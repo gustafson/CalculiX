@@ -67,9 +67,9 @@ CC=gcc
 FC=gfortran
 
 .c.o :
-	$(CC) $(CFLAGS) -c $<
+	$(CC) $(CFLAGSLOC) -c $<
 .f.o :
-	$(FC) $(FFLAGS) -c $<
+	$(FC) $(FFLAGSLOC) -c $<
 
 include Makefile.inc
 
