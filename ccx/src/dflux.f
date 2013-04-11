@@ -18,7 +18,7 @@
 !
       subroutine dflux(flux,sol,kstep,kinc,time,noel,npt,coords,
      &     jltyp,temp,press,loadtype,area,vold,co,lakonl,konl,
-     &     ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,iscale)
+     &     ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,iscale,mi)
 !
 !     user subroutine dflux
 !
@@ -77,6 +77,10 @@
 !                        5-7: rotations)
 !     ilmpc(1..nmpc)     ilmpc(i) is the MPC number corresponding
 !                        to the reference number in ikmpc(i)   
+!     mi(1)              max # of integration points per element (max
+!                        over all elements)
+!     mi(2)              max degree of freedomm per node (max over all
+!                        nodes) in fields like v(0:mi(2))...
 !
 !     OUTPUT:
 !
@@ -94,9 +98,9 @@
       character*20 loadtype
 !
       integer kstep,kinc,noel,npt,jltyp,konl(20),ipompc(*),
-     &  nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),node,idof,id,iscale
+     &  nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),node,idof,id,iscale,mi(2)
 !
-      real*8 flux(2),time(2),coords(3),sol,temp,press,vold(0:4,*),
+      real*8 flux(2),time(2),coords(3),sol,temp,press,vold(0:mi(2),*),
      &  area,co(3,*),coefmpc(*)
 !
 !     the code starting here up to the end of the file serves as
@@ -108,8 +112,8 @@
       integer ifaceq(8,6),ifacet(6,4),ifacew(8,5),ig,nelem,nopes,
      &  iflag,i,j,k,nope
 !
-      real*8 xl21(0:3,8),xi,et,al,rho,um,h,pnode1(3),pnode2(3),
-     &  ratio(8),dist,xl22(0:3,8),dpnode1(3,3),dpnode2(3,3),v1(3),
+      real*8 xl21(3,8),xi,et,al,rho,um,h,pnode1(3),pnode2(3),
+     &  ratio(8),dist,xl22(3,8),dpnode1(3,3),dpnode2(3,3),v1(3),
      &  v2(3),dh(3),xsj2(3),xs2(3,7),shp2(7,8)
 !
       data ifaceq /4,3,2,1,11,10,9,12,

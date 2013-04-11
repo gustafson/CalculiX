@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine restarts(istep,nset,nload,nforc, nboun,nk,ne,
-     &  nmpc,nalset,nmat,ntmat_,npmat_,norien,nam,nprint,mint_,
+     &  nmpc,nalset,nmat,ntmat_,npmat_,norien,nam,nprint,mi,
      &  ntrans,ncs_,namtot_,ncmat_,mpcfree,maxlenmpc,
      &  ne1d,ne2d,nflow,nlabel,iplas,
      &  nkon,ithermal,nmethod,iperturb,nstate_,nener,set,istartset,
@@ -40,16 +40,16 @@
 !
       character*1 typeboun(*),inpc(*)
       character*3 output
-      character*6 filab(*)
       character*6 prlab(*)
       character*8 lakon(*)
       character*20 labmpc(*),sideload(*)
       character*80 orname(*),amname(*),matname(*)
       character*81 set(*),prset(*),tieset(3,*),cbody(*)
+      character*87 filab(*)
       character*132 jobnamec(*),textpart(16)
 !
       integer istep,nset,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,
-     &  ntmat_,npmat_,norien,nam,nprint,mint_,ntrans,ncs_,
+     &  ntmat_,npmat_,norien,nam,nprint,mi(2),ntrans,ncs_,
      &  namtot_,ncmat_,mpcfree,ne1d,ne2d,nflow,nlabel,iplas,nkon,
      &  ithermal,nmethod,iperturb(*),nstate_,istartset(*),iendset(*),
      &  ialset(*),kon(*),ipkon(*),nodeboun(*),ndirboun(*),iamboun(*),
@@ -93,7 +93,7 @@
 !
       if(irestartread.eq.1) then
         call restartread(istep,nset,nload,nforc, nboun,nk,ne,
-     &  nmpc,nalset,nmat,ntmat_,npmat_,norien,nam,nprint,mint_,
+     &  nmpc,nalset,nmat,ntmat_,npmat_,norien,nam,nprint,mi,
      &  ntrans,ncs_,namtot_,ncmat_,mpcfree,maxlenmpc,
      &  ne1d,ne2d,nflow,nlabel,iplas,
      &  nkon,ithermal,nmethod,iperturb,nstate_,nener,set,istartset,

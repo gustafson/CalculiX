@@ -21,7 +21,7 @@
      &  coefmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,iponoel,inoel,
      &  iponoelmax,kon,ipkon,lakon,ne,iponor,xnor,knor,nam,nk,nk_,
      &  co,thicke,nodeboun,ndirboun,ikboun,ilboun,nboun,nboun_,
-     &  iamboun,typeboun,xboun,nmethod,iperturb,istep,vold)
+     &  iamboun,typeboun,xboun,nmethod,iperturb,istep,vold,mi)
 !
 !     connects nodes of 1-D and 2-D elements, for which 
 !     concentrated forces were
@@ -43,12 +43,13 @@
      &  irotnode,nk,nk_,newnode,idof,id,mpcfreenew,k,isector,ndepnodes,
      &  idepnodes(80),l,iexpnode,indexx,irefnode,imax,isol,mpcfreeold,
      &  nod,impc,istep,nodeboun(*),ndirboun(*),ikboun(*),ilboun(*),
-     &  nboun,nboun_,iamboun(*),nmethod,iperturb,nrhs,ipiv(3),info,m
+     &  nboun,nboun_,iamboun(*),nmethod,iperturb,nrhs,ipiv(3),info,m,
+     &  mi(2)
 !
       real*8 xforc(*),trab(7,*),coefmpc(*),xnor(*),val,co(3,*),
      &  thicke(2,*),pi,xboun(*),xnoref(3),dmax,d(3,3),e(3,3,3),
      &  alpha,q(3),w(3),xn(3),a(3,3),a1(3),a2(3),dd,c1,c2,c3,ww,c(3,3),
-     &  vold(0:4,*)
+     &  vold(0:mi(2),*)
 !
       data d /1.,0.,0.,0.,1.,0.,0.,0.,1./
       data e /0.,0.,0.,0.,0.,-1.,0.,1.,0.,
@@ -378,7 +379,7 @@ c               idir=idir-3
      &                    nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &                    ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
      &                    type,typeboun,nmethod,iperturb,fixed,vold,
-     &                    irotnode)
+     &                    irotnode,mi)
                   else
 !     
 !                    check for an unused rotational DOF

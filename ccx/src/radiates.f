@@ -73,7 +73,7 @@
             enddo
          elseif(textpart(i)(1:10).eq.'AMPLITUDE=') then
             read(textpart(i)(11:90),'(a80)') amplitude
-            do j=1,nam
+            do j=nam,1,-1
                if(amname(j).eq.amplitude) then
                   iamptemp=j
                   exit
@@ -127,7 +127,7 @@
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          elseif(textpart(i)(1:19).eq.'RADIATIONAMPLITUDE=') then
             read(textpart(i)(20:99),'(a80)') amplitude
-            do j=1,nam
+            do j=nam,1,-1
                if(amname(j).eq.amplitude) then
                   iampradi=j
                   exit

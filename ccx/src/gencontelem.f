@@ -20,27 +20,30 @@
      &  lakon,set,istartset,iendset,ialset,cg,straight,ifree,
      &  koncont,co,vold,xo,yo,zo,x,y,z,nx,ny,nz,nset,ielmat,cs,
      &  elcon,istep,iinc,iit,ncmat_,ntmat_,ifcont1,ifcont2,ne0,
-     &  vini,nmethod)
+     &  vini,nmethod,mi,imastop)
 !
 !     generate contact elements for the slave contact nodes
 !
       implicit none
 !
       character*8 lakon(*)
+c      character*18 cfile
       character*81 tieset(3,*),slavset,set(*)
 !
       integer ntie,nset,istartset(*),iendset(*),ialset(*),ifree,
      &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),ne,node,
-     &  neigh(10),nodeedge(2,10),iflag,kneigh,i,j,k,l,islav,isol,
+     &  neigh(1),nodeedge(2,10),iflag,kneigh,i,j,k,l,islav,isol,
      &  itri,ll,kflag,n,ipos,nx(*),ny(*),ipointer(10),istep,iinc,
      &  nz(*),nstart,ielmat(*),material,ifaceq(8,6),ifacet(6,4),
      &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,iit,
      &  nnodelem,nface,nope,nodef(8),ncmat_,ntmat_,ifcont1(*),
-     &  ifcont2(*),ne0,ifaceref,isum,nmethod
+     &  ifcont2(*),ne0,ifaceref,isum,nmethod,mi(2),iteller,
+     &  imastop(3,*), itriangle(100),ntriangle,ntriangle_,itriold,
+     &  itrinew,id
 !
-      real*8 cg(3,*),straight(16,*),co(3,*),vold(0:4,*),p(3),
+      real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),p(3),
      &  totdist(10),dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),cs(17,*),
-     &  beta,c0,elcon(0:ncmat_,ntmat_,*),vini(0:4,*)
+     &  beta,c0,elcon(0:ncmat_,ntmat_,*),vini(0:mi(2),*)
 !
 !     nodes per face for hex elements
 !
@@ -74,14 +77,37 @@
      &             2,3,6,5,8,15,11,14,
      &             4,6,3,1,12,15,9,13/
 !
+      data iteller /0/
+      save iteller
+!
 !     maximum number of neighboring master triangles for a slave node
 !
       kflag=2
 !
+!     opening a file to store the contact spring elements
+!    
+c      iteller=iteller+1
+c      cfile(1:18)='contactelem       '
+c      if(iteller.lt.10) then
+c         write(cfile(12:12),'(i1)') iteller
+c         cfile(13:16)='.inp'
+c      elseif(iteller.lt.100) then
+c         write(cfile(12:13),'(i2)') iteller
+c         cfile(14:17)='.inp'
+c      elseif(iteller.lt.1000) then
+c         write(cfile(12:14),'(i3)') iteller
+c         cfile(15:18)='.inp'
+c      else
+c         write(*,*) '*ERROR in gencontelem: more than 1000'
+c         write(*,*) '       contact element files'
+c         stop
+c      endif
+c      open(27,file=cfile,status='unknown')
+!
       do i=1,ntie
          if(tieset(1,i)(81:81).ne.'C') cycle
          iflag=0
-         kneigh=10
+         kneigh=1
          slavset=tieset(2,i)
          material=int(cs(1,i))
 !     
@@ -132,73 +158,124 @@
      &             n,neigh,kneigh)
 !     
                isol=0
-!     
-               do k=1,kneigh
-                  itri=neigh(k)+itietri(1,i)-1
-!     
-                  ipos=0
-                  totdist(k)=0.d0
-                  nodeedge(1,k)=0
-                  nodeedge(2,k)=0
-!     
+!
+               itriold=0
+               itri=neigh(1)+itietri(1,i)-1
+               ntriangle=0
+               ntriangle_=100
+!
+               loop1: do
                   do l=1,3
                      ll=4*l-3
                      dist=straight(ll,itri)*p(1)+
      &                    straight(ll+1,itri)*p(2)+
      &                    straight(ll+2,itri)*p(3)+
      &                    straight(ll+3,itri)
-                     if(dist.gt.0.d0) then
-                        totdist(k)=totdist(k)+dist
-                        if(ipos.eq.0) then
-                           nodeedge(1,k)=koncont(l,itri)
-                           if(l.ne.3) then
-                              nodeedge(2,k)=koncont(l+1,itri)
-                           else
-                              nodeedge(2,k)=koncont(1,itri)
-                           endif
+c                     if(dist.gt.0.d0) then
+                     if(dist.gt.1.d-6) then
+                        itrinew=imastop(l,itri)
+                        if(itrinew.eq.0) then
+c                           write(*,*) '**border reached'
+                           exit loop1
+                        elseif(itrinew.eq.itriold) then
+c                           write(*,*) '**solution in between triangles'
+                           isol=itri
+                           exit loop1
                         else
-                           if((nodeedge(1,k).eq.koncont(l,itri)).or.
-     &                      (nodeedge(2,k).eq.koncont(l,itri)))then
-                              nodeedge(1,k)=koncont(l,itri)
-                              nodeedge(2,k)=0
-                           else
-                              if(l.ne.3) then
-                                 nodeedge(1,k)=koncont(l+1,itri)
-                              else
-                                 nodeedge(1,k)=koncont(1,itri)
+                           call nident(itriangle,itrinew,ntriangle,id)
+                           if(id.gt.0) then
+                              if(itriangle(id).eq.itrinew) then
+c                                 write(*,*) '**circular path; no solution'
+                                 exit loop1
                               endif
                            endif
+                           ntriangle=ntriangle+1
+                           if(ntriangle.gt.ntriangle_) then
+c                              write(*,*) '**too many iterations'
+                              exit loop1
+                           endif
+                           do k=ntriangle,id+2,-1
+                              itriangle(k)=itriangle(k-1)
+                           enddo
+                           itriangle(id+1)=itrinew
+                           itriold=itri
+                           itri=itrinew
+                           cycle loop1
                         endif
-                        ipos=ipos+1
+                     elseif(l.eq.3) then
+c                              write(*,*) '**regular solution'
+                        isol=itri
+                        exit loop1
                      endif
                   enddo
+               enddo loop1
 !     
-                  if(totdist(k).le.0.d0) then
-                     isol=k
-                     exit
-                  endif
-               enddo
-!
-!              if no independent face was found, a small
-!              tolerance is applied
-!
-               if(isol.eq.0) then
-                  do k=1,kneigh
-                     ipointer(k)=neigh(k)+itietri(1,i)-1
-                  enddo
-                  call dsort(totdist,ipointer,kneigh,kflag)
-                  do k=1,kneigh
-                     itri=ipointer(k)
-                     dist=dabs(straight(1,itri)*cg(1,itri)+
-     &                         straight(2,itri)*cg(2,itri)+
-     &                         straight(3,itri)*cg(3,itri)+
-     &                         straight(4,itri))
-                     if(totdist(k).lt.1.d-3*dist) then
-                        isol=k
-                        exit
-                     endif
-                  enddo
-               endif
+c               do k=1,kneigh
+c                  itri=neigh(k)+itietri(1,i)-1
+c!     
+c                  ipos=0
+c                  totdist(k)=0.d0
+c                  nodeedge(1,k)=0
+c                  nodeedge(2,k)=0
+c!     
+c                  do l=1,3
+c                     ll=4*l-3
+c                     dist=straight(ll,itri)*p(1)+
+c     &                    straight(ll+1,itri)*p(2)+
+c     &                    straight(ll+2,itri)*p(3)+
+c     &                    straight(ll+3,itri)
+c                     if(dist.gt.0.d0) then
+c                        totdist(k)=totdist(k)+dist
+c                        if(ipos.eq.0) then
+c                           nodeedge(1,k)=koncont(l,itri)
+c                           if(l.ne.3) then
+c                              nodeedge(2,k)=koncont(l+1,itri)
+c                           else
+c                              nodeedge(2,k)=koncont(1,itri)
+c                           endif
+c                        else
+c                           if((nodeedge(1,k).eq.koncont(l,itri)).or.
+c     &                      (nodeedge(2,k).eq.koncont(l,itri)))then
+c                              nodeedge(1,k)=koncont(l,itri)
+c                              nodeedge(2,k)=0
+c                           else
+c                              if(l.ne.3) then
+c                                 nodeedge(1,k)=koncont(l+1,itri)
+c                              else
+c                                 nodeedge(1,k)=koncont(1,itri)
+c                              endif
+c                           endif
+c                        endif
+c                        ipos=ipos+1
+c                     endif
+c                  enddo
+c!     
+c                  if(totdist(k).le.0.d0) then
+c                     isol=k
+c                     exit
+c                  endif
+c               enddo
+c!
+c!              if no independent face was found, a small
+c!              tolerance is applied
+c!
+c               if(isol.eq.0) then
+c                  do k=1,kneigh
+c                     ipointer(k)=neigh(k)+itietri(1,i)-1
+c                  enddo
+c                  call dsort(totdist,ipointer,kneigh,kflag)
+c                  do k=1,kneigh
+c                     itri=ipointer(k)
+c                     dist=dabs(straight(1,itri)*cg(1,itri)+
+c     &                         straight(2,itri)*cg(2,itri)+
+c     &                         straight(3,itri)*cg(3,itri)+
+c     &                         straight(4,itri))
+c                     if(totdist(k).lt.1.d-3*dist) then
+c                        isol=k
+c                        exit
+c                     endif
+c                  enddo
+c               endif
 !
 !              check whether distance is larger than c0:
 !              no element is generated
@@ -209,9 +286,13 @@
      &                 straight(15,itri)*p(3)+
      &                 straight(16,itri)
                   beta=elcon(1,1,material)
-                  c0=dlog(100.d0)/beta
+                  if(beta.gt.0.d0) then
+                     c0=dlog(100.d0)/beta
+                  else
+                     c0=0.d0
+                  endif
                   if(dist.gt.c0) then
-c                     isol=0
+                     isol=0
 !
 !                    adjusting the bodies at the start of the
 !                    calculation such that they touch
@@ -313,6 +394,17 @@ c                     isol=0
 !
                   write(lakon(ne)(8:8),'(i1)') nnodelem+1
 c                  write(*,*) 'new elem',ne,(nodef(k),k=1,nnodelem),node
+                  if((nnodelem.eq.3).or.(nnodelem.eq.6)) then
+c                     write(27,100)
+c 100                 format('*ELEMENT,TYPE=C3D4')
+c                     write(27,*) ne,',',nodef(1),',',nodef(2),',',
+c     &                           nodef(3),',',node
+                  else
+c                     write(27,101)
+c 101                 format('*ELEMENT,TYPE=C3D6')
+c                     write(27,*) ne,',',nodef(2),',',node,',',nodef(3),
+c     &                    ',',nodef(1),',',node,',',nodef(4)
+                  endif
                endif
 !     
             else
@@ -480,7 +572,7 @@ c                  write(*,*) 'new elem',ne,(nodef(k),k=1,nnodelem),node
                      kon(ifree)=node
                      ifree=ifree+1
                      write(lakon(ne)(8:8),'(i1)') nnodelem+1
-c                  write(*,*) 'new elem',ne,(nodef(k),k=1,nnodelem),node
+c                   write(*,*) 'new elem',ne,(nodef(k),k=1,nnodelem),node
                   endif
 !     
                enddo
@@ -534,6 +626,8 @@ c                  write(*,*) 'new elem',ne,(nodef(k),k=1,nnodelem),node
 c         write(*,*) 'gencontelem',i,ifcont1(i-ne0)
       enddo
 !     
+c      close(27)
+!
       return
       end
 

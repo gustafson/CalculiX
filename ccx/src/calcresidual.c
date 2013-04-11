@@ -16,7 +16,7 @@
 /*     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.         */
 
 #include <stdio.h>
-#include <math.h>
+#include <math.h> 
 #include <stdlib.h>
 #include "CalculiX.h"
 #ifdef SPOOLES
@@ -34,9 +34,11 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
         int *iexpl, int *nactdof, double *aux1, double *aux2, double *vold,
         double *vini, double *dtime, double *accold, int *nk, double *adb,
         double *aub, int *icol, int *irow, int *nzl, double *alpha,
-        double *fextini, double *fini){
+        double *fextini, double *fini, int *islavnode, int *nslavnode,
+        int *imastnode, int *nmastnode, int *mortar, int *ntie,double *f_cm,
+	double* f_cs, int *mi){
 
-    int j,k;
+    int j,k,nodes,nodem,i,mt=mi[1]+1;
     double scal1;
       
     /* residual for a static analysis */
@@ -44,6 +46,7 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
     if(*nmethod!=4){
 	for(k=0;k<neq[1];++k){
 	    b[k]=fext[k]-f[k];
+//	   printf("calcresidual dof=%d,fext=%e,f=%e,resi=%e\n",k,fext[k],f[k],b[k]);
 	}
     }
       
@@ -51,22 +54,12 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
       
     else if(*iexpl<=1){
 	for(k=0;k<*nk;++k){
-	    if(nactdof[4*k]!=0){
-		aux2[nactdof[4*k]-1]=(vold[5*k]-vini[5*k])/(*dtime);}
-	    for(j=1;j<4;++j){
-		if(nactdof[4*k+j]!=0){aux2[nactdof[4*k+j]-1]=accold[4*k+j];}
+	    if(nactdof[mt*k]!=0){
+		aux2[nactdof[mt*k]-1]=(vold[mt*k]-vini[mt*k])/(*dtime);}
+	    for(j=1;j<mt;++j){
+		if(nactdof[mt*k+j]!=0){aux2[nactdof[mt*k+j]-1]=accold[mt*k+j];}
 	    }
 	}
-/*	k=0;
-	do{
-	    if(nactdof[k]!=0){
-		aux2[nactdof[k]-1]=(vold[k]-vini[k])/(*dtime);}
-	    k++;
-	    for(kk=0;kk<3;kk++){
-		if(nactdof[k]!=0){aux2[nactdof[k]-1]=accold[k];}
-		k++;
-	    }
-	    }while(k<4**nk);*/
 	FORTRAN(op,(&neq[1],aux1,aux2,b,adb,aub,icol,irow,nzl)); 
 	scal1=1.+*alpha;
 	for(k=0;k<neq[0];++k){
@@ -81,22 +74,12 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
     
     else{
 	for(k=0;k<*nk;++k){
-	    if(nactdof[4*k]!=0){
-		aux2[nactdof[4*k]-1]=(vold[5*k]-vini[5*k])/(*dtime);}
-	    for(j=1;j<4;++j){
-		if(nactdof[4*k+j]!=0){aux2[nactdof[4*k+j]-1]=accold[4*k+j];}
+	    if(nactdof[mt*k]!=0){
+		aux2[nactdof[mt*k]-1]=(vold[mt*k]-vini[mt*k])/(*dtime);}
+	    for(j=1;j<mt;++j){
+		if(nactdof[mt*k+j]!=0){aux2[nactdof[mt*k+j]-1]=accold[mt*k+j];}
 	    }
 	}
-/*	k=0;
-	do{
-	    if(nactdof[k]!=0){
-		aux2[nactdof[k]-1]=(vold[k]-vini[k])/(*dtime);}
-	    k++;
-	    for(kk=0;kk<3;kk++){
-		if(nactdof[k]!=0){aux2[nactdof[k]-1]=accold[k];}
-		k++;
-	    }
-	    }while(k<4**nk);*/
 	scal1=1.+*alpha;
 	for(k=0;k<neq[0];++k){
 	    b[k]=scal1*(fext[k]-f[k])-*alpha*(fextini[k]-fini[k])
@@ -107,5 +90,32 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
 	} 
     }
     
+    if(*mortar==1){
+
+      /* removing the forces in the slave nodes */
+
+      for(k=0;k<nslavnode[*ntie];k++){
+	nodes=islavnode[k];
+	for(j=1;j<mt;j++){
+          i=nactdof[mt*(nodes-1)+j];
+	  if(i==0){continue;}else{i--;}
+	  b[i]-=f_cs[i];
+		  //b[i]=0.;
+	}
+      }
+
+      /* removing the forces in the master nodes */
+
+      for(k=0;k<nmastnode[*ntie];k++){
+	nodem=imastnode[k];
+	for(j=1;j<mt;j++){
+	  i=nactdof[mt*(nodem-1)+j];
+	  if(i==0){continue;}else{i--;}
+	  b[i]-=f_cm[i];
+		  //b[i]-=0.;
+	}
+      }
+    }
+
     return;
 }

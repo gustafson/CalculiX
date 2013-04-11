@@ -28,8 +28,9 @@
 !     integer iostat
       real*8 ttime,time,dtime
 !
- 1    write(8,100) istep,j,icutb+1,l,ttime,time,dtime
-      call flush(8)
+      write(8,100) istep,j,icutb+1,l,ttime,time,dtime
+c      call flush(8)
+      flush(8)
 !
 !     for some unix systems flush has two arguments
 !
@@ -39,7 +40,7 @@
 !        stop
 !     endif
 !
- 100  format(4(1x,i5),3(1x,e13.6))
+ 100  format(1x,i5,1x,i10,2(1x,i5),3(1x,e13.6))
 !
       return
       end

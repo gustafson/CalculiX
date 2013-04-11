@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine restartread(istep,nset,nload,nforc, nboun,nk,ne,
-     &  nmpc,nalset,nmat,ntmat_,npmat_,norien,nam,nprint,mint_,
+     &  nmpc,nalset,nmat,ntmat_,npmat_,norien,nam,nprint,mi,
      &  ntrans,ncs_,namtot_,ncmat_,mpcfree,maxlenmpc,
      &  ne1d,ne2d,nflow,nlabel,iplas,
      &  nkon,ithermal,nmethod,iperturb,nstate_,nener,set,istartset,
@@ -39,22 +39,22 @@
 !
       character*1 typeboun(*)
       character*3 output
-      character*6 filab(*)
       character*6 prlab(*)
       character*8 lakon(*)
       character*20 labmpc(*),sideload(*)
       character*80 orname(*),amname(*),matname(*)
       character*81 set(*),prset(*),tieset(3,*),cbody(*)
+      character*87 filab(*)
       character*132 fnrstrt,jobnamec(*)
 !
       integer istep,nset,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,
-     &  ntmat_,npmat_,norien,nam,nprint,mint_,ntrans,ncs_,
+     &  ntmat_,npmat_,norien,nam,nprint,mi(2),ntrans,ncs_,
      &  namtot_,ncmat_,mpcfree,ne1d,ne2d,nflow,nlabel,iplas,nkon,
      &  ithermal,nmethod,iperturb(*),nstate_,istartset(*),iendset(*),
      &  ialset(*),kon(*),ipkon(*),nodeboun(*),ndirboun(*),iamboun(*),
      &  ikboun(*),ilboun(*),ipompc(*),nodempc(*),ikmpc(*),ilmpc(*),
      &  nodeforc(*),ndirforc(*),iamforc(*),ikforc(*),ilforc(*),
-     &  nelemload(*),iamload(*),nelcon(*),
+     &  nelemload(*),iamload(*),nelcon(*),mt,
      &  nrhcon(*),nalcon(*),nplicon(*),nplkcon(*),ielorien(*),inotr(*),
      &  namta(*),iamt1(*),ielmat(*),nodebounold(*),ndirbounold(*),
      &  iponor(*),knor(*),iponoel(*),inoel(*),rig(*),
@@ -108,7 +108,8 @@
          read(15)nk
          read(15)ne
          read(15)nkon
-         read(15)mint_
+         read(15)(mi(i),i=1,2)
+         mt=mi(2)+1
 !
 !        constraint size
 !
@@ -168,7 +169,7 @@
 !        skipping the next entries until the requested step is found
 ! 
          call skip(nset,nalset,nload,nbody,nforc,nboun,nflow,nk,ne,nkon,
-     &     mint_,nmpc,mpcend,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,
+     &     mi(1),nmpc,mpcend,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,
      &     nam,nprint,nlabel,ncs_,ne1d,ne2d,infree,nmethod,
      &     iperturb,nener,iplas,ithermal,nstate_,iprestr,mcs,ntie)
 !
@@ -238,7 +239,7 @@
 !
 !     prestress
 !
-      if(iprestr.gt.0) read(15) (prestr(i),i=1,6*mint_*ne)
+      if(iprestr.gt.0) read(15) (prestr(i),i=1,6*mi(1)*ne)
 !
 !     labels
 !
@@ -330,9 +331,9 @@
 !
 !     temperature, displacement, static pressure, velocity and acceleration
 !
-      read(15)(vold(i),i=1,5*nk)
+      read(15)(vold(i),i=1,mt*nk)
       if((nmethod.eq.4).or.((nmethod.eq.1).and.(iperturb(1).ge.2))) then
-         read(15)(veold(i),i=1,4*nk)
+         read(15)(veold(i),i=1,mt*nk)
       endif
 !
 !     reordering
@@ -369,13 +370,13 @@
 !
 !     integration point variables
 !
-      read(15)(sti(i),i=1,6*mint_*ne)
-      read(15)(eme(i),i=1,6*mint_*ne)
+      read(15)(sti(i),i=1,6*mi(1)*ne)
+      read(15)(eme(i),i=1,6*mi(1)*ne)
       if(nener.eq.1) then
-         read(15)(ener(i),i=1,mint_*ne)
+         read(15)(ener(i),i=1,mi(1)*ne)
       endif
       if(nstate_.gt.0)then
-         read(15)(xstate(i),i=1,nstate_*mint_*ne)
+         read(15)(xstate(i),i=1,nstate_*mi(1)*ne)
       endif
 !
 !     control parameters

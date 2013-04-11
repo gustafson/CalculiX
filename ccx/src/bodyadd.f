@@ -57,6 +57,7 @@
 !
       if(id.ne.0) then
          do
+            if(id.eq.0) exit
             if(cbody(id).eq.set) then
                if(ibody(1,id).eq.ilabel) then
 !

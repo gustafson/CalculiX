@@ -18,7 +18,7 @@
 !
       subroutine dashforc(xl,konl,vl,imat,elcon,nelcon,
      &  elas,fn,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,
-     &  plicon,nplicon,npmat_,vel,time,nmethod)
+     &  plicon,nplicon,npmat_,vel,time,nmethod,mi)
 !
 !     calculates the force of the dashpot
 !
@@ -27,10 +27,10 @@
       character*8 lakonl
 !
       integer konl(20),i,j,imat,ncmat_,ntmat_,nope,nmethod,
-     &  kode,nelcon(2,*),nplicon(0:ntmat_,*),npmat_,id,niso
+     &  kode,nelcon(2,*),nplicon(0:ntmat_,*),npmat_,id,niso,mi(2)
 !
-      real*8 xl(3,20),elas(21),t0l,t1l,vl(0:3,20),plconloc(82),
-     &  pl(0:3,9),xn(3),al,dd,fn(0:3,*),vel(1:3,20),time,
+      real*8 xl(3,20),elas(21),t0l,t1l,vl(0:mi(2),20),plconloc(82),
+     &  pl(0:3,9),xn(3),al,dd,fn(0:mi(2),*),vel(1:3,20),time,
      &  elcon(0:ncmat_,ntmat_,*),elconloc(21),xk,fk,
      &  plicon(0:2*npmat_,ntmat_,*),xiso(20),yiso(20)
 !

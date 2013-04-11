@@ -56,10 +56,12 @@ void checkinclength(double *time,double *ttime,double *theta, double *dtheta,
     if((*itpamp>0)&&(*idrct==0)){
 	if(namta[3**itpamp-1]<0){
 /*	    reftime=*ttime+*dtheta**tper+1.01e-6;*/
-	    reftime=*ttime+(*dtheta+1.01e-6)**tper;
+//	    reftime=*ttime+(*dtheta+1.01e-6)**tper;
+	    reftime=*ttime+(*dtheta)**tper;
 	}else{
 /*	    reftime=*time+*dtheta**tper+1.01e-6;*/
-	    reftime=*time+(*dtheta+1.01e-6)**tper;
+//	    reftime=*time+(*dtheta+1.01e-6)**tper;
+	    reftime=*time+(*dtheta)**tper;
 	}
 	istart=namta[3**itpamp-3];
 	iend=namta[3**itpamp-2];
@@ -69,6 +71,10 @@ void checkinclength(double *time,double *ttime,double *theta, double *dtheta,
 	}else{
 	    inew=id+1;
 	}
+
+            /* inew: smallest time point exceeding time+dtheta*tper
+               inext: smallest time point exceeding time */
+
 	if(*inext<inew){
 	    if(namta[3**itpamp-1]<0){
 		*dtheta=(amta[2**inext-2]-*ttime)/(*tper);

@@ -31,15 +31,16 @@
      &  iperturb
 !
       real*8 xl(3,9),elas(21),ratio(9),q(3),dist,shp2(7,9),
-     &  dc(3),s(60,60),voldl(3,9),pl(0:3,9),xn(3),al,dd,
+     &  dc(3),s(60,60),voldl(3,9),pl(3,9),xn(3),al,dd,
      &  c1,c2,c3,c4,alpha,beta,elcon(0:ncmat_,ntmat_,*),xsj2(3),
      &  xsju(3,3,9),dxsju(3,9),h(3,9),fpu(3,3,9),xi,et,
      &  xs2(3,7),t0l,t1l,elconloc(21),plconloc(82),xk,fk,
      &  xiso(20),yiso(20),dd0,plicon(0:2*npmat_,ntmat_,*),
      &  a11,a12,a22,b1(3,9),b2(3,9),dal(3,3,9),qxxy(3),fnl(3),
-     &  qxyy(3),dxi(3,9),det(3,9),determinant,c11,c12,c22
+     &  qxyy(3),dxi(3,9),det(3,9),determinant,c11,c12,c22,
+     &  qxyx(3),qyxy(3)
 !
-      data iflag /2/
+      data iflag /4/
 !
 !     actual positions of the nodes belonging to the contact spring
 !
@@ -207,6 +208,24 @@
       qxyy(2)=xs2(3,1)*xs2(1,7)-xs2(1,1)*xs2(3,7)
       qxyy(3)=xs2(1,1)*xs2(2,7)-xs2(2,1)*xs2(1,7)
 !
+!     Modified by Stefan Sicklinger
+!
+!     dq/dx x d2q/dxy
+!
+      qxyx(1)=xs2(2,1)*xs2(3,6)-xs2(3,1)*xs2(2,6)
+      qxyx(2)=xs2(3,1)*xs2(1,6)-xs2(1,1)*xs2(3,6)
+      qxyx(3)=xs2(1,1)*xs2(2,6)-xs2(2,1)*xs2(1,6)
+!
+!
+!     d2q/dxy x dq/dy
+!
+      qyxy(1)=xs2(2,6)*xs2(3,2)-xs2(3,6)*xs2(2,2)
+      qyxy(2)=xs2(3,6)*xs2(1,2)-xs2(1,6)*xs2(3,2)
+      qyxy(3)=xs2(1,6)*xs2(2,2)-xs2(2,6)*xs2(1,2)
+!
+!
+!     End modifications
+!
 !     normal on the surface
 !
       dd=dsqrt(xsj2(1)*xsj2(1)+xsj2(2)*xsj2(2)+xsj2(3)*xsj2(3))
@@ -222,23 +241,34 @@ c      write(*,*) 'springstiff ',al
 !     alpha and beta, taking the representative area into account
 !     (conversion of pressure into force)
 !
-      if(dabs(elcon(2,1,imat)).lt.1.d-30) then
-         elas(1)=0.d0
-         elas(2)=0.d0
-      else
-         if((nterms.eq.8).or.(nterms.eq.4)) then
-            alpha=elcon(2,1,imat)*dd*4.d0
-c     alpha=elcon(2,1,imat)*dd*4.d0/konl(nope+1)
+      if(elcon(1,1,imat).gt.0.d0) then
+!
+!        exponential overclosure
+!
+         if(dabs(elcon(2,1,imat)).lt.1.d-30) then
+            elas(1)=0.d0
+            elas(2)=0.d0
          else
-            alpha=elcon(2,1,imat)*dd/2.d0
+            if((nterms.eq.8).or.(nterms.eq.4)) then
+               alpha=elcon(2,1,imat)*dd*4.d0
+c     alpha=elcon(2,1,imat)*dd*4.d0/konl(nope+1)
+            else
+               alpha=elcon(2,1,imat)*dd/2.d0
 c     alpha=elcon(2,1,imat)*dd/2.d0/konl(nope+1)
+            endif
+            beta=elcon(1,1,imat)
+            if(-beta*al.gt.23.d0-dlog(alpha)) then
+               beta=(dlog(alpha)-23.d0)/al
+            endif
+            elas(1)=dexp(-beta*al+dlog(alpha))
+            elas(2)=-beta*elas(1)
          endif
-         beta=elcon(1,1,imat)
-         if(-beta*al.gt.23.d0-dlog(alpha)) then
-            beta=(dlog(alpha)-23.d0)/al
-         endif
-         elas(1)=dexp(-beta*al+dlog(alpha))
-         elas(2)=-beta*elas(1)
+      else
+!     
+!        linear overclosure
+!
+         elas(1)=-dd*elcon(2,1,imat)*dist
+         elas(2)=-dd*elcon(2,1,imat)
       endif
 !
 !     contact force
@@ -272,8 +302,13 @@ c     alpha=elcon(2,1,imat)*dd/2.d0/konl(nope+1)
       do k=1,nope
          do i=1,3
             do j=1,3
-               xsju(i,j,k)=xsju(i,j,k)+qxxy(i)*dxi(j,k)
-     &                                +qxyy(i)*det(j,k)
+!
+!     modified by Stefan Sicklinger
+!
+               xsju(i,j,k)=xsju(i,j,k)+(qxxy(i)+qxyx(i))*dxi(j,k)
+     &                                +(qxyy(i)+qyxy(i))*det(j,k)
+c               xsju(i,j,k)=xsju(i,j,k)+qxxy(i)*dxi(j,k)
+c     &                                +qxyy(i)*det(j,k)
             enddo
          enddo
       enddo

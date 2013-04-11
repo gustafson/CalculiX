@@ -29,35 +29,35 @@
      &     kontri,ntri,nloadtr,tarea,tenv,physcon,erad,f,
      &     dist,idist,area,ithermal,iinc,iit,
      &     cs,mcs,inocs,ntrit,nk,fenv,istep,dtime,ttime,
-     &     time,iviewfile,jobnamef,xloadold,reltime,nmethod)
+     &     time,iviewfile,jobnamef,xloadold,reltime,nmethod,mi)
 !     
       implicit none
 !     
       logical covered(160,160),exi
 !     
-      character*4 label(10)
+      character*87 label(27)
       character*8 lakonl,lakon(*)
       character*20 sideload(*)
       character*132 jobnamef(*),fnvw
 !     
       integer ntr,nelemload(2,*),nope,nopes,mint2d,i,j,k,l,
-     &     node,ntm,ifaceq(8,6),ifacet(6,4),iviewfile,
+     &     node,ntm,ifaceq(8,6),ifacet(6,4),iviewfile,mi(2),
      &     ifacew(8,5),nelem,ig,index,konl(20),iflag,
      &     ipkon(*),kon(*),ncovered,kontri(3,*),iptri(*),nloadtr(*),
      &     i1,j1,istart,iend,jstart,jend,imin,imid,imax,mcs,inocs(*),
      &     k1,kflag,idist(*),ndist,i2,i3,ng,idi,idj,ntri,
      &     ithermal,iinc,iit,ix,iy,ntrit,jj,is,m,jmod,nkt,
      &     icntrl,imag,nk,istep,jltyp,nfield,nonzero,nmethod,
-     &     limev,ier,nw,idata(1),ncalls
+     &     limev,ier,nw,idata(1),ncalls,nlabel
 !     
       real*8 ac(ntm,*),bc(ntm,1),xloadact(2,*),h(2),w(239),
-     &     xl2(0:3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
-     &     vold(0:4,*),co(3,*),shp2(7,8),xs2(3,7),xn(3),xxn,
+     &     xl2(3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
+     &     vold(0:mi(2),*),co(3,*),shp2(7,8),xs2(3,7),xn(3),xxn,
      &     pmid(3,*),e3(4,*),e1(3,*),e2(3,*),p1(3),p2(3),p3(3),
      &     areamean,tarea(*),tenv(*),x,y,cs(17,*),porigin(3),
      &     erad(*),fenv(*),e,ec,physcon(*),yymin,yymax,xxmin,
      &     xxmid,xxmax,dummy,a(3,3),b(3,3),c(3,3),ddd(3),p31(3),
-     &     xx(3),yy(3),ftij,f(ntr,*),dint,dir(3),
+     &     xx(3),yy(3),ftij,f(ntr,*),dint,dir(3),tl2(8),
      &     dirloc(3),dist(*),area(*),dd,p21(3),p32(3),pi,
      &     totarea,fn,stn,qfn,een,t(3),sidemean,tvar(2),field,
      &     dtime,ttime,time,areaj,xloadold(2,*),reltime,p(3,3),
@@ -86,6 +86,8 @@
       common /formfactor/ vj,unitvec,porigin
 !
       external fform
+!
+      nlabel=27
 !
 !     factor determines when the numerical integration using cubtri
 !     is replaced by a simplified formula using only the center
@@ -176,14 +178,16 @@
                if(int(cs(1,i)).gt.nkt) nkt=int(cs(1,i))
             enddo
             nkt=nk*nkt
-            do i=1,10
-               label(i)='    '
+            do i=1,nlabel
+               do l=1,87
+                  label(i)(l:l)=' '
+               enddo
             enddo
             label(1)(1:1)='U'
             imag=0
             icntrl=2
             call rectcyl(co,vold,fn,stn,qfn,een,cs,nk,icntrl,t,
-     &           label,imag)
+     &           label,imag,mi)
             
             do jj=0,mcs-1
                is=cs(1,jj+1)
@@ -191,7 +195,7 @@
                do i=1,is-1
                   do l=1,nk
                      if(inocs(l).ne.jj) cycle
-                     do m=1,4
+                     do m=1,mi(2)
                         vold(m,l+nk*i)=vold(m,l)
                      enddo
                   enddo
@@ -199,7 +203,7 @@
             enddo
             icntrl=-2
             call rectcyl(co,vold,fn,stn,qfn,een,cs,nkt,icntrl,t,
-     &           label,imag)
+     &           label,imag,mi)
          endif
 !     
 !     calculating the momentaneous center of the triangles,
@@ -814,7 +818,7 @@ c     &          ',',1.d0-fenv(i)
 !     
          if((nope.eq.20).or.(nope.eq.8)) then
             do k=1,nopes
-               xl2(0,k)=vold(0,konl(ifaceq(k,ig)))
+               tl2(k)=vold(0,konl(ifaceq(k,ig)))
 !     
                do j=1,3
                   xl2(j,k)=co(j,konl(ifaceq(k,ig)))+
@@ -823,7 +827,7 @@ c     &          ',',1.d0-fenv(i)
             enddo
          elseif((nope.eq.10).or.(nope.eq.4)) then
             do k=1,nopes
-               xl2(0,k)=vold(0,konl(ifacet(k,ig)))
+               tl2(k)=vold(0,konl(ifacet(k,ig)))
                do j=1,3
                   xl2(j,k)=co(j,konl(ifacet(k,ig)))+
      &                 vold(j,konl(ifacet(k,ig)))
@@ -831,7 +835,7 @@ c     &          ',',1.d0-fenv(i)
             enddo
          else
             do k=1,nopes
-               xl2(0,k)=vold(0,konl(ifacew(k,ig)))
+               tl2(k)=vold(0,konl(ifacew(k,ig)))
                do j=1,3
                   xl2(j,k)=co(j,konl(ifacew(k,ig)))+
      &                 vold(j,konl(ifacew(k,ig)))
@@ -896,7 +900,7 @@ c     &          ',',1.d0-fenv(i)
 !     
             temp=0.d0
             do j=1,nopes
-               temp=temp+xl2(0,j)*shp2(4,j)
+               temp=temp+tl2(j)*shp2(4,j)
             enddo
 !     
             tarea(i1)=tarea(i1)+temp*dxsj2*weight
@@ -914,7 +918,7 @@ c     &          ',',1.d0-fenv(i)
                enddo
                call radiate(h(1),tenv(i1),temp,istep,
      &              iinc,tvar,nelem,l,coords,jltyp,field,nfield,
-     &              sideload(i),node,areaj,vold)
+     &              sideload(i),node,areaj,vold,mi)
                if(nmethod.eq.1) h(1)=xloadold(1,i)+
      &              (h(1)-xloadold(1,i))*reltime
                erad(i1)=erad(i1)+h(1)

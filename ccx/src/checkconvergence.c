@@ -19,7 +19,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "CalculiX.h"
-#ifdef SPOOLES
+#ifdef SPOOLES 
    #include "spooles.h"
 #endif
 #ifdef SGI
@@ -35,7 +35,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	  int *kode, char *filab, double *een, double *t1act,
           double *time, double *epn,int *ielmat,char *matname,
           double *enern, double *xstaten, int *nstate_, int *istep,
-          int *iinc, int *iperturb, double *ener, int *mint_, char *output,
+          int *iinc, int *iperturb, double *ener, int *mi, char *output,
           int *ithermal, double *qfn, int *mode, int *noddiam, double *trab,
           int *inotr, int *ntrans, double *orab, int *ielorien, int *norien,
           char *description,double *sti,
@@ -48,15 +48,16 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
           int *namta, int *itpamp, int *inext, double *dthetaref, int *itp,
           int *jprint, int *jout, int *uncoupled, double *t1, int *iitterm,
           int *nelemload, int *nload, int *nodeboun, int *nboun, int *itg,
-          int *ndirboun, double *deltmx){
-
-    int k,*ipneigh=NULL,*neigh=NULL,*inum=NULL,id,istart,iend,inew,i,j;
-    double c1[2],c2[2],reftime,*fn=NULL;
+          int *ndirboun, double *deltmx, int *iflagact,char *set,int *nset,
+          int *istartset,int *iendset,int *ialset){
 
     int i0,ir,ip,ic,il,ig,ia,iest,iest1=0,iest2=0,iconvergence,idivergence,
-      ngraph=1;
+	ngraph=1,k,*ipneigh=NULL,*neigh=NULL,*inum=NULL,id,istart,iend,inew,
+        i,j,mt=mi[1]+1;
+
     double df,dc,db,dd,ran,can,rap,ea,cae,ral,da,*vr=NULL,*vi=NULL,*stnr=NULL,
-	*stni=NULL,*vmax=NULL,*stnmax=NULL,*cs=NULL;
+	*stni=NULL,*vmax=NULL,*stnmax=NULL,*cs=NULL,c1[2],c2[2],reftime,
+        *fn=NULL;
 
     i0=ctrl[0];ir=ctrl[1];ip=ctrl[2];ic=ctrl[3];il=ctrl[4];ig=ctrl[5];ia=ctrl[7];
     df=ctrl[10];dc=ctrl[11];db=ctrl[12];da=ctrl[13];dd=ctrl[16];
@@ -95,10 +96,15 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
     iconvergence=0;
 
+    //	if (*iit==1) iconvergence=1;
+
     /* mechanical */
 
+//    printf("iflagact= %d \n",*iflagact);
+
     if(*ithermal<2){
-	if((ram[0]<=c1[0]*qam[0])&&
+                if((*iit>1)&&(ram[0]<=c1[0]*qam[0])&&(*iflagact==0)&&
+		   //         if((*iit>1)&&(ram[0]<=c1[0]*qam[0])&&
 	   ((cam[0]<=c2[0]*uam[0])||
 	    (((ram[0]*cam[0]<c2[0]*uam[0]*ram2[0])||(ram[0]<=ral*qam[0])||(qa[0]<=ea*qam[0]))&&(*ntg==0))||
 	    (cam[0]<1.e-8))) iconvergence=1;
@@ -139,7 +145,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    if(*ithermal==2){
 	        *iitterm=*iit;
 		*ithermal=1;
-		for(k=0;k<*nk;++k){t1[k]=vold[5*k];}
+		for(k=0;k<*nk;++k){t1[k]=vold[mt*k];}
 		*ttime=*ttime-*dtime;
 		*iit=1;
 		(ctrl[0])*=4;
@@ -161,13 +167,10 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	
 	if(*nmethod != 4){
 	    for(i=0;i<*nk;i++){
-		for(j=1;j<4;j++){
-		    veold[4*i+j]=(vold[5*i+j]-vini[5*i+j])/(*dtime);
+		for(j=1;j<mt;j++){
+		    veold[mt*i+j]=(vold[mt*i+j]-vini[mt*i+j])/(*dtime);
 		}
 	    }
-	    /* for(k=0;k<4**nk;++k){
-		veold[k]=(vold[k]-vini[k])/(*dtime);
-		}*/
 	}
 	
 	/* check whether next increment size must be decreased */
@@ -180,24 +183,22 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		if(*dtheta<*tmin){
 		    printf("\n *ERROR: increment size smaller than minimum\n");
 		    printf(" best solution and residuals are in the frd file\n\n");
-		    fn=NNEW(double,4**nk);
+		    fn=NNEW(double,mt**nk);
 		    inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 		    FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,
-                      nk,sti,stn,ipkon,inum,kon,lakon,ne,mint_,orab,
+                      nk,sti,stn,ipkon,inum,kon,lakon,ne,mi,orab,
 		      ielorien,co,nelemload,nload,nodeboun,nboun,itg,ntg,
                       vold,ndirboun));
 		    ++*kode;
-		    ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
 		    FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,vold,stn,inum,
                          nmethod,kode,
 			 filab,een,t1act,fn,ttime,epn,ielmat,matname,enern,
-			 xstaten,nstate_,istep,iinc,iperturb,ener,mint_,output,
+			 xstaten,nstate_,istep,iinc,iperturb,ener,mi,output,
 			 ithermal,qfn,mode,noddiam,
 			 trab,inotr,ntrans,orab,ielorien,norien,description,
 			 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,
-			 veold,ne,cs));
-		    free(ipneigh);free(neigh);
-		    FORTRAN(uout,(vold));
+			 veold,ne,cs,set,nset,istartset,iendset,ialset));
+		    FORTRAN(uout,(vold,mi));
 		    FORTRAN(stop,());
 		}
 	    }
@@ -240,9 +241,11 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		*jprint=*jout+1;
 	    }
 	    if(namta[3**itpamp-1]<0){
-		reftime=*ttime+*dtheta**tper+1.01e-6;
+//		reftime=*ttime+*dtheta**tper+1.01e-6;
+		reftime=*ttime+*dtheta**tper;
 	    }else{
-		reftime=*time+*dtheta**tper+1.01e-6;
+//		reftime=*time+*dtheta**tper+1.01e-6;
+		reftime=*time+*dtheta**tper;
 	    }
 	    istart=namta[3**itpamp-3];
 	    iend=namta[3**itpamp-2];
@@ -252,6 +255,10 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    }else{
 		inew=id+1;
 	    }
+
+            /* inew: smallest time point exceeding time+dtheta*tper
+               inext: smallest time point exceeding time */
+
 	    if(*inext<inew){
 		if(namta[3**itpamp-1]<0){
 		    *dtheta=(amta[2**inext-2]-*ttime)/(*tper);
@@ -278,22 +285,20 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	if(*iit>ic){
 	    printf("\n *ERROR: too many iterations needed\n");
 	    printf(" best solution and residuals are in the frd file\n\n");
-	    fn=NNEW(double,4**nk);
+	    fn=NNEW(double,mt**nk);
 	    inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 	    FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,nk,sti,stn,
-		ipkon,inum,kon,lakon,ne,mint_,orab,ielorien,co,
+		ipkon,inum,kon,lakon,ne,mi,orab,ielorien,co,
                 nelemload,nload,nodeboun,nboun,itg,ntg,vold,ndirboun));
 	    ++*kode;
-	    ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
 	    FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,vold,stn,inum,nmethod,kode,
 			 filab,een,t1act,fn,ttime,epn,ielmat,matname,enern,
-			 xstaten,nstate_,istep,iinc,iperturb,ener,mint_,output,
+			 xstaten,nstate_,istep,iinc,iperturb,ener,mi,output,
 			 ithermal,qfn,mode,noddiam,
 			 trab,inotr,ntrans,orab,ielorien,norien,description,
 			 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,
-			 veold,ne,cs));
-	    free(ipneigh);free(neigh);
-	    FORTRAN(uout,(vold));
+			 veold,ne,cs,set,nset,istartset,iendset,ialset));
+	    FORTRAN(uout,(vold,mi));
 	    FORTRAN(stop,());
 	}	
 	
@@ -320,24 +325,22 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		    printf("\n *ERROR: solution seems to diverge; please try \n");
 		    printf(" automatic incrementation; program stops\n");
 		    printf(" best solution and residuals are in the frd file\n\n");
-		    fn=NNEW(double,4**nk);
+		    fn=NNEW(double,mt**nk);
 		    inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 		    FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,nk,
-                       sti,stn,ipkon,inum,kon,lakon,ne,mint_,orab,
+                       sti,stn,ipkon,inum,kon,lakon,ne,mi,orab,
 		       ielorien,co,nelemload,nload,nodeboun,nboun,itg,ntg,
                        vold,ndirboun));
 		    ++*kode;
-		    ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
 		    FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,vold,stn,
                        inum,nmethod,kode,
 		       filab,een,t1act,fn,ttime,epn,ielmat,matname,enern,
-		       xstaten,nstate_,istep,iinc,iperturb,ener,mint_,output,
+		       xstaten,nstate_,istep,iinc,iperturb,ener,mi,output,
 		       ithermal,qfn,mode,noddiam,
 		       trab,inotr,ntrans,orab,ielorien,norien,description,
 		       ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,
-		       veold,ne,cs));
-		    free(ipneigh);free(neigh);
-		    FORTRAN(uout,(vold));
+		       veold,ne,cs,set,nset,istartset,iendset,ialset));
+		    FORTRAN(uout,(vold,mi));
 		    FORTRAN(stop,());
 		}
 		else {
@@ -361,24 +364,22 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		    if(*dtheta<*tmin){
 			printf("\n *ERROR: increment size smaller than minimum\n");
 			printf(" best solution and residuals are in the frd file\n\n");
-			fn=NNEW(double,4**nk);
+			fn=NNEW(double,mt**nk);
 			inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 			FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,
-                           nk,sti,stn,ipkon,inum,kon,lakon,ne,mint_,orab,
+                           nk,sti,stn,ipkon,inum,kon,lakon,ne,mi,orab,
 			   ielorien,co,nelemload,nload,nodeboun,nboun,
                            itg,ntg,vold,ndirboun));
 			++*kode;
-			ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
 			FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,vold,stn,
                            inum,nmethod,kode,
 			   filab,een,t1act,fn,ttime,epn,ielmat,matname,enern,
-			   xstaten,nstate_,istep,iinc,iperturb,ener,mint_,
+			   xstaten,nstate_,istep,iinc,iperturb,ener,mi,
                            output,ithermal,qfn,mode,noddiam,
 			   trab,inotr,ntrans,orab,ielorien,norien,description,
 			   ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,
-			   veold,ne,cs));
-			free(ipneigh);free(neigh);
-			FORTRAN(uout,(vold));
+			   veold,ne,cs,set,nset,istartset,iendset,ialset));
+			FORTRAN(uout,(vold,mi));
 			FORTRAN(stop,());
 		    }
 		    *icntrl=1;
@@ -386,24 +387,22 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		    if(*icutb>ia){
 			printf("\n *ERROR: too many cutbacks\n");
 			printf(" best solution and residuals are in the frd file\n\n");
-			fn=NNEW(double,4**nk);
+			fn=NNEW(double,mt**nk);
 			inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 			FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,
-                           nk,sti,stn,ipkon,inum,kon,lakon,ne,mint_,orab,
+                           nk,sti,stn,ipkon,inum,kon,lakon,ne,mi,orab,
 			   ielorien,co,nelemload,nload,nodeboun,nboun,
                            itg,ntg,vold,ndirboun));
 			++*kode;
-			ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
 			FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,vold,stn,
                            inum,nmethod,kode,
 			   filab,een,t1act,fn,ttime,epn,ielmat,matname,enern,
-			   xstaten,nstate_,istep,iinc,iperturb,ener,mint_,
+			   xstaten,nstate_,istep,iinc,iperturb,ener,mi,
                            output,ithermal,qfn,mode,noddiam,
 			   trab,inotr,ntrans,orab,ielorien,norien,description,
 			   ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,
-			   veold,ne,cs));
-			free(ipneigh);free(neigh);
-			FORTRAN(uout,(vold));
+			   veold,ne,cs,set,nset,istartset,iendset,ialset));
+			FORTRAN(uout,(vold,mi));
 			FORTRAN(stop,());
 		    }
 		    if(*uncoupled){
@@ -442,24 +441,22 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		    if(*dtheta<*tmin){
 			printf("\n *ERROR: increment size smaller than minimum\n");
 			printf(" best solution and residuals are in the frd file\n\n");
-			fn=NNEW(double,4**nk);
+			fn=NNEW(double,mt**nk);
 			inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 			FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,
-                           nk,sti,stn,ipkon,inum,kon,lakon,ne,mint_,orab,
+                           nk,sti,stn,ipkon,inum,kon,lakon,ne,mi,orab,
 			   ielorien,co,nelemload,nload,nodeboun,nboun,
                            itg,ntg,vold,ndirboun));
 			++*kode;
-			ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
 			FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,vold,stn,
                            inum,nmethod,kode,
 			   filab,een,t1act,fn,ttime,epn,ielmat,matname,enern,
 			   xstaten,nstate_,istep,iinc,iperturb,ener,
-                           mint_,output,ithermal,qfn,mode,noddiam,
+                           mi,output,ithermal,qfn,mode,noddiam,
 			   trab,inotr,ntrans,orab,ielorien,norien,description,
 			   ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,
-			   veold,ne,cs));
-			free(ipneigh);free(neigh);
-			FORTRAN(uout,(vold));
+			   veold,ne,cs,set,nset,istartset,iendset,ialset));
+			FORTRAN(uout,(vold,mi));
 			FORTRAN(stop,());
 		    }
 		    *icntrl=1;
@@ -467,24 +464,22 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		    if(*icutb>ia){
 			printf("\n *ERROR: too many cutbacks\n");
 			printf(" best solution and residuals are in the frd file\n\n");
-			fn=NNEW(double,4**nk);
+			fn=NNEW(double,mt**nk);
 			inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 			FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,
-                           nk,sti,stn,ipkon,inum,kon,lakon,ne,mint_,orab,
+                           nk,sti,stn,ipkon,inum,kon,lakon,ne,mi,orab,
 			   ielorien,co,nelemload,nload,nodeboun,nboun,
                            itg,ntg,vold,ndirboun));
 			++*kode;
-			ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
 			FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,vold,stn,
                            inum,nmethod,kode,
 			   filab,een,t1act,fn,ttime,epn,ielmat,matname,enern,
-			   xstaten,nstate_,istep,iinc,iperturb,ener,mint_,
+			   xstaten,nstate_,istep,iinc,iperturb,ener,mi,
                            output,ithermal,qfn,mode,noddiam,
 			   trab,inotr,ntrans,orab,ielorien,norien,description,
 			   ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,
-			   veold,ne,cs));
-			free(ipneigh);free(neigh);
-			FORTRAN(uout,(vold));
+			   veold,ne,cs,set,nset,istartset,iendset,ialset));
+			FORTRAN(uout,(vold,mi));
 			FORTRAN(stop,());
 		    }
 		    if(*uncoupled){

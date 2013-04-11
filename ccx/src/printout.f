@@ -18,7 +18,7 @@
 !
       subroutine printout(set,nset,istartset,iendset,ialset,nprint,
      &  prlab,prset,v,t1,fn,ipkon,lakon,stx,eme,xstate,ener,
-     &  mint_,nstate_,ithermal,co,kon,qfx,ttime,trab,inotr,ntrans,
+     &  mi,nstate_,ithermal,co,kon,qfx,ttime,trab,inotr,ntrans,
      &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin)
 !
 !     stores results in the .dat file
@@ -28,20 +28,23 @@
       logical force
 !
       character*1 cflag
-      character*6 prlab(*),filab(*)
+      character*6 prlab(*)
       character*8 lakon(*)
       character*80 noset,elset
       character*81 set(*),prset(*)
+      character*87 filab(*)
 !
       integer nset,istartset(*),iendset(*),ialset(*),nprint,ipkon(*),
-     &  mint_,nstate_,ii,jj,iset,l,lb,limit,node,ipos,ithermal,
+     &  mi(2),nstate_,ii,jj,iset,l,lb,limit,node,ipos,ithermal,
      &  nelem,kon(*),inotr(2,*),ntrans,ielorien(*),norien,nk,ne,
-     &  inum(*),nfield,ikin,nodes,ne0,nope
+     &  inum(*),nfield,ikin,nodes,ne0,nope,mt
 !
-      real*8 v(0:4,*),t1(*),fn(0:3,*),stx(6,mint_,*),
-     &  eme(6,mint_,*),xstate(nstate_,mint_,*),ener(mint_,*),energytot,
-     &  volumetot,co(3,*),qfx(3,mint_,*),rftot(0:3),ttime,
-     &  trab(7,*),orab(7,*),vold(0:4,*),enerkintot
+      real*8 v(0:mi(2),*),t1(*),fn(0:mi(2),*),stx(6,mi(1),*),
+     &  eme(6,mi(1),*),xstate(nstate_,mi(1),*),ener(mi(1),*),energytot,
+     &  volumetot,co(3,*),qfx(3,mi(1),*),rftot(0:3),ttime,
+     &  trab(7,*),orab(7,*),vold(0:mi(2),*),enerkintot
+!
+      mt=mi(2)+1
 !
 !     interpolation in the original nodes of 1d and 2d elements
 !
@@ -49,11 +52,11 @@
          if((prlab(ii)(1:4).eq.'U   ').or.
      &      ((prlab(ii)(1:4).eq.'NT  ').and.(ithermal.gt.1))) then
             if(filab(1)(5:5).ne.' ') then
-               nfield=5
+               nfield=mt
                cflag=' '
                force=.false.
                call map3dto1d2d(v,ipkon,inum,kon,lakon,nfield,nk,
-     &              ne,cflag,co,vold,force)
+     &              ne,cflag,co,vold,force,mi)
             endif
             exit
           endif
@@ -65,7 +68,7 @@
                cflag=' '
                force=.false.
                call map3dto1d2d(t1,ipkon,inum,kon,lakon,nfield,nk,
-     &              ne,cflag,co,vold,force)
+     &              ne,cflag,co,vold,force,mi)
             endif
             exit
           endif
@@ -73,11 +76,11 @@
       do ii=1,nprint
          if(prlab(ii)(1:2).eq.'RF') then
             if(filab(1)(5:5).ne.' ') then
-               nfield=4
+               nfield=mt
                cflag=' '
                force=.true.
                call map3dto1d2d(fn,ipkon,inum,kon,lakon,nfield,nk,
-     &              ne,cflag,co,vold,force)
+     &              ne,cflag,co,vold,force,mi)
             endif
             exit
           endif
@@ -159,16 +162,16 @@
                if(jj.eq.iendset(iset)) then
                   node=ialset(jj)
                   call printoutnode(prlab,v,t1,fn,ithermal,ii,node,
-     &              rftot,trab,inotr,ntrans,co)
+     &              rftot,trab,inotr,ntrans,co,mi)
                elseif(ialset(jj+1).gt.0) then
                   node=ialset(jj)
                   call printoutnode(prlab,v,t1,fn,ithermal,ii,node,
-     &              rftot,trab,inotr,ntrans,co)
+     &              rftot,trab,inotr,ntrans,co,mi)
                else
                   do node=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                 -ialset(jj+1)
                   call printoutnode(prlab,v,t1,fn,ithermal,ii,node,
-     &              rftot,trab,inotr,ntrans,co)
+     &              rftot,trab,inotr,ntrans,co,mi)
                   enddo
                endif
             enddo
@@ -261,18 +264,18 @@
                   if(jj.eq.iendset(iset)) then
                      nelem=ialset(jj)
                      call printoutint(prlab,ipkon,lakon,stx,eme,xstate,
-     &                    ener,mint_,nstate_,l,lb,ii,nelem,qfx,
+     &                    ener,mi(1),nstate_,l,lb,ii,nelem,qfx,
      &                    orab,ielorien,norien,co,kon)
                   elseif(ialset(jj+1).gt.0) then
                      nelem=ialset(jj)
                      call printoutint(prlab,ipkon,lakon,stx,eme,xstate,
-     &                    ener,mint_,nstate_,l,lb,ii,nelem,qfx,orab,
+     &                    ener,mi(1),nstate_,l,lb,ii,nelem,qfx,orab,
      &                    ielorien,norien,co,kon)
                   else
                      do nelem=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                    -ialset(jj+1)
                         call printoutint(prlab,ipkon,lakon,stx,eme,
-     &                       xstate,ener,mint_,nstate_,l,lb,ii,nelem,
+     &                       xstate,ener,mi(1),nstate_,l,lb,ii,nelem,
      &                       qfx,orab,ielorien,norien,co,kon)
                      enddo
                   endif
@@ -363,7 +366,7 @@
                   read(lakon(nelem)(8:8),'(i1)') nope
                   nodes=kon(ipkon(nelem)+nope)
                   call printoutelem(prlab,ipkon,lakon,kon,co,
-     &                 ener,mint_,ii,nelem,energytot,volumetot,
+     &                 ener,mi(1),ii,nelem,energytot,volumetot,
      &                 enerkintot,ikin,ne,stx,nodes)
                enddo
             else
@@ -375,18 +378,18 @@
                   if(jj.eq.iendset(iset)) then
                      nelem=ialset(jj)
                      call printoutelem(prlab,ipkon,lakon,kon,co,
-     &                    ener,mint_,ii,nelem,energytot,volumetot,
+     &                    ener,mi(1),ii,nelem,energytot,volumetot,
      &                    enerkintot,ikin,ne,stx,nodes)
                   elseif(ialset(jj+1).gt.0) then
                      nelem=ialset(jj)
                      call printoutelem(prlab,ipkon,lakon,kon,co,
-     &                    ener,mint_,ii,nelem,energytot,volumetot,
+     &                    ener,mi(1),ii,nelem,energytot,volumetot,
      &                    enerkintot,ikin,ne,stx,nodes)
                   else
                      do nelem=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                    -ialset(jj+1)
                         call printoutelem(prlab,ipkon,lakon,kon,co,
-     &                       ener,mint_,ii,nelem,energytot,volumetot,
+     &                       ener,mi(1),ii,nelem,energytot,volumetot,
      &                    enerkintot,ikin,ne,stx,nodes)
                      enddo
                   endif

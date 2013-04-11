@@ -26,215 +26,184 @@
 void dfdbj(double *bcont,double **dbcontp,int *neq,int *nope,int *konl,
 	   int* nactdof,double *s,double *z,int *ikmpc,int *ilmpc,
 	   int *ipompc,int *nodempc,int *nmpc,double *coefmpc,
-	   double *fnl,int *nev,int **ikactcontp,int **ilactcontp,int *nactcont,int *nactcont_){
+	   double *fnl,int *nev,int **ikactcontp,int **ilactcontp,
+           int *nactcont,int *nactcont_,int *mi){
 
   int j,j1,jdof,kdof,k,k1,l,id,index,ist,id1,ist1,index1,id2,ist2,index2,
-      jdofcont,jdofdbcont;;
-  int i1,i2,i3,i4,i5;
-  double d1,d2,d3,d4,d5,sl;
+      jdbcontcol,i1,i3,i4,mt=mi[1]+1;
+  double d1,sl;
 
   double *dbcont=*dbcontp;
   int *ikactcont=*ikactcontp,*ilactcont=*ilactcontp;
   
   for(j=0; j<*nope; j++){
-    i1=4*(konl[j]-1)+1;
-    for(j1=0; j1<3; j1++){
-      jdof=nactdof[i1+j1];
-      if(jdof!=0){
-	FORTRAN(nident,(ikactcont,&jdof,nactcont,&id));
-	jdofcont=0;
-	if(id>0){
-	  if(ikactcont[id-1]==jdof){
-	    jdofcont=id;
-	    jdofdbcont=ilactcont[jdofcont-1];
-	  }
-	}
-	if(jdofcont==0){
-	  (*nactcont)++;
-	  if(*nactcont>*nactcont_){
-	    *nactcont_=(int)(1.1**nactcont_);
-	    RENEW(ikactcont,int,*nactcont_);
-	    RENEW(ilactcont,int,*nactcont_);
-	    RENEW(dbcont,double,*nev**nactcont_);
-	  }
-	  k=*nactcont-1;
-	  l=k-1;
-	  do{
-	    ikactcont[k]=ikactcont[l];
-	    ilactcont[k--]=ilactcont[l--];
-	  }while(k>id);
-	  /*
-	  for(k=*nactcont-1; k>=id+1; k--){
-	    ikactcont[k]=ikactcont[k-1];
-	    ilactcont[k]=ilactcont[k-1];
-	    /*	    i2=k**nev;
-	    i3=(k-1)**nev;
-	    	    for(l=0; l<*nev; l++){
-	      dbcont[i2+l]=dbcont[i3+l];
-	      }*/
-	  //}
-	  jdofcont=id+1;
-	  jdofdbcont=*nactcont;
-	  ikactcont[jdofcont-1]=jdof;
-	  ilactcont[jdofcont-1]=*nactcont;
-	  memset(&dbcont[(*nactcont-1)**nev],0,sizeof(double)**nev);
-	  //	  memset(&dbcont[(jdofcont-1)**nev],0,sizeof(double)**nev);
-	  /*	  for(l=0; l<*nev; l++){
-	    dbcont[(jdofcont-1)**nev+l]=0.0;
-	    }*/
-	}
-	jdofcont--;
-	jdof--;
-	bcont[jdof]-=fnl[j*3+j1];
-	i4=(jdofdbcont-1)**nev;
-	//	i4=jdofcont**nev;
-	i3=(3*j+j1);
-	for(k=0; k<*nope; k++){
-	  for(k1=0; k1<3; k1++){
-	    sl=s[(3*k+k1)*60+i3];
-	    kdof=nactdof[4*(konl[k]-1)+k1+1];
-	    if(kdof!=0){
-	      for(l=0; l<*nev; l++){
-		dbcont[i4+l]-=sl*z[l**neq+kdof-1];
-	      }
-	    }
-	    else{
-	      kdof=8*(konl[k]-1)+k1+1;
-	      FORTRAN(nident,(ikmpc,&kdof,nmpc,&id));
-	      if(id>0){
-		id--;
-		if(ikmpc[id]==kdof){
-		  id=ilmpc[id];
-		  ist=ipompc[id-1];
-		  ist--;
-		  index=nodempc[ist*3+2];
-		  if(index==0) continue;
-		  index--;
-		  do{
-		    kdof=nactdof[4*(nodempc[index*3])+nodempc[index*3+1]];
-		    d1=sl*coefmpc[index]/coefmpc[ist];
-		    if(kdof!=0){
-		      for(l=0; l<*nev; l++){
-			dbcont[i4+l]+=d1*z[l**neq+kdof-1];
+      i1=mt*(konl[j]-1)+1;
+      for(j1=0; j1<3; j1++){
+	  jdof=nactdof[i1+j1];
+	  if(jdof!=0){
+	      jdof--;
+	      FORTRAN(nident,(ikactcont,&jdof,nactcont,&id));
+	      do{
+		  if(id>0){
+		      if(ikactcont[id-1]==jdof){
+			  jdbcontcol=ilactcont[id-1];
+			  break;
 		      }
-		    }
-		    index=nodempc[index*3+2];
-		    if(index==0) break;
-		    index--;
-		  }while(1);
-		}
-	      }
-	    }
-	  }
-	}
-      }
-      else{
-	jdof=8*(konl[j]-1)+j1+1;
-	FORTRAN(nident,(ikmpc,&jdof,nmpc,&id1));
-	if(id1>0){
-	  id1--;
-	  if(ikmpc[id1]==jdof){
-	    id1=ilmpc[id1];
-	    ist1=ipompc[id1-1];
-	    ist1--;
-	    index1=nodempc[ist1*3+2];
-	    if(index1==0) continue;
-	    index1--;
-	    do{
-	      jdof=nactdof[4*(nodempc[index1*3])+nodempc[index1*3+1]];
-	      if(jdof!=0){
-		FORTRAN(nident,(ikactcont,&jdof,nactcont,&id));
-		jdofcont=0;
-		if(id>0){
-		  if(ikactcont[id-1]==jdof){
-		    jdofcont=id;
-		    jdofdbcont=ilactcont[jdofcont-1];
 		  }
-		}
-		if(jdofcont==0){
 		  (*nactcont)++;
 		  if(*nactcont>*nactcont_){
-		    *nactcont_=(int)(1.1**nactcont_);
-		    RENEW(ikactcont,int,*nactcont_);
-		    RENEW(ilactcont,int,*nactcont_);
-		    RENEW(dbcont,double,*nev**nactcont_);
+		      *nactcont_=(int)(1.1**nactcont_);
+		      RENEW(ikactcont,int,*nactcont_);
+		      RENEW(ilactcont,int,*nactcont_);
+		      RENEW(dbcont,double,*nev**nactcont_);
 		  }
 		  k=*nactcont-1;
 		  l=k-1;
-		  do{
-		    ikactcont[k]=ikactcont[l];
-		    ilactcont[k--]=ilactcont[l--];
-		  }while(k>id);
-		  /*		  for(k=*nactcont-1; k>=id+1; k--){
-		    ikactcont[k]=ikactcont[k-1];
-		    ilactcont[k]=ilactcont[k-1];
-		    /*		    for(l=0; l<*nev; l++){
-		      dbcont[k**nev+l]=dbcont[(k-1)**nev+l];
-		      }*/
-		  //}
-		  jdofcont=id+1;
-		  jdofdbcont=*nactcont;
-		  ikactcont[jdofcont-1]=jdof;
-		  ilactcont[jdofcont-1]=*nactcont;
-		  memset(&dbcont[(*nactcont-1)**nev],0,sizeof(double)**nev);		  
-		  //		  memset(&dbcont[(jdofcont-1)**nev],0,sizeof(double)**nev);
-		  /*		  for(l=0; l<*nev; l++){
-		    dbcont[(jdofcont-1)**nev+l]=0.0;
-		    }*/
-		}
-		jdofcont--;
-		bcont[jdofcont]+=coefmpc[index1]*fnl[j*3+j1]/coefmpc[ist1];
-		//		i4=jdofcont**nev;
-		i4=(jdofdbcont-1)**nev;
-		i3=(3*j+j1);
-		for(k=0; k<*nope; k++){
-		  for(k1=0; k1<3; k1++){
-		    sl=s[(3*k+k1)*60+i3];
-		    kdof=nactdof[4*(konl[k]-1)+k1+1];
-		    if(kdof!=0){
-		      d1=sl*coefmpc[index1]/coefmpc[ist1];
-		      for(l=0; l<*nev; l++){
-			dbcont[i4+l]+=d1*z[l**neq+kdof-1];
-		      }
-		    }
-		    else{
-		      kdof=8*(konl[k]-1)+k1+1;
-		      FORTRAN(nident,(ikmpc,&kdof,nmpc,&id2));
-		      if(id2>0){
-			id2--;
-			if(ikmpc[id2]==kdof){
-			  id2=ilmpc[id2];
-			  ist2=ipompc[id2-1];
-			  ist2--;
-			  index2=nodempc[ist2*3+2];
-			  if(index2==0) continue;
-			  index2--;
-			  do{
-			    kdof=nactdof[4*(nodempc[index2*3])+nodempc[index2*3+1]];
-			    if(kdof!=0){
-			      d1=sl*coefmpc[index1]*coefmpc[index2]/(coefmpc[ist1]*coefmpc[ist2]);
-			      for(l=0; l<*nev; l++){
-				dbcont[i4+l]-=d1*z[l**neq+kdof-1];
-			      }
-			    }
-			    index2=nodempc[index2*3+2];
-			    if(index2==0) break;
-			    index2--;
-			  }while(1);
-			}
-		      }
-		    }
+		  while(k>id){
+		      ikactcont[k]=ikactcont[l];
+		      ilactcont[k--]=ilactcont[l--];
 		  }
-		}
+		  jdbcontcol=*nactcont;
+		  ikactcont[id]=jdof;
+		  ilactcont[id]=*nactcont;
+		  memset(&dbcont[(*nactcont-1)**nev],0,sizeof(double)**nev);
+		  break;
+	      }while(1);
+	      bcont[jdof]-=fnl[j*3+j1];
+	      i4=(jdbcontcol-1)**nev;
+	      i3=(3*j+j1);
+	      for(k=0; k<*nope; k++){
+		  for(k1=0; k1<3; k1++){
+		      sl=s[(3*k+k1)*60+i3];
+		      kdof=nactdof[mt*(konl[k]-1)+k1+1];
+		      if(kdof!=0){
+			  for(l=0; l<*nev; l++){
+			      dbcont[i4+l]-=sl*z[(long long)l**neq+kdof-1];
+			  }
+		      }
+		      else{
+			  kdof=8*(konl[k]-1)+k1+1;
+			  FORTRAN(nident,(ikmpc,&kdof,nmpc,&id));
+			  if(id>0){
+			      id--;
+			      if(ikmpc[id]==kdof){
+				  id=ilmpc[id];
+				  ist=ipompc[id-1];
+				  ist--;
+				  index=nodempc[ist*3+2];
+				  if(index==0) continue;
+				  index--;
+				  do{
+				      kdof=nactdof[mt*(nodempc[index*3])+nodempc[index*3+1]];
+				      d1=sl*coefmpc[index]/coefmpc[ist];
+				      if(kdof!=0){
+					  for(l=0; l<*nev; l++){
+					      dbcont[i4+l]+=d1*z[(long long)l**neq+kdof-1];
+					  }
+				      }
+				      index=nodempc[index*3+2];
+				      if(index==0) break;
+				      index--;
+				  }while(1);
+			      }
+			  }
+		      }
+		  }
 	      }
-	      index1=nodempc[index1*3+2];
-	      if(index1==0) break;
-	      index1--;
-	    }while(1);
 	  }
-	}
+	  else{
+	      jdof=8*(konl[j]-1)+j1+1;
+	      FORTRAN(nident,(ikmpc,&jdof,nmpc,&id1));
+	      if(id1>0){
+		  id1--;
+		  if(ikmpc[id1]==jdof){
+		      id1=ilmpc[id1];
+		      ist1=ipompc[id1-1];
+		      ist1--;
+		      index1=nodempc[ist1*3+2];
+		      if(index1==0) continue;
+		      index1--;
+		      do{
+			  jdof=nactdof[mt*(nodempc[index1*3])+nodempc[index1*3+1]];
+			  if(jdof!=0){
+			      jdof--;
+			      FORTRAN(nident,(ikactcont,&jdof,nactcont,&id));
+			      do{
+				  if(id>0){
+				      if(ikactcont[id-1]==jdof){
+					  jdbcontcol=ilactcont[id-1];
+				      }
+				  }
+				  (*nactcont)++;
+				  if(*nactcont>*nactcont_){
+				      *nactcont_=(int)(1.1**nactcont_);
+				      RENEW(ikactcont,int,*nactcont_);
+				      RENEW(ilactcont,int,*nactcont_);
+				      RENEW(dbcont,double,*nev**nactcont_);
+				  }
+				  k=*nactcont-1;
+				  l=k-1;
+				  do{
+				      ikactcont[k]=ikactcont[l];
+				      ilactcont[k--]=ilactcont[l--];
+				  }while(k>id);
+				  jdbcontcol=*nactcont;
+				  ikactcont[id]=jdof;
+				  ilactcont[id]=*nactcont;
+				  memset(&dbcont[(*nactcont-1)**nev],0,sizeof(double)**nev);		  
+				  break;
+			      }while(1);
+			      bcont[jdof]+=coefmpc[index1]*fnl[j*3+j1]/coefmpc[ist1];
+			      i4=(jdbcontcol-1)**nev;
+			      i3=(3*j+j1);
+			      for(k=0; k<*nope; k++){
+				  for(k1=0; k1<3; k1++){
+				      sl=s[(3*k+k1)*60+i3];
+				      kdof=nactdof[mt*(konl[k]-1)+k1+1];
+				      if(kdof!=0){
+					  d1=sl*coefmpc[index1]/coefmpc[ist1];
+					  for(l=0; l<*nev; l++){
+					      dbcont[i4+l]+=d1*z[(long long)l**neq+kdof-1];
+					  }
+				      }
+				      else{
+					  kdof=8*(konl[k]-1)+k1+1;
+					  FORTRAN(nident,(ikmpc,&kdof,nmpc,&id2));
+					  if(id2>0){
+					      id2--;
+					      if(ikmpc[id2]==kdof){
+						  id2=ilmpc[id2];
+						  ist2=ipompc[id2-1];
+						  ist2--;
+						  index2=nodempc[ist2*3+2];
+						  if(index2==0) continue;
+						  index2--;
+						  do{
+						      kdof=nactdof[mt*(nodempc[index2*3])+nodempc[index2*3+1]];
+						      if(kdof!=0){
+							  d1=sl*coefmpc[index1]*coefmpc[index2]/(coefmpc[ist1]*coefmpc[ist2]);
+							  for(l=0; l<*nev; l++){
+							      dbcont[i4+l]-=d1*z[(long long)l**neq+kdof-1];
+							  }
+						      }
+						      index2=nodempc[index2*3+2];
+						      if(index2==0) break;
+						      index2--;
+						  }while(1);
+					      }
+					  }
+				      }
+				  }
+			      }
+			  }
+			  index1=nodempc[index1*3+2];
+			  if(index1==0) break;
+			  index1--;
+		      }while(1);
+		  }
+	      }
+	  }
       }
-    }
   }
   *dbcontp=dbcont;
   *ikactcontp=ikactcont;
@@ -242,9 +211,9 @@ void dfdbj(double *bcont,double **dbcontp,int *neq,int *nope,int *konl,
 }
 
 /*!
-!     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
-!
+  !     CalculiX - A 3-dimensional finite element program
+  !              Copyright (C) 1998-2007 Guido Dhondt
+  !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
 !     published by the Free Software Foundation(version 2);

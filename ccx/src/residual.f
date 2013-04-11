@@ -27,11 +27,11 @@
 !
       implicit none
 !
-      character*6 filab(*)
+      character*87 filab(*)
 !
-      integer nactdof(0:3,*),ithermal,i,j,nk
+      integer nactdof(0:mi(2),*),ithermal,i,j,nk
 !
-      real*8 b(*),fn(0:3,*)
+      real*8 b(*),fn(0:mi(2),*)
 !
 !     storing the residual forces in field fn
 !

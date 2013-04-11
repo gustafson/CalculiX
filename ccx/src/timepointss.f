@@ -40,14 +40,14 @@
       igen=.false.
 
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in amplitudes: *AMPLITUDE should be'
+         write(*,*) '*ERROR in timepointss: *AMPLITUDE should be'
          write(*,*) '  placed before all step definitions'
          stop
       endif
 !
       nam=nam+1
       if(nam.gt.nam_) then
-         write(*,*) '*ERROR in amplitudes: increase nam_'
+         write(*,*) '*ERROR in timepointss: increase nam_'
          stop
       endif
       namta(3,nam)=nam
@@ -58,7 +58,8 @@
          if(textpart(i)(1:5).eq.'NAME=') then
             amname(nam)=textpart(i)(6:85)
             if(textpart(i)(86:86).ne.' ') then
-               write(*,*)'*ERROR in amplitudes: amplitude name too long'
+               write(*,*)
+     &           '*ERROR in timepointss: amplitude name too long'
                write(*,*) '       (more than 80 characters)'
                write(*,*) '       amplitude name:',textpart(i)(1:132)
                stop
@@ -72,7 +73,7 @@
 !
       if(amname(nam).eq.'                                               
      &                                 ') then
-         write(*,*) '*ERROR in amplitudes: Amplitude has no name'
+         write(*,*) '*ERROR in timepointss: Amplitude has no name'
          call inputerror(inpc,ipoinpc,iline)
       endif
 !
@@ -92,7 +93,8 @@
                if(textpart(i)(1:1).ne.' ') then  
                   namtot=namtot+1
                   if(namtot.gt.namtot_) then
-                     write(*,*) '*ERROR in amplitudes: increase namtot_'
+                     write(*,*) 
+     &                '*ERROR in timepointss: increase namtot_'
                      stop
                   endif
                   read(textpart(i),'(f20.0)',iostat=istat) x

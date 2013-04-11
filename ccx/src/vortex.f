@@ -18,7 +18,7 @@
 !     
       subroutine vortex(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,numf,set)
+     &     nodef,idirf,df,cp,R,numf,set,mi)
 !     
 !     orifice element
 !     
@@ -30,15 +30,13 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
-     &     inv,ipkon(*),kon(*),t_chang,nelemswirl
+     &     inv,ipkon(*),kon(*),t_chang,nelemswirl,mi(2)
 !
-      real*8 prop(*),v(0:4,*),xflow,f,df(4),kappa,r,cp,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,r,cp,
      &     p1,p2,T1,T2,km1,pi,
      &     r2d,r1d,eta,U1,
      &     c1u,c2u, cinput, r1, r2, omega, K1, rpm,ciu,expon,
      &     Ui,Kr,cte1,cte2,qred_crit,A,xflow_oil
-!     
-!      numf=4
 !     
       if (iflag.eq.0) then
          identity=.true.
@@ -148,7 +146,7 @@
 !     rotation induced loss (correction factor)
            K1= prop(index+4)
 !
-!     tengential velocity of the disk at vortex entry
+!     tangential velocity of the disk at vortex entry
              U1=prop(index+5)
 !
 !     number of the element generating the upstream swirl
@@ -207,7 +205,7 @@
                prop(index+9)=c2u
             elseif(inv.lt.0) then
                prop(index+9)=c1u
-            endif   
+            endif  
 !
 !    inner rotation
 !     
@@ -272,11 +270,11 @@
 !     
             if(R2.ge.R1) then
                Ui=omega*R1
-               c1u=Ui
+               c1u=Ui*kr
                c2u=c1u*R2/R1
             elseif(R2.lt.R1) then
                Ui=omega*R2
-               c2u=Ui
+               c2u=Ui*kr
                c1u=c2u*R1/R2
             endif
 !     
@@ -293,10 +291,10 @@
             if(((R2.ge.R1).and.(xflow.gt.0d0))
      &           .or.((R2.lt.R1).and.(xflow.lt.0d0)))then
 !     
-               cte1=(kr*c1u)**2/(2*Cp*T1)
+               cte1=(c1u)**2/(2*Cp*T1)
                cte2=(R2/R1)**2-1
 !     
-               f=p2/p1-1-eta*((1+cte1*cte2)**expon-1)
+                f=p2/p1-1-eta*((1+cte1*cte2)**expon-1)
 !     
 !     pressure node1
                df(1)=-p2/p1**2
@@ -312,8 +310,7 @@
 !
             elseif(((R2.lt.R1).and.(xflow.gt.0d0))
      &              .or.((R2.gt.R1).and.(xflow.lt.0d0)))then
-!     
-               cte1=(kr*c2u)**2/(2*Cp*T2)
+               cte1=(c2u)**2/(2*Cp*T2)
                cte2=(R1/R2)**2-1
 !
                f=p1/p2-1-eta*((1+cte1*cte2)**expon-1)
@@ -526,11 +523,11 @@
 !     
             if(R2.ge.R1) then
                Ui=omega*R1
-               c1u=Ui
+               c1u=Ui*kr
                c2u=c1u*R2/R1
             elseif(R2.lt.R1) then
                Ui=omega*R2
-               c2u=Ui
+               c2u=Ui*kr
                c1u=c2u*R1/R2
             endif
 !     
@@ -544,17 +541,19 @@
             expon=kappa/km1
          endif
 !
+         xflow_oil=0.d0
+!
          write(1,*) ''
-         write(1,55) 'In line',int(nodem/100),' from node',node1,
+         write(1,55) 'In line',int(nodem/1000),' from node',node1,
      &' to node', node2,':   air massflow rate=',xflow,'kg/s',
      &', oil massflow rate=',xflow_oil,'kg/s'
- 55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
+ 55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.5,A,A,F9.5,A)
 
          if(inv.eq.1) then
             write(1,56)'       Inlet node ',node1,':     Tt1= ',T1,
      &           'K, Ts1= ',T1,'K, Pt1= ',P1/1E5,
      &           'Bar'
-            write(1,*)'             element V    ',set(numf+nelem)(1:20)
+            write(1,*)'             element V    ',set(numf)(1:20)
             write(1,57)'             C1u= ',C1u,'m/s ,C2u= ',C2u,'m/s'
             write(1,56)'       Outlet node ',node2,':    Tt2= ',T2,
      &           'K, Ts2= ',T2,'K, Pt2= ',P2/1e5,
@@ -564,7 +563,7 @@
             write(1,56)'       Inlet node ',node2,':     Tt1= ',T1,
      &           'K, Ts1= ',T1,'K, Pt1= ',P1/1E5,
      &           'Bar'
-            write(1,*)'             element V    ',set(numf+nelem)(1:20)
+            write(1,*)'             element V    ',set(numf)(1:20)
             write(1,57)'             C1u= ',C1u,'m/s ,C2u= ',C2u,'m/s'
             write(1,56)'       Outlet node ',node1,'     Tt2= ',
      &           T2,'K, Ts2= ',T2,'K, Pt2= ',P2/1e5,

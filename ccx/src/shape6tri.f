@@ -38,7 +38,7 @@
 !
       integer i,j,k,iflag
 !
-      real*8 shp(7,6),xs(3,7),xsi(2,3),xl(0:3,6),sh(3),xsj(3)
+      real*8 shp(7,6),xs(3,7),xsi(2,3),xl(3,6),sh(3),xsj(3)
 !
       real*8 xi,et
 !

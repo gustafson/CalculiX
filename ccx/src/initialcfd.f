@@ -20,7 +20,7 @@
      &  nx,ny,nz,isolidsurf,neighsolidsurf,xsolidsurf,dh,nshcon,shcon,
      &  nrhcon,rhcon,vold,voldaux,ntmat_,iponoel,inoel,
      &  iexplicit,ielmat,nsolidsurf,turbulent,physcon,compressible,
-     &  matname,inomat,voldtu)
+     &  matname,inomat,voldtu,mi)
 !
 !     initial calculations for cfd applicatons:
 !     - determine the distance from the nearest solid surface
@@ -43,11 +43,11 @@
      &  nk,node,i,j,k,iponoel(*),inoel(3,*),nx(*),ny(*),index,nelem,
      &  nz(*),neighsolidsurf(*),kneigh,nodep(4),iplaneq(3,8),iplanet(4),
      &  iplanew(2,6),nshcon(*),nrhcon(*),ntmat_,neigh,nodel,ifacel,
-     &  ielmat(*),imat,inomat(*)
+     &  ielmat(*),imat,inomat(*),mi(2)
 !
       real*8 x(*),y(*),z(*),xo(*),yo(*),zo(*),xsolidsurf(*),
      &  yy(*),co(3,*),dh(*),r,cp,rho,shcon(0:3,ntmat_,*),voldtu(2,*),
-     &  rhcon(0:1,ntmat_,*),vold(0:4,*),voldaux(0:4,*),px,py,pz,
+     &  rhcon(0:1,ntmat_,*),vold(0:mi(2),*),voldaux(0:4,*),px,py,pz,
      &  a,b,c,d,temp,vel,dtu,dtnu,physcon(*),xtu,xkin,dvi
 !
 !     nodes belonging to the element faces

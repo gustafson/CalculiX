@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine extrapolate(yi,yn,ipkon,inum,kon,lakon,nfield,nk,
-     &  ne,mint_,ndim,orab,ielorien,co,iorienglob,cflag,nelemload,
+     &  ne,mi,ndim,orab,ielorien,co,iorienglob,cflag,nelemload,
      &  nload,nodeboun,nboun,fluid,ndirboun,vold,ithermal,force)
 !
 !     extrapolates field values at the integration points to the 
@@ -33,16 +33,16 @@
       character*1 cflag
       character*8 lakon(*),lakonl
 !
-      integer ipkon(*),inum(*),kon(*),mint_,ne,indexe,nope,
+      integer ipkon(*),inum(*),kon(*),mi(2),ne,indexe,nope,
      &  nonei20(3,12),nfield,nonei10(3,6),nk,i,j,k,l,ndim,
      &  nonei15(3,9),iorienglob,iorien,ielorien(*),konl,
      &  mint3d,m,iflag,nelemload(2,*),nload,node,nboun,
      &  nodeboun(*),ndirboun(*),ithermal(2)
 !
-      real*8 yi(ndim,mint_,*),yn(nfield,*),field(999,20),a8(8,8),
+      real*8 yi(ndim,mi(1),*),yn(nfield,*),field(999,20),a8(8,8),
      &  a4(4,4),a27(20,27),a9(6,9),a2(6,2),orab(7,*),co(3,*),
      &  coords(3,27),xi,et,ze,xl(3,20),xsj,shp(4,20),weight,
-     &  yiloc(6,27),a(3,3),b(3,3),c(3,3),vold(0:4,*)
+     &  yiloc(6,27),a(3,3),b(3,3),c(3,3),vold(0:mi(2),*)
 !
       include "gauss.f"
 !
@@ -199,6 +199,10 @@ c            inum(kon(indexe+2))=inum(kon(indexe+2))+1
 c            if(kon(indexe+3).ne.0)
 c     &           inum(kon(indexe+3))=inum(kon(indexe+3))+1
             fluid=.true.
+            cycle
+         elseif((lakon(i)(1:1).eq.'E').and.(lakon(i)(7:7).eq.'A'))then
+            inum(kon(indexe+1))=inum(kon(indexe+1))+1
+            inum(kon(indexe+2))=inum(kon(indexe+2))+1
             cycle
          else
             cycle
@@ -523,7 +527,7 @@ c         if(lakonl(4:5).eq.'20') then
 !
       if((cflag.ne.' ').and.(cflag.ne.'E')) then
          call map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,ne,cflag,co,
-     &         vold,force)
+     &         vold,force,mi)
       endif
 !
 !     printing values for environmental film, radiation and

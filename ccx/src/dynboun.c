@@ -41,13 +41,15 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
              double *aub, int *icol, int *irow, int *neq, int *nzs,
              double *sigma, double *b, int *isolver,
              double *alpham, double *betam, int *nzl,
-             int *init,double *bact, double *bmin, int *jq, char *amname,double *bv){
+             int *init,double *bact, double *bmin, int *jq, 
+             char *amname,double *bv, double *bprev, double *bdiff,
+             int *nactmech, int *icorrect, int *iprev){
 
     int idiff[3],i,j,ic,ir;
 
     double *xbounmin=NULL,*xbounplus=NULL,*bplus=NULL,
 	*ba=NULL,deltatime,deltatime2,deltatimesq,timemin,ttimemin,
-        timeplus,ttimeplus,*aux=NULL,*b1=NULL,*b2=NULL;
+        timeplus,ttimeplus,*aux=NULL,*b1=NULL,*b2=NULL,*bnew=NULL;
 
 #ifdef SGI
   int token=1;
@@ -211,6 +213,9 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
   }
   
   if((idiff[1]!=0)||(idiff[2]!=0)){
+
+      /* present value is not zero */
+
       if(idiff[2]==0){
 	  for(i=0;i<neq[1];i++){bplus[i]=bact[i];}
       }
@@ -230,12 +235,56 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
 	  bmin[i]=bact[i];
 	  bact[i]=bplus[i];
       }
+      bnew=NNEW(double,neq[1]);
       FORTRAN(op,(&neq[1],aux,b1,bplus,adb,aub,
 		  icol,irow,nzl));
-      for(i=0;i<neq[1];i++){b[i]=b[i]-bplus[i];}
+      for(i=0;i<neq[1];i++){bnew[i]=-bplus[i];}
       FORTRAN(op,(&neq[1],aux,b2,bplus,ad,au,
 		  icol,irow,nzl));
-      for(i=0;i<neq[1];i++){b[i]=b[i]-bplus[i];}
+      if(*icorrect==2){
+	  for(i=0;i<neq[1];i++){
+	      bnew[i]-=bplus[i];
+	      b[i]+=bnew[i];
+	  }
+      }else if(*icorrect==0){
+	  for(i=0;i<neq[1];i++){
+	      bnew[i]-=bplus[i];
+	      bdiff[i]=bnew[i]-bprev[i];
+	      b[i]+=bdiff[i];
+//	      printf("dynboun %e,%e,%e,%e\n",bprev[i],bnew[i],bdiff[i],b[i]);
+	  }
+	  memcpy(&bprev[0],&bnew[0],sizeof(double)*neq[1]);
+      }else{
+	  for(i=0;i<neq[1];i++){
+	      bnew[i]-=bplus[i];
+	      bdiff[i]+=bnew[i]-bprev[i];
+	      b[i]+=bdiff[i];
+	  }
+	  memcpy(&bprev[0],&bnew[0],sizeof(double)*neq[1]);
+      }
+      free(bnew);
+      *nactmech=neq[1];
+      *iprev=1;
+  }else if((*iprev!=0)&&(*icorrect!=2)){
+
+      /* present value of b is zero, previous value was not zero */
+
+      if(*icorrect==0){
+	  for(i=0;i<neq[1];i++){
+	      bdiff[i]=-bprev[i];
+	      b[i]+=bdiff[i];
+//	      printf("dynboun %e,%e,%e,%e\n",bprev[i],bdiff[i],b[i]);
+	  }
+	  memset(&bprev[0],0.,sizeof(double)*neq[1]);
+      }else{
+	  for(i=0;i<neq[1];i++){
+	      bdiff[i]+=-bprev[i];
+	      b[i]+=bdiff[i];
+	  }
+	  memset(&bprev[0],0.,sizeof(double)*neq[1]);
+      }
+      *nactmech=neq[1];
+      *iprev=0;
   }
   
   free(xbounmin);free(xbounplus);

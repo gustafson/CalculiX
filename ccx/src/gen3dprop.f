@@ -41,9 +41,9 @@
 C         if((lakon(i).ne.'DLIPIMAF').and.(lakon(i).ne.'DLIPIWCF')) cycle
          if((lakon(i).ne.'DLIPIMAF').and.(lakon(i).ne.'DLIPIWCF')
      &        .and.(lakon(i)(1:5).ne.'DLABF')
-     &        .and.(lakon(i)(1:6).ne.'DGAPIF')
+     &        .and.(lakon(i)(1:6).ne.'DGAPFF')
      &        .and.(lakon(i)(1:5).ne.'DORFL')
-     &        .and.(lakon(i)(1:6).ne.'DGAPXF')) cycle
+     &        .and.(lakon(i)(1:6).ne.'DGAPIF')) cycle
          do ii=1,6
             node=int(prop(ielprop(i)+int((ii+2.5d0)/3.d0)))
             if(node.gt.iponoelmax) cycle

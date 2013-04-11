@@ -19,7 +19,8 @@
       subroutine tiefaccont(lakon,ipkon,kon,ntie,tieset,nset,set,
      &  istartset,iendset,ialset,itiefac,islavsurf,islavnode,
      &  imastnode,nslavnode,nmastnode,nslavs,nmasts,ifacecount,
-     &  ipe,ime,imastop,ncont,koncont,iponoels,inoels,ifreenoels)
+     &  ipe,ime,imastop,ncont,koncont,iponoels,inoels,ifreenoels,
+     &  ifreeme)
 !
 !     Catalogueing the slave faces (itieface, islavsurf)
 !                  the slave nodes (islavnode, nslavnode)
@@ -45,7 +46,7 @@
      &  itiefac(2,*),islavsurf(2,*),islavnode(*),imastnode(*),
      &  nslavnode(ntie+1),nmastnode(ntie+1),ifacecount,islav,imast,
      &  ipe(*),ime(4,*),imastop(3,*),ipos,node1,node2,index1,
-     &  index1old,ifree,ncont,koncont(4,*),iponoels(*),
+     &  index1old,ifreeme,ncont,koncont(4,*),iponoels(*),
      &  inoels(3,*),ifreenoels,ifreenoelold
 !
 ! nslavnode: num of slave nodes
@@ -299,71 +300,6 @@
             nmastnode(i+1)=nmastnode(i)
          endif 
       enddo      
-!
-!     catalogueing the edges in the triangulation
-!     determining neighboring triangles
-!
-      ifree=0
-      do j=1,ncont
-         do k=1,3
-            node1=koncont(k,j)
-            if(k.eq.3) then
-               node2=koncont(1,j)
-            else
-               node2=koncont(k+1,j)
-            endif
-!
-            if(k.eq.1) then
-               ipos=3
-            else
-               ipos=k-1
-            endif
-!
-!           making sure that node1 < node2
-!
-            if(node1.gt.node2) then
-               node=node1
-               node1=node2
-               node2=node
-            endif    
-            if(ipe(node1).eq.0) then
-               ifree=ifree+1
-               ipe(node1)=ifree
-               ime(1,ifree)=node2
-               ime(2,ifree)=j
-               ime(3,ifree)=ipos
-            else
-               index1=ipe(node1)
-               if(ime(1,index1).eq.node2) then
-                  imastop(ipos,j)=ime(2,index1)
-                  imastop(ime(3,index1),ime(2,index1))=j
-                  ipe(node1)=ime(4,index1)
-                  cycle
-               endif
-!
-               index1old=index1
-               index1=ime(4,index1)
-               do
-                  if(index1.eq.0) then
-                     ifree=ifree+1
-                     ime(4,index1old)=ifree
-                     ime(1,ifree)=node2
-                     ime(2,ifree)=j
-                     ime(3,ifree)=ipos                       
-                     exit
-                  endif
-                  if(ime(1,index1).eq.node2) then
-                     imastop(ipos,j)=ime(2,index1)
-                     imastop(ime(3,index1),ime(2,index1))=j
-                     ime(4,index1old)=ime(4,index1)
-                     exit
-                  endif
-                  index1old=index1
-                  index1=ime(4,index1)
-               enddo
-            endif
-         enddo
-      enddo
 !
       return
       end

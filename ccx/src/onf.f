@@ -18,25 +18,25 @@
 !
       subroutine onf(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,
      &  kode,filab,een,t1,fn,time,epn,ielmat,matname,enern,xstaten,
-     &  nstate_,istep,iinc,iperturb,ener,mint_)
+     &  nstate_,istep,iinc,iperturb,ener,mi)
 !
 !     stores the results in frd format
 !
       implicit none
 !
-      character*6 filab(*)
       character*5 m1
       character*8 lakon(*)
       character*80 matname(*)
+      character*87 filab(*)
 !
       integer kon(*),inum(*),nk,ne,nmethod,kode,i,j,ipkon(*),indexe,
      &  one,ielmat(*),nstate_,istep,iinc,ianatyp,iperturb,
-     &  konl(20),jj,mint3d,k,nope,mint_,n,kflag,iy(3),iflag,
+     &  konl(20),jj,mint3d,k,nope,mi(2),n,kflag,iy(3),iflag,
      &  nktrue,netrue
 !
       real*8 co(3,*),v(3,*),stn(6,*),een(6,*),t1(*),fn(3,*),time,
      &  epn(*),enern(*),xstaten(nstate_,*),zero,stnprin(3),str(6),
-     &  str2(6),v1,v2,v3,ener(mint_,*),xi,et,ze,weight,volume,
+     &  str2(6),v1,v2,v3,ener(mi(1),*),xi,et,ze,weight,volume,
      &  energy,totenergy,xsj,xl(3,20),shp(4,20),tt,cm,cn,
      &  bb,cc,pi
 !

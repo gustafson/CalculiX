@@ -18,7 +18,7 @@
 !
       subroutine newton(icalccg,ne,ipkon,lakon,kon,t0,co,rhcon,
      &       nrhcon,ntmat_,physcon,nelem,cgr,bodyf,ielmat,ithermal,
-     &       vold)
+     &       vold,mi)
 !
 !     assigns the body forces to the elements by use of field ipobody
 !
@@ -27,11 +27,12 @@
       character*8 lakon(*)
 !
       integer i,j,k,ne,icalccg,ipkon(*),nope,konl(20),kon(*),two,id,
-     &  nrhcon(*),ntmat_,nelem,indexe,imat,ielmat(*),ithermal,iflag
+     &  nrhcon(*),ntmat_,nelem,indexe,imat,ielmat(*),ithermal,iflag,
+     &  mi(2)
 !
       real*8 xi,et,ze,weight,xl(3,20),shp(4,20),xsj,rho,cgr(4,*),
      &  t0l,t0(*),rhcon(0:1,ntmat_,*),physcon(*),co(3,*),dd,bodyf(3),
-     &  vold(0:4,*)
+     &  vold(0:mi(2),*)
 !
       data two /2/
 !
@@ -208,7 +209,7 @@ c         write(*,*) 'cg calculated anew'
      &               (dd*dsqrt(dd))
          enddo
       enddo
-c      write(*,*) nelem,bodyf(1),bodyf(2),bodyf(3)
+c      write(*,*) 'newton',nelem,bodyf(1),bodyf(2),bodyf(3)
 !
       return
       end

@@ -20,14 +20,13 @@
 !
 !     ataches node with coordinates in "pnode" to the face containing 
 !     "nterms" nodes with coordinates in field "pneigh" (nterms < 9).
-!     cave: the coordinates are stored in pneigh(1..3,*), pneigh(0,*)
-!           is reserved for the temperature
+!     cave: the coordinates are stored in pneigh(1..3,*)
 !
       implicit none
 !
       integer nterms,i,j,imin,jmin
 !
-      real*8 ratio(8),pneigh(0:3,8),pnode(3),dummy,
+      real*8 ratio(8),pneigh(3,8),pnode(3),dummy,
      &  a(-1:1,-1:1),xi(-1:1,-1:1),et(-1:1,-1:1),p(3),aold(-1:1,-1:1),
      &  xiold(-1:1,-1:1),etold(-1:1,-1:1),distmin,xiopt,etopt,
      &  d1,d2,d3,d4,dist,xil,etl

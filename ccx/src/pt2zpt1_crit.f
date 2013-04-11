@@ -24,54 +24,60 @@
 !     2)the ratio of the critical pressure ratio  Qred_1/Qred_2crit=Pt2/Pt1
 !     =D(M1)/D(M2_crit)is computed [D(M)=M*(1+0.5*(kappa-1)*M)**(-0.5*(kappa+1)/(kappa-1))]
 !   
-      subroutine pt2zpt1_crit(pt2,pt1,Tt1,lambda,kappa,r,l,d,A,iflag,
-     &     inv,pt2zpt1_c,qred_crit,crit,qred_max1,case)
+      subroutine pt2zpt1_crit(pt2,pt1,Tt1,Tt2,lambda,kappa,r,l,d,A,
+     &     iflag,inv,pt2zpt1_c,qred_crit,crit,qred_max1,icase)
 !     
       implicit none
 !
       logical crit
 !
-      integer iflag,inv,case
+      integer iflag,inv,icase,i
 !     
       real*8 pt2,pt1,lambda,kappa,l,d,M1,pt2zpt1,pt2zpt1_c,
-     &     km1,kp1,km1zk,kp1zk,e,Tt1,r,A,
+     &     km1,kp1,km1zk,kp1zk,Tt1,Tt2,r,A,
      &     xflow_crit,qred_crit,f1,f2,f3,m1_ac,m1_min,m1_max,
-     &     expon1,qred_max1
+     &     expon1,qred_max1,lld
 !
 !     useful variables and constants
-!     
+! 
       km1=kappa-1.d0
       kp1=kappa+1.d0
       km1zk=km1/kappa
       kp1zk=kp1/kappa
-      e=2.7182818d0
+      lld=lambda*l/d
       expon1=-0.5d0*kp1/km1
 !
 !     adiabatic case
 !
-      if(case.eq.0) then
+      if(icase.eq.0) then
 !     
 !     computing M1 using dichotomy method
 !     
+         i=1
           m1_max=1
           m1_min=0.001d0
           do
+             i=i+1
              m1_ac=(m1_min+m1_max)*0.5d0
+!
+             f1=(1.d0-M1_min**2)*(kappa*M1_min**2)**(-1)
+     &            +0.5d0*kp1zk*log((0.5d0*kp1)*M1_min**2
+     &            *(1+0.5d0*km1*M1_min**2)**(-1))-lld
 !     
-             f1=(1.d0-M1_min**2)/(kappa*M1_min**2)
-     &            +0.5d0*kp1zk*log((1+0.5d0*km1)*M1_min**2
-     &            /(1+0.5d0*km1*M1_min**2))/log(e)-lambda*l/d
+             f2=(1.d0-M1_ac**2)*(kappa*M1_ac**2)**(-1)
+     &            +0.5d0*kp1zk*log((0.5d0*kp1)*M1_ac**2
+     &            *(1+0.5d0*km1*M1_ac**2)**(-1))-lld
 !     
-             f2=(1.d0-M1_ac**2)/(kappa*M1_ac**2)
-     &            +0.5d0*kp1zk*log((1+0.5d0*km1)*M1_ac**2
-     &            /(1+0.5d0*km1*M1_ac**2))/log(e)-lambda*l/d
+             f3=(1.d0-M1_max**2)*(kappa*M1_max**2)**(-1)
+     &            +0.5d0*kp1zk*log((0.5d0*kp1)*M1_max**2
+     &            *(1+0.5d0*km1*M1_max**2)**(-1))-lld
 !     
-             f3=(1.d0-M1_max**2)/(kappa*M1_max**2)
-     &            +0.5d0*kp1zk*log((1+0.5d0*km1)*M1_max**2
-     &            /(1+0.5d0*km1*M1_max**2))/log(e)-lambda*l/d
-!     
-             if(abs(f3).le.1E-4) then
+             if(abs(f2).le.1E-6) then
                 M1=m1_ac
+                exit
+             endif
+             if(i.gt.50) then
+                M1=M1_ac
                 exit
              endif
 !     
@@ -90,24 +96,21 @@
              endif
           enddo
 !
-          if(M1.lt.0.1d0) then
-             M1=0.1d0
-          endif
-!
-!     computing the critical pressure ratio in the adiabatic case
-!     
-          Pt2zPt1_c=M1*(2/kp1*(1+km1/2.d0*M1**2))**(-0.5d0*kp1/km1)
+          Pt2zpt1_c=M1*(0.5d0*kp1)**(0.5*kp1/km1)
+     &         *(1+0.5d0*km1*M1**2)**(-0.5d0*kp1/km1)
 !     
 !     isotherm case
 !
-       elseif (case.eq.1) then
+       elseif (icase.eq.1) then
 !     
 !     computing M1 using dichotomy method for choked conditions M2=1/dsqrt(kappa)
-!     (1.d0-kappa*M1_min**2)/(kappa*M1_min**2)+log(kappa*M1_min**2)-lambda*l/d=0
+!     (1.d0-kappa*M1**2)/(kappa*M1**2)+log(kappa*M1**2)-lambda*l/d=0
 !     
           m1_max=1/dsqrt(kappa)
           m1_min=0.1d0
+          i=1
           do
+             i=i+1
              m1_ac=(m1_min+m1_max)*0.5d0
 !     
              f1=(1.d0-kappa*M1_min**2)/(kappa*M1_min**2)
@@ -119,7 +122,7 @@
              f3=(1.d0-kappa*M1_max**2)/(kappa*M1_max**2)
      &            +log(kappa*M1_max**2)-lambda*l/d
 !     
-             if(abs(f3).le.1E-5) then
+             if((abs(f2).le.1E-5).or.(i.ge.50)) then
                 M1=m1_ac
                 exit
              endif
@@ -139,10 +142,12 @@
              endif
           enddo
 !     
-!        computing the critical pressure ratio in the isotherm case
+!        computing the critical pressure ratio in the isothermal case
+!     pt=A*dsqrt(kappa)/(xflow*dsqrt(kappa Tt))*M*(1+0.5d0*(kappa-1)M**2)**(-0.5d0*(kappa+1)/(kappa-1))
+!     and forming the pressure ratio between inlet and outlet(choked)
 !     
-          Pt2zPt1_c=M1*dsqrt(kappa)*((1+0.5d0*km1/kappa)
-     &         /(1+0.5d0*km1*M1**2))**(kappa/km1)
+          Pt2zPt1_c=dsqrt(Tt2/Tt1)*M1*dsqrt(kappa)*((1+0.5d0*km1/kappa)
+     &         /(1+0.5d0*km1*M1**2))**(0.5d0*(kappa+1)/km1)
 !     
        endif
 !     

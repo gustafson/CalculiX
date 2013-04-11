@@ -24,7 +24,7 @@
      &  nforc_,nodeforc,ndirforc,xforc,iamforc,nelemload,sideload,
      &  nload,ithermal,ntrans,co,ixfree,ikfree,inoelfree,iponoelmax,
      &  iperturb,tinc,tper,tmin,tmax,ctrl,typeboun,nmethod,nset,set,
-     &  istartset,iendset,ialset,prop,ielprop,vold)
+     &  istartset,iendset,ialset,prop,ielprop,vold,mi)
 !
 !     generates three-dimensional elements:
 !         for isochoric elements
@@ -52,14 +52,14 @@
      &  ntrans,inotr(2,*),nam,iponoelmax,iperturb,numnod,itransaxial,
      &  rig(*),nmethod,nset,istartset(*),iendset(*),ialset(*),
      &  ielprop(*),idir,indexref,indexold,idofold,idold,indexnew,
-     &  idofnew,idnew,ksol,lsol,nmpc0,nmpc01,nmpcdif
+     &  idofnew,idnew,ksol,lsol,nmpc0,nmpc01,nmpcdif,mi(2)
 !
       integer iponor(2,*),knor(*),ixfree,ikfree
 !
       real*8 coefmpc(*),thicke(2,*),xnor(*),thickn(2,*),tinc,tper,tmin,
      &  tmax,offset(2,*),t0(*),t1(*),xforc(*),trab(7,*),co(3,*),b(3,3),
-     &  xboun(*),pi,ctrl(*),prop(*),vold(0:4,*),xlag(3,20),xeul(3,20),
-     &  a(3,3),xi,et,ze,coloc(3,8),xj
+     &  xboun(*),pi,ctrl(*),prop(*),vold(0:mi(2),*),xlag(3,20),
+     &  xeul(3,20),a(3,3),xi,et,ze,coloc(3,8),xj
 !
       data neigh /1,9,2,12,4,17,5,2,9,1,10,3,18,6,
      &            3,11,4,10,2,19,7,4,11,3,12,1,20,8,
@@ -165,7 +165,7 @@ c               if(nodempc(2,index).gt.3) then
      &     tper,tmin,tmax,ctrl,ipompc,nodempc,coefmpc,nmpc,nmpc_,
      &     mpcfree,ikmpc,ilmpc,labmpc,ikboun,ilboun,nboun,nboun_,
      &     nodeboun,ndirboun,xboun,iamboun,typeboun,nam,ntrans,inotr,
-     &     trab,ikfree,ixfree,nmethod,ithermal,istep)
+     &     trab,ikfree,ixfree,nmethod,ithermal,istep,mi)
 !
       endif
 !
@@ -517,7 +517,7 @@ c     &                    coefmpc(index)
      &           thicke,offset,ntrans,inotr,trab,ikboun,ilboun,nboun,
      &           nboun_,nodeboun,ndirboun,xboun,iamboun,typeboun,ipompc,
      &           nodempc,coefmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,
-     &           nk,nk_,co,rig,nmethod,iperturb,ithermal)
+     &           nk,nk_,co,rig,nmethod,iperturb,ithermal,mi,nam)
 !            
             elseif(lakon(i)(1:1).eq.'B') then
                call gen3dfrom1d(i,kon,ipkon,lakon,ne,iponor,xnor,knor,
@@ -665,7 +665,7 @@ c         enddo
      &     xboun,iamboun,typeboun,iponoel,inoel,iponoelmax,kon,ipkon,
      &     lakon,ne,iponor,xnor,knor,ipompc,nodempc,coefmpc,nmpc,nmpc_,
      &     mpcfree,ikmpc,ilmpc,labmpc,rig,ntrans,inotr,trab,nam,nk,nk_,
-     &     co,nmethod,iperturb,istep,vold)
+     &     co,nmethod,iperturb,istep,vold,mi)
 !
 !        updating the nodal surfaces: establishing links between the user
 !        defined nodes and the newly generated nodes (mid-nodes
@@ -693,7 +693,7 @@ c         enddo
          if(ithermal(1).gt.0) then
             call gen3dtemp(iponoel,inoel,iponoelmax,kon,ipkon,lakon,ne,
      &           iponor,xnor,knor,t0,t1,thicke,offset,rig,nk,nk_,co,
-     &           istep,ithermal,vold)
+     &           istep,ithermal,vold,mi)
          endif
 !
 !        updating the concentrated loading
@@ -703,7 +703,7 @@ c         enddo
      &     coefmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,iponoel,inoel,
      &     iponoelmax,kon,ipkon,lakon,ne,iponor,xnor,knor,nam,nk,nk_,
      &     co,thicke,nodeboun,ndirboun,ikboun,ilboun,nboun,nboun_,
-     &     iamboun,typeboun,xboun,nmethod,iperturb,istep,vold)
+     &     iamboun,typeboun,xboun,nmethod,iperturb,istep,vold,mi)
       endif
 !
       return

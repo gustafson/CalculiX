@@ -18,7 +18,7 @@
 !
       subroutine e_c3d_v1rhs(co,nk,konl,lakonl,p1,p2,omx,bodyfx,
      &  nbody,ff,nelem,nmethod,rhcon,nrhcon,ielmat,ntmat_,vold,voldaux,
-     &  idist,dtime,matname,mint_,
+     &  idist,dtime,matname,mi,
      &  ttime,time,istep,iinc,shcon,nshcon,
      &  turbulent,voldtu,yy,nelemface,sideface,nface,compressible)
 !
@@ -38,14 +38,14 @@
       integer konl(20),ifaceq(8,6),nk,nbody,nelem,
      &  idist,i,j,k,i1,i2,j1,nmethod,ii,jj,jj1,id,ipointer,
      &  ig,kk,nrhcon(*),ielmat(*),nshcon(*),ntmat_,nope,nopes,imat,
-     &  mint2d,mint3d,mint_,ifacet(6,4),nopev,ifacew(8,5),istep,iinc,
+     &  mint2d,mint3d,mi(2),ifacet(6,4),nopev,ifacew(8,5),istep,iinc,
      &  iflag,k1,nelemface(*),nface
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,p1(3),p2(3),
      &  bodyf(3),bodyfx(3),ff(60),bf(3),q(3),c1,c2,xsjmod,
      &  rhcon(0:1,ntmat_,*),vel(3),div,shcon(0:3,ntmat_,*),
-     &  voldl(0:4,20),xl2(0:3,8),xsj2(3),shp2(7,8),omcor,
-     &  vold(0:4,*),om,omx,xi,et,ze,const,xsj,temp,theta2,
+     &  voldl(0:mi(2),20),xl2(3,8),xsj2(3),shp2(7,8),omcor,
+     &  vold(0:mi(2),*),om,omx,xi,et,ze,const,xsj,temp,theta2,
      &  voldaux(0:4,*),voldauxl(0:4,20),rho,weight,shpv(20),t(3,3),
      &  voldtu(2,*),voldtul(2,20),cvel(3),vkl(3,3),corio(3),xkin,
      &  xtuf,vort,un,yy(*),yyl(20),y,f2,unt,umt,a1,arg2,xlocal20(3,9,6),

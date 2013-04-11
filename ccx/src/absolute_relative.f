@@ -18,7 +18,7 @@
 !     
       subroutine absolute_relative(node1,node2,nodem,nelem,lakon,
      &     kon,ipkon, nactdog,identity,ielprop,prop,iflag,v,
-     &     xflow,f,nodef,idirf,df,cp,R,physcon,numf,set)
+     &     xflow,f,nodef,idirf,df,cp,R,physcon,numf,set,mi)
 !     
 !     orifice element
 !     
@@ -30,14 +30,12 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
-     &     ipkon(*),kon(*),nelemswirl
+     &     ipkon(*),kon(*),nelemswirl,mi(2)
 !     
-      real*8 prop(*),v(0:4,*),xflow,f,df(4),kappa,R,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,
      &     p1,p2,T1,T2,cp,physcon(*),km1,kp1,kdkm1,
      &     kdkp1,u,pi,Qred_crit,pt1,pt2,Tt1,Tt2,ct,fact,
      &     Cp_cor
-!     
-!      numf=4
 !     
       if (iflag.eq.0) then
          identity=.true.
@@ -421,24 +419,13 @@
             write(1,56)'       Inlet node ',node1,':     Tt1= ',Tt1,
      &           'K, Ts1= ',Tt1,'K, Pt1= ',Pt1/1E5,
      &           'Bar'
-            write(1,*)'             element T    ',set(numf+nelem)(1:20)
+            write(1,*)'             element T    ',set(numf)(1:20)
             write(1,57)'             u= ',u,'m/s ,Ct= ',Ct,'m/s'
             write(1,56)'       Outlet node ',node2,':    Tt2= ',T2,
      &           'K, Ts2= ',Tt2,'K, Ptt2= ',Pt2/1e5,
      &           'Bar'
 !     
-c$$$         else if(inv.eq.-1) then
-c$$$            write(1,56)'       Inlet node ',node2,':     Tt1= ',TT1,
-c$$$     &           'K, Ts1= ',Tt1,'K, Pt1= ',Pt1/1E5,
-c$$$     &           'Bar'
-c$$$            write(1,*)'             element T    ',set(numf+nelem)(1:20)
-c$$$            write(1,57)'             u= ',u,'m/s ,Ct= ',CT,'m/s'
-c$$$            write(1,56)'       Outlet node ',node1,'     Tt2= ',
-c$$$     &           Tt2,'K, Ts2= ',Tt2,'K, Pt2= ',Pt2/1e5,
-c$$$     &           'Bar'
-!         endif
  56      FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A,f9.5)  
-! 57      FORMAT(1X,A,f9.3,A,f9.3,A,f6.4)
  57      FORMAT(1X,A,f6.2,A,f6.2,A)
 
       endif

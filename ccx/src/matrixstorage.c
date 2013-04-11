@@ -26,12 +26,12 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
                 double *sigma,int *icol, int **irowp, 
                 int *neq, int *nzs, int *ntrans, int *inotr,
                 double *trab, double *co, int *nk, int *nactdof,
-                char *jobnamec){
+		char *jobnamec, int *mi){
 
   char fsti[132]="",fmas[132]="";
   int i,j,k,l,*irow=NULL,*ai=NULL,*aj=NULL,kflag=2,ndim,jref,kstart,klen,
     *ipoint=NULL,npoint_,npoint,neq3,index,i3l,i3c,i3lo,i3co,idof,n,il,
-    ic,id,itrans,ndim2,*ipoindex=NULL;
+    ic,id,itrans,ndim2,*ipoindex=NULL,mt=mi[1]+1;
   double *au=NULL,*aa=NULL,*trans=NULL,*aa3=NULL,a[9];
   FILE *f2,*f3;
 
@@ -192,7 +192,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
 
     trans=NNEW(double,9*neq3);
     for (i=0;i<*nk;i++){
-      idof=nactdof[4*i+1];
+      idof=nactdof[mt*i+1];
       if(idof==0) continue;
       itrans=inotr[2*i];
       if(itrans==0){
@@ -414,7 +414,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
 
     trans=NNEW(double,9*neq3);
     for (i=0;i<*nk;i++){
-      idof=nactdof[4*i+1];
+      idof=nactdof[mt*i+1];
       if(idof==0) continue;
       itrans=inotr[2*i];
       if(itrans==0){

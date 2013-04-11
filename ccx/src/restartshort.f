@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine restartshort(nset,nload,nbody,nforc,nboun,nk,ne,
-     &  nmpc,nalset,nmat,ntmat,npmat,norien,nam,nprint,mint,
+     &  nmpc,nalset,nmat,ntmat,npmat,norien,nam,nprint,mi,
      &  ntrans,ncs,namtot,ncmat,memmpc,ne1d,ne2d,nflow,
      &  set,meminset,rmeminset,jobnamec,irestartstep,icntrl,ithermal,
      &  nener,nstate_,ntie)
@@ -31,7 +31,7 @@
       character*132 fnrstrt,jobnamec(*)
 !
       integer istep,nset,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,
-     &  ntmat,npmat,norien,nam,nprint,mint,ntrans,ncs,
+     &  ntmat,npmat,norien,nam,nprint,mi(2),ntrans,ncs,
      &  namtot,ncmat,memmpc,ne1d,ne2d,nflow,infree(4),
      &  nmethod,iperturb,meminset(*),rmeminset(*),
      &  i,j,k,ipos,icntrl,nener,irestartstep,im0,im1,im2,mem,iact,
@@ -84,7 +84,7 @@
             read(15)nk
             read(15)ne
             read(15)nkon
-            read(15)mint
+            read(15)(mi(i),i=1,2)
 !
 !           constraint size
 !
@@ -143,7 +143,7 @@
 !     
             call skip(nset,nalset,nload,nbody,
      &         nforc,nboun,nflow,nk,ne,nkon,
-     &         mint,nmpc,memmpc,nmat,ntmat,npmat,ncmat,norien,
+     &         mi,nmpc,memmpc,nmat,ntmat,npmat,ncmat,norien,
      &         ntrans,nam,nprint,nlabel,ncs,ne1d,ne2d,infree,
      &         nmethod,iperturb,nener,iplas,ithermal,nstate_,iprestr,
      &         mcs,ntie)
@@ -196,7 +196,7 @@
          read(15)nk
          read(15)ne
          read(15)nkon
-         read(15)mint
+         read(15)(mi(i),i=1,2)
 !
 !        constraint size
 !
@@ -256,7 +256,7 @@
 !        skipping the next entries
 !     
          call skip(nset,nalset,nload,nbody,nforc,nboun,nflow,nk,ne,nkon,
-     &      mint,nmpc,memmpc,nmat,ntmat,npmat,ncmat,norien,ntrans,
+     &      mi,nmpc,memmpc,nmat,ntmat,npmat,ncmat,norien,ntrans,
      &      nam,nprint,nlabel,ncs,ne1d,ne2d,infree,nmethod,
      &      iperturb,nener,iplas,ithermal,nstate_,iprestr,mcs,ntie)
 !

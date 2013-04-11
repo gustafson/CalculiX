@@ -45,7 +45,7 @@
 !
       real*8 cg(3,*),straight(16,*),co(3,*),p(3),
      &  totdist(20),dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),
-     &  beta,c0,pl(0:3,8),cgdist,
+     &  beta,c0,pl(3,8),cgdist,
      &  ratio(8),xi,et,coefmpc(*),tietol(*),tolloc
 !
 !     nodes per face for hex elements
@@ -375,7 +375,7 @@ c     &                       totdist(k),cgdist
                      enddo
                      nodempc(3,mpcfreeold)=0
 
-                     call writempc(ipompc,nodempc,coefmpc,labmpc,nmpc)
+c                     call writempc(ipompc,nodempc,coefmpc,labmpc,nmpc)
                   enddo
 !
                endif

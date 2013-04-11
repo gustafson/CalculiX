@@ -18,7 +18,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
                 double *sigma,int *icol, int **irowp, 
                 int *neq, int *nzs, int *ntrans, int *inotr,
                 double *trab, double *co, int *nk, int *nactdof,
-                char *jobnamec);
+		char *jobnamec, int *mi);
 
 
 

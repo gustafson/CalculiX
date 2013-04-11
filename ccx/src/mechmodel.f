@@ -18,7 +18,7 @@
 !
       subroutine mechmodel(elconloc,elas,emec,kode,emec0,ithermal,
      &     icmd,beta,stre,xkl,ckl,vj,xikl,vij,plconloc,xstate,xstateini,
-     &     ielas,amat,t1l,dtime,time,ttime,iel,iint,nstate_,mint_,
+     &     ielas,amat,t1l,dtime,time,ttime,iel,iint,nstate_,mi,
      &     iorien,pgauss,orab,eloc,mattyp,pnewdt,istep,iinc)
 !
 !     kode=-1: Arruda-Boyce
@@ -48,7 +48,7 @@
 !
       character*80 amat
 !
-      integer kode,ithermal,icmd,ielas,iel,iint,nstate_,mint_,iorien,
+      integer kode,ithermal,icmd,ielas,iel,iint,nstate_,mi(2),iorien,
      &  mattyp,istep,iinc
 !
       real*8 elconloc(*),elas(21),emec(*),emec0(*),beta(*),stre(*),
@@ -57,7 +57,7 @@
      &  dudc(9),d2udc2(81),dldc(27),d2ldc2(243),dlbdc(27),d2lbdc2(243),
      &  pgauss(3),orab(7,*),time,ttime,eloc(6),pnewdt
 !
-      real*8 xstate(nstate_,mint_,*),xstateini(nstate_,mint_,*)
+      real*8 xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
 !
       if(kode.gt.0) then
          call linel(kode,mattyp,beta,emec,stre,elas,elconloc,
@@ -75,12 +75,12 @@
          mattyp=3
          call incplas(elconloc,plconloc,xstate,xstateini,elas,emec,
      &     emec0,ithermal,icmd,beta,stre,vj,kode,ielas,amat,t1l,dtime,
-     &     time,ttime,iel,iint,nstate_,mint_,eloc,pgauss)
+     &     time,ttime,iel,iint,nstate_,mi(1),eloc,pgauss)
       else
          mattyp=3
          call umat_main(amat,iel,iint,kode,elconloc,emec,emec0,beta,
      &        xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,icmd,ielas,
-     &        mint_,nstate_,xstateini,xstate,stre,elas,iorien,pgauss,
+     &        mi(1),nstate_,xstateini,xstate,stre,elas,iorien,pgauss,
      &        orab,pnewdt,istep,iinc)
       endif
 !

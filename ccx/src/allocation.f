@@ -18,7 +18,7 @@
 !
       subroutine allocation(nload,nforc,nboun,nk,ne,nmpc,
      &  nset,nalset,nmat,ntmat,npmat,norien,nam,nprint,
-     &  mint,ntrans,set,meminset,rmeminset,ncs,
+     &  mi,ntrans,set,meminset,rmeminset,ncs,
      &  namtot,ncmat,memmpc,ne1d,ne2d,nflow,jobnamec,irstrt,
      &  ithermal,nener,nstate,irestartstep,inpc,ipoinp,inp,
      &  ntie,nbody,nprop,ipoinpc,nevdamp)
@@ -47,19 +47,24 @@
 !
       integer nload,nforc,nboun,nk,ne,nmpc,nset,nalset,
      &  nmat,ntmat,npmat,norien,nam,nprint,kode,iline,
-     &  istat,n,key,meminset(*),i,js,inoset,mint,ii,ipol,inl,
+     &  istat,n,key,meminset(*),i,js,inoset,mi(2),ii,ipol,inl,
      &  ibounstart,ibounend,ibound,ntrans,ntmatl,npmatl,ityp,l,
      &  ielset,nope,nteller,nterm,ialset(16),ncs,rmeminset(*),
      &  ileftset,irightset,namtot,ncmat,nconstants,memmpc,j,ipos,
      &  maxrmeminset,ne1d,ne2d,necper,necpsr,necaxr,nesr,
      &  neb32,nn,nflow,nradiate,irestartread,irestartstep,icntrl,
-     &  irstrt,ithermal,nener,nstate,ipoinp(2,*),inp(3,*),
+     &  irstrt,ithermal(2),nener,nstate,ipoinp(2,*),inp(3,*),
      &  ntie,nbody,nprop,ipoinpc(0:*),idepvar,nevdamp
 !
       real*8 temperature,tempact,xfreq,tpinc,tpmin,tpmax
 !
       integer nentries
-      parameter(nentries=13)
+      parameter(nentries=14)
+!
+!     in the presence of mechanical steps the highest number
+!     of DOF is at least 3
+!
+      if(ithermal(2).ne.2) mi(2)=3
 !
 !     initialisation of ipoinp
 !
@@ -423,12 +428,12 @@ c            enddo
          elseif((textpart(1)(1:8).eq.'*DYNAMIC').or.
      &      (textpart(1)(1:32).eq.'*COUPLEDTEMPERATURE-DISPLACEMENT'))
      &          then
-            if((mint.eq.1).or.(mint.eq.8).or.(mint.eq.27)) then
-               mint=27
-            elseif(mint.eq.4) then
-               mint=15
+            if((mi(1).eq.1).or.(mi(1).eq.8).or.(mi(1).eq.27)) then
+               mi(1)=27
+            elseif(mi(1).eq.4) then
+               mi(1)=15
             else
-               mint=18
+               mi(1)=18
             endif
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
@@ -520,35 +525,35 @@ c            enddo
                   endif
                   if((label.eq.'C3D20   ').or.
      &               (label.eq.'F3D20   ')) then
-                     mint=max(mint,27)
+                     mi(1)=max(mi(1),27)
                      nope=20
                   elseif((label(1:8).eq.'C3D20R  ').or.
      &                   (label(1:8).eq.'F3D20R  ')) then
-                     mint=max(mint,8)
+                     mi(1)=max(mi(1),8)
                      nope=20
                   elseif(label(1:8).eq.'C3D20RI ') then
-                     mint=max(mint,8)
+                     mi(1)=max(mi(1),8)
                      nope=20
                      isochoric=.true.
                   elseif((label.eq.'C3D8R   ').or.
      &                   (label.eq.'F3D8R   ')) then
-                     mint=max(mint,1)
+                     mi(1)=max(mi(1),1)
                      nope=8
                   elseif((label.eq.'C3D10   ').or.
      &                   (label.eq.'F3D10   ')) then
-                     mint=max(mint,4)
+                     mi(1)=max(mi(1),4)
                      nope=10
                   elseif((label.eq.'C3D4    ').or.
      &                   (label.eq.'F3D4    ')) then
-                     mint=max(mint,1)
+                     mi(1)=max(mi(1),1)
                      nope=4
                   elseif((label.eq.'C3D15   ').or.
      &                   (label.eq.'F3D15   ')) then
-                     mint=max(mint,9)
+                     mi(1)=max(mi(1),9)
                      nope=15
                   elseif((label.eq.'C3D6    ').or.
      &                   (label.eq.'F3D6    ')) then
-                     mint=max(mint,2)
+                     mi(1)=max(mi(1),2)
                      nope=6
                   elseif((label.eq.'CPE8R   ').or.
      &                    (label.eq.'CPS8R   ').or.
@@ -556,38 +561,40 @@ c            enddo
      &                    (label.eq.'S8R     ').or.
      &                    (label.eq.'C3D8    ').or.
      &                    (label.eq.'F3D8    ')) then
-                     mint=max(mint,8)
+                     mi(1)=max(mi(1),8)
                      nope=8
                   elseif((label.eq.'CPE8    ').or.
      &                    (label.eq.'CPS8    ').or.
      &                    (label.eq.'CAX8    ').or.
      &                    (label.eq.'S8      ')) then
-                     mint=max(mint,27)
+                     mi(1)=max(mi(1),27)
                      nope=8
                   elseif((label.eq.'CPE6    ').or.
      &                    (label.eq.'CPS6    ').or.
      &                    (label.eq.'CAX6    ').or.
      &                    (label.eq.'S6      ')) then
-                     mint=max(mint,9)
+                     mi(1)=max(mi(1),9)
                      nope=6
                   elseif(label.eq.'B32     ') then
-                     mint=max(mint,27)
+                     mi(1)=max(mi(1),27)
                      nope=3
                   elseif(label.eq.'B32R    ') then
-                     mint=max(mint,8)
+                     mi(1)=max(mi(1),8)
                      nope=3
                   elseif(label(1:8).eq.'DASHPOTA') then
                      label='EDSHPTA2'
                      nope=2
                   elseif(label(1:1).eq.'D') then
                      nope=3
+                     mi(2)=max(3,mi(2))
                   elseif(label(1:7).eq.'SPRINGA') then
-                     mint=max(mint,1)
+                     mi(1)=max(mi(1),1)
                      label='ESPRNGA2'
                      nope=2
                   elseif(label.eq.'GAPUNI  ') then
                      nope=2
                   endif
+                  if(label(1:1).eq.'F') mi(2)=max(mi(2),4)
                endif
             enddo loop1
 !
@@ -773,9 +780,12 @@ c            enddo
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:13).eq.'*FLUIDSECTION') then
-            nprop=nprop+1
-            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+               nprop=nprop+8
+            enddo
          elseif(textpart(1)(1:9).eq.'*FRICTION') then
             ncmat=max(7,ncmat)
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -1121,7 +1131,7 @@ c            enddo
                icntrl=1
                call restartshort(nset,nload,nbody,nforc,nboun,nk,ne,
      &              nmpc,nalset,nmat,ntmat,npmat,norien,nam,nprint,
-     &              mint,ntrans,ncs,namtot,ncmat,memmpc,
+     &              mi,ntrans,ncs,namtot,ncmat,memmpc,
      &              ne1d,ne2d,nflow,set,meminset,rmeminset,jobnamec,
      &              irestartstep,icntrl,ithermal,nener,nstate,ntie)
                irstrt=-1
@@ -1478,7 +1488,7 @@ c      memmpc=memmpc+15*ne1d+24*ne2d
       write(*,*) '  elements: ',ne
       write(*,*) '  one-dimensional elements: ',ne1d
       write(*,*) '  two-dimensional elements: ',ne2d
-      write(*,*) '  integration points per element: ',mint
+      write(*,*) '  integration points per element: ',mi(1)
       write(*,*)
       write(*,*) '  distributed facial loads: ',nload
       write(*,*) '  distributed volumetric loads: ',nbody

@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine noanalysis(inpc,textpart,nmethod,iperturb,istep,
-     &  istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)
+     &  istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,tper)
 !
 !     reading the input deck: *NO ANALYSIS
 !
@@ -29,6 +29,8 @@
       integer nmethod,iperturb,istep,istat,n,key,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),ipoinpc(0:*)
 !
+      real*8 tper
+!
       if(istep.lt.1) then
          write(*,*)'*ERROR in noanalysis: *NO ANALYSIS can only be used'
          write(*,*) '  within a STEP'
@@ -39,6 +41,7 @@
 !
       nmethod=0
       iperturb=0
+      tper=1.d0
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

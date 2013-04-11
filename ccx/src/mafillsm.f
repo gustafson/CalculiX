@@ -26,7 +26,7 @@
      &  t0,t1,ithermal,prestr,
      &  iprestr,vold,iperturb,sti,nzs,stx,adb,aub,iexpl,plicon,
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
-     &  matname,mint_,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
+     &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  coriolis,ibody,xloadold,reltime,veold)
 !
@@ -42,29 +42,30 @@
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
-     &  ilmpc(*),ikboun(*),ilboun(*),nactdof(0:3,*),konl(20),irow(*),
+     &  ilmpc(*),ikboun(*),ilboun(*),mi(2),
+     &  nactdof(0:mi(2),*),konl(20),irow(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(*),ielorien(*),
      &  ipkon(*),intscheme,ncocon(2,*),nshcon(*),ipobody(2,*),nbody,
      &  ibody(3,*)
 !
       integer nk,ne,nboun,nmpc,nforc,nload,neq(2),nzl,nmethod,icolumn,
-     &  ithermal,iprestr,iperturb(*),nzs(3),i,j,k,l,m,idist,jj,
+     &  ithermal(2),iprestr,iperturb(*),nzs(3),i,j,k,l,m,idist,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,jdof,node1,node2,kflag,icalccg,
-     &  ntmat_,indexe,nope,norien,iexpl,mint_,i0,ncmat_,istep,iinc
+     &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc
 !
       integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
-     &  t0(*),t1(*),prestr(6,mint_,*),vold(0:4,*),s(60,60),ff(60),
-     &  sti(6,mint_,*),sm(60,60),stx(6,mint_,*),adb(*),aub(*),
+     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(60,60),ff(60),
+     &  sti(6,mi(1),*),sm(60,60),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),
      &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),
      &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*)
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
-     &  xstiff(27,mint_,*),veold(0:3,*)
+     &  xstiff(27,mi(1),*),veold(0:mi(2),*)
 !
       real*8 om,valu2,value,dtime,ttime,time
 !
@@ -132,7 +133,7 @@ c      elseif(mass.or.buckling) then
 !        distributed forces (body forces or thermal loads or
 !        residual stresses or distributed face loads)
 !
-         if((nbody.ne.0).or.(ithermal.ne.0).or.
+         if((nbody.ne.0).or.(ithermal(1).ne.0).or.
      &      (iprestr.ne.0).or.(nload.ne.0)) then
             idist=1
          else
@@ -141,7 +142,7 @@ c      elseif(mass.or.buckling) then
 !
       endif
 !
-      if((ithermal.le.1).or.(ithermal.eq.3)) then
+      if((ithermal(1).le.1).or.(ithermal(1).eq.3)) then
 !
 !     mechanical analysis: loop over all elements
 !
@@ -163,10 +164,6 @@ c      elseif(mass.or.buckling) then
            nope=6
         elseif(lakon(i)(1:2).eq.'ES') then
            read(lakon(i)(8:8),'(i1)') nope
-!
-!          contact area division number
-!
-           konl(nope+1)=kon(indexe+nope+1)
         else
            cycle
         endif
@@ -211,12 +208,13 @@ c        if((rhsi).and.(nbody.gt.0).and.(lakon(i)(1:1).ne.'E')) then
               elseif(ibody(1,j).eq.3) then
                  call newton(icalccg,ne,ipkon,lakon,kon,t0,co,rhcon,
      &                nrhcon,ntmat_,physcon,i,cgr,bodyf,ielmat,ithermal,
-     &                vold)
+     &                vold,mi)
               endif
               index=ipobody(2,index)
               if(index.eq.0) exit
            enddo
         endif
+c        write(*,*) 'mafillsm ',i,bodyf(1),bodyf(2),bodyf(3)
 !
         call e_c3d(co,nk,konl,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,i,
      &          nmethod,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
@@ -224,7 +222,7 @@ c        if((rhsi).and.(nbody.gt.0).and.(lakon(i)(1:1).ne.'E')) then
      &          t0,t1,ithermal,vold,iperturb,nelemload,sideload,xload,
      &          nload,idist,sti,stx,iexpl,plicon,
      &          nplicon,plkcon,nplkcon,xstiff,npmat_,
-     &          dtime,matname,mint_,ncmat_,mass(1),stiffness,buckling,
+     &          dtime,matname,mi(1),ncmat_,mass(1),stiffness,buckling,
      &          rhsi,intscheme,ttime,time,istep,iinc,coriolis,xloadold,
      &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold)
 !
@@ -468,7 +466,7 @@ c                  endif
       enddo
 !
       endif
-      if(ithermal.gt.1) then
+      if(ithermal(1).gt.1) then
 !
 !     thermal analysis: loop over all elements
 !
@@ -500,7 +498,7 @@ c                  endif
      &  ff,i,nmethod,rhcon,nrhcon,ielmat,ielorien,norien,orab,
      &  ntmat_,t0,t1,ithermal,vold,iperturb,nelemload,
      &  sideload,xload,nload,idist,iexpl,dtime,
-     &  matname,mint_,mass(2),stiffness,buckling,rhsi,intscheme,
+     &  matname,mi(1),mass(2),stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  xstiff,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,
      &  ilmpc)

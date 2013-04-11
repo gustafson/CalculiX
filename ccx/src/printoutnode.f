@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine printoutnode(prlab,v,t1,fn,ithermal,ii,node,
-     &  rftot,trab,inotr,ntrans,co)
+     &  rftot,trab,inotr,ntrans,co,mi)
 !
 !     stores results in the .dat file
 !
@@ -25,9 +25,9 @@
 !
       character*6 prlab(*)
 !
-      integer ithermal,node,ii,j,inotr(2,*),ntrans
+      integer ithermal,node,ii,j,inotr(2,*),ntrans,mi(2)
 !
-      real*8 v(0:4,*),t1(*),fn(0:3,*),rftot(0:3),trab(7,*),
+      real*8 v(0:mi(2),*),t1(*),fn(0:mi(2),*),rftot(0:3),trab(7,*),
      &  co(3,*),a(3,3)
 !
       if((prlab(ii)(1:4).eq.'U   ').or.(prlab(ii)(1:4).eq.'V   ')) then
@@ -87,6 +87,8 @@
      &           fn(0,node)
          endif
       endif
+!
+      flush(5)
 !
       return
       end

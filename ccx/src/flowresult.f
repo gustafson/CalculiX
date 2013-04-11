@@ -17,16 +17,16 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
       subroutine flowresult(ntg,itg,cam,vold,v,nload,sideload,
-     &     nelemload,xloadact,nactdog,network)
+     &     nelemload,xloadact,nactdog,network,mi)
 !     
       implicit none
 !     
       character*20 sideload(*) 
 !     
       integer i,j,nload,node,ntg,itg(*),nelemload(2,*),
-     &     nactdog(0:3,*),network
+     &     nactdog(0:3,*),network,mi(2)
 !     
-      real*8 cam(3),vold(0:4,*),v(0:4,*),xloadact(2,*)
+      real*8 cam(3),vold(0:mi(2),*),v(0:mi(2),*),xloadact(2,*)
 !     
 !     calculating the change of gas temperature: is taken
 !     into account in the global convergence for purely
@@ -40,7 +40,11 @@ c      cam=0.d0
          do i=1,ntg
             node=itg(i)
             if(nactdog(0,node).eq.0) cycle
-            cam(2)=max(cam(2),dabs(vold(0,node)-v(0,node)))
+            if(dabs(vold(0,node)-v(0,node)).gt.cam(2)) then
+               cam(2)=dabs(vold(0,node)-v(0,node))
+               cam(5)=node+0.5d0
+            endif
+c            cam(2)=max(cam(2),dabs(vold(0,node)-v(0,node)))
          enddo
       endif
 !     

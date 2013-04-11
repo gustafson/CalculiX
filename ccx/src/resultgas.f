@@ -25,7 +25,7 @@
      &     ikforc,ilforc,xforcact,nforc,ielmat,nteq,prop,ielprop,
      &     nactdog,nacteq,iin,physcon,camt,camf,camp,rhcon,nrhcon,
      &     ipobody,ibody,xbodyact,nbody,dtheta,vold,xloadold,
-     &     reltime,nmethod,set)
+     &     reltime,nmethod,set,mi)
 !     
       implicit none
 !     
@@ -38,24 +38,25 @@
      &     nelemload(2,*),nope,nopes,mint2d,i,j,k,l,nrhcon(*),
      &     node,imat,ntmat_,id,ntm,ifaceq(8,6),ifacet(6,4),numf,
      &     ifacew(8,5),node1,node2,nshcon(*),nelem,ig,index,konl(20),
-     &     ipkon(*),kon(*),idof,
+     &     ipkon(*),kon(*),idof,mi(2),
      &     iinc,istep,jltyp,nfield,ikforc(*),ipobody(2,*),
      &     ilforc(*),nforc,nodem,idirf(5),ieq,nactdog(0:3,*),nbody,
-     &     nacteq(0:3,*),ielprop(*),nodef(5),iin,kflag,ibody(3,*),case,
+     &     nacteq(0:3,*),ielprop(*),nodef(5),iin,kflag,ibody(3,*),icase,
      &     inv, index2,nmethod,nelem0,nodem0,nelem1,nodem1,nelem2,
      &     nodem2,nelemswirl
 !     
       real*8 bc(ntm),xloadact(2,*),cp,h(2),physcon(*),r,dvi,rho,
-     &     xl2(0:3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
-     &     gastemp,v(0:4,*),shcon(0:3,ntmat_,*),co(3,*),shp2(7,8),
+     &     xl2(3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
+     &     gastemp,v(0:mi(2),*),shcon(0:3,ntmat_,*),co(3,*),shp2(7,8),
      &     field,prop(*),tg1,tg2,dtime,ttime,time,g(3),
-     &     xforcact(*),areaj,xflow,tvar(2),f,df(5),camt,camf,camp,
+     &     xforcact(*),areaj,xflow,tvar(2),f,df(5),camt(*),camf(*),
+     &     camp(*),tl2(8),
      &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,kappa,a,T,Tt,Pt,
      &     dtheta,ts1,ts2,xs2(3,7),xk1,xk2,xdenom1,xdenom2,expon,pt1,
      &     pt2,dt1,dt2,xcst,xnum1,xnum2,Qred_crit,xflow_crit,
      &     xflow0,xflow1,reltime,
      &     xflow2,R1,R2,Rout,Rin,Uout,Uin,heat,pi,
-     &     Cp_cor,U,Ct,vold(0:4,*),xloadold(2,*),omega
+     &     Cp_cor,U,Ct,vold(0:mi(2),*),xloadold(2,*),omega
 !     
       include "gauss.f"
 !     
@@ -85,9 +86,12 @@
 !     
 !     calculating the maximum change in the solution
 !     
-      camt=0.d0
-      camf=0.d0
-      camp=0.d0
+      camt(1)=0.d0
+      camf(1)=0.d0
+      camp(1)=0.d0
+      camt(2)=0.5d0
+      camf(2)=0.5d0
+      camp(2)=0.5d0
 !     
       do i=1,ntg
          node=itg(i)
@@ -95,11 +99,20 @@
             if(nactdog(j,node).eq.0) cycle
             idof=nactdog(j,node)
             if(j.eq.0) then
-               if(dabs(bc(idof)).gt.camt) camt=dabs(bc(idof))
+               if(dabs(bc(idof)).gt.camt(1)) then
+                  camt(1)=dabs(bc(idof))
+                  camt(2)=node+0.5d0
+               endif
             elseif(j.eq.1) then
-               if(dabs(bc(idof)).gt.camf) camf=dabs(bc(idof))
+               if(dabs(bc(idof)).gt.camf(1)) then
+                  camf(1)=dabs(bc(idof))
+                  camf(2)=node+0.5d0
+               endif
             else
-               if(dabs(bc(idof)).gt.camp) camp=dabs(bc(idof))
+               if(dabs(bc(idof)).gt.camp(1)) then
+                  camp(1)=dabs(bc(idof))
+                  camp(2)=node+0.5d0
+               endif
             endif
          enddo
       enddo
@@ -137,7 +150,7 @@
 !     
 !     testing the validity of the solution for branches elements
 !     and restrictor. Since the element properties is dependent on
-!     
+!    
       do i=1, nflow
          nelem=ieg(i)
          if ((lakon(nelem)(4:5).eq.'ATR').or. 
@@ -213,6 +226,8 @@
             Pt=v(2,node)
             xflow=v(1,nodem)
 !     
+            icase=0
+            inv=1
             imat=ielmat(nelem)
             call materialdata_tg(imat,ntmat_,v(3,node),
      &           shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho)
@@ -220,19 +235,19 @@
             index=ielprop(nelem)
             kappa=(cp/(cp-R))
 !     
-            if((lakon(nelem)(2:5).eq.'GAPI')
-     &           .or.(lakon(nelem)(2:5).eq.'GAPX'))then
+            if((lakon(nelem)(2:5).eq.'GAPF')
+     &           .or.(lakon(nelem)(2:5).eq.'GAPI'))then
                A=prop(index+1)
-               if((lakon(nelem)(2:6).eq.'GAPIA')
-     &           .or.(lakon(nelem)(2:5).eq.'GAPXA'))then
-                  case=0
-               elseif((lakon(nelem)(2:6).eq.'GAPII')
-     &                 .or.(lakon(nelem)(2:5).eq.'GAPXI'))then
-                  case=1
+               if((lakon(nelem)(2:6).eq.'GAPFA')
+     &              .or.(lakon(nelem)(2:5).eq.'GAPIA'))then
+                  icase=0
+               elseif((lakon(nelem)(2:6).eq.'GAPFI')
+     &                 .or.(lakon(nelem)(2:5).eq.'GAPII'))then
+                  icase=1
                endif  
             elseif(lakon(nelem)(2:3).eq.'OR') then
                A=prop(index+1)
-               case=0
+               icase=0
 !     
             elseif(lakon(nelem)(2:3).eq.'RE') then
                index2=ipkon(nelem)
@@ -240,13 +255,13 @@
                node2=kon(index2+3)
 !     
                if(lakon(nelem)(4:5).eq.'EX') then
-                  if(lakon(int(prop(index+4)))(2:6).eq.'GAPIA') then
-                     case=0
-                  elseif(lakon(int(prop(index+4)))(2:6).eq.'GAPII')then
-                     case=1
+                  if(lakon(int(prop(index+4)))(2:6).eq.'GAPFA') then
+                     icase=0
+                  elseif(lakon(int(prop(index+4)))(2:6).eq.'GAPFI')then
+                     icase=1
                   endif
                else
-                  case=0
+                  icase=0
                endif
 !     
 !     defining the sections
@@ -278,14 +293,14 @@
                   endif
                endif
             endif
-!
+!     
             if(xflow.lt.0d0) then
                inv=-1
             else
                inv=1
             endif
 !     
-            if(case.eq.0) then
+            if(icase.eq.0) then
                Qred_crit=dsqrt(kappa/R)*(1.+0.5*(kappa-1.))
      &              **(-0.5d0*(kappa+1.)/(kappa-1.))
             else
@@ -294,15 +309,14 @@
             endif
             xflow_crit=inv*Qred_crit*Pt*A/dsqrt(Tt)             
 !     
-            call ts_calc(xflow,Tt,Pt,kappa,r,a,T,case)
+            call ts_calc(xflow,Tt,Pt,kappa,r,a,T,icase)
 !     
             v(3,node)=T
 !     
-
             if(dabs(v(1,nodem)).ge.dabs(xflow_crit)) then
                v(1,nodem)=xflow_crit
-               if(case.eq.1) then
-!                 
+               if(icase.eq.1) then
+!     
                   if(nactdog(0,node2).ne.0) then
                      index2=ipkon(nelem)
                      node1=kon(index2+1)
@@ -310,14 +324,10 @@
                      v(3,node2)=v(3,node1)
                      v(0,node2)=v(3,node2)
      &                    *(1+0.5d0*(kappa-1)/kappa)
-
+                     
+                  endif
                endif
             endif
-         endif
-
-!     Mach number
-!     
-!            M=(2.d0/(kappa-1.d0)*(Tt/T-1.d0))**0.5d0
 !     
          endif
 !     
@@ -365,8 +375,8 @@
 !     
 !     Definitions of the constant for isothermal flow elements
 !     
-         if((lakon(nelem)(2:6).eq.'GAPII')
-     &        .or.(lakon(nelem)(2:6).eq.'GAPXI')) then
+         if((lakon(nelem)(2:6).eq.'GAPFI')
+     &        .or.(lakon(nelem)(2:6).eq.'GAPII')) then
             if((node1.ne.0).and.(node2.ne.0)) then
                A=prop(ielprop(nelem)+1)
                pt1=v(2,node1)
@@ -381,8 +391,8 @@
                   endif
                   tg1=v(0,node1)
                   ts1=v(3,node1)
-                  call ts_calc(xflow,Tg1,Pt1,kappa,r,a,Ts1,case)
-                  call ts_calc(xflow,Tg2,Pt2,kappa,r,a,Ts2,case)
+                  call ts_calc(xflow,Tg1,Pt1,kappa,r,a,Ts1,icase)
+                  call ts_calc(xflow,Tg2,Pt2,kappa,r,a,Ts2,icase)
                else
                   pt1=v(2,node2)
                   pt2=v(2,node1)
@@ -391,9 +401,9 @@
                   endif
 !
                   tg1=v(0,node2)
-                  call ts_calc(xflow,Tg1,Pt1,kappa,r,a,Ts1,case)
+                  call ts_calc(xflow,Tg1,Pt1,kappa,r,a,Ts1,icase)
                   tg2=v(0,node1)
-                  call ts_calc(xflow,Tg2,Pt2,kappa,r,a,Ts2,case)
+                  call ts_calc(xflow,Tg2,Pt2,kappa,r,a,Ts2,icase)
                endif
 !     
                dt1=tg1/ts1-1d0
@@ -423,8 +433,8 @@
                      bc(ieq)=bc(ieq)+cp*(tg1-tg2)*xflow
                   endif
 !     
-               elseif((lakon(nelem)(2:6).eq.'GAPII')
-     &                 .or.(lakon(nelem)(2:6).eq.'GAPXI')) then
+               elseif((lakon(nelem)(2:6).eq.'GAPFI')
+     &                 .or.(lakon(nelem)(2:6).eq.'GAPII')) then
                   if((nacteq(3,node1).eq.node2)) then
 !     
                      bc(ieq)=(ts2+xnum2/xdenom2-ts1-xnum1/xdenom1)
@@ -453,8 +463,8 @@
                      bc(ieq)=bc(ieq)-cp*(tg2-tg1)*xflow
                   endif
 !     
-               elseif((lakon(nelem)(2:6).eq.'GAPII')
-     &                .or. (lakon(nelem)(2:6).eq.'GAPXI')) then
+               elseif((lakon(nelem)(2:6).eq.'GAPFI')
+     &                .or. (lakon(nelem)(2:6).eq.'GAPII')) then
                   if(nacteq(3,node2).eq.node1) then
 !     
                      bc(ieq)=(ts2+xnum2/xdenom2-ts1-xnum1/xdenom1) 
@@ -502,7 +512,7 @@
      &           nactdog,identity,
      &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
      &           cp,r,rho,physcon,g,co,dvi,numf,vold,set,shcon,
-     &           nshcon,rhcon,nrhcon,ntmat_)
+     &           nshcon,rhcon,nrhcon,ntmat_,mi)
             bc(ieq)=-f
          endif
       enddo
@@ -596,7 +606,7 @@
 !     
             if((nope.eq.20).or.(nope.eq.8)) then
                do k=1,nopes
-                  xl2(0,k)=v(0,konl(ifaceq(k,ig)))
+                  tl2(k)=v(0,konl(ifaceq(k,ig)))
                   do j=1,3
                      xl2(j,k)=co(j,konl(ifaceq(k,ig)))+
      &                    v(j,konl(ifaceq(k,ig)))
@@ -604,7 +614,7 @@
                enddo
             elseif((nope.eq.10).or.(nope.eq.4)) then
                do k=1,nopes
-                  xl2(0,k)=v(0,konl(ifacet(k,ig)))
+                  tl2(k)=v(0,konl(ifacet(k,ig)))
                   do j=1,3
                      xl2(j,k)=co(j,konl(ifacet(k,ig)))+
      &                    v(j,konl(ifacet(k,ig)))
@@ -612,7 +622,7 @@
                enddo
             else
                do k=1,nopes
-                  xl2(0,k)=v(0,konl(ifacew(k,ig)))
+                  tl2(k)=v(0,konl(ifacew(k,ig)))
                   do j=1,3
                      xl2(j,k)=co(j,konl(ifacew(k,ig)))+
      &                    v(j,konl(ifacew(k,ig)))
@@ -670,7 +680,7 @@
                   coords(k)=0.d0
                enddo
                do j=1,nopes
-                  temp=temp+xl2(0,j)*shp2(4,j)
+                  temp=temp+tl2(j)*shp2(4,j)
                   do k=1,3
                      coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
                   enddo
@@ -684,7 +694,7 @@
                   jltyp=jltyp+10
                   call film(h,sinktemp,temp,istep,
      &                 iinc,tvar,nelem,l,coords,jltyp,field,nfield,
-     &                 sideload(i),node,areaj,v)
+     &                 sideload(i),node,areaj,v,mi)
                   if(nmethod.eq.1) h(1)=xloadold(1,i)+
      &                 (h(1)-xloadold(1,i))*reltime
                endif
@@ -779,8 +789,6 @@
          imat=ielmat(nelem)
          call materialdata_tg(imat,ntmat_,gastemp,
      &        shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho)
-         
-       
 !
          call cp_corrected(cp,Tg1,Tg2,cp_cor)
 !     
@@ -844,11 +852,9 @@
             if(xflow.gt.0d0) then
                node1=kon(ipkon(nelem)+1)
                node2=kon(ipkon(nelem)+3)
-
             else
                node1=kon(ipkon(nelem)+1)
                node2=kon(ipkon(nelem)+3)
-
             endif
 !     
 !     computing temperature corrected Cp=Cp(T) coefficient 
@@ -917,44 +923,43 @@
 !
       do i=1,nflow
          nelem=ieg(i)
-         index=ielprop(nelem)
+!      
+         if(lakon(nelem)(2:5).eq.'GAPI') then
+            index=ielprop(nelem)
+            if((prop(index+8).ne.0).and.
+     &           (prop(index+9).ne.0).and.
+     &           (prop(index+8).ne.0)) then
 !     
-         if((lakon(nelem)(2:5).eq.'GAPX').and.
-     &        (prop(index+8).ne.0).and.
-     &        (prop(index+9).ne.0).and.
-     &        (prop(index+8).ne.0)) then
-!     
-            nodem=kon(ipkon(nelem)+2)
-            xflow=v(1,nodem)
-            if(xflow.gt.0d0) then
-               node1=kon(ipkon(nelem)+1)
-               node2=kon(ipkon(nelem)+3)
-
-            else
-               node1=kon(ipkon(nelem)+1)
-               node2=kon(ipkon(nelem)+3)
-            endif
-            omega=pi/30d0*prop(index+10)
-            rin=prop(index+8)
-            rout=prop(index+9)
-            heat=0.5*omega**2*(rout**2-rin**2)*xflow
-!
-!     influence on the temperature of node 2
-!            
-            if(xflow.gt.0d0)then
-               ieq=nacteq(0,node2)
-               if(nacteq(0,node2).ne.0)then
-                  bc(ieq)=bc(ieq)+heat
-!     
+               nodem=kon(ipkon(nelem)+2)
+               xflow=v(1,nodem)
+               if(xflow.gt.0d0) then
+                  node1=kon(ipkon(nelem)+1)
+                  node2=kon(ipkon(nelem)+3)
+               else
+                  node1=kon(ipkon(nelem)+1)
+                  node2=kon(ipkon(nelem)+3)
                endif
-            else
-               ieq=nacteq(0,node1)
-               if(nacteq(0,node1).ne.0)then
-                  bc(ieq)=bc(ieq)+heat
+               omega=pi/30d0*prop(index+10)
+               write(*,*) 'icase',icase
+               rin=prop(index+8)
+               rout=prop(index+9)
+               heat=0.5*omega**2*(rout**2-rin**2)*xflow
+!     
+!     influence on the temperature of node 2
+!     
+               if(xflow.gt.0d0)then
+                  ieq=nacteq(0,node2)
+                  if(nacteq(0,node2).ne.0)then
+                     bc(ieq)=bc(ieq)+heat
+                  endif
+               else
+                  ieq=nacteq(0,node1)
+                  if(nacteq(0,node1).ne.0)then
+                     bc(ieq)=bc(ieq)+heat
+                  endif
                endif
             endif
          endif
       enddo        
-!     
       return
       end

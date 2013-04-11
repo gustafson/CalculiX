@@ -18,7 +18,7 @@
 !
       subroutine incplas(elconloc,plconloc,xstate,xstateini,
      &  elas,emec,emec0,ithermal,icmd,beta,stre,vj,kode,
-     &  ielas,amat,t1l,dtime,time,ttime,iel,iint,nstate_,mint_,
+     &  ielas,amat,t1l,dtime,time,ttime,iel,iint,nstate_,mi,
      &  eloc,pgauss)
 !
 !     calculates stiffness and stresses for the incremental plasticity
@@ -26,7 +26,7 @@
 !     elastoplasticity, Comp. Meth. Appl. Mech. Engng., 66(1988)199-219
 !     and 68(1988)1-31)
 !
-!     icmd=3: calcutates stress at mechanical strain
+!     icmd=3: calculates stress at mechanical strain
 !     else: calculates stress at mechanical strain and the stiffness
 !           matrix
 !
@@ -42,7 +42,7 @@
       character*80 amat
 !
       integer ithermal,icmd,i,j,k,l,m,n,nt,kk(84),kode,
-     &  niso,nkin,ielas,iel,iint,nstate_,mint_,id,leximp,lend,layer,
+     &  niso,nkin,ielas,iel,iint,nstate_,mi(2),id,leximp,lend,layer,
      &  kspt,kstep,kinc,iloop
 !
       real*8 elconloc(21),elas(21),emec(6),emec0(6),beta(6),stre(6),
@@ -54,7 +54,7 @@
      &  fiso,dfiso,fkin,dfkin,fiso0,fkin0,ep,t1l,dtime,
      &  epini,a1,dsvm,xxa,xxn,vj2,vj23,
      &  cop1,cop2,fu1,fu2,fu,dcop,time,ttime,eloc(6),
-     &  xstate(nstate_,mint_,*),xstateini(nstate_,mint_,*),
+     &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  g1,g2,g3,g4,g5,g6,g7,g8,g9,g10,g11,g12,g13,g14,g15,g16,
      &  g17,g18,g28,g29,g30,g31,g32,g33,decra(5),deswa(5),serd,
      &  esw(2),ec(2),p,qtild,predef(1),dpred(1),timeabq(2),pgauss(3),
@@ -139,8 +139,9 @@ c      write(*,*) 'iel,iint ',iel,iint
             user_creep=.true.
          else
             user_creep=.false.
-            if(xxa.lt.1.d-20) xxa=1.d-20
+c            if(xxa.lt.1.d-20) xxa=1.d-20
             xxa=elconloc(3)*(ttime+dtime)**elconloc(5)
+            if(xxa.lt.1.d-20) xxa=1.d-20
             xxn=elconloc(4)
             a1=xxa*dtime
 c            a2=xxn*a1

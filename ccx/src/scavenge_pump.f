@@ -18,7 +18,7 @@
       subroutine scavenge_pump(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_)
+     &        nshcon,rhcon,nrhcon,ntmat_,mi)
 !     
 !     scavenge pump element
 !     
@@ -30,10 +30,10 @@
 !     
       integer nelem,nactdog(0:3,*),numf,node1,node2,nodem,
      &     ielprop(*),nodef(5),idirf(5),index,iflag,
-     &     ipkon(*),kon(*),nshcon(*),
+     &     ipkon(*),kon(*),nshcon(*),mi(2),
      &     nrhcon(*),ntmat_
 !     
-      real*8 prop(*),v(0:4,*),xflow,f,df(5),kappa,cp,physcon(*)
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(5),kappa,cp,physcon(*)
      &     ,dvi,shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),R
 !  
       if (iflag.eq.0) then

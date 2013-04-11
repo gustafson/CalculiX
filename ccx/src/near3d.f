@@ -37,6 +37,8 @@ c
       if(k.gt.n) then
          write(*,*) '*ERROR in near3d: neighbors requested'
          write(*,*) '       supersedes number of nodes'
+         write(*,*) '       number of neighbors requested:',k
+         write(*,*) '       number of nodes:',n
          stop
       endif
 c

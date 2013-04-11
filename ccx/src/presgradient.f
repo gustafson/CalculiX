@@ -18,7 +18,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine presgradient(iponoel,inoel,sa,sav,nk,dt,shockcoef,
-     &  dtimef,ipkon,kon,lakon,vold)
+     &  dtimef,ipkon,kon,lakon,vold,mi)
 !
 !     determining measure for the pressure gradient
 !
@@ -32,10 +32,10 @@
       character*8 lakon(*)
 !
       integer iponoel(*),inoel(3,*),nk,i,j,index,indexe,nope,
-     &  ipkon(*),kon(*),node,ielem
+     &  ipkon(*),kon(*),node,ielem,mi(2)
 !
       real*8 sa(*),sav(*),dt(*),shockcoef,dtimef,ca,sum,sumabs,pa,
-     &  vold(0:4,*)
+     &  vold(0:mi(2),*)
 !
       ca=shockcoef*dtimef
 !

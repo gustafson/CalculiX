@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine film(h,sink,temp,kstep,kinc,time,noel,npt,
-     &  coords,jltyp,field,nfield,loadtype,node,area,vold)
+     &  coords,jltyp,field,nfield,loadtype,node,area,vold,mi)
 !
 !     user subroutine film
 !
@@ -51,6 +51,10 @@
 !                        2: displacement in global y-direction
 !                        3: displacement in global z-direction
 !                        4: static pressure
+!     mi(1)              max # of integration points per element (max
+!                        over all elements)
+!     mi(2)              max degree of freedomm per node (max over all
+!                        nodes) in fields like v(0:mi(2))...
 !
 !     OUTPUT:
 !
@@ -62,9 +66,9 @@
       implicit none
 !
       character*20 loadtype
-      integer kstep,kinc,noel,npt,jltyp,nfield,node
+      integer kstep,kinc,noel,npt,jltyp,nfield,node,mi(2)
       real*8 h(2),sink,time(2),coords(3),temp,field(nfield),area,
-     &  vold(0:4,*)
+     &  vold(0:mi(2),*)
 !
 c      h(1)=10.d0*coords(2)
       h(1)=200.d0

@@ -33,7 +33,8 @@
 !
       real*8 co(3,*),csab(7),rp,zp,xi,et,xn,yn,zn,rp1,zp1,rp2,zp2,
      &  straight(9,*),zcscg(*),rcscg(*),zcs0cg(*),rcs0cg(*),distmax,
-     &  dist,ratio(8),pneigh(0:3,8),pnode(3),tolloc,xap,yap,zap
+     &  dist,ratio(8),pneigh(3,8),pnode(3),tolloc,xap,yap,zap,
+     &  x12,y12,z12,x13,y13,z13,area,typdist
 !
 !     finding for each node on the right side a corresponding
 !     triangle
@@ -133,18 +134,38 @@ c     &           (pnode(3)-co(3,nodei))**2)
       enddo
 !
 !     check whether this distance is inferior to the tolerance
+!     only for projections on the exterior border of a face
 !
-      dist=dsqrt((rp2-rp1)**2+(zp2-zp1)**2)
-c      write(*,*) '       distance: ',dist
-      if(dist.ge.tolloc) then
-         write(*,*) '*WARNING in linkdissimilar: no suitable partner'
-         write(*,*) '         face found for node', noded,'.'
-         write(*,*) '         Nodes belonging to the best partner face:'
-         write(*,*) (nodef(i),i=1,nterms)
-         write(*,*) '         3-D Euclidean distance: ',dist
-         write(*,*) 
-         ier=-1
-c         stop
+      if((((nterms.eq.4).or.(nterms.eq.8)).and.
+     &    ((xi.le.-1.d0).or.(xi.ge.1.d0).or.
+     &     (et.le.-1.d0).or.(et.ge.1.d0))).or.
+     &   (((nterms.eq.3).or.(nterms.eq.6)).and.
+     &    ((xi.le.0.d0).or.(et.le.0.d0).or.(xi+et.ge.1.d0)))) then
+!
+!        calculating a typical distance of the face
+!
+         x12=pneigh(1,2)-pneigh(1,1)
+         y12=pneigh(2,2)-pneigh(2,1)
+         z12=pneigh(3,2)-pneigh(3,1)
+         x13=pneigh(1,3)-pneigh(1,1)
+         y13=pneigh(2,3)-pneigh(2,1)
+         z13=pneigh(3,3)-pneigh(3,1)
+         area=dsqrt((y12*z13-y13*z12)**2+
+     &              (x12*z13-x13*z12)**2+
+     &              (x12*y13-x13*y12)**2)
+         typdist=dsqrt(area)
+        
+         dist=dsqrt((rp2-rp1)**2+(zp2-zp1)**2)
+         if(dist.ge.typdist/10.d0) then
+            write(*,*) '*WARNING in linkdissimilar: no suitable partner'
+            write(*,*) '         face found for node', noded,'.'
+            write(*,*) 
+     &      '         Nodes belonging to the best partner face:'
+            write(*,*) (nodef(i),i=1,nterms)
+            write(*,*) '         3-D Euclidean distance: ',dist
+            write(*,*) 
+            ier=-1
+         endif
       endif
 !     
       return

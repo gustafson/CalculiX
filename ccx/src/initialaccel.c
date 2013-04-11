@@ -36,7 +36,7 @@
 	      namta,nam,ampli,&time,&reltime,ttime,&dtime,ithermal,nmethod,
               xbounold,xboun,xbounact,iamboun,nboun,
 	      nodeboun,ndirboun,nodeforc,ndirforc,istep,&iinc,
-	      co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload));
+	      co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload,mi));
     
     time=0.;
     dtime=1.;
@@ -55,7 +55,7 @@
        ikforc,ilforc,xforcact,nforc,cam,ielmat,&nteq,prop,ielprop,
        nactdog,nacteq,nodeboun,ndirboun,&network,rhcon,
        nrhcon,ipobody,ibody,xbodyact,nbody,iviewfile,jobnamef,ctrl,
-       xloadold,&reltime,nmethod,set);}
+       xloadold,&reltime,nmethod,set,mi,istartset,iendset,ialset,nset);}
 
     if((icascade==2)||(ncont!=0)){
 	/**nmpc=nmpcref;*/
@@ -73,7 +73,7 @@
 	     co,vold,ielmat,cs,elcon,istep,&iinc,&iit,ncmat_,ntmat_,
 	     ifcont1,ifcont2,&ne0,vini,nmethod,nmpc,&mpcfree,&memmpc_,
 	     &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
-             iperturb,ikboun,nboun);
+	     iperturb,ikboun,nboun,mi,imastop);
 	icascade=1;
     }
     newstep=0;
@@ -81,7 +81,7 @@
 		       nmpc,ikboun,ilboun,nboun,xbounold,aux,iaux,
 		       &maxlenmpc,ikmpc,ilmpc,&icascade,
 		       kon,ipkon,lakon,ne,&reltime,&newstep,xboun,fmpc,
-                       &iit,&idiscon,&ncont,trab,ntrans,ithermal));
+                       &iit,&idiscon,&ncont,trab,ntrans,ithermal,mi));
     if((icascade==2)||(ncont!=0)){
 	/*nmpcref=*nmpc;*/
 	memmpcref_=memmpc_;mpcfreeref=mpcfree;
@@ -96,14 +96,14 @@
               labmpc,nk,&memmpc_,&icascade,&maxlenmpc,
               kon,ipkon,lakon,ne,nnn,nactdof,icol,jq,&irow,isolver,
 	      neq,nzs,nmethod,&f,&fext,&b,&aux2,&fini,&fextini,
-	      &adb,&aub,ithermal,iperturb,mass);
+	      &adb,&aub,ithermal,iperturb,mass,mi);
     
     iout=-1;
     ielas=1;
 
-    fn=NNEW(double,4**nk);
-    stx=NNEW(double,6**mint_**ne);
-    if(*ithermal>1) qfx=NNEW(double,3**mint_**ne);
+    fn=NNEW(double,mt**nk);
+    stx=NNEW(double,6*mi[0]**ne);
+    if(*ithermal>1) qfx=NNEW(double,3*mi[0]**ne);
 
     FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,vold,stn,inum,stx,
 	  elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -113,7 +113,7 @@
 	  ndirboun,xbounold,nboun,ipompc,
 	  nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,&bet,
           &gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
-	  xstateini,xstiff,xstate,npmat_,epn,matname,mint_,&ielas,&icmd,
+	  xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
           ncmat_,nstate_,sti,vini,ikboun,ilboun,ener,enern,sti,xstaten,
           eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
           ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
@@ -154,7 +154,7 @@
 	      ielmat,ielorien,norien,orab,ntmat_,
 	      t0,t1act,ithermal,prestr,iprestr,vold,iperturb,sti,
 	      nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
-	      xstiff,npmat_,&dtime,matname,mint_,
+	      xstiff,npmat_,&dtime,matname,mi,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
 	      physcon,shcon,nshcon,cocon,ncocon,ttime,&time,istep,&iinc,
 		      &coriolis,ibody,xloadold,&reltime,veold));
@@ -164,13 +164,16 @@
       /* error occurred in mafill: storing the geometry in frd format */
 
       ++*kode;
-      ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
+      if(strcmp1(&filab[1044],"ZZS")==0){
+	  neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
+      }
       FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,
            een,t1,fn,ttime,epn,ielmat,matname,enern,xstaten,nstate_,istep,
-           &iinc,iperturb,ener,mint_,output,ithermal,qfn,&mode,&noddiam,
+           &iinc,iperturb,ener,mi,output,ithermal,qfn,&mode,&noddiam,
            trab,inotr,ntrans,orab,ielorien,norien,description,
-	   ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs));
-      free(ipneigh);free(neigh);
+	   ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs,
+           set,nset,istartset,iendset,ialset));
+      if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
       
       FORTRAN(stop,());
       
@@ -282,7 +285,11 @@
 
     /* storing the acceleration accold */
     
-    for(k=0;k<4**nk;++k){
+//    int n1,n2;
+    for(k=0;k<mt**nk;++k){
+//	n1=(int)((k+0.5)/4);
+//	n2=k-4*n1;
+//	if(nactdof[k]!=0){accold[5*n1+n2]=b[nactdof[k]-1];}
 	if(nactdof[k]!=0){accold[k]=b[nactdof[k]-1];}
     }
 

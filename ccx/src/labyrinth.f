@@ -17,7 +17,8 @@
 !     
       subroutine labyrinth(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,physcon,co,dvi,numf,vold,set,kon,ipkon)
+     &     nodef,idirf,df,cp,R,physcon,co,dvi,numf,vold,set,
+     &     kon,ipkon,mi)
 !     
 !     labyrinth element
 !     
@@ -28,17 +29,17 @@
       character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,
-     &     inv,kgas,n,iaxial,nodea,nodeb,ipkon(*),kon(*)
+     &     ielprop(*),nodef(4),idirf(4),index,iflag,mi(2),
+     &     inv,kgas,n,iaxial,nodea,nodeb,ipkon(*),kon(*),i
 !
-      real*8 prop(*),v(0:4,*),xflow,f,df(4),kappa,R,a,d,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,a,d,
      &     p1,p2,T1,Aeff,C1,C2,C3,cd,cp,physcon(3),p2p1,km1,dvi,
      &     kp1,kdkm1,tdkp1,km1dk,x,y,ca1,cb1,ca2,cb2,dT1,alambda,
      &     rad,reynolds,pi,ppkrit,co(3,*),
      &     carry_over,lc,hst,e,szt,num,denom,t,s,b,h,cdu,
      &     cd_radius,cst,dh,cd_honeycomb,cd_lab,bdh,
      &     pt0zps1,cd_1spike,cdbragg,rzdh,
-     &     cd_correction,p1p2,xflow_oil,T2,vold(0:4,*)
+     &     cd_correction,p1p2,xflow_oil,T2,vold(0:mi(2),*)
 !     
       pi=4.d0*datan(1.d0)
       e=2.718281828459045d0
@@ -64,15 +65,15 @@
           if(lakon(nelem)(2:5).ne.'LABF') then
              t=prop(index+1)
              s=prop(index+2)
-             d=prop(index+3)
-             n=int(prop(index+4))
-             b=prop(index+5)
-             h=prop(index+6)
-!     hc=prop(index+7)
-             lc=prop(index+7)
-             rad=prop(index+8)
-             X=prop(index+9)
-             Hst=prop(index+10)
+             iaxial=int(prop(index+3))
+             d=prop(index+4)
+             n=int(prop(index+5))
+             b=prop(index+6)
+             h=prop(index+7)
+             lc=prop(index+8)
+             rad=prop(index+9)
+             X=prop(index+10)
+             Hst=prop(index+11)
 !
              A=pi*D*s
 !
@@ -209,14 +210,15 @@
             kappa=(cp/(cp-R))
             t=prop(index+1)
             s=prop(index+2)
-            d=prop(index+3)
-            n=int(prop(index+4))
-            b=prop(index+5)
-            h=prop(index+6)
-            lc=prop(index+7)
-            rad=prop(index+8)
-            X=prop(index+9)
-            Hst=prop(index+10)
+            iaxial=int(prop(index+3))
+            d=prop(index+4)
+            n=int(prop(index+5))
+            b=prop(index+6)
+            h=prop(index+7)
+            lc=prop(index+8)
+            rad=prop(index+9)
+            X=prop(index+10)
+            Hst=prop(index+11)
             A=pi*D*s
 !
 !     Flexible labyrinth for coupled calculations
@@ -250,7 +252,6 @@
          dT1=dsqrt(T1)
 !     
          Aeff=A
-C         e=2.718281828459045d0
 !     
 !     honeycomb stator correction
 !     
@@ -598,7 +599,7 @@ C         e=2.718281828459045d0
           write(1,56)'       Inlet node  ',node1,':   Tt1=',T1,
      &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
 
-            write(1,*)'             element S    ',set(numf+nelem)(1:20)
+            write(1,*)'             element S    ',set(numf)(1:20)
             write(1,57)'             eta= ',dvi,'kg/(m*s), Re= ' ,
      &           reynolds,
      &', Cd_radius= ',cd_radius,', Cd_honeycomb= ', 1+cd_honeycomb/100
@@ -628,7 +629,7 @@ C         e=2.718281828459045d0
             write(1,56)'       Inlet node  ',node2,':    Tt1= ',T1,
      &           'K, Ts1= ',T1,'K, Pt1= ',P1/1E5, 'Bar' 
          
-            write(1,*)'             element S    ',set(numf+nelem)(1:20)
+            write(1,*)'             element S    ',set(numf)(1:20)
             write(1,57)'             eta=',dvi,'kg/(m*s), Re= '
      &           ,reynolds,
      & ', Cd_radius= ',cd_radius,', Cd_honeycomb= ',1+cd_honeycomb/100       

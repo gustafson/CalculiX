@@ -18,10 +18,10 @@
 !     
       subroutine gaspipe_fanno(node1,node2,nodem,nelem,lakon,kon,
      &        ipkon,nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set
-     &        ,shcon,nshcon,rhcon,nrhcon,ntmat_,co,vold)
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,
+     &        shcon,nshcon,rhcon,nrhcon,ntmat_,co,vold,mi)
 !     
-!     pipe with friction losses (Fanno Formulas) GAPI 
+!     pipe with friction losses (Fanno Formulas) GAPF 
 !     
       implicit none
 !     
@@ -31,27 +31,23 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(5),idirf(5),index,iflag,
-     &     inv,ipkon(*),kon(*),case,kgas,k_oil
-     &     ,nshcon(*),nrhcon(*),ntmat_,i,nodea,nodeb,nodec,iaxial
+     &     inv,ipkon(*),kon(*),icase,kgas,k_oil
+     &     ,nshcon(*),nrhcon(*),ntmat_,i,mi(2),nodea,nodeb,
+     &     nodec,iaxial
+          
 !
-      real*8 prop(*),v(0:4,*),xflow,f,df(5),kappa,R,a,d,l,
-     &     p1,p2,T1,T2,Tt1,Tt2,pt1,pt2,cp,physcon(*),p2p1,km1,dvi,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(5),kappa,R,a,d,l,
+     &     p1,p2,T1,T2,Tt1,Tt2,pt1,pt2,cp,physcon(3),p2p1,km1,dvi,
      &     kp1,kdkm1,reynolds,pi,e,lambda,lld,kdkp1,T2dTt2,
      &     T1dTt1,X_t1dTt1,X_t2dTt2,X2_den,X1_den,
      &     X1,X2,B1,B2,C1,C2,tdkp1,
      &     pt2zpt1,ks,form_fact,xflow_oil,Tt1dT1,Tt2dT2,
      &     Pt2zPt1_c,qred_crit,l_neg,Qred,
      &     expon1,expon2,cte,term1,term2,term3,term4,term5,term6,
-     &     phi,M1,M2,qred2,qred1,qred_max1
-     &     ,shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),radius,co(3,*),
-     &     vold(0:4,*),initial_radius,ps1,ps2,l_initial
+     &     term,phi,M1,M2,qred2,qred1,qred_max1,qred_crit_out,co(3,*),
+     &     shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),vold(0:mi(2),*),
+     &     radius,initial_radius,l_initial
 !     
-
-!     
-C      write(*,*) ''
-C      if(lakon(nelem)(1:6).eq.'DGAPIF') then
-C         write(*,*) nelem,lakon(nelem)(1:6)
-C      endif
 !
       if (iflag.eq.0) then
          identity=.true.
@@ -69,12 +65,7 @@ C      endif
          crit=.false.
 !
          pi=4.d0*datan(1.d0)
-!
-       write(*,*) ''
-      if((lakon(nelem)(2:6).eq.'GAPIF').and.
-     &   (lakon(nelem)(2:7).ne.'GAPIF2')) then
-         write(*,*) nelem,lakon(nelem)(1:6)
-      endif    
+!     
          index=ielprop(nelem)
          kappa=(cp/(cp-R))
          A=prop(index+1)
@@ -87,30 +78,26 @@ C      endif
             l_neg=l
          endif
          ks=prop(index+4)
-         if(lakon(nelem)(2:6).eq.'GAPIA') then
-            case=0
-         elseif(lakon(nelem)(2:6).eq.'GAPII') then
-            case=1
+         if(lakon(nelem)(2:6).eq.'GAPFA') then
+            icase=0
+         elseif(lakon(nelem)(2:6).eq.'GAPFI') then
+            icase=1
          endif
-         
-         
-!         write(*,*) 'case',case
          form_fact=prop(index+5)
          xflow_oil=prop(index+6)
          k_oil=int(prop(index+7))
 !
-         if((lakon(nelem)(2:6).eq.'GAPIF').and.
-     &        (lakon(nelem)(2:7).ne.'GAPIF2')) then
-            
-            case=0
+         if((lakon(nelem)(2:6).eq.'GAPFF').and.
+     &        (lakon(nelem)(2:7).ne.'GAPFF2')) then
+!            
+            icase=0
             nodea=int(prop(index+1))
             nodeb=int(prop(index+2))
             iaxial=int(prop(index+3))
             radius=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &           co(1,nodea)-vold(1,nodea))**2)
-
+!
             initial_radius=dsqrt((co(1,nodeb)-co(1,nodea))**2)
-            write(*,*) 'initial radius',initial_radius,'radius',radius
 
             if(iaxial.ne.0) then
               A=pi*radius**2/iaxial
@@ -129,10 +116,10 @@ C      endif
             form_fact=prop(index+6)
             xflow_oil=prop(index+7)
             k_oil=int(prop(index+8))
-C
-         elseif (lakon(nelem)(2:7).eq.'GAPIF2') then
+!
+         elseif (lakon(nelem)(2:7).eq.'GAPFF2') then
             write(*,*) nelem,lakon(nelem)(1:6)
-            case=0
+            icase=0
             nodea=int(prop(index+1))
             nodeb=int(prop(index+2))
             nodec=int(prop(index+3))
@@ -140,7 +127,6 @@ C
             radius=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &           co(1,nodea)-vold(1,nodea))**2)
             initial_radius=dsqrt((co(1,nodeb)-co(1,nodea))**2)
-            write(*,*) 'initial radius',initial_radius,'radius',radius
             d=2*radius
            if(iaxial.ne.0) then
               A=pi*radius**2/iaxial
@@ -150,7 +136,6 @@ C
             l_initial=dsqrt((co(2,nodec)-co(2,nodeb))**2)
             l=dsqrt((co(2,nodec)+vold(2,nodec)-
      &           co(2,nodeb)-vold(2,nodeb))**2)
-            write(*,*) 'initial length',l_initial,'length',l
             if(l.lt.0d0) then
                l_neg=l
                l=abs(l)
@@ -162,9 +147,10 @@ C
             xflow_oil=prop(index+7)
             k_oil=int(prop(index+8))
          endif
-!
+
          pt1=v(2,node1)
          pt2=v(2,node2)
+         
 !
          if(pt1.ge.pt2) then
             inv=1
@@ -178,20 +164,24 @@ C
             Tt2=v(0,node1)+physcon(1)
          endif
 !
+         write(*,*) pt1,pt2,Tt1,Tt2
+         
          p2p1=pt2/pt1
          km1=kappa-1.d0
          kp1=kappa+1.d0
          kdkm1=kappa/km1
          tdkp1=2.d0/kp1
          C2=tdkp1**kdkm1
-!             
+!        
+!     incompressible flow
+         xflow=inv*A*dsqrt(d/l*2*Pt1/(R*Tt1)*(pt1-pt2))
          if(p2p1.gt.C2) then
-            xflow=inv*pt1*a*dsqrt(2.d0*kdkm1*p2p1**(2.d0/kappa)
+           xflow=inv*pt1*a*dsqrt(2.d0*kdkm1*p2p1**(2.d0/kappa)
      &           *(1.d0-p2p1**(1.d0/kdkm1))/r)/dsqrt(Tt1)
          else
             xflow=inv*pt1*a*dsqrt(kappa/r)*tdkp1**(kp1/(2.d0*km1))/
      &           dsqrt(Tt1)
-          endif       
+         endif
 !
 !     calculation of the dynamic viscosity 
 !     
@@ -201,30 +191,32 @@ C
          endif  
 !
          reynolds=dabs(xflow)*d/(dvi*a)
-         if(reynolds.lt.100) then
-            reynolds = 100
-         endif         
 !
          call friction_coefficient(l_neg,d,ks,reynolds,form_fact,lambda)
+         xflow=inv*A*dsqrt(d/(lambda*l)*2*Pt1/(R*Tt1)*(pt1-pt2))
 !
-         call pt2zpt1_crit(pt2,pt1,Tt1,lambda,kappa,r,l,d,A,iflag,
-     &     inv,pt2zpt1_c,qred_crit,crit,qred_max1,case)
-! 
+         call pt2zpt1_crit(pt2,pt1,Tt1,Tt2,lambda,kappa,r,l,d,A,iflag,
+     &     inv,pt2zpt1_c,qred_crit,crit,qred_max1,icase)
+!
          Qred=dabs(xflow)*dsqrt(Tt1)/(A*pt1)
 !
          if (crit) then
             xflow=0.5*inv*Qred_crit*Pt1*A/dsqrt(Tt1)
-            if(case.eq.1) then
+            if(icase.eq.1) then
 !     
-               call ts_calc(xflow,Tt1,pt1,kappa,r,a,T1,case)
+               call ts_calc(xflow,Tt1,pt1,kappa,r,a,T1,icase)
                if (inv.eq.1) then 
                   v(3,node1)=T1
                   v(3,node2)=T1
-                  v(0,node2)=T1*(1.d0+km1/(2*kappa))
+                  if(nactdog(0,node2).eq.1) then
+                     v(0,node2)=T1*(1.d0+km1/(2*kappa))
+                  endif
                else
                   v(3,node2)=T1
                   v(3,node1)=T1
-                  v(0,node1)=T1*(1.d0+km1/(2*kappa))  
+                  if(nactdog(0,node1).eq.1) then
+                     v(0,node1)=T1*(1.d0+km1/(2*kappa)) 
+                  endif
                endif
             endif
          elseif(Qred.gt.Qred_crit) then
@@ -232,6 +224,7 @@ C
          else
             xflow=inv*Qred*pt1*A/dsqrt(Tt1)
          endif
+!         xflow=0.5d0*dabs(xflow)
 !
       elseif (iflag.eq.2)then
 !
@@ -259,18 +252,18 @@ C
             l_neg=l
          endif
          ks=prop(index+4)
-         if(lakon(nelem)(2:6).eq.'GAPIA') then
-            case=0
-         elseif(lakon(nelem)(2:6).eq.'GAPII') then
-            case=1
+         if(lakon(nelem)(2:6).eq.'GAPFA') then
+            icase=0
+         elseif(lakon(nelem)(2:6).eq.'GAPFI') then
+            icase=1
          endif
          form_fact=prop(index+5)
          xflow_oil=prop(index+6)
          k_oil=int(prop(index+7))
 !
-         if((lakon(nelem)(2:6).eq.'GAPIF').and.
-     &        (lakon(nelem)(2:7).ne.'GAPIF2')) then
-            case=0
+                  if((lakon(nelem)(2:6).eq.'GAPFF').and.
+     &        (lakon(nelem)(2:7).ne.'GAPFF2')) then
+            icase=0
             nodea=int(prop(index+1))
             nodeb=int(prop(index+2))
             iaxial=int(prop(index+3))
@@ -294,9 +287,9 @@ C
             form_fact=prop(index+6)          
             xflow_oil=prop(index+7)
             k_oil=int(prop(index+8))
-C
-         elseif (lakon(nelem)(2:7).eq.'GAPIF2') then
-            case=0
+!
+         elseif (lakon(nelem)(2:7).eq.'GAPFF2') then
+            icase=0
             nodea=int(prop(index+1))
             nodeb=int(prop(index+2))
             nodec=int(prop(index+3))
@@ -325,29 +318,23 @@ C
             k_oil=int(prop(index+8))
          endif
 
-         xflow=v(1,nodem)
          pt1=v(2,node1)
          pt2=v(2,node2)
+         xflow=v(1,nodem)
 !
          if(xflow.ge.0d0) then
             inv=1
-            xflow=v(1,nodem)
             Tt1=v(0,node1)+physcon(1)
-            if(case.eq.0) then
+            if(icase.eq.0) then
                Tt2=Tt1
             else
                Tt2=v(0,node2)+physcon(1)
             endif
 !
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,case)
+            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,icase)
 !
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,case)
-!     Computing the static pressures
-            ps1=pt1*(T1/Tt1)**(kappa/(kappa-1))
-            ps2=pt2*(T2/Tt2)**(kappa/(kappa-1))
-            v(4,node1)=ps1
-            v(4,node2)=ps2
-C 
+            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,icase)
+!     
             nodef(1)=node1
             nodef(2)=node1
             nodef(3)=nodem
@@ -359,21 +346,16 @@ C
             pt2=v(2,node1)
             xflow=-v(1,nodem)
             Tt1=v(0,node2)+physcon(1)
-
-            if(case.eq.0) then
+            if(icase.eq.0) then
                Tt2=Tt1
             else
                Tt2=v(0,node1)+physcon(1)
             endif
 !
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,case)
+            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,icase)
 !
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,case)
-!     computing the static pressures
-            p1=pt1*(T1/Tt1)**(kappa/(kappa-1))
-            p2=pt2*(T2/Tt2)**(kappa/(kappa-1))
-            v(4,node1)=p2
-            v(4,node2)=p1
+            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,icase)
+!
             nodef(1)=node2
             nodef(2)=node2
             nodef(3)=nodem
@@ -397,13 +379,7 @@ C
            endif        
 !           
            reynolds=dabs(xflow)*d/(dvi*a)
-!           write(*,*) 'Reynolds',reynolds
-           
-           if(reynolds.lt.100) then
-              reynolds = 100
-           endif
-
-        
+!
 !     definition of the friction coefficient for 2 phase flows and pure air
 !     
 !     Friedel's Method
@@ -416,7 +392,7 @@ C
                write(*,*) ' check element ',nelem,' definition'
                write(*,*) ' Current calculation stops here'
                stop
-            elseif(xflow_oil.eq.0) then
+            elseif(xflow_oil.eq.0.d0) then
                write(*,*) '*WARNING:in gaspipe.f'
                write(*,*) ' using two phase flow'
                write(*,*) ' the oil mass flow rate is NULL'
@@ -427,9 +403,11 @@ C
             else
                call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
-     &              v,nactdog,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
-     &              shcon,rhcon,ntmat_)
-!               write(*,*) 'lambda',lambda
+     &              v,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
+     &              shcon,rhcon,ntmat_,mi)
+!
+               lambda=lambda*phi
+!
             endif
 !     
 !     Alber's Method
@@ -451,12 +429,12 @@ C
                call friction_coefficient(l_neg,d,ks,reynolds,form_fact,
      &              lambda)
             else
-               write(*,*) 'oil ALBERS'
                call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
-     &              v,nactdog,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
-     &              shcon,rhcon,ntmat_)
+     &              v,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
+     &              shcon,rhcon,ntmat_,mi)
 !     
+
                call friction_coefficient(l_neg,d,ks,reynolds,form_fact,
      &              lambda)
 !
@@ -468,55 +446,81 @@ C
 !     
          else
 !     
-!
             phi=1.d0
             call friction_coefficient(l_neg,d,ks,reynolds,form_fact,
      &           lambda)
          endif
 !     
-         call pt2zpt1_crit(pt2,pt1,Tt1,lambda,kappa,r,l,d,A,iflag,
-     &     inv,pt2zpt1_c,qred_crit,crit,qred_max1,case)
+         call pt2zpt1_crit(pt2,pt1,Tt1,Tt2,lambda,kappa,r,l,d,A,iflag,
+     &     inv,pt2zpt1_c,qred_crit,crit,qred_max1,icase)
+
+         Qred1=xflow*dsqrt(Tt1)/(A*Pt1)
 
          if(dabs(xflow)*dsqrt(Tt1)/(A*Pt1).gt.qred_max1) then
             crit=.true.
          endif
+!
+         Qred2=xflow*dsqrt(Tt2)/(A*Pt2)
+         if(icase.eq.0) then
+            qred_crit_out=dsqrt(kappa/R)*(2/(kappa+1))**(0.5d0*
+     &           (kappa+1)/(kappa-1))
+         else
+            qred_crit_out=R**(-0.5d0)*(2/(kappa+1))**(0.5d0*
+     &           (kappa+1)/(kappa-1))
+         endif
 !     
 !     definition of the coefficients 
+!     
+            lld=lambda*l/d
 !
-         lld=lambda*l/(d)
-         Qred1=xflow*dsqrt(Tt1)/(A*P1)
-         Qred2=xflow*dsqrt(Tt2)/(A*P2)
+         M2=dsqrt(2/km1*((Tt2/T2)-1))
+         if(icase.eq.0) then
+            if((M2.lt.1)) then
+               crit=.false.
+               if((M2.ge.1.d0).or.(dabs(M2-1).lt.1E-5)) then
+                  pt2=pt1*pt2zpt1_c
+               endif
+            endif
+         elseif (icase.eq.1) then
+            if(M2.lt.1/dsqrt(kappa)) then
+               crit=.false.
+            else
+               crit=.true.
+            endif
+         endif
 !
 !     adiabatic case
 !     
-         if(case.eq.0) then
+         if(icase.eq.0) then
+!
+            T2dTt2=T2/Tt2
+            Tt2dT2=1.d0/T2dTt2
+            X_T2dTt2=T2dTt2**(2*kdkm1)
+            T1dTt1=T1/Tt1
+            Tt1dT1=1.d0/T1dTt1
+            X_T1dTt1=T1dTt1**(2*kdkm1)
+!     
+            X2_den=pt2**2*X_T2dTt2
+            X2=t2**2/X2_den
+            X1_den=pt1**2*X_T1dTt1
+            X1=T1**2/X1_den   
+!     
+            C1=2.d0*cp*A**2*X1_den*(-1.d0+2.d0*kdkm1*T1dTt1)
+     &           -2.d0*xflow**2*R**2*T1
+!     
+            C2=2.d0*cp*A**2*X2_den*(-1.d0+2.d0*kdkm1*T2dTt2)
+     &           -2.d0*xflow**2*R**2*T2
+!     
+            expon1=(kappa+1)/km1
+            expon2=2*kappa/(km1)
+!     
+            cte=0.5d0*(kappa+1)/kappa
+!
+            term1=pt1**2*T1**expon1*Tt1**(-expon2)*A**2
+!
             if(.not.crit) then
-
-               T2dTt2=T2/Tt2
-               Tt2dT2=1.d0/T2dTt2
-               X_T2dTt2=T2dTt2**(2*kdkm1)
-               T1dTt1=T1/Tt1
-               Tt1dT1=1.d0/T1dTt1
-               X_T1dTt1=T1dTt1**(2*kdkm1)
-!     
-               X2_den=pt2**2*X_T2dTt2
-               X2=t2**2/X2_den
-               X1_den=pt1**2*X_T1dTt1
-               X1=T1**2/X1_den   
-!     
-               C1=2.d0*cp*A**2*X1_den*(1.d0-2.d0*kdkm1*(Tt1dT1-1.d0))
-     &              +2.d0*xflow**2*R**2*T1
-!     
-               C2=2.d0*cp*A**2*X2_den*(1.d0-2.d0*kdkm1*(Tt2dT2-1.d0))
-     &              +2.d0*xflow**2*R**2*T2
-!     
-               expon1=(kappa+1)/km1
-               expon2=2*kappa/(km1)
-!     
-               cte=0.5d0*(kappa+1)/kappa
-!     
                term1=pt1**2*T1**expon1*Tt1**(-expon2)*A**2
-               term2=pt2**2*T2**expon1*Tt2**(-expon2)*A**2
+               term2=pt2**2*T2**expon1*Tt2**(-expon2)*A**2        
 !     
 
 !     simplified version
@@ -559,7 +563,7 @@ C
 !     
 !     mass flow
 !     
-               df(3)=-2.d0/(R*xflow**3)*(term1-term2)
+               df(3)=-2.d0/(R*(inv*xflow)**3)*(term1-term2)
      &              +B2/C2*(-2.d0*inv*xflow*R*R*T2**2.d0)
      &              +B1/C1*(-2.d0*inv*xflow*R*R*T1**2.d0)
 !     
@@ -577,21 +581,29 @@ C
      &              *(1.d0-2.d0*kdkm1*(Tt2-T2)/Tt2))
                
             else
-!     
-!               pt1=pt2/pt2zpt1_c
-               f=xflow*dsqrt(Tt1)/pt1-A*qred_max1
+!
+               term=kappa*term1/(xflow**2*R)
+               B1=expon1*1/T1*(1/kappa*term-1)+cte*1/T1
+               f=1/kappa*(term1-1)+cte*(log(T1dTt1)-log(2/kp1*term))
+     &              -lld
+     &              +b1/c1*(2*cp*A**2*(Tt1-T1)
+     &              *X1_den-xflow**2*R**2*T1**2)
 !     
 !     pressure node1
 !     
-               df(1)=-xflow*dsqrt(Tt1)/pt1**2
+               df(1)=2/pt1*(1/kappa*term-cte)
+     &              +B1/C1*(4.d0*cp*A**2*(Tt1-T1)*pt1*X_T1dTt1)
 !     
 !     temperature node1
 !     
-               df(2)=0.5d0*xflow/(pt1*dsqrt(Tt1))
+               df(2)=expon2*1/Tt1*(-1/kappa*term+1)-cte*1/Tt1
+     &              +b1/c1*(2*cp*A**2*X1_den
+     &              *(1.d0-2.d0*kdkm1*(Tt1-T1)/Tt1))
 !     
 !     mass flow
 !     
-               df(3)=inv*dsqrt(Tt1)/pt1
+               df(3)=2.d0/(inv*xflow)*(-term/kappa+cte)
+     &              +B1/C1*(-2.d0*inv*xflow*R*R*T1**2.d0)
 !     
 !     pressure node2
 !     
@@ -600,14 +612,11 @@ C
 !     temperature node2
 !     
                df(5)=0.d0
-!     
             endif
 !     
-!     isothermal case
+!     isothermal icase
 !     
-         elseif(case.eq.1) then
-            write(*,*) 'gaspipe_isothermal'
-            if(.not.crit) then
+         elseif(icase.eq.1) then
                T2dTt2=T2/Tt2
                Tt2dT2=1.d0/T2dTt2
                X_T2dTt2=T2dTt2**(2*kdkm1)
@@ -637,6 +646,7 @@ C
                term5=T1**(expon1)*Tt1**(-expon2)*(pt1**2*A**2)
                term6=T2**(expon1)*Tt2**(-expon2)*(pt2**2*A**2)
 !
+            if(.not.crit) then
                B1=1/(R*xflow**2)*term1*expon1/T1
      &              -expon1/T1   
 !     
@@ -687,76 +697,40 @@ C
      &              *(1.d0-2.d0*kdkm1*(Tt2-T2)/Tt2))
                
             else
-!
-C               f=xflow*dsqrt(Tt1)/pt1-A*qred_max1
-!     
-!     pressure node1
-!     
-C               df(1)=-xflow*dsqrt(Tt1)/pt1**2
-!     
-!     temperature node1
-!     
-C               df(2)=0.5d0*xflow/(pt1*dsqrt(Tt1))
-!     
-!     mass flow
-!     
-C               df(3)=inv*dsqrt(Tt1)/pt1
-!     
-!     pressure node2
-!     
-C               df(4)=0.d0
-!     
-!     temperature node2
-!     
-C               df(5)=0.d0
-!
+               term=term1/(xflow**2*R)
+               B1=expon1/T1*(term-1)
 !     alternate critical equation
 !  
-               f=1/(R*xflow**2)*(term1-term2)
-     &              +(-log(term5)+log(kappa))            
+               f=term-1-log(term)            
      &              -lld 
-C     &              +b2/c2*(2*cp*A**2*(Tt2-T2)
-C     &              *X2_den-xflow**2*R**2*T2**2)
      &              +b1/c1*(2*cp*A**2*(Tt1-T1)
      &              *X1_den-xflow**2*R**2*T1**2)
 !     
 !     pressure node1
 !     
-               df(1)=1/(R*xflow**2)*(term1*2/pt1)
-     &              +(-(2/pt1))
+               df(1)=2/pt1*(term-1)
      &              +B1/C1*(4.d0*cp*A**2*(Tt1-T1)*pt1*X_T1dTt1)
 !     
 !     temperature node1
 !     
-               df(2)=1/(R*xflow**2)*term1*(-expon2)/Tt1
-     &              +(expon2/Tt1)            
+               df(2)=expon2/Tt1*(-term+1)            
      &              +b1/c1*(2*cp*A**2*X1_den
      &              *(1.d0-2.d0*kdkm1*(Tt1-T1)/Tt1))
 !     
 !     mass flow
 !     
-               df(3)=-2.d0/(R*xflow**3)*(term1-kappa)
-C     &              +B2/C2*(-2.d0*inv*xflow*R*R*T2**2.d0)
+               df(3)=2/xflow*(-term+1)
      &              +B1/C1*(-2.d0*inv*xflow*R*R*T1**2.d0)
 !     
 !     pressure node2
 !     
                df(4)=0.d0
-C                    1/(R*xflow**2)*(-term2*2/pt2)
-C     &              +(2/pt2)
-C     &              +B2/C2*(4.d0*cp*A**2*(Tt2-T2)*pt2*X_T2dTt2)
 !     
 !     
 !     temperature node2
 !     
                df(5)=0.d0
-C     &              1/(R*xflow**2)*term2*(expon2/Tt2)
-C     &              +(-expon2/Tt2)            
-C     &              +b2/c2*(2*cp*A**2*X2_den
-C     &              *(1.d0-2.d0*kdkm1*(Tt2-T2)/Tt2))
-   
-              
-     
+!     
             endif
          endif
 !
@@ -784,10 +758,10 @@ C     &              *(1.d0-2.d0*kdkm1*(Tt2-T2)/Tt2))
             l_neg=l
          endif
          ks=prop(index+4)
-         if(lakon(nelem)(2:6).eq.'GAPIA') then
-            case=0
-         elseif(lakon(nelem)(2:6).eq.'GAPII') then
-            case=1
+         if(lakon(nelem)(2:6).eq.'GAPFA') then
+            icase=0
+         elseif(lakon(nelem)(2:6).eq.'GAPFI') then
+            icase=1
          endif
          form_fact=prop(index+5)
          xflow_oil=prop(index+6)
@@ -800,31 +774,31 @@ C     &              *(1.d0-2.d0*kdkm1*(Tt2-T2)/Tt2))
             inv=1
             xflow=v(1,nodem)
             Tt1=v(0,node1)+physcon(1)
-            if(case.eq.0) then
+            if(icase.eq.0) then
                Tt2=Tt1
             else
                Tt2=v(0,node2)+physcon(1)
             endif
 !      
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,case)
+            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,icase)
 !
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,case)
+            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,icase)
 !     
          else
             inv=-1
             pt1=v(2,node2)
             pt2=v(2,node1)
             xflow=v(1,nodem)
-           
+!           
             Tt1=v(0,node2)+physcon(1)
-            if(case.eq.0) then
+            if(icase.eq.0) then
                Tt2=Tt1
             else
                Tt2=v(0,node1)+physcon(1)
             endif
-               
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,case)
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,case)
+!               
+            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,icase)
+            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,icase)
 !     
             nodef(1)=node2
             nodef(2)=node2
@@ -842,10 +816,7 @@ C     &              *(1.d0-2.d0*kdkm1*(Tt2-T2)/Tt2))
             call dynamic_viscosity(kgas,T1,dvi)
          endif
 ! 
-         reynolds=dabs(xflow)*d/(dvi*a)    
-         if(reynolds.lt.100.d0) then
-            reynolds= 100.d0
-         endif
+         reynolds=dabs(xflow)*d/(dvi*a)
 !     
 !     definition of the friction coefficient for 2 phase flows and pure air
 !     
@@ -870,12 +841,13 @@ C     &              *(1.d0-2.d0*kdkm1*(Tt2-T2)/Tt2))
             else
                call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
-     &              v,nactdog,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
-     &              shcon,rhcon,ntmat_)
+     &              v,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
+     &              shcon,rhcon,ntmat_,mi)
+!
+               call friction_coefficient(l_neg,d,ks,reynolds,form_fact,
+     &              lambda)
 !
             endif
-!     
-!     Alber's Method
 !     
          elseif (lakon(nelem)(7:7).eq.'A') then
             if((k_oil.lt.0).or.(k_oil.gt.12)) then
@@ -894,16 +866,13 @@ C     &              *(1.d0-2.d0*kdkm1*(Tt2-T2)/Tt2))
                call friction_coefficient(l_neg,d,ks,reynolds,form_fact,
      &              lambda)
             else
-               write(*,*) 'oil ALBERS'
                call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
-     &              v,nactdog,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
-     &              shcon,rhcon,ntmat_)
+     &              v,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
+     &              shcon,rhcon,ntmat_,mi)
 !     
                call friction_coefficient(l_neg,d,ks,reynolds,form_fact,
      &              lambda)
-!     
-               lambda=lambda*phi
 !
             endif
 !     
@@ -915,8 +884,8 @@ C     &              *(1.d0-2.d0*kdkm1*(Tt2-T2)/Tt2))
      &           lambda)
          endif
 !     
-         call pt2zpt1_crit(pt2,pt1,Tt1,lambda,kappa,r,l,d,A,iflag,
-     &     inv,pt2zpt1_c,qred_crit,crit,qred_max1,case)
+         call pt2zpt1_crit(pt2,pt1,Tt1,Tt2,lambda,kappa,r,l,d,A,iflag,
+     &     inv,pt2zpt1_c,qred_crit,crit,qred_max1,icase)
 
 !     
 !     definition of the coefficients 
@@ -925,7 +894,7 @@ C     &              *(1.d0-2.d0*kdkm1*(Tt2-T2)/Tt2))
          M2=dsqrt(2/km1*((Tt2/T2)-1))
 !
          write(1,*) ''
-         write(1,55) 'In line',int(nodem/100),' from node',node1,
+         write(1,55) 'In line',int(nodem/1000),' from node',node1,
      &' to node', node2,':   air massflow rate= ',xflow,'kg/s',
      &', oil massflow rate= ',xflow_oil,'kg/s'
  55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
@@ -934,10 +903,10 @@ C     &              *(1.d0-2.d0*kdkm1*(Tt2-T2)/Tt2))
             write(1,53)'       Inlet node ',node1,':    Tt1= ',Tt1,
      &           'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
      &           'Bar, M1= ',M1
-            write(1,*)'             element W    ',set(numf+nelem)(1:20)
-            write(1,57)'             eta=',dvi,'kg/(m*s), Re= '
-     &           ,reynolds,', Phi= ',phi,', lambda= ',lambda,
-     &           ', lamda*l/d= ',lambda*l/d,', zeta= ',phi*lambda*l/d
+            write(1,*)'             element W    ',set(numf)(1:20)
+            write(1,57)'             Eta=',dvi,' kg/(m*s), Re= '
+     &           ,reynolds,', PHI= ',phi,', LAMBDA= ',lambda,
+     &         ', LAMBDA*l/d= ',lambda*l/d,', ZETA_PHI= ',phi*lambda*l/d
             write(1,53)'       Outlet node ',node2,'    Tt2= ',Tt2,
      &           'K, Ts2= ',T2,'K, Pt2= ',Pt2/1e5,
      &           'Bar, M2= ',M2
@@ -946,18 +915,18 @@ C     &              *(1.d0-2.d0*kdkm1*(Tt2-T2)/Tt2))
             write(1,53)'       Inlet node ',node2,':    Tt1= ',Tt1,
      &           'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
      &           'Bar, M1= ',M1
-            write(1,*)'             element W    ',set(numf+nelem)(1:20)
-            write(1,57)'             eta= ',dvi,'kg/(m*s), Re= '
+            write(1,*)'             element W    ',set(numf)(1:20)
+            write(1,57)'             Eta= ',dvi,' kg/(m*s), Re= '
      &           ,reynolds,' ,Phi= ',phi,', lambda= ',lambda,
-     &           ', lamda*l/d= ',lambda*l/d,', zeta= ',phi*lambda*l/d
+     &          ', lamda*l/d= ',lambda*l/d,', zeta_phi= ',phi*lambda*l/d
             write(1,53)'       Outlet node ',node1,'    Tt2= ',Tt2,
      &           'K, Ts2= ',T2,'K, Pt2=',Pt2/1e5,
      &           'Bar, M2= ',M2
          endif
       endif
- 53         FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A,f8.5)  
- 57         FORMAT(1X,A,G9.4,A,G11.5,A,f8.5,A,f8.5,A,f8.5,A,f8.5)
-!     
+ 53   FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A,f8.5)  
+ 57   FORMAT(1X,A,G9.4,A,G11.5,A,f8.4,A,f8.5,A,f8.5,A,f8.5)
+!  
       return
       end
       

@@ -85,6 +85,7 @@
          if((labmpc(nmpc)(1:7).eq.'MEANROT').or.
      &        (labmpc(nmpc)(1:1).eq.'1')) then
             nodevector=node
+            labmpc(nmpc)(1:7)='MEANROT'
          endif
 !
          if(inode.eq.1) then

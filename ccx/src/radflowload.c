@@ -51,15 +51,17 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
                  int *network, double *rhcon, int *nrhcon, int *ipobody,
                  int *ibody, double *xbodyact, int *nbody,int *iviewfile,
                  char *jobnamef, double *ctrl, double *xloadold,
-                 double *reltime, int *nmethod, char *set){
+                 double *reltime, int *nmethod, char *set, int *mi,
+		 int * istartset,int* iendset,int *ialset,int *nset){
   
   /* network=0: purely thermal
      network=1: general case (temperatures, fluxes and pressures unknown)
      network=2: purely aerodynamic, i.e. only fluxes and pressures unknown */
   
   int nhrs=1,info=0,i,iin=0,symmetryflag=2,inputformat=2,*icol=NULL,
-      *irow=NULL,icntrl,icutb=0,iin_abs=0;
-  double uamt=0,uamf=0,uamp=0,camt,camf,camp,*au=NULL,*adb=NULL,
+      *irow=NULL,icntrl,icutb=0,iin_abs=0,mt=mi[1]+1;
+
+  double uamt=0,uamf=0,uamp=0,camt[2],camf[2],camp[2],*au=NULL,*adb=NULL,
     *aub=NULL,sigma=0.,ramt=0.,ramf=0.,ramp=0.,ram1t=0.,ram1f=0.,ram1p=0.,
     ram2t=0.,ram2f=0.,ram2p=0.,dtheta=1.,*v=NULL;
   
@@ -68,7 +70,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
      of the gas nodes with boundary conditions must be stored in v
      (in initialgas) */ 
 
-  v=NNEW(double,5**nk);
+  v=NNEW(double,mt**nk);
 
   if(*ntg!=0) {
       icntrl=0;
@@ -76,7 +78,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
 	  
 	  if(iin==0){
 	      
-	      for(i=0;i<5**nk;i++) v[i]=vold[i];
+	      for(i=0;i<mt**nk;i++) v[i]=vold[i];
 
 	      FORTRAN(initialgas,(itg,ieg,ntm,ntg,ac,bc,lakon,v,
                            ipkon,kon,nflow,
@@ -84,7 +86,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
 			   nodeboun,xbounact,ielmat,ntmat_,shcon,nshcon,
 			   physcon,ipiv,nteq,rhcon,nrhcon,ipobody,ibody,
 			   xbodyact,co,nbody,network,&iin_abs,vold,set,
-			   istep,iit));
+			   istep,iit,mi));
       
 	      FORTRAN(resultgas,(itg,ieg,ntg,ntm,bc,nload,sideload,
 			  nelemload,xloadact,
@@ -92,9 +94,9 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
 			  iinc,istep,dtime,ttime,time,
 			  ikforc,ilforc,xforcact,
                           nforc,ielmat,nteq,prop,ielprop,nactdog,nacteq,&iin,
-			  physcon,&camt,&camf,&camp,rhcon,nrhcon,ipobody,
+			  physcon,camt,camf,camp,rhcon,nrhcon,ipobody,
 			  ibody,xbodyact,nbody,&dtheta,vold,xloadold,
-			  reltime,nmethod,set));
+			  reltime,nmethod,set,mi));
 	  }
 	  
 	  iin++;
@@ -107,7 +109,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
 			     istep,dtime,ttime,time,
 			     ielmat,nteq,prop,ielprop,nactdog,nacteq,
 			     physcon,rhcon,nrhcon,ipobody,ibody,xbodyact,
-			     nbody,vold,xloadold,reltime,nmethod,set));
+			     nbody,vold,xloadold,reltime,nmethod,set,mi));
 	  
 	  if(*ntm>0){
 	      FORTRAN(dgesv,(nteq,&nhrs,ac,ntm,ipiv,bc,ntm,&info)); 
@@ -125,7 +127,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
 				 istep,dtime,ttime,time,
 				 ielmat,nteq,prop,ielprop,nactdog,nacteq,
 				 physcon,rhcon,nrhcon,ipobody,ibody,xbodyact,
-				 nbody,vold,xloadold,reltime,nmethod,set));
+				 nbody,vold,xloadold,reltime,nmethod,set,mi));
 	    
 	      FORTRAN(equationcheck,(ac,ntm,nteq,nactdog,itg,ntg,nacteq,network));
 	    
@@ -138,37 +140,55 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
 	       nflow,iinc,istep,dtime,ttime,time,
 	       ikforc,ilforc,xforcact,
 	       nforc,ielmat,nteq,prop,ielprop,nactdog,nacteq,
-	       &iin,physcon,&camt,&camf,&camp,rhcon,nrhcon,ipobody,
+	       &iin,physcon,camt,camf,camp,rhcon,nrhcon,ipobody,
 	       ibody,xbodyact,nbody,&dtheta,vold,xloadold,
-	       reltime,nmethod,set));
+	       reltime,nmethod,set,mi));
 	    
 	      if(*network!=2){ 
 		  ram2t=ram1t;
 		  ram1t=ramt;
-		  ramt=camt;
-		  if (camt>uamt) {uamt=camt;}
+		  ramt=camt[0];
+		  if (camt[0]>uamt) {uamt=camt[0];}
 		  printf
-                    ("      largest increment of gas temperature=%e\n",uamt);
-		  printf
-                    ("      largest correction to gas temperature=%e\n",camt);
+                    ("      largest increment of gas temperature= %e\n",uamt);
+		  if((int)camt[1]==0){
+		      printf
+		      ("      largest correction to gas temperature= %e\n",
+                       camt[0]);
+		  }else{
+		      printf
+		      ("      largest correction to gas temperature= %e in node %d\n",
+                       camt[0],(int)camt[1]);
+		  }
 	      }
 	      
 	      if(*network!=0){
 		  ram2f=ram1f;
 		  ram1f=ramf;
-		  ramf=camf;
-		  if (camf>uamf) {uamf=camf;}
-		  printf("      largest increment of gas massflow=%e\n",uamf);
-		  printf("      largest correction to gas massflow=%e\n",camf);
+		  ramf=camf[0];
+		  if (camf[0]>uamf) {uamf=camf[0];}
+		  printf("      largest increment of gas massflow= %e\n",uamf);
+		  if((int)camf[1]==0){
+		      printf("      largest correction to gas massflow= %e\n",
+			 camf[0]);
+		  }else{
+		      printf("      largest correction to gas massflow= %e in node %d\n",
+			 camf[0],(int)camf[1]);
+		  }
 		  
 		  ram2p=ram1p;
 		  ram1p=ramp;
-		  ramp=camp;
-		  if (camp>uamp) {uamp=camp;}
-		  printf("      largest increment of gas pressure=%e\n",uamp);
-		  printf("      largest correction to gas pressure=%e\n",camp);
-	      }
-	      
+		  ramp=camp[0];
+		  if (camp[0]>uamp) {uamp=camp[0];}
+		  printf("      largest increment of gas pressure= %e\n",uamp);
+		  if((int)camp[1]==0){
+		      printf("      largest correction to gas pressure= %e\n",
+                         camp[0]);
+		  }else{
+		      printf("      largest correction to gas pressure= %e in node %d\n",
+                         camp[0],(int)camp[1]);
+		  }
+	      }	      
 	  }
 	  
 	  printf("\n");
@@ -185,25 +205,30 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
       }
 	
       FORTRAN(flowresult,(ntg,itg,cam,vold,v,nload,sideload,
-			    nelemload,xloadact,nactdog,network));
+			  nelemload,xloadact,nactdog,network,mi));
 #ifdef NETWORKOUT
 
-      FORTRAN(flowoutput,(itg,ieg,ntg,ntm,bc,lakon,ntmat_,
-			  v,shcon,nshcon,ipkon,kon,co,nflow, dtime,ttime,time,
-			  ielmat,prop,ielprop,nactdog,nacteq,&iin,physcon,
-			  &camt,&camf,&camp,&uamt,&uamf,&uamp,rhcon,nrhcon,
-			  vold,jobnamef,set));
+      /* detailled output file for general and 
+	 purely aerodynamic cases */
+
+      if(*network!=0){
+	FORTRAN(flowoutput,(itg,ieg,ntg,ntm,bc,lakon,ntmat_,
+			    v,shcon,nshcon,ipkon,kon,co,nflow, dtime,ttime,time,
+			    ielmat,prop,ielprop,nactdog,nacteq,&iin,physcon,
+			    camt,camf,camp,&uamt,&uamf,&uamp,rhcon,nrhcon,
+			    vold,jobnamef,set,istartset,iendset,ialset,nset,mi));
+      }
 #endif
   }
       
   if(*ntr>0){
 	
       FORTRAN(radmatrix, (ntr,ntm,ac,bc,sideload,nelemload,xloadact,lakon,
-			    vold,ipkon,kon,co,pmid,e1,e2,e3,iptri,kontri,ntri,
-			    nloadtr,tarea,tenv,physcon,erad,f,dist,idist,area,
-			    ithermal,iinc,iit,cs,mcs,inocs,ntrit,nk,fenv,istep,
-			    dtime,ttime,time,iviewfile,jobnamef,xloadold,
-                            reltime,nmethod));
+			  vold,ipkon,kon,co,pmid,e1,e2,e3,iptri,kontri,ntri,
+			  nloadtr,tarea,tenv,physcon,erad,f,dist,idist,area,
+			  ithermal,iinc,iit,cs,mcs,inocs,ntrit,nk,fenv,istep,
+			  dtime,ttime,time,iviewfile,jobnamef,xloadold,
+			  reltime,nmethod,mi));
 		
 #ifdef SPOOLES
       spooles(ac,au,adb,aub,&sigma,bc,icol,irow,ntr,ntm,

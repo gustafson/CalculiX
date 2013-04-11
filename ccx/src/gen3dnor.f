@@ -21,7 +21,7 @@
      &  tper,tmin,tmax,ctrl,ipompc,nodempc,coefmpc,nmpc,nmpc_,mpcfree,
      &  ikmpc,ilmpc,labmpc,ikboun,ilboun,nboun,nboun_,nodeboun,ndirboun,
      &  xboun,iamboun,typeboun,nam,ntrans,inotr,trab,ikfree,ixfree,
-     &  nmethod,ithermal,istep)
+     &  nmethod,ithermal,istep,mi)
 !
 !     calculates normals on 1-D and 2-D elements
 !
@@ -37,7 +37,7 @@
      &  ne,iponor(2,*),knor(*),rig(*),iperturb,ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,mpcfree,ikmpc(*),ilmpc(*),ikboun(*),ilboun(*),nboun,
      &  nboun_,nodeboun(*),ndirboun(*),iamboun(*),nam,ntrans,inotr(2,*),
-     &  isol,istep,idummy
+     &  isol,istep,idummy,mi(2)
 !
       integer i,ndepnodes,index,nexp,nnor,nel,ielem,indexe,j,iel(100),
      &  jl(100),ial(100),ifi(100),idepnodes(80),indexx,k,l,ifix,nemin,
@@ -427,10 +427,12 @@ c                        endif
                      ifi(j)=1
                      cycle
                   endif
+                  ifi(j)=0
                   do k=1,3
                      xn1(k,j)=xnor(indexx+k)
                   enddo
                else
+                  ifi(j)=0
                   xn1(1,j)=0.d0
                   xn1(2,j)=0.d0
                   xn1(3,j)=-1.d0
@@ -812,7 +814,7 @@ c     write(*,*) 'dependent node: ',node
      &                 nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &                 ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
      &                 type,typeboun,nmethod,iperturb,fixed,vdummy,
-     &                 idummy)
+     &                 idummy,mi)
                else
 !
 !                    check whether the rotational degree of freedom

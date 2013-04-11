@@ -27,7 +27,7 @@
 !
       integer nterms,i,j
 !
-      real*8 ratio(8),pneigh(0:3,*),pnode(3),a,xi,et,xig,etg,p(3),
+      real*8 ratio(8),pneigh(3,*),pnode(3),a,xi,et,xig,etg,p(3),
      &  dummy
 !
       if(nterms.eq.3) then

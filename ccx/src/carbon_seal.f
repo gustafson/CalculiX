@@ -18,7 +18,7 @@
 !     
       subroutine carbon_seal(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,R,physcon,dvi,numf,set)
+     &     nodef,idirf,df,R,physcon,dvi,numf,set,mi)
 !     
 !     carbon seal element calculated with Richter method
 !      Richter "Rohrhydraulik", Springer ,1971,p. 175
@@ -31,12 +31,10 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
-     &     inv
+     &     inv,mi(2)
 !
-      real*8 prop(*),v(0:4,*),xflow,f,df(4),R,d,l,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),R,d,l,
      &     p1,p2,T1,physcon(*),dvi,pi,s,T2
-!     
-!      numf=4
 !     
       if (iflag.eq.0) then
          identity=.true.
@@ -81,8 +79,6 @@
             write(*,*) 'unable to perform carbon seal calculation'
             write(*,*) 'check input file'
          endif
-!
-c         write(*,*) 'xflow',xflow
 !     
       elseif (iflag.eq.2)then
 !     
@@ -108,8 +104,6 @@ c         write(*,*) 'xflow',xflow
             nodef(3)=nodem
             nodef(4)=node1
          endif
-!     
-c     xflow=v(1,nodem)
 !     
          idirf(1)=2
          idirf(2)=0
@@ -169,7 +163,7 @@ c     xflow=v(1,nodem)
             write(1,56)'       Inlet node  ',node1,':   Tt1=',T1,
      &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
          
-            write(1,*)'             element G   ',set(numf+nelem)(1:20)
+            write(1,*)'             element G   ',set(numf)(1:20)
 
             write(1,56)'       Outlet node ',node2,':   Tt2=',T2,
      &           'K, Ts2=',T2,'K, Pt2=',P2/1e5,'Bar'
@@ -178,7 +172,7 @@ c     xflow=v(1,nodem)
             write(1,56)'       Inlet node  ',node2,':    Tt1=',T1,
      &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
      &          
-            write(1,*)'             element G    ',set(numf+nelem)(1:20)
+            write(1,*)'             element G    ',set(numf)(1:20)
 
             write(1,56)'       Outlet node ',node1,':    Tt2=',T2,
      &           'K, Ts2=',T2,'K, Pt2=',P2/1e5, 'Bar'
@@ -191,10 +185,6 @@ c     xflow=v(1,nodem)
 
 
       endif
-!     
-c      do i=1,4
-c         write(*,*)'df(',i,')=',df(i)
-c      enddo
 !     
       return
       end

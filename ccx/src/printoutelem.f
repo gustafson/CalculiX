@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine printoutelem(prlab,ipkon,lakon,kon,co,
-     &     ener,mint_,ii,nelem,energytot,volumetot,enerkintot,nkin,ne,
+     &     ener,mi,ii,nelem,energytot,volumetot,enerkintot,nkin,ne,
      &     stx,nodes)
 !
 !     stores whole element results for element "nelem" in the .dat file
@@ -27,12 +27,12 @@
       character*6 prlab(*)
       character*8 lakon(*)
 !
-      integer ipkon(*),nelem,ii,kon(*),mint_,nope,indexe,j,k,konl(20),
+      integer ipkon(*),nelem,ii,kon(*),mi(2),nope,indexe,j,k,konl(20),
      &  mint3d,jj,nener,iflag,nkin,ne,nodes
 !
-      real*8 ener(mint_,*),energytot,volumetot,energy,volume,co(3,*),
+      real*8 ener(mi(1),*),energytot,volumetot,energy,volume,co(3,*),
      &  xl(3,20),xi,et,ze,xsj,shp(4,20),weight,enerkintot,enerkin,
-     &  stx(6,mint_,*)
+     &  stx(6,mi(1),*)
 !
       include "gauss.f"
 !

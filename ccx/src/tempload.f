@@ -22,7 +22,7 @@
      &  amta,namta,nam,ampli,time,reltime,ttime,dtime,ithermal,nmethod,
      &  xbounold,xboun,xbounact,iamboun,nboun,
      &  nodeboun,ndirboun,nodeforc,ndirforc,istep,iinc,
-     &  co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload)
+     &  co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi)
 !
 !     calculates the loading at a given time
 !
@@ -39,14 +39,14 @@
      &  iamloadi1,iamloadi2,ibody(3,*),itg(*),ntg,idof,
      &  nbody,iambodyi,nodeboun(*),ndirboun(*),nodeforc(2,*),
      &  ndirforc(*),istep,iinc,msecpt,node,j,ikboun(*),ilboun(*),
-     &  ipresboun
+     &  ipresboun,mi(2)
 !
       real*8 xforc(*),xforcact(*),xload(2,*),xloadact(2,*),
      &  t1(*),t1act(*),amta(2,*),ampli(*),time,
      &  xforcold(*),xloadold(2,*),t1old(*),reltime,
      &  xbounold(*),xboun(*),xbounact(*),ttime,dtime,reftime,
      &  xbody(7,*),xbodyold(7,*),
-     &  xbodyact(7,*),co(3,*),vold(0:4,*),abqtime(2),coords(3)
+     &  xbodyact(7,*),co(3,*),vold(0:mi(2),*),abqtime(2),coords(3)
 !
       data msecpt /1/
 !
@@ -131,10 +131,10 @@ c     &      (ndirboun(i).le.3)) cycle
 !
             if(ndirboun(i).eq.0) then
                call utemp(xbounact(i),msecpt,istep,iinc,abqtime,node,
-     &              coords,vold)
+     &              coords,vold,mi)
             else
                call uboun(xbounact(i),istep,iinc,abqtime,node,
-     &              ndirboun(i),coords,vold)
+     &              ndirboun(i),coords,vold,mi)
             endif
             cycle
          endif
@@ -192,7 +192,7 @@ c     &      (ndirboun(i).le.3)) cycle
                endif
 !
                call cflux(xforcact(i),msecpt,istep,iinc,abqtime,node,
-     &              coords,vold)
+     &              coords,vold,mi)
                cycle
             endif
          endif
@@ -284,7 +284,7 @@ c     &      (ndirboun(i).le.3)) cycle
                   coords(j)=co(j,i)+vold(j,i)
                enddo
                call utemp(t1act(i),msecpt,istep,iinc,abqtime,i,
-     &              coords,vold)
+     &              coords,vold,mi)
                cycle
             endif
             if(nam.gt.0) then

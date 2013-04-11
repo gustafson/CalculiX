@@ -378,12 +378,12 @@
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
 !
-      do i=1,nmpc
-         call writempc(ipompc,nodempc,coefmpc,labmpc,i)
-      enddo
-      do i=1,nmpc
-         write(*,*) i,ikmpc(i),ilmpc(i)
-      enddo
+c      do i=1,nmpc
+c         call writempc(ipompc,nodempc,coefmpc,labmpc,i)
+c      enddo
+c      do i=1,nmpc
+c         write(*,*) i,ikmpc(i),ilmpc(i)
+c      enddo
 !
       return
       end

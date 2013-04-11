@@ -18,7 +18,7 @@
 !
       subroutine compdt(nk,dt,nshcon,shcon,nrhcon,rhcon,vold,ntmat_,
      &  iponoel,inoel,dtimef,iexplicit,ielmat,physcon,dh,cocon,
-     &  ncocon,ithermal)
+     &  ncocon,ithermal,mi)
 !
 !     - determine the time step for each node (stored in field dt
 !       and the minimum value across all nodes (dtimef)
@@ -28,11 +28,11 @@
       logical iexplicit
 !
       integer nk,i,iponoel(*),inoel(3,*),index,nelem,ithermal,
-     &  nshcon(*),nrhcon(*),ntmat_,ielmat(*),imat,ncocon(2,*)
+     &  nshcon(*),nrhcon(*),ntmat_,ielmat(*),imat,ncocon(2,*),mi(2)
 !
       real*8 dtimef,dt(*),dvi,r,cp,rho,shcon(0:3,ntmat_,*),
-     &  rhcon(0:1,ntmat_,*),vold(0:4,*),temp,vel,dtu,dtnu,physcon(*),
-     &  dh(*),cocon(0:6,ntmat_,*),dtal,cond
+     &  rhcon(0:1,ntmat_,*),vold(0:mi(2),*),temp,vel,dtu,dtnu,
+     &  physcon(*),dh(*),cocon(0:6,ntmat_,*),dtal,cond
 !
 !     
 !     determining the time increment dt for each node.

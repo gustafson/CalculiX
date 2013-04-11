@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
-#include <string.h>
+#include <string.h> 
 #include "CalculiX.h"
 
 /**
@@ -42,22 +42,6 @@ void multimortar(double *au, double *ad, int *irow, int *jq, int *nzs,
 
     //Reference: Stefan Hueber's thesis page 28-33
     
-    
-/*	Premultiply Bd by -Dd^(-1)
-           before multiplication: Bd is stored in aubd,
-                                  Dd is stored in bdd
-	    after multiplication: -Dd^(-1).Bd is stored in auqdt
-                                  The diagonal contains only 1's                      
-*/
-
-  for(j=0; j<neq[1]; j++){
-    //    if (bdd[j]==0) continue; wrong!
-    for(i=jqbd[j]-1; i<jqbd[j+1]-1; i++){
-      icol=irowbd[i]-1;
-      aubd[i] /= -bdd[icol];
-      printf("aubd[%d]=%e\n",i,aubd[i]);
-    }
-  }
 	
   /* copy aubd into auqdt (transpose of qd) */
 
@@ -69,16 +53,32 @@ void multimortar(double *au, double *ad, int *irow, int *jq, int *nzs,
     jqqdt[j]=jqbd[j];
   }
   *nzsqdt=*nzsbd;
+    
+/*	Premultiply Bd by -Dd^(-1)
+           before multiplication: Bd is stored in aubd,
+                                  Dd is stored in bdd
+	    after multiplication: -Dd^(-1).Bd is stored in auqdt
+                                  The diagonal contains only 1's                      
+*/
 
-  //  int number=1;
+  for(j=0; j<neq[1]; j++){
+    //    if (bdd[j]==0) continue; wrong!
+    for(i=jqqdt[j]-1; i<jqqdt[j+1]-1; i++){
+      icol=irowqdt[i]-1;
+      auqdt[i] /= -bdd[icol];
+      //printf("aubd[%d]=%e\n",i,aubd[i]);
+    }
+  }
 
-  //  FORTRAN(writematrix,(auqdt,bdd,irowqdt,jqqdt,&neq[1],&number));
+  //   int number=1;
+
+  //   FORTRAN(writematrix,(auqdt,bdd,irowqdt,jqqdt,&neq[1],&number));
 
   
 
-  //  number=2;
+  //   number=2;
 
-  //FORTRAN(writematrix,(au,ad,irow,jq,&neq[1],&number));
+  //  FORTRAN(writematrix,(au,ad,irow,jq,&neq[1],&number));
 	
   /* determining the symmetry part of au and storing it
      into aus */
@@ -271,9 +271,9 @@ void multimortar(double *au, double *ad, int *irow, int *jq, int *nzs,
   }
   jqi[neq[1]] = nzsi + 1;	
 
-  //  number=4;
+   //int  number=4;
 
-  //FORTRAN(writematrix,(aui,adi,irowi,jqi,&neq[1],&number));
+   //FORTRAN(writematrix,(aui,adi,irowi,jqi,&neq[1],&number));
   
   free(mast1);free(ipointer);
 
@@ -331,9 +331,9 @@ void multimortar(double *au, double *ad, int *irow, int *jq, int *nzs,
   unitmatrix=NNEW(double,neq[1]);
   for(j=0;j<neq[1];j++){unitmatrix[j]=1.;}
 
-  //  number=5;
+     //number=5;
 
-  //FORTRAN(writematrix,(auqd,unitmatrix,irowqd,jqqd,&neq[1],&number));
+   //FORTRAN(writematrix,(auqd,unitmatrix,irowqd,jqqd,&neq[1],&number));
   
   FORTRAN(opnonsym, (&neq[1], aux, b, bhat, unitmatrix, auqd, jqqd, irowqd));
 
@@ -440,9 +440,9 @@ void multimortar(double *au, double *ad, int *irow, int *jq, int *nzs,
   }
   jqc[neq[1]] = *nzsc + 1;
 
-  //  number=6;
+     //number=6;
 
-  //FORTRAN(writematrix,(auc,adc,irowc,jqc,&neq[1],&number));
+   //FORTRAN(writematrix,(auc,adc,irowc,jqc,&neq[1],&number));
 
   free(mast1);free(ipointer);
  
@@ -455,4 +455,6 @@ void multimortar(double *au, double *ad, int *irow, int *jq, int *nzs,
   free(aus);free(irows);free(jqs);
 
   *irowcp = irowc; *aucp=auc;
+
+  return;
 }

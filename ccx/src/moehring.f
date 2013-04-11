@@ -18,7 +18,7 @@
 !     
       subroutine moehring (node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,dvi,numf,set)
+     &     nodef,idirf,df,cp,R,dvi,numf,set,mi)
 !     
 !     moehring element
 !     This subroutines computes the evolution of the core swirl ratio 
@@ -40,9 +40,9 @@
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
      &     ipkon(*),kon(*),kgas,key,neval,ier,limit,lenw,last,
-     &     iwork2(400),node_up,node_down
+     &     iwork2(400),node_up,node_down,mi(2)
 !     
-      real*8 prop(*),v(0:4,*),xflow,f,df(4),r,dvi,pi,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),r,dvi,pi,
      &     R_min, R_max,cr, R_shroud,rsrmax,gap,swirl_up,
      &     pup,pdown,tup,tdown,kappa,cp,
      &     Rup,Rdown,rpm,K0,Kup,Cq,Re_phi,phi,lambda1, lambda2,

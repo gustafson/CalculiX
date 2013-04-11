@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine dualshape4q(xi,et,xl,xsj,xs,shp,iflag)
+      subroutine dualshape4q(xi,et,xl,xsj,xs,shp,ns,pslavdual,iflag)
 !
 !     iflag=2: calculate the value of the shape functions,
 !              their derivatives w.r.t. the local coordinates
@@ -29,11 +29,11 @@
 !
       implicit none
 !
-      integer i,j,k,iflag
+      integer i,j,k,iflag,ns
 !
-      real*8 shp(4,8),xs(3,2),xsi(2,3),xl(0:3,8),sh(3),xsj(3)
+      real*8 shp(4,8),xs(3,2),xsi(2,3),xl(3,8),sh(3),xsj(3)
 !
-      real*8 xi,et
+      real*8 xi,et,pslavdual(16,*)
 !
 !     shape functions and their glocal derivatives for an element
 !     described with two local parameters and three global ones.
@@ -61,10 +61,21 @@
 !
 !     Dual shape functions
 !
-      shp(4,1)=4.d0*shp(3,1)-2.d0*shp(3,2)+shp(3,3)-2.d0*shp(3,4)
-      shp(4,2)=4.d0*shp(3,2)-2.d0*shp(3,1)+shp(3,4)-2.d0*shp(3,3)
-      shp(4,3)=4.d0*shp(3,3)-2.d0*shp(3,2)+shp(3,1)-2.d0*shp(3,4)
-      shp(4,4)=4.d0*shp(3,4)-2.d0*shp(3,1)+shp(3,2)-2.d0*shp(3,3)
+c      shp(4,1)=4.d0*shp(3,1)-2.d0*shp(3,2)+shp(3,3)-2.d0*shp(3,4)
+c      shp(4,2)=4.d0*shp(3,2)-2.d0*shp(3,1)+shp(3,4)-2.d0*shp(3,3)
+c      shp(4,3)=4.d0*shp(3,3)-2.d0*shp(3,2)+shp(3,1)-2.d0*shp(3,4)
+c      shp(4,4)=4.d0*shp(3,4)-2.d0*shp(3,1)+shp(3,2)-2.d0*shp(3,3)
+!
+!    with Mass Matrix pslavdual
+!
+      shp(4,1)=pslavdual(1,ns)*shp(3,1)+pslavdual(2,ns)*shp(3,2)+
+     & pslavdual(3,ns)*shp(3,3)+pslavdual(4,ns)*shp(3,4)
+      shp(4,2)=pslavdual(5,ns)*shp(3,1)+pslavdual(6,ns)*shp(3,2)+
+     & pslavdual(7,ns)*shp(3,3)+pslavdual(8,ns)*shp(3,4)
+      shp(4,3)=pslavdual(9,ns)*shp(3,1)+pslavdual(10,ns)*shp(3,2)+
+     & pslavdual(11,ns)*shp(3,3)+pslavdual(12,ns)*shp(3,4)
+      shp(4,4)=pslavdual(13,ns)*shp(3,1)+pslavdual(14,ns)*shp(3,2)+
+     & pslavdual(15,ns)*shp(3,3)+pslavdual(16,ns)*shp(3,4)
 !
 !     computation of the local derivative of the global coordinates
 !     (xs)

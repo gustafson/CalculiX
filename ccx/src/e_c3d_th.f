@@ -20,7 +20,7 @@
      &  ff,nelem,nmethod,rhcon,nrhcon,ielmat,ielorien,norien,orab,
      &  ntmat_,t0,t1,ithermal,vold,iperturb,nelemload,
      &  sideload,xload,nload,idist,iexpl,dtime,
-     &  matname,mint_,mass,stiffness,buckling,rhsi,intscheme,
+     &  matname,mi,mass,stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  xstiff,xloadold,reltime,
      &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc)
@@ -45,23 +45,23 @@
       character*80 matname(*),amat
 !
       integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nelem,nmethod,
-     &  mattyp,ithermal,iperturb,nload,idist,i,j,k,i1,j1,l,m,
+     &  mattyp,ithermal(2),iperturb,nload,idist,i,j,k,i1,j1,l,m,
      &  ii,jj,id,ipointer,ig,kk,istiff,iperm(20),ipompc(*),
      &  nrhcon(*),ielmat(*),ielorien(*),nodempc(3,*),nmpc,
      &  ntmat_,nope,nopes,norien,iexpl,imat,mint2d,ikmpc(*),
-     &  mint3d,mint_,ifacet(6,4),nopev,iorien,ilmpc(*),
+     &  mint3d,mi(2),ifacet(6,4),nopev,iorien,ilmpc(*),
      &  ifacew(8,5),intscheme,ipointeri,ipointerj,ncocon(2,*),
      &  nshcon(*),iinc,istep,jltyp,nfield,node,iflag,iscale
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),xstiff(27,mint_,*),
+      real*8 co(3,*),xl(3,20),shp(4,20),xstiff(27,mi(1),*),
      &  s(60,60),w(3,3),ff(60),shpj(4,20),sinktemp,xs2(3,7),
      &  rhcon(0:1,ntmat_,*),dxsj2,temp,press,xloadold(2,*),
      &  orab(7,*),t0(*),t1(*),coords(3),c1,c2,reltime,
-     &  xl2(0:3,8),xsj2(3),shp2(7,8),vold(0:4,*),xload(2,*),
+     &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),xload(2,*),
      &  xi,et,ze,xsj,xsjj,sm(60,60),t1l,rho,summass,summ,ttime,time,
      &  sume,factorm,factore,alp,weight,pgauss(3),tvar(2),
      &  cocon(0:6,ntmat_,*),shcon(0:3,ntmat_,*),sph,coconloc(6),
-     &  field,areaj,sax(60,60),ffax(60),coefmpc(*)
+     &  field,areaj,sax(60,60),ffax(60),coefmpc(*),tl2(8)
 !
       real*8 dtime,physcon(*)
 !
@@ -357,7 +357,7 @@ c                  pgauss(j)=pgauss(j)+shp(4,i1)*co(j,konl(i1))
          istiff=1
          call materialdata_th(cocon,ncocon,imat,iorien,pgauss,orab,
      &        ntmat_,coconloc,mattyp,t1l,rhcon,nrhcon,rho,shcon,
-     &        nshcon,sph,xstiff,kk,nelem,istiff,mint_)
+     &        nshcon,sph,xstiff,kk,nelem,istiff,mi(1))
 !
 !           incorporating the jacobian determinant in the shape
 !           functions
@@ -455,19 +455,29 @@ c     &                 weight
                      cycle
                   endif
                   if(sideload(id)(3:4).eq.'NU') then
-                     do j=1,3
-                        pgauss(j)=0.d0
-                        do i1=1,nope
-                           pgauss(j)=pgauss(j)+
-     &                          shp(4,i1)*xl(j,i1)
+                     if(ithermal(2).eq.2) then
+                        do j=1,3
+                           pgauss(j)=0.d0
+                           do i1=1,nope
+                              pgauss(j)=pgauss(j)+
+     &                             shp(4,i1)*xl(j,i1)
+                           enddo
                         enddo
-                     enddo
+                     else
+                        do j=1,3
+                           pgauss(j)=0.d0
+                           do i1=1,nope
+                              pgauss(j)=pgauss(j)+
+     &                             shp(4,i1)*(xl(j,i1)+vold(j,konl(i1)))
+                           enddo
+                        enddo
+                     endif
                      jltyp=1
                      iscale=1
                      call dflux(xload(1,id),t1l,istep,iinc,tvar,
      &                 nelem,kk,pgauss,jltyp,temp,press,sideload(id),
      &                 areaj,vold,co,lakonl,konl,ipompc,nodempc,coefmpc,
-     &                 nmpc,ikmpc,ilmpc,iscale)
+     &                 nmpc,ikmpc,ilmpc,iscale,mi)
                      if((nmethod.eq.1).and.(iscale.ne.0))
      &                    xload(1,id)=xloadold(1,id)+
      &                   (xload(1,id)-xloadold(1,id))*reltime
@@ -522,27 +532,45 @@ c         endif
 !
           if((nope.eq.20).or.(nope.eq.8)) then
              do i=1,nopes
-                xl2(0,i)=vold(0,konl(ifaceq(i,ig)))
-                do j=1,3
-                   xl2(j,i)=co(j,konl(ifaceq(i,ig)))+
-     &                  vold(j,konl(ifaceq(i,ig)))
-                enddo
+                tl2(i)=vold(0,konl(ifaceq(i,ig)))
+                if(ithermal(2).eq.2) then
+                   do j=1,3
+                      xl2(j,i)=co(j,konl(ifaceq(i,ig)))
+                   enddo
+                else
+                   do j=1,3
+                      xl2(j,i)=co(j,konl(ifaceq(i,ig)))+
+     &                     vold(j,konl(ifaceq(i,ig)))
+                   enddo
+                endif
              enddo
           elseif((nope.eq.10).or.(nope.eq.4)) then
              do i=1,nopes
-                xl2(0,i)=vold(0,konl(ifacet(i,ig)))
-                do j=1,3
-                   xl2(j,i)=co(j,konl(ifacet(i,ig)))+
-     &                  vold(j,konl(ifacet(i,ig)))
-                enddo
+                tl2(i)=vold(0,konl(ifacet(i,ig)))
+                if(ithermal(2).eq.2) then
+                   do j=1,3
+                      xl2(j,i)=co(j,konl(ifacet(i,ig)))
+                   enddo
+                else
+                   do j=1,3
+                      xl2(j,i)=co(j,konl(ifacet(i,ig)))+
+     &                     vold(j,konl(ifacet(i,ig)))
+                   enddo
+                endif
              enddo
           else
              do i=1,nopes
-                xl2(0,i)=vold(0,konl(ifacew(i,ig)))
-                do j=1,3
-                   xl2(j,i)=co(j,konl(ifacew(i,ig)))+
-     &                  vold(j,konl(ifacew(i,ig)))
-                enddo
+                tl2(i)=vold(0,konl(ifacew(i,ig)))
+                if(ithermal(2).eq.2) then
+                   do j=1,3
+                      xl2(j,i)=co(j,konl(ifacew(i,ig)))
+                   enddo
+                else
+                   do j=1,3
+                      xl2(j,i)=co(j,konl(ifacew(i,ig)))+
+     &                     vold(j,konl(ifacew(i,ig)))
+                   enddo
+                endif
              enddo
           endif
 !
@@ -607,7 +635,7 @@ c         endif
 !
              temp=0.d0
              do j=1,nopes
-                temp=temp+xl2(0,j)*shp2(4,j)
+                temp=temp+tl2(j)*shp2(4,j)
              enddo
 !
 !            for nonuniform load: determine the coordinates of the
@@ -628,7 +656,7 @@ c         endif
                    call dflux(xload(1,id),temp,istep,iinc,tvar,
      &               nelem,i,coords,jltyp,temp,press,sideload(id),
      &               areaj,vold,co,lakonl,konl,
-     &               ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,iscale)
+     &               ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,iscale,mi)
                    if((nmethod.eq.1).and.(iscale.ne.0))
      &                   xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime
@@ -636,13 +664,13 @@ c         endif
 c                   write(*,*) 'nonuniform'
                    call film(xload(1,id),sinktemp,temp,istep,
      &               iinc,tvar,nelem,i,coords,jltyp,field,nfield,
-     &               sideload(id),node,areaj,vold)
+     &               sideload(id),node,areaj,vold,mi)
                    if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime
                 elseif(sideload(id)(1:1).eq.'R') then
                    call radiate(xload(1,id),xload(2,id),temp,istep,
      &               iinc,tvar,nelem,i,coords,jltyp,field,nfield,
-     &               sideload(id),node,areaj,vold)
+     &               sideload(id),node,areaj,vold,mi)
                    if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime
                 endif

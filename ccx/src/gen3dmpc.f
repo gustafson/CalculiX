@@ -57,6 +57,15 @@ c                     nodempc(2,index1)=nodempc(2,index1)-3
                   endif
                else
                   index2=iponoel(node)
+c
+c                 check for nodes not belonging to 1d or 2d elements
+c
+                  if(index2.eq.0) then
+                     index1=nodempc(3,index1)
+                     if(index1.eq.0) exit
+                     cycle
+                  endif
+c
                   ielem=inoel(1,index2)
                   indexe=ipkon(ielem)
                   j=inoel(2,index2)

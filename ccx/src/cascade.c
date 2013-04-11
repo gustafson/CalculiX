@@ -124,6 +124,10 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 
         /* linear mpc */
 
+        /* because of the next line the size of field labmpc
+           has to be defined as 20*nmpc+1: without "+1" an
+           undefined field is accessed */
+
 	if((strcmp1(&labmpc[20*i],"                    ")==0) ||
 	   (strcmp1(&labmpc[20*i],"CYCLIC")==0) ||
 /*	   ((strcmp1(&labmpc[20*i],"CYCLIC")==0)&&(*ithermal==2)) ||*/
@@ -712,7 +716,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
     *nodempcp=nodempc;
     *coefmpcp=coefmpc;
     
-    /*    for(i=0;i<*nmpc;i++){
+    /*  for(i=0;i<*nmpc;i++){
 	j=i+1;
 	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
 	}*/

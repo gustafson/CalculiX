@@ -196,7 +196,12 @@
      &           (label(1:2).ne.'P3').and.(label(1:2).ne.'P4').and.
      &           (label(1:2).ne.'P5').and.(label(1:2).ne.'P6').and.
      &           (label(1:2).ne.'P ').and.(label(1:2).ne.'BX').and.
-     &           (label(1:2).ne.'BY').and.(label(1:2).ne.'BZ')).or.
+     &           (label(1:2).ne.'BY').and.(label(1:2).ne.'BZ').and.
+cBernhardiStart
+     &           (label(1:2).ne.'ED')).or.
+     &          ((label(3:6).ne.'NOR1').and.(label(3:6).ne.'NOR2').and.
+     &           (label(3:6).ne.'NOR3').and.(label(3:6).ne.'NOR4')).and.
+cBernhardiEnd
      &          ((label(3:4).ne.'  ').and.(label(3:4).ne.'NU').and.
      &           (label(3:4).ne.'NP'))) then
             call inputerror(inpc,ipoinpc,iline)
@@ -235,7 +240,19 @@
                   if(label(1:2).eq.'P2') label(1:2)='P5'
                elseif((lakon(l)(1:1).eq.'S').or.
      &                (lakon(l)(7:7).eq.'L')) then
-                  label(1:2)='P1'
+cBernhardiStart
+                     if(label(1:6).eq.'EDNOR1') then
+                        label(1:2)='P3'
+                     elseif(label(1:6).eq.'EDNOR2') then
+                        label(1:2)='P4'
+                     elseif(label(1:6).eq.'EDNOR3') then
+                        label(1:2)='P5'
+                     elseif(label(1:6).eq.'EDNOR4') then
+                        label(1:2)='P6'
+                     else
+                     label(1:2)='P1'
+                  endif
+cBernhardiEnd
                endif
                if(lc.ne.1) then
                   jsector=isector+maxsectors
@@ -293,7 +310,19 @@
                   if(label(1:2).eq.'P2') label(1:2)='P5'
                elseif((lakon(l)(1:1).eq.'S').or.
      &                 (lakon(l)(7:7).eq.'L')) then
-                  label(1:2)='P1'
+cBernhardiStart
+                     if(label(1:6).eq.'EDNOR1') then
+                        label(1:2)='P3'
+                     elseif(label(1:6).eq.'EDNOR2') then
+                        label(1:2)='P4'
+                     elseif(label(1:6).eq.'EDNOR3') then
+                        label(1:2)='P5'
+                     elseif(label(1:6).eq.'EDNOR4') then
+                        label(1:2)='P6'
+                     else
+                     label(1:2)='P1'
+                  endif
+cBernhardiEnd
                endif
 !
                do j=istartset(i),iendset(i)

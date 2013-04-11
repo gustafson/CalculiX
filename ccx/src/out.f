@@ -18,45 +18,46 @@
 !
       subroutine out(co,nk,kon,ipkon,lakon,ne0,v,stn,inum,nmethod,
      &  kode,filab,een,t1,fn,time,epn,ielmat,matname,enern,xstaten,
-     &  nstate_,istep,iinc,iperturb,ener,mint_,output,ithermal,qfn,
+     &  nstate_,istep,iinc,iperturb,ener,mi,output,ithermal,qfn,
      &  mode,noddiam,trab,inotr,ntrans,orab,ielorien,norien,description,
      &  ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,stnmax,ngraph,veold,ne,
-     &  cs)
+     &  cs,set,nset,istartset,iendset,ialset)
 !
 !     stores the results in frd format
 !
       implicit none
 !
       character*3 output
-      character*6 filab(*)
       character*8 lakon(*)
       character*12 description
       character*80 matname(*)
+      character*81 set(*)
+      character*87 filab(*)
 !
       integer kon(*),inum(*),nk,ne0,nmethod,kode,ipkon(*),mode,noddiam,
-     &  ielmat(*),nstate_,istep,iinc,iperturb,mint_,ithermal,inotr(2,*),
-     &  ntrans,ielorien(*),norien,ngraph,ne
+     &  ielmat(*),nstate_,istep,iinc,iperturb,mi(2),ithermal,inotr(2,*),
+     &  ntrans,ielorien(*),norien,ngraph,ne,nset,istartset(*),
+     &  iendset(*),ialset(*),ipneigh(*),neigh(2,*)
 !
-      real*8 co(3,*),v(0:4,*),stn(6,*),een(6,*),t1(*),fn(0:3,*),time,
-     &  epn(*),enern(*),xstaten(nstate_,*),ener(mint_,*),qfn(3,*),
-     &  trab(7,*),orab(7,*),vr(0:4,*),vi(0:4,*),stnr(6,*),cs(17,*),
-     &  stni(6,*),pi,vmax(0:3,*),stnmax(0:6,*),veold(0:3,*)
-!
-      integer ipneigh(*),neigh(2,*)
-      real*8 stx(6,mint_,*)
+      real*8 co(3,*),v(0:mi(2),*),stn(6,*),een(6,*),t1(*),fn(0:mi(2),*),
+     &  time,epn(*),enern(*),xstaten(nstate_,*),ener(mi(1),*),qfn(3,*),
+     &  trab(7,*),orab(7,*),vr(0:mi(2),*),vi(0:mi(2),*),stnr(6,*),
+     &  cs(17,*),stni(6,*),pi,vmax(0:3,*),stnmax(0:6,*),
+     &  veold(0:mi(2),*),stx(6,mi(1),*)
 !
       if((output.eq.'frd').or.(output.eq.'FRD')) then
          call frd(co,nk,kon,ipkon,lakon,ne0,v,stn,inum,nmethod,
      &        kode,filab,een,t1,fn,time,epn,ielmat,matname,enern,
      &        xstaten,nstate_,istep,iinc,ithermal,qfn,mode,noddiam,
      &        trab,inotr,ntrans,orab,ielorien,norien,description,
-     &        ipneigh,neigh,mint_,stx,vr,vi,stnr,stni,vmax,
-     &        stnmax,ngraph,veold,ener,ne,cs)
+     &        ipneigh,neigh,mi(1),stx,vr,vi,stnr,stni,vmax,
+     &        stnmax,ngraph,veold,ener,ne,cs,set,nset,istartset,
+     &        iendset,ialset)
       else
          if(nmethod.ne.0) then
             call onf(co,nk,kon,ipkon,lakon,ne0,v,stn,inum,nmethod,
      &        kode,filab,een,t1,fn,time,epn,ielmat,matname,enern,
-     &        xstaten,nstate_,istep,iinc,iperturb,ener,mint_)
+     &        xstaten,nstate_,istep,iinc,iperturb,ener,mi(1))
          endif
       endif
 !

@@ -18,7 +18,7 @@
 !
       subroutine heattransfers(inpc,textpart,nmethod,iperturb,isolver,
      &  istep,istat,n,tinc,tper,tmin,tmax,idrct,ithermal,iline,ipol,
-     &  inl,ipoinp,inp,alpha,mei,fei,ipoinpc,ctrl)
+     &  inl,ipoinp,inp,alpha,mei,fei,ipoinpc,ctrl,ttime)
 !
 !     reading the input deck: *HEAT TRANSFER
 !
@@ -31,6 +31,8 @@
 !
       implicit none
 !
+      logical timereset
+!
       character*1 inpc(*)
       character*20 solver
       character*132 textpart(16)
@@ -39,13 +41,15 @@
      &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),mei(4),ncv,mxiter,
      &  ipoinpc(0:*),idirect
 !
-      real*8 tinc,tper,tmin,tmax,alpha,fei(3),tol,fmin,fmax,ctrl(*)
+      real*8 tinc,tper,tmin,tmax,alpha,fei(3),tol,fmin,fmax,ctrl(*),
+     &  ttime
 !
       tmin=0.d0
       tmax=0.d0
       nmethod=4
       alpha=0.d0
       mei(4)=0
+      timereset=.false.
 !
       if(iperturb.eq.0) then
          iperturb=2
@@ -96,6 +100,8 @@
             mei(4)=1
          elseif(textpart(i)(1:7).eq.'DELTMX=') then
             read(textpart(i)(8:27),'(f20.0)',iostat=istat) ctrl(27)
+         elseif(textpart(i)(1:9).eq.'TIMERESET') then
+            timereset=.true.
          endif
       enddo
       if(nmethod.eq.1) ctrl(27)=1.d30
@@ -155,6 +161,7 @@
                tmin=1.d-5
                tmax=1.d+30
             endif
+            if(timereset)ttime=ttime-tper
             return
          endif
 !
@@ -241,6 +248,8 @@
          read(textpart(2)(1:20),'(f20.0)',iostat=istat) tper
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
       endif
+!
+      if(timereset)ttime=ttime-tper
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

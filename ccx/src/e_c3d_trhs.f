@@ -19,7 +19,7 @@
       subroutine e_c3d_trhs(co,nk,konl,lakonl,p1,p2,omx,bodyfx,
      &  nbody,ff,nelem,nmethod,rhcon,nrhcon,
      &  ielmat,ntmat_,vold,voldaux,nelemload,
-     &  sideload,xload,nload,idist,dtime,matname,mint_,
+     &  sideload,xload,nload,idist,dtime,matname,mi,
      &  ttime,time,istep,iinc,xloadold,reltimef,shcon,nshcon,cocon,
      &  ncocon,physcon,nelemface,sideface,nface,
      &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,compressible,v,
@@ -42,7 +42,7 @@
       integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nbody,nelem,
      &  nload,idist,i,j,k,i1,i2,j1,ncocon(2,*),k1,node,nfield,
      &  nmethod,ii,jj,id,ipointer,ig,kk,nrhcon(*),ielmat(*),nshcon(*),
-     &  ntmat_,nope,nopes,imat,mint2d,mint3d,mint_,ifacet(6,4),nopev,
+     &  ntmat_,nope,nopes,imat,mint2d,mint3d,mi(2),ifacet(6,4),nopev,
      &  ifacew(8,5),istep,iinc,layer,kspt,jltyp,iflag,nelemface(*),
      &  nface,igl,idf,ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),
      &  iscale,turbulent
@@ -52,12 +52,12 @@
      &  bf(3),q(3),xsjmod,dtem(3),vkl(3,3),corio(3),sinktemp,
      &  rhcon(0:1,ntmat_,*),reltimef,t(3,3),tv(3),bfv,press,
      &  vel(3),div,shcon(0:3,ntmat_,*),pgauss(3),dxsj2,areaj,
-     &  voldl(0:4,20),xloadold(2,*),cocon(0:6,ntmat_,*),
-     &  xl2(0:3,8),xsj2(3),shp2(7,8),vold(0:4,*),xload(2,*),
+     &  voldl(0:mi(2),20),xloadold(2,*),cocon(0:6,ntmat_,*),
+     &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),xload(2,*),
      &  om,omx,xi,et,ze,const,xsj,field,physcon(*),tvn,
      &  temp,voldaux(0:4,*),voldauxl(0:4,20),rho,xi3d,et3d,ze3d,
-     &  weight,shpv(20),xlocal20(3,9,6),coefmpc(*),v(0:4,*),
-     &  xlocal4(3,1,4),xlocal10(3,3,4),xlocal6(3,1,5),vl(0:4,20),
+     &  weight,shpv(20),xlocal20(3,9,6),coefmpc(*),v(0:mi(2),*),
+     &  xlocal4(3,1,4),xlocal10(3,3,4),xlocal6(3,1,5),vl(0:mi(2),20),
      &  xlocal15(3,4,5),xlocal8(3,4,6),xlocal8r(3,1,6),omcor,
      &  shpvnithi(20),voldtu(2,*),voldtul(2,20),yy(*),yyl(20),
      &  y,xtuf,xkin,vort,un,unt,umt,f2,arg2,c1,c2,a1
@@ -505,8 +505,8 @@ c            write(*,*) 'ec3dtrhs distributed heat'
                   iscale=1
                   call dflux(xload(1,id),temp,istep,iinc,tvar,
      &                 nelem,kk,pgauss,jltyp,temp,press,sideload(id),
-     &                 areaj,vold,co,lakonl,konl,
-     &                 ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,iscale)
+     &                 areaj,vold,co,lakonl,konl,ipompc,nodempc,coefmpc,
+     &                 nmpc,ikmpc,ilmpc,iscale,mi)
                   if((nmethod.eq.1).and.(iscale.ne.0))
      &                  xload(1,id)=xloadold(1,id)+
      &                 (xload(1,id)-xloadold(1,id))*reltimef
@@ -776,20 +776,20 @@ c                     read(sideload(id)(2:2),'(i1)') jltyp
      &                       nelem,i,coords,jltyp,temp,press,
      &                       sideload(id),areaj,vold,co,lakonl,konl,
      &                       ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,
-     &                       iscale)
+     &                       iscale,mi)
                         if((nmethod.eq.1).and.(iscale.ne.0))
      &                        xload(1,id)=xloadold(1,id)+
      &                       (xload(1,id)-xloadold(1,id))*reltimef
                      elseif(sideload(id)(1:1).eq.'F') then
                         call film(xload(1,id),sinktemp,temp,istep,
      &                       iinc,tvar,nelem,i,coords,jltyp,field,
-     &                       nfield,sideload(id),node,areaj,vold)
+     &                       nfield,sideload(id),node,areaj,vold,mi)
                         if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
      &                       (xload(1,id)-xloadold(1,id))*reltimef
                      elseif(sideload(id)(1:1).eq.'R') then
                         call radiate(xload(1,id),xload(2,id),temp,istep,
      &                       iinc,tvar,nelem,i,coords,jltyp,field,
-     &                       nfield,sideload(id),node,areaj,vold)
+     &                       nfield,sideload(id),node,areaj,vold,mi)
                         if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
      &                       (xload(1,id)-xloadold(1,id))*reltimef
                      endif

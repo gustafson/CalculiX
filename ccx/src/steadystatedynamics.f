@@ -33,13 +33,14 @@
       character*132 textpart(16)
 !
       integer nmethod,istep,istat,n,key,iexpl,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),iperturb,isolver,i,ndata,nfour,mcs,
+     &  ipoinp(2,*),inp(3,*),iperturb(2),isolver,i,ndata,nfour,mcs,
      &  ipoinpc(0:*),nforc,nload,nbody,iprestr,ithermal,j,nk
 !
-      real*8 fmin,fmax,bias,tmin,tmax,xmodal(9),cs(17,*),t0(*),t1(*)
+      real*8 fmin,fmax,bias,tmin,tmax,xmodal(*),cs(17,*),t0(*),t1(*)
 !
       iexpl=0
-      iperturb=0
+      iperturb(1)=0
+      iperturb(2)=0
       harmonic='YES'
       cyclicsymmetry=.false.
 !

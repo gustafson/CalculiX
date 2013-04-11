@@ -24,13 +24,14 @@
 void radcyc(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 	    double *cs, int *mcs, int *nkon,int *ialset, int *istartset,
             int *iendset,int **kontrip,int *ntri,
-            double **cop, double **voldp,int *ntrit, int *inocs){
+            double **cop, double **voldp,int *ntrit, int *inocs,
+            int *mi){
 
   /* duplicates triangular faces for cyclic radiation conditions */
 
   char *filab=NULL;
 
-  int i,is,nsegments,idtie,nkt,icntrl,imag=0,*kontri=NULL,
+  int i,is,nsegments,idtie,nkt,icntrl,imag=0,*kontri=NULL,mt=mi[1]+1,
      node,i1,i2,nope,iel,indexe,j,k,ielset,node1,node2,node3,l,jj;
 
   double *vt=NULL,*fnt=NULL,*stnt=NULL,*eent=NULL,*qfnt=NULL,t[3],theta,
@@ -45,7 +46,7 @@ void radcyc(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 
   nsegments=1;
   for(j=0;j<*mcs;j++){
-    if(cs[17*j]>nsegments) nsegments=cs[17*j];
+      if(cs[17*j]>nsegments) nsegments=(int)(cs[17*j]);
   }
 
   /* assigning nodes and elements to sectors */
@@ -125,17 +126,17 @@ void radcyc(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
   }
 
   RENEW(co,double,3**nk*nsegments);
-  RENEW(vold,double,5**nk*nsegments);
+  RENEW(vold,double,mt**nk*nsegments);
   nkt=*nk*nsegments;
       
   /* generating the coordinates for the other sectors */
   
   icntrl=1;
   
-  FORTRAN(rectcyl,(co,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filab,&imag));
+  FORTRAN(rectcyl,(co,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filab,&imag,mi));
   
   for(jj=0;jj<*mcs;jj++){
-    is=cs[17*jj];
+    is=(int)(cs[17*jj]);
     for(i=1;i<is;i++){
       
       theta=i*2.*pi/cs[17*jj];
@@ -153,7 +154,7 @@ void radcyc(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
   icntrl=-1;
     
   FORTRAN(rectcyl,(co,vt,fnt,stnt,qfnt,eent,cs,&nkt,&icntrl,t,filab,
-      &imag));
+		   &imag,mi));
 
   *kontrip=kontri;*cop=co;*voldp=vold;
 

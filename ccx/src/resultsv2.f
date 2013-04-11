@@ -16,16 +16,17 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine resultsv2(nk,nactdoh,v,sol,ipompc,nodempc,coefmpc,nmpc)
+      subroutine resultsv2(nk,nactdoh,v,sol,ipompc,nodempc,coefmpc,nmpc,
+     &  mi)
 !
 !     calculates the velocity correction (STEP 3) in the nodes
 !
       implicit none
 !
       integer ipompc(*),nodempc(3,*),nmpc,nk,nactdoh(0:4,*),i,j,ist,
-     &  node,ndir,index
+     &  node,ndir,index,mi(2)
 !
-      real*8 coefmpc(*),sol(*),v(0:4,*),fixed_disp
+      real*8 coefmpc(*),sol(*),v(0:mi(2),*),fixed_disp
 !
 !     extracting the 2nd velocity correction from the solution (STEP 3)
 !

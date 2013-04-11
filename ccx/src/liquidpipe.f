@@ -18,7 +18,7 @@
 !     
       subroutine liquidpipe(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,rho,g,co,dvi,numf,vold)
+     &     nodef,idirf,df,rho,g,co,dvi,numf,vold,mi,ipkon,kon)
 !
 !     pipe element for incompressible media
 !     
@@ -28,15 +28,17 @@
       character*8 lakon(*)
 !      
       integer nelem,nactdog(0:3,*),node1,node2,nodem,iaxial,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,
-     &     inv,ncoel,ndi,nbe,id,nen,ngv,numf,nodea,nodeb
+     &     ielprop(*),nodef(4),idirf(4),index,iflag,mi(2),
+     &     inv,ncoel,ndi,nbe,id,nen,ngv,numf,nodea,nodeb,
+     &     ipkon(*),isothermal,kon(*)
 !      
-      real*8 prop(*),v(0:4,*),xflow,f,df(4),a,d,pi,radius,
-     &     p1,p2,rho,dvi,friction,reynolds,vold(0:4,*),
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),a,d,pi,radius,
+     &     p1,p2,rho,dvi,friction,reynolds,vold(0:mi(2),*),
      &     g(3),a1,a2,xn,xk,xk1,xk2,zeta,dl,dg,rh,a0,alpha,
      &     coarseness,rd,xks,z1,z2,co(3,*),xcoel(11),yel(11),
      &     yco(11),xdi(10),ydi(10),xbe(7),ybe(7),zbe(7),ratio,
-     &     xen(10),yen(10),xgv(8),ygv(8),ds,dd,dfriction,xkn,xkp
+     &     xen(10),yen(10),xgv(8),ygv(8),ds,dd,dfriction,xkn,xkp,
+     &     dh,kappa,r
 !
       data ncoel /7/
       data xcoel /0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0/
@@ -84,11 +86,6 @@
          z2=-g(1)*co(1,node2)-g(2)*co(2,node2)-g(3)*co(3,node2)
 !     
          if(iflag.eq.1) then
-c            if(z1+p1/rho.ge.z2+p2/rho) then
-c               inv=1
-c            else
-c               inv=-1
-c            endif
             inv=0
          else
             xflow=v(1,nodem)
@@ -127,7 +124,6 @@ c            endif
                   a=pi*radius*radius
                endif
                rh=radius/2.d0
-c               write(*,*) nodea,nodeb,radius,a
             else
                a=prop(index+1)
                rh=prop(index+2)
@@ -208,7 +204,8 @@ c               write(*,*) nodea,nodeb,radius,a
             endif
          elseif(lakon(nelem)(6:7).eq.'EL') then
 !     
-!     pipe, sudden enlargement
+!     pipe, sudden enlargement Berlamont version: fully turbulent
+!     all section ratios
 !     
             a1=prop(index+1)
             a2=prop(index+2)
@@ -244,9 +241,49 @@ c               write(*,*) nodea,nodeb,radius,a
                   xkn=zeta/(a1*a1)
                endif
             endif
+         elseif(lakon(nelem)(4:5).eq.'EL') then
+!     
+!     pipe, sudden enlargement Idelchik version: reynolds dependent,
+!     0.01 <= section ratio <= 0.6
+!     
+            a1=prop(index+1)
+            a2=prop(index+2)
+            dh=prop(index+3)
+            if(inv.eq.0) then
+               reynolds=5000.d0
+            else
+               reynolds=xflow*dh/(dvi*a1)
+            endif
+            if(inv.ge.0) then
+               call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
+     &              isothermal,kon,ipkon,R,Kappa,v,mi)
+               if(inv.ne.0) then
+                  xk=zeta/(a1*a1)
+               else
+                  xkp=zeta/(a1*a1)
+               endif
+            endif
+            if(inv.le.0) then
+               reynolds=-reynolds
+!
+!              setting length and angle for contraction to zero
+!
+               prop(index+4)=0.d0
+               prop(index+5)=0.d0
+               lakon(nelem)(4:5)='CO'
+               call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
+     &              isothermal,kon,ipkon,R,Kappa,v,mi)
+               lakon(nelem)(4:5)='EL'
+               if(inv.ne.0) then
+                  xk=zeta/(a1*a1)
+               else
+                  xkn=zeta/(a1*a1)
+               endif
+            endif
          elseif(lakon(nelem)(6:7).eq.'CO') then
 !     
-!     pipe, sudden contraction
+!     pipe, sudden contraction Berlamont version: fully turbulent
+!     all section ratios
 !     
             a1=prop(index+1)
             a2=prop(index+2)
@@ -282,6 +319,40 @@ c               write(*,*) nodea,nodeb,radius,a
                   xkn=zeta/(a2*a2)
                endif
             endif
+         elseif(lakon(nelem)(4:5).eq.'CO') then
+!     
+!     pipe, sudden contraction Idelchik version: reynolds dependent,
+!     0.1 <= section ratio <= 0.6
+!     
+            a1=prop(index+1)
+            a2=prop(index+2)
+            dh=prop(index+3)
+            if(inv.eq.0) then
+               reynolds=5000.d0
+            else
+               reynolds=xflow*dh/(dvi*a2)
+            endif
+            if(inv.ge.0) then
+               call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
+     &              isothermal,kon,ipkon,R,Kappa,v,mi)
+               if(inv.ne.0) then
+                  xk=zeta/(a2*a2)
+               else
+                  xkp=zeta/(a2*a2)
+               endif
+            endif
+            if(inv.le.0) then
+               reynolds=-reynolds
+               lakon(nelem)(4:5)='EL'
+               call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
+     &              isothermal,kon,ipkon,R,Kappa,v,mi)
+               lakon(nelem)(4:5)='CO'
+               if(inv.ne.0) then
+                  xk=zeta/(a2*a2)
+               else
+                  xkn=zeta/(a2*a2)
+               endif
+            endif
          elseif(lakon(nelem)(6:7).eq.'DI') then
 !     
 !     pipe, diaphragm
@@ -308,7 +379,7 @@ c               write(*,*) nodea,nodeb,radius,a
             endif
          elseif(lakon(nelem)(6:7).eq.'EN') then
 !     
-!     pipe, entrance
+!     pipe, entrance (Berlamont data)
 !     
             a=prop(index+1)
             a0=prop(index+2)
@@ -325,11 +396,83 @@ c               write(*,*) nodea,nodeb,radius,a
      &              (xen(id+1)-xen(id))
             endif
             if(inv.ne.0) then
+               if(inv.gt.0) then
+!                 entrance
+                  xk=zeta/(a*a)
+               else
+!                 exit
+                  xk=1.d0/(a*a)
+               endif
+            else
+               xkn=1.d0/(a*a)
+               xkp=zeta/(a*a)
+            endif
+         elseif(lakon(nelem)(4:5).eq.'EN') then
+!     
+!     pipe, entrance (Idelchik)
+!     
+            a1=prop(index+1)
+            a2=prop(index+2)
+            call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
+     &           isothermal,kon,ipkon,R,Kappa,v,mi)
+!
+!           check for negative flow: in that case the loss
+!           coefficient is wrong
+!
+            if(inv.lt.0) then
+               write(*,*) '*ERROR in liquidpipe: loss coefficients'
+               write(*,*) '       for entrance (Idelchik) do not apply'
+               write(*,*) '       to reversed flow'
+               stop
+            endif
+            if(inv.ne.0) then
+               xk=zeta/(a2*a2)
+            else
+               xkn=zeta/(a2*a2)
+               xkp=xkn
+            endif
+         elseif(lakon(nelem)(4:5).eq.'EN') then
+!     
+!     pipe, exit (Idelchik)
+!     
+            a1=prop(index+1)
+            a2=prop(index+2)
+            call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
+     &           isothermal,kon,ipkon,R,Kappa,v,mi)
+            if(inv.lt.0) then
+               write(*,*) '*ERROR in liquidpipe: loss coefficients'
+               write(*,*) '       for exit (Idelchik) do not apply to'
+               write(*,*) '       reversed flow'
+               stop
+            endif
+            if(inv.ne.0) then
+               xk=zeta/(a1*a1)
+            else
+               xkn=zeta/(a1*a1)
+               xkp=xkn
+            endif
+         elseif(lakon(nelem)(4:5).eq.'US') then
+!     
+!     pipe, user defined loss coefficient
+!     
+            a1=prop(index+1)
+            a2=prop(index+2)
+            call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
+     &           isothermal,kon,ipkon,R,Kappa,v,mi)
+            if(inv.lt.0) then
+               write(*,*) '*ERROR in liquidpipe: loss coefficients'
+               write(*,*) '       for a user element do not apply to'
+               write(*,*) '       reversed flow'
+               stop
+            endif
+            if(a1.lt.a2) then
+               a=a1
+            else
+               a=a2
+            endif
+            if(inv.ne.0) then
                xk=zeta/(a*a)
             else
-c
-c              to be changed: entrance is different from exit
-c
                xkn=zeta/(a*a)
                xkp=xkn
             endif
@@ -358,7 +501,7 @@ c
             endif
          elseif(lakon(nelem)(6:7).eq.'BE') then
 !     
-!     pipe, bend
+!     pipe, bend; values from Berlamont
 !     
             a=prop(index+1)
             rd=prop(index+2)
@@ -380,6 +523,112 @@ c
      &              (xbe(id+1)-xbe(id)))
             endif
             zeta=zeta*alpha/90.d0
+            if(inv.ne.0) then
+               xk=zeta/(a*a)
+            else
+               xkn=zeta/(a*a)
+               xkp=xkn
+            endif
+         elseif(lakon(nelem)(4:5).eq.'BE') then
+!     
+!     pipe, bend; values from Idelchik or Miller
+!     
+            a=prop(index+1)
+            dh=prop(index+3)
+            a1=a
+            a2=a
+            if(inv.eq.0) then
+               reynolds=5000.d0
+            else
+               reynolds=dabs(xflow)*dh/(dvi*a1)
+            endif
+            call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
+     &           isothermal,kon,ipkon,R,Kappa,v,mi)
+            if(inv.ne.0) then
+               xk=zeta/(a*a)
+            else
+               xkn=zeta/(a*a)
+               xkp=xkn
+            endif
+         elseif(lakon(nelem)(4:5).eq.'LO') then
+!     
+!     long orifice; values from Idelchik or Lichtarowicz
+!     
+            a1=prop(index+1)
+            a2=prop(index+1)
+            dh=prop(index+3)
+            if(inv.eq.0) then
+               reynolds=5000.d0
+            else
+               reynolds=dabs(xflow)*dh/(dvi*a1)
+            endif
+            call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
+     &           isothermal,kon,ipkon,R,Kappa,v,mi)
+            if(inv.ne.0) then
+               xk=zeta/(a1*a1)
+            else
+               xkn=zeta/(a1*a1)
+               xkp=xkn
+            endif
+            a2=a1
+         elseif(lakon(nelem)(4:5).eq.'WA') then
+!     
+!     wall orifice; values from Idelchik
+!   
+!           entrance is infinitely large
+!  
+            a1=1.d10*prop(index+1)
+!
+!           reduced cross section
+!
+            a2=prop(index+2)
+            dh=prop(index+3)
+            if(inv.eq.0) then
+               reynolds=5000.d0
+            else
+               reynolds=dabs(xflow)*dh/(dvi*a2)
+            endif
+            call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
+     &           isothermal,kon,ipkon,R,Kappa,v,mi)
+!
+!           check for negative flow: in that case the loss
+!           coefficient is wrong
+!
+            if(inv.lt.0) then
+               write(*,*) '*ERROR in liquidpipe: loss coefficients'
+               write(*,*) '       for wall orifice do not apply to'
+               write(*,*) '       reversed flow'
+               stop
+            endif
+            if(inv.ne.0) then
+               xk=zeta/(a*a)
+            else
+               xkn=zeta/(a*a)
+               xkp=xkn
+            endif
+         elseif(lakon(nelem)(4:5).eq.'BR') then
+!     
+!     branches (joints and splits); values from Idelchik and GE
+!   
+            if(nelem.eq.int(prop(index+2))) then
+               a=prop(index+5)
+            else
+               a=prop(index+6)
+            endif
+            a1=a
+            a2=a
+            call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
+     &           isothermal,kon,ipkon,R,Kappa,v,mi)
+!
+!           check for negative flow: in that case the loss
+!           coefficient is wroing
+!
+            if(inv.lt.0) then
+               write(*,*) '*ERROR in liquidpipe: loss coefficients'
+               write(*,*) '       for branches do not apply to'
+               write(*,*) '       reversed flow'
+               stop
+            endif
             if(inv.ne.0) then
                xk=zeta/(a*a)
             else
@@ -412,8 +661,6 @@ c
             df(1)=-df(3)
             df(2)=(xk2-xk1+inv*xk)*xflow/(rho*rho)
             f=df(3)*p2+df(1)*p1+df(2)*xflow/2.d0+z2-z1
-c            write(*,*) 'nelem,z1,z2,p1,p2,xflow',nelem,z1,z2,p1,p2,xflow
-c            write(*,*) 'xk1,xk2,xkm,f',xk1,xk2,xk,f
          endif
 !     
       endif

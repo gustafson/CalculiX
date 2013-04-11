@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine restartwrite(istepnew,nset,nload,nforc, nboun,nk,ne,
-     &  nmpc,nalset,nmat,ntmat_,npmat_,norien,nam,nprint,mint_,
+     &  nmpc,nalset,nmat,ntmat_,npmat_,norien,nam,nprint,mi,
      &  ntrans,ncs_,namtot_,ncmat_,mpcend,maxlenmpc,
      &  ne1d,ne2d,nflow,nlabel,iplas,
      &  nkon,ithermal,nmethod,iperturb,nstate_,nener,set,istartset,
@@ -41,16 +41,16 @@
 !
       character*1 typeboun(*)
       character*3 output
-      character*6 filab(*)
       character*6 prlab(*)
       character*8 lakon(*)
       character*20 labmpc(*),sideload(*)
       character*80 orname(*),amname(*),matname(*)
       character*81 set(*),prset(*),tieset(3,*),cbody(*)
+      character*87 filab(*)
       character*132 fnrstrt,jobnamec(*)
 !
       integer nset,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,
-     &  ntmat_,npmat_,norien,nam,nprint,mint_,ntrans,ncs_,
+     &  ntmat_,npmat_,norien,nam,nprint,mi(2),ntrans,ncs_,
      &  namtot_,ncmat_,mpcend,ne1d,ne2d,nflow,nlabel,iplas,nkon,
      &  ithermal,nmethod,iperturb(*),nstate_,istartset(*),iendset(*),
      &  ialset(*),kon(*),ipkon(*),nodeboun(*),ndirboun(*),iamboun(*),
@@ -62,7 +62,7 @@
      &  iponor(*),knor(*),iponoel(*),inoel(*),rig(*),
      &  nshcon(*),ncocon(*),ics(*),infree(*),nnn(*),i,ipos,
      &  nener,iprestr,istepnew,maxlenmpc,mcs,j,ntie,
-     &  ibody(*),nbody
+     &  ibody(*),nbody,mt
 !
       real*8 co(*),xboun(*),coefmpc(*),xforc(*),xload(*),elcon(*),
      &  rhcon(*),alcon(*),alzero(*),plicon(*),plkcon(*),orab(*),
@@ -72,6 +72,8 @@
      &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),
      &  qaold(2),cs(17,*),physcon(*),ctrl(*),
      &  ttime,fmpc(*),xbody(*),xbodyold(*)
+!
+      mt=mi(2)+1
 !
       ipos=index(jobnamec(1),char(0))
       fnrstrt(1:ipos-1)=jobnamec(1)(1:ipos-1)
@@ -109,7 +111,7 @@
       write(15)nk
       write(15)ne
       write(15)nkon
-      write(15)mint_
+      write(15)(mi(i),i=1,2)
 !
 !     constraint size
 !
@@ -241,7 +243,7 @@
 !
 !     prestress
 !
-      if(iprestr.gt.0) write(15) (prestr(i),i=1,6*mint_*ne)
+      if(iprestr.gt.0) write(15) (prestr(i),i=1,6*mi(1)*ne)
 !
 !     labels
 !
@@ -333,9 +335,9 @@
 !
 !     temperature, displacement, static pressure, velocity and acceleration
 !
-      write(15)(vold(i),i=1,5*nk)
+      write(15)(vold(i),i=1,mt*nk)
       if((nmethod.eq.4).or.((nmethod.eq.1).and.(iperturb(1).ge.2))) then
-         write(15)(veold(i),i=1,4*nk)
+         write(15)(veold(i),i=1,mt*nk)
       endif
 !
 !     reordering
@@ -372,13 +374,13 @@
 !
 !     integration point variables
 !
-      write(15)(sti(i),i=1,6*mint_*ne)
-      write(15)(eme(i),i=1,6*mint_*ne)
+      write(15)(sti(i),i=1,6*mi(1)*ne)
+      write(15)(eme(i),i=1,6*mi(1)*ne)
       if(nener.eq.1) then
-         write(15)(ener(i),i=1,mint_*ne)
+         write(15)(ener(i),i=1,mi(1)*ne)
       endif
       if(nstate_.gt.0)then
-         write(15)(xstate(i),i=1,nstate_*mint_*ne)
+         write(15)(xstate(i),i=1,nstate_*mi(1)*ne)
       endif
 !
 !     control parameters

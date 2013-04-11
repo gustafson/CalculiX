@@ -20,7 +20,7 @@
      &  iponoel,vold,ipompc,nodempc,coefmpc,nmpc,nfreestream,
      &  ifreestream,nsolidsurf,isolidsurf,xsolidsurf,
      &  inoel,physcon,compressible,ielmat,nshcon,shcon,nrhcon,
-     &  rhcon,voldtu,ntmat_,labmpc,inomat)
+     &  rhcon,voldtu,ntmat_,labmpc,inomat,mi)
 !
 !     applies turbulence boundary conditions
 !
@@ -34,9 +34,9 @@
      &  index,nodei,ndiri,ist,ipompc(*),nodempc(3,*),nmpc,
      &  ndir,nfreestream,ifreestream(*),iponoel(*),
      &  inoel,imat,ielmat(*),ntmat_,nshcon(*),nrhcon(*),compressible,
-     &  nsolidsurf,isolidsurf(*),inomat(*)
+     &  nsolidsurf,isolidsurf(*),inomat(*),mi(2)
 !
-      real*8 vold(0:4,*),xbounact(*),residuk,size,coefmpc(*),
+      real*8 vold(0:mi(2),*),xbounact(*),residuk,size,coefmpc(*),
      &  xtu,xkin,temp,r,dvi,rho,physcon(*),shcon(0:3,ntmat_,*),
      &  rhcon(0:1,ntmat_,*),xsolidsurf(*),voldtu(2,*),residut,
      &  correctionk,correctiont

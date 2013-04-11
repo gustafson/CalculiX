@@ -22,7 +22,7 @@
      &  t0,t1,ithermal,vold,iperturb,nelemload,
      &  sideload,xload,nload,idist,sti,stx,iexpl,plicon,
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
-     &  matname,mint_,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
+     &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  ttime,time,istep,iinc,coriolis,xloadold,reltime,
      &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold)
 !
@@ -50,29 +50,30 @@
      &  nmethod,k1,l1,ii,jj,ii1,jj1,id,ipointer,ig,m1,m2,m3,m4,kk,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(*),ielorien(*),
      &  ntmat_,nope,nopes,norien,ihyper,iexpl,kode,imat,mint2d,
-     &  mint3d,mint_,ifacet(6,4),nopev,iorien,istiff,ncmat_,
+     &  mint3d,mi(2),ifacet(6,4),nopev,iorien,istiff,ncmat_,
      &  ifacew(8,5),intscheme,n,ipointeri,ipointerj,istep,iinc,
      &  layer,kspt,jltyp,iflag,iperm(60),m,ipompc(*),nodempc(3,*),
      &  nmpc,ikmpc(*),ilmpc(*),iscale
 !
       integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),veold(0:3,*),
+      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),veold(0:mi(2),*),
      &  s(60,60),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),ff(60),
      &  bf(3),q(3),shpj(4,20),elcon(0:ncmat_,ntmat_,*),
      &  rhcon(0:1,ntmat_,*),xkl(3,3),eknlsign,reltime,
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
      &  anisox(3,3,3,3),voldl(3,20),vo(3,3),xloadold(2,*),
-     &  xl2(0:3,8),xsj2(3),shp2(7,8),vold(0:4,*),xload(2,*),v(3,3,3,3),
+     &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),xload(2,*),
+     &  v(3,3,3,3),
      &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(60,60),
-     &  sti(6,mint_,*),stx(6,mint_,*),s11,s22,s33,s12,s13,s23,s11b,
+     &  sti(6,mi(1),*),stx(6,mi(1),*),s11,s22,s33,s12,s13,s23,s11b,
      &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,coefmpc(*),
      &  senergy,senergyb,rho,elas(21),summass,summ,
      &  sume,factorm,factore,alp,elconloc(21),eth(6),
-     &  weight,coords(3),dmass,xl1(0:3,8),term
+     &  weight,coords(3),dmass,xl1(3,8),term
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
-     &  xstiff(27,mint_,*),plconloc(82),dtime,ttime,time,tvar(2),
+     &  xstiff(27,mi(1),*),plconloc(82),dtime,ttime,time,tvar(2),
      &  sax(60,60),ffax(60)
 !
       include "gauss.f"
@@ -413,7 +414,7 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
                   t1l=t1l+vold(0,konl(i1))/8.d0
                enddo
             elseif(lakonl(4:6).eq.'20 ') then
-               call lintemp_th(t0,vold,konl,nope,kk,t0l,t1l)
+               call lintemp_th(t0,vold,konl,nope,kk,t0l,t1l,mi)
             else
                do i1=1,nope
                   t0l=t0l+shp(4,i1)*t0(konl(i1))
@@ -451,7 +452,7 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
      &        nelem,ithermal,alzero,mattyp,t0l,t1l,
      &        ihyper,istiff,elconloc,eth,kode,plicon,
      &        nplicon,plkcon,nplkcon,npmat_,
-     &        plconloc,mint_,dtime,nelem,kk,
+     &        plconloc,mi(1),dtime,nelem,kk,
      &        xstiff,ncmat_)
 !
          if(mattyp.eq.1) then
@@ -790,7 +791,7 @@ c            if((iperturb(1).eq.0).or.buckling)
                      call dload(xload(1,id),istep,iinc,tvar,nelem,i,
      &                  layer,kspt,coords,jltyp,sideload(id),vold,co,
      &                  lakonl,konl,ipompc,nodempc,coefmpc,nmpc,ikmpc,
-     &                  ilmpc,iscale,veold,rho,amat)
+     &                  ilmpc,iscale,veold,rho,amat,mi)
                      if((nmethod.eq.1).and.(iscale.ne.0))
      &                    xload(1,id)=xloadold(1,id)+
      &                   (xload(1,id)-xloadold(1,id))*reltime
@@ -1021,7 +1022,7 @@ c             if(iperturb(1).eq.0) then
                    call dload(xload(1,id),istep,iinc,tvar,nelem,i,layer,
      &                  kspt,coords,jltyp,sideload(id),vold,co,lakonl,
      &                  konl,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,
-     &                  iscale,veold,rho,amat)
+     &                  iscale,veold,rho,amat,mi)
                    if((nmethod.eq.1).and.(iscale.ne.0))
      &                   xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime
@@ -1077,7 +1078,7 @@ c             elseif((mass).and.(iperturb(1).ne.0)) then
                    call dload(xload(1,id),istep,iinc,tvar,nelem,i,layer,
      &                  kspt,coords,jltyp,sideload(id),vold,co,lakonl,
      &                  konl,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,
-     &                  iscale,veold,rho,amat)
+     &                  iscale,veold,rho,amat,mi)
                    if((nmethod.eq.1).and.(iscale.ne.0))
      &                   xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime

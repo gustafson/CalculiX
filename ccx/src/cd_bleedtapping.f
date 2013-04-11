@@ -19,7 +19,8 @@
 !     this function enable to determine the discharge coefficient of bleed
 !     tappings
 !
-      subroutine cd_bleedtapping(ps2,ps1,ps1pt1,number,cd)
+      subroutine cd_bleedtapping(ps2,ps1,ps1pt1,nummer,curve,x_tab,y_tab
+     &     ,cd)
 !
 !
 !     in : SImultation of the secondary air system of aero engines
@@ -28,7 +29,8 @@
 !
       implicit none
 !
-      integer number,id,i,index
+      integer nummer,id,i,number,curve,index
+      real*8 x_tab(15),y_tab(15)
 !
 !     Fig.7 tapping with lip
 !
@@ -57,53 +59,52 @@
 !
       ps2pt1=ps2/ps1
       dabmax=100.d0
-!
-      if (number.eq.1) then
-         index=9
-         write(*,*)
-         write(*,*) 'Cd calculations will be performed using'
-         write(*,*) 'Cd-Kurven HP3 Schlitz;Kurve Nr. 1'
-         do i=1,index
-            cdx(i)=cdx1(i)
-            cdy(i)=cdy1(i)
-         enddo
-!
-      elseif(number.eq.2) then
-         index=7
-!         real*8 cdx(15)
-         write(*,*)
-         write(*,*) 'Cd calculations will be performed using'
-         write(*,*) 'Cd-Kurven HP3 Schlitz;Kurve Nr. 2'
-         do i=1,index
-            cdx(i)=cdx2(i)
-            cdy(i)=cdy2(i)
-         enddo
-!         
-!
-      elseif(number.gt.2) then
-         write(*,*)
-         write(*,*) 'no characteristic available under this index'
-         write(*,*) 'cd is implicitely assumed equal to 1'
-         cd=1.d0
-         return
-      endif
-!
-!psvptv  ratio between the static pressure in the main canal 
-!and the total pressure in the main canal
-!
-!check whether ps1/pt1 less than 1 , if not then a warning is sent and 
-! the calculation will peroceed with an  "oversized" dab
-!
-      if(abs(1.d0-ps2pt1).le.dabmax*(1.d0-ps1pt1)) then
-         dab=(1.d0-ps2pt1)/(1.d0-ps1pt1)
+! 
+      if(nummer.eq.0) then
+         if (curve.eq.1) then
+            index=9
+            write(*,*)
+            write(*,*) 'Cd calculations will be performed using'
+            write(*,*) 'Cd-Kurven HP3 Schlitz;Kurve Nr. 1'
+            do i=1,index
+               cdx(i)=cdx1(i)
+               cdy(i)=cdy1(i)
+            enddo
+!     
+         elseif(curve.eq.2) then
+            index=7
+            write(*,*)
+            write(*,*) 'Cd calculations will be performed using'
+            write(*,*) 'Cd-Kurven HP3 Schlitz;Kurve Nr. 2'
+            do i=1,index
+               cdx(i)=cdx2(i)
+               cdy(i)=cdy2(i)
+            enddo
+!     
+         elseif(curve.gt.2) then
+            write(*,*)
+            write(*,*) 'no characteristic available under this index'
+            write(*,*) 'cd is implicitely assumed equal to 1'
+            cd=1.d0
+            return
+         endif
+!     
+!     psvptv  ratio between the static pressure in the main canal 
+!     and the total pressure in the main canal
+!     
+!     check whether ps1/pt1 less than 1 , if not then a warning is sent and 
+!     the calculation will peroceed with an  "oversized" dab
+!     
+         if(abs(1.d0-ps2pt1).le.dabmax*(1.d0-ps1pt1)) then
+            dab=(1.d0-ps2pt1)/(1.d0-ps1pt1)
          else 
             dab=dabmax
-         write(*,*) 'in cd_bleedtapping.f: ps1/pt1=',ps1pt1
-         write(*,*) 'the calculation will proceed with DAB=100.'
-      endif
-!
-! determination of cd with the caracteristics
-!
+            write(*,*) 'in cd_bleedtapping.f: ps1/pt1=',ps1pt1
+            write(*,*) 'the calculation will proceed with DAB=100.'
+         endif
+!     
+!     determination of cd with the caracteristics
+!     
          call ident(cdx,dab,index,id)
          if(id.eq.1) then
             cd=cdy(1)
@@ -114,5 +115,24 @@
      &           *(dab-cdx(id))/(cdx(id+1)-cdx(id))
          endif
 !     
-         return
-         end
+      else
+         if(abs(1.d0-ps2pt1).le.dabmax*(1.d0-ps1pt1)) then
+            dab=(1.d0-ps2pt1)/(1.d0-ps1pt1)
+         else 
+            dab=dabmax
+            write(*,*) 'in cd_bleedtapping.f: ps1/pt1=',ps1pt1
+            write(*,*) 'the calculation will proceed with DAB=100.'
+         endif
+
+         call ident(x_tab,dab,nummer,id)
+         if(id.le.1d0) then
+            cd=y_tab(1)
+         elseif(id.ge.nummer) then
+            cd=y_tab(nummer)
+         else
+            cd=y_tab(id)+(y_tab(id+1)-y_tab(id))
+     &           *(dab-x_tab(id))/(x_tab(id+1)-x_tab(id))
+         endif   
+      endif
+      return
+      end

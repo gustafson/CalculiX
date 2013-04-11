@@ -18,7 +18,7 @@
 !
       subroutine createddentry(itie,ipkon,kon,nodes,
      &  lakon,islavsurf,itiefac,contribution,co,vold,
-     &  iponoels,inoels)
+     &  iponoels,inoels,mi,gapcont,gapmints,pslavdual)
 !
 !     compute the Dd[p,q] matrix entry for contact problems
 !     Author: Li, Yang
@@ -33,10 +33,12 @@
      &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),
      &  nope,islavsurf(2,*),itiefac(2,*),ifaces,nelems,jfaces,
      &  mint2d,m,nopes,iq,ii,nodes,indexe,iponoels(*),
-     &  inoels(3,*),index1,islavsurfentry,locs
+     &  inoels(3,*),index1,islavsurfentry,locs,mi(2),ns
 !
-      real*8 ets,xis,weights,xl2s(0:3,8),xsj2s(3),co(3,*),vold(0:4,*),
-     &  shp2s(7,8),xs2s(3,2),contribution
+      real*8 ets,xis,weights,xl2s(3,8),xsj2s(3),co(3,*),
+     &  vold(0:mi(2),*),shp2s(7,8),xs2s(3,2),contribution,
+     &  gapcont,gapmints(*),shp2d(4,8),xsj2d(3),xs2d(3,2),
+     &  pslavdual(16,*)
 !
       include "gauss.f"
 !
@@ -66,12 +68,14 @@
      &             4,6,3,1,12,15,9,13/
 !
       contribution = 0.d0
+      gapcont=0.d0
       itie = itie + 1
       index1=iponoels(nodes)
       do
          if(index1.eq.0) exit
          islavsurfentry=inoels(1,index1)
          locs=inoels(2,index1)
+c      WRITE(*,*) "islavsurfentry",islavsurfentry,"index1",index1
          if((islavsurfentry.lt.itiefac(1,itie)).or.
      &        (islavsurfentry.gt.itiefac(2,itie))) exit
          ifaces=islavsurf(1,islavsurfentry)
@@ -195,18 +199,26 @@
             endif
 !     
             iflag = 2
+            ns=islavsurfentry
             if(nopes.eq.8) then
                call shape8q(xis,ets,xl2s,xsj2s,xs2s,shp2s,iflag)
+               call dualshape8q(xis,ets,xl2s,xsj2d,xs2d,shp2d,iflag)
             elseif(nopes.eq.4) then
                call shape4q(xis,ets,xl2s,xsj2s,xs2s,shp2s,iflag)
+               call dualshape4q(xis,ets,xl2s,xsj2d,xs2d,shp2d,ns,
+     &                pslavdual,iflag)
             elseif(nopes.eq.6) then
                call shape6tri(xis,ets,xl2s,xsj2s,xs2s,shp2s,iflag)
+               call dualshape6tri(xis,ets,xl2s,xsj2d,xs2d,shp2d,iflag)
             else
                call shape3tri(xis,ets,xl2s,xsj2s,xs2s,shp2s,iflag)
+               call dualshape3tri(xis,ets,xl2s,xsj2d,xs2d,shp2d,iflag)
             endif
 !     
             contribution=contribution+shp2s(4,locs)*
      &           weights*dsqrt(xsj2s(1)**2+xsj2s(2)**2+xsj2s(3)**2)
+        gapcont=gapcont+shp2d(4,locs)*gapmints((islavsurfentry-1)*4+m)*
+     &           weights*dsqrt(xsj2d(1)**2+xsj2d(2)**2+xsj2d(3)**2)
          enddo
          index1=inoels(3,index1)
       enddo

@@ -16,15 +16,15 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine updatecont(koncont,ncont,co,vold,cg,straight)
+      subroutine updatecont(koncont,ncont,co,vold,cg,straight,mi)
 !
 !     update geometric date of the contact master surface triangulation
 !
       implicit none
 !
-      integer koncont(4,*),ncont,i,j,k,node
+      integer koncont(4,*),ncont,i,j,k,node,mi(2)
 !
-      real*8 co(3,*),vold(0:4,*),cg(3,*),straight(16,*),col(3,3)
+      real*8 co(3,*),vold(0:mi(2),*),cg(3,*),straight(16,*),col(3,3)
 !
       do i=1,ncont
          do j=1,3

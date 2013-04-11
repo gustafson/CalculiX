@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine printoutint(prlab,ipkon,lakon,stx,eme,xstate,ener,
-     &  mint_,nstate_,l1,lb,ii,nelem,qfx,orab,ielorien,norien,co,kon)
+     &  mi,nstate_,l1,lb,ii,nelem,qfx,orab,ielorien,norien,co,kon)
 !
 !     stores integration point results for element "nelem" in the .dat file
 !
@@ -26,11 +26,11 @@
       character*6 prlab(*)
       character*8 lakon(*)
 !
-      integer ipkon(*),mint_,nstate_,nelem,l,lb,ii,mint3d,j,k,nope,
+      integer ipkon(*),mi(2),nstate_,nelem,l,lb,ii,mint3d,j,k,nope,
      &  ielorien(*),norien,kon(*),konl,indexe,m,iorien,iflag,l1
 !
-      real*8 stx(6,mint_,*),eme(6,mint_,*),xstate(nstate_,mint_,*),
-     &  ener(mint_,*),qfx(3,mint_,*),xi,et,ze,xl(3,20),xsj,shp(4,20),
+      real*8 stx(6,mi(1),*),eme(6,mi(1),*),xstate(nstate_,mi(1),*),
+     &  ener(mi(1),*),qfx(3,mi(1),*),xi,et,ze,xl(3,20),xsj,shp(4,20),
      &  coords(3,27),weight,orab(7,*),co(3,*),a(3,3),b(3,3),c(3,3),
      &  qfxl(3)
 !

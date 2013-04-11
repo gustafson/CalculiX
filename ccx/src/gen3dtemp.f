@@ -18,7 +18,7 @@
 !
       subroutine gen3dtemp(iponoel,inoel,iponoelmax,kon,ipkon,lakon,ne,
      &  iponor,xnor,knor,t0,t1,thicke,offset,rig,nk,nk_,co,istep,
-     &  ithermal,vold)
+     &  ithermal,vold,mi)
 !
 !     maps the temperatures and temperature gradients in 1-D and 2-D
 !     elements on their expanded counterparts
@@ -29,10 +29,10 @@
 !
       integer iponoel(*),inoel(3,*),iponoelmax,kon(*),ipkon(*),ne,
      &  iponor(2,*),knor(*),rig(*),i,i1,nk,nk_,i2,index,ielem,j,
-     &  indexe,indexk,k,node,istep,ithermal
+     &  indexe,indexk,k,node,istep,ithermal,mi(2)
 !
       real*8 xnor(*),t0(*),t1(*),thicke(2,*),offset(2,*),co(3,*),
-     &  vold(0:4,*)
+     &  vold(0:mi(2),*)
 !
 !     initial conditions
 !

@@ -17,15 +17,15 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
       subroutine gasmechbc(vold,nload,sideload,
-     &     nelemload,xload)
+     &     nelemload,xload,mi)
 !     
       implicit none
 !     
       character*20 sideload(*) 
 !     
-      integer i,nload,node,nelemload(2,*)
+      integer i,nload,node,nelemload(2,*),mi(2)
 !     
-      real*8 vold(0:4,*),xload(2,*)
+      real*8 vold(0:mi(2),*),xload(2,*)
 !
 !     updating the boudary conditions in a mechanical
 !     calculation coming from a previous thermal calculation

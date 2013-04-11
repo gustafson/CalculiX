@@ -19,32 +19,35 @@
       subroutine modaldynamics(inpc,textpart,nmethod,tinc,tper,iexpl,
      &  istep,istat,n,iline,ipol,inl,ipoinp,inp,iperturb,isolver,
      &  cs,mcs,ipoinpc,idrct,ctrl,tmin,tmax,nforc,nload,nbody,iprestr,
-     &  t0,t1,ithermal,nk,vold,veold)
+     &  t0,t1,ithermal,nk,vold,veold,xmodal,set,nset,mi)
 !
 !     reading the input deck: *MODAL DYNAMIC
 !
       implicit none
 !
-      logical steadystate,cyclicsymmetry
+      logical steadystate,cyclicsymmetry,nodalset
 !
       character*1 inpc(*)
       character*20 solver
+      character*81 set(*),noset
       character*132 textpart(16)
 !
       integer nmethod,istep,istat,n,key,iexpl,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),iperturb,isolver,i,mcs,ipoinpc(0:*),
-     &  idrct,nforc,nload,nbody,iprestr,ithermal,j,nk
+     &  ipoinp(2,*),inp(3,*),iperturb(2),isolver,i,mcs,ipoinpc(0:*),
+     &  idrct,nforc,nload,nbody,iprestr,ithermal,j,nk,ipos,nset,mi(2)
 !
       real*8 tinc,tper,cs(17,*),ctrl(*),tmin,tmax,t0(*),t1(*),
-     &  vold(0:4,*),veold(0:3,*)
+     &  vold(0:mi(2),*),veold(0:mi(2),*),xmodal(*)
 !
       iexpl=0
-      iperturb=0
+      iperturb(1)=0
+      iperturb(2)=0
       idrct=1
       tmin=0.d0
       tmax=0.d0
       steadystate=.false.
       cyclicsymmetry=.false.
+      nodalset=.false.
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR in modaldynamics: *MODAL DYNAMIC can only'
@@ -79,6 +82,12 @@
             steadystate=.true.
          elseif(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
             cyclicsymmetry=.true.
+         elseif(textpart(i)(1:5).eq.'NSET=') then
+            nodalset=.true.
+            noset=textpart(i)(6:85)
+            noset(81:81)=' '
+            ipos=index(noset,' ')
+            noset(ipos:ipos)='N'
          endif
       enddo
 !
@@ -113,6 +122,19 @@
          write(*,*) '       cannot be used for modal dynamic'
          write(*,*) '       calculations '
          stop
+      endif
+!
+      if(nodalset) then
+         do i=1,nset
+            if(set(i).eq.noset) exit
+         enddo
+         if(i.gt.nset) then
+            noset(ipos:ipos)=' '
+            write(*,*) '*ERROR in transforms: node set ',noset
+            write(*,*) '  has not yet been defined.'
+            stop
+         endif
+         xmodal(10)=i+0.5d0
       endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

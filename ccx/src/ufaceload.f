@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine uenvtemp(co,ipkon,kon,lakon,
+      subroutine ufaceload(co,ipkon,kon,lakon,
      &  nelemload,sideload,nload)
 !
 !
@@ -31,8 +31,7 @@
 !     sideload(*)        load label
 !     nload              number of facial distributed loads
 !
-!     user routine called at the start of each step for
-!     thermal calculations (ithermal > 1); possible use:
+!     user routine called at the start of each step; possible use:
 !     calculation of the area of sets of elements for
 !     further use to calculate film or radiation coefficients.
 !     The areas can be shared using common blocks.

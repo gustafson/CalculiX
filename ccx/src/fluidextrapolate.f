@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine fluidextrapolate(v,ipkon,inum,kon,lakon,
-     &  ne)
+     &  ne,mi)
 !
 !     extrapolates nodal values in fluid elements
 !
@@ -25,9 +25,10 @@
 !
       character*8 lakon(*),lakonl
 !
-      integer ipkon(*),inum(*),kon(*),ne,indexe,i,node1,node2,node3
+      integer ipkon(*),inum(*),kon(*),ne,indexe,i,node1,node2,node3,
+     &  mi(2)
 !
-      real*8 v(0:4,*)
+      real*8 v(0:mi(2),*)
 !
 !     determining all outflowing mass flow in the end nodes and
 !     assigning it to the end nodes

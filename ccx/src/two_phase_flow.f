@@ -19,7 +19,7 @@
       subroutine two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow_air,
      &     xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,v,
      &     dvi_air,cp,r,k_oil,phi,lambda,nshcon,nrhcon,shcon
-     &     ,rhcon,ntmat_)
+     &     ,rhcon,ntmat_,mi)
 !     
 !    two phase flow correlations 
 !     
@@ -27,11 +27,11 @@
 !     
       character*8 lakon(*)
 !     
-      integer nelem,ielprop(*),index,
-     &     ipkon(*),kon(*),case,kgas,k_oil,mtlog,ier,nshcon(*),
+      integer nelem,ielprop(*),index,mi(2),
+     &     ipkon(*),kon(*),icase,kgas,k_oil,mtlog,ier,nshcon(*),
      &     nrhcon(*),ntmat_
 !
-      real*8 prop(*),v(0:4,*),kappa,R,a,d,l,
+      real*8 prop(*),v(0:mi(2),*),kappa,R,a,d,l,
      &     T1,T2,Tt1,Tt2,pt1,pt2,cp,dvi_air,dvi_oil,
      &     reynolds,lambda,ks,form_fact,f,
      &     l_neg,xflow_air,xflow_oil,A1,A2,
@@ -69,8 +69,8 @@
       pt2=pt2
       T2=t2
 !
-      if((lakon(nelem)(2:5).eq.'GAPI')
-     &     .or.(lakon(nelem)(2:5).eq.'GAPX')) then
+      if((lakon(nelem)(2:5).eq.'GAPF')
+     &     .or.(lakon(nelem)(2:5).eq.'GAPI')) then
             A=prop(index+1)
             d=prop(index+2)
             l=prop(index+3)
@@ -107,11 +107,11 @@
       if((lakon(nelem)(2:7).eq.'RELOID').or.
      &     (lakon(nelem)(2:7).eq.'REBEMI')) then
 !
-         case=0
+         icase=0
 
          A1=prop(index+1)
          A2=prop(index+2)
-         call ts_calc(xflow_air,Tt1,Pt1,kappa,r,A1,T1,case)
+         call ts_calc(xflow_air,Tt1,Pt1,kappa,r,A1,T1,icase)
 
          d=dsqrt(A1*4/(4.d0*datan(1.d0)))
 !
@@ -134,7 +134,7 @@
 !     
 !     pure air
             call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &           isothermal,kon,ipkon,R,Kappa,v)
+     &           isothermal,kon,ipkon,R,Kappa,v,mi)
             lambda=zeta
             return
          else
@@ -160,7 +160,7 @@
             reynolds_h=mpg*d/(A1*dvi_h)
 !
             call zeta_calc(nelem,prop,ielprop,lakon,reynolds_h,zeta_h,
-     &           isothermal,kon,ipkon,R,Kappa,v)
+     &           isothermal,kon,ipkon,R,Kappa,v,mi)
 !     
 !     orifice in a wall
             if(lakon(nelem)(2:7).eq.'RELOID') then
@@ -199,27 +199,27 @@
 !                 flow in pipes"
 !                 Chemical Engineering Progress vol.45, N°1
 !
-      elseif(((lakon(nelem)(2:5).eq.'GAPI')
-     &        .or. (lakon(nelem)(2:5).eq.'GAPX'))
+      elseif(((lakon(nelem)(2:5).eq.'GAPF')
+     &        .or. (lakon(nelem)(2:5).eq.'GAPI'))
      &        .or.((lakon(nelem)(2:7).ne.'REBEMI')
      &        .and.(lakon(nelem)(2:7)).ne.'RELOID'))then
 !
-         if((lakon(nelem)(2:6).eq.'GAPIA')
-     &        .or.(lakon(nelem)(2:6).eq.'GAPXA'))then
-            case=0
-         elseif((lakon(nelem)(2:6).eq.'GAPII')
-     &           .or.(lakon(nelem)(2:6).eq.'GAPXI'))then
-            case=1
+         if((lakon(nelem)(2:6).eq.'GAPFA')
+     &        .or.(lakon(nelem)(2:6).eq.'GAPIA'))then
+            icase=0
+         elseif((lakon(nelem)(2:6).eq.'GAPFI')
+     &           .or.(lakon(nelem)(2:6).eq.'GAPII'))then
+            icase=1
          else
-            case=0
+            icase=0
          endif
 !
-         if((lakon(nelem)(2:4).eq.'RE').and.
-     &        (lakon(nelem)(4:6).ne.'BR')) then
+         if((lakon(nelem)(2:3).eq.'RE').and.
+     &        (lakon(nelem)(4:5).ne.'BR')) then
             a=min(prop(index+1),prop(index+2))
          endif
 !
-         call ts_calc(xflow_air,Tt1,Pt1,kappa,r,a,T1,case)
+         call ts_calc(xflow_air,Tt1,Pt1,kappa,r,a,T1,icase)
 !
 !     calculating kinematic viscosity and density for air 
 !

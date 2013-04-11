@@ -31,7 +31,7 @@ void remastruct(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
               int *neq, int *nzs,int *nmethod, double **fp,
               double **fextp, double **bp, double **aux2p, double **finip,
               double **fextinip,double **adbp, double **aubp, int *ithermal,
-	      int *iperturb, int *mass){
+	      int *iperturb, int *mass, int *mi){
 
     /* reconstructs the nonzero locations in the stiffness and mass
        matrix after a change in MPC's */
@@ -93,7 +93,7 @@ void remastruct(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
     mastruct(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,ipompc,
 	     nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,neq,nnn,
 	     ikmpc,ilmpc,ipointer,nzs,nmethod,ithermal,
-             ikboun,ilboun,iperturb);
+             ikboun,ilboun,iperturb,mi);
 
     free(ipointer);free(mast1);
     RENEW(irow,int,nzs[1]);

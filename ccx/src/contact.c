@@ -30,11 +30,12 @@ void contact(int *ncont, int *ntie, char *tieset, int *nset, char *set,
              int *nmethod, int *nmpc, int *mpcfree, int *memmpc_,
              int **ipompcp, char **labmpcp, int **ikmpcp, int **ilmpcp,
              double **fmpcp, int **nodempcp, double **coefmpcp,
-             int *iperturb, int *ikboun, int *nboun){
+             int *iperturb, int *ikboun, int *nboun, int *mi,
+             int *imastop){
     
     char *labmpc=NULL;
 
-    int i,j,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL,*ipompc=NULL,*ikmpc=NULL,
+    int i,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL,*ipompc=NULL,*ikmpc=NULL,
 	*ilmpc=NULL,*nodempc=NULL,nmpc_;
     
     double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL,
@@ -45,7 +46,7 @@ void contact(int *ncont, int *ntie, char *tieset, int *nset, char *set,
     nmpc_=*nmpc;
     
     FORTRAN(updatecont,(koncont,ncont,co,vold,
-			cg,straight));
+			cg,straight,mi));
     
 /*    printf("before remcontmpc mpcnew=%d\n",*nmpc);
        for(i=0;i<*nmpc;i++){
@@ -79,7 +80,8 @@ void contact(int *ncont, int *ntie, char *tieset, int *nset, char *set,
     FORTRAN(gencontelem,(tieset,ntie,itietri,ne,ipkon,kon,lakon,set,
        istartset,iendset,ialset,cg,straight,ifree,koncont,
        co,vold,xo,yo,zo,x,y,z,nx,ny,nz,nset,ielmat,cs,elcon,istep,
-       iinc,iit,ncmat_,ntmat_,ifcont1,ifcont2,ne0,vini,nmethod));
+       iinc,iit,ncmat_,ntmat_,ifcont1,ifcont2,ne0,vini,nmethod,mi,
+       imastop));
 
     free(xo);free(yo);free(zo);free(x);free(y);free(z);free(nx);
     free(ny);free(nz);

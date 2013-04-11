@@ -21,7 +21,7 @@
      &  nforc,nelemload,sideload,xload,nload,xbody,ipobody,nbody,
      &  b,nactdoh,icolv,jqv,irowv,neqv,nzlv,nmethod,ikmpc,ilmpc,ikboun,
      &  ilboun,rhcon,nrhcon,ielmat,ntmat_,t0,ithermal,vold,voldaux,nzsv,
-     &  dtime,matname,mint_,ncmat_,physcon,shcon,nshcon,ttime,time,
+     &  dtime,matname,mi,ncmat_,physcon,shcon,nshcon,ttime,time,
      &  istep,iinc,ibody,xloadold,turbulent,voldtu,yy,
      &  nelemface,sideface,nface,compressible,ne1,ne2)
 !
@@ -44,11 +44,11 @@
 !
       integer nk,ne,nboun,nmpc,nforc,nload,neqv,nzlv,nmethod,
      &  ithermal,nzsv,i,j,k,idist,jj,id,ist,index,jdof1,idof1,
-     &  jdof,node1,kflag,ntmat_,indexe,nope,mint_,i0,ncmat_,istep,iinc
+     &  jdof,node1,kflag,ntmat_,indexe,nope,mi(2),i0,ncmat_,istep,iinc
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),bodyf(3),b(*),xloadold(2,*),voldtu(2,*),yy(*),
-     &  t0(*),vold(0:4,*),voldaux(0:4,*),ff(60),rhcon(0:1,ntmat_,*),
+     &  t0(*),vold(0:mi(2),*),voldaux(0:4,*),ff(60),rhcon(0:1,ntmat_,*),
      &  physcon(*),shcon(0:3,ntmat_,*),xbody(7,*)
 !
       real*8 om,dtime,ttime,time
@@ -132,7 +132,7 @@
 !
         call e_c3d_v1rhs(co,nk,konl,lakon(i),p1,p2,om,bodyf,
      &       nbody,ff,i,nmethod,rhcon,nrhcon,ielmat,ntmat_,vold,
-     &       voldaux,idist,dtime,matname,mint_,
+     &       voldaux,idist,dtime,matname,mi(1),
      &       ttime,time,istep,iinc,shcon,nshcon,
      &       turbulent,voldtu,yy,nelemface,sideface,nface,compressible)
 !

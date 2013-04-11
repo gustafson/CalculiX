@@ -15,7 +15,7 @@
 /*     along with this program; if not, write to the Free Software       */
 /*     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.         */
 
-#include <stdio.h>
+#include <stdio.h> 
 #include <math.h>
 #include <stdlib.h>
 #include "CalculiX.h"
@@ -23,22 +23,28 @@
 void contactstress(double *bhat, double *adc, double *auc,int *jqc, 
     int *irowc, int *neq, double *gap, double *bdd, double *b, int *islavact,
     double *auqdt, int *irowqdt, int *jqqdt, int *ntie, int *nslavnode,
-    int *islavnode, double *slavnor, int *icolc, int *nzlc, int *nactdof){
+    int *islavnode, double *slavnor, int *icolc, int *nzlc, int *nactdof, 
+    int* iflagact,double* cstress, int *mi, double *lambda){
     
-    int i,j,idof1,idof2,idof3,nodes;
+    int i,j,idof1,idof2,idof3,nodes,mt=mi[1]+1;
 
-    double *cstress=NULL,aux,stressnormal,dispnormal,*unitmatrix=NULL,
-        constant=1.;
+    double aux,stressnormal,stressnormal2,dispnormal,*unitmatrix=NULL,
+        constant=1.E1;
 
     /* determining the contact stress vectors and updating the active
        and inactive sets */
 
-  int number=11;
+    int number=11;
+    *iflagact=0;
 
-  FORTRAN(writematrix,(auc,b,irowc,jqc,&neq[1],&number));
+ // FORTRAN(writematrix,(auc,b,irowc,jqc,&neq[1],&number));
+	
+/*   for(j=0;j<neq[1];j++){
 
-
-    cstress=NNEW(double,neq[1]);
+//      printf("contactstress bdd[%d]=%e\n",j,bdd[j]);
+//      printf("contactstress uhat b[%d]=%e\n",j,b[j]);
+//      printf("%e\n",j,b[j]);
+    }*/
     
     FORTRAN(op,(&neq[1],&aux,b,cstress,adc,auc,icolc,irowc,nzlc));
 
@@ -48,9 +54,9 @@ void contactstress(double *bhat, double *adc, double *auc,int *jqc,
 
         /* mechanical degrees of freedom */
 
-	idof1=nactdof[4*nodes-3]-1;
-	idof2=nactdof[4*nodes-2]-1;
-	idof3=nactdof[4*nodes-1]-1;
+	idof1=nactdof[mt*nodes-3]-1;
+	idof2=nactdof[mt*nodes-2]-1;
+	idof3=nactdof[mt*nodes-1]-1;
 
 	/* calculation of the Lagrange multiplier
            (= contact pressure) */
@@ -58,32 +64,46 @@ void contactstress(double *bhat, double *adc, double *auc,int *jqc,
 	cstress[idof1]=(bhat[idof1]-cstress[idof1])/bdd[idof1];
 	cstress[idof2]=(bhat[idof2]-cstress[idof2])/bdd[idof2];
 	cstress[idof3]=(bhat[idof3]-cstress[idof3])/bdd[idof3];
+	
+	lambda[idof1]+=cstress[idof1];
+	lambda[idof2]+=cstress[idof2];
+	lambda[idof3]+=cstress[idof3];
 
 	/* scaled normal stress */
 
-	stressnormal=cstress[idof1]*bdd[idof1]+cstress[idof2]*bdd[idof2]+
-	             cstress[idof3]*bdd[idof3];
+	stressnormal2=cstress[idof1]*slavnor[3*j]+cstress[idof2]*slavnor[3*j+1]+
+	             cstress[idof3]*slavnor[3*j+2];
+
+	stressnormal=lambda[idof1]*slavnor[3*j]+lambda[idof2]*slavnor[3*j+1]+
+	             lambda[idof3]*slavnor[3*j+2];
+				 
+    printf("contact stress Lambda_n[%d]=%e, cstress_n[%d]=%e\n",j,stressnormal,j,stressnormal2);
 
 	/* Division by bdd is anulated by multiplication by bdd needed for
 	stressnormal (scaled) */
-	
-	//	stressnormal=(bhat[idof1]-cstress[idof1])/bdd[idof1]*slavnor[3*j]
-	//          +(bhat[idof2]-cstress[idof2])/bdd[idof2]*slavnor[3*j+1]
-	//          +(bhat[idof3]-cstress[idof3])/bdd[idof3]*slavnor[3*j+2];
-	
-	//stressnormal=(bhat[idof1]-cstress[idof1])*slavnor[3*j]
-	//            +(bhat[idof2]-cstress[idof2])*slavnor[3*j+1]
-	//            +(bhat[idof3]-cstress[idof3])*slavnor[3*j+2];
 	
 	dispnormal=b[idof1]*slavnor[3*j]
 	          +b[idof2]*slavnor[3*j+1]
 	          +b[idof3]*slavnor[3*j+2];
 	
-	if(stressnormal+constant*(dispnormal-gap[j])>0.){
-	  islavact[j]=1;
+	if(stressnormal+constant*(dispnormal-gap[j])>1E-10){
+		if (islavact[j]!=1) {*iflagact = 1;
+		//	printf("1 node %d, value = %f\n", j,stressnormal+constant*(dispnormal-gap[j]));
+		}
+		islavact[j]=1;
 	}else{
-	  islavact[j]=0.;
+		if (islavact[j]!=0){ *iflagact = 1;
+		//		printf("2 node %d, value = %f\n", j,stressnormal+constant*(dispnormal-gap[j]));
+		}
+		islavact[j]=0.;
+		lambda[idof1]=0.;
+		lambda[idof2]=0.;
+		lambda[idof3]=0.;
+		cstress[idof1]=0.;
+		cstress[idof2]=0.;
+		cstress[idof3]=0.;
 	}
+//	printf("node %d, status :%d\n",j,islavact[j]);
       }
     }
 
@@ -93,17 +113,20 @@ void contactstress(double *bhat, double *adc, double *auc,int *jqc,
     for(j=0;j<neq[1];j++){
       unitmatrix[j]=1.;
       bhat[j]=b[j];
-      printf("contactstress dof=%d,cstress=%e\n",j,cstress[j]);
+//      printf("contactstress dof=%d,cstress=%e\n",j,cstress[j]);
     }
 
     FORTRAN(opnonsym, (&neq[1], &aux, bhat, b, unitmatrix, auqdt, jqqdt, irowqdt));
     
+    for(j=0;j<neq[1];j++){
+//      printf("contactstress u b[%d]=%e\n",j,b[j]);
+    }
+
 
   number=12;
 
-  FORTRAN(writematrix,(auc,b,irowc,jqc,&neq[1],&number));
+//  FORTRAN(writematrix,(auc,b,irowc,jqc,&neq[1],&number));
 
     free(unitmatrix);
-
     return;
 }

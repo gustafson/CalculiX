@@ -18,7 +18,7 @@
 !
       subroutine e_c3d_prhs(co,nk,konl,lakonl,sm,ff,nelem,nmethod,rhcon,
      &  nrhcon,ielmat,ntmat_,v,vold,voldaux,nelemface,sideface,nface,
-     &  dtime,matname,mint_,shcon,nshcon,theta1,physcon,
+     &  dtime,matname,mi,shcon,nshcon,theta1,physcon,
      &  iexplicit)
 !
 !     computation of the pressure element matrix and rhs for the element with
@@ -38,14 +38,14 @@
       integer konl(20),ifaceq(8,6),nelemface(*),nk,nelem,j1,
      &  nface,i,j,k,i1,i2,nmethod,ii,jj,id,ipointer,ig,kk,
      &  nrhcon(*),ielmat(*),nshcon(*),ntmat_,nope,nopes,imat,mint2d,
-     &  mint3d,mint_,ifacet(6,4),nopev,ifacew(8,5),iflag,iexplicit
+     &  mint3d,mi(2),ifacet(6,4),nopev,ifacew(8,5),iflag,iexplicit
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),r,cp,dvi,
      &  ff(60),theta1,c2i,xsjmod,rhcon(0:1,ntmat_,*),rhovel(3),
-     &  shcon(0:3,ntmat_,*),vl(0:4,20),xl2(0:3,8),xsj2(3),shp2(7,8),
-     &  v(0:4,*),xi,et,ze,xsj,sm(60,60),temp,voldaux(0:4,*),
-     &  rho,weight,vold(0:4,*),delrhovel(3),aux(3),voldauxl(0:4,20),
-     &  dpress(3),voldauxl2(0:4,8),vl2(0:4,8),voldl(0:4,20),
+     &  shcon(0:3,ntmat_,*),vl(0:mi(2),20),xl2(3,8),xsj2(3),shp2(7,8),
+     &  v(0:mi(2),*),xi,et,ze,xsj,sm(60,60),temp,voldaux(0:4,*),
+     &  rho,weight,vold(0:mi(2),*),delrhovel(3),aux(3),voldauxl(0:4,20),
+     &  dpress(3),voldauxl2(0:4,8),vl2(0:4,8),voldl(0:mi(2),20),
      &  physcon(*),gg(60),divrhovel,auxg(3),
      &  xi3d,et3d,ze3d,xlocal20(3,9,6),xlocal4(3,1,4),xlocal10(3,3,4),
      &  xlocal6(3,1,5),xlocal15(3,4,5),xlocal8(3,4,6),xlocal8r(3,1,6)

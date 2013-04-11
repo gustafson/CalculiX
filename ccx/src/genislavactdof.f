@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine genislavactdof(ntie,neq,nactdof,nslavnode,islavact,
-     &     islavactdof,islavnode)
+     &     islavactdof,islavnode,mi)
 !
 !     Author : Samoela Rakotonanahary
 !     genislavactdof get the field islavactdof in order to 
@@ -28,7 +28,8 @@
 !     corresponding slave node position in field islavnode and the
 !     global (x-y-z) degree of freedom
 !     
-      integer i,j,k,ntie,neq(*),node,nslavnode(*),nactdof(0:3,*),
+      integer i,j,k,ntie,neq(*),node,nslavnode(*),mi(2),
+     &     nactdof(0:mi(2),*),
      &     islavact(*),islavactdof(*),islavnode(*)
 !     
       do i=1,ntie

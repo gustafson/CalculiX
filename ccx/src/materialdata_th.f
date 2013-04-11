@@ -17,20 +17,20 @@
 !
       subroutine materialdata_th(cocon,ncocon,imat,iorien,pgauss,orab,
      &  ntmat_,coconloc,mattyp,t1l,rhcon,nrhcon,rho,shcon,nshcon,sph,
-     &  xstiff,iint,iel,istiff,mint_)
+     &  xstiff,iint,iel,istiff,mi)
 !
       implicit none
 !
 !     determines the density, the specific heat and the conductivity 
 !     in an integration point with coordinates pgauss
 !
-      integer ncocon(2,*),imat,iorien,k,mattyp,mint_,
+      integer ncocon(2,*),imat,iorien,k,mattyp,mi(2),
      &  ntmat_,id,two,four,seven,nrhcon(*),nshcon(*),
      &  iint,iel,ncond,istiff,ncoconst
 !
       real*8 cocon(0:6,ntmat_,*),orab(7,*),coconloc(6),t1l,
      &  pgauss(3),rhcon(0:1,ntmat_,*),
-     &  shcon(0:3,ntmat_,*),rho,sph,xstiff(27,mint_,*)
+     &  shcon(0:3,ntmat_,*),rho,sph,xstiff(27,mi(1),*)
 !
       two=2
       four=4

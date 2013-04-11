@@ -16,20 +16,17 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-      subroutine ts_calc(xflow,Tt,Pt,kappa,r,a,Ts,case)
+      subroutine ts_calc(xflow,Tt,Pt,kappa,r,a,Ts,icase)
 !     
 !     this subroutine solves the implicit equation
 !     f=xflow*dsqrt(Tt)/(a*Pt)-C*(TtdT)**expon*(Ttdt-1)**0.5d0
 !     
       implicit none
 !
-      integer inv,case,i
+      integer inv,icase,i
 !     
       real*8 xflow,Tt,Pt,Ts,kappa,r,f,df,a,expon,Ts_old,C,TtzTs,
      &     deltaTs,TtzTs_crit, Qred_crit,Qred,h1,h2,h3
-!     
-c      write(*,*) ''
-c      write(*,*) 'Ts_calc.f'
       expon=-0.5d0*(kappa+1.d0)/(kappa-1.d0)
 !     
       C=dsqrt(2.d0/r*kappa/(kappa-1.d0))
@@ -55,15 +52,13 @@ c      write(*,*) 'Ts_calc.f'
 !
       Qred=abs(xflow)*dsqrt(Tt)/(a*Pt)
 !
-c      write(*,*) 'epsilon',(Qred/C)**2
-!
 !     optimised estimate of T static
 !
       Ts=Tt/(1+(Qred**2/C**2))
 !     
 !     adiabatic
 !     
-      if(case.eq.0) then
+      if(icase.eq.0) then
 !
          TtzTs_crit=(kappa+1.d0)/2.d0
 !         
@@ -101,24 +96,19 @@ c      write(*,*) 'epsilon',(Qred/C)**2
 !
          f=Qred-f
          deltaTs=-f/df
-c         write(*,*) 'deltaTs=',deltaTs
 !     
          Ts=Ts+deltaTs
-c         write(*,*) 'Ts',Ts
 !     
          if( (((dabs(Ts-Ts_old)/ts_old).le.1.E-8))
      &        .or.((dabs(Ts-Ts_old)).le.1.E-10)) then
-c            write(*,*) 'f=',f
-c            write(*,*) 'Ts=',Ts
-c            write(*,*) 'i',i
-c            write(*,*) ''
+            exit
+         else if(i.gt.20) then
+            Ts=0.9*Tt
             exit
          endif
          Ts_old=Ts
       enddo
 !     
-c      write(*,*) 'end of ts_clac.f'
-c      write(*,*) ''
       return
       end
       

@@ -18,7 +18,7 @@
 !     
       subroutine liquidpump(node1,node2,nodem,nelem,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,rho,g,co,numf)
+     &     nodef,idirf,df,rho,g,co,numf,mi)
 !
 !     pump for incompressible media
 !     
@@ -28,9 +28,9 @@
 !      
       integer nelem,nactdog(0:3,*),node1,node2,nodem,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
-     &     inv,id,numf,npu,i
+     &     inv,id,numf,npu,i,mi(2)
 !      
-      real*8 prop(*),v(0:4,*),xflow,f,df(4),
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),
      &     p1,p2,rho,g(3),dg,z1,z2,co(3,*),
      &     xpu(10),ypu(10),xxpu(10),yypu(10),dh
 !

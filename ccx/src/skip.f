@@ -18,15 +18,15 @@
 !
       subroutine skip(nset,nalset,nload,nbody,
      &  nforc,nboun,nflow,nk,ne,nkon,
-     &  mint_,nmpc,memmpc_,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,nam,
+     &  mi,nmpc,memmpc_,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,nam,
      &  nprint,nlabel,ncs_,ne1d,ne2d,infree,nmethod,
      &  iperturb,nener,iplas,ithermal,nstate_,iprestr,mcs,ntie)
 !
       implicit none
 !
-      integer nset,nalset,nload,nforc,nboun,nflow,nk,ne,nkon,mint_,
+      integer nset,nalset,nload,nforc,nboun,nflow,nk,ne,nkon,mi(2),
      &  nmpc,memmpc_,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,nam,
-     &  nprint,nlabel,ncs_,ne1d,ne2d,infree(4),i,
+     &  nprint,nlabel,ncs_,ne1d,ne2d,infree(4),i,mt,
      &  nmethod,iperturb(*),nener,iplas,ithermal,nstate_,iprestr,i4,
      &  maxamta,mcs,ntie,nbody
 !
@@ -38,8 +38,11 @@
       character*20 c20
       character*80 c80
       character*81 c81
+      character*87 c87
 !
       real*8 r8
+!
+      mt=mi(2)+1
 !
 !        skipping the next entries
 !     
@@ -86,14 +89,14 @@
       read(15)(i4,i=1,2*nbody)
       read(15)(r8,i=1,7*nbody)
       read(15)(r8,i=1,7*nbody)
-      if(iprestr.gt.0) read(15) (r8,i=1,6*mint_*ne)
-      read(15)(i4,i=1,2*nflow)
-      read(15)(r8,i=1,nflow)
-      if(nam.gt.0) read(15)(i4,i=1,nflow)
-      read(15)(r8,i=1,nflow)
+      if(iprestr.gt.0) read(15) (r8,i=1,6*mi(1)*ne)
+c      read(15)(i4,i=1,2*nflow)
+c      read(15)(r8,i=1,nflow)
+c      if(nam.gt.0) read(15)(i4,i=1,nflow)
+c      read(15)(r8,i=1,nflow)
       read(15)(c5,i=1,nprint)
       read(15)(c81,i=1,nprint)
-      read(15)(c4,i=1,nlabel)
+      read(15)(c87,i=1,nlabel)
       read(15)(r8,i=1,(ncmat_+1)*ntmat_*nmat)
       read(15)(i4,i=1,2*nmat)
       read(15)(r8,i=1,2*ntmat_*nmat)
@@ -141,10 +144,10 @@
       endif
       read(15)(c80,i=1,nmat)
       read(15)(i4,i=1,ne)
-      read(15)(r8,i=1,5*nk)
+      read(15)(r8,i=1,mt*nk)
       if((nmethod.eq.4).or.((nmethod.eq.1).and.(iperturb(1).ge.2))) 
      &     then
-         read(15)(r8,i=1,4*nk)
+         read(15)(r8,i=1,mt*nk)
       endif
       read(15)(i4,i=1,nk)
       if((ne1d.gt.0).or.(ne2d.gt.0))then
@@ -164,10 +167,10 @@
          read(15)(i4,i=1,ncs_)
          read(15)(r8,i=1,17*mcs)
       endif
-      read(15)(r8,i=1,6*mint_*ne)
-      read(15)(r8,i=1,6*mint_*ne)
-      if(nener.eq.1) read(15)(r8,i=1,mint_*ne)
-      if(nstate_.gt.0) read(15)(r8,i=1,nstate_*mint_*ne)
+      read(15)(r8,i=1,6*mi(1)*ne)
+      read(15)(r8,i=1,6*mi(1)*ne)
+      if(nener.eq.1) read(15)(r8,i=1,mi(1)*ne)
+      if(nstate_.gt.0) read(15)(r8,i=1,nstate_*mi(1)*ne)
       read(15) (r8,i=1,27)
       read(15) (r8,i=1,2)
       read(15) c3

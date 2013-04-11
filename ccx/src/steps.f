@@ -63,7 +63,8 @@
                enddo
             endif
 !
-         elseif(textpart(i)(1:6).eq.'NLGEOM') then
+         elseif((textpart(i)(1:6).eq.'NLGEOM').and.
+     &          (textpart(i)(7:9).ne.'=NO')) then
 !
 !           geometrically nonlinear calculations
 !
@@ -76,16 +77,16 @@
                call inputerror(inpc,ipoinpc,iline)
                stop
             endif
-!
-!          to ensure linear calculations for 1d and 2d elements and 
-!          for nonlinear MPCs, the
-!          convergence criteria were set extremely high. If nonlinear
-!          calculations are requested, these criteria must be reset
-!
-            if(ctrl(19).eq.1.d+30) then
-               ctrl(19)=0.005
-               ctrl(20)=0.01
-            endif
+c!
+c!          to ensure linear calculations for 1d and 2d elements and 
+c!          for nonlinear MPCs, the
+c!          convergence criteria were set extremely high. If nonlinear
+c!          calculations are requested, these criteria must be reset
+c!
+c            if(ctrl(19).eq.1.d+30) then
+c               ctrl(19)=0.005
+c               ctrl(20)=0.01
+c            endif
 !
          elseif(textpart(i)(1:4).eq.'INC=') then
 !
@@ -115,16 +116,16 @@
             endif
          endif
       enddo
-!
-!     to ensure linear calculations for 1d and 2d elements and 
-!     for nonlinear MPCs, the
-!     convergence criteria were set extremely high. If nonlinear
-!     calculations are requested, these criteria must be reset
-!
-      if((iperturb(1).eq.3).and.(ctrl(19).eq.1.d+30)) then
-         ctrl(19)=0.005
-         ctrl(20)=0.01
-      endif
+c!
+c!     to ensure linear calculations for 1d and 2d elements and 
+c!     for nonlinear MPCs, the
+c!     convergence criteria were set extremely high. If nonlinear
+c!     calculations are requested, these criteria must be reset
+c!
+c      if((iperturb(1).eq.3).and.(ctrl(19).eq.1.d+30)) then
+c         ctrl(19)=0.005
+c         ctrl(20)=0.01
+c      endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

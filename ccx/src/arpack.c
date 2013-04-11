@@ -62,7 +62,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	     char *filab, double *eme,
              int *iexpl, double *plicon, int *nplicon, double *plkcon,
              int *nplkcon,
-             double *xstate, int *npmat_, char *matname, int *mint_,
+             double *xstate, int *npmat_, char *matname, int *mi,
              int *ncmat_, int *nstate_, double *ener, char *jobnamec,
              char *output, char *set, int *nset, int *istartset,
              int *iendset, int *ialset, int *nprint, char *prlab,
@@ -74,22 +74,23 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   
   char bmat[2]="G", which[3]="LM", howmny[2]="A", fneig[132]="",
       description[13]="            ";
+
   int *inum=NULL,k,ido,dz,iparam[11],ipntr[11],lworkl,ngraph=1,
-    info,rvec=1,*select=NULL,lfin,j,lint,iout,ielas=1,icmd,
-    iinc=1,istep=1,nev,ncv,mxiter,jrow,*ipobody=NULL,inewton=0,ifreebody;
-  int mass[2]={1,1}, stiffness=1, buckling=0, rhsi=0, intscheme=0,noddiam=-1,
-      coriolis=0,symmetryflag=0,inputformat=0;
+    info,rvec=1,*select=NULL,lfin,j,lint,iout,ielas=1,icmd=0,mt=mi[1]+1,
+    iinc=1,istep=1,nev,ncv,mxiter,jrow,*ipobody=NULL,inewton=0,ifreebody,
+    mass[2]={1,1}, stiffness=1, buckling=0, rhsi=0, intscheme=0,noddiam=-1,
+    coriolis=0,symmetryflag=0,inputformat=0,*ipneigh=NULL,*neigh=NULL;
+
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,
     *workl=NULL,*aux=NULL,*d=NULL,sigma=1,*temp_array=NULL,
-    *een=NULL,sum,cam[3],*f=NULL,*fn=NULL,qa[3],*fext=NULL,*epn=NULL,
+    *een=NULL,sum,cam[5],*f=NULL,*fn=NULL,qa[3],*fext=NULL,*epn=NULL,
     *xstateini=NULL,*xstiff=NULL,*stiini=NULL,*vini=NULL,freq,*stx=NULL,
     *enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,
     *physcon=NULL,*qfx=NULL,*qfn=NULL,tol,fmin,fmax,pi,*cgr=NULL,
     *xloadold=NULL,reltime,*vr=NULL,*vi=NULL,*stnr=NULL,*stni=NULL,
     *vmax=NULL,*stnmax=NULL,*cs=NULL;
-  FILE *f1;
 
-  int *ipneigh=NULL,*neigh=NULL;
+  FILE *f1;
 
   /* dummy arguments for the results call */
 
@@ -99,10 +100,10 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   int token;
 #endif
 
-  if((strcmp1(&filab[60],"PU  ")==0)||
-     (strcmp1(&filab[102],"PHS ")==0)||
-     (strcmp1(&filab[108],"MAXU")==0)||
-     (strcmp1(&filab[114],"MAXS")==0)){
+  if((strcmp1(&filab[870],"PU  ")==0)||
+     (strcmp1(&filab[1479],"PHS ")==0)||
+     (strcmp1(&filab[1566],"MAXU")==0)||
+     (strcmp1(&filab[1653],"MAXS")==0)){
       printf("*ERROR in arpack: PU, PHS, MAXU and MAX was selected in a frequency calculation without cyclic symmetry;\n this is not correct\n");
       FORTRAN(stop,());
   }
@@ -139,8 +140,8 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
      previous static step was viscoplastic */
 
   if(*nstate_!=0){
-    xstateini=NNEW(double,*nstate_**mint_**ne);
-    for(k=0;k<*nstate_**mint_**ne;++k){
+    xstateini=NNEW(double,*nstate_*mi[0]**ne);
+    for(k=0;k<*nstate_*mi[0]**ne;++k){
       xstateini[k]=xstate[k];
     }
   }
@@ -151,14 +152,14 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   /* allocating a field for the stiffness matrix */
 
-  xstiff=NNEW(double,27**mint_**ne);
+  xstiff=NNEW(double,27*mi[0]**ne);
 
   iout=-1;
-  v=NNEW(double,5**nk);
-  fn=NNEW(double,4**nk);
-  stx=NNEW(double,6**mint_**ne);
+  v=NNEW(double,mt**nk);
+  fn=NNEW(double,mt**nk);
+  stx=NNEW(double,6*mi[0]**ne);
   if(*ithermal>1){
-      qfx=NNEW(double,3**mint_**ne);
+      qfx=NNEW(double,3*mi[0]**ne);
   }
   if(*iperturb==0){
      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
@@ -169,7 +170,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	       ndirboun,xboun,nboun,ipompc,
 	       nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
 	       &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
-	       xstateini,xstiff,xstate,npmat_,epn,matname,mint_,&ielas,
+	       xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
@@ -183,7 +184,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	       ndirboun,xboun,nboun,ipompc,
 	       nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
 	       &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
-	       xstateini,xstiff,xstate,npmat_,epn,matname,mint_,&ielas,
+	       xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
@@ -212,7 +213,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      ielorien,norien,orab,ntmat_,
 	      t0,t0,ithermal,prestr,iprestr,vold,iperturb,sti,
 	      nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
-	      xstiff,npmat_,&dtime,matname,mint_,
+	      xstiff,npmat_,&dtime,matname,mi,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
 	      physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
 		      &coriolis,ibody,xloadold,&reltime,veold));
@@ -227,7 +228,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      ielorien,norien,orab,ntmat_,
 	      t0,t1old,ithermal,prestr,iprestr,vold,iperturb,sti,
 	      nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
-	      xstiff,npmat_,&dtime,matname,mint_,
+	      xstiff,npmat_,&dtime,matname,mi,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
               physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
 		      &coriolis,ibody,xloadold,&reltime,veold));
@@ -241,14 +242,18 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
     ++*kode;time=0.;
     inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
-    ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
+    if(strcmp1(&filab[1044],"ZZS")==0){
+	neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
+    }
     FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,een,t1,
          fn,&time,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
-	 iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,trab,inotr,ntrans,
+	 iperturb,ener,mi,output,ithermal,qfn,&j,&noddiam,trab,inotr,ntrans,
          orab,ielorien,norien,description,
-	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs));
+	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs,
+	 set,nset,istartset,iendset,ialset));
     
-    free(inum);free(ipneigh);free(neigh);FORTRAN(stop,());
+    if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
+    free(inum);FORTRAN(stop,());
 
   }
 
@@ -283,7 +288,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   else if(*isolver==6){
 #ifdef MATRIXSTORAGE
     matrixstorage(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1],
-        ntrans,inotr,trab,co,nk,nactdof,jobnamec);
+		  ntrans,inotr,trab,co,nk,nactdof,jobnamec,mi);
 #else
     printf("*ERROR in arpack: the MATRIXSTORAGE library is not linked\n\n");
     FORTRAN(stop,());
@@ -481,18 +486,18 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   /* calculating the displacements and the stresses and storing */
   /* the results in frd format for each valid eigenmode */
 
-  v=NNEW(double,5**nk);
-  fn=NNEW(double,4**nk);
+  v=NNEW(double,mt**nk);
+  fn=NNEW(double,mt**nk);
   stn=NNEW(double,6**nk);
   inum=NNEW(int,*nk);
-  stx=NNEW(double,6**mint_**ne);
+  stx=NNEW(double,6*mi[0]**ne);
   if(*ithermal>1){
       qfn=NNEW(double,3**nk);
-      qfx=NNEW(double,3**mint_**ne);
+      qfx=NNEW(double,3*mi[0]**ne);
   }
   
-  if(strcmp1(&filab[18],"E   ")==0) een=NNEW(double,6**nk);
-  if(strcmp1(&filab[36],"ENER")==0) enern=NNEW(double,*nk);
+  if(strcmp1(&filab[261],"E   ")==0) een=NNEW(double,6**nk);
+  if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,*nk);
 
   temp_array=NNEW(double,neq[1]);
 
@@ -501,7 +506,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     lint=lfin;
     lfin=lfin+neq[1];
 
-    for(k=0;k<6**mint_**ne;k++){eme[k]=0.;}
+    for(k=0;k<6*mi[0]**ne;k++){eme[k]=0.;}
 
     /* check whether the frequency belongs to the requested
        interval */
@@ -529,11 +534,12 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	}
     }
 
-    eei=NNEW(double,6**mint_**ne);
+    eei=NNEW(double,6*mi[0]**ne);
     if(*nener==1){
-	stiini=NNEW(double,6**mint_**ne);
-	enerini=NNEW(double,*mint_**ne);}
+	stiini=NNEW(double,6*mi[0]**ne);
+	enerini=NNEW(double,mi[0]**ne);}
 
+    memset(&v[0],0.,sizeof(double)*mt**nk);
     if(*iperturb==0){
       FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	    stx,elcon,
@@ -544,7 +550,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    nodeboun,ndirboun,xboun,nboun,ipompc,
 	    nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
             &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
-	    xstateini,xstiff,xstate,npmat_,epn,matname,mint_,&ielas,
+	    xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,
 	    &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
             sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
@@ -559,7 +565,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    nodeboun,ndirboun,xboun,nboun,ipompc,
 	    nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
             &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
-	    xstateini,xstiff,xstate,npmat_,epn,matname,mint_,&ielas,
+	    xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,
 	    &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,sti,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
@@ -571,13 +577,16 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
     ++*kode;
     freq=d[j]/6.283185308;
-    ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
+    if(strcmp1(&filab[1044],"ZZS")==0){
+	neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
+    }
     FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,een,t1,
          fn,&freq,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
-	 iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,
+	 iperturb,ener,mi,output,ithermal,qfn,&j,&noddiam,
          trab,inotr,ntrans,orab,ielorien,norien,description,
-	 ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs));
-    free(ipneigh);free(neigh);
+	 ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs,
+         set,nset,istartset,iendset,ialset));
+    if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
   }
 
   if((fmax>0.)&&(fmax>d[nev-1])){
@@ -598,10 +607,10 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   if(*nstate_!=0){free(xstateini);}
 
-  if(strcmp1(&filab[18],"E   ")==0) free(een);
-  if(strcmp1(&filab[36],"ENER")==0) free(enern);
+  if(strcmp1(&filab[261],"E   ")==0) free(een);
+  if(strcmp1(&filab[522],"ENER")==0) free(enern);
 
-  for(k=0;k<6**mint_**ne;k++){eme[k]=0.;}
+  for(k=0;k<6*mi[0]**ne;k++){eme[k]=0.;}
     
   return;
 }

@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine rectcyl(co,v,fn,stn,qfn,een,cs,n,icntrl,t,filab,
-     &  imag)
+     &  imag,mi)
 !
 !     icntrl=1:  rectangular to cylindrical coordinates for nodal
 !                coordinates in field co
@@ -39,9 +39,10 @@
 !
       implicit none
 !
-      character*6 filab(*)
-      integer i,j,n,icntrl,imag
-      real*8 co(3,*),v(0:4,*),fn(0:3,*),stn(6,*),een(6,*),a(3,3),
+      character*87 filab(*)
+      integer i,j,n,icntrl,imag,mi(2)
+      real*8 co(3,*),v(0:mi(2),*),fn(0:mi(2),*),stn(6,*),een(6,*),
+     &  a(3,3),
      &  xr,xt,xz,b(3,3),cs(17,*),t(3),u(3),qfn(3,*),csab(7),
      &  xn(3),r(3),z,theta,rr,c(3,3),ctm,ct,st,ddx,ddy,dd
 !
@@ -129,6 +130,7 @@
          do i=1,n
             rr=co(1,i)
             theta=co(2,i)
+c            write(*,*) 'rectcyl',i,co(2,i)
             z=co(3,i)
             ct=dcos(theta)
             st=dsin(theta)

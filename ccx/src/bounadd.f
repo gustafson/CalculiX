@@ -20,7 +20,7 @@
      &  nboun,nboun_,iamboun,iamplitude,nam,ipompc,nodempc,
      &  coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &  ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,type,
-     &  typeboun,nmethod,iperturb,fixed,vold,nodetrue)
+     &  typeboun,nmethod,iperturb,fixed,vold,nodetrue,mi)
 !
 !     adds a boundary condition to the data base
 !
@@ -35,10 +35,10 @@
      &  iamboun(*),iamplitude,nam,ipompc(*),nodempc(3,*),nmpc,nmpc_,
      &  mpcfree,inotr(2,*),ntrans,ikboun(*),ilboun(*),ikmpc(*),
      &  ilmpc(*),itr,idof,newnode,number,id,idofnew,idnew,nk,nk_,
-     &  mpcfreenew,nmethod,iperturb,ii,nodetrue
+     &  mpcfreenew,nmethod,iperturb,ii,nodetrue,mi(2)
 !
       real*8 xboun(*),val,coefmpc(*),trab(7,*),a(3,3),co(3,*),
-     &  vold(0:4,*)
+     &  vold(0:mi(2),*)
 !
       if(ntrans.le.0) then
          itr=0
@@ -178,7 +178,7 @@
 !
 !              copying the initial conditions from node into newnode
 !
-               do j=0,4
+               do j=0,mi(2)
                   vold(j,newnode)=vold(j,node)
                enddo
 c               write(*,*) ' bounadd ',nk,vold(0,nk),node,vold(0,node)

@@ -18,7 +18,7 @@
 !
       subroutine initialconditions(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,t0,t1,prestr,iprestr,ithermal,veold,inoelfree,nk_,
-     &  mint_,istep,istat,n,iline,ipol,inl,ipoinp,inp,lakon,kon,co,ne,
+     &  mi,istep,istat,n,iline,ipol,inl,ipoinp,inp,lakon,kon,co,ne,
      &  ipkon,vold,ipoinpc,xstate,nstate_)
 !
 !     reading the input deck: *INITIAL CONDITIONS
@@ -34,15 +34,15 @@
       character*132 textpart(16)
 !
       integer istartset(*),iendset(*),ialset(*),nset,iprestr,ithermal,
-     &  istep,istat,n,i,j,k,l,ii,key,idir,ipos,inoelfree,nk_,mint_,
+     &  istep,istat,n,i,j,k,l,ii,key,idir,ipos,inoelfree,nk_,mi(2),
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ij,jj,ntens,ncrds,layer,
      &  kspt,lrebar,iflag,i1,mint3d,nope,kon(*),konl(20),indexe,
      &  ipkon(*),ne,ipoinpc(0:*),nstate_
 !
-      real*8 t0(*),t1(*),beta(6),prestr(6,mint_,*),veold(0:3,*),
+      real*8 t0(*),t1(*),beta(6),prestr(6,mi(1),*),veold(0:mi(2),*),
      &  temperature,velocity,tempgrad1,tempgrad2,pgauss(3),
      &  shp(4,20),xsj,xl(3,20),xi,et,ze,weight,co(3,*),pressure,
-     &  vold(0:4,*),xstate(nstate_,mint_,*),dispvelo,totpres
+     &  vold(0:mi(2),*),xstate(nstate_,mi(1),*),dispvelo,totpres
 !
       include "gauss.f"
 !

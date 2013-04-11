@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine e_c3d_v2rhs(co,nk,konl,lakonl,
-     &  ff,nelem,nmethod,vold,v,dtime,theta2,iexplicit)
+     &  ff,nelem,nmethod,vold,v,dtime,theta2,iexplicit,mi)
 !
 !     computation of the velocity element matrix and rhs for the element with
 !     element with the topology in konl: step 3 (correction **)
@@ -29,10 +29,11 @@
       character*8 lakonl
 !
       integer konl(20),nk,nelem,i,j,i1,j1,nmethod,jj,jj1,kk,
-     &  nope,mint3d,iflag,iexplicit
+     &  nope,mint3d,iflag,iexplicit,mi(2)
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),ff(60),xsjmod,vl(0:4,20),
-     &  vel(3),div,voldl(0:4,20),v(0:4,*),vold(0:4,*),dtime,term,
+      real*8 co(3,*),xl(3,20),shp(4,20),ff(60),xsjmod,vl(0:mi(2),20),
+     &  vel(3),div,voldl(0:mi(2),20),v(0:mi(2),*),vold(0:mi(2),*),dtime,
+     &  term,
      &  xi,et,ze,xsj,weight,shpv(20),theta2,dpress(3),ddpress(3)
 !
       include "gauss.f"

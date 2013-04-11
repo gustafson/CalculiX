@@ -163,11 +163,11 @@
 !
       nconf=ifree-1
 !
-      do i=1,ntie
-         do j=istartfield(i),iendfield(i)
-            write(*,*) 'nodestiedface ',i,j,ifield(j)
-         enddo
-      enddo
+c      do i=1,ntie
+c         do j=istartfield(i),iendfield(i)
+c            write(*,*) 'nodestiedface ',i,j,ifield(j)
+c         enddo
+c      enddo
 !     
       return
       end

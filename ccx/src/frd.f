@@ -20,40 +20,48 @@
      &  kode,filab,een,t1,fn,time,epn,ielmat,matname,enern,xstaten,
      &  nstate_,istep,iinc,ithermal,qfn,mode,noddiam,trab,inotr,
      &  ntrans,orab,ielorien,norien,description,ipneigh,neigh,
-     &  mint_,stx,vr,vi,stnr,stni,vmax,stnmax,ngraph,veold,ener,ne,
-     &  cs)
+     &  mi,stx,vr,vi,stnr,stni,vmax,stnmax,ngraph,veold,ener,ne,
+     &  cs,set,nset,istartset,iendset,ialset)
 !
 !     stores the results in frd format
+!
+!     iselect selects which nodes are to be stored:
+!          iselect=-1 means only those nodes for which inum negative
+!                     ist, i.e. network nodes
+!          iselect=+1 means only those nodes for which inum positive
+!                     ist, i.e. structural nodes
+!          iselect=0  means both of the above
 !
       implicit none
 !
       character*1 c
       character*3 m1,m2,m3,m4,m5
       character*5 p0,p1,p2,p3,p4,p5,p6,p8,p10,p11,p12
-      character*6 filab(*)
       character*8 lakon(*),date,newclock,fmat
       character*10 clock
       character*12 description
       character*20 newdate
       character*80 matname(*)
+      character*81 set(*)
+      character*87 filab(*)
       character*132 text
 !
       integer kon(*),inum(*),nk,ne0,nmethod,kode,i,j,ipkon(*),indexe,
-     &  one,ielmat(*),lb,nterms,nstate_,l,ithermal,mode,mint_,norien,
+     &  one,ielmat(*),nstate_,l,ithermal,mode,mi(2),norien,
      &  noddiam,null,icounter,inotr(2,*),ntrans,ipneigh(*),neigh(2,*),
      &  ielorien(*),iinc,istep,nkcoords,ngraph,k,nodes,nope,ne,
-     &  ncomment,nout
+     &  nout,nset,istartset(*),iendset(*),ialset(*),iset,m,
+     &  noutloc,ncomp,nksegment,iselect,noutplus,noutmin,ncomma
 !
-      real*8 co(3,*),v(0:4,*),stn(6,*),een(6,*),t1(*),fn(0:3,*),time,
-     &  epn(*),enern(*),xstaten(nstate_,*),pi,qfn(3,*),oner,trab(7,*),
-     &  a(3,3),stx(6,mint_,*),orab(7,*),vr(0:4,*),vi(0:4,*),stnr(6,*),
-     &  stni(6,*),vmax(0:3,*),stnmax(0:6,*),veold(0:3,*),ener(mint_,*),
-     &  cs(17,*)
+      real*8 co(3,*),v(0:mi(2),*),stn(6,*),een(6,*),t1(*),fn(0:mi(2),*),
+     &  time,epn(*),enern(*),xstaten(nstate_,*),pi,qfn(3,*),oner,
+     &  trab(7,*),stx(6,mi(1),*),orab(7,*),vr(0:mi(2),*),
+     &  vi(0:mi(2),*),stnr(6,*),stni(6,*),vmax(0:3,*),stnmax(0:6,*),
+     &  veold(0:mi(2),*),ener(mi(1),*),cs(17,*)
 !
       data icounter /0/
-      save icounter,nkcoords,nout
+      save icounter,nkcoords,nout,noutmin,noutplus
 !
-      icounter=icounter+1
       pi=4.d0*datan(1.d0)
 !
       c='C'
@@ -76,12 +84,13 @@
       p11='   11'
       p12='   12'
 !
-      if(time.le.0.d0) then
+      if((time.le.0.d0).or.(nmethod.eq.2)) then
          fmat(1:8)='(e12.5) '
-      elseif((dlog10(time).ge.0.d0).and.(dlog10(time).lt.11.d0)) then
+      elseif((dlog10(time).ge.0.d0).and.(dlog10(time).lt.10.d0)) then
          fmat(1:5)='(f12.'
-         write(fmat(6:7),'(i2)') 11-int(dlog10(time)+1.d0)
-         fmat(8:8)=')'
+         ncomma=10-int(dlog10(time)+1.d0)
+         write(fmat(6:6),'(i1)') ncomma
+         fmat(7:8)=') '
       else
          fmat(1:8)='(e12.5) '
       endif
@@ -152,11 +161,15 @@
         write(7,'(a5,a1,67x,i1)') p2,c,one
 !
         if(nmethod.ne.0) then
-           nout=0
+          nout=0
+          noutplus=0
+          noutmin=0
           do i=1,nk
              if(inum(i).eq.0) cycle
              write(7,101) m1,i,(co(j,i),j=1,3)
              nout=nout+1
+             if(inum(i).gt.0) noutplus=noutplus+1
+             if(inum(i).lt.0) noutmin=noutmin+1
           enddo
         else
           do i=1,nk
@@ -236,52 +249,24 @@
         if(nmethod.eq.0) return
       endif
 !
+!     for cyclic symmetry frequency calculations only results
+!     for even numbers (= odd modes, numbering starts at 0)are stored
+!
+      if(((nmethod.eq.2).or.(nmethod.eq.5)).and.((mode/2)*2.ne.mode) 
+     &          .and.(noddiam.ge.0))return
+!
 !     storing the displacements of the nodes
 !
       if(filab(1)(1:4).eq.'U   ') then
-         ncomment=7
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') icounter
-         write(7,'(a132)') text
-         if(nmethod.eq.2) then
-            ncomment=12
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            if(noddiam.ge.0) then
-               text='    1PAX'
-               write(text(25:36),'(1p,e12.5)') cs(6,1)
-               write(text(37:48),'(1p,e12.5)') cs(7,1)
-               write(text(49:60),'(1p,e12.5)') cs(8,1)
-               write(text(61:72),'(1p,e12.5)') cs(9,1)
-               write(text(73:84),'(1p,e12.5)') cs(10,1)
-               write(text(85:96),'(1p,e12.5)') cs(11,1)
-               write(7,'(a132)') text
-            endif
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         write(text(25:36),'(i12)') ncomment*133+nout*50+4
-         text(37:48)=description
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+         iselect=1
+         call frdset(filab(1),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
          text=' -4  DISP        4    1'
          write(7,'(a132)') text
          text=' -5  D1          1    2    1    0'
@@ -293,62 +278,53 @@
          text=' -5  ALL         1    2    0    0    1ALL'
          write(7,'(a132)') text
 !
-         if((ntrans.eq.0).or.(filab(1)(6:6).eq.'G')) then
-            do i=1,nkcoords
-               if(inum(i).le.0) cycle
-               write(7,101) m1,i,(v(j,i),j=1,3)
-            enddo
-         else
-            do i=1,nkcoords
-               if(inum(i).le.0) cycle
-               if(inotr(1,i).eq.0) then
-                  write(7,101) m1,i,(v(j,i),j=1,3)
-               else
-                  call transformatrix(trab(1,inotr(1,i)),co(1,i),a)
-                  write(7,101) m1,i,
-     &               v(1,i)*a(1,1)+v(2,i)*a(2,1)+v(3,i)*a(3,1),
-     &               v(1,i)*a(1,2)+v(2,i)*a(2,2)+v(3,i)*a(3,2),
-     &               v(1,i)*a(1,3)+v(2,i)*a(2,3)+v(3,i)*a(3,3)
-               endif
-            enddo
-         endif
+         call frdvector(v,iset,ntrans,filab(1),nkcoords,inum,m1,inotr,
+     &        trab,co,istartset,iendset,ialset,mi,ngraph)
 !
          write(7,'(a3)') m3
+      endif
+!
+!     storing the imaginary part of displacements of the nodes
+!     for the odd modes of cyclic symmetry calculations
+!
+      if(noddiam.ge.0) then
+         if(filab(1)(1:4).eq.'U   ') then
+!
+            call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
+            text=' -4  DISP        4    1'
+            write(7,'(a132)') text
+            text=' -5  D1          1    2    1    0'
+            write(7,'(a132)') text
+            text=' -5  D2          1    2    2    0'
+            write(7,'(a132)') text
+            text=' -5  D3          1    2    3    0'
+            write(7,'(a132)') text
+            text=' -5  ALL         1    2    0    0    1ALL'
+            write(7,'(a132)') text
+!     
+c         call frdvector(v((mi(2)+1)*nk,1),iset,ntrans,filab,nkcoords,
+c     &        inum,m1,inotr,trab,co,istartset,iendset,ialset,mi,ngraph)
+         call frdvector(v(0,nk+1),iset,ntrans,filab(1),nkcoords,
+     &        inum,m1,inotr,trab,co,istartset,iendset,ialset,mi,ngraph)
+!     
+            write(7,'(a3)') m3
+         endif
       endif
 !
 !     storing the velocities of the nodes
 !
       if(filab(21)(1:4).eq.'V   ') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') icounter
-         write(7,'(a132)') text
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+         iselect=1
+         call frdset(filab(21),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
          text=' -4  VELO        4    1'
          write(7,'(a132)') text
          text=' -5  V1          1    2    1    0'
@@ -359,113 +335,54 @@
          write(7,'(a132)') text
          text=' -5  ALL         1    2    0    0    1ALL'
          write(7,'(a132)') text
-!       
-         if((ntrans.eq.0).or.(filab(1)(6:6).eq.'G')) then
-            do i=1,nkcoords
-               if(inum(i).le.0) cycle
-               write(7,101) m1,i,(veold(j,i),j=1,3)
-            enddo
-         else
-            do i=1,nkcoords
-               if(inum(i).le.0) cycle
-               if(inotr(1,i).eq.0) then
-                  write(7,101) m1,i,(veold(j,i),j=1,3)
-               else
-                  call transformatrix(trab(1,inotr(1,i)),co(1,i),a)
-                  write(7,101) m1,i,
-     &            veold(1,i)*a(1,1)+veold(2,i)*a(2,1)+veold(3,i)*a(3,1),
-     &            veold(1,i)*a(1,2)+veold(2,i)*a(2,2)+veold(3,i)*a(3,2),
-     &            veold(1,i)*a(1,3)+veold(2,i)*a(2,3)+veold(3,i)*a(3,3)
-               endif
-            enddo
-         endif
 !
+         call frdvector(veold,iset,ntrans,filab(21),nkcoords,inum,m1,
+     &        inotr,trab,co,istartset,iendset,ialset,mi,ngraph)
+!     
          write(7,'(a3)') m3
       endif
 !
 !     storing the temperatures in the nodes
 !
       if(filab(2)(1:4).eq.'NT  ') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') icounter
-         write(7,'(a132)') text
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+         iselect=0
+         call frdset(filab(2),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
          text=' -4  NDTEMP      1    1'
          write(7,'(a132)') text
          text=' -5  T           1    1    0    0'
          write(7,'(a132)') text
 !
-         do i=1,nkcoords
-            if(inum(i).eq.0) cycle
-            if(ithermal.le.1) then
-               write(7,101) m1,i,t1(i)
-            else
-               write(7,101) m1,i,v(0,i)
-            endif
-         enddo
-!
+         if(ithermal.le.1) then
+            call frdscalar(t1,iset,nkcoords,inum,m1,
+     &           istartset,iendset,ialset,ngraph,iselect)
+         else
+            ncomp=0
+            call frdvectorcomp(v,iset,nkcoords,inum,m1,
+     &           istartset,iendset,ialset,ncomp,mi,ngraph,iselect)
+         endif
+!     
          write(7,'(a3)') m3
       endif
 !
 !     storing the stresses in the nodes
 !
       if(filab(3)(1:4).eq.'S   ') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') icounter
-         write(7,'(a132)') text
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
-!
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode      
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+!     
+         iselect=1
+         call frdset(filab(3),set,iset,istartset,iendset,ialset,
+     &        inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!     
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &        noutloc,description,kode,nmethod,fmat)
+!     
          text=' -4  STRESS      6    1'
          write(7,'(a132)') text
          text=' -5  SXX         1    4    1    1'
@@ -480,49 +397,56 @@
          write(7,'(a132)') text
          text=' -5  SZX         1    4    3    1'
          write(7,'(a132)') text
-!
-         do i=1,nkcoords
-            if(inum(i).le.0) cycle
-            write(7,101) m1,i,(stn(j,i),j=1,4),
-     &           stn(6,i),stn(5,i)
-         enddo
-!
+!     
+         call frdtensor(stn,iset,nkcoords,inum,m1,istartset,iendset,
+     &          ialset,ngraph)
+!     
          write(7,'(a3)') m3
       endif
 !
+!     storing the imaginary part of the stresses in the nodes
+!     for the odd modes of cyclic symmetry calculations
+!
+      if(noddiam.ge.0) then
+         if(filab(3)(1:4).eq.'S   ') then
+!
+            call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
+            text=' -4  STRESS      6    1'
+            write(7,'(a132)') text
+            text=' -5  SXX         1    4    1    1'
+            write(7,'(a132)') text
+            text=' -5  SYY         1    4    2    2'
+            write(7,'(a132)') text
+            text=' -5  SZZ         1    4    3    3'
+            write(7,'(a132)') text
+            text=' -5  SXY         1    4    1    2'
+            write(7,'(a132)') text
+            text=' -5  SYZ         1    4    2    3'
+            write(7,'(a132)') text
+            text=' -5  SZX         1    4    3    1'
+            write(7,'(a132)') text
+!     
+            call frdtensor(stn(1,nk+1),iset,nkcoords,inum,m1,istartset,
+     &           iendset,ialset,ngraph,ntrans,filab(3),trab,co,inotr)
+!     
+            write(7,'(a3)') m3
+         endif
+      endif
+!     
 !     storing the strains in the nodes
 !
       if(filab(4)(1:4).eq.'E   ') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') icounter
-         write(7,'(a132)') text
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode      
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+         iselect=1
+         call frdset(filab(4),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
          text=' -4  STRAIN      6    1'
          write(7,'(a132)') text
          text=' -5  EXX         1    4    1    1'
@@ -538,11 +462,8 @@
          text=' -5  EZX         1    4    3    1'
          write(7,'(a132)') text
 !
-         do i=1,nkcoords
-            if(inum(i).le.0) cycle
-            write(7,101) m1,i,(een(j,i),j=1,4),
-     &           een(6,i),een(5,i)
-         enddo
+         call frdtensor(een,iset,nkcoords,inum,m1,istartset,iendset,
+     &          ialset,ngraph,ntrans,filab(4),trab,co,inotr)
 !
          write(7,'(a3)') m3
       endif
@@ -550,36 +471,15 @@
 !     storing the forces in the nodes
 !
       if(filab(5)(1:4).eq.'RF  ') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') icounter
-         write(7,'(a132)') text
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+         iselect=1
+         call frdset(filab(5),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
          text=' -4  FORC        4    1'
          write(7,'(a132)') text
          text=' -5  F1          1    2    1    0'
@@ -591,49 +491,31 @@
          text=' -5  ALL         1    2    0    0    1ALL'
          write(7,'(a132)') text
 !
-         if((ntrans.eq.0).or.(filab(5)(6:6).eq.'G')) then
-            do i=1,nkcoords
-               if(inum(i).le.0) cycle
-               write(7,101) m1,i,(fn(j,i),j=1,3)
-            enddo
-         else
-            do i=1,nkcoords
-               if(inum(i).le.0) cycle
-               if(inotr(1,i).eq.0) then
-                  write(7,101) m1,i,(fn(j,i),j=1,3)
-               else
-                  call transformatrix(trab(1,inotr(1,i)),co(1,i),a)
-                  write(7,101) m1,i,
-     &                 fn(1,i)*a(1,1)+fn(2,i)*a(2,1)+fn(3,i)*a(3,1),
-     &                 fn(1,i)*a(1,2)+fn(2,i)*a(2,2)+fn(3,i)*a(3,2),
-     &                 fn(1,i)*a(1,3)+fn(2,i)*a(2,3)+fn(3,i)*a(3,3)
-               endif
-            enddo
-         endif
-!
+         call frdvector(fn,iset,ntrans,filab(5),nkcoords,inum,m1,inotr,
+     &        trab,co,istartset,iendset,ialset,mi,ngraph)
+!     
          write(7,'(a3)') m3
       endif
 !
 !     storing the equivalent plastic strains in the nodes
 !
       if(filab(6)(1:4).eq.'PEEQ') then
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+!
+         iselect=1
+         call frdset(filab(6),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
          text=' -4  PE          1    1'
          write(7,'(a132)') text
          text=' -5  PE          1    1    0    0'
          write(7,'(a132)') text
 !
-         do i=1,nkcoords
-            if(inum(i).le.0) cycle
-            write(7,101) m1,i,epn(i)
-         enddo
+         call frdscalar(epn,iset,nkcoords,inum,m1,
+     &        istartset,iendset,ialset,ngraph,iselect)
 !
          write(7,'(a3)') m3
       endif
@@ -641,45 +523,22 @@
 !     storing the energy in the nodes
 !
       if(filab(7)(1:4).eq.'ENER') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') icounter
-         write(7,'(a132)') text
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+         iselect=1
+         call frdset(filab(7),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
          text=' -4  ENER        1    1'
          write(7,'(a132)') text
          text=' -5  ENER        1    1    0    0'
          write(7,'(a132)') text
 !
-         do i=1,nkcoords
-            if(inum(i).le.0) cycle
-            write(7,101) m1,i,enern(i)
-         enddo
+         call frdscalar(enern,iset,nkcoords,inum,m1,
+     &        istartset,iendset,ialset,ngraph,iselect)
 !
          write(7,'(a3)') m3
       endif
@@ -688,36 +547,15 @@
 !     with CDIS,CSTR
 ! 
       if(filab(26)(1:4).eq.'CONT') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') kode
-         write(7,'(a132)') text
 !
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
+         do i=ne,1,-1
+            if((lakon(i)(2:2).ne.'S').or.
+     &           (lakon(i)(7:7).ne.'C')) exit
+         enddo
+         noutloc=ne-i
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         write(7,'(a132)') text
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
 !
          text=' -4  CONTACT     6    1'
          write(7,'(a132)') text
@@ -748,36 +586,16 @@
 !     storing the contact energy in the nodes
 !
       if(filab(27)(1:4).eq.'CELS') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') icounter
-         write(7,'(a132)') text
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+         do i=ne,1,-1
+            if((lakon(i)(2:2).ne.'S').or.
+     &           (lakon(i)(7:7).ne.'C')) exit
+         enddo
+         noutloc=ne-i
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
          text=' -4  CELS        1    1'
          write(7,'(a132)') text
          text=' -5  CELS        1    1    0    0'
@@ -788,7 +606,7 @@
      &           (lakon(i)(7:7).ne.'C')) exit
             read(lakon(i)(8:8),'(i1)') nope
             nodes=kon(ipkon(i)+nope)
-            write(7,101) m2,nodes,ener(1,i)
+            write(7,101) m1,nodes,ener(1,i)
          enddo
 !
          write(7,'(a3)') m3
@@ -797,14 +615,15 @@
 !     storing the internal state variables in the nodes
 !
       if(filab(8)(1:4).eq.'SDV ') then
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode      
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+!
+         iselect=1
+         call frdset(filab(8),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
          text=' -4  SDV         6    1'
          if(nstate_.le.9) then
             write(text(18:18),'(i1)') nstate_
@@ -822,17 +641,51 @@
             write(7,'(a132)') text
          enddo
 !     
-         do i=1,nkcoords
-            if(inum(i).le.0) cycle
-            do k=1,int((nstate_+5)/6)
-               if(k.eq.1) then
-                  write(7,101) m1,i,(xstaten(j,i),j=1,min(6,nstate_))
+         if(iset.eq.0) then
+            do i=1,nkcoords
+               if(inum(i).le.0) cycle
+               do k=1,int((nstate_+5)/6)
+                  if(k.eq.1) then
+                     write(7,101) m1,i,(xstaten(j,i),j=1,min(6,nstate_))
+                  else
+                     write(7,102) m2,(xstaten(j,i),j=(k-1)*6+1,
+     &                    min(k*6,nstate_))
+                  endif
+               enddo
+            enddo
+         else
+            do k=istartset(iset),iendset(iset)
+               if(ialset(k).gt.0) then
+                  i=ialset(k)
+                  if(inum(i).le.0) cycle
+                  do l=1,int((nstate_+5)/6)
+                     if(l.eq.1) then
+                        write(7,101) m1,i,
+     &                    (xstaten(j,i),j=1,min(6,nstate_))
+                     else
+                        write(7,102) m2,(xstaten(j,i),j=(l-1)*6+1,
+     &                       min(l*6,nstate_))
+                     endif
+                  enddo
                else
-                  write(7,102) m2,(xstaten(j,i),j=(k-1)*6+1,
-     &                min(k*6,nstate_))
+                  i=ialset(k-2)
+                  do
+                     i=i-ialset(k)
+                     if(i.ge.ialset(k-1)) exit
+                     if(inum(i).le.0) cycle
+                     do l=1,int((nstate_+5)/6)
+                        if(l.eq.1) then
+                           write(7,101) m1,i,
+     &                       (xstaten(j,i),j=1,min(6,nstate_))
+                        else
+                           write(7,102) m2,(xstaten(j,i),j=(l-1)*6+1,
+     &                          min(l*6,nstate_))
+                        endif
+                     enddo
+                  enddo
                endif
             enddo
-         enddo
+         endif
 !     
          write(7,'(a3)') m3
       endif
@@ -840,14 +693,24 @@
 !     storing the heat flux in the nodes
 !
       if((filab(9)(1:4).eq.'HFL ').and.(ithermal.gt.1)) then
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+!
+         iselect=1
+         call frdset(filab(9),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
+c         text=
+c     & '  100CL       .00000E+00                                 3    1'
+c         write(text(25:36),'(i12)') nout
+c         text(37:48)=description
+c         text(75:75)='1'
+c         write(text(8:12),'(i5)') 100+kode
+c         write(text(13:24),fmat) time
+c         write(text(59:63),'(i5)') kode
+c         write(7,'(a132)') text
          text=' -4  FLUX        4    1'
          write(7,'(a132)') text
          text=' -5  F1          1    2    1    0'
@@ -859,34 +722,61 @@
          text=' -5  ALL         1    2    0    0    1ALL'
          write(7,'(a132)') text
 !
-         do i=1,nkcoords
-            if(inum(i).le.0) cycle
-            write(7,101) m1,i,(qfn(j,i),j=1,3)
-         enddo
-!
+         if(iset.eq.0) then
+            do i=1,nkcoords
+               if(inum(i).le.0) cycle
+               write(7,101) m1,i,(qfn(j,i),j=1,3)
+            enddo
+         else
+            do k=istartset(iset),iendset(iset)
+               if(ialset(k).gt.0) then
+                  i=ialset(k)
+                  if(inum(i).le.0) cycle
+                  write(7,101) m1,i,(qfn(j,i),j=1,3)
+               else
+                  i=ialset(k-2)
+                  do
+                     i=i-ialset(k)
+                     if(i.ge.ialset(k-1)) exit
+                     if(inum(i).le.0) cycle
+                     write(7,101) m1,i,(qfn(j,i),j=1,3)
+                  enddo
+               endif
+            enddo
+         endif
+!     
          write(7,'(a3)') m3
       endif
 !
 !     storing the heat generation in the nodes
 !
       if((filab(10)(1:4).eq.'RFL ').and.(ithermal.gt.1)) then
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+!
+         iselect=1
+         call frdset(filab(10),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
+c         text=
+c     & '  100CL       .00000E+00                                 3    1'
+c         write(text(25:36),'(i12)') nout
+c         text(37:48)=description
+c         text(75:75)='1'
+c         write(text(8:12),'(i5)') 100+kode
+c         write(text(13:24),fmat) time
+c         write(text(59:63),'(i5)') kode
+c         write(7,'(a132)') text
          text=' -4  RFL         1    1'
          write(7,'(a132)') text
          text=' -5  RFL         1    1    0    0'
          write(7,'(a132)') text
 !
-         do i=1,nkcoords
-            if(inum(i).le.0) cycle
-            write(7,101) m1,i,fn(0,i)
-         enddo
+         ncomp=0
+         call frdvectorcomp(fn,iset,nkcoords,inum,m1,
+     &        istartset,iendset,ialset,ncomp,mi,ngraph,iselect)
 !
          write(7,'(a3)') m3
       endif
@@ -896,38 +786,16 @@
       if(filab(13)(1:3).eq.'ZZS') then
 ! 
          call estimator(co,nk,kon,ipkon,lakon,ne0,stn,
-     &            ipneigh,neigh,stx,mint_)
+     &            ipneigh,neigh,stx,mi(1))
 !
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') icounter
-         write(7,'(a132)') text
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
+         iselect=1
+         call frdset(filab(13),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode      
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
          text=' -4  ZZSTR       6    1'
          write(7,'(a132)') text
          text=' -5  SXX         1    4    1    1'
@@ -943,11 +811,8 @@
          text=' -5  SZX         1    4    3    1'
          write(7,'(a132)') text
 !
-         do i=1,nkcoords
-            if(inum(i).le.0) cycle
-            write(7,101) m1,i,(stn(j,i),j=1,4),
-     &           stn(6,i),stn(5,i)
-         enddo
+         call frdtensor(stn,iset,nkcoords,inum,m1,istartset,iendset,
+     &                 ialset,ngraph,ntrans,filab(13),trab,co,inotr)
 !
          write(7,'(a3)') m3
       endif
@@ -955,45 +820,23 @@
 !     storing the total temperature in the fluid nodes
 !
       if(filab(14)(1:4).eq.'TT  ') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') icounter
-         write(7,'(a132)') text
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+         iselect=-1
+         call frdset(filab(14),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
          text=' -4  TOTEMP      1    1'
          write(7,'(a132)') text
          text=' -5  TT          1    1    0    0'
          write(7,'(a132)') text
 !
-         do i=1,nkcoords
-            if(inum(i).ge.0) cycle
-            write(7,101) m1,i,v(0,i)
-         enddo
+         ncomp=0
+         call frdvectorcomp(v,iset,nkcoords,inum,m1,
+     &        istartset,iendset,ialset,ncomp,mi,ngraph,iselect)
 !
          write(7,'(a3)') m3
       endif
@@ -1001,45 +844,23 @@
 !     storing the mass flow in the fluid nodes
 !
       if(filab(15)(1:4).eq.'MF  ') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') icounter
-         write(7,'(a132)') text
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+         iselect=-1
+         call frdset(filab(15),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
          text=' -4  MAFLOW      1    1'
          write(7,'(a132)') text
          text=' -5  MF          1    1    0    0'
          write(7,'(a132)') text
 !
-         do i=1,nkcoords
-            if(inum(i).ge.0) cycle
-            write(7,101) m1,i,v(1,i)
-         enddo
+         ncomp=1
+         call frdvectorcomp(v,iset,nkcoords,inum,m1,
+     &        istartset,iendset,ialset,ncomp,mi,ngraph,iselect)
 !
          write(7,'(a3)') m3
       endif
@@ -1047,45 +868,23 @@
 !     storing the total pressure in the fluid nodes
 !
       if(filab(16)(1:4).eq.'PT  ') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') icounter
-         write(7,'(a132)') text
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+         iselect=-1
+         call frdset(filab(16),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
          text=' -4  TOPRES      1    1'
          write(7,'(a132)') text
          text=' -5  PT          1    1    0    0'
          write(7,'(a132)') text
 !
-         do i=1,nkcoords
-            if(inum(i).ge.0) cycle
-            write(7,101) m1,i,v(2,i)
-         enddo
+         ncomp=2
+         call frdvectorcomp(v,iset,nkcoords,inum,m1,
+     &        istartset,iendset,ialset,ncomp,mi,ngraph,iselect)
 !
          write(7,'(a3)') m3
       endif
@@ -1093,90 +892,45 @@
 !     storing the static temperature in the fluid nodes
 !
       if(filab(17)(1:4).eq.'TS  ') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') icounter
-         write(7,'(a132)') text
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
+         iselect=-1
+         call frdset(filab(17),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
          text=' -4  STTEMP      1    1'
          write(7,'(a132)') text
          text=' -5  TS          1    1    0    0'
          write(7,'(a132)') text
 !
-         do i=1,nkcoords
-            if(inum(i).ge.0) cycle
-            write(7,101) m1,i,v(3,i)
-         enddo
+         ncomp=3
+         call frdvectorcomp(v,iset,nkcoords,inum,m1,
+     &        istartset,iendset,ialset,ncomp,mi,ngraph,iselect)
 !
          write(7,'(a3)') m3
       endif
 !
-      if((nmethod.ne.2).and.(nmethod.lt.4)) return
+c      if((nmethod.ne.2).and.(nmethod.lt.4)) return
 !
-!     for cyclic symmetry frequency calculations only results
-!     for even numbers are stored
+!     the remaining lines only apply to frequency calculations
+!     with cyclic symmetry and steady state calculations
 !
-      if(((nmethod.eq.2).or.(nmethod.eq.5)).and.((mode/2)*2.ne.mode)) 
-     &          return
+      if((nmethod.ne.2).and.(nmethod.ne.5)) return
 !
 !     storing the displacements of the nodes (magnitude, phase)
 !
       if(filab(11)(1:4).eq.'PU  ') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') kode
-         write(7,'(a132)') text
 !
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
+         iselect=1
+         call frdset(filab(11),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         write(7,'(a132)') text
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
 !
          text=' -4  PDISP       6    1'
          write(7,'(a132)') text
@@ -1193,62 +947,86 @@
          text=' -5  PHA3        1   12    6    0'
          write(7,'(a132)') text
 !
-         do i=1,nkcoords/ngraph
-            if(inum(i).eq.0) cycle
-            write(7,101) m1,i,(vr(j,i),j=1,3),(vi(j,i),j=1,3)
-         enddo
-!
+         if(iset.eq.0) then
+            do i=1,nkcoords
+               if(inum(i).eq.0) cycle
+               write(7,101) m1,i,(vr(j,i),j=1,3),(vi(j,i),j=1,3)
+            enddo
+         else
+            nksegment=nkcoords/ngraph
+            do k=istartset(iset),iendset(iset)
+               if(ialset(k).gt.0) then
+                  do l=0,ngraph-1
+                     i=ialset(k)+l*nksegment
+                     if(inum(i).eq.0) cycle
+                     write(7,101) m1,i,(vr(j,i),j=1,3),(vi(j,i),j=1,3)
+                  enddo
+               else
+                  l=ialset(k-2)
+                  do
+                     l=l-ialset(k)
+                     if(l.ge.ialset(k-1)) exit
+                     do m=0,ngraph-1
+                        i=l+m*nksegment
+                        if(inum(i).eq.0) cycle
+                        write(7,101) m1,i,(vr(j,i),j=1,3),
+     &                      (vi(j,i),j=1,3)
+                     enddo
+                  enddo
+               endif
+            enddo
+         endif
+!     
          write(7,'(a3)') m3
       endif
 !
 !     storing the temperatures of the nodes (magnitude,phase)
 !
       if(filab(12)(1:4).eq.'PNT ') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') kode
-         write(7,'(a132)') text
 !
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
+         iselect=1
+         call frdset(filab(12),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         write(7,'(a132)') text
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
 !
-         text=' -4  PNDTEMP     7    1'
+         text=' -4  PNDTEMP     2    1'
          write(7,'(a132)') text
          text=' -5  MAG1        1    1    1    0'
          write(7,'(a132)') text
          text=' -5  PHA1        1    1    2    0'
          write(7,'(a132)') text
-         text=' -5  ALL         1   12    0    0    1ALL'
-         write(7,'(a132)') text
 !
-         do i=1,nkcoords/ngraph
-            if(inum(i).eq.0) cycle
-            write(7,101) m1,i,vr(0,i),vr(0,i),vr(0,i),
-     &            vi(0,i),vi(0,i),vi(0,i)
-         enddo
+         if(iset.eq.0) then
+            do i=1,nkcoords
+               if(inum(i).eq.0) cycle
+               write(7,101) m1,i,vr(0,i),vi(0,i)
+            enddo
+         else
+            nksegment=nkcoords/ngraph
+            do k=istartset(iset),iendset(iset)
+               if(ialset(k).gt.0) then
+                  do l=0,ngraph-1
+                     i=ialset(k)+l*nksegment
+                     if(inum(i).eq.0) cycle
+                     write(7,101) m1,i,vr(0,i),vi(0,i)
+                  enddo
+               else
+                  l=ialset(k-2)
+                  do
+                     l=l-ialset(k)
+                     if(l.ge.ialset(k-1)) exit
+                     do m=0,ngraph-1
+                        i=l+m*nksegment
+                        if(inum(i).eq.0) cycle
+                        write(7,101) m1,i,vr(0,i),vi(0,i)
+                     enddo
+                  enddo
+               endif
+            enddo
+         endif
 !
          write(7,'(a3)') m3
       endif
@@ -1258,36 +1036,14 @@
 !     storing the stresses in the nodes (magnitude,phase)
 !
       if(filab(18)(1:4).eq.'PHS ') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') kode
-         write(7,'(a132)') text
 !
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
+         iselect=1
+         call frdset(filab(18),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         write(7,'(a132)') text
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
 !
          text=' -4  PSTRESS    12    1'
          write(7,'(a132)') text
@@ -1316,14 +1072,44 @@
          text=' -5  PHAZX       1    4    3    1'
          write(7,'(a132)') text
 !
-         do i=1,nkcoords/ngraph
-            if(inum(i).le.0) cycle
-            write(7,101) m1,i,(stnr(j,i),j=1,4),
-     &           stnr(6,i),stnr(5,i)
-            write(7,101) m2,i,(stni(j,i),j=1,4),
-     &           stni(6,i),stni(5,i)
-         enddo
-!
+         if(iset.eq.0) then
+            do i=1,nkcoords
+               if(inum(i).le.0) cycle
+               write(7,101) m1,i,(stnr(j,i),j=1,4),
+     &              stnr(6,i),stnr(5,i)
+               write(7,101) m2,i,(stni(j,i),j=1,4),
+     &              stni(6,i),stni(5,i)
+            enddo
+         else
+            nksegment=nkcoords/ngraph
+            do k=istartset(iset),iendset(iset)
+               if(ialset(k).gt.0) then
+                  do l=0,ngraph-1
+                     i=ialset(k)+l*nksegment
+                     if(inum(i).le.0) cycle
+                     write(7,101) m1,i,(stnr(j,i),j=1,4),
+     &                    stnr(6,i),stnr(5,i)
+                     write(7,101) m2,i,(stni(j,i),j=1,4),
+     &                    stni(6,i),stni(5,i)
+                  enddo
+               else
+                  l=ialset(k-2)
+                  do
+                     l=l-ialset(k)
+                     if(l.ge.ialset(k-1)) exit
+                     do m=0,ngraph-1
+                        i=l+m*nksegment
+                        if(inum(i).le.0) cycle
+                        write(7,101) m1,i,(stnr(j,i),j=1,4),
+     &                       stnr(6,i),stnr(5,i)
+                        write(7,101) m2,i,(stni(j,i),j=1,4),
+     &                       stni(6,i),stni(5,i)
+                     enddo
+                  enddo
+               endif
+            enddo
+         endif
+!     
          write(7,'(a3)') m3
       endif
 !
@@ -1332,36 +1118,14 @@
 !         (magnitude, components)
 !
       if(filab(19)(1:4).eq.'MAXU') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') kode
-         write(7,'(a132)') text
 !
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
+         iselect=1
+         call frdset(filab(19),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         write(7,'(a132)') text
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
 !
          text=' -4  MDISP       4    1'
          write(7,'(a132)') text
@@ -1374,10 +1138,34 @@
          text=' -5  ANG         1    4    4    0'
          write(7,'(a132)') text
 !
-         do i=1,nkcoords/ngraph
-            if(inum(i).eq.0) cycle
-            write(7,101) m1,i,(vmax(j,i),j=1,3),vmax(0,i)
-         enddo
+         if(iset.eq.0) then
+            do i=1,nkcoords
+               if(inum(i).eq.0) cycle
+               write(7,101) m1,i,(vmax(j,i),j=1,3),vmax(0,i)
+            enddo
+         else
+            nksegment=nkcoords/ngraph
+            do k=istartset(iset),iendset(iset)
+               if(ialset(k).gt.0) then
+                  do l=0,ngraph-1
+                     i=ialset(k)+l*nksegment
+                     if(inum(i).eq.0) cycle
+                     write(7,101) m1,i,(vmax(j,i),j=1,3),vmax(0,i)
+                  enddo
+               else
+                  l=ialset(k-2)
+                  do
+                     l=l-ialset(k)
+                     if(l.ge.ialset(k-1)) exit
+                     do m=0,ngraph-1
+                        i=l+m*nksegment
+                        if(inum(i).eq.0) cycle
+                        write(7,101) m1,i,(vmax(j,i),j=1,3),vmax(0,i)
+                     enddo
+                  enddo
+               endif
+            enddo
+         endif
 !
          write(7,'(a3)') m3
       endif
@@ -1389,36 +1177,13 @@
 !     absolute value of all principal stresses
 !
       if(filab(20)(1:4).eq.'MAXS') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') kode
-         write(7,'(a132)') text
 !
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
+         iselect=1
+         call frdset(filab(20),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect)
 !
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(75:75)='1'
-         write(text(8:12),'(i5)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         write(7,'(a132)') text
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
 !
          text=' -4  MSTRESS     7    1'
          write(7,'(a132)') text
@@ -1437,13 +1202,41 @@
          text=' -5  MAG         1    4    0    0'
          write(7,'(a132)') text
 !
-         do i=1,nkcoords/ngraph
-            if(inum(i).le.0) cycle
-            write(7,101) m1,i,(stnmax(j,i),j=1,4),
-     &           stnmax(6,i),stnmax(5,i)
-            write(7,101) m2,i,stnmax(0,i)
-         enddo
-!
+         if(iset.eq.0) then
+            do i=1,nkcoords
+               if(inum(i).le.0) cycle
+               write(7,101) m1,i,(stnmax(j,i),j=1,4),
+     &              stnmax(6,i),stnmax(5,i)
+               write(7,101) m2,i,stnmax(0,i)
+            enddo
+         else
+            nksegment=nkcoords/ngraph
+            do k=istartset(iset),iendset(iset)
+               if(ialset(k).gt.0) then
+                  do l=0,ngraph-1
+                     i=ialset(k)+l*nksegment
+                     if(inum(i).le.0) cycle
+                     write(7,101) m1,i,(stnmax(j,i),j=1,4),
+     &                    stnmax(6,i),stnmax(5,i)
+                     write(7,101) m2,i,stnmax(0,i)
+                  enddo
+               else
+                  l=ialset(k-2)
+                  do
+                     l=l-ialset(k)
+                     if(l.ge.ialset(k-1)) exit
+                     do m=0,ngraph-1
+                        i=l+m*nksegment
+                        if(inum(i).le.0) cycle
+                        write(7,101) m1,i,(stnmax(j,i),j=1,4),
+     &                       stnmax(6,i),stnmax(5,i)
+                        write(7,101) m2,i,stnmax(0,i)
+                     enddo
+                  enddo
+               endif
+            enddo
+         endif
+!     
          write(7,'(a3)') m3
       endif
 

@@ -61,7 +61,7 @@
             enddo
          elseif(textpart(i)(1:10).eq.'AMPLITUDE=') then
             read(textpart(i)(11:90),'(a80)') amplitude
-            do j=1,nam
+            do j=nam,1,-1
                if(amname(j).eq.amplitude) then
                   iamplitude=j
                   exit

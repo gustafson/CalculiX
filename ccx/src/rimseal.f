@@ -17,7 +17,8 @@
 !     
       subroutine rimseal(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,physcon,dvi,numf,set)!     
+     &     nodef,idirf,df,cp,R,physcon,dvi,numf,set,mi)
+!     
 !     rimseal element
 !     
       implicit none
@@ -27,13 +28,13 @@
       character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,
+     &     ielprop(*),nodef(4),idirf(4),index,iflag,mi(2),
      &     inv,ipkon(*),kon(*),kgas,nelem_in,nelem_out,
      &     element0,node10,node20,node11,node21,node12,node22,node_cav,
      &     node_main,node_main2,node_in1,node_out1,node_in2,node_out2
 !
     
-      real*8 prop(*),v(0:4,*),xflow,f,df(4),kappa,R,a,d,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,a,d,
      &     p1,p2,T1,T2,Aeff,C1,C2,C3,cd,cp,physcon(3),p2p1,km1,dvi,
      &     kp1,kdkm1,tdkp1,km1dk,x,y,ca1,cb1,ca2,cb2,dT1,alambda,
      &     reynolds,pi,xflow_oil,s,Tcav,pcav,pmin,pmax,
@@ -55,7 +56,9 @@
          endif
 !     
       elseif (iflag.eq.1) then      
-!
+!     
+         p1=v(2,node1)
+         call rimseal_calc(p1)
       elseif (iflag.eq.2) then
 !
       elseif (iflag.eq.3) then

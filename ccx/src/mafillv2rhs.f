@@ -19,7 +19,7 @@
       subroutine mafillv2rhs(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,
      &  b,nactdoh,icolv,jqv,irowv,neqv,nzlv,nmethod,ikmpc,ilmpc,ikboun,
-     &  ilboun,vold,nzsv,dtime,v,theta2,iexplicit,nea,neb)
+     &  ilboun,vold,nzsv,dtime,v,theta2,iexplicit,nea,neb,mi)
 !
 !     filling the rhs b of the velocity equations (step 3)
 !
@@ -29,13 +29,13 @@
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  icolv(*),jqv(*),ikmpc(*),ilmpc(*),ikboun(*),ilboun(*),
-     &  nactdoh(0:4,*),konl(20),irowv(*),ipkon(*),nea,neb
+     &  nactdoh(0:4,*),konl(20),irowv(*),ipkon(*),nea,neb,mi(2)
 !
       integer nk,ne,nboun,nmpc,neqv,nzlv,nmethod,nzsv,i,j,k,jj,
      &  id,ist,index,jdof1,idof1,iexplicit,node1,kflag,indexe,nope,i0
 !
-      real*8 co(3,*),xboun(*),coefmpc(*),b(*),v(0:4,*),theta2,
-     &  vold(0:4,*),ff(60),dtime
+      real*8 co(3,*),xboun(*),coefmpc(*),b(*),v(0:mi(2),*),theta2,
+     &  vold(0:mi(2),*),ff(60),dtime
 !
       kflag=2
       i0=0
@@ -70,7 +70,7 @@
         enddo
 !
         call e_c3d_v2rhs(co,nk,konl,lakon(i),
-     &       ff,i,nmethod,vold,v,dtime,theta2,iexplicit)
+     &       ff,i,nmethod,vold,v,dtime,theta2,iexplicit,mi)
 !
         do jj=1,3*nope
 !

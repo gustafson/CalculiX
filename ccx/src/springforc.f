@@ -18,7 +18,7 @@
 !
       subroutine springforc(xl,konl,vl,imat,elcon,nelcon,
      &  elas,fnl,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,
-     &  plicon,nplicon,npmat_,veoldl,senergy,iener,cstr)
+     &  plicon,nplicon,npmat_,veoldl,senergy,iener,cstr,mi,ifricdamp)
 !
 !     calculates the force of the spring
 !
@@ -26,14 +26,15 @@
 !
       character*8 lakonl
 !
-      integer konl(9),i,j,imat,ncmat_,ntmat_,nope,nterms,iflag,
-     &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),iener
+      integer konl(9),i,j,imat,ncmat_,ntmat_,nope,nterms,iflag,mi(2),
+     &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),iener,
+     &  ifricdamp
 !
-      real*8 xl(3,9),elas(21),ratio(9),t0l,t1l,vr(3),vl(0:3,9),
-     &  pl(0:3,9),xn(3),al,area,alpha,beta,fnl(3,9),veoldl(3,9),
+      real*8 xl(3,9),elas(21),ratio(9),t0l,t1l,vr(3),vl(0:mi(2),9),
+     &  pl(3,9),xn(3),al,area,alpha,beta,fnl(3,9),veoldl(0:mi(2),9),
      &  elcon(0:ncmat_,ntmat_,*),pproj(3),xsj2(3),xs2(3,7),dist,
      &  shp2(7,8),xi,et,elconloc(21),plconloc(82),xk,fk,dd,
-     &  xiso(20),yiso(20),dd0,plicon(0:2*npmat_,ntmat_,*),
+     &  xiso(20),yiso(20),dd0,plicon(0:2*npmat_,ntmat_,*),fn,
      &  damp,c0,eta,um,eps,fnd(3,9),fnv(3,9),ver(3),dvernor,
      &  dampforc,vertan(3),dvertan,fricforc,pi,senergy,cstr(6)
 !
@@ -153,29 +154,40 @@ c      write(*,*) 'springforc ',(pproj(i),i=1,3)
 !     distance from surface along normal
 !
       dist=vr(1)*xn(1)+vr(2)*xn(2)+vr(3)*xn(3)
-      cstr(1)=dist
+      if(dist.le.0.d0) cstr(1)=-dist
 !
 !     representative area
 !
-      if(dabs(elcon(2,1,imat)).lt.1.d-30) then
-         elas(1)=0.d0
-         elas(2)=0.d0
-      else
-         if((nterms.eq.8).or.(nterms.eq.4)) then
-            area=area*4.d0
-c     area=area*4.d0/konl(nope+1)
+      if(elcon(1,1,imat).gt.0.d0) then
+!
+!        exponential overclosure
+!
+         if(dabs(elcon(2,1,imat)).lt.1.d-30) then
+            elas(1)=0.d0
+            elas(2)=0.d0
          else
-            area=area/2.d0
+            if((nterms.eq.8).or.(nterms.eq.4)) then
+               area=area*4.d0
+c     area=area*4.d0/konl(nope+1)
+            else
+               area=area/2.d0
 c     area=area/2.d0/konl(nope+1)
-         endif
+            endif
 !     
-         alpha=elcon(2,1,imat)*area
-         beta=elcon(1,1,imat)
-         if(-beta*dist.gt.23.d0-dlog(alpha)) then
-            beta=(dlog(alpha)-23.d0)/dist
+            alpha=elcon(2,1,imat)*area
+            beta=elcon(1,1,imat)
+            if(-beta*dist.gt.23.d0-dlog(alpha)) then
+               beta=(dlog(alpha)-23.d0)/dist
+            endif
+            elas(1)=dexp(-beta*dist+dlog(alpha))
+            elas(2)=-beta*elas(1)
          endif
-         elas(1)=dexp(-beta*dist+dlog(alpha))
-         elas(2)=-beta*elas(1)
+      else
+!
+!        linear overclosure
+!
+         elas(1)=-area*elcon(2,1,imat)*dist
+         elas(2)=-area*elcon(2,1,imat)
       endif
 !
 !     forces in the nodes of the contact element
@@ -189,43 +201,16 @@ c     area=area/2.d0/konl(nope+1)
       if(iener.eq.1) then
          senergy=elas(1)/beta;
       endif
-c     write(*,*) 'springforc ',konl(nope),dist,(-fnl(i,nope),i=1,3)
+c      write(*,*) 'springforc ',konl(nope),dist,(-fnl(i,nope),i=1,3)
       cstr(4)=elas(1)/area
+c      write(*,*) 'springforc ',konl(nope),cstr(4)
 !
 !     contact damping
 !
       if(ncmat_.ge.5) then
          damp=elcon(3,1,imat)
          if(damp.gt.0.d0) then
-!
-!           calculate the relative velocity
-!
-            do i=1,3
-               ver(i)=0.d0
-               do j=1,nterms
-                  ver(i)=ver(i)+ratio(j)*veoldl(i,j)
-               enddo
-               ver(i)=veoldl(i,nope)-ver(i)
-            enddo
-            dvernor=ver(1)*xn(1)+ver(2)*xn(2)+ver(3)*xn(3)
-!
-            c0=elcon(4,1,imat)
-            eta=elcon(5,1,imat)
-!
-            if(dist.gt.c0) then
-               dampforc=0.d0
-            elseif(dist.gt.eta*c0) then
-               dampforc=dvernor*(c0-dist)/(c0*(1.d0-eta))*damp*area
-            else
-               dampforc=dvernor*damp*area
-            endif
-!
-            do i=1,3
-               do j=1,nterms
-                  fnd(i,j)=ratio(j)*dampforc*xn(i)
-               enddo
-               fnd(i,nope)=-dampforc*xn(i)
-            enddo
+            ifricdamp=1
          endif
       endif
 !
@@ -234,72 +219,7 @@ c     write(*,*) 'springforc ',konl(nope),dist,(-fnl(i,nope),i=1,3)
       if(ncmat_.ge.7) then
          um=elcon(6,1,imat)
          if(um.gt.0.d0) then
-            if(damp.le.0.d0) then
-!     
-!     calculate the relative velocity
-!     
-               do i=1,3
-                  ver(i)=0.d0
-                  do j=1,nterms
-                     ver(i)=ver(i)+ratio(j)*veoldl(i,j)
-                  enddo
-                  ver(i)=veoldl(i,nope)-ver(i)
-               enddo
-               dvernor=ver(1)*xn(1)+ver(2)*xn(2)+ver(3)*xn(3)
-            endif
-!     
-            pi=4.d0*datan(1.d0)
-!     
-!     calculate the tangential relative velocity
-!     
-            do i=1,3
-               vertan(i)=ver(i)-dvernor*xn(i)
-            enddo
-            dvertan=dsqrt(vertan(1)**2+vertan(2)**2+vertan(3)**2)
-!     
-!     normalizing the tangent vector
-!     
-            do i=1,3
-               vertan(i)=vertan(i)/dvertan
-            enddo
-!     
-!     friction constants
-!     
-            eps=elcon(7,1,imat)
-!     
-            fricforc=2.d0*um*datan(dvertan/eps)/pi
-!     
-!     modify the friction force in case of contact damping
-!     
-            if(damp.gt.0.d0) fricforc=fricforc+dampforc*dvertan/dvernor
-!     
-            do i=1,3
-               do j=1,nterms
-                  fnv(i,j)=ratio(j)*fricforc*vertan(i)
-               enddo
-               fnv(i,nope)=-fricforc*vertan(i)
-            enddo
-         endif
-      endif
-!
-!     summing all forces
-!
-      if(ncmat_.ge.5) then
-         if(damp.gt.0.d0) then
-            do j=1,nope
-               do i=1,3
-                  fnl(i,j)=fnl(i,j)+fnd(i,j)
-               enddo
-            enddo
-         endif
-      endif
-      if(ncmat_.ge.7) then
-         if(um.gt.0.d0) then
-            do j=1,nope
-               do i=1,3
-                  fnl(i,j)=fnl(i,j)+fnv(i,j)
-               enddo
-            enddo
+            ifricdamp=1
          endif
       endif
 !

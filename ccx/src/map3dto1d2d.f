@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,
-     &  ne,cflag,co,vold,force)
+     &  ne,cflag,co,vold,force,mi)
 !
 !     interpolates 3d field nodal values to 1d/2d nodal locations
 !
@@ -33,11 +33,11 @@
 !
       integer ipkon(*),inum(*),kon(*),ne,indexe,nfield,nk,i,j,k,l,m,
      &  node3(8,3),node6(3,6),node8(3,8),node2d,node3d,indexe2d,ne1d2d,
-     &  node3m(8,3),node(8),m1,m2,nodea,nodeb,nodec,iflag
+     &  node3m(8,3),node(8),m1,m2,nodea,nodeb,nodec,iflag,mi(2)
 !
-      real*8 yn(nfield,*),cg(3),p(3),pcg(3),t(3),xl(0:3,8),shp(7,8),
+      real*8 yn(nfield,*),cg(3),p(3),pcg(3),t(3),xl(3,8),shp(7,8),
      &  xsj(3),e1(3),e2(3),e3(3),s(6),dd,xi,et,co(3,*),xs(3,7),
-     &  vold(0:4,*),ratioe(3)
+     &  vold(0:mi(2),*),ratioe(3)
 !
       include "gauss.f"
 !

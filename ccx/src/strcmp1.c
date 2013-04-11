@@ -28,7 +28,18 @@ int strcmp1(const char *s1, const char *s2)
   do {
     a=*s1++;
     b=*s2++;
-    if((a=='\0')||(b=='\0')){
+
+/* the statement if((a=='\0')||(b=='\0')) has been treated separately
+   in order to avoid the first field (s1) to be defined one longer
+   than required; s1 is assumed to be a variable field, s2 is
+   assumed to be a fixed string */
+
+    if(b=='\0'){
+      a='\0';
+      b='\0';
+      break;
+    }
+    if(a=='\0'){
       a='\0';
       b='\0';
       break;

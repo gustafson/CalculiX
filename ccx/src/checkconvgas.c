@@ -48,18 +48,18 @@ void checkconvgas(int *icutb, int *iin,
   
   /* temperature */
   
-  if(*iin<=ip){c1t=0.001*ran;}
-  else{c1t=0.001*rap;}
+  if(*iin<=ip){c1t=0.0001*ran;}
+  else{c1t=0.0001*rap;}
   
   /* mass flow */
   
-  if(*iin<=ip){c1f=0.001*ran;}
-  else{c1f=0.001*rap;}
+  if(*iin<=ip){c1f=0.0001*ran;}
+  else{c1f=0.0001*rap;}
   
   /* pressure */
   
-  if(*iin<=ip){c1p=0.001*ran;}
-  else{c1p=0.001*rap;}
+  if(*iin<=ip){c1p=0.0001*ran;}
+  else{c1p=0.0001*rap;}
   
   if(*ram1t<*ram2t) {*ram2t=*ram1t;}
   if(*ram1f<*ram2f) {*ram2f=*ram1f;}
@@ -70,11 +70,12 @@ void checkconvgas(int *icutb, int *iin,
   if(((*ramt<=c1t**qamt)||(*ramt<1.e-8))&&
      ((*ramf<=c1f**qamf)||(*ramf<1.e-15))&&
      ((*ramp<=c1p**qamp)||(*ramp<1.e-8))&&
-     (*iin>=5)){
+     (*iin>3)){
       
       /* increment convergence reached */
       
-      printf("      convergence\n\n");
+      printf("      flow network: convergence\n\n");
+      printf("      gas iteration:%d \n\n",*iin);
       *icntrl=1;
       *icutb=0;
   }
@@ -85,7 +86,7 @@ void checkconvgas(int *icutb, int *iin,
 
       /* divergence based on temperatures */
       
-      if((*iin>=10*i0)||(fabs(*ramt)>1.e20)){
+      if((*iin>=20*i0)||(fabs(*ramt)>1.e20)){
 	  if((*ram1t>*ram2t)&&(*ramt>*ram2t)&&(*ramt>c1t**qamt)){
 	      idivergence=1;
 	  }
@@ -93,7 +94,7 @@ void checkconvgas(int *icutb, int *iin,
 
       /* divergence based on the mass flux */
       
-      if((*iin>=10*i0)||(fabs(*ramf)>1.e20)){
+      if((*iin>=20*i0)||(fabs(*ramf)>1.e20)){
 	  if((*ram1f>*ram2f)&&(*ramf>*ram2f)&&(*ramf>c1f**qamf)){
 	      idivergence=1;
 	  }
@@ -101,7 +102,7 @@ void checkconvgas(int *icutb, int *iin,
 
       /* divergence based on pressures */
       
-      if((*iin>=10*i0)||(fabs(*ramp)>1.e20)){
+      if((*iin>=20*i0)||(fabs(*ramp)>1.e20)){
 	  if((*ram1p>*ram2p)&&(*ramp>*ram2p)&&(*ramp>c1p**qamp)){
 	      idivergence=1;
 	  }
@@ -118,11 +119,11 @@ void checkconvgas(int *icutb, int *iin,
 	  *iin=0;
 	  (*icutb)++;
 	  if(*icutb>ia){
-	      printf("\n *ERROR: too many cutbacks\n");
-	      FORTRAN(stop,());
+	    printf("\n *ERROR: too many cutbacks\n");
+	    FORTRAN(stop,());
 	  }
       }else{
-	  printf("      no convergence\n\n");
+	 	  printf("      no convergence\n\n"); 
       }
   }
   return;

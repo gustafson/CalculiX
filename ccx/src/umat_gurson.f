@@ -18,7 +18,7 @@
 !
       subroutine umat_gurson(amat,iel,iint,kode,elconloc,emec,emec0,
      &        beta,xokl,voj,xkl,vj,ithermal,t1l,dtime,time,ttime,
-     &        icmd,ielas,mint_,nstate_,xstateini,xstate,stre,stiff,
+     &        icmd,ielas,mi,nstate_,xstateini,xstate,stre,stiff,
      &        iorien,pgauss,orab)
 !
 !     calculates stiffness and stresses for a Gurson-type material
@@ -71,13 +71,13 @@
 !                        1: elastic iteration, i.e. no irreversible
 !                           deformation allowed
 !
-!     mint_              max. # of integration points per element in the
+!     mi(1)              max. # of integration points per element in the
 !                        model
 !     nstate_            max. # of state variables in the model
 !
-!     xstateini(nstate_,mint_,# of elements)
+!     xstateini(nstate_,mi(1),# of elements)
 !                        state variables at the start of the increment
-!     xstate(nstate_,mint_,# of elements)
+!     xstate(nstate_,mi(1),# of elements)
 !                        state variables at the end of the increment
 !
 !     stre(6)            Piola-Kirchhoff stress of the second kind
@@ -97,7 +97,7 @@
 !
 !     OUTPUT:
 !
-!     xstate(nstate_,mint_,# of elements)
+!     xstate(nstate_,mi(1),# of elements)
 !                        updated state variables at the end of the increment
 !     stre(6)            Piola-Kirchhoff stress of the second kind at the
 !                        end of the increment
@@ -116,12 +116,12 @@
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mint_,iorien,
+      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(2),iorien,
      &  i,j,n,nrhs,lda,ldb,ipiv(7),info
 !
       real*8 elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xokl(3,3),voj,pgauss(3),orab(7,*),
-     &  time,ttime,xstate(nstate_,mint_,*),xstateini(nstate_,mint_,*),
+     &  time,ttime,xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  um,un,aa,f,um2,dg,ddg,ep(6),s(6),de(6),h,r(7),rg,residual,
      &  dij(6,6),a(4,4),constant,constant1,constant2,fv(4),bb(4,2),
      &  ra(4),fa(4),gg,tan(6,6),hv(4),cg,ak,ehydro,af(7),ar(7),edev(6),

@@ -21,7 +21,7 @@
      &  labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,lakon,ipkon,kon,nk,nk_,
      &  nodeboun,ndirboun,ikboun,ilboun,nboun,nboun_,iperturb,ne_,
      &  co,xboun,ctrl,typeboun,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,iamboun,nam,inotr,trab,ntrans,nmethod,ipoinpc)
+     &  inp,iamboun,nam,inotr,trab,ntrans,nmethod,ipoinpc,mi)
 !
 !     reading the input deck: *GAP
 !
@@ -35,7 +35,7 @@
 !
       implicit none
 !
-      logical fixed
+      logical fixed,calcnormal
 !
       character*1 typeboun(*),type,inpc(*)
       character*8 lakon(*)
@@ -49,10 +49,10 @@
      &  j,k,nodeboun(*),ndirboun(*),ikboun(*),ilboun(*),iamboun(*),
      &  nboun,nboun_,key,iperturb(2),inode,iline,ipol,inl,ipoinpc(0:*),
      &  ipoinp(2,*),inp(3,*),l,index1,ibounstart,ibounend,iamplitude,
-     &  nam,inotr(2,*),ntrans,nmethod,idummy
+     &  nam,inotr(2,*),ntrans,nmethod,idummy,mi(2),node1,node2
 !
       real*8 coefmpc(3,*),co(3,*),xboun(*),ctrl(*),xn(3),clearance,
-     &  bounval,trab(7,*),vdummy(0:4)
+     &  bounval,trab(7,*),vdummy(0:4),dd
 !
       fixed=.false.
       type='B'
@@ -125,6 +125,13 @@
       read(textpart(4)(1:20),'(f20.0)',iostat=istat) xn(3)
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
 !
+!     check whether size of gap normal is zero; if so, the 
+!     gap normal is calculated from the coordinates
+!
+      calcnormal=.false.
+      dd=dsqrt(xn(1)*xn(1)+xn(2)*xn(2)+xn(3)*xn(3))
+      if(dabs(dd).eq.0.d0) calcnormal=.true.
+!
 !     generating the gap MPC's
 !
       do j=istartset(i),iendset(i)
@@ -139,26 +146,26 @@
 !
 !           three terms for node 1
 !
-            node=kon(index1+1)
+            node1=kon(index1+1)
             inode=0
             do l=1,3
                inode=inode+1
                call usermpc(ipompc,nodempc,coefmpc,
      &              labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &              nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
-     &              nboun,nboun_,inode,node,co,label,
+     &              nboun,nboun_,inode,node1,co,label,
      &              typeboun,iperturb)
             enddo
 !
 !           three terms for node 2
 !
-            node=kon(index1+2)
+            node2=kon(index1+2)
             do l=1,3
                inode=inode+1
                call usermpc(ipompc,nodempc,coefmpc,
      &              labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &              nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
-     &              nboun,nboun_,inode,node,co,label,
+     &              nboun,nboun_,inode,node2,co,label,
      &              typeboun,iperturb)
             enddo
 !
@@ -175,6 +182,24 @@
      &           nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &           nboun,nboun_,inode,node,co,label,typeboun,
      &           iperturb)
+!
+!           calculating the gap normal
+!
+            if(calcnormal) then
+               do l=1,3
+                  xn(l)=co(l,node2)-co(l,node1)
+               enddo
+               dd=dsqrt(xn(1)*xn(1)+xn(2)*xn(2)+xn(3)*xn(3))
+               if(dabs(dd).eq.0.d0) then
+                  write(*,*) '*ERROR in gaps: gap normal cannot '
+                  write(*,*) '       determined'
+                  stop
+               endif
+               do l=1,3
+                  xn(l)=xn(l)/dd
+               enddo
+            endif
+!               
             do l=1,3
                co(l,nk)=xn(l)
             enddo
@@ -189,7 +214,8 @@
      &        iamboun,iamplitude,nam,ipompc,nodempc,
      &        coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &        ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &        type,typeboun,nmethod,iperturb,fixed,vdummy)
+     &        type,typeboun,nmethod,iperturb,fixed,vdummy,
+     &        idummy,mi)
 !
 !           nonhomogeneous term for user MPC
 !
@@ -215,26 +241,26 @@
 !
 !              three terms for node 1
 !
-               node=kon(index1+1)
+               node1=kon(index1+1)
                inode=0
                do l=1,3
                   inode=inode+1
                   call usermpc(ipompc,nodempc,coefmpc,
      &                 labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &                 nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
-     &                 nboun,nboun_,inode,node,co,label,
+     &                 nboun,nboun_,inode,node1,co,label,
      &                 typeboun,iperturb)
                enddo
 !
-!              three terms for node 1
+!              three terms for node 2
 !
-               node=kon(index1+2)
+               node2=kon(index1+2)
                do l=1,3
                   inode=inode+1
                   call usermpc(ipompc,nodempc,coefmpc,
      &                 labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &                 nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
-     &                 nboun,nboun_,inode,node,co,label,
+     &                 nboun,nboun_,inode,node2,co,label,
      &                 typeboun,iperturb)
                enddo
 !
@@ -251,6 +277,24 @@
      &              nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &              nboun,nboun_,inode,node,co,label,typeboun,
      &              iperturb)
+!
+!              calculating the gap normal
+!
+               if(calcnormal) then
+                  do l=1,3
+                     xn(l)=co(l,node2)-co(l,node1)
+                  enddo
+                  dd=dsqrt(xn(1)*xn(1)+xn(2)*xn(2)+xn(3)*xn(3))
+                  if(dabs(dd).eq.0.d0) then
+                     write(*,*) '*ERROR in gaps: gap normal cannot '
+                     write(*,*) '       determined'
+                     stop
+                  endif
+                  do l=1,3
+                     xn(l)=xn(l)/dd
+                  enddo
+               endif
+!     
                do l=1,3
                   co(l,nk)=xn(l)
                enddo
@@ -265,7 +309,8 @@
      &              iamboun,iamplitude,nam,ipompc,nodempc,
      &              coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &              ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &              type,typeboun,nmethod,iperturb,fixed,vdummy,idummy)
+     &              type,typeboun,nmethod,iperturb,fixed,vdummy,idummy,
+     &              mi)
 !
 !              nonhomogeneous term for user MPC
 !

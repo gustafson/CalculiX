@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine rectcylvi(co,v,fn,stn,qfn,een,cs,n,icntrl,t,filab,
-     &  imag)
+     &  imag,mi)
 !
 !     cf. subroutine rectcyl
 !     In the present routine, the imaginary part of the 
@@ -26,9 +26,10 @@
 !
       implicit none
 !
-      character*6 filab(*)
-      integer i,j,n,icntrl,imag
-      real*8 co(3,*),v(0:4,*),fn(0:3,*),stn(6,*),een(6,*),a(3,3),
+      character*87 filab(*)
+      integer i,j,n,icntrl,imag,mi(2)
+      real*8 co(3,*),v(0:mi(2),*),fn(0:mi(2),*),stn(6,*),een(6,*),
+     &  a(3,3),
      &  xr,xt,xz,b(3,3),cs(17,*),t(3),u(3),qfn(3,*),csab(7),
      &  xn(3),r(3),z,theta,rr,c(3,3),ctm,ct,st,ddx,ddy,dd
 !
@@ -40,7 +41,8 @@
          j=i
          call transformatrix(csab,co(1,i),a)
 !     
-         if(filab(11)(1:4).eq.'PU  ') then
+         if((filab(1)(1:4).eq.'U   ').or.
+     &        (filab(11)(1:4).eq.'PU'))  then 
             xr=v(1,j)*a(1,1)+v(2,j)*a(1,2)+v(3,j)*a(1,3)
             xt=v(1,j)*a(2,1)+v(2,j)*a(2,2)+v(3,j)*a(2,3)
             xz=v(1,j)*a(3,1)+v(2,j)*a(3,2)+v(3,j)*a(3,3)
@@ -49,7 +51,8 @@
             v(3,j)=xz
          endif
 !     
-         if(filab(18)(1:4).eq.'PHS ') then
+         if((filab(3)(1:4).eq.'S   ').or.
+     &        (filab(18)(1:4).eq.'PHS ')) then
             b(1,1)=stn(1,j)*a(1,1)+stn(4,j)*a(1,2)+stn(5,j)*a(1,3)
             b(1,2)=stn(1,j)*a(2,1)+stn(4,j)*a(2,2)+stn(5,j)*a(2,3)
             b(1,3)=stn(1,j)*a(3,1)+stn(4,j)*a(3,2)+stn(5,j)*a(3,3)

@@ -30,12 +30,13 @@ void bdfill(int **irowbdp, int *jqbd,
         char *lakon, int *nslavnode, int *nmastnode, int *imastnode,
         int *islavnode, int *islavsurf, int *imastsurf, double *pmastsurf, 
         int *itiefac, int *neq, int *nactdof, double *co, double *vold,
-        int *iponoels, int *inoels){
+	int *iponoels, int *inoels, int *mi, double *gapmints, double *gap,
+        double* pslavsurf,double* pslavdual){
 		
   int i, j, k,l,m, idof1,idofs,idofm, nodes, nodem, kflag, index, indexold,
-    *mast1=NULL, *irowbd=NULL,ifree,*ipointer=NULL;
+      *mast1=NULL, *irowbd=NULL,ifree,*ipointer=NULL,mt=mi[1]+1,contint;
   
-  double contribution=0.0, *aubd=NULL;
+  double contribution=0.0, *aubd=NULL,gapcont=0.0;
   
   irowbd = *irowbdp; aubd=*aubdp;
   
@@ -60,16 +61,17 @@ void bdfill(int **irowbdp, int *jqbd,
 	nodem = imastnode[k];
 	FORTRAN(createbdentry, ( &i,ipkon,kon,lakon,&nodem,&nodes,
 	     islavsurf,imastsurf,pmastsurf,itiefac,&contribution,co,vold,
-             iponoels,inoels));
+	     iponoels,inoels,mi,pslavsurf,pslavdual));
 	contribution=-contribution;
+//	printf("S : %d, M: %d, %e\n",nodes,nodem,contribution);
 	for(l=0; l<3; l++){
-	  idofs = nactdof[4*(nodes-1)+l+1];
+	  idofs = nactdof[mt*(nodes-1)+l+1];
 	  //	  for(m=0;m<3;m++){	
-	    idofm = nactdof[4*(nodem-1)+l+1];						
+	    idofm = nactdof[mt*(nodem-1)+l+1];						
 	    if ((idofs>0)&&(idofm>0)){ //insertion for active dofs
 	      insertas(ipointer, &irowbd, &mast1, &idofs, &idofm, &ifree, nzsbd,
 		       &contribution, &aubd);
-	      printf("idofs =%d , ifofm =%d, cont = %e\n",idofs,idofm,contribution);
+	     // printf("idofs =%d , ifofm =%d, cont = %e\n",idofs,idofm,contribution);
 	    }
 	    //}	
 	}
@@ -115,7 +117,7 @@ void bdfill(int **irowbdp, int *jqbd,
   j = 0;
   for(i=0; i<neq[1]; i++){
     if(j == *nzsbd){
-      for(k=i; k<neq[1]; k++) //GUido script
+      for(k=i; k<neq[1]; k++) 
 	jqbd[k] = *nzsbd+1;
       break;
     }
@@ -140,18 +142,22 @@ void bdfill(int **irowbdp, int *jqbd,
   free(ipointer);free(mast1);
   
   /* determining the diagonal entries and storing them in bdd */
+
+  for(i=0;i<neq[1];i++){bdd[i]=0.;}
   
   for(i=0; i<*ntie; i++){
     for(j=nslavnode[i]; j<nslavnode[i+1]; j++){
       nodes = islavnode[j];
       FORTRAN(createddentry,(&i,ipkon,kon,&nodes,
       	      lakon,islavsurf,itiefac,&contribution,co,vold,
-              iponoels,inoels)); 
+	      iponoels,inoels,mi,&gapcont,gapmints,pslavdual));
+      gap[j]=gapcont/contribution;  
+//      printf(" gap[%d]= %e\n",j,gap[j]);
+//        gap[j]=0.0;
       for(l=0; l<3; l++){
-	idof1 = nactdof[4*(nodes-1)+l+1];
+	idof1 = nactdof[mt*(nodes-1)+l+1];
 	if (idof1>0)
 	  bdd[idof1-1]+=contribution;
-	printf("cont[%d] = %e\n",idof1,contribution); 
       }
     }
   }

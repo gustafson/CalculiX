@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine uboun(boun,kstep,kinc,time,node,idof,coords,vold)
+      subroutine uboun(boun,kstep,kinc,time,node,idof,coords,vold,mi)
 !
 !     user subroutine uboun
 !
@@ -37,6 +37,10 @@
 !                        2: displacement in global y-direction
 !                        3: displacement in global z-direction
 !                        4: static pressure
+!     mi(1)              max # of integration points per element (max
+!                        over all elements)
+!     mi(2)              max degree of freedomm per node (max over all
+!                        nodes) in fields like v(0:mi(2))...
 !
 !     OUTPUT:
 !
@@ -45,8 +49,8 @@
 !           
       implicit none
 !
-      integer kstep,kinc,node,idof 
-      real*8 boun,time(2),coords(3),vold(0:4,*)
+      integer kstep,kinc,node,idof,mi(2) 
+      real*8 boun,time(2),coords(3),vold(0:mi(2),*)
 !
       boun=10.d0
 !

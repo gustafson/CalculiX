@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine e_c3d_krhs(co,nk,konl,lakonl,ffk,fft,nelem,nmethod,
-     &  rhcon,nrhcon,ielmat,ntmat_,vold,voldaux,dtime,matname,mint_,
+     &  rhcon,nrhcon,ielmat,ntmat_,vold,voldaux,dtime,matname,mi,
      &  shcon,nshcon,voldtu,compressible,yy,nelemface,sideface,nface,
      &  turbulent)
 !
@@ -34,15 +34,15 @@
 !
       integer konl(20),ifaceq(8,6),nk,nelem,nload,i,j,k,i1,i2,j1,k1,
      &  nmethod,ii,jj,id,ipointer,ig,kk,nrhcon(*),ielmat(*),nshcon(*),
-     &  ntmat_,nope,nopes,imat,mint2d,mint3d,mint_,ifacet(6,4),nopev,
+     &  ntmat_,nope,nopes,imat,mint2d,mint3d,mi(2),ifacet(6,4),nopev,
      &  ifacew(8,5),istep,iinc,layer,kspt,jltyp,iflag,iscale,
      &  compressible,idf,igl,nelemface(*),nface,turbulent
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,
      &  ffk(60),xsjmod,vkl(3,3),rhcon(0:1,ntmat_,*),reltime,
      &  t(3,3),bfv,press,vel(3),div,shcon(0:3,ntmat_,*),pgauss(3),
-     &  xkin,xtuf,voldl(0:4,20),yyl(20),tvk(3),tvt(3),
-     &  xl2(0:3,8),xsj2(3),shp2(7,8),vold(0:4,*),tvnk,tvnt,
+     &  xkin,xtuf,voldl(0:mi(2),20),yyl(20),tvk(3),tvt(3),
+     &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),tvnk,tvnt,
      &  om,omx,xi,et,ze,const,xsj,fft(60),dxkin(3),
      &  temp,voldaux(0:4,*),voldauxl(0:4,20),rho,dxtuf(3),
      &  weight,shpv(20),rhokin,rhotuf,y,vort,c1,c2,arg2,f2,

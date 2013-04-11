@@ -20,7 +20,7 @@
      &     ipkon,kon,lakon,ielmat,ne,nload,iptri,kontri,ntri,nloadtr,
      &     nflow,ndirboun,nactdog,nodeboun,nacteq,nboun,
      &     ielprop,prop,nteq,v,network,physcon,shcon,ntmat_,
-     &     co,ipogn,ign,vold,set,nshcon,rhcon,nrhcon)
+     &     co,ipogn,ign,vold,set,nshcon,rhcon,nrhcon,mi)
 !     
 !     determines the number of gas temperatures and radiation
 !     temperatures
@@ -42,11 +42,11 @@
      &     ndirboun(*),nactdog(0:3,*),nboun,nodeboun(*),ntmat_,
      &     idir,ntq,nteq,nacteq(0:3,*),node1,node2,nodem,
      &     ielprop(*),idirf(4),iflag,imat,numf,ipogn(*),ign(2,*),
-     &     ifreegn,indexold,isothermflag,nrhcon(*),nshcon(*)
+     &     ifreegn,indexold,isothermflag,nrhcon(*),nshcon(*),mi(2)
 !     
-      real*8 prop(*),f,xflow,nodef(4),df(4),v(0:4,*),g(3),
+      real*8 prop(*),f,xflow,nodef(4),df(4),v(0:mi(2),*),g(3),
      &     cp,r,physcon(*),shcon(0:3,ntmat_,*),rho,
-     &     co(3,*),dvi,vold(0:4,*),rhcon(*)
+     &     co(3,*),dvi,vold(0:mi(2),*),rhcon(*)
 !     
       data ifaceq /4,3,2,1,11,10,9,12,
      &     5,6,7,8,13,14,15,16,
@@ -265,34 +265,21 @@
 !     
 !     subtracting the SPC conditions
 !     
-!     write(*,*) 'subtracting the SPC conditions'
-!
-c      write(*,*) 'nactdog1'
-c      do i=1,ntg
-c         write(*,*) itg(i),(nactdog(j,itg(i)),j=0,3)
-c      enddo
-c      if (nflow.ne.0) then
-         do i=1,nboun
-            node=nodeboun(i)
-            call nident(itg,node,ntg,id)
-            if (id.gt.0) then
-               if (itg(id).eq.node) then
-                  idir=ndirboun(i)
-                  nactdog(idir,node)=0
-                  if(idir.eq.0) then
-                     temperaturebc=.true.
-                  elseif(idir.eq.2) then
-                     pressurebc=.true.
-                  endif
+      do i=1,nboun
+         node=nodeboun(i)
+         call nident(itg,node,ntg,id)
+         if (id.gt.0) then
+            if (itg(id).eq.node) then
+               idir=ndirboun(i)
+               nactdog(idir,node)=0
+               if(idir.eq.0) then
+                  temperaturebc=.true.
+               elseif(idir.eq.2) then
+                  pressurebc=.true.
                endif
             endif
-         enddo
-c      endif
-!
-c      write(*,*) 'nactdog2'
-c      do i=1,ntg
-c         write(*,*) itg(i),(nactdog(j,itg(i)),j=0,3)
-c      enddo
+         endif
+      enddo
 !
 !     determining the active equations
 !     
@@ -339,7 +326,7 @@ c      enddo
             call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &           nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &           nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,
-     &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_)
+     &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi)
 !      
             if (.not.identity) then
                nacteq(2,nodem)=1
@@ -432,6 +419,7 @@ c      enddo
          do i=1,nflow
             nelem=ieg(i)
             if((lakon(nelem)(2:3).eq.'LI').or.
+     &         (lakon(nelem)(2:3).eq.'LP').or.
      &         (lakon(nelem)(2:3).eq.'  ')) cycle
             imat=ielmat(nelem)
             r=shcon(3,1,imat)
@@ -469,197 +457,36 @@ c      enddo
          enddo
       enddo
 !
-c      write(*,*) 'nactdog'
-c      do i=1,ntg
-c         write(*,*) itg(i),(nactdog(j,itg(i)),j=0,3)
-c      enddo
-!
-c      write(*,*) ''
-c      write(*,*) 'nacteq'
-c      do i=1,ntg
-c         write(*,*) itg(i),(nacteq(j,itg(i)),j=0,3)
-c      enddo
-!
       if (ntq.ne.nteq) then
          write(*,*) '*ERROR in envtemp:'
          write(*,*) '*****number of gas equations is not equal to'
-         write(*,*) 'number of active degrees of freedom*****'
+         write(*,*) ' number of active degrees of freedom*****'
+         write(*,*) ' nteq= ',nteq
+         write(*,*) ' ntq= ',ntq
          stop
       endif   
       write(*,*) ''
 !  
 !     calling the user routine uenvtemp (can be empty)
 !
-      call uenvtemp(co,ipkon,kon,lakon,nelemload,sideload,nload)
+C      call uenvtemp(co,ipkon,kon,lakon,nelemload,sideload,nload)
 !     
-!     if a gas node i belongs to one or more isothermal elements,
-!     the corresponding element numbers are stored in ign(1,ipogn(i)),
-!     ign(1,ign(2,ipogn(i))),... till ign(1,ign(2,ign(2,...))))=0.
-!     i is not local node number in field itg, not the global
-!     node number
-!
-!     filling ipogn and ign
-!
       isothermflag=0
       ifreegn=1
 !
       do i=1,nflow
-        nelem=ieg(i)
-        if(lakon(nelem)(2:4).ne.'GAP') cycle
-        index=ielprop(nelem)
-        
-        if((lakon(nelem)(2:6).eq.'GAPII')
-     &       .or.(lakon(nelem)(2:6).eq.'GAPXI')) then
-           
-           isothermflag=nelem
-           index=ipkon(nelem)
-           node1=kon(index+1)
-           node2=kon(index+3)
-!     
-           if((node1.eq.0).or.(node2.eq.0))cycle
-!     
-           call nident(itg,node1,ntg,id)
-           ign(2,ifreegn)=ipogn(id)
-           ign(1,ifreegn)=nelem
-           ipogn(id)=ifreegn
-           ifreegn=ifreegn+1
-!     
-           call nident(itg,node2,ntg,id)
-           ign(2,ifreegn)=ipogn(id)
-           ign(1,ifreegn)=nelem
-           ipogn(id)=ifreegn
-           ifreegn=ifreegn+1
-        endif 
+         nelem=ieg(i)
+         if((lakon(nelem)(1:4).eq."DGAP")
+     &        .and.(lakon(nelem)(6:6).eq."I")) then
+!            
+            index=ipkon(nelem)
+            node1=kon(index+1)
+            node2=kon(index+3)
+            if((node1.eq.0).or.(node2.eq.0)) cycle
+!            
+            nacteq(3,node2)=node1
+         endif
       enddo
-!
-      if(isothermflag.ne.0)then
-         loop : do
-!     
-!     looking for a loose end
-!     
-         looseend=.false.
-         do i=1,ntg
-            if(ipogn(i).ne.0d0) then
-               if(ign(2,ipogn(i)).eq.0) then
-                  if(nactdog(0,i).eq.0) cycle
-                  looseend=.true.
-                  index=ipogn(i)
-                  node=itg(i)
-                  exit
-               endif
-            endif
-         enddo
-         write(*,*) (ipogn(k),k=1,ntg)
-!     
-!     if no loose end is found : closed loop 
-!     create one loose end by eliminating one element in the loop
-!     
-         if (.not.looseend) then
-            do i=1,ntg
-               if(ipogn(i).ne.0) then
-                  nelem=ign(1,ipogn(i))
-!     
-!     remove element nelem from ign
-!     
-                  node=itg(i)
-                  ipogn(i)=ign(2,ipogn(i))
-                  index=ipkon(nelem)
-                  node1=kon(index+1)
-!     
-                  if((node1.eq.node).or.(node1.eq.0)) then
-                     node1=kon(index+3)
-                  endif
-!     
-                  call nident(itg,node1,ntg,id)
-                  index=ipogn(id)
-                  indexold=0
-!     
-                  do
-                     if(ign(1,index).eq.nelem)then
-                        if(indexold.eq.0) then
-                           ipogn(id)=ign(2,index)
-                        else
-                           ign(2,indexold)=ign(2,index)
-                        endif
-                        exit
-                     else
-                        indexold=index
-                        index=ign(2,index)
-                     endif
-                  enddo
-                  cycle loop
-               endif
-            enddo
-         endif         
-!     
-!     treat the node starting at a loose end
-!     
-         do
-            
-            ipogn(i)=0
-            nelem=ign(1,index)
-!     
-!     remove element nelem from field ign
-!     
-!            index=ipkon(nelem)
-            
-            node1=kon(ipkon(nelem)+1)
-            node2=kon(ipkon(nelem)+3)
-!
-            if(node.eq.node1) then
-               nacteq(3,node)=node2
-            elseif(node.eq.node2) then
-               nacteq(3,node)=node1
-            endif
-!         
-            if(node1.eq.node) then
-               node1=kon(ipkon(nelem)+3)
-            endif
-            call  nident(itg,node1,ntg,id)
-            index=ipogn(id)
-            indexold=0
-            do
-               if(ign(1,index).eq.nelem)then
-                  if(indexold.eq.0) then
-                     ipogn(id)=ign(2,index)
-!                     write(*,*) (ipogn(k),k=1,ntg)
-                  else
-                     ign(2,indexold)=ign(2,index)
-                  endif
-                  exit
-               else
-                  indexold=index
-                  index=ign(2,index)
-                  if(indexold.eq.0.and.index.eq.0) cycle loop
-               endif
-            enddo
-!     
-            node=node1
-            call nident(itg,node,ntg,i)
-            if(ipogn(i).eq.0) exit
-            index=ipogn(i)
-         enddo
-!
-!         write(*,*) (ipogn(k),k=1,ntg)
-!
-!         do k=1,2
-!            write(*,*) (ign(k,j),j=1,ifreegn)
-!         enddo
-!     
-!     check for untreated nodes
-!     
-         do k=1,ntg
-            if(ipogn(i).ne.0)cycle loop
-         enddo
-!     
-         exit
-      enddo loop
-      endif
-
-!      do i=1,ntg
-!         node=itg(i)
-!         write(*,*) 'node presure', node, v(2,node)
-!      enddo
 !
       return
       end

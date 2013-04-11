@@ -29,7 +29,7 @@
       character*132 textpart(16)
 !
       integer nmethod,mei(4),istep,istat,n,key,ncv,mxiter,
-     &  nforc,nload,ithermal,iprestr,i,nk,iperturb,iline,ipol,inl,
+     &  nforc,nload,ithermal,iprestr,i,nk,iperturb(2),iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),nev,isolver,nbody,ipoinpc(0:*)
 !
       real*8 fei(3),t0(*),t1(*),tol
@@ -97,7 +97,8 @@
       endif
 !
       nmethod=3
-      if(iperturb.gt.1) iperturb=0
+      if(iperturb(1).gt.1) iperturb(1)=0
+      iperturb(2)=0
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

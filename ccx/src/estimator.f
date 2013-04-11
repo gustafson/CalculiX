@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine estimator(co,nk,kon,ipkon,lakon,ne,stn,
-     & ipneigh,neigh,sti,mint_)
+     & ipneigh,neigh,sti,mi)
 !
 !     modified zienkiewicz zhu pointwise error estimator
 !
@@ -33,13 +33,13 @@
 !
       integer kon(*),nk,ne,i,j,ipkon(*),indexe,nodebase,
      & k,ipneigh(*),neigh(2,*),ifree,node,ielem,ielem1,index,index1,m,
-     & jj,mint_,ii,ncount,nope,itypflag,inum(nk),nenei20(3,8),maxcommon,
+     & jj,mi(2),ii,ncount,nope,itypflag,inum(nk),nenei20(3,8),maxcommon,
      & icommon,idxnode,iecount,index2,lneigh8a(7,8),ipoints,icont,
      & nmids(maxmid),nelem(3),nelemv,iavflag,members(ne),ielem2,
      & linpatch,iterms,inodes(4),iaddelem,ielidx,nenei10(3,4),iscount,
      & idxnode1,maxcommon1
 !
-      real*8 co(3,*),stn(6,*),sti(6,mint_,*),angle,scpav(6,nk),
+      real*8 co(3,*),stn(6,*),sti(6,mi(1),*),angle,scpav(6,nk),
      & angmax
 !
       data lneigh8a /2,3,4,5,6,7,8,1,3,4,5,6,7,8,1,2,4,5,6,7,8,
@@ -448,7 +448,7 @@ c               write(*,*) 'Alternative node is',idxnode
 !
 !           evaluate patch for patch base node (nodebase)
 !
-            call patch(iterms,nodebase,sti,scpav,mint_,kon,ipkon,
+            call patch(iterms,nodebase,sti,scpav,mi(1),kon,ipkon,
      &           ipoints,members,linpatch,co,lakon,iavflag)
             inum(nodebase)=1
 !     
@@ -482,7 +482,7 @@ c               write(*,*) 'Alternative node is',idxnode
                      endif
                      nmids(k)=kon(ipkon(ielem)+nenei20(j,m))
                      inum(nmids(k))=inum(nmids(k))+1
-                     call patch(iterms,nmids(k),sti,scpav,mint_,kon,
+                     call patch(iterms,nmids(k),sti,scpav,mi(1),kon,
      &                    ipkon,ipoints,members,linpatch,co,lakon,
      &                    iavflag)
                      k=k+1
@@ -812,7 +812,7 @@ c            write(*,*) 'using',iterms,' terms for patch',nodebase
 !     
 !           patch for patch base node
 !
-            call patch(iterms,nodebase,sti,scpav,mint_,kon,ipkon,
+            call patch(iterms,nodebase,sti,scpav,mi(1),kon,ipkon,
      &           ipoints,members,linpatch,co,lakon,iavflag)
             inum(nodebase)=1
 !
@@ -845,7 +845,7 @@ c            write(*,*) 'using',iterms,' terms for patch',nodebase
                   endif
                   nmids(k)=kon(ipkon(ielem)+nenei10(j,m))
                   inum(nmids(k))=inum(nmids(k))+1
-                  call patch(iterms,nmids(k),sti,scpav,mint_,kon,
+                  call patch(iterms,nmids(k),sti,scpav,mi(1),kon,
      &                 ipkon,ipoints,members,linpatch,co,lakon,
      &                 iavflag)
                   k=k+1

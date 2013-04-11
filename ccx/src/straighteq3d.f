@@ -66,45 +66,45 @@
 !
 !     p12 x xn
 !
-      straight(1)=p12(2)*straight(15)-p12(3)*straight(14)
-      straight(2)=p12(3)*straight(13)-p12(1)*straight(15)
-      straight(3)=p12(1)*straight(14)-p12(2)*straight(13)
-      dd=dsqrt(straight(1)*straight(1)+straight(2)*straight(2)+
-     &         straight(3)*straight(3))
-      do i=1,3
-         straight(i)=straight(i)/dd
-      enddo
-!
-!     p23 x xn
-!
-      straight(5)=p23(2)*straight(15)-p23(3)*straight(14)
-      straight(6)=p23(3)*straight(13)-p23(1)*straight(15)
-      straight(7)=p23(1)*straight(14)-p23(2)*straight(13)
-      dd=dsqrt(straight(5)*straight(5)+straight(6)*straight(6)+
-     &         straight(7)*straight(7))
-      do i=5,7
-         straight(i)=straight(i)/dd
-      enddo
-!
-!     p31 x xn
-!
-      straight(9)=p31(2)*straight(15)-p31(3)*straight(14)
-      straight(10)=p31(3)*straight(13)-p31(1)*straight(15)
-      straight(11)=p31(1)*straight(14)-p31(2)*straight(13)
+      straight(9)=p12(2)*straight(15)-p12(3)*straight(14)
+      straight(10)=p12(3)*straight(13)-p12(1)*straight(15)
+      straight(11)=p12(1)*straight(14)-p12(2)*straight(13)
       dd=dsqrt(straight(9)*straight(9)+straight(10)*straight(10)+
      &         straight(11)*straight(11))
       do i=9,11
          straight(i)=straight(i)/dd
       enddo
 !
+!     p23 x xn
+!
+      straight(1)=p23(2)*straight(15)-p23(3)*straight(14)
+      straight(2)=p23(3)*straight(13)-p23(1)*straight(15)
+      straight(3)=p23(1)*straight(14)-p23(2)*straight(13)
+      dd=dsqrt(straight(1)*straight(1)+straight(2)*straight(2)+
+     &         straight(3)*straight(3))
+      do i=1,3
+         straight(i)=straight(i)/dd
+      enddo
+!
+!     p31 x xn
+!
+      straight(5)=p31(2)*straight(15)-p31(3)*straight(14)
+      straight(6)=p31(3)*straight(13)-p31(1)*straight(15)
+      straight(7)=p31(1)*straight(14)-p31(2)*straight(13)
+      dd=dsqrt(straight(5)*straight(5)+straight(6)*straight(6)+
+     &         straight(7)*straight(7))
+      do i=5,7
+         straight(i)=straight(i)/dd
+      enddo
+!
 !     determining the inhomogeneous terms
 !
-      straight(4)=-straight(1)*col(1,1)-straight(2)*col(2,1)-
-     &             straight(3)*col(3,1)
-      straight(8)=-straight(5)*col(1,2)-straight(6)*col(2,2)-
-     &             straight(7)*col(3,2)
-      straight(12)=-straight(9)*col(1,3)-straight(10)*col(2,3)-
-     &             straight(11)*col(3,3)
+      straight(12)=-straight(9)*col(1,1)-straight(10)*col(2,1)-
+     &             straight(11)*col(3,1)
+      straight(4)=-straight(1)*col(1,2)-straight(2)*col(2,2)-
+     &             straight(3)*col(3,2)
+      straight(8)=-straight(5)*col(1,3)-straight(6)*col(2,3)-
+     &             straight(7)*col(3,3)
       straight(16)=-straight(13)*col(1,1)-straight(14)*col(2,1)-
      &             straight(15)*col(3,1)
 !

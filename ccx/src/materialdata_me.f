@@ -18,7 +18,7 @@
       subroutine materialdata_me(elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
      &  imat,amat,iorien,pgauss,orab,ntmat_,elas,rho,i,ithermal,
      &  alzero,mattyp,t0l,t1l,ihyper,istiff,elconloc,eth,kode,plicon,
-     &  nplicon,plkcon,nplkcon,npmat_,plconloc,mint_,dtime,iel,iint,
+     &  nplicon,plkcon,nplkcon,npmat_,plconloc,mi,dtime,iel,iint,
      &  xstiff,ncmat_)
 !
       implicit none
@@ -34,12 +34,12 @@
       integer nelcon(2,*),nrhcon(*),nalcon(2,*),
      &  imat,iorien,ithermal,i,j,k,mattyp,kal(2,6),j1,j2,j3,j4,
      &  jj,ntmat_,istiff,nelconst,ihyper,kode,itemp,kin,nelas,
-     &  iel,iint,mint_,ncmat_,id,two,seven
+     &  iel,iint,mi(2),ncmat_,id,two,seven
 !
       integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),
-     &  alcon(0:6,ntmat_,*),eth(6),xstiff(27,mint_,*),
+     &  alcon(0:6,ntmat_,*),eth(6),xstiff(27,mi(1),*),
      &  orab(7,*),elas(21),alph(6),alzero(*),rho,t0l,t1l,
      &  skl(3,3),xa(3,3),elconloc(21),emax,pgauss(3)
 !

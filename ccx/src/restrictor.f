@@ -18,8 +18,8 @@
 !     
       subroutine restrictor(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &     nshcon,rhcon,nrhcon,ntmat_)
+     &     nodef,idirf,df,cp,r,physcon,dvi,numf,set
+     &     ,shcon,nshcon,rhcon,nrhcon,ntmat_,mi)
 !     
 !     pressure loss element with partial total head loss 
 !     
@@ -31,17 +31,19 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(5),idirf(5),index,iflag,
-     &     inv,ipkon(*),kon(*),kgas,case,k_oil,nshcon(*),
-     &     nrhcon(*),ntmat_
+     &     inv,ipkon(*),kon(*),kgas,icase,k_oil,nshcon(*),
+     &     nrhcon(*),ntmat_,mi(2)
 !     
-      real*8 prop(*),v(0:4,*),xflow,f,df(5),kappa,R,d,
-     &     Tt1,Tt2,pt1,pt2,cp,physcon(*),km1,dvi,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(5),kappa,R,d,
+     &     Tt1,Tt2,pt1,pt2,cp,physcon(3),km1,dvi,
      &     kp1,kdkm1,reynolds,kdkp1,
      &     pt2pt1,pt1pt2,pt1pt2_crit,qred_crit,qred1,qred2,zeta,
      &     A1,A2,root, expon1,expon2,expon3,fact1,fact2,sqrt,pi,
-     &     pt2_lim,Ts1,Ts2,M2,M1,xflow_oil,T1,T2,phi,
-     &     shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*)
+     &     pt2_lim,M2,M1,xflow_oil,T1,T2,phi,
+     &     shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),zeta_phi,Aeff,
+     &     C2,tdkp1
 !     
+      phi=0.d0
       if (iflag.eq.0) then
          identity=.true.
 !     
@@ -82,6 +84,12 @@
 !     
 !     for other Restrictor elements         
 !     
+         else if (lakon(nelem)(2:5).eq.'REUS' ) then
+            A1=prop(index+1)
+            A2=prop(index+2)
+            if(A1.gt.A2) then
+               A1=A2
+            endif
          else
             A1=prop(index+1)
             A2=prop(index+2)
@@ -123,6 +131,7 @@
 !     
          if(A1.le.A2) then
 !     
+
             Qred1=dsqrt(kappa/R)*pt1pt2**(-0.5d0*kp1/(kappa*zeta))
      &           *dsqrt(2.d0/km1*(pt1pt2**(km1/(kappa*zeta))-1d0))
 !     
@@ -161,6 +170,25 @@
                xflow=inv*A2*pt2*Qred2/dsqrt(Tt2)
             endif
          endif
+
+         pt2pt1=pt2/pt1
+         km1=kappa-1.d0
+         kp1=kappa+1.d0
+         kdkm1=kappa/km1
+         tdkp1=2.d0/kp1
+         C2=tdkp1**kdkm1
+         if(A1.gt.A2) then
+            Aeff=A2
+         else
+            Aeff=A1
+         endif
+         if(pt2pt1.gt.C2) then
+            xflow=inv*pt1*Aeff*dsqrt(2.d0*kdkm1*pt2pt1**(2.d0/kappa)
+     &           *(1.d0-pt2pt1**(1.d0/kdkm1))/r)/dsqrt(Tt1)
+         else
+            xflow=inv*pt1*Aeff*dsqrt(kappa/r)*tdkp1**(kp1/(2.d0*km1))/
+     &           dsqrt(Tt1)
+         endif
 !     
       elseif (iflag.eq.2)then
 !     
@@ -173,7 +201,7 @@
          kdkm1=kappa/km1
          kdkp1=kappa/kp1
          index=ielprop(nelem)
-
+!
          pt1=v(2,node1)
          pt2=v(2,node2)
 !
@@ -185,6 +213,7 @@
 !     
 !     defining surfaces and oil properties for branches elements
 !     
+         xflow_oil=-12345678.
          if(lakon(nelem)(2:6).eq.'REBRJ') then
             if(nelem.eq.int(prop(index+2))) then
                A1=prop(index+5)
@@ -201,57 +230,85 @@
             if(nelem.eq.int(prop(index+2))) then
                A1=prop(index+5)
                A2=A1
-               xflow_oil=prop(index+9)
-               k_oil=int(prop(index+11))
+               if(lakon(nelem)(2:8).eq.'REBRSI1') then
+                  xflow_oil=prop(index+11)
+                  k_oil=int(prop(index+13))
+               else
+                  xflow_oil=prop(index+9)
+                  k_oil=int(prop(index+11))
+               endif
             elseif(nelem.eq.int(prop(index+3)))then
                A1=prop(index+6)
                A2=A1
-               xflow_oil=prop(index+10)
-               k_oil=int(prop(index+11))
+               if(lakon(nelem)(2:8).eq.'REBRSI1') then
+                  xflow_oil=prop(index+12)
+                  k_oil=int(prop(index+13))
+               else 
+                  xflow_oil=prop(index+10)
+                  k_oil=int(prop(index+11))
+               endif
             endif
 !     
 !     for other Restrictor elements         
 !     
-         else
+       
+         else                 
             if(inv.gt.0.d0) then
                A1=prop(index+1)
                A2=prop(index+2)
-            else
+            else              
                A1=prop(index+2)
-               A2=prop(index+1)
+               A2=prop(index+1)              
             endif
-!               
-            if (lakon(nelem)(2:5).eq.'REEL') then
+!           
+            if(lakon(nelem)(2:5).eq.'REEL') then
                xflow_oil=prop(index+4)
                k_oil=int(prop(index+5))
-            elseif((lakon(nelem)(2:5).eq.'REUS').or.
-     &              (lakon(nelem)(2:7).eq.'RELOID').or.  
-     &              (lakon(nelem)(2:5).eq.'REEN').or.  
-     &              (lakon(nelem)(2:5).eq.'REEX').or.   
-     &              (lakon(nelem)(2:7).eq.'REWAOR').or. 
+            elseif((lakon(nelem)(2:7).eq.'RELOID').or.
+     &              (lakon(nelem)(2:5).eq.'REUS').or. 
+     &              (lakon(nelem)(2:5).eq.'REEN').or.
+     &              (lakon(nelem)(2:5).eq.'REEX').or.
+     &              (lakon(nelem)(2:7).eq.'REWAOR').or.
      &              (lakon(nelem)(2:7).eq.'RELOLI')) then
                xflow_oil=prop(index+5)
                k_oil=int(prop(index+6))
             elseif((lakon(nelem)(2:5).eq.'RECO').or.
      &              (lakon(nelem)(2:7).eq.'REBEMA').or.
-     &              (lakon(nelem)(2:7).eq.'REBEMI')) then
+     &              (lakon(nelem)(2:7).eq.'REBEMI').or.
+     &              (lakon(nelem)(2:8).eq.'REBEIDC')) then
                xflow_oil=prop(index+6)
                k_oil=int(prop(index+7))
-            elseif(lakon(nelem)(2:7).eq.'REBEID') then
+            elseif(lakon(nelem)(2:8).eq.'REBEIDR') then
                xflow_oil=prop(index+8)
                k_oil=int(prop(index+9))
             endif
          endif
-!     
-         if(pt1.ge.pt2) then
+!
+         if(pt1.gt.pt2) then
             inv=1
             xflow=v(1,nodem)
             Tt1=v(0,node1)+physcon(1)
             Tt2=v(0,node2)+physcon(1)
 !     
-            case=0
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,a1,T1,case)
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,a2,T2,case)
+            icase=0
+            call ts_calc(xflow,Tt1,Pt1,kappa,r,a1,T1,icase)
+            call ts_calc(xflow,Tt2,Pt2,kappa,r,a2,T2,icase)
+!
+            nodef(1)=node1
+            nodef(2)=node1
+            nodef(3)=nodem
+            nodef(4)=node2
+            
+         elseif(pt1.eq.pt2) then
+            inv=1
+            xflow=v(1,nodem)
+            Tt1=v(0,node1)+physcon(1)
+            Tt2=v(0,node2)+physcon(1)
+!     
+            pt2=pt2-0.01*pt2
+            icase=0
+            call ts_calc(xflow,Tt1,Pt1,kappa,r,a1,T1,icase)
+            call ts_calc(xflow,Tt2,Pt2,kappa,r,a2,T2,icase)
 !
             nodef(1)=node1
             nodef(2)=node1
@@ -265,15 +322,15 @@
             xflow=-v(1,nodem)
             Tt1=v(0,node2)+physcon(1)
             Tt2=v(0,node1)+physcon(1)
-            case=0
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,a1,T1,case)
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,a2,T2,case)
-
+            icase=0
+            call ts_calc(xflow,Tt1,Pt1,kappa,r,a1,T1,icase)
+            call ts_calc(xflow,Tt2,Pt2,kappa,r,a2,T2,icase)
             nodef(1)=node2
             nodef(2)=node2
             nodef(3)=nodem
             nodef(4)=node1 
          endif
+
 !     
          idirf(1)=2
          idirf(2)=0
@@ -283,29 +340,18 @@
 !     calculation of the dynamic viscosity 
 !     
          if( lakon(nelem)(2:3).eq.'RE') then
-            case=0
-         elseif(lakon(nelem)(2:5).eq.'REEX') then
-            if(lakon(int(prop(index+4)))(2:6).eq.'GAPIA') then
-               case=0
-            elseif(lakon(int(prop(index+4)))(2:6).eq.'GAPII') then
-               case=1
-            endif
-!     
+            icase=0
          endif
-!     
-         call ts_calc(xflow,Tt1,Pt1,kappa,r,A1,Ts1,case)
-!     
-         call ts_calc(xflow,Tt2,Pt2,kappa,r,A2,Ts2,case)
 !     
          if (A1.le.A2) then
             if(dabs(dvi).lt.1E-30) then
                kgas=0
-               call dynamic_viscosity(kgas,Ts1,dvi)
+               call dynamic_viscosity(kgas,T1,dvi)
             endif
          else
             if(dabs(dvi).lt.1E-30) then
                kgas=0
-               call dynamic_viscosity(kgas,Ts2,dvi)
+               call dynamic_viscosity(kgas,T2,dvi)
             endif
          endif
 !     
@@ -322,22 +368,26 @@
                reynolds=dabs(xflow)*d/(dvi*A2)
             endif
          endif
+
+         if(xflow_oil.lt.1E-10) then
+            xflow_oil=0d0
+         endif 
 !
 !     BEND MILLER with oil
 !     
          if(lakon(nelem)(2:7).eq.'REBEMI') then
             if(xflow_oil.ne.0d0) then
 !
-               call two_phase_flow(Tt1,pt1,Ts1,Tt2,pt2,Ts2,xflow,
+               call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
      &              v,dvi,cp,r,k_oil,phi,zeta,nshcon,nrhcon,
-     &              shcon,rhcon,ntmat_)
+     &              shcon,rhcon,ntmat_,mi)
 !
                zeta=phi*zeta
             else
 
                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &              isothermal,kon,ipkon,R,Kappa,v)
+     &              isothermal,kon,ipkon,R,Kappa,v,mi)
                phi=1.d0
             endif
 !
@@ -345,16 +395,17 @@
 !
          elseif(lakon(nelem)(2:7).eq.'RELOID') then
             if(xflow_oil.ne.0d0) then
-               call two_phase_flow(Tt1,pt1,Ts1,Tt2,pt2,Ts2,xflow,
+!               
+               call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
      &              v,dvi,cp,r,k_oil,phi,zeta,nshcon,nrhcon,
-     &              shcon,rhcon,ntmat_)
+     &              shcon,rhcon,ntmat_,mi)
                zeta=phi*zeta
 
             else
 
                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &              isothermal,kon,ipkon,R,Kappa,v)
+     &              isothermal,kon,ipkon,R,Kappa,v,mi)
                phi=1.d0
             endif
 !
@@ -362,20 +413,20 @@
 !
          else
 !
-            if(xflow_oil.ne.0) then
-               call two_phase_flow(Tt1,pt1,Ts1,Tt2,pt2,Ts2,xflow,
+
+            if(xflow_oil.ne.0d0) then
+               call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
      &              v,dvi,cp,r,k_oil,phi,zeta,nshcon,nrhcon,
-     &              shcon,rhcon,ntmat_)
-
-                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &              isothermal,kon,ipkon,R,Kappa,v)
-
+     &              shcon,rhcon,ntmat_,mi)
+               call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
+     &              isothermal,kon,ipkon,R,Kappa,v,mi)
                 zeta=phi*zeta
             else
                phi=1.d0
-                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &              isothermal,kon,ipkon,R,Kappa,v)
+               call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
+     &              isothermal,kon,ipkon,R,Kappa,v,mi)
+               zeta=phi*zeta
             endif
          endif
 !     
@@ -385,8 +436,8 @@
             xflow=v(1,nodem)
             Tt2=v(0,node2)
             Tt1=v(0,node1)
-           call ts_calc(xflow,Tt1,Pt1,kappa,r,A1,Ts1,case)
-           call ts_calc(xflow,Tt2,Pt2,kappa,r,A2,Ts2,case)
+           call ts_calc(xflow,Tt1,Pt1,kappa,r,A1,T1,icase)
+           call ts_calc(xflow,Tt2,Pt2,kappa,r,A2,T2,icase)
 !     
             nodef(1)=node1
             nodef(2)=node1
@@ -404,7 +455,7 @@
 !     
 !     Mach number caclulation
 !     
-         M1=dsqrt(2d0/km1*(Tt1/Ts1-1d0))
+         M1=dsqrt(2d0/km1*(Tt1/T1-1d0))
          if((1.d0-M1).le.1E-6) then
             if(zeta.gt.0d0) then
                call limit_case_calc(a2,pt1,Tt2,xflow,zeta,r,kappa,
@@ -412,7 +463,7 @@
 !     
             endif
          else
-            M2=dsqrt(2d0/km1*(Tt2/Ts2-1d0))
+            M2=dsqrt(2d0/km1*(Tt2/T2-1d0))
          endif
 !     
 !     Section A1 smaller than or equal to section A2
@@ -443,7 +494,7 @@
      &              **(-0.5d0*kp1/km1)
             endif
 !     
-!     case zeta greater than zero
+!     icase zeta greater than zero
 !     
             if(zeta.gt.0) then
 !     
@@ -491,7 +542,7 @@
 !     
 !     section1 is critical
 !     
-                      f=xflow*sqrt/(pt1*A1)-dsqrt(R/kappa)*qred_crit
+                     f=xflow*sqrt/(pt1*A1)-dsqrt(R/kappa)*qred_crit
 !     
 !     pressure node1
 !     
@@ -515,7 +566,7 @@
                else
 !     
 !     section A2 critical
-!     
+!
                   call pt2_lim_calc(pt1,a2,a1,kappa,zeta,pt2_lim)
                   pt1pt2=pt1/pt2_lim
 !     
@@ -547,7 +598,7 @@
 !     
                endif
 !     
-!     case zeta less than zero
+!     icase zeta less than zero
 !     
             elseif(zeta.lt.0) then
 !     
@@ -615,22 +666,15 @@
 !
             elseif(zeta.eq.0d0) then
 !     
-               Qred1=dabs(xflow)*dsqrt(Tt1*kappa/R)/(A1*Pt1)
-               Qred2=dabs(xflow)*dsqrt(Tt2*kappa/R)/(A2*Pt2)
-               Qred_crit=dsqrt(kappa/R)*(1.d0+0.5d0*km1)
-     &              **(-0.5d0*kp1/km1)
+               f=pt1-pt2
 !     
-               f=pt1/pt2-1.d0
-!     
-               df(1)=1/pt2
+               df(1)=1
 !     
                df(2)=0
 !     
                df(3)=0
 !     
-               df(4)=-pt1/pt2**2
-!     
-!            endif
+               df(4)=-1
 !     
             endif
 !     
@@ -650,6 +694,7 @@
             if(zeta.gt.0d0) then
 !     
                sqrt=dsqrt(R*Tt1/kappa)
+!
                expon1=-0.5d0*kp1/(zeta*kappa)
                fact1=pt1pt2**expon1
                expon2=km1/(zeta*kappa)
@@ -674,7 +719,7 @@
 !     pressure node1
 !     
                   df(1)=-fact1/pt1*dsqrt(root)
-     &                 *(expon1+0.5*expon2*fact2/root)
+     &                 *(expon1+0.5*dsqrt(2/km1)*expon2*fact2/root)
 !     
 !     temperature node1
 !     
@@ -688,15 +733,17 @@
 !     
                   df(4)=-xflow*sqrt/(A2*Pt2**2)
      &                 -fact1/pt2*dsqrt(root)*
-     &                 (-expon1-0.5*expon2*fact2/root)
+     &                 (-expon1-0.5*dsqrt(2/km1)*expon2*fact2/root)
 !     
                else
+                  write(*,*) 
+     &               '*WARNING in restrictor: A1 greater A2 critical'
 !     
 !     section2 is critical
 !     
                   pt2=pt1/pt1pt2_crit
 !     
-                  f=xflow*dsqrt(Tt2)/(pt2*A2)-qred_crit
+                  f=xflow*dsqrt(Tt1)/(pt2*A2)-qred_crit
 !     
 !     pressure node1
 !     
@@ -708,11 +755,11 @@
 !     
 !     mass flow
 !     
-                  df(3)=inv*dsqrt(Tt2)/(A2*pt2)
+                  df(3)=inv*dsqrt(Tt1)/(A2*pt2)
 !     
 !     pressure node2
 !     
-                  df(4)=-xflow*dsqrt(Tt2)/(A2*pt2**2)
+                  df(4)=-xflow*dsqrt(Tt1)/(A2*pt2**2)
 !     
                endif
 !     
@@ -738,7 +785,6 @@
 !     
       elseif(iflag.eq.3) then
 !
-         numf=4
          isothermal=.false.
          pi=4.d0*datan(1.d0)
          kappa=(cp/(cp-R))
@@ -774,43 +820,48 @@
             if(nelem.eq.int(prop(index+2))) then
                A1=prop(index+5)
                A2=A1
-               xflow_oil=prop(index+9)
-               k_oil=int(prop(index+11))
+               if(lakon(nelem)(2:8).eq.'REBRSI1') then
+                  xflow_oil=prop(index+11)
+                  k_oil=int(prop(index+13))
+               else
+                  xflow_oil=prop(index+9)
+                  k_oil=int(prop(index+11))
+               endif
             elseif(nelem.eq.int(prop(index+3)))then
                A1=prop(index+6)
                A2=A1
-               xflow_oil=prop(index+10)
-               k_oil=int(prop(index+11))
+               if(lakon(nelem)(2:8).eq.'REBRSI1') then
+                  xflow_oil=prop(index+12)
+                  k_oil=int(prop(index+13))
+               else 
+                  xflow_oil=prop(index+10)
+                  k_oil=int(prop(index+11))
+               endif
             endif
 !     
 !     for other Restrictor elements         
 !     
          else
-            if(inv.gt.0.d0) then
-               A1=prop(index+1)
-               A2=prop(index+2)
-            else
-               A1=prop(index+2)
-               A2=prop(index+1)
-            endif
-!
+            A1=prop(index+1)
+            A2=prop(index+2)
             if(lakon(nelem)(2:5).eq.'REEL') then
                xflow_oil=prop(index+4)
                k_oil=int(prop(index+5))
-            elseif((lakon(nelem)(2:5).eq.'REUS').or.
-     &              (lakon(nelem)(2:7).eq.'RELOID').or.  
+            elseif((lakon(nelem)(2:7).eq.'RELOID').or.
+     &              (lakon(nelem)(2:5).eq.'REUS').or.  
      &              (lakon(nelem)(2:5).eq.'REEN').or.  
      &              (lakon(nelem)(2:5).eq.'REEX').or.   
      &              (lakon(nelem)(2:7).eq.'REWAOR').or.
      &              (lakon(nelem)(2:7).eq.'RELOLI')) then
                xflow_oil=prop(index+5)
-               k_oil=int(prop(index+6))             
+               k_oil=int(prop(index+6))
             elseif((lakon(nelem)(2:5).eq.'RECO').or.
      &              (lakon(nelem)(2:7).eq.'REBEMA').or.
-     &              (lakon(nelem)(2:7).eq.'REBEMI')) then 
+     &              (lakon(nelem)(2:7).eq.'REBEMI').or.
+     &              (lakon(nelem)(2:8).eq.'REBEIDC')) then
                xflow_oil=prop(index+6)
                k_oil=int(prop(index+7))
-            elseif(lakon(nelem)(2:8).eq.'REBEID') then
+            elseif(lakon(nelem)(2:7).eq.'REBEIDR') then
                xflow_oil=prop(index+8)
                k_oil=int(prop(index+9))
             endif
@@ -820,64 +871,45 @@
             inv=1
             xflow=v(1,nodem)
             Tt1=v(0,node1)+physcon(1)
-            Tt2=v(0,node2)+physcon(1)
-!     
-            case=0
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,a1,T1,case)
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,a2,T2,case)
-!     
-            nodef(1)=node1
-            nodef(2)=node1
-            nodef(3)=nodem
-            nodef(4)=node2
+            Tt2=v(0,node2)+physcon(1)     
+            icase=0
+            call ts_calc(xflow,Tt1,Pt1,kappa,r,a1,T1,icase)
+            call ts_calc(xflow,Tt2,Pt2,kappa,r,a2,T2,icase)
 !     
          else
             inv=-1
             pt1=v(2,node2)
             pt2=v(2,node1)
-            xflow=v(1,nodem)
+            xflow=-v(1,nodem)
             Tt1=v(0,node2)+physcon(1)
             Tt2=v(0,node1)+physcon(1)
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,a1,T1,case)
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,a2,T2,case)
+            icase=0
+            call ts_calc(xflow,Tt1,Pt1,kappa,r,a1,T1,icase)
+            call ts_calc(xflow,Tt2,Pt2,kappa,r,a2,T2,icase)
 !            
-            nodef(1)=node2
-            nodef(2)=node2
-            nodef(3)=nodem
-            nodef(4)=node1 
          endif
-!     
-         idirf(1)=2
-         idirf(2)=0
-         idirf(3)=1
-         idirf(4)=2
 !     
 !     calculation of the dynamic viscosity 
 !     
          if( lakon(nelem)(2:3).eq.'RE') then
-            case=0
+            icase=0
          elseif(lakon(nelem)(2:5).eq.'REEX') then
-            if(lakon(int(prop(index+4)))(2:6).eq.'GAPIA') then
-               case=0
-            elseif(lakon(int(prop(index+4)))(2:6).eq.'GAPII') then
-               case=1
+            if(lakon(int(prop(index+4)))(2:6).eq.'GAPFA') then
+               icase=0
+            elseif(lakon(int(prop(index+4)))(2:6).eq.'GAPFI') then
+               icase=1
             endif
-!     
          endif
-!     
-         call ts_calc(xflow,Tt1,Pt1,kappa,r,A1,Ts1,case)
-!     
-         call ts_calc(xflow,Tt2,Pt2,kappa,r,A2,Ts2,case)
 !     
          if (A1.le.A2) then
             if(dabs(dvi).lt.1E-30) then
                kgas=0
-               call dynamic_viscosity(kgas,Ts1,dvi)
+               call dynamic_viscosity(kgas,T1,dvi)
             endif
          else
             if(dabs(dvi).lt.1E-30) then
                kgas=0
-               call dynamic_viscosity(kgas,Ts2,dvi)
+               call dynamic_viscosity(kgas,T2,dvi)
             endif
          endif
 !     
@@ -885,50 +917,57 @@
 !     
          if (lakon(nelem)(2:5).eq.'REBR') then
             d=dsqrt(4d0*A1/Pi)
-            reynolds=dabs(xflow)*d/(dvi*A1)     
+            reynolds=dabs(xflow)*d/(dvi*A1)
          else
-            d=prop(index+3)     
+            d=prop(index+3)    
             if(A1.le.A2) then
                reynolds=dabs(xflow)*d/(dvi*A1)
             else
                reynolds=dabs(xflow)*d/(dvi*A2)
             endif
          endif
+
+         if(xflow_oil.lt.1E-10) then
+            xflow_oil=0d0
+         endif
 !
 !     BEND MILLER with oil
 !  
          if(lakon(nelem)(2:7).eq.'REBEMI') then
             if(xflow_oil.ne.0d0) then
-!
-               call two_phase_flow(Tt1,pt1,Ts1,Tt2,pt2,Ts2,xflow,
+               call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
      &              v,dvi,cp,r,k_oil,phi,zeta,nshcon,nrhcon,
-     &              shcon,rhcon,ntmat_)
+     &              shcon,rhcon,ntmat_,mi)
+
+               call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
+     &              isothermal,kon,ipkon,R,Kappa,v,mi)
 ! 
-               zeta=phi*zeta
+               zeta_phi=phi*zeta
             else
 !
                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &              isothermal,kon,ipkon,R,Kappa,v)
+     &              isothermal,kon,ipkon,R,Kappa,v,mi)
                phi=1.d0
 !               
             endif
 !
-!   long  orifice in a wall with oil
+!   long  orifice in a wall with oil after Idelchik
 !
          elseif(lakon(nelem)(2:7).eq.'RELOID') then
             if(xflow_oil.ne.0d0) then
-               call two_phase_flow(Tt1,pt1,Ts1,Tt2,pt2,Ts2,xflow,
+               call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
      &              v,dvi,cp,r,k_oil,phi,zeta,nshcon,nrhcon,
-     &              shcon,rhcon,ntmat_)
+     &              shcon,rhcon,ntmat_,mi)
 !
-               zeta=phi*zeta
+               zeta_phi=phi*zeta
             else
 !
                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &              isothermal,kon,ipkon,R,Kappa,v)
+     &              isothermal,kon,ipkon,R,Kappa,v,mi)
                phi=1.d0
+               zeta_phi=phi*zeta
             endif
 !
 !     every other zeta elements with/without oil
@@ -936,20 +975,20 @@
          else
 !
             if(xflow_oil.ne.0) then
-               call two_phase_flow(Tt1,pt1,Ts1,Tt2,pt2,Ts2,xflow,
+               call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
      &              v,dvi,cp,r,k_oil,phi,zeta,nshcon,nrhcon,
-     &              shcon,rhcon,ntmat_)
+     &              shcon,rhcon,ntmat_,mi)
 !
                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &              isothermal,kon,ipkon,R,Kappa,v)
+     &              isothermal,kon,ipkon,R,Kappa,v,mi)
 ! 
-               zeta=phi*zeta
+               zeta_phi=phi*zeta
             else
                phi=1.d0
-
                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &              isothermal,kon,ipkon,R,Kappa,v)
+     &              isothermal,kon,ipkon,R,Kappa,v,mi)
+               zeta_phi=phi*zeta
             endif
          endif
 !     
@@ -959,8 +998,6 @@
             xflow=v(1,nodem)
             Tt1=v(0,node1)
             Tt2=v(0,node2)
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,A1,Ts1,case)
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,A2,Ts2,case)
 !     
          endif
 !     
@@ -971,9 +1008,9 @@
          endif
          pt1pt2=pt1/pt2
 !     
-!     Mach number caclulation
+!     Mach number calculation
 !     
-         M1=dsqrt(2d0/km1*(Tt1/Ts1-1d0))
+         M1=dsqrt(2d0/km1*(Tt1/T1-1d0))
          if((1.d0-M1).le.1E-6) then
             if(zeta.gt.0d0) then
                call limit_case_calc(a2,pt1,Tt2,xflow,zeta,r,kappa,
@@ -981,11 +1018,11 @@
 !     
             endif
          else
-            M2=dsqrt(2d0/km1*(Tt2/Ts2-1d0))
+            M2=dsqrt(2d0/km1*(Tt2/T2-1d0))
          endif
 !     
          write(1,*) ''
-         write(1,55) 'In line',int(nodem/100),' from node',node1,
+         write(1,55) 'In line',int(nodem/1000),' from node',node1,
      &        ' to node', node2,':   air massflow rate=',xflow,'kg/s'
      &        , ', oil massflow rate=',xflow_oil,'kg/s'
  55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
@@ -996,26 +1033,28 @@
 !     
             if(inv.eq.1) then
                write(1,56)'       Inlet node ',node1,':    Tt1= ',Tt1,
-     &              'K, Ts1= ',Ts1,'K, Pt1= ',Pt1/1E5,
+     &              'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
      &              'Bar, M1= ',M1
-               write(1,*)'             element F    ',set(nelem+numf)
+               write(1,*)'             element F    ',set(numf)
      &              (1:20)
                write(1,57)'             eta= ',dvi,'kg/(m*s), Re= '
-     &              ,reynolds,', Phi=',phi,', ZETA= ',zeta
+     &              ,reynolds,', PHI=',phi,', ZETA= ',zeta,
+     &', ZETA_PHI= ',zeta_phi
                write(1,56)'       Outlet node ',node2,':   Tt2= ',Tt2,
-     &              'K, Ts2= ',Ts2,'K, Pt2= ',Pt2/1e5,
+     &              'K, Ts2= ',T2,'K, Pt2= ',Pt2/1e5,
      &              'Bar, M2= ',M2
 !     
             else if(inv.eq.-1) then
                write(1,56)'       Inlet node ',node2,':    Tt1= ',Tt1,
-     &              'K, Ts1= ',Ts1,'K, Pt1= ',Pt1/1E5,
+     &              'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
      &              'Bar, M1= ',M1
-               write(1,*)'            element F    ',set(nelem+numf)
+               write(1,*)'            element F    ',set(numf)
      &              (1:20)
-               write(1,57)'            eta= ',dvi,'kg/(m*s), 
-     &              Re= ' ,reynolds,', Phi= ',phi,', ZETA= ',zeta
+               write(1,57)'            eta= ',dvi,'kg/(m*s), Re= ' 
+     &             ,reynolds,', PHI= ',phi,', ZETA= ',zeta,
+     &', ZETA_PHI= ',zeta_phi
                write(1,56)'       Outlet node ',node1,':   Tt2= ',Tt2,
-     &              'K, Ts2= ',Ts2,'K, Pt2= ',Pt2/1e5,
+     &              'K, Ts2= ',T2,'K, Pt2= ',Pt2/1e5,
      &              'Bar, M2= ',M2
             endif
          else
@@ -1024,33 +1063,34 @@
 !     
             if(inv.eq.1) then
                write(1,56)'       Inlet node ',node1,':    Tt1= ',Tt1,
-     &              'K, Ts1= ',Ts1,'K, Pt1= ',Pt1/1E5,
+     &              'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
      &              'Bar, M1= ',M1
-               write(1,*)'             element B    ',set(nelem+numf)
+               write(1,*)'             element B    ',set(numf)
      &              (1:20)
-               write(1,57)'             eta= ',dvi,'kg/(m*s), Re= '
-     &              ,reynolds,', phi= ',phi,', ZETA= ',zeta
+               write(1,57)'             Eta= ',dvi,' kg/(m*s), Re= '
+     &,reynolds,', PHI= ',phi,', ZETA= ',zeta
                write(1,56)'       Outlet node ',node2,':   Tt2= ',Tt2,
-     &              'K, Ts2= ',Ts2,'K, Pt2= ',Pt2/1E5,
+     &              'K, Ts2= ',T2,'K, Pt2= ',Pt2/1E5,
      &              'Bar, M2= ',M2
 !     
             else if(inv.eq.-1) then
                write(1,56)'       Inlet node ',node2,':    Tt1= ',Tt1,
-     &              'K, Ts1= ',Ts1,'K, Pt1= ',Pt1/1E5,
+     &              'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
      &              'Bar, M1= ',M1
-               write(1,*)'             element B    ',set(nelem+numf)
+               write(1,*)'             element B    ',set(numf)
      &              (1:20)
-               write(1,57)'                 eta=',dvi,'kg/(m*s), Re= '
-     &              ,reynolds,', phi= ',phi,', ZETA= ',zeta
+               write(1,57)'                 Eta=',dvi,' kg/(m*s), Re= '
+     &              ,reynolds,', PHI= ',phi,', ZETA= ',zeta
                write(1,56)'       Outlet node ',node1,':   Tt2= ',Tt2,
-     &              'K, Ts2= ',Ts2,'K, Pt2= ',Pt2/1E5,
+     &              'K, Ts2= ',T2,'K, Pt2= ',Pt2/1E5,
      &              'Bar, M2= ',M2
             endif
          endif
       endif
  56   FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f8.5,A,f8.6)
- 57   FORMAT(1X,A,G10.4,A,G10.5,A,f8.6,A,f9.5)
+ 57   FORMAT(1X,A,G9.4,A,G11.5,A,f8.4,A,f8.4,A,f8.4)
 !     
+
       return
       end
       

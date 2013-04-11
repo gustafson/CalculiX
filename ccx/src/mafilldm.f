@@ -26,7 +26,7 @@
      &  t0,t1,ithermal,prestr,
      &  iprestr,vold,iperturb,sti,nzs,stx,adb,aub,iexpl,plicon,
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
-     &  matname,mint_,ncmat_,ttime,time,istep,iinc,ibody)
+     &  matname,mi,ncmat_,ttime,time,istep,iinc,ibody)
 !
 !     filling the damping matrix in spare matrix format (sm)
 !
@@ -38,7 +38,8 @@
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
-     &  ilmpc(*),ikboun(*),ilboun(*),nactdof(0:3,*),konl(20),irow(*),
+     &  ilmpc(*),ikboun(*),ilboun(*),mi(2),nactdof(0:mi(2),*),konl(20),
+     &  irow(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(*),ielorien(*),
      &  ipkon(*),ipobody(2,*),nbody,
      &  ibody(3,*)
@@ -47,19 +48,19 @@
      &  ithermal,iprestr,iperturb,nzs(3),i,j,k,l,m,idist,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,node1,node2,
-     &  ntmat_,indexe,nope,norien,iexpl,mint_,i0,ncmat_,istep,iinc
+     &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc
 !
       integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),
-     &  t0(*),t1(*),prestr(6,mint_,*),vold(0:4,*),s(60,60),ff(60),
-     &  sti(6,mint_,*),sm(60,60),stx(6,mint_,*),adb(*),aub(*),
+     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(60,60),ff(60),
+     &  sti(6,mi(1),*),sm(60,60),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*)
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
-     &  xstiff(27,mint_,*)
+     &  xstiff(27,mi(1),*)
 !
       real*8 om,value,dtime,ttime,time
 !
@@ -105,7 +106,7 @@
      &          t0,t1,ithermal,vold,iperturb,
      &          nelemload,sideload,xload,nload,idist,sti,stx,
      &          iexpl,plicon,nplicon,plkcon,nplkcon,xstiff,npmat_,
-     &          dtime,matname,mint_,ncmat_,ttime,time,istep,iinc,
+     &          dtime,matname,mi(1),ncmat_,ttime,time,istep,iinc,
      &          nmethod)
 !
         do jj=1,3*nope

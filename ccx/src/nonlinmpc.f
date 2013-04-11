@@ -19,7 +19,7 @@
       subroutine nonlinmpc(co,vold,ipompc,nodempc,coefmpc,labmpc,
      &  nmpc,ikboun,ilboun,nboun,xbounact,aux,iaux,maxlenmpc,ikmpc,
      &  ilmpc,icascade,kon,ipkon,lakon,ne,reltime,newstep,xboun,fmpc,
-     &  iit,idiscon,ncont,trab,ntrans,ithermal)
+     &  iit,idiscon,ncont,trab,ntrans,ithermal,mi)
 !
 !     updates the coefficients in nonlinear MPC's
 !
@@ -36,9 +36,9 @@
      &  l,m,lmax,mmax,ikmpc(*),ilmpc(*),icascade,neigh(7,8),
      &  mpc,kon(*),ipkon(*),indexe,ne,idofrem,idofins,nmpc0,nmpc01,
      &  newstep,iit,idiscon,ncont,iexpnode,indexexp,nmpcdif,ntrans,
-     &  nodei,noded,lathyp(3,6),inum,ndir,number,ithermal
+     &  nodei,noded,lathyp(3,6),inum,ndir,number,ithermal,mi(2)
 !
-      real*8 co(3,*),coefmpc(*),vold(0:4,*),c(3,3),dc(3,3,3),ww,
+      real*8 co(3,*),coefmpc(*),vold(0:mi(2),*),c(3,3),dc(3,3,3),ww,
      &  e(3,3,3),d(3,3),w(3),f(3,3),c1,c2,c3,c4,c5,c6,xbounact(*),
      &  xboun(*),fmpc(*),expan
       real*8 dd,a11,a12,a13,a21,a22,a23,a31,a32,a33,
@@ -693,7 +693,7 @@ c     &                                    dc(i,j,3)*w(3)
                call nident(ikmpc,idof,nmpc-1,id)
                if(id.gt.0) then
                   if(ikmpc(id).eq.idof) then
-                     write(*,*) '*WARNING in generatecycmpcs: cyclic MPC
+                     write(*,*) '*WARNING in nonlinmpc: cyclic MPC
      & in node'
                      write(*,*) '         ',noded,' and direction ',ndir
                      write(*,*) '         cannot be created: the'

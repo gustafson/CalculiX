@@ -18,7 +18,7 @@
 !
       subroutine frdfluid(co,nk,kon,ipkon,lakon,ne,v,vold,
      &  kode,time,ielmat,matname,nnstep,vtu,voldtu,voldaux,
-     &  physcon,filab,inomat,ntrans,inotr,trab)
+     &  physcon,filab,inomat,ntrans,inotr,trab,mi)
 !
 !     stores the results in frd format
 !
@@ -27,17 +27,18 @@
       character*1 c
       character*3 m1,m2,m3,m4,m5
       character*5 p0,p1,p2,p3,p4,p5,p6,p8,p10,p11,p12
-      character*6 filab(*)
       character*8 lakon(*),date,newclock,fmat
       character*10 clock
       character*20 newdate
       character*80 matname(*)
+      character*87 filab(*)
       character*132 text
 !
       integer kon(*),nk,ne,kode,i,j,ipkon(*),indexe,inomat(*),
-     &  one,ielmat(*),null,nnstep,inotr(2,*),ntrans
+     &  one,ielmat(*),null,nnstep,inotr(2,*),ntrans,mi(2)
 !
-      real*8 co(3,*),v(0:4,*),time,vold(0:4,*),vtu(2,*),voldtu(2,*),
+      real*8 co(3,*),v(0:mi(2),*),time,vold(0:mi(2),*),vtu(2,*),
+     &  voldtu(2,*),
      &  pi,oner,voldaux(0:4,*),physcon(*),trab(7,*),a(3,3)
 !
       kode=kode+1
@@ -217,6 +218,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
+         write(text(25:36),'(i12)') nk
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -249,6 +251,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
+         write(text(25:36),'(i12)') nk
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -274,6 +277,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
+         write(text(25:36),'(i12)') nk
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -299,6 +303,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
+         write(text(25:36),'(i12)') nk
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -321,6 +326,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
+         write(text(25:36),'(i12)') nk
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -346,6 +352,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
+         write(text(25:36),'(i12)') nk
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -392,6 +399,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
+         write(text(25:36),'(i12)') nk
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -416,6 +424,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
+         write(text(25:36),'(i12)') nk
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -440,6 +449,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
+         write(text(25:36),'(i12)') nk
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -464,6 +474,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
+         write(text(25:36),'(i12)') nk
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -488,6 +499,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
+         write(text(25:36),'(i12)') nk
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -513,6 +525,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
+         write(text(25:36),'(i12)') nk
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -544,6 +557,7 @@ c            write(7,100) m1,i,(vold(4,i)-0.988631)*2.d0
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
+         write(text(25:36),'(i12)') nk
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode

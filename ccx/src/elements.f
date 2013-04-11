@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine elements(inpc,textpart,kon,ipkon,lakon,nkon,ne,ne_,
-     &  set,istartset,iendset,ialset,nset,nset_,nalset,nalset_,mint_,
+     &  set,istartset,iendset,ialset,nset,nset_,nalset,nalset_,mi,
      &  ixfree,iponor,xnor,istep,istat,n,iline,ipol,inl,ipoinp,inp,
      &  iaxial,ipoinpc,solid,cfd,network)
 !
@@ -34,7 +34,7 @@
 !
       integer kon(*),istartset(*),iendset(*),ialset(*),ne,ne_,nset,
      &  nset_,nalset,nalset_,istep,istat,n,key,i,ielset,js,k,nn,
-     &  nteller,j,ipkon(*),nkon,nope,indexe,mint_,ipos,indexy,ixfree,
+     &  nteller,j,ipkon(*),nkon,nope,indexe,mi(2),ipos,indexy,ixfree,
      &  iponor(2,*),nopeexp,iline,ipol,inl,ipoinp(2,*),inp(3,*),
      &  iaxial,ipoinpc(0:*),cfd
 !
@@ -72,7 +72,7 @@
 !                 existent set
 !
                   if(iendset(js).eq.nalset) then
-                     exit loop
+                     cycle loop
                   else
 !
 !                    rearranging set information towards the end

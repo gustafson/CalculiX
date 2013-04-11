@@ -22,7 +22,8 @@
 !
       implicit none
 !
-      character*132 includefn,text
+      character*132 includefn
+      character*1320 text
 !
       integer nstart,nend,ii,jj,kk,lincludefn
 !

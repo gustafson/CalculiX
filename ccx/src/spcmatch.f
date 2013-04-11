@@ -18,7 +18,7 @@
 !
       subroutine spcmatch(xboun,nodeboun,ndirboun,nboun,xbounold,
      &   nodebounold,ndirbounold,nbounold,ikboun,ilboun,vold,reorder,
-     &   nreorder)
+     &   nreorder,mi)
 !
 !     matches SPC boundary conditions of one step with those of
 !     the previous step
@@ -26,22 +26,16 @@
       implicit none
 !
       integer nodeboun(*),ndirboun(*),nboun,nodebounold(*),ilboun(*),
-     &  ndirbounold(*),nbounold,i,kflag,idof,id,nreorder(*),ikboun(*)
+     &  ndirbounold(*),nbounold,i,kflag,idof,id,nreorder(*),ikboun(*),
+     &  mi(2)
 !
-      real*8 xboun(*),xbounold(*),vold(0:4,*),reorder(*)
+      real*8 xboun(*),xbounold(*),vold(0:mi(2),*),reorder(*)
 !
       kflag=2
 !
       do i=1,nboun
          nreorder(i)=0
       enddo
-!
-c      do i=1,nboun
-c         ikboun(i)=7*(nodeboun(i)-1)+ndirboun(i)
-c         ilboun(i)=i
-c      enddo
-c!
-c      if(nboun.gt.0) call isortii(ikboun,ilboun,nboun,kflag)
 !
       do i=1,nbounold
          idof=8*(nodebounold(i)-1)+ndirbounold(i)
@@ -58,7 +52,11 @@ c      if(nboun.gt.0) call isortii(ikboun,ilboun,nboun,kflag)
 !
       do i=1,nboun
          if(nreorder(i).eq.0) then
-            reorder(i)=vold(ndirboun(i),nodeboun(i))
+            if(ndirboun(i).gt.4) then
+               reorder(i)=0.d0
+            else
+               reorder(i)=vold(ndirboun(i),nodeboun(i))
+            endif
          endif
       enddo
 !

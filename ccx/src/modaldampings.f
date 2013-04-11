@@ -46,7 +46,7 @@
          endif
       enddo
       if(rayleigh) then
-         xmodal(10)=-0.5
+         xmodal(11)=-0.5
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
          if((istat.lt.0).or.(key.eq.1)) then
@@ -79,7 +79,7 @@
 !
             if(highfrequ<lowfrequ) highfrequ=lowfrequ  
             do k=lowfrequ,highfrequ
-               xmodal(10+k)=zeta
+               xmodal(11+k)=zeta
             enddo
          enddo  
       endif

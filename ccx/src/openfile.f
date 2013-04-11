@@ -70,8 +70,8 @@ c      rewind(8)
       write(8,100)
       write(8,101)
  100  format('SUMMARY OF JOB INFORMATION')
- 101  format('  STEP   INC   ATT  ITRS     TOT TIME       STEP TIME    
-     &       INC TIME')
+ 101  format('  STEP      INC     ATT  ITRS     TOT TIME     STEP TIME      
+     &    INC TIME')
 !
       if(output.eq.'onf') then
          fnonf=jobname(1:i)//'.onf'

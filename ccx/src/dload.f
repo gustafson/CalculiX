@@ -19,7 +19,7 @@
       subroutine dload(f,kstep,kinc,time,noel,npt,layer,kspt,
      &     coords,jltyp,loadtype,vold,co,lakonl,konl,
      &     ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,iscale,veold,
-     &     rho,amat)
+     &     rho,amat,mi)
 !
 !     user subroutine dload
 !
@@ -80,6 +80,10 @@
 !                        to the reference number in ikmpc(i)   
 !     rho                local density 
 !     amat               material name
+!     mi(1)              max # of integration points per element (max
+!                        over all elements)
+!     mi(2)              max degree of freedomm per node (max over all
+!                        nodes) in fields like v(0:mi(2))...
 !
 !     OUTPUT:
 !
@@ -96,9 +100,9 @@
       character*20 loadtype
       character*80 amat
 !
-      integer kstep,kinc,noel,npt,jltyp,layer,kspt,konl(20),iscale
+      integer kstep,kinc,noel,npt,jltyp,layer,kspt,konl(20),iscale,mi(2)
 !
-      real*8 f,time(2),coords(3),vold(0:4,*),co(3,*),rho
+      real*8 f,time(2),coords(3),vold(0:mi(2),*),co(3,*),rho
 !
 !     the code starting here up to the end of the file serves as
 !     an example for combined mechanical-lubrication problems. 
@@ -110,8 +114,8 @@
      &  iflag,i,j,nope,ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),
      &  node,idof,id
 !
-      real*8 xl2(0:3,8),pres(8),xi,et,xsj2(3),xs2(3,7),shp2(7,8),
-     &  coefmpc(*),veold(0:3,*)
+      real*8 xl2(3,8),pres(8),xi,et,xsj2(3),xs2(3,7),shp2(7,8),
+     &  coefmpc(*),veold(0:mi(2),*)
 !
       data ifaceq /4,3,2,1,11,10,9,12,
      &            5,6,7,8,13,14,15,16,
@@ -180,7 +184,7 @@
             idof=8*(node-1)
             call nident(ikmpc,idof,nmpc,id)
             if((id.eq.0).or.(ikmpc(id).ne.idof)) then
-               write(*,*) '*ERROR in dflux: node ',node
+               write(*,*) '*ERROR in dload: node ',node
                write(*,*) '       is not connected to the oil film'
                stop
             endif
@@ -194,7 +198,7 @@
             idof=8*(node-1)
             call nident(ikmpc,idof,nmpc,id)
             if((id.eq.0).or.(ikmpc(id).ne.idof)) then
-               write(*,*) '*ERROR in dflux: node ',node
+               write(*,*) '*ERROR in dload: node ',node
                write(*,*) '       is not connected to the oil film'
                stop
             endif
@@ -208,7 +212,7 @@
             idof=8*(node-1)
             call nident(ikmpc,idof,nmpc,id)
             if((id.eq.0).or.(ikmpc(id).ne.idof)) then
-               write(*,*) '*ERROR in dflux: node ',node
+               write(*,*) '*ERROR in dload: node ',node
                write(*,*) '       is not connected to the oil film'
                stop
             endif

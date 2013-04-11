@@ -20,7 +20,7 @@
       implicit none
 !
       integer nentries
-      parameter(nentries=13)
+      parameter(nentries=14)
 !
       character*1 inpc(*)
       character*20 nameref(nentries)
@@ -30,7 +30,7 @@
       data nameref /'RESTART,READ','NODE','ELEMENT','NSET',
      &              'ELSET','TRANSFORM','MATERIAL','ORIENTATION',
      &              'SURFACE','TIE','SURFACEINTERACTION',
-     &              'INITIALCONDITIONS','REST'/
+     &              'INITIALCONDITIONS','AMPLITUDE','REST'/
 !
       open(16,file='input.inpc',status='unknown',err=161)
       do i=1,nline

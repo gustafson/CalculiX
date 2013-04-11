@@ -22,7 +22,7 @@
      &  mpcfree,inotr,trab,ntrans,ikboun,ilboun,ikmpc,ilmpc,nk_,
      &  co,labmpc,boun_flag,typeboun,istep,istat,n,iline,ipol,
      &  inl,ipoinp,inp,nam_,namtot_,namta,amta,nmethod,iperturb,
-     &  iaxial,ipoinpc,vold)
+     &  iaxial,ipoinpc,vold,mi)
 !
 !     reading the input deck: *INITIAL CONDITIONS
 !
@@ -43,10 +43,10 @@
      &  ilmpc(*),nmpcold,id,idof,index1,ntrans,nk_,ipos,m,node,is,ie,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),nam_,namtot,namtot_,
      &  namta(3,*),idelay,nmethod,iperturb,lc,iaxial,ipoinpc(0:*),
-     &  ktrue
+     &  ktrue,mi(2)
 !
       real*8 xboun(*),bounval,coefmpc(*),trab(7,*),co(3,*),amta(2,*),
-     &  vold(0:4,*)
+     &  vold(0:mi(2),*)
 !
       type='B'
       iamplitude=0
@@ -169,7 +169,7 @@
 c            nboun=0
          elseif(textpart(i)(1:10).eq.'AMPLITUDE=') then
             read(textpart(i)(11:90),'(a80)') amplitude
-            do j=1,nam
+            do j=nam,1,-1
                if(amname(j).eq.amplitude) then
                   iamplitude=j
                   exit
@@ -288,7 +288,7 @@ c         if(ibounstart.eq.11) ibounstart=0
      &        iamboun,iamplitude,nam,ipompc,nodempc,
      &        coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &        ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &        type,typeboun,nmethod,iperturb,fixed,vold,ktrue)
+     &        type,typeboun,nmethod,iperturb,fixed,vold,ktrue,mi)
          else
             read(textpart(1)(1:80),'(a80)',iostat=istat) noset
             noset(81:81)=' '
@@ -314,7 +314,7 @@ c         if(ibounstart.eq.11) ibounstart=0
      &               iamboun,iamplitude,nam,ipompc,nodempc,
      &               coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &               ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &               type,typeboun,nmethod,iperturb,fixed,vold,ktrue)
+     &               type,typeboun,nmethod,iperturb,fixed,vold,ktrue,mi)
                else
                   k=ialset(j-2)
                   do
@@ -328,7 +328,7 @@ c         if(ibounstart.eq.11) ibounstart=0
      &                 coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &                 ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,
      &                 labmpc,type,typeboun,nmethod,iperturb,fixed,
-     &                 vold,ktrue)
+     &                 vold,ktrue,mi)
                   enddo
                endif
             enddo

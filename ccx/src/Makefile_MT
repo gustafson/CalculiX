@@ -12,7 +12,7 @@ FC=gfortran
 
 include Makefile.inc
 
-SCCXMAIN = ccx_2.0.c
+SCCXMAIN = ccx_2.1.c
 
 OCCXF = $(SCCXF:.f=.o)
 OCCXC = $(SCCXC:.c=.o)
@@ -26,9 +26,9 @@ LIBS = \
        ../../../ARPACK/libarpack_INTEL.a \
        -lpthread -lm
 
-ccx_2.0_MT: $(OCCXMAIN) ccx_2.0_MT.a  $(LIBS)
-	./date.pl; $(CC) $(CFLAGS) -c ccx_2.0.c; $(FC) -Wall -O3 -o $@ $(OCCXMAIN) ccx_2.0_MT.a $(LIBS)
+ccx_2.1_MT: $(OCCXMAIN) ccx_2.1_MT.a  $(LIBS)
+	./date.pl; $(CC) $(CFLAGS) -c ccx_2.1.c; $(FC) -Wall -O3 -o $@ $(OCCXMAIN) ccx_2.1_MT.a $(LIBS)
 
-ccx_2.0_MT.a: $(OCCXF) $(OCCXC)
+ccx_2.1_MT.a: $(OCCXF) $(OCCXC)
 	ar vr $@ $?
                                                                                

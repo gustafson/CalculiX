@@ -18,7 +18,7 @@
 !
       subroutine createbdentry(itie,ipkon,kon,lakon,nodem,nodes,
      &  islavsurf,imastsurf,pmastsurf,itiefac,contribution,co,vold,
-     &  iponoels,inoels)
+     &  iponoels,inoels,mi,pslavsurf,pslavdual)
 !
 !     compute the Bd[p,q] matrix entry for contact problems
 !     Author: Li, Yang
@@ -34,12 +34,12 @@
      &  indexe,nope,islavsurf(2,*),m1,iponoels(*),inoels(3,*),
      &  imastsurf(*),itiefac(2,*),ifaces,nelems,jfaces,ifacem,nelemm,
      &  jfacem,mint2d,indexf,nopes,nopem,iq,ii,nodem,nodes,
-     &  index1,islavsurfentry,locs,locm
+     &  index1,islavsurfentry,locs,locm,mi(2),ns
 !
-      real*8 pmastsurf(2,*),co(3,*),vold(0:4,*),
-     &  ets,xis,etm,xim,weights,xl2s(0:3,8),xsj2s(3),
-     &  shp2s(4,8),xs2s(3,2),xl2m(0:3,8),xsj2m(3),shp2m(7,8),xs2m(3,2),
-     &  contribution
+      real*8 pmastsurf(2,*),co(3,*),vold(0:mi(2),*),
+     &  ets,xis,etm,xim,weights,xl2s(3,8),xsj2s(3),
+     &  shp2s(4,8),xs2s(3,2),xl2m(3,8),xsj2m(3),shp2m(7,8),xs2m(3,2),
+     &  contribution,pslavsurf(3,*),pslavdual(16,*)
 !
       include "gauss.f"
 !
@@ -85,28 +85,31 @@ c         PRINT *,"islavsurfentry :",islavsurfentry
 !           
 !     Decide the max integration points number, just consider 2D situation 
 !     
+       mint2d=islavsurf(2,islavsurfentry+1)-islavsurf(2,islavsurfentry)
+c       WRITE(*,*) "createbd 89 islavs=",islavsurfentry
+c       WRITE(*,*) "createbd 89 nombreh=",islavsurf(2,islavsurfentry+1)
          if(lakon(nelems)(4:5).eq.'8R') then
-            mint2d=1
+c            mint2d=1
             nopes=4
-            nope=8
+           nope=8
          elseif(lakon(nelems)(4:4).eq.'8') then
-            mint2d=4
+c            mint2d=4
             nopes=4
             nope=8
          elseif(lakon(nelems)(4:6).eq.'20R') then
-            mint2d=4
+c            mint2d=4
             nopes=8
             nope=20
          elseif(lakon(nelems)(4:4).eq.'2') then
-            mint2d=9
+c            mint2d=9
             nopes=8
             nope=20
          elseif(lakon(nelems)(4:5).eq.'10') then
-            mint2d=3
+c            mint2d=3
             nopes=6
             nope=10
          elseif(lakon(nelems)(4:4).eq.'4') then
-            mint2d=1
+c            mint2d=1
             nopes=3
             nope=4
          endif
@@ -114,7 +117,7 @@ c         PRINT *,"islavsurfentry :",islavsurfentry
 !     treatment of wedge faces
 !     
          if(lakon(nelems)(4:4).eq.'6') then
-            mint2d=1
+c           mint2d=1
             nope=6
             if(jfaces.le.2) then
                nopes=3
@@ -125,13 +128,13 @@ c         PRINT *,"islavsurfentry :",islavsurfentry
          if(lakon(nelems)(4:5).eq.'15') then
             nope=15
             if(jfaces.le.2) then
-               mint2d=3
+c               mint2d=3
                nopes=6
             else
-               mint2d=4
-               nopes=8
-            endif
-         endif
+c              mint2d=4
+              nopes=8
+           endif
+        endif
 ! 
 !        determining the nodes belonging to the slave face
 !        and their coordinates    
@@ -291,42 +294,16 @@ c         PRINT *,"islavsurfentry :",islavsurfentry
                enddo
             endif
 !     
-            if((lakon(nelems)(4:5).eq.'8R').or.
-     &           ((lakon(nelems)(4:4).eq.'6').and.
-     &           (nopes.eq.4))) then
-               xis=gauss2d1(1,m)
-               ets=gauss2d1(2,m)
-               weights=weight2d1(m)
-            elseif((lakon(nelems)(4:4).eq.'8').or.
-     &              (lakon(nelems)(4:6).eq.'20R').or.
-     &              ((lakon(nelems)(4:5).eq.'15').and.
-     &              (nopes.eq.8))) then
-               xis=gauss2d2(1,m)
-               ets=gauss2d2(2,m)
-               weights=weight2d2(m)
-            elseif(lakon(nelems)(4:4).eq.'2') then
-               xis=gauss2d3(1,m)
-               ets=gauss2d3(2,m)
-               weights=weight2d3(m)
-            elseif((lakon(nelems)(4:5).eq.'10').or.
-     &              ((lakon(nelems)(4:5).eq.'15').and.
-     &              (nopes.eq.6))) then
-               xis=gauss2d5(1,m)
-               ets=gauss2d5(2,m)
+               xis=pslavsurf(1,indexf+m)
+               ets=pslavsurf(2,indexf+m)
                weights=weight2d5(m)
-            elseif((lakon(nelems)(4:4).eq.'4').or.
-     &              ((lakon(nelems)(4:4).eq.'6').and.
-     &              (nopes.eq.3))) then
-               xis=gauss2d4(1,m)
-               ets=gauss2d4(2,m)
-               weights=weight2d4(m)
-            endif
-!     
+               ns=islavsurfentry
             iflag = 2
             if(nopes.eq.8) then
                call dualshape8q(xis,ets,xl2s,xsj2s,xs2s,shp2s,iflag)
             elseif(nopes.eq.4) then
-               call dualshape4q(xis,ets,xl2s,xsj2s,xs2s,shp2s,iflag)
+               call dualshape4q(xis,ets,xl2s,xsj2s,xs2s,shp2s,ns,
+     &           pslavdual,iflag)
             elseif(nopes.eq.6) then
                call dualshape6tri(xis,ets,xl2s,xsj2s,xs2s,shp2s,iflag)
             else
@@ -346,7 +323,7 @@ c         PRINT *,"islavsurfentry :",islavsurfentry
                call shape3tri(xim,etm,xl2m,xsj2m,xs2m,shp2m,iflag)
             endif
             contribution=contribution+shp2s(4,locs)*shp2m(4,locm)*
-     &           weights*dsqrt(xsj2s(1)**2+xsj2s(2)**2+xsj2s(3)**2)
+     &           pslavsurf(3,indexf+m)
          enddo
          index1=inoels(3,index1)
       enddo

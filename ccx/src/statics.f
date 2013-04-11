@@ -20,7 +20,8 @@
      &  istat,n,tinc,tper,tmin,tmax,idrct,iline,ipol,inl,ipoinp,inp,
      &  ithermal,cs,ics,tieset,istartset,
      &  iendset,ialset,ipompc,nodempc,coefmpc,nmpc,nmpc_,ikmpc,
-     &  ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl,cfd)
+     &  ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl,cfd,ttime,
+     &  iaxial)
 !
 !     reading the input deck: *STATIC
 !
@@ -36,6 +37,8 @@
 !
       implicit none
 !
+      logical timereset
+!
       character*1 inpc(*)
       character*20 labmpc(*),solver
       character*81 set(*),tieset(3,*)
@@ -45,13 +48,14 @@
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,ics(*),iexpl,
      &  istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,ikmpc(*),ilmpc(*),mpcfree,nset,mcs,ipoinpc(0:*),
-     &  cfd
+     &  cfd,iaxial
 !
-      real*8 tinc,tper,tmin,tmax,cs(17,*),coefmpc(*)
+      real*8 tinc,tper,tmin,tmax,cs(17,*),coefmpc(*),ttime
 !
       idrct=0
       tmin=0.d0
       tmax=0.d0
+      timereset=.false.
 !
       if((iperturb.eq.1).and.(istep.ge.1)) then
          write(*,*) '*ERROR in statics: perturbation analysis is'
@@ -97,6 +101,8 @@
          elseif((textpart(i)(1:6).eq.'DIRECT').and.
      &          (textpart(i)(1:9).ne.'DIRECT=NO')) then
             idrct=1
+         elseif(textpart(i)(1:9).eq.'TIMERESET') then
+            timereset=.true.
          endif
       enddo
 !
@@ -121,7 +127,7 @@
 !
 !     check for nodes on a cyclic symmetry axis
 !
-      if(mcs.eq.0) then
+      if((mcs.eq.0).or.(iaxial.ne.0)) then
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
       else
@@ -155,7 +161,10 @@
             tper=1.d0
             tmin=1.d-5
             tmax=1.d+30
+         else
+            tper=1.d0
          endif
+         if(timereset)ttime=ttime-tper
          return
       endif
 !
@@ -195,6 +204,8 @@
             tmax=1.d+30
          endif
       endif
+!
+      if(timereset)ttime=ttime-tper
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

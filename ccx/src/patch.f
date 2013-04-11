@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine patch(iterms,node,sti,scpav,mint_,kon,ipkon,
+      subroutine patch(iterms,node,sti,scpav,mi,kon,ipkon,
      & ipoints,members,linpatch,co,lakon,iavflag)
 !
 !     computes the smoothed nodal stresses for an element patch
@@ -25,11 +25,11 @@
 !
       integer i,j,nope,mint3d,indexe,ielem,kon(*),ipkon(*),
      & iterms,k,iflag,nrhs,info,node,ipnt,
-     & mint_,irow,ipoints,members(*),linpatch,ielidx,iavflag
+     & mi(2),irow,ipoints,members(*),linpatch,ielidx,iavflag
 !
       real*8 xl(3,20),co(3,*),shp(4,20),
      & pgauss(3),pol(20),pntdist,w,scpav(6,*),xsj,
-     & sti(6,mint_,*),xi,et,ze,rv1(ipoints),pp(ipoints,iterms),
+     & sti(6,mi(1),*),xi,et,ze,rv1(ipoints),pp(ipoints,iterms),
      & pdat(ipoints,6),pfit(6),pwrk(iterms),pre(ipoints,iterms),
      & z(ipoints,ipoints)
 !

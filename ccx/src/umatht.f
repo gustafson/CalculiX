@@ -20,7 +20,7 @@
      &  statev,temp,dtemp,dtemdx,time,dtime,predef,dpred,
      &  cmname,ntgrd,nstatv,props,nprops,coords,pnewdt,
      &  noel,npt,layer,kspt,kstep,kinc,vold,co,lakonl,konl,
-     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc)
+     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,mi)
 !
 !     heat transfer material subroutine
 !
@@ -82,6 +82,10 @@
 !                        5-7: rotations)
 !     ilmpc(1..nmpc)     ilmpc(i) is the MPC number corresponding
 !                        to the reference number in ikmpc(i)   
+!     mi(1)              max # of integration points per element (max
+!                        over all elements)
+!     mi(2)              max degree of freedomm per node (max over all
+!                        nodes) in fields like v(0:mi(2))...
 !
 !     OUTPUT:
 !     
@@ -101,12 +105,12 @@
       character*80 cmname
 !
       integer ntgrd,nstatv,nprops,noel,npt,layer,kspt,kstep,kinc,
-     &  konl(20),ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*)
+     &  konl(20),ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),mi(2)
 !
       real*8 u,dudt,dudg(ntgrd),flux(ntgrd),dfdt(ntgrd),
      &  statev(nstatv),pnewdt,temp,dtemp,dtemdx(ntgrd),time(2),dtime,
      &  predef,dpred,props(nprops),coords(3),dfdg(ntgrd,ntgrd),
-     &  vold(0:4,*),co(3,*),coefmpc(*)
+     &  vold(0:mi(2),*),co(3,*),coefmpc(*)
 !
 !     the code starting here up to the end of the file serves as
 !     an example for combined mechanical-lubrication problems. 
@@ -115,8 +119,8 @@
       integer ifaceq(8,6),ifacet(6,4),ifacew(8,5),ig,nelem,nopes,
      &  iflag,i,j,nope,node,idof,id
 !
-      real*8 xl21(0:3,8),xi,et,al,rho,um,h,pnode1(3),pnode2(3),
-     &  ratio(8),dist,xl22(0:3,8)
+      real*8 xl21(3,8),xi,et,al,rho,um,h,pnode1(3),pnode2(3),
+     &  ratio(8),dist,xl22(3,8)
 !
       data ifaceq /4,3,2,1,11,10,9,12,
      &            5,6,7,8,13,14,15,16,

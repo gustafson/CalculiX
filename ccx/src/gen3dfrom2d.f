@@ -20,7 +20,7 @@
      &  thicke,offset,ntrans,inotr,trab,ikboun,ilboun,nboun,nboun_,
      &  nodeboun,ndirboun,xboun,iamboun,typeboun,ipompc,nodempc,coefmpc,
      &  nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,nk,nk_,co,rig,nmethod,
-     &  iperturb,ithermal)
+     &  iperturb,ithermal,mi,nam)
 !
 !     expands 2d element i into a 3d element
 !
@@ -42,7 +42,7 @@
 !
       integer indexe,j,nodel(8),indexx,indexk,k,nedge,nodes(3,8),
      &  iamplitude,l,newnode,idir,idof,id,m,mpcfreenew,node,ithermal(2),
-     &  jmin,jmax,idummy
+     &  jmin,jmax,idummy,mi(2)
 ! 
       real*8 xnor(*),thicke(2,*),offset(2,*),trab(7,*),xboun(*),
      &  coefmpc(*),co(3,*),vdummy(0:4)
@@ -205,7 +205,7 @@
      &              nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &              ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,
      &              labmpc,type,typeboun,nmethod,iperturb,
-     &              fixed,vdummy,idummy)
+     &              fixed,vdummy,idummy,mi)
             endif
 !     
 !           specifying that the side planes do the same

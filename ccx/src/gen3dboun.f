@@ -20,7 +20,7 @@
      &  xboun,iamboun,typeboun,iponoel,inoel,iponoelmax,kon,ipkon,
      &  lakon,ne,iponor,xnor,knor,ipompc,nodempc,coefmpc,nmpc,nmpc_,
      &  mpcfree,ikmpc,ilmpc,labmpc,rig,ntrans,inotr,trab,nam,nk,nk_,co,
-     &  nmethod,iperturb,istep,vold)
+     &  nmethod,iperturb,istep,vold,mi)
 !
 !     connects nodes of 1-D and 2-D elements, for which SPC's were
 !     defined, to the nodes of their expanded counterparts
@@ -40,11 +40,11 @@
      &  index,ielem,j,indexe,indexk,idir,iamplitude,irotnode,nk,nk_,
      &  newnode,idof,id,mpcfreenew,k,nam,nmethod,iperturb,ndepnodes,
      &  idepnodes(80),l,iexpnode,indexx,irefnode,imax,isol,mpcfreeold,
-     &  nod,impc,istep,nrhs,ipiv(3),info,m
+     &  nod,impc,istep,nrhs,ipiv(3),info,m,mi(2)
 !
       real*8 xboun(*),xnor(*),coefmpc(*),trab(7,*),val,co(3,*),
      &  xnoref(3),dmax,d(3,3),e(3,3,3),alpha,q(3),w(3),xn(3),
-     &  a1(3),a2(3),dd,c1,c2,c3,ww,c(3,3),vold(0:4,*),a(3,3)
+     &  a1(3),a2(3),dd,c1,c2,c3,ww,c(3,3),vold(0:mi(2),*),a(3,3)
 !
       data d /1.,0.,0.,0.,1.,0.,0.,0.,1./
       data e /0.,0.,0.,0.,0.,-1.,0.,1.,0.,
@@ -59,7 +59,7 @@
          if(node.gt.iponoelmax) then
 c            if(ndirboun(i).gt.3) then
             if(ndirboun(i).gt.4) then
-               write(*,*) '*WARNING: in gen3dboun: node ',i,
+               write(*,*) '*WARNING: in gen3dboun: node ',node,
      &              ' does not'
                write(*,*) '       belong to a beam nor shell'
                write(*,*) '       element and consequently has no'
@@ -71,7 +71,7 @@ c            if(ndirboun(i).gt.3) then
          if(index.eq.0) then
 c            if(ndirboun(i).gt.3) then
             if(ndirboun(i).gt.4) then
-               write(*,*) '*WARNING: in gen3dboun: node ',i,
+               write(*,*) '*WARNING: in gen3dboun: node ',node,
      &              ' does not'
                write(*,*) '       belong to a beam nor shell'
                write(*,*) '       element and consequently has no'
@@ -107,7 +107,8 @@ c               j=idir-3
      &              iamplitude,nam,ipompc,nodempc,coefmpc,
      &              nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &              ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &              type,typeboun,nmethod,iperturb,fixed,vold,irotnode)
+     &              type,typeboun,nmethod,iperturb,fixed,vold,
+     &              irotnode,mi)
             endif
          else
 !
@@ -344,7 +345,8 @@ c               idir=idir-3
      &              iamplitude,nam,ipompc,nodempc,coefmpc,
      &              nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &              ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &              type,typeboun,nmethod,iperturb,fixed,vold,irotnode)
+     &              type,typeboun,nmethod,iperturb,fixed,vold,
+     &              irotnode,mi)
 !
 !              check for shells whether the rotation about the normal
 !              on the shell has been eliminated
@@ -375,7 +377,7 @@ c               idir=idir-3
      &                    nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &                    ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
      &                    type,typeboun,nmethod,iperturb,fixed,vold,
-     &                    irotnode)
+     &                    irotnode,mi)
                   else
 !     
 !                    check for an unused rotational DOF
@@ -405,7 +407,7 @@ c                        idof=8*(node-1)+3+imax
                         nmpc=nmpc+1
                         if(nmpc.gt.nmpc_) then
                            write(*,*) 
-     &                          '*ERROR in gen3dnor: increase nmpc_'
+     &                          '*ERROR in gen3dboun: increase nmpc_'
                            stop
                         endif
 !     
@@ -505,7 +507,7 @@ c                        idof=8*(node-1)+3+imax
      &                 nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &                 ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
      &                 type,typeboun,nmethod,iperturb,fixed,vold,
-     &                 irotnode)
+     &                 irotnode,mi)
                endif
             elseif(lakon(ielem)(7:7).eq.'B') then
 !
@@ -573,7 +575,7 @@ c                        idof=8*(node-1)+3+imax
      &                    nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &                    ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
      &                    type,typeboun,nmethod,iperturb,fixed,vold,
-     &                    knor(indexk+k))
+     &                    knor(indexk+k),mi)
                   enddo
                endif
             else

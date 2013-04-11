@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine lintemp_th(t0,vold,konl,nope,jj,t0l,t1l)
+      subroutine lintemp_th(t0,vold,konl,nope,jj,t0l,t1l,mi)
 !
 !     calculates a trilinear approximation to the quadratic interpolation
 !     of the temperatures in a C3D20 element (full integration). A
@@ -27,9 +27,9 @@
 !
       implicit none
 !
-      integer konl(20),nope,jj,i1,i,j
+      integer konl(20),nope,jj,i1,i,j,mi(2)
 !
-      real*8 t0(*),vold(0:4,*),t0l,t1l,a20l(20,27)
+      real*8 t0(*),vold(0:mi(2),*),t0l,t1l,a20l(20,27)
 !                        
       data ((a20l(i,j),i=1,20),j=1,10) /
      & -0.088729832,-0.240369600,-0.059630393,-0.240369600,-0.240369600,

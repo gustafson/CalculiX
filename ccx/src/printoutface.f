@@ -18,7 +18,7 @@
 !
       subroutine printoutface(co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
      &  cocon,ncocon,compressible,istartset,iendset,ipkon,lakon,kon,
-     &  ialset,prset,ttime,nset,set,nprint,prlab,ielmat)
+     &  ialset,prset,ttime,nset,set,nprint,prlab,ielmat,mi)
 !
 !     calculation and printout of the lift and drag forces
 !
@@ -34,12 +34,14 @@
       integer konl(20),ifaceq(8,6),nelem,ii,nprint,i,j,i1,i2,j1,
      &  ncocon(2,*),k1,jj,ig,nrhcon(*),nshcon(*),ntmat_,nope,nopes,imat,
      &  mint2d,ifacet(6,4),ifacew(8,5),iflag,indexe,jface,istartset(*),
-     &  iendset(*),ipkon(*),kon(*),iset,ialset(*),nset,ipos,ielmat(*)
+     &  iendset(*),ipkon(*),kon(*),iset,ialset(*),nset,ipos,ielmat(*),
+     &  mi(2)
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,f(3),
      &  vkl(3,3),rhcon(0:1,ntmat_,*),t(3,3),div,shcon(0:3,ntmat_,*),
-     &  voldl(0:4,20),cocon(0:6,ntmat_,*),xl2(0:3,8),xsj2(3),shp2(7,8),
-     &  vold(0:4,*),xi,et,xsj,temp,xi3d,et3d,ze3d,weight,
+     &  voldl(0:mi(2),20),cocon(0:6,ntmat_,*),xl2(3,8),xsj2(3),
+     &  shp2(7,8),
+     &  vold(0:mi(2),*),xi,et,xsj,temp,xi3d,et3d,ze3d,weight,
      &  xlocal20(3,9,6),xlocal4(3,1,4),xlocal10(3,3,4),xlocal6(3,1,5),
      &  xlocal15(3,4,5),xlocal8(3,4,6),xlocal8r(3,1,6),ttime,pres,
      &  tf(3),tn,tt,dd,coords(3)

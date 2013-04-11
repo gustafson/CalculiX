@@ -53,11 +53,7 @@
 !     the *RIGID BODY option implies a nonlinear geometric 
 !     calculation
 !
-      if(iperturb.eq.0) then
-c         iperturb=2
-c         ctrl(19)=1.d+30
-c         ctrl(20)=1.d+30
-      elseif(iperturb.eq.1) then
+      if(iperturb.eq.1) then
          write(*,*) '*ERROR in rigidbodies: the *RIGID BODY option'
          write(*,*) '       cannot be used in a perturbation step'
          stop

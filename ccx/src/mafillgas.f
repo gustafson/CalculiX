@@ -24,7 +24,7 @@
      &     istep,dtime,ttime,time,
      &     ielmat,nteq,prop,ielprop,nactdog,nacteq,physcon,
      &     rhcon,nrhcon,ipobody,ibody,xbodyact,nbody,vold,xloadold,
-     &     reltime,nmethod,set)
+     &     reltime,nmethod,set,mi)
 !     
       implicit none
 !     
@@ -42,16 +42,16 @@
      &     nodem,ieq,kflag,nrhcon(*),numf,
      &     idofp1,idofp2,idofm,idoft1,idoft2,idoft,nactdog(0:3,*),
      &     nacteq(0:3,*),ielprop(*),nodef(5),idirf(5),nbody,
-     &     nmethod,case
+     &     nmethod,icase,mi(2)
 !     
       real*8 ac(ntm,*),xloadact(2,*),cp,h(2),physcon(*),dvi,
-     &     xl2(0:3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
-     &     gastemp,v(0:4,*),shcon(0:3,ntmat_,*),co(3,*),shp2(7,8),
-     &     ftot,field,prop(*),f,df(5),tg1,tg2,r,rho,
+     &     xl2(3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
+     &     gastemp,v(0:mi(2),*),shcon(0:3,ntmat_,*),co(3,*),shp2(7,8),
+     &     ftot,field,prop(*),f,df(5),tg1,tg2,r,rho,tl2(8),
      &     dtime,ttime,time,areaj,xflow,tvar(2),g(3),
      &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,ts1,ts2,xs2(3,7),
      &     xdenom1,xdenom2,xcst,xk1,xk2,expon,a,dt1,dt2,kappa,
-     &     pt1,pt2,inv,vold(0:4,*),xloadold(2,*),reltime,pi
+     &     pt1,pt2,inv,vold(0:mi(2),*),xloadold(2,*),reltime,pi
 !     
       include "gauss.f"
 !     
@@ -92,7 +92,8 @@
       ftot=0.d0
 !     
 !     element contribution.
-!     
+!              
+ 
       do i=1,nflow
          nelem=ieg(i)
          index=ipkon(nelem)
@@ -129,11 +130,11 @@
 !
 !     Definitions of the constant for isothermal flow elements
 !
-         if((lakon(nelem)(2:6).eq.'GAPII')
-     &        .or.(lakon(nelem)(2:6).eq.'GAPXI'))then
+         if((lakon(nelem)(2:6).eq.'GAPFI')
+     &        .or.(lakon(nelem)(2:6).eq.'GAPII'))then
             if((node1.ne.0).and.(node2.ne.0)) then
 !
-               case=1
+               icase=1
                A=prop(ielprop(nelem)+1)
                pt1=v(2,node1)
                pt2=v(2,node2)
@@ -141,9 +142,6 @@
                   inv=1.d0
                   pt1=v(2,node1)
                   pt2=v(2,node2)
-!                  if((v(3,nodem)).ge.(pt2/pt1))then
-!                     pt2=v(3,nodem)*pt1
-!                  endif
                   if(dabs(tg2/ts2-(1+0.5*(kappa-1)/kappa)).lt.1E-5) then
                     
                      pt2=dabs(xflow)*dsqrt(Tg2*R)/A
@@ -151,18 +149,16 @@
      &                    **(0.5*(kappa+1)/(kappa-1)) 
                   endif
                   tg1=v(0,node1)
-!                  ts1=v(3,node1)
-                  call ts_calc(xflow,Tg1,Pt1,kappa,r,a,Ts1,case)
+                  call ts_calc(xflow,Tg1,Pt1,kappa,r,a,Ts1,icase)
+                  
+
                   tg2=v(0,node2)
-                  call ts_calc(xflow,Tg2,Pt2,kappa,r,a,Ts2,case)
-!                  ts2=v(3,node2)
+                  call ts_calc(xflow,Tg2,Pt2,kappa,r,a,Ts2,icase)
                else
+                 
                   inv=-1.d0
                   pt1=v(2,node2)
                   pt2=v(2,node1)
-!                  if(v(3,nodem).ge.(pt2/pt1))then
-!                     pt2=v(3,nodem)*pt1
-!                  endif
                   if(dabs(tg2/ts2-(1+0.5*(kappa-1)/kappa)).lt.1E-5) then
                     
                      pt2=dabs(xflow)*dsqrt(Tg2*R)/A
@@ -170,11 +166,9 @@
      &                    **(0.5*(kappa+1)/(kappa-1)) 
                   endif
                   tg1=v(0,node2)
-!                  ts1=v(3,node2)
-                  call ts_calc(xflow,Tg1,Pt1,kappa,r,a,Ts1,case)
+                  call ts_calc(xflow,Tg1,Pt1,kappa,r,a,Ts1,icase)
                   tg2=v(0,node1)
-!                  ts2=v(3,node1)
-                  call ts_calc(xflow,Tg2,Pt2,kappa,r,a,Ts2,case)
+                  call ts_calc(xflow,Tg2,Pt2,kappa,r,a,Ts2,icase)
                endif
                dt1=tg1/ts1-1d0
                dt2=tg2/ts2-1d0
@@ -209,7 +203,6 @@
 !     
 !     energy equation contribution node1
 !     
-           
             if (nacteq(0,node1).ne.0) then
                ieq=nacteq(0,node1)
                if ((xflow.le.0d0).and.(nacteq(3,node1).eq.0))then
@@ -310,7 +303,7 @@
             if (nacteq(0,node2).ne.0) then
                ieq=nacteq(0,node2)
                if ((xflow.ge.0d0).and.(nacteq(3,node2).eq.0))then
-!     
+!
 !     adiabatic element
 !     
                   if(idoft1.ne.0)then
@@ -426,7 +419,7 @@
             call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &           nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &           nodef,idirf,df,cp,R,rho,physcon,g,co,dvi,numf,
-     &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_)
+     &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi)
 !
             do k=1,numf
                idof=nactdog(idirf(k),nodef(k))
@@ -526,7 +519,7 @@
 !     
             if((nope.eq.20).or.(nope.eq.8)) then
                do k=1,nopes
-                  xl2(0,k)=v(0,konl(ifaceq(k,ig)))
+                  tl2(k)=v(0,konl(ifaceq(k,ig)))
                   do j=1,3
                      xl2(j,k)=co(j,konl(ifaceq(k,ig)))+
      &                    v(j,konl(ifaceq(k,ig)))
@@ -534,7 +527,7 @@
                enddo
             elseif((nope.eq.10).or.(nope.eq.4)) then
                do k=1,nopes
-                  xl2(0,k)=v(0,konl(ifacet(k,ig)))
+                  tl2(k)=v(0,konl(ifacet(k,ig)))
                   do j=1,3
                      xl2(j,k)=co(j,konl(ifacet(k,ig)))+
      &                    v(j,konl(ifacet(k,ig)))
@@ -542,7 +535,7 @@
                enddo
             else
                do k=1,nopes
-                  xl2(0,k)=v(0,konl(ifacew(k,ig)))
+                  tl2(k)=v(0,konl(ifacew(k,ig)))
                   do j=1,3
                      xl2(j,k)=co(j,konl(ifacew(k,ig)))+
      &                    v(j,konl(ifacew(k,ig)))
@@ -600,7 +593,7 @@
                   coords(k)=0.d0
                enddo
                do j=1,nopes
-                  temp=temp+xl2(0,j)*shp2(4,j)
+                  temp=temp+tl2(j)*shp2(4,j)
                   do k=1,3
                      coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
                   enddo
@@ -614,7 +607,7 @@
                   sinktemp=v(0,node)
                   call film(h,sinktemp,temp,istep,
      &                 iinc,tvar,nelem,l,coords,jltyp,field,nfield,
-     &                 sideload(i),node,areaj,v)
+     &                 sideload(i),node,areaj,v,mi)
                   if(nmethod.eq.1) h(1)=xloadold(1,i)+
      &                 (h(1)-xloadold(1,i))*reltime
                endif

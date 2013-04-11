@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine storeresidual(nactdof,b,fn,filab,ithermal,nk,sti,stn,
-     &  ipkon,inum,kon,lakon,ne,mint_,orab,ielorien,co,nelemload,
+     &  ipkon,inum,kon,lakon,ne,mi,orab,ielorien,co,nelemload,
      &  nload,nodeboun,nboun,itg,ntg,vold,ndirboun)
 !
 !     This routine is called in case of divergence:
@@ -32,20 +32,25 @@
       logical fluid,force
 !
       character*1 cflag
-      character*6 filab(*)
       character*8 lakon(*)
+      character*87 filab(*)
 !
-      integer nactdof(0:3,*),ithermal(2),i,j,nk,nfield,ndim,iorienglob,
+      integer mi(2),nactdof(0:mi(2),*),ithermal(2),i,j,nk,
+     &  nfield,ndim,iorienglob,
      &  nelemload(2,*),nload,nodeboun(*),nboun,ipkon(*),inum(*),kon(*),
-     &  ne,mint_,ielorien,itg(*),ntg,ndirboun(*)
+     &  ne,ielorien,itg(*),ntg,ndirboun(*),mt,nlabel
 !
-      real*8 b(*),fn(0:3,*),sti(6,mint_,*),stn(6,*),orab(7,*),co(3,*),
-     &  vold(0:4,*)
+      real*8 b(*),fn(0:mi(2),*),sti(6,mi(1),*),stn(6,*),orab(7,*),
+     &  co(3,*),vold(0:mi(2),*)
+!
+      mt=mi(2)+1
+!
+      nlabel=27
 !
 !     storing the residual forces in field fn
 !
       do i=1,nk
-         do j=0,3
+         do j=0,mi(2)
             if(nactdof(j,i).gt.0) then
                fn(j,i)=b(nactdof(j,i))
             else
@@ -56,7 +61,7 @@
 !
 !     adapting the storage labels
 !
-      do i=1,17
+      do i=1,nlabel
          filab(i)(1:4)='    '
       enddo
 !
@@ -92,22 +97,22 @@
       iorienglob=0
       cflag=filab(1)(5:5)
       call extrapolate(sti,stn,ipkon,inum,kon,lakon,nfield,nk,
-     &     ne,mint_,ndim,orab,ielorien,co,iorienglob,cflag,
+     &     ne,mi(1),ndim,orab,ielorien,co,iorienglob,cflag,
      &     nelemload,nload,nodeboun,nboun,fluid,ndirboun,vold,
      &     ithermal,force)
 !
       if(fluid) then
-         call fluidextrapolate(vold,ipkon,inum,kon,lakon,ne)
+         call fluidextrapolate(vold,ipkon,inum,kon,lakon,ne,mi)
       endif
 !
 !     interpolation for 1d/2d elements
 !
       if(filab(1)(5:5).eq.'I') then
-         nfield=5
+         nfield=mt
          cflag=filab(1)(5:5)
          force=.false.
          call map3dto1d2d(vold,ipkon,inum,kon,lakon,nfield,nk,
-     &        ne,cflag,co,vold,force)
+     &        ne,cflag,co,vold,force,mi)
       endif
 !
 !     marking gas nodes by multiplying inum by -1

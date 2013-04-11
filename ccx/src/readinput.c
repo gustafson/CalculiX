@@ -37,7 +37,7 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
       icntrl,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,ntmat,npmat,
       norien,nam,nprint,mint,ntrans,ncs,namtot,ncmat,memmpc,ne1d,
       ne2d,nflow,*meminset=NULL,*rmeminset=NULL, *inp=NULL,ntie,
-      nener,nstate,nentries=13,ifreeinp,ikey,lincludefn,
+      nener,nstate,nentries=14,ifreeinp,ikey,lincludefn,
       nbody,ncharmax=1000000,*ipoinpc=NULL; 
 
   /* initialization */
@@ -81,7 +81,7 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
       i=-1;
       do{
 	  i++;
-	  if((buff[i]=='\0')||(buff[i]=='\n')||(buff[i]=='\r')||(k==132)) break;
+	  if((buff[i]=='\0')||(buff[i]=='\n')||(buff[i]=='\r')||(k==1320)) break;
 	  if((buff[i]==' ')||(buff[i]=='\t')) continue;
           buff[k]=buff[i];
 	  k++;
@@ -324,6 +324,10 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"INITIALCONDITIONS",
                           nline,&ikey));
 			  }
+      else if(strcmp1(&buff[0],"*AMPLITUDE")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"AMPLITUDE",
+                          nline,&ikey));
+			  }
       else if(strcmp1(&buff[0],"*")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
                           nline,&ikey));
@@ -352,7 +356,7 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
   *ipoinpcp=ipoinpc;
   *inpp=inp;
   
-  /* FORTRAN(writeinput,(inpc,ipoinp,inp,nline,&ipoinp[2*ikey-1],ipoinpc));*/
+  //  FORTRAN(writeinput,(inpc,ipoinp,inp,nline,&ipoinp[2*ikey-1],ipoinpc));
 
   return;
 

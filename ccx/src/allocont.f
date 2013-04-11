@@ -63,7 +63,7 @@
                if(set(j).eq.mastset) exit
             enddo
             if(j.gt.nset) then
-               write(*,*) '*ERROR in triangucont: master surface',
+               write(*,*) '*ERROR in allocont: master surface',
      &               mastset
                write(*,*) '       does not exist'
                stop
@@ -72,9 +72,6 @@
 !
             do j=istartset(imast),iendset(imast)
                if(ialset(j).gt.0) then
-c                  if(j.gt.istartset(imast)) then
-c                     if(ialset(j).eq.ialset(j-1)) cycle
-c                  endif
 !
                   nelem=int(ialset(j)/10.d0)
                   jface=ialset(j)-10*nelem
@@ -150,7 +147,7 @@ c                  endif
                if(set(j).eq.slavset) exit
             enddo
             if(j.gt.nset) then
-               write(*,*) '*ERROR in triangucont: ',
+               write(*,*) '*ERROR in allocont: ',
      &           'slave nodal surface ',slavset
                write(*,*) '       does not exist'
                stop

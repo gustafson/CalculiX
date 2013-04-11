@@ -20,7 +20,7 @@
      &  ithermal,nk,iponoel,inoel,vold,voldtu,t1act,isolidsurf,
      &  nsolidsurf,xsolidsurf,nfreestream,ifreestream,turbulent,
      &  voldaux,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
-     &  ipompc,nodempc,coefmpc,nmpc,inomat)
+     &  ipompc,nodempc,coefmpc,nmpc,inomat,mi)
 !
 !     applies velocity boundary conditions
 !
@@ -32,11 +32,11 @@
      &  ndirboun(*),nshcon(*),nk,i,nboun,node,imat,ithermal,iponoel(*),
      &  inoel(3,*),nsolidsurf,ifreenode,ifreestream(*),nfreestream,k,
      &  index,ipompc(*),nodempc(3,*),nmpc,ist,ndir,inomat(*),ndiri,
-     &  nodei
+     &  nodei,mi(2)
 !
-      real*8 rhcon(0:1,ntmat_,*),vold(0:4,*),xbounact(*),shcon,
+      real*8 rhcon(0:1,ntmat_,*),vold(0:mi(2),*),xbounact(*),shcon,
      &  voldtu(2,*),t1act(*),temp,r,dvi,xsolidsurf(*),reflength,
-     &  refkin,reftuf,refvel,cp,voldaux(0:4,*),physcon(*),v(0:4,*),
+     &  refkin,reftuf,refvel,cp,voldaux(0:4,*),physcon(*),v(0:mi(2),*),
      &  coefmpc(*),fixed_pres,size,correction,residu
 !
 !     inserting the pressure boundary conditions

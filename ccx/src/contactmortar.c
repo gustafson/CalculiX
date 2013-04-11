@@ -16,7 +16,7 @@
 /*     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.         */
 
 #include <stdio.h>
-#include <math.h>
+#include <math.h> 
 #include <stdlib.h>
 #include "CalculiX.h"
 
@@ -35,24 +35,25 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
         double *adc, int **irowcp, int *jqc, int *islavact,
         double *gap, double *bdd, double **auqdtp, int **irowqdtp,
         int *jqqdt, int *nzsqdt, int *nzlc,double *slavnor,double *bhat,
-        int *icolc){
+	int *icolc, double **aubdp, int **irowbdp, int *jqbd, int *mi,
+        int *ipe, int *ime){
     
     int i,j,k,l,m,numb,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL,ifree=0,kflag, 
-        nzsbd,*mast1=NULL,*ipointer=NULL,*irowbd=NULL,*jqbd=NULL, 
+        nzsbd,*mast1=NULL,*ipointer=NULL,*irowbd=NULL,
         *irowc=NULL,*imastsurf=NULL,jrow,jcol,islavnodeentry,
         *islavactdof=NULL,*irow=NULL,*irowqdt=NULL,* jqctemp=NULL, 
         * irowctemp=NULL,jslavnodeentry;
 
     double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL,*aubd=NULL, 
-      *auc=NULL, *pmastsurf=NULL,*auqdt=NULL,
-      *slavtan=NULL,t1,t2,t3,e1,e2,e3,*au=NULL,* auctemp=NULL;
+      *auc=NULL, *pmastsurf=NULL,*auqdt=NULL,*gapmints=NULL,*pslavdual=NULL,
+      *slavtan=NULL,t1,t2,t3,e1,e2,e3,*au=NULL,* auctemp=NULL,*pslavsurf=NULL;
 	  
 
     irow = *irowp; au=*aup; auc=*aucp; irowc=*irowcp; auqdt=*auqdtp;
-    irowqdt=*irowqdtp;
+    irowqdt=*irowqdtp; aubd=*aubdp; irowbd=*irowbdp;
 	
     FORTRAN(updatecont,(koncont,ncont,co,vold,
-            cg,straight));
+			cg,straight,mi));
 
     /* determining the size of the auxiliary fields */
 
@@ -72,47 +73,57 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
     ny=NNEW(int,ntrimax);
     nz=NNEW(int,ntrimax);
 
-    imastsurf=NNEW(int,9**ncone);
-    pmastsurf=NNEW(double,18**ncone);
+//    imastsurf=NNEW(int,50**ncone);
+//    pmastsurf=NNEW(double,100**ncone);
+//    pslavsurf=NNEW(double,150**ncone);
+    imastsurf=NNEW(int,500**ncone);
+    pmastsurf=NNEW(double,1000**ncone);
+    pslavsurf=NNEW(double,1500**ncone);
     slavtan=NNEW(double,6*nslavnode[*ntie]);
-    
+    gapmints=NNEW(double,9**ncone);
+    pslavdual=NNEW(double,16*itiefac[2**ntie-1]);
+    //printf("taille=%d\n",itiefac[2**ntie-1]);
+            
     FORTRAN(gencontrel,(tieset,ntie,itietri,ipkon,kon,
         lakon,set,cg,straight,&ifree,
         koncont,co,vold,xo,yo,zo,x,y,z,nx,ny,nz,nset,cs,
         elcon,istep,iinc,iit,ncmat_,ntmat_,
         vini,nmethod,islavsurf,imastsurf,pmastsurf,itiefac,
-        islavnode,nslavnode,slavnor,slavtan,imastop,gap,
-        islavact));
+        islavnode,nslavnode,slavnor,slavtan,imastop,gapmints,
+	islavact,mi,ncont,ipe,ime,pslavsurf,pslavdual));
 	
     free(xo);free(yo);free(zo);free(x);free(y);free(z);free(nx);
     free(ny);free(nz);
 
     RENEW(imastsurf,int,ifree);
     RENEW(pmastsurf,double,2*ifree);
+    RENEW(pslavsurf,double,3*ifree);	
 	
     /* coupling the active slave degrees of freedom with the corresponding slave
        node */
     
     islavactdof=NNEW(int,neq[1]);
     
-    FORTRAN(genislavactdof,(ntie,neq,nactdof,nslavnode,islavact,islavactdof,islavnode));
+    FORTRAN(genislavactdof,(ntie,neq,nactdof,nslavnode,islavact,islavactdof,
+			    islavnode,mi));
     
+	/*
+	for (i=0;i<neq[1];i++){
+	printf("islavact[%d]=%d\n",i,islavactdof[i]);
+	} */
+	
     /* calculating the coupling matrices bd (described by aubd, irowbd, jqbd and nzsbd; 
        nonsymmetric, zero diagonal) and dd (in bdd; diagonal matrix */
 
     nzsbd = nzs[1];
 
-    aubd = NNEW(double, nzsbd);
-    irowbd = NNEW(int, nzsbd);
-    jqbd = NNEW(int, neq[1]+1);
-
     bdfill(&irowbd, jqbd, &aubd, bdd, &nzsbd, ntie,
         ipkon, kon, lakon, nslavnode, nmastnode, imastnode, islavnode, 
         islavsurf, imastsurf, pmastsurf, itiefac, neq, nactdof,co,vold,
-        iponoels, inoels); 
+	iponoels, inoels,mi,gapmints,gap,pslavsurf,pslavdual); 
 
-    free(imastsurf);free(pmastsurf);
-    
+    free(imastsurf);free(pmastsurf);free(gapmints);free(pslavsurf);
+    free(pslavdual);
     /* modifying the stiffnes matrix with the coupling matrices; the
        modified (symmetric) matrix is described in asymmetric form by
        the fields auc, adc, irowc, jqc and nzsc */ 
@@ -158,29 +169,220 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
     }
 
 	nzs[1]=jq[neq[1]]-1;
-	
-	for(i=0;i<neq[1];i++){
-	  printf("islavactdof=%d %d\n",i+1,islavactdof[i]);
+
+
+/*for(i=0;i<nslavnode[*ntie];i++){
+		for (j=0;j<3;j++){
+		printf("norm %f\n",slavnor[3*i+j]);
+		}
+		for (j=0;j<6;j++){
+		printf("norm %f\n",slavtan[6*i+j]);
+		}
 	}
-
-
+*/
     /* changing au due to N and T (normal and tangential
        direction at the slave surface */
-    
+	i=0;
     for(j=0;j<neq[1];j++){
-      for(i=jq[j]-1;i<jq[j+1]-1;i++){
-	k=irow[i]-1;
+	
 
+	while (i<jq[j+1]-1){ //changement 29.01
+
+	if(islavactdof[j]>0){ //risk Actif-Actif
+		  islavnodeentry = floor(islavactdof[j]/10.);
+	  jrow= islavactdof[j]-10*islavnodeentry;
+	
+	k=irow[i]-1;
+	if(islavactdof[k]>0){
+	switch(jrow){
+	
+	case 1 : 
+				if(k==j+1){
+				
+					e1=adc[j];
+					e2=auc[i];
+					e3=auc[i+1];
+				        jslavnodeentry=floor(islavactdof[j]/10.);
+
+					ad[j]=slavnor[3*(jslavnodeentry-1)+jrow-1]; 
+					t1=slavtan[6*(islavnodeentry-1)];
+					t2=slavtan[6*(islavnodeentry-1)+1];
+					t3=slavtan[6*(islavnodeentry-1)+2];
+
+					au[i]=t1*e1+t2*e2+t3*e3;
+				
+					t1=slavtan[6*(islavnodeentry-1)+3];
+					t2=slavtan[6*(islavnodeentry-1)+4];
+					t3=slavtan[6*(islavnodeentry-1)+5];
+				
+					au[++i]=t1*e1+t2*e2+t3*e3;
+				
+				}
+				else{ //normal scheme
+					islavnodeentry = floor(islavactdof[k]/10.);
+					jrow= islavactdof[k]-10*islavnodeentry;
+
+					if (jrow==1){
+						e1=auc[i];
+							jslavnodeentry=floor(islavactdof[j]/10.);
+							if (islavnodeentry!=jslavnodeentry){
+						au[i]=0;
+						}else{
+							jcol=islavactdof[j]-10*jslavnodeentry;
+							au[i]=slavnor[3*(islavnodeentry-1)+jcol-1];
+						}
+					}
+					else if (jrow==2){
+						t1=slavtan[6*(islavnodeentry-1)];
+						t2=slavtan[6*(islavnodeentry-1)+1];
+						t3=slavtan[6*(islavnodeentry-1)+2];
+						e2=auc[i];
+						if((k+1)==j){e3=adc[j];}else{e3=auc[i+1];}
+						au[i]=t1*e1+t2*e2+t3*e3;
+	 
+					}
+					else{
+						t1=slavtan[6*(islavnodeentry-1)+3];
+						t2=slavtan[6*(islavnodeentry-1)+4];
+						t3=slavtan[6*(islavnodeentry-1)+5];
+
+						au[i]=t1*e1+t2*e2+t3*e3;
+
+					}
+				}
+				break;
+	
+	case 2 :	if(k==j-1){
+				
+				e1=auc[i];
+				e2=ad[j];
+				e3=auc[i+1];
+				
+
+
+				au[i]=slavnor[3*(jslavnodeentry-1)+jrow-1];
+				
+				t1=slavtan[6*(islavnodeentry-1)];
+				t2=slavtan[6*(islavnodeentry-1)+1];
+				t3=slavtan[6*(islavnodeentry-1)+2];
+				
+				ad[j]=t1*e1+t2*e2+t3*e3; 
+				t1=slavtan[6*(islavnodeentry-1)+3];
+				t2=slavtan[6*(islavnodeentry-1)+4];
+				t3=slavtan[6*(islavnodeentry-1)+5];
+				
+				au[++i]=t1*e1+t2*e2+t3*e3;
+					
+					
+					
+					
+				}else{ //normal scheme
+								islavnodeentry = floor(islavactdof[k]/10.);
+				jrow= islavactdof[k]-10*islavnodeentry;
+
+				if (jrow==1){
+					e1=auc[i];
+					jslavnodeentry=floor(islavactdof[j]/10.);
+			if (islavnodeentry!=jslavnodeentry){
+			au[i]=0;
+			}else{
+			jcol=islavactdof[j]-10*jslavnodeentry;
+					au[i]=slavnor[3*(islavnodeentry-1)+jcol-1];
+
+				}
+				}
+				else if (jrow==2){
+					t1=slavtan[6*(islavnodeentry-1)];
+					t2=slavtan[6*(islavnodeentry-1)+1];
+					t3=slavtan[6*(islavnodeentry-1)+2];
+					e2=auc[i];
+				if((k+1)==j){e3=adc[j];}else{e3=auc[i+1];}
+					au[i]=t1*e1+t2*e2+t3*e3;
+	 
+					}
+					else{
+					t1=slavtan[6*(islavnodeentry-1)+3];
+					t2=slavtan[6*(islavnodeentry-1)+4];
+					t3=slavtan[6*(islavnodeentry-1)+5];
+
+					au[i]=t1*e1+t2*e2+t3*e3;
+
+					}
+				}
+				break;
+	
+	case 3 :	if (k==j-2){
+	
+				e1=auc[i];
+				e2=auc[i+1];
+				e3=adc[j];
+				
+				au[i]=slavnor[3*(jslavnodeentry-1)+jrow-1];
+				
+				t1=slavtan[6*(islavnodeentry-1)];
+				t2=slavtan[6*(islavnodeentry-1)+1];
+				t3=slavtan[6*(islavnodeentry-1)+2];
+				
+				au[++i]=t1*e1+t2*e2+t3*e3;
+				
+				t1=slavtan[6*(islavnodeentry-1)+3];
+				t2=slavtan[6*(islavnodeentry-1)+4];
+				t3=slavtan[6*(islavnodeentry-1)+5];
+				
+				ad[j]=t1*e1+t2*e2+t3*e3; 
+				}	
+				else{ //normal scheme
+								islavnodeentry = floor(islavactdof[k]/10.);
+				jrow= islavactdof[k]-10*islavnodeentry;
+
+				if (jrow==1){
+					e1=auc[i];
+					jslavnodeentry=floor(islavactdof[j]/10.);
+			if (islavnodeentry!=jslavnodeentry){
+			au[i]=0;
+			}else{
+			jcol=islavactdof[j]-10*jslavnodeentry;
+					au[i]=slavnor[3*(islavnodeentry-1)+jcol-1];
+
+				}
+				}
+				else if (jrow==2){
+					t1=slavtan[6*(islavnodeentry-1)];
+					t2=slavtan[6*(islavnodeentry-1)+1];
+					t3=slavtan[6*(islavnodeentry-1)+2];
+					e2=auc[i];
+				if((k+1)==j){e3=adc[j];}else{e3=auc[i+1];}
+					au[i]=t1*e1+t2*e2+t3*e3;
+	 
+					}
+					else{
+					t1=slavtan[6*(islavnodeentry-1)+3];
+					t2=slavtan[6*(islavnodeentry-1)+4];
+					t3=slavtan[6*(islavnodeentry-1)+5];
+
+					au[i]=t1*e1+t2*e2+t3*e3;
+
+					}
+				}
+				break;
+				
+	default :   printf("Problem of active set");
+				break;
+	
+	
+	}
+	}
+	i++;
+	
+	}else{ //Actif-Else
+	
+	k=irow[i]-1;
+       // printf("contactmortar 397 k=%d,i=%d\n",k,i);
 	/*  k is the row number, j is the column number */
 
 	if(islavactdof[k]>0){
 	  islavnodeentry = floor(islavactdof[k]/10.);
 	  jrow= islavactdof[k]-10*islavnodeentry;
-
-	  /* islavnodeentry is the slave node entry in field
-             islavnode corresponding to row k,
-             jslavnodeentry is the slave node entry in field
-             islavnode corresponding to column j */
 
 	  if (jrow==1){
 	    e1=auc[i];
@@ -190,9 +392,8 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
 	    }else{
 	      jcol=islavactdof[j]-10*jslavnodeentry;
 	      	      au[i]=slavnor[3*(islavnodeentry-1)+jcol-1];
-	      //au[i]=slavnor[3*(islavnodeentry-1)+jcol-1]*bdd[k]; //normer avec d le N..
+
 	    }
-	    printf("au,%d,%d,%d,%f\n",k+1,j+1,jrow,au[i]);
 	  }
 	  else if (jrow==2){
 	    t1=slavtan[6*(islavnodeentry-1)];
@@ -201,51 +402,26 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
 	    e2=auc[i];
 	    if((k+1)==j){e3=adc[j];}else{e3=auc[i+1];}
 	    au[i]=t1*e1+t2*e2+t3*e3;
-	    printf("au,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f\n",k+1,j+1,jrow,t1,t2,t3,e1,e2,e3,au[i]);
+	 
 	  }
 	  else{
 	    t1=slavtan[6*(islavnodeentry-1)+3];
 	    t2=slavtan[6*(islavnodeentry-1)+4];
 	    t3=slavtan[6*(islavnodeentry-1)+5];
-	    //	    e3=au[i];
+
 	    au[i]=t1*e1+t2*e2+t3*e3;
-	    printf("au,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f\n",k+1,j+1,jrow,t1,t2,t3,e1,e2,e3,au[i]);
+
 	  }
+	  
 	}
-
-        /* diagonal terms */
-
-	if(k==(j-1)){
-	  if(islavactdof[j]>0){
-	    jslavnodeentry=floor(islavactdof[j]/10.);
-	    jrow=islavactdof[j]-10*jslavnodeentry;
-	    if(jrow==1){
-	      e1=adc[j];
-	      	      ad[j]=slavnor[3*(jslavnodeentry-1)+jrow-1];
-								    //ad[j]=slavnor[3*(jslavnodeentry-1)+jrow-1]*bdd[j];
-	    printf("ad,%d,%d,%f\n",j+1,jrow,ad[j]);
-	    }else if(jrow==2){
-	      t1=slavtan[6*(jslavnodeentry-1)];
-	      t2=slavtan[6*(jslavnodeentry-1)+1];
-	      t3=slavtan[6*(jslavnodeentry-1)+2];
-	      e2=adc[j];
-	      e3=auc[i+1];
-	      ad[j]=t1*e1+t2*e2+t3*e3;
-	    printf("ad,%d,%d,%f,%f,%f,%f,%f,%f,%f\n",j+1,jrow,t1,t2,t3,e1,e2,e3,ad[j]);
-	    }else{
-	      t1=slavtan[6*(jslavnodeentry-1)+3];
-	      t2=slavtan[6*(jslavnodeentry-1)+4];
-	      t3=slavtan[6*(jslavnodeentry-1)+5];
-	      //	      e3=ad[j];
-	      ad[j]=t1*e1+t2*e2+t3*e3;
-	    printf("ad,%d,%d,%f,%f,%f,%f,%f,%f,%f\n",j+1,jrow,t1,t2,t3,e1,e2,e3,ad[j]);
-	    }
-	  }
+	
+	i++;
+	
 	}
-
-
+	
+	}
       }
-    }
+
 	
     /* changing b due to N and T (normal and tangential
        direction at the slave surface */
@@ -257,7 +433,8 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
 	  if (jrow==1){
 	    e1=bhat[k];
 	    b[k]=gap[islavnodeentry-1];
-	    printf("b,%d,%d,%f\n",k+1,jrow,ad[j]);
+//	    	    printf("jrow=1 %d %e\n",k,b[k]);
+	    //printf("b,%d,%d,%f\n",k+1,jrow,ad[j]);
 	  }
 	  else if (jrow==2){
 	    t1=slavtan[6*(islavnodeentry-1)];
@@ -266,7 +443,8 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
 	    e2=bhat[k];
 	    e3=bhat[k+1];
 	    b[k]=t1*e1+t2*e2+t3*e3;
-	    printf("b,%d,%d,%f,%f,%f,%f,%f,%f,%f\n",k+1,jrow,t1,t2,t3,e1,e2,e3,au[i]);
+//	    printf("jrow=2 %d %e\n",k,b[k]);
+	    //printf("b,%d,%d,%f,%f,%f,%f,%f,%f,%f\n",k+1,jrow,t1,t2,t3,e1,e2,e3,au[i]);
 	  }
 	  else{
 	    t1=slavtan[6*(islavnodeentry-1)+3];
@@ -274,34 +452,34 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
 	    t3=slavtan[6*(islavnodeentry-1)+5];
 	    //	    e3=b[k];
 	    b[k]=t1*e1+t2*e2+t3*e3;
-	    printf("b,%d,%d,%f,%f,%f,%f,%f,%f,%f\n",k+1,jrow,t1,t2,t3,e1,e2,e3,au[i]);
+//	    printf("jrow=3 %d %e\n",k,b[k]);
+	    //printf("b,%d,%d,%f,%f,%f,%f,%f,%f,%f\n",k+1,jrow,t1,t2,t3,e1,e2,e3,au[i]);
 	  }
 	}
       }
 
-  int number=10;
+    int number=10;
 
-  FORTRAN(writematrix,(auc,adc,irowc,jqc,&neq[1],&number));
+//  FORTRAN(writematrix,(auc,adc,irowc,jqc,&neq[1],&number));
 
-   number=7;
+    number=7;
 
-  FORTRAN(writematrix,(au,ad,irow,jq,&neq[1],&number));
+//   FORTRAN(writematrix,(au,ad,irow,jq,&neq[1],&number));
+
+	printf("\n");
+    number=8;
+
+//   FORTRAN(writematrix,(au,bhat,irow,jq,&neq[1],&number));
 
 
-  // number=8;
+   number=9;
 
-//  FORTRAN(writematrix,(au,bhat,irow,jq,&neq[1],&number));
-
-
- // number=9;
-
- // FORTRAN(writematrix,(au,b,irow,jq,&neq[1],&number));
+//   FORTRAN(writematrix,(au,b,irow,jq,&neq[1],&number));
 
     
     free(islavactdof);
 	
     free(slavtan);
-    free(aubd);free(jqbd);free(irowbd);
     
     /* So far every nonzero in Auc was stored; however,
        Auc is symmetric. To reduce the computational effort
@@ -361,7 +539,7 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
     /* nzlc is the number of the rightmost column with 
        nonzero off-diagonal terms */
 
-    //  number=10;
+      number=10;
 
 //  FORTRAN(writematrix,(auc,adc,irowc,jqc,&neq[1],&number));
 
@@ -374,7 +552,7 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
     }
     
     *irowp = irow; *aup=au; *aucp=auc; *irowcp=irowc; *auqdtp=auqdt;
-    *irowqdtp=irowqdt;
+    *irowqdtp=irowqdt; *aubdp=aubd; *irowbdp=irowbd;
 
     return;
 }

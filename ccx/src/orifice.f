@@ -18,7 +18,7 @@
 !     
       subroutine orifice(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,physcon,dvi,numf,set,co,vold)
+     &     nodef,idirf,df,cp,R,physcon,dvi,numf,set,co,vold,mi)
 !     
 !     orifice element
 !     
@@ -31,16 +31,18 @@
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
      &     inv,ipkon(*),kon(*),number,kgas,nelemref,
-     &     nodea,nodeb,iaxial
+     &     nodea,nodeb,iaxial,mi(2),i
 !
       real*4 ofvidg
 !     
-      real*8 prop(*),v(0:4,*),xflow,f,df(4),kappa,R,a,d,xl,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,a,d,xl,
      &     p1,p2,T1,Aeff,C1,C2,C3,cd,cp,physcon(3),p2p1,km1,dvi,
      &     kp1,kdkm1,tdkp1,km1dk,x,y,ca1,cb1,ca2,cb2,dT1,alambda,
      &     rad,beta,reynolds,theta,k_phi,c2u_new,u,pi,xflow_oil,
      &     ps1pt1,uref,cd_chamf,angle,vid,cdcrit,T2,radius,
-     &     initial_radius,co(3,*),vold(0:4,*),offset
+     &     initial_radius,co(3,*),vold(0:mi(2),*),offset,
+     &     x_tab(15), y_tab(15),x_tab2(15),y_tab2(15),curve
+!
 !
       external ofvidg
 !
@@ -146,11 +148,12 @@
 !
 !     calculation of the dynamic viscosity 
 !     
-         if(dabs(dvi).lt.1E-30) then
+!  
+        if(dabs(dvi).lt.1E-30) then
             kgas=0
             call dynamic_viscosity(kgas,T1,dvi)
          endif 
-!     
+!  
          if ((lakon(nelem)(4:5).ne.'BT').and.
      &        (lakon(nelem)(4:5).ne.'PN').and.
      &        (lakon(nelem)(4:5).ne.'C1').and.
@@ -166,15 +169,15 @@
 !              
 !     preswirl nozzle
                if(lakon(nelemref)(2:5).eq.'ORPN') then
-                  uref=v(1,kon(ipkon(nelemref)+3))
+                  uref=prop(ielprop(nelemref)+5)
 !
 !     forced vortex
                elseif(lakon(nelemref)(2:5).eq.'VOFO') then
-                  uref=v(1,kon(ipkon(nelemref)+7))
+                  uref=prop(ielprop(nelemref)+7)
 !
 !     free vortex 
-               elseif(lakon(nelemref)(2:5).eq.'VOFO') then
-                  uref=v(1,kon(ipkon(nelemref)+9))
+               elseif(lakon(nelemref)(2:5).eq.'VOFR') then
+                  uref=prop(ielprop(nelemref)+9)
 !
                else
                   write(*,*) '*ERROR in orifice:'
@@ -196,6 +199,7 @@
 !
          if((lakon(nelem)(2:5).eq.'ORBG')) then
 !
+            p2p1=p2/p1
             cdcrit=prop(index+2)
 !     
             call cd_bragg(cdcrit,p2p1,cd)
@@ -293,19 +297,38 @@
          elseif (lakon(nelem)(2:5).eq.'ORBT') then
 !     
 !     calculate the discharge coefficient of bleed tappings (OWN tables)
-!     
+!   
             ps1pt1=prop(index+2)
-            number=int(prop(index+3))
+            curve=int(prop(index+3))
+            number=int(prop(index+4))
+!
+            if(number.ne.0.d0)then
+               do i=1,number
+                  x_tab(i)=prop(index+2*i+3)
+                  y_tab(i)=prop(index+2*i+4)
+               enddo
+            endif
 !     
-            call cd_bleedtapping(p2,p1,ps1pt1,number,cd)
+            call cd_bleedtapping(p2,p1,ps1pt1,number,curve,x_tab,y_tab,
+     &           cd)
 !     
          elseif (lakon(nelem)(2:5).eq.'ORPN') then
 !     
 !     calculate the discharge coefficient of preswirl nozzle (OWN tables)
-!     
-
-            number=int(prop(index+4))
-            call cd_preswirlnozzle(p2,p1,number,cd)
+!   
+            d=dsqrt(4*A/pi)
+            reynolds=dabs(xflow)*d/(dvi*a)
+            curve=int(prop(index+4))
+            number=int(prop(index+6))
+            if(number.ne.0.d0)then
+               do i=1,number
+                  x_tab2(i)=prop(index+2*i+5)
+                  y_tab2(i)=prop(index+2*i+6)
+               enddo
+            endif
+            call cd_preswirlnozzle(p2,p1,number,curve,x_tab2,y_tab2
+     &           ,cd)
+!
             theta=prop(index+2)
             k_phi=prop(index+3)
 !
@@ -326,7 +349,6 @@
             nodeb=int(prop(index+2))
             iaxial=int(prop(index+3))
             offset=prop(index+4)
-            write(*,*) 'offset',offset
             radius=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &           co(1,nodea)-vold(1,nodea))**2)-offset
 !
@@ -441,15 +463,15 @@
 !              
 !     preswirl nozzle
                if(lakon(nelemref)(2:5).eq.'ORPN') then
-                  uref=v(1,kon(ipkon(nelemref)+5))
+                  uref=prop(ielprop(nelemref)+5)
 !
 !     forced vortex
                elseif(lakon(nelemref)(2:5).eq.'VOFO') then
-                  uref=v(1,kon(ipkon(nelemref)+7))
+                  uref=prop(ielprop(nelemref)+7)
 !
 !     free vortex 
-               elseif(lakon(nelemref)(2:5).eq.'VOFO') then
-                  uref=v(1,kon(ipkon(nelemref)+9))
+               elseif(lakon(nelemref)(2:5).eq.'VOFR') then
+                  uref=prop(ielprop(nelemref)+9)
                else
                   write(*,*) '*ERROR in orifice:'
                   write(*,*) ' element',nelemref
@@ -459,7 +481,7 @@
             endif
             u=u-uref
             angle=prop(index+5)
-!     
+!
          endif
 !
 !     calculate the discharge coefficient using Bragg's Method
@@ -470,6 +492,9 @@
 !
          if((lakon(nelem)(2:5).eq.'ORBG')) then
 !
+            p2p1=p2/p1
+            d=dsqrt(a*4/Pi)           
+            reynolds=dabs(xflow)*d/(dvi*a)
             cdcrit=prop(index+2)
 !     
             call cd_bragg(cdcrit,p2p1,cd)
@@ -478,7 +503,9 @@
 !
 !     calculate the discharge coefficient using own table data and 
 !     using Dr.Albers method for rotating cavities
-!     
+!                
+            reynolds=dabs(xflow)*d/(dvi*a)
+!         
             call cd_own_albers(p1,p2,xl,d,cd,u,T1,R,kappa)
 !     
 !     chamfer correction
@@ -568,18 +595,39 @@
 !     
 !     calculate the discharge coefficient of bleed tappings (OWN tables)
 !     
+            d=dsqrt(A*Pi/4)
+            reynolds=dabs(xflow)*d/(dvi*a)
             ps1pt1=prop(index+2)
-            number=int(prop(index+3))
+            curve=int(prop(index+3))
+            number=int(prop(index+4))
+            if(number.ne.0.d0)then
+               do i=1,number
+                  x_tab(i)=prop(index+2*i+3)
+                  y_tab(i)=prop(index+2*i+4)
+               enddo
+            endif
 !     
-            call cd_bleedtapping(p2,p1,ps1pt1,number,cd)
+            call cd_bleedtapping(p2,p1,ps1pt1,number,curve,x_tab,y_tab,
+     &           cd)
 !     
          elseif (lakon(nelem)(2:5).eq.'ORPN') then
 !     
 !     calculate the discharge coefficient of preswirl nozzle (OWN tables)
-!     
-            write(*,*) prop(index+4)
-            number=int(prop(index+4))
-            call cd_preswirlnozzle(p2,p1,number,cd)
+!    
+            d=dsqrt(4*A/pi)
+            reynolds=dabs(xflow)*d/(dvi*a)
+            curve=int(prop(index+4))
+            number=int(prop(index+6))
+!
+            if(number.ne.0.d0)then             
+               do i=1,number
+                  x_tab2(i)=prop(index+2*i+5)
+                  y_tab2(i)=prop(index+2*i+6)
+               enddo
+            endif
+!
+            call cd_preswirlnozzle(p2,p1,number,curve,x_tab2,y_tab2,cd)
+!
             theta=prop(index+2)
             k_phi=prop(index+3)
 !     
@@ -606,28 +654,35 @@
          xflow_oil=0
 !
          write(1,*) ''
-         write(1,55) 'In line',int(nodem/100),' from node',node1,
-     &' to node', node2,':   air massflow rate=',inv*xflow,'kg/s',
-     &', oil massflow rate=',xflow_oil,'kg/s'
+         write(1,55) 'In line',int(nodem/1000),' from node',node1,
+     &   ' to node', node2,':   air massflow rate=',inv*xflow,'kg/s',
+     &   ', oil massflow rate=',xflow_oil,'kg/s'
  55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
-
+         
          if(inv.eq.1) then
             write(1,56)'       Inlet node  ',node1,':   Tt1=',T1,
      &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
-         
-            write(1,*)'             element R   ',set(numf+nelem)(1:20)
-            write(1,57)'             Eta= ',dvi,', Re='
+            
+            write(1,*)'             element R   ',set(numf)(1:20)
+            write(1,57)'             Eta= ',dvi,' kg/(m*s), Re='
      &           ,reynolds
-            write(1,58)'             CD= ',cd
+            if(lakon(nelem)(2:5).ne.'ORMA') then
+               write(1,58)'             CD= ',cd
+            elseif(lakon(nelem)(2:5).eq.'ORMA') then
+               write(1,59)'             CD= ',cd,' C1u= ',uref,'m/s'
+            endif
+            
 
 !     special for bleed tappings
             if(lakon(nelem)(2:5).eq.'ORBT') then
-               write(1,*) 'DAB ',(1-P2/P1)/(1-ps1pt1),' ,curve N° ',
-     &             number 
+               write(1,60) '             DAB=',(1-P2/P1)/(1-ps1pt1),
+     &              ' ,curve N°',curve 
 !     special for preswirlnozzles
             elseif(lakon(nelem)(2:5).eq.'ORPN') then
-               write(1,*)            'm/s C2u= ',c2u_new,'m/s'
-            endif
+               write(1,61)'             C2u= ',c2u_new,'m/s'
+!     special for recievers
+            
+            endif 
 
             write(1,56)'       Outlet node ',node2,':   Tt2=',T2,
      &           'K, Ts2=',T2,'K, Pt2=',P2/1e5,'Bar'
@@ -636,14 +691,14 @@
             write(1,56)'       Inlet node  ',node2,':    Tt1=',T1,
      &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
      &          
-            write(1,*)'             element R    ',set(numf+nelem)(1:20)
+            write(1,*)'             element R    ',set(numf)(1:20)
             write(1,57)'             eta= ',dvi,'kg/(m*s), Re='
      &           ,reynolds,', CD=',cd
 
 !     special for bleed tappings
             if(lakon(nelem)(2:5).eq.'ORBT') then
-               write(1,*) 'DAB ',(1-P2/P1)/(1-ps1pt1),', curve N° ',
-     &              number
+               write(1,60) '             DAB ',(1-P2/P1)/(1-ps1pt1),'
+     &              , curve N°', curve
 !     special for preswirlnozzles
             elseif(lakon(nelem)(2:5).eq.'ORPN') then
                write(1,*) 'u= ',u,'m/s, C2u= ',c2u_new,'m/s'
@@ -655,8 +710,11 @@
          endif
 !
  56      FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A)
- 57      FORMAT(1X,A,G11.4,A,G11.4)
+ 57      FORMAT(1X,A,G9.4,A,G11.4)
  58      FORMAT(1X,A,f12.5)
+ 59      FORMAT(1X,A,f12.5,A,f12.5,A)
+ 60      FORMAT(1X,A,f12.5,A,I2,A)
+ 61      FORMAT(1X,A,f12.3,A)
 
       endif
 !     

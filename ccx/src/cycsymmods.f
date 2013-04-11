@@ -23,7 +23,7 @@
      &  ipoinp,inp,ntie,mcs,lprev,ithermal,rcscg,rcs0cg,zcscg,
      &  zcs0cg,nrcg,nzcg,jcs,kontri,straight,ne,ipkon,kon,
      &  lakon,lcs,icounter,ifacetet,inodface,ipoinpc,maxsectors,
-     &  trab,ntrans,ntrans_,jobnamec,vold,cfd)
+     &  trab,ntrans,ntrans_,jobnamec,vold,cfd,mi)
 !
 !     reading the input deck: *CYCLIC SYMMETRY MODEL
 !
@@ -56,17 +56,18 @@
 !
       integer istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
      &  nset,istep,istat,n,key,i,j,k,nk,nmpc,nmpc_,mpcfree,ics(*),
-     &  nr(*),nz(*),idep,iindep,l,noded,ikmpc(*),ilmpc(*),lcs(*),
+     &  nr(*),nz(*),jdep,jindep,l,noded,ikmpc(*),ilmpc(*),lcs(*),
      &  kflag,node,ncsnodes,ncs_,iline,ipol,inl,ipoinp(2,*),nneigh,
      &  inp(3,*),itie,iset,ipos,mcs,lprev,ntie,ithermal,ncounter,
      &  nrcg(*),nzcg(*),jcs(*),kontri(3,*),ne,ipkon(*),kon(*),nodei,
      &  icounter(*),ifacetet(*),inodface(*),ipoinpc(0:*),maxsectors,
-     &  noden(2),ntrans,ntrans_,cfd
+     &  noden(2),ntrans,ntrans_,cfd,mi(2)
 !
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
      &  csab(7),xn,yn,zn,dd,xap,yap,zap,tietol(*),cs(17,*),xsectors,
      &  gsectors,x3,y3,z3,phi,rcscg(*),rcs0cg(*),zcscg(*),zcs0cg(*),
-     &  straight(9,*),x1,y1,z1,x2,y2,z2,zp,rp,dist,trab(7,*),vold(0:4,*)
+     &  straight(9,*),x1,y1,z1,x2,y2,z2,zp,rp,dist,trab(7,*),
+     &  vold(0:mi(2),*)
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR in cycsymmods: *CYCLIC SYMMETRY MODEL'
@@ -77,6 +78,8 @@
       gsectors=1
       elset='
      &                      '
+      tie='
+     &                   '
       do i=2,n
          if(textpart(i)(1:2).eq.'N=') then
             read(textpart(i)(3:22),'(f20.0)',iostat=istat) xsectors
@@ -152,8 +155,8 @@
 !
       iset=0
       if(elset.eq.'                     ') then
-         write(*,*) '*WARNING in cycsymmods: no element set given'
-         call inputwarning(inpc,ipoinpc,iline)
+         write(*,*) '*INFO in cycsymmods: no element set given'
+         call inputinfo(inpc,ipoinpc,iline)
       else
          do i=1,nset
             if(set(i).eq.elset) then
@@ -162,9 +165,9 @@
             endif
          enddo
          if(iset.eq.0) then
-            write(*,*) '*WARNING in cycsymmods: element set does not'
-            write(*,*) '         exist; '
-            call inputwarning(inpc,ipoinpc,iline)
+            write(*,*) '*ERROR in cycsymmods: element set does not'
+            write(*,*) '       exist; '
+            call inputerror(inpc,ipoinpc,iline)
          endif
       endif
       cs(13,mcs)=iset+0.5
@@ -208,7 +211,7 @@
          write(*,*) '  has not yet been defined.' 
          stop
       endif
-      idep=i
+      jdep=i
 !
       do i=1,nset
          if(set(i).eq.indepset) exit
@@ -218,7 +221,7 @@
          write(*,*) '  has not yet been defined.' 
          stop
       endif
-      iindep=i
+      jindep=i
 !
 !     unit vector along the rotation axis (xn,yn,zn)
 !
@@ -236,7 +239,7 @@
 !     symmetry equations
 !
       l=0
-      do j=istartset(iindep),iendset(iindep)
+      do j=istartset(jindep),iendset(jindep)
          if(ialset(j).gt.0) then
             l=l+1
             if(lprev+l.gt.ncs_) then
@@ -337,9 +340,9 @@ c      write(*,*)
       nodesonaxis=.false.
 !
       nneigh=1
-      do i=istartset(idep),iendset(idep)
+      do i=istartset(jdep),iendset(jdep)
          if(ialset(i).gt.0) then
-            if(i.gt.istartset(idep)) then
+            if(i.gt.istartset(jdep)) then
                if(ialset(i).eq.ialset(i-1)) cycle
             endif
             noded=ialset(i)
@@ -453,9 +456,9 @@ c                  write(*,*) 'phi ',phi
       ncounter=0
       triangulation=.false.
 !
-      do i=istartset(idep),iendset(idep)
+      do i=istartset(jdep),iendset(jdep)
          if(ialset(i).gt.0) then
-            if(i.gt.istartset(idep)) then
+            if(i.gt.istartset(jdep)) then
                if(ialset(i).eq.ialset(i-1)) cycle
             endif
             noded=ialset(i)
@@ -466,7 +469,7 @@ c                  write(*,*) 'phi ',phi
      &         mcs,triangulation,csab,xn,yn,zn,phi,noded,
      &         ncsnodes,nodesonaxis,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
      &         nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
-     &         ifacetet,inodface,ncounter,jobnamec,vold,cfd)
+     &         ifacetet,inodface,ncounter,jobnamec,vold,cfd,mi)
 !
          else
             k=ialset(i-2)
@@ -481,7 +484,7 @@ c                  write(*,*) 'phi ',phi
      &              mcs,ithermal,triangulation,csab,xn,yn,zn,phi,noded,
      &              ncsnodes,nodesonaxis,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
      &              nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
-     &              ifacetet,inodface,ncounter,jobnamec,vold,cfd)
+     &              ifacetet,inodface,ncounter,jobnamec,vold,cfd,mi)
             enddo
          endif
 !

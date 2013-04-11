@@ -57,7 +57,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	       double *xloadold,
                double **t1oldp, int **iambounp, double **xbounoldp, int *iexpl,
                double *plicon, int *nplicon, double *plkcon,int *nplkcon,
-               double *xstate, int *npmat_, char *matname, int *mint_,
+               double *xstate, int *npmat_, char *matname, int *mi,
                int *ncmat_, int *nstate_, double **enerp, char *jobnamec,
                double *ttime, char *set, int *nset, int *istartset,
                int *iendset, int *ialset, int *nprint, char *prlab,
@@ -71,7 +71,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
     *labmpcold=NULL;
 
   int nev,i,j,k, *inum=NULL,*ipobody=NULL,inewton=0,nsectors,
-    iinc,l,iout,ielas,icmd,iprescribedboundary,ndata,nmd,nevd,
+    iinc=0,l,iout,ielas,icmd,iprescribedboundary,ndata,nmd,nevd,
     ndatatot,*iphaseforc=NULL,*iphaseload=NULL,*iphaseboun=NULL,
     *isave=NULL,nfour,ii,ir,ic,mode,noddiam=-1,*nm=NULL,
     *kon=NULL,*ipkon=NULL,*ielmat=NULL,*ielorien=NULL,*inotr=NULL,
@@ -81,7 +81,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
     *ilmpcold=NULL,nmpcold,mpcendold,kflag=2,*iamt1=NULL,ifreebody,
     *itg=NULL,ntg=0,symmetryflag=0,inputformat=0,dashpot,nrhs=1,
     *ipiv=NULL,info,nev2,ngraph,nkg,neg,iflag=1,idummy=1,imax,
-    nzse[3],*nnn=*nnnp;
+      nzse[3],*nnn=*nnnp,mt=mi[1]+1,*ikactmech=NULL,nactmech;
 
   double *d=NULL, *z=NULL,*stiini=NULL,*vini=NULL,*freqnh=NULL,
     *xforcact=NULL, *xloadact=NULL,y,*fr=NULL,*fi=NULL,*cc=NULL,
@@ -92,7 +92,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
     *enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,*qfn=NULL,
     *qfx=NULL, *xbodyact=NULL, *cgr=NULL, *au=NULL,*xbodyi=NULL,
     time,dtime,reltime,*co=NULL,*xboun=NULL,*xbounold=NULL,
-    physcon[1],qa[3],cam[3],accold[1],bet,gam,*ad=NULL,sigma=0.,alpham,betam,
+    physcon[1],qa[3],cam[5],accold[1],bet,gam,*ad=NULL,sigma=0.,alpham,betam,
     fmin,fmax,bias,*freq=NULL,*xforcr=NULL,dd,pi,vreal,constant,
     *xforci=NULL,*xloadr=NULL,*xloadi=NULL,*xbounr=NULL,*xbouni=NULL,
     *br=NULL,*bi=NULL,*ubr=NULL,*ubi=NULL,*mubr=NULL,*mubi=NULL,
@@ -124,7 +124,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   coefmpc=*coefmpcp;labmpc=*labmpcp;ikmpc=*ikmpcp;ilmpc=*ilmpcp;
   fmpc=*fmpcp;iamt1=*iamt1p;t0=*t0p;t1=*t1p;t1old=*t1oldp;
 
-  xstiff=NNEW(double,27**mint_**ne);
+  xstiff=NNEW(double,27*mi[0]**ne);
 
   pi=4.*atan(1.);
   iout=1;
@@ -265,14 +265,14 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       /* determining the maximum amount of sectors */
 
       for(i=0;i<*mcs;i++){
-	  if(cs[17*i]>nsectors) nsectors=cs[17*i];
+	  if(cs[17*i]>nsectors) nsectors=(int)(cs[17*i]+0.5);
       }
 
         /* determining the maximum number of sectors to be plotted */
 
       ngraph=1;
       for(j=0;j<*mcs;j++){
-	  if(cs[17*j+4]>ngraph) ngraph=cs[17*j+4];
+	  if(cs[17*j+4]>ngraph) ngraph=(int)(cs[17*j+4]+0.5);
       }
       nkg=*nk*ngraph;
       neg=*ne*ngraph;
@@ -280,13 +280,14 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       /* allocating field for the expanded structure */
 
       RENEW(co,double,3**nk*nsectors);
+      for(i=3**nk;i<3**nk*nsectors;i++){co[i]=0.;}
       if(*ithermal!=0){
 	  RENEW(t0,double,*nk*nsectors);
 	  RENEW(t1old,double,*nk*nsectors);
 	  RENEW(t1,double,*nk*nsectors);
 	  if(*nam>0) RENEW(iamt1,int,*nk*nsectors);
       }
-      RENEW(nactdof,int,4**nk*nsectors);
+      RENEW(nactdof,int,mt**nk*nsectors);
       if(*ntrans>0) RENEW(inotr,int,2**nk*nsectors);
       RENEW(kon,int,*nkon*nsectors);
       RENEW(ipkon,int,*ne*nsectors);
@@ -323,7 +324,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       RENEW(ipompc,int,*nmpc*nsectors);
       RENEW(nodempc,int,3**mpcend*nsectors);
       RENEW(coefmpc,double,*mpcend*nsectors);
-      RENEW(labmpc,char,20**nmpc*nsectors);
+      RENEW(labmpc,char,20**nmpc*nsectors+1);
       RENEW(ikmpc,int,*nmpc*nsectors);
       RENEW(ilmpc,int,*nmpc*nsectors);
       RENEW(fmpc,double,*nmpc*nsectors);
@@ -335,7 +336,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	alcon,nalcon,alzero,ielmat,ielorien,norien,orab,ntmat_,
 	t0,ithermal,prestr,iprestr,vold,iperturb,sti,nzs,
 	adb,aub,filab,eme,plicon,nplicon,plkcon,nplkcon,
-        xstate,npmat_,matname,mint_,ics,cs,mpcend,ncmat_,
+        xstate,npmat_,matname,mi,ics,cs,mpcend,ncmat_,
         nstate_,mcs,nkon,ener,jobnamec,output,set,nset,istartset,
         iendset,ialset,nprint,prlab,prset,nener,trab,
         inotr,ntrans,ttime,fmpc,&nev,z,iamboun,xbounold,
@@ -344,10 +345,10 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
         &irowe,isolver,nzse,&adbe,&aube,iexpl,
 	ibody,xbody,nbody,cocon,ncocon,tieset,&ntie,&nnn);
 
-      free(vold);vold=NNEW(double,5**nk);
-      RENEW(eme,double,6**mint_**ne);
-      RENEW(xstiff,double,27**mint_**ne);
-      if(*nener==1) RENEW(ener,double,*mint_**ne);
+      free(vold);vold=NNEW(double,mt**nk);
+      RENEW(eme,double,6*mi[0]**ne);
+      RENEW(xstiff,double,27*mi[0]**ne);
+      if(*nener==1) RENEW(ener,double,mi[0]**ne);
   }
 
   fclose(f1);
@@ -379,7 +380,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      ielorien,norien,orab,ntmat_,
 	      t0,t0,ithermal,prestr,iprestr,vold,iperturb,sti,
 	      nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
-	      xstiff,npmat_,&dtime,matname,mint_,ncmat_,
+	      xstiff,npmat_,&dtime,matname,mi,ncmat_,
 	      ttime,&time,istep,&iinc,ibody));*/
 
       /*  zc = damping matrix * eigenmodes */
@@ -491,7 +492,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
       /* calculating the damping coefficients = friction coefficient*2*eigenvalue */
       
-      if(xmodal[9]<0){
+      if(xmodal[10]<0){
 	  for(i=0;i<nev;i++){
 	      if(fabs(d[i])>(1.e-10)){
 		  fric[i]=(alpham+betam*d[i]*d[i]);
@@ -509,17 +510,17 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      FORTRAN(stop,());
 	  }
 	      
-	  /*copy the damping coefficients for every eigenfrequencie from xmodal[10....] */
-	  if(nev<(int)xmodal[9]){
+	  /*copy the damping coefficients for every eigenfrequencie from xmodal[11....] */
+	  if(nev<(int)xmodal[10]){
 	      imax=nev;
 	      printf("*WARNING in dyna: too many modal damping coefficients applied\n");
 	      printf("         damping coefficients corresponding to nonexisting eigenvalues are ignored\n");
 	  }
 	  else{
-	      imax=(int)xmodal[9];
+	      imax=(int)xmodal[10];
 	  }
 	  for(i=0; i<imax; i++){
-	      fric[i]=2.*d[i]*xmodal[10+i];     
+	      fric[i]=2.*d[i]*xmodal[11+i];     
 	  }
 	  
       }
@@ -610,21 +611,21 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       
       /* result fields */
       
-      vr=NNEW(double,5**nk);
-      vi=NNEW(double,5**nk);
-      fn=NNEW(double,4**nk);
+      vr=NNEW(double,mt**nk);
+      vi=NNEW(double,mt**nk);
+      fn=NNEW(double,mt**nk);
       stn=NNEW(double,6**nk);
       inum=NNEW(int,*nk);
-      stx=NNEW(double,6**mint_**ne);
-      if(*ithermal>1) {qfn=NNEW(double,3**nk);qfx=NNEW(double,3**mint_**ne);}
+      stx=NNEW(double,6*mi[0]**ne);
+      if(*ithermal>1) {qfn=NNEW(double,3**nk);qfx=NNEW(double,3*mi[0]**ne);}
       
-      if(strcmp1(&filab[18],"E   ")==0) een=NNEW(double,6**nk);
-      if(strcmp1(&filab[36],"ENER")==0) enern=NNEW(double,*nk);
+      if(strcmp1(&filab[261],"E   ")==0) een=NNEW(double,6**nk);
+      if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,*nk);
       
-      eei=NNEW(double,6**mint_**ne);
+      eei=NNEW(double,6*mi[0]**ne);
       if(*nener==1){
-	  stiini=NNEW(double,6**mint_**ne);
-	  enerini=NNEW(double,*mint_**ne);}
+	  stiini=NNEW(double,6*mi[0]**ne);
+	  enerini=NNEW(double,mi[0]**ne);}
       
       if(iprescribedboundary){
 	  
@@ -667,7 +668,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       }
       
       for(l=0;l<ndatatot;l=l+*jout){
-	  for(i=0;i<6**mint_**ne;i++){eme[i]=0.;}
+	  for(i=0;i<6*mi[0]**ne;i++){eme[i]=0.;}
 	  time=freq[l]/(2.*pi);
 	  *ttime=time;
 
@@ -686,7 +687,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	        ielorien,norien,orab,ntmat_,
 	        t0,t0,ithermal,prestr,iprestr,vold,iperturb,sti,
 	        nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
-	        xstiff,npmat_,&dtime,matname,mint_,ncmat_,
+	        xstiff,npmat_,&dtime,matname,mi,ncmat_,
 	        ttime,&time,istep,&iinc,ibody));
 
 	      /*  zc = damping matrix * eigenmodes */
@@ -728,7 +729,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
                nam,ampli,&time,&reltime,ttime,&dtime,ithermal,nmethod,
 	       xbounold,xboun,xbounact,iamboun,nboun,nodeboun,ndirboun,
                nodeforc,ndirforc,istep,&iinc,co,vold,itg,&ntg,amname,
-               ikboun,ilboun,nelemload,sideload));
+	       ikboun,ilboun,nelemload,sideload,mi));
 	  
 	  /* real part of forces */
 	  
@@ -762,7 +763,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		       t0,t1act,ithermal,iprestr,vold,iperturb,iexpl,plicon,
 		       nplicon,plkcon,nplkcon,
 		       npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
-                       xbodyold,&reltime,veold,matname));
+                       xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech));
 	  
 	  /* correction for nonzero SPC's */
 	  
@@ -839,7 +840,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		       t0,t1act,ithermal,iprestr,vold,iperturb,iexpl,plicon,
 		       nplicon,plkcon,nplkcon,
 		       npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
-                       xbodyold,&reltime,veold,matname));
+                       xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech));
 	  
 	  /* correction for nonzero SPC's */
 	  
@@ -983,6 +984,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      }
 	  }
 	  
+	  memset(&vr[0],0.,sizeof(double)*mt**nk);
 	  if(iprescribedboundary){
 	      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,vr,stn,inum,
 		  stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
@@ -993,7 +995,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[1],
 		  veold,accold,&bet,&gam,&dtime,&time,ttime,
 		  plicon,nplicon,plkcon,nplkcon,
-		  xstateini,xstiff,xstate,npmat_,epn,matname,mint_,&ielas,
+		  xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,
 		  &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,
 		  enern,sti,xstaten,eei,enerini,cocon,ncocon,
 		  set,nset,istartset,iendset,ialset,nprint,prlab,prset,
@@ -1009,7 +1011,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[1],
 		  veold,accold,&bet,&gam,&dtime,&time,ttime,
 		  plicon,nplicon,plkcon,nplkcon,
-		  xstateini,xstiff,xstate,npmat_,epn,matname,mint_,&ielas,
+		  xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,
 		  &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,
 		  enern,sti,xstaten,eei,enerini,cocon,ncocon,
 		  set,nset,istartset,iendset,ialset,nprint,prlab,prset,
@@ -1019,15 +1021,17 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  (*kode)++;
 	  
 	  mode=-1;
-	  ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
+	  if(strcmp1(&filab[1044],"ZZS")==0){
+	      neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
+	  }
 	  FORTRAN(out,(co,&nkg,kon,ipkon,lakon,&neg,vr,stn,inum,nmethod,
             kode,filab,een,t1,fn,ttime,epn,ielmat,matname,enern,xstaten,
             nstate_,istep,&iinc,
-	    iperturb,ener,mint_,output,ithermal,qfn,&mode,&noddiam,
+	    iperturb,ener,mi,output,ithermal,qfn,&mode,&noddiam,
             trab,inotr,ntrans,orab,ielorien,norien,description,
-	    ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,stnmax,&idummy,veold,
-            &neg,cs));
-	  free(ipneigh);free(neigh);
+	    ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,
+            &neg,cs,set,nset,istartset,iendset,ialset));
+	  if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
 	  
 	  /* calculating the imaginary response */
 	  
@@ -1047,6 +1051,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      }
 	  }
 	  
+	  memset(&vi[0],0.,sizeof(double)*mt**nk);
 	  if(iprescribedboundary){
 	      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,vi,stn,inum,
 		  stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
@@ -1057,7 +1062,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
                   ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[1],
                   veold,accold,&bet,&gam,&dtime,&time,ttime,
                   plicon,nplicon,plkcon,nplkcon,
-                  xstateini,xstiff,xstate,npmat_,epn,matname,mint_,&ielas,
+                  xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,
                   &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,
                   enern,sti,xstaten,eei,enerini,cocon,ncocon,
                   set,nset,istartset,iendset,ialset,nprint,prlab,prset,
@@ -1073,7 +1078,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
                   ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[1],
                   veold,accold,&bet,&gam,&dtime,&time,ttime,
                   plicon,nplicon,plkcon,nplkcon,
-                  xstateini,xstiff,xstate,npmat_,epn,matname,mint_,&ielas,
+                  xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,
                   &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,
                   enern,sti,xstaten,eei,enerini,cocon,ncocon,
                   set,nset,istartset,iendset,ialset,nprint,prlab,prset,
@@ -1082,39 +1087,39 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  
 	  /* calculating the magnitude and phase */
 	  
-	  if(strcmp1(&filab[60],"PU")==0){
+	  if(strcmp1(&filab[870],"PU")==0){
 	      
 	      constant=180./pi;
-	      va=NNEW(double,5**nk);
-	      vp=NNEW(double,5**nk);
+	      va=NNEW(double,mt**nk);
+	      vp=NNEW(double,mt**nk);
 	      
 	      if(*ithermal<=1){
 		  for(i=0;i<*nk;i++){
 		      for(j=1;j<4;j++){
-			  vreal=vr[5*i+j];
-			  va[5*i+j]=sqrt(vr[5*i+j]*vr[5*i+j]+vi[5*i+j]*vi[5*i+j]);
+			  vreal=vr[mt*i+j];
+			  va[mt*i+j]=sqrt(vr[mt*i+j]*vr[mt*i+j]+vi[mt*i+j]*vi[mt*i+j]);
 			  if(fabs(vreal)<1.e-10){
-			      if(vi[5*i+j]>0.){vp[5*i+j]=90.;}
-			      else{vp[5*i+j]=-90.;}
+			      if(vi[mt*i+j]>0.){vp[mt*i+j]=90.;}
+			      else{vp[mt*i+j]=-90.;}
 			  }
 			  else{
-			      vp[5*i+j]=atan(vi[5*i+j]/vreal)*constant;
-			      if(vreal<0.) vp[5*i+j]+=180.;
+			      vp[mt*i+j]=atan(vi[mt*i+j]/vreal)*constant;
+			      if(vreal<0.) vp[mt*i+j]+=180.;
 			  }
 		      }
 		  }
 	      }
 	      else{
 		  for(i=0;i<*nk;i++){
-		      vreal=vr[5*i];
-		      va[5*i]=sqrt(vr[5*i]*vr[5*i]+vi[5*i]*vi[5*i]);
+		      vreal=vr[mt*i];
+		      va[mt*i]=sqrt(vr[mt*i]*vr[mt*i]+vi[mt*i]*vi[mt*i]);
 		      if(fabs(vreal)<1.e-10){
-			  if(vi[5*i]>0){vp[5*i]=90.;}
-			  else{vp[5*i]=-90.;}
+			  if(vi[mt*i]>0){vp[mt*i]=90.;}
+			  else{vp[mt*i]=-90.;}
 		      }
 		      else{
-			  vp[5*i]=atan(vi[5*i]/vreal)*constant;
-			  if(vreal<0.) vp[5*i]+=180.;
+			  vp[mt*i]=atan(vi[mt*i]/vreal)*constant;
+			  if(vreal<0.) vp[mt*i]+=180.;
 		      }
 		  }
 	      }
@@ -1123,16 +1128,18 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  (*kode)++;
 	  mode=0;
 	  
-	  ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
+	  if(strcmp1(&filab[1044],"ZZS")==0){
+	      neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
+	  }
 	  FORTRAN(out,(co,&nkg,kon,ipkon,lakon,&neg,vi,stn,inum,nmethod,
             kode,filab,
             een,t1,fn,ttime,epn,ielmat,matname,enern,xstaten,nstate_,istep,
             &iinc,
-	    iperturb,ener,mint_,output,ithermal,qfn,&mode,&noddiam,
+	    iperturb,ener,mi,output,ithermal,qfn,&mode,&noddiam,
             trab,inotr,ntrans,orab,ielorien,norien,description,
-	    ipneigh,neigh,stx,va,vp,stnr,stni,vmax,stnmax,&idummy,veold,
-            &neg,cs));
-	  free(ipneigh);free(neigh);
+	    ipneigh,neigh,stx,va,vp,stnr,stni,vmax,stnmax,&ngraph,veold,
+            &neg,cs,set,nset,istartset,iendset,ialset));
+	  if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
 
 	  free(va);free(vp);
 	  
@@ -1160,8 +1167,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       free(eei);
       if(*nener==1){free(stiini);free(enerini);}
       
-      if(strcmp1(&filab[18],"E   ")==0) free(een);
-      if(strcmp1(&filab[36],"ENER")==0) free(enern);
+      if(strcmp1(&filab[261],"E   ")==0) free(een);
+      if(strcmp1(&filab[522],"ENER")==0) free(enern);
       if(*ithermal>1) {free(qfn);free(qfx);}
       
       /* updating the loading at the end of the step; 
@@ -1241,7 +1248,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
       /* calculating the damping coefficients = friction coefficient*2*eigenvalue */
       
-      if(xmodal[9]<0){
+      if(xmodal[10]<0){
 	  for(i=0;i<nev;i++){
 	      if(fabs(d[i])>(1.e-10)){
 		  fric[i]=(alpham+betam*d[i]*d[i]);
@@ -1259,17 +1266,17 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      FORTRAN(stop,());
 	  }
 	      
-	  /*copy the damping coefficients for every eigenfrequencie from xmodal[10....] */
-	  if(nev<(int)xmodal[9]){
+	  /*copy the damping coefficients for every eigenfrequencie from xmodal[11....] */
+	  if(nev<(int)xmodal[10]){
 	      imax=nev;
 	      printf("*WARNING in dyna: too many modal damping coefficients applied\n");
 	      printf("         damping coefficients corresponding to nonexisting eigenvalues are ignored\n");
 	  }
 	  else{
-	      imax=(int)xmodal[9];
+	      imax=(int)xmodal[10];
 	  }
 	  for(i=0; i<imax; i++){
-	      fric[i]=2.*d[i]*xmodal[10+i];     
+	      fric[i]=2.*d[i]*xmodal[11+i];     
 	  }
 	  
       }
@@ -1288,7 +1295,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	    iamt1,nk,amta,namta,nam,ampli,&time,&reltime,ttime,&dtime,
             ithermal,nmethod,xbounold,xboun,&xbounact[l**nboun],iamboun,nboun,
 	    nodeboun,ndirboun,nodeforc,ndirforc,istep,&iinc,co,vold,itg,&ntg,
-            amname,ikboun,ilboun,nelemload,sideload));
+	    amname,ikboun,ilboun,nelemload,sideload,mi));
 	  
       }
 
@@ -1443,7 +1450,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       RENEW(freqnh,double,ndatatot);
 
       for(ii=0;ii<ndatatot;ii++){
-	  for(i=0;i<6**mint_**ne;i++){eme[i]=0.;}
+	  for(i=0;i<6*mi[0]**ne;i++){eme[i]=0.;}
 
 	  sprintf(description,"%12f",freqnh[ii]/(2.*pi));
 	  
@@ -1504,7 +1511,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	            ielorien,norien,orab,ntmat_,
 	            t0,t0,ithermal,prestr,iprestr,vold,iperturb,sti,
 	            nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
-	            xstiff,npmat_,&dtime,matname,mint_,ncmat_,
+	            xstiff,npmat_,&dtime,matname,mi,ncmat_,
 	            ttime,&freq[l],istep,&iinc,ibody));
 		  
 		  /*  zc = damping matrix * eigenmodes */
@@ -1562,7 +1569,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		t0,t1act,ithermal,iprestr,vold,iperturb,iexpl,plicon,
 		nplicon,plkcon,nplkcon,
 		npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
-			   xbodyold,&reltime,veold,matname));
+		xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech));
 	      
 	      for(i=0;i<neq[1];i++){bi[i]=0.;}
 	      
@@ -1749,20 +1756,20 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  
 	  /* result fields */
 	  
-	  vr=NNEW(double,5**nk);
-	  fn=NNEW(double,4**nk);
+	  vr=NNEW(double,mt**nk);
+	  fn=NNEW(double,mt**nk);
 	  stn=NNEW(double,6**nk);
 	  inum=NNEW(int,*nk);
-	  stx=NNEW(double,6**mint_**ne);
-	  if(*ithermal>1) {qfn=NNEW(double,3**nk);qfx=NNEW(double,3**mint_**ne);}
+	  stx=NNEW(double,6*mi[0]**ne);
+	  if(*ithermal>1) {qfn=NNEW(double,3**nk);qfx=NNEW(double,3*mi[0]**ne);}
 	  
-	  if(strcmp1(&filab[18],"E   ")==0) een=NNEW(double,6**nk);
-	  if(strcmp1(&filab[36],"ENER")==0) enern=NNEW(double,*nk);
+	  if(strcmp1(&filab[261],"E   ")==0) een=NNEW(double,6**nk);
+	  if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,*nk);
 	  
-	  eei=NNEW(double,6**mint_**ne);
+	  eei=NNEW(double,6*mi[0]**ne);
 	  if(*nener==1){
-	      stiini=NNEW(double,6**mint_**ne);
-	      enerini=NNEW(double,*mint_**ne);}
+	      stiini=NNEW(double,6*mi[0]**ne);
+	      enerini=NNEW(double,mi[0]**ne);}
 	  
 	  /* storing the results */
 	  
@@ -1770,6 +1777,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      time=tmin+2.*pi/freqnh[ii]*(double)l/(double)nfour;
 	      *ttime=time;
 	      
+	      memset(&vr[0],0.,sizeof(double)*mt**nk);
 	      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,vr,stn,inum,
 		  stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
 		  ielmat,ielorien,norien,orab,ntmat_,t0,t1,
@@ -1779,7 +1787,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[1],
 		  veold,accold,&bet,&gam,&dtime,&time,ttime,
 		  plicon,nplicon,plkcon,nplkcon,
-		  xstateini,xstiff,xstate,npmat_,epn,matname,mint_,&ielas,
+		  xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,
 		  &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,
 		  enern,sti,xstaten,eei,enerini,cocon,ncocon,
 		  set,nset,istartset,iendset,ialset,nprint,prlab,prset,
@@ -1789,22 +1797,25 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      (*kode)++;
 	      mode=-1;
 	      
-	      ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
+	      if(strcmp1(&filab[1044],"ZZS")==0){
+		  neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
+	      }
 	      FORTRAN(out,(co,&nkg,kon,ipkon,lakon,&neg,vr,stn,inum,nmethod,kode,
 		   filab,een,t1,fn,ttime,epn,ielmat,matname,enern,xstaten,
-                   nstate_,istep,&iinc,iperturb,ener,mint_,output,ithermal,
+                   nstate_,istep,&iinc,iperturb,ener,mi,output,ithermal,
                    qfn,&mode,&noddiam,trab,inotr,ntrans,orab,ielorien,norien,
 		   description,ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,
-		   stnmax,&idummy,veold,&neg,cs));
-	      free(ipneigh);free(neigh);
+		   stnmax,&ngraph,veold,&neg,cs,set,nset,istartset,iendset,
+                   ialset));
+	      if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
 
 	  }
 	  
 	  free(vr);free(fn);free(stn);free(inum);free(stx);free(eei);free(btot);
 	  if(*ithermal>1) {free(qfn);free(qfx);}
 	  
-	  if(strcmp1(&filab[18],"E   ")==0) free(een);
-	  if(strcmp1(&filab[36],"ENER")==0) free(enern);
+	  if(strcmp1(&filab[261],"E   ")==0) free(een);
+	  if(strcmp1(&filab[522],"ENER")==0) free(enern);
 	  
 	  if(*nener==1){free(stiini);free(enerini);}
 	  
@@ -1854,7 +1865,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  RENEW(t1,double,*nk);
 	  if(*nam>0) RENEW(iamt1,int,*nk);
       }
-      RENEW(nactdof,int,4**nk);
+      RENEW(nactdof,int,mt**nk);
       if(*ntrans>0) RENEW(inotr,int,2**nk);
       RENEW(kon,int,*nkon);
       RENEW(ipkon,int,*ne);
@@ -1874,7 +1885,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       RENEW(ipompc,int,*nmpc);
       RENEW(nodempc,int,3**mpcend);
       RENEW(coefmpc,double,*mpcend);
-      RENEW(labmpc,char,20**nmpc);
+      RENEW(labmpc,char,20**nmpc+1);
       RENEW(ikmpc,int,*nmpc);
       RENEW(ilmpc,int,*nmpc);
       RENEW(fmpc,double,*nmpc);
@@ -1890,9 +1901,9 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       free(ipompcold);free(nodempcold);free(coefmpcold);
       free(labmpcold);free(ikmpcold);free(ilmpcold);
 
-      RENEW(vold,double,5**nk);
-      RENEW(eme,double,6**mint_**ne);
-      if(*nener==1)RENEW(ener,double,*mint_**ne);
+      RENEW(vold,double,mt**nk);
+      RENEW(eme,double,6*mi[0]**ne);
+      if(*nener==1)RENEW(ener,double,mi[0]**ne);
 
 /* distributed loads */
 

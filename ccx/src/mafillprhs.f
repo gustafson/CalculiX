@@ -20,7 +20,7 @@
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,nelemface,sideface,
      &  nface,b,nactdoh,icolp,jqp,irowp,neqp,nzlp,nmethod,ikmpc,ilmpc,
      &  ikboun,ilboun,rhcon,nrhcon,ielmat,ntmat_,vold,voldaux,nzsp,
-     &  dtime,matname,mint_,ncmat_,shcon,nshcon,v,theta1,
+     &  dtime,matname,mi,ncmat_,shcon,nshcon,v,theta1,
      &  iexplicit,physcon,nea,neb)
 !
 !     filling the rhs b of the pressure equations (step 2)
@@ -39,9 +39,10 @@
       integer nk,ne,nboun,nmpc,nface,neqp,nzlp,nmethod,nzsp,i,j,k,l,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,node1,node2,kflag,ntmat_,indexe,nope,
-     &  mint_,i0,ncmat_,idof3
+     &  mi(2),i0,ncmat_,idof3
 !
-      real*8 co(3,*),xboun(*),coefmpc(*),b(*),v(0:4,*),vold(0:4,*),
+      real*8 co(3,*),xboun(*),coefmpc(*),b(*),v(0:mi(2),*),
+     &  vold(0:mi(2),*),
      &  voldaux(0:4,*),ff(60),sm(60,60),rhcon(0:1,ntmat_,*),
      &  shcon(0:3,ntmat_,*),theta1,physcon(*)
 !
@@ -93,7 +94,7 @@ c      endif
 !
         call e_c3d_prhs(co,nk,konl,lakon(i),sm,ff,i,nmethod,rhcon,
      &       nrhcon,ielmat,ntmat_,v,vold,voldaux,nelemface,sideface,
-     &       nface,dtime,matname,mint_,shcon,nshcon,theta1,physcon,
+     &       nface,dtime,matname,mi(1),shcon,nshcon,theta1,physcon,
      &       iexplicit)
 !
         do jj=1,nope

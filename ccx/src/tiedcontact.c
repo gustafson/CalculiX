@@ -28,7 +28,7 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
                int **ipompcp, char **labmpcp, int **ikmpcp, int **ilmpcp,
                double **fmpcp, int **nodempcp, double **coefmpcp,
 	       int *ithermal, double *co, double *vold, int *cfd,
-               int *nmpc_){
+	       int *nmpc_, int *mi){
 
   char kind[2]="T",*labmpc=NULL;
 
@@ -36,7 +36,7 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
       *ny=NULL,*nz=NULL,*ifaceslave=NULL,*istartfield=NULL,
       *iendfield=NULL,*ifield=NULL,ntrimax,index,indexold,
       smallsliding,ncont,ncone,nterms,*ipompc=NULL,*ikmpc=NULL,
-      *ilmpc=NULL,*nodempc=NULL,ismallsliding,neq,neqterms,
+      *ilmpc=NULL,*nodempc=NULL,ismallsliding=0,neq,neqterms,
       nmpctied,mortar=0;
 
   double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL,
@@ -79,7 +79,7 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
   cg=NNEW(double,3*ncont);
   straight=NNEW(double,16*ncont);
   
-  FORTRAN(updatecont,(koncont,&ncont,co,vold,cg,straight));
+  FORTRAN(updatecont,(koncont,&ncont,co,vold,cg,straight,mi));
   
   /* determining the nodes belonging to the slave face surfaces */
 
@@ -115,7 +115,7 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
      nconf: number of MPC's due to facal slave surfaces */  
 
   RENEW(ipompc,int,*nmpc_+neq);
-  RENEW(labmpc,char,20*(*nmpc_+neq));
+  RENEW(labmpc,char,20*(*nmpc_+neq)+1);
   RENEW(ikmpc,int,*nmpc_+neq);
   RENEW(ilmpc,int,*nmpc_+neq);
   RENEW(fmpc,double,*nmpc_+neq);
@@ -171,7 +171,7 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
   /* reallocating the MPC fields */
 
   /*  RENEW(ipompc,int,nmpc_);
-  RENEW(labmpc,char,20*nmpc_);
+  RENEW(labmpc,char,20*nmpc_+1);
   RENEW(ikmpc,int,nmpc_);
   RENEW(ilmpc,int,nmpc_);
   RENEW(fmpc,double,nmpc_);*/

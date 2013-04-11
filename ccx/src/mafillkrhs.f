@@ -20,7 +20,7 @@
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,nelemface,sideface,
      &  nface,nactdok,neqk,nmethod,ikmpc,ilmpc,
      &  ikboun,ilboun,rhcon,nrhcon,ielmat,ntmat_,vold,voldaux,nzsk,
-     &  dtime,matname,mint_,ncmat_,shcon,nshcon,v,theta1,
+     &  dtime,matname,mi,ncmat_,shcon,nshcon,v,theta1,
      &  bk,bt,voldtu,isolidsurf,nsolidsurf,ifreestream,nfreestream,
      &  xsolidsurf,yy,compressible,turbulent)
 !
@@ -45,9 +45,10 @@
       integer nk,ne,nboun,nmpc,nface,neqk,nmethod,nzsk,i,j,k,jj,
      &  id,ist,index,jdof1,idof1,
      &  node1,kflag,ntmat_,indexe,nope,
-     &  mint_,i0,ncmat_
+     &  mi(2),i0,ncmat_
 !
-      real*8 co(3,*),xboun(*),coefmpc(*),bk(*),v(0:4,*),vold(0:4,*),
+      real*8 co(3,*),xboun(*),coefmpc(*),bk(*),v(0:mi(2),*),
+     &  vold(0:mi(2),*),
      &  voldaux(0:4,*),ffk(60),rhcon(0:1,ntmat_,*),yy(*),
      &  shcon(0:3,ntmat_,*),theta1,bt(*),fft(60),voldtu(2,*),
      &  xsolidsurf(*)
@@ -88,7 +89,7 @@
         enddo
 !
         call e_c3d_krhs(co,nk,konl,lakon(i),ffk,fft,i,nmethod,rhcon,
-     &       nrhcon,ielmat,ntmat_,vold,voldaux,dtime,matname,mint_,
+     &       nrhcon,ielmat,ntmat_,vold,voldaux,dtime,matname,mi(1),
      &       shcon,nshcon,voldtu,compressible,yy,nelemface,sideface,
      &       nface,turbulent)
 !

@@ -28,16 +28,16 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      int *nodeboun, int *ndirboun, int *nboun, int *ipompc,
 	      int *nodempc, int *nmpc, int *nactdof, int *icol,
 	      int *jq, int **mast1p, int **irowp, int *isolver, int *neq,
-	      int *nnn, int *ikmpc, int *ilmpc,
-	      int *ipointer, int *nzs, int *nmethod,
-              int *ithermal, int *ikboun, int *ilboun, int *iperturb){
+	      int *nnn, int *ikmpc, int *ilmpc,int *ipointer, int *nzs, 
+              int *nmethod,int *ithermal, int *ikboun, int *ilboun, 
+              int *iperturb, int *mi){
 
   char lakonl[2]=" \0";
 
   int i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
     ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,
     index1,index2,m,node,nzs_,ist,kflag,indexe,nope,isize,*mast1=NULL,
-      *irow=NULL,icolumn,nmastboun,fluid=0;
+      *irow=NULL,icolumn,nmastboun,fluid=0,mt=mi[1]+1,jmax;
 
   /* the indices in the comments follow FORTRAN convention, i.e. the
      fields start with 1 */
@@ -50,7 +50,7 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 
   /* initialisation of nactmpc */
 
-  for(i=0;i<4**nk;++i){nactdof[i]=0;}
+  for(i=0;i<mt**nk;++i){nactdof[i]=0;}
 
   /* determining the mechanical active degrees of freedom due to elements */
 
@@ -77,7 +77,7 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  for(j=0;j<nope;++j){
 	      node=kon[indexe+j]-1;
 	      for(k=1;k<4;++k){
-		  nactdof[4*node+k]=1;
+		  nactdof[mt*node+k]=1;
 	      }
 	  }
       }
@@ -101,7 +101,7 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  
 	  for(j=0;j<nope;++j){
 	      node=kon[indexe+j]-1;
-	      nactdof[4*node]=1;
+	      nactdof[mt*node]=1;
 	  }
       }
   }
@@ -113,7 +113,8 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  index=ipompc[i]-1;
 	  do{
 	      if(nodempc[3*index+1]<4){
-		  nactdof[4*nodempc[3*index]+nodempc[3*index+1]-4]=1;
+//		  nactdof[mt*nodempc[3*index]+nodempc[3*index+1]-4]=1;
+		  nactdof[mt*(nodempc[3*index]-1)+nodempc[3*index+1]]=1;
 	      }
 	      index=nodempc[3*index+2];
 	      if(index==0) break;
@@ -126,40 +127,41 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 
   for(i=0;i<*nboun;++i){
       if(ndirboun[i]>3){continue;}
-      nactdof[4*(nodeboun[i]-1)+ndirboun[i]]=0;
+      nactdof[mt*(nodeboun[i]-1)+ndirboun[i]]=0;
   }
 
   for(i=0;i<*nmpc;++i){
     index=ipompc[i]-1;
     if(nodempc[3*index+1]>3) continue;
-    nactdof[4*nodempc[3*index]+nodempc[3*index+1]-4]=0;
+    nactdof[mt*(nodempc[3*index]-1)+nodempc[3*index+1]]=0;
   }
  
   /* numbering the active degrees of freedom */
   
   neq[0]=0;
+  jmax=4;if(mi[1]+1<4){jmax=mi[1]+1;}
   for(i=0;i<*nk;++i){
-    for(j=1;j<4;++j){
-      if(nactdof[4*nnn[i]+j-4]!=0){
+    for(j=1;j<jmax;++j){
+	if(nactdof[mt*(nnn[i]-1)+j]!=0){
         if((*ithermal<2)||(*ithermal>=3)){
           ++neq[0];
-          nactdof[4*nnn[i]+j-4]=neq[0];
+          nactdof[mt*(nnn[i]-1)+j]=neq[0];
         }
         else{
-          nactdof[4*nnn[i]+j-4]=0;
+	    nactdof[mt*(nnn[i]-1)+j]=0;
         }
       }
     }
   }
   neq[1]=neq[0];
   for(i=0;i<*nk;++i){
-    if(nactdof[4*nnn[i]-4]!=0){
+      if(nactdof[mt*(nnn[i]-1)]!=0){
       if(*ithermal>1){
         ++neq[1];
-        nactdof[4*nnn[i]-4]=neq[1];
+        nactdof[mt*(nnn[i]-1)]=neq[1];
       }
       else{
-        nactdof[4*nnn[i]-4]=0;
+	  nactdof[mt*(nnn[i]-1)]=0;
       }
     }
   }
@@ -205,7 +207,7 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	k=jj-3*j;
 	
 	node1=kon[indexe+j];
-	jdof1=nactdof[4*(node1-1)+k+1];
+	jdof1=nactdof[mt*(node1-1)+k+1];
 	
 	for(ll=jj;ll<3*nope;++ll){
 	  
@@ -213,7 +215,7 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  m=ll-3*l;
 	  
 	  node2=kon[indexe+l];
-	  jdof2=nactdof[4*(node2-1)+m+1];
+	  jdof2=nactdof[mt*(node2-1)+m+1];
 	  
 	  /* check whether one of the DOF belongs to a SPC or MPC */
 	  
@@ -244,7 +246,8 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		index=nodempc[3*ist-1];
 		if(index==0) continue;
 		while(1){
-		  idof2=nactdof[4*nodempc[3*index-3]+nodempc[3*index-2]-4];
+//		  idof2=nactdof[mt*nodempc[3*index-3]+nodempc[3*index-2]-4];
+		    idof2=nactdof[mt*(nodempc[3*index-3]-1)+nodempc[3*index-2]];
 		  if(idof2!=0){
 		    insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);
 		  }
@@ -289,10 +292,12 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		index1=nodempc[3*ist-1];
 		if(index1==0) continue;
 		while(1){
-		  idof1=nactdof[4*nodempc[3*index1-3]+nodempc[3*index1-2]-4];
+//		  idof1=nactdof[mt*nodempc[3*index1-3]+nodempc[3*index1-2]-4];
+		    idof1=nactdof[mt*(nodempc[3*index1-3]-1)+nodempc[3*index1-2]];
 		  index2=index1;
 		  while(1){
-		    idof2=nactdof[4*nodempc[3*index2-3]+nodempc[3*index2-2]-4];
+//		    idof2=nactdof[mt*nodempc[3*index2-3]+nodempc[3*index2-2]-4];
+		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
 		    if((idof1!=0)&&(idof2!=0)){
 		      insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);}
 		    index2=nodempc[3*index2-1];
@@ -311,7 +316,8 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		index1=nodempc[3*ist1-1];
 		if(index1==0) continue;
 		while(1){
-		  idof1=nactdof[4*nodempc[3*index1-3]+nodempc[3*index1-2]-4];
+//		  idof1=nactdof[mt*nodempc[3*index1-3]+nodempc[3*index1-2]-4];
+		    idof1=nactdof[mt*(nodempc[3*index1-3]-1)+nodempc[3*index1-2]];
 		  ist2=ipompc[id2-1];
 		  index2=nodempc[3*ist2-1];
 		  if(index2==0){
@@ -320,7 +326,8 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		    else{continue;}
 		  }
 		  while(1){
-		    idof2=nactdof[4*nodempc[3*index2-3]+nodempc[3*index2-2]-4];
+//		    idof2=nactdof[mt*nodempc[3*index2-3]+nodempc[3*index2-2]-4];
+		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
 		    if((idof1!=0)&&(idof2!=0)){
 		      insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);}
 		    index2=nodempc[3*index2-1];
@@ -363,14 +370,14 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	j=jj;
 	
 	node1=kon[indexe+j];
-	jdof1=nactdof[4*(node1-1)];
+	jdof1=nactdof[mt*(node1-1)];
 	
 	for(ll=jj;ll<nope;++ll){
 	  
 	  l=ll;
 	  
 	  node2=kon[indexe+l];
-	  jdof2=nactdof[4*(node2-1)];
+	  jdof2=nactdof[mt*(node2-1)];
 	  
 	  /* check whether one of the DOF belongs to a SPC or MPC */
 	  
@@ -401,7 +408,8 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		index=nodempc[3*ist-1];
 		if(index==0) continue;
 		while(1){
-		  idof2=nactdof[4*nodempc[3*index-3]+nodempc[3*index-2]-4];
+//		  idof2=nactdof[mt*nodempc[3*index-3]+nodempc[3*index-2]-4];
+		    idof2=nactdof[mt*(nodempc[3*index-3]-1)+nodempc[3*index-2]];
 		  if(idof2!=0){
 		    insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);
 		  }
@@ -445,10 +453,12 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		index1=nodempc[3*ist-1];
 		if(index1==0) continue;
 		while(1){
-		  idof1=nactdof[4*nodempc[3*index1-3]+nodempc[3*index1-2]-4];
+//		  idof1=nactdof[mt*nodempc[3*index1-3]+nodempc[3*index1-2]-4];
+		    idof1=nactdof[mt*(nodempc[3*index1-3]-1)+nodempc[3*index1-2]];
 		  index2=index1;
 		  while(1){
-		    idof2=nactdof[4*nodempc[3*index2-3]+nodempc[3*index2-2]-4];
+//		    idof2=nactdof[mt*nodempc[3*index2-3]+nodempc[3*index2-2]-4];
+		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
 		    if((idof1!=0)&&(idof2!=0)){
 		      insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);}
 		    index2=nodempc[3*index2-1];
@@ -467,7 +477,8 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		index1=nodempc[3*ist1-1];
 		if(index1==0) continue;
 		while(1){
-		  idof1=nactdof[4*nodempc[3*index1-3]+nodempc[3*index1-2]-4];
+//		  idof1=nactdof[mt*nodempc[3*index1-3]+nodempc[3*index1-2]-4];
+		    idof1=nactdof[mt*(nodempc[3*index1-3]-1)+nodempc[3*index1-2]];
 		  ist2=ipompc[id2-1];
 		  index2=nodempc[3*ist2-1];
 		  if(index2==0){
@@ -476,7 +487,8 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		    else{continue;}
 		  }
 		  while(1){
-		    idof2=nactdof[4*nodempc[3*index2-3]+nodempc[3*index2-2]-4];
+//		    idof2=nactdof[mt*nodempc[3*index2-3]+nodempc[3*index2-2]-4];
+		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
 		    if((idof1!=0)&&(idof2!=0)){
 		      insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);}
 		    index2=nodempc[3*index2-1];
@@ -500,7 +512,8 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	node1=0;
 	for(j=0;j<*nk;j++){
 	  for(k=0;k<4;++k){
-	    if(nactdof[4*nnn[j]+k-4]==i+1){
+//	    if(nactdof[mt*nnn[j]+k-4]==i+1){
+	      if(nactdof[mt*(nnn[j]-1)+k]==i+1){
 	      node1=nnn[j];
 	      idof1=k;
 	      break;

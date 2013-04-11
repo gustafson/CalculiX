@@ -22,7 +22,7 @@
      &  mcs,triangulation,csab,xn,yn,zn,phi,noded,ncsnodes,
      &  nodesonaxis,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,nzcg,jcs,lcs,
      &  kontri,straight,ne,ipkon,kon,lakon,ifacetet,inodface,ncounter,
-     &  jobnamec,vold,cfd)
+     &  jobnamec,vold,cfd,mi)
 !
 !     generate cyclic mpc's
 !
@@ -43,12 +43,12 @@
      &     number,idof,ndir,node,ncsnodes,id,mpcfreeold,
      &     mcs,nrcg(*),nzcg(*),jcs(*),lcs(*),nodef(8),
      &     netri,ifacetet(*),inodface(*),lathyp(3,6),inum,one,i,
-     &     noden(10),ncounter,ier,ipos,cfd
+     &     noden(10),ncounter,ier,ipos,cfd,mi(2)
 !     
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
      &  csab(7),xn,yn,zn,xap,yap,zap,rp,zp,al(3,3),ar(3,3),phi,
      &  x2,y2,z2,x3,y3,z3,rcscg(*),rcs0cg(*),zcscg(*),zcs0cg(*),
-     &  straight(9,*),ratio(8),vold(0:4,*)
+     &  straight(9,*),ratio(8),vold(0:mi(2),*)
 !
       save netri
 !     
@@ -166,7 +166,7 @@ c      nneigh=1
 !
 !        copying the initial conditions for the new node
 !
-         do i=0,4
+         do i=0,mi(2)
             vold(i,nodei)=vold(i,noded)
          enddo
 !

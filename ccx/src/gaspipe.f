@@ -19,7 +19,7 @@
       subroutine gaspipe(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_)
+     &        nshcon,rhcon,nrhcon,ntmat_,mi)
 !     
 !     pipe with friction losses 
 !     
@@ -31,10 +31,10 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(5),idirf(5),index,iflag,
-     &     inv,ipkon(*),kon(*),case,kgas,k_oil,nshcon(*),
-     &     nrhcon(*),ntmat_
+     &     inv,ipkon(*),kon(*),icase,kgas,k_oil,nshcon(*),
+     &     nrhcon(*),ntmat_,mi(2)
 !
-      real*8 prop(*),v(0:4,*),xflow,f,df(5),kappa,R,a,d,l,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(5),kappa,R,a,d,l,
      &     p1,p2,T1,T2,Tt1,Tt2,pt1,pt2,cp,physcon(*),p2p1,km1,dvi,
      &     kp1,kdkm1,reynolds,pi,e,lambda,lld,kdkp1,T2dTt2,
      &     T1dTt1,X_t1dTt1,X_t2dTt2,X2_den,X1_den,
@@ -54,6 +54,7 @@
             identity=.false.
          endif
 !     
+  
       elseif (iflag.eq.1)then
 !
          crit=.false.
@@ -71,9 +72,9 @@
          endif
          ks=prop(index+4)
          if(lakon(nelem)(2:6).eq.'GAPIA') then
-            case=0
+            icase=0
          elseif(lakon(nelem)(2:6).eq.'GAPII') then
-            case=1
+            icase=1
          endif
          form_fact=prop(index+5)
          xflow_oil=prop(index+6)
@@ -124,8 +125,8 @@
 !
          call friction_coefficient(l_neg,d,ks,reynolds,form_fact,lambda)
 !
-         call pt2zpt1_crit(p2,p1,T1,lambda,kappa,r,l,d,A,iflag,
-     &        inv,Pt2zPt1_c,Qred_crit,crit,qred_max1,case)
+         call pt2zpt1_crit(p2,p1,T1,T2,lambda,kappa,r,l,d,A,iflag,
+     &        inv,Pt2zPt1_c,Qred_crit,crit,qred_max1,icase)
 !     
          v(3,nodem)=Pt2zPt1_c
 !
@@ -134,7 +135,7 @@
             xflow=0.5*inv*Qred_crit*P1*A/dsqrt(T1)
 !
             if(lakon(nelem)(2:6).eq.'GAPII') then
-               call ts_calc(xflow,T1,P1,kappa,r,a,Ts1,case)
+               call ts_calc(xflow,T1,P1,kappa,r,a,Ts1,icase)
                if (inv.eq.1) then 
                   v(3,node1)=Ts1
                   v(3,node2)=Ts1
@@ -177,16 +178,17 @@
          endif
          ks=prop(index+4)
          if(lakon(nelem)(2:6).eq.'GAPIA') then
-            case=0
+            icase=0
          elseif(lakon(nelem)(2:6).eq.'GAPII') then
-            case=1
+            icase=1
          endif
          form_fact=prop(index+5)
          xflow_oil=prop(index+6)
-         k_oil=int(prop(index+7))
+         k_oil=int(prop(index+7)) 
 !
          pt1=v(2,node1)
          pt2=v(2,node2)
+         xflow=v(1,nodem) 
 !
          if(xflow.ge.0d0) then
             inv=1
@@ -194,9 +196,9 @@
             Tt1=v(0,node1)+physcon(1)
             Tt2=v(0,node2)+physcon(1)
 !
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,case)
+            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,icase)
 !
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,case)
+            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,icase)
 !     
             nodef(1)=node1
             nodef(2)=node1
@@ -210,9 +212,9 @@
             xflow=-v(1,nodem)
             Tt1=v(0,node2)+physcon(1)
             Tt2=v(0,node1)+physcon(1)
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,case)
+            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,icase)
 !
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,case)
+            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,icase)
 !     
             nodef(1)=node2
             nodef(2)=node2
@@ -244,7 +246,7 @@
                call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
      &              v,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
-     &              shcon,rhcon,ntmat_)
+     &              shcon,rhcon,ntmat_,mi)
                lambda=lambda*phi
             endif
 !     
@@ -263,10 +265,8 @@
      &           lambda)
          endif
 !     
-!         call friction_coefficient(l_neg,d,ks,reynolds,form_fact,lambda)
-!     
-         call pt2zpt1_crit(pt2,pt1,Tt1,lambda,kappa,r,l,d,A,iflag,
-     &     inv,pt2zpt1_c,qred_crit,crit,qred_max1,case)
+         call pt2zpt1_crit(pt2,pt1,Tt1,Tt2,lambda,kappa,r,l,d,A,iflag,
+     &     inv,pt2zpt1_c,qred_crit,crit,qred_max1,icase)
 !
          if(dabs(xflow)*dsqrt(Tt1)/(A*Pt1).gt.qred_max1) then
             crit=.true.
@@ -274,7 +274,7 @@
 !     
 !     definition of the coefficients 
 !     
-         lld=lambda*l/d         
+         lld=lambda*l/d 
 !
          if(.not.crit) then
 !     
@@ -397,9 +397,9 @@
          endif
          ks=prop(index+4)
          if(lakon(nelem)(2:6).eq.'GAPIA') then
-            case=0
+            icase=0
          elseif(lakon(nelem)(2:6).eq.'GAPII') then
-            case=1
+            icase=1
          endif
          form_fact=prop(index+5)
          xflow_oil=prop(index+6)
@@ -414,9 +414,9 @@
             Tt1=v(0,node1)+physcon(1)
             Tt2=v(0,node2)+physcon(1)
 !     
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,case)
+            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,icase)
 !            
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,case)
+            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,icase)
 !     
          else
             inv=-1
@@ -426,8 +426,8 @@
             Tt1=v(0,node2)+physcon(1)
             Tt2=v(0,node1)+physcon(1)
 !
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,case)
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,case)
+            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,icase)
+            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,icase)
 !     
             nodef(1)=node2
             nodef(2)=node2
@@ -475,7 +475,7 @@
                call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
      &              v,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
-     &              shcon,rhcon,ntmat_)
+     &              shcon,rhcon,ntmat_,mi)
                lambda=lambda*phi
             endif
 !     
@@ -487,8 +487,8 @@
      &           lambda)
          endif
 !     
-         call pt2zpt1_crit(pt2,pt1,Tt1,lambda,kappa,r,l,d,A,iflag,
-     &     inv,pt2zpt1_c,qred_crit,crit,qred_max1,case)
+         call pt2zpt1_crit(pt2,pt1,Tt1,Tt2,lambda,kappa,r,l,d,A,iflag,
+     &     inv,pt2zpt1_c,qred_crit,crit,qred_max1,icase)
 !     
 !     definition of the coefficients 
 !     

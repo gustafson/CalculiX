@@ -19,7 +19,7 @@
       subroutine applybount(nodeboun,ndirboun,nboun,xbounact,
      &  iponoel,vold,ipompc,nodempc,coefmpc,nmpc,inomat,matname,
      &  nshcon,shcon,nrhcon,rhcon,physcon,compressible,ntmat_,
-     &  voldaux)
+     &  voldaux,mi)
 !
 !     applies temperature boundary conditions
 !
@@ -30,9 +30,10 @@
       integer nodeboun(*),ndirboun(*),i,nboun,node,iponoel(*),
      &  index,nodei,ndiri,ist,ipompc(*),nodempc(3,*),nmpc,
      &  ndir,inomat(*),imat,nshcon(*),nrhcon(*),k,compressible,
-     &  ntmat_
+     &  ntmat_,mi(2)
 !
-      real*8 vold(0:4,*),xbounact(*),residu,size,coefmpc(*),correction,
+      real*8 vold(0:mi(2),*),xbounact(*),residu,size,coefmpc(*),
+     &  correction,
      &  temp,shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),physcon(*),
      &  cp,r,rho,voldaux(0:4,*)
 !

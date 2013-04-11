@@ -22,7 +22,7 @@
       implicit none
 !
       integer nentries
-      parameter(nentries=13)
+      parameter(nentries=14)
 !
 !     parser for the input file (original order)
 !

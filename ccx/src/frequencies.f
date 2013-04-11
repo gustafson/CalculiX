@@ -28,7 +28,7 @@
       character*20 solver
       character*132 textpart(16)
 !
-      integer nmethod,mei(4),ncv,mxiter,istep,istat,iperturb,i,nboun,
+      integer nmethod,mei(4),ncv,mxiter,istep,istat,iperturb(2),i,nboun,
      &  n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),nev,ithermal,isolver,
      &  ipoinpc(0:*)
 !
@@ -52,7 +52,7 @@
 !     default solver
 !
       if(isolver.eq.0) then
-         solver(1:7)='SPOOLES'
+         solver(1:20)='SPOOLES             '
       elseif(isolver.eq.2) then
          solver(1:16)='ITERATIVESCALING'
       elseif(isolver.eq.3) then
@@ -104,7 +104,8 @@
       endif
 !
       nmethod=2
-      if(iperturb.gt.1) iperturb=0
+      if(iperturb(1).gt.1) iperturb(1)=0
+      iperturb(2)=0
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

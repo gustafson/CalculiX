@@ -55,7 +55,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
              int *iexpl, double *plicon, int *nplicon, double *plkcon,
              int *nplkcon,
              double *xstate, int *npmat_, char *matname, int *isolver,
-             int *mint_, int *ncmat_, int *nstate_, double *cs, int *mcs,
+             int *mi, int *ncmat_, int *nstate_, double *cs, int *mcs,
              int *nkon, double *ener, double *xbounold,
 	     double *xforcold, double *xloadold,
              char *amname, double *amta, int *namta,
@@ -65,14 +65,17 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
              int *iendset, int *ialset, int *nprint, char *prlab,
              char *prset, int *nener, double *trab, 
              int *inotr, int *ntrans, double *fmpc, char *cbody, int *ibody,
-	     double *xbody, int *nbody, double *xbodyold){
+	     double *xbody, int *nbody, double *xbodyold, double *tper){
   
   char description[13]="            ";
-  int *inum=NULL,k,*icol=NULL,*irow=NULL,ielas,icmd,istep=1,iinc=1;
-  int mass[2]={0,0}, stiffness=1, buckling=0, rhsi=1, intscheme=0,*ncocon=NULL,
-    *nshcon=NULL,mode=-1,noddiam=-1,*ipobody=NULL,inewton=0,coriolis=0,iout,
-    ifreebody,*itg=NULL,ntg=0,symmetryflag=0,inputformat=0,ngraph=1;
-  double *stn=NULL,*v=NULL,*een=NULL,cam[3],*xstiff=NULL,*stiini=NULL,
+
+  int *inum=NULL,k,*icol=NULL,*irow=NULL,ielas,icmd=0,istep=1,iinc=1,
+      mass[2]={0,0}, stiffness=1, buckling=0, rhsi=1, intscheme=0,*ncocon=NULL,
+      *nshcon=NULL,mode=-1,noddiam=-1,*ipobody=NULL,inewton=0,coriolis=0,iout,
+      ifreebody,*itg=NULL,ntg=0,symmetryflag=0,inputformat=0,ngraph=1,
+      mt=mi[1]+1;
+
+  double *stn=NULL,*v=NULL,*een=NULL,cam[5],*xstiff=NULL,*stiini=NULL,
          *f=NULL,*fn=NULL,qa[3],*fext=NULL,*epn=NULL,*xstateini=NULL,
          *vini=NULL,*stx=NULL,*enern=NULL,*xbounact=NULL,*xforcact=NULL,
          *xloadact=NULL,*t1act=NULL,*ampli=NULL,*xstaten=NULL,*eei=NULL,
@@ -130,8 +133,8 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      namta,nam,ampli,&time,&reltime,ttime,&dtime,ithermal,nmethod,
               xbounold,xboun,xbounact,iamboun,nboun,
 	      nodeboun,ndirboun,nodeforc,ndirforc,&istep,&iinc,
-              co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload));
-  *ttime=*ttime+1.;
+	      co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload,mi));
+  *ttime=*ttime+*tper;
 
   /* determining the internal forces and the stiffness coefficients */
 
@@ -139,12 +142,13 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   /* allocating a field for the stiffness matrix */
 
-  xstiff=NNEW(double,27**mint_**ne);
+  xstiff=NNEW(double,27*mi[0]**ne);
 
   iout=-1;
-  v=NNEW(double,5**nk);
-  fn=NNEW(double,4**nk);
-  stx=NNEW(double,6**mint_**ne);
+  v=NNEW(double,mt**nk);
+//  memset(&vold[0],0.,sizeof(double)*mt**nk);
+  fn=NNEW(double,mt**nk);
+  stx=NNEW(double,6*mi[0]**ne);
   FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	       elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
 	       ielorien,norien,orab,ntmat_,t0,t1act,ithermal,
@@ -153,7 +157,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	       ndirboun,xbounact,nboun,ipompc,
 	       nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,veold,accold,
 	       &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
-	       xstateini,xstiff,xstate,npmat_,epn,matname,mint_,&ielas,
+	       xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
@@ -176,7 +180,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    ielorien,norien,orab,ntmat_,
 	    t0,t1act,ithermal,prestr,iprestr,vold,iperturb,sti,
 	    nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
-	    xstiff,npmat_,&dtime,matname,mint_,
+	    xstiff,npmat_,&dtime,matname,mi,
             ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
             shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
 		    ibody,xloadold,&reltime,veold));
@@ -234,19 +238,19 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     /* calculating the displacements and the stresses and storing */
     /* the results in frd format for each valid eigenmode */
 
-    v=NNEW(double,5**nk);
-    fn=NNEW(double,4**nk);
+    v=NNEW(double,mt**nk);
+    fn=NNEW(double,mt**nk);
     stn=NNEW(double,6**nk);
     inum=NNEW(int,*nk);
-    stx=NNEW(double,6**mint_**ne);
+    stx=NNEW(double,6*mi[0]**ne);
   
-    if(strcmp1(&filab[18],"E   ")==0) een=NNEW(double,6**nk);
-    if(strcmp1(&filab[36],"ENER")==0) enern=NNEW(double,*nk);
+    if(strcmp1(&filab[261],"E   ")==0) een=NNEW(double,6**nk);
+    if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,*nk);
 
-    eei=NNEW(double,6**mint_**ne);
+    eei=NNEW(double,6*mi[0]**ne);
     if(*nener==1){
-	stiini=NNEW(double,6**mint_**ne);
-	enerini=NNEW(double,*mint_**ne);}
+	stiini=NNEW(double,6*mi[0]**ne);
+	enerini=NNEW(double,mi[0]**ne);}
 
     FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	    elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -255,7 +259,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
             f,fn,nactdof,&iout,qa,vold,b,nodeboun,ndirboun,xbounact,nboun,ipompc,
 	    nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,veold,accold,&bet,
             &gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
-	    xstateini,xstiff,xstate,npmat_,epn,matname,mint_,&ielas,&icmd,
+	    xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
             ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,sti,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
@@ -265,12 +269,14 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     if(*nener==1){
 	free(stiini);free(enerini);}
 
-    for(k=0;k<5**nk;++k){
+    memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
+    memcpy(&sti[0],&stx[0],sizeof(double)*6*mi[0]**ne);
+/*    for(k=0;k<mt**nk;++k){
       vold[k]=v[k];
     }
-    for(k=0;k<6**mint_**ne;++k){
+    for(k=0;k<6*mi[0]**ne;++k){
       sti[k]=stx[k];
-    }
+      }*/
 
     ++*kode;
 
@@ -279,25 +285,28 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     if(*mcs>0){
       frdcyc(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,een,t1,
 		   fn,ttime,epn,ielmat,matname,cs,mcs,nkon,enern,xstaten,
-                   nstate_,&istep,&iinc,iperturb,ener,mint_,output,ithermal,
+                   nstate_,&istep,&iinc,iperturb,ener,mi,output,ithermal,
                    qfn,ialset,istartset,iendset,trab,inotr,ntrans,orab,
-	           ielorien,norien,sti,veold);
+	           ielorien,norien,sti,veold,&noddiam,set,nset);
     }
     else{
-    ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
+	if(strcmp1(&filab[1044],"ZZS")==0){
+	    neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
+	}
 	FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,een,t1,
 	    fn,ttime,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
-	    iperturb,ener,mint_,output,ithermal,qfn,&mode,&noddiam,
+	    iperturb,ener,mi,output,ithermal,qfn,&mode,&noddiam,
             trab,inotr,ntrans,orab,ielorien,norien,description,
-	    ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs));
-	free(ipneigh);free(neigh);
+	    ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs,
+            set,nset,istartset,iendset,ialset));
+	if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
     }
 
     free(v);free(stn);free(inum);
     free(b);free(stx);free(fn);
 
-    if(strcmp1(&filab[18],"E   ")==0) free(een);
-    if(strcmp1(&filab[36],"ENER")==0) free(enern);
+    if(strcmp1(&filab[261],"E   ")==0) free(een);
+    if(strcmp1(&filab[522],"ENER")==0) free(enern);
 
   }
   else {
@@ -306,13 +315,16 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
     ++*kode;
     inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
-    ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
+    if(strcmp1(&filab[1044],"ZZS")==0){
+	neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
+    }
     FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,een,t1,
          fn,ttime,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
-	 iperturb,ener,mint_,output,ithermal,qfn,&mode,&noddiam,
+	 iperturb,ener,mi,output,ithermal,qfn,&mode,&noddiam,
          trab,inotr,ntrans,orab,ielorien,norien,description,
-	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs));
-    free(ipneigh);free(neigh);
+	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs,
+         set,nset,istartset,iendset,ialset));
+    if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
     free(inum);FORTRAN(stop,());
 
   }
@@ -327,7 +339,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   for(k=0;k<7**nbody;k=k+7){xbodyold[k]=xbodyact[k];}
   if(*ithermal==1){
     for(k=0;k<*nk;++k){t1old[k]=t1act[k];}
-    for(k=0;k<*nk;++k){vold[5*k]=t1act[k];}
+    for(k=0;k<*nk;++k){vold[mt*k]=t1act[k];}
   }
 
   free(xbounact);free(xforcact);free(xloadact);free(t1act);free(ampli);

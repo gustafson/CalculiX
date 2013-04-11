@@ -47,7 +47,7 @@ int *kon=NULL, *nodeboun=NULL, *ndirboun=NULL, *ipompc=NULL,
 	*nplicon=NULL, *nplkcon=NULL, *inotr=NULL, *iponor=NULL, *knor=NULL,
 	*ikforc=NULL, *ilforc=NULL, *iponoel=NULL, *inoel=NULL, *nshcon=NULL,
 	*ncocon=NULL,*ibody=NULL, *inum1=NULL,*ielprop=NULL,
-        *inum2=NULL,*ipoinpc=NULL,cfd=0;
+    *inum2=NULL,*ipoinpc=NULL,cfd=0,mt;
     
 double *co=NULL, *xboun=NULL, *coefmpc=NULL, *xforc=NULL,
 	*xload=NULL, *ad=NULL, *au=NULL, *xbounold=NULL, *xforcold=NULL,
@@ -67,18 +67,19 @@ char *sideload=NULL, *set=NULL, *matname=NULL, *orname=NULL, *amname=NULL,
 	jobnamec[396]="",jobnamef[132]="",output[4]="frd", *typeboun=NULL,
 	*inpc=NULL,*tieset=NULL,*cbody=NULL;
     
-int nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,
+int nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,nentries=14,
   nmethod,neq[3]={0,0,0},i,mpcfree=1,mei[4],j,nzl,nam,nbounold=0,
   nforcold=0,nloadold=0,nbody,nbody_=0,nbodyold=0,
   k,nzs[3],nmpc_=0,nload_=0,nforc_=0,istep,istat,nboun_=0,
   iperturb[2]={0,0},nmat,ntmat_=0,norien,ithermal[2]={0,0},
   iprestr,kode,isolver=0,
   jout[2]={1,1},nlabel,nkon=0,idrct,jmax[2],iexpl,nevtot=0,
-  iplas=0,npmat_=0,mint_=0,ntrans,mpcend=-1,namtot_=0,iumat=0,mpcmult,
+//  iplas=0,npmat_=0,mi[2]={0,0},ntrans,mpcend=-1,namtot_=0,iumat=0,mpcmult,
+  iplas=0,npmat_=0,mi[2]={0,3},ntrans,mpcend=-1,namtot_=0,iumat=0,mpcmult,
   icascade=0,maxlenmpc,mpcinfo[4],ne1d=0,ne2d=0,infree[4]={0,0,0,0},
   callfrommain,nflow=0,jin=0,irstrt=0,nener=0,jrstrt=0,nenerold,
-  nline,ipoinp[26],*inp=NULL,ntie,ntie_=0,mcs=0,kflag=2,nprop_=0,
-      nprop=0,ndprop=21,itpamp=0,iviewfile,nkold,nevdamp_=0;
+  nline,ipoinp[2*nentries],*inp=NULL,ntie,ntie_=0,mcs=0,kflag=2,nprop_=0,
+  nprop=0,itpamp=0,iviewfile,nkold,nevdamp_=0;
 
 int *meminset=NULL,*rmeminset=NULL;
 
@@ -102,7 +103,7 @@ else{
     if(strcmp1(argv[i],"-i")==0) {
     strcpy(jobnamec,argv[i+1]);strcpy1(jobnamef,argv[i+1],132);jin++;break;}
     if(strcmp1(argv[i],"-v")==0) {
-	printf("\nThis is version version 2.0\n\n");
+	printf("\nThis is version version 2.1\n\n");
 	FORTRAN(stop,());
     }
   }
@@ -117,12 +118,12 @@ else{
 FORTRAN(openfile,(jobnamef,output));
 
 printf("\n************************************************************\n\n");
-printf("CalculiX version 2.0, Copyright(C) 1998-2007 Guido Dhondt\n");
+printf("CalculiX version 2.1, Copyright(C) 1998-2007 Guido Dhondt\n");
 printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
 printf("************************************************************\n\n");
-printf("You are using an executable made on Mi 12. Aug 21:56:16 CEST 2009\n");
+printf("You are using an executable made on Do 4. Mär 20:53:32 CET 2010\n");
 fflush(stdout);
 
 istep=0;
@@ -153,16 +154,19 @@ meminset=NNEW(int,nset_);
 rmeminset=NNEW(int,nset_);
 
 FORTRAN(allocation,(&nload_,&nforc_,&nboun_,&nk_,&ne_,&nmpc_,&nset_,&nalset_,
-   &nmat_,&ntmat_,&npmat_,&norien_,&nam_,&nprint_,&mint_,&ntrans_,
+   &nmat_,&ntmat_,&npmat_,&norien_,&nam_,&nprint_,mi,&ntrans_,
    set,meminset,rmeminset,&ncs_,&namtot_,&ncmat_,&memmpc_,&ne1d,
    &ne2d,&nflow,jobnamec,&irstrt,ithermal,&nener,&nstate_,&istep,
    inpc,ipoinp,inp,&ntie_,&nbody_,&nprop_,ipoinpc,&nevdamp_));
 
-free(set);free(meminset);free(rmeminset);
+free(set);free(meminset);free(rmeminset);mt=mi[1]+1;
 
 nzs_=20000000;
 
 nload=0;nbody=0;nforc=0;nboun=0;nk=0;nmpc=0;nam=0;
+
+/* caveat: change nlabel in radmatrix.f and expand.c as well 
+   if changing next line, as well as in storeresidual.f */
 nlabel=27;
 
 while(istat>=0) {
@@ -198,7 +202,6 @@ while(istat>=0) {
 
     ielprop=NNEW(int,ne_);
     for(i=0;i<ne_;i++) ielprop[i]=-1;
-    (nprop_)*=ndprop;
     prop=NNEW(double,nprop_);
 
     /* fields for 1-D and 2-D elements */
@@ -234,7 +237,7 @@ while(istat>=0) {
     for(i=0;i<3*memmpc_;i+=3){nodempc[i+2]=i/3+2;}
     nodempc[3*memmpc_-1]=0;
     coefmpc=NNEW(double,memmpc_);
-    labmpc=NNEW(char,20*nmpc_);
+    labmpc=NNEW(char,20*nmpc_+1);
     ikmpc=NNEW(int,nmpc_);
     ilmpc=NNEW(int,nmpc_);
     fmpc=NNEW(double,nmpc_);
@@ -309,12 +312,12 @@ while(istat>=0) {
 
     /* linear dynamic properties */
     
-    xmodal=NNEW(double,10+nevdamp_);
-    xmodal[9]=nevdamp_+0.5;
+    xmodal=NNEW(double,11+nevdamp_);
+    xmodal[10]=nevdamp_+0.5;
 
     /* internal state variables */
 
-    if(nstate_>0){xstate=NNEW(double,nstate_*mint_*ne);}
+    if(nstate_>0){xstate=NNEW(double,nstate_*mi[0]*ne);}
 
     /* material orientation */
 
@@ -343,15 +346,15 @@ while(istat>=0) {
 	t1=NNEW(double,3*nk_);}
     iamt1=NNEW(int,nk_);
 
-    prestr=NNEW(double,6*mint_*ne_);
-    vold=NNEW(double,5*nk_);
-    veold=NNEW(double,4*nk_);
+    prestr=NNEW(double,6*mi[0]*ne_);
+    vold=NNEW(double,mt*nk_);
+    veold=NNEW(double,mt*nk_);
 
     ielmat=NNEW(int,ne_);
 
     matname=NNEW(char,80*nmat);
 
-    filab=NNEW(char,6*nlabel);
+    filab=NNEW(char,87*nlabel);
 
     /* tied constraints */
 
@@ -374,12 +377,14 @@ while(istat>=0) {
     /* allocating and reallocating space for subsequent steps */
 
     if((nmethod != 4) && ((nmethod != 1) || (iperturb[0] < 2))){
-      veold=NNEW(double,4*nk_);
+      veold=NNEW(double,mt*nk_);
     }
     else{
-      RENEW(veold,double,4*nk_);
+      RENEW(veold,double,mt*nk_);
+      memset(&veold[mt*nk],0,sizeof(double)*mt*(nk_-nk));
     }
-    RENEW(vold,double,5*nk_);
+    RENEW(vold,double,mt*nk_);
+    memset(&vold[mt*nk],0,sizeof(double)*mt*(nk_-nk));
 
  /*   if(nmethod != 4){free(accold);}*/
 
@@ -417,7 +422,7 @@ while(istat>=0) {
 
     RENEW(ipompc,int,nmpc_);
 
-    RENEW(labmpc,char,20*nmpc_);
+    RENEW(labmpc,char,20*nmpc_+1);
     RENEW(ikmpc,int,nmpc_);
     RENEW(ilmpc,int,nmpc_);
     RENEW(fmpc,double,nmpc_);
@@ -447,9 +452,9 @@ while(istat>=0) {
     xforcold=NNEW(double,nforc_);
     xloadold=NNEW(double,2*nload_);
     if(ithermal[0]!=0) t1old=NNEW(double,nk_); 
-    sti=NNEW(double,6*mint_*ne);
-    eme=NNEW(double,6*mint_*ne);
-    if(nener==1)ener=NNEW(double,mint_*ne*2);
+    sti=NNEW(double,6*mi[0]*ne);
+    eme=NNEW(double,6*mi[0]*ne);
+    if(nener==1)ener=NNEW(double,mi[0]*ne*2);
     nnn=NNEW(int,nk_);
   }
 
@@ -470,7 +475,7 @@ while(istat>=0) {
 	    &iprestr,&isolver,fei,veold,&tinc,&tper,
 	    xmodal,filab,jout,&nlabel,&idrct,
 	    jmax,&tmin,&tmax,&iexpl,&alpha,iamboun,plicon,nplicon,
-	    plkcon,nplkcon,&iplas,&npmat_,&mint_,&nk_,trab,inotr,&ntrans,
+	    plkcon,nplkcon,&iplas,&npmat_,mi,&nk_,trab,inotr,&ntrans,
 	    ikboun,ilboun,ikmpc,ilmpc,ics,dcs,&ncs_,&namtot_,cs,&nstate_,
 	    &ncmat_,&iumat,&mcs,labmpc,iponor,xnor,knor,thickn,thicke,
 	    ikforc,ilforc,offset,iponoel,inoel,rig,infree,nshcon,shcon,
@@ -495,31 +500,31 @@ while(istat>=0) {
 
     /* allocating and initializing fields pointing to the previous step */
 
-    RENEW(vold,double,5*nk);
-    sti=NNEW(double,6*mint_*ne);
+    RENEW(vold,double,mt*nk);
+    sti=NNEW(double,6*mi[0]*ne);
 
     /* strains */
 
-    eme=NNEW(double,6*mint_*ne);
+    eme=NNEW(double,6*mi[0]*ne);
 
     /* residual stresses/strains */
 
     if(iprestr==1) {
-	RENEW(prestr,double,6*mint_*ne);
+	RENEW(prestr,double,6*mi[0]*ne);
 	for(i=0;i<ne;i++){
-	    for(j=0;j<mint_;j++){
+	    for(j=0;j<mi[0];j++){
 		for(k=0;k<6;k++){
-		    sti[6*mint_*i+6*j+k]=prestr[6*mint_*i+6*j+k];
+		    sti[6*mi[0]*i+6*j+k]=prestr[6*mi[0]*i+6*j+k];
 		}
 	    }
 	}
     }
     else if(iprestr==2){
-	RENEW(prestr,double,6*mint_*ne);
+	RENEW(prestr,double,6*mi[0]*ne);
 	for(i=0;i<ne;i++){
-	    for(j=0;j<mint_;j++){
+	    for(j=0;j<mi[0];j++){
 		for(k=0;k<6;k++){
-		    eme[6*mint_*i+6*j+k]=prestr[6*mint_*i+6*j+k];
+		    eme[6*mi[0]*i+6*j+k]=prestr[6*mi[0]*i+6*j+k];
 		}
 	    }
 	}
@@ -539,7 +544,7 @@ while(istat>=0) {
     if(ithermal[0]>1){
       for(i=0;i<nboun;i++){
 	if(ndirboun[i]==0){
-	  xbounold[i]=vold[5*nodeboun[i]];
+	    xbounold[i]=vold[mt*(nodeboun[i]-1)];
 	}
       }
     }
@@ -611,7 +616,7 @@ while(istat>=0) {
     /* allocating space for the state variables */
 
     /*    if(nstate_>0){
-      xstate=NNEW(double,nstate_*mint_*ne);
+      xstate=NNEW(double,nstate_*mi[0]*ne);
       }*/
 
     /* next statements for plastic materials and nonlinear springs */
@@ -679,13 +684,13 @@ while(istat>=0) {
   tiedcontact(&ntie, tieset, &nset, set,istartset, iendset, ialset,
        lakon, ipkon, kon,tietol,&nmpc, &mpcfree, &memmpc_,
        &ipompc, &labmpc, &ikmpc, &ilmpc,&fmpc, &nodempc, &coefmpc,
-       ithermal, co, vold,&cfd,&nmpc_);
+       ithermal, co, vold,&cfd,&nmpc_,mi);
 
  }else{
 
     /* reallocating space in all but the first step (>1) */
 
-    RENEW(vold,double,5*nk);
+    RENEW(vold,double,mt*nk);
 
     /* if the SPC boundary conditions were changed in the present step,
        they have to be rematched with those in the last step. Removed SPC 
@@ -701,7 +706,8 @@ while(istat>=0) {
       RENEW(ndirbounold,int,nboun);
     }
     FORTRAN(spcmatch,(xboun,nodeboun,ndirboun,&nboun,xbounold,nodebounold,
-	      ndirbounold,&nbounold,ikboun,ilboun,vold,reorder,nreorder));
+		      ndirbounold,&nbounold,ikboun,ilboun,vold,reorder,nreorder,
+                      mi));
     RENEW(xbounold,double,nboun);
     RENEW(nodebounold,int,nboun);
     RENEW(ndirbounold,int,nboun);
@@ -756,7 +762,7 @@ while(istat>=0) {
   RENEW(xbodyold,double,7*nbody);
 
   RENEW(ipompc,int,nmpc);
-  RENEW(labmpc,char,20*nmpc);
+  RENEW(labmpc,char,20*nmpc+1);
   RENEW(ikmpc,int,nmpc);
   RENEW(ilmpc,int,nmpc);
   RENEW(fmpc,double,nmpc);
@@ -764,7 +770,7 @@ while(istat>=0) {
   /* energy */
 
   if((nener==1)&&(nenerold==0)){
-    ener=NNEW(double,mint_*ne*2);
+    ener=NNEW(double,mi[0]*ne*2);
     if((istep>1)&&(iperturb[0]>1)){
       printf("*ERROR in CalculiX: in nonlinear calculations");
       printf("       energy output must be selected in the first step");
@@ -775,16 +781,12 @@ while(istat>=0) {
   /* initial velocities and accelerations */
 
   if((nmethod == 4) || ((nmethod == 1) && (iperturb[0] >= 2))) {
-    RENEW(veold,double,4*nk);
+    RENEW(veold,double,mt*nk);
   }
   else {free(veold);}
 
-/*  if(nmethod == 4) {
-    accold=NNEW(double,4*nk);
-    }*/
-
   if((nmethod == 4)&&(iperturb[0]>1)) {
-    accold=NNEW(double,4*nk);
+    accold=NNEW(double,mt*nk);
     }
 
   if(nam > 0) {
@@ -817,6 +819,10 @@ while(istat>=0) {
       }
   }
   
+  /*   calling the user routine ufaceload (can be empty) */
+
+  FORTRAN(ufaceload,(co,ipkon,kon,lakon,nelemload,sideload,&nload));
+  
   /* decascading MPC's and renumbering the equations: only necessary
   if MPC's changed */
 
@@ -838,7 +844,7 @@ while(istat>=0) {
     for(i=1;i<=nk;++i)
 	nnn[i-1]=i;
 	
-    /*   if((icascade==0)&&(isolver!=6)){*/
+//    if((icascade==0)&&(isolver!=6)){
     if((icascade==10)&&(isolver!=6)){
 
 	/* renumbering the nodes */
@@ -868,7 +874,7 @@ while(istat>=0) {
   
   if(icascade==0) printf(" Determining the structure of the matrix:\n");
   
-  nactdof=NNEW(int,4*nk);  
+  nactdof=NNEW(int,mt*nk);  
   mast1=NNEW(int,nzs[1]);
   irow=NNEW(int,nzs[1]);
   
@@ -882,7 +888,7 @@ while(istat>=0) {
 	  mastruct(&nk,kon,ipkon,lakon,&ne,nodeboun,ndirboun,&nboun,ipompc,
 		   nodempc,&nmpc,nactdof,icol,jq,&mast1,&irow,&isolver,neq,nnn,
 		   ikmpc,ilmpc,ipointer,nzs,&nmethod,ithermal,
-                   ikboun,ilboun,iperturb);
+                   ikboun,ilboun,iperturb,mi);
       }
       else{neq[0]=1;neq[1]=1;neq[2]=1;}
   }
@@ -895,7 +901,7 @@ while(istat>=0) {
       mastructcs(&nk,kon,ipkon,lakon,&ne,nodeboun,ndirboun,&nboun,
 		 ipompc,nodempc,&nmpc,nactdof,icol,jq,&mast1,&irow,&isolver,
 		 neq,nnn,ikmpc,ilmpc,ipointer,nzs,&nmethod,
-		 ics,cs,labmpc,&mcs);
+		 ics,cs,labmpc,&mcs,mi);
   }
   
   free(ipointer);free(mast1);
@@ -919,12 +925,12 @@ while(istat>=0) {
              t0,t1,t1old,ithermal,prestr,&iprestr, vold,iperturb,sti,nzs,
 	     &kode,adb,aub,filab,eme,&iexpl,plicon,
              nplicon,plkcon,nplkcon,xstate,&npmat_,matname,
-	     &isolver,&mint_,&ncmat_,&nstate_,cs,&mcs,&nkon,ener,
+	     &isolver,mi,&ncmat_,&nstate_,cs,&mcs,&nkon,ener,
              xbounold,xforcold,xloadold,amname,amta,namta,
              &nam,iamforc,iamload,iamt1,iamboun,&ttime,
              output,set,&nset,istartset,iendset,ialset,&nprint,prlab,
              prset,&nener,trab,inotr,&ntrans,fmpc,cbody,ibody,xbody,&nbody,
-             xbodyold);
+	     xbodyold,&tper);
 
       }
 
@@ -945,7 +951,7 @@ while(istat>=0) {
 	     veold,accold,amname,amta,namta,
 	     &nam,iamforc,iamload,iamt1,&alpha,
              &iexpl,iamboun,plicon,nplicon,plkcon,nplkcon,
-	     xstate,&npmat_,&istep,&ttime,matname,qaold,&mint_,
+	     xstate,&npmat_,&istep,&ttime,matname,qaold,mi,
 	     &isolver,&ncmat_,&nstate_,&iumat,cs,&mcs,&nkon,&ener,
 	     mpcinfo,nnn,output,
              shcon,nshcon,cocon,ncocon,physcon,&nflow,ctrl,
@@ -976,7 +982,7 @@ while(istat>=0) {
              t0,t1,t1old,ithermal,prestr,&iprestr,vold,iperturb,sti,nzs,
 	     &kode,adb,aub,mei,fei,filab,
 	     eme,&iexpl,plicon,nplicon,plkcon,nplkcon,
-	     xstate,&npmat_,matname,&mint_,&ncmat_,&nstate_,ener,jobnamec,
+	     xstate,&npmat_,matname,mi,&ncmat_,&nstate_,ener,jobnamec,
              output,set,&nset,istartset,iendset,ialset,&nprint,prlab,
              prset,&nener,&isolver,trab,inotr,&ntrans,&ttime,fmpc,cbody,
              ibody,xbody,&nbody);}
@@ -996,7 +1002,7 @@ while(istat>=0) {
              t0,t1,t1old,ithermal,prestr,&iprestr, 
 	     vold,iperturb,sti,nzs,&kode,adb,aub,mei,fei,filab,
 	     eme,&iexpl,plicon,nplicon,plkcon,nplkcon,
-	     xstate,&npmat_,matname,&mint_,ics,cs,&mpcend,&ncmat_,
+	     xstate,&npmat_,matname,mi,ics,cs,&mpcend,&ncmat_,
              &nstate_,&mcs,&nkon,ener,jobnamec,output,set,&nset,istartset,
              iendset,ialset,&nprint,prlab,
              prset,&nener,&isolver,trab,inotr,&ntrans,&ttime,fmpc,cbody,
@@ -1020,7 +1026,7 @@ while(istat>=0) {
              t0,t1,t1old,ithermal,prestr,&iprestr, 
 	     vold,iperturb,sti,nzs,&kode,adb,aub,mei,fei,filab,
 	     eme,&iexpl,plicon,nplicon,plkcon,nplkcon,
-	     xstate,&npmat_,matname,&mint_,&ncmat_,&nstate_,ener,output,
+	     xstate,&npmat_,matname,mi,&ncmat_,&nstate_,ener,output,
              set,&nset,istartset,iendset,ialset,&nprint,prlab,
              prset,&nener,&isolver,trab,inotr,&ntrans,&ttime,fmpc,cbody,
              ibody,xbody,&nbody);
@@ -1052,7 +1058,7 @@ while(istat>=0) {
 	    jout,&kode,filab,&eme,xforcold,xloadold,
             &t1old,&iamboun,&xbounold,&iexpl,plicon,
             nplicon,plkcon,nplkcon,xstate,&npmat_,matname,
-            &mint_,&ncmat_,&nstate_,&ener,jobnamec,&ttime,set,&nset,
+            mi,&ncmat_,&nstate_,&ener,jobnamec,&ttime,set,&nset,
             istartset,iendset,&ialset,&nprint,prlab,
             prset,&nener,trab,&inotr,&ntrans,&fmpc,cbody,ibody,xbody,&nbody,
             xbodyold,&istep,&isolver,jq,output,&mcs,&nkon,&mpcend,ics,cs,
@@ -1081,7 +1087,7 @@ while(istat>=0) {
 	    jout,&kode,filab,&eme,xforcold,xloadold,
             &t1old,&iamboun,&xbounold,&iexpl,plicon,
             nplicon,plkcon,nplkcon,xstate,&npmat_,matname,
-            &mint_,&ncmat_,&nstate_,&ener,jobnamec,&ttime,set,&nset,
+            mi,&ncmat_,&nstate_,&ener,jobnamec,&ttime,set,&nset,
             istartset,iendset,ialset,&nprint,prlab,
             prset,&nener,trab,&inotr,&ntrans,&fmpc,cbody,ibody,xbody,&nbody,
             xbodyold,&istep,&isolver,jq,output,&mcs,&nkon,ics,cs,&mpcend,&nnn);
@@ -1165,7 +1171,7 @@ while(istat>=0) {
       jrstrt=0;
       FORTRAN(restartwrite,(&istep, &nset, &nload, &nforc, &nboun, &nk, &ne, 
         &nmpc, &nalset, &nmat, &ntmat_, &npmat_, &norien, &nam, &nprint,  
-        &mint_, &ntrans, &ncs_, &namtot_, &ncmat_, &mpcend,&maxlenmpc, &ne1d, 
+        mi, &ntrans, &ncs_, &namtot_, &ncmat_, &mpcend,&maxlenmpc, &ne1d, 
         &ne2d, &nflow, &nlabel, &iplas, &nkon,ithermal,&nmethod,iperturb, 
         &nstate_,&nener, set, istartset, iendset, ialset, co, kon, ipkon, 
         lakon, nodeboun, ndirboun, iamboun, xboun, ikboun, ilboun, ipompc, 

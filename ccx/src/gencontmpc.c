@@ -112,7 +112,7 @@ void gencontmpc(int *ne, int *ne0, char *lakon, int *ipkon, int *kon,
 				    if(*nmpc_<11)*nmpc_=11;
 				    *nmpc_=(int)(1.1**nmpc_);
 				    RENEW(ipompc,int,*nmpc_);
-				    RENEW(labmpc,char,20**nmpc_);
+				    RENEW(labmpc,char,20**nmpc_+1);
 				    RENEW(ikmpc,int,*nmpc_);
 				    RENEW(ilmpc,int,*nmpc_);
 				    RENEW(fmpc,double,*nmpc_);
@@ -227,7 +227,7 @@ void gencontmpc(int *ne, int *ne0, char *lakon, int *ipkon, int *kon,
 				    if(*nmpc_<11)*nmpc_=11;
 				    *nmpc_=(int)(1.1**nmpc_);
 				    RENEW(ipompc,int,*nmpc_);
-				    RENEW(labmpc,char,20**nmpc_);
+				    RENEW(labmpc,char,20**nmpc_+1);
 				    RENEW(ikmpc,int,*nmpc_);
 				    RENEW(ilmpc,int,*nmpc_);
 				    RENEW(fmpc,double,*nmpc_);
@@ -345,7 +345,7 @@ void gencontmpc(int *ne, int *ne0, char *lakon, int *ipkon, int *kon,
 				    if(*nmpc_<11)*nmpc_=11;
 				    *nmpc_=(int)(1.1**nmpc_);
 				    RENEW(ipompc,int,*nmpc_);
-				    RENEW(labmpc,char,20**nmpc_);
+				    RENEW(labmpc,char,20**nmpc_+1);
 				    RENEW(ikmpc,int,*nmpc_);
 				    RENEW(ilmpc,int,*nmpc_);
 				    RENEW(fmpc,double,*nmpc_);
@@ -460,7 +460,7 @@ void gencontmpc(int *ne, int *ne0, char *lakon, int *ipkon, int *kon,
 				    if(*nmpc_<11)*nmpc_=11;
 				    *nmpc_=(int)(1.1**nmpc_);
 				    RENEW(ipompc,int,*nmpc_);
-				    RENEW(labmpc,char,20**nmpc_);
+				    RENEW(labmpc,char,20**nmpc_+1);
 				    RENEW(ikmpc,int,*nmpc_);
 				    RENEW(ilmpc,int,*nmpc_);
 				    RENEW(fmpc,double,*nmpc_);
@@ -576,7 +576,7 @@ void gencontmpc(int *ne, int *ne0, char *lakon, int *ipkon, int *kon,
 				if(*nmpc_<11)*nmpc_=11;
 				*nmpc_=(int)(1.1**nmpc_);
 				RENEW(ipompc,int,*nmpc_);
-				RENEW(labmpc,char,20**nmpc_);
+				RENEW(labmpc,char,20**nmpc_+1);
 				RENEW(ikmpc,int,*nmpc_);
 				RENEW(ilmpc,int,*nmpc_);
 				RENEW(fmpc,double,*nmpc_);
@@ -662,7 +662,7 @@ void gencontmpc(int *ne, int *ne0, char *lakon, int *ipkon, int *kon,
     } /* i */
 
     RENEW(ipompc,int,*nmpc);
-    RENEW(labmpc,char,20**nmpc);
+    RENEW(labmpc,char,20**nmpc+1);
     RENEW(ikmpc,int,*nmpc);
     RENEW(ilmpc,int,*nmpc);
     RENEW(fmpc,double,*nmpc);

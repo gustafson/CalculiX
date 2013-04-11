@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine uout(v)
+      subroutine uout(v,mi)
 !
 !     This routine allows the user to write user-defined output
 !     to file. The output can be brought into the routine by commons
@@ -26,12 +26,18 @@
 !     INPUT:
 ! 
 !     v                  solution vector
+!     mi(1)              max # of integration points per element (max
+!                        over all elements)
+!     mi(2)              max degree of freedomm per node (max over all
+!                        nodes) in fields like v(0:mi(2))...
 !
 !     OUTPUT: none
 !           
       implicit none
 !
-      real*8 v(0:4,*)
+      integer mi(2)
+!
+      real*8 v(0:mi(2),*)
 !
       return
       end
