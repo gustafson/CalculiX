@@ -27,11 +27,12 @@
       integer n,i,j,k,ierror
 !
       character*1 ctext
-      character*132 text,textpart(16)
+      character*132 textpart(16)
+      character*1320 text
 !
       n=1
       j=0
-      do i=1,132
+      do i=1,1320
          ctext=text(i:i)
          if(ctext.ne.',') then
             if(ctext.eq.' ') then
@@ -51,7 +52,7 @@ c     &             ctext=char(ichar(ctext)-32)
             n=n+1
             if(n.gt.16) then
                ierror=0
-               do k=i+1,132
+               do k=i+1,1320
                   if(text(k:k).eq.',') cycle
                   if(text(k:k).eq.' ') then
                      if(ierror.eq.0) then
@@ -61,7 +62,7 @@ c     &             ctext=char(ichar(ctext)-32)
      &                     '*ERROR in splitline: there should not'
                         write(*,*)'       be more than 16 entries in a '
                         write(*,*) '       line; '
-                        write(*,'(a132)') text(1:k-1)
+                        write(*,'(a1320)') text(1:k-1)
                         stop
                      endif
                   endif

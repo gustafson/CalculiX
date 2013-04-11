@@ -189,7 +189,7 @@
  104           format(' total force (fx,fy,fz) for set ',A,
      &                 ' and time ',e14.7)
                write(5,*)
-               write(5,'(6x,1p,3(1x,e11.4))') rftot(1),rftot(2),rftot(3)
+               write(5,'(6x,1p,3(1x,e13.6))') rftot(1),rftot(2),rftot(3)
             elseif((prlab(ii)(1:5).eq.'RFL O').or.
      &              (prlab(ii)(1:5).eq.'RFL T')) then
                write(5,*)
@@ -197,7 +197,7 @@
  105           format(' total heat generation for set ',A,
      &                ' and time ',e14.7)
                write(5,*)
-               write(5,'(6x,1p,1x,e11.4)') rftot(0)
+               write(5,'(6x,1p,1x,e13.6)') rftot(0)
             endif
 !
 !        integration point values
@@ -372,7 +372,7 @@
                   nodes=kon(ipkon(nelem)+nope)
                   call printoutelem(prlab,ipkon,lakon,kon,co,
      &                 ener,mi(1),ii,nelem,energytot,volumetot,
-     &                 enerkintot,ikin,ne,stx,nodes)
+     &                 enerkintot,ikin,ne,stx,nodes,thicke,ielmat)
                enddo
             else
                do iset=1,nset
@@ -384,18 +384,18 @@
                      nelem=ialset(jj)
                      call printoutelem(prlab,ipkon,lakon,kon,co,
      &                    ener,mi(1),ii,nelem,energytot,volumetot,
-     &                    enerkintot,ikin,ne,stx,nodes)
+     &                    enerkintot,ikin,ne,stx,nodes,thicke,ielmat)
                   elseif(ialset(jj+1).gt.0) then
                      nelem=ialset(jj)
                      call printoutelem(prlab,ipkon,lakon,kon,co,
      &                    ener,mi(1),ii,nelem,energytot,volumetot,
-     &                    enerkintot,ikin,ne,stx,nodes)
+     &                    enerkintot,ikin,ne,stx,nodes,thicke,ielmat)
                   else
                      do nelem=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                    -ialset(jj+1)
                         call printoutelem(prlab,ipkon,lakon,kon,co,
      &                       ener,mi(1),ii,nelem,energytot,volumetot,
-     &                    enerkintot,ikin,ne,stx,nodes)
+     &                    enerkintot,ikin,ne,stx,nodes,thicke,ielmat)
                      enddo
                   endif
                enddo
@@ -410,7 +410,7 @@
  116           format(' total internal energy for set ',A,' and time ',
      &              e14.7)
                write(5,*)
-               write(5,'(6x,1p,1x,e11.4)') energytot
+               write(5,'(6x,1p,1x,e13.6)') energytot
             elseif((prlab(ii)(1:5).eq.'ELKEO').or.
      &              (prlab(ii)(1:5).eq.'ELKET')) then
                write(5,*)
@@ -418,21 +418,21 @@
  120           format(' total kinetic energy for set ',A,' and time ',
      &              e14.7)
                write(5,*)
-               write(5,'(6x,1p,1x,e11.4)') enerkintot
+               write(5,'(6x,1p,1x,e13.6)') enerkintot
             elseif((prlab(ii)(1:5).eq.'EVOLO').or.
      &              (prlab(ii)(1:5).eq.'EVOLT')) then
                write(5,*)
                write(5,121) elset(1:ipos-2),ttime
  121           format(' total volume for set ',A,' and time ',e14.7)
                write(5,*)
-               write(5,'(6x,1p,1x,e11.4)') volumetot
+               write(5,'(6x,1p,1x,e13.6)') volumetot
             elseif((prlab(ii)(1:5).eq.'CELSO').or.
      &              (prlab(ii)(1:5).eq.'CELST')) then
                write(5,*)
                write(5,125) ttime
  125           format(' total contact spring energy for time ',e14.7)
                write(5,*)
-               write(5,'(6x,1p,1x,e11.4)') energytot
+               write(5,'(6x,1p,1x,e13.6)') energytot
 !     
             endif
          endif

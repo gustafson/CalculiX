@@ -22,7 +22,7 @@
      &  mcs,triangulation,csab,xn,yn,zn,phi,noded,ncsnodes,
      &  rcscg,rcs0cg,zcscg,zcs0cg,nrcg,nzcg,jcs,lcs,
      &  kontri,straight,ne,ipkon,kon,lakon,ifacetet,inodface,ncounter,
-     &  jobnamec,vold,cfd,mi)
+     &  jobnamec,vold,cfd,mi,indepset)
 !
 !     generate cyclic mpc's
 !
@@ -35,6 +35,7 @@
       character*5 p0,p1,p2,p3,p7,p9999
       character*8 lakon(*)
       character*20 labmpc(*),label
+      character*81 indepset
       character*132 jobnamec(*),fntria
 !     
       integer ipompc(*),nodempc(3,*),nneigh,ne,ipkon(*),kon(*),
@@ -43,7 +44,7 @@
      &     number,idof,ndir,node,ncsnodes,id,mpcfreeold,
      &     mcs,nrcg(*),nzcg(*),jcs(*),lcs(*),nodef(8),
      &     netri,ifacetet(*),inodface(*),lathyp(3,6),inum,one,i,
-     &     noden(10),ncounter,ier,ipos,cfd,mi(*)
+     &     noden(10),ncounter,ier,ipos,cfd,mi(*),ilen
 !     
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
      &  csab(7),xn,yn,zn,xap,yap,zap,rp,zp,al(3,3),ar(3,3),phi,
@@ -116,22 +117,34 @@ c         write(*,*)
      &           inodface)
             triangulation=.true.
 !
-            fntria(1:28)='TriMasterCyclicSymmetryModel'
-            ncyclicsymmetrymodel=ncyclicsymmetrymodel+1
-            if(ncyclicsymmetrymodel.lt.10) then
-               write(fntria(29:29),'(i1)')ncyclicsymmetrymodel
-               ipos=30
-            elseif(ncyclicsymmetrymodel.lt.100) then
-               write(fntria(29:30),'(i2)')ncyclicsymmetrymodel
-               ipos=31
-            else
-               write(*,*) '*ERROR in generatecycmpcs: no more than'
-               write(*,*) '       99 cyclic symmetry model cards'
-               write(*,*) '       allowed'
-               stop
-            endif
-            do i=ipos,132
-               fntria(i:i)=' '
+c            fntria(1:28)='TriMasterCyclicSymmetryModel'
+c            ncyclicsymmetrymodel=ncyclicsymmetrymodel+1
+c            if(ncyclicsymmetrymodel.lt.10) then
+c               write(fntria(29:29),'(i1)')ncyclicsymmetrymodel
+c               fntria(30:33)='.frd'
+c               ipos=34
+c            elseif(ncyclicsymmetrymodel.lt.100) then
+c               write(fntria(29:30),'(i2)')ncyclicsymmetrymodel
+c               fntria(31:34)='.frd'
+c               ipos=35
+c            else
+c               write(*,*) '*ERROR in generatecycmpcs: no more than'
+c               write(*,*) '       99 cyclic symmetry model cards'
+c               write(*,*) '       allowed'
+c               stop
+c            endif
+c            do i=ipos,132
+c               fntria(i:i)=' '
+c            enddo
+c
+            ilen=index(indepset,' ')
+            fntria(1:3)='Tri'
+            do j=4,ilen+2
+               fntria(j:j)=indepset(j-3:j-3)
+            enddo
+            fntria(ilen+3:ilen+6)='.frd'
+            do j=ilen+7,132
+               fntria(j:j)=' '
             enddo
 !
             open(70,file=fntria,status='unknown')

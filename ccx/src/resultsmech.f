@@ -24,7 +24,7 @@
      &  xstateini,xstiff,xstate,npmat_,matname,mi,ielas,icmd,
      &  ncmat_,nstate_,stiini,vini,ener,eei,enerini,istep,iinc,
      &  springarea,reltime,calcul_fn,calcul_qa,calcul_cauchy,iener,
-     &  ikin,nal,ne0,thicke,xnormastface,nea,neb)
+     &  ikin,nal,ne0,thicke,xnormastface,emeini,nea,neb)
 !
 !     calculates stresses and the material tangent at the integration
 !     points and the internal forces at the nodes
@@ -63,7 +63,7 @@
      &  xstiff(27,mi(1),*),xstate(nstate_,mi(1),*),plconloc(82),
      &  vokl(3,3),xstateini(nstate_,mi(1),*),vikl(3,3),
      &  gs(8,4),a,reltime,tlayer(4),dlayer(4),xlayer(mi(3),4),
-     &  thicke(mi(3),*),xnormastface(3,8,*)
+     &  thicke(mi(3),*),xnormastface(3,8,*),emeini(6,mi(1),*)
 !
       include "gauss.f"
 !
@@ -634,13 +634,13 @@ c     Bernhardi end
 !
 !                 prestress values
 !
-            if(iprestr.ne.1) then
+            if(iprestr.eq.1) then
                do kk=1,6
-                  beta(kk)=0.d0
+                  beta(kk)=-prestr(kk,jj,i)
                enddo
             else
                do kk=1,6
-                  beta(kk)=-prestr(kk,jj,i)
+                  beta(kk)=0.d0
                enddo
             endif
 !
@@ -652,8 +652,9 @@ c     Bernhardi end
                t0l=0.d0
                t1l=0.d0
                if(ithermal(1).eq.1) then
-                  if(lakonl(4:5).eq.'8 ') then
-                     do i1=1,nope
+                  if((lakonl(4:5).eq.'8 ').or.
+     &               (lakonl(4:5).eq.'8I')) then
+                     do i1=1,8
                         t0l=t0l+t0(konl(i1))/8.d0
                         t1l=t1l+t1(konl(i1))/8.d0
                      enddo
@@ -666,8 +667,9 @@ c     Bernhardi end
                      enddo
                   endif
                elseif(ithermal(1).ge.2) then
-                  if(lakonl(4:5).eq.'8 ') then
-                     do i1=1,nope
+                  if((lakonl(4:5).eq.'8 ').or.
+     &               (lakonl(4:5).eq.'8I')) then
+                     do i1=1,8
                         t0l=t0l+t0(konl(i1))/8.d0
                         t1l=t1l+vold(0,konl(i1))/8.d0
                      enddo
@@ -714,12 +716,17 @@ c     Bernhardi end
             if(ithermal(1).ne.0) then
                do m1=1,6
                   emec(m1)=eloc(m1)-eth(m1)
-                  emec0(m1)=eme(m1,jj,i)
+c                 emec0(m1)=emeini(m1,jj,i)
                enddo
             else
                do m1=1,6
                   emec(m1)=eloc(m1)
-                  emec0(m1)=eme(m1,jj,i)
+c                 emec0(m1)=emeini(m1,jj,i)
+               enddo
+            endif
+            if(kode.le.-100) then
+               do m1=1,6
+                  emec0(m1)=emeini(m1,jj,i)
                enddo
             endif
 !
@@ -807,9 +814,12 @@ c     Bernhardi end
                endif
             endif
 ! 
-!           updating the internal energy
+!           updating the internal energy and mechanical strain
+!           for user materials (kode<=-100) the mechanical strain has to
+!           be updated at the end of each increment (also if no output
+!           is requested), since it is input to the umat routine
 !
-            if((iout.gt.0).or.(iout.eq.-2)) then
+            if((iout.gt.0).or.(iout.eq.-2).or.(kode.le.-100)) then
                if(ithermal(1).eq.0) then
                   do m1=1,6
                      eth(m1)=0.d0

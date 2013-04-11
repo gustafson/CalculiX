@@ -18,9 +18,9 @@
 !
       subroutine initialcfd(yy,nk,co,ne,ipkon,kon,lakon,x,y,z,xo,yo,zo,
      &  nx,ny,nz,isolidsurf,neighsolidsurf,xsolidsurf,dh,nshcon,shcon,
-     &  nrhcon,rhcon,vold,voldcon,ntmat_,iponoel,inoel,
+     &  nrhcon,rhcon,vold,vcon,ntmat_,iponoel,inoel,
      &  iexplicit,ielmat,nsolidsurf,turbulent,physcon,compressible,
-     &  matname,inomat,voldtu,mi,euler,ithermal)
+     &  matname,inomat,vcontu,mi,euler,ithermal)
 !
 !     initial calculations for cfd applicatons:
 !     - determine the distance from the nearest solid surface
@@ -29,7 +29,7 @@
 !       for solid surface nodes (stored in xsolidsurf)
 !     - determine the adjacent element height for each node 
 !       (stored in field dh)
-!     - calculate the value of the auxiliary variables (voldcon)
+!     - calculate the value of the conservative variables (vcon)
 !
       implicit none
 !
@@ -47,8 +47,8 @@
      &  nonei15(3,9),euler,ithermal
 !
       real*8 x(*),y(*),z(*),xo(*),yo(*),zo(*),xsolidsurf(*),
-     &  yy(*),co(3,*),dh(*),r,cp,rho,shcon(0:3,ntmat_,*),voldtu(2,*),
-     &  rhcon(0:1,ntmat_,*),vold(0:mi(2),*),voldcon(0:4,*),px,py,pz,
+     &  yy(*),co(3,*),dh(*),r,cp,rho,shcon(0:3,ntmat_,*),vcontu(2,*),
+     &  rhcon(0:1,ntmat_,*),vold(0:mi(2),*),vcon(0:4,*),px,py,pz,
      &  a,b,c,d,temp,vel,dtu,dtnu,physcon(*),xtu,xkin,dvi
 !
 !     nodes belonging to the element faces
@@ -260,7 +260,7 @@ c            write(*,*) 'xsolidsurf ',node1,node2,xsolidsurf(i)
                stop
             endif
             rho=vold(4,node)/(r*(vold(0,node)-physcon(1)))
-            voldcon(0,node)=rho*(cp*(temp-physcon(1))+
+            vcon(0,node)=rho*(cp*(temp-physcon(1))+
      &           (vold(1,node)**2+vold(2,node)**2+vold(3,node)**2)
      &           /2.d0)-vold(4,node)
 !
@@ -273,20 +273,22 @@ c               if(dvi.gt.1.d-20) euler=0
             endif
 cstart shallow
 c            rho=dsqrt(vold(4,node)/5.d0+(0.005*co(1,node))**2)
-c            voldcon(0,node)=rho*(cp*(temp-physcon(1))+
+c            vcon(0,node)=rho*(cp*(temp-physcon(1))+
 c     &           (vold(1,node)**2+vold(2,node)**2+vold(3,node)**2)
 c     &           /2.d0)
 cend shallow
          else
             call materialdata_rho(rhcon,nrhcon,imat,rho,
      &           temp,ntmat_,ithermal)
-            voldcon(0,node)=rho*(cp*(temp-physcon(1))+
+            if(ithermal.gt.1) then
+               vcon(0,node)=rho*(cp*(temp-physcon(1))+
      &           (vold(1,node)**2+vold(2,node)**2+vold(3,node)**2)
      &           /2.d0)
+            endif
          endif
-         voldcon(4,node)=rho
+         vcon(4,node)=rho
          do k=1,3
-            voldcon(k,node)=rho*vold(k,node)
+            vcon(k,node)=rho*vold(k,node)
          enddo
       enddo
 !
@@ -321,8 +323,9 @@ c         xkin=10.d0**(-3.5d0)*xtu
      &              temp,ntmat_,ithermal)
             endif
 !     
-            voldtu(1,node)=xkin*dvi
-            voldtu(2,node)=xtu*rho
+            vcontu(1,node)=xkin*dvi
+c            vcontu(1,node)=0.d0
+            vcontu(2,node)=xtu*rho
          enddo
       endif
 !     

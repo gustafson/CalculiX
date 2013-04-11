@@ -58,6 +58,7 @@
                      return
                   endif
                   id=id-1
+                  if(id.eq.0) exit
                else
                   exit
                endif

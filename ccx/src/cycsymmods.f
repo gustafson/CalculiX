@@ -45,7 +45,7 @@
 !
       implicit none
 !
-      logical triangulation,calcangle,nodesonaxis
+      logical triangulation,calcangle,nodesonaxis,check
 !
       character*1 inpc(*)
       character*8 lakon(*)
@@ -67,14 +67,16 @@
      &  csab(7),xn,yn,zn,dd,xap,yap,zap,tietol(2,*),cs(17,*),xsectors,
      &  gsectors,x3,y3,z3,phi,rcscg(*),rcs0cg(*),zcscg(*),zcs0cg(*),
      &  straight(9,*),x1,y1,z1,x2,y2,z2,zp,rp,dist,trab(7,*),
-     &  vold(0:mi(2),*)
+     &  vold(0:mi(2),*),calculated_angle,user_angle
 !
       if(istep.gt.0) then
-         write(*,*) '*ERROR in cycsymmods: *CYCLIC SYMMETRY MODEL'
-         write(*,*) '  should be placed before all step definitions'
+         write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+         write(*,*) '       *CYCLIC SYMMETRY MODEL should'
+         write(*,*) '       be placed before all step definitions'
          stop
       endif
 !
+      check=.true.
       gsectors=1
       elset='
      &                      '
@@ -84,6 +86,8 @@
          if(textpart(i)(1:2).eq.'N=') then
             read(textpart(i)(3:22),'(f20.0)',iostat=istat) xsectors
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         elseif(textpart(i)(1:8).eq.'CHECK=NO') then
+            check=.false.
          elseif(textpart(i)(1:7).eq.'NGRAPH=') then
             read(textpart(i)(8:27),'(f20.0)',iostat=istat) gsectors
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
@@ -98,7 +102,8 @@
             elset(ipos:ipos)='E'
          else
             write(*,*) 
-     &        '*WARNING in cycsymmods: parameter not recognized:'
+     &                 '*WARNING reading *CYCLIC SYMMETRY MODEL:'
+            write(*,*) '         parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline)
@@ -106,18 +111,21 @@
       enddo
 !
       if(xsectors.le.0) then
-         write(*,*) '*ERROR in cycsymmods: the required parameter N'
+         write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+         write(*,*) '       the required parameter N'
          write(*,*) '       is lacking on the *CYCLIC SYMMETRY MODEL'
          write(*,*) '       keyword card or has a value <=0'
          stop
       endif
       if(gsectors.lt.1) then
-         write(*,*) '*WARNING in cycsymmods: cannot plot less than'
+         write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
+         write(*,*) '         cannot plot less than'
          write(*,*) '         one sector: one sector will be plotted'
          gsectors=1
       endif
       if(gsectors.gt.xsectors) then
-         write(*,*) '*WARNING in cycsymmods: cannot plot more than'
+         write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
+         write(*,*) '         cannot plot more than'
          write(*,*) '         ',xsectors,'sectors;',
      &           xsectors,' sectors will'
          write(*,*) '       be plotted'
@@ -147,7 +155,8 @@
             itie=1
          else
             write(*,*)
-     &        '*ERROR in cycsymmods: tie constraint is nonexistent'
+     &                 '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+            write(*,*) '       tie constraint is nonexistent'
             call inputerror(inpc,ipoinpc,iline)
          endif
       endif
@@ -163,7 +172,8 @@
 !
       iset=0
       if(elset.eq.'                     ') then
-         write(*,*) '*INFO in cycsymmods: no element set given'
+         write(*,*) '*INFO reading *CYCLIC SYMMETRY MODEL:'
+         write(*,*) '      no element set given'
          call inputinfo(inpc,ipoinpc,iline)
       else
          do i=1,nset
@@ -173,7 +183,8 @@
             endif
          enddo
          if(iset.eq.0) then
-            write(*,*) '*ERROR in cycsymmods: element set does not'
+            write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+            write(*,*) '       element set does not'
             write(*,*) '       exist; '
             call inputerror(inpc,ipoinpc,iline)
          endif
@@ -184,14 +195,16 @@
      &     ipoinp,inp,ipoinpc)
 !
       if((istat.lt.0).or.(key.eq.1)) then
-         write(*,*)'*ERROR in cycsymmods: definition of the cyclic'
-         write(*,*) '  symmetry model is not complete'
+         write(*,*)'*ERROR reading *CYCLIC SYMMETRY MODEL:'
+         write(*,*) '      definition of the cyclic'
+         write(*,*) '      symmetry model is not complete'
          stop
       endif
 !
       ntrans=ntrans+1
       if(ntrans.gt.ntrans_) then
-         write(*,*) '*ERROR in cycsymmods: increase ntrans_'
+         write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+         write(*,*) '       increase ntrans_'
          stop
       endif
 !
@@ -209,16 +222,15 @@
 !
       trab(7,ntrans)=2
 !
-c      call writeset(nset,set,istartset,iendset,ialset)
-!
 !     check whether depset and indepset exist
 !
       do i=1,nset
          if(set(i).eq.depset) exit
       enddo
       if(i.gt.nset) then
-         write(*,*) '*ERROR in cycsymmods: surface ',depset
-         write(*,*) '  has not yet been defined.' 
+         write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+         write(*,*) '       surface ',depset
+         write(*,*) '       has not yet been defined.' 
          stop
       endif
       jdep=i
@@ -227,8 +239,9 @@ c      call writeset(nset,set,istartset,iendset,ialset)
          if(set(i).eq.indepset) exit
       enddo
       if(i.gt.nset) then
-         write(*,*) '*ERROR in cycsymmods: surface ',indepset
-         write(*,*) '  has not yet been defined.' 
+         write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+         write(*,*) '       surface ',indepset
+         write(*,*) '       has not yet been defined.' 
          stop
       endif
       jindep=i
@@ -253,7 +266,8 @@ c      call writeset(nset,set,istartset,iendset,ialset)
          if(ialset(j).gt.0) then
             l=l+1
             if(lprev+l.gt.ncs_) then
-               write(*,*) '*ERROR in cycsymmods: increase ncs_'
+               write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+               write(*,*) '       increase ncs_'
                stop
             endif
             node =ialset(j)
@@ -274,7 +288,8 @@ c      call writeset(nset,set,istartset,iendset,ialset)
                if(k.ge.ialset(j-1)) exit
                l=l+1
                if(l.gt.ncs_) then
-                  write(*,*) '*ERROR in cycsymmods: increase ncs_'
+                  write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+                  write(*,*) '       increase ncs_'
                   stop
                endif
                node=k
@@ -305,18 +320,11 @@ c      call writeset(nset,set,istartset,iendset,ialset)
       kflag=2
       call dsort(rcs,nr,ncsnodes,kflag)
       call dsort(zcs,nz,ncsnodes,kflag)
-c      write(*,*) 'independent side'
-c      do i=1,ncsnodes
-c         write(*,'(i5,1x,i5,3(1x,e11.4),1x,i5,1x,e11.4,1x,i5)') 
-c     &       i,ics(i),rcs0(i),zcs0(i),rcs(i),nr(i),zcs(i),nz(i)
-c      enddo
-c      write(*,*)
 !
 !     check whether a tolerance was defined. If not, a tolerance
 !     is calculated as 0.5 % of the mean of the distance of every
 !     independent node to its nearest neighbour
 !
-c      if(tolloc.lt.1.d-30) then
       if(tolloc.lt.0.d0) then
          nneigh=2
          dist=0.d0
@@ -337,16 +345,29 @@ c      if(tolloc.lt.1.d-30) then
      &                     (co(2,nodei)-co(2,noden(2)))**2+
      &                     (co(3,nodei)-co(3,noden(2)))**2)
          enddo
-c         tolloc=0.005d0*dist/ncsnodes
          tolloc=1.d-10*dist/ncsnodes
-         write(*,*) '*INFO in cycsymmods: no tolerance was defined'
+         write(*,*) '*INFO reading *CYCLIC SYMMETRY MODEL:'
+         write(*,*) '      no tolerance was defined'
          write(*,*) '      in the *TIE option; a tolerance of ',
      &       tolloc
          write(*,*) '      will be used'
          write(*,*)
       endif
 !
-!     calculating the angle and check for nodes on the axis
+!     calculating the angle between dependent and independent
+!     side and check for nodes on the axis
+!
+!     this angle may be different from 2*pi/xsectors: in that way
+!     the user can simulate fractional nodal diameters
+!
+!     (x2,y2,z2): unit vector on the dependent side and orthogonal
+!                 to the rotation axis
+!     (x3,y3,z3): unit vector on the independent side and orthogonal
+!                 to the rotation axis
+!     (x1,y1,z1)=(x2,y2,z2)x(x3,y3,z3)
+!                points in the same direction of xn if the independent
+!                side is on the clockwise side of the dependent side if
+!                looking in the direction of xn
 !
       calcangle=.false.
       nodesonaxis=.false.
@@ -400,9 +421,23 @@ c         tolloc=0.005d0*dist/ncsnodes
                z1=x2*y3-x3*y2
 !
                phi=(x1*xn+y1*yn+z1*zn)/dabs(x1*xn+y1*yn+z1*zn)*
-     &              6.28318531d0/cs(1,mcs)
+     &              dacos(x2*x3+y2*y3+z2*z3)
+               if(check) then
+                  calculated_angle=dacos(x2*x3+y2*y3+z2*z3)
+                  user_angle=6.28318531d0/cs(1,mcs)
+                  if(dabs(calculated_angle-user_angle)/calculated_angle
+     &                 .gt.0.01d0) then
+                     write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL'
+                     write(*,*) '       number of segments does not'
+                     write(*,*) '       agree with the geometry'
+                     write(*,*) '       angle based on N:',
+     &                  user_angle*57.29577951d0
+                     write(*,*) '       angle based on the geometry:',
+     &                       calculated_angle*57.29577951d0
+                     stop
+                  endif
+               endif
                calcangle=.true.
-c               write(*,*) 'phi ',phi
             endif
 !
          else
@@ -453,9 +488,24 @@ c               write(*,*) 'phi ',phi
                   z1=x2*y3-x3*y2
 !     
                   phi=(x1*xn+y1*yn+z1*zn)/dabs(x1*xn+y1*yn+z1*zn)*
-     &                 6.28318531d0/cs(1,mcs)
+     &              dacos(x2*x3+y2*y3+z2*z3)
+                  if(check) then
+                     calculated_angle=dacos(x2*x3+y2*y3+z2*z3)
+                     user_angle=6.28318531d0/cs(1,mcs)
+                     if(dabs(calculated_angle-user_angle)
+     &                    /calculated_angle.gt.0.01d0) then
+                        write(*,*) 
+     &                     '*ERROR reading *CYCLIC SYMMETRY MODEL'
+                        write(*,*) '       number of segments does not'
+                        write(*,*) '       agree with the geometry'
+                        write(*,*) '       angle based on N:',
+     &                    user_angle*57.29577951d0
+                        write(*,*) '       angle based on the geometry:'
+     &                       ,calculated_angle*57.29577951d0
+                        stop
+                     endif
+                  endif
                   calcangle=.true.
-c                  write(*,*) 'phi ',phi
                endif
 !     
             enddo
@@ -481,7 +531,8 @@ c                  write(*,*) 'phi ',phi
      &         mcs,triangulation,csab,xn,yn,zn,phi,noded,
      &         ncsnodes,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
      &         nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
-     &         ifacetet,inodface,ncounter,jobnamec,vold,cfd,mi)
+     &         ifacetet,inodface,ncounter,jobnamec,vold,cfd,mi,
+     &         indepset)
 !
          else
             k=ialset(i-2)
@@ -496,25 +547,20 @@ c                  write(*,*) 'phi ',phi
      &           mcs,triangulation,csab,xn,yn,zn,phi,noded,
      &           ncsnodes,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
      &           nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
-     &           ifacetet,inodface,ncounter,jobnamec,vold,cfd,mi)
-c!
-c               call generatecycmpcs(tolloc,co,nk,ipompc,nodempc,
-c     &              coefmpc,nmpc,nmpc_,ikmpc,ilmpc,mpcfree,rcs,zcs,ics,
-c     &              nr,nz,rcs0,zcs0,ncs_,cs,labmpc,istep,istat,n,
-c     &              mcs,ithermal,triangulation,csab,xn,yn,zn,phi,noded,
-c     &              ncsnodes,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
-c     &              nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
-c     &              ifacetet,inodface,ncounter,jobnamec,vold,cfd,mi)
+     &           ifacetet,inodface,ncounter,jobnamec,vold,cfd,mi,
+     &           indepset)
             enddo
          endif
 !
       enddo
 !
       if(ncounter.ne.0) then
-         write(*,*) '*ERROR in cycsymmods: for at least one dependent'
-         write(*,*) '       node in a cyclic symmetry definition no '
-         write(*,*) '       independent counterpart was found'
-         stop
+         write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
+         write(*,*) '        for at least one dependent'
+         write(*,*) '        node in a cyclic symmetry definition no '
+         write(*,*) '        independent counterpart was found'
+c     next line was commented on 19/04/2012
+c         stop
       endif
 !
 !     sorting ics

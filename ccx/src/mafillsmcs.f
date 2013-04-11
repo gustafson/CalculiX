@@ -28,7 +28,8 @@
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
      &  matname,mi,ics,cs,nm,ncmat_,labmpc,mass,stiffness,buckling,
      &  rhsi,intscheme,mcs,coriolis,ibody,xloadold,reltime,ielcs,
-     &  veold,springarea,thicke,xnormastface)
+     &  veold,springarea,thicke,xnormastface,integerglob,doubleglob,
+     &  tieset,istartset,iendset,ialset,ntie)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !     for cyclic symmetry calculations
@@ -40,13 +41,14 @@
       character*8 lakon(*)
       character*20 labmpc(*),sideload(*)
       character*80 matname(*)
+      character*81 tieset(3,*)
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
      &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,
-     &  nactdof(0:mi(2),*),konl(20),irow(*),
+     &  nactdof(0:mi(2),*),konl(20),irow(*),istartset(*),iendset(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
-     &  ielorien(mi(3),*),
+     &  ielorien(mi(3),*),integerglob(*),ialset(*),ntie,
      &  ipkon(*),ics(*),ij,ilength,lprev,ipobody(2,*),nbody,
      &  ibody(3,*),nk,ne,nboun,nmpc,nforc,nload,neq,nzl,nmethod,
      &  ithermal,iprestr,iperturb(*),nzs,i,j,k,l,m,idist,jj,
@@ -63,7 +65,7 @@
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),xloadold(2,*),
      &  alcon(0:6,ntmat_,*),cs(17,*),alzero(*),orab(7,*),reltime,
      &  springarea(2,*),plicon(0:2*npmat_,ntmat_,*),xstate,xstateini,
-     &  plkcon(0:2*npmat_,ntmat_,*),thicke(mi(3),*),
+     &  plkcon(0:2*npmat_,ntmat_,*),thicke(mi(3),*),doubleglob(*),
      &  xstiff(27,mi(1),*),pi,theta,ti,tr,veold(0:mi(2),*),om,valu2,
      &  value,dtime,walue,walu2,time,ttime,xnormastface(3,8,*)
 !
@@ -209,7 +211,9 @@ c        endif
      &          dtime,matname,mi(1),ncmat_,mass,stiffness,buckling,rhsi,
      &          intscheme,ttime,time,istep,iinc,coriolis,xloadold,
      &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
-     &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke)
+     &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
+     &          xnormastface,integerglob,doubleglob,tieset,istartset,
+     &          iendset,ialset,ntie)
 !
         do jj=1,3*nope
 !

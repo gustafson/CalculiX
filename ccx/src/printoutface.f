@@ -86,8 +86,9 @@
 !     
             write(5,*)
             write(5,120) faset(1:ipos-2),ttime
- 120        format(' surface stress vector (tx,ty,tz), normal stress, sh
-     &ear stress and coordinates for set ',A,' and time ',e14.7)
+ 120        format(' surface stress vector  tx            ty           
+     & tz      normal stress  shear stress and coordinates for set ',A,'
+     & and time ',e14.7)
             write(5,*)
 !     
 !           printing the data
@@ -357,7 +358,7 @@ c     &                 r,dvi,rhcon,nrhcon,rho,cocon,ncocon,cond)
                   tt=dsqrt((tf(1)-tn*xsj2(1)/dd)**2+
      &                     (tf(2)-tn*xsj2(2)/dd)**2+
      &                     (tf(3)-tn*xsj2(3)/dd)**2)
-                  write(5,'(i6,1x,i3,1x,i3,1p,8(1x,e11.4))') nelem,ig,i,
+                  write(5,'(i10,1x,i3,1x,i3,1p,8(1x,e13.6))')nelem,ig,i,
      &                 (tf(i1),i1=1,3),tn,tt,(coords(i1),i1=1,3)
 !     
                enddo
@@ -368,7 +369,7 @@ c     &                 r,dvi,rhcon,nrhcon,rho,cocon,ncocon,cond)
  121        format(' total surface force (fx,fy,fz) for set ',A,
      &           ' and time ',e14.7)
             write(5,*)
-            write(5,'(1p,3(1x,e11.4))') (f(j),j=1,3)
+            write(5,'(1p,3(1x,e13.6))') (f(j),j=1,3)
 !     
          endif
       enddo

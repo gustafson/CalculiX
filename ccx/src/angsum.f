@@ -84,7 +84,7 @@
 !
       integer i,j
       real*8 vector(3,3),ca,cb,cc,ca2,cb2,cc2,sa,sb,sc,cosa,sina,
-     &     cotanb,cotanc,a,b,c,angle,cotet(3,4),absval
+     &     cotanb,cotanc,a,b,c,cotet(3,4),absval
 !     calculate normal vectors
       do i=1,3
 !     i is vector 1, 2 and 3
@@ -118,7 +118,7 @@
 !
       if((dabs(sa).lt.1.d-8).or.(dabs(sb).lt.1.d-8).or.
      &   (dabs(sc).lt.1.d-8)) then
-        angle=0.d0
+        spaceangle=0.d0
         return
       endif
 !

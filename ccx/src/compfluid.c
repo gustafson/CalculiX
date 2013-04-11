@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "CalculiX.h"
 #ifdef SPOOLES
 #include "spooles.h"
@@ -39,40 +40,43 @@ int *nk1,*kon1,*ipkon1,*ne1,*nodeboun1,*ndirboun1,*nboun1,*ipompc1,
     *nodempc1,*nmpc1,*nodeforc1,*ndirforc1,*nforc1,*nelemload1,*nload1,
     *ipobody1,*nbody1,*nactdoh1,*icolv1,*jqv1,*irowv1,neqv1,nzlv1,*nmethod1,
     *ikmpc1,*ilmpc1,*ikboun1,*ilboun1,*nrhcon1,*ielmat1,*ntmat_1,*ithermal1,
-    nzsv1,*mi1,*ncmat_1,*nshcon1,*istep1,*iinc1,*ibody1,*turbulent1,
+    nzsv1,*mi1,*ncmat_1,*nshcon1,*istep1,*iinc1,*ibody1,*iturbulent1,
     *nelemface1,*nface1,compressible1,num_cpus,*icolp1,*jqp1,*irowp1,
     neqp1,nzlp1,nzsp1,iexplicit1,*ncocon1,neqt1,nzst1,*ipvar1,*ipvarf1,
     *nactdok1,neqk1,nzsk1,*isolidsurf1,*nsolidsurf1,*ifreestream1,
     *nfreestream1;
 
 double *co1,*xboun1,*coefmpc1,*xforc1,*xload1,*xbody1,*rhcon1,*t01,
-    *vold1,*voldcon1,dtimef1,*physcon1,*shcon1,*ttime1,timef1,*xloadold1,
-    *voldtu1,*yy1,*b=NULL,*xbounact1,theta11,*v1,theta21,*cocon1,
-    reltimef1,*dtl1,*var1,*varf1,*sti1,*bk=NULL,*bt=NULL,*xsolidsurf1;
+    *vold1,*vcon1,dtimef1,*physcon1,*shcon1,*ttime1,timef1,*xloadold1,
+    *vcontu1,*yy1,*b=NULL,*xbounact1,theta11,*v1,theta21,*cocon1,*dtc1,
+    reltimef1,*dt1,*var1,*varf1,*sti1,*bk=NULL,*bt=NULL,*xsolidsurf1;
 
-void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
-    int *ne, int *ipoface, char *sideface, int *ifreestream, 
+void compfluid(double **cop, int *nk, int **ipkonp, int **konp, char **lakonp,
+    int *ne, char **sidefacep, int *ifreestream, 
     int *nfreestream, int *isolidsurf, int *neighsolidsurf,
-    int *nsolidsurf, int *iponoel, int *inoel, int *nshcon, double *shcon,
+    int *nsolidsurf, int **iponoelp, int **inoelp, int *nshcon, double *shcon,
     int *nrhcon, double *rhcon, double *vold, int *ntmat_,int *nodeboun, 
-    int *ndirboun, int *nboun, int *ipompc,int *nodempc, int *nmpc,
-    int *ikmpc, int *ilmpc, int *ithermal, int *ikboun, int *ilboun,
-    int *turbulent, int *isolver, int *iexpl, double *voldtu, double *ttime,
+    int *ndirboun, int *nboun, int **ipompcp,int **nodempcp, int *nmpc,
+    int **ikmpcp, int **ilmpcp, int *ithermal, int *ikboun, int *ilboun,
+    int *iturbulent, int *isolver, int *iexpl, double *vcontu, double *ttime,
     double *time, double *dtime, int *nodeforc,int *ndirforc,double *xforc,
     int *nforc, int *nelemload, char *sideload, double *xload,int *nload,
-    double *xbody,int *ipobody,int *nbody, int *ielmat, char *matname,
+    double *xbody,int *ipobody,int *nbody, int **ielmatp, char *matname,
     int *mi, int *ncmat_, double *physcon, int *istep, int *iinc,
     int *ibody, double *xloadold, double *xboun,
-    double *coefmpc, int *nmethod, double *xforcold, double *xforcact,
+    double **coefmpcp, int *nmethod, double *xforcold, double *xforcact,
     int *iamforc,int *iamload, double *xbodyold, double *xbodyact,
     double *t1old, double *t1, double *t1act, int *iamt1, double *amta,
     int *namta, int *nam, double *ampli, double *xbounold, double *xbounact,
-    int *iamboun, int *itg, int *ntg, char *amname, double *t0, int *nelemface,
+    int *iamboun, int *itg, int *ntg, char *amname, double *t0, 
+    int **nelemfacep,
     int *nface, double *cocon, int *ncocon, double *xloadact, double *tper,
     int *jmax, int *jout, char *set, int *nset, int *istartset,
     int *iendset, int *ialset, char *prset, char *prlab, int *nprint,
-    double *trab, int *inotr, int *ntrans, char *filab, char *labmpc, 
-    double *sti, int *norien, double *orab){
+    double *trab, int *inotr, int *ntrans, char *filab, char **labmpcp, 
+    double *sti, int *norien, double *orab, char *jobnamef,char *tieset,
+    int *ntie, int *mcs, int *ics, double *cs, int *nkon, int *mpcfree,
+    int *memmpc_,double **fmpcp,int *nef){
 
     /* main computational fluid dynamics routine */
 
@@ -85,7 +89,7 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
        for Engineering Applications", AIAA Journal(1994), 32(8), 
        1598-1605                                                       */
   
-  char cflag[1];
+  char cflag[1],*labmpc=NULL,*lakon=NULL,*sideface=NULL;
 
   int *ipointer=NULL, *mast1=NULL, *irowt=NULL, *irowv=NULL, *irowp=NULL,
       *irowk=NULL, *icolt=NULL, *icolv=NULL, *icolp=NULL, *icolk=NULL,
@@ -93,21 +97,33 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
       *nactdok=NULL, *nx=NULL, *ny=NULL, *nz=NULL,nzs,neqt,neqv,neqp,
       neqk,nzst,nzsv,nzsp,nzsk,iexplicit,nzlt,nzlv,nzlp,nzlk,kode,nnstep,
       convergence,iout,iit,symmetryflag=0,inputformat=0,compressible,
-      nmethodd,nstate_=0,*ielorien=NULL,*inum=NULL,ismooth=0,
+      nmethodd,nstate_=0,*ielorien=NULL,*inum=NULL,ismooth=0,iqfx=0,isti=0,
       *inomat=NULL,ikin=0,mt=mi[1]+1,*ipvar=NULL,*ipvarf=NULL,nvar_,nvarf_,
-      nfield,ndim,iorienglob,cfd=1,force=0,euler=1;
+      nfield,ndim,iorienglob,cfd=1,force=0,euler=1,*ithread=NULL,
+      *integerglob=NULL,nslav,*islav=NULL,ncs,*icscp=NULL,*islavcp=NULL,
+      nkold,neold,*nodempc=NULL,*ipompc=NULL,*ikmpc=NULL,*ilmpc=NULL,
+      *ipkon=NULL,*kon=NULL,*ielmat=NULL,*nelemface=NULL,*inoel=NULL,
+      *iponoel=NULL,*ipoface=NULL,*nodface=NULL,inoelfree;
 
-  double *yy=NULL, *xsolidsurf=NULL, *dt=NULL, *voldcon=NULL, *x=NULL,
+  double *yy=NULL, *xsolidsurf=NULL, *dt=NULL, *vcon=NULL, *x=NULL,
       *y=NULL, *z=NULL, *xo=NULL, *yo=NULL, *zo=NULL, *adbt=NULL,
       *aubt=NULL, *adbv=NULL, *aubv=NULL, *adbp=NULL, *aubp=NULL,
       *adbk=NULL, *aubk=NULL,*v=NULL, *vtu=NULL,timef,ttimef,
       dtimef,*addiv=NULL,*sol=NULL, *aux=NULL,shockscale,*stn=NULL,
-      *solk=NULL,*solt=NULL,theta1,theta2,*adb=NULL,
+      *solk=NULL,*solt=NULL,theta1,theta2,*adb=NULL,*qfn=NULL,
       *aub=NULL,sigma=0.,*dh=NULL,reltimef,*fn=NULL,*thicke=NULL,
-      *eme=NULL,*qfx=NULL,*xstate=NULL,*ener=NULL,
+      *eme=NULL,*qfx=NULL,*xstate=NULL,*ener=NULL,*dtc=NULL,
       csmooth=0.,shockcoef=1.,*sa=NULL,*sav=NULL,*dtl=NULL,*varf=NULL,
       *adlt=NULL,*adlv=NULL,*adlp=NULL,*adlk=NULL,factor=1.,*var=NULL,
-      *voldconini=NULL;
+      *vconini=NULL,*doubleglob=NULL,*xcs=NULL,*ycs=NULL,*zcs=NULL,
+      *xslav=NULL,*yslav=NULL,*zslav=NULL,*coefmpc=NULL,*fmpc=NULL,
+      *co=NULL;
+
+  nodempc=*nodempcp;ipompc=*ipompcp;ikmpc=*ikmpcp;ilmpc=*ilmpcp;
+  coefmpc=*coefmpcp;labmpc=*labmpcp;fmpc=*fmpcp;co=*cop;
+  ipkon=*ipkonp;lakon=*lakonp;kon=*konp;ielmat=*ielmatp;
+  nelemface=*nelemfacep;sideface=*sidefacep;inoel=*inoelp;
+  iponoel=*iponoelp;
 
   /* standard: shockcoef=1 */
   /* attention: set to 0.1 for test purposes! */
@@ -115,6 +131,10 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 #ifdef SGI
   int token;
 #endif
+
+  /* open frd-file for fluids */
+
+  FORTRAN(openfilefluid,(jobnamef));
 
   /* variables for multithreading procedure */
 
@@ -186,6 +206,101 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
       theta1=1.0;theta2=1.0;compressible=0;
   }
 
+  if(compressible==1){
+      printf(" *ERROR in compfluid: compressible CFD calculations\n");
+      printf("        are not possible with this version of CalculiX\n");
+      FORTRAN(stop,());
+  }
+
+  /* generating additional elements and MPC's for cyclic symmetric
+     structures */
+
+  if(*mcs==1){
+
+      /* find the cyclic symmetry slave nodes */
+
+      islav=NNEW(int,*nk);
+      FORTRAN(findslavcfd,(nmpc,labmpc,ipompc,nodempc,islav,&nslav));
+      RENEW(islav,int,nslav);
+
+      /* generate new nodes and elements in a layer on the slave
+         and master side */
+
+      nkold=*nk;
+      neold=*ne;
+      ncs=cs[3];
+      icscp=NNEW(int,ncs);
+      xcs=NNEW(double,ncs);
+      ycs=NNEW(double,ncs);
+      zcs=NNEW(double,ncs);
+      islavcp=NNEW(int,nslav);
+      xslav=NNEW(double,nslav);
+      yslav=NNEW(double,nslav);
+      zslav=NNEW(double,nslav);
+      RENEW(co,double,3*(*nk+ncs+nslav));
+      RENEW(ipkon,int,*ne+*nface);
+      RENEW(lakon,char,8*(*ne+*nface));
+      RENEW(kon,int,*nkon+8**nface);
+      RENEW(ielmat,int,mi[2]*(*nkon+8**nface));
+
+      FORTRAN(gencycsymelemcfd,(ics,cs,icscp,xcs,ycs,zcs,islav,
+         &nslav,islavcp,xslav,yslav,zslav,nface,nelemface,sideface,
+	 nk,co,ne,ipkon,lakon,kon,nkon,ielmat,mi));
+
+      RENEW(ipkon,int,*ne);
+      RENEW(lakon,char,8**ne);
+      RENEW(kon,int,*nkon);
+      RENEW(ielmat,int,mi[2]**ne);
+
+      /* generate new MPC's */
+
+      if(*ithermal>1){
+	  RENEW(ipompc,int,*nmpc+5*(ncs+nslav));
+	  RENEW(ikmpc,int,*nmpc+5*(ncs+nslav));
+	  RENEW(ilmpc,int,*nmpc+5*(ncs+nslav));
+	  RENEW(labmpc,char,*nmpc+5*(ncs+nslav));
+      }else{
+	  RENEW(ipompc,int,*nmpc+4*(ncs+nslav));
+	  RENEW(ikmpc,int,*nmpc+4*(ncs+nslav));
+	  RENEW(ilmpc,int,*nmpc+4*(ncs+nslav));
+	  RENEW(labmpc,char,*nmpc+4*(ncs+nslav));
+      }
+      interpolcycsymcfd(&nkold,co,&neold,ipkon,kon,&nodempc,ipompc,nmpc,
+                        ikmpc,ilmpc,&coefmpc,labmpc,mpcfree,memmpc_,lakon,
+                        &ncs,icscp,xcs,ycs,zcs,&nslav,islavcp,xslav,yslav,
+                        zslav,ithermal);
+
+      free(icscp);free(xcs);free(ycs);free(zcs);
+      free(islavcp);free(xslav);free(yslav);free(zslav);
+
+      /* update the field with external faces
+	 and node-to-element dependence */
+
+      *nef+=(*ne-neold);
+      RENEW(sideface,char,6**nef);
+      RENEW(nelemface,int,6**nef);
+      ipoface=NNEW(int,*nk);
+      nodface=NNEW(int,5*6**nef);
+      RENEW(iponoel,int,*nk);
+      RENEW(inoel,int,3*20**nef);
+
+      FORTRAN(precfdcyc,(nelemface,sideface,nface,ipoface,nodface,
+       ne,ipkon,kon,lakon,ikboun,ilboun,xboun,nboun,nk,isolidsurf,
+       nsolidsurf,ifreestream,nfreestream,neighsolidsurf,iponoel,inoel,
+       &inoelfree,nef,co,ipompc,nodempc,ikmpc,ilmpc,nmpc,set,istartset,
+       iendset,ialset,nset,iturbulent));
+
+      RENEW(sideface,char,*nface);
+      RENEW(nelemface,int,*nface);
+      free(ipoface);free(nodface);
+      RENEW(inoel,int,3*inoelfree);
+
+  }else if(*mcs>1){
+      printf(" *ERROR in compfluid: for CFD only one cyclic symmetry\n");
+      printf("        conditions is allowed\n");
+      FORTRAN(stop,());
+  }
+
   /* if initial conditions are specified for the temperature, 
      it is assumed that the temperature is an unknown */
 
@@ -212,7 +327,7 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
       jqt=NNEW(int,*nk+1);
   }
 
-  if(*turbulent!=0){
+  if(*iturbulent!=0){
       irowk=NNEW(int,nzs);
       icolk=NNEW(int,*nk);
       jqk=NNEW(int,*nk+1);
@@ -223,7 +338,7 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 	    nodempc,nmpc,nactdoh,icolt,icolv,icolp,icolk,jqt,jqv,jqp,
 	    jqk,&mast1,&irowt,&irowv,&irowp,&irowk,isolver,&neqt,&neqv,
             &neqp,&neqk,ikmpc,ilmpc,ipointer,&nzst,&nzsv,&nzsp,&nzsk,
-            ithermal,ikboun,ilboun,turbulent,nactdok,ifreestream,nfreestream,
+            ithermal,ikboun,ilboun,iturbulent,nactdok,ifreestream,nfreestream,
 	    isolidsurf,nsolidsurf,&nzs,&iexplicit,ielmat,inomat,labmpc);
 
   free(ipointer);free(mast1);
@@ -233,8 +348,8 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
   yy=NNEW(double,*nk);
   xsolidsurf=NNEW(double,*nsolidsurf);
   dh=NNEW(double,*nk);
-  voldcon=NNEW(double,mt**nk);
-  voldconini=NNEW(double,mt**nk);
+  vcon=NNEW(double,mt**nk);
+  vconini=NNEW(double,mt**nk);
   x=NNEW(double,*nsolidsurf);
   y=NNEW(double,*nsolidsurf);
   z=NNEW(double,*nsolidsurf);
@@ -247,9 +362,9 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
   
   FORTRAN(initialcfd,(yy,nk,co,ne,ipkon,kon,lakon,x,y,z,xo,yo,zo,
        nx,ny,nz,isolidsurf,neighsolidsurf,xsolidsurf,dh,nshcon,shcon,
-       nrhcon,rhcon,vold,voldcon,ntmat_,iponoel,inoel,
-       &iexplicit,ielmat,nsolidsurf,turbulent,physcon,&compressible,
-       matname,inomat,voldtu,mi,&euler,ithermal));
+       nrhcon,rhcon,vold,vcon,ntmat_,iponoel,inoel,
+       &iexplicit,ielmat,nsolidsurf,iturbulent,physcon,&compressible,
+       matname,inomat,vcontu,mi,&euler,ithermal));
   
   free(x);free(y);free(z);free(xo);free(yo);free(zo);free(nx);free(ny);
   free(nz);
@@ -355,9 +470,9 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
       
   }
 
-  /* lhs for the turbulent */
+  /* lhs for the turbulent parameters */
 
-  if(*turbulent!=0){
+  if(*iturbulent!=0){
       adbk=NNEW(double,neqk);
       aubk=NNEW(double,nzsk);
       FORTRAN(mafillklhs,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
@@ -382,6 +497,7 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
   timef=*time-*dtime;
   dt=NNEW(double,*nk);
 //  if((iexplicit==1)&&(*nmethod==1))dtl=NNEW(double,*nk);
+  dtc=NNEW(double,*nk);
 
   if(compressible){
       sa=NNEW(double,neqt);
@@ -399,9 +515,15 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 //      if((iexplicit==1)&&(*nmethod==1))for(i=0;i<*nk;i++)dtl[i]=1.e30;
       FORTRAN(compdt,(nk,dt,nshcon,shcon,nrhcon,rhcon,vold,ntmat_,iponoel,
 	      inoel,&dtimef,&iexplicit,ielmat,physcon,dh,cocon,ncocon,ithermal,
-	      mi,ipkon,kon,lakon,dtl,ne,v,co,turbulent,voldtu));
+	      mi,ipkon,kon,lakon,dtl,ne,v,co,iturbulent,vcontu,dtc));
 
-      /* fixed time */
+      /* correction for too large changes */
+
+//      if(iit>10){
+//ccc      if(iit>=2){
+//ccc	  if((iexplicit==1)&&(*nmethod==1)){dtimef*=factor;}
+//	  if(*nmethod==1){dtimef*=factor;}
+//      }
 
       timef+=dtimef;
       if((*dtime<timef)&&(*nmethod==4)){
@@ -410,12 +532,6 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
       }
       reltimef=timef/(*tper);
       if(reltimef>1.) reltimef=1.;
-
-      if(iit>10){
-//      if(iit>=2){
-//	  if((iexplicit==1)&&(*nmethod==1)){dtimef*=factor;}
-	  if(*nmethod==1){dtimef*=factor;}
-      }
 
       /* determining the instantaneous load */
 
@@ -428,7 +544,8 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
              xbounold,xboun,xbounact,iamboun,nboun,
              nodeboun,ndirboun,nodeforc,ndirforc,istep,iinc,
 	     co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
-             ntrans,trab,inotr,vold));
+	     ntrans,trab,inotr,vold,integerglob,doubleglob,tieset,istartset,
+             iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc));
 /*	  FORTRAN(tempload,(xforcold,xforc,xforcact,iamforc,nforc,
              xloadold,xload,xloadact,iamload,nload,ibody,xbody,nbody,
              xbodyold,xbodyact,t1old,t1,t1act,iamt1,nk,amta,
@@ -444,13 +561,14 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
              xbounold,xboun,xbounact,iamboun,nboun,
              nodeboun,ndirboun,nodeforc,ndirforc,istep,iinc,
 	     co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
-             ntrans,trab,inotr,vold));
+             ntrans,trab,inotr,vold,integerglob,doubleglob,tieset,istartset,
+             iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc));
       }
 
       /*    if((iit/jout[1])*jout[1]==iit){
 	  nnstep=6;
 	  FORTRAN(frddummy,(co,nk,kon,ipkon,lakon,ne,v,vold,
-	      &kode,&timef,ielmat,matname,&nnstep,vtu,voldtu,voldcon));
+	      &kode,&timef,ielmat,matname,&nnstep,vtu,vcontu,vcon));
 	      }*/
 
       /* STEP 1: velocity correction */
@@ -466,18 +584,20 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
       icolv1=icolv;jqv1=jqv;irowv1=irowv;neqv1=neqv;nzlv1=nzlv;
       nmethod1=nmethod;ikmpc1=ikmpc;ilmpc1=ilmpc;ikboun1=ikboun;
       ilboun1=ilboun;rhcon1=rhcon;nrhcon1=nrhcon;ielmat1=ielmat;
-      ntmat_1=ntmat_;t01=t0;ithermal1=ithermal;vold1=vold;voldcon1=voldcon;
+      ntmat_1=ntmat_;t01=t0;ithermal1=ithermal;vold1=vold;vcon1=vcon;
       nzsv1=nzsv;dtimef1=dtimef;matname1=matname;mi1=mi;ncmat_1=ncmat_;
       physcon1=physcon;shcon1=shcon;nshcon1=nshcon;ttime1=ttime;
       timef1=timef;istep1=istep;iinc1=iinc;ibody1=ibody;xloadold1=xloadold;
-      turbulent1=turbulent;voldtu1=voldtu;yy1=yy;nelemface1=nelemface;
-      sideface1=sideface;nface1=nface;compressible1=compressible;
-      dtl1=dtl;ipvar1=ipvar;var1=var;ipvarf1=ipvarf;varf1=varf;sti1=sti;
+      iturbulent1=iturbulent;vcontu1=vcontu;yy1=yy;nelemface1=nelemface;
+      sideface1=sideface;nface1=nface;compressible1=compressible;dtc1=dtc;
+      dt1=dt;ipvar1=ipvar;var1=var;ipvarf1=ipvarf;varf1=varf;sti1=sti;
   
   /* create threads and wait */
   
+      ithread=NNEW(int,num_cpus);
       for(i=0; i<num_cpus; i++)  {
-	  pthread_create(&tid[i], NULL, mafillv1rhsmt, (void *)i);
+	  ithread[i]=i;
+	  pthread_create(&tid[i], NULL, (void *)mafillv1rhsmt, (void *)&ithread[i]);
       }
       for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
 
@@ -486,7 +606,7 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 	      b[i]+=b[i+j*neqv];
 	  }
       }
-      RENEW(b,double,neqv);
+      RENEW(b,double,neqv);free(ithread);
 
       sol=NNEW(double,neqv);
       aux=NNEW(double,neqv);
@@ -499,21 +619,21 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 
       FORTRAN(resultsv1,(nk,nactdoh,v,sol,ipompc,nodempc,coefmpc,nmpc,mi));
       free(sol);
-
-      /*     if((iit/jout[1])*jout[1]==iit){
-	  nnstep=1;
-	  FORTRAN(frdfluid,(co,nk,kon,ipkon,lakon,ne,v,vold,
-	     &kode,&timef,ielmat,matname,&nnstep,vtu,voldtu,voldcon,
-		  physcon,filab,inomat,ntrans,inotr,trab,mi,stn));
-		  }*/
       
       /* inserting the velocity boundary conditions */
 
-	   FORTRAN(applybounv,(nodeboun,ndirboun,nboun,xbounact,
-	     ithermal,nk,iponoel,inoel,vold,voldtu,t1act,isolidsurf,
-	     nsolidsurf,xsolidsurf,nfreestream,ifreestream,turbulent,
-             voldcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
-	     &compressible,&ismooth,nmpc,nodempc,ipompc,coefmpc,inomat,mi));
+/*	   FORTRAN(applybounv,(nodeboun,ndirboun,nboun,xbounact,
+	     ithermal,nk,iponoel,inoel,vold,vcontu,t1act,isolidsurf,
+	     nsolidsurf,xsolidsurf,nfreestream,ifreestream,iturbulent,
+             vcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
+	     &compressible,&ismooth,nmpc,nodempc,ipompc,coefmpc,inomat,mi));*/
+
+	   /*     if((iit/jout[1])*jout[1]==iit){
+	  nnstep=1;
+	  FORTRAN(frdfluid,(co,nk,kon,ipkon,lakon,ne,v,vold,
+	     &kode,&timef,ielmat,matname,&nnstep,vtu,vcontu,vcon,
+			    physcon,filab,inomat,ntrans,inotr,trab,mi,stn,qfn));
+			    }*/
 
       /* STEP 2: pressure correction */
 
@@ -526,13 +646,15 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
       nactdoh1=nactdoh;icolp1=icolp;jqp1=jqp;irowp1=irowp;neqp1=neqp;
       nzlp1=nzlp;nmethod1=nmethod;ikmpc1=ikmpc;ilmpc1=ilmpc;ikboun1=ikboun;
       ilboun1=ilboun;rhcon1=rhcon;nrhcon1=nrhcon;ielmat1=ielmat;
-      ntmat_1=ntmat_;vold1=vold;voldcon1=voldcon;nzsp1=nzsp;dtimef1=dtimef;
+      ntmat_1=ntmat_;vold1=vold;vcon1=vcon;nzsp1=nzsp;dtimef1=dtimef;
       matname1=matname;mi1=mi;ncmat_1=ncmat_;shcon1=shcon;nshcon1=nshcon;
-      v1=v;theta11=theta1;iexplicit1=iexplicit;physcon1=physcon;
-      dtl1=dtl;ipvar1=ipvar;var1=var;ipvarf1=ipvarf;varf1=varf;
+      v1=v;theta11=theta1;iexplicit1=iexplicit;physcon1=physcon;dtc1=dtc;
+      dt1=dt;ipvar1=ipvar;var1=var;ipvarf1=ipvarf;varf1=varf;
   
+      ithread=NNEW(int,num_cpus);
       for(i=0; i<num_cpus; i++)  {
-	  pthread_create(&tid[i], NULL, mafillprhsmt, (void *)i);
+	  ithread[i]=i;
+	  pthread_create(&tid[i], NULL, (void *)mafillprhsmt, (void *)&ithread[i]);
       }
       for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
 
@@ -541,7 +663,7 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 	      b[i]+=b[i+j*neqp];
 	  }
       }
-      RENEW(b,double,neqp);
+      RENEW(b,double,neqp);free(ithread);
 
       sol=NNEW(double,neqp);
       if((iexplicit==1)&&(neqp>0)){
@@ -594,17 +716,17 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
       /* inserting the pressure boundary conditions for liquids */
 
           FORTRAN(applybounp,(nodeboun,ndirboun,nboun,xbounact,
-       ithermal,nk,iponoel,inoel,vold,voldtu,t1act,isolidsurf,
-       nsolidsurf,xsolidsurf,nfreestream,ifreestream,turbulent,
-       voldcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
+       ithermal,nk,iponoel,inoel,vold,vcontu,t1act,isolidsurf,
+       nsolidsurf,xsolidsurf,nfreestream,ifreestream,iturbulent,
+       vcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
        ipompc,nodempc,coefmpc,nmpc,inomat,mi));
       }
 
-      /*     if((iit/jout[1])*jout[1]==iit){
+      /*      if((iit/jout[1])*jout[1]==iit){
 	  nnstep=2;
 	  FORTRAN(frdfluid,(co,nk,kon,ipkon,lakon,ne,v,vold,
-	     &kode,&timef,ielmat,matname,&nnstep,vtu,voldtu,voldcon,
-		  physcon,filab,inomat,ntrans,inotr,trab,mi,stn));
+	     &kode,&timef,ielmat,matname,&nnstep,vtu,vcontu,vcon,
+		  physcon,filab,inomat,ntrans,inotr,trab,mi,stn,qfn));
 		  }*/
       
       /* STEP 3: velocity correction */
@@ -619,13 +741,15 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
       nactdoh1=nactdoh;icolv1=icolv;jqv1=jqv;irowv1=irowv;neqv1=neqv;
       nzlv1=nzlv;nmethod1=nmethod;ikmpc1=ikmpc;ilmpc1=ilmpc;ikboun1=ikboun;
       ilboun1=ilboun;vold1=vold;nzsv1=nzsv;dtimef1=dtimef;v1=v;
-      theta21=theta2;iexplicit1=iexplicit;mi1=mi;
-      dtl1=dtl;ipvar1=ipvar;var1=var;ipvarf1=ipvarf;varf1=varf;
+      theta21=theta2;iexplicit1=iexplicit;mi1=mi;dtc1=dtc;
+      dt1=dt;ipvar1=ipvar;var1=var;ipvarf1=ipvarf;varf1=varf;
   
   /* create threads and wait */
   
+      ithread=NNEW(int,num_cpus);
       for(i=0; i<num_cpus; i++)  {
-	  pthread_create(&tid[i], NULL, mafillv2rhsmt, (void *)i);
+	  ithread[i]=i;
+	  pthread_create(&tid[i], NULL, (void *)mafillv2rhsmt, (void *)&ithread[i]);
       }
       for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
 
@@ -634,7 +758,7 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 	      b[i]+=b[i+j*neqv];
 	  }
       }
-      RENEW(b,double,neqv);
+      RENEW(b,double,neqv);free(ithread);
 
       sol=NNEW(double,neqv);
       aux=NNEW(double,neqv);
@@ -647,20 +771,20 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
       FORTRAN(resultsv2,(nk,nactdoh,v,sol,ipompc,nodempc,coefmpc,nmpc,mi));
       free(sol);
 
-      /*       if((iit/jout[1])*jout[1]==iit){
+      /*      if((iit/jout[1])*jout[1]==iit){
 	  nnstep=3;
 	  FORTRAN(frdfluid,(co,nk,kon,ipkon,lakon,ne,v,vold,
-		&kode,&timef,ielmat,matname,&nnstep,vtu,voldtu,voldcon,
-		  physcon,filab,inomat,ntrans,inotr,trab,mi,stn));
+		&kode,&timef,ielmat,matname,&nnstep,vtu,vcontu,vcon,
+		  physcon,filab,inomat,ntrans,inotr,trab,mi,stn,qfn));
 		  }*/
       
       /* inserting the velocity boundary conditions */
 
-       FORTRAN(applybounv,(nodeboun,ndirboun,nboun,xbounact,
-       ithermal,nk,iponoel,inoel,vold,voldtu,t1act,isolidsurf,
-       nsolidsurf,xsolidsurf,nfreestream,ifreestream,turbulent,
-       voldcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
-       &compressible,&ismooth,nmpc,nodempc,ipompc,coefmpc,inomat,mi));
+      /*     FORTRAN(applybounv,(nodeboun,ndirboun,nboun,xbounact,
+       ithermal,nk,iponoel,inoel,vold,vcontu,t1act,isolidsurf,
+       nsolidsurf,xsolidsurf,nfreestream,ifreestream,iturbulent,
+       vcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
+       &compressible,&ismooth,nmpc,nodempc,ipompc,coefmpc,inomat,mi));*/
 
       /* STEP 4: energy correction */
 
@@ -680,17 +804,19 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 	  neqt1=neqt;
 	  nmethod1=nmethod;ikmpc1=ikmpc;ilmpc1=ilmpc;ikboun1=ikboun;
 	  ilboun1=ilboun;rhcon1=rhcon;nrhcon1=nrhcon;ielmat1=ielmat;
-	  ntmat_1=ntmat_;t01=t0;ithermal1=ithermal;vold1=vold;voldcon1=voldcon;
+	  ntmat_1=ntmat_;t01=t0;ithermal1=ithermal;vold1=vold;vcon1=vcon;
 	  nzst1=nzst;dtimef1=dtimef;matname1=matname;mi1=mi;ncmat_1=ncmat_;
 	  physcon1=physcon;shcon1=shcon;nshcon1=nshcon;ttime1=ttime;
 	  timef1=timef;istep1=istep;iinc1=iinc;ibody1=ibody;xloadold1=xloadold;
 	  reltimef1=reltimef;cocon1=cocon;ncocon1=ncocon;nelemface1=nelemface;
-          sideface1=sideface;nface1=nface;compressible1=compressible;v1=v;
-          voldtu1=voldtu;yy1=yy;turbulent1=turbulent;
-	  dtl1=dtl;ipvar1=ipvar;var1=var;ipvarf1=ipvarf;varf1=varf;
+          sideface1=sideface;nface1=nface;compressible1=compressible;
+          vcontu1=vcontu;yy1=yy;iturbulent1=iturbulent;dtc1=dtc;
+	  dt1=dt;ipvar1=ipvar;var1=var;ipvarf1=ipvarf;varf1=varf;
 	  
+	  ithread=NNEW(int,num_cpus);
 	  for(i=0; i<num_cpus; i++)  {
-	      pthread_create(&tid[i], NULL, mafilltrhsmt, (void *)i);
+	      ithread[i]=i;
+	      pthread_create(&tid[i], NULL, (void *)mafilltrhsmt, (void *)&ithread[i]);
 	  }
 	  for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
 	  
@@ -699,7 +825,7 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 		  b[i]+=b[i+j*neqt];
 	      }
 	  }
-	  RENEW(b,double,neqt);
+	  RENEW(b,double,neqt);free(ithread);
 	  
 	  sol=NNEW(double,neqt);
 	  aux=NNEW(double,neqt);
@@ -719,17 +845,17 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
       /*    if((iit/jout[1])*jout[1]==iit){
 	  nnstep=4;
 	  FORTRAN(frdfluid,(co,nk,kon,ipkon,lakon,ne,v,vold,
-		  &kode,&timef,ielmat,matname,&nnstep,vtu,voldtu,voldcon,
+		  &kode,&timef,ielmat,matname,&nnstep,vtu,vcontu,vcon,
 		  physcon,filab,inomat,ntrans,inotr,trab,mi,stn));
 		  }*/
 
       /* STEP 5: turbulent correction */
 
-      if(*turbulent!=0){
+      if(*iturbulent!=0){
 /*	        if((iit/jout[1])*jout[1]==iit){
 	  nnstep=6;
 	  FORTRAN(frdfluid,(co,nk,kon,ipkon,lakon,ne,v,vold,
-		  &kode,&timef,ielmat,matname,&nnstep,vtu,voldtu,voldcon,
+		  &kode,&timef,ielmat,matname,&nnstep,vtu,vcontu,vcon,
 		  physcon,filab,inomat,ntrans,inotr,trab,mi,stn));
 		  }*/
 
@@ -743,17 +869,19 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
           nactdok1=nactdok;neqk1=neqk;
 	  nmethod1=nmethod;ikmpc1=ikmpc;ilmpc1=ilmpc;ikboun1=ikboun;
 	  ilboun1=ilboun;rhcon1=rhcon;nrhcon1=nrhcon;ielmat1=ielmat;
-	  ntmat_1=ntmat_;vold1=vold;voldcon1=voldcon;
+	  ntmat_1=ntmat_;vold1=vold;vcon1=vcon;
 	  nzsk1=nzsk;dtimef1=dtimef;matname1=matname;mi1=mi;ncmat_1=ncmat_;
-	  shcon1=shcon;nshcon1=nshcon;v1=v;theta11=theta1;
-          voldtu1=voldtu;isolidsurf1=isolidsurf;nsolidsurf1=nsolidsurf;
+	  shcon1=shcon;nshcon1=nshcon;theta11=theta1;
+          vcontu1=vcontu;isolidsurf1=isolidsurf;nsolidsurf1=nsolidsurf;
           ifreestream1=ifreestream;nfreestream1=nfreestream;
           xsolidsurf1=xsolidsurf;yy1=yy;compressible1=compressible;
-          turbulent1=turbulent;ithermal1=ithermal;ipvar1=ipvar;var1=var;
+          iturbulent1=iturbulent;ithermal1=ithermal;ipvar1=ipvar;var1=var;
           ipvarf1=ipvarf;varf1=varf;
 	  
+	  ithread=NNEW(int,num_cpus);
 	  for(i=0; i<num_cpus; i++)  {
-	      pthread_create(&tid[i], NULL, mafillkrhsmt, (void *)i);
+	      ithread[i]=i;
+	      pthread_create(&tid[i], NULL, (void *)mafillkrhsmt, (void *)&ithread[i]);
 	  }
 	  for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
 	  
@@ -765,7 +893,7 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 //	      printf("i=%d,bk=%e,bt=%e\n",i,bk[i],bt[i]);
 	  }
 	  RENEW(bk,double,neqk);
-	  RENEW(bt,double,neqk);
+	  RENEW(bt,double,neqk);free(ithread);
 	  
 	  solk=NNEW(double,neqk);
 	  aux=NNEW(double,neqk);
@@ -788,30 +916,30 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 	  /*       if((iit/jout[1])*jout[1]==iit){
 	  nnstep=5;
 	  FORTRAN(frdfluid,(co,nk,kon,ipkon,lakon,ne,v,vold,
-		  &kode,&timef,ielmat,matname,&nnstep,vtu,voldtu,voldcon,
+		  &kode,&timef,ielmat,matname,&nnstep,vtu,vcontu,vcon,
 		  physcon,filab,inomat,ntrans,inotr,trab,mi,stn));
 		  }*/
       }
       
-      /* adding v to voldcon and vtu to voldtu; 
+      /* adding v to vcon and vtu to vcontu; 
          for thermal incompressible fluids: determine the static
                            temperature  */
 
-      FORTRAN(updatecfd,(vold,voldcon,v,nk,
+      FORTRAN(updatecfd,(vold,vcon,v,nk,
            ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,&iout,
 	   nmethod,&convergence,physcon,iponoel,inoel,ithermal,
-	   nactdoh,&iit,&compressible,&ismooth,voldtu,vtu,turbulent,
+	   nactdoh,&iit,&compressible,&ismooth,vcontu,vtu,iturbulent,
 			 inomat,nodeboun,ndirboun,nboun,mi,co,&factor));
 
       /* inserting the boundary conditions for the turbulence
          parameters */
 
-      /*     if(*turbulent!=0){
+      /*   if(*iturbulent!=0){
 	  FORTRAN(applybounk,(nodeboun,ndirboun,nboun,xbounact,
 	    iponoel,vold,ipompc,nodempc,coefmpc,nmpc,nfreestream,
 	    ifreestream,nsolidsurf,isolidsurf,xsolidsurf,
 	    inoel,physcon,&compressible,ielmat,nshcon,shcon,nrhcon,
-	    rhcon,voldtu,ntmat_,labmpc,inomat));
+	    rhcon,vcontu,ntmat_,labmpc,inomat));
 	    }*/
  
           /* extrapolating the stresses (for debugging purposes) */
@@ -842,10 +970,10 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 
 	  sol=NNEW(double,neqt);
 	  aux=NNEW(double,neqt);
-	  for(i=0;i<neqt;i++){sol[i]=voldcon[mt*i];}
+	  for(i=0;i<neqt;i++){sol[i]=vcon[mt*i];}
 	  FORTRAN(smoothshock,(adbt,aubt,adlt,addiv,sol,aux,icolt,irowt,jqt,
 			  &neqt,&nzlt,sa));
-	  for(i=0;i<neqt;i++){voldcon[mt*i]=sol[i];}
+	  for(i=0;i<neqt;i++){vcon[mt*i]=sol[i];}
 	  free(sol);free(aux);
 
 	  /* shocksmoothing rho * velocity */
@@ -854,14 +982,14 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 	  aux=NNEW(double,neqv);
 	  for(i=0;i<neqv/3;i++){
 	      for(j=0;j<3;j++){
-		  sol[3*i+j]=voldcon[mt*i+j+1];
+		  sol[3*i+j]=vcon[mt*i+j+1];
 	      }
 	  }
 	  FORTRAN(smoothshock,(adbv,aubv,adlv,addiv,sol,aux,icolv,irowv,jqv,
 			  &neqv,&nzlv,sav));
 	  for(i=0;i<neqv/3;i++){
 	      for(j=0;j<3;j++){
-		  voldcon[mt*i+j+1]=sol[3*i+j];
+		  vcon[mt*i+j+1]=sol[3*i+j];
 	      }
 	  }
 	  free(sol);free(aux);
@@ -870,26 +998,26 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 
 	  sol=NNEW(double,neqp);
 	  aux=NNEW(double,neqp);
-	  for(i=0;i<neqp;i++){sol[i]=voldcon[mt*i+4];}
+	  for(i=0;i<neqp;i++){sol[i]=vcon[mt*i+4];}
 	  FORTRAN(smoothshock,(adbp,aubp,adlp,addiv,sol,aux,icolp,irowp,jqp,
 			  &neqp,&nzlp,sa));
-	  for(i=0;i<neqp;i++){voldcon[mt*i+4]=sol[i];}
+	  for(i=0;i<neqp;i++){vcon[mt*i+4]=sol[i];}
 	  free(sol);free(aux);
 	 
 	  /* inserting the velocity boundary conditions */
  
 	  FORTRAN(applybounv,(nodeboun,ndirboun,nboun,xbounact,
-	    ithermal,nk,iponoel,inoel,vold,voldtu,t1act,isolidsurf,
-	    nsolidsurf,xsolidsurf,nfreestream,ifreestream,turbulent,
-	    voldcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
+	    ithermal,nk,iponoel,inoel,vold,vcontu,t1act,isolidsurf,
+	    nsolidsurf,xsolidsurf,nfreestream,ifreestream,iturbulent,
+	    vcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
 	    &compressible,&ismooth,nmpc,nodempc,ipompc,coefmpc,inomat,mi));
 	  
 	  /* determine the static temperature and the static pressure */
 
-	  FORTRAN(updatecomp,(vold,voldcon,v,nk,
+	  FORTRAN(updatecomp,(vold,vcon,v,nk,
 	    ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,&iout,
 	    nmethod,&convergence,physcon,iponoel,inoel,ithermal,
-	    nactdoh,&iit,&compressible,&ismooth,voldtu,vtu,turbulent,
+	    nactdoh,&iit,&compressible,&ismooth,vcontu,vtu,iturbulent,
 			     inomat,nodeboun,ndirboun,nboun,mi,co,&factor));
 	  
 	  /* inserting the static pressure boundary conditions */
@@ -897,55 +1025,101 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 	  FORTRAN(applybounpgas,(nodeboun,ndirboun,nboun,xbounact,
 		  iponoel,vold,ipompc,nodempc,coefmpc,nmpc,inomat,matname,
                   nshcon,shcon,nrhcon,rhcon,physcon,ntmat_,
-		  voldcon,mi));
+		  vcon,mi));
 
 	  FORTRAN(presgradient,(iponoel,inoel,sa,sav,&neqt,dt,&shockcoef,
 				&dtimef,ipkon,kon,lakon,vold,mi,
-                                &compressible,nmethod,dtl,isolidsurf,
+                                &compressible,nmethod,dt,isolidsurf,
                                 nsolidsurf,co,&euler));
 	  
 	  ismooth=0;
 	  
       }
       
+      /* inserting the velocity and temperature conditions 
+         for incompressible materials*/
+      
+      FORTRAN(applyboun,(nodeboun,ndirboun,nboun,xbounact,
+	  ithermal,nk,iponoel,inoel,vold,vcontu,t1act,isolidsurf,
+	  nsolidsurf,xsolidsurf,nfreestream,ifreestream,iturbulent,
+	  vcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
+	  &compressible,&ismooth,nmpc,nodempc,ipompc,coefmpc,inomat,mi,
+	  ikboun,ilboun,ilmpc,labmpc));
+      
+      /* inserting the velocity conditions */
+      
+      /*     FORTRAN(applybounv,(nodeboun,ndirboun,nboun,xbounact,
+	  ithermal,nk,iponoel,inoel,vold,vcontu,t1act,isolidsurf,
+	  nsolidsurf,xsolidsurf,nfreestream,ifreestream,iturbulent,
+	  vcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
+          &compressible,&ismooth,nmpc,nodempc,ipompc,coefmpc,inomat,mi));*/
+      
       /* inserting the static temperature boundary conditions */
       
-      FORTRAN(applybount,(nodeboun,ndirboun,nboun,xbounact,
+      /*    FORTRAN(applybount,(nodeboun,ndirboun,nboun,xbounact,
 	iponoel,vold,ipompc,nodempc,coefmpc,nmpc,inomat,matname,
         nshcon,shcon,nrhcon,rhcon,physcon,&compressible,ntmat_,
-	voldcon,mi,ithermal));
+	vcon,mi,ithermal));*/
       
       /* inserting the boundary conditions for the turbulence
 	 parameters */
       
-      if(*turbulent!=0){
+      /*    if(*iturbulent!=0){
 	  FORTRAN(applybounk,(nodeboun,ndirboun,nboun,xbounact,
 		 iponoel,vold,ipompc,nodempc,coefmpc,nmpc,nfreestream,
 		 ifreestream,nsolidsurf,isolidsurf,xsolidsurf,
 	         inoel,physcon,&compressible,ielmat,nshcon,shcon,nrhcon,
-		 rhcon,voldtu,ntmat_,labmpc,inomat,mi,ithermal));
-      }
+		 rhcon,vcontu,ntmat_,labmpc,inomat,mi,ithermal));
+		 }*/
 
       /* check convergence */
 
-      FORTRAN(cfdconv,(vold,voldcon,v,nk,
+      FORTRAN(cfdconv,(vold,vcon,v,nk,
 	      ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,&iout,
 	      nmethod,&convergence,physcon,iponoel,inoel,ithermal,
-	      nactdoh,&iit,&compressible,&ismooth,voldtu,vtu,turbulent,
+	      nactdoh,&iit,&compressible,&ismooth,vcontu,vtu,iturbulent,
 	      inomat,nodeboun,ndirboun,nboun,mi,co,&factor,
-	      voldconini,&dtimef));
+	      vconini,&dtimef));
       
-      if(((iit/jout[1])*jout[1]==iit)||(convergence==1)){
+      if(((iit/jout[1])*jout[1]==iit)||(convergence==1)||
+	 (iit==jmax[1])){
 
-	  /*        check whether stresses are requested */
+	  /* calculating the stress and the heat flow at the
+             integration points, if requested */
+
+	  if(strcmp1(&filab[174],"S   ")==0)isti=1;
+          if(strcmp1(&filab[696],"HFL ")==0)iqfx=1;
+	  for(i=0;i<*nprint;i++){
+	      if(strcmp1(&prlab[6*i],"S")==0) isti=1;
+	      if(strcmp1(&prlab[6*i],"HFL")==0)iqfx=1;
+	  }
+	  if(iqfx==1) qfx=NNEW(double,3*mi[0]**ne);
+	  if((isti==1)||(iqfx==1)){
+	      FORTRAN(calcstressheatflux,(kon,lakon,ipkon,ielmat,ntmat_,
+		      vold,matname,mi,shcon,nshcon,iturbulent,&compressible,
+                      ipvar,var,sti,qfx,cocon,ncocon,ne,&isti,&iqfx));
+	  }
+
+          /* print output */
+
+	  FORTRAN(printout,(set,nset,istartset,iendset,ialset,nprint,
+	    prlab,prset,vold,t1,fn,ipkon,lakon,sti,eme,xstate,ener,
+	    mi,&nstate_,ithermal,co,kon,qfx,&timef,trab,inotr,ntrans,
+	    orab,ielorien,norien,nk,ne,inum,filab,vold,&ikin));
+
+	  /* lift and drag force */
+
+	  FORTRAN(printoutface,(co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
+	    cocon,ncocon,&compressible,istartset,iendset,ipkon,lakon,kon,
+	    ialset,prset,&timef,nset,set,nprint,prlab,ielmat,mi));
  
-          /* extrapolating the stresses (for debugging purposes) */
+          /* extrapolating the stresses */
 
 	  if(strcmp1(&filab[174],"S   ")==0){
 	      nfield=6;
 	      ndim=6;
 	      cfd=1;
-	      if((*norien>0)&&(strcmp1(&filab[179],"L")==0)){
+	      if((*norien>0)&&(strcmp1(&filab[178],"L")==0)){
 		  iorienglob=1;
 	      }else{
 		  iorienglob=0;
@@ -957,49 +1131,75 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 		      &nfield,nk,ne,mi,&ndim,orab,ielorien,co,&iorienglob,
 		      cflag,nelemload,nload,nodeboun,nboun,ndirboun,
 		      vold,ithermal,&force,&cfd,ielmat,thicke));
+	      free(inum);
 	  }
 
+	  /* extrapolating the heat flow */
+
+	  
+	  if(strcmp1(&filab[696],"HFL ")==0){
+	      nfield=3;
+	      ndim=3;
+	      cfd=1;
+	      if((*norien>0)&&(strcmp1(&filab[700],"L")==0)){
+		  iorienglob=1;
+	      }else{
+		  iorienglob=0;
+	      }
+	      strcpy1(&cflag[0],&filab[700],1);
+	      qfn=NNEW(double,3**nk);
+	      inum=NNEW(int,*nk);
+	      FORTRAN(extrapolate,(qfx,qfn,ipkon,inum,kon,lakon,
+		      &nfield,nk,ne,mi,&ndim,orab,ielorien,co,&iorienglob,
+		      cflag,nelemload,nload,nodeboun,nboun,ndirboun,
+		      vold,ithermal,&force,&cfd,ielmat,thicke));
+	      free(inum);
+	  }
+	 
 	  /* check whether the Mach number is requested */
 
 	  if((strcmp1(&filab[1914],"MACH")==0)|| 
              (strcmp1(&filab[1131],"TT")==0)){
-	      FORTRAN(calcmach,(vold,voldcon,v,nk,
+	      FORTRAN(calcmach,(vold,vcon,v,nk,
 		      ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,&iout,
 		      nmethod,&convergence,physcon,iponoel,inoel,ithermal,
-		      nactdoh,&iit,&compressible,&ismooth,voldtu,vtu,turbulent,
+		      nactdoh,&iit,&compressible,&ismooth,vcontu,vtu,iturbulent,
 		      inomat,nodeboun,ndirboun,nboun,mi,co,&factor));
 	  }
 
 	  nnstep=6;
 	  FORTRAN(frdfluid,(co,nk,kon,ipkon,lakon,ne,v,vold,
-		  &kode,&timef,ielmat,matname,&nnstep,vtu,voldtu,voldcon,
-		  physcon,filab,inomat,ntrans,inotr,trab,mi,stn));
+		  &kode,&timef,ielmat,matname,&nnstep,vtu,vcontu,vcon,
+		  physcon,filab,inomat,ntrans,inotr,trab,mi,stn,qfn));
 
-	  if(strcmp1(&filab[174],"S   ")==0){free(stn);free(inum);}
+	  if(iqfx==1) free(qfx);
+	  if(strcmp1(&filab[174],"S   ")==0){free(stn);}
+	  if(strcmp1(&filab[696],"HFL ")==0){free(qfn);}
 
       }
       
-      if(((iit/jout[1])*jout[1]==iit)||(convergence==1)){
+/*      if(((iit/jout[1])*jout[1]==iit)||(convergence==1)){
 	  FORTRAN(printout,(set,nset,istartset,iendset,ialset,nprint,
 	    prlab,prset,vold,t1,fn,ipkon,lakon,sti,eme,xstate,ener,
 	    mi,&nstate_,ithermal,co,kon,qfx,&timef,trab,inotr,ntrans,
-	    orab,ielorien,norien,nk,ne,inum,filab,vold,&ikin));
+	    orab,ielorien,norien,nk,ne,inum,filab,vold,&ikin));*/
 
 	  /* lift and drag force */
 
-	  FORTRAN(printoutface,(co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
+      /*  FORTRAN(printoutface,(co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
 	    cocon,ncocon,&compressible,istartset,iendset,ipkon,lakon,kon,
 	    ialset,prset,&timef,nset,set,nprint,prlab,ielmat,mi));
-      }
+	    }*/
       
-      if(convergence==1){
-/*	  nnstep=6;
+      /*   if(convergence==1){
+	  nnstep=6;
 	  FORTRAN(frdfluid,(co,nk,kon,ipkon,lakon,ne,v,vold,
-		  &kode,&timef,ielmat,matname,&nnstep,vtu,voldtu,voldcon,
-		  physcon,filab,inomat,ntrans,inotr,trab,mi,stn));*/
+		  &kode,&timef,ielmat,matname,&nnstep,vtu,vcontu,vcon,
+		  physcon,filab,inomat,ntrans,inotr,trab,mi,stn));
 	  break;
-      }
-      if(iit==jmax[1]) FORTRAN(stop,());
+      }*/
+
+      if((iit==jmax[1])||(convergence==1)) FORTRAN(stop,());
       
       ttimef+=dtimef;
   }while(1);
@@ -1029,8 +1229,9 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 
   if(compressible){free(sa);free(sav);}
 
-  free(yy);free(xsolidsurf);free(dt);free(dh);free(voldcon);free(voldconini);
+  free(yy);free(xsolidsurf);free(dt);free(dh);free(vcon);free(vconini);
 //  if((iexplicit==1)&&(*nmethod==1))free(dtl);
+  free(dtc);
 
   free(irowv);free(irowp);
   free(icolv);free(icolp);
@@ -1045,12 +1246,18 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
       free(irowt);free(icolt);free(jqt);free(adbt);free(aubt);free(adlt);
   }
 
-  if(*turbulent!=0){
+  if(*iturbulent!=0){
       free(irowk);free(icolk);free(jqk);free(nactdok);
       free(adbk);free(aubk);free(adlk);
   }
 
   free(v);free(vtu);free(var);free(ipvar);free(varf);free(ipvarf);
+
+  *nodempcp=nodempc;*ipompcp=ipompc;*ikmpcp=ikmpc;*ilmpcp=ilmpc;
+  *coefmpcp=coefmpc;*labmpcp=labmpc;*fmpcp=fmpc;*cop=co;
+  *ipkonp=ipkon;*lakonp=lakon;*konp=kon;*ielmatp=ielmat;
+  *nelemfacep=nelemface;*sidefacep=sideface;*inoelp=inoel;
+  *iponoelp=iponoel;
   
   FORTRAN(stop,());
 
@@ -1060,86 +1267,86 @@ void compfluid(double *co, int *nk, int *ipkon, int *kon, char *lakon,
 
 /* subroutine for multithreading of mafillv1rhs */
 
-void *mafillv1rhsmt(void *i){
+void *mafillv1rhsmt(int *i){
 
     int index,nea,neb,nedelta;
 
-    index=((int)i)*neqv1;
+    index=*i*neqv1;
     
     nedelta=(int)ceil(*ne1/(double)num_cpus);
-    nea=((int)i)*nedelta+1;
-    neb=(((int)i)+1)*nedelta;
+    nea=*i*nedelta+1;
+    neb=(*i+1)*nedelta;
     if(neb>*ne1) neb=*ne1;
 
     FORTRAN(mafillv1rhs,(co1,nk1,kon1,ipkon1,lakon1,ne1,nodeboun1,ndirboun1,
 	 xboun1,nboun1,ipompc1,nodempc1,coefmpc1,nmpc1,nodeforc1,ndirforc1,xforc1,
 	 nforc1,nelemload1,sideload1,xload1,nload1,xbody1,ipobody1,nbody1,
 	 &b[index],nactdoh1,icolv1,jqv1,irowv1,&neqv1,&nzlv1,nmethod1,ikmpc1,ilmpc1,ikboun1,
-         ilboun1,rhcon1,nrhcon1,ielmat1,ntmat_1,t01,ithermal1,vold1,voldcon1,&nzsv1,
-         dtl1,matname1,mi1,ncmat_1,physcon1,shcon1,nshcon1,ttime1,&timef1,
-         istep1,iinc1,ibody1,xloadold1,turbulent1,voldtu1,yy1,
+         ilboun1,rhcon1,nrhcon1,ielmat1,ntmat_1,t01,ithermal1,vold1,vcon1,&nzsv1,
+         dt1,matname1,mi1,ncmat_1,physcon1,shcon1,nshcon1,ttime1,&timef1,
+         istep1,iinc1,ibody1,xloadold1,iturbulent1,vcontu1,yy1,
 	 nelemface1,sideface1,nface1,&compressible1,&nea,&neb,&dtimef1,
-	 ipvar1,var1,ipvarf1,varf1,sti1));
+	 ipvar1,var1,ipvarf1,varf1,sti1,dtc1));
 
     return NULL;
 }
 
 /* subroutine for multithreading of mafillprhs */
 
-void *mafillprhsmt(void *i){
+void *mafillprhsmt(int *i){
 
     int index,nea,neb,nedelta;
 
-    index=((int)i)*neqp1;
+    index=*i*neqp1;
     
     nedelta=(int)ceil(*ne1/(double)num_cpus);
-    nea=((int)i)*nedelta+1;
-    neb=(((int)i)+1)*nedelta;
+    nea=*i*nedelta+1;
+    neb=(*i+1)*nedelta;
     if(neb>*ne1) neb=*ne1;
 
     FORTRAN(mafillprhs,(co1,nk1,kon1,ipkon1,lakon1,ne1,nodeboun1,ndirboun1,
        xbounact1,nboun1,ipompc1,nodempc1,coefmpc1,nmpc1,nelemface1,sideface1,
        nface1,&b[index],nactdoh1,icolp1,jqp1,irowp1,&neqp1,&nzlp1,nmethod1,ikmpc1,ilmpc1,
-       ikboun1,ilboun1,rhcon1,nrhcon1,ielmat1,ntmat_1,vold1,voldcon1,&nzsp1,
-       dtl1,matname1,mi1,ncmat_1,shcon1,nshcon1,v1,&theta11,
-       &iexplicit1,physcon1,&nea,&neb,&dtimef1,ipvar1,var1,ipvarf1,varf1));
+       ikboun1,ilboun1,rhcon1,nrhcon1,ielmat1,ntmat_1,vold1,vcon1,&nzsp1,
+       dt1,matname1,mi1,ncmat_1,shcon1,nshcon1,v1,&theta11,
+       &iexplicit1,physcon1,&nea,&neb,&dtimef1,ipvar1,var1,ipvarf1,varf1,dtc1));
 
     return NULL;
 }
 
 /* subroutine for multithreading of mafillv2rhs */
 
-void *mafillv2rhsmt(void *i){
+void *mafillv2rhsmt(int *i){
 
     int index,nea,neb,nedelta;
 
-    index=((int)i)*neqv1;
+    index=*i*neqv1;
     
     nedelta=(int)ceil(*ne1/(double)num_cpus);
-    nea=((int)i)*nedelta+1;
-    neb=(((int)i)+1)*nedelta;
+    nea=*i*nedelta+1;
+    neb=(*i+1)*nedelta;
     if(neb>*ne1) neb=*ne1;
 
     FORTRAN(mafillv2rhs,(co1,nk1,kon1,ipkon1,lakon1,ne1,nodeboun1,ndirboun1,
        xboun1,nboun1,ipompc1,nodempc1,coefmpc1,nmpc1,
        &b[index],nactdoh1,icolv1,jqv1,irowv1,&neqv1,&nzlv1,nmethod1,ikmpc1,ilmpc1,ikboun1,
-       ilboun1,vold1,&nzsv1,dtl1,v1,&theta21,&iexplicit1,&nea,&neb,mi1,&dtimef1,
-       ipvar1,var1,ipvarf1,varf1));
+       ilboun1,vold1,&nzsv1,dt1,v1,&theta21,&iexplicit1,&nea,&neb,mi1,&dtimef1,
+       ipvar1,var1,ipvarf1,varf1,dtc1));
 
     return NULL;
 }
 
 /* subroutine for multithreading of mafilltrhs */
 
-void *mafilltrhsmt(void *i){
+void *mafilltrhsmt(int *i){
 
     int index,nea,neb,nedelta;
 
-    index=((int)i)*neqt1;
+    index=*i*neqt1;
     
     nedelta=(int)ceil(*ne1/(double)num_cpus);
-    nea=((int)i)*nedelta+1;
-    neb=(((int)i)+1)*nedelta;
+    nea=*i*nedelta+1;
+    neb=(*i+1)*nedelta;
     if(neb>*ne1) neb=*ne1;
 	  
     FORTRAN(mafilltrhs,(co1,nk1,kon1,ipkon1,lakon1,ne1,nodeboun1,ndirboun1,
@@ -1148,38 +1355,38 @@ void *mafilltrhsmt(void *i){
              nforc1,nelemload1,sideload1,xload1,nload1,xbody1,ipobody1,nbody1,
              &b[index],nactdoh1,&neqt1,nmethod1,ikmpc1,ilmpc1,ikboun1,
              ilboun1,rhcon1,nrhcon1,ielmat1,ntmat_1,t01,ithermal1,vold1,
-             voldcon1,&nzst1,
-             dtl1,matname1,mi1,ncmat_1,physcon1,shcon1,nshcon1,ttime1,&timef1,
+             vcon1,&nzst1,
+             dt1,matname1,mi1,ncmat_1,physcon1,shcon1,nshcon1,ttime1,&timef1,
              istep1,iinc1,ibody1,xloadold1,&reltimef1,cocon1,ncocon1,nelemface1,
-	     sideface1,nface1,&compressible1,v1,voldtu1,yy1,turbulent1,&nea,
-	     &neb,&dtimef1,ipvar1,var1,ipvarf1,varf1));
+	     sideface1,nface1,&compressible1,vcontu1,yy1,iturbulent1,&nea,
+	     &neb,&dtimef1,ipvar1,var1,ipvarf1,varf1,dtc1));
 
     return NULL;
 }
 
 /* subroutine for multithreading of mafillkrhs */
 
-void *mafillkrhsmt(void *i){
+void *mafillkrhsmt(int *i){
 
     int index,nea,neb,nedelta;
 
-    index=((int)i)*neqk1;
+    index=*i*neqk1;
     
     nedelta=(int)ceil(*ne1/(double)num_cpus);
-    nea=((int)i)*nedelta+1;
-    neb=(((int)i)+1)*nedelta;
+    nea=*i*nedelta+1;
+    neb=(*i+1)*nedelta;
     if(neb>*ne1) neb=*ne1;
 	  
     FORTRAN(mafillkrhs,(co1,nk1,kon1,ipkon1,lakon1,ne1,nodeboun1,ndirboun1,
 	    xboun1,nboun1,ipompc1,nodempc1,coefmpc1,nmpc1,nelemface1,sideface1,
 	    nface1,nactdok1,&neqk1,nmethod1,ikmpc1,ilmpc1,
-	    ikboun1,ilboun1,rhcon1,nrhcon1,ielmat1,ntmat_1,vold1,voldcon1,
+	    ikboun1,ilboun1,rhcon1,nrhcon1,ielmat1,ntmat_1,vold1,vcon1,
             &nzsk1,
-	    &dtimef1,matname1,mi1,ncmat_1,shcon1,nshcon1,v1,&theta11,
-	    &bk[index],&bt[index],voldtu1,isolidsurf1,nsolidsurf1,
+	    &dtimef1,matname1,mi1,ncmat_1,shcon1,nshcon1,&theta11,
+	    &bk[index],&bt[index],vcontu1,isolidsurf1,nsolidsurf1,
             ifreestream1,nfreestream1,
-	    xsolidsurf1,yy1,&compressible1,turbulent1,ithermal1,ipvar1,var1,
-	    ipvarf1,varf1,&nea,&neb));
+	    xsolidsurf1,yy1,&compressible1,iturbulent1,ithermal1,ipvar1,var1,
+	    ipvarf1,varf1,&nea,&neb,dtc1));
 
     return NULL;
 }

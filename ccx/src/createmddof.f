@@ -21,7 +21,7 @@
      &            ilmpc,ipompc,nodempc,nmpc,
      &            imdmpc,nmdmpc,imdboun,nmdboun,ikboun,nboun,
      &            nset,ntie,tieset,set,lakon,kon,ipkon,labmpc,
-     &            ilboun,filab,prlab,prset,nprint,ne)
+     &            ilboun,filab,prlab,prset,nprint,ne,cyclicsymmetry)
 !
 !     creating a set imddof containing the degrees of freedom
 !     selected by the user for modal dynamic calculations. The
@@ -43,7 +43,7 @@
      &  imdboun(*),nmdboun,ikboun(*),nboun,index,indexe,islav,
      &  jface,nset,ntie,nnodelem,nope,nodef(8),nelem,nface,iright,
      &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),kon(*),
-     &  ipkon(*),i,ilboun(*),nlabel,ne
+     &  ipkon(*),i,ilboun(*),nlabel,ne,cyclicsymmetry
 !
 !     nodes per face for hex elements
 !
@@ -67,7 +67,7 @@
      &             4,5,6,0,
      &             1,2,5,4,
      &             2,3,6,5,
-     &             4,6,3,1/
+     &             3,1,4,6/
 !
 !     nodes per face for quadratic wedge elements
 !
@@ -75,7 +75,7 @@
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
-     &             4,6,3,1,12,15,9,13/
+     &             3,1,4,6,9,13,12,15/
 !
       data nlabel /32/
 !
@@ -97,9 +97,16 @@
          endif
       enddo
 !
-!     storing the nodes for which *NODE FILE was selected
+!     storing the nodes for which *NODE FILE or *EL FILE was selected
 !
       do i=1,nlabel
+!
+!        CDIS,CSTR und CELS are not taken into account:
+!        contact area is treated separately (no set can
+!        be specified for CDIS, CSTR und CELS)
+!
+         if((i.eq.26).or.(i.eq.27)) cycle
+!
          if(filab(i)(1:1).ne.' ') then
             read(filab(i)(7:87),'(a81)') noset
             nrset=0
@@ -114,6 +121,15 @@
 !           of imdnode is deactivated
 !
             if(nrset.eq.0) then
+               if(cyclicsymmetry.eq.1) then
+                  write(*,*) '*ERROR in createmddof: in a cylic'
+                  write(*,*) '       symmetric modal dynamic or'
+                  write(*,*) '       steady static dynamics calculation'
+                  write(*,*) '       a node set MUST be defined on each'
+                  write(*,*) '       *NODE FILE, *NODE OUTPUT, *EL FILE'
+                  write(*,*) '       or *ELEMENT OUTPUT card'
+                  stop
+               endif
                nmdnode=0
                nmddof=0
                nmdboun=0
@@ -239,8 +255,11 @@
       do i=1,ntie
 !     
 !     check for contact conditions
+!     'C' are active contact conditions
+!     '-' are temporarily deactivated contact conditions
 !     
-         if(tieset(1,i)(81:81).eq.'C') then
+         if((tieset(1,i)(81:81).eq.'C').or.
+     &      (tieset(1,i)(81:81).eq.'-')) then
             rightset=tieset(3,i)
 !     
 !     determining the master surface
@@ -249,7 +268,7 @@
                if(set(j).eq.rightset) exit
             enddo
             if(j.gt.nset) then
-               write(*,*) '*ERROR in triangucont: master surface',
+               write(*,*) '*ERROR in createmddof: master surface',
      &              rightset
                write(*,*) '       does not exist'
                stop
@@ -341,7 +360,7 @@
                if(set(j).eq.slavset) exit
             enddo
             if(j.gt.nset) then
-               write(*,*) '*ERROR in triangucont: ',
+               write(*,*) '*ERROR in createmddof: ',
      &           'slave nodal surface ',slavset
                write(*,*) '       does not exist'
                stop

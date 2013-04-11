@@ -29,7 +29,7 @@
 !
       integer i,j,imat,ncmat_,ntmat_,k,nope,nterms,iflag,
      &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),
-     &  iperturb,mi(*),node,noel,istep,iinc,npred
+     &  iperturb(*),mi(*),node,noel,istep,iinc,npred
 !
       real*8 xl(3,9),ratio(9),q(3),val,shp2(7,9),ak(5),
      &  al(3),s(60,60),voldl(0:mi(2),9),pl(3,9),xn(3),dm,
@@ -43,7 +43,7 @@
 !
 !     actual positions of the nodes belonging to the contact spring
 !
-      if(iperturb.eq.0) then
+      if(iperturb(2).eq.0) then
          do i=1,nope
             do j=1,3
                pl(j,i)=xl(j,i)

@@ -99,7 +99,7 @@
       do
          if(nactive.eq.0) exit
          ielem=iactelem(1)
-         write(*,*) 'ielem ',ielem
+c         write(*,*) 'ielem ',ielem
 c         do i=1,nactive
 c            write(*,*) iactelem(i),iactnode(i)
 c         enddo

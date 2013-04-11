@@ -35,7 +35,7 @@ void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
              int *itiefac,double *areaslav,int *iponoels,int *inoels,
              double *springarea, double *tietol, double *reltime,
 	     int *imastnode, int *nmastnode, double *xmastnor,
-	     double *xnormastface, char *filab){
+	     double *xnormastface, char *filab, int *mcs, int *ics){
     
     char *labmpc=NULL;
 
@@ -52,13 +52,7 @@ void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
     FORTRAN(updatecontpen,(koncont,ncont,co,vold,
 			cg,straight,mi,imastnode,nmastnode,xmastnor,
 			ntie,tieset,nset,set,istartset,
-			iendset,ialset,ipkon,lakon,kon));
-    
-/*    printf("before remcontmpc mpcnew=%d\n",*nmpc);
-       for(i=0;i<*nmpc;i++){
-	j=i+1;
-	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
-	}*/
+			iendset,ialset,ipkon,lakon,kon,cs,mcs,ics));
 
     /* deleting contact MPC's (not for modal dynamics calculations) */
 
@@ -106,11 +100,6 @@ void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
                    nboun);
 		   }*/
 //    printf("mpcnew=%d\n",*nmpc);
-    
-    /*    for(i=0;i<*nmpc;i++){
-	j=i+1;
-	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
-	}*/
 
     *ipompcp=ipompc;*labmpcp=labmpc;*ikmpcp=ikmpc;*ilmpcp=ilmpc;
     *fmpcp=fmpc;*nodempcp=nodempc;*coefmpcp=coefmpc;

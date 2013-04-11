@@ -118,8 +118,8 @@ c            noset(ipos:ipos)='N'
          isolver=4
       elseif(solver(1:5).eq.'TAUCS') then
          isolver=5
-      elseif(solver(1:13).eq.'MATRIXSTORAGE') then
-         isolver=6
+c      elseif(solver(1:13).eq.'MATRIXSTORAGE') then
+c         isolver=6
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
       else

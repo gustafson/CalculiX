@@ -30,15 +30,16 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
 
   FILE *f1[10];
 
-  char buff[1320], fninp[132]="", includefn[132]="", *inpc=NULL,
-       textpart[2112],*set=NULL;
+  char buff[1320]="", fninp[132]="", includefn[132]="", *inpc=NULL,
+       textpart[2112]="",*set=NULL;
 
   int i,j,k,n,in=0,nlinemax=100000,irestartread,irestartstep,
       icntrl,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,ntmat,npmat,
-      norien,nam,nprint,mint,ntrans,ncs,namtot,ncmat,memmpc,ne1d,
+      norien,nam,nprint,mi[3],ntrans,ncs,namtot,ncmat,memmpc,ne1d,
       ne2d,nflow,*meminset=NULL,*rmeminset=NULL, *inp=NULL,ntie,
       nener,nstate,nentries=14,ifreeinp,ikey,lincludefn,nslavs,
-      nbody,ncharmax=1000000,*ipoinpc=NULL,ichangefriction=0,nkon; 
+      nbody,ncharmax=1000000,*ipoinpc=NULL,ichangefriction=0,nkon,
+      ifile; 
 
   /* initialization */
 
@@ -94,7 +95,32 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
 
       /* changing to uppercase except include filenames */
 
-      if(k<15){
+      j=0;
+      ifile=0;
+      do{
+	  if(j>=6){
+	      if(strcmp1(&buff[j-6],"INPUT=")==0) ifile=1;
+	  }
+	  if(j>=7){
+	      if(strcmp1(&buff[j-7],"OUTPUT=")==0) ifile=1;
+	  }
+	  if(ifile==1){
+	      do{
+		  if(strcmp1(&buff[j],",")!=0){
+		      j++;
+		  }else{
+		      ifile=0;
+		      break;
+		  }
+	      }while(j<k);
+	  }else{
+	      buff[j]=toupper(buff[j]);
+	  }
+	  j++;
+      }while(j<k);
+
+
+/*      if(k<15){
 	  for(j=0;j<k;j++){
 	      buff[j]=toupper(buff[j]);
 	  }
@@ -132,7 +158,7 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
 		  }
 	      }
           }
-      }
+	  }*/
   
       /* filling with blanks */
 	  
@@ -199,7 +225,7 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
             icntrl=0;
             FORTRAN(restartshort,(nset,&nload,&nbody,&nforc,&nboun,&nk,
               &ne,&nmpc,&nalset,&nmat,&ntmat,&npmat,&norien,&nam,
-              &nprint,&mint,&ntrans,&ncs,&namtot,&ncmat,&memmpc,
+              &nprint,mi,&ntrans,&ncs,&namtot,&ncmat,&memmpc,
               &ne1d,&ne2d,&nflow,set,meminset,rmeminset,jobnamec,
 	      &irestartstep,&icntrl,ithermal,&nener,&nstate,&ntie,
 	      &nslavs,&nkon));           
@@ -325,6 +351,10 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
                           nline,&ikey));
       }
+      else if(strcmp1(&buff[0],"*GAPCONDUCTANCE")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
+                          nline,&ikey));
+      }
       else if((strcmp1(&buff[0],"*FRICTION")==0)&&(ichangefriction==0)){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
                           nline,&ikey));
@@ -342,6 +372,11 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
                           nline,&ikey));
 			  }
+      else if(strcmp1(&buff[0],"*SUBMODEL")==0){
+	(*nset)+=2;
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
+                          nline,&ikey));
+      }
       else if(strcmp1(&buff[0],"*")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
                           nline,&ikey));

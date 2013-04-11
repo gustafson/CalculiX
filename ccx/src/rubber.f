@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine rubber(elconloc,elas,emec,kode,emec0,didc,
+      subroutine rubber(elconloc,elas,emec,kode,didc,
      &  d2idc2,dibdc,d2ibdc2,dudc,d2udc2,dldc,d2ldc2,dlbdc,d2lbdc2,
      &  ithermal,icmd,beta,stre)
 !
@@ -33,7 +33,7 @@
       integer nelconst,kode,kk(84),i,j,k,l,m,nt,icmd,istart,iend,
      &  nc,n,ithermal,ii,jj,mm,neig
 !
-      real*8 elconloc(*),elas(*),emec(*),emec0(*),didc(3,3,3),
+      real*8 elconloc(*),elas(*),emec(*),didc(3,3,3),
      &  d2idc2(3,3,3,3,3),dibdc(3,3,3),d2ibdc2(3,3,3,3,3),dudc(3,3),
      &  d2udc2(3,3,3,3),dldc(3,3,3),d2ldc2(3,3,3,3,3),dlbdc(3,3,3),
      &  d2lbdc2(3,3,3,3,3),v1,v2,v3,c(3,3),cinv(3,3),d(3,3),djth,
@@ -45,8 +45,6 @@
      &  1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,3,3,1,3,
      &  1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,1,2,2,3,1,3,2,3,
      &  2,3,2,3/)
-c      write(*,*) ' emec '
-c      write(*,'(4(1x,e19.12))') (emec(i),i=1,6)
 !
 !     copy the elastic constants into a new field, such that
 !     they can be mixed without influencing the field in the
@@ -134,19 +132,12 @@ c      if(icmd.eq.1) then
          c(1,2)=2.d0*emec(4)
          c(1,3)=2.d0*emec(5)
          c(2,3)=2.d0*emec(6)
-c      write(*,*) ' c '
-c      write(*,'(4(1x,e19.12))') (((c(i,j),i=1,3),j=1,3))
 !
 !        calculation of the invariants of c
 !
          v1=c(1,1)+c(2,2)+c(3,3)
          v2=c(2,2)*c(3,3)+c(1,1)*c(3,3)+c(1,1)*c(2,2)-
      &     (c(2,3)*c(2,3)+c(1,3)*c(1,3)+c(1,2)*c(1,2))
-c         v2=v1*v1
-c         do i=1,3
-c            v2=v2-c(i,i)*c(i,i)
-c         enddo
-c         v2=v2/2.d0
          v3=c(1,1)*(c(2,2)*c(3,3)-c(2,3)*c(2,3))
      &     -c(1,2)*(c(1,2)*c(3,3)-c(1,3)*c(2,3))
      &     +c(1,3)*(c(1,2)*c(2,3)-c(1,3)*c(2,2))
@@ -852,30 +843,5 @@ c         v2=v2/2.d0
 !               
       enddo
 !
-c      write(*,*) ' al '
-c      write(*,'(4(1x,e19.12))') (al(i),i=1,3)
-c      write(*,*) ' all '
-c      write(*,'(4(1x,e19.12))') (all(i),i=1,3)
-c      write(*,*) ' alb '
-c      write(*,'(4(1x,e19.12))') (alb(i),i=1,3)
-c      write(*,*) ' dldc '
-c      write(*,'(4(1x,e19.12))') (((dldc(i,j,k),i=1,3),j=1,3),k=1,3)
-c      write(*,*) ' d2ldc2 '
-c      write(*,'(4(1x,e19.12))') (((((d2ldc2(i,j,k,l,m),i=1,3),j=1,3)
-c     &  ,k=1,3),l=1,3),m=1,3)
-c      write(*,*) ' dlbdc '
-c      write(*,'(4(1x,e19.12))') (((dlbdc(i,j,k),i=1,3),j=1,3),k=1,3)
-c      write(*,*) ' d2lbdc2 '
-c      write(*,'(4(1x,e19.12))') (((((d2lbdc2(i,j,k,l,m),i=1,3),j=1,3)
-c     &  ,k=1,3),l=1,3),m=1,3)
-c      write(*,*) ' elconloc '
-c      write(*,'(4(1x,e19.12))') (elconloc(i),i=1,21)
-c      write(*,*) ' elas '
-c      write(*,'(4(1x,e19.12))') (elas(i),i=1,21)
-c      write(*,*) ' dudc '
-c      write(*,'(4(1x,e19.12))') (((dudc(i,j),i=1,3),j=1,3))
-c      write(*,*) ' d2udc2 '
-c      write(*,'(4(1x,e19.12))') (((((d2udc2(i,j,k,l),i=1,3),j=1,3)
-c     &  ,k=1,3),l=1,3))
       return
       end

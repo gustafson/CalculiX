@@ -18,12 +18,12 @@
 !
       subroutine e_c3d_trhs(co,nk,konl,lakonl,p1,p2,omx,bodyfx,
      &  nbody,ff,nelem,nmethod,rhcon,nrhcon,
-     &  ielmat,ntmat_,vold,voldcon,nelemload,
+     &  ielmat,ntmat_,vold,vcon,nelemload,
      &  sideload,xload,nload,idist,dtime,matname,mi,
      &  ttime,time,istep,iinc,xloadold,reltimef,shcon,nshcon,cocon,
      &  ncocon,physcon,nelemface,sideface,nface,
-     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,compressible,v,
-     &  voldtu,yy,turbulent,ipvar,var,ipvarf,varf)
+     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,compressible,
+     &  vcontu,yy,turbulent,ipvar,var,ipvarf,varf,dtc)
 !
 !     computation of the energy element matrix and rhs for the element with
 !     element with the topology in konl: step 4
@@ -48,7 +48,7 @@
      &  nface,igl,idf,ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),
      &  iscale,turbulent,ipvar(*),index,ipvarf(*),iemchange
 !
-      real*8 co(3,*),shp(4,20),xs2(3,7),dvi,
+      real*8 co(3,*),shp(4,20),xs2(3,7),dvi,dtc(*),
      &  p1(3),p2(3),bodyf(3),bodyfx(3),ff(60),cond,enthalpy,
      &  bf(3),q(3),xsjmod,dtem(3),vkl(3,3),corio(3),sinktemp,
      &  rhcon(0:1,ntmat_,*),reltimef,t(3,3),tv(3),bfv,press,
@@ -56,11 +56,11 @@
      &  voldl(0:mi(2),20),xloadold(2,*),cocon(0:6,ntmat_,*),
      &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),xload(2,*),
      &  om,omx,xi,et,ze,const,xsj,field,physcon(*),tvn,
-     &  temp,voldcon(0:4,*),voldconl(0:4,20),rho,xi3d,et3d,ze3d,
-     &  weight,shpv(20),xlocal20(3,9,6),coefmpc(*),v(0:mi(2),*),
+     &  temp,vcon(0:4,*),vconl(0:4,20),rho,xi3d,et3d,ze3d,
+     &  weight,shpv(20),xlocal20(3,9,6),coefmpc(*),
      &  xlocal4(3,1,4),xlocal10(3,3,4),xlocal6(3,1,5),vl(0:mi(2),20),
      &  xlocal15(3,4,5),xlocal8(3,4,6),xlocal8r(3,1,6),omcor,
-     &  shpvnithi(20),voldtu(2,*),voldtul(2,20),yy(*),yyl(20),
+     &  shpvnithi(20),vcontu(2,*),vcontul(2,20),yy(*),yyl(20),
      &  y,xtuf,xkin,vort,un,unt,umt,f2,arg2,c1,c2,a1,var(*),varf(*)
 !
       real*8 dtime,ttime,time,tvar(2),coords(3)
@@ -92,45 +92,30 @@
       imat=ielmat(1,nelem)
       amat=matname(imat)
 !
-      if(lakonl(4:4).eq.'2') then
-         nope=20
-         nopes=8
-      elseif(lakonl(4:4).eq.'8') then
-         nope=8
-         nopes=4
-      elseif(lakonl(4:5).eq.'10') then
-         nope=10
-         nopes=6
-      elseif(lakonl(4:4).eq.'4') then
+      if(lakonl(4:4).eq.'4') then
          nope=4
-         nopes=3
-      elseif(lakonl(4:5).eq.'15') then
-         nope=15
+         mint3d=1
       elseif(lakonl(4:4).eq.'6') then
          nope=6
-      endif
-!
-      if(lakonl(4:5).eq.'8R') then
-         mint2d=1
+         mint3d=2
+      elseif(lakonl(4:5).eq.'8R') then
+         nope=8
          mint3d=1
-      elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) then
-         mint2d=4
+      elseif(lakonl(4:4).eq.'8') then
+         nope=8
+         mint3d=8
+      elseif(lakonl(4:5).eq.'10') then
+         nope=10
+         mint3d=4
+      elseif(lakonl(4:5).eq.'15') then
+         nope=15
+         mint3d=9
+      elseif(lakonl(4:6).eq.'20R') then
+         nope=20
          mint3d=8
       elseif(lakonl(4:4).eq.'2') then
-         mint2d=9
+         nope=20
          mint3d=27
-      elseif(lakonl(4:5).eq.'10') then
-         mint2d=3
-         mint3d=4
-      elseif(lakonl(4:4).eq.'4') then
-         mint2d=1
-         mint3d=1
-      elseif(lakonl(4:5).eq.'15') then
-         mint3d=9
-      elseif(lakonl(4:5).eq.'6 ') then
-         mint3d=2
-      elseif(lakonl(4:5).eq.'6R') then
-         mint3d=1
       else
          mint3d=0
       endif
@@ -141,22 +126,13 @@
          ff(i)=0.d0
       enddo
 !
-!     temperature, velocity and auxiliary variables
+!     temperature, velocity and conservative variables
 !     (rho*energy density, rho*velocity and rho)
 !
       do i1=1,nope
-c         do i2=0,4
-c            voldl(i2,i1)=vold(i2,konl(i1))
-c         enddo
          voldl(0,i1)=vold(0,konl(i1))
          voldl(4,i1)=vold(4,konl(i1))
-         voldconl(0,i1)=voldcon(0,konl(i1))
-c         voldconl(4,i1)=voldcon(4,konl(i1))
-c         if(turbulent.ne.0) then
-c            voldtul(1,i1)=voldtu(1,konl(i1))
-c            voldtul(2,i1)=voldtu(2,konl(i1))
-c            yyl(i1)=yy(konl(i1))
-c         endif
+         vconl(0,i1)=vcon(0,konl(i1))
       enddo
 !
 !     computation of the matrix: loop over the Gauss points
@@ -222,11 +198,10 @@ c         endif
 !        in the integration point
 !
          do i1=1,nope
-            enthalpy=enthalpy+shpv(i1)*(voldconl(0,i1)+voldl(4,i1))
+            enthalpy=enthalpy+shpv(i1)*(vconl(0,i1)+voldl(4,i1))
          enddo
 !     
-!     material data (density, dynamic viscosity, heat capacity and
-!     conductivity)
+!     material data (conductivity)
 !     
          call materialdata_cond(imat,ntmat_,temp,cocon,ncocon,cond)
 !     
@@ -248,7 +223,7 @@ c         endif
 !     
          do jj=1,nope
             ff(jj)=ff(jj)-xsjmod*(
-     &           (shp(4,jj)+dtime*shpv(jj)/2.d0)*enthalpy+
+     &           (shp(4,jj)+dtc(konl(jj))*shpv(jj)/2.d0)*enthalpy+
      &           shp(1,jj)*tv(1)+shp(2,jj)*tv(2)+shp(3,jj)*tv(3))
          enddo
 !     
@@ -265,7 +240,7 @@ c         endif
 !
             do jj=1,nope
                ff(jj)=ff(jj)+xsjmod*(shp(4,jj)+
-     &              dtime*shpv(jj)/2.d0)*bfv
+     &              dtc(konl(jj))*shpv(jj)/2.d0)*bfv
             enddo
          else
             index=index+10
@@ -302,7 +277,7 @@ c         endif
                endif
                do jj=1,nope
                   ff(jj)=ff(jj)+xsjmod*(shp(4,jj)+
-     &              dtime*shpv(jj)/2.d0)*xload(1,id)
+     &              dtc(konl(jj))*shpv(jj)/2.d0)*xload(1,id)
                enddo
                exit
             enddo
@@ -315,6 +290,7 @@ c         endif
 !     
 !        free stream or solid surface boundaries
 !     
+         nopes=0
          call nident(nelemface,nelem,nface,idf)
          do
             if((idf.eq.0).or.(nelemface(idf).ne.nelem)) exit
@@ -343,23 +319,43 @@ c         endif
                exit
             enddo
 !     
-!     treatment of wedge faces
-!     
+            if(nopes.eq.0) then
+               if(lakonl(4:4).eq.'4') then
+                  nopes=3
+                  mint2d=1
+               elseif(lakonl(4:4).eq.'6') then
+                  mint2d=1
+               elseif(lakonl(4:5).eq.'8R') then
+                  nopes=4
+                  mint2d=1
+               elseif(lakonl(4:4).eq.'8') then
+                  nopes=4
+                  mint2d=4
+               elseif(lakonl(4:5).eq.'10') then
+                  nopes=6
+                  mint2d=3
+               elseif(lakonl(4:6).eq.'20R') then
+                  nopes=8
+                  mint2d=4
+               elseif(lakonl(4:4).eq.'2') then
+                  nopes=8
+                  mint2d=9
+               endif
+            endif
+!
             if(lakonl(4:4).eq.'6') then
-               mint2d=1
                if(ig.le.2) then
                   nopes=3
                else
                   nopes=4
                endif
-            endif
-            if(lakonl(4:5).eq.'15') then
+            elseif(lakonl(4:5).eq.'15') then
                if(ig.le.2) then
-                  mint2d=3
                   nopes=6
+                  mint2d=3
                else
-                  mint2d=4
                   nopes=8
+                  mint2d=4
                endif
             endif
 !     
@@ -441,10 +437,6 @@ c         endif
                index=index+5
 !
                tvn=tv(1)*xsj2(1)+tv(2)*xsj2(2)+tv(3)*xsj2(3)
-c                  if((nelem.eq.20).and.(ig.eq.4)) then
-c                     write(*,*) 'e_c3d_trhs ',nelem,ig,tvn,xsj2(2),
-c     &                     tv(2),dtem(2),vold(0,83),vold(0,79),cond
-c                  endif
 !
                if(flux.eq.1) then
                   dxsj2=dsqrt(xsj2(1)*xsj2(1)+xsj2(2)*xsj2(2)+
@@ -461,7 +453,6 @@ c                  endif
                         do k=1,3
                            coords(k)=0.d0
                            do j=1,nopes
-c                              coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
                               coords(k)=coords(k)+
      &                             co(k,konl(ifaceq(j,ig)))*shp2(4,j)
                            enddo
@@ -470,7 +461,6 @@ c                              coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
                         do k=1,3
                            coords(k)=0.d0
                            do j=1,nopes
-c                              coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
                               coords(k)=coords(k)+
      &                             co(k,konl(ifacet(j,ig)))*shp2(4,j)
                            enddo
@@ -479,7 +469,6 @@ c                              coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
                         do k=1,3
                            coords(k)=0.d0
                            do j=1,nopes
-c                              coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
                               coords(k)=coords(k)+
      &                             co(k,konl(ifacew(j,ig)))*shp2(4,j)
                            enddo

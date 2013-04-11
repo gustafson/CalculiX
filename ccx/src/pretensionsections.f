@@ -19,7 +19,8 @@
       subroutine pretensionsections(inpc,textpart,ipompc,nodempc,
      &  coefmpc,nmpc,nmpc_,mpcfree,nk,ikmpc,ilmpc,
      &  labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,lakon,
-     &  kon,ipkon,set,nset,istartset,iendset,ialset,co,ics,dcs)
+     &  kon,ipkon,set,nset,istartset,iendset,ialset,co,ics,dcs,t0,
+     &  ithermal,ne)
 !
 !     reading the input deck: *PRE-TENSION SECTION
 !
@@ -41,11 +42,12 @@
      &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),indexpret,
      &  k,ipos,nkold,nope,m,kon(*),ipkon(*),indexe,iset,nset,idir,
      &  istartset(*),iendset(*),ialset(*),index1,ics(2,*),mpcpret,
-     &  mint,iflag
+     &  mint,iflag,ithermal(2),ielem,three,in(3),node1,node2,isign,
+     &  ndep,nind,kflag,ne
 !
       real*8 coefmpc(*),xn(3),xt(3),xd(3),dd,co(3,*),dcs(*),area,
-     &  areanodal(8),xl2(3,8),xi,et,weight,shp2(7,8),
-     &  xs2(3,2),xsj2(3),xsj
+     &  areanodal(8),xl2(3,8),xi,et,weight,shp2(7,8),t0(*),
+     &  xs2(3,2),xsj2(3),xsj,yn(3)
 !
       include "gauss.f"
 !     
@@ -75,7 +77,7 @@
      &             4,5,6,0,
      &             1,2,5,4,
      &             2,3,6,5,
-     &             4,6,3,1/
+     &             3,1,4,6/
 !
 !     nodes per face for quadratic wedge elements
 !
@@ -83,7 +85,7 @@
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
-     &             4,6,3,1,12,15,9,13/
+     &             3,1,4,6,9,13,12,15/
 !
 !     nodes per face for quad elements
 !
@@ -103,13 +105,25 @@
       data iflag /2/
 !
       if(istep.gt.0) then
-         write(*,*) '*ERROR in pretensionsections.f: *EQUATION should'
+         write(*,*) 
+     &      '*ERROR reading *PRE-TENSION SECTION: *EQUATION should'
          write(*,*) '       be placed before all step definitions'
          stop
       endif
 !
+      ielem=0
+      do i=1,81
+         surface(i:i)=' '
+      enddo
+!
       do i=2,n
          if(textpart(i)(1:8).eq.'SURFACE=') then
+            if(ielem.ne.0) then
+               write(*,*) '*ERROR reading PRE-TENSION SECTION:'
+               write(*,*) '       ELEMENT and SURFACE are'
+               write(*,*) '       mutually exclusive'
+               call inputerror(inpc,ipoinpc,iline)
+            endif
             surface=textpart(i)(9:88)
             ipos=index(surface,' ')
             surface(ipos:ipos)='T'
@@ -117,13 +131,28 @@
             read(textpart(i)(6:15),'(i10)',iostat=istat) irefnode
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
             if((irefnode.gt.nk).or.(irefnode.le.0)) then
-               write(*,*) '*ERROR in pretensionsections.f:'
+               write(*,*) '*ERROR reading *PRE-TENSION SECTION:'
                write(*,*) '       node ',irefnode,' is not defined'
                stop
             endif
+         elseif(textpart(i)(1:8).eq.'ELEMENT=') then
+            if(surface(1:1).ne.' ') then
+               write(*,*) '*ERROR reading PRE-TENSION SECTION:'
+               write(*,*) '       ELEMENT and SURFACE are'
+               write(*,*) '       mutually exclusive'
+               call inputerror(inpc,ipoinpc,iline)
+            endif
+            read(textpart(i)(9:18),'(i10)',iostat=istat) ielem
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if((ielem.gt.ne).or.(ielem.le.0)) then
+               write(*,*) '*ERROR reading PRE-TENSION SECTION:'
+               write(*,*) '       element',ielem,'is not defined'
+               call inputerror(inpc,ipoinpc,iline)
+            endif
          else
             write(*,*) 
-     &       '*WARNING in pretensionsections: parameter not recognized:'
+     &       '*WARNING reading *PRE-TENSION SECTION: parameter not recog
+     &nized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline)
@@ -133,16 +162,31 @@
 !     checking whether the surface exists and is an element face
 !     surface
 !
-      iset=0
-      do i=1,nset
-         if(set(i).eq.surface) then
-            iset=i
-            exit
+      if(surface(1:1).ne.' ') then
+         iset=0
+         do i=1,nset
+            if(set(i).eq.surface) then
+               iset=i
+               exit
+            endif
+         enddo
+         if(iset.eq.0) then
+            write(*,*) 
+     &      '*ERROR reading *PRE-TENSION SECTION: nonexistent surface'
+            write(*,*) '       or surface consists of nodes'
+            call inputerror(inpc,ipoinpc,iline)
          endif
-      enddo
-      if(iset.eq.0) then
-         write(*,*) '*ERROR in pretensionsections: nonexistent surface'
-         write(*,*) '       or surface consists of nodes'
+      elseif(ielem.gt.0) then
+         if(lakon(ielem)(1:3).ne.'B31') then
+            write(*,*) '*ERROR reading PRE-TENSION SECTION:'
+            write(*,*) '       element',ielem,' is not a linear'
+            write(*,*) '       beam element'
+            stop
+         endif
+      else
+         write(*,*) '*ERROR reading PRE-TENSION SECTION:'
+         write(*,*) '       either the parameter SURFACE or the'
+         write(*,*) '       parameter ELEMENT must be used'
          call inputerror(inpc,ipoinpc,iline)
       endif
 !         
@@ -159,6 +203,129 @@
       do i=1,3
          xn(i)=xn(i)/dd
       enddo
+!
+!     beam pretension
+!
+      if(ielem.gt.0) then
+         indexe=ipkon(ielem)
+         node1=kon(indexe+1)
+         node2=kon(indexe+2)
+         do i=1,3
+            yn(i)=dabs(xn(i))
+            in(i)=i
+         enddo
+!
+!        sorting yn in descending order
+!
+         three=3
+         kflag=-2
+         call dsort(yn,in,three,kflag)
+!
+!        equation: u_2*n-u_1*n+d=0
+!
+!        looking for the largest coefficient
+!
+         do i=1,3
+            if(yn(i).lt.1.d-10) cycle
+!
+!           default dependent and independent nodes
+!
+            ndep=node2
+            nind=node1
+            isign=1
+!
+            idof=8*(node2-1)+in(i)
+            call nident(ikmpc,idof,nmpc,id)
+            if(id.ne.0) then
+               if(ikmpc(id).eq.idof) then
+                  idof=8*(node1-1)+in(i)
+                  call nident(ikmpc,idof,nmpc,id)
+                  if(id.ne.0) then
+                     if(ikmpc(id).eq.idof) then
+                        cycle
+                     endif
+                  endif
+                  ndep=node1
+                  nind=node2
+                  isign=-1
+               endif
+            endif
+!
+            nmpc=nmpc+1
+            if(nmpc.gt.nmpc_) then
+               write(*,*) '*ERROR in equations: increase nmpc_'
+               stop
+            endif
+            labmpc(nmpc)='PRETENSION          '
+            ipompc(nmpc)=mpcfree
+!     
+!     updating ikmpc and ilmpc
+!     
+            do j=nmpc,id+2,-1
+               ikmpc(j)=ikmpc(j-1)
+               ilmpc(j)=ilmpc(j-1)
+            enddo
+            ikmpc(id+1)=idof
+            ilmpc(id+1)=nmpc
+!
+            jn=in(i)
+!
+            if(dabs(xn(idir)).gt.1.d-10) then
+               nodempc(1,mpcfree)=ndep
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=isign*xn(idir)
+               mpcfree=nodempc(3,mpcfree)
+!
+               nodempc(1,mpcfree)=nind
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=-isign*xn(idir)
+               mpcfree=nodempc(3,mpcfree)
+            endif
+!
+            idir=idir+1
+            if(idir.eq.4) idir=1
+            if(dabs(xn(idir)).gt.1.d-10) then
+               nodempc(1,mpcfree)=ndep
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=isign*xn(idir)
+               mpcfree=nodempc(3,mpcfree)
+!
+               nodempc(1,mpcfree)=nind
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=-isign*xn(idir)
+               mpcfree=nodempc(3,mpcfree)
+            endif
+!
+            idir=idir+1
+            if(idir.eq.4) idir=1
+            if(dabs(xn(idir)).gt.1.d-10) then
+               nodempc(1,mpcfree)=ndep
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=isign*xn(idir)
+               mpcfree=nodempc(3,mpcfree)
+!
+               nodempc(1,mpcfree)=nind
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=-isign*xn(idir)
+               mpcfree=nodempc(3,mpcfree)
+            endif
+!
+!           inhomogeneous term
+!
+            nodempc(1,mpcfree)=irefnode
+            nodempc(2,mpcfree)=1
+            coefmpc(mpcfree)=1.d0
+            mpcfreeold=mpcfree
+            mpcfree=nodempc(3,mpcfree)
+            nodempc(3,mpcfreeold)=0
+!
+            return
+         enddo
+         write(*,*) '*ERROR reading *PRE-TENSION SECTION'
+         write(*,*) '       all DOFS of the beam elements'
+         write(*,*) '       have been used previously'
+         stop
+      endif
 !
 !     finding a unit vector xt perpendicular to the normal vector
 !     using a unit vector in x or in y 
@@ -596,6 +763,49 @@
                coefmpc(mpcfree)=xn(idir)
                indexpret=mpcfree
                mpcfree=nodempc(3,mpcfree)
+            endif
+!
+!           thermal MPC
+!
+            if(ithermal(2).gt.0) then
+               idof=8*(nk-1)
+               call nident(ikmpc,idof,nmpc,id)
+!     
+               nmpc=nmpc+1
+               if(nmpc.gt.nmpc_) then
+                  write(*,*) '*ERROR in equations: increase nmpc_'
+                  stop
+               endif
+               labmpc(nmpc)='                    '
+               ipompc(nmpc)=mpcfree
+!     
+!     updating ikmpc and ilmpc
+!     
+               do j=nmpc,id+2,-1
+                  ikmpc(j)=ikmpc(j-1)
+                  ilmpc(j)=ilmpc(j-1)
+               enddo
+               ikmpc(id+1)=idof
+               ilmpc(id+1)=nmpc
+!
+               nodempc(1,mpcfree)=nk
+               nodempc(2,mpcfree)=0
+               coefmpc(mpcfree)=1.d0
+               mpcfree=nodempc(3,mpcfree)
+!
+               nodempc(1,mpcfree)=node
+               nodempc(2,mpcfree)=0
+               coefmpc(mpcfree)=-1.d0
+!
+               mpcfreeold=mpcfree
+               mpcfree=nodempc(3,mpcfree)
+               nodempc(3,mpcfreeold)=0
+            endif
+!
+!           initial value for new node
+!
+            if(ithermal(1).gt.0) then
+               t0(nk)=t0(node)
             endif
 !
          enddo

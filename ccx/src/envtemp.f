@@ -287,7 +287,7 @@ c            iptri(ntr)=ntri+1
      &         (lakon(ieg(i))(4:7).eq.'CHWE').or.
      &         (lakon(ieg(i))(4:7).eq.'CHDS')) then
            nactdog(3,node)=1
-        elseif(lakon(ieg(i))(2:8).eq.'ACCTUBE') then
+        elseif(lakon(ieg(i))(2:7).eq.'ACCTUB') then
 !         
             index=ielprop(ieg(i))
             if(prop(index+1).eq.2) then
@@ -548,12 +548,12 @@ c      enddo
                nacteq(j,node)=nteq
             endif 
          enddo
-c         write(30,*) 'unknowns ',node,(nactdog(j,node),j=0,3)
+!         write(30,*) 'unknowns ',node,(nactdog(j,node),j=0,3)
       enddo
-      do i=1,ntg
-         node=itg(i)
-c         write(30,*) 'equations',node,(nacteq(j,node),j=0,2)
-      enddo
+!      do i=1,ntg
+!         node=itg(i)
+!         write(30,*) 'equations',node,(nacteq(j,node),j=0,2)
+!      enddo
 !
 !     taking additional MPC's into account
 !
@@ -635,6 +635,17 @@ c         write(30,*) 'equations',node,(nacteq(j,node),j=0,2)
             nacteq(3,node2)=node1
          endif
       enddo
+c
+c      write(30,*) 'nactdog'
+c      do i=1,ntg
+c         write(30,*) itg(i),(nactdog(j,itg(i)),j=0,3)
+c      enddo
+c
+c      write(30,*) ''
+c      write(30,*) 'nacteq'
+c      do i=1,ntg
+c         write(30,*) itg(i),(nacteq(j,itg(i)),j=0,3)
+c      enddo
 !
       return
       end

@@ -16,11 +16,11 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine cfdconv(vold,voldcon,v,nk,
+      subroutine cfdconv(vold,vcon,v,nk,
      &  ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,iout,
      &  nmethod,convergence,physcon,iponoel,inoel,ithermal,
-     &  nactdoh,iit,compressible,ismooth,voldtu,vtu,turbulent,
-     &  inomat,nodeboun,ndirboun,nboun,mi,co,factor,voldconini,
+     &  nactdoh,iit,compressible,ismooth,vcontu,vtu,turbulent,
+     &  inomat,nodeboun,ndirboun,nboun,mi,co,factor,vconini,
      &  dtimef)
 !
 !     calculates the change in solution
@@ -34,11 +34,11 @@
      &  nmethod,imat,nelem,iponoel(*),inoel(3,*),ismooth,
      &  inomat(*),node,nodeboun(*),ndirboun(*),nboun
 !
-      real*8 v(0:mi(2),*),vold(0:mi(2),*),voldcon(0:4,*),
+      real*8 v(0:mi(2),*),vold(0:mi(2),*),vcon(0:4,*),
      &  rhcon(0:1,ntmat_,*),rho,c1,vmax(0:6),dummy,press,
      &  vconmax(0:6),cp,r,temp,temp0,c2,c3,tempnew,vel2,
      &  shcon(0:3,ntmat_,*),drho,dtemp,physcon(*),dpress,
-     &  voldtu(2,*),vtu(2,*),co(3,*),factor,voldconini(0:4,*),
+     &  vcontu(2,*),vtu(2,*),co(3,*),factor,vconini(0:4,*),
      &  dtimef
 !     
       do j=0,6
@@ -49,34 +49,34 @@
       if(compressible.eq.1) then
          do i=1,nk
             do j=0,4
-               vmax(j)=vmax(j)+(voldcon(j,i)-voldconini(j,i))**2
-               vconmax(j)=vconmax(j)+voldconini(j,i)**2
-               voldconini(j,i)=voldcon(j,i)
+               vmax(j)=vmax(j)+(vcon(j,i)-vconini(j,i))**2
+               vconmax(j)=vconmax(j)+vconini(j,i)**2
+               vconini(j,i)=vcon(j,i)
             enddo
          enddo
       else
          do i=1,nk
             do j=0,3
-               vmax(j)=vmax(j)+(voldcon(j,i)-voldconini(j,i))**2
-               vconmax(j)=vconmax(j)+voldconini(j,i)**2
-               voldconini(j,i)=voldcon(j,i)
+               vmax(j)=vmax(j)+(vcon(j,i)-vconini(j,i))**2
+               vconmax(j)=vconmax(j)+vconini(j,i)**2
+               vconini(j,i)=vcon(j,i)
             enddo
 !
 !           for incompressible fluids the pressure is stored
 !           in vold(4,*), the initial pressure in 
-!           voldconini(4,*)
+!           vconini(4,*)
 !
             do j=4,4
-               vmax(j)=vmax(j)+(vold(j,i)-voldconini(j,i))**2
-               vconmax(j)=vconmax(j)+voldconini(j,i)**2
-               voldconini(j,i)=vold(j,i)
+               vmax(j)=vmax(j)+(vold(j,i)-vconini(j,i))**2
+               vconmax(j)=vconmax(j)+vconini(j,i)**2
+               vconini(j,i)=vold(j,i)
             enddo
          enddo
       endif
       do i=1,nk
          do j=1,2
             vmax(4+j)=vmax(4+j)+vtu(1,i)**2
-            vconmax(4+j)=vconmax(4+j)+voldtu(1,i)**2
+            vconmax(4+j)=vconmax(4+j)+vcontu(1,i)**2
          enddo
       enddo
 !     
@@ -108,7 +108,7 @@ c      write(*,'(i7,15(1x,e10.3))') iit,vmax(3),vconmax(3)
 c      write(*,'(i7,15(1x,e10.3))') iit,vmax(4),vconmax(4)
 c      write(*,'(i7,15(1x,e10.3))') iit,vmax(5),vconmax(5)
 c      write(*,'(i7,15(1x,e10.3))') iit,vmax(6),vconmax(6)
-      write(*,'(i7,15(1x,e10.3))') iit,vmax(0),vconmax(0),
+      write(8,'(i7,15(1x,e10.3))') iit,vmax(0),vconmax(0),
      &     vmax(1),vconmax(1),vmax(2),vconmax(2),
      &     vmax(3),vconmax(3),vmax(4),vconmax(4),
      &     vmax(5),vconmax(5),vmax(6),vconmax(6),dtimef

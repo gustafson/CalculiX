@@ -25,7 +25,7 @@
 !
       implicit none
 !
-      logical temp_flag,user
+      logical temp_flag,user,submodel
 !
       character*1 inpc(*)
       character*80 amname(*),amplitude
@@ -35,7 +35,7 @@
       integer istartset(*),iendset(*),ialset(*),iamt1(*),nmethod,
      &  nset,nk,ithermal,istep,istat,n,key,i,j,k,l,nam,ipoinpc(0:*),
      &  iamplitude,ipos,inoelfree,nk_,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),nam_,namtot,namtot_,namta(3,*),idelay
+     &  inp(3,*),nam_,namtot,namtot_,namta(3,*),idelay,iglobstep
 !
       real*8 t0(*),t1(*),temperature,tempgrad1,tempgrad2,amta(2,*),
      &  t1g(2,*)
@@ -43,6 +43,8 @@
       iamplitude=0
       idelay=0
       user=.false.
+      iglobstep=0
+      submodel=.false.
 !
       if(nmethod.eq.3) then
          write(*,*) '*ERROR reading *TEMPERATURE: temperature'
@@ -129,6 +131,11 @@
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          elseif(textpart(i)(1:4).eq.'USER') then
             user=.true.
+         elseif(textpart(i)(1:8).eq.'SUBMODEL') then
+            submodel=.true.
+         elseif(textpart(i)(1:5).eq.'STEP=') then
+            read(textpart(i)(6:15),'(i10)',iostat=istat) iglobstep
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          else
             write(*,*) 
      &        '*WARNING reading *TEMPERATURE: parameter not recognized:'
@@ -137,6 +144,18 @@
             call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
+!
+!     check whether global step was specified for submodel
+!
+      if((submodel).and.(iglobstep.eq.0)) then
+         write(*,*) '*ERROR reading *TEMPERATURE: no global step'
+         write(*,*) '       step specified for the submodel'
+         call inputerror(inpc,ipoinpc,iline)
+      endif
+!
+!     storing the step for submodels in iamboun
+!
+      if(submodel) iamplitude=iglobstep
 !
       if(user.and.(iamplitude.ne.0)) then
          write(*,*) 
@@ -156,6 +175,7 @@
 !        dummy temperature consisting of the first primes
 !
          if(user) temperature=1.2357111317d0
+         if(submodel) temperature=1.9232931374d0
 !
          if(inoelfree.ne.0) then
             tempgrad1=0.d0

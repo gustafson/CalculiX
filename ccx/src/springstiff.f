@@ -29,7 +29,7 @@
 !
       integer konl(20),i,j,imat,ncmat_,ntmat_,k,l,nope,nterms,iflag,
      &  i1,kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),
-     &  iperturb,nmethod,mi(*),ne0,nstate_
+     &  iperturb(*),nmethod,mi(*),ne0,nstate_
 !
       real*8 xl(3,9),elas(21),ratio(9),q(3),val,shp2(7,9),
      &  al(3),s(60,60),voldl(0:mi(2),9),pl(3,9),xn(3),dm,dm2,
@@ -46,23 +46,15 @@
      &  xnormastface(3,8)
 !
       data iflag /4/
-c      write(*,*) 'springstiff'
 !
 !     actual positions of the nodes belonging to the contact spring
+!     (otherwise no contact force)
 !
-      if(iperturb.eq.0) then
-         do i=1,nope
-            do j=1,3
-               pl(j,i)=xl(j,i)
-            enddo
+      do i=1,nope
+         do j=1,3
+            pl(j,i)=xl(j,i)+voldl(j,i)
          enddo
-      else
-         do i=1,nope
-            do j=1,3
-               pl(j,i)=xl(j,i)+voldl(j,i)
-            enddo
-         enddo
-      endif
+      enddo
 !
       if(lakonl(7:7).eq.'A') then
          dd0=dsqrt((xl(1,2)-xl(1,1))**2
@@ -390,7 +382,7 @@ c     &          -elcon(1,1,imat)*springarea(1)
 !     Coulomb friction for static calculations
 !    
       if(ncmat_.ge.7) then
-         if(iperturb.gt.1) then
+c         if((iperturb(1).gt.1).or.(nmethod.eq.4)) then
             um=elcon(6,1,imat)
             if(um.gt.0.d0) then
 !
@@ -560,7 +552,7 @@ c     enddo
                   enddo
                endif
             endif
-         endif
+c         endif
       endif
 !
 !     determining the stiffness matrix contributions

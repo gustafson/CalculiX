@@ -17,19 +17,25 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine createinum(ipkon,inum,kon,lakon,nk,ne,cflag,nelemload,
-     &  nload,nodeboun,nboun,ndirboun,ithermal)
+     &  nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi)
 !
 !     determines inum in case no extrapolation is requested in the
 !     input deck (e.g. only nodal variables are requested)
 !
       implicit none
 !
+      logical force
+!
       character*1 cflag
       character*8 lakon(*),lakonl
 !
-      integer ipkon(*),inum(*),kon(*),ne,indexe,nope,
+      integer ipkon(*),inum(*),kon(*),ne,indexe,nope,nfield,mi(*),
      &  nk,i,j,nelemload(2,*),nload,node,nboun,
      &  nodeboun(*),ndirboun(*),ithermal(2)
+!
+      real*8 yn,co(3,*),vold(0:mi(2),*)
+!
+      force=.false.
 !
       do i=1,nk
          inum(i)=0
@@ -78,30 +84,15 @@ c        incompatible modes elements
 c     Bernhardi end
 !
       enddo
-c!
-c!     printing values for environmental film, radiation and
-c!     pressure nodes (these nodes are considered to be network
-c!     nodes)
-c!
-c      do i=1,nload
-c         node=nelemload(2,i)
-c         if(node.gt.0) then
-c            if(inum(node).gt.0) cycle
-c            inum(node)=-1
-c         endif
-c      enddo
-c!
-c!     printing values of prescribed boundary conditions (these
-c!     nodes are considered to be structural nodes)
-c!
-c      if(ithermal(2).gt.1) then
-c         do i=1,nboun
-c            node=nodeboun(i)
-c            if(inum(node).ne.0) cycle
-c            if((cflag.ne.' ').and.(ndirboun(i).eq.3)) cycle
-c            inum(node)=1
-c         enddo
-c      endif
+!
+!     for 1d and 2d elements only:
+!     finding the solution in the original nodes
+!
+      if((cflag.ne.' ').and.(cflag.ne.'E')) then
+         nfield=0
+         call map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,ne,cflag,co,
+     &         vold,force,mi)
+      endif
 !
       return
       end

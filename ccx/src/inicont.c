@@ -32,7 +32,7 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
                int *nmpc, int *mpcfree, int *memmpc_,
                int **ipompcp, char **labmpcp, int **ikmpcp, int **ilmpcp,
                double **fmpcp, int **nodempcp, double **coefmpcp,
-               int *iperturb, int *ikboun, int *nboun){
+	       int *iperturb, int *ikboun, int *nboun, double *co){
     
   char kind1[2]="C",kind2[2]="-", *tchar1=NULL, *tchar3=NULL, *labmpc=NULL;
     
@@ -67,7 +67,7 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
   /* triangulation of the master side */
   
   FORTRAN(triangucont,(ncont,ntie,tieset,nset,set,istartset,iendset,
-	 ialset,itietri,lakon,ipkon,kon,koncont,kind1,kind2));
+	  ialset,itietri,lakon,ipkon,kon,koncont,kind1,kind2,co,nk));
     
   RENEW(ipe,int,*nk);
   RENEW(ime,int,12**ncont);
@@ -162,7 +162,7 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
       RENEW(ilmpc,int,*nmpc);
       RENEW(fmpc,double,*nmpc);
     
-/*      for(i=0;i<*nmpc;i++){
+      /*   for(i=0;i<*nmpc;i++){
 	j=i+1;
 	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
 	}*/

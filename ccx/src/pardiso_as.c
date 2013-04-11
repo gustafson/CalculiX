@@ -150,11 +150,20 @@ void pardiso_factor_as(double *ad, double *au, double *adb, double *aub,
 
 void pardiso_solve_as(double *b, int *neq){
 
+  char *env;
   int maxfct=1,mnum=1,mtype=11,phase=33,*perm=NULL,nrhs=1,
       msglvl=0,i,error=0;
   double *x=NULL;
 
   printf(" Solving the system of equations using the asymmetric pardiso solver\n");
+
+  iparmas[0]=0;
+  env=getenv("OMP_NUM_THREADS");
+  if(env) {
+    iparmas[2]=atoi(env);}
+  else{
+    iparmas[2]=1;
+  }
 
   printf(" number of threads =% d\n\n",iparmas[2]);
 

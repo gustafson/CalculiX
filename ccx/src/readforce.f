@@ -43,7 +43,6 @@
       open(27,file='dummy',status='unknown')
 !
       do i=1,nev
-c         do j=1,nk
          do
             read(27,*,iostat=istat) node,(comp(k),k=1,6)
             if(istat.ne.0) then

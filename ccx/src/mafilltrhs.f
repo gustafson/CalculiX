@@ -20,11 +20,11 @@
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
      &  nforc,nelemload,sideload,xload,nload,xbody,ipobody,nbody,
      &  b,nactdoh,neqt,nmethod,ikmpc,ilmpc,ikboun,
-     &  ilboun,rhcon,nrhcon,ielmat,ntmat_,t0,ithermal,vold,voldcon,nzst,
+     &  ilboun,rhcon,nrhcon,ielmat,ntmat_,t0,ithermal,vold,vcon,nzst,
      &  dtl,matname,mi,ncmat_,physcon,shcon,nshcon,ttime,time,
      &  istep,iinc,ibody,xloadold,reltimef,cocon,ncocon,nelemface,
-     &  sideface,nface,compressible,v,voldtu,yy,turbulent,nea,neb,
-     &  dtimef,ipvar,var,ipvarf,varf)
+     &  sideface,nface,compressible,vcontu,yy,turbulent,nea,neb,
+     &  dtimef,ipvar,var,ipvarf,varf,dtc)
 !
 !     filling the rhs b of the velocity equations (step 1)
 !
@@ -49,8 +49,8 @@
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),bodyf(3),b(*),xloadold(2,*),reltimef,cocon(0:6,ntmat_,*),
-     &  t0(*),vold(0:mi(2),*),voldcon(0:4,*),ff(60),v(0:mi(2),*),yy(*),
-     &  rhcon(0:1,ntmat_,*),physcon(*),voldtu(2,*),
+     &  t0(*),vold(0:mi(2),*),vcon(0:4,*),ff(60),yy(*),
+     &  rhcon(0:1,ntmat_,*),physcon(*),vcontu(2,*),dtc(*),
      &  shcon(0:3,ntmat_,*),xbody(7,*),var(*),varf(*)
 !
       real*8 om,dtimef,ttime,time,dtl(*)
@@ -134,12 +134,12 @@ c         enddo
 !     
          call e_c3d_trhs(co,nk,kon(indexe+1),lakon(i),p1,p2,om,bodyf,
      &        nbody,ff,i,nmethod,rhcon,nrhcon,
-     &        ielmat,ntmat_,vold,voldcon,nelemload,
+     &        ielmat,ntmat_,vold,vcon,nelemload,
      &        sideload,xload,nload,idist,dtimef,matname,mi(1),
      &        ttime,time,istep,iinc,xloadold,reltimef,shcon,nshcon,
      &        cocon,ncocon,physcon,nelemface,sideface,nface,
-     &        ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,compressible,v,
-     &        voldtu,yy,turbulent,ipvar,var,ipvarf,varf)
+     &        ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,compressible,
+     &        vcontu,yy,turbulent,ipvar,var,ipvarf,varf,dtc)
 !     
          do jj=1,nope
 !     

@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine dualshape3tri(xi,et,xl,xsj,xs,shp,iflag)
+      subroutine dualshape3tri(xi,et,xl,xsj,xs,shp,ns,pslavdual,iflag)
 !
 !     shape functions and derivatives for a 3-node linear
 !     isoparametric triangular element. 0<=xi,et<=1,xi+et<=1 
@@ -32,9 +32,10 @@
 !
       implicit none
 !
-      integer i,j,k,iflag
+      integer i,j,k,iflag,ns
 !
-      real*8 shp(4,3),xs(3,2),xsi(2,3),xl(0:3,3),sh(3),xsj(3)
+      real*8 shp(4,3),xs(3,2),xsi(2,3),xl(3,8),sh(3),xsj(3),
+     &       pslavdual(16,*)
 !
       real*8 xi,et
 !
@@ -61,9 +62,12 @@
 !
 !     Dual shape functions
 !
-      shp(4,1)=3.d0*shp(3,1)-shp(3,2)-shp(3,3)
-      shp(4,2)=3.d0*shp(3,2)-shp(3,1)-shp(3,3)
-      shp(4,3)=3.d0*shp(3,3)-shp(3,1)-shp(3,2)
+      shp(4,1)=pslavdual(1,ns)*shp(3,1)+pslavdual(2,ns)*shp(3,2)
+     &     + pslavdual(3,ns)*shp(3,3)
+      shp(4,2)=pslavdual(5,ns)*shp(3,1)+pslavdual(6,ns)*shp(3,2)
+     &     +pslavdual(7,ns)*shp(3,3)
+      shp(4,3)=pslavdual(9,ns)*shp(3,1)+pslavdual(10,ns)*shp(3,2)
+     &     +pslavdual(11,ns)*shp(3,3)
 !
 !     computation of the local derivative of the global coordinates
 !     (xs)

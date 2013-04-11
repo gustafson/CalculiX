@@ -32,34 +32,34 @@
 !
       if((prlab(ii)(1:4).eq.'U   ').or.(prlab(ii)(1:4).eq.'V   ')) then
          if((ntrans.eq.0).or.(prlab(ii)(6:6).eq.'G')) then
-            write(5,'(i6,1p,3(1x,e11.4))') node,
+            write(5,'(i10,1p,3(1x,e13.6))') node,
      &           (v(j,node),j=1,3)
          elseif(inotr(1,node).eq.0) then
-            write(5,'(i6,1p,3(1x,e11.4))') node,
+            write(5,'(i10,1p,3(1x,e13.6))') node,
      &           (v(j,node),j=1,3)
          else
             call transformatrix(trab(1,inotr(1,node)),co(1,node),a)
-            write(5,'(i6,1p,3(1x,e11.4))') node,
+            write(5,'(i10,1p,3(1x,e13.6))') node,
      &          v(1,node)*a(1,1)+v(2,node)*a(2,1)+v(3,node)*a(3,1),
      &          v(1,node)*a(1,2)+v(2,node)*a(2,2)+v(3,node)*a(3,2),
      &          v(1,node)*a(1,3)+v(2,node)*a(2,3)+v(3,node)*a(3,3)
          endif
       elseif(prlab(ii)(1:4).eq.'NT  ') then
          if(ithermal.le.1) then
-            write(5,'(i6,1x,1p,e11.4)') node,
+            write(5,'(i10,1x,1p,e13.6)') node,
      &           t1(node)
          else
-            write(5,'(i6,1x,1p,e11.4)') node,
+            write(5,'(i10,1x,1p,e13.6)') node,
      &           v(0,node)
          endif
       elseif(prlab(ii)(1:4).eq.'PS  ') then
-         write(5,'(i6,1x,1p,e11.4)') node,
+         write(5,'(i10,1x,1p,e13.6)') node,
      &        v(4,node)
       elseif(prlab(ii)(1:4).eq.'PN  ') then
-            write(5,'(i6,1x,1p,e11.4)') node,
+            write(5,'(i10,1x,1p,e13.6)') node,
      &           v(2,node)
       elseif(prlab(ii)(1:4).eq.'MF  ') then
-         write(5,'(i6,1x,1p,e11.4)') node,
+         write(5,'(i10,1x,1p,e13.6)') node,
      &        v(1,node)
       elseif(prlab(ii)(1:4).eq.'RF  ') then
          do j=1,3
@@ -67,14 +67,14 @@
          enddo
          if(prlab(ii)(5:5).ne.'O') then
             if((ntrans.eq.0).or.(prlab(ii)(6:6).eq.'G')) then
-               write(5,'(i6,1p,3(1x,e11.4))') node,
+               write(5,'(i10,1p,3(1x,e13.6))') node,
      &              (fn(j,node),j=1,3)         
             elseif(inotr(1,node).eq.0) then
-               write(5,'(i6,1p,3(1x,e11.4))') node,
+               write(5,'(i10,1p,3(1x,e13.6))') node,
      &              (fn(j,node),j=1,3) 
             else
                call transformatrix(trab(1,inotr(1,node)),co(1,node),a)
-               write(5,'(i6,1p,3(1x,e11.4))') node,
+               write(5,'(i10,1p,3(1x,e13.6))') node,
      &            fn(1,node)*a(1,1)+fn(2,node)*a(2,1)+fn(3,node)*a(3,1),
      &            fn(1,node)*a(1,2)+fn(2,node)*a(2,2)+fn(3,node)*a(3,2),
      &            fn(1,node)*a(1,3)+fn(2,node)*a(2,3)+fn(3,node)*a(3,3)
@@ -83,7 +83,7 @@
       elseif(prlab(ii)(1:4).eq.'RFL ') then
          rftot(0)=rftot(0)+fn(0,node)
          if(prlab(ii)(5:5).ne.'O') then
-            write(5,'(i6,1p,3(1x,e11.4))') node,
+            write(5,'(i10,1p,3(1x,e13.6))') node,
      &           fn(0,node)
          endif
       endif

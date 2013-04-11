@@ -16,15 +16,15 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine calcmach(vold,voldcon,v,nk,
+      subroutine calcmach(vold,vcon,v,nk,
      &  ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,iout,
      &  nmethod,convergence,physcon,iponoel,inoel,ithermal,
-     &  nactdoh,iit,compressible,ismooth,voldtu,vtu,turbulent,
+     &  nactdoh,iit,compressible,ismooth,vcontu,vtu,turbulent,
      &  inomat,nodeboun,ndirboun,nboun,mi,co,factor)
 !
 !     calculates 
 !       vold (temperature,velocity and pressure)
-!       voldcon (volumetric energy density, volumetric momentum
+!       vcon (volumetric energy density, volumetric momentum
 !                density and density)
 !       at the nodes    
 !
@@ -39,11 +39,11 @@
      &  nmethod,imat,nelem,iponoel(*),inoel(3,*),ismooth,
      &  inomat(*),node,nodeboun(*),ndirboun(*),nboun
 !
-      real*8 v(0:mi(2),*),vold(0:mi(2),*),voldcon(0:4,*),
+      real*8 v(0:mi(2),*),vold(0:mi(2),*),vcon(0:4,*),
      &  rhcon(0:1,ntmat_,*),rho,c1,vmax(0:4),dummy,press,
      &  voldmax(0:4),cp,r,temp,temp0,c2,c3,tempnew,vel2,
      &  shcon(0:3,ntmat_,*),drho,dtemp,physcon(*),dpress,
-     &  voldtu(2,*),vtu(2,*),co(3,*),factor
+     &  vcontu(2,*),vtu(2,*),co(3,*),factor
 !     
 !     calculate the Mach number and store it in v(1,*)
 !     

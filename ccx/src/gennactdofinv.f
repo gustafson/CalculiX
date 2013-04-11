@@ -30,11 +30,12 @@
       character*8 lakon(*),lakonl
 !
       integer mi(*),nactdof(0:mi(2),*),nactdofinv(*),nk,nodorig(*),
-     &  ipkon(*),i,j,l,ne,indexe,node2d,node3d,indexe2d,
-     &  node3(8,3),node6(3,6),node8(3,8),kon(*),mt
+     &  ipkon(*),i,j,l,ne,indexe,node2d,node3d,indexe2d,node2(4,2),
+     &  node3(8,3),node6(3,6),node8(3,8),kon(*),mt,jmax
 !
       data node3 /1,4,8,5,12,20,16,17,9,11,15,13,
      &            0,0,0,0,2,3,7,6,10,19,14,18/
+      data node2 /1,4,8,5,2,3,7,6/
       data node6 /1,13,4,2,14,5,3,15,6,7,0,10,8,0,11,9,0,12/
       data node8 /1,17,5,2,18,6,3,19,7,4,20,8,9,0,13,10,0,14,
      &      11,0,15,12,0,16/
@@ -55,12 +56,18 @@
      &      (lakonl(1:1).ne.'C')) cycle
          indexe=ipkon(i)
 !
-         if(lakonl(4:5).eq.'15') then
+         if((lakonl(4:5).eq.'15').or.(lakonl(4:4).eq.'6')) then
 !
-!        6-noded 2D element
+!           3-noded or 6-noded 2D element
 !
-            indexe2d=indexe+15
-            do j=1,6
+            if(lakonl(4:5).eq.'15') then
+               indexe2d=indexe+15
+               jmax=6
+            else
+               indexe2d=indexe+6
+               jmax=3
+            endif
+            do j=1,jmax
                node2d=kon(indexe2d+j)
                node3d=kon(indexe+node6(1,j))
                nodorig(node3d)=node2d
@@ -69,24 +76,60 @@
             enddo
          elseif(lakonl(7:7).eq.'B') then
 !
+!           2-noded or 3-noded beam element
+!
+            if(lakonl(4:5).eq.'8I') then
+               indexe2d=indexe+11
+               jmax=2
+            elseif(lakonl(4:5).eq.'8R') then
+               indexe2d=indexe+8
+               jmax=2
+            elseif(lakonl(4:5).eq.'20') then
+               indexe2d=indexe+20
+               jmax=3
+            endif
+!
+!           2-noded beam element
+!
+            if(jmax.eq.2) then
+               do j=1,2
+                  node2d=kon(indexe2d+j)
+                  do l=1,4
+                     if(node3(l,j).ne.0) then
+                        node3d=kon(indexe+node2(l,j))
+                        nodorig(node3d)=node2d
+                     endif
+                  enddo
+               enddo
+            else
+!
 !           3-noded beam element
 !
-            indexe2d=indexe+20
-            do j=1,3
-               node2d=kon(indexe2d+j)
-               do l=1,8
-                  if(node3(l,j).ne.0) then
-                     node3d=kon(indexe+node3(l,j))
-                     nodorig(node3d)=node2d
-                  endif
+               do j=1,3
+                  node2d=kon(indexe2d+j)
+                  do l=1,8
+                     if(node3(l,j).ne.0) then
+                        node3d=kon(indexe+node3(l,j))
+                        nodorig(node3d)=node2d
+                     endif
+                  enddo
                enddo
-            enddo
+            endif
          else
 !
-!           8-noded 2D element
+!           4-noded or 8-noded 2D element
 !
-            indexe2d=indexe+20
-            do j=1,8
+            if(lakonl(4:5).eq.'8I') then
+               indexe2d=indexe+11
+               jmax=4
+            elseif(lakonl(4:5).eq.'8R') then
+               indexe2d=indexe+8
+               jmax=4
+            elseif(lakonl(4:5).eq.'20') then
+               indexe2d=indexe+20
+               jmax=8
+            endif
+            do j=1,jmax
                node2d=kon(indexe2d+j)
                node3d=kon(indexe+node8(1,j))
                nodorig(node3d)=node2d

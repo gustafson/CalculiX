@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "CalculiX.h"
 #ifdef SPOOLES
 #include "spooles.h"
@@ -67,14 +68,14 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
                  int *ineighe, int *nmpc, int *nodempc,int *ipompc,
                  double *coefmpc,char *labmpc, int *iemchange,int *nam, 
                  int *iamload,int *jqrad,int *irowrad,int *nzsrad,
-                 int *icolrad){
+                 int *icolrad,int *ne){
   
   /* network=0: purely thermal
      network=1: general case (temperatures, fluxes and pressures unknown)
      network=2: purely aerodynamic, i.e. only fluxes and pressures unknown */
 
   int nhrs=1,info=0,i,j,iin=0,icntrl,icutb=0,iin_abs=0,mt=mi[1]+1,im,
-      symmetryflag=2,inputformat=1,node,channel;
+      symmetryflag=2,inputformat=1,node,channel,*ithread=NULL;
 
   static int ifactorization=0;
 
@@ -93,6 +94,8 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
      (in initialgas) */ 
 
   v=NNEW(double,mt**nk);
+
+  /* gas networks */
 
   if(*ntg!=0) {
       icntrl=0;
@@ -126,6 +129,8 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 			   istep,iit,mi,ineighe,ilboun));
 	      }
 
+              /* storing the residual in the rhs vector */
+
 	      FORTRAN(resultnet,(itg,ieg,ntg,bc,nload,sideload,
 			  nelemload,xloadact,
 			  lakon,ntmat_,v,shcon,nshcon,ipkon,kon,co,nflow,
@@ -143,6 +148,8 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 	  iin_abs++;
 	  printf("      gas iteration %d \n \n",iin);
 	  
+          /* filling the lhs matrix */
+         
 	  FORTRAN(mafillnet,(itg,ieg,ntg,ac,nload,sideload,
 			     nelemload,xloadact,lakon,ntmat_,v,
 			     shcon,nshcon,ipkon,kon,co,nflow,iinc,
@@ -152,6 +159,8 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 			     nbody,vold,xloadold,reltime,nmethod,set,mi,
                              nmpc,nodempc,ipompc,coefmpc,labmpc));
 	  
+          /* solving the system of equations */
+
 	  if(*nteq>0){
 	      FORTRAN(dgesv,(nteq,&nhrs,ac,nteq,ipiv,bc,nteq,&info)); 
 	  }
@@ -177,6 +186,9 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 
 	  }
 	  else {
+
+              /* storing the residual in the rhs vector */
+
 	      FORTRAN(resultnet,(itg,ieg,ntg,bc,nload,sideload,nelemload,
 	       xloadact,lakon,ntmat_,v,shcon,nshcon,ipkon,kon,co,
 	       nflow,iinc,istep,dtime,ttime,time,ikforc,ilforc,xforcact,
@@ -185,6 +197,8 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 	       ibody,xbodyact,nbody,&dtheta,vold,xloadold,
 	       reltime,nmethod,set,mi,ineighe,cama,&vamt,
 	       &vamf,&vamp,&vama,nmpc,nodempc,ipompc,coefmpc,labmpc));
+
+              /* printing the largest corrections */
 	    
 	      if(*network!=2){ 
 		  cam2t=cam1t;
@@ -253,27 +267,38 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 	  
 	  if(*network==0) {icntrl=1;}
 	  else {
+
+              /* check the convergence */
+
 	      checkconvnet(&icutb,&iin,&uamt,&uamf,&uamp,
 		 &cam1t,&cam1f,&cam1p,&cam2t,&cam2f,&cam2p,&cam0t,&cam0f,
 		 &cam0p,&icntrl,&dtheta,ctrl,&uama,&cam1a,&cam2a,&cam0a,
 		 &vamt,&vamf,&vamp,&vama);
 	  }
       }
-	
+
+      /* storing network output as boundary conditions for
+         the structure */
+
       FORTRAN(flowresult,(ntg,itg,cam,vold,v,nload,sideload,
-	      nelemload,xloadact,nactdog,network,mi));
+	      nelemload,xloadact,nactdog,network,mi,ne,ipkon,lakon,kon));
 
       /* extra output for hydraulic jump (fluid channels) */
 
+#ifdef NETWORKOUT
       if(*network!=0){
 	FORTRAN(flowoutput,(itg,ieg,ntg,nteq,bc,lakon,ntmat_,
 			    v,shcon,nshcon,ipkon,kon,co,nflow, dtime,ttime,time,
 			    ielmat,prop,ielprop,nactdog,nacteq,&iin,physcon,
 			    camt,camf,camp,&uamt,&uamf,&uamp,rhcon,nrhcon,
-			    vold,jobnamef,set,istartset,iendset,ialset,nset,mi));
+			    vold,jobnamef,set,istartset,iendset,ialset,nset,
+                            mi));
       }
+#endif
   }
       
+  /* radiation */
+
   if(*ntr>0){
       
       /* variables for multithreading procedure */
@@ -390,8 +415,10 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
   
 	      /* create threads and wait */
 	      
+	      ithread=NNEW(int,num_cpus);
 	      for(i=0; i<num_cpus; i++)  {
-		  pthread_create(&tid[i], NULL, calcviewmt, (void *)i);
+		  ithread[i]=i;
+		  pthread_create(&tid[i], NULL, (void *)calcviewmt, (void *)&ithread[i]);
 	      }
 	      for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
 	      
@@ -417,7 +444,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 		  }*/
 
 	      free(dist);free(idist);free(e1);free(e2);free(e3);
-              free(pmid);
+              free(pmid);free(ithread);
 
 	      /* postprocessing the viewfactors */
 
@@ -429,12 +456,19 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 
 	  }
 
-	  if(fabs(*iviewfile)==2){
+	  if(fabs(*iviewfile)>=2){
 
 	      /* writing viewfactors to file */
 
 	      FORTRAN(writeview,(ntr,adview,auview,fenv,nzsrad,
 				 jobnamef));
+	  }
+
+	  if(fabs(*iviewfile)==3){
+
+	      /* calculation of viewfactors only */
+
+	      FORTRAN(stop,());
 	  }
       }
 
@@ -511,17 +545,17 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 
 /* subroutine for multithreading of calcview */
 
-void *calcviewmt(void *i){
+void *calcviewmt(int *i){
 
     int indexad,indexau,indexdi,ntria,ntrib,nedelta;
 
-    indexad=((int)i)**ntr1;
-    indexau=((int)i)*2**nzsrad1;
-    indexdi=((int)i)**ntrit1;
+    indexad=*i**ntr1;
+    indexau=*i*2**nzsrad1;
+    indexdi=*i**ntrit1;
     
     nedelta=(int)ceil(*ntri1/(double)num_cpus);
-    ntria=((int)i)*nedelta+1;
-    ntrib=(((int)i)+1)*nedelta;
+    ntria=*i*nedelta+1;
+    ntrib=(*i+1)*nedelta;
     if(ntrib>*ntri1) ntrib=*ntri1;
 
 //    printf("i=%d,ntria=%d,ntrib=%d\n",i,ntria,ntrib);

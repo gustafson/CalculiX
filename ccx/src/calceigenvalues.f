@@ -21,9 +21,11 @@
 !     calculates the eigenvalues al of the symmetric 3x3 matrix c
 !     the eigenvalues are sorted in increasing order
 !
-      integer idummy(3),three,kflag
+      implicit none
 !
-      real*8 c(3,3),al(3),v1,v2,bb,cc,cm,cn,tt,pi
+      integer idummy(3),three,kflag,i
+!
+      real*8 c(3,3),al(3),v1,v2,v3,bb,cc,cm,cn,tt,pi
 !     
       data kflag /1/
       data three /3/
@@ -36,6 +38,9 @@
       v1=c(1,1)+c(2,2)+c(3,3)
       v2=c(2,2)*c(3,3)+c(1,1)*c(3,3)+c(1,1)*c(2,2)-
      &     (c(2,3)*c(2,3)+c(1,3)*c(1,3)+c(1,2)*c(1,2))
+      v3=c(1,1)*(c(2,2)*c(3,3)-c(2,3)*c(2,3))
+     &     -c(1,2)*(c(1,2)*c(3,3)-c(1,3)*c(2,3))
+     &     +c(1,3)*(c(1,2)*c(2,3)-c(1,3)*c(2,2))
 !
       bb=v2-v1*v1/3.d0
       cc=-2.d0*v1**3/27.d0+v1*v2/3.d0-v3

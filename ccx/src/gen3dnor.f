@@ -37,7 +37,7 @@
      &  ne,iponor(2,*),knor(*),rig(*),iperturb,ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,mpcfree,ikmpc(*),ilmpc(*),ikboun(*),ilboun(*),nboun,
      &  nboun_,nodeboun(*),ndirboun(*),iamboun(*),nam,ntrans,inotr(2,*),
-     &  isol,istep,idummy,mi(*),icomposite,ielmat(mi(3),*),
+     &  isol,istep,idummy,mi(*),icomposite,ielmat(mi(3),*),nkold,
      &  i,ndepnodes,index,nexp,nnor,nel,ielem,indexe,j,iel(100),
      &  jl(100),ial(100),ifi(100),idepnodes(80),indexx,k,l,ifix,nemin,
      &  jact,ixfree,ikfree,node,nelshell,irefnode,idof,id,mpcfreeold,
@@ -47,8 +47,9 @@
      &  tmax,ctrl(*),coefmpc(*),xboun(*),trab(7,*),vdummy(0:4), 
      &  xno(3,100),xta(3,100),xn1(3,100),thl1(100),thl2(100),
      &  off1(100),off2(100),xi,et,coloc6(2,6),coloc8(2,8),xl(3,8),
-     &  dd,xnoref(3),dot,coloc3(3),dot1,dot2,dmax,val
+     &  dd,xnoref(3),dot,coloc3(3),dot1,dot2,dmax,val,coloc2(2)
 !
+      data coloc2 /-1.d0,1.d0/
       data coloc3 /-1.d0,0.d0,1.d0/
       data coloc6 /0.d0,0.d0,1.d0,0.d0,0.d0,1.d0,0.5d0,0.d0,
      &             0.5d0,0.5d0,0.d0,0.5d0/
@@ -59,7 +60,9 @@
 !
 !     calculating the normals in nodes belonging to shells/beams
 !
-      do i=1,nk
+      nkold=nk
+!
+      do i=1,nkold
          ndepnodes=0
          index=iponoel(i)
          if(index.eq.0) cycle
@@ -118,7 +121,32 @@
                else
                   ifi(j)=0
                endif
-               if((lakon(iel(j))(2:2).eq.'6').or.
+!
+!              local normal on the element (Jacobian)
+!
+               if((lakon(iel(j))(2:2).eq.'3').or.
+     &              (lakon(iel(j))(4:4).eq.'3')) then
+                  xi=coloc6(1,jl(j))
+                  et=coloc6(2,jl(j))
+                  do k=1,3
+                     node=kon(indexe+k)
+                     do l=1,3
+                        xl(l,k)=co(l,node)
+                     enddo
+                  enddo
+                  call norshell3(xi,et,xl,xno(1,j))
+               elseif((lakon(iel(j))(2:2).eq.'4').or.
+     &              (lakon(iel(j))(4:4).eq.'4')) then
+                  xi=coloc8(1,jl(j))
+                  et=coloc8(2,jl(j))
+                  do k=1,4
+                     node=kon(indexe+k)
+                     do l=1,3
+                        xl(l,k)=co(l,node)
+                     enddo
+                  enddo
+                  call norshell4(xi,et,xl,xno(1,j))
+               elseif((lakon(iel(j))(2:2).eq.'6').or.
      &              (lakon(iel(j))(4:4).eq.'6')) then
                   xi=coloc6(1,jl(j))
                   et=coloc6(2,jl(j))
@@ -129,7 +157,8 @@
                      enddo
                   enddo
                   call norshell6(xi,et,xl,xno(1,j))
-               else
+               elseif((lakon(iel(j))(2:2).eq.'8').or.
+     &              (lakon(iel(j))(4:4).eq.'8')) then
                   xi=coloc8(1,jl(j))
                   et=coloc8(2,jl(j))
                   do k=1,8
@@ -140,6 +169,7 @@
                   enddo
                   call norshell8(xi,et,xl,xno(1,j))
                endif
+!
                dd=dsqrt(xno(1,j)**2+xno(2,j)**2+xno(3,j)**2)
                if(dd.lt.1.d-10) then
                   write(*,*) '*ERROR in gen3dnor: size of estimated'
@@ -414,21 +444,45 @@ c
 !           estimate the normal
 !
             do j=nelshell,nel
-               xi=coloc3(jl(j))
-               indexe=ipkon(iel(j))
-               do k=1,3
-                  node=kon(indexe+k)
-                  do l=1,3
-                     xl(l,k)=co(l,node)
+               if(lakon(iel(j))(3:3).eq.'1') then
+!
+!                 linear beam element
+!
+                  xi=coloc2(jl(j))
+                  indexe=ipkon(iel(j))
+                  do k=1,2
+                     node=kon(indexe+k)
+                     do l=1,3
+                        xl(l,k)=co(l,node)
+                     enddo
                   enddo
-               enddo
 !
-!           determining the tangent vector xta
+!                 determining the tangent vector xta
 !
-               do k=1,3
-                  xta(k,j)=(xi-0.5d0)*xl(k,1)-2.d0*xi*xl(k,2)+
-     &                 (xi+0.5d0)*xl(k,3)
-               enddo
+                  do k=1,3
+                     xta(k,j)=(xl(k,2)-xl(k,1))/2.d0
+                  enddo
+               else
+!
+!                 quadratic beam element
+!
+                  xi=coloc3(jl(j))
+                  indexe=ipkon(iel(j))
+                  do k=1,3
+                     node=kon(indexe+k)
+                     do l=1,3
+                        xl(l,k)=co(l,node)
+                     enddo
+                  enddo
+!
+!                 determining the tangent vector xta
+!
+                  do k=1,3
+                     xta(k,j)=(xi-0.5d0)*xl(k,1)-2.d0*xi*xl(k,2)+
+     &                    (xi+0.5d0)*xl(k,3)
+                  enddo
+               endif
+!
                dd=dsqrt(xta(1,j)**2+xta(2,j)**2+xta(3,j)**2)
                if(dd.lt.1.d-10) then
                   write(*,*) '*ERROR in gen3dnor: size of estimated'

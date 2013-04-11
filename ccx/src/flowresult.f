@@ -17,16 +17,18 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
       subroutine flowresult(ntg,itg,cam,vold,v,nload,sideload,
-     &     nelemload,xloadact,nactdog,network,mi)
+     &     nelemload,xloadact,nactdog,network,mi,ne,ipkon,lakon,kon)
 !     
       implicit none
-!     
+!    
+      character*8 lakon(*),lakonl
       character*20 sideload(*) 
 !     
-      integer i,j,nload,node,ntg,itg(*),nelemload(2,*),
-     &     nactdog(0:3,*),network,mi(*)
+      integer i,j,nload,node,ntg,itg(*),nelemload(2,*),kon(*),
+     &     nactdog(0:3,*),network,mi(*),ne,indexe,ipkon(*),
+     &     node1,node2,node3
 !     
-      real*8 cam(3),vold(0:mi(2),*),v(0:mi(2),*),xloadact(2,*)
+      real*8 cam(5),vold(0:mi(2),*),v(0:mi(2),*),xloadact(2,*)
 !     
 !     calculating the change of gas temperature: is taken
 !     into account in the global convergence for purely
@@ -50,10 +52,49 @@
 !
       do i=1,ntg
          node=itg(i)
-c         do j=0,2
          do j=0,3
             vold(j,node)=v(j,node)
          enddo
+      enddo
+!
+!     determining all outflowing mass flow in the end nodes and
+!     assigning it to the end nodes
+!
+      do i=1,ne
+!
+         if(ipkon(i).lt.0) cycle
+         lakonl=lakon(i)
+         if(lakonl(1:1).ne.'D') cycle
+!
+         indexe=ipkon(i)
+         if(kon(indexe+1).ne.0)  then
+            node1=kon(indexe+1)
+            vold(1,node1)=0.d0
+         endif
+         if(kon(indexe+3).ne.0) then
+            node3=kon(indexe+3)
+            vold(1,node3)=0.d0
+         endif
+      enddo
+!
+      do i=1,ne
+!
+         if(ipkon(i).lt.0) cycle
+         lakonl=lakon(i)
+         if(lakonl(1:1).ne.'D') cycle
+!
+         indexe=ipkon(i)
+         node2=kon(indexe+2)
+         if(kon(indexe+1).ne.0)  then
+            node1=kon(indexe+1)
+            if(vold(1,node2).gt.0.d0) 
+     &         vold(1,node1)=vold(1,node1)+vold(1,node2)
+         endif
+         if(kon(indexe+3).ne.0) then
+            node3=kon(indexe+3)
+            if(vold(1,node2).lt.0.d0) 
+     &         vold(1,node3)=vold(1,node3)-vold(1,node2)
+         endif
       enddo
 !     
 !     updating the film boundary conditions

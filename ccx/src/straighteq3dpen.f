@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine straighteq3dpen(col,straight,xnor)
+      subroutine straighteq3dpen(col,straight,xnor,noeq)
 !
 !     calculate the equation of the planes through the
 !     edges of a triangle and perpendicular to the representative
@@ -24,7 +24,8 @@
 !     with the plane of the triangle itself with 
 !     (col(1,1),col(2,1),col(3,1)),(col(1,2),col(2,2),col(3,2)),
 !     (col(1,3),col(2,3),col(3,3))
-!     as vertices. The equation of the plane through the edge 
+!     as vertices (nodet(1),nodet(2),nodet(3)). 
+!     The equation of the plane through the edge 
 !     opposite nodet(1) is of the form
 !     straight(1)*x+straight(2)*y+straight(3)*z+straight(4)=0, such that the
 !     vector (straight(1),straight(2),straight(3)) points outwards; 
@@ -43,9 +44,13 @@
 !     through the nodes 2-3, edgenor(*,2) for the edge 3-1 and
 !     edgenor(*,3) for the edge 1-2
 !
+!     noeq is the triangle nodes for which the opposite side should not get
+!     an equation (all coefficients zero; this is needed for plane strain,
+!     plane stress and axisymmetric elements
+!
       implicit none
 !
-      integer i
+      integer i,noeq
 !
       real*8 col(3,3),straight(16),p12(3),p23(3),p31(3),dd,scal1,
      &       scal2,xp12(3),xp23(3),xp31(3),xq12(3),xq23(3),xq31(3),
@@ -141,36 +146,54 @@
 !
 !     p12 x edgenor(*,3)
 !
-      straight(9)=p12(2)*edgenor(3,3)-p12(3)*edgenor(2,3)
-      straight(10)=p12(3)*edgenor(1,3)-p12(1)*edgenor(3,3)
-      straight(11)=p12(1)*edgenor(2,3)-p12(2)*edgenor(1,3)
-      dd=dsqrt(straight(9)*straight(9)+straight(10)*straight(10)+
-     &         straight(11)*straight(11))
-      do i=9,11
-         straight(i)=straight(i)/dd
-      enddo
+      if(noeq.ne.3) then
+         straight(9)=p12(2)*edgenor(3,3)-p12(3)*edgenor(2,3)
+         straight(10)=p12(3)*edgenor(1,3)-p12(1)*edgenor(3,3)
+         straight(11)=p12(1)*edgenor(2,3)-p12(2)*edgenor(1,3)
+         dd=dsqrt(straight(9)*straight(9)+straight(10)*straight(10)+
+     &        straight(11)*straight(11))
+         do i=9,11
+            straight(i)=straight(i)/dd
+         enddo
+      else
+         do i=9,11
+            straight(i)=0.d0
+         enddo
+      endif
 !
 !     p23 x edgenor(*,1)
 !
-      straight(1)=p23(2)*edgenor(3,1)-p23(3)*edgenor(2,1)
-      straight(2)=p23(3)*edgenor(1,1)-p23(1)*edgenor(3,1)
-      straight(3)=p23(1)*edgenor(2,1)-p23(2)*edgenor(1,1)
-      dd=dsqrt(straight(1)*straight(1)+straight(2)*straight(2)+
-     &         straight(3)*straight(3))
-      do i=1,3
-         straight(i)=straight(i)/dd
-      enddo
+      if(noeq.ne.1) then
+         straight(1)=p23(2)*edgenor(3,1)-p23(3)*edgenor(2,1)
+         straight(2)=p23(3)*edgenor(1,1)-p23(1)*edgenor(3,1)
+         straight(3)=p23(1)*edgenor(2,1)-p23(2)*edgenor(1,1)
+         dd=dsqrt(straight(1)*straight(1)+straight(2)*straight(2)+
+     &        straight(3)*straight(3))
+         do i=1,3
+            straight(i)=straight(i)/dd
+         enddo
+      else
+         do i=1,3
+            straight(i)=0.d0
+         enddo
+      endif
 !
 !     p31 x edgenor(*,2)
 !
-      straight(5)=p31(2)*edgenor(3,2)-p31(3)*edgenor(2,2)
-      straight(6)=p31(3)*edgenor(1,2)-p31(1)*edgenor(3,2)
-      straight(7)=p31(1)*edgenor(2,2)-p31(2)*edgenor(1,2)
-      dd=dsqrt(straight(5)*straight(5)+straight(6)*straight(6)+
-     &         straight(7)*straight(7))
-      do i=5,7
-         straight(i)=straight(i)/dd
-      enddo
+      if(noeq.ne.2) then
+         straight(5)=p31(2)*edgenor(3,2)-p31(3)*edgenor(2,2)
+         straight(6)=p31(3)*edgenor(1,2)-p31(1)*edgenor(3,2)
+         straight(7)=p31(1)*edgenor(2,2)-p31(2)*edgenor(1,2)
+         dd=dsqrt(straight(5)*straight(5)+straight(6)*straight(6)+
+     &        straight(7)*straight(7))
+         do i=5,7
+            straight(i)=straight(i)/dd
+         enddo
+      else
+         do i=5,7
+            straight(i)=0.d0
+         enddo
+      endif
 !
 !     determining the inhomogeneous terms
 !

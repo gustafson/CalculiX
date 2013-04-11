@@ -292,6 +292,7 @@
             nelem=ieg(i)
             index=ipkon(nelem)
             node1=kon(index+1)
+            nodem=kon(index+2)
             node2=kon(index+3)
             if((node1.eq.0).or.(node2.eq.0)) cycle
             idof1=nactdog(0,node1)
@@ -301,7 +302,11 @@
 !     initial temperature given in node1
                   ac(idof1,idof1)=1.d0
                   bc(idof1)=v(0,node1)
-               else
+!
+!                 temperature taken into account only for incoming
+!                 flux (from the viewpoint of node1).
+!
+               elseif(v(1,nodem).lt.0.d0) then
                   ac(idof1,idof1)=ac(idof1,idof1)+1.d0
                   if(v(0,node2).gt.0.d0) then
 !     initial temperature given in node2
@@ -316,7 +321,12 @@
 !     initial temperature given in node2
                   ac(idof2,idof2)=1.d0
                   bc(idof2)=v(0,node2)
-               else
+!
+!                 temperature taken into account only for incoming
+!                 flux (from the viewpoint of node2). Default (if
+!                 no flux is predefined) is positive flux.
+!
+               elseif(v(1,nodem).ge.0.d0) then
                   ac(idof2,idof2)=ac(idof2,idof2)+1.d0
                   if(v(0,node1).gt.0.d0) then
 !     initial temperature given in node1
@@ -610,12 +620,18 @@
                endif
             endif
 !     
-            call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
+!           calculating flux if the flux is an unknown AND there was
+!           no initial flux defined by the user
+!
+            if((nactdog(1,nodem).ne.0).and.(v(1,nodem).eq.0.d0)) then
+               call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &           nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &           nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,
      &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider)
+               v(1,nodem)=xflow
+            endif
 !     
-            if(nactdog(1,nodem).ne.0) v(1,nodem)=xflow
+c            if(nactdog(1,nodem).ne.0) v(1,nodem)=xflow
 !     
             if(lakon(nelem)(2:4).ne.'LIP') then
                if(v(1,nodem).eq.0d0) then
@@ -659,7 +675,7 @@
                write(*,*) '*WARNING :in subroutine initialgas.f'
                write(*,*) '          more than 2 elements GASPIPE'
                write(*,*) '          or RESTRICTOR are connected '
-               write(*,*) '          to node',ieg(i),'. The common'
+               write(*,*) '          to node',itg(i),'. The common'
                write(*,*) 
      &              '          node is converted into a chamber.'
                write(*,*) '          Total and static parameters are'

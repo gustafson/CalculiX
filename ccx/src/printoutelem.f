@@ -18,7 +18,7 @@
 !
       subroutine printoutelem(prlab,ipkon,lakon,kon,co,
      &     ener,mi,ii,nelem,energytot,volumetot,enerkintot,nkin,ne,
-     &     stx,nodes)
+     &     stx,nodes,thicke,ielmat)
 !
 !     stores whole element results for element "nelem" in the .dat file
 !
@@ -27,12 +27,15 @@
       character*6 prlab(*)
       character*8 lakon(*)
 !
-      integer ipkon(*),nelem,ii,kon(*),mi(*),nope,indexe,j,k,konl(20),
-     &  mint3d,jj,nener,iflag,nkin,ne,nodes
+      integer ipkon(*),nelem,ii,kon(*),mi(*),nope,indexe,i,j,k,konl(20),
+     &  mint3d,jj,nener,iflag,nkin,ne,nodes,ki,kl,ilayer,nlayer,kk,
+     &  nopes,ielmat(mi(3),*),mint2d
 !
       real*8 ener(mi(1),*),energytot,volumetot,energy,volume,co(3,*),
      &  xl(3,20),xi,et,ze,xsj,shp(4,20),weight,enerkintot,enerkin,
-     &  stx(6,mi(1),*)
+     &  stx(6,mi(1),*),a,gs(8,4),dlayer(4),tlayer(4),thickness,
+     &  thicke(mi(3),*),xlayer(mi(3),4),shp2(7,8),xs2(3,7),xsj2(3),
+     &  xl2(3,8)
 !
       include "gauss.f"
 !
@@ -48,7 +51,9 @@
 !
       indexe=ipkon(nelem)
 !
-      if(lakon(nelem)(4:4).eq.'2') then
+      if(lakon(nelem)(1:5).eq.'C3D8I') then
+         nope=11
+      elseif(lakon(nelem)(4:4).eq.'2') then
          nope=20
       elseif(lakon(nelem)(4:4).eq.'8') then
          nope=8
@@ -62,6 +67,49 @@
          nope=6
       else
          nope=0
+      endif
+!
+!        composite materials
+!
+      if(lakon(nelem)(7:8).eq.'LC') then
+!
+!        determining the number of layers
+!
+         nlayer=0
+         do k=1,mi(3)
+            if(ielmat(k,nelem).ne.0) then
+               nlayer=nlayer+1
+            endif
+         enddo
+         mint2d=4
+         nopes=8
+!
+!        determining the layer thickness and global thickness
+!        at the shell integration points
+!
+         iflag=1
+         indexe=ipkon(nelem)
+         do kk=1,mint2d
+            xi=gauss3d2(1,kk)
+            et=gauss3d2(2,kk)
+            call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
+            tlayer(kk)=0.d0
+            do i=1,nlayer
+               thickness=0.d0
+               do j=1,nopes
+                  thickness=thickness+thicke(i,indexe+j)*shp2(4,j)
+               enddo
+               tlayer(kk)=tlayer(kk)+thickness
+               xlayer(i,kk)=thickness
+            enddo
+         enddo
+         iflag=2
+!
+         ilayer=0
+         do i=1,4
+            dlayer(i)=0.d0
+         enddo
+!     
       endif
 !
       do j=1,nope
@@ -79,7 +127,11 @@
          mint3d=1
       elseif((lakon(nelem)(4:4).eq.'8').or.
      &        (lakon(nelem)(4:6).eq.'20R')) then
-         mint3d=8
+         if(lakon(nelem)(7:8).eq.'LC') then
+            mint3d=8*nlayer
+         else
+            mint3d=8
+         endif
       elseif(lakon(nelem)(4:4).eq.'2') then
          mint3d=27
       elseif(lakon(nelem)(4:5).eq.'10') then
@@ -106,10 +158,35 @@
          elseif((lakon(nelem)(4:4).eq.'8').or.
      &           (lakon(nelem)(4:6).eq.'20R'))
      &           then
-            xi=gauss3d2(1,jj)
-            et=gauss3d2(2,jj)
-            ze=gauss3d2(3,jj)
-            weight=weight3d2(jj)
+            if(lakon(nelem)(7:8).ne.'LC') then
+               xi=gauss3d2(1,jj)
+               et=gauss3d2(2,jj)
+               ze=gauss3d2(3,jj)
+               weight=weight3d2(jj)
+            else
+               kl=mod(jj,8)
+               if(kl.eq.0) kl=8
+!     
+               xi=gauss3d2(1,kl)
+               et=gauss3d2(2,kl)
+               ze=gauss3d2(3,kl)
+               weight=weight3d2(kl)
+!     
+               ki=mod(jj,4)
+               if(ki.eq.0) ki=4
+!     
+               if(kl.eq.1) then
+                  ilayer=ilayer+1
+                  if(ilayer.gt.1) then
+                     do i=1,4
+                        dlayer(i)=dlayer(i)+xlayer(ilayer-1,i)
+                     enddo
+                  endif
+               endif
+               ze=2.d0*(dlayer(ki)+(ze+1.d0)/2.d0*xlayer(ilayer,ki))/
+     &              tlayer(ki)-1.d0
+               weight=weight*xlayer(ilayer,ki)/tlayer(ki)
+            endif
          elseif(lakon(nelem)(4:4).eq.'2') then
             xi=gauss3d3(1,jj)
             et=gauss3d3(2,jj)
@@ -137,7 +214,11 @@
             weight=weight3d7(jj)
          endif
 !
-         if(nope.eq.20) then
+         if(lakon(nelem)(1:5).eq.'C3D8R') then
+            call shape8hr(xl,xsj,shp,gs,a)
+         elseif(lakon(nelem)(1:5).eq.'C3D8I') then
+            call shape8hu(xi,et,ze,xl,xsj,shp,iflag)
+         elseif(nope.eq.20) then
             call shape20h(xi,et,ze,xl,xsj,shp,iflag)
          elseif(nope.eq.8) then
             call shape8h(xi,et,ze,xl,xsj,shp,iflag)
@@ -164,24 +245,24 @@
 !     
       if((prlab(ii)(1:5).eq.'ELSE ').or.
      &     (prlab(ii)(1:5).eq.'ELSET')) then
-         write(5,'(i6,1p,1x,e11.4)') nelem,energy
+         write(5,'(i10,1p,1x,e13.6)') nelem,energy
       elseif((prlab(ii)(1:5).eq.'CELS ').or.
      &        (prlab(ii)(1:5).eq.'CELST')) then
-         write(5,'(i6,1p,1x,e11.4)') nodes,energy
+         write(5,'(i10,1p,1x,e13.6)') nodes,energy
       elseif((prlab(ii)(1:5).eq.'CDIS ').or.
      &        (prlab(ii)(1:5).eq.'CDIST')) then
-         write(5,'(i6,1p,1x,e11.4,1p,1x,e11.4,1p,1x,e11.4)') nodes,
+         write(5,'(i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') nodes,
      &        stx(1,1,nelem),stx(2,1,nelem),stx(3,1,nelem)
       elseif((prlab(ii)(1:5).eq.'CSTR ').or.
      &        (prlab(ii)(1:5).eq.'CSTRT')) then
-         write(5,'(i6,1p,1x,e11.4,1p,1x,e11.4,1p,1x,e11.4)') nodes,
+         write(5,'(i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') nodes,
      &        stx(4,1,nelem),stx(5,1,nelem),stx(6,1,nelem)
       elseif((prlab(ii)(1:5).eq.'EVOL ').or.
      &        (prlab(ii)(1:5).eq.'EVOLT')) then
-         write(5,'(i6,1p,1x,e11.4)') nelem,volume
+         write(5,'(i10,1p,1x,e13.6)') nelem,volume
       elseif((prlab(ii)(1:5).eq.'ELKE ').or.
      &        (prlab(ii)(1:5).eq.'ELKET')) then
-         write(5,'(i6,1p,1x,e11.4)') nelem,enerkin
+         write(5,'(i10,1p,1x,e13.6)') nelem,enerkin
       endif
 !     
       return

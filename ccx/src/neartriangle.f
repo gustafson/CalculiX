@@ -18,7 +18,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine neartriangle(p,xn,xo,yo,zo,x,y,z,nx,ny,nz,n,neigh,
-     &  kneigh,itietri,ntie,straight,imastop,itri,itie)
+     &  kneigh,itietri,ntie,straight,imastop,itri,itie,debug)
 !
 !     check for a triangle such that a straight line
 !     through p and with direction xn cuts this triangle
@@ -30,6 +30,8 @@
 !
       real*8 p(3),xn(3),xo(*),yo(*),zo(*),x(*),y(*),z(*),straight(16,*),
      &  al,al1,al2
+
+      logical debug
 !     
 !     determining the kneigh neighboring triangles
 !
@@ -48,7 +50,7 @@
      &         straight(15,itri)*p(3))/
      &        (straight(13,itri)*xn(1)+straight(14,itri)*xn(2)
      &        +straight(15,itri)*xn(3))
-!     
+c            if(debug) write(20,*) 'NT:itri',itri,'al',al
             do m1=1,3
                al1=straight(4*m1-3,itri)*p(1)+
      &              straight(4*m1-2,itri)*p(2)+
@@ -56,13 +58,15 @@
                al2=straight(4*m1-3,itri)*xn(1)+
      &              straight(4*m1-2,itri)*xn(2)+
      &              straight(4*m1-1,itri)*xn(3)
+c               if(debug) write(20,*) '  m',m1,'al1',al1,'al2',al2
+c               if(debug) write(20,*) al1+al*al2+straight(4*m1,itri)
                if(al1+al*al2+straight(4*m1,itri).gt.1.d-10)then
 c                  if(al.lt.1.d-10) cycle loop1
                   itri=imastop(m1,itri)
                   if(itel.gt.n) then
-                     write(*,*) '*INFO in neartriangle: circular'
-                     write(*,*) 
-     &                '      hopping; no contact established'
+c                     write(20,*) '*INFO in neartriangle: circular'
+c                     write(20,*) 
+c     &                '      hopping; no contact established'
                      exit loop1
                   endif
                   if(itri.eq.0) cycle loop1
@@ -75,11 +79,11 @@ c                  if(al.lt.1.d-10) cycle loop1
             exit loop1
          enddo loop2
       enddo loop1
-!
+c      if(debug)write(20,*)'NT:exit',itri  
       if(isol.ne.1) then
          itri=0
       endif
-!     
+!   
       return
       end
       

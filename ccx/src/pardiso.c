@@ -103,11 +103,20 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
 
 void pardiso_solve(double *b, int *neq){
 
+  char *env;
   int maxfct=1,mnum=1,mtype=-2,phase=33,*perm=NULL,nrhs=1,
       msglvl=0,i,error=0;
   double *x=NULL;
 
   printf(" Solving the system of equations using the symmetric pardiso solver\n");
+
+  iparm[0]=0;
+  env=getenv("OMP_NUM_THREADS");
+  if(env) {
+    iparm[2]=atoi(env);}
+  else{
+    iparm[2]=1;
+  }
 
   printf(" number of threads =% d\n\n",iparm[2]);
 

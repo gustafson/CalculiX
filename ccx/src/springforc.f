@@ -44,17 +44,16 @@
      &  dt1,dte,alnew(3),reltime,xnormastface(3,8),dm2
 !
       iflag=2
-c      write(*,*) 'springforc '
-c      data iflag /2/
 !
 !     actual positions of the nodes belonging to the contact spring
+!     (otherwise no contact force)
 !      
       do i=1,nope
          do j=1,3
             pl(j,i)=xl(j,i)+vl(j,i)
          enddo
       enddo
-!
+!     
       if(lakonl(7:7).eq.'A') then
          dd0=dsqrt((xl(1,2)-xl(1,1))**2
      &           +(xl(2,2)-xl(2,1))**2
@@ -245,7 +244,7 @@ c     &	          -elcon(1,1,imat)*springarea(1)
 !     Coulomb friction for static calculations
 !
       if(ncmat_.ge.7) then
-         if(iperturb(1).gt.1) then
+c         if((iperturb(1).gt.1).or.(nmethod.eq.4)) then
             um=elcon(6,1,imat)
             if(um.gt.0.d0) then
                if(1.d0 - dabs(xn(1)).lt.1.5231d-6) then       
@@ -370,7 +369,7 @@ c                  write(*,*)'SLIP'
 !     
             cstr(2)=t(1)*t1(1)+t(2)*t1(2)+t(3)*t1(3)
             cstr(3)=t(1)*t2(1)+t(2)*t2(2)+t(3)*t2(3)
-         endif
+c         endif
       endif
 !
 !     force in the master nodes

@@ -162,7 +162,7 @@ c         write(*,*) ((vl(k,j),k=1,3),j=1,nope)
                   call springforc_th(xl,vl,imat,elcon,nelcon,
      &              tnl,ncmat_,ntmat_,nope,kode,elconloc,
      &              plicon,nplicon,npmat_,mi,springarea(1,konl(nope+1)),
-     &              timeend,matname,konl(nope),i,istep,iinc)
+     &              timeend,matname,konl(nope),i,istep,iinc,iperturb)
                endif
 !
                do j=1,nope
@@ -254,8 +254,9 @@ c         write(*,*) ((vl(k,j),k=1,3),j=1,nope)
 !
             t1lold=0.d0
             t1l=0.d0
-            if(lakon(i)(4:5).eq.'8 ') then
-               do i1=1,nope
+            if((lakon(i)(4:5).eq.'8 ').or.
+     &         (lakon(i)(4:5).eq.'8I')) then
+               do i1=1,8
                   t1lold=t1lold+vold(0,konl(i1))/8.d0
                   t1l=t1l+v(0,konl(i1))/8.d0
                enddo

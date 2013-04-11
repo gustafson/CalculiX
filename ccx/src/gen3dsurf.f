@@ -23,8 +23,8 @@
      &  ikboun,ilboun,nboun,nboun_,nodeboun,ndirboun,xboun,iamboun,
      &  typeboun,mi)
 !
-!     connects nodes of 1-D and 2-D elements, for which SPC's were
-!     defined, to the nodes of their expanded counterparts
+!     connects nodes of 1-D and 2-D elements, belonging to nodal
+!     surfaces, to the nodes of their expanded counterparts
 !
       implicit none
 !
@@ -49,6 +49,9 @@
 !
       do i=1,nset
          ipos=index(set(i),' ')
+!
+!        only nodal surfaces are involved
+!
          if(set(i)(ipos-1:ipos-1).ne.'S') cycle
          do l=istartset(i),iendset(i)
             node=ialset(l)

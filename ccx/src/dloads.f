@@ -27,7 +27,7 @@
 !
       implicit none
 !
-      logical dload_flag
+      logical dload_flag,submodel
 !
       character*1 inpc(*)
       character*8 lakon(*)
@@ -41,7 +41,7 @@
      &  iamload(2,*),nam,iamplitude,ipos,ne,iline,ipol,iperturb,
      &  inl,ipoinp(2,*),inp(3,*),ibody(3,*),nbody,nbody_,nam_,namtot,
      &  namtot_,namta(3,*),idelay,nmethod,lc,isector,node,ipoinpc(0:*),
-     &  maxsectors,jsector
+     &  maxsectors,jsector,iglobstep
 !
       real*8 xload(2,*),xbody(7,*),xmagnitude,dd,p1(3),p2(3),bodyf(3),
      &  xbodyold(7,*),physcon(*),amta(2,*)
@@ -50,6 +50,8 @@
       idelay=0
       lc=1
       isector=0
+      submodel=.false.
+      iglobstep=0
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR in dloads: *DLOAD should only be used'
@@ -145,6 +147,11 @@
                stop
             endif
             isector=isector-1
+         elseif(textpart(i)(1:8).eq.'SUBMODEL') then
+            submodel=.true.
+         elseif(textpart(i)(1:5).eq.'STEP=') then
+            read(textpart(i)(6:15),'(i10)',iostat=istat) iglobstep
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          else
             write(*,*) 
      &        '*WARNING in dloads: parameter not recognized:'
@@ -154,12 +161,29 @@
          endif
       enddo
 !
+!     check whether global step was specified for submodel
+!
+      if((submodel).and.(iglobstep.eq.0)) then
+         write(*,*) '*ERROR reading *DLOAD: no global step'
+         write(*,*) '       step specified for the submodel'
+         call inputerror(inpc,ipoinpc,iline)
+      endif
+!
       do
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
          if((istat.lt.0).or.(key.eq.1)) return
 !
          read(textpart(2)(1:20),'(a20)',iostat=istat) label
+!
+!        for submodels the load label is modified and the global
+!        step is stored in iamload(1,*)
+!
+         if(submodel) then
+            label(3:4)='SM'
+            iamplitude=iglobstep
+         endif
+!
          if(label(3:4).ne.'NP') then
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) xmagnitude
          else
@@ -209,7 +233,7 @@ cBernhardiStart
      &           (label(3:6).ne.'NOR3').and.(label(3:6).ne.'NOR4')).and.
 cBernhardiEnd
      &          ((label(3:4).ne.'  ').and.(label(3:4).ne.'NU').and.
-     &           (label(3:4).ne.'NP'))) then
+     &           (label(3:4).ne.'NP').and.(label(3:4).ne.'SM'))) then
             call inputerror(inpc,ipoinpc,iline)
          endif
 !

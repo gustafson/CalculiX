@@ -17,9 +17,9 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine applybounv(nodeboun,ndirboun,nboun,xbounact,
-     &  ithermal,nk,iponoel,inoel,vold,voldtu,t1act,isolidsurf,
+     &  ithermal,nk,iponoel,inoel,vold,vcontu,t1act,isolidsurf,
      &  nsolidsurf,xsolidsurf,nfreestream,ifreestream,turbulent,
-     &  voldcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
+     &  vcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
      &  compressible,ismooth,nmpc,nodempc,ipompc,coefmpc,inomat,
      &  mi)
 !
@@ -37,19 +37,20 @@
      &  ist,ndir,ndiri,inomat(*)
 !
       real*8 rhcon(0:1,ntmat_,*),rho,vold(0:mi(2),*),xbounact(*),shcon,
-     &  voldtu(2,*),t1act(*),temp,xsolidsurf(*),reflength,
-     &  refkin,reftuf,refvel,voldcon(0:4,*),physcon(*),v(0:mi(2),*),
-     &  rhoi,coefmpc(*),residu,size,correction
+     &  vcontu(2,*),t1act(*),temp,xsolidsurf(*),reflength,
+     &  refkin,reftuf,refvel,vcon(0:4,*),physcon(*),v(0:mi(2),*),
+     &  rhoi,coefmpc(*),residu,size,correction,sum
 !
-!     inserting the velocity boundary conditions
+!     taking velocity MPC's into account
 !
-      do i=1,nboun
-         if((ndirboun(i).lt.1).or.(ndirboun(i).gt.3)) cycle
+      do i=1,nmpc
+         ist=ipompc(i)
+         ndir=nodempc(2,ist)
+         if((ndir.lt.1).or.(ndir.gt.3)) cycle
+         node=nodempc(1,ist)
 !     
-         node=nodeboun(i)
-!
-!        check whether fluid SPC
-!
+!     check whether fluid MPC
+!     
          imat=inomat(node)
          if(imat.eq.0) cycle
          if(compressible.eq.0) then
@@ -64,228 +65,43 @@
 !     
 !     determining rho from the solution field (for compressible fluids)
 !     
-            rho=voldcon(4,node)
+            rho=vcon(4,node)+v(4,node)
          endif
-         if(ismooth.eq.0) then
 !     
-!     in case of no smoothing (incompressible fluids or
-!     pre-smoothing call of compressible fluids)
+         index=nodempc(3,ist)
+         sum=0.d0
+         if(index.ne.0) then
+            do
+               nodei=nodempc(1,index)
+               ndiri=nodempc(2,index)
 !     
-            v(ndirboun(i),node)=xbounact(i)*rho
-     &           -voldcon(ndirboun(i),node)
-         else
+!     determining rho
 !     
-!     in case of smoothing: update voldcon (only for compressible
+               if(compressible.eq.0) then
+!     
+!     determining rho from the material constants (for incompressible
 !     fluids)
 !     
-            voldcon(ndirboun(i),node)=xbounact(i)*rho
+                  imat=inomat(nodei)
+                  if(imat.eq.0) cycle
+                  temp=vold(0,nodei)
+                  call materialdata_rho(rhcon,nrhcon,imat,rhoi,
+     &                 temp,ntmat_,ithermal)
+               else
+!     
+!     determining rho from the solution field (for compressible fluids)
+!     
+                  rhoi=vcon(4,nodei)+v(4,nodei)
+               endif
+!     
+               sum=sum+coefmpc(index)*
+     &              (vcon(ndiri,nodei)+v(ndiri,nodei))/rhoi
+               index=nodempc(3,index)
+               if(index.eq.0) exit
+            enddo
          endif
+         v(ndir,node)=-sum/coefmpc(ist)*rho-vold(ndir,node)
       enddo
-!
-!     taking velocity MPC's into account
-!
-      if(ismooth.eq.0) then
-         do i=1,nmpc
-            ist=ipompc(i)
-            ndir=nodempc(2,ist)
-            if((ndir.lt.1).or.(ndir.gt.3)) cycle
-            node=nodempc(1,ist)
-!
-!           check whether fluid MPC
-!
-            imat=inomat(node)
-            if(imat.eq.0) cycle
-            if(compressible.eq.0) then
-!     
-!     determining rho from the material constants (for incompressible
-!     fluids)
-!     
-               temp=vold(0,node)
-               call materialdata_rho(rhcon,nrhcon,imat,rho,
-     &              temp,ntmat_,ithermal)
-            else
-!     
-!     determining rho from the solution field (for compressible fluids)
-!     
-               rho=voldcon(4,node)+v(4,node)
-            endif
-!     
-            index=nodempc(3,ist)
-            residu=coefmpc(ist)*(voldcon(ndir,node)+v(ndir,node))/rho
-            size=(coefmpc(ist)/rho)**2
-            if(index.ne.0) then
-               do
-                  nodei=nodempc(1,index)
-                  ndiri=nodempc(2,index)
-!     
-!     determining rho
-!     
-                  if(compressible.eq.0) then
-!     
-!     determining rho from the material constants (for incompressible
-!     fluids)
-!     
-                     imat=inomat(nodei)
-                     if(imat.eq.0) cycle
-                     temp=vold(0,nodei)
-                     call materialdata_rho(rhcon,nrhcon,imat,rhoi,
-     &                    temp,ntmat_,ithermal)
-                  else
-!     
-!     determining rho from the solution field (for compressible fluids)
-!     
-                     rhoi=voldcon(4,nodei)+v(4,nodei)
-                  endif
-!     
-                  residu=residu+coefmpc(index)*
-     &                 (voldcon(ndiri,nodei)+v(ndiri,nodei))/rhoi
-                  size=size+(coefmpc(index)/rhoi)**2
-                  index=nodempc(3,index)
-                  if(index.eq.0) exit
-               enddo
-            endif
-!
-!           correcting all terms of the MPC
-!
-            residu=residu/size
-!
-            correction=-residu*coefmpc(ist)/rho
-            v(ndir,node)=v(ndir,node)+correction
-            index=nodempc(3,ist)
-            if(index.ne.0) then
-               do
-                  nodei=nodempc(1,index)
-                  ndiri=nodempc(2,index)
-!     
-!     determining rho
-!     
-                  if(compressible.eq.0) then
-!     
-!     determining rho from the material constants (for incompressible
-!     fluids)
-!     
-                     imat=inomat(nodei)
-                     if(imat.eq.0) cycle
-                     temp=vold(0,nodei)
-                     call materialdata_rho(rhcon,nrhcon,imat,rhoi,
-     &                    temp,ntmat_,ithermal)
-                  else
-!     
-!     determining rho from the solution field (for compressible fluids)
-!     
-                     rhoi=voldcon(4,nodei)+v(4,nodei)
-                  endif
-!     
-                  correction=-residu*coefmpc(index)/rhoi
-                  v(ndiri,nodei)=v(ndiri,nodei)+correction
-                  index=nodempc(3,index)
-                  if(index.eq.0) exit
-               enddo
-            endif
-         enddo
-      else
-!
-!        smoothing procedure: voldcon has already been updated
-!
-         do i=1,nmpc
-            ist=ipompc(i)
-            ndir=nodempc(2,ist)
-            if((ndir.lt.1).or.(ndir.gt.3)) cycle
-            node=nodempc(1,ist)
-!
-!           check whether fluid MPC
-!
-            imat=inomat(node)
-            if(imat.eq.0) cycle
-            if(compressible.eq.0) then
-!     
-!     determining rho from the material constants (for incompressible
-!     fluids)
-!     
-               temp=vold(0,node)
-               call materialdata_rho(rhcon,nrhcon,imat,rho,
-     &              temp,ntmat_,ithermal)
-            else
-!     
-!     determining rho from the solution field (for compressible fluids)
-!     
-               rho=voldcon(4,node)+v(4,node)
-            endif
-!     
-            index=nodempc(3,ist)
-            residu=coefmpc(ist)*voldcon(ndir,node)/rho
-            size=(coefmpc(ist)/rho)**2
-            if(index.ne.0) then
-               do
-                  nodei=nodempc(1,index)
-                  ndiri=nodempc(2,index)
-!     
-!     determining rho
-!     
-                  if(compressible.eq.0) then
-!     
-!     determining rho from the material constants (for incompressible
-!     fluids)
-!     
-                     imat=inomat(nodei)
-                     if(imat.eq.0) cycle
-                     temp=vold(0,nodei)
-                     call materialdata_rho(rhcon,nrhcon,imat,rhoi,
-     &                    temp,ntmat_,ithermal)
-                  else
-!     
-!     determining rho from the solution field (for compressible fluids)
-!     
-                     rhoi=voldcon(4,nodei)
-                  endif
-!     
-                  residu=residu+coefmpc(index)*
-     &                 voldcon(ndiri,nodei)/rhoi
-                  size=size+(coefmpc(index)/rhoi)**2
-                  index=nodempc(3,index)
-                  if(index.eq.0) exit
-               enddo
-            endif
-!
-!           correcting all terms of the MPC
-!
-            residu=residu/size
-!
-            correction=-residu*coefmpc(ist)/rho
-            voldcon(ndir,node)=voldcon(ndir,node)+correction
-            index=nodempc(3,ist)
-            if(index.ne.0) then
-               do
-                  nodei=nodempc(1,index)
-                  ndiri=nodempc(2,index)
-!     
-!     determining rho
-!     
-                  if(compressible.eq.0) then
-!     
-!     determining rho from the material constants (for incompressible
-!     fluids)
-!     
-                     imat=inomat(nodei)
-                     if(imat.eq.0) cycle
-                     temp=vold(0,nodei)
-                     call materialdata_rho(rhcon,nrhcon,imat,rhoi,
-     &                    temp,ntmat_,ithermal)
-                  else
-!     
-!     determining rho from the solution field (for compressible fluids)
-!     
-                     rhoi=voldcon(4,nodei)
-                  endif
-!     
-                  correction=-residu*coefmpc(index)/rhoi
-                  voldcon(ndiri,nodei)=voldcon(ndiri,nodei)+correction
-                  index=nodempc(3,index)
-                  if(index.eq.0) exit
-               enddo
-            endif
-         enddo
-      endif
 !     
       return
       end

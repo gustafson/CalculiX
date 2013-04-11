@@ -55,17 +55,6 @@
       shp(2,7)=(1.d0-xi*xi)/2.d0
       shp(2,8)=-et*(1.d0-xi)
 !
-!     shape functions
-!
-      shp(4,1)=(1.d0-xi)*(1.d0-et)*(-xi-et-1.d0)/4.d0
-      shp(4,2)=(1.d0+xi)*(1.d0-et)*(xi-et-1.d0)/4.d0
-      shp(4,3)=(1.d0+xi)*(1.d0+et)*(xi+et-1.d0)/4.d0
-      shp(4,4)=(1.d0-xi)*(1.d0+et)*(-xi+et-1.d0)/4.d0
-      shp(4,5)=(1.d0-xi*xi)*(1.d0-et)/2.d0
-      shp(4,6)=(1.d0+xi)*(1.d0-et*et)/2.d0
-      shp(4,7)=(1.d0-xi*xi)*(1.d0+et)/2.d0
-      shp(4,8)=(1.d0-xi)*(1.d0-et*et)/2.d0
-!
 !     computation of the local derivative of the global coordinates
 !     (xs)
 !

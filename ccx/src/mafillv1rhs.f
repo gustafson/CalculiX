@@ -20,11 +20,11 @@
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
      &  nforc,nelemload,sideload,xload,nload,xbody,ipobody,nbody,
      &  b,nactdoh,icolv,jqv,irowv,neqv,nzlv,nmethod,ikmpc,ilmpc,ikboun,
-     &  ilboun,rhcon,nrhcon,ielmat,ntmat_,t0,ithermal,vold,voldcon,nzsv,
+     &  ilboun,rhcon,nrhcon,ielmat,ntmat_,t0,ithermal,vold,vcon,nzsv,
      &  dtl,matname,mi,ncmat_,physcon,shcon,nshcon,ttime,time,
-     &  istep,iinc,ibody,xloadold,turbulent,voldtu,yy,
-     &  nelemface,sideface,nface,compressible,ne1,ne2,dtimef,ipvar,var,
-     &  ipvarf,varf,sti)
+     &  istep,iinc,ibody,xloadold,turbulent,vcontu,yy,
+     &  nelemface,sideface,nface,compressible,nea,neb,dtimef,ipvar,var,
+     &  ipvarf,varf,sti,dtc)
 !
 !     filling the rhs b of the velocity equations (step 1)
 !
@@ -42,7 +42,7 @@
      &  ikmpc(*),ilmpc(*),ikboun(*),ilboun(*),nactdoh(0:4,*),konl(20),
      &  irowv(*),nrhcon(*),mi(*),ielmat(mi(3),*),ipkon(*),nshcon(*),
      &  ipobody(2,*),
-     &  nbody,ibody(3,*),nelemface(*),nface,ne1,ne2
+     &  nbody,ibody(3,*),nelemface(*),nface,nea,neb
 !
       integer nk,ne,nboun,nmpc,nforc,nload,neqv,nzlv,nmethod,
      &  ithermal,nzsv,i,j,k,idist,jj,id,ist,index,jdof1,idof1,
@@ -50,10 +50,10 @@
      &  ipvar(*),ipvarf(*)
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
-     &  p2(3),bodyf(3),b(*),xloadold(2,*),voldtu(2,*),yy(*),
-     &  t0(*),vold(0:mi(2),*),voldcon(0:4,*),ff(60),rhcon(0:1,ntmat_,*),
+     &  p2(3),bodyf(3),b(*),xloadold(2,*),vcontu(2,*),yy(*),
+     &  t0(*),vold(0:mi(2),*),vcon(0:4,*),ff(60),rhcon(0:1,ntmat_,*),
      &  physcon(*),shcon(0:3,ntmat_,*),xbody(7,*),var(*),varf(*),
-     &  sti(6,mi(1),*)
+     &  sti(6,mi(1),*),dtc(*)
 !
       real*8 om,dtimef,ttime,time,dtl(*)
 !
@@ -74,7 +74,7 @@
          idist=0
       endif
 !
-      do i=ne1,ne2
+      do i=nea,neb
 !
         if(ipkon(i).lt.0) cycle
         if(lakon(i)(1:1).ne.'F') cycle
@@ -94,10 +94,6 @@
         else
            cycle
         endif
-!
-c        do j=1,nope
-c          konl(j)=kon(indexe+j) 
-c        enddo
 !
         om=0.d0
 !
@@ -136,10 +132,10 @@ c        enddo
 !
            call e_c3d_v1rhs(co,nk,kon(indexe+1),lakon(i),p1,p2,om,
      &       bodyf,nbody,ff,i,nmethod,rhcon,nrhcon,ielmat,ntmat_,vold,
-     &       voldcon,idist,dtimef,matname,mi(1),
+     &       vcon,idist,dtimef,matname,mi(1),
      &       ttime,time,istep,iinc,shcon,nshcon,
-     &       turbulent,voldtu,yy,nelemface,sideface,nface,compressible,
-     &       ipvar,var,ipvarf,varf,sti,ithermal)
+     &       turbulent,vcontu,yy,nelemface,sideface,nface,compressible,
+     &       ipvar,var,ipvarf,varf,sti,ithermal,dtc)
 !
         do jj=1,3*nope
 !
@@ -183,7 +179,7 @@ c          ff(jj)=ff(jj)*dtl(node1)/dtimef
 !
 !        point forces
 !      
-      if(ne1.eq.1) then
+      if(nea.eq.1) then
          do i=1,nforc
             if(ndirforc(i).gt.3) cycle
             jdof=nactdoh(ndirforc(i),nodeforc(1,i))

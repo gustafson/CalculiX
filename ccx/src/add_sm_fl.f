@@ -48,7 +48,7 @@
 !
       if(irow(ipointer).ne.ii) then
          write(*,*) '*ERROR in add_sm_ei: coefficient should be 0'
-         write(*,*) i,j,ii,jj,ipointer,irow(ipointer)
+c         write(*,*) i,j,ii,jj,ipointer,irow(ipointer)
       else
          aub(ipointer)=aub(ipointer)+value
       endif

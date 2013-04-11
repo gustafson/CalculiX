@@ -42,6 +42,12 @@
             else
                iviewfile=-abs(iviewfile)
             endif
+         elseif(textpart(i)(1:9).eq.'WRITEONLY') then
+            if(iviewfile.eq.0) then
+               iviewfile=3
+            else
+               iviewfile=3*iviewfile/abs(iviewfile)
+            endif
          elseif(textpart(i)(1:5).eq.'WRITE') then
             if(iviewfile.eq.0) then
                iviewfile=2

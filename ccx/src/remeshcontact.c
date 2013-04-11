@@ -30,7 +30,7 @@ void remeshcontact(int *ntie, char *tieset, int *nset, char *set,
 	       int *ne,int *nk_, int *ithermal, int **ielmatp, 
 	       int **ielorienp,double **t0p,double **voldp,double **veoldp,
 	       int *ncont,double **xstatep,int *nstate_,double **prestrp,
-               int *iprestr){
+	       int *iprestr,int *nxstate){
 
   char *labmpc=NULL,*lakon=NULL;
 
@@ -81,9 +81,14 @@ void remeshcontact(int *ntie, char *tieset, int *nset, char *set,
   
   RENEW(nodface,int,9*ntotface);
 
-  if(ithermal[1]<=1){
+/*  if(ithermal[1]<=1){
       ninterface*=3;
   }else if(ithermal[1]>2){
+      ninterface*=4;
+      }*/
+  if(ithermal[1]==0){
+      ninterface*=3;
+  }else if((ithermal[1]==1)||(ithermal[1]>2)){
       ninterface*=4;
   }
 
@@ -137,6 +142,13 @@ void remeshcontact(int *ntie, char *tieset, int *nset, char *set,
   RENEW(ipkon,int,*ne+8*nface+8*ntets2remesh);
   RENEW(ielmat,int,mi[2]*(*ne+8*nface+8*ntets2remesh));
   RENEW(ielorien,int,mi[2]*(*ne+8*nface+8*ntets2remesh));
+  if(*iprestr>0){RENEW(prestr,double,6*mi[0]*(*ne+8*nface+8*ntets2remesh));}
+  if(*nstate_>0){
+      RENEW(xstate,double,*nstate_*mi[0]*(*ne+8*nface+8*ntets2remesh));
+      for(k=*nxstate;k<*nstate_*mi[0]*(*ne+8*nface+8*ntets2remesh);k++){
+	  xstate[k]=0.;}
+      *nxstate=*ne+8*nface+8*ntets2remesh;
+  }
 
   /* 8 new elements with max 11 nodes (C3D8I) 
      8 new elements with 4 nodes (C3D4) */

@@ -70,7 +70,7 @@
      &              ii
                stop
             endif
-            if((fixed).and.(i<5)) then
+            if((fixed).and.(i.lt.5)) then
                val=vold(i,nodetrue)
             elseif(fixed) then
                write(*,*) '*ERROR in bounadd: parameter FIXED cannot'
@@ -137,7 +137,7 @@
      &              ii
                stop
             endif
-            if((fixed).and.(i<5)) then
+            if((fixed).and.(i.lt.5)) then
                val=vold(i,nodetrue)
             elseif(fixed) then
                write(*,*) '*ERROR in bounadd: parameter FIXED cannot'

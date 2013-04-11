@@ -62,6 +62,8 @@
 !
       mt=mi(2)+1
 !
+      force=.false.
+!
 !     no print requests
 !
       if(iout.le.0) then
@@ -96,7 +98,7 @@
       if(filab(1)(5:5).ne.' ') then
          nfield=mt
          cflag=filab(1)(5:5)
-         force=.false.
+c         force=.false.
          call map3dto1d2d(v,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,cflag,co,vold,force,mi)
       endif
@@ -109,7 +111,7 @@
          if(filab(2)(5:5).eq.'I') then
             nfield=1
             cflag=filab(2)(5:5)
-            force=.false.
+c            force=.false.
             call map3dto1d2d(t1,ipkon,inum,kon,lakon,nfield,nk,
      &           ne,cflag,co,vold,force,mi)
          endif
@@ -258,8 +260,7 @@
 !     inum if nodal quantities are requested: used in subroutine frd
 !     to determine which nodes are active in the model 
 !
-      if((filab(1)(5:5).ne.'I').and.
-     &   (filab(3)(1:4).ne.'S   ').and.(filab(4)(1:4).ne.'E   ').and.
+      if((filab(3)(1:4).ne.'S   ').and.(filab(4)(1:4).ne.'E   ').and.
      &   (filab(6)(1:4).ne.'PEEQ').and.(filab(7)(1:4).ne.'ENER').and.
      &   (filab(8)(1:4).ne.'SDV ').and.(filab(9)(1:4).ne.'HFL ').and.
      &   ((nmethod.ne.4).or.(iperturb(1).ge.2))) then
@@ -269,7 +270,7 @@
          iorienloc=0
          cflag=filab(1)(5:5)
          call createinum(ipkon,inum,kon,lakon,nk,ne,cflag,nelemload,
-     &       nload,nodeboun,nboun,ndirboun,ithermal)
+     &       nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi)
       endif
 !
       if(ithermal(1).gt.1) then
@@ -280,7 +281,6 @@
 !         -extrapolation for the mass flow in the end nodes
 !
          call networkextrapolate(v,ipkon,inum,kon,lakon,ne,mi)
-c      endif
 !
 !     printing values for environmental film, radiation and
 !     pressure nodes (these nodes are considered to be network
@@ -290,7 +290,6 @@ c      endif
             node=nelemload(2,i)
             if(node.gt.0) then
                if(inum(node).gt.0) cycle
-c               inum(node)=-1
                inum(node)=1
             endif
          enddo
@@ -298,7 +297,6 @@ c               inum(node)=-1
 !     printing values of prescribed boundary conditions (these
 !     nodes are considered to be structural nodes)
 !
-c      if(ithermal(2).gt.1) then
          do i=1,nboun
             node=nodeboun(i)
             if(inum(node).ne.0) cycle

@@ -16,6 +16,40 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
+c> subroutine generating the first actice set 
+c> and calculating the areas for all faces on slaveside
+c> @param   [in]  kon   	    Field containing the connectivity of the elements in succesive order
+c> @param   [in]  lakon 	    element label 
+c> @param   [in]  istep       	 index step
+c> @param   [in]  iinc	      	 index increment
+c> @param   [in]  iit 	      	 index iteration
+c> @param   [out] islavact    	 first active set 
+c> @param   [in,out] ifree       in=0 out=# active nodes
+c> @param   [out]    areaslav    (i)area of face i, ONLY HELP FIELD
+c> @param   [in]  itiefac     	 pointer into field islavsurf: (1,i) beginning slave_i (2,i) end of slave_i
+c> @param   [in]  islavsurf      islavsurf(1,i) slaveface i islavsurf(2,i) pointer into imastsurf and pmastsurf
+c> @param   [in]  co    	 field containing the coordinates of all nodes
+c> @param   [in,out]  vold  	 field containing the displacements
+c> @param   [in]  iponoels       pointer for node i into field inoel...
+c> @param   [in]  inoels	  ...which stores 1D&2D elements belonging to node 
+C>                               (1,i)el. number (2,i) # nodes (3,i) pointer to next entry 
+c> @param   [in]  se(i)          name of set_i
+c> @param   [in]  nset           # sets
+c> @param   [in]  istartset      (i) pointer into ialset containing first set member
+c> @param   [in]  iendset        (i) pointer into ialset containing the last member
+c> @param   [in]  ialset         field containing elements of all sets
+c> @param   [in]  tietol         tie toleances
+c> @param   [in]  cg             field containing centers of gravity
+c> @param   [in]  straight       (1:4 5:8 9:13,i)coeffs of plane equation for edges of triagle_i (13:16,i) coeffs of plane containing triagle
+c> @param   [in]  koncont        (1:3,i) nodes of triagle_i (4,i) element face
+c> @param   [in]  nslavnode      (i) for contraint i pointer into field islavnode
+C> @param   [in]     islavnode   fields containing nodes of slace surfaces
+c> @param   [in]  imastop        (l,i) for edge l in triagle i neightbouring triangle
+c> @param   [in,out] x,y,z       ONLY HELP FIELD
+c> @param   [in,out] xo,yo,zo    ONLY HELP FIELD
+c> @param   [in,out] nx,ny,nz    ONLY HELP FIELD
+c> @param   [out] vini
+c> @see contactmortar
       subroutine genfirstactif(tieset,ntie,itietri,ne,ipkon,kon,
      &  lakon,cg,straight,
      &  koncont,co,vold,xo,yo,zo,x,y,z,nx,ny,nz,ielmat,cs,
@@ -37,54 +71,23 @@ c      character*18 cfile
      &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),ne,node,
      &  neigh(1),iflag,kneigh,i,j,k,l,isol,iset,idummy,
      &  itri,ll,kflag,n,nx(*),ny(*),istep,iinc,mi(*),
-     &  nz(*),nstart,ielmat(mi(3),*),material,ifaceq(8,6),ifacet(6,4),
-     &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,iit,
-     &  nnodelem,nface,nope,nodef(8),ncmat_,ntmat_,index1,
-     &  ne0,nmethod,iteller,ifaces,jfaces,
+     &  nz(*),nstart,ielmat(mi(3),*),material,
+     &  nelem,iit,
+     &  nface,nope,nodef(8),ncmat_,ntmat_,index1,
+     &  ne0,iteller,ifaces,jfaces,
      &  imastop(3,*), itriangle(100),ntriangle,ntriangle_,itriold,
      &  itrinew,id,nslavnode(*),islavnode(*),islavsurf(2,*),
      &  itiefac(2,*),iponoels(*),inoels(3,*),konl(20),nelems,m,
-     &  mint2d,nopes,idof,index2,
+     &  mint2d,nopes,nmethod,
      &  ipos,nset,istartset(*),iendset(*),
-     &  ialset(*),islavact(*),ifree
+     &  ialset(*),islavact(*),ifree,ifac,getiface
 !
       real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),p(3),
      &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),cs(17,*),
-     &  beta,c0,elcon(0:ncmat_,ntmat_,*),vini(0:mi(2),*),weight,
+     &  c0,elcon(0:ncmat_,ntmat_,*),vini(0:mi(2),*),weight,
      &  areaslav(*),xl2(3,8),area,xi,et,shp2(7,8),
-     &  xs2(3,2),xsj2(3),adjust,tietol(2,*)
-!
-!     nodes per face for hex elements
-!
-      data ifaceq /4,3,2,1,11,10,9,12,
-     &            5,6,7,8,13,14,15,16,
-     &            1,2,6,5,9,18,13,17,
-     &            2,3,7,6,10,19,14,18,
-     &            3,4,8,7,11,20,15,19,
-     &            4,1,5,8,12,17,16,20/
-!
-!     nodes per face for tet elements
-!
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
-!
-!     nodes per face for linear wedge elements
-!
-      data ifacew1 /1,3,2,0,
-     &             4,5,6,0,
-     &             1,2,5,4,
-     &             2,3,6,5,
-     &             4,6,3,1/
-!
-!     nodes per face for quadratic wedge elements
-!
-      data ifacew2 /1,3,2,9,8,7,0,0,
-     &             4,5,6,10,11,12,0,0,
-     &             1,2,5,4,7,14,10,13,
-     &             2,3,6,5,8,15,11,14,
-     &             4,6,3,1,12,15,9,13/
+     &  xs2(3,2),xsj2(3),tietol(2,*),beta,adjust
+
 !
 !     flag for shape functions
 !
@@ -94,12 +97,12 @@ c      character*18 cfile
       save iteller
 !
       include "gauss.f"
-!
+!      
       do i=1,ntie
          if(tieset(1,i)(81:81).ne.'C') cycle
          kneigh=1
          slavset=tieset(2,i)
-         material=int(cs(1,i))
+c         material=int(cs(1,i))
 !
 !        check whether an adjust node set has been defined
 !        only checked in the first increment of the first step
@@ -129,51 +132,7 @@ c      character*18 cfile
 !     
 !     Decide on the max integration points number, just consider 2D situation 
 !     
-            if(lakon(nelems)(4:5).eq.'8R') then
-               mint2d=1
-               nopes=4
-               nope=8
-            elseif(lakon(nelems)(4:4).eq.'8') then
-               mint2d=4
-               nopes=4
-               nope=8
-            elseif(lakon(nelems)(4:6).eq.'20R') then
-               mint2d=4
-               nopes=8
-               nope=20
-            elseif(lakon(nelems)(4:4).eq.'2') then
-               mint2d=9
-               nopes=8
-               nope=20
-            elseif(lakon(nelems)(4:5).eq.'10') then
-               mint2d=3
-               nopes=6
-               nope=10
-            elseif(lakon(nelems)(4:4).eq.'4') then
-               mint2d=1
-               nopes=3
-               nope=4
-!     
-!     treatment of wedge faces
-!     
-            elseif(lakon(nelems)(4:4).eq.'6') then
-               mint2d=1
-               nope=6
-               if(jfaces.le.2) then
-                  nopes=3
-               else
-                  nopes=4
-               endif
-            elseif(lakon(nelems)(4:5).eq.'15') then
-               nope=15
-               if(jfaces.le.2) then
-                  mint2d=3
-                  nopes=6
-               else
-                  mint2d=4
-                  nopes=8
-               endif
-            endif
+            call getnumberofnodes(nelems,jfaces,lakon,nope,nopes,mint2d)
 !     
 !     actual position of the nodes belonging to the
 !     slave surface
@@ -181,29 +140,15 @@ c      character*18 cfile
             do j=1,nope
                konl(j)=kon(ipkon(nelems)+j)
             enddo
-!     
-            if((nope.eq.20).or.(nope.eq.8)) then
-               do m=1,nopes
-                  do j=1,3
-                     xl2(j,m)=co(j,konl(ifaceq(m,jfaces)))+
-     &                    vold(j,konl(ifaceq(m,jfaces)))
-                  enddo
+            do m=1,nopes
+               do j=1,3
+                  ifac=getiface(m,jfaces,nope)
+                  xl2(j,m)=co(j,konl(ifac))+
+     &                 vold(j,konl(ifac))
+                 
                enddo
-            elseif((nope.eq.10).or.(nope.eq.4)) then
-               do m=1,nopes
-                  do j=1,3
-                     xl2(j,m)=co(j,konl(ifacet(m,jfaces)))+
-     &                    vold(j,konl(ifacet(m,jfaces)))
-                  enddo
-               enddo
-            else
-               do m=1,nopes
-                  do j=1,3
-                     xl2(j,m)=co(j,konl(ifacew1(m,jfaces)))+
-     &                    vold(j,konl(ifacew1(m,jfaces)))
-                  enddo
-               enddo
-            endif
+            enddo
+!           
 !     
 !           calculating the area of the slave face
 !
@@ -278,6 +223,7 @@ c      character*18 cfile
 !
          do j=nslavnode(i)+1,nslavnode(i+1)
             node=islavnode(j)
+c            write(*,*)'j',j,'node',node
 !
 !                 calculating the area corresponding to the
 !                 slave node; is made up of the area
@@ -294,6 +240,7 @@ c      character*18 cfile
 !     
             do k=1,3
                p(k)=co(k,node)+vold(k,node)
+c               write(*,*) 'vold(',node,k,')=', vold(j,node)
             enddo
 !     
 !              determining the kneigh neighboring master contact
@@ -363,6 +310,8 @@ c                              write(*,*) '**regular solution'
      &                 straight(14,itri)*p(2)+
      &                 straight(15,itri)*p(3)+
      &                 straight(16,itri)
+     
+c               if(node.eq.3059)write(*,*)'node',node,'dist',dist
 !
 !                 check for an adjust parameter (only in the first
 !                 increment of the first step)
@@ -378,8 +327,8 @@ c                              write(*,*) '**regular solution'
                         if(id.gt.0) then
                            if(ialset(istartset(iset)+id-1).eq.node) then
                               do k=1,3
-c                                 co(k,node)=co(k,node)-
-c     &                                      dist*straight(12+k,itri)
+                                 co(k,node)=co(k,node)-
+     &                                      dist*straight(12+k,itri)
                               enddo
                               dist=0.d0
                            endif
@@ -389,27 +338,39 @@ c     &                                      dist*straight(12+k,itri)
 !                       adjust parameter
 !
                         adjust=dabs(tietol(1,i))-2.d0
-                        if(dist.le.adjust) then
+
+                       if(dist.le.adjust) then
+c                       write(*,*) 'adjust',node,adjust,dist
+c                       write(*,*) (co(k,node),k=1,3)
                            do k=1,3
-c                              co(k,node)=co(k,node)-
-c     &                             dist*straight(12+k,itri)
+                              co(k,node)=co(k,node)-
+     &                             dist*straight(12+k,itri)
                            enddo
+c                           write(*,*) (co(k,node),k=1,3)
                            dist=0.d0
                         endif
                      endif
                   endif
 !                           
-                  beta=elcon(1,1,material)
-                  if(beta.gt.0.d0) then
-                     c0=dlog(100.d0)/beta
-                  else
-                     if(dabs(area).gt.0.d0) then
-                        c0=1.d-6*dsqrt(area)
-                     else
-                        c0=1.d-10
-                     endif
-                  endif
-c	          WRITE(*,*) dist
+c                  beta=elcon(1,1,material)
+c                  if(beta.gt.0.d0) then
+c                    c0=dlog(100.d0)/beta
+c                  else
+c                     if(dabs(area).gt.0.d0) then
+c                        c0=1.d-6*dsqrt(area)
+c                     else
+c                        c0=1.d-10
+c                     endif
+c                  endif
+c               WRITE(*,*) dist
+
+c                 c0=1.27d-4
+c                 c0=6.27d-4
+                  c0=1.d-10
+                 if(dabs(tietol(1,i)).ge.2.d0) then
+                    c0=dabs(tietol(1,i))-2.d0
+                 endif
+c                  c0=1.d-10
                   if(dist.gt.c0) then
 c                     isol=0
                      isol=0
@@ -417,22 +378,22 @@ c                     isol=0
 !                    adjusting the bodies at the start of the
 !                    calculation such that they touch
 !
-                  elseif((istep.eq.1).and.(iinc.eq.1).and.
-     &                   (iit.le.0).and.(dist.lt.0.d0).and.
-     &                   (nmethod.eq.1)) then
-                     do k=1,3
-                        vold(k,node)=vold(k,node)-
-     &                        dist*straight(12+k,itri)
-                        vini(k,node)=vold(k,node)
-                    enddo
+c                  elseif((istep.eq.1).and.(iinc.eq.1).and.
+c     &                   (iit.le.0).and.(dist.lt.0.d0).and.
+c     &                   (nmethod.eq.1)) then
+c                     do k=1,3
+c                        vold(k,node)=vold(k,node)-
+c     &                        dist*straight(12+k,itri)
+c                        vini(k,node)=vold(k,node)
+c                    enddo
                   endif
                endif
 !     
                if(isol.ne.0) then
 !     
 !                 Active node
-		  islavact(j)=1
-c                  WRITE(*,*) "GENFIRSTACTIF",j
+                  islavact(j)=2
+!                  WRITE(*,*) "GENFIRSTACTIF",j
                   ifree=ifree+1
                else
                   islavact(j)=-1

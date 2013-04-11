@@ -28,35 +28,35 @@
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
      &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
-     &  coriolis,ibody,xloadold,reltime,veold,springarea,thicke,
-     &  xnormastface)
+     &  coriolis,ibody,xloadold,reltime,veold,springarea,nstate_,
+     &  xstateini,xstate,thicke,
+     &  xnormastface,integerglob,doubleglob,tieset,istartset,iendset,
+     &  ialset,ntie)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !     asymmetric contributions
 !
       implicit none
 !
-      logical mass,stiffness,buckling,rhsi,coriolis
+      logical mass(2),stiffness,buckling,rhsi,coriolis
 !
       character*8 lakon(*)
       character*20 sideload(*)
       character*80 matname(*)
+      character*81 tieset(3,*)
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
-     &  ilmpc(*),ikboun(*),ilboun(*),mi(*),
-     &  nactdof(0:mi(2),*),konl(20),irow(*),
+     &  ilmpc(*),ikboun(*),ilboun(*),mi(*),integerglob(*),
+     &  nactdof(0:mi(2),*),konl(20),irow(*),istartset(*),iendset(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
-     &  ielorien(mi(3),*),
+     &  ielorien(mi(3),*),ialset(*),ntie,ne0,nstate_,
      &  ipkon(*),intscheme,ncocon(2,*),nshcon(*),ipobody(2,*),nbody,
-     &  ibody(3,*)
-!
-      integer nk,ne,nboun,nmpc,nforc,nload,neq,nzl,nmethod,
-     &  ithermal,iprestr,iperturb(*),nzs(3),i,j,k,l,m,idist,jj,
+     &  ibody(3,*),nk,ne,nboun,nmpc,nforc,nload,neq,nzl,nmethod,
+     &  ithermal(2),iprestr,iperturb(*),nzs(3),i,j,k,l,m,idist,jj,
      &  ll,jdof1,jdof2,node1,node2,
-     &  ntmat_,indexe,nope,norien,iexpl,ncmat_,istep,iinc
-!
-      integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
+     &  ntmat_,indexe,nope,norien,iexpl,ncmat_,istep,iinc,
+     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),bb(*),xloadold(2,*),
@@ -65,12 +65,11 @@
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),reltime,
      &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),
      &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
-     &  springarea(2,*),thicke(mi(3),*),xnormastface(3,8,*)
-!
-      real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
-     &  xstiff(27,mi(1),*),veold(0:mi(2),*)
-!
-      real*8 om,dtime,ttime,time
+     &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
+     &  springarea(2,*),thicke(mi(3),*),xnormastface(3,8,*),
+     &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
+     &  xstiff(27,mi(1),*),veold(0:mi(2),*),doubleglob(*),
+     &  om,dtime,ttime,time
 !
 !     storing the symmetric matrix in asymmetric format
 !
@@ -78,14 +77,33 @@
          au(nzs(3)+i)=au(i)
       enddo
 !
+      if(rhsi) then
+!
+!        distributed forces (body forces or thermal loads or
+!        residual stresses or distributed face loads)
+!
+         if((nbody.ne.0).or.(ithermal(1).ne.0).or.
+     &      (iprestr.ne.0).or.(nload.ne.0)) then
+            idist=1
+         else
+            idist=0
+         endif
+!
+      endif
+!
 !     mechanical analysis: asymmetric contributions
 !
+      ne0=0
       do i=1,ne
 !
         if(ipkon(i).lt.0) cycle
-        if(lakon(i)(1:1).ne.'E') cycle
+        if(lakon(i)(1:2).ne.'ES') cycle
         indexe=ipkon(i)
-        nope=4
+        read(lakon(i)(8:8),'(i1)') nope
+!     
+!     local contact spring number
+!     
+        if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
 !
         do j=1,nope
           konl(j)=kon(indexe+j) 
@@ -100,7 +118,9 @@
      &          dtime,matname,mi(1),ncmat_,mass,stiffness,buckling,rhsi,
      &          intscheme,ttime,time,istep,iinc,coriolis,xloadold,
      &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
-     &          springarea,ipkon,thicke)
+     &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
+     &          xnormastface,integerglob,
+     &          doubleglob,tieset,istartset,iendset,ialset,ntie)
 !
         do jj=1,3*nope
 !

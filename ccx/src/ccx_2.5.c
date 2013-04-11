@@ -32,6 +32,8 @@ int myid = 0, nproc = 0;
 int main(int argc,char *argv[])
 {
   
+FILE *f1;
+  
 int *kon=NULL, *nodeboun=NULL, *ndirboun=NULL, *ipompc=NULL,
 	*nodempc=NULL, *nodeforc=NULL, *ndirforc=NULL,
         *nelemload=NULL,im,
@@ -64,8 +66,8 @@ double ctrl[27]={4.5,8.5,9.5,16.5,10.5,4.5,0.,5.5,0.,0.,0.25,0.5,0.75,0.85,0.,0.
     
 char *sideload=NULL, *set=NULL, *matname=NULL, *orname=NULL, *amname=NULL,
 	*filab=NULL, *lakon=NULL, *labmpc=NULL, *prlab=NULL, *prset=NULL, 
-	jobnamec[396]="",jobnamef[132]="",output[4]="frd", *typeboun=NULL,
-	*inpc=NULL,*tieset=NULL,*cbody=NULL;
+	jobnamec[528]="",jobnamef[132]="",output[4]="asc", *typeboun=NULL,
+	*inpc=NULL,*tieset=NULL,*cbody=NULL,fneig[132]="";
     
 int nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,nentries=14,
   nmethod,neq[3]={0,0,0},i,mpcfree=1,mei[4],j,nzl,nam,nbounold=0,
@@ -100,7 +102,7 @@ else{
     if(strcmp1(argv[i],"-i")==0) {
     strcpy(jobnamec,argv[i+1]);strcpy1(jobnamef,argv[i+1],132);jin++;break;}
     if(strcmp1(argv[i],"-v")==0) {
-	printf("\nThis is version version 2.4\n\n");
+	printf("\nThis is version version 2.5\n\n");
 	FORTRAN(stop,());
     }
   }
@@ -121,12 +123,12 @@ FORTRAN(uexternaldb,(&lop,&lrestart,time,&dtime,&kstep,&kinc));
 FORTRAN(openfile,(jobnamef,output));
 
 printf("\n************************************************************\n\n");
-printf("CalculiX version 2.4, Copyright(C) 1998-2011 Guido Dhondt\n");
+printf("CalculiX version 2.5, Copyright(C) 1998-2011 Guido Dhondt\n");
 printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
 printf("************************************************************\n\n");
-printf("You are using an executable made on Mo 5. Dez 19:25:22 CET 2011\n");
+printf("You are using an executable made on Sa 6. Okt 15:15:49 CEST 2012\n");
 fflush(stdout);
 
 istep=0;
@@ -327,10 +329,14 @@ while(istat>=0) {
     xmodal=NNEW(double,11+nevdamp_);
     xmodal[10]=nevdamp_+0.5;
 
-    /* internal state variables */
+    /* internal state variables (nslavs is needed for restart
+       calculations) */
 
     xstate=NNEW(double,nstate_*mi[0]*(ne+nslavs));
     nxstate=nstate_*mi[0]*(ne+nslavs);
+
+//    xstate=NNEW(double,nstate_*mi[0]*ne);
+//    nxstate=nstate_*mi[0]*ne;
 
     /* material orientation */
 
@@ -557,7 +563,7 @@ while(istat>=0) {
                &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc, 
 	       &coefmpc,&co,&nmpc_,mi,&nk,&nkon,&ne,&nk_,ithermal,
 	       &ielmat,&ielorien,&t0,&vold,&veold,&ncont,&xstate,&nstate_,
-	       &prestr,&iprestr);
+	       &prestr,&iprestr,&nxstate);
       }
     }
 
@@ -843,7 +849,8 @@ while(istat>=0) {
   if(ncont==1){
       nload0=nload;
       reloadcontact(lakon,ipkon,kon,&nelemload,&sideload,&iamload, 
-		    &xload,&nload,&ne,t1,iamt1,&nam,ithermal,vold,mi);
+		    &xload,&nload,&ne,t1,iamt1,&nam,ithermal,vold,mi,
+                    &xloadold);
   }
 
   RENEW(nelemload,int,2*nload);
@@ -905,7 +912,9 @@ while(istat>=0) {
   
   /*   calling the user routine ufaceload (can be empty) */
 
-  FORTRAN(ufaceload,(co,ipkon,kon,lakon,nelemload,sideload,&nload));
+  if(ithermal[1]>=2){
+      FORTRAN(ufaceload,(co,ipkon,kon,lakon,nelemload,sideload,&nload));
+  }
   
   /* decascading MPC's and renumbering the equations: only necessary
   if MPC's changed */
@@ -1015,7 +1024,7 @@ while(istat>=0) {
              &nam,iamforc,iamload,iamt1,iamboun,&ttime,
              output,set,&nset,istartset,iendset,ialset,&nprint,prlab,
              prset,&nener,trab,inotr,&ntrans,fmpc,cbody,ibody,xbody,&nbody,
-	     xbodyold,&tper,thicke);
+	     xbodyold,&tper,thicke,jobnamec,tieset,&ntie,&istep);
 
       }
 
@@ -1043,7 +1052,8 @@ while(istat>=0) {
              set,&nset,istartset,iendset,ialset,&nprint,prlab,
              prset,&nener,ikforc,ilforc,trab,inotr,&ntrans,&fmpc,
              cbody,ibody,xbody,&nbody,xbodyold,ielprop,prop,
-	     &ntie,tieset,&itpamp,&iviewfile,jobnamec,tietol,&nslavs,thicke);
+	     &ntie,tieset,&itpamp,&iviewfile,jobnamec,tietol,&nslavs,thicke,
+             ics);
 
 	memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
         maxlenmpc=mpcinfo[3];
@@ -1114,7 +1124,7 @@ while(istat>=0) {
 	     xstate,&npmat_,matname,mi,&ncmat_,&nstate_,ener,output,
              set,&nset,istartset,iendset,ialset,&nprint,prlab,
              prset,&nener,&isolver,trab,inotr,&ntrans,&ttime,fmpc,cbody,
-             ibody,xbody,&nbody,thicke);
+	     ibody,xbody,&nbody,thicke,jobnamec);
 #else
             printf("*ERROR in CalculiX: the ARPACK library is not linked\n\n");
             FORTRAN(stop,());
@@ -1142,13 +1152,13 @@ while(istat>=0) {
 	    namta,&nam,iamforc,iamload,&iamt1,
 	    jout,&kode,filab,&eme,xforcold,xloadold,
             &t1old,&iamboun,&xbounold,&iexpl,plicon,
-            nplicon,plkcon,nplkcon,xstate,&npmat_,matname,
+            nplicon,plkcon,nplkcon,&xstate,&npmat_,matname,
             mi,&ncmat_,&nstate_,&ener,jobnamec,&ttime,set,&nset,
             istartset,iendset,&ialset,&nprint,prlab,
             prset,&nener,trab,&inotr,&ntrans,&fmpc,cbody,ibody,xbody,&nbody,
             xbodyold,&istep,&isolver,jq,output,&mcs,&nkon,&mpcend,ics,cs,
 	    &ntie,tieset,&idrct,jmax,&tmin,&tmax,ctrl,&itpamp,tietol,&nalset,
-	    &nnn,ikforc,ilforc,thicke);
+	    &nnn,ikforc,ilforc,thicke,&nslavs);
     }
   else if(nmethod==5)
     {
@@ -1304,6 +1314,15 @@ while(istat>=0) {
 }
 
  FORTRAN(closefile,());
+
+ strcpy(fneig,jobnamec);
+ strcat(fneig,".frd");
+ if((f1=fopen(fneig,"ab"))==NULL){
+ printf("*ERROR in frd: cannot open frd file for writing...");
+ exit(0);
+ }
+ fprintf(f1," 9999\n");
+ fclose(f1);
 
 #ifdef CALCULIX_MPI
 MPI_Finalize();

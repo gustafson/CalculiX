@@ -37,7 +37,13 @@
      &     g(3),co(3,*),dvi,vold(0:mi(2),*),shcon(0:3,ntmat_,*),
      &     rhcon(0:1,ntmat_,*)
 !
-      if(lakon(nelem)(2:8).eq.'ACCTUBE') then 
+      if(lakon(nelem)(2:8).eq.'ACCTUBO') then 
+!         
+         call acctube_one(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,ider)
+!
+      else if(lakon(nelem)(2:8).eq.'ACCTUBE') then 
 !         
          call acctube(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,

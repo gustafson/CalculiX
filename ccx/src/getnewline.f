@@ -30,7 +30,8 @@
      &  ipoinpc(0:*),i,j
 !
       character*1 inpc(*)
-      character*132 text,textpart(16)
+      character*132 textpart(16)
+      character*1320 text
 !
 !     reading a new line
 !

@@ -82,18 +82,19 @@
       endif
       noelset(ipos:ipos)=type
 !
-!     check whether new set or old set 
+!     check whether new set or old set (a *SURFACE can be used to
+!     extend an already existing surface)
 !
       do iset=1,nset
          if(set(iset).eq.noelset) then
 !
-!                 existent set
+!           existent set
 !
             if(iendset(iset).eq.nalset) then
                exit
             else
 !
-!                    rearranging set information towards the end
+!              rearranging set information towards the end
 !
                nn=iendset(iset)-istartset(iset)+1
                if(nalset+nn.gt.nalset_) then

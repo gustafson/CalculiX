@@ -234,7 +234,8 @@ c          do j=1,nope
 !
       if(mint3d.eq.0) then
          do i1=1,nope
-            do i2=1,3
+c            do i2=1,3
+            do i2=0,3
                voldl(i2,i1)=vold(i2,konl(i1))
             enddo
          enddo

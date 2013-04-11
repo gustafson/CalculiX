@@ -16,10 +16,10 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine con2phys(vold,voldcon,v,nk,
+      subroutine con2phys(vold,vcon,v,nk,
      &  ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,iout,
      &  nmethod,convergence,physcon,iponoel,inoel,ithermal,
-     &  nactdoh,iit,compressible,ismooth,voldtu,vtu,turbulent,
+     &  nactdoh,iit,compressible,ismooth,vcontu,vtu,turbulent,
      &  inomat,nodeboun,ndirboun,nboun,mi,co,factor)
 !
 !     calculates the physical variable from the conservative
@@ -37,11 +37,11 @@
      &  nmethod,imat,nelem,iponoel(*),inoel(3,*),ismooth,
      &  inomat(*),node,nodeboun(*),ndirboun(*),nboun
 !
-      real*8 v(0:mi(2),*),vold(0:mi(2),*),voldcon(0:4,*),
+      real*8 v(0:mi(2),*),vold(0:mi(2),*),vcon(0:4,*),
      &  rhcon(0:1,ntmat_,*),rho,c1,vmax(0:4),dummy,press,
      &  voldmax(0:4),cp,r,temp,temp0,c2,c3,tempnew,vel2,
      &  shcon(0:3,ntmat_,*),drho,dtemp,physcon(*),dpress,
-     &  voldtu(2,*),vtu(2,*),co(3,*),factor
+     &  vcontu(2,*),vtu(2,*),co(3,*),factor
 !     
 !     gas and thermal liquids
 !
@@ -56,9 +56,9 @@
 !     
 !              gas
 !     
-               rho=voldcon(4,i)
-               c1=(voldcon(0,i)-(voldcon(1,i)**2+voldcon(2,i)**2+
-     &              voldcon(3,i)**2)/(2.d0*rho))/rho
+               rho=vcon(4,i)
+               c1=(vcon(0,i)-(vcon(1,i)**2+vcon(2,i)**2+
+     &              vcon(3,i)**2)/(2.d0*rho))/rho
 !     
 !              iterating to find the temperature
 !     
@@ -94,7 +94,7 @@ c     end shallow
 !     
                do k=1,3
                   if(nactdoh(k,i).ne.0) then
-                     vold(k,i)=voldcon(k,i)/rho
+                     vold(k,i)=vcon(k,i)/rho
                   endif
                enddo
 !     
@@ -102,8 +102,8 @@ c     end shallow
 !     
 !              thermal liquid
 !     
-               c1=voldcon(0,i)
-               c2=(voldcon(1,i)**2+voldcon(2,i)**2+voldcon(3,i)**2)/2.d0
+               c1=vcon(0,i)
+               c2=(vcon(1,i)**2+vcon(2,i)**2+vcon(3,i)**2)/2.d0
                temp0=temp
                j=0
 !     
@@ -119,7 +119,7 @@ c     end shallow
                   if((dabs(temp-temp0).lt.1.d-4*dabs(temp)).or.
      &                 (dabs(temp-temp0).lt.1.d-10)) then
                      vold(0,i)=temp
-                     voldcon(4,i)=rho
+                     vcon(4,i)=rho
                      exit
                   endif
                   if(j.gt.100) then
@@ -134,7 +134,7 @@ c     end shallow
 !     
                do k=1,3
                   if(nactdoh(k,i).ne.0) then
-                     vold(k,i)=voldcon(k,i)/rho
+                     vold(k,i)=vcon(k,i)/rho
                   endif
                enddo
             endif
@@ -150,13 +150,13 @@ c     end shallow
             call materialdata_rho(rhcon,nrhcon,imat,rho,
      &           temp,ntmat_,ithermal)
 !     
-            voldcon(4,i)=rho
+            vcon(4,i)=rho
 !     
 !     storing the density
 !     calculating the velocity
 !     
             do k=1,3
-               vold(k,i)=voldcon(k,i)/rho
+               vold(k,i)=vcon(k,i)/rho
             enddo
          enddo
       endif

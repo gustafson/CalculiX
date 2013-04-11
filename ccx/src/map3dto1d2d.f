@@ -26,14 +26,15 @@
 !
       implicit none
 !
-      logical force
+      logical force,quadratic
 !
       character*1 cflag
       character*8 lakon(*),lakonl
 !
       integer ipkon(*),inum(*),kon(*),ne,indexe,nfield,nk,i,j,k,l,m,
      &  node3(8,3),node6(3,6),node8(3,8),node2d,node3d,indexe2d,ne1d2d,
-     &  node3m(8,3),node(8),m1,m2,nodea,nodeb,nodec,iflag,mi(*)
+     &  node3m(8,3),node(8),m1,m2,nodea,nodeb,nodec,iflag,mi(*),jmax,
+     &  jinc,nope
 !
       real*8 yn(nfield,*),cg(3),p(3),pcg(3),t(3),xl(3,8),shp(7,8),
      &  xsj(3),e1(3),e2(3),e3(3),s(6),dd,xi,et,co(3,*),xs(3,7),
@@ -41,14 +42,11 @@
 !
       include "gauss.f"
 !
-c      data node3 /1,4,8,5,9,11,15,13,2,3,7,6/
       data node3 /1,4,8,5,12,20,16,17,9,11,15,13,
      &            0,0,0,0,2,3,7,6,10,19,14,18/
       data node3m /1,5,8,4,17,16,20,12,
      &             0,0,0,0,0,0,0,0,
      &             3,7,6,2,19,14,18,10/
-c      data node6 /1,4,2,5,3,6,7,10,8,11,9,12/
-c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
       data node6 /1,13,4,2,14,5,3,15,6,7,0,10,8,0,11,9,0,12/
       data node8 /1,17,5,2,18,6,3,19,7,4,20,8,9,0,13,10,0,14,
      &      11,0,15,12,0,16/
@@ -68,16 +66,22 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
      &      (lakonl(1:1).ne.'C')) cycle
          ne1d2d=1
          indexe=ipkon(i)
+c!
+c!        inactivating the 3d expansion nodes of 1d/2d elements
+c!
+c         do j=1,20
+c            inum(kon(indexe+j))=0
+c         enddo
 !
-!        inactivating the 3d expansion nodes of 1d/2d elements
-!
-         do j=1,20
-            inum(kon(indexe+j))=0
-         enddo
-!
-         if(lakonl(4:5).eq.'15') then
-            indexe2d=indexe+15
-            do j=1,6
+         if((lakonl(4:5).eq.'15').or.(lakonl(4:4).eq.'6')) then
+            if(lakonl(4:5).eq.'15') then
+               indexe2d=indexe+15
+               jmax=6
+            else
+               indexe2d=indexe+6
+               jmax=3
+            endif
+            do j=1,jmax
                node2d=kon(indexe2d+j)
                inum(node2d)=0
                do k=1,nfield
@@ -85,8 +89,17 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
                enddo
             enddo
          elseif(lakonl(7:7).eq.'B') then
-            indexe2d=indexe+20
-            do j=1,3
+            if(lakonl(4:5).eq.'8I') then
+               indexe2d=indexe+11
+               jmax=2
+            elseif(lakonl(4:5).eq.'8R') then
+               indexe2d=indexe+8
+               jmax=2
+            elseif(lakonl(4:5).eq.'20') then
+               indexe2d=indexe+20
+               jmax=3
+            endif
+            do j=1,jmax
                node2d=kon(indexe2d+j)
                inum(node2d)=0
                do k=1,nfield
@@ -94,8 +107,17 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
                enddo
             enddo
          else
-            indexe2d=indexe+20
-            do j=1,8
+            if(lakonl(4:5).eq.'8I') then
+               indexe2d=indexe+11
+               jmax=4
+            elseif((lakonl(4:5).eq.'8R').or.(lakonl(4:5).eq.'8 ')) then
+               indexe2d=indexe+8
+               jmax=4
+            elseif(lakonl(4:5).eq.'20') then
+               indexe2d=indexe+20
+               jmax=8
+            endif
+            do j=1,jmax
                node2d=kon(indexe2d+j)
                inum(node2d)=0
                do k=1,nfield
@@ -103,6 +125,12 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
                enddo
             enddo
          endif
+!
+!        inactivating the 3d expansion nodes of 1d/2d elements
+!
+         do j=1,indexe2d-indexe
+            inum(kon(indexe+j))=0
+         enddo
 !
       enddo
 !
@@ -120,16 +148,30 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
      &      (lakonl(1:1).ne.'C')) cycle
          indexe=ipkon(i)
 !
-         if(lakonl(4:5).eq.'15') then
-            indexe2d=indexe+15
-            do j=1,6
+!        check whether linear or quadratic element
+!
+         if((lakonl(4:4).eq.'6').or.(lakonl(4:4).eq.'8')) then
+            quadratic=.false.
+         else
+            quadratic=.true.
+         endif
+!
+         if((lakonl(4:5).eq.'15').or.(lakonl(4:4).eq.'6')) then
+            if(lakonl(4:5).eq.'15') then
+               indexe2d=indexe+15
+               jmax=6
+            else
+               indexe2d=indexe+6
+               jmax=3
+            endif
+            do j=1,jmax
                node2d=kon(indexe2d+j)
                inum(node2d)=inum(node2d)-1
                if(.not.force) then
 !
 !                 taking the mean across the thickness
 !
-                  if(j.le.3) then
+                  if((j.le.3).and.(quadratic)) then
 !
 !                    end nodes: weights 1/6,2/3 and 1/6
 !
@@ -155,7 +197,7 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
 !
 !                 forces must be summed
 !
-                  if(j.le.3) then
+                  if((j.le.3).and.(quadratic)) then
 !
 !                    end nodes
 !
@@ -179,12 +221,27 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
                endif
             enddo
          elseif(lakonl(7:7).eq.'B') then
-            indexe2d=indexe+20
+            if(lakonl(4:5).eq.'8I') then
+               indexe2d=indexe+11
+               jmax=2
+               jinc=1
+               nope=4
+            elseif(lakonl(4:5).eq.'8R') then
+               indexe2d=indexe+8
+               jmax=2
+               jinc=1
+               nope=4
+            elseif(lakonl(4:5).eq.'20') then
+               indexe2d=indexe+20
+               jmax=3
+               jinc=2
+               nope=8
+            endif
             if(cflag.ne.'M') then
 !
 !              mean values for beam elements
 !
-               do j=1,3
+               do j=1,jmax
                   node2d=kon(indexe2d+j)
                   if(.not.force) then
 !
@@ -192,7 +249,11 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
 !
                      do l=1,4
                         inum(node2d)=inum(node2d)-1
-                        node3d=kon(indexe+node3(l,j))
+                        if(quadratic) then
+                           node3d=kon(indexe+node3(l,j))
+                        else
+                           node3d=kon(indexe+node3(l,2*j-1))
+                        endif
                         do k=1,nfield
                            yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
                         enddo
@@ -202,7 +263,7 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
 !                    forces must be summed across the section
 !
                      inum(node2d)=inum(node2d)-1
-                     if(j.ne.2) then
+                     if((j.ne.2).and.(quadratic)) then
                         do l=1,8
                            node3d=kon(indexe+node3(l,j))
                            do k=1,nfield
@@ -211,7 +272,11 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
                         enddo
                      else
                         do l=1,4
-                           node3d=kon(indexe+node3(l,j))
+                           if(quadratic) then
+                              node3d=kon(indexe+node3(l,j))
+                           else
+                              node3d=kon(indexe+node3(l,2*j-1))
+                           endif
                            do k=1,nfield
                               yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
                            enddo
@@ -223,14 +288,18 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
 !
 !              section forces for beam elements
 !
-               do j=1,3,2
+               do j=1,jmax,jinc
                   node2d=kon(indexe2d+j)
                   inum(node2d)=inum(node2d)-1
 !
 !                 coordinates of the nodes belonging to the section
 !
-                  do l=1,8
-                     node(l)=kon(indexe+node3m(l,j))
+                  do l=1,nope
+                     if(quadratic) then
+                        node(l)=kon(indexe+node3m(l,j))
+                     else
+                        node(l)=kon(indexe+node3m(l,2*j-1))
+                     endif
                      do m=1,3
                         xl(m,l)=co(m,node(l))+vold(m,node(l))
                      enddo
@@ -239,13 +308,20 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
 !                 center of gravity and unit vectors 1 and 2
 !
                   do m=1,3
-                     cg(m)=(xl(m,6)+xl(m,8))/2.d0
+c                     cg(m)=(xl(m,6)+xl(m,8))/2.d0
+c                     if(j.eq.1) then
+c                        e1(m)=(xl(m,8)-xl(m,6))
+c                     else
+c                        e1(m)=(xl(m,6)-xl(m,8))
+c                     endif
+c                     e2(m)=(xl(m,7)-xl(m,5))
+                     cg(m)=(xl(m,1)+xl(m,2)+xl(m,3)+xl(m,4))/4.d0
                      if(j.eq.1) then
-                        e1(m)=(xl(m,8)-xl(m,6))
+                        e1(m)=(xl(m,1)+xl(m,4)-xl(m,2)-xl(m,3))
                      else
-                        e1(m)=(xl(m,6)-xl(m,8))
+                        e1(m)=(xl(m,2)+xl(m,3)-xl(m,1)-xl(m,4))
                      endif
-                     e2(m)=(xl(m,7)-xl(m,5))
+                     e2(m)=(xl(m,3)+xl(m,4)-xl(m,1)-xl(m,2))
                   enddo
 !
 !                 normalizing e1
@@ -286,13 +362,17 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
                   do l=1,4
                      xi=gauss2d2(1,l)
                      et=gauss2d2(2,l)
-                     call shape8q(xi,et,xl,xsj,xs,shp,iflag)
+                     if(quadratic) then
+                        call shape8q(xi,et,xl,xsj,xs,shp,iflag)
+                     else
+                        call shape4q(xi,et,xl,xsj,xs,shp,iflag)
+                     endif
 !
 !                    local stress tensor
 !
                      do m1=1,6
                         s(m1)=0.d0
-                        do m2=1,8
+                        do m2=1,nope
                            s(m1)=s(m1)+shp(4,m2)*yn(m1,node(m2))
                         enddo
                      enddo
@@ -301,7 +381,7 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
 !
                      do m1=1,3
                         p(m1)=0.d0
-                        do m2=1,8
+                        do m2=1,nope
                            p(m1)=p(m1)+shp(4,m2)*xl(m1,m2)
                         enddo
                         pcg(m1)=p(m1)-cg(m1)
@@ -359,15 +439,24 @@ c                     write(*,*) 'map3dto1d2d_e',xsj(1),xsj(2),xsj(3)
 !
             endif
          else
-            indexe2d=indexe+20
-            do j=1,8
+            if(lakonl(4:5).eq.'8I') then
+               indexe2d=indexe+11
+               jmax=4
+            elseif(lakonl(4:5).eq.'8R') then
+               indexe2d=indexe+8
+               jmax=4
+            elseif(lakonl(4:5).eq.'20') then
+               indexe2d=indexe+20
+               jmax=8
+            endif
+            do j=1,jmax
                node2d=kon(indexe2d+j)
                inum(node2d)=inum(node2d)-1
                if(.not.force) then
 !
 !                 taking the mean across the thickness
 !
-                  if(j.le.4) then
+                  if((j.le.4).and.(quadratic)) then
 !
 !                    end nodes: weights 1/6,2/3 and 1/6
 !
@@ -393,7 +482,7 @@ c                     write(*,*) 'map3dto1d2d_e',xsj(1),xsj(2),xsj(3)
 !
 !                 forces must be summed
 !
-                  if(j.le.4) then
+                  if((j.le.4).and.(quadratic)) then
 !
 !                    end nodes
 !
@@ -441,6 +530,10 @@ c                     write(*,*) 'map3dto1d2d_e',xsj(1),xsj(2),xsj(3)
          if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'I').or.
      &      (lakonl(1:1).ne.'C')) cycle
          indexe=ipkon(i)
+!
+!        not relevant for linear elements
+!
+         if((lakonl(4:4).eq.'6').or.(lakonl(4:4).eq.'8')) cycle
 !
          if(lakonl(7:7).eq.'B') then
             indexe2d=indexe+20

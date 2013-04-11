@@ -142,12 +142,6 @@
          iset=nset
       endif
 !
-c      if((n.gt.2).and.(textpart(3)(1:8).eq.'GENERATE')) then
-c         igen=.true.
-c      else
-c         igen=.false.
-c      endif
-!
       do
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
@@ -269,10 +263,15 @@ c      endif
                      if(ialset(nalset+1).gt.ne) then
                         write(*,*) '*WARNING in noelsets: value ',
      &                       ialset(nalset+1)
-                        write(*,*) '         in set ',set(iset),' > ne'
-                     else
-                        nalset=nalset+1
+                        write(*,*) '         in set ',set(iset),' > ne;'
+                        write(*,*) '         This is only allowed for'
+                        write(*,*) 
+     &                       '         global elsets in combination'
+                        write(*,*) '         with submodels'
+c                     else
+c                        nalset=nalset+1
                      endif
+                     nalset=nalset+1
                   endif
                endif
             enddo

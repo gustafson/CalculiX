@@ -18,7 +18,7 @@
 !
       subroutine e_c3d_v2rhs(co,nk,konl,lakonl,
      &  ff,nelem,nmethod,vold,v,dtime,theta2,iexplicit,mi,
-     &  ipvar,var,ipvarf,varf)
+     &  ipvar,var,ipvarf,varf,dtc)
 !
 !     computation of the velocity element matrix and rhs for the element with
 !     element with the topology in konl: step 3 (correction **)
@@ -35,48 +35,37 @@
 !
       real*8 co(3,*),xl(3,20),shp(4,20),ff(60),xsjmod,vl(0:mi(2),20),
      &  vel(3),div,voldl(0:mi(2),20),v(0:mi(2),*),vold(0:mi(2),*),dtime,
-     &  term,var(*),varf(*),
+     &  term,var(*),varf(*),dtc(*),
      &  xi,et,ze,xsj,weight,shpv(20),theta2,dpress(3),ddpress(3)
 !
       include "gauss.f"
 !
       iflag=3
 !
-      if(lakonl(4:4).eq.'2') then
-         nope=20
-      elseif(lakonl(4:4).eq.'8') then
-         nope=8
-      elseif(lakonl(4:5).eq.'10') then
-         nope=10
-      elseif(lakonl(4:4).eq.'4') then
+      if(lakonl(4:4).eq.'4') then
          nope=4
-      elseif(lakonl(4:5).eq.'15') then
-         nope=15
+         mint3d=1
       elseif(lakonl(4:4).eq.'6') then
          nope=6
-      endif
-!
-      if(lakonl(4:5).eq.'8R') then
-         mint3d=1
-      elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) then
-c         if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'S').or.
-c     &        (lakonl(7:7).eq.'E')) then
-c            mint3d=4
-c         else
-            mint3d=8
-c         endif
-      elseif(lakonl(4:4).eq.'2') then
-         mint3d=27
-      elseif(lakonl(4:5).eq.'10') then
-         mint3d=4
-      elseif(lakonl(4:4).eq.'4') then
-         mint3d=1
-      elseif(lakonl(4:5).eq.'15') then
-         mint3d=9
-      elseif(lakonl(4:5).eq.'6 ') then
          mint3d=2
-      elseif(lakonl(4:5).eq.'6R') then
+      elseif(lakonl(4:5).eq.'8R') then
+         nope=8
          mint3d=1
+      elseif(lakonl(4:4).eq.'8') then
+         nope=8
+         mint3d=8
+      elseif(lakonl(4:5).eq.'10') then
+         nope=10
+         mint3d=4
+      elseif(lakonl(4:5).eq.'15') then
+         nope=15
+         mint3d=9
+      elseif(lakonl(4:6).eq.'20R') then
+         nope=20
+         mint3d=8
+      elseif(lakonl(4:4).eq.'2') then
+         nope=20
+         mint3d=27
       else
          mint3d=0
       endif
@@ -87,14 +76,9 @@ c         endif
          ff(i)=0.d0
       enddo
 !     
-!     temperature, velocity and auxiliary variables
+!     temperature, velocity and conservative variables
 !     (rho*energy density, rho*velocity and rho)
 !     
-c      do i1=1,nope
-c         do j1=1,4
-c            voldl(j1,i1)=vold(j1,konl(i1))
-c         enddo
-c      enddo
       if(iexplicit.eq.0) then
          do i1=1,nope
             vl(4,i1)=v(4,konl(i1))
@@ -143,20 +127,10 @@ c      enddo
 !     of the shape function times the velocity shpv(*)
 !     in the integration point
 !     
-c         do i1=1,3
-c            dpress(i1)=0.d0
-c         enddo
-c         do i1=1,nope
-c            do j1=1,3
-c               dpress(j1)=dpress(j1)+shp(j1,i1)*voldl(4,i1)
-c            enddo
-c         enddo
-!
          do i1=1,nope
             index=index+1
             shpv(i1)=var(index)
          enddo
-c         index=index+14
          index=index+5
          do i1=1,3
             index=index+1
@@ -182,8 +156,7 @@ c         index=index+14
          if(iexplicit.eq.1) then
             jj1=1
             do jj=1,nope
-               term=xsjmod*(shp(4,jj)+dtime*shpv(jj)/2.d0)
-ccc               term=xsjmod*(shp(4,jj))
+               term=xsjmod*(shp(4,jj)+dtc(konl(jj))*shpv(jj)/2.d0)
                ff(jj1)=ff(jj1)-dpress(1)*term
                ff(jj1+1)=ff(jj1+1)-dpress(2)*term
                ff(jj1+2)=ff(jj1+2)-dpress(3)*term
@@ -193,26 +166,17 @@ ccc               term=xsjmod*(shp(4,jj))
             jj1=1
             do jj=1,nope
 !
-!               without stability term 
-!
-c               ff(jj1)=ff(jj1)-xsjmod*(dpress(1)*(shp(4,jj)
-c     &              )+theta2*shp(4,jj)*ddpress(1))
-c               ff(jj1+1)=ff(jj1+1)-xsjmod*(dpress(2)*(shp(4,jj)
-c     &              )+theta2*shp(4,jj)*ddpress(2))
-c               ff(jj1+2)=ff(jj1+2)-xsjmod*(dpress(3)*(shp(4,jj)
-c     &              )+theta2*shp(4,jj)*ddpress(3))
-!
 !               with stability term 
 !
                ff(jj1)=ff(jj1)-xsjmod*(dpress(1)*(shp(4,jj)+
-     &              (1.d0-theta2)*
-     &              dtime*shpv(jj)/2.d0)+theta2*shp(4,jj)*ddpress(1))
+     &              (1.d0-theta2)*dtc(konl(jj))
+     &              *shpv(jj)/2.d0)+theta2*shp(4,jj)*ddpress(1))
                ff(jj1+1)=ff(jj1+1)-xsjmod*(dpress(2)*(shp(4,jj)+
-     &              (1.d0-theta2)*
-     &              dtime*shpv(jj)/2.d0)+theta2*shp(4,jj)*ddpress(2))
+     &              (1.d0-theta2)*dtc(konl(jj))
+     &              *shpv(jj)/2.d0)+theta2*shp(4,jj)*ddpress(2))
                ff(jj1+2)=ff(jj1+2)-xsjmod*(dpress(3)*(shp(4,jj)+
-     &              (1.d0-theta2)*
-     &              dtime*shpv(jj)/2.d0)+theta2*shp(4,jj)*ddpress(3))
+     &              (1.d0-theta2)*dtc(konl(jj))
+     &              *shpv(jj)/2.d0)+theta2*shp(4,jj)*ddpress(3))
                jj1=jj1+3
             enddo
          endif

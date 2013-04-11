@@ -22,6 +22,8 @@
      &next_hole_position,
      &gradient,
      &calc_section_rel_length
+!
+      calc_next_hole_abs_position=0.d0
 !     
       return
 !

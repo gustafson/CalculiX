@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine incplas(elconloc,plconloc,xstate,xstateini,
-     &  elas,emec,emec0,ithermal,icmd,beta,stre,vj,kode,
+     &  elas,emec,ithermal,icmd,beta,stre,vj,kode,
      &  ielas,amat,t1l,dtime,time,ttime,iel,iint,nstate_,mi,
      &  eloc,pgauss,nmethod)
 !
@@ -41,11 +41,11 @@
 !
       character*80 amat
 !
-      integer ithermal,icmd,i,j,kode,
+      integer ithermal,icmd,i,j,kode,ivisco,ielastic,
      &  niso,nkin,ielas,iel,iint,nstate_,mi(*),id,leximp,lend,layer,
      &  kspt,kstep,kinc,iloop,nmethod
 !
-      real*8 elconloc(21),elas(21),emec(6),emec0(6),beta(6),stre(6),
+      real*8 elconloc(21),elas(21),emec(6),beta(6),stre(6),
      &  vj,plconloc(82),stbl(6),epl,stril(6),xitril(6),
      &  ee,un,um,al,xk,cop,umb,umbb,dxitril,f0,d0,f1,d1,d2,xg(3,3),
      &  xs(3,3),xx(3,3),xn(3,3),xd(3,3),cpl(6),c(6),ci(6),
@@ -123,6 +123,15 @@ ccc         write(*,*) '*WARNING in incplas: deformation inside-out'
          vj=1.d0
       endif
 !
+!     check whether the user activated a viscous calculation
+!     (*VISCO instead of *STATIC)
+!
+      if((nmethod.ne.1).or.(ithermal.eq.3)) then
+         ivisco=1
+      else
+         ivisco=0
+      endif
+!
 !     check for user subroutines
 !
       if((plconloc(81).lt.0.8d0).and.(plconloc(82).lt.0.8d0)) then
@@ -131,7 +140,7 @@ ccc         write(*,*) '*WARNING in incplas: deformation inside-out'
          user_hardening=0
       endif
 c      if(kode.eq.-52) then
-      if((kode.eq.-52).and.((nmethod.ne.1).or.(ithermal.eq.3))) then
+      if((kode.eq.-52).and.(ivisco.eq.1)) then
          if(elconloc(3).lt.0.d0) then
             user_creep=1
          else
@@ -249,6 +258,19 @@ ccc         write(*,*) '*WARNING in incplas: dxitril < 0'
          enddo
       endif
 !
+!     if no viscous calculation is performed a pure creep calculatino
+!     (without plasticity) is reduced to an elastic calculation
+!
+      ielastic=0
+      if(ivisco.eq.0) then
+         if(niso.eq.2) then
+            if((dabs(yiso(1)).lt.1.d-10).and.
+     &         (dabs(yiso(2)).lt.1.d-10)) then
+               ielastic=1
+            endif
+         endif
+      endif
+!
 !     check for yielding
 !
       if(user_hardening.eq.1) then
@@ -274,7 +296,7 @@ ccc         write(*,*) '*WARNING in incplas: dxitril < 0'
       endif
 !
       ftrial=dxitril-dsqrt(2.d0/3.d0)*fiso
-      if((ftrial.le.1.d-10).or.(ielas.eq.1)) then
+      if((ftrial.le.1.d-10).or.(ielas.eq.1).or.(ielastic.eq.1)) then
 !
 !        no plastic deformation
 !        beta contains the Cauchy residual stresses
@@ -538,7 +560,7 @@ c            enddo
             fkin0=fkin
          endif
 !
-         if((kode.eq.-51).or.((nmethod.eq.1).and.(ithermal.ne.3))) then
+         if((kode.eq.-51).or.(ivisco.eq.0)) then
             dcop=(ftrial-c2*(fiso-fiso0)
      &           -umbb*(2.d0*cop+c4*(fkin-fkin0)))/
      &           (-c1*dfiso-umbb*(2.d0+c3*dfkin))
@@ -638,8 +660,7 @@ ccc                  write(*,*) '*ERROR in incplas: no temperature defined'
                   fkin0=fkin
                endif
 !
-               if((kode.eq.-51).or.
-     %              ((nmethod.eq.1).and.(ithermal.ne.3))) then
+               if((kode.eq.-51).or.(ivisco.eq.0)) then
                   fu=(ftrial-c2*(fiso-fiso0)
      &                 -umbb*(2.d0*cop+c4*(fkin-fkin0)))
                else
@@ -772,7 +793,7 @@ c                     write(*,*) cop,fu
 !
 !        creep contribution
 !
-         if((kode.eq.-52).and.((nmethod.ne.1).or.(ithermal.eq.3))) then
+         if((kode.eq.-52).and.(ivisco.eq.1)) then
             d0=d0+dsvm/(3.d0*umbb)
          endif
 !

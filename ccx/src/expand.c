@@ -71,26 +71,28 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
     int *inum=NULL,k,idir,lfin,j,iout=0,index,inode,id,i,idof,im,
         ielas,icmd,kk,l,nkt,icntrl,imag=1,icomplex,kkv,kk6,iterm,
-	lprev,ilength,ij,i1,i2,iel,ielset,node,indexe,nope,ml1,
+        lprev,ilength,ij,i1,i2,iel,ielset,node,indexe,nope,ml1,nelem,
         *inocs=NULL,*ielcs=NULL,jj,l1,l2,is,nlabel,*nshcon=NULL,
         nodeleft,*noderight=NULL,numnodes,ileft,kflag=2,itr,locdir,
         neqh,j1,nodenew,mass[2]={1,1},stiffness=1,buckling=0,mt=mi[1]+1,
 	rhsi=0,intscheme=0,coriolis=0,istep=1,iinc=1,iperturbmass[2],
         *mast1e=NULL,*ipointere=NULL,*irowe=*irowep,*ipobody=NULL,*jqe=*jqep,
 	*icole=*icolep,tint=-1,tnstart=-1,tnend=-1,tint2=-1,*nnn=*nnnp,
-	noderight_,*izdof=*izdofp,iload,iforc,*iznode=NULL,nznode,ll,ne0;
+	noderight_,*izdof=*izdofp,iload,iforc,*iznode=NULL,nznode,ll,ne0,
+        *integerglob=NULL;
 
     long long lint;
 
-    double *stn=NULL,*v=NULL,*temp_array=NULL,*vini=NULL,
-	*een=NULL,cam[5],*f=NULL,*fn=NULL,qa[3],*epn=NULL,
-        *stiini=NULL,*emn=NULL,*xnormastface=NULL,
+    double *stn=NULL,*v=NULL,*temp_array=NULL,*vini=NULL,*csmass=NULL,
+        *een=NULL,cam[5],*f=NULL,*fn=NULL,qa[3],*epn=NULL,summass,
+        *stiini=NULL,*emn=NULL,*xnormastface=NULL,*emeini=NULL,
 	*xstateini=NULL,theta,pi,*coefmpcnew=NULL,t[3],ctl,stl,
 	*stx=NULL,*enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,
 	*qfx=NULL,*qfn=NULL,xreal,ximag,*vt=NULL,sum,*aux=NULL,
         *coefright=NULL,*physcon=NULL,coef,a[9],ratio,reltime,*ade=NULL,
         *aue=NULL,*adbe=*adbep,*aube=*aubep,*fext=NULL,*cgr=NULL,
-        *shcon=NULL,*springarea=NULL,*z=*zp, *zdof=NULL, *thicke=NULL;
+        *shcon=NULL,*springarea=NULL,*z=*zp, *zdof=NULL, *thicke=NULL,
+        *doubleglob=NULL;
     
     /* dummy arguments for the results call */
     
@@ -130,10 +132,12 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	for(i=0;i<*nk;i++) inocs[i]=-1;
 	for(i=0;i<*ne;i++) ielcs[i]=-1;
     }
+    csmass=NNEW(double,*mcs);
+    if(*mcs==1) csmass[0]=1.;
     
     for(i=0;i<*mcs;i++){
 	is=cs[17*i];
-	if(is==1) continue;
+	//	if(is==1) continue;
 	ielset=cs[17*i+12];
 	if(ielset==0) continue;
 	for(i1=istartset[ielset-1]-1;i1<iendset[ielset-1];i1++){
@@ -142,12 +146,19 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		if(ipkon[iel]<0) continue;
 		ielcs[iel]=i;
 		indexe=ipkon[iel];
-		if(strcmp1(&lakon[8*iel+3],"2")==0)nope=20;
-		else if (strcmp1(&lakon[8*iel+3],"8")==0)nope=8;
-		else if (strcmp1(&lakon[8*iel+3],"10")==0)nope=10;
-		else if (strcmp1(&lakon[8*iel+3],"4")==0)nope=4;
-		else if (strcmp1(&lakon[8*iel+3],"15")==0)nope=15;
-		else {nope=6;}
+		if(*mcs==1){
+		  if(strcmp1(&lakon[8*iel+3],"2")==0)nope=20;
+		  else if (strcmp1(&lakon[8*iel+3],"8")==0)nope=8;
+		  else if (strcmp1(&lakon[8*iel+3],"10")==0)nope=10;
+		  else if (strcmp1(&lakon[8*iel+3],"4")==0)nope=4;
+		  else if (strcmp1(&lakon[8*iel+3],"15")==0)nope=15;
+		  else {nope=6;}
+		}else{
+		  nelem=iel+1;
+		  FORTRAN(calcmass,(ipkon,lakon,kon,co,mi,&nelem,ne,thicke,
+                        ielmat,&nope,t0,t1,rhcon,nrhcon,ntmat_,
+			ithermal,&csmass[i]));
+		}
 		for(i2=0;i2<nope;++i2){
 		    node=kon[indexe+i2]-1;
 		    inocs[node]=i;
@@ -161,12 +172,19 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		    if(ipkon[iel]<0) continue;
 		    ielcs[iel]=i;
 		    indexe=ipkon[iel];
-		    if(strcmp1(&lakon[8*iel+3],"2")==0)nope=20;
-		    else if (strcmp1(&lakon[8*iel+3],"8")==0)nope=8;
-		    else if (strcmp1(&lakon[8*iel+3],"10")==0)nope=10;
-		    else if (strcmp1(&lakon[8*iel+3],"4")==0)nope=4;
-		    else if (strcmp1(&lakon[8*iel+3],"15")==0)nope=15;
-		    else {nope=6;}
+		    if(*mcs==1){
+		      if(strcmp1(&lakon[8*iel+3],"2")==0)nope=20;
+		      else if (strcmp1(&lakon[8*iel+3],"8")==0)nope=8;
+		      else if (strcmp1(&lakon[8*iel+3],"10")==0)nope=10;
+		      else if (strcmp1(&lakon[8*iel+3],"4")==0)nope=4;
+		      else if (strcmp1(&lakon[8*iel+3],"15")==0)nope=15;
+		      else {nope=6;}
+		    }else{
+		      nelem=iel+1;
+		      FORTRAN(calcmass,(ipkon,lakon,kon,co,mi,&nelem,ne,thicke,
+                        ielmat,&nope,t0,t1,rhcon,nrhcon,ntmat_,
+			ithermal,&csmass[i]));
+		    }
 		    for(i2=0;i2<nope;++i2){
 			node=kon[indexe+i2]-1;
 			inocs[node]=i;
@@ -174,6 +192,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		}while(1);
 	    }
 	} 
+//	printf("expand.c mass = %d,%e\n",i,csmass[i]);
     }
 
     /* copying imdnode into iznode 
@@ -335,7 +354,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
        z before: real and imaginary part for a segment for all eigenvalues
        z after: real part for all segments for all eigenvalues */
 
-    zdof=NNEW(double,*nev**nzdof);
+    zdof=NNEW(double,(long long)*nev**nzdof);
 
     lfin=0;
     for(j=*nev-1;j>-1;--j){
@@ -417,7 +436,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      nodempc,coefmpcnew,labmpc,nmpc,nmethod,cam,&neqh,veold,accold,
 	      &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
 	      xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
-	      ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],sti,
+	      ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],emeini,
 	      xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
 	      ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	      nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
@@ -499,7 +518,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 			FORTRAN(nident,(izdof,&idof,nzdof,&id));
 			if(id!=0){
 			    if(izdof[id-1]==idof){
-				zdof[j**nzdof+id-1]=vt[k*mt**nk+mt*i+j1];
+				zdof[(long long)j**nzdof+id-1]=vt[k*mt**nk+mt*i+j1];
 			    }
 			}
 		    }
@@ -509,17 +528,36 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	
 /* normalizing the eigenvectors with the mass */
 
-	if (nm[j]==0||(nm[j]==(int)((cs[0]/2))&&(fmod(cs[0],2.)==0.))){sum=sqrt(cs[0]);}
-	else{sum=sqrt(cs[0]/2);}
-/*	lint=(long long)j**nsectors*neqh;
-	for(i=0;i<*nsectors*neqh;++i) z[lint+i]=z[lint+i]/sum;*/
-	for(i=0;i<*nzdof;i++){zdof[j**nzdof+i]/=sum;}
+/*	if (nm[j]==0||(nm[j]==(int)((cs[0]/2))&&(fmod(cs[0],2.)==0.)))
+                 {sum=sqrt(cs[0]);}
+		 else{sum=sqrt(cs[0]/2);}*/
+
+	sum=0.;
+	summass=0.;
+	for(i=0;i<*mcs;i++){
+	  if (nm[j]==0||(nm[j]==(int)((cs[17*i]/2))&&(fmod(cs[17*i],2.)==0.))){
+	    sum+=cs[17*i]*csmass[i];
+	  }else{
+	    sum+=cs[17*i]*csmass[i]/2.;
+	  }
+	  summass+=csmass[i];
+	}
+	if(fabs(summass)>1.e-20){
+	  sum=sqrt(sum/summass);
+	}else{
+	  printf("*ERROR in expand.c: total mass of structure is zero\n");
+	  printf("       maybe no element sets were specified for the\n");
+	  printf("       cyclic symmetry ties\n");
+	  FORTRAN(stop,());
+	}
+
+	for(i=0;i<*nzdof;i++){zdof[(long long)j**nzdof+i]/=sum;}
     }
   
 /* copying zdof into z */
   
-    RENEW(z,double,*nev**nzdof);
-    memcpy(&z[0],&zdof[0],sizeof(double)**nev**nzdof);
+    RENEW(z,double,(long long)*nev**nzdof);
+    memcpy(&z[0],&zdof[0],(long long)sizeof(double)**nev**nzdof);
     free(zdof);
 
 /* copying the multiple point constraints */
@@ -851,7 +889,8 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
 	      physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
 	      &coriolis,ibody,xloadold,&reltime,veold,springarea,nstate_,
-              xstateini,xstate,thicke,xnormastface));
+              xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
+              tieset,istartset,iendset,ialset,ntie));
       
       
       free(fext);
@@ -866,7 +905,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     
     free(temp_array);free(coefmpcnew);free(noderight);free(coefright);
     free(v);free(vt);free(fn);free(stn);free(inum);free(stx);
-    free(inocs);free(ielcs);free(filabt);free(iznode);
+    free(inocs);free(ielcs);free(filabt);free(iznode);free(csmass);
 
     return;
 }

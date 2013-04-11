@@ -79,7 +79,7 @@
      &             4,5,6,0,
      &             1,2,5,4,
      &             2,3,6,5,
-     &             4,6,3,1/
+     &             3,1,4,6/
 !
 !     nodes per face for quadratic wedge elements
 !
@@ -87,7 +87,7 @@
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
-     &             4,6,3,1,12,15,9,13/
+     &             3,1,4,6,9,13,12,15/
 !
       ifacecount=0
       nslavs=0
@@ -206,7 +206,8 @@
                               if(id.gt.0) then
                                  if(islavsurf(1,ifacecount+id).eq.iface) 
      &                              then
-                                    ipos=id
+!                                   original position (not ordered)
+                                    ipos=islavsurf(2,ifacecount+id)
                                  endif
                               endif
 !     
@@ -221,6 +222,7 @@
                                  enddo
                                  islavsurf(1,ifacecount+id+1)=iface
                                  islavsurf(2,ifacecount+id+1)=numberf
+!                                   original position (not ordered)
                                  ipos=numberf
                               endif
 !     

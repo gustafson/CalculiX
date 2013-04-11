@@ -227,10 +227,12 @@
          pt2=v(2,node2)
          if(nelem.eq.int(prop(index+2))) then
             A2 = prop(index+5)
+            zeta_fac = prop(index+11)
          elseif(nelem.eq.int(prop(index+3))) then
             A2 = prop(index+6)
+            zeta_fac = prop(index+12)
          endif
-         zeta_fac = prop(index+11)
+!         zeta_fac = prop(index+11)
 !
 !        Set the node numbers for the degrees of freedom
          nodef(1)=node1
@@ -291,11 +293,13 @@
          if(nelem.eq.int(prop(index+2))) then
             A2 = prop(index+5)
             chan_num = 1
+            zeta_fac = prop(index+11)
          elseif(nelem.eq.int(prop(index+3))) then
             A2 = prop(index+6)
             chan_num = 2
+            zeta_fac = prop(index+12)
          endif
-         zeta_fac = prop(index+11)
+!         zeta_fac = prop(index+11)
 !
 !        Write the main information about the element
 !

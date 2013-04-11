@@ -1,3 +1,4 @@
+
 /*     CalculiX - A 3-dimensional finite element program                   */
 /*              Copyright (C) 1998-2011 Guido Dhondt                          */
 
@@ -621,7 +622,7 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
            b. determining the number of cpus to use
               - if CCX_NPROC_EQUATION_SOLVER>0 then use
                 CCX_NPROC_EQUATION_SOLVER cpus
-              - else if CCX_NPROC>0 use CCX_NPROC cpus
+              - else if OMP_NUM_THREADS>0 use OMP_NUM_THREADS cpus
               - else use the maximum number of cpus
 	 */
 	if (num_cpus < 0) {
@@ -704,7 +705,7 @@ void spooles_solve(double *b, int *neq)
 	int size = *neq;
 	DenseMtx *mtxB,*mtxX;
 
-	printf(" Solving the system of equations using the symmetric spooles solver\n");
+//	printf(" Solving the system of equations using the symmetric spooles solver\n");
 
 	{
 		int i;
@@ -722,7 +723,7 @@ void spooles_solve(double *b, int *neq)
 	}
 
 #ifdef USE_MT
-	printf(" Using up to %d cpu(s) for spooles.\n\n", num_cpus);
+//	printf(" Using up to %d cpu(s) for spooles.\n\n", num_cpus);
 	if (num_cpus > 1) {
 		/* do not use the multithreaded solver unless
 		 * we have multiple threads - avoid the
@@ -733,7 +734,7 @@ void spooles_solve(double *b, int *neq)
 		mtxX=fsolve(&pfi, mtxB);
 	}
 #else
-	printf(" Using 1 cpu for spooles.\n\n");
+//	printf(" Using 1 cpu for spooles.\n\n");
 	mtxX=fsolve(&pfi, mtxB);
 #endif
 
@@ -935,7 +936,7 @@ void spooles_factor_rad(double *ad, double *au,  double *adb, double *aub,
            b. determining the number of cpus to use
               - if CCX_NPROC_EQUATION_SOLVER>0 then use
                 CCX_NPROC_EQUATION_SOLVER cpus
-              - else if CCX_NPROC>0 use CCX_NPROC cpus
+              - else if OMP_NUM_THREADS>0 use OMP_NUM_THREADS cpus
               - else use the maximum number of cpus
 	 */
 	if (num_cpus < 0) {

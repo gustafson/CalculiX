@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine defplas(elconloc,elas,emec,emec0,ithermal,icmd,
+      subroutine defplas(elconloc,elas,emec,ithermal,icmd,
      &  beta,stre,ckl,vj)
 !
 !     calculates stiffness and stresses for the deformation plasticity
@@ -31,7 +31,7 @@
 !
       integer ithermal,icmd,i,j,k,l,m,n,ii,istart,iend,nt,kk(84)
 !
-      real*8 elconloc(*),elas(*),emec(*),emec0(*),beta(*),s(6),al,
+      real*8 elconloc(*),elas(*),emec(*),beta(*),s(6),al,
      &  ee,un,s0,xn,stre(*),eq,c0,c1,c2,c3,dkl(3,3),ekl(3,3),
      &  q,dq,pp,el(6),ckl(3,3),vj
 !

@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine remeshload(ipkon,kon,lakon,nelemload,sideload,iamload,
-     &  xload,nload,ne,t1,iamt1,nam,ithermal,vold,mi)
+     &  xload,nload,ne,t1,iamt1,nam,ithermal,vold,mi,xloadold)
 !
 !     remeshing quadratic elements adjacent to contact surfaces
 !     using appropriate linear elements (C3D8I,C3D4 and C3D6)
@@ -33,7 +33,7 @@
      &  iamload(2,*),nload,kon10(4,8),kon15(6,8),kon20(8,8),
      &  nelem,iamt1(*),nam,ithermal(2),iamplitude,mi(*)
 !
-      real*8 xload(2,*),t1(*),vold(0:mi(2),*)
+      real*8 xload(2,*),t1(*),vold(0:mi(2),*),xloadold(2,*)
 !
 !     nodes belonging to the element faces
 !
@@ -94,7 +94,7 @@
 !
 !           element has been remeshed
 !
-            indexe=-indexe-1
+            indexe=-indexe-2
 !
 !           looking for any distributed load
 !
@@ -123,6 +123,8 @@
                   endif
                   xload(1,nload)=xload(1,id)
                   xload(2,nload)=xload(2,id)
+                  xloadold(1,nload)=xloadold(1,id)
+                  xloadold(2,nload)=xloadold(2,id)
                enddo
                id=id-1
             enddo
@@ -143,12 +145,9 @@
                      konl(j)=kon(indexe+j)
                   enddo
                   konl(21)=kon(indexer+3)
-c                  konl(22)=kon(indexer+39)
                   konl(22)=kon(indexer+51)
                   konl(23)=kon(indexer+6)
-c                  konl(24)=kon(indexer+15)
                   konl(24)=kon(indexer+18)
-c                  konl(25)=kon(indexer+23)
                   konl(25)=kon(indexer+29)
                   konl(26)=kon(indexer+8)
                   konl(27)=kon(indexer+7)
@@ -190,8 +189,8 @@ c                  konl(25)=kon(indexer+23)
                         do k=5,8
                            t1(node)=t1(node)+2.d0*t1(nodes(k))
                         enddo
+                        t1(node)=t1(node)/4.d0
                      enddo
-                     t1(node)=t1(node)/4.d0
 !
 !                    volumetric node
 !                     
@@ -204,37 +203,17 @@ c                  konl(25)=kon(indexer+23)
                         t1(node)=t1(node)+t1(konl(k))
                      enddo
                      t1(node)=t1(node)/4.d0
-c                  else
-c!
-c!                    facial nodes
-c!
-c                     do j=1,6
-c                        node=konl(20+j)
-c                        do k=1,8
-c                           nodes(k)=konl(ifaceq(k,j))
-c                        enddo
-c                        vold(0,node)=0.d0
-c                        do k=1,4
-c                           vold(0,node)=vold(0,node)-vold(0,nodes(k))
-c                        enddo
-c                        do k=5,8
-c                           vold(0,node)=vold(0,node)
-c     &                           +2.d0*vold(0,nodes(k))
-c                        enddo
-c                     enddo
-c                     vold(0,node)=vold(0,node)/4.d0
-c!
-c!                    volumetric node
-c!                     
-c                     node=konl(27)
-c                     vold(0,node)=0.d0
-c                     do k=1,8
-c                        vold(0,node)=vold(0,node)-vold(0,konl(k))
-c                     enddo
-c                     do k=9,20
-c                        vold(0,node)=vold(0,node)+vold(0,konl(k))
-c                     enddo
-c                     vold(0,node)=vold(0,node)/4.d0
+!
+!                    dummy C3D8I-nodes: dummy temperature
+!                    (else unitialized value in tempload.f)
+!
+                     do k=0,7
+                        do j=9,11
+                           node=kon(indexer+11*k+j)
+                           t1(node)=0.d0
+                        enddo
+                     enddo
+!
                   endif
                elseif(lakon(i)(4:5).eq.'15') then
                   nelem=kon(indexe+1)
@@ -289,25 +268,6 @@ c                     vold(0,node)=vold(0,node)/4.d0
                         enddo
                      enddo
                      t1(node)=t1(node)/4.d0
-c                  else
-c!
-c!                    facial nodes
-c!
-c                     do j=3,5
-c                        node=konl(13+j)
-c                        do k=1,8
-c                           nodes(k)=konl(ifacew(k,j))
-c                        enddo
-c                        vold(0,node)=0.d0
-c                        do k=1,4
-c                           vold(0,node)=vold(0,node)-vold(0,nodes(k))
-c                        enddo
-c                        do k=5,8
-c                           vold(0,node)=vold(0,node)
-c     &                           +2.d0*vold(0,nodes(k))
-c                        enddo
-c                     enddo
-c                     vold(0,node)=vold(0,node)/4.d0
                   endif
                endif
             endif

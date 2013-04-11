@@ -66,15 +66,16 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
              char *prset, int *nener, double *trab, 
              int *inotr, int *ntrans, double *fmpc, char *cbody, int *ibody,
 	     double *xbody, int *nbody, double *xbodyold, double *tper,
-             double *thicke){
+	     double *thicke, char *jobnamec,char *tieset,int *ntie,
+             int *istep){
   
   char description[13]="            ";
 
-  int *inum=NULL,k,*icol=NULL,*irow=NULL,ielas,icmd=0,istep=1,iinc=1,
+  int *inum=NULL,k,*icol=NULL,*irow=NULL,ielas,icmd=0,iinc=1,
       mass[2]={0,0}, stiffness=1, buckling=0, rhsi=1, intscheme=0,*ncocon=NULL,
       *nshcon=NULL,mode=-1,noddiam=-1,*ipobody=NULL,inewton=0,coriolis=0,iout,
       ifreebody,*itg=NULL,ntg=0,symmetryflag=0,inputformat=0,ngraph=1,
-      mt=mi[1]+1,ne0;
+      mt=mi[1]+1,ne0,*integerglob=NULL,iglob=0,*ipneigh=NULL,*neigh=NULL;
 
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*xstiff=NULL,*stiini=NULL,
          *f=NULL,*fn=NULL,qa[3],*fext=NULL,*epn=NULL,*xstateini=NULL,
@@ -83,9 +84,8 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
          *enerini=NULL,*cocon=NULL,*shcon=NULL,*physcon=NULL,*qfx=NULL,
          *qfn=NULL,sigma=0.,*cgr=NULL,*xbodyact=NULL,*vr=NULL,*vi=NULL,
          *stnr=NULL,*stni=NULL,*vmax=NULL,*stnmax=NULL,*springarea=NULL,
-         *eenmax=NULL,*fnr=NULL,*fni=NULL,*emn=NULL,*xnormastface=NULL;
-
-  int *ipneigh=NULL,*neigh=NULL;
+         *eenmax=NULL,*fnr=NULL,*fni=NULL,*emn=NULL,*xnormastface=NULL,
+         *emeini=NULL,*doubleglob=NULL;
 
 #ifdef SGI
   int token;
@@ -93,10 +93,21 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   /* dummy arguments for the results call */
 
-  double *veold=NULL,*accold=NULL,bet,gam,dtime=1.,time=1.,reltime=1.;
+  double *veold=NULL,*accold=NULL,bet,gam,dtime,time,reltime=1.;
 
   icol=*icolp;
   irow=*irowp;
+
+  time=*tper;
+  dtime=*tper;
+
+  ne0=*ne;
+
+  /* determining the global values to be used as boundary conditions
+     for a submodel */
+
+  getglobalresults(jobnamec,&integerglob,&doubleglob,nboun,iamboun,xboun,
+		   nload,sideload,iamload,&iglob);
 
   /* allocating fields for the actual external loading */
 
@@ -134,9 +145,10 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      t1old,t1,t1act,iamt1,nk,amta,
 	      namta,nam,ampli,&time,&reltime,ttime,&dtime,ithermal,nmethod,
               xbounold,xboun,xbounact,iamboun,nboun,
-	      nodeboun,ndirboun,nodeforc,ndirforc,&istep,&iinc,
+	      nodeboun,ndirboun,nodeforc,ndirforc,istep,&iinc,
 	      co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
-              ntrans,trab,inotr,veold));
+              ntrans,trab,inotr,veold,integerglob,doubleglob,tieset,istartset,
+              iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc));
   *ttime=*ttime+*tper;
 
   /* determining the internal forces and the stiffness coefficients */
@@ -162,9 +174,9 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	       &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
 	       xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
-               sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
+               emeini,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-	       fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
+	       fmpc,nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,
 	       &reltime,&ne0,xforc,nforc,thicke,xnormastface);
   free(v);free(fn);free(stx);free(inum);
   iout=1;
@@ -186,9 +198,10 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
 	    xstiff,npmat_,&dtime,matname,mi,
             ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
-            shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
+            shcon,nshcon,cocon,ncocon,ttime,&time,istep,&iinc,&coriolis,
 	    ibody,xloadold,&reltime,veold,springarea,nstate_,
-            xstateini,xstate,thicke,xnormastface));
+            xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
+            tieset,istartset,iendset,ialset,ntie));
 
   /* determining the right hand side */
 
@@ -266,10 +279,10 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,veold,accold,&bet,
             &gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
 	    xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
-            ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,sti,
+            ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,emeini,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
+	    nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
             &ne0,xforc,nforc,thicke,xnormastface);
 
     free(eei);
@@ -290,22 +303,24 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     /* for cyclic symmetric sectors: duplicating the results */
 
     if(*mcs>0){
-      frdcyc(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,een,t1,
+      frdcyc(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,een,t1act,
 		   fn,ttime,epn,ielmat,matname,cs,mcs,nkon,enern,xstaten,
-                   nstate_,&istep,&iinc,iperturb,ener,mi,output,ithermal,
+                   nstate_,istep,&iinc,iperturb,ener,mi,output,ithermal,
                    qfn,ialset,istartset,iendset,trab,inotr,ntrans,orab,
-	           ielorien,norien,sti,veold,&noddiam,set,nset,emn,thicke);
+	           ielorien,norien,sti,veold,&noddiam,set,nset,emn,thicke,
+	           jobnamec,&ne0);
     }
     else{
 	if(strcmp1(&filab[1044],"ZZS")==0){
 	    neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
 	}
-	FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,een,t1,
-	    fn,ttime,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
-	    iperturb,ener,mi,output,ithermal,qfn,&mode,&noddiam,
-            trab,inotr,ntrans,orab,ielorien,norien,description,
-	    ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs,
-	    set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,thicke));
+	frd(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,
+	    kode,filab,een,t1act,fn,ttime,epn,ielmat,matname,enern,xstaten,
+	    nstate_,istep,&iinc,ithermal,qfn,&mode,&noddiam,trab,inotr,
+	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
+	    mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
+	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
+	    thicke,jobnamec,output);
 	if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
     }
 
@@ -326,12 +341,13 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     if(strcmp1(&filab[1044],"ZZS")==0){
 	neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
     }
-    FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,een,t1,
-         fn,ttime,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
-	 iperturb,ener,mi,output,ithermal,qfn,&mode,&noddiam,
-         trab,inotr,ntrans,orab,ielorien,norien,description,
-	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs,
-	 set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,thicke));
+    frd(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,
+	    kode,filab,een,t1,fn,ttime,epn,ielmat,matname,enern,xstaten,
+	    nstate_,istep,&iinc,ithermal,qfn,&mode,&noddiam,trab,inotr,
+	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
+	    mi,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
+	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
+	    thicke,jobnamec,output);
     if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
     free(inum);FORTRAN(stop,());
 
@@ -352,6 +368,8 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   free(xbounact);free(xforcact);free(xloadact);free(t1act);free(ampli);
   free(xbodyact);if(*nbody>0) free(ipobody);free(xstiff);
+
+  if(iglob==1){free(integerglob);free(doubleglob);}
 
   *icolp=icol;
   *irowp=irow;

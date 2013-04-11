@@ -76,6 +76,12 @@ c      shp(4,4)=4.d0*shp(3,4)-2.d0*shp(3,1)+shp(3,2)-2.d0*shp(3,3)
      & pslavdual(11,ns)*shp(3,3)+pslavdual(12,ns)*shp(3,4)
       shp(4,4)=pslavdual(13,ns)*shp(3,1)+pslavdual(14,ns)*shp(3,2)+
      & pslavdual(15,ns)*shp(3,3)+pslavdual(16,ns)*shp(3,4)
+c       if(ns.eq.214)then
+c        write(*,*)'xi',xi,'et',et 
+c        write(*,*)pslavdual(13,ns),pslavdual(14,ns),
+c     &  pslavdual(15,ns),pslavdual(16,ns)
+c        write(*,*)shp(3,1),shp(3,2),shp(3,3),shp(3,4)
+c       endif
 !
 !     computation of the local derivative of the global coordinates
 !     (xs)

@@ -174,8 +174,9 @@ c         write(30,*) 'resultgas',node,(v(j,node),j=0,2)
             if(dabs(v(3,node)).gt.vama) vama=dabs(v(3,node))
 !
 !        Geometry factor of an ACC tube
+!        for all versions of the ACC tube
 !
-         elseif(lakon(ieg(i))(2:8).eq.'ACCTUBE') then
+         elseif(lakon(ieg(i))(2:7).eq.'ACCTUB') then
             index=ipkon(ieg(i))
             node=kon(index+2)
             if(nactdog(3,node).eq.0) cycle
@@ -687,10 +688,23 @@ c                     bc(ieq)=(ts2+xnum2/xdenom2-ts1-xnum1/xdenom1)
             endif
 !     
 !     mass equation contribution node2
+!     only in the case of an ACCTUBE but not in the case of an ACCTUBO
 !     
-            if (nacteq(1,node2).ne.0) then
-               ieq=nacteq(1,node2)
-               bc(ieq)=bc(ieq)+xflow
+            if(lakon(nelem)(2:8).ne.'ACCTUBE') then
+               if (nacteq(1,node2).ne.0) then
+		  ieq=nacteq(1,node2)
+		  bc(ieq)=bc(ieq)+xflow
+               endif
+            else
+               if (nacteq(1,node2).ne.0) then
+		  if(nelem.ne.prop(ielprop(nelem)+14)) then
+		    ieq=nacteq(1,node2)
+		    bc(ieq)=bc(ieq)+xflow-v(0,nodem)
+		  else
+		    ieq=nacteq(1,node2)
+		    bc(ieq)=bc(ieq)+xflow
+		  endif
+               endif
             endif
          endif
 !     
@@ -735,6 +749,8 @@ c                     bc(ieq)=(ts2+xnum2/xdenom2-ts1-xnum1/xdenom1)
       do i=1,nload
          if(sideload(i)(3:4).eq.'FC') then
             nelem=nelemload(1,i)
+            index=ipkon(nelem)
+            if(index.lt.0) cycle
             lakonl=lakon(nelem)
             node=nelemload(2,i)
             ieq=nacteq(0,node)
@@ -805,12 +821,6 @@ c                     bc(ieq)=(ts2+xnum2/xdenom2-ts1-xnum1/xdenom1)
 !     
 !     connectivity of the element
 !     
-            index=ipkon(nelem)
-            if(index.lt.0) then
-               write(*,*) '*ERROR in resultnet: element ',nelem
-               write(*,*) '       is not defined'
-               stop
-            endif
             do k=1,nope
                konl(k)=kon(index+k)
             enddo

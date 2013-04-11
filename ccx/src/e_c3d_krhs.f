@@ -17,9 +17,9 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine e_c3d_krhs(co,nk,konl,lakonl,ffk,fft,nelem,nmethod,
-     &  rhcon,nrhcon,ielmat,ntmat_,vold,voldcon,dtime,matname,mi,
-     &  shcon,nshcon,voldtu,compressible,yy,nelemface,sideface,nface,
-     &  turbulent,ithermal,ipvar,var,ipvarf,varf)
+     &  rhcon,nrhcon,ielmat,ntmat_,vold,vcon,dtime,matname,mi,
+     &  shcon,nshcon,vcontu,compressible,yy,nelemface,sideface,nface,
+     &  turbulent,ithermal,ipvar,var,ipvarf,varf,dtc)
 !
 !     computation of the turbulence element matrix and rhs for the
 !     element with the topology in konl: step 4
@@ -44,18 +44,17 @@
      &  t(3,3),bfv,press,vel(3),div,shcon(0:3,ntmat_,*),pgauss(3),
      &  xkin,xtuf,voldl(0:mi(2),20),yyl(20),tvk(3),tvt(3),
      &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),tvnk,tvnt,
-     &  om,omx,xi,et,ze,const,xsj,fft(60),dxkin(3),
-     &  temp,voldcon(0:4,*),voldconl(0:4,20),rho,dxtuf(3),
+     &  om,omx,xi,et,ze,const,xsj,fft(60),dxkin(3),dtc(*),
+     &  temp,vcon(0:4,*),vconl(0:4,20),rho,dxtuf(3),
      &  weight,shpv(20),rhokin,rhotuf,y,vort,c1,c2,arg2,f2,
      &  a1,unt,umt,cdktuf,arg1,f1,skin,skin1,skin2,stuf,stuf1,
      &  stuf2,beta,beta1,beta2,betas,gamm,gamm1,xkappa,un,
-     &  gamm2,umsk,umst,tu,tuk,tut,voldtu(2,*),voldtul(2,20),
+     &  gamm2,umsk,umst,tu,tuk,tut,vcontu(2,*),vcontul(2,20),
      &  f1m,yy(*),xsjmodk,xsjmodt,xi3d,et3d,ze3d,xlocal20(3,9,6),
      &  xlocal4(3,1,4),xlocal10(3,3,4),xlocal6(3,1,5),
      &  xlocal15(3,4,5),xlocal8(3,4,6),xlocal8r(3,1,6),var(*),varf(*)
 !
-      real*8 dtime,ttime,time,tvar(2),
-     &  coords(3)
+      real*8 dtime,ttime,time
 !
       include "gauss.f"
       include "xlocal.f"
@@ -76,11 +75,6 @@
      &             2,3,6,5,8,15,11,14,
      &             4,6,3,1,12,15,9,13/),(/8,5/))
       iflag=3
-c      data iperm /13,14,-15,16,17,-18,19,20,-21,22,23,-24,
-c     &            1,2,-3,4,5,-6,7,8,-9,10,11,-12,
-c     &            37,38,-39,40,41,-42,43,44,-45,46,47,-48,
-c     &            25,26,-27,28,29,-30,31,32,-33,34,35,-36,
-c     &            49,50,-51,52,53,-54,55,56,-57,58,59,-60/
 !
 !     turbulence constants
 !
@@ -100,57 +94,33 @@ c      skin1=0.85d0
       gamm1=beta1/betas-stuf1*xkappa*xkappa/dsqrt(betas)
       gamm2=beta2/betas-stuf2*xkappa*xkappa/dsqrt(betas)
 !
-      tvar(1)=time
-      tvar(2)=ttime+dtime
-!
       imat=ielmat(1,nelem)
       amat=matname(imat)
 !
-      if(lakonl(4:4).eq.'2') then
-         nope=20
-         nopes=8
-      elseif(lakonl(4:4).eq.'8') then
-         nope=8
-         nopes=4
-      elseif(lakonl(4:5).eq.'10') then
-         nope=10
-         nopes=6
-      elseif(lakonl(4:4).eq.'4') then
+      if(lakonl(4:4).eq.'4') then
          nope=4
-         nopes=3
-      elseif(lakonl(4:5).eq.'15') then
-         nope=15
+         mint3d=1
       elseif(lakonl(4:4).eq.'6') then
          nope=6
-      endif
-!
-      if(lakonl(4:5).eq.'8R') then
-         mint2d=1
-         mint3d=1
-      elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) then
-         if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'S').or.
-     &        (lakonl(7:7).eq.'E')) then
-            mint2d=2
-            mint3d=4
-         else
-            mint2d=4
-            mint3d=8
-         endif
-      elseif(lakonl(4:4).eq.'2') then
-         mint2d=9
-         mint3d=27
-      elseif(lakonl(4:5).eq.'10') then
-         mint2d=3
-         mint3d=4
-      elseif(lakonl(4:4).eq.'4') then
-         mint2d=1
-         mint3d=1
-      elseif(lakonl(4:5).eq.'15') then
-         mint3d=9
-      elseif(lakonl(4:5).eq.'6 ') then
          mint3d=2
-      elseif(lakonl(4:5).eq.'6R') then
+      elseif(lakonl(4:5).eq.'8R') then
+         nope=8
          mint3d=1
+      elseif(lakonl(4:4).eq.'8') then
+         nope=8
+         mint3d=8
+      elseif(lakonl(4:5).eq.'10') then
+         nope=10
+         mint3d=4
+      elseif(lakonl(4:5).eq.'15') then
+         nope=15
+         mint3d=9
+      elseif(lakonl(4:6).eq.'20R') then
+         nope=20
+         mint3d=8
+      elseif(lakonl(4:4).eq.'2') then
+         nope=20
+         mint3d=27
       else
          mint3d=0
       endif
@@ -162,12 +132,12 @@ c      skin1=0.85d0
          fft(i)=0.d0
       enddo
 !
-!     temperature, velocity and auxiliary variables
+!     temperature, velocity and conservative variables
 !     (rho*energy density, rho*velocity and rho)
 !
          do i1=1,nope
-            voldtul(1,i1)=voldtu(1,konl(i1))
-            voldtul(2,i1)=voldtu(2,konl(i1))
+            vcontul(1,i1)=vcontu(1,konl(i1))
+            vcontul(2,i1)=vcontu(2,konl(i1))
          enddo
 !
 !     computation of the matrix: loop over the Gauss points
@@ -225,8 +195,8 @@ c      skin1=0.85d0
          do i1=1,nope
          enddo
          do i1=1,nope
-            rhokin=rhokin+shpv(i1)*voldtul(1,i1)
-            rhotuf=rhotuf+shpv(i1)*voldtul(2,i1)
+            rhokin=rhokin+shpv(i1)*vcontul(1,i1)
+            rhotuf=rhotuf+shpv(i1)*vcontul(2,i1)
          enddo
 !     
 !     material data (density and dynamic viscosity)
@@ -251,8 +221,8 @@ c      skin1=0.85d0
             enddo
             do i1=1,nope
                do j1=1,3
-                  dxkin(j1)=dxkin(j1)+shp(j1,i1)*voldtul(1,i1)
-                  dxtuf(j1)=dxtuf(j1)+shp(j1,i1)*voldtul(2,i1)
+                  dxkin(j1)=dxkin(j1)+shp(j1,i1)*vcontul(1,i1)
+                  dxtuf(j1)=dxtuf(j1)+shp(j1,i1)*vcontul(2,i1)
                enddo
             enddo
             do j1=1,3
@@ -269,8 +239,8 @@ c      skin1=0.85d0
             enddo
             do i1=1,nope
                do j1=1,3
-                  dxkin(j1)=dxkin(j1)+shp(j1,i1)*voldtul(1,i1)
-                  dxtuf(j1)=dxtuf(j1)+shp(j1,i1)*voldtul(2,i1)
+                  dxkin(j1)=dxkin(j1)+shp(j1,i1)*vcontul(1,i1)
+                  dxtuf(j1)=dxtuf(j1)+shp(j1,i1)*vcontul(2,i1)
                enddo
             enddo
             do j1=1,3
@@ -345,14 +315,20 @@ c
          tu=var(index+13)
          index=index+13
 !
-         tuk=tu-betas*rho*xtuf*xkin
-         tut=gamm*tu/unt-beta*rho*xtuf*xtuf+2.d0*f1m*rho*stuf2*
+         tuk=rho*(unt*tu-betas*xtuf*xkin)
+         tut=rho*(gamm*tu-beta*xtuf*xtuf+2.d0*f1m*stuf2*
      &       (dxkin(1)*dxtuf(1)+dxkin(2)*dxtuf(2)+dxkin(3)*dxtuf(3))/
-     &       xtuf
-c
-c        modified source terms
-c
-c         tuk=tu-betas*rho*xtuf*xkin
+     &       xtuf)
+c         write(*,*) 'e_c3d_krhs1',nelem,rho*unt*tu,rho*betas*xtuf*xkin,
+c     &          tuk
+c         write(*,*) 'e_c3d_krhs2',nelem,rho*gamm*tu,
+c     &       rho*beta*xtuf*xtuf+2.d0*f1m*stuf2*
+c     &       (dxkin(1)*dxtuf(1)+dxkin(2)*dxtuf(2)+dxkin(3)*dxtuf(3))/
+c     &       xtuf,tut
+!
+!        modified source terms
+!
+c         tuk=tu
 c         tut=gamm*tu/unt+2.d0*f1m*rho*stuf2*
 c     &       (dxkin(1)*dxtuf(1)+dxkin(2)*dxtuf(2)+dxkin(3)*dxtuf(3))/
 c     &       xtuf
@@ -361,19 +337,17 @@ c     &       xtuf
             dxkin(i1)=dxkin(i1)*umsk
             dxtuf(i1)=dxtuf(i1)*umst
          enddo
-c         write(*,*) 'e_c3d_krhs rhokin,tuk ',rhokin,tuk
-c         write(*,*) 'e_c3d_krhs rhotuf,tut ',rhotuf,tut
-c         write(*,*) 'e_c3d_krhs dxkin',dxkin(1),dxkin(2),dxkin(3)
-c         write(*,*) 'e_c3d_krhs dxtuf',dxtuf(1),dxtuf(2),dxtuf(3)
 !     
 !     determination of lhs and rhs
 !     
          do jj=1,nope
 !     
-            ffk(jj)=ffk(jj)-xsjmod*((shp(4,jj)+dtime*shpv(jj)/2.d0)*
+            ffk(jj)=ffk(jj)-
+     %           xsjmod*((shp(4,jj)+dtc(konl(jj))*shpv(jj)/2.d0)*
      &           (rhokin-tuk)+(shp(1,jj)*dxkin(1)+shp(2,jj)*dxkin(2)
      &              +shp(3,jj)*dxkin(3)))
-            fft(jj)=fft(jj)-xsjmod*((shp(4,jj)+dtime*shpv(jj)/2.d0)*
+            fft(jj)=fft(jj)-
+     %           xsjmod*((shp(4,jj)+dtc(konl(jj))*shpv(jj)/2.d0)*
      &           (rhotuf-tut)+(shp(1,jj)*dxtuf(1)+shp(2,jj)*dxtuf(2)
      &              +shp(3,jj)*dxtuf(3)))
          enddo
@@ -385,50 +359,51 @@ c         write(*,*) 'e_c3d_krhs dxtuf',dxtuf(1),dxtuf(2),dxtuf(3)
 !     
 !        free stream or solid surface boundaries
 !     
+         nopes=0
          call nident(nelemface,nelem,nface,idf)
          do
             if((idf.eq.0).or.(nelemface(idf).ne.nelem)) exit
             read(sideface(idf)(1:1),'(i1)') ig
 !     
-!     treatment of wedge faces
-!     
+            if(nopes.eq.0) then
+               if(lakonl(4:4).eq.'4') then
+                  nopes=3
+                  mint2d=1
+               elseif(lakonl(4:4).eq.'6') then
+                  mint2d=1
+               elseif(lakonl(4:5).eq.'8R') then
+                  nopes=4
+                  mint2d=1
+               elseif(lakonl(4:4).eq.'8') then
+                  nopes=4
+                  mint2d=4
+               elseif(lakonl(4:5).eq.'10') then
+                  nopes=6
+                  mint2d=3
+               elseif(lakonl(4:6).eq.'20R') then
+                  nopes=8
+                  mint2d=4
+               elseif(lakonl(4:4).eq.'2') then
+                  nopes=8
+                  mint2d=9
+               endif
+            endif
+!
             if(lakonl(4:4).eq.'6') then
-               mint2d=1
                if(ig.le.2) then
                   nopes=3
                else
                   nopes=4
                endif
-            endif
-            if(lakonl(4:5).eq.'15') then
+            elseif(lakonl(4:5).eq.'15') then
                if(ig.le.2) then
-                  mint2d=3
                   nopes=6
+                  mint2d=3
                else
-                  mint2d=4
                   nopes=8
+                  mint2d=4
                endif
             endif
-!     
-c            if((nope.eq.20).or.(nope.eq.8)) then
-c               do i=1,nopes
-c                  do j=1,3
-c                     xl2(j,i)=co(j,konl(ifaceq(i,ig)))
-c                  enddo
-c               enddo
-c            elseif((nope.eq.10).or.(nope.eq.4)) then
-c               do i=1,nopes
-c                  do j=1,3
-c                     xl2(j,i)=co(j,konl(ifacet(i,ig)))
-c                  enddo
-c               enddo
-c            else
-c               do i=1,nopes
-c                  do j=1,3
-c                     xl2(j,i)=co(j,konl(ifacew(i,ig)))
-c                  enddo
-c               enddo
-c            endif
 !     
             do i=1,mint2d
 !     
@@ -498,8 +473,8 @@ c            endif
                enddo
                do i1=1,nope
                   do j1=1,3
-                     dxkin(j1)=dxkin(j1)+shp(j1,i1)*voldtul(1,i1)
-                     dxtuf(j1)=dxtuf(j1)+shp(j1,i1)*voldtul(2,i1)
+                     dxkin(j1)=dxkin(j1)+shp(j1,i1)*vcontul(1,i1)
+                     dxtuf(j1)=dxtuf(j1)+shp(j1,i1)*vcontul(2,i1)
                   enddo
                enddo
                do j1=1,3

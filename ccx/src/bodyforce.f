@@ -40,7 +40,7 @@
          if(ipobody(1,l).eq.0) then
             ipobody(1,l)=k
          else
-c
+!
             index=l
             do
                if(ipobody(1,index).eq.k) exit
@@ -53,10 +53,6 @@ c
                endif
                index=ipobody(2,index)
             enddo
-c            ipobody(2,ifreebody)=ipobody(2,l)
-c            ipobody(2,l)=ifreebody
-c            ipobody(1,ifreebody)=k
-c            ifreebody=ifreebody+1
          endif
          return
       endif
@@ -73,7 +69,7 @@ c            ifreebody=ifreebody+1
             if(ipobody(1,l).eq.0) then
                ipobody(1,l)=k
             else
-c
+!
                index=l
                do
                   if(ipobody(1,index).eq.k) exit
@@ -86,10 +82,6 @@ c
                   endif
                   index=ipobody(2,index)
                enddo
-c               ipobody(2,ifreebody)=ipobody(2,l)
-c               ipobody(2,l)=ifreebody
-c               ipobody(1,ifreebody)=k
-c               ifreebody=ifreebody+1
             endif
          else
             l=ialset(j-2)
@@ -99,7 +91,7 @@ c               ifreebody=ifreebody+1
                if(ipobody(1,l).eq.0) then
                   ipobody(1,l)=k
                else
-c
+!
                   index=l
                   do
                      if(ipobody(1,index).eq.k) exit
@@ -112,10 +104,6 @@ c
                      endif
                      index=ipobody(2,index)
                   enddo
-c                  ipobody(2,ifreebody)=ipobody(2,l)
-c                  ipobody(2,l)=ifreebody
-c                  ipobody(1,ifreebody)=k
-c                  ifreebody=ifreebody+1
                endif
             enddo
          endif

@@ -196,6 +196,18 @@
             else
                jsector=isector
             endif
+            if(isector.ne.0) then
+               if(ntrans.ne.0) then
+                  if(inotr(1,l).ne.0) then
+                     write(*,*) '*ERROR in cloads: in node ',l
+                     write(*,*) '       a force is applied in a local'
+                     write(*,*) '       coordinate system in a sector'
+                     write(*,*) '       different from the basis sector'
+                     write(*,*) '       this is not allowed'
+                     stop
+                  endif
+               endif
+            endif
             call forcadd(l,iforcdir,forcval,nodeforc,ndirforc,xforc,
      &        nforc,nforc_,iamforc,iamplitude,nam,ntrans,trab,inotr,co,
      &        ikforc,ilforc,jsector,add,user)
@@ -222,6 +234,21 @@
                   else
                      jsector=isector
                   endif
+                  if(isector.ne.0) then
+                     if(ntrans.ne.0) then
+                        if(inotr(1,k).ne.0) then
+                           write(*,*) '*ERROR in cloads: in node ',k
+                           write(*,*) 
+     &                      '       a force is applied in a local'
+                           write(*,*) 
+     &                      '       coordinate system in a sector'
+                           write(*,*)
+     &                      '       different from the basis sector'
+                           write(*,*) '       this is not allowed'
+                           stop
+                        endif
+                     endif
+                  endif
                   call forcadd(k,iforcdir,forcval,
      &               nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &               iamplitude,nam,ntrans,trab,inotr,co,ikforc,ilforc,
@@ -235,6 +262,21 @@
                         jsector=isector+maxsectors
                      else
                         jsector=isector
+                     endif
+                     if(isector.ne.0) then
+                        if(ntrans.ne.0) then
+                           if(inotr(1,k).ne.0) then
+                              write(*,*) '*ERROR in cloads: in node ',k
+                              write(*,*) 
+     &                         '       a force is applied in a local'
+                              write(*,*) 
+     &                         '       coordinate system in a sector'
+                              write(*,*) 
+     &                         '       different from the basis sector'
+                              write(*,*) '       this is not allowed'
+                              stop
+                           endif
+                        endif
                      endif
                      call forcadd(k,iforcdir,forcval,
      &                 nodeforc,ndirforc,xforc,nforc,nforc_,

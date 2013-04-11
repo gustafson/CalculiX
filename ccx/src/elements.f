@@ -120,7 +120,7 @@
 !
 !           removing the ABAQUS label for heat transfer elements
 !
-            if(label(1:2).eq.'DC') then
+            if((label(1:2).eq.'DC').and.(label(1:7).ne.'DCOUP3D')) then
                label(1:7)=label(2:8)
                label(8:8)=' '
             endif
@@ -140,16 +140,31 @@
 !
      &         (label.eq.'C3D20R  ').or.
      &         (label.eq.'C3D20RI ').or.
-     &         (label.eq.'C3D8    ').or.
      &         (label.eq.'CPE8R   ').or.
      &         (label.eq.'CPS8R   ').or.
      &         (label.eq.'CAX8R   ').or.
      &         (label.eq.'S8R     ').or.
      &         (label.eq.'B32R    ').or.
 !
+!           full integration linear hexahedral element
+!           (including such which are expanded into one)
+!
+     &         (label.eq.'C3D8    ').or.
+     &         (label.eq.'CPE4    ').or.
+     &         (label.eq.'CPS4    ').or.
+     &         (label.eq.'CAX4    ').or.
+     &         (label.eq.'S4      ').or.
+     &         (label.eq.'B31     ').or.
+!
 !           reduced integration linear hexahedral element
+!           (including such which are expanded into one)
 !
      &         (label.eq.'C3D8R   ').or.
+     &         (label.eq.'CPE4R   ').or.
+     &         (label.eq.'CPS4R   ').or.
+     &         (label.eq.'CAX4R   ').or.
+     &         (label.eq.'S4R     ').or.
+     &         (label.eq.'B31R    ').or.
 c    Bernhardi start
 c
 c           incompatible modes element
@@ -175,8 +190,13 @@ c    Bernhardi end
      &         (label.eq.'S6      ').or.
 !
 !           linear wedge
+!           (including such which are expanded into one)
 !
      &         (label.eq.'C3D6    ').or.
+     &         (label.eq.'CPE3    ').or.
+     &         (label.eq.'CPS3    ').or.
+     &         (label.eq.'CAX3    ').or.
+     &         (label.eq.'S3      ').or.
 !
 !           gap element
 !
@@ -205,6 +225,10 @@ c    Bernhardi end
      &             (label.eq.'F3D6    ')) then
                cfd=1
 !
+!           distributing coupling element
+!
+            elseif(label(1:7).eq.'DCOUP3D') then
+!
 !           network element
 !
             elseif(label(1:1).eq.'D') then
@@ -219,7 +243,10 @@ c    Bernhardi end
                iaxial=180
             elseif((label(1:3).eq.'B32').or.
      &             (label(1:2).eq.'S6').or.
-     &             (label(1:2).eq.'S8')) then
+     &             (label(1:2).eq.'S8').or.
+     &             (label(1:3).eq.'B31').or.
+     &             (label(1:2).eq.'S3').or.
+     &             (label(1:2).eq.'S4')) then
                beamshell=.true.
             endif
 !
@@ -259,12 +286,28 @@ c     Bernhardi end
      &        (label(1:4).eq.'CAX6').or.(label(1:2).eq.'S6')) then
          nope=6
          nopeexp=21
-      elseif(label(1:1).eq.'B') then
+      elseif(label(1:3).eq.'B32') then
          nope=3
          nopeexp=23
+      elseif(label(1:4).eq.'B31 ') then
+         nope=2
+!        expanded into C3D8I: 11 nodes per element
+         nopeexp=13
+      elseif(label(1:4).eq.'B31R') then
+         nope=2
+         nopeexp=10
       elseif(label(4:4).eq.'8') then
          nope=8
          nopeexp=8
+      elseif((label(1:5).eq.'CPE4 ').or.(label(1:5).eq.'CPS4 ').or.
+     &        (label(1:5).eq.'CAX4 ').or.(label(1:3).eq.'S4 ')) then
+         nope=4
+!        expanded into C3D8I: 11 nodes per element
+         nopeexp=15
+      elseif((label(1:4).eq.'CPE4').or.(label(1:4).eq.'CPS4').or.
+     &        (label(1:4).eq.'CAX4').or.(label(1:2).eq.'S4')) then
+         nope=4
+         nopeexp=12
       elseif(label(4:5).eq.'10') then
          nope=10
          nopeexp=10
@@ -277,10 +320,17 @@ c     Bernhardi end
       elseif(label(4:4).eq.'6') then
          nope=6
          nopeexp=6
+      elseif((label(1:4).eq.'CPE3').or.(label(1:4).eq.'CPS3').or.
+     &        (label(1:4).eq.'CAX3').or.(label(1:2).eq.'S3')) then
+         nope=3
+         nopeexp=9
       elseif(label(1:8).eq.'DASHPOTA') then
          label='EDSHPTA2'
          nope=2
          nopeexp=2
+      elseif(label(1:7).eq.'DCOUP3D') then
+         nope=1
+         nopeexp=1
       elseif(label(1:1).eq.'D') then
          nope=3
          nopeexp=3
@@ -332,7 +382,7 @@ c     Bernhardi end
 !
          nkon=nkon+nopeexp
 !
-         do j=2,n
+         do j=2,min(n,nope+1)
             read(textpart(j)(1:10),'(i10)',iostat=istat) kon(indexe+j-1)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          enddo

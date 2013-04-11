@@ -17,8 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine frdfluid(co,nk,kon,ipkon,lakon,ne,v,vold,
-     &  kode,time,ielmat,matname,nnstep,vtu,voldtu,voldcon,
-     &  physcon,filab,inomat,ntrans,inotr,trab,mi,stn)
+     &  kode,time,ielmat,matname,nnstep,vtu,vcontu,vcon,
+     &  physcon,filab,inomat,ntrans,inotr,trab,mi,stn,qfn)
 !
 !     stores the results in frd format
 !
@@ -38,8 +38,8 @@
      &  one,ielmat(mi(3),*),null,nnstep,inotr(2,*),ntrans,nout
 !
       real*8 co(3,*),v(0:mi(2),*),time,vold(0:mi(2),*),vtu(2,*),
-     &  voldtu(2,*),stn(6,*),
-     &  pi,oner,voldcon(0:4,*),physcon(*),trab(7,*),a(3,3)
+     &  vcontu(2,*),stn(6,*),qfn(3,*),pi,oner,vcon(0:4,*),physcon(*),
+     &  trab(7,*),a(3,3)
 !
       save nout
 !
@@ -580,6 +580,38 @@
          write(7,'(a3)') m3
       endif
 !
+!     storing the heat flux in the nodes
+!
+      if(filab(9)(1:4).eq.'HFL ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(7,'(a132)') text
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(25:36),'(i12)') nout
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(7,'(a132)') text
+         text=' -4  FLUX        4    1'
+         write(7,'(a132)') text
+         text=' -5  F1          1    2    1    0'
+         write(7,'(a132)') text
+         text=' -5  F2          1    2    2    0'
+         write(7,'(a132)') text
+         text=' -5  F3          1    2    3    0'
+         write(7,'(a132)') text
+         text=' -5  ALL         1    2    0    0    1ALL'
+         write(7,'(a132)') text
+         do i=1,nk
+            if(inomat(i).le.0) cycle
+            write(7,100) m1,i,(qfn(j,i),j=1,3)
+         enddo
+         write(7,'(a3)') m3
+      endif
+!
       if(filab(24)(1:4).eq.'CP  ') then
          text='    1PSTEP'
          write(text(25:36),'(i12)') kode
@@ -629,7 +661,7 @@
 !
          do i=1,nk
             if(inomat(i).le.0) cycle
-            write(7,100) m1,i,voldtu(1,i),voldtu(1,i)/voldtu(2,i)
+            write(7,100) m1,i,vcontu(1,i),vcontu(2,i)
          enddo
 !
          write(7,'(a3)') m3

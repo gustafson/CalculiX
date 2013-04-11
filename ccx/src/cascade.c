@@ -92,7 +92,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
     nodempc=*nodempcp;
     coefmpc=*coefmpcp;
     
-    /*   for(i=0;i<*nmpc;i++){
+    /*      for(i=0;i<*nmpc;i++){
 	j=i+1;
 	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
 	}*/

@@ -24,15 +24,16 @@ void reloadcontact(char *lakon, int *ipkon, int *kon,
 	       int **nelemloadp, char **sideloadp, int **iamloadp, 
 	       double **xloadp, int *nload, int *ne, double *t1,
 	       int *iamt1, int *nam, int *ithermal, double *vold,
-               int *mi){
+	       int *mi, double **xloadoldp){
 
   char *sideload=NULL;
 
   int *nelemload=NULL,*iamload=NULL;
 
-  double *xload=NULL;
+  double *xload=NULL,*xloadold=NULL;
 
   nelemload=*nelemloadp;sideload=*sideloadp;iamload=*iamloadp;xload=*xloadp;
+  xloadold=*xloadoldp;
   
   /* reallocating the fields for distributed loading */
   
@@ -42,16 +43,19 @@ void reloadcontact(char *lakon, int *ipkon, int *kon,
   RENEW(sideload,char,20**nload*5);
   if(*nam>0) RENEW(iamload,int,2**nload*5);
   RENEW(xload,double,2**nload*5);
+  RENEW(xloadold,double,2**nload*5);
 
   FORTRAN(remeshload,(ipkon,kon,lakon,nelemload,sideload,iamload,xload,
-          nload,ne,t1,iamt1,nam,ithermal,vold,mi));
+		      nload,ne,t1,iamt1,nam,ithermal,vold,mi,xloadold));
 
+  RENEW(xloadold,double,2**nload);
 /*  RENEW(nelemload,int,2**nload);
   RENEW(sideload,char,20**nload);
   RENEW(iamload,int,2**nload);
   RENEW(xload,double,2**nload);*/
 
   *nelemloadp=nelemload;*sideloadp=sideload;*iamloadp=iamload;*xloadp=xload;
+  *xloadoldp=xloadold;
 
   return;
 }

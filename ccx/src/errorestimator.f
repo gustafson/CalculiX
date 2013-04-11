@@ -466,6 +466,9 @@ c         endif
             else
                yn(3,i)=0.d0
             endif
+         else
+            yn(3,i)=0.d0
+            yn(5,i)=0.d0
          endif
          yn(1,i)=0.d0
          yn(2,i)=0.d0
@@ -499,7 +502,7 @@ c         endif
             endif
          endif
 !
-         if(lakonl(4:6).eq.'20') then
+         if(lakonl(4:5).eq.'20') then
             if(lakonl(7:8).ne.'LC') then
                do j=9,20
                   do k=3,5,2

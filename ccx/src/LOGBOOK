@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 2.4
+LOG-BOOK Version 2.5
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -1942,3 +1942,141 @@ Dec 2002        - started to work on single crystal plasticity
 26 Nov 2011    - no creep in a *STATIC step. Use *VISCO instead
 
 1 Dec 2011     - replaced CCX_NPROC by OMP_NUM_THREADS
+
+7 Dec 2011     - introduced field emeini for umat user routines
+
+10 Dec 2011    - corrected some errors in remeshcontact.c and 
+                 remeshcontactel.f
+
+17 Dec 2011    - made some corrections for the storage of contact variables
+                 in the .dat file for modal dynamic calculations
+               - changed k and ipoint into long long in matrixstorage.c
+
+22 Dec 2011    - corrections to modal dynamics + contact friction
+               - correction to multithreading
+
+2 Jan 2012     - worked on tension-only materials
+
+12 Jan 2012    - changed calculation of initial temperatures in initialnet.f
+
+16 Jan 2012    - changed e11.4 into e13.6 in all printout*.f files
+
+22 Jan 2012    - started change in contact: consistent derivation of
+                 the continuous normal
+
+28 Jan 2012    - corrected an error in checkconvergence.c and springstiff.f
+
+5 Feb 2012     - contact: changed continuous normal back to mathematically
+                 correct normal
+
+8 Feb 2012     - corrected an error in nonlingeo.c (emeini)
+
+19 Feb 2012    - updated Mortar contact (without friction)
+
+25 Feb 2012    - changed the format of the .frd file into a mixture of
+                 ASCII and binary information in case *NODE OUTPUT or 
+                 *ELEMENT OUTPUT is used.
+
+4 Mar 2012     - changed format for node and element number in the .dat
+                 file to i10 (from i6)
+
+10 Mar 2012    - made some changes in createmddof.f and cycsymmods.f
+
+12 Mar 2012    - corrections in steadystate.c and rectcylvi.f
+
+13 Mar 2012    - N on the *CYCLIC SYMMETRY MODEL card is compared with the
+                 angle based on the geometry.
+               - extrapolation of the network mass flow to the end nodes
+                 is done in radflowload -> can be used as boundary condition
+                 in a subsequent thermomechanical structural calculation
+                 (determination of the heat transfer coefficients)
+
+18 Mar 2012    - corrected an error in dyna.c (several steps with
+                 restricted output -> initial conditions in subsequent
+                 step for ALL nodes)
+
+23 Mar 2012    - introduced a random error of 0.1 % in gen3dfrom1d.f in
+                 order to get rid of hourglassing in beam elements.
+
+26 Mar 2012    - removed change from 23 March.
+               - started to code the expansion of linear shells, beams,
+                 axisymmetric, plane stress and plane strain elements
+
+10 Apr 2012    - removed an error in nonlingeo.c
+               - additional option for calculating viewfactors only
+
+19 Apr 2012    - change in triangulate: now several faces belonging to one
+                 and the same element may belong to the master surface
+                 of a cyclic symmetry tie
+
+22 Apr 2012    - corrected an error in compfluid.c: instationary 
+                 incompressible flow works (Couette)
+
+29 Apr 2012    - introduced larger time step for the stability terms
+                 for incompressible fluid calculations
+
+1 Mai 2012     - removed call to applybounv in between mafillv1rhs and
+                 mafillv2rhs
+
+5 Mai 2012     - started to change the application of boundary conditions
+                 for incompressible fluids
+
+10 Mai 2012    - made a change in e_c3d.f for contact springs:
+                 important in the first iteration for given 
+                 displacements
+
+11 Mai 2012    - change in springstiff and springforc: Coulomb friction
+                 is only taken into account for dynamic calculations
+                 (linear and nonlinear) and geometrically nonlinear
+                 static calculations
+
+14 Mai 2012    - changed applyboun.f to include boundary conditions for
+                 the turbulent variables
+
+23 Mai 2012    - corrected small errors (for thermal calculations)
+
+24 Mai 2012    - accelerated some CFD-routines
+
+29 Mai 2012    - made a change in gen3dboun.f and flowresult.f
+
+30 Mai 2012    - updated Mortar contact
+
+3 June 2012    - CFD: MPC's are updated between step 1 and step 2:
+                 necessary for cyclic symmetry calculations
+
+14 June 2012   - started to work on submodels
+
+27 June 2012   - continued work on submodels
+
+5 July 2012    - started work on automatic cyclic symmetry
+                 conditions for CFD
+               - submodels seem to work
+
+18 July 2012   - step time is taken into account for linear calculations
+                 (amplitude definitions)
+               - corrected an error in thermal contact
+ 
+23 July 2012   - changed the order of the last line in field ifacew1 and
+                 ifacew2
+
+28 July 2012   - made some corrections in frd.c
+               - include modifications by Stefanie Asenbauer
+
+4 Aug 2012     - modified plastic routines (*VISCO)
+               - adjustment in e_c3d.f for submodes with nlgeom
+
+7 Aug 2012     - made a correction in remeshcontactel.f for elements with
+                 more than one face belonging to a slave or master
+                 contact surface
+
+6 Sept 2012    - corrected an error in remeshsurf.f
+
+13 Sept 2012   - inserted cgx reading routines for binary frd files
+                 (submodel applications)
+               - allowed for contact calculations with linear strains
+                 (NLGEOM is not automatically activated for contact)
+               - allowed for storage of the triangulation of the master
+                 surfaces for cyclic symmetry, contact and tied contact
+
+ 29 Sept 2012  - corrected errors pointed out by valgrind while running
+                 the test examples

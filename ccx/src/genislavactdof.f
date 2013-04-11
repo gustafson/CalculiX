@@ -34,17 +34,21 @@
 !     
 !     close the contact.fbd file
 !
+      close(20)
+      close(30)
       close(40)
 !
       do i=1,ntie
          do j = nslavnode(i)+1,nslavnode(i+1)
             node=islavnode(j)
-            if(islavact(j).eq.1) then
+            if(islavact(j).gt.-1) then
                do k=1,3
                   if (nactdof(k,node).eq.0) cycle
                   islavactdof(nactdof(k,node))=10*j+k
+c                  if(j.eq.28)write(*,*)'dof',
+c     &            nactdof(k,node),'v',islavactdof(nactdof(k,node))
                enddo
-            endif
+            endif         
          enddo
       enddo
 !

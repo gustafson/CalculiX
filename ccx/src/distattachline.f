@@ -95,11 +95,11 @@
 c      a=(pnode(1)-p(1))**2+(pnode(2)-p(2))**2+(pnode(3)-p(3))**2
       coeff=0.0
       do i=1,3
-      coeff=coeff+xn(i)*(p(i)-pnode(i))
+         coeff=coeff+xn(i)*(p(i)-pnode(i))
       enddo
-      a=(p(1)-pnode(1)+coeff*xn(1))**2+(p(2)-pnode(2)+
-     & coeff*xn(2))**2+(p(3)-pnode(3)+coeff*xn(3))**2
-!
+      a=(p(1)-pnode(1)-coeff*xn(1))**2+(p(2)-pnode(2)-
+     &     coeff*xn(2))**2+(p(3)-pnode(3)-coeff*xn(3))**2
+!     
       return
       end
       

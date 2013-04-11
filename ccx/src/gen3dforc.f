@@ -29,7 +29,7 @@
 !
       implicit none
 !
-      logical add,fixed,user
+      logical add,fixed,user,quadratic
 !
       character*1 type,typeboun(*)
       character*8 lakon(*)
@@ -88,6 +88,16 @@
             cycle
          endif
          ielem=inoel(1,index)
+!
+!        checking whether element is linear or quardratic
+!
+         if((lakon(ielem)(4:4).eq.'6').or.
+     &      (lakon(ielem)(4:4).eq.'8')) then
+            quadratic=.false.
+         else
+            quadratic=.true.
+         endif
+!
          j=inoel(2,index)
          indexe=ipkon(ielem)
          indexk=iponor(2,indexe+j)
@@ -433,7 +443,7 @@
                cycle
             endif
 !
-!                    2d element shell element: generate MPC's
+!           2d shell element: generate MPC's
 !
             if(lakon(ielem)(7:7).eq.'L') then
                newnode=knor(indexk+1)
@@ -462,7 +472,7 @@
 !
                   nodempc(1,mpcfree)=newnode
                   nodempc(2,mpcfree)=idir
-                  if(j.gt.4) then
+                  if((j.gt.4).or.(.not.quadratic)) then
                      coefmpc(mpcfree)=1.d0
                   else
                      coefmpc(mpcfree)=-1.d0
@@ -474,7 +484,7 @@
                      stop
                   endif
 !
-                  if(j.le.4) then
+                  if((j.le.4).and.(quadratic)) then
                      nodempc(1,mpcfree)=knor(indexk+2)
                      nodempc(2,mpcfree)=idir
                      coefmpc(mpcfree)=4.d0
@@ -488,7 +498,7 @@
 !
                   nodempc(1,mpcfree)=knor(indexk+3)
                   nodempc(2,mpcfree)=idir
-                  if(j.gt.4) then
+                  if((j.gt.4).or.(.not.quadratic)) then
                      coefmpc(mpcfree)=1.d0
                   else
                      coefmpc(mpcfree)=-1.d0
@@ -599,6 +609,12 @@ c                  endif
 !
                node=knor(indexk+2)
                val=xforc(i)
+!
+!              next statement seems to be needed for linear elements
+!              it is not quite clear why
+!
+               if(.not.quadratic)val=val/2.d0
+!
                call forcadd(node,idir,val,nodeforc,
      &              ndirforc,xforc,nforc,nforc_,iamforc,
      &              iamplitude,nam,ntrans,trab,inotr,co,

@@ -72,7 +72,7 @@
       enddo
 !
 !     interpolating the total temperature, total pressure
-!     and static temperature; changing the sign of inum
+!     and static temperature;
 !
       do i=1,ne
 !

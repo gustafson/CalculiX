@@ -20,7 +20,7 @@
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,
      &  b,nactdoh,icolv,jqv,irowv,neqv,nzlv,nmethod,ikmpc,ilmpc,ikboun,
      &  ilboun,vold,nzsv,dtl,v,theta2,iexplicit,nea,neb,mi,dtimef,
-     &  ipvar,var,ipvarf,varf)
+     &  ipvar,var,ipvarf,varf,dtc)
 !
 !     filling the rhs b of the velocity equations (step 3)
 !
@@ -37,7 +37,7 @@
      &  id,ist,index,jdof1,idof1,iexplicit,node1,kflag,indexe,nope,i0
 !
       real*8 co(3,*),xboun(*),coefmpc(*),b(*),v(0:mi(2),*),theta2,
-     &  vold(0:mi(2),*),ff(60),dtimef,dtl(*),var(*),varf(*)
+     &  vold(0:mi(2),*),ff(60),dtimef,dtl(*),var(*),varf(*),dtc(*)
 !
       kflag=2
       i0=0
@@ -73,7 +73,7 @@ c        enddo
 !
         call e_c3d_v2rhs(co,nk,kon(indexe+1),lakon(i),
      &          ff,i,nmethod,vold,v,dtimef,theta2,iexplicit,mi,
-     &          ipvar,var,ipvarf,varf)
+     &          ipvar,var,ipvarf,varf,dtc)
 !
         do jj=1,3*nope
 !

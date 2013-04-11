@@ -81,7 +81,7 @@
      &             4,5,6,0,
      &             1,2,5,4,
      &             2,3,6,5,
-     &             4,6,3,1/
+     &             3,1,4,6/
 !
 !     nodes per face for quadratic wedge elements
 !
@@ -89,7 +89,7 @@
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
-     &             4,6,3,1,12,15,9,13/
+     &             3,1,4,6,9,13,12,15/
 !
 !     flag for shape functions
 !
@@ -107,7 +107,6 @@
 !    
       if(filab(1)(3:3).eq.'C') then
          if((istep.eq.istep0).and.(iinc.eq.iinc0)) then
-            open(27,file=cfile,status='unknown',position='append')
             iteller=iteller+1
          else
             istep0=istep
@@ -119,13 +118,16 @@
 !
          if(iteller.eq.1) then
             do i=1,999
-               cfile(1:33)='CONTACT_ELEMENTS_IN_ITERATION_   '
+               cfile(1:26)='ContactElementsInIteration'
                if(i.lt.10) then
-                  write(cfile(31:31),'(i1)') i
+                  write(cfile(27:27),'(i1)') i
+                  cfile(28:33)='.inp  '
                elseif(i.lt.100) then
-                  write(cfile(31:32),'(i2)') i
+                  write(cfile(27:28),'(i2)') i
+                  cfile(29:33)='.inp '
                elseif(i.lt.1000) then
-                  write(cfile(31:33),'(i3)') i
+                  write(cfile(27:29),'(i3)') i
+                  cfile(30:33)='.inp'
                endif
                inquire(file=cfile,exist=exi)
                if(exi) then
@@ -136,13 +138,16 @@
                endif
             enddo
          endif
-         cfile(1:33)='CONTACT_ELEMENTS_IN_ITERATION_   '
+         cfile(1:26)='ContactElementsInIteration'
          if(iteller.lt.10) then
-            write(cfile(31:31),'(i1)') iteller
+            write(cfile(27:27),'(i1)') iteller
+            cfile(28:33)='.inp  '
          elseif(iteller.lt.100) then
-            write(cfile(31:32),'(i2)') iteller
+            write(cfile(27:28),'(i2)') iteller
+            cfile(29:33)='.inp '
          elseif(iteller.lt.1000) then
-            write(cfile(31:33),'(i3)') iteller
+            write(cfile(27:29),'(i3)') iteller
+            cfile(30:33)='.inp'
          else
             write(*,*) '*ERROR in gencontelem: more than 1000'
             write(*,*) '       contact element files'
@@ -251,6 +256,13 @@ c         if((istep.eq.1).and.(iinc.eq.1).and.(iit.le.0)) then
                   do j=1,3
                      xl2(j,m)=co(j,konl(ifacet(m,jfaces)))+
      &                    vold(j,konl(ifacet(m,jfaces)))
+                  enddo
+               enddo
+            elseif(nope.eq.15) then
+               do m=1,nopes
+                  do j=1,3
+                     xl2(j,m)=co(j,konl(ifacew2(m,jfaces)))+
+     &                    vold(j,konl(ifacew2(m,jfaces)))
                   enddo
                enddo
             else
@@ -375,7 +387,13 @@ c         if((istep.eq.1).and.(iinc.eq.1).and.(iit.le.0)) then
      &                    straight(ll+3,itri)
 c                     if(dist.gt.0.d0) then
 c                     if(dist.gt.1.d-6) then
-                     if(dist.gt.1.d-6*dsqrt(area)) then
+!
+!                    1.d-6 was increased to 1.d-3 on 19/04/2012
+!                    this is important for 2d-calculations or
+!                    calculations for which structures fit exactly
+!                    at their boundaries
+!
+                     if(dist.gt.1.d-3*dsqrt(area)) then
                         itrinew=imastop(l,itri)
                         if(itrinew.eq.0) then
 c                           write(*,*) '**border reached'
@@ -473,17 +491,6 @@ c                        c0=1.d-3*dsqrt(area)
                   if(dist.gt.c0) then
                      isol=0
 !
-!                    adjusting the bodies at the start of the
-!                    calculation such that they touch
-!
-c                  elseif((istep.eq.1).and.(iinc.eq.1).and.
-c     &                   (iit.le.0).and.(dist.lt.0.d0).and.
-c     &                   (nmethod.eq.1)) then
-c                     do k=1,3
-c                        vold(k,node)=vold(k,node)-
-c     &                        dist*straight(12+k,itri)
-c                        vini(k,node)=vold(k,node)
-c                    enddo
                   endif
                endif
 !     

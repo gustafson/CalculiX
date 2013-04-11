@@ -18,21 +18,27 @@
 !
       subroutine frequencies(inpc,textpart,nmethod,
      &  mei,fei,iperturb,istep,istat,n,iline,ipol,inl,
-     &  ipoinp,inp,ithermal,isolver,xboun,nboun,ipoinpc)
+     &  ipoinp,inp,ithermal,isolver,xboun,nboun,ipoinpc,
+     &  ipompc,labmpc,fmpc,ikmpc,ilmpc,nmpc)
 !
 !     reading the input deck: *FREQUENCY
 !
       implicit none
 !
+      logical global,cycmpcactive
+!
       character*1 inpc(*)
-      character*20 solver
+      character*20 solver,labmpc(*)
       character*132 textpart(16)
 !
       integer nmethod,mei(4),ncv,mxiter,istep,istat,iperturb(2),i,nboun,
      &  n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),nev,ithermal,isolver,
-     &  ipoinpc(0:*)
+     &  ipoinpc(0:*),nmpcred,kflag,ipompc(*),ikmpc(*),ilmpc(*),nmpc
 !
-      real*8 fei(3),pi,fmin,fmax,tol,xboun(*)
+      real*8 fei(3),pi,fmin,fmax,tol,xboun(*),fmpc(*)
+!
+      global=.true.
+      cycmpcactive=.true.
 !
       pi=4.d0*datan(1.d0)
       mei(4)=0
@@ -76,6 +82,10 @@
             read(textpart(i)(8:27),'(a20)') solver
          elseif(textpart(i)(1:11).eq.'STORAGE=YES') then
             mei(4)=1
+         elseif(textpart(i)(1:9).eq.'GLOBAL=NO') then
+            global=.false.
+         elseif(textpart(i)(1:15).eq.'CYCMPC=INACTIVE') then
+            cycmpcactive=.false.
          else
             write(*,*) 
      &        '*WARNING in frequencies: parameter not recognized:'
@@ -119,40 +129,76 @@
       if(iperturb(1).gt.1) iperturb(1)=0
       iperturb(2)=0
 !
-      call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &     ipoinp,inp,ipoinpc)
-      if((istat.lt.0).or.(key.eq.1)) then
-         write(*,*) '*ERROR in frequencies: definition not complete'
-         write(*,*) '  '
-         call inputerror(inpc,ipoinpc,iline)
-         stop
-      endif
-      read(textpart(1)(1:10),'(i10)',iostat=istat) nev
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-      if(nev.le.0) then
-         write(*,*) '*ERROR in frequencies: less than 1 eigenvalue re
+      if(isolver.ne.6) then
+         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &        ipoinp,inp,ipoinpc)
+         if((istat.lt.0).or.(key.eq.1)) then
+            write(*,*) '*ERROR in frequencies: definition not complete'
+            write(*,*) '  '
+            call inputerror(inpc,ipoinpc,iline)
+            stop
+         endif
+         read(textpart(1)(1:10),'(i10)',iostat=istat) nev
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(nev.le.0) then
+            write(*,*) '*ERROR in frequencies: less than 1 eigenvalue re
      &quested'
-         stop
-      endif
-      tol=1.d-2
-      ncv=4*nev
-      ncv=ncv+nev
-      mxiter=1000
-      if(textpart(2)(1:1).ne.' ') then
-         read(textpart(2)(1:20),'(f20.0)',iostat=istat) fmin
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-      endif
-      if(textpart(3)(1:1).ne.' ') then
-         read(textpart(3)(1:20),'(f20.0)',iostat=istat) fmax
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-      endif
+            stop
+         endif
+         tol=1.d-2
+         ncv=4*nev
+         ncv=ncv+nev
+         mxiter=1000
+         if(textpart(2)(1:1).ne.' ') then
+            read(textpart(2)(1:20),'(f20.0)',iostat=istat) fmin
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         endif
+         if(textpart(3)(1:1).ne.' ') then
+            read(textpart(3)(1:20),'(f20.0)',iostat=istat) fmax
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         endif
+!     
+         mei(1)=nev
+         mei(2)=ncv
+         mei(3)=mxiter
+         fei(1)=tol
+         fei(2)=fmin
+         fei(3)=fmax
+!     
+      else
 !
-      mei(1)=nev
-      mei(2)=ncv
-      mei(3)=mxiter
-      fei(1)=tol
-      fei(2)=fmin
-      fei(3)=fmax
+!        matrix storage
+!
+         if(global) then
+            mei(1)=1
+         else
+            mei(1)=0
+         endif
+!
+         if(.not.cycmpcactive) then
+!
+!           remove the CYCLIC and SUBCYCLIC MPC's
+!
+            nmpcred=0
+!
+            kflag=2
+            call isortii(ilmpc,ikmpc,nmpc,kflag)
+!
+            do i=1,nmpc
+               if((labmpc(i)(1:6).eq.'CYCLIC').or.
+     &            (labmpc(i)(1:9).eq.'SUBCYCLIC')) cycle
+               nmpcred=nmpcred+1
+               ipompc(nmpcred)=ipompc(i)
+               labmpc(nmpcred)=labmpc(i)
+               fmpc(nmpcred)=fmpc(i)
+               ikmpc(nmpcred)=ikmpc(i)
+               ilmpc(nmpcred)=nmpcred
+            enddo
+!
+            nmpc=nmpcred
+            call isortii(ikmpc,ilmpc,nmpc,kflag)
+         endif
+      endif
 !
 !     removing nonzero boundary conditions
 !

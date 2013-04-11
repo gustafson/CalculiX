@@ -24,11 +24,11 @@
      &  inl,ipoinp,inp,nam_,namtot_,namta,amta,nmethod,iperturb,
      &  iaxial,ipoinpc,vold,mi)
 !
-!     reading the input deck: *INITIAL CONDITIONS
+!     reading the input deck: *BOUNDARY
 !
       implicit none
 !
-      logical boun_flag,user,massflowrate,fixed
+      logical boun_flag,user,massflowrate,fixed,submodel
 !
       character*1 typeboun(*),type,inpc(*)
       character*20 labmpc(*)
@@ -43,7 +43,7 @@
      &  ilmpc(*),nmpcold,id,idof,index1,ntrans,nk_,ipos,m,node,is,ie,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),nam_,namtot,namtot_,
      &  namta(3,*),idelay,nmethod,iperturb,lc,iaxial,ipoinpc(0:*),
-     &  ktrue,mi(*)
+     &  ktrue,mi(*),iglobstep
 !
       real*8 xboun(*),bounval,coefmpc(*),trab(7,*),co(3,*),amta(2,*),
      &  vold(0:mi(2),*)
@@ -55,6 +55,8 @@
       massflowrate=.false.
       fixed=.false.
       lc=1
+      iglobstep=0
+      submodel=.false.
 !
       do i=2,n
          if((textpart(i)(1:6).eq.'OP=NEW').and.(.not.boun_flag)) then
@@ -136,10 +138,10 @@
                      idof=8*(nodempc(1,index1)-1)+nodempc(2,index1)
                      call nident(ikmpc,idof,nmpc,id)
                      if(id.eq.0) then
-                        write(*,*) '*ERROR in boundaries'
+                        write(*,*) '*ERROR reading *BOUNDARY'
                         stop
                      elseif(ikmpc(id).ne.idof) then
-                        write(*,*) '*ERROR in boundaries'
+                        write(*,*) '*ERROR reading *BOUNDARY'
                         stop
                      endif
                      ilmpc(id)=k
@@ -176,7 +178,8 @@ c            nboun=0
                endif
             enddo
             if(j.eq.0) then
-               write(*,*)'*ERROR in boundaries: nonexistent amplitude'
+               write(*,*)
+     &           '*ERROR reading *BOUNDARY: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline)
                stop
@@ -184,7 +187,7 @@ c            nboun=0
             iamplitude=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
             if(idelay.ne.0) then
-               write(*,*) '*ERROR in boundaries: the parameter TIME'
+               write(*,*) '*ERROR reading *BOUNDARY: the parameter TIME'
                write(*,*) '       DELAY is used twice in the same'
                write(*,*) '       keyword; '
                call inputerror(inpc,ipoinpc,iline)
@@ -194,13 +197,13 @@ c            nboun=0
             endif
             nam=nam+1
             if(nam.gt.nam_) then
-               write(*,*) '*ERROR in boundaries: increase nam_'
+               write(*,*) '*ERROR reading *BOUNDARY: increase nam_'
                stop
             endif
             amname(nam)='
      &                                 '
             if(iamplitude.eq.0) then
-               write(*,*) '*ERROR in boundaries: time delay must be'
+               write(*,*) '*ERROR reading *BOUNDARY: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
                stop
             endif
@@ -225,7 +228,7 @@ c            nboun=0
             read(textpart(i)(10:19),'(i10)',iostat=istat) lc
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
             if(nmethod.ne.5) then
-               write(*,*) '*ERROR in boundaries: the parameter LOAD'
+               write(*,*) '*ERROR reading *BOUNDARY: the parameter LOAD'
                write(*,*) '       CASE is only allowed in STEADY STATE'
                write(*,*) '       DYNAMICS calculations'
                stop
@@ -236,14 +239,31 @@ c            nboun=0
             massflowrate=.true.
          elseif(textpart(i)(1:5).eq.'FIXED') then
             fixed=.true.
+         elseif(textpart(i)(1:8).eq.'SUBMODEL') then
+            submodel=.true.
+         elseif(textpart(i)(1:5).eq.'STEP=') then
+            read(textpart(i)(6:15),'(i10)',iostat=istat) iglobstep
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          else
             write(*,*) 
-     &        '*WARNING in boundaries: parameter not recognized:'
+     &        '*WARNING reading *BOUNDARY: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
+!
+!     check whether global step was specified for submodel
+!
+      if((submodel).and.(iglobstep.eq.0)) then
+         write(*,*) '*ERROR reading *DLOAD: no global step'
+         write(*,*) '       step specified for the submodel'
+         call inputerror(inpc,ipoinpc,iline)
+      endif
+!
+!     storing the step for submodels in iamboun
+!
+      if(submodel) iamplitude=iglobstep
 !
       if(user.and.(iamplitude.ne.0)) then
          write(*,*) '*WARNING: no amplitude definition is allowed'
@@ -276,16 +296,28 @@ c         if(ibounstart.eq.11) ibounstart=0
          endif
          if((massflowrate).and.(iaxial.ne.0)) bounval=bounval/iaxial
 !     
-!        dummy temperature consisting of the first primes
+!        dummy boundary condition consisting of the first primes
 !
          if(user) bounval=1.2357111317d0
+         if(submodel) bounval=1.9232931374d0
 !
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
          if(istat.eq.0) then
             if((l.gt.nk).or.(l.le.0)) then
-               write(*,*) '*ERROR in boundaries:'
+               write(*,*) '*ERROR reading *BOUNDARY:'
                write(*,*) '       node ',l,' is not defined'
                stop
+            endif
+            if(submodel) then
+               if(ntrans.gt.0) then
+                  if(inotr(1,l).gt.0) then
+                     write(*,*) '*ERROR reading *BOUNDARY: in submodel'
+                     write(*,*) '       node',l,' a local coordinate'
+                     write(*,*) '       system was defined. This is not'
+                     write(*,*) '       allowed'
+                     stop
+                  endif
+               endif
             endif
             ktrue=l
             if(lc.ne.1) l=l+nk
@@ -305,7 +337,7 @@ c         if(ibounstart.eq.11) ibounstart=0
             enddo
             if(i.gt.nset) then
                noset(ipos:ipos)=' '
-               write(*,*) '*ERROR in boundaries: node set ',noset
+               write(*,*) '*ERROR reading *BOUNDARY: node set ',noset
                write(*,*) '  has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline)
                stop
@@ -313,6 +345,20 @@ c         if(ibounstart.eq.11) ibounstart=0
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then
                   k=ialset(j)
+                  if(submodel) then
+                     if(ntrans.gt.0) then
+                        if(inotr(1,k).gt.0) then
+                           write(*,*) 
+     &                       '*ERROR reading *BOUNDARY: in submodel'
+                           write(*,*) '       node',k,
+     &                       ' a local coordinate'
+                           write(*,*) 
+     &                       '       system was defined. This is not'
+                           write(*,*) '       allowed'
+                           stop
+                        endif
+                     endif
+                  endif
                   ktrue=k
                   if(lc.ne.1) k=k+nk
                   call bounadd(k,ibounstart,ibounend,bounval,
@@ -326,6 +372,20 @@ c         if(ibounstart.eq.11) ibounstart=0
                   do
                      k=k-ialset(j)
                      if(k.ge.ialset(j-1)) exit
+                     if(submodel) then
+                        if(ntrans.gt.0) then
+                           if(inotr(1,k).gt.0) then
+                              write(*,*) 
+     &                          '*ERROR reading *BOUNDARY: in submodel'
+                              write(*,*) '       node',k,
+     &                          ' a local coordinate'
+                              write(*,*) 
+     &                          '       system was defined. This is not'
+                              write(*,*) '       allowed'
+                              stop
+                           endif
+                        endif
+                     endif
                      ktrue=k
                      if(lc.ne.1) k=k+nk
                      call bounadd(k,ibounstart,ibounend,bounval,

@@ -91,30 +91,11 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
     }
     
     if(*mortar==1){
-
       /* removing the forces in the slave nodes */
-
-      for(k=0;k<nslavnode[*ntie];k++){
-	nodes=islavnode[k];
-	for(j=1;j<mt;j++){
-          i=nactdof[mt*(nodes-1)+j];
-	  if(i==0){continue;}else{i--;}
-	  b[i]-=f_cs[i];
-		  //b[i]=0.;
-	}
-      }
-
-      /* removing the forces in the master nodes */
-
-      for(k=0;k<nmastnode[*ntie];k++){
-	nodem=imastnode[k];
-	for(j=1;j<mt;j++){
-	  i=nactdof[mt*(nodem-1)+j];
-	  if(i==0){continue;}else{i--;}
-	  b[i]-=f_cm[i];
-		  //b[i]-=0.;
-	}
-      }
+      for(k=0;k<neq[1];++k){
+	b[k]-=f_cs[k];
+	b[k]-=f_cm[k];
+      }	
     }
 
     return;

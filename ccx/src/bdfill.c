@@ -19,30 +19,81 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include "CalculiX.h"
 
-/*
+/**
  *Calculate the entries of Bd and Dd, and insert them into the data structure
+ * 
+ * @param [out] irowbdp		field containing row numbers of aubd
+ * @param [out] jqbd		pointer into field irowbd
+ * @param [out] aubdp		pointer to matrix Bd
+ * @param [out] bdd		matrix Dd
+ * @param [out] nzsbd		size of aubd
+ * @param [in] ntie		number of contraints
+ * @param [in] ipkon		pointer into field kon...
+ * @param [in] kon 		.. for element i storing the connectivity list of elem. in succ. order
+ * @param [in] lakon		(i) label for element i
+ * @param [in] nslavnode	(i)pointer into field isalvnode for contact tie i 
+ * @param [in] nmastnode	(i)pointer into field imastnode for contact tie i
+ * @param [in] imastnode	field storing the nodes of the master surfaces
+ * @param [in] islavnode	field storing the nodes of the slave surface
+ * @param [in] islavsurf	islavsurf(1,i) slaveface i islavsurf(2,i) # integration points generated before looking at face i 
+ * @param [in] imastsurf	index of masterface corresponding to integration point i
+ * @param [in] pmastsurf 	field storing position and etal for integration points on master side
+ * @param [in] itiefac		pointer into field islavsurf: (1,i) beginning slave_i (2,i) end of slave_i
+ * @param [in] neq		(0) # of mechanical equations (1) sum of mechanical and thermal equations (2) neq(1+ # of single point contraints)
+ * @param [in] nactdof		(i,j) actual degree of freedom of DOF i if node j
+ * @param [in] co		coordinates of nodesf
+ * @param [in] vold		displacement of nodesf
+ * @param [in] iponoels		(i) pointer into field inoels...
+ * @param [in] inoels		...which stores 1D&2D elements belonging to node 
+ *                               (1,i)el. number (2,i) # nodes (3,i) pointer to next entry 
+ * @param [in] mi
+ * @param [in] gapmints		(i) gap between slave surface and master surface in integration point i
+ * @param [out] gap		(i) \f$ g_i= \frac{1}{D_i} <g, \Psi_i> \f$ for node i on slave surface
+ * @param [in] pslavsurf	field storing  position xil, etal and weight for integration point on slave side
+ * @param [in] pslavdual	(1:4,i) dual shape functions for face i
+ * @param [in] nintpoint	number of integration points
 */
 
 void bdfill(int **irowbdp, int *jqbd,
         double **aubdp, double *bdd,int *nzsbd, int *ntie, int *ipkon, int *kon, 
         char *lakon, int *nslavnode, int *nmastnode, int *imastnode,
         int *islavnode, int *islavsurf, int *imastsurf, double *pmastsurf, 
-        int *itiefac, int *neq, int *nactdof, double *co, double *vold,
+        int *itiefac,char *tieset, int *neq, int *nactdof, double *co, double *vold,
 	int *iponoels, int *inoels, int *mi, double *gapmints, double *gap,
-        double* pslavsurf,double* pslavdual){
+        double* pslavsurf,double* pslavdual, int *nintpoint,double *slavnor,int *nk,
+        int *nboun,int *ndirboun,int *nodeboun,double *xboun,
+        int *nmpc,int *ipompc,int *nodempc,double *coefmpc,
+        int *ikboun,int *ilboun,int *ikmpc,int *ilmpc,
+        int *nslavspc,int *islavspc,int *nsspc,int *nslavmpc,int *islavmpc,int *nsmpc,
+        int *nmastspc,int *imastspc,int *nmspc,int *nmastmpc,int *imastmpc,int *nmmpc,
+	double **Bdp,double *Dd,int *jqb,int **irowbp, int *nzsbd2, double *dhinv){
 		
-  int i, j, k,l,m, idof1,idofs,idofm, nodes, nodem, kflag,numb,
-      *mast1=NULL,number, *irowbd=NULL,ifree,mt=mi[1]+1,icounter,istart;
+  int i, j,jj, k,kk,l,m, ll,icounter,icounter2,idof1,idofs,idofm, nodesf, nodem, kflag,numb,
+      *mast1=NULL,number, *irowbd=NULL,ifree,mt=mi[1]+1,istart, *iscontr=NULL, *imcontr=NULL,
+      *idcontr1=NULL, *idcontr2=NULL,*igcontr=NULL, debug,intpointl, *irowb=NULL, *mast2=NULL,ifree2,
+      ist,ist2,dir,node1,jslav,dim,id,dof,index,dirdep,dirind,index2,id2,dirdep2,dirind2,node2,idof2,
+      idof3,islavk2;
   
-  double contribution=0.0, *aubd=NULL;
+  double contribution=0.0, *aubd=NULL, *contr=NULL, *dcontr=NULL, *gcontr=NULL,*anull=NULL, *Bd=NULL,
+         gap2,*xs=NULL,*xm=NULL,*help=NULL,dm[3],n[3],c2,coefdep,coefind,coefdep2,coefind2,c3,detdh,dh[9]; 
+
+       clock_t debut;
+       clock_t fin;
   
-  irowbd = *irowbdp; aubd=*aubdp;
-  
+  irowbd = *irowbdp; aubd=*aubdp; irowb= *irowbp; Bd=*Bdp;
   ifree = 1; // position in the fieds FORTRAN condition
+  ifree2=1;
+  xs=NNEW(double,3);
+  xm=NNEW(double,3);
+  help=NNEW(double,3);
   mast1=NNEW(int,*nzsbd);
+  mast2=NNEW(int,*nk);
+  anull=NNEW(double,1); 
   
+  debug=0;
   /* calculating the off-diagonal terms and storing them in aubd */
 
   /* meaning of the fields in FORTRAN notation:
@@ -52,44 +103,349 @@ void bdfill(int **irowbdp, int *jqbd,
      mast1(ipointer(i)): points to another element in field aubd belonging
                          to column i, unless zero.
   */
-  
+
+  debut=clock();
+
+  for (i=0;i<neq[1];i++){bdd[i]=0.0;}
+  for (i=0;i<*nk;i++){Dd[i]=0.0;}
+    
+
   for( i=0; i<*ntie; i++){
-    for(j=nslavnode[i]; j<nslavnode[i+1]; j++){
-      nodes = islavnode[j];
-
-      /* calculating the gap at the slave nodes */
-
-      FORTRAN(creategap,(&i,ipkon,kon,lakon,&nodes,
-	     islavsurf,itiefac,co,vold,
-	     iponoels,inoels,mi,pslavsurf,pslavdual,gapmints,&gap[j]));
-
-      for(k=nmastnode[i]; k<nmastnode[i+1]; k++){
-	nodem = imastnode[k];
-
-        /* calculating the entries of the coupling matrix Bd */
-
-	FORTRAN(createbdentry, ( &i,ipkon,kon,lakon,&nodem,&nodes,
-	     islavsurf,imastsurf,pmastsurf,itiefac,&contribution,co,vold,
-	     iponoels,inoels,mi,pslavsurf,pslavdual));
-
-	contribution=-contribution;
-	for(l=0; l<3; l++){
-	  idofs = nactdof[mt*(nodes-1)+l+1];
-	    idofm = nactdof[mt*(nodem-1)+l+1];						
-	    if ((idofs>0)&&(idofm>0)){ //insertion for active dofs
-	      insertas(&irowbd, &mast1, &idofs, &idofm, &ifree, nzsbd,
-		       &contribution, &aubd);
-	    }
+    
+    if(tieset[i*(81*3)+80]=='C'){ 
+        for(j=nslavnode[i]; j<nslavnode[i+1]; j++){
+      	         gap[j]=0.0;
 	}
-      }
+	for (l= itiefac[2*i]; l<=itiefac[2*i+1];l++){
+//	        debug=0;if(l==214||l==219)debug=1;
+               	if(debug==1)printf("bdfill face %d intpoints %d %d \n",l, islavsurf[2*(l-1)+1],islavsurf[2*l+1]);
+//		if(l==3)FORTRAN(stop,());
+                intpointl=islavsurf[2*l+1]-islavsurf[2*(l-1)+1];
+//                printf("inpointl/7= %d \n",intpointl/7);
+                if(intpointl>0){
+		  contr=NNEW(double,9*9*intpointl/7+1);
+		  iscontr=NNEW(int, 9*9*intpointl/7+1);
+		  imcontr=NNEW(int, 9*9*intpointl/7+1);
+		  dcontr=NNEW(double,9*9*intpointl/7+1);
+		  idcontr1=NNEW(int, 9*9*intpointl/7+1);
+		  idcontr2=NNEW(int, 9*9*intpointl/7+1);
+		  gcontr=NNEW(double, 9*intpointl/7+1);
+		  igcontr=NNEW(int, 9*intpointl/7+1);
+               
+		  FORTRAN(createbd,(&i,&l,ipkon,kon,lakon,co,vold,gapmints,
+     			 islavsurf,imastsurf,pmastsurf,itiefac,contr,iscontr,imcontr,
+  			dcontr,idcontr1,idcontr2,gcontr,igcontr,iponoels,inoels,mi,pslavsurf,pslavdual,
+			nslavnode,islavnode,nmastnode,imastnode,&icounter,&icounter2));
+
+		  for(j=0; j<icounter;j++){
+				contribution=-contr[j];
+				nodesf=islavnode[iscontr[j]-1];
+				nodem=imastnode[imcontr[j]-1];
+//				if(nodesf==1548)printf("bdfill face %d intpoints %d %d \n",l, islavsurf[2*(l-1)+1],islavsurf[2*l+1]);
+				if(debug==1)printf("\tbdfill: B_d nodesf %d nodem %d c %e \n",nodesf,nodem,contribution);
+				/* modification 5.6.2012 for SPCs on master side */
+// /*old*/				insertas(&irowb, &mast2,&nodem, &nodesf,  &ifree2, nzsbd2,
+//		       			&contribution, &Bd);
+                                if ((contribution>1e-14 ||contribution<-1e-14)){ 
+				insertas(&irowb, &mast2,&nodesf, &nodem,  &ifree2, nzsbd2,
+		       			&contribution, &Bd);
+				}	
+			        dof=0;
+				for(ll=0; ll<3; ll++){
+	  				idofs = nactdof[mt*(nodesf-1)+ll+1];
+	    				idofm = nactdof[mt*(nodem-1)+ll+1];
+					if(debug==1)printf("\t idofs %d idofm %d \n",idofs,idofm);
+	    				if ((idofs>0)&&(idofm>0)&&(contribution>1e-18 ||contribution<-1e-18)){ ///insertion for active dofs  
+	      				insertas(&irowbd, &mast1, &idofs, &idofm, &ifree, nzsbd,
+		       			&contribution, &aubd);
+				        }else if((idofs>0)&&(contribution>1e-18 ||contribution<-1e-18)){/// mpc on master node
+			                  for(jj=nmastmpc[2*(imcontr[j]-1)];jj<nmastmpc[2*(imcontr[j]-1)+1];jj++){
+                                           ist=imastmpc[2*jj];
+                                           dirdep=nodempc[3*(ist-1)+1];
+                                           coefdep=coefmpc[ist-1];
+                                           index=nodempc[3*(ist-1)+2];
+//					   printf("\t\t nmpc %d dir %d \n",jj,dirdep);
+					   if(ll==(dirdep-1)){
+                                           while(index!=0){				   
+				            node1=nodempc[3*(index-1)]; 
+                                            dirind=nodempc[3*(index-1)+1];
+	                                    c2=-coefmpc[index-1]*contribution/coefdep;
+	    			            idofm = nactdof[mt*(node1-1)+(dirind-1)+1];
+//					    printf("\t\t idofs %d idofm %d c %e \n",idofs,idofm,c2);
+                                            if(idofm>0){
+	      				    insertas(&irowbd, &mast1, &idofs, &idofm, &ifree, nzsbd,
+		       			     &c2, &aubd);
+					    }
+                                            index=nodempc[3*(index-1)+2];
+	                                    }
+	                                   }
+					  }
+					}else if((idofm>0)&&(contribution>1e-18 ||contribution<-1e-18)){///mpc on slave node
+			                  for(jj=nslavmpc[2*(iscontr[j]-1)];jj<nslavmpc[2*(iscontr[j]-1)+1];jj++){
+                                           ist=islavmpc[2*(jj)];
+                                           dirdep=nodempc[3*(ist-1)+1];
+                                           coefdep=coefmpc[ist-1];
+                                           index=nodempc[3*(ist-1)+2];
+//				           printf("\t\t nmpc %d dir %d \n",jj,dirdep);
+					   if(ll==(dirdep-1)){
+                                           while(index!=0){				   
+				            node1=nodempc[3*(index-1)]; 
+                                            dirind=nodempc[3*(index-1)+1];
+	                                    c2=-coefmpc[index-1]*contribution/coefdep;
+	    			            idofs = nactdof[mt*(node1-1)+(dirind-1)+1]; 
+//					    printf("\t\t idofs %d idofm %d c %e \n",idofs,idofm,c2);
+                                            if(idofs>0){
+	      				    insertas(&irowbd, &mast1, &idofs, &idofm, &ifree, nzsbd,
+		       			     &c2, &aubd);
+					    }
+                                            index=nodempc[3*(index-1)+2];
+	                                    }
+	                                   }
+					  }					
+					}else if((idofs==0)&&(idofm==0)&&(contribution>1e-18 ||contribution<-1e-18)){///mpc on master and slave node
+			                  for(jj=nmastmpc[2*(imcontr[j]-1)];jj<nmastmpc[2*(imcontr[j]-1)+1];jj++){
+                                           ist=imastmpc[2*jj];
+                                           dirdep=nodempc[3*(ist-1)+1];
+                                           coefdep=coefmpc[ist-1];
+                                           index=nodempc[3*(ist-1)+2];
+					   if(ll==(dirdep-1)){
+                                           while(index!=0){				   
+				            node1=nodempc[3*(index-1)]; 
+                                            dirind=nodempc[3*(index-1)+1];
+	                                    c2=-coefmpc[index-1]*contribution/coefdep;
+	    			            idofm = nactdof[mt*(node1-1)+(dirind-1)+1];
+//					    printf("\t\t indexm %d nodem %d idofm %d\n",index,node1,idofm);				    
+			                    for(kk=nslavmpc[2*(iscontr[j]-1)];kk<nslavmpc[2*(iscontr[j]-1)+1];kk++){
+                                             ist2=islavmpc[2*kk];
+                                             dirdep2=nodempc[3*(ist2-1)+1];
+                                             coefdep2=coefmpc[ist2-1];
+                                             index2=nodempc[3*(ist2-1)+2];
+					     if(ll==(dirdep2-1)){
+                                              while(index2!=0){				   
+				               node2=nodempc[3*(index2-1)]; 
+                                               dirind2=nodempc[3*(index2-1)+1];
+	                                       c3=-coefmpc[index2-1]*c2/coefdep2;
+	    			               idofs = nactdof[mt*(node2-1)+(dirind2-1)+1];
+//					       printf("\t\t indexs %d nodes %d idofs %d\n",index2,node2,idofs);
+//					       printf("\t\t idofs %d idofm %d c %e %e \n",idofs,idofm,c2,c3);
+                                               if(idofs>0&&idofm>0){
+	      				       insertas(&irowbd, &mast1, &idofs, &idofm, &ifree, nzsbd,
+		       			       &c3, &aubd);
+					       }
+                                              index2=nodempc[3*(index2-1)+2];
+	                                      }
+	                                     }
+					    }					    				  
+                                            index=nodempc[3*(index-1)+2];
+	                                    }
+	                                   }
+					  }					
+					}  
+				}        
+		  }
+		  for(j=0; j<icounter2;j++){
+			contribution=dcontr[j];
+			nodesf=islavnode[idcontr1[j]-1];
+		        nodem=islavnode[idcontr2[j]-1];			
+			if(debug==1)printf("\tbdfill: face %d node %d %d dbb %e\n",l,nodesf,nodem,contribution);
+                        if(nodesf==nodem){
+                          Dd[nodesf-1]+=contribution;
+      			  for(ll=0; ll<3; ll++){
+				idof1 = nactdof[mt*(nodesf-1)+ll+1];
+				if(debug==1) printf("\t idofs %d idofm %d c %e \n",idof1,idof1,contribution);
+				if (idof1>0){
+	  			          bdd[idof1-1]+=contribution;
+				}else{
+			                  for(jj=nslavmpc[2*(idcontr1[j]-1)];jj<nslavmpc[2*(idcontr1[j]-1)+1];jj++){
+                                           ist=islavmpc[2*jj];
+//					   printf("\t ist %d\n",ist);
+                                           dirdep=nodempc[3*(ist-1)+1];
+                                           coefdep=coefmpc[ist-1];
+                                           index=nodempc[3*(ist-1)+2];
+					   if(ll==(dirdep-1)){
+                                           while(index!=0){				   
+				            node1=nodempc[3*(index-1)]; 
+                                            dirind=nodempc[3*(index-1)+1];
+	                                    c2=-coefmpc[index-1]*contribution/coefdep;
+	    			            idofm = nactdof[mt*(node1-1)+(dirind-1)+1];	
+//					    printf("\t\t -node %d dir %d \n",node1,dirind);
+//					    printf("\t\t -idofs %d idofm %d node %d c %e \n",idofs,idofm,node1,c2);
+                                             index2=nodempc[3*(ist-1)+2];
+                                              while(index2!=0){	
+				               node1=nodempc[3*(index2-1)]; 
+                                               dirind=nodempc[3*(index2-1)+1];
+	                                       c3=-coefmpc[index2-1]*c2/coefdep;
+	    			               idofs = nactdof[mt*(node1-1)+(dirind-1)+1];
+//					       printf("\t\t node %d dir %d \n",node1,dirind);
+//					       printf("\t\t idofs %d idofm %d node %d c %e \n",idofs,idofm,node1,c3);
+					       if(idofs==idofm && idofs>0){
+	      				         bdd[idofs-1]+=c3;
+					       }else if(idofs>0 && idofm>0){
+						 if(islavmpc[2*jj+1]==1){
+	      				           insertas(&irowbd, &mast1, &idofs, &idofm, &ifree, nzsbd,
+		       			           &c3, &aubd);						       
+//						 printf("bdfill: can't handle nondiagonal D_d matrix jet, have a look at mpc of slave node %d \n",nodesf);
+//						 FORTRAN(stop,());
+						 }
+					       } 
+                                              index2=nodempc[3*(index2-1)+2];
+	                                      }					    				  
+                                            index=nodempc[3*(index-1)+2];
+					    }
+	                                    }
+					  }				  
+				}  
+      			  }
+			}else{  
+			        if(contribution>1e-14 ||contribution<-1e-14){
+				  insertas(&irowb, &mast2,&nodesf, &nodem,  &ifree2, nzsbd2,
+		       			&contribution, &Bd);
+					
+//				  insertas(&irowb, &mast2,&nodem, &nodesf,  &ifree2, nzsbd2,
+//		       			&contribution, &Bd);					
+					
+				  for(ll=0; ll<3; ll++){
+	  				idofs = nactdof[mt*(nodesf-1)+ll+1];
+	    				idofm = nactdof[mt*(nodem-1)+ll+1];
+//					printf("\t idofs %d idofm %d \n",idofs,idofm);
+	    				if ((idofs>0)&&(idofm>0)){ ///insertion for active dofs  
+	      				insertas(&irowbd, &mast1, &idofs, &idofm, &ifree, nzsbd,
+		       			&contribution, &aubd);
+				        }else if((idofs>0)&&(idofm==0)){/// mpc on slavenode1 node
+			                  for(jj=nslavmpc[2*(idcontr2[j]-1)];jj<nslavmpc[2*(idcontr2[j]-1)+1];jj++){
+//					   printf("bdfill:nodes %d nodem %d nspcs %d ist %d\n",nodesf,nodem,nslavmpc[2*(idcontr2[j]-1)+1]-nslavmpc[2*(idcontr2[j]-1)],islavmpc[jj]);
+                                           ist=islavmpc[2*(jj)];
+                                           dirdep=nodempc[3*(ist-1)+1];
+                                           coefdep=coefmpc[ist-1];
+                                           index=nodempc[3*(ist-1)+2];
+//					   printf("\t\t nmpc %d dir %d \n",jj,dirdep);
+					   if(ll==(dirdep-1)){
+                                           while(index!=0){				   
+				            node1=nodempc[3*(index-1)]; 
+                                            dirind=nodempc[3*(index-1)+1];
+	                                    c2=-coefmpc[index-1]*contribution/coefdep;
+	    			            idofm = nactdof[mt*(node1-1)+(dirind-1)+1];
+//					    printf("\t\t idofs %d idofm %d c %e \n",idofs,idofm,c2);
+                                            if(idofm>0){
+	      				    insertas(&irowbd, &mast1, &idofs, &idofm, &ifree, nzsbd,
+		       			     &c2, &aubd);
+					    }
+                                            index=nodempc[3*(index-1)+2];
+	                                    }
+	                                   }
+					  }
+					}else if((idofm>0)&&(idofs==0)){///mpc on slavenode2 node
+			                  for(jj=nslavmpc[2*(idcontr1[j]-1)];jj<nslavmpc[2*(idcontr1[j]-1)+1];jj++){
+                                           ist=islavmpc[2*(jj)];
+                                           dirdep=nodempc[3*(ist-1)+1];
+                                           coefdep=coefmpc[ist-1];
+                                           index=nodempc[3*(ist-1)+2];
+//				           printf("\t\t nmpc %d dir %d \n",jj,dirdep);
+					   if(ll==(dirdep-1)){
+                                           while(index!=0){				   
+				            node1=nodempc[3*(index-1)]; 
+                                            dirind=nodempc[3*(index-1)+1];
+	                                    c2=-coefmpc[index-1]*contribution/coefdep;
+	    			            idofs = nactdof[mt*(node1-1)+(dirind-1)+1]; 
+//					    printf("\t\t idofs %d idofm %d c %e \n",idofs,idofm,c2);
+                                            if(idofs>0){
+	      				    insertas(&irowbd, &mast1, &idofs, &idofm, &ifree, nzsbd,
+		       			     &c2, &aubd);
+					    }
+                                            index=nodempc[3*(index-1)+2];
+	                                    }
+	                                   }
+					  }					
+					}else if((idofs==0)&&(idofm==0)){///mpc on both slave node (possible?)
+			                  for(jj=nslavmpc[2*(idcontr2[j]-1)];jj<nslavmpc[2*(idcontr2[j]-1)+1];jj++){
+                                           ist=islavmpc[2*(jj)];
+                                           dirdep=nodempc[3*(ist-1)+1];
+                                           coefdep=coefmpc[ist-1];
+                                           index=nodempc[3*(ist-1)+2];
+					   if(ll==(dirdep-1)){
+                                           while(index!=0){				   
+				            node1=nodempc[3*(index-1)]; 
+                                            dirind=nodempc[3*(index-1)+1];
+	                                    c2=-coefmpc[index-1]*contribution/coefdep;
+	    			            idofm = nactdof[mt*(node1-1)+(dirind-1)+1];
+//					    printf("\t\t indexm %d nodem %d idofm %d\n",index,node1,idofm);				    
+			                    for(kk=nslavmpc[2*(idcontr1[j]-1)];kk<nslavmpc[2*(idcontr1[j]-1)+1];kk++){
+                                             ist2=islavmpc[2*kk];
+                                             dirdep2=nodempc[3*(ist2-1)+1];
+                                             coefdep2=coefmpc[ist2-1];
+                                             index2=nodempc[3*(ist2-1)+2];
+					     if(ll==(dirdep2-1)){
+                                              while(index2!=0){				   
+				               node2=nodempc[3*(index2-1)]; 
+                                               dirind2=nodempc[3*(index2-1)+1];
+	                                       c3=-coefmpc[index2-1]*c2/coefdep2;
+	    			               idofs = nactdof[mt*(node2-1)+(dirind2-1)+1];
+//					       printf("\t\t indexs %d nodes %d idofs %d\n",index2,node2,idofs);
+//					       printf("\t\t idofs %d idofm %d c %e %e \n",idofs,idofm,c2,c3);
+                                               if(idofs>0&&idofm>0){
+	      				       insertas(&irowbd, &mast1, &idofs, &idofm, &ifree, nzsbd,
+		       			       &c3, &aubd);
+					       }
+                                              index2=nodempc[3*(index2-1)+2];
+	                                      }
+	                                     }
+					    }					    				  
+                                            index=nodempc[3*(index-1)+2];
+	                                    }
+	                                   }
+					  }					
+					}  
+				  }
+				}
+		        }  
+		  }	
+		  for(j=0; j<sqrt(icounter2);j++){		
+			contribution=gcontr[j];
+			ll=igcontr[j]-1;
+			gap[ll]+=contribution;
+			if(debug==1)printf("nodes %d c %e gap %e  \n",islavnode[ll],contribution,gap[ll]);			
+			
+		  }
+		  free(contr);
+		  free(iscontr);
+		  free(imcontr);
+		  free(dcontr);
+		  free(idcontr1);
+		  free(idcontr2);		
+              }
+	 }
+//	debug=0;
+	for(j=nslavnode[i]; j<nslavnode[i+1]; j++){
+	  nodesf = islavnode[j];
+	  /* calculating the gap at the slave nodesf */
+	  contribution=Dd[nodesf-1];
+//	  if(nodesf==1477||nodesf==1480||nodesf==24646||nodesf==3597||nodesf==3596||nodesf==4143
+//	    ||nodesf==4142||nodesf==4689||nodesf==4688||nodesf==5235||nodesf==5234
+//	    ||nodesf==5781||nodesf==5780||nodesf==6327||nodesf==6326||nodesf==70689){
+//        if(nodesf==1624||nodesf==1575||nodesf==1526||nodesf==1625||nodesf==1527||nodesf==1576||nodesf==4712){	    
+//	    printf("gap(%d)= %e gap*= %e  %e\n",nodesf,gap[j],gap[j]/contribution,contribution );
+//	  }
+	  gap[j]=gap[j]/contribution; 
+//	  if(nodesf==1546||nodesf==1547||nodesf==1548){
+//	    printf("gap2(%d)= %e \n",nodesf,gap[j] );
+//	  }	  
+	}
     }
   }
+  fin=clock();
+  printf("bdfill_createbd: %f s \n",((double) (fin-debut))/CLOCKS_PER_SEC);
   
+/** Sort aubd **/
   *nzsbd=ifree-1;
+  *nzsbd2=ifree2-1;
+   printf("bdfill: sumicounter %i \n",(ifree-1));
+
   /* Sort mast1, irowbd and aubd; 
      Outcome: the values in field aubd are sorted, column by
      column; no sorting is done within the columns */
-
+  //number=5;
+  //FORTRAN(writeintvector,(mast1,nzsbd,&number));
+  debut=clock();
   kflag = 2;
   FORTRAN(isortiid, (mast1, irowbd, aubd, nzsbd, &kflag));
   /*  fill in jqbd
@@ -125,14 +481,14 @@ void bdfill(int **irowbdp, int *jqbd,
  }*/
 
   /* Sorting of the rows*/
-  for (i=0;i<neq[1];i++){
+ for (i=0;i<neq[1];i++){
     if(jqbd[i+1]-jqbd[i]>0){
    numb=jqbd[i+1]-jqbd[i]; 
    FORTRAN(isortid,(&irowbd[jqbd[i]-1],&aubd[jqbd[i]-1],&numb,&kflag));
     }
   }
   
-   number=5;
+//   number=5;
 
 //   FORTRAN(writematrix,(aubd,bdd,irowbd,jqbd,&neq[1],&number));
   /*Calulation ot the real contribution*/
@@ -165,7 +521,7 @@ void bdfill(int **irowbdp, int *jqbd,
 //   for (i=0;i<neq[1]+1;i++){
 //     printf("bdfill second jq[%d]=%d\n",i,jqbd[i]);
 // }
-
+   printf("bdfill: size aubd %i \n",icounter);
  *nzsbd=icounter;
  RENEW(irowbd,int,*nzsbd);
  RENEW(aubd,double,*nzsbd);
@@ -176,28 +532,275 @@ void bdfill(int **irowbdp, int *jqbd,
 
  free(mast1);
   
-  /* determining the diagonal entries and storing them in bdd */
+ /** sort Bd **/
+ debut=clock();
+  kflag = 2;
+  FORTRAN(isortiid, (mast2, irowb, Bd, nzsbd2, &kflag));
 
-  for(i=0;i<neq[1];i++){bdd[i]=0.;}
-  
-  for(i=0; i<*ntie; i++){
-    for(j=nslavnode[i]; j<nslavnode[i+1]; j++){
-      nodes = islavnode[j];
-      FORTRAN(createddentry,(&i,ipkon,kon,&nodes,
-      	      lakon,islavsurf,itiefac,&contribution,co,vold,
-	      iponoels,inoels,mi,pslavdual));
-      gap[j]=gap[j]/contribution; 
-//      printf("gap[%d] = %f\n",nodes,gap[j]); 
-      for(l=0; l<3; l++){
-	idof1 = nactdof[mt*(nodes-1)+l+1];
-	if (idof1>0)
-	  bdd[idof1-1]+=contribution;
-      }
+
+  j = 0;
+  for(i=0; i<*nk; i++){
+    if(j == *nzsbd2){
+      for(k=i; k<*nk; k++) 
+	jqb[k] = *nzsbd2+1;
+      break;
+    }
+    
+    
+    if(mast2[j] != i+1){
+      jqb[i] = j+1;
+      continue;
+    }
+    
+    jqb[i] = j+1;
+    
+    while(1){
+      j++;
+      if(j == *nzsbd2) break;
+      if(mast2[j] != i+1) break;
     }
   }
   
-  *irowbdp = irowbd; *aubdp=aubd;
+  jqb[*nk] = *nzsbd2 + 1;
+
+ for (i=0;i<*nk;i++){
+    if(jqb[i+1]-jqb[i]>0){
+   numb=jqb[i+1]-jqb[i]; 
+   FORTRAN(isortid,(&irowb[jqb[i]-1],&Bd[jqb[i]-1],&numb,&kflag));
+    }
+  }
+  
+   number=5;
+
+//   FORTRAN(writematrix,(aubd,bdd,irowbd,jqbd,&neq[1],&number));
+
+  
+ icounter=0;
  
+ for (i=0;i<*nk;i++)
+ {
+ 
+   if(jqb[i]!=jqb[i+1]){
+     irowb[icounter]=irowb[jqb[i]-1];
+     Bd[icounter]=Bd[jqb[i]-1];
+     icounter++;
+     istart=icounter;
+     for (j=jqb[i];j<jqb[i+1]-1;j++){
+       if (irowb[j]==irowb[icounter-1]){
+	 Bd[icounter-1]+=Bd[j];   
+       }else{
+	 irowb[icounter]=irowb[j];
+	 Bd[icounter]=Bd[j];
+	 icounter++;
+       }
+   }
+   }else{ istart=icounter+1;}
+  
+  jqb[i]=istart;
+ }
+ jqb[*nk]=icounter+1; 
+ 
+//   for (i=0;i<neq[1]+1;i++){
+//     printf("bdfill second jq[%d]=%d\n",i,jqbd[i]);
+// }
+   printf("bdfill: size Bd %i \n",icounter);
+ *nzsbd2=icounter;
+ RENEW(irowb,int,*nzsbd2);
+ RENEW(Bd,double,*nzsbd2);
+ 
+ //  number=20;
+
+//   FORTRAN(writematrix,(Bd,Dd,irowb,jqb,nk,&number));
+
+free(mast2);
+
+
+/** handle SPC's on master nodes **/
+  double ndm=0.0;
+  for( i=0; i<*ntie; i++){
+        for(j=nmastnode[i]; j<nmastnode[i+1]; j++){
+	   nodem = imastnode[j];
+	   dm[0]=0.0;dm[1]=0.0;dm[2]=0.0;
+//	   printf("nodem %d\n",nodem);
+	   for(jj=nmastspc[2*(j)];jj<nmastspc[2*(j)+1];jj++){
+	     ist=imastspc[2*jj];
+             dir=ndirboun[ist-1];
+	     node1=nodeboun[ist-1];
+	     dm[dir-1]=xboun[ist-1];
+	     if(debug==1){printf("jj %d ist %d dir %d node %d\n",jj,ist,dir,node1);}
+	   }
+	   for(jj=nmastmpc[2*(j)];jj<nmastmpc[2*(j)+1];jj++){
+//	    printf("nodem %d mpc %d type %d\n",nodem,jj,imastmpc[2*jj+1]); 
+	    if(imastmpc[2*jj+1]==3){                   
+	     ist=imastmpc[2*jj];                                           
+	     dirdep=nodempc[3*(ist-1)+1];                                           
+	     coefdep=coefmpc[ist-1];                                           
+	     index=nodempc[3*(ist-1)+2];
+//	     printf("jj %d ist %d dir %d node %d\n",jj,ist,dirdep,nodem);                             
+	     while(index!=0){				   				            
+		 node1=nodempc[3*(index-1)];                                             
+		 dirind=nodempc[3*(index-1)+1];	                                    
+		 c2=-coefmpc[index-1]*contribution/coefdep;	    			            
+		 idofm = nactdof[mt*(node1-1)+(dirind-1)+1];
+		 if(idofm==0){
+		   idofm=8*(node1-1)+dirind;
+		   FORTRAN(nident,(ikboun,&idofm,nboun,&id));
+		   if(id>0 &&ikboun[id-1]==idofm){
+		     dm[dirdep-1]=dm[dirdep-1]-coefmpc[index-1]*xboun[ilboun[id-1]]/coefdep;
+//		     printf("xboun %e\n",xboun[ilboun[id-1]]);
+		   }
+		 }
+		 index=nodempc[3*(index-1)+2];	                                    
+	       }
+	     }
+	    
+	   }
+            ndm=sqrt(dm[0]*dm[0]+dm[1]*dm[1]+dm[2]*dm[2]);
+	    if(ndm>1.e-16){
+            for (jj=jqb[nodem-1]-1;jj<jqb[nodem]-1;jj++){
+	      nodesf=irowb[jj];
+              for(k=0;k<3;k++){
+               help[k]=1/(Dd[nodesf-1])*Bd[jj]*dm[k];
+              }        
+	      dim=nslavnode[i+1]-nslavnode[i];	          
+	      FORTRAN(nident,(&islavnode[nslavnode[i]], &nodesf,&dim, &id));	 
+	      if(id>0 && islavnode[nslavnode[i]+id-1]==nodesf){	   
+		jslav=nslavnode[i]+id-1;	 
+	      }else{                       
+		FORTRAN(stop,());	 
+	      }     
+              gap2=help[0]*slavnor[3*jslav]
+	          +help[1]*slavnor[3*jslav+1]
+	          +help[2]*slavnor[3*jslav+2];
+	      gap[jslav]=gap[jslav]-gap2;  
+	    }
+	    }
+	}
+  }
+     printf("bdfill: SPC's on master side handled \n");	   
+  /** calculate inverse of D_d in general setting with SPC's **/
+  
+    for (i=0;i<*ntie;i++){
+	for(j=nslavnode[i];j<nslavnode[i+1];j++){
+	    nodesf=islavnode[j];
+	    idof1=nactdof[mt*nodesf-3]-1;
+	    idof2=nactdof[mt*nodesf-2]-1;
+	    idof3=nactdof[mt*nodesf-1]-1;
+//	    printf("idof %d %d %d\n", idof1,idof2,idof3);	    
+	    if(idof1>-1) {dh[0]=bdd[idof1];}else{dh[0]=0.0;}
+	    if(idof2>-1) {dh[4]=bdd[idof2];}else{dh[4]=0.0;}
+	    if(idof3>-1) {dh[8]=bdd[idof3];}else{dh[8]=0.0;}
+	    dh[1]=0.0;dh[2]=0.0;dh[3]=0.0;dh[5]=0.0;dh[6]=0.0;dh[7]=0.0;
+	    if(idof1>-1 && bdd[idof1]>1.e-15) {dhinv[j*9+0]=1.0/dh[0];}else{dhinv[j*9+0]=0.0;}
+	    if(idof2>-1 && bdd[idof2]>1.e-15) {dhinv[j*9+4]=1.0/dh[4];}else{dhinv[j*9+4]=0.0;}
+	    if(idof3>-1 && bdd[idof3]>1.e-15) {dhinv[j*9+8]=1.0/dh[8];}else{dhinv[j*9+8]=0.0;}	    
+	    dhinv[j*9+1]=0.0;dhinv[j*9+2]=0.0;dhinv[j*9+3]=0.0;dhinv[j*9+5]=0.0;dhinv[j*9+6]=0.0;dhinv[j*9+7]=0.0;
+	    for(jj=0;jj<3;jj++){
+	     idofs=nactdof[mt*nodesf-3+jj]-1;
+	     if(idofs>-1){
+	      if(jqbd[idofs+1]-jqbd[idofs]>0){
+	       for(kk=jqbd[idofs]-1;kk<jqbd[idofs+1]-1;kk++){
+//                islavk2 = floor(islavactdof[irowbd[kk]-1]/10.);
+	        if(irowbd[kk]-1==idof1)dirind = 1;
+	        if(irowbd[kk]-1==idof2)dirind = 2;
+	        if(irowbd[kk]-1==idof3)dirind = 3;
+		if(irowbd[kk]-1==idof1 ||irowbd[kk]-1==idof2||irowbd[kk]-1==idof3){
+	         dh[3*jj+dirind-1]=aubd[kk];
+		}
+	       }
+	      } 
+	     }
+	    }	    
+	    if(idof1==-1 && idof2>-1 && idof3>-1){ 
+	     detdh=dh[4]*dh[8]-dh[5]*dh[7];
+	     dhinv[j*9+4]=1/detdh*dh[8];
+	     dhinv[j*9+8]=1/detdh*dh[4]; 
+	     dhinv[j*9+5]=-1/detdh*dh[5];
+	     dhinv[j*9+7]=-1/detdh*dh[7]; 	     	    
+	    }else if(idof2==-1 && idof1>-1 && idof3>-1){ 
+	     detdh=dh[0]*dh[8]-dh[2]*dh[6];
+	     dhinv[j*9+0]=1/detdh*dh[8];
+	     dhinv[j*9+8]=1/detdh*dh[0]; 
+	     dhinv[j*9+2]=-1/detdh*dh[2];
+	     dhinv[j*9+6]=-1/detdh*dh[6];	      
+	    }else if(idof3==-1 && idof2>-1 && idof1>-1){ 	      
+	     detdh=dh[4]*dh[0]-dh[1]*dh[3];
+	     dhinv[j*9+4]=1/detdh*dh[0];
+	     dhinv[j*9+0]=1/detdh*dh[4]; 
+	     dhinv[j*9+1]=-1/detdh*dh[1];
+	     dhinv[j*9+3]=-1/detdh*dh[3];	    
+	    }
+	    if(debug==1){
+	    printf("bdfill: nodes %d\n",nodesf);
+	    printf("\t %e %e %e \t %e %e %e\n",dh[0],dh[1],dh[2],dhinv[j*9+0],dhinv[j*9+1],dhinv[j*9+2]);
+	    printf(" D=\t %e %e %e Di=\t %e %e %e\n",dh[3],dh[4],dh[5],dhinv[j*9+3],dhinv[j*9+4],dhinv[j*9+5]);
+	    printf("\t %e %e %e \t %e %e %e\n",dh[6],dh[7],dh[8],dhinv[j*9+6],dhinv[j*9+7],dhinv[j*9+8]);	    
+	    }
+	}
+    }
+     printf("bdfill: inverse of D calculated\n");	
+  
+  /** handle zyclic symmetry **/
+  /*
+  for( i=0; i<*ntie; i++){
+        for(j=nslavnode[i]; j<nslavnode[i+1]; j++){
+	  kk=0;
+	  for(jj=nslavmpc[2*(j)];jj<nslavmpc[2*(j)+1];jj++){
+	    if(kk==0 && islavmpc[2*jj+1]==2){
+	     kk=1;
+             ist=islavmpc[2*(jj)];
+             dirdep=nodempc[3*(ist-1)+1];
+             coefdep=coefmpc[ist-1];
+             index=nodempc[3*(ist-1)+2];
+	     node1=nodempc[3*(index-1)];
+	     dim=nslavnode[*ntie];
+             FORTRAN(nident,(islavnode, &node1,&dim, &id));
+	     gap[id-1]=gap[id-1]+gap[j];
+	    }  
+	  }  
+	}
+  }	
+  */
+
+  /* determining the diagonal entries and storing them in bdd */
+/*
+  for( i=0; i<*ntie; i++){
+        for(j=nslavnode[i]; j<nslavnode[i+1]; j++){
+         nodesf = islavnode[j];
+         printf("node= %d\n",nodesf);
+      	 gap2=0.0;
+      	 idof1 = nactdof[mt*(nodesf-1)+1];
+      	 contribution=bdd[idof1-1];
+
+         for(k=0;k<3;k++){
+           xs[k]=co[3*(nodesf-1)+k]+vold[3*(nodesf-1)+k];
+         }
+         for(k=0;k<3;k++){
+         help[k]=-contribution*xs[k];
+         } 
+//	printf("help= %e %e %e \n",help[0],help[1],help[2]);       
+         for (jj=jqb[nodesf-1]-1;jj<jqb[nodesf]-1;jj++){
+          nodem=irowb[jj];
+          for(k=0;k<3;k++){
+           xm[k]=co[3*(nodem-1)+k]+vold[3*(nodem-1)+k];
+          }
+          for(k=0;k<3;k++){
+           help[k]=help[k]-Bd[jj]*xm[k];
+          }
+//         printf("\t nodem= %d Bd= %e \n",nodem, Bd[jj]);
+         
+         }
+	printf("\t help= %e %e %e \n",help[0],help[1],help[2]);
+         gap2=    help[0]*slavnor[3*j]
+	          +help[1]*slavnor[3*j+1]
+	          +help[2]*slavnor[3*j+2];
+        if(debug==1){
+	 printf("node= %d gap2(%d)= %e  \n",nodesf,idof1,gap2 );
+        }
+        gap[j]=gap2/contribution;
+	}
+  }*/
+  *irowbdp = irowbd; *aubdp=aubd; *irowbp = irowb; *Bdp=Bd;
   return;
 }
 

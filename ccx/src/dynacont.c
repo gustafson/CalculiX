@@ -90,7 +90,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
               int *itiefac,double *areaslav,int *iponoels,int *inoels,
               double *springarea,int *izdof,int *nzdof,double *fn,
 	      int *imastnode,int *nmastnode,double *xmastnor,
-              double *xnormastface){
+              double *xnormastface, double *xstateini, int *nslavs){
     
   char lakonl[9]="        \0";
 
@@ -112,8 +112,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       *bjbas=NULL, *bjinc=NULL, *dbj=NULL, *lhs=NULL,dbjmax,bjmax,
       *bjincp=NULL,sump,h14,*dbjp=NULL,senergy=0.0,*xforcdiff=NULL,
       df,i0,ic,ia,dbjmaxOLD1,dbjmaxOLD2,*xloaddiff=NULL,*dbcont=NULL,
-      zl=0.0,*xbodydiff=NULL,*t1diff=NULL,*xboundiff=NULL,*bdiff=NULL,
-      *xstateini=NULL;
+      zl=0.0,*xbodydiff=NULL,*t1diff=NULL,*xboundiff=NULL,*bdiff=NULL;
 
   ikactcont=*ikactcontp;ikactmech=*ikactmechp;
 
@@ -165,7 +164,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
           iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
           itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
-	  imastnode,nmastnode,xmastnor,xnormastface,filab);
+	  imastnode,nmastnode,xmastnor,xnormastface,filab,mcs,ics);
 
   ikactcont1=NNEW(int,nactcont1_);
 
@@ -255,6 +254,8 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 
   do{
 
+      /* restoring initial values */
+
       if(*nmdnode>0){
 	  for(i=0;i<*nmdnode;i++){
 	      i1=mt*(imdnode[i]-1);
@@ -264,6 +265,12 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  }
       }else{
 	  memcpy(&vold[0],&vini[0],sizeof(double)*mt**nk);
+      }
+
+      if(*nstate_!=0){
+	for(k=0;k<*nstate_*mi[0]*(*ne0+*nslavs);++k){
+	  xstate[k]=xstateini[k];
+	}	
       }
     
     /* restoring aa[(iinc-1)*nev+i] (before change of *dtime) */
@@ -715,7 +722,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
 	      iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
               itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
-	      imastnode,nmastnode,xmastnor,xnormastface,filab);
+	      imastnode,nmastnode,xmastnor,xnormastface,filab,mcs,ics);
 
 //      printf("number of contact springs = %d\n",*ne-*ne0);
 
@@ -896,7 +903,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
 	      iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
               itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
-	      imastnode,nmastnode,xmastnor,xnormastface,filab);
+	      imastnode,nmastnode,xmastnor,xnormastface,filab,mcs,ics);
 
 //      printf("number of contact springs = %d\n",*ne-*ne0);
 

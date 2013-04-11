@@ -115,11 +115,13 @@ c               if(surfset(ipos:ipos).eq.'S') cycle
 !
 !     nodeface(4..7,ipoface(i)) contains the middle nodes
 !
+!     let set A contain all elements adjacent to a contact surface
+!
 !     nodface(8,ipoface(i)) contains:
 !       -1: face belongs to a contact surface
 !       -2: face is an internal face
-!       >0: face belongs to exactly one element of set A. Set A
-!           contains all elements adjacent to a contact surface
+!       >0: face belongs to exactly one element of set A but does
+!           not belong to a contact surface.
 !
 !     nodface(9,ipoface(i))
 !     is a pointer to the next surface for which node i is the
@@ -136,8 +138,12 @@ c               if(surfset(ipos:ipos).eq.'S') cycle
 !     
 !     hexahedral element
 !     
+c                  if((lakon(i)(4:4).eq.'2').and.
+c     &               (lakon(i)(7:7).eq.' ')) then
                   if((lakon(i)(4:4).eq.'2').and.
-     &               (lakon(i)(7:7).eq.' ')) then
+     &               ((lakon(i)(7:7).eq.' ').or.
+     &                (lakon(i)(7:7).eq.'L').or.
+     &                (lakon(i)(7:7).eq.'B'))) then
                      do j=1,6
                         do k=1,4
                            nodes(k)=kon(indexe+ifaceq(k,j))
@@ -207,7 +213,7 @@ c               if(surfset(ipos:ipos).eq.'S') cycle
                               nodface(3,ifree)=nodes(4)
                               do k=5,8
                                  nodface(k-1,ifree)=
-     &                                kon(indexe+ifaceq(k,j))
+     &                                kon(indexe+ifacew(k,j))
                               enddo
                               if(j.eq.jface) then
                                  nodface(8,ifree)=-1
@@ -338,8 +344,10 @@ c      ntets2remesh=0
 !     tetrahedral element
 !     
                      if(lakon(i)(4:5).eq.'10') then
-                        do k=1,3
-                           node=kon(indexe+ifacet(k,jface))
+c                        do k=1,3
+c                           node=kon(indexe+ifacet(k,jface))
+                        do k=1,4
+                           node=kon(indexe+k)
                            index1=iponoel(node)
                            do
                               if(index1.eq.0) exit

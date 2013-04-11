@@ -27,13 +27,14 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
                 int *neq, int *nzs, int *ntrans, int *inotr,
                 double *trab, double *co, int *nk, int *nactdof,
 		char *jobnamec, int *mi, int *ipkon, char *lakon,
-		int *kon, int *ne){
+		int *kon, int *ne, int *mei, int *nboun, int *nmpc){
 
   char fsti[132]="",fmas[132]="",fdof[132]="";
-  int i,j,k,l,*irow=NULL,*ai=NULL,*aj=NULL,kflag=2,ndim,jref,kstart,klen,
-    *ipoint=NULL,npoint_,npoint,neq3,index,i3l,i3c,i3lo,i3co,idof,n,il,
+  int i,j,l,*irow=NULL,*ai=NULL,*aj=NULL,kflag=2,ndim,jref,kstart,klen,
+    npoint_,npoint,neq3,index,i3l,i3c,i3lo,i3co,idof,n,il,
     ic,id,itrans,ndim2,*ipoindex=NULL,mt=mi[1]+1,*nactdofinv=NULL,
     *nodorig=NULL,inode,idir;
+  long long *ipoint=NULL,k;
   double *au=NULL,*aa=NULL,*trans=NULL,*aa3=NULL,a[9];
   FILE *f2,*f3,*f4;
 
@@ -64,7 +65,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
 
   /* stiffness matrix */
 
-  if(itrans==0){
+  if((itrans==0)||(mei[0]==1)){
     
     /* no transformation */
 
@@ -91,7 +92,15 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
   }
   else{
     
-    /* transformation: matrices are stored in transformed coordinates */
+    /* transformation: storing the matrices in transformed coordinates 
+       (needed by turboreduce (not part of CalculiX)) */
+
+      if((*nboun!=0)||(*nmpc!=0)){
+	  printf("*ERROR in matrixstorage: matrix storage in local\n");
+	  printf("       coordinates is only possible in the absence\n");
+	  printf("       of SPC's and MPC's\n\n");
+	  FORTRAN(stop,());
+      }
 
     ndim2=*neq+2**nzs;
 
@@ -135,6 +144,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
       kstart=k;
       do{
         k++;
+	if(k==ndim2) break;
         if(aj[k]!=jref) break;
       }while(1);
       klen=k-kstart;
@@ -149,7 +159,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
 
     npoint_=*neq;
     npoint=0;
-    ipoint=NNEW(int,npoint_);
+    ipoint=NNEW(long long,npoint_);
     ipoindex=NNEW(int,npoint_);
 
     neq3=*neq/3;
@@ -164,8 +174,8 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
       i3c=((ic-1)-i3co)/3;
       i3lo=(il-1)%3;
       i3l=((il-1)-i3lo)/3;
-      k=i3c*neq3+i3l;
-      FORTRAN(nident,(ipoint,&k,&npoint,&id));
+      k=(long long)i3c*neq3+i3l;
+      FORTRAN(nidentll,(ipoint,&k,&npoint,&id));
       if(npoint==0){
         npoint++;
         ipoint[npoint-1]=k;
@@ -175,7 +185,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
         npoint++;
         if(npoint>npoint_){
           npoint_=(int)(1.1*npoint_);
-          RENEW(ipoint,int,npoint_);
+          RENEW(ipoint,long long,npoint_);
           RENEW(ipoindex,int,npoint_);
         }
         index+=9;
@@ -285,7 +295,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
     FORTRAN(stop,());
   }
 
-  if(itrans==0){
+  if((itrans==0)||(mei[0]==1)){
     
     /* no transformation */
 
@@ -312,7 +322,9 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
   }
   else{
     
-    /* transformation: matrices are stored in transformed coordinates */
+    
+    /* transformation: storing the matrices in transformed coordinates 
+       (needed by turboreduce (not part of CalculiX)) */
 
     ndim2=*neq+2**nzs;
 
@@ -356,6 +368,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
       kstart=k;
       do{
         k++;
+	if(k==ndim2) break;
         if(aj[k]!=jref) break;
       }while(1);
       klen=k-kstart;
@@ -370,7 +383,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
 
     npoint_=*neq;
     npoint=0;
-    ipoint=NNEW(int,npoint_);
+    ipoint=NNEW(long long,npoint_);
     ipoindex=NNEW(int,npoint_);
 
     neq3=*neq/3;
@@ -385,8 +398,8 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
       i3c=((ic-1)-i3co)/3;
       i3lo=(il-1)%3;
       i3l=((il-1)-i3lo)/3;
-      k=i3c*neq3+i3l;
-      FORTRAN(nident,(ipoint,&k,&npoint,&id));
+      k=(long long)i3c*neq3+i3l;
+      FORTRAN(nidentll,(ipoint,&k,&npoint,&id));
       if(npoint==0){
         npoint++;
         ipoint[npoint-1]=k;
@@ -396,7 +409,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
         npoint++;
         if(npoint>npoint_){
           npoint_=(int)(1.1*npoint_);
-          RENEW(ipoint,int,npoint_);
+          RENEW(ipoint,long long,npoint_);
           RENEW(ipoindex,int,npoint_);
         }
         index+=9;
@@ -503,7 +516,11 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
   strcpy(fdof,jobnamec);
   strcat(fdof,".dof");
 
-  printf(" Storing the node and global direction per entry (row or column)\n in the stiffness and mass matrices in the form node.direction in file %s \n\n",fdof);
+  if((itrans==0)||(mei[0]==1)){
+      printf(" Storing the node and global direction per entry (row or column)\n in the stiffness and mass matrices in the form node.direction in file %s \n\n",fdof);
+  }else{
+      printf(" Storing the node and local direction per entry (row or column)\n in the stiffness and mass matrices in the form node.direction in file %s \n\n",fdof);
+  }
 
   if((f4=fopen(fdof,"wb"))==NULL){
     printf("*ERROR in matrixstorage: cannot open %s for writing...\n",fdof);

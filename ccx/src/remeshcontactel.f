@@ -38,14 +38,14 @@
      &  ikmpc(*),ilmpc(*),nmpc,nmpc_,mpcfree,nalset,ielface10(4,4),
      &  ielface15(4,5),ielface20(4,6),idof,ithermal(2),jmin,jmax,
      &  kon10(4,8),kon15(6,8),kon20(8,8),nkon,is,ie,nk0,mpcfreeold,
-     &  mi(*),ielmat(mi(3),*),ielorien(mi(3),*),vold(0:mi(2),*),
-     &  veold(0:mi(2),*),t0(*),iponoel(*),inoel(2,*),ifacet(6,4),
-     &  ik,node,indexe1,konl1(10),nstate_,iprestr,ll,nope,iflag,mm
+     &  mi(*),ielmat(mi(3),*),ielorien(mi(3),*),iponoel(*),inoel(2,*),
+     &  ifacet(6,4),ik,node,indexe1,konl1(10),nstate_,iprestr,ll,nope,
+     &  iflag,mm,iy,number,jjface
 !
       real*8 coefmpc(*),co(3,*),xstate(nstate_,mi(1),*),shp(4,20),
      &  prestr(6,mi(1),*),field(6,20),fieldst(nstate_,20),a8(8,8),
      &  a4(4,4),a27(20,27),a9(6,9),xi,et,ze,g10(3,8),g15(3,8),g20(3,8),
-     &  xl(3,20),xsj
+     &  xl(3,20),xsj,vold(0:mi(2),*),veold(0:mi(2),*),t0(*)
 !
 !     nodes belonging to the element faces
 !
@@ -241,8 +241,11 @@
       kflag=1
 !
 !     degrees of freedom for the MPC's
+!     the thermal equations generated for ithermal(2)=1 are
+!     used in tempload.f
 !
-      if(ithermal(2).le.1) then
+c      if(ithermal(2).le.1) then
+      if(ithermal(2).eq.0) then
          jmin=1
          jmax=3
       elseif(ithermal(2).eq.2) then
@@ -390,6 +393,11 @@ c               if(surfset(ipos:ipos).eq.'S') cycle
                is=istartset(n)
                ie=iendset(n)
 !
+!              sorting the faces in ascending order
+!
+               number=ie-is+1
+               call isortii(ialset(is),iy,number,kflag)
+!
                istartset(n)=nalset+1
 !     
                do ij=is,ie
@@ -400,10 +408,12 @@ c                  write(*,*) 'remeshcontactel ',i,jface
                   indexe=ipkon(i)
                   if(indexe.lt.0) cycle
 !     
-!     quadratic hexahedral element
+!     quadratic hexahedral element (beam and shell inclusive)
 !     
                   if((lakon(i)(4:4).eq.'2').and.
-     &               (lakon(i)(7:7).eq.' ')) then
+     &               ((lakon(i)(7:7).eq.' ').or.
+     &                (lakon(i)(7:7).eq.'L').or.
+     &                (lakon(i)(7:7).eq.'B'))) then
 !
 !                    storing the nodes of the C3D20 element
 !
@@ -441,6 +451,20 @@ c                  write(*,*) 'remeshcontactel ',i,jface
                      do j=1,4
                         nalset=nalset+1
                         ialset(nalset)=10*(ne+ielface20(j,jface))+jface
+!
+!                       treating other faces of the same element
+!
+                        k=0
+                        do
+                           k=k+1
+                           if(ij+k.gt.ie) exit
+                           if(int(ialset(ij+k)/10.d0).ne.i) exit
+                           jjface=ialset(ij+k)-
+     &                          10*int(ialset(ij+k)/10.d0)
+                           nalset=nalset+1
+                           ialset(nalset)=10*(ne+ielface20(j,jjface))
+     &                            +jjface
+                        enddo
                      enddo
 !
 !                    generating a new node in the middle of the
@@ -491,7 +515,7 @@ c                  write(*,*) 'remeshcontactel ',i,jface
 !
 !                    deactivating the remeshed element
 !
-                     ipkon(i)=-ipkon(i)-1
+                     ipkon(i)=-ipkon(i)-2
 !
 !                    first node of the original element is 
 !                    replaced by the first subelement
@@ -565,12 +589,22 @@ c                  write(*,*) 'remeshcontactel ',i,jface
                         do k=1,8
                            kon(nkon+k)=konl(kon20(k,j))
                         enddo
+!
+!                       internal nodes for the C3D8I element
+!
                         do k=9,11
                            nk=nk+1
                            kon(nkon+k)=nk
-                           co(1,nk)=0.d0
-                           co(2,nk)=0.d0
-                           co(3,nk)=0.d0
+                           do l=1,3
+                              co(l,nk)=0.d0
+                           enddo
+                           do l=0,mi(2)
+                              vold(l,nk)=0.d0
+                              veold(l,nk)=0.d0
+                              if(ithermal(1).gt.0) then
+                                 t0(nk)=0.d0
+                              endif
+                           enddo
                         enddo
                         nkon=nkon+11
 !
@@ -626,11 +660,25 @@ c                  write(*,*) 'remeshcontactel ',i,jface
                      do j=1,4
                         nalset=nalset+1
                         ialset(nalset)=10*(ne+ielface10(j,jface))+jface
+!
+!                       treating other faces of the same element
+!
+                        k=0
+                        do
+                           k=k+1
+                           if(ij+k.gt.ie) exit
+                           if(int(ialset(ij+k)/10.d0).ne.i) exit
+                           jjface=ialset(ij+k)-
+     &                          10*int(ialset(ij+k)/10.d0)
+                           nalset=nalset+1
+                           ialset(nalset)=10*(ne+ielface10(j,jjface))
+     &                            +jjface
+                        enddo
                      enddo
 !     
 !                    deactivating the remeshed element
 !     
-                     ipkon(i)=-ipkon(i)-1
+                     ipkon(i)=-ipkon(i)-2
 !     
 !                    first node of the original element is 
 !                    replaced by the first subelement
@@ -744,7 +792,7 @@ c                           write(*,*) 'C3D10 element ',i
 !
 !                             deactivating the remeshed element
 !     
-                              ipkon(i)=-ipkon(i)-1
+                              ipkon(i)=-ipkon(i)-2
 !     
 !                             first node of the original element is 
 !                             replaced by the first subelement
@@ -833,9 +881,12 @@ c                           write(*,*) 'C3D10 element ',i
                         enddo
                      enddo
 !     
-!     quadratic wedge element
+!     quadratic wedge element (beam and shell inclusive)
 !     
-                  elseif((lakon(i)(4:5).eq.'15')) then
+                  elseif((lakon(i)(4:5).eq.'15').and.
+     &               ((lakon(i)(7:7).eq.' ').or.
+     &                (lakon(i)(7:7).eq.'L').or.
+     &                (lakon(i)(7:7).eq.'B'))) then
 !
 !                    storing the nodes of the C3D15 element
 !
@@ -873,11 +924,25 @@ c                           write(*,*) 'C3D10 element ',i
                      do j=1,4
                         nalset=nalset+1
                         ialset(nalset)=10*(ne+ielface15(j,jface))+jface
+!
+!                       treating other faces of the same element
+!
+                        k=0
+                        do
+                           k=k+1
+                           if(ij+k.gt.ie) exit
+                           if(int(ialset(ij+k)/10.d0).ne.i) exit
+                           jjface=ialset(ij+k)-
+     &                          10*int(ialset(ij+k)/10.d0)
+                           nalset=nalset+1
+                           ialset(nalset)=10*(ne+ielface15(j,jjface))
+     &                            +jjface
+                        enddo
                      enddo
 !
 !                    deactivating the remeshed element
 !
-                     ipkon(i)=-ipkon(i)-1
+                     ipkon(i)=-ipkon(i)-2
 !
 !                    first node of the original element is 
 !                    replaced by the first subelement

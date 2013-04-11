@@ -457,6 +457,8 @@
       do i=1,nload
          if(sideload(i)(3:4).eq.'FC') then
             nelem=nelemload(1,i)
+            index=ipkon(nelem)
+            if(index.lt.0) cycle
             lakonl=lakon(nelem)
             node=nelemload(2,i)
             ieq=nacteq(0,node)
@@ -527,12 +529,6 @@
 !     
 !     connectivity of the element
 !     
-            index=ipkon(nelem)
-            if(index.lt.0) then
-               write(*,*) '*ERROR in mafillnet: element ',nelem
-               write(*,*) '       is not defined'
-               stop
-            endif
             do k=1,nope
                konl(k)=kon(index+k)
             enddo

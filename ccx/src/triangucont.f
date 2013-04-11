@@ -17,21 +17,27 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine triangucont(ncont,ntie,tieset,nset,set,istartset,
-     &  iendset,ialset,itietri,lakon,ipkon,kon,koncont,kind1,kind2)
+     &  iendset,ialset,itietri,lakon,ipkon,kon,koncont,kind1,kind2,
+     &  co,nk)
 !
 !     generate a triangulation of the contact master surfaces
 !
       implicit none
 !
-      character*1 kind1,kind2
+      character*1 kind1,kind2,c
+      character*3 m1,m2,m3
+      character*5 p0,p1,p2,p3,p7,p9999
       character*8 lakon(*)
       character*81 tieset(3,*),rightset,set(*)
+      character*88 fntria
 !
       integer ncont,ntie,i,j,k,l,nset,istartset(*),iendset(*),ialset(*),
-     &  iright,itietri(2,ntie),nelem,jface,indexe,ipkon(*),nope,m,
-     &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),node,
+     &  iright,itietri(2,ntie),nelem,jface,indexe,ipkon(*),nope,m,one,
+     &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),node,ilen,
      &  ntrifac,itrifac3(3,1),itrifac4(3,2),itrifac6(3,4),itrifac8(3,6),
-     &  itrifac(3,6),nnodelem,nface,nodef(8),kon(*),koncont(4,*)
+     &  itrifac(3,6),nnodelem,nface,nodef(8),kon(*),koncont(4,*),nk
+!
+      real*8 co(3,*)
 !
 !     nodes per face for hex elements
 !
@@ -55,7 +61,7 @@
      &             4,5,6,0,
      &             1,2,5,4,
      &             2,3,6,5,
-     &             4,6,3,1/
+     &             3,1,4,6/
 !
 !     nodes per face for quadratic wedge elements
 !
@@ -63,7 +69,7 @@
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
-     &             4,6,3,1,12,15,9,13/
+     &             3,1,4,6,9,13,12,15/
 !
 !     triangulation for three-node face
 !
@@ -335,6 +341,46 @@ c                  endif
             itietri(2,i)=ncont
 !
          endif
+!
+!        storing the triangulation in .frd format
+!
+         ilen=index(tieset(3,i),' ')
+         fntria(1:3)='Tri'
+         do j=4,ilen+2
+            fntria(j:j)=tieset(3,i)(j-3:j-3)
+         enddo
+         fntria(ilen+3:ilen+6)='.frd'
+         do j=ilen+7,88
+            fntria(j:j)=' '
+         enddo
+!
+         open(70,file=fntria,status='unknown')
+         c='C'
+         m1=' -1'
+         m2=' -2'
+         m3=' -3'
+         p0='    0'
+         p1='    1'
+         p2='    2'
+         p3='    3'
+         p7='    7'
+         p9999=' 9999'
+         one=1
+         write(70,'(a5,a1)') p1,c
+         write(70,'(a5,a1,67x,i1)') p2,c,one
+         do j=1,nk
+            write(70,'(a3,i10,1p,3e12.5)') m1,j,(co(k,j),k=1,3)
+         enddo
+         write(70,'(a3)') m3
+         write(70,'(a5,a1,67x,i1)') p3,c,one
+         do j=1,ncont
+            write(70,'(a3,i10,2a5)')m1,j,p7,p0
+            write(70,'(a3,3i10)') m2,(koncont(k,j),k=1,3)
+         enddo
+         write(70,'(a3)') m3
+         write(70,'(a5)') p9999
+         close(70)
+!     
       enddo
 !
       return

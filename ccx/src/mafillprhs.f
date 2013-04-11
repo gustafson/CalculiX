@@ -19,9 +19,9 @@
       subroutine mafillprhs(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,nelemface,sideface,
      &  nface,b,nactdoh,icolp,jqp,irowp,neqp,nzlp,nmethod,ikmpc,ilmpc,
-     &  ikboun,ilboun,rhcon,nrhcon,ielmat,ntmat_,vold,voldcon,nzsp,
+     &  ikboun,ilboun,rhcon,nrhcon,ielmat,ntmat_,vold,vcon,nzsp,
      &  dtl,matname,mi,ncmat_,shcon,nshcon,v,theta1,
-     &  iexplicit,physcon,nea,neb,dtimef,ipvar,var,ipvarf,varf)
+     &  iexplicit,physcon,nea,neb,dtimef,ipvar,var,ipvarf,varf,dtc)
 !
 !     filling the rhs b of the pressure equations (step 2)
 !
@@ -43,8 +43,8 @@
      &  i0,ncmat_,idof3
 !
       real*8 co(3,*),xboun(*),coefmpc(*),b(*),v(0:mi(2),*),
-     &  vold(0:mi(2),*),
-     &  voldcon(0:4,*),ff(60),sm(60,60),rhcon(0:1,ntmat_,*),
+     &  vold(0:mi(2),*),dtc(*),
+     &  vcon(0:4,*),ff(60),sm(60,60),rhcon(0:1,ntmat_,*),
      &  shcon(0:3,ntmat_,*),theta1,physcon(*),var(*),varf(*)
 !
       real*8 value,dtl(*),dtimef
@@ -95,9 +95,9 @@ c        enddo
 !
         call e_c3d_prhs(co,nk,kon(indexe+1),lakon(i),sm,ff,i,nmethod,
      &       rhcon,
-     &       nrhcon,ielmat,ntmat_,v,vold,voldcon,nelemface,sideface,
+     &       nrhcon,ielmat,ntmat_,v,vold,vcon,nelemface,sideface,
      &       nface,dtimef,matname,mi(1),shcon,nshcon,theta1,physcon,
-     &       iexplicit,ipvar,var,ipvarf,varf)
+     &       iexplicit,ipvar,var,ipvarf,varf,dtc)
 !
         do jj=1,nope
 !

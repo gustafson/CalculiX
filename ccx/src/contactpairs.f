@@ -145,13 +145,14 @@
       ipos=index(tieset(3,ntie),' ')
       tieset(3,ntie)(ipos:ipos)='T'
 !
-!     the definition of a contact pair triggers a geometrically 
-!     nonlinear calculation
+!     the definition of a contact pair triggers a call to
+!     nonlingeo (for static calculations) but not automatically
+!     to the nonlinear calculation of strains (i.e.
+!     iperturb(2) should be zero unless NLGEOM is activated)
 !
       if(iperturb(1).eq.0) then
          iperturb(1)=2
       endif
-      iperturb(2)=1
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

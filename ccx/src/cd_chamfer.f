@@ -74,8 +74,9 @@
             enddo
          enddo
       else 
-         write(*,*) 'in cd_chamfer.f :unacceptable angle',angle,'grad'
-         stop
+         write(*,*) '*WARNING in cd_chamfer.f :unacceptable angle'
+     &,angle,'grad'
+        write(*,*) 'Chamfer correction is assumed Cd_chamfer=1'
       endif
 !
       if (idx.eq.0) then

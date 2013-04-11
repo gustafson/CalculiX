@@ -267,7 +267,7 @@
             endif
 !
             if(iorien.eq.0) then
-               write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
+               write(5,'(i10,1x,i3,1p,6(1x,e13.6))') nelem,j,
      &              (stx(k,j,nelem),k=1,6)
             else
                call transformatrix(orab(1,iorien),coords(1,j),a)
@@ -296,7 +296,7 @@
                      enddo
                   enddo
                enddo
-               write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
+               write(5,'(i10,1x,i3,1p,6(1x,e13.6))') nelem,j,
      &              b(1,1),b(2,2),b(3,3),b(1,2),b(1,3),b(2,3)
             endif
          enddo
@@ -317,7 +317,7 @@
             endif
 !
             if(iorien.eq.0) then
-               write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
+               write(5,'(i10,1x,i3,1p,6(1x,e13.6))') nelem,j,
      &              (eei(k,j,nelem),k=1,6)
             else
                call transformatrix(orab(1,iorien),coords(1,j),a)
@@ -344,7 +344,7 @@
                      enddo
                   enddo
                enddo
-               write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
+               write(5,'(i10,1x,i3,1p,6(1x,e13.6))') nelem,j,
      &              b(1,1),b(2,2),b(3,3),b(1,2),b(1,3),b(2,3)
             endif
          enddo
@@ -365,7 +365,7 @@
             endif
 !
             if(iorien.eq.0) then
-               write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
+               write(5,'(i10,1x,i3,1p,6(1x,e13.6))') nelem,j,
      &              (eme(k,j,nelem),k=1,6)
             else
                call transformatrix(orab(1,iorien),coords(1,j),a)
@@ -392,18 +392,18 @@
                      enddo
                   enddo
                enddo
-               write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
+               write(5,'(i10,1x,i3,1p,6(1x,e13.6))') nelem,j,
      &              b(1,1),b(2,2),b(3,3),b(1,2),b(1,3),b(2,3)
             endif
          enddo
       elseif(prlab(ii)(1:4).eq.'PEEQ') then
          do j=1,mint3d
-            write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
+            write(5,'(i10,1x,i3,1p,6(1x,e13.6))') nelem,j,
      &           xstate(1,j,nelem)
          enddo
       elseif(prlab(ii)(1:4).eq.'ENER') then
          do j=1,mint3d
-            write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
+            write(5,'(i10,1x,i3,1p,6(1x,e13.6))') nelem,j,
      &           ener(j,nelem)
          enddo
       elseif(prlab(ii)(1:4).eq.'SDV ') then
@@ -427,7 +427,7 @@
                write(*,*) '         printed in the local system'
                write(*,*) '         results are in the global system'
             endif
-            write(5,'(i6,1x,i3,1p,99(1x,e11.4))') nelem,j,
+            write(5,'(i10,1x,i3,1p,99(1x,e13.6))') nelem,j,
      &           (xstate(k,j,nelem),k=1,nstate_)
          enddo
       elseif(prlab(ii)(1:4).eq.'HFL ') then
@@ -447,14 +447,14 @@
             endif
 !
             if(iorien.eq.0) then
-               write(5,'(i6,1x,i3,1p,3(1x,e11.4))') nelem,j,
+               write(5,'(i10,1x,i3,1p,3(1x,e13.6))') nelem,j,
      &              (qfx(k,j,nelem),k=1,3)
             else
                do k=1,3
                   qfxl(k)=qfx(k,j,nelem)
                enddo
                call transformatrix(orab(1,iorien),coords(1,j),a)
-               write(5,'(i6,1x,i3,1p,3(1x,e11.4))') nelem,j,
+               write(5,'(i10,1x,i3,1p,3(1x,e13.6))') nelem,j,
      &              qfxl(1)*a(1,1)+qfxl(2)*a(2,1)+qfxl(3)*a(3,1),
      &              qfxl(1)*a(1,2)+qfxl(2)*a(2,2)+qfxl(3)*a(3,2),
      &              qfxl(1)*a(1,3)+qfxl(2)*a(2,3)+qfxl(3)*a(3,3)

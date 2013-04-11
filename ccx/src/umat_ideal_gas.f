@@ -23,13 +23,16 @@
 !
 !     calculates stiffness and stresses for an ideal gas
 !     For this material there is just one material constant equal to
-!     density x specific gas constant x temperature in Kelvin
-!     The user should list this constant as a function of temperature
+!     initial density x specific gas constant
+!     The user should list this constant (which does not depend on
+!     the temperature)
 !     underneath the *USER MATERIAL,CONSTANTS=1 card. The name of the
 !     material has to start with IDEAL_GAS, e.g. IDEAL_GAS_AIR or
 !     IDEAL_GAS_NITROGEN etc.
 !
-!     icmd=3: calcutates stress at mechanical strain
+!     This routine should only be used with nlgeom=yes
+!
+!     icmd=3: calculates stress at mechanical strain
 !     else: calculates stress at mechanical strain and the stiffness
 !           matrix
 !
@@ -121,36 +124,82 @@
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien,i
+      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien,i,
+     &  kk(84),k,l,m,n,nt
 !
       real*8 elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xokl(3,3),voj,pgauss(3),orab(7,*),
-     &  time,ttime
+     &  time,ttime,xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
+     &  rho0r,c(3,3),cinv(3,3),v3,didc(3,3)
 !
-      real*8 xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),xk
+      kk=(/1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
+     &  1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,3,3,1,3,
+     &  1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,1,2,2,3,1,3,2,3,
+     &  2,3,2,3/)
 !
-      real*8 e,un,al,um,am1,am2
+      rho0r=elconloc(1)
 !
-      xk=elconloc(1)
+!     calculation of the Green deformation tensor for the total
+!     strain and the thermal strain
+!     
+      do i=1,3
+         c(i,i)=emec(i)*2.d0+1.d0
+      enddo
+      c(1,2)=2.d0*emec(4)
+      c(1,3)=2.d0*emec(5)
+      c(2,3)=2.d0*emec(6)
 !
-!     insert here code to calculate the stresses
+!     calculation of the third invariant of C
 !
-      stre(1)=xk*(emec(1)+emec(2)+emec(3))
-      stre(2)=xk*(emec(1)+emec(2)+emec(3))
-      stre(3)=xk*(emec(1)+emec(2)+emec(3))
-      stre(4)=0.d0
-      stre(5)=0.d0
-      stre(6)=0.d0
+      v3=c(1,1)*(c(2,2)*c(3,3)-c(2,3)*c(2,3))
+     &     -c(1,2)*(c(1,2)*c(3,3)-c(1,3)*c(2,3))
+     &     +c(1,3)*(c(1,2)*c(2,3)-c(1,3)*c(2,2))
+!
+!     inversion of c
+!     
+      cinv(1,1)=(c(2,2)*c(3,3)-c(2,3)*c(2,3))/v3
+      cinv(2,2)=(c(1,1)*c(3,3)-c(1,3)*c(1,3))/v3
+      cinv(3,3)=(c(1,1)*c(2,2)-c(1,2)*c(1,2))/v3
+      cinv(1,2)=(c(1,3)*c(2,3)-c(1,2)*c(3,3))/v3
+      cinv(1,3)=(c(1,2)*c(2,3)-c(2,2)*c(1,3))/v3
+      cinv(2,3)=(c(1,2)*c(1,3)-c(1,1)*c(2,3))/v3
+      cinv(2,1)=cinv(1,2)
+      cinv(3,1)=cinv(1,3)
+      cinv(3,2)=cinv(2,3)
+!
+!     changing the meaning of v3
+!
+      v3=v3*rho0r
+!
+!     stress at mechanical strain
+!     
+      stre(1)=v3*cinv(1,1)
+      stre(2)=v3*cinv(2,2)
+      stre(3)=v3*cinv(3,3)
+      stre(4)=v3*cinv(1,2)
+      stre(5)=v3*cinv(1,3)
+      stre(6)=v3*cinv(2,3)
+!
+!     tangent
+!
       if(icmd.ne.3) then
 !
-!        insert here code to calculate the stiffness matrix
 !
-         do i=1,6
-            stiff(i)=xk
-         enddo
-         do i=7,21
-            stiff(i)=0.d0
-         enddo
+!        second derivative of the c-invariants w.r.t. c(k,l) 
+!        and c(m,n)
+!
+         if(icmd.ne.3) then
+            nt=0
+            do i=1,21
+               k=kk(nt+1)
+               l=kk(nt+2)
+               m=kk(nt+3)
+               n=kk(nt+4)
+               nt=nt+4
+               stiff(i)=v3*(cinv(m,n)*cinv(k,l)-
+     &            (cinv(k,m)*cinv(n,l)+cinv(k,n)*cinv(m,l))/2.d0)
+            enddo
+         endif
       endif
 !
       return

@@ -62,7 +62,7 @@
       nelcon(1,nmat)=-51
 !
       do i=2,n
-         if(textpart(i)(11:14).eq.'USER') then
+         if(textpart(i)(1:4).eq.'USER') then
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
             return

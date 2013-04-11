@@ -707,28 +707,6 @@ c     Bernhardi end
          call map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,ne,cflag,co,
      &         vold,force,mi)
       endif
-c!
-c!     printing values for environmental film, radiation and
-c!     pressure nodes
-c!
-c      do i=1,nload
-c         node=nelemload(2,i)
-c         if(node.gt.0) then
-c            if(inum(node).gt.0) cycle
-c            inum(node)=-1
-c         endif
-c      enddo
-c!
-c!     printing values of prescribed boundary conditions
-c!
-c      if(ithermal(2).gt.1) then
-c         do i=1,nboun
-c            node=nodeboun(i)
-c            if(inum(node).ne.0) cycle
-c            if((cflag.ne.' ').and.(ndirboun(i).eq.3)) cycle
-c            inum(node)=1
-c         enddo
-c      endif
 !
       return
       end

@@ -33,20 +33,20 @@
 !
       close(5)
 !
-      inquire(7,opened=frd)
-      if(frd) then
-!
-!        closing the .frd file
-!
-         p9999=' 9999'
-         write(7,'(a5)') p9999
-         close(7)
-      else
-!
-!        closing the .onf file
-!
-         close(11)
-      endif
+c      inquire(7,opened=frd)
+c      if(frd) then
+c!
+c!        closing the .frd file
+c!
+c         p9999=' 9999'
+c         write(7,'(a5)') p9999
+c         close(7)
+c      else
+c!
+c!        closing the .onf file
+c!
+c         close(11)
+c      endif
 !
 !     closing the .sta file
 !

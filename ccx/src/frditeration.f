@@ -29,7 +29,7 @@
       character*8 lakon(*),date,newclock,fmat
       character*10 clock
       character*20 newdate
-      character*26 cfile
+      character*28 cfile
       character*80 matname(*)
       character*132 text
 !
@@ -43,41 +43,7 @@
 !
       save iteller,istep0,iinc0
 !
-c      if(iteller.eq.1) then
-      cfile(1:26)='RESULTS_FOR_LAST_ITERATIONS'
-c         if(istep.lt.10) then
-c            write(cfile(8:8),'(i1)') istep
-c            cfile(9:9)='.'
-c            if(iinc.lt.10) then
-c               write(cfile(10:10),'(i1)') iinc
-c               cfile(11:11)='.'
-c               if(iteller.lt.10) then
-c                  write(cfile(12:12),'(i1)') iteller
-c               elseif(iteller.lt.100) then
-c                  write(cfile(12:13),'(i2)') iteller
-c               elseif(iteller.lt.1000) then
-c                  write(cfile(12:14),'(i3)') iteller
-c               else
-c                  write(*,*) '*ERROR in frditeration: iteller>999'
-c               endif
-c            elseif(iinc.lt.100) then
-c               write(cfile(10:11),'(i2)') iinc
-c               cfile(12:12)='.'
-c               if(iteller.lt.10) then
-c                  write(cfile(13:13),'(i1)') iteller
-c               elseif(iteller.lt.100) then
-c                  write(cfile(13:14),'(i2)') iteller
-c               elseif(iteller.lt.1000) then
-c                  write(cfile(13:15),'(i3)') iteller
-c               else
-c                  write(*,*) '*ERROR in frditeration: iinc>99'
-c               endif
-c            endif
-c         else
-c            write(*,*) '*ERROR in frditeration: istep>9'
-c         endif
-c         open(27,file=cfile,status='unknown')
-c      endif
+      cfile(1:28)='ResultsForLastIterations.frd'
       if((istep.eq.istep0).and.(iinc.eq.iinc0)) then
          open(27,file=cfile,status='unknown',position='append')
          iteller=iteller+1

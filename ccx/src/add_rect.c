@@ -24,10 +24,10 @@
 
 void add_rect(double *au_1,int * irow_1,int * jq_1,int n_1, int m_1,
 	       double *au_2,int * irow_2,int * jq_2,int n_2, int m_2,
-               double **au_rp,int **irow_rp,int * jq_r){
+               double **au_rp,int **irow_rp,int * jq_r,int *nzs){
 
        /*Result fields*/
-       	int *irow=NULL,ifree=1,nzs,numb,icol,i,j,k,l,m,carre=0,kflag=2,istart,icounter,
+       	int *irow=NULL,ifree=1,numb,icol,i,j,k,l,m,carre=0,kflag=2,istart,icounter,
               pt1,pt2,row1,row2;
 	double *au=NULL,value;
         clock_t debut;
@@ -39,7 +39,7 @@ void add_rect(double *au_1,int * irow_1,int * jq_1,int n_1, int m_1,
 		return;
 	} 
 
-        nzs=jq_1[m_1]+jq_2[m_2]-2;
+//        nzs=jq_1[m_1]+jq_2[m_2]-2;
 	//printf("nzs add_rect = %d\n",nzs);
 //        irow=NNEW(int,nzs);
 //        au=NNEW(double,nzs);
@@ -58,26 +58,26 @@ void add_rect(double *au_1,int * irow_1,int * jq_1,int n_1, int m_1,
 		        row2=irow_2[pt2];
 			if (row1==row2){
 				value=au_1[pt1]+au_2[pt2];
-				insertas_ws(&irow,&row1,&m,&ifree,&nzs,&value,&au);
+				insertas_ws(&irow,&row1,&m,&ifree,nzs,&value,&au);
 				pt1++;
 				pt2++;
 			}else{
 				if (row1<row2) {
-				insertas_ws(&irow,&row1,&m,&ifree,&nzs,&au_1[pt1],&au);
+				insertas_ws(&irow,&row1,&m,&ifree,nzs,&au_1[pt1],&au);
 				pt1++;
 				}else{
-				insertas_ws(&irow,&row2,&m,&ifree,&nzs,&au_2[pt2],&au);
+				insertas_ws(&irow,&row2,&m,&ifree,nzs,&au_2[pt2],&au);
 				pt2++;
 				}
 			}
 		}
 		else{ 
 			if (pt1<jq_1[m]-1){ //column 2 finished
-				insertas_ws(&irow,&irow_1[pt1],&m,&ifree,&nzs,&au_1[pt1],&au);
+				insertas_ws(&irow,&irow_1[pt1],&m,&ifree,nzs,&au_1[pt1],&au);
 				pt1++;				
 			}
 			else{ //column 1 finished
-				insertas_ws(&irow,&irow_2[pt2],&m,&ifree,&nzs,&au_2[pt2],&au);
+				insertas_ws(&irow,&irow_2[pt2],&m,&ifree,nzs,&au_2[pt2],&au);
 				pt2++;						
 			}
 		}
@@ -85,9 +85,9 @@ void add_rect(double *au_1,int * irow_1,int * jq_1,int n_1, int m_1,
 	   jq_r[m]=ifree;	
         }
 
-
-	RENEW(irow,int,ifree-1);
-        RENEW(au,double,ifree-1);
+        *nzs=ifree-1;
+	RENEW(irow,int,*nzs);
+        RENEW(au,double,*nzs);
         *irow_rp=irow;*au_rp=au;
 	   fin= clock();
 	printf("add_rect : %f s\n",((double)(fin-debut))/CLOCKS_PER_SEC);

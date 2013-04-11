@@ -40,14 +40,34 @@
       do i=1,ne
          indexes=ipkon(i)
          if(indexes.lt.0) cycle
+!
+!        looking for solid elements or spring elements only
+!
          if((lakon(i)(7:7).ne.' ').and.(lakon(i)(1:1).ne.'E')) cycle
-c         if((lakon(i)(4:4).ne.'8').and.
-c     &        (lakon(i)(4:4).ne.'1').and.
-c     &        (lakon(i)(7:7).ne.' ')) cycle
-         if(lakon(i)(4:4).eq.'8') then
+c         if(lakon(i)(4:4).eq.'8') then
+c            nope=8
+c         elseif(lakon(i)(4:4).eq.'1') then
+c            nope=10
+c         elseif(lakon(i)(4:4).eq.'2') then
+c            nope=20
+c         elseif(lakon(i)(1:1).eq.'E') then
+c            read(lakon(i)(8:8),'(i1)') nope
+c         else
+c            cycle
+c         endif
+!
+!        determining the number of nodes belonging to the element
+!
+         if(lakon(i)(4:4).eq.'4') then
+            nope=4
+         elseif(lakon(i)(4:4).eq.'6') then
+            nope=6
+         elseif(lakon(i)(4:4).eq.'8') then
             nope=8
-         elseif(lakon(i)(4:4).eq.'1') then
+         elseif(lakon(i)(4:5).eq.'10') then
             nope=10
+         elseif(lakon(i)(4:5).eq.'15') then
+            nope=15
          elseif(lakon(i)(4:4).eq.'2') then
             nope=20
          elseif(lakon(i)(1:1).eq.'E') then
@@ -55,6 +75,7 @@ c     &        (lakon(i)(7:7).ne.' ')) cycle
          else
             cycle
          endif
+!
          do l=1,nope
             node=kon(indexes+l)
             if(node.le.iponoelmax) then
@@ -66,7 +87,8 @@ c     &        (lakon(i)(7:7).ne.' ')) cycle
                   j=inoel(2,index2)
                   indexk=iponor(2,indexe+j)
 !
-!                    2d shell element
+!                 2d shell element: the exterior expanded nodes
+!                 are connected to the non-expanded node
 !
                   if(lakon(ielem)(7:7).eq.'L') then
                      newnode=knor(indexk+1)
@@ -121,7 +143,8 @@ c     &        (lakon(i)(7:7).ne.' ')) cycle
                      enddo
                   elseif(lakon(ielem)(7:7).eq.'B') then
 !
-!                       1d beam element
+!                    1d beam element: corner nodes are connected to
+!                    the not-expanded node
 !
                      newnode=knor(indexk+1)
                      do idir=0,3
@@ -177,8 +200,10 @@ c     &        (lakon(i)(7:7).ne.' ')) cycle
                      enddo
                   else
 !     
-!                       2d plane stress, plane strain or axisymmetric
-!                       element
+!                    2d plane stress, plane strain or axisymmetric
+!                    element: the expanded middle node (this is the
+!                    "governing" node for these elements) is connected to
+!                    the non-expanded node
 !
                      newnode=knor(indexk+2)
                      do idir=0,2

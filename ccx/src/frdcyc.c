@@ -31,7 +31,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
             int *iendset, double *trab, int *inotr, int *ntrans,
 	    double *orab, int *ielorien, int *norien, double *sti,
             double *veold, int *noddiam,char *set,int *nset, double *emn,
-            double *thicke){
+            double *thicke,char* jobnamec,int *ne0){
 
   /* duplicates fields for static cyclic symmetric calculations */
 
@@ -40,7 +40,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   int nkt,icntrl,*kont=NULL,*ipkont=NULL,*inumt=NULL,*ielmatt=NULL,net,i,l,
      imag=0,mode=-1,ngraph,*inocs=NULL,*ielcs=NULL,l1,l2,is,
       jj,node,i1,i2,nope,iel,indexe,j,ielset,*inotrt=NULL,mt=mi[1]+1,
-      *ipneigh=NULL,*neigh=NULL;
+      *ipneigh=NULL,*neigh=NULL,net0;
 
   double *vt=NULL,*fnt=NULL,*stnt=NULL,*eent=NULL,*cot=NULL,*t1t=NULL,
          *epnt=NULL,*enernt=NULL,*xstatent=NULL,theta,pi,t[3],*qfnt=NULL,
@@ -114,7 +114,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   cot=NNEW(double,3**nk*ngraph);
   if(*ntrans>0)inotrt=NNEW(int,2**nk*ngraph);
 
-  if((strcmp1(&filab[0],"U  ")==0)||
+  if((strcmp1(&filab[0],"U ")==0)||
      ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2)))
     vt=NNEW(double,mt**nk*ngraph);
   if((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal<2))
@@ -154,6 +154,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   inumt=NNEW(int,*nk*ngraph);
   
   nkt=ngraph**nk;
+  net0=(ngraph-1)**ne+(*ne0);
   net=ngraph**ne;
 
   /* copying the coordinates of the first sector */
@@ -231,7 +232,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   
   FORTRAN(rectcyl,(co,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filab,&imag,mi,emn));
   
-  if((strcmp1(&filab[0],"U  ")==0)||
+  if((strcmp1(&filab[0],"U ")==0)||
      ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2)))
     for(l=0;l<mt**nk;l++){vt[l]=v[l];};
   if((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal<2))
@@ -262,7 +263,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
     
       for(l=0;l<*nk;l++){inumt[l+i**nk]=inum[l];}
     
-      if((strcmp1(&filab[0],"U  ")==0)||
+      if((strcmp1(&filab[0],"U ")==0)||
          ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2))){
         for(l1=0;l1<*nk;l1++){
           if(inocs[l1]==jj){
@@ -368,16 +369,18 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   if(strcmp1(&filab[1044],"ZZS")==0){
       neigh=NNEW(int,40*net);ipneigh=NNEW(int,nkt);
   }
-  FORTRAN(out,(cot,&nkt,kont,ipkont,lakont,&net,vt,stnt,inumt,nmethod,kode,
-	       filab,eent,t1t,fnt,time,epnt,ielmatt,matname,enernt,
-               xstatent,nstate_,istep,iinc,iperturb,ener,mi,output,
-               ithermal,qfnt,&mode,noddiam,trab,inotrt,ntrans,orab,ielorien,
-               norien,description,ipneigh,neigh,stit,vr,vi,stnr,stni,
-               vmax,stnmax,&ngraph,veold,&net,cs,set,nset,istartset,
-               iendset,ialset,eenmax,fnr,fni,emnt,thicke));
+
+  frd(cot,&nkt,kont,ipkont,lakont,&net0,vt,stnt,inumt,nmethod,
+	    kode,filab,eent,t1t,fnt,time,epnt,ielmatt,matname,enernt,xstatent,
+	    nstate_,istep,iinc,ithermal,qfnt,&mode,noddiam,trab,inotrt,
+	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
+	    mi,stit,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,&net,
+	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emnt,
+	    thicke,jobnamec,output);
+
   if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
   
-  if((strcmp1(&filab[0],"U  ")==0)||
+  if((strcmp1(&filab[0],"U ")==0)||
      ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2))) free(vt);
   if((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal<2)) free(t1t);
   if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1044],"ZZS ")==0)||

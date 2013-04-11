@@ -65,17 +65,17 @@
      &  iorien,orab,pgauss)
       elseif(kode.gt.-50) then
          mattyp=3
-         call rubber(elconloc,elas,emec,kode,emec0,didc,d2idc2,
+         call rubber(elconloc,elas,emec,kode,didc,d2idc2,
      &     dibdc,d2ibdc2,dudc,d2udc2,dldc,d2ldc2,dlbdc,d2lbdc2,
      &     ithermal,icmd,beta,stre)
       elseif(kode.eq.-50) then
          mattyp=3
-         call defplas(elconloc,elas,emec,emec0,ithermal,icmd,beta,stre,
+         call defplas(elconloc,elas,emec,ithermal,icmd,beta,stre,
      &     ckl,vj)
       elseif(kode.gt.-100) then
          mattyp=3
          call incplas(elconloc,plconloc,xstate,xstateini,elas,emec,
-     &     emec0,ithermal,icmd,beta,stre,vj,kode,ielas,amat,t1l,dtime,
+     &     ithermal,icmd,beta,stre,vj,kode,ielas,amat,t1l,dtime,
      &     time,ttime,iel,iint,nstate_,mi(1),eloc,pgauss,nmethod)
       else
          mattyp=3

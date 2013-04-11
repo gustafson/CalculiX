@@ -45,7 +45,7 @@
          call umat_abaqusnl(amatloc,iel,iint,kode,elconloc,emec,
      &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
-     &        iorien,pgauss,orab,istep,iinc)
+     &        iorien,pgauss,orab,istep,iinc,pnewdt)
 !
       elseif(amat(1:6).eq.'ABAQUS') then
 !
@@ -54,7 +54,7 @@
          call umat_abaqus(amatloc,iel,iint,kode,elconloc,emec,
      &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
-     &        iorien,pgauss,orab,istep,iinc)
+     &        iorien,pgauss,orab,istep,iinc,pnewdt)
 !
       elseif(amat(1:10).eq.'ANISO_PLAS') then
 !
@@ -75,6 +75,16 @@
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
      &        iorien,pgauss,orab,nmethod)
+!
+      elseif(amat(1:16).eq.'COMPRESSION_ONLY') then
+!
+         amatloc(1:64)=amat(17:80)
+         amatloc(65:80)='                '
+         call umat_compression_only(amatloc,
+     &        iel,iint,kode,elconloc,emec,
+     &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
+     &        icmd,ielas,mi(1),
+     &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,orab)
 !
       elseif(amat(1:13).eq.'ELASTIC_FIBER') then
 !
@@ -111,6 +121,16 @@
          amatloc(1:66)=amat(15:80)
          amatloc(67:80)='              '
          call umat_single_crystal(amatloc,
+     &        iel,iint,kode,elconloc,emec,
+     &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
+     &        icmd,ielas,mi(1),
+     &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,orab)
+!
+      elseif(amat(1:12).eq.'TENSION_ONLY') then
+!
+         amatloc(1:68)=amat(13:80)
+         amatloc(69:80)='            '
+         call umat_tension_only(amatloc,
      &        iel,iint,kode,elconloc,emec,
      &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),

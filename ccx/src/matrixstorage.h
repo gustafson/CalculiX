@@ -20,6 +20,6 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
                 int *neq, int *nzs, int *ntrans, int *inotr,
                 double *trab, double *co, int *nk, int *nactdof,
 		char *jobnamec, int *mi, int *ipkon, char *lakon,
-		int *kon, int *ne);
+		int *kon, int *ne, int *mei, int *nboun, int *nmpc);
 
 

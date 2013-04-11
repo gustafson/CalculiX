@@ -57,7 +57,6 @@
       do i=1,nbounold
          node=nodeboun(i)
          if(node.gt.iponoelmax) then
-c            if(ndirboun(i).gt.3) then
             if(ndirboun(i).gt.4) then
                write(*,*) '*WARNING: in gen3dboun: node ',node,
      &              ' does not'
@@ -69,7 +68,6 @@ c            if(ndirboun(i).gt.3) then
          endif
          index=iponoel(node)
          if(index.eq.0) then
-c            if(ndirboun(i).gt.3) then
             if(ndirboun(i).gt.4) then
                write(*,*) '*WARNING: in gen3dboun: node ',node,
      &              ' does not'
@@ -88,7 +86,9 @@ c            if(ndirboun(i).gt.3) then
          if(nam.gt.0) iamplitude=iamboun(i)
 !
          if(rig(node).ne.0) then
-c            if(idir.gt.3) then
+!
+!           existing knot
+!
             if(idir.gt.4) then
                if(rig(node).lt.0) then
                   write(*,*) '*ERROR in gen3dboun: in node ',node
@@ -98,7 +98,6 @@ c            if(idir.gt.3) then
                   write(*,*) '       have rotational DOFs'
                   stop
                endif
-c               j=idir-3
                j=idir-4
                irotnode=rig(node)
                type='B'
@@ -114,7 +113,6 @@ c               j=idir-3
 !
 !           check for rotational DOFs defined in any but the first step
 !
-c            if(idir.gt.3) then
             if(idir.gt.4) then
 !
 !              create a knot: determine the knot
@@ -215,8 +213,6 @@ c            if(idir.gt.3) then
 !
 !              determine the first displacements of iexpnode
 !
-c               write(*,*) 'q ',q(1),q(2),q(3)
-c               write(*,*) 'w ',w(1),w(2),w(3)
                alpha=0.d0
                do k=1,ndepnodes
                   nod=idepnodes(k)
@@ -273,14 +269,12 @@ c               write(*,*) 'w ',w(1),w(2),w(3)
 !
                m=3
                nrhs=1
-c               write(*,*) 'xn before ',xn(1),xn(2),xn(3)
                call dgesv(m,nrhs,a,m,ipiv,xn,m,info)
                if(info.ne.0) then
                   write(*,*) '*ERROR in gen3dforc:'
                   write(*,*) '       singular system of equations'
                   stop
                endif
-c               write(*,*) 'xn after ',xn(1),xn(2),xn(3)
 !
                dd=0.d0
                do l=1,3
@@ -290,7 +284,6 @@ c               write(*,*) 'xn after ',xn(1),xn(2),xn(3)
                do l=1,3
                   xn(l)=dasin(dd/alpha)*xn(l)/dd
                enddo
-c               write(*,*) 'xn afterafter ',xn(1),xn(2),xn(3)
 !
 !              determine the displacements of irefnode
 !
@@ -331,13 +324,9 @@ c               write(*,*) 'xn afterafter ',xn(1),xn(2),xn(3)
                   vold(l,irotnode)=xn(l)
                enddo
                vold(1,iexpnode)=alpha
-c               write(*,*) 'w',w(1),w(2),w(3)
-c               write(*,*) 'xn',xn(1),xn(2),xn(3)
-c               write(*,*) 'alpha',alpha
 !     
 !              apply the boundary condition
 !               
-c               idir=idir-3
                idir=idir-4
                type='B'
                call bounadd(irotnode,idir,idir,val,nodeboun,
@@ -384,7 +373,6 @@ c               idir=idir-3
 !     
                      isol=0
                      do l=1,3
-c                        idof=8*(node-1)+3+imax
                         idof=8*(node-1)+4+imax
                         call nident(ikboun,idof,nboun,id)
                         if((id.gt.0).and.(ikboun(id).eq.idof)) then
@@ -445,7 +433,9 @@ c                        idof=8*(node-1)+3+imax
                cycle
             endif
 !     
-!                    2d element shell element: generate MPC's
+!           2d element shell element: generate MPC's
+!
+!           u(n_1)+u(n_3)=2*u(n)
 !
             if(lakon(ielem)(7:7).eq.'L') then
                newnode=knor(indexk+1)
@@ -500,18 +490,62 @@ c                        idof=8*(node-1)+3+imax
 !              fixing the temperature degrees of freedom
 !
                if(idir.eq.0) then
-                  type='B'
-                  call bounadd(knor(indexk+3),idir,idir,val,nodeboun,
-     &                 ndirboun,xboun,nboun,nboun_,iamboun,
-     &                 iamplitude,nam,ipompc,nodempc,coefmpc,
-     &                 nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
-     &                 ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &                 type,typeboun,nmethod,iperturb,fixed,vold,
-     &                 irotnode,mi)
+c                  type='B'
+c                  call bounadd(knor(indexk+3),idir,idir,val,nodeboun,
+c     &                 ndirboun,xboun,nboun,nboun_,iamboun,
+c     &                 iamplitude,nam,ipompc,nodempc,coefmpc,
+c     &                 nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
+c     &                 ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
+c     &                 type,typeboun,nmethod,iperturb,fixed,vold,
+c     &                 irotnode,mi)
+!
+!                 t(n_3)=t(n)
+!
+                  newnode=knor(indexk+3)
+                  idof=8*(newnode-1)+idir
+                  call nident(ikmpc,idof,nmpc,id)
+                  if((id.le.0).or.(ikmpc(id).ne.idof)) then
+                     nmpc=nmpc+1
+                     if(nmpc.gt.nmpc_) then
+                        write(*,*) 
+     &                       '*ERROR in gen3dboun: increase nmpc_'
+                        stop
+                     endif
+                     labmpc(nmpc)='                    '
+                     ipompc(nmpc)=mpcfree
+                     do j=nmpc,id+2,-1
+                        ikmpc(j)=ikmpc(j-1)
+                        ilmpc(j)=ilmpc(j-1)
+                     enddo
+                     ikmpc(id+1)=idof
+                     ilmpc(id+1)=nmpc
+                     nodempc(1,mpcfree)=newnode
+                     nodempc(2,mpcfree)=idir
+                     coefmpc(mpcfree)=1.d0
+                     mpcfree=nodempc(3,mpcfree)
+                     if(mpcfree.eq.0) then
+                        write(*,*) 
+     &                       '*ERROR in gen3dboun: increase nmpc_'
+                        stop
+                     endif
+                     nodempc(1,mpcfree)=node
+                     nodempc(2,mpcfree)=idir
+                     coefmpc(mpcfree)=-1.d0
+                     mpcfreenew=nodempc(3,mpcfree)
+                     if(mpcfreenew.eq.0) then
+                        write(*,*) 
+     &                       '*ERROR in gen3dboun: increase nmpc_'
+                        stop
+                     endif
+                     nodempc(3,mpcfree)=0
+                     mpcfree=mpcfreenew
+                  endif
                endif
             elseif(lakon(ielem)(7:7).eq.'B') then
 !
 !                       1d beam element: generate MPC's
+!
+!              u(n_1)+u(n_2)+u(n_3)+u(n_4)=4*u(n)
 !
                newnode=knor(indexk+1)
                idof=8*(newnode-1)+idir
@@ -567,19 +601,61 @@ c                        idof=8*(node-1)+3+imax
 !              fixing the temperature degrees of freedom
 !
                if(idir.eq.0) then
-                  type='B'
+c                  type='B'
                   do k=2,4
-                     call bounadd(knor(indexk+k),idir,idir,val,nodeboun,
-     &                    ndirboun,xboun,nboun,nboun_,iamboun,
-     &                    iamplitude,nam,ipompc,nodempc,coefmpc,
-     &                    nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
-     &                    ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &                    type,typeboun,nmethod,iperturb,fixed,vold,
-     &                    knor(indexk+k),mi)
+c                     call bounadd(knor(indexk+k),idir,idir,val,nodeboun,
+c     &                    ndirboun,xboun,nboun,nboun_,iamboun,
+c     &                    iamplitude,nam,ipompc,nodempc,coefmpc,
+c     &                    nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
+c     &                    ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
+c     &                    type,typeboun,nmethod,iperturb,fixed,vold,
+c     &                    knor(indexk+k),mi)
+!
+!                    t(n_k)=t(n), k=2,4
+!
+                     newnode=knor(indexk+k)
+                     idof=8*(newnode-1)+idir
+                     call nident(ikmpc,idof,nmpc,id)
+                     if((id.le.0).or.(ikmpc(id).ne.idof)) then
+                        nmpc=nmpc+1
+                        if(nmpc.gt.nmpc_) then
+                           write(*,*) 
+     &                          '*ERROR in gen3dboun: increase nmpc_'
+                           stop
+                        endif
+                        labmpc(nmpc)='                    '
+                        ipompc(nmpc)=mpcfree
+                        do j=nmpc,id+2,-1
+                           ikmpc(j)=ikmpc(j-1)
+                           ilmpc(j)=ilmpc(j-1)
+                        enddo
+                        ikmpc(id+1)=idof
+                        ilmpc(id+1)=nmpc
+                        nodempc(1,mpcfree)=newnode
+                        nodempc(2,mpcfree)=idir
+                        coefmpc(mpcfree)=1.d0
+                        mpcfree=nodempc(3,mpcfree)
+                        if(mpcfree.eq.0) then
+                           write(*,*) 
+     &                          '*ERROR in gen3dboun: increase nmpc_'
+                           stop
+                        endif
+                        nodempc(1,mpcfree)=node
+                        nodempc(2,mpcfree)=idir
+                        coefmpc(mpcfree)=-1.d0
+                        mpcfreenew=nodempc(3,mpcfree)
+                        if(mpcfreenew.eq.0) then
+                           write(*,*) 
+     &                          '*ERROR in gen3dboun: increase nmpc_'
+                           stop
+                        endif
+                        nodempc(3,mpcfree)=0
+                        mpcfree=mpcfreenew
+                     endif
                   enddo
                endif
             else
-!
+!     
 !                       2d plane stress, plane strain or axisymmetric
 !                       element: MPC in all but z-direction
 !

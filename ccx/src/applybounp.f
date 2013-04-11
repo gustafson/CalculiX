@@ -17,9 +17,9 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine applybounp(nodeboun,ndirboun,nboun,xbounact,
-     &  ithermal,nk,iponoel,inoel,vold,voldtu,t1act,isolidsurf,
+     &  ithermal,nk,iponoel,inoel,vold,vcontu,t1act,isolidsurf,
      &  nsolidsurf,xsolidsurf,nfreestream,ifreestream,turbulent,
-     &  voldcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
+     &  vcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
      &  ipompc,nodempc,coefmpc,nmpc,inomat,mi)
 !
 !     applies velocity boundary conditions
@@ -36,8 +36,8 @@
      &  nodei
 !
       real*8 rhcon(0:1,ntmat_,*),vold(0:mi(2),*),xbounact(*),shcon,
-     &  voldtu(2,*),t1act(*),temp,r,dvi,xsolidsurf(*),reflength,
-     &  refkin,reftuf,refvel,cp,voldcon(0:4,*),physcon(*),v(0:mi(2),*),
+     &  vcontu(2,*),t1act(*),temp,r,dvi,xsolidsurf(*),reflength,
+     &  refkin,reftuf,refvel,cp,vcon(0:4,*),physcon(*),v(0:mi(2),*),
      &  coefmpc(*),fixed_pres,size,correction,residu
 !
 !     inserting the pressure boundary conditions

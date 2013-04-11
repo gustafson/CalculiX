@@ -24,10 +24,10 @@
 
 void multi_rect(double *au_1,int * irow_1,int * jq_1,int n_1, int m_1,
 	       double *au_2,int * irow_2,int * jq_2,int n_2, int m_2,
-               double **au_rp,int **irow_rp,int * jq_r){ 
+               double **au_rp,int **irow_rp,int * jq_r,int *nzs){ 
 
        /*Result fields*/
-       	int *irow=NULL,ifree=1,nzs,numb,icol,i,j,k,l,m,carre=0,kflag=2,istart,icounter;
+       	int *irow=NULL,ifree=1,numb,icol,i,j,k,l,m,carre=0,kflag=2,istart,icounter;
         int flag=0;
 	double *au=NULL,value;
         clock_t debut;
@@ -40,7 +40,7 @@ void multi_rect(double *au_1,int * irow_1,int * jq_1,int n_1, int m_1,
 		return;
 	} 
 
-        nzs=n_1*m_2;
+//        nzs=n_1*m_2;
         irow=*irow_rp;
         au=*au_rp; 
 
@@ -54,13 +54,16 @@ void multi_rect(double *au_1,int * irow_1,int * jq_1,int n_1, int m_1,
 		flag=0;
                 value=0.0;
 		multi_scal(au_1,irow_1,jq_1,au_2,irow_2,jq_2,i,j,&value,&flag);
-		if (flag!=0) insertas_ws(&irow,&l,&m,&ifree,&nzs,&value,&au);
+		if (flag!=0) insertas_ws(&irow,&l,&m,&ifree,nzs,&value,&au);
 		}
            jq_r[m]=ifree;
 	}
 
 	/* Sort the column and compute jq*/ 
     
+	*nzs=ifree;
+	RENEW(au,double,*nzs);
+	RENEW(irow,int,*nzs);
         *irow_rp=irow;*au_rp=au;   
 	   fin= clock();
 	printf("multi_rect : %f s\n",((double)(fin-debut))/CLOCKS_PER_SEC);

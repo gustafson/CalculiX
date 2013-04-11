@@ -81,7 +81,7 @@ void checkconvnet(int *icutb, int *iin,
   if(((*camt<=c1t**uamt)||(*camt<1.e-8**vamt))&&
      ((*camf<=c1f**uamf)||(*camf<1.e-8**vamf))&&
      ((*camp<=c1p**uamp)||(*camp<1.e-8**vamp))&&
-     ((*cama<=c1p**uama)||(*cama<1.e-8**vama))&&
+     ((*cama<=c1a**uama)||(*cama<1.e-8**vama))&&
      (*iin>3)){
       
       /* increment convergence reached */
@@ -122,7 +122,7 @@ void checkconvnet(int *icutb, int *iin,
       /* divergence based on geometry */
       
       if((*iin>=20*i0)||(fabs(*cama)>1.e20)){
-	  if((*cam1a>=*cam2a)&&(*cama>=*cam2a)&&(*cama>c1p**uama)){
+	  if((*cam1a>=*cam2a)&&(*cama>=*cam2a)&&(*cama>c1a**uama)){
 	      idivergence=1;
 	  }
       }

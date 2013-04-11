@@ -66,14 +66,24 @@
 !     rotating case eq 17
       
       if (u.ne.0) then
-         vid=dsqrt(2.d0*kappa/(kappa-1.d0)*R*T1*
-     &        (1.d0-p2/p1**((kappa-1.d0)/kappa)))
-         rv=1000*u/vid*(cd/0.6)**(-3)
+         vid=dsqrt(2.d0*kappa/(kappa-1.d0)*r*T1*
+     &        (1.d0-(p2/p1)**((kappa-1.d0)/kappa)))
+         rv=u/vid*(cd/0.6)**(-3)
          c1=exp(-rv**1.2d0)
-         c2=0.5*rv**(0.6d0)*(cd/0.6)**(-0.5d0)
-         c3=exp(-0.5d0*rv**0.9d0)
+         c2=0.5d0*rv**0.6d0*dsqrt(0.6/cd)
+         c3=exp(-0.5*rv**0.9d0)
          ms_cdr=cd*(c1+c2*c3)
          cd=ms_cdr
+         cd=min(max(cd,0.d0),1.d0)
+
+!         vid=dsqrt(2.d0*kappa/(kappa-1.d0)*R*T1*
+!     &        (1.d0-p2/p1**((kappa-1.d0)/kappa)))
+!         rv=1000*u/vid*(cd/0.6)**(-3)
+!         c1=exp(-rv**1.2d0)
+!         c2=0.5*rv**(0.6d0)*(cd/0.6)**(-0.5d0)
+!         c3=exp(-0.5d0*rv**0.9d0)
+!         ms_cdr=cd*(c1+c2*c3)
+!         cd=ms_cdr
       endif
 !
       return

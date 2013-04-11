@@ -55,7 +55,7 @@
      &  neb32,nn,nflow,nradiate,irestartread,irestartstep,icntrl,
      &  irstrt,ithermal(2),nener,nstate,ipoinp(2,*),inp(3,*),
      &  ntie,nbody,nprop,ipoinpc(0:*),nevdamp,npt,
-     &  iposs,iposm,nslavs,nlayer,nkon,nopeexp
+     &  iposs,iposm,nslavs,nlayer,nkon,nopeexp,k
 !
       real*8 temperature,tempact,xfreq,tpinc,tpmin,tpmax
 !
@@ -348,39 +348,34 @@
                if(istat.lt.0) exit
                nstate=max(l,nstate)
             enddo
-         elseif(textpart(1)(1:20).eq.'*DISTRIBUTEDCOUPLING') then
-            do i=2,n
-               if(textpart(i)(1:8).eq.'SURFACE=') then
-                  surface=textpart(i)(9:88)
-                  ipos=index(surface,' ')
-                  surface(ipos:ipos)='T'
-                  exit
+         elseif(textpart(1)(1:21).eq.'*DISTRIBUTINGCOUPLING') then
+            nmpc=nmpc+3
+            memmpc=memmpc+3
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+!
+               read(textpart(1)(1:10),'(i10)',iostat=istat) l
+               if(istat.eq.0) then
+                  memmpc=memmpc+3
+               else
+                  read(textpart(1)(1:80),'(a80)',iostat=istat) noset
+                  noset(81:81)=' '
+                  ipos=index(noset,' ')
+                  noset(ipos:ipos)='N'
+                  do i=1,nset
+                     if(set(i).eq.noset) then
+                        memmpc=memmpc+3*meminset(i)
+                        exit
+                     endif
+                  enddo
                endif
             enddo
-            do i=1,nset
-               if(set(i).eq.surface) then
-!
-!                 worst case: 8 nodes per element face
-!
-                  nk=nk+8*meminset(i)
-!
-!                 1 distributed coupling MPC
-!                  
-                  nmpc=nmpc+1
-!
-!                 3 terms * # of nodes +1 parallel to coupling
-!                 direction
-!
-                  memmpc=memmpc+24*meminset(i)+1
-                  exit
-!
-               endif
-            enddo
-            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &           ipoinp,inp,ipoinpc)
          elseif((textpart(1)(1:6).eq.'*DLOAD').or.
-     &           (textpart(1)(1:6).eq.'*DFLUX').or.
-     &           (textpart(1)(1:5).eq.'*FILM')) then
+     &          (textpart(1)(1:7).eq.'*DSLOAD').or.
+     &          (textpart(1)(1:6).eq.'*DFLUX').or.
+     &          (textpart(1)(1:5).eq.'*FILM')) then
             if(textpart(1)(1:5).ne.'*FILM') then
                nam=nam+1
                namtot=namtot+1
@@ -508,7 +503,8 @@
                      call inputerror(inpc,ipoinpc,iline)
                      stop
                   endif
-                  if(label(1:2).eq.'DC') then
+                  if((label(1:2).eq.'DC').and.(label(1:7).ne.'DCOUP3D'))
+     &                  then
                      label(1:7)=label(2:8)
                      label(8:8)=' '
                   endif
@@ -556,13 +552,6 @@
                      mi(1)=max(mi(1),1)
                      nope=6
                      nopeexp=6
-                  elseif((label.eq.'CPE8R   ').or.
-     &                    (label.eq.'CPS8R   ').or.
-     &                    (label.eq.'CAX8R   ').or.
-     &                    (label.eq.'S8R     ')) then
-                     mi(1)=max(mi(1),8)
-                     nope=8
-                     nopeexp=28
                   elseif((label.eq.'C3D8    ').or.
      &                    (label.eq.'F3D8    ')) then
                      mi(1)=max(mi(1),8)
@@ -574,13 +563,28 @@ c    Bernhardi start
                      nope=8
                      nopeexp=11
 c    Bernhardi end
-                  elseif((label.eq.'CPE8    ').or.
-     &                    (label.eq.'CPS8    ').or.
-     &                    (label.eq.'CAX8    ').or.
-     &                    (label.eq.'S8      ')) then
-                     mi(1)=max(mi(1),27)
-                     nope=8
-                     nopeexp=28
+                  elseif((label.eq.'CPE3    ').or.
+     &                    (label.eq.'CPS3    ').or.
+     &                    (label.eq.'CAX3    ').or.
+     &                    (label.eq.'S3      ')) then
+                     mi(1)=max(mi(1),2)
+                     nope=3
+                     nopeexp=9
+                  elseif((label.eq.'CPE4R   ').or.
+     &                    (label.eq.'CPS4R   ').or.
+     &                    (label.eq.'CAX4R   ').or.
+     &                    (label.eq.'S4R     ')) then
+                     mi(1)=max(mi(1),1)
+                     nope=4
+                     nopeexp=12
+                  elseif((label.eq.'CPE4    ').or.
+     &                    (label.eq.'CPS4    ').or.
+     &                    (label.eq.'CAX4    ').or.
+     &                    (label.eq.'S4      ')) then
+                     mi(1)=max(mi(1),8)
+                     nope=4
+!                    modified into C3D8I (11 nodes)
+                     nopeexp=15
                   elseif((label.eq.'CPE6    ').or.
      &                    (label.eq.'CPS6    ').or.
      &                    (label.eq.'CAX6    ').or.
@@ -588,9 +592,32 @@ c    Bernhardi end
                      mi(1)=max(mi(1),9)
                      nope=6
                      nopeexp=21
+                  elseif((label.eq.'CPE8R   ').or.
+     &                    (label.eq.'CPS8R   ').or.
+     &                    (label.eq.'CAX8R   ').or.
+     &                    (label.eq.'S8R     ')) then
+                     mi(1)=max(mi(1),8)
+                     nope=8
+                     nopeexp=28
+                  elseif((label.eq.'CPE8    ').or.
+     &                    (label.eq.'CPS8    ').or.
+     &                    (label.eq.'CAX8    ').or.
+     &                    (label.eq.'S8      ')) then
+                     mi(1)=max(mi(1),27)
+                     nope=8
+                     nopeexp=28
                   elseif(label.eq.'SB4     ') then
                      mi(2)=max(mi(2),7)
                      nope=4
+                  elseif(label.eq.'B31     ') then
+                     mi(1)=max(mi(1),8)
+                     nope=2
+!                    modified into C3D8I (11 nodes)
+                     nopeexp=13
+                  elseif(label.eq.'B31R    ') then
+                     mi(1)=max(mi(1),1)
+                     nope=2
+                     nopeexp=10
                   elseif(label.eq.'B32     ') then
                      mi(1)=max(mi(1),27)
                      nope=3
@@ -603,6 +630,9 @@ c    Bernhardi end
                      label='EDSHPTA2'
                      nope=2
                      nopeexp=2
+                  elseif(label(1:7).eq.'DCOUP3D') then
+                     nope=1
+                     nopeexp=1
                   elseif(label(1:1).eq.'D') then
                      nope=3
                      nopeexp=3
@@ -1105,36 +1135,47 @@ c            nstate=max(nstate,9)
             enddo
             if(ncmat.ge.9) ncmat=max(19,ncmat)
          elseif(textpart(1)(1:19).eq.'*PRE-TENSIONSECTION') then
+            surface(1:1)=' '
             do i=2,n
                if(textpart(i)(1:8).eq.'SURFACE=') then
                   surface=textpart(i)(9:88)
                   ipos=index(surface,' ')
                   surface(ipos:ipos)='T'
                   exit
+               elseif(textpart(i)(1:8).eq.'ELEMENT=') then
+                  nmpc=nmpc+1
+                  memmpc=memmpc+7
+                  exit
                endif
             enddo
-            do i=1,nset
-               if(set(i).eq.surface) then
-!
+            if(surface(1:1).ne.' ') then
+               do i=1,nset
+                  if(set(i).eq.surface) then
+!     
 !                 worst case: 8 nodes per element face
-!
-                  nk=nk+8*meminset(i)
-                  npt=npt+8*meminset(i)
-!
+!     
+                     nk=nk+8*meminset(i)
+                     npt=npt+8*meminset(i)
+!     
 !                 2 MPC's per node perpendicular to tension direction
+!                 + 1 thermal MPC per node
 !                 + 1 MPC in tension direction
 !                  
-                  nmpc=nmpc+16*meminset(i)+1
+c                  nmpc=nmpc+16*meminset(i)+1
+                     nmpc=nmpc+24*meminset(i)+1
 !
 !                 6 terms per MPC perpendicular to tension direction
+!                 + 2 thermal terms per MPC
 !                 + 6 terms * # of nodes +1 parallel to tension
 !                 direction
 !
-                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
-                  exit
-!
-               endif
-            enddo
+c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
+                     memmpc=memmpc+112*meminset(i)+48*meminset(i)+1
+                     exit
+!     
+                  endif
+               enddo
+            endif
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:8).eq.'*RADIATE') then
@@ -1313,6 +1354,69 @@ c                  if(irestartstep.eq.0) irestartstep=1
                enddo
                if(ncmat.ge.9) ncmat=max(19,ncmat)
             endif
+         elseif(textpart(1)(1:9).eq.'*SUBMODEL') then
+            ntie=ntie+1
+            nam=nam+1
+            namtot=namtot+4
+!
+!           global element set
+!
+            do j=2,n
+               if(textpart(j)(1:12).eq.'GLOBALELSET=')
+     &              then
+                  mastset(1:80)=textpart(j)(13:92)
+                  mastset(81:81)=' '
+                  ipos=index(mastset,' ')
+                  mastset(ipos:ipos)='E'
+                  do i=1,nset
+                     if(set(i).eq.mastset) exit
+                  enddo
+                  if(i.le.nset) then
+                     nset=nset+1
+                     do k=1,81
+                        set(nset)(k:k)=' '
+                     enddo
+                     meminset(nset)=meminset(nset)+meminset(i)
+                     rmeminset(nset)=rmeminset(nset)+meminset(i)
+                  endif
+               elseif(textpart(j)(1:5).eq.'TYPE=') then
+                  if(textpart(j)(6:12).eq.'SURFACE') then
+                     selabel='T'
+                  else
+                     selabel='N'
+                  endif
+               endif
+            enddo
+!
+!           local node or element face set
+!
+            nset=nset+1
+            set(nset)(1:1)=' '
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+               read(textpart(1)(1:10),'(i10)',iostat=istat) ialset(1)
+               if(istat.gt.0) then
+                  noset=textpart(1)(1:80)
+                  noset(81:81)=' '
+                  ipos=index(noset,' ')
+                  noset(ipos:ipos)=selabel
+                  do i=1,nset-1
+                     if(set(i).eq.noset) then
+                        meminset(nset)=meminset(nset)+meminset(i)
+!
+!                       surfaces are stored in expanded form 
+!                       (no equivalent to generate)
+!
+                        rmeminset(nset)=rmeminset(nset)+meminset(i)
+                     endif
+                  enddo
+               else
+                  meminset(nset)=meminset(nset)+1
+                  rmeminset(nset)=rmeminset(nset)+1
+               endif
+            enddo
          elseif(textpart(1)(1:9).eq.'*SURFACE ') then
             nset=nset+1
             sulabel='T'
@@ -1512,8 +1616,10 @@ c                  if(irestartstep.eq.0) irestartstep=1
 !
       if(necaxr.gt.0) ntie=max(1,ntie)
 !
-!        providing space for the expansion of shell and beam elements
-!        to genuine volume elements
+!     providing space for the expansion of shell and beam elements
+!     to genuine volume elements (no distinction is made between
+!     linear and quadratic elements. The worst case (quadratic)
+!     is taken
 !
       nk=nk+3*8*ne2d+8*3*ne1d
       if(ne1d.gt.0) then

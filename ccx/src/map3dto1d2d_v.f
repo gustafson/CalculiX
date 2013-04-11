@@ -24,11 +24,13 @@
 !
       implicit none
 !
+      logical quadratic
+!
       character*8 lakon(*),lakonl
 !
       integer ipkon(*),inum(*),kon(*),ne,indexe,nfield,nk,i,j,k,l,
      &  node3(8,3),node6(3,6),node8(3,8),node2d,node3d,indexe2d,ne1d2d,
-     &  node3m(8,3),iflag,nactdof(nfield,*)
+     &  node3m(8,3),iflag,nactdof(nfield,*),jmax
 !
       real*8 yn(nfield,*),ratioe(3)
 !
@@ -58,16 +60,22 @@
      &      (lakonl(1:1).ne.'C')) cycle
          ne1d2d=1
          indexe=ipkon(i)
+c!
+c!        inactivating the 3d expansion nodes of 1d/2d elements
+c!
+c         do j=1,20
+c            inum(kon(indexe+j))=0
+c         enddo
 !
-!        inactivating the 3d expansion nodes of 1d/2d elements
-!
-         do j=1,20
-            inum(kon(indexe+j))=0
-         enddo
-!
-         if(lakonl(4:5).eq.'15') then
-            indexe2d=indexe+15
-            do j=1,6
+         if((lakonl(4:5).eq.'15').or.(lakonl(4:4).eq.'6')) then
+            if(lakonl(4:5).eq.'15') then
+               indexe2d=indexe+15
+               jmax=6
+            else
+               indexe2d=indexe+6
+               jmax=3
+            endif
+            do j=1,jmax
                node2d=kon(indexe2d+j)
                inum(node2d)=0
                do k=1,nfield
@@ -75,8 +83,17 @@
                enddo
             enddo
          elseif(lakonl(7:7).eq.'B') then
-            indexe2d=indexe+20
-            do j=1,3
+            if(lakonl(4:5).eq.'8I') then
+               indexe2d=indexe+11
+               jmax=2
+            elseif(lakonl(4:5).eq.'8R') then
+               indexe2d=indexe+8
+               jmax=2
+            elseif(lakonl(4:5).eq.'20') then
+               indexe2d=indexe+20
+               jmax=3
+            endif
+            do j=1,jmax
                node2d=kon(indexe2d+j)
                inum(node2d)=0
                do k=1,nfield
@@ -84,8 +101,17 @@
                enddo
             enddo
          else
-            indexe2d=indexe+20
-            do j=1,8
+            if(lakonl(4:5).eq.'8I') then
+               indexe2d=indexe+11
+               jmax=4
+            elseif((lakonl(4:5).eq.'8R').or.(lakonl(4:5).eq.'8 ')) then
+               indexe2d=indexe+8
+               jmax=4
+            elseif(lakonl(4:5).eq.'20') then
+               indexe2d=indexe+20
+               jmax=8
+            endif
+            do j=1,jmax
                node2d=kon(indexe2d+j)
                inum(node2d)=0
                do k=1,nfield
@@ -93,6 +119,12 @@
                enddo
             enddo
          endif
+!
+!        inactivating the 3d expansion nodes of 1d/2d elements
+!
+         do j=1,indexe2d-indexe
+            inum(kon(indexe+j))=0
+         enddo
 !
       enddo
 !
@@ -109,16 +141,30 @@
          if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'I').or.
      &        (lakonl(1:1).ne.'C')) cycle
          indexe=ipkon(i)
+!
+!        check whether linear or quadratic element
+!
+         if((lakonl(4:4).eq.'6').or.(lakonl(4:4).eq.'8')) then
+            quadratic=.false.
+         else
+            quadratic=.true.
+         endif
 !     
-         if(lakonl(4:5).eq.'15') then
-            indexe2d=indexe+15
-            do j=1,6
+         if((lakonl(4:5).eq.'15').or.(lakonl(4:4).eq.'6')) then
+            if(lakonl(4:5).eq.'15') then
+               indexe2d=indexe+15
+               jmax=6
+            else
+               indexe2d=indexe+6
+               jmax=3
+            endif
+            do j=1,jmax
                node2d=kon(indexe2d+j)
                inum(node2d)=inum(node2d)-1
 !     
 !     taking the mean across the thickness
 !     
-               if(j.le.3) then
+               if((j.le.3).and.(quadratic)) then
 !     
 !     end nodes: weights 1/6,2/3 and 1/6
 !     
@@ -143,18 +189,31 @@
                endif
             enddo
          elseif(lakonl(7:7).eq.'B') then
-            indexe2d=indexe+20
+            if(lakonl(4:5).eq.'8I') then
+               indexe2d=indexe+11
+               jmax=2
+            elseif(lakonl(4:5).eq.'8R') then
+               indexe2d=indexe+8
+               jmax=2
+            elseif(lakonl(4:5).eq.'20') then
+               indexe2d=indexe+20
+               jmax=3
+            endif
 !     
 !     mean values for beam elements
 !     
-            do j=1,3
+            do j=1,jmax
                node2d=kon(indexe2d+j)
 !     
 !     mean value of vertex values
 !     
                do l=1,4
                   inum(node2d)=inum(node2d)-1
-                  node3d=kon(indexe+node3(l,j))
+                  if(quadratic) then
+                     node3d=kon(indexe+node3(l,j))
+                  else
+                     node3d=kon(indexe+node3(l,2*j-1))
+                  endif
                   do k=1,nfield
                      if(nactdof(k,node2d).eq.0) yn(k,node2d)=
      &                    yn(k,node2d)+yn(k,node3d)
@@ -162,14 +221,23 @@
                enddo
             enddo
          else
-            indexe2d=indexe+20
-            do j=1,8
+            if(lakonl(4:5).eq.'8I') then
+               indexe2d=indexe+11
+               jmax=4
+            elseif(lakonl(4:5).eq.'8R') then
+               indexe2d=indexe+8
+               jmax=4
+            elseif(lakonl(4:5).eq.'20') then
+               indexe2d=indexe+20
+               jmax=8
+            endif
+            do j=1,jmax
                node2d=kon(indexe2d+j)
                inum(node2d)=inum(node2d)-1
 !     
 !     taking the mean across the thickness
 !     
-               if(j.le.4) then
+               if((j.le.4).and.(quadratic)) then
 !     
 !     end nodes: weights 1/6,2/3 and 1/6
 !     

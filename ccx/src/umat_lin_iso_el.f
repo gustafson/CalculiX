@@ -116,7 +116,7 @@
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien
+      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien,i
 !
       real*8 elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xokl(3,3),voj,pgauss(3),orab(7,*),
@@ -141,6 +141,7 @@
       stre(4)=am2*emec(4)-beta(4)
       stre(5)=am2*emec(5)-beta(5)
       stre(6)=am2*emec(6)-beta(6)
+c      write(*,*) 'stre',(stre(i),i=1,6)
 !
       if(icmd.ne.3) then
 !
@@ -167,6 +168,7 @@
          stiff(19)=0.d0
          stiff(20)=0.d0
          stiff(21)=um
+c      write(*,*) 'stiff',(stiff(i),i=1,21)
       endif
 !
       return

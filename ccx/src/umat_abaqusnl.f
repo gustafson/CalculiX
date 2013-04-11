@@ -19,7 +19,7 @@
       subroutine umat_abaqusnl(amat,iel,iint,kode,elconloc,emec,emec0,
      &        beta,xokl,voj,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi,nstate_,xstateini,xstate,stre,stiff,
-     &        iorien,pgauss,orab,kstep,kinc)
+     &        iorien,pgauss,orab,kstep,kinc,pnewdt)
 !
 !     calculates stiffness and stresses for a nonlinear material
 !     defined by an ABAQUS umat routine

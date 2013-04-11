@@ -93,14 +93,35 @@
             if(ipkon(i).lt.0) cycle
             if((lakon(i)(1:2).ne.'C3').and.(lakon(i)(1:1).ne.'D').and.
      &         (lakon(i)(1:1).ne.'G').and.(lakon(i)(1:1).ne.'E')) then
-               if(lakon(i)(1:1).eq.'B') then
+!
+!              number of nodes belonging to the element
+!
+               if(lakon(i)(1:3).eq.'B31') then
+                  numnod=2
+               elseif(lakon(i)(1:1).eq.'B') then
                   numnod=3
+               elseif((lakon(i)(2:2).eq.'3').or.
+     &                (lakon(i)(4:4).eq.'3')) then
+                  numnod=3
+               elseif((lakon(i)(2:2).eq.'4').or.
+     &                (lakon(i)(4:4).eq.'4')) then
+                  numnod=4
                elseif((lakon(i)(2:2).eq.'6').or.
      &                (lakon(i)(4:4).eq.'6')) then
                   numnod=6
-               else
+               elseif((lakon(i)(2:2).eq.'8').or.
+     &                (lakon(i)(4:4).eq.'8')) then
                   numnod=8
                endif
+!
+c               if(lakon(i)(1:1).eq.'B') then
+c                  numnod=3
+c               elseif((lakon(i)(2:2).eq.'6').or.
+c     &                (lakon(i)(4:4).eq.'6')) then
+c                  numnod=6
+c               else
+c                  numnod=8
+c               endif
                indexe=ipkon(i)
                do j=1,numnod
                   node=kon(indexe+j)
@@ -505,11 +526,12 @@ c               if(nodempc(2,index).gt.3) then
                if((lakon(i)(1:2).eq.'CP').or.
      &              (lakon(i)(1:2).eq.'CA')) then
                   indexe=ipkon(i)
-                  if(lakon(i)(4:4).eq.'6') then
-                     nope=6
-                  else
-                     nope=8
-                  endif
+                  read(lakon(i)(4:4),'(i1)') nope
+c                  if(lakon(i)(4:4).eq.'6') then
+c                     nope=6
+c                  else
+c                     nope=8
+c                  endif
                   do j=1,nope
                      node=kon(indexe+j)
                      if(dabs(co(3,node)).gt.0.d0) then
@@ -548,33 +570,61 @@ c               if(nodempc(2,index).gt.3) then
      &                thicke,ntrans,inotr,trab,nk,nk_,co,offset,mi)
               endif
 !     
-              if(lakon(i)(1:4).eq.'CPE6') then
+              if(lakon(i)(1:4).eq.'CPE3') then
+                 lakon(i)(1:7)='C3D6  E'
+              elseif(lakon(i)(1:5).eq.'CPE4R') then
+                 lakon(i)(1:7)='C3D8R E'
+              elseif(lakon(i)(1:4).eq.'CPE4') then
+                 lakon(i)(1:7)='C3D8  E'
+              elseif(lakon(i)(1:4).eq.'CPE6') then
                  lakon(i)(1:7)='C3D15 E'
               elseif(lakon(i)(1:5).eq.'CPE8R') then
                  lakon(i)(1:7)='C3D20RE'
               elseif(lakon(i)(1:4).eq.'CPE8') then
                  lakon(i)(1:7)='C3D20 E'
+              elseif(lakon(i)(1:4).eq.'CPS3') then
+                 lakon(i)(1:7)='C3D6  S'
+              elseif(lakon(i)(1:5).eq.'CPS4R') then
+                 lakon(i)(1:7)='C3D8R S'
+              elseif(lakon(i)(1:4).eq.'CPS4') then
+                 lakon(i)(1:7)='C3D8  S'
               elseif(lakon(i)(1:4).eq.'CPS6') then
                  lakon(i)(1:7)='C3D15 S'
               elseif(lakon(i)(1:5).eq.'CPS8R') then
                  lakon(i)(1:7)='C3D20RS'
               elseif(lakon(i)(1:4).eq.'CPS8') then
                  lakon(i)(1:7)='C3D20 S'
+              elseif(lakon(i)(1:4).eq.'CAX3') then
+                 lakon(i)(1:7)='C3D6  A'
+              elseif(lakon(i)(1:5).eq.'CAX4R') then
+                 lakon(i)(1:7)='C3D8R A'
+              elseif(lakon(i)(1:4).eq.'CAX4') then
+                 lakon(i)(1:7)='C3D8  A'
               elseif(lakon(i)(1:4).eq.'CAX6') then
                  lakon(i)(1:7)='C3D15 A'
               elseif(lakon(i)(1:5).eq.'CAX8R') then
                  lakon(i)(1:7)='C3D20RA'
               elseif(lakon(i)(1:4).eq.'CAX8') then
                  lakon(i)(1:7)='C3D20 A'
+              elseif(lakon(i)(1:2).eq.'S3') then
+                 lakon(i)(1:7)='C3D6  L'
+              elseif(lakon(i)(1:3).eq.'S4R') then
+                 lakon(i)(1:7)='C3D8R L'
+              elseif(lakon(i)(1:2).eq.'S4') then
+                 lakon(i)(1:7)='C3D8I L'
               elseif(lakon(i)(1:2).eq.'S6') then
                  lakon(i)(1:7)='C3D15 L'
               elseif(lakon(i)(1:3).eq.'S8R') then
                  lakon(i)(1:7)='C3D20RL'
               elseif(lakon(i)(1:2).eq.'S8') then
                  lakon(i)(1:7)='C3D20 L'
+              elseif(lakon(i)(1:4).eq.'B31R') then
+                 lakon(i)(1:7)='C3D8R B'
+              elseif(lakon(i)(1:3).eq.'B31') then
+                 lakon(i)(1:7)='C3D8I B'
               elseif(lakon(i)(1:4).eq.'B32R') then
                  lakon(i)(1:7)='C3D20RB'
-              elseif(lakon(i)(1:1).eq.'B') then
+              elseif(lakon(i)(1:3).eq.'B32') then
                  lakon(i)(1:7)='C3D20 B'
               endif
            enddo

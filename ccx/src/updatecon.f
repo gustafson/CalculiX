@@ -16,15 +16,15 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine updatecon(vold,voldcon,v,nk,
+      subroutine updatecon(vold,vcon,v,nk,
      &  ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,iout,
      &  nmethod,convergence,physcon,iponoel,inoel,ithermal,
-     &  nactdoh,iit,compressible,ismooth,voldtu,vtu,turbulent,
+     &  nactdoh,iit,compressible,ismooth,vcontu,vtu,turbulent,
      &  inomat,nodeboun,ndirboun,nboun,mi,co,factor)
 !
 !     calculates 
-!       voldcon (volumetric energy density, volumetric momentum
-!                density and density) by adding v to voldcon from
+!       vcon (volumetric energy density, volumetric momentum
+!                density and density) by adding v to vcon from
 !                the previous iteration
 !       vold (temperature,velocity and pressure)
 !       at the nodes    
@@ -38,17 +38,17 @@
      &  nmethod,imat,nelem,iponoel(*),inoel(3,*),ismooth,
      &  inomat(*),node,nodeboun(*),ndirboun(*),nboun
 !
-      real*8 v(0:mi(2),*),vold(0:mi(2),*),voldcon(0:4,*),
+      real*8 v(0:mi(2),*),vold(0:mi(2),*),vcon(0:4,*),
      &  rhcon(0:1,ntmat_,*),rho,c1,vmax(0:4),dummy,press,
      &  voldmax(0:4),cp,r,temp,temp0,c2,c3,tempnew,vel2,
      &  shcon(0:3,ntmat_,*),drho,dtemp,physcon(*),dpress,
-     &  voldtu(2,*),vtu(2,*),co(3,*),factor
+     &  vcontu(2,*),vtu(2,*),co(3,*),factor
 !     
 !     volumetric energy density
 !     
       if(ithermal.gt.1) then
          do i=1,nk
-            voldcon(0,i)=voldcon(0,i)+v(0,i)
+            vcon(0,i)=vcon(0,i)+v(0,i)
          enddo
       endif
 !     
@@ -59,11 +59,11 @@
 c         if(inomat(i).eq.0) cycle
 !
          do j=1,3
-            voldcon(j,i)=voldcon(j,i)+v(j,i)
+            vcon(j,i)=vcon(j,i)+v(j,i)
          enddo
 !
          if(compressible.eq.1) then
-            voldcon(4,i)=voldcon(4,i)+v(4,i)
+            vcon(4,i)=vcon(4,i)+v(4,i)
          else
             vold(4,i)=vold(4,i)+v(4,i)
          endif
@@ -73,8 +73,8 @@ c         if(inomat(i).eq.0) cycle
 !     
       if(turbulent.ne.0) then
          do i=1,nk
-            voldtu(1,i)=voldtu(1,i)+vtu(1,i)
-            voldtu(2,i)=voldtu(2,i)+vtu(2,i)
+            vcontu(1,i)=vcontu(1,i)+vtu(1,i)
+            vcontu(2,i)=vcontu(2,i)+vtu(2,i)
          enddo
       endif
 !     

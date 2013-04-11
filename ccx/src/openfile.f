@@ -52,21 +52,17 @@
       open(5,file=fndat(1:i+4),status='unknown',err=51)
       close(5,status='delete',err=52)
       open(5,file=fndat(1:i+4),status='unknown',err=51)
-c      rewind(5)
 !
-      if(output.ne.'onf') then
-         fnfrd=jobname(1:i)//'.frd'
-         open(7,file=fnfrd(1:i+4),status='unknown',err=71)
-         close(7,status='delete',err=72)
-         open(7,file=fnfrd(1:i+4),status='unknown',err=71)
-c         rewind(7)
-      endif
+!     delete the .frd file (it is reopened in frd.c)
+!
+      fnfrd=jobname(1:i)//'.frd'
+      open(7,file=fnfrd(1:i+4),status='unknown',err=71)
+      close(7,status='delete',err=72)
 !
       fnsta=jobname(1:i)//'.sta'
       open(8,file=fnsta(1:i+4),status='unknown',err=81)
       close(8,status='delete',err=82)
       open(8,file=fnsta(1:i+4),status='unknown',err=81)
-c      rewind(8)
       write(8,100)
       write(8,101)
  100  format('SUMMARY OF JOB INFORMATION')

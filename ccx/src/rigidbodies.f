@@ -108,7 +108,7 @@
          elseif(textpart(i)(1:8).eq.'ROTNODE=') then
             read(textpart(i)(9:18),'(i10)',iostat=istat) irotnode
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-            if(irefnode.gt.nk) then
+            if(irotnode.gt.nk) then
                write(*,*) '*ERROR in rigidbodies: rot node',irotnode
                write(*,*) '       has not been defined'
                stop
@@ -179,6 +179,12 @@
             stop
          endif
          irefnode=nk
+!
+!        default position of the reference node is the origin
+!
+         co(1,nk)=0.d0
+         co(2,nk)=0.d0
+         co(3,nk)=0.d0
       endif
 !
       if(irotnode.eq.0) then

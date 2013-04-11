@@ -19,7 +19,7 @@
       subroutine springforc_th(xl,vl,imat,elcon,nelcon,
      &  tnl,ncmat_,ntmat_,nope,kode,elconloc,
      &  plicon,nplicon,npmat_,mi,springarea,timeend,matname,
-     &  node,noel,istep,iinc)
+     &  node,noel,istep,iinc,iperturb)
 !
 !     calculates the heat flux across a contact area
 !
@@ -29,7 +29,7 @@
 !
       integer i,j,imat,ncmat_,ntmat_,nope,nterms,iflag,mi(*),
      &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),
-     &  node,noel,istep,iinc,npred
+     &  node,noel,istep,iinc,npred,iperturb(*)
 !
       real*8 xl(3,9),ratio(9),t0l,t1l,al(3),vl(0:mi(2),9),
      &  pl(3,9),xn(3),dm,alpha,beta,tnl(9),pressure,dtemp,
@@ -39,16 +39,25 @@
      &  xiso(20),yiso(20),plicon(0:2*npmat_,ntmat_,*),temp(2),
      &  predef(2),coords(3),tmean
 !
-c      data iflag /2/
       iflag=2
 !
 !     actual positions of the nodes belonging to the contact spring
-!
-      do i=1,nope
-         do j=1,3
-            pl(j,i)=xl(j,i)+vl(j,i)
+!     (for geometrically linear static calculations the undeformed position 
+!      is taken)
+!      
+      if(iperturb(2).eq.0) then
+         do i=1,nope
+            do j=1,3
+               pl(j,i)=xl(j,i)
+            enddo
          enddo
-      enddo
+      else
+         do i=1,nope
+            do j=1,3
+               pl(j,i)=xl(j,i)+vl(j,i)
+            enddo
+         enddo
+      endif
 !
       nterms=nope-1
 c      write(*,*) ((xl(i,j),i=1,3),j=1,nterms)

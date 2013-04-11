@@ -114,13 +114,13 @@
 !
       implicit none
 !
-      integer creep
+      integer visco
 !
       character*80 amat
 !
       integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien,
      &  i,j,ipiv(6),info,neq,lda,ldb,j1,j2,j3,j4,j5,j6,j7,j8,
-     &  nrhs,iplas,kel(4,21),nmethod
+     &  nrhs,iplas,kel(4,21),nmethod,ielastic
 !
       real*8 ep0(6),al10,al20(6),eeq,ep(6),al1,b,Pn(6),QSn(6),
      &  al2(6),dg,ddg,ca,cn,c(21),r0,x(21),cm1(21),h1,h2,
@@ -195,7 +195,6 @@
       enddo
 !
       if((iint.eq.1).and.(iel.eq.1)) then
-c      write(*,*) 'element, int.point,kstep,kinc ',iel,iint
       endif
 !
 !     elastic strains
@@ -204,9 +203,6 @@ c      write(*,*) 'element, int.point,kstep,kinc ',iel,iint
          ee(i)=emec(i)-ep0(i)
       enddo
       if((iint.eq.1).and.(iel.eq.1)) then
-c      write(*,*) 'emec ',(emec(i),i=1,6)
-c      write(*,*) 'ep0 ',(ep0(i),i=1,6)
-c      write(*,*) 'ee ',(ee(i),i=1,6)
       endif
 !
 !     (visco)plastic constants
@@ -218,9 +214,20 @@ c      write(*,*) 'ee ',(ee(i),i=1,6)
       cn=elconloc(14)
 !
       if((ca.lt.0.d0).or.((nmethod.eq.1).and.(ithermal.ne.3))) then
-         creep=0
+         visco=0
       else
-         creep=1
+         visco=1
+      endif
+!
+!     if the user did not activate a viscous calculation, a pure
+!     creep calculation (without plasticity) is reduced to an
+!     elastic calculation
+!
+      ielastic=0
+      if(visco.eq.0) then
+         if((dabs(r0).lt.1.d-10).and.
+     &      (dabs(d1).lt.1.d-10).and.
+     &      (dabs(d2).lt.1.d-10)) ielastic=1
       endif
 !
       h1=d1
@@ -233,10 +240,6 @@ c      write(*,*) 'ee ',(ee(i),i=1,6)
          q2(i)=-d2*al20(i)
       enddo
       if((iint.eq.1).and.(iel.eq.1)) then
-c      write(*,200) q1
-c 200  format('q10 ',/,(6(1x,e11.4)))
-c      write(*,201) (q2(i),i=1,6)
-c 201  format('q20 ',/,(6(1x,e11.4)))
       endif
 !
 !     global trial stress tensor
@@ -268,15 +271,9 @@ c 201  format('q20 ',/,(6(1x,e11.4)))
          stri(5)=2.d0*c(8)*ee(5)-beta(5)
          stri(6)=2.d0*c(9)*ee(6)-beta(6)
       endif
-c      if((iint.eq.1).and.(iel.eq.1)) then
-c      write(*,*) 'stri ',(stri(i),i=1,6)
-c      endif
 !
 !     stress radius (only deviatoric part of stress enters)
 !
-c      do i=1,6
-c         sgold(i)=0.d0
-c      enddo
       strinv=(stri(1)+stri(2)+stri(3))/3.d0
       do i=1,3
          sg(i)=stri(i)-strinv+q2(i)
@@ -290,9 +287,6 @@ c      enddo
 !     evaluation of the yield surface
 !
       htri=dsg+c0*(q1-r0)
-c      if((iint.eq.1).and.(iel.eq.1)) then
-c         write(*,*) 'htri ',htri
-c      endif
 !
 !     check whether plasticity occurs
 !
@@ -302,17 +296,13 @@ c      endif
          iplas=0
       endif
 !
-      if((iplas.eq.0).or.(ielas.eq.1)) then
+      if((iplas.eq.0).or.(ielas.eq.1).or.(ielastic.eq.1)) then
 !
 !        elastic stress
 !
          do i=1,6
             stre(i)=stri(i)
          enddo
-c      if((iint.eq.1).and.(iel.eq.1)) then
-c         write(*,*) ' stress '
-c         write(*,'(6(1x,e11.4))') (stre(i),i=1,6)
-c      endif
 !
 !        elastic stiffness
 !
@@ -344,10 +334,6 @@ c      endif
                stiff(20)=0.d0
                stiff(21)=c(9)
             endif
-c            if((iint.eq.1).and.(iel.eq.1)) then
-c               write(*,*) 'stiffness '
-c               write(*,'(6(1x,e11.4))') (stiff(i),i=1,21)
-c            endif
          endif
 !
          return
@@ -466,8 +452,6 @@ c            endif
 !     loop
 !
       if((iint.eq.1).and.(iel.eq.1)) then
-c         write(*,202) dg
-c 202     format('dg ',/,(6(1x,e11.4)))
       endif
       do
 !
@@ -476,18 +460,6 @@ c 202     format('dg ',/,(6(1x,e11.4)))
          do i=1,6
             ee(i)=emec(i)-ep(i)
          enddo
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,605) (emec(i),i=1,6)
-c 605        format('emec ',/,(6(1x,e11.4)))
-c         endif
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,606) (ep(i),i=1,6)
-c 606        format('ep ',/,(6(1x,e11.4)))
-c         endif
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,607) (ee(i),i=1,6)
-c 607        format('ee ',/,(6(1x,e11.4)))
-c         endif
 !
 !        stress state variables q1 and q2
 !
@@ -525,10 +497,6 @@ c         endif
             stri(5)=2.d0*c(8)*ee(5)-beta(5)
             stri(6)=2.d0*c(9)*ee(6)-beta(6)
          endif
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,805) (stri(i),i=1,6)
-c 805        format('stri ',/,(6(1x,e11.4)))
-c         endif
 !     
 !        stress radius (only deviatoric part of stress enters)
 !     
@@ -544,13 +512,7 @@ c         endif
 !     
 !        evaluation of the yield surface
 !
-c      if((iint.eq.1).and.(iel.eq.1)) then
-c         write(*,611) dsg,q1,r0,c0
-c 611     format('dsg,q1,r0,c0,al1,d1 ',/,(6(1x,e11.4)))
-c         write(*,612) (q2(i),i=1,6)
-c 612     format('q2 ',/,(6(1x,e11.4)))
-c      endif
-         if(creep.eq.1) then
+         if(visco.eq.1) then
             htri=dsg+c0*(q1-r0-(ca*dg)**(1.d0/cn))
          else
             htri=dsg+c0*(q1-r0)
@@ -559,14 +521,6 @@ c      endif
          do i=1,6
             sg(i)=sg(i)/dsg
          enddo
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,905) (sg(i),i=1,6)
-c 905        format('sg ',/,(6(1x,e11.4)))
-c         endif
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,203) htri
-c 203        format('htri ',/,(6(1x,e11.4)))
-c         endif
 !
 !        determining the residual matrix
 !
@@ -577,10 +531,6 @@ c         endif
          do i=1,6
             r(7+i)=al20(i)-al2(i)+dg*sg(i)
          enddo
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,205) (r(i),i=1,13)
-c 205        format('r ',/,(6(1x,e11.4)))
-c         endif
 !     
 !           check convergence
 !     
@@ -591,15 +541,9 @@ c         endif
             enddo
             dd=sqrt(dd)
             if(dd.le.1.d-10) then
-c               if((iint.eq.1).and.(iel.eq.1)) then
-c                  write(*,*) 'CONVERGENCE!'
-c               endif
                exit
             endif
          endif
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,*) 'no convergence'
-c         endif
 !
 !           determining b.x
 !
@@ -636,14 +580,6 @@ c         endif
          au1(10)=au1(10)+.5d0
          au1(15)=au1(15)+.5d0
          au1(21)=au1(21)+.5d0
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,811) (au1(i),i=1,21)
-c 811        format('au1 ',/,(6(1x,e11.4)))
-c         endif
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,811) (cm1(i),i=1,21)
-c 812        format('cm1 ',/,(6(1x,e11.4)))
-c         endif
 !
 !           filling the LHS
 !
@@ -754,10 +690,6 @@ c         endif
                enddo
             enddo
          endif
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,813) ((gl(i,j),j=1,6),i=1,6)
-c 813        format('gl ',/,(6(1x,e11.4)))
-c         endif
 !
 !           filling the RHS
 !
@@ -777,12 +709,7 @@ c         endif
          do i=1,6
             Pn(i)=gr(i,1)
          enddo
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,411) (Pn(i),i=1,6)
-c 411        format('Pn ',/,(6(1x,e11.4)))
-c         endif
 !
-c         c3=-1.d0/(a+b)
          c3=-h2/(1.d0+b*h2)
          QSn(1)=c3*(x(1)*Pn(1)+x(2)*Pn(2)+x(4)*Pn(3)+
      &        2.d0*(x(7)*Pn(4)+x(11)*Pn(5)+x(16)*Pn(6)))+sg(1)*h2
@@ -796,14 +723,10 @@ c         c3=-1.d0/(a+b)
      &        2.d0*(x(14)*Pn(4)+x(15)*Pn(5)+x(20)*Pn(6)))+sg(5)*h2
          QSn(6)=c3*(x(16)*Pn(1)+x(17)*Pn(2)+x(18)*Pn(3)+
      &        2.d0*(x(19)*Pn(4)+x(20)*Pn(5)+x(21)*Pn(6)))+sg(6)*h2
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,412) (QSn(i),i=1,6)
-c 412        format('QSn ',/,(6(1x,e11.4)))
-c         endif
 !
 !           calculating the creep contribution
 !
-         if(creep.eq.1) then
+         if(visco.eq.1) then
             if(dg.gt.0.d0) then
                gcreep=c0*ca/cn*(dg*ca)**(1.d0/cn-1.d0)
             else
@@ -822,24 +745,16 @@ c         endif
      &        c1*h1+
      &        QSn(1)*sg(1)+QSn(2)*sg(2)+QSn(3)*sg(3)+
      &        2.d0*(QSn(4)*sg(4)+QSn(5)*sg(5)+QSn(6)*sg(6))
-         if(creep.eq.1) then
+         if(visco.eq.1) then
             gm1=1.d0/(gm1+gcreep)
          else
             gm1=1.d0/gm1
          endif
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,512) gm1
-c 512        format('gm1 ',/,(6(1x,e11.4)))
-c         endif
          ddg=gm1*(htri-(Pn(1)*r(1)+Pn(2)*r(2)+Pn(3)*r(3)+
      &        2.d0*(Pn(4)*r(4)+Pn(5)*r(5)+Pn(6)*r(6))+
      &        c0*h1*r(7)+
      &        QSn(1)*r(8)+QSn(2)*r(9)+QSn(3)*r(10)+
      &        2.d0*(QSn(4)*r(11)+QSn(5)*r(12)+QSn(6)*r(13))))
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,313) ddg
-c 313        format('ddg ',/,(6(1x,e11.4)))
-c         endif
 !
 !        updating the residual matrix
 !
@@ -850,10 +765,6 @@ c         endif
          do i=1,6
             r(7+i)=r(7+i)+ddg*sg(i)
          enddo
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,210) (r(i),i=1,13)
-c 210        format('r up ',/,(6(1x,e11.4)))
-c         endif
 !
 !        update the plastic strain
 !
@@ -917,8 +828,6 @@ c         endif
 !
 !        update the kinematic hardening variables
 !
-c         c4=a/(a+b)
-c         c6=b/(a+b)
          c4=1.d0/(1.d0+b*h2)
          c6=c4*b*h2
          c5=c6/3.d0
@@ -972,15 +881,6 @@ c         c6=b/(a+b)
 !        update the consistency parameter
 !
          dg=dg+ddg
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,*) 'ep ',(ep(i),i=1,6)
-c            write(*,211) al1
-c 211        format('al1new ',/,(6(1x,e11.4)))
-c            write(*,212) (al2(i),i=1,6)
-c 212        format('al2new ',/,(6(1x,e11.4)))
-c            write(*,213) dg
-c 213        format('dg ',/,(6(1x,e11.4)))
-c         endif
 !
 !        end of major loop
 !
@@ -1033,10 +933,6 @@ c         endif
             stop
          endif
 !
-c      if((iint.eq.1).and.(iel.eq.1)) then
-c         write(*,714) ((gr(i,j),j=1,6),i=1,6)
-c 714     format('gr ',/,(6(1x,e11.4)))
-c      endif
          stiff(1)=gr(1,1)-gm1*Pn(1)*Pn(1)
          stiff(2)=gr(1,2)-gm1*Pn(1)*Pn(2)
          stiff(3)=gr(2,2)-gm1*Pn(2)*Pn(2)
@@ -1059,23 +955,7 @@ c      endif
          stiff(20)=gr(5,6)-gm1*Pn(5)*Pn(6)
          stiff(21)=gr(6,6)-gm1*Pn(6)*Pn(6)
 !
-c         if((iint.eq.1).and.(iel.eq.1)) then
-c            write(*,*) 'stiffness '
-c            write(*,'(6(1x,e11.4))') (stiff(i),i=1,21)
-c         endif
       endif
-c      if((iint.eq.1).and.(iel.eq.1)) then
-c         write(*,311) q1
-c 311     format('q1new ',/,(6(1x,e11.4)))
-c         write(*,312) (q2(i),i=1,6)
-c 312     format('q2new ',/,(6(1x,e11.4)))
-c      endif
-c      if((iint.eq.1).and.(iel.eq.1)) then
-c      write(*,*) ' stress '
-c      write(*,'(6(1x,e11.4))') (stri(i),i=1,6)
-c         write(*,214) dg,dtime
-c 214     format('dg ',/,(6(1x,e11.4)))
-c      endif
 !
 !     updating the state variables
 !

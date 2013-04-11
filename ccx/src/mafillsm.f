@@ -29,7 +29,8 @@
      &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  coriolis,ibody,xloadold,reltime,veold,springarea,nstate_,
-     &  xstateini,xstate,thicke,xnormastface)
+     &  xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
+     &  tieset,istartset,iendset,ialset,ntie)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !
@@ -40,13 +41,14 @@
       character*8 lakon(*)
       character*20 sideload(*)
       character*80 matname(*)
+      character*81 tieset(3,*)
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
      &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,
-     &  nactdof(0:mi(2),*),konl(20),irow(*),icolumn,
-     &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
-     &  ielorien(mi(3),*),
+     &  nactdof(0:mi(2),*),konl(20),irow(*),icolumn,ialset(*),
+     &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),ntie,
+     &  ielorien(mi(3),*),integerglob(*),istartset(*),iendset(*),
      &  ipkon(*),intscheme,ncocon(2,*),nshcon(*),ipobody(2,*),nbody,
      &  ibody(3,*),nk,ne,nboun,nmpc,nforc,nload,neq(2),nzl,nmethod,
      &  ithermal(2),iprestr,iperturb(*),nzs(3),i,j,k,l,m,idist,jj,
@@ -65,7 +67,7 @@
      &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),veold(0:mi(2),*),om,valu2,value,dtime,ttime,
-     &  time,thicke(mi(3),*),xnormastface(3,8,*)
+     &  time,thicke(mi(3),*),xnormastface(3,8,*),doubleglob(*)
 !
       kflag=2
       i0=0
@@ -233,7 +235,8 @@ c        write(*,*) 'mafillsm ',i,bodyf(1),bodyf(2),bodyf(3)
      &          rhsi,intscheme,ttime,time,istep,iinc,coriolis,xloadold,
      &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
      &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
-     &          xnormastface)
+     &          xnormastface,integerglob,doubleglob,tieset,istartset,
+     &          iendset,ialset,ntie)
 !
         do jj=1,3*nope
 !

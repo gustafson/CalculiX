@@ -38,7 +38,7 @@
      &  itrifac3(3,1),itrifac4(3,2),itrifac6(3,4),itrifac8(3,6),
      &  itrifac(3,6),ifacew2(8,5),lcs(*),inodface(*),nnodface,
      &  k,kflag,i,ne,ipkon(*),kon(*),indexe,nope,nface,nodface,jface,
-     &  netri,ntrifac,kontri(3,*)
+     &  netri,ntrifac,kontri(3,*),m
 !
       real*8 straight(9,*),zcscg(*),rcscg(*),zcs0cg(*),
      &  rcs0cg(*),cgl(2),col(2,3),rcs0(*),zcs0(*)
@@ -65,7 +65,7 @@
      &             4,5,6,0,
      &             1,2,5,4,
      &             2,3,6,5,
-     &             4,6,3,1/
+     &             3,1,4,6/
 !
 !     nodes per face for quadratic wedge elements
 !
@@ -73,7 +73,7 @@
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
-     &             4,6,3,1,12,15,9,13/
+     &             3,1,4,6,9,13,12,15/
 !
 !     triangulation for three-node face
 !
@@ -184,98 +184,97 @@
 !        check which face of the element belongs to the independent side 
 !
          jface=0
-         loop: do j=1,nface
+         loop: do m=1,nface
+            nnodelem=nodface
+!
+!           several faces of one and the same element may belong
+!           to the master surface
+!
             do k=1,nodface
-               if(iface(k,j).eq.0) then
+               if(iface(k,m).eq.0) then
                   nnodelem=k-1
                   exit
                endif
-               if(nodelem(iface(k,j)).eq.0) cycle loop
+               if(nodelem(iface(k,m)).eq.0) cycle loop
             enddo
-            jface=j
-            exit
-         enddo loop
-         if(jface.eq.0) cycle
+            jface=m
+c            exit
+c         enddo loop
+c         if(jface.eq.0) cycle
 !
 !        store the node numbers in a local face field
 !
-         do k=1,nnodelem
-            nodef(k)=nodelem(iface(k,jface))
-            inodface(nnodface+k)=nodef(k)
-         enddo
-         nnodface=nnodface+nnodelem
+            do k=1,nnodelem
+               nodef(k)=nodelem(iface(k,jface))
+               inodface(nnodface+k)=nodef(k)
+            enddo
+            nnodface=nnodface+nnodelem
 !
 !        number of triangles
 !
-         if(nnodelem.eq.3) then
-            ntrifac=1
-            do j=1,ntrifac
-               do k=1,3
-                  itrifac(k,j)=itrifac3(k,j)
+            if(nnodelem.eq.3) then
+               ntrifac=1
+               do j=1,ntrifac
+                  do k=1,3
+                     itrifac(k,j)=itrifac3(k,j)
+                  enddo
                enddo
-            enddo
-         elseif(nnodelem.eq.4) then
-            ntrifac=2
-            do j=1,ntrifac
-               do k=1,3
-                  itrifac(k,j)=itrifac4(k,j)
+            elseif(nnodelem.eq.4) then
+               ntrifac=2
+               do j=1,ntrifac
+                  do k=1,3
+                     itrifac(k,j)=itrifac4(k,j)
+                  enddo
                enddo
-            enddo
-         elseif(nnodelem.eq.6) then
-            ntrifac=4
-            do j=1,ntrifac
-               do k=1,3
-                  itrifac(k,j)=itrifac6(k,j)
+            elseif(nnodelem.eq.6) then
+               ntrifac=4
+               do j=1,ntrifac
+                  do k=1,3
+                     itrifac(k,j)=itrifac6(k,j)
+                  enddo
                enddo
-            enddo
-         elseif(nnodelem.eq.8) then
-            ntrifac=6
-            do j=1,ntrifac
-               do k=1,3
-                  itrifac(k,j)=itrifac8(k,j)
+            elseif(nnodelem.eq.8) then
+               ntrifac=6
+               do j=1,ntrifac
+                  do k=1,3
+                     itrifac(k,j)=itrifac8(k,j)
+                  enddo
                enddo
-            enddo
-         endif
+            endif
 !
-         do j=1,ntrifac
+            do j=1,ntrifac
 !
 !           new triangle
 !
-            netri=netri+1
-            do l=1,2
-               cgl(l)=0.d0
-            enddo
-            do k=1,3
-               node=nodef(itrifac(k,j))
-               kontri(k,netri)=node
-               call nident(jcs,node,ncsnodes,id)
-               col(1,k)=rcs0(lcs(id))
-               col(2,k)=zcs0(lcs(id))
+               netri=netri+1
                do l=1,2
-                  cgl(l)=cgl(l)+col(l,k)
+                  cgl(l)=0.d0
                enddo
-            enddo
+               do k=1,3
+                  node=nodef(itrifac(k,j))
+                  kontri(k,netri)=node
+                  call nident(jcs,node,ncsnodes,id)
+                  col(1,k)=rcs0(lcs(id))
+                  col(2,k)=zcs0(lcs(id))
+                  do l=1,2
+                     cgl(l)=cgl(l)+col(l,k)
+                  enddo
+               enddo
 !
 !           center of gravity of the triangle
 !
-c            write(*,*) netri,zcs0(101)
-            rcscg(netri)=cgl(1)/3.d0
-c            write(*,*) netri,zcs0(101),rcscg(netri)
-            zcscg(netri)=cgl(2)/3.d0
-c            write(*,*) 'triangle ',netri,(kontri(k,netri),k=1,3)
-c            write(*,*) col(1,1),col(2,1)
-c            write(*,*) col(1,2),col(2,2)
-c            write(*,*) col(1,3),col(2,3)
-c            write(*,*) rcscg(netri),zcscg(netri)
+               rcscg(netri)=cgl(1)/3.d0
+               zcscg(netri)=cgl(2)/3.d0
 !
 !           determining the equations of the straight lines bordering
 !           the triangle
 !            
-            call straighteq2d(col,straight(1,netri))
+               call straighteq2d(col,straight(1,netri))
 !
-            ifacetet(netri)=nnodface
+               ifacetet(netri)=nnodface
 !
-         enddo
+            enddo
+         enddo loop
       enddo
 !
       if(netri.eq.0) then

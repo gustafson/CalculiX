@@ -16,6 +16,17 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
+c> updates the location of the center of gravity of 
+c>       the master triangles and the coefficients of their
+c>       bounding planes
+c> @param [in]       	koncont	   
+c> @param [in]       	ncont 	   
+c> @param [in]       	co          coordinates
+c> @param [in]       	vold        displacements
+c> @param [in,out]   	cg          center of gravity for triangles
+c> @param [in,out]      straight    
+c> @param [in]       	mi
+C> @see contactmortar
       subroutine updatecont(koncont,ncont,co,vold,cg,straight,mi)
 !
 !     update geometric date of the contact master surface triangulation

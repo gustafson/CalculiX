@@ -72,7 +72,7 @@
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),iaxial,j,mi(*),
      &  istartset(*),iendset(*),ialset(*),ipkon(*),ics(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
-     &  ielorien(mi(3),*),icomposite,
+     &  ielorien(mi(3),*),icomposite,nsubmodel,
      &  namta(3,*),iamforc(*),iamload(2,*),iamt1(*),ipoinpc(0:*),
      &  iamboun(*),inotr(2,*),ikboun(*),ilboun(*),ikmpc(*),ilmpc(*),
      &  iponor(2,*),knor(*),ikforc(*),ilforc(*),iponoel(*),inoel(3,*),
@@ -191,6 +191,7 @@
          norien=0
          ntrans=0
          ntie=0
+         nsubmodel=0
 !
          lprev=0
 !
@@ -305,7 +306,12 @@
      &           nmat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
          elseif((textpart(1)(1:12).eq.'*CONTACTFILE').or.
-     &          (textpart(1)(1:12).eq.'*CONTACTFILE')) then
+     &          (textpart(1)(1:14).eq.'*CONTACTOUTPUT')) then
+            if(textpart(1)(1:12).eq.'*CONTACTFILE') then
+               output='asc'
+            else
+               output='bin'
+            endif
             ifile_output=3
             call noelfiles(inpc,textpart,jout,filab,nmethod,
      &           nodefile_flag,elfile_flag,ifile_output,nener,ithermal,
@@ -393,13 +399,14 @@ c
      &        namta,amta,ipoinpc,mi)
             dflux_flag=.true.
 !
-         elseif(textpart(1)(1:20).eq.'*DISTRIBUTEDCOUPLING') then
-            call distrubutedcouplings(inpc,textpart,ipompc,nodempc,
+         elseif(textpart(1)(1:21).eq.'*DISTRIBUTINGCOUPLING') then
+            call distributingcouplings(inpc,textpart,ipompc,nodempc,
      &           coefmpc,nmpc,nmpc_,mpcfree,nk,ikmpc,ilmpc,
      &           labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,
      &           lakon,kon,ipkon,set,nset,istartset,iendset,ialset,co)
 !
-         elseif(textpart(1)(1:6).eq.'*DLOAD') then
+         elseif((textpart(1)(1:6).eq.'*DLOAD').or.
+     &          (textpart(1)(1:7).eq.'*DSLOAD')) then
             call dloads(inpc,textpart,set,istartset,iendset,
      &        ialset,nset,nelemload,sideload,xload,nload,nload_,
      &        ielmat,iamload,
@@ -429,6 +436,11 @@ c
 !
          elseif((textpart(1)(1:7).eq.'*ELFILE').or.
      &          (textpart(1)(1:14).eq.'*ELEMENTOUTPUT')) then
+            if(textpart(1)(1:7).eq.'*ELFILE') then
+               output='asc'
+            else
+               output='bin'
+            endif
             ifile_output=2
             call noelfiles(inpc,textpart,jout,filab,nmethod,
      &           nodefile_flag,elfile_flag,ifile_output,nener,ithermal,
@@ -494,7 +506,8 @@ c
          elseif(textpart(1)(1:10).eq.'*FREQUENCY') then
             call frequencies(inpc,textpart,nmethod,
      &        mei,fei,iperturb,istep,istat,n,iline,ipol,
-     &        inl,ipoinp,inp,ithermal,isolver,xboun,nboun,ipoinpc)
+     &        inl,ipoinp,inp,ithermal,isolver,xboun,nboun,ipoinpc,
+     &        ipompc,labmpc,fmpc,ikmpc,ilmpc,nmpc)
 !
          elseif(textpart(1)(1:9).eq.'*FRICTION') then
             call frictions(inpc,textpart,elcon,nelcon,
@@ -588,6 +601,11 @@ c
 !
          elseif((textpart(1)(1:9).eq.'*NODEFILE').or.
      &          (textpart(1)(1:11).eq.'*NODEOUTPUT')) then
+            if(textpart(1)(1:9).eq.'*NODEFILE') then
+               output='asc'
+            else
+               output='bin'
+            endif
             ifile_output=1
             call noelfiles(inpc,textpart,jout,filab,nmethod,
      &           nodefile_flag,elfile_flag,ifile_output,nener,ithermal,
@@ -632,7 +650,7 @@ c
      &           coefmpc,nmpc,nmpc_,mpcfree,nk,ikmpc,ilmpc,
      &           labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,
      &           lakon,kon,ipkon,set,nset,istartset,iendset,ialset,co,
-     &           ics,dcs)
+     &           ics,dcs,t0,ithermal,ne)
 !
          elseif(textpart(1)(1:8).eq.'*RADIATE') then
             call radiates(inpc,textpart,set,istartset,iendset,
@@ -730,6 +748,12 @@ c
      &                 nload,ithermal,t0,t1,nk,irstrt,istep,istat,n,
      &                 jmax,ctrl,iline,ipol,inl,ipoinp,inp,newstep,
      &                 ipoinpc,physcon)
+!
+         elseif(textpart(1)(1:9).eq.'*SUBMODEL') then
+            call submodels(inpc,textpart,set,istartset,iendset,ialset,
+     &           nset,nset_,nalset,nalset_,nk,istep,istat,n,iline,ipol,
+     &           inl,ipoinp,inp,ipoinpc,nsubmodel,tieset,tietol,ntie,
+     &           ntie_,jobnamec,amta,namta,nam,nam_,namtot_)
 !
          elseif(textpart(1)(1:9).eq.'*SURFACE ') then
             call surfaces(inpc,textpart,set,istartset,iendset,ialset,
@@ -1140,12 +1164,21 @@ c      write(5,*)
       if(iperturb(1).eq.1) then
          write(*,*) 'Perturbation parameter is active'
          write(*,*)
-      elseif(iperturb(1).eq.2) then
-         write(*,*) 'Nonlinear geometric effects are taken into account'
-         write(*,*)
+c      elseif(iperturb(1).eq.2) then
+c         write(*,*) 'Newton-Raphson iterative procedure is activated'
+c         write(*,*)
       elseif(iperturb(1).eq.3) then
-         write(*,*) 'Nonlinear geometric effects and nonlinear '
-         write(*,*) 'material laws are taken into account'
+         write(*,*) 'Nonlinear material laws are taken into account'
+         write(*,*)
+      endif
+!
+      if(iperturb(1).ge.2) then
+         write(*,*) 'Newton-Raphson iterative procedure is active'
+         write(*,*)
+      endif
+!
+      if(iperturb(2).eq.1) then
+         write(*,*) 'Nonlinear geometric effects are taken into account'
          write(*,*)
       endif
 !

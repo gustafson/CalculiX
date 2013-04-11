@@ -26,19 +26,35 @@
       character*8 lakon(*)
 !
       integer mi(*),i,kon(*),ipkon(*),ne,iponor(2,*),knor(*),ntrans,
-     &  inotr(2,*),nk,nk_,indexe,j,nodel(8),indexx,indexk,k,nodeb(8,3)
+     &  inotr(2,*),nk,nk_,indexe,j,nodel(8),indexx,indexk,k,nodeb(8,3),
+     &  nope,ishift
 !
       real*8 xnor(*),thicke(mi(3),*),trab(7,*),co(3,*),offset(2,*),
      &  thickb(2,3),xnorb(6,3),sc
 !
       indexe=ipkon(i)
 !
-!           localizing the nodes, thicknesses and normals for the
-!           beam element
+!     check whether linear or quadratic
+!
+      if(lakon(i)(3:3).eq.'1') then
+         nope=2
+         if(lakon(i)(4:4).eq.'R') then
+            ishift=8
+         else
+            ishift=11
+         endif
+      elseif(lakon(i)(3:3).eq.'2') then
+         nope=3
+         ishift=20
+      endif
+!
+!     localizing the nodes, thicknesses and normals for the
+!     beam element
 !            
-      do j=1,3
+c      do j=1,3
+      do j=1,nope
          nodel(j)=kon(indexe+j)
-         kon(indexe+20+j)=nodel(j)
+         kon(indexe+ishift+j)=nodel(j)
          indexx=iponor(1,indexe+j)
          indexk=iponor(2,indexe+j)
          thickb(1,j)=thicke(1,indexe+j)
@@ -56,7 +72,9 @@
          endif
       enddo
 !
-!           generating the 3-D element topology for beam elements
+!     generating the 3-D element topology for beam elements
+!
+!     rectangular cross section
 !
       if(lakon(i)(8:8).eq.'R') then
          kon(indexe+1)=nodeb(1,1)
@@ -65,17 +83,17 @@
      &           -thickb(1,1)*xnorb(j,1)*(.5d0+offset(1,i))
      &           +thickb(2,1)*xnorb(j+3,1)*(.5d0-offset(2,i))
          enddo
-         kon(indexe+2)=nodeb(1,3)
+         kon(indexe+2)=nodeb(1,nope)
          do j=1,3
-            co(j,nodeb(1,3))=co(j,nodel(3))
-     &           -thickb(1,3)*xnorb(j,3)*(.5d0+offset(1,i))
-     &           +thickb(2,3)*xnorb(j+3,3)*(.5d0-offset(2,i))
+            co(j,nodeb(1,nope))=co(j,nodel(nope))
+     &           -thickb(1,nope)*xnorb(j,nope)*(.5d0+offset(1,i))
+     &           +thickb(2,nope)*xnorb(j+3,nope)*(.5d0-offset(2,i))
          enddo
-         kon(indexe+3)=nodeb(2,3)
+         kon(indexe+3)=nodeb(2,nope)
          do j=1,3
-            co(j,nodeb(2,3))=co(j,nodel(3))
-     &           -thickb(1,3)*xnorb(j,3)*(.5d0+offset(1,i))
-     &           -thickb(2,3)*xnorb(j+3,3)*(.5d0+offset(2,i))
+            co(j,nodeb(2,nope))=co(j,nodel(nope))
+     &           -thickb(1,nope)*xnorb(j,nope)*(.5d0+offset(1,i))
+     &           -thickb(2,nope)*xnorb(j+3,nope)*(.5d0+offset(2,i))
          enddo
          kon(indexe+4)=nodeb(2,1)
          do j=1,3
@@ -89,17 +107,17 @@
      &           +thickb(1,1)*xnorb(j,1)*(.5d0-offset(1,i))
      &           +thickb(2,1)*xnorb(j+3,1)*(.5d0-offset(2,i))
          enddo
-         kon(indexe+6)=nodeb(4,3)
+         kon(indexe+6)=nodeb(4,nope)
          do j=1,3
-            co(j,nodeb(4,3))=co(j,nodel(3))
-     &           +thickb(1,3)*xnorb(j,3)*(.5d0-offset(1,i))
-     &           +thickb(2,3)*xnorb(j+3,3)*(.5d0-offset(2,i))
+            co(j,nodeb(4,nope))=co(j,nodel(nope))
+     &           +thickb(1,nope)*xnorb(j,nope)*(.5d0-offset(1,i))
+     &           +thickb(2,nope)*xnorb(j+3,nope)*(.5d0-offset(2,i))
          enddo
-         kon(indexe+7)=nodeb(3,3)
+         kon(indexe+7)=nodeb(3,nope)
          do j=1,3
-            co(j,nodeb(3,3))=co(j,nodel(3))
-     &           +thickb(1,3)*xnorb(j,3)*(.5d0-offset(1,i))
-     &           -thickb(2,3)*xnorb(j+3,3)*(.5d0+offset(2,i))
+            co(j,nodeb(3,nope))=co(j,nodel(nope))
+     &           +thickb(1,nope)*xnorb(j,nope)*(.5d0-offset(1,i))
+     &           -thickb(2,nope)*xnorb(j+3,nope)*(.5d0+offset(2,i))
          enddo
          kon(indexe+8)=nodeb(3,1)
          do j=1,3
@@ -107,81 +125,94 @@
      &           +thickb(1,1)*xnorb(j,1)*(.5d0-offset(1,i))
      &           -thickb(2,1)*xnorb(j+3,1)*(.5d0+offset(2,i))
          enddo
-         kon(indexe+9)=nodeb(1,2)
-         do j=1,3
-            co(j,nodeb(1,2))=co(j,nodel(2))
-     &           -thickb(1,2)*xnorb(j,2)*(.5d0+offset(1,i))
-     &           +thickb(2,2)*xnorb(j+3,2)*(.5d0-offset(2,i))
-         enddo
-         kon(indexe+10)=nodeb(5,3)
-         do j=1,3
-            co(j,nodeb(5,3))=co(j,nodel(3))
-     &           -thickb(1,3)*xnorb(j,3)*(.5d0+offset(1,i))
-     &           -thickb(2,3)*xnorb(j+3,3)*offset(2,i)
-         enddo
-         kon(indexe+11)=nodeb(2,2)
-         do j=1,3
-            co(j,nodeb(2,2))=co(j,nodel(2))
-     &           -thickb(1,2)*xnorb(j,2)*(.5d0+offset(1,i))
-     &           -thickb(2,2)*xnorb(j+3,2)*(.5d0+offset(2,i))
-         enddo
-         kon(indexe+12)=nodeb(5,1)
-         do j=1,3
-            co(j,nodeb(5,1))=co(j,nodel(1))
-     &           -thickb(1,1)*xnorb(j,1)*(.5d0+offset(1,i))
-     &           -thickb(2,1)*xnorb(j+3,1)*offset(2,i)
-         enddo
-         kon(indexe+13)=nodeb(4,2)
-         do j=1,3
-            co(j,nodeb(4,2))=co(j,nodel(2))
-     &           +thickb(1,2)*xnorb(j,2)*(.5d0-offset(1,i))
-     &           +thickb(2,2)*xnorb(j+3,2)*(.5d0-offset(2,i))
-         enddo
-         kon(indexe+14)=nodeb(7,3)
-         do j=1,3
-            co(j,nodeb(7,3))=co(j,nodel(3))
-     &           +thickb(1,3)*xnorb(j,3)*(.5d0-offset(1,i))
-     &           -thickb(2,3)*xnorb(j+3,3)*offset(2,i)
-         enddo
-         kon(indexe+15)=nodeb(3,2)
-         do j=1,3
-            co(j,nodeb(3,2))=co(j,nodel(2))
-     &           +thickb(1,2)*xnorb(j,2)*(.5d0-offset(1,i))
-     &           -thickb(2,2)*xnorb(j+3,2)*(.5d0+offset(2,i))
-         enddo
-         kon(indexe+16)=nodeb(7,1)
-         do j=1,3
-            co(j,nodeb(7,1))=co(j,nodel(1))
-     &           +thickb(1,1)*xnorb(j,1)*(.5d0-offset(1,i))
-     &           -thickb(2,1)*xnorb(j+3,1)*offset(2,i)
-         enddo
-         kon(indexe+17)=nodeb(8,1)
-         do j=1,3
-            co(j,nodeb(8,1))=co(j,nodel(1))
-     &           -thickb(1,1)*xnorb(j,1)*offset(1,i)
-     &           +thickb(2,1)*xnorb(j+3,1)*(.5d0-offset(2,i))
-         enddo
-         kon(indexe+18)=nodeb(8,3)
-         do j=1,3
-            co(j,nodeb(8,3))=co(j,nodel(3))
-     &           -thickb(1,3)*xnorb(j,3)*offset(1,i)
-     &           +thickb(2,3)*xnorb(j+3,3)*(.5d0-offset(2,i))
-         enddo
-         kon(indexe+19)=nodeb(6,3)
-         do j=1,3
-            co(j,nodeb(6,3))=co(j,nodel(3))
-     &           -thickb(1,3)*xnorb(j,3)*offset(1,i)
-     &           -thickb(2,3)*xnorb(j+3,3)*(.5d0+offset(2,i))
-         enddo
-         kon(indexe+20)=nodeb(6,1)
-         do j=1,3
-            co(j,nodeb(6,1))=co(j,nodel(1))
-     &           -thickb(1,1)*xnorb(j,1)*offset(1,i)
-     &           -thickb(2,1)*xnorb(j+3,1)*(.5d0+offset(2,i))
-         enddo
+!
+!        middle nodes for quadratic elements
+!
+         if(nope.eq.3) then
+            kon(indexe+9)=nodeb(1,2)
+            do j=1,3
+               co(j,nodeb(1,2))=co(j,nodel(2))
+     &              -thickb(1,2)*xnorb(j,2)*(.5d0+offset(1,i))
+     &              +thickb(2,2)*xnorb(j+3,2)*(.5d0-offset(2,i))
+            enddo
+            kon(indexe+10)=nodeb(5,3)
+            do j=1,3
+               co(j,nodeb(5,3))=co(j,nodel(3))
+     &              -thickb(1,3)*xnorb(j,3)*(.5d0+offset(1,i))
+     &              -thickb(2,3)*xnorb(j+3,3)*offset(2,i)
+            enddo
+            kon(indexe+11)=nodeb(2,2)
+            do j=1,3
+               co(j,nodeb(2,2))=co(j,nodel(2))
+     &              -thickb(1,2)*xnorb(j,2)*(.5d0+offset(1,i))
+     &              -thickb(2,2)*xnorb(j+3,2)*(.5d0+offset(2,i))
+            enddo
+            kon(indexe+12)=nodeb(5,1)
+            do j=1,3
+               co(j,nodeb(5,1))=co(j,nodel(1))
+     &              -thickb(1,1)*xnorb(j,1)*(.5d0+offset(1,i))
+     &              -thickb(2,1)*xnorb(j+3,1)*offset(2,i)
+            enddo
+            kon(indexe+13)=nodeb(4,2)
+            do j=1,3
+               co(j,nodeb(4,2))=co(j,nodel(2))
+     &              +thickb(1,2)*xnorb(j,2)*(.5d0-offset(1,i))
+     &              +thickb(2,2)*xnorb(j+3,2)*(.5d0-offset(2,i))
+            enddo
+            kon(indexe+14)=nodeb(7,3)
+            do j=1,3
+               co(j,nodeb(7,3))=co(j,nodel(3))
+     &              +thickb(1,3)*xnorb(j,3)*(.5d0-offset(1,i))
+     &              -thickb(2,3)*xnorb(j+3,3)*offset(2,i)
+            enddo
+            kon(indexe+15)=nodeb(3,2)
+            do j=1,3
+               co(j,nodeb(3,2))=co(j,nodel(2))
+     &              +thickb(1,2)*xnorb(j,2)*(.5d0-offset(1,i))
+     &              -thickb(2,2)*xnorb(j+3,2)*(.5d0+offset(2,i))
+            enddo
+            kon(indexe+16)=nodeb(7,1)
+            do j=1,3
+               co(j,nodeb(7,1))=co(j,nodel(1))
+     &              +thickb(1,1)*xnorb(j,1)*(.5d0-offset(1,i))
+     &              -thickb(2,1)*xnorb(j+3,1)*offset(2,i)
+            enddo
+            kon(indexe+17)=nodeb(8,1)
+            do j=1,3
+               co(j,nodeb(8,1))=co(j,nodel(1))
+     &              -thickb(1,1)*xnorb(j,1)*offset(1,i)
+     &              +thickb(2,1)*xnorb(j+3,1)*(.5d0-offset(2,i))
+            enddo
+            kon(indexe+18)=nodeb(8,3)
+            do j=1,3
+               co(j,nodeb(8,3))=co(j,nodel(3))
+     &              -thickb(1,3)*xnorb(j,3)*offset(1,i)
+     &              +thickb(2,3)*xnorb(j+3,3)*(.5d0-offset(2,i))
+            enddo
+            kon(indexe+19)=nodeb(6,3)
+            do j=1,3
+               co(j,nodeb(6,3))=co(j,nodel(3))
+     &              -thickb(1,3)*xnorb(j,3)*offset(1,i)
+     &              -thickb(2,3)*xnorb(j+3,3)*(.5d0+offset(2,i))
+            enddo
+            kon(indexe+20)=nodeb(6,1)
+            do j=1,3
+               co(j,nodeb(6,1))=co(j,nodel(1))
+     &              -thickb(1,1)*xnorb(j,1)*offset(1,i)
+     &              -thickb(2,1)*xnorb(j+3,1)*(.5d0+offset(2,i))
+            enddo
+         endif
       else
 !
 !                 circular cross section
+!
+         if(nope.eq.2) then
+            write(*,*) '*ERROR in gen3dfrom1d: element ',i,
+     &        'is a linear beam element with circular cross section'
+            write(*,*) '       Please use quadratic elements for beams
+     &with circular cross section.'
+            stop
+         endif
 !
          sc=.5d0/dsqrt(2.d0)
          kon(indexe+1)=nodeb(1,1)

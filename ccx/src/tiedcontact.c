@@ -72,7 +72,7 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
   /* triangulation of the master surface */
 
   FORTRAN(triangucont,(&ncont,ntie,tieset,nset,set,istartset,iendset,
-	 ialset,itietri,lakon,ipkon,kon,koncont,kind1,kind2));
+	  ialset,itietri,lakon,ipkon,kon,koncont,kind1,kind2,co,nk));
   
   /* catalogueing the neighbors of the master triangles */
   

@@ -25,7 +25,8 @@
      &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  ttime,time,istep,iinc,coriolis,xloadold,reltime,
      &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,springarea,
-     &  nstate_,xstateini,xstate,ne0,ipkon,thicke,xnormastface)
+     &  nstate_,xstateini,xstate,ne0,ipkon,thicke,xnormastface,
+     &  integerglob,doubleglob,tieset,istartset,iendset,ialset,ntie)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -42,26 +43,29 @@
 !
       logical mass,stiffness,buckling,rhsi,coriolis
 !
+      character*1 entity
       character*8 lakonl
       character*20 sideload(*)
       character*80 matname(*),amat
+      character*81 tieset(3,*)
 !
       integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nbody,nelem,mi(*),
      &  mattyp,ithermal,iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
      &  nmethod,k1,l1,ii,jj,ii1,jj1,id,ipointer,ig,m1,m2,m3,m4,kk,
-     &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
+     &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),six,
      &  ielorien(mi(3),*),ilayer,nlayer,ki,kl,ipkon(*),indexe,
      &  ntmat_,nope,nopes,norien,ihyper,iexpl,kode,imat,mint2d,
-     &  mint3d,ifacet(6,4),nopev,iorien,istiff,ncmat_,
+     &  mint3d,ifacet(6,4),nopev,iorien,istiff,ncmat_,iface,
      &  ifacew(8,5),intscheme,n,ipointeri,ipointerj,istep,iinc,
      &  layer,kspt,jltyp,iflag,iperm(60),m,ipompc(*),nodempc(3,*),
-     &  nmpc,ikmpc(*),ilmpc(*),iscale,nstate_,ne0
+     &  nmpc,ikmpc(*),ilmpc(*),iscale,nstate_,ne0,iselect(6),
+     &  istartset(*),iendset(*),ialset(*),ntie,integerglob(*)
 !
       integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),veold(0:mi(2),*),
      &  s(60,60),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),ff(60),
-     &  bf(3),q(3),shpj(4,20),elcon(0:ncmat_,ntmat_,*),
+     &  bf(3),q(3),shpj(4,20),elcon(0:ncmat_,ntmat_,*),t(3),
      &  rhcon(0:1,ntmat_,*),xkl(3,3),eknlsign,reltime,
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
      &  anisox(3,3,3,3),voldl(0:mi(2),20),vo(3,3),xloadold(2,*),
@@ -72,12 +76,12 @@
      &  sti(6,mi(1),*),stx(6,mi(1),*),s11,s22,s33,s12,s13,s23,s11b,
      &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,coefmpc(*),xlayer(mi(3),4),
      &  senergy,senergyb,rho,elas(21),summass,summ,thicke(mi(3),*),
-     &  sume,factorm,factore,alp,elconloc(21),eth(6),
+     &  sume,factorm,factore,alp,elconloc(21),eth(6),doubleglob(*),
      &  weight,coords(3),dmass,xl1(3,8),term,xnormastface(3,8,*)
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),plconloc(82),dtime,ttime,time,tvar(2),
-     &  sax(60,60),ffax(60),gs(8,4),a
+     &  sax(60,60),ffax(60),gs(8,4),a,stress(6),stre(3,3)
 !
       data ifaceq /4,3,2,1,11,10,9,12,
      &            5,6,7,8,13,14,15,16,
@@ -278,12 +282,6 @@ c            write(*,*) 'tlayer ',kk,tlayer(kk)
         enddo
       enddo
 !
-c      if(nelcon(1,imat).lt.0) then
-c         ihyper=1
-c      else
-c         ihyper=0
-c      endif
-!
 !       initialisation for distributed forces
 !
       if(rhsi) then
@@ -326,6 +324,20 @@ c      endif
 !     calculating the stiffness matrix for the contact spring elements
 !
       if(mint3d.eq.0) then
+!
+!        for a
+!        first step in a displacement-driven geometrically nonlinear
+!        calculation or a nonlinear calculation with linear strains
+!        the next block has to be evaluated
+!
+         if(iperturb(2).eq.0) then
+            do i1=1,nope
+               do i2=1,3
+                  voldl(i2,i1)=vold(i2,konl(i1))
+               enddo
+            enddo
+         endif
+!
          if(lakonl(7:7).eq.'A') then
             kode=nelcon(1,imat)
             t0l=0.d0
@@ -391,10 +403,6 @@ c      endif
                   ze=2.d0*(dlayer(ki)+(ze+1.d0)/2.d0*xlayer(ilayer,ki))/
      &                 tlayer(ki)-1.d0
                   weight=weight*xlayer(ilayer,ki)/tlayer(ki)
-c                  write(*,*) 'kk', kk
-c                  write(*,*) 'coords',xi,et,ze
-c                  write(*,*) 'weight',weight
-c                  write(*,*) 'dlayer',dlayer(ki)
 !
 !                 material and orientation
 !
@@ -669,13 +677,6 @@ c            call orthotropic(elas,anisox)
 !
                            s(ii1,jj1)=s(ii1,jj1)+(al*w(1,1)+
      &                          um*(2.d0*w(1,1)+w(2,2)+w(3,3)))*weight
-c                          if((nelem.eq.1).and.(ii1.eq.1).and.(jj1.eq.1)) 
-c     &                       then
-c                             write(*,*) 'e_c3d',kk,ii1,jj1,s(ii1,jj1)
-c                             write(*,*) '    &',al,um
-c                             write(*,*) '    &',w(1,1),w(2,2),w(3,3)
-c                             write(*,*) '    &',weight
-c                          endif
 !                          
                            s(ii1,jj1+1)=s(ii1,jj1+1)+(al*w(1,2)+
      &                          um*w(2,1))*weight
@@ -1175,6 +1176,43 @@ c             if(iperturb(1).eq.0) then
                    if((nmethod.eq.1).and.(iscale.ne.0))
      &                   xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime
+                elseif(sideload(id)(3:4).eq.'SM') then
+!
+!                  submodel boundary: interpolation from the
+!                  global model
+!
+                   do k=1,3
+                      coords(k)=0.d0
+                      do j=1,nopes
+                         coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
+                      enddo
+                   enddo
+                   read(sideload(id)(2:2),'(i1)') jltyp
+!
+                   entity='T'
+                   six=6
+                   do k=1,6
+                      iselect(k)=k+4
+                   enddo
+                   iface=10*nelem+jltyp
+                   call interpolsubmodel(integerglob,doubleglob,stress,
+     &                  coords,iselect,six,iface,tieset,istartset,
+     &                  iendset,ialset,ntie,entity)
+c                   write(*,*) 'e_c3d ',(stress(k),k=1,6)
+!
+!                  cave: stress order of cgx: xx,yy,zz,xy,yz,xz
+!
+                   t(1)=stress(1)*xsj2(1)+stress(4)*xsj2(2)+
+     &                  stress(6)*xsj2(3)
+                   t(2)=stress(4)*xsj2(1)+stress(2)*xsj2(2)+
+     &                  stress(5)*xsj2(3)
+                   t(3)=stress(6)*xsj2(1)+stress(5)*xsj2(2)+
+     &                  stress(3)*xsj2(3)
+!
+                   xload(1,id)=-1.d0
+                   do k=1,3
+                      xsj2(k)=t(k)
+                   enddo
                 endif
 !
                 do k=1,nopes
@@ -1233,6 +1271,39 @@ c             elseif((mass).and.(iperturb(1).ne.0)) then
                    if((nmethod.eq.1).and.(iscale.ne.0))
      &                   xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime
+                elseif(sideload(id)(3:4).eq.'SM') then
+!
+!                  submodel boundary: interpolation from the
+!                  global model
+!
+                   do k=1,3
+                      coords(k)=0.d0
+                      do j=1,nopes
+                         coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
+                      enddo
+                   enddo
+                   read(sideload(id)(2:2),'(i1)') jltyp
+!
+                   entity='T'
+                   six=6
+                   do k=1,6
+                      iselect(k)=k+4
+                   enddo
+                   iface=10*nelem+jltyp
+                   call interpolsubmodel(integerglob,doubleglob,stress,
+     &                  coords,iselect,six,iface,tieset,istartset,
+     &                  iendset,ialset,ntie,entity)
+c                   write(*,*) 'e_c3d ',(stress(k),k=1,6)
+!
+                   stre(1,1)=stress(1)
+                   stre(1,2)=stress(4)
+                   stre(1,3)=stress(6)
+                   stre(2,1)=stress(4)
+                   stre(2,2)=stress(2)
+                   stre(2,3)=stress(5)
+                   stre(3,1)=stress(6)
+                   stre(3,2)=stress(5)
+                   stre(3,3)=stress(3)
                 endif
 !
 !               calculation of the deformation gradient
@@ -1267,33 +1338,71 @@ c     Bernhardi end
                       else
                          ipointerj=(ifacew(jj,ig)-1)*3
                       endif
-                      do k=1,3
-                         do l=1,3
-                            if(k.eq.l) cycle
-                            eknlsign=1.d0
-                            if(k*l.eq.2) then
-                               n=3
-                               if(k.lt.l) eknlsign=-1.d0
-                            elseif(k*l.eq.3) then
-                               n=2
-                               if(k.gt.l) eknlsign=-1.d0
-                            else
-                               n=1
-                               if(k.lt.l) eknlsign=-1.d0
-                            endif
-                            term=weight*xload(1,id)*shp2(4,ii)*eknlsign*
-     &                       (xsj2(1)*
-     &                        (xkl(n,2)*shp2(3,jj)-xkl(n,3)*shp2(2,jj))+
-     &                        xsj2(2)*
-     &                        (xkl(n,3)*shp2(1,jj)-xkl(n,1)*shp2(3,jj))+
-     &                        xsj2(3)*
-     &                        (xkl(n,1)*shp2(2,jj)-xkl(n,2)*shp2(1,jj)))
-                            s(ipointeri+k,ipointerj+l)=
-     &                           s(ipointeri+k,ipointerj+l)+term/2.d0
-                            s(ipointerj+l,ipointeri+k)=
-     &                           s(ipointerj+l,ipointeri+k)+term/2.d0
+!
+!                     if no submodel: only pressure
+!                     else: complete stress vector
+!
+                      if(sideload(id)(3:4).ne.'SM') then
+                         do k=1,3
+                            do l=1,3
+                               if(k.eq.l) cycle
+                               eknlsign=1.d0
+                               if(k*l.eq.2) then
+                                  n=3
+                                  if(k.lt.l) eknlsign=-1.d0
+                               elseif(k*l.eq.3) then
+                                  n=2
+                                  if(k.gt.l) eknlsign=-1.d0
+                               else
+                                  n=1
+                                  if(k.lt.l) eknlsign=-1.d0
+                               endif
+                               term=weight*xload(1,id)*shp2(4,ii)*
+     &                              eknlsign*(xsj2(1)*
+     &                              (xkl(n,2)*shp2(3,jj)-xkl(n,3)*
+     &                              shp2(2,jj))+xsj2(2)*
+     &                              (xkl(n,3)*shp2(1,jj)-xkl(n,1)*
+     &                              shp2(3,jj))+xsj2(3)*
+     &                              (xkl(n,1)*shp2(2,jj)-xkl(n,2)*
+     &                              shp2(1,jj)))
+                               s(ipointeri+k,ipointerj+l)=
+     &                              s(ipointeri+k,ipointerj+l)+term/2.d0
+                               s(ipointerj+l,ipointeri+k)=
+     &                              s(ipointerj+l,ipointeri+k)+term/2.d0
+                            enddo
                          enddo
-                      enddo
+                      else
+                         do kk=1,3
+                            do k=1,3
+                               do l=1,3
+                                  if(k.eq.l) cycle
+                                  eknlsign=1.d0
+                                  if(k*l.eq.2) then
+                                     n=3
+                                     if(k.lt.l) eknlsign=-1.d0
+                                  elseif(k*l.eq.3) then
+                                     n=2
+                                     if(k.gt.l) eknlsign=-1.d0
+                                  else
+                                     n=1
+                                     if(k.lt.l) eknlsign=-1.d0
+                                  endif
+                                  term=-weight*stre(kk,k)*shp2(4,ii)*
+     &                                 eknlsign*(xsj2(1)*
+     &                                 (xkl(n,2)*shp2(3,jj)-xkl(n,3)*
+     &                                 shp2(2,jj))+xsj2(2)*
+     &                                 (xkl(n,3)*shp2(1,jj)-xkl(n,1)*
+     &                                 shp2(3,jj))+xsj2(3)*
+     &                                 (xkl(n,1)*shp2(2,jj)-xkl(n,2)*
+     &                                 shp2(1,jj)))
+                                  s(ipointeri+kk,ipointerj+l)=
+     &                             s(ipointeri+kk,ipointerj+l)+term/2.d0
+                                  s(ipointerj+l,ipointeri+kk)=
+     &                             s(ipointerj+l,ipointeri+kk)+term/2.d0
+                               enddo
+                            enddo
+                         enddo
+                      endif
                    enddo
                 enddo
 !

@@ -71,7 +71,7 @@
      &             4,5,6,0,
      &             1,2,5,4,
      &             2,3,6,5,
-     &             4,6,3,1/
+     &             3,1,4,6/
 !
 !     nodes per face for quadratic wedge elements
 !
@@ -79,13 +79,10 @@
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
-     &             4,6,3,1,12,15,9,13/
+     &             3,1,4,6,9,13,12,15/
 !
 !     opening a file to store the nodes which are not connected
 !
-c      open(9,file='nodes_not_connected.fbd',status='unknown',err=51)
-c      close(9,status='delete',err=52)
-c      open(9,file='nodes_not_connected.fbd',status='unknown',err=51)
       open(40,file='WarnNodeMissMasterIntersect.nam',status='unknown')
       write(40,*) '*NSET,NSET=WarnNodeMissMasterIntersect'
 !
@@ -481,8 +478,6 @@ c                              write(*,*) '**regular solution'
                         endif
                      enddo
                      nodempc(3,mpcfreeold)=0
-
-c                     call writempc(ipompc,nodempc,coefmpc,labmpc,nmpc)
                   enddo
 !
                endif
@@ -504,40 +499,6 @@ c                     call writempc(ipompc,nodempc,coefmpc,labmpc,nmpc)
      &                 n,neigh,kneigh)
 !     
                   isol=0
-!     
-c                  do k=1,kneigh
-c                     itri=neigh(k)+itietri(1,i)-1
-c!     
-c                     totdist(k)=0.d0
-c!     
-c                     do l=1,3
-c                        ll=4*l-3
-c                        dist=straight(ll,itri)*p(1)+
-c     &                       straight(ll+1,itri)*p(2)+
-c     &                       straight(ll+2,itri)*p(3)+
-c     &                       straight(ll+3,itri)
-c                        if(dist.gt.0.d0) then
-c                           totdist(k)=totdist(k)+dist
-c                        endif
-c                     enddo
-cc                  write(*,*) 'gentiedmpc ',k,itri,koncont(4,itri),
-cc     &                       totdist(k)
-c                     totdist(k)=dsqrt(totdist(k)**2+
-c     &                    (straight(13,itri)*p(1)+
-c     &                    straight(14,itri)*p(2)+
-c     &                    straight(15,itri)*p(3)+
-c     &                    straight(16,itri))**2)
-cc                     cgdist=dsqrt((p(1)-cg(1,itri))**2+
-cc     &                    (p(2)-cg(2,itri))**2+
-cc     &                    (p(3)-cg(3,itri))**2)
-cc                  write(*,*) 'gentiedmpc ',k,itri,koncont(4,itri),
-cc     &                       totdist(k),cgdist
-c!     
-c                     if(totdist(k).le.tietol(1,i)) then
-c                        isol=k
-c                        exit
-c                     endif
-c                  enddo
 !     
                isol=0
 !
@@ -765,13 +726,6 @@ c                              write(*,*) '**regular solution'
       close(40)
 !     
       return
-!
-c 51   write(*,*) '*ERROR in openfile: could not open file ',
-c     &  'nodes_not_connected.fbd'
-c      stop
-c 52   write(*,*) '*ERROR in openfile: could not delete file ',
-c     &  'nodes_not_connected.fbd'
-c      stop
 !
       end
 

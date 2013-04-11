@@ -337,6 +337,8 @@ c      incrementalmpc=iperturb(2)
      &           (prlab(i)(1:4).eq.'PEEQ').or.
      &           (prlab(i)(1:4).eq.'ENER').or.
      &           (prlab(i)(1:4).eq.'ELKE').or.
+     &           (prlab(i)(1:4).eq.'CDIS').or.
+     &           (prlab(i)(1:4).eq.'CSTR').or.
      &           (prlab(i)(1:4).eq.'CELS').or.
      &           (prlab(i)(1:4).eq.'SDV ').or.
      &           (prlab(i)(1:4).eq.'RF  ')) then

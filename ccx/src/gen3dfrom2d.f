@@ -29,7 +29,7 @@
 !
       implicit none
 !
-      logical axial,fixed
+      logical axial,fixed,quadratic
 !
       character*1 type,typeboun(*)
       character*8 lakon(*)
@@ -41,7 +41,8 @@
      &  ikmpc(*),ilmpc(*),nk,nk_,i,rig(*),nmethod,iperturb,ishift,
      &  indexe,j,nodel(8),indexx,indexk,k,nedge,nodes(3,8),nodec(3,8),
      &  iamplitude,l,newnode,idir,idof,id,m,mpcfreenew,node,ithermal(2),
-     &  jmin,jmax,idummy,mi(*),indexc,indexl,icomposite,ielmat(mi(3),*)
+     &  jmin,jmax,idummy,mi(*),indexc,indexl,icomposite,ielmat(mi(3),*),
+     &  nope
 ! 
       real*8 xnor(*),thicke(mi(3),*),offset(2,*),trab(7,*),xboun(*),
      &  coefmpc(*),co(3,*),vdummy(0:4),thicks(8),xnors(3,8),dc,ds,val,
@@ -63,16 +64,50 @@ c      write(*,*) 'gen3dfrom2d element ',i
 !           localizing the nodes, thicknesses and normals for the
 !           2-D element
 !            
-      if((lakon(i)(2:2).eq.'6').or.
-     &     (lakon(i)(4:4).eq.'6')) then
+      if((lakon(i)(2:2).eq.'3').or.
+     &     (lakon(i)(4:4).eq.'3')) then
+         quadratic=.false.
          nedge=3
-         ishift=15
-      else
+         nope=3
+         ishift=6
+      elseif((lakon(i)(2:2).eq.'4').or.
+     &     (lakon(i)(4:4).eq.'4')) then
+         quadratic=.false.
          nedge=4
+         nope=4
+!
+!        CPE4R,CPS4R, CAX4R and S4R elements are expanded into C3D8R
+!
+         if((lakon(i)(3:3).eq.'R').or.
+     &      (lakon(i)(5:5).eq.'R')) then
+            ishift=8
+!
+!           S4 elements are expanded into C3D8I
+!
+         elseif(lakon(i)(1:1).eq.'S') then
+            ishift=11
+!
+!           CPE4, CPS4 and CAX4 elements are expanded into C3D8
+!
+         else
+            ishift=8
+         endif
+      elseif((lakon(i)(2:2).eq.'6').or.
+     &     (lakon(i)(4:4).eq.'6')) then
+         quadratic=.true.
+         nedge=3
+         nope=6
+         ishift=15
+      elseif((lakon(i)(2:2).eq.'8').or.
+     &     (lakon(i)(4:4).eq.'8')) then
+         quadratic=.true.
+         nedge=4
+         nope=8
          ishift=20
       endif
 !
-      do j=1,2*nedge
+c      do j=1,2*nedge
+      do j=1,nope
          nodel(j)=kon(indexe+j)
          kon(indexe+ishift+j)=nodel(j)
          indexk=iponor(2,indexe+j)
@@ -89,7 +124,8 @@ c      write(*,*) 'gen3dfrom2d element ',i
 !           stress/strain elements
 !
       if(lakon(i)(1:2).ne.'CA') then
-         do j=1,2*nedge
+c         do j=1,2*nedge
+         do j=1,nope
             indexx=iponor(1,indexe+j)
             do k=1,3
                xnors(k,j)=xnor(indexx+k)
@@ -101,7 +137,6 @@ c      write(*,*) 'gen3dfrom2d element ',i
             endif
          enddo
 !
-c               write(*,*) 'original expansion '
          do k=1,nedge
             kon(indexe+k)=nodes(1,k)
 !
@@ -109,7 +144,6 @@ c               write(*,*) 'original expansion '
                co(j,nodes(1,k))=co(j,nodel(k))
      &              -thicks(k)*xnors(j,k)*(.5d0+offset(1,i))
             enddo
-c            write(*,*) nodes(1,k),(co(j,nodes(1,k)),j=1,3)
          enddo
          do k=1,nedge
             kon(indexe+nedge+k)=nodes(3,k)
@@ -117,39 +151,36 @@ c            write(*,*) nodes(1,k),(co(j,nodes(1,k)),j=1,3)
                co(j,nodes(3,k))=co(j,nodel(k))
      &              +thicks(k)*xnors(j,k)*(.5d0-offset(1,i))
             enddo
-c            write(*,*) nodes(3,k),(co(j,nodes(3,k)),j=1,3)
          enddo
-         do k=nedge+1,2*nedge
-            kon(indexe+nedge+k)=nodes(1,k)
-            do j=1,3
-               co(j,nodes(1,k))=co(j,nodel(k))
-     &              -thicks(k)*xnors(j,k)*(.5d0+offset(1,i))
+!
+!        middle nodes for quadratic expansion
+!
+         if(quadratic) then
+            do k=nedge+1,2*nedge
+               kon(indexe+nedge+k)=nodes(1,k)
+               do j=1,3
+                  co(j,nodes(1,k))=co(j,nodel(k))
+     &                 -thicks(k)*xnors(j,k)*(.5d0+offset(1,i))
+               enddo
             enddo
-c            write(*,*) nodes(1,k),(co(j,nodes(1,k)),j=1,3)
-         enddo
-         do k=nedge+1,2*nedge
-            kon(indexe+2*nedge+k)=nodes(3,k)
-            do j=1,3
-               co(j,nodes(3,k))=co(j,nodel(k))
-     &              +thicks(k)*xnors(j,k)*(.5d0-offset(1,i))
+            do k=nedge+1,2*nedge
+               kon(indexe+2*nedge+k)=nodes(3,k)
+               do j=1,3
+                  co(j,nodes(3,k))=co(j,nodel(k))
+     &                 +thicks(k)*xnors(j,k)*(.5d0-offset(1,i))
+               enddo
             enddo
-c            write(*,*) nodes(3,k),(co(j,nodes(3,k)),j=1,3)
-         enddo
-         do k=1,nedge
-            kon(indexe+4*nedge+k)=nodes(2,k)
-            do j=1,3
-               co(j,nodes(2,k))=co(j,nodel(k))
-     &              -thicks(k)*xnors(j,k)*offset(1,i)
+            do k=1,nedge
+               kon(indexe+4*nedge+k)=nodes(2,k)
+               do j=1,3
+                  co(j,nodes(2,k))=co(j,nodel(k))
+     &                 -thicks(k)*xnors(j,k)*offset(1,i)
+               enddo
             enddo
-c            write(*,*) nodes(2,k),(co(j,nodes(2,k)),j=1,3)
-         enddo
-c        do k=1,68
-c           write(*,*) k,kon(k),",",co(1,kon(k)),",",co(2,kon(k)),
-c     &          ",",co(3,kon(k))
-c        enddo
-c        write(*,*) i,lakon(i)
+         endif
 !
 !        generating the layer geometry for composite shells
+!        only for S8R elements
 !
          if(lakon(i)(8:8).eq.'C') then
             thickness=0.d0
@@ -157,7 +188,6 @@ c        write(*,*) i,lakon(i)
             indexl=0
             do l=1,mi(3)
                if(ielmat(l,i).eq.0) exit
-c               write(*,*) 'layer ',l
                indexc=indexc+ishift
                indexl=indexl+3
 !
@@ -166,8 +196,6 @@ c               write(*,*) 'layer ',l
                      nodec(k,j)=knor(iponor(2,indexe+j)+indexl+k)
                   enddo
                enddo
-c            write(*,*) 'gen3dfrom2d,indexc ',i,indexc
-c            write(*,*) 'gen3dfrom2d,indexl ',i,indexl
 !
                do k=1,nedge
                   kon(indexc+k)=nodec(1,k)
@@ -177,7 +205,6 @@ c            write(*,*) 'gen3dfrom2d,indexl ',i,indexl
      &                    (thickness(k)-thicks(k)*(.5d0+offset(1,i)))
      &                    *xnors(j,k)
                   enddo
-c                  write(*,*) nodec(1,k),(co(j,nodec(1,k)),j=1,3)
                enddo
                do k=1,nedge
                   kon(indexc+nedge+k)=nodec(3,k)
@@ -187,7 +214,6 @@ c                  write(*,*) nodec(1,k),(co(j,nodec(1,k)),j=1,3)
      &                    -thicks(k)*(.5d0-offset(1,i)))
      &                   *xnors(j,k)
                   enddo
-c                  write(*,*) nodec(3,k),(co(j,nodec(3,k)),j=1,3)
                enddo
                do k=nedge+1,2*nedge
                   kon(indexc+nedge+k)=nodec(1,k)
@@ -196,7 +222,6 @@ c                  write(*,*) nodec(3,k),(co(j,nodec(3,k)),j=1,3)
      &                    (thickness(k)-thicks(k)*(.5d0+offset(1,i)))
      &                     *xnors(j,k)
                   enddo
-c                  write(*,*) nodec(1,k),(co(j,nodec(1,k)),j=1,3)
                enddo
                do k=nedge+1,2*nedge
                   kon(indexc+2*nedge+k)=
@@ -207,7 +232,7 @@ c                  write(*,*) nodec(1,k),(co(j,nodec(1,k)),j=1,3)
      &                    -thicks(k)*(.5d0-offset(1,i)))
      &                   *xnors(j,k)
                   enddo
-c                  write(*,*) nodec(3,k),(co(j,nodec(3,k)),j=1,3)
+c                 write(*,*) nodec(3,k),(co(j,nodec(3,k)),j=1,3)
                enddo
                do k=1,nedge
                   kon(indexc+4*nedge+k)=
@@ -218,7 +243,7 @@ c                  write(*,*) nodec(3,k),(co(j,nodec(3,k)),j=1,3)
      &                    -thicks(k)*(.5d0-offset(1,i)))
      &                    *xnors(j,k)
                   enddo
-c                  write(*,*) nodec(2,k),(co(j,nodec(2,k)),j=1,3)
+c                 write(*,*) nodec(2,k),(co(j,nodec(2,k)),j=1,3)
                enddo
 !
                do k=1,2*nedge
@@ -226,10 +251,6 @@ c                  write(*,*) nodec(2,k),(co(j,nodec(2,k)),j=1,3)
                enddo
             enddo
          endif
-c        do k=1,68
-c           write(*,*) kon(k),",",co(1,kon(k)),",",co(2,kon(k)),
-c     &          ",",co(3,kon(k))
-c        enddo
       else
 !
 !           generating the 3-D element topology for axisymmetric elements
@@ -247,11 +268,13 @@ c        enddo
             co(3,node)=-x*ds
             kon(indexe+j)=node
 !
-            node=knor(indexk+2)
-            co(1,node)=x
-            co(2,node)=y
-            co(3,node)=0.d0
-            kon(indexe+4*nedge+j)=node
+            if(quadratic) then
+               node=knor(indexk+2)
+               co(1,node)=x
+               co(2,node)=y
+               co(3,node)=0.d0
+               kon(indexe+4*nedge+j)=node
+            endif
 !
             node=knor(indexk+3)
             co(1,node)=x*dc
@@ -260,29 +283,31 @@ c        enddo
             kon(indexe+nedge+j)=node
          enddo
 !
-         do j=nedge+1,2*nedge
-            indexk=iponor(2,indexe+j)
-            x=co(1,nodel(j))
-            y=co(2,nodel(j))
-!
-            node=knor(indexk+1)
-            co(1,node)=x*dc
-            co(2,node)=y
-            co(3,node)=-x*ds
-            kon(indexe+nedge+j)=node
-!
-            node=knor(indexk+3)
-            co(1,node)=x*dc
-            co(2,node)=y
-            co(3,node)=x*ds
-            kon(indexe+2*nedge+j)=node
-         enddo
+         if(quadratic) then
+            do j=nedge+1,2*nedge
+               indexk=iponor(2,indexe+j)
+               x=co(1,nodel(j))
+               y=co(2,nodel(j))
+!     
+               node=knor(indexk+1)
+               co(1,node)=x*dc
+               co(2,node)=y
+               co(3,node)=-x*ds
+               kon(indexe+nedge+j)=node
+!     
+               node=knor(indexk+3)
+               co(1,node)=x*dc
+               co(2,node)=y
+               co(3,node)=x*ds
+               kon(indexe+2*nedge+j)=node
+            enddo
+         endif
       endif
 !
 !           additional SPC's due to plane strain/plane stress/axisymmetric
 !           conditions
 !
-      do j=1,2*nedge
+      do j=1,nope
          if(lakon(i)(1:1).ne.'S') then
 !
 !                    fixing the middle plane
@@ -322,8 +347,60 @@ c        enddo
             do l=1,3,2
                newnode=nodes(l,j)
                do idir=jmin,jmax
-                  if((idir.eq.3).and.(lakon(i)(1:3).eq.'CPS'))
-     &                 cycle
+                  if((idir.eq.3).and.(lakon(i)(1:3).eq.'CPS')) then
+!
+!                    for linear elements and plane stress it is not
+!                    sufficient to set the z-displacement of the 
+!                    midplane nodes to zero, since these are not used.
+!                    Instead, the sum of the z-displacement of the
+!                    boundary plane nodes are set to zero:
+!                    w_1+w_3=0
+!
+                     if(((lakon(i)(4:4).eq.'3').or.
+     &                   (lakon(i)(4:4).eq.'4')).and.
+     &                  (l.eq.1)) then
+                        idof=8*(newnode-1)+3
+                        call nident(ikmpc,idof,nmpc,id)
+                        if((id.le.0).or.(ikmpc(id).ne.idof)) then
+                           nmpc=nmpc+1
+                           if(nmpc.gt.nmpc_) then
+                              write(*,*) 
+     &                          '*ERROR in gen3dfrom2d: increase nmpc_'
+                              stop
+                           endif
+                           labmpc(nmpc)='                    '
+                           ipompc(nmpc)=mpcfree
+                           do m=nmpc,id+2,-1
+                              ikmpc(m)=ikmpc(m-1)
+                              ilmpc(m)=ilmpc(m-1)
+                           enddo
+                           ikmpc(id+1)=idof
+                           ilmpc(id+1)=nmpc
+                           nodempc(1,mpcfree)=newnode
+                           nodempc(2,mpcfree)=3
+                           coefmpc(mpcfree)=1.d0
+                           mpcfree=nodempc(3,mpcfree)
+                           if(mpcfree.eq.0) then
+                              write(*,*) 
+     &                          '*ERROR in gen3dfrom2d: increase nmpc_'
+                              stop
+                           endif
+                           nodempc(1,mpcfree)=nodes(3,j)
+                           nodempc(2,mpcfree)=3
+                           coefmpc(mpcfree)=1.d0
+                           mpcfreenew=nodempc(3,mpcfree)
+                           if(mpcfreenew.eq.0) then
+                              write(*,*) 
+     &                          '*ERROR in gen3dfrom2d: increase nmpc_'
+                              stop
+                           endif
+                           nodempc(3,mpcfree)=0
+                           mpcfree=mpcfreenew
+                        endif
+                     else
+                        cycle
+                     endif
+                  endif
                   idof=8*(newnode-1)+idir
                   call nident(ikmpc,idof,nmpc,id)
                   if((id.le.0).or.(ikmpc(id).ne.idof)) then

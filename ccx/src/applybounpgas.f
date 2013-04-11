@@ -19,7 +19,7 @@
       subroutine applybounpgas(nodeboun,ndirboun,nboun,xbounact,
      &  iponoel,vold,ipompc,nodempc,coefmpc,nmpc,inomat,matname,
      &  nshcon,shcon,nrhcon,rhcon,physcon,ntmat_,
-     &  voldcon,mi)
+     &  vcon,mi)
 !
 !     applies pressure boundary conditions for gases
 !
@@ -37,7 +37,7 @@
       real*8 vold(0:mi(2),*),xbounact(*),residu,size,coefmpc(*),
      &  correction,
      &  shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),physcon(*),
-     &  cp,r,rho,voldcon(0:4,*),temp
+     &  cp,r,rho,vcon(0:4,*),temp
 !
 !     inserting the pressure boundary conditions vor gases
 !
@@ -70,12 +70,12 @@
             stop
          endif
          rho=vold(4,node)/(r*(vold(0,node)-physcon(1)))
-         voldcon(0,node)=rho*(cp*(temp-physcon(1))+
+         vcon(0,node)=rho*(cp*(temp-physcon(1))+
      &        (vold(1,node)**2+vold(2,node)**2+vold(3,node)**2)
      &        /2.d0)-vold(4,node)
-         voldcon(4,node)=rho
+         vcon(4,node)=rho
          do k=1,3
-            voldcon(k,node)=rho*vold(k,node)
+            vcon(k,node)=rho*vold(k,node)
          enddo
       enddo
 !
@@ -140,12 +140,12 @@
             stop
          endif
          rho=vold(4,nodei)/(r*(vold(0,nodei)-physcon(1)))
-         voldcon(0,nodei)=rho*(cp*(temp-physcon(1))+
+         vcon(0,nodei)=rho*(cp*(temp-physcon(1))+
      &        (vold(1,nodei)**2+vold(2,nodei)**2+vold(3,nodei)**2)
      &        /2.d0)-vold(4,nodei)
-         voldcon(4,nodei)=rho
+         vcon(4,nodei)=rho
          do k=1,3
-            voldcon(k,nodei)=rho*vold(k,nodei)
+            vcon(k,nodei)=rho*vold(k,nodei)
          enddo
          index=nodempc(3,ist)
          if(index.ne.0) then
@@ -182,12 +182,12 @@
                   stop
                endif
                rho=vold(4,nodei)/(r*(vold(0,nodei)-physcon(1)))
-               voldcon(0,nodei)=rho*(cp*(temp-physcon(1))+
+               vcon(0,nodei)=rho*(cp*(temp-physcon(1))+
      &              (vold(1,nodei)**2+vold(2,nodei)**2+vold(3,nodei)**2)
      &              /2.d0)-vold(4,nodei)
-               voldcon(4,nodei)=rho
+               vcon(4,nodei)=rho
                do k=1,3
-                  voldcon(k,nodei)=rho*vold(k,nodei)
+                  vcon(k,nodei)=rho*vold(k,nodei)
                enddo
                index=nodempc(3,index)
                if(index.eq.0) exit

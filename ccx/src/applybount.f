@@ -19,7 +19,7 @@
       subroutine applybount(nodeboun,ndirboun,nboun,xbounact,
      &  iponoel,vold,ipompc,nodempc,coefmpc,nmpc,inomat,matname,
      &  nshcon,shcon,nrhcon,rhcon,physcon,compressible,ntmat_,
-     &  voldcon,mi,ithermal)
+     &  vcon,mi,ithermal)
 !
 !     applies temperature boundary conditions
 !
@@ -35,7 +35,7 @@
       real*8 vold(0:mi(2),*),xbounact(*),residu,size,coefmpc(*),
      &  correction,
      &  temp,shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),physcon(*),
-     &  cp,r,rho,voldcon(0:4,*)
+     &  cp,r,rho,vcon(0:4,*)
 !
 !     inserting the temperature boundary conditions
 !
@@ -72,19 +72,19 @@
                stop
             endif
             rho=vold(4,node)/(r*(vold(0,node)-physcon(1)))
-            voldcon(0,node)=rho*(cp*(temp-physcon(1))+
+            vcon(0,node)=rho*(cp*(temp-physcon(1))+
      &           (vold(1,node)**2+vold(2,node)**2+vold(3,node)**2)
      &           /2.d0)-vold(4,node)
          else
             call materialdata_rho(rhcon,nrhcon,imat,rho,
      &           temp,ntmat_,ithermal)
-            voldcon(0,node)=rho*(cp*(temp-physcon(1))+
+            vcon(0,node)=rho*(cp*(temp-physcon(1))+
      &           (vold(1,node)**2+vold(2,node)**2+vold(3,node)**2)
      &           /2.d0)
          endif
-         voldcon(4,node)=rho
+         vcon(4,node)=rho
          do k=1,3
-            voldcon(k,node)=rho*vold(k,node)
+            vcon(k,node)=rho*vold(k,node)
          enddo
       enddo
 !
@@ -151,19 +151,19 @@ c         if(index.le.0) cycle
                stop
             endif
             rho=vold(4,node)/(r*(vold(0,node)-physcon(1)))
-            voldcon(0,node)=rho*(cp*(temp-physcon(1))+
+            vcon(0,node)=rho*(cp*(temp-physcon(1))+
      &           (vold(1,node)**2+vold(2,node)**2+vold(3,node)**2)
      &           /2.d0)-vold(4,node)
          else
             call materialdata_rho(rhcon,nrhcon,imat,rho,
      &           temp,ntmat_,ithermal)
-            voldcon(0,node)=rho*(cp*(temp-physcon(1))+
+            vcon(0,node)=rho*(cp*(temp-physcon(1))+
      &           (vold(1,node)**2+vold(2,node)**2+vold(3,node)**2)
      &           /2.d0)
          endif
-         voldcon(4,node)=rho
+         vcon(4,node)=rho
          do k=1,3
-            voldcon(k,node)=rho*vold(k,node)
+            vcon(k,node)=rho*vold(k,node)
          enddo
 !
          index=nodempc(3,ist)
@@ -205,19 +205,19 @@ c         if(index.le.0) cycle
                      stop
                   endif
                   rho=vold(4,nodei)/(r*(vold(0,nodei)-physcon(1)))
-                  voldcon(0,nodei)=rho*(cp*(temp-physcon(1))+
+                  vcon(0,nodei)=rho*(cp*(temp-physcon(1))+
      &              (vold(1,nodei)**2+vold(2,nodei)**2+vold(3,nodei)**2)
      &                 /2.d0)-vold(4,nodei)
                else
                   call materialdata_rho(rhcon,nrhcon,imat,rho,
      &                 temp,ntmat_,ithermal)
-                  voldcon(0,nodei)=rho*(cp*(temp-physcon(1))+
+                  vcon(0,nodei)=rho*(cp*(temp-physcon(1))+
      &              (vold(1,nodei)**2+vold(2,nodei)**2+vold(3,nodei)**2)
      &                 /2.d0)
                endif
-               voldcon(4,nodei)=rho
+               vcon(4,nodei)=rho
                do k=1,3
-                  voldcon(k,nodei)=rho*vold(k,nodei)
+                  vcon(k,nodei)=rho*vold(k,nodei)
                enddo
 !     
                index=nodempc(3,index)

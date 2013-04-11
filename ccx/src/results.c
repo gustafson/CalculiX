@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "CalculiX.h"
 
 char *lakon1,*matname1;
@@ -34,7 +35,7 @@ double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
     *prestr1,*eme1,*fn1=NULL,*qa1=NULL,*vold1,*veold1,*dtime1,*time1,
     *ttime1,*plicon1,*plkcon1,*xstateini1,*xstiff1,*xstate1,*stiini1,
     *vini1,*ener1,*eei1,*enerini1,*springarea1,*reltime1,*coefmpc1,
-    *cocon1,*qfx1,*xnormastface1,*thicke1;
+    *cocon1,*qfx1,*xnormastface1,*thicke1,*emeini1;
 
 void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
        double *v,double *stn,int *inum,double *stx,double *elcon,int *nelcon,
@@ -53,7 +54,7 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
        double *epn,char *matname,int *mi,int *ielas,int *icmd,int *ncmat_,
        int *nstate_,
        double *stiini,double *vini,int *ikboun,int *ilboun,double *ener,
-       double *enern,double *sti,double *xstaten,double *eei,double *enerini,
+       double *enern,double *emeini,double *xstaten,double *eei,double *enerini,
        double *cocon,int *ncocon,char *set,int *nset,int *istartset,
        int *iendset,
        int *ialset,int *nprint,char *prlab,char *prset,double *qfx,double *qfn,
@@ -64,7 +65,7 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
        double *xforc, int *nforc, double *thicke,double *xnormastface){
 
     int intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,iener,ikin,
-        intpointvart,mt=mi[1]+1,i,j;
+        intpointvart,mt=mi[1]+1,i,j,*ithread=NULL;
 
     /*
 
@@ -159,7 +160,7 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 
     if((strcmp1(&filab[3],"I")==0)&&(*iout==0)){
 	FORTRAN(frditeration,(co,nk,kon,ipkon,lakon,ne,v,
-			      time,ielmat,matname,mi,istep,iinc));
+			      ttime,ielmat,matname,mi,istep,iinc));
     }
 
     /* calculating the stresses and material tangent at the 
@@ -185,22 +186,21 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
         stiini1=stiini;vini1=vini;ener1=ener;eei1=eei;enerini1=enerini;
         istep1=istep;iinc1=iinc;springarea1=springarea;reltime1=reltime;
         calcul_fn1=calcul_fn;calcul_qa1=calcul_qa;calcul_cauchy1=calcul_cauchy;
-        iener1=iener;
-	ikin1=ikin;
-	mt1=mt;
-	nk1=nk;
-	ne01=ne0;
-	thicke1=thicke;
-        xnormastface1=xnormastface;
+        iener1=iener;ikin1=ikin;mt1=mt;nk1=nk;ne01=ne0;thicke1=thicke;
+        xnormastface1=xnormastface;emeini1=emeini;
 
 	/* calculating the stresses */
 	
-	printf(" Using up to %d cpu(s) for the stress calculation.\n\n", num_cpus);
+	if(((*nmethod!=4)&&(*nmethod!=5))||(iperturb[0]>1)){
+		printf(" Using up to %d cpu(s) for the stress calculation.\n\n", num_cpus);
+	}
 	
 	/* create threads and wait */
 	
+	ithread=NNEW(int,num_cpus);
 	for(i=0; i<num_cpus; i++)  {
-	    pthread_create(&tid[i], NULL, resultsmechmt, (void *)i);
+	    ithread[i]=i;
+	    pthread_create(&tid[i], NULL, (void *)resultsmechmt, (void *)&ithread[i]);
 	}
 	for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
 	
@@ -212,7 +212,7 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 		fn[i]+=fn1[i+j*mt**nk];
 	    }
 	}
-	free(fn1);
+	free(fn1);free(ithread);
 	
         /* determine the internal force */
 
@@ -285,8 +285,10 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 	
 	/* create threads and wait */
 	
+	ithread=NNEW(int,num_cpus);
 	for(i=0; i<num_cpus; i++)  {
-	    pthread_create(&tid[i], NULL, resultsthermmt, (void *)i);
+	    ithread[i]=i;
+	    pthread_create(&tid[i], NULL, (void *)resultsthermmt, (void *)&ithread[i]);
 	}
 	for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
 	
@@ -306,7 +308,7 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 		fn[mt*i]+=fn1[mt*i+j*mt**nk];
 	    }
 	}
-	free(fn1);
+	free(fn1);free(ithread);
 	
         /* determine the internal concentrated heat flux */
 
@@ -361,21 +363,21 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 
 /* subroutine for multithreading of resultsmech */
 
-void *resultsmechmt(void *i){
+void *resultsmechmt(int *i){
 
     int indexfn,indexqa,indexnal,nea,neb,nedelta;
 
-    indexfn=((int)i)*mt1**nk1;
-    indexqa=((int)i)*3;
-    indexnal=((int)i);
+    indexfn=*i*mt1**nk1;
+    indexqa=*i*3;
+    indexnal=*i;
     
 // ceil -> floor
 
     nedelta=(int)floor(*ne1/(double)num_cpus);
-    nea=((int)i)*nedelta+1;
-    neb=(((int)i)+1)*nedelta;
+    nea=*i*nedelta+1;
+    neb=(*i+1)*nedelta;
 // next line! -> all parallel sections
-    if(((int)i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
+    if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
 //    if(neb>*ne1) neb=*ne1;
 
 //    printf("mech i=%d,nea=%d,neb=%d\n",i,nea,neb);
@@ -389,25 +391,25 @@ void *resultsmechmt(void *i){
           xstateini1,xstiff1,xstate1,npmat1_,matname1,mi1,ielas1,icmd1,
           ncmat1_,nstate1_,stiini1,vini1,ener1,eei1,enerini1,istep1,iinc1,
           springarea1,reltime1,&calcul_fn1,&calcul_qa1,&calcul_cauchy1,&iener1,
-	  &ikin1,&nal[indexnal],ne01,thicke1,xnormastface1,&nea,&neb));
+	  &ikin1,&nal[indexnal],ne01,thicke1,xnormastface1,emeini1,&nea,&neb));
 
     return NULL;
 }
 
 /* subroutine for multithreading of resultsmech */
 
-void *resultsthermmt(void *i){
+void *resultsthermmt(int *i){
 
     int indexfn,indexqa,indexnal,nea,neb,nedelta;
 
-    indexfn=((int)i)*mt1**nk1;
-    indexqa=((int)i)*3;
-    indexnal=((int)i);
+    indexfn=*i*mt1**nk1;
+    indexqa=*i*3;
+    indexnal=*i;
     
     nedelta=(int)floor(*ne1/(double)num_cpus);
-    nea=((int)i)*nedelta+1;
-    neb=(((int)i)+1)*nedelta;
-    if(((int)i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
+    nea=*i*nedelta+1;
+    neb=(*i+1)*nedelta;
+    if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
 //    if(neb>*ne1) neb=*ne1;
 
 //    printf("therm i=%d,nea=%d,neb=%d\n",i,nea,neb);

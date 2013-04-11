@@ -17,9 +17,9 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine applybounmpc(nodeboun,ndirboun,nboun,xbounact,
-     &  ithermal,nk,iponoel,inoel,vold,voldtu,t1act,isolidsurf,
+     &  ithermal,nk,iponoel,inoel,vold,vcontu,t1act,isolidsurf,
      &  nsolidsurf,xsolidsurf,nfreestream,ifreestream,turbulent,
-     &  voldcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
+     &  vcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
      &  compressible,ismooth,nmpc,nodempc,ipompc,coefmpc,inomat,
      &  mi,matname)
 !
@@ -38,8 +38,8 @@
      &  ist,ndir,ndiri,inomat(*),ielmat(mi(3),*)
 !
       real*8 rhcon(0:1,ntmat_,*),rho,vold(0:mi(2),*),xbounact(*),
-     &  voldtu(2,*),t1act(*),temp,xsolidsurf(*),reflength,r,cp,
-     &  refkin,reftuf,refvel,voldcon(0:4,*),physcon(*),v(0:mi(2),*),
+     &  vcontu(2,*),t1act(*),temp,xsolidsurf(*),reflength,r,cp,
+     &  refkin,reftuf,refvel,vcon(0:4,*),physcon(*),v(0:mi(2),*),
      &  rhoi,coefmpc(*),residu,size,correction,shcon(0:3,ntmat_,*)
 !
 !     inserting SPC's
@@ -65,13 +65,13 @@
 !
          if(ndirboun(i).eq.0) then
             do j=0,4
-               voldcon(j,node)=0.d0
+               vcon(j,node)=0.d0
             enddo
          elseif(ndirboun(i).lt.4) then
-            voldcon(ndirboun(i),node)=0.d0
+            vcon(ndirboun(i),node)=0.d0
          elseif(compressible.eq.0) then
             do j=0,4
-               voldcon(j,node)=0.d0
+               vcon(j,node)=0.d0
             enddo
          endif
 !
@@ -113,13 +113,13 @@
 !
          if(ndir.eq.0) then
             do j=0,4
-               voldcon(j,node)=0.d0
+               vcon(j,node)=0.d0
             enddo
          elseif(ndir.lt.4) then
-            voldcon(ndir,node)=0.d0
+            vcon(ndir,node)=0.d0
          elseif(compressible.eq.0) then
             do j=0,4
-               voldcon(j,node)=0.d0
+               vcon(j,node)=0.d0
             enddo
          endif
 !     
@@ -137,8 +137,8 @@
          imat=inomat(node)
          if(imat.eq.0) cycle
 !
-         if((voldcon(0,node).eq.0.d0).or.
-     &      ((voldcon(4,node).eq.0.d0).and.(compressible.eq.1))) then
+         if((vcon(0,node).eq.0.d0).or.
+     &      ((vcon(4,node).eq.0.d0).and.(compressible.eq.1))) then
 !
 !           all conservative variables have to be updated
 !
@@ -167,26 +167,26 @@
                   stop
                endif
                rho=vold(4,node)/(r*(vold(0,node)-physcon(1)))
-               voldcon(0,node)=rho*(cp*(temp-physcon(1))+
+               vcon(0,node)=rho*(cp*(temp-physcon(1))+
      &              (vold(1,node)**2+vold(2,node)**2+vold(3,node)**2)
      &              /2.d0)-vold(4,node)
             else
                call materialdata_rho(rhcon,nrhcon,imat,rho,
      &              temp,ntmat_,ithermal)
-               voldcon(0,node)=rho*(cp*(temp-physcon(1))+
+               vcon(0,node)=rho*(cp*(temp-physcon(1))+
      &              (vold(1,node)**2+vold(2,node)**2+vold(3,node)**2)
      &              /2.d0)
             endif
-            voldcon(4,node)=rho
+            vcon(4,node)=rho
             do k=1,3
-               voldcon(k,node)=rho*vold(k,node)
+               vcon(k,node)=rho*vold(k,node)
             enddo
-         elseif(voldcon(1,node).eq.0.d0) then
-            voldcon(1,node)=voldcon(4,node)*vold(1,node)
-         elseif(voldcon(2,node).eq.0.d0) then
-            voldcon(2,node)=voldcon(4,node)*vold(2,node)
-         elseif(voldcon(3,node).eq.0.d0) then
-            voldcon(3,node)=voldcon(4,node)*vold(3,node)
+         elseif(vcon(1,node).eq.0.d0) then
+            vcon(1,node)=vcon(4,node)*vold(1,node)
+         elseif(vcon(2,node).eq.0.d0) then
+            vcon(2,node)=vcon(4,node)*vold(2,node)
+         elseif(vcon(3,node).eq.0.d0) then
+            vcon(3,node)=vcon(4,node)*vold(3,node)
          endif
       enddo
 !
@@ -201,8 +201,8 @@
          imat=inomat(node)
          if(imat.eq.0) cycle
 !         
-         if((voldcon(0,node).eq.0.d0).or.
-     &      ((voldcon(4,node).eq.0.d0).and.(compressible.eq.1))) then
+         if((vcon(0,node).eq.0.d0).or.
+     &      ((vcon(4,node).eq.0.d0).and.(compressible.eq.1))) then
 !
 !           all conservative variables have to be updated
 !
@@ -231,26 +231,26 @@
                   stop
                endif
                rho=vold(4,node)/(r*(vold(0,node)-physcon(1)))
-               voldcon(0,node)=rho*(cp*(temp-physcon(1))+
+               vcon(0,node)=rho*(cp*(temp-physcon(1))+
      &              (vold(1,node)**2+vold(2,node)**2+vold(3,node)**2)
      &              /2.d0)-vold(4,node)
             else
                call materialdata_rho(rhcon,nrhcon,imat,rho,
      &              temp,ntmat_,ithermal)
-               voldcon(0,node)=rho*(cp*(temp-physcon(1))+
+               vcon(0,node)=rho*(cp*(temp-physcon(1))+
      &              (vold(1,node)**2+vold(2,node)**2+vold(3,node)**2)
      &              /2.d0)
             endif
-            voldcon(4,node)=rho
+            vcon(4,node)=rho
             do k=1,3
-               voldcon(k,node)=rho*vold(k,node)
+               vcon(k,node)=rho*vold(k,node)
             enddo
-         elseif(voldcon(1,node).eq.0.d0) then
-            voldcon(1,node)=voldcon(4,node)*vold(1,node)
-         elseif(voldcon(2,node).eq.0.d0) then
-            voldcon(2,node)=voldcon(4,node)*vold(2,node)
-         elseif(voldcon(3,node).eq.0.d0) then
-            voldcon(3,node)=voldcon(4,node)*vold(3,node)
+         elseif(vcon(1,node).eq.0.d0) then
+            vcon(1,node)=vcon(4,node)*vold(1,node)
+         elseif(vcon(2,node).eq.0.d0) then
+            vcon(2,node)=vcon(4,node)*vold(2,node)
+         elseif(vcon(3,node).eq.0.d0) then
+            vcon(3,node)=vcon(4,node)*vold(3,node)
          endif
       enddo
 !     

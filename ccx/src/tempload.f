@@ -23,7 +23,8 @@
      &  xbounold,xboun,xbounact,iamboun,nboun,
      &  nodeboun,ndirboun,nodeforc,ndirforc,istep,iinc,
      &  co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
-     &  ntrans,trab,inotr,veold)
+     &  ntrans,trab,inotr,veold,integerglob,doubleglob,tieset,istartset,
+     &  iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc)
 !
 !     calculates the loading at a given time
 !
@@ -31,26 +32,31 @@
 !
       logical gasnode
 !
+      character*1 entity
       character*20 sideload(*)
       character*80 amname(*)
+      character*81 tieset(3,*)
 !
       integer iamforc(*),iamload(2,*),iamt1(*),nelemload(2,*),
      &  nam,i,istart,iend,id,nforc,nload,nk,namta(3,*),ithermal,
      &  nmethod,iamt1i,iamboun(*),nboun,iamforci,iambouni,
-     &  iamloadi1,iamloadi2,ibody(3,*),itg(*),ntg,idof,
+     &  iamloadi1,iamloadi2,ibody(3,*),itg(*),ntg,idof,one,
      &  nbody,iambodyi,nodeboun(*),ndirboun(*),nodeforc(2,*),
      &  ndirforc(*),istep,iinc,msecpt,node,j,ikboun(*),ilboun(*),
-     &  ipresboun,mi(*),ntrans,inotr(2,*),idummy
+     &  ipresboun,mi(*),ntrans,inotr(2,*),idummy,integerglob(*),
+     &  istartset(*),iendset(*),ialset(*),ntie,iselect(1),
+     &  nmpc,ikmpc(*),ilmpc(*),nodempc(3,*),k,ist,index,ipompc(*)
 !
       real*8 xforc(*),xforcact(*),xload(2,*),xloadact(2,*),
-     &  t1(*),t1act(*),amta(2,*),ampli(*),time,
-     &  xforcold(*),xloadold(2,*),t1old(*),reltime,
+     &  t1(*),t1act(*),amta(2,*),ampli(*),time,fixed_temp,
+     &  xforcold(*),xloadold(2,*),t1old(*),reltime,coefmpc(*),
      &  xbounold(*),xboun(*),xbounact(*),ttime,dtime,reftime,
      &  xbody(7,*),xbodyold(7,*),xbodyact(7,*),co(3,*),
      &  vold(0:mi(2),*),abqtime(2),coords(3),trab(7,*),
-     &  veold(0:mi(2),*),ddummy
+     &  veold(0:mi(2),*),ddummy,doubleglob(*)
 !
       data msecpt /1/
+      data one /1/
 !
 !     if an amplitude is active, the loading is scaled according to
 !     the actual time. If no amplitude is active, then the load is
@@ -135,6 +141,39 @@
                call uboun(xbounact(i),istep,iinc,abqtime,node,
      &              ndirboun(i),coords,vold,mi)
             endif
+            cycle
+         endif
+         if((xboun(i).lt.1.9232931375d0).and.
+     &        (xboun(i).gt.1.9232931373d0)) then
+!     
+!           boundary conditions for submodel
+!     
+            node=nodeboun(i)
+!
+!           check whether node is a gasnode
+!
+            gasnode=.false.
+            call nident(itg,node,ntg,id)
+            if(id.gt.0) then
+               if(itg(id).eq.node) then
+                  gasnode=.true.
+               endif
+            endif
+!
+!           for the interpolation of submodels the undeformed
+!           geometry is taken
+!
+            do j=1,3
+               coords(j)=co(j,node)
+            enddo
+!
+            entity='N'
+            one=1
+            iselect(1)=ndirboun(i)+1
+            call interpolsubmodel(integerglob,doubleglob,xbounact(i),
+     &           coords,iselect,one,node,tieset,istartset,iendset,
+     &           ialset,ntie,entity)
+c            write(*,*) 'tempload ',node,ndirboun(i),xbounact(i)
             cycle
          endif
 !
@@ -295,6 +334,7 @@ c               xloadact(2,i)=xload(2,i)
          do i=1,nk
             if((t1(i).lt.1.2357111318d0).and.
      &           (t1(i).gt.1.2357111316d0)) then
+               write(*,*) 'tempload.f ',i,t1(i)
 !
                abqtime(1)=time
                abqtime(2)=ttime+dtime
@@ -306,6 +346,26 @@ c               xloadact(2,i)=xload(2,i)
      &              coords,vold,mi)
                cycle
             endif
+!
+            if((t1(i).lt.1.9232931375d0).and.
+     &           (t1(i).gt.1.9232931373d0)) then
+!
+!              for the interpolation of submodels the undeformed
+!              geometry is taken
+!
+               do j=1,3
+                  coords(j)=co(j,i)
+               enddo
+!
+               entity='N'
+               one=1
+               iselect(1)=1
+               call interpolsubmodel(integerglob,doubleglob,t1act(i),
+     &              coords,iselect,one,i,tieset,istartset,iendset,
+     &              ialset,ntie,entity)
+               cycle
+            endif
+!
             if(nam.gt.0) then
                iamt1i=iamt1(i)
             else
@@ -318,6 +378,27 @@ c               xloadact(2,i)=xload(2,i)
             else
                t1act(i)=t1(i)
             endif
+         enddo
+!
+!        taking temperature MPC's into account
+!
+         do j=1,nmpc
+            k=mod(ikmpc(j),8)
+            if(k.ne.0) cycle
+            i=ilmpc(j)
+            ist=ipompc(i)
+            node=nodempc(1,ist)
+            index=nodempc(3,ist)
+            fixed_temp=0.d0
+            if(index.ne.0) then
+               do
+                  fixed_temp=fixed_temp-
+     &              coefmpc(index)*t1act(nodempc(1,index))
+                  index=nodempc(3,index)
+                  if(index.eq.0) exit
+               enddo
+            endif
+            t1act(node)=fixed_temp/coefmpc(ist)
          enddo
       endif
 c      write(*,*) 'nboun'

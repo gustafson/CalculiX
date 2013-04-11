@@ -18,7 +18,8 @@
 !
       subroutine compdt(nk,dt,nshcon,shcon,nrhcon,rhcon,vold,ntmat_,
      &  iponoel,inoel,dtimef,iexplicit,ielmat,physcon,dh,cocon,
-     &  ncocon,ithermal,mi,ipkon,kon,lakon,dtl,ne,v,co,turbulent,voldtu)
+     &  ncocon,ithermal,mi,ipkon,kon,lakon,dtl,ne,v,co,turbulent,vcontu,
+     &  dtc)
 !
 !     - determine the time step for each node (stored in field dt
 !       and the minimum value across all nodes (dtimef)
@@ -31,11 +32,11 @@
      &  nshcon(*),nrhcon(*),ntmat_,ielmat(mi(3),*),imat,ncocon(2,*),
      &  ipkon(*),kon(*),ne,nope,indexe,iflag,iexplicit,turbulent
 !
-      real*8 dtimef,dt(*),dvi,r,cp,rho,shcon(0:3,ntmat_,*),
-     &  rhcon(0:1,ntmat_,*),vold(0:mi(2),*),temp,vel,dtu,dtnu,
-     &  physcon(*),dh(*),cocon(0:6,ntmat_,*),dtal,cond,voldl(3,20),
+      real*8 dtimef,dt(*),dvi,r,cp,rho,shcon(0:3,ntmat_,*),dtc(*),
+     &  rhcon(0:1,ntmat_,*),vold(0:mi(2),*),temp,vel,dtcon,dtmed,
+     &  physcon(*),dh(*),cocon(0:6,ntmat_,*),dtthd,cond,voldl(3,20),
      &  xl(3,20),vertex6(3,6),vertex8(3,8),xi,et,ze,xsj,shp(4,20),
-     &  dtl(*),h,v(0:mi(2),*),co(3,*),dd,voldtu(2,*)
+     &  dtl(*),h,v(0:mi(2),*),co(3,*),dd,vcontu(2,*),dttud
 !
       data vertex6 /0.d0,0.d0,0.d0,1.d0,0.d0,0.d0,
      &              0.d0,1.d0,0.d0,0.d0,0.d0,1.d0,
@@ -153,38 +154,60 @@ c      endif
             call materialdata_cp(imat,ntmat_,temp,shcon,nshcon,cp)
             r=shcon(3,1,imat)
             dt(i)=dh(i)/(dsqrt(cp*r*temp/(cp-r))+vel)
-c            dtl(i)=dtl(i)/(dsqrt(cp*r*temp/(cp-r))+vel)
-cstart shallow
-cccc            dt(i)=dh(i)/(dsqrt(10.d0*rho)+vel)
-cend shallow
-c            if(dtl(i).lt.dtimef) dtimef=dtl(i)
             if(dt(i).lt.dtimef) dtimef=dt(i)
          else
+!
+!           calculation of the incompressible flow time step
+!
             call materialdata_dvi(imat,ntmat_,temp,shcon,nshcon,dvi)
             call materialdata_rho(rhcon,nrhcon,imat,rho,
      &           temp,ntmat_,ithermal)
+!
+!           convective time step (dtcon)
+!
             if(vel.lt.1.d-10) vel=1.d-10
-            dtu=dh(i)/vel
+            dtcon=dh(i)/vel
+!
+!           mechanical diffusion time step (dtmed)
+!
             if(dvi.lt.1.d-10) dvi=1.d-10
-            dtnu=dh(i)*dh(i)*rho/(2.d0*dvi)
-            dt(i)=dtu*dtnu/(dtu+dtnu)
+            dtmed=dh(i)*dh(i)*rho/(2.d0*dvi)
+!
+            dt(i)=dtcon*dtmed/(dtcon+dtmed)
+!
+!           thermal diffusion time step (dtthd)
+!
             if(ithermal.gt.1) then
                call materialdata_cond(imat,ntmat_,temp,cocon,ncocon,
      &                cond)
                call materialdata_cp(imat,ntmat_,temp,shcon,nshcon,cp)
                if(cond.lt.1.d-10) cond=1.d-10
-               dtal=dh(i)*dh(i)*rho*cp/(2.d0*cond)
-               dt(i)=(dt(i)*dtal)/(dt(i)+dtal)
+               dtthd=dh(i)*dh(i)*rho*cp/(2.d0*cond)
+               dt(i)=(dt(i)*dtthd)/(dt(i)+dtthd)
             endif
-            if(turbulent.ne.0) then
-               dtal=dh(i)*dh(i)*rho/
-     &              (2.d0*(dvi+dabs(voldtu(1,i)/voldtu(2,i))))
-               dt(i)=(dt(i)*dtal)/(dt(i)+dtal)
-            endif
+!
+!           turbulent diffusion time step (dttud)
+!
+c            if(turbulent.ne.0) then
+c               dttud=dh(i)*dh(i)*rho/
+c     &              (2.d0*(dvi+rho*dabs(vcontu(1,i)/vcontu(2,i))))
+c               dt(i)=(dt(i)*dttud)/(dt(i)+dttud)
+c            endif
+!
             if(dt(i).lt.dtimef) dtimef=dt(i)
+            dtc(i)=dt(i)
+!
          endif
 !
       enddo
+!
+!     no increased damping for compressible fluids
+!
+      if(iexplicit.eq.1) then
+         do i=1,nk
+            dtc(i)=dtimef
+         enddo
+      endif
 !
 !     middle nodes (interpolation between neighboring end nodes;
 !     still to be done)

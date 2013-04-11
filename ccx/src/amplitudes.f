@@ -69,6 +69,10 @@
             namta(1,nam)=0
             namta(2,nam)=0
             user=.true.
+         elseif(textpart(i)(1:18).eq.'DEFINITION=TABULAR') then
+            cycle
+         elseif(textpart(i)(1:14).eq.'VALUE=RELATIVE') then
+            cycle
          else
             write(*,*) 
      &        '*WARNING reading *AMPLITUDE: parameter not recognized:'

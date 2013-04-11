@@ -102,10 +102,18 @@
       if(typename(1:18).eq.'ABSOLUTETORELATIVE') then
          elname='ATR    '
          ndprop=3
-!	 
+!
+!     version of Yavor Dobrev
+!
+      elseif(typename(1:10).eq.'ACCTUBEONE') then
+         elname ='ACCTUBO'
+         ndprop=19 
+!
+!     version of Stefanie Asenbauer
+!
       elseif(typename(1:7).eq.'ACCTUBE') then
          elname ='ACCTUBE'
-         ndprop=15
+         ndprop=24
 !
       elseif(typename(1:12).eq.'BLEEDTAPPING') then
          elname='ORBT   '
@@ -386,7 +394,7 @@
             ndprop=15
          elseif(typename(7:20).eq.'SPLITIDELCHIK2')then
             elname='REBRSI2'
-            ndprop=12
+            ndprop=13
          endif
 !
       elseif(typename(1:7).eq.'RIMSEAL') then
@@ -554,10 +562,10 @@
             enddo
          endif
          nprop=nprop+ndprop+1
-!	 
+! 
       elseif(elname.eq.'ACCTUBE') then
 !         
-!        Read the first 15 elements
+!        Read the first 20 elements
 ! 
          lprop=0
          ndpropread=ndprop
@@ -574,17 +582,17 @@
                
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
                
-!              If 15 elements have been read, check how many more
+!              If 20 elements have been read, check how many more
 !              are to be read
-               if (lprop.eq.15) then
-                  ndpropread = ndpropread +
-     &                        (prop(nprop+14)+prop(nprop+15))*2
+               if (lprop.eq.20) then
+                  ndpropread = lprop +
+     &                        (prop(nprop+19)+prop(nprop+20))*2
                   ndprop = ndpropread
                endif
             enddo
          enddo
 !         
-!        Until now 2 lines have been read
+!        Until now 3 lines have been read
 !        If necessary read the rest
 !
          if(ndpropread.gt.lprop) then
@@ -739,9 +747,21 @@
          prop(npropstart+11)=noil_mat+0.5d0
       elseif(elname(1:7).eq.'REBRSI1') then
          prop(npropstart+15)=noil_mat+0.5d0
+         if(dabs(prop(npropstart+13)).le.1E-5) then
+            prop(npropstart+13)=1.d0
+         endif
+         if(dabs(prop(npropstart+14)).le.1E-5) then
+            prop(npropstart+14)=1.d0
+         endif
 !     
       elseif(elname(1:7).eq.'REBRSI2') then
-         prop(npropstart+12)=noil_mat+0.5d0
+         prop(npropstart+13)=noil_mat+0.5d0
+         if(dabs(prop(npropstart+11)).le.1E-5) then
+            prop(npropstart+11)=1.d0
+         endif
+         if(dabs(prop(npropstart+12)).le.1E-5) then
+            prop(npropstart+12)=1.d0
+         endif
 !     
       endif
 !
@@ -1111,7 +1131,7 @@ c     &         (elname(1:6).eq.'REWAOR').or.
          if(prop(npropstart+2).lt.(prop(npropstart+3))) then
              write(*,*) '*ERROR in fluidsections: '
              write(*,*) 'element TYPE=ROTATING CAVITY(Radial inflow)'
-             write(*,*) 'the specified upstream radius is smaller than'  
+             write(*,*) 'the specified upstream radius is smaller than'
              write(*,*) 'the specified downstream radius!'
              write(*,*) 'Please check the element definition.'
              stop
@@ -1121,7 +1141,7 @@ c     &         (elname(1:6).eq.'REWAOR').or.
          if(prop(npropstart+1).lt.(prop(npropstart+2))) then
              write(*,*) '*ERROR in fluidsections: '
              write(*,*) 'element TYPE=ROTATING CAVITY(Radial inflow)'
-             write(*,*) 'the specified upstream radius is smaller than'  
+             write(*,*) 'the specified upstream radius is smaller than'
              write(*,*) 'the specified downstream radius!'
              write(*,*) 'Please check the element definition.'
              stop
