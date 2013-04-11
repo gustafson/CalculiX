@@ -1,0 +1,79 @@
+!
+!     CalculiX - A 3-dimensional finite element program
+!              Copyright (C) 1998-2007 Guido Dhondt
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation(version 2);
+!     
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of 
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+!     GNU General Public License for more details.
+!
+!     You should have received a copy of the GNU General Public License
+!     along with this program; if not, write to the Free Software
+!     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+!
+      subroutine creep(decra,deswa,statev,serd,ec,esw,p,qtild,
+     &  temp,dtemp,predef,dpred,time,dtime,cmname,leximp,lend,
+     &  coords,nstatv,noel,npt,layer,kspt,kstep,kinc)
+!
+!     user creep routine
+!
+!     INPUT:
+!
+!     statev(1..nstatv)  internal variables
+!     serd               not used
+!     ec(1)              equivalent creep at the start of the increment
+!     ec(2)              not used
+!     esw(1..2)          not used
+!     p                  not used
+!     qtild              von Mises stress
+!     temp               temperature at the end of the increment
+!     dtemp              not used
+!     predef             not used
+!     dpred              not used
+!     time(1)            value of the step time at the end of the increment
+!     time(2)            value of the total time at the end of the increment
+!     dtime              time increment
+!     cmname             material name
+!     leximp             not used
+!     lend               not used
+!     coords(1..3)       coordinates of the current integration point
+!     nstatv             number of internal variables
+!     noel               element number
+!     npt                integration point number
+!     layer              not used
+!     kspt               not used
+!     kstep              not used
+!     kinc               not used
+!
+!
+!     OUTPUT:
+!
+!     decra(1)           equivalent deviatoric creep strain increment
+!     decra(2..4)        not used
+!     decra(5)           derivative of the equivalent deviatoric
+!                        creep strain increment w.r.t. the von Mises
+!                        stress
+!     deswa(1..5)        not used
+!   
+      character*80 cmname
+!
+      integer leximp,lend,nstatv,noel,npt,layer,kspt,kstep,kinc
+!
+      real*8 decra(5),deswa(5),statev(*),serd,ec(2),esw(2),p,qtild,
+     &  temp,dtemp,predef(*),dpred(*),time(2),dtime,coords(*)
+!
+      if (cmname .eq. "STRONG") then                             
+        decra(1)= 0.333333333333e-8*qtild*dtime                      
+        decra(5)= 0.333333333333e-8*dtime                            
+      elseif (cmname .eq. "WEAK") then                             
+        decra(1)= 0.333333333333e-8*qtild*dtime                      
+        decra(5)= 0.333333333333e-8*dtime                            
+      endif                                                      
+!
+      return
+      end

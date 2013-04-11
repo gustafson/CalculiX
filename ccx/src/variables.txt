@@ -1,0 +1,547 @@
+!
+!     CalculiX - A 3-dimensional finite element program
+!              Copyright (C) 1998 Guido Dhondt
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation(version 2);
+!     
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of 
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+!     GNU General Public License for more details.
+!
+!     You should have received a copy of the GNU General Public License
+!     along with this program; if not, write to the Free Software
+!     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+! 
+      This file describes the variables used in CalculiX and their meaning
+
+REARRANGEMENT OF THE ORDER IN THE INPUT DECK
+
+      ifreeinp:       next blank line in field inp
+
+      ipoinp(1,i):    index of the first column in field inp
+                      containing information on a block of lines in 
+                      the input deck corresponding to fundamental key i;
+                      a fundamental key is a key for which the order
+                      in the input file matters
+                      (the fundamental keys are listed in file keystart.f)
+      ipoinp(2,i):    index of the last column in field inp 
+                      containing information on a block of lines in
+                      the input deck corresopnding to fundamental key i;
+
+      inp:            a column i in field inp (i.e. inp(1..3,i))
+                      corresponds to a uninterupted block of lines
+                      assigned to one and the same fundamental key
+                      in the input deck. inp(1,i) is its first line
+                      in the input deck, inp(2,i) its last line and
+                      inp(3,i) the next column in inp corresponding 
+                      to the same fundamental key; it takes the value
+                      0 if none other exists.
+
+MATERIAL DESCRIPTION
+ 
+      nmat:           # materials
+      
+      matname(i):     name of material i
+ 
+      nelcon(1,i):     # (hyper)elastic constants for material i
+                      (negative kode for nonlinear elastic constants)
+      nelcon(2,i):     # temperature data points for the elastic constants
+                      of material i
+      elcon(0,j,i):   temperature at (hyper)elastic temperature point j of
+                      material i
+      elcon(k,j,i):   (hyper)elastic constant k at elastic temperature point j
+                      of material i
+ 
+      nrhcon(i):      # temperature data points for the density of 
+                      material i
+      rhcon(0,j,i):   temperature at density temperature point j of
+                      material i
+      rhcon(1,j,i):   density at the density temperature point j of
+                      material i
+      
+      nshcon(i):      # temperature data points for the specific heat of 
+                      material i
+      shcon(0,j,i):   temperature at specific heat temperature point j of
+                      material i
+      shcon(1,j,i):   specific heat at the specific heat temperature point j of
+                      material i
+      
+      nalcon(1,i):    # of expansion constants for material i
+      nalcon(2,i):    # of temperature data points for the expansion
+                      coefficients of material i
+      alcon(0,j,i):   temperature at expansion temperature point j
+                      of material i
+      alcon(k,j,i):   expansion coefficient k at expansion temperature
+                      point j of material i
+ 
+      ncocon(1,i):    # of conductivity constants for material i
+      ncocon(2,i):    # of temperature data points for the conductivity
+                      coefficients of material i
+      cocon(0,j,i):   temperature at conductivity temperature point j
+                      of material i
+      cocon(k,j,i):   conductivity coefficient k at conductivity temperature
+                      point j of material i
+ 
+      orname(i):      name of orientation i
+      orab(1..6,i):   coordinates of points a and b defining the new
+                      orientation
+      norien:         # orientations
+
+      isotropic hardening:
+
+      nplicon(0,i):   # temperature data points for the isotropic hardening
+                      curve of material i
+      nplicon(j,i):   # of stress - plastic strain data points at temperature
+                      j for material i
+      plicon(0,j,i):  temperature data point j of material i
+      plicon(2*k-1,j,i): stress corresponding to stress-plastic strain data
+                         point
+                         k at temperature data point j of material i
+      plicon(2*k,j,i):   plastic strain corresponding to stress-plastic strain
+                         data point k at temperature data point j of material i
+
+      kinematic hardening:
+
+      nplkcon(0,i):      # temperature data points for the kinematic hardening
+                         curve of material i
+      nplkcon(j,i):      # of stress - plastic strain data points at 
+                         temperature j for material i
+      plkcon(0,j,i):     temperature data point j of material i
+      plkcon(2*k-1,j,i): stress corresponding to stress-plastic strain data 
+                         point  k at temperature data point j of material i
+      plkcon(2*k,j,i):   plastic strain corresponding to stress-plastic strain
+                         data point
+                         k at temperature data point j of material i
+
+      kode=-1:           Arrudy-Boyce
+           -2:           Mooney-Rivlin
+	   -3:           Neo-Hooke
+	   -4:           Ogden (N=1)
+	   -5:           Ogden (N=2)
+	   -6:           Ogden (N=3)
+	   -7:           Polynomial (N=1)
+	   -8:           Polynomial (N=2)
+	   -9:           Polynomial (N=3)
+	   -10:          Reduced Polynomial (N=1)
+	   -11:          Reduced Polynomial (N=2)
+	   -12:          Reduced Polynomial (N=3)
+	   -13:          Van der Waals (not implemented yet)
+	   -14:          Yeoh
+	   -15:          Hyperfoam (N=1)
+	   -16:          Hyperfoam (N=2)
+	   -17:          Hyperfoam (N=3)
+	   -50:          deformation plasticity
+	   -51:          incremental plasticity (no viscosity)
+	   -52:          viscoplasticity
+        < -100:          user material routine with -kode-100 user
+                         defined constants with keyword *USER MATERIAL
+
+
+PROCEDURE DESCRIPTION
+
+      iperturb:       0: linear
+                      1: second order theory
+                      2: nonlinear geometric
+                      3: nonlinear elastic material (and nonlinear geometric)
+
+      nmethod:        1: static (linear or nonlinear)
+                      2: frequency(linear)
+	              3: buckling (linear)
+                      4: dynamic (linear or nonlinear)
+
+GEOMETRY DESCRIPTION
+   
+      nk:             highest node number
+      co(i,j):        coordinate i of node j
+      intr(1,j):      transformation number applicable in node j
+      intr(2,j):      a SPC in a node j in which a transformation
+                      applies corresponds to a MPC. intr(2,j) contains
+                      the number of a new node generated for the 
+                      inhomogeneous part of the MPC
+  
+
+TOPOLOGY DESCRIPTION
+
+      ne:             highest element number
+      mint_:          max # of integration points per element (max over all 
+                      elements)
+      kon(i):         field containing the connectivity lists of the 
+                      elements in successive order
+
+      For element i:
+
+      ipkon(i):       (location in kon of the first node in the element
+                      connectivity list of element i)-1
+      lakon(i):       element label
+      ielorien(i):    orientation number
+      ielmat(i):      material number
+
+SHELL (2-D) AND BEAM (1-D) VARIABLES (INCLUDING PLANE STRAIN, PLANE
+ STRESS AND AXISYMMETRIC ELEMENTS) 
+
+      iponor(2,i):    two pointers for entry i of kon. The first
+                      pointer points to the location in xnor preceding
+                      the normals of entry i, the second points to the
+                      location in knor of the newly generated
+                      dependent nodes of entry i.
+      xnor(i):        field containing the normals in nodes on the
+                      elements they belong to
+      knor(i):        field containing the extra nodes needed to
+                      expand the shell and beam elements to volume
+                      elements
+      thickn(2,i):    thicknesses (one for shells, two for beams) in
+                      node i
+      thicke(2,i):    thicknesses (one for shells, two for beams) in
+                      element nodes. The entries correspond to the
+                      nodal entries in field kon
+      offset(2,i):    offsets (one for shells, two for beams) in
+                      element i
+      iponoel(i):     pointer for node i into field inoel, which
+                      stores the 1-D and 2-D elements belonging to the
+                      node.
+      inoel(3,i):     field containing an element number, a local node
+                      number within this element and a pointer to
+                      another entry (or zero if there is no
+                      other).
+      inoelfree:      next free field in inoel
+      rig(i):         character*1 field indicating whether node i is a
+                      rigid node ('R') or not (' '). In a rigid node
+                      or knot all expansion nodes except the ones not
+                      in the midface of plane stress, plane strain and
+                      axisymmetric elements are connected with a rigid
+                      body MPC 
+
+AMPLITUDES
+
+      nam:            # amplitude definitions
+
+      amta(1,j):      time of (time,amplitude) pair j
+      amta(2,j):      amplitude of (time,amplitude) pair j
+      namtot:         total # of (time,amplitude) pairs
+
+      For amplitude i:
+
+      amname(i):      name of the amplitude
+      namta(1,i):     location of first (time,amplitude) pair in
+                      field amta
+      namta(2,i):     location of last (time,amplitude) pair in 
+                      field amta
+
+TRANSFORMS
+
+      ntrans          # transform definitions
+      trab(1..6,i)    coordinates of two points defining the transform
+      trab(7,i)       =1 for rectangular transformations
+                      =2 for cylindrical transformations
+  
+SINGLE POINT CONSTRAINTS
+
+      nboun           # SPC's
+
+      For SPC (single point constraint) i:
+      
+      nodeboun(i):    SPC node
+      ndirboun(i):    SPC direction
+      typeboun(i):    SPC type (SPCs can contain the nonhomogeneous
+                      part of MPCs):
+                      B=prescribed boundary condition
+                      M=midplane
+                      P=planempc
+                      R=rigidbody
+                      S=straigthmpc
+                      U=usermpc
+      xboun(i):       magnitude of constraint at end of a step
+      xbounold(i):    magnitude of constraint at beginning of a step
+      xbounact(i):    magnitude of constraint at the end of the present
+                      increment
+      xbounini(i):    magnitude of constraint at the start of the
+                      present increment
+      iamboun(i):     amplitude number
+      ikboun(i):      ordered array of the DOFs corresponding to the
+                      SPC's (DOF=3*(nodeboun(i)-1)+ndirboun(i))
+      ilboun(i):      original SPC number for ikboun(i) 
+
+MULTIPLE POINT CONSTRAINTS
+
+      ipompc(i):      starting location in nodempc and coefmpc of MPC i
+      
+      nodempc(1,ipompc(i)),nodempc(1,nodempc(3,ipompc(i))),
+      nodempc(1,nodempc(3,nodempc(3,nodempc(3,ipompc(i)))),...
+      until nodempc(3,nodempc(3,......))))))=0:
+                      nodes belonging to MPC i
+
+      nodempc(2,ipompc(i)),nodempc(2,nodempc(3,ipompc(i))),
+      nodempc(2,nodempc(3,nodempc(3,nodempc(3,ipompc(i)))),...
+      until nodempc(3,nodempc(3,......))))))=0:
+                      directions belonging to MPC i
+
+      xbounmpc(ipompc(i)),xbounmpc(nodempc(3,ipompc(i))),
+      xbounmpc(nodempc(3,nodempc(3,nodempc(3,ipompc(i)))),...
+      until nodempc(3,nodempc(3,......))))))=0:
+                      coefficients belonging to MPC i
+      ikmpc (i):      ordered array of the dependent DOFs
+                      corresponding to the MPC's
+		      DOF=3*(nodempc(1,ipompc(i))-1)+nodempc(2,ipompc(i))
+      ilmpc (i):      original SPC number for ikmpc(i) 
+
+      icascade:       0: MPC's did not change since the last iteration
+                      1: MPC's changed since last iteration:
+                         dependency check in cascade.c necessary
+                      2: at least one nonlinear MPC had DOFs in common
+                         with a linear MPC or another nonlinear MPC.
+                         dependency check is necessary in each iteration
+ 
+POINT LOADS
+
+      nforc:          # of point loads
+
+      For point load i:
+
+      nodeforc(i):    node in which force is applied
+      ndirforc(i):    direction of force
+      xforc(i):       magnitude of force at end of a step
+      xforcold(i):    magnitude of force at start of a step
+      xforcact(i):    actual magnitude
+      iamforc(i):     amplitude number
+      ikforc(i):      ordered array of the DOFs corresponding to the
+                      point loads (DOF=3*(nodeboun(i)-1)+ndirboun(i)) 
+      ilforc(i):      original SPC number for ikforc(i) 
+
+DISTRIBUTED LOADS
+
+      nload:          # of facial distributed loads
+
+      For distributed load i:
+
+      nelemload(1,i): element to which distributed load is applied
+      nelemload(2,i): node for the environment temperature (only for
+                      heat transfer analyses)
+      sideload(i):    load label; indicated element side to which load
+                      is applied
+      xload(1,i):     magnitude of load at end of a step or, for heat
+                      transfer analyses, the convection (*FILM) or the
+                      radiation coefficient (*RADIATE)
+      xload(2,i):     the environment temperature (only for heat
+                      transfer analyses
+      xloadold(1..2,i):magnitude of load at start of a step
+      xloadact(1..2,i):actual magnitude of load
+      iamload(1,i):   amplitude number for xload(1,i)
+      iamload(2,i):   amplitude number for xload(2,i)
+
+MASS FLOW RATE
+
+      nflow:          # of mass flow rates
+
+      For mass flow rate i:
+
+      nodeflow(1,i):  node from which the mass flows
+      nodeflow(2,i):  node to which the mass flows
+      xflow(i):       magnitude of the mass flow rate
+      xflowold(i):    magnitude of the mass flow rate at start of a step
+      xflowact(i):    actual magnitude of the mass flow rate
+      iamflow(i):     amplitude number for xflow(i)
+
+TEMPERATURE LOADS
+
+      t0(i):          initial temperature in node i at the start of the
+                      calculation
+      t1(i):          temperature at the end of a step in node i
+      t1old(i):       temperature at the start of a step in node i
+      t1act(i):       actual temperature in node i
+      iamt1(i):       amplitude number
+
+CENTRIFUGAL LOADING
+
+      om:             square of the rotational speed at the end of a step
+      omold:          square of the rotational speed at the start of a step
+      omact:          actual value of the square of the rotational speed
+      iamom:          amplitude number
+      p1(i):          coordinate i of a first point on the rotation axis
+      p2(i):          coordinate i of a second point on the rotation axis
+
+GRAVITY LOADING
+
+      bodyf(i):       coordinate i of the body force at the end of a step
+      bodyfold(i):    coordinate i of the body force at the start of a step
+      bodyfact(i):    coordinate i of the actual body force
+      iambodyf:       amplitude number
+
+STRESS AND STRAIN FIELDS
+
+      eei(i,j,k):     in general:
+                      Lagrange strain component i in integration point j
+                      of element k (linear strain in linear elastic 
+                      calculations)
+
+                      for elements with *DEFORMATION PLASTICITY property:
+                      Eulerian strain component i in integration point j
+                      of element k (linear strain in linear elastic 
+                      calculations)
+
+      eeiini(i,j,k):  Lagrange strain component i in integration point
+                      of element k at the start of an increment
+
+      een(i,j):       Lagrange strain component i in node j (mean over all
+                      adjacent elements linear strain in linear elastic
+                      calculations)
+
+      stx(i,j,k):     Cauchy or PK2
+                      stress component i in integration point j
+                      of element k at the end of an iteration
+                      (linear stress in linear elastic calculations) 
+
+      sti(i,j,k):     PK2 stress component i in integration point j
+                      of element k at the start of an iteration
+                      (linear stress in linear elastic calculations) 
+
+      stiini(i,j,k):  PK2 stress component i in integration point j
+                      of element k at the start of an increment 
+
+      stn(i,j):       Cauchy stress component i in node j (mean over all 
+                      adjacent elements; "linear" stress in linear elastic
+                      calculations)
+
+THERMAL ANALYSIS
+
+      ithermal:       0: no temperatures involved in the calculation
+                      1: stress analysis with given temperature field
+                      2: thermal analysis (no displacements)
+                      3: coupled thermal-mechanical analysis:
+                         temperatures and displacements are solved for
+                         simultaneously
+
+      v(0,j):         temperature of node j at the end of
+                      an iteration (for ithermal > 1)
+      vold(0,j):      temperature of node j  at the start
+                      of an iteration (for ithermal > 1)
+      vini(0,j):      temperature of node j at the start
+                      of an increment (for ithermal > 1)
+
+      fn(0,j):        actual temperature at node j (for ithermal > 1)
+
+      qfx(i,j,k):     heat flux component i in integration point j
+                      of element k at the end of an iteration
+
+      qfn(i,j):       heat flux component i in node j (mean over all 
+                      adjacent elements)
+
+
+DISPLACEMENTS AND SPATIAL/TIME DERIVATIVES
+
+      v(i,j):         displacement of node j in direction i at the end of
+                      an iteration
+      vold(i,j):      displacement of node j in direction i at the start
+                      of an iteration
+      vini(i,j):      displacement of node j in direction i at the start
+                      of an increment
+
+      ve(i,j):        velocity of node j in direction i at the end of
+                      an iteration
+      veold(i,j):     velocity of node j in direction i at the start
+                      of an iteration
+      veini(i,j):     velocity of node j in direction i at the start
+                      of an increment
+
+      accold(i,j):    acceleration of node j in direction i at the start
+                      of an iteration
+      accini(i,j):    acceleration of node j in direction i at the start
+                      of an increment
+
+      vkl(i,j):       (i,j) component of the displacement gradient tensor
+                      at the end of an iteration
+
+      xkl(i,j):       (i,j) component of the deformation gradient tensor
+                      at the end of an iteration
+
+      xikl(i,j):      (i,j) component of the deformation gradient tensor
+                      at the start of an increment
+
+      ckl(i,j):       (i,j) component of the inverse of the deformation
+                      gradient tensor
+
+LINEAR EQUATION SYSTEM
+
+      ad(i):          element i on diagonal of stiffness matrix
+      au(i):          element i in upper triangle of stiffness matrix
+      adb(i):         element i on diagonal of mass matrix, or, for
+                      buckling, of the incremental stiffness matrix
+                      (only nonzero elements are stored)
+      aub(i):         element i in upper triangle of mass matrix, or, for
+                      buckling, of the incremental stiffness matrix
+                      (only nonzero elements are stored)
+      neq[0]:         # of mechanical equations
+      neq[1]:         sum of mechanical and thermal equations
+      nzl:            number of the column such that all columns with
+                      a higher column number do not contain any
+                      (projected) nonzero off-diagonal terms (<= neq[1])
+      nzs:            sum of projected nonzero off-diagonal terms
+      nactdof(i,j):   actual degree of freedom (in the system of equations)
+                      of DOF i of node j (0 if not active)
+
+INTERNAL AND EXTERNAL FORCES
+
+      fext(i):        external mechanical forces in DOF i (due to point
+                      loads and distributed loads, including centrifugal and
+                      gravity loads, but excluding temperature loading and
+                      displacement loading)
+
+      fextini(i):     external mechanical forces in DOF i (due to point
+                      loads and distributed loads, including centrifugal and
+                      gravity loads, but excluding temperature loading and
+                      displacement loading) at the end of the last increment
+
+      finc(i):        external mechanical forces in DOF i augmented by 
+                      contributions due to temperature loading and prescribed
+                      displacements; used in linear calculations only
+
+      f(i):           actual internal forces in DOF i due to: 
+                      actual displacements in the independent nodes;
+                      prescribed displacements at the end of the increment
+                      in the dependent nodes;
+                      temperatures at the end of the increment in all nodes 
+
+      fini(i):        internal forces in DOF i at the end of the last
+                      increment
+
+      b(i):           right hand side of the equation system: difference
+                      between fext and f in nonlinear calcultions; for linear
+                      calculations, b=finc.
+
+      fn(i,j):        actual force at node j in direction i
+
+INCREMENT PARAMETERS
+
+      tinc:           user given increment size (can be modified by the 
+                      program if the parameter DIRECT is not activated)
+      tper:           user given step size
+
+      dtheta:         normalized (by tper) increment size
+      theta:          normalized (by tper) size of all previous increments (not
+                      including the present increment)
+      reltime:        theta+dtheta
+
+      dtime:          real time increment size
+      time:           real time size of all previous increments INCLUDING
+                      the present increment
+
+DIRECT INTEGRATION DYNAMICS
+
+      alpha,bet,gam:  parameter in the alpha-method of Hilber, Hughes and 
+                      Taylor
+      iexpl:          =0: implicit dynamics
+                      =1: explicit dynamics 
+
+FREQUENCY CALCULATIONS
+
+      mei(0)          number of requested eigenvalues
+      mei(1)          number of Lanczos vectors
+      mei(2)          maximum number of iterations
+      fei(0)          tolerance (accuracy)
+      fei(1)          lower value of requested frequency range
+      fei(2)          upper value of requested frequency range
+
+

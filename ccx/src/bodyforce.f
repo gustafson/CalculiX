@@ -1,0 +1,87 @@
+!
+!     CalculiX - A 3-dimensional finite element program
+!              Copyright (C) 1998-2007 Guido Dhondt
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation(version 2);
+!     
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of 
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+!     GNU General Public License for more details.
+!
+!     You should have received a copy of the GNU General Public License
+!     along with this program; if not, write to the Free Software
+!     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+!
+      subroutine bodyforce(cbody,ibody,ipobody,nbody,set,istartset,
+     &  iendset,ialset,inewton,nset,ifreebody,k)
+!
+!     assigns the body forces to the elements by use of field ipobody
+!
+      implicit none
+!
+      character*81 cbody(*),elset,set(*)
+!
+      integer ibody(3,*),nbody,ipobody(2,*),i,j,l,istartset(*),
+     &  iendset(*),ialset(*),kindofbodyforce,inewton,nset,istat,
+     &  ifreebody,k
+!
+      elset=cbody(k)
+      kindofbodyforce=ibody(1,k)
+      if(kindofbodyforce.eq.3) inewton=1
+!
+!     check whether element number or set name
+!
+      read(elset,'(i21)',iostat=istat) l
+      if(istat.eq.0) then
+         if(ipobody(1,l).eq.0) then
+            ipobody(1,l)=k
+         else
+            ipobody(2,ifreebody)=ipobody(2,l)
+            ipobody(2,l)=ifreebody
+            ipobody(1,ifreebody)=k
+            ifreebody=ifreebody+1
+         endif
+         return
+      endif
+!
+!     set name
+!
+      do i=1,nset
+         if(set(i).eq.elset) exit
+      enddo
+!     
+      do j=istartset(i),iendset(i)
+         if(ialset(j).gt.0) then
+            l=ialset(j)
+            if(ipobody(1,l).eq.0) then
+               ipobody(1,l)=k
+            else
+               ipobody(2,ifreebody)=ipobody(2,l)
+               ipobody(2,l)=ifreebody
+               ipobody(1,ifreebody)=k
+               ifreebody=ifreebody+1
+            endif
+         else
+            l=ialset(j-2)
+            do
+               l=l-ialset(j)
+               if(l.ge.ialset(j-1)) exit
+               if(ipobody(1,l).eq.0) then
+                  ipobody(1,l)=k
+               else
+                  ipobody(2,ifreebody)=ipobody(2,l)
+                  ipobody(2,l)=ifreebody
+                  ipobody(1,ifreebody)=k
+                  ifreebody=ifreebody+1
+               endif
+            enddo
+         endif
+      enddo
+!     
+      return
+      end
+
