@@ -23,7 +23,7 @@
      &  xbounold,xboun,xbounact,iamboun,nboun,
      &  nodeboun,ndirboun,nodeforc,ndirforc,istep,iinc,
      &  co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
-     &  xforcdiff,xloaddiff,xbodydiff,t1diff,xboundiff,icorrect,
+     &  xforcdiff,xloaddiff,xbodydiff,t1diff,xboundiff,iabsload,
      &  iprescribedboundary)
 !
 !     calculates the loading at a given time and the difference with
@@ -43,7 +43,7 @@
      &  iamloadi1,iamloadi2,ibody(3,*),itg(*),ntg,idof,
      &  nbody,iambodyi,nodeboun(*),ndirboun(*),nodeforc(2,*),
      &  ndirforc(*),istep,iinc,msecpt,node,j,ikboun(*),ilboun(*),
-     &  ipresboun,mi(2),icorrect,iprescribedboundary
+     &  ipresboun,mi(2),iabsload,iprescribedboundary
 !
       real*8 xforc(*),xforcact(*),xload(2,*),xloadact(2,*),
      &  t1(*),t1act(*),amta(2,*),ampli(*),time,xforcdiff(*),
@@ -132,7 +132,7 @@
                   enddo
                endif
 !     
-               if(icorrect.eq.0) then
+               if(iabsload.eq.0) then
                   xboundiff(i)=xbounact(i)
                else
                   xboundiff(i)=xbounact(i)-xboundiff(i)
@@ -154,7 +154,7 @@
                iambouni=0
             endif
 !     
-            if(icorrect.eq.0) then
+            if(iabsload.eq.0) then
                xboundiff(i)=xbounact(i)
             else
                xboundiff(i)=xbounact(i)-xboundiff(i)
@@ -208,7 +208,7 @@
                   enddo
                endif
 !
-               if(icorrect.eq.0) then
+               if(iabsload.eq.0) then
                   xforcdiff(i)=xforcact(i)
                else
                   xforcdiff(i)=xforcact(i)-xforcdiff(i)
@@ -225,7 +225,7 @@
             iamforci=0
          endif
 !
-         if(icorrect.eq.0) then
+         if(iabsload.eq.0) then
             xforcdiff(i)=xforcact(i)
          else
             xforcdiff(i)=xforcact(i)-xforcdiff(i)
@@ -242,6 +242,14 @@
       enddo
 !
       do i=1,nload
+!
+!        check for dload subroutine
+!
+         if(sideload(i)(3:4).eq.'NU') then
+            iabsload=2
+            cycle
+         endif
+!
          ipresboun=0
 !
 !        check for pressure boundary conditions
@@ -253,7 +261,7 @@
             if(id.gt.0) then
                if(ikboun(id).eq.idof) then
                   ipresboun=1
-                  if(icorrect.eq.0) then
+                  if(iabsload.eq.0) then
                      xloaddiff(1,i)=xloadact(1,i)
                   else
                      xloaddiff(1,i)=xloadact(1,i)-xloaddiff(1,i)
@@ -273,7 +281,7 @@
                iamloadi2=0
             endif
 !
-            if(icorrect.eq.0) then
+            if(iabsload.eq.0) then
                xloaddiff(1,i)=xloadact(1,i)
             else
                xloaddiff(1,i)=xloadact(1,i)-xloaddiff(1,i)
@@ -288,7 +296,7 @@
             endif
             xloaddiff(1,i)=xloadact(1,i)-xloaddiff(1,i)
 !
-            if(icorrect.eq.0) then
+            if(iabsload.eq.0) then
                xloaddiff(2,i)=xloadact(1,i)
             else
                xloaddiff(2,i)=xloadact(2,i)-xloaddiff(2,i)
@@ -311,7 +319,7 @@
             iambodyi=0
          endif
 !
-         if(icorrect.eq.0) then
+         if(iabsload.eq.0) then
             xbodydiff(1,i)=xbodyact(1,i)
          else
             xbodydiff(1,i)=xbodyact(1,i)-xbodydiff(1,i)
@@ -341,7 +349,7 @@ c!
 c               do j=1,3
 c                  coords(j)=co(j,i)+vold(j,i)
 c               enddo
-c               if(icorrect.eq.0) then
+c               if(iabsload.eq.0) then
 c                  t1diff(i)=t1act(i)
 c               else
 c                  t1diff(i)=t1act(i)-t1diff(i)
@@ -357,7 +365,7 @@ c            else
 c               iamt1i=0
 c            endif
 c!
-c            if(icorrect.eq.0) then
+c            if(iabsload.eq.0) then
 c               t1diff(i)=t1act(i)
 c            else
 c               t1diff(i)=t1act(i)-t1diff(i)

@@ -57,7 +57,7 @@
      &         (prlab(i)(1:4).eq.'RF  ').or.
      &         (prlab(i)(1:4).eq.'RFL ').or.
      &         (prlab(i)(1:4).eq.'PS  ').or.
-     &         (prlab(i)(1:4).eq.'PT  ').or.
+     &         (prlab(i)(1:4).eq.'PN  ').or.
      &         (prlab(i)(1:4).eq.'MF  ').or.
      &         (prlab(i)(1:4).eq.'V   ')) cycle
             ii=ii+1
@@ -168,7 +168,7 @@ c      jout=max(jout,1)
      &         (textpart(ii)(1:4).ne.'RF  ').and.
      &         (textpart(ii)(1:4).ne.'RFL ').and.
      &         (textpart(ii)(1:4).ne.'PS  ').and.
-     &         (textpart(ii)(1:4).ne.'PT  ').and.
+     &         (textpart(ii)(1:4).ne.'PN  ').and.
      &         (textpart(ii)(1:4).ne.'MF  ').and.
      &         (textpart(ii)(1:4).ne.'V   ')) then
                write(*,*) '*WARNING in nodeprints: label not applicable'

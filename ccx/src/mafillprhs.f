@@ -20,8 +20,8 @@
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,nelemface,sideface,
      &  nface,b,nactdoh,icolp,jqp,irowp,neqp,nzlp,nmethod,ikmpc,ilmpc,
      &  ikboun,ilboun,rhcon,nrhcon,ielmat,ntmat_,vold,voldaux,nzsp,
-     &  dtime,matname,mi,ncmat_,shcon,nshcon,v,theta1,
-     &  iexplicit,physcon,nea,neb)
+     &  dtl,matname,mi,ncmat_,shcon,nshcon,v,theta1,
+     &  iexplicit,physcon,nea,neb,dtimef)
 !
 !     filling the rhs b of the pressure equations (step 2)
 !
@@ -46,7 +46,7 @@
      &  voldaux(0:4,*),ff(60),sm(60,60),rhcon(0:1,ntmat_,*),
      &  shcon(0:3,ntmat_,*),theta1,physcon(*)
 !
-      real*8 value,dtime
+      real*8 value,dtl(*),dtimef
 !
       kflag=2
       i0=0
@@ -94,7 +94,7 @@ c      endif
 !
         call e_c3d_prhs(co,nk,konl,lakon(i),sm,ff,i,nmethod,rhcon,
      &       nrhcon,ielmat,ntmat_,v,vold,voldaux,nelemface,sideface,
-     &       nface,dtime,matname,mi(1),shcon,nshcon,theta1,physcon,
+     &       nface,dtimef,matname,mi(1),shcon,nshcon,theta1,physcon,
      &       iexplicit)
 !
         do jj=1,nope
@@ -103,6 +103,7 @@ c      endif
           k=jj-3*(j-1)
 !
           node1=kon(indexe+j)
+c          ff(jj)=ff(jj)*dtl(node1)/dtimef
           jdof1=nactdoh(4,node1)
 !
           do ll=jj,nope
@@ -358,17 +359,15 @@ cd
         enddo
       enddo
 !
-c      write(*,*) 'press 136 ',b(128)
-c      write(*,*) 'press 68 ',b(64)
-c      write(*,*) 'press 323 ',b(304)
-c      write(*,*) 'press 289 ',b(272)
-c      write(*,*) 'press 243 ',b(322)
-c      write(*,*) 'press 392 ',b(369)
-c      write(*,*)
-c      write(*,*) 'rhspressure'
-c      do i=1,neqp
-c         write(*,*) 'rhs press ',i,b(i)*2.e10
-c      enddo
+!     nonlocal time stepping for compressible steady state calculations
+!     
+      if((iexplicit.eq.1).and.(nmethod.eq.1)) then
+         do i=1,nk
+            if(nactdoh(4,i).gt.0) then
+               b(nactdoh(4,i))=b(nactdoh(4,i))*dtl(i)/dtimef
+            endif
+         enddo
+      endif
 !
       return
       end

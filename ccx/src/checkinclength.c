@@ -34,7 +34,7 @@ void checkinclength(double *time,double *ttime,double *theta, double *dtheta,
           double *amta,int *namta, int *itpamp, int *inext, double *dthetaref, 
           int *itp,int *jprint, int *jout){
 
-    int id,istart,iend,inew;
+    int id,istart,iend,inew,ireduceincrement;
     double reftime;
 
     int i0,ir,ip,ic,il,ig,ia;
@@ -48,19 +48,15 @@ void checkinclength(double *time,double *ttime,double *theta, double *dtheta,
     
     if(*dtheta>*tmax){
 	*dtheta=*tmax;
-	printf(" the increment size exceeds thetamax and is decreased to %e\n\n",*dtheta**tper);
+//	printf(" the increment size exceeds thetamax and is decreased to %e\n\n",*dtheta**tper);
     } 
     
     /* if itp=1 the increment just finished ends at a time point */
     
     if((*itpamp>0)&&(*idrct==0)){
 	if(namta[3**itpamp-1]<0){
-/*	    reftime=*ttime+*dtheta**tper+1.01e-6;*/
-//	    reftime=*ttime+(*dtheta+1.01e-6)**tper;
 	    reftime=*ttime+(*dtheta)**tper;
 	}else{
-/*	    reftime=*time+*dtheta**tper+1.01e-6;*/
-//	    reftime=*time+(*dtheta+1.01e-6)**tper;
 	    reftime=*time+(*dtheta)**tper;
 	}
 	istart=namta[3**itpamp-3];
@@ -71,11 +67,28 @@ void checkinclength(double *time,double *ttime,double *theta, double *dtheta,
 	}else{
 	    inew=id+1;
 	}
+//	printf("istart=%d,iend=%d,inext=%d,inew=%d\n",istart,iend,*inext,inew);
 
             /* inew: smallest time point exceeding time+dtheta*tper
                inext: smallest time point exceeding time */
 
-	if(*inext<inew){
+	/* the check with *tmin
+           was introduced to circumvent the following problem: if the new data point is
+           smaller than the next data point, but the distance is very small, the next *dheta
+           calculated a few lines below may be zero due to the subtraction of two nearly equal
+           numbers; a zero *dtheta leads to a fatal error */
+
+	ireduceincrement=0;
+	if(*inext<iend){
+	    if(fabs((amta[2**inext-2]-reftime)/(*tper))<*tmin){
+		ireduceincrement=1;
+	    }
+	}
+
+	if((*inext<inew)||(ireduceincrement==1)){
+//	if((*inext<inew)||(fabs((amta[2**inext-2]-reftime)/(*tper))<*tmin)){
+	  //	if((*inext<inew)||(fabs((amta[2**inext-2]-reftime))<1.e-10)){
+	  
 	    if(namta[3**itpamp-1]<0){
 		*dtheta=(amta[2**inext-2]-*ttime)/(*tper);
 	    }else{
@@ -83,7 +96,7 @@ void checkinclength(double *time,double *ttime,double *theta, double *dtheta,
 	    }
 	    (*inext)++;
 	    *itp=1;
-	    printf(" the increment size exceeds a time point and is decreased to %e\n\n",*dtheta**tper);
+//	    printf(" the increment size exceeds a time point and is decreased to %e\n\n",*dtheta**tper);
 	}else{*itp=0;}
     }
 

@@ -55,7 +55,7 @@
       elseif(prlab(ii)(1:4).eq.'PS  ') then
          write(5,'(i6,1x,1p,e11.4)') node,
      &        v(4,node)
-      elseif(prlab(ii)(1:4).eq.'PT  ') then
+      elseif(prlab(ii)(1:4).eq.'PN  ') then
             write(5,'(i6,1x,1p,e11.4)') node,
      &           v(2,node)
       elseif(prlab(ii)(1:4).eq.'MF  ') then

@@ -28,7 +28,7 @@
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
      &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
-     &  coriolis,ibody,xloadold,reltime,veold)
+     &  coriolis,ibody,xloadold,reltime,veold,springarea)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !     asymmetric contributions
@@ -62,7 +62,8 @@
      &  sti(6,mi(1),*),sm(60,60),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),reltime,
      &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),
-     &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*)
+     &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
+     &  springarea(*)
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),veold(0:mi(2),*)
@@ -96,7 +97,8 @@
      &          nplicon,plkcon,nplkcon,xstiff,npmat_,
      &          dtime,matname,mi(1),ncmat_,mass,stiffness,buckling,rhsi,
      &          intscheme,ttime,time,istep,iinc,coriolis,xloadold,
-     &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold)
+     &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
+     &          springarea)
 !
         do jj=1,3*nope
 !

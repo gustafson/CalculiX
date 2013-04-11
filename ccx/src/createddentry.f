@@ -18,7 +18,7 @@
 !
       subroutine createddentry(itie,ipkon,kon,nodes,
      &  lakon,islavsurf,itiefac,contribution,co,vold,
-     &  iponoels,inoels,mi,gapcont,gapmints,pslavdual)
+     &  iponoels,inoels,mi,pslavdual)
 !
 !     compute the Dd[p,q] matrix entry for contact problems
 !     Author: Li, Yang
@@ -37,7 +37,7 @@
 !
       real*8 ets,xis,weights,xl2s(3,8),xsj2s(3),co(3,*),
      &  vold(0:mi(2),*),shp2s(7,8),xs2s(3,2),contribution,
-     &  gapcont,gapmints(*),shp2d(4,8),xsj2d(3),xs2d(3,2),
+     &  shp2d(4,8),xsj2d(3),xs2d(3,2),
      &  pslavdual(16,*)
 !
       include "gauss.f"
@@ -68,7 +68,6 @@
      &             4,6,3,1,12,15,9,13/
 !
       contribution = 0.d0
-      gapcont=0.d0
       itie = itie + 1
       index1=iponoels(nodes)
       do
@@ -217,8 +216,6 @@ c      WRITE(*,*) "islavsurfentry",islavsurfentry,"index1",index1
 !     
             contribution=contribution+shp2s(4,locs)*
      &           weights*dsqrt(xsj2s(1)**2+xsj2s(2)**2+xsj2s(3)**2)
-        gapcont=gapcont+shp2d(4,locs)*gapmints((islavsurfentry-1)*4+m)*
-     &           weights*dsqrt(xsj2d(1)**2+xsj2d(2)**2+xsj2d(3)**2)
          enddo
          index1=inoels(3,index1)
       enddo

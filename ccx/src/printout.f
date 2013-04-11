@@ -92,7 +92,7 @@
 !
          if((prlab(ii)(1:4).eq.'U   ').or.(prlab(ii)(1:4).eq.'NT  ').or.
      &      (prlab(ii)(1:4).eq.'RF  ').or.(prlab(ii)(1:4).eq.'RFL ').or. 
-     &      (prlab(ii)(1:4).eq.'PS  ').or.(prlab(ii)(1:4).eq.'PT  ').or.
+     &      (prlab(ii)(1:4).eq.'PS  ').or.(prlab(ii)(1:4).eq.'PN  ').or.
      &      (prlab(ii)(1:4).eq.'MF  ').or.(prlab(ii)(1:4).eq.'V   ')) 
      &      then
 !
@@ -131,10 +131,12 @@
                write(5,115) noset(1:ipos-2),ttime
  115           format(' static pressures for set ',A,' and time ',e14.7)
                write(5,*)
-            elseif(prlab(ii)(1:4).eq.'PT  ') then
+            elseif(prlab(ii)(1:4).eq.'PN  ') then
                write(5,*)
                write(5,117) noset(1:ipos-2),ttime
- 117           format(' total pressures for set ',A,' and time ',e14.7)
+ 117           format(' network pressures (total pressure for gases, sta
+     &tic pressure for liquids and fluid depth for channels) for set ',
+     &A,' and time ',e14.7)
                write(5,*)
             elseif(prlab(ii)(1:4).eq.'MF  ') then
                write(5,*)

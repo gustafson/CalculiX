@@ -81,7 +81,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
          *xloadact=NULL,*t1act=NULL,*ampli=NULL,*xstaten=NULL,*eei=NULL,
          *enerini=NULL,*cocon=NULL,*shcon=NULL,*physcon=NULL,*qfx=NULL,
          *qfn=NULL,sigma=0.,*cgr=NULL,*xbodyact=NULL,*vr=NULL,*vi=NULL,
-         *stnr=NULL,*stni=NULL,*vmax=NULL,*stnmax=NULL;
+      *stnr=NULL,*stni=NULL,*vmax=NULL,*stnmax=NULL,*springarea=NULL;
 
   int *ipneigh=NULL,*neigh=NULL;
 
@@ -146,7 +146,6 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   iout=-1;
   v=NNEW(double,mt**nk);
-//  memset(&vold[0],0.,sizeof(double)*mt**nk);
   fn=NNEW(double,mt**nk);
   stx=NNEW(double,6*mi[0]**ne);
   FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
@@ -161,7 +160,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-               fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
+               fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));
   free(v);free(fn);free(stx);
   iout=1;
   
@@ -183,7 +182,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    xstiff,npmat_,&dtime,matname,mi,
             ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
             shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
-		    ibody,xloadold,&reltime,veold));
+		    ibody,xloadold,&reltime,veold,springarea));
 
   /* determining the right hand side */
 
@@ -263,7 +262,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
             ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,sti,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-            nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
+            nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));
 
     free(eei);
     if(*nener==1){

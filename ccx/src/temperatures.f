@@ -162,10 +162,10 @@
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
          if(istat.eq.0) then
             if(l.gt.nk) then
-               write(*,*) '*ERROR in temperatures: node ',l
-               write(*,*) '       exceeds the largest defined ',
+               write(*,*) '*WARNING in temperatures: node ',l
+               write(*,*) '          exceeds the largest defined ',
      &            'node number'
-               stop
+               cycle
             endif
             t1(l)=temperature
             if(nam.gt.0) iamt1(l)=iamplitude

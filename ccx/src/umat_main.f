@@ -27,7 +27,7 @@
 !
       implicit none
 !
-      character*80 amat
+      character*80 amat,amatloc
 !
       integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(2),iorien,
      &  istep,iinc
@@ -40,21 +40,27 @@
 !
       if(amat(1:8).eq.'ABAQUSNL') then
 !
-         call umat_abaqusnl(amat(9:80),iel,iint,kode,elconloc,emec,
+         amatloc(1:72)=amat(9:80)
+         amatloc(73:80)='        '
+         call umat_abaqusnl(amatloc,iel,iint,kode,elconloc,emec,
      &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
      &        iorien,pgauss,orab,istep,iinc)
 !
       elseif(amat(1:6).eq.'ABAQUS') then
 !
-         call umat_abaqus(amat(7:80),iel,iint,kode,elconloc,emec,
+         amatloc(1:74)=amat(7:80)
+         amatloc(75:80)='      '
+         call umat_abaqus(amatloc,iel,iint,kode,elconloc,emec,
      &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
      &        iorien,pgauss,orab,istep,iinc)
 !
       elseif(amat(1:10).eq.'ANISO_PLAS') then
 !
-         call umat_aniso_plas(amat(11:80),
+         amatloc(1:70)=amat(11:80)
+         amatloc(71:80)='          '
+         call umat_aniso_plas(amatloc,
      &        iel,iint,kode,elconloc,emec,emec0,
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),
@@ -62,7 +68,7 @@
 !
       elseif(amat(1:11).eq.'ANISO_CREEP') then
 !
-         call umat_aniso_creep(amat(12:80),
+         call umat_aniso_creep(amatloc,
      &        iel,iint,kode,elconloc,emec,emec0,
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),
@@ -70,6 +76,8 @@
 !
       elseif(amat(1:13).eq.'ELASTIC_FIBER') then
 !
+         amatloc(1:67)=amat(14:80)
+         amatloc(68:80)='             '
          call umat_elastic_fiber(amat(14:80),
      &        iel,iint,kode,elconloc,emec,emec0,
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
@@ -78,7 +86,9 @@
 !
       elseif(amat(1:10).eq.'LIN_ISO_EL') then
 !
-         call umat_lin_iso_el(amat(11:80),
+         amatloc(1:70)=amat(11:80)
+         amatloc(71:80)='          '
+         call umat_lin_iso_el(amatloc,
      &        iel,iint,kode,elconloc,emec,emec0,
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),
@@ -86,7 +96,9 @@
 !
       elseif(amat(1:14).eq.'SINGLE_CRYSTAL') then
 !
-         call umat_single_crystal(amat(15:80),
+         amatloc(1:66)=amat(15:80)
+         amatloc(67:80)='              '
+         call umat_single_crystal(amatloc,
      &        iel,iint,kode,elconloc,emec,
      &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),
@@ -94,7 +106,9 @@
 !
       elseif(amat(1:4).eq.'USER') then
 !
-         call umat_user(amat(5:80),iel,iint,kode,elconloc,emec,emec0,
+         amatloc(1:76)=amat(5:80)
+         amatloc(77:80)='    '
+         call umat_user(amatloc,iel,iint,kode,elconloc,emec,emec0,
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
      &        iorien,pgauss,orab,pnewdt)

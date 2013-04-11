@@ -27,12 +27,13 @@
       character*1 type,inpc(*)
       character*8 lakon(*)
       character*20 label,newlabel
-      character*81 set(*),noset,elset
+      character*81 set(*),noset,elset,noelset
       character*132 textpart(16)
 !
       integer nset,nset_,nalset,nalset_,istep,istat,n,key,i,nk,ne,
      &  j,istartset(*),iendset(*),ialset(*),ipos,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),iside,l,k,kstart,kend,ipoinpc(0:*)
+     &  ipoinp(2,*),inp(3,*),iside,l,k,kstart,kend,ipoinpc(0:*),
+     &  iset,nn,kincrement
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR in surfaces: *SURFACE should be placed'
@@ -40,27 +41,16 @@
          stop
       endif
 !
-      nset=nset+1
-      if(nset.gt.nset_) then
-         write(*,*) '*ERROR in surfaces: increase nset_'
-         stop
-      endif
-!
       kstart=0
       kend=0
-!
-!     reading the name of the set and the type of set
-!
-      do i=1,81
-         set(nset)(i:i)=' '
-      enddo
 !
       type='T'
 !
       do i=2,n
          if(textpart(i)(1:5).eq.'NAME=')
      &        then
-            set(nset)(1:80)=textpart(i)(6:85)
+            noelset(1:80)=textpart(i)(6:85)
+            noelset(81:81)=' '
             if(textpart(i)(86:86).ne.' ') then
                write(*,*) '*ERROR in surfaces: surface name too long'
                write(*,*) '       (more than 80 characters)'
@@ -79,15 +69,60 @@
          endif
       enddo
 !
-      ipos=index(set(nset),' ')
+      ipos=index(noelset,' ')
       if(ipos.eq.1) then
          write(*,*) '*ERROR in surfaces: no name specified'
          stop
       endif
-      set(nset)(ipos:ipos)=type
+      noelset(ipos:ipos)=type
 !
-      istartset(nset)=nalset+1
-      iendset(nset)=nalset
+!     check whether new set or old set 
+!
+      do iset=1,nset
+         if(set(iset).eq.noelset) then
+!
+!                 existent set
+!
+            if(iendset(iset).eq.nalset) then
+               exit
+            else
+!
+!                    rearranging set information towards the end
+!
+               nn=iendset(iset)-istartset(iset)+1
+               if(nalset+nn.gt.nalset_) then
+                  write(*,*)'*ERROR in noelsets: increase nalset_'
+                  stop
+               endif
+               do k=1,nn
+                  ialset(nalset+k)=ialset(istartset(iset)+k-1)
+               enddo
+               do k=istartset(iset),nalset
+                  ialset(k)=ialset(k+nn)
+               enddo
+               do k=1,nset
+                  if(istartset(k).gt.iendset(iset)) then
+                     istartset(k)=istartset(k)-nn
+                     iendset(k)=iendset(k)-nn
+                  endif
+               enddo
+               istartset(iset)=nalset-nn+1
+               iendset(iset)=nalset
+               exit
+            endif
+         endif
+      enddo
+      if(iset.gt.nset) then
+         nset=nset+1
+         if(nset.gt.nset_) then
+            write(*,*) '*ERROR in noelsets: increase nset_'
+            stop
+         endif
+         set(nset)=noelset
+         istartset(nset)=nalset+1
+         iendset(nset)=0
+         iset=nset
+      endif
 !
       if(type.eq.'S') then
 !
@@ -96,7 +131,12 @@
          do
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
-            if((istat.lt.0).or.(key.eq.1)) return
+            if((istat.lt.0).or.(key.eq.1)) then
+               if(iendset(nset).eq.0) then
+                  nset=nset-1
+               endif
+               return
+            endif
             if(n.gt.1) then
                write(*,*) '*ERROR in surfaces: only one entry per'
                write(*,*) '       line allowed'
@@ -126,10 +166,11 @@
                            endif
                            ialset(nalset)=ialset(j)
                         else
-                           kstart=ialset(nalset-1)+1
+                           kstart=ialset(nalset-1)
                            kend=ialset(nalset)
                            nalset=nalset-1
-                           do k=kstart,kend
+                           kincrement=-ialset(j)
+                           do k=kstart+kincrement,kend,kincrement
                               nalset=nalset+1
                               if(nalset.gt.nalset_) then
                                  write(*,*) 
@@ -140,7 +181,7 @@
                            enddo
                         endif
                      enddo
-                     iendset(nset)=nalset
+                     iendset(iset)=nalset
                      exit
                   endif
                enddo
@@ -154,10 +195,10 @@
                if(ialset(nalset+1).gt.nk) then
                   write(*,*) '*WARNING in surfaces: value ',
      &                 ialset(nalset+1)
-                  write(*,*) '         in set ',set(nset),' > nk'
+                  write(*,*) '         in set ',set(iset),' > nk'
                else
                   nalset=nalset+1
-                  iendset(nset)=nalset
+                  iendset(iset)=nalset
                endif
             endif
          enddo
@@ -169,7 +210,12 @@
          do
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
-            if((istat.lt.0).or.(key.eq.1)) return
+            if((istat.lt.0).or.(key.eq.1)) then
+               if(iendset(nset).eq.0) then
+                  nset=nset-1
+               endif
+               return
+            endif
             if(nalset+1.gt.nalset_) then
                write(*,*) '*ERROR in surfaces: increase nalset_'
                stop
@@ -233,9 +279,10 @@
                            read(newlabel(2:2),'(i1)',iostat=istat) iside
                            ialset(nalset)=iside+10*l
                         else
-                           kstart=kstart+1
+                           kstart=kstart
                            nalset=nalset-1
-                           do l=kstart,kend
+                           kincrement=-ialset(j)
+                           do l=kstart+kincrement,kend,kincrement
                               nalset=nalset+1
                               if(nalset.gt.nalset_) then
                                  write(*,*) 
@@ -265,7 +312,7 @@
                            enddo
                         endif
                      enddo
-                     iendset(nset)=nalset
+                     iendset(iset)=nalset
                      exit
                   endif
                enddo
@@ -279,7 +326,7 @@
                if(l.gt.ne) then
                   write(*,*) '*WARNING in surfaces: value ',
      &                 ialset(nalset+1)
-                  write(*,*) '         in set ',set(nset),' > ne'
+                  write(*,*) '         in set ',set(iset),' > ne'
                else
                   newlabel=label
                   if((lakon(l)(1:2).eq.'CP').or.
@@ -301,7 +348,7 @@
                   read(newlabel(2:2),'(i1)',iostat=istat) iside
                   nalset=nalset+1
                   ialset(nalset)=iside+10*l
-                  iendset(nset)=nalset
+                  iendset(iset)=nalset
                endif
             endif
          enddo

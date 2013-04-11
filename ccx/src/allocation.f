@@ -21,7 +21,7 @@
      &  mi,ntrans,set,meminset,rmeminset,ncs,
      &  namtot,ncmat,memmpc,ne1d,ne2d,nflow,jobnamec,irstrt,
      &  ithermal,nener,nstate,irestartstep,inpc,ipoinp,inp,
-     &  ntie,nbody,nprop,ipoinpc,nevdamp)
+     &  ntie,nbody,nprop,ipoinpc,nevdamp,npt)
 !
 !     calculates a conservative estimate of the size of the 
 !     fields to be allocated
@@ -54,7 +54,7 @@
      &  maxrmeminset,ne1d,ne2d,necper,necpsr,necaxr,nesr,
      &  neb32,nn,nflow,nradiate,irestartread,irestartstep,icntrl,
      &  irstrt,ithermal(2),nener,nstate,ipoinp(2,*),inp(3,*),
-     &  ntie,nbody,nprop,ipoinpc(0:*),idepvar,nevdamp
+     &  ntie,nbody,nprop,ipoinpc(0:*),idepvar,nevdamp,npt
 !
       real*8 temperature,tempact,xfreq,tpinc,tpmin,tpmax
 !
@@ -87,7 +87,8 @@
       nesr=0
       neb32=0
       nradiate=0
-      ncs=0
+c      ncs=0
+c      npt=0
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
@@ -575,6 +576,9 @@ c            enddo
      &                    (label.eq.'S6      ')) then
                      mi(1)=max(mi(1),9)
                      nope=6
+                  elseif(label.eq.'SB4     ') then
+                     mi(2)=max(mi(2),7)
+                     nope=4
                   elseif(label.eq.'B32     ') then
                      mi(1)=max(mi(1),27)
                      nope=3
@@ -788,6 +792,7 @@ c            enddo
             enddo
          elseif(textpart(1)(1:9).eq.'*FRICTION') then
             ncmat=max(7,ncmat)
+            ntmat=max(1,ntmat)
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:13).eq.'*HYPERELASTIC') then
@@ -1069,6 +1074,7 @@ c            enddo
 !                 worst case: 8 nodes per element face
 !
                   nk=nk+8*meminset(i)
+                  npt=npt+8*meminset(i)
 !
 !                 2 MPC's per node perpendicular to tension direction
 !                 + 1 MPC in tension direction
@@ -1273,6 +1279,7 @@ c                        rmeminset(nset)=rmeminset(nset)+rmeminset(i)
             enddo
          elseif(textpart(1)(1:16).eq.'*SURFACEBEHAVIOR') then
             ncmat=max(2,ncmat)
+            ntmat=max(1,ntmat)
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:19).eq.'*SURFACEINTERACTION') then
@@ -1498,6 +1505,7 @@ c      memmpc=memmpc+15*ne1d+24*ne2d
       write(*,*) '  terms in all multiple point constraints: ',memmpc
       write(*,*) '  tie constraints: ',ntie
       write(*,*) '  dependent nodes tied by cyclic constraints: ',ncs
+      write(*,*) '  dependent nodes in pre-tension constraints: ',npt
       write(*,*)
       write(*,*) '  sets: ',nset
       write(*,*) '  terms in all sets: ',nalset

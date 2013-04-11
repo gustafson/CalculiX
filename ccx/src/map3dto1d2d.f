@@ -64,7 +64,9 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
 !
          if(ipkon(i).lt.0) cycle
          lakonl=lakon(i)
-         if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'G').or.
+c         if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'G').or.
+c     &      (lakonl(1:1).ne.'C')) cycle
+         if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'I').or.
      &      (lakonl(1:1).ne.'C')) cycle
          ne1d2d=1
          indexe=ipkon(i)
@@ -116,7 +118,9 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
 !
          if(ipkon(i).lt.0) cycle
          lakonl=lakon(i)
-         if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'G').or.
+c         if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'G').or.
+c     &      (lakonl(1:1).ne.'C')) cycle
+         if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'I').or.
      &      (lakonl(1:1).ne.'C')) cycle
          indexe=ipkon(i)
 !
@@ -470,7 +474,9 @@ c     &                     *weight2d3(l)
 !
          if(ipkon(i).lt.0) cycle
          lakonl=lakon(i)
-         if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'G').or.
+c         if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'G').or.
+c     &      (lakonl(1:1).ne.'C')) cycle
+         if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'I').or.
      &      (lakonl(1:1).ne.'C')) cycle
          indexe=ipkon(i)
 !

@@ -22,7 +22,7 @@
      &  rcs0,zcs0,ncs_,cs,labmpc,istep,istat,n,iline,ipol,inl,
      &  ipoinp,inp,ntie,mcs,lprev,ithermal,rcscg,rcs0cg,zcscg,
      &  zcs0cg,nrcg,nzcg,jcs,kontri,straight,ne,ipkon,kon,
-     &  lakon,lcs,icounter,ifacetet,inodface,ipoinpc,maxsectors,
+     &  lakon,lcs,ifacetet,inodface,ipoinpc,maxsectors,
      &  trab,ntrans,ntrans_,jobnamec,vold,cfd,mi)
 !
 !     reading the input deck: *CYCLIC SYMMETRY MODEL
@@ -60,7 +60,7 @@
      &  kflag,node,ncsnodes,ncs_,iline,ipol,inl,ipoinp(2,*),nneigh,
      &  inp(3,*),itie,iset,ipos,mcs,lprev,ntie,ithermal,ncounter,
      &  nrcg(*),nzcg(*),jcs(*),kontri(3,*),ne,ipkon(*),kon(*),nodei,
-     &  icounter(*),ifacetet(*),inodface(*),ipoinpc(0:*),maxsectors,
+     &  ifacetet(*),inodface(*),ipoinpc(0:*),maxsectors,
      &  noden(2),ntrans,ntrans_,cfd,mi(2)
 !
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
@@ -467,7 +467,7 @@ c                  write(*,*) 'phi ',phi
      &         coefmpc,nmpc,ikmpc,ilmpc,mpcfree,rcs,zcs,ics,
      &         nr,nz,rcs0,zcs0,labmpc,
      &         mcs,triangulation,csab,xn,yn,zn,phi,noded,
-     &         ncsnodes,nodesonaxis,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
+     &         ncsnodes,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
      &         nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
      &         ifacetet,inodface,ncounter,jobnamec,vold,cfd,mi)
 !
@@ -482,7 +482,7 @@ c                  write(*,*) 'phi ',phi
      &              coefmpc,nmpc,nmpc_,ikmpc,ilmpc,mpcfree,rcs,zcs,ics,
      &              nr,nz,rcs0,zcs0,ncs_,cs,labmpc,istep,istat,n,
      &              mcs,ithermal,triangulation,csab,xn,yn,zn,phi,noded,
-     &              ncsnodes,nodesonaxis,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
+     &              ncsnodes,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
      &              nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
      &              ifacetet,inodface,ncounter,jobnamec,vold,cfd,mi)
             enddo

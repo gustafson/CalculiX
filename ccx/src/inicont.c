@@ -24,29 +24,41 @@
 void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
                int *istartset, int *iendset, int *ialset, int **itietrip,
                char *lakon, int *ipkon, int *kon, int **koncontp,
-               int *ncone, double *tietol, int *ismallsliding, int **itiefacp,
+               int *nslavs, double *tietol, int *ismallsliding, int **itiefacp,
                int **islavsurfp, int **islavnodep, int **imastnodep,
                int **nslavnodep, int **nmastnodep, int *mortar,
                int **imastopp,int *nkon,int **iponoelsp,int **inoelsp,
-               int **ipep, int **imep){
-
-  char kind[2]="C";
-
-  int *itietri=NULL,*koncont=NULL, *itiefac=NULL, *islavsurf=NULL,
-      *islavnode=NULL,*imastnode=NULL,*nslavnode=NULL,*nmastnode=NULL,
-      nslavs, nmasts, ifacecount, *ipe=NULL, *ime=NULL, *imastop=NULL,
-      *iponoels=NULL,*inoels=NULL,ifreenoels,ifreeme;
-
+	       int **ipep, int **imep, int *ne, int *ifacecount,
+               int *nmpc, int *mpcfree, int *memmpc_,
+               int **ipompcp, char **labmpcp, int **ikmpcp, int **ilmpcp,
+               double **fmpcp, int **nodempcp, double **coefmpcp,
+               int *iperturb, int *ikboun, int *nboun){
+    
+  char kind[2]="C", *tchar1=NULL, *tchar3=NULL, *labmpc=NULL;
+    
+  int *itietri=NULL,*koncont=NULL, *itiefac=NULL, *islavsurf=NULL,im,
+	*islavnode=NULL,*imastnode=NULL,*nslavnode=NULL,*nmastnode=NULL,
+	nmasts, *ipe=NULL, *ime=NULL, *imastop=NULL,
+	*iponoels=NULL,*inoels=NULL,ifreenoels,ifreeme, *ipoface=NULL,
+	*nodface=NULL,iface,*ipompc=NULL,*ikmpc=NULL,
+      *ilmpc=NULL,*nodempc=NULL,nmpc_,i,j,k,ncone;
+    
+  double *fmpc=NULL, *coefmpc=NULL;
+    
   itietri=*itietrip;koncont=*koncontp;itiefac=*itiefacp;islavsurf=*islavsurfp;
   islavnode=*islavnodep;imastnode=*imastnodep;nslavnode=*nslavnodep;
   nmastnode=*nmastnodep;imastop=*imastopp,iponoels=*iponoelsp,
   inoels=*inoelsp;ipe=*ipep;ime=*imep;
 
+  ipompc=*ipompcp;labmpc=*labmpcp;ikmpc=*ikmpcp;ilmpc=*ilmpcp;
+  fmpc=*fmpcp;nodempc=*nodempcp;coefmpc=*coefmpcp;
+  nmpc_=*nmpc;
+
   /* determining the number of slave entities (nodes or faces, ncone),
      and the number of master triangles (ncont) */
 
   FORTRAN(allocont,(ncont,ntie,tieset,nset,set,istartset,iendset,
-          ialset,lakon,ncone,tietol,ismallsliding,kind,mortar));
+          ialset,lakon,&ncone,tietol,ismallsliding,kind,mortar));
   if(ncont==0) return;
 
   itietri=NNEW(int,2**ntie);
@@ -59,8 +71,10 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
     
   RENEW(ipe,int,*nk);
   RENEW(ime,int,12**ncont);
-  memset(&ipe[0],0,sizeof(int)**nk);
-  memset(&ime[0],0,sizeof(int)*12**ncont);
+//  memset(&ipe[0],0,sizeof(int)**nk);
+//  memset(&ime[0],0,sizeof(int)*12**ncont);
+  DMEMSET(ipe,0,*nk,0.);
+  DMEMSET(ime,0,12**ncont,0.);
   imastop=NNEW(int,3**ncont);
 
   FORTRAN(trianeighbor,(ipe,ime,imastop,ncont,koncont,
@@ -68,36 +82,107 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
 
   if(*mortar==0){free(ipe);free(ime);}
   else{RENEW(ime,int,4*ifreeme);}
-		
-  if(*mortar==1){
-    
-    itiefac=NNEW(int,2**ntie);
-    islavsurf=NNEW(int,2**ncone);
-    islavnode=NNEW(int,8**ncone);
-    imastnode=NNEW(int,3**ncont);
-    nslavnode=NNEW(int,*ntie+1);
-    nmastnode=NNEW(int,*ntie+1);
-    iponoels=NNEW(int,*nk);
-    inoels=NNEW(int,3**nkon);
-    
-    FORTRAN(tiefaccont,(lakon,ipkon,kon,ntie,tieset,nset,set,
-       istartset,iendset,ialset,itiefac,islavsurf,islavnode,
-       imastnode,nslavnode,nmastnode,&nslavs,&nmasts,&ifacecount,
-       ipe,ime,imastop,ncont,koncont,iponoels,inoels,&ifreenoels,
-       &ifreeme));
 
-    RENEW(islavsurf, int, 2*ifacecount+2);
-    RENEW(islavnode, int, nslavs);
-    RENEW(imastnode, int, nmasts);
-    RENEW(inoels,int,3*ifreenoels);
+  /* catalogueing the external faces (only for node-to-face
+     contact with a nodal slave surface */
+
+  ipoface=NNEW(int,*nk);
+  nodface=NNEW(int,5*6**ne);
+  FORTRAN(findsurface,(ipoface,nodface,ne,ipkon,kon,lakon,ntie,
+		 tieset));
+    
+  itiefac=NNEW(int,2**ntie);
+  islavsurf=NNEW(int,2*6**ne);
+  islavnode=NNEW(int,8*ncone);
+  nslavnode=NNEW(int,*ntie+1);
+  iponoels=NNEW(int,*nk);
+  inoels=NNEW(int,3**nkon);
+  
+  if(*mortar==1){
+      imastnode=NNEW(int,3**ncont);
+      nmastnode=NNEW(int,*ntie+1);
   }
   
+  /* catalogueing the slave faces and slave nodes 
+     catalogueing the master nodes (only for Mortar contact) */
+
+  FORTRAN(tiefaccont,(lakon,ipkon,kon,ntie,tieset,nset,set,
+       istartset,iendset,ialset,itiefac,islavsurf,islavnode,
+       imastnode,nslavnode,nmastnode,nslavs,&nmasts,ifacecount,
+       iponoels,inoels,&ifreenoels,mortar,ipoface,nodface,nk));
+
+  RENEW(islavsurf, int, 2**ifacecount+2);
+  RENEW(islavnode, int, *nslavs);
+  RENEW(inoels,int,3*ifreenoels);
+  free(ipoface);free(nodface);
+
+  if(*mortar==1){
+      RENEW(imastnode, int, nmasts);
+  }
+
+  /* constraining the middle nodes for the slave surfaces (not
+     for modal dynamics calculations) */
+
+  if(*iperturb>1){
+      for(i=0;i<*ifacecount;i++){
+	  iface=islavsurf[2*i];
+	  gencontmpc(ne,&iface,lakon,ipkon,kon,nmpc,&ikmpc,&ilmpc,&ipompc,
+               mpcfree,&fmpc,&labmpc,&nodempc,memmpc_,&coefmpc,&nmpc_,ikboun,
+	       nboun);
+      }
+
+  /* constraining the middle nodes for the master surfaces (not
+     for modal dynamics calculations) */
+
+      tchar1=NNEW(char,81);
+      tchar3=NNEW(char,81);
+      for(i=0; i<*ntie; i++){
+	if(tieset[i*(81*3)+80]=='C'){
+	  //a contact constraint was found, so increase nalset
+	  memcpy(tchar3,&tieset[i*(81*3)+81+81],81);
+	  tchar3[80]='\0';
+	  for(j=0; j<*nset; j++){
+	    memcpy(tchar1,&set[j*81],81);
+	    tchar1[80]='\0';
+	    if(strcmp(tchar1,tchar3)==0){
+	      //independent element face surface was found
+		for(k=istartset[j]-1;k<iendset[j];k++){
+		    iface=ialset[k];
+		    gencontmpc(ne,&iface,lakon,ipkon,kon,nmpc,&ikmpc,&ilmpc,
+                               &ipompc,mpcfree,&fmpc,&labmpc,&nodempc,
+                               memmpc_,&coefmpc,&nmpc_,ikboun,nboun);
+		}
+		    
+	    }
+	  }
+	}
+      }
+      free(tchar1);
+      free(tchar3);
+
+      RENEW(ipompc,int,*nmpc);
+      RENEW(labmpc,char,20**nmpc+1);
+      RENEW(ikmpc,int,*nmpc);
+      RENEW(ilmpc,int,*nmpc);
+      RENEW(fmpc,double,*nmpc);
+    
+/*      for(i=0;i<*nmpc;i++){
+	j=i+1;
+	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
+	}*/
+
+    }
+      
+
   *itietrip=itietri;*koncontp=koncont;
   *itiefacp=itiefac;*islavsurfp=islavsurf;
   *islavnodep=islavnode;*imastnodep=imastnode;
   *nslavnodep=nslavnode;*nmastnodep=nmastnode;
   *imastopp=imastop;*iponoelsp=iponoels;*inoelsp=inoels;
   *ipep=ipe;*imep=ime;
+
+  *ipompcp=ipompc;*labmpcp=labmpc;*ikmpcp=ikmpc;*ilmpcp=ilmpc;
+  *fmpcp=fmpc;*nodempcp=nodempc;*coefmpcp=coefmpc;
   
   return;
 }

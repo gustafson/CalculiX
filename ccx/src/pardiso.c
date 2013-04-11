@@ -33,7 +33,7 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
 
   char *env;
   int i,j,k,l,maxfct=1,mnum=1,mtype=-2,phase=12,nrhs=1,*perm=NULL,
-      msglvl=1,error=0;
+      msglvl=0,error=0;
   long long ndim;
   double *b=NULL,*x=NULL;
 

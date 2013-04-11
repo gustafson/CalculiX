@@ -74,13 +74,13 @@
 !         
          call liquidpipe(node1,node2,nodem,nelem,lakon,nactdog,identity,
      &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
-     &           rho,g,co,dvi,numf,vold,mi,ipkon,kon)
+     &           rho,g,co,dvi,numf,vold,mi,ipkon,kon,set)
 !
       elseif(lakon(nelem)(2:5).eq.'LICH') then
 !         
          call liquidchan(node1,node2,nodem,nelem,lakon,nactdog,identity,
      &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
-     &           rho,g,co,dvi,numf,vold,mi)
+     &           rho,g,co,dvi,numf,mi,ipkon,kon)
 !
       elseif(lakon(nelem)(2:5).eq.'LIPU') then
 !         

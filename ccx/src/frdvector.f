@@ -71,7 +71,7 @@
                   endif
                enddo
             else
-               i=ialset(k-2)
+               l=ialset(k-2)
                do
                   l=l-ialset(k)
                   if(l.ge.ialset(k-1)) exit

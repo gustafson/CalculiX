@@ -252,8 +252,8 @@
 !     for cyclic symmetry frequency calculations only results
 !     for even numbers (= odd modes, numbering starts at 0)are stored
 !
-      if(((nmethod.eq.2).or.(nmethod.eq.5)).and.((mode/2)*2.ne.mode) 
-     &          .and.(noddiam.ge.0))return
+      if((nmethod.eq.2).and.(((mode/2)*2.ne.mode).and.
+     &                        (noddiam.ge.0))) return
 !
 !     storing the displacements of the nodes
 !
@@ -429,7 +429,7 @@ c     &        inum,m1,inotr,trab,co,istartset,iendset,ialset,mi,ngraph)
             write(7,'(a132)') text
 !     
             call frdtensor(stn(1,nk+1),iset,nkcoords,inum,m1,istartset,
-     &           iendset,ialset,ngraph,ntrans,filab(3),trab,co,inotr)
+     &           iendset,ialset,ngraph)
 !     
             write(7,'(a3)') m3
          endif
@@ -463,7 +463,7 @@ c     &        inum,m1,inotr,trab,co,istartset,iendset,ialset,mi,ngraph)
          write(7,'(a132)') text
 !
          call frdtensor(een,iset,nkcoords,inum,m1,istartset,iendset,
-     &          ialset,ngraph,ntrans,filab(4),trab,co,inotr)
+     &          ialset,ngraph)
 !
          write(7,'(a3)') m3
       endif
@@ -559,17 +559,17 @@ c     &        inum,m1,inotr,trab,co,istartset,iendset,ialset,mi,ngraph)
 !
          text=' -4  CONTACT     6    1'
          write(7,'(a132)') text
-         text=' -5  CD1         1    4    1    1'
+         text=' -5  COPEN       1    4    1    1'
          write(7,'(a132)') text
-         text=' -5  CD2         1    4    2    2'
+         text=' -5  CSLIP1      1    4    2    2'
          write(7,'(a132)') text
-         text=' -5  CD3         1    4    3    3'
+         text=' -5  CSLIP2      1    4    3    3'
          write(7,'(a132)') text
-         text=' -5  CS1         1    4    1    2'
+         text=' -5  CPRESS      1    4    1    2'
          write(7,'(a132)') text
-         text=' -5  CS2         1    4    2    3'
+         text=' -5  CSHEAR1     1    4    2    3'
          write(7,'(a132)') text
-         text=' -5  CS3         1    4    3    1'
+         text=' -5  CSHEAR2     1    4    3    1'
          write(7,'(a132)') text
 !
          do i=ne,1,-1
@@ -781,7 +781,7 @@ c         write(7,'(a132)') text
          write(7,'(a3)') m3
       endif
 !
-!     storing the stress errors in the nodes
+!     storing the Zienkiewicz-Zhu improved stresses in the nodes
 !
       if(filab(13)(1:3).eq.'ZZS') then
 ! 
@@ -812,9 +812,48 @@ c         write(7,'(a132)') text
          write(7,'(a132)') text
 !
          call frdtensor(stn,iset,nkcoords,inum,m1,istartset,iendset,
-     &                 ialset,ngraph,ntrans,filab(13),trab,co,inotr)
+     &                 ialset,ngraph)
 !
          write(7,'(a3)') m3
+      endif
+!
+!     storing the imaginary part of the Zienkiewicz-Zhu stresses in the nodes
+!     for the odd modes of cyclic symmetry calculations
+!
+      if(noddiam.ge.0) then
+         if(filab(13)(1:3).eq.'ZZS') then
+!     
+            call estimator(co,nk,kon,ipkon,lakon,ne0,stn,
+     &           ipneigh,neigh,stx(1,1,ne+1),mi(1))
+!     
+            iselect=1
+            call frdset(filab(13),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!     
+            call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &           noutloc,description,kode,nmethod,fmat)
+!     
+            text=' -4  ZZSTR       6    1'
+            write(7,'(a132)') text
+            text=' -5  SXX         1    4    1    1'
+            write(7,'(a132)') text
+            text=' -5  SYY         1    4    2    2'
+            write(7,'(a132)') text
+            text=' -5  SZZ         1    4    3    3'
+            write(7,'(a132)') text
+            text=' -5  SXY         1    4    1    2'
+            write(7,'(a132)') text
+            text=' -5  SYZ         1    4    2    3'
+            write(7,'(a132)') text
+            text=' -5  SZX         1    4    3    1'
+            write(7,'(a132)') text
+!     
+            call frdtensor(stn,iset,nkcoords,inum,m1,istartset,iendset,
+     &           ialset,ngraph)
+!     
+            write(7,'(a3)') m3
+         endif
       endif
 !
 !     storing the total temperature in the fluid nodes
@@ -865,7 +904,7 @@ c         write(7,'(a132)') text
          write(7,'(a3)') m3
       endif
 !
-!     storing the total pressure in the fluid nodes
+!     storing the total pressure in the gas network nodes
 !
       if(filab(16)(1:4).eq.'PT  ') then
 !
@@ -883,6 +922,78 @@ c         write(7,'(a132)') text
          write(7,'(a132)') text
 !
          ncomp=2
+         call frdvectorcomp(v,iset,nkcoords,inum,m1,
+     &        istartset,iendset,ialset,ncomp,mi,ngraph,iselect)
+!
+         write(7,'(a3)') m3
+      endif
+!
+!     storing the static pressure in the liquid network nodes
+!
+      if(filab(22)(1:4).eq.'PT  ') then
+!
+         iselect=-1
+         call frdset(filab(22),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
+         text=' -4  STPRES      1    1'
+         write(7,'(a132)') text
+         text=' -5  PS          1    1    0    0'
+         write(7,'(a132)') text
+!
+         ncomp=2
+         call frdvectorcomp(v,iset,nkcoords,inum,m1,
+     &        istartset,iendset,ialset,ncomp,mi,ngraph,iselect)
+!
+         write(7,'(a3)') m3
+      endif
+!
+!     storing the liquid depth in the channel nodes
+!
+      if(filab(28)(1:4).eq.'DEPT') then
+!
+         iselect=-1
+         call frdset(filab(28),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
+         text=' -4  DEPTH       1    1'
+         write(7,'(a132)') text
+         text=' -5  DEPTH       1    1    0    0'
+         write(7,'(a132)') text
+!
+         ncomp=2
+         call frdvectorcomp(v,iset,nkcoords,inum,m1,
+     &        istartset,iendset,ialset,ncomp,mi,ngraph,iselect)
+!
+         write(7,'(a3)') m3
+      endif
+!
+!     storing the liquid depth in the channel nodes
+!
+      if(filab(29)(1:4).eq.'HCRI') then
+!
+         iselect=-1
+         call frdset(filab(29),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
+         text=' -4  HCRIT       1    1'
+         write(7,'(a132)') text
+         text=' -5  HCRIT       1    1    0    0'
+         write(7,'(a132)') text
+!
+         ncomp=3
          call frdvectorcomp(v,iset,nkcoords,inum,m1,
      &        istartset,iendset,ialset,ncomp,mi,ngraph,iselect)
 !
@@ -919,6 +1030,7 @@ c      if((nmethod.ne.2).and.(nmethod.lt.4)) return
 !     with cyclic symmetry and steady state calculations
 !
       if((nmethod.ne.2).and.(nmethod.ne.5)) return
+      if((nmethod.eq.5).and.(mode.eq.-1)) return
 !
 !     storing the displacements of the nodes (magnitude, phase)
 !
@@ -1031,8 +1143,6 @@ c      if((nmethod.ne.2).and.(nmethod.lt.4)) return
          write(7,'(a3)') m3
       endif
 !
-      if(nmethod.ne.2) return
-!
 !     storing the stresses in the nodes (magnitude,phase)
 !
       if(filab(18)(1:4).eq.'PHS ') then
@@ -1112,6 +1222,8 @@ c      if((nmethod.ne.2).and.(nmethod.lt.4)) return
 !     
          write(7,'(a3)') m3
       endif
+!
+      if(nmethod.ne.2) return
 !
 !     storing the maximum displacements of the nodes 
 !     in the basis sector

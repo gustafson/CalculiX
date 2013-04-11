@@ -106,10 +106,28 @@
 !
 !           linear overclosure
 !
-            elcon(1,1,nmat)=-1.d0
+c            elcon(1,1,nmat)=-1.d0
+!
+!           linear spring stiffness
+!
             read(textpart(1)(1:20),'(f20.0)',iostat=istat)
      &           elcon(2,1,nmat)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+!
+!           pressure at zero penetration
+!
+            read(textpart(2)(1:20),'(f20.0)',iostat=istat)
+     &           elcon(1,1,nmat)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+!
+!           if nonpositive: default value
+!           elcon(1,1,nmat)<0 indicates linear spring stiffness
+!
+            if(elcon(1,1,nmat).lt.1.d-30) then
+               elcon(1,1,nmat)=-10.d0/(4.d0*datan(1.d0))
+            else
+               elcon(1,1,nmat)=-elcon(1,1,nmat)
+            endif
 !     
 !     checking the values
 !     

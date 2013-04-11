@@ -63,8 +63,22 @@
          write(7,'(a132)') text
       endif
 !     
-      text=
+      if(nmethod.eq.1) then
+         text=
+     & '  100CL       .00000E+00                                 0    1'
+      elseif(nmethod.eq.2) then
+         text=
+     & '  100CL       .00000E+00                                 2    1'
+      elseif(nmethod.eq.3) then
+         text=
+     & '  100CL       .00000E+00                                 4    1'
+      elseif((nmethod.eq.4).or.(nmethod.eq.5)) then
+         text=
+     & '  100CL       .00000E+00                                 1    1'
+      else
+         text=
      & '  100CL       .00000E+00                                 3    1'
+      endif
       write(text(25:36),'(i12)') noutloc
       text(37:48)=description
       if(nmethod.eq.2) text(64:68)='MODAL'

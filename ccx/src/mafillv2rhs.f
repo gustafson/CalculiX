@@ -19,7 +19,7 @@
       subroutine mafillv2rhs(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,
      &  b,nactdoh,icolv,jqv,irowv,neqv,nzlv,nmethod,ikmpc,ilmpc,ikboun,
-     &  ilboun,vold,nzsv,dtime,v,theta2,iexplicit,nea,neb,mi)
+     &  ilboun,vold,nzsv,dtl,v,theta2,iexplicit,nea,neb,mi,dtimef)
 !
 !     filling the rhs b of the velocity equations (step 3)
 !
@@ -35,7 +35,7 @@
      &  id,ist,index,jdof1,idof1,iexplicit,node1,kflag,indexe,nope,i0
 !
       real*8 co(3,*),xboun(*),coefmpc(*),b(*),v(0:mi(2),*),theta2,
-     &  vold(0:mi(2),*),ff(60),dtime
+     &  vold(0:mi(2),*),ff(60),dtimef,dtl(*)
 !
       kflag=2
       i0=0
@@ -70,7 +70,7 @@
         enddo
 !
         call e_c3d_v2rhs(co,nk,konl,lakon(i),
-     &       ff,i,nmethod,vold,v,dtime,theta2,iexplicit,mi)
+     &          ff,i,nmethod,vold,v,dtimef,theta2,iexplicit,mi)
 !
         do jj=1,3*nope
 !
@@ -78,6 +78,7 @@
           k=jj-3*(j-1)
 !
           node1=kon(indexe+j)
+c          ff(jj)=ff(jj)*dtl(node1)/dtimef
           jdof1=nactdoh(k,node1)
 !
 !            distributed forces
@@ -110,6 +111,18 @@
 !
         enddo
       enddo
+!
+!     nonlocal time stepping for compressible steady state calculations
+!     
+      if((iexplicit.eq.1).and.(nmethod.eq.1)) then
+         do i=1,nk
+            do j=1,3
+               if(nactdoh(j,i).gt.0) then
+                  b(nactdoh(j,i))=b(nactdoh(j,i))*dtl(i)/dtimef
+               endif
+            enddo
+         enddo
+      endif
 !
       return
       end

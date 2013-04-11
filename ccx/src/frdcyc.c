@@ -43,7 +43,8 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
 
   double *vt=NULL,*fnt=NULL,*stnt=NULL,*eent=NULL,*cot=NULL,*t1t=NULL,
          *epnt=NULL,*enernt=NULL,*xstatent=NULL,theta,pi,t[3],*qfnt=NULL,
-         *vr=NULL,*vi=NULL,*stnr=NULL,*stni=NULL,*vmax=NULL,*stnmax=NULL;
+         *vr=NULL,*vi=NULL,*stnr=NULL,*stni=NULL,*vmax=NULL,*stnmax=NULL,
+         *stit=NULL;
 
   pi=4.*atan(1.);
 
@@ -117,7 +118,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
     vt=NNEW(double,mt**nk*ngraph);
   if((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal<2))
     t1t=NNEW(double,*nk*ngraph);
-  if(strcmp1(&filab[174],"S   ")==0)
+  if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1044],"ZZS ")==0))
     stnt=NNEW(double,6**nk*ngraph);
   if(strcmp1(&filab[261],"E   ")==0)
     eent=NNEW(double,6**nk*ngraph);
@@ -131,6 +132,8 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
     xstatent=NNEW(double,*nstate_**nk*ngraph);
   if(strcmp1(&filab[696],"HFL ")==0)
     qfnt=NNEW(double,3**nk*ngraph);
+  if(strcmp1(&filab[1044],"ZZS ")==0)
+    stit=NNEW(double,6*mi[0]**ne*ngraph);
 
   /* the topology only needs duplication the first time it is
      stored in the frd file (*kode=1)
@@ -242,6 +245,8 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
     for(l=0;l<*nstate_**nk;l++){xstatent[l]=xstaten[l];};
   if(strcmp1(&filab[696],"HFL ")==0)
     for(l=0;l<3**nk;l++){qfnt[l]=qfn[l];};
+  if(strcmp1(&filab[1044],"ZZS ")==0)
+    for(l=0;l<6*mi[0]**ne;l++){stit[l]=sti[l];};
   
   for(jj=0;jj<*mcs;jj++){
     is=cs[17*jj+4];
@@ -342,13 +347,13 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
 		   &imag,mi));
   
   if(strcmp1(&filab[1044],"ZZS")==0){
-      neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
+      neigh=NNEW(int,40*net);ipneigh=NNEW(int,nkt);
   }
   FORTRAN(out,(cot,&nkt,kont,ipkont,lakont,&net,vt,stnt,inumt,nmethod,kode,
 	       filab,eent,t1t,fnt,time,epnt,ielmatt,matname,enernt,
                xstatent,nstate_,istep,iinc,iperturb,ener,mi,output,
                ithermal,qfnt,&mode,noddiam,trab,inotrt,ntrans,orab,ielorien,
-               norien,description,ipneigh,neigh,sti,vr,vi,stnr,stni,
+               norien,description,ipneigh,neigh,stit,vr,vi,stnr,stni,
                vmax,stnmax,&ngraph,veold,&net,cs,set,nset,istartset,
                iendset,ialset));
   if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
@@ -356,7 +361,8 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   if((strcmp1(&filab[0],"U   ")==0)||
      ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2))) free(vt);
   if((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal<2)) free(t1t);
-  if(strcmp1(&filab[174],"S   ")==0) free(stnt);
+  if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1044],"ZZS ")==0)) 
+     free(stnt);
   if(strcmp1(&filab[261],"E   ")==0) free(eent);
   if((strcmp1(&filab[348],"RF  ")==0)||(strcmp1(&filab[783],"RFL ")==0))
         free(fnt);
@@ -364,6 +370,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   if(strcmp1(&filab[522],"ENER")==0) free(enernt);
   if(strcmp1(&filab[609],"SDV ")==0) free(xstatent);
   if(strcmp1(&filab[696],"HFL ")==0) free(qfnt);
+  if(strcmp1(&filab[1044],"ZZS ")==0) free(stit);
 
 //  if(*kode==1){
     free(kont);free(ipkont);free(lakont);free(ielmatt);

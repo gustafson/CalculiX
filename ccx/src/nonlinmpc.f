@@ -744,6 +744,7 @@ c     &                                    dc(i,j,3)*w(3)
                enddo
             enddo
          elseif((labmpc(ii)(1:20).ne.'                    ').and.
+     &          (labmpc(ii)(1:10).ne.'PRETENSION').and.
      &          (labmpc(ii)(1:7).ne.'CONTACT').and.
      &          (labmpc(ii)(1:6).ne.'CYCLIC').and.
      &          (labmpc(ii)(1:9).ne.'SUBCYCLIC')) then

@@ -280,19 +280,20 @@
             call contactdampings(inpc,textpart,elcon,nelcon,
      &           nmat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
-         elseif(textpart(1)(1:12).eq.'*CONTACTFILE') then
+         elseif((textpart(1)(1:12).eq.'*CONTACTFILE').or.
+     &          (textpart(1)(1:12).eq.'*CONTACTFILE')) then
             ifile_output=3
             call noelfiles(inpc,textpart,jout,filab,nmethod,
      &           nodefile_flag,elfile_flag,ifile_output,nener,ithermal,
      &           istep,istat,n,iline,ipol,inl,ipoinp,inp,out3d,nlabel,
      &           amname,nam,itpamp,idrct,ipoinpc,cfd,contactfile_flag,
-     &           set,nset)
+     &           set,nset,xmodal)
             contactfile_flag=.true.
 !
          elseif(textpart(1)(1:12).eq.'*CONTACTPAIR') then
             call contactpairs(inpc,textpart,tieset,cs,istep,
      &           istat,n,iline,ipol,inl,ipoinp,inp,ntie,ntie_,
-     &           iperturb,matname,nmat,ipoinpc,tietol)
+     &           iperturb,matname,nmat,ipoinpc,tietol,set,nset)
 !
          elseif(textpart(1)(1:13).eq.'*CONTACTPRINT') then
             call contactprints(inpc,textpart,nprint,nprint_,jout,
@@ -322,6 +323,8 @@
      &        npmat_,plicon,nplicon,ncmat_,elcon,matname,
      &        irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)
 !
+c        ics(15*ncx_+1) was removed: can be cleaned up.
+c
          elseif(textpart(1)(1:20).eq.'*CYCLICSYMMETRYMODEL') then
             call cycsymmods(inpc,textpart,set,istartset,iendset,
      &        ialset,nset,tieset,tietol,co,nk,ipompc,nodempc,
@@ -333,7 +336,7 @@
      &        dcs(4*ncs_+1),dcs(6*ncs_+1),dcs(8*ncs_+1),dcs(10*ncs_+1),
      &        ics(3*ncs_+1),ics(5*ncs_+1),ics(7*ncs_+1),ics(8*ncs_+1),
      &        dcs(12*ncs_+1),ne,ipkon,kon,lakon,ics(14*ncs_+1),
-     &        ics(15*ncs_+1),ics(16*ncs_+1),ics(18*ncs_+1),ipoinpc,
+     &        ics(16*ncs_+1),ics(18*ncs_+1),ipoinpc,
      &        maxsectors,trab,ntrans,ntrans_,jobnamec,vold,cfd,mi)
 !
          elseif(textpart(1)(1:8).eq.'*DASHPOT') then
@@ -407,7 +410,7 @@
      &           nodefile_flag,elfile_flag,ifile_output,nener,ithermal,
      &           istep,istat,n,iline,ipol,inl,ipoinp,inp,out3d,nlabel,
      &           amname,nam,itpamp,idrct,ipoinpc,cfd,contactfile_flag,
-     &           set,nset)
+     &           set,nset,xmodal)
             elfile_flag=.true.
 !
          elseif(textpart(1)(1:8).eq.'*ELPRINT') then
@@ -555,7 +558,7 @@
      &           nodefile_flag,elfile_flag,ifile_output,nener,ithermal,
      &           istep,istat,n,iline,ipol,inl,ipoinp,inp,out3d,nlabel,
      &           amname,nam,itpamp,idrct,ipoinpc,cfd,contactfile_flag,
-     &           set,nset)
+     &           set,nset,xmodal)
             nodefile_flag=.true.
 !
          elseif(textpart(1)(1:10).eq.'*NODEPRINT') then
@@ -593,7 +596,8 @@
             call pretensionsections(inpc,textpart,ipompc,nodempc,
      &           coefmpc,nmpc,nmpc_,mpcfree,nk,ikmpc,ilmpc,
      &           labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,
-     &           lakon,kon,ipkon,set,nset,istartset,iendset,ialset,co)
+     &           lakon,kon,ipkon,set,nset,istartset,iendset,ialset,co,
+     &           ics)
 !
          elseif(textpart(1)(1:8).eq.'*RADIATE') then
             call radiates(inpc,textpart,set,istartset,iendset,

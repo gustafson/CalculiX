@@ -27,8 +27,8 @@
 !     
       implicit none
 !     
-      logical identity,wall,temperaturebc,pressurebc,massflowbcall,
-     &     looseend,pressurebcall
+      logical identity,walltemp,temperaturebc,pressurebc,massflowbcall,
+     &     pressurebcall
 !
       character*8 lakon(*)
       character*20 sideload(*)
@@ -42,10 +42,10 @@
      &     ndirboun(*),nactdog(0:3,*),nboun,nodeboun(*),ntmat_,
      &     idir,ntq,nteq,nacteq(0:3,*),node1,node2,nodem,
      &     ielprop(*),idirf(4),iflag,imat,numf,ipogn(*),ign(2,*),
-     &     ifreegn,indexold,isothermflag,nrhcon(*),nshcon(*),mi(2)
+     &     ifreegn,isothermflag,nrhcon(*),nshcon(*),mi(2)
 !     
       real*8 prop(*),f,xflow,nodef(4),df(4),v(0:mi(2),*),g(3),
-     &     cp,r,physcon(*),shcon(0:3,ntmat_,*),rho,
+     &     cp,r,physcon(*),shcon(0:3,ntmat_,*),rho,a,
      &     co(3,*),dvi,vold(0:mi(2),*),rhcon(*)
 !     
       data ifaceq /4,3,2,1,11,10,9,12,
@@ -72,7 +72,7 @@
       ntr=0
       ntri=0
 !
-      wall=.false.
+      walltemp=.false.
       temperaturebc=.false.
       pressurebc=.false.
       massflowbcall=.true.
@@ -83,7 +83,7 @@
 !
       do i=1,nload
          if(sideload(i)(3:4).eq.'FC') then
-            wall=.true.
+            walltemp=.true.
             call nident(itg,nelemload(2,i),ntg,id)
             if(id.gt.0) then
                if(itg(id).eq.nelemload(2,i)) cycle
@@ -94,6 +94,18 @@
             enddo
             itg(id+1)=nelemload(2,i)
             nactdog(0,nelemload(2,i))=1
+!     
+         elseif(sideload(i)(3:4).eq.'NP') then
+            call nident(itg,nelemload(2,i),ntg,id)
+            if(id.gt.0) then
+               if(itg(id).eq.nelemload(2,i)) cycle
+            endif
+            ntg=ntg+1
+            do j=ntg,id+2,-1
+               itg(j)=itg(j-1)
+            enddo
+            itg(id+1)=nelemload(2,i)
+            nactdog(2,nelemload(2,i))=1
 !     
          elseif(sideload(i)(3:4).eq.'CR') then
             ntr=ntr+1
@@ -210,6 +222,13 @@
          call nident(itg,node,ntg,id)
          if(id.gt.0) then
             if(itg(id).eq.node) then
+!
+!              upstream depth of SO,WO and DO is known
+!
+               if((lakon(ieg(i))(4:7).eq.'CHSO').or.
+     &              (lakon(ieg(i))(4:7).eq.'CHWO').or.
+     &              (lakon(ieg(i))(4:7).eq.'CHDO')) cycle
+               nactdog(0,node)=1
                nactdog(2,node)=1
                cycle 
            endif
@@ -219,13 +238,18 @@
             itg(j)=itg(j-1)
          enddo
          itg(id+1)=node
+!
+!        upstream depth of SO,WO and DO is known
+!     
+         if((lakon(ieg(i))(4:7).eq.'CHSO').or.
+     &      (lakon(ieg(i))(4:7).eq.'CHWO').or.
+     &      (lakon(ieg(i))(4:7).eq.'CHDO')) cycle
          nactdog(0,node)=1
          nactdog(2,node)=1
       enddo
 !     
 !     middle node of the flow element :flux
 !     
-      
       do i=1,nflow
          index=ipkon(ieg(i))
          node=kon(index+2)
@@ -239,6 +263,17 @@
         enddo
         itg(id+1)=node
         nactdog(1,node)=1
+!
+!        variable geometric property
+!
+        if(lakon(ieg(i))(6:7).eq.'GV') then
+           index=ielprop(ieg(i))
+           if(prop(index+2).le.0.d0) nactdog(3,node)=1
+        elseif((lakon(ieg(i))(4:7).eq.'CHSG').or.
+     &         (lakon(ieg(i))(4:7).eq.'CHWE').or.
+     &         (lakon(ieg(i))(4:7).eq.'CHDS')) then
+           nactdog(3,node)=1
+        endif
       enddo
 !     
 !     third node of the flow element
@@ -250,6 +285,13 @@
          call nident(itg,node,ntg,id)
          if(id.gt.0) then
             if(itg(id).eq.node) then
+!
+!              downstream depth of SG,WE and DS is known
+!
+               if((lakon(ieg(i))(4:7).eq.'CHSG').or.
+     &            (lakon(ieg(i))(4:7).eq.'CHWE').or.
+     &            (lakon(ieg(i))(4:7).eq.'CHDS')) cycle
+               nactdog(0,node)=1
                nactdog(2,node)=1
                cycle
             endif
@@ -259,6 +301,12 @@
             itg(j)=itg(j-1)
          enddo
          itg(id+1)=node
+!
+!        downstream depth of SG,WE and DS is known
+!
+         if((lakon(ieg(i))(4:7).eq.'CHSG').or.
+     &        (lakon(ieg(i))(4:7).eq.'CHWE').or.
+     &        (lakon(ieg(i))(4:7).eq.'CHDS')) cycle
          nactdog(0,node)=1
          nactdog(2,node)=1
       enddo
@@ -281,6 +329,22 @@
          endif
       enddo
 !
+!     check whether, for the middle node, either the
+!     mass flow is unknown, or the geometrie, or none
+!     but not both (only for gate valves)
+!
+      do i=1,nflow
+         nelem=ieg(i)
+         if(lakon(nelem)(6:7).ne.'GV') cycle
+         index=ipkon(nelem)
+         nodem=kon(index+2)
+         if((nactdog(1,nodem).eq.1).and.(nactdog(3,nodem).eq.1)) then
+            write(*,*) '*ERROR in envtemp: both the geometry and the'
+            write(*,*) '       mass flow is unknown in element ',ieg(i)
+            stop
+         endif
+      enddo
+!
 !     determining the active equations
 !     
 !     element contributions
@@ -297,30 +361,30 @@
 !                             1   m   2
 !     
          if(node1.eq.0)then
-            if (nactdog(1,nodem).ne.0)then
-               nacteq(1,node2)=1
+            if ((nactdog(1,nodem).ne.0).or.(nactdog(3,nodem).ne.0))then
+               nacteq(1,node2)=1                      ! mass equation
             endif
             if (nactdog(0,node2).ne.0)then
-               nacteq(0,node2)=1
+               nacteq(0,node2)=1                      ! energy equation
             endif
 !     
 !     "end of network" element node O---X---
 !     1   m   2
          elseif (node2.eq.0) then
-            if (nactdog(1,nodem).ne.0)then
-               nacteq(1,node1)=1
+            if ((nactdog(1,nodem).ne.0).or.(nactdog(3,nodem).ne.0))then
+               nacteq(1,node1)=1                      ! mass equation
             endif
             if (nactdog(0,node1).ne.0)then
-               nacteq(0,node1)=1
+               nacteq(0,node1)=1                      ! energy equation
             endif
 !     
 !     "flow element" O---X---O
 !                    1   m   2     
 !     
          else  
-            if(nactdog(1,nodem).ne.0) then
-               nacteq(1,node2)=1
-               nacteq(1,node1)=1
+            if((nactdog(1,nodem).ne.0).or.(nactdog(3,nodem).ne.0)) then
+               nacteq(1,node2)=1                       ! mass equation
+               nacteq(1,node1)=1                       ! mass equation
             endif
 !   
             call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
@@ -329,15 +393,15 @@
      &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi)
 !      
             if (.not.identity) then
-               nacteq(2,nodem)=1
+               nacteq(2,nodem)=1                       ! momentum equation
             endif
 !     
             if (nactdog(0,node1).ne.0)then
-               nacteq(0,node1)=1
-            endif
+               nacteq(0,node1)=1                       ! energy equation
+            endif     
 !
             if (nactdog(0,node2).ne.0)then 
-               nacteq(0,node2)=1
+               nacteq(0,node2)=1                       ! energy equation
             endif
          endif 
       enddo
@@ -357,7 +421,7 @@
 !
       do i=1,ntg
          node=itg(i)
-         if(nactdog(1,node).ne.0) then
+         if((nactdog(1,node).ne.0).or.(nactdog(3,node).ne.0)) then
             massflowbcall=.false.
             exit
          endif
@@ -392,17 +456,21 @@
             if(node1.ne.0) nactdog(2,node1)=0
             if(node2.ne.0) nactdog(2,node2)=0
          enddo
-      elseif((.not.temperaturebc).and.(.not.wall)) then
+      elseif((.not.temperaturebc).and.(.not.walltemp)) then
 !
-!        purely aerodynamic
+!        pure liquid dynamics
 !
+         write(*,*) '*INFO in envtemp: no thermal boundary conditions'
+         write(*,*) '      detected; the network is considered to be'
+         write(*,*) '      athermal and no gas temperatures will be'
+         write(*,*) '      calculated'
          network=2
          do i=1,ntg
             node=itg(i)
             nactdog(0,node)=0
             nacteq(0,node)=0
          enddo
-      elseif((.not.temperaturebc).and.wall) then
+      elseif((.not.temperaturebc).and.walltemp) then
          write(*,*) '*ERROR in envtemp: at least one temperature'
          write(*,*) '       boundary condition must be given'
          stop
@@ -436,7 +504,7 @@
       ntq=0
       do i=1,ntg
          node=itg(i)
-         do  j=0,2
+         do  j=0,3
             if (nactdog(j,node).ne.0) then
                ntq=ntq+1
                nactdog(j,node)=ntq
@@ -455,6 +523,11 @@
                nacteq(j,node)=nteq
             endif 
          enddo
+         write(30,*) 'unknowns ',node,(nactdog(j,node),j=0,3)
+      enddo
+      do i=1,ntg
+         node=itg(i)
+         write(30,*) 'equations',node,(nacteq(j,node),j=0,2)
       enddo
 !
       if (ntq.ne.nteq) then

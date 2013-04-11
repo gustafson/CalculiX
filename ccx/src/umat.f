@@ -55,7 +55,7 @@ c      write(*,*) 'drot ',((drot(i,j),i=1,3),j=1,3)
       al=un*e/(1.d0+un)/(1.d0-2.d0*un)
       um=e/2.d0/(1.d0+un)
       am1=al+2.d0*um
-      am2=2.d0*um
+      am2=um
 !
 !     stress
 !      

@@ -30,15 +30,17 @@
 #endif
 
 void checkconvgas(int *icutb, int *iin,
-		  double *qamt, double *qamf, double *qamp, 
-		  double *ram1t, double *ram1f, double *ram1p,
-		  double *ram2t, double *ram2f, double *ram2p,
-		  double *ramt, double *ramf, double *ramp,
-		  int *icntrl, double *dtheta, double *ctrl){
+		  double *uamt, double *uamf, double *uamp, 
+		  double *cam1t, double *cam1f, double *cam1p,
+		  double *cam2t, double *cam2f, double *cam2p,
+		  double *camt, double *camf, double *camp,
+		  int *icntrl, double *dtheta, double *ctrl,
+                  double *uama,double *cam1a,double *cam2a,double *cama,
+                  double *vamt, double *vamf, double *vamp, double *vama){
   
   int i0,ir,ip,ic,il,ig,ia,idivergence;
   
-  double c1t,c1f,c1p;
+  double c1t,c1f,c1p,c1a;
   double df,dc,db,dd,ran,can,rap,ea,cae,ral;
 
   i0=ctrl[0];ir=ctrl[1];ip=ctrl[2];ic=ctrl[3];il=ctrl[4];ig=ctrl[5];ia=ctrl[7];
@@ -61,21 +63,30 @@ void checkconvgas(int *icutb, int *iin,
   if(*iin<=ip){c1p=0.0001*ran;}
   else{c1p=0.0001*rap;}
   
-  if(*ram1t<*ram2t) {*ram2t=*ram1t;}
-  if(*ram1f<*ram2f) {*ram2f=*ram1f;}
-  if(*ram1p<*ram2p) {*ram2p=*ram1p;}
+  /* geometry */
   
-  /* check for convergence or divergence */
+  if(*iin<=ip){c1a=0.0001*ran;}
+  else{c1a=0.0001*rap;}
+  
+  if(*cam1t<*cam2t) {*cam2t=*cam1t;}
+  if(*cam1f<*cam2f) {*cam2f=*cam1f;}
+  if(*cam1p<*cam2p) {*cam2p=*cam1p;}
+  if(*cam1a<*cam2a) {*cam2a=*cam1a;}
+  
+  /* check for convergence or divergence 
+     comparison of the latest change with
+        - the largest change in the present calculation
+        - the largest value in the present calculation */
 
-  if(((*ramt<=c1t**qamt)||(*ramt<1.e-8))&&
-     ((*ramf<=c1f**qamf)||(*ramf<1.e-15))&&
-     ((*ramp<=c1p**qamp)||(*ramp<1.e-8))&&
+  if(((*camt<=c1t**uamt)||(*camt<1.e-8**vamt))&&
+     ((*camf<=c1f**uamf)||(*camf<1.e-8**vamf))&&
+     ((*camp<=c1p**uamp)||(*camp<1.e-8**vamp))&&
+     ((*cama<=c1p**uama)||(*cama<1.e-8**vama))&&
      (*iin>3)){
       
       /* increment convergence reached */
       
-      printf("      flow network: convergence\n\n");
-      printf("      gas iteration:%d \n\n",*iin);
+      printf("      flow network: convergence in gas iteration %d \n\n",*iin);
       *icntrl=1;
       *icutb=0;
   }
@@ -86,27 +97,39 @@ void checkconvgas(int *icutb, int *iin,
 
       /* divergence based on temperatures */
       
-      if((*iin>=20*i0)||(fabs(*ramt)>1.e20)){
-	  if((*ram1t>*ram2t)&&(*ramt>*ram2t)&&(*ramt>c1t**qamt)){
+      if((*iin>=20*i0)||(fabs(*camt)>1.e20)){
+	  if((*cam1t>=*cam2t)&&(*camt>=*cam2t)&&(*camt>c1t**uamt)){
 	      idivergence=1;
 	  }
       }
 
       /* divergence based on the mass flux */
       
-      if((*iin>=20*i0)||(fabs(*ramf)>1.e20)){
-	  if((*ram1f>*ram2f)&&(*ramf>*ram2f)&&(*ramf>c1f**qamf)){
+      if((*iin>=20*i0)||(fabs(*camf)>1.e20)){
+	  if((*cam1f>=*cam2f)&&(*camf>=*cam2f)&&(*camf>c1f**uamf)){
 	      idivergence=1;
 	  }
       }
 
       /* divergence based on pressures */
       
-      if((*iin>=20*i0)||(fabs(*ramp)>1.e20)){
-	  if((*ram1p>*ram2p)&&(*ramp>*ram2p)&&(*ramp>c1p**qamp)){
+      if((*iin>=20*i0)||(fabs(*camp)>1.e20)){
+	  if((*cam1p>=*cam2p)&&(*camp>=*cam2p)&&(*camp>c1p**uamp)){
 	      idivergence=1;
 	  }
       }
+
+      /* divergence based on geometry */
+      
+      if((*iin>=20*i0)||(fabs(*cama)>1.e20)){
+	  if((*cam1a>=*cam2a)&&(*cama>=*cam2a)&&(*cama>c1p**uama)){
+	      idivergence=1;
+	  }
+      }
+
+      /* divergence based on the number of iterations */
+
+      if(*iin>20*ic) idivergence=1;
 
       /* divergence based on singular matrix or negative pressures */
 

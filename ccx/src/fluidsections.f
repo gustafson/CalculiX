@@ -26,7 +26,7 @@
 !
       implicit none
 !
-      logical liquid
+      logical liquid,manning
 !
       character*1 inpc(*)
       character*7 elname
@@ -45,6 +45,7 @@
 
       noil_mat=0
       liquid=.false.
+      manning=.false.
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in fluidsections: *FLUID SECTION should'
@@ -85,6 +86,8 @@
 !
          elseif(textpart(i)(1:6).eq.'LIQUID') then
             liquid=.true.
+         elseif(textpart(i)(1:7).eq.'MANNING') then
+            manning=.true.
          endif
       enddo
 !
@@ -183,7 +186,7 @@
             endif
          elseif(typename(10:14).eq.'DUMMY') then
             ndprop=1
-            elname='LABD'
+            elname='LABD   '
          else
             ndprop=11 
             if(typename(10:15).eq.'SINGLE') then
@@ -256,29 +259,54 @@
          elseif(typename(5:19).eq.'WHITE-COLEBROOK') then
             if(typename(20:27).eq.'FLEXIBLE') then
                elname='LIPIWCF'
-               ndprop=4
+               ndprop=6
             else
                elname='LIPIWC '
-               ndprop=3
+               ndprop=5
             endif
          endif
 !
       elseif(typename(1:7).eq.'CHANNEL') then
-         if(typename(5:8).eq.'BEND') then
-            elname='LICHBE '
-            ndprop=4
-         elseif(typename(5:10).eq.'BRANCH') then
-            elname='LICHBR '
+         if(typename(8:17).eq.'SLUICEGATE') then
+            elname='LICHSG '
+            ndprop=7
+         elseif(typename(8:20).eq.'SLUICEOPENING') then
+            elname='LICHSO '
             ndprop=6
-         elseif(typename(5:15).eq.'CONTRACTION') then
+         elseif(typename(8:16).eq.'WEIRCREST') then
+            elname='LICHWE '
+            ndprop=7
+         elseif(typename(8:16).eq.'WEIRSLOPE') then
+            elname='LICHWO '
+            ndprop=6
+         elseif(typename(8:17).eq.'STRAIGHT') then
+            elname='LICH   '
+            ndprop=7
+         elseif(typename(8:16).eq.'RESERVOIR') then
+            elname='LICHRE '
+            ndprop=6
+         elseif(typename(8:25).eq.'DISCONTINUOUSSLOPE') then
+            elname='LICHDS '
+            ndprop=9
+         elseif(typename(8:27).eq.'DISCONTINUOUSOPENING') then
+            elname='LICHDO '
+            ndprop=6
+         elseif(typename(8:18).eq.'CONTRACTION') then
             elname='LICHCO '
-            ndprop=3
-         elseif(typename(5:15).eq.'ENLARGEMENT') then
+            ndprop=2
+         elseif(typename(8:18).eq.'ENLARGEMENT') then
             elname='LICHEL '
-            ndprop=3
-         elseif(typename(5:19).eq.'WHITE-COLEBROOK') then
-            elname='LICHWC '
-            ndprop=3
+            ndprop=2
+         elseif(typename(8:11).eq.'STEP') then
+            elname='LICHST '
+            ndprop=2
+         elseif(typename(8:11).eq.'DROP') then
+            elname='LICHDR '
+            ndprop=2
+         else
+            write(*,*) '*ERROR in fluidsections:'
+            write(*,*) '       unknown channel section'
+            call inputerror(inpc,ipoinpc,iline) 
          endif
 !
       elseif(typename(1:14).eq.'PRESWIRLNOZZLE') then
@@ -315,7 +343,7 @@
          elseif(typename(11:20).eq.'BENDMILLER') then
             elname='REBEMI '
             ndprop=7
-         elseif(typename(11:17).eq.'BENDMAN') then
+         elseif(typename(11:17).eq.'BENDOWN') then
             elname='REBEMA '
             ndprop=7
          elseif(typename(11:14).eq.'EXIT') then
@@ -348,12 +376,16 @@
          endif
 !
       elseif(typename(1:7).eq.'RIMSEAL') then
-         elname='RIMS'
+         elname='RIMS   '
          ndprop=5
 !
       else if (typename(1:6).eq.'S-PUMP') then
-         elname='SPUMP'
+         elname='SPUMP  '
          ndprop=5
+!
+      else if (typename(1:6).eq.'O-PUMP') then
+         elname='LDOP   '
+         ndprop=3
 !         
       elseif(typename(1:6).eq.'VORTEX') then
          if(typename(7:10).eq.'FREE') then
@@ -396,39 +428,6 @@
          call inputerror(inpc,ipoinpc,iline)
          stop
       endif
-!
-!     assigning the elements of the set the appropriate material
-!     and property pointer
-!
-      do j=istartset(i),iendset(i)
-         if(ialset(j).gt.0) then
-            if(lakon(ialset(j))(1:1).ne.'D') then
-               write(*,*) '*ERROR in fluidsections: element ',
-     &            ialset(j),' is no fluid element.'
-               stop
-            endif
-            lakon(ialset(j))(2:8)=elname(1:7)
-            if(liquid.and.(lakon(ialset(j))(2:3).eq.'RE')) 
-     &             lakon(ialset(j))(2:3)='LP'
-            ielmat(ialset(j))=imaterial
-            ielprop(ialset(j))=nprop
-         else
-            k=ialset(j-2)
-            do
-               k=k-ialset(j)
-               if(k.ge.ialset(j-1)) exit
-               if(lakon(k)(1:1).ne.'D') then
-                  write(*,*) '*ERROR in fluidsections: element ',
-     &                 k,' is no fluid element.'
-                  stop
-               endif
-               lakon(k)(2:8)=elname(1:7)
-               if(liquid.and.(lakon(k)(2:3).eq.'RE')) lakon(k)(2:3)='LP'
-               ielmat(k)=imaterial
-               ielprop(k)=nprop
-            enddo
-         endif
-      enddo
 !
       npropstart=nprop
 !
@@ -536,10 +535,19 @@
             read(textpart(2),'(i10)',iostat=istat) nodeb
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
             prop(nprop+2)=nodeb+0.5d0
-            read(textpart(3),'(f40.0)',iostat=istat)
-     &            prop(nprop+3)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-            prop(nprop+4)=iaxial+0.5d0
+            if(elname.eq.'LIPIMAF') then
+               read(textpart(3),'(f40.0)',iostat=istat)
+     &              prop(nprop+3)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               prop(nprop+4)=iaxial+0.5d0
+            else
+               do j=3,5
+                  read(textpart(j),'(f40.0)',iostat=istat)
+     &                 prop(nprop+j)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               enddo            
+               prop(nprop+6)=iaxial+0.5d0
+            endif
             nprop=nprop+ndprop
          else
 !
@@ -651,7 +659,7 @@
 !     
       endif
 !
-!     "transforming" real inputs into integer inputs
+!     "transforming" integer inputs into real inputs
 !
       if(elname(1:4).eq.'REBR') then
 !
@@ -744,6 +752,39 @@ c     &         (elname(1:6).eq.'REWAOR').or.
             prop(npropstart+5)= prop(npropstart+4)+0.5d0
             prop(npropstart+4)= prop(npropstart+3)
             prop(npropstart+3)= iaxial+0.5d0
+         endif
+      elseif(elname(1:4).eq.'LICH') then
+!
+!        upstream and downstream reference elements for channels
+!
+         if((elname(5:6).eq.'SO').or.
+     &      (elname(5:6).eq.'WO').or.
+     &      (elname(5:6).eq.'  ').or.
+     &      (elname(5:6).eq.'RE').or.
+     &      (elname(5:6).eq.'DS').or.
+     &      (elname(5:6).eq.'DO')) then
+            prop(npropstart+6)=prop(npropstart+6)+0.5d0
+         elseif(elname(5:6).eq.'SG') then
+            prop(npropstart+5)=prop(npropstart+5)+0.5d0
+            prop(npropstart+7)=prop(npropstart+7)+0.5d0
+         elseif(elname(5:6).eq.'WE') then
+            prop(npropstart+5)=prop(npropstart+5)+0.5d0
+         endif
+         if(elname(5:6).eq.'DS') then
+            prop(npropstart+8)=prop(npropstart+8)+0.5d0
+         endif
+!
+!        if Manning: change sign of 5th entry as marker
+!
+         if(manning) then
+            if((elname(5:6).eq.'SO').or.
+     &         (elname(5:6).eq.'WO').or.
+     &         (elname(5:6).eq.'  ').or.
+     &         (elname(5:6).eq.'RE').or.
+     &         (elname(5:6).eq.'DS').or.
+     &         (elname(5:6).eq.'DO')) then
+               prop(npropstart+5)=-prop(npropstart+5)
+            endif
          endif
       endif         
 !     
@@ -959,15 +1000,24 @@ c     &         (elname(1:6).eq.'REWAOR').or.
       endif
 !
       if(elname(1:5).eq.'CARBS') then
-         if((prop(npropstart+1).le.0.d0)
-     &        .or.(prop(npropstart+2).le.0.d0)
-     &        .or.(prop(npropstart+3).le.0.d0) ) then
-            write(*,*) '*ERROR in fluidsections:'
-            write(*,*) 'the selected height of the diameter'
-            write(*,*) 'or the selected lenght' 
-            write(*,*) 'or the selected gap '
-            write(*,*) 'has been defined as less or equal to 0'
-            stop
+         if(elname(1:7).eq.'CARBSGE') then
+            if(prop(npropstart+1).le.0.d0) then
+               write(*,*) '*ERROR in fluidsections:'
+               write(*,*) 'the selected diameter of the carbon seal'
+               write(*,*) 'has been defined as less or equal to 0'
+               stop
+            endif
+         else
+            if((prop(npropstart+1).le.0.d0)
+     &           .or.(prop(npropstart+2).le.0.d0)
+     &           .or.(prop(npropstart+3).le.0.d0)) then
+               write(*,*) '*ERROR in fluidsections:'
+               write(*,*) 'the selected diameter'
+               write(*,*) 'or the selected length' 
+               write(*,*) 'or the selected gap of the carbon seal'
+               write(*,*) 'has been defined as less or equal to 0'
+               stop
+            endif
          endif
       endif
 !
@@ -1153,6 +1203,71 @@ c     &         (elname(1:6).eq.'REWAOR').or.
             endif
          endif
       endif
+!
+!     assigning the elements of the set the appropriate material
+!     and property pointer
+!
+      do j=istartset(i),iendset(i)
+         if(ialset(j).gt.0) then
+            if(lakon(ialset(j))(1:1).ne.'D') then
+               write(*,*) '*ERROR in fluidsections: element ',
+     &            ialset(j),' is no fluid element.'
+               stop
+            endif
+            lakon(ialset(j))(2:8)=elname(1:7)
+!
+!           gas type elements used for liquids are labeled with LP
+!
+            if((liquid.and.(lakon(ialset(j))(2:3).eq.'RE')).or.
+     &           (liquid.and.(lakon(ialset(j))(2:3).eq.'OR'))) 
+     &             lakon(ialset(j))(2:3)='LP'
+!
+!
+             if(liquid.and.(lakon(ialset(j))(2:3).eq.'VO')) then
+               lakon(ialset(j))(2:3)='LP'
+               if(lakon(ialset(j))(4:5).eq.'FR') then 
+                  lakon(ialset(j))(4:5)='VF'
+               else if(lakon(ialset(j))(4:5).eq.'FO') then 
+                  lakon(ialset(j))(4:5)='VS'
+               endif
+            endif
+!     
+            if(liquid.and.((lakon(ialset(j))(4:5).eq.'BG').or.
+     &           (lakon(ialset(j))(4:5).eq.'BT').or.
+     &           (lakon(ialset(j))(4:5).eq.'MA').or.
+     &           (lakon(ialset(j))(4:5).eq.'MM').or.
+     &           (lakon(ialset(j))(4:5).eq.'PA').or.
+     &           (lakon(ialset(j))(4:5).eq.'PM').or.
+     &           (lakon(ialset(j))(4:5).eq.'PN'))) then
+               write(*,*) ''
+               write(*,*) '*ERROR in fluidsections: element ',k,
+     &' is no valid incompressible orifice element.'
+               write(*,*) ' Please change element type 
+     & and/or definition.'
+               write(*,*) ' Calculation stopped.'
+               stop
+
+            endif
+!
+            ielmat(ialset(j))=imaterial
+            if(ndprop.gt.0) ielprop(ialset(j))=npropstart
+         else
+            k=ialset(j-2)
+            do
+               k=k-ialset(j)
+               if(k.ge.ialset(j-1)) exit
+               if(lakon(k)(1:1).ne.'D') then
+                  write(*,*) '*ERROR in fluidsections: element ',
+     &                 k,' is no fluid element.'
+                  stop
+               endif
+               lakon(k)(2:8)=elname(1:7)
+               if(liquid.and.(lakon(k)(2:3).eq.'RE')) lakon(k)(2:3)='LP'
+               ielmat(k)=imaterial
+               if(ndprop.gt.0) ielprop(k)=npropstart
+            enddo
+         endif
+      enddo
 !
       return
       end

@@ -32,6 +32,10 @@
      &     nactdof(0:mi(2),*),
      &     islavact(*),islavactdof(*),islavnode(*)
 !     
+!     close the contact.fbd file
+!
+      close(40)
+!
       do i=1,ntie
          do j = nslavnode(i)+1,nslavnode(i+1)
             node=islavnode(j)

@@ -24,7 +24,7 @@
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
      &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  ttime,time,istep,iinc,coriolis,xloadold,reltime,
-     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold)
+     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,springarea)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -64,7 +64,7 @@
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
      &  anisox(3,3,3,3),voldl(3,20),vo(3,3),xloadold(2,*),
      &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),xload(2,*),
-     &  v(3,3,3,3),
+     &  v(3,3,3,3),springarea(*),
      &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(60,60),
      &  sti(6,mi(1),*),stx(6,mi(1),*),s11,s22,s33,s12,s13,s23,s11b,
      &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,coefmpc(*),
@@ -269,7 +269,7 @@ c      if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling)) then
          endif
          call springstiff(xl,elas,konl,voldl,s,imat,elcon,nelcon,
      &      ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,plicon,
-     &      nplicon,npmat_,iperturb)
+     &      nplicon,npmat_,iperturb,springarea(konl(nope+1)),nmethod)
          return
       endif
 !

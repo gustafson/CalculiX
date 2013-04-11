@@ -21,31 +21,32 @@
      &  koncont,co,xo,yo,zo,x,y,z,nx,ny,nz,nset,
      &  ifaceslave,istartfield,iendfield,ifield,
      &  ipompc,nodempc,coefmpc,nmpc,nmpctied,mpcfree,ikmpc,ilmpc,
-     &  labmpc,ithermal,tietol,cfd,ncont)
+     &  labmpc,ithermal,tietol,cfd,ncont,imastop)
 !
 !     generates MPC's for the slave tied contact nodes
 !
       implicit none
 !
+      character*1 c
+      character*3 m11,m2,m3
+      character*5 p0,p1,p2,p3,p7,p9999
       character*8 lakon(*)
       character*20 labmpc(*)
       character*81 tieset(3,*),slavset,set(*)
 !
       integer ntie,nset,istartset(*),iendset(*),ialset(*),
-     &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),ne,node,
-     &  neigh(20),iflag,kneigh,i,j,k,l,islav,isol,
-     &  itri,ll,kflag,n,ipos,nx(*),ny(*),ipointer(20),
-     &  nz(*),nstart,ifaceq(8,6),ifacet(6,4),
-     &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,
-     &  nnodelem,nface,nope,nodef(8),idof,
-     &  ifaceref,isum,kstart,kend,jstart,id,
+     &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),node,
+     &  neigh(1),iflag,kneigh,i,j,k,l,isol,itri,ll,kflag,n,nx(*),
+     &  ny(*),ipointer(1),nz(*),nstart,ifaceq(8,6),ifacet(6,4),
+     &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,imastop(3,*),
+     &  nnodelem,nface,nope,nodef(8),idof,kstart,kend,jstart,id,
      &  jend,ifield(*),istartfield(*),iendfield(*),ifaceslave(*),
      &  ipompc(*),nodempc(3,*),nmpc,nmpctied,mpcfree,ikmpc(*),
-     &  ilmpc(*),ithermal(2),cfd,ncont,mpcfreeold,m
+     &  ilmpc(*),ithermal(2),cfd,ncont,mpcfreeold,m,one,number_of_nodes,
+     &  itriold,itrinew,ntriangle,ntriangle_,itriangle(100)
 !
       real*8 cg(3,*),straight(16,*),co(3,*),p(3),
-     &  totdist(20),dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),
-     &  beta,c0,pl(3,8),cgdist,
+     &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),pl(3,8),
      &  ratio(8),xi,et,coefmpc(*),tietol(*),tolloc
 !
 !     nodes per face for hex elements
@@ -80,11 +81,48 @@
      &             2,3,6,5,8,15,11,14,
      &             4,6,3,1,12,15,9,13/
 !
+!     opening a file to store the nodes which are not connected
 !
+c      open(9,file='nodes_not_connected.fbd',status='unknown',err=51)
+c      close(9,status='delete',err=52)
+c      open(9,file='nodes_not_connected.fbd',status='unknown',err=51)
+      open(40,file='WarnNodeMissMasterIntersect.nam',status='unknown')
+      write(40,*) '*NSET,NSET=WarnNodeMissMasterIntersect'
 !
-      open(9,file='nodes_not_connected.fbd',status='unknown',err=51)
-      close(9,status='delete',err=52)
-      open(9,file='nodes_not_connected.fbd',status='unknown',err=51)
+!     storing the triangulation of the master surfaces
+!     
+      open(70,file='TriMasterContactTie.frd',status='unknown')
+      c='C'
+      m11=' -1'
+      m2=' -2'
+      m3=' -3'
+      p0='    0'
+      p1='    1'
+      p2='    2'
+      p3='    3' 
+      p7='    7'
+      p9999=' 9999'
+      one=1
+      write(70,'(a5,a1)') p1,c
+      write(70,'(a5,a1,67x,i1)') p2,c,one
+      number_of_nodes=0
+      do i=1,itietri(2,ntie)
+         number_of_nodes=max(number_of_nodes,koncont(1,i))
+         number_of_nodes=max(number_of_nodes,koncont(2,i))
+         number_of_nodes=max(number_of_nodes,koncont(3,i))
+      enddo
+      do i=1,number_of_nodes
+         write(70,'(a3,i10,1p,3e12.5)') m11,i,(co(j,i),j=1,3)
+      enddo
+      write(70,'(a3)') m3
+      write(70,'(a5,a1,67x,i1)') p3,c,one
+      do i=1,itietri(2,ntie)
+         write(70,'(a3,i10,2a5)')m11,i,p7,p0
+         write(70,'(a3,3i10)') m2,(koncont(j,i),j=1,3)
+      enddo
+      write(70,'(a3)') m3
+      write(70,'(a5)') p9999
+      close(70)
 !
       nmpctied=nmpc
 !
@@ -129,7 +167,7 @@
       do i=1,ntie
          if(tieset(1,i)(81:81).ne.'T') cycle
          iflag=0
-         kneigh=20
+         kneigh=1
          slavset=tieset(2,i)
 !
 !        default tolerance if none is specified 
@@ -201,54 +239,122 @@ c               write(*,*) 'gentiedmpc ',j,node
 !     
                isol=0
 !     
-               do k=1,kneigh
-                  itri=neigh(k)+itietri(1,i)-1
+c               do k=1,kneigh
+c                  itri=neigh(k)+itietri(1,i)-1
+c!     
+c                  totdist(k)=0.d0
+c!     
+c                  do l=1,3
+c                     ll=4*l-3
+c                     dist=straight(ll,itri)*p(1)+
+c     &                    straight(ll+1,itri)*p(2)+
+c     &                    straight(ll+2,itri)*p(3)+
+c     &                    straight(ll+3,itri)
+c                     if(dist.gt.0.d0) then
+c                        totdist(k)=totdist(k)+dist
+c                     endif
+c                  enddo
+cc                  write(*,*) 'gentiedmpc ',k,itri,koncont(4,itri),
+cc     &                       totdist(k)
+c                  totdist(k)=dsqrt(totdist(k)**2+
+c     &                (straight(13,itri)*p(1)+
+c     &                 straight(14,itri)*p(2)+
+c     &                 straight(15,itri)*p(3)+
+c     &                 straight(16,itri))**2)
+cc                  cgdist=dsqrt((p(1)-cg(1,itri))**2+
+cc     &                         (p(2)-cg(2,itri))**2+
+cc     &                         (p(3)-cg(3,itri))**2)
+cc                  write(*,*) 'gentiedmpc ',k,itri,koncont(4,itri),
+cc     &                       totdist(k),cgdist
+c!     
+c                  if(totdist(k).le.tietol(i)) then
+c                     isol=k
+c                     exit
+c                  endif
+c               enddo
 !     
-                  totdist(k)=0.d0
-!     
+               isol=0
+!
+               itriold=0
+               itri=neigh(1)+itietri(1,i)-1
+               ntriangle=0
+               ntriangle_=100
+!
+               loop1: do
                   do l=1,3
                      ll=4*l-3
                      dist=straight(ll,itri)*p(1)+
      &                    straight(ll+1,itri)*p(2)+
      &                    straight(ll+2,itri)*p(3)+
      &                    straight(ll+3,itri)
-                     if(dist.gt.0.d0) then
-                        totdist(k)=totdist(k)+dist
+c                     if(dist.gt.1.d-6) then
+                     if(dist.gt.tietol(i)) then
+                        itrinew=imastop(l,itri)
+                        if(itrinew.eq.0) then
+c                           write(*,*) '**border reached'
+                           isol=-1
+                           exit loop1
+                        elseif(itrinew.eq.itriold) then
+c                           write(*,*) '**solution in between triangles'
+                           isol=itri
+                           exit loop1
+                        else
+                           call nident(itriangle,itrinew,ntriangle,id)
+                           if(id.gt.0) then
+                              if(itriangle(id).eq.itrinew) then
+c                                 write(*,*) '**circular path; no solution'
+                                 isol=-2
+                                 exit loop1
+                              endif
+                           endif
+                           ntriangle=ntriangle+1
+                           if(ntriangle.gt.ntriangle_) then
+c                              write(*,*) '**too many iterations'
+                              isol=-3
+                              exit loop1
+                           endif
+                           do k=ntriangle,id+2,-1
+                              itriangle(k)=itriangle(k-1)
+                           enddo
+                           itriangle(id+1)=itrinew
+                           itriold=itri
+                           itri=itrinew
+                           cycle loop1
+                        endif
+                     elseif(l.eq.3) then
+c                              write(*,*) '**regular solution'
+                        isol=itri
+                        exit loop1
                      endif
                   enddo
-c                  write(*,*) 'gentiedmpc ',k,itri,koncont(4,itri),
-c     &                       totdist(k)
-                  totdist(k)=dsqrt(totdist(k)**2+
-     &                (straight(13,itri)*p(1)+
+               enddo loop1
+!
+!              if an opposite triangle is found: check the distance
+!              perpendicular to the triangle
+!
+               if(isol.gt.0) then
+                  dist=dsqrt(straight(13,itri)*p(1)+
      &                 straight(14,itri)*p(2)+
      &                 straight(15,itri)*p(3)+
-     &                 straight(16,itri))**2)
-c                  cgdist=dsqrt((p(1)-cg(1,itri))**2+
-c     &                         (p(2)-cg(2,itri))**2+
-c     &                         (p(3)-cg(3,itri))**2)
-c                  write(*,*) 'gentiedmpc ',k,itri,koncont(4,itri),
-c     &                       totdist(k),cgdist
-!     
-                  if(totdist(k).le.tietol(i)) then
-                     isol=k
-                     exit
-                  endif
-               enddo
+     &                 straight(16,itri))**2
+                  if(dist.gt.tietol(i)) isol=0
+               endif
 !
-!              check whether distance is larger than tietol(i):
-!              no element is generated
+               if(isol.le.0) then
 !
-               if(isol.eq.0) then
+!                 no MPC is generated
 !
-!                    distance is too large: no MPC is generated
-!
-                  call dsort(totdist,ipointer,kneigh,kflag)
                   write(*,*) '*WARNING in gentiedmpc: no tied MPC'
                   write(*,*) '         generated for node ',node
-                  write(*,*) '         master face too far away'
-                  write(*,*) '         distance: ',totdist(1)
-                  write(*,*) '         tolerance: ',tietol(i)
-                  write(9,*) 'seta nodes_not_connected n ',node
+                  if(isol.eq.0) then
+                     write(*,*) '         master face too far away'
+                     write(*,*) '         distance: ',dist
+                     write(*,*) '         tolerance: ',tietol(i)
+                  else
+                     write(*,*) '         no corresponding master face'
+                     write(*,*) '         found; tolerance: ',tietol(i)
+                  endif
+                  write(40,*) node
                 else
 !     
                   nelem=int(koncont(4,itri)/10.d0)
@@ -334,7 +440,7 @@ c     &                       totdist(k),cgdist
      &                          node,' is not active;'
                            write(*,*) '         no tied constraint ',
      &                                'is generated'
-                           write(9,*) 'seta nodes_not_connected n ',node
+                           write(40,*) node
                            cycle
                         endif
                      endif
@@ -398,54 +504,125 @@ c                     call writempc(ipompc,nodempc,coefmpc,labmpc,nmpc)
 !     
                   isol=0
 !     
-                  do k=1,kneigh
-                     itri=neigh(k)+itietri(1,i)-1
+c                  do k=1,kneigh
+c                     itri=neigh(k)+itietri(1,i)-1
+c!     
+c                     totdist(k)=0.d0
+c!     
+c                     do l=1,3
+c                        ll=4*l-3
+c                        dist=straight(ll,itri)*p(1)+
+c     &                       straight(ll+1,itri)*p(2)+
+c     &                       straight(ll+2,itri)*p(3)+
+c     &                       straight(ll+3,itri)
+c                        if(dist.gt.0.d0) then
+c                           totdist(k)=totdist(k)+dist
+c                        endif
+c                     enddo
+cc                  write(*,*) 'gentiedmpc ',k,itri,koncont(4,itri),
+cc     &                       totdist(k)
+c                     totdist(k)=dsqrt(totdist(k)**2+
+c     &                    (straight(13,itri)*p(1)+
+c     &                    straight(14,itri)*p(2)+
+c     &                    straight(15,itri)*p(3)+
+c     &                    straight(16,itri))**2)
+cc                     cgdist=dsqrt((p(1)-cg(1,itri))**2+
+cc     &                    (p(2)-cg(2,itri))**2+
+cc     &                    (p(3)-cg(3,itri))**2)
+cc                  write(*,*) 'gentiedmpc ',k,itri,koncont(4,itri),
+cc     &                       totdist(k),cgdist
+c!     
+c                     if(totdist(k).le.tietol(i)) then
+c                        isol=k
+c                        exit
+c                     endif
+c                  enddo
 !     
-                     totdist(k)=0.d0
-!     
-                     do l=1,3
-                        ll=4*l-3
-                        dist=straight(ll,itri)*p(1)+
-     &                       straight(ll+1,itri)*p(2)+
-     &                       straight(ll+2,itri)*p(3)+
-     &                       straight(ll+3,itri)
-                        if(dist.gt.0.d0) then
-                           totdist(k)=totdist(k)+dist
+               isol=0
+!
+               itriold=0
+               itri=neigh(1)+itietri(1,i)-1
+               ntriangle=0
+               ntriangle_=100
+!
+               loop2: do
+                  do l=1,3
+                     ll=4*l-3
+                     dist=straight(ll,itri)*p(1)+
+     &                    straight(ll+1,itri)*p(2)+
+     &                    straight(ll+2,itri)*p(3)+
+     &                    straight(ll+3,itri)
+c                     if(dist.gt.1.d-6) then
+                     if(dist.gt.tietol(i)) then
+                        itrinew=imastop(l,itri)
+                        if(itrinew.eq.0) then
+c                           write(*,*) '**border reached'
+                           isol=-1
+                           exit loop2
+                        elseif(itrinew.eq.itriold) then
+c                           write(*,*) '**solution in between triangles'
+                           isol=itri
+                           exit loop2
+                        else
+                           call nident(itriangle,itrinew,ntriangle,id)
+                           if(id.gt.0) then
+                              if(itriangle(id).eq.itrinew) then
+c                                 write(*,*) '**circular path; no solution'
+                                 isol=-2
+                                 exit loop2
+                              endif
+                           endif
+                           ntriangle=ntriangle+1
+                           if(ntriangle.gt.ntriangle_) then
+c                              write(*,*) '**too many iterations'
+                              isol=-3
+                              exit loop2
+                           endif
+                           do k=ntriangle,id+2,-1
+                              itriangle(k)=itriangle(k-1)
+                           enddo
+                           itriangle(id+1)=itrinew
+                           itriold=itri
+                           itri=itrinew
+                           cycle loop2
                         endif
-                     enddo
-c                  write(*,*) 'gentiedmpc ',k,itri,koncont(4,itri),
-c     &                       totdist(k)
-                     totdist(k)=dsqrt(totdist(k)**2+
-     &                    (straight(13,itri)*p(1)+
-     &                    straight(14,itri)*p(2)+
-     &                    straight(15,itri)*p(3)+
-     &                    straight(16,itri))**2)
-c                     cgdist=dsqrt((p(1)-cg(1,itri))**2+
-c     &                    (p(2)-cg(2,itri))**2+
-c     &                    (p(3)-cg(3,itri))**2)
-c                  write(*,*) 'gentiedmpc ',k,itri,koncont(4,itri),
-c     &                       totdist(k),cgdist
-!     
-                     if(totdist(k).le.tietol(i)) then
-                        isol=k
-                        exit
+                     elseif(l.eq.3) then
+c                              write(*,*) '**regular solution'
+                        isol=itri
+                        exit loop2
                      endif
                   enddo
+               enddo loop2
+!
+!              if an opposite triangle is found: check the distance
+!              perpendicular to the triangle
+!
+               if(isol.gt.0) then
+                  dist=dsqrt(straight(13,itri)*p(1)+
+     &                 straight(14,itri)*p(2)+
+     &                 straight(15,itri)*p(3)+
+     &                 straight(16,itri))**2
+                  if(dist.gt.tietol(i)) isol=0
+               endif
 !     
 !     check whether distance is larger than tietol(i):
 !     no element is generated
 !     
                   if(isol.eq.0) then
-!     
-!                    distance is too large: no MPC is generated
 !
-                     call dsort(totdist,ipointer,kneigh,kflag)
+!                 no MPC is generated
+!
                      write(*,*) '*WARNING in gentiedmpc: no tied MPC'
                      write(*,*) '         generated for node ',node
-                     write(*,*) '         master face too far away'
-                     write(*,*) '         distance: ',totdist(1)
-                     write(*,*) '         tolerance: ',tietol(i)
-                     write(9,*) 'seta nodes_not_connected n ',node
+                     if(isol.eq.0) then
+                        write(*,*) '         master face too far away'
+                        write(*,*) '         distance: ',dist
+                        write(*,*) '         tolerance: ',tietol(i)
+                     else
+                      write(*,*) '         no corresponding master face'
+                      write(*,*) '         found; tolerance: ',tietol(i)
+                     endif
+                     write(40,*) node
                   else
 !     
                      nelem=int(koncont(4,itri)/10.d0)
@@ -531,7 +708,7 @@ c     &                       totdist(k),cgdist
      &                             node,' is not active;'
                               write(*,*) '         no tied constraint ',
      &                             'is generated'
-                              write(9,*) 'seta nodes_not_connected n ',node
+                              write(40,*) node
                               cycle
                            endif
                         endif
@@ -583,16 +760,16 @@ c     &                       totdist(k),cgdist
 !
       nmpctied=nmpc-nmpctied
 !
-      close(9)
+      close(40)
 !     
       return
 !
- 51   write(*,*) '*ERROR in openfile: could not open file ',
-     &  'nodes_not_connected.fbd'
-      stop
- 52   write(*,*) '*ERROR in openfile: could not delete file ',
-     &  'nodes_not_connected.fbd'
-      stop
+c 51   write(*,*) '*ERROR in openfile: could not open file ',
+c     &  'nodes_not_connected.fbd'
+c      stop
+c 52   write(*,*) '*ERROR in openfile: could not delete file ',
+c     &  'nodes_not_connected.fbd'
+c      stop
 !
       end
 

@@ -206,6 +206,8 @@
          enddo
       endif
 !
+      if(ntmat.eq.0) nelcon(1,nmat)=0
+!
       return
       end
 

@@ -24,9 +24,10 @@
 !
 !     ismallsliding = 0: large sliding
 !                   = 1: small sliding
-!                   = 2: in-face sliding
 !
       implicit none
+!
+      logical nodeslavsurf
 !
       character*1 kind
       character*8 lakon(*)
@@ -50,10 +51,10 @@
 !        check for contact conditions
 !
          if(tieset(1,i)(81:81).eq.kind) then
-            if(tietol(i).lt.-1.5d0) then
-               ismallsliding=2
-            elseif(tietol(i).lt.-0.5d0) then
-               ismallsliding=max(ismallsliding,1)
+            if(tietol(i).lt.0.d0) then
+               ismallsliding=1
+            else
+               ismallsliding=0
             endif
             mastset=tieset(3,i)
 !
@@ -136,9 +137,15 @@
 !           counting the slave nodes
 !
             slavset=tieset(2,i)
-            ipos=index(slavset,' ')
-            if(slavset(ipos-1:ipos-1).eq.'T') then
+            ipos=index(slavset,' ')-1
+            if(slavset(ipos:ipos).eq.'T') then
                mortar=1
+            else
+!
+!              default for node-to-surface contact is
+!              a nodal slave surface
+!
+               nodeslavsurf=.true.
             endif
 !
 !           determining the slave surface
@@ -147,11 +154,28 @@
                if(set(j).eq.slavset) exit
             enddo
             if(j.gt.nset) then
-               write(*,*) '*ERROR in allocont: ',
-     &           'slave nodal surface ',slavset
-               write(*,*) '       does not exist'
-               stop
+               if(mortar.eq.1) then
+                  write(*,*) 
+     &              '*ERROR in allocont: element slave surface ',
+     &              slavset(1:ipos-1)
+                  write(*,*) '       does not exist'
+                  stop
+               endif
+               do j=1,nset
+                  if((set(j)(1:ipos-1).eq.slavset(1:ipos-1)).and.
+     &                 (set(j)(ipos:ipos).eq.'T')) then
+                     nodeslavsurf=.false.
+                     exit
+                  endif
+               enddo
+               if(j.gt.nset) then
+                  write(*,*) '*ERROR in allocont: slave surface ',
+     &                 slavset(1:ipos-1)
+                  write(*,*) '       does not exist'
+                  stop
+               endif
             endif
+!
             islav=j
 !
             do j=istartset(islav),iendset(islav)

@@ -28,7 +28,7 @@
      &  ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,sti,
      &  xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
      &  ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-     &  nelemload,nload,ikmpc,ilmpc,istep,iinc)
+     &  nelemload,nload,ikmpc,ilmpc,istep,iinc,springarea)
 !
 !     calculates and prints the displacements, temperatures and forces 
 !     at the nodes and the stress and  strain  at the reduced integration 
@@ -68,16 +68,13 @@
      &  nactdof(0:mi(2),*),nodeboun(*),nelemload(2,*),
      &  ndirboun(*),ipompc(*),nodempc(3,*),ikboun(*),ilboun(*),
      &  ncocon(2,*),inotr(2,*),iorienglob,iflag,nload,nshcon,
-     &  istep,iinc,mt
-!
-      integer nk,ne,mattyp,ithermal(2),iprestr,i,j,k,m1,m2,jj,
+     &  istep,iinc,mt,nk,ne,mattyp,ithermal(2),iprestr,i,j,k,m1,m2,jj,
      &  i1,m3,m4,kk,iener,indexe,nope,norien,iperturb(*),iout,
      &  nal,icmd,ihyper,nboun,nmpc,nmethod,ist,ndir,node,index,
      &  neq,kode,imat,mint3d,nfield,ndim,iorien,ielas,
      &  istiff,ncmat_,nstate_,incrementalmpc,jmin,jmax,
-     &  nset,istartset(*),iendset(*),ialset(*),nprint,ntrans,ikin
-!
-      integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
+     &  nset,istartset(*),iendset(*),ialset(*),nprint,ntrans,ikin,
+     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 co(3,*),v(0:mi(2),*),shp(4,20),stiini(6,mi(1),*),
      &  stx(6,mi(1),*),stn(6,*),xl(3,20),vl(0:mi(2),20),stre(6),
@@ -87,19 +84,16 @@
      &  skl(3,3),beta(6),q(0:mi(2),20),vkl(0:3,3),cam(5),
      &  t0(*),t1(*),prestr(6,mi(1),*),eme(6,mi(1),*),een(6,*),ckl(3,3),
      &  vold(0:mi(2),*),b(*),xboun(*),coefmpc(*),eloc(9),
-     &  veold(0:mi(2),*),
+     &  veold(0:mi(2),*),springarea(*),
      &  accold(0:mi(2),*),elconloc(21),eth(6),xkl(3,3),
      &  voldl(0:mi(2),20),epn(*),
      &  xikl(3,3),ener(mi(1),*),enern(*),sti(6,mi(1),*),emec(6),
      &  eei(6,mi(1),*),enerini(mi(1),*),cocon(0:6,ntmat_,*),emec0(6),
-     &  fmpc(*),shcon,sph,c1,vel(1:3,20),veoldl(0:mi(2),20)
-!
-      real*8 e,un,al,um,am1,xi,et,ze,tt,exx,eyy,ezz,exy,exz,eyz,
+     &  fmpc(*),shcon,sph,c1,vel(1:3,20),veoldl(0:mi(2),20),
+     &  e,un,al,um,am1,xi,et,ze,tt,exx,eyy,ezz,exy,exz,eyz,
      &  xsj,qa(3),vj,t0l,t1l,bet,gam,dtime,forcempc,scal1,scal2,bnac,
      &  fixed_disp,weight,pgauss(3),vij,coconloc(6),qflux(3),time,ttime,
-     &  t1lold
-!
-      real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
+     &  t1lold,plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),xstate(nstate_,mi(1),*),plconloc(82),
      &  vokl(3,3),xstateini(nstate_,mi(1),*),vikl(3,3),trab(7,*),
      &  xstaten(nstate_,*)
@@ -135,12 +129,12 @@
                      else
                         bnac=0.d0
                      endif
-c                     v(j,i)=vold(j,i)+bnac
                      v(j,i)=v(j,i)+bnac
                      if((iperturb(1).ne.0).and.(nmethod.eq.1)) then
                         if(dabs(bnac).gt.cam(1)) then
                            cam(1)=dabs(bnac)
-                           cam(4)=i+0.5d0
+c                           cam(4)=i+0.5d0
+                           cam(4)=nactdof(j,i)-0.5d0
                         endif
                      endif
                   enddo
@@ -153,12 +147,12 @@ c                     v(j,i)=vold(j,i)+bnac
                   else
                      bnac=0.d0
                   endif
-c                  v(0,i)=vold(0,i)+bnac
                   v(0,i)=v(0,i)+bnac
                   if((iperturb(1).ne.0).and.(nmethod.eq.1)) then
                      if(dabs(bnac).gt.cam(2)) then
                         cam(2)=dabs(bnac)
-                        cam(5)=i+0.5d0
+c                        cam(5)=i+0.5d0
+                        cam(5)=nactdof(0,i)-0.5d0
                      endif
                   endif
                enddo
@@ -227,11 +221,11 @@ c            endif
                      else
                         bnac=0.d0
                      endif
-c                     v(j,i)=vold(j,i)+scal1*bnac
                      v(j,i)=v(j,i)+scal1*bnac
                      if(dabs(scal1*bnac).gt.cam(1)) then
                         cam(1)=dabs(scal1*bnac)
-                        cam(4)=i+0.5d0
+c                        cam(4)=i+0.5d0
+                        cam(4)=nactdof(j,i)-0.5d0
                      endif
                      veold(j,i)=veold(j,i)+scal2*bnac
                      accold(j,i)=accold(j,i)+bnac
@@ -245,11 +239,11 @@ c                     v(j,i)=vold(j,i)+scal1*bnac
                   else
                      bnac=0.d0
                   endif
-c                  v(0,i)=vold(0,i)+bnac
                   v(0,i)=v(0,i)+bnac
                   if(dabs(bnac).gt.cam(2)) then
                      cam(2)=dabs(bnac)
-                     cam(5)=i+0.5d0
+c                     cam(5)=i+0.5d0
+                     cam(5)=nactdof(0,i)-0.5d0
                   endif
                   if(nactdof(0,i).ne.0) then
                      cam(3)=max(cam(3),dabs(v(0,i)-vini(0,i)))
@@ -452,12 +446,14 @@ c      incrementalmpc=iperturb(2)
      &      (filab(18)(1:4).eq.'PHS ').or.
      &      (filab(20)(1:4).eq.'MAXS').or.
      &      (filab(26)(1:4).eq.'CONT').or.
-     &      (filab(27)(1:3).eq.'CELS')) intpointvar=.true.
+     &      (filab(27)(1:4).eq.'CELS')) intpointvar=.true.
          do i=1,nprint
             if((prlab(i)(1:4).eq.'S   ').or.
      &           (prlab(i)(1:4).eq.'E   ').or.
      &           (prlab(i)(1:4).eq.'PEEQ').or.
      &           (prlab(i)(1:4).eq.'ENER').or.
+     &           (prlab(i)(1:4).eq.'ELKE').or.
+     &           (prlab(i)(1:4).eq.'CELS').or.
      &           (prlab(i)(1:4).eq.'SDV ').or.
      &           (prlab(i)(1:4).eq.'RF  ')) then
                intpointvar=.true.
@@ -502,7 +498,7 @@ c         enddo
          elseif(lakon(i)(1:1).eq.'E') then
             read(lakon(i)(8:8),'(i1)') nope
 !
-!          contact area division number
+!           local contact spring number
 !
             if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
          else
@@ -594,7 +590,7 @@ c            write(*,*) 'noeie',i,konl(j),(vl(k,j),k=1,3)
                call springforc(xl,konl,vl,imat,elcon,nelcon,elas,
      &              fnl,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,
      &              plicon,nplicon,npmat_,veoldl,ener(1,i),iener,
-     &              stx(1,1,i),mi)
+     &              stx(1,1,i),mi,springarea(konl(nope+1)),nmethod)
                do j=1,nope
                   do k=1,3
                      fn(k,konl(j))=fn(k,konl(j))+fnl(k,j)
@@ -1588,16 +1584,20 @@ c               if(kode.ne.-50) then
             forcempc=fmpc(i)
             fn(ndir,node)=forcempc*coefmpc(ist)
             index=nodempc(3,ist)
-c
+!
+!           nodes not belonging to the structure have to be
+!           taken out
+!
             if(labmpc(i)(1:7).eq.'MEANROT') then
                if(nodempc(3,nodempc(3,index)).eq.0) cycle
+            elseif(labmpc(i)(1:10).eq.'PRETENSION') then
+               if(nodempc(3,index).eq.0) cycle
             elseif(labmpc(i)(1:5).eq.'RIGID') then
                if(nodempc(3,nodempc(3,nodempc(3,nodempc(3,nodempc(3,inde
      &x))))).eq.0) cycle
             else
                if(index.eq.0) cycle
             endif
-c            if(index.eq.0) cycle
             do
                node=nodempc(1,index)
                ndir=nodempc(2,index)
@@ -1605,6 +1605,8 @@ c            if(index.eq.0) cycle
                index=nodempc(3,index)
                if(labmpc(i)(1:7).eq.'MEANROT') then
                   if(nodempc(3,nodempc(3,index)).eq.0) exit
+               elseif(labmpc(i)(1:10).eq.'PRETENSION') then
+                  if(nodempc(3,index).eq.0) exit
                elseif(labmpc(i)(1:5).eq.'RIGID') then
                   if(nodempc(3,nodempc(3,nodempc(3,nodempc(3,nodempc(3,i
      &ndex))))).eq.0) exit

@@ -28,16 +28,16 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
                int **ipompcp, char **labmpcp, int **ikmpcp, int **ilmpcp,
                double **fmpcp, int **nodempcp, double **coefmpcp,
 	       int *ithermal, double *co, double *vold, int *cfd,
-	       int *nmpc_, int *mi){
+	       int *nmpc_, int *mi, int *nk){
 
   char kind[2]="T",*labmpc=NULL;
 
-  int *itietri=NULL,*koncont=NULL,nconf,i,j,k,*nx=NULL,
+  int *itietri=NULL,*koncont=NULL,nconf,i,k,*nx=NULL,im,
       *ny=NULL,*nz=NULL,*ifaceslave=NULL,*istartfield=NULL,
-      *iendfield=NULL,*ifield=NULL,ntrimax,index,indexold,
-      smallsliding,ncont,ncone,nterms,*ipompc=NULL,*ikmpc=NULL,
+      *iendfield=NULL,*ifield=NULL,ntrimax,index,
+      ncont,ncone,*ipompc=NULL,*ikmpc=NULL,
       *ilmpc=NULL,*nodempc=NULL,ismallsliding=0,neq,neqterms,
-      nmpctied,mortar=0;
+      nmpctied,mortar=0,*ipe=NULL,*ime=NULL,*imastop=NULL,ifreeme;
 
   double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL,
     *cg=NULL,*straight=NULL,*fmpc=NULL,*coefmpc=NULL;
@@ -72,6 +72,19 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
 
   FORTRAN(triangucont,(&ncont,ntie,tieset,nset,set,istartset,iendset,
           ialset,itietri,lakon,ipkon,kon,koncont,kind));
+  
+  /* catalogueing the neighbors of the master triangles */
+  
+  RENEW(ipe,int,*nk);
+  RENEW(ime,int,12*ncont);
+  DMEMSET(ipe,0,*nk,0.);
+  DMEMSET(ime,0,12*ncont,0.);
+  imastop=NNEW(int,3*ncont);
+
+  FORTRAN(trianeighbor,(ipe,ime,imastop,&ncont,koncont,
+		        &ifreeme));
+
+  free(ipe);free(ime);
 
   /* allocation of space for the center of gravity of the triangles
      and the 4 describing planes */
@@ -158,12 +171,12 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
 	  koncont,co,xo,yo,zo,x,y,z,nx,ny,nz,nset,
 	  ifaceslave,istartfield,iendfield,ifield,
 	  ipompc,nodempc,coefmpc,nmpc,&nmpctied,mpcfree,ikmpc,ilmpc,
-	  labmpc,ithermal,tietol,cfd,&ncont));
+	  labmpc,ithermal,tietol,cfd,&ncont,imastop));
 
   (*nmpc_)+=nmpctied;
   
   free(xo);free(yo);free(zo);free(x);free(y);free(z);free(nx);
-  free(ny);free(nz);
+  free(ny);free(nz);free(imastop);
 
   free(ifaceslave);free(istartfield);free(iendfield);free(ifield);
   free(itietri);free(koncont);free(cg);free(straight);

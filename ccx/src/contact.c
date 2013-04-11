@@ -20,18 +20,20 @@
 #include <stdlib.h>
 #include "CalculiX.h"
 
-void contact(int *ncont, int *ntie, char *tieset, int *nset, char *set,
-	     int *istartset, int *iendset, int *ialset, int *itietri,
+void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
+	     int *istartset, int *iendset, int *ialset,int *itietri,
 	     char *lakon, int *ipkon, int *kon, int *koncont, int *ne,
 	     double *cg, double *straight, int *ifree, double *co,
 	     double *vold, int *ielmat, double *cs, double *elcon,
              int *istep,int *iinc,int *iit,int *ncmat_,int *ntmat_,
-             int *ifcont1, int *ifcont2, int *ne0, double *vini,
+             int *ne0, double *vini,
              int *nmethod, int *nmpc, int *mpcfree, int *memmpc_,
              int **ipompcp, char **labmpcp, int **ikmpcp, int **ilmpcp,
              double **fmpcp, int **nodempcp, double **coefmpcp,
              int *iperturb, int *ikboun, int *nboun, int *mi,
-             int *imastop){
+             int *imastop,int *nslavnode,int *islavnode,int *islavsurf,
+             int *itiefac,double *areaslav,int *iponoels,int *inoels,
+             double *springarea, double *tietol){
     
     char *labmpc=NULL;
 
@@ -56,9 +58,9 @@ void contact(int *ncont, int *ntie, char *tieset, int *nset, char *set,
 
     /* deleting contact MPC's (not for modal dynamics calculations) */
 
-    if(*iperturb>1){
+/*    if(*iperturb>1){
 	remcontmpc(nmpc,labmpc,mpcfree,nodempc,ikmpc,ilmpc,coefmpc,ipompc);
-    }
+	}*/
     
     /* determining the size of the auxiliary fields */
     
@@ -77,11 +79,13 @@ void contact(int *ncont, int *ntie, char *tieset, int *nset, char *set,
     ny=NNEW(int,ntrimax);
     nz=NNEW(int,ntrimax);
     
-    FORTRAN(gencontelem,(tieset,ntie,itietri,ne,ipkon,kon,lakon,set,
-       istartset,iendset,ialset,cg,straight,ifree,koncont,
-       co,vold,xo,yo,zo,x,y,z,nx,ny,nz,nset,ielmat,cs,elcon,istep,
-       iinc,iit,ncmat_,ntmat_,ifcont1,ifcont2,ne0,vini,nmethod,mi,
-       imastop));
+    FORTRAN(gencontelem,(tieset,ntie,itietri,ne,ipkon,kon,lakon,
+       cg,straight,ifree,koncont,
+       co,vold,xo,yo,zo,x,y,z,nx,ny,nz,ielmat,cs,elcon,istep,
+       iinc,iit,ncmat_,ntmat_,ne0,vini,nmethod,mi,
+       imastop,nslavnode,islavnode,islavsurf,itiefac,areaslav,iponoels,
+       inoels,springarea,ikmpc,ilmpc,nmpc,ipompc,nodempc,coefmpc,
+       set,nset,istartset,iendset,ialset,tietol));
 
     free(xo);free(yo);free(zo);free(x);free(y);free(z);free(nx);
     free(ny);free(nz);
@@ -91,11 +95,11 @@ void contact(int *ncont, int *ntie, char *tieset, int *nset, char *set,
        (not for modal dynamic calculations) */
 
 //    printf("mpcold=%d\n",*nmpc);
-    if(*iperturb>1){
+/*    if(*iperturb>1){
 	gencontmpc(ne,ne0,lakon,ipkon,kon,nmpc,&ikmpc,&ilmpc,&ipompc,mpcfree,
 		   &fmpc,&labmpc,&nodempc,memmpc_,&coefmpc,&nmpc_,ikboun,
                    nboun);
-    }
+		   }*/
 //    printf("mpcnew=%d\n",*nmpc);
     
     /*    for(i=0;i<*nmpc;i++){

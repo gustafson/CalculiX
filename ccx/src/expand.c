@@ -67,7 +67,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   
     char *filabt,*tchar1=NULL,*tchar2=NULL,*tchar3=NULL;
 
-    int *inum=NULL,k,idir,lfin,j,iout=0,index,inode,id,i,idof,
+    int *inum=NULL,k,idir,lfin,j,iout=0,index,inode,id,i,idof,im,
         ielas,icmd,kk,l,nkt,icntrl,imag=1,icomplex,kkv,kk6,iterm,
 	lprev,ilength,ij,i1,i2,iel,ielset,node,indexe,nope,ml1,
         *inocs=NULL,*ielcs=NULL,jj,l1,l2,is,nlabel,*nshcon=NULL,
@@ -87,7 +87,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	*qfx=NULL,*qfn=NULL,xreal,ximag,*vt=NULL,sum,*aux=NULL,
         *coefright=NULL,*physcon=NULL,coef,a[9],ratio,reltime,*ade=NULL,
         *aue=NULL,*adbe=*adbep,*aube=*aubep,*fext=NULL,*cgr=NULL,
-        *shcon=NULL;
+        *shcon=NULL,*springarea=NULL;
     
     /* dummy arguments for the results call */
     
@@ -108,7 +108,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     inum=NNEW(int,*nk);
     stx=NNEW(double,6*mi[0]**ne);
     
-    nlabel=27;
+    nlabel=29;
     filabt=NNEW(char,87*nlabel);
     for(i=1;i<87*nlabel;i++) filabt[i]=' ';
     filabt[0]='U';
@@ -298,7 +298,8 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	
 	eei=NNEW(double,6*mi[0]**ne);
 
-	memset(&v[0],0.,sizeof(double)*2*mt**nk);
+//	memset(&v[0],0.,sizeof(double)*2*mt**nk);
+	DMEMSET(v,0,2*mt**nk,0.);
 	
 	for(k=0;k<2*neqh;k+=neqh){
 	    
@@ -364,7 +365,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],sti,
 	      xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
 	      ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-	      nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
+	      nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));
 	    
 	}
 	free(eei);
@@ -778,7 +779,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mi,
 	      ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
 	      physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
-	      &coriolis,ibody,xloadold,&reltime,veold));
+	      &coriolis,ibody,xloadold,&reltime,veold,springarea));
       
       
       free(fext);

@@ -24,7 +24,7 @@
 !     calculates stiffness and stresses for a nonlinear material
 !     defined by an ABAQUS umat routine
 !
-!     icmd=3: calcutates stress at mechanical strain
+!     icmd=3: calculates stress at mechanical strain
 !     else: calculates stress at mechanical strain and the stiffness
 !           matrix
 !
@@ -262,6 +262,13 @@ c      nprops=21
          enddo
       endif
 !
+!     changing physical strain into engineering strain
+!
+      do i=4,6
+         stran(i)=2.d0*stran(i)
+         dstran(i)=2.d0*dstran(i)
+      enddo
+!
       call umat(stre,xstate(1,iint,iel),ddsdde,sse,spd,scd,rpl,ddsddt,
      &  drplde,drpldt,stran,dstran,abqtime,dtime,temp,dtemp,predef,
      &  dpred,amat,ndi,nshr,ntens,nstate_,elconloc,nprops,pgauss,drot,
@@ -296,29 +303,29 @@ c      nprops=21
          enddo
       endif
 !
-!     calculate the stiffness matrix
+!     calculate the stiffness matrix (the matrix is symmetrized)
 !
       if(icmd.ne.3) then
          stiff(1)=ddsdde(1,1)
-         stiff(2)=ddsdde(1,2)
+         stiff(2)=(ddsdde(1,2)+ddsdde(2,1))/2.d0
          stiff(3)=ddsdde(2,2)
-         stiff(4)=ddsdde(1,3)
-         stiff(5)=ddsdde(2,3)
+         stiff(4)=(ddsdde(1,3)+ddsdde(3,1))/2.d0
+         stiff(5)=(ddsdde(2,3)+ddsdde(3,2))/2.d0
          stiff(6)=ddsdde(3,3)
-         stiff(7)=ddsdde(1,4)
-         stiff(8)=ddsdde(2,4)
-         stiff(9)=ddsdde(3,4)
+         stiff(7)=(ddsdde(1,4)+ddsdde(4,1))/2.d0
+         stiff(8)=(ddsdde(2,4)+ddsdde(4,2))/2.d0
+         stiff(9)=(ddsdde(3,4)+ddsdde(4,3))/2.d0
          stiff(10)=ddsdde(4,4)
-         stiff(11)=ddsdde(1,5)
-         stiff(12)=ddsdde(2,5)
-         stiff(13)=ddsdde(3,5)
-         stiff(14)=ddsdde(4,5)
+         stiff(11)=(ddsdde(1,5)+ddsdde(5,1))/2.d0
+         stiff(12)=(ddsdde(2,5)+ddsdde(5,2))/2.d0
+         stiff(13)=(ddsdde(3,5)+ddsdde(5,3))/2.d0
+         stiff(14)=(ddsdde(4,5)+ddsdde(5,4))/2.d0
          stiff(15)=ddsdde(5,5)
-         stiff(16)=ddsdde(1,6)
-         stiff(17)=ddsdde(2,6)
-         stiff(18)=ddsdde(3,6)
-         stiff(19)=ddsdde(4,6)
-         stiff(20)=ddsdde(5,6)
+         stiff(16)=(ddsdde(1,6)+ddsdde(6,1))/2.d0
+         stiff(17)=(ddsdde(2,6)+ddsdde(6,2))/2.d0
+         stiff(18)=(ddsdde(3,6)+ddsdde(6,3))/2.d0
+         stiff(19)=(ddsdde(4,6)+ddsdde(6,4))/2.d0
+         stiff(20)=(ddsdde(5,6)+ddsdde(6,5))/2.d0
          stiff(21)=ddsdde(6,6)
 !
          if(iorien.ne.0) then

@@ -16,10 +16,9 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-!     This subroutine enable to compute the friction coefficient of
-!     the pipe flow for laminar and turbulent coefficient and also
-!     with an approximationinterpolation for the domain between laminar 
-!     and turbulent flow
+!     This subroutine computes the friction coefficient of
+!     the pipe flow for laminar and turbulent flow including the
+!     transition region
 !     
       subroutine friction_coefficient(l,d,ks,reynolds,form_fact,lambda)
 !     

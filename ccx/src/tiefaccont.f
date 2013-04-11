@@ -19,20 +19,21 @@
       subroutine tiefaccont(lakon,ipkon,kon,ntie,tieset,nset,set,
      &  istartset,iendset,ialset,itiefac,islavsurf,islavnode,
      &  imastnode,nslavnode,nmastnode,nslavs,nmasts,ifacecount,
-     &  ipe,ime,imastop,ncont,koncont,iponoels,inoels,ifreenoels,
-     &  ifreeme)
+     &  iponoels,inoels,ifreenoels,
+     &  mortar,ipoface,nodface,nk)
 !
 !     Catalogueing the slave faces (itieface, islavsurf)
 !                  the slave nodes (islavnode, nslavnode)
-!                  the master nodes (imastnode, nmastnode)
-!                  the opposite trangles in the triangulation
-!                         (imastop)
 !                  the slave faces to which the slave nodes
 !                       belong
+!                  the master nodes (imastnode, nmastnode; only
+!                       for surface-to-surface contact)
 !
 !     Authors: Li,Yang; Rakotonanahary, Samoela; 
 !
       implicit none
+!
+      logical nodeslavsurf
 !
       character*8 lakon(*)
       character*81 tieset(3,*),slavset,mastset,set(*)
@@ -45,9 +46,9 @@
      &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),node,
      &  itiefac(2,*),islavsurf(2,*),islavnode(*),imastnode(*),
      &  nslavnode(ntie+1),nmastnode(ntie+1),ifacecount,islav,imast,
-     &  ipe(*),ime(4,*),imastop(3,*),ipos,node1,node2,index1,
-     &  index1old,ifreeme,ncont,koncont(4,*),iponoels(*),
-     &  inoels(3,*),ifreenoels,ifreenoelold
+     &  ipos,index1,iponoels(*),inoels(3,*),ifreenoels,ifreenoelold,
+     &  mortar,numbern,numberf,iface,kflag,nk,ipoface(*),
+     &  nodface(5,*)
 !
 ! nslavnode: num of slave nodes
 ! islavnode: all slave nodes, tie by tie, ordered within one tie constraint
@@ -95,7 +96,6 @@
 !
 !     counters for new fields islavsurf and itiefac
 !       
-        PRINT *, "Tiefiaccont..."
       do i=1,ntie
 !
 !        check for contact conditions
@@ -105,39 +105,182 @@
 !
 !           check whether facial slave surface; 
 !
-            ipos=index(slavset,' ')
+            ipos=index(slavset,' ')-1
+! 
+!           default for node-to-surface contact is
+!           a nodal slave surface
+!
             if(slavset(ipos:ipos).eq.'S') then
-               nslavnode(i+1)=nslavnode(i)
-               nmastnode(i+1)=nmastnode(i)
-               cycle
+               nodeslavsurf=.true.
             endif
 !
-            mastset=tieset(3,i)
-!
-!           determining the slave surface
+!           determining the slave surface 
 !
             do j=1,nset
                if(set(j).eq.slavset) exit
             enddo
             if(j.gt.nset) then
-               write(*,*) '*ERROR in tiefaccont: slave surface'
-               write(*,*) '       does not exist'
-               stop
+               do j=1,nset
+                  if((set(j)(1:ipos-1).eq.slavset(1:ipos-1)).and.
+     &                 (set(j)(ipos:ipos).eq.'T')) then
+                     nodeslavsurf=.false.
+                     exit
+                  endif
+               enddo
             endif
+!
             islav=j
+!
+            if((mortar.eq.0).and.(nodeslavsurf)) then
+!
+!           nodal slave surface and node-to-surface contact
+!
+!           storing the slave nodes in islavnode (sorted)
+!
+               nslavnode(i)=nslavs
+               numbern=0
+               do j=istartset(islav),iendset(islav)
+                  if(ialset(j).gt.0) then
+                     k=ialset(j)
+                     call nident(islavnode(nslavs+1),k,numbern,id)
+                     if(id.gt.0) then
+                        if(islavnode(nslavs+id).eq.k) cycle
+                     endif
+                     numbern=numbern+1
+                     do l=numbern,id+2,-1
+                        islavnode(nslavs+l)=islavnode(nslavs+l-1)
+                     enddo
+                     islavnode(nslavs+id+1)=k
+                  else
+                     k=ialset(j-2)
+                     do
+                        k=k-ialset(j)
+                        if(k.ge.ialset(j-1)) exit
+                        call nident(islavnode(nslavs+1),k,numbern,id)
+                        if(id.gt.0) then
+                           if(islavnode(nslavs+id).eq.k) cycle
+                        endif
+                        numbern=numbern+1
+                        do l=numbern,id+2,-1
+                           islavnode(nslavs+l)=islavnode(nslavs+l-1)
+                        enddo
+                        islavnode(nslavs+id+1)=k
+                     enddo
+                  endif
+                  nslavnode(i+1)=nslavnode(i)+numbern
+               enddo
+!     
+!              check all external solid faces whether they contain
+!              slave nodes
+!     
+!              islavsurf(1,*) contains the faces (ordered)
+!              islavsurf(2,*) contains the position of the
+!              original order
+!     
+               itiefac(1,i)=ifacecount+1
+               numberf=0
+!     
+               do j=1,nk
+                  index1=ipoface(j)
+                  do
+                     if(index1.eq.0) exit
+                     iface=nodface(4,index1)
+                     do k=0,3
+                        if(k.eq.0) then
+                           node=j
+                        else
+                           node=nodface(k,index1)
+                        endif
+!     
+!                       check whether node belongs to slave surface
+!     
+                        call nident(islavnode(nslavs+1),node,numbern,
+     &                                id)
+                        if(id.gt.0) then
+                           if(islavnode(nslavs+id).eq.node) then
+                              call nident2(islavsurf(1,ifacecount+1),
+     &                             iface,numberf,id)
+!     
+                              ipos=0
+                              if(id.gt.0) then
+                                 if(islavsurf(1,ifacecount+id).eq.iface) 
+     &                              then
+                                    ipos=id
+                                 endif
+                              endif
+!     
+!                             check whether new face
+!     
+                              if(ipos.eq.0) then
+                                 numberf=numberf+1
+                                 do l=ifacecount+numberf,ifacecount+id+2
+     &                                      ,-1
+                                    islavsurf(1,l)=islavsurf(1,l-1)
+                                    islavsurf(2,l)=islavsurf(2,l-1)
+                                 enddo
+                                 islavsurf(1,ifacecount+id+1)=iface
+                                 islavsurf(2,ifacecount+id+1)=numberf
+                                 ipos=numberf
+                              endif
+!     
+!                             update info to which faces a slave node
+!                             belongs
+!     
+!                             for node-to-surface contact inoels(2,*)
+!                             contains the number of nodes belonging to
+!                             the face; 
+!     
+                              ifreenoelold=iponoels(node)
+                              ifreenoels=ifreenoels+1
+                              iponoels(node)=ifreenoels
+                              inoels(1,ifreenoels)=ifacecount+ipos
+                              if(nodface(4,index1).eq.0) then
+                                 inoels(2,ifreenoels)=3
+                              else
+                                 inoels(2,ifreenoels)=4
+                              endif
+                              inoels(3,ifreenoels)=ifreenoelold
+                           endif
+                        endif
+                     enddo
+                     index1=nodface(5,index1)
+                  enddo
+               enddo
+!     
+!           restoring the right order of islavsurf(1,*);
+!           thereafter islavsurf(2,*) is obsolete for node-to-surface
+!           contact
+!
+               kflag=2
+               call isort2i(islavsurf(1,ifacecount+1),numberf,kflag)
+!
+!              update ifacecount and itiefac
+!     
+               itiefac(2,i)=ifacecount+numberf
+!
+               nslavs=nslavnode(i+1)
+               ifacecount=itiefac(2,i)
+!
+               cycle
+            endif
+!
+!           element face slave surface (node-to-surface or
+!           surface-to-surface contact)
+!
+c            islav=j
             nslavnode(i)=nslavs
 !
             itiefac(1,i)=ifacecount+1
             do j=istartset(islav),iendset(islav)
                if(ialset(j).gt.0) then
 !
-!               put all the num, made of element num and face num 
-!               of slave face, into islavsurf(1,*)               
+!                store the slave face in islavsurf               
 !
                   ifacecount=ifacecount+1
                   islavsurf(1,ifacecount)=ialset(j)
 !               
-!           Decide islavnode, and nslavnode
+!                 store the nodes belonging to the slave face
+!                 in islavnode
 !
                   ifaces = ialset(j)
                   nelems = int(ifaces/10)
@@ -145,11 +288,13 @@
                   indexe = ipkon(nelems)
 !
                   if(lakon(nelems)(4:4).eq.'2') then
-                      nopes=8
+c                      nopes=8
+                      nopes=4
                   elseif(lakon(nelems)(4:4).eq.'8') then
                       nopes=4
                   elseif(lakon(nelems)(4:5).eq.'10') then
-                      nopes=6
+c                      nopes=6
+                      nopes=3
                   elseif(lakon(nelems)(4:4).eq.'4') then
                       nopes=3
                   endif
@@ -163,9 +308,11 @@
                   endif
                   if(lakon(nelems)(4:5).eq.'15') then
                     if(jfaces.le.2) then
-                       nopes=6
+c                       nopes=6
+                       nopes=3
                     else
-                       nopes=8
+c                       nopes=8
+                       nopes=4
                     endif
                   endif   
 !                  
@@ -191,19 +338,29 @@
                      endif
                      if(.not.exist) then
                         nslavs=nslavs+1
-                        do k=nslavs,id+2,-1
+                        do k=nslavs,nslavnode(i)+id+2,-1
                            islavnode(k)=islavnode(k-1)
                         enddo
-                        islavnode(id+1)=node
+                        islavnode(nslavnode(i)+id+1)=node
                      endif
 !
 !                    filling fields iponoels and inoels
+!
+!                    for node-to-surface contact inoels(2,*)
+!                    contains the number of nodes belonging to
+!                    the face; 
+!                    for surface-to-surface contact inoels(2,*)
+!                    contains the local node number
 !
                      ifreenoelold=iponoels(node)
                      ifreenoels=ifreenoels+1
                      iponoels(node)=ifreenoels
                      inoels(1,ifreenoels)=ifacecount
-                     inoels(2,ifreenoels)=l
+                     if(mortar.eq.1) then
+                        inoels(2,ifreenoels)=l
+                     else
+                        inoels(2,ifreenoels)=nopes
+                     endif
                      inoels(3,ifreenoels)=ifreenoelold
                   enddo
 !     
@@ -211,9 +368,19 @@
             enddo
             nslavnode(ntie+1)=nslavs
             itiefac(2,i)=ifacecount
+c!
+c!           for node-to-surface contact ncone is the number of slave
+c!           nodes
+c!
+            if(mortar.eq.0) then
+c               ncone=nslavnode(ntie+1)-nslavnode(ntie)
+               cycle
+            endif
 !
+!           what follows is only for surface-to-surface contact
 !           determining the master surface
 !
+            mastset=tieset(3,i)
             do j=1,nset
                if(set(j).eq.mastset) exit
             enddo
@@ -297,7 +464,7 @@
 !           no contact tie
 !
             nslavnode(i+1)=nslavnode(i)
-            nmastnode(i+1)=nmastnode(i)
+            if(mortar.eq.1) nmastnode(i+1)=nmastnode(i)
          endif 
       enddo      
 !

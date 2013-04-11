@@ -35,7 +35,7 @@
 !     
       logical covered(160,160),exi
 !     
-      character*87 label(27)
+      character*87 label(29)
       character*8 lakonl,lakon(*)
       character*20 sideload(*)
       character*132 jobnamef(*),fnvw
@@ -87,7 +87,7 @@
 !
       external fform
 !
-      nlabel=27
+      nlabel=29
 !
 !     factor determines when the numerical integration using cubtri
 !     is replaced by a simplified formula using only the center

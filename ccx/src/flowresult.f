@@ -34,8 +34,6 @@
 !     the network solution is not iterated to speed up
 !     the calculation)
 !
-c      cam=0.d0
-!     
       if(network.eq.0) then
          do i=1,ntg
             node=itg(i)
@@ -44,15 +42,16 @@ c      cam=0.d0
                cam(2)=dabs(vold(0,node)-v(0,node))
                cam(5)=node+0.5d0
             endif
-c            cam(2)=max(cam(2),dabs(vold(0,node)-v(0,node)))
          enddo
       endif
 !     
-!     replacing vold by v
+!     replacing vold by v (including the static temperature for
+!     gases and the critical depth for liquid channels)
 !
       do i=1,ntg
          node=itg(i)
-         do j=0,2
+c         do j=0,2
+         do j=0,3
             vold(j,node)=v(j,node)
          enddo
       enddo

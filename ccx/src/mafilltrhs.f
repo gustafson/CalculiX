@@ -21,9 +21,10 @@
      &  nforc,nelemload,sideload,xload,nload,xbody,ipobody,nbody,
      &  b,nactdoh,neqt,nmethod,ikmpc,ilmpc,ikboun,
      &  ilboun,rhcon,nrhcon,ielmat,ntmat_,t0,ithermal,vold,voldaux,nzst,
-     &  dtime,matname,mi,ncmat_,physcon,shcon,nshcon,ttime,time,
+     &  dtl,matname,mi,ncmat_,physcon,shcon,nshcon,ttime,time,
      &  istep,iinc,ibody,xloadold,reltimef,cocon,ncocon,nelemface,
-     &  sideface,nface,compressible,v,voldtu,yy,turbulent,nea,neb)
+     &  sideface,nface,compressible,v,voldtu,yy,turbulent,nea,neb,
+     &  dtimef)
 !
 !     filling the rhs b of the velocity equations (step 1)
 !
@@ -51,7 +52,7 @@
      &  rhcon(0:1,ntmat_,*),physcon(*),voldtu(2,*),
      &  shcon(0:3,ntmat_,*),xbody(7,*)
 !
-      real*8 om,dtime,ttime,time
+      real*8 om,dtimef,ttime,time,dtl(*)
 !
       kflag=2
       i0=0
@@ -133,7 +134,7 @@
          call e_c3d_trhs(co,nk,konl,lakon(i),p1,p2,om,bodyf,
      &        nbody,ff,i,nmethod,rhcon,nrhcon,
      &        ielmat,ntmat_,vold,voldaux,nelemload,
-     &        sideload,xload,nload,idist,dtime,matname,mi(1),
+     &        sideload,xload,nload,idist,dtimef,matname,mi(1),
      &        ttime,time,istep,iinc,xloadold,reltimef,shcon,nshcon,
      &        cocon,ncocon,physcon,nelemface,sideface,nface,
      &        ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,compressible,v,
@@ -142,6 +143,7 @@
          do jj=1,nope
 !     
             node1=kon(indexe+jj)
+c            ff(jj)=ff(jj)*dtl(node1)/dtimef
             jdof1=nactdoh(0,node1)
 !     
 !     distributed forces
@@ -175,17 +177,15 @@
          enddo
       enddo
 !
-c      do i=1,neqt
-c         write(*,*) 'mafilltrhs ',i,b(i)
-c      enddo
-c      write(*,*) 'press 3 ',b(2)
-c      write(*,*) 'press 392 ',b(369)
-c      write(*,*) 'press 256 ',b(241)
-c      write(*,*) 'press 343 ',b(322)
-c      write(*,*) 'press 104 ',b(97)
-c      write(*,*) 'press 256 ',b(241)
-c      write(*,*)
-c      write(*,*) 'voldaux(0,1) ',voldaux(0,1)
+!     nonlocal time stepping for compressible steady state calculations
+!     
+      if((compressible.eq.1).and.(nmethod.eq.1)) then
+         do i=1,nk
+            if(nactdoh(0,i).gt.0) then
+               b(nactdoh(0,i))=b(nactdoh(0,i))*dtl(i)/dtimef
+            endif
+         enddo
+      endif
 !     
       return
       end

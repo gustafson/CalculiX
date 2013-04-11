@@ -21,7 +21,7 @@
 #include <string.h>
 #include "CalculiX.h"
 
-void insertas(int *ipointer, int **irowp, int **mast1p, int *i1,
+void insertas(int **irowp, int **mast1p, int *i1,
 	 int *i2, int *ifree, int *nzs_, double *contribution, double **bdp){
 
   /*   inserts a new nonzero matrix position into the data structure
@@ -29,7 +29,7 @@ void insertas(int *ipointer, int **irowp, int **mast1p, int *i1,
        i1: row number (FORTRAN convention) 
        i2: column number (FORTRAN convention) */
 
-  int idof1,idof2,istart,*irow=NULL,*mast1=NULL;
+  int idof1,idof2,*irow=NULL,*mast1=NULL;
   double *bd=NULL;
 
   irow=*irowp;   
@@ -38,47 +38,21 @@ void insertas(int *ipointer, int **irowp, int **mast1p, int *i1,
 
   idof1 = *i1;
   idof2 = *i2;
-    
-  if(ipointer[idof2-1]==0){
-    ++*ifree;
+
     if(*ifree>*nzs_){
-      *nzs_=(int)(1.1**nzs_);
+//      printf("Insertas RENEW ifree = %d,nzs = %d\n",*ifree,*nzs_);
+//      *nzs_=(int)(1.1**nzs_);
+      *nzs_=(int)(1.5**nzs_);
       RENEW(irow,int,*nzs_);
+      if (irow==NULL) printf("WARNING !!!!\n");
       RENEW(mast1,int,*nzs_);
       RENEW(bd,double,*nzs_);
     }
-    ipointer[idof2-1]=*ifree;
+    mast1[*ifree-1]=idof2;
     irow[*ifree-1]=idof1;
-    mast1[*ifree-1]=0;
     bd[*ifree-1]=*contribution;
-  }
-  else{
-    istart=ipointer[idof2-1];
-    while(1){
-      if(irow[istart-1]==idof1){ //Former row number -> update value
-	bd[istart-1]+=*contribution;
-	break;
-      }
-      if(mast1[istart-1]==0){ // new row number value
-	++*ifree;
-	if(*ifree>*nzs_){
-	  *nzs_=(int)(1.1**nzs_);
-	  RENEW(bd,double,*nzs_);
-	  RENEW(mast1,int,*nzs_);
-	  RENEW(irow,int,*nzs_);
-	}
-	mast1[istart-1]=*ifree;
-	irow[*ifree-1]=idof1;
-	mast1[*ifree-1]=0;
-	bd[*ifree-1]=*contribution;  //first value
-	
-	break;
-      }
-      else{
-	istart=mast1[istart-1];
-      }
-    }
-  }
+    ++*ifree;
+//    printf("ifree %d\n",*ifree);
   
   *irowp=irow;
   *mast1p=mast1;

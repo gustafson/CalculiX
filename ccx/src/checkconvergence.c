@@ -59,6 +59,8 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	*stni=NULL,*vmax=NULL,*stnmax=NULL,*cs=NULL,c1[2],c2[2],reftime,
         *fn=NULL;
 
+    if (*iflagact==1){ctrl[0]=*iit+4;ctrl[1]=*iit+8;ctrl[3]+=1;}
+	
     i0=ctrl[0];ir=ctrl[1];ip=ctrl[2];ic=ctrl[3];il=ctrl[4];ig=ctrl[5];ia=ctrl[7];
     df=ctrl[10];dc=ctrl[11];db=ctrl[12];da=ctrl[13];dd=ctrl[16];
     ran=ctrl[18];can=ctrl[19];rap=ctrl[22];
@@ -94,13 +96,9 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	if(ram1[1]<ram2[1]){ram2[1]=ram1[1];}
     }
 
-    iconvergence=0;
-
-    //	if (*iit==1) iconvergence=1;
-
+    iconvergence=0; 
+ 
     /* mechanical */
-
-//    printf("iflagact= %d \n",*iflagact);
 
     if(*ithermal<2){
                 if((*iit>1)&&(ram[0]<=c1[0]*qam[0])&&(*iflagact==0)&&
@@ -134,11 +132,20 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	     (cam[1]<1.e-8))))iconvergence=1;
     }
 
+    /* reset iflagact */
+
+    *iflagact=0;
+
 	
 	/* increment convergence reached */
 	
     if((iconvergence==1)&&(idivergence==0)){
 	*ttime=*ttime+*dtime;
+
+        /* cutting the insignificant digits from ttime */
+
+	*ttime=*ttime+1.;
+	*ttime=*ttime-1.;
 	/*	if((*uncoupled)&&(*ithermal==1))(*iit)-=(*iitterm);*/
 	FORTRAN(writesummary,(istep,iinc,icutb,iit,ttime,time,dtime));
 	if(*uncoupled){

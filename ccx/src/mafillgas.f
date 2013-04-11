@@ -103,23 +103,46 @@
 !
          xflow=v(1,nodem)
 !
-         if(node1.eq.0) then
-            tg1=v(0,node2)
-            tg2=tg1
-            ts1=v(3,node2)
-            ts2=ts1
-         elseif(node2.eq.0) then
-            tg1=v(0,node1)
-            tg2=tg1
-            ts1=v(3,node1)
-            ts2=ts1
+        if((lakon(nelem)(2:3).ne.'LP').and.
+     &     (lakon(nelem)(2:3).ne.'LI')) then
+            if(node1.eq.0) then
+               tg1=v(0,node2)
+               tg2=tg1
+               ts1=v(3,node2)
+               ts2=ts1
+            elseif(node2.eq.0) then
+               tg1=v(0,node1)
+               tg2=tg1
+               ts1=v(3,node1)
+               ts2=ts1
+            else
+               tg1=v(0,node1)
+               tg2=v(0,node2)
+               ts1=v(3,node1)
+               ts2=v(3,node2)
+            endif
+!
+            gastemp=(ts1+ts2)/2.d0
+!
+!     for liquid pipe element only the upstream temperature is used to 
+!     determine thematerial properties
+!
          else
-            tg1=v(0,node1)
-            tg2=v(0,node2)
-            ts1=v(3,node1)
-            ts2=v(3,node2)
+            
+            if(xflow.gt.0) then
+               if(node1.eq.0) then
+                  gastemp=v(0,node2)
+               else
+                  gastemp=v(0,node1)
+               endif
+            else
+               if(node2.eq.0) then
+                  gastemp=v(0,node1)
+               else
+                  gastemp=v(0,node2)
+               endif
+            endif
          endif
-         gastemp=(ts1+ts2)/2.d0
 !
          imat=ielmat(nelem)
 !
@@ -623,6 +646,11 @@
             enddo
          endif
       enddo
+!
+      write(30,*) 'ac in mafillgas'
+c      do i=1,9
+c         write(30,'(9(1x,e11.4))') (ac(i,j),j=1,9)
+c      enddo
 !
       return
       end

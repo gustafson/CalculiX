@@ -86,12 +86,12 @@ c     &          slavstraight(nopes*4+4)
      &   (co(2,node)+vold(2,node))-xn(3)*(co(3,node)+vold(3,node))-
      &          slavstraight(nopes*4+4)
             do i=1,3
-               pvertex(i,nvertex)=co(i,node)+al*xn(i)
+               pvertex(i,nvertex)=co(i,node)+vold(i,node)+al*xn(i)
             enddo
 !
 !           projecting the node on the slave surface
 !
-            call attach(xl2,pvertex,nopes,ratio,dist,xil,etl)
+            call attachline(xl2,pvertex,nopes,ratio,dist,xil,etl,xn)
 !
 !           cataloguein the node in inodesin
 !
@@ -104,7 +104,8 @@ c     &          slavstraight(nopes*4+4)
             enddo
             inodesin(idi+1)=node
             do i=1,3
-               pnodesin(i,idi+1)=co(i,node)+vold(i,node)
+c               pnodesin(i,idi+1)=co(i,node)+vold(i,node)
+               pnodesin(i,idi+1)=pvertex(i,nvertex)
             enddo
             exit
          else

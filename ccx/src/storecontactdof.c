@@ -105,7 +105,9 @@ void storecontactdof(int *nope,int *nactdof, int *mt, int *konl, int **ikactcont
 				  break;
 			      }while(1);
 			      
-			      bcont[jdof]+=coefmpc[index-1]*
+/*			      bcont[jdof]+=coefmpc[index-1]*
+			      fnl[3*j+j1]/coefmpc[ist-1];*/
+			      bcont[jdof]-=coefmpc[index-1]*
 				  fnl[3*j+j1]/coefmpc[ist-1];
 			  }
 			  index=nodempc[3*index-1];

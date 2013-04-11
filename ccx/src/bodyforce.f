@@ -27,7 +27,7 @@
 !
       integer ibody(3,*),ipobody(2,*),i,j,l,istartset(*),nbody,
      &  iendset(*),ialset(*),kindofbodyforce,inewton,nset,istat,
-     &  ifreebody,k
+     &  ifreebody,k,index
 !
       elset=cbody(k)
       kindofbodyforce=ibody(1,k)
@@ -40,10 +40,23 @@
          if(ipobody(1,l).eq.0) then
             ipobody(1,l)=k
          else
-            ipobody(2,ifreebody)=ipobody(2,l)
-            ipobody(2,l)=ifreebody
-            ipobody(1,ifreebody)=k
-            ifreebody=ifreebody+1
+c
+            index=l
+            do
+               if(ipobody(1,index).eq.k) exit
+               if(ipobody(2,index).eq.0) then
+                  ipobody(2,index)=ifreebody
+                  ipobody(1,ifreebody)=k
+                  ipobody(2,ifreebody)=0
+                  ifreebody=ifreebody+1
+                  exit
+               endif
+               index=ipobody(2,index)
+            enddo
+c            ipobody(2,ifreebody)=ipobody(2,l)
+c            ipobody(2,l)=ifreebody
+c            ipobody(1,ifreebody)=k
+c            ifreebody=ifreebody+1
          endif
          return
       endif
@@ -60,10 +73,23 @@
             if(ipobody(1,l).eq.0) then
                ipobody(1,l)=k
             else
-               ipobody(2,ifreebody)=ipobody(2,l)
-               ipobody(2,l)=ifreebody
-               ipobody(1,ifreebody)=k
-               ifreebody=ifreebody+1
+c
+               index=l
+               do
+                  if(ipobody(1,index).eq.k) exit
+                  if(ipobody(2,index).eq.0) then
+                     ipobody(2,index)=ifreebody
+                     ipobody(1,ifreebody)=k
+                     ipobody(2,ifreebody)=0
+                     ifreebody=ifreebody+1
+                     exit
+                  endif
+                  index=ipobody(2,index)
+               enddo
+c               ipobody(2,ifreebody)=ipobody(2,l)
+c               ipobody(2,l)=ifreebody
+c               ipobody(1,ifreebody)=k
+c               ifreebody=ifreebody+1
             endif
          else
             l=ialset(j-2)
@@ -73,10 +99,23 @@
                if(ipobody(1,l).eq.0) then
                   ipobody(1,l)=k
                else
-                  ipobody(2,ifreebody)=ipobody(2,l)
-                  ipobody(2,l)=ifreebody
-                  ipobody(1,ifreebody)=k
-                  ifreebody=ifreebody+1
+c
+                  index=l
+                  do
+                     if(ipobody(1,index).eq.k) exit
+                     if(ipobody(2,index).eq.0) then
+                        ipobody(2,index)=ifreebody
+                        ipobody(1,ifreebody)=k
+                        ipobody(2,ifreebody)=0
+                        ifreebody=ifreebody+1
+                        exit
+                     endif
+                     index=ipobody(2,index)
+                  enddo
+c                  ipobody(2,ifreebody)=ipobody(2,l)
+c                  ipobody(2,l)=ifreebody
+c                  ipobody(1,ifreebody)=k
+c                  ifreebody=ifreebody+1
                endif
             enddo
          endif

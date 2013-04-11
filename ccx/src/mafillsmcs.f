@@ -28,7 +28,7 @@
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
      &  matname,mi,ics,cs,nm,ncmat_,labmpc,mass,stiffness,buckling,
      &  rhsi,intscheme,mcs,coriolis,ibody,xloadold,reltime,ielcs,
-     &  veold)
+     &  veold,springarea)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !     for cyclic symmetry calculations
@@ -47,29 +47,24 @@
      &  nactdof(0:mi(2),*),konl(20),irow(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(*),ielorien(*),
      &  ipkon(*),ics(*),ij,ilength,lprev,ipobody(2,*),nbody,
-     &  ibody(3,*)
-!
-      integer nk,ne,nboun,nmpc,nforc,nload,neq,nzl,nmethod,
+     &  ibody(3,*),nk,ne,nboun,nmpc,nforc,nload,neq,nzl,nmethod,
      &  ithermal,iprestr,iperturb(*),nzs,i,j,k,l,m,idist,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,node1,node2,kflag,
      &  ntmat_,indexe,nope,norien,iexpl,i0,nm,inode,icomplex,
      &  inode1,icomplex1,inode2,icomplex2,ner,ncmat_,intscheme,istep,
-     &  iinc,mcs,ielcs(*)
-!
-      integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
+     &  iinc,mcs,ielcs(*),nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),bb(*),xbody(7,*),cgr(4,*),
      &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(60,60),ff(60),
      &  sti(6,mi(1),*),sm(60,60),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),xloadold(2,*),
-     &  alcon(0:6,ntmat_,*),cs(17,*),alzero(*),orab(7,*),reltime
-!
-      real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
-     &  xstiff(27,mi(1),*),pi,theta,ti,tr,veold(0:mi(2),*)
-!
-      real*8 om,valu2,value,dtime,walue,walu2,time,ttime
+     &  alcon(0:6,ntmat_,*),cs(17,*),alzero(*),orab(7,*),reltime,
+     &  springarea(*),plicon(0:2*npmat_,ntmat_,*),
+     &  plkcon(0:2*npmat_,ntmat_,*),
+     &  xstiff(27,mi(1),*),pi,theta,ti,tr,veold(0:mi(2),*),om,valu2,
+     &  value,dtime,walue,walu2,time,ttime
 !
 !
 !     calculating the scaling factors for the cyclic symmetry calculation
@@ -198,7 +193,8 @@ c        endif
      &          nplicon,plkcon,nplkcon,xstiff,npmat_,
      &          dtime,matname,mi(1),ncmat_,mass,stiffness,buckling,rhsi,
      &          intscheme,ttime,time,istep,iinc,coriolis,xloadold,
-     &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold)
+     &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
+     &          springarea)
 !
         do jj=1,3*nope
 !

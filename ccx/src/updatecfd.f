@@ -20,7 +20,7 @@
      &  ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,iout,
      &  nmethod,convergence,physcon,iponoel,inoel,ithermal,
      &  nactdoh,iit,compressible,ismooth,voldtu,vtu,turbulent,
-     &  inomat,nodeboun,ndirboun,nboun,mi,shockscale)
+     &  inomat,nodeboun,ndirboun,nboun,mi)
 !
 !     calculates 
 !       vold (temperature,velocity and pressure)
@@ -43,7 +43,7 @@
      &  rhcon(0:1,ntmat_,*),rho,c1,vmax(0:4),dummy,press,
      &  voldmax(0:4),cp,r,temp,temp0,c2,c3,tempnew,vel2,
      &  shcon(0:3,ntmat_,*),drho,dtemp,physcon(*),dpress,
-     &  voldtu(2,*),vtu(2,*),shockscale
+     &  voldtu(2,*),vtu(2,*)
 !
       if(ismooth.eq.0) then
 !     
@@ -245,15 +245,9 @@ c                  temp=max((c1-c2/rho)/(rho*cp),1.d-2)+physcon(1)
      &           (dabs(voldmax(4)).lt.1.d-10)).and.
      &           (iit.gt.1)) convergence=1
          endif
-         write(*,*) 'rho*totenergy ',vmax(0),voldmax(0),iit
-         write(*,*) 'rho*vx ',vmax(1),voldmax(1)
-         write(*,*) 'rho*vy ',vmax(2),voldmax(2)
-         write(*,*) 'rho*vz ',vmax(3),voldmax(3)
-         write(*,*) 'pressure(fluids)/density(gas) ',vmax(4),voldmax(4)
-         shockscale=((vmax(0)**2+vmax(1)**2+vmax(2)**2+vmax(3)**2+
-     &               vmax(4)**2)/(voldmax(0)**2+voldmax(1)**2+
-     &               voldmax(2)**2+voldmax(3)**2+voldmax(4)**2))**
-     &               (1.d0/20.d0)
+         write(*,'(i10,10(1x,e11.4))') iit,vmax(0),voldmax(0),
+     &       vmax(1),voldmax(1),vmax(2),voldmax(2),
+     &       vmax(3),voldmax(3),vmax(4),voldmax(4)
       endif
 !     
       return

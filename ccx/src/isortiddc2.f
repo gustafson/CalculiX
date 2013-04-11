@@ -49,6 +49,12 @@ C   920501  Reformatted the REFERENCES section.  (DWL, WRB)
 C   920519  Clarified error messages.  (DWL)
 C   920801  Declarations section rebuilt and code restructured to use
 C           IF-THEN-ELSE-ENDIF.  (RWC, WRB)
+!   100411  changed the dimension of IL and IU from 21 to 31.
+!
+!     field IL and IU have the dimension 31. This is log2 of the largest
+!     array size to be sorted. If arrays larger than 2**31 in length have
+!     to be sorted, this dimension has to be modified accordingly
+!
 C***END PROLOGUE  ISORT
 C     .. Scalar Arguments ..
       implicit none
@@ -65,7 +71,7 @@ C     .. Local Scalars ..
       real*8 TTY11,TTY12,TY11,TY12,TTY21,TTY22,TY21,TY22
       character*20 UUY,UY
 C     .. Local Arrays ..
-      INTEGER IL(21), IU(21)
+      INTEGER IL(31), IU(31)
 C     .. External Subroutines ..
 !      EXTERNAL XERMSG
 C     .. Intrinsic Functions ..

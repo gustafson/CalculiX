@@ -30,7 +30,7 @@ void dfdbj(double *bcont,double **dbcontp,int *neq,int *nope,int *konl,
            int *nactcont,int *nactcont_,int *mi){
 
   int j,j1,jdof,kdof,k,k1,l,id,index,ist,id1,ist1,index1,id2,ist2,index2,
-      jdbcontcol,i1,i3,i4,mt=mi[1]+1;
+      jdbcontcol,i1,i3,i4,mt=mi[1]+1,im;
   double d1,sl;
 
   double *dbcont=*dbcontp;
@@ -66,7 +66,8 @@ void dfdbj(double *bcont,double **dbcontp,int *neq,int *nope,int *konl,
 		  jdbcontcol=*nactcont;
 		  ikactcont[id]=jdof;
 		  ilactcont[id]=*nactcont;
-		  memset(&dbcont[(*nactcont-1)**nev],0,sizeof(double)**nev);
+//		  memset(&dbcont[(*nactcont-1)**nev],0,sizeof(double)**nev);
+		  DMEMSET(dbcont,(*nactcont-1)**nev,*nactcont**nev,0.);
 		  break;
 	      }while(1);
 	      bcont[jdof]-=fnl[j*3+j1];
@@ -150,7 +151,8 @@ void dfdbj(double *bcont,double **dbcontp,int *neq,int *nope,int *konl,
 				  jdbcontcol=*nactcont;
 				  ikactcont[id]=jdof;
 				  ilactcont[id]=*nactcont;
-				  memset(&dbcont[(*nactcont-1)**nev],0,sizeof(double)**nev);		  
+//				  memset(&dbcont[(*nactcont-1)**nev],0,sizeof(double)**nev);		  
+				  DMEMSET(dbcont,(*nactcont-1)**nev,*nactcont**nev,0.);
 				  break;
 			      }while(1);
 			      bcont[jdof]+=coefmpc[index1]*fnl[j*3+j1]/coefmpc[ist1];

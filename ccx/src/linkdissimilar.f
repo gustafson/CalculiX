@@ -16,24 +16,22 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine linkdissimilar(co,nk,ics,csab,ncsnodes,
-     &  rcscg,rcs0cg,zcscg,zcs0cg,nrcg,nzcg,jcs,kontri,straight,
-     &  lcs,nodef,ratio,nterms,rp,zp,netri,
-     &  nodesonaxis,nodei,ifacetet,inodface,noded,tolloc,xn,yn,zn,ier)
+      subroutine linkdissimilar(co,csab,
+     &  rcscg,rcs0cg,zcscg,zcs0cg,nrcg,nzcg,straight,
+     &  nodef,ratio,nterms,rp,zp,netri,
+     &  nodei,ifacetet,inodface,noded,xn,yn,zn,ier)
 !
 !     links dissimilar meshes for cyclic symmetry
 !
       implicit none
 !
-      logical nodesonaxis
-!
-      integer nneigh,jcs(*),j,nk,ics(*),nodef(8),nodei,nrcg(*),ncsnodes,
-     &  nzcg(*),nterms,ineigh(20),itrimax,lcs(*),i,netri,kontri(3,*),
+      integer nneigh,j,nodef(8),nodei,nrcg(*),
+     &  nzcg(*),nterms,ineigh(20),itrimax,i,netri,
      &  itri,ifirst,ilast,ifacetet(*),inodface(*),noded,ier
 !
       real*8 co(3,*),csab(7),rp,zp,xi,et,xn,yn,zn,rp1,zp1,rp2,zp2,
      &  straight(9,*),zcscg(*),rcscg(*),zcs0cg(*),rcs0cg(*),distmax,
-     &  dist,ratio(8),pneigh(3,8),pnode(3),tolloc,xap,yap,zap,
+     &  dist,ratio(8),pneigh(3,8),pnode(3),xap,yap,zap,
      &  x12,y12,z12,x13,y13,z13,area,typdist
 !
 !     finding for each node on the right side a corresponding
@@ -82,29 +80,10 @@
       nterms=ilast-ifirst
       do i=1,nterms
          nodef(i)=inodface(ifirst+i)
-c
-c         xap=co(1,nodef(i))-csab(1)
-c         yap=co(2,nodef(i))-csab(2)
-c         zap=co(3,nodef(i))-csab(3)
-c         pneigh(1,i)=xap*xn+yap*yn+zap*zn
-c         pneigh(2,i)=dsqrt((xap-zp1*xn)**2+(yap-zp1*yn)**2+
-c     &                     (zap-zp1*zn)**2)
-c         pneigh(3,i)=0.d0
-c
          do j=1,3
             pneigh(j,i)=co(j,nodef(i))
          enddo
       enddo
-c
-c      xap=co(1,nodei)-csab(1)
-c      yap=co(2,nodei)-csab(2)
-c      zap=co(3,nodei)-csab(3)
-c      zp1=xap*xn+yap*yn+zap*zn
-c      rp1=dsqrt((xap-zp1*xn)**2+(yap-zp1*yn)**2+(zap-zp1*zn)**2)
-c      pnode(1)=zp1
-c      pnode(2)=rp1
-c      pnode(3)=0.d0
-c
       do j=1,3
          pnode(j)=co(j,nodei)
       enddo
@@ -117,10 +96,6 @@ c
       rp1=dsqrt((xap-zp1*xn)**2+(yap-zp1*yn)**2+(zap-zp1*zn)**2)
 !
       call attach(pneigh,pnode,nterms,ratio,dist,xi,et)
-!
-c      dist=dsqrt((pnode(1)-co(1,nodei))**2+
-c     &           (pnode(2)-co(2,nodei))**2+
-c     &           (pnode(3)-co(3,nodei))**2)
 !
       xap=pnode(1)-csab(1)
       yap=pnode(2)-csab(2)

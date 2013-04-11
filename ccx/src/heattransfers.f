@@ -67,6 +67,7 @@
 !
 !     default solver
 !
+      solver='                    '
       if(isolver.eq.0) then
          solver(1:7)='SPOOLES'
       elseif(isolver.eq.2) then

@@ -21,6 +21,7 @@ applybount.f \
 applybounv.f \
 approxplane.f \
 attach.f \
+attachline.f \
 beamsections.f \
 bodyadd.f \
 bodyforce.f \
@@ -71,6 +72,7 @@ couptempdisps.f \
 cp_corrected.f \
 createbdentry.f \
 createddentry.f \
+creategap.f \
 createmddof.f \
 creep.f \
 creeps.f \
@@ -94,6 +96,7 @@ dfluxes.f \
 dgesv.f \
 diamtr.f \
 distattach.f \
+distattachline.f \
 distributedcouplings.f \
 dKdm.f \
 dKdp.f \
@@ -129,20 +132,25 @@ e_c3d.f \
 e_c3d_krhs.f \
 e_c3d_plhs.f \
 e_c3d_prhs.f \
+e_c3d_prhs_l.f \
 e_c3d_rhs.f \
 e_c3d_rhs_th.f \
 e_c3d_th.f \
 e_c3d_tlhs.f \
 e_c3d_trhs.f \
+e_c3d_trhs_l.f \
 e_c3d_vlhs.f \
 e_c3d_v1rhs.f \
+e_c3d_v1rhs_l.f \
 e_c3d_v2rhs.f \
+e_c3d_v2rhs_l.f \
 e_damp.f \
 faceprints.f \
 fcrit.f \
 fillknotmpc.f \
 film.f \
 films.f \
+findsurface.f \
 finpro.f \
 flowoutput.f \
 flowresult.f \
@@ -184,12 +192,15 @@ gencontelem.f \
 gencontrel.f \
 generatecycmpcs.f \
 genislavactdof.f \
+gennactdofinv.f \
 genran.f \
 gentiedmpc.f \
 getnewline.f \
 graph.f \
+hcrit.f \
 headings.f \
 heattransfers.f \
+hns.f \
 hybsvd.f \
 hyperelastics.f \
 hyperfoams.f \
@@ -212,6 +223,7 @@ isortid.f \
 isortiddc1.f \
 isortiddc2.f \
 isortii.f \
+isort2i.f \
 isortiid.f \
 keystart.f \
 knotmpc.f \
@@ -375,6 +387,7 @@ shape20h_pl.f \
 shellsections.f \
 sigini.f \
 skip.f \
+slavintmortar.f \
 smooth.f \
 smoothshock.f \
 solidsections.f \
@@ -466,6 +479,7 @@ writesummary.f \
 zeta_calc.f
 
 SCCXC = \
+add_rect.c \
 arpack.c \
 arpackbu.c \
 arpackcs.c \
@@ -489,11 +503,15 @@ gencontmpc.c \
 inicont.c \
 insert.c \
 insertas.c \
+insertas_ws.c \
 mastruct.c \
 mastructcs.c \
 mastructf.c \
 matrixstorage.c \
 multimortar.c \
+multi_rect.c \
+multi_rectv.c \
+multi_scal.c \
 nonlingeo.c \
 pardiso.c \
 pcgsolver.c \

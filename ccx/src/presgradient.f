@@ -1,4 +1,3 @@
-
 !
 !     CalculiX - A 3-dimensional finite element program
 !              Copyright (C) 1998-2007 Guido Dhondt
@@ -18,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine presgradient(iponoel,inoel,sa,sav,nk,dt,shockcoef,
-     &  dtimef,ipkon,kon,lakon,vold,mi)
+     &  dtimef,ipkon,kon,lakon,vold,mi,compressible,nmethod,dtl)
 !
 !     determining measure for the pressure gradient
 !
@@ -32,12 +31,10 @@
       character*8 lakon(*)
 !
       integer iponoel(*),inoel(3,*),nk,i,j,index,indexe,nope,
-     &  ipkon(*),kon(*),node,ielem,mi(2)
+     &  ipkon(*),kon(*),node,ielem,mi(2),compressible,nmethod
 !
       real*8 sa(*),sav(*),dt(*),shockcoef,dtimef,ca,sum,sumabs,pa,
-     &  vold(0:mi(2),*)
-!
-      ca=shockcoef*dtimef
+     &  vold(0:mi(2),*),dtl(*)
 !
       do i=1,nk
          if(iponoel(i).le.0) cycle
@@ -77,11 +74,30 @@
          endif
 c         write(*,*) 'presgradient ',i,dabs(sum),sumabs,
 c     &           dabs(sum)/sumabs
-         sa(i)=dabs(sum)*ca/(sumabs*dt(i))
-         sav(3*i-2)=sa(i)
-         sav(3*i-1)=sa(i)
-         sav(3*i)=sa(i)
+         sa(i)=dabs(sum)/(sumabs*dt(i))
       enddo
+!
+      if((compressible.eq.0).or.(nmethod.eq.4)) then
+         ca=shockcoef*dtimef
+         do i=1,nk
+            sa(i)=ca*sa(i)
+            sav(3*i-2)=sa(i)
+            sav(3*i-1)=sa(i)
+            sav(3*i)=sa(i)
+         enddo
+      else
+!
+!        steady state compressible
+!
+         do i=1,nk
+c            ca=shockcoef*dtl(i)*10.d0
+            ca=shockcoef*dtl(i)
+            sa(i)=ca*sa(i)
+            sav(3*i-2)=sa(i)
+            sav(3*i-1)=sa(i)
+            sav(3*i)=sa(i)
+         enddo
+      endif
 !
       return
       end

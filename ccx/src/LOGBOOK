@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 2.1
+LOG-BOOK Version 2.2
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -1312,16 +1312,16 @@ Dec 2002        - started to work on single crystal plasticity
 
 29 April 2008  - update of dyna.c
 
-7 Mai 2008     - introduced contact damping and friction for
+7 May 2008     - introduced contact damping and friction for
                  modal dynamic calculations
 
-15 Mai 2008    - different meaning of MAXU and MAXS in arpackcs.c
+15 May 2008    - different meaning of MAXU and MAXS in arpackcs.c
                - correction in steadystate.c
 
-27 Mai 2008    - changed the order of the integration points in
+27 May 2008    - changed the order of the integration points in
                  gauss3d6
 
-31 Mai 2008    - coded a linearized version of the mean rotation MPC
+31 May 2008    - coded a linearized version of the mean rotation MPC
 
 3 June 2008    - implemented pre-tension section to simulate
                  pre-tension in bolts (3D only).
@@ -1625,3 +1625,79 @@ Dec 2002        - started to work on single crystal plasticity
                  purposes
 
 14 Feb 2010    - made a change in results.f
+
+21 Feb 2010    - for contact springs the pressure should be multiplied by
+                 the slave area; this major change was started today.
+
+25 Feb 2010    - changed the proximity check in linkdissimilar.f
+
+7 Mar 2010     - made corrections for ZZS output and ngraph>1
+               - coded slave area calculations for 2D contact applications
+
+13 Mar 2010    - coded the parameter ADJUST on the *CONTACT PAIR card
+               - got rid of IN-FACE SLIDING
+
+15 Mar 2010    - introduced local time stepping for steady state CFD
+               - cleaned up e_c3d_[v1,p,v2,t]rhs.f
+               - previous stable cfd version: 13 Mar 2010
+
+22 Mar 2010    - nodes with largest displacements etc. in 2d structures
+                 are the original node numbers now, not the expanded
+                 numbers
+
+26 Mar 2010    - corrected bodyforce.f
+               - defined the size of xstiff in dyna.c and steadystate.c
+                 as (long long)
+               - corrected an error in frdvector.f
+
+28 Mar 2010    - local time stepping in steady state CFD calculations seems
+                 to work
+
+30 Mar 2010    - made some changes in preparation for the Bishop 4-node
+                 shell element
+
+11 Apr 2010    - changed the dimension of field IL and IU in all sort
+                 routines from 21 to 31.
+               - started to code friction for static contact calculations
+                 (penalty)
+
+18 Apr 2010    - changed the definition of c0 for linear contact springs in
+                 gencontelem.f
+               - changed the search for corresponding master triangles
+                 in gentiedmpc to kneigh=1 and neighbor search 
+
+19 Apr 2010    - plane stress, plane strain and axisymmetric elements 
+                 should be defined in the z=0 plane. This is now checked 
+                 in gen3delem.f
+
+20 Apr 2010    - started to compare frd files for selected test examples
+                 (in addition to dat files)
+
+25 Apr 2010    - changed fields for networks in order to allow for 
+                 geometric data as unknowns
+               - default for *EL FILE is GLOBAL=YES
+
+1 May 2010     - for a gate valve the extent of closure can be solved for:
+                 example for geometric unknowns in networks
+
+17 May 2010    - worked on liquid channels
+               - corrected an error in allocation.f
+
+20 May 2010    - made a correct in dyna.c (in case a dload subroutine has
+                 been defined)
+
+27 May 2010    - improved the linear contact spring relationship
+               - worked on liquid channels
+
+9 June 2010    - modified the linear contact spring relationship slightly
+
+14 June 2010   - started debugging backwater calculations
+
+16 June 2010   - change the convergence rules for changing numbers of 
+                 contact spring elements (LARGE SLIDING)
+
+30 June 2010   - simple backwater calculations work (sluice gate/reservoir)
+
+12 July 2010   - weir calculations work
+
+5 Aug 2010     - made some small corrections

@@ -43,7 +43,8 @@
      &  nk,node,i,j,k,iponoel(*),inoel(3,*),nx(*),ny(*),index,nelem,
      &  nz(*),neighsolidsurf(*),kneigh,nodep(4),iplaneq(3,8),iplanet(4),
      &  iplanew(2,6),nshcon(*),nrhcon(*),ntmat_,neigh,nodel,ifacel,
-     &  ielmat(*),imat,inomat(*),mi(2)
+     &  ielmat(*),imat,inomat(*),mi(2),nonei20(3,12),nonei10(3,6),
+     &  nonei15(3,9)
 !
       real*8 x(*),y(*),z(*),xo(*),yo(*),zo(*),xsolidsurf(*),
      &  yy(*),co(3,*),dh(*),r,cp,rho,shcon(0:3,ntmat_,*),voldtu(2,*),
@@ -72,6 +73,15 @@
      &              1,4,5,1,5,6,1,3,6,1,3,4/
       data iplanet /3,4,2,1/
       data iplanew /2,4,2,5,2,3,1,4,1,5,1,3/
+!
+      data nonei10 /5,1,2,6,2,3,7,3,1,8,1,4,9,2,4,10,3,4/
+!
+      data nonei15 /7,1,2,8,2,3,9,3,1,10,4,5,11,5,6,12,6,4,
+     &  13,1,4,14,2,5,15,3,6/
+!
+      data nonei20 /9,1,2,10,2,3,11,3,4,12,4,1,
+     &  13,5,6,14,6,7,15,7,8,16,8,5,
+     &  17,1,5,18,2,6,19,3,7,20,4,8/
 !
       if(turbulent.ne.0) then
 !
@@ -195,10 +205,32 @@
 !
       enddo loop
 !
-!     middle nodes (interpolation between neighboring end nodes;
-!     still to be done)
+!     middle nodes (interpolation between neighboring end nodes)
 !      
-!
+      do i=1,ne
+         if(lakon(nelem)(1:1).ne.'F') cycle
+         indexe=ipkon(nelem)
+         if(indexe.lt.0) cycle
+         if(lakon(nelem)(4:5).eq.'20') then
+            do j=9,20
+               node=kon(indexe+j)
+               dh(node)=(dh(kon(indexe+nonei20(2,j-8)))+
+     &              dh(kon(indexe+nonei20(3,j-8))))/2.d0
+            enddo
+         elseif(lakon(nelem)(4:5).eq.'10') then
+            do j=5,10
+               node=kon(indexe+j)
+               dh(node)=(dh(kon(indexe+nonei10(2,j-4)))+
+     &              dh(kon(indexe+nonei10(3,j-4))))/2.d0
+            enddo
+         elseif(lakon(nelem)(4:5).eq.'15') then
+            do j=7,15
+               node=kon(indexe+j)
+               dh(node)=(dh(kon(indexe+nonei15(2,j-6)))+
+     &              dh(kon(indexe+nonei15(3,j-6))))/2.d0
+            enddo
+         endif
+      enddo
 !
 !     calculate auxiliary fields
 !         
@@ -206,8 +238,6 @@
          if(inomat(node).eq.0) cycle
          imat=inomat(node)
          temp=vold(0,node)
-c         call materialdata_tg_sec(imat,ntmat_,temp,
-c     &        shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho,physcon)
          call materialdata_cp_sec(imat,ntmat_,temp,shcon,nshcon,cp,
      &        physcon)
 !     
@@ -250,6 +280,13 @@ c     &        shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho,physcon)
 !     freestream conditions
 !     
       if(turbulent.ne.0) then
+         if(dabs(physcon(8)).lt.1.d-20) then
+            write(*,*) '*ERROR in initialcfd: typical length of the'
+            write(*,*) '       computational domain is too small'
+            write(*,*) '       use *VALUES AT INFINITY to define a'
+            write(*,*) '       finite value'
+            stop
+         endif
          xtu=5.5d0*physcon(5)/physcon(8)
 c         xkin=10.d0**(-3.5d0)*xtu
          xkin=10.d0**(-2.d0)*xtu

@@ -401,6 +401,7 @@ c     &        rhcon,nrhcon,rho)
 !
          unt=a1*xkin/max(a1*xtuf,vort*f2)
          umt=unt*rho
+         write(*,*) 'e_c3d_krhs ',dvi,umt
 !
 !        factor F1
 !     
@@ -408,12 +409,12 @@ c     &        rhcon,nrhcon,rho)
 !
 !           k-epsilon model
 !
-            f1=1.d0
+            f1=0.d0
          elseif(turbulent.eq.2) then
 !
 !           q-omega model
 !
-            f1=0.d0
+            f1=1.d0
          else
 !
 !           SST model
@@ -449,6 +450,9 @@ c     &        rhcon,nrhcon,rho)
          tut=gamm*tu/unt-beta*rho*xtuf*xtuf+2.d0*f1m*rho*stuf2*
      &       (dxkin(1)*dxtuf(1)+dxkin(2)*dxtuf(2)+dxkin(3)*dxtuf(3))/
      &       xtuf
+cc         tuk=0.d0
+cc         tut=0.d0
+cc
          do i1=1,3
             dxkin(i1)=dxkin(i1)*umsk
             dxtuf(i1)=dxtuf(i1)*umst
@@ -695,6 +699,7 @@ c     &              dvi,rhcon,nrhcon,rho)
 !     
                unt=a1*xkin/max(a1*xtuf,vort*f2)
                umt=unt*rho
+            write(*,*) 'e_c3d_krhs ',dvi,umt
 !     
 !     factor F1
 !     
@@ -702,12 +707,12 @@ c     &              dvi,rhcon,nrhcon,rho)
 !     
 !     k-epsilon model
 !     
-                  f1=1.d0
+                  f1=0.d0
                elseif(turbulent.eq.2) then
 !     
 !     q-omega model
 !     
-                  f1=0.d0
+                  f1=1.d0
                else
 !     
 !     SST model
@@ -757,10 +762,6 @@ c     &              dvi,rhcon,nrhcon,rho)
             enddo
             idf=idf-1
          enddo
-      endif
-      if(nelem.eq.1055) then
-         write(*,*) 'e_c3d_krhs ',(ffk(j),j=1,nope)
-         write(*,*) 'e_c3d_krhs ',(fft(j),j=1,nope)
       endif
 !
       return

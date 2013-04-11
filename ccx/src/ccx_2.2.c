@@ -34,7 +34,7 @@ int main(int argc,char *argv[])
   
 int *kon=NULL, *nodeboun=NULL, *ndirboun=NULL, *ipompc=NULL,
 	*nodempc=NULL, *nodeforc=NULL, *ndirforc=NULL,
-	*nelemload=NULL,
+        *nelemload=NULL,im,
 	*nnn=NULL, *nactdof=NULL, *icol=NULL,*ics=NULL,
 	*jq=NULL, *mast1=NULL, *irow=NULL, *rig=NULL,
 	*ikmpc=NULL, *ilmpc=NULL, *ikboun=NULL, *ilboun=NULL,
@@ -79,7 +79,7 @@ int nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,nentries=14,
   icascade=0,maxlenmpc,mpcinfo[4],ne1d=0,ne2d=0,infree[4]={0,0,0,0},
   callfrommain,nflow=0,jin=0,irstrt=0,nener=0,jrstrt=0,nenerold,
   nline,ipoinp[2*nentries],*inp=NULL,ntie,ntie_=0,mcs=0,kflag=2,nprop_=0,
-  nprop=0,itpamp=0,iviewfile,nkold,nevdamp_=0;
+  nprop=0,itpamp=0,iviewfile,nkold,nevdamp_=0,npt_=0;
 
 int *meminset=NULL,*rmeminset=NULL;
 
@@ -89,13 +89,11 @@ int nzs_,nk_=0,ne_=0,nset_=0,nalset_=0,nmat_=0,norien_=0,nam_=0,
 double fei[3],tinc,tper,tmin,tmax,*xmodal=NULL,
     alpha,ttime=0.,qaold[2]={0.,0.},physcon[9]={0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
-
 #ifdef CALCULIX_MPI
 MPI_Init(&argc, &argv) ;
 MPI_Comm_rank(MPI_COMM_WORLD, &myid) ;
 MPI_Comm_size(MPI_COMM_WORLD, &nproc) ;
 #endif
-
 
 if(argc==1){printf("Usage: CalculiX.exe -i jobname\n");FORTRAN(stop,());}
 else{
@@ -103,7 +101,7 @@ else{
     if(strcmp1(argv[i],"-i")==0) {
     strcpy(jobnamec,argv[i+1]);strcpy1(jobnamef,argv[i+1],132);jin++;break;}
     if(strcmp1(argv[i],"-v")==0) {
-	printf("\nThis is version version 2.1\n\n");
+	printf("\nThis is version version 2.2\n\n");
 	FORTRAN(stop,());
     }
   }
@@ -115,15 +113,21 @@ else{
   }
 }
 
+#ifdef BAM
+int lop=0,lrestart=0,kstep=1,kinc=1;
+double time[2],dtime;
+FORTRAN(uexternaldb,(&lop,&lrestart,time,&dtime,&kstep,&kinc));
+#endif
+
 FORTRAN(openfile,(jobnamef,output));
 
 printf("\n************************************************************\n\n");
-printf("CalculiX version 2.1, Copyright(C) 1998-2007 Guido Dhondt\n");
+printf("CalculiX version 2.2, Copyright(C) 1998-2007 Guido Dhondt\n");
 printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
 printf("************************************************************\n\n");
-printf("You are using an executable made on Do 4. Mär 20:53:32 CET 2010\n");
+printf("You are using an executable made on Sa 7. Aug 14:22:47 CEST 2010\n");
 fflush(stdout);
 
 istep=0;
@@ -157,7 +161,7 @@ FORTRAN(allocation,(&nload_,&nforc_,&nboun_,&nk_,&ne_,&nmpc_,&nset_,&nalset_,
    &nmat_,&ntmat_,&npmat_,&norien_,&nam_,&nprint_,mi,&ntrans_,
    set,meminset,rmeminset,&ncs_,&namtot_,&ncmat_,&memmpc_,&ne1d,
    &ne2d,&nflow,jobnamec,&irstrt,ithermal,&nener,&nstate_,&istep,
-   inpc,ipoinp,inp,&ntie_,&nbody_,&nprop_,ipoinpc,&nevdamp_));
+   inpc,ipoinp,inp,&ntie_,&nbody_,&nprop_,ipoinpc,&nevdamp_,&npt_));
 
 free(set);free(meminset);free(rmeminset);mt=mi[1]+1;
 
@@ -167,7 +171,7 @@ nload=0;nbody=0;nforc=0;nboun=0;nk=0;nmpc=0;nam=0;
 
 /* caveat: change nlabel in radmatrix.f and expand.c as well 
    if changing next line, as well as in storeresidual.f */
-nlabel=27;
+nlabel=29;
 
 while(istat>=0) {
 
@@ -366,8 +370,12 @@ while(istat>=0) {
 
     /* temporary fields for cyclic symmetry calculations */
 
-    if(ncs_>0){
-      ics=NNEW(int,24*ncs_);
+    if((ncs_>0)||(npt_>0)){
+      if(2*npt_>24*ncs_){
+	ics=NNEW(int,2*npt_);
+      }else{
+	ics=NNEW(int,24*ncs_);
+      }
       dcs=NNEW(double,30*ncs_);
     }
 
@@ -381,10 +389,12 @@ while(istat>=0) {
     }
     else{
       RENEW(veold,double,mt*nk_);
-      memset(&veold[mt*nk],0,sizeof(double)*mt*(nk_-nk));
+//      memset(&veold[mt*nk],0,sizeof(double)*mt*(nk_-nk));
+      DMEMSET(veold,mt*nk,mt*nk_,0.);
     }
     RENEW(vold,double,mt*nk_);
-    memset(&vold[mt*nk],0,sizeof(double)*mt*(nk_-nk));
+//    memset(&vold[mt*nk],0,sizeof(double)*mt*(nk_-nk));
+    DMEMSET(vold,mt*nk,mt*nk_,0.);
 
  /*   if(nmethod != 4){free(accold);}*/
 
@@ -486,6 +496,8 @@ while(istat>=0) {
             qaold,output,typeboun,inpc,&nline,ipoinp,inp,tieset,tietol,
             &ntie,fmpc,cbody,ibody,xbody,&nbody,&nbody_,xbodyold,&nam_,
 	    ielprop,&nprop,&nprop_,prop,&itpamp,&iviewfile,ipoinpc,&cfd));
+
+  if((nmethod!=1)||(iperturb[0]<2))icascade=0;
 
 /*	FORTRAN(writeboun,(nodeboun,ndirboun,xboun,typeboun,&nboun));*/
 
@@ -676,7 +688,8 @@ while(istat>=0) {
 
     if(ncs_>0){
       RENEW(ics,int,ncs_);
-      free(dcs);}
+      free(dcs);
+    }else if(npt_>0){free(ics);}
 
  
   /* tied contact constraints: generate appropriate MPC's */
@@ -684,7 +697,7 @@ while(istat>=0) {
   tiedcontact(&ntie, tieset, &nset, set,istartset, iendset, ialset,
        lakon, ipkon, kon,tietol,&nmpc, &mpcfree, &memmpc_,
        &ipompc, &labmpc, &ikmpc, &ilmpc,&fmpc, &nodempc, &coefmpc,
-       ithermal, co, vold,&cfd,&nmpc_,mi);
+       ithermal, co, vold,&cfd,&nmpc_,mi,&nk);
 
  }else{
 
@@ -844,8 +857,8 @@ while(istat>=0) {
     for(i=1;i<=nk;++i)
 	nnn[i-1]=i;
 	
-//    if((icascade==0)&&(isolver!=6)){
-    if((icascade==10)&&(isolver!=6)){
+    if((icascade==0)&&(isolver!=6)){
+//    if((icascade==10)&&(isolver!=6)){
 
 	/* renumbering the nodes */
 	

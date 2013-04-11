@@ -52,7 +52,7 @@
      &  ntrans,inotr(2,*),nam,iponoelmax,iperturb,numnod,itransaxial,
      &  rig(*),nmethod,nset,istartset(*),iendset(*),ialset(*),
      &  ielprop(*),idir,indexref,indexold,idofold,idold,indexnew,
-     &  idofnew,idnew,ksol,lsol,nmpc0,nmpc01,nmpcdif,mi(2)
+     &  idofnew,idnew,ksol,lsol,nmpc0,nmpc01,nmpcdif,mi(2),nope
 !
       integer iponor(2,*),knor(*),ixfree,ikfree
 !
@@ -192,16 +192,11 @@ c               if(nodempc(2,index).gt.3) then
                do j=1,8
                   node=kon(indexe+j)
                   mpc=0
-c                  write(*,*) 'isochoric condition in node ',node
                   label(1:9)='ISOCHORIC'
                   write(label(10:20),'(i11)') node
                   nmpcdif=nmpc-nmpc0
                   call cident20(labmpc(nmpc01),label,nmpcdif,id)
                   id=id+nmpc0
-c                  write(*,*) 'newlabel ',label
-c                  do k=1,nmpc
-c                     write(*,*) 'oldlabel ',k,labmpc(k)
-c                  enddo
                   if(id.gt.0) then
                      if(labmpc(id).eq.label) then
                         mpc=id
@@ -387,9 +382,6 @@ c                  enddo
                   b(3,1)=a(1,2)*a(2,3)-a(2,2)*a(1,3)
                   b(3,2)=a(2,1)*a(1,3)-a(1,1)*a(2,3)
                   b(3,3)=a(1,1)*a(2,2)-a(1,2)*a(2,1)
-c                  write(*,*) 'b(1,j)',b(1,1),b(1,2),b(1,3)
-c                  write(*,*) 'b(2,j)',b(2,1),b(2,2),b(2,3)
-c                  write(*,*) 'b(3,j)',b(3,1),b(3,2),b(3,3)
 !     
                   index=ipompc(mpc)
                   do
@@ -397,21 +389,14 @@ c                  write(*,*) 'b(3,j)',b(3,1),b(3,2),b(3,3)
                         coefmpc(index)=1.d0
                         idof=8*(nodempc(1,index)-1)
      &                       +nodempc(2,index)
-c                        write(*,*) 
-c     &                   'gen3delem1 node,idir',nodempc(1,index),
-c     &                       nodempc(2,index)
                         call nident(ikboun,idof,nboun,id)
                         xboun(ilboun(id))=xboun(ilboun(id))+
      &                       a(1,1)*b(1,1)+a(1,2)*b(1,2)+a(1,3)*b(1,3)
      &                       -1.d0/xj
-c                     write(*,*) 'nonlinmpcboun ',nodempc(1,index),
-c     &                        nodempc(2,index),ilboun(id),
-c     &                       xboun(ilboun(id))
                         exit
                      else
                         node=nodempc(1,index)
                         idir=nodempc(2,index)
-c                        write(*,*) 'gen3delem2 node,idir',node,idir
                         do k=1,7
                            if(kon(indexe+neigh(k,j)).eq.node) then
                               if(k.eq.1) then
@@ -495,8 +480,6 @@ c                        write(*,*) 'gen3delem2 node,idir',node,idir
                               exit
                            endif
                         enddo
-c                        write(*,*) 'gen3delem2 node,idir',node,idir,
-c     &                    coefmpc(index)
                      endif
                      index=nodempc(3,index)
                   enddo
@@ -505,58 +488,91 @@ c     &                    coefmpc(index)
             endif
          enddo
 !
+!        if there is any plane stress, plane strain or axisymmetric
+!        element the structure should lie in the z=0 plane
+!
+         if(inoelfree.ne.0) then
+            do i=1,ne
+               if(ipkon(i).lt.0) cycle
+               if((lakon(i)(1:2).eq.'CP').or.
+     &              (lakon(i)(1:2).eq.'CA')) then
+                  indexe=ipkon(i)
+                  if(lakon(i)(4:4).eq.'6') then
+                     nope=6
+                  else
+                     nope=8
+                  endif
+                  do j=1,nope
+                     node=kon(indexe+j)
+                     if(dabs(co(3,node)).gt.0.d0) then
+                        write(*,*) '*ERROR in gen3delem. The structure'
+                        write(*,*) '       contains plane stress, plane'
+                        write(*,*) '       strain or axisymmetric'
+                        write(*,*) '       elements and should lie in '
+                        write(*,*) '       the z=0 plane. This is at'
+                        write(*,*) '       least not the case for node',
+     &                       node
+                        stop
+                     endif
+                  enddo
+               endif
+            enddo
+         endif
+!
 !        1D and 2D elements
 !
-         do i=1,ne
-            if(ipkon(i).lt.0) cycle
-            if((lakon(i)(1:2).eq.'CP').or.
+         if(inoelfree.ne.0) then
+            do i=1,ne
+               if(ipkon(i).lt.0) cycle
+               if((lakon(i)(1:2).eq.'CP').or.
      &              (lakon(i)(1:1).eq.'S').or.
      &              (lakon(i)(1:2).eq.'CA')) then
 !
-               call gen3dfrom2d(i,kon,ipkon,lakon,ne,iponor,xnor,knor,
+                 call gen3dfrom2d(i,kon,ipkon,lakon,ne,iponor,xnor,knor,
      &           thicke,offset,ntrans,inotr,trab,ikboun,ilboun,nboun,
      &           nboun_,nodeboun,ndirboun,xboun,iamboun,typeboun,ipompc,
      &           nodempc,coefmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,
      &           nk,nk_,co,rig,nmethod,iperturb,ithermal,mi,nam)
 !            
-            elseif(lakon(i)(1:1).eq.'B') then
-               call gen3dfrom1d(i,kon,ipkon,lakon,ne,iponor,xnor,knor,
-     &              thicke,ntrans,inotr,trab,nk,nk_,co,offset)
-            endif
-!
-            if(lakon(i)(1:4).eq.'CPE6') then
-               lakon(i)(1:7)='C3D15 E'
-            elseif(lakon(i)(1:5).eq.'CPE8R') then
-               lakon(i)(1:7)='C3D20RE'
-            elseif(lakon(i)(1:4).eq.'CPE8') then
-               lakon(i)(1:7)='C3D20 E'
-            elseif(lakon(i)(1:4).eq.'CPS6') then
-               lakon(i)(1:7)='C3D15 S'
-            elseif(lakon(i)(1:5).eq.'CPS8R') then
-               lakon(i)(1:7)='C3D20RS'
-            elseif(lakon(i)(1:4).eq.'CPS8') then
-               lakon(i)(1:7)='C3D20 S'
-            elseif(lakon(i)(1:4).eq.'CAX6') then
-               lakon(i)(1:7)='C3D15 A'
-            elseif(lakon(i)(1:5).eq.'CAX8R') then
-               lakon(i)(1:7)='C3D20RA'
-            elseif(lakon(i)(1:4).eq.'CAX8') then
-               lakon(i)(1:7)='C3D20 A'
-            elseif(lakon(i)(1:2).eq.'S6') then
-               lakon(i)(1:7)='C3D15 L'
-            elseif(lakon(i)(1:3).eq.'S8R') then
-               lakon(i)(1:7)='C3D20RL'
-            elseif(lakon(i)(1:2).eq.'S8') then
-               lakon(i)(1:7)='C3D20 L'
-            elseif(lakon(i)(1:4).eq.'B32R') then
-               lakon(i)(1:7)='C3D20RB'
-            elseif(lakon(i)(1:1).eq.'B') then
-               lakon(i)(1:7)='C3D20 B'
-            endif
-         enddo
-!
-!                 check whether the coefficient of the dependent
-!                 terms in ISOCHORIC MPC's is not zero
+              elseif(lakon(i)(1:1).eq.'B') then
+                 call gen3dfrom1d(i,kon,ipkon,lakon,ne,iponor,xnor,knor,
+     &                thicke,ntrans,inotr,trab,nk,nk_,co,offset)
+              endif
+!     
+              if(lakon(i)(1:4).eq.'CPE6') then
+                 lakon(i)(1:7)='C3D15 E'
+              elseif(lakon(i)(1:5).eq.'CPE8R') then
+                 lakon(i)(1:7)='C3D20RE'
+              elseif(lakon(i)(1:4).eq.'CPE8') then
+                 lakon(i)(1:7)='C3D20 E'
+              elseif(lakon(i)(1:4).eq.'CPS6') then
+                 lakon(i)(1:7)='C3D15 S'
+              elseif(lakon(i)(1:5).eq.'CPS8R') then
+                 lakon(i)(1:7)='C3D20RS'
+              elseif(lakon(i)(1:4).eq.'CPS8') then
+                 lakon(i)(1:7)='C3D20 S'
+              elseif(lakon(i)(1:4).eq.'CAX6') then
+                 lakon(i)(1:7)='C3D15 A'
+              elseif(lakon(i)(1:5).eq.'CAX8R') then
+                 lakon(i)(1:7)='C3D20RA'
+              elseif(lakon(i)(1:4).eq.'CAX8') then
+                 lakon(i)(1:7)='C3D20 A'
+              elseif(lakon(i)(1:2).eq.'S6') then
+                 lakon(i)(1:7)='C3D15 L'
+              elseif(lakon(i)(1:3).eq.'S8R') then
+                 lakon(i)(1:7)='C3D20RL'
+              elseif(lakon(i)(1:2).eq.'S8') then
+                 lakon(i)(1:7)='C3D20 L'
+              elseif(lakon(i)(1:4).eq.'B32R') then
+                 lakon(i)(1:7)='C3D20RB'
+              elseif(lakon(i)(1:1).eq.'B') then
+                 lakon(i)(1:7)='C3D20 B'
+              endif
+           enddo
+        endif
+!     
+!     check whether the coefficient of the dependent
+!     terms in ISOCHORIC MPC's is not zero
 !
          if(isochoric) then
             do i=1,nmpc

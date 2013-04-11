@@ -66,7 +66,8 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
 	  else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
 	  else if (strcmp1(&lakon[8*i+3],"10")==0)nope=10;
-	  else if (strcmp1(&lakon[8*i+3],"4")==0)nope=4;
+	  else if ((strcmp1(&lakon[8*i+3],"4")==0)||
+                   (strcmp1(&lakon[8*i+2],"4")==0)) nope=4;
 	  else if (strcmp1(&lakon[8*i+3],"15")==0)nope=15;
 	  else if (strcmp1(&lakon[8*i+3],"6")==0)nope=6;
 	  else if (strcmp1(&lakon[8*i],"E")==0){
@@ -74,11 +75,24 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      nope=atoi(lakonl);}
 	  else continue;
 	  
+          /* displacement degrees of freedom */
+
 	  for(j=0;j<nope;++j){
 	      node=kon[indexe+j]-1;
 	      for(k=1;k<4;++k){
 		  nactdof[mt*node+k]=1;
 	      }
+	  }
+
+	  /* rotational degrees of freedom for the SB4 element */
+
+	  if(strcmp1(&lakon[8*i+2],"4")==0){
+	    for(j=0;j<nope;++j){
+	      node=kon[indexe+j]-1;
+	      for(k=5;k<8;++k){
+		nactdof[mt*node+k]=1;
+	      }
+	    }
 	  }
       }
   }
@@ -126,22 +140,21 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   /* subtracting the SPC and MPC nodes */
 
   for(i=0;i<*nboun;++i){
-      if(ndirboun[i]>3){continue;}
+      if(ndirboun[i]>mi[1]){continue;}
       nactdof[mt*(nodeboun[i]-1)+ndirboun[i]]=0;
   }
 
   for(i=0;i<*nmpc;++i){
     index=ipompc[i]-1;
-    if(nodempc[3*index+1]>3) continue;
+    if(nodempc[3*index+1]>mi[1]) continue;
     nactdof[mt*(nodempc[3*index]-1)+nodempc[3*index+1]]=0;
   }
  
   /* numbering the active degrees of freedom */
   
   neq[0]=0;
-  jmax=4;if(mi[1]+1<4){jmax=mi[1]+1;}
   for(i=0;i<*nk;++i){
-    for(j=1;j<jmax;++j){
+    for(j=1;j<mt;++j){
 	if(nactdof[mt*(nnn[i]-1)+j]!=0){
         if((*ithermal<2)||(*ithermal>=3)){
           ++neq[0];
@@ -201,18 +214,18 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  nope=atoi(lakonl);}
       else continue;
       
-      for(jj=0;jj<3*nope;++jj){
+      for(jj=0;jj<mi[1]*nope;++jj){
 	
-	j=jj/3;
-	k=jj-3*j;
+	j=jj/mi[1];
+	k=jj-mi[1]*j;
 	
 	node1=kon[indexe+j];
 	jdof1=nactdof[mt*(node1-1)+k+1];
 	
-	for(ll=jj;ll<3*nope;++ll){
+	for(ll=jj;ll<mi[1]*nope;++ll){
 	  
-	  l=ll/3;
-	  m=ll-3*l;
+	  l=ll/mi[1];
+	  m=ll-mi[1]*l;
 	  
 	  node2=kon[indexe+l];
 	  jdof2=nactdof[mt*(node2-1)+m+1];

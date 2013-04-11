@@ -20,7 +20,7 @@
      &  coefmpc,nmpc,ikmpc,ilmpc,mpcfree,rcs,zcs,ics,nr,nz,
      &  rcs0,zcs0,labmpc,
      &  mcs,triangulation,csab,xn,yn,zn,phi,noded,ncsnodes,
-     &  nodesonaxis,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,nzcg,jcs,lcs,
+     &  rcscg,rcs0cg,zcscg,zcs0cg,nrcg,nzcg,jcs,lcs,
      &  kontri,straight,ne,ipkon,kon,lakon,ifacetet,inodface,ncounter,
      &  jobnamec,vold,cfd,mi)
 !
@@ -28,7 +28,7 @@
 !
       implicit none
 !     
-      logical triangulation,nodesonaxis,interpolation
+      logical triangulation,interpolation
 !     
       character*1 c
       character*3 m1,m2,m3
@@ -38,7 +38,7 @@
       character*132 jobnamec(*),fntria
 !     
       integer ipompc(*),nodempc(3,*),nneigh,ne,ipkon(*),kon(*),
-     &     j,k,nk,nmpc,mpcfree,ics(*),nterms,
+     &     j,k,nk,nmpc,mpcfree,ics(*),nterms,ncyclicsymmetrymodel,
      &     nr(*),nz(*),noded,nodei,ikmpc(*),ilmpc(*),kontri(3,*),
      &     number,idof,ndir,node,ncsnodes,id,mpcfreeold,
      &     mcs,nrcg(*),nzcg(*),jcs(*),lcs(*),nodef(8),
@@ -50,13 +50,14 @@
      &  x2,y2,z2,x3,y3,z3,rcscg(*),rcs0cg(*),zcscg(*),zcs0cg(*),
      &  straight(9,*),ratio(8),vold(0:mi(2),*)
 !
-      save netri
+      save netri,ncyclicsymmetrymodel
+!
+      data ncyclicsymmetrymodel /0/
 !     
 !     latin hypercube positions in a 3 x 3 matrix
 !     
       data lathyp /1,2,3,1,3,2,2,1,3,2,3,1,3,1,2,3,2,1/
 !     
-c      nneigh=1
       nneigh=10
 !     
       xap=co(1,noded)-csab(1)
@@ -95,16 +96,16 @@ c      nneigh=1
 !     sides of the mpc's do no agree: interpolation is
 !     necessary. 
 !     
-         write(*,*) '*WARNING in generatecycmpcs: no cyclic'
-         write(*,*) '         symmetric partner found for'
-         write(*,*) '         dependent node ',noded,'.'
-         write(*,*) '         allowed tolerance:',tolloc
-         write(*,*) '         best partner node number:',nodei
-         write(*,*) '         actual distance in a radial plane: ',
-     &           dsqrt((rp-rcs0(node))**2+(zp-zcs0(node))**2)
-         write(*,*) '         Remedy: the node is connected to an'
-         write(*,*) '         independent element side.'
-         write(*,*)
+c         write(*,*) '*WARNING in generatecycmpcs: no cyclic'
+c         write(*,*) '         symmetric partner found for'
+c         write(*,*) '         dependent node ',noded,'.'
+c         write(*,*) '         allowed tolerance:',tolloc
+c         write(*,*) '         best partner node number:',nodei
+c         write(*,*) '         actual distance in a radial plane: ',
+c     &           dsqrt((rp-rcs0(node))**2+(zp-zcs0(node))**2)
+c         write(*,*) '         Remedy: the node is connected to an'
+c         write(*,*) '         independent element side.'
+c         write(*,*)
 !     
          interpolation=.true.
 !     
@@ -115,10 +116,21 @@ c      nneigh=1
      &           inodface)
             triangulation=.true.
 !
-            ipos=index(jobnamec(1),char(0))
-            fntria(1:ipos-1)=jobnamec(1)(1:ipos-1)
-            fntria(ipos:ipos+3)=".tri"
-            do i=ipos+4,132
+            fntria(1:28)='TriMasterCyclicSymmetryModel'
+            ncyclicsymmetrymodel=ncyclicsymmetrymodel+1
+            if(ncyclicsymmetrymodel.lt.10) then
+               write(fntria(29:29),'(i1)')ncyclicsymmetrymodel
+               ipos=30
+            elseif(ncyclicsymmetrymodel.lt.100) then
+               write(fntria(29:30),'(i2)')ncyclicsymmetrymodel
+               ipos=31
+            else
+               write(*,*) '*ERROR in generatecycmpcs: no more than'
+               write(*,*) '       99 cyclic symmetry model cards'
+               write(*,*) '       allowed'
+               stop
+            endif
+            do i=ipos,132
                fntria(i:i)=' '
             enddo
 !
@@ -176,10 +188,10 @@ c      nneigh=1
 !  
          ier=0
 !
-         call linkdissimilar(co,nk,ics,csab,ncsnodes,
-     &        rcscg,rcs0cg,zcscg,zcs0cg,nrcg,nzcg,jcs,kontri,straight,
-     &        lcs,nodef,ratio,nterms,rp,zp,netri,
-     &        nodesonaxis,nodei,ifacetet,inodface,noded,tolloc,xn,yn,
+         call linkdissimilar(co,csab,
+     &        rcscg,rcs0cg,zcscg,zcs0cg,nrcg,nzcg,straight,
+     &        nodef,ratio,nterms,rp,zp,netri,
+     &        nodei,ifacetet,inodface,noded,xn,yn,
      &        zn,ier)
 !
          if(ier.ne.0) then
@@ -187,49 +199,8 @@ c      nneigh=1
             return
          endif
 !
-!        moving the dependent node such that is corresponds exactly
-!        to the independent node
-!     
-c         xap=co(1,nodei)-csab(1)
-c         yap=co(2,nodei)-csab(2)
-c         zap=co(3,nodei)-csab(3)
-c!     
-c         zp=xap*xn+yap*yn+zap*zn
-c         rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
-c!     
-c         x2=(xap-zp*xn)/rp
-c         y2=(yap-zp*yn)/rp
-c         z2=(zap-zp*zn)/rp
-c         x3=yn*z2-y2*zn
-c         y3=x2*zn-xn*z2
-c         z3=xn*y2-x2*yn
-c!     
-c         co(1,noded)=csab(1)+zp*xn+rp*(x2*dcos(phi)-x3*dsin(phi))
-c         co(2,noded)=csab(2)+zp*yn+rp*(y2*dcos(phi)-y3*dsin(phi))
-c         co(3,noded)=csab(3)+zp*zn+rp*(z2*dcos(phi)-z3*dsin(phi))
       else
          if(ics(node).lt.0) return
-!
-!        moving the dependent node such that is corresponds exactly
-!        to the independent node
-!     
-c         xap=co(1,nodei)-csab(1)
-c         yap=co(2,nodei)-csab(2)
-c         zap=co(3,nodei)-csab(3)
-!     
-c         zp=xap*xn+yap*yn+zap*zn
-c         rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
-!     
-c         x2=(xap-zp*xn)/rp
-c         y2=(yap-zp*yn)/rp
-c         z2=(zap-zp*zn)/rp
-c         x3=yn*z2-y2*zn
-c         y3=x2*zn-xn*z2
-c         z3=xn*y2-x2*yn
-!     
-c         co(1,noded)=csab(1)+zp*xn+rp*(x2*dcos(phi)-x3*dsin(phi))
-c         co(2,noded)=csab(2)+zp*yn+rp*(y2*dcos(phi)-y3*dsin(phi))
-c         co(3,noded)=csab(3)+zp*zn+rp*(z2*dcos(phi)-z3*dsin(phi))
       endif
 !     
 !     generating the mechanical MPC's; the generated MPC's are for

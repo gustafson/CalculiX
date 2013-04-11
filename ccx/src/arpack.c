@@ -75,7 +75,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   char bmat[2]="G", which[3]="LM", howmny[2]="A", fneig[132]="",
       description[13]="            ";
 
-  int *inum=NULL,k,ido,dz,iparam[11],ipntr[11],lworkl,ngraph=1,
+  int *inum=NULL,k,ido,dz,iparam[11],ipntr[11],lworkl,ngraph=1,im,
     info,rvec=1,*select=NULL,lfin,j,lint,iout,ielas=1,icmd=0,mt=mi[1]+1,
     iinc=1,istep=1,nev,ncv,mxiter,jrow,*ipobody=NULL,inewton=0,ifreebody,
     mass[2]={1,1}, stiffness=1, buckling=0, rhsi=0, intscheme=0,noddiam=-1,
@@ -88,7 +88,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     *enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,
     *physcon=NULL,*qfx=NULL,*qfn=NULL,tol,fmin,fmax,pi,*cgr=NULL,
     *xloadold=NULL,reltime,*vr=NULL,*vi=NULL,*stnr=NULL,*stni=NULL,
-    *vmax=NULL,*stnmax=NULL,*cs=NULL;
+    *vmax=NULL,*stnmax=NULL,*cs=NULL,*springarea=NULL;
 
   FILE *f1;
 
@@ -174,7 +174,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-               fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
+               fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));
   }else{
      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	       elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -188,7 +188,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-               fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
+               fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));
   }
   free(f);free(v);free(fn);free(stx);if(*ithermal>1){free(qfx);}
   iout=1;
@@ -216,7 +216,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mi,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
 	      physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
-		      &coriolis,ibody,xloadold,&reltime,veold));
+		      &coriolis,ibody,xloadold,&reltime,veold,springarea));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -231,7 +231,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mi,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
               physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
-		      &coriolis,ibody,xloadold,&reltime,veold));
+		      &coriolis,ibody,xloadold,&reltime,veold,springarea));
   }
 
   free(fext);
@@ -539,7 +539,8 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	stiini=NNEW(double,6*mi[0]**ne);
 	enerini=NNEW(double,mi[0]**ne);}
 
-    memset(&v[0],0.,sizeof(double)*mt**nk);
+//    memset(&v[0],0.,sizeof(double)*mt**nk);
+    DMEMSET(v,0,mt**nk,0.);
     if(*iperturb==0){
       FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	    stx,elcon,
@@ -554,7 +555,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
             sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-            nelemload,nload,ikmpc,ilmpc,&istep,&iinc));}
+            nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));}
     else{
       FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	    stx,elcon,
@@ -569,7 +570,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,sti,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-            nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
+            nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));
     }
     free(eei);
     if(*nener==1){

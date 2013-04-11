@@ -29,12 +29,12 @@
 !
       integer node1,node2,ipe(*),ime(4,*),indexl,iactiveline(3,*),
      &  nactiveline,id,indexi,intersec(2,*),nvertex,lvertex(13),i,
-     &  idummy,ifreeintersec,nopes,nintersec,j,itri,index1,index2,
-     &  k,node,ithree,idin,r1,mi(2)
+     &  ifreeintersec,nopes,nintersec,j,itri,index1,index2,
+     &  k,node,ithree,idin,mi(2)
 !
       real*8 xntersec(3,*),pvertex(3,*),pr(3),xm(3),xn(3),co(3,*),
-     &  dd,xl2(3,*),rc(3),dc(3),al,dummy(3),ratio(8),dist,xil,
-     &  etl,al2,inter(3),err,rand,vold(0:mi(2),*)
+     &  dd,xl2(3,*),rc(3),dc(3),al,ratio(8),dist,xil,
+     &  etl,al2,inter(3),err,vold(0:mi(2),*)
 !
       data ithree /3/
 !
@@ -43,8 +43,6 @@
 !     order in field ime and the invert flag is set to true
 !
       err=1d-6
-c      call time(r1)
-c      call srand(REAL(MOD(r1,1000)))
       invert=.false.
       if(node2.lt.node1) then
          node=node1
@@ -121,18 +119,18 @@ c      call srand(REAL(MOD(r1,1000)))
 !
 !        remove the line from the active stack
 !
-!        restore intersec/ifreeintersec
-!
-         indexi=iactiveline(3,id)
-         do
-!
-! Inversion
-!
-            idummy=indexi
-            indexi=intersec(2,indexi)
-            intersec(2,idummy)=0
-            if(indexi.eq.0) exit
-         enddo
+c!        restore intersec/ifreeintersec
+c!
+c         indexi=iactiveline(3,id)
+c         do
+c!
+c! Inversion
+c!
+c            idummy=indexi
+c            indexi=intersec(2,indexi)
+c            intersec(2,idummy)=0
+c            if(indexi.eq.0) exit
+c         enddo
 !
 !        restore iactiveline/nactiveline
 !
@@ -147,10 +145,8 @@ c      call srand(REAL(MOD(r1,1000)))
 !        line was not active: check for intersections
 !
          do i=1,3
-c            pr(i)=co(i,node2)-co(i,node1)+err*rand(1)
              pr(i)=co(i,node2)+vold(i,node2)-
      &         co(i,node1)-vold(i,node1)
-c         WRITE(*,*) "pr",i,pr(i) 
          enddo
 !
 !        normal on a plane through the line and vector xn
@@ -171,15 +167,11 @@ c         WRITE(*,*) "pr",i,pr(i)
                do i=1,3
                   rc(i)=co(i,node1)+vold(i,node1)-xl2(i,j)
                   dc(i)=xl2(i,j+1)-xl2(i,j)
-c                  rc(i)=co(i,node1)-xl2(i,j)+err*rand(1)
-c                  dc(i)=xl2(i,j+1)-xl2(i,j)+err*rand(1)
                enddo
             else
                do i=1,3
                   rc(i)=co(i,node1)+vold(i,node1)-xl2(i,j)
                   dc(i)=xl2(i,1)-xl2(i,j)
-c                 rc(i)=co(i,node1)-xl2(i,j)+err*rand(1)
-c                  dc(i)=xl2(i,1)-xl2(i,j)+err*rand(1)
                enddo
             endif
             al=(xm(1)*rc(1)+xm(2)*rc(2)+xm(3)*rc(3))/
@@ -195,13 +187,20 @@ c                  dc(i)=xl2(i,1)-xl2(i,j)+err*rand(1)
             do i=1,3
                inter(i)=xl2(i,j)+al*dc(i)
             enddo
-c      al2=(pr(1)*(inter(1)-co(1,node1))+pr(2)*(inter(2)-co(2,node1))+
-c     & pr(3)*(inter(3)-co(3,node1)))/(pr(1)**2+pr(2)**2+pr(3)**2)
-      al2=(pr(1)*(inter(1)-co(1,node1)-vold(1,node1))+
-     & pr(2)*(inter(2)-co(2,node1)-vold(2,node1))+
-     & pr(3)*(inter(3)-co(3,node1)-vold(3,node1)))/
-     &(pr(1)**2+pr(2)**2+pr(3)**2)
-            if((al2.ge.1.d0).or.(al2.le.0.d0)) cycle 
+!
+!
+!
+            al2=(((inter(1)-co(1,node1)-vold(1,node1))*pr(1)+
+     &        (inter(2)-co(2,node1)-vold(2,node1))*pr(2)+
+     &        (inter(3)-co(3,node1)-vold(3,node1))*pr(3))-
+     &        (pr(1)*xn(1)+pr(2)*xn(2)+pr(3)*xn(3))*
+     &        ((inter(1)-co(1,node1)-vold(1,node1))*xn(1)+
+     &        (inter(2)-co(2,node1)-vold(2,node1))*xn(2)+
+     &        (inter(3)-co(3,node1)-vold(3,node1))*xn(3)))/
+     &        ((pr(1)**2+pr(2)**2+pr(3)**2)-
+     &    (pr(1)*xn(1)+pr(2)*xn(2)+pr(3)*xn(3))**2)
+!
+            if((al2.ge.1.0d0).or.(al2.le.0.0d0)) cycle 
 !
             if(nintersec.eq.0) then
                nactiveline=nactiveline+1
@@ -231,8 +230,8 @@ c     & pr(3)*(inter(3)-co(3,node1)))/(pr(1)**2+pr(2)**2+pr(3)**2)
             do i=1,3
                xntersec(i,ifreeintersec)=inter(i)
             enddo
-            call attach(xl2,xntersec(1,ifreeintersec),nopes,
-     &           ratio,dist,xil,etl)
+            call attachline(xl2,xntersec(1,ifreeintersec),nopes,
+     &           ratio,dist,xil,etl,xn)
 c            ifreeintersec=intersec(2,ifreeintersec)
             intersec(2,ifreeintersec)=0
          enddo
@@ -249,43 +248,39 @@ c            ifreeintersec=intersec(2,ifreeintersec)
 !
 !           measuring the distance from node1
 !
-c            if(((xntersec(1,index1)-co(1,node1))**2+
-c     &          (xntersec(2,index1)-co(2,node1))**2+
-c     &          (xntersec(3,index1)-co(3,node1))**2).gt.
-c     &         ((xntersec(1,index2)-co(1,node1))**2+
-c     &          (xntersec(2,index2)-co(2,node1))**2+
-c     &          (xntersec(3,index2)-co(3,node1))**2) ) then
-          if(((xntersec(1,index1)-co(1,node1)-vold(1,node1))**2+
-     &     (xntersec(2,index1)-co(2,node1)-vold(2,node1))**2+
-     &     (xntersec(3,index1)-co(3,node1)-vold(3,node1))**2).gt.
-     &     ((xntersec(1,index2)-co(1,node1)-vold(1,node1))**2+
-     &     (xntersec(2,index2)-co(2,node1)-vold(2,node1))**2+
-     &     (xntersec(3,index2)-co(3,node1)-vold(3,node1))**2) )then
-!
+            if(((xntersec(1,index1)-co(1,node1)-vold(1,node1))**2+
+     &           (xntersec(2,index1)-co(2,node1)-vold(2,node1))**2+
+     &           (xntersec(3,index1)-co(3,node1)-vold(3,node1))**2).gt.
+     &           ((xntersec(1,index2)-co(1,node1)-vold(1,node1))**2+
+     &           (xntersec(2,index2)-co(2,node1)-vold(2,node1))**2+
+     &           (xntersec(3,index2)-co(3,node1)-vold(3,node1))**2) )
+     &               then
+!     
                	   iactiveline(3,id+1)=index2
                    intersec(2,index2)=index1
                    intersec(2,index1)=0
             endif
          endif
 !     
-         indexi=iactiveline(3,id+1)
-         if((indexi.gt.0).and.(nintersec.gt.0)) then
+c         indexi=iactiveline(3,id+1)
+c         if((indexi.gt.0).and.(nintersec.gt.0)) then
+         if(nintersec.gt.0) then
+            indexi=iactiveline(3,id+1)
             nvertex=nvertex+1
             lvertex(nvertex)=intersec(1,indexi)
             do i=1,3
                pvertex(i,nvertex)=xntersec(i,indexi)
             enddo
             indexi=intersec(2,indexi)
-!
-!           check whether there is a second intersection
-!
-c            if((indexi.ne.0).or.(nintersec.eq.2)) then
-           if((indexi.ne.0)) then
+!     
+!     check whether there is a second intersection
+!     
+            if((indexi.ne.0)) then
                nvertex=nvertex+1
-!
-!              for two intersections the orientation of the line
-!              is important
-!
+!     
+!     for two intersections the orientation of the line
+!     is important
+!     
                if(invert) then
                   lvertex(nvertex)=lvertex(nvertex-1)
                   lvertex(nvertex-1)=intersec(1,indexi)
@@ -301,7 +296,7 @@ c            if((indexi.ne.0).or.(nintersec.eq.2)) then
                endif
             endif
          endif
-!
+!     
 !        if there are no intersections the line has to be set
 !        active if node1 lies inside
 !

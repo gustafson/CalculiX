@@ -28,7 +28,7 @@
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
      &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
-     &  coriolis,ibody,xloadold,reltime,veold)
+     &  coriolis,ibody,xloadold,reltime,veold,springarea)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !
@@ -60,7 +60,7 @@
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
      &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(60,60),ff(60),
      &  sti(6,mi(1),*),sm(60,60),stx(6,mi(1),*),adb(*),aub(*),
-     &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),
+     &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),springarea(*),
      &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),
      &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*)
 !
@@ -164,6 +164,10 @@ c      elseif(mass.or.buckling) then
            nope=6
         elseif(lakon(i)(1:2).eq.'ES') then
            read(lakon(i)(8:8),'(i1)') nope
+!     
+!          local contact spring number
+!     
+           if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
         else
            cycle
         endif
@@ -224,7 +228,8 @@ c        write(*,*) 'mafillsm ',i,bodyf(1),bodyf(2),bodyf(3)
      &          nplicon,plkcon,nplkcon,xstiff,npmat_,
      &          dtime,matname,mi(1),ncmat_,mass(1),stiffness,buckling,
      &          rhsi,intscheme,ttime,time,istep,iinc,coriolis,xloadold,
-     &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold)
+     &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
+     &          springarea)
 !
         do jj=1,3*nope
 !

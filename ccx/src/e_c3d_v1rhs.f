@@ -386,7 +386,7 @@ cccc
 !     
             unt=a1*xkin/max(a1*xtuf,vort*f2)
             umt=unt*rho
-c            write(*,*) 'e_c3d_v1rhs ',dvi,umt
+            write(*,*) 'e_c3d_v1rhs ',dvi,umt
 !
             do i1=1,3
                do j1=i1,3

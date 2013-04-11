@@ -82,7 +82,7 @@
                write(*,*) '*WARNING in checktime: a time point'
                write(*,*) '         precedes the initial time'
                write(*,*) '         increment tinc; tinc is'
-               write(*,*) '         decrease to ',tinc
+               write(*,*) '         decreased to ',tinc
             endif
          endif
       endif

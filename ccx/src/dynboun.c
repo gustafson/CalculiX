@@ -45,7 +45,7 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
              char *amname,double *bv, double *bprev, double *bdiff,
              int *nactmech, int *icorrect, int *iprev){
 
-    int idiff[3],i,j,ic,ir;
+    int idiff[3],i,j,ic,ir,im;
 
     double *xbounmin=NULL,*xbounplus=NULL,*bplus=NULL,
 	*ba=NULL,deltatime,deltatime2,deltatimesq,timemin,ttimemin,
@@ -275,13 +275,15 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
 	      b[i]+=bdiff[i];
 //	      printf("dynboun %e,%e,%e,%e\n",bprev[i],bdiff[i],b[i]);
 	  }
-	  memset(&bprev[0],0.,sizeof(double)*neq[1]);
+//	  memset(&bprev[0],0.,sizeof(double)*neq[1]);
+	  DMEMSET(bprev,0,neq[1],0.);
       }else{
 	  for(i=0;i<neq[1];i++){
 	      bdiff[i]+=-bprev[i];
 	      b[i]+=bdiff[i];
 	  }
-	  memset(&bprev[0],0.,sizeof(double)*neq[1]);
+//	  memset(&bprev[0],0.,sizeof(double)*neq[1]);
+	  DMEMSET(bprev,0,neq[1],0.);
       }
       *nactmech=neq[1];
       *iprev=0;

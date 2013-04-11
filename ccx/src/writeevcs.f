@@ -38,6 +38,7 @@
      &CLES/TIME)'
       write(5,*)
       do j=1,nx
+         if(x(j).lt.0.d0) x(j)=0.d0
          x(j)=dsqrt(x(j))
          if(xmin.gt.x(j)) cycle
          if(xmax.gt.0.d0) then

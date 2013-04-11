@@ -18,7 +18,7 @@
 !
       subroutine contactpairs(inpc,textpart,tieset,cs,istep,
      &                istat,n,iline,ipol,inl,ipoinp,inp,ntie,ntie_,
-     &                iperturb,matname,nmat,ipoinpc,tietol)
+     &                iperturb,matname,nmat,ipoinpc,tietol,set,nset)
 !
 !     reading the input deck: *CONTACT PAIR
 !
@@ -27,14 +27,19 @@
       logical surftosurf  
 !
       character*1 inpc(*)
-      character*81 tieset(3,*)
+      character*80 matname(*),material
+      character*81 tieset(3,*),noset,set(*)
       character*132 textpart(16)
 !
       integer istep,istat,n,i,key,ipos,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),ntie,ntie_,iperturb(2),nmat,ipoinpc(0:*)
+     &  inp(3,*),ntie,ntie_,iperturb(2),nmat,ipoinpc(0:*),nset,j
 !
-      real*8 cs(17,*),tietol(*)
-      character*80 matname(*),material
+      real*8 cs(17,*),tietol(*),adjust
+!
+!     tietol contains information on:
+!            - small (tietol<0) or large (tietol>0) sliding
+!            - the adjust value (only if dabs(tietol)>=2,
+!                 adjust=dabs(tietol)-2
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR in contactpairs: *CONTACT PAIR should'
@@ -49,15 +54,43 @@
          write(*,*) '*ERROR in contactpairs: increase ntie_'
          stop
       endif
-      tietol(ntie)=0.d0
+      tietol(ntie)=1.d0
+      do j=1,80
+         tieset(1,ntie)(j:j)=' '
+      enddo
 !
       do i=2,n
          if(textpart(i)(1:12).eq.'INTERACTION=') then
             material=textpart(i)(13:92)
          elseif(textpart(i)(1:12).eq.'SMALLSLIDING') then
-            tietol(ntie)=-1.d0
-         elseif(textpart(i)(1:14).eq.'IN-FACESLIDING') then
-            tietol(ntie)=-2.d0
+            tietol(ntie)=-tietol(ntie)
+         elseif(textpart(i)(1:7).eq.'ADJUST=') then
+            read(textpart(i)(8:25),'(f20.0)',iostat=istat) adjust
+            if(istat.gt.0) then
+               noset(1:80)=textpart(i)(8:87)
+               noset(81:81)=' '
+               ipos=index(noset,' ')
+               noset(ipos:ipos)='N'
+               do j=1,nset
+                  if(set(j).eq.noset) exit
+               enddo
+               if(j.gt.nset) then
+                  noset(ipos:ipos)=' '
+                  write(*,*) '*ERROR in contactpairs: adjust node set',
+     &                   noset
+                  write(*,*) '       has not been defined'
+                  call inputerror(inpc,ipoinpc,iline)
+                  stop
+               endif
+               do j=1,ipos-1
+                  tieset(1,ntie)(j:j)=noset(j:j)
+               enddo
+               do j=ipos,80
+                  tieset(1,ntie)(j:j)=' '
+               enddo
+            else
+               tietol(ntie)=dsign(1.d0,tietol(ntie))*(2.d0+adjust)
+            endif
          elseif(textpart(i)(1:21).eq.'TYPE=SURFACETOSURFACE') then
             surftosurf=.true.   
          endif

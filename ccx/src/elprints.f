@@ -168,18 +168,23 @@
                   write(*,*) '         frequency or bucking calculation'
                   cycle
                endif
-            elseif(textpart(ii)(1:4).eq.'CEEQ') then
+            elseif((textpart(ii)(1:4).eq.'CEEQ').or.
+     &             (textpart(ii)(1:2).eq.'CE').or.
+     &             (textpart(ii)(1:2).eq.'PE')) then
                if((nmethod.eq.2).or.(nmethod.eq.3)) then
-                  write(*,*) '*WARNING in elprints: selection of CEEQ'
+                  write(*,*) 
+     &            '*WARNING in elprints: selection of CEEQ or CE or PE'
                   write(*,*) '         does not make sense for a'
                   write(*,*) '         frequency or bucking calculation'
                   cycle
                endif
                textpart(ii)(1:4)='PEEQ'
-               write(*,*) '*WARNING in elprints: selection of CEEQ'
+               write(*,*) 
+     &         '*WARNING in elprints: selection of CEEQ or CE or PE'
                write(*,*)
      &            '         is converted into PEEQ; no distinction'
-               write(*,*) '        is made between PEEQ and CEEQ'
+               write(*,*) 
+     &          '        is made between PEEQ, CEEQ, CE and PE'
             elseif(textpart(ii)(1:3).eq.'SDV') then
                if((nmethod.eq.2).or.(nmethod.eq.3)) then
                   write(*,*) '*WARNING in elprints: selection of SDV'
