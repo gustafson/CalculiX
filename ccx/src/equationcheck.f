@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2007 Guido Dhondt
+!     Copyright (C) 1998-2011 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,12 +39,12 @@
             do l=0,2
                if(nactdog(l,node).eq.j) then
                   if(l.eq.0) then
-                     write(*,*) '*INFO in equationcheck: temperatur
-     &e in node ',node,' cannot be determined: probably no incoming
+                     write(*,*)      '*INFO in equationcheck: temperatur
+     &e in node ',node,     ' cannot be determined: probably no incoming
      & mass flow'
                   elseif(l.eq.2) then
-                     write(*,*) '*INFO in equationcheck: pressure i 
-     &n node ',node,' cannot be determined: all incoming elements a
+                     write(*,*)      '*INFO in equationcheck: pressure i 
+     &n node ',node,     ' cannot be determined: all incoming elements a
      &re probably critical'
                   endif
                   cycle loop1
@@ -64,12 +64,12 @@
             do l=0,2
                if(nacteq(l,node).eq.i) then
                   if(l.eq.0) then
-                     write(*,*) '*INFO in equationcheck: energy equ
-     &ation in node ',node,' is identically zero: probably no incom
+                     write(*,*)      '*INFO in equationcheck: energy equ
+     &ation in node ',node,     ' is identically zero: probably no incom
      &ing mass flow'
                   elseif(l.eq.2) then
-                     write(*,*) '*INFO in equationcheck: element eq 
-     &uation in ',node,' is identically zero: the element is probab
+                     write(*,*)      '*INFO in equationcheck: element eq 
+     &uation in node',node, ' is identically zero: the element is probab
      &ly critical'
                   endif
                   cycle loop2

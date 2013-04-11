@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &        plicon,nplicon,
      &        ncmat_,elcon,matname,irstrt,istep,istat,n,iline,ipol,
      &        inl,ipoinp,inp,nmat_,set,istartset,iendset,ialset,
-     &        nset,ielmat,ielorien,ipoinpc)
+     &        nset,ielmat,ielorien,ipoinpc,mi)
 !
 !     reading the input deck: *SPRING
 !
@@ -33,10 +33,11 @@
       character*81 set(*),elset
       character*132 textpart(16)
 !
-      integer nelcon(2,*),nmat,ntmat_,ntmat,npmat_,npmat,istep,
+      integer mi(*),nelcon(2,*),nmat,ntmat_,ntmat,npmat_,npmat,istep,
      &  n,key,i,nplicon(0:ntmat_,*),ncmat_,istat,istartset(*),
      &  iendset(*),irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),nmat_,
-     &  ialset(*),ipos,nset,j,k,ielmat(*),ielorien(*),ipoinpc(0:*)  
+     &  ialset(*),ipos,nset,j,k,ielmat(mi(3),*),ielorien(mi(3),*),
+     &  ipoinpc(0:*)  
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),temperature,
      &  elcon(0:ncmat_,ntmat_,*)
@@ -176,15 +177,15 @@
 !
       do j=istartset(i),iendset(i)
          if(ialset(j).gt.0) then
-            ielmat(ialset(j))=nmat
-            ielorien(ialset(j))=0
+            ielmat(1,ialset(j))=nmat
+            ielorien(1,ialset(j))=0
          else
             k=ialset(j-2)
             do
                k=k-ialset(j)
                if(k.ge.ialset(j-1)) exit
-               ielmat(k)=nmat
-               ielorien(k)=0
+               ielmat(1,k)=nmat
+               ielorien(1,k)=0
             enddo
          endif
       enddo

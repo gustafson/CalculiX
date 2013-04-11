@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -47,10 +47,10 @@
 !
       integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nelem,nmethod,
      &  mattyp,ithermal(2),iperturb,nload,idist,i,j,k,i1,j1,l,m,
-     &  ii,jj,id,ipointer,ig,kk,istiff,iperm(20),ipompc(*),
-     &  nrhcon(*),ielmat(*),ielorien(*),nodempc(3,*),nmpc,
+     &  ii,jj,id,ipointer,ig,kk,istiff,iperm(20),ipompc(*),mi(*),
+     &  nrhcon(*),ielmat(mi(3),*),ielorien(mi(3),*),nodempc(3,*),nmpc,
      &  ntmat_,nope,nopes,norien,iexpl,imat,mint2d,ikmpc(*),
-     &  mint3d,mi(2),ifacet(6,4),nopev,iorien,ilmpc(*),kode,
+     &  mint3d,ifacet(6,4),nopev,iorien,ilmpc(*),kode,
      &  ifacew(8,5),intscheme,ipointeri,ipointerj,ncocon(2,*),
      &  nshcon(*),iinc,istep,jltyp,nfield,node,iflag,iscale,
      &  nplicon(0:ntmat_,*),nelcon(2,*),npmat_,ncmat_,i2,
@@ -95,10 +95,10 @@
 !
       summass=0.d0
 !
-      imat=ielmat(nelem)
+      imat=ielmat(1,nelem)
       amat=matname(imat)
       if(norien.gt.0) then
-         iorien=ielorien(nelem)
+         iorien=ielorien(1,nelem)
       else
          iorien=0
       endif
@@ -688,7 +688,7 @@ c         endif
      &                   xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime
                 elseif(sideload(id)(1:1).eq.'F') then
-c                   write(*,*) 'nonuniform'
+                   node=nelemload(2,id)
                    call film(xload(1,id),sinktemp,temp,istep,
      &               iinc,timeend,nelem,i,coords,jltyp,field,nfield,
      &               sideload(id),node,areaj,vold,mi)

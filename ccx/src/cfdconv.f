@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,19 +29,19 @@
 !
       integer convergence,compressible
 !
-      integer nrhcon(*),ntmat_,nactdoh(0:4,*),iit,turbulent,
-     &  nshcon(*),ielmat(*),nk,ithermal,i,j,k,index,iout,
+      integer nrhcon(*),ntmat_,nactdoh(0:4,*),iit,turbulent,mi(*),
+     &  nshcon(*),ielmat(mi(3),*),nk,ithermal,i,j,k,index,iout,
      &  nmethod,imat,nelem,iponoel(*),inoel(3,*),ismooth,
-     &  inomat(*),node,nodeboun(*),ndirboun(*),nboun,mi(2)
+     &  inomat(*),node,nodeboun(*),ndirboun(*),nboun
 !
       real*8 v(0:mi(2),*),vold(0:mi(2),*),voldcon(0:4,*),
-     &  rhcon(0:1,ntmat_,*),rho,c1,vmax(0:4),dummy,press,
-     &  vconmax(0:4),cp,r,temp,temp0,c2,c3,tempnew,vel2,
+     &  rhcon(0:1,ntmat_,*),rho,c1,vmax(0:6),dummy,press,
+     &  vconmax(0:6),cp,r,temp,temp0,c2,c3,tempnew,vel2,
      &  shcon(0:3,ntmat_,*),drho,dtemp,physcon(*),dpress,
      &  voldtu(2,*),vtu(2,*),co(3,*),factor,voldconini(0:4,*),
      &  dtimef
 !     
-      do j=0,4
+      do j=0,6
          vmax(j)=0.d0
          vconmax(j)=0.d0
       enddo
@@ -73,6 +73,12 @@
             enddo
          enddo
       endif
+      do i=1,nk
+         do j=1,2
+            vmax(4+j)=vmax(4+j)+vtu(1,i)**2
+            vconmax(4+j)=vconmax(4+j)+voldtu(1,i)**2
+         enddo
+      enddo
 !     
 !     for steady state calculations: check convergence
 !     
@@ -94,9 +100,18 @@
      &        (dabs(vconmax(4)).lt.1.d-10)).and.
      &        (iit.gt.1)) convergence=1
       endif
-      write(*,'(i10,11(1x,e11.4))') iit,vmax(0),vconmax(0),
+c      write(*,'(i7,15(1x,e10.3))') iit,dtimef
+c      write(*,'(i7,15(1x,e10.3))') iit,vmax(0),vconmax(0)
+c      write(*,'(i7,15(1x,e10.3))') iit,vmax(1),vconmax(1)
+c      write(*,'(i7,15(1x,e10.3))') iit,vmax(2),vconmax(2)
+c      write(*,'(i7,15(1x,e10.3))') iit,vmax(3),vconmax(3)
+c      write(*,'(i7,15(1x,e10.3))') iit,vmax(4),vconmax(4)
+c      write(*,'(i7,15(1x,e10.3))') iit,vmax(5),vconmax(5)
+c      write(*,'(i7,15(1x,e10.3))') iit,vmax(6),vconmax(6)
+      write(*,'(i7,15(1x,e10.3))') iit,vmax(0),vconmax(0),
      &     vmax(1),vconmax(1),vmax(2),vconmax(2),
-     &     vmax(3),vconmax(3),vmax(4),vconmax(4),dtimef
+     &     vmax(3),vconmax(3),vmax(4),vconmax(4),
+     &     vmax(5),vconmax(5),vmax(6),vconmax(6),dtimef
       factor=min(1.d0,1.01d0*factor)
       if(dabs(vconmax(0)).gt.1.d-3) then
          factor=min(factor,vconmax(0)/vmax(0)*0.001)

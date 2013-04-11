@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@
       character*8 lakonl
       character*80 amat
 !
-      integer iel,iint,kode,mi(2),nstate_,iorien,ntgrd,ncoconst,
+      integer iel,iint,kode,mi(*),nstate_,iorien,ntgrd,ncoconst,
      &  layer,kspt,kstep,kinc,kal(2,6),konl(20),ipompc(*),
      &  nodempc(3,*),nmpc,ikmpc(*),ilmpc(*)
 !
@@ -35,7 +35,7 @@
      &  skl(3,3),t1lold,xstiff(27,mi(1),*),xa(3,3),vold(0:mi(2),*),
      &  co(3,*),coefmpc(*)
 !
-      data kal /1,1,2,2,3,3,1,2,1,3,2,3/
+      kal=reshape((/1,1,2,2,3,3,1,2,1,3,2,3/),(/2,6/))
 !
       if(kode.eq.1) then
 !

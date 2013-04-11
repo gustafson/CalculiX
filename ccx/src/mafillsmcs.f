@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
      &  matname,mi,ics,cs,nm,ncmat_,labmpc,mass,stiffness,buckling,
      &  rhsi,intscheme,mcs,coriolis,ibody,xloadold,reltime,ielcs,
-     &  veold,springarea)
+     &  veold,springarea,thicke,xnormastface)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !     for cyclic symmetry calculations
@@ -43,9 +43,10 @@
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
-     &  ilmpc(*),ikboun(*),ilboun(*),mi(2),nstate_,ne0,
+     &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,
      &  nactdof(0:mi(2),*),konl(20),irow(*),
-     &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(*),ielorien(*),
+     &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
+     &  ielorien(mi(3),*),
      &  ipkon(*),ics(*),ij,ilength,lprev,ipobody(2,*),nbody,
      &  ibody(3,*),nk,ne,nboun,nmpc,nforc,nload,neq,nzl,nmethod,
      &  ithermal,iprestr,iperturb(*),nzs,i,j,k,l,m,idist,jj,
@@ -62,9 +63,9 @@
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),xloadold(2,*),
      &  alcon(0:6,ntmat_,*),cs(17,*),alzero(*),orab(7,*),reltime,
      &  springarea(2,*),plicon(0:2*npmat_,ntmat_,*),xstate,xstateini,
-     &  plkcon(0:2*npmat_,ntmat_,*),
+     &  plkcon(0:2*npmat_,ntmat_,*),thicke(mi(3),*),
      &  xstiff(27,mi(1),*),pi,theta,ti,tr,veold(0:mi(2),*),om,valu2,
-     &  value,dtime,walue,walu2,time,ttime
+     &  value,dtime,walue,walu2,time,ttime,xnormastface(3,8,*)
 !
 !
 !     calculating the scaling factors for the cyclic symmetry calculation
@@ -144,8 +145,16 @@ c    Bernhardi end
            nope=4
         elseif(lakon(i)(4:5).eq.'15') then
            nope=15
-        else
+        elseif(lakon(i)(4:4).eq.'6') then
            nope=6
+        elseif(lakon(i)(1:2).eq.'ES') then
+           read(lakon(i)(8:8),'(i1)') nope
+!     
+!          local contact spring number
+!     
+           if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
+        else
+           cycle
         endif
 !
         do j=1,nope
@@ -200,7 +209,7 @@ c        endif
      &          dtime,matname,mi(1),ncmat_,mass,stiffness,buckling,rhsi,
      &          intscheme,ttime,time,istep,iinc,coriolis,xloadold,
      &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
-     &          springarea,nstate_,xstateini,xstate,ne0)
+     &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke)
 !
         do jj=1,3*nope
 !
@@ -212,7 +221,7 @@ c        endif
 !
           do ll=jj,3*nope
     	    if (mcs.gt.1)then
-               if(cs(1,(ielcs(i)+1)).ne.1.d0) then
+               if(ielcs(i).gt.0) then
                   s(jj,ll)=(cs(1,(ielcs(i)+1))/cs(1,1))*s(jj,ll)
                   sm(jj,ll)=(cs(1,(ielcs(i)+1))/cs(1,1))*sm(jj,ll)
                endif

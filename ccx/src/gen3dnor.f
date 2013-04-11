@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,13 +21,13 @@
      &  tper,tmin,tmax,ctrl,ipompc,nodempc,coefmpc,nmpc,nmpc_,mpcfree,
      &  ikmpc,ilmpc,labmpc,ikboun,ilboun,nboun,nboun_,nodeboun,ndirboun,
      &  xboun,iamboun,typeboun,nam,ntrans,inotr,trab,ikfree,ixfree,
-     &  nmethod,ithermal,istep,mi)
+     &  nmethod,ithermal,istep,mi,icomposite,ielmat)
 !
 !     calculates normals on 1-D and 2-D elements
 !
       implicit none
 !
-      logical fixed
+      logical fixed,composite
 !
       character*1 type,typeboun(*)
       character*8 lakon(*)
@@ -37,17 +37,15 @@
      &  ne,iponor(2,*),knor(*),rig(*),iperturb,ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,mpcfree,ikmpc(*),ilmpc(*),ikboun(*),ilboun(*),nboun,
      &  nboun_,nodeboun(*),ndirboun(*),iamboun(*),nam,ntrans,inotr(2,*),
-     &  isol,istep,idummy,mi(2)
-!
-      integer i,ndepnodes,index,nexp,nnor,nel,ielem,indexe,j,iel(100),
+     &  isol,istep,idummy,mi(*),icomposite,ielmat(mi(3),*),
+     &  i,ndepnodes,index,nexp,nnor,nel,ielem,indexe,j,iel(100),
      &  jl(100),ial(100),ifi(100),idepnodes(80),indexx,k,l,ifix,nemin,
      &  jact,ixfree,ikfree,node,nelshell,irefnode,idof,id,mpcfreeold,
      &  irotnode,imax,iamplitude,nmethod,ithermal(2),iexpnode
 !
-      real*8 co(3,*),thicke(2,*),offset(2,*),xnor(*),tinc,tper,tmin,
-     &  tmax,ctrl(*),coefmpc(*),xboun(*),trab(7,*),vdummy(0:4) 
-!
-      real*8 xno(3,100),xta(3,100),xn1(3,100),thl1(100),thl2(100),
+      real*8 co(3,*),thicke(mi(3),*),offset(2,*),xnor(*),tinc,tper,tmin,
+     &  tmax,ctrl(*),coefmpc(*),xboun(*),trab(7,*),vdummy(0:4), 
+     &  xno(3,100),xta(3,100),xn1(3,100),thl1(100),thl2(100),
      &  off1(100),off2(100),xi,et,coloc6(2,6),coloc8(2,8),xl(3,8),
      &  dd,xnoref(3),dot,coloc3(3),dot1,dot2,dmax,val
 !
@@ -296,7 +294,22 @@ c
                   enddo
                endif
 !
-!           updating the pointers iponor
+!              check whether any elements are composite elements
+!
+               composite=.false.
+               if(icomposite.eq.1) then
+                  do j=1,nel
+                     if(ial(j).eq.1) then
+                        ielem=iel(j)
+                        if(ielmat(2,ielem).ne.0) then
+                           composite=.true.
+                           exit
+                        endif
+                     endif
+                  enddo
+               endif
+!
+!             updating the pointers iponor
 !            
                nexp=nexp+1
                do j=1,nel
@@ -325,7 +338,7 @@ c
                do k=1,3
                   nk=nk+1
                   if(nk.gt.nk_) then
-                     write(*,*) '*ERROR in nodes: increase nk_'
+                     write(*,*) '*ERROR in gen3dnor: increase nk_'
                      stop
                   endif
                   knor(ikfree+k)=nk
@@ -339,14 +352,28 @@ c
                      idepnodes(ndepnodes+1)=nk
                      ndepnodes=ndepnodes+1
                   elseif(k.eq.2) then
-c                        if(jl(jact).le.4) then
-c                     write(*,*) 'depnode ',nk
                      idepnodes(ndepnodes+1)=nk
                      ndepnodes=ndepnodes+1
-c                        endif
                   endif
                enddo
                ikfree=ikfree+3
+!
+!              extra nodes for composite shells
+!
+               if(composite) then
+                  do l=1,mi(3)
+                     do k=1,3
+                        nk=nk+1
+                        if(nk.gt.nk_) then
+                           write(*,*) '*ERROR in gen3dnor: increase nk_'
+                           stop
+                        endif
+                        knor(ikfree+k)=nk
+                     enddo
+                     ikfree=ikfree+3
+                  enddo
+               endif
+!
             enddo
          endif
 !
@@ -624,7 +651,7 @@ c                        endif
                do k=1,8
                   nk=nk+1
                   if(nk.gt.nk_) then
-                     write(*,*) '*ERROR in nodes: increase nk_'
+                     write(*,*) '*ERROR in gen3dnor: increase nk_'
                      stop
                   endif
                   knor(ikfree+k)=nk

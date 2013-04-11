@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine linel(kode,mattyp,beta,emec,stre,elas,elconloc,
-     &  iorien,orab)
+     &  iorien,orab,pgauss)
 !
 !     calculates stresses for linear elastic materials
 !
@@ -30,10 +30,10 @@
      &  elconloc(*),emax,ya(3,3,3,3),orab(7,*),skl(3,3),e,un,
      &  um,um2,al,am1,pgauss(3),emec(6)
 !
-      data kel /1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
+      kel=reshape((/1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
      &          1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,
      &          3,3,1,3,1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,
-     &          1,2,2,3,1,3,2,3,2,3,2,3/
+     &          1,2,2,3,1,3,2,3,2,3,2,3/),(/4,21/))
 !
 !     engineering strain
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
      &  thicke,ipkon,iponor,xnor,ixfree,
      &  offset,lakon,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &  ipoinpc)
+     &  ipoinpc,mi)
 !
 !     reading the input deck: *BEAM SECTION
 !
@@ -33,14 +33,17 @@
       character*81 set(*),elset
       character*132 textpart(16)
 !
-      integer istartset(*),iendset(*),ialset(*),ielmat(*),ipoinpc(0:*),
-     &  ielorien(*),ipkon(*),iline,ipol,inl,ipoinp(2,*),inp(3,*)
+      integer istartset(*),iendset(*),ialset(*),mi(*),ielmat(mi(3),*),
+     &  ipoinpc(0:*),
+     &  ielorien(mi(3),*),ipkon(*),iline,ipol,inl,ipoinp(2,*),
+     &  inp(3,*)
 !
       integer nset,nmat,norien,istep,istat,n,key,i,j,k,l,imaterial,
      &  iorientation,ipos,m,iponor(2,*),ixfree,
      &  indexx,indexe,irstrt
 !
-      real*8 thicke(2,*),thickness1,thickness2,p(3),xnor(*),offset(2,*),
+      real*8 thicke(mi(3),*),thickness1,thickness2,p(3),xnor(*),
+     &  offset(2,*),
      &  offset1,offset2,dd
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
@@ -152,8 +155,8 @@
      &ement.'
                stop
             endif
-            ielmat(ialset(j))=imaterial
-            ielorien(ialset(j))=iorientation
+            ielmat(1,ialset(j))=imaterial
+            ielorien(1,ialset(j))=iorientation
             offset(1,ialset(j))=offset1
             offset(2,ialset(j))=offset2
             if(section.eq.'RECT') then
@@ -174,8 +177,8 @@
      &.'
                   stop
                endif
-               ielmat(k)=imaterial
-               ielorien(k)=iorientation
+               ielmat(1,k)=imaterial
+               ielorien(1,k)=iorientation
                offset(1,k)=offset1
                offset(2,k)=offset2
                if(section.eq.'RECT') then

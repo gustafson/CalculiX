@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,7 +37,7 @@
       character*8 lakon(*)
 !      
       integer nelem,nactdog(0:3,*),node1,node2,nodem,indexup,i,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,mi(2),nsol,
+     &     ielprop(*),nodef(4),idirf(4),index,iflag,mi(*),nsol,
      &     inv,numf,nodesg,nelemdown,nelemup,node0,kon(*),ipkon(*)
 !      
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),b,d,c,p,
@@ -684,7 +684,7 @@ c               write(30,*)'h1= ',h1,'h2= ',h2
                   endif
                endif
 !
-               write(*,*) 'CO ',jump
+c               write(*,*) 'CO ',jump
 !
                if(.not.jump) then
                   c1=rho*rho*dg
@@ -713,7 +713,7 @@ c               write(30,*)'h1= ',h1,'h2= ',h2
                   endif
                endif
 !
-               write(*,*) 'EL ',jump
+c               write(*,*) 'EL ',jump
 !
                if(.not.jump) then
                   c1=rho*rho*dg

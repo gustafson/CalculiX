@@ -54,4 +54,13 @@ void spooles_solve(double *b, int *neq);
 
 void spooles_cleanup();
 
+void spooles_factor_rad(double *ad, double *au, double *adb, double *aub, 
+                    double *sigma, int *icol, int *irow,
+                    int *neq, int *nzs, int *symmetryflag,
+                    int *inputformat);
+
+void spooles_solve_rad(double *b, int *neq);
+
+void spooles_cleanup_rad();
+
 #endif

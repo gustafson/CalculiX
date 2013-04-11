@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2007 Guido Dhondt                          */
+/*              Copyright (C) 1998-2011 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -21,7 +21,6 @@
 #include <time.h>
 #include <sys/time.h>
 #include <string.h>
-#include <omp.h>
 #include "CalculiX.h"
 
 #ifdef SPOOLES
@@ -89,7 +88,9 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
               double *bfric, int *imastop,int *nslavnode,int *islavnode,
               int *islavsurf,
               int *itiefac,double *areaslav,int *iponoels,int *inoels,
-              double *springarea,int *izdof,int *nzdof){
+              double *springarea,int *izdof,int *nzdof,double *fn,
+	      int *imastnode,int *nmastnode,double *xmastnor,
+              double *xnormastface){
     
   char lakonl[9]="        \0";
 
@@ -163,13 +164,14 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  vini,nmethod,nmpc,mpcfree,memmpc_,
 	  &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
           iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
-          itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime);
+          itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
+	  imastnode,nmastnode,xmastnor,xnormastface,filab);
 
   ikactcont1=NNEW(int,nactcont1_);
 
   for(i=*ne0;i<*ne;i++){
       indexe=ipkon[i];
-      imat=ielmat[i];
+      imat=ielmat[mi[2]*i];
       kodem=nelcon[2*imat-2];
       for(j=0;j<8;j++){lakonl[j]=lakon[8*i+j];}
       nope=atoi(&lakonl[7]);
@@ -187,8 +189,9 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 			  fnl,ncmat_,ntmat_,&nope,lakonl,&t0l,
 			  &t1l,&kodem,elconloc,plicon,nplicon,npmat_,
 			  veoldl,&senergy,&iener,cstr,mi,
-                          &springarea[konl[nope]-1],nmethod,ne0,iperturb,
-                          nstate_,xstateini,xstate,reltime));
+                          &springarea[2*(konl[nope]-1)],nmethod,ne0,iperturb,
+                          nstate_,xstateini,xstate,reltime,
+                          &xnormastface[24*(konl[nope]-1)]));
 
       storecontactdof(&nope,nactdof,&mt,konl,&ikactcont1,&nactcont1,
 		      &nactcont1_,bcont,fnl,ikmpc,nmpc,ilmpc,ipompc,nodempc, 
@@ -316,7 +319,8 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	        ndirforc,istep,iinc,co,vold,itg,&ntg,amname,ikboun,ilboun,
 		nelemload,sideload,mi,
 		xforcdiff,xloaddiff,xbodydiff,t1diff,xboundiff,&iabsload,
-                iprescribedboundary,ntrans,trab,inotr,veold,nactdof,bcont));
+		iprescribedboundary,ntrans,trab,inotr,veold,nactdof,bcont,
+                fn));
 	      
       /* calculating the instantaneous loading vector */
       
@@ -710,13 +714,14 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      vini,nmethod,nmpc,mpcfree,memmpc_,
 	      &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
 	      iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
-              itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime);
+              itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
+	      imastnode,nmastnode,xmastnor,xnormastface,filab);
 
 //      printf("number of contact springs = %d\n",*ne-*ne0);
 
       for(i=*ne0;i<*ne;i++){
 	indexe=ipkon[i];
-	imat=ielmat[i];
+	imat=ielmat[mi[2]*i];
 	kodem=nelcon[2*imat-2];
 	for(j=0;j<8;j++){lakonl[j]=lakon[8*i+j];}
 	nope=atoi(&lakonl[7]);
@@ -734,13 +739,15 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 			    fnl,ncmat_,ntmat_,&nope,lakonl,&t0l,
 			    &t1l,&kodem,elconloc,plicon,nplicon,npmat_,
 			    veoldl,&senergy,&iener,cstr,mi,
-                            &springarea[konl[nope]-1],nmethod,ne0,iperturb,
-                            nstate_,xstateini,xstate,reltime));
+                            &springarea[2*(konl[nope]-1)],nmethod,ne0,iperturb,
+                            nstate_,xstateini,xstate,reltime,
+                            &xnormastface[24*(konl[nope]-1)]));
 	
 	FORTRAN(springstiff,(xl,elas,konl,voldl,s,&imat,elcon,nelcon,
 	        ncmat_,ntmat_,&nope,lakonl,&t0l,&t1l,&kode,elconloc,
-		plicon,nplicon,npmat_,iperturb,&springarea[konl[nope]-1],
-		nmethod,mi,ne0,nstate_,xstateini,xstate,reltime));
+		plicon,nplicon,npmat_,iperturb,&springarea[2*(konl[nope]-1)],
+		nmethod,mi,ne0,nstate_,xstateini,xstate,reltime,
+		&xnormastface[24*(konl[nope]-1)]));
 
 	dfdbj(bcont,&dbcont,&neq[1],&nope,konl,nactdof,
 	      s,z,ikmpc,ilmpc,ipompc,nodempc,nmpc,coefmpc,
@@ -888,13 +895,14 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      vini,nmethod,nmpc,mpcfree,memmpc_,
 	      &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
 	      iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
-              itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime);
+              itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
+	      imastnode,nmastnode,xmastnor,xnormastface,filab);
 
 //      printf("number of contact springs = %d\n",*ne-*ne0);
 
       for(i=*ne0;i<*ne;i++){
 	indexe=ipkon[i];
-	imat=ielmat[i];
+	imat=ielmat[mi[2]*i];
 	kodem=nelcon[2*imat-2];
 	for(j=0;j<8;j++){lakonl[j]=lakon[8*i+j];}
 	nope=atoi(&lakonl[7]);

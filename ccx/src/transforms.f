@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,16 +35,18 @@
      &  inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*)
 !
       if(istep.gt.0) then
-         write(*,*) '*ERROR in transforms: *TRANSFORM should be'
+         write(*,*) '*ERROR reading *TRANSFORM: *TRANSFORM should be'
          write(*,*) '  placed before all step definitions'
          stop
       endif
 !
       ntrans=ntrans+1
       if(ntrans.gt.ntrans_) then
-         write(*,*) '*ERROR in transforms: increase ntrans_'
+         write(*,*) '*ERROR reading *TRANSFORM: increase ntrans_'
          stop
       endif
+!
+      ipos=1
 !
 !     rectangular coordinate system: trab(7,norien)=1
 !     cylindrical coordinate system: trab(7,norien)=-1
@@ -64,7 +66,7 @@
             endif
          else
             write(*,*) 
-     &        '*WARNING in transforms: parameter not recognized:'
+     &        '*WARNING reading *TRANSFORM: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline)
@@ -74,7 +76,7 @@
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
-         write(*,*)'*ERROR in transforms: definition of a'
+         write(*,*)'*ERROR reading *TRANSFORM: definition of a'
          write(*,*) '  transformation is not complete'
          call inputerror(inpc,ipoinpc,iline)
          stop
@@ -90,7 +92,7 @@
       enddo
       if(i.gt.nset) then
          noset(ipos:ipos)=' '
-         write(*,*) '*ERROR in transforms: node set ',noset
+         write(*,*) '*ERROR reading *TRANSFORM: node set ',noset
          write(*,*) '  has not yet been defined.'
          stop
       endif

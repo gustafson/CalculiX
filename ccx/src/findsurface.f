@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -66,8 +66,8 @@
                ithree=3
                ifour=4
 !     
-!     determining the external element faces of the solid mesh 
-!     the faces are catalogued by the four lowes nodes numbers
+!     determining the external element faces of the solid mesh; 
+!     the faces are catalogued by the four lowest node numbers
 !     in ascending order. 
 !
 !     ipoface(i) points to a face for which

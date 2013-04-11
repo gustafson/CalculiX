@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,7 +26,7 @@
 !
       implicit none
 !
-      logical nodesonaxis,cylindrical,replace
+      logical nodesonaxis,cylindrical,replace,left,right
 !
       character*8 lakon(*)
       character*20 labmpc(*)
@@ -36,7 +36,7 @@
      &     nset,i,j,k,nk,nmpc,nmpc_,mpcfree,ics(*),l,ikmpc(*),ilmpc(*),
      &     lcs(*),kflag,ncsnodes,ncs_,mcs,ntie,nrcg(*),nzcg(*),jcs(*),
      &     kontri(3,*),ne,ipkon(*),kon(*),ifacetet(*),inodface(*),
-     &     nodel(5),noder(5),nkon,
+     &     nodel(5),noder(5),nkon,indexe,nope,
      &     indcs, node_cycle,itemp(5),nx(*),ny(*),netri,noder0,
      &     nodef(8),nterms,kseg,k2,ndir,idof,number,id,mpcfreeold,
      &     lathyp(3,6),inum,ier
@@ -101,30 +101,77 @@
                   noder(2)=j         
                endif    
             enddo
-!     
-!     Looking for the cyclic symmetry the nodes belong to
-!     
-!     
-            do k=1,ne-1
-               do l=ipkon(k)+1,ipkon(k+1)
-                  if (nodel(1).eq.kon(l)) then
-                     nodel(3)=k
-                  elseif (noder(1).eq.kon(l)) then
-                     noder(3)=k
-                  endif
-               enddo   
-            enddo
-!     
-!     For the last element a different loop is needed 
-!     
-            do l=ipkon(ne),nkon
-               if (nodel(1).eq.kon(l)) then
-                  nodel(3)=k
-!     
-               elseif (noder(1).eq.kon(l)) then
-                  noder(3)=k
+!
+!           identifying an element on either side of the
+!           multistage connection
+!
+            left=.false.
+            right=.false.
+            loop: do k=1,ne
+               indexe=ipkon(k)
+               if(indexe.lt.0) cycle
+!
+!              number of nodes belonging to the element
+!
+               if(lakon(k)(1:5).eq.'C3D8I') then
+                  nope=11
+               elseif(lakon(k)(4:4).eq.'2') then
+                  nope=20
+               elseif(lakon(k)(4:4).eq.'8') then
+                  nope=8
+               elseif(lakon(k)(4:5).eq.'10') then
+                  nope=10
+               elseif(lakon(k)(4:4).eq.'4') then
+                  nope=4
+               elseif(lakon(k)(4:5).eq.'15') then
+                  nope=15
+               elseif(lakon(k)(4:4).eq.'6') then
+                  nope=6
+               elseif(lakon(k)(1:2).eq.'ES') then
+                  read(lakon(k)(8:8),'(i1)') nope
                endif
-            enddo   
+!
+               do l=indexe+1,indexe+nope
+                  if(.not.left) then
+                     if(nodel(1).eq.kon(l))then
+                        nodel(3)=k
+                        left=.true.
+                     endif
+                   endif
+                  if(.not.right) then
+                     if(noder(1).eq.kon(l))then
+                        noder(3)=k
+                        right=.true.
+                     endif
+                   endif
+                   if(left.and.right) exit loop
+                enddo
+             enddo loop
+c     !     
+c     !     Looking for the cyclic symmetry the nodes belong to
+c!     
+c!     
+c            do k=1,ne-1
+c               write(*,*) 'multistages ',k,ipkon(k),ipkon(k+1)
+c               do l=ipkon(k)+1,ipkon(k+1)
+c                  if (nodel(1).eq.kon(l)) then
+c                     nodel(3)=k
+c                  elseif (noder(1).eq.kon(l)) then
+c                     noder(3)=k
+c                  endif
+c               enddo   
+c            enddo
+c!     
+c!     For the last element a different loop is needed 
+c!     
+c            do l=ipkon(ne),nkon
+c               if (nodel(1).eq.kon(l)) then
+c                  nodel(3)=k
+c!     
+c               elseif (noder(1).eq.kon(l)) then
+c                  noder(3)=k
+c               endif
+c            enddo   
 !     
             do j=1,mcs
                do l=istartset(int(cs(13,j))),iendset(int(cs(13,j)))

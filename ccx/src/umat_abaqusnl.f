@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -57,7 +57,7 @@
 !     vj                 Jacobian at the end of the increment
 !
 !     ithermal           0: no thermal effects are taken into account
-!                        1: thermal effects are taken into account (triggered
+!                        >0: thermal effects are taken into account (triggered
 !                        by the keyword *INITIAL CONDITIONS,TYPE=TEMPERATURE)
 !     t1l                temperature at the end of the increment
 !     dtime              time length of the increment
@@ -128,7 +128,7 @@
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(2),i,iorien,
+      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),i,iorien,
      &  ndi,nshr,ntens,nprops,layer,kspt,kstep,kinc,kal(2,6),kel(4,21),
      &  j1,j2,j3,j4,j5,j6,j7,j8,jj,n,ier,j,matz
 !
@@ -143,14 +143,14 @@
      &  drpldt,stran(6),dstran(6),abqtime(2),predef,temp,dtemp,
      &  dpred,drot(3,3),celent,pnewdt
 !
-      data kal /1,1,2,2,3,3,1,2,1,3,2,3/
+      kal=reshape((/1,1,2,2,3,3,1,2,1,3,2,3/),(/2,6/))
 !
-      data kel /1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
+      kel=reshape((/1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
      &          1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,
      &          3,3,1,3,1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,
-     &          1,2,2,3,1,3,2,3,2,3,2,3/
+     &          1,2,2,3,1,3,2,3,2,3,2,3/),(/4,21/))
 !
-      data d /1.d0,1.d0,1.d0,0.d0,0.d0,0.d0/
+      d=(/1.d0,1.d0,1.d0,0.d0,0.d0,0.d0/)
 !
 !     calculating the logarithmic mechanical strain at the
 !     start of the increment
@@ -312,10 +312,10 @@
 !     increment
 !
       do i=1,3
-         c(i)=2.d0*emec0(i)+1.d0
+         c(i)=2.d0*emec(i)+1.d0
       enddo
       do i=4,6
-         c(i)=2.d0*emec0(i)
+         c(i)=2.d0*emec(i)
       enddo
 !
 !     calculating the square of the right Cauchy-Green tensor at the
@@ -354,8 +354,8 @@
 !
       do i=1,3
          do j=1,3
-            r(i,j)=xokl(i,1)*um1(1,j)+xokl(i,2)*um1(2,j)+
-     &              xokl(i,3)*um1(3,j)
+            r(i,j)=xkl(i,1)*um1(1,j)+xkl(i,2)*um1(2,j)+
+     &              xkl(i,3)*um1(3,j)
          enddo
       enddo
 !

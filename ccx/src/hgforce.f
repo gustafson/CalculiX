@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,7 +25,7 @@
 !     Meth. Engg., Vol. 17, 679-706, 1981. 
 !
       implicit none
-      integer i,j,k,mi(2),konl(20)
+      integer i,j,k,mi(*),konl(20)
       real*8 gs(8,4),a,elas(1),ahr
       real*8 vl(0:mi(2),20), fn(0:mi(2),*)
       real*8 hglf(3,4)

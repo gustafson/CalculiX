@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,12 +16,12 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine createmddof(imddof,nmddof,nrset,istartset,iendset,
+      subroutine createmddof(imddof,nmddof,istartset,iendset,
      &            ialset,nactdof,ithermal,mi,imdnode,nmdnode,ikmpc,
      &            ilmpc,ipompc,nodempc,nmpc,
      &            imdmpc,nmdmpc,imdboun,nmdboun,ikboun,nboun,
      &            nset,ntie,tieset,set,lakon,kon,ipkon,labmpc,
-     &            ilboun)
+     &            ilboun,filab,prlab,prset,nprint,ne)
 !
 !     creating a set imddof containing the degrees of freedom
 !     selected by the user for modal dynamic calculations. The
@@ -30,18 +30,20 @@
 !
       implicit none
 !
+      character*6 prlab(*)
       character*8 lakon(*)
       character*20 labmpc(*)
-      character*81 tieset(3,*),rightset,set(*),slavset
+      character*81 tieset(3,*),rightset,set(*),slavset,noset,prset(*)
+      character*87 filab(*)
 !
-      integer imddof(*),nmddof,nrset,istartset(*),iendset(*),mi(2),
+      integer imddof(*),nmddof,nrset,istartset(*),iendset(*),mi(*),
      &  ialset(*),nactdof(0:mi(2),*),node,ithermal,j,k,l,
      &  ikmpc(*),ilmpc(*),ipompc(*),nodempc(3,*),nmpc,
-     &  imdnode(*),nmdnode,imdmpc(*),nmdmpc,
+     &  imdnode(*),nmdnode,imdmpc(*),nmdmpc,nprint,
      &  imdboun(*),nmdboun,ikboun(*),nboun,index,indexe,islav,
      &  jface,nset,ntie,nnodelem,nope,nodef(8),nelem,nface,iright,
      &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),kon(*),
-     &  ipkon(*),i,ilboun(*)
+     &  ipkon(*),i,ilboun(*),nlabel,ne
 !
 !     nodes per face for hex elements
 !
@@ -75,43 +77,158 @@
      &             2,3,6,5,8,15,11,14,
      &             4,6,3,1,12,15,9,13/
 !
-      do j=istartset(nrset),iendset(nrset)
-         if(ialset(j).gt.0) then
-            node=ialset(j)
-            call addimd(imdnode,nmdnode,node)
-            if(ithermal.ne.2) then
-               do k=1,3
-                  call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
-     &                 nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
-     &                 nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
-     &                 ikboun,nboun,ilboun)
-               enddo
-            else
-               k=0
-               call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
-     &              nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
-     &              nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,ikboun,
-     &              nboun,ilboun)
+      data nlabel /32/
+!
+!     if 1d/2d elements are part of the mesh, no node selection
+!     is performed (because of the renumbering due to the
+!     expansion node selection is excessively difficult)
+!
+      do i=1,ne
+         if((lakon(i)(7:7).eq.'E').or.
+     &      (lakon(i)(7:7).eq.'S').or.
+     &      (lakon(i)(7:7).eq.'A').or.
+     &      (lakon(i)(7:7).eq.'L').or.
+     &      (lakon(i)(7:7).eq.'B')) then
+            nmdnode=0
+            nmddof=0
+            nmdboun=0
+            nmdmpc=0
+            return
+         endif
+      enddo
+!
+!     storing the nodes for which *NODE FILE was selected
+!
+      do i=1,nlabel
+         if(filab(i)(1:1).ne.' ') then
+            read(filab(i)(7:87),'(a81)') noset
+            nrset=0
+            do k=1,nset
+               if(set(k).eq.noset) then
+                  nrset=k
+                  exit
+               endif
+            enddo
+!
+!           if output for all nodes is selected, use
+!           of imdnode is deactivated
+!
+            if(nrset.eq.0) then
+               nmdnode=0
+               nmddof=0
+               nmdboun=0
+               nmdmpc=0
+               return
             endif
-         else
-            node=ialset(j-2)
-            do
-               node=node-ialset(j)
-               if(node.ge.ialset(j-1)) exit
-               call addimd(imdnode,nmdnode,node)
-               if(ithermal.ne.2) then
-                  do k=1,3
-                     call addimdnodedof(node,k,ikmpc,ilmpc,
-     &                    ipompc,nodempc,nmpc,imdnode,nmdnode,imddof,
-     &                    nmddof,nactdof,mi,imdmpc,nmdmpc,imdboun,
-     &                    nmdboun,ikboun,nboun,ilboun)
-                  enddo
+!
+!           adding the nodes belonging to nrset
+!
+            do j=istartset(nrset),iendset(nrset)
+               if(ialset(j).gt.0) then
+                  node=ialset(j)
+                  call addimd(imdnode,nmdnode,node)
+                  if(ithermal.ne.2) then
+                     do k=1,3
+                        call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
+     &                   nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
+     &                   nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
+     &                   ikboun,nboun,ilboun)
+                     enddo
+                  else
+                     k=0
+                     call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
+     &                nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
+     &                nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,ikboun,
+     &                nboun,ilboun)
+                  endif
                else
-                  k=0
-                  call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
-     &                 nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
-     &                 nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
-     &                 ikboun,nboun,ilboun)
+                  node=ialset(j-2)
+                  do
+                     node=node-ialset(j)
+                     if(node.ge.ialset(j-1)) exit
+                     call addimd(imdnode,nmdnode,node)
+                     if(ithermal.ne.2) then
+                        do k=1,3
+                           call addimdnodedof(node,k,ikmpc,ilmpc,
+     &                      ipompc,nodempc,nmpc,imdnode,nmdnode,imddof,
+     &                      nmddof,nactdof,mi,imdmpc,nmdmpc,imdboun,
+     &                      nmdboun,ikboun,nboun,ilboun)
+                        enddo
+                     else
+                        k=0
+                        call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
+     &                   nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
+     &                   nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
+     &                   ikboun,nboun,ilboun)
+                     endif
+                  enddo
+               endif
+            enddo
+!
+         endif
+      enddo
+!
+!     storing the nodes for which *NODE PRINT was selected
+!
+      do i=1,nprint
+         if((prlab(i)(1:4).eq.'U   ').or.
+     &        (prlab(i)(1:4).eq.'NT  ').or.
+     &        (prlab(i)(1:4).eq.'RF  ').or.
+     &        (prlab(i)(1:4).eq.'RFL ').or.
+     &        (prlab(i)(1:4).eq.'PS  ').or.
+     &        (prlab(i)(1:4).eq.'PN  ').or.
+     &        (prlab(i)(1:4).eq.'MF  ').or.
+     &        (prlab(i)(1:4).eq.'V   ')) then
+            noset=prset(i)
+            nrset=0
+            do k=1,nset
+               if(set(k).eq.noset) then
+                  nrset=k
+                  exit
+               endif
+            enddo
+!
+!           adding the nodes belonging to nrset
+!
+            do j=istartset(nrset),iendset(nrset)
+               if(ialset(j).gt.0) then
+                  node=ialset(j)
+                  call addimd(imdnode,nmdnode,node)
+                  if(ithermal.ne.2) then
+                     do k=1,3
+                        call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
+     &                   nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
+     &                   nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
+     &                   ikboun,nboun,ilboun)
+                     enddo
+                  else
+                     k=0
+                     call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
+     &                nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
+     &                nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,ikboun,
+     &                nboun,ilboun)
+                  endif
+               else
+                  node=ialset(j-2)
+                  do
+                     node=node-ialset(j)
+                     if(node.ge.ialset(j-1)) exit
+                     call addimd(imdnode,nmdnode,node)
+                     if(ithermal.ne.2) then
+                        do k=1,3
+                           call addimdnodedof(node,k,ikmpc,ilmpc,
+     &                      ipompc,nodempc,nmpc,imdnode,nmdnode,imddof,
+     &                      nmddof,nactdof,mi,imdmpc,nmdmpc,imdboun,
+     &                      nmdboun,ikboun,nboun,ilboun)
+                        enddo
+                     else
+                        k=0
+                        call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
+     &                   nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
+     &                   nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
+     &                   ikboun,nboun,ilboun)
+                     endif
+                  enddo
                endif
             enddo
          endif
@@ -265,7 +382,7 @@
          endif
       enddo
 !
-!     adding nodes belonging to nonlinear MPC's
+!     adding nodes belonging to nonlinear MPC's (why only dependent nodes?)
 !      
       do i=1,nmpc
          if((labmpc(i)(1:20).ne.'                    ').and.
@@ -273,7 +390,7 @@
      &          (labmpc(i)(1:6).ne.'CYCLIC').and.
      &          (labmpc(i)(1:9).ne.'SUBCYCLIC')) then
             index=ipompc(i)
-            if(indexe.eq.0) cycle
+            if(index.eq.0) cycle
             node=nodempc(1,index)
             call addimd(imdnode,nmdnode,node)
             if(ithermal.ne.2) then
@@ -295,9 +412,9 @@
 !
 !     subtracting 1 to comply with the C-convention
 !
-      do j=1,nmddof
-         imddof(j)=imddof(j)-1
-      enddo
+c      do j=1,nmddof
+c         imddof(j)=imddof(j)-1
+c      enddo
 !
 c      write (*,*) 'nmddof, nmdnode',nmddof,nmdnode
 !

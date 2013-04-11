@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2007 Guido Dhondt
+!     Copyright (C) 1998-2011 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,20 +32,20 @@
       character*20 sideload(*),labmpc(*)
       character*81 set(*)
 !     
-      integer itg(*),ieg(*),ntg,nteq,nflow,nload,ielmat(*),
+      integer mi(*),itg(*),ieg(*),ntg,nteq,nflow,nload,ielmat(mi(3),*),
      &     nelemload(2,*),nope,nopes,mint2d,i,j,k,l,iflag,
      &     node,imat,ntmat_,id,ifaceq(8,6),ifacet(6,4),
      &     ifacew(8,5),node1,node2,nshcon(*),nelem,ig,index,konl(20),
      &     ipkon(*),kon(*),idof,iinc,ibody(3,*),istep,jltyp,nfield,
      &     ipobody(2,*),nodem,ieq,kflag,nrhcon(*),numf,
      &     idofp1,idofp2,idofm,idoft1,idoft2,idoft,nactdog(0:3,*),
-     &     nacteq(0:3,*),ielprop(*),nodef(5),idirf(5),nbody,
-     &     nmethod,icase,mi(2),nmpc,nodempc(3,*),ipompc(*),idir
+     &     nacteq(0:3,*),ielprop(*),nodef(8),idirf(8),nbody,
+     &     nmethod,icase,nmpc,nodempc(3,*),ipompc(*),idir,ider
 !     
       real*8 ac(nteq,*),xloadact(2,*),cp,h(2),physcon(*),dvi,
      &     xl2(3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
      &     gastemp,v(0:mi(2),*),shcon(0:3,ntmat_,*),co(3,*),shp2(7,8),
-     &     ftot,field,prop(*),f,df(5),tg1,tg2,r,rho,tl2(8),
+     &     ftot,field,prop(*),f,df(8),tg1,tg2,r,rho,tl2(8),
      &     dtime,ttime,time,areaj,xflow,tvar(2),g(3),coefmpc(*),
      &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,ts1,ts2,xs2(3,7),
      &     xdenom1,xdenom2,xcst,xk1,xk2,expon,a,dt1,dt2,kappa,
@@ -72,6 +72,7 @@
       data iflag /2/
 !     
       kflag=2
+      ider=1
 !
       Pi=4.d0*datan(1.d0)
       tvar(1)=time
@@ -142,7 +143,7 @@
             endif
          endif
 !
-         imat=ielmat(nelem)
+         imat=ielmat(1,nelem)
 !
          call materialdata_tg(imat,ntmat_,gastemp,shcon,nshcon,cp,r,dvi,
      &        rhcon,nrhcon,rho)
@@ -440,7 +441,7 @@
             call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &           nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &           nodef,idirf,df,cp,R,rho,physcon,g,co,dvi,numf,
-     &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi)
+     &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider)
 !
             do k=1,numf
                idof=nactdog(idirf(k),nodef(k))
@@ -664,9 +665,10 @@
          enddo
       enddo
 !
-c      write(30,*) 'ac in mafillgas'
-c      do i=1,17
-c         write(30,'(17(1x,e11.4))') (ac(i,j),j=1,17)
+c      write(*,*) 'ac in mafillgas'
+c      write(*,*) nteq
+c      do i=1,51
+c         write(*,'(17(1x,e11.4))') (ac(i,j),j=1,51)
 c      enddo
 !
       return

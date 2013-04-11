@@ -1,7 +1,7 @@
 
 
 /*     CalculiX - A 3-Dimensional finite element program                   */
-/*              Copyright (C) 1998-2007 Guido Dhondt                          */
+/*              Copyright (C) 1998-2011 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -78,18 +78,19 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	rhsi=0,intscheme=0,coriolis=0,istep=1,iinc=1,iperturbmass[2],
         *mast1e=NULL,*ipointere=NULL,*irowe=*irowep,*ipobody=NULL,*jqe=*jqep,
 	*icole=*icolep,tint=-1,tnstart=-1,tnend=-1,tint2=-1,*nnn=*nnnp,
-	noderight_,*izdof=*izdofp,iload,iforc,*iznode=NULL,nznode,ll;
+	noderight_,*izdof=*izdofp,iload,iforc,*iznode=NULL,nznode,ll,ne0;
 
     long long lint;
 
     double *stn=NULL,*v=NULL,*temp_array=NULL,*vini=NULL,
-	*een=NULL,cam[5],*f=NULL,*fn=NULL,qa[3],*epn=NULL,*stiini=NULL,
+	*een=NULL,cam[5],*f=NULL,*fn=NULL,qa[3],*epn=NULL,
+        *stiini=NULL,*emn=NULL,*xnormastface=NULL,
 	*xstateini=NULL,theta,pi,*coefmpcnew=NULL,t[3],ctl,stl,
 	*stx=NULL,*enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,
 	*qfx=NULL,*qfn=NULL,xreal,ximag,*vt=NULL,sum,*aux=NULL,
         *coefright=NULL,*physcon=NULL,coef,a[9],ratio,reltime,*ade=NULL,
         *aue=NULL,*adbe=*adbep,*aube=*aubep,*fext=NULL,*cgr=NULL,
-        *shcon=NULL,*springarea=NULL,*z=*zp, *zdof=NULL;
+        *shcon=NULL,*springarea=NULL,*z=*zp, *zdof=NULL, *thicke=NULL;
     
     /* dummy arguments for the results call */
     
@@ -110,7 +111,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     inum=NNEW(int,*nk);
     stx=NNEW(double,6*mi[0]**ne);
     
-    nlabel=30;
+    nlabel=32;
     filabt=NNEW(char,87*nlabel);
     for(i=1;i<87*nlabel;i++) filabt[i]=' ';
     filabt[0]='U';
@@ -218,7 +219,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     
     icntrl=1;
     
-    FORTRAN(rectcyl,(co,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filabt,&imag,mi));
+    FORTRAN(rectcyl,(co,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filabt,&imag,mi,emn));
     
     for(jj=0;jj<*mcs;jj++){
 	is=(int)(cs[17*jj]+0.5);
@@ -239,7 +240,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		if(ielcs[l]==jj){
 		    if(ipkon[l]>=0){
 			ipkon[l+i**ne]=ipkon[l]+i**nkon;
-			ielmat[l+i**ne]=ielmat[l];
+			ielmat[mi[2]*(l+i**ne)]=ielmat[mi[2]*l];
 			if(*norien>0) ielorien[l+i**ne]=ielorien[l];
 			for(l1=0;l1<8;l1++){
 			    l2=8*l+l1;
@@ -255,7 +256,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     
     icntrl=-1;
     
-    FORTRAN(rectcyl,(co,vt,fn,stn,qfn,een,cs,&nkt,&icntrl,t,filabt,&imag,mi));
+    FORTRAN(rectcyl,(co,vt,fn,stn,qfn,een,cs,&nkt,&icntrl,t,filabt,&imag,mi,emn));
 
 /* expand nactdof */
 
@@ -406,11 +407,11 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		}
 	    }
 	    
-	    FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
+	    results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
 	      stx,elcon,
 	      nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,ielorien,
 	      norien,orab,ntmat_,t0,t0,ithermal,
-	      prestr,iprestr,filab,eme,&een[kk6],iperturb,
+	      prestr,iprestr,filab,eme,&emn[kk6],&een[kk6],iperturb,
 	      f,&fn[kkv],nactdof,&iout,qa,vold,&z[lint+k],
 	      nodeboun,ndirboun,xboun,nboun,ipompc,
 	      nodempc,coefmpcnew,labmpc,nmpc,nmethod,cam,&neqh,veold,accold,
@@ -419,7 +420,8 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],sti,
 	      xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
 	      ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-	      nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime));
+	      nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
+              &ne0,xforc,nforc,thicke,xnormastface);
 	    
 	}
 	free(eei);
@@ -429,7 +431,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	icntrl=2;imag=1;
 	
 	FORTRAN(rectcylexp,(co,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filabt,&imag,mi,
-			    iznode,&nznode,nsectors,nk));
+			    iznode,&nznode,nsectors,nk,emn));
 	
 	/* basis sector */
 
@@ -481,7 +483,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	icntrl=-2;imag=0;
 	
 	FORTRAN(rectcylexp,(co,vt,fn,stn,qfn,een,cs,&nkt,&icntrl,t,filabt,
-			    &imag,mi,iznode,&nznode,nsectors,nk));
+			    &imag,mi,iznode,&nznode,nsectors,nk,emn));
 	
 /* storing the displacements into the expanded eigenvectors */
 
@@ -849,7 +851,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
 	      physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
 	      &coriolis,ibody,xloadold,&reltime,veold,springarea,nstate_,
-              xstateini,xstate));
+              xstateini,xstate,thicke,xnormastface));
       
       
       free(fext);
@@ -865,6 +867,6 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     free(temp_array);free(coefmpcnew);free(noderight);free(coefright);
     free(v);free(vt);free(fn);free(stn);free(inum);free(stx);
     free(inocs);free(ielcs);free(filabt);free(iznode);
-    
+
     return;
 }

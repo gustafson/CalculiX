@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,10 +34,10 @@
 !
       integer convergence,compressible
 !
-      integer nrhcon(*),ntmat_,nactdoh(0:4,*),iit,turbulent,
-     &  nshcon(*),ielmat(*),nk,ithermal,i,j,k,index,iout,
+      integer nrhcon(*),ntmat_,nactdoh(0:4,*),iit,turbulent,mi(*),
+     &  nshcon(*),ielmat(mi(3),*),nk,ithermal,i,j,k,index,iout,
      &  nmethod,imat,nelem,iponoel(*),inoel(3,*),ismooth,
-     &  inomat(*),node,nodeboun(*),ndirboun(*),nboun,mi(2)
+     &  inomat(*),node,nodeboun(*),ndirboun(*),nboun
 !
       real*8 v(0:mi(2),*),vold(0:mi(2),*),voldcon(0:4,*),
      &  rhcon(0:1,ntmat_,*),rho,c1,vmax(0:4),dummy,press,

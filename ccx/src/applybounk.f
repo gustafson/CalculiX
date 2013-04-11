@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,9 +32,10 @@
 !
       integer nodeboun(*),ndirboun(*),i,j,nboun,node,
      &  index,nodei,ndiri,ist,ipompc(*),nodempc(3,*),nmpc,
-     &  ndir,nfreestream,ifreestream(*),iponoel(*),
-     &  inoel,imat,ielmat(*),ntmat_,nshcon(*),nrhcon(*),compressible,
-     &  nsolidsurf,isolidsurf(*),inomat(*),mi(2),ithermal
+     &  ndir,nfreestream,ifreestream(*),iponoel(*),mi(*),
+     &  inoel,imat,ielmat(mi(3),*),ntmat_,nshcon(*),nrhcon(*),
+     &  compressible,
+     &  nsolidsurf,isolidsurf(*),inomat(*),ithermal
 !
       real*8 vold(0:mi(2),*),xbounact(*),residuk,size,coefmpc(*),
      &  xtu,xkin,temp,r,dvi,rho,physcon(*),shcon(0:3,ntmat_,*),
@@ -48,12 +49,11 @@ c      xkin=10.d0**(-3.5d0)*xtu
       xkin=10.d0**(-2.d0)*xtu
       do j=1,nfreestream
          node=ifreestream(j)
+c         write(*,*) 'applybounk  freestream ',node
          imat=inomat(node)
          if(imat.eq.0) cycle
          temp=vold(0,node)
          call materialdata_dvi(imat,ntmat_,temp,shcon,nshcon,dvi)
-c         call materialdata_tg_sec(imat,ntmat_,temp,
-c     &        shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho,physcon)
 !     
 !     density for gases
 !     
@@ -74,11 +74,10 @@ c     &        shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho,physcon)
 !
       do j=1,nsolidsurf
          node=isolidsurf(j)
+c         write(*,*) 'applybounk solid  ',node
          imat=inomat(node)
          if(imat.eq.0) cycle
          temp=vold(0,node)
-c         call materialdata_tg_sec(imat,ntmat_,temp,
-c     &        shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho,physcon)
          call materialdata_dvi(imat,ntmat_,temp,shcon,nshcon,dvi)
 !     
 !     density for gases
@@ -107,6 +106,7 @@ c         write(*,*) 'applybounk ',node,xsolidsurf(j)
          ndir=nodempc(2,ist)
          if(ndir.ne.4) cycle
          node=nodempc(1,ist)
+c         write(*,*) 'applybounk  mpc ',node
 !     
 !     check whether fluid MPC
 !     

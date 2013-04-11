@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,7 +25,7 @@
 !
       character*3 m1
 !
-      integer iset,nkcoords,inum(*),mi(2),ngraph,nksegment,
+      integer iset,nkcoords,inum(*),mi(*),ngraph,nksegment,
      &  istartset(*),iendset(*),ialset(*),i,k,l,m,ncomp,iselect
 !
       real*8 fn(0:mi(2),*)

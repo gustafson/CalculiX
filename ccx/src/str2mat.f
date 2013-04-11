@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,9 +27,9 @@
 !                 component order: 11,22,33,12,13,23
 !     ckl(3,3):   the inverse deformation gradient
 !     vj:         Jakobian determinant
-!     cauchy:     logical variable
-!                 if true: str contains the Cauchy stress
-!                 if false: str contains the Kirchhoff stress or
+!     cauchy:     integer variable
+!                 if 1: str contains the Cauchy stress
+!                 if 0: str contains the Kirchhoff stress or
 !                           Lagrange strain
 !
 !     OUTPUT:
@@ -39,7 +39,7 @@
 !
       implicit none
 !
-      logical cauchy
+      integer cauchy
 !
       integer i,m1,m2
 !
@@ -75,7 +75,7 @@
 !
       enddo
 !
-      if(cauchy) then
+      if(cauchy.eq.1) then
          do i=1,6
             str(i)=s(i)*vj
          enddo

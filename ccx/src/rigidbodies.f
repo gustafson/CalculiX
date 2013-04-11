@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -77,6 +77,16 @@
                write(*,*) '       ELSET can be specified, not both'
                stop
             endif
+         elseif(textpart(i)(1:8).eq.'PINNSET=') then
+            if(elset(1:1).eq.' ') then
+               noset(1:80)=textpart(i)(9:88)
+               ipos=index(noset,' ')
+               noset(ipos:ipos)='N'
+            else
+               write(*,*) '*ERROR in rigidbodies: either NSET or'
+               write(*,*) '       ELSET can be specified, not both'
+               stop
+            endif
          elseif(textpart(i)(1:5).eq.'NSET=') then
             if(elset(1:1).eq.' ') then
                noset(1:80)=textpart(i)(6:85)
@@ -117,6 +127,8 @@
       if((elset(1:1).eq.' ').and.
      &   (noset(1:1).eq.' ')) then
          write(*,*) '*WARNING in rigidbodies: no set defined'
+         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &     ipoinp,inp,ipoinpc)
          return
       endif
 !
@@ -135,6 +147,8 @@
          if(inoset.eq.0) then
             write(*,*) '*WARNING in rigidbodies: node set ',noset
             write(*,*) '         does not exist'
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &          ipoinp,inp,ipoinpc)
             return
          endif
       endif
@@ -149,6 +163,8 @@
          if(ielset.eq.0) then
             write(*,*) '*WARNING in rigidbodies: element set ',elset
             write(*,*) '         does not exist'
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &          ipoinp,inp,ipoinpc)
             return
          endif
       endif

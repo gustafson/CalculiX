@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@
 !
       implicit none
 !
-      logical ogden,hyperfoam,taylor
+      integer ogden,hyperfoam,taylor
 !
       integer nelconst,kode,kk(84),i,j,k,l,m,nt,icmd,istart,iend,
      &  nc,n,ithermal,ii,jj,mm,neig
@@ -41,10 +41,10 @@
      &  alb(3),beta(*),v33,v36,all(3),term,stre(*),total,coefa,
      &  coefb,coefd,coefm,constant(21)
 !
-      data kk /1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
+      kk=(/1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
      &  1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,3,3,1,3,
      &  1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,1,2,2,3,1,3,2,3,
-     &  2,3,2,3/
+     &  2,3,2,3/)
 c      write(*,*) ' emec '
 c      write(*,'(4(1x,e19.12))') (emec(i),i=1,6)
 !
@@ -60,15 +60,15 @@ c      write(*,'(4(1x,e19.12))') (emec(i),i=1,6)
 !     which involves parts of a taylor expansion in terms of the
 !     reduced Green deformation invariants
 !
-      ogden=.false.
-      hyperfoam=.false.
-      taylor=.false.
+      ogden=0
+      hyperfoam=0
+      taylor=0
       if((kode.lt.-3).and.(kode.gt.-7)) then
-         ogden=.true.
+         ogden=1
       elseif((kode.lt.-14).and.(kode.gt.-18)) then
-         hyperfoam=.true.
+         hyperfoam=1
       else
-         taylor=.true.
+         taylor=1
       endif
 !
 c      if(icmd.eq.1) then
@@ -220,7 +220,7 @@ c         v2=v2/2.d0
 !
          do l=1,3
             do k=1,l
-               if(taylor) then
+               if(taylor.eq.1) then
                   dibdc(k,l,1)=-v33**4*v1*didc(k,l,3)/3.d0
      &                 +v33*didc(k,l,1)
                   dibdc(k,l,2)=-2.d0*v33**5*v2*didc(k,l,3)/3.d0
@@ -241,7 +241,7 @@ c         v2=v2/2.d0
                m=kk(nt+3)
                n=kk(nt+4)
                nt=nt+4
-               if(taylor) then
+               if(taylor.eq.1) then
                   d2ibdc2(k,l,m,n,1)=4.d0/9.d0*v33**7*v1*didc(k,l,3)
      &                 *didc(m,n,3)-v33**4/3.d0*(didc(m,n,1)*didc(k,l,3)
      &                 +didc(k,l,1)*didc(m,n,3))-v33**4/3.d0*v1*
@@ -261,7 +261,7 @@ c         v2=v2/2.d0
 !     calculation of the principal stretches for the Ogden model and 
 !     hyperfoam materials
 !
-         if((ogden).or.(hyperfoam)) then
+         if((ogden.eq.1).or.(hyperfoam.eq.1)) then
 !
 !        taking the thermal jacobian into account        
 !
@@ -434,7 +434,7 @@ c         v2=v2/2.d0
 !
 !        reduced principal stretches (Ogden model)
 !
-            if(ogden) then
+            if(ogden.eq.1) then
 !
 !           calculation of the reduced principal stretches
 !

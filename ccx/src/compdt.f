@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine compdt(nk,dt,nshcon,shcon,nrhcon,rhcon,vold,ntmat_,
      &  iponoel,inoel,dtimef,iexplicit,ielmat,physcon,dh,cocon,
-     &  ncocon,ithermal,mi,ipkon,kon,lakon,dtl,ne,v,co)
+     &  ncocon,ithermal,mi,ipkon,kon,lakon,dtl,ne,v,co,turbulent,voldtu)
 !
 !     - determine the time step for each node (stored in field dt
 !       and the minimum value across all nodes (dtimef)
@@ -27,15 +27,15 @@
 !
       character*8 lakon(*),lakonl
 !
-      integer nk,i,j,k,iponoel(*),inoel(3,*),index,nelem,ithermal,
-     &  nshcon(*),nrhcon(*),ntmat_,ielmat(*),imat,ncocon(2,*),mi(2),
-     &  ipkon(*),kon(*),ne,nope,indexe,iflag,iexplicit
+      integer nk,i,j,k,iponoel(*),inoel(3,*),index,nelem,ithermal,mi(*),
+     &  nshcon(*),nrhcon(*),ntmat_,ielmat(mi(3),*),imat,ncocon(2,*),
+     &  ipkon(*),kon(*),ne,nope,indexe,iflag,iexplicit,turbulent
 !
       real*8 dtimef,dt(*),dvi,r,cp,rho,shcon(0:3,ntmat_,*),
      &  rhcon(0:1,ntmat_,*),vold(0:mi(2),*),temp,vel,dtu,dtnu,
      &  physcon(*),dh(*),cocon(0:6,ntmat_,*),dtal,cond,voldl(3,20),
      &  xl(3,20),vertex6(3,6),vertex8(3,8),xi,et,ze,xsj,shp(4,20),
-     &  dtl(*),h,v(0:mi(2),*),co(3,*),dd
+     &  dtl(*),h,v(0:mi(2),*),co(3,*),dd,voldtu(2,*)
 !
       data vertex6 /0.d0,0.d0,0.d0,1.d0,0.d0,0.d0,
      &              0.d0,1.d0,0.d0,0.d0,0.d0,1.d0,
@@ -143,7 +143,7 @@ c      endif
 !     
 !        determining the time increment
 !
-         imat=ielmat(nelem)
+         imat=ielmat(1,nelem)
          temp=vold(0,i)
 !
 !        density for gases
@@ -174,6 +174,11 @@ c            if(dtl(i).lt.dtimef) dtimef=dtl(i)
                call materialdata_cp(imat,ntmat_,temp,shcon,nshcon,cp)
                if(cond.lt.1.d-10) cond=1.d-10
                dtal=dh(i)*dh(i)*rho*cp/(2.d0*cond)
+               dt(i)=(dt(i)*dtal)/(dt(i)+dtal)
+            endif
+            if(turbulent.ne.0) then
+               dtal=dh(i)*dh(i)*rho/
+     &              (2.d0*(dvi+dabs(voldtu(1,i)/voldtu(2,i))))
                dt(i)=(dt(i)*dtal)/(dt(i)+dtal)
             endif
             if(dt(i).lt.dtimef) dtimef=dt(i)

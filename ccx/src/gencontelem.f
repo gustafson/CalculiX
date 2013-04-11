@@ -23,38 +23,41 @@
      &  vini,nmethod,mi,imastop,nslavnode,islavnode,islavsurf,
      &  itiefac,areaslav,iponoels,inoels,springarea,ikmpc,
      &  ilmpc,nmpc,ipompc,nodempc,coefmpc,set,nset,istartset,
-     &  iendset,ialset,tietol,reltime)
+     &  iendset,ialset,tietol,reltime,xmastnor,xnormastface,imastnode,
+     &  nmastnode,filab)
 !
 !     generate contact elements for the slave contact nodes
 !
       implicit none
 !
-      character*8 lakon(*)
-c      character*18 cfile
-      character*81 tieset(3,*),slavset,set(*),noset
+      logical exi
 !
-      integer ntie,ifree,
+      character*8 lakon(*)
+      character*33 cfile
+      character*81 tieset(3,*),slavset,set(*),noset
+      character*87 filab(*)
+!
+      integer ntie,ifree,istep0,iinc0,
      &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),ne,node,
      &  neigh(1),iflag,kneigh,i,j,k,l,isol,iset,idummy,
-     &  itri,ll,kflag,n,nx(*),ny(*),istep,iinc,
-     &  nz(*),nstart,ielmat(*),material,ifaceq(8,6),ifacet(6,4),
+     &  itri,ll,kflag,n,nx(*),ny(*),istep,iinc,mi(*),
+     &  nz(*),nstart,ielmat(mi(3),*),material,ifaceq(8,6),ifacet(6,4),
      &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,iit,
      &  nnodelem,nface,nope,nodef(8),ncmat_,ntmat_,index1,
-     &  ne0,nmethod,mi(2),iteller,ifaces,jfaces,
+     &  ne0,nmethod,iteller,ifaces,jfaces,
      &  imastop(3,*), itriangle(100),ntriangle,ntriangle_,itriold,
      &  itrinew,id,nslavnode(*),islavnode(*),islavsurf(2,*),
      &  itiefac(2,*),iponoels(*),inoels(3,*),konl(20),nelems,m,
-     &  mint2d,nopes,idof,index2,ikmpc(*),ilmpc(*),nmpc,
+     &  mint2d,nopes,index2,ikmpc(*),ilmpc(*),nmpc,
      &  nodempc(3,*),ipompc(*),ipos,nset,istartset(*),iendset(*),
-     &  ialset(*)
+     &  ialset(*),imastnode(*),nmastnode(*)
 !
       real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),p(3),
      &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),cs(17,*),
      &  beta,c0,elcon(0:ncmat_,ntmat_,*),vini(0:mi(2),*),weight,
      &  areaslav(*),springarea(2,*),xl2(3,8),area,xi,et,shp2(7,8),
-     &  xs2(3,2),xsj2(3),coefmpc(*),adjust,tietol(2,*),reltime
-!
-      include "gauss.f"
+     &  xs2(3,2),xsj2(3),coefmpc(*),adjust,tietol(2,*),reltime,
+     &  xmastnor(3,*),xnormastface(3,8,*)
 !
 !     nodes per face for hex elements
 !
@@ -93,27 +96,60 @@ c      character*18 cfile
       data iflag /2/
 !
       data iteller /0/
-      save iteller
+      data istep0 /-1/
+      data iinc0 /-1/
+!
+      save iteller,istep0,iinc0
+!
+      include "gauss.f"
 !
 !     opening a file to store the contact spring elements
 !    
-c      iteller=iteller+1
-c      cfile(1:18)='contactelem       '
-c      if(iteller.lt.10) then
-c         write(cfile(12:12),'(i1)') iteller
-c         cfile(13:16)='.inp'
-c      elseif(iteller.lt.100) then
-c         write(cfile(12:13),'(i2)') iteller
-c         cfile(14:17)='.inp'
-c      elseif(iteller.lt.1000) then
-c         write(cfile(12:14),'(i3)') iteller
-c         cfile(15:18)='.inp'
-c      else
-c         write(*,*) '*ERROR in gencontelem: more than 1000'
-c         write(*,*) '       contact element files'
-c         stop
-c      endif
-c      open(27,file=cfile,status='unknown')
+      if(filab(1)(3:3).eq.'C') then
+         if((istep.eq.istep0).and.(iinc.eq.iinc0)) then
+            open(27,file=cfile,status='unknown',position='append')
+            iteller=iteller+1
+         else
+            istep0=istep
+            iinc0=iinc
+            iteller=1
+         endif
+!
+!        deleting old files if new increment was started
+!
+         if(iteller.eq.1) then
+            do i=1,999
+               cfile(1:33)='CONTACT_ELEMENTS_IN_ITERATION_   '
+               if(i.lt.10) then
+                  write(cfile(31:31),'(i1)') i
+               elseif(i.lt.100) then
+                  write(cfile(31:32),'(i2)') i
+               elseif(i.lt.1000) then
+                  write(cfile(31:33),'(i3)') i
+               endif
+               inquire(file=cfile,exist=exi)
+               if(exi) then
+                  open(27,file=cfile,status='unknown')
+                  close(27,status='delete')
+               else
+                  exit
+               endif
+            enddo
+         endif
+         cfile(1:33)='CONTACT_ELEMENTS_IN_ITERATION_   '
+         if(iteller.lt.10) then
+            write(cfile(31:31),'(i1)') iteller
+         elseif(iteller.lt.100) then
+            write(cfile(31:32),'(i2)') iteller
+         elseif(iteller.lt.1000) then
+            write(cfile(31:33),'(i3)') iteller
+         else
+            write(*,*) '*ERROR in gencontelem: more than 1000'
+            write(*,*) '       contact element files'
+            stop
+         endif
+         open(27,file=cfile,status='unknown')
+      endif
 !
       do i=1,ntie
          if(tieset(1,i)(81:81).ne.'C') cycle
@@ -338,7 +374,8 @@ c         if((istep.eq.1).and.(iinc.eq.1).and.(iit.le.0)) then
      &                    straight(ll+2,itri)*p(3)+
      &                    straight(ll+3,itri)
 c                     if(dist.gt.0.d0) then
-                     if(dist.gt.1.d-6) then
+c                     if(dist.gt.1.d-6) then
+                     if(dist.gt.1.d-6*dsqrt(area)) then
                         itrinew=imastop(l,itri)
                         if(itrinew.eq.0) then
 c                           write(*,*) '**border reached'
@@ -351,7 +388,7 @@ c                           write(*,*) '**solution in between triangles'
                            call nident(itriangle,itrinew,ntriangle,id)
                            if(id.gt.0) then
                               if(itriangle(id).eq.itrinew) then
-c                                 write(*,*) '**circular path; no solution'
+c                             write(*,*) '**circular path;no solution'
                                  exit loop1
                               endif
                            endif
@@ -379,6 +416,7 @@ c                              write(*,*) '**regular solution'
 !              check whether distance is larger than c0:
 !              no element is generated
 !
+c               write(*,*) 'gencontelem isol ',node,itri,isol
                if(isol.ne.0) then
                   dist=straight(13,itri)*p(1)+
      &                 straight(14,itri)*p(2)+
@@ -427,6 +465,7 @@ c                  if((istep.eq.1).and.(iinc.eq.1).and.(iit.le.0)) then
                   else
                      if(dabs(area).gt.0.d0) then
                         c0=1.d-6*dsqrt(area)
+c                        c0=1.d-3*dsqrt(area)
                      else
                         c0=1.d-10
                      endif
@@ -455,7 +494,7 @@ c                    enddo
                   ne=ne+1
                   ipkon(ne)=ifree
                   lakon(ne)='ESPRNGC '
-                  ielmat(ne)=material
+                  ielmat(1,ne)=material
                   nelem=int(koncont(4,itri)/10.d0)
                   jface=koncont(4,itri)-10*nelem
 !
@@ -538,24 +577,42 @@ c                    enddo
                   write(lakon(ne)(8:8),'(i1)') nnodelem+1
 c                  write(*,*) 'new elem',ne,(nodef(k),k=1,nnodelem),node
                   if((nnodelem.eq.3).or.(nnodelem.eq.6)) then
-c                     write(27,100)
-c 100                 format('*ELEMENT,TYPE=C3D4')
-c                     write(27,*) ne,',',nodef(1),',',nodef(2),',',
-c     &                           nodef(3),',',node
+                     if(filab(1)(3:3).eq.'C') then
+                        write(27,100)
+ 100                    format('*ELEMENT,TYPE=C3D4')
+                        write(27,*) ne,',',nodef(1),',',nodef(2),',',
+     &                       nodef(3),',',node
+                     endif
                   else
-c                     write(27,101)
-c 101                 format('*ELEMENT,TYPE=C3D6')
-c                     write(27,*) ne,',',nodef(2),',',node,',',nodef(3),
-c     &                    ',',nodef(1),',',node,',',nodef(4)
+                     if(filab(1)(3:3).eq.'C') then
+                        write(27,101)
+ 101                    format('*ELEMENT,TYPE=C3D6')
+                        write(27,*) ne,',',nodef(2),',',node,',',
+     &                     nodef(3),',',nodef(1),',',node,',',nodef(4)
+                     endif
                   endif
+!              
+!               Saving the normals of the master nodes for each face
+!  
+                  do l=1,nnodelem
+                     call nident(imastnode(nmastnode(i)+1),
+     &                    nodef(l),
+     &                    nmastnode(i+1)-nmastnode(i),id)
+                     index1=nmastnode(i)+id
+                     do m=1,3
+                        xnormastface(m,l,j)=xmastnor(m,index1)
+                     enddo
+                  enddo
                endif
 !     
          enddo
       enddo
 !
+!     closing the file containing the contact elements
 !     
-c      close(27)
+      if(filab(1)(3:3).eq.'C') then
+         close(27)
+      endif
 !
       return
       end
-

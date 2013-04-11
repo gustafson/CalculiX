@@ -33,7 +33,9 @@ void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
              int *iperturb, int *ikboun, int *nboun, int *mi,
              int *imastop,int *nslavnode,int *islavnode,int *islavsurf,
              int *itiefac,double *areaslav,int *iponoels,int *inoels,
-             double *springarea, double *tietol, double *reltime){
+             double *springarea, double *tietol, double *reltime,
+	     int *imastnode, int *nmastnode, double *xmastnor,
+	     double *xnormastface, char *filab){
     
     char *labmpc=NULL;
 
@@ -47,8 +49,10 @@ void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
     fmpc=*fmpcp;nodempc=*nodempcp;coefmpc=*coefmpcp;
     nmpc_=*nmpc;
     
-    FORTRAN(updatecont,(koncont,ncont,co,vold,
-			cg,straight,mi));
+    FORTRAN(updatecontpen,(koncont,ncont,co,vold,
+			cg,straight,mi,imastnode,nmastnode,xmastnor,
+			ntie,tieset,nset,set,istartset,
+			iendset,ialset,ipkon,lakon,kon));
     
 /*    printf("before remcontmpc mpcnew=%d\n",*nmpc);
        for(i=0;i<*nmpc;i++){
@@ -85,7 +89,8 @@ void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
        iinc,iit,ncmat_,ntmat_,ne0,vini,nmethod,mi,
        imastop,nslavnode,islavnode,islavsurf,itiefac,areaslav,iponoels,
        inoels,springarea,ikmpc,ilmpc,nmpc,ipompc,nodempc,coefmpc,
-       set,nset,istartset,iendset,ialset,tietol,reltime));
+       set,nset,istartset,iendset,ialset,tietol,reltime,xmastnor,
+       xnormastface,imastnode,nmastnode,filab));
 
     free(xo);free(yo);free(zo);free(x);free(y);free(z);free(nx);
     free(ny);free(nz);

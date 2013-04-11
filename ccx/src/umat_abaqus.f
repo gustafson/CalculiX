@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -57,7 +57,7 @@
 !     vj                 Jacobian at the end of the increment
 !
 !     ithermal           0: no thermal effects are taken into account
-!                        1: thermal effects are taken into account (triggered
+!                        >0: thermal effects are taken into account (triggered
 !                        by the keyword *INITIAL CONDITIONS,TYPE=TEMPERATURE)
 !     t1l                temperature at the end of the increment
 !     dtime              time length of the increment
@@ -136,7 +136,7 @@
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(2),i,iorien,
+      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),i,iorien,
      &  ndi,nshr,ntens,nprops,layer,kspt,kstep,kinc,kal(2,6),kel(4,21),
      &  j1,j2,j3,j4,j5,j6,j7,j8,jj
 !
@@ -149,14 +149,15 @@
      &  drpldt,stran(6),dstran(6),abqtime(2),predef,temp,dtemp,
      &  dpred,drot(3,3),celent,pnewdt
 !
-      data kal /1,1,2,2,3,3,1,2,1,3,2,3/
+      kal=reshape((/1,1,2,2,3,3,1,2,1,3,2,3/),(/2,6/))
 !
-      data kel /1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
+      kel=reshape((/1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
      &          1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,
      &          3,3,1,3,1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,
-     &          1,2,2,3,1,3,2,3,2,3,2,3/
+     &          1,2,2,3,1,3,2,3,2,3,2,3/),(/4,21/))
 !
-      data drot /1.d0,0.d0,0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,1.d0/
+      drot=reshape((/1.d0,0.d0,0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,1.d0/),
+     &            (/3,3/))
 !
 !     calculating the mechanical strain
 !

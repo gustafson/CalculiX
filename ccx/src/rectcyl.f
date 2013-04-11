@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,16 +17,16 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine rectcyl(co,v,fn,stn,qfn,een,cs,n,icntrl,t,filab,
-     &  imag,mi)
+     &  imag,mi,emn)
 !
 !     icntrl=1:  rectangular to cylindrical coordinates for nodal
 !                coordinates in field co
 !     icntrl=-1: cylindrical to rectangular coordinates for nodal
 !                coordinates in field co
 !     icntrl=2:  rectangular to cylindrical coordinates for fields
-!                v,fn,stn and een
+!                v,fn,stn,een and emn
 !     icntrl=-2: cylindrical to rectangular coordinates for fields
-!                v,fn,stn and een
+!                v,fn,stn, een and emn
 !
 !     the axis of the cylindrical coordinates is defined by points
 !     a with coordinates csab(1..3) and b with coordinates csab(4..6).
@@ -40,9 +40,9 @@
       implicit none
 !
       character*87 filab(*)
-      integer i,j,n,icntrl,imag,mi(2)
+      integer i,j,n,icntrl,imag,mi(*)
       real*8 co(3,*),v(0:mi(2),*),fn(0:mi(2),*),stn(6,*),een(6,*),
-     &  a(3,3),
+     &  a(3,3),emn(6,*),
      &  xr,xt,xz,b(3,3),cs(17,*),t(3),u(3),qfn(3,*),csab(7),
      &  xn(3),r(3),z,theta,rr,c(3,3),ctm,ct,st,ddx,ddy,dd
 !
@@ -160,7 +160,7 @@ c            write(*,*) 'rectcyl',i,co(2,i)
             j=i
             call transformatrix(csab,co(1,i),a)
 !
-            if((filab(1)(1:4).eq.'U   ').or.
+            if((filab(1)(1:3).eq.'U  ').or.
      &         (filab(11)(1:4).eq.'PU'))  then 
                xr=v(1,j)*a(1,1)+v(2,j)*a(2,1)+v(3,j)*a(3,1)
                xt=v(1,j)*a(1,2)+v(2,j)*a(2,2)+v(3,j)*a(3,2)
@@ -227,13 +227,32 @@ c            write(*,*) 'rectcyl',i,co(2,i)
                qfn(3,j)=xz
             endif
 !
+            if(filab(32)(1:4).eq.'ME  ') then
+               b(1,1)=emn(1,j)*a(1,1)+emn(4,j)*a(2,1)+emn(5,j)*a(3,1)
+               b(1,2)=emn(1,j)*a(1,2)+emn(4,j)*a(2,2)+emn(5,j)*a(3,2)
+               b(1,3)=emn(1,j)*a(1,3)+emn(4,j)*a(2,3)+emn(5,j)*a(3,3)
+               b(2,1)=emn(4,j)*a(1,1)+emn(2,j)*a(2,1)+emn(6,j)*a(3,1)
+               b(2,2)=emn(4,j)*a(1,2)+emn(2,j)*a(2,2)+emn(6,j)*a(3,2)
+               b(2,3)=emn(4,j)*a(1,3)+emn(2,j)*a(2,3)+emn(6,j)*a(3,3)
+               b(3,1)=emn(5,j)*a(1,1)+emn(6,j)*a(2,1)+emn(3,j)*a(3,1)
+               b(3,2)=emn(5,j)*a(1,2)+emn(6,j)*a(2,2)+emn(3,j)*a(3,2)
+               b(3,3)=emn(5,j)*a(1,3)+emn(6,j)*a(2,3)+emn(3,j)*a(3,3)
+!
+               emn(1,j)=a(1,1)*b(1,1)+a(2,1)*b(2,1)+a(3,1)*b(3,1)
+               emn(2,j)=a(1,2)*b(1,2)+a(2,2)*b(2,2)+a(3,2)*b(3,2)
+               emn(3,j)=a(1,3)*b(1,3)+a(2,3)*b(2,3)+a(3,3)*b(3,3)
+               emn(4,j)=a(1,1)*b(1,2)+a(2,1)*b(2,2)+a(3,1)*b(3,2)
+               emn(5,j)=a(1,1)*b(1,3)+a(2,1)*b(2,3)+a(3,1)*b(3,3)
+               emn(6,j)=a(1,2)*b(1,3)+a(2,2)*b(2,3)+a(3,2)*b(3,3)
+            endif
+!
 !           imaginary part for cyclic symmetry frequency calculations
 !
             if(imag.eq.1) then
 !
                j=i+n
 !
-               if((filab(1)(1:4).eq.'U   ').or.
+               if((filab(1)(1:3).eq.'U  ').or.
      &            (filab(11)(1:4).eq.'PU'))  then 
                   xr=v(1,j)*a(1,1)+v(2,j)*a(2,1)+v(3,j)*a(3,1)
                   xt=v(1,j)*a(1,2)+v(2,j)*a(2,2)+v(3,j)*a(3,2)
@@ -299,6 +318,25 @@ c            write(*,*) 'rectcyl',i,co(2,i)
                   qfn(2,j)=xt
                   qfn(3,j)=xz
                endif
+!
+               if(filab(32)(1:4).eq.'ME  ') then
+                  b(1,1)=emn(1,j)*a(1,1)+emn(4,j)*a(2,1)+emn(5,j)*a(3,1)
+                  b(1,2)=emn(1,j)*a(1,2)+emn(4,j)*a(2,2)+emn(5,j)*a(3,2)
+                  b(1,3)=emn(1,j)*a(1,3)+emn(4,j)*a(2,3)+emn(5,j)*a(3,3)
+                  b(2,1)=emn(4,j)*a(1,1)+emn(2,j)*a(2,1)+emn(6,j)*a(3,1)
+                  b(2,2)=emn(4,j)*a(1,2)+emn(2,j)*a(2,2)+emn(6,j)*a(3,2)
+                  b(2,3)=emn(4,j)*a(1,3)+emn(2,j)*a(2,3)+emn(6,j)*a(3,3)
+                  b(3,1)=emn(5,j)*a(1,1)+emn(6,j)*a(2,1)+emn(3,j)*a(3,1)
+                  b(3,2)=emn(5,j)*a(1,2)+emn(6,j)*a(2,2)+emn(3,j)*a(3,2)
+                  b(3,3)=emn(5,j)*a(1,3)+emn(6,j)*a(2,3)+emn(3,j)*a(3,3)
+!
+                  emn(1,j)=a(1,1)*b(1,1)+a(2,1)*b(2,1)+a(3,1)*b(3,1)
+                  emn(2,j)=a(1,2)*b(1,2)+a(2,2)*b(2,2)+a(3,2)*b(3,2)
+                  emn(3,j)=a(1,3)*b(1,3)+a(2,3)*b(2,3)+a(3,3)*b(3,3)
+                  emn(4,j)=a(1,1)*b(1,2)+a(2,1)*b(2,2)+a(3,1)*b(3,2)
+                  emn(5,j)=a(1,1)*b(1,3)+a(2,1)*b(2,3)+a(3,1)*b(3,3)
+                  emn(6,j)=a(1,2)*b(1,3)+a(2,2)*b(2,3)+a(3,2)*b(3,3)
+               endif
             endif
          enddo
       elseif(icntrl.eq.-2) then
@@ -306,7 +344,7 @@ c            write(*,*) 'rectcyl',i,co(2,i)
             j=i
             call transformatrix(csab,co(1,i),a)
 !
-            if((filab(1)(1:4).eq.'U   ').or.
+            if((filab(1)(1:3).eq.'U  ').or.
      &         (filab(11)(1:4).eq.'PU'))  then 
                xr=v(1,j)*a(1,1)+v(2,j)*a(1,2)+v(3,j)*a(1,3)
                xt=v(1,j)*a(2,1)+v(2,j)*a(2,2)+v(3,j)*a(2,3)
@@ -373,13 +411,32 @@ c            write(*,*) 'rectcyl',i,co(2,i)
                qfn(3,j)=xz
             endif
 !
+            if(filab(32)(1:4).eq.'ME  ') then
+               b(1,1)=emn(1,j)*a(1,1)+emn(4,j)*a(1,2)+emn(5,j)*a(1,3)
+               b(1,2)=emn(1,j)*a(2,1)+emn(4,j)*a(2,2)+emn(5,j)*a(2,3)
+               b(1,3)=emn(1,j)*a(3,1)+emn(4,j)*a(3,2)+emn(5,j)*a(3,3)
+               b(2,1)=emn(4,j)*a(1,1)+emn(2,j)*a(1,2)+emn(6,j)*a(1,3)
+               b(2,2)=emn(4,j)*a(2,1)+emn(2,j)*a(2,2)+emn(6,j)*a(2,3)
+               b(2,3)=emn(4,j)*a(3,1)+emn(2,j)*a(3,2)+emn(6,j)*a(3,3)
+               b(3,1)=emn(5,j)*a(1,1)+emn(6,j)*a(1,2)+emn(3,j)*a(1,3)
+               b(3,2)=emn(5,j)*a(2,1)+emn(6,j)*a(2,2)+emn(3,j)*a(2,3)
+               b(3,3)=emn(5,j)*a(3,1)+emn(6,j)*a(3,2)+emn(3,j)*a(3,3)
+!
+               emn(1,j)=a(1,1)*b(1,1)+a(1,2)*b(2,1)+a(1,3)*b(3,1)
+               emn(2,j)=a(2,1)*b(1,2)+a(2,2)*b(2,2)+a(2,3)*b(3,2)
+               emn(3,j)=a(3,1)*b(1,3)+a(3,2)*b(2,3)+a(3,3)*b(3,3)
+               emn(4,j)=a(1,1)*b(1,2)+a(1,2)*b(2,2)+a(1,3)*b(3,2)
+               emn(5,j)=a(1,1)*b(1,3)+a(1,2)*b(2,3)+a(1,3)*b(3,3)
+               emn(6,j)=a(2,1)*b(1,3)+a(2,2)*b(2,3)+a(2,3)*b(3,3)
+            endif
+!
 !           imaginary part for cyclic symmetry frequency calculations
 !
             if(imag.eq.1) then
 !
                j=i+n
 !
-               if((filab(1)(1:4).eq.'U   ').or.
+               if((filab(1)(1:3).eq.'U  ').or.
      &            (filab(11)(1:4).eq.'PU'))  then 
                   xr=v(1,j)*a(1,1)+v(2,j)*a(1,2)+v(3,j)*a(1,3)
                   xt=v(1,j)*a(2,1)+v(2,j)*a(2,2)+v(3,j)*a(2,3)
@@ -444,6 +501,25 @@ c            write(*,*) 'rectcyl',i,co(2,i)
                   qfn(1,j)=xr
                   qfn(2,j)=xt
                   qfn(3,j)=xz
+               endif
+!     
+               if(filab(32)(1:4).eq.'ME  ') then
+                  b(1,1)=emn(1,j)*a(1,1)+emn(4,j)*a(1,2)+emn(5,j)*a(1,3)
+                  b(1,2)=emn(1,j)*a(2,1)+emn(4,j)*a(2,2)+emn(5,j)*a(2,3)
+                  b(1,3)=emn(1,j)*a(3,1)+emn(4,j)*a(3,2)+emn(5,j)*a(3,3)
+                  b(2,1)=emn(4,j)*a(1,1)+emn(2,j)*a(1,2)+emn(6,j)*a(1,3)
+                  b(2,2)=emn(4,j)*a(2,1)+emn(2,j)*a(2,2)+emn(6,j)*a(2,3)
+                  b(2,3)=emn(4,j)*a(3,1)+emn(2,j)*a(3,2)+emn(6,j)*a(3,3)
+                  b(3,1)=emn(5,j)*a(1,1)+emn(6,j)*a(1,2)+emn(3,j)*a(1,3)
+                  b(3,2)=emn(5,j)*a(2,1)+emn(6,j)*a(2,2)+emn(3,j)*a(2,3)
+                  b(3,3)=emn(5,j)*a(3,1)+emn(6,j)*a(3,2)+emn(3,j)*a(3,3)
+!     
+                  emn(1,j)=a(1,1)*b(1,1)+a(1,2)*b(2,1)+a(1,3)*b(3,1)
+                  emn(2,j)=a(2,1)*b(1,2)+a(2,2)*b(2,2)+a(2,3)*b(3,2)
+                  emn(3,j)=a(3,1)*b(1,3)+a(3,2)*b(2,3)+a(3,3)*b(3,3)
+                  emn(4,j)=a(1,1)*b(1,2)+a(1,2)*b(2,2)+a(1,3)*b(3,2)
+                  emn(5,j)=a(1,1)*b(1,3)+a(1,2)*b(2,3)+a(1,3)*b(3,3)
+                  emn(6,j)=a(2,1)*b(1,3)+a(2,2)*b(2,3)+a(2,3)*b(3,3)
                endif
             endif
 !

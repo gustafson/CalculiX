@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -23,9 +23,8 @@
 !                 stress with respect to the Eulerian strain
 !     ckl(3,3):   inverse deformation gradient
 !     vj:         Jacobian determinant
-!     cauchy:     logical variable
-!                 if true: elas is written in terms of Cauchy stress
-!                 if false: elas is written in terms of Kirchhoff stress
+!     cauchy:     if 1: elas is written in terms of Cauchy stress
+!                 if 0: elas is written in terms of Kirchhoff stress
 !
 !     OUTPUT:
 !
@@ -35,7 +34,7 @@
 !
       implicit none
 !
-      logical cauchy
+      integer cauchy
 !
       integer kk(84),i,nt,k,l,m,n
 !
@@ -136,7 +135,7 @@
      &                 ckl(k,2)*ckl(l,3)*ckl(m,2)*ckl(n,3))
       enddo
 !
-      if(cauchy) then
+      if(cauchy.eq.1) then
          do i=1,21
             elas(i)=e(i)*vj
          enddo

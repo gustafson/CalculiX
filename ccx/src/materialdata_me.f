@@ -1,5 +1,5 @@
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,7 +34,7 @@
       integer nelcon(2,*),nrhcon(*),nalcon(2,*),
      &  imat,iorien,ithermal,i,j,k,mattyp,kal(2,6),j1,j2,j3,j4,
      &  jj,ntmat_,istiff,nelconst,ihyper,kode,itemp,kin,nelas,
-     &  iel,iint,mi(2),ncmat_,id,two,seven
+     &  iel,iint,mi(*),ncmat_,id,two,seven
 !
       integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
@@ -46,7 +46,7 @@
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  plconloc(82),dtime
 !
-      data kal /1,1,2,2,3,3,1,2,1,3,2,3/
+      kal=reshape((/1,1,2,2,3,3,1,2,1,3,2,3/),(/2,6/))
 !
       two=2
       seven=7

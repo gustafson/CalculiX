@@ -1,6 +1,6 @@
 !
 !     CalculiX 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,14 +40,15 @@
       character*80 matname(*),amat
 !
       integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nbody,nelem,
-     &  nload,idist,i,j,k,i1,i2,j1,ncocon(2,*),k1,node,nfield,
-     &  nmethod,ii,jj,id,ipointer,ig,kk,nrhcon(*),ielmat(*),nshcon(*),
-     &  ntmat_,nope,nopes,imat,mint2d,mint3d,mi(2),ifacet(6,4),nopev,
+     &  nload,idist,i,j,k,i1,i2,j1,ncocon(2,*),k1,node,nfield,mi(*),
+     &  nmethod,ii,jj,id,ipointer,ig,kk,nrhcon(*),ielmat(mi(3),*),
+     &  nshcon(*),
+     &  ntmat_,nope,nopes,imat,mint2d,mint3d,ifacet(6,4),nopev,
      &  ifacew(8,5),istep,iinc,layer,kspt,jltyp,iflag,nelemface(*),
      &  nface,igl,idf,ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),
      &  iscale,turbulent,ipvar(*),index,ipvarf(*),iemchange
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,
+      real*8 co(3,*),shp(4,20),xs2(3,7),dvi,
      &  p1(3),p2(3),bodyf(3),bodyfx(3),ff(60),cond,enthalpy,
      &  bf(3),q(3),xsjmod,dtem(3),vkl(3,3),corio(3),sinktemp,
      &  rhcon(0:1,ntmat_,*),reltimef,t(3,3),tv(3),bfv,press,
@@ -67,28 +68,28 @@
       include "gauss.f"
       include "xlocal.f"
 !
-      data ifaceq /4,3,2,1,11,10,9,12,
+      ifaceq=reshape((/4,3,2,1,11,10,9,12,
      &            5,6,7,8,13,14,15,16,
      &            1,2,6,5,9,18,13,17,
      &            2,3,7,6,10,19,14,18,
      &            3,4,8,7,11,20,15,19,
-     &            4,1,5,8,12,17,16,20/
-      data ifacet /1,3,2,7,6,5,
+     &            4,1,5,8,12,17,16,20/),(/8,6/))
+      ifacet=reshape((/1,3,2,7,6,5,
      &             1,2,4,5,9,8,
      &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
-      data ifacew /1,3,2,9,8,7,0,0,
+     &             1,4,3,8,10,7/),(/6,4/))
+      ifacew=reshape((/1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
-     &             4,6,3,1,12,15,9,13/
-      data iflag /3/
-      data a1 /0.31d0/
+     &             4,6,3,1,12,15,9,13/),(/8,5/))
+      iflag=3
+      a1=0.31d0
 !
       tvar(1)=time
       tvar(2)=ttime+dtime
 !
-      imat=ielmat(nelem)
+      imat=ielmat(1,nelem)
       amat=matname(imat)
 !
       if(lakonl(4:4).eq.'2') then
@@ -144,16 +145,18 @@
 !     (rho*energy density, rho*velocity and rho)
 !
       do i1=1,nope
-         do i2=0,4
-            voldl(i2,i1)=vold(i2,konl(i1))
-         enddo
+c         do i2=0,4
+c            voldl(i2,i1)=vold(i2,konl(i1))
+c         enddo
+         voldl(0,i1)=vold(0,konl(i1))
+         voldl(4,i1)=vold(4,konl(i1))
          voldconl(0,i1)=voldcon(0,konl(i1))
-         voldconl(4,i1)=voldcon(4,konl(i1))
-         if(turbulent.ne.0) then
-            voldtul(1,i1)=voldtu(1,konl(i1))
-            voldtul(2,i1)=voldtu(2,konl(i1))
-            yyl(i1)=yy(konl(i1))
-         endif
+c         voldconl(4,i1)=voldcon(4,konl(i1))
+c         if(turbulent.ne.0) then
+c            voldtul(1,i1)=voldtu(1,konl(i1))
+c            voldtul(2,i1)=voldtu(2,konl(i1))
+c            yyl(i1)=yy(konl(i1))
+c         endif
       enddo
 !
 !     computation of the matrix: loop over the Gauss points
@@ -284,7 +287,7 @@
                      pgauss(j)=0.d0
                      do i1=1,nope
                         pgauss(j)=pgauss(j)+
-     &                       shp(4,i1)*xl(j,konl(i1))
+     &                       shp(4,i1)*co(j,konl(i1))
                      enddo
                   enddo
                   jltyp=1
@@ -435,6 +438,7 @@
                      tv(i1)=tv(i1)+cond*dtem(i1)
                   endif
                enddo
+               index=index+5
 !
                tvn=tv(1)*xsj2(1)+tv(2)*xsj2(2)+tv(3)*xsj2(3)
 c                  if((nelem.eq.20).and.(ig.eq.4)) then

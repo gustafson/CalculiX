@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@
       logical in
 !
       integer  inodesin(*),nnodesin,node,idi,nvertex,lvertex(*),i,
-     &  inodesout(*),nnodesout,ido,nopes,j,mi(2)
+     &  inodesout(*),nnodesout,ido,nopes,j,mi(*)
 !
       real*8 pvertex(3,*),pnodesin(3,*),slavstraight(20),xn(3),co(3,*),
      &  al,xl2(3,*),ratio(8),dist,xil,etl,vold(0:mi(2),*)

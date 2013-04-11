@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -98,7 +98,7 @@
       character*20 loadtype
 !
       integer kstep,kinc,noel,npt,jltyp,konl(20),ipompc(*),
-     &  nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),node,idof,id,iscale,mi(2)
+     &  nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),node,idof,id,iscale,mi(*)
 !
       real*8 flux(2),time(2),coords(3),sol,temp,press,vold(0:mi(2),*),
      &  area,co(3,*),coefmpc(*)
@@ -106,8 +106,6 @@
 !     the code starting here up to the end of the file serves as
 !     an example for combined mechanical-lubrication problems. 
 !     Please replace it by your own code for your concrete application.
-!
-      include "gauss.f"
 !
       integer ifaceq(8,6),ifacet(6,4),ifacew(8,5),ig,nelem,nopes,
      &  iflag,i,j,k,nope
@@ -132,6 +130,8 @@
      &             2,3,6,5,8,15,11,14,
      &             4,6,3,1,12,15,9,13/
       data iflag /3/
+!
+      include "gauss.f"
 !
       nelem=noel
 !

@@ -95,7 +95,7 @@
       ifreenoels=0
 !
 !     counters for new fields islavsurf and itiefac
-!       
+!
       do i=1,ntie
 !
 !        check for contact conditions
@@ -262,8 +262,7 @@
                nslavs=nslavnode(i+1)
                ifacecount=itiefac(2,i)
 !
-               cycle
-            endif
+            else
 !
 !           element face slave surface (node-to-surface or
 !           surface-to-surface contact)
@@ -369,14 +368,7 @@ c                       nopes=8
             enddo
             nslavnode(ntie+1)=nslavs
             itiefac(2,i)=ifacecount
-c!
-c!           for node-to-surface contact ncone is the number of slave
-c!           nodes
-c!
-            if(mortar.eq.0) then
-c               ncone=nslavnode(ntie+1)-nslavnode(ntie)
-               cycle
-            endif
+	    endif
 !
 !           what follows is only for surface-to-surface contact
 !           determining the master surface
@@ -450,10 +442,10 @@ c               ncone=nslavnode(ntie+1)-nslavnode(ntie)
                      endif
                      if(exist) cycle
                      nmasts=nmasts+1
-                     do k=nmasts,id+2,-1
+                     do k=nmasts,nmastnode(i)+id+2,-1
                         imastnode(k)=imastnode(k-1)
                      enddo
-                     imastnode(id+1)=node
+                     imastnode(nmastnode(i)+id+1)=node
                   enddo
 ! 
                endif

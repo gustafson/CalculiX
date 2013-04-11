@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2007 Guido Dhondt                     */
+/*              Copyright (C) 1998-2011 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -15,6 +15,7 @@
 /*     along with this program; if not, write to the Free Software       */
 /*     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.         */
 
+#include <unistd.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -32,16 +33,25 @@
 #include "pardiso.h"
 #endif
 
-void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *acr,
-                 double *bcr,int *ipivr,
+char *sideload1;
+
+int *kontri1,*nloadtr1,*idist=NULL,*ntrit1,*mi1,*jqrad1,
+    *irowrad1,*nzsrad1,num_cpus,*ntri1,*ntr1;
+
+double *vold1,*co1,*pmid1,*e11,*e21,*e31,*adview=NULL,*auview=NULL,*dist=NULL,
+    *area1,sidemean1;
+
+void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
+                 double *aurad,double *bcr,int *ipivr,
                  double *ac,double *bc,int *nload,char *sideload,
                  int *nelemload,double *xloadact,char *lakon,int *ipiv,
                  int *ntmat_,double *vold,double *shcon,
-                 int *nshcon,int *ipkon,int *kon,double *co,double *pmid,
-                 double *e1,double *e2,double *e3,int *iptri,int *kontri,
+                 int *nshcon,int *ipkon,int *kon,double *co,
+                 int *kontri,
                  int *ntri,int *nloadtr,double *tarea,double *tenv,
-                 double *physcon,double *erad,double *f,double *dist,
-                 int *idist,double *area,int *nflow,int *ikboun,
+                 double *physcon,double *erad,double **adviewp, 
+                 double **auviewp,
+                 int *nflow,int *ikboun,
                  double *xbounact,int *nboun,int *ithermal,
                  int *iinc,int *iit,double *cs, int *mcs, int *inocs, 
                  int *ntrit,int *nk, double *fenv,int *istep,double *dtime,
@@ -56,22 +66,27 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *acr,
 		 int * istartset,int* iendset,int *ialset,int *nset,
                  int *ineighe, int *nmpc, int *nodempc,int *ipompc,
                  double *coefmpc,char *labmpc, int *iemchange,int *nam, 
-                 int *iamload){
+                 int *iamload,int *jqrad,int *irowrad,int *nzsrad,
+                 int *icolrad){
   
   /* network=0: purely thermal
      network=1: general case (temperatures, fluxes and pressures unknown)
      network=2: purely aerodynamic, i.e. only fluxes and pressures unknown */
-  
-  char kind[2]="N";
 
-  int nhrs=1,info=0,i,iin=0,icntrl,icutb=0,iin_abs=0,mt=mi[1]+1;
+  int nhrs=1,info=0,i,j,iin=0,icntrl,icutb=0,iin_abs=0,mt=mi[1]+1,im,
+      symmetryflag=2,inputformat=1,node,channel;
+
+  static int ifactorization=0;
 
   double uamt=0,uamf=0,uamp=0,camt[2],camf[2],camp[2],
-    cam1t=0.,cam1f=0.,cam1p=0.,
+    cam1t=0.,cam1f=0.,cam1p=0.,sidemean,
     cam2t=0.,cam2f=0.,cam2p=0.,dtheta=1.,*v=NULL,cama[2],cam1a=0.,
     cam2a=0.,uama=0.,vamt=0.,vamf=0.,vamp=0.,vama=0.,cam0t=0.,cam0f=0.,
-    cam0p=0.,cam0a=0.;
+    cam0p=0.,cam0a=0.,sigma=0.,*adbrad=NULL,*aubrad=NULL,*q=NULL,
+    *area=NULL,*pmid=NULL,*e1=NULL,*e2=NULL,*e3=NULL;
   
+  adview=*adviewp;auview=*auviewp;
+
   /* check whether there are any gas temperature nodes; this check should
      NOT be done on nteq, since also for zero equations the temperature
      of the gas nodes with boundary conditions must be stored in v
@@ -87,14 +102,30 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *acr,
 	      
 	      for(i=0;i<mt**nk;i++) v[i]=vold[i];
 
+              /* initialization pressurized flow 
+                 (no free surface: gas networks or
+                  water networks with fully wetted perimeter*/
+
 	      FORTRAN(initialnet,(itg,ieg,ntg,ac,bc,lakon,v,
                            ipkon,kon,nflow,
 			   ikboun,nboun,prop,ielprop,nactdog,ndirboun,
 			   nodeboun,xbounact,ielmat,ntmat_,shcon,nshcon,
 			   physcon,ipiv,nteq,rhcon,nrhcon,ipobody,ibody,
 			   xbodyact,co,nbody,network,&iin_abs,vold,set,
-			   istep,iit,mi,ineighe,ilboun));
+			   istep,iit,mi,ineighe,ilboun,&channel));
       
+              /* initialization for channels with free surface */
+
+	      if(channel==1){
+		  FORTRAN(initialchannel,(itg,ieg,ntg,ac,bc,lakon,v,
+                           ipkon,kon,nflow,
+			   ikboun,nboun,prop,ielprop,nactdog,ndirboun,
+			   nodeboun,xbounact,ielmat,ntmat_,shcon,nshcon,
+			   physcon,ipiv,nteq,rhcon,nrhcon,ipobody,ibody,
+			   xbodyact,co,nbody,network,&iin_abs,vold,set,
+			   istep,iit,mi,ineighe,ilboun));
+	      }
+
 	      FORTRAN(resultnet,(itg,ieg,ntg,bc,nload,sideload,
 			  nelemload,xloadact,
 			  lakon,ntmat_,v,shcon,nshcon,ipkon,kon,co,nflow,
@@ -244,23 +275,178 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *acr,
   }
       
   if(*ntr>0){
-	
-      FORTRAN(radmatrix, (ntr,acr,bcr,sideload,nelemload,xloadact,lakon,
-			  vold,ipkon,kon,co,pmid,e1,e2,e3,iptri,kontri,ntri,
-			  nloadtr,tarea,tenv,physcon,erad,f,dist,idist,area,
-			  ithermal,iinc,iit,cs,mcs,inocs,ntrit,nk,fenv,istep,
-			  dtime,ttime,time,iviewfile,jobnamef,xloadold,
-			  reltime,nmethod,mi,iemchange,nam,iamload));
-	
-      /* equation system is asymmetric and not sparse:
-         a non-sparse matrix solver is in this case
-         faster than a sparse matrix solver */
-	
-//#ifdef SPOOLES
-//      spooles(ac,au,adb,aub,&sigma,bc,icol,irow,ntr,ntr,
-//	      &symmetryflag,&inputformat);
-//#else
+      
+      /* variables for multithreading procedure */
+      
+      int sys_cpus;
+      char *env,*envloc,*envsys;
+      
+      num_cpus = 0;
+      sys_cpus=0;
+      
+      /* explicit user declaration prevails */
+      
+      envsys=getenv("NUMBER_OF_CPUS");
+      if(envsys){
+	  sys_cpus=atoi(envsys);
+	  if(sys_cpus<0) sys_cpus=0;
+      }
+      
+      /* automatic detection of available number of processors */
+      
+      if(sys_cpus==0){
+	  sys_cpus = sysconf(_SC_NPROCESSORS_CONF);
+	  if(sys_cpus<1) sys_cpus=1;
+      }
+      
+      /* local declaration prevails, if strictly positive */
+      
+      envloc = getenv("CCX_NPROC_VIEWFACTOR");
+      if(envloc){
+	  num_cpus=atoi(envloc);
+	  if(num_cpus<0){
+	      num_cpus=0;
+	  }else if(num_cpus>sys_cpus){
+	      num_cpus=sys_cpus;
+	  }
+	  
+      }
+      
+      /* else global declaration, if any, applies */
+      
+      env = getenv("OMP_NUM_THREADS");
+      if(num_cpus==0){
+	  if (env)
+	      num_cpus = atoi(env);
+	  if (num_cpus < 1) {
+	      num_cpus=1;
+	  }else if(num_cpus>sys_cpus){
+	      num_cpus=sys_cpus;
+	  }
+      }
+      
+// next line is to be inserted in a similar way for all other paralell parts
+      
+      if(*ntr<num_cpus) num_cpus=*ntr;
+      
+      pthread_t tid[num_cpus];
+      
+      /*the default sink temperature is updated at the start of each
+	increment */
+     
+      for(i=0;i<*ntr;i++){
+	  node=nelemload[2*nloadtr[i]-1];
+	  if(node!=0){
+	      tenv[i]=vold[mt*(node-1)]-physcon[0];
+	  }else if(*iit<=0){
+	      tenv[i]=xloadact[2*nloadtr[i]-1]-physcon[0];
+	  }
+      }
+     
+/*     for pure thermal steps the viewfactors have to be
+       calculated only once, for thermo-mechanical steps
+       (ithermal=3) they are recalculated in each iteration
+       unless they are read from file */
 
+      if(((*ithermal==3)&&(*iviewfile>=0))||(*iit==-1)){
+	  if(*iviewfile<0){
+
+              /* reading viewfactors from file */
+
+	      FORTRAN(readview,(ntr,adview,auview,fenv,nzsrad,ithermal,
+				jobnamef));
+
+	  }else{
+
+	      /* determining geometric data to calculate the viewfactors */
+
+	      area=NNEW(double,*ntrit);
+	      pmid=NNEW(double,3**ntrit);
+	      e1=NNEW(double,3**ntrit);
+	      e2=NNEW(double,3**ntrit);
+	      e3=NNEW(double,4**ntrit);
+
+	      FORTRAN(geomview,(vold,co,pmid,e1,e2,e3,kontri,area,
+				cs,mcs,inocs,ntrit,nk,mi,&sidemean));
+
+	      RENEW(adview,double,num_cpus**ntr);
+	      RENEW(auview,double,num_cpus*2**nzsrad);
+	      
+	      dist=NNEW(double,num_cpus**ntrit);
+	      idist=NNEW(int,num_cpus**ntrit);
+
+	      DMEMSET(adview,0,num_cpus**ntr,0.);
+	      DMEMSET(auview,0,num_cpus*2**nzsrad,0.);
+
+	      sideload1=sideload;vold1=vold;co1=co;pmid1=pmid;
+	      e11=e1;e21=e2;e31=e3;kontri1=kontri;ntr1=ntr;
+              nloadtr1=nloadtr;area1=area;ntri1=ntri;
+              ntrit1=ntrit;mi1=mi;jqrad1=jqrad;irowrad1=irowrad;
+              nzsrad1=nzsrad;sidemean1=sidemean;
+
+	      /* calculating the viewfactors */
+	      
+	      printf(" Using up to %d cpu(s) for the viewfactor calculation.\n\n", num_cpus);
+  
+	      /* create threads and wait */
+	      
+	      for(i=0; i<num_cpus; i++)  {
+		  pthread_create(&tid[i], NULL, calcviewmt, (void *)i);
+	      }
+	      for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
+	      
+	      for(i=0;i<*ntr;i++){
+		  for(j=1;j<num_cpus;j++){
+		      adview[i]+=adview[i+j**ntr];
+		  }
+	      }
+	      RENEW(adview,double,*ntr);
+	      
+	      for(i=0;i<2**nzsrad;i++){
+		  for(j=1;j<num_cpus;j++){
+		      auview[i]+=auview[i+j*2**nzsrad];
+		  }
+	      }
+	      RENEW(auview,double,2**nzsrad);
+
+/*	      for(i=0;i<*ntr;i++){
+		  printf("radflowload adview = %d %e\n",i,adview[i]);
+	      }
+	      for(i=0;i<2**nzsrad;i++){
+		  printf("radflowload auview = %d %e\n",i,auview[i]);
+		  }*/
+
+	      free(dist);free(idist);free(e1);free(e2);free(e3);
+              free(pmid);
+
+	      /* postprocessing the viewfactors */
+
+	      FORTRAN(postview,(ntr,sideload,nelemload,kontri,ntri,nloadtr,
+				tenv,adview,auview,area,fenv,jqrad,irowrad,
+                                nzsrad));
+
+	      free(area);
+
+	  }
+
+	  if(fabs(*iviewfile)==2){
+
+	      /* writing viewfactors to file */
+
+	      FORTRAN(writeview,(ntr,adview,auview,fenv,nzsrad,
+				 jobnamef));
+	  }
+      }
+
+      /* assembling the radiation matrix */
+      
+      FORTRAN(radmatrix,(ntr,adrad,aurad,bcr,sideload,nelemload,
+          xloadact,lakon,vold,ipkon,kon,co,nloadtr,tarea,tenv,physcon,
+          erad,adview,auview,ithermal,iinc,iit,fenv,istep,dtime,ttime,
+          time,iviewfile,xloadold,reltime,nmethod,mi,iemchange,nam,
+          iamload,jqrad,irowrad,nzsrad));
+
+      /* factoring the system of equations */
 
       /* the left hand side of the radiation matrix has probably
          changed if
@@ -273,23 +459,80 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *acr,
            (i.e. call of dgesv) */
 
       if(((*ithermal==3)&&(*iviewfile>=0))||
-         (*iit==-1)||(*iemchange==1)||((*iit==0)&&(*nmethod==1))){
-	  FORTRAN(dgesv,(ntr,&nhrs,acr,ntr,ipivr,bcr,ntr,&info));
-      }else{
-	  FORTRAN(dgetrs,(kind,ntr,&nhrs,acr,ntr,ipivr,bcr,ntr,&info));
+         (*iit==-1)||(*iemchange==1)||((*iit==0)&&(abs(*nmethod)==1))){
+
+#if defined(PARDISO)
+	if(ifactorization==1) pardiso_cleanup_as(ntr);
+	pardiso_factor_as(adrad,aurad,adbrad,aubrad,&sigma,icolrad,
+			  irowrad,ntr,nzsrad,jqrad);
+	ifactorization=1;
+#elif defined(SPOOLES)
+	if(ifactorization==1) spooles_cleanup_rad();
+	spooles_factor_rad(adrad,aurad,adbrad,aubrad,&sigma,
+			   icolrad,irowrad,ntr,nzsrad,
+			   &symmetryflag,&inputformat);
+	ifactorization=1;
+#else
+	printf("*ERROR in radflowload: the SPOOLES library is not linked\n\n");
+	FORTRAN(stop,());
+#endif
+
       }
-//#endif
+
+      /* solving the system of equations */
+
+#if defined(PARDISO)
+          pardiso_solve_as(bcr,ntr);
+
+#elif defined(SPOOLES)
+          spooles_solve_rad(bcr,ntr);
+#endif
 	
       if (info!=0){
 	  printf("*ERROR IN RADFLOWLOAD: SINGULAR MATRIX*\n");}   
       
-      else{ FORTRAN(radresult, (ntr,xloadact,bcr,nloadtr,tarea,
-				tenv,physcon,erad,f,fenv));}
+      else{ 
+	  q=NNEW(double,*ntr);
+	  FORTRAN(radresult, (ntr,xloadact,bcr,nloadtr,tarea,
+				tenv,physcon,erad,auview,fenv,
+			        irowrad,jqrad,nzsrad,q));
+	  free(q);
+      }
+      
   }
 
   free(v);
+
+  *adviewp=adview;*auviewp=auview;
 
   return;
 
 } 
 
+/* subroutine for multithreading of calcview */
+
+void *calcviewmt(void *i){
+
+    int indexad,indexau,indexdi,ntria,ntrib,nedelta;
+
+    indexad=((int)i)**ntr1;
+    indexau=((int)i)*2**nzsrad1;
+    indexdi=((int)i)**ntrit1;
+    
+    nedelta=(int)ceil(*ntri1/(double)num_cpus);
+    ntria=((int)i)*nedelta+1;
+    ntrib=(((int)i)+1)*nedelta;
+    if(ntrib>*ntri1) ntrib=*ntri1;
+
+//    printf("i=%d,ntria=%d,ntrib=%d\n",i,ntria,ntrib);
+//    printf("indexad=%d,indexau=%d,indexdi=%d\n",indexad,indexau,indexdi);
+
+    FORTRAN(calcview,(sideload1,vold1,co1,pmid1,e11,e21,e31,
+                      kontri1,nloadtr1,&adview[indexad],
+                      &auview[indexau],&dist[indexdi],&idist[indexdi],area1,
+		      ntrit1,mi1,jqrad1,irowrad1,nzsrad1,&sidemean1,
+                      &ntria,&ntrib));
+
+    return NULL;
+}
+    

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
       integer inodesin(*),nnodesin,nvertex,lvertex(13),inodesout(*),
      &  nnodesout,nopes,ipe(*),ime(4,*),iactiveline(3,*),nactiveline,
      &  intersec(2,*),ifreeintersec,itri,koncont(4,*),itriacornerl(4),
-     &  i,j,k,nintpoint,ncont,idin,imastsurf(*),nnodelem,mi(2),ijk,
+     &  i,j,k,nintpoint,ncont,idin,imastsurf(*),nnodelem,mi(*),ijk,
      &  ninsert,nodel,ssurf
 !
       real*8 pvertex(3,13),pnodesin(3,*),slavstraight(20),xn(3),
@@ -36,10 +36,10 @@
      &  ratio(8),dist,xil,etl,area,areax,areay,areaz,pmastsurf(2,*),
      &  xl2m(3,8),vold(0:mi(2),*),al,gapmints(*)
 !
-      include "gauss.f"
-!
       data ijk /0/
       save ijk
+!
+      include "gauss.f"
 !
       nvertex=0
 !

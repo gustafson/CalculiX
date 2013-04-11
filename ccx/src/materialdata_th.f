@@ -1,5 +1,5 @@
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@
 !     determines the density, the specific heat and the conductivity 
 !     in an integration point with coordinates pgauss
 !
-      integer ncocon(2,*),imat,iorien,k,mattyp,mi(2),
+      integer ncocon(2,*),imat,iorien,k,mattyp,mi(*),
      &  ntmat_,id,two,four,seven,nrhcon(*),nshcon(*),
      &  iint,iel,ncond,istiff,ncoconst
 !

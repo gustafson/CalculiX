@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,8 +34,8 @@
       integer konl(20),ifaceq(8,6),nelem,ii,nprint,i,j,i1,i2,j1,
      &  ncocon(2,*),k1,jj,ig,nrhcon(*),nshcon(*),ntmat_,nope,nopes,imat,
      &  mint2d,ifacet(6,4),ifacew(8,5),iflag,indexe,jface,istartset(*),
-     &  iendset(*),ipkon(*),kon(*),iset,ialset(*),nset,ipos,ielmat(*),
-     &  mi(2)
+     &  iendset(*),ipkon(*),kon(*),iset,ialset(*),nset,ipos,
+     &  mi(*),ielmat(mi(3),*)
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,f(3),
      &  vkl(3,3),rhcon(0:1,ntmat_,*),t(3,3),div,shcon(0:3,ntmat_,*),
@@ -104,7 +104,7 @@
                ig=jface-10*nelem
                lakonl=lakon(nelem)
                indexe=ipkon(nelem)
-               imat=ielmat(nelem)
+               imat=ielmat(1,nelem)
 !     
                if(lakonl(4:4).eq.'2') then
                   nope=20

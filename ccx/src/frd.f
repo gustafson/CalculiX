@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,8 @@
      &  nstate_,istep,iinc,ithermal,qfn,mode,noddiam,trab,inotr,
      &  ntrans,orab,ielorien,norien,description,ipneigh,neigh,
      &  mi,stx,vr,vi,stnr,stni,vmax,stnmax,ngraph,veold,ener,ne,
-     &  cs,set,nset,istartset,iendset,ialset,eenmax)
+     &  cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
+     &  thicke)
 !
 !     stores the results in frd format
 !
@@ -47,17 +48,19 @@
       character*132 text
 !
       integer kon(*),inum(*),nk,ne0,nmethod,kode,i,j,ipkon(*),indexe,
-     &  one,ielmat(*),nstate_,l,ithermal,mode,mi(2),norien,
+     &  mi(*),one,ielmat(mi(3),*),nstate_,l,ithermal,mode,norien,
      &  noddiam,null,icounter,inotr(2,*),ntrans,ipneigh(*),neigh(2,*),
-     &  ielorien(*),iinc,istep,nkcoords,ngraph,k,nodes,nope,ne,
-     &  nout,nset,istartset(*),iendset(*),ialset(*),iset,m,
-     &  noutloc,ncomp,nksegment,iselect,noutplus,noutmin,ncomma
+     &  ielorien(mi(3),*),iinc,istep,nkcoords,ngraph,k,nodes,nope,ne,
+     &  nout,nset,istartset(*),iendset(*),ialset(*),iset,m,nemax,
+     &  noutloc,ncomp,nksegment,iselect,noutplus,noutmin,ncomma,
+     &  nlayer,icomp(6)
 !
       real*8 co(3,*),v(0:mi(2),*),stn(6,*),een(6,*),t1(*),fn(0:mi(2),*),
      &  time,epn(*),enern(*),xstaten(nstate_,*),pi,qfn(3,*),oner,
      &  trab(7,*),stx(6,mi(1),*),orab(7,*),vr(0:mi(2),*),
      &  vi(0:mi(2),*),stnr(6,*),stni(6,*),vmax(0:3,*),stnmax(0:6,*),
-     &  veold(0:mi(2),*),ener(mi(1),*),cs(17,*),eenmax(0:6,*)
+     &  veold(0:mi(2),*),ener(mi(1),*),cs(17,*),eenmax(0:6,*),
+     &  fnr(0:mi(2),*),fni(0:mi(2),*),emn(6,*),thicke(mi(3),*)
 !
       data icounter /0/
       save icounter,nkcoords,nout,noutmin,noutplus
@@ -189,56 +192,87 @@
 !
         write(7,'(a5,a1,67x,i1)') p3,c,one
 !
+        nemax=ne0
+!
         do i=1,ne0
 !
            if(ipkon(i).lt.0) cycle
            indexe=ipkon(i)
            if(lakon(i)(4:4).eq.'2') then
-              if((lakon(i)(7:7).eq.' ').or.(filab(1)(5:5).eq.'E').or.
-     &           (lakon(i)(7:7).eq.'I')) then
-              write(7,'(a3,i10,3a5)') m1,i,p4,p0,matname(ielmat(i))(1:5)
-              write(7,'(a3,10i10)') m2,(kon(indexe+j),j=1,10)
-              write(7,'(a3,10i10)') m2,(kon(indexe+j),j=11,12),
-     &             (kon(indexe+j),j=17,19),kon(indexe+20),
-     &             (kon(indexe+j),j=13,16)
+              if(((lakon(i)(7:7).eq.' ').or.(filab(1)(5:5).eq.'E').or.
+     &          (lakon(i)(7:7).eq.'I')).and.(lakon(i)(7:8).ne.'LC'))then
+                 write(7,'(a3,i10,3a5)') 
+     &                m1,i,p4,p0,matname(ielmat(1,i))(1:5)
+                 write(7,'(a3,10i10)') m2,(kon(indexe+j),j=1,10)
+                 write(7,'(a3,10i10)') m2,(kon(indexe+j),j=11,12),
+     &                (kon(indexe+j),j=17,19),kon(indexe+20),
+     &                (kon(indexe+j),j=13,16)
+              elseif(lakon(i)(7:8).eq.'LC') then
+                 nlayer=0
+                 do k=1,mi(3)
+                    if(ielmat(k,i).eq.0) exit
+                    nlayer=nlayer+1
+                 enddo
+                 do k=1,nlayer
+                    nemax=nemax+1
+                    write(7,'(a3,i10,3a5)') 
+     &                   m1,nemax,p4,p0,matname(ielmat(1,i))(1:5)
+                    write(7,'(a3,10i10)') 
+     &                   m2,(kon(indexe+8+20*k+j),j=1,10)
+                    write(7,'(a3,10i10)') 
+     &                   m2,(kon(indexe+8+20*k+j),j=11,12),
+     &                   (kon(indexe+8+20*k+j),j=17,19),
+     &                    kon(indexe+8+20*k+20),
+     &                   (kon(indexe+8+20*k+j),j=13,16)
+                 enddo
               elseif(lakon(i)(7:7).eq.'B') then
-              write(7,'(a3,i10,3a5)')m1,i,p12,p0,matname(ielmat(i))(1:5)
-              write(7,'(a3,3i10)') m2,kon(indexe+21),kon(indexe+23),
-     &               kon(indexe+22)
+                 write(7,'(a3,i10,3a5)')m1,i,p12,p0,
+     &                matname(ielmat(1,i))(1:5)
+                 write(7,'(a3,3i10)') m2,kon(indexe+21),kon(indexe+23),
+     &                kon(indexe+22)
               else
-              write(7,'(a3,i10,3a5)')m1,i,p10,p0,matname(ielmat(i))(1:5)
-              write(7,'(a3,8i10)') m2,(kon(indexe+20+j),j=1,8)
+                 write(7,'(a3,i10,3a5)')m1,i,p10,p0,
+     &                matname(ielmat(1,i))(1:5)
+                 write(7,'(a3,8i10)') m2,(kon(indexe+20+j),j=1,8)
               endif
            elseif(lakon(i)(4:4).eq.'8') then
-              write(7,'(a3,i10,3a5)') m1,i,p1,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)') m1,i,p1,p0,
+     &                         matname(ielmat(1,i))(1:5)
               write(7,'(a3,8i10)') m2,(kon(indexe+j),j=1,8)
            elseif(lakon(i)(4:5).eq.'10') then
-              write(7,'(a3,i10,3a5)') m1,i,p6,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)') m1,i,p6,p0,
+     &                         matname(ielmat(1,i))(1:5)
               write(7,'(a3,10i10)') m2,(kon(indexe+j),j=1,10)
            elseif(lakon(i)(4:4).eq.'4') then
-              write(7,'(a3,i10,3a5)') m1,i,p3,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)') m1,i,p3,p0,
+     &                         matname(ielmat(1,i))(1:5)
               write(7,'(a3,4i10)') m2,(kon(indexe+j),j=1,4)
            elseif(lakon(i)(4:5).eq.'15') then
               if((lakon(i)(7:7).eq.' ').or.(filab(1)(5:5).eq.'E')) then
-              write(7,'(a3,i10,3a5)') m1,i,p5,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)') m1,i,p5,p0,
+     &                         matname(ielmat(1,i))(1:5)
               write(7,'(a3,10i10)') m2,(kon(indexe+j),j=1,9),
      &          kon(indexe+13)
               write(7,'(a3,5i10)') m2,(kon(indexe+j),j=14,15),
      &          (kon(indexe+j),j=10,12)
               else
-              write(7,'(a3,i10,3a5)') m1,i,p8,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)') m1,i,p8,p0,
+     &                             matname(ielmat(1,i))(1:5)
               write(7,'(a3,6i10)') m2,(kon(indexe+15+j),j=1,6)
               endif
            elseif(lakon(i)(4:4).eq.'6') then
-              write(7,'(a3,i10,3a5)') m1,i,p2,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)') m1,i,p2,p0,
+     &                              matname(ielmat(1,i))(1:5)
               write(7,'(a3,6i10)') m2,(kon(indexe+j),j=1,6)
            elseif(lakon(i)(1:1).eq.'D') then
               if((kon(indexe+1).eq.0).or.(kon(indexe+3).eq.0)) cycle
-              write(7,'(a3,i10,3a5)')m1,i,p12,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)')m1,i,p12,p0,
+     &                               matname(ielmat(1,i))(1:5)
               write(7,'(a3,3i10)') m2,kon(indexe+1),kon(indexe+3),
      &                 kon(indexe+2)
            elseif((lakon(i)(1:1).eq.'E').and.(lakon(i)(7:7).eq.'A'))then
-              write(7,'(a3,i10,3a5)')m1,i,p11,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)')m1,i,p11,p0,
+     &                                  matname(ielmat(1,i))(1:5)
               write(7,'(a3,2i10)') m2,(kon(indexe+j),j=1,2)
            endif
 !
@@ -257,7 +291,7 @@
 !
 !     storing the displacements of the nodes
 !
-      if(filab(1)(1:4).eq.'U   ') then
+      if(filab(1)(1:2).eq.'U ') then
 !
          iselect=1
          call frdset(filab(1),set,iset,istartset,iendset,ialset,
@@ -288,7 +322,7 @@
 !     for the odd modes of cyclic symmetry calculations
 !
       if(noddiam.ge.0) then
-         if(filab(1)(1:4).eq.'U   ') then
+         if(filab(1)(1:2).eq.'U ') then
 !
             call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
      &                  noutloc,description,kode,nmethod,fmat)
@@ -468,6 +502,101 @@ c     &        inum,m1,inotr,trab,co,istartset,iendset,ialset,mi,ngraph)
          write(7,'(a3)') m3
       endif
 !
+!     storing the imaginary part of the total strains in the nodes
+!     for the odd modes of cyclic symmetry calculations
+!
+      if(noddiam.ge.0) then
+         if(filab(4)(1:4).eq.'E   ') then
+!
+            call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
+            text=' -4  STRAIN      6    1'
+            write(7,'(a132)') text
+            text=' -5  EXX         1    4    1    1'
+            write(7,'(a132)') text
+            text=' -5  EYY         1    4    2    2'
+            write(7,'(a132)') text
+            text=' -5  EZZ         1    4    3    3'
+            write(7,'(a132)') text
+            text=' -5  EXY         1    4    1    2'
+            write(7,'(a132)') text
+            text=' -5  EYZ         1    4    2    3'
+            write(7,'(a132)') text
+            text=' -5  EZX         1    4    3    1'
+            write(7,'(a132)') text
+!     
+            call frdtensor(een(1,nk+1),iset,nkcoords,inum,m1,istartset,
+     &           iendset,ialset,ngraph)
+!     
+            write(7,'(a3)') m3
+         endif
+      endif
+!     
+!     storing the mechanical strains in the nodes
+!
+      if(filab(32)(1:4).eq.'ME  ') then
+!
+         iselect=1
+         call frdset(filab(4),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
+         text=' -4  MSTRAI      6    1'
+         write(7,'(a132)') text
+         text=' -5  MEXX        1    4    1    1'
+         write(7,'(a132)') text
+         text=' -5  MEYY        1    4    2    2'
+         write(7,'(a132)') text
+         text=' -5  MEZZ        1    4    3    3'
+         write(7,'(a132)') text
+         text=' -5  MEXY        1    4    1    2'
+         write(7,'(a132)') text
+         text=' -5  MEYZ        1    4    2    3'
+         write(7,'(a132)') text
+         text=' -5  MEZX        1    4    3    1'
+         write(7,'(a132)') text
+!
+         call frdtensor(emn,iset,nkcoords,inum,m1,istartset,iendset,
+     &          ialset,ngraph)
+!
+         write(7,'(a3)') m3
+      endif
+!
+!     storing the imaginary part of the mechanical strains in the nodes
+!     for the odd modes of cyclic symmetry calculations
+!
+      if(noddiam.ge.0) then
+         if(filab(32)(1:4).eq.'ME  ') then
+!
+            call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
+            text=' -4  MSTRAI      6    1'
+            write(7,'(a132)') text
+            text=' -5  MEXX        1    4    1    1'
+            write(7,'(a132)') text
+            text=' -5  MEYY        1    4    2    2'
+            write(7,'(a132)') text
+            text=' -5  MEZZ        1    4    3    3'
+            write(7,'(a132)') text
+            text=' -5  MEXY        1    4    1    2'
+            write(7,'(a132)') text
+            text=' -5  MEYZ        1    4    2    3'
+            write(7,'(a132)') text
+            text=' -5  MEZX        1    4    3    1'
+            write(7,'(a132)') text
+!     
+            call frdtensor(emn(1,nk+1),iset,nkcoords,inum,m1,istartset,
+     &           iendset,ialset,ngraph)
+!     
+            write(7,'(a3)') m3
+         endif
+      endif
+!
 !     storing the forces in the nodes
 !
       if(filab(5)(1:4).eq.'RF  ') then
@@ -495,6 +624,34 @@ c     &        inum,m1,inotr,trab,co,istartset,iendset,ialset,mi,ngraph)
      &        trab,co,istartset,iendset,ialset,mi,ngraph)
 !     
          write(7,'(a3)') m3
+      endif
+!
+!     storing the imaginary part of forces of the nodes
+!     for the odd modes of cyclic symmetry calculations
+!
+      if(noddiam.ge.0) then
+         if(filab(5)(1:4).eq.'RF  ') then
+!     
+            call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &           noutloc,description,kode,nmethod,fmat)
+!     
+            text=' -4  FORC        4    1'
+            write(7,'(a132)') text
+            text=' -5  F1          1    2    1    0'
+            write(7,'(a132)') text
+            text=' -5  F2          1    2    2    0'
+            write(7,'(a132)') text
+            text=' -5  F3          1    2    3    0'
+            write(7,'(a132)') text
+            text=' -5  ALL         1    2    0    0    1ALL'
+            write(7,'(a132)') text
+!     
+            call frdvector(fn(0,nk+1),iset,ntrans,filab(5),nkcoords,
+     &           inum,m1,inotr,trab,co,istartset,iendset,ialset,mi,
+     &           ngraph)
+!     
+            write(7,'(a3)') m3
+         endif
       endif
 !
 !     storing the equivalent plastic strains in the nodes
@@ -785,7 +942,7 @@ c         write(7,'(a132)') text
 !
       if(filab(13)(1:3).eq.'ZZS') then
 ! 
-         call estimator(co,nk,kon,ipkon,lakon,ne0,stn,
+         call zienzhu(co,nk,kon,ipkon,lakon,ne0,stn,
      &            ipneigh,neigh,stx,mi(1))
 !
          iselect=1
@@ -823,7 +980,7 @@ c         write(7,'(a132)') text
       if(noddiam.ge.0) then
          if(filab(13)(1:3).eq.'ZZS') then
 !     
-            call estimator(co,nk,kon,ipkon,lakon,ne0,stn,
+            call zienzhu(co,nk,kon,ipkon,lakon,ne0,stn,
      &           ipneigh,neigh,stx(1,1,ne+1),mi(1))
 !     
             iselect=1
@@ -851,6 +1008,73 @@ c         write(7,'(a132)') text
 !     
             call frdtensor(stn,iset,nkcoords,inum,m1,istartset,iendset,
      &           ialset,ngraph)
+!     
+            write(7,'(a3)') m3
+         endif
+      endif
+!
+!     storing the error estimator in the nodes
+!
+      if(filab(13)(1:3).eq.'ERR') then
+! 
+         call errorestimator(stx,stn,ipkon,inum,kon,lakon,nk,
+     &        ne,mi,ielmat,thicke)
+!
+         iselect=1
+         call frdset(filab(13),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!     
+         text=' -4  ERROR       2    1'
+         write(7,'(a132)') text
+         text=' -5  PSTD        1    1    1    0'
+         write(7,'(a132)') text
+         text=' -5  VMSTD       1    2    2    0'
+         write(7,'(a132)') text
+!
+         ncomp=2
+         icomp(1)=3
+         icomp(2)=5
+!
+         call frdtensorcomp(stn,iset,nkcoords,inum,m1,istartset,iendset,
+     &                 ialset,ngraph,icomp,ncomp)
+!
+         write(7,'(a3)') m3
+      endif
+!
+!     storing the imaginary part of the error estimator in the nodes
+!     for the odd modes of cyclic symmetry calculations
+!
+      if(noddiam.ge.0) then
+         if(filab(13)(1:3).eq.'ERR') then
+! 
+         call errorestimator(stx(1,1,ne+1),stn,ipkon,inum,kon,lakon,nk,
+     &        ne,mi,ielmat,thicke)
+!     
+            iselect=1
+            call frdset(filab(13),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!     
+            call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &           noutloc,description,kode,nmethod,fmat)
+!     
+            text=' -4  ERROR       2    1'
+            write(7,'(a132)') text
+            text=' -5  PSTD        1    1    1    0'
+            write(7,'(a132)') text
+            text=' -5  VMSTD       1    2    2    0'
+            write(7,'(a132)') text
+!
+            ncomp=2
+            icomp(1)=3
+            icomp(2)=5
+!     
+            call frdtensorcomp(stn,iset,nkcoords,inum,m1,istartset,
+     &           iendset,ialset,ngraph,icomp,ncomp)
 !     
             write(7,'(a3)') m3
          endif
@@ -1027,9 +1251,9 @@ c         write(7,'(a132)') text
 c      if((nmethod.ne.2).and.(nmethod.lt.4)) return
 !
 !     the remaining lines only apply to frequency calculations
-!     with cyclic symmetry and steady state calculations
+!     with cyclic symmetry, complex frequency and steady state calculations
 !
-      if((nmethod.ne.2).and.(nmethod.ne.5)) return
+      if((nmethod.ne.2).and.(nmethod.ne.5).and.(nmethod.ne.6)) return
       if((nmethod.eq.5).and.(mode.eq.-1)) return
 !
 !     storing the displacements of the nodes (magnitude, phase)
@@ -1214,6 +1438,66 @@ c      if((nmethod.ne.2).and.(nmethod.lt.4)) return
      &                       stnr(6,i),stnr(5,i)
                         write(7,101) m2,i,(stni(j,i),j=1,4),
      &                       stni(6,i),stni(5,i)
+                     enddo
+                  enddo
+               endif
+            enddo
+         endif
+!     
+         write(7,'(a3)') m3
+      endif
+!
+!     storing the forces of the nodes (magnitude, phase)
+!
+      if(filab(31)(1:4).eq.'PRF ') then
+!
+         iselect=1
+         call frdset(filab(11),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect,
+     &           ngraph)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
+         text=' -4  PFORC       6    1'
+         write(7,'(a132)') text
+         text=' -5  MAG1        1   12    1    0'
+         write(7,'(a132)') text
+         text=' -5  MAG2        1   12    2    0'
+         write(7,'(a132)') text
+         text=' -5  MAG3        1   12    3    0'
+         write(7,'(a132)') text
+         text=' -5  PHA1        1   12    4    0'
+         write(7,'(a132)') text
+         text=' -5  PHA2        1   12    5    0'
+         write(7,'(a132)') text
+         text=' -5  PHA3        1   12    6    0'
+         write(7,'(a132)') text
+!
+         if(iset.eq.0) then
+            do i=1,nkcoords
+               if(inum(i).eq.0) cycle
+               write(7,101) m1,i,(fnr(j,i),j=1,3),(fni(j,i),j=1,3)
+            enddo
+         else
+            nksegment=nkcoords/ngraph
+            do k=istartset(iset),iendset(iset)
+               if(ialset(k).gt.0) then
+                  do l=0,ngraph-1
+                     i=ialset(k)+l*nksegment
+                     if(inum(i).eq.0) cycle
+                     write(7,101) m1,i,(fnr(j,i),j=1,3),(fni(j,i),j=1,3)
+                  enddo
+               else
+                  l=ialset(k-2)
+                  do
+                     l=l-ialset(k)
+                     if(l.ge.ialset(k-1)) exit
+                     do m=0,ngraph-1
+                        i=l+m*nksegment
+                        if(inum(i).eq.0) cycle
+                        write(7,101) m1,i,(fnr(j,i),j=1,3),
+     &                      (fni(j,i),j=1,3)
                      enddo
                   enddo
                endif

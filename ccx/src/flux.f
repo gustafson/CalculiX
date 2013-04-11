@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &     nodef,idirf,df,cp,R,rho,physcon,g,co,dvi,numf,
-     &     vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi)
+     &     vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider)
 !
 !     determine whether the flux in the element is an unknown 
 !     
@@ -30,14 +30,20 @@
       character*81 set(*)
 !      
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
-     &     ielprop(*),nodef(5),idirf(5),kflag,ipkon(*),kon(*),
-     &     nshcon(*), nrhcon(*),ntmat_,mi(2)
+     &     ielprop(*),nodef(8),idirf(8),kflag,ipkon(*),kon(*),
+     &     nshcon(*), nrhcon(*),ntmat_,mi(*),ider
 !      
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(5),R,cp,physcon(*),rho,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(8),R,cp,physcon(*),rho,
      &     g(3),co(3,*),dvi,vold(0:mi(2),*),shcon(0:3,ntmat_,*),
      &     rhcon(0:1,ntmat_,*)
 !
-      if(lakon(nelem)(2:6).eq.'CARBS') then  
+      if(lakon(nelem)(2:8).eq.'ACCTUBE') then 
+!         
+         call acctube(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,ider)
+!
+      elseif(lakon(nelem)(2:6).eq.'CARBS') then  
 !
          call carbon_seal(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
@@ -48,6 +54,24 @@
          call characteristic(node1,node2,nodem,nelem,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,physcon,numf,set,mi)
+!
+      elseif(lakon(nelem)(2:5).eq.'CROS') then 
+!         
+         call cross_split(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider)
+!     
+      elseif(lakon(nelem)(2:8).eq.'REBRSI1') then 
+!         
+         call wye(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider)
+!     
+      elseif(lakon(nelem)(2:8).eq.'REBRSI2') then 
+!         
+         call tee(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider)
 !
       elseif(lakon(nelem)(2:4).eq.'LAB') then 
 !         

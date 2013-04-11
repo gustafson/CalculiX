@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,24 +19,25 @@
       subroutine elements(inpc,textpart,kon,ipkon,lakon,nkon,ne,ne_,
      &  set,istartset,iendset,ialset,nset,nset_,nalset,nalset_,mi,
      &  ixfree,iponor,xnor,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &  iaxial,ipoinpc,solid,cfd,network)
+     &  iaxial,ipoinpc,solid,cfd,network,filab,nlabel,out3d)
 !
 !     reading the input deck: *ELEMENT
 !
       implicit none
 !
-      logical solid,network
+      logical solid,network,beamshell,out3d
 !
       character*1 inpc(*)
       character*8 lakon(*),label
       character*81 set(*),elset
+      character*87 filab(*)
       character*132 textpart(16)
 !
       integer kon(*),istartset(*),iendset(*),ialset(*),ne,ne_,nset,
      &  nset_,nalset,nalset_,istep,istat,n,key,i,ielset,js,k,nn,
-     &  nteller,j,ipkon(*),nkon,nope,indexe,mi(2),ipos,indexy,ixfree,
+     &  nteller,j,ipkon(*),nkon,nope,indexe,mi(*),ipos,indexy,ixfree,
      &  iponor(2,*),nopeexp,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  iaxial,ipoinpc(0:*),cfd
+     &  iaxial,ipoinpc(0:*),cfd,nlabel
 !
       real*8 xnor(*)
 !
@@ -48,6 +49,7 @@
 !
       indexy=-1
       ielset=0
+      beamshell=.false.
 !
       label='        '
 !
@@ -213,7 +215,13 @@ c    Bernhardi end
                stop
             endif
 !
-            if(label(1:3).eq.'CAX') iaxial=180
+            if(label(1:3).eq.'CAX') then
+               iaxial=180
+            elseif((label(1:3).eq.'B32').or.
+     &             (label(1:2).eq.'S6').or.
+     &             (label(1:2).eq.'S8')) then
+               beamshell=.true.
+            endif
 !
          else
             write(*,*) 
@@ -288,7 +296,18 @@ c     Bernhardi end
       do
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
-         if((istat.lt.0).or.(key.eq.1)) return
+         if((istat.lt.0).or.(key.eq.1)) then
+!
+!           default for frd output of beams and shell is the 3d-expansion
+!
+            if(beamshell) then
+               do j=1,nlabel
+                  filab(j)(5:5)='E'
+               enddo
+               out3d=.true.
+            endif
+            return
+         endif
          read(textpart(1)(1:10),'(i10)',iostat=istat) i
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          if(i.gt.ne_) then

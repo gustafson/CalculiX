@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine viscos(inpc,textpart,nmethod,iperturb,isolver,istep,
      &  istat,n,tinc,tper,tmin,tmax,idrct,iline,ipol,inl,ipoinp,
-     &  inp,ipoinpc)
+     &  inp,ipoinpc,nelcon,nmat,ncmat_)
 !
 !     reading the input deck: *VISCO (provided for compatibility
 !     reasons with ABAQUS)
@@ -37,7 +37,8 @@
       character*132 textpart(16)
 !
       integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,
-     &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*)
+     &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),nelcon(2,*),
+     &  nmat,ncmat_
 !
       real*8 tinc,tper,tmin,tmax
 !
@@ -58,6 +59,14 @@
          write(*,*) '  within a STEP'
          stop
       endif
+c!
+c!     activating creep if deactivated in a previous *STATIC step
+c!
+c      if(ncmat_.ge.9) then
+c         do i=1,nmat
+c            if(nelcon(1,i).eq.-51) nelcon(1,i)=-52
+c         enddo
+c      endif
 !
 !     default solver
 !
@@ -108,7 +117,7 @@
          write(*,*) '         the default solver is used'
       endif
 !
-      nmethod=1
+      nmethod=-1
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

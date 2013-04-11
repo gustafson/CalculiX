@@ -14,11 +14,12 @@
 /*     along with this program; if not, write to the Free Software       */
 /*     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.         */
 
+
 void matrixstorage(double *ad, double **aup, double *adb, double *aub, 
                 double *sigma,int *icol, int **irowp, 
                 int *neq, int *nzs, int *ntrans, int *inotr,
                 double *trab, double *co, int *nk, int *nactdof,
-		char *jobnamec, int *mi);
-
+		char *jobnamec, int *mi, int *ipkon, char *lakon,
+		int *kon, int *ne);
 
 

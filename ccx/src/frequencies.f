@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,6 +36,11 @@
 !
       pi=4.d0*datan(1.d0)
       mei(4)=0
+!
+!     defaults for fmin and fmax
+!
+      fmin=-1.d0
+      fmax=-1.d0
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR in frequencies: *FREQUENCY can only be used'
@@ -133,10 +138,14 @@
       ncv=4*nev
       ncv=ncv+nev
       mxiter=1000
-      read(textpart(2)(1:20),'(f20.0)',iostat=istat) fmin
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-      read(textpart(3)(1:20),'(f20.0)',iostat=istat) fmax
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(textpart(2)(1:1).ne.' ') then
+         read(textpart(2)(1:20),'(f20.0)',iostat=istat) fmin
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      endif
+      if(textpart(3)(1:1).ne.' ') then
+         read(textpart(3)(1:20),'(f20.0)',iostat=istat) fmax
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      endif
 !
       mei(1)=nev
       mei(2)=ncv

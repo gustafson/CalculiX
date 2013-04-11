@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -57,7 +57,7 @@
 !     vj                 Jacobian at the end of the increment
 !
 !     ithermal           0: no thermal effects are taken into account
-!                        1: thermal effects are taken into account (triggered
+!                        >0: thermal effects are taken into account (triggered
 !                        by the keyword *INITIAL CONDITIONS,TYPE=TEMPERATURE)
 !     t1l                temperature at the end of the increment
 !     dtime              time length of the increment
@@ -116,7 +116,7 @@
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(2),iorien
+      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien
 !
       real*8 elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xokl(3,3),voj,pgauss(3),orab(7,*),

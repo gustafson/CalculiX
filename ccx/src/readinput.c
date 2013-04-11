@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2007 Guido Dhondt                          */
+/*              Copyright (C) 1998-2011 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -37,8 +37,8 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
       icntrl,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,ntmat,npmat,
       norien,nam,nprint,mint,ntrans,ncs,namtot,ncmat,memmpc,ne1d,
       ne2d,nflow,*meminset=NULL,*rmeminset=NULL, *inp=NULL,ntie,
-      nener,nstate,nentries=14,ifreeinp,ikey,lincludefn,
-      nbody,ncharmax=1000000,*ipoinpc=NULL,ichangefriction=0; 
+      nener,nstate,nentries=14,ifreeinp,ikey,lincludefn,nslavs,
+      nbody,ncharmax=1000000,*ipoinpc=NULL,ichangefriction=0,nkon; 
 
   /* initialization */
 
@@ -189,7 +189,7 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
 	  for(i=0;i<n;i++){
 	      if(strcmp1(&textpart[(long long)132*i],"READ")==0){
 		  irestartread=1;
-		  if(irestartstep==0) irestartstep=1;
+//		  if(irestartstep==0) irestartstep=1;
 	      }
 	      if(strcmp1(&textpart[(long long)132*i],"STEP")==0){
 		  irestartstep=atoi(&textpart[(long long)132*i+5]);
@@ -201,7 +201,8 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
               &ne,&nmpc,&nalset,&nmat,&ntmat,&npmat,&norien,&nam,
               &nprint,&mint,&ntrans,&ncs,&namtot,&ncmat,&memmpc,
               &ne1d,&ne2d,&nflow,set,meminset,rmeminset,jobnamec,
-              &irestartstep,&icntrl,ithermal,&nener,&nstate,&ntie));           
+	      &irestartstep,&icntrl,ithermal,&nener,&nstate,&ntie,
+	      &nslavs,&nkon));           
             FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"RESTART,READ",
                               nline,&ikey));
 	  }

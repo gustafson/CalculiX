@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2007 Guido Dhondt                          */
+/*              Copyright (C) 1998-2011 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -32,7 +32,7 @@
    #include "pardiso.h"
 #endif
 
-void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
+void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	     int *ne, 
 	     int *nodeboun, int *ndirboun, double *xboun, int *nboun, 
 	     int *ipompc, int *nodempc, double *coefmpc, char *labmpc,
@@ -65,7 +65,8 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
              int *iendset, int *ialset, int *nprint, char *prlab,
              char *prset, int *nener, double *trab, 
              int *inotr, int *ntrans, double *fmpc, char *cbody, int *ibody,
-	     double *xbody, int *nbody, double *xbodyold, double *tper){
+	     double *xbody, int *nbody, double *xbodyold, double *tper,
+             double *thicke){
   
   char description[13]="            ";
 
@@ -73,7 +74,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
       mass[2]={0,0}, stiffness=1, buckling=0, rhsi=1, intscheme=0,*ncocon=NULL,
       *nshcon=NULL,mode=-1,noddiam=-1,*ipobody=NULL,inewton=0,coriolis=0,iout,
       ifreebody,*itg=NULL,ntg=0,symmetryflag=0,inputformat=0,ngraph=1,
-      mt=mi[1]+1;
+      mt=mi[1]+1,ne0;
 
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*xstiff=NULL,*stiini=NULL,
          *f=NULL,*fn=NULL,qa[3],*fext=NULL,*epn=NULL,*xstateini=NULL,
@@ -82,7 +83,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
          *enerini=NULL,*cocon=NULL,*shcon=NULL,*physcon=NULL,*qfx=NULL,
          *qfn=NULL,sigma=0.,*cgr=NULL,*xbodyact=NULL,*vr=NULL,*vi=NULL,
          *stnr=NULL,*stni=NULL,*vmax=NULL,*stnmax=NULL,*springarea=NULL,
-         *eenmax=NULL;
+         *eenmax=NULL,*fnr=NULL,*fni=NULL,*emn=NULL,*xnormastface=NULL;
 
   int *ipneigh=NULL,*neigh=NULL;
 
@@ -144,17 +145,17 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   /* allocating a field for the stiffness matrix */
 
-  xstiff=NNEW(double,27*mi[0]**ne);
+  xstiff=NNEW(double,(long long)27*mi[0]**ne);
 
   iout=-1;
   v=NNEW(double,mt**nk);
   fn=NNEW(double,mt**nk);
   stx=NNEW(double,6*mi[0]**ne);
   inum=NNEW(int,*nk);
-  FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
+  results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	       elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
 	       ielorien,norien,orab,ntmat_,t0,t1act,ithermal,
-	       prestr,iprestr,filab,eme,een,iperturb,
+   	       prestr,iprestr,filab,eme,emn,een,iperturb,
 	       f,fn,nactdof,&iout,qa,vold,b,nodeboun,
 	       ndirboun,xbounact,nboun,ipompc,
 	       nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,veold,accold,
@@ -164,7 +165,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
 	       fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
-               &reltime));
+	       &reltime,&ne0,xforc,nforc,thicke,xnormastface);
   free(v);free(fn);free(stx);free(inum);
   iout=1;
   
@@ -187,7 +188,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
             ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
             shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
 	    ibody,xloadold,&reltime,veold,springarea,nstate_,
-            xstateini,xstate));
+            xstateini,xstate,thicke,xnormastface));
 
   /* determining the right hand side */
 
@@ -204,7 +205,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
       spooles(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs,&symmetryflag,
               &inputformat);
 #else
-            printf("*ERROR in prespooles: the SPOOLES library is not linked\n\n");
+            printf("*ERROR in linstatic: the SPOOLES library is not linked\n\n");
             FORTRAN(stop,());
 #endif
     }
@@ -216,7 +217,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
       token=1;
       sgi_main(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs,token);
 #else
-            printf("*ERROR in prespooles: the SGI library is not linked\n\n");
+            printf("*ERROR in linstatic: the SGI library is not linked\n\n");
             FORTRAN(stop,());
 #endif
     }
@@ -224,7 +225,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 #ifdef TAUCS
       tau(ad,&au,adb,aub,&sigma,b,icol,&irow,neq,nzs);
 #else
-            printf("*ERROR in prespooles: the TAUCS library is not linked\n\n");
+            printf("*ERROR in linstatic: the TAUCS library is not linked\n\n");
             FORTRAN(stop,());
 #endif
     }
@@ -232,7 +233,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 #ifdef PARDISO
       pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs);
 #else
-            printf("*ERROR in prespooles: the PARDISO library is not linked\n\n");
+            printf("*ERROR in linstatic: the PARDISO library is not linked\n\n");
             FORTRAN(stop,());
 #endif
     }
@@ -250,16 +251,17 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   
     if(strcmp1(&filab[261],"E   ")==0) een=NNEW(double,6**nk);
     if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,*nk);
+    if(strcmp1(&filab[2697],"ME  ")==0) emn=NNEW(double,6**nk);
 
     eei=NNEW(double,6*mi[0]**ne);
     if(*nener==1){
 	stiini=NNEW(double,6*mi[0]**ne);
 	enerini=NNEW(double,mi[0]**ne);}
 
-    FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
+    results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	    elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
 	    ielorien,norien,orab,ntmat_,t0,t1act,ithermal,
-	    prestr,iprestr,filab,eme,een,iperturb,
+	    prestr,iprestr,filab,eme,emn,een,iperturb,
             f,fn,nactdof,&iout,qa,vold,b,nodeboun,ndirboun,xbounact,nboun,ipompc,
 	    nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,veold,accold,&bet,
             &gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
@@ -267,7 +269,8 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
             ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,sti,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime));
+	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
+            &ne0,xforc,nforc,thicke,xnormastface);
 
     free(eei);
     if(*nener==1){
@@ -291,7 +294,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		   fn,ttime,epn,ielmat,matname,cs,mcs,nkon,enern,xstaten,
                    nstate_,&istep,&iinc,iperturb,ener,mi,output,ithermal,
                    qfn,ialset,istartset,iendset,trab,inotr,ntrans,orab,
-	           ielorien,norien,sti,veold,&noddiam,set,nset);
+	           ielorien,norien,sti,veold,&noddiam,set,nset,emn,thicke);
     }
     else{
 	if(strcmp1(&filab[1044],"ZZS")==0){
@@ -302,7 +305,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    iperturb,ener,mi,output,ithermal,qfn,&mode,&noddiam,
             trab,inotr,ntrans,orab,ielorien,norien,description,
 	    ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs,
-	    set,nset,istartset,iendset,ialset,eenmax));
+	    set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,thicke));
 	if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
     }
 
@@ -311,6 +314,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
     if(strcmp1(&filab[261],"E   ")==0) free(een);
     if(strcmp1(&filab[522],"ENER")==0) free(enern);
+    if(strcmp1(&filab[2697],"ME  ")==0) free(emn);
 
   }
   else {
@@ -327,7 +331,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	 iperturb,ener,mi,output,ithermal,qfn,&mode,&noddiam,
          trab,inotr,ntrans,orab,ielorien,norien,description,
 	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs,
-	 set,nset,istartset,iendset,ialset,eenmax));
+	 set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,thicke));
     if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
     free(inum);FORTRAN(stop,());
 

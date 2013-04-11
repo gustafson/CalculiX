@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -33,7 +33,7 @@
      &  shcon,nshcon,cocon,ncocon,ics,sti,
      &  ener,xstate,jobnamec,infree,nnn,prestr,iprestr,cbody, 
      &  ibody,xbody,nbody,xbodyold,ttime,qaold,cs,mcs,output,
-     &  physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol)
+     &  physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol,nslavs,t0g,t1g)
 !
       implicit none
 !
@@ -50,25 +50,26 @@
       character*132 fnrstrt,jobnamec(*)
 !
       integer nset,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,
-     &  ntmat_,npmat_,norien,nam,nprint,mi(2),ntrans,ncs_,
+     &  ntmat_,npmat_,norien,nam,nprint,mi(*),ntrans,ncs_,
      &  namtot_,ncmat_,mpcend,ne1d,ne2d,nflow,nlabel,iplas,nkon,
      &  ithermal,nmethod,iperturb(*),nstate_,istartset(*),iendset(*),
      &  ialset(*),kon(*),ipkon(*),nodeboun(*),ndirboun(*),iamboun(*),
      &  ikboun(*),ilboun(*),ipompc(*),nodempc(*),ikmpc(*),ilmpc(*),
      &  nodeforc(*),ndirforc(*),iamforc(*),ikforc(*),ilforc(*),
      &  nelemload(*),iamload(*),nelcon(*),
-     &  nrhcon(*),nalcon(*),nplicon(*),nplkcon(*),ielorien(*),inotr(*),
+     &  nrhcon(*),nalcon(*),nplicon(*),nplkcon(*),ielorien(*),
+     &  inotr(*),
      &  namta(*),iamt1(*),ielmat(*),nodebounold(*),ndirbounold(*),
      &  iponor(*),knor(*),iponoel(*),inoel(*),rig(*),
      &  nshcon(*),ncocon(*),ics(*),infree(*),nnn(*),i,ipos,
      &  nener,iprestr,istepnew,maxlenmpc,mcs,j,ntie,
-     &  ibody(*),nbody,mt
+     &  ibody(*),nbody,mt,nslavs
 !
       real*8 co(*),xboun(*),coefmpc(*),xforc(*),xload(*),elcon(*),
      &  rhcon(*),alcon(*),alzero(*),plicon(*),plkcon(*),orab(*),
      &  trab(*),amta(*),t0(*),t1(*),prestr(*),veold(*),tietol(2,*),
      &  vold(*),xbounold(*),xforcold(*),xloadold(*),t1old(*),eme(*),
-     &  xnor(*),thickn(*),thicke(*),offset(*),
+     &  xnor(*),thickn(*),thicke(*),offset(*),t0g(*),t1g(*),
      &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),
      &  qaold(2),cs(17,*),physcon(*),ctrl(*),
      &  ttime,fmpc(*),xbody(*),xbodyold(*)
@@ -111,7 +112,7 @@
       write(15)nk
       write(15)ne
       write(15)nkon
-      write(15)(mi(i),i=1,2)
+      write(15)(mi(i),i=1,3)
 !
 !     constraint size
 !
@@ -164,6 +165,7 @@
       write(15)iplas
       write(15)ithermal
       write(15)nstate_
+      write(15)nslavs
       write(15)iprestr
 !
 !     sets
@@ -295,7 +297,7 @@
       if(norien.ne.0)then
          write(15)(orname(i),i=1,norien)
          write(15)(orab(i),i=1,7*norien)
-         write(15)(ielorien(i),i=1,ne)
+         write(15)(ielorien(i),i=1,mi(3)*ne)
       endif
 !
 !     transformations
@@ -317,12 +319,11 @@
 !     temperatures
 !
       if(ithermal.gt.0)then
+         write(15)(t0(i),i=1,nk)
+         write(15)(t1(i),i=1,nk)
          if((ne1d.gt.0).or.(ne2d.gt.0))then
-            write(15)(t0(i),i=1,3*nk)
-            write(15)(t1(i),i=1,3*nk)
-         else
-            write(15)(t0(i),i=1,nk)
-            write(15)(t1(i),i=1,nk)
+            write(15)(t0g(i),i=1,2*nk)
+            write(15)(t1g(i),i=1,2*nk)
          endif
          if(nam.gt.0) write(15)(iamt1(i),i=1,nk)
          write(15)(t1old(i),i=1,nk)
@@ -331,7 +332,7 @@
 !     materials
 !
       write(15)(matname(i),i=1,nmat)
-      write(15)(ielmat(i),i=1,ne)
+      write(15)(ielmat(i),i=1,mi(3)*ne)
 !
 !     temperature, displacement, static pressure, velocity and acceleration
 !
@@ -350,7 +351,7 @@
          write(15)(iponor(i),i=1,2*nkon)
          write(15)(xnor(i),i=1,infree(1)-1)
          write(15)(knor(i),i=1,infree(2)-1)
-         write(15)(thicke(i),i=1,2*nkon)
+         write(15)(thicke(i),i=1,mi(3)*nkon)
          write(15)(offset(i),i=1,2*ne)
          write(15)(iponoel(i),i=1,infree(4))
          write(15)(inoel(i),i=1,3*(infree(3)-1))
@@ -381,7 +382,7 @@
          write(15)(ener(i),i=1,mi(1)*ne)
       endif
       if(nstate_.gt.0)then
-         write(15)(xstate(i),i=1,nstate_*mi(1)*ne)
+         write(15)(xstate(i),i=1,nstate_*mi(1)*(ne+nslavs))
       endif
 !
 !     control parameters

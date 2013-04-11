@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine estimator(co,nk,kon,ipkon,lakon,ne,stn,
+      subroutine zienzhu(co,nk,kon,ipkon,lakon,ne,stn,
      & ipneigh,neigh,sti,mi)
 !
 !     modified zienkiewicz zhu pointwise error estimator
@@ -33,7 +33,7 @@
 !
       integer kon(*),nk,ne,i,j,ipkon(*),indexe,nodebase,
      & k,ipneigh(*),neigh(2,*),ifree,node,ielem,ielem1,index,index1,m,
-     & jj,mi(2),ii,ncount,nope,itypflag,inum(nk),nenei20(3,8),maxcommon,
+     & jj,mi(*),ii,ncount,nope,itypflag,inum(nk),nenei20(3,8),maxcommon,
      & icommon,idxnode,iecount,index2,lneigh8a(7,8),ipoints,icont,
      & nmids(maxmid),nelem(3),nelemv,iavflag,members(ne),ielem2,
      & linpatch,iterms,inodes(4),iaddelem,ielidx,nenei10(3,4),iscount,

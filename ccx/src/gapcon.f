@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine gapcon(ak,d,flowm,temp,predef,time,ciname,slname,
-     &   msname,coords,noel,node,npred,kstep,kinc)
+     &   msname,coords,noel,node,npred,kstep,kinc,area)
 !
 !     user subroutine gapcon
 !
@@ -42,6 +42,7 @@
 !     npred              not used
 !     kstep              step number
 !     kinc               increment number
+!     area               slave area
 !
 !     OUTPUT:
 !
@@ -54,7 +55,8 @@
 !
       integer noel,node,npred,kstep,kinc
 !
-      real*8 ak(5),d(2),flowm(2),temp(2),predef(2,*),time(*),coords(3)
+      real*8 ak(5),d(2),flowm(2),temp(2),predef(2,*),time(*),coords(3),
+     &  area
 !
 !     insert code here
 !

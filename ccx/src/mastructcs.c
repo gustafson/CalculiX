@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2007 Guido Dhondt                          */
+/*              Copyright (C) 1998-2011 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -32,6 +32,8 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      int *ipointer, int *nzs, int *nmethod,
 	      int *ics, double *cs, char *labmpc, int *mcs, int *mi){
 
+  char lakonl[2]=" \0";
+
   int i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
     ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,
     index1,index2,m,node,nzs_,ist,kflag,indexe,nope,isize,*mast1=NULL,
@@ -57,15 +59,29 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     
     if(ipkon[i]<0) continue;
     indexe=ipkon[i];
-/*  Bernhardi start  */
-    if(strcmp1(&lakon[8*i],"C3D8I")==0){nope=11;}
-    else if(strcmp1(&lakon[8*i],"C3D20")==0){nope=20;}
-/*  Bernhardi end */
-    else if(strcmp1(&lakon[8*i],"C3D8")==0){nope=8;}
-    else if(strcmp1(&lakon[8*i],"C3D10")==0){nope=10;}
-    else if(strcmp1(&lakon[8*i],"C3D15")==0){nope=15;}
-    else if(strcmp1(&lakon[8*i],"C3D6")==0){nope=6;}
-    else if(strcmp1(&lakon[8*i],"C3D4")==0){nope=4;}
+///*  Bernhardi start  */
+//    if(strcmp1(&lakon[8*i],"C3D8I")==0){nope=11;}
+//    else if(strcmp1(&lakon[8*i],"C3D20")==0){nope=20;}
+///*  Bernhardi end */
+//    else if(strcmp1(&lakon[8*i],"C3D8")==0){nope=8;}
+//    else if(strcmp1(&lakon[8*i],"C3D10")==0){nope=10;}
+//    else if(strcmp1(&lakon[8*i],"C3D15")==0){nope=15;}
+//    else if(strcmp1(&lakon[8*i],"C3D6")==0){nope=6;}
+//    else if(strcmp1(&lakon[8*i],"C3D4")==0){nope=4;}
+/* Bernhardi start */
+    if (strcmp1(&lakon[8*i+3],"8I")==0)nope=11;
+    else if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
+/* Bernhardi end */
+    else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
+    else if (strcmp1(&lakon[8*i+3],"10")==0)nope=10;
+    else if ((strcmp1(&lakon[8*i+3],"4")==0)||
+	     (strcmp1(&lakon[8*i+2],"4")==0)) nope=4;
+    else if (strcmp1(&lakon[8*i+3],"15")==0)nope=15;
+    else if (strcmp1(&lakon[8*i+3],"6")==0)nope=6;
+    else if (strcmp1(&lakon[8*i],"E")==0){
+	lakonl[0]=lakon[8*i+7];
+	nope=atoi(lakonl);}
+    else continue;
 
     for(j=0;j<nope;++j){
       node=kon[indexe+j]-1;
@@ -129,15 +145,29 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       
     if(ipkon[i]<0) continue;
     indexe=ipkon[i];
+///*  Bernhardi start  */
+//    if(strcmp1(&lakon[8*i],"C3D8I")==0){nope=11;}
+//    else if(strcmp1(&lakon[8*i],"C3D20")==0){nope=20;}
+///*  Bernhardi end */
+//    else if (strcmp1(&lakon[8*i],"C3D8")==0){nope=8;}
+//    else if (strcmp1(&lakon[8*i],"C3D10")==0){nope=10;}
+//    else if (strcmp1(&lakon[8*i],"C3D15")==0){nope=15;}
+//    else if (strcmp1(&lakon[8*i],"C3D6")==0){nope=6;}
+//    else if (strcmp1(&lakon[8*i],"C3D4")==0){nope=4;}
+
 /*  Bernhardi start  */
     if(strcmp1(&lakon[8*i],"C3D8I")==0){nope=11;}
-    else if(strcmp1(&lakon[8*i],"C3D20")==0){nope=20;}
+    else if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
 /*  Bernhardi end */
-    else if (strcmp1(&lakon[8*i],"C3D8")==0){nope=8;}
-    else if (strcmp1(&lakon[8*i],"C3D10")==0){nope=10;}
-    else if (strcmp1(&lakon[8*i],"C3D15")==0){nope=15;}
-    else if (strcmp1(&lakon[8*i],"C3D6")==0){nope=6;}
-    else if (strcmp1(&lakon[8*i],"C3D4")==0){nope=4;}
+    else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
+    else if (strcmp1(&lakon[8*i+3],"10")==0)nope=10;
+    else if (strcmp1(&lakon[8*i+3],"4")==0)nope=4;
+    else if (strcmp1(&lakon[8*i+3],"15")==0)nope=15;
+    else if (strcmp1(&lakon[8*i+3],"6")==0)nope=6;
+    else if (strcmp1(&lakon[8*i],"E")==0){
+	lakonl[0]=lakon[8*i+7];
+	nope=atoi(lakonl);}
+    else continue;
       
     for(jj=0;jj<3*nope;++jj){
 	
@@ -398,7 +428,7 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 /*  for(i=0;i<neq[0];++i){
     itot=0;
     if(ipointer[i]==0){
-      printf("*ERROR in mastruct: zero column");
+      printf("*ERROR in mastructcs: zero column");
       FORTRAN(stop,());
     }
     istart=ipointer[i];
@@ -443,8 +473,8 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   
   printf(" number of equations\n");
   printf(" %d\n",neq[0]);
-  printf(" number of nonzero matrix elements\n");
-  printf(" %d\n",ifree);
+  printf(" number of nonzero lower triangular matrix elements\n");
+  printf(" %d\n",ifree-neq[0]);
   
   /* new meaning of icol,j1,mast1,irow:
      
@@ -509,7 +539,7 @@ be easier to understand.
 
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

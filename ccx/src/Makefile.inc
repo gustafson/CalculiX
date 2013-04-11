@@ -1,5 +1,7 @@
 SCCXF = \
 absolute_relative.f \
+acctube.f \
+acctube_functions.f \
 addimdnodecload.f \
 addimdnodedload.f \
 addizdofcload.f \
@@ -10,6 +12,7 @@ add_sm_ei.f \
 add_sm_fl.f \
 add_sm_st.f \
 add_sm_st_as.f \
+add_sm_st_corio.f \
 addimd.f \
 addimdnodedof.f \
 allocation.f \
@@ -19,6 +22,7 @@ angsum.f \
 anisonl.f \
 anisotropic.f \
 applybounk.f \
+applybounmpc.f \
 applybounp.f \
 applybounpgas.f \
 applybount.f \
@@ -26,6 +30,7 @@ applybounv.f \
 approxplane.f \
 attach.f \
 attachline.f \
+attachpen.f \
 beamsections.f \
 bodyadd.f \
 bodyforce.f \
@@ -33,7 +38,16 @@ bounadd.f \
 boundaries.f \
 bounrem.f \
 buckles.f \
+calceigenvalues.f \
 calcmach.f \
+calcview.f \
+calc_ider_cross_split.f \
+calc_ider_tee.f \
+calc_ider_wye.f \
+calc_residual_cross_split.f \
+calc_residual_tee.f \
+calc_residual_wye.f \
+calc_zeta_bend_big_radius.f \
 calinput.f \
 carbon_seal.f \
 cd_bleedtapping.f \
@@ -58,9 +72,13 @@ cflux.f \
 cfluxes.f \
 changedepterm.f \
 changefrictions.f \
+changematerials.f \
+changeplastics.f \
+changekon.f \
 characteristic.f \
 checkarpackcs.f \
 checkslavevertex.f \
+checktemp.f \
 checktime.f \
 checktriaedge.f \
 checktriavertex.f \
@@ -71,11 +89,14 @@ cload.f \
 cloads.f \
 closefile.f \
 compdt.f \
+complexfrequencies.f \
+con2phys.f \
 conductivities.f \
 contactdampings.f \
 contactpairs.f \
 contactprints.f \
 controlss.f \
+coriolissolve.f \
 couptempdisps.f \
 cp_corrected.f \
 createbdentry.f \
@@ -83,8 +104,10 @@ createddentry.f \
 creategap.f \
 createinum.f \
 createmddof.f \
+createmdelem.f \
 creep.f \
 creeps.f \
+cross_split.f \
 cubic.f \
 cubtri.f \
 cychards.f \
@@ -107,6 +130,7 @@ dgesv.f \
 diamtr.f \
 distattach.f \
 distattachline.f \
+distattachpen.f \
 distributedcouplings.f \
 dKdm.f \
 dKdp.f \
@@ -114,6 +138,7 @@ dKdt.f \
 dKdX.f \
 dload.f \
 dloads.f \
+dlz.f \
 dot.f \
 dqag.f \
 dredu.f \
@@ -129,13 +154,14 @@ dynamic_viscosity.f \
 dynamic_viscosity_oil.f \
 dynresults.f \
 elastics.f \
+elementpernode.f \
 elements.f \
 elprints.f \
 enthalpy.f \
 envtemp.f \
 equationcheck.f \
 equations.f \
-estimator.f \
+errorestimator.f \
 expansions.f \
 extrapolate.f \
 e_c3d.f \
@@ -152,6 +178,7 @@ e_c3d_trhs.f \
 e_c3d_vlhs.f \
 e_c3d_v1rhs.f \
 e_c3d_v2rhs.f \
+e_corio.f \
 e_damp.f \
 faceprints.f \
 fcrit.f \
@@ -166,12 +193,15 @@ fluidconstants.f \
 fluidsections.f \
 flux.f \
 forcadd.f \
+forcesolve.f \
 frd.f \
 frdfluid.f \
 frdheader.f \
+frditeration.f \
 frdscalar.f \
 frdset.f \
 frdtensor.f \
+frdtensorcomp.f \
 frdvector.f \
 frdvectorcomp.f \
 frequencies.f \
@@ -206,6 +236,7 @@ genmodes.f \
 gennactdofinv.f \
 genran.f \
 gentiedmpc.f \
+geomview.f \
 getnewline.f \
 graph.f \
 hcrit.f \
@@ -224,6 +255,7 @@ identifytiedface.f \
 includefilename.f \
 incplas.f \
 initialcfd.f \
+initialchannel.f \
 initialconditions.f \
 initialnet.f \
 inputerror.f \
@@ -257,6 +289,7 @@ loadaddt.f \
 lump.f \
 mafill1lhs.f \
 mafill3lhs.f \
+mafillcorio.f \
 mafilldm.f \
 mafillklhs.f \
 mafillkrhs.f \
@@ -272,6 +305,7 @@ mafillvlhs.f \
 mafillv1rhs.f \
 mafillv2rhs.f \
 map3dto1d2d.f \
+map3dtolayer.f \
 map3dto1d2d_v.f \
 materialdata_cond.f \
 materialdata_cp.f \
@@ -316,7 +350,7 @@ number.f \
 onedint.f \
 onf.f \
 op.f \
-opcs.f \
+op_corio.f \
 openfile.f \
 opnonsym.f \
 opnonsymt.f \
@@ -346,6 +380,7 @@ plcopy.f \
 plinterpol.f \
 plmix.f \
 polynom.f \
+postview.f \
 precfd.f \
 presgradient.f \
 pretensionsections.f \
@@ -366,21 +401,30 @@ rcavi.f \
 rcavi2.f \
 rcavi_cp_lt.f \
 rcavi_cp_nt.f \
+readforce.f \
+readview.f \
 rearrange.f \
 rectcyl.f \
 rectcylexp.f \
 rectcylvi.f \
+remeshcontactel.f \
+remeshload.f \
+remeshsurf.f \
 renumber.f \
 restartread.f \
 restarts.f \
 restartshort.f \
 restartwrite.f \
 restrictor.f \
+resultsforc.f \
+resultsini.f \
 resultnet.f \
-results.f \
 resultsk.f \
+resultsmech.f \
 resultsp.f \
+resultsprint.f \
 resultst.f \
+resultstherm.f \
 resultsv1.f \
 resultsv2.f \
 rhs.f \
@@ -436,11 +480,13 @@ storeresidual.f \
 str2mat.f \
 straighteq2d.f \
 straighteq3d.f \
+straighteq3dpen.f \
 straightmpc.f \
 subspace.f \
 surfacebehaviors.f \
 surfaceinteractions.f \
 surfaces.f \
+tee.f \
 temperatures.f \
 tempload.f \
 temploaddiff.f \
@@ -486,7 +532,9 @@ uncouptempdisps.f \
 uout.f \
 updatecfd.f \
 updatecomp.f \
+updatecon.f \
 updatecont.f \
+updatecontpen.f \
 usermaterials.f \
 usermpc.f \
 utemp.f \
@@ -495,10 +543,13 @@ viewfactors.f \
 viscos.f \
 vortex.f \
 wcoef.f \
+writeadl.f \
 writeboun.f \
 writebv.f \
 writeev.f \
+writeevcomplex.f \
 writeevcs.f \
+writeevcscomplex.f \
 writehe.f \
 writeim.f \
 writeinput.f \
@@ -508,7 +559,11 @@ writepf.f \
 writere.f \
 writeset.f \
 writesummary.f \
-zeta_calc.f
+writesummarydiv.f \
+writeview.f \
+wye.f \
+zeta_calc.f \
+zienzhu.f 
 
 SCCXC = \
 add_rect.c \
@@ -523,6 +578,7 @@ checkconvergence.c \
 checkconvnet.c \
 checkinclength.c \
 compfluid.c \
+complexfreq.c \
 contact.c \
 contactmortar.c \
 contactstress.c \
@@ -537,9 +593,11 @@ inicont.c \
 insert.c \
 insertas.c \
 insertas_ws.c \
+linstatic.c \
 mastruct.c \
 mastructcs.c \
 mastructf.c \
+mastructrad.c \
 matrixstorage.c \
 multimortar.c \
 multi_rect.c \
@@ -547,15 +605,18 @@ multi_rectv.c \
 multi_scal.c \
 nonlingeo.c \
 pardiso.c \
+pardiso_as.c \
 pcgsolver.c \
 prediction.c \
 preiter.c \
-prespooles.c \
 radcyc.c \
 radflowload.c \
 readinput.c \
+reloadcontact.c \
 remastruct.c \
 remcontmpc.c \
+remeshcontact.c \
+results.c \
 sgi.c \
 spooles.c \
 steadystate.c \

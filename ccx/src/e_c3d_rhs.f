@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,11 +39,12 @@
       character*20 sideload(*)
       character*80 matname(*),amat
 !
-      integer nk,konl(20),ielmat(*),nbody,ifaceq(8,6),nelemload(2,*),
+      integer mi(*),nk,konl(20),ielmat(mi(3),*),nbody,ifaceq(8,6),
+     &  nelemload(2,*),
      &  nelem,nmethod,iperturb,nload,idist,i,i1,j1,jj,jj1,id,kk,
      &  ipointer,nope,nopes,j,k,ntmat_,i2,imat,ii,ig,mint2d,mint3d,
      &  ifacet(6,4),ifacew(8,5),istep,iinc,layer,kspt,jltyp,iflag,
-     &  ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),iscale,mi(2)
+     &  ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),iscale
 !
       real*8 co(3,*),p1(3,2),p2(3,2),omx(2),bodyfx(3),veold(0:mi(2),*),
      &  rhcon(0:1,ntmat_,*),xs2(3,7),xloadold(2,*),reltime,
@@ -143,7 +144,7 @@ c      endif
 !     calculating the density: no temperature dependence assumed!
 !     otherwise cfr. e_c3d.f
 !
-      imat=ielmat(nelem)
+      imat=ielmat(1,nelem)
       amat=matname(imat)
       rho=rhcon(1,1,imat)
 !

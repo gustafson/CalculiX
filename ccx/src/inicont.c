@@ -98,10 +98,8 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
   iponoels=NNEW(int,*nk);
   inoels=NNEW(int,3**nkon);
   
-  if(*mortar==1){
-      imastnode=NNEW(int,3**ncont);
-      nmastnode=NNEW(int,*ntie+1);
-  }
+  imastnode=NNEW(int,3**ncont);
+  nmastnode=NNEW(int,*ntie+1);
   
   /* catalogueing the slave faces and slave nodes 
      catalogueing the master nodes (only for Mortar contact) */
@@ -115,11 +113,9 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
   RENEW(islavnode,int,*nslavs);
   RENEW(inoels,int,3*ifreenoels);
   free(ipoface);free(nodface);
-
-  if(*mortar==1){
-      RENEW(imastnode,int,nmasts);
-  }
-
+  
+  RENEW(imastnode,int,nmasts);
+  
   /* constraining the middle nodes for the slave surfaces (not
      for modal dynamics calculations) */
 

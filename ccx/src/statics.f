@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &  ithermal,cs,ics,tieset,istartset,
      &  iendset,ialset,ipompc,nodempc,coefmpc,nmpc,nmpc_,ikmpc,
      &  ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl,cfd,ttime,
-     &  iaxial)
+     &  iaxial,nelcon,nmat)
 !
 !     reading the input deck: *STATIC
 !
@@ -48,7 +48,7 @@
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,ics(*),iexpl,
      &  istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,ikmpc(*),ilmpc(*),mpcfree,nset,mcs,ipoinpc(0:*),
-     &  cfd,iaxial
+     &  cfd,iaxial,nelcon(2,*),nmat
 !
       real*8 tinc,tper,tmin,tmax,cs(17,*),coefmpc(*),ttime
 !
@@ -70,6 +70,12 @@
          write(*,*) '  within a STEP'
          stop
       endif
+c!
+c!     no creep allowed in a *STATIC step
+c!
+c      do i=1,nmat
+c         if(nelcon(1,i).eq.-52) nelcon(1,i)=-51
+c      enddo
 !
 !     no heat transfer analysis
 !

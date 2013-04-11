@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -61,7 +61,7 @@
      &  inp(3,*),itie,iset,ipos,mcs,lprev,ntie,ithermal,ncounter,
      &  nrcg(*),nzcg(*),jcs(*),kontri(3,*),ne,ipkon(*),kon(*),nodei,
      &  ifacetet(*),inodface(*),ipoinpc(0:*),maxsectors,
-     &  noden(2),ntrans,ntrans_,cfd,mi(2)
+     &  noden(2),ntrans,ntrans_,cfd,mi(*)
 !
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
      &  csab(7),xn,yn,zn,dd,xap,yap,zap,tietol(2,*),cs(17,*),xsectors,
@@ -316,7 +316,8 @@ c      write(*,*)
 !     is calculated as 0.5 % of the mean of the distance of every
 !     independent node to its nearest neighbour
 !
-      if(tolloc.lt.1.d-30) then
+c      if(tolloc.lt.1.d-30) then
+      if(tolloc.lt.0.d0) then
          nneigh=2
          dist=0.d0
          do i=1,ncsnodes
@@ -336,7 +337,8 @@ c      write(*,*)
      &                     (co(2,nodei)-co(2,noden(2)))**2+
      &                     (co(3,nodei)-co(3,noden(2)))**2)
          enddo
-         tolloc=0.005d0*dist/ncsnodes
+c         tolloc=0.005d0*dist/ncsnodes
+         tolloc=1.d-10*dist/ncsnodes
          write(*,*) '*INFO in cycsymmods: no tolerance was defined'
          write(*,*) '      in the *TIE option; a tolerance of ',
      &       tolloc
@@ -489,12 +491,20 @@ c                  write(*,*) 'phi ',phi
                noded=k
 !
                call generatecycmpcs(tolloc,co,nk,ipompc,nodempc,
-     &              coefmpc,nmpc,nmpc_,ikmpc,ilmpc,mpcfree,rcs,zcs,ics,
-     &              nr,nz,rcs0,zcs0,ncs_,cs,labmpc,istep,istat,n,
-     &              mcs,ithermal,triangulation,csab,xn,yn,zn,phi,noded,
-     &              ncsnodes,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
-     &              nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
-     &              ifacetet,inodface,ncounter,jobnamec,vold,cfd,mi)
+     &           coefmpc,nmpc,ikmpc,ilmpc,mpcfree,rcs,zcs,ics,
+     &           nr,nz,rcs0,zcs0,labmpc,
+     &           mcs,triangulation,csab,xn,yn,zn,phi,noded,
+     &           ncsnodes,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
+     &           nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
+     &           ifacetet,inodface,ncounter,jobnamec,vold,cfd,mi)
+c!
+c               call generatecycmpcs(tolloc,co,nk,ipompc,nodempc,
+c     &              coefmpc,nmpc,nmpc_,ikmpc,ilmpc,mpcfree,rcs,zcs,ics,
+c     &              nr,nz,rcs0,zcs0,ncs_,cs,labmpc,istep,istat,n,
+c     &              mcs,ithermal,triangulation,csab,xn,yn,zn,phi,noded,
+c     &              ncsnodes,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
+c     &              nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
+c     &              ifacetet,inodface,ncounter,jobnamec,vold,cfd,mi)
             enddo
          endif
 !

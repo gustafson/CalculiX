@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,15 +20,16 @@
      &  nforc,nboun,nflow,nk,ne,nkon,
      &  mi,nmpc,memmpc_,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,nam,
      &  nprint,nlabel,ncs_,ne1d,ne2d,infree,nmethod,
-     &  iperturb,nener,iplas,ithermal,nstate_,iprestr,mcs,ntie)
+     &  iperturb,nener,iplas,ithermal,nstate_,iprestr,mcs,ntie,
+     &  nslavs)
 !
       implicit none
 !
-      integer nset,nalset,nload,nforc,nboun,nflow,nk,ne,nkon,mi(2),
+      integer nset,nalset,nload,nforc,nboun,nflow,nk,ne,nkon,mi(*),
      &  nmpc,memmpc_,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,nam,
      &  nprint,nlabel,ncs_,ne1d,ne2d,infree(4),i,mt,
      &  nmethod,iperturb(*),nener,iplas,ithermal,nstate_,iprestr,i4,
-     &  maxamta,mcs,ntie,nbody
+     &  maxamta,mcs,ntie,nbody,nslavs
 !
       character*1 c1
       character*3 c3
@@ -118,7 +119,7 @@ c      read(15)(r8,i=1,nflow)
       if(norien.ne.0)then
          read(15)(c80,i=1,norien)
          read(15)(r8,i=1,7*norien)
-         read(15)(i4,i=1,ne)
+         read(15)(i4,i=1,mi(3)*ne)
       endif
       if(ntrans.ne.0)then
          read(15)(r8,i=1,7*ntrans)
@@ -132,18 +133,17 @@ c      read(15)(r8,i=1,nflow)
          read(15)(r8,i=1,maxamta)
       endif
       if(ithermal.gt.0)then
+         read(15)(r8,i=1,nk)
+         read(15)(r8,i=1,nk)
          if((ne1d.gt.0).or.(ne2d.gt.0))then
-            read(15)(r8,i=1,3*nk)
-            read(15)(r8,i=1,3*nk)
-         else
-            read(15)(r8,i=1,nk)
-            read(15)(r8,i=1,nk)
+            read(15)(r8,i=1,2*nk)
+            read(15)(r8,i=1,2*nk)
          endif
          if(nam.gt.0) read(15)(i4,i=1,nk)
          read(15)(r8,i=1,nk)
       endif
       read(15)(c80,i=1,nmat)
-      read(15)(i4,i=1,ne)
+      read(15)(i4,i=1,mi(3)*ne)
       read(15)(r8,i=1,mt*nk)
       if((nmethod.eq.4).or.((nmethod.eq.1).and.(iperturb(1).ge.2))) 
      &     then
@@ -154,7 +154,7 @@ c      read(15)(r8,i=1,nflow)
          read(15)(i4,i=1,2*nkon)
          read(15)(r8,i=1,infree(1)-1)
          read(15)(i4,i=1,infree(2)-1)
-         read(15)(r8,i=1,2*nkon)
+         read(15)(r8,i=1,mi(3)*nkon)
          read(15)(r8,i=1,2*ne)
          read(15)(i4,i=1,infree(4))
          read(15)(i4,i=1,3*(infree(3)-1))
@@ -173,7 +173,7 @@ c      read(15)(r8,i=1,nflow)
       read(15)(r8,i=1,6*mi(1)*ne)
       read(15)(r8,i=1,6*mi(1)*ne)
       if(nener.eq.1) read(15)(r8,i=1,mi(1)*ne)
-      if(nstate_.gt.0) read(15)(r8,i=1,nstate_*mi(1)*ne)
+      if(nstate_.gt.0) read(15)(r8,i=1,nstate_*mi(1)*(ne+nslavs))
       read(15) (r8,i=1,27)
       read(15) (r8,i=1,2)
       read(15) c3

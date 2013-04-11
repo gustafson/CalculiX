@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,7 +34,7 @@
      &  ener,xstate,jobnamec,infree,nnn,irstrt,inpc,textpart,istat,n,
      &  key,prestr,iprestr,cbody,ibody,xbody,nbody,xbodyold,
      &  ttime,qaold,cs,mcs,output,physcon,ctrl,typeboun,iline,ipol,inl,
-     &  ipoinp,inp,fmpc,tieset,ntie,tietol,ipoinpc)
+     &  ipoinp,inp,fmpc,tieset,ntie,tietol,ipoinpc,nslavs,t0g,t1g)
 !
       implicit none
 !
@@ -49,26 +49,27 @@
       character*132 jobnamec(*),textpart(16)
 !
       integer istep,nset,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,
-     &  ntmat_,npmat_,norien,nam,nprint,mi(2),ntrans,ncs_,
+     &  ntmat_,npmat_,norien,nam,nprint,mi(*),ntrans,ncs_,
      &  namtot_,ncmat_,mpcfree,ne1d,ne2d,nflow,nlabel,iplas,nkon,
      &  ithermal,nmethod,iperturb(*),nstate_,istartset(*),iendset(*),
      &  ialset(*),kon(*),ipkon(*),nodeboun(*),ndirboun(*),iamboun(*),
      &  ikboun(*),ilboun(*),ipompc(*),nodempc(*),ikmpc(*),ilmpc(*),
      &  nodeforc(*),ndirforc(*),iamforc(*),ikforc(*),ilforc(*),
      &  nelemload(*),iamload(*),nelcon(*),ipoinpc(0:*),
-     &  nrhcon(*),nalcon(*),nplicon(*),nplkcon(*),ielorien(*),inotr(*),
-     &  namta(*),iamt1(*),ielmat(*),nodebounold(*),ndirbounold(*),
+     &  nrhcon(*),nalcon(*),nplicon(*),nplkcon(*),ielorien(mi(3),*),
+     &  inotr(*),
+     &  namta(*),iamt1(*),ielmat(mi(3),*),nodebounold(*),ndirbounold(*),
      &  iponor(*),knor(*),iponoel(*),inoel(*),rig(*),
      &  nshcon(*),ncocon(*),ics(*),infree(*),nnn(*),
      &  nener,irestartstep,irestartread,irstrt,istat,n,i,key,
      &  iprestr,mcs,maxlenmpc,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),ntie,ibody(*),nbody
+     &  ipoinp(2,*),inp(3,*),ntie,ibody(*),nbody,nslavs
 !
       real*8 co(*),xboun(*),coefmpc(*),xforc(*),xload(*),elcon(*),
      &  rhcon(*),alcon(*),alzero(*),plicon(*),plkcon(*),orab(*),
      &  trab(*),amta(*),t0(*),t1(*),prestr(*),veold(*),tietol(2,*),
      &  vold(*),xbounold(*),xforcold(*),xloadold(*),t1old(*),eme(*),
-     &  xnor(*),thickn(*),thicke(*),offset(*),
+     &  xnor(*),thickn(*),thicke(*),offset(*),t0g(2,*),t1g(2,*),
      &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),
      &  ttime,qaold(2),cs(17,*),physcon(*),
      &  ctrl(*),fmpc(*),xbody(*),xbodyold(*)
@@ -79,7 +80,7 @@
       do i=2,n
          if(textpart(i)(1:4).eq.'READ') then
             irestartread=1
-            if(irestartstep.eq.0) irestartstep=1
+c            if(irestartstep.eq.0) irestartstep=1
          elseif(textpart(i)(1:5).eq.'STEP=') then
             read(textpart(i)(6:15),'(i10)',iostat=istat) irestartstep
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
@@ -115,7 +116,8 @@
      &  shcon,nshcon,cocon,ncocon,ics,sti,
      &  ener,xstate,jobnamec,infree,nnn,irestartstep,prestr,iprestr,
      &  cbody,ibody,xbody,nbody,xbodyold,ttime,qaold,cs,mcs,
-     &  output,physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol)
+     &  output,physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol,nslavs,
+     &  t0g,t1g)
       endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

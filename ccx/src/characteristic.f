@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2007 Guido Dhondt
+!     Copyright (C) 1998-2011 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,11 +34,11 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
-     &     inv,id,numf,npu,i,mi(2)
+     &     inv,id,numf,npu,i,mi(*)
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),
      &     p1,p2,physcon(*),
-     &     xpu(10),ypu(10),Qred,p1mp2zp1,T1,scal,T2
+     &     xpu(100),ypu(100),Qred,p1mp2zp1,T1,scal,T2
 !     
       if (iflag.eq.0) then
          identity=.true.
@@ -57,6 +57,11 @@
 !     
          npu=nint(prop(index+2))
          scal=prop(index+1)
+
+         do i=1, 100
+            xpu(i)=0
+            ypu(i)=0
+         enddo
 !
          do i=1,npu
             xpu(i)=prop(index+2*i+1)
@@ -92,7 +97,7 @@
      &             *(p1mp2zp1-xpu(id))/(xpu(id+1)-xpu(id))
                xflow=inv*Qred*P1/dsqrt(T1)
             endif
-!                 
+!
          elseif (iflag.eq.2) then
             numf=4
 !     

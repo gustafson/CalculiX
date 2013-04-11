@@ -58,7 +58,7 @@
 !     vj                 Jacobian at the end of the increment
 !
 !     ithermal           0: no thermal effects are taken into account
-!                        1: thermal effects are taken into account (triggered
+!                        >0: thermal effects are taken into account (triggered
 !                        by the keyword *INITIAL CONDITIONS,TYPE=TEMPERATURE)
 !     t1l                temperature at the end of the increment
 !     dtime              time length of the increment
@@ -118,7 +118,7 @@
 !
       character*20 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(2),iorien
+      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien
 !
       integer i
 !

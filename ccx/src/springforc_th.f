@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
 !
       character*80 matname(*),slname,msname
 !
-      integer i,j,imat,ncmat_,ntmat_,nope,nterms,iflag,mi(2),
+      integer i,j,imat,ncmat_,ntmat_,nope,nterms,iflag,mi(*),
      &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),
      &  node,noel,istep,iinc,npred
 !
@@ -39,7 +39,8 @@
      &  xiso(20),yiso(20),plicon(0:2*npmat_,ntmat_,*),temp(2),
      &  predef(2),coords(3),tmean
 !
-      data iflag /2/
+c      data iflag /2/
+      iflag=2
 !
 !     actual positions of the nodes belonging to the contact spring
 !
@@ -50,6 +51,8 @@
       enddo
 !
       nterms=nope-1
+c      write(*,*) ((xl(i,j),i=1,3),j=1,nterms)
+c      write(*,*) ((vl(i,j),i=1,3),j=1,nterms)
 !
 !     vector vr connects the dependent node with its projection
 !     on the independent face
@@ -57,6 +60,7 @@
       do i=1,3
          pproj(i)=pl(i,nope)
       enddo
+c      write(*,*) ((pl(i,j),i=1,3),j=1,nterms)
       call attach(pl,pproj,nterms,ratio,dist,xi,et)
       do i=1,3
          al(i)=pl(i,nope)-pproj(i)
@@ -153,7 +157,8 @@
             coords(j)=xl(j,nope)
          enddo
          call gapcon(ak,d,flowm,temp,predef,timeend,matname(imat),
-     &               slname,msname,coords,noel,node,npred,istep,iinc)
+     &               slname,msname,coords,noel,node,npred,istep,iinc,
+     &               springarea)
          conductance=ak(1)
       else
          do i=1,niso

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -58,7 +58,7 @@
 !     vj                 Jacobian at the end of the increment
 !
 !     ithermal           0: no thermal effects are taken into account
-!                        1: thermal effects are taken into account (triggered
+!                        >0: thermal effects are taken into account (triggered
 !                        by the keyword *INITIAL CONDITIONS,TYPE=TEMPERATURE)
 !     t1l                temperature at the end of the increment
 !     dtime              time length of the increment
@@ -117,7 +117,7 @@
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(2),nfiber,i,
+      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),nfiber,i,
      &  j,k,l,m,n,ioffset,nt,kk(84),iorien
 !
       real*8 elconloc(21),stiff(21),emec0(6),beta(6),stre(6),
@@ -130,10 +130,10 @@
      &   didc(3,3,3),d2idc2(3,3,3,3,3),dibdc(3,3,3),d2ibdc2(3,3,3,3,3),
      &   dudc(3,3),d2udc2(3,3,3,3),v33,cinv(3,3),xk1,xk2,d(3,3),term
 !
-      data kk /1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
+      kk=(/1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
      &  1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,3,3,1,3,
      &  1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,1,2,2,3,1,3,2,3,
-     &  2,3,2,3/
+     &  2,3,2,3/)
 !
 !     calculating the transformation matrix
 !

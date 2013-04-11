@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine materials(inpc,textpart,matname,nmat,nmat_,
-     &  irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)
+     &  irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,
+     &  imat)
 !
 !     reading the input deck: *MATERIAL
 !
@@ -28,7 +29,7 @@
       character*132 textpart(16)
 !
       integer nmat,nmat_,istep,istat,n,key,i,irstrt,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),ipoinpc(0:*)
+     &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),imat
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in materials: *MATERIAL should be placed'
@@ -41,6 +42,8 @@
          write(*,*) '*ERROR in materials: increase nmat_'
          stop
       endif
+!
+      imat=nmat
 !
       do i=2,n
          if(textpart(i)(1:5).eq.'NAME=') then

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,7 +43,7 @@
 !     field              currently not used
 !     nfield             currently not used (value = 1)
 !     loadtype           load type label
-!     node               currently not used
+!     node               network node (only for forced convection)
 !     area               area covered by the integration point
 !     vold(0..4,1..nk)   solution field in all nodes
 !                        0: temperature
@@ -66,7 +66,7 @@
       implicit none
 !
       character*20 loadtype
-      integer kstep,kinc,noel,npt,jltyp,nfield,node,mi(2)
+      integer kstep,kinc,noel,npt,jltyp,nfield,node,mi(*)
       real*8 h(2),sink,time(2),coords(3),temp,field(nfield),area,
      &  vold(0:mi(2),*)
 !

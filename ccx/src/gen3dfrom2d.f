@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  thicke,offset,ntrans,inotr,trab,ikboun,ilboun,nboun,nboun_,
      &  nodeboun,ndirboun,xboun,iamboun,typeboun,ipompc,nodempc,coefmpc,
      &  nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,nk,nk_,co,rig,nmethod,
-     &  iperturb,ithermal,mi,nam)
+     &  iperturb,ithermal,mi,nam,icomposite,ielmat)
 !
 !     expands 2d element i into a 3d element
 !
@@ -38,18 +38,17 @@
       integer kon(*),ipkon(*),ne,iponor(2,*),knor(*),ntrans,inotr(2,*),
      &  ikboun(*),ilboun(*),nboun,nboun_,nodeboun(*),ndirboun(*),
      &  iamboun(*),nam,ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,
-     &  ikmpc(*),ilmpc(*),nk,nk_,i,rig(*),nmethod,iperturb,ishift
-!
-      integer indexe,j,nodel(8),indexx,indexk,k,nedge,nodes(3,8),
+     &  ikmpc(*),ilmpc(*),nk,nk_,i,rig(*),nmethod,iperturb,ishift,
+     &  indexe,j,nodel(8),indexx,indexk,k,nedge,nodes(3,8),nodec(3,8),
      &  iamplitude,l,newnode,idir,idof,id,m,mpcfreenew,node,ithermal(2),
-     &  jmin,jmax,idummy,mi(2)
+     &  jmin,jmax,idummy,mi(*),indexc,indexl,icomposite,ielmat(mi(3),*)
 ! 
-      real*8 xnor(*),thicke(2,*),offset(2,*),trab(7,*),xboun(*),
-     &  coefmpc(*),co(3,*),vdummy(0:4)
-!
-      real*8 thicks(8),xnors(3,8),dc,ds,val,x,y
+      real*8 xnor(*),thicke(mi(3),*),offset(2,*),trab(7,*),xboun(*),
+     &  coefmpc(*),co(3,*),vdummy(0:4),thicks(8),xnors(3,8),dc,ds,val,
+     &  x,y,thickness(8)
 !
       fixed=.false.
+c      write(*,*) 'gen3dfrom2d element ',i
 !
 !              check for axial elements  
 !
@@ -77,7 +76,10 @@
          nodel(j)=kon(indexe+j)
          kon(indexe+ishift+j)=nodel(j)
          indexk=iponor(2,indexe+j)
-         thicks(j)=thicke(1,indexe+j)
+         thicks(j)=0.d0
+         do k=1,mi(3)
+            thicks(j)=thicks(j)+thicke(k,indexe+j)
+         enddo
          do k=1,3
             nodes(k,j)=knor(indexk+k)
          enddo
@@ -99,6 +101,7 @@
             endif
          enddo
 !
+c               write(*,*) 'original expansion '
          do k=1,nedge
             kon(indexe+k)=nodes(1,k)
 !
@@ -106,6 +109,7 @@
                co(j,nodes(1,k))=co(j,nodel(k))
      &              -thicks(k)*xnors(j,k)*(.5d0+offset(1,i))
             enddo
+c            write(*,*) nodes(1,k),(co(j,nodes(1,k)),j=1,3)
          enddo
          do k=1,nedge
             kon(indexe+nedge+k)=nodes(3,k)
@@ -113,6 +117,7 @@
                co(j,nodes(3,k))=co(j,nodel(k))
      &              +thicks(k)*xnors(j,k)*(.5d0-offset(1,i))
             enddo
+c            write(*,*) nodes(3,k),(co(j,nodes(3,k)),j=1,3)
          enddo
          do k=nedge+1,2*nedge
             kon(indexe+nedge+k)=nodes(1,k)
@@ -120,6 +125,7 @@
                co(j,nodes(1,k))=co(j,nodel(k))
      &              -thicks(k)*xnors(j,k)*(.5d0+offset(1,i))
             enddo
+c            write(*,*) nodes(1,k),(co(j,nodes(1,k)),j=1,3)
          enddo
          do k=nedge+1,2*nedge
             kon(indexe+2*nedge+k)=nodes(3,k)
@@ -127,6 +133,7 @@
                co(j,nodes(3,k))=co(j,nodel(k))
      &              +thicks(k)*xnors(j,k)*(.5d0-offset(1,i))
             enddo
+c            write(*,*) nodes(3,k),(co(j,nodes(3,k)),j=1,3)
          enddo
          do k=1,nedge
             kon(indexe+4*nedge+k)=nodes(2,k)
@@ -134,7 +141,95 @@
                co(j,nodes(2,k))=co(j,nodel(k))
      &              -thicks(k)*xnors(j,k)*offset(1,i)
             enddo
+c            write(*,*) nodes(2,k),(co(j,nodes(2,k)),j=1,3)
          enddo
+c        do k=1,68
+c           write(*,*) k,kon(k),",",co(1,kon(k)),",",co(2,kon(k)),
+c     &          ",",co(3,kon(k))
+c        enddo
+c        write(*,*) i,lakon(i)
+!
+!        generating the layer geometry for composite shells
+!
+         if(lakon(i)(8:8).eq.'C') then
+            thickness=0.d0
+            indexc=indexe+2*nedge
+            indexl=0
+            do l=1,mi(3)
+               if(ielmat(l,i).eq.0) exit
+c               write(*,*) 'layer ',l
+               indexc=indexc+ishift
+               indexl=indexl+3
+!
+               do j=1,2*nedge
+                  do k=1,3
+                     nodec(k,j)=knor(iponor(2,indexe+j)+indexl+k)
+                  enddo
+               enddo
+c            write(*,*) 'gen3dfrom2d,indexc ',i,indexc
+c            write(*,*) 'gen3dfrom2d,indexl ',i,indexl
+!
+               do k=1,nedge
+                  kon(indexc+k)=nodec(1,k)
+!     
+                  do j=1,3
+                     co(j,nodec(1,k))=co(j,nodel(k))+
+     &                    (thickness(k)-thicks(k)*(.5d0+offset(1,i)))
+     &                    *xnors(j,k)
+                  enddo
+c                  write(*,*) nodec(1,k),(co(j,nodec(1,k)),j=1,3)
+               enddo
+               do k=1,nedge
+                  kon(indexc+nedge+k)=nodec(3,k)
+                  do j=1,3
+                     co(j,nodec(3,k))=co(j,nodel(k))+
+     &                   (thickness(k)+thicke(l,indexe+k)
+     &                    -thicks(k)*(.5d0-offset(1,i)))
+     &                   *xnors(j,k)
+                  enddo
+c                  write(*,*) nodec(3,k),(co(j,nodec(3,k)),j=1,3)
+               enddo
+               do k=nedge+1,2*nedge
+                  kon(indexc+nedge+k)=nodec(1,k)
+                  do j=1,3
+                     co(j,nodec(1,k))=co(j,nodel(k))+
+     &                    (thickness(k)-thicks(k)*(.5d0+offset(1,i)))
+     &                     *xnors(j,k)
+                  enddo
+c                  write(*,*) nodec(1,k),(co(j,nodec(1,k)),j=1,3)
+               enddo
+               do k=nedge+1,2*nedge
+                  kon(indexc+2*nedge+k)=
+     &              nodec(3,k)
+                  do j=1,3
+                     co(j,nodec(3,k))=co(j,nodel(k))+
+     &                   (thickness(k)+thicke(l,indexe+k)
+     &                    -thicks(k)*(.5d0-offset(1,i)))
+     &                   *xnors(j,k)
+                  enddo
+c                  write(*,*) nodec(3,k),(co(j,nodec(3,k)),j=1,3)
+               enddo
+               do k=1,nedge
+                  kon(indexc+4*nedge+k)=
+     &                  nodec(2,k)
+                  do j=1,3
+                     co(j,nodec(2,k))=co(j,nodel(k))+
+     &                    (thickness(k)+thicke(l,indexe+k)/2.d0
+     &                    -thicks(k)*(.5d0-offset(1,i)))
+     &                    *xnors(j,k)
+                  enddo
+c                  write(*,*) nodec(2,k),(co(j,nodec(2,k)),j=1,3)
+               enddo
+!
+               do k=1,2*nedge
+                  thickness(k)=thickness(k)+thicke(l,indexe+k)
+               enddo
+            enddo
+         endif
+c        do k=1,68
+c           write(*,*) kon(k),",",co(1,kon(k)),",",co(2,kon(k)),
+c     &          ",",co(3,kon(k))
+c        enddo
       else
 !
 !           generating the 3-D element topology for axisymmetric elements

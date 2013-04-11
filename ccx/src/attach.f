@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -48,6 +48,7 @@ c      d4=1.d-3
           et(i,j)=j*d1
           call distattach(xi(i,j),et(i,j),pneigh,pnode,a(i,j),p,
      &      ratio,nterms)
+c             write(*,*) i,j,a(i,j)
         enddo
       enddo
 !

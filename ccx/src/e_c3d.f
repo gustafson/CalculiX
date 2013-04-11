@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,7 +25,7 @@
      &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  ttime,time,istep,iinc,coriolis,xloadold,reltime,
      &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,springarea,
-     &  nstate_,xstateini,xstate,ne0)
+     &  nstate_,xstateini,xstate,ne0,ipkon,thicke,xnormastface)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -46,12 +46,13 @@
       character*20 sideload(*)
       character*80 matname(*),amat
 !
-      integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nbody,nelem,
+      integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nbody,nelem,mi(*),
      &  mattyp,ithermal,iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
      &  nmethod,k1,l1,ii,jj,ii1,jj1,id,ipointer,ig,m1,m2,m3,m4,kk,
-     &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(*),ielorien(*),
+     &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
+     &  ielorien(mi(3),*),ilayer,nlayer,ki,kl,ipkon(*),indexe,
      &  ntmat_,nope,nopes,norien,ihyper,iexpl,kode,imat,mint2d,
-     &  mint3d,mi(2),ifacet(6,4),nopev,iorien,istiff,ncmat_,
+     &  mint3d,ifacet(6,4),nopev,iorien,istiff,ncmat_,
      &  ifacew(8,5),intscheme,n,ipointeri,ipointerj,istep,iinc,
      &  layer,kspt,jltyp,iflag,iperm(60),m,ipompc(*),nodempc(3,*),
      &  nmpc,ikmpc(*),ilmpc(*),iscale,nstate_,ne0
@@ -66,19 +67,17 @@
      &  anisox(3,3,3,3),voldl(0:mi(2),20),vo(3,3),xloadold(2,*),
      &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),xload(2,*),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
-     &  v(3,3,3,3),springarea(2,*),
+     &  v(3,3,3,3),springarea(2,*),thickness,tlayer(4),dlayer(4),
      &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(60,60),
      &  sti(6,mi(1),*),stx(6,mi(1),*),s11,s22,s33,s12,s13,s23,s11b,
-     &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,coefmpc(*),
-     &  senergy,senergyb,rho,elas(21),summass,summ,
+     &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,coefmpc(*),xlayer(mi(3),4),
+     &  senergy,senergyb,rho,elas(21),summass,summ,thicke(mi(3),*),
      &  sume,factorm,factore,alp,elconloc(21),eth(6),
-     &  weight,coords(3),dmass,xl1(3,8),term
+     &  weight,coords(3),dmass,xl1(3,8),term,xnormastface(3,8,*)
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),plconloc(82),dtime,ttime,time,tvar(2),
      &  sax(60,60),ffax(60),gs(8,4),a
-!
-      include "gauss.f"
 !
       data ifaceq /4,3,2,1,11,10,9,12,
      &            5,6,7,8,13,14,15,16,
@@ -101,20 +100,13 @@
      &            37,38,-39,40,41,-42,43,44,-45,46,47,-48,
      &            25,26,-27,28,29,-30,31,32,-33,34,35,-36,
      &            49,50,-51,52,53,-54,55,56,-57,58,59,-60/
-
+!
+      include "gauss.f"
 !
       tvar(1)=time
       tvar(2)=ttime+dtime
 !
       summass=0.d0
-!
-      imat=ielmat(nelem)
-      amat=matname(imat)
-      if(norien.gt.0) then
-         iorien=ielorien(nelem)
-      else
-         iorien=0
-      endif
 !
 c     Bernhardi start
       if(lakonl(1:5).eq.'C3D8I') then
@@ -148,6 +140,73 @@ c     Bernhardi end
          read(lakonl(8:8),'(i1)') nope
       endif
 !
+!     material and orientation
+!
+      if(lakonl(7:8).ne.'LC') then
+!
+         imat=ielmat(1,nelem)
+         amat=matname(imat)
+         if(norien.gt.0) then
+            iorien=ielorien(1,nelem)
+         else
+            iorien=0
+         endif
+!
+         if(nelcon(1,imat).lt.0) then
+            ihyper=1
+         else
+            ihyper=0
+         endif
+      else
+!
+!        composite materials
+!
+!        determining the number of layers
+!
+         nlayer=0
+         do k=1,mi(3)
+            if(ielmat(k,nelem).ne.0) then
+               nlayer=nlayer+1
+            endif
+c            do j=1,nopes
+c               if(dabs(thicke(i,indexe+j)).gt.1.d-30) then
+c                  nlayer=nlayer+1
+c                  exit
+c               endif
+c            enddo
+         enddo
+         mint2d=4
+!
+!        determining the layer thickness and global thickness
+!        at the shell integration points
+!
+         iflag=1
+         indexe=ipkon(nelem)
+         do kk=1,mint2d
+            xi=gauss3d2(1,kk)
+            et=gauss3d2(2,kk)
+            call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
+            tlayer(kk)=0.d0
+            do i=1,nlayer
+               thickness=0.d0
+               do j=1,nopes
+                  thickness=thickness+thicke(i,indexe+j)*shp2(4,j)
+               enddo
+               tlayer(kk)=tlayer(kk)+thickness
+               xlayer(i,kk)=thickness
+c               write(*,*) 'xlayer ',i,kk,xlayer(i,kk)
+            enddo
+c            write(*,*) 'tlayer ',kk,tlayer(kk)
+         enddo
+         iflag=3
+!
+         ilayer=0
+         do i=1,4
+            dlayer(i)=0.d0
+         enddo
+!     
+      endif
+!
       if(intscheme.eq.0) then
          if(lakonl(4:5).eq.'8R') then
             mint2d=1
@@ -159,7 +218,11 @@ c     Bernhardi end
                mint3d=4
             else
                mint2d=4
-               mint3d=8
+               if(lakonl(7:8).eq.'LC') then
+                  mint3d=8*nlayer
+               else
+                  mint3d=8
+               endif
             endif
          elseif(lakonl(4:4).eq.'2') then
             mint2d=9
@@ -215,11 +278,11 @@ c     Bernhardi end
         enddo
       enddo
 !
-      if(nelcon(1,imat).lt.0) then
-         ihyper=1
-      else
-         ihyper=0
-      endif
+c      if(nelcon(1,imat).lt.0) then
+c         ihyper=1
+c      else
+c         ihyper=0
+c      endif
 !
 !       initialisation for distributed forces
 !
@@ -233,7 +296,6 @@ c     Bernhardi end
 !
 !     displacements for 2nd order static and modal theory
 !
-c      if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling)) then
       if(((iperturb(1).eq.1).or.(iperturb(2).eq.1)).and.
      &          stiffness.and.(.not.buckling)) then
          do i1=1,nope
@@ -285,7 +347,8 @@ c      if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling)) then
          call springstiff(xl,elas,konl,voldl,s,imat,elcon,nelcon,
      &      ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,plicon,
      &      nplicon,npmat_,iperturb,springarea(1,konl(nope+1)),nmethod,
-     &      mi,ne0,nstate_,xstateini,xstate,reltime)
+     &      mi,ne0,nstate_,xstateini,xstate,reltime,
+     &      xnormastface(1,1,konl(nope+1)))
          return
       endif
 !
@@ -300,10 +363,55 @@ c      if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling)) then
                weight=weight3d1(kk)
             elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) 
      &              then
-               xi=gauss3d2(1,kk)
-               et=gauss3d2(2,kk)
-               ze=gauss3d2(3,kk)
-               weight=weight3d2(kk)
+               if(lakonl(7:8).ne.'LC') then
+                  xi=gauss3d2(1,kk)
+                  et=gauss3d2(2,kk)
+                  ze=gauss3d2(3,kk)
+                  weight=weight3d2(kk)
+               else
+                  kl=mod(kk,8)
+                  if(kl.eq.0) kl=8
+!
+                  xi=gauss3d2(1,kl)
+                  et=gauss3d2(2,kl)
+                  ze=gauss3d2(3,kl)
+                  weight=weight3d2(kl)
+!
+                  ki=mod(kk,4)
+                  if(ki.eq.0) ki=4
+!
+                  if(kl.eq.1) then
+                     ilayer=ilayer+1
+                     if(ilayer.gt.1) then
+                        do i=1,4
+                           dlayer(i)=dlayer(i)+xlayer(ilayer-1,i)
+                        enddo
+                     endif
+                  endif
+                  ze=2.d0*(dlayer(ki)+(ze+1.d0)/2.d0*xlayer(ilayer,ki))/
+     &                 tlayer(ki)-1.d0
+                  weight=weight*xlayer(ilayer,ki)/tlayer(ki)
+c                  write(*,*) 'kk', kk
+c                  write(*,*) 'coords',xi,et,ze
+c                  write(*,*) 'weight',weight
+c                  write(*,*) 'dlayer',dlayer(ki)
+!
+!                 material and orientation
+!
+                  imat=ielmat(ilayer,nelem)
+                  amat=matname(imat)
+                  if(norien.gt.0) then
+                     iorien=ielorien(ilayer,nelem)
+                  else
+                     iorien=0
+                  endif
+!     
+                  if(nelcon(1,imat).lt.0) then
+                     ihyper=1
+                  else
+                     ihyper=0
+                  endif
+               endif
             elseif(lakonl(4:4).eq.'2') then
                xi=gauss3d3(1,kk)
                et=gauss3d3(2,kk)
@@ -348,6 +456,12 @@ c      if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling)) then
                weight=weight3d9(kk)
             endif
          endif
+c         if(nelem.eq.1) then
+c                  write(*,*) 'kk', kk
+c                  write(*,*) 'coords',xi,et,ze
+c                  write(*,*) 'weight',weight
+c                  write(*,*) 'dlayer',dlayer(ki)
+c         endif
 !
 !           calculation of the shape functions and their derivatives
 !           in the gauss point
@@ -475,6 +589,7 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
      &        xstiff,ncmat_)
 !
          if(mattyp.eq.1) then
+c            write(*,*) 'elastic co', elas(1),elas(2)
             e=elas(1)
             un=elas(2)
             um=e/(1.d0+un)
@@ -526,7 +641,6 @@ c            call orthotropic(elas,anisox)
 !
          if(stiffness.or.mass.or.buckling.or.coriolis) then
 !
-c            if((iperturb(1).eq.0).or.buckling)
             if(((iperturb(1).ne.1).and.(iperturb(2).ne.1)).or.buckling)
      &           then
                jj1=1
@@ -555,6 +669,14 @@ c            if((iperturb(1).eq.0).or.buckling)
 !
                            s(ii1,jj1)=s(ii1,jj1)+(al*w(1,1)+
      &                          um*(2.d0*w(1,1)+w(2,2)+w(3,3)))*weight
+c                          if((nelem.eq.1).and.(ii1.eq.1).and.(jj1.eq.1)) 
+c     &                       then
+c                             write(*,*) 'e_c3d',kk,ii1,jj1,s(ii1,jj1)
+c                             write(*,*) '    &',al,um
+c                             write(*,*) '    &',w(1,1),w(2,2),w(3,3)
+c                             write(*,*) '    &',weight
+c                          endif
+!                          
                            s(ii1,jj1+1)=s(ii1,jj1+1)+(al*w(1,2)+
      &                          um*w(2,1))*weight
                            s(ii1,jj1+2)=s(ii1,jj1+2)+(al*w(1,3)+
@@ -627,7 +749,7 @@ c            if((iperturb(1).eq.0).or.buckling)
 !                     Coriolis matrix
 !
                         if(coriolis) then
-                           dmass=
+                           dmass=2.d0*
      &                        rho*shpj(4,ii)*shp(4,jj)*weight*dsqrt(omx)
                            sm(ii1,jj1+1)=sm(ii1,jj1+1)-p2(3)*dmass
                            sm(ii1,jj1+2)=sm(ii1,jj1+2)+p2(2)*dmass
@@ -758,7 +880,8 @@ c            if((iperturb(1).eq.0).or.buckling)
 !                     Coriolis matrix
 !
                      if(coriolis) then
-                        dmass=rho*shpj(4,ii)*shp(4,jj)*weight*dsqrt(omx)
+                        dmass=2.d0*
+     &                    rho*shpj(4,ii)*shp(4,jj)*weight*dsqrt(omx)
                         sm(ii1,jj1+1)=sm(ii1,jj1+1)-p2(3)*dmass
                         sm(ii1,jj1+2)=sm(ii1,jj1+2)+p2(2)*dmass
                         sm(ii1+1,jj1)=sm(ii1+1,jj1)+p2(3)*dmass
@@ -1165,13 +1288,10 @@ c     Bernhardi end
      &                        (xkl(n,3)*shp2(1,jj)-xkl(n,1)*shp2(3,jj))+
      &                        xsj2(3)*
      &                        (xkl(n,1)*shp2(2,jj)-xkl(n,2)*shp2(1,jj)))
-c                            if(ipointeri+k.le.ipointerj+l) then
-                               s(ipointeri+k,ipointerj+l)=
-     &                              s(ipointeri+k,ipointerj+l)+term/2.d0
-c                            else
-                               s(ipointerj+l,ipointeri+k)=
-     &                              s(ipointerj+l,ipointeri+k)+term/2.d0
-c                            endif
+                            s(ipointeri+k,ipointerj+l)=
+     &                           s(ipointeri+k,ipointerj+l)+term/2.d0
+                            s(ipointerj+l,ipointeri+k)=
+     &                           s(ipointerj+l,ipointeri+k)+term/2.d0
                          enddo
                       enddo
                    enddo
@@ -1283,6 +1403,9 @@ c            alp=.2215d0
 !
       endif
 !
+c      if(nelem.eq.1) then
+c         write(*,'(8(1x,e11.4))') ((s(i,j),i=1,60),j=1,60)
+c      endif
       return
       end
 

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -51,8 +51,6 @@
       do i=1,ne
          if(ipkon(i).lt.0) cycle
          lakonl=lakon(i)
-c         if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'G').or.
-c     &      (lakonl(1:1).ne.'C')) cycle
          if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'I').or.
      &      (lakonl(1:1).ne.'C')) cycle
          indexe=ipkon(i)
@@ -64,14 +62,10 @@ c     &      (lakonl(1:1).ne.'C')) cycle
             indexe2d=indexe+15
             do j=1,6
                node2d=kon(indexe2d+j)
-c               do l=1,3
-c                  if(node6(l,j).ne.0) then
-                     node3d=kon(indexe+node6(1,j))
-                     nodorig(node3d)=node2d
-                     nodorig(node3d+1)=node2d
-                     nodorig(node3d+2)=node2d
-c                  endif
-c               enddo
+               node3d=kon(indexe+node6(1,j))
+               nodorig(node3d)=node2d
+               nodorig(node3d+1)=node2d
+               nodorig(node3d+2)=node2d
             enddo
          elseif(lakonl(7:7).eq.'B') then
 !
@@ -94,17 +88,10 @@ c               enddo
             indexe2d=indexe+20
             do j=1,8
                node2d=kon(indexe2d+j)
-c               do l=1,3
-c                  if(node8(l,j).ne.0) then
-                     node3d=kon(indexe+node8(1,j))
-                     nodorig(node3d)=node2d
-c                     write(*,*) node3d,node2d
-                     nodorig(node3d+1)=node2d
-c                     write(*,*) node3d+1,node2d
-                     nodorig(node3d+2)=node2d
-c                     write(*,*) node3d+2,node2d
-c                  endif
-c               enddo
+               node3d=kon(indexe+node8(1,j))
+               nodorig(node3d)=node2d
+               nodorig(node3d+1)=node2d
+               nodorig(node3d+2)=node2d
             enddo
          endif
       enddo
@@ -119,9 +106,6 @@ c               enddo
             nactdofinv(nactdof(j,i))=(nodorig(i)-1)*mt+j
          enddo
       enddo
-c      do i=1,25
-c         write(*,*) i-1,nactdofinv(i),nactdofinv(i)/mt+1
-c      enddo
 !
       return
       end

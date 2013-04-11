@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2007 Guido Dhondt                          */
+/*              Copyright (C) 1998-2011 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -132,7 +132,6 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  index=ipompc[i]-1;
 	  do{
 	      if(nodempc[3*index+1]<4){
-//		  nactdof[mt*nodempc[3*index]+nodempc[3*index+1]-4]=1;
 		  nactdof[mt*(nodempc[3*index]-1)+nodempc[3*index+1]]=1;
 	      }
 	      index=nodempc[3*index+2];
@@ -189,12 +188,12 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   else{neq[2]=neq[1];}
   
   ifree=0;
-  /* for(i=0;i<4**nk;++i){printf("nactdof=%d,%d,%d\n",i/4+1,i-(i/4)*4,nactdof[i]);}*/
 
-    /* determining the position of each nonzero matrix element
+    /* determining the position of each nonzero matrix element in
+       the SUPERdiagonal matrix */
 
-       mast1(ipointer(i)) = first nonzero row in column i
-       irow(ipointer(i))  points to further nonzero elements in 
+    /*   mast1(ipointer(i)) = first nonzero row in column i
+	 irow(ipointer(i))  points to further nonzero elements in 
                              column i */
       
     for(i=0;i<4**nk;++i){ipointer[i]=0;}
@@ -267,7 +266,6 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		index=nodempc[3*ist-1];
 		if(index==0) continue;
 		while(1){
-//		  idof2=nactdof[mt*nodempc[3*index-3]+nodempc[3*index-2]-4];
 		    idof2=nactdof[mt*(nodempc[3*index-3]-1)+nodempc[3*index-2]];
 		  if(idof2!=0){
 		    insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);
@@ -285,7 +283,6 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	    if((*nmethod==2)||((*nmethod==4)&&(*iperturb<=1))||(*nmethod>=5)){
 		FORTRAN(nident,(ikboun,&idof2,nboun,&id)); 
 		icolumn=neq[1]+ilboun[id-1];
-		/*	printf("idof1=%d,icolumn=%d\n",idof1,icolumn);*/
     	 	insert(ipointer,&mast1,&irow,&idof1,&icolumn,&ifree,&nzs_);
 	    }
 	  }
@@ -312,11 +309,9 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		index1=nodempc[3*ist-1];
 		if(index1==0) continue;
 		while(1){
-//		  idof1=nactdof[mt*nodempc[3*index1-3]+nodempc[3*index1-2]-4];
 		    idof1=nactdof[mt*(nodempc[3*index1-3]-1)+nodempc[3*index1-2]];
 		  index2=index1;
 		  while(1){
-//		    idof2=nactdof[mt*nodempc[3*index2-3]+nodempc[3*index2-2]-4];
 		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
 		    if((idof1!=0)&&(idof2!=0)){
 		      insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);}
@@ -336,7 +331,6 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		index1=nodempc[3*ist1-1];
 		if(index1==0) continue;
 		while(1){
-//		  idof1=nactdof[mt*nodempc[3*index1-3]+nodempc[3*index1-2]-4];
 		    idof1=nactdof[mt*(nodempc[3*index1-3]-1)+nodempc[3*index1-2]];
 		  ist2=ipompc[id2-1];
 		  index2=nodempc[3*ist2-1];
@@ -346,7 +340,6 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		    else{continue;}
 		  }
 		  while(1){
-//		    idof2=nactdof[mt*nodempc[3*index2-3]+nodempc[3*index2-2]-4];
 		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
 		    if((idof1!=0)&&(idof2!=0)){
 		      insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);}
@@ -364,9 +357,6 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     }
 
     }
-
-    /* nzs[0]=ifree-neq[0];*/
-    /*   printf("\nneq[0]=%d,nzs[0]=%d\n\n",neq[0],nzs[0]);*/
 
     /* thermal entries*/
 
@@ -431,7 +421,6 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		index=nodempc[3*ist-1];
 		if(index==0) continue;
 		while(1){
-//		  idof2=nactdof[mt*nodempc[3*index-3]+nodempc[3*index-2]-4];
 		    idof2=nactdof[mt*(nodempc[3*index-3]-1)+nodempc[3*index-2]];
 		  if(idof2!=0){
 		    insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);
@@ -476,11 +465,9 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		index1=nodempc[3*ist-1];
 		if(index1==0) continue;
 		while(1){
-//		  idof1=nactdof[mt*nodempc[3*index1-3]+nodempc[3*index1-2]-4];
 		    idof1=nactdof[mt*(nodempc[3*index1-3]-1)+nodempc[3*index1-2]];
 		  index2=index1;
 		  while(1){
-//		    idof2=nactdof[mt*nodempc[3*index2-3]+nodempc[3*index2-2]-4];
 		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
 		    if((idof1!=0)&&(idof2!=0)){
 		      insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);}
@@ -500,7 +487,6 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		index1=nodempc[3*ist1-1];
 		if(index1==0) continue;
 		while(1){
-//		  idof1=nactdof[mt*nodempc[3*index1-3]+nodempc[3*index1-2]-4];
 		    idof1=nactdof[mt*(nodempc[3*index1-3]-1)+nodempc[3*index1-2]];
 		  ist2=ipompc[id2-1];
 		  index2=nodempc[3*ist2-1];
@@ -510,7 +496,6 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		    else{continue;}
 		  }
 		  while(1){
-//		    idof2=nactdof[mt*nodempc[3*index2-3]+nodempc[3*index2-2]-4];
 		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
 		    if((idof1!=0)&&(idof2!=0)){
 		      insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);}
@@ -528,36 +513,37 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     }
 
     }
+
+    /*   storing the nonzero nodes in the SUPERdiagonal columns:
+	 mast1 contains the row numbers,
+	 irow the column numbers  */
     
     for(i=0;i<neq[2];++i){
-      if(ipointer[i]==0){
-	if(i>=neq[1]) continue;
-	node1=0;
-	for(j=0;j<*nk;j++){
-	  for(k=0;k<4;++k){
-//	    if(nactdof[mt*nnn[j]+k-4]==i+1){
-	      if(nactdof[mt*(nnn[j]-1)+k]==i+1){
-	      node1=nnn[j];
-	      idof1=k;
-	      break;
+	if(ipointer[i]==0){
+	    if(i>=neq[1]) continue;
+	    node1=0;
+	    for(j=0;j<*nk;j++){
+		for(k=0;k<4;++k){
+		    if(nactdof[mt*(nnn[j]-1)+k]==i+1){
+			node1=nnn[j];
+			idof1=k;
+			break;
+		    }
+		}
+		if(node1!=0) break;
 	    }
-	  }
-	  if(node1!=0) break;
+	    printf("*ERROR in mastruct: zero column\n");
+	    printf("       node=%d,DOF=%d\n",node1,idof1);
+	    FORTRAN(stop,());
 	}
-	printf("*ERROR in mastruct: zero column\n");
-	printf("       node=%d,DOF=%d\n",node1,idof1);
-	FORTRAN(stop,());
-      }
-      istart=ipointer[i];
-      while(1){
-	istartold=istart;
-	istart=irow[istart-1];
-	irow[istartold-1]=i+1;
-	if(istart==0) break;
-      }
+	istart=ipointer[i];
+	while(1){
+	    istartold=istart;
+	    istart=irow[istart-1];
+	    irow[istartold-1]=i+1;
+	    if(istart==0) break;
+	}
     }
-
-    /* defining icol and jq */
 
     if(neq[1]==0){
       printf("\n*WARNING: no degrees of freedom in the model\n\n");
@@ -581,22 +567,26 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 
     printf(" number of equations\n");
     printf(" %d\n",neq[1]);
-    printf(" number of nonzero matrix elements\n");
-    printf(" %d\n",nmast);
+    printf(" number of nonzero lower triangular matrix elements\n");
+    printf(" %d\n",nmast-neq[1]);
     printf("\n");
 
-    /* changing the meaning of icol,j1,mast1,irow:
+    /* switching from a SUPERdiagonal inventory to a SUBdiagonal one:
+       since the nonzeros are located in symmetric positions mast1
+       can be considered to contain the column numbers and irow the
+       row numbers; after sorting mast1 the following results:
 
-       - irow is going to contain the row numbers of the SUBdiagonal
+       - irow contains the row numbers of the SUBdiagonal
          nonzero's, column per column
        - mast1 contains the column numbers
+
+       Furthermore, the following fields are determined:       
+
        - icol(i)=# SUBdiagonal nonzero's in column i
        - jq(i)= location in field irow of the first SUBdiagonal
-         nonzero in column i
+         nonzero in column i  */
 
-	 */
-
-    /* switching from a SUPERdiagonal inventory to a SUBdiagonal one */
+    /* ordering the column numbers in mast1 */
 
     FORTRAN(isortii,(mast1,irow,&nmast,&kflag));
     
@@ -619,6 +609,8 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     }
     nmast=nmast-isubtract;
     for(l=k;l<neq[1]+1;++l){jq[l]=nmast+1;}
+
+    /* sorting the row numbers within each column */
 
     for(i=0;i<neq[1];++i){
       if(jq[i+1]-jq[i]>0){
@@ -687,7 +679,7 @@ be easier to understand.
 
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2007 Guido Dhondt
+!     Copyright (C) 1998-2011 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,7 +31,7 @@
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
      &     inv,ipkon(*),kon(*),number,kgas,nelemref,
-     &     nodea,nodeb,iaxial,mi(2),i,itype
+     &     nodea,nodeb,iaxial,mi(*),i,itype
 !
       real*4 ofvidg
 !     
@@ -656,60 +656,59 @@
          endif
          xflow_oil=0
 !
-         write(1,*) ''
-         write(1,55) 'In line',int(nodem/1000),' from node',node1,
-     &   ' to node', node2,':   air massflow rate=',inv*xflow,'kg/s',
-     &   ', oil massflow rate=',xflow_oil,'kg/s'
- 55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
-         
-         if(inv.eq.1) then
-            write(1,56)'       Inlet node  ',node1,':   Tt1=',T1,
-     &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
-            
-            write(1,*)'             element R   ',set(numf)(1:20)
-            write(1,57)'             Eta= ',dvi,' kg/(m*s), Re='
+          write(1,*) ''
+          write(1,55) 'In line ',int(nodem/1000),' from node ',node1,
+     &   ' to node ', node2,':   air massflow rate= ',inv*xflow,' kg/s',
+     &   ', oil massflow rate= ',xflow_oil,' kg/s'
+  55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
+          
+          if(inv.eq.1) then
+             write(1,56)'       Inlet node ',node1,':   Tt1= ',T1,
+     &           ' K, Ts1= ',T1,' K, Pt1= ',P1/1E5, ' Bar'
+             
+             write(1,*)'             element R   ',set(numf)(1:30)
+             write(1,57)'             Eta= ',dvi,' kg/(m*s), Re='
      &           ,reynolds
-            if(lakon(nelem)(2:5).ne.'ORMA') then
-               write(1,58)'             CD= ',cd
-            elseif(lakon(nelem)(2:5).eq.'ORMA') then
-               write(1,59)'             CD= ',cd,' C1u= ',uref,'m/s'
-            endif
-            
-
-!     special for bleed tappings
-            if(lakon(nelem)(2:5).eq.'ORBT') then
-               write(1,60) '             DAB=',(1-P2/P1)/(1-ps1pt1),
-     &              ' ,curve N°',curve 
-!     special for preswirlnozzles
-            elseif(lakon(nelem)(2:5).eq.'ORPN') then
-               write(1,61)'             C2u= ',c2u_new,'m/s'
-!     special for recievers
-            
-            endif 
-
-            write(1,56)'       Outlet node ',node2,':   Tt2=',T2,
-     &           'K, Ts2=',T2,'K, Pt2=',P2/1e5,'Bar'
-!     
-         else if(inv.eq.-1) then
-            write(1,56)'       Inlet node  ',node2,':    Tt1=',T1,
-     &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
+             if(lakon(nelem)(2:5).ne.'ORMA') then
+                write(1,58)'             CD= ',cd
+             elseif(lakon(nelem)(2:5).eq.'ORMA') then
+                write(1,59)'             CD= ',cd,' C1u= ',uref,' m/s'
+             endif
+             
+ 
+ !     special for bleed tappings
+             if(lakon(nelem)(2:5).eq.'ORBT') then
+                write(1,60) '             DAB= ',(1-P2/P1)/(1-ps1pt1),
+     &              ' ,curve N° ',curve 
+ !     special for preswirlnozzles
+             elseif(lakon(nelem)(2:5).eq.'ORPN') then
+                write(1,61)'             C2u= ',c2u_new,' m/s'
+ !     special for recievers
+             
+             endif 
+ 
+             write(1,56)'       Outlet node ',node2,':   Tt2= ',T2,
+     &           ' K, Ts2= ',T2,' K, Pt2= ',P2/1e5,' Bar'
+ !     
+          else if(inv.eq.-1) then
+             write(1,56)'       Inlet node  ',node2,':    Tt1= ',T1,
+     &           'K, Ts1= ',T1,'K, Pt1= ',P1/1E5, 'Bar'
      &          
-            write(1,*)'             element R    ',set(numf)(1:20)
-            write(1,57)'             eta= ',dvi,'kg/(m*s), Re='
-     &           ,reynolds,', CD=',cd
-
-!     special for bleed tappings
-            if(lakon(nelem)(2:5).eq.'ORBT') then
-               write(1,60) '             DAB ',(1-P2/P1)/(1-ps1pt1),'
-     &              , curve N°', curve
-!     special for preswirlnozzles
-            elseif(lakon(nelem)(2:5).eq.'ORPN') then
-               write(1,*) 'u= ',u,'m/s, C2u= ',c2u_new,'m/s'
-            endif
-
-            write(1,56)'       Outlet node ',node1,':    Tt2=',T2,
-     &           'K, Ts2=',T2,'K, Pt2=',P2/1e5, 'Bar'
-               
+             write(1,*)'             element R    ',set(numf)(1:30)
+             write(1,57)'             eta= ',dvi,' kg/(m*s), Re='
+     &           ,reynolds,', CD= ',cd
+ 
+ !     special for bleed tappings
+             if(lakon(nelem)(2:5).eq.'ORBT') then
+                write(1,60) '             DAB ',(1-P2/P1)/(1-ps1pt1),
+     &              ', curve N° ', curve
+ !     special for preswirlnozzles
+             elseif(lakon(nelem)(2:5).eq.'ORPN') then
+                write(1,*) 'u= ',u,' m/s, C2u= ',c2u_new,' m/s'
+             endif
+ 
+             write(1,56)'       Outlet node ',node1,':    Tt2= ',T2,
+     &           ' K, Ts2= ',T2,' K, Pt2= ',P2/1e5, ' Bar'
          endif
 !
  56      FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A)

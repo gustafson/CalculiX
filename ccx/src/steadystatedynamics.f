@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -81,12 +81,12 @@
             read(textpart(i)(10:12),'(a3)') harmonic
          elseif(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
             cyclicsymmetry=.true.
-         elseif(textpart(i)(1:5).eq.'NSET=') then
-            nodalset=.true.
-            noset=textpart(i)(6:85)
-            noset(81:81)=' '
-            ipos=index(noset,' ')
-            noset(ipos:ipos)='N'
+c         elseif(textpart(i)(1:5).eq.'NSET=') then
+c            nodalset=.true.
+c            noset=textpart(i)(6:85)
+c            noset(81:81)=' '
+c            ipos=index(noset,' ')
+c            noset(ipos:ipos)='N'
          else
             write(*,*) 
      &      '*WARNING in steadystatedynamics: parameter not recognized:'
@@ -131,24 +131,24 @@
          stop
       endif
 !
-      if(nodalset) then
-         do i=1,nset
-            if(set(i).eq.noset) exit
-         enddo
-         if(i.gt.nset) then
-            noset(ipos:ipos)=' '
-            write(*,*) '*ERROR in steadystatedynamics: node set ',noset
-            write(*,*) '  has not yet been defined.'
-            stop
-         endif
-         xmodal(10)=i+0.5d0
-      else
-         if(cyclicsymmetry) then
-            write(*,*) '*ERROR in steadystatedynamics: cyclic symmetric'
-            write(*,*) '       structure, yet no node set defined'
-            stop
-         endif
-      endif
+c      if(nodalset) then
+c         do i=1,nset
+c            if(set(i).eq.noset) exit
+c         enddo
+c         if(i.gt.nset) then
+c            noset(ipos:ipos)=' '
+c            write(*,*) '*ERROR in steadystatedynamics: node set ',noset
+c            write(*,*) '  has not yet been defined.'
+c            stop
+c         endif
+c         xmodal(10)=i+0.5d0
+c      else
+c         if(cyclicsymmetry) then
+c            write(*,*) '*ERROR in steadystatedynamics: cyclic symmetric'
+c            write(*,*) '       structure, yet no node set defined'
+c            stop
+c         endif
+c      endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

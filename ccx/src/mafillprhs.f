@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -33,13 +33,14 @@
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nelemface(*),icolp(*),jqp(*),ikmpc(*),ilmpc(*),ikboun(*),
-     &  ilboun(*),nactdoh(0:4,*),konl(20),irowp(*),nrhcon(*),ielmat(*),
+     &  ilboun(*),nactdoh(0:4,*),konl(20),irowp(*),nrhcon(*),
+     &  mi(*),ielmat(mi(3),*),
      &  ipkon(*),nshcon(*),iexplicit,nea,neb,ipvar(*),ipvarf(*)
 !
       integer nk,ne,nboun,nmpc,nface,neqp,nzlp,nmethod,nzsp,i,j,k,l,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,node1,node2,kflag,ntmat_,indexe,nope,
-     &  mi(2),i0,ncmat_,idof3
+     &  i0,ncmat_,idof3
 !
       real*8 co(3,*),xboun(*),coefmpc(*),b(*),v(0:mi(2),*),
      &  vold(0:mi(2),*),

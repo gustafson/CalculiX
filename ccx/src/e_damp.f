@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,9 +36,10 @@
       character*80 matname(*)
 !
       integer konl(20),nelemload(2,*),nk,nbody,nelem,
-     &  ithermal,iperturb,nload,idist,i,j,i1,i2,
-     &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(*),ielorien(*),
-     &  ntmat_,nope,norien,iexpl,kode,imat,mi(2),ncmat_,
+     &  ithermal,iperturb,nload,idist,i,j,i1,i2,mi(*),
+     &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
+     &  ielorien(mi(3),*),
+     &  ntmat_,nope,norien,iexpl,kode,imat,ncmat_,
      &  istep,iinc,nmethod
 !
       integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
@@ -53,7 +54,7 @@
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),dtime,ttime,time
 !
-      imat=ielmat(nelem)
+      imat=ielmat(1,nelem)
 !
       read(lakonl(8:8),'(i1)') nope
 !

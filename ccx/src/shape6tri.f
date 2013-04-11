@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,6 +18,7 @@
 !
       subroutine shape6tri(xi,et,xl,xsj,xs,shp,iflag)
 !
+!     iflag=1: calculate only the value of the shape functions
 !     iflag=2: calculate the value of the shape functions,
 !              their derivatives w.r.t. the local coordinates
 !              and the Jacobian vector (local normal to the
@@ -45,6 +46,17 @@
 !     shape functions and their glocal derivatives for an element
 !     described with two local parameters and three global ones.
 !
+!     shape functions
+!
+      shp(4,1)=2.d0*(0.5d0-xi-et)*(1.d0-xi-et)
+      shp(4,2)=xi*(2.d0*xi-1.d0)
+      shp(4,3)=et*(2.d0*et-1.d0)
+      shp(4,4)=4.d0*xi*(1.d0-xi-et)
+      shp(4,5)=4.d0*xi*et
+      shp(4,6)=4.d0*et*(1.d0-xi-et)            
+!
+      if(iflag.eq.1) return
+!
 !     local derivatives of the shape functions: xi-derivative
 !
       shp(1,1)=4.d0*(xi+et)-3.d0
@@ -62,15 +74,6 @@
       shp(2,4)=-4.d0*xi
       shp(2,5)=4.d0*xi
       shp(2,6)=4.d0*(1.d0-xi-2.d0*et)
-!
-!     shape functions
-!
-      shp(4,1)=2.d0*(0.5d0-xi-et)*(1.d0-xi-et)
-      shp(4,2)=xi*(2.d0*xi-1.d0)
-      shp(4,3)=et*(2.d0*et-1.d0)
-      shp(4,4)=4.d0*xi*(1.d0-xi-et)
-      shp(4,5)=4.d0*xi*et
-      shp(4,6)=4.d0*et*(1.d0-xi-et)            
 !
 !     computation of the local derivative of the global coordinates
 !     (xs)

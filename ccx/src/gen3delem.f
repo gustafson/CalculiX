@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,7 +24,8 @@
      &  nforc_,nodeforc,ndirforc,xforc,iamforc,nelemload,sideload,
      &  nload,ithermal,ntrans,co,ixfree,ikfree,inoelfree,iponoelmax,
      &  iperturb,tinc,tper,tmin,tmax,ctrl,typeboun,nmethod,nset,set,
-     &  istartset,iendset,ialset,prop,ielprop,vold,mi)
+     &  istartset,iendset,ialset,prop,ielprop,vold,mi,nkon,ielmat,
+     &  icomposite,t0g,t1g)
 !
 !     generates three-dimensional elements:
 !         for isochoric elements
@@ -50,13 +51,13 @@
      &  ikforc(*),ilforc(*),nodeforc(2,*),ndirforc(*),iamforc(*),
      &  nelemload(*),nforc,nforc_,ithermal(2),nload,iamboun(*),
      &  ntrans,inotr(2,*),nam,iponoelmax,iperturb,numnod,itransaxial,
-     &  rig(*),nmethod,nset,istartset(*),iendset(*),ialset(*),
+     &  rig(*),nmethod,nset,istartset(*),iendset(*),ialset(*),nkon,
      &  ielprop(*),idir,indexref,indexold,idofold,idold,indexnew,
-     &  idofnew,idnew,ksol,lsol,nmpc0,nmpc01,nmpcdif,mi(2),nope
+     &  idofnew,idnew,ksol,lsol,nmpc0,nmpc01,nmpcdif,mi(*),nope,
+     &  ielmat(mi(3),*),iponor(2,*),knor(*),ixfree,ikfree,icomposite
 !
-      integer iponor(2,*),knor(*),ixfree,ikfree
-!
-      real*8 coefmpc(*),thicke(2,*),xnor(*),thickn(2,*),tinc,tper,tmin,
+      real*8 coefmpc(*),thicke(mi(3),*),xnor(*),thickn(2,*),tinc,
+     &  tper,tmin,t0g(2,*),t1g(2,*),
      &  tmax,offset(2,*),t0(*),t1(*),xforc(*),trab(7,*),co(3,*),b(3,3),
      &  xboun(*),pi,ctrl(*),prop(*),vold(0:mi(2),*),xlag(3,20),
      &  xeul(3,20),a(3,3),xi,et,ze,coloc(3,8),xj
@@ -79,6 +80,12 @@
 !     in the structure. Otherwise inoelfree=0.
 !
       if((istep.eq.1).and.(inoelfree.eq.1)) then
+!
+!        shift of the connectivity for composite elements
+!
+         if(icomposite.eq.1) then
+            call changekon(ne,ipkon,lakon,mi,nkon,thicke,ielmat,kon)
+         endif
 !
          itransaxial=0
 !
@@ -165,7 +172,8 @@ c               if(nodempc(2,index).gt.3) then
      &     tper,tmin,tmax,ctrl,ipompc,nodempc,coefmpc,nmpc,nmpc_,
      &     mpcfree,ikmpc,ilmpc,labmpc,ikboun,ilboun,nboun,nboun_,
      &     nodeboun,ndirboun,xboun,iamboun,typeboun,nam,ntrans,inotr,
-     &     trab,ikfree,ixfree,nmethod,ithermal,istep,mi)
+     &     trab,ikfree,ixfree,nmethod,ithermal,istep,mi,icomposite,
+     &     ielmat)
 !
       endif
 !
@@ -532,11 +540,12 @@ c               if(nodempc(2,index).gt.3) then
      &           thicke,offset,ntrans,inotr,trab,ikboun,ilboun,nboun,
      &           nboun_,nodeboun,ndirboun,xboun,iamboun,typeboun,ipompc,
      &           nodempc,coefmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,
-     &           nk,nk_,co,rig,nmethod,iperturb,ithermal,mi,nam)
+     &           nk,nk_,co,rig,nmethod,iperturb,ithermal,mi,nam,
+     &           icomposite,ielmat)
 !            
               elseif(lakon(i)(1:1).eq.'B') then
                  call gen3dfrom1d(i,kon,ipkon,lakon,ne,iponor,xnor,knor,
-     &                thicke,ntrans,inotr,trab,nk,nk_,co,offset)
+     &                thicke,ntrans,inotr,trab,nk,nk_,co,offset,mi)
               endif
 !     
               if(lakon(i)(1:4).eq.'CPE6') then
@@ -577,6 +586,10 @@ c     Bernhardi start
            endif
         enddo
 c     Bernhardi end
+c        do i=1,68
+c           write(*,*) kon(i),",",co(1,kon(i)),",",co(2,kon(i)),
+c     &          ",",co(3,kon(i))
+c        enddo
 !     
 !     check whether the coefficient of the dependent
 !     terms in ISOCHORIC MPC's is not zero
@@ -695,7 +708,9 @@ c     Bernhardi end
             call gen3dsurf(iponoel,inoel,iponoelmax,kon,ipkon,
      &        lakon,ne,iponor,knor,ipompc,nodempc,coefmpc,nmpc,nmpc_,
      &        mpcfree,ikmpc,ilmpc,labmpc,rig,ntrans,inotr,trab,nam,nk,
-     &        nk_,co,nmethod,iperturb,nset,set,istartset,iendset,ialset)
+     &        nk_,co,nmethod,iperturb,nset,set,istartset,iendset,ialset,
+     &        ikboun,ilboun,nboun,nboun_,nodeboun,ndirboun,xboun,
+     &        iamboun,typeboun,mi)
          endif
 !
 !        updating the MPCs: establishing links between the user
@@ -713,7 +728,7 @@ c     Bernhardi end
          if(ithermal(1).gt.0) then
             call gen3dtemp(iponoel,inoel,iponoelmax,kon,ipkon,lakon,ne,
      &           iponor,xnor,knor,t0,t1,thicke,offset,rig,nk,nk_,co,
-     &           istep,ithermal,vold,mi)
+     &           istep,ithermal,vold,mi,t0g,t1g)
          endif
 !
 !        updating the concentrated loading

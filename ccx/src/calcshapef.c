@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2007 Guido Dhondt                          */
+/*              Copyright (C) 1998-2011 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -605,7 +605,7 @@ void calcshapef(int *nvar_, int *ipvar, double **varp, int *ne,
 			ze3d=xlocal6[3*(ig-1)+3*kk+2];
 			FORTRAN(shape6w,(&xi3d,&et3d,&ze3d,xl,&xsj,&varf[nvarf],&iflag));
 		    }
-		    nvarf+=4*nope+4;
+		    nvarf+=4*nope+9;
 		}
 		id--;
 	    }while(1);

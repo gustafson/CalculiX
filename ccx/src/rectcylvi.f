@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
       implicit none
 !
       character*87 filab(*)
-      integer i,j,n,icntrl,imag,mi(2)
+      integer i,j,n,icntrl,imag,mi(*)
       real*8 co(3,*),v(0:mi(2),*),fn(0:mi(2),*),stn(6,*),een(6,*),
      &  a(3,3),
      &  xr,xt,xz,b(3,3),cs(17,*),t(3),u(3),qfn(3,*),csab(7),
@@ -41,7 +41,7 @@
          j=i
          call transformatrix(csab,co(1,i),a)
 !     
-         if((filab(1)(1:4).eq.'U   ').or.
+         if((filab(1)(1:3).eq.'U  ').or.
      &        (filab(11)(1:4).eq.'PU'))  then 
             xr=v(1,j)*a(1,1)+v(2,j)*a(1,2)+v(3,j)*a(1,3)
             xt=v(1,j)*a(2,1)+v(2,j)*a(2,2)+v(3,j)*a(2,3)

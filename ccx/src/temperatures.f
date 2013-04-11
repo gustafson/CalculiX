@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine temperatures(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,t0,t1,nk,ithermal,iamt1,amname,nam,inoelfree,nk_,
      &  nmethod,temp_flag,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &  nam_,namtot_,namta,amta,ipoinpc)
+     &  nam_,namtot_,namta,amta,ipoinpc,t1g)
 !
 !     reading the input deck: *TEMPERATURE
 !
@@ -37,14 +37,15 @@
      &  iamplitude,ipos,inoelfree,nk_,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),nam_,namtot,namtot_,namta(3,*),idelay
 !
-      real*8 t0(*),t1(*),temperature,tempgrad1,tempgrad2,amta(2,*)
+      real*8 t0(*),t1(*),temperature,tempgrad1,tempgrad2,amta(2,*),
+     &  t1g(2,*)
 !
       iamplitude=0
       idelay=0
       user=.false.
 !
       if(nmethod.eq.3) then
-         write(*,*) '*ERROR in temperatures: temperature'
+         write(*,*) '*ERROR reading *TEMPERATURE: temperature'
          write(*,*) '       loading is not allowed in a linear'
          write(*,*) '       buckling step; perform a static'
          write(*,*) '       nonlinear calculation instead'
@@ -52,13 +53,13 @@
       endif
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in temperatures: *TEMPERATURE'
+         write(*,*) '*ERROR reading *TEMPERATURE: *TEMPERATURE'
          write(*,*) '  should only be used within a STEP'
          stop
       endif
 !
       if(ithermal.ne.1) then
-         write(*,*) '*ERROR in temperatures: a *TEMPERATURE'
+         write(*,*) '*ERROR reading *TEMPERATURE: a *TEMPERATURE'
          write(*,*) '  card is detected but no thermal'
          write(*,*) '  *INITIAL CONDITIONS are given'
          stop
@@ -78,7 +79,8 @@
                endif
             enddo
             if(j.eq.0) then
-               write(*,*)'*ERROR in temperatures: nonexistent amplitude'
+               write(*,*)
+     &           '*ERROR reading *TEMPERATURE: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline)
                stop
@@ -86,7 +88,8 @@
             iamplitude=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
             if(idelay.ne.0) then
-               write(*,*) '*ERROR in temperatures: the parameter TIME'
+               write(*,*) 
+     &           '*ERROR reading *TEMPERATURE: the parameter TIME'
                write(*,*) '       DELAY is used twice in the same'
                write(*,*) '       keyword; '
                call inputerror(inpc,ipoinpc,iline)
@@ -96,13 +99,14 @@
             endif
             nam=nam+1
             if(nam.gt.nam_) then
-               write(*,*) '*ERROR in temperatures: increase nam_'
+               write(*,*) '*ERROR reading *TEMPERATURE: increase nam_'
                stop
             endif
             amname(nam)='
      &                                 '
             if(iamplitude.eq.0) then
-               write(*,*) '*ERROR in temperatures: time delay must be'
+               write(*,*) 
+     &           '*ERROR reading *TEMPERATURE: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
                stop
             endif
@@ -127,7 +131,7 @@
             user=.true.
          else
             write(*,*) 
-     &        '*WARNING in temperatures: parameter not recognized:'
+     &        '*WARNING reading *TEMPERATURE: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline)
@@ -135,8 +139,9 @@
       enddo
 !
       if(user.and.(iamplitude.ne.0)) then
-         write(*,*) '*WARNING: no amplitude definition is allowed'
-         write(*,*) '          for temperatures defined by a'
+         write(*,*) 
+     &     '*WARNING reading *TEMPERATURE: no amplitude definition is'
+         write(*,*) '          allowed for temperatures defined by a'
          write(*,*) '          user routine'
          iamplitude=0
       endif
@@ -168,16 +173,16 @@
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
          if(istat.eq.0) then
             if(l.gt.nk) then
-               write(*,*) '*WARNING in temperatures: node ',l
-               write(*,*) '          exceeds the largest defined ',
+               write(*,*) '*WARNING reading *TEMPERATURE: node ',l
+               write(*,*) '         exceeds the largest defined ',
      &            'node number'
                cycle
             endif
             t1(l)=temperature
             if(nam.gt.0) iamt1(l)=iamplitude
             if(inoelfree.ne.0) then
-               t1(nk_+l)=tempgrad1
-               t1(2*nk_+l)=tempgrad2
+               t1g(1,l)=tempgrad1
+               t1g(2,l)=tempgrad2
             endif
          else
             read(textpart(1)(1:80),'(a80)',iostat=istat) noset
@@ -189,8 +194,8 @@
             enddo
             if(i.gt.nset) then
                noset(ipos:ipos)=' '
-               write(*,*) '*ERROR in temperatures: node set ',noset
-               write(*,*) '  has not yet been defined. '
+               write(*,*) '*ERROR reading *TEMPERATURE: node set ',noset
+               write(*,*) '       has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline)
                stop
             endif
@@ -199,8 +204,8 @@
                   t1(ialset(j))=temperature
                   if(nam.gt.0) iamt1(ialset(j))=iamplitude
                   if(inoelfree.ne.0) then
-                     t1(nk_+ialset(j))=tempgrad1
-                     t1(2*nk_+ialset(j))=tempgrad2
+                     t1g(1,ialset(j))=tempgrad1
+                     t1g(2,ialset(j))=tempgrad2
                   endif
                else
                   k=ialset(j-2)
@@ -210,8 +215,8 @@
                      t1(k)=temperature
                      if(nam.gt.0) iamt1(k)=iamplitude
                      if(inoelfree.ne.0) then
-                        t1(nk_+k)=tempgrad1
-                        t1(2*nk_+k)=tempgrad2
+                        t1g(1,k)=tempgrad1
+                        t1g(2,k)=tempgrad2
                      endif
                   enddo
                endif

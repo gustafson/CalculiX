@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  nmpc,nalset,nmat,ntmat,npmat,norien,nam,nprint,mi,
      &  ntrans,ncs,namtot,ncmat,memmpc,ne1d,ne2d,nflow,
      &  set,meminset,rmeminset,jobnamec,irestartstep,icntrl,ithermal,
-     &  nener,nstate_,ntie)
+     &  nener,nstate_,ntie,nslavs,nkon)
 !
 !     istartset := meminset
 !     iendset := rmeminset
@@ -31,12 +31,12 @@
       character*132 fnrstrt,jobnamec(*)
 !
       integer istep,nset,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,
-     &  ntmat,npmat,norien,nam,nprint,mi(2),ntrans,ncs,
+     &  ntmat,npmat,norien,nam,nprint,mi(*),ntrans,ncs,
      &  namtot,ncmat,memmpc,ne1d,ne2d,nflow,infree(4),
-     &  nmethod,iperturb,meminset(*),rmeminset(*),
+     &  nmethod,iperturb(2),meminset(*),rmeminset(*),
      &  i,j,k,ipos,icntrl,nener,irestartstep,im0,im1,im2,mem,iact,
      &  istat,nkon,nlabel,iplas,ithermal,nstate_,iprestr,maxlenmpc,
-     &  mcs,ntie,nbody
+     &  mcs,ntie,nbody,nslavs
 !
       if(icntrl.eq.0) then
 !
@@ -58,9 +58,20 @@
 !
             read(15,iostat=istat)istep
             if(istat.lt.0) then
-               write(*,*) '*ERROR in restartshort: requested step'
-               write(*,*) '       is not in the restart file'
-               stop
+               if(irestartstep.eq.0) then
+!
+!                 reading the last step
+!
+                  irestartstep=istep
+                  close(15)
+                  open(15,file=fnrstrt,ACCESS='SEQUENTIAL',
+     &                 FORM='UNFORMATTED',err=15)
+                  read(15,iostat=istat)istep
+               else
+                  write(*,*) '*ERROR in restartshort: requested step'
+                  write(*,*) '       is not in the restart file'
+                  stop
+               endif
             endif
 !
 !           reading the number of sets
@@ -84,7 +95,7 @@
             read(15)nk
             read(15)ne
             read(15)nkon
-            read(15)(mi(i),i=1,2)
+            read(15)(mi(i),i=1,3)
 !
 !           constraint size
 !
@@ -132,11 +143,12 @@
 !           procedure info
 !
             read(15)nmethod
-            read(15)iperturb
+            read(15)(iperturb(i),i=1,2)
             read(15)nener
             read(15)iplas
             read(15)ithermal
             read(15)nstate_
+            read(15)nslavs
             read(15)iprestr
 !
 !        skipping the next entries
@@ -146,7 +158,7 @@
      &         mi,nmpc,memmpc,nmat,ntmat,npmat,ncmat,norien,
      &         ntrans,nam,nprint,nlabel,ncs,ne1d,ne2d,infree,
      &         nmethod,iperturb,nener,iplas,ithermal,nstate_,iprestr,
-     &         mcs,ntie)
+     &         mcs,ntie,nslavs)
 !
          enddo
 !
@@ -173,9 +185,20 @@
 !
          read(15,iostat=istat)istep
          if(istat.lt.0) then
-            write(*,*) '*ERROR in restartshort: requested step'
-            write(*,*) '       is not in the restart file'
-            stop
+            if(irestartstep.eq.0) then
+!
+!              reading the last step
+!
+               irestartstep=istep
+               close(15)
+               open(15,file=fnrstrt,ACCESS='SEQUENTIAL',
+     &              FORM='UNFORMATTED',err=15)
+               read(15,iostat=istat)istep
+            else
+               write(*,*) '*ERROR in restartshort: requested step'
+               write(*,*) '       is not in the restart file'
+               stop
+            endif
          endif
 !
 !        set size
@@ -196,7 +219,7 @@
          read(15)nk
          read(15)ne
          read(15)nkon
-         read(15)(mi(i),i=1,2)
+         read(15)(mi(i),i=1,3)
 !
 !        constraint size
 !
@@ -244,11 +267,12 @@
 !        procedure info
 !
          read(15)nmethod
-         read(15)iperturb
+         read(15)(iperturb(i),i=1,2)
          read(15)nener
          read(15)iplas
          read(15)ithermal
          read(15)nstate_
+         read(15)nslavs
          read(15)iprestr
 !
          if(istep.eq.irestartstep) exit
@@ -258,7 +282,8 @@
          call skip(nset,nalset,nload,nbody,nforc,nboun,nflow,nk,ne,nkon,
      &      mi,nmpc,memmpc,nmat,ntmat,npmat,ncmat,norien,ntrans,
      &      nam,nprint,nlabel,ncs,ne1d,ne2d,infree,nmethod,
-     &      iperturb,nener,iplas,ithermal,nstate_,iprestr,mcs,ntie)
+     &      iperturb,nener,iplas,ithermal,nstate_,iprestr,mcs,ntie,
+     &      nslavs)
 !
       enddo
 !

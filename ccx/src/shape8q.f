@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,6 +21,7 @@
 !     shape functions and derivatives for a 8-node quadratic
 !     isoparametric quadrilateral element. -1<=xi,et<=1 
 !
+!     iflag=1: calculate only the value of the shape functions
 !     iflag=2: calculate the value of the shape functions,
 !              their derivatives w.r.t. the local coordinates
 !              and the Jacobian vector (local normal to the
@@ -45,6 +46,19 @@
 !     shape functions and their glocal derivatives for an element
 !     described with two local parameters and three global ones.
 !
+!     shape functions
+!
+      shp(4,1)=(1.d0-xi)*(1.d0-et)*(-xi-et-1.d0)/4.d0
+      shp(4,2)=(1.d0+xi)*(1.d0-et)*(xi-et-1.d0)/4.d0
+      shp(4,3)=(1.d0+xi)*(1.d0+et)*(xi+et-1.d0)/4.d0
+      shp(4,4)=(1.d0-xi)*(1.d0+et)*(-xi+et-1.d0)/4.d0
+      shp(4,5)=(1.d0-xi*xi)*(1.d0-et)/2.d0
+      shp(4,6)=(1.d0+xi)*(1.d0-et*et)/2.d0
+      shp(4,7)=(1.d0-xi*xi)*(1.d0+et)/2.d0
+      shp(4,8)=(1.d0-xi)*(1.d0-et*et)/2.d0
+!
+      if(iflag.eq.1) return
+!
 !     local derivatives of the shape functions: xi-derivative
 !
       shp(1,1)=(1.d0-et)*(2.d0*xi+et)/4.d0
@@ -66,17 +80,6 @@
       shp(2,6)=-et*(1.d0+xi)
       shp(2,7)=(1.d0-xi*xi)/2.d0
       shp(2,8)=-et*(1.d0-xi)
-!
-!     shape functions
-!
-      shp(4,1)=(1.d0-xi)*(1.d0-et)*(-xi-et-1.d0)/4.d0
-      shp(4,2)=(1.d0+xi)*(1.d0-et)*(xi-et-1.d0)/4.d0
-      shp(4,3)=(1.d0+xi)*(1.d0+et)*(xi+et-1.d0)/4.d0
-      shp(4,4)=(1.d0-xi)*(1.d0+et)*(-xi+et-1.d0)/4.d0
-      shp(4,5)=(1.d0-xi*xi)*(1.d0-et)/2.d0
-      shp(4,6)=(1.d0+xi)*(1.d0-et*et)/2.d0
-      shp(4,7)=(1.d0-xi*xi)*(1.d0+et)/2.d0
-      shp(4,8)=(1.d0-xi)*(1.d0-et*et)/2.d0
 !
 !     computation of the local derivative of the global coordinates
 !     (xs)

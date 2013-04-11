@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,11 +36,11 @@ c      character*18 cfile
       integer ntie,
      &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),ne,node,
      &  neigh(1),iflag,kneigh,i,j,k,l,isol,iset,idummy,
-     &  itri,ll,kflag,n,nx(*),ny(*),istep,iinc,
-     &  nz(*),nstart,ielmat(*),material,ifaceq(8,6),ifacet(6,4),
+     &  itri,ll,kflag,n,nx(*),ny(*),istep,iinc,mi(*),
+     &  nz(*),nstart,ielmat(mi(3),*),material,ifaceq(8,6),ifacet(6,4),
      &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,iit,
      &  nnodelem,nface,nope,nodef(8),ncmat_,ntmat_,index1,
-     &  ne0,nmethod,mi(2),iteller,ifaces,jfaces,
+     &  ne0,nmethod,iteller,ifaces,jfaces,
      &  imastop(3,*), itriangle(100),ntriangle,ntriangle_,itriold,
      &  itrinew,id,nslavnode(*),islavnode(*),islavsurf(2,*),
      &  itiefac(2,*),iponoels(*),inoels(3,*),konl(20),nelems,m,
@@ -53,8 +53,6 @@ c      character*18 cfile
      &  beta,c0,elcon(0:ncmat_,ntmat_,*),vini(0:mi(2),*),weight,
      &  areaslav(*),xl2(3,8),area,xi,et,shp2(7,8),
      &  xs2(3,2),xsj2(3),adjust,tietol(2,*)
-!
-      include "gauss.f"
 !
 !     nodes per face for hex elements
 !
@@ -95,6 +93,7 @@ c      character*18 cfile
       data iteller /0/
       save iteller
 !
+      include "gauss.f"
 !
       do i=1,ntie
          if(tieset(1,i)(81:81).ne.'C') cycle

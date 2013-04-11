@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,8 @@
       subroutine mechmodel(elconloc,elas,emec,kode,emec0,ithermal,
      &     icmd,beta,stre,xkl,ckl,vj,xikl,vij,plconloc,xstate,xstateini,
      &     ielas,amat,t1l,dtime,time,ttime,iel,iint,nstate_,mi,
-     &     iorien,pgauss,orab,eloc,mattyp,pnewdt,istep,iinc,ipkon)
+     &     iorien,pgauss,orab,eloc,mattyp,pnewdt,istep,iinc,ipkon,
+     &     nmethod)
 !
 !     kode=-1: Arruda-Boyce
 !          -2: Mooney-Rivlin
@@ -48,8 +49,8 @@
 !
       character*80 amat
 !
-      integer kode,ithermal,icmd,ielas,iel,iint,nstate_,mi(2),iorien,
-     &  mattyp,istep,iinc,ipkon(*)
+      integer kode,ithermal,icmd,ielas,iel,iint,nstate_,mi(*),iorien,
+     &  mattyp,istep,iinc,ipkon(*),nmethod
 !
       real*8 elconloc(*),elas(21),emec(*),emec0(*),beta(*),stre(*),
      &  ckl(*),vj,plconloc(*),t1l,xkl(*),xikl(*),vij,
@@ -61,7 +62,7 @@
 !
       if(kode.gt.0) then
          call linel(kode,mattyp,beta,emec,stre,elas,elconloc,
-     &  iorien,orab)
+     &  iorien,orab,pgauss)
       elseif(kode.gt.-50) then
          mattyp=3
          call rubber(elconloc,elas,emec,kode,emec0,didc,d2idc2,
@@ -75,13 +76,13 @@
          mattyp=3
          call incplas(elconloc,plconloc,xstate,xstateini,elas,emec,
      &     emec0,ithermal,icmd,beta,stre,vj,kode,ielas,amat,t1l,dtime,
-     &     time,ttime,iel,iint,nstate_,mi(1),eloc,pgauss)
+     &     time,ttime,iel,iint,nstate_,mi(1),eloc,pgauss,nmethod)
       else
          mattyp=3
          call umat_main(amat,iel,iint,kode,elconloc,emec,emec0,beta,
      &        xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,icmd,ielas,
      &        mi(1),nstate_,xstateini,xstate,stre,elas,iorien,pgauss,
-     &        orab,pnewdt,istep,iinc,ipkon)
+     &        orab,pnewdt,istep,iinc,ipkon,nmethod)
       endif
 !
       return

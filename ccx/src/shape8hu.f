@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,69 +36,73 @@
 !
       real*8 xi,et,ze,xsj,omg,omh,omr,opg,oph,opr
 !
-!     local derivatives at center point: xi-derivative
+      if(iflag.gt.2) then
 !
-      shp(1,1)=-1.0d0/8.d0
-      shp(1,2)=1.0d0/8.d0
-      shp(1,3)=1.0d0/8.d0
-      shp(1,4)=-1.0d0/8.d0
-      shp(1,5)=-1.0d0/8.d0
-      shp(1,6)=1.0d0/8.d0
-      shp(1,7)=1.0d0/8.d0
-      shp(1,8)=-1.0d0/8.d0
+!        local derivatives at center point: xi-derivative
 !
-!     local derivatives at center point: eta-derivative
+         shp(1,1)=-1.0d0/8.d0
+         shp(1,2)=1.0d0/8.d0
+         shp(1,3)=1.0d0/8.d0
+         shp(1,4)=-1.0d0/8.d0
+         shp(1,5)=-1.0d0/8.d0
+         shp(1,6)=1.0d0/8.d0
+         shp(1,7)=1.0d0/8.d0
+         shp(1,8)=-1.0d0/8.d0
 !
-      shp(2,1)=-1.0d0/8.d0
-      shp(2,2)=-1.0d0/8.d0
-      shp(2,3)=1.0d0/8.d0
-      shp(2,4)=1.0d0/8.d0
-      shp(2,5)=-1.0d0/8.d0
-      shp(2,6)=-1.0d0/8.d0
-      shp(2,7)=1.0d0/8.d0
-      shp(2,8)=1.0d0/8.d0
+!        local derivatives at center point: eta-derivative
 !
-!     local derivatives at center point: zeta-derivative
+         shp(2,1)=-1.0d0/8.d0
+         shp(2,2)=-1.0d0/8.d0
+         shp(2,3)=1.0d0/8.d0
+         shp(2,4)=1.0d0/8.d0
+         shp(2,5)=-1.0d0/8.d0
+         shp(2,6)=-1.0d0/8.d0
+         shp(2,7)=1.0d0/8.d0
+         shp(2,8)=1.0d0/8.d0
 !
-      shp(3,1)=-1.0d0/8.d0
-      shp(3,2)=-1.0d0/8.d0
-      shp(3,3)=-1.0d0/8.d0
-      shp(3,4)=-1.0d0/8.d0
-      shp(3,5)=1.0d0/8.d0
-      shp(3,6)=1.0d0/8.d0
-      shp(3,7)=1.0d0/8.d0
-      shp(3,8)=1.0d0/8.d0
+!        local derivatives at center point: zeta-derivative
 !
-!     computation of the local derivative of the global coordinates
-!     (xs) at center point of element.
+         shp(3,1)=-1.0d0/8.d0
+         shp(3,2)=-1.0d0/8.d0
+         shp(3,3)=-1.0d0/8.d0
+         shp(3,4)=-1.0d0/8.d0
+         shp(3,5)=1.0d0/8.d0
+         shp(3,6)=1.0d0/8.d0
+         shp(3,7)=1.0d0/8.d0
+         shp(3,8)=1.0d0/8.d0
 !
-      do i=1,3
-        do j=1,3
-          xs(i,j)=0.d0
-          do k=1,8 
-            xs(i,j)=xs(i,j)+xl(i,k)*shp(j,k)
-          enddo
-        enddo
-      enddo
+!        computation of the local derivative of the global coordinates
+!        (xs) at center point of element.
 !
-!     computation of the jacobian determinant at center point
+         do i=1,3
+            do j=1,3
+               xs(i,j)=0.d0
+               do k=1,8 
+                  xs(i,j)=xs(i,j)+xl(i,k)*shp(j,k)
+               enddo
+            enddo
+         enddo
 !
-      xsj=xs(1,1)*(xs(2,2)*xs(3,3)-xs(2,3)*xs(3,2))
-     &   -xs(1,2)*(xs(2,1)*xs(3,3)-xs(2,3)*xs(3,1))
-     &   +xs(1,3)*(xs(2,1)*xs(3,2)-xs(2,2)*xs(3,1))
+!        computation of the jacobian determinant at center point
 !
-!     computation of the global derivative of the local coordinates
-!     at center point of element. 
+         xsj=xs(1,1)*(xs(2,2)*xs(3,3)-xs(2,3)*xs(3,2))
+     &        -xs(1,2)*(xs(2,1)*xs(3,3)-xs(2,3)*xs(3,1))
+     &        +xs(1,3)*(xs(2,1)*xs(3,2)-xs(2,2)*xs(3,1))
 !
-      xsi0(1,1)=(xs(2,2)*xs(3,3)-xs(3,2)*xs(2,3))/xsj
-      xsi0(1,2)=(xs(1,3)*xs(3,2)-xs(1,2)*xs(3,3))/xsj
-      xsi0(1,3)=(xs(1,2)*xs(2,3)-xs(2,2)*xs(1,3))/xsj
-      xsi0(2,1)=(xs(2,3)*xs(3,1)-xs(2,1)*xs(3,3))/xsj
-      xsi0(2,2)=(xs(1,1)*xs(3,3)-xs(3,1)*xs(1,3))/xsj
-      xsi0(2,3)=(xs(1,3)*xs(2,1)-xs(1,1)*xs(2,3))/xsj
-      xsi0(3,1)=(xs(2,1)*xs(3,2)-xs(3,1)*xs(2,2))/xsj
-      xsi0(3,2)=(xs(1,2)*xs(3,1)-xs(1,1)*xs(3,2))/xsj
-      xsi0(3,3)=(xs(1,1)*xs(2,2)-xs(2,1)*xs(1,2))/xsj
+!        computation of the global derivative of the local coordinates
+!        at center point of element. 
+!
+         xsi0(1,1)=(xs(2,2)*xs(3,3)-xs(3,2)*xs(2,3))/xsj
+         xsi0(1,2)=(xs(1,3)*xs(3,2)-xs(1,2)*xs(3,3))/xsj
+         xsi0(1,3)=(xs(1,2)*xs(2,3)-xs(2,2)*xs(1,3))/xsj
+         xsi0(2,1)=(xs(2,3)*xs(3,1)-xs(2,1)*xs(3,3))/xsj
+         xsi0(2,2)=(xs(1,1)*xs(3,3)-xs(3,1)*xs(1,3))/xsj
+         xsi0(2,3)=(xs(1,3)*xs(2,1)-xs(1,1)*xs(2,3))/xsj
+         xsi0(3,1)=(xs(2,1)*xs(3,2)-xs(3,1)*xs(2,2))/xsj
+         xsi0(3,2)=(xs(1,2)*xs(3,1)-xs(1,1)*xs(3,2))/xsj
+         xsi0(3,3)=(xs(1,1)*xs(2,2)-xs(2,1)*xs(1,2))/xsj
+!     
+      endif
 !
 !     shape functions and their global derivatives
 !

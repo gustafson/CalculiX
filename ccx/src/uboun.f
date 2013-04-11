@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -49,7 +49,7 @@
 !           
       implicit none
 !
-      integer kstep,kinc,node,idof,mi(2) 
+      integer kstep,kinc,node,idof,mi(*) 
       real*8 boun,time(2),coords(3),vold(0:mi(2),*)
 !
       boun=10.d0

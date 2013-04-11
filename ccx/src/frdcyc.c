@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2007 Guido Dhondt                          */
+/*              Copyright (C) 1998-2011 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -30,7 +30,8 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
             int *ithermal, double *qfn, int *ialset, int *istartset,
             int *iendset, double *trab, int *inotr, int *ntrans,
 	    double *orab, int *ielorien, int *norien, double *sti,
-            double *veold, int *noddiam,char *set,int *nset){
+            double *veold, int *noddiam,char *set,int *nset, double *emn,
+            double *thicke){
 
   /* duplicates fields for static cyclic symmetric calculations */
 
@@ -44,7 +45,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   double *vt=NULL,*fnt=NULL,*stnt=NULL,*eent=NULL,*cot=NULL,*t1t=NULL,
          *epnt=NULL,*enernt=NULL,*xstatent=NULL,theta,pi,t[3],*qfnt=NULL,
          *vr=NULL,*vi=NULL,*stnr=NULL,*stni=NULL,*vmax=NULL,*stnmax=NULL,
-         *stit=NULL,*eenmax=NULL;
+      *stit=NULL,*eenmax=NULL,*fnr=NULL,*fni=NULL,*emnt=NULL;
 
   pi=4.*atan(1.);
 
@@ -113,12 +114,13 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   cot=NNEW(double,3**nk*ngraph);
   if(*ntrans>0)inotrt=NNEW(int,2**nk*ngraph);
 
-  if((strcmp1(&filab[0],"U   ")==0)||
+  if((strcmp1(&filab[0],"U  ")==0)||
      ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2)))
     vt=NNEW(double,mt**nk*ngraph);
   if((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal<2))
     t1t=NNEW(double,*nk*ngraph);
-  if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1044],"ZZS ")==0))
+  if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1044],"ZZS ")==0)||
+     (strcmp1(&filab[1044],"ERR ")==0))
     stnt=NNEW(double,6**nk*ngraph);
   if(strcmp1(&filab[261],"E   ")==0)
     eent=NNEW(double,6**nk*ngraph);
@@ -132,8 +134,11 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
     xstatent=NNEW(double,*nstate_**nk*ngraph);
   if(strcmp1(&filab[696],"HFL ")==0)
     qfnt=NNEW(double,3**nk*ngraph);
-  if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[2175],"CONT")==0))
+  if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)||
+     (strcmp1(&filab[2175],"CONT")==0))
     stit=NNEW(double,6*mi[0]**ne*ngraph);
+  if(strcmp1(&filab[2697],"ME  ")==0)
+    emnt=NNEW(double,6**nk*ngraph);
 
   /* the topology only needs duplication the first time it is
      stored in the frd file (*kode=1)
@@ -144,7 +149,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
     kont=NNEW(int,*nkon*ngraph);
     ipkont=NNEW(int,*ne*ngraph);
     lakont=NNEW(char,8**ne*ngraph);
-    ielmatt=NNEW(int,*ne*ngraph);
+    ielmatt=NNEW(int,mi[2]**ne*ngraph);
 //  }
   inumt=NNEW(int,*nk*ngraph);
   
@@ -162,14 +167,14 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
       for(l=0;l<*nkon;l++){kont[l]=kon[l];}
       for(l=0;l<*ne;l++){ipkont[l]=ipkon[l];}
       for(l=0;l<8**ne;l++){lakont[l]=lakon[l];}
-      for(l=0;l<*ne;l++){ielmatt[l]=ielmat[l];}
+      for(l=0;l<mi[2]**ne;l++){ielmatt[l]=ielmat[l];}
 //  }  
 
   /* generating the coordinates for the other sectors */
   
   icntrl=1;
   
-  FORTRAN(rectcyl,(cot,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filab,&imag,mi));
+  FORTRAN(rectcyl,(cot,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filab,&imag,mi,emn));
   
   for(jj=0;jj<*mcs;jj++){
     is=cs[17*jj+4];
@@ -200,7 +205,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
           if(ielcs[l]==jj){
             if(ipkon[l]>=0){
               ipkont[l+i**ne]=ipkon[l]+i**nkon;
-              ielmatt[l+i**ne]=ielmat[l];
+              ielmatt[mi[2]*(l+i**ne)]=ielmat[mi[2]*l];
               for(l1=0;l1<8;l1++){
                 l2=8*l+l1;
                 lakont[l2+i*8**ne]=lakon[l2];
@@ -216,7 +221,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   icntrl=-1;
     
   FORTRAN(rectcyl,(cot,vt,fnt,stnt,qfnt,eent,cs,&nkt,&icntrl,t,filab,
-		   &imag,mi));
+		   &imag,mi,emn));
   
   /* mapping the results to the other sectors */
   
@@ -224,9 +229,9 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   
   icntrl=2;
   
-  FORTRAN(rectcyl,(co,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filab,&imag,mi));
+  FORTRAN(rectcyl,(co,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filab,&imag,mi,emn));
   
-  if((strcmp1(&filab[0],"U   ")==0)||
+  if((strcmp1(&filab[0],"U  ")==0)||
      ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2)))
     for(l=0;l<mt**nk;l++){vt[l]=v[l];};
   if((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal<2))
@@ -245,8 +250,11 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
     for(l=0;l<*nstate_**nk;l++){xstatent[l]=xstaten[l];};
   if(strcmp1(&filab[696],"HFL ")==0)
     for(l=0;l<3**nk;l++){qfnt[l]=qfn[l];};
-  if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[2175],"CONT")==0))
+  if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)||
+     (strcmp1(&filab[2175],"CONT")==0))
     for(l=0;l<6*mi[0]**ne;l++){stit[l]=sti[l];};
+  if(strcmp1(&filab[2697],"ME  ")==0)
+    for(l=0;l<6**nk;l++){emnt[l]=emn[l];};
   
   for(jj=0;jj<*mcs;jj++){
     is=cs[17*jj+4];
@@ -254,7 +262,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
     
       for(l=0;l<*nk;l++){inumt[l+i**nk]=inum[l];}
     
-      if((strcmp1(&filab[0],"U   ")==0)||
+      if((strcmp1(&filab[0],"U  ")==0)||
          ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2))){
         for(l1=0;l1<*nk;l1++){
           if(inocs[l1]==jj){
@@ -338,13 +346,24 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
           }
         }
       }
+    
+      if(strcmp1(&filab[2697],"ME  ")==0){
+        for(l1=0;l1<*nk;l1++){
+          if(inocs[l1]==jj){
+            for(l2=0;l2<6;l2++){
+              l=6*l1+l2;
+              emnt[l+6**nk*i]=emn[l];
+            }
+          }
+        }
+      }
     }
   }
   
   icntrl=-2;
   
   FORTRAN(rectcyl,(cot,vt,fnt,stnt,qfnt,eent,cs,&nkt,&icntrl,t,filab,
-		   &imag,mi));
+		   &imag,mi,emn));
   
   if(strcmp1(&filab[1044],"ZZS")==0){
       neigh=NNEW(int,40*net);ipneigh=NNEW(int,nkt);
@@ -355,13 +374,14 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
                ithermal,qfnt,&mode,noddiam,trab,inotrt,ntrans,orab,ielorien,
                norien,description,ipneigh,neigh,stit,vr,vi,stnr,stni,
                vmax,stnmax,&ngraph,veold,&net,cs,set,nset,istartset,
-               iendset,ialset,eenmax));
+               iendset,ialset,eenmax,fnr,fni,emnt,thicke));
   if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
   
-  if((strcmp1(&filab[0],"U   ")==0)||
+  if((strcmp1(&filab[0],"U  ")==0)||
      ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2))) free(vt);
   if((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal<2)) free(t1t);
-  if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1044],"ZZS ")==0)) 
+  if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1044],"ZZS ")==0)||
+     (strcmp1(&filab[1044],"ERR ")==0)) 
      free(stnt);
   if(strcmp1(&filab[261],"E   ")==0) free(eent);
   if((strcmp1(&filab[348],"RF  ")==0)||(strcmp1(&filab[783],"RFL ")==0))
@@ -370,7 +390,9 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   if(strcmp1(&filab[522],"ENER")==0) free(enernt);
   if(strcmp1(&filab[609],"SDV ")==0) free(xstatent);
   if(strcmp1(&filab[696],"HFL ")==0) free(qfnt);
-  if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[2175],"CONT")==0)) free(stit);
+  if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)||
+     (strcmp1(&filab[2175],"CONT")==0)) free(stit);
+  if(strcmp1(&filab[2697],"ME  ")==0) free(emnt);
 
 //  if(*kode==1){
     free(kont);free(ipkont);free(lakont);free(ielmatt);

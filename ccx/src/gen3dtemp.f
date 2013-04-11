@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine gen3dtemp(iponoel,inoel,iponoelmax,kon,ipkon,lakon,ne,
      &  iponor,xnor,knor,t0,t1,thicke,offset,rig,nk,nk_,co,istep,
-     &  ithermal,vold,mi)
+     &  ithermal,vold,mi,t0g,t1g)
 !
 !     maps the temperatures and temperature gradients in 1-D and 2-D
 !     elements on their expanded counterparts
@@ -29,10 +29,10 @@
 !
       integer iponoel(*),inoel(3,*),iponoelmax,kon(*),ipkon(*),ne,
      &  iponor(2,*),knor(*),rig(*),i,i1,nk,nk_,i2,index,ielem,j,
-     &  indexe,indexk,k,node,istep,ithermal,mi(2)
+     &  indexe,indexk,k,node,istep,ithermal,mi(*)
 !
-      real*8 xnor(*),t0(*),t1(*),thicke(2,*),offset(2,*),co(3,*),
-     &  vold(0:mi(2),*)
+      real*8 xnor(*),t0(*),t1(*),thicke(mi(3),*),offset(2,*),co(3,*),
+     &  vold(0:mi(2),*),t0g(2,*),t1g(2,*)
 !
 !     initial conditions
 !
@@ -58,51 +58,51 @@
                elseif(lakon(ielem)(7:7).eq.'L') then
                   node=knor(indexk+1)
                   t0(node)=t0(i)
-     &                -t0(i1)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+     &              -t0g(1,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
                   if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+2)
                   t0(node)=t0(i)
                   if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+3)
                   t0(node)=t0(i)
-     &                +t0(i1)*thicke(1,indexe+j)*(0.5d0-offset(1,ielem))
+     &              +t0g(1,i)*thicke(1,indexe+j)*(0.5d0-offset(1,ielem))
                   if(ithermal.gt.1) vold(0,node)=t0(node)
                elseif(lakon(ielem)(7:7).eq.'B') then
                   node=knor(indexk+1)
                   t0(node)=t0(i)
-     &                -t0(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
-     &                +t0(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+     &              -t0g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+     &              +t0g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
                   if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+2)
                   t0(node)=t0(i)
-     &                -t0(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
-     &                -t0(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+     &              -t0g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+     &              -t0g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
                   if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+3)
                   t0(node)=t0(i)
-     &                +t0(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
-     &                -t0(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+     &              +t0g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+     &              -t0g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
                   if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+4)
                   t0(node)=t0(i)
-     &                +t0(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
-     &                +t0(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+     &              +t0g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+     &              +t0g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
                   if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+5)
                   t0(node)=t0(i)
-     &                -t0(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+     &              -t0g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
                   if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+6)
                   t0(node)=t0(i)
-     &                -t0(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+     &              -t0g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
                   if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+7)
                   t0(node)=t0(i)
-     &                +t0(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+     &              +t0g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
                   if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+8)
                   t0(node)=t0(i)
-     &                +t0(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+     &              +t0g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
                   if(ithermal.gt.1) vold(0,node)=t0(node)
                endif
                if(rig(i).eq.0) exit
@@ -134,41 +134,41 @@
                elseif(lakon(ielem)(7:7).eq.'L') then
                   node=knor(indexk+1)
                   t1(node)=t1(i)
-     &                -t1(i1)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+     &              -t1g(1,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
                   node=knor(indexk+2)
                   t1(node)=t1(i)
                   node=knor(indexk+3)
                   t1(node)=t1(i)
-     &                +t1(i1)*thicke(1,indexe+j)*(0.5d0-offset(1,ielem))
+     &              +t1g(1,i)*thicke(1,indexe+j)*(0.5d0-offset(1,ielem))
                elseif(lakon(ielem)(7:7).eq.'B') then
                   node=knor(indexk+1)
                   t1(node)=t1(i)
-     &               -t1(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
-     &               +t1(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+     &             -t1g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+     &             +t1g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
                   node=knor(indexk+2)
                   t1(node)=t1(i)
-     &                -t1(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
-     &                -t1(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+     &              -t1g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+     &              -t1g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
                   node=knor(indexk+3)
                   t1(node)=t1(i)
-     &                +t1(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
-     &                -t1(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+     &              +t1g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+     &              -t1g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
                   node=knor(indexk+4)
                   t1(node)=t1(i)
-     &                +t1(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
-     &                +t1(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+     &              +t1g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+     &              +t1g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
                   node=knor(indexk+5)
                   t1(node)=t1(i)
-     &                -t1(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+     &              -t1g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
                   node=knor(indexk+6)
                   t1(node)=t1(i)
-     &                -t1(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+     &              -t1g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
                   node=knor(indexk+7)
                   t1(node)=t1(i)
-     &                +t1(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+     &              +t1g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
                   node=knor(indexk+8)
                   t1(node)=t1(i)
-     &                +t1(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+     &              +t1g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
                endif
                if(rig(i).eq.0) exit
                index=inoel(3,index)

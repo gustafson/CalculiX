@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,7 +43,7 @@
      &     number,idof,ndir,node,ncsnodes,id,mpcfreeold,
      &     mcs,nrcg(*),nzcg(*),jcs(*),lcs(*),nodef(8),
      &     netri,ifacetet(*),inodface(*),lathyp(3,6),inum,one,i,
-     &     noden(10),ncounter,ier,ipos,cfd,mi(2)
+     &     noden(10),ncounter,ier,ipos,cfd,mi(*)
 !     
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
      &  csab(7),xn,yn,zn,xap,yap,zap,rp,zp,al(3,3),ar(3,3),phi,
@@ -309,7 +309,7 @@ c         write(*,*)
       enddo
 !     
 !     generating the thermal MPC's; the generated MPC's are for nodal
-!     diameter 0. 
+!     diameter 0. BETTER: based on ithermal(2), cf. gen3dfrom2d.f
 !     
       nmpc=nmpc+1
       labmpc(nmpc)='CYCLIC              '

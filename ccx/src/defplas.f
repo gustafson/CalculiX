@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
 !
       implicit none
 !
-      logical cauchy
+      integer cauchy
 !
       integer ithermal,icmd,i,j,k,l,m,n,ii,istart,iend,nt,kk(84)
 !
@@ -35,12 +35,12 @@
      &  ee,un,s0,xn,stre(*),eq,c0,c1,c2,c3,dkl(3,3),ekl(3,3),
      &  q,dq,pp,el(6),ckl(3,3),vj
 !
-      data kk /1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
+      kk=(/1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
      &  1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,3,3,1,3,
      &  1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,1,2,2,3,1,3,2,3,
-     &  2,3,2,3/
+     &  2,3,2,3/)
 !
-      cauchy=.true.
+      cauchy=1
 !
       istart=1
       iend=1

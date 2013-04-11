@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine storeresidual(nactdof,b,fn,filab,ithermal,nk,sti,stn,
      &  ipkon,inum,kon,lakon,ne,mi,orab,ielorien,co,nelemload,
-     &  nload,nodeboun,nboun,itg,ntg,vold,ndirboun)
+     &  nload,nodeboun,nboun,itg,ntg,vold,ndirboun,ielmat,thicke)
 !
 !     This routine is called in case of divergence:
 !     stores the residual forces in fn and changes the
@@ -35,17 +35,17 @@
       character*8 lakon(*)
       character*87 filab(*)
 !
-      integer mi(2),nactdof(0:mi(2),*),ithermal(2),i,j,nk,
-     &  nfield,ndim,iorienglob,cfd,
+      integer mi(*),nactdof(0:mi(2),*),ithermal(2),i,j,nk,
+     &  nfield,ndim,iorienglob,cfd,ielmat(mi(3),*),
      &  nelemload(2,*),nload,nodeboun(*),nboun,ipkon(*),inum(*),kon(*),
      &  ne,ielorien,itg(*),ntg,ndirboun(*),mt,nlabel
 !
       real*8 b(*),fn(0:mi(2),*),sti(6,mi(1),*),stn(6,*),orab(7,*),
-     &  co(3,*),vold(0:mi(2),*)
+     &  co(3,*),vold(0:mi(2),*),thicke(mi(3),*)
 !
       mt=mi(2)+1
 !
-      nlabel=30
+      nlabel=32
 !
 !     storing the residual forces in field fn
 !
@@ -66,7 +66,7 @@
       enddo
 !
       if(ithermal(1).ne.2) then
-         filab(1)(1:4)='U   '
+         filab(1)(1:3)='U  '
          filab(5)(1:4)='RF  '
       else
          filab(1)(1:4)='    '
@@ -99,7 +99,7 @@
       call extrapolate(sti,stn,ipkon,inum,kon,lakon,nfield,nk,
      &     ne,mi(1),ndim,orab,ielorien,co,iorienglob,cflag,
      &     nelemload,nload,nodeboun,nboun,ndirboun,vold,
-     &     ithermal,force,cfd)
+     &     ithermal,force,cfd,ielmat,thicke)
 !
       if(ithermal(1).gt.1) then
          call networkextrapolate(vold,ipkon,inum,kon,lakon,ne,mi)

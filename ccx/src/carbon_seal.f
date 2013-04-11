@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2007 Guido Dhondt
+!     Copyright (C) 1998-2011 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,7 +31,7 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
-     &     inv,mi(2)
+     &     inv,mi(*)
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),R,d,l,
      &     p1,p2,T1,physcon(*),dvi,pi,s,T2
@@ -117,7 +117,7 @@
          pi=4.d0*datan(1.d0)
          
 !     
-         if (lakon(nelem)(2:8).eq.'CARBS') then
+         if (lakon(nelem)(2:6).eq.'CARBS') then
 !     
             f=xflow*T1-pi*d*s**3*(P1**2-P2**2)/(24.d0*R*dvi*l)
 !     
@@ -155,28 +155,28 @@
 
          write(1,*) ''
          write(1,55) 'In line',int(nodem/100),' from node',node1,
-     &' to node', node2,':   air massflow rate=',xflow,'kg/s'
+     &' to node', node2,':   air massflow rate=',xflow,' kg/s'
 !     &,', oil massflow rate=',xflow_oil,'kg/s'
  55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
 
          if(inv.eq.1) then
             write(1,56)'       Inlet node  ',node1,':   Tt1=',T1,
-     &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
+     &           ' K, Ts1=',T1,' K, Pt1=',P1/1E5, ' Bar'
          
-            write(1,*)'             element G   ',set(numf)(1:20)
+            write(1,*)'             element G   ',set(numf)(1:30)
 
             write(1,56)'       Outlet node ',node2,':   Tt2=',T2,
-     &           'K, Ts2=',T2,'K, Pt2=',P2/1e5,'Bar'
+     &           ' K, Ts2=',T2,' K, Pt2=',P2/1e5,' Bar'
 !     
          else if(inv.eq.-1) then
             write(1,56)'       Inlet node  ',node2,':    Tt1=',T1,
-     &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
+     &           ' K, Ts1=',T1,' K, Pt1=',P1/1E5, ' Bar'
      &          
-            write(1,*)'             element G    ',set(numf)(1:20)
+            write(1,*)'             element G    ',set(numf)(1:30)
 
             write(1,56)'       Outlet node ',node1,':    Tt2=',T2,
-     &           'K, Ts2=',T2,'K, Pt2=',P2/1e5, 'Bar'
-               
+     &           ' K, Ts2=',T2,' K, Pt2=',P2/1e5, ' Bar'
+
          endif
       
  56      FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A)

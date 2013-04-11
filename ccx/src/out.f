@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &  nstate_,istep,iinc,iperturb,ener,mi,output,ithermal,qfn,
      &  mode,noddiam,trab,inotr,ntrans,orab,ielorien,norien,description,
      &  ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,stnmax,ngraph,veold,ne,
-     &  cs,set,nset,istartset,iendset,ialset,eenmax)
+     &  cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,thicke)
 !
 !     stores the results in frd format
 !
@@ -35,15 +35,17 @@
       character*87 filab(*)
 !
       integer kon(*),inum(*),nk,ne0,nmethod,kode,ipkon(*),mode,noddiam,
-     &  ielmat(*),nstate_,istep,iinc,iperturb,mi(2),ithermal,inotr(2,*),
-     &  ntrans,ielorien(*),norien,ngraph,ne,nset,istartset(*),
+     &  mi(*),ielmat(mi(3),*),nstate_,istep,iinc,iperturb,
+     &  ithermal,inotr(2,*),
+     &  ntrans,ielorien(mi(3),*),norien,ngraph,ne,nset,istartset(*),
      &  iendset(*),ialset(*),ipneigh(*),neigh(2,*)
 !
       real*8 co(3,*),v(0:mi(2),*),stn(6,*),een(6,*),t1(*),fn(0:mi(2),*),
      &  time,epn(*),enern(*),xstaten(nstate_,*),ener(mi(1),*),qfn(3,*),
      &  trab(7,*),orab(7,*),vr(0:mi(2),*),vi(0:mi(2),*),stnr(6,*),
      &  cs(17,*),stni(6,*),pi,vmax(0:3,*),stnmax(0:6,*),eenmax(0:6,*),
-     &  veold(0:mi(2),*),stx(6,mi(1),*)
+     &  veold(0:mi(2),*),stx(6,mi(1),*),fnr(0:mi(2),*),fni(0:mi(2),*),
+     &  emn(6,*),thicke(mi(3),*)
 !
       if((output.eq.'frd').or.(output.eq.'FRD')) then
          call frd(co,nk,kon,ipkon,lakon,ne0,v,stn,inum,nmethod,
@@ -52,7 +54,7 @@
      &        trab,inotr,ntrans,orab,ielorien,norien,description,
      &        ipneigh,neigh,mi(1),stx,vr,vi,stnr,stni,vmax,
      &        stnmax,ngraph,veold,ener,ne,cs,set,nset,istartset,
-     &        iendset,ialset,eenmax)
+     &        iendset,ialset,eenmax,fnr,fni,emn,thicke)
       else
          if(nmethod.ne.0) then
             call onf(co,nk,kon,ipkon,lakon,ne0,v,stn,inum,nmethod,

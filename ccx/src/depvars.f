@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -42,11 +42,11 @@
          stop
       endif
 !
-      if((nelcon(1,nmat).gt.-100).and.(ncocon(1,nmat).gt.-100)) then
-         write(*,*) '*ERROR in depvars: *DEPVAR should be preceded'
-         write(*,*) '  by an *USER MATERIAL card'
-         stop
-      endif
+c      if((nelcon(1,nmat).gt.-100).and.(ncocon(1,nmat).gt.-100)) then
+c         write(*,*) '*ERROR in depvars: *DEPVAR should be preceded'
+c         write(*,*) '  by an *USER MATERIAL card'
+c         stop
+c      endif
 !
       do i=2,n
          write(*,*) 

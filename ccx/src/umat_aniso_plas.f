@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,9 +18,8 @@
 !
       subroutine umat_aniso_plas(amat,iel,iint,kode,elconloc,emec,
      &        emec0,beta,xokl,voj,xkl,vj,ithermal,t1l,dtime,time,ttime,
-     &        icmd,ielas,
-     &        mi,nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,
-     &        orab)
+     &        icmd,ielas,mi,nstate_,xstateini,xstate,stre,stiff,iorien,
+     &        pgauss,orab,nmethod)
 !
 !     calculates stiffness and stresses for a user defined material
 !     law
@@ -58,7 +57,7 @@
 !     vj                 Jacobian at the end of the increment
 !
 !     ithermal           0: no thermal effects are taken into account
-!                        1: thermal effects are taken into account (triggered
+!                        >0: thermal effects are taken into account (triggered
 !                        by the keyword *INITIAL CONDITIONS,TYPE=TEMPERATURE)
 !     t1l                temperature at the end of the increment
 !     dtime              time length of the increment
@@ -115,31 +114,27 @@
 !
       implicit none
 !
-      logical creep
+      integer creep
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(2),iorien
-!
-      integer i,j,ipiv(6),info,neq,lda,ldb,j1,j2,j3,j4,j5,j6,j7,j8,
-     &  nrhs,iplas,kel(4,21)
+      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien,
+     &  i,j,ipiv(6),info,neq,lda,ldb,j1,j2,j3,j4,j5,j6,j7,j8,
+     &  nrhs,iplas,kel(4,21),nmethod
 !
       real*8 ep0(6),al10,al20(6),eeq,ep(6),al1,b,Pn(6),QSn(6),
      &  al2(6),dg,ddg,ca,cn,c(21),r0,x(21),cm1(21),h1,h2,
      &  q1,q2(6),stri(6),htri,sg(6),r(13),au1(21),au2(21),
      &  ee(6),dd,gl(6,6),gr(6,6),c0,c1,c2,c3,c4,c5,c6,
-     &  skl(3,3),gcreep,gm1,ya(3,3,3,3),d1,d2,dsg,detc,strinv
-!
-      real*8 elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
+     &  skl(3,3),gcreep,gm1,ya(3,3,3,3),d1,d2,dsg,detc,strinv,
+     &  elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xokl(3,3),voj,pgauss(3),orab(7,*),
-     &  time,ttime
+     &  time,ttime,xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
 !
-      real*8 xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
-!
-      data kel /1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
+      kel=reshape((/1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
      &          1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,
      &          3,3,1,3,1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,
-     &          1,2,2,3,1,3,2,3,2,3,2,3/
+     &          1,2,2,3,1,3,2,3,2,3,2,3/),(/4,21/))
 !
       c0=dsqrt(2.d0/3.d0)
       c1=2.d0/3.d0
@@ -222,10 +217,10 @@ c      write(*,*) 'ee ',(ee(i),i=1,6)
       ca=c0/(elconloc(13)*ttime**elconloc(15)*dtime)
       cn=elconloc(14)
 !
-      if(ca.lt.0.d0) then
-         creep=.false.
+      if((ca.lt.0.d0).or.((nmethod.eq.1).and.(ithermal.ne.3))) then
+         creep=0
       else
-         creep=.true.
+         creep=1
       endif
 !
       h1=d1
@@ -555,7 +550,7 @@ c 611     format('dsg,q1,r0,c0,al1,d1 ',/,(6(1x,e11.4)))
 c         write(*,612) (q2(i),i=1,6)
 c 612     format('q2 ',/,(6(1x,e11.4)))
 c      endif
-         if(creep) then
+         if(creep.eq.1) then
             htri=dsg+c0*(q1-r0-(ca*dg)**(1.d0/cn))
          else
             htri=dsg+c0*(q1-r0)
@@ -808,7 +803,7 @@ c         endif
 !
 !           calculating the creep contribution
 !
-         if(creep) then
+         if(creep.eq.1) then
             if(dg.gt.0.d0) then
                gcreep=c0*ca/cn*(dg*ca)**(1.d0/cn-1.d0)
             else
@@ -827,7 +822,7 @@ c         endif
      &        c1*h1+
      &        QSn(1)*sg(1)+QSn(2)*sg(2)+QSn(3)*sg(3)+
      &        2.d0*(QSn(4)*sg(4)+QSn(5)*sg(5)+QSn(6)*sg(6))
-         if(creep) then
+         if(creep.eq.1) then
             gm1=1.d0/(gm1+gcreep)
          else
             gm1=1.d0/gm1

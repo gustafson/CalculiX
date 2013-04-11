@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -22,7 +22,8 @@
      &  ikboun,ilboun,rhcon,nrhcon,ielmat,ntmat_,vold,voldcon,nzsk,
      &  dtime,matname,mi,ncmat_,shcon,nshcon,v,theta1,
      &  bk,bt,voldtu,isolidsurf,nsolidsurf,ifreestream,nfreestream,
-     &  xsolidsurf,yy,compressible,turbulent,ithermal)
+     &  xsolidsurf,yy,compressible,turbulent,ithermal,ipvar,var,ipvarf,
+     &  varf,nea,neb)
 !
 !     filling the rhs b of the turbulence equations (step 5)
 !
@@ -38,16 +39,16 @@
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nelemface(*),ikmpc(*),ilmpc(*),ikboun(*),compressible,
-     &  ilboun(*),nactdok(*),konl(20),nrhcon(*),ielmat(*),
+     &  ilboun(*),nactdok(*),konl(20),nrhcon(*),mi(*),ielmat(mi(3),*),
      &  ipkon(*),nshcon(*),ifreestream(*),nfreestream,isolidsurf(*),
-     &  nsolidsurf,turbulent,ithermal
+     &  nsolidsurf,turbulent,ithermal,ipvar(*),ipvarf(*)
 !
       integer nk,ne,nboun,nmpc,nface,neqk,nmethod,nzsk,i,j,k,jj,
      &  id,ist,index,jdof1,idof1,node1,kflag,ntmat_,indexe,nope,
-     &  mi(2),i0,ncmat_
+     &  i0,ncmat_,nea,neb
 !
       real*8 co(3,*),xboun(*),coefmpc(*),bk(*),v(0:mi(2),*),
-     &  vold(0:mi(2),*),
+     &  vold(0:mi(2),*),var(*),varf(*),
      &  voldcon(0:4,*),ffk(60),rhcon(0:1,ntmat_,*),yy(*),
      &  shcon(0:3,ntmat_,*),theta1,bt(*),fft(60),voldtu(2,*),
      &  xsolidsurf(*)
@@ -62,7 +63,7 @@
          bt(i)=0.d0
       enddo
 !
-      do i=1,ne
+      do i=nea,neb
 !
         if(ipkon(i).lt.0) cycle
         if(lakon(i)(1:1).ne.'F') cycle
@@ -91,7 +92,7 @@ c        enddo
      &       rhcon,
      &       nrhcon,ielmat,ntmat_,vold,voldcon,dtime,matname,mi(1),
      &       shcon,nshcon,voldtu,compressible,yy,nelemface,sideface,
-     &       nface,turbulent,ithermal)
+     &       nface,turbulent,ithermal,ipvar,var,ipvarf,varf)
 !
         do jj=1,nope
 !

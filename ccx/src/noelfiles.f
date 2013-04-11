@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@
       implicit none
 !
       logical nodefile_flag,elfile_flag,out3d,sectionforces,
-     &  contactfile_flag
+     &  contactfile_flag,lastiterations
 !
       character*1 nodesys,elemsys,inpc(*)
       character*80 amname(*),timepointsname
@@ -79,6 +79,9 @@
             do j=21,25
                filab(j)(1:4)='    '
             enddo
+            filab(28)(1:4)='    '
+            filab(29)(1:4)='    '
+            filab(31)(1:4)='    '
 !
             filab(1)(6:87)=' '
             filab(2)(6:87)=' '
@@ -93,6 +96,9 @@
             do j=21,25
                filab(j)(6:87)=' '
             enddo
+            filab(28)(6:87)='    '
+            filab(29)(6:87)='    '
+            filab(31)(6:87)='    '
          endif
       elseif(ifile_output.eq.2) then
 !
@@ -107,6 +113,8 @@
             filab(13)(1:4)='    '
             filab(18)(1:4)='    '
             filab(20)(1:4)='    '
+            filab(30)(1:4)='    '
+            filab(32)(1:4)='    '
 !
             filab(3)(6:87)=' '
             filab(4)(6:87)=' '
@@ -116,6 +124,8 @@
             filab(13)(6:87)=' '
             filab(18)(6:87)=' '
             filab(20)(6:87)=' '
+            filab(30)(6:87)=' '
+            filab(32)(6:87)=' '
 !
             sectionforces=.false.
          endif
@@ -126,6 +136,8 @@
          if(.not.contactfile_flag) then
             filab(26)(1:4)='    '
             filab(26)(6:87)='    '
+            filab(27)(1:4)='    '
+            filab(27)(6:87)='    '
          endif
       endif
 !
@@ -164,6 +176,16 @@
         elseif(textpart(ii)(1:9).eq.'GLOBAL=NO') then
            nodesys='L'
            elemsys='L'
+        elseif(textpart(ii)(1:9).eq.'OUTPUT=2D') then
+           if(istep.eq.1) then
+              out3d=.false.
+              do j=1,nlabel
+                 if(filab(j)(5:5).eq.'E') filab(j)(5:5)='I'
+              enddo
+           elseif(out3d) then
+              write(*,*) '*WARNING in noelfiles: OUTPUT=2D has no'
+              write(*,*) '         effect in all but the first step'
+           endif
         elseif(textpart(ii)(1:9).eq.'OUTPUT=3D') then
            if(istep.eq.1) then
               out3d=.true.
@@ -175,12 +197,12 @@
               write(*,*) '         effect in all but the first step'
            endif
         elseif(textpart(ii)(1:13).eq.'SECTIONFORCES') then
-           if(out3d) then
-              write(*,*) '*WARNING in noelfiles: SECTION FORCES cannot'
-              write(*,*) '         be selected for 3D output'
-           else
+c           if(out3d) then
+c              write(*,*) '*WARNING in noelfiles: SECTION FORCES cannot'
+c              write(*,*) '         be selected for 3D output'
+c           else
               filab(3)(5:5)='M'
-           endif
+c           endif
         elseif(textpart(ii)(1:11).eq.'TIMEPOINTS=') then
            timepointsname=textpart(ii)(12:91)
            do i=1,nam
@@ -204,11 +226,15 @@
            jout(1)=1
            jout(2)=1
         elseif(textpart(ii)(1:5).eq.'NSET=') then
-            noset=textpart(ii)(6:85)
-            noset(81:81)=' '
-            ipos=index(noset,' ')
-            noset(ipos:ipos)='N'
-         else
+           noset=textpart(ii)(6:85)
+           noset(81:81)=' '
+           ipos=index(noset,' ')
+           noset(ipos:ipos)='N'
+        elseif(textpart(ii)(1:14).eq.'LASTITERATIONS') then
+           filab(1)(4:4)='I'
+        elseif(textpart(ii)(1:15).eq.'CONTACTELEMENTS') then
+           filab(1)(3:3)='C'
+        else
             write(*,*) 
      &        '*WARNING in noelfiles: parameter not recognized:'
             write(*,*) '         ',
@@ -237,7 +263,7 @@
          if((key.eq.1).or.(istat.lt.0)) return
          do ii=1,n
             if(textpart(ii)(1:4).eq.'U   ') then
-               filab(1)(1:4)='U   '
+               filab(1)(1:2)='U '
                filab(1)(6:6)=nodesys
                filab(1)(7:87)=noset
             elseif(textpart(ii)(1:4).eq.'NT  ') then
@@ -266,9 +292,10 @@
                   filab(6)(6:6)=elemsys
                   filab(6)(7:87)=noset
                endif
-            elseif((textpart(ii)(1:4).eq.'CEEQ').or.
-     &             (textpart(ii)(1:2).eq.'CE').or.
-     &             (textpart(ii)(1:2).eq.'PE')) then
+            elseif(((textpart(ii)(1:4).eq.'CEEQ').or.
+     &              (textpart(ii)(1:2).eq.'CE').or.
+     &              (textpart(ii)(1:2).eq.'PE')).and.
+     &             (textpart(ii)(1:4).ne.'CELS')) then
                textpart(ii)(1:4)='PEEQ'
                if((nmethod.eq.2).or.(nmethod.eq.3)) then
                   write(*,*) 
@@ -323,7 +350,8 @@ c                  if(.not.out3d) filab(9)(5:5)='I'
                   filab(10)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'PU  ') then
-               if((nmethod.ne.2).and.(nmethod.ne.5)) then
+               if((nmethod.ne.2).and.(nmethod.ne.5).and.
+     &            (nmethod.ne.6)) then
                   write(*,*) '*WARNING in noelfiles: PU only makes'
                   write(*,*) '         sense for frequency and steady'
                   write(*,*) '         state dynamics calculations'
@@ -340,6 +368,10 @@ c                  if(.not.out3d) filab(9)(5:5)='I'
                filab(12)(7:87)=noset
             elseif(textpart(ii)(1:3).eq.'ZZS') then
                filab(13)(1:4)='ZZS '
+               filab(13)(6:6)=elemsys
+               filab(13)(7:87)=noset
+            elseif(textpart(ii)(1:3).eq.'ERR') then
+               filab(13)(1:4)='ERR '
                filab(13)(6:6)=elemsys
                filab(13)(7:87)=noset
             elseif(textpart(ii)(1:4).eq.'TT  ') then
@@ -459,6 +491,24 @@ c               endif
                   filab(30)(6:6)=elemsys
                   filab(30)(7:87)=noset
                endif
+            elseif(textpart(ii)(1:4).eq.'PRF ') then
+               if((nmethod.ne.2).and.(nmethod.ne.5).and.
+     &            (nmethod.ne.6)) then
+                  write(*,*) '*WARNING in noelfiles: PRF only makes'
+                  write(*,*) '         sense for frequency and steady'
+                  write(*,*) '         state dynamics calculations'
+               elseif((nmethod.eq.5).and.(xmodal(7).gt.0.d0)) then
+                  write(*,*) '*WARNING in noelfiles: PRF does not make'
+                  write(*,*) '         sense for nonharmonic periodic'
+                  write(*,*) '         excitations; use RF instead'
+               else
+                  filab(31)(1:4)='PRF '
+                  filab(31)(7:87)=noset
+               endif
+            elseif(textpart(ii)(1:4).eq.'ME  ') then
+               filab(32)(1:4)='ME  '
+               filab(32)(6:6)=elemsys
+               filab(32)(7:87)=noset
             else
                write(*,*) '*WARNING in noelfiles: label not applicable'
                write(*,*) '         or unknown; '

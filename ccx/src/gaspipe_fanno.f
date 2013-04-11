@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2007 Guido Dhondt
+!     Copyright (C) 1998-2011 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,7 +32,7 @@
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(5),idirf(5),index,iflag,
      &     inv,ipkon(*),kon(*),icase,kgas,k_oil
-     &     ,nshcon(*),nrhcon(*),ntmat_,i,mi(2),nodea,nodeb,
+     &     ,nshcon(*),nrhcon(*),ntmat_,i,mi(*),nodea,nodeb,
      &     nodec,iaxial
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(5),kappa,R,a,d,l,
@@ -898,33 +898,33 @@
 !
          write(1,*) ''
          write(1,55) 'In line',int(nodem/1000),' from node',node1,
-     &' to node', node2,':   air massflow rate= ',xflow,'kg/s',
-     &', oil massflow rate= ',xflow_oil,'kg/s'
+     &' to node', node2,':   air massflow rate= ',xflow,' kg/s',
+     &', oil massflow rate= ',xflow_oil,' kg/s'
  55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
 ! 
          if(inv.eq.1) then
             write(1,53)'       Inlet node ',node1,':    Tt1= ',Tt1,
      &           'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
      &           'Bar, M1= ',M1
-            write(1,*)'             element W    ',set(numf)(1:20)
+            write(1,*)'             element W    ',set(numf)(1:30)
             write(1,57)'             Eta=',dvi,' kg/(m*s), Re= '
      &           ,reynolds,', PHI= ',phi,', LAMBDA= ',lambda,
      &         ', LAMBDA*l/d= ',lambda*l/d,', ZETA_PHI= ',phi*lambda*l/d
-            write(1,53)'       Outlet node ',node2,'    Tt2= ',Tt2,
-     &           'K, Ts2= ',T2,'K, Pt2= ',Pt2/1e5,
-     &           'Bar, M2= ',M2
-!     
+             write(1,53)'       Outlet node ',node2,'    Tt2= ',Tt2,
+     &           ' K, Ts2= ',T2,' K, Pt2= ',Pt2/1e5,
+     &           ' Bar, M2= ',M2
+ !    
          else if(inv.eq.-1) then
             write(1,53)'       Inlet node ',node2,':    Tt1= ',Tt1,
-     &           'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
-     &           'Bar, M1= ',M1
-            write(1,*)'             element W    ',set(numf)(1:20)
-            write(1,57)'             Eta= ',dvi,' kg/(m*s), Re= '
+     &           ' K, Ts1= ',T1,' K, Pt1= ',Pt1/1E5,
+     &           ' Bar, M1= ',M1
+            write(1,*)'             element W    ',set(numf)(1:30)
+           write(1,57)'             Eta= ',dvi,' kg/(m*s), Re= '
      &           ,reynolds,' ,Phi= ',phi,', lambda= ',lambda,
      &          ', lamda*l/d= ',lambda*l/d,', zeta_phi= ',phi*lambda*l/d
             write(1,53)'       Outlet node ',node1,'    Tt2= ',Tt2,
-     &           'K, Ts2= ',T2,'K, Pt2=',Pt2/1e5,
-     &           'Bar, M2= ',M2
+     &           ' K, Ts2= ',T2,' K, Pt2=',Pt2/1e5,
+     &           ' Bar, M2= ',M2
          endif
       endif
  53   FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A,f8.5)  

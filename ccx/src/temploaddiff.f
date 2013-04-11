@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@
      &  nodeboun,ndirboun,nodeforc,ndirforc,istep,iinc,
      &  co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
      &  xforcdiff,xloaddiff,xbodydiff,t1diff,xboundiff,iabsload,
-     &  iprescribedboundary,ntrans,trab,inotr,veold,nactdof,bcont)
+     &  iprescribedboundary,ntrans,trab,inotr,veold,nactdof,bcont,fn)
 !
 !     calculates the loading at a given time and the difference with
 !     the last call of temploaddiff: is needed in the modal dynamic
@@ -43,7 +43,7 @@
      &  iamloadi1,iamloadi2,ibody(3,*),itg(*),ntg,idof,
      &  nbody,iambodyi,nodeboun(*),ndirboun(*),nodeforc(2,*),
      &  ndirforc(*),istep,iinc,msecpt,node,j,ikboun(*),ilboun(*),
-     &  ipresboun,mi(2),iabsload,iprescribedboundary,ntrans,inotr(2,*),
+     &  ipresboun,mi(*),iabsload,iprescribedboundary,ntrans,inotr(2,*),
      &  nactdof(0:mi(2),*)
 !
       real*8 xforc(*),xforcact(*),xload(2,*),xloadact(2,*),
@@ -52,7 +52,7 @@
      &  xbounold(*),xboun(*),xbounact(*),ttime,dtime,reftime,
      &  xbody(7,*),xbodyold(7,*),xbodydiff(7,*),t1diff(*),
      &  xbodyact(7,*),co(3,*),vold(0:mi(2),*),abqtime(2),coords(3),
-     &  xboundiff(*),trab(7,*), veold(0:mi(2),*),bcont(*)
+     &  xboundiff(*),trab(7,*), veold(0:mi(2),*),bcont(*),fn(0:mi(2),*)
 !
       data msecpt /1/
 !
@@ -243,7 +243,7 @@
                endif
                call cload(xforcact(i),istep,iinc,abqtime,node,
      &              ndirforc(i),coords,vold,mi,ntrans,trab,inotr,veold,
-     &              nmethod,nactdof,bcont)
+     &              nmethod,nactdof,bcont,fn)
                xforcdiff(i)=xforcact(i)-xforcdiff(i)
                cycle
             endif

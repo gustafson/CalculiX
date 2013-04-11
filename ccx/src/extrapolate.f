@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,9 +17,9 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine extrapolate(yi,yn,ipkon,inum,kon,lakon,nfield,nk,
-     &  ne,mi,ndim,orab,ielorien,co,iorienglob,cflag,nelemload,
+     &  ne,mi,ndim,orab,ielorien,co,iorienloc,cflag,nelemload,
      &  nload,nodeboun,nboun,ndirboun,vold,ithermal,force,
-     &  cfd)
+     &  cfd,ielmat,thicke)
 !
 !     extrapolates field values at the integration points to the 
 !     nodes
@@ -34,16 +34,19 @@
       character*1 cflag
       character*8 lakon(*),lakonl
 !
-      integer ipkon(*),inum(*),kon(*),mi(2),ne,indexe,nope,
+      integer ipkon(*),inum(*),kon(*),mi(*),ne,indexe,nope,
      &  nonei20(3,12),nfield,nonei10(3,6),nk,i,j,k,l,ndim,
-     &  nonei15(3,9),iorienglob,iorien,ielorien(*),konl,
-     &  mint3d,m,iflag,nelemload(2,*),nload,node,nboun,
-     &  nodeboun(*),ndirboun(*),ithermal(2),cfd
+     &  nonei15(3,9),iorienloc,iorien,ielorien(mi(3),*),konl,
+     &  mint3d,m,iflag,nelemload(2,*),nload,node,nboun,jj,ll,
+     &  nodeboun(*),ndirboun(*),ithermal(2),cfd,ielmat(mi(3),*),
+     &  nlayer,nopeexp,ilayer,kk,mint2d,nopes,kl,ki
 !
-      real*8 yi(ndim,mi(1),*),yn(nfield,*),field(999,20),a8(8,8),
+      real*8 yi(ndim,mi(1),*),yn(nfield,*),field(999,20*mi(3)),a8(8,8),
      &  a4(4,4),a27(20,27),a9(6,9),a2(6,2),orab(7,*),co(3,*),
      &  coords(3,27),xi,et,ze,xl(3,20),xsj,shp(4,20),weight,
-     &  yiloc(6,27),a(3,3),b(3,3),c(3,3),vold(0:mi(2),*)
+     &  yiloc(6,27),a(3,3),b(3,3),c(3,3),vold(0:mi(2),*),tlayer(4),
+     &  dlayer(4),xlayer(mi(3),4),thickness,xs2(3,7),xl2(3,8),
+     &  xsj2(3),shp2(7,8),thicke(mi(3),*)
 !
       include "gauss.f"
 !
@@ -179,6 +182,23 @@
          indexe=ipkon(i)
          lakonl=lakon(i)
 !
+         if(lakonl(7:8).eq.'LC') then
+            nlayer=0
+            do j=1,mi(3)
+               if(ielmat(j,i).gt.0) then
+                  nlayer=nlayer+1
+               else
+                  exit
+               endif
+            enddo
+!
+            if(lakonl(4:4).eq.'2') then
+               nopeexp=28
+            elseif(lakonl(4:5).eq.'15') then
+               nopeexp=21
+            endif
+         endif
+!
          if((lakonl(1:1).eq.'F').and.(cfd.ne.1)) then
             cycle
          elseif((lakonl(1:1).ne.'F').and.(cfd.eq.1)) then
@@ -195,8 +215,6 @@
             nope=15
          elseif(lakonl(4:4).eq.'6') then
             nope=6
-c         elseif(lakonl(1:1).eq.'D') then
-c            cycle
          elseif((lakon(i)(1:1).eq.'E').and.(lakon(i)(7:7).eq.'A'))then
             inum(kon(indexe+1))=inum(kon(indexe+1))+1
             inum(kon(indexe+2))=inum(kon(indexe+2))+1
@@ -208,15 +226,62 @@ c            cycle
 !     calculation of the integration point coordinates for
 !     output in the local system
 !
-         if((iorienglob.ne.0).and.(ielorien(i).ne.0)) then
+         if((iorienloc.ne.0).and.
+     &        ((lakonl(7:8).eq.'LC').or.(ielorien(1,i).ne.0))) then
 !
-            iorien=ielorien(i)
-!
+            if(lakonl(7:8).ne.'LC') then
+               iorien=ielorien(1,i)
+            else
+!     
+!     composite materials
+!     
+               mint2d=4
+               nopes=8
+!     determining the number of layers
+!     
+               nlayer=0
+               do k=1,mi(3)
+                  if(ielmat(k,i).ne.0) then
+                     nlayer=nlayer+1
+                  endif
+               enddo
+!     
+!     determining the layer thickness and global thickness
+!     at the shell integration points
+!     
+               iflag=1
+               indexe=ipkon(i)
+               do kk=1,mint2d
+                  xi=gauss3d2(1,kk)
+                  et=gauss3d2(2,kk)
+                  call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
+                  tlayer(kk)=0.d0
+                  do k=1,nlayer
+                     thickness=0.d0
+                     do j=1,nopes
+                        thickness=thickness+thicke(k,indexe+j)*shp2(4,j)
+                     enddo
+                     tlayer(kk)=tlayer(kk)+thickness
+                     xlayer(k,kk)=thickness
+                  enddo
+               enddo
+c               iflag=3
+!     
+               ilayer=0
+               do k=1,4
+                  dlayer(k)=0.d0
+               enddo
+            endif
+!     
             if(lakon(i)(4:5).eq.'8R') then
                mint3d=1
             elseif((lakon(i)(4:4).eq.'8').or.
      &              (lakon(i)(4:6).eq.'20R')) then
-               mint3d=8
+               if(lakonl(7:8).eq.'LC') then
+                  mint3d=8*nlayer
+               else
+                  mint3d=8
+               endif
             elseif(lakon(i)(4:4).eq.'2') then
                mint3d=27
             elseif(lakon(i)(4:5).eq.'10') then
@@ -245,10 +310,39 @@ c            cycle
                elseif((lakon(i)(4:4).eq.'8').or.
      &                 (lakon(i)(4:6).eq.'20R'))
      &                 then
-                  xi=gauss3d2(1,j)
-                  et=gauss3d2(2,j)
-                  ze=gauss3d2(3,j)
-                  weight=weight3d2(j)
+                  if(lakonl(7:8).ne.'LC') then
+                     xi=gauss3d2(1,j)
+                     et=gauss3d2(2,j)
+                     ze=gauss3d2(3,j)
+                     weight=weight3d2(j)
+                  else
+                     kl=mod(jj,8)
+                     if(kl.eq.0) kl=8
+!     
+                     xi=gauss3d2(1,kl)
+                     et=gauss3d2(2,kl)
+                     ze=gauss3d2(3,kl)
+                     weight=weight3d2(kl)
+!     
+                     ki=mod(jj,4)
+                     if(ki.eq.0) ki=4
+!     
+                     if(kl.eq.1) then
+                        ilayer=ilayer+1
+                        if(ilayer.gt.1) then
+                           do k=1,4
+                              dlayer(k)=dlayer(k)+xlayer(ilayer-1,k)
+                           enddo
+                        endif
+                     endif
+                     ze=2.d0*(dlayer(ki)+(ze+1.d0)/2.d0*
+     &                    xlayer(ilayer,ki))/tlayer(ki)-1.d0
+                     weight=weight*xlayer(ilayer,ki)/tlayer(ki)
+!     
+!                    material and orientation
+!     
+                     iorien=ielorien(ilayer,i)
+                  endif
                elseif(lakon(i)(4:4).eq.'2') then
                   xi=gauss3d3(1,j)
                   et=gauss3d3(2,j)
@@ -288,6 +382,21 @@ c            cycle
                   call shape15w(xi,et,ze,xl,xsj,shp,iflag)
                else
                   call shape6w(xi,et,ze,xl,xsj,shp,iflag)
+               endif
+!
+!              layer without orientation in a composite
+!
+               if(iorien.eq.0) then
+                  if(nfield.eq.3) then
+                     do k=1,3
+                        yiloc(k,j)=yi(k,j,i)
+                     enddo
+                  elseif(nfield.eq.6) then
+                     do k=1,6
+                        yiloc(k,j)=yi(k,j,i)
+                     enddo
+                  endif
+                  cycle
                endif
 !
                do k=1,3
@@ -341,15 +450,35 @@ c            cycle
                endif
             enddo
 !
-            if((lakonl(4:6).eq.'20R').or.(lakonl(4:5).eq.'8 ')) then
-               do j=1,8
-                  do k=1,nfield
-                     field(k,j)=0.d0
-                     do l=1,8
-                        field(k,j)=field(k,j)+a8(j,l)*yiloc(k,l)
+c     Bernhardi start
+            if((lakonl(4:6).eq.'20R').or.(lakonl(4:5).eq.'8 ')
+     &           .or.(lakonl(4:5).eq.'8I')) then
+c     Bernhardi end
+c            if((lakonl(4:6).eq.'20R').or.(lakonl(4:5).eq.'8 ')) then
+               if(lakonl(7:8).ne.'LC') then
+                  do j=1,8
+                     do k=1,nfield
+                        field(k,j)=0.d0
+                        do l=1,8
+                           field(k,j)=field(k,j)+a8(j,l)*yiloc(k,l)
+                        enddo
                      enddo
                   enddo
-               enddo
+               else
+                  do m=1,nlayer
+                     jj=20*(m-1)
+                     ll=8*(m-1)
+                     do j=1,8
+                        do k=1,nfield
+                           field(k,jj+j)=0.d0
+                           do l=1,8
+                              field(k,jj+j)=
+     &                           field(k,jj+j)+a8(j,l)*yiloc(k,ll+l)
+                           enddo
+                        enddo
+                     enddo
+                  enddo
+               endif
             elseif(lakonl(4:4).eq.'8') then
                do j=1,8
                   do k=1,nfield
@@ -414,14 +543,30 @@ c     Bernhardi start
             if((lakonl(4:6).eq.'20R').or.(lakonl(4:5).eq.'8 ')
      &        .or.(lakonl(4:5).eq.'8I')) then
 c     Bernhardi end
-               do j=1,8
-                  do k=1,nfield
-                     field(k,j)=0.d0
-                     do l=1,8
-                        field(k,j)=field(k,j)+a8(j,l)*yi(k,l,i)
+               if(lakonl(7:8).ne.'LC') then
+                  do j=1,8
+                     do k=1,nfield
+                        field(k,j)=0.d0
+                        do l=1,8
+                           field(k,j)=field(k,j)+a8(j,l)*yi(k,l,i)
+                        enddo
                      enddo
                   enddo
-               enddo
+               else
+                  do m=1,nlayer
+                     jj=20*(m-1)
+                     ll=8*(m-1)
+                     do j=1,8
+                        do k=1,nfield
+                           field(k,jj+j)=0.d0
+                           do l=1,8
+                              field(k,jj+j)=
+     &                           field(k,jj+j)+a8(j,l)*yi(k,ll+l,i)
+                           enddo
+                        enddo
+                     enddo
+                  enddo
+               endif
             elseif(lakonl(4:4).eq.'8') then
                do j=1,8
                   do k=1,nfield
@@ -476,13 +621,24 @@ c     Bernhardi end
 !        determining the field values in the midside nodes
 !
          if(lakonl(4:6).eq.'20R') then
-c         if(lakonl(4:5).eq.'20') then
-            do j=9,20
-               do k=1,nfield
-                  field(k,j)=(field(k,nonei20(2,j-8))+
-     &                 field(k,nonei20(3,j-8)))/2.d0
+            if(lakonl(7:8).ne.'LC') then
+               do j=9,20
+                  do k=1,nfield
+                     field(k,j)=(field(k,nonei20(2,j-8))+
+     &                    field(k,nonei20(3,j-8)))/2.d0
+                  enddo
                enddo
-            enddo
+            else
+               do m=1,nlayer
+                  jj=20*(m-1)
+                  do j=9,20
+                     do k=1,nfield
+                        field(k,jj+j)=(field(k,jj+nonei20(2,j-8))
+     &                     +field(k,jj+nonei20(3,j-8)))/2.d0
+                     enddo
+                  enddo
+               enddo
+            endif
          elseif(lakonl(4:5).eq.'10') then
             do j=5,10
                do k=1,nfield
@@ -501,13 +657,24 @@ c         if(lakonl(4:5).eq.'20') then
 !
 !        transferring the field values into yn
 !
-         do j=1,nope
-            do k=1,nfield
-               yn(k,kon(indexe+j))=yn(k,kon(indexe+j))+
-     &              field(k,j)
+         if(lakonl(7:8).ne.'LC') then
+            do j=1,nope
+               do k=1,nfield
+                  yn(k,kon(indexe+j))=yn(k,kon(indexe+j))+
+     &                 field(k,j)
+               enddo
+               inum(kon(indexe+j))=inum(kon(indexe+j))+1
             enddo
-            inum(kon(indexe+j))=inum(kon(indexe+j))+1
-         enddo
+         else
+            do j=1,nope*nlayer
+               do k=1,nfield
+                  yn(k,kon(indexe+nopeexp+j))=
+     &            yn(k,kon(indexe+nopeexp+j))+field(k,j)
+               enddo
+               inum(kon(indexe+nopeexp+j))=inum(kon(indexe+nopeexp+j))+1
+            enddo
+         endif
+!
 c     Bernhardi start
 c        incompatible modes elements
          if(lakonl(1:5).eq.'C3D8I') then

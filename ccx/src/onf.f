@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,8 +30,8 @@
       character*87 filab(*)
 !
       integer kon(*),inum(*),nk,ne,nmethod,kode,i,j,ipkon(*),indexe,
-     &  one,ielmat(*),nstate_,istep,iinc,ianatyp,iperturb,
-     &  konl(20),jj,mint3d,k,nope,mi(2),n,kflag,iy(3),iflag,
+     &  mi(*),one,ielmat(mi(3),*),nstate_,istep,iinc,ianatyp,iperturb,
+     &  konl(20),jj,mint3d,k,nope,n,kflag,iy(3),iflag,
      &  nktrue,netrue
 !
       real*8 co(3,*),v(3,*),stn(6,*),een(6,*),t1(*),fn(3,*),time,
@@ -95,7 +95,7 @@ c         open(13,file='beam.onf',status='unknown')
 !
 !     storing the displacements of the nodes
 !
-      if(filab(1)(1:4).eq.'U   ') then
+      if(filab(1)(1:3).eq.'U  ') then
 !
          write(11,'(a5)') m1
          write(11,'(a3)') '510'

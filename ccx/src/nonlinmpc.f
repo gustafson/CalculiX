@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,7 +36,7 @@
      &  l,m,lmax,mmax,ikmpc(*),ilmpc(*),icascade,neigh(7,8),
      &  mpc,kon(*),ipkon(*),indexe,ne,idofrem,idofins,nmpc0,nmpc01,
      &  newstep,iit,idiscon,ncont,iexpnode,indexexp,nmpcdif,ntrans,
-     &  nodei,noded,lathyp(3,6),inum,ndir,number,ithermal,mi(2)
+     &  nodei,noded,lathyp(3,6),inum,ndir,number,ithermal,mi(*)
 !
       real*8 co(3,*),coefmpc(*),vold(0:mi(2),*),c(3,3),dc(3,3,3),ww,
      &  e(3,3,3),d(3,3),w(3),f(3,3),c1,c2,c3,c4,c5,c6,xbounact(*),

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine incplas(elconloc,plconloc,xstate,xstateini,
      &  elas,emec,emec0,ithermal,icmd,beta,stre,vj,kode,
      &  ielas,amat,t1l,dtime,time,ttime,iel,iint,nstate_,mi,
-     &  eloc,pgauss)
+     &  eloc,pgauss,nmethod)
 !
 !     calculates stiffness and stresses for the incremental plasticity
 !     material law (Ref: J.C. Simo, A framework for finite strain
@@ -37,13 +37,13 @@
 !
       implicit none
 !
-      logical user_hardening,user_creep
+      integer user_hardening,user_creep
 !
       character*80 amat
 !
-      integer ithermal,icmd,i,j,k,l,m,n,nt,kk(84),kode,
-     &  niso,nkin,ielas,iel,iint,nstate_,mi(2),id,leximp,lend,layer,
-     &  kspt,kstep,kinc,iloop
+      integer ithermal,icmd,i,j,kode,
+     &  niso,nkin,ielas,iel,iint,nstate_,mi(*),id,leximp,lend,layer,
+     &  kspt,kstep,kinc,iloop,nmethod
 !
       real*8 elconloc(21),elas(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,plconloc(82),stbl(6),epl,stril(6),xitril(6),
@@ -60,17 +60,13 @@
      &  esw(2),ec(2),p,qtild,predef(1),dpred(1),timeabq(2),pgauss(3),
      &  dtemp
 !
-      data kk /1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
-     &  1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,3,3,1,3,
-     &  1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,1,2,2,3,1,3,2,3,
-     &  2,3,2,3/
+c      data kk /1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
+c     &  1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,3,3,1,3,
+c     &  1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,1,2,2,3,1,3,2,3,
+c     &  2,3,2,3/
 !
-      data xg /1.,0.,0.,0.,1.,0.,0.,0.,1./
-!
-      data leximp /1/
-      data lend /2/
-!
-c      write(*,*) 'iel,iint ',iel,iint
+      leximp=1
+      lend=2
 !
 !     localizing the plastic fields
 !
@@ -111,7 +107,7 @@ c      write(*,*) 'iel,iint ',iel,iint
       if(vj.gt.1.d-30) then
          vj=dsqrt(vj)
       else
-         write(*,*) '*WARNING in incplas: deformation inside-out'
+ccc         write(*,*) '*WARNING in incplas: deformation inside-out'
 !
 !        deformation is reset to zero in order to continue the
 !        calculation. Alternatively, a flag could be set forcing
@@ -130,22 +126,20 @@ c      write(*,*) 'iel,iint ',iel,iint
 !     check for user subroutines
 !
       if((plconloc(81).lt.0.8d0).and.(plconloc(82).lt.0.8d0)) then
-         user_hardening=.true.
+         user_hardening=1
       else
-         user_hardening=.false.
+         user_hardening=0
       endif
-      if(kode.eq.-52) then
+c      if(kode.eq.-52) then
+      if((kode.eq.-52).and.((nmethod.ne.1).or.(ithermal.eq.3))) then
          if(elconloc(3).lt.0.d0) then
-            user_creep=.true.
+            user_creep=1
          else
-            user_creep=.false.
-c            if(xxa.lt.1.d-20) xxa=1.d-20
+            user_creep=0
             xxa=elconloc(3)*(ttime+dtime)**elconloc(5)
             if(xxa.lt.1.d-20) xxa=1.d-20
             xxn=elconloc(4)
             a1=xxa*dtime
-c            a2=xxn*a1
-c            a3=1.d0/xxn
          endif
       endif
 !
@@ -229,7 +223,7 @@ c            a3=1.d0/xxn
      &     g12*g8) + g12*g5*(g32 + 2*g5*g3) + g3*g1*(g33 + 2*g4*
      &     g1))
       if(dxitril.lt.0.d0) then
-         write(*,*) '*WARNING in incplas: dxitril < 0'
+ccc         write(*,*) '*WARNING in incplas: dxitril < 0'
          dxitril=0.d0
       else
          dxitril=dsqrt(dxitril)
@@ -257,7 +251,7 @@ c            a3=1.d0/xxn
 !
 !     check for yielding
 !
-      if(user_hardening) then
+      if(user_hardening.eq.1) then
          call uhardening(amat,iel,iint,t1l,epini,ep,dtime,
      &        fiso,dfiso,fkin,dfkin)
          fiso=fiso*vj
@@ -324,20 +318,147 @@ c         write(*,*) 'no plastic deformation'
             xs(2,3)=stril(6)
             xs(3,2)=stril(6)
 !
-            nt=0
-            do i=1,21
-               k=kk(nt+1)
-               l=kk(nt+2)
-               m=kk(nt+3)
-               n=kk(nt+4)
-               nt=nt+4
-               elas(i)=umb*(xg(k,m)*xg(l,n)+xg(k,n)*xg(l,m)-
-     &              2.d0*xg(k,l)*xg(m,n)/3.d0)
-     &              -2.d0*(xs(k,l)*xg(m,n)+xg(k,l)*xs(m,n))/3.d0
-     &              +xk*vj2*xg(k,l)*xg(m,n)
-     &              -xk*(vj2-1.d0)*(xg(k,m)*xg(l,n)
-     &              +xg(k,n)*xg(l,m))/2.d0
-            enddo
+            elas(1)=umb*(xg(1,1)*xg(1,1)+xg(1,1)*xg(1,1)-
+     &           2.d0*xg(1,1)*xg(1,1)/3.d0)
+     &           -2.d0*(xs(1,1)*xg(1,1)+xg(1,1)*xs(1,1))/3.d0
+     &           +xk*vj2*xg(1,1)*xg(1,1)
+     &           -xk*(vj2-1.d0)*(xg(1,1)*xg(1,1)
+     &           +xg(1,1)*xg(1,1))/2.d0
+            elas(2)=umb*(xg(1,2)*xg(1,2)+xg(1,2)*xg(1,2)-
+     &           2.d0*xg(1,1)*xg(2,2)/3.d0)
+     &           -2.d0*(xs(1,1)*xg(2,2)+xg(1,1)*xs(2,2))/3.d0
+     &           +xk*vj2*xg(1,1)*xg(2,2)
+     &           -xk*(vj2-1.d0)*(xg(1,2)*xg(1,2)
+     &           +xg(1,2)*xg(1,2))/2.d0
+            elas(3)=umb*(xg(2,2)*xg(2,2)+xg(2,2)*xg(2,2)-
+     &           2.d0*xg(2,2)*xg(2,2)/3.d0)
+     &           -2.d0*(xs(2,2)*xg(2,2)+xg(2,2)*xs(2,2))/3.d0
+     &           +xk*vj2*xg(2,2)*xg(2,2)
+     &           -xk*(vj2-1.d0)*(xg(2,2)*xg(2,2)
+     &           +xg(2,2)*xg(2,2))/2.d0
+            elas(4)=umb*(xg(1,3)*xg(1,3)+xg(1,3)*xg(1,3)-
+     &           2.d0*xg(1,1)*xg(3,3)/3.d0)
+     &           -2.d0*(xs(1,1)*xg(3,3)+xg(1,1)*xs(3,3))/3.d0
+     &           +xk*vj2*xg(1,1)*xg(3,3)
+     &           -xk*(vj2-1.d0)*(xg(1,3)*xg(1,3)
+     &           +xg(1,3)*xg(1,3))/2.d0
+            elas(5)=umb*(xg(2,3)*xg(2,3)+xg(2,3)*xg(2,3)-
+     &           2.d0*xg(2,2)*xg(3,3)/3.d0)
+     &           -2.d0*(xs(2,2)*xg(3,3)+xg(2,2)*xs(3,3))/3.d0
+     &           +xk*vj2*xg(2,2)*xg(3,3)
+     &           -xk*(vj2-1.d0)*(xg(2,3)*xg(2,3)
+     &           +xg(2,3)*xg(2,3))/2.d0
+            elas(6)=umb*(xg(3,3)*xg(3,3)+xg(3,3)*xg(3,3)-
+     &           2.d0*xg(3,3)*xg(3,3)/3.d0)
+     &           -2.d0*(xs(3,3)*xg(3,3)+xg(3,3)*xs(3,3))/3.d0
+     &           +xk*vj2*xg(3,3)*xg(3,3)
+     &           -xk*(vj2-1.d0)*(xg(3,3)*xg(3,3)
+     &           +xg(3,3)*xg(3,3))/2.d0
+            elas(7)=umb*(xg(1,1)*xg(1,2)+xg(1,2)*xg(1,1)-
+     &           2.d0*xg(1,1)*xg(1,2)/3.d0)
+     &           -2.d0*(xs(1,1)*xg(1,2)+xg(1,1)*xs(1,2))/3.d0
+     &           +xk*vj2*xg(1,1)*xg(1,2)
+     &           -xk*(vj2-1.d0)*(xg(1,1)*xg(1,2)
+     &           +xg(1,2)*xg(1,1))/2.d0
+            elas(8)=umb*(xg(2,1)*xg(2,2)+xg(2,2)*xg(2,1)-
+     &           2.d0*xg(2,2)*xg(1,2)/3.d0)
+     &           -2.d0*(xs(2,2)*xg(1,2)+xg(2,2)*xs(1,2))/3.d0
+     &           +xk*vj2*xg(2,2)*xg(1,2)
+     &           -xk*(vj2-1.d0)*(xg(2,1)*xg(2,2)
+     &           +xg(2,2)*xg(2,1))/2.d0
+            elas(9)=umb*(xg(3,1)*xg(3,2)+xg(3,2)*xg(3,1)-
+     &           2.d0*xg(3,3)*xg(1,2)/3.d0)
+     &           -2.d0*(xs(3,3)*xg(1,2)+xg(3,3)*xs(1,2))/3.d0
+     &           +xk*vj2*xg(3,3)*xg(1,2)
+     &           -xk*(vj2-1.d0)*(xg(3,1)*xg(3,2)
+     &           +xg(3,2)*xg(3,1))/2.d0
+            elas(10)=umb*(xg(1,1)*xg(2,2)+xg(1,2)*xg(2,1)-
+     &           2.d0*xg(1,2)*xg(1,2)/3.d0)
+     &           -2.d0*(xs(1,2)*xg(1,2)+xg(1,2)*xs(1,2))/3.d0
+     &           +xk*vj2*xg(1,2)*xg(1,2)
+     &           -xk*(vj2-1.d0)*(xg(1,1)*xg(2,2)
+     &           +xg(1,2)*xg(2,1))/2.d0
+            elas(11)=umb*(xg(1,1)*xg(1,3)+xg(1,3)*xg(1,1)-
+     &           2.d0*xg(1,1)*xg(1,3)/3.d0)
+     &           -2.d0*(xs(1,1)*xg(1,3)+xg(1,1)*xs(1,3))/3.d0
+     &           +xk*vj2*xg(1,1)*xg(1,3)
+     &           -xk*(vj2-1.d0)*(xg(1,1)*xg(1,3)
+     &           +xg(1,3)*xg(1,1))/2.d0
+            elas(12)=umb*(xg(2,1)*xg(2,3)+xg(2,3)*xg(2,1)-
+     &           2.d0*xg(2,2)*xg(1,3)/3.d0)
+     &           -2.d0*(xs(2,2)*xg(1,3)+xg(2,2)*xs(1,3))/3.d0
+     &           +xk*vj2*xg(2,2)*xg(1,3)
+     &           -xk*(vj2-1.d0)*(xg(2,1)*xg(2,3)
+     &           +xg(2,3)*xg(2,1))/2.d0
+            elas(13)=umb*(xg(3,1)*xg(3,3)+xg(3,3)*xg(3,1)-
+     &           2.d0*xg(3,3)*xg(1,3)/3.d0)
+     &           -2.d0*(xs(3,3)*xg(1,3)+xg(3,3)*xs(1,3))/3.d0
+     &           +xk*vj2*xg(3,3)*xg(1,3)
+     &           -xk*(vj2-1.d0)*(xg(3,1)*xg(3,3)
+     &           +xg(3,3)*xg(3,1))/2.d0
+            elas(14)=umb*(xg(1,1)*xg(2,3)+xg(1,3)*xg(2,1)-
+     &           2.d0*xg(1,2)*xg(1,3)/3.d0)
+     &           -2.d0*(xs(1,2)*xg(1,3)+xg(1,2)*xs(1,3))/3.d0
+     &           +xk*vj2*xg(1,2)*xg(1,3)
+     &           -xk*(vj2-1.d0)*(xg(1,1)*xg(2,3)
+     &           +xg(1,3)*xg(2,1))/2.d0
+            elas(15)=umb*(xg(1,1)*xg(3,3)+xg(1,3)*xg(3,1)-
+     &           2.d0*xg(1,3)*xg(1,3)/3.d0)
+     &           -2.d0*(xs(1,3)*xg(1,3)+xg(1,3)*xs(1,3))/3.d0
+     &           +xk*vj2*xg(1,3)*xg(1,3)
+     &           -xk*(vj2-1.d0)*(xg(1,1)*xg(3,3)
+     &           +xg(1,3)*xg(3,1))/2.d0
+            elas(16)=umb*(xg(1,2)*xg(1,3)+xg(1,3)*xg(1,2)-
+     &           2.d0*xg(1,1)*xg(2,3)/3.d0)
+     &           -2.d0*(xs(1,1)*xg(2,3)+xg(1,1)*xs(2,3))/3.d0
+     &           +xk*vj2*xg(1,1)*xg(2,3)
+     &           -xk*(vj2-1.d0)*(xg(1,2)*xg(1,3)
+     &           +xg(1,3)*xg(1,2))/2.d0
+            elas(17)=umb*(xg(2,2)*xg(2,3)+xg(2,3)*xg(2,2)-
+     &           2.d0*xg(2,2)*xg(2,3)/3.d0)
+     &           -2.d0*(xs(2,2)*xg(2,3)+xg(2,2)*xs(2,3))/3.d0
+     &           +xk*vj2*xg(2,2)*xg(2,3)
+     &           -xk*(vj2-1.d0)*(xg(2,2)*xg(2,3)
+     &           +xg(2,3)*xg(2,2))/2.d0
+            elas(18)=umb*(xg(3,2)*xg(3,3)+xg(3,3)*xg(3,2)-
+     &           2.d0*xg(3,3)*xg(2,3)/3.d0)
+     &           -2.d0*(xs(3,3)*xg(2,3)+xg(3,3)*xs(2,3))/3.d0
+     &           +xk*vj2*xg(3,3)*xg(2,3)
+     &           -xk*(vj2-1.d0)*(xg(3,2)*xg(3,3)
+     &           +xg(3,3)*xg(3,2))/2.d0
+            elas(19)=umb*(xg(1,2)*xg(2,3)+xg(1,3)*xg(2,2)-
+     &           2.d0*xg(1,2)*xg(2,3)/3.d0)
+     &           -2.d0*(xs(1,2)*xg(2,3)+xg(1,2)*xs(2,3))/3.d0
+     &           +xk*vj2*xg(1,2)*xg(2,3)
+     &           -xk*(vj2-1.d0)*(xg(1,2)*xg(2,3)
+     &           +xg(1,3)*xg(2,2))/2.d0
+            elas(20)=umb*(xg(1,2)*xg(3,3)+xg(1,3)*xg(3,2)-
+     &           2.d0*xg(1,3)*xg(2,3)/3.d0)
+     &           -2.d0*(xs(1,3)*xg(2,3)+xg(1,3)*xs(2,3))/3.d0
+     &           +xk*vj2*xg(1,3)*xg(2,3)
+     &           -xk*(vj2-1.d0)*(xg(1,2)*xg(3,3)
+     &           +xg(1,3)*xg(3,2))/2.d0
+            elas(21)=umb*(xg(2,2)*xg(3,3)+xg(2,3)*xg(3,2)-
+     &           2.d0*xg(2,3)*xg(2,3)/3.d0)
+     &           -2.d0*(xs(2,3)*xg(2,3)+xg(2,3)*xs(2,3))/3.d0
+     &           +xk*vj2*xg(2,3)*xg(2,3)
+     &           -xk*(vj2-1.d0)*(xg(2,2)*xg(3,3)
+     &           +xg(2,3)*xg(3,2))/2.d0
+c
+c            nt=0
+c            do i=1,21
+c               k=kk(nt+1)
+c               l=kk(nt+2)
+c               m=kk(nt+3)
+c               n=kk(nt+4)
+c               nt=nt+4
+c               elas(i)=umb*(xg(k,m)*xg(l,n)+xg(k,n)*xg(l,m)-
+c     &              2.d0*xg(k,l)*xg(m,n)/3.d0)
+c     &              -2.d0*(xs(k,l)*xg(m,n)+xg(k,l)*xs(m,n))/3.d0
+c     &              +xk*vj2*xg(k,l)*xg(m,n)
+c     &              -xk*(vj2-1.d0)*(xg(k,m)*xg(l,n)
+c     &              +xg(k,n)*xg(l,m))/2.d0
+c            enddo
 !
          endif
 !
@@ -363,7 +484,7 @@ c         write(*,*) 'no plastic deformation'
          iloop=iloop+1
          ep=epl+c2*cop
 !
-         if(user_hardening) then
+         if(user_hardening.eq.1) then
             call uhardening(amat,iel,iint,t1l,epini,ep,dtime,
      &           fiso,dfiso,fkin,dfkin)
             fiso=fiso*vj
@@ -417,14 +538,14 @@ c         write(*,*) 'no plastic deformation'
             fkin0=fkin
          endif
 !
-         if(kode.eq.-51) then
+         if((kode.eq.-51).or.((nmethod.eq.1).and.(ithermal.ne.3))) then
             dcop=(ftrial-c2*(fiso-fiso0)
      &           -umbb*(2.d0*cop+c4*(fkin-fkin0)))/
      &           (-c1*dfiso-umbb*(2.d0+c3*dfkin))
          else
-            if(user_creep) then
+            if(user_creep.eq.1) then
                if(ithermal.eq.0) then
-                  write(*,*) '*ERROR in incplas: no temperature defined'
+ccc                  write(*,*) '*ERROR in incplas: no temperature defined'
                   stop
                endif
                timeabq(1)=time
@@ -471,7 +592,7 @@ c         write(*,*) 'no plastic deformation'
             do
                ep=epl+c2*cop
 !
-               if(user_hardening) then
+               if(user_hardening.eq.1) then
                   call uhardening(amat,iel,iint,t1l,epini,ep,dtime,
      &                 fiso,dfiso,fkin,dfkin)
                   fiso=fiso*vj
@@ -517,11 +638,12 @@ c         write(*,*) 'no plastic deformation'
                   fkin0=fkin
                endif
 !
-               if(kode.eq.-51) then
+               if((kode.eq.-51).or.
+     %              ((nmethod.eq.1).and.(ithermal.ne.3))) then
                   fu=(ftrial-c2*(fiso-fiso0)
      &                 -umbb*(2.d0*cop+c4*(fkin-fkin0)))
                else
-                  if(user_creep) then
+                  if(user_creep.eq.1) then
                      timeabq(1)=time
                      timeabq(2)=ttime
                      qtild=(ftrial-c2*(fiso-fiso0)
@@ -650,7 +772,7 @@ c                     write(*,*) cop,fu
 !
 !        creep contribution
 !
-         if(kode.eq.-52) then
+         if((kode.eq.-52).and.((nmethod.ne.1).or.(ithermal.eq.3))) then
             d0=d0+dsvm/(3.d0*umbb)
          endif
 !
@@ -705,21 +827,191 @@ c                     write(*,*) cop,fu
          xd(3,1)=xd(1,3)
          xd(3,2)=xd(2,3)
 !
-         nt=0
-         do i=1,21
-            k=kk(nt+1)
-            l=kk(nt+2)
-            m=kk(nt+3)
-            n=kk(nt+4)
-            nt=nt+4
-            elas(i)=(umb-f0*umbb)*(xg(k,m)*xg(l,n)+xg(k,n)*xg(l,m)-
-     &        2.d0*xg(k,l)*xg(m,n)/3.d0)
-     &        -2.d0*(xs(k,l)*xg(m,n)+xg(k,l)*xs(m,n))/3.d0
-     &        +f0*2.d0*(xx(k,l)*xg(m,n)+xg(k,l)*xx(m,n))/3.d0
-     &        -d1*xn(k,l)*xn(m,n)-d2*(xn(k,l)*xd(m,n)+
-     &        xd(k,l)*xn(m,n))/2.d0+xk*vj2*xg(k,l)*xg(m,n)
-     &        -xk*(vj2-1.d0)*(xg(k,m)*xg(l,n)+xg(k,n)*xg(l,m))/2.d0
-         enddo
+         elas(1)=(umb-f0*umbb)*(xg(1,1)*xg(1,1)+xg(1,1)*xg(1,1)-
+     &        2.d0*xg(1,1)*xg(1,1)/3.d0)
+     &        -2.d0*(xs(1,1)*xg(1,1)+xg(1,1)*xs(1,1))/3.d0
+     &        +f0*2.d0*(xx(1,1)*xg(1,1)+xg(1,1)*xx(1,1))/3.d0
+     &        -d1*xn(1,1)*xn(1,1)-d2*(xn(1,1)*xd(1,1)+
+     &        xd(1,1)*xn(1,1))/2.d0+xk*vj2*xg(1,1)*xg(1,1)
+     &        -xk*(vj2-1.d0)*(xg(1,1)*xg(1,1)+xg(1,1)*xg(1,1))/2.d0
+         elas(2)=(umb-f0*umbb)*(xg(1,2)*xg(1,2)+xg(1,2)*xg(1,2)-
+     &        2.d0*xg(1,1)*xg(2,2)/3.d0)
+     &        -2.d0*(xs(1,1)*xg(2,2)+xg(1,1)*xs(2,2))/3.d0
+     &        +f0*2.d0*(xx(1,1)*xg(2,2)+xg(1,1)*xx(2,2))/3.d0
+     &        -d1*xn(1,1)*xn(2,2)-d2*(xn(1,1)*xd(2,2)+
+     &        xd(1,1)*xn(2,2))/2.d0+xk*vj2*xg(1,1)*xg(2,2)
+     &        -xk*(vj2-1.d0)*(xg(1,2)*xg(1,2)+xg(1,2)*xg(1,2))/2.d0
+         elas(3)=(umb-f0*umbb)*(xg(2,2)*xg(2,2)+xg(2,2)*xg(2,2)-
+     &        2.d0*xg(2,2)*xg(2,2)/3.d0)
+     &        -2.d0*(xs(2,2)*xg(2,2)+xg(2,2)*xs(2,2))/3.d0
+     &        +f0*2.d0*(xx(2,2)*xg(2,2)+xg(2,2)*xx(2,2))/3.d0
+     &        -d1*xn(2,2)*xn(2,2)-d2*(xn(2,2)*xd(2,2)+
+     &        xd(2,2)*xn(2,2))/2.d0+xk*vj2*xg(2,2)*xg(2,2)
+     &        -xk*(vj2-1.d0)*(xg(2,2)*xg(2,2)+xg(2,2)*xg(2,2))/2.d0
+         elas(4)=(umb-f0*umbb)*(xg(1,3)*xg(1,3)+xg(1,3)*xg(1,3)-
+     &        2.d0*xg(1,1)*xg(3,3)/3.d0)
+     &        -2.d0*(xs(1,1)*xg(3,3)+xg(1,1)*xs(3,3))/3.d0
+     &        +f0*2.d0*(xx(1,1)*xg(3,3)+xg(1,1)*xx(3,3))/3.d0
+     &        -d1*xn(1,1)*xn(3,3)-d2*(xn(1,1)*xd(3,3)+
+     &        xd(1,1)*xn(3,3))/2.d0+xk*vj2*xg(1,1)*xg(3,3)
+     &        -xk*(vj2-1.d0)*(xg(1,3)*xg(1,3)+xg(1,3)*xg(1,3))/2.d0
+         elas(5)=(umb-f0*umbb)*(xg(2,3)*xg(2,3)+xg(2,3)*xg(2,3)-
+     &        2.d0*xg(2,2)*xg(3,3)/3.d0)
+     &        -2.d0*(xs(2,2)*xg(3,3)+xg(2,2)*xs(3,3))/3.d0
+     &        +f0*2.d0*(xx(2,2)*xg(3,3)+xg(2,2)*xx(3,3))/3.d0
+     &        -d1*xn(2,2)*xn(3,3)-d2*(xn(2,2)*xd(3,3)+
+     &        xd(2,2)*xn(3,3))/2.d0+xk*vj2*xg(2,2)*xg(3,3)
+     &        -xk*(vj2-1.d0)*(xg(2,3)*xg(2,3)+xg(2,3)*xg(2,3))/2.d0
+         elas(6)=(umb-f0*umbb)*(xg(3,3)*xg(3,3)+xg(3,3)*xg(3,3)-
+     &        2.d0*xg(3,3)*xg(3,3)/3.d0)
+     &        -2.d0*(xs(3,3)*xg(3,3)+xg(3,3)*xs(3,3))/3.d0
+     &        +f0*2.d0*(xx(3,3)*xg(3,3)+xg(3,3)*xx(3,3))/3.d0
+     &        -d1*xn(3,3)*xn(3,3)-d2*(xn(3,3)*xd(3,3)+
+     &        xd(3,3)*xn(3,3))/2.d0+xk*vj2*xg(3,3)*xg(3,3)
+     &        -xk*(vj2-1.d0)*(xg(3,3)*xg(3,3)+xg(3,3)*xg(3,3))/2.d0
+         elas(7)=(umb-f0*umbb)*(xg(1,1)*xg(1,2)+xg(1,2)*xg(1,1)-
+     &        2.d0*xg(1,1)*xg(1,2)/3.d0)
+     &        -2.d0*(xs(1,1)*xg(1,2)+xg(1,1)*xs(1,2))/3.d0
+     &        +f0*2.d0*(xx(1,1)*xg(1,2)+xg(1,1)*xx(1,2))/3.d0
+     &        -d1*xn(1,1)*xn(1,2)-d2*(xn(1,1)*xd(1,2)+
+     &        xd(1,1)*xn(1,2))/2.d0+xk*vj2*xg(1,1)*xg(1,2)
+     &        -xk*(vj2-1.d0)*(xg(1,1)*xg(1,2)+xg(1,2)*xg(1,1))/2.d0
+         elas(8)=(umb-f0*umbb)*(xg(2,1)*xg(2,2)+xg(2,2)*xg(2,1)-
+     &        2.d0*xg(2,2)*xg(1,2)/3.d0)
+     &        -2.d0*(xs(2,2)*xg(1,2)+xg(2,2)*xs(1,2))/3.d0
+     &        +f0*2.d0*(xx(2,2)*xg(1,2)+xg(2,2)*xx(1,2))/3.d0
+     &        -d1*xn(2,2)*xn(1,2)-d2*(xn(2,2)*xd(1,2)+
+     &        xd(2,2)*xn(1,2))/2.d0+xk*vj2*xg(2,2)*xg(1,2)
+     &        -xk*(vj2-1.d0)*(xg(2,1)*xg(2,2)+xg(2,2)*xg(2,1))/2.d0
+         elas(9)=(umb-f0*umbb)*(xg(3,1)*xg(3,2)+xg(3,2)*xg(3,1)-
+     &        2.d0*xg(3,3)*xg(1,2)/3.d0)
+     &        -2.d0*(xs(3,3)*xg(1,2)+xg(3,3)*xs(1,2))/3.d0
+     &        +f0*2.d0*(xx(3,3)*xg(1,2)+xg(3,3)*xx(1,2))/3.d0
+     &        -d1*xn(3,3)*xn(1,2)-d2*(xn(3,3)*xd(1,2)+
+     &        xd(3,3)*xn(1,2))/2.d0+xk*vj2*xg(3,3)*xg(1,2)
+     &        -xk*(vj2-1.d0)*(xg(3,1)*xg(3,2)+xg(3,2)*xg(3,1))/2.d0
+         elas(10)=(umb-f0*umbb)*(xg(1,1)*xg(2,2)+xg(1,2)*xg(2,1)-
+     &        2.d0*xg(1,2)*xg(1,2)/3.d0)
+     &        -2.d0*(xs(1,2)*xg(1,2)+xg(1,2)*xs(1,2))/3.d0
+     &        +f0*2.d0*(xx(1,2)*xg(1,2)+xg(1,2)*xx(1,2))/3.d0
+     &        -d1*xn(1,2)*xn(1,2)-d2*(xn(1,2)*xd(1,2)+
+     &        xd(1,2)*xn(1,2))/2.d0+xk*vj2*xg(1,2)*xg(1,2)
+     &        -xk*(vj2-1.d0)*(xg(1,1)*xg(2,2)+xg(1,2)*xg(2,1))/2.d0
+         elas(11)=(umb-f0*umbb)*(xg(1,1)*xg(1,3)+xg(1,3)*xg(1,1)-
+     &        2.d0*xg(1,1)*xg(1,3)/3.d0)
+     &        -2.d0*(xs(1,1)*xg(1,3)+xg(1,1)*xs(1,3))/3.d0
+     &        +f0*2.d0*(xx(1,1)*xg(1,3)+xg(1,1)*xx(1,3))/3.d0
+     &        -d1*xn(1,1)*xn(1,3)-d2*(xn(1,1)*xd(1,3)+
+     &        xd(1,1)*xn(1,3))/2.d0+xk*vj2*xg(1,1)*xg(1,3)
+     &        -xk*(vj2-1.d0)*(xg(1,1)*xg(1,3)+xg(1,3)*xg(1,1))/2.d0
+         elas(12)=(umb-f0*umbb)*(xg(2,1)*xg(2,3)+xg(2,3)*xg(2,1)-
+     &        2.d0*xg(2,2)*xg(1,3)/3.d0)
+     &        -2.d0*(xs(2,2)*xg(1,3)+xg(2,2)*xs(1,3))/3.d0
+     &        +f0*2.d0*(xx(2,2)*xg(1,3)+xg(2,2)*xx(1,3))/3.d0
+     &        -d1*xn(2,2)*xn(1,3)-d2*(xn(2,2)*xd(1,3)+
+     &        xd(2,2)*xn(1,3))/2.d0+xk*vj2*xg(2,2)*xg(1,3)
+     &        -xk*(vj2-1.d0)*(xg(2,1)*xg(2,3)+xg(2,3)*xg(2,1))/2.d0
+         elas(13)=(umb-f0*umbb)*(xg(3,1)*xg(3,3)+xg(3,3)*xg(3,1)-
+     &        2.d0*xg(3,3)*xg(1,3)/3.d0)
+     &        -2.d0*(xs(3,3)*xg(1,3)+xg(3,3)*xs(1,3))/3.d0
+     &        +f0*2.d0*(xx(3,3)*xg(1,3)+xg(3,3)*xx(1,3))/3.d0
+     &        -d1*xn(3,3)*xn(1,3)-d2*(xn(3,3)*xd(1,3)+
+     &        xd(3,3)*xn(1,3))/2.d0+xk*vj2*xg(3,3)*xg(1,3)
+     &        -xk*(vj2-1.d0)*(xg(3,1)*xg(3,3)+xg(3,3)*xg(3,1))/2.d0
+         elas(14)=(umb-f0*umbb)*(xg(1,1)*xg(2,3)+xg(1,3)*xg(2,1)-
+     &        2.d0*xg(1,2)*xg(1,3)/3.d0)
+     &        -2.d0*(xs(1,2)*xg(1,3)+xg(1,2)*xs(1,3))/3.d0
+     &        +f0*2.d0*(xx(1,2)*xg(1,3)+xg(1,2)*xx(1,3))/3.d0
+     &        -d1*xn(1,2)*xn(1,3)-d2*(xn(1,2)*xd(1,3)+
+     &        xd(1,2)*xn(1,3))/2.d0+xk*vj2*xg(1,2)*xg(1,3)
+     &        -xk*(vj2-1.d0)*(xg(1,1)*xg(2,3)+xg(1,3)*xg(2,1))/2.d0
+         elas(15)=(umb-f0*umbb)*(xg(1,1)*xg(3,3)+xg(1,3)*xg(3,1)-
+     &        2.d0*xg(1,3)*xg(1,3)/3.d0)
+     &        -2.d0*(xs(1,3)*xg(1,3)+xg(1,3)*xs(1,3))/3.d0
+     &        +f0*2.d0*(xx(1,3)*xg(1,3)+xg(1,3)*xx(1,3))/3.d0
+     &        -d1*xn(1,3)*xn(1,3)-d2*(xn(1,3)*xd(1,3)+
+     &        xd(1,3)*xn(1,3))/2.d0+xk*vj2*xg(1,3)*xg(1,3)
+     &        -xk*(vj2-1.d0)*(xg(1,1)*xg(3,3)+xg(1,3)*xg(3,1))/2.d0
+         elas(16)=(umb-f0*umbb)*(xg(1,2)*xg(1,3)+xg(1,3)*xg(1,2)-
+     &        2.d0*xg(1,1)*xg(2,3)/3.d0)
+     &        -2.d0*(xs(1,1)*xg(2,3)+xg(1,1)*xs(2,3))/3.d0
+     &        +f0*2.d0*(xx(1,1)*xg(2,3)+xg(1,1)*xx(2,3))/3.d0
+     &        -d1*xn(1,1)*xn(2,3)-d2*(xn(1,1)*xd(2,3)+
+     &        xd(1,1)*xn(2,3))/2.d0+xk*vj2*xg(1,1)*xg(2,3)
+     &        -xk*(vj2-1.d0)*(xg(1,2)*xg(1,3)+xg(1,3)*xg(1,2))/2.d0
+         elas(17)=(umb-f0*umbb)*(xg(2,2)*xg(2,3)+xg(2,3)*xg(2,2)-
+     &        2.d0*xg(2,2)*xg(2,3)/3.d0)
+     &        -2.d0*(xs(2,2)*xg(2,3)+xg(2,2)*xs(2,3))/3.d0
+     &        +f0*2.d0*(xx(2,2)*xg(2,3)+xg(2,2)*xx(2,3))/3.d0
+     &        -d1*xn(2,2)*xn(2,3)-d2*(xn(2,2)*xd(2,3)+
+     &        xd(2,2)*xn(2,3))/2.d0+xk*vj2*xg(2,2)*xg(2,3)
+     &        -xk*(vj2-1.d0)*(xg(2,2)*xg(2,3)+xg(2,3)*xg(2,2))/2.d0
+         elas(18)=(umb-f0*umbb)*(xg(3,2)*xg(3,3)+xg(3,3)*xg(3,2)-
+     &        2.d0*xg(3,3)*xg(2,3)/3.d0)
+     &        -2.d0*(xs(3,3)*xg(2,3)+xg(3,3)*xs(2,3))/3.d0
+     &        +f0*2.d0*(xx(3,3)*xg(2,3)+xg(3,3)*xx(2,3))/3.d0
+     &        -d1*xn(3,3)*xn(2,3)-d2*(xn(3,3)*xd(2,3)+
+     &        xd(3,3)*xn(2,3))/2.d0+xk*vj2*xg(3,3)*xg(2,3)
+     &        -xk*(vj2-1.d0)*(xg(3,2)*xg(3,3)+xg(3,3)*xg(3,2))/2.d0
+         elas(19)=(umb-f0*umbb)*(xg(1,2)*xg(2,3)+xg(1,3)*xg(2,2)-
+     &        2.d0*xg(1,2)*xg(2,3)/3.d0)
+     &        -2.d0*(xs(1,2)*xg(2,3)+xg(1,2)*xs(2,3))/3.d0
+     &        +f0*2.d0*(xx(1,2)*xg(2,3)+xg(1,2)*xx(2,3))/3.d0
+     &        -d1*xn(1,2)*xn(2,3)-d2*(xn(1,2)*xd(2,3)+
+     &        xd(1,2)*xn(2,3))/2.d0+xk*vj2*xg(1,2)*xg(2,3)
+     &        -xk*(vj2-1.d0)*(xg(1,2)*xg(2,3)+xg(1,3)*xg(2,2))/2.d0
+         elas(20)=(umb-f0*umbb)*(xg(1,2)*xg(3,3)+xg(1,3)*xg(3,2)-
+     &        2.d0*xg(1,3)*xg(2,3)/3.d0)
+     &        -2.d0*(xs(1,3)*xg(2,3)+xg(1,3)*xs(2,3))/3.d0
+     &        +f0*2.d0*(xx(1,3)*xg(2,3)+xg(1,3)*xx(2,3))/3.d0
+     &        -d1*xn(1,3)*xn(2,3)-d2*(xn(1,3)*xd(2,3)+
+     &        xd(1,3)*xn(2,3))/2.d0+xk*vj2*xg(1,3)*xg(2,3)
+     &        -xk*(vj2-1.d0)*(xg(1,2)*xg(3,3)+xg(1,3)*xg(3,2))/2.d0
+         elas(21)=(umb-f0*umbb)*(xg(2,2)*xg(3,3)+xg(2,3)*xg(3,2)-
+     &        2.d0*xg(2,3)*xg(2,3)/3.d0)
+     &        -2.d0*(xs(2,3)*xg(2,3)+xg(2,3)*xs(2,3))/3.d0
+     &        +f0*2.d0*(xx(2,3)*xg(2,3)+xg(2,3)*xx(2,3))/3.d0
+     &        -d1*xn(2,3)*xn(2,3)-d2*(xn(2,3)*xd(2,3)+
+     &        xd(2,3)*xn(2,3))/2.d0+xk*vj2*xg(2,3)*xg(2,3)
+     &        -xk*(vj2-1.d0)*(xg(2,2)*xg(3,3)+xg(2,3)*xg(3,2))/2.d0
+!     
+c     nt=0
+c     do i=1,21
+c            k=kk(nt+1)
+c            l=kk(nt+2)
+c            m=kk(nt+3)
+c            n=kk(nt+4)
+c            nt=nt+4
+c            elas(i)=(umb-f0*umbb)*(xg(k,m)*xg(l,n)+xg(k,n)*xg(l,m)-
+c     &        2.d0*xg(k,l)*xg(m,n)/3.d0)
+c     &        -2.d0*(xs(k,l)*xg(m,n)+xg(k,l)*xs(m,n))/3.d0
+c     &        +f0*2.d0*(xx(k,l)*xg(m,n)+xg(k,l)*xx(m,n))/3.d0
+c     &        -d1*xn(k,l)*xn(m,n)-d2*(xn(k,l)*xd(m,n)+
+c     &        xd(k,l)*xn(m,n))/2.d0+xk*vj2*xg(k,l)*xg(m,n)
+c     &        -xk*(vj2-1.d0)*(xg(k,m)*xg(l,n)+xg(k,n)*xg(l,m))/2.d0
+c               write(*,301) i,k,m,l,n,k,n,l,m
+c               write(*,302) k,l,m,n
+c               write(*,303) k,l,m,n,k,l,m,n
+c               write(*,304) k,l,m,n,k,l,m,n
+c               write(*,305) k,l,m,n,k,l,m,n
+c               write(*,306) k,l,m,n,k,l,m,n
+c               write(*,307) k,m,l,n,k,n,l,m
+c 301           format(6x,'elas(',i1,')=(umb-f0*umbb)*(xg(',i1,',',i1,
+c     &           ')*xg(',i1,',',i1,')+xg(',i1,',',i1,')*xg(',i1,',',
+c     &           i1,')-')
+c 302           format(5x,'&2.d0*xg(',i1,',',i1,')*xg(',i1,',',i1,
+c     &              ')/3.d0)')
+c 303           format(5x,'&-2.d0*(xs(',i1,',',i1,')*xg(',i1,',',i1,
+c     &            ')+xg(',i1,',',i1,')*xs(',i1,',',i1,'))/3.d0')
+c 304           format(5x,'&+f0*2.d0*(xx(',i1,',',i1,')*xg(',i1,',',i1,
+c     &           ')+xg(',i1,',',i1,')*xx(',i1,',',i1,'))/3.d0')
+c 305           format(5x,'&-d1*xn(',i1,',',i1,')*xn(',i1,',',i1,
+c     &           ')-d2*(xn(',i1,',',i1,')*xd(',i1,',',i1,')+')
+c 306           format(5x,'&xd(',i1,',',i1,')*xn(',i1,',',i1,
+c     &           '))/2.d0+xk*vj2*xg(',i1,',',i1,')*xg(',i1,',',i1,')')
+c 307           format(5x,'&-xk*(vj2-1.d0)*(xg(',i1,',',i1,')*xg(',i1,
+c     &           ',',i1,')+xg(',i1,',',i1,')*xg(',i1,',',i1,'))/2.d0')
+c         enddo
 !
       endif
 !

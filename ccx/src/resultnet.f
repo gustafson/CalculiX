@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2007 Guido Dhondt
+!     Copyright (C) 1998-2011 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,14 +35,15 @@
       character*20 sideload(*),labmpc(*)
       character*81 set(*)
 !     
-      integer itg(*),ieg(*),ntg,nteq,nflow,nload,ielmat(*),iflag,
+      integer mi(*),itg(*),ieg(*),ntg,nteq,nflow,nload,
+     &     ielmat(mi(3),*),iflag,ider,
      &     nelemload(2,*),nope,nopes,mint2d,i,j,k,l,nrhcon(*),
      &     node,imat,ntmat_,id,ifaceq(8,6),ifacet(6,4),numf,
      &     ifacew(8,5),node1,node2,nshcon(*),nelem,ig,index,konl(20),
-     &     ipkon(*),kon(*),idof,mi(2),ineighe(*),idir,
+     &     ipkon(*),kon(*),idof,ineighe(*),idir,
      &     iinc,istep,jltyp,nfield,ikforc(*),ipobody(2,*),
-     &     ilforc(*),nforc,nodem,idirf(5),ieq,nactdog(0:3,*),nbody,
-     &     nacteq(0:3,*),ielprop(*),nodef(5),iin,kflag,ibody(3,*),icase,
+     &     ilforc(*),nforc,nodem,idirf(8),ieq,nactdog(0:3,*),nbody,
+     &     nacteq(0:3,*),ielprop(*),nodef(8),iin,kflag,ibody(3,*),icase,
      &     inv, index2,nmethod,nelem0,nodem0,nelem1,nodem1,nelem2,
      &     nodem2,nelemswirl,nmpc,nodempc(3,*),ipompc(*)
 !     
@@ -50,7 +51,7 @@
      &     xl2(3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
      &     gastemp,v(0:mi(2),*),shcon(0:3,ntmat_,*),co(3,*),shp2(7,8),
      &     field,prop(*),tg1,tg2,dtime,ttime,time,g(3),eta,
-     &     xforcact(*),areaj,xflow,tvar(2),f,df(5),camt(*),camf(*),
+     &     xforcact(*),areaj,xflow,tvar(2),f,df(8),camt(*),camf(*),
      &     camp(*),tl2(8),cama(*),vamt,vamf,vamp,vama,
      &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,kappa,a,T,Tt,Pt,
      &     dtheta,ts1,ts2,xs2(3,7),xk1,xk2,xdenom1,xdenom2,expon,pt1,
@@ -79,6 +80,7 @@
       data iflag /2/
 !     
       kflag=2
+      ider=0
 !     
       tvar(1)=time
       tvar(2)=ttime+dtime
@@ -169,8 +171,30 @@ c         write(30,*) 'resultgas',node,(v(j,node),j=0,2)
             elseif(v(3,node).lt.0.12501) then
                v(3,node)=0.12501d0
             endif
-c            write(30,*) 'resultgas ',node,prop(index+2)
-c            v(3,node)=prop(index+2)
+            if(dabs(v(3,node)).gt.vama) vama=dabs(v(3,node))
+!
+!        Geometry factor of an ACC tube
+!
+         elseif(lakon(ieg(i))(2:8).eq.'ACCTUBE') then
+            index=ipkon(ieg(i))
+            node=kon(index+2)
+            if(nactdog(3,node).eq.0) cycle
+            index=ielprop(ieg(i))
+!           Interval factor unknown
+            if(prop(index+1).eq.2) then
+!              Using a smaller step gets better convergence(factor 0.5)
+               v(3,node)=v(3,node)+bc(nactdog(3,node))*
+     &            dtheta
+               if(v(3,node).lt.0.1)then
+                  v(3,node) = 0.1
+               endif
+!           Hole diameter factor unknown               
+            elseif(prop(index+1).eq.3) then
+               v(3,node)=v(3,node)+bc(nactdog(3,node))*dtheta
+               if(v(3,node).lt.0.1)then
+                  v(3,node) = 0.1
+               endif
+            endif
             if(dabs(v(3,node)).gt.vama) vama=dabs(v(3,node))
 !
 !     update location of hydraulic jump
@@ -206,7 +230,6 @@ c            v(3,node)=prop(index+2)
 !               
 c                  write(30,*) 'resultgas eta ',eta
                if((eta.lt.0.d0).or.(eta.gt.1.d0)) then
-c               if(eta.ne.0.5d0) then
                   index=ipkon(nelem)
                   node1=kon(index+1)
                   nodem=kon(index+2)
@@ -229,25 +252,8 @@ c               if(eta.ne.0.5d0) then
                         gastemp=v(0,node2)
                      endif
                   endif
-c                  if(node1.eq.0) then
-c                     tg1=v(0,node2)
-c                     tg2=tg1
-c                     ts1=v(3,node2)
-c                     ts2=Ts1
-c                  elseif(node2.eq.0) then
-c                     tg1=v(0,node1)
-c                     tg2=tg1
-c                     ts1=v(3,node1)
-c                     ts2=ts1
-c                  else
-c                     tg1=v(0,node1)
-c                     tg2=v(0,node2)
-c                     ts1=v(3,node1)
-c                     ts2=v(3,node2)
-c                  endif
-c                  gastemp=(ts1+ts2)/2.d0
 !     
-                  imat=ielmat(nelem)
+                  imat=ielmat(1,nelem)
 !     
                   call materialdata_tg(imat,ntmat_,gastemp,shcon,nshcon,
      &                 cp,r,dvi,rhcon,nrhcon,rho)
@@ -275,7 +281,7 @@ c                  gastemp=(ts1+ts2)/2.d0
      &                 nactdog,identity,
      &                 ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
      &                 cp,r,rho,physcon,g,co,dvi,numf,vold,set,shcon,
-     &                 nshcon,rhcon,nrhcon,ntmat_,mi)
+     &                 nshcon,rhcon,nrhcon,ntmat_,mi,ider)
                   kflag=2
 !     
                endif
@@ -395,7 +401,7 @@ c
 !     
             icase=0
             inv=1
-            imat=ielmat(nelem)
+            imat=ielmat(1,nelem)
             call materialdata_tg(imat,ntmat_,v(3,node),
      &           shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho)
 !     
@@ -567,7 +573,7 @@ c
             endif
          endif
 !     
-         imat=ielmat(nelem)
+         imat=ielmat(1,nelem)
 !     
          call materialdata_tg(imat,ntmat_,gastemp,shcon,nshcon,cp,r,dvi,
      &        rhcon,nrhcon,rho)
@@ -719,7 +725,7 @@ c                     bc(ieq)=(ts2+xnum2/xdenom2-ts1-xnum1/xdenom1)
      &           nactdog,identity,
      &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
      &           cp,r,rho,physcon,g,co,dvi,numf,vold,set,shcon,
-     &           nshcon,rhcon,nrhcon,ntmat_,mi)
+     &           nshcon,rhcon,nrhcon,ntmat_,mi,ider)
             bc(ieq)=-f
          endif
       enddo
@@ -1001,7 +1007,7 @@ c                     bc(ieq)=(ts2+xnum2/xdenom2-ts1-xnum1/xdenom1)
             endif
          endif
 !
-         imat=ielmat(nelem)
+         imat=ielmat(1,nelem)
          call materialdata_tg(imat,ntmat_,gastemp,
      &        shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho)
 !
@@ -1083,7 +1089,7 @@ c            gastemp=(Tg1+Tg2)/2.d0
                endif
             endif
 !
-            imat=ielmat(nelem)
+            imat=ielmat(1,nelem)
             call materialdata_tg(imat,ntmat_,gastemp,
      &           shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho)
 !

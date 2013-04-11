@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 2.3
+LOG-BOOK Version 2.4
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -1801,3 +1801,144 @@ Dec 2002        - started to work on single crystal plasticity
 
 24 Mar 2011    - corrected an error in radmatrix.f
 
+27 Mar 2011    - changed storage of radiation matrix from full
+                 storage into sparse storage
+
+5 April 2011   - wrote an interface to solve asymmetric matrices
+                 with PARDISO
+
+7 April 2011   - paralellized the calculation of the viewfactor
+                 matrix for radiation (cave: logicals in FORTRAN do
+                 not seem to be thread-safe)
+
+9 April 2011   - got rid of iptri for radiation and introduced a
+                 new entry in kontri -> accelerates execution
+
+19 April 2011  - introduced initialchannel.f
+
+20 April 2011  - changed the allocation of xstiff to (long long)
+
+3 Mai 2011     - started to paralellize results.f
+
+14 Mai 2011    - paralellization of results.f finished
+               - changed a parameter in gencontelem.f
+
+19 Mai 2011    - in user subroutine cload fn is provided. To this
+                 end the elements are determined in dyna.c for
+                 which the stresses have to be determined.
+
+24 Mai 2011    - made subroutine frditeration.f available to write
+                 the displacements in each iteration to file (for
+                 debugging purposes)
+
+7 June 2011    - documented beam element examples
+               - started to work on complex frequencies
+
+9 June 2011    - corrected an error in mafillsmcs.f
+               - changed mi(2)into mi(*) in the integer declarations
+
+13 June 2011   - changed ielorien(*), ielmat(*) and thicke(2,*) into
+                 ielorien(mi(3),*), ielmat(mi(3),*) and thicke(mi(3),*)
+                 for composite applications
+
+4 July 2011    - made a small change in spooles.c (number of cpus
+                 for parallel radiation applications)
+
+5 July 2011    - inserted a factor of 2. for Coriolis in e_c3d.f and
+                 e_corio.f
+
+6 July 2011    - made some changes for complex frequency calculations
+
+17 July 2011   - change in .eig-file: for calculations without cyclic
+                 symmetry the square of the eigenvalue (square of the
+                 eigenfrequency) is stored
+               - Coriolis works
+
+20 July 2011   - took care of displacement and stress output for 
+                 composites
+
+25 July 2011   - started to change SPC and MPC-treatment for fluids
+
+30 July 2011   - introduced label PRF for *NODE FILE: size and angle
+                 of reaction forces for cyclic symmetry frequency
+                 calculations
+               - the square of the eigenfrequencies is stored in the
+                 .eig file (the square can be negative - buckling)
+
+1 Aug 2011     - for cyclic symmetry calculations the imaginary part
+                 of the strains is stored as well (if E is requested)
+
+7 Aug 2011     - introduced the mechanical strain ME as output variable
+               - corrected some mistakes in umat_abaqusnl.f 
+
+9 Aug 2011     - corrected a mistake in CalculiX.c/allocation.f
+                 (initialization of xstate/definition of nstate)
+
+7 Sept 2011    - corrected errors in mastructcs.c and mafillsmcs.f
+                 (springs in connection with cyclic symmetry)
+
+8 Sept 2011    - created an option to store the displacements of the 
+                 last iterations (for debugging purposes in case of
+                 divergence)
+
+13 Sept 2011   - introduced a check whether in mechanical calculations
+                 with temperature loading a temperature was assigned to
+                 all nodes belonging to elements
+
+2 Oct 2011     - introduced fields t0g and t1g to take temperature gradients 
+                 across shells into account
+               - continued automatic remeshing for quadratic elements in
+                 contact
+
+8 Oct 2011     - corrected the calculation of the external faces and solid 
+                 boundary nodes in precfd.f
+
+9 Oct 2011     - change treatment of slave contact nodes in 2d plane stress/
+                 strain and axisymmetric elements in gen3dsurf.f
+
+11 oct 2011    - reversed change from 25 July 2011 and 8 Oct 2011. Reason:
+                 wrong results of convergent Jeffery-Hamel flow
+
+12 Oct 2011    - improved automatic remeshing for C3D10 with contact
+
+16 Oct 2011    - introduced an error estimator (ERR) based on the extrapolation
+                 within element belonging to one and the same node
+
+25 Oct 2011    - OUTPUT=2D or OUTPUT=3D is required in the presence of
+                 shells or beams (or SECTION FORCES)
+
+27 Oct 2011    - accelerated CFD (stored dpress in e_c3d_prhs.f)
+
+30 Oct 2011    - reversed change of 25.10
+               - introduced the parameter CONTACT ELEMENTS on the
+                 *NODE FILE and *EL FILE cards
+
+31 Oct 2011    - worked on turbulence models for CFD.
+
+7 Nov 2011     - in CFD calculations the solid surface and freestream
+                 surface have to be declared as nodal sets (only
+                 used for turbulence)
+
+9 Nov 2011     - started updating gas networks
+
+13 Nov 2011    - adjusted the time increment for CFD w.r.t. the
+                 turbulent viscosity
+               - default for beams and shells is OUTPUT=3D, for plane
+                 stress, plane strain and axisymmetric elements it is
+                 OUTPUT=2D
+
+14 Nov 2011    - coded *CHANGE MATERIAL and *CHANGE PLASTIC in order to
+                 change plastic material data within a step
+               - no creep in a *STATIC step (change of -52 into -51)
+
+16 Nov 2011    - changed the error estimator -> standard deviation instead
+                 of max-min
+
+24 Nov 2011    - made a small change to shape8hu.f
+               - coded the interpolation of initial fields in integration
+                 points for quadratic elements remeshed due to contact
+               - incorporated some changes for gas networks
+
+26 Nov 2011    - no creep in a *STATIC step. Use *VISCO instead
+
+1 Dec 2011     - replaced CCX_NPROC by OMP_NUM_THREADS

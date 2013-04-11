@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@
 !     corresponding slave node position in field islavnode and the
 !     global (x-y-z) degree of freedom
 !     
-      integer i,j,k,ntie,neq(*),node,nslavnode(*),mi(2),
+      integer i,j,k,ntie,neq(*),node,nslavnode(*),mi(*),
      &     nactdof(0:mi(2),*),
      &     islavact(*),islavactdof(*),islavnode(*)
 !     

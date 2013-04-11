@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -47,7 +47,7 @@
          stop
       endif
 !
-      nstate_=max(nstate_,3)
+      nstate_=max(nstate_,9)
 !
       nelcon(1,imat)=7
       nelcon(2,imat)=1

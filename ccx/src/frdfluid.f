@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,12 +34,14 @@
       character*87 filab(*)
       character*132 text
 !
-      integer kon(*),nk,ne,kode,i,j,ipkon(*),indexe,inomat(*),
-     &  one,ielmat(*),null,nnstep,inotr(2,*),ntrans,mi(2)
+      integer kon(*),nk,ne,kode,i,j,ipkon(*),indexe,inomat(*),mi(*),
+     &  one,ielmat(mi(3),*),null,nnstep,inotr(2,*),ntrans,nout
 !
       real*8 co(3,*),v(0:mi(2),*),time,vold(0:mi(2),*),vtu(2,*),
      &  voldtu(2,*),stn(6,*),
      &  pi,oner,voldcon(0:4,*),physcon(*),trab(7,*),a(3,3)
+!
+      save nout
 !
       kode=kode+1
       pi=4.d0*datan(1.d0)
@@ -139,7 +141,10 @@
 !
         write(7,'(a5,a1,67x,i1)') p2,c,one
 !
+        nout=0
         do i=1,nk
+           if(inomat(i).le.0) cycle
+           nout=nout+1
            write(7,100) m1,i,(co(j,i),j=1,3)
         enddo
 !
@@ -156,49 +161,60 @@
            if(lakon(i)(4:4).eq.'2') then
               if((lakon(i)(7:7).eq.' ').or.
      &           (lakon(i)(7:7).eq.'H')) then
-              write(7,'(a3,i10,3a5)') m1,i,p4,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)') m1,i,p4,p0,
+     &                          matname(ielmat(1,i))(1:5)
               write(7,'(a3,10i10)') m2,(kon(indexe+j),j=1,10)
               write(7,'(a3,10i10)') m2,(kon(indexe+j),j=11,12),
      &             (kon(indexe+j),j=17,19),kon(indexe+20),
      &             (kon(indexe+j),j=13,16)
               elseif(lakon(i)(7:7).eq.'B') then
-              write(7,'(a3,i10,3a5)')m1,i,p12,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)')m1,i,p12,p0,
+     &                          matname(ielmat(1,i))(1:5)
               write(7,'(a3,3i10)') m2,kon(indexe+21),kon(indexe+23),
      &               kon(indexe+22)
               else
-              write(7,'(a3,i10,3a5)')m1,i,p10,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)')m1,i,p10,p0,
+     &                          matname(ielmat(1,i))(1:5)
               write(7,'(a3,8i10)') m2,(kon(indexe+20+j),j=1,8)
               endif
            elseif(lakon(i)(4:4).eq.'8') then
-              write(7,'(a3,i10,3a5)') m1,i,p1,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)') m1,i,p1,p0,
+     &                          matname(ielmat(1,i))(1:5)
               write(7,'(a3,8i10)') m2,(kon(indexe+j),j=1,8)
            elseif(lakon(i)(4:5).eq.'10') then
-              write(7,'(a3,i10,3a5)') m1,i,p6,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)') m1,i,p6,p0,
+     &                          matname(ielmat(1,i))(1:5)
               write(7,'(a3,10i10)') m2,(kon(indexe+j),j=1,10)
            elseif(lakon(i)(4:4).eq.'4') then
-              write(7,'(a3,i10,3a5)') m1,i,p3,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)') m1,i,p3,p0,
+     &                          matname(ielmat(1,i))(1:5)
               write(7,'(a3,4i10)') m2,(kon(indexe+j),j=1,4)
            elseif(lakon(i)(4:5).eq.'15') then
               if((lakon(i)(7:7).eq.' ')) then
-              write(7,'(a3,i10,3a5)') m1,i,p5,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)') m1,i,p5,p0,
+     &                          matname(ielmat(1,i))(1:5)
               write(7,'(a3,10i10)') m2,(kon(indexe+j),j=1,9),
      &          kon(indexe+13)
               write(7,'(a3,5i10)') m2,(kon(indexe+j),j=14,15),
      &          (kon(indexe+j),j=10,12)
               else
-              write(7,'(a3,i10,3a5)') m1,i,p8,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)') m1,i,p8,p0,
+     &                          matname(ielmat(1,i))(1:5)
               write(7,'(a3,6i10)') m2,(kon(indexe+15+j),j=1,6)
               endif
            elseif(lakon(i)(4:4).eq.'6') then
-              write(7,'(a3,i10,3a5)') m1,i,p2,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)') m1,i,p2,p0,
+     &                          matname(ielmat(1,i))(1:5)
               write(7,'(a3,6i10)') m2,(kon(indexe+j),j=1,6)
            elseif(lakon(i)(1:1).eq.'D') then
               if((kon(indexe+1).eq.0).or.(kon(indexe+3).eq.0)) cycle
-              write(7,'(a3,i10,3a5)')m1,i,p12,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)')m1,i,p12,p0,
+     &                          matname(ielmat(1,i))(1:5)
               write(7,'(a3,3i10)') m2,kon(indexe+1),kon(indexe+3),
      &                 kon(indexe+2)
            elseif(lakon(i)(1:1).eq.'E') then
-              write(7,'(a3,i10,3a5)')m1,i,p11,p0,matname(ielmat(i))(1:5)
+              write(7,'(a3,i10,3a5)')m1,i,p11,p0,
+     &                          matname(ielmat(1,i))(1:5)
               write(7,'(a3,2i10)') m2,(kon(indexe+j),j=1,2)
            endif
 !
@@ -218,7 +234,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
-         write(text(25:36),'(i12)') nk
+         write(text(25:36),'(i12)') nout
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -235,6 +251,7 @@
          write(7,'(a132)') text
 !
          do i=1,nk
+            if(inomat(i).le.0) cycle
             write(7,100) m1,i,(v(j,i),j=1,3)
          enddo
 !     
@@ -251,7 +268,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
-         write(text(25:36),'(i12)') nk
+         write(text(25:36),'(i12)') nout
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -262,6 +279,7 @@
          write(7,'(a132)') text
 !
          do i=1,nk
+            if(inomat(i).le.0) cycle
             write(7,100) m1,i,v(4,i)
          enddo
 !
@@ -277,7 +295,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
-         write(text(25:36),'(i12)') nk
+         write(text(25:36),'(i12)') nout
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -288,6 +306,7 @@
          write(7,'(a132)') text
 !
          do i=1,nk
+            if(inomat(i).le.0) cycle
             write(7,100) m1,i,v(0,i)
          enddo
 !
@@ -303,7 +322,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
-         write(text(25:36),'(i12)') nk
+         write(text(25:36),'(i12)') nout
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -314,6 +333,7 @@
          write(7,'(a132)') text
 !
          do i=1,nk
+            if(inomat(i).le.0) cycle
             write(7,100) m1,i,vtu(1,i)
          enddo
 !
@@ -326,7 +346,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
-         write(text(25:36),'(i12)') nk
+         write(text(25:36),'(i12)') nout
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -337,6 +357,7 @@
          write(7,'(a132)') text
 !
          do i=1,nk
+            if(inomat(i).le.0) cycle
             write(7,100) m1,i,vtu(2,i)
          enddo
 !
@@ -352,7 +373,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
-         write(text(25:36),'(i12)') nk
+         write(text(25:36),'(i12)') nout
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -399,7 +420,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
-         write(text(25:36),'(i12)') nk
+         write(text(25:36),'(i12)') nout
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -410,6 +431,7 @@
          write(7,'(a132)') text
 !
          do i=1,nk
+            if(inomat(i).le.0) cycle
             write(7,100) m1,i,vold(4,i)
          enddo
 !
@@ -424,7 +446,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
-         write(text(25:36),'(i12)') nk
+         write(text(25:36),'(i12)') nout
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -435,6 +457,7 @@
          write(7,'(a132)') text
 !
          do i=1,nk
+            if(inomat(i).le.0) cycle
             write(7,100) m1,i,vold(0,i)
          enddo
 !
@@ -449,7 +472,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
-         write(text(25:36),'(i12)') nk
+         write(text(25:36),'(i12)') nout
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -460,6 +483,7 @@
          write(7,'(a132)') text
 !
          do i=1,nk
+            if(inomat(i).le.0) cycle
             write(7,100) m1,i,v(1,i)
          enddo
 !
@@ -474,7 +498,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
-         write(text(25:36),'(i12)') nk
+         write(text(25:36),'(i12)') nout
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -485,6 +509,7 @@
          write(7,'(a132)') text
 !
          do i=1,nk
+            if(inomat(i).le.0) cycle
             write(7,100) m1,i,vold(0,i)*(1.d0+(v(0,i)-1.d0)/2*v(1,i)**2)
          enddo
 !
@@ -499,7 +524,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
-         write(text(25:36),'(i12)') nk
+         write(text(25:36),'(i12)') nout
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -510,6 +535,7 @@
          write(7,'(a132)') text
 !
          do i=1,nk
+            if(inomat(i).le.0) cycle
             write(7,100) m1,i,vold(4,i)*
      &        (1.d0+(v(0,i)-1.d0)/2*v(1,i)**2)**(v(0,i)/(v(0,i)-1.d0))
          enddo
@@ -527,7 +553,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
-         write(text(25:36),'(i12)') nk
+         write(text(25:36),'(i12)') nout
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -547,6 +573,7 @@
          text=' -5  SZX         1    4    3    1'
          write(7,'(a132)') text
          do i=1,nk
+            if(inomat(i).le.0) cycle
             write(7,100) m1,i,(stn(j,i),j=1,4),
      &           stn(6,i),stn(5,i)
          enddo
@@ -561,7 +588,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
-         write(text(25:36),'(i12)') nk
+         write(text(25:36),'(i12)') nout
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -572,6 +599,7 @@
          write(7,'(a132)') text
 !
          do i=1,nk
+            if(inomat(i).le.0) cycle
             write(7,100) m1,i,(vold(4,i)-physcon(6))*2.d0/
      &            (physcon(7)*physcon(5)**2)
          enddo
@@ -587,7 +615,7 @@
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(75:75)='1'
-         write(text(25:36),'(i12)') nk
+         write(text(25:36),'(i12)') nout
          write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
@@ -600,7 +628,8 @@
          write(7,'(a132)') text
 !
          do i=1,nk
-            write(7,100) m1,i,voldtu(1,i),voldtu(2,i)
+            if(inomat(i).le.0) cycle
+            write(7,100) m1,i,voldtu(1,i),voldtu(1,i)/voldtu(2,i)
          enddo
 !
          write(7,'(a3)') m3

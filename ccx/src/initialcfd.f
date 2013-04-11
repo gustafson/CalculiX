@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,7 +43,7 @@
      &  nk,node,i,j,k,iponoel(*),inoel(3,*),nx(*),ny(*),index,nelem,
      &  nz(*),neighsolidsurf(*),kneigh,nodep(4),iplaneq(3,8),iplanet(4),
      &  iplanew(2,6),nshcon(*),nrhcon(*),ntmat_,neigh,nodel,ifacel,
-     &  ielmat(*),imat,inomat(*),mi(2),nonei20(3,12),nonei10(3,6),
+     &  mi(*),ielmat(mi(3),*),imat,inomat(*),nonei20(3,12),nonei10(3,6),
      &  nonei15(3,9),euler,ithermal
 !
       real*8 x(*),y(*),z(*),xo(*),yo(*),zo(*),xsolidsurf(*),
@@ -138,7 +138,7 @@
             xsolidsurf(i)=dsqrt((co(1,node1)-co(1,node2))**2+
      &           (co(2,node1)-co(2,node2))**2+
      &           (co(3,node1)-co(3,node2))**2)
-            write(*,*) 'xsolidsurf ',node1,node2,xsolidsurf(i)
+c            write(*,*) 'xsolidsurf ',node1,node2,xsolidsurf(i)
          enddo
 !
       endif

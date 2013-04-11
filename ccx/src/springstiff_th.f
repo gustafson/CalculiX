@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,7 +29,7 @@
 !
       integer i,j,imat,ncmat_,ntmat_,k,nope,nterms,iflag,
      &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),
-     &  iperturb,mi(2),node,noel,istep,iinc,npred
+     &  iperturb,mi(*),node,noel,istep,iinc,npred
 !
       real*8 xl(3,9),ratio(9),q(3),val,shp2(7,9),ak(5),
      &  al(3),s(60,60),voldl(0:mi(2),9),pl(3,9),xn(3),dm,
@@ -168,7 +168,8 @@
             coords(j)=xl(j,nope)
          enddo
          call gapcon(ak,d,flowm,temp,predef,timeend,matname(imat),
-     &               slname,msname,coords,noel,node,npred,istep,iinc)
+     &               slname,msname,coords,noel,node,npred,istep,iinc,
+     &               springarea)
          conductance=ak(1)
       else
          do i=1,niso

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2007 Guido Dhondt
+!     Copyright (C) 1998-2011 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
       subroutine envtemp(itg,ieg,ntg,ntr,sideload,nelemload,
-     &     ipkon,kon,lakon,ielmat,ne,nload,iptri,kontri,ntri,nloadtr,
+     &     ipkon,kon,lakon,ielmat,ne,nload,kontri,ntri,nloadtr,
      &     nflow,ndirboun,nactdog,nodeboun,nacteq,nboun,
      &     ielprop,prop,nteq,v,network,physcon,shcon,ntmat_,
      &     co,vold,set,nshcon,rhcon,nrhcon,mi,
@@ -36,19 +36,20 @@
       character*20 sideload(*)
       character*81 set(*)
 !     
-      integer itg(*),ntg,ntr,nelemload(2,*),ipkon(*),network,
-     &     kon(*),ielmat(*),ne,i,j,k,l,index,id,node,nload,ifaceq(8,6),
+      integer itg(*),ntg,ntr,nelemload(2,*),ipkon(*),network,mi(*),
+     &     kon(*),ielmat(mi(3),*),ne,i,j,k,l,index,id,node,nload,
+     &     ifaceq(8,6),ider,
      &     ifacet(6,4),ifacew(8,5),kontri3(3,1),kontri4(3,2),
-     &     kontri6(3,4),kontri8(3,6),iptri(*),kontri(3,*),ntri,
+     &     kontri6(3,4),kontri8(3,6),kontri(4,*),ntri,
      &     konf(8),nloadtr(*),nelem,nope,nopes,ig,nflow,ieg(*),
      &     ndirboun(*),nactdog(0:3,*),nboun,nodeboun(*),ntmat_,
      &     idir,ntq,nteq,nacteq(0:3,*),node1,node2,nodem,
-     &     ielprop(*),idirf(4),iflag,imat,numf,
-     &     ifreegn,isothermflag,nrhcon(*),nshcon(*),mi(2),
+     &     ielprop(*),idirf(8),iflag,imat,numf,
+     &     ifreegn,isothermflag,nrhcon(*),nshcon(*),
      &     nmpc,nodempc(3,*),ipompc(*),ikboun(*),idof
 !     
-      real*8 prop(*),f,xflow,nodef(4),df(4),v(0:mi(2),*),g(3),
-     &     cp,r,physcon(*),shcon(0:3,ntmat_,*),rho,a,
+      real*8 prop(*),f,xflow,nodef(8),df(8),v(0:mi(2),*),g(3),
+     &     cp,r,physcon(*),shcon(0:3,ntmat_,*),rho,
      &     co(3,*),dvi,vold(0:mi(2),*),rhcon(*)
 !     
       data ifaceq /4,3,2,1,11,10,9,12,
@@ -169,7 +170,7 @@
 !     
 !     triangulation of the face
 !     
-            iptri(ntr)=ntri+1
+c            iptri(ntr)=ntri+1
             nloadtr(ntr)=i
             if((lakon(nelem)(4:4).eq.'2').or.
      &           ((lakon(nelem)(4:5).eq.'15').and.(ig.gt.2))) then
@@ -178,6 +179,7 @@
                   do l=1,3
                      kontri(l,ntri)=konf(kontri8(l,k))
                   enddo
+                  kontri(4,ntri)=ntr
                enddo
             elseif((lakon(nelem)(4:4).eq.'8').or.
      &              ((lakon(nelem)(4:4).eq.'6').and.(ig.gt.2))) then
@@ -186,6 +188,7 @@
                   do l=1,3
                      kontri(l,ntri)=konf(kontri4(l,k))
                   enddo
+                  kontri(4,ntri)=ntr
                enddo
             elseif((lakon(nelem)(4:5).eq.'10').or.
      &              ((lakon(nelem)(4:5).eq.'15').and.(ig.le.2))) then
@@ -194,6 +197,7 @@
                   do l=1,3
                      kontri(l,ntri)=konf(kontri6(l,k))
                   enddo
+                  kontri(4,ntri)=ntr
                enddo
             elseif((lakon(nelem)(4:4).eq.'4').or.
      &              ((lakon(nelem)(4:4).eq.'6').and.(ig.le.2))) then
@@ -202,6 +206,7 @@
                   do l=1,3
                      kontri(l,ntri)=konf(kontri3(l,k))
                   enddo
+                  kontri(4,ntri)=ntr
                enddo
             endif   
          endif
@@ -282,6 +287,16 @@
      &         (lakon(ieg(i))(4:7).eq.'CHWE').or.
      &         (lakon(ieg(i))(4:7).eq.'CHDS')) then
            nactdog(3,node)=1
+        elseif(lakon(ieg(i))(2:8).eq.'ACCTUBE') then
+!         
+            index=ielprop(ieg(i))
+            if(prop(index+1).eq.2) then
+!              Interval factor unknown,setting a DOF for geometry
+               nactdog(3,node)=1
+            elseif(prop(index+1).eq.3) then
+!              Hole diameter factor unknown,setting a DOF for geometry
+               nactdog(3,node)=1
+            endif
         endif
       enddo
 !     
@@ -395,11 +410,12 @@ c      enddo
                nacteq(1,node2)=1                       ! mass equation
                nacteq(1,node1)=1                       ! mass equation
             endif
-!   
+! 
+            ider=0
             call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &           nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &           nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,
-     &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi)
+     &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider)
 !      
             if (.not.identity) then
                nacteq(2,nodem)=1                       ! momentum equation
@@ -498,7 +514,7 @@ c      enddo
             if((lakon(nelem)(2:3).eq.'LI').or.
      &         (lakon(nelem)(2:3).eq.'LP').or.
      &         (lakon(nelem)(2:3).eq.'  ')) cycle
-            imat=ielmat(nelem)
+            imat=ielmat(1,nelem)
             r=shcon(3,1,imat)
             if(r.lt.1.d-10) then
                write(*,*)'*ERROR in envtemp: specific gas',

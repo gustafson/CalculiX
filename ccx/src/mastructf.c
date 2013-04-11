@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2007 Guido Dhondt                          */
+/*              Copyright (C) 1998-2011 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -213,9 +213,9 @@ void mastructf(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       
       *neqk=0;
       for(i=0;i<*nk;++i){
-	  if(nactdok[i-1]!=0){
+	  if(nactdok[i]!=0){
 	      ++(*neqk);
-	      nactdok[i-1]=*neqk;
+	      nactdok[i]=*neqk;
 	  }
       }
   }    

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -69,7 +69,7 @@
          if(nelcon(1,nmat).ne.-114) then
 !
 !           viscoplastic material with zero yield surface and
-!           without hardening
+!           without hardening: no plasticity
 !
             iperturb(1)=3
             iperturb(2)=1
@@ -81,6 +81,11 @@
                endif
             enddo
             if(nelcon(1,nmat).eq.-109) then
+!
+!              elastic orthotropic
+!              no plasticity
+!              user creep: -109
+!
                nstate_=max(nstate_,7)
                if(matname(nmat)(70:80).ne.'           ') then
                   write(*,*) '*ERROR in creeps: the material name for'
@@ -99,6 +104,11 @@ c                  matname(nmat)(12:80)=matname(nmat)(1:69)
      &              ipoinp,inp,ipoinpc)
                return
             else
+!
+!              elastic orthotropic
+!              no plasticity
+!              Norton creep: -114
+!
                nstate_=max(nstate_,14)
                do i=1,nelcon(2,nmat)
                   elcon(10,i,nmat)=0.d0
@@ -120,6 +130,11 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
                endif
             endif
          else
+!
+!              elastic orthotropic
+!              plasticity
+!              Norton creep: -114 (user creep is not allowed)
+!
             do i=2,n
                if(textpart(i)(1:8).eq.'LAW=USER') then
                   write(*,*) '*ERROR in creeps: for an elastically'
@@ -137,9 +152,16 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
 !
       if(nelcon(1,nmat).ne.-114) then
 !
-!        isotropic elasticity with creep
+!        elastic isotropic
+!        plasticity or no plasticity
+!        creep (Norton or user): -52
 !
          if(nelcon(1,nmat).ne.-51) then
+!
+!           elastic isotropic
+!           no plasticity -> zero yield plasticity
+!           creep (Norton or user)
+!
             nplicon(0,nmat)=1
             nplicon(1,nmat)=2
             plicon(0,1,nmat)=0.d0

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  ialset,nset,nelemload,sideload,xload,nload,nload_,
      &  ielmat,ntmat_,iamload,
      &  amname,nam,lakon,ne,dflux_flag,istep,istat,n,iline,ipol,inl,
-     &  ipoinp,inp,nam_,namtot_,namta,amta,ipoinpc)
+     &  ipoinp,inp,nam_,namtot_,namta,amta,ipoinpc,mi)
 !
 !     reading the input deck: *DFLUX
 !
@@ -35,8 +35,9 @@
       character*81 set(*),elset
       character*132 textpart(16)
 !
-      integer istartset(*),iendset(*),ialset(*),nelemload(2,*),
-     &  ielmat(*),nset,nload,nload_,ntmat_,istep,istat,n,i,j,l,key,
+      integer istartset(*),iendset(*),ialset(*),nelemload(2,*),mi(*),
+     &  ielmat(mi(3),*),nset,nload,nload_,ntmat_,istep,istat,n,i,j,l,
+     &  key,
      &  iamload(2,*),nam,iamplitude,ipos,ne,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),nam_,namtot,namtot_,namta(3,*),idelay,isector,
      &  ipoinpc(0:*)

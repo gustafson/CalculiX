@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine cload(xload,kstep,kinc,time,node,idof,coords,vold,
-     &  mi,ntrans,trab,inotr,veold,nmethod,nactdof,bcont)
+     &  mi,ntrans,trab,inotr,veold,nmethod,nactdof,bcont,fn)
 !
 !     user subroutine cload
 !
@@ -31,7 +31,8 @@
 !     node               node number
 !     idof               degree of freedom
 !     coords(1..3)       global coordinates of the node
-!     vold(0..4,1..nk)   solution field in all nodes
+!     vold(0..mi(2)
+!              ,1..nk)   solution field in all nodes
 !                        0: temperature
 !                        1: displacement in global x-direction
 !                        2: displacement in global y-direction
@@ -57,6 +58,7 @@
 !                        contains the number of a new node generated
 !                        for the inhomogeneous part of the MPC
 !     nmethod            kind of procedure
+!                       -1: visco
 !                        0: no analysis
 !                        1: static
 !                        2: frequency
@@ -73,6 +75,16 @@
 !                        this option is only available for modal dynamic
 !                        calculations (nmethod=4). In all other cases use
 !                        of this field may lead to a segmentation fault
+!     fn(0..mi(2)
+!              ,1..nk)   reaction force in all nodes
+!                        0: concentrated reaction flux
+!                        1: reaction force in global x-direction
+!                        2: reaction force in global y-direction
+!                        3: reaction force in global z-direction
+!                        this option is only available for modal dynamic
+!                        calculations (nmethod=4). In all other cases use
+!                        of this field may lead to a segmentation fault
+!             
 !
 !     OUTPUT:
 !
@@ -81,12 +93,12 @@
 !           
       implicit none
 !
-      integer kstep,kinc,node,idof,mi(2),ntrans,inotr(2,*),itr,
+      integer kstep,kinc,node,idof,mi(*),ntrans,inotr(2,*),itr,
      &  nmethod,nactdof(0:mi(2),*) 
 !
       real*8 xload,time(2),coords(3),vold(0:mi(2),*),trab(7,*),
      &  veold(0:mi(2),*),a(3,3),ve1,ve2,ve3,f1,f2,f3,bcont(*),
-     &  fcontact
+     &  fcontact,fn(0:mi(2),*)
 !
 !     displacements vold and velocities veold are given in
 !     the global system

@@ -1,6 +1,6 @@
 
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,9 +17,10 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine printout(set,nset,istartset,iendset,ialset,nprint,
-     &  prlab,prset,v,t1,fn,ipkon,lakon,stx,eme,xstate,ener,
+     &  prlab,prset,v,t1,fn,ipkon,lakon,stx,eei,xstate,ener,
      &  mi,nstate_,ithermal,co,kon,qfx,ttime,trab,inotr,ntrans,
-     &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin)
+     &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin,ielmat,thicke,
+     &  eme)
 !
 !     stores results in the .dat file
 !
@@ -35,14 +36,15 @@
       character*87 filab(*)
 !
       integer nset,istartset(*),iendset(*),ialset(*),nprint,ipkon(*),
-     &  mi(2),nstate_,ii,jj,iset,l,lb,limit,node,ipos,ithermal,
-     &  nelem,kon(*),inotr(2,*),ntrans,ielorien(*),norien,nk,ne,
-     &  inum(*),nfield,ikin,nodes,ne0,nope,mt
+     &  mi(*),nstate_,ii,jj,iset,l,limit,node,ipos,ithermal,
+     &  nelem,kon(*),inotr(2,*),ntrans,ielorien(mi(3),*),norien,nk,ne,
+     &  inum(*),nfield,ikin,nodes,ne0,nope,mt,ielmat(mi(3),*)
 !
       real*8 v(0:mi(2),*),t1(*),fn(0:mi(2),*),stx(6,mi(1),*),
-     &  eme(6,mi(1),*),xstate(nstate_,mi(1),*),ener(mi(1),*),energytot,
+     &  eei(6,mi(1),*),xstate(nstate_,mi(1),*),ener(mi(1),*),energytot,
      &  volumetot,co(3,*),qfx(3,mi(1),*),rftot(0:3),ttime,
-     &  trab(7,*),orab(7,*),vold(0:mi(2),*),enerkintot
+     &  trab(7,*),orab(7,*),vold(0:mi(2),*),enerkintot,thicke(mi(3),*),
+     &  eme(6,mi(1),*)
 !
       mt=mi(2)+1
 !
@@ -265,20 +267,21 @@
                   if(ialset(jj).lt.0) cycle
                   if(jj.eq.iendset(iset)) then
                      nelem=ialset(jj)
-                     call printoutint(prlab,ipkon,lakon,stx,eme,xstate,
-     &                    ener,mi(1),nstate_,l,lb,ii,nelem,qfx,
-     &                    orab,ielorien,norien,co,kon)
+                     call printoutint(prlab,ipkon,lakon,stx,eei,xstate,
+     &                    ener,mi(1),nstate_,ii,nelem,qfx,
+     &                    orab,ielorien,norien,co,kon,ielmat,thicke,eme)
                   elseif(ialset(jj+1).gt.0) then
                      nelem=ialset(jj)
-                     call printoutint(prlab,ipkon,lakon,stx,eme,xstate,
-     &                    ener,mi(1),nstate_,l,lb,ii,nelem,qfx,orab,
-     &                    ielorien,norien,co,kon)
+                     call printoutint(prlab,ipkon,lakon,stx,eei,xstate,
+     &                    ener,mi(1),nstate_,ii,nelem,qfx,orab,
+     &                    ielorien,norien,co,kon,ielmat,thicke,eme)
                   else
                      do nelem=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                    -ialset(jj+1)
-                        call printoutint(prlab,ipkon,lakon,stx,eme,
-     &                       xstate,ener,mi(1),nstate_,l,lb,ii,nelem,
-     &                       qfx,orab,ielorien,norien,co,kon)
+                        call printoutint(prlab,ipkon,lakon,stx,eei,
+     &                       xstate,ener,mi(1),nstate_,ii,nelem,
+     &                       qfx,orab,ielorien,norien,co,kon,ielmat,
+     &                       thicke,eme)
                      enddo
                   endif
                enddo

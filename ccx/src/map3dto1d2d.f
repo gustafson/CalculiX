@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -33,7 +33,7 @@
 !
       integer ipkon(*),inum(*),kon(*),ne,indexe,nfield,nk,i,j,k,l,m,
      &  node3(8,3),node6(3,6),node8(3,8),node2d,node3d,indexe2d,ne1d2d,
-     &  node3m(8,3),node(8),m1,m2,nodea,nodeb,nodec,iflag,mi(2)
+     &  node3m(8,3),node(8),m1,m2,nodea,nodeb,nodec,iflag,mi(*)
 !
       real*8 yn(nfield,*),cg(3),p(3),pcg(3),t(3),xl(3,8),shp(7,8),
      &  xsj(3),e1(3),e2(3),e3(3),s(6),dd,xi,et,co(3,*),xs(3,7),
@@ -312,6 +312,11 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
                      t(1)=s(1)*xsj(1)+s(4)*xsj(2)+s(5)*xsj(3)
                      t(2)=s(4)*xsj(1)+s(2)*xsj(2)+s(6)*xsj(3)
                      t(3)=s(5)*xsj(1)+s(6)*xsj(2)+s(3)*xsj(3)
+c                     write(*,*) 'map3dto1d2d',t(1),t(2),t(3)
+c                     write(*,*) 'map3dto1d2d_p',p(1),p(2),p(3)
+c                     write(*,*) 'map3dto1d2d_g',pcg(1),pcg(2),pcg(3)
+c                     write(*,*) 'map3dto1d2d_e',e3(1),e3(2),e3(3)
+c                     write(*,*) 'map3dto1d2d_e',xsj(1),xsj(2),xsj(3)
 !
 !                    section forces
 !

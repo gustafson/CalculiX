@@ -20,7 +20,7 @@
      &  elas,fnl,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,
      &  plicon,nplicon,npmat_,veoldl,senergy,iener,cstr,mi,
      &  springarea,nmethod,ne0,iperturb,nstate_,xstateini,
-     &  xstate,reltime)
+     &  xstate,reltime,xnormastface)
 !
 !     calculates the force of the spring
 !
@@ -28,7 +28,7 @@
 !
       character*8 lakonl
 !
-      integer konl(9),i,j,imat,ncmat_,ntmat_,nope,nterms,iflag,mi(2),
+      integer konl(9),i,j,imat,ncmat_,ntmat_,nope,nterms,iflag,mi(*),
      &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),iener,
      &  nmethod,ne0,iperturb(2),nstate_
 !
@@ -41,12 +41,14 @@
      &  um,eps,pi,senergy,cstr(6),dvertan,dg,dfshear,dfnl,
      &  fricforc,springarea(2),ver(3),dvernor,
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),t1(3),t2(3),
-     &  dt1,dte,alnew(3),reltime
+     &  dt1,dte,alnew(3),reltime,xnormastface(3,8),dm2
 !
-      data iflag /2/
+      iflag=2
+c      write(*,*) 'springforc '
+c      data iflag /2/
 !
 !     actual positions of the nodes belonging to the contact spring
-!
+!      
       do i=1,nope
          do j=1,3
             pl(j,i)=xl(j,i)+vl(j,i)
@@ -132,6 +134,12 @@
          pproj(i)=pl(i,nope)
       enddo
 c      write(*,*) 'springforc ',(pproj(i),i=1,3)
+c      write(*,*) 'springforc ',(konl(i),i=1,nope)
+c      do i=1,nope-1
+c         write(*,*) 'springforc',(pl(j,i),j=1,3)
+c      enddo
+c      write(*,*) 'springforc',(pproj(j),j=1,3)
+c      call attachpen(pl,pproj,nterms,ratio,dist,xi,et,xnormastface)
       call attach(pl,pproj,nterms,ratio,dist,xi,et)
       do i=1,3
          al(i)=pl(i,nope)-pproj(i)
@@ -148,6 +156,23 @@ c      write(*,*) 'springforc ',(pproj(i),i=1,3)
       else
          call shape3tri(xi,et,pl,xsj2,xs2,shp2,iflag)
       endif
+c!
+c!     normal vector in the projection point based on the
+c!     edge normals of the master face
+c!     
+c      do i=1,3
+c      	 xn(i)=0.d0
+c	 do j=1,nterms
+c	    xn(i)=xn(i)+ratio(j)*xnormastface(i,j)
+c	 enddo
+c      enddo
+c!      
+c      dm2=dsqrt(xn(1)*xn(1)+xn(2)*xn(2)+xn(3)*xn(3))
+c      do i=1,3
+c         xn(i)=xn(i)/dm2
+c      enddo
+c!
+c      dm=dsqrt(xsj2(1)*xsj2(1)+xsj2(2)*xsj2(2)+xsj2(3)*xsj2(3))
 !
 !     normal on the surface
 !
@@ -312,7 +337,7 @@ c     &	          -elcon(1,1,imat)*springarea(1)
 !
 !                 stick
 !
-                  write(*,*)'STICK'
+c                  write(*,*)'STICK'
                   do i=1,3
                      fnl(i,nope)=fnl(i,nope)+ftrial(i)
                   enddo
@@ -324,7 +349,7 @@ c     &	          -elcon(1,1,imat)*springarea(1)
 !
 !                 slip
 !
-                  write(*,*)'SLIP'
+c                  write(*,*)'SLIP'
                   dg=(dftrial-dfshear)/xk
                   do i=1,3
                      ftrial(i)=te(i)/dte

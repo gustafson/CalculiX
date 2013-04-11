@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2007 Guido Dhondt                          */
+/*              Copyright (C) 1998-2011 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -23,6 +23,12 @@
  * support for multithreaded solving added.
  * (C) 2003 Manfred Spraul
  */
+
+/* spooles_factor and spooles_solve occur twice in this routine: once
+   with their plane names and once with _rad appended to the name. This is
+   necessary since the factorized stiffness matrices (plain names) and the
+   factorized radiation matrices (_rad appended) are kept at the same time
+   in the program */
 
 #ifdef SPOOLES
 
@@ -277,7 +283,8 @@ DenseMtx *fsolve(struct factorinfo *pfi, DenseMtx *mtxB)
 }
 
 #ifdef USE_MT 
-static void factor_MT(struct factorinfo *pfi, InpMtx *mtxA, int size, FILE *msgFile, int *symmetryflag)
+//static void factor_MT(struct factorinfo *pfi, InpMtx *mtxA, int size, FILE *msgFile, int *symmetryflag)
+void factor_MT(struct factorinfo *pfi, InpMtx *mtxA, int size, FILE *msgFile, int *symmetryflag)
 {
 	Graph *graph;
 	IV *ownersIV;
@@ -456,7 +463,7 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 	int size = *neq;
 	InpMtx *mtxA;
 
-	printf(" Factoring the system of equations using spooles\n\n");
+	printf(" Factoring the system of equations using the symmetric spooles solver\n");
 
 /*	if(*neq==0) return;*/
  
@@ -466,168 +473,209 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 	}
 
 	/*
-	 * Create the InpMtx object from the Calculix matrix
+	 * Create the InpMtx object from the CalculiX matrix
 	 *      representation
 	 */
 
 	{
-		int row, ipoint, ipo;
-		int nent,i,j;
-
-		mtxA = InpMtx_new();
-
-		if((*inputformat==0)||(*inputformat==3)){
-		    nent = *nzs + *neq;	/* estimated # of nonzero entries */
-		}else if(*inputformat==1){
-		    nent=2**nzs+*neq;
-		}else if(*inputformat==2){
-		    nent=0;
-		    for(i=0;i<*neq;i++){
-			for(j=0;j<*neq;j++){
-			    if(fabs(ad[i**nzs+j])>1.e-20) nent++;
+	    int row, ipoint, ipo;
+	    int nent,i,j;
+	    
+	    mtxA = InpMtx_new();
+	    
+	    if((*inputformat==0)||(*inputformat==3)){
+		nent = *nzs + *neq;	/* estimated # of nonzero entries */
+	    }else if(*inputformat==1){
+		nent=2**nzs+*neq;
+	    }else if(*inputformat==2){
+		nent=0;
+		for(i=0;i<*neq;i++){
+		    for(j=0;j<*neq;j++){
+			if(fabs(ad[i**nzs+j])>1.e-20) nent++;
+		    }
+		}
+	    }
+	    
+	    InpMtx_init(mtxA, INPMTX_BY_ROWS, SPOOLES_REAL, nent, size);
+	    
+	    /* inputformat:
+	       0: sparse lower triangular matrix in ad (diagonal)
+	          and au (lower triangle)
+	       1: sparse lower + upper triangular matrix in ad (diagonal)
+	          and au (first lower triangle, then upper triangle; lower
+	          and upper triangle have nonzero's at symmetric positions)
+	       2: full matrix in field ad
+	       3: sparse upper triangular matrix in ad (diagonal)
+	          and au (upper triangle)  */
+	    
+	    if(*inputformat==0){
+		ipoint = 0;
+		
+		if(*sigma==0.){
+		    for (row = 0; row < size; row++) {
+			InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
+			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
+			    int col = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, row, col,
+						  au[ipo]);
+			}
+			ipoint = ipoint + icol[row];
+		    }
+		}
+		else{
+		    for (row = 0; row < size; row++) {
+			InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
+			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
+			    int col = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, row, col,
+						  au[ipo]-*sigma*aub[ipo]);
+			}
+			ipoint = ipoint + icol[row];
+		    }
+		}
+	    }else if(*inputformat==1){
+		ipoint = 0;
+		
+		if(*sigma==0.){
+		    for (row = 0; row < size; row++) {
+			InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
+			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
+			    int col = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, col,row,
+						  au[ipo]);
+			    InpMtx_inputRealEntry(mtxA, row,col,
+						  au[ipo+*nzs]);
+			}
+			ipoint = ipoint + icol[row];
+		    }
+		}
+		else{
+		    for (row = 0; row < size; row++) {
+			InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
+			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
+			    int col = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, col,row,
+						  au[ipo]-*sigma*aub[ipo]);
+			    InpMtx_inputRealEntry(mtxA, row,col,
+						  au[ipo+*nzs]-*sigma*aub[ipo+*nzs]);
+			}
+			ipoint = ipoint + icol[row];
+		    }
+		}
+	    }else if(*inputformat==2){
+		for(i=0;i<*neq;i++){
+		    for(j=0;j<*neq;j++){
+			if(fabs(ad[i**nzs+j])>1.e-20){
+			    InpMtx_inputRealEntry(mtxA,j,i,
+						  ad[i**nzs+j]);
 			}
 		    }
 		}
-
-		InpMtx_init(mtxA, INPMTX_BY_ROWS, SPOOLES_REAL, nent, size);
-
-		if(*inputformat==0){
-		    ipoint = 0;
-		    
-		    if(*sigma==0.){
-			for (row = 0; row < size; row++) {
-			    InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
-			    for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-				int col = irow[ipo] - 1;
-				InpMtx_inputRealEntry(mtxA, row, col,
-						      au[ipo]);
-			    }
-			    ipoint = ipoint + icol[row];
-			}
-		    }
-		    else{
-			for (row = 0; row < size; row++) {
-			    InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
-			    for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-				int col = irow[ipo] - 1;
-				InpMtx_inputRealEntry(mtxA, row, col,
-						      au[ipo]-*sigma*aub[ipo]);
-			    }
-			    ipoint = ipoint + icol[row];
-			}
-		    }
-		}else if(*inputformat==1){
-		    ipoint = 0;
-		    
-		    if(*sigma==0.){
-			for (row = 0; row < size; row++) {
-			    InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
-			    for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-				int col = irow[ipo] - 1;
-				InpMtx_inputRealEntry(mtxA, row, col,
-						      au[ipo]);
-				InpMtx_inputRealEntry(mtxA, col,row,
-						      au[ipo+*nzs]);
-			    }
-			    ipoint = ipoint + icol[row];
-			}
-		    }
-		    else{
-			for (row = 0; row < size; row++) {
-			    InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
-			    for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-				int col = irow[ipo] - 1;
-				InpMtx_inputRealEntry(mtxA, row, col,
-						      au[ipo]-*sigma*aub[ipo]);
-				InpMtx_inputRealEntry(mtxA, col, row,
-						      au[ipo+*nzs]-*sigma*aub[ipo+*nzs]);
-			    }
-			    ipoint = ipoint + icol[row];
-			}
-		    }
-		}else if(*inputformat==2){
-		    for(i=0;i<*neq;i++){
-			for(j=0;j<*neq;j++){
-			    if(fabs(ad[i**nzs+j])>1.e-20){
-				InpMtx_inputRealEntry(mtxA,j,i,
-					 ad[i**nzs+j]);
-			    }
-			}
-		    }
-		}else if(*inputformat==3){
-		  ipoint = 0;
-		  
-		  if(*sigma==0.){
+	    }else if(*inputformat==3){
+		ipoint = 0;
+		
+		if(*sigma==0.){
 		    for (row = 0; row < size; row++) {
-		      InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
-		      for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-			int col = irow[ipo] - 1;
-			InpMtx_inputRealEntry(mtxA, col, row,
-					      au[ipo]);
-		      }
-		      ipoint = ipoint + icol[row];
+			InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
+			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
+			    int col = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, col, row,
+						  au[ipo]);
+			}
+			ipoint = ipoint + icol[row];
 		    }
-		  }
-		  else{
-		    for (row = 0; row < size; row++) {
-		      InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
-		      for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-			int col = irow[ipo] - 1;
-			InpMtx_inputRealEntry(mtxA, col, row, 
-					      au[ipo]-*sigma*aub[ipo]);
-		      }
-		      ipoint = ipoint + icol[row];
-		    }
-		  }
-		}		  
-
-                InpMtx_changeStorageMode(mtxA, INPMTX_BY_VECTORS);
-                  
-		if (DEBUG_LVL > 1) {
-			fprintf(msgFile, "\n\n input matrix");
-			InpMtx_writeForHumanEye(mtxA, msgFile);
-			fflush(msgFile);
 		}
+		else{
+		    for (row = 0; row < size; row++) {
+			InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
+			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
+			    int col = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, col, row, 
+						  au[ipo]-*sigma*aub[ipo]);
+			}
+			ipoint = ipoint + icol[row];
+		    }
+		}
+	    }		  
+	    
+	    InpMtx_changeStorageMode(mtxA, INPMTX_BY_VECTORS);
+            
+	    if (DEBUG_LVL > 1) {
+		fprintf(msgFile, "\n\n input matrix");
+		InpMtx_writeForHumanEye(mtxA, msgFile);
+		fflush(msgFile);
+	    }
 	}
-
+	
 	/* solve it! */
 
 
 #ifdef USE_MT
 	/* Rules for parallel solve:
-	 * - if CCX_NPROC is positive, then use CCX_NPROC cpus, unless
-	 *   that exceeds the number of cpus in the system.
-	 * - if CCX_NPROC is -1, then use the number of cpus in the system.
-	 * - otherwise use 1 cpu (default).
+           a. determining the maximum number of cpus:
+              - if NUMBER_OF_CPUS>0 this is taken as the number of
+                cpus in the system
+              - else it is taken from _SC_NPROCESSORS_CONF, if strictly
+                positive
+              - else 1 cpu is assumed (default)
+           b. determining the number of cpus to use
+              - if CCX_NPROC_EQUATION_SOLVER>0 then use
+                CCX_NPROC_EQUATION_SOLVER cpus
+              - else if CCX_NPROC>0 use CCX_NPROC cpus
+              - else use the maximum number of cpus
 	 */
 	if (num_cpus < 0) {
-		int sys_cpus;
-		char *env;
-
-		num_cpus = 0;
-#ifdef _SC_NPROCESSORS_CONF
+	    int sys_cpus;
+	    char *env,*envloc,*envsys;
+	    
+	    num_cpus = 0;
+	    sys_cpus=0;
+	    
+	    /* explicit user declaration prevails */
+	    
+	    envsys=getenv("NUMBER_OF_CPUS");
+	    if(envsys){
+		sys_cpus=atoi(envsys);
+		if(sys_cpus<0) sys_cpus=0;
+	    }
+	    
+	    /* automatic detection of available number of processors */
+	    
+	    if(sys_cpus==0){
 		sys_cpus = sysconf(_SC_NPROCESSORS_CONF);
-		if (sys_cpus <= 0)
-			sys_cpus = 1;
-#else
-		sys_cpus = 1;
-#endif
-      		env = getenv("CCX_NPROC");
-		if (env)
-			num_cpus = atoi(env);
-		if (num_cpus > 0) {
-//			if (num_cpus > sys_cpus)
-//				num_cpus = sys_cpus;
-		} else if (num_cpus == -1) {
-			num_cpus = sys_cpus;
-		} else {
-			num_cpus = 1;
+		if(sys_cpus<1) sys_cpus=1;
+	    }
+	    
+	    /* local declaration prevails, if strictly positive */
+	    
+	    envloc = getenv("CCX_NPROC_EQUATION_SOLVER");
+	    if(envloc){
+		num_cpus=atoi(envloc);
+		if(num_cpus<0){
+		    num_cpus=0;
+		}else if(num_cpus>sys_cpus){
+		    num_cpus=sys_cpus;
 		}
-		printf("Using up to %d cpu(s) for spooles.\n", num_cpus);
+	    }
+	    
+	    /* else global declaration, if any, applies */
+	    
+	    env = getenv("OMP_NUM_THREADS");
+	    if(num_cpus==0){
+		if (env)
+		    num_cpus = atoi(env);
+		if (num_cpus < 1) {
+		    num_cpus=1;
+		}else if(num_cpus>sys_cpus){
+		    num_cpus=sys_cpus;
+		}
+	    }
+	    
 	}
+	printf(" Using up to %d cpu(s) for spooles.\n\n", num_cpus);
 	if (num_cpus > 1) {
-		/* do not use the multithreaded solver unless
-		 * we have multiple threads - avoid the
+	    /* do not use the multithreaded solver unless
+	     * we have multiple threads - avoid the
 		 * locking overhead
 		 */
 		factor_MT(&pfi, mtxA, size, msgFile,symmetryflag);
@@ -635,6 +683,7 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 		factor(&pfi, mtxA, size, msgFile,symmetryflag);
 	}
 #else
+	printf(" Using 1 cpu for spooles.\n\n");
 	factor(&pfi, mtxA, size, msgFile,symmetryflag);
 #endif
 }
@@ -655,6 +704,8 @@ void spooles_solve(double *b, int *neq)
 	int size = *neq;
 	DenseMtx *mtxB,*mtxX;
 
+	printf(" Solving the system of equations using the symmetric spooles solver\n");
+
 	{
 		int i;
 		mtxB = DenseMtx_new();
@@ -671,6 +722,7 @@ void spooles_solve(double *b, int *neq)
 	}
 
 #ifdef USE_MT
+	printf(" Using up to %d cpu(s) for spooles.\n\n", num_cpus);
 	if (num_cpus > 1) {
 		/* do not use the multithreaded solver unless
 		 * we have multiple threads - avoid the
@@ -681,6 +733,7 @@ void spooles_solve(double *b, int *neq)
 		mtxX=fsolve(&pfi, mtxB);
 	}
 #else
+	printf(" Using 1 cpu for spooles.\n\n");
 	mtxX=fsolve(&pfi, mtxB);
 #endif
 
@@ -708,6 +761,319 @@ void spooles_cleanup()
 	fclose(msgFile);
 }
 
+
+/** 
+ * factor a system of the form (au - sigma * aub)
+ * 
+*/
+
+FILE *msgFilf;
+struct factorinfo pfj;
+
+void spooles_factor_rad(double *ad, double *au,  double *adb, double *aub, 
+             double *sigma,int *icol, int *irow,
+	     int *neq, int *nzs, int *symmetryflag, int *inputformat)
+{
+	int size = *neq;
+	InpMtx *mtxA;
+
+	printf(" Factoring the system of equations using the asymmetric spooles solver\n\n");
+
+/*	if(*neq==0) return;*/
+ 
+	if ((msgFilf = fopen("spooles.out", "a")) == NULL) {
+		fprintf(stderr, "\n fatal error in spooles.c"
+			"\n unable to open file spooles.out\n");
+	}
+
+	/*
+	 * Create the InpMtx object from the Calculix matrix
+	 *      representation
+	 */
+
+	{
+	    int row, ipoint, ipo;
+	    int nent,i,j;
+	    
+	    mtxA = InpMtx_new();
+	    
+	    if((*inputformat==0)||(*inputformat==3)){
+		nent = *nzs + *neq;	/* estimated # of nonzero entries */
+	    }else if(*inputformat==1){
+		nent=2**nzs+*neq;
+	    }else if(*inputformat==2){
+		nent=0;
+		for(i=0;i<*neq;i++){
+		    for(j=0;j<*neq;j++){
+			if(fabs(ad[i**nzs+j])>1.e-20) nent++;
+		    }
+		}
+	    }
+	    
+	    InpMtx_init(mtxA, INPMTX_BY_ROWS, SPOOLES_REAL, nent, size);
+	    
+	    /* inputformat:
+	       0: sparse lower triangular matrix in ad (diagonal)
+	          and au (lower triangle)
+	       1: sparse lower + upper triangular matrix in ad (diagonal)
+	          and au (first lower triangle, then upper triangle; lower
+	          and upper triangle have nonzero's at symmetric positions)
+	       2: full matrix in field ad
+	       3: sparse upper triangular matrix in ad (diagonal)
+	          and au (upper triangle)  */
+	    
+	    if(*inputformat==0){
+		ipoint = 0;
+		
+		if(*sigma==0.){
+		    for (row = 0; row < size; row++) {
+			InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
+			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
+			    int col = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, row, col,
+						  au[ipo]);
+			}
+			ipoint = ipoint + icol[row];
+		    }
+		}
+		else{
+		    for (row = 0; row < size; row++) {
+			InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
+			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
+			    int col = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, row, col,
+						  au[ipo]-*sigma*aub[ipo]);
+			}
+			ipoint = ipoint + icol[row];
+		    }
+		}
+	    }else if(*inputformat==1){
+		ipoint = 0;
+		
+		if(*sigma==0.){
+		    for (row = 0; row < size; row++) {
+			InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
+			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
+			    int col = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, col,row,
+						  au[ipo]);
+			    InpMtx_inputRealEntry(mtxA, row,col,
+						  au[ipo+*nzs]);
+			}
+			ipoint = ipoint + icol[row];
+		    }
+		}
+		else{
+		    for (row = 0; row < size; row++) {
+			InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
+			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
+			    int col = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, col,row,
+						  au[ipo]-*sigma*aub[ipo]);
+			    InpMtx_inputRealEntry(mtxA, row,col,
+						  au[ipo+*nzs]-*sigma*aub[ipo+*nzs]);
+			}
+			ipoint = ipoint + icol[row];
+		    }
+		}
+	    }else if(*inputformat==2){
+		for(i=0;i<*neq;i++){
+		    for(j=0;j<*neq;j++){
+			if(fabs(ad[i**nzs+j])>1.e-20){
+			    InpMtx_inputRealEntry(mtxA,j,i,
+						  ad[i**nzs+j]);
+			}
+		    }
+		}
+	    }else if(*inputformat==3){
+		ipoint = 0;
+		
+		if(*sigma==0.){
+		    for (row = 0; row < size; row++) {
+			InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
+			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
+			    int col = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, col, row,
+						  au[ipo]);
+			}
+			ipoint = ipoint + icol[row];
+		    }
+		}
+		else{
+		    for (row = 0; row < size; row++) {
+			InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
+			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
+			    int col = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, col, row, 
+						  au[ipo]-*sigma*aub[ipo]);
+			}
+			ipoint = ipoint + icol[row];
+		    }
+		}
+	    }		  
+	    
+	    InpMtx_changeStorageMode(mtxA, INPMTX_BY_VECTORS);
+	    
+	    if (DEBUG_LVL > 1) {
+		fprintf(msgFilf, "\n\n input matrix");
+		InpMtx_writeForHumanEye(mtxA, msgFilf);
+		fflush(msgFilf);
+	    }
+	}
+
+	/* solve it! */
+
+
+#ifdef USE_MT
+	/* Rules for parallel solve:
+           a. determining the maximum number of cpus:
+              - if NUMBER_OF_CPUS>0 this is taken as the number of
+                cpus in the system
+              - else it is taken from _SC_NPROCESSORS_CONF, if strictly
+                positive
+              - else 1 cpu is assumed (default)
+           b. determining the number of cpus to use
+              - if CCX_NPROC_EQUATION_SOLVER>0 then use
+                CCX_NPROC_EQUATION_SOLVER cpus
+              - else if CCX_NPROC>0 use CCX_NPROC cpus
+              - else use the maximum number of cpus
+	 */
+	if (num_cpus < 0) {
+	    int sys_cpus;
+	    char *env,*envloc,*envsys;
+	    
+	    num_cpus = 0;
+	    sys_cpus=0;
+	    
+	    /* explicit user declaration prevails */
+	    
+	    envsys=getenv("NUMBER_OF_CPUS");
+	    if(envsys){
+		sys_cpus=atoi(envsys);
+		if(sys_cpus<0) sys_cpus=0;
+	    }
+	    
+	    /* automatic detection of available number of processors */
+	    
+	    if(sys_cpus==0){
+		sys_cpus = sysconf(_SC_NPROCESSORS_CONF);
+		if(sys_cpus<1) sys_cpus=1;
+	    }
+	    
+	    /* local declaration prevails, if strictly positive */
+	    
+	    envloc = getenv("CCX_NPROC_EQUATION_SOLVER");
+	    if(envloc){
+		num_cpus=atoi(envloc);
+		if(num_cpus<0){
+		    num_cpus=0;
+		}else if(num_cpus>sys_cpus){
+		    num_cpus=sys_cpus;
+		}
+	    }
+	    
+	    /* else global declaration, if any, applies */
+	    
+	    env = getenv("OMP_NUM_THREADS");
+	    if(num_cpus==0){
+		if (env)
+		    num_cpus = atoi(env);
+		if (num_cpus < 1) {
+		    num_cpus=1;
+		}else if(num_cpus>sys_cpus){
+		    num_cpus=sys_cpus;
+		}
+	    }
+	    
+	}
+	printf(" Using up to %d cpu(s) for spooles.\n\n", num_cpus);
+	if (num_cpus > 1) {
+		/* do not use the multithreaded solver unless
+		 * we have multiple threads - avoid the
+		 * locking overhead
+		 */
+		factor_MT(&pfj, mtxA, size, msgFilf,symmetryflag);
+	} else {
+		factor(&pfj, mtxA, size, msgFilf,symmetryflag);
+	}
+#else
+	printf(" Using 1 cpu for spooles.\n\n");
+	factor(&pfj, mtxA, size, msgFilf,symmetryflag);
+#endif
+}
+
+/** 
+ * solve a system of equations with rhs b
+ * factorization must have been performed before 
+ * using spooles_factor
+ * 
+*/
+
+void spooles_solve_rad(double *b, int *neq)
+{
+	/* rhs vector B
+	 * Note that there is only one rhs vector, thus
+	 * a bit simpler that the AllInOne example
+	 */
+	int size = *neq;
+	DenseMtx *mtxB,*mtxX;
+
+	printf(" solving the system of equations using the symmetric spooles solver\n");
+
+	{
+		int i;
+		mtxB = DenseMtx_new();
+		DenseMtx_init(mtxB, SPOOLES_REAL, 0, 0, size, 1, 1, size);
+		DenseMtx_zero(mtxB);
+		for (i = 0; i < size; i++) {
+			DenseMtx_setRealEntry(mtxB, i, 0, b[i]);
+		}
+		if (DEBUG_LVL > 1) {
+			fprintf(msgFilf, "\n\n rhs matrix in original ordering");
+			DenseMtx_writeForHumanEye(mtxB, msgFilf);
+			fflush(msgFilf);
+		}
+	}
+
+#ifdef USE_MT
+	printf(" Using up to %d cpu(s) for spooles.\n\n", num_cpus);
+	if (num_cpus > 1) {
+		/* do not use the multithreaded solver unless
+		 * we have multiple threads - avoid the
+		 * locking overhead
+		 */
+		mtxX=fsolve_MT(&pfj, mtxB);
+	} else {
+		mtxX=fsolve(&pfj, mtxB);
+	}
+#else
+	printf(" Using 1 cpu for spooles.\n\n");
+	mtxX=fsolve(&pfj, mtxB);
+#endif
+
+	/* convert the result back to Calculix representation */
+	{
+		int i;
+		for (i = 0; i < size; i++) {
+			b[i] = DenseMtx_entries(mtxX)[i];
+		}
+	}
+	/* cleanup */
+	DenseMtx_free(mtxX);
+}
+
+void spooles_cleanup_rad()
+{
+        
+  	FrontMtx_free(pfj.frontmtx);
+	IV_free(pfj.newToOldIV);
+	IV_free(pfj.oldToNewIV);
+	SubMtxManager_free(pfj.mtxmanager);
+	if (pfj.solvemap)
+		SolveMap_free(pfj.solvemap);
+	ETree_free(pfj.frontETree);
+	fclose(msgFilf);
+}
 
 /** 
  * spooles: Main interface between Calculix and spooles:

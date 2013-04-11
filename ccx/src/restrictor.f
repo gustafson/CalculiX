@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2007 Guido Dhondt
+!     Copyright (C) 1998-2011 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,7 +32,7 @@
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(5),idirf(5),index,iflag,
      &     inv,ipkon(*),kon(*),kgas,icase,k_oil,nshcon(*),
-     &     nrhcon(*),ntmat_,mi(2)
+     &     nrhcon(*),ntmat_,mi(*)
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(5),kappa,R,d,
      &     Tt1,Tt2,pt1,pt2,cp,physcon(3),km1,dvi,
@@ -213,7 +213,7 @@
             inv=-1
          endif     
 !     
-!     defining surfaces and oil properties for branches elements
+!     defining surfaces and oil properties for branch elements
 !     
          if(lakon(nelem)(2:6).eq.'REBRJ') then
             if(nelem.eq.int(prop(index+2))) then
@@ -1027,24 +1027,25 @@
             M2=dsqrt(2d0/km1*(Tt2/T2-1d0))
          endif
 !     
-         write(1,*) ''
-         write(1,55) 'In line',int(nodem/1000),' from node',node1,
-     &        ' to node', node2,':   air massflow rate=',xflow,'kg/s'
-     &        , ', oil massflow rate=',xflow_oil,'kg/s'
- 55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
-!     
+          write(1,*) ''
+          write(1,55) 'In line ',int(nodem/1000),' from node ',node1,
+     &        ' to node ', node2,':   air massflow rate= ',xflow,' kg/s'
+     &        , ', oil massflow rate= ',xflow_oil,' kg/s'
+  55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
+     
          if(lakon(nelem)(4:5).ne.'BR') then
 !     
 !     for restrictors
 !     
-            if(inv.eq.1) then
-               write(1,56)'       Inlet node ',node1,':    Tt1= ',Tt1,
-     &              'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
-     &              'Bar, M1= ',M1
-               write(1,*)'             element F    ',set(numf)
-     &              (1:20)
-               write(1,57)'             eta= ',dvi,'kg/(m*s), Re= '
-     &              ,reynolds,', PHI=',phi,', ZETA= ',zeta,
+     
+             if(inv.eq.1) then
+                write(1,56)'       Inlet node ',node1,':    Tt1= ',Tt1,
+     &              ' K, Ts1= ',T1,' K, Pt1= ',Pt1/1E5,
+     &              ' Bar, M1= ',M1
+                write(1,*)'             element F    ',set(numf)
+     &              (1:30)
+               write(1,57)'             eta= ',dvi,' kg/(m*s), Re= '
+     &              ,reynolds,', PHI= ',phi,', ZETA= ',zeta,
      &', ZETA_PHI= ',zeta_phi
                write(1,56)'       Outlet node ',node2,':   Tt2= ',Tt2,
      &              'K, Ts2= ',T2,'K, Pt2= ',Pt2/1e5,
@@ -1052,16 +1053,16 @@
 !     
             else if(inv.eq.-1) then
                write(1,56)'       Inlet node ',node2,':    Tt1= ',Tt1,
-     &              'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
-     &              'Bar, M1= ',M1
+     &              ' K, Ts1= ',T1,' K, Pt1= ',Pt1/1E5,
+     &              ' Bar, M1= ',M1
                write(1,*)'            element F    ',set(numf)
-     &              (1:20)
-               write(1,57)'            eta= ',dvi,'kg/(m*s), Re= ' 
+     &              (1:30)
+               write(1,57)'            eta= ',dvi,' kg/(m*s), Re= ' 
      &             ,reynolds,', PHI= ',phi,', ZETA= ',zeta,
      &', ZETA_PHI= ',zeta_phi
                write(1,56)'       Outlet node ',node1,':   Tt2= ',Tt2,
-     &              'K, Ts2= ',T2,'K, Pt2= ',Pt2/1e5,
-     &              'Bar, M2= ',M2
+     &              ' K, Ts2= ',T2,' K, Pt2= ',Pt2/1e5,
+     &              ' Bar, M2= ',M2
             endif
          else
 !     
@@ -1069,15 +1070,15 @@
 !     
             if(inv.eq.1) then
                write(1,56)'       Inlet node ',node1,':    Tt1= ',Tt1,
-     &              'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
-     &              'Bar, M1= ',M1
+     &              ' K, Ts1= ',T1,' K, Pt1= ',Pt1/1E5,
+     &              ' Bar, M1= ',M1
                write(1,*)'             element B    ',set(numf)
      &              (1:20)
                write(1,57)'             Eta= ',dvi,' kg/(m*s), Re= '
      &,reynolds,', PHI= ',phi,', ZETA= ',zeta
                write(1,56)'       Outlet node ',node2,':   Tt2= ',Tt2,
-     &              'K, Ts2= ',T2,'K, Pt2= ',Pt2/1E5,
-     &              'Bar, M2= ',M2
+     &              ' K, Ts2= ',T2,' K, Pt2= ',Pt2/1E5,
+     &              ' Bar, M2= ',M2
 !     
             else if(inv.eq.-1) then
                write(1,56)'       Inlet node ',node2,':    Tt1= ',Tt1,
@@ -1088,8 +1089,8 @@
                write(1,57)'                 Eta=',dvi,' kg/(m*s), Re= '
      &              ,reynolds,', PHI= ',phi,', ZETA= ',zeta
                write(1,56)'       Outlet node ',node1,':   Tt2= ',Tt2,
-     &              'K, Ts2= ',T2,'K, Pt2= ',Pt2/1E5,
-     &              'Bar, M2= ',M2
+     &              ' K, Ts2= ',T2,' K, Pt2= ',Pt2/1E5,
+     &              ' Bar, M2= ',M2
             endif
          endif
       endif

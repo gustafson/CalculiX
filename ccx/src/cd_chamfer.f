@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2007 Guido Dhondt
+!     Copyright (C) 1998-2011 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -97,7 +97,7 @@
             if(idy.ge.ny) then
                cd=tab_cd(nx,ny)
             else
-               cd=tab_cd(1,idy)+(tab_cd(1,idy+1)-tab_cd(1,idy))
+               cd=tab_cd(nx,idy)+(tab_cd(nx,idy+1)-tab_cd(nx,idy))
      &              *(lzd-ylzd(idy))/(ylzd(idy+1)-ylzd(idy))
             endif 
          endif
@@ -120,7 +120,7 @@
          endif
       endif
 !     
-      write(*,*)'chamfer correction equals to',cd
+!      write(*,*)'chamfer correction equals to',cd
 !     
       return
       end

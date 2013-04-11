@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2007 Guido Dhondt                          */
+/*              Copyright (C) 1998-2011 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -26,20 +26,21 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
                 double *sigma,int *icol, int **irowp, 
                 int *neq, int *nzs, int *ntrans, int *inotr,
                 double *trab, double *co, int *nk, int *nactdof,
-		char *jobnamec, int *mi){
+		char *jobnamec, int *mi, int *ipkon, char *lakon,
+		int *kon, int *ne){
 
-  char fsti[132]="",fmas[132]="";
+  char fsti[132]="",fmas[132]="",fdof[132]="";
   int i,j,k,l,*irow=NULL,*ai=NULL,*aj=NULL,kflag=2,ndim,jref,kstart,klen,
     *ipoint=NULL,npoint_,npoint,neq3,index,i3l,i3c,i3lo,i3co,idof,n,il,
-    ic,id,itrans,ndim2,*ipoindex=NULL,mt=mi[1]+1;
+    ic,id,itrans,ndim2,*ipoindex=NULL,mt=mi[1]+1,*nactdofinv=NULL,
+    *nodorig=NULL,inode,idir;
   double *au=NULL,*aa=NULL,*trans=NULL,*aa3=NULL,a[9];
-  FILE *f2,*f3;
+  FILE *f2,*f3,*f4;
 
   strcpy(fsti,jobnamec);
   strcat(fsti,".sti");
 
   printf(" Storing the stiffness matrix in file %s \n\n",fsti);
-  printf(" *INFO: this routine only works in the absence of SPC's!\n and in the absence of transformations in combination\n with equations\n\n ");
 
   if((f2=fopen(fsti,"wb"))==NULL){
     printf("*ERROR in matrixstorage: cannot open %s for writing...\n",fsti);
@@ -278,7 +279,6 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
   strcat(fmas,".mas");
 
   printf(" Storing the mass matrix in file %s \n\n",fmas);
-  printf(" *INFO: this routine only works in the absence of SPC's! \n\n");
 
   if((f3=fopen(fmas,"wb"))==NULL){
     printf("*ERROR in matrixstorage: cannot open %s for writing...\n",fmas);
@@ -496,6 +496,34 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
 
   *aup=au;
   *irowp=irow;
+
+  /* node and global direction for each degree of freedom in the
+     matrix (corresponding with a row or column number) */
+
+  strcpy(fdof,jobnamec);
+  strcat(fdof,".dof");
+
+  printf(" Storing the node and global direction per entry (row or column)\n in the stiffness and mass matrices in the form node.direction in file %s \n\n",fdof);
+
+  if((f4=fopen(fdof,"wb"))==NULL){
+    printf("*ERROR in matrixstorage: cannot open %s for writing...\n",fdof);
+    FORTRAN(stop,());
+  }
+
+  /* invert nactdof */
+
+  nactdofinv=NNEW(int,mt**nk);nodorig=NNEW(int,*nk);
+  FORTRAN(gennactdofinv,(nactdof,nactdofinv,nk,mi,nodorig,
+			 ipkon,lakon,kon,ne));
+  free(nodorig);
+  
+  for(i=0;i<*neq;i++){
+      inode=(int)((double)nactdofinv[(int)i]/mt)+1;
+      idir=nactdofinv[(int)i]-mt*(inode-1);
+      fprintf(f4,"%d.%d\n",inode,idir);
+  }
+
+  fclose(f4);
 
   FORTRAN(stop,());
 

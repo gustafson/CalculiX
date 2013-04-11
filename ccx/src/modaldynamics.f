@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,7 +34,7 @@
 !
       integer nmethod,istep,istat,n,key,iexpl,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),iperturb(2),isolver,i,mcs,ipoinpc(0:*),
-     &  idrct,nforc,nload,nbody,iprestr,ithermal,j,nk,ipos,nset,mi(2)
+     &  idrct,nforc,nload,nbody,iprestr,ithermal,j,nk,ipos,nset,mi(*)
 !
       real*8 tinc,tper,cs(17,*),ctrl(*),tmin,tmax,t0(*),t1(*),
      &  vold(0:mi(2),*),veold(0:mi(2),*),xmodal(*)
@@ -87,12 +87,12 @@
             steadystate=.true.
          elseif(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
             cyclicsymmetry=.true.
-         elseif(textpart(i)(1:5).eq.'NSET=') then
-            nodalset=.true.
-            noset=textpart(i)(6:85)
-            noset(81:81)=' '
-            ipos=index(noset,' ')
-            noset(ipos:ipos)='N'
+c         elseif(textpart(i)(1:5).eq.'NSET=') then
+c            nodalset=.true.
+c            noset=textpart(i)(6:85)
+c            noset(81:81)=' '
+c            ipos=index(noset,' ')
+c            noset(ipos:ipos)='N'
          else
             write(*,*) 
      &        '*WARNING in modaldynamics: parameter not recognized:'
@@ -135,24 +135,24 @@
          stop
       endif
 !
-      if(nodalset) then
-         do i=1,nset
-            if(set(i).eq.noset) exit
-         enddo
-         if(i.gt.nset) then
-            noset(ipos:ipos)=' '
-            write(*,*) '*ERROR in modaldynamics: node set ',noset
-            write(*,*) '  has not yet been defined.'
-            stop
-         endif
-         xmodal(10)=i+0.5d0
-      else
-         if(cyclicsymmetry) then
-            write(*,*) '*ERROR in modaldynamics: cyclic symmetric'
-            write(*,*) '       structure, yet no node set defined'
-            stop
-         endif
-      endif
+c      if(nodalset) then
+c         do i=1,nset
+c            if(set(i).eq.noset) exit
+c         enddo
+c         if(i.gt.nset) then
+c            noset(ipos:ipos)=' '
+c            write(*,*) '*ERROR in modaldynamics: node set ',noset
+c            write(*,*) '  has not yet been defined.'
+c            stop
+c         endif
+c         xmodal(10)=i+0.5d0
+c      else
+c         if(cyclicsymmetry) then
+c            write(*,*) '*ERROR in modaldynamics: cyclic symmetric'
+c            write(*,*) '       structure, yet no node set defined'
+c            stop
+c         endif
+c      endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
@@ -252,10 +252,10 @@
       nmethod=4
 !
 !     correction for cyclic symmetric structures:
-!       if the present step was not preceded by a frequency step
-!       no nodal diameter has been selected. To make sure that
-!       mastructcs is called instead of mastruct a fictitious
-!       minimum nodal diameter is stored
+!     if the present step was not preceded by a frequency step
+!     no nodal diameter has been selected. To make sure that
+!     mastructcs is called instead of mastruct a fictitious
+!     minimum nodal diameter is stored
 !
       if((cyclicsymmetry).and.(mcs.ne.0).and.(cs(2,1)<0.d0)) 
      &       cs(2,1)=0.d0

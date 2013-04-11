@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -63,7 +63,7 @@
          write(7,'(a132)') text
       endif
 !     
-      if(nmethod.eq.1) then
+      if(abs(nmethod).eq.1) then
          text=
      & '  100CL       .00000E+00                                 0    1'
       elseif(nmethod.eq.2) then

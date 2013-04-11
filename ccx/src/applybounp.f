@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,11 +28,12 @@
 !
       integer turbulent
 !
-      integer nrhcon(*),ielmat(*),ntmat_,nodeboun(*),isolidsurf(*),
+      integer nrhcon(*),mi(*),ielmat(mi(3),*),ntmat_,nodeboun(*),
+     &  isolidsurf(*),
      &  ndirboun(*),nshcon(*),nk,i,nboun,node,imat,ithermal,iponoel(*),
      &  inoel(3,*),nsolidsurf,ifreenode,ifreestream(*),nfreestream,k,
      &  index,ipompc(*),nodempc(3,*),nmpc,ist,ndir,inomat(*),ndiri,
-     &  nodei,mi(2)
+     &  nodei
 !
       real*8 rhcon(0:1,ntmat_,*),vold(0:mi(2),*),xbounact(*),shcon,
      &  voldtu(2,*),t1act(*),temp,r,dvi,xsolidsurf(*),reflength,

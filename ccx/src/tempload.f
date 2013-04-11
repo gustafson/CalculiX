@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,7 +40,7 @@
      &  iamloadi1,iamloadi2,ibody(3,*),itg(*),ntg,idof,
      &  nbody,iambodyi,nodeboun(*),ndirboun(*),nodeforc(2,*),
      &  ndirforc(*),istep,iinc,msecpt,node,j,ikboun(*),ilboun(*),
-     &  ipresboun,mi(2),ntrans,inotr(2,*),idummy
+     &  ipresboun,mi(*),ntrans,inotr(2,*),idummy
 !
       real*8 xforc(*),xforcact(*),xload(2,*),xloadact(2,*),
      &  t1(*),t1act(*),amta(2,*),ampli(*),time,
@@ -211,7 +211,7 @@
 !
                call cload(xforcact(i),istep,iinc,abqtime,node,
      &              ndirforc(i),coords,vold,mi,ntrans,trab,inotr,veold,
-     &              nmethod,idummy,ddummy)
+     &              nmethod,idummy,ddummy,ddummy)
                cycle
             endif
          endif
@@ -265,8 +265,8 @@
             endif
             if(iamloadi2.gt.0) then
                xloadact(2,i)=xload(2,i)*ampli(iamloadi2)
-            elseif(nmethod.eq.1) then
-               xloadact(2,i)=xload(2,i)
+c            elseif(nmethod.eq.1) then
+c               xloadact(2,i)=xload(2,i)
             else
                xloadact(2,i)=xload(2,i)
             endif

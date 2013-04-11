@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -58,7 +58,7 @@
 !     vj                 Jacobian at the end of the increment
 !
 !     ithermal           0: no thermal effects are taken into account
-!                        1: thermal effects are taken into account (triggered
+!                        >0: thermal effects are taken into account (triggered
 !                        by the keyword *INITIAL CONDITIONS,TYPE=TEMPERATURE)
 !     t1l                temperature at the end of the increment
 !     dtime              time length of the increment
@@ -115,11 +115,11 @@
 !
       implicit none
 !
-      logical active(18),convergence,creep
+      integer active(18),convergence,creep
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(2),iorien
+      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien
 !
       integer index(18),i,j,k,l,ipiv(18),info,ichange,neq,lda,ldb,
      &  nrhs,iplas,icounter
@@ -161,7 +161,7 @@
 !     17. n=0,0,1   l=1,1,0
 !     18. n=0,0,1   l=1,-1,0
 !
-      data xm
+      xm=reshape((
      &   /0.4082482904639E+00,-0.4082482904639E+00, 0.0000000000000E+00,
      &    0.0000000000000E+00, 0.2041241452319E+00,-0.2041241452319E+00,
      &    0.4082482904639E+00, 0.0000000000000E+00,-0.4082482904639E+00,
@@ -198,8 +198,9 @@
      &    0.0000000000000E+00, 0.3535533905933E+00, 0.3535533905933E+00,
      &    0.0000000000000E+00, 0.0000000000000E+00, 0.0000000000000E+00,
      &    0.0000000000000E+00, 0.3535533905933E+00,-0.3535533905933E+00/
+     &    ),(/6,18/))
 !
-      data xx
+      xx=reshape((
      &   /0.4082482904639E+00,-0.4082482904639E+00, 0.0000000000000E+00,
      &    0.0000000000000E+00, 0.2041241452319E+00,-0.2041241452319E+00,
      &    0.4082482904639E+00, 0.0000000000000E+00,-0.4082482904639E+00,
@@ -236,8 +237,9 @@
      &    0.0000000000000E+00, 0.3535533905933E+00, 0.3535533905933E+00,
      &    0.0000000000000E+00, 0.0000000000000E+00, 0.0000000000000E+00,
      &    0.0000000000000E+00, 0.3535533905933E+00,-0.3535533905933E+00/
+     &    ),(/6,18/))
 !
-      data h
+      h=reshape((
      &   /0.1E+01,-0.1E+00,-0.1E+00,-0.1E+00,-0.1E+00,-0.1E+00,-0.1E+00,
      &   -0.1E+00,-0.1E+00,-0.1E+00,-0.1E+00,-0.1E+00, 0.0E+00, 0.0E+00,
      &    0.0E+00, 0.0E+00, 0.0E+00, 0.0E+00,-0.1E+00, 0.1E+01,-0.1E+00,
@@ -284,7 +286,7 @@
      &   -0.1E+00,-0.1E+00,-0.1E+00, 0.1E+01,-0.1E+00, 0.0E+00, 0.0E+00,
      &    0.0E+00, 0.0E+00, 0.0E+00, 0.0E+00, 0.0E+00, 0.0E+00, 0.0E+00,
      &    0.0E+00, 0.0E+00, 0.0E+00,-0.1E+00,-0.1E+00,-0.1E+00,-0.1E+00,
-     &   -0.1E+00, 0.1E+01/
+     &   -0.1E+00, 0.1E+01/),(/18,18/))
 !
 !     elastic constants
 !
@@ -932,7 +934,7 @@
 !
 !     plastic deformation
 !
-      creep=.true.
+      creep=1
       nrhs=1
       lda=18
       ldb=18
@@ -941,9 +943,9 @@
 !      
       do i=1,18
          if(htri(i).gt.0.d0) then
-            active(i)=.true.
+            active(i)=1
          else
-            active(i)=.false.
+            active(i)=0
          endif
       enddo
 !
@@ -1060,7 +1062,7 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
                r(6+2*i)=al20(i)-al2(i)
             enddo
             do i=1,18
-               if(active(i)) then
+               if(active(i).eq.1) then
                   do j=1,6
                      r(j)=r(j)+xm(j,i)*sg(i)*dg(i)
                   enddo
@@ -1071,27 +1073,27 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
 !     
 !           check convergence
 !     
-            convergence=.true.
+            convergence=1
             do i=1,18
-               if(.not.active(i)) cycle
+               if(active(i).eq.0) cycle
                if(htri(i).gt.1.d-5) then
-                  convergence=.false.
+                  convergence=0
                   go to 9
                endif
             enddo
  9          continue
-            if(convergence) then
+            if(convergence.eq.1) then
                dd=0.d0
                do i=1,6
                   dd=dd+r(i)*r(i)
                enddo
                do i=1,18
-                  if(.not.active(i)) cycle
+                  if(active(i).eq.0) cycle
                   dd=dd+r(5+2*i)*r(5+2*i)+r(6+2*i)*r(6+2*i)
                enddo
                dd=sqrt(dd)
                if(dd.gt.1.d-10) then
-                  convergence=.false.
+                  convergence=0
                else
                   go to 12
                endif
@@ -1132,7 +1134,7 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
 !           indexing the active slip planes
 !     
             do i=1,18
-               if(active(i)) then
+               if(active(i).eq.1) then
                   index(i)=1.d0
                else
                   index(i)=0.d0
@@ -1149,14 +1151,14 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
 !           filling the LHS
 !     
             do 1 i=1,18
-               if(.not.active(i)) go to 1
+               if(active(i).eq.0) go to 1
                aux(i)=(q(i)+q1(i))/(1.d0/b(i)+dg(i))
  1          continue
 !     
             do 2 i=1,18
-               if(.not.active(i)) go to 2
+               if(active(i).eq.0) go to 2
                do 3 j=1,18
-                  if(.not.active(j)) go to 3
+                  if(active(j).eq.0) go to 3
                   if(i.ne.j) then
                      gl(index(i),index(j))=(xm(1,i)*xmc(1,j)+
      &                    xm(2,i)*xmc(2,j)+xm(3,i)*xmc(3,j)+2.d0*
@@ -1172,7 +1174,7 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
      &                    /(1.d0+dg(j)*d(j))
                   endif
  3             continue
-               if(creep)then
+               if(creep.eq.1)then
                   if(dg(i).gt.0.d0) then
                      gl(index(i),index(i))=gl(index(i),index(i))+
      &                    (dg(i)/dtime)**(1.d0/cn(i)-1.d0)*ck(i)/
@@ -1192,7 +1194,7 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
 !           filling the RHS
 !     
             do 4 i=1,18
-               if(.not.active(i)) go to 4
+               if(active(i).eq.0) go to 4
                do j=1,6
                   t(j)=xmc(j,i)*sg(i)
                enddo
@@ -1201,7 +1203,7 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
                   t(6+2*j)=0.d0
                enddo
                t(6+2*i)=c(i)*sg(i)/(1.d0+dg(i)*d(i))
-               if(creep) then
+               if(creep.eq.1) then
                   gr(index(i),1)=htri(i)
                else
                   gr(index(i),1)=htri(i)
@@ -1224,7 +1226,7 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
             endif
 !
             do i=1,18
-               if(active(i)) then
+               if(active(i).eq.1) then
                   ddg(i)=gr(index(i),1)
                else
                   ddg(i)=0.d0
@@ -1235,9 +1237,9 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
 !     
             ichange=0
             do 5 i=1,18
-               if(.not.active(i)) go to 5
+               if(active(i).eq.0) go to 5
                if(dg(i)+ddg(i).lt.0.d0) then
-                 active(i)=.false.
+                 active(i)=0
                  dg(i)=0.d0
                  al1(i)=al10(i)
                  al2(i)=al20(i)
@@ -1256,7 +1258,7 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
 !        updating the residual matrix
 !
          do i=1,18
-            if(active(i)) then
+            if(active(i).eq.1) then
                do j=1,6
                   r(j)=r(j)+xm(j,i)*sg(i)*ddg(i)
                enddo
@@ -1271,13 +1273,13 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
             ep(i)=ep(i)+r(i)
          enddo
          do i=1,18
-            if(active(i)) then
+            if(active(i).eq.1) then
                al1(i)=al1(i)+r(5+2*i)/(1.d0+b(i)*dg(i))
                al2(i)=al2(i)+r(6+2*i)/(1.d0+d(i)*dg(i))
             endif
          enddo
          do i=1,18
-            if(active(i)) then
+            if(active(i).eq.1) then
                dg(i)=dg(i)+ddg(i)
             endif
          enddo
@@ -1369,9 +1371,9 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
             enddo
          endif
          do 6 i=1,18
-            if(.not.active(i)) go to 6
+            if(active(i).eq.0) go to 6
             do 7 j=1,18
-               if(.not.active(j)) go to 7
+               if(active(j).eq.0) go to 7
                do k=1,6
                   do l=1,6
                      ddsdde(k,l)=ddsdde(k,l)-

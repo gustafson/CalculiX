@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,9 +18,8 @@
 !
       subroutine umat_aniso_creep(amat,iel,iint,kode,elconloc,emec,
      &        emec0,beta,xokl,voj,xkl,vj,ithermal,t1l,dtime,time,ttime,
-     &        icmd,ielas,
-     &        mi,nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,
-     &        orab)
+     &        icmd,ielas,mi,nstate_,xstateini,xstate,stre,stiff,iorien,
+     &        pgauss,orab,nmethod)
 !
 !     calculates stiffness and stresses for a user defined material
 !     law
@@ -59,7 +58,7 @@
 !
 !     ithermal           0: no thermal effects are taken into account: for
 !                        creep this does not make sense.
-!                        1: thermal effects are taken into account (triggered
+!                        >0: thermal effects are taken into account (triggered
 !                        by the keyword *INITIAL CONDITIONS,TYPE=TEMPERATURE)
 !     t1l                temperature at the end of the increment
 !     dtime              time length of the increment
@@ -116,36 +115,32 @@
 !
       implicit none
 !
-      logical interval,cauchy,exitcriterion
+      integer exitcriterion
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(2),iorien
-!
-      integer i,j,ipiv(6),info,neq,lda,ldb,j1,j2,j3,j4,j5,j6,j7,j8,
+      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien,
+     &  i,j,ipiv(6),info,neq,lda,ldb,j1,j2,j3,j4,j5,j6,j7,j8,
      &  nrhs,iplas,kel(4,21),iloop,leximp,lend,layer,kspt,kstep,
-     &  kinc,ii
+     &  kinc,ii,nmethod
 !
       real*8 ep0(6),epqini,ep(6),b,Pn(6),dg,ddg,c(21),x(21),cm1(21),
      &  stri(6),htri,sg(6),r(13),ee(6),dd,gl(6,6),gr(6,6),c0,c1,c2,
      &  skl(3,3),gcreep,gm1,ya(3,3,3,3),dsg,detc,strinv,
      &  depq,svm,dsvm,dg1,dg2,fu,fu1,fu2,expon,ec(2),
-     &  timeabq(2),r1(13),ep1(6),gl1(6,6),sg1(6),ckl(3,3)
-!
-      real*8 elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
+     &  timeabq(2),r1(13),ep1(6),gl1(6,6),sg1(6),ckl(3,3),
+     &  elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xokl(3,3),voj,pgauss(3),orab(7,*),
      &  time,ttime,decra(5),deswa(5),serd,esw(2),p,predef(1),dpred(1),
-     &  dtemp
+     &  dtemp,xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
 !
-      real*8 xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
-!
-      data kel /1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
+      kel=reshape((/1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
      &          1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,
      &          3,3,1,3,1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,
-     &          1,2,2,3,1,3,2,3,2,3,2,3/
+     &          1,2,2,3,1,3,2,3,2,3,2,3/),(/4,21/))
 !
-      data leximp /1/
-      data lend /3/
+      leximp=1
+      lend=3
 !
       if(ithermal.eq.0) then
          write(*,*)'*ERROR in umat_aniso_creep: no temperature defined;'
@@ -156,7 +151,7 @@
       endif
 !
       iloop=0
-      exitcriterion=.false.
+      exitcriterion=0
 !
       c0=dsqrt(2.d0/3.d0)
       c1=2.d0/3.d0
@@ -205,25 +200,6 @@
       do i=1,6
          ep0(i)=xstateini(1+i,iint,iel)
       enddo
-c!start
-c!     inverse deformation gradient
-c!
-c      ckl(1,1)=(xkl(2,2)*xkl(3,3)-xkl(2,3)*xkl(3,2))/vj
-c      ckl(2,2)=(xkl(1,1)*xkl(3,3)-xkl(1,3)*xkl(3,1))/vj
-c      ckl(3,3)=(xkl(1,1)*xkl(2,2)-xkl(1,2)*xkl(2,1))/vj
-c      ckl(1,2)=(xkl(1,3)*xkl(3,2)-xkl(1,2)*xkl(3,3))/vj
-c      ckl(1,3)=(xkl(1,2)*xkl(2,3)-xkl(2,2)*xkl(1,3))/vj
-c      ckl(2,3)=(xkl(2,1)*xkl(1,3)-xkl(1,1)*xkl(2,3))/vj
-c      ckl(2,1)=(xkl(3,1)*xkl(2,3)-xkl(2,1)*xkl(3,3))/vj
-c      ckl(3,1)=(xkl(2,1)*xkl(3,2)-xkl(2,2)*xkl(3,1))/vj
-c      ckl(3,2)=(xkl(3,1)*xkl(1,2)-xkl(1,1)*xkl(3,2))/vj
-c!     
-c!     converting the Lagrangian strain into Eulerian
-c!     strain
-c!     
-c      cauchy=.false.
-c      call str2mat(emec,ckl,vj,cauchy)
-c!end
 !     elastic strains
 !
       do i=1,6
@@ -280,14 +256,14 @@ c!end
 !
 !     check whether plasticity occurs
 !
-c      if(htri.gt.0.d0) then
       if(htri.gt.1.d-10) then
          iplas=1
       else
          iplas=0
       endif
 !
-      if((iplas.eq.0).or.(ielas.eq.1)) then
+      if((iplas.eq.0).or.(ielas.eq.1).or.
+     &                   ((nmethod.eq.1).and.(ithermal.ne.3))) then
 !
 !        elastic stress
 !
@@ -497,7 +473,7 @@ c      if(htri.gt.0.d0) then
 !
          if(decra(1).gt.c0*dg) then
             dg=decra(1)/c0
-            if(iloop.gt.1) exitcriterion=.true.
+            if(iloop.gt.1) exitcriterion=1
          endif
 !     
          htri=dsg-c0*svm
@@ -514,7 +490,7 @@ c      if(htri.gt.0.d0) then
 !     
 !     check convergence
 !     
-         if(exitcriterion) exit
+         if(exitcriterion.eq.1) exit
          if((dabs(htri).le.1.d-3).and.
      &        ((iloop.gt.1).and.((dabs(ddg).lt.1.d-10).or.
      &        (dabs(ddg).lt.1.d-3*dabs(dg))))) then
@@ -642,10 +618,6 @@ c      if(htri.gt.0.d0) then
          gm1=1.d0/(gm1+gcreep)
          ddg=gm1*(htri-(Pn(1)*r(1)+Pn(2)*r(2)+Pn(3)*r(3)+
      &        (Pn(4)*r(4)+Pn(5)*r(5)+Pn(6)*r(6))))
-c         if((iel.eq.380).and.(iint.eq.1)) then
-c            write(*,*) 'depq,svm ',decra(1),svm
-c            write(*,*) 'dg,ddg,gm1 ',dg,ddg,gm1
-c         endif
 !     
 !     updating the residual matrix
 !     
@@ -698,14 +670,11 @@ c         endif
 !        end of major loop
 !
          if((iloop.gt.15).or.(dg.le.0.d0)) then
-c            write(*,*) dg,iloop,dsg,svm,iel,iint
             iloop=1
             dg=0.d0
             do i=1,6
                ep(i)=ep0(i)
             enddo
-!     
-c            write(*,*) 'second attempt'
 !     
 !     second attempt: root search through interval division
 !     
@@ -768,10 +737,8 @@ c            write(*,*) 'second attempt'
      &              amat,leximp,lend,pgauss,nstate_,iel,iint,layer,kspt,
      &              kstep,kinc)
                if(decra(1).gt.c0*dg) then
-c                  write(*,*) 'dg was changed from ',dg,
-c     &                    ' to ',decra(1)/c0
                   dg=decra(1)/c0
-                  if(abs(iloop).gt.2) exitcriterion=.true.
+                  if(abs(iloop).gt.2) exitcriterion=1
                endif
 !     
 !     needed in case decra(1) was changed in subroutine creep,
@@ -793,7 +760,7 @@ c     &                    ' to ',decra(1)/c0
 !     
 !     check convergence
 !     
-               if(exitcriterion) exit loop
+               if(exitcriterion.eq.1) exit loop
                if((dabs(htri).le.1.d-3).and.
      &              ((iloop.gt.2).and.((dabs(ddg).lt.1.d-10).or.
      &              (dabs(ddg).lt.1.d-3*dabs(dg))))) then
@@ -807,10 +774,10 @@ c     &                    ' to ',decra(1)/c0
                   endif
                endif
                if(iloop.gt.100) then
-                  write(*,*) 
-     &               '*ERROR: no convergence in umat_aniso_creep'
-                  write(*,*) '        iloop>100'
-                  write(*,*) 'htri,dd ',htri,dd
+c                  write(*,*) 
+c     &               '*ERROR: no convergence in umat_aniso_creep'
+c                  write(*,*) '        iloop>100'
+c                  write(*,*) 'htri,dd ',htri,dd
                   exit loop
                endif
 !     
@@ -969,7 +936,7 @@ c                     write(*,*) 'iloop,dg,fu ',iloop,dg,fu
 c                     dg1=dg
 c                     fu1=fu
                      if(iloop.eq.2) then
-                        if(dabs(fu).gt.dabs(fu1)) exitcriterion=.true.
+                        if(dabs(fu).gt.dabs(fu1)) exitcriterion=1
                         dg1=dg
                         fu1=fu
                         ddg=dg*9.d0
@@ -1105,7 +1072,7 @@ c                  write(*,*) 'iloop,dg,fu ',iloop,dg,fu
 !     converting the stress into the material frame of
 !     reference
 !     
-c      cauchy=.true.
+c      cauchy=1
 c      call str2mat(stre,ckl,vj,cauchy)
 !     
 !     calculating the tangent stiffness matrix

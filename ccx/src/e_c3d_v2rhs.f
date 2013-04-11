@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,7 +30,7 @@
       character*8 lakonl
 !
       integer konl(20),nk,nelem,i,j,i1,j1,nmethod,jj,jj1,kk,
-     &  nope,mint3d,iflag,iexplicit,mi(2),ipvar(*),index,ii,
+     &  nope,mint3d,iflag,iexplicit,mi(*),ipvar(*),index,ii,
      &  ipvarf(*)
 !
       real*8 co(3,*),xl(3,20),shp(4,20),ff(60),xsjmod,vl(0:mi(2),20),
@@ -40,7 +40,7 @@
 !
       include "gauss.f"
 !
-      data iflag /3/
+      iflag=3
 !
       if(lakonl(4:4).eq.'2') then
          nope=20
@@ -90,11 +90,11 @@ c         endif
 !     temperature, velocity and auxiliary variables
 !     (rho*energy density, rho*velocity and rho)
 !     
-      do i1=1,nope
-         do j1=1,4
-            voldl(j1,i1)=vold(j1,konl(i1))
-         enddo
-      enddo
+c      do i1=1,nope
+c         do j1=1,4
+c            voldl(j1,i1)=vold(j1,konl(i1))
+c         enddo
+c      enddo
       if(iexplicit.eq.0) then
          do i1=1,nope
             vl(4,i1)=v(4,konl(i1))
@@ -143,20 +143,26 @@ c         endif
 !     of the shape function times the velocity shpv(*)
 !     in the integration point
 !     
-         do i1=1,3
-            dpress(i1)=0.d0
-         enddo
-         do i1=1,nope
-            do j1=1,3
-               dpress(j1)=dpress(j1)+shp(j1,i1)*voldl(4,i1)
-            enddo
-         enddo
+c         do i1=1,3
+c            dpress(i1)=0.d0
+c         enddo
+c         do i1=1,nope
+c            do j1=1,3
+c               dpress(j1)=dpress(j1)+shp(j1,i1)*voldl(4,i1)
+c            enddo
+c         enddo
 !
          do i1=1,nope
             index=index+1
             shpv(i1)=var(index)
          enddo
-         index=index+14
+c         index=index+14
+         index=index+5
+         do i1=1,3
+            index=index+1
+            dpress(i1)=var(index)
+         enddo
+         index=index+6
 !
 !        only for the semi-implicit procedure: calculate ddpress
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  ialset,nset,ielmat,matname,nmat,
      &  irstrt,istep,istat,n,iline,ipol,
      &  inl,ipoinp,inp,lakon,ielprop,nprop,nprop_,prop,iaxial,
-     &  ipoinpc)
+     &  ipoinpc,mi)
 !
 !     reading the input deck: *FLUID SECTION
 !
@@ -35,7 +35,8 @@
       character*81 set(*),elset
       character*132 textpart(16)
 !
-      integer istartset(*),iendset(*),ialset(*),ielmat(*),iaxial,
+      integer mi(*),istartset(*),iendset(*),ialset(*),
+     &  ielmat(mi(3),*),iaxial,
      &  irstrt,nset,nmat,ndprop,npropstart,ndpropread,
      &  istep,istat,n,key,i,j,k,imaterial,ipos,lprop,ipoinpc(0:*),
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ielprop(*),nprop,nprop_,
@@ -101,10 +102,10 @@
       if(typename(1:18).eq.'ABSOLUTETORELATIVE') then
          elname='ATR    '
          ndprop=3
-!
-      elseif(typename(1:18).eq.'RELATIVETOABSOLUTE') then
-         elname='RTA    '
-         ndprop=3
+!	 
+      elseif(typename(1:7).eq.'ACCTUBE') then
+         elname ='ACCTUBE'
+         ndprop=15
 !
       elseif(typename(1:12).eq.'BLEEDTAPPING') then
          elname='ORBT   '
@@ -118,9 +119,56 @@
             elname='CARBS  '
          endif
 !
+      elseif(typename(1:7).eq.'CHANNEL') then
+         if(typename(8:17).eq.'SLUICEGATE') then
+            elname='LICHSG '
+            ndprop=7
+         elseif(typename(8:20).eq.'SLUICEOPENING') then
+            elname='LICHSO '
+            ndprop=6
+         elseif(typename(8:16).eq.'WEIRCREST') then
+            elname='LICHWE '
+            ndprop=7
+         elseif(typename(8:16).eq.'WEIRSLOPE') then
+            elname='LICHWO '
+            ndprop=6
+         elseif(typename(8:17).eq.'STRAIGHT') then
+            elname='LICH   '
+            ndprop=7
+         elseif(typename(8:16).eq.'RESERVOIR') then
+            elname='LICHRE '
+            ndprop=6
+         elseif(typename(8:25).eq.'DISCONTINUOUSSLOPE') then
+            elname='LICHDS '
+            ndprop=9
+         elseif(typename(8:27).eq.'DISCONTINUOUSOPENING') then
+            elname='LICHDO '
+            ndprop=6
+         elseif(typename(8:18).eq.'CONTRACTION') then
+            elname='LICHCO '
+            ndprop=6
+         elseif(typename(8:18).eq.'ENLARGEMENT') then
+            elname='LICHEL '
+            ndprop=6
+         elseif(typename(8:11).eq.'STEP') then
+            elname='LICHST '
+            ndprop=6
+         elseif(typename(8:11).eq.'DROP') then
+            elname='LICHDR '
+            ndprop=6
+         else
+            write(*,*) '*ERROR in fluidsections:'
+            write(*,*) '       unknown channel section'
+            call inputerror(inpc,ipoinpc,iline) 
+         endif
+!
       elseif(typename(1:14).eq.'CHARACTERISTIC') then
          ndprop=22
          elname='CHAR   '
+!      
+      elseif(typename(1:10).eq.'CROSSSPLIT')then
+         elname='CROSPL'
+         ndprop=12
 !
       elseif(typename(1:12).eq.'GASPIPEFANNO') then
 !     
@@ -271,52 +319,13 @@
             endif
          endif
 !
-      elseif(typename(1:7).eq.'CHANNEL') then
-         if(typename(8:17).eq.'SLUICEGATE') then
-            elname='LICHSG '
-            ndprop=7
-         elseif(typename(8:20).eq.'SLUICEOPENING') then
-            elname='LICHSO '
-            ndprop=6
-         elseif(typename(8:16).eq.'WEIRCREST') then
-            elname='LICHWE '
-            ndprop=7
-         elseif(typename(8:16).eq.'WEIRSLOPE') then
-            elname='LICHWO '
-            ndprop=6
-         elseif(typename(8:17).eq.'STRAIGHT') then
-            elname='LICH   '
-            ndprop=7
-         elseif(typename(8:16).eq.'RESERVOIR') then
-            elname='LICHRE '
-            ndprop=6
-         elseif(typename(8:25).eq.'DISCONTINUOUSSLOPE') then
-            elname='LICHDS '
-            ndprop=9
-         elseif(typename(8:27).eq.'DISCONTINUOUSOPENING') then
-            elname='LICHDO '
-            ndprop=6
-         elseif(typename(8:18).eq.'CONTRACTION') then
-            elname='LICHCO '
-            ndprop=6
-         elseif(typename(8:18).eq.'ENLARGEMENT') then
-            elname='LICHEL '
-            ndprop=6
-         elseif(typename(8:11).eq.'STEP') then
-            elname='LICHST '
-            ndprop=6
-         elseif(typename(8:11).eq.'DROP') then
-            elname='LICHDR '
-            ndprop=6
-         else
-            write(*,*) '*ERROR in fluidsections:'
-            write(*,*) '       unknown channel section'
-            call inputerror(inpc,ipoinpc,iline) 
-         endif
-!
       elseif(typename(1:14).eq.'PRESWIRLNOZZLE') then
          elname='ORPN   '
          ndprop=39
+!
+      elseif(typename(1:18).eq.'RELATIVETOABSOLUTE') then
+         elname='RTA    '
+         ndprop=3
 !
       elseif(typename(1:10).eq.'RESTRICTOR') then
          if(typename(11:15).eq.'USER') then
@@ -374,10 +383,10 @@
             ndprop=11  
          elseif(typename(7:20).eq.'SPLITIDELCHIK1')then
             elname='REBRSI1'
-            ndprop=13
+            ndprop=15
          elseif(typename(7:20).eq.'SPLITIDELCHIK2')then
             elname='REBRSI2'
-            ndprop=11
+            ndprop=12
          endif
 !
       elseif(typename(1:7).eq.'RIMSEAL') then
@@ -545,6 +554,60 @@
             enddo
          endif
          nprop=nprop+ndprop+1
+!	 
+      elseif(elname.eq.'ACCTUBE') then
+!         
+!        Read the first 15 elements
+! 
+         lprop=0
+         ndpropread=ndprop
+!         
+         do j=1,(ndpropread-1)/8+1
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+            if((istat.lt.0).or.(key.eq.1)) exit
+            do k=1,8
+               lprop=lprop+1
+               if(lprop.gt.ndpropread) exit
+               read(textpart(k),'(f40.0)',iostat=istat)
+     &                 prop(nprop+lprop)
+               
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               
+!              If 15 elements have been read, check how many more
+!              are to be read
+               if (lprop.eq.15) then
+                  ndpropread = ndpropread +
+     &                        (prop(nprop+14)+prop(nprop+15))*2
+                  ndprop = ndpropread
+               endif
+            enddo
+         enddo
+!         
+!        Until now 2 lines have been read
+!        If necessary read the rest
+!
+         if(ndpropread.gt.lprop) then
+            do j=3,(ndpropread-1)/8+1
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+               do k=1,8
+                  lprop=lprop+1
+                  if(lprop.gt.ndpropread) exit
+                  read(textpart(k),'(f40.0)',iostat=istat)
+     &                 prop(nprop+lprop)
+               
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               enddo
+            enddo
+         endif
+!
+         nprop=nprop+ndprop
+!
+         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+!         
       elseif(ndprop.gt.0) then
 !
 !        flexible liquid pipe
@@ -675,10 +738,10 @@
       elseif(elname(1:6).eq.'REBRSG') then
          prop(npropstart+11)=noil_mat+0.5d0
       elseif(elname(1:7).eq.'REBRSI1') then
-         prop(npropstart+13)=noil_mat+0.5d0
+         prop(npropstart+15)=noil_mat+0.5d0
 !     
       elseif(elname(1:7).eq.'REBRSI2') then
-         prop(npropstart+11)=noil_mat+0.5d0
+         prop(npropstart+12)=noil_mat+0.5d0
 !     
       endif
 !
@@ -1292,7 +1355,7 @@ c     &         (elname(1:6).eq.'REWAOR').or.
                stop
             endif
 !
-            ielmat(ialset(j))=imaterial
+            ielmat(1,ialset(j))=imaterial
             if(ndprop.gt.0) ielprop(ialset(j))=npropstart
          else
             k=ialset(j-2)
@@ -1337,7 +1400,7 @@ c     &         (elname(1:6).eq.'REWAOR').or.
                   write(*,*) ' Calculation stopped.'
                   stop
                endif
-               ielmat(k)=imaterial
+               ielmat(1,k)=imaterial
                if(ndprop.gt.0) ielprop(k)=npropstart
             enddo
          endif

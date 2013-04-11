@@ -40,7 +40,7 @@
       integer ielprop(*),nelem,iexp(2),i,j,ier,write1,iexp3(2),
      &     write2,nelem_ref,ipkon(*),kon(*),nelem0,nelem1,nelem2,node10,
      &     node20,nodem0,node11,node21,nodem1,node12,node22,nodem2,
-     &     iexpbr1(2) /11,11/,icase,node0,node1,node2,mi(2)
+     &     iexpbr1(2) /11,11/,icase,node0,node1,node2,mi(*)
 !
       real*8 zeta,prop(*),lzd,reynolds,ereo,fa2za1,zetap,zeta0,
      &     lambda,thau,a1,a2,dh,l,a2za1,ldumm,dhdumm,ks,

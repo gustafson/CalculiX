@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,43 +36,44 @@
       character*8 lakonl
       character*80 matname(*),amat
 !
-      integer konl(20),ifaceq(8,6),nk,nbody,nelem,ithermal,
+      integer konl(20),ifaceq(8,6),nk,nbody,nelem,ithermal,mi(*),
      &  idist,i,j,k,i1,i2,j1,nmethod,ii,jj,jj1,id,ipointer,
-     &  ig,kk,nrhcon(*),ielmat(*),nshcon(*),ntmat_,nope,nopes,imat,
-     &  mint2d,mint3d,mi(2),ifacet(6,4),ifacew(8,5),istep,iinc,
+     &  ig,kk,nrhcon(*),ielmat(mi(3),*),nshcon(*),ntmat_,nope,
+     &  nopes,imat,
+     &  mint2d,mint3d,ifacet(6,4),ifacew(8,5),istep,iinc,
      &  iflag,k1,nelemface(*),nface,ipvar(*),index,ipvarf(*)
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),dvi,p1(3),p2(3),
+      real*8 co(3,*),shp(4,20),dvi,p1(3),p2(3),
      &  bodyf(3),bodyfx(3),ff(60),bf(3),q(3),c1,c2,xsjmod,
      &  rhcon(0:1,ntmat_,*),vel(3),div,shcon(0:3,ntmat_,*),
      &  voldl(0:mi(2),20),xsj2(3),shp2(7,8),omcor,
-     &  vold(0:mi(2),*),om,omx,const,xsj,temp,
+     &  vold(0:mi(2),*),om,omx,const,xsj,temp,tt(3,3),
      &  voldcon(0:4,*),voldconl(0:4,20),rho,weight,shpv(20),t(3,3),
      &  voldtu(2,*),voldtul(2,20),cvel(3),vkl(3,3),corio(3),xkin,
      &  xtuf,vort,un,yy(*),yyl(20),y,f2,unt,umt,a1,arg2,dpress(3),
-     &  var(*),varf(*),sti(6,mi(1),*)
+     &  var(*),varf(*),sti(6,mi(1),*),tu
 !
       real*8 dtime,ttime,time,tvar(2)
 !
       include "gauss.f"
 !
-      data ifaceq /4,3,2,1,11,10,9,12,
+      ifaceq=reshape((/4,3,2,1,11,10,9,12,
      &            5,6,7,8,13,14,15,16,
      &            1,2,6,5,9,18,13,17,
      &            2,3,7,6,10,19,14,18,
      &            3,4,8,7,11,20,15,19,
-     &            4,1,5,8,12,17,16,20/
-      data ifacet /1,3,2,7,6,5,
+     &            4,1,5,8,12,17,16,20/),(/8,6/))
+      ifacet=reshape((/1,3,2,7,6,5,
      &             1,2,4,5,9,8,
      &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
-      data ifacew /1,3,2,9,8,7,0,0,
+     &             1,4,3,8,10,7/),(/6,4/))
+      ifacew=reshape((/1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
-     &             4,6,3,1,12,15,9,13/
-      data iflag /3/
-      data a1 /0.31d0/
+     &             4,6,3,1,12,15,9,13/),(/8,5/))
+      iflag=3
+      a1=0.31d0
 !
 !     for pressure stability term (nithiarasu)
 !
@@ -81,7 +82,7 @@ c      theta2=.5d0
       tvar(1)=time
       tvar(2)=ttime+dtime
 !
-      imat=ielmat(nelem)
+      imat=ielmat(1,nelem)
       amat=matname(imat)
 !
       if(lakonl(4:4).eq.'2') then
@@ -132,14 +133,6 @@ c         endif
       else
          mint3d=0
       endif
-!     
-!     computation of the coordinates of the local nodes
-!     
-c      do i=1,nope
-c         do j=1,3
-c            xl(j,i)=co(j,konl(i))
-c         enddo
-c      enddo
 !     
 !     initialisation for distributed forces
 !     
@@ -295,6 +288,10 @@ c         index=index+10
                enddo
                xkin=xkin/rho
                xtuf=xtuf/rho
+               var(index+8)=rho
+               var(index+9)=y
+               var(index+10)=xkin
+               var(index+11)=xtuf
             endif
          else
 !
@@ -315,16 +312,92 @@ c         index=index+10
                enddo
                xkin=xkin/rho
                xtuf=xtuf/rho
+               var(index+8)=rho
+               var(index+9)=rho
+               var(index+10)=xkin
+               var(index+11)=xtuf
             endif
          endif
 !
 !        calculation of the viscous stress
 !
-         do i1=1,3
-            do j1=i1,3
-               t(i1,j1)=dvi*t(i1,j1)
+c         do i1=1,3
+c            do j1=i1,3
+c               t(i1,j1)=dvi*t(i1,j1)
+c            enddo
+c         enddo
+c!
+c         sti(1,kk,nelem)=t(1,1)
+c         sti(2,kk,nelem)=t(2,2)
+c         sti(3,kk,nelem)=t(3,3)
+c         sti(4,kk,nelem)=t(1,2)
+c         sti(5,kk,nelem)=t(1,3)
+c         sti(6,kk,nelem)=t(2,3)
+!
+!        adding the turbulent stress
+!
+         if(turbulent.ne.0) then
+c!     
+c!           vorticity
+c!     
+c            vort=dsqrt((vkl(3,2)-vkl(2,3))**2+
+c     &           (vkl(1,3)-vkl(3,1))**2+
+c     &           (vkl(2,1)-vkl(1,2))**2)
+c!     
+c!           kinematic viscosity
+c!     
+c            un=dvi/rho
+c!     
+c!           factor F2
+c!     
+c            c1=dsqrt(xkin)/(0.09d0*xtuf*y)
+c            c2=500.d0*un/(y*y*xtuf)
+c            arg2=max(2.d0*c1,c2)
+c            f2=dtanh(arg2*arg2)
+!     
+!     kinematic and dynamic turbulent viscosity
+!     
+c            unt=a1*xkin/max(a1*xtuf,vort*f2)
+            unt=xkin/xtuf
+            var(index+12)=unt
+!
+            umt=unt*rho
+!
+!           calculating the turbulent stress
+!
+            do i1=1,3
+               do j1=i1,3
+                  tt(i1,j1)=umt*t(i1,j1)
+               enddo
+               tt(i1,i1)=tt(i1,i1)-2.d0*rho*xkin/3.d0
             enddo
-         enddo
+            tu=umt*(tt(1,1)*vkl(1,1)+tt(1,2)*vkl(1,2)+tt(1,3)*vkl(1,3)+
+     &              tt(2,1)*vkl(2,1)+tt(2,2)*vkl(2,2)+tt(2,3)*vkl(2,3)+
+     &              tt(3,1)*vkl(3,1)+tt(3,2)*vkl(3,2)+tt(3,3)*vkl(3,3))
+!
+            if(compressible.eq.1) then
+               tu=tu-2.d0*rho*xkin*div/3.d0
+            endif
+            var(index+13)=tu
+!
+!           adding the viscous stress
+!
+            do i1=1,3
+               do j1=i1,3
+                  t(i1,j1)=dvi*t(i1,j1)+tt(i1,j1)
+c                  t(i1,j1)=dvi*t(i1,j1)
+               enddo
+            enddo
+         else
+!
+            do i1=1,3
+               do j1=i1,3
+                  t(i1,j1)=dvi*t(i1,j1)
+               enddo
+            enddo
+         endif
+!
+!        storing the total stress
 !
          sti(1,kk,nelem)=t(1,1)
          sti(2,kk,nelem)=t(2,2)
@@ -332,48 +405,6 @@ c         index=index+10
          sti(4,kk,nelem)=t(1,2)
          sti(5,kk,nelem)=t(1,3)
          sti(6,kk,nelem)=t(2,3)
-!
-!        adding the turbulent stress
-!
-         if(turbulent.ne.0) then
-!     
-!           vorticity
-!     
-            vort=dsqrt((vkl(3,2)-vkl(2,3))**2+
-     &           (vkl(1,3)-vkl(3,1))**2+
-     &           (vkl(2,1)-vkl(1,2))**2)
-!     
-!           kinematic viscosity
-!     
-            un=dvi/rho
-!     
-!           factor F2
-!     
-            c1=dsqrt(xkin)/(0.09d0*xtuf*y)
-            c2=500.d0*un/(y*y*xtuf)
-            arg2=max(2.d0*c1,c2)
-            f2=dtanh(arg2*arg2)
-!     
-!     kinematic and dynamic turbulent viscosity
-!     
-            unt=a1*xkin/max(a1*xtuf,vort*f2)
-            umt=unt*rho
-c            write(*,*) 'e_c3d_v1rhs ',dvi,umt
-!
-            do i1=1,3
-               do j1=i1,3
-                  t(i1,j1)=t(i1,j1)+umt*t(i1,j1)
-               enddo
-               t(i1,i1)=t(i1,i1)-2.d0*rho*xkin/3.d0
-            enddo
-c         else
-c!
-c            do i1=1,3
-c               do j1=i1,3
-c                  t(i1,j1)=dvi*t(i1,j1)
-c               enddo
-c            enddo
-         endif
 !
 !     storing the total dissipative stress x velocity
 !     (viscous + turbulent)
@@ -384,7 +415,6 @@ c            enddo
          var(index)=t(1,2)*vel(1)+t(2,2)*vel(2)+t(2,3)*vel(3)
          index=index+1
          var(index)=t(1,3)*vel(1)+t(2,3)*vel(2)+t(3,3)*vel(3)
-!     
 !     
 !     determination of lhs and rhs
 !     
@@ -422,6 +452,10 @@ c     &              dtime*shpv(jj)/2.d0
 !     
             om=omx*rho
             omcor=2.d0*rho*dsqrt(omx)
+c
+c            om=0.d0
+c            omcor=0.d0
+c
             do ii=1,3
                bodyf(ii)=bodyfx(ii)*rho
             enddo
@@ -473,6 +507,9 @@ c     &              dtime*shpv(jj)/2.d0
      &              dtime*shpv(jj)/2.d0)
                ff(jj1+2)=ff(jj1+2)+xsjmod*bf(3)*(shp(4,jj)+
      &              dtime*shpv(jj)/2.d0)
+c               ff(jj1)=ff(jj1)+xsjmod*bf(1)*(shp(4,jj))
+c               ff(jj1+1)=ff(jj1+1)+xsjmod*bf(2)*(shp(4,jj))
+c               ff(jj1+2)=ff(jj1+2)+xsjmod*bf(3)*(shp(4,jj))
                jj1=jj1+3
             enddo
          else
@@ -603,66 +640,66 @@ c     &              dtime*shpv(jj)/2.d0
 !     calculation of the turbulent kinetic energy, turbulence
 !     frequency and their spatial derivatives for gases and liquids
 !     
-               if(compressible.eq.1) then
+               if(turbulent.ne.0) then
+                  if(compressible.eq.1) then
 !     
-!                 gas
+!                    gas
 !     
-                  if(turbulent.ne.0) then
                      rho=0.d0
                      do i1=1,nope
                         rho=rho+shp(4,i1)*voldconl(4,i1)
                      enddo
-                     xkin=0.d0
-                     xtuf=0.d0
-                     y=0.d0
-                     do i1=1,nope
-                        xkin=xkin+shp(4,i1)*voldtul(1,i1)/voldconl(4,i1)
-                        xtuf=xtuf+shp(4,i1)*voldtul(2,i1)/voldconl(4,i1)
-                        y=y+shp(4,i1)*yyl(i1)
-                     enddo
-                  endif
-               else
+                  else
 !     
-!                 liquid
+!                    liquid
 !     
-                  if(turbulent.ne.0) then
                      call materialdata_rho(rhcon,nrhcon,imat,rho,
      &                    temp,ntmat_,ithermal)
-                     xkin=0.d0
-                     xtuf=0.d0
-                     y=0.d0
-                     do i1=1,nope
-                        xkin=xkin+shp(4,i1)*voldtul(1,i1)/rho
-                        xtuf=xtuf+shp(4,i1)*voldtul(2,i1)/rho
-                        y=y+shp(4,i1)*yyl(i1)
-                     enddo
                   endif
+                  y=0.d0
+                  xkin=0.d0
+                  xtuf=0.d0
+                  do i1=1,nope
+                     y=y+shp(4,i1)*yyl(i1)
+                     xkin=xkin+shp(4,i1)*voldtul(1,i1)
+                     xtuf=xtuf+shp(4,i1)*voldtul(2,i1)
+                  enddo
+                  xkin=xkin/rho
+                  xtuf=xtuf/rho
+!
+                  varf(index+4)=rho
+                  varf(index+5)=y
+                  varf(index+6)=xkin
+                  varf(index+7)=xtuf
                endif
 !     
 !              calculation of turbulent auxiliary variables
 !     
                if(turbulent.ne.0) then
-!     
-!                 vorticity
-!     
-                  vort=dsqrt((vkl(3,2)-vkl(2,3))**2+
-     &                 (vkl(1,3)-vkl(3,1))**2+
-     &                 (vkl(2,1)-vkl(1,2))**2)
-!     
-!                 kinematic viscosity
-!     
-                  un=dvi/rho
-!     
-!                 factor F2
-!     
-                  c1=dsqrt(xkin)/(0.09d0*xtuf*y)
-                  c2=500.d0*un/(y*y*xtuf)
-                  arg2=max(2.d0*c1,c2)
-                  f2=dtanh(arg2*arg2)
+c!     
+c!                 vorticity
+c!     
+c                  vort=dsqrt((vkl(3,2)-vkl(2,3))**2+
+c     &                 (vkl(1,3)-vkl(3,1))**2+
+c     &                 (vkl(2,1)-vkl(1,2))**2)
+c!     
+c!                 kinematic viscosity
+c!     
+c                  un=dvi/rho
+c!     
+c!                 factor F2
+c!     
+c                  c1=dsqrt(xkin)/(0.09d0*xtuf*y)
+c                  c2=500.d0*un/(y*y*xtuf)
+c                  arg2=max(2.d0*c1,c2)
+c                  f2=dtanh(arg2*arg2)
 !     
 !                 kinematic and dynamic turbulent viscosity
 !     
-                  unt=a1*xkin/max(a1*xtuf,vort*f2)
+c                  unt=a1*xkin/max(a1*xtuf,vort*f2)
+                  unt=xkin/xtuf
+                  varf(index+8)=unt
+c
                   umt=unt*rho
 !     
                   do i1=1,3
@@ -691,6 +728,7 @@ c     &              dtime*shpv(jj)/2.d0
                index=index+1
                varf(index)=t(1,3)*vel(1)+t(2,3)*vel(2)+
      &              t(3,3)*vel(3)
+               index=index+5
 !               
                do k=1,nopes
                   if((nope.eq.20).or.(nope.eq.8)) then

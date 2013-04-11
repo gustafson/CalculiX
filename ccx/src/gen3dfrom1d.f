@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine gen3dfrom1d(i,kon,ipkon,lakon,ne,iponor,xnor,knor,
-     &  thicke,ntrans,inotr,trab,nk,nk_,co,offset)
+     &  thicke,ntrans,inotr,trab,nk,nk_,co,offset,mi)
 !
 !     expands 1d element i into a 3d element
 !
@@ -25,10 +25,10 @@
 !
       character*8 lakon(*)
 !
-      integer i,kon(*),ipkon(*),ne,iponor(2,*),knor(*),ntrans,
+      integer mi(*),i,kon(*),ipkon(*),ne,iponor(2,*),knor(*),ntrans,
      &  inotr(2,*),nk,nk_,indexe,j,nodel(8),indexx,indexk,k,nodeb(8,3)
 !
-      real*8 xnor(*),thicke(2,*),trab(7,*),co(3,*),offset(2,*),
+      real*8 xnor(*),thicke(mi(3),*),trab(7,*),co(3,*),offset(2,*),
      &  thickb(2,3),xnorb(6,3),sc
 !
       indexe=ipkon(i)

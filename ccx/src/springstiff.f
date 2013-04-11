@@ -19,7 +19,7 @@
       subroutine springstiff(xl,elas,konl,voldl,s,imat,elcon,nelcon,
      &  ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,plicon,
      &  nplicon,npmat_,iperturb,springarea,nmethod,mi,ne0,
-     &  nstate_,xstateini,xstate,reltime)
+     &  nstate_,xstateini,xstate,reltime,xnormastface)
 !
 !     calculates the stiffness of a spring
 !
@@ -29,10 +29,10 @@
 !
       integer konl(20),i,j,imat,ncmat_,ntmat_,k,l,nope,nterms,iflag,
      &  i1,kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),
-     &  iperturb,nmethod,mi(2),ne0,nstate_
+     &  iperturb,nmethod,mi(*),ne0,nstate_
 !
       real*8 xl(3,9),elas(21),ratio(9),q(3),val,shp2(7,9),
-     &  al(3),s(60,60),voldl(0:mi(2),9),pl(3,9),xn(3),dm,
+     &  al(3),s(60,60),voldl(0:mi(2),9),pl(3,9),xn(3),dm,dm2,
      &  c1,c2,c3,c4,alpha,beta,elcon(0:ncmat_,ntmat_,*),xm(3),
      &  xmu(3,3,9),dxmu(3,9),dval(3,9),fpu(3,3,9),xi,et,
      &  xs2(3,7),t0l,t1l,elconloc(21),plconloc(82),xk,fk,
@@ -42,9 +42,11 @@
      &  qxyx(3),qyxy(3),springarea(2),dd,dist,t(3),tu(3,3,9),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  dt,um,eps,pi,dftdt(3,3),tp(3),te(3),ftrial(3),
-     &  dftrial,dfnl,dfshear,dg,dte,alnew(3),dfn(3,9),reltime
+     &  dftrial,dfnl,dfshear,dg,dte,alnew(3),dfn(3,9),reltime,
+     &  xnormastface(3,8)
 !
       data iflag /4/
+c      write(*,*) 'springstiff'
 !
 !     actual positions of the nodes belonging to the contact spring
 !
@@ -131,6 +133,7 @@
       do i=1,3
          q(i)=pl(i,nope)
       enddo
+c      call attachpen(pl,q,nterms,ratio,dist,xi,et,xnormastface)
       call attach(pl,q,nterms,ratio,dist,xi,et)
       do i=1,3
          al(i)=pl(i,nope)-q(i)
@@ -229,6 +232,24 @@
 !
 !
 !     End modifications
+c!
+c!     normal vector in the projection point based on the
+c!     edge normals of the master face
+c!     
+c      do i=1,3
+c         xn(i)=0.d0
+c         do j=1,nterms
+c            xn(i)=xn(i)+ratio(j)*xnormastface(i,j)
+c         enddo
+c      enddo
+c!      
+c      dm2=dsqrt(xn(1)*xn(1)+xn(2)*xn(2)+xn(3)*xn(3))
+c      do i=1,3
+c         xn(i)=xn(i)/dm2
+c      enddo
+c!
+c      dm=dsqrt(xm(1)*xm(1)+xm(2)*xm(2)+xm(3)*xm(3))
+c      
 !
 !     normal on the surface
 !
@@ -236,6 +257,7 @@
       do i=1,3
          xn(i)=xm(i)/dm
       enddo
+
 !
 !     distance from surface along normal (= clearance)
 !
@@ -421,13 +443,13 @@ c     &          -elcon(1,1,imat)*springarea(1)
                      enddo
                   enddo
                enddo
-
+!
                do i=1,nterms
                   do j=1,3
                      dal(j,j,i)=-shp2(4,i)
                   enddo
                enddo
-               
+!               
                do j=1,3
                   dal(j,j,nope)=1.d0
                enddo
@@ -530,8 +552,8 @@ c     enddo
                      do j=1,3
                         do i=1,3
                            do l=1,3
-                              fpu(i,j,k)=fpu(i,j,k)+dftdt(i,l)*tu(l,j,k)    
-c     &                           +um*ftrial(i)*dfn(j,k)      
+                              fpu(i,j,k)=fpu(i,j,k)+dftdt(i,l)*tu(l,j,k)
+!     &                           +um*ftrial(i)*dfn(j,k)      
                            enddo
                         enddo
                      enddo

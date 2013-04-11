@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,9 +17,10 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
 C
-C-----MATRIX-VECTOR MULTIPLY FOR REAL SPARSE SYMMETRIC MATRICES---------
+C-----MATRIX-VECTOR MULTIPLY FOR REAL SPARSE ANTISYMMETRIC MATRICES-----
+C     i.e. the transpose is the negative matrix: A^T=-A
 C
-      SUBROUTINE OPcs(n,p,W,U,ad,asd,icol,irow,nzl)
+      SUBROUTINE OP_corio(n,p,W,U,ad,asd,icol,irow,nzl)
       implicit real*8(a-h,o-z)
 !
 C-----------------------------------------------------------------------
@@ -27,8 +28,6 @@ C-----------------------------------------------------------------------
       INTEGER  IROW(*),ICOL(*),n,nzl
 C-----------------------------------------------------------------------
 C    SPARSE MATRIX-VECTOR MULTIPLY FOR LANCZS  U = A*W
-C    SEE USPEC SUBROUTINE FOR DESCRIPTION OF THE ARRAYS THAT DEFINE
-C    THE MATRIX
 c    the vector p is not needed but is kept for compatibility reasons
 c    with the calling program
 C-----------------------------------------------------------------------
@@ -48,10 +47,9 @@ C
 C
          DO 20 L = LFIRST,LLAST
             I = IROW(L)
-            if(i>n) cycle
 C
             U(I) = U(I) + Asd(L)*W(J)
-            U(J) = U(J) + Asd(L)*W(I)
+            U(J) = U(J) - Asd(L)*W(I)
 C
  20      CONTINUE
 C

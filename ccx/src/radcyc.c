@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2007 Guido Dhondt                          */
+/*              Copyright (C) 1998-2011 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -36,7 +36,7 @@ void radcyc(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 
   double *vt=NULL,*fnt=NULL,*stnt=NULL,*eent=NULL,*qfnt=NULL,t[3],theta,
      pi,*v=NULL,*fn=NULL,*stn=NULL,*een=NULL,*qfn=NULL,*co=NULL,
-     *vold=NULL;
+     *vold=NULL,*emnt=NULL,*emn=NULL;
 
   pi=4.*atan(1.);
   
@@ -105,23 +105,24 @@ void radcyc(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
      reduced to the next lower integer. */
 
   *ntrit=nsegments**ntri;
-  RENEW(kontri,int,3**ntrit);
-  for(i=3**ntri;i<3**ntrit;i++) kontri[i]=0;
+  RENEW(kontri,int,4**ntrit);
+  for(i=4**ntri;i<4**ntrit;i++) kontri[i]=0;
 
   for(i=0;i<*ntri;i++){
-    node1=kontri[3*i];
+    node1=kontri[4*i];
     if(inocs[node1-1]<0) continue;
     idtie=inocs[node1-1];
-    node2=kontri[3*i+1];
+    node2=kontri[4*i+1];
     if((inocs[node2-1]<0)||(inocs[node2-1]!=idtie)) continue;
-    node3=kontri[3*i+2];
+    node3=kontri[4*i+2];
     if((inocs[node3-1]<0)||(inocs[node3-1]!=idtie)) continue;
     idtie=cs[17*idtie];
     for(k=1;k<idtie;k++){
       j=i+k**ntri;
-      kontri[3*j]=node1+k**nk;
-      kontri[3*j+1]=node2+k**nk;
-      kontri[3*j+2]=node3+k**nk;
+      kontri[4*j]=node1+k**nk;
+      kontri[4*j+1]=node2+k**nk;
+      kontri[4*j+2]=node3+k**nk;
+      kontri[4*j+3]=kontri[4*i+3];
     }
   }
 
@@ -133,7 +134,7 @@ void radcyc(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
   
   icntrl=1;
   
-  FORTRAN(rectcyl,(co,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filab,&imag,mi));
+  FORTRAN(rectcyl,(co,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filab,&imag,mi,emn));
   
   for(jj=0;jj<*mcs;jj++){
     is=(int)(cs[17*jj]);
@@ -154,7 +155,7 @@ void radcyc(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
   icntrl=-1;
     
   FORTRAN(rectcyl,(co,vt,fnt,stnt,qfnt,eent,cs,&nkt,&icntrl,t,filab,
-		   &imag,mi));
+		   &imag,mi,emnt));
 
   *kontrip=kontri;*cop=co;*voldp=vold;
 

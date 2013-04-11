@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine solidsections(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
      &  lakon,thicke,kon,ipkon,irstrt,istep,istat,n,iline,ipol,inl,
-     &  ipoinp,inp,cs,mcs,iaxial,ipoinpc)
+     &  ipoinp,inp,cs,mcs,iaxial,ipoinpc,mi)
 !
 !     reading the input deck: *SOLID SECTION
 !
@@ -31,12 +31,13 @@
       character*81 set(*),elset
       character*132 textpart(16)
 !
-      integer istartset(*),iendset(*),ialset(*),ielmat(*),
-     &  ielorien(*),kon(*),ipkon(*),indexe,irstrt,nset,nmat,norien,
+      integer mi(*),istartset(*),iendset(*),ialset(*),ielmat(mi(3),*),
+     &  ielorien(mi(3),*),kon(*),ipkon(*),indexe,irstrt,nset,nmat,
+     &  norien,
      &  istep,istat,n,key,i,j,k,l,imaterial,iorientation,ipos,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),mcs,iaxial,ipoinpc(0:*)
 !
-      real*8 thicke(2,*),thickness,pi,cs(17,*)
+      real*8 thicke(mi(3),*),thickness,pi,cs(17,*)
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in solidsections: *SOLID SECTION should'
@@ -138,8 +139,8 @@
                write(*,*) '       Faulty element: ',ialset(j)
                stop
             endif
-            ielmat(ialset(j))=imaterial
-            ielorien(ialset(j))=iorientation
+            ielmat(1,ialset(j))=imaterial
+            ielorien(1,ialset(j))=iorientation
          else
             k=ialset(j-2)
             do
@@ -154,8 +155,8 @@
                   write(*,*) '       Faulty element: ',k
                   stop
                endif
-               ielmat(k)=imaterial
-               ielorien(k)=iorientation
+               ielmat(1,k)=imaterial
+               ielorien(1,k)=iorientation
             enddo
          endif
       enddo

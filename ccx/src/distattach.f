@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,6 +30,9 @@
       real*8 ratio(8),pneigh(3,*),pnode(3),a,xi,et,xig,etg,p(3),
      &  dummy
 !
+c      write(*,*) xig,etg
+c      write(*,*) ((pneigh(i,j),i=1,3),j=1,nterms)
+c      write(*,*) pnode(1),pnode(2),pnode(3)
       if(nterms.eq.3) then
          xi=(xig+1.d0)/2.d0
          et=(etg+1.d0)/2.d0
