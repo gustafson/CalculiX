@@ -103,6 +103,12 @@
             read(textpart(i)(8:27),'(f20.0)',iostat=istat) ctrl(27)
          elseif(textpart(i)(1:9).eq.'TIMERESET') then
             timereset=.true.
+         else
+            write(*,*) 
+     &        '*WARNING in heattransfers: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
       if(nmethod.eq.1) ctrl(27)=1.d30

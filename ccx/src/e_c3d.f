@@ -24,7 +24,8 @@
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
      &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  ttime,time,istep,iinc,coriolis,xloadold,reltime,
-     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,springarea)
+     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,springarea,
+     &  nstate_,xstateini,xstate,ne0)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -53,7 +54,7 @@
      &  mint3d,mi(2),ifacet(6,4),nopev,iorien,istiff,ncmat_,
      &  ifacew(8,5),intscheme,n,ipointeri,ipointerj,istep,iinc,
      &  layer,kspt,jltyp,iflag,iperm(60),m,ipompc(*),nodempc(3,*),
-     &  nmpc,ikmpc(*),ilmpc(*),iscale
+     &  nmpc,ikmpc(*),ilmpc(*),iscale,nstate_,ne0
 !
       integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
@@ -62,9 +63,10 @@
      &  bf(3),q(3),shpj(4,20),elcon(0:ncmat_,ntmat_,*),
      &  rhcon(0:1,ntmat_,*),xkl(3,3),eknlsign,reltime,
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
-     &  anisox(3,3,3,3),voldl(3,20),vo(3,3),xloadold(2,*),
+     &  anisox(3,3,3,3),voldl(0:mi(2),20),vo(3,3),xloadold(2,*),
      &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),xload(2,*),
-     &  v(3,3,3,3),springarea(*),
+     &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
+     &  v(3,3,3,3),springarea(2,*),
      &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(60,60),
      &  sti(6,mi(1),*),stx(6,mi(1),*),s11,s22,s33,s12,s13,s23,s11b,
      &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,coefmpc(*),
@@ -74,7 +76,7 @@
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),plconloc(82),dtime,ttime,time,tvar(2),
-     &  sax(60,60),ffax(60)
+     &  sax(60,60),ffax(60),gs(8,4),a
 !
       include "gauss.f"
 !
@@ -99,6 +101,7 @@
      &            37,38,-39,40,41,-42,43,44,-45,46,47,-48,
      &            25,26,-27,28,29,-30,31,32,-33,34,35,-36,
      &            49,50,-51,52,53,-54,55,56,-57,58,59,-60/
+
 !
       tvar(1)=time
       tvar(2)=ttime+dtime
@@ -113,7 +116,13 @@
          iorien=0
       endif
 !
-      if(lakonl(4:4).eq.'2') then
+c     Bernhardi start
+      if(lakonl(1:5).eq.'C3D8I') then
+         nope=11
+         nopev=8
+         nopes=4
+      elseif(lakonl(4:4).eq.'2') then
+c     Bernhardi end
          nope=20
          nopev=8
          nopes=8
@@ -266,10 +275,17 @@ c      if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling)) then
                t0l=(t0(konl(1))+t0(konl(2)))/2.d0
                t1l=(vold(0,konl(1))+vold(0,konl(2)))/2.d0
             endif
+         else
+!
+!        as soon as the first contact element is discovered ne0 is
+!        determined and saved
+!
+            if(ne0.eq.0) ne0=nelem-1
          endif
          call springstiff(xl,elas,konl,voldl,s,imat,elcon,nelcon,
      &      ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,plicon,
-     &      nplicon,npmat_,iperturb,springarea(konl(nope+1)),nmethod)
+     &      nplicon,npmat_,iperturb,springarea(1,konl(nope+1)),nmethod,
+     &      mi,ne0,nstate_,xstateini,xstate,reltime)
          return
       endif
 !
@@ -284,9 +300,6 @@ c      if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling)) then
                weight=weight3d1(kk)
             elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) 
      &              then
-c               xi=gauss3d2(1,kk)/dabs(gauss3d2(1,kk))
-c               et=gauss3d2(2,kk)/dabs(gauss3d2(2,kk))
-c               ze=gauss3d2(3,kk)/dabs(gauss3d2(3,kk))
                xi=gauss3d2(1,kk)
                et=gauss3d2(2,kk)
                ze=gauss3d2(3,kk)
@@ -339,7 +352,13 @@ c               ze=gauss3d2(3,kk)/dabs(gauss3d2(3,kk))
 !           calculation of the shape functions and their derivatives
 !           in the gauss point
 !
-         if(nope.eq.20) then
+c     Bernhardi start
+         if(lakonl(1:5).eq.'C3D8R') then
+            call shape8hr(xl,xsj,shp,gs,a)
+         elseif(lakonl(1:5).eq.'C3D8I') then
+            call shape8hu(xi,et,ze,xl,xsj,shp,iflag)
+         else if(nope.eq.20) then
+c     Bernhardi end
             if(lakonl(7:7).eq.'A') then
                call shape20h_ax(xi,et,ze,xl,xsj,shp,iflag)
             elseif((lakonl(7:7).eq.'E').or.(lakonl(7:7).eq.'S')) then
@@ -367,8 +386,8 @@ c               enddo
 !           check the jacobian determinant
 !
          if(xsj.lt.1.d-20) then
-            write(*,*) '*WARNING in e_c3d: nonpositive jacobian'
-            write(*,*) '         determinant in element',nelem
+            write(*,*) '*ERROR in e_c3d: nonpositive jacobian'
+            write(*,*) '       determinant in element',nelem
             write(*,*)
             xsj=dabs(xsj)
             nmethod=0
@@ -756,7 +775,12 @@ c            if((iperturb(1).eq.0).or.buckling)
 !
          endif
 !
-!           computation of the right hand side
+!        add hourglass control stiffnesses: C3D8R only. 
+         if(lakonl(1:5).eq.'C3D8R') then 
+            call hgstiffness(s,elas,a,gs)
+         endif
+!
+!        computation of the right hand side
 !
          if(rhsi) then
 !
@@ -896,7 +920,9 @@ c
              endif
           endif
 !
-          if((nope.eq.20).or.(nope.eq.8)) then
+c     Bernhardi start
+          if((nope.eq.20).or.(nope.eq.8).or.(nope.eq.11)) then
+c     Bernhardi end
 c             if(iperturb(1).eq.0) then
              if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
                 do i=1,nopes
@@ -1029,7 +1055,9 @@ c             if(iperturb(1).eq.0) then
                 endif
 !
                 do k=1,nopes
-                   if((nope.eq.20).or.(nope.eq.8)) then
+c    Bernhardi start
+                   if((nope.eq.20).or.(nope.eq.8).or.(nope.eq.11)) then
+c    Bernhardi end
                       ipointer=(ifaceq(k,ig)-1)*3
                    elseif((nope.eq.10).or.(nope.eq.4)) then
                       ipointer=(ifacet(k,ig)-1)*3
@@ -1096,7 +1124,9 @@ c             elseif((mass).and.(iperturb(1).ne.0)) then
                 enddo
 !
                 do ii=1,nopes
-                   if((nope.eq.20).or.(nope.eq.8)) then
+c     Bernhardi start
+                   if((nope.eq.20).or.(nope.eq.8).or.(nope.eq.11)) then
+c     Bernhardi end
                       ipointeri=(ifaceq(ii,ig)-1)*3
                    elseif((nope.eq.10).or.(nope.eq.4)) then
                      ipointeri=(ifacet(ii,ig)-1)*3
@@ -1104,7 +1134,10 @@ c             elseif((mass).and.(iperturb(1).ne.0)) then
                       ipointeri=(ifacew(ii,ig)-1)*3
                    endif
                    do jj=1,nopes
-                      if((nope.eq.20).or.(nope.eq.8)) then
+c     Bernhardi start
+                      if((nope.eq.20).or.(nope.eq.8)
+     &                 .or.(nope.eq.11)) then
+c     Bernhardi end
                          ipointerj=(ifaceq(jj,ig)-1)*3
                       elseif((nope.eq.10).or.(nope.eq.4)) then
                          ipointerj=(ifacet(jj,ig)-1)*3

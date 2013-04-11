@@ -105,6 +105,12 @@
             nmethod=1
          elseif(textpart(i)(1:7).eq.'DELTMX=') then
             read(textpart(i)(8:27),'(f20.0)',iostat=istat) ctrl(27)
+         else
+            write(*,*) 
+     &        '*WARNING in couptempdisps: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
       if(nmethod.eq.1) ctrl(27)=1.d30

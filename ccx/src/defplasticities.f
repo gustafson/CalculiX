@@ -49,6 +49,14 @@
          stop
       endif
 !
+      do i=2,n
+         write(*,*) 
+     &        '*WARNING in defplasticities: parameter not recognized:'
+         write(*,*) '         ',
+     &        textpart(i)(1:index(textpart(i),' ')-1)
+         call inputwarning(inpc,ipoinpc,iline)
+      enddo
+!
       nelcon(1,nmat)=-50
 !
       iend=5

@@ -19,7 +19,7 @@
       subroutine applybounp(nodeboun,ndirboun,nboun,xbounact,
      &  ithermal,nk,iponoel,inoel,vold,voldtu,t1act,isolidsurf,
      &  nsolidsurf,xsolidsurf,nfreestream,ifreestream,turbulent,
-     &  voldaux,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
+     &  voldcon,shcon,nshcon,rhcon,nrhcon,ielmat,ntmat_,physcon,v,
      &  ipompc,nodempc,coefmpc,nmpc,inomat,mi)
 !
 !     applies velocity boundary conditions
@@ -36,7 +36,7 @@
 !
       real*8 rhcon(0:1,ntmat_,*),vold(0:mi(2),*),xbounact(*),shcon,
      &  voldtu(2,*),t1act(*),temp,r,dvi,xsolidsurf(*),reflength,
-     &  refkin,reftuf,refvel,cp,voldaux(0:4,*),physcon(*),v(0:mi(2),*),
+     &  refkin,reftuf,refvel,cp,voldcon(0:4,*),physcon(*),v(0:mi(2),*),
      &  coefmpc(*),fixed_pres,size,correction,residu
 !
 !     inserting the pressure boundary conditions
@@ -62,59 +62,42 @@
          if(imat.eq.0) cycle
 !     
          index=nodempc(3,ist)
-         residu=coefmpc(ist)*(voldaux(ndir,node)+v(ndir,node))
-         size=(coefmpc(ist))**2
+c         residu=coefmpc(ist)*(vold(ndir,node)+v(ndir,node))
+         residu=0.d0
+c         size=(coefmpc(ist))**2
          if(index.ne.0) then
             do
                nodei=nodempc(1,index)
                ndiri=nodempc(2,index)
-!
-c               idof=8*(nodei-1)+ndiri
-c               call nident(ikboun,idof,nboun,id)
-c               if(id.ne.0) then
-c                  if(ikboun(id).eq.idof) then
-c                     index=nodempc(3,index)
-c                     if(index.eq.0) exit
-c                     cycle
-c                  endif
-c               endif
 !
                residu=residu+coefmpc(index)*
-     &              (voldaux(ndiri,nodei)+v(ndiri,nodei))
-               size=size+(coefmpc(index))**2
+     &              (vold(ndiri,nodei)+v(ndiri,nodei))
+c               size=size+(coefmpc(index))**2
                index=nodempc(3,index)
                if(index.eq.0) exit
             enddo
          endif
-!     
-!     correcting all terms of the MPC
-!     
-         residu=residu/size
-!     
-         correction=-residu*coefmpc(ist)
-         v(ndir,node)=v(ndir,node)+correction
-         index=nodempc(3,ist)
-         if(index.ne.0) then
-            do
-               nodei=nodempc(1,index)
-               ndiri=nodempc(2,index)
 !
-c               idof=8*(nodei-1)+ndiri
-c               call nident(ikboun,idof,nboun,id)
-c               if(id.ne.0) then
-c                  if(ikboun(id).eq.idof) then
-c                     index=nodempc(3,index)
-c                     if(index.eq.0) exit
-c                     cycle
-c                  endif
-c               endif
-!
-               correction=-residu*coefmpc(index)
-               v(ndiri,nodei)=v(ndiri,nodei)+correction
-               index=nodempc(3,index)
-               if(index.eq.0) exit
-            enddo
-         endif
+         v(ndir,node)=-residu/coefmpc(ist)-vold(ndir,node)
+c!     
+c!     correcting all terms of the MPC
+c! 
+c         residu=residu/size
+c!     
+c         correction=-residu*coefmpc(ist)
+c         v(ndir,node)=v(ndir,node)+correction
+c         index=nodempc(3,ist)
+c         if(index.ne.0) then
+c            do
+c               nodei=nodempc(1,index)
+c               ndiri=nodempc(2,index)
+c!
+c               correction=-residu*coefmpc(index)
+c               v(ndiri,nodei)=v(ndiri,nodei)+correction
+c               index=nodempc(3,index)
+c               if(index.eq.0) exit
+c            enddo
+c         endif
       enddo
 !     
       return

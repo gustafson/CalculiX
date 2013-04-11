@@ -19,7 +19,8 @@
       subroutine springforc(xl,konl,vl,imat,elcon,nelcon,
      &  elas,fnl,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,
      &  plicon,nplicon,npmat_,veoldl,senergy,iener,cstr,mi,
-     &  springarea,nmethod)
+     &  springarea,nmethod,ne0,iperturb,nstate_,xstateini,
+     &  xstate,reltime)
 !
 !     calculates the force of the spring
 !
@@ -29,16 +30,18 @@
 !
       integer konl(9),i,j,imat,ncmat_,ntmat_,nope,nterms,iflag,mi(2),
      &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),iener,
-     &  nmethod
+     &  nmethod,ne0,iperturb(2),nstate_
 !
       real*8 xl(3,9),elas(21),ratio(9),t0l,t1l,al(3),vl(0:mi(2),9),
-     &  pl(3,9),xn(3),dm,alpha,beta,fnl(3,9),
-     &  veoldl(0:mi(2),9),dist,c2,c3,t(3),dt,
+     &  pl(3,9),xn(3),dm,alpha,beta,fnl(3,9),tp(3),te(3),ftrial(3),
+     &  veoldl(0:mi(2),9),dist,c2,c3,t(3),dt,dftrial,vertan(3),
      &  elcon(0:ncmat_,ntmat_,*),pproj(3),xsj2(3),xs2(3,7),val,
      &  shp2(7,8),xi,et,elconloc(21),plconloc(82),xk,fk,dd,
      &  xiso(20),yiso(20),dd0,plicon(0:2*npmat_,ntmat_,*),
-     &  um,eps,pi,senergy,cstr(6),
-     &  springarea
+     &  um,eps,pi,senergy,cstr(6),dvertan,dg,dfshear,dfnl,
+     &  fricforc,springarea(2),ver(3),dvernor,
+     &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),t1(3),t2(3),
+     &  dt1,dte,alnew(3),reltime
 !
       data iflag /2/
 !
@@ -64,7 +67,7 @@
 !
 !        interpolating the material data
 !
-         call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t0l,t1l,
+         call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
      &     elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
 !
 !        calculating the spring force and the spring constant
@@ -153,9 +156,15 @@ c      write(*,*) 'springforc ',(pproj(i),i=1,3)
          xn(i)=xsj2(i)/dm
       enddo
 !
-!     distance from surface along normal
+!     distance from surface along normal (= clearance)
 !
       val=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
+!
+!     check for a reduction of the initial penetration, if any
+!
+      if(nmethod.eq.1) then
+         val=val-springarea(2)*(1.d0-reltime)
+      endif
       if(val.le.0.d0) cstr(1)=val
 !
 !     representative area: usually the slave surface stored in
@@ -163,11 +172,11 @@ c      write(*,*) 'springforc ',(pproj(i),i=1,3)
 !     node does not belong to any element, the master surface
 !     is used
 !
-      if(springarea.le.0.d0) then
+      if(springarea(1).le.0.d0) then
          if(nterms.eq.3) then
-            springarea=dm/2.d0
+            springarea(1)=dm/2.d0
          else
-            springarea=dm*4.d0
+            springarea(1)=dm*4.d0
          endif
       endif
 !
@@ -180,7 +189,7 @@ c      write(*,*) 'springforc ',(pproj(i),i=1,3)
             beta=1.d0
          else
 !     
-            alpha=elcon(2,1,imat)*springarea
+            alpha=elcon(2,1,imat)*springarea(1)
             beta=elcon(1,1,imat)
             if(-beta*val.gt.23.d0-dlog(alpha)) then
                beta=(dlog(alpha)-23.d0)/val
@@ -190,14 +199,12 @@ c      write(*,*) 'springforc ',(pproj(i),i=1,3)
       else
 !     
 !        linear overclosure
-!
-c         eps=1.d-6
+!     
          pi=4.d0*datan(1.d0)
          eps=-elcon(1,1,imat)*pi/elcon(2,1,imat)
-c         elas(1)=-elcon(1,1,imat)-springarea*elcon(2,1,imat)*val*
-c     &            (0.5d0+datan(-val/eps)/pi)
-         elas(1)=-springarea*elcon(2,1,imat)*val*
-     &            (0.5d0+datan(-val/eps)/pi)
+         elas(1)=(-springarea(1)*elcon(2,1,imat)*val*
+     &            (0.5d0+datan(-val/eps)/pi)) 
+c     &	          -elcon(1,1,imat)*springarea(1)
       endif
 !
 !     forces in the nodes of the contact element
@@ -208,46 +215,136 @@ c     &            (0.5d0+datan(-val/eps)/pi)
       if(iener.eq.1) then
          senergy=elas(1)/beta;
       endif
-c      write(*,*) 'springforc ',konl(nope),val,(-fnl(i,nope),i=1,3)
-      cstr(4)=elas(1)/springarea
-c      write(*,*) 'springforc ',konl(nope),cstr(4)
+      cstr(4)=elas(1)/springarea(1)
 !
 !     Coulomb friction for static calculations
 !
       if(ncmat_.ge.7) then
-         if(nmethod.eq.1) then
+         if(iperturb(1).gt.1) then
             um=elcon(6,1,imat)
             if(um.gt.0.d0) then
-               eps=elcon(7,1,imat)
-               pi=4.d0*datan(1.d0)
+               if(1.d0 - dabs(xn(1)).lt.1.5231d-6) then       
+!           
+!     calculating the local directions on master surface
+!
+                  t1(1)=-xn(3)*xn(1)
+                  t1(2)=-xn(3)*xn(2)
+                  t1(3)=1.d0-xn(3)*xn(3)
+               else
+                  t1(1)=1.d0-xn(1)*xn(1)
+                  t1(2)=-xn(1)*xn(2)
+                  t1(3)=-xn(1)*xn(3)
+               endif
+               dt1=dsqrt(t1(1)*t1(1)+t1(2)*t1(2)+t1(3)*t1(3))
                do i=1,3
-                  al(i)=al(i)-vl(i,nope)
+                  t1(i)=t1(i)/dt1
                enddo
+               t2(1)=xn(2)*t1(3)-xn(3)*t1(2)
+               t2(2)=xn(3)*t1(1)-xn(1)*t1(3)
+               t2(3)=xn(1)*t1(2)-xn(2)*t1(1)           
+!     
+!              linear stiffness of the shear stress versus
+!              slip curve
+!
+               xk=elcon(7,1,imat)*springarea(1)
+!
+!              calculating the relative displacement between the slave node
+!              and its projection on the master surface
+!
+               do i=1,3
+                  alnew(i)=vl(i,nope)
+                  do j=1,nterms
+                     alnew(i)=alnew(i)-ratio(j)*vl(i,j)
+                  enddo
+               enddo
+!
+!              calculating the difference in relative displacement since
+!              the start of the increment = lamda^*
+!
+               do i=1,3
+                  al(i)=alnew(i)-xstateini(3+i,1,ne0+konl(nope+1))
+               enddo
+!
+!              ||lambda^*||
+!
                val=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
 !
-!              t is the vector connecting the undeformed position
-!              of the slave node with the projection on the master
-!              face of its deformed position
+!              update the relative tangential displacement
 !
                do i=1,3
-                  t(i)=al(i)-val*xn(i)
+                  t(i)=xstateini(6+i,1,ne0+konl(nope+1))+al(i)-val*xn(i)
                enddo
-               dt=dsqrt(t(1)*t(1)+t(2)*t(2)+t(3)*t(3))
-               if(dt.lt.1.d-20) then
-                  c2=1.d0/eps
-               else
-                  c2=datan(dt/eps)/dt
-               endif
-               c2=-um*2.d0*c2/pi
-               c3=c2*elas(1)
+!
+!              store the actual relative displacement and
+!                    the actual relative tangential displacement
+!
                do i=1,3
-                  fnl(i,nope)=fnl(i,nope)+c3*t(i)
+                  xstate(3+i,1,ne0+konl(nope+1))=alnew(i)
+                  xstate(6+i,1,ne0+konl(nope+1))=t(i)
                enddo
+!
+!              size of normal force
+!
+               dfnl=dsqrt(fnl(1,nope)**2+fnl(2,nope)**2+fnl(3,nope)**2)
+!
+!              maximum size of shear force
+!
+               dfshear=um*dfnl       
+!
+!              plastic and elastic slip
+!
+               do i=1,3
+                  tp(i)=xstateini(i,1,ne0+konl(nope+1))
+                  te(i)=t(i)-tp(i)
+               enddo
+               dte=dsqrt(te(1)*te(1)+te(2)*te(2)+te(3)*te(3))
+!
+!              trial force
+!
+               do i=1,3
+                  ftrial(i)=xk*te(i)
+               enddo
+               dftrial=dsqrt(ftrial(1)**2+ftrial(2)**2+ftrial(3)**2)
+!
+!              check whether stick or slip
+!
+               if((dftrial.lt.dfshear) .or. (dftrial.le.0.d0)) then
+!
+!                 stick
+!
+                  write(*,*)'STICK'
+                  do i=1,3
+                     fnl(i,nope)=fnl(i,nope)+ftrial(i)
+                  enddo
+                  cstr(5)=(ftrial(1)*t1(1)+ftrial(2)*t1(2)+
+     &                    ftrial(3)*t1(3))/springarea(1)
+                  cstr(6)=(ftrial(1)*t2(1)+ftrial(2)*t2(2)+
+     &                    ftrial(3)*t2(3))/springarea(1)
+               else
+!
+!                 slip
+!
+                  write(*,*)'SLIP'
+                  dg=(dftrial-dfshear)/xk
+                  do i=1,3
+                     ftrial(i)=te(i)/dte
+                     fnl(i,nope)=fnl(i,nope)+dfshear*ftrial(i)
+                     xstate(i,1,ne0+konl(nope+1))=tp(i)+dg*ftrial(i)
+                  enddo
+                  cstr(5)=(dfshear*ftrial(1)*t1(1)+
+     &                    dfshear*ftrial(2)*t1(2)+
+     &                    dfshear*ftrial(3)*t1(3))/springarea(1)
+                  cstr(6)=(dfshear*ftrial(1)*t2(1)+
+     &                    dfshear*ftrial(2)*t2(2)+
+     &                    dfshear*ftrial(3)*t2(3))/springarea(1)
+
+               endif
             endif
-            cstr(2)=t(1)
-            cstr(3)=t(2)
-            cstr(5)=fnl(1,nope)/springarea
-            cstr(6)=fnl(2,nope)/springarea
+!
+!     storing the tangential displacements
+!     
+            cstr(2)=t(1)*t1(1)+t(2)*t1(2)+t(3)*t1(3)
+            cstr(3)=t(1)*t2(1)+t(2)*t2(2)+t(3)*t2(3)
          endif
       endif
 !

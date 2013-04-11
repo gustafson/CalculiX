@@ -23,10 +23,10 @@
 !
 !     Y. Park and R.e. Sonntag
 !     "Thermodynamic porperties of ideal gas air at 0.1MPa"
-!      Internaltional Journal of Energy Research, vol 20,771-785(1996)
+!      International Journal of Energy Research, vol 20,771-785(1996)
 
 !     N.B.:
-!     The tempratures range from 100K to 4000K
+!     The temperatures range from 100K to 4000K
 !
 !     Enthalpy values in KJ/Kg in the document are given in J/Kg
 !
@@ -72,7 +72,7 @@
 !
 !     linear interpolation
 !
-!      call ident(tab_temperature,T,40,id)
+      call ident(tab_temperature,T,40,id)
 !
       if(id.le.1) then
          H=tab_enthalpy(1)

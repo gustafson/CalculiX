@@ -569,7 +569,14 @@ c               if(nodempc(2,index).gt.3) then
                  lakon(i)(1:7)='C3D20 B'
               endif
            enddo
+c     Bernhardi start
         endif
+        do i=1,ne
+           if(lakon(i)(1:5).eq.'C3D8I') then
+              call genmodes(i,kon,ipkon,lakon,ne,nk,nk_,co)
+           endif
+        enddo
+c     Bernhardi end
 !     
 !     check whether the coefficient of the dependent
 !     terms in ISOCHORIC MPC's is not zero
@@ -646,9 +653,6 @@ c               if(nodempc(2,index).gt.3) then
                enddo
             enddo
          endif
-c         do i=1,nmpc
-c            write(*,*) 'iklmpc ',i,ikmpc(i),ilmpc(i)
-c         enddo
 !
 !        filling the new KNOT MPC's (needs the coordinates
 !        of the expanded nodes)

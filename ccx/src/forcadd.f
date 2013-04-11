@@ -18,13 +18,13 @@
 !
       subroutine forcadd(node,i,val,nodeforc,ndirforc,xforc,
      &  nforc,nforc_,iamforc,iamplitude,nam,ntrans,trab,inotr,co,
-     &  ikforc,ilforc,isector,add)
+     &  ikforc,ilforc,isector,add,user)
 !
 !     adds a cload condition to the data base
 !
       implicit none
 !
-      logical add
+      logical add,user
 !
       integer nodeforc(2,*),ndirforc(*),node,i,nforc,nforc_,j,
      &  iamforc(*),iamplitude,nam,ntrans,inotr(2,*),itr,idf(3),
@@ -110,7 +110,7 @@ c
             endif
          enddo
 !
-         if(idf(1).ne.0) then
+         if((idf(1).ne.0).and.(.not.user)) then
 !
 !        a force was previously applied to this node. The component
 !        in direction i is filtered out and replaced by the new
@@ -142,7 +142,11 @@ c
                nodeforc(1,nforc)=node
                nodeforc(2,nforc)=isector
                ndirforc(nforc)=j
-               xforc(nforc)=val*a(j,i)
+               if(user) then
+                  xforc(nforc)=val
+               else
+                  xforc(nforc)=val*a(j,i)
+               endif
                if(nam.gt.0) iamforc(nforc)=iamplitude
 !
 !              updating ikforc and ilforc

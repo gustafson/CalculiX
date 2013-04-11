@@ -111,6 +111,12 @@ c      jout=max(jout,1)
            endif
            jout(1)=1
            jout(2)=1
+         else
+            write(*,*) 
+     &        '*WARNING in contactprints: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(ii)(1:index(textpart(ii),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
         endif
       enddo
 

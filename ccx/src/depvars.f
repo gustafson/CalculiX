@@ -28,7 +28,7 @@
       character*132 textpart(16)
 !
       integer nelcon(2,*),nmat,istep,nstate_,ncocon(2,*),ipoinpc(0:*),
-     &  n,key,istat,nstate,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*)
+     &  n,key,istat,nstate,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),i
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in depvars: *DEPVAR should be placed'
@@ -47,6 +47,14 @@
          write(*,*) '  by an *USER MATERIAL card'
          stop
       endif
+!
+      do i=2,n
+         write(*,*) 
+     &        '*WARNING in depvars: parameter not recognized:'
+         write(*,*) '         ',
+     &        textpart(i)(1:index(textpart(i),' ')-1)
+         call inputwarning(inpc,ipoinpc,iline)
+      enddo
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

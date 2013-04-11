@@ -17,9 +17,9 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine e_c3d_krhs(co,nk,konl,lakonl,ffk,fft,nelem,nmethod,
-     &  rhcon,nrhcon,ielmat,ntmat_,vold,voldaux,dtime,matname,mi,
+     &  rhcon,nrhcon,ielmat,ntmat_,vold,voldcon,dtime,matname,mi,
      &  shcon,nshcon,voldtu,compressible,yy,nelemface,sideface,nface,
-     &  turbulent)
+     &  turbulent,ithermal)
 !
 !     computation of the turbulence element matrix and rhs for the
 !     element with the topology in konl: step 4
@@ -35,7 +35,7 @@
       integer konl(20),ifaceq(8,6),nk,nelem,nload,i,j,k,i1,i2,j1,k1,
      &  nmethod,ii,jj,id,ipointer,ig,kk,nrhcon(*),ielmat(*),nshcon(*),
      &  ntmat_,nope,nopes,imat,mint2d,mint3d,mi(2),ifacet(6,4),nopev,
-     &  ifacew(8,5),istep,iinc,layer,kspt,jltyp,iflag,iscale,
+     &  ifacew(8,5),istep,iinc,layer,kspt,jltyp,iflag,iscale,ithermal,
      &  compressible,idf,igl,nelemface(*),nface,turbulent
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,
@@ -44,7 +44,7 @@
      &  xkin,xtuf,voldl(0:mi(2),20),yyl(20),tvk(3),tvt(3),
      &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),tvnk,tvnt,
      &  om,omx,xi,et,ze,const,xsj,fft(60),dxkin(3),
-     &  temp,voldaux(0:4,*),voldauxl(0:4,20),rho,dxtuf(3),
+     &  temp,voldcon(0:4,*),voldconl(0:4,20),rho,dxtuf(3),
      &  weight,shpv(20),rhokin,rhotuf,y,vort,c1,c2,arg2,f2,
      &  a1,unt,umt,cdktuf,arg1,f1,skin,skin1,skin2,stuf,stuf1,
      &  stuf2,beta,beta1,beta2,betas,gamm,gamm1,xkappa,un,
@@ -149,8 +149,10 @@ c     &            49,50,-51,52,53,-54,55,56,-57,58,59,-60/
          mint3d=1
       elseif(lakonl(4:5).eq.'15') then
          mint3d=9
-      elseif(lakonl(4:4).eq.'6') then
+      elseif(lakonl(4:5).eq.'6 ') then
          mint3d=2
+      elseif(lakonl(4:5).eq.'6R') then
+         mint3d=1
       else
          mint3d=0
       endif
@@ -183,7 +185,7 @@ c     &            49,50,-51,52,53,-54,55,56,-57,58,59,-60/
          enddo
          if(compressible.eq.1) then
             do i1=1,nope
-               voldauxl(4,i1)=voldaux(4,konl(i1))
+               voldconl(4,i1)=voldcon(4,konl(i1))
             enddo
          endif
 !
@@ -221,11 +223,16 @@ c     &            49,50,-51,52,53,-54,55,56,-57,58,59,-60/
             et=gauss3d8(2,kk)
             ze=gauss3d8(3,kk)
             weight=weight3d8(kk)
-         elseif(lakonl(4:4).eq.'6') then
+         elseif(lakonl(4:5).eq.'6 ') then
             xi=gauss3d7(1,kk)
             et=gauss3d7(2,kk)
             ze=gauss3d7(3,kk)
             weight=weight3d7(kk)
+         elseif(lakonl(4:5).eq.'6R') then
+            xi=gauss3d11(1,kk)
+            et=gauss3d11(2,kk)
+            ze=gauss3d11(3,kk)
+            weight=weight3d11(kk)
          endif
 !     
 !     calculation of the shape functions and their derivatives
@@ -254,8 +261,8 @@ c     &            49,50,-51,52,53,-54,55,56,-57,58,59,-60/
 !     check the jacobian determinant
 !     
          if(xsj.lt.1.d-20) then
-            write(*,*) '*WARNING in e_c3d: nonpositive jacobian'
-            write(*,*) '         determinant in element',nelem
+            write(*,*) '*ERROR in e_c3d_krhs: nonpositive jacobian'
+            write(*,*) '       determinant in element',nelem
             write(*,*)
             xsj=dabs(xsj)
             nmethod=0
@@ -306,8 +313,6 @@ c     &            49,50,-51,52,53,-54,55,56,-57,58,59,-60/
 !     
 !     material data (density and dynamic viscosity)
 !     
-c         call materialdata_tg(imat,ntmat_,temp,shcon,nshcon,cp,r,dvi,
-c     &        rhcon,nrhcon,rho)
          call materialdata_dvi(imat,ntmat_,temp,shcon,nshcon,dvi)
 !
 !     determining the stress
@@ -336,7 +341,7 @@ c     &        rhcon,nrhcon,rho)
                dxtuf(j1)=0.d0
             enddo
             do i1=1,nope
-               rho=rho+shp(4,i1)*voldauxl(4,i1)
+               rho=rho+shp(4,i1)*voldconl(4,i1)
                xkin=xkin+shp(4,i1)*voldtul(1,i1)
                xtuf=xtuf+shp(4,i1)*voldtul(2,i1)
                do j1=1,3
@@ -355,7 +360,7 @@ c     &        rhcon,nrhcon,rho)
 !           liquid
 !
             call materialdata_rho(rhcon,nrhcon,imat,rho,
-     &           temp,ntmat_)
+     &           temp,ntmat_,ithermal)
             xkin=0.d0
             xtuf=0.d0
             do j1=1,3
@@ -450,9 +455,7 @@ c     &        rhcon,nrhcon,rho)
          tut=gamm*tu/unt-beta*rho*xtuf*xtuf+2.d0*f1m*rho*stuf2*
      &       (dxkin(1)*dxtuf(1)+dxkin(2)*dxtuf(2)+dxkin(3)*dxtuf(3))/
      &       xtuf
-cc         tuk=0.d0
-cc         tut=0.d0
-cc
+!
          do i1=1,3
             dxkin(i1)=dxkin(i1)*umsk
             dxtuf(i1)=dxtuf(i1)*umst
@@ -611,10 +614,8 @@ cc
                   call shape6w(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
                endif
 !     
-!     material data (density and dynamic viscosity)
+!     material data (dynamic viscosity)
 !     
-c               call materialdata_tg(imat,ntmat_,temp,shcon,nshcon,cp,r,
-c     &              dvi,rhcon,nrhcon,rho)
                call materialdata_dvi(imat,ntmat_,temp,shcon,nshcon,dvi)
 !     
 !     calculation of the density for gases
@@ -634,7 +635,7 @@ c     &              dvi,rhcon,nrhcon,rho)
                      dxtuf(j1)=0.d0
                   enddo
                   do i1=1,nope
-                     rho=rho+shp(4,i1)*voldauxl(4,i1)
+                     rho=rho+shp(4,i1)*voldconl(4,i1)
                      xkin=xkin+shp(4,i1)*voldtul(1,i1)
                      xtuf=xtuf+shp(4,i1)*voldtul(2,i1)
                      do j1=1,3
@@ -653,7 +654,7 @@ c     &              dvi,rhcon,nrhcon,rho)
 !     liquid
 !     
                   call materialdata_rho(rhcon,nrhcon,imat,rho,
-     &                 temp,ntmat_)
+     &                 temp,ntmat_,ithermal)
                   xkin=0.d0
                   xtuf=0.d0
                   do j1=1,3

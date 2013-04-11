@@ -34,7 +34,7 @@
       integer istep,istat,n,i,key,ipos,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),ntie,ntie_,iperturb(2),nmat,ipoinpc(0:*),nset,j
 !
-      real*8 cs(17,*),tietol(*),adjust
+      real*8 cs(17,*),tietol(2,*),adjust
 !
 !     tietol contains information on:
 !            - small (tietol<0) or large (tietol>0) sliding
@@ -54,7 +54,7 @@
          write(*,*) '*ERROR in contactpairs: increase ntie_'
          stop
       endif
-      tietol(ntie)=1.d0
+      tietol(1,ntie)=1.d0
       do j=1,80
          tieset(1,ntie)(j:j)=' '
       enddo
@@ -63,7 +63,7 @@
          if(textpart(i)(1:12).eq.'INTERACTION=') then
             material=textpart(i)(13:92)
          elseif(textpart(i)(1:12).eq.'SMALLSLIDING') then
-            tietol(ntie)=-tietol(ntie)
+            tietol(1,ntie)=-tietol(1,ntie)
          elseif(textpart(i)(1:7).eq.'ADJUST=') then
             read(textpart(i)(8:25),'(f20.0)',iostat=istat) adjust
             if(istat.gt.0) then
@@ -89,10 +89,16 @@
                   tieset(1,ntie)(j:j)=' '
                enddo
             else
-               tietol(ntie)=dsign(1.d0,tietol(ntie))*(2.d0+adjust)
+               tietol(1,ntie)=dsign(1.d0,tietol(1,ntie))*(2.d0+adjust)
             endif
          elseif(textpart(i)(1:21).eq.'TYPE=SURFACETOSURFACE') then
             surftosurf=.true.   
+         else
+            write(*,*) 
+     &        '*WARNING in contactpairs: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !
@@ -107,7 +113,7 @@
          call inputerror(inpc,ipoinpc,iline)
          stop
       endif
-      cs(1,ntie)=i+0.5d0
+      tietol(2,ntie)=i+0.5d0
 !
       tieset(1,ntie)(81:81)='C'
 !

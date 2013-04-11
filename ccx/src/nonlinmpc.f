@@ -746,6 +746,7 @@ c     &                                    dc(i,j,3)*w(3)
          elseif((labmpc(ii)(1:20).ne.'                    ').and.
      &          (labmpc(ii)(1:10).ne.'PRETENSION').and.
      &          (labmpc(ii)(1:7).ne.'CONTACT').and.
+     &          (labmpc(ii)(1:7).ne.'NETWORK').and.
      &          (labmpc(ii)(1:6).ne.'CYCLIC').and.
      &          (labmpc(ii)(1:9).ne.'SUBCYCLIC')) then
             index=ipompc(ii)
@@ -777,7 +778,7 @@ c     &                                    dc(i,j,3)*w(3)
                call umpc_user(aux,aux(3*maxlenmpc+1),const,
      &            aux(6*maxlenmpc+1),iaux,n,fmpc(ii),iit,idiscon)
             else
-               write(*,*) '*ERROR in nonlinmpc: mpc of type',labmpc(ii)
+               write(*,*) '*ERROR in nonlinmpc: mpc of type ',labmpc(ii)
                write(*,*) '       is unknown'
                stop
             endif

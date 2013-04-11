@@ -60,10 +60,15 @@
                stop
             endif
          elseif(textpart(i)(1:7).eq.'SYSTEM=') then
-c            if(textpart(i)(8:18).eq.'CYLINDRICAL') then
             if(textpart(i)(8:8).eq.'C') then
                orab(7,norien)=-1.d0
             endif
+         else
+            write(*,*) 
+     &        '*WARNING in orientations: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

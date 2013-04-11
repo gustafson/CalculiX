@@ -18,7 +18,8 @@
 !
       subroutine springstiff(xl,elas,konl,voldl,s,imat,elcon,nelcon,
      &  ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,plicon,
-     &  nplicon,npmat_,iperturb,springarea,nmethod)
+     &  nplicon,npmat_,iperturb,springarea,nmethod,mi,ne0,
+     &  nstate_,xstateini,xstate,reltime)
 !
 !     calculates the stiffness of a spring
 !
@@ -28,18 +29,20 @@
 !
       integer konl(20),i,j,imat,ncmat_,ntmat_,k,l,nope,nterms,iflag,
      &  i1,kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),
-     &  iperturb,nmethod
+     &  iperturb,nmethod,mi(2),ne0,nstate_
 !
       real*8 xl(3,9),elas(21),ratio(9),q(3),val,shp2(7,9),
-     &  al(3),s(60,60),voldl(3,9),pl(3,9),xn(3),dm,
+     &  al(3),s(60,60),voldl(0:mi(2),9),pl(3,9),xn(3),dm,
      &  c1,c2,c3,c4,alpha,beta,elcon(0:ncmat_,ntmat_,*),xm(3),
      &  xmu(3,3,9),dxmu(3,9),dval(3,9),fpu(3,3,9),xi,et,
      &  xs2(3,7),t0l,t1l,elconloc(21),plconloc(82),xk,fk,
      &  xiso(20),yiso(20),dd0,plicon(0:2*npmat_,ntmat_,*),
      &  a11,a12,a22,b1(3,9),b2(3,9),dal(3,3,9),qxxy(3),fnl(3),
      &  qxyy(3),dxi(3,9),det(3,9),determinant,c11,c12,c22,
-     &  qxyx(3),qyxy(3),springarea,dd,dist,t(3),tu(3,3,9),
-     &  dtu(3,9),dt,um,eps,pi
+     &  qxyx(3),qyxy(3),springarea(2),dd,dist,t(3),tu(3,3,9),
+     &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
+     &  dt,um,eps,pi,dftdt(3,3),tp(3),te(3),ftrial(3),
+     &  dftrial,dfnl,dfshear,dg,dte,alnew(3),dfn(3,9),reltime
 !
       data iflag /4/
 !
@@ -73,7 +76,7 @@
 !
 !        interpolating the material data
 !
-         call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t0l,t1l,
+         call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
      &     elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
 !
 !        calculating the spring force and the spring constant
@@ -218,7 +221,6 @@
       qxyx(2)=xs2(3,1)*xs2(1,6)-xs2(1,1)*xs2(3,6)
       qxyx(3)=xs2(1,1)*xs2(2,6)-xs2(2,1)*xs2(1,6)
 !
-!
 !     d2q/dxy x dq/dy
 !
       qyxy(1)=xs2(2,6)*xs2(3,2)-xs2(3,6)*xs2(2,2)
@@ -235,20 +237,23 @@
          xn(i)=xm(i)/dm
       enddo
 !
-!     distance from surface along normal
+!     distance from surface along normal (= clearance)
 !
       val=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
+      if(nmethod.eq.1) then
+         val=val-springarea(2)*(1.d0-reltime)
+      endif
 !
 !     representative area: usually the slave surface stored in
 !     springarea; however, if no area was assigned because the
 !     node does not belong to any element, the master surface
 !     is used
 !
-      if(springarea.le.0.d0) then
+      if(springarea(1).le.0.d0) then
          if(nterms.eq.3) then
-            springarea=dm/2.d0
+            springarea(1)=dm/2.d0
          else
-            springarea=dm*4.d0
+            springarea(1)=dm*4.d0
          endif
       endif
 !
@@ -263,7 +268,7 @@
             elas(1)=0.d0
             elas(2)=0.d0
          else
-            alpha=elcon(2,1,imat)*springarea
+            alpha=elcon(2,1,imat)*springarea(1)
             beta=elcon(1,1,imat)
             if(-beta*val.gt.23.d0-dlog(alpha)) then
                beta=(dlog(alpha)-23.d0)/val
@@ -275,14 +280,12 @@
 !     
 !        linear overclosure
 !
-c         eps=1.d-6
          pi=4.d0*datan(1.d0)
          eps=-elcon(1,1,imat)*pi/elcon(2,1,imat)
-c         elas(1)=-elcon(1,1,imat)-springarea*elcon(2,1,imat)*val*
-c     &            (0.5d0+datan(-val/eps)/pi)
-         elas(1)=-springarea*elcon(2,1,imat)*val*
-     &            (0.5d0+datan(-val/eps)/pi)
-         elas(2)=-springarea*elcon(2,1,imat)*
+         elas(1)=(-springarea(1)*elcon(2,1,imat)*val*
+     &            (0.5d0+datan(-val/eps)/pi))
+c     &          -elcon(1,1,imat)*springarea(1)
+         elas(2)=-springarea(1)*elcon(2,1,imat)*
      &            ((0.5d0+datan(-val/eps)/pi)-
      &             val/(pi*eps*(1.d0+(val/eps)**2)))
       endif
@@ -292,7 +295,6 @@ c     &            (0.5d0+datan(-val/eps)/pi)
       do i=1,3
          fnl(i)=-elas(1)*xn(i)
       enddo
-c      write(*,*) 'springstiff ',konl(nope),val,(-fnl(i),i=1,3)
 !
 !     derivatives of the jacobian vector w.r.t. the displacement
 !     vectors (d m / d u_k)
@@ -361,70 +363,73 @@ c      write(*,*) 'springstiff ',konl(nope),val,(-fnl(i),i=1,3)
      &                    +c4*(xn(i)*dxmu(j,k)-xmu(i,j,k))
             enddo
          enddo
-      enddo
+      enddo    
 !
 !     Coulomb friction for static calculations
-!
+!    
       if(ncmat_.ge.7) then
-         if(nmethod.eq.1) then
+         if(iperturb.gt.1) then
             um=elcon(6,1,imat)
             if(um.gt.0.d0) then
-               eps=elcon(7,1,imat)
-               pi=4.d0*datan(1.d0)
 !
-!              new definition of vector al
-!              vector al connects the undeformed position of the slave node 
-!              with its projection on the master face
+!              stiffness of shear stress versus slip curve
 !
-!              = lambda^*
-!               
-               do i=1,3
-                  al(i)=al(i)-voldl(i,nope)
-               enddo
+               xk=elcon(7,1,imat)*springarea(1)
 !
-!              || lambda^* ||
-!
-               val=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
-!
-!              t is the projection on the master surface
-!              of the vector connecting the undeformed position
-!              of the slave node with the projection on the master
-!              face of its deformed position
+!              calculating the relative displacement between the slave node
+!              and its projection on the master surface
 !
                do i=1,3
-                  t(i)=al(i)-val*xn(i)
-               enddo
-               dt=dsqrt(t(1)*t(1)+t(2)*t(2)+t(3)*t(3))
-!
-!              determining the friction force
-!
-               if(dt.lt.1.d-20) then
-                  c2=1.d0/eps
-               else
-                  c2=datan(dt/eps)/dt
-               endif
-               c2=-um*2.d0*c2/pi
-               c3=c2*elas(1)
-               do i=1,3
-                  fnl(i)=fnl(i)+c3*t(i)
-               enddo
-c               c4=c2*elas(2)*dm
-               c4=c2*elas(2)*c1
-!
-!              first contribution to fpu
-!
-               do k=1,nope
-                  do j=1,3
-                     do i=1,3
-                        fpu(i,j,k)=fpu(i,j,k)+c4*t(i)*dval(j,k)
-                     enddo
+                  alnew(i)=voldl(i,nope)
+                  do j=1,nterms
+                     alnew(i)=alnew(i)-ratio(j)*voldl(i,j)
                   enddo
                enddo
 !
-!              d al/d u_k -> d al^*/d u_k
+!              calculating the difference in relative displacement since
+!              the start of the increment = lamda^*
 !
+               do i=1,3
+                  al(i)=alnew(i)-xstateini(3+i,1,ne0+konl(nope+1))
+               enddo
+!
+!              ||lambda^*||
+!
+               val=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
+!
+!              update the relative tangential displacement
+!
+               do i=1,3
+                  t(i)=xstateini(6+i,1,ne0+konl(nope+1))+al(i)-val*xn(i)
+               enddo
+!
+!              store the actual relative displacement and
+!                    the actual relative tangential displacement
+!
+               do i=1,3
+                  xstate(3+i,1,ne0+konl(nope+1))=alnew(i)
+                  xstate(6+i,1,ne0+konl(nope+1))=t(i)
+               enddo
+!
+!              d al/d u_k -> d al^*/d u_k
+!              notice: xi & et are const.
+!
+               do k=1,nope
+                  do i=1,3
+                     do j=1,3
+                        dal(i,j,k)=0.d0
+                     enddo
+                  enddo
+               enddo
+
+               do i=1,nterms
+                  do j=1,3
+                     dal(j,j,i)=-shp2(4,i)
+                  enddo
+               enddo
+               
                do j=1,3
-                  dal(j,j,nope)=dal(j,j,nope)-1.d0
+                  dal(j,j,nope)=1.d0
                enddo
 !
 !              (d al/d u_k).||m|| -> (d al^*/d u_k).||m||
@@ -433,8 +438,8 @@ c               c4=c2*elas(2)*dm
                   do i=1,3
                      dval(i,k)=al(1)*xmu(1,i,k)+al(2)*xmu(2,i,k)
      &                        +al(3)*xmu(3,i,k)-val*dxmu(i,k)
-     &                        +xm(1)*dal(1,j,k)+xm(2)*dal(2,j,k)
-     &                        +xm(3)*dal(3,j,k)
+     &                        +xm(1)*dal(1,i,k)+xm(2)*dal(2,i,k)
+     &                        +xm(3)*dal(3,i,k)
                   enddo
                enddo
 !
@@ -450,35 +455,88 @@ c               c4=c2*elas(2)*dm
                   enddo
                enddo
 !
-!              (d ||t||/d u_k).||t||
+!              size of normal force
 !
-               do k=1,nope
-                  do j=1,3
-                     dtu(j,k)=0.d0
-                     do i=1,3
-                        dtu(j,k)=dtu(j,k)+t(i)*tu(i,j,k)
-                     enddo
-                  enddo
+               dfnl=dsqrt(fnl(1)**2+fnl(2)**2+fnl(3)**2)
+!
+!              maximum size of shear force
+!
+             dfshear=um*dfnl       
+!
+!              plastic and elastic slip
+!
+               do i=1,3
+                  tp(i)=xstateini(i,1,ne0+konl(nope+1))
+                  te(i)=t(i)-tp(i)
                enddo
 !
-!              second and third contribution to fpu
+c     do k=1,nope
+c     do i=1,3
+c     dfn(i,k)=xn(1)*fpu(1,i,k)+xn(2)*fpu(2,i,k)+
+c     &                       xn(3)*fpu(3,i,k)  
+c     enddo
+c     enddo
+!       
+               dte=dsqrt(te(1)*te(1)+te(2)*te(2)+te(3)*te(3))
 !
-               if(dt.lt.1.d-20) then
-                  c4=-2.d0/(3.d0*eps**3)
+!              trial force
+!
+               do i=1,3
+                  ftrial(i)=xk*te(i)
+               enddo
+               dftrial=dsqrt(ftrial(1)**2+ftrial(2)**2+ftrial(3)**2)
+!
+!              check whether stick or slip
+!                            
+               if((dftrial.lt.dfshear) .or. (dftrial.le.0.d0)) then
+!
+!                 stick force
+!
+                  do i=1,3
+                     fnl(i)=fnl(i)+ftrial(i)
+                  enddo
+!
+!                 stick stiffness
+!
+                  do k=1,nope
+                     do j=1,3
+                        do i=1,3
+                           fpu(i,j,k)=fpu(i,j,k)+xk*tu(i,j,k)
+                        enddo
+                     enddo
+                  enddo  
                else
-                  c4=1.d0/(eps*dt*dt*(1.d0+(dt/eps)**2))
-     &              -datan(dt/eps)/(dt**3)
-               endif
-               c4=-c4*um*2.d0/pi*elas(1)
+!         
+!                 slip force
 !
-               do k=1,nope
-                  do j=1,3
-                     do i=1,3
-                        fpu(i,j,k)=fpu(i,j,k)+c4*t(i)*dtu(j,k)
-     &                            +c3*tu(i,j,k)
+                  dg=(dftrial-dfshear)/xk
+                  do i=1,3
+                   ftrial(i)=te(i)/dte
+                     fnl(i)=fnl(i)+dfshear*ftrial(i)
+                     xstate(i,1,ne0+konl(nope+1))=tp(i)+dg*ftrial(i)
+                  enddo
+!
+!                 slip stiffness
+!
+                c1=xk*dfshear/dftrial
+                  do i=1,3
+                     do j=1,3
+                        dftdt(i,j)=-c1*ftrial(i)*ftrial(j)
+                     enddo
+                     dftdt(i,i)=dftdt(i,i)+c1
+                  enddo
+!
+                  do k=1,nope
+                     do j=1,3
+                        do i=1,3
+                           do l=1,3
+                              fpu(i,j,k)=fpu(i,j,k)+dftdt(i,l)*tu(l,j,k)    
+c     &                           +um*ftrial(i)*dfn(j,k)      
+                           enddo
+                        enddo
                      enddo
                   enddo
-               enddo
+               endif
             endif
          endif
       endif
@@ -507,7 +565,7 @@ c               c4=c2*elas(2)*dm
 !     symmetrizing the matrix
 !
       do j=1,3*nope
-         do i=1,j-1
+        do i=1,j-1
             s(i,j)=(s(i,j)+s(j,i))/2.d0
          enddo
       enddo

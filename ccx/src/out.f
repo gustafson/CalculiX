@@ -21,7 +21,7 @@
      &  nstate_,istep,iinc,iperturb,ener,mi,output,ithermal,qfn,
      &  mode,noddiam,trab,inotr,ntrans,orab,ielorien,norien,description,
      &  ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,stnmax,ngraph,veold,ne,
-     &  cs,set,nset,istartset,iendset,ialset)
+     &  cs,set,nset,istartset,iendset,ialset,eenmax)
 !
 !     stores the results in frd format
 !
@@ -42,7 +42,7 @@
       real*8 co(3,*),v(0:mi(2),*),stn(6,*),een(6,*),t1(*),fn(0:mi(2),*),
      &  time,epn(*),enern(*),xstaten(nstate_,*),ener(mi(1),*),qfn(3,*),
      &  trab(7,*),orab(7,*),vr(0:mi(2),*),vi(0:mi(2),*),stnr(6,*),
-     &  cs(17,*),stni(6,*),pi,vmax(0:3,*),stnmax(0:6,*),
+     &  cs(17,*),stni(6,*),pi,vmax(0:3,*),stnmax(0:6,*),eenmax(0:6,*),
      &  veold(0:mi(2),*),stx(6,mi(1),*)
 !
       if((output.eq.'frd').or.(output.eq.'FRD')) then
@@ -52,7 +52,7 @@
      &        trab,inotr,ntrans,orab,ielorien,norien,description,
      &        ipneigh,neigh,mi(1),stx,vr,vi,stnr,stni,vmax,
      &        stnmax,ngraph,veold,ener,ne,cs,set,nset,istartset,
-     &        iendset,ialset)
+     &        iendset,ialset,eenmax)
       else
          if(nmethod.ne.0) then
             call onf(co,nk,kon,ipkon,lakon,ne0,v,stn,inum,nmethod,

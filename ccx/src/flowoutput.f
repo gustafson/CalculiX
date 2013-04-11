@@ -18,7 +18,7 @@
 !     
 !     construction of the B matrix      
 !     
-      subroutine flowoutput(itg,ieg,ntg,ntm,bc,lakon,ntmat_,
+      subroutine flowoutput(itg,ieg,ntg,nteq,bc,lakon,ntmat_,
      &     v,shcon,nshcon,ipkon,kon,co,nflow, dtime,ttime,time,
      &     ielmat,prop,ielprop,nactdog,nacteq,iin,physcon,
      &     camt,camf,camp,uamt,uamf,uamp,rhcon,nrhcon,
@@ -31,7 +31,7 @@
       character*81 set(*)
 !     
       integer itg(*),ieg(*),ntg,nflow,ielmat(*),i,nrhcon(*),node,
-     &     ntmat_,ntm,nshcon(*),nelem,index,ipkon(*),kon(*),iin,
+     &     ntmat_,nteq,nshcon(*),nelem,index,ipkon(*),kon(*),iin,
      &     nactdog(0:3,*),nacteq(0:3,*),ielprop(*),
      &     istartset(*),iendset(*),ialset(*),nset,mi(2)
 !     

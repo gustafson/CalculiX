@@ -21,7 +21,7 @@
      &  nstate_,istep,iinc,ithermal,qfn,mode,noddiam,trab,inotr,
      &  ntrans,orab,ielorien,norien,description,ipneigh,neigh,
      &  mi,stx,vr,vi,stnr,stni,vmax,stnmax,ngraph,veold,ener,ne,
-     &  cs,set,nset,istartset,iendset,ialset)
+     &  cs,set,nset,istartset,iendset,ialset,eenmax)
 !
 !     stores the results in frd format
 !
@@ -57,7 +57,7 @@
      &  time,epn(*),enern(*),xstaten(nstate_,*),pi,qfn(3,*),oner,
      &  trab(7,*),stx(6,mi(1),*),orab(7,*),vr(0:mi(2),*),
      &  vi(0:mi(2),*),stnr(6,*),stni(6,*),vmax(0:3,*),stnmax(0:6,*),
-     &  veold(0:mi(2),*),ener(mi(1),*),cs(17,*)
+     &  veold(0:mi(2),*),ener(mi(1),*),cs(17,*),eenmax(0:6,*)
 !
       data icounter /0/
       save icounter,nkcoords,nout,noutmin,noutplus
@@ -1286,7 +1286,8 @@ c      if((nmethod.ne.2).and.(nmethod.lt.4)) return
 !     in the basis sector (components, magnitude)
 ! 
 !     the worst principal stress is the maximum of the
-!     absolute value of all principal stresses
+!     absolute value of all principal stresses, times
+!     its original sign
 !
       if(filab(20)(1:4).eq.'MAXS') then
 !
@@ -1351,7 +1352,77 @@ c      if((nmethod.ne.2).and.(nmethod.lt.4)) return
 !     
          write(7,'(a3)') m3
       endif
-
+!
+!     storing the worst principal strain at the nodes
+!     in the basis sector (components, magnitude)
+! 
+!     the worst principal strain is the maximum of the
+!     absolute value of all principal strains, times
+!     its original sign
+!
+      if(filab(30)(1:4).eq.'MAXE') then
+!
+         iselect=1
+         call frdset(filab(30),set,iset,istartset,iendset,ialset,
+     &           inum,noutloc,nout,nset,noutmin,noutplus,iselect)
+!
+         call frdheader(icounter,oner,time,pi,noddiam,cs,null,mode,
+     &                  noutloc,description,kode,nmethod,fmat)
+!
+         text=' -4  MSTRAIN     7    1'
+         write(7,'(a132)') text
+         text=' -5  EXX         1    4    1    1'
+         write(7,'(a132)') text
+         text=' -5  EYY         1    4    2    2'
+         write(7,'(a132)') text
+         text=' -5  EZZ         1    4    3    3'
+         write(7,'(a132)') text
+         text=' -5  EXY         1    4    1    2'
+         write(7,'(a132)') text
+         text=' -5  EYZ         1    4    2    3'
+         write(7,'(a132)') text
+         text=' -5  EZX         1    4    3    1'
+         write(7,'(a132)') text
+         text=' -5  MAG         1    4    0    0'
+         write(7,'(a132)') text
+!
+         if(iset.eq.0) then
+            do i=1,nkcoords
+               if(inum(i).le.0) cycle
+               write(7,101) m1,i,(eenmax(j,i),j=1,4),
+     &              eenmax(6,i),eenmax(5,i)
+               write(7,101) m2,i,eenmax(0,i)
+            enddo
+         else
+            nksegment=nkcoords/ngraph
+            do k=istartset(iset),iendset(iset)
+               if(ialset(k).gt.0) then
+                  do l=0,ngraph-1
+                     i=ialset(k)+l*nksegment
+                     if(inum(i).le.0) cycle
+                     write(7,101) m1,i,(eenmax(j,i),j=1,4),
+     &                    eenmax(6,i),eenmax(5,i)
+                     write(7,101) m2,i,eenmax(0,i)
+                  enddo
+               else
+                  l=ialset(k-2)
+                  do
+                     l=l-ialset(k)
+                     if(l.ge.ialset(k-1)) exit
+                     do m=0,ngraph-1
+                        i=l+m*nksegment
+                        if(inum(i).le.0) cycle
+                        write(7,101) m1,i,(eenmax(j,i),j=1,4),
+     &                       eenmax(6,i),eenmax(5,i)
+                        write(7,101) m2,i,eenmax(0,i)
+                     enddo
+                  enddo
+               endif
+            enddo
+         endif
+!     
+         write(7,'(a3)') m3
+      endif
 !
  101  format(a3,i10,1p,6e12.5)
  102  format(a3,10x,1p,6e12.5)

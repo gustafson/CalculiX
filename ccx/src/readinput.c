@@ -38,7 +38,7 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
       norien,nam,nprint,mint,ntrans,ncs,namtot,ncmat,memmpc,ne1d,
       ne2d,nflow,*meminset=NULL,*rmeminset=NULL, *inp=NULL,ntie,
       nener,nstate,nentries=14,ifreeinp,ikey,lincludefn,
-      nbody,ncharmax=1000000,*ipoinpc=NULL; 
+      nbody,ncharmax=1000000,*ipoinpc=NULL,ichangefriction=0; 
 
   /* initialization */
 
@@ -320,12 +320,25 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
                           nline,&ikey));
       }
+      else if(strcmp1(&buff[0],"*SURFACEBEHAVIOR")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
+                          nline,&ikey));
+      }
+      else if((strcmp1(&buff[0],"*FRICTION")==0)&&(ichangefriction==0)){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
+                          nline,&ikey));
+      }
       else if(strcmp1(&buff[0],"*INITIALCONDITIONS")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"INITIALCONDITIONS",
                           nline,&ikey));
 			  }
       else if(strcmp1(&buff[0],"*AMPLITUDE")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"AMPLITUDE",
+                          nline,&ikey));
+			  }
+      else if(strcmp1(&buff[0],"*CHANGEFRICTION")==0){
+	ichangefriction=1;
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
                           nline,&ikey));
 			  }
       else if(strcmp1(&buff[0],"*")==0){

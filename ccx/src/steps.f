@@ -77,16 +77,6 @@
                call inputerror(inpc,ipoinpc,iline)
                stop
             endif
-c!
-c!          to ensure linear calculations for 1d and 2d elements and 
-c!          for nonlinear MPCs, the
-c!          convergence criteria were set extremely high. If nonlinear
-c!          calculations are requested, these criteria must be reset
-c!
-c            if(ctrl(19).eq.1.d+30) then
-c               ctrl(19)=0.005
-c               ctrl(20)=0.01
-c            endif
 !
          elseif(textpart(i)(1:4).eq.'INC=') then
 !
@@ -114,18 +104,13 @@ c            endif
             elseif(textpart(i)(17:19).eq.'SST') then
                physcon(9)=3.5d0
             endif
+         else
+            write(*,*) '*WARNING in steps: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
-c!
-c!     to ensure linear calculations for 1d and 2d elements and 
-c!     for nonlinear MPCs, the
-c!     convergence criteria were set extremely high. If nonlinear
-c!     calculations are requested, these criteria must be reset
-c!
-c      if((iperturb(1).eq.3).and.(ctrl(19).eq.1.d+30)) then
-c         ctrl(19)=0.005
-c         ctrl(20)=0.01
-c      endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

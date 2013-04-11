@@ -34,7 +34,7 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
                double **fmpcp, int **nodempcp, double **coefmpcp,
                int *iperturb, int *ikboun, int *nboun){
     
-  char kind[2]="C", *tchar1=NULL, *tchar3=NULL, *labmpc=NULL;
+  char kind1[2]="C",kind2[2]="-", *tchar1=NULL, *tchar3=NULL, *labmpc=NULL;
     
   int *itietri=NULL,*koncont=NULL, *itiefac=NULL, *islavsurf=NULL,im,
 	*islavnode=NULL,*imastnode=NULL,*nslavnode=NULL,*nmastnode=NULL,
@@ -58,7 +58,7 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
      and the number of master triangles (ncont) */
 
   FORTRAN(allocont,(ncont,ntie,tieset,nset,set,istartset,iendset,
-          ialset,lakon,&ncone,tietol,ismallsliding,kind,mortar));
+	  ialset,lakon,&ncone,tietol,ismallsliding,kind1,kind2,mortar));
   if(ncont==0) return;
 
   itietri=NNEW(int,2**ntie);
@@ -67,7 +67,7 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
   /* triangulation of the master side */
   
   FORTRAN(triangucont,(ncont,ntie,tieset,nset,set,istartset,iendset,
-          ialset,itietri,lakon,ipkon,kon,koncont,kind));
+	 ialset,itietri,lakon,ipkon,kon,koncont,kind1,kind2));
     
   RENEW(ipe,int,*nk);
   RENEW(ime,int,12**ncont);
@@ -111,13 +111,13 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
        imastnode,nslavnode,nmastnode,nslavs,&nmasts,ifacecount,
        iponoels,inoels,&ifreenoels,mortar,ipoface,nodface,nk));
 
-  RENEW(islavsurf, int, 2**ifacecount+2);
-  RENEW(islavnode, int, *nslavs);
+  RENEW(islavsurf,int,2**ifacecount+2);
+  RENEW(islavnode,int,*nslavs);
   RENEW(inoels,int,3*ifreenoels);
   free(ipoface);free(nodface);
 
   if(*mortar==1){
-      RENEW(imastnode, int, nmasts);
+      RENEW(imastnode,int,nmasts);
   }
 
   /* constraining the middle nodes for the slave surfaces (not

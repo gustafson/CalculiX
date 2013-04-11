@@ -43,7 +43,7 @@
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
-     &  ilmpc(*),ikboun(*),ilboun(*),mi(2),
+     &  ilmpc(*),ikboun(*),ilboun(*),mi(2),nstate_,ne0,
      &  nactdof(0:mi(2),*),konl(20),irow(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(*),ielorien(*),
      &  ipkon(*),ics(*),ij,ilength,lprev,ipobody(2,*),nbody,
@@ -61,7 +61,7 @@
      &  sti(6,mi(1),*),sm(60,60),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),xloadold(2,*),
      &  alcon(0:6,ntmat_,*),cs(17,*),alzero(*),orab(7,*),reltime,
-     &  springarea(*),plicon(0:2*npmat_,ntmat_,*),
+     &  springarea(2,*),plicon(0:2*npmat_,ntmat_,*),xstate,xstateini,
      &  plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),pi,theta,ti,tr,veold(0:mi(2),*),om,valu2,
      &  value,dtime,walue,walu2,time,ttime
@@ -82,6 +82,7 @@ c         write(*,*)
 c      enddo
 !
       pi=4.d0*datan(1.d0)
+      nstate_=0
 !
       do i=1,mcs
          theta=nm*2.d0*pi/cs(1,i)
@@ -124,11 +125,16 @@ c      enddo
 !
 !     initialisation of the error parameter
 !
+      ne0=0
       do i=1,ne
 !
         if(ipkon(i).lt.0) cycle
         indexe=ipkon(i)
-        if(lakon(i)(4:4).eq.'2') then
+c    Bernhardi start
+        if(lakon(i)(4:5).eq.'8I') then
+           nope=11
+        elseif(lakon(i)(4:4).eq.'2') then
+c    Bernhardi end
            nope=20
         elseif(lakon(i)(4:4).eq.'8') then
            nope=8
@@ -194,7 +200,7 @@ c        endif
      &          dtime,matname,mi(1),ncmat_,mass,stiffness,buckling,rhsi,
      &          intscheme,ttime,time,istep,iinc,coriolis,xloadold,
      &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
-     &          springarea)
+     &          springarea,nstate_,xstateini,xstate,ne0)
 !
         do jj=1,3*nope
 !

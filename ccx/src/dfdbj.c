@@ -27,14 +27,14 @@ void dfdbj(double *bcont,double **dbcontp,int *neq,int *nope,int *konl,
 	   int* nactdof,double *s,double *z,int *ikmpc,int *ilmpc,
 	   int *ipompc,int *nodempc,int *nmpc,double *coefmpc,
 	   double *fnl,int *nev,int **ikactcontp,int **ilactcontp,
-           int *nactcont,int *nactcont_,int *mi){
+           int *nactcont,int *nactcont_,int *mi, int *cyclicsymmetry,
+           int *izdof, int *nzdof){
 
   int j,j1,jdof,kdof,k,k1,l,id,index,ist,id1,ist1,index1,id2,ist2,index2,
-      jdbcontcol,i1,i3,i4,mt=mi[1]+1,im;
-  double d1,sl;
+      jdbcontcol,i1,i3,i4,mt=mi[1]+1,im,*ikactcont=*ikactcontp,
+      *ilactcont=*ilactcontp,kdofm1;
 
-  double *dbcont=*dbcontp;
-  int *ikactcont=*ikactcontp,*ilactcont=*ilactcontp;
+  double d1,sl,*dbcont=*dbcontp;
   
   for(j=0; j<*nope; j++){
       i1=mt*(konl[j]-1)+1;
@@ -78,9 +78,21 @@ void dfdbj(double *bcont,double **dbcontp,int *neq,int *nope,int *konl,
 		      sl=s[(3*k+k1)*60+i3];
 		      kdof=nactdof[mt*(konl[k]-1)+k1+1];
 		      if(kdof!=0){
+			  if(!(*cyclicsymmetry)){
 			  for(l=0; l<*nev; l++){
 			      dbcont[i4+l]-=sl*z[(long long)l**neq+kdof-1];
 			  }
+			}else{
+			  kdofm1=kdof-1;
+			  FORTRAN(nident,(izdof,&kdofm1,nzdof,&id));
+			  if(id!=0){
+			    if(izdof[id-1]==kdofm1){
+			      for(l=0; l<*nev; l++){
+				dbcont[i4+l]-=sl*z[l**nzdof+id-1];
+			      }
+			    }else{printf("*ERROR in dfdbj\n");FORTRAN(stop,());}
+			  }else{printf("*ERROR in dfdbj\n");FORTRAN(stop,());}
+			}
 		      }
 		      else{
 			  kdof=8*(konl[k]-1)+k1+1;
@@ -95,12 +107,24 @@ void dfdbj(double *bcont,double **dbcontp,int *neq,int *nope,int *konl,
 				  if(index==0) continue;
 				  index--;
 				  do{
-				      kdof=nactdof[mt*(nodempc[index*3])+nodempc[index*3+1]];
+				      kdof=nactdof[mt*(nodempc[index*3]-1)+nodempc[index*3+1]];
 				      d1=sl*coefmpc[index]/coefmpc[ist];
 				      if(kdof!=0){
+					  if(!(*cyclicsymmetry)){
 					  for(l=0; l<*nev; l++){
-					      dbcont[i4+l]+=d1*z[(long long)l**neq+kdof-1];
+					    dbcont[i4+l]+=d1*z[(long long)l**neq+kdof-1];
 					  }
+					}
+				      }else{
+					kdofm1=kdof-1;
+					FORTRAN(nident,(izdof,&kdofm1,nzdof,&id));
+					if(id!=0){
+					  if(izdof[id-1]==kdofm1){
+					    for(l=0; l<*nev; l++){
+					      dbcont[i4+l]+=d1*z[l**nzdof+id-1];
+					    }
+					  }else{printf("*ERROR in dfdbj\n");FORTRAN(stop,());}
+					}else{printf("*ERROR in dfdbj\n");FORTRAN(stop,());}
 				      }
 				      index=nodempc[index*3+2];
 				      if(index==0) break;
@@ -125,7 +149,7 @@ void dfdbj(double *bcont,double **dbcontp,int *neq,int *nope,int *konl,
 		      if(index1==0) continue;
 		      index1--;
 		      do{
-			  jdof=nactdof[mt*(nodempc[index1*3])+nodempc[index1*3+1]];
+			  jdof=nactdof[mt*(nodempc[index1*3]-1)+nodempc[index1*3+1]];
 			  if(jdof!=0){
 			      jdof--;
 			      FORTRAN(nident,(ikactcont,&jdof,nactcont,&id));
@@ -164,8 +188,20 @@ void dfdbj(double *bcont,double **dbcontp,int *neq,int *nope,int *konl,
 				      kdof=nactdof[mt*(konl[k]-1)+k1+1];
 				      if(kdof!=0){
 					  d1=sl*coefmpc[index1]/coefmpc[ist1];
-					  for(l=0; l<*nev; l++){
+					  if(!(*cyclicsymmetry)){
+					    for(l=0; l<*nev; l++){
 					      dbcont[i4+l]+=d1*z[(long long)l**neq+kdof-1];
+					    }
+					  }else{
+					    kdofm1=kdof-1;
+					    FORTRAN(nident,(izdof,&kdofm1,nzdof,&id));
+					    if(id!=0){
+					      if(izdof[id-1]==kdofm1){
+						for(l=0; l<*nev; l++){
+						  dbcont[i4+l]+=d1*z[l**nzdof+id-1];
+						}
+					      }else{printf("*ERROR in dfdbj\n");FORTRAN(stop,());}
+					    }else{printf("*ERROR in dfdbj\n");FORTRAN(stop,());}
 					  }
 				      }
 				      else{
@@ -181,11 +217,23 @@ void dfdbj(double *bcont,double **dbcontp,int *neq,int *nope,int *konl,
 						  if(index2==0) continue;
 						  index2--;
 						  do{
-						      kdof=nactdof[mt*(nodempc[index2*3])+nodempc[index2*3+1]];
+						      kdof=nactdof[mt*(nodempc[index2*3]-1)+nodempc[index2*3+1]];
 						      if(kdof!=0){
 							  d1=sl*coefmpc[index1]*coefmpc[index2]/(coefmpc[ist1]*coefmpc[ist2]);
-							  for(l=0; l<*nev; l++){
+							  if(!(*cyclicsymmetry)){
+							    for(l=0; l<*nev; l++){
 							      dbcont[i4+l]-=d1*z[(long long)l**neq+kdof-1];
+							    }
+							  }else{
+							    kdofm1=kdof-1;
+							    FORTRAN(nident,(izdof,&kdofm1,nzdof,&id));
+							    if(id!=0){
+							      if(izdof[id-1]==kdofm1){
+								for(l=0; l<*nev; l++){
+								  dbcont[i4+l]-=d1*z[l**nzdof+id-1];
+								}
+							      }else{printf("*ERROR in dfdbj\n");FORTRAN(stop,());}
+							    }else{printf("*ERROR in dfdbj\n");FORTRAN(stop,());}
 							  }
 						      }
 						      index2=nodempc[index2*3+2];

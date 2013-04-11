@@ -20,7 +20,7 @@
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi,
      &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,
-     &        orab,pnewdt,istep,iinc)
+     &        orab,pnewdt,istep,iinc,ipkon)
 !
 !     calculates stiffness and stresses for a user defined material
 !     law
@@ -30,7 +30,7 @@
       character*80 amat,amatloc
 !
       integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(2),iorien,
-     &  istep,iinc
+     &  istep,iinc,ipkon(*)
 !
       real*8 elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xikl(3,3),vij,pgauss(3),orab(7,*),
@@ -68,6 +68,8 @@
 !
       elseif(amat(1:11).eq.'ANISO_CREEP') then
 !
+         amatloc(1:69)=amat(12:80)
+         amatloc(70:80)='           '
          call umat_aniso_creep(amatloc,
      &        iel,iint,kode,elconloc,emec,emec0,
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
@@ -94,6 +96,16 @@
      &        icmd,ielas,mi(1),
      &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,orab)
 !
+      elseif(amat(1:9).eq.'IDEAL_GAS') then
+!
+         amatloc(1:71)=amat(10:80)
+         amatloc(72:80)='          '
+         call umat_ideal_gas(amatloc,
+     &        iel,iint,kode,elconloc,emec,emec0,
+     &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
+     &        icmd,ielas,mi(1),
+     &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,orab)
+!
       elseif(amat(1:14).eq.'SINGLE_CRYSTAL') then
 !
          amatloc(1:66)=amat(15:80)
@@ -111,7 +123,7 @@
          call umat_user(amatloc,iel,iint,kode,elconloc,emec,emec0,
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
-     &        iorien,pgauss,orab,pnewdt)
+     &        iorien,pgauss,orab,pnewdt,ipkon)
       else
          write(*,*) '*ERROR in umat: no user material subroutine'
          write(*,*) '       defined for material ',amat

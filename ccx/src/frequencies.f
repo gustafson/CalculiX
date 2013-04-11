@@ -71,6 +71,12 @@
             read(textpart(i)(8:27),'(a20)') solver
          elseif(textpart(i)(1:11).eq.'STORAGE=YES') then
             mei(4)=1
+         else
+            write(*,*) 
+     &        '*WARNING in frequencies: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

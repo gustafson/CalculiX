@@ -148,6 +148,12 @@
 !           reduced integration linear hexahedral element
 !
      &         (label.eq.'C3D8R   ').or.
+c    Bernhardi start
+c
+c           incompatible modes element
+c
+     &         (label.eq.'C3D8I   ').or.
+c    Bernhardi end
 !
 !           quadratic tetrahedral element
 !
@@ -193,6 +199,7 @@
      &             (label.eq.'F3D10   ').or.
      &             (label.eq.'F3D4    ').or.
      &             (label.eq.'F3D15   ').or.
+     &             (label.eq.'F3D6R   ').or.
      &             (label.eq.'F3D6    ')) then
                cfd=1
 !
@@ -208,6 +215,12 @@
 !
             if(label(1:3).eq.'CAX') iaxial=180
 !
+         else
+            write(*,*) 
+     &        '*WARNING in elements: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo loop
 !
@@ -222,7 +235,12 @@
 !     deck, nopeexp is the number of nodes per element after expansion
 !     (only applicable to 1D and 2D elements such as beams, shells..)
 !
-      if(label(4:5).eq.'20') then
+c     Bernhardi start
+      if(label(1:5).eq.'C3D8I') then
+         nope=8
+         nopeexp=11
+      elseif(label(4:5).eq.'20') then
+c     Bernhardi end
          nope=20
          nopeexp=20
       elseif((label(1:4).eq.'CPE8').or.(label(1:4).eq.'CPS8').or.

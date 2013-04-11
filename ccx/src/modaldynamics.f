@@ -46,7 +46,11 @@
       tmin=0.d0
       tmax=0.d0
       steadystate=.false.
-      cyclicsymmetry=.false.
+      if((mcs.ne.0).and.(cs(2,1).ge.0.d0)) then
+         cyclicsymmetry=.true.
+      else
+         cyclicsymmetry=.false.
+      endif
       nodalset=.false.
 !
       if(istep.lt.1) then
@@ -89,6 +93,12 @@
             noset(81:81)=' '
             ipos=index(noset,' ')
             noset(ipos:ipos)='N'
+         else
+            write(*,*) 
+     &        '*WARNING in modaldynamics: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !
@@ -131,11 +141,17 @@
          enddo
          if(i.gt.nset) then
             noset(ipos:ipos)=' '
-            write(*,*) '*ERROR in transforms: node set ',noset
+            write(*,*) '*ERROR in modaldynamics: node set ',noset
             write(*,*) '  has not yet been defined.'
             stop
          endif
          xmodal(10)=i+0.5d0
+      else
+         if(cyclicsymmetry) then
+            write(*,*) '*ERROR in modaldynamics: cyclic symmetric'
+            write(*,*) '       structure, yet no node set defined'
+            stop
+         endif
       endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

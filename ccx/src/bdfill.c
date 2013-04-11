@@ -31,7 +31,7 @@ void bdfill(int **irowbdp, int *jqbd,
         int *islavnode, int *islavsurf, int *imastsurf, double *pmastsurf, 
         int *itiefac, int *neq, int *nactdof, double *co, double *vold,
 	int *iponoels, int *inoels, int *mi, double *gapmints, double *gap,
-        double* pslavsurf,double* pslavdual,int* islavact){
+        double* pslavsurf,double* pslavdual){
 		
   int i, j, k,l,m, idof1,idofs,idofm, nodes, nodem, kflag,numb,
       *mast1=NULL,number, *irowbd=NULL,ifree,mt=mi[1]+1,icounter,istart;
@@ -40,7 +40,6 @@ void bdfill(int **irowbdp, int *jqbd,
   
   irowbd = *irowbdp; aubd=*aubdp;
   
-//  ifree = 0;
   ifree = 1; // position in the fieds FORTRAN condition
   mast1=NNEW(int,*nzsbd);
   
@@ -62,7 +61,7 @@ void bdfill(int **irowbdp, int *jqbd,
 
       FORTRAN(creategap,(&i,ipkon,kon,lakon,&nodes,
 	     islavsurf,itiefac,co,vold,
-	     iponoels,inoels,mi,pslavsurf,pslavdual,gapmints,&gap[j],&islavact[j]));
+	     iponoels,inoels,mi,pslavsurf,pslavdual,gapmints,&gap[j]));
 
       for(k=nmastnode[i]; k<nmastnode[i+1]; k++){
 	nodem = imastnode[k];

@@ -19,7 +19,7 @@
       subroutine creategap(itie,ipkon,kon,lakon,nodes,
      &  islavsurf,itiefac,co,vold,
      &  iponoels,inoels,mi,pslavsurf,pslavdual,gapmints,
-     &  gapcont,islavact)
+     &  gapcont)
 !
 !     compute the Bd[p,q] matrix entry for contact problems
 !     Author: Li, Yang
@@ -33,7 +33,7 @@
      &  indexe,nope,islavsurf(2,*),iponoels(*),inoels(3,*),
      &  itiefac(2,*),ifaces,nelems,jfaces,
      &  mint2d,indexf,nopes,nodes,
-     &  index1,islavsurfentry,locs,mi(2),ns,islavact
+     &  index1,islavsurfentry,locs,mi(2),ns
 !
       real*8 co(3,*),vold(0:mi(2),*),gapcont,
      &  ets,xis,weights,xl2s(3,8),xsj2s(3),gapmints(*),
@@ -165,7 +165,7 @@
 !     
             xis=pslavsurf(1,indexf+m)
             ets=pslavsurf(2,indexf+m)
-            weights=weight2d5(m)
+c            weights=weight2d5(m)
             ns=islavsurfentry
 !
             iflag = 2
@@ -183,7 +183,6 @@
             gapcont=gapcont+shp2s(4,locs)*gapmints(indexf+m)*
      &           pslavsurf(3,indexf+m)
          enddo
-	 if (mint2d.eq.0) islavact=-1
          index1=inoels(3,index1)
       enddo
       itie = itie - 1

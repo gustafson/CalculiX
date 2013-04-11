@@ -32,7 +32,8 @@
 #include "pardiso.h"
 #endif
 
-void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
+void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *acr,
+                 double *bcr,int *ipivr,
                  double *ac,double *bc,int *nload,char *sideload,
                  int *nelemload,double *xloadact,char *lakon,int *ipiv,
                  int *ntmat_,double *vold,double *shcon,
@@ -53,19 +54,22 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
                  char *jobnamef, double *ctrl, double *xloadold,
                  double *reltime, int *nmethod, char *set, int *mi,
 		 int * istartset,int* iendset,int *ialset,int *nset,
-                 int *ineighe){
+                 int *ineighe, int *nmpc, int *nodempc,int *ipompc,
+                 double *coefmpc,char *labmpc, int *iemchange,int *nam, 
+                 int *iamload){
   
   /* network=0: purely thermal
      network=1: general case (temperatures, fluxes and pressures unknown)
      network=2: purely aerodynamic, i.e. only fluxes and pressures unknown */
   
-  int nhrs=1,info=0,i,iin=0,symmetryflag=2,inputformat=2,*icol=NULL,
-      *irow=NULL,icntrl,icutb=0,iin_abs=0,mt=mi[1]+1;
+  char kind[2]="N";
 
-  double uamt=0,uamf=0,uamp=0,camt[2],camf[2],camp[2],*au=NULL,*adb=NULL,
-    *aub=NULL,sigma=0.,cam1t=0.,cam1f=0.,cam1p=0.,
+  int nhrs=1,info=0,i,iin=0,icntrl,icutb=0,iin_abs=0,mt=mi[1]+1;
+
+  double uamt=0,uamf=0,uamp=0,camt[2],camf[2],camp[2],
+    cam1t=0.,cam1f=0.,cam1p=0.,
     cam2t=0.,cam2f=0.,cam2p=0.,dtheta=1.,*v=NULL,cama[2],cam1a=0.,
-      cam2a=0.,uama=0.,vamt=0.,vamf=0.,vamp=0.,vama=0.,cam0t=0.,cam0f=0.,
+    cam2a=0.,uama=0.,vamt=0.,vamf=0.,vamp=0.,vama=0.,cam0t=0.,cam0f=0.,
     cam0p=0.,cam0a=0.;
   
   /* check whether there are any gas temperature nodes; this check should
@@ -83,7 +87,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
 	      
 	      for(i=0;i<mt**nk;i++) v[i]=vold[i];
 
-	      FORTRAN(initialgas,(itg,ieg,ntm,ntg,ac,bc,lakon,v,
+	      FORTRAN(initialnet,(itg,ieg,ntg,ac,bc,lakon,v,
                            ipkon,kon,nflow,
 			   ikboun,nboun,prop,ielprop,nactdog,ndirboun,
 			   nodeboun,xbounact,ielmat,ntmat_,shcon,nshcon,
@@ -91,7 +95,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
 			   xbodyact,co,nbody,network,&iin_abs,vold,set,
 			   istep,iit,mi,ineighe,ilboun));
       
-	      FORTRAN(resultgas,(itg,ieg,ntg,ntm,bc,nload,sideload,
+	      FORTRAN(resultnet,(itg,ieg,ntg,bc,nload,sideload,
 			  nelemload,xloadact,
 			  lakon,ntmat_,v,shcon,nshcon,ipkon,kon,co,nflow,
 			  iinc,istep,dtime,ttime,time,
@@ -100,53 +104,56 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
 			  physcon,camt,camf,camp,rhcon,nrhcon,ipobody,
 			  ibody,xbodyact,nbody,&dtheta,vold,xloadold,
 			  reltime,nmethod,set,mi,ineighe,cama,&vamt,
-			  &vamf,&vamp,&vama));
+			  &vamf,&vamp,&vama,nmpc,nodempc,ipompc,coefmpc,
+                          labmpc));
 	  }
 	  
 	  iin++;
 	  iin_abs++;
 	  printf("      gas iteration %d \n \n",iin);
 	  
-	  FORTRAN(mafillgas,(itg,ieg,ntg,ntm,ac,nload,sideload,
+	  FORTRAN(mafillnet,(itg,ieg,ntg,ac,nload,sideload,
 			     nelemload,xloadact,lakon,ntmat_,v,
 			     shcon,nshcon,ipkon,kon,co,nflow,iinc,
 			     istep,dtime,ttime,time,
 			     ielmat,nteq,prop,ielprop,nactdog,nacteq,
 			     physcon,rhcon,nrhcon,ipobody,ibody,xbodyact,
-			     nbody,vold,xloadold,reltime,nmethod,set,mi));
+			     nbody,vold,xloadold,reltime,nmethod,set,mi,
+                             nmpc,nodempc,ipompc,coefmpc,labmpc));
 	  
-	  if(*ntm>0){
-	      FORTRAN(dgesv,(nteq,&nhrs,ac,ntm,ipiv,bc,ntm,&info)); 
+	  if(*nteq>0){
+	      FORTRAN(dgesv,(nteq,&nhrs,ac,nteq,ipiv,bc,nteq,&info)); 
 	  }
 
-	    /*spooles(ac,au,adb,aub,&sigma,bc,icol,irow,nteq,ntm,
+	    /*spooles(ac,au,adb,aub,&sigma,bc,icol,irow,nteq,nteq,
 	      &symmetryflag,&inputformat);*/
 	  
 	  if (info!=0) {
 	      printf(" *WARNING in radflowload: singular matrix\n");
 	    
-	      FORTRAN(mafillgas,(itg,ieg,ntg,ntm,ac,nload,sideload,
+	      FORTRAN(mafillnet,(itg,ieg,ntg,ac,nload,sideload,
 				 nelemload,xloadact,lakon,ntmat_,v,
 				 shcon,nshcon,ipkon,kon,co,nflow,iinc,
 				 istep,dtime,ttime,time,
 				 ielmat,nteq,prop,ielprop,nactdog,nacteq,
 				 physcon,rhcon,nrhcon,ipobody,ibody,xbodyact,
-				 nbody,vold,xloadold,reltime,nmethod,set,mi));
+				 nbody,vold,xloadold,reltime,nmethod,set,mi,
+                                 nmpc,nodempc,ipompc,coefmpc,labmpc));
 	    
-	      FORTRAN(equationcheck,(ac,ntm,nteq,nactdog,itg,ntg,nacteq,network));
+	      FORTRAN(equationcheck,(ac,nteq,nactdog,itg,ntg,nacteq,network));
 	    
 	      iin=0;
 
 	  }
 	  else {
-	      FORTRAN(resultgas,(itg,ieg,ntg,ntm,bc,nload,sideload,nelemload,
+	      FORTRAN(resultnet,(itg,ieg,ntg,bc,nload,sideload,nelemload,
 	       xloadact,lakon,ntmat_,v,shcon,nshcon,ipkon,kon,co,
 	       nflow,iinc,istep,dtime,ttime,time,ikforc,ilforc,xforcact,
 	       nforc,ielmat,nteq,prop,ielprop,nactdog,nacteq,
 	       &iin,physcon,camt,camf,camp,rhcon,nrhcon,ipobody,
 	       ibody,xbodyact,nbody,&dtheta,vold,xloadold,
 	       reltime,nmethod,set,mi,ineighe,cama,&vamt,
-	       &vamf,&vamp,&vama));
+	       &vamf,&vamp,&vama,nmpc,nodempc,ipompc,coefmpc,labmpc));
 	    
 	      if(*network!=2){ 
 		  cam2t=cam1t;
@@ -215,7 +222,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
 	  
 	  if(*network==0) {icntrl=1;}
 	  else {
-	      checkconvgas (&icutb,&iin,&uamt,&uamf,&uamp,
+	      checkconvnet(&icutb,&iin,&uamt,&uamf,&uamp,
 		 &cam1t,&cam1f,&cam1p,&cam2t,&cam2f,&cam2p,&cam0t,&cam0f,
 		 &cam0p,&icntrl,&dtheta,ctrl,&uama,&cam1a,&cam2a,&cam0a,
 		 &vamt,&vamf,&vamp,&vama);
@@ -228,7 +235,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
       /* extra output for hydraulic jump (fluid channels) */
 
       if(*network!=0){
-	FORTRAN(flowoutput,(itg,ieg,ntg,ntm,bc,lakon,ntmat_,
+	FORTRAN(flowoutput,(itg,ieg,ntg,nteq,bc,lakon,ntmat_,
 			    v,shcon,nshcon,ipkon,kon,co,nflow, dtime,ttime,time,
 			    ielmat,prop,ielprop,nactdog,nacteq,&iin,physcon,
 			    camt,camf,camp,&uamt,&uamf,&uamp,rhcon,nrhcon,
@@ -238,24 +245,45 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
       
   if(*ntr>0){
 	
-      FORTRAN(radmatrix, (ntr,ntm,ac,bc,sideload,nelemload,xloadact,lakon,
+      FORTRAN(radmatrix, (ntr,acr,bcr,sideload,nelemload,xloadact,lakon,
 			  vold,ipkon,kon,co,pmid,e1,e2,e3,iptri,kontri,ntri,
 			  nloadtr,tarea,tenv,physcon,erad,f,dist,idist,area,
 			  ithermal,iinc,iit,cs,mcs,inocs,ntrit,nk,fenv,istep,
 			  dtime,ttime,time,iviewfile,jobnamef,xloadold,
-			  reltime,nmethod,mi));
-		
-#ifdef SPOOLES
-      spooles(ac,au,adb,aub,&sigma,bc,icol,irow,ntr,ntm,
-	      &symmetryflag,&inputformat);
-#else
-      FORTRAN(dgesv,(ntr,&nhrs,ac,ntm,ipiv,bc,ntm,&info));
-#endif
+			  reltime,nmethod,mi,iemchange,nam,iamload));
+	
+      /* equation system is asymmetric and not sparse:
+         a non-sparse matrix solver is in this case
+         faster than a sparse matrix solver */
+	
+//#ifdef SPOOLES
+//      spooles(ac,au,adb,aub,&sigma,bc,icol,irow,ntr,ntr,
+//	      &symmetryflag,&inputformat);
+//#else
+
+
+      /* the left hand side of the radiation matrix has probably
+         changed if
+         - the viewfactors were updated
+         - a new step was started
+         - the emissivity coefficients were changed
+         - a new increment was started in a stationary calculation
+           (since the emissivity coefficients are ramped)
+	   in that case the LU decomposition has to be repeated
+           (i.e. call of dgesv) */
+
+      if(((*ithermal==3)&&(*iviewfile>=0))||
+         (*iit==-1)||(*iemchange==1)||((*iit==0)&&(*nmethod==1))){
+	  FORTRAN(dgesv,(ntr,&nhrs,acr,ntr,ipivr,bcr,ntr,&info));
+      }else{
+	  FORTRAN(dgetrs,(kind,ntr,&nhrs,acr,ntr,ipivr,bcr,ntr,&info));
+      }
+//#endif
 	
       if (info!=0){
 	  printf("*ERROR IN RADFLOWLOAD: SINGULAR MATRIX*\n");}   
       
-      else{ FORTRAN(radresult, (ntr,xloadact,ntm,bc,nloadtr,tarea,
+      else{ FORTRAN(radresult, (ntr,xloadact,bcr,nloadtr,tarea,
 				tenv,physcon,erad,f,fenv));}
   }
 

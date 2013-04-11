@@ -107,8 +107,11 @@
                call inputerror(inpc,ipoinpc,iline)
             endif
          else
-            write(*,*) '*WARNING in hyperelastics: unknown option:'
-            write(*,'(a132)') textpart(i)
+            write(*,*) 
+     &        '*WARNING in hyperelastics: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

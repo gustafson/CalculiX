@@ -17,7 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine allocont(ncont,ntie,tieset,nset,set,istartset,
-     &  iendset,ialset,lakon,ncone,tietol,ismallsliding,kind,mortar)
+     &  iendset,ialset,lakon,ncone,tietol,ismallsliding,kind1,kind2,
+     &  mortar)
 !
 !     counting the number of triangles needed for the 
 !     triangulation of the contact master surfaces
@@ -29,14 +30,14 @@
 !
       logical nodeslavsurf
 !
-      character*1 kind
+      character*1 kind1,kind2
       character*8 lakon(*)
       character*81 tieset(3,*),mastset,set(*),slavset
 !
       integer ncont,ntie,i,j,k,nset,istartset(*),iendset(*),ialset(*),
      &  imast,nelem,jface,ncone,islav,ismallsliding,ipos,mortar
 !
-      real*8 tietol(*)
+      real*8 tietol(2,*)
 !
 !     number of master triangles
 !
@@ -50,8 +51,9 @@
 !
 !        check for contact conditions
 !
-         if(tieset(1,i)(81:81).eq.kind) then
-            if(tietol(i).lt.0.d0) then
+         if((tieset(1,i)(81:81).eq.kind1).or.
+     &      (tieset(1,i)(81:81).eq.kind2)) then
+            if(tietol(1,i).lt.0.d0) then
                ismallsliding=1
             else
                ismallsliding=0
@@ -64,9 +66,11 @@
                if(set(j).eq.mastset) exit
             enddo
             if(j.gt.nset) then
+               ipos=index(mastset,' ')
                write(*,*) '*ERROR in allocont: master surface',
-     &               mastset
-               write(*,*) '       does not exist'
+     &               mastset(1:ipos-2)
+               write(*,*) '       does not exist or does not contain'
+               write(*,*) '       element faces'
                stop
             endif
             imast=j

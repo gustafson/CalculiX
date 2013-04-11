@@ -18,37 +18,35 @@
 !     
 !     This subroutine creates the matrix ac for gas problems
 !     
-      subroutine mafillgas(itg,ieg,ntg,ntm,
-     &     ac,nload,sideload,nelemload,xloadact,lakon,ntmat_,v,
-     &     shcon,nshcon,ipkon,kon,co,nflow,iinc,
+      subroutine mafillnet(itg,ieg,ntg,ac,nload,sideload,nelemload,
+     &     xloadact,lakon,ntmat_,v,shcon,nshcon,ipkon,kon,co,nflow,iinc,
      &     istep,dtime,ttime,time,
      &     ielmat,nteq,prop,ielprop,nactdog,nacteq,physcon,
      &     rhcon,nrhcon,ipobody,ibody,xbodyact,nbody,vold,xloadold,
-     &     reltime,nmethod,set,mi)
+     &     reltime,nmethod,set,mi,nmpc,nodempc,ipompc,coefmpc,labmpc)
 !     
       implicit none
 !     
       logical identity
       character*8 lakonl,lakon(*)
-      character*20 sideload(*)
+      character*20 sideload(*),labmpc(*)
       character*81 set(*)
 !     
       integer itg(*),ieg(*),ntg,nteq,nflow,nload,ielmat(*),
      &     nelemload(2,*),nope,nopes,mint2d,i,j,k,l,iflag,
-     &     node,imat,ntmat_,id,ntm,ifaceq(8,6),ifacet(6,4),
+     &     node,imat,ntmat_,id,ifaceq(8,6),ifacet(6,4),
      &     ifacew(8,5),node1,node2,nshcon(*),nelem,ig,index,konl(20),
-     &     ipkon(*),kon(*),idof,iinc,ibody(3,*),
-     &     istep,jltyp,nfield,ipobody(2,*),
-     &     nodem,ieq,kflag,nrhcon(*),numf,
+     &     ipkon(*),kon(*),idof,iinc,ibody(3,*),istep,jltyp,nfield,
+     &     ipobody(2,*),nodem,ieq,kflag,nrhcon(*),numf,
      &     idofp1,idofp2,idofm,idoft1,idoft2,idoft,nactdog(0:3,*),
      &     nacteq(0:3,*),ielprop(*),nodef(5),idirf(5),nbody,
-     &     nmethod,icase,mi(2)
+     &     nmethod,icase,mi(2),nmpc,nodempc(3,*),ipompc(*),idir
 !     
-      real*8 ac(ntm,*),xloadact(2,*),cp,h(2),physcon(*),dvi,
+      real*8 ac(nteq,*),xloadact(2,*),cp,h(2),physcon(*),dvi,
      &     xl2(3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
      &     gastemp,v(0:mi(2),*),shcon(0:3,ntmat_,*),co(3,*),shp2(7,8),
      &     ftot,field,prop(*),f,df(5),tg1,tg2,r,rho,tl2(8),
-     &     dtime,ttime,time,areaj,xflow,tvar(2),g(3),
+     &     dtime,ttime,time,areaj,xflow,tvar(2),g(3),coefmpc(*),
      &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,ts1,ts2,xs2(3,7),
      &     xdenom1,xdenom2,xcst,xk1,xk2,expon,a,dt1,dt2,kappa,
      &     pt1,pt2,inv,vold(0:mi(2),*),xloadold(2,*),reltime,pi
@@ -530,7 +528,7 @@
 !     
             index=ipkon(nelem)
             if(index.lt.0) then
-               write(*,*) '*ERROR in radflowload: element ',nelem
+               write(*,*) '*ERROR in mafillnet: element ',nelem
                write(*,*) '       is not defined'
                stop
             endif
@@ -647,9 +645,28 @@
          endif
       enddo
 !
-      write(30,*) 'ac in mafillgas'
-c      do i=1,9
-c         write(30,'(9(1x,e11.4))') (ac(i,j),j=1,9)
+!     additional multiple point constraints
+!
+      j=nteq+1
+      do i=nmpc,1,-1
+         if(labmpc(i)(1:7).ne.'NETWORK') cycle
+         j=j-1
+         index=ipompc(i)
+!
+         do
+            node=nodempc(1,index)
+            idir=nodempc(2,index)
+            if(nactdog(idir,node).ne.0) then
+               ac(j,nactdog(idir,node))=coefmpc(index)
+            endif
+            index=nodempc(3,index)
+            if(index.eq.0) exit
+         enddo
+      enddo
+!
+c      write(30,*) 'ac in mafillgas'
+c      do i=1,17
+c         write(30,'(17(1x,e11.4))') (ac(i,j),j=1,17)
 c      enddo
 !
       return

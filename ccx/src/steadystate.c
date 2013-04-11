@@ -65,23 +65,27 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
                int **inotrp, int *ntrans, double **fmpcp, char *cbody, int *ibody,
                double *xbody, int *nbody, double *xbodyold, int *istep,
                int *isolver, int *jq, char *output, int *mcs,int *nkon, 
-               int *ics, double *cs, int *mpcend, int **nnnp){
+	       int *ics, double *cs, int *mpcend, int **nnnp,double *ctrl){
 
   char fneig[132]="",description[13]="            ",*lakon=NULL,*labmpc=NULL,
-    *labmpcold=NULL;
+    *labmpcold=NULL,cflag[1]=" ";
 
   int nev,i,j,k, *inum=NULL,*ipobody=NULL,inewton=0,nsectors,im,
     iinc=0,l,iout,ielas,icmd,iprescribedboundary,ndata,nmd,nevd,
     ndatatot,*iphaseforc=NULL,*iphaseload=NULL,*iphaseboun=NULL,
     *isave=NULL,nfour,ii,ir,ic,mode,noddiam=-1,*nm=NULL,
     *kon=NULL,*ipkon=NULL,*ielmat=NULL,*ielorien=NULL,*inotr=NULL,
-    *nodeboun=NULL,*ndirboun=NULL,*iamboun=NULL,*ikboun=NULL,
+    *nodeboun=NULL,*ndirboun=NULL,*iamboun=NULL,*ikboun=NULL,jj,
     *ilboun=NULL,*nactdof=NULL,*ipompc=NULL,*nodempc=NULL,*ikmpc=NULL,
     *ilmpc=NULL,*ipompcold=NULL,*nodempcold=NULL,*ikmpcold=NULL,
     *ilmpcold=NULL,nmpcold,mpcendold,kflag=2,*iamt1=NULL,ifreebody,
     *itg=NULL,ntg=0,symmetryflag=0,inputformat=0,dashpot,nrhs=1,
     *ipiv=NULL,info,nev2,ngraph=1,nkg,neg,iflag=1,idummy=1,imax,
-      nzse[3],*nnn=*nnnp,mt=mi[1]+1,*ikactmech=NULL,nactmech;
+    nzse[3],*nnn=*nnnp,mt=mi[1]+1,*ikactmech=NULL,nactmech,i2,id,
+    *imddof=NULL,nmddof,*imdnode=NULL,nmdnode,*imdboun=NULL,nmdboun,
+    *imdmpc=NULL,nmdmpc,*izdof=NULL,nzdof,nrset,cyclicsymmetry,
+    *ikactmechr=NULL,*ikactmechi=NULL,nactmechr,nactmechi,intpointvar,
+    iforc,iload;
 
   double *d=NULL, *z=NULL,*stiini=NULL,*vini=NULL,*freqnh=NULL,
     *xforcact=NULL, *xloadact=NULL,y,*fr=NULL,*fi=NULL,*cc=NULL,
@@ -101,7 +105,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
     *coefmpcold=NULL,*t0=NULL,*t1=NULL,*t1old=NULL,*adc=NULL,*auc=NULL,
     *am=NULL,*bm=NULL,*zc=NULL,*e=NULL,*stnr=NULL,*stni=NULL,
     *vmax=NULL,*stnmax=NULL,*va=NULL,*vp=NULL,*fric=NULL,*springarea=NULL,
-    *stna=NULL,*stnp=NULL;
+    *stna=NULL,*stnp=NULL,*bp=NULL,*eenmax=NULL;
 
   /* dummy arguments for the call of expand*/
 
@@ -128,10 +132,13 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   xstiff=NNEW(double,27*mi[0]**ne);
 
   pi=4.*atan(1.);
-  iout=1;
+  iout=2;
 
   alpham=xmodal[0];
   betam=xmodal[1];
+
+  nrset=(int)xmodal[9];
+
   fmin=2.*pi*xmodal[2];
   fmax=2.*pi*xmodal[3];
   ndata=floor(xmodal[4]);
@@ -152,6 +159,56 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       }
   }
 
+  /* check for cyclic symmetry */
+
+  if((*mcs==0)||(cs[1]<0)){cyclicsymmetry=0;}else{cyclicsymmetry=1;}
+
+  /* creating imddof containing the degrees of freedom
+     retained by the user and imdnode containing the nodes */
+
+  nmddof=0;nmdnode=0;nmdboun=0;nmdmpc=0;
+  if(nrset!=0){
+      imddof=NNEW(int,*nk*3);
+      imdnode=NNEW(int,*nk);
+      imdboun=NNEW(int,*nboun);
+      imdmpc=NNEW(int,*nmpc);
+      FORTRAN(createmddof,(imddof,&nmddof,&nrset,istartset,iendset,
+			   ialset,nactdof,ithermal,mi,imdnode,&nmdnode,
+                           ikmpc,ilmpc,ipompc,nodempc,nmpc,
+                           imdmpc,&nmdmpc,imdboun,&nmdboun,ikboun,
+                           nboun,nset,&ntie,tieset,set,lakon,kon,ipkon,labmpc,
+                           ilboun));
+    
+  /* checking for user-defined loads: all relevant nodes belonging to
+     elements subject to user-defined loads are stored in imdnode
+     as well (vold and veold are made available in the user subroutines */
+  
+      if(!cyclicsymmetry){
+	  for(i=0;i<*nload;i++){
+	      iload=i+1;
+	      FORTRAN(addimdnodedload,(nelemload,sideload,ipkon,kon,lakon,
+		      &iload,imdnode,&nmdnode,ikmpc,ilmpc,ipompc,nodempc,nmpc,
+                      imddof,&nmddof,nactdof,mi,imdmpc,&nmdmpc,imdboun,&nmdboun,
+		      ikboun,nboun,ilboun,ithermal));
+	  }
+	  
+	  for(i=0;i<*nforc;i++){
+	      iforc=i+1;
+	      FORTRAN(addimdnodecload,(nodeforc,&iforc,imdnode,&nmdnode,xforc,
+                   ikmpc,ilmpc,ipompc,nodempc,nmpc,imddof,&nmddof,
+                   nactdof,mi,imdmpc,&nmdmpc,imdboun,&nmdboun,
+		   ikboun,nboun,ilboun,ithermal));
+	  }
+      }
+
+      RENEW(imddof,int,nmddof);
+      RENEW(imdnode,int,nmdnode);
+      RENEW(imdboun,int,nmdboun);
+      RENEW(imdmpc,int,nmdmpc);
+  }
+
+  /* reading the eigenvalue and eigenmode information */
+
   strcpy(fneig,jobnamec);
   strcat(fneig,".eig");
 
@@ -162,7 +219,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
   nsectors=1;
 
-  if(*mcs==0){
+  if(!cyclicsymmetry){
 
       nkg=*nk;
       neg=*ne;
@@ -253,10 +310,10 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  if(nev==0){
 	      z=NNEW(double,neq[1]*nevd);
 	  }else{
-	      RENEW(z,double,neq[1]*(nev+nevd));
+	      RENEW(z,double,(long long)neq[1]*(nev+nevd));
 	  }
 	  
-	  if(fread(&z[neq[1]*nev],sizeof(double),neq[1]*nevd,f1)!=neq[1]*nevd){
+	  if(fread(&z[(long long)neq[1]*nev],sizeof(double),neq[1]*nevd,f1)!=neq[1]*nevd){
 	      printf("*ERROR reading the eigenvalue file...");
 	      exit(0);
 	  }
@@ -271,9 +328,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
         /* determining the maximum number of sectors to be plotted */
 
-      ngraph=1;
       for(j=0;j<*mcs;j++){
-	  if(cs[17*j+4]>ngraph) ngraph=(int)(cs[17*j+4]+0.5);
+	  if(cs[17*j+4]>ngraph) ngraph=(int)cs[17*j+4];
       }
       nkg=*nk*ngraph;
       neg=*ne*ngraph;
@@ -281,6 +337,10 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       /* allocating field for the expanded structure */
 
       RENEW(co,double,3**nk*nsectors);
+
+      /* next line is necessary for multiple cyclic symmetry
+         conditions */
+
       for(i=3**nk;i<3**nk*nsectors;i++){co[i]=0.;}
       if(*ithermal!=0){
 	  RENEW(t0,double,*nk*nsectors);
@@ -296,7 +356,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       RENEW(lakon,char,8**ne*nsectors);
       RENEW(ielmat,int,*ne*nsectors);
       if(*norien>0) RENEW(ielorien,int,*ne*nsectors);
-      RENEW(z,double,neq[1]*nev*nsectors/2);
+//      RENEW(z,double,(long long)neq[1]*nev*nsectors/2);
 
       RENEW(nodeboun,int,*nboun*nsectors);
       RENEW(ndirboun,int,*nboun*nsectors);
@@ -330,6 +390,16 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       RENEW(ilmpc,int,*nmpc*nsectors);
       RENEW(fmpc,double,*nmpc*nsectors);
 
+      /* reallocating the fields for the nodes in which the
+         solution has to be calculated */
+
+      RENEW(imddof,int,neq[1]/2*nsectors);
+      RENEW(imdnode,int,*nk*nsectors);
+      RENEW(imdboun,int,*nboun*nsectors);
+      RENEW(imdmpc,int,*nmpc*nsectors);
+
+      izdof=NNEW(int,1);
+
       expand(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
 	ipompc,nodempc,coefmpc,labmpc,nmpc,nodeforc,ndirforc,xforc,
         nforc,nelemload,sideload,xload,nload,nactdof,neq,
@@ -340,15 +410,23 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
         xstate,npmat_,matname,mi,ics,cs,mpcend,ncmat_,
         nstate_,mcs,nkon,ener,jobnamec,output,set,nset,istartset,
         iendset,ialset,nprint,prlab,prset,nener,trab,
-        inotr,ntrans,ttime,fmpc,&nev,z,iamboun,xbounold,
+        inotr,ntrans,ttime,fmpc,&nev,&z,iamboun,xbounold,
 	&nsectors,nm,icol,irow,nzl,nam,ipompcold,nodempcold,coefmpcold,
         labmpcold,&nmpcold,xloadold,iamload,t1old,t1,iamt1,xstiff,&icole,&jqe,
         &irowe,isolver,nzse,&adbe,&aube,iexpl,
-	ibody,xbody,nbody,cocon,ncocon,tieset,&ntie,&nnn);
+	ibody,xbody,nbody,cocon,ncocon,tieset,&ntie,&nnn,imddof,&nmddof,
+	imdnode,&nmdnode,imdboun,&nmdboun,imdmpc,&nmdmpc,&izdof,&nzdof);
+
+      RENEW(imddof,int,nmddof);
+      RENEW(imdnode,int,nmdnode);
+      RENEW(imdboun,int,nmdboun);
+      RENEW(imdmpc,int,nmdmpc);
 
       free(vold);vold=NNEW(double,mt**nk);
       RENEW(eme,double,6*mi[0]**ne);
-      RENEW(xstiff,double,(long long)27*mi[0]**ne);
+
+//      RENEW(xstiff,double,(long long)27*mi[0]**ne);
+      RENEW(xstiff,double,(long long)27*mi[0]**ne*nsectors);
       if(*nener==1) RENEW(ener,double,mi[0]**ne);
   }
 
@@ -366,61 +444,90 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   }
   if(dashpot){
 
-      if(*mcs!=0){
+      if(cyclicsymmetry){
 	  printf("*ERROR in steadystate: dashpots are not allowed in combination with cyclic symmetry\n");
 	  FORTRAN(stop,());
       }
-       /*  adc=NNEW(double,neq[1]);
-      auc=NNEW(double,nzs[1]);
-      FORTRAN(mafilldm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
-	      ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
-	      nforc,nelemload,sideload,xload,nload,xbody,ipobody,nbody,cgr,
-	      adc,auc,nactdof,icol,jq,irow,neq,nzl,nmethod,
-	      ikmpc,ilmpc,ikboun,ilboun,
-	      elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
-	      ielorien,norien,orab,ntmat_,
-	      t0,t0,ithermal,prestr,iprestr,vold,iperturb,sti,
-	      nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
-	      xstiff,npmat_,&dtime,matname,mi,ncmat_,
-	      ttime,&time,istep,&iinc,ibody));*/
-
-      /*  zc = damping matrix * eigenmodes */
-
-  /*  zc=NNEW(double,neq[1]*nev);
-      for(i=0;i<nev;i++){
-	  FORTRAN(op,(&neq[1],aux,&z[i*neq[1]],&zc[i*neq[1]],adc,auc,
-	  icol,irow,nzl));
-	  }*/
 
       /* cc is the reduced damping matrix (damping matrix mapped onto
          space spanned by eigenmodes) */
 
       cc=NNEW(double,nev*nev);
-       /* for(i=0;i<nev;i++){
-	  for(j=0;j<=i;j++){
-	      for(k=0;k<neq[1];k++){
-		  cc[i*nev+j]+=z[j*neq[1]+k]*zc[i*neq[1]+k];
-	      }
-	  }
-	  }*/
-
-      /* symmetric part of cc matrix */
-
-  /* for(i=0;i<nev;i++){
-	  for(j=i;j<nev;j++){
-	      cc[i*nev+j]=cc[j*nev+i];
-	  }
-      }
-      free(zc);free(adc);free(auc);*/
       nev2=2*nev;
       am=NNEW(double,nev2*nev2);
       bm=NNEW(double,nev2);
       ipiv=NNEW(int,nev2);
   }
+
+  inum=NNEW(int,*nk);
+  strcpy1(&cflag[0],&filab[4],1);
+  FORTRAN(createinum,(ipkon,inum,kon,lakon,nk,ne,&cflag[0],nelemload,
+	      nload,nodeboun,nboun,ndirboun,ithermal));
+
+  /* check whether integration point values are requested; if not,
+     the stress fields do not have to be allocated */
+
+  intpointvar=0;
+  if(*ithermal<=1){
+
+      /* mechanical */
+
+      if((strcmp1(&filab[174],"S")==0)||
+	 (strcmp1(&filab[261],"E")==0)||
+	 (strcmp1(&filab[348],"RF")==0)||
+	 (strcmp1(&filab[435],"PEEQ")==0)||
+	 (strcmp1(&filab[522],"ENER")==0)||
+	 (strcmp1(&filab[609],"SDV")==0)||
+	 (strcmp1(&filab[1044],"ZZS")==0)||
+	 (strcmp1(&filab[1479],"PHS")==0)||
+	 (strcmp1(&filab[1653],"MAXS")==0)||
+	 (strcmp1(&filab[2175],"CONT")==0)||
+	 (strcmp1(&filab[2262],"CELS")==0)) intpointvar=1;
+      for(i=0;i<*nprint;i++){
+	  if((strcmp1(&prlab[6*i],"S")==0)||
+	     (strcmp1(&prlab[6*i],"E")==0)||
+	     (strcmp1(&prlab[6*i],"PEEQ")==0)||
+	     (strcmp1(&prlab[6*i],"ENER")==0)||
+	     (strcmp1(&prlab[6*i],"SDV")==0)||
+	     (strcmp1(&prlab[6*i],"RF")==0)) {intpointvar=1;break;}
+      }
+  }else{
+
+      /* thermal */
+
+      if((strcmp1(&filab[696],"HFL")==0)||
+	 (strcmp1(&filab[783],"RFL")==0)) intpointvar=1;
+      for(i=0;i<*nprint;i++){
+	  if((strcmp1(&prlab[6*i],"HFL")==0)||
+	     (strcmp1(&prlab[6*i],"RFL")==0)) {intpointvar=1;break;}
+      }
+  }
    
   if(nfour<=0){
 
       /* harmonic excitation */
+
+      ikactmechr=NNEW(int,neq[1]);ikactmechi=NNEW(int,neq[1]);
+      nactmechr=0;nactmechi=0;
+      
+      /* result fields */
+      
+      if(intpointvar==1){
+	  fn=NNEW(double,mt**nk);
+	  stnr=NNEW(double,6**nk);
+	  stni=NNEW(double,6**nk);
+	  stx=NNEW(double,6*mi[0]**ne);
+	  eei=NNEW(double,6*mi[0]**ne);
+
+	  if(*ithermal>1) {qfn=NNEW(double,3**nk);qfx=NNEW(double,3*mi[0]**ne);}
+	  
+	  if(strcmp1(&filab[261],"E   ")==0) een=NNEW(double,6**nk);
+	  if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,*nk);
+	  
+	  if(*nener==1){
+	      stiini=NNEW(double,6*mi[0]**ne);
+	      enerini=NNEW(double,mi[0]**ne);}
+      }
       
       /* determining the frequency data points */
       
@@ -486,7 +593,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  }
       }
 
-      if((iprescribedboundary)&&(*mcs!=0)){
+      if((iprescribedboundary)&&(cyclicsymmetry)){
 	  printf("*ERROR in steadystate: prescribed boundaries are not allowed in combination with cyclic symmetry\n");
 	  FORTRAN(stop,());
       }
@@ -499,7 +606,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  fric[i]=(alpham+betam*d[i]*d[i]);
 	      }
 	      else {
-		  printf("*WARNING in dyna: one of the frequencies is zero\n");
+		  printf("*WARNING in steadystate: one of the frequencies is zero\n");
 		  printf("         no Rayleigh mass damping allowed\n");
 		  fric[i]=0.;
 	      }
@@ -514,7 +621,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  /*copy the damping coefficients for every eigenfrequencie from xmodal[11....] */
 	  if(nev<(int)xmodal[10]){
 	      imax=nev;
-	      printf("*WARNING in dyna: too many modal damping coefficients applied\n");
+	      printf("*WARNING in steadystate: too many modal damping coefficients applied\n");
 	      printf("         damping coefficients corresponding to nonexisting eigenvalues are ignored\n");
 	  }
 	  else{
@@ -614,20 +721,6 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       
       vr=NNEW(double,mt**nk);
       vi=NNEW(double,mt**nk);
-      fn=NNEW(double,mt**nk);
-      stnr=NNEW(double,6**nk);
-      stni=NNEW(double,6**nk);
-      inum=NNEW(int,*nk);
-      stx=NNEW(double,6*mi[0]**ne);
-      if(*ithermal>1) {qfn=NNEW(double,3**nk);qfx=NNEW(double,3*mi[0]**ne);}
-      
-      if(strcmp1(&filab[261],"E   ")==0) een=NNEW(double,6**nk);
-      if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,*nk);
-      
-      eei=NNEW(double,6*mi[0]**ne);
-      if(*nener==1){
-	  stiini=NNEW(double,6*mi[0]**ne);
-	  enerini=NNEW(double,mi[0]**ne);}
       
       if(iprescribedboundary){
 	  
@@ -696,7 +789,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      
 	      zc=NNEW(double,neq[1]*nev);
 	      for(i=0;i<nev;i++){
-		  FORTRAN(op,(&neq[1],aux,&z[i*neq[1]],&zc[i*neq[1]],adc,auc,
+		  FORTRAN(op,(&neq[1],aux,&z[(long long)i*neq[1]],&zc[i*neq[1]],adc,auc,
 			      icol,irow,nzl));
 	      }
 	      
@@ -707,7 +800,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      for(i=0;i<nev;i++){
 		  for(j=0;j<=i;j++){
 		      for(k=0;k<neq[1];k++){
-			  cc[i*nev+j]+=z[j*neq[1]+k]*zc[i*neq[1]+k];
+			  cc[i*nev+j]+=z[(long long)j*neq[1]+k]*zc[i*neq[1]+k];
 		      }
 		  }
 	      }
@@ -731,7 +824,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
                nam,ampli,&time,&reltime,ttime,&dtime,ithermal,nmethod,
 	       xbounold,xboun,xbounact,iamboun,nboun,nodeboun,ndirboun,
                nodeforc,ndirforc,istep,&iinc,co,vold,itg,&ntg,amname,
-	       ikboun,ilboun,nelemload,sideload,mi));
+	       ikboun,ilboun,nelemload,sideload,mi,
+               ntrans,trab,inotr,veold));
 	  
 	  /* real part of forces */
 	  
@@ -765,12 +859,48 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		       t0,t1act,ithermal,iprestr,vold,iperturb,iexpl,plicon,
 		       nplicon,plkcon,nplkcon,
 		       npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
-                       xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech));
+                       xbodyold,&reltime,veold,matname,mi,ikactmechr,&nactmechr));
 	  
-	  /* correction for nonzero SPC's */
+	  /* real modal coefficients */
 	  
-	  if(iprescribedboundary){
+	  if(!iprescribedboundary){
+	      if(!cyclicsymmetry){
+		  for(i=0;i<nev;i++){
+		      i2=i*neq[1];
+		      aa[i]=0.;
+		      if(nactmechr<neq[1]/2){
+			  for(j=0;j<nactmechr;j++){
+			      aa[i]+=z[i2+ikactmechr[j]]*br[ikactmechr[j]];
+			  }
+		      }else{
+			  for(j=0;j<neq[1];j++){
+			      aa[i]+=z[i2+j]*br[j];
+			  }
+		      }
+		  }
+	      }else{
+		  for(i=0;i<nev;i++){aa[i]=0.;}
+		  for(j=0;j<nactmechr;j++){
+		      for(i=0;i<nev;i++){
+			  FORTRAN(nident,(izdof,&ikactmechr[j],&nzdof,&id));
+			  if(id!=0){
+			      if(izdof[id-1]==ikactmechr[j]){
+				  aa[i]+=z[i*nzdof+id-1]*br[ikactmechr[j]];
+			      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+			  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+		      }
+		  }
+	      }
+	 
+	  
+	  }else{
+	  
+	      /* correction for nonzero SPC's */
 	      
+	      /* next statement makes sure that br is reset to zero at the
+                 start of rhs.f */
+	      nactmechr=neq[1];
+
 	      /* real part of boundary conditions */
 	      
 	      for (i=0;i<*nboun;i++){
@@ -842,11 +972,47 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		       t0,t1act,ithermal,iprestr,vold,iperturb,iexpl,plicon,
 		       nplicon,plkcon,nplkcon,
 		       npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
-                       xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech));
+                       xbodyold,&reltime,veold,matname,mi,ikactmechi,&nactmechi));
+	  
+	  /* imaginary modal coefficients */
+	  
+	  if(!iprescribedboundary){
+	      if(!cyclicsymmetry){
+		  for(i=0;i<nev;i++){
+		      i2=i*neq[1];
+		      bb[i]=0.;
+		      if(nactmechi<neq[1]/2){
+			  for(j=0;j<nactmechi;j++){
+			      bb[i]+=z[i2+ikactmechi[j]]*bi[ikactmechi[j]];
+			  }
+		      }else{
+			  for(j=0;j<neq[1];j++){
+			      bb[i]+=z[i2+j]*bi[j];
+			  }
+		      }
+		  }
+	      }else{
+		  for(i=0;i<nev;i++){bb[i]=0.;}
+		  for(j=0;j<nactmechi;j++){
+		      for(i=0;i<nev;i++){
+			  FORTRAN(nident,(izdof,&ikactmechi[j],&nzdof,&id));
+			  if(id!=0){
+			      if(izdof[id-1]==ikactmechi[j]){
+				  bb[i]+=z[i*nzdof+id-1]*bi[ikactmechi[j]];
+			      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+			  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+		      }
+		  }
+	      }
+
+	  }else{
 	  
 	  /* correction for nonzero SPC's */
-	  
-	  if(iprescribedboundary){
+	      
+	      /* next statement makes sure that bi is reset to zero at the
+                 start of rhs.f */
+
+	      nactmechi=neq[1];
 	      
 	      /* imaginary part of boundary conditions */
 	      
@@ -885,31 +1051,30 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      }
 	      FORTRAN(op,(&neq[1],aux,ubi,mubi,adb,aub,
 			  icol,irow,nzl));
-	  }
 	  
-	  /* correction for prescribed boundary conditions */
+	      /* correction for prescribed boundary conditions */
 	  
-	  if(iprescribedboundary){
 	      for(i=0;i<neq[1];i++){
 		  br[i]+=freq[l]*(freq[l]*mubr[i]+alpham*mubi[i]+betam*fi[i]);
 		  bi[i]+=freq[l]*(freq[l]*mubi[i]-alpham*mubr[i]-betam*fr[i]);
 	      }
-	  }
 	  
-	  /* real and imaginary modal coefficients */
-	  
-	  for(i=0;i<nev;i++){
-	      aa[i]=0.;
-	      for(j=0;j<neq[1];j++){
-		  aa[i]+=z[i*neq[1]+j]*br[j];
+	      /* real and imaginary modal coefficients */
+
+	      for(i=0;i<nev;i++){
+		  aa[i]=0.;
+		  for(j=0;j<neq[1];j++){
+		      aa[i]+=z[(long long)i*neq[1]+j]*br[j];
+		  }
 	      }
-	  }
-	  
-	  for(i=0;i<nev;i++){
-	      bb[i]=0.;
-	      for(j=0;j<neq[1];j++){
-		  bb[i]+=z[i*neq[1]+j]*bi[j];
+	      
+	      for(i=0;i<nev;i++){
+		  bb[i]=0.;
+		  for(j=0;j<neq[1];j++){
+		      bb[i]+=z[(long long)i*neq[1]+j]*bi[j];
+		  }
 	      }
+	      
 	  }
 	  
 	  /* calculating the modal coefficients */
@@ -967,28 +1132,75 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  /* output in the .dat file */
 
 	  FORTRAN(writepf,(d,bjr,bji,&time,&nev));
-	  
+      
 	  /* calculating the real response */
-	  
+      
 	  if(iprescribedboundary){
-	      for(i=0;i<neq[1];i++){
-		  br[i]=ubr[i];
+	      if(nmdnode==0){
+		  memcpy(&br[0],&ubr[0],sizeof(double)*neq[1]);
+	      }else{
+		  for(i=0;i<nmddof;i++){
+		      br[imddof[i]]=ubr[imddof[i]];
+		  }
 	      }
 	  }
 	  else{
-	      for(i=0;i<neq[1];i++){
-		  br[i]=0.;
-	      }
-	  }
-	  for(i=0;i<neq[1];i++){
-	      for(j=0;j<nev;j++){
-		  br[i]+=bjr[j]*z[j*neq[1]+i];
+	      if(nmdnode==0){
+		  DMEMSET(br,0,neq[1],0.);
+	      }else{
+		  for(i=0;i<nmddof;i++){
+		      br[imddof[i]]=0.;
+		  }
 	      }
 	  }
 	  
-//	  memset(&vr[0],0.,sizeof(double)*mt**nk);
-	  DMEMSET(vr,0,mt**nk,0.);
+	  if(!cyclicsymmetry){
+	      if(nmdnode==0){
+		  for(i=0;i<neq[1];i++){
+		      for(j=0;j<nev;j++){
+			  br[i]+=bjr[j]*z[(long long)j*neq[1]+i];
+		      }
+		  }
+	      }else{
+		  for(i=0;i<nmddof;i++){
+		      for(j=0;j<nev;j++){
+			  br[imddof[i]]+=bjr[j]*z[(long long)j*neq[1]+imddof[i]];
+		      }
+		  }
+	      }
+	  }else{
+	      for(i=0;i<nmddof;i++){
+		  FORTRAN(nident,(izdof,&imddof[i],&nzdof,&id));
+		  if(id!=0){
+		      if(izdof[id-1]==imddof[i]){
+			  for(j=0;j<nev;j++){
+			      br[imddof[i]]+=bjr[j]*z[j*nzdof+id-1];
+			  }
+		      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+		  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+	      }
+	  }
+	  
+	  if(nmdnode==0){
+	      DMEMSET(vr,0,mt**nk,0.);
+	  }else{
+	      for(jj=0;jj<nmdnode;jj++){
+		  i=imdnode[jj]-1;
+		  for(j=1;j<4;j++){
+		      vr[mt*i+j]=0.;
+		  }
+	      }
+	  }
+
 	  if(iprescribedboundary){
+      
+              /* calculating displacements/temperatures */
+      
+	      FORTRAN(dynresults,(nk,vr,ithermal,nactdof,vold,nodeboun,
+		    ndirboun,xbounr,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,
+		    br,bp,veold,&dtime,mi,imdnode,&nmdnode,imdboun,&nmdboun,
+		    imdmpc,&nmdmpc,nmethod));
+
 	      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,vr,stnr,inum,
 		  stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
 		  ielmat,ielorien,norien,orab,ntmat_,t0,t1,
@@ -1003,8 +1215,16 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  enern,sti,xstaten,eei,enerini,cocon,ncocon,
 		  set,nset,istartset,iendset,ialset,nprint,prlab,prset,
 		  qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload,
-                  ikmpc,ilmpc,istep,&iinc,springarea));}
+		  ikmpc,ilmpc,istep,&iinc,springarea,&reltime));}
 	  else{
+      
+              /* calculating displacements/temperatures */
+      
+	      FORTRAN(dynresults,(nk,vr,ithermal,nactdof,vold,nodeboun,
+		    ndirboun,xbounact,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,
+		    br,bp,veold,&dtime,mi,imdnode,&nmdnode,imdboun,&nmdboun,
+		    imdmpc,&nmdmpc,nmethod));
+
 	      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,vr,stnr,inum,
 		  stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
 		  ielmat,ielorien,norien,orab,ntmat_,t0,t1,
@@ -1019,7 +1239,16 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  enern,sti,xstaten,eei,enerini,cocon,ncocon,
 		  set,nset,istartset,iendset,ialset,nprint,prlab,prset,
 		  qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload,
-                  ikmpc,ilmpc,istep,&iinc,springarea));}
+		  ikmpc,ilmpc,istep,&iinc,springarea,&reltime));
+
+	      if(nmdnode==0){
+		  DMEMSET(br,0,neq[1],0.);
+	      }else{
+		  for(i=0;i<nmddof;i++){
+		      br[imddof[i]]=0.;
+		  }
+	      }
+	  }
 	  
 	  (*kode)++;
 	  
@@ -1033,30 +1262,78 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	    iperturb,ener,mi,output,ithermal,qfn,&mode,&noddiam,
             trab,inotr,ntrans,orab,ielorien,norien,description,
 	    ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,
-            &neg,cs,set,nset,istartset,iendset,ialset));
+	    &neg,cs,set,nset,istartset,iendset,ialset,eenmax));
 	  if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
 	  
 	  /* calculating the imaginary response */
-	  
+      
 	  if(iprescribedboundary){
-	      for(i=0;i<neq[1];i++){
-		  bi[i]=ubi[i];
+	      if(nmdnode==0){
+		  memcpy(&bi[0],&ubi[0],sizeof(double)*neq[1]);
+	      }else{
+		  for(i=0;i<nmddof;i++){
+		      bi[imddof[i]]=ubi[imddof[i]];
+		  }
 	      }
 	  }
 	  else{
-	      for(i=0;i<neq[1];i++){
-		  bi[i]=0.;
-	      }
-	  }
-	  for(i=0;i<neq[1];i++){
-	      for(j=0;j<nev;j++){
-		  bi[i]+=bji[j]*z[j*neq[1]+i];
+	      if(nmdnode==0){
+		  DMEMSET(bi,0,neq[1],0.);
+	      }else{
+		  for(i=0;i<nmddof;i++){
+		      bi[imddof[i]]=0.;
+		  }
 	      }
 	  }
 	  
-//	  memset(&vi[0],0.,sizeof(double)*mt**nk);
-	  DMEMSET(vi,0,mt**nk,0.);
+	  if(!cyclicsymmetry){
+	      if(nmdnode==0){
+		  for(i=0;i<neq[1];i++){
+		      for(j=0;j<nev;j++){
+			  bi[i]+=bji[j]*z[(long long)j*neq[1]+i];
+		      }
+		  }
+	      }else{
+		  for(i=0;i<nmddof;i++){
+		      for(j=0;j<nev;j++){
+			  bi[imddof[i]]+=bji[j]*z[(long long)j*neq[1]+imddof[i]];
+		      }
+		  }
+	      }
+	  }else{
+	      for(i=0;i<nmddof;i++){
+		  FORTRAN(nident,(izdof,&imddof[i],&nzdof,&id));
+		  if(id!=0){
+		      if(izdof[id-1]==imddof[i]){
+			  for(j=0;j<nev;j++){
+			      bi[imddof[i]]+=bji[j]*z[j*nzdof+id-1];
+			  }
+		      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+		  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+	      }
+	  }
+	  
+	  
+	  if(nmdnode==0){
+	      DMEMSET(vi,0,mt**nk,0.);
+	  }else{
+	      for(jj=0;jj<nmdnode;jj++){
+		  i=imdnode[jj]-1;
+		  for(j=1;j<4;j++){
+		      vi[mt*i+j]=0.;
+		  }
+	      }
+	  }
+
 	  if(iprescribedboundary){
+      
+              /* calculating displacements/temperatures */
+      
+	      FORTRAN(dynresults,(nk,vi,ithermal,nactdof,vold,nodeboun,
+		    ndirboun,xbouni,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,
+		    bi,bp,veold,&dtime,mi,imdnode,&nmdnode,imdboun,&nmdboun,
+		    imdmpc,&nmdmpc,nmethod));
+
 	      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,vi,stni,inum,
 		  stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
 		  ielmat,ielorien,norien,orab,ntmat_,t0,t1,
@@ -1071,8 +1348,16 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
                   enern,sti,xstaten,eei,enerini,cocon,ncocon,
                   set,nset,istartset,iendset,ialset,nprint,prlab,prset,
 	          qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload,
-                  ikmpc,ilmpc,istep,&iinc,springarea));}
+		  ikmpc,ilmpc,istep,&iinc,springarea,&reltime));}
 	  else{ 
+      
+              /* calculating displacements/temperatures */
+      
+	      FORTRAN(dynresults,(nk,vi,ithermal,nactdof,vold,nodeboun,
+		    ndirboun,xbounact,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,
+		    bi,bp,veold,&dtime,mi,imdnode,&nmdnode,imdboun,&nmdboun,
+		    imdmpc,&nmdmpc,nmethod));
+
 	      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,vi,stni,inum,
                   stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
                   ielmat,ielorien,norien,orab,ntmat_,t0,t1,
@@ -1087,7 +1372,16 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
                   enern,sti,xstaten,eei,enerini,cocon,ncocon,
                   set,nset,istartset,iendset,ialset,nprint,prlab,prset,
 	          qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload,
-                  ikmpc,ilmpc,istep,&iinc,springarea));}
+		  ikmpc,ilmpc,istep,&iinc,springarea,&reltime));
+
+	      if(nmdnode==0){
+		  DMEMSET(bi,0,neq[1],0.);
+	      }else{
+		  for(i=0;i<nmddof;i++){
+		      bi[imddof[i]]=0.;
+		  }
+	      }
+	  }
 	  
 	  /* calculating the magnitude and phase */
 	  
@@ -1098,32 +1392,66 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      vp=NNEW(double,mt**nk);
 	      
 	      if(*ithermal<=1){
-		  for(i=0;i<*nk;i++){
-		      for(j=1;j<4;j++){
-			  vreal=vr[mt*i+j];
-			  va[mt*i+j]=sqrt(vr[mt*i+j]*vr[mt*i+j]+vi[mt*i+j]*vi[mt*i+j]);
-			  if(fabs(vreal)<1.e-10){
-			      if(vi[mt*i+j]>0.){vp[mt*i+j]=90.;}
-			      else{vp[mt*i+j]=-90.;}
+		  if(nmdnode==0){
+		      for(i=0;i<*nk;i++){
+			  for(j=1;j<4;j++){
+			      vreal=vr[mt*i+j];
+			      va[mt*i+j]=sqrt(vr[mt*i+j]*vr[mt*i+j]+vi[mt*i+j]*vi[mt*i+j]);
+			      if(fabs(vreal)<1.e-10){
+				  if(vi[mt*i+j]>0.){vp[mt*i+j]=90.;}
+				  else{vp[mt*i+j]=-90.;}
+			      }
+			      else{
+				  vp[mt*i+j]=atan(vi[mt*i+j]/vreal)*constant;
+				  if(vreal<0.) vp[mt*i+j]+=180.;
+			      }
 			  }
-			  else{
-			      vp[mt*i+j]=atan(vi[mt*i+j]/vreal)*constant;
-			      if(vreal<0.) vp[mt*i+j]+=180.;
+		      }
+		  }else{
+		      for(jj=0;jj<nmdnode;jj++){
+			  i=imdnode[jj]-1;
+			  for(j=1;j<4;j++){
+			      vreal=vr[mt*i+j];
+			      va[mt*i+j]=sqrt(vr[mt*i+j]*vr[mt*i+j]+vi[mt*i+j]*vi[mt*i+j]);
+			      if(fabs(vreal)<1.e-10){
+				  if(vi[mt*i+j]>0.){vp[mt*i+j]=90.;}
+				  else{vp[mt*i+j]=-90.;}
+			      }
+			      else{
+				  vp[mt*i+j]=atan(vi[mt*i+j]/vreal)*constant;
+				  if(vreal<0.) vp[mt*i+j]+=180.;
+			      }
 			  }
 		      }
 		  }
 	      }
 	      else{
-		  for(i=0;i<*nk;i++){
-		      vreal=vr[mt*i];
-		      va[mt*i]=sqrt(vr[mt*i]*vr[mt*i]+vi[mt*i]*vi[mt*i]);
-		      if(fabs(vreal)<1.e-10){
-			  if(vi[mt*i]>0){vp[mt*i]=90.;}
-			  else{vp[mt*i]=-90.;}
+		  if(nmdnode==0){
+		      for(i=0;i<*nk;i++){
+			  vreal=vr[mt*i];
+			  va[mt*i]=sqrt(vr[mt*i]*vr[mt*i]+vi[mt*i]*vi[mt*i]);
+			  if(fabs(vreal)<1.e-10){
+			      if(vi[mt*i]>0){vp[mt*i]=90.;}
+			      else{vp[mt*i]=-90.;}
+			  }
+			  else{
+			      vp[mt*i]=atan(vi[mt*i]/vreal)*constant;
+			      if(vreal<0.) vp[mt*i]+=180.;
+			  }
 		      }
-		      else{
-			  vp[mt*i]=atan(vi[mt*i]/vreal)*constant;
-			  if(vreal<0.) vp[mt*i]+=180.;
+		  }else{
+		      for(jj=0;jj<nmdnode;jj++){
+			  i=imdnode[jj]-1;
+			  vreal=vr[mt*i];
+			  va[mt*i]=sqrt(vr[mt*i]*vr[mt*i]+vi[mt*i]*vi[mt*i]);
+			  if(fabs(vreal)<1.e-10){
+			      if(vi[mt*i]>0){vp[mt*i]=90.;}
+			      else{vp[mt*i]=-90.;}
+			  }
+			  else{
+			      vp[mt*i]=atan(vi[mt*i]/vreal)*constant;
+			      if(vreal<0.) vp[mt*i]+=180.;
+			  }
 		      }
 		  }
 	      }
@@ -1136,17 +1464,33 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      stnp=NNEW(double,6**nk);
 	      
 	      if(*ithermal<=1){
-		  for(i=0;i<*nk;i++){
-		      for(j=0;j<6;j++){
-			  vreal=stnr[6*i+j];
-			  stna[6*i+j]=sqrt(stnr[6*i+j]*stnr[6*i+j]+stni[6*i+j]*stni[6*i+j]);
+		  if(nmdnode==0){
+		      for(i=0;i<*nk;i++){
+			  for(j=0;j<6;j++){
+			      vreal=stnr[6*i+j];
+			      stna[6*i+j]=sqrt(stnr[6*i+j]*stnr[6*i+j]+stni[6*i+j]*stni[6*i+j]);
+			      if(fabs(vreal)<1.e-10){
+				  if(stni[6*i+j]>0.){stnp[6*i+j]=90.;}
+				  else{stnp[6*i+j]=-90.;}
+			      }
+			      else{
+				  stnp[6*i+j]=atan(stni[6*i+j]/vreal)*constant;
+				  if(vreal<0.) stnp[6*i+j]+=180.;
+			      }
+			  }
+		      }
+		  }else{
+		      for(jj=0;jj<nmdnode;jj++){
+			  i=imdnode[jj]-1;
+			  vreal=vr[mt*i];
+			  va[mt*i]=sqrt(vr[mt*i]*vr[mt*i]+vi[mt*i]*vi[mt*i]);
 			  if(fabs(vreal)<1.e-10){
-			      if(stni[6*i+j]>0.){stnp[6*i+j]=90.;}
-			      else{stnp[6*i+j]=-90.;}
+			      if(vi[mt*i]>0){vp[mt*i]=90.;}
+			      else{vp[mt*i]=-90.;}
 			  }
 			  else{
-			      stnp[6*i+j]=atan(stni[6*i+j]/vreal)*constant;
-			      if(vreal<0.) stnp[6*i+j]+=180.;
+			      vp[mt*i]=atan(vi[mt*i]/vreal)*constant;
+			      if(vreal<0.) vp[mt*i]+=180.;
 			  }
 		      }
 		  }
@@ -1166,7 +1510,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	    iperturb,ener,mi,output,ithermal,qfn,&mode,&noddiam,
             trab,inotr,ntrans,orab,ielorien,norien,description,
 	    ipneigh,neigh,stx,va,vp,stna,stnp,vmax,stnmax,&ngraph,veold,
-            &neg,cs,set,nset,istartset,iendset,ialset));
+	    &neg,cs,set,nset,istartset,iendset,ialset,eenmax));
 	  if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
 
 	  free(va);free(vp);free(stna);free(stnp);
@@ -1190,15 +1534,6 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  free(iphaseboun);
       }
       
-  /* freeing the result fields */
-      
-      free(eei);
-      if(*nener==1){free(stiini);free(enerini);}
-      
-      if(strcmp1(&filab[261],"E   ")==0) free(een);
-      if(strcmp1(&filab[522],"ENER")==0) free(enern);
-      if(*ithermal>1) {free(qfn);free(qfx);}
-      
       /* updating the loading at the end of the step; 
 	 important in case the amplitude at the end of the step
 	 is not equal to one */
@@ -1211,11 +1546,9 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  for(k=0;k<*nk;++k){t1[k]=t1act[k];}
       }
       
-      free(fn);free(inum);free(stx);
       free(br);free(bi);free(bjr);free(bji),free(freq);
       free(xforcact);free(xloadact);free(xbounact);free(aa);free(bb);
       free(ampli);free(xbodyact);free(vr);free(vi);if(*nbody>0) free(ipobody);
-      free(stnr);free(stni);
       
       if(*ithermal==1) free(t1act);
       
@@ -1243,11 +1576,26 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  free(xbounr);free(xbouni);free(fr);free(fi);free(ubr);free(ubi);
 	  free(mubr);free(mubi);
       }
-  }
 
-  else{
+      free(ikactmechr);free(ikactmechi);
+      
+      if(intpointvar==1){
+	  free(fn);free(stnr);free(stni);free(stx);free(eei);
+
+	  if(*ithermal>1) {free(qfn);free(qfx);}
+	  
+	  if(strcmp1(&filab[261],"E   ")==0) free(een);
+	  if(strcmp1(&filab[522],"ENER")==0) free(enern);
+	  
+	  if(*nener==1){free(stiini);free(enerini);}
+      }
+
+  }else{
 
       /* steady state response to a nonharmonic periodic loading */
+
+      ikactmech=NNEW(int,neq[1]);
+      nactmech=0;
       
       xforcact=NNEW(double,nfour**nforc);
       xloadact=NNEW(double,nfour*2**nload);
@@ -1270,7 +1618,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  }
       }
 
-      if((iprescribedboundary)&&(*mcs!=0)){
+      if((iprescribedboundary)&&(cyclicsymmetry)){
 	  printf("*ERROR in steadystate: prescribed boundaries are not allowed in combination with cyclic symmetry\n");
 	  FORTRAN(stop,());
       }
@@ -1283,7 +1631,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  fric[i]=(alpham+betam*d[i]*d[i]);
 	      }
 	      else {
-		  printf("*WARNING in dyna: one of the frequencies is zero\n");
+		  printf("*WARNING in steadystate: one of the frequencies is zero\n");
 		  printf("         no Rayleigh mass damping allowed\n");
 		  fric[i]=0.;
 	      }
@@ -1298,7 +1646,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  /*copy the damping coefficients for every eigenfrequencie from xmodal[11....] */
 	  if(nev<(int)xmodal[10]){
 	      imax=nev;
-	      printf("*WARNING in dyna: too many modal damping coefficients applied\n");
+	      printf("*WARNING in steadystate: too many modal damping coefficients applied\n");
 	      printf("         damping coefficients corresponding to nonexisting eigenvalues are ignored\n");
 	  }
 	  else{
@@ -1324,7 +1672,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	    iamt1,nk,amta,namta,nam,ampli,&time,&reltime,ttime,&dtime,
             ithermal,nmethod,xbounold,xboun,&xbounact[l**nboun],iamboun,nboun,
 	    nodeboun,ndirboun,nodeforc,ndirforc,istep,&iinc,co,vold,itg,&ntg,
-	    amname,ikboun,ilboun,nelemload,sideload,mi));
+	    amname,ikboun,ilboun,nelemload,sideload,mi,
+            ntrans,trab,inotr,veold));
 	  
       }
 
@@ -1487,7 +1836,12 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  xloadr=NNEW(double,2**nload);
 	  xbodyr=NNEW(double,7**nbody);
 	  for(k=0;k<7**nbody;k++){xbodyr[k]=xbody[k];}
-	  if(iprescribedboundary) xbounr=NNEW(double,*nboun);
+	  if(iprescribedboundary){
+	      xbounr=NNEW(double,*nboun);
+	      fr=NNEW(double,neq[1]); /* force corresponding to real particular solution */
+	      ubr=NNEW(double,neq[1]); /* real particular solution */
+	      mubr=NNEW(double,neq[1]); /* mass times real particular solution */
+	  }
 	  
 	  /* assigning the body forces to the elements */ 
 
@@ -1504,9 +1858,6 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  
 	  br=NNEW(double,neq[1]); /* load rhs vector (real part) */
 	  bi=NNEW(double,neq[1]); /* load rhs vector (imaginary part) */
-	  fr=NNEW(double,neq[1]); /* force corresponding to real particular solution */
-	  ubr=NNEW(double,neq[1]); /* real particular solution */
-	  mubr=NNEW(double,neq[1]); /* mass times real particular solution */
 	  btot=NNEW(double,nfour*neq[1]);
 	  
 	  bjr=NNEW(double,nev); /* real response modal decomposition */
@@ -1547,7 +1898,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  
 		  zc=NNEW(double,neq[1]*nev);
 		  for(i=0;i<nev;i++){
-		      FORTRAN(op,(&neq[1],aux,&z[i*neq[1]],&zc[i*neq[1]],
+		      FORTRAN(op,(&neq[1],aux,&z[(long long)i*neq[1]],&zc[i*neq[1]],
                                   adc,auc,icol,irow,nzl));
 		  }
 		  
@@ -1558,7 +1909,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  for(i=0;i<nev;i++){
 		      for(j=0;j<=i;j++){
 			  for(k=0;k<neq[1];k++){
-			      cc[i*nev+j]+=z[j*neq[1]+k]*zc[i*neq[1]+k];
+			      cc[i*nev+j]+=z[(long long)j*neq[1]+k]*zc[i*neq[1]+k];
 			  }
 		      }
 		  }
@@ -1599,10 +1950,54 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		nplicon,plkcon,nplkcon,
 		npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
 		xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech));
+	  
+	      /* real modal coefficients */
+	  
+	      if(!iprescribedboundary){
+		  if(!cyclicsymmetry){
+		      for(i=0;i<nev;i++){
+			  i2=i*neq[1];
+			  aa[i]=0.;
+			  if(nactmech<neq[1]/2){
+			      for(j=0;j<nactmech;j++){
+				  aa[i]+=z[i2+ikactmech[j]]*br[ikactmech[j]];
+			      }
+			  }else{
+			      for(j=0;j<neq[1];j++){
+				  aa[i]+=z[i2+j]*br[j];
+			      }
+			  }
+		      }
+		  }else{
+		      for(i=0;i<nev;i++){aa[i]=0.;}
+		      for(j=0;j<nactmech;j++){
+			  for(i=0;i<nev;i++){
+			      FORTRAN(nident,(izdof,&ikactmech[j],&nzdof,&id));
+			      if(id!=0){
+				  if(izdof[id-1]==ikactmech[j]){
+				      aa[i]+=z[i*nzdof+id-1]*br[ikactmech[j]];
+				  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+			      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+			  }
+		      }
+		  }
+	  
+		  /* imaginary modal coefficients */
+		  
+		  for(i=0;i<nev;i++){
+		      bb[i]=0.;
+		  }
+
+	      }else{
+
+		  /* prescribed boundary conditions */
 	      
-	      for(i=0;i<neq[1];i++){bi[i]=0.;}
+	          /* next statement makes sure that br is reset to zero at the
+                     start of rhs.f */
+
+		  nactmech=neq[1];
 	      
-	      if(iprescribedboundary){
+		  for(i=0;i<neq[1];i++){bi[i]=0.;}
 		  
 		  for(i=0;i<*nboun;i++){
 		      xbounr[i]=xbounact[l**nboun+i];
@@ -1644,22 +2039,21 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		      br[i]+=freq[l]*(freq[l]*mubr[i]);
 		      bi[i]+=freq[l]*(-alpham*mubr[i]-betam*fr[i]);
 		  }
+	      
+		  /* real and imaginary modal coefficients */
 		  
-	      }
-	      
-	      /* real and imaginary modal coefficients */
-	      
-	      for(i=0;i<nev;i++){
-		  aa[i]=0.;
-		  for(j=0;j<neq[1];j++){
-		      aa[i]+=z[i*neq[1]+j]*br[j];
+		  for(i=0;i<nev;i++){
+		      aa[i]=0.;
+		      for(j=0;j<neq[1];j++){
+			  aa[i]+=z[(long long)i*neq[1]+j]*br[j];
+		      }
 		  }
-	      }
-	      
-	      for(i=0;i<nev;i++){
-		  bb[i]=0.;
-		  for(j=0;j<neq[1];j++){
-		      bb[i]+=z[i*neq[1]+j]*bi[j];
+		  
+		  for(i=0;i<nev;i++){
+		      bb[i]=0.;
+		      for(j=0;j<neq[1];j++){
+			  bb[i]+=z[(long long)i*neq[1]+j]*bi[j];
+		      }
 		  }
 	      }
 	      
@@ -1713,92 +2107,203 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  }
 		  
 	      }
-	      
+      
 	      /* calculating the real response */
 	      
 	      if(iprescribedboundary){
-		  for(i=0;i<neq[1];i++){
-		      br[i]=ubr[i];
+		  if(nmdnode==0){
+		      memcpy(&br[0],&ubr[0],sizeof(double)*neq[1]);
+		  }else{
+		      for(i=0;i<nmddof;i++){
+			  br[imddof[i]]=ubr[imddof[i]];
+		      }
 		  }
 	      }
 	      else{
-		  for(i=0;i<neq[1];i++){
-		      br[i]=0.;
-		  }
-	      }
-	      for(i=0;i<neq[1];i++){
-		  for(j=0;j<nev;j++){
-		      br[i]+=bjr[j]*z[j*neq[1]+i];
+		  if(nmdnode==0){
+		      DMEMSET(br,0,neq[1],0.);
+		  }else{
+		      for(i=0;i<nmddof;i++){
+			  br[imddof[i]]=0.;
+		      }
 		  }
 	      }
 	      
+	      if(!cyclicsymmetry){
+		  if(nmdnode==0){
+		      for(i=0;i<neq[1];i++){
+			  for(j=0;j<nev;j++){
+			      br[i]+=bjr[j]*z[(long long)j*neq[1]+i];
+			  }
+		      }
+		  }else{
+		      for(i=0;i<nmddof;i++){
+			  for(j=0;j<nev;j++){
+			      br[imddof[i]]+=bjr[j]*z[(long long)j*neq[1]+imddof[i]];
+			  }
+		      }
+		  }
+	      }else{
+		  for(i=0;i<nmddof;i++){
+		      FORTRAN(nident,(izdof,&imddof[i],&nzdof,&id));
+		      if(id!=0){
+			  if(izdof[id-1]==imddof[i]){
+			      for(j=0;j<nev;j++){
+				  br[imddof[i]]+=bjr[j]*z[j*nzdof+id-1];
+			      }
+			  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+		      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+		  }
+	      }
+	  
 	      /* calculating the imaginary response */
 	      
-	      for(i=0;i<neq[1];i++){
-		  bi[i]=0.;
+	      if(nmdnode==0){
+		  DMEMSET(bi,0,neq[1],0.);
+	      }else{
+		  for(i=0;i<nmddof;i++){
+		      bi[imddof[i]]=0.;
+		  }
 	      }
-	      for(i=0;i<neq[1];i++){
-		  for(j=0;j<nev;j++){
-		      bi[i]+=bji[j]*z[j*neq[1]+i];
+	  
+	      if(!cyclicsymmetry){
+		  if(nmdnode==0){
+		      for(i=0;i<neq[1];i++){
+			  for(j=0;j<nev;j++){
+			      bi[i]+=bji[j]*z[(long long)j*neq[1]+i];
+			  }
+		      }
+		  }else{
+		      for(i=0;i<nmddof;i++){
+			  for(j=0;j<nev;j++){
+			      bi[imddof[i]]+=bji[j]*z[(long long)j*neq[1]+imddof[i]];
+			  }
+		      }
+		  }
+	      }else{
+		  for(i=0;i<nmddof;i++){
+		      FORTRAN(nident,(izdof,&imddof[i],&nzdof,&id));
+		      if(id!=0){
+			  if(izdof[id-1]==imddof[i]){
+			      for(j=0;j<nev;j++){
+				  bi[imddof[i]]+=bji[j]*z[j*nzdof+id-1];
+			      }
+			  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+		      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
 		  }
 	      }
 	      
-	      /* magnitude and phase of the response */
+	      if(nmdnode==0){
 	      
-	      for(i=0;i<neq[1];i++){
-		  breal=br[i];
-		  br[i]=sqrt(br[i]*br[i]+bi[i]*bi[i]);
-		  if(fabs(breal)<1.e-10){
-		      if(bi[i]>0.){bi[i]=pi/2.;}
-		      else{bi[i]=-pi/2.;}
-		  }
-		  else{
-		      bi[i]=atan(bi[i]/breal);
-		      if(breal<0.){bi[i]+=pi;}
-		  }
-	      }
-	      
-	      /* correction for the sinus terms */
-	      
-	      if((l!=0)&&(2*(int)floor(l/2.+0.1)==l)){
+		  /* magnitude and phase of the response */
+
 		  for(i=0;i<neq[1];i++){
-		      bi[i]-=pi/2.;}
+		      breal=br[i];
+		      br[i]=sqrt(br[i]*br[i]+bi[i]*bi[i]);
+		      if(fabs(breal)<1.e-10){
+			  if(bi[i]>0.){bi[i]=pi/2.;}
+			  else{bi[i]=-pi/2.;}
+		      }
+		      else{
+			  bi[i]=atan(bi[i]/breal);
+			  if(breal<0.){bi[i]+=pi;}
+		      }
+		  }
+		  
+		  /* correction for the sinus terms */
+		  
+		  if((l!=0)&&(2*(int)floor(l/2.+0.1)==l)){
+		      for(i=0;i<neq[1];i++){
+			  bi[i]-=pi/2.;}
+		  }
+		  
+		  /* contribution to the time response */
+		  
+		  for(j=0;j<nfour;j++){
+		      time=tmin+2.*pi/freqnh[ii]*(double)j/(double)nfour;
+		      for(i=0;i<neq[1];i++){
+			  btot[j*neq[1]+i]+=br[i]*cos(freq[l]*time+bi[i]);
+		      }
+		  }
+	      }else{
+	      
+		  /* magnitude and phase of the response */
+
+		  for(jj=0;jj<nmddof;jj++){
+		      i=imddof[jj];
+		      breal=br[i];
+		      br[i]=sqrt(br[i]*br[i]+bi[i]*bi[i]);
+		      if(fabs(breal)<1.e-10){
+			  if(bi[i]>0.){bi[i]=pi/2.;}
+			  else{bi[i]=-pi/2.;}
+		      }
+		      else{
+			  bi[i]=atan(bi[i]/breal);
+			  if(breal<0.){bi[i]+=pi;}
+		      }
+		  }
+		  
+		  /* correction for the sinus terms */
+		  
+		  if((l!=0)&&(2*(int)floor(l/2.+0.1)==l)){
+		      for(jj=0;jj<nmddof;jj++){
+			  i=imddof[jj];
+			  bi[i]-=pi/2.;}
+		  }
+		  
+		  /* contribution to the time response */
+		  
+		  for(j=0;j<nfour;j++){
+		      time=tmin+2.*pi/freqnh[ii]*(double)j/(double)nfour;
+		      for(jj=0;jj<nmddof;jj++){
+			  i=imddof[jj];
+			  btot[j*neq[1]+i]+=br[i]*cos(freq[l]*time+bi[i]);
+		      }
+		  }
 	      }
-	      
-	      /* contribution to the time response */
-	      
-	      for(j=0;j<nfour;j++){
-		  time=tmin+2.*pi/freqnh[ii]*(double)j/(double)nfour;
-		  for(i=0;i<neq[1];i++){
-		      btot[j*neq[1]+i]+=br[i]*cos(freq[l]*time+bi[i]);
+
+              /* resetting the part of br occupied by the variables to be printed
+                 to zero */
+
+	      if(!iprescribedboundary){
+		  if(nmdnode==0){
+		      DMEMSET(br,0,neq[1],0.);
+		  }else{
+		      for(i=0;i<nmddof;i++){
+			  br[imddof[i]]=0.;
+		      }
 		  }
 	      }
 	      
 	  }
 	  
-	  free(mubr);
 	  free(xforcr);free(xloadr);free(xbodyr);free(br);free(bi);free(freq);
-	  free(fr);free(ubr);free(bjr);free(bji);free(aa);free(bb);
+	  free(bjr);free(bji);free(aa);free(bb);
+
           if(*nbody>0) free(ipobody);
-	  if(iprescribedboundary) free(xbounr);
+	  if(iprescribedboundary) {free(xbounr);free(fr);free(ubr);free(mubr);}
 	  
 	  
 	  /* result fields */
 	  
 	  vr=NNEW(double,mt**nk);
-	  fn=NNEW(double,mt**nk);
-	  stn=NNEW(double,6**nk);
-	  inum=NNEW(int,*nk);
-	  stx=NNEW(double,6*mi[0]**ne);
-	  if(*ithermal>1) {qfn=NNEW(double,3**nk);qfx=NNEW(double,3*mi[0]**ne);}
-	  
-	  if(strcmp1(&filab[261],"E   ")==0) een=NNEW(double,6**nk);
-	  if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,*nk);
-	  
-	  eei=NNEW(double,6*mi[0]**ne);
-	  if(*nener==1){
-	      stiini=NNEW(double,6*mi[0]**ne);
-	      enerini=NNEW(double,mi[0]**ne);}
+
+	  if(intpointvar==1){
+	      fn=NNEW(double,mt**nk);
+	      stn=NNEW(double,6**nk);
+	      stx=NNEW(double,6*mi[0]**ne);
+
+	      if(*ithermal>1) {
+		  qfn=NNEW(double,3**nk);qfx=NNEW(double,3*mi[0]**ne);}
+	      
+	      if(strcmp1(&filab[261],"E   ")==0) een=NNEW(double,6**nk);
+	      if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,*nk);
+	      
+	      eei=NNEW(double,6*mi[0]**ne);
+	      if(*nener==1){
+		  stiini=NNEW(double,6*mi[0]**ne);
+		  enerini=NNEW(double,mi[0]**ne);}
+	  }
 	  
 	  /* storing the results */
 	  
@@ -1806,8 +2311,24 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      time=tmin+2.*pi/freqnh[ii]*(double)l/(double)nfour;
 	      *ttime=time;
 	      
-//	      memset(&vr[0],0.,sizeof(double)*mt**nk);
-	      DMEMSET(vr,0,mt**nk,0.);
+	      if(nmdnode==0){
+		  DMEMSET(vr,0,mt**nk,0.);
+	      }else{
+		  for(jj=0;jj<nmdnode;jj++){
+		      i=imdnode[jj]-1;
+		      for(j=1;j<4;j++){
+			  vr[mt*i+j]=0.;
+		      }
+		  }
+	      }
+      
+              /* calculating displacements/temperatures */
+      
+	      FORTRAN(dynresults,(nk,vr,ithermal,nactdof,vold,nodeboun,
+		    ndirboun,&xbounacttime[l**nboun],nboun,ipompc,nodempc,
+                    coefmpc,labmpc,nmpc,&btot[l*neq[1]],bp,veold,&dtime,mi,
+                    imdnode,&nmdnode,imdboun,&nmdboun,imdmpc,&nmdmpc,nmethod));
+
 	      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,vr,stn,inum,
 		  stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
 		  ielmat,ielorien,norien,orab,ntmat_,t0,t1,
@@ -1822,7 +2343,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  enern,sti,xstaten,eei,enerini,cocon,ncocon,
 		  set,nset,istartset,iendset,ialset,nprint,prlab,prset,
 		  qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload,ikmpc,
-                  ilmpc,istep,&iinc,springarea));
+		  ilmpc,istep,&iinc,springarea,&reltime));
 	  
 	      (*kode)++;
 	      mode=-1;
@@ -1836,18 +2357,22 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
                    qfn,&mode,&noddiam,trab,inotr,ntrans,orab,ielorien,norien,
 		   description,ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,
 		   stnmax,&ngraph,veold,&neg,cs,set,nset,istartset,iendset,
-                   ialset));
+		   ialset,eenmax));
 	      if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
 
 	  }
 	  
-	  free(vr);free(fn);free(stn);free(inum);free(stx);free(eei);free(btot);
-	  if(*ithermal>1) {free(qfn);free(qfx);}
-	  
-	  if(strcmp1(&filab[261],"E   ")==0) free(een);
-	  if(strcmp1(&filab[522],"ENER")==0) free(enern);
-	  
-	  if(*nener==1){free(stiini);free(enerini);}
+	  free(vr);free(btot);
+
+	  if(intpointvar==1){
+	      free(fn);free(stn);free(stx);free(eei);
+	      if(*ithermal>1) {free(qfn);free(qfx);}
+	      
+	      if(strcmp1(&filab[261],"E   ")==0) free(een);
+	      if(strcmp1(&filab[522],"ENER")==0) free(enern);
+	      
+	      if(*nener==1){free(stiini);free(enerini);}
+	  }
 	  
       }
       free(xforcact);free(xloadact);free(xbodyact);free(xbounact);
@@ -1876,13 +2401,17 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  }
       }
 
+      free(ikactmech);
+
   }
 
-  free(adb);free(aub);free(z);free(d);
+  free(adb);free(aub);free(z);free(d);free(inum);
 
-  if(*mcs==0){
+  if(!cyclicsymmetry){
       free(ad);free(au);
   }else{
+      free(izdof);
+
       *nk/=nsectors;
       *ne/=nsectors;
       *nboun/=nsectors;
@@ -1970,6 +2499,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
   if(dashpot){free(cc);free(am);free(bm);free(ipiv);}
 
+  if(nmdnode>0){free(imddof);free(imdnode);free(imdboun);free(imdmpc);}
 
   *cop=co;*konp=kon;*ipkonp=ipkon;*lakonp=lakon;*ielmatp=ielmat;
   *ielorienp=ielorien;*inotrp=inotr;*nodebounp=nodeboun;

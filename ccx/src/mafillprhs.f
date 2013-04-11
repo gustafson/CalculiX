@@ -19,9 +19,9 @@
       subroutine mafillprhs(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,nelemface,sideface,
      &  nface,b,nactdoh,icolp,jqp,irowp,neqp,nzlp,nmethod,ikmpc,ilmpc,
-     &  ikboun,ilboun,rhcon,nrhcon,ielmat,ntmat_,vold,voldaux,nzsp,
+     &  ikboun,ilboun,rhcon,nrhcon,ielmat,ntmat_,vold,voldcon,nzsp,
      &  dtl,matname,mi,ncmat_,shcon,nshcon,v,theta1,
-     &  iexplicit,physcon,nea,neb,dtimef)
+     &  iexplicit,physcon,nea,neb,dtimef,ipvar,var,ipvarf,varf)
 !
 !     filling the rhs b of the pressure equations (step 2)
 !
@@ -34,7 +34,7 @@
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nelemface(*),icolp(*),jqp(*),ikmpc(*),ilmpc(*),ikboun(*),
      &  ilboun(*),nactdoh(0:4,*),konl(20),irowp(*),nrhcon(*),ielmat(*),
-     &  ipkon(*),nshcon(*),iexplicit,nea,neb
+     &  ipkon(*),nshcon(*),iexplicit,nea,neb,ipvar(*),ipvarf(*)
 !
       integer nk,ne,nboun,nmpc,nface,neqp,nzlp,nmethod,nzsp,i,j,k,l,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
@@ -43,8 +43,8 @@
 !
       real*8 co(3,*),xboun(*),coefmpc(*),b(*),v(0:mi(2),*),
      &  vold(0:mi(2),*),
-     &  voldaux(0:4,*),ff(60),sm(60,60),rhcon(0:1,ntmat_,*),
-     &  shcon(0:3,ntmat_,*),theta1,physcon(*)
+     &  voldcon(0:4,*),ff(60),sm(60,60),rhcon(0:1,ntmat_,*),
+     &  shcon(0:3,ntmat_,*),theta1,physcon(*),var(*),varf(*)
 !
       real*8 value,dtl(*),dtimef
 !
@@ -88,14 +88,15 @@ c      endif
            cycle
         endif
 !
-        do j=1,nope
-          konl(j)=kon(indexe+j) 
-        enddo
+c        do j=1,nope
+c          konl(j)=kon(indexe+j) 
+c        enddo
 !
-        call e_c3d_prhs(co,nk,konl,lakon(i),sm,ff,i,nmethod,rhcon,
-     &       nrhcon,ielmat,ntmat_,v,vold,voldaux,nelemface,sideface,
+        call e_c3d_prhs(co,nk,kon(indexe+1),lakon(i),sm,ff,i,nmethod,
+     &       rhcon,
+     &       nrhcon,ielmat,ntmat_,v,vold,voldcon,nelemface,sideface,
      &       nface,dtimef,matname,mi(1),shcon,nshcon,theta1,physcon,
-     &       iexplicit)
+     &       iexplicit,ipvar,var,ipvarf,varf)
 !
         do jj=1,nope
 !
@@ -361,13 +362,13 @@ cd
 !
 !     nonlocal time stepping for compressible steady state calculations
 !     
-      if((iexplicit.eq.1).and.(nmethod.eq.1)) then
-         do i=1,nk
-            if(nactdoh(4,i).gt.0) then
-               b(nactdoh(4,i))=b(nactdoh(4,i))*dtl(i)/dtimef
-            endif
-         enddo
-      endif
+c      if((iexplicit.eq.1).and.(nmethod.eq.1)) then
+c         do i=1,nk
+c            if(nactdoh(4,i).gt.0) then
+c               b(nactdoh(4,i))=b(nactdoh(4,i))*dtl(i)/dtimef
+c            endif
+c         enddo
+c      endif
 !
       return
       end

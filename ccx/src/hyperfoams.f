@@ -64,8 +64,11 @@
                call inputerror(inpc,ipoinpc,iline)
             endif
          else
-            write(*,*) '*WARNING in hyperfoams: unknown option:'
-            write(*,'(a132)') textpart(i)
+            write(*,*) 
+     &        '*WARNING in hyperfoams: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

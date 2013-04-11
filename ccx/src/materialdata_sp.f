@@ -15,7 +15,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine materialdata_sp(elcon,nelcon,imat,ntmat_,i,t0l,t1l,
+      subroutine materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
      &  elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
 !
       implicit none
@@ -25,7 +25,7 @@
       integer nelcon(2,*),imat,i,k,kin,ntmat_,nelconst,kode,
      &  itemp,ncmat_,id,nplicon(0:ntmat_,*),npmat_
 !
-      real*8 elcon(0:ncmat_,ntmat_,*),t0l,t1l,elconloc(21),
+      real*8 elcon(0:ncmat_,ntmat_,*),t1l,elconloc(21),
      &   plicon(0:2*npmat_,ntmat_,*),plconloc(82)
 !
 !     nelconst: # constants read from file
@@ -38,41 +38,46 @@
 !     plconloc(2*k),k=1...20:    force
 !     
       if(kode.lt.-50) then
-         plconloc(1)=0.d0
-         plconloc(2)=0.d0
-         plconloc(3)=0.d0
-         plconloc(81)=nplicon(1,imat)+0.5d0
-         plconloc(82)=0.5d0
+         if(npmat_.eq.0) then
+            plconloc(81)=0.5d0
+            plconloc(82)=0.5d0
+         else
+            plconloc(1)=0.d0
+            plconloc(2)=0.d0
+            plconloc(3)=0.d0
+            plconloc(81)=nplicon(1,imat)+0.5d0
+            plconloc(82)=0.5d0
 !     
-!        nonlinear spring characteristic
+!     nonlinear spring characteristic or gap conductance characteristic
 !     
-         if(nplicon(1,imat).ne.0) then
+            if(nplicon(1,imat).ne.0) then
 !     
-            if(nplicon(0,imat).eq.1) then
-               id=-1
-            else
-               call ident2(plicon(0,1,imat),t1l,nplicon(0,imat),
-     &              2*npmat_+1,id)
-            endif
-!     
-            if(nplicon(0,imat).eq.0) then
-               continue
-            elseif((nplicon(0,imat).eq.1).or.(id.eq.0).or.
-     &              (id.eq.nplicon(0,imat))) then
-               if(id.le.0) then
-                  itemp=1
+               if(nplicon(0,imat).eq.1) then
+                  id=-1
                else
-                  itemp=id
+                  call ident2(plicon(0,1,imat),t1l,nplicon(0,imat),
+     &                 2*npmat_+1,id)
                endif
-               kin=0
-               call plcopy(plicon,nplicon,plconloc,npmat_,ntmat_,
-     &              imat,itemp,i,kin)
-               if((id.eq.0).or.(id.eq.nplicon(0,imat))) then
+!     
+               if(nplicon(0,imat).eq.0) then
+                  continue
+               elseif((nplicon(0,imat).eq.1).or.(id.eq.0).or.
+     &                 (id.eq.nplicon(0,imat))) then
+                  if(id.le.0) then
+                     itemp=1
+                  else
+                     itemp=id
+                  endif
+                  kin=0
+                  call plcopy(plicon,nplicon,plconloc,npmat_,ntmat_,
+     &                 imat,itemp,i,kin)
+                  if((id.eq.0).or.(id.eq.nplicon(0,imat))) then
+                  endif
+               else
+                  kin=0
+                  call plmix(plicon,nplicon,plconloc,npmat_,ntmat_,
+     &                 imat,id+1,t1l,i,kin)
                endif
-            else
-               kin=0
-               call plmix(plicon,nplicon,plconloc,npmat_,ntmat_,
-     &              imat,id+1,t1l,i,kin)
             endif
          endif
       else

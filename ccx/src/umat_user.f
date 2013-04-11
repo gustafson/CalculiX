@@ -19,7 +19,7 @@
       subroutine umat_user(amat,iel,iint,kode,elconloc,emec,emec0,
      &        beta,xokl,voj,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi,nstate_,xstateini,xstate,stre,stiff,
-     &        iorien,pgauss,orab,pnewdt)
+     &        iorien,pgauss,orab,pnewdt,ipkon)
 !
 !     calculates stiffness and stresses for a user defined material
 !     law
@@ -119,12 +119,17 @@
 !                        trial and should exceed zero but be less than 1.
 !                        Default is -1 indicating that the user routine
 !                        has converged.
+!     ipkon(*)           ipkon(iel) points towards the position in field
+!                        kon prior to the first node of the element's
+!                        topology. If ipkon(iel) is set to -1, the 
+!                        element is removed from the mesh
 !
       implicit none
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(2),iorien
+      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(2),iorien,
+     &  ipkon(*)
 !
       real*8 elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xokl(3,3),voj,pgauss(3),orab(7,*),

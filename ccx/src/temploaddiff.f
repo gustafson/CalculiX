@@ -24,7 +24,7 @@
      &  nodeboun,ndirboun,nodeforc,ndirforc,istep,iinc,
      &  co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
      &  xforcdiff,xloaddiff,xbodydiff,t1diff,xboundiff,iabsload,
-     &  iprescribedboundary)
+     &  iprescribedboundary,ntrans,trab,inotr,veold,nactdof,bcont)
 !
 !     calculates the loading at a given time and the difference with
 !     the last call of temploaddiff: is needed in the modal dynamic
@@ -43,7 +43,8 @@
      &  iamloadi1,iamloadi2,ibody(3,*),itg(*),ntg,idof,
      &  nbody,iambodyi,nodeboun(*),ndirboun(*),nodeforc(2,*),
      &  ndirforc(*),istep,iinc,msecpt,node,j,ikboun(*),ilboun(*),
-     &  ipresboun,mi(2),iabsload,iprescribedboundary
+     &  ipresboun,mi(2),iabsload,iprescribedboundary,ntrans,inotr(2,*),
+     &  nactdof(0:mi(2),*)
 !
       real*8 xforc(*),xforcact(*),xload(2,*),xloadact(2,*),
      &  t1(*),t1act(*),amta(2,*),ampli(*),time,xforcdiff(*),
@@ -51,7 +52,7 @@
      &  xbounold(*),xboun(*),xbounact(*),ttime,dtime,reftime,
      &  xbody(7,*),xbodyold(7,*),xbodydiff(7,*),t1diff(*),
      &  xbodyact(7,*),co(3,*),vold(0:mi(2),*),abqtime(2),coords(3),
-     &  xboundiff(*)
+     &  xboundiff(*),trab(7,*), veold(0:mi(2),*),bcont(*)
 !
       data msecpt /1/
 !
@@ -177,6 +178,7 @@
          if(ndirforc(i).eq.0) then
             if((xforc(i).lt.1.2357111318d0).and.
      &         (xforc(i).gt.1.2357111316d0)) then
+               iabsload=2
 !
 !              user subroutine for the concentrated heat flux
 !
@@ -215,6 +217,33 @@
                endif
                call cflux(xforcact(i),msecpt,istep,iinc,abqtime,node,
      &              coords,vold,mi)
+               xforcdiff(i)=xforcact(i)-xforcdiff(i)
+               cycle
+            endif
+         else
+            if((xforc(i).lt.1.2357111318d0).and.
+     &         (xforc(i).gt.1.2357111316d0)) then
+               iabsload=2
+!
+!              user subroutine for the concentrated force
+!
+               node=nodeforc(1,i)
+!
+               abqtime(1)=time
+               abqtime(2)=ttime+dtime
+!
+               do j=1,3
+                  coords(j)=co(j,node)+vold(j,node)
+               enddo
+!
+               if(iabsload.eq.0) then
+                  xforcdiff(i)=xforcact(i)
+               else
+                  xforcdiff(i)=xforcact(i)-xforcdiff(i)
+               endif
+               call cload(xforcact(i),istep,iinc,abqtime,node,
+     &              ndirforc(i),coords,vold,mi,ntrans,trab,inotr,veold,
+     &              nmethod,nactdof,bcont)
                xforcdiff(i)=xforcact(i)-xforcdiff(i)
                cycle
             endif

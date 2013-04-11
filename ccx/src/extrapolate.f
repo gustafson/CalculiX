@@ -18,7 +18,8 @@
 !
       subroutine extrapolate(yi,yn,ipkon,inum,kon,lakon,nfield,nk,
      &  ne,mi,ndim,orab,ielorien,co,iorienglob,cflag,nelemload,
-     &  nload,nodeboun,nboun,fluid,ndirboun,vold,ithermal,force)
+     &  nload,nodeboun,nboun,ndirboun,vold,ithermal,force,
+     &  cfd)
 !
 !     extrapolates field values at the integration points to the 
 !     nodes
@@ -28,7 +29,7 @@
 !
       implicit none
 !
-      logical fluid,force
+      logical force
 !
       character*1 cflag
       character*8 lakon(*),lakonl
@@ -37,7 +38,7 @@
      &  nonei20(3,12),nfield,nonei10(3,6),nk,i,j,k,l,ndim,
      &  nonei15(3,9),iorienglob,iorien,ielorien(*),konl,
      &  mint3d,m,iflag,nelemload(2,*),nload,node,nboun,
-     &  nodeboun(*),ndirboun(*),ithermal(2)
+     &  nodeboun(*),ndirboun(*),ithermal(2),cfd
 !
       real*8 yi(ndim,mi(1),*),yn(nfield,*),field(999,20),a8(8,8),
      &  a4(4,4),a27(20,27),a9(6,9),a2(6,2),orab(7,*),co(3,*),
@@ -178,7 +179,9 @@
          indexe=ipkon(i)
          lakonl=lakon(i)
 !
-         if(lakonl(1:1).eq.'F') then
+         if((lakonl(1:1).eq.'F').and.(cfd.ne.1)) then
+            cycle
+         elseif((lakonl(1:1).ne.'F').and.(cfd.eq.1)) then
             cycle
          elseif(lakonl(4:4).eq.'2') then
             nope=20
@@ -192,14 +195,8 @@
             nope=15
          elseif(lakonl(4:4).eq.'6') then
             nope=6
-         elseif(lakonl(1:1).eq.'D') then
-c            if(kon(indexe+1).ne.0) 
-c     &           inum(kon(indexe+1))=inum(kon(indexe+1))+1
-c            inum(kon(indexe+2))=inum(kon(indexe+2))+1
-c            if(kon(indexe+3).ne.0)
-c     &           inum(kon(indexe+3))=inum(kon(indexe+3))+1
-            fluid=.true.
-            cycle
+c         elseif(lakonl(1:1).eq.'D') then
+c            cycle
          elseif((lakon(i)(1:1).eq.'E').and.(lakon(i)(7:7).eq.'A'))then
             inum(kon(indexe+1))=inum(kon(indexe+1))+1
             inum(kon(indexe+2))=inum(kon(indexe+2))+1
@@ -413,7 +410,10 @@ c     &           inum(kon(indexe+3))=inum(kon(indexe+3))+1
 !        for C3D15: use of the C3D6 linear interpolation functions
 !        for C3D6: use of a linear interpolation function
 !
-            if((lakonl(4:6).eq.'20R').or.(lakonl(4:5).eq.'8 ')) then
+c     Bernhardi start
+            if((lakonl(4:6).eq.'20R').or.(lakonl(4:5).eq.'8 ')
+     &        .or.(lakonl(4:5).eq.'8I')) then
+c     Bernhardi end
                do j=1,8
                   do k=1,nfield
                      field(k,j)=0.d0
@@ -508,6 +508,17 @@ c         if(lakonl(4:5).eq.'20') then
             enddo
             inum(kon(indexe+j))=inum(kon(indexe+j))+1
          enddo
+c     Bernhardi start
+c        incompatible modes elements
+         if(lakonl(1:5).eq.'C3D8I') then
+            do j=1,3
+               do k=1,nfield
+                  yn(k,kon(indexe+nope+j))=0.0d0
+               enddo
+               inum(kon(indexe+nope+j))=inum(kon(indexe+nope+j))+1
+            enddo
+         endif
+c     Bernhardi end
 !
       enddo
 !
@@ -529,28 +540,28 @@ c         if(lakonl(4:5).eq.'20') then
          call map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,ne,cflag,co,
      &         vold,force,mi)
       endif
-!
-!     printing values for environmental film, radiation and
-!     pressure nodes
-!
-      do i=1,nload
-         node=nelemload(2,i)
-         if(node.gt.0) then
-            if(inum(node).gt.0) cycle
-            inum(node)=-1
-         endif
-      enddo
-!
-!     printing values of prescribed boundary conditions
-!
-      if(ithermal(2).gt.1) then
-         do i=1,nboun
-            node=nodeboun(i)
-            if(inum(node).ne.0) cycle
-            if((cflag.ne.' ').and.(ndirboun(i).eq.3)) cycle
-            inum(node)=1
-         enddo
-      endif
+c!
+c!     printing values for environmental film, radiation and
+c!     pressure nodes
+c!
+c      do i=1,nload
+c         node=nelemload(2,i)
+c         if(node.gt.0) then
+c            if(inum(node).gt.0) cycle
+c            inum(node)=-1
+c         endif
+c      enddo
+c!
+c!     printing values of prescribed boundary conditions
+c!
+c      if(ithermal(2).gt.1) then
+c         do i=1,nboun
+c            node=nodeboun(i)
+c            if(inum(node).ne.0) cycle
+c            if((cflag.ne.' ').and.(ndirboun(i).eq.3)) cycle
+c            inum(node)=1
+c         enddo
+c      endif
 !
       return
       end

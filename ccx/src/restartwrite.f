@@ -33,7 +33,7 @@
      &  shcon,nshcon,cocon,ncocon,ics,sti,
      &  ener,xstate,jobnamec,infree,nnn,prestr,iprestr,cbody, 
      &  ibody,xbody,nbody,xbodyold,ttime,qaold,cs,mcs,output,
-     &  physcon,ctrl,typeboun,fmpc,tieset,ntie)
+     &  physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol)
 !
       implicit none
 !
@@ -66,7 +66,7 @@
 !
       real*8 co(*),xboun(*),coefmpc(*),xforc(*),xload(*),elcon(*),
      &  rhcon(*),alcon(*),alzero(*),plicon(*),plkcon(*),orab(*),
-     &  trab(*),amta(*),t0(*),t1(*),prestr(*),veold(*),
+     &  trab(*),amta(*),t0(*),t1(*),prestr(*),veold(*),tietol(2,*),
      &  vold(*),xbounold(*),xforcold(*),xloadold(*),t1old(*),eme(*),
      &  xnor(*),thickn(*),thicke(*),offset(*),
      &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),
@@ -263,13 +263,13 @@
 !
 !     specific heat
 !
-      write(15)(shcon(i),i=1,3*ntmat_*nmat)
+      write(15)(shcon(i),i=1,4*ntmat_*nmat)
       write(15)(nshcon(i),i=1,nmat)
 !
 !     conductivity
 !
       write(15)(cocon(i),i=1,7*ntmat_*nmat)
-      write(15)(ncocon(i),i=1,nmat)
+      write(15)(ncocon(i),i=1,2*nmat)
 !
 !     expansion coefficients
 !
@@ -361,6 +361,7 @@
 !
       if(ntie.gt.0) then
          write(15)((tieset(i,j),i=1,3),j=1,ntie)
+         write(15)((tietol(i,j),i=1,2),j=1,ntie)
       endif
 !
 !     cyclic symmetry

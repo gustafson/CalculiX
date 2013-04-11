@@ -19,7 +19,7 @@
       subroutine mafillklhs(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,
      &  nactdok,icolk,jqk,irowk,neqk,nzlk,
-     &  ikmpc,ilmpc,ikboun,ilboun,nzsk,adbk,aubk,nmethod)
+     &  ikmpc,ilmpc,ikboun,ilboun,nzsk,adbk,aubk,ipvar,var)
 !
 !     filling the lhs turbulence matrix in spare matrix format (sm)
 !
@@ -34,14 +34,15 @@
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  icolk(*),jqk(*),ikmpc(*),nzsk,nmethod,
      &  ilmpc(*),ikboun(*),ilboun(*),nactdok(*),konl(20),irowk(*),
-     &  ipkon(*)
+     &  ipkon(*),ipvar(*)
 !
       integer nk,ne,nboun,nmpc,neqk,nzlk,i,j,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,node1,node2,
      &  indexe,nope,i0
 !
-      real*8 co(3,*),xboun(*),coefmpc(*),sm(60,60),adbk(*),aubk(*)
+      real*8 co(3,*),xboun(*),coefmpc(*),sm(60,60),adbk(*),aubk(*),
+     &  var(*)
 !
       real*8 value
 !
@@ -94,7 +95,7 @@
 !       the temperature element routine = the turbulence element
 !       routine
 !
-        call e_c3d_tlhs(co,nk,konl,lakon(i),sm,i,nmethod)
+        call e_c3d_tlhs(co,nk,konl,lakon(i),sm,i,ipvar,var)
 !
         do jj=1,nope
 !

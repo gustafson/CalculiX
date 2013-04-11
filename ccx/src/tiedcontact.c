@@ -30,7 +30,7 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
 	       int *ithermal, double *co, double *vold, int *cfd,
 	       int *nmpc_, int *mi, int *nk){
 
-  char kind[2]="T",*labmpc=NULL;
+  char kind1[2]="T",kind2[2]="T",*labmpc=NULL;
 
   int *itietri=NULL,*koncont=NULL,nconf,i,k,*nx=NULL,im,
       *ny=NULL,*nz=NULL,*ifaceslave=NULL,*istartfield=NULL,
@@ -56,7 +56,8 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
      slave side */
 
   FORTRAN(allocont,(&ncont,ntie,tieset,nset,set,istartset,iendset,
-	      ialset,lakon,&ncone,tietol,&ismallsliding,kind,&mortar));
+	  ialset,lakon,&ncone,tietol,&ismallsliding,kind1,
+          kind2,&mortar));
 
   if(ncont==0) return;
 
@@ -71,7 +72,7 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
   /* triangulation of the master surface */
 
   FORTRAN(triangucont,(&ncont,ntie,tieset,nset,set,istartset,iendset,
-          ialset,itietri,lakon,ipkon,kon,koncont,kind));
+	 ialset,itietri,lakon,ipkon,kon,koncont,kind1,kind2));
   
   /* catalogueing the neighbors of the master triangles */
   

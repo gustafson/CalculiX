@@ -175,7 +175,7 @@ c            nboun=0
                   exit
                endif
             enddo
-            if(j.gt.nam) then
+            if(j.eq.0) then
                write(*,*)'*ERROR in boundaries: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline)
@@ -236,6 +236,12 @@ c            nboun=0
             massflowrate=.true.
          elseif(textpart(i)(1:5).eq.'FIXED') then
             fixed=.true.
+         else
+            write(*,*) 
+     &        '*WARNING in boundaries: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

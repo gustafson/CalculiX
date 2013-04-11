@@ -67,7 +67,7 @@
                   exit
                endif
             enddo
-            if(j.gt.nam) then
+            if(j.eq.0) then
                write(*,*)'*ERROR in cfluxes: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline)
@@ -117,6 +117,12 @@
             user=.true.
          elseif(textpart(i)(1:3).eq.'ADD') then
             add=.true.
+         else
+            write(*,*) 
+     &        '*WARNING in cfluxes: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !
@@ -164,7 +170,7 @@
             call forcadd(l,iforcdir,forcval,
      &        nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &        iamplitude,nam,ntrans,trab,inotr,co,ikforc,ilforc,
-     &        isector,add)
+     &        isector,add,user)
          else
             read(textpart(1)(1:80),'(a80)',iostat=istat) noset
             noset(81:81)=' '
@@ -185,7 +191,7 @@
                call forcadd(ialset(j),iforcdir,forcval,
      &           nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &           iamplitude,nam,ntrans,trab,inotr,co,ikforc,ilforc,
-     &           isector,add)
+     &           isector,add,user)
                else
                   k=ialset(j-2)
                   do
@@ -194,7 +200,7 @@
                      call forcadd(k,iforcdir,forcval,
      &                 nodeforc,ndirforc,xforc,nforc,nforc_,
      &                 iamforc,iamplitude,nam,ntrans,trab,inotr,co,
-     &                 ikforc,ilforc,isector,add)
+     &                 ikforc,ilforc,isector,add,user)
                   enddo
                endif
             enddo

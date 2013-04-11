@@ -18,15 +18,15 @@
 !     
 !     Checking for zero columns in the gas matrix
 !     
-      subroutine equationcheck(ac,ntm,nteq,nactdog,itg,ntg,nacteq,
+      subroutine equationcheck(ac,nteq,nactdog,itg,ntg,nacteq,
      &  network)
 !     
       implicit none
 !     
-      integer nactdog(0:3,*),ntm,nteq,itg(*),ntg,i,j,k,l,node,
+      integer nactdog(0:3,*),nteq,itg(*),ntg,i,j,k,l,node,
      &  nacteq(0:3,*),network
 !     
-      real*8 ac(ntm,*)
+      real*8 ac(nteq,*)
 !   
 !     checking the columns
 !

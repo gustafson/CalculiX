@@ -32,10 +32,18 @@
       real*8 physcon(*)
 !
       if(istep.gt.0) then
-         write(*,*) '*ERROR in physicalconstants: *VALUES AT INFINITY'
+         write(*,*) '*ERROR in valuesatinf: *VALUES AT INFINITY'
          write(*,*) '        should only be used before the first STEP'
          stop
       endif
+!
+      do i=2,n
+         write(*,*) 
+     &        '*WARNING in valuesatinf: parameter not recognized:'
+         write(*,*) '         ',
+     &        textpart(i)(1:index(textpart(i),' ')-1)
+         call inputwarning(inpc,ipoinpc,iline)
+      enddo
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

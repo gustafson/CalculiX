@@ -57,9 +57,16 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
     double df,dc,db,dd,ran,can,rap,ea,cae,ral,da,*vr=NULL,*vi=NULL,*stnr=NULL,
 	*stni=NULL,*vmax=NULL,*stnmax=NULL,*cs=NULL,c1[2],c2[2],reftime,
-        *fn=NULL;
+        *fn=NULL,*eenmax=NULL;
 
-    if (*iflagact==1){ctrl[0]=*iit+4;ctrl[1]=*iit+8;ctrl[3]+=1;}
+    /* next lines are active if the number of contact elements was
+       changed in the present increment */
+
+    if (*iflagact==1){
+	if(ctrl[0]<*iit+4)ctrl[0]=*iit+4;
+	if(ctrl[1]<*iit+8)ctrl[1]=*iit+8;
+	ctrl[3]+=1;
+    }
 	
     i0=ctrl[0];ir=ctrl[1];ip=ctrl[2];ic=ctrl[3];il=ctrl[4];ig=ctrl[5];ia=ctrl[7];
     df=ctrl[10];dc=ctrl[11];db=ctrl[12];da=ctrl[13];dd=ctrl[16];
@@ -204,7 +211,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 			 ithermal,qfn,mode,noddiam,
 			 trab,inotr,ntrans,orab,ielorien,norien,description,
 			 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,
-			 veold,ne,cs,set,nset,istartset,iendset,ialset));
+			 veold,ne,cs,set,nset,istartset,iendset,ialset,eenmax));
 		    FORTRAN(uout,(vold,mi));
 		    FORTRAN(stop,());
 		}
@@ -304,7 +311,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 			 ithermal,qfn,mode,noddiam,
 			 trab,inotr,ntrans,orab,ielorien,norien,description,
 			 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,
-			 veold,ne,cs,set,nset,istartset,iendset,ialset));
+			 veold,ne,cs,set,nset,istartset,iendset,ialset,eenmax));
 	    FORTRAN(uout,(vold,mi));
 	    FORTRAN(stop,());
 	}	
@@ -346,7 +353,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		       ithermal,qfn,mode,noddiam,
 		       trab,inotr,ntrans,orab,ielorien,norien,description,
 		       ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,
-		       veold,ne,cs,set,nset,istartset,iendset,ialset));
+		       veold,ne,cs,set,nset,istartset,iendset,ialset,eenmax));
 		    FORTRAN(uout,(vold,mi));
 		    FORTRAN(stop,());
 		}
@@ -385,7 +392,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                            output,ithermal,qfn,mode,noddiam,
 			   trab,inotr,ntrans,orab,ielorien,norien,description,
 			   ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,
-			   veold,ne,cs,set,nset,istartset,iendset,ialset));
+			   veold,ne,cs,set,nset,istartset,iendset,ialset,eenmax));
 			FORTRAN(uout,(vold,mi));
 			FORTRAN(stop,());
 		    }
@@ -408,7 +415,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                            output,ithermal,qfn,mode,noddiam,
 			   trab,inotr,ntrans,orab,ielorien,norien,description,
 			   ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,
-			   veold,ne,cs,set,nset,istartset,iendset,ialset));
+			   veold,ne,cs,set,nset,istartset,iendset,ialset,eenmax));
 			FORTRAN(uout,(vold,mi));
 			FORTRAN(stop,());
 		    }
@@ -462,7 +469,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                            mi,output,ithermal,qfn,mode,noddiam,
 			   trab,inotr,ntrans,orab,ielorien,norien,description,
 			   ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,
-			   veold,ne,cs,set,nset,istartset,iendset,ialset));
+			   veold,ne,cs,set,nset,istartset,iendset,ialset,eenmax));
 			FORTRAN(uout,(vold,mi));
 			FORTRAN(stop,());
 		    }
@@ -485,7 +492,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                            output,ithermal,qfn,mode,noddiam,
 			   trab,inotr,ntrans,orab,ielorien,norien,description,
 			   ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,
-			   veold,ne,cs,set,nset,istartset,iendset,ialset));
+			   veold,ne,cs,set,nset,istartset,iendset,ialset,eenmax));
 			FORTRAN(uout,(vold,mi));
 			FORTRAN(stop,());
 		    }

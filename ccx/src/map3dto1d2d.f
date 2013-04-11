@@ -64,8 +64,6 @@ c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
 !
          if(ipkon(i).lt.0) cycle
          lakonl=lakon(i)
-c         if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'G').or.
-c     &      (lakonl(1:1).ne.'C')) cycle
          if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'I').or.
      &      (lakonl(1:1).ne.'C')) cycle
          ne1d2d=1
@@ -118,8 +116,6 @@ c     &      (lakonl(1:1).ne.'C')) cycle
 !
          if(ipkon(i).lt.0) cycle
          lakonl=lakon(i)
-c         if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'G').or.
-c     &      (lakonl(1:1).ne.'C')) cycle
          if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'I').or.
      &      (lakonl(1:1).ne.'C')) cycle
          indexe=ipkon(i)
@@ -128,13 +124,6 @@ c     &      (lakonl(1:1).ne.'C')) cycle
             indexe2d=indexe+15
             do j=1,6
                node2d=kon(indexe2d+j)
-c               do l=1,2
-c                  inum(node2d)=inum(node2d)-1
-c                  node3d=kon(indexe+node6(l,j))
-c                  do k=1,nfield
-c                     yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
-c                  enddo
-c               enddo
                inum(node2d)=inum(node2d)-1
                if(.not.force) then
 !
@@ -243,10 +232,7 @@ c               enddo
                   do l=1,8
                      node(l)=kon(indexe+node3m(l,j))
                      do m=1,3
-c                        xl(m,l)=co(m,node(l))
                         xl(m,l)=co(m,node(l))+vold(m,node(l))
-c                     write(*,*) 'i,j,l ',i,j,l,co(m,node(l)),
-c     &                    vold(m,node(l)),node(l)
                      enddo
                   enddo
 !
@@ -295,33 +281,12 @@ c     &                    vold(m,node(l)),node(l)
                      e3(3)=e1(1)*e2(2)-e2(1)*e1(2)
                   endif
 !
-c                  write(*,*) i,j,e3(1),e3(2),e3(3)
-!
 !                 loop over the integration points (2x2)
 !                  
                   do l=1,4
-c                  do l=1,9
                      xi=gauss2d2(1,l)
                      et=gauss2d2(2,l)
-c                     xi=gauss2d3(1,l)
-c                     et=gauss2d3(2,l)
                      call shape8q(xi,et,xl,xsj,xs,shp,iflag)
-c!
-c!                    local unit normal (only once per section)
-c!
-c                     if(l.eq.1) then
-c                        dd=dsqrt(xsj(1)*xsj(1)+xsj(2)*xsj(2)+
-c     &                        xsj(3)*xsj(3))
-c                        if(j.eq.1) then
-c                           do m=1,3
-c                              e3(m)=-xsj(m)/dd
-c                           enddo
-c                        else
-cc                           do m=1,3
-cc                              e3(m)=xsj(m)/dd
-cc                           enddo
-c                        endif
-c                     endif
 !
 !                    local stress tensor
 !
@@ -352,13 +317,10 @@ c                     endif
 !
                      yn(1,node2d)=yn(1,node2d)+
      &                   (e1(1)*t(1)+e1(2)*t(2)+e1(3)*t(3))
-c     &                   *weight2d3(l)
                      yn(2,node2d)=yn(2,node2d)+
      &                   (e2(1)*t(1)+e2(2)*t(2)+e2(3)*t(3))
-c     &                   *weight2d3(l)
                      yn(3,node2d)=yn(3,node2d)+
      &                   (e3(1)*t(1)+e3(2)*t(2)+e3(3)*t(3))
-c     &                   *weight2d3(l)
 !
 !                    section moments
 !
@@ -368,7 +330,6 @@ c     &                   *weight2d3(l)
      &                     (e3(1)*pcg(2)*t(3)+e3(2)*pcg(3)*t(1)+
      &                     e3(3)*pcg(1)*t(2)-e3(3)*pcg(2)*t(1)-
      &                     e3(1)*pcg(3)*t(2)-e3(2)*pcg(1)*t(3))
-c     &                     *weight2d3(l)
 !
 !                    about 2-direction
 !
@@ -376,7 +337,6 @@ c     &                     *weight2d3(l)
      &                     (e2(1)*pcg(2)*t(3)+e2(2)*pcg(3)*t(1)+
      &                     e2(3)*pcg(1)*t(2)-e2(3)*pcg(2)*t(1)-
      &                     e2(1)*pcg(3)*t(2)-e2(2)*pcg(1)*t(3))
-c     &                     *weight2d3(l)
 !
 !                    about 1-direction
 !
@@ -384,7 +344,6 @@ c     &                     *weight2d3(l)
      &                     (e1(1)*pcg(2)*t(3)+e1(2)*pcg(3)*t(1)+
      &                     e1(3)*pcg(1)*t(2)-e1(3)*pcg(2)*t(1)-
      &                     e1(1)*pcg(3)*t(2)-e1(2)*pcg(1)*t(3))
-c     &                     *weight2d3(l)
 !
 !                    components 5 and 6 are switched in the frd
 !                    format, so the final order is beam axis,
@@ -474,8 +433,6 @@ c     &                     *weight2d3(l)
 !
          if(ipkon(i).lt.0) cycle
          lakonl=lakon(i)
-c         if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'G').or.
-c     &      (lakonl(1:1).ne.'C')) cycle
          if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'I').or.
      &      (lakonl(1:1).ne.'C')) cycle
          indexe=ipkon(i)

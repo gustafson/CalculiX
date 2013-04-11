@@ -34,7 +34,7 @@
      &  ener,xstate,jobnamec,infree,nnn,irstrt,inpc,textpart,istat,n,
      &  key,prestr,iprestr,cbody,ibody,xbody,nbody,xbodyold,
      &  ttime,qaold,cs,mcs,output,physcon,ctrl,typeboun,iline,ipol,inl,
-     &  ipoinp,inp,fmpc,tieset,ntie,ipoinpc)
+     &  ipoinp,inp,fmpc,tieset,ntie,tietol,ipoinpc)
 !
       implicit none
 !
@@ -66,7 +66,7 @@
 !
       real*8 co(*),xboun(*),coefmpc(*),xforc(*),xload(*),elcon(*),
      &  rhcon(*),alcon(*),alzero(*),plicon(*),plkcon(*),orab(*),
-     &  trab(*),amta(*),t0(*),t1(*),prestr(*),veold(*),
+     &  trab(*),amta(*),t0(*),t1(*),prestr(*),veold(*),tietol(2,*),
      &  vold(*),xbounold(*),xforcold(*),xloadold(*),t1old(*),eme(*),
      &  xnor(*),thickn(*),thicke(*),offset(*),
      &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),
@@ -76,7 +76,7 @@
       irestartread=0
       irestartstep=0
 !
-      do i=1,n
+      do i=2,n
          if(textpart(i)(1:4).eq.'READ') then
             irestartread=1
             if(irestartstep.eq.0) irestartstep=1
@@ -88,6 +88,12 @@
          elseif(textpart(i)(1:10).eq.'FREQUENCY=') then
             read(textpart(i)(11:20),'(i10)',iostat=istat) irstrt
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         else
+            write(*,*) 
+     &        '*WARNING in restarts: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !
@@ -109,7 +115,7 @@
      &  shcon,nshcon,cocon,ncocon,ics,sti,
      &  ener,xstate,jobnamec,infree,nnn,irestartstep,prestr,iprestr,
      &  cbody,ibody,xbody,nbody,xbodyold,ttime,qaold,cs,mcs,
-     &  output,physcon,ctrl,typeboun,fmpc,tieset,ntie)
+     &  output,physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol)
       endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

@@ -20,7 +20,7 @@
      &  iponoel,vold,ipompc,nodempc,coefmpc,nmpc,nfreestream,
      &  ifreestream,nsolidsurf,isolidsurf,xsolidsurf,
      &  inoel,physcon,compressible,ielmat,nshcon,shcon,nrhcon,
-     &  rhcon,voldtu,ntmat_,labmpc,inomat,mi)
+     &  rhcon,voldtu,ntmat_,labmpc,inomat,mi,ithermal)
 !
 !     applies turbulence boundary conditions
 !
@@ -34,7 +34,7 @@
      &  index,nodei,ndiri,ist,ipompc(*),nodempc(3,*),nmpc,
      &  ndir,nfreestream,ifreestream(*),iponoel(*),
      &  inoel,imat,ielmat(*),ntmat_,nshcon(*),nrhcon(*),compressible,
-     &  nsolidsurf,isolidsurf(*),inomat(*),mi(2)
+     &  nsolidsurf,isolidsurf(*),inomat(*),mi(2),ithermal
 !
       real*8 vold(0:mi(2),*),xbounact(*),residuk,size,coefmpc(*),
      &  xtu,xkin,temp,r,dvi,rho,physcon(*),shcon(0:3,ntmat_,*),
@@ -63,7 +63,7 @@ c     &        shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho,physcon)
      &        (r*(vold(0,node)-physcon(1)))
          else
             call materialdata_rho(rhcon,nrhcon,imat,rho,
-     &           temp,ntmat_)
+     &           temp,ntmat_,ithermal)
          endif
 !
          voldtu(1,node)=xkin*dvi
@@ -89,7 +89,7 @@ c     &        shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho,physcon)
      &        (r*(vold(0,node)-physcon(1)))
          else
             call materialdata_rho(rhcon,nrhcon,imat,rho,
-     &           temp,ntmat_)
+     &           temp,ntmat_,ithermal)
          endif
 !
          voldtu(1,node)=0.d0

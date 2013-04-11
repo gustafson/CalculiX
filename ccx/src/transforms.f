@@ -62,6 +62,12 @@
             if(textpart(i)(6:6).eq.'C') then
                trab(7,ntrans)=-1.d0
             endif
+         else
+            write(*,*) 
+     &        '*WARNING in transforms: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

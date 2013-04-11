@@ -16,21 +16,21 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine materialdata_rho(rhcon,nrhcon,imat,rho,
-     &  t1l,ntmat_)
+     &  t1l,ntmat_,ithermal)
 !
       implicit none
 !
 !     determines the density of the material
 !
-      integer nrhcon(*),imat,two,ntmat_,id
+      integer nrhcon(*),imat,two,ntmat_,id,ithermal
 !
       real*8 rhcon(0:1,ntmat_,*),rho,t1l
 !
       two=2
 !
-c      if(ithermal.eq.0) then
-c         rho=rhcon(1,1,imat)
-c      else
+      if(ithermal.eq.0) then
+         rho=rhcon(1,1,imat)
+      else
          call ident2(rhcon(0,1,imat),t1l,nrhcon(imat),two,id)
          if(nrhcon(imat).eq.0) then
             continue
@@ -46,7 +46,7 @@ c      else
      &           (t1l-rhcon(0,id,imat))/
      &           (rhcon(0,id+1,imat)-rhcon(0,id,imat))
          endif
-c      endif
+      endif
       return
       end
 !     

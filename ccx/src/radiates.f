@@ -79,7 +79,7 @@
                   exit
                endif
             enddo
-            if(j.gt.nam) then
+            if(j.eq.0) then
                write(*,*)'*ERROR in radiates: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline)
@@ -133,7 +133,7 @@
                   exit
                endif
             enddo
-            if(j.gt.nam) then
+            if(j.eq.0) then
                write(*,*)'*ERROR in radiates: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline)
@@ -184,6 +184,12 @@
             environmentnode=.true.
          elseif(textpart(i)(1:7).eq.'CAVITY=') THEN
             read(textpart(i)(8:10),'(a3)',iostat=istat) cavlabel
+         else
+            write(*,*) 
+     &        '*WARNING in radiates: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !
@@ -259,10 +265,6 @@
                elseif(label(1:2).eq.'R6') then
                   label(1:2)='R2'
                endif
-c            elseif((lakon(l)(1:1).eq.'B').or.
-c     &              (lakon(l)(7:7).eq.'B')) then
-c            elseif((lakon(l)(1:1).eq.'S').or.
-c     &              (lakon(l)(7:7).eq.'L')) then
             endif
             call loadaddt(l,label,xmagradi,xmagtemp,nelemload,sideload,
      &           xload,nload,nload_,iamload,iamptemp,iampradi,nam,node)
@@ -301,10 +303,6 @@ c     &              (lakon(l)(7:7).eq.'L')) then
                elseif(label(1:2).eq.'R6') then
                   label(1:2)='R2'
                endif
-c            elseif((lakon(l)(1:1).eq.'B').or.
-c     &              (lakon(l)(7:7).eq.'B')) then
-c            elseif((lakon(l)(1:1).eq.'S').or.
-c     &              (lakon(l)(7:7).eq.'L')) then
             endif
 !
             do j=istartset(i),iendset(i)

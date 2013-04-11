@@ -101,6 +101,12 @@
             iendset(js)=nalset
             set(js)=noset
             exit
+         else
+            write(*,*) 
+     &        '*WARNING in nodes: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo loop
 !

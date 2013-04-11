@@ -208,6 +208,12 @@
             noset(81:81)=' '
             ipos=index(noset,' ')
             noset(ipos:ipos)='N'
+         else
+            write(*,*) 
+     &        '*WARNING in noelfiles: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(ii)(1:index(textpart(ii),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
         endif
       enddo
 !
@@ -444,6 +450,15 @@ c               endif
                   filab(29)(1:4)='HCRI'
                   filab(29)(6:6)=nodesys
                   filab(29)(7:87)=noset
+            elseif(textpart(ii)(1:4).eq.'MAXE') then
+               if(nmethod.ne.2) then
+                  write(*,*) '*WARNING in noelfiles: MAXE only makes'
+                  write(*,*) '         sense for frequency calculations'
+               else
+                  filab(30)(1:4)='MAXE'
+                  filab(30)(6:6)=elemsys
+                  filab(30)(7:87)=noset
+               endif
             else
                write(*,*) '*WARNING in noelfiles: label not applicable'
                write(*,*) '         or unknown; '

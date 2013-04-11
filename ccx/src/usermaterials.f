@@ -58,6 +58,12 @@
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          elseif(textpart(i)(1:12).eq.'TYPE=THERMAL') then
             imech=0
+         else
+            write(*,*) 
+     &        '*WARNING in usermaterials: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

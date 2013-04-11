@@ -28,7 +28,7 @@
       character*132 textpart(16)
 !
       integer nshcon(*),nmat,ntmat,ntmat_,istep,istat,n,ipoinpc(0:*),
-     &  key,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*)
+     &  key,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),i
 !
       real*8 shcon(0:3,ntmat_,*)
 !
@@ -47,6 +47,14 @@
          write(*,*) '  preceded by a *MATERIAL card'
          stop
       endif
+!
+      do i=2,n
+         write(*,*) 
+     &        '*WARNING in fluidconstants: parameter not recognized:'
+         write(*,*) '         ',
+     &        textpart(i)(1:index(textpart(i),' ')-1)
+         call inputwarning(inpc,ipoinpc,iline)
+      enddo
 !
       do
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

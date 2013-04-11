@@ -69,7 +69,7 @@
                   exit
                endif
             enddo
-            if(j.gt.nam) then
+            if(j.eq.0) then
                write(*,*)'*ERROR in films: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline)
@@ -123,7 +123,7 @@
                   exit
                endif
             enddo
-            if(j.gt.nam) then
+            if(j.eq.0) then
                write(*,*)'*ERROR in films: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline)
@@ -170,6 +170,12 @@
             read(textpart(i)(15:34),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         else
+            write(*,*) 
+     &        '*WARNING in films: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !
@@ -241,10 +247,6 @@
                elseif(label(1:2).eq.'F6') then
                   label(1:2)='F2'
                endif
-            elseif((lakon(l)(1:1).eq.'B').or.
-     &              (lakon(l)(7:7).eq.'B')) then
-            elseif((lakon(l)(1:1).eq.'S').or.
-     &              (lakon(l)(7:7).eq.'L')) then
             endif
             call loadaddt(l,label,xmagfilm,xmagtemp,nelemload,sideload,
      &           xload,nload,nload_,iamload,
@@ -279,13 +281,11 @@
                   label(1:2)='F5'
                elseif(label(1:2).eq.'F4') then
                   label(1:2)='F6'
+               elseif(label(1:2).eq.'F5') then
+                  label(1:2)='F1'
+               elseif(label(1:2).eq.'F6') then
+                  label(1:2)='F2'
                endif
-            elseif((lakon(l)(1:1).eq.'B').or.
-     &              (lakon(l)(7:7).eq.'B')) then
-               if(label(1:2).eq.'F2') label(1:2)='F5'
-            elseif((lakon(l)(1:1).eq.'S').or.
-     &              (lakon(l)(7:7).eq.'L')) then
-               label(1:2)='F1'
             endif
 !
             do j=istartset(i),iendset(i)

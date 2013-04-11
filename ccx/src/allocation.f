@@ -237,11 +237,11 @@ c      npt=0
                nprint=nprint+n
             enddo
          elseif(textpart(1)(1:6).eq.'*CREEP') then
-            if(ityp.eq.2) then
-               nstate=max(nstate,13)
-            else
-               nstate=max(nstate,7)
-            endif
+c            if(ityp.eq.2) then
+c               nstate=max(nstate,13)
+c            else
+c               nstate=max(nstate,7)
+c            endif
             ncmat=max(9,ncmat)
             npmat=max(2,npmat)
             if(ncmat.ge.9) ncmat=max(19,ncmat)
@@ -352,14 +352,14 @@ c            enddo
                ntmatl=ntmatl+1
                ntmat=max(ntmatl,ntmat)
             enddo
-         elseif(textpart(1)(1:7).eq.'*DEPVAR') then
-            do
-               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &              ipoinp,inp,ipoinpc)
-               if((istat.lt.0).or.(key.eq.1)) exit
-               read(textpart(1)(1:10),'(i10)',iostat=istat) idepvar
-               nstate=max(nstate,idepvar)
-            enddo
+c         elseif(textpart(1)(1:7).eq.'*DEPVAR') then
+c            do
+c               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+c     &              ipoinp,inp,ipoinpc)
+c               if((istat.lt.0).or.(key.eq.1)) exit
+c               read(textpart(1)(1:10),'(i10)',iostat=istat) idepvar
+c               nstate=max(nstate,idepvar)
+c            enddo
          elseif(textpart(1)(1:20).eq.'*DISTRIBUTEDCOUPLING') then
             do i=2,n
                if(textpart(i)(1:8).eq.'SURFACE=') then
@@ -556,6 +556,9 @@ c            enddo
      &                   (label.eq.'F3D6    ')) then
                      mi(1)=max(mi(1),2)
                      nope=6
+                  elseif(label.eq.'F3D6R   ') then
+                     mi(1)=max(mi(1),1)
+                     nope=6
                   elseif((label.eq.'CPE8R   ').or.
      &                    (label.eq.'CPS8R   ').or.
      &                    (label.eq.'CAX8R   ').or.
@@ -564,6 +567,11 @@ c            enddo
      &                    (label.eq.'F3D8    ')) then
                      mi(1)=max(mi(1),8)
                      nope=8
+c    Bernhardi start
+                  elseif(label.eq.'C3D8I   ') then
+                     mi(1)=max(mi(1),8)
+                     nope=8
+c    Bernhardi end
                   elseif((label.eq.'CPE8    ').or.
      &                    (label.eq.'CPS8    ').or.
      &                    (label.eq.'CAX8    ').or.
@@ -608,6 +616,12 @@ c            enddo
                if((istat.lt.0).or.(key.eq.1)) exit
                read(textpart(1)(1:10),'(i10)',iostat=istat) i
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+c    Bernhardi start
+c              space for incompatible mode nodes
+               if(label(1:5).eq.'C3D8I') then
+                  nk=nk+3
+               endif
+c    Bernhardi end
                if(label(1:2).ne.'C3') then
                   if(label(1:3).eq.'CPE') then
                      necper=necper+1
@@ -760,7 +774,7 @@ c            enddo
                if((istat.lt.0).or.(key.eq.1)) exit
                nprint=nprint+n
             enddo
-         elseif(textpart(1)(1:4).eq.'*GAP') then
+         elseif(textpart(1)(1:5).eq.'*GAP ') then
             elset='                    '
             do i=2,n
                if(textpart(i)(1:6).eq.'ELSET=') then
@@ -793,8 +807,33 @@ c            enddo
          elseif(textpart(1)(1:9).eq.'*FRICTION') then
             ncmat=max(7,ncmat)
             ntmat=max(1,ntmat)
+c            nstate=max(nstate,9)
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
+         elseif(textpart(1)(1:15).eq.'*GAPCONDUCTANCE') then
+            nmat=nmat+1
+            ntmatl=0
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,
+     &              inl,ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+               read(textpart(3)(1:20),'(f20.0)',iostat=istat) 
+     &              temperature
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(ntmatl.eq.0) then
+                  npmatl=0
+                  ntmatl=ntmatl+1
+                  ntmat=max(ntmatl,ntmat)
+                  tempact=temperature
+               elseif(temperature.ne.tempact) then
+                  npmatl=0
+                  ntmatl=ntmatl+1
+                  ntmat=max(ntmatl,ntmat)
+                  tempact=temperature
+               endif
+               npmatl=npmatl+1
+               npmat=max(npmatl,npmat)
+            enddo
          elseif(textpart(1)(1:13).eq.'*HYPERELASTIC') then
             ntmatl=0
             ityp=-7
@@ -1031,11 +1070,11 @@ c            enddo
                if((istat.lt.0).or.(key.eq.1)) exit
             enddo
          elseif(textpart(1)(1:8).eq.'*PLASTIC') then
-            if(ityp.eq.2) then
-               nstate=max(nstate,13)
-            else
-               nstate=max(nstate,14)
-            endif
+c            if(ityp.eq.2) then
+c               nstate=max(nstate,13)
+c            else
+c               nstate=max(nstate,14)
+c            endif
             ntmatl=0
             do
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

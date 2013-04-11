@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine fluidextrapolate(v,ipkon,inum,kon,lakon,
+      subroutine networkextrapolate(v,ipkon,inum,kon,lakon,
      &  ne,mi)
 !
 !     extrapolates nodal values in fluid elements
@@ -85,22 +85,10 @@
 !        end node
 !
          node1=kon(indexe+1)
-c         if(node1.ne.0)  then
-c            if(inum(node1).lt.0) then
-c               v(1,node1)=-v(1,node1)/inum(node1)
-c               inum(node1)=-inum(node1)
-c            endif
-c         endif
 !
 !        other end node
 !
          node3=kon(indexe+3)
-c         if(node3.ne.0)  then
-c            if(inum(node3).lt.0) then
-c               v(1,node3)=-v(1,node3)/inum(node3)
-c               inum(node3)=-inum(node3)
-c            endif
-c         endif
 !
 !        middle node and zero nodes (network entrances/exits)
 !        interpolating the total temperature, total pressure

@@ -37,11 +37,6 @@
 !
       do i=2,n
          if(textpart(i)(1:4).eq.'READ') then
-c            if(istep.ne.1) then
-c               write(*,*) '*ERROR in viewfactors: *VIEWFACTOR,READ can'
-c               write(*,*) '       only be used in the first step'
-c               stop
-c            endif
             if(iviewfile.eq.0) then
                iviewfile=-1
             else
@@ -87,6 +82,12 @@ c            endif
                   jobnamec(3)(125:125)=' '
                endif
             enddo loop2
+         else
+            write(*,*) 
+     &        '*WARNING in viewfactors: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

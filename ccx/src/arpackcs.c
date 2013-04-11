@@ -94,7 +94,7 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     vreal,vimag,*stnr=NULL,*stni=NULL,stnreal,stnimag,*vmax=NULL,
     *stnmax=NULL,vl[4],stnl[6],dd,v1,v2,v3,bb,cc,al[3],cm,cn,tt,
     worstpsmax,vray[3],worstumax,p1[3],p2[3],q[3],tan[3],*springarea=NULL,
-    *stxt=NULL;
+    *stxt=NULL,*eenmax=NULL,eenl[6];
 
   FILE *f1;
 
@@ -150,6 +150,7 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   v=NNEW(double,mt**nk);
   fn=NNEW(double,mt**nk);
   stx=NNEW(double,6*mi[0]**ne);
+  inum=NNEW(int,*nk);
   if(*iperturb==0){
      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	       elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -163,7 +164,8 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-               fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));
+	       fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
+               &reltime));
   }else{
      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	       elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -177,9 +179,10 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-               fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));
+	       fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
+               &reltime));
   }
-  free(f);free(v);free(fn);free(stx);
+  free(f);free(v);free(fn);free(stx);free(inum);
   iout=1;
 
   /* determining the maximum number of sectors to be plotted */
@@ -300,7 +303,7 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	 iperturb,ener,mi,output,ithermal,qfn,&j,&nm,
          trab,inotr,ntrans,orab,ielorien,norien,description,
 	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs,
-         set,nset,istartset,iendset,ialset));
+	 set,nset,istartset,iendset,ialset,eenmax));
     
     if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
     free(inum);FORTRAN(stop,());
@@ -537,9 +540,12 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   v=NNEW(double,2*mt**nk);
   fn=NNEW(double,2*mt**nk);
-  stn=NNEW(double,12**nk);
+  if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1653],"MAXS")==0)|| 
+     (strcmp1(&filab[1479],"PHS ")==0)||(strcmp1(&filab[1044],"ZZS ")==0)) 
+      stn=NNEW(double,12**nk);
 
-  if(strcmp1(&filab[261],"E   ")==0) een=NNEW(double,12**nk);
+  if((strcmp1(&filab[261],"E   ")==0)||(strcmp1(&filab[2523],"MAXE")==0)) 
+      een=NNEW(double,12**nk);
   if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,2**nk);
 
   inum=NNEW(int,*nk);
@@ -662,6 +668,13 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     }
   }   
 
+  if(strcmp1(&filab[2523],"MAXE")==0){
+      if((strcmp1(&filab[2528],"L")==0)&&(*norien>0)){
+      printf("\n*WARNING in arpackcs: element fields in cyclic symmetry calculation\n cannot be requested in local orientations;\n the global orientation will be used \n\n");
+      strcpy1(&filab[1658],"G",1);
+    }
+  }   
+
   /* allocating fields for magnitude and phase information of
      displacements and stresses */
 
@@ -681,6 +694,10 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   if(strcmp1(&filab[1653],"MAXS")==0){
     stnmax=NNEW(double,7*nkt);
+  }
+
+  if(strcmp1(&filab[2523],"MAXE")==0){
+    eenmax=NNEW(double,7*nkt);
   }
 
   /* start of output calculations */
@@ -783,7 +800,7 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],sti,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-            nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));}
+	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime));}
       else{
 	FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
             &stx[kkx],elcon,
@@ -798,7 +815,7 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],sti,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-            nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));
+	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime));
       }
 
     }
@@ -898,8 +915,8 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
        of the absolute value of the principal stresses */
 
     if(strcmp1(&filab[1653],"MAXS")==0){
-
-      /* determining the set of nodes for the 
+	
+	/* determining the set of nodes for the 
          worst principal stress calculation */
 
       ielset=0;
@@ -915,13 +932,9 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	FORTRAN(stop,());
       }
 
-//      worstpsmax=0.;
-//      iworsttime=0;
       for(i1=istartset[ielset-1]-1;i1<iendset[ielset-1];i1++){
 	if(ialset[i1]>0){
 	  l1=ialset[i1]-1;
-
-	  /*     for(l1=0;l1<*nk;l1++){*/
 
 	  worstpsmax=0.;
 	  for(l3=0;l3<360;l3++){
@@ -973,7 +986,6 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    if(fabs(al[2])>dd) dd=fabs(al[2]);
 	    if(dd>worstpsmax){
 		worstpsmax=dd;
-//	      iworsttime=l3;
 		stnmax[7*l1]=dd;
 		for(l2=1;l2<7;l2++){
 		    stnmax[7*l1+l2]=stnl[l2-1];
@@ -1037,7 +1049,6 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      if(fabs(al[2])>dd) dd=fabs(al[2]);
 	      if(dd>worstpsmax){
 		  worstpsmax=dd;
-//		iworsttime=l3;
 		  stnmax[7*l1]=dd;
 		  for(l2=1;l2<7;l2++){
 		      stnmax[7*l1+l2]=stnl[l2-1];
@@ -1048,62 +1059,159 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	  }while(1);
 	}
       }
+    }
 
-    /* storing the stresses at the time of the worst
-       principal stress anywhere in the structure */
-        
-/*      for(l1=0;l1<*nk;l1++){
-	ctl=cos(iworsttime/constant);
-	stl=sin(iworsttime/constant);
-	for(l2=0;l2<6;l2++){
-	  l=6*l1+l2;
-	  stnl[l2]=ctl*stn[l]-stl*stn[l+6**nk];
-	  }*/
-	
-	/* determining the eigenvalues */
-	
-/*	v1=stnl[0]+stnl[1]+stnl[2];
-	v2=stnl[1]*stnl[2]+stnl[0]*stnl[2]+stnl[0]*stnl[1]-
-	  (stnl[5]*stnl[5]+stnl[4]*stnl[4]+stnl[3]*stnl[3]);
-	v3=stnl[0]*(stnl[1]*stnl[2]-stnl[5]*stnl[5])
-	  -stnl[3]*(stnl[3]*stnl[2]-stnl[4]*stnl[5])
-	  +stnl[4]*(stnl[3]*stnl[5]-stnl[4]*stnl[1]);
-	bb=v2-v1*v1/3.;
-	cc=-2.*v1*v1*v1/27.+v1*v2/3.-v3;
-	if(fabs(bb)<=1.e-10){
-	  if(fabs(cc)>1.e-10){
-	    al[0]=-pow(cc,(1./3.));
-	  }else{
-	    al[0]=0.;
-	  }
-	  al[1]=al[0];
-	  al[2]=al[0];
-	}else{
-	  cm=2.*sqrt(-bb/3.);
-	  cn=3.*cc/(cm*bb);
-	  if(fabs(cn)>1.){
-	    if(cn>1.){
-	      cn=1.;
+    /* determine the worst principal strain anywhere
+       in the structure as a function of time; 
+       the worst principal strain is the maximum
+       of the absolute value of the principal strains,
+       times its original sign */
+
+    if(strcmp1(&filab[2523],"MAXE")==0){
+
+      /* determining the set of nodes for the 
+         worst principal strain calculation */
+
+      ielset=0;
+      for(i=0;i<*nset;i++){
+	if(strcmp1(&set[81*i],"STRAINDOMAINN")==0){
+	  ielset=i+1;
+	  break;
+	}
+      }
+      if(ielset==0){
+	printf("\n*ERROR in arpackcs: no node set for MAXE\n");
+	printf("       (must have the name STRAINDOMAIN)\n\n");
+	FORTRAN(stop,());
+      }
+
+      for(i1=istartset[ielset-1]-1;i1<iendset[ielset-1];i1++){
+	if(ialset[i1]>0){
+	  l1=ialset[i1]-1;
+
+	  worstpsmax=0.;
+	  for(l3=0;l3<360;l3++){
+	    ctl=cos(l3/constant);
+	    stl=sin(l3/constant);
+	    for(l2=0;l2<6;l2++){
+	      l=6*l1+l2;
+	      eenl[l2]=ctl*een[l]-stl*een[l+6**nk];
+	    }
+	    
+	    /* determining the eigenvalues */
+	    
+	    v1=eenl[0]+eenl[1]+eenl[2];
+	    v2=eenl[1]*eenl[2]+eenl[0]*eenl[2]+eenl[0]*eenl[1]-
+	      (eenl[5]*eenl[5]+eenl[4]*eenl[4]+eenl[3]*eenl[3]);
+	    v3=eenl[0]*(eenl[1]*eenl[2]-eenl[5]*eenl[5])
+	      -eenl[3]*(eenl[3]*eenl[2]-eenl[4]*eenl[5])
+	      +eenl[4]*(eenl[3]*eenl[5]-eenl[4]*eenl[1]);
+	    bb=v2-v1*v1/3.;
+	    cc=-2.*v1*v1*v1/27.+v1*v2/3.-v3;
+	    if(fabs(bb)<=1.e-10){
+	      if(fabs(cc)>1.e-10){
+		al[0]=-pow(cc,(1./3.));
+	      }else{
+		al[0]=0.;
+	      }
+	      al[1]=al[0];
+	      al[2]=al[0];
 	    }else{
-	      cn=-1.;
+	      cm=2.*sqrt(-bb/3.);
+	      cn=3.*cc/(cm*bb);
+	      if(fabs(cn)>1.){
+		if(cn>1.){
+		  cn=1.;
+		}else{
+		  cn=-1.;
+		}
+	      }
+	      tt=(atan2(sqrt(1.-cn*cn),cn))/3.;
+	      al[0]=cm*cos(tt);
+	      al[1]=cm*cos(tt+2.*pi/3.);
+	      al[2]=cm*cos(tt+4.*pi/3.);
+	    }
+	    for(l2=0;l2<3;l2++){
+	      al[l2]+=v1/3.;
+	    }
+	    dd=fabs(al[0]);
+	    if(fabs(al[1])>dd) dd=fabs(al[1]);
+	    if(fabs(al[2])>dd) dd=fabs(al[2]);
+	    if(dd>worstpsmax){
+		worstpsmax=dd;
+		eenmax[7*l1]=dd;
+		for(l2=1;l2<7;l2++){
+		    eenmax[7*l1+l2]=eenl[l2-1];
+		}
 	    }
 	  }
-	  tt=(atan2(sqrt(1.-cn*cn),cn))/3.;
-	  al[0]=cm*cos(tt);
-	  al[1]=cm*cos(tt+2.*pi/3.);
-	  al[2]=cm*cos(tt+4.*pi/3.);
+	  
+	}else{
+	  l1=ialset[i1-2]-1;
+	  do{
+	    l1=l1-ialset[i1];
+	    if(l1>=ialset[i1-1]-1) break;
+
+	    worstpsmax=0.;
+	    for(l3=0;l3<360;l3++){
+	      ctl=cos(l3/constant);
+	      stl=sin(l3/constant);
+	      for(l2=0;l2<6;l2++){
+		l=6*l1+l2;
+		eenl[l2]=ctl*een[l]-stl*een[l+6**nk];
+	      }
+	      
+	      /* determining the eigenvalues */
+	      
+	      v1=eenl[0]+eenl[1]+eenl[2];
+	      v2=eenl[1]*eenl[2]+eenl[0]*eenl[2]+eenl[0]*eenl[1]-
+		(eenl[5]*eenl[5]+eenl[4]*eenl[4]+eenl[3]*eenl[3]);
+	      v3=eenl[0]*(eenl[1]*eenl[2]-eenl[5]*eenl[5])
+		-eenl[3]*(eenl[3]*eenl[2]-eenl[4]*eenl[5])
+		+eenl[4]*(eenl[3]*eenl[5]-eenl[4]*eenl[1]);
+	      bb=v2-v1*v1/3.;
+	      cc=-2.*v1*v1*v1/27.+v1*v2/3.-v3;
+	      if(fabs(bb)<=1.e-10){
+		if(fabs(cc)>1.e-10){
+		  al[0]=-pow(cc,(1./3.));
+		}else{
+		  al[0]=0.;
+		}
+		al[1]=al[0];
+		al[2]=al[0];
+	      }else{
+		cm=2.*sqrt(-bb/3.);
+		cn=3.*cc/(cm*bb);
+		if(fabs(cn)>1.){
+		  if(cn>1.){
+		    cn=1.;
+		  }else{
+		    cn=-1.;
+		  }
+		}
+		tt=(atan2(sqrt(1.-cn*cn),cn))/3.;
+		al[0]=cm*cos(tt);
+		al[1]=cm*cos(tt+2.*pi/3.);
+		al[2]=cm*cos(tt+4.*pi/3.);
+	      }
+	      for(l2=0;l2<3;l2++){
+		al[l2]+=v1/3.;
+	      }
+	      dd=fabs(al[0]);
+	      if(fabs(al[1])>dd) dd=fabs(al[1]);
+	      if(fabs(al[2])>dd) dd=fabs(al[2]);
+	      if(dd>worstpsmax){
+		  worstpsmax=dd;
+		  eenmax[7*l1]=dd;
+		  for(l2=1;l2<7;l2++){
+		      eenmax[7*l1+l2]=eenl[l2-1];
+		  }
+	      }
+	    }
+	    
+	  }while(1);
 	}
-	for(l2=0;l2<3;l2++){
-	  al[l2]+=v1/3.;
-	}
-	dd=fabs(al[0]);
-	if(fabs(al[1])>dd) dd=fabs(al[1]);
-	if(fabs(al[2])>dd) dd=fabs(al[2]);
-	stnmax[7*l1]=dd;
-	for(l2=1;l2<7;l2++){
-	  stnmax[7*l1+l2]=stnl[l2-1];
-	}
-	}*/
+      }
     }
     
     /* mapping the results to the other sectors */
@@ -1116,13 +1224,11 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
     if((strcmp1(&filab[0],"U   ")==0)||(strcmp1(&filab[870],"PU  ")==0)){
       for(l=0;l<mt**nk;l++){vt[l]=v[l];}
-//    if((strcmp1(&filab[0],"U   ")==0)||(strcmp1(&filab[870],"PU  ")==0))
       for(l=0;l<mt**nk;l++){vt[l+mt**nk*ngraph]=v[l+mt**nk];}}
     if(strcmp1(&filab[87],"NT  ")==0)
       for(l=0;l<*nk;l++){t1t[l]=t1[l];};
     if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1479],"PHS ")==0)){
 	for(l=0;l<6**nk;l++){stnt[l]=stn[l];}
-//    if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1479],"PHS ")==0))
 	for(l=0;l<6**nk;l++){stnt[l+6**nk*ngraph]=stn[l+6**nk];}}
     if(strcmp1(&filab[261],"E   ")==0)
       for(l=0;l<6**nk;l++){eent[l]=een[l];};
@@ -1376,7 +1482,7 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
        &istep,&iinc,iperturb,ener,mi,output,ithermal,qfn,&j,&nm,
        trab,inotrt,ntrans,orab,ielorien,norien,description,
        ipneigh,neigh,stxt,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,&net,cs,
-       set,nset,istartset,iendset,ialset));
+       set,nset,istartset,iendset,ialset,eenmax));
     if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
 
   }
@@ -1387,10 +1493,14 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   free(adb);free(aub);free(temp_array);free(coefmpcnew);
 
-  free(v);free(fn);free(stn);free(inum);free(stx);free(resid);
+  if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1653],"MAXS")==0)|| 
+     (strcmp1(&filab[1479],"PHS ")==0)||(strcmp1(&filab[1044],"ZZS ")==0)) 
+     free(stn);
+
+  free(v);free(fn);free(inum);free(stx);free(resid);
   free(z);free(workd);free(workl);free(select);free(d);
 
-  if(strcmp1(&filab[261],"E   ")==0) free(een);
+  if((strcmp1(&filab[261],"E   ")==0)||(strcmp1(&filab[2523],"MAXE")==0)) free(een);
   if(strcmp1(&filab[522],"ENER")==0) free(enern);
 
   if((strcmp1(&filab[0],"U   ")==0)||(strcmp1(&filab[870],"PU  ")==0)) free(vt);
@@ -1419,6 +1529,7 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   if(strcmp1(&filab[1479],"PHS")==0){free(stnr);free(stni);}
   if(strcmp1(&filab[1566],"MAXU")==0){free(vmax);}
   if(strcmp1(&filab[1653],"MAXS")==0){free(stnmax);}
+  if(strcmp1(&filab[2523],"MAXE")==0){free(eenmax);}
 
   for(i=0;i<6*mi[0]**ne;i++){eme[i]=0.;}
 

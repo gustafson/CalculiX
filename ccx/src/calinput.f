@@ -78,13 +78,13 @@
      &  infree(4),ixfree,ikfree,inoelfree,iponoelmax,rig(*),nshcon(*),
      &  ncocon(2,*),nodebounold(*),ielprop(*),nprop,nprop_,maxsectors,
      &  ndirbounold(*),nnn(*),nline,ipoinp(2,*),inp(3,*),
-     &  ianisoplas,cfd,ifile_output
+     &  ianisoplas,cfd,ifile_output,ichangefriction
 !
       integer nalset,nalset_,nmat,nmat_,ntmat_,norien,norien_,
      &  nmethod,nk,ne,nboun,nmpc,nmpc_,mpcfree,i,istat,n,
      &  key,nk_,ne_,nboun_,ncs_,namtot_,nstate_,iviewfile,
      &  isolver,ithermal(2),iperturb(*),iprestr,istep,mei(4),nkon,
-     &  nprint,nload,nload_,nforc,nforc_,nlabel,iumat,
+     &  nprint,nload,nload_,nforc,nforc_,nlabel,iumat,imat,
      &  nset,nset_,nprint_,nam,nam_,jout(2),ncmat_,itpamp,
      &  ierror,idrct,jmax(2),iexpl,iplas,npmat_,mi(2),ntrans,ntrans_,
      &  M_or_SPC,nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),nflow,
@@ -101,7 +101,7 @@
      &  shcon(0:3,ntmat_,*),cocon(0:6,ntmat_,*),
      &  ctrl(*),vold(0:mi(2),*),xbounold(*),xforcold(*),
      &  xloadold(*),t1old(*),eme(*),sti(*),ener(*),
-     &  xstate(nstate_,mi(1),*),ttime,qaold(2),cs(17,*),tietol(*),
+     &  xstate(nstate_,mi(1),*),ttime,qaold(2),cs(17,*),tietol(2,*),
      &  xbody(7,*),xbodyold(7,*)
 !
       real*8 fei(3),tinc,tper,xmodal(*),tmin,tmax,
@@ -114,6 +114,7 @@
 !
       newstep=0
       iviewfile=0
+      ichangefriction=0
 !
       maxsectors=1
       if(mcs.ne.0) then
@@ -261,7 +262,13 @@
      &        cflux_flag,istep,istat,n,iline,ipol,inl,ipoinp,inp,nam_,
      &        namtot_,namta,amta,iaxial,ipoinpc)
             cflux_flag=.true.
-
+!
+         elseif(textpart(1)(1:15).eq.'*CHANGEFRICTION') then
+            ichangefriction=1
+            call changefrictions(inpc,textpart,matname,nmat,nmat_,
+     &           irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,nrhcon,
+     &           ipoinpc,imat)
+!
          elseif(textpart(1)(1:6).eq.'*CLOAD') then
             call cloads(inpc,textpart,set,istartset,iendset,
      &        ialset,nset,nodeforc,ndirforc,xforc,nforc,nforc_,
@@ -474,10 +481,10 @@ c
 !
          elseif(textpart(1)(1:9).eq.'*FRICTION') then
             call frictions(inpc,textpart,elcon,nelcon,
-     &           nmat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,
-     &           ipoinp,inp,ipoinpc)
+     &           imat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc,nstate_,ichangefriction)
 !
-         elseif(textpart(1)(1:4).eq.'*GAP') then
+         elseif(textpart(1)(1:5).eq.'*GAP ') then
             call gaps(inpc,textpart,set,istartset,iendset,
      &           ialset,nset,nset_,nalset,nalset_,ipompc,nodempc,
      &           coefmpc,labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,lakon,
@@ -485,6 +492,11 @@ c
      &           nboun,nboun_,iperturb,ne_,co,xboun,ctrl,typeboun,
      &           istep,istat,n,iline,ipol,inl,ipoinp,inp,iamboun,nam,
      &           inotr,trab,ntrans,nmethod,ipoinpc,mi)
+!
+         elseif(textpart(1)(1:15).eq.'*GAPCONDUCTANCE') then
+            call gapconductances(inpc,textpart,nelcon,nmat,ntmat_,
+     &        npmat_,plicon,nplicon,iperturb,irstrt,istep,istat,n,iline,
+     &        ipol,inl,ipoinp,inp,ipoinpc)
 !
          elseif(textpart(1)(1:8).eq.'*HEADING') then
             call headings(inpc,textpart,istat,n,iline,ipol,inl,
@@ -525,6 +537,10 @@ c
      &        isolver,cs,mcs,ipoinpc,idrct,ctrl,tmin,tmax,
      &        nforc,nload,nbody,iprestr,t0,t1,ithermal,nk,vold,veold,
      &        xmodal,set,nset,mi)
+!
+         elseif(textpart(1)(1:12).eq.'*MODELCHANGE') then
+            call modelchanges(inpc,textpart,tieset,istat,n,iline,
+     &           ipol,inl,ipoinp,inp,ntie,ipoinpc,istep)
 !
          elseif(textpart(1)(1:4).eq.'*MPC') then
             call mpcs(inpc,textpart,set,istartset,iendset,
@@ -597,7 +613,7 @@ c
      &           coefmpc,nmpc,nmpc_,mpcfree,nk,ikmpc,ilmpc,
      &           labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,
      &           lakon,kon,ipkon,set,nset,istartset,iendset,ialset,co,
-     &           ics)
+     &           ics,dcs)
 !
          elseif(textpart(1)(1:8).eq.'*RADIATE') then
             call radiates(inpc,textpart,set,istartset,iendset,
@@ -629,7 +645,7 @@ c
      &           irstrt,inpc,textpart,istat,n,key,prestr,iprestr,
      &           cbody,ibody,xbody,nbody,xbodyold,ttime,qaold,
      &           cs,mcs,output,physcon,ctrl,typeboun,iline,ipol,inl,
-     &           ipoinp,inp,fmpc,tieset,ntie,ipoinpc)
+     &           ipoinp,inp,fmpc,tieset,ntie,tietol,ipoinpc)
 !
          elseif(textpart(1)(1:10).eq.'*RIGIDBODY') then
             call rigidbodies(inpc,textpart,set,istartset,iendset,
@@ -686,7 +702,7 @@ c
             call steadystatedynamics(inpc,textpart,nmethod,
      &        iexpl,istep,istat,n,iline,ipol,inl,ipoinp,inp,iperturb,
      &        isolver,xmodal,cs,mcs,ipoinpc,nforc,nload,nbody,iprestr,
-     &        t0,t1,ithermal,nk)
+     &        t0,t1,ithermal,nk,set,nset)
 !
          elseif(textpart(1)(1:5).eq.'*STEP') then
             call steps(inpc,textpart,iperturb,iprestr,nbody,nforc,
@@ -707,7 +723,7 @@ c
          elseif(textpart(1)(1:19).eq.'*SURFACEINTERACTION') then
             call surfaceinteractions(inpc,textpart,matname,nmat,nmat_,
      &           irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,nrhcon,
-     &           ipoinpc)
+     &           ipoinpc,imat)
 !
          elseif(textpart(1)(1:12).eq.'*TEMPERATURE') then
             call temperatures(inpc,textpart,set,istartset,iendset,
@@ -893,11 +909,31 @@ c      call writeinput(inpc,ipoinp,inp,nline,ipoinp(2,12))
             write(*,*) '*WARNING in calinput: heat flux output'
             write(*,*) '         requested, yet no heat transfer'
             write(*,*) '         calculation'
+            filab(9)='      '
          endif
          if(filab(10)(1:3).eq.'RFL') then
             write(*,*) '*WARNING in calinput: heat source output'
             write(*,*) '         requested, yet no heat transfer'
             write(*,*) '         calculation'
+            filab(10)='      '
+         endif
+         if(filab(14)(1:2).eq.'MF') then
+            write(*,*) '*WARNING in calinput: mass flow output'
+            write(*,*) '         requested, yet no heat transfer'
+            write(*,*) '         calculation'
+            filab(14)='      '
+         endif
+         if(filab(15)(1:2).eq.'PT') then
+            write(*,*) '*WARNING in calinput: total pressure output'
+            write(*,*) '         requested, yet no heat transfer'
+            write(*,*) '         calculation'
+            filab(15)='      '
+         endif
+         if(filab(16)(1:2).eq.'TT') then
+            write(*,*) '*WARNING in calinput: total temperature output'
+            write(*,*) '         requested, yet no heat transfer'
+            write(*,*) '         calculation'
+            filab(16)='      '
          endif
       endif
 !
@@ -975,7 +1011,6 @@ c      call writeinput(inpc,ipoinp,inp,nline,ipoinp(2,12))
 !     check whether a *FLUID CONSTANTS card was used for 
 !     3D compressible fluid calculations
 !
-c      if((cfd).and.((iexpl.eq.1).or.(iexpl.eq.3))) then
       if((cfd.eq.1).or.network) then
          ierror=0
          do i=1,nmat
@@ -1041,33 +1076,6 @@ c      if((cfd).and.((iexpl.eq.1).or.(iexpl.eq.3))) then
          enddo
       endif
 !
-!     check whether the conductivity was defined for 3D compressible
-!     fluid calculations or 3D incompressible thermal fluid calculations
-!
-c      if(((ithermal(1).ge.1).and.(fluid).and.
-c     &    ((iexpl.eq.0).or.(iexpl.eq.2))).or.
-c     &   ((fluid).and.((iexpl.eq.1).or.(iexpl.eq.3)))) then
-c         ierror=0
-c         do i=1,nmat
-c            if(ncocon(1,i).ne.0) then
-c               ierror=ierror+1
-c            else
-c               write(*,*) '*WARNING in calinput: no conductivity '
-c               write(*,*) 
-c     &              '         constants were assigned to material ',
-c     &                      matname(i)(1:index(matname(i),' ')-1)
-c               write(*,*) '         in a thermo(mechanical) calculation'
-c               write(*,*)
-c            endif
-c         enddo
-c         if(ierror.eq.0) then
-c            write(*,*) '*ERROR in calinput: no conductivity constants'
-c            write(*,*) '       were assigned to any material in a'
-c            write(*,*) '       thermal fluid calculation'
-c            stop
-c         endif
-c      endif
-!
       if(cfd.eq.1) then
          if(iperturb(1).eq.0) then
             iperturb(1)=2
@@ -1077,22 +1085,6 @@ c      endif
             call inputerror(inpc,ipoinpc,iline)
             stop
          endif
-!
-!        copying the initial conditions into vold; for ithermal(1)>1
-!        the thermal conditions are copied in CalculiX.c
-!
-cc         if(istep.eq.1) then
-cc            if(ithermal(1).eq.1) then
-cc               do i=1,nk
-cc                  vold(0,i)=t0(i)
-cc               enddo
-cc            endif
-c            do i=1,nk
-c               do j=1,3
-c                  vold(j,i)=veold(j,i)
-c               enddo
-c            enddo
-cc         endif
       endif
 !
       write(*,*)
@@ -1107,7 +1099,7 @@ cc         endif
       elseif(nmethod.eq.3) then
          write(*,*) 'Buckling analysis was selected'
       elseif(nmethod.eq.4) then
-         write(*,*) 'Linear dynamic analysis was selected'
+         write(*,*) 'Dynamic analysis was selected'
       endif
       write(*,*)
       if(iperturb(1).eq.1) then
@@ -1121,17 +1113,6 @@ cc         endif
          write(*,*) 'material laws are taken into account'
          write(*,*)
       endif
-!
-c      write(*,*) 'spc'
-c      do i=1,nboun
-c         write(*,'(4i7,1x,e11.4)') 
-c     &        i,nodeboun(i),ndirboun(i),iamboun(i),xboun(i)
-c      enddo
-c      write(*,*) 'cload'
-c      do i=1,nforc
-c         write(*,'(4i7,1x,e11.4)')
-c     &      i,nodeforc(1,i),ndirforc(i),iamforc(i),xforc(i)
-c      enddo
 !
       return
       end

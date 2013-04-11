@@ -57,9 +57,10 @@
 !
       icalccg=0
 !
-      if((nmethod.eq.4).and.(iperturb.lt.2).and.(nactmech.lt.neq/2))then
+      if((nmethod.ge.4).and.(iperturb.lt.2).and.(nactmech.lt.neq/2))then
 !
-!        modal dynamics: only nonzeros are reset to zero
+!        modal dynamics and steady state dynamics: 
+!        only nonzeros are reset to zero
 !
          do i=1,nactmech
             fext(ikactmech(i)+1)=0.d0
@@ -166,9 +167,10 @@ c      if((ithermal.le.1).or.(ithermal.eq.3)) then
      &        iinc,dtime,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,
      &        ikmpc,ilmpc,veold,matname,mi)
 !
-!        modal dynamics: location of nonzeros is stored
+!        modal dynamics and steady state dynamics: 
+!        location of nonzeros is stored
 !
-         if((nmethod.eq.4).and.(iperturb.lt.2)) then
+         if((nmethod.ge.4).and.(iperturb.lt.2)) then
           do jj=1,3*nope
 !
             j=(jj-1)/3+1
@@ -313,9 +315,10 @@ c      else
      &        ttime,time,istep,iinc,xloadold,reltime,
      &        ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,mi)
 !
-!        modal dynamics: location of nonzeros is stored
+!        modal dynamics and steady state dynamics: 
+!        location of nonzeros is stored
 !
-         if((nmethod.eq.4.and.(iperturb.lt.2))) then
+         if((nmethod.ge.4.and.(iperturb.lt.2))) then
           do jj=1,nope
 !
             j=jj
@@ -427,9 +430,10 @@ c      else
 !
 !        point forces
 !
-!        modal dynamics: location of nonzeros is stored
+!        modal dynamics and steady state dynamics: 
+!        location of nonzeros is stored
 !
-      if((nmethod.eq.4).and.(iperturb.lt.2)) then
+      if((nmethod.ge.4).and.(iperturb.lt.2)) then
        do i=1,nforc
          if(ndirforc(i).gt.3) cycle
          if(dabs(xforc(i)).lt.1.d-30) cycle

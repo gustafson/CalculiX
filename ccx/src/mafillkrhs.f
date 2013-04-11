@@ -19,10 +19,10 @@
       subroutine mafillkrhs(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,nelemface,sideface,
      &  nface,nactdok,neqk,nmethod,ikmpc,ilmpc,
-     &  ikboun,ilboun,rhcon,nrhcon,ielmat,ntmat_,vold,voldaux,nzsk,
+     &  ikboun,ilboun,rhcon,nrhcon,ielmat,ntmat_,vold,voldcon,nzsk,
      &  dtime,matname,mi,ncmat_,shcon,nshcon,v,theta1,
      &  bk,bt,voldtu,isolidsurf,nsolidsurf,ifreestream,nfreestream,
-     &  xsolidsurf,yy,compressible,turbulent)
+     &  xsolidsurf,yy,compressible,turbulent,ithermal)
 !
 !     filling the rhs b of the turbulence equations (step 5)
 !
@@ -40,16 +40,15 @@
      &  nelemface(*),ikmpc(*),ilmpc(*),ikboun(*),compressible,
      &  ilboun(*),nactdok(*),konl(20),nrhcon(*),ielmat(*),
      &  ipkon(*),nshcon(*),ifreestream(*),nfreestream,isolidsurf(*),
-     &  nsolidsurf,turbulent
+     &  nsolidsurf,turbulent,ithermal
 !
       integer nk,ne,nboun,nmpc,nface,neqk,nmethod,nzsk,i,j,k,jj,
-     &  id,ist,index,jdof1,idof1,
-     &  node1,kflag,ntmat_,indexe,nope,
+     &  id,ist,index,jdof1,idof1,node1,kflag,ntmat_,indexe,nope,
      &  mi(2),i0,ncmat_
 !
       real*8 co(3,*),xboun(*),coefmpc(*),bk(*),v(0:mi(2),*),
      &  vold(0:mi(2),*),
-     &  voldaux(0:4,*),ffk(60),rhcon(0:1,ntmat_,*),yy(*),
+     &  voldcon(0:4,*),ffk(60),rhcon(0:1,ntmat_,*),yy(*),
      &  shcon(0:3,ntmat_,*),theta1,bt(*),fft(60),voldtu(2,*),
      &  xsolidsurf(*)
 !
@@ -84,14 +83,15 @@
            cycle
         endif
 !
-        do j=1,nope
-          konl(j)=kon(indexe+j) 
-        enddo
+c        do j=1,nope
+c          konl(j)=kon(indexe+j) 
+c        enddo
 !
-        call e_c3d_krhs(co,nk,konl,lakon(i),ffk,fft,i,nmethod,rhcon,
-     &       nrhcon,ielmat,ntmat_,vold,voldaux,dtime,matname,mi(1),
+        call e_c3d_krhs(co,nk,kon(indexe+1),lakon(i),ffk,fft,i,nmethod,
+     &       rhcon,
+     &       nrhcon,ielmat,ntmat_,vold,voldcon,dtime,matname,mi(1),
      &       shcon,nshcon,voldtu,compressible,yy,nelemface,sideface,
-     &       nface,turbulent)
+     &       nface,turbulent,ithermal)
 !
         do jj=1,nope
 !

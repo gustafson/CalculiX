@@ -28,7 +28,8 @@
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
      &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
-     &  coriolis,ibody,xloadold,reltime,veold,springarea)
+     &  coriolis,ibody,xloadold,reltime,veold,springarea,nstate_,
+     &  xstateini,xstate)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !
@@ -42,32 +43,28 @@
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
-     &  ilmpc(*),ikboun(*),ilboun(*),mi(2),
-     &  nactdof(0:mi(2),*),konl(20),irow(*),
+     &  ilmpc(*),ikboun(*),ilboun(*),mi(2),nstate_,ne0,
+     &  nactdof(0:mi(2),*),konl(20),irow(*),icolumn,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(*),ielorien(*),
      &  ipkon(*),intscheme,ncocon(2,*),nshcon(*),ipobody(2,*),nbody,
-     &  ibody(3,*)
-!
-      integer nk,ne,nboun,nmpc,nforc,nload,neq(2),nzl,nmethod,icolumn,
+     &  ibody(3,*),nk,ne,nboun,nmpc,nforc,nload,neq(2),nzl,nmethod,
      &  ithermal(2),iprestr,iperturb(*),nzs(3),i,j,k,l,m,idist,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,jdof,node1,node2,kflag,icalccg,
-     &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc
-!
-      integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
+     &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
+     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
      &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(60,60),ff(60),
      &  sti(6,mi(1),*),sm(60,60),stx(6,mi(1),*),adb(*),aub(*),
-     &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),springarea(*),
+     &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),springarea(2,*),
      &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),
-     &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*)
-!
-      real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
-     &  xstiff(27,mi(1),*),veold(0:mi(2),*)
-!
-      real*8 om,valu2,value,dtime,ttime,time
+     &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
+     &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
+     &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
+     &  xstiff(27,mi(1),*),veold(0:mi(2),*),om,valu2,value,dtime,ttime,
+     &  time
 !
       kflag=2
       i0=0
@@ -146,11 +143,16 @@ c      elseif(mass.or.buckling) then
 !
 !     mechanical analysis: loop over all elements
 !
+      ne0=0
       do i=1,ne
 !
         if(ipkon(i).lt.0) cycle
         indexe=ipkon(i)
-        if(lakon(i)(4:4).eq.'2') then
+c     Bernhardi start
+        if(lakon(i)(1:5).eq.'C3D8I') then
+           nope=11
+        elseif(lakon(i)(4:4).eq.'2') then
+c     Bernhardi end
            nope=20
         elseif(lakon(i)(4:4).eq.'8') then
            nope=8
@@ -229,7 +231,7 @@ c        write(*,*) 'mafillsm ',i,bodyf(1),bodyf(2),bodyf(3)
      &          dtime,matname,mi(1),ncmat_,mass(1),stiffness,buckling,
      &          rhsi,intscheme,ttime,time,istep,iinc,coriolis,xloadold,
      &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
-     &          springarea)
+     &          springarea,nstate_,xstateini,xstate,ne0)
 !
         do jj=1,3*nope
 !
@@ -491,7 +493,13 @@ c                  endif
            nope=15
         elseif(lakon(i)(4:4).eq.'6') then
            nope=6
-        else
+         elseif(lakon(i)(1:2).eq.'ES') then
+           read(lakon(i)(8:8),'(i1)') nope
+!     
+!          local contact spring number
+!     
+           if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
+       else
            cycle
         endif
 !
@@ -506,7 +514,7 @@ c                  endif
      &  matname,mi(1),mass(2),stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  xstiff,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,
-     &  ilmpc)
+     &  ilmpc,springarea,plicon,nplicon,npmat_,ncmat_,elcon,nelcon)
 !
         do jj=1,nope
 !

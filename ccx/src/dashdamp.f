@@ -59,7 +59,7 @@
 !
 !     interpolating the material data
 !
-      call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t0l,t1l,
+      call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
      &     elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
 !
 !     calculating the damping force and damping coefficient

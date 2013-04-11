@@ -20,7 +20,8 @@
      &     ipkon,kon,lakon,ielmat,ne,nload,iptri,kontri,ntri,nloadtr,
      &     nflow,ndirboun,nactdog,nodeboun,nacteq,nboun,
      &     ielprop,prop,nteq,v,network,physcon,shcon,ntmat_,
-     &     co,ipogn,ign,vold,set,nshcon,rhcon,nrhcon,mi)
+     &     co,vold,set,nshcon,rhcon,nrhcon,mi,
+     &     nmpc,nodempc,ipompc,labmpc,ikboun)
 !     
 !     determines the number of gas temperatures and radiation
 !     temperatures
@@ -31,6 +32,7 @@
      &     pressurebcall
 !
       character*8 lakon(*)
+      character*20 labmpc(*)
       character*20 sideload(*)
       character*81 set(*)
 !     
@@ -41,8 +43,9 @@
      &     konf(8),nloadtr(*),nelem,nope,nopes,ig,nflow,ieg(*),
      &     ndirboun(*),nactdog(0:3,*),nboun,nodeboun(*),ntmat_,
      &     idir,ntq,nteq,nacteq(0:3,*),node1,node2,nodem,
-     &     ielprop(*),idirf(4),iflag,imat,numf,ipogn(*),ign(2,*),
-     &     ifreegn,isothermflag,nrhcon(*),nshcon(*),mi(2)
+     &     ielprop(*),idirf(4),iflag,imat,numf,
+     &     ifreegn,isothermflag,nrhcon(*),nshcon(*),mi(2),
+     &     nmpc,nodempc(3,*),ipompc(*),ikboun(*),idof
 !     
       real*8 prop(*),f,xflow,nodef(4),df(4),v(0:mi(2),*),g(3),
      &     cp,r,physcon(*),shcon(0:3,ntmat_,*),rho,a,
@@ -86,7 +89,10 @@
             walltemp=.true.
             call nident(itg,nelemload(2,i),ntg,id)
             if(id.gt.0) then
-               if(itg(id).eq.nelemload(2,i)) cycle
+               if(itg(id).eq.nelemload(2,i)) then
+                  nactdog(0,nelemload(2,i))=1
+                  cycle
+               endif
             endif
             ntg=ntg+1
             do j=ntg,id+2,-1
@@ -98,7 +104,10 @@
          elseif(sideload(i)(3:4).eq.'NP') then
             call nident(itg,nelemload(2,i),ntg,id)
             if(id.gt.0) then
-               if(itg(id).eq.nelemload(2,i)) cycle
+               if(itg(id).eq.nelemload(2,i)) then
+                  nactdog(2,nelemload(2,i))=1
+                  cycle
+               endif
             endif
             ntg=ntg+1
             do j=ntg,id+2,-1
@@ -328,22 +337,22 @@
             endif
          endif
       enddo
-!
-!     check whether, for the middle node, either the
-!     mass flow is unknown, or the geometrie, or none
-!     but not both (only for gate valves)
-!
-      do i=1,nflow
-         nelem=ieg(i)
-         if(lakon(nelem)(6:7).ne.'GV') cycle
-         index=ipkon(nelem)
-         nodem=kon(index+2)
-         if((nactdog(1,nodem).eq.1).and.(nactdog(3,nodem).eq.1)) then
-            write(*,*) '*ERROR in envtemp: both the geometry and the'
-            write(*,*) '       mass flow is unknown in element ',ieg(i)
-            stop
-         endif
-      enddo
+c!
+c!     check whether, for the middle node, either the
+c!     mass flow is unknown, or the geometrie, or none
+c!     but not both (only for gate valves)
+c!
+c      do i=1,nflow
+c         nelem=ieg(i)
+c         if(lakon(nelem)(6:7).ne.'GV') cycle
+c         index=ipkon(nelem)
+c         nodem=kon(index+2)
+c         if((nactdog(1,nodem).eq.1).and.(nactdog(3,nodem).eq.1)) then
+c            write(*,*) '*ERROR in envtemp: both the geometry and the'
+c            write(*,*) '       mass flow is unknown in element ',ieg(i)
+c            stop
+c         endif
+c      enddo
 !
 !     determining the active equations
 !     
@@ -523,27 +532,77 @@
                nacteq(j,node)=nteq
             endif 
          enddo
-         write(30,*) 'unknowns ',node,(nactdog(j,node),j=0,3)
+c         write(30,*) 'unknowns ',node,(nactdog(j,node),j=0,3)
       enddo
       do i=1,ntg
          node=itg(i)
-         write(30,*) 'equations',node,(nacteq(j,node),j=0,2)
+c         write(30,*) 'equations',node,(nacteq(j,node),j=0,2)
       enddo
 !
-      if (ntq.ne.nteq) then
+!     taking additional MPC's into account
+!
+      do i=1,nmpc
+         index=ipompc(i)
+         node=nodempc(1,index)
+         call nident(itg,node,ntg,id)
+         if(id.gt.0) then
+            if(itg(id).eq.node) then
+               index=nodempc(3,index)
+               if(index.ne.0) then
+                  do
+                     node=nodempc(1,index)
+                     call nident(itg,node,ntg,id)
+                     if(id.gt.0) then
+                        if(itg(id).eq.node) then
+                           index=nodempc(3,index)
+                           if(index.eq.0) then
+                              exit
+                           else
+                              cycle
+                           endif
+                        endif
+                     endif
+!
+!                    check for dummy nodes in the MPC
+!                    (needed to apply SPCs)
+!
+                     idof=8*(node-1)+nodempc(2,index)
+                     call nident(ikboun,idof,nboun,id)
+                     if(id.gt.0) then
+                        if(ikboun(id).eq.idof) then
+                           index=nodempc(3,index)
+                           if(index.eq.0) then
+                              exit
+                           else
+                              cycle
+                           endif
+                        endif
+                     endif
+!
+                     write(*,*) '*ERROR in envtemp: MPC contains'
+                     write(*,*) '       network nodes, e.g. node ',
+     &                  nodempc(1,ipompc(i)),' as well as'
+                     write(*,*) '       other nodes, e.g. node ',
+     &                  node
+                     stop
+                  enddo
+               endif
+               labmpc(i)(1:7)='NETWORK'
+               nteq=nteq+1
+            endif
+         endif
+      enddo
+!
+      if(ntq.ne.nteq) then
          write(*,*) '*ERROR in envtemp:'
-         write(*,*) '*****number of gas equations is not equal to'
+         write(*,*) '*****number of network equations is not equal to'
          write(*,*) ' number of active degrees of freedom*****'
-         write(*,*) ' nteq= ',nteq
-         write(*,*) ' ntq= ',ntq
+         write(*,*) ' # of network equations = ',nteq
+         write(*,*) ' # of active degrees of freedom= ',ntq
          stop
       endif   
       write(*,*) ''
 !  
-!     calling the user routine uenvtemp (can be empty)
-!
-C      call uenvtemp(co,ipkon,kon,lakon,nelemload,sideload,nload)
-!     
       isothermflag=0
       ifreegn=1
 !

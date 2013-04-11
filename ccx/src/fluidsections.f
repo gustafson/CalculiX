@@ -56,7 +56,6 @@
       typename='
      &                        '
 !
-
       do i=2,n
          if(textpart(i)(1:9).eq.'MATERIAL=') then
             material=textpart(i)(10:89)
@@ -88,6 +87,12 @@
             liquid=.true.
          elseif(textpart(i)(1:7).eq.'MANNING') then
             manning=.true.
+         else
+            write(*,*) 
+     &        '*WARNING in fluidsections: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !
@@ -293,16 +298,16 @@
             ndprop=6
          elseif(typename(8:18).eq.'CONTRACTION') then
             elname='LICHCO '
-            ndprop=2
+            ndprop=6
          elseif(typename(8:18).eq.'ENLARGEMENT') then
             elname='LICHEL '
-            ndprop=2
+            ndprop=6
          elseif(typename(8:11).eq.'STEP') then
             elname='LICHST '
-            ndprop=2
+            ndprop=6
          elseif(typename(8:11).eq.'DROP') then
             elname='LICHDR '
-            ndprop=2
+            ndprop=6
          else
             write(*,*) '*ERROR in fluidsections:'
             write(*,*) '       unknown channel section'
@@ -378,6 +383,24 @@
       elseif(typename(1:7).eq.'RIMSEAL') then
          elname='RIMS   '
          ndprop=5
+! 
+      elseif(typename(1:14).eq.'ROTATINGCAVITY') then
+         if(typename(15:20).eq.'LINEAR')then
+            elname='RCVL   '
+            ndprop=3
+         else if(typename(15:23).eq.'NONLINEAR')then
+            elname='RCVN   '
+            ndprop=3
+         endif
+!
+      elseif(typename(1:13).eq.'RADIALOUTFLOW') then
+         if(typename(14:24).eq.'RADIALINLET')then
+            elname='RORI   '
+            ndprop=4
+         else if(typename(14:23).eq.'AXIALINLET')then
+            elname='ROAI   '
+            ndprop=4
+         endif
 !
       else if (typename(1:6).eq.'S-PUMP') then
          elname='SPUMP  '
@@ -861,12 +884,12 @@ c     &         (elname(1:6).eq.'REWAOR').or.
                write(*,*) '       with Parker must not exceed 2'
                stop
             endif
-         else
-            if(prop(npropstart+3)/prop(npropstart+2).gt.10.d0) then
-               write(*,*) '*ERROR in fluidsections: L/d of an orifice'
-               write(*,*) '        must not exceed 10'
-               stop
-            endif
+!         else
+!            if(prop(npropstart+3)/prop(npropstart+2).gt.10.d0) then
+!               write(*,*) '*ERROR in fluidsections: L/d of an orifice'
+!               write(*,*) '        must not exceed 10'
+!               stop
+!            endif
          endif
       elseif(elname(1:4).eq.'ORBT') then
          if(prop(npropstart+2).lt.0.d0) then
@@ -1018,6 +1041,27 @@ c     &         (elname(1:6).eq.'REWAOR').or.
                write(*,*) 'has been defined as less or equal to 0'
                stop
             endif
+         endif
+      endif
+!
+      if(elname(1:3).eq.'RCVL') then
+         if(prop(npropstart+2).lt.(prop(npropstart+3))) then
+             write(*,*) '*ERROR in fluidsections: '
+             write(*,*) 'element TYPE=ROTATING CAVITY(Radial inflow)'
+             write(*,*) 'the specified upstream radius is smaller than'  
+             write(*,*) 'the specified downstream radius!'
+             write(*,*) 'Please check the element definition.'
+             stop
+         endif
+      endif 
+      if(elname(1:3).eq.'RCVN') then
+         if(prop(npropstart+1).lt.(prop(npropstart+2))) then
+             write(*,*) '*ERROR in fluidsections: '
+             write(*,*) 'element TYPE=ROTATING CAVITY(Radial inflow)'
+             write(*,*) 'the specified upstream radius is smaller than'  
+             write(*,*) 'the specified downstream radius!'
+             write(*,*) 'Please check the element definition.'
+             stop
          endif
       endif
 !
@@ -1242,11 +1286,10 @@ c     &         (elname(1:6).eq.'REWAOR').or.
                write(*,*) ''
                write(*,*) '*ERROR in fluidsections: element ',k,
      &' is no valid incompressible orifice element.'
-               write(*,*) ' Please change element type 
-     & and/or definition.'
+               write(*,*) ' Please change element type', 
+     &' and/or definition.'
                write(*,*) ' Calculation stopped.'
                stop
-
             endif
 !
             ielmat(ialset(j))=imaterial
@@ -1262,7 +1305,38 @@ c     &         (elname(1:6).eq.'REWAOR').or.
                   stop
                endif
                lakon(k)(2:8)=elname(1:7)
-               if(liquid.and.(lakon(k)(2:3).eq.'RE')) lakon(k)(2:3)='LP'
+!
+!     gas type elements used for liquids are labeled with LP
+!     
+               if((liquid.and.(lakon(ialset(j))(2:3).eq.'RE')).or.
+     &              (liquid.and.(lakon(ialset(j))(2:3).eq.'OR'))) 
+     &              lakon(ialset(j))(2:3)='LP'
+!     
+!     
+               if(liquid.and.(lakon(ialset(j))(2:3).eq.'VO')) then
+                  lakon(ialset(j))(2:3)='LP'
+                  if(lakon(ialset(j))(4:5).eq.'FR') then 
+                     lakon(ialset(j))(4:5)='VF'
+                  else if(lakon(ialset(j))(4:5).eq.'FO') then 
+                     lakon(ialset(j))(4:5)='VS'
+                  endif
+               endif
+!     
+               if(liquid.and.((lakon(ialset(j))(4:5).eq.'BG').or.
+     &              (lakon(ialset(j))(4:5).eq.'BT').or.
+     &              (lakon(ialset(j))(4:5).eq.'MA').or.
+     &              (lakon(ialset(j))(4:5).eq.'MM').or.
+     &              (lakon(ialset(j))(4:5).eq.'PA').or.
+     &              (lakon(ialset(j))(4:5).eq.'PM').or.
+     &              (lakon(ialset(j))(4:5).eq.'PN'))) then
+                  write(*,*) ''
+                  write(*,*) '*ERROR in fluidsections: element ',k,
+     &                 ' is no valid incompressible orifice element.'
+                  write(*,*) ' Please change element type ',
+     &'and/or definition.'
+                  write(*,*) ' Calculation stopped.'
+                  stop
+               endif
                ielmat(k)=imaterial
                if(ndprop.gt.0) ielprop(k)=npropstart
             enddo

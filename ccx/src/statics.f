@@ -79,6 +79,7 @@
 !
 !     default solver
 !
+      solver='                    '
       if(isolver.eq.0) then
          solver(1:7)='SPOOLES'
       elseif(isolver.eq.2) then
@@ -103,6 +104,12 @@
             idrct=1
          elseif(textpart(i)(1:9).eq.'TIMERESET') then
             timereset=.true.
+         else
+            write(*,*) 
+     &        '*WARNING in statics: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

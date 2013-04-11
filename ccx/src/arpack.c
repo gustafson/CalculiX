@@ -88,7 +88,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     *enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,
     *physcon=NULL,*qfx=NULL,*qfn=NULL,tol,fmin,fmax,pi,*cgr=NULL,
     *xloadold=NULL,reltime,*vr=NULL,*vi=NULL,*stnr=NULL,*stni=NULL,
-    *vmax=NULL,*stnmax=NULL,*cs=NULL,*springarea=NULL;
+    *vmax=NULL,*stnmax=NULL,*cs=NULL,*springarea=NULL,*eenmax=NULL;
 
   FILE *f1;
 
@@ -161,6 +161,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   if(*ithermal>1){
       qfx=NNEW(double,3*mi[0]**ne);
   }
+  inum=NNEW(int,*nk);
   if(*iperturb==0){
      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	       elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -174,7 +175,8 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-               fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));
+	       fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
+               &reltime));
   }else{
      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	       elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -188,9 +190,10 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-               fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));
+	       fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
+               &reltime));
   }
-  free(f);free(v);free(fn);free(stx);if(*ithermal>1){free(qfx);}
+  free(f);free(v);free(fn);free(stx);if(*ithermal>1)free(qfx);free(inum);
   iout=1;
 
   /* filling in the matrix */
@@ -216,7 +219,8 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mi,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
 	      physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
-		      &coriolis,ibody,xloadold,&reltime,veold,springarea));
+	      &coriolis,ibody,xloadold,&reltime,veold,springarea,nstate_,
+              xstateini,xstate));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -231,7 +235,8 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mi,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
               physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
-		      &coriolis,ibody,xloadold,&reltime,veold,springarea));
+	      &coriolis,ibody,xloadold,&reltime,veold,springarea,nstate_,
+              xstateini,xstate));
   }
 
   free(fext);
@@ -250,7 +255,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	 iperturb,ener,mi,output,ithermal,qfn,&j,&noddiam,trab,inotr,ntrans,
          orab,ielorien,norien,description,
 	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs,
-	 set,nset,istartset,iendset,ialset));
+	 set,nset,istartset,iendset,ialset,eenmax));
     
     if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
     free(inum);FORTRAN(stop,());
@@ -555,7 +560,8 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
             sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-            nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));}
+	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
+            &reltime));}
     else{
       FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	    stx,elcon,
@@ -570,7 +576,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,sti,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-            nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));
+	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime));
     }
     free(eei);
     if(*nener==1){
@@ -586,7 +592,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	 iperturb,ener,mi,output,ithermal,qfn,&j,&noddiam,
          trab,inotr,ntrans,orab,ielorien,norien,description,
 	 ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs,
-         set,nset,istartset,iendset,ialset));
+	 set,nset,istartset,iendset,ialset,eenmax));
     if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
   }
 

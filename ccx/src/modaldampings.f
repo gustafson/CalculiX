@@ -43,6 +43,12 @@
       do i=2,n
          if(textpart(i)(1:8).eq.'RAYLEIGH') then
             rayleigh=.true.
+         else
+            write(*,*) 
+     &        '*WARNING in modaldampings: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
       if(rayleigh) then

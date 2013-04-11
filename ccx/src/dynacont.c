@@ -89,7 +89,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
               double *bfric, int *imastop,int *nslavnode,int *islavnode,
               int *islavsurf,
               int *itiefac,double *areaslav,int *iponoels,int *inoels,
-              double *springarea){
+              double *springarea,int *izdof,int *nzdof){
     
   char lakonl[9]="        \0";
 
@@ -99,7 +99,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       *ikactcont=NULL,*ilactcont=NULL,*ikactcont1=NULL,nactcont1=0,
       i1,icutb=0,iconvergence=0,idivergence=0,mt=mi[1]+1,
       nactcont1_=100,*ikactmech=NULL,iabsload=0,nactfric_,nactfric,
-      *ikactfric=NULL,im;
+      *ikactfric=NULL,im,cyclicsymmetry;
 
   long long i2;
 
@@ -111,9 +111,14 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       *bjbas=NULL, *bjinc=NULL, *dbj=NULL, *lhs=NULL,dbjmax,bjmax,
       *bjincp=NULL,sump,h14,*dbjp=NULL,senergy=0.0,*xforcdiff=NULL,
       df,i0,ic,ia,dbjmaxOLD1,dbjmaxOLD2,*xloaddiff=NULL,*dbcont=NULL,
-      zl=0.0,*xbodydiff=NULL,*t1diff=NULL,*xboundiff=NULL,*bdiff=NULL;
+      zl=0.0,*xbodydiff=NULL,*t1diff=NULL,*xboundiff=NULL,*bdiff=NULL,
+      *xstateini=NULL;
 
   ikactcont=*ikactcontp;ikactmech=*ikactmechp;
+
+  /* check for cyclic symmetry */
+
+  if((*mcs==0)||(cs[1]<0)){cyclicsymmetry=0;}else{cyclicsymmetry=1;}
 
   if(*inonlinmpc==1) iabsload=2;
 
@@ -158,7 +163,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  vini,nmethod,nmpc,mpcfree,memmpc_,
 	  &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
           iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
-          itiefac,areaslav,iponoels,inoels,springarea,tietol);
+          itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime);
 
   ikactcont1=NNEW(int,nactcont1_);
 
@@ -182,7 +187,8 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 			  fnl,ncmat_,ntmat_,&nope,lakonl,&t0l,
 			  &t1l,&kodem,elconloc,plicon,nplicon,npmat_,
 			  veoldl,&senergy,&iener,cstr,mi,
-                          &springarea[konl[nope]-1],nmethod));
+                          &springarea[konl[nope]-1],nmethod,ne0,iperturb,
+                          nstate_,xstateini,xstate,reltime));
 
       storecontactdof(&nope,nactdof,&mt,konl,&ikactcont1,&nactcont1,
 		      &nactcont1_,bcont,fnl,ikmpc,nmpc,ilmpc,ipompc,nodempc, 
@@ -310,7 +316,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	        ndirforc,istep,iinc,co,vold,itg,&ntg,amname,ikboun,ilboun,
 		nelemload,sideload,mi,
 		xforcdiff,xloaddiff,xbodydiff,t1diff,xboundiff,&iabsload,
-                iprescribedboundary));
+                iprescribedboundary,ntrans,trab,inotr,veold,nactdof,bcont));
 	      
       /* calculating the instantaneous loading vector */
       
@@ -351,20 +357,35 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 
       /* correcting aamech */
 
-      for(i=0;i<*nev;i++){
-	  i2=(long long)i*neq[1];
-	  
-	  if(iabsload==2){aamech[i]=0.;}
-	  if(*nactmech<neq[1]/2){
-	      for(j=0;j<*nactmech;j++){
-		  aamech[i]+=z[i2+ikactmech[j]]*b[ikactmech[j]];
-	      }
-	  }else{
-	      for(j=0;j<neq[1];j++){
-		  aamech[i]+=z[i2+j]*b[j];
+      if(!cyclicsymmetry){
+	  for(i=0;i<*nev;i++){
+	      i2=(long long)i*neq[1];
+	      
+	      if(iabsload==2){aamech[i]=0.;}
+	      if(*nactmech<neq[1]/2){
+		  for(j=0;j<*nactmech;j++){
+		      aamech[i]+=z[i2+ikactmech[j]]*b[ikactmech[j]];
+		  }
+	      }else{
+		  for(j=0;j<neq[1];j++){
+		      aamech[i]+=z[i2+j]*b[j];
+		  }
 	      }
 	  }
-	  
+      }else{
+	  for(i=0;i<*nev;i++){
+	      if(iabsload==2){aamech[i]=0.;}
+	  }
+	  for(j=0;j<*nactmech;j++){
+	      FORTRAN(nident,(izdof,&ikactmech[j],nzdof,&id));
+	      if(id!=0){
+		  if(izdof[id-1]==ikactmech[j]){
+		      for(i=0;i<*nev;i++){
+			  aamech[i]+=z[i**nzdof+id-1]*b[ikactmech[j]];
+		      }
+		  }else{printf("*ERROR in dynacont\n");FORTRAN(stop,());}
+	      }else{printf("*ERROR in dynacont\n");FORTRAN(stop,());}
+	  }
       }
       
     }
@@ -606,8 +627,6 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       }
       else{
 	  if(*nmdnode==0){
-//	      memset(&b[0],0.,sizeof(double)*neq[1]);
-//	      memset(&bp[0],0.,sizeof(double)*neq[1]);
 	      DMEMSET(b,0,neq[1],0.);
 	      DMEMSET(bp,0,neq[1],0.);
 	  }else{
@@ -618,19 +637,33 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  }
       }
       
-      if(*nmdnode==0){
-	  for(i=0;i<neq[1];i++){
-	      for(j=0;j<*nev;j++){
-		  b[i]+=bj[j]*z[(long long)j*neq[1]+i];
-		  bp[i]+=bjp[j]*z[(long long)j*neq[1]+i];
+      if(!cyclicsymmetry){
+	  if(*nmdnode==0){
+	      for(i=0;i<neq[1];i++){
+		  for(j=0;j<*nev;j++){
+		      b[i]+=bj[j]*z[(long long)j*neq[1]+i];
+		      bp[i]+=bjp[j]*z[(long long)j*neq[1]+i];
+		  }
+	      }
+	  }else{
+	      for(i=0;i<*nmddof;i++){
+		  for(j=0;j<*nev;j++){
+		      b[imddof[i]]+=bj[j]*z[(long long)j*neq[1]+imddof[i]];
+		      bp[imddof[i]]+=bjp[j]*z[(long long)j*neq[1]+imddof[i]];
+		  }
 	      }
 	  }
       }else{
 	  for(i=0;i<*nmddof;i++){
-	      for(j=0;j<*nev;j++){
-		  b[imddof[i]]+=bj[j]*z[(long long)j*neq[1]+imddof[i]];
-		  bp[imddof[i]]+=bjp[j]*z[(long long)j*neq[1]+imddof[i]];
-	      }
+	      FORTRAN(nident,(izdof,&imddof[i],nzdof,&id));
+	      if(id!=0){
+		  if(izdof[id-1]==imddof[i]){
+		      for(j=0;j<*nev;j++){
+			  b[imddof[i]]+=bj[j]*z[j**nzdof+id-1];
+			  bp[imddof[i]]+=bjp[j]*z[j**nzdof+id-1];
+		      }
+		  }else{printf("*ERROR in dynacont\n");FORTRAN(stop,());}
+	      }else{printf("*ERROR in dynacont\n");FORTRAN(stop,());}
 	  }
       }
       
@@ -650,9 +683,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       FORTRAN(dynresults,(nk,v,ithermal,nactdof,vold,nodeboun,
 	      ndirboun,xbounact,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,
 	      b,bp,veold,dtime,mi,imdnode,nmdnode,imdboun,nmdboun,
-	      imdmpc,nmdmpc));
-      
-//      memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
+	      imdmpc,nmdmpc,nmethod));
       
       if(iconvergence==1){
 	break;
@@ -661,21 +692,13 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       /* creating contact elements and calculating the contact forces
 	 based on the displacements at the end of the present increment */
       
-//      memset(&bcont[0],0,sizeof(double)*neq[1]);
-//      if(loop==1){
-//	  for(j=0;j<nactcont1;j++){bcont[ikactcont1[j]]=0.;}
-//	  free(ikactcont1);
-//      }else{
 	  for(j=0;j<*nactcont;j++){bcont[ikactcont[j]]=0.;}
-//      }
 
       RENEW(dbcont,double,*nactcont_**nev);
       RENEW(ikactcont,int,*nactcont_);
       RENEW(ilactcont,int,*nactcont_);
       *nactcont=0;
       
-//      memset(&dbcont[0],0,sizeof(double)**nactcont_**nev);
-//      memset(&ikactcont[0],0,sizeof(int)**nactcont_);
       DMEMSET(dbcont,0,*nactcont_**nev,0.);
       DMEMSET(ikactcont,0,*nactcont_,0.);
       
@@ -687,7 +710,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      vini,nmethod,nmpc,mpcfree,memmpc_,
 	      &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
 	      iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
-              itiefac,areaslav,iponoels,inoels,springarea,tietol);
+              itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime);
 
 //      printf("number of contact springs = %d\n",*ne-*ne0);
 
@@ -711,16 +734,18 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 			    fnl,ncmat_,ntmat_,&nope,lakonl,&t0l,
 			    &t1l,&kodem,elconloc,plicon,nplicon,npmat_,
 			    veoldl,&senergy,&iener,cstr,mi,
-                            &springarea[konl[nope]-1],nmethod));
+                            &springarea[konl[nope]-1],nmethod,ne0,iperturb,
+                            nstate_,xstateini,xstate,reltime));
 	
 	FORTRAN(springstiff,(xl,elas,konl,voldl,s,&imat,elcon,nelcon,
 	        ncmat_,ntmat_,&nope,lakonl,&t0l,&t1l,&kode,elconloc,
 		plicon,nplicon,npmat_,iperturb,&springarea[konl[nope]-1],
-                nmethod));
+		nmethod,mi,ne0,nstate_,xstateini,xstate,reltime));
 
 	dfdbj(bcont,&dbcont,&neq[1],&nope,konl,nactdof,
 	      s,z,ikmpc,ilmpc,ipompc,nodempc,nmpc,coefmpc,
-	      fnl,nev,&ikactcont,&ilactcont,nactcont,nactcont_,mi);
+	      fnl,nev,&ikactcont,&ilactcont,nactcont,nactcont_,mi,
+              &cyclicsymmetry,izdof,nzdof);
       }
 
       if(*nactcont>100){*nactcont_=*nactcont;}else{*nactcont_=100;}
@@ -733,21 +758,38 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	 bbb(i,j) is the internal product of the change of the contact force with
 	 respect to modal coordinate j with the eigenmode i */
 
-//      memset(&bbb[0],0,*nev**nev);
-//      memset(&aaa[0],0,*nev);
       DMEMSET(bbb,0,*nev**nev,0.);
       DMEMSET(aaa,0,*nev,0.);
 
-      for(k=0; k<*nactcont; k++){
-	i1=ikactcont[k];
-	i2=(ilactcont[k]-1)**nev;
-	for(j=0; j<*nev; j++){
-	  zl=z[(long long)j*neq[1]+i1];
-	  aaa[j]+=zl*bcont[i1];
-	  for(l=0; l<*nev; l++){
-	    bbb[l**nev+j]+=zl*dbcont[i2+l];
+      if(!cyclicsymmetry){
+	  for(k=0; k<*nactcont; k++){
+	      i1=ikactcont[k];
+	      i2=(ilactcont[k]-1)**nev;
+	      for(j=0; j<*nev; j++){
+		  zl=z[(long long)j*neq[1]+i1];
+		  aaa[j]+=zl*bcont[i1];
+		  for(l=0; l<*nev; l++){
+		      bbb[l**nev+j]+=zl*dbcont[i2+l];
+		  }
+	      }
 	  }
-	}
+      }else{
+	  for(k=0; k<*nactcont; k++){
+	      i1=ikactcont[k];
+	      i2=(ilactcont[k]-1)**nev;
+	      FORTRAN(nident,(izdof,&i1,nzdof,&id));
+	      if(id!=0){
+		  if(izdof[id-1]==i1){
+		      for(j=0; j<*nev; j++){
+			  zl=z[j**nzdof+id-1];
+			  aaa[j]+=zl*bcont[i1];
+			  for(l=0; l<*nev; l++){
+			      bbb[l**nev+j]+=zl*dbcont[i2+l];
+			  }
+		      }
+		  }else{printf("*ERROR in dynacont\n");FORTRAN(stop,());}
+	      }else{printf("*ERROR in dynacont\n");FORTRAN(stop,());}
+	  }
       }
       
       for(l=0;l<*nev;l++){
@@ -846,7 +888,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      vini,nmethod,nmpc,mpcfree,memmpc_,
 	      &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
 	      iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
-              itiefac,areaslav,iponoels,inoels,springarea,tietol);
+              itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime);
 
 //      printf("number of contact springs = %d\n",*ne-*ne0);
 
@@ -880,14 +922,28 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       /* calculating aafric: contains the force contributions due
          to damping and friction in the contact areas */
 
-      for(i=0;i<*nev;i++){
-	  i2=(long long)i*neq[1];
-	  aafric[i]=0.;
+      if(!cyclicsymmetry){
+	  for(i=0;i<*nev;i++){
+	      i2=(long long)i*neq[1];
+	      aafric[i]=0.;
+	      for(j=0;j<nactfric;j++){
+		  aafric[i]+=z[i2+ikactfric[j]]*bfric[ikactfric[j]];
+	      }
+	  }
+      }else{
+	  for(i=0;i<*nev;i++){aafric[i]=0.;}
 	  for(j=0;j<nactfric;j++){
-	      aafric[i]+=z[i2+ikactfric[j]]*bfric[ikactfric[j]];
+	      FORTRAN(nident,(izdof,&ikactfric[j],nzdof,&id));
+	      if(id!=0){
+		  if(izdof[id-1]==ikactfric[j]){
+		      for(i=0;i<*nev;i++){
+			  aafric[i]+=z[i**nzdof+id-1]*bfric[ikactfric[j]];
+		      }
+		  }else{printf("*ERROR in dynacont\n");FORTRAN(stop,());}
+	      }else{printf("*ERROR in dynacont\n");FORTRAN(stop,());}
 	  }
       }
-
+      
       /* setting bfric to zero */
 
       for(j=0;j<nactfric;j++){bfric[ikactfric[j]]=0.;}
@@ -905,17 +961,38 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
      mechanical+contact load at the start of the increment with
      the mechanical+contact load at the end of the increment */
   
-  for(i=0;i<*nev;i++){
-    i2=(long long)i*neq[1];
-
-    aanew[i]=aamech[i];
-    if(*ifricdamp==1){aanew[i]+=aafric[i];}
-    for(j=0;j<*nactcont;j++){
-	aanew[i]+=z[i2+ikactcont[j]]*bcont[ikactcont[j]];
-    }
-
-    bb[i]=(aanew[i]-aa[i])/(*dtime);
-    aa[i]=aanew[i]-bb[i]**time;
+  if(!cyclicsymmetry){
+      for(i=0;i<*nev;i++){
+	  i2=(long long)i*neq[1];
+	  
+	  aanew[i]=aamech[i];
+	  if(*ifricdamp==1){aanew[i]+=aafric[i];}
+	  for(j=0;j<*nactcont;j++){
+	      aanew[i]+=z[i2+ikactcont[j]]*bcont[ikactcont[j]];
+	  }
+	  
+	  bb[i]=(aanew[i]-aa[i])/(*dtime);
+	  aa[i]=aanew[i]-bb[i]**time;
+      }
+  }else{
+      memcpy(&aanew[0],&aamech[0],sizeof(double)**nev);
+      if(*ifricdamp==1){
+	  for(i=0;i<*nev;i++){aanew[i]+=aafric[i];}
+      }
+      for(j=0;j<*nactcont;j++){
+	  FORTRAN(nident,(izdof,&ikactcont[j],nzdof,&id));
+	  if(id!=0){
+	      if(izdof[id-1]==ikactcont[j]){
+		  for(i=0;i<*nev;i++){
+		      aanew[i]+=z[i**nzdof+id-1]*bcont[ikactcont[j]];
+		  }
+	      }else{printf("*ERROR in dynacont\n");FORTRAN(stop,());}
+	  }else{printf("*ERROR in dynacont\n");FORTRAN(stop,());}
+      }
+      for(i=0;i<*nev;i++){
+      	  bb[i]=(aanew[i]-aa[i])/(*dtime);
+	  aa[i]=aanew[i]-bb[i]**time;
+      }
   }
   
   free(aaa);free(bbb);free(bjbas);free(bjinc);free(dbj);free(lhs);

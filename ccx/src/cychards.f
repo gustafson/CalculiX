@@ -60,6 +60,14 @@
          stop
       endif
 !
+      do i=2,n
+         write(*,*) 
+     &        '*WARNING in cychards: parameter not recognized:'
+         write(*,*) '         ',
+     &        textpart(i)(1:index(textpart(i),' ')-1)
+         call inputwarning(inpc,ipoinpc,iline)
+      enddo
+!
 !        isotropic hardening coefficients
 !
       do
@@ -125,10 +133,6 @@
          ndatamax=0
          do i=1,nelcon(2,nmat)
             t1l=elcon(0,i,nmat)
-c            plconloc(1)=0.d0
-c            plconloc(2)=0.d0
-c            plconloc(3)=0.d0
-c            plconloc(81)=nplicon(1,nmat)+0.5d0
 !     
             if(nplicon(0,nmat).eq.1) then
                id=-1
@@ -175,13 +179,6 @@ c            plconloc(81)=nplicon(1,nmat)+0.5d0
             write(*,*) '         material ',matname(nmat)(71:80)
          endif
       endif
-!
-c      if(nelcon(1,nmat).eq.-114) then
-c         write(*,*) 'anisotropic elasticity+viscoplasticity'
-c         do i=1,nelcon(2,nmat)
-c            write(*,*) (elcon(j,i,nmat),j=0,14)
-c         enddo
-c      endif
 !
       return
       end

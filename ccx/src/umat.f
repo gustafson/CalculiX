@@ -69,15 +69,18 @@ c      write(*,*) 'drot ',((drot(i,j),i=1,3),j=1,3)
 !     stiffness
 !
       do i=1,6
-         do j=i,6
+         do j=1,6
             ddsdde(i,j)=0.d0
          enddo
       enddo
       ddsdde(1,1)=al+2.d0*um
       ddsdde(1,2)=al
+      ddsdde(2,1)=al
       ddsdde(2,2)=al+2.d0*um
       ddsdde(1,3)=al
+      ddsdde(3,1)=al
       ddsdde(2,3)=al
+      ddsdde(3,2)=al
       ddsdde(3,3)=al+2.d0*um
       ddsdde(4,4)=um
       ddsdde(5,5)=um

@@ -77,7 +77,7 @@
                   exit
                endif
             enddo
-            if(j.gt.nam) then
+            if(j.eq.0) then
                write(*,*)'*ERROR in temperatures: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline)
@@ -125,6 +125,12 @@
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          elseif(textpart(i)(1:4).eq.'USER') then
             user=.true.
+         else
+            write(*,*) 
+     &        '*WARNING in temperatures: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

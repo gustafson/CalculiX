@@ -57,7 +57,10 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     
     if(ipkon[i]<0) continue;
     indexe=ipkon[i];
-    if(strcmp1(&lakon[8*i],"C3D20")==0){nope=20;}
+/*  Bernhardi start  */
+    if(strcmp1(&lakon[8*i],"C3D8I")==0){nope=11;}
+    else if(strcmp1(&lakon[8*i],"C3D20")==0){nope=20;}
+/*  Bernhardi end */
     else if(strcmp1(&lakon[8*i],"C3D8")==0){nope=8;}
     else if(strcmp1(&lakon[8*i],"C3D10")==0){nope=10;}
     else if(strcmp1(&lakon[8*i],"C3D15")==0){nope=15;}
@@ -126,7 +129,10 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       
     if(ipkon[i]<0) continue;
     indexe=ipkon[i];
-    if(strcmp1(&lakon[8*i],"C3D20")==0){nope=20;}
+/*  Bernhardi start  */
+    if(strcmp1(&lakon[8*i],"C3D8I")==0){nope=11;}
+    else if(strcmp1(&lakon[8*i],"C3D20")==0){nope=20;}
+/*  Bernhardi end */
     else if (strcmp1(&lakon[8*i],"C3D8")==0){nope=8;}
     else if (strcmp1(&lakon[8*i],"C3D10")==0){nope=10;}
     else if (strcmp1(&lakon[8*i],"C3D15")==0){nope=15;}

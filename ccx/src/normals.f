@@ -29,7 +29,7 @@
       character*132 textpart(16)
 !
       integer iponor(2,*),ixfree,ipkon(*),kon(*),nk,ipoinpc(0:*),
-     &  nk_,ne,istep,istat,n,ielement,node,j,indexe,
+     &  nk_,ne,istep,istat,n,ielement,node,j,indexe,i,
      &  key,iline,ipol,inl,ipoinp(2,*),inp(3,*)
 !
       real*8 xnor(*),x,y,z,dd
@@ -39,6 +39,14 @@
          write(*,*) '  before all step definitions'
          stop
       endif
+!
+      do i=2,n
+         write(*,*) 
+     &        '*WARNING in normals: parameter not recognized:'
+         write(*,*) '         ',
+     &        textpart(i)(1:index(textpart(i),' ')-1)
+         call inputwarning(inpc,ipoinpc,iline)
+      enddo
 !
       loop:do
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

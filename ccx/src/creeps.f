@@ -163,6 +163,12 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &              ipoinp,inp,ipoinpc)
                return
+            else
+               write(*,*) 
+     &              '*WARNING in creeps: parameter not recognized:'
+               write(*,*) '         ',
+     &              textpart(i)(1:index(textpart(i),' ')-1)
+               call inputwarning(inpc,ipoinpc,iline)
             endif
          enddo
 !

@@ -33,7 +33,7 @@ void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
              int *iperturb, int *ikboun, int *nboun, int *mi,
              int *imastop,int *nslavnode,int *islavnode,int *islavsurf,
              int *itiefac,double *areaslav,int *iponoels,int *inoels,
-             double *springarea, double *tietol){
+             double *springarea, double *tietol, double *reltime){
     
     char *labmpc=NULL;
 
@@ -85,7 +85,7 @@ void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
        iinc,iit,ncmat_,ntmat_,ne0,vini,nmethod,mi,
        imastop,nslavnode,islavnode,islavsurf,itiefac,areaslav,iponoels,
        inoels,springarea,ikmpc,ilmpc,nmpc,ipompc,nodempc,coefmpc,
-       set,nset,istartset,iendset,ialset,tietol));
+       set,nset,istartset,iendset,ialset,tietol,reltime));
 
     free(xo);free(yo);free(zo);free(x);free(y);free(z);free(nx);
     free(ny);free(nz);

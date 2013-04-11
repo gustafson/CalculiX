@@ -128,7 +128,10 @@
          call pt2zpt1_crit(p2,p1,T1,T2,lambda,kappa,r,l,d,A,iflag,
      &        inv,Pt2zPt1_c,Qred_crit,crit,qred_max1,icase)
 !     
-         v(3,nodem)=Pt2zPt1_c
+!        next location is "misused" to store the critical value
+!        used in resultgas.f
+!
+         v(2,nodem)=Pt2zPt1_c
 !
          Qred=dabs(xflow)*dsqrt(T1)/(A*P1)
          if (crit) then

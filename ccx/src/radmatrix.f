@@ -23,34 +23,38 @@
 !     if the surfaces are far enough away, one-point integration
 !     is used
 ! 
-      subroutine radmatrix(ntr,ntm,
-     &     ac,bc,sideload,nelemload,xloadact,lakon,vold,
+      subroutine radmatrix(ntr,
+     &     acr,bcr,sideload,nelemload,xloadact,lakon,vold,
      &     ipkon,kon,co,pmid,e1,e2,e3,iptri,
      &     kontri,ntri,nloadtr,tarea,tenv,physcon,erad,f,
      &     dist,idist,area,ithermal,iinc,iit,
      &     cs,mcs,inocs,ntrit,nk,fenv,istep,dtime,ttime,
-     &     time,iviewfile,jobnamef,xloadold,reltime,nmethod,mi)
+     &     time,iviewfile,jobnamef,xloadold,reltime,nmethod,mi,
+     &     iemchange,nam,iamload)
 !     
       implicit none
 !     
       logical covered(160,160),exi
+!
+!     change following line if nlabel is increased
 !     
-      character*87 label(29)
+      character*87 label(30)
       character*8 lakonl,lakon(*)
       character*20 sideload(*)
       character*132 jobnamef(*),fnvw
 !     
       integer ntr,nelemload(2,*),nope,nopes,mint2d,i,j,k,l,
-     &     node,ntm,ifaceq(8,6),ifacet(6,4),iviewfile,mi(2),
+     &     node,ifaceq(8,6),ifacet(6,4),iviewfile,mi(2),
      &     ifacew(8,5),nelem,ig,index,konl(20),iflag,
      &     ipkon(*),kon(*),ncovered,kontri(3,*),iptri(*),nloadtr(*),
      &     i1,j1,istart,iend,jstart,jend,imin,imid,imax,mcs,inocs(*),
      &     k1,kflag,idist(*),ndist,i2,i3,ng,idi,idj,ntri,
      &     ithermal,iinc,iit,ix,iy,ntrit,jj,is,m,jmod,nkt,
      &     icntrl,imag,nk,istep,jltyp,nfield,nonzero,nmethod,
-     &     limev,ier,nw,idata(1),ncalls,nlabel
+     &     limev,ier,nw,idata(1),ncalls,nlabel,iemchange,nam,
+     &     iamload(2,*)
 !     
-      real*8 ac(ntm,*),bc(ntm,1),xloadact(2,*),h(2),w(239),
+      real*8 acr(ntr,*),bcr(ntr,1),xloadact(2,*),h(2),w(239),
      &     xl2(3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
      &     vold(0:mi(2),*),co(3,*),shp2(7,8),xs2(3,7),xn(3),xxn,
      &     pmid(3,*),e3(4,*),e1(3,*),e2(3,*),p1(3),p2(3),p3(3),
@@ -87,7 +91,10 @@
 !
       external fform
 !
-      nlabel=29
+!     change following line if nlabel is increased and the dimension
+!     of field label above!
+!     
+      nlabel=30
 !
 !     factor determines when the numerical integration using cubtri
 !     is replaced by a simplified formula using only the center
@@ -313,6 +320,7 @@
 !           checking which triangles face triangle i
 !     
             ndist=0
+            call nident(iptri,i,ntr,idi)
             do j=1,ntrit
                if((kontri(1,j).eq.0).or.(area(j).lt.1.d-20)) cycle
                if(pmid(1,j)*e3(1,i)+pmid(2,j)*e3(2,i)+
@@ -327,7 +335,7 @@
                   jmod=j
                endif
 !     
-               call nident(iptri,i,ntr,idi)
+c               call nident(iptri,i,ntr,idi)
                call nident(iptri,jmod,ntr,idj)
                if(sideload(nloadtr(idi))(18:20).ne.
      &            sideload(nloadtr(idj))(18:20)) cycle
@@ -529,7 +537,7 @@ c     &                  i,j,ftij/area(i)
                   jmod=j
                endif
 !     
-               call nident(iptri,i,ntr,idi)
+c               call nident(iptri,i,ntr,idi)
                call nident(iptri,jmod,ntr,idj)
                f(idi,idj)=f(idi,idj)+ftij
 !     
@@ -726,19 +734,31 @@ c     &          ',',1.d0-fenv(i)
 !     
       endif
 !     
-!        initialization of ac and bc
+!        initialization of acr and bcr
 !     
-      do i=1,ntr
-         do j=1,ntr
-            ac(i,j)=0.d0
-         enddo
-         bc(i,1)=0.d0
-      enddo
+c      do i=1,ntr
+c!     
+c!        acr is (re)initialized only if the viewfactors changed
+c!        or the emissivity
+c!
+c         if(((ithermal.eq.3).and.(iviewfile.ge.0)).or.
+c     &      (iit.eq.-1).or.(iemchange.eq.1).or.
+c     &      ((iit.eq.0).and.(nmethod.eq.1))) then
+c            do j=1,ntr
+c               acr(i,j)=0.d0
+c            enddo
+c         endif
+c         bcr(i,1)=0.d0
+c      enddo
 !     
-!     filling ac and bc
+!     filling acr and bcr
 !     
       do i1=1,ntr
-         ac(i1,i1)=1.d0
+c         if(((ithermal.eq.3).and.(iviewfile.ge.0)).or.
+c     &      (iit.eq.-1).or.(iemchange.eq.1).or.
+c     &      ((iit.eq.0).and.(nmethod.eq.1))) then
+c            acr(i1,i1)=1.d0
+c         endif
          i=nloadtr(i1)
          nelem=nelemload(1,i)
          lakonl=lakon(nelem)
@@ -806,7 +826,7 @@ c     &          ',',1.d0-fenv(i)
 !     
          index=ipkon(nelem)
          if(index.lt.0) then
-            write(*,*) '*ERROR in radflowload: element ',nelem
+            write(*,*) '*ERROR in radmatrix: element ',nelem
             write(*,*) '       is not defined'
             stop
          endif
@@ -853,6 +873,16 @@ c     &          ',',1.d0-fenv(i)
          jltyp=jltyp+10
          if(sideload(i)(5:6).ne.'NU') then
             erad(i1)=xloadact(1,i)
+!
+!           if an amplitude was defined for the emissivity it is
+!           assumed that the emissivity changes with the step, so
+!           acr has to be calculated anew in every iteration
+!
+            if(nam.gt.0) then
+               if(iamload(1,i).ne.0) then
+                  iemchange=1
+               endif
+            endif
          else
             erad(i1)=0.d0
          endif
@@ -918,7 +948,7 @@ c     &          ',',1.d0-fenv(i)
                enddo
                call radiate(h(1),tenv(i1),temp,istep,
      &              iinc,tvar,nelem,l,coords,jltyp,field,nfield,
-     &              sideload(i),node,areaj,vold,mi)
+     &              sideload(i),node,areaj,vold,mi,iemchange)
                if(nmethod.eq.1) h(1)=xloadold(1,i)+
      &              (h(1)-xloadold(1,i))*reltime
                erad(i1)=erad(i1)+h(1)
@@ -936,19 +966,21 @@ c     &          ',',1.d0-fenv(i)
          e=erad(i1)
          ec=1.d0-e
 !     
-         do j1=1,ntr
-            ac(i1,j1)=ac(i1,j1)-ec*f(i1,j1)
-         enddo
-         bc(i1,1)=physcon(2)*(e*tarea(i1)**4+
+!        acr is recalculated only if the viewfactors changed
+!        or the emissivity
+!
+         if(((ithermal.eq.3).and.(iviewfile.ge.0)).or.
+     &      (iit.eq.-1).or.(iemchange.eq.1).or.
+     &      ((iit.eq.0).and.(nmethod.eq.1))) then
+            do j1=1,ntr
+c               acr(i1,j1)=acr(i1,j1)-ec*f(i1,j1)
+               acr(i1,j1)=-ec*f(i1,j1)
+            enddo
+            acr(i1,i1)=1.d0+acr(i1,i1)
+         endif
+         bcr(i1,1)=physcon(2)*(e*tarea(i1)**4+
      &        ec*fenv(i1)*tenv(i1)**4)
 !     
-      enddo
-!     
-      nonzero=0
-      do i=1,ntr
-         do j=1,ntr
-            if(dabs(ac(i,j)).gt.1.d-20) nonzero=nonzero+1
-         enddo
       enddo
 !     
       return

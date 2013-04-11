@@ -68,6 +68,12 @@
             namta(3,nam)=-nam
          elseif(textpart(i)(1:8).eq.'GENERATE') then
             igen=.true.
+         else
+            write(*,*) 
+     &        '*WARNING in timepointss: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

@@ -50,10 +50,18 @@
       endif
 !
       if(iperturb(1).eq.1) then
-         write(*,*) '*ERROR in rigidbodies: the *MPC option'
+         write(*,*) '*ERROR in mpcs: the *MPC option'
          write(*,*) '       cannot be used in a perturbation step'
          stop
       endif
+!
+      do i=2,n
+         write(*,*) 
+     &        '*WARNING in mpcs: parameter not recognized:'
+         write(*,*) '         ',
+     &        textpart(i)(1:index(textpart(i),' ')-1)
+         call inputwarning(inpc,ipoinpc,iline)
+      enddo
 !
       istart=0
       inode=0

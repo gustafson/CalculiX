@@ -95,7 +95,7 @@
 !
       nnodface=0
 !
-!     sort the nodes on the right hand side
+!     sort the nodes on the independent side
 !
       do j=1,ncsnodes
          jcs(j)=abs(ics(j))
@@ -107,7 +107,7 @@
 !
       netri=0
 !
-!     check the elements adjacent to the right nodes
+!     check the elements adjacent to the independent nodes
 !
       do i=1,ne
          indexe=ipkon(i)
@@ -139,7 +139,7 @@
             cycle
          endif
 !
-!        check which nodes of the element belong to the right set
+!        check which nodes of the element belong to the independent set
 !
          nnodelem=0
          do j=1,nope
@@ -181,7 +181,7 @@
             enddo
          endif
 !
-!        check which face of the element belongs to the right side 
+!        check which face of the element belongs to the independent side 
 !
          jface=0
          loop: do j=1,nface

@@ -306,73 +306,78 @@
 !     initialization
 !     
             if((kode.lt.-50).and.(kode.gt.-100)) then
-               plconloc(1)=0.d0
-               plconloc(2)=0.d0
-               plconloc(3)=0.d0
-               plconloc(81)=nplicon(1,imat)+0.5d0
-               plconloc(82)=nplkcon(1,imat)+0.5d0
+               if(npmat_.eq.0) then
+                  plconloc(81)=0.5d0
+                  plconloc(82)=0.5d0
+               else
+                  plconloc(1)=0.d0
+                  plconloc(2)=0.d0
+                  plconloc(3)=0.d0
+                  plconloc(81)=nplicon(1,imat)+0.5d0
+                  plconloc(82)=nplkcon(1,imat)+0.5d0
 !     
 !     isotropic hardening
 !     
-               if(nplicon(1,imat).ne.0) then
+                  if(nplicon(1,imat).ne.0) then
 !     
-                  if(nplicon(0,imat).eq.1) then
-                     id=-1
-                  else
-                     call ident2(plicon(0,1,imat),t1l,nplicon(0,imat),
-     &                    2*npmat_+1,id)
-                  endif
-!     
-                  if(nplicon(0,imat).eq.0) then
-                     continue
-                  elseif((nplicon(0,imat).eq.1).or.(id.eq.0).or.
-     &                    (id.eq.nplicon(0,imat))) then
-                     if(id.le.0) then
-                        itemp=1
+                     if(nplicon(0,imat).eq.1) then
+                        id=-1
                      else
-                        itemp=id
+                        call ident2(plicon(0,1,imat),t1l,
+     &                       nplicon(0,imat),2*npmat_+1,id)
                      endif
-                     kin=0
-                     call plcopy(plicon,nplicon,plconloc,npmat_,ntmat_,
-     &                    imat,itemp,i,kin)
-                     if((id.eq.0).or.(id.eq.nplicon(0,imat))) then
+!     
+                     if(nplicon(0,imat).eq.0) then
+                        continue
+                     elseif((nplicon(0,imat).eq.1).or.(id.eq.0).or.
+     &                       (id.eq.nplicon(0,imat))) then
+                        if(id.le.0) then
+                           itemp=1
+                        else
+                           itemp=id
+                        endif
+                        kin=0
+                        call plcopy(plicon,nplicon,plconloc,npmat_,
+     &                       ntmat_,imat,itemp,i,kin)
+                        if((id.eq.0).or.(id.eq.nplicon(0,imat))) then
+                        endif
+                     else
+                        kin=0
+                        call plmix(plicon,nplicon,plconloc,npmat_,
+     &                       ntmat_,imat,id+1,t1l,i,kin)
                      endif
-                  else
-                     kin=0
-                     call plmix(plicon,nplicon,plconloc,npmat_,ntmat_,
-     &                    imat,id+1,t1l,i,kin)
                   endif
-               endif
 !     
 !     kinematic hardening
 !     
-               if(nplkcon(1,imat).ne.0) then
+                  if(nplkcon(1,imat).ne.0) then
 !     
-                  if(nplkcon(0,imat).eq.1) then
-                     id=-1
-                  else
-                     call ident2(plkcon(0,1,imat),t1l,nplkcon(0,imat),
-     &                    2*npmat_+1,id)
-                  endif
-!     
-                  if(nplkcon(0,imat).eq.0) then
-                     continue
-                  elseif((nplkcon(0,imat).eq.1).or.(id.eq.0).or.
-     &                    (id.eq.nplkcon(0,imat))) then
-                     if(id.le.0)then
-                        itemp=1
+                     if(nplkcon(0,imat).eq.1) then
+                        id=-1
                      else
-                        itemp=id
+                        call ident2(plkcon(0,1,imat),t1l,
+     &                       nplkcon(0,imat),2*npmat_+1,id)
                      endif
-                     kin=1
-                     call plcopy(plkcon,nplkcon,plconloc,npmat_,ntmat_,
-     &                    imat,itemp,i,kin)
-                     if((id.eq.0).or.(id.eq.nplkcon(0,imat))) then
+!     
+                     if(nplkcon(0,imat).eq.0) then
+                        continue
+                     elseif((nplkcon(0,imat).eq.1).or.(id.eq.0).or.
+     &                       (id.eq.nplkcon(0,imat))) then
+                        if(id.le.0)then
+                           itemp=1
+                        else
+                           itemp=id
+                        endif
+                        kin=1
+                        call plcopy(plkcon,nplkcon,plconloc,npmat_,
+     &                       ntmat_,imat,itemp,i,kin)
+                        if((id.eq.0).or.(id.eq.nplkcon(0,imat))) then
+                        endif
+                     else
+                        kin=1
+                        call plmix(plkcon,nplkcon,plconloc,npmat_,
+     &                       ntmat_,imat,id+1,t1l,i,kin)
                      endif
-                  else
-                     kin=1
-                     call plmix(plkcon,nplkcon,plconloc,npmat_,ntmat_,
-     &                    imat,id+1,t1l,i,kin)
                   endif
                endif
             endif
@@ -383,51 +388,24 @@
             if(nelcon(2,imat).eq.0) then
                continue
             elseif(nelcon(2,imat).eq.1) then
-c               if(ihyper.ne.1) then
-c                  do k=1,nelconst
-c                     elconloc(k)=elcon(k,1,imat)
-c                  enddo
-c               else
                   do k=1,nelconst
                      elconloc(k)=elcon(k,1,imat)
                   enddo
-c               endif
             elseif(id.eq.0) then
-c               if(ihyper.ne.1) then
-c                  do k=1,nelconst
-c                     elconloc(k)=elcon(k,1,imat)
-c                  enddo
-c               else
                   do k=1,nelconst
                      elconloc(k)=elcon(k,1,imat)
                   enddo
-c               endif
             elseif(id.eq.nelcon(2,imat)) then
-c               if(ihyper.ne.1) then
-c                  do k=1,nelconst
-c                     elconloc(k)=elcon(k,id,imat)
-c                  enddo
-c               else
                   do k=1,nelconst
                      elconloc(k)=elcon(k,id,imat)
                   enddo
-c               endif
             else
-c               if(ihyper.ne.1) then
-c                  do k=1,nelconst
-c                     elconloc(k)=elcon(k,id,imat)+
-c     &                    (elcon(k,id+1,imat)-elcon(k,id,imat))*
-c     &                    (t1l-elcon(0,id,imat))/
-c     &                    (elcon(0,id+1,imat)-elcon(0,id,imat))
-c                  enddo
-c               else
                   do k=1,nelconst
                      elconloc(k)=elcon(k,id,imat)+
      &                    (elcon(k,id+1,imat)-elcon(k,id,imat))*
      &                    (t1l-elcon(0,id,imat))/
      &                    (elcon(0,id+1,imat)-elcon(0,id,imat))
                   enddo
-c               endif
             endif
 !
 !           modifying the thermal constants if anisotropic and

@@ -33,7 +33,7 @@
      &  shcon,nshcon,cocon,ncocon,ics,sti,
      &  ener,xstate,jobnamec,infree,nnn,irestartstep,prestr,iprestr,
      &  cbody,ibody,xbody,nbody,xbodyold,ttime,qaold,cs,mcs,
-     &  output,physcon,ctrl,typeboun,fmpc,tieset,ntie)
+     &  output,physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol)
 !
       implicit none
 !
@@ -64,7 +64,7 @@
 !
       real*8 co(*),xboun(*),coefmpc(*),xforc(*),xload(*),elcon(*),
      &  rhcon(*),alcon(*),alzero(*),plicon(*),plkcon(*),orab(*),
-     &  trab(*),amta(*),t0(*),t1(*),veold(*),
+     &  trab(*),amta(*),t0(*),t1(*),veold(*),tietol(2,*),
      &  vold(*),xbounold(*),xforcold(*),xloadold(*),t1old(*),eme(*),
      &  xnor(*),thickn(*),thicke(*),offset(*),
      &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),prestr(*),ttime,
@@ -85,7 +85,7 @@
 !
          read(15,iostat=istat)istep
          if(istat.lt.0) then
-            write(*,*) '*ERROR in restartread: requested step'
+            write(*,*) '*ERROR reading *RESTART,READ: requested step'
             write(*,*) '       is not in the restart file'
             stop
          endif
@@ -259,13 +259,13 @@
 !
 !     specific heat
 !
-      read(15)(shcon(i),i=1,3*ntmat_*nmat)
+      read(15)(shcon(i),i=1,4*ntmat_*nmat)
       read(15)(nshcon(i),i=1,nmat)
 !
 !     conductivity
 !
       read(15)(cocon(i),i=1,7*ntmat_*nmat)
-      read(15)(ncocon(i),i=1,nmat)
+      read(15)(ncocon(i),i=1,2*nmat)
 !
 !     expansion coefficients
 !
@@ -357,6 +357,7 @@
 !
       if(ntie.gt.0) then
          read(15)((tieset(i,j),i=1,3),j=1,ntie)
+         read(15)((tietol(i,j),i=1,2),j=1,ntie)
       endif
 !
 !     cyclic symmetry
@@ -390,7 +391,8 @@
 !
       return
 !
- 15   write(*,*) '*ERROR in restartread: could not open file ',fnrstrt
+ 15   write(*,*) '*ERROR reading *RESTART,READ: could not open file ',
+     &   fnrstrt
       stop
       end
 

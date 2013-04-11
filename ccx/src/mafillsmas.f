@@ -63,7 +63,7 @@
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),reltime,
      &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),
      &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
-     &  springarea(*)
+     &  springarea(2,*)
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),veold(0:mi(2),*)

@@ -20,10 +20,11 @@
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
      &  nforc,nelemload,sideload,xload,nload,xbody,ipobody,nbody,
      &  b,nactdoh,icolv,jqv,irowv,neqv,nzlv,nmethod,ikmpc,ilmpc,ikboun,
-     &  ilboun,rhcon,nrhcon,ielmat,ntmat_,t0,ithermal,vold,voldaux,nzsv,
+     &  ilboun,rhcon,nrhcon,ielmat,ntmat_,t0,ithermal,vold,voldcon,nzsv,
      &  dtl,matname,mi,ncmat_,physcon,shcon,nshcon,ttime,time,
      &  istep,iinc,ibody,xloadold,turbulent,voldtu,yy,
-     &  nelemface,sideface,nface,compressible,ne1,ne2,dtimef)
+     &  nelemface,sideface,nface,compressible,ne1,ne2,dtimef,ipvar,var,
+     &  ipvarf,varf,sti)
 !
 !     filling the rhs b of the velocity equations (step 1)
 !
@@ -44,12 +45,14 @@
 !
       integer nk,ne,nboun,nmpc,nforc,nload,neqv,nzlv,nmethod,
      &  ithermal,nzsv,i,j,k,idist,jj,id,ist,index,jdof1,idof1,
-     &  jdof,node1,kflag,ntmat_,indexe,nope,mi(2),i0,ncmat_,istep,iinc
+     &  jdof,node1,kflag,ntmat_,indexe,nope,mi(2),i0,ncmat_,istep,iinc,
+     &  ipvar(*),ipvarf(*)
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),bodyf(3),b(*),xloadold(2,*),voldtu(2,*),yy(*),
-     &  t0(*),vold(0:mi(2),*),voldaux(0:4,*),ff(60),rhcon(0:1,ntmat_,*),
-     &  physcon(*),shcon(0:3,ntmat_,*),xbody(7,*)
+     &  t0(*),vold(0:mi(2),*),voldcon(0:4,*),ff(60),rhcon(0:1,ntmat_,*),
+     &  physcon(*),shcon(0:3,ntmat_,*),xbody(7,*),var(*),varf(*),
+     &  sti(6,mi(1),*)
 !
       real*8 om,dtimef,ttime,time,dtl(*)
 !
@@ -91,9 +94,9 @@
            cycle
         endif
 !
-        do j=1,nope
-          konl(j)=kon(indexe+j) 
-        enddo
+c        do j=1,nope
+c          konl(j)=kon(indexe+j) 
+c        enddo
 !
         om=0.d0
 !
@@ -130,11 +133,12 @@
            enddo
         endif
 !
-           call e_c3d_v1rhs(co,nk,konl,lakon(i),p1,p2,om,bodyf,
-     &       nbody,ff,i,nmethod,rhcon,nrhcon,ielmat,ntmat_,vold,
-     &       voldaux,idist,dtimef,matname,mi(1),
+           call e_c3d_v1rhs(co,nk,kon(indexe+1),lakon(i),p1,p2,om,
+     &       bodyf,nbody,ff,i,nmethod,rhcon,nrhcon,ielmat,ntmat_,vold,
+     &       voldcon,idist,dtimef,matname,mi(1),
      &       ttime,time,istep,iinc,shcon,nshcon,
-     &       turbulent,voldtu,yy,nelemface,sideface,nface,compressible)
+     &       turbulent,voldtu,yy,nelemface,sideface,nface,compressible,
+     &       ipvar,var,ipvarf,varf,sti,ithermal)
 !
         do jj=1,3*nope
 !
@@ -214,15 +218,15 @@ c          ff(jj)=ff(jj)*dtl(node1)/dtimef
 !
 !     nonlocal time stepping for compressible steady state calculations
 !     
-      if((compressible.eq.1).and.(nmethod.eq.1)) then
-         do i=1,nk
-            do j=1,3
-               if(nactdoh(j,i).gt.0) then
-                  b(nactdoh(j,i))=b(nactdoh(j,i))*dtl(i)/dtimef
-               endif
-            enddo
-         enddo
-      endif
+c      if((compressible.eq.1).and.(nmethod.eq.1)) then
+c         do i=1,nk
+c            do j=1,3
+c               if(nactdoh(j,i).gt.0) then
+c                  b(nactdoh(j,i))=b(nactdoh(j,i))*dtl(i)/dtimef
+c               endif
+c            enddo
+c         enddo
+c      endif
 !
       return
       end

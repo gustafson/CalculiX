@@ -33,7 +33,8 @@ void multi_rectv(double *au_1,int * irow_1,int * jq_1,int n_1, int m_1,
 
 	for(j=0;j<m_1;j++){
 		for (i=jq_1[j]-1;i<jq_1[j+1]-1;i++){
-			v_r[j]+=au_1[i]*b[j];
+//			v_r[j]-=au_1[i]*b[j];
+			v_r[j]+=au_1[i]*b[irow_1[i]-1];
 		}
 	}
 

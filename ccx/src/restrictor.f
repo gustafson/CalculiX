@@ -73,6 +73,7 @@
                A1=prop(index+6)
                A2=A1
             endif
+            zeta=1.d0
          elseif(lakon(nelem)(2:6).eq.'REBRS') then
             if(nelem.eq.int(prop(index+2))) then
                A1=prop(index+5)
@@ -81,21 +82,22 @@
                A1=prop(index+6)
                A2=A1
             endif
+            zeta=1.d0
 !     
 !     for other Restrictor elements         
 !     
          else if (lakon(nelem)(2:5).eq.'REUS' ) then
             A1=prop(index+1)
             A2=prop(index+2)
+            zeta=prop(index+4)
             if(A1.gt.A2) then
                A1=A2
             endif
          else
             A1=prop(index+1)
-            A2=prop(index+2)
+            A2=prop(index+2) 
+            zeta=1.d0
          endif
-!     
-         zeta=1.d0
 !     
          pt1=v(2,node1)
          pt2=v(2,node2)
@@ -158,17 +160,12 @@
 !     
             endif
 !     
-         else
-            Qred2=dsqrt(kappa/R)*pt1pt2**(-0.5d0*kp1/(kappa*zeta))
-     &           *dsqrt(2.d0/km1*(pt1pt2**(km1/(kappa*zeta))-1d0))
-            Qred1=pt2pt1*A2/A1*Qred2
-            Qred_crit=(1.d0+0.5d0*km1)**(-0.5d0*kp1/km1)
+         else     
+            Qred_crit=dsqrt(kappa/R)*(1.d0+0.5d0*km1)
+     &              **(-0.5d0*kp1/km1)
+            call pt2_lim_calc(pt1,a2,a1,kappa,zeta,pt2_lim)
 !     
-            if(Qred2.gt.Qred_crit) then
-               xflow=inv*A2*pt2*Qred_crit/dsqrt(Tt2)
-            else
-               xflow=inv*A2*pt2*Qred2/dsqrt(Tt2)
-            endif
+            xflow=inv*A2*pt2_lim*Qred_crit/dsqrt(Tt2)
          endif
 
          pt2pt1=pt2/pt1
@@ -188,6 +185,11 @@
          else
             xflow=inv*pt1*Aeff*dsqrt(kappa/r)*tdkp1**(kp1/(2.d0*km1))/
      &           dsqrt(Tt1)
+         endif
+         if(lakon(nelem)(2:5).ne.'RECO') then
+            xflow=0.75*xflow
+         else
+            xflow=xflow
          endif
 !     
       elseif (iflag.eq.2)then
@@ -213,7 +215,6 @@
 !     
 !     defining surfaces and oil properties for branches elements
 !     
-         xflow_oil=-12345678.
          if(lakon(nelem)(2:6).eq.'REBRJ') then
             if(nelem.eq.int(prop(index+2))) then
                A1=prop(index+5)
@@ -411,9 +412,8 @@
 !
 !     every other zeta elements with/without oil
 !
-         else
-!
-
+         else               
+!    
             if(xflow_oil.ne.0d0) then
                call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
@@ -421,7 +421,7 @@
      &              shcon,rhcon,ntmat_,mi)
                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
      &              isothermal,kon,ipkon,R,Kappa,v,mi)
-                zeta=phi*zeta
+               zeta=phi*zeta
             else
                phi=1.d0
                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
@@ -429,7 +429,7 @@
                zeta=phi*zeta
             endif
          endif
-!     
+!
          if(zeta.lt.0) then
             pt1=v(2,node1)
             pt2=v(2,node2)
@@ -454,7 +454,7 @@
          pt1pt2=pt1/pt2
 !     
 !     Mach number caclulation
-!     
+!    
          M1=dsqrt(2d0/km1*(Tt1/T1-1d0))
          if((1.d0-M1).le.1E-6) then
             if(zeta.gt.0d0) then
@@ -949,6 +949,7 @@
                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
      &              isothermal,kon,ipkon,R,Kappa,v,mi)
                phi=1.d0
+               zeta_phi=phi*zeta
 !               
             endif
 !
@@ -1011,11 +1012,16 @@
 !     Mach number calculation
 !     
          M1=dsqrt(2d0/km1*(Tt1/T1-1d0))
-         if((1.d0-M1).le.1E-6) then
-            if(zeta.gt.0d0) then
-               call limit_case_calc(a2,pt1,Tt2,xflow,zeta,r,kappa,
-     &              pt2_lim,M2)
-!     
+         if((1.d0-M1).le.1E-3) then
+  
+            if(zeta.gt.0d0)then
+               if(xflow_oil.eq.0) then
+                  call limit_case_calc(a2,pt1,Tt2,xflow,zeta,r,kappa,
+     &                 pt2_lim,M2)
+               else
+                  call limit_case_calc(a2,pt1,Tt2,xflow,zeta_phi,r,kappa
+     &                 ,pt2_lim,M2)
+               endif
             endif
          else
             M2=dsqrt(2d0/km1*(Tt2/T2-1d0))

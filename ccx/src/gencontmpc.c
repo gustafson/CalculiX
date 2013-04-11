@@ -35,6 +35,7 @@ void gencontmpc(int *ne, int *iface, char *lakon, int *ipkon, int *kon,
     int i,j,k,indexe,
         node,id,idir,idof,node1,node2,index,*ipompc=NULL,*ikmpc=NULL,
 	*ilmpc=NULL,*nodempc=NULL,jface,jmin,jmax,ij;
+		int kk;
     
     int nonei6[9]={7,13,14,8,14,15,9,15,13};
     
@@ -208,15 +209,22 @@ void gencontmpc(int *ne, int *iface, char *lakon, int *ipkon, int *kon,
 		j=ifaceq[(jface-1)*8+ij]-1;
 		if(jface>2){
 		    node=(kon[indexe+j]+kon[indexe+j+4])/2;
+		    node1=kon[indexe+nonei8[(j-8)*3+1]-1];
+		    node2=kon[indexe+nonei8[(j-8)*3+2]-1];
 		}else{
 		    node=kon[indexe+j];
+		    node1=kon[indexe+nonei20[(j-8)*3+1]-1];
+		    node2=kon[indexe+nonei20[(j-8)*3+2]-1];
 		}
 		
 		/* create a MPC between node and the 
 		   corresponding end nodes */
 		
-		node1=kon[indexe+nonei8[(j-8)*3+1]-1];
-		node2=kon[indexe+nonei8[(j-8)*3+2]-1];
+//		printf("gencontmpc %d %d %d\n",j,jface,ij);
+//		kk=nonei8[(j-8)*3+1];
+//		printf("gencontmpc %d \n",kk);
+//		printf("gencontmpc %d \n",indexe);
+//		printf("gencontmpc %d \n",indexe+kk-1);
 		
 		/* create a MPC between node, node1 and node2 */
 		
@@ -319,236 +327,239 @@ void gencontmpc(int *ne, int *iface, char *lakon, int *ipkon, int *kon,
 	
 	if(strcmp1(&lakon[8*i+6]," ")==0){
 	    
-		/* genuine 15-node element */
-
-		if(jface<3){
-		    jmin=3;jmax=6;
-		}else{
-		    jmin=4;jmax=8;
-		}
-		for(ij=jmin;ij<jmax;ij++){
-		    j=ifacew[(jface-1)*8+ij]-1;
-		    node=kon[indexe+j];
-			    
-			    /* create a MPC between node and the 
-                               corresponding end nodes */
-
-			    node1=kon[indexe+nonei15[(j-6)*3+1]-1];
-			    node2=kon[indexe+nonei15[(j-6)*3+2]-1];
-
-			    /* create a MPC between node, node1 and node2 */
-
-			    for(idir=1;idir<4;idir++){
-				idof=8*(node-1)+idir;
-				FORTRAN(nident,(ikboun,&idof,nboun,&id));
-				if(id>0){
-				    if(ikboun[id-1]==idof)continue;
-				}
-				FORTRAN(nident,(ikmpc,&idof,nmpc,&id));
-				if(id>0){
-				    if(ikmpc[id-1]==idof)continue;
-				}
-				(*nmpc)++;
-				if(*nmpc>*nmpc_){
-				    if(*nmpc_<11)*nmpc_=11;
-				    *nmpc_=(int)(1.1**nmpc_);
-				    RENEW(ipompc,int,*nmpc_);
-				    RENEW(labmpc,char,20**nmpc_+1);
-				    RENEW(ikmpc,int,*nmpc_);
-				    RENEW(ilmpc,int,*nmpc_);
-				    RENEW(fmpc,double,*nmpc_);
-				}
-				ipompc[*nmpc-1]=*mpcfree;
-				strcpy1(&labmpc[20*(*nmpc-1)],"CONTACT             ",20);
-				for(k=*nmpc-1;k>id;k--){
-				    ikmpc[k]=ikmpc[k-1];
-				    ilmpc[k]=ilmpc[k-1];
-				}
-				ikmpc[id]=idof;
-				ilmpc[id]=*nmpc;
-				
-				/* first term */
-				
-				nodempc[3**mpcfree-3]=node;
-				nodempc[3**mpcfree-2]=idir;
-				coefmpc[*mpcfree-1]=2.;
-				index=*mpcfree;
-				*mpcfree=nodempc[3**mpcfree-1];
-				if(*mpcfree==0){
-				    *mpcfree=*memmpc_+1;
-				    nodempc[3*index-1]=*mpcfree;
-				    if(*memmpc_<11)*memmpc_=11;
-				    *memmpc_=(int)(1.1**memmpc_);
-				    printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
-				    RENEW(nodempc,int,3**memmpc_);
-				    RENEW(coefmpc,double,*memmpc_);
-				    for(k=*mpcfree;k<*memmpc_;k++){
-					nodempc[3*k-1]=k+1;
-				    }
-				    nodempc[3**memmpc_-1]=0;
-				}
-				
-				/* second term */
-				
-				nodempc[3**mpcfree-3]=node1;
-				nodempc[3**mpcfree-2]=idir;
-				coefmpc[*mpcfree-1]=-1.;
-				index=*mpcfree;
-				*mpcfree=nodempc[3**mpcfree-1];
-				if(*mpcfree==0){
-				    *mpcfree=*memmpc_+1;
-				    nodempc[3*index-1]=*mpcfree;
-				    if(*memmpc_<11)*memmpc_=11;
-				    *memmpc_=(int)(1.1**memmpc_);
-				    printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
-				    RENEW(nodempc,int,3**memmpc_);
-				    RENEW(coefmpc,double,*memmpc_);
-				    for(k=*mpcfree;k<*memmpc_;k++){
-					nodempc[3*k-1]=k+1;
-				    }
-				    nodempc[3**memmpc_-1]=0;
-				}
-				
-				/* third term */
-				
-				nodempc[3**mpcfree-3]=node2;
-				nodempc[3**mpcfree-2]=idir;
-				coefmpc[*mpcfree-1]=-1.;
-				index=*mpcfree;
-				*mpcfree=nodempc[3**mpcfree-1];
-				nodempc[3*index-1]=0;
-				if(*mpcfree==0){
-				    *mpcfree=*memmpc_+1;
-				    if(*memmpc_<11)*memmpc_=11;
-				    *memmpc_=(int)(1.1**memmpc_);
-				    printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
-				    RENEW(nodempc,int,3**memmpc_);
-				    RENEW(coefmpc,double,*memmpc_);
-				    for(k=*mpcfree;k<*memmpc_;k++){
-					nodempc[3*k-1]=k+1;
-				    }
-				    nodempc[3**memmpc_-1]=0;
-				}
-		    }
-		} /* j */
-		
-	    }else if(strcmp1(&lakon[8*i+6],"B")!=0){
-
-		/* plane strain, plane stress, axisymmetric elements
-                   or shell elements */
-
-		if(jface<3){
-		    jmin=3;jmax=6;
-		}else{
-		    jmin=4;jmax=5;
-		}
-		for(ij=jmin;ij<jmax;ij++){
+	    /* genuine 15-node element */
+	    
+	    if(jface<3){
+		jmin=3;jmax=6;
+	    }else{
+		jmin=4;jmax=8;
+	    }
+	    for(ij=jmin;ij<jmax;ij++){
 		j=ifacew[(jface-1)*8+ij]-1;
-		if(jface>2){node=(kon[indexe+j]+kon[indexe+j+3])/2;}
-			    
-			    /* create a MPC between node and the 
-                               corresponding end nodes */
-
-			    node1=kon[indexe+nonei6[(j-6)*3+1]-1];
-			    node2=kon[indexe+nonei6[(j-6)*3+2]-1];
-
-			    /* create a MPC between node, node1 and node2 */
-
-			    for(idir=1;idir<3;idir++){
-				idof=8*(node-1)+idir;
-				FORTRAN(nident,(ikboun,&idof,nboun,&id));
-				if(id>0){
-				    if(ikboun[id-1]==idof)continue;
-				}
-				FORTRAN(nident,(ikmpc,&idof,nmpc,&id));
-				if(id>0){
-				    if(ikmpc[id-1]==idof)continue;
-				}
-				(*nmpc)++;
-				if(*nmpc>*nmpc_){
-				    if(*nmpc_<11)*nmpc_=11;
-				    *nmpc_=(int)(1.1**nmpc_);
-				    RENEW(ipompc,int,*nmpc_);
-				    RENEW(labmpc,char,20**nmpc_+1);
-				    RENEW(ikmpc,int,*nmpc_);
-				    RENEW(ilmpc,int,*nmpc_);
-				    RENEW(fmpc,double,*nmpc_);
-				}
-				ipompc[*nmpc-1]=*mpcfree;
-				strcpy1(&labmpc[20*(*nmpc-1)],"CONTACT             ",20);
-				for(k=*nmpc-1;k>id;k--){
-				    ikmpc[k]=ikmpc[k-1];
-				    ilmpc[k]=ilmpc[k-1];
-				}
-				ikmpc[id]=idof;
-				ilmpc[id]=*nmpc;
-				
-				/* first term */
-				
-				nodempc[3**mpcfree-3]=node;
-				nodempc[3**mpcfree-2]=idir;
-				coefmpc[*mpcfree-1]=2.;
-				index=*mpcfree;
-				*mpcfree=nodempc[3**mpcfree-1];
-				if(*mpcfree==0){
-				    *mpcfree=*memmpc_+1;
-				    nodempc[3*index-1]=*mpcfree;
-				    if(*memmpc_<11)*memmpc_=11;
-				    *memmpc_=(int)(1.1**memmpc_);
-				    printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
-				    RENEW(nodempc,int,3**memmpc_);
-				    RENEW(coefmpc,double,*memmpc_);
-				    for(k=*mpcfree;k<*memmpc_;k++){
-					nodempc[3*k-1]=k+1;
-				    }
-				    nodempc[3**memmpc_-1]=0;
-				}
-				
-				/* second term */
-				
-				nodempc[3**mpcfree-3]=node1;
-				nodempc[3**mpcfree-2]=idir;
-				coefmpc[*mpcfree-1]=-1.;
-				index=*mpcfree;
-				*mpcfree=nodempc[3**mpcfree-1];
-				if(*mpcfree==0){
-				    *mpcfree=*memmpc_+1;
-				    nodempc[3*index-1]=*mpcfree;
-				    if(*memmpc_<11)*memmpc_=11;
-				    *memmpc_=(int)(1.1**memmpc_);
-				    printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
-				    RENEW(nodempc,int,3**memmpc_);
-				    RENEW(coefmpc,double,*memmpc_);
-				    for(k=*mpcfree;k<*memmpc_;k++){
-					nodempc[3*k-1]=k+1;
-				    }
-				    nodempc[3**memmpc_-1]=0;
-				}
-				
-				/* third term */
-				
-				nodempc[3**mpcfree-3]=node2;
-				nodempc[3**mpcfree-2]=idir;
-				coefmpc[*mpcfree-1]=-1.;
-				index=*mpcfree;
-				*mpcfree=nodempc[3**mpcfree-1];
-				nodempc[3*index-1]=0;
-				if(*mpcfree==0){
-				    *mpcfree=*memmpc_+1;
-				    if(*memmpc_<11)*memmpc_=11;
-				    *memmpc_=(int)(1.1**memmpc_);
-				    printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
-				    RENEW(nodempc,int,3**memmpc_);
-				    RENEW(coefmpc,double,*memmpc_);
-				    for(k=*mpcfree;k<*memmpc_;k++){
-					nodempc[3*k-1]=k+1;
-				    }
-				    nodempc[3**memmpc_-1]=0;
-				}
+		node=kon[indexe+j];
+		
+		/* create a MPC between node and the 
+		   corresponding end nodes */
+		
+		node1=kon[indexe+nonei15[(j-6)*3+1]-1];
+		node2=kon[indexe+nonei15[(j-6)*3+2]-1];
+		
+		/* create a MPC between node, node1 and node2 */
+		
+		for(idir=1;idir<4;idir++){
+		    idof=8*(node-1)+idir;
+		    FORTRAN(nident,(ikboun,&idof,nboun,&id));
+		    if(id>0){
+			if(ikboun[id-1]==idof)continue;
+		    }
+		    FORTRAN(nident,(ikmpc,&idof,nmpc,&id));
+		    if(id>0){
+			if(ikmpc[id-1]==idof)continue;
+		    }
+		    (*nmpc)++;
+		    if(*nmpc>*nmpc_){
+			if(*nmpc_<11)*nmpc_=11;
+			*nmpc_=(int)(1.1**nmpc_);
+			RENEW(ipompc,int,*nmpc_);
+			RENEW(labmpc,char,20**nmpc_+1);
+			RENEW(ikmpc,int,*nmpc_);
+			RENEW(ilmpc,int,*nmpc_);
+			RENEW(fmpc,double,*nmpc_);
+		    }
+		    ipompc[*nmpc-1]=*mpcfree;
+		    strcpy1(&labmpc[20*(*nmpc-1)],"CONTACT             ",20);
+		    for(k=*nmpc-1;k>id;k--){
+			ikmpc[k]=ikmpc[k-1];
+			ilmpc[k]=ilmpc[k-1];
+		    }
+		    ikmpc[id]=idof;
+		    ilmpc[id]=*nmpc;
+		    
+		    /* first term */
+		    
+		    nodempc[3**mpcfree-3]=node;
+		    nodempc[3**mpcfree-2]=idir;
+		    coefmpc[*mpcfree-1]=2.;
+		    index=*mpcfree;
+		    *mpcfree=nodempc[3**mpcfree-1];
+		    if(*mpcfree==0){
+			*mpcfree=*memmpc_+1;
+			nodempc[3*index-1]=*mpcfree;
+			if(*memmpc_<11)*memmpc_=11;
+			*memmpc_=(int)(1.1**memmpc_);
+			printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
+			RENEW(nodempc,int,3**memmpc_);
+			RENEW(coefmpc,double,*memmpc_);
+			for(k=*mpcfree;k<*memmpc_;k++){
+			    nodempc[3*k-1]=k+1;
+			}
+			nodempc[3**memmpc_-1]=0;
+		    }
+		    
+		    /* second term */
+		    
+		    nodempc[3**mpcfree-3]=node1;
+		    nodempc[3**mpcfree-2]=idir;
+		    coefmpc[*mpcfree-1]=-1.;
+		    index=*mpcfree;
+		    *mpcfree=nodempc[3**mpcfree-1];
+		    if(*mpcfree==0){
+			*mpcfree=*memmpc_+1;
+			nodempc[3*index-1]=*mpcfree;
+			if(*memmpc_<11)*memmpc_=11;
+			*memmpc_=(int)(1.1**memmpc_);
+			printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
+			RENEW(nodempc,int,3**memmpc_);
+			RENEW(coefmpc,double,*memmpc_);
+			for(k=*mpcfree;k<*memmpc_;k++){
+			    nodempc[3*k-1]=k+1;
+			}
+			nodempc[3**memmpc_-1]=0;
+		    }
+		    
+		    /* third term */
+		    
+		    nodempc[3**mpcfree-3]=node2;
+		    nodempc[3**mpcfree-2]=idir;
+		    coefmpc[*mpcfree-1]=-1.;
+		    index=*mpcfree;
+		    *mpcfree=nodempc[3**mpcfree-1];
+		    nodempc[3*index-1]=0;
+		    if(*mpcfree==0){
+			*mpcfree=*memmpc_+1;
+			if(*memmpc_<11)*memmpc_=11;
+			*memmpc_=(int)(1.1**memmpc_);
+			printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
+			RENEW(nodempc,int,3**memmpc_);
+			RENEW(coefmpc,double,*memmpc_);
+			for(k=*mpcfree;k<*memmpc_;k++){
+			    nodempc[3*k-1]=k+1;
+			}
+			nodempc[3**memmpc_-1]=0;
+		    }
+		}
+	    } /* j */
+	    
+	}else if(strcmp1(&lakon[8*i+6],"B")!=0){
+	    
+	    /* plane strain, plane stress, axisymmetric elements
+	       or shell elements */
+	    
+	    if(jface<3){
+		jmin=3;jmax=6;
+	    }else{
+		jmin=4;jmax=5;
+	    }
+	    for(ij=jmin;ij<jmax;ij++){
+		j=ifacew[(jface-1)*8+ij]-1;
+		if(jface>2){
+		    node=(kon[indexe+j]+kon[indexe+j+3])/2;
+		    node1=kon[indexe+nonei6[(j-6)*3+1]-1];
+		    node2=kon[indexe+nonei6[(j-6)*3+2]-1];
+		}else{
+		    node=kon[indexe+j];
+		    node1=kon[indexe+nonei15[(j-6)*3+1]-1];
+		    node2=kon[indexe+nonei15[(j-6)*3+2]-1];
+		}
+		
+		
+		/* create a MPC between node, node1 and node2 */
+		
+		for(idir=1;idir<3;idir++){
+		    idof=8*(node-1)+idir;
+		    FORTRAN(nident,(ikboun,&idof,nboun,&id));
+		    if(id>0){
+			if(ikboun[id-1]==idof)continue;
+		    }
+		    FORTRAN(nident,(ikmpc,&idof,nmpc,&id));
+		    if(id>0){
+			if(ikmpc[id-1]==idof)continue;
+		    }
+		    (*nmpc)++;
+		    if(*nmpc>*nmpc_){
+			if(*nmpc_<11)*nmpc_=11;
+			*nmpc_=(int)(1.1**nmpc_);
+			RENEW(ipompc,int,*nmpc_);
+			RENEW(labmpc,char,20**nmpc_+1);
+			RENEW(ikmpc,int,*nmpc_);
+			RENEW(ilmpc,int,*nmpc_);
+			RENEW(fmpc,double,*nmpc_);
+		    }
+		    ipompc[*nmpc-1]=*mpcfree;
+		    strcpy1(&labmpc[20*(*nmpc-1)],"CONTACT             ",20);
+		    for(k=*nmpc-1;k>id;k--){
+			ikmpc[k]=ikmpc[k-1];
+			ilmpc[k]=ilmpc[k-1];
+		    }
+		    ikmpc[id]=idof;
+		    ilmpc[id]=*nmpc;
+		    
+		    /* first term */
+		    
+		    nodempc[3**mpcfree-3]=node;
+		    nodempc[3**mpcfree-2]=idir;
+		    coefmpc[*mpcfree-1]=2.;
+		    index=*mpcfree;
+		    *mpcfree=nodempc[3**mpcfree-1];
+		    if(*mpcfree==0){
+			*mpcfree=*memmpc_+1;
+			nodempc[3*index-1]=*mpcfree;
+			if(*memmpc_<11)*memmpc_=11;
+			*memmpc_=(int)(1.1**memmpc_);
+			printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
+			RENEW(nodempc,int,3**memmpc_);
+			RENEW(coefmpc,double,*memmpc_);
+			for(k=*mpcfree;k<*memmpc_;k++){
+			    nodempc[3*k-1]=k+1;
+			}
+			nodempc[3**memmpc_-1]=0;
+		    }
+		    
+		    /* second term */
+		    
+		    nodempc[3**mpcfree-3]=node1;
+		    nodempc[3**mpcfree-2]=idir;
+		    coefmpc[*mpcfree-1]=-1.;
+		    index=*mpcfree;
+		    *mpcfree=nodempc[3**mpcfree-1];
+		    if(*mpcfree==0){
+			*mpcfree=*memmpc_+1;
+			nodempc[3*index-1]=*mpcfree;
+			if(*memmpc_<11)*memmpc_=11;
+			*memmpc_=(int)(1.1**memmpc_);
+			printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
+			RENEW(nodempc,int,3**memmpc_);
+			RENEW(coefmpc,double,*memmpc_);
+			for(k=*mpcfree;k<*memmpc_;k++){
+			    nodempc[3*k-1]=k+1;
+			}
+			nodempc[3**memmpc_-1]=0;
+		    }
+		    
+		    /* third term */
+		    
+		    nodempc[3**mpcfree-3]=node2;
+		    nodempc[3**mpcfree-2]=idir;
+		    coefmpc[*mpcfree-1]=-1.;
+		    index=*mpcfree;
+		    *mpcfree=nodempc[3**mpcfree-1];
+		    nodempc[3*index-1]=0;
+		    if(*mpcfree==0){
+			*mpcfree=*memmpc_+1;
+			if(*memmpc_<11)*memmpc_=11;
+			*memmpc_=(int)(1.1**memmpc_);
+			printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
+			RENEW(nodempc,int,3**memmpc_);
+			RENEW(coefmpc,double,*memmpc_);
+			for(k=*mpcfree;k<*memmpc_;k++){
+			    nodempc[3*k-1]=k+1;
+			}
+			nodempc[3**memmpc_-1]=0;
 		    }
 		}
 	    }
-
+	}
+	
         }else if(strcmp1(&lakon[8*i+3],"10")==0){
 
 		/* genuine 10-node element */

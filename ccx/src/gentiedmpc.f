@@ -47,7 +47,7 @@
 !
       real*8 cg(3,*),straight(16,*),co(3,*),p(3),
      &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),pl(3,8),
-     &  ratio(8),xi,et,coefmpc(*),tietol(*),tolloc
+     &  ratio(8),xi,et,coefmpc(*),tietol(2,*),tolloc
 !
 !     nodes per face for hex elements
 !
@@ -172,7 +172,7 @@ c      open(9,file='nodes_not_connected.fbd',status='unknown',err=51)
 !
 !        default tolerance if none is specified 
 !
-         if(tietol(i).lt.1.d-10) tietol(i)=tolloc
+         if(tietol(1,i).lt.1.d-10) tietol(1,i)=tolloc
 !     
 !     determining the slave set
 !     
@@ -267,7 +267,7 @@ cc     &                         (p(3)-cg(3,itri))**2)
 cc                  write(*,*) 'gentiedmpc ',k,itri,koncont(4,itri),
 cc     &                       totdist(k),cgdist
 c!     
-c                  if(totdist(k).le.tietol(i)) then
+c                  if(totdist(k).le.tietol(1,i)) then
 c                     isol=k
 c                     exit
 c                  endif
@@ -288,7 +288,7 @@ c               enddo
      &                    straight(ll+2,itri)*p(3)+
      &                    straight(ll+3,itri)
 c                     if(dist.gt.1.d-6) then
-                     if(dist.gt.tietol(i)) then
+                     if(dist.gt.tietol(1,i)) then
                         itrinew=imastop(l,itri)
                         if(itrinew.eq.0) then
 c                           write(*,*) '**border reached'
@@ -337,7 +337,7 @@ c                              write(*,*) '**regular solution'
      &                 straight(14,itri)*p(2)+
      &                 straight(15,itri)*p(3)+
      &                 straight(16,itri))**2
-                  if(dist.gt.tietol(i)) isol=0
+                  if(dist.gt.tietol(1,i)) isol=0
                endif
 !
                if(isol.le.0) then
@@ -349,10 +349,11 @@ c                              write(*,*) '**regular solution'
                   if(isol.eq.0) then
                      write(*,*) '         master face too far away'
                      write(*,*) '         distance: ',dist
-                     write(*,*) '         tolerance: ',tietol(i)
+                     write(*,*) '         tolerance: ',tietol(1,i)
                   else
                      write(*,*) '         no corresponding master face'
-                     write(*,*) '         found; tolerance: ',tietol(i)
+                     write(*,*) '         found; tolerance: ',
+     &                       tietol(1,i)
                   endif
                   write(40,*) node
                 else
@@ -532,7 +533,7 @@ cc     &                    (p(3)-cg(3,itri))**2)
 cc                  write(*,*) 'gentiedmpc ',k,itri,koncont(4,itri),
 cc     &                       totdist(k),cgdist
 c!     
-c                     if(totdist(k).le.tietol(i)) then
+c                     if(totdist(k).le.tietol(1,i)) then
 c                        isol=k
 c                        exit
 c                     endif
@@ -553,7 +554,7 @@ c                  enddo
      &                    straight(ll+2,itri)*p(3)+
      &                    straight(ll+3,itri)
 c                     if(dist.gt.1.d-6) then
-                     if(dist.gt.tietol(i)) then
+                     if(dist.gt.tietol(1,i)) then
                         itrinew=imastop(l,itri)
                         if(itrinew.eq.0) then
 c                           write(*,*) '**border reached'
@@ -602,10 +603,10 @@ c                              write(*,*) '**regular solution'
      &                 straight(14,itri)*p(2)+
      &                 straight(15,itri)*p(3)+
      &                 straight(16,itri))**2
-                  if(dist.gt.tietol(i)) isol=0
+                  if(dist.gt.tietol(1,i)) isol=0
                endif
 !     
-!     check whether distance is larger than tietol(i):
+!     check whether distance is larger than tietol(1,i):
 !     no element is generated
 !     
                   if(isol.eq.0) then
@@ -617,10 +618,11 @@ c                              write(*,*) '**regular solution'
                      if(isol.eq.0) then
                         write(*,*) '         master face too far away'
                         write(*,*) '         distance: ',dist
-                        write(*,*) '         tolerance: ',tietol(i)
+                        write(*,*) '         tolerance: ',tietol(1,i)
                      else
                       write(*,*) '         no corresponding master face'
-                      write(*,*) '         found; tolerance: ',tietol(i)
+                      write(*,*) '         found; tolerance: ',
+     &                                tietol(1,i)
                      endif
                      write(40,*) node
                   else

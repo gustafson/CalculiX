@@ -40,6 +40,14 @@
          stop
       endif
 !
+      do i=2,n
+         write(*,*) 
+     &        '*WARNING in nodalthicknesses: parameter not recognized:'
+         write(*,*) '         ',
+     &        textpart(i)(1:index(textpart(i),' ')-1)
+         call inputwarning(inpc,ipoinpc,iline)
+      enddo
+!
       do
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)

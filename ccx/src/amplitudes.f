@@ -39,14 +39,14 @@
       user=.false.
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in amplitudes: *AMPLITUDE should be'
+         write(*,*) '*ERROR reading *AMPLITUDE: *AMPLITUDE should be'
          write(*,*) '  placed before all step definitions'
          stop
       endif
 !
       nam=nam+1
       if(nam.gt.nam_) then
-         write(*,*) '*ERROR in amplitudes: increase nam_'
+         write(*,*) '*ERROR reading *AMPLITUDE: increase nam_'
          stop
       endif
       namta(3,nam)=nam
@@ -57,7 +57,8 @@
          if(textpart(i)(1:5).eq.'NAME=') then
             amname(nam)=textpart(i)(6:85)
             if(textpart(i)(86:86).ne.' ') then
-               write(*,*)'*ERROR in amplitudes: amplitude name too long'
+               write(*,*) '*ERROR reading *AMPLITUDE: amplitude'
+               write(*,*) '      name is too long'
                write(*,*) '      (more than 80 characters)'
                write(*,*) '      amplitude name:',textpart(i)(1:132)
                stop
@@ -68,12 +69,18 @@
             namta(1,nam)=0
             namta(2,nam)=0
             user=.true.
+         else
+            write(*,*) 
+     &        '*WARNING reading *AMPLITUDE: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !
       if(amname(nam).eq.'                                               
      &                                 ') then
-         write(*,*) '*ERROR in amplitudes: Amplitude has no name'
+         write(*,*) '*ERROR reading *AMPLITUDE: Amplitude has no name'
          call inputerror(inpc,ipoinpc,iline)
       endif
 !
@@ -94,7 +101,8 @@
             if(textpart(2*i-1)(1:1).ne.' ') then  
                namtot=namtot+1
                if(namtot.gt.namtot_) then
-                  write(*,*) '*ERROR in amplitudes: increase namtot_'
+                  write(*,*) 
+     &               '*ERROR reading *AMPLITUDE: increase namtot_'
                   stop
                endif
                read(textpart(2*i-1),'(f20.0)',iostat=istat) x
@@ -112,7 +120,8 @@
 !
       if(namta(1,nam).gt.namta(2,nam)) then
          ipos=index(amname(nam),' ')
-         write(*,*) '*WARNING in amplitudes: *AMPLITUDE definition ',
+         write(*,*) 
+     &      '*WARNING reading *AMPLITUDE: *AMPLITUDE definition ',
      &       amname(nam)(1:ipos-1) 
          write(*,*) '         has no data points'
          nam=nam-1

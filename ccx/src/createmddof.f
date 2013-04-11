@@ -18,9 +18,10 @@
 !
       subroutine createmddof(imddof,nmddof,nrset,istartset,iendset,
      &            ialset,nactdof,ithermal,mi,imdnode,nmdnode,ikmpc,
-     &            ilmpc,ipompc,nodempc,nmpc,nsectors,nksector,
+     &            ilmpc,ipompc,nodempc,nmpc,
      &            imdmpc,nmdmpc,imdboun,nmdboun,ikboun,nboun,
-     &            nset,ntie,tieset,set,lakon,kon,ipkon,labmpc)
+     &            nset,ntie,tieset,set,lakon,kon,ipkon,labmpc,
+     &            ilboun)
 !
 !     creating a set imddof containing the degrees of freedom
 !     selected by the user for modal dynamic calculations. The
@@ -35,12 +36,12 @@
 !
       integer imddof(*),nmddof,nrset,istartset(*),iendset(*),mi(2),
      &  ialset(*),nactdof(0:mi(2),*),node,ithermal,j,k,l,
-     &  ikmpc(*),ilmpc(*),ipompc(*),nodempc(3,*),nmpc,nsectors,
-     &  node1,nksector,imdnode(*),nmdnode,imdmpc(*),nmdmpc,
+     &  ikmpc(*),ilmpc(*),ipompc(*),nodempc(3,*),nmpc,
+     &  imdnode(*),nmdnode,imdmpc(*),nmdmpc,
      &  imdboun(*),nmdboun,ikboun(*),nboun,index,indexe,islav,
      &  jface,nset,ntie,nnodelem,nope,nodef(8),nelem,nface,iright,
      &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),kon(*),
-     &  ipkon(*),i
+     &  ipkon(*),i,ilboun(*)
 !
 !     nodes per face for hex elements
 !
@@ -77,47 +78,41 @@
       do j=istartset(nrset),iendset(nrset)
          if(ialset(j).gt.0) then
             node=ialset(j)
-            do l=0,nsectors-1
-               node1=node+l*nksector
-               call addimd(imdnode,nmdnode,node1)
-               if(ithermal.ne.2) then
-                  do k=1,3
-                     call addimdnodedof(node1,k,ikmpc,ilmpc,ipompc,
-     &                    nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
-     &                    nactdof,mi,
-     &                    imdmpc,nmdmpc,imdboun,nmdboun,ikboun,nboun)
-                  enddo
-               else
-                  k=0
-                  call addimdnodedof(node1,k,ikmpc,ilmpc,ipompc,
+            call addimd(imdnode,nmdnode,node)
+            if(ithermal.ne.2) then
+               do k=1,3
+                  call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
      &                 nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
-     &                    nactdof,mi,
-     &                 imdmpc,nmdmpc,imdboun,nmdboun,ikboun,nboun)
-               endif
-            enddo
+     &                 nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
+     &                 ikboun,nboun,ilboun)
+               enddo
+            else
+               k=0
+               call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
+     &              nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
+     &              nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,ikboun,
+     &              nboun,ilboun)
+            endif
          else
             node=ialset(j-2)
             do
                node=node-ialset(j)
                if(node.ge.ialset(j-1)) exit
-               do l=0,nsectors-1
-                  node1=node+l*nksector
-                  call addimd(imdnode,nmdnode,node1)
-                  if(ithermal.ne.2) then
-                     do k=1,3
-                        call addimdnodedof(node1,k,ikmpc,ilmpc,
-     &                       ipompc,nodempc,nmpc,imdnode,nmdnode,imddof,
-     &                       nmddof,nactdof,mi,
-     &                       imdmpc,nmdmpc,imdboun,nmdboun,ikboun,nboun)
-                     enddo
-                  else
-                     k=0
-                     call addimdnodedof(node1,k,ikmpc,ilmpc,ipompc,
-     &                    nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
-     &                    nactdof,mi,
-     &                    imdmpc,nmdmpc,imdboun,nmdboun,ikboun,nboun)
-                  endif
-               enddo
+               call addimd(imdnode,nmdnode,node)
+               if(ithermal.ne.2) then
+                  do k=1,3
+                     call addimdnodedof(node,k,ikmpc,ilmpc,
+     &                    ipompc,nodempc,nmpc,imdnode,nmdnode,imddof,
+     &                    nmddof,nactdof,mi,imdmpc,nmdmpc,imdboun,
+     &                    nmdboun,ikboun,nboun,ilboun)
+                  enddo
+               else
+                  k=0
+                  call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
+     &                 nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
+     &                 nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
+     &                 ikboun,nboun,ilboun)
+               endif
             enddo
          endif
       enddo
@@ -212,8 +207,8 @@
                      do k=1,3
                         call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
      &                       nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
-     &                       nactdof,mi,
-     &                       imdmpc,nmdmpc,imdboun,nmdboun,ikboun,nboun)
+     &                       nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
+     &                       ikboun,nboun,ilboun)
                      enddo
                   endif
                enddo
@@ -244,8 +239,8 @@
                      do k=1,3
                         call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
      &                       nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
-     &                       nactdof,mi,
-     &                       imdmpc,nmdmpc,imdboun,nmdboun,ikboun,nboun)
+     &                       nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
+     &                       ikboun,nboun,ilboun)
                      enddo
                   endif
                else
@@ -260,7 +255,7 @@
                            call addimdnodedof(node,k,ikmpc,ilmpc,
      &                          ipompc,nodempc,nmpc,imdnode,nmdnode,
      &                          imddof,nmddof,nactdof,mi,imdmpc,nmdmpc,
-     &                          imdboun,nmdboun,ikboun,nboun)
+     &                          imdboun,nmdboun,ikboun,nboun,ilboun)
                         enddo
                      endif
                   enddo
@@ -285,15 +280,15 @@
                do k=1,3
                   call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
      &                 nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
-     &                 nactdof,mi,
-     &                 imdmpc,nmdmpc,imdboun,nmdboun,ikboun,nboun)
+     &                 nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
+     &                 ikboun,nboun,ilboun)
                enddo
             else
                k=0
                call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
      &              nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
-     &              nactdof,mi,
-     &              imdmpc,nmdmpc,imdboun,nmdboun,ikboun,nboun)
+     &              nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,ikboun,
+     &              nboun,ilboun)
             endif
          endif
       enddo

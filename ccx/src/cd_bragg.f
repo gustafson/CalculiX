@@ -7,11 +7,13 @@
 !     and convergent nozzles"
 !     Journal of Mechanical engineering vol 2 No 1 1960
 !     
-      subroutine cd_bragg(cd,p2p1,cdbragg)
+      subroutine cd_bragg(cd,p2p1,cdbragg,itype)
 !     
       implicit none
 !     
-      integer nx,ny,idx,idy,i,j
+!     itype is used in the proprietary version of cd_bragg
+!
+      integer nx,ny,idx,idy,i,j,itype
 !     
       real*8 cd,p2p1,cdbragg,z1,z2,z3,z4,et,xi
 !     

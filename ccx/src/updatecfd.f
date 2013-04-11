@@ -16,15 +16,15 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine updatecfd(vold,voldaux,v,nk,
+      subroutine updatecfd(vold,voldcon,v,nk,
      &  ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,iout,
      &  nmethod,convergence,physcon,iponoel,inoel,ithermal,
      &  nactdoh,iit,compressible,ismooth,voldtu,vtu,turbulent,
-     &  inomat,nodeboun,ndirboun,nboun,mi)
+     &  inomat,nodeboun,ndirboun,nboun,mi,co,factor)
 !
 !     calculates 
 !       vold (temperature,velocity and pressure)
-!       voldaux (volumetric energy density, volumetric momentum
+!       voldcon (volumetric energy density, volumetric momentum
 !                density and density)
 !       at the nodes    
 !
@@ -39,38 +39,38 @@
      &  nmethod,imat,nelem,iponoel(*),inoel(3,*),ismooth,
      &  inomat(*),node,nodeboun(*),ndirboun(*),nboun,mi(2)
 !
-      real*8 v(0:mi(2),*),vold(0:mi(2),*),voldaux(0:4,*),
+      real*8 v(0:mi(2),*),vold(0:mi(2),*),voldcon(0:4,*),
      &  rhcon(0:1,ntmat_,*),rho,c1,vmax(0:4),dummy,press,
      &  voldmax(0:4),cp,r,temp,temp0,c2,c3,tempnew,vel2,
      &  shcon(0:3,ntmat_,*),drho,dtemp,physcon(*),dpress,
-     &  voldtu(2,*),vtu(2,*)
+     &  voldtu(2,*),vtu(2,*),co(3,*),factor
 !
       if(ismooth.eq.0) then
 !     
 !     updates the volumetric energy density (only if ithermal>1),
 !     the volumetric momentum density and the static pressure
 !     
-         do j=0,4
-            vmax(j)=0.d0
-            voldmax(j)=0.d0
-         enddo
+c         do j=0,4
+c            vmax(j)=0.d0
+c            voldmax(j)=0.d0
+c         enddo
 !     
 !     volumetric energy density
 !     
          if(ithermal.gt.1) then
             do i=1,nk
-               vmax(0)=vmax(0)+v(0,i)**2
-               voldmax(0)=voldmax(0)+voldaux(0,i)**2
-               voldaux(0,i)=voldaux(0,i)+v(0,i)
+c               vmax(0)=vmax(0)+v(0,i)**2
+c               voldmax(0)=voldmax(0)+voldcon(0,i)**2
+               voldcon(0,i)=voldcon(0,i)+v(0,i)
             enddo
 !
 !           subtracting the boundary conditions
 !
-            do i=1,nboun
-               if(ndirboun(i).eq.0) then
-                  vmax(0)=vmax(0)-v(0,nodeboun(i))**2
-               endif
-            enddo
+c            do i=1,nboun
+c               if(ndirboun(i).eq.0) then
+c                  vmax(0)=vmax(0)-v(0,nodeboun(i))**2
+c               endif
+c            enddo
 !
          endif
 !     
@@ -78,9 +78,9 @@
 !     
          do i=1,nk
             do j=1,3
-               vmax(j)=vmax(j)+v(j,i)**2
-               voldmax(j)=voldmax(j)+voldaux(j,i)**2
-               voldaux(j,i)=voldaux(j,i)+v(j,i)
+c               vmax(j)=vmax(j)+v(j,i)**2
+c               voldmax(j)=voldmax(j)+voldcon(j,i)**2
+               voldcon(j,i)=voldcon(j,i)+v(j,i)
             enddo
          enddo
 !     
@@ -110,60 +110,21 @@
 !              gas: density was calculated
 !     
                if(ismooth.eq.0) then
-                  vmax(4)=vmax(4)+v(4,i)**2
-                  voldmax(4)=voldmax(4)+voldaux(4,i)**2
-                  voldaux(4,i)=voldaux(4,i)+v(4,i)
+c                  vmax(4)=vmax(4)+v(4,i)**2
+c                  voldmax(4)=voldmax(4)+voldcon(4,i)**2
+                  voldcon(4,i)=voldcon(4,i)+v(4,i)
                   cycle
-               endif
-               rho=voldaux(4,i)
-               c1=(voldaux(0,i)-(voldaux(1,i)**2+voldaux(2,i)**2+
-     &              voldaux(3,i)**2)/(2.d0*rho))/rho
-!     
-!              temperature has to be calculated
-!     
-               temp0=temp
-               j=0
-               do
-                  call materialdata_cp_sec(imat,ntmat_,temp,shcon,
-     &                 nshcon,cp,physcon)
-                  r=shcon(3,1,imat)
-c                  call materialdata_tg_sec(imat,ntmat_,temp,
-c     &                 shcon,nshcon,cp,r,dvi,rhcon,nrhcon,dummy,
-c     &                 physcon)
-                  temp=max(c1/(cp-r),1.d-2)+physcon(1)
-                  j=j+1
-                  if(dabs(temp-temp0).lt.1.d-4*temp) then
-                     vold(0,i)=temp
-                     exit
-                  endif
-                  if(j.gt.100) then
-                     stop
-                  endif
-                  temp0=temp
-               enddo
-!     
-!              determining the pressure (gas equation)
-!     
-               vold(4,i)=rho*r*(temp-physcon(1))
-!
-!              determining the Mach number
-!
-               if(ismooth.eq.2) then
-                  vel2=vold(1,i)**2+vold(2,i)**2+vold(3,i)**2
-                  v(0,i)=cp/(cp-r)
-                  v(1,i)=dsqrt((vold(1,i)**2+vold(2,i)**2+vold(3,i)**2)
-     &                      /(v(0,i)*r*(temp-physcon(1))))
                endif
 !     
             else
 !     
 !              thermal liquid: pressure was calculated
 !     
-               vmax(4)=vmax(4)+v(4,i)**2
-               voldmax(4)=voldmax(4)+vold(4,i)**2
+c               vmax(4)=vmax(4)+v(4,i)**2
+c               voldmax(4)=voldmax(4)+vold(4,i)**2
                vold(4,i)=vold(4,i)+v(4,i)
-               c1=voldaux(0,i)
-               c2=(voldaux(1,i)**2+voldaux(2,i)**2+voldaux(3,i)**2)/2.d0
+               c1=voldcon(0,i)
+               c2=(voldcon(1,i)**2+voldcon(2,i)**2+voldcon(3,i)**2)/2.d0
                temp0=temp
                j=0
 !     
@@ -173,8 +134,7 @@ c     &                 physcon)
                   call materialdata_cp_sec(imat,ntmat_,temp,shcon,
      &                 nshcon,cp,physcon)
                   call materialdata_rho(rhcon,nrhcon,imat,rho,
-     &                 temp,ntmat_)
-c                  temp=max((c1-c2/rho)/(rho*cp),1.d-2)+physcon(1)
+     &                 temp,ntmat_,ithermal)
                   temp=(c1-c2/rho)/(rho*cp)+physcon(1)
                   j=j+1
                   if((dabs(temp-temp0).lt.1.d-4*dabs(temp)).or.
@@ -189,15 +149,15 @@ c                  temp=max((c1-c2/rho)/(rho*cp),1.d-2)+physcon(1)
                   endif
                   temp0=temp
                enddo
-            endif
 !     
 !     calculating the velocity
 !     
-            do k=1,3
-               if(nactdoh(k,i).ne.0) then
-                  vold(k,i)=voldaux(k,i)/rho
-               endif
-            enddo
+               do k=1,3
+                  if(nactdoh(k,i).ne.0) then
+                     vold(k,i)=voldcon(k,i)/rho
+                  endif
+               enddo
+            endif
          enddo
       else
 !     
@@ -208,18 +168,24 @@ c                  temp=max((c1-c2/rho)/(rho*cp),1.d-2)+physcon(1)
             imat=inomat(i)
             temp=vold(0,i)
             call materialdata_rho(rhcon,nrhcon,imat,rho,
-     &           temp,ntmat_)
+     &           temp,ntmat_,ithermal)
 !     
-            vmax(4)=vmax(4)+v(4,i)**2
-            voldmax(4)=voldmax(4)+vold(4,i)**2
+c            vmax(4)=vmax(4)+v(4,i)**2
+c            voldmax(4)=voldmax(4)+vold(4,i)**2
+c            if((i.eq.321).or.(i.eq.322)) then
+c               write(*,*) 'updatecfd ',i,vold(4,i),v(4,i)
+c            endif
             vold(4,i)=vold(4,i)+v(4,i)
-            voldaux(4,i)=rho
+c            if((i.eq.321).or.(i.eq.322)) then
+c               write(*,*) 'updatecfd ',i,vold(4,i),v(4,i)
+c            endif
+            voldcon(4,i)=rho
 !     
 !     storing the density
 !     calculating the velocity
 !     
             do k=1,3
-               vold(k,i)=voldaux(k,i)/rho
+               vold(k,i)=voldcon(k,i)/rho
             enddo
          enddo
       endif
@@ -227,27 +193,45 @@ c                  temp=max((c1-c2/rho)/(rho*cp),1.d-2)+physcon(1)
 !     for steady state calculations: check convergence
 !     
       if(ismooth.eq.0) then
-         convergence=0
-         do i=0,4
-            vmax(i)=dsqrt(vmax(i))
-            voldmax(i)=dsqrt(voldmax(i))
-         enddo
-         if(nmethod.eq.1) then
-            if(((dabs(vmax(0)).lt.1.d-8*dabs(voldmax(0))).or.
-     &           (dabs(voldmax(0)).lt.1.d-10)).and.
-     &           ((dabs(vmax(1)).lt.1.d-8*dabs(voldmax(1))).or.
-     &           (dabs(voldmax(1)).lt.1.d-10)).and.
-     &           ((dabs(vmax(2)).lt.1.d-8*dabs(voldmax(2))).or.
-     &           (dabs(voldmax(2)).lt.1.d-10)).and.
-     &           ((dabs(vmax(3)).lt.1.d-8*dabs(voldmax(3))).or.
-     &           (dabs(voldmax(3)).lt.1.d-10)).and.
-     &           ((dabs(vmax(4)).lt.1.d-8*dabs(voldmax(4))).or.
-     &           (dabs(voldmax(4)).lt.1.d-10)).and.
-     &           (iit.gt.1)) convergence=1
-         endif
-         write(*,'(i10,10(1x,e11.4))') iit,vmax(0),voldmax(0),
-     &       vmax(1),voldmax(1),vmax(2),voldmax(2),
-     &       vmax(3),voldmax(3),vmax(4),voldmax(4)
+c         convergence=0
+c         do i=0,4
+c            vmax(i)=dsqrt(vmax(i))
+c            voldmax(i)=dsqrt(voldmax(i))
+c         enddo
+c         if(nmethod.eq.1) then
+c            if(((dabs(vmax(0)).lt.1.d-8*dabs(voldmax(0))).or.
+c     &           (dabs(voldmax(0)).lt.1.d-10)).and.
+c     &           ((dabs(vmax(1)).lt.1.d-8*dabs(voldmax(1))).or.
+c     &           (dabs(voldmax(1)).lt.1.d-10)).and.
+c     &           ((dabs(vmax(2)).lt.1.d-8*dabs(voldmax(2))).or.
+c     &           (dabs(voldmax(2)).lt.1.d-10)).and.
+c     &           ((dabs(vmax(3)).lt.1.d-8*dabs(voldmax(3))).or.
+c     &           (dabs(voldmax(3)).lt.1.d-10)).and.
+c     &           ((dabs(vmax(4)).lt.1.d-8*dabs(voldmax(4))).or.
+c     &           (dabs(voldmax(4)).lt.1.d-10)).and.
+c     &           (iit.gt.1)) convergence=1
+c         endif
+c         write(*,'(i10,10(1x,e11.4))') iit,vmax(0),voldmax(0),
+c     &       vmax(1),voldmax(1),vmax(2),voldmax(2),
+c     &       vmax(3),voldmax(3),vmax(4),voldmax(4)
+c         write(*,*) 'convergence ',convergence
+
+c         factor=min(1.d0,1.01d0*factor)
+c         if(dabs(voldmax(0)).gt.1.d-3) then
+c            factor=min(factor,voldmax(0)/vmax(0)*0.001)
+c         endif
+c         if(dabs(voldmax(1)).gt.1.d-3) then
+c            factor=min(factor,voldmax(1)/vmax(1)*0.001)
+c         endif
+c         if(dabs(voldmax(2)).gt.1.d-3) then
+c            factor=min(factor,voldmax(2)/vmax(2)*0.001)
+c         endif
+c         if(dabs(voldmax(3)).gt.1.d-3) then
+c            factor=min(factor,voldmax(3)/vmax(3)*0.001)
+c         endif
+c         if(dabs(voldmax(4)).gt.1.d-3) then
+c            factor=min(factor,voldmax(4)/vmax(4)*0.001)
+c         endif
       endif
 !     
       return

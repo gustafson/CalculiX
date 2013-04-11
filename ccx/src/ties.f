@@ -32,7 +32,7 @@
       integer istep,istat,n,i,key,ipos,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),ntie,ntie_,ipoinpc(0:*)
 !
-      real*8 tietol(*)
+      real*8 tietol(2,*)
 !
       multistage=.false.
       tied=.true.
@@ -49,11 +49,12 @@
          stop
       endif
 !
-      tietol(ntie)=-1.d0
+      tietol(1,ntie)=-1.d0
 !
       do i=2,n
          if(textpart(i)(1:18).eq.'POSITIONTOLERANCE=') then
-            read(textpart(i)(19:38),'(f20.0)',iostat=istat) tietol(ntie)
+            read(textpart(i)(19:38),'(f20.0)',iostat=istat) 
+     &             tietol(1,ntie)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          elseif(textpart(i)(1:5).eq.'NAME=') then
             read(textpart(i)(6:85),'(a80)',iostat=istat) 
@@ -64,6 +65,12 @@
          elseif(textpart(i)(1:10).eq.'MULTISTAGE') then
             multistage=.true.
             tied=.false.
+         else
+            write(*,*) 
+     &        '*WARNING in ties: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
       if(tieset(1,ntie)(1:1).eq.' ') then

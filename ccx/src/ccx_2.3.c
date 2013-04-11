@@ -72,13 +72,12 @@ int nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,nentries=14,
   nforcold=0,nloadold=0,nbody,nbody_=0,nbodyold=0,
   k,nzs[3],nmpc_=0,nload_=0,nforc_=0,istep,istat,nboun_=0,
   iperturb[2]={0,0},nmat,ntmat_=0,norien,ithermal[2]={0,0},
-  iprestr,kode,isolver=0,
+  iprestr,kode,isolver=0,inlgeom=0,
   jout[2]={1,1},nlabel,nkon=0,idrct,jmax[2],iexpl,nevtot=0,
-//  iplas=0,npmat_=0,mi[2]={0,0},ntrans,mpcend=-1,namtot_=0,iumat=0,mpcmult,
   iplas=0,npmat_=0,mi[2]={0,3},ntrans,mpcend=-1,namtot_=0,iumat=0,mpcmult,
   icascade=0,maxlenmpc,mpcinfo[4],ne1d=0,ne2d=0,infree[4]={0,0,0,0},
   callfrommain,nflow=0,jin=0,irstrt=0,nener=0,jrstrt=0,nenerold,
-  nline,ipoinp[2*nentries],*inp=NULL,ntie,ntie_=0,mcs=0,kflag=2,nprop_=0,
+  nline,ipoinp[2*nentries],*inp=NULL,ntie,ntie_=0,mcs=0,nprop_=0,
   nprop=0,itpamp=0,iviewfile,nkold,nevdamp_=0,npt_=0;
 
 int *meminset=NULL,*rmeminset=NULL;
@@ -101,7 +100,7 @@ else{
     if(strcmp1(argv[i],"-i")==0) {
     strcpy(jobnamec,argv[i+1]);strcpy1(jobnamef,argv[i+1],132);jin++;break;}
     if(strcmp1(argv[i],"-v")==0) {
-	printf("\nThis is version version 2.2\n\n");
+	printf("\nThis is version version 2.3\n\n");
 	FORTRAN(stop,());
     }
   }
@@ -122,12 +121,12 @@ FORTRAN(uexternaldb,(&lop,&lrestart,time,&dtime,&kstep,&kinc));
 FORTRAN(openfile,(jobnamef,output));
 
 printf("\n************************************************************\n\n");
-printf("CalculiX version 2.2, Copyright(C) 1998-2007 Guido Dhondt\n");
+printf("CalculiX version 2.3, Copyright(C) 1998-2007 Guido Dhondt\n");
 printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
 printf("************************************************************\n\n");
-printf("You are using an executable made on Sa 7. Aug 14:22:47 CEST 2010\n");
+printf("You are using an executable made on Sa 26. Mär 18:20:38 CET 2011\n");
 fflush(stdout);
 
 istep=0;
@@ -169,9 +168,10 @@ nzs_=20000000;
 
 nload=0;nbody=0;nforc=0;nboun=0;nk=0;nmpc=0;nam=0;
 
-/* caveat: change nlabel in radmatrix.f and expand.c as well 
-   if changing next line, as well as in storeresidual.f */
-nlabel=29;
+/* caveat: change nlabel in radmatrix.f and expand.c 
+   if changing next line, as well as in storeresidual.f; 
+   do not forget to change the dimension of label in radmatrix.f too */
+nlabel=30;
 
 while(istat>=0) {
 
@@ -364,7 +364,7 @@ while(istat>=0) {
 
     if(ntie_>0){
       tieset=NNEW(char,243*ntie_);
-      tietol=NNEW(double,ntie_);
+      tietol=NNEW(double,2*ntie_);
       cs=NNEW(double,17*ntie_);
     }
 
@@ -376,7 +376,11 @@ while(istat>=0) {
       }else{
 	ics=NNEW(int,24*ncs_);
       }
-      dcs=NNEW(double,30*ncs_);
+      if(npt_>30*ncs_){
+	  dcs=NNEW(double,npt_);
+      }else{
+	  dcs=NNEW(double,30*ncs_);
+      }
     }
 
   }
@@ -627,9 +631,9 @@ while(istat>=0) {
 
     /* allocating space for the state variables */
 
-    /*    if(nstate_>0){
-      xstate=NNEW(double,nstate_*mi[0]*ne);
-      }*/
+    if(nstate_>0){
+	xstate=NNEW(double,nstate_*mi[0]*ne);
+    }
 
     /* next statements for plastic materials and nonlinear springs */
 
@@ -690,6 +694,12 @@ while(istat>=0) {
       RENEW(ics,int,ncs_);
       free(dcs);
     }else if(npt_>0){free(ics);}
+
+    if(mcs>0){
+	RENEW(cs,double,17*mcs);
+    }else{
+	free(cs);
+    }
 
  
   /* tied contact constraints: generate appropriate MPC's */
@@ -824,13 +834,13 @@ while(istat>=0) {
 
   /*  sorting the elements with distributed loads */
 
-  if(nload>0){
+/*  if(nload>0){
       if(nam>0){
 	  FORTRAN(isortiddc2,(nelemload,iamload,xload,xloadold,sideload,&nload,&kflag));
       }else{
 	  FORTRAN(isortiddc1,(nelemload,xload,xloadold,sideload,&nload,&kflag));
       }
-  }
+      }*/
   
   /*   calling the user routine ufaceload (can be empty) */
 
@@ -857,8 +867,8 @@ while(istat>=0) {
     for(i=1;i<=nk;++i)
 	nnn[i-1]=i;
 	
-    if((icascade==0)&&(isolver!=6)){
-//    if((icascade==10)&&(isolver!=6)){
+//    if((icascade==0)&&(isolver!=6)){
+    if((icascade==10)&&(isolver!=6)){
 
 	/* renumbering the nodes */
 	
@@ -924,6 +934,7 @@ while(istat>=0) {
   /* nmethod=2: frequency analysis  */
   /* nmethod=3: buckling analysis */
   /* nmethod=4: linear dynamic analysis */
+  /* nmethod=5: steady state dynamics analysis */
 
   if((nmethod<=1)||(iperturb[0]>1))
     {
@@ -964,14 +975,14 @@ while(istat>=0) {
 	     veold,accold,amname,amta,namta,
 	     &nam,iamforc,iamload,iamt1,&alpha,
              &iexpl,iamboun,plicon,nplicon,plkcon,nplkcon,
-	     xstate,&npmat_,&istep,&ttime,matname,qaold,mi,
+	     &xstate,&npmat_,&istep,&ttime,matname,qaold,mi,
 	     &isolver,&ncmat_,&nstate_,&iumat,cs,&mcs,&nkon,&ener,
 	     mpcinfo,nnn,output,
              shcon,nshcon,cocon,ncocon,physcon,&nflow,ctrl,
              set,&nset,istartset,iendset,ialset,&nprint,prlab,
              prset,&nener,ikforc,ilforc,trab,inotr,&ntrans,&fmpc,
              cbody,ibody,xbody,&nbody,xbodyold,ielprop,prop,
-	     &ntie,tieset,&itpamp,&iviewfile,jobnamec,tietol);
+	     &ntie,tieset,&itpamp,&iviewfile,jobnamec,tietol,&inlgeom);
 
 	memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
         maxlenmpc=mpcinfo[3];
@@ -1075,7 +1086,7 @@ while(istat>=0) {
             istartset,iendset,&ialset,&nprint,prlab,
             prset,&nener,trab,&inotr,&ntrans,&fmpc,cbody,ibody,xbody,&nbody,
             xbodyold,&istep,&isolver,jq,output,&mcs,&nkon,&mpcend,ics,cs,
-	   &ntie,tieset,&idrct,jmax,&tmin,&tmax,ctrl,&itpamp,tietol,&nalset,&nnn);
+	    &ntie,tieset,&idrct,jmax,&tmin,&tmax,ctrl,&itpamp,tietol,&nalset,&nnn);
     }
   else if(nmethod==5)
     {
@@ -1103,7 +1114,7 @@ while(istat>=0) {
             mi,&ncmat_,&nstate_,&ener,jobnamec,&ttime,set,&nset,
             istartset,iendset,ialset,&nprint,prlab,
             prset,&nener,trab,&inotr,&ntrans,&fmpc,cbody,ibody,xbody,&nbody,
-            xbodyold,&istep,&isolver,jq,output,&mcs,&nkon,ics,cs,&mpcend,&nnn);
+	    xbodyold,&istep,&isolver,jq,output,&mcs,&nkon,ics,cs,&mpcend,&nnn,ctrl);
     }
 
   free(nactdof);
@@ -1199,7 +1210,7 @@ while(istat>=0) {
         shcon, nshcon, cocon, ncocon, ics, 
 	sti, ener, xstate, jobnamec,infree,nnn,prestr,&iprestr,cbody, 
 	ibody,xbody,&nbody,xbodyold,&ttime,qaold,cs,&mcs,output,
-        physcon,ctrl,typeboun,fmpc,tieset,&ntie));
+	physcon,ctrl,typeboun,fmpc,tieset,&ntie,tietol));
     }
   } 
 	  

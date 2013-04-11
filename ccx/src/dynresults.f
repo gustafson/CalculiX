@@ -19,7 +19,7 @@
       subroutine dynresults(nk,v,ithermal,nactdof,vold,nodeboun,
      &  ndirboun,xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,
      &  b,bp,veold,dtime,mi,imdnode,nmdnode,imdboun,nmdboun,imdmpc,
-     &  nmdmpc)
+     &  nmdmpc,nmethod)
 !
 !     calculates the displacements or temperatures in a modal dynamics 
 !     calculation
@@ -31,7 +31,7 @@
       integer nodeboun(*),ndirboun(*),ipompc(*),imdnode(*),nmdnode,
      &  nodempc(3,*),nk,ithermal,i,j,index,mi(2),nactdof(0:mi(2),*),
      &  nboun,nmpc,ist,ndir,node,incrementalmpc,jmin,jmax,
-     &  imdboun(*),nmdboun,imdmpc(*),nmdmpc
+     &  imdboun(*),nmdboun,imdmpc(*),nmdmpc,nmethod
 !
       real*8 v(0:mi(2),*),vold(0:mi(2),*),xboun(*),coefmpc(*),
      &  fixed_disp,b(*),veold(0:mi(2),*),bp(*),dtime
@@ -120,59 +120,62 @@
          enddo
 !     
 !     extracting the velocity information from the solution
+!     only for modal dynamic calculations
 !     
-         do i=1,nk
-            do j=jmin,jmax
-               if(nactdof(j,i).ne.0) then
-                  veold(j,i)=bp(nactdof(j,i))
-               else
-                  veold(j,i)=0.d0
-               endif
+         if(nmethod.eq.4) then
+            do i=1,nk
+               do j=jmin,jmax
+                  if(nactdof(j,i).ne.0) then
+                     veold(j,i)=bp(nactdof(j,i))
+                  else
+                     veold(j,i)=0.d0
+                  endif
+               enddo
             enddo
-         enddo
 !     
 !     inserting the boundary conditions
 !     
-         do i=1,nboun
-            if(ndirboun(i).gt.3) cycle
-            fixed_disp=xboun(i)
-            veold(ndirboun(i),nodeboun(i))=
-     &           (fixed_disp-vold(ndirboun(i),nodeboun(i)))/dtime
-         enddo
+            do i=1,nboun
+               if(ndirboun(i).gt.3) cycle
+               fixed_disp=xboun(i)
+               veold(ndirboun(i),nodeboun(i))=
+     &              (fixed_disp-vold(ndirboun(i),nodeboun(i)))/dtime
+            enddo
 !     
 !     inserting the mpc information
 !     the parameter incrementalmpc indicates whether the
 !     incremental displacements enter the mpc or the total 
 !     displacements (incrementalmpc=0)
 !     
-         do i=1,nmpc
-            if((labmpc(i)(1:20).eq.'                    ').or.
-     &           (labmpc(i)(1:6).eq.'CYCLIC').or.
-     &           (labmpc(i)(1:9).eq.'SUBCYCLIC')) then
-               incrementalmpc=0
-            else
-               incrementalmpc=1
-            endif
-            ist=ipompc(i)
-            node=nodempc(1,ist)
-            ndir=nodempc(2,ist)
-            if(ndir.eq.0) then
-               if(ithermal.lt.2) cycle
-            else
-               if(ithermal.eq.2) cycle
-            endif
-            index=nodempc(3,ist)
-            fixed_disp=0.d0
-            if(index.ne.0) then
-               do
-                  fixed_disp=fixed_disp-coefmpc(index)*
-     &                 veold(nodempc(2,index),nodempc(1,index))
-                  index=nodempc(3,index)
-                  if(index.eq.0) exit
-               enddo
-            endif
-            veold(ndir,node)=fixed_disp/coefmpc(ist)
-         enddo
+            do i=1,nmpc
+               if((labmpc(i)(1:20).eq.'                    ').or.
+     &              (labmpc(i)(1:6).eq.'CYCLIC').or.
+     &              (labmpc(i)(1:9).eq.'SUBCYCLIC')) then
+                  incrementalmpc=0
+               else
+                  incrementalmpc=1
+               endif
+               ist=ipompc(i)
+               node=nodempc(1,ist)
+               ndir=nodempc(2,ist)
+               if(ndir.eq.0) then
+                  if(ithermal.lt.2) cycle
+               else
+                  if(ithermal.eq.2) cycle
+               endif
+               index=nodempc(3,ist)
+               fixed_disp=0.d0
+               if(index.ne.0) then
+                  do
+                     fixed_disp=fixed_disp-coefmpc(index)*
+     &                    veold(nodempc(2,index),nodempc(1,index))
+                     index=nodempc(3,index)
+                     if(index.eq.0) exit
+                  enddo
+               endif
+               veold(ndir,node)=fixed_disp/coefmpc(ist)
+            enddo
+         endif
 !     
 !     output for a selected number of nodes (fields imdnode,
 !     imdboun and imdmpc)  
@@ -250,61 +253,64 @@
          enddo
 !     
 !     extracting the velocity information from the solution
-!     
-         do i=1,nmdnode
-            do j=jmin,jmax
-               if(nactdof(j,imdnode(i)).ne.0) then
-                  veold(j,imdnode(i))=bp(nactdof(j,imdnode(i)))
-               else
-                  veold(j,imdnode(i))=0.d0
-               endif
+!     only for modal dynamic calculations
+!  
+         if(nmethod.eq.4) then
+            do i=1,nmdnode
+               do j=jmin,jmax
+                  if(nactdof(j,imdnode(i)).ne.0) then
+                     veold(j,imdnode(i))=bp(nactdof(j,imdnode(i)))
+                  else
+                     veold(j,imdnode(i))=0.d0
+                  endif
+               enddo
             enddo
-         enddo
 !     
 !     inserting the boundary conditions
 !     
-         do j=1,nmdboun
-            i=imdboun(j)
-            if(ndirboun(i).gt.3) cycle
-            fixed_disp=xboun(i)
-            veold(ndirboun(i),nodeboun(i))=
-     &           (fixed_disp-vold(ndirboun(i),nodeboun(i)))/dtime
-         enddo
+            do j=1,nmdboun
+               i=imdboun(j)
+               if(ndirboun(i).gt.3) cycle
+               fixed_disp=xboun(i)
+               veold(ndirboun(i),nodeboun(i))=
+     &              (fixed_disp-vold(ndirboun(i),nodeboun(i)))/dtime
+            enddo
 !     
 !     inserting the mpc information
 !     the parameter incrementalmpc indicates whether the
 !     incremental displacements enter the mpc or the total 
 !     displacements (incrementalmpc=0)
 !     
-         do j=1,nmdmpc
-            i=imdmpc(j)
-            if((labmpc(i)(1:20).eq.'                    ').or.
-     &           (labmpc(i)(1:6).eq.'CYCLIC').or.
-     &           (labmpc(i)(1:9).eq.'SUBCYCLIC')) then
-               incrementalmpc=0
-            else
-               incrementalmpc=1
-            endif
-            ist=ipompc(i)
-            node=nodempc(1,ist)
-            ndir=nodempc(2,ist)
-            if(ndir.eq.0) then
-               if(ithermal.lt.2) cycle
-            else
-               if(ithermal.eq.2) cycle
-            endif
-            index=nodempc(3,ist)
-            fixed_disp=0.d0
-            if(index.ne.0) then
-               do
-                  fixed_disp=fixed_disp-coefmpc(index)*
-     &                 veold(nodempc(2,index),nodempc(1,index))
-                  index=nodempc(3,index)
-                  if(index.eq.0) exit
-               enddo
-            endif
-            veold(ndir,node)=fixed_disp/coefmpc(ist)
-         enddo
+            do j=1,nmdmpc
+               i=imdmpc(j)
+               if((labmpc(i)(1:20).eq.'                    ').or.
+     &              (labmpc(i)(1:6).eq.'CYCLIC').or.
+     &              (labmpc(i)(1:9).eq.'SUBCYCLIC')) then
+                  incrementalmpc=0
+               else
+                  incrementalmpc=1
+               endif
+               ist=ipompc(i)
+               node=nodempc(1,ist)
+               ndir=nodempc(2,ist)
+               if(ndir.eq.0) then
+                  if(ithermal.lt.2) cycle
+               else
+                  if(ithermal.eq.2) cycle
+               endif
+               index=nodempc(3,ist)
+               fixed_disp=0.d0
+               if(index.ne.0) then
+                  do
+                     fixed_disp=fixed_disp-coefmpc(index)*
+     &                    veold(nodempc(2,index),nodempc(1,index))
+                     index=nodempc(3,index)
+                     if(index.eq.0) exit
+                  enddo
+               endif
+               veold(ndir,node)=fixed_disp/coefmpc(ist)
+            enddo
+         endif
       endif
 !     
       return

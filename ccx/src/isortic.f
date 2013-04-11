@@ -1,4 +1,4 @@
-*DECK ISORT
+C*DECK ISORT
       SUBROUTINE ISORTIC (IX, IY, N, KFLAG)
 C***BEGIN PROLOGUE  ISORT
 C***PURPOSE  Sort an array and optionally make the same interchanges in
@@ -269,7 +269,8 @@ C
 C
 C     Interchange these elements
 C
-      IF (K .LE. L) THEN
+c      IF (K .LE. L) THEN
+      IF (K .lt. L) THEN
          TT = IX(L)
          IX(L) = IX(K)
          IX(K) = TT

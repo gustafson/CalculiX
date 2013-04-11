@@ -40,33 +40,58 @@
          stop
       endif
 !
+      igen=.false.
+!
 !     reading the name of the set
 !
-      if((textpart(1)(1:5).eq.'*nset').or.(textpart(1)(1:5).eq.'*NSET'))
-     &  then
-         noelset(1:80)=textpart(2)(6:85)
-         if(textpart(2)(86:86).ne.' ') then
-            write(*,*) '*ERROR in noelsets: set name too long'
-            write(*,*) '       (more than 80 characters)'
-            write(*,*) '       set name:',textpart(2)(1:132)
-            stop
-         endif
-         noelset(81:81)=' '
-         ipos=index(noelset,' ')
-         noelset(ipos:ipos)='N'
-         kode=0
+      if(textpart(1)(1:5).eq.'*NSET') then
+         do i=2,n
+            if(textpart(i)(1:5).eq.'NSET=') then
+               noelset(1:80)=textpart(i)(6:85)
+               if(textpart(i)(86:86).ne.' ') then
+                  write(*,*) '*ERROR in noelsets: set name too long'
+                  write(*,*) '       (more than 80 characters)'
+                  write(*,*) '       set name:',textpart(2)(1:132)
+                  stop
+               endif
+               noelset(81:81)=' '
+               ipos=index(noelset,' ')
+               noelset(ipos:ipos)='N'
+               kode=0
+            elseif(textpart(i)(1:8).eq.'GENERATE') then
+               igen=.true.
+            else
+               write(*,*) 
+     &              '*WARNING in noelsets: parameter not recognized:'
+               write(*,*) '         ',
+     &              textpart(i)(1:index(textpart(i),' ')-1)
+               call inputwarning(inpc,ipoinpc,iline)
+            endif
+         enddo
       else
-         noelset(1:80)=textpart(2)(7:86)
-         if(textpart(2)(87:87).ne.' ') then
-            write(*,*) '*ERROR in noelsets: set name too long'
-            write(*,*) '       (more than 80 characters)'
-            write(*,*) '       set name',textpart(2)(1:132)
-            stop
-         endif
-         noelset(81:81)=' '
-         ipos=index(noelset,' ')
-         noelset(ipos:ipos)='E'
-         kode=1
+         do i=2,n
+            if(textpart(i)(1:6).eq.'ELSET=') then
+               noelset(1:80)=textpart(i)(7:86)
+               if(textpart(i)(87:87).ne.' ') then
+                  write(*,*) '*ERROR in noelsets: set name too long'
+                  write(*,*) '       (more than 80 characters)'
+                  write(*,*) '       set name',textpart(2)(1:132)
+                  stop
+               endif
+               noelset(81:81)=' '
+               ipos=index(noelset,' ')
+               noelset(ipos:ipos)='E'
+               kode=1
+            elseif(textpart(i)(1:8).eq.'GENERATE') then
+               igen=.true.
+            else
+               write(*,*) 
+     &              '*WARNING in noelsets: parameter not recognized:'
+               write(*,*) '         ',
+     &              textpart(i)(1:index(textpart(i),' ')-1)
+               call inputwarning(inpc,ipoinpc,iline)
+            endif
+         enddo
       endif
 !
 !     check whether new set or old set 
@@ -117,11 +142,11 @@
          iset=nset
       endif
 !
-      if((n.gt.2).and.(textpart(3)(1:8).eq.'GENERATE')) then
-         igen=.true.
-      else
-         igen=.false.
-      endif
+c      if((n.gt.2).and.(textpart(3)(1:8).eq.'GENERATE')) then
+c         igen=.true.
+c      else
+c         igen=.false.
+c      endif
 !
       do
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

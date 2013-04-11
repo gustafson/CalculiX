@@ -19,7 +19,7 @@
       subroutine mafilltlhs(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,
      &  nactdoh,icolt,jqt,irowt,neqt,nzlt,
-     &  ikmpc,ilmpc,ikboun,ilboun,nzst,adbt,aubt,nmethod)
+     &  ikmpc,ilmpc,ikboun,ilboun,nzst,adbt,aubt,ipvar,var)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !
@@ -28,18 +28,15 @@
       character*8 lakon(*)
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
-     &  icolt(*),jqt(*),ikmpc(*),nzst,nmethod,
+     &  icolt(*),jqt(*),ikmpc(*),nzst,nmethod,ipvar(*),
      &  ilmpc(*),ikboun(*),ilboun(*),nactdoh(0:4,*),konl(20),irowt(*),
-     &  ipkon(*)
-!
-      integer nk,ne,nboun,nmpc,neqt,nzlt,i,j,jj,
+     &  ipkon(*),nk,ne,nboun,nmpc,neqt,nzlt,i,j,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,node1,node2,
      &  indexe,nope,i0
 !
-      real*8 co(3,*),xboun(*),coefmpc(*),sm(60,60),adbt(*),aubt(*)
-!
-      real*8 value
+      real*8 co(3,*),xboun(*),coefmpc(*),sm(60,60),adbt(*),aubt(*),
+     &  var(*),value
 !
       i0=0
 !
@@ -87,7 +84,7 @@
           konl(j)=kon(indexe+j) 
         enddo
 !
-        call e_c3d_tlhs(co,nk,konl,lakon(i),sm,i,nmethod)
+        call e_c3d_tlhs(co,nk,konl,lakon(i),sm,i,ipvar,var)
 !
         do jj=1,nope
 !

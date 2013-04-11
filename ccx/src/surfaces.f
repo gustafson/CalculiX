@@ -66,6 +66,12 @@
                write(*,*) '*ERROR in surfaces: unknown surface type'
                stop
             endif
+         else
+            write(*,*) 
+     &        '*WARNING in surfaces: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

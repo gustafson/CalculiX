@@ -116,6 +116,12 @@
             idrct=1
          elseif(textpart(i)(1:7).eq.'SOLVER=') then
             read(textpart(i)(8:27),'(a20)') solver
+         else
+            write(*,*) 
+     &        '*WARNING in dynamics: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

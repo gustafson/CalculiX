@@ -23,7 +23,7 @@
      &  vini,nmethod,mi,imastop,nslavnode,islavnode,islavsurf,
      &  itiefac,areaslav,iponoels,inoels,springarea,ikmpc,
      &  ilmpc,nmpc,ipompc,nodempc,coefmpc,set,nset,istartset,
-     &  iendset,ialset,tietol)
+     &  iendset,ialset,tietol,reltime)
 !
 !     generate contact elements for the slave contact nodes
 !
@@ -51,8 +51,8 @@ c      character*18 cfile
       real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),p(3),
      &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),cs(17,*),
      &  beta,c0,elcon(0:ncmat_,ntmat_,*),vini(0:mi(2),*),weight,
-     &  areaslav(*),springarea(*),xl2(3,8),area,xi,et,shp2(7,8),
-     &  xs2(3,2),xsj2(3),coefmpc(*),adjust,tietol(*)
+     &  areaslav(*),springarea(2,*),xl2(3,8),area,xi,et,shp2(7,8),
+     &  xs2(3,2),xsj2(3),coefmpc(*),adjust,tietol(2,*),reltime
 !
       include "gauss.f"
 !
@@ -119,12 +119,13 @@ c      open(27,file=cfile,status='unknown')
          if(tieset(1,i)(81:81).ne.'C') cycle
          kneigh=1
          slavset=tieset(2,i)
-         material=int(cs(1,i))
+         material=int(tietol(2,i))
 !
 !        check whether an adjust node set has been defined
-!        only checked in the first increment of the first step
+!        only checked at the start of the first step
 !
-         if((istep.eq.1).and.(iinc.eq.1).and.(iit.le.0)) then
+c         if((istep.eq.1).and.(iinc.eq.1).and.(iit.le.0)) then
+         if((istep.eq.1).and.(iit.lt.0)) then
             iset=0
             if(tieset(1,i)(1:1).ne.' ') then
                noset(1:80)=tieset(1,i)(1:80)
@@ -228,7 +229,7 @@ c      open(27,file=cfile,status='unknown')
 !           calculating the area of the slave face
 !
             area=0.d0
-            do m = 1,mint2d
+            do m=1,mint2d
                if((lakon(nelems)(4:5).eq.'8R').or.
      &              ((lakon(nelems)(4:4).eq.'6').and.(nopes.eq.4))) then
                   xi=gauss2d1(1,m)
@@ -384,10 +385,11 @@ c                              write(*,*) '**regular solution'
      &                 straight(15,itri)*p(3)+
      &                 straight(16,itri)
 !
-!                 check for an adjust parameter (only in the first
-!                 increment of the first step)
+!                 check for an adjust parameter (only at the start
+!                 of the first step)
 !
-                  if((istep.eq.1).and.(iinc.eq.1).and.(iit.le.0)) then
+c                  if((istep.eq.1).and.(iinc.eq.1).and.(iit.le.0)) then
+                  if((istep.eq.1).and.(iit.lt.0)) then
                      if(iset.ne.0) then
 !
 !                       check whether node belongs to the adjust node
@@ -404,11 +406,11 @@ c                              write(*,*) '**regular solution'
                               dist=0.d0
                            endif
                         endif
-                     elseif(dabs(tietol(i)).ge.2.d0) then
+                     elseif(dabs(tietol(1,i)).ge.2.d0) then
 !
 !                       adjust parameter
 !
-                        adjust=dabs(tietol(i))-2.d0
+                        adjust=dabs(tietol(1,i))-2.d0
                         if(dist.le.adjust) then
                            do k=1,3
                               co(k,node)=co(k,node)-
@@ -435,14 +437,14 @@ c                              write(*,*) '**regular solution'
 !                    adjusting the bodies at the start of the
 !                    calculation such that they touch
 !
-                  elseif((istep.eq.1).and.(iinc.eq.1).and.
-     &                   (iit.le.0).and.(dist.lt.0.d0).and.
-     &                   (nmethod.eq.1)) then
-                     do k=1,3
-                        vold(k,node)=vold(k,node)-
-     &                        dist*straight(12+k,itri)
-                        vini(k,node)=vold(k,node)
-                    enddo
+c                  elseif((istep.eq.1).and.(iinc.eq.1).and.
+c     &                   (iit.le.0).and.(dist.lt.0.d0).and.
+c     &                   (nmethod.eq.1)) then
+c                     do k=1,3
+c                        vold(k,node)=vold(k,node)-
+c     &                        dist*straight(12+k,itri)
+c                        vini(k,node)=vold(k,node)
+c                    enddo
                   endif
                endif
 !     
@@ -457,54 +459,18 @@ c                              write(*,*) '**regular solution'
                   nelem=int(koncont(4,itri)/10.d0)
                   jface=koncont(4,itri)-10*nelem
 !
-!                 calculating the corresponding slave area
-!
-c                  area=0.d0
-c                  index1=iponoels(node)
-!
-c                  if(index1.eq.0) then
-c!
-c!                    node does not belong to any element, check
-c!                    whether it is tied to another node by a one-to-one
-c!                    tie
-c!                     
-c                     idof=(node-1)*8
-c                     isol=0
-c                     do k=1,3
-c                        idof=idof+1
-c                        call nident(ikmpc,idof,nmpc,id)
-c                        if(id.gt.0) then
-c                           if(ikmpc(id).eq.idof) then
-c                              isol=1
-c                              exit
-c                           endif
-c                        endif
-c                     enddo
-c!     
-c!                   if a MPC was found, check whether it is a 
-c!                   one-to-one tie
-c!     
-c                     if(isol.eq.1) then
-c                        index1=ipompc(ilmpc(id))
-c                        index2=nodempc(3,index1)
-c                        if((nodempc(3,index2).eq.0).and.
-c     &                     (nodempc(2,index1).eq.nodempc(2,index2)).and.
-c     &                     (dabs(coefmpc(index1)+coefmpc(index2))
-c     &                       .lt.1.d-10))then
-c                           index1=iponoels(nodempc(1,index2))
-c                        else
-c                           index1=0
-c                        endif
-c                     endif
-c                  endif
-!
-c                  do
-c                     if(index1.eq.0) exit
-c                     area=area+areaslav(inoels(1,index1))/
-c     &                          inoels(2,index1)
-c                     index1=inoels(3,index1)
-c                  enddo
-                  springarea(ne-ne0)=area
+!                 storing the area corresponding to the slave node
+!                 and the clearance if penetration takes place,
+!                 i.e. dist <0 at the start of every step
+!                
+                  springarea(1,j)=area
+                  if(iit.lt.0.d0) then
+                     if(dist.lt.0.d0) then
+                        springarea(2,j)=dist
+                     else
+                        springarea(2,j)=0.d0
+                     endif
+                  endif
 !
                   indexe=ipkon(nelem)
                   if(lakon(nelem)(4:4).eq.'2') then
@@ -567,7 +533,7 @@ c                  enddo
                   ifree=ifree+nnodelem+1
                   kon(ifree)=node
                   ifree=ifree+1
-                  kon(ifree)=ne-ne0
+                  kon(ifree)=j
 !
                   write(lakon(ne)(8:8),'(i1)') nnodelem+1
 c                  write(*,*) 'new elem',ne,(nodef(k),k=1,nnodelem),node

@@ -65,6 +65,12 @@
                ityp=21
             endif
             exit
+         else
+            write(*,*) 
+     &        '*WARNING in elastics: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

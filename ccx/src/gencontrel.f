@@ -22,12 +22,10 @@
      &  iinc,iit,
      &  islavsurf,imastsurf,pmastsurf,itiefac,
      &  islavnode,nslavnode,slavnor,slavtan,imastop,
-     &  islavact,mi,ncont,ipe,ime,pslavsurf,pslavdual)
+     &  mi,ncont,ipe,ime,pslavsurf,pslavdual)
 !
 !     Calculating the normals and tangential vectors in the nodes of
 !       the slave surface (slavnor, slavtan)
-!     Determining the gap at the regular integration points of the
-!       slave surface
 !     Determining the coefficients of the dual shape functions on
 !       the slave surface
 !
@@ -50,7 +48,7 @@
      &  nnodelem,nface,nope,nodef(8),m1,km1,km2,km3,number,
      &  islavsurf(2,*),islavnode(*),nslavnode(ntie+1),
      &  imastsurf(*),itiefac(2,*),ifaces,nelems,jfaces,mi(2),
-     &  mint2d,m,nopes,konl(20),id,islavact(*),indexnode(8),
+     &  mint2d,m,nopes,konl(20),id,indexnode(8),
      &  itria(4),ntria,itriacorner(4,4),inodesin(3*ncont),line,
      &  nnodesin,inodesout(3*ncont),nnodesout,iactiveline(3,3*ncont),
      &  nactiveline,intersec(2,6*ncont),ipe(*),ime(4,*),nintpoint,k1,j1,
@@ -476,86 +474,12 @@ c               do j=k,4
                   call shape6tri(xi,et,xl2s,xsj2,xs2,shp2,iflag)
                else
                   call shape3tri(xi,et,xl2s,xsj2,xs2,shp2,iflag)
-               endif
+               endif 
+            enddo
 !     
 !     Calculate the Mass matrix for compilation of the dualshapefunction 
 !     pslavdual(16,*)
-!     
-               do k=1,3
-                  p(k)=0.d0
-                  do j=1,nopes
-                     p(k)=p(k)+xl2s(k,j)*shp2(4,j)
-                  enddo
-               enddo
-!     
-!     determining the kneigh neighboring master contact
-!     triangle centers of gravity
-!     
-               call near3d(xo,yo,zo,x,y,z,nx,ny,nz,p(1),p(2),p(3),
-     &              ntri,neigh,kneigh)
-!     
-               dd=dsqrt(xsj2(1)**2+xsj2(2)**2+xsj2(3)**2)
-!     
-               do k=1,3
-                  xn(k)=xsj2(k)/dd
-               enddo
-!     
-               isol=0
-!     
-               loop1: do k=1,kneigh
-                  itri=neigh(k)+itietri(1,i)-1
-                  itel=0
-                  loop2: do
-                     itel=itel+1
-                     al=-(straight(16,itri)+straight(13,itri)*p(1)
-     &                 +straight(14,itri)*p(2)+straight(15,itri)*p(3))/
-     &                 (straight(13,itri)*xn(1)+straight(14,itri)*xn(2)
-     &                 +straight(15,itri)*xn(3))
-!     
-                     do m1=1,3
-                        al1=straight(4*m1-3,itri)*p(1)+
-     &                       straight(4*m1-2,itri)*p(2)+
-     &                       straight(4*m1-1,itri)*p(3)
-                        al2=straight(4*m1-3,itri)*xn(1)+
-     &                       straight(4*m1-2,itri)*xn(2)+
-     &                       straight(4*m1-1,itri)*xn(3)
-                        if(al1+al*al2+straight(4*m1,itri).gt.1.d-10)then
-c                           if(al.lt.1.d-10) cycle loop1
-                           itri=imastop(m1,itri)
-                           if(itel.gt.ntri) then
-                              write(*,*) '*INFO in gencontrel: circular'
-                              write(*,*) 
-     &                           '      hopping; no contact established'
-                              exit loop1
-                           endif
-                           if(itri.eq.0) cycle loop1
-                           cycle loop2
-                        endif
-                     enddo
-!     
-                     isol=1
-!     
-                     exit loop1
-                  enddo loop2
-               enddo loop1
-!     
-               if(isol.ne.0) then
-!     
-!     independent face found; all nodes belonging to 
-!     the face are active (only at the start of a new
-!     step)
-!     
-c               WRITE(*,*) "gencontrel",al
-                  if((iinc.eq.1).and.(iit.eq.1)) then
-                     do m1=1,nopes
-                        islavact(indexnode(m1))=1
-                     enddo
-                  endif
-               endif
-            enddo
-!
-!     computation of psladual            
-!     
+!         
 !     compute inverse of me_ls
 !     factorisation
 !     

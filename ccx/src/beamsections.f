@@ -44,7 +44,8 @@
      &  offset1,offset2,dd
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in beamsections: *SOLID SECTION should'
+         write(*,*) 
+     &       '*ERROR reading *BEAM SECTION: *SOLID SECTION should'
          write(*,*) '  be placed before all step definitions'
          stop
       endif
@@ -71,7 +72,8 @@
             elseif(textpart(i)(9:12).eq.'RECT') then
                section='RECT'
             else
-               write(*,*) '*ERROR in beamsections: unknown section'
+               write(*,*) 
+     &           '*ERROR reading *BEAM SECTION: unknown section'
                stop
             endif
          elseif(textpart(i)(1:8).eq.'OFFSET1=') then
@@ -80,13 +82,19 @@
          elseif(textpart(i)(1:8).eq.'OFFSET2=') then
             read(textpart(i)(9:28),'(f20.0)',iostat=istat) offset2
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         else
+            write(*,*) 
+     &       '*WARNING reading *BEAM SECTION: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !
 !     check whether a sections was defined
 !
       if(section.eq.'    ') then
-         write(*,*) '*ERROR in beamsections: no section defined'
+         write(*,*) '*ERROR reading *BEAM SECTION: no section defined'
          stop
       endif
 !
@@ -96,7 +104,7 @@
          if(matname(i).eq.material) exit
       enddo
       if(i.gt.nmat) then
-         write(*,*) '*ERROR in beamsections: nonexistent material'
+         write(*,*) '*ERROR reading *BEAM SECTION: nonexistent material'
          write(*,*) '  '
          call inputerror(inpc,ipoinpc,iline)
          stop
@@ -111,7 +119,8 @@
             if(orname(i).eq.orientation) exit
          enddo
          if(i.gt.norien) then
-            write(*,*)'*ERROR in beamsections: nonexistent orientation'
+            write(*,*)
+     &         '*ERROR reading *BEAM SECTION: nonexistent orientation'
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline)
             stop
@@ -124,7 +133,7 @@
       enddo
       if(i.gt.nset) then
          elset(ipos:ipos)=' '
-         write(*,*) '*ERROR in beamsections: element set ',elset
+         write(*,*) '*ERROR reading *BEAM SECTION: element set ',elset
          write(*,*) '  has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline)
          stop
@@ -136,7 +145,8 @@
       do j=istartset(i),iendset(i)
          if(ialset(j).gt.0) then
             if(lakon(ialset(j))(1:1).ne.'B') then
-               write(*,*) '*ERROR in beamsections: *BEAM SECTION can'
+               write(*,*) 
+     &           '*ERROR reading *BEAM SECTION: *BEAM SECTION can'
                write(*,*) '       only be used for beam elements.'
                write(*,*) '       Element ',ialset(j),' is not a beam el
      &ement.'
@@ -157,7 +167,8 @@
                k=k-ialset(j)
                if(k.ge.ialset(j-1)) exit
                if(lakon(k)(1:1).ne.'B') then
-                  write(*,*) '*ERROR in beamsections: *BEAM SECTION can'
+                  write(*,*) 
+     &              '*ERROR reading *BEAM SECTION: *BEAM SECTION can'
                   write(*,*) '       only be used for beam elements.'
                   write(*,*) '       Element ',k,' is not a beam element
      &.'
@@ -184,14 +195,15 @@
       read(textpart(1)(1:20),'(f20.0)',iostat=istat) thickness1
       if(istat.gt.0) then
          write(*,*) 
-     &        '*ERROR in beamsections: first beam thickness is lacking'
+     &   '*ERROR reading *BEAM SECTION: first beam thickness is lacking'
          call inputerror(inpc,ipoinpc,iline)
       endif
       if(n.gt.1) then
          read(textpart(2)(1:20),'(f20.0)',iostat=istat) thickness2
          if(istat.gt.0) then
             write(*,*) 
-     &        '*ERROR in beamsections: second beam thickness is lacking'
+     &        '*ERROR reading *BEAM SECTION: ',
+     &        'second beam thickness is lacking'
             call inputerror(inpc,ipoinpc,iline)
          endif
       else
@@ -233,7 +245,8 @@
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
       dd=dsqrt(p(1)*p(1)+p(2)*p(2)+p(3)*p(3))
       if(dd.lt.1.d-10) then
-         write(*,*) '*ERROR in beamsections: normal in direction 1'
+         write(*,*) 
+     &       '*ERROR reading *BEAM SECTION: normal in direction 1'
          write(*,*) '       has zero size'
          stop
       endif

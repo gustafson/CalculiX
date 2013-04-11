@@ -37,7 +37,7 @@
      &  index1,islavsurfentry,locs,locm,mi(2),ns
 !
       real*8 pmastsurf(2,*),co(3,*),vold(0:mi(2),*),
-     &  ets,xis,etm,xim,weights,xl2s(3,8),xsj2s(3),
+     &  ets,xis,etm,xim,xl2s(3,8),xsj2s(3),
      &  shp2s(4,8),xs2s(3,2),xl2m(3,8),xsj2m(3),shp2m(7,8),xs2m(3,2),
      &  contribution,pslavsurf(3,*),pslavdual(16,*)
 !
@@ -296,7 +296,6 @@ c              mint2d=4
 !     
                xis=pslavsurf(1,indexf+m)
                ets=pslavsurf(2,indexf+m)
-               weights=weight2d5(m)
                ns=islavsurfentry
             iflag = 2
             if(nopes.eq.8) then

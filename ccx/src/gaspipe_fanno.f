@@ -34,7 +34,6 @@
      &     inv,ipkon(*),kon(*),icase,kgas,k_oil
      &     ,nshcon(*),nrhcon(*),ntmat_,i,mi(2),nodea,nodeb,
      &     nodec,iaxial
-          
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(5),kappa,R,a,d,l,
      &     p1,p2,T1,T2,Tt1,Tt2,pt1,pt2,cp,physcon(3),p2p1,km1,dvi,
@@ -47,7 +46,6 @@
      &     term,phi,M1,M2,qred2,qred1,qred_max1,qred_crit_out,co(3,*),
      &     shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),vold(0:mi(2),*),
      &     radius,initial_radius,l_initial
-!     
 !
       if (iflag.eq.0) then
          identity=.true.
@@ -98,7 +96,7 @@
      &           co(1,nodea)-vold(1,nodea))**2)
 !
             initial_radius=dsqrt((co(1,nodeb)-co(1,nodea))**2)
-
+!
             if(iaxial.ne.0) then
               A=pi*radius**2/iaxial
             else
@@ -147,10 +145,9 @@
             xflow_oil=prop(index+7)
             k_oil=int(prop(index+8))
          endif
-
+!
          pt1=v(2,node1)
          pt2=v(2,node2)
-         
 !
          if(pt1.ge.pt2) then
             inv=1
@@ -164,8 +161,6 @@
             Tt2=v(0,node1)+physcon(1)
          endif
 !
-         write(*,*) pt1,pt2,Tt1,Tt2
-         
          p2p1=pt2/pt1
          km1=kappa-1.d0
          kp1=kappa+1.d0
@@ -224,7 +219,6 @@
          else
             xflow=inv*Qred*pt1*A/dsqrt(Tt1)
          endif
-!         xflow=0.5d0*dabs(xflow)
 !
       elseif (iflag.eq.2)then
 !
@@ -317,23 +311,22 @@
             xflow_oil=prop(index+7)
             k_oil=int(prop(index+8))
          endif
-
+!
          pt1=v(2,node1)
          pt2=v(2,node2)
          xflow=v(1,nodem)
 !
-         if(xflow.ge.0d0) then
+         if((pt1.gt.pt2).or.(xflow.ge.0d0)) then
             inv=1
             Tt1=v(0,node1)+physcon(1)
+            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,icase)
             if(icase.eq.0) then
                Tt2=Tt1
+               call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,icase)
             else
+               t2=t1
                Tt2=v(0,node2)+physcon(1)
             endif
-!
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,icase)
-!
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,icase)
 !     
             nodef(1)=node1
             nodef(2)=node1
@@ -379,6 +372,10 @@
            endif        
 !           
            reynolds=dabs(xflow)*d/(dvi*a)
+!
+           if(reynolds.lt.1) then
+              reynolds = 1.d0
+           endif
 !
 !     definition of the friction coefficient for 2 phase flows and pure air
 !     
@@ -434,7 +431,6 @@
      &              v,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
      &              shcon,rhcon,ntmat_,mi)
 !     
-
                call friction_coefficient(l_neg,d,ks,reynolds,form_fact,
      &              lambda)
 !
@@ -453,9 +449,9 @@
 !     
          call pt2zpt1_crit(pt2,pt1,Tt1,Tt2,lambda,kappa,r,l,d,A,iflag,
      &     inv,pt2zpt1_c,qred_crit,crit,qred_max1,icase)
-
+!
          Qred1=xflow*dsqrt(Tt1)/(A*Pt1)
-
+!
          if(dabs(xflow)*dsqrt(Tt1)/(A*Pt1).gt.qred_max1) then
             crit=.true.
          endif
@@ -469,9 +465,9 @@
      &           (kappa+1)/(kappa-1))
          endif
 !     
-!     definition of the coefficients 
-!     
-            lld=lambda*l/d
+!     definition of the coefficients
+!
+         lld=lambda*l/d
 !
          M2=dsqrt(2/km1*((Tt2/T2)-1))
          if(icase.eq.0) then
@@ -505,10 +501,14 @@
             X1_den=pt1**2*X_T1dTt1
             X1=T1**2/X1_den   
 !     
-            C1=2.d0*cp*A**2*X1_den*(-1.d0+2.d0*kdkm1*T1dTt1)
+!            C1=2.d0*cp*A**2*X1_den*(-1.d0+2.d0*kdkm1*T1dTt1)
+!     &           -2.d0*xflow**2*R**2*T1
+            C1=2.d0*cp*A**2*X1_den*(-1.d0+2.d0*kdkm1*(T1dTt1-1))
      &           -2.d0*xflow**2*R**2*T1
 !     
-            C2=2.d0*cp*A**2*X2_den*(-1.d0+2.d0*kdkm1*T2dTt2)
+!            C2=2.d0*cp*A**2*X2_den*(-1.d0+2.d0*kdkm1*T2dTt2)
+!     &           -2.d0*xflow**2*R**2*T2
+            C2=2.d0*cp*A**2*X2_den*(-1.d0+2.d0*kdkm1*(T2dTt2-1))
      &           -2.d0*xflow**2*R**2*T2
 !     
             expon1=(kappa+1)/km1
@@ -522,14 +522,13 @@
                term1=pt1**2*T1**expon1*Tt1**(-expon2)*A**2
                term2=pt2**2*T2**expon1*Tt2**(-expon2)*A**2        
 !     
-
 !     simplified version
                term3=Tt2dT2
                term4=Tt1dT1
 !     
                term5=T1**(expon1)*Tt1**(-expon2)*(pt1**2)               
                term6=T2**(expon1)*Tt2**(-expon2)*(pt2**2)               
-
+!
                B1=1/(R*xflow**2)*term1*expon1/T1
      &              +cte*(-(2/km1)*1/T1)
 !     
@@ -579,12 +578,13 @@
      &              +cte*(-expon1*1/Tt2)
      &              +b2/c2*(2*cp*A**2*X2_den
      &              *(1.d0-2.d0*kdkm1*(Tt2-T2)/Tt2))
-               
+!               
             else
 !
                term=kappa*term1/(xflow**2*R)
                B1=expon1*1/T1*(1/kappa*term-1)+cte*1/T1
-               f=1/kappa*(term1-1)+cte*(log(T1dTt1)-log(2/kp1*term))
+!     f=1/kappa*(term1-1)+cte*(log(T1dTt1)-log(2/kp1*term))
+               f=1/kappa*(term-1)+cte*(log(T1dTt1)-log(2/kp1*term))
      &              -lld
      &              +b1/c1*(2*cp*A**2*(Tt1-T1)
      &              *X1_den-xflow**2*R**2*T1**2)
@@ -612,6 +612,7 @@
 !     temperature node2
 !     
                df(5)=0.d0
+!
             endif
 !     
 !     isothermal icase
@@ -726,7 +727,6 @@
 !     
                df(4)=0.d0
 !     
-!     
 !     temperature node2
 !     
                df(5)=0.d0
@@ -737,7 +737,7 @@
 !     output
 !
       elseif(iflag.eq.3) then
-
+!
          pi=4.d0*datan(1.d0)
          e=2.7182818d0
 !     
@@ -774,15 +774,19 @@
             inv=1
             xflow=v(1,nodem)
             Tt1=v(0,node1)+physcon(1)
+            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,icase)
             if(icase.eq.0) then
                Tt2=Tt1
+               call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,icase)
             else
+               T2=T1
                Tt2=v(0,node2)+physcon(1)
+               call tt_calc(xflow,Tt2,Pt2,kappa,r,a,T2,icase,iflag)
             endif
 !      
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,icase)
-!
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,icase)
+!            call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,icase)
+!!
+!            call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,icase)
 !     
          else
             inv=-1
@@ -800,11 +804,6 @@
             call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,icase)
             call ts_calc(xflow,Tt2,Pt2,kappa,r,a,T2,icase)
 !     
-            nodef(1)=node2
-            nodef(2)=node2
-            nodef(3)=nodem
-            nodef(4)=node1
-            nodef(5)=node1
          endif
 !     
          pt2zpt1=pt2/pt1
@@ -817,6 +816,10 @@
          endif
 ! 
          reynolds=dabs(xflow)*d/(dvi*a)
+!
+        if(reynolds.lt.1.d0) then
+            reynolds= 1.d0
+         endif
 !     
 !     definition of the friction coefficient for 2 phase flows and pure air
 !     

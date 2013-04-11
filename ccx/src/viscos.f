@@ -82,6 +82,12 @@
          elseif((textpart(i)(1:6).eq.'DIRECT').and.
      &          (textpart(i)(1:9).ne.'DIRECT=NO')) then
             idrct=1
+         else
+            write(*,*) 
+     &        '*WARNING in viscos: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

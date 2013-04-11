@@ -31,38 +31,14 @@
       integer icol(*),irow(*),jq(*),neq,nzl,i,j,k
 !
       real*8 adb(*),aub(*),adl(*),sol(*),aux(*),p,sa(*),addiv(*)
-c!
-c!     lumping the matrix set (adb,aux) and storing the resulting
-c!     diagonal terms in adl
-c!
-c      do i=1,neq
-c         adl(i)=adb(i)
-c      enddo
-c!
-c      do j=1,neq
-c         do k=jq(j),jq(j+1)-1
-c            i=irow(k)
-c            adl(i)=adl(i)+aub(k)
-c            adl(j)=adl(j)+aub(k)
-c         enddo
-c      enddo
-!
-!     subtracting the lumped matrix from the diagonal and storing
-!     it into the lumped matrix storage
-!
-cg      do i=1,neq
-cg         addiv(i)=adb(i)-adl(i)
-cg      enddo
 !
 !     multiplying M-ML with the solution
 !
-cg      call op(neq,p,sol,aux,addiv,aub,icol,irow,nzl)
       call op(neq,p,sol,aux,adb,aub,icol,irow,nzl)
 !
 !     smoothing the solution
 !
       do i=1,neq
-cg         sol(i)=sol(i)+sa(i)*aux(i)/(adb(i)-addiv(i))
          sol(i)=sol(i)+sa(i)*aux(i)*adl(i)
       enddo
 !

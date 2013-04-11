@@ -45,7 +45,7 @@
 !    symmetric segments 
 !     
       real*8 tolloc,co(3,* ),coefmpc(*),xind(*),yind(*),xind0(*),
-     &     yind0(*),dd,xap,yap,zap,tietol(*),cs(17,*),xp,yp,
+     &     yind0(*),dd,xap,yap,zap,tietol(2,*),cs(17,*),xp,yp,
      &     phi,rcscg(*),rcs0cg(*),zcscg(*),zcs0cg(*),zp,rp,
      &     straight(9,*),T(3,3),csab(7),ratio(8),Tinv(3,3),
      &     coord(3),node(3),T2D(3,3),phi0,al(3,3),ar(3,3),
@@ -78,7 +78,7 @@
             leftset=tieset(2,i)
             rightset=tieset(3,i)
 !     
-            if (tietol(i).eq.-1.d0) then
+            if (tietol(1,i).eq.-1.d0) then
                tolloc=0.1d0
                write(*,*) 
      &           '*INFO in multistages: no tolerance was defined'
@@ -87,7 +87,7 @@
                write(*,*) '      will be used'
                write(*,*)
             else
-               tolloc=tietol(i)
+               tolloc=tietol(1,i)
             endif
 !     
 !     Copying the nodes of each Set of the Tie

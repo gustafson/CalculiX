@@ -19,7 +19,8 @@
       subroutine mafillv2rhs(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,
      &  b,nactdoh,icolv,jqv,irowv,neqv,nzlv,nmethod,ikmpc,ilmpc,ikboun,
-     &  ilboun,vold,nzsv,dtl,v,theta2,iexplicit,nea,neb,mi,dtimef)
+     &  ilboun,vold,nzsv,dtl,v,theta2,iexplicit,nea,neb,mi,dtimef,
+     &  ipvar,var,ipvarf,varf)
 !
 !     filling the rhs b of the velocity equations (step 3)
 !
@@ -29,13 +30,14 @@
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  icolv(*),jqv(*),ikmpc(*),ilmpc(*),ikboun(*),ilboun(*),
-     &  nactdoh(0:4,*),konl(20),irowv(*),ipkon(*),nea,neb,mi(2)
+     &  nactdoh(0:4,*),konl(20),irowv(*),ipkon(*),nea,neb,mi(2),
+     &  ipvar(*),ipvarf(*)
 !
       integer nk,ne,nboun,nmpc,neqv,nzlv,nmethod,nzsv,i,j,k,jj,
      &  id,ist,index,jdof1,idof1,iexplicit,node1,kflag,indexe,nope,i0
 !
       real*8 co(3,*),xboun(*),coefmpc(*),b(*),v(0:mi(2),*),theta2,
-     &  vold(0:mi(2),*),ff(60),dtimef,dtl(*)
+     &  vold(0:mi(2),*),ff(60),dtimef,dtl(*),var(*),varf(*)
 !
       kflag=2
       i0=0
@@ -65,12 +67,13 @@
            cycle
         endif
 !
-        do j=1,nope
-          konl(j)=kon(indexe+j) 
-        enddo
+c        do j=1,nope
+c          konl(j)=kon(indexe+j) 
+c        enddo
 !
-        call e_c3d_v2rhs(co,nk,konl,lakon(i),
-     &          ff,i,nmethod,vold,v,dtimef,theta2,iexplicit,mi)
+        call e_c3d_v2rhs(co,nk,kon(indexe+1),lakon(i),
+     &          ff,i,nmethod,vold,v,dtimef,theta2,iexplicit,mi,
+     &          ipvar,var,ipvarf,varf)
 !
         do jj=1,3*nope
 !
@@ -114,15 +117,15 @@ c          ff(jj)=ff(jj)*dtl(node1)/dtimef
 !
 !     nonlocal time stepping for compressible steady state calculations
 !     
-      if((iexplicit.eq.1).and.(nmethod.eq.1)) then
-         do i=1,nk
-            do j=1,3
-               if(nactdoh(j,i).gt.0) then
-                  b(nactdoh(j,i))=b(nactdoh(j,i))*dtl(i)/dtimef
-               endif
-            enddo
-         enddo
-      endif
+c      if((iexplicit.eq.1).and.(nmethod.eq.1)) then
+c         do i=1,nk
+c            do j=1,3
+c               if(nactdoh(j,i).gt.0) then
+c                  b(nactdoh(j,i))=b(nactdoh(j,i))*dtl(i)/dtimef
+c               endif
+c            enddo
+c         enddo
+c      endif
 !
       return
       end

@@ -29,7 +29,7 @@
    #include "tau.h"
 #endif
 
-void checkconvgas(int *icutb, int *iin,
+void checkconvnet(int *icutb, int *iin,
 		  double *uamt, double *uamf, double *uamp, 
 		  double *cam1t, double *cam1f, double *cam1p,
 		  double *cam2t, double *cam2f, double *cam2p,

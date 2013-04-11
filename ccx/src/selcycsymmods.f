@@ -72,6 +72,12 @@
          elseif(textpart(i)(1:5).eq.'NMAX=') then
             read(textpart(i)(6:15),'(i10)',iostat=istat) ns(3)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         else
+            write(*,*) 
+     &        '*WARNING in selcycsymmods: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !
@@ -120,25 +126,10 @@
                      call nident(ikmpc,idof,nmpc,id)
                      if(id.gt.0) then
                         if(ikmpc(id).eq.idof) then
-                           write(*,*) 'removing MPC',node,k
+c                           write(*,*) 'removing MPC',node,k
                            mpc=ilmpc(id)
                            call mpcrem(mpc,mpcfree,nodempc,nmpc,ikmpc,
      &                           ilmpc,labmpc,coefmpc,ipompc)
-c                           index=ipompc(mpc)
-c                           do
-c                              indexold=index
-c                              index=nodempc(3,index)
-c                              if(index.eq.0) exit
-c                           enddo
-c                           nodempc(3,indexold)=mpcfree
-c                           mpcfree=ipompc(mpc)
-c                           do j=id,nmpc-1
-c                              ikmpc(j)=ikmpc(j+1)
-c                              ilmpc(j)=ilmpc(j+1)
-c                           enddo
-c                           ikmpc(nmpc)=0
-c                           ilmpc(nmpc)=0
-c                           nmpc=nmpc-1
                         endif
                      endif
                   enddo

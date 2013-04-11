@@ -30,7 +30,7 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,mi(2),
-     &     inv,kgas,n,iaxial,nodea,nodeb,ipkon(*),kon(*),i
+     &     inv,kgas,n,iaxial,nodea,nodeb,ipkon(*),kon(*),i,itype
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,a,d,
      &     p1,p2,T1,Aeff,C1,C2,C3,cd,cp,physcon(3),p2p1,km1,dvi,
@@ -41,6 +41,7 @@
      &     pt0zps1,cd_1spike,cdbragg,rzdh,
      &     cd_correction,p1p2,xflow_oil,T2,vold(0:mi(2),*)
 !     
+      itype=1
       pi=4.d0*datan(1.d0)
       e=2.718281828459045d0
 !    
@@ -315,7 +316,7 @@
 !     "Effect of conpressibility on the discharge coefficient of orifices and convergent nozzles"
 !     Journal of Mechanical engineering vol 2 No 1 1960
 !     
-            call cd_bragg(cdu,p2p1,cdbragg)
+            call cd_bragg(cdu,p2p1,cdbragg,itype)
             cd=cdbragg
             Aeff=Aeff*cd 
 !     
@@ -541,7 +542,7 @@
 !     "Effect of conpressibility on the discharge coefficient of orifices and convergent nozzles"
 !     Journal of Mechanical engineering vol 2 No 1 1960
 !     
-            call cd_bragg(cdu,p2p1,cdbragg)
+            call cd_bragg(cdu,p2p1,cdbragg,itype)
             cd=cdbragg
             Aeff=Aeff*cd 
          endif

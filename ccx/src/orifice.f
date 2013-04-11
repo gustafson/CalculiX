@@ -31,7 +31,7 @@
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
      &     inv,ipkon(*),kon(*),number,kgas,nelemref,
-     &     nodea,nodeb,iaxial,mi(2),i
+     &     nodea,nodeb,iaxial,mi(2),i,itype
 !
       real*4 ofvidg
 !     
@@ -202,7 +202,8 @@
             p2p1=p2/p1
             cdcrit=prop(index+2)
 !     
-            call cd_bragg(cdcrit,p2p1,cd)
+            itype=2
+            call cd_bragg(cdcrit,p2p1,cd,itype)
 !     
          elseif (lakon(nelem)(2:5).eq.'ORMA') then
 !
@@ -497,7 +498,8 @@
             reynolds=dabs(xflow)*d/(dvi*a)
             cdcrit=prop(index+2)
 !     
-            call cd_bragg(cdcrit,p2p1,cd)
+            itype=2
+            call cd_bragg(cdcrit,p2p1,cd,itype)
 !     
          elseif (lakon(nelem)(2:5).eq.'ORMA') then
 !
@@ -600,6 +602,7 @@
             ps1pt1=prop(index+2)
             curve=int(prop(index+3))
             number=int(prop(index+4))
+            reynolds=dabs(xflow)*d/(dvi*a)
             if(number.ne.0.d0)then
                do i=1,number
                   x_tab(i)=prop(index+2*i+3)

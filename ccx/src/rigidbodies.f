@@ -103,6 +103,12 @@
                write(*,*) '       has not been defined'
                stop
             endif
+         else
+            write(*,*) 
+     &        '*WARNING in rigidbodies: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

@@ -53,7 +53,6 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   for(i=0;i<mt**nk;++i){nactdof[i]=0;}
 
   /* determining the mechanical active degrees of freedom due to elements */
-
   if((*ithermal<2)||(*ithermal>=3)){
       for(i=0;i<*ne;++i){
 	  
@@ -63,7 +62,10 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      continue;
 	  }
 	  indexe=ipkon[i];
-	  if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
+/* Bernhardi start */
+          if (strcmp1(&lakon[8*i+3],"8I")==0)nope=11;
+	  else if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
+/* Bernhardi end */
 	  else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
 	  else if (strcmp1(&lakon[8*i+3],"10")==0)nope=10;
 	  else if ((strcmp1(&lakon[8*i+3],"4")==0)||
@@ -111,6 +113,9 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  else if (strcmp1(&lakon[8*i+3],"4")==0)nope=4;
 	  else if (strcmp1(&lakon[8*i+3],"15")==0)nope=15;
 	  else if (strcmp1(&lakon[8*i+3],"6")==0)nope=6;
+	  else if (strcmp1(&lakon[8*i],"E")==0){
+	      lakonl[0]=lakon[8*i+7];
+	      nope=atoi(lakonl);}
 	  else continue;
 	  
 	  for(j=0;j<nope;++j){
@@ -203,7 +208,10 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       if(ipkon[i]<0) continue;
       if(strcmp1(&lakon[8*i],"F")==0)continue;
       indexe=ipkon[i];
-      if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
+/* Bernhardi start */
+      if (strcmp1(&lakon[8*i+3],"8I")==0)nope=11;
+      else if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
+/* Bernhardi end */
       else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
       else if (strcmp1(&lakon[8*i+3],"10")==0)nope=10;
       else if (strcmp1(&lakon[8*i+3],"4")==0)nope=4;
@@ -275,12 +283,11 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
                and modal dynamic calculations) */
 
 	    if((*nmethod==2)||((*nmethod==4)&&(*iperturb<=1))||(*nmethod>=5)){
-		FORTRAN(nident,(ikboun,&idof2,nboun,&id));
+		FORTRAN(nident,(ikboun,&idof2,nboun,&id)); 
 		icolumn=neq[1]+ilboun[id-1];
 		/*	printf("idof1=%d,icolumn=%d\n",idof1,icolumn);*/
-		insert(ipointer,&mast1,&irow,&idof1,&icolumn,&ifree,&nzs_);
+    	 	insert(ipointer,&mast1,&irow,&idof1,&icolumn,&ifree,&nzs_);
 	    }
-
 	  }
 	  
 	  else{
@@ -376,6 +383,9 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       else if (strcmp1(&lakon[8*i+3],"4")==0)nope=4;
       else if (strcmp1(&lakon[8*i+3],"15")==0)nope=15;
       else if (strcmp1(&lakon[8*i+3],"6")==0)nope=6;
+      else if (strcmp1(&lakon[8*i],"E")==0){
+	  lakonl[0]=lakon[8*i+7];
+	  nope=atoi(lakonl);}
       else continue;
       
       for(jj=0;jj<nope;++jj){

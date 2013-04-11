@@ -19,7 +19,7 @@
       subroutine mafillplhs(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,nactdoh,icolp,jqp,irowp,
      &  neqp,nzlp,ikmpc,ilmpc,ikboun,ilboun,nzsp,adbp,aubp,nmethod,
-     &  iexplicit)
+     &  iexplicit,ipvar,var)
 !
 !     filling the lhs pressure matrix in sparse matrix format
 !
@@ -34,14 +34,15 @@
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  icolp(*),jqp(*),ikmpc(*),nzsp,nmethod,iexplicit,
      &  ilmpc(*),ikboun(*),ilboun(*),nactdoh(0:4,*),konl(20),irowp(*),
-     &  ipkon(*)
+     &  ipkon(*),ipvar(*)
 !
       integer nk,ne,nboun,nmpc,neqp,nzlp,i,j,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,node1,node2,
      &  indexe,nope,i0
 !
-      real*8 co(3,*),xboun(*),coefmpc(*),sm(60,60),adbp(*),aubp(*)
+      real*8 co(3,*),xboun(*),coefmpc(*),sm(60,60),adbp(*),aubp(*),
+     &  var(*)
 !
       real*8 value
 !
@@ -91,7 +92,8 @@
           konl(j)=kon(indexe+j) 
         enddo
 !
-        call e_c3d_plhs(co,nk,konl,lakon(i),sm,i,nmethod,iexplicit)
+        call e_c3d_plhs(co,nk,konl,lakon(i),sm,i,nmethod,iexplicit,
+     &            ipvar,var)
 !
         do jj=1,nope
 !

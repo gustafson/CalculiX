@@ -29,14 +29,14 @@
 !
       implicit none
 !
-      logical fluid,force
+      logical force
 !
       character*1 cflag
       character*8 lakon(*)
       character*87 filab(*)
 !
       integer mi(2),nactdof(0:mi(2),*),ithermal(2),i,j,nk,
-     &  nfield,ndim,iorienglob,
+     &  nfield,ndim,iorienglob,cfd,
      &  nelemload(2,*),nload,nodeboun(*),nboun,ipkon(*),inum(*),kon(*),
      &  ne,ielorien,itg(*),ntg,ndirboun(*),mt,nlabel
 !
@@ -45,7 +45,7 @@
 !
       mt=mi(2)+1
 !
-      nlabel=29
+      nlabel=30
 !
 !     storing the residual forces in field fn
 !
@@ -91,18 +91,18 @@
 !
 !     calculating inum
 !
-      fluid=.false.
       nfield=0
       ndim=0
       iorienglob=0
       cflag=filab(1)(5:5)
+      cfd=0
       call extrapolate(sti,stn,ipkon,inum,kon,lakon,nfield,nk,
      &     ne,mi(1),ndim,orab,ielorien,co,iorienglob,cflag,
-     &     nelemload,nload,nodeboun,nboun,fluid,ndirboun,vold,
-     &     ithermal,force)
+     &     nelemload,nload,nodeboun,nboun,ndirboun,vold,
+     &     ithermal,force,cfd)
 !
-      if(fluid) then
-         call fluidextrapolate(vold,ipkon,inum,kon,lakon,ne,mi)
+      if(ithermal(1).gt.1) then
+         call networkextrapolate(vold,ipkon,inum,kon,lakon,ne,mi)
       endif
 !
 !     interpolation for 1d/2d elements

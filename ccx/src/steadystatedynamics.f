@@ -19,22 +19,23 @@
       subroutine steadystatedynamics(inpc,textpart,nmethod,
      &  iexpl,istep,istat,n,iline,ipol,inl,ipoinp,inp,iperturb,isolver,
      &  xmodal,cs,mcs,ipoinpc,nforc,nload,nbody,iprestr,t0,t1,ithermal,
-     &  nk)
+     &  nk,set,nset)
 !
 !     reading the input deck: *STEADY STATE DYNAMICS
 !
       implicit none
 !
-      logical cyclicsymmetry
+      logical cyclicsymmetry,nodalset
 !
       character*1 inpc(*)
       character*3 harmonic
       character*20 solver
+      character*81 set(*),noset
       character*132 textpart(16)
 !
-      integer nmethod,istep,istat,n,key,iexpl,iline,ipol,inl,
+      integer nmethod,istep,istat,n,key,iexpl,iline,ipol,inl,nset,
      &  ipoinp(2,*),inp(3,*),iperturb(2),isolver,i,ndata,nfour,mcs,
-     &  ipoinpc(0:*),nforc,nload,nbody,iprestr,ithermal,j,nk
+     &  ipoinpc(0:*),nforc,nload,nbody,iprestr,ithermal,j,nk,ipos
 !
       real*8 fmin,fmax,bias,tmin,tmax,xmodal(*),cs(17,*),t0(*),t1(*)
 !
@@ -42,10 +43,16 @@
       iperturb(1)=0
       iperturb(2)=0
       harmonic='YES'
-      cyclicsymmetry=.false.
+      if((mcs.ne.0).and.(cs(2,1).ge.0.d0)) then
+         cyclicsymmetry=.true.
+      else
+         cyclicsymmetry=.false.
+      endif
+      nodalset=.false.
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in modaldynamics: *STEADY STATE DYNAMICS'
+         write(*,*) '*ERROR in steadystatedynamics: *STEADY STATE DYNAMI
+     &CS'
          write(*,*) '  can only be used within a STEP'
          stop
       endif
@@ -74,18 +81,32 @@
             read(textpart(i)(10:12),'(a3)') harmonic
          elseif(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
             cyclicsymmetry=.true.
+         elseif(textpart(i)(1:5).eq.'NSET=') then
+            nodalset=.true.
+            noset=textpart(i)(6:85)
+            noset(81:81)=' '
+            ipos=index(noset,' ')
+            noset(ipos:ipos)='N'
+         else
+            write(*,*) 
+     &      '*WARNING in steadystatedynamics: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !
       if(solver(1:7).eq.'SPOOLES') then
          isolver=0
       elseif(solver(1:16).eq.'ITERATIVESCALING') then
-         write(*,*) '*WARNING in modaldynamics: the iterative scaling'
+         write(*,*) '*WARNING in steadystatedynamics: the iterative scal
+     &ing'
          write(*,*) '         procedure is not available for modal'
          write(*,*) '         dynamic calculations; the default solver'
          write(*,*) '         is used'
       elseif(solver(1:17).eq.'ITERATIVECHOLESKY') then
-         write(*,*) '*WARNING in modaldynamics: the iterative scaling'
+         write(*,*) '*WARNING in steadystatedynamics: the iterative scal
+     &ing'
          write(*,*) '         procedure is not available for modal'
          write(*,*) '         dynamic calculations; the default solver'
          write(*,*) '         is used'
@@ -98,22 +119,42 @@
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
       else
-         write(*,*) '*WARNING in modaldynamics: unknown solver;'
+         write(*,*) '*WARNING in steadystatedynamics: unknown solver;'
          write(*,*) '         the default solver is used'
       endif
 !
       if((isolver.eq.2).or.(isolver.eq.3)) then
-         write(*,*) '*ERROR in modaldynamics: the default solver ',
-     & solver
+         write(*,*) '*ERROR in steadystatedynamics: the default solver '
+     & ,solver
          write(*,*) '       cannot be used for modal dynamic'
          write(*,*) '       calculations '
          stop
       endif
 !
+      if(nodalset) then
+         do i=1,nset
+            if(set(i).eq.noset) exit
+         enddo
+         if(i.gt.nset) then
+            noset(ipos:ipos)=' '
+            write(*,*) '*ERROR in steadystatedynamics: node set ',noset
+            write(*,*) '  has not yet been defined.'
+            stop
+         endif
+         xmodal(10)=i+0.5d0
+      else
+         if(cyclicsymmetry) then
+            write(*,*) '*ERROR in steadystatedynamics: cyclic symmetric'
+            write(*,*) '       structure, yet no node set defined'
+            stop
+         endif
+      endif
+!
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
-         write(*,*) '*ERROR in modaldynamics: definition not complete'
+         write(*,*) '*ERROR in steadystatedynamics: definition not compl
+     &ete'
          write(*,*) '       '
          call inputerror(inpc,ipoinpc,iline)
          stop

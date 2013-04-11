@@ -27,7 +27,15 @@
       character*132 textpart(16)
 !
       integer istat,n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  ipoinpc(0:*)
+     &  ipoinpc(0:*),i
+!
+      do i=2,n
+         write(*,*) 
+     &        '*WARNING in headings: parameter not recognized:'
+         write(*,*) '         ',
+     &        textpart(i)(1:index(textpart(i),' ')-1)
+         call inputwarning(inpc,ipoinpc,iline)
+      enddo
 !
       do
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

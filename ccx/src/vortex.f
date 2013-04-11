@@ -267,7 +267,7 @@
 !          
 !     rotation speed
             omega=pi/30*rpm
-!     
+!
             if(R2.ge.R1) then
                Ui=omega*R1
                c1u=Ui*kr
@@ -287,7 +287,6 @@
 !
             expon=kappa/km1
 !
-
             if(((R2.ge.R1).and.(xflow.gt.0d0))
      &           .or.((R2.lt.R1).and.(xflow.lt.0d0)))then
 !     
@@ -333,8 +332,7 @@
 !     outpout
 !
          elseif(iflag.eq.3) then
-
-
+!
          index=ielprop(nelem) 
          kappa=(cp/(cp-R))
          km1=kappa-1
@@ -517,6 +515,9 @@
 !
 !     Temperature change
             t_chang=prop(index+6)
+!
+!    no element generating the upstream swirl
+             nelemswirl=0
 !          
 !     rotation speed
             omega=pi/30*rpm

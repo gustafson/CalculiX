@@ -34,10 +34,11 @@ c
      &  aano,aaso,aasw,aanw,aamin,xx,yy,rr,xp,yp
 c
       if(k.gt.n) then
-         write(*,*) '*ERROR in near2d: neighbors requested'
-         write(*,*) '       supersedes number of nodes'
+c         write(*,*) '*ERROR in near2d: neighbors requested'
+c         write(*,*) '       supersedes number of nodes'
 c         write(*,*) k,n
-         stop
+c         stop
+         k=n
       endif
 c
       if(k.gt.20) then

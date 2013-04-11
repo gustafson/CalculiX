@@ -17,7 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine radiate(e,sink,temp,kstep,kinc,time,noel,npt,
-     &  coords,jltyp,field,nfield,loadtype,node,area,vold,mi)
+     &  coords,jltyp,field,nfield,loadtype,node,area,vold,mi,
+     &  iemchange)
 !
 !     user subroutine radiate
 !
@@ -62,11 +63,13 @@
 !     e(2)               not used; please do NOT assign any value
 !     sink               sink temperature (need not be defined
 !                        for cavity radiation)
+!     iemchange          = 1 if the emissivity is changed during a step,
+!                        else zero.
 !           
       implicit none
 !
       character*20 loadtype
-      integer kstep,kinc,noel,npt,jltyp,nfield,node,mi(2)
+      integer kstep,kinc,noel,npt,jltyp,nfield,node,mi(2),iemchange
       real*8 e(2),sink,time(2),coords(3),temp,field(nfield),area,
      &  vold(0:mi(2),*)
 !

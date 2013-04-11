@@ -70,6 +70,12 @@
             elset(81:81)=' '
             ipos=index(elset,' ')
             elset(ipos:ipos)='E'
+         else
+            write(*,*) 
+     &        '*WARNING in springs: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

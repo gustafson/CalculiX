@@ -45,87 +45,87 @@
      &              -1.d0,-1.d0,1.d0,1.d0,-1.d0,1.d0,
      &              1.d0,1.d0,1.d0,-1.d0,1.d0,1.d0/
       data iflag /3/
-!
-!     determining the element height in flow direction
-!
-      if(iexplicit.eq.1) then
-         do i=1,ne
-            indexe=ipkon(i)
-            lakonl(1:8)=lakon(i)(1:8)
-!     
-!     number of nodes in the element
-!     
-            if(lakonl(4:4).eq.'2') then
-               nope=20
-            elseif(lakonl(4:4).eq.'8') then
-               nope=8
-            elseif(lakonl(4:5).eq.'10') then
-               nope=10
-            elseif(lakonl(4:4).eq.'4') then
-               nope=4
-            elseif(lakonl(4:5).eq.'15') then
-               nope=15
-            elseif(lakonl(4:4).eq.'6') then
-               nope=6
-            endif
-!     
-!     velocity at the nodes
-!     
-            do j=1,nope
-               do k=1,3
-                  voldl(k,j)=vold(k,kon(indexe+j))
-                  xl(k,j)=co(k,kon(indexe+j))
-               enddo
-            enddo
-!     
-!     element height
-!     
-            h=0.d0
-            do j=1,nope
-               if(nope.eq.20) then
-                  call shape20h(xi,et,ze,xl,xsj,shp,iflag)
-               elseif(nope.eq.8) then
-                  xi=vertex8(1,j)
-                  et=vertex8(2,j)
-                  ze=vertex8(3,j)
-                  call shape8h(xi,et,ze,xl,xsj,shp,iflag)
-               elseif(nope.eq.10) then
-                  call shape10tet(xi,et,ze,xl,xsj,shp,iflag)
-               elseif(nope.eq.4) then
-                  call shape4tet(xi,et,ze,xl,xsj,shp,iflag)
-               elseif(nope.eq.15) then
-                  call shape15w(xi,et,ze,xl,xsj,shp,iflag)
-               elseif(nope.eq.6) then
-                  xi=vertex6(1,j)
-                  et=vertex6(2,j)
-                  ze=vertex6(3,j)
-                  call shape6w(xi,et,ze,xl,xsj,shp,iflag)
-               endif
-!     
-               dd=dsqrt(voldl(1,j)*voldl(1,j)+
-     &              voldl(2,j)*voldl(2,j)+voldl(3,j)*voldl(3,j))
-               if(dd.lt.1.d-10) then
-                  cycle
-               else
-                  h=h+dabs(shp(1,j)*voldl(1,j)+shp(2,j)*voldl(2,j)+
-     &              shp(3,j)*voldl(3,j))/dd
-               endif
-            enddo
-!     
-            if(h.gt.0.d0) h=2.d0/h
-!     
-!        height at the nodes of the elements is replaced by the
-!        element height of the latter is smaller
-!
-            do j=1,nope
-c               if(kon(indexe+j).eq.9363) write(*,*) kon(indexe+j),
-c     &                h,dtl(kon(indexe+j))
-               if(dtl(kon(indexe+j)).gt.h) dtl(kon(indexe+j))=h
-            enddo
-         enddo
-c      write(*,*) 'node ',kon(ipkon(4471)+1),dh(kon(ipkon(4471)+1)),
-c     &           dtl(kon(ipkon(4471)+1))
-      endif
+c!
+c!     determining the element height in flow direction
+c!
+c      if(iexplicit.eq.1) then
+c         do i=1,ne
+c            indexe=ipkon(i)
+c            if(indexe.lt.0) cycle
+c            lakonl(1:8)=lakon(i)(1:8)
+c!     
+c!     number of nodes in the element
+c!     
+c            if(lakonl(4:4).eq.'2') then
+c               nope=20
+c            elseif(lakonl(4:4).eq.'8') then
+c               nope=8
+c            elseif(lakonl(4:5).eq.'10') then
+c               nope=10
+c            elseif(lakonl(4:4).eq.'4') then
+c               nope=4
+c            elseif(lakonl(4:5).eq.'15') then
+c               nope=15
+c            elseif(lakonl(4:4).eq.'6') then
+c               nope=6
+c            else
+c               cycle
+c            endif
+c!     
+c!     velocity at the nodes
+c!     
+c            do j=1,nope
+c               do k=1,3
+c                  voldl(k,j)=vold(k,kon(indexe+j))
+c                  xl(k,j)=co(k,kon(indexe+j))
+c               enddo
+c            enddo
+c!     
+c!     element height
+c!     
+c            h=0.d0
+c            do j=1,nope
+c               if(nope.eq.20) then
+c                  call shape20h(xi,et,ze,xl,xsj,shp,iflag)
+c               elseif(nope.eq.8) then
+c                  xi=vertex8(1,j)
+c                  et=vertex8(2,j)
+c                  ze=vertex8(3,j)
+c                  call shape8h(xi,et,ze,xl,xsj,shp,iflag)
+c               elseif(nope.eq.10) then
+c                  call shape10tet(xi,et,ze,xl,xsj,shp,iflag)
+c               elseif(nope.eq.4) then
+c                  call shape4tet(xi,et,ze,xl,xsj,shp,iflag)
+c               elseif(nope.eq.15) then
+c                  call shape15w(xi,et,ze,xl,xsj,shp,iflag)
+c               elseif(nope.eq.6) then
+c                  xi=vertex6(1,j)
+c                  et=vertex6(2,j)
+c                  ze=vertex6(3,j)
+c                  call shape6w(xi,et,ze,xl,xsj,shp,iflag)
+c               endif
+c!     
+c               dd=dsqrt(voldl(1,j)*voldl(1,j)+
+c     &              voldl(2,j)*voldl(2,j)+voldl(3,j)*voldl(3,j))
+c               if(dd.lt.1.d-10) then
+c                  cycle
+c               else
+c                  h=h+dabs(shp(1,j)*voldl(1,j)+shp(2,j)*voldl(2,j)+
+c     &              shp(3,j)*voldl(3,j))/dd
+c               endif
+c            enddo
+c!     
+cc            if(h.gt.0.d0) h=2.d0/h
+c            if(h.gt.0.d0) h=nope/h
+c!     
+c!        height at the nodes of the elements is replaced by the
+c!        element height of the latter is smaller
+c!
+c            do j=1,nope
+c               if(dtl(kon(indexe+j)).gt.h) dtl(kon(indexe+j))=h
+c            enddo
+c         enddo
+c      endif
 !     
 !     determining the time increment dt for each node.
 !
@@ -152,14 +152,17 @@ c     &           dtl(kon(ipkon(4471)+1))
          if(iexplicit.eq.1) then
             call materialdata_cp(imat,ntmat_,temp,shcon,nshcon,cp)
             r=shcon(3,1,imat)
-            if(dtl(i).lt.dh(i)) dtl(i)=dh(i)
             dt(i)=dh(i)/(dsqrt(cp*r*temp/(cp-r))+vel)
-            dtl(i)=dt(i)*dtl(i)/dh(i)
-            if(dtl(i).lt.dtimef) dtimef=dtl(i)
+c            dtl(i)=dtl(i)/(dsqrt(cp*r*temp/(cp-r))+vel)
+cstart shallow
+cccc            dt(i)=dh(i)/(dsqrt(10.d0*rho)+vel)
+cend shallow
+c            if(dtl(i).lt.dtimef) dtimef=dtl(i)
+            if(dt(i).lt.dtimef) dtimef=dt(i)
          else
             call materialdata_dvi(imat,ntmat_,temp,shcon,nshcon,dvi)
             call materialdata_rho(rhcon,nrhcon,imat,rho,
-     &           temp,ntmat_)
+     &           temp,ntmat_,ithermal)
             if(vel.lt.1.d-10) vel=1.d-10
             dtu=dh(i)/vel
             if(dvi.lt.1.d-10) dvi=1.d-10
@@ -181,19 +184,5 @@ c     &           dtl(kon(ipkon(4471)+1))
 !     middle nodes (interpolation between neighboring end nodes;
 !     still to be done)
 !      
-!
-!     determining the minimum height across the complete fluid mesh            
-!
-c      dtimef=1.d30
-c      if(iexplicit.eq.1) then
-c         do i=1,nk
-c            if(dtl(i).lt.dtimef) dtimef=dtl(i)
-c         enddo
-c      else
-c         do i=1,nk
-c            if(dt(i).lt.dtimef) dtimef=dt(i)
-c         enddo
-c      endif
-!
       return
       end

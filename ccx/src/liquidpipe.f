@@ -67,6 +67,7 @@
 !
       numf=4
 !
+      pi=4.d0*datan(1.d0)
       dkda=0.d0
 !
       if (iflag.eq.0) then
@@ -135,7 +136,6 @@
      &                       co(2,nodea)-vold(2,nodea))**2+
      &                      (co(3,nodeb)+vold(3,nodeb)-
      &                       co(3,nodea)-vold(3,nodea))**2)
-               pi=4.d0*datan(1.d0)
                if(iaxial.ne.0) then
                   a=pi*radius*radius/iaxial
                else
@@ -174,7 +174,6 @@
      &                       co(2,nodea)-vold(2,nodea))**2+
      &                       (co(3,nodeb)+vold(3,nodeb)-
      &                       co(3,nodea)-vold(3,nodea))**2)
-               pi=4.d0*datan(1.d0)
                if(iaxial.ne.0) then
                   a=pi*radius*radius/iaxial
                else
@@ -263,7 +262,7 @@
             a2=prop(index+2)
             dh=prop(index+3)
             if(dh.eq.0.d0) then
-               dh=dsqrt(4*a1/Pi)
+               dh=dsqrt(4*a1/pi)
             endif
             if(inv.eq.0) then
                reynolds=5000.d0
@@ -344,7 +343,7 @@
             a2=prop(index+2)
             dh=prop(index+3)
             if(dh.eq.0.d0) then
-               dh=dsqrt(4*a2/Pi)
+               dh=dsqrt(4*a2/pi)
             endif
             if(inv.eq.0) then
                reynolds=5000.d0
@@ -447,7 +446,7 @@
 !
             dh=prop(index+3)
             if(dh.eq.0.d0) then
-               dh=dsqrt(4*a2/Pi)
+               dh=dsqrt(4*a2/pi)
             endif
             if(inv.eq.0) then
                reynolds=5000.d0
@@ -478,7 +477,7 @@
 !
             dh=prop(index+3)
             if(dh.eq.0.d0) then
-               dh=dsqrt(4*a1/Pi)
+               dh=dsqrt(4*a1/pi)
             endif
             if(inv.eq.0) then
                reynolds=5000.d0
@@ -516,7 +515,7 @@
 !
             dh=prop(index+3)
             if(dh.eq.0.d0) then
-               dh=dsqrt(4*a/Pi)
+               dh=dsqrt(4*a/pi)
             endif
             if(inv.eq.0) then
                reynolds=5000.d0
@@ -535,7 +534,13 @@
 !     pipe, gate valve (Berlamont)
 !     
             a=prop(index+1)
-            alpha=prop(index+2)
+            if(nactdog(3,nodem).eq.0) then
+!              geometry is fixed
+               alpha=prop(index+2)
+            else
+!              geometry is unknown
+               alpha=v(3,nodem)
+            endif
             a1=a
             a2=a
             dzetadalpha=0.d0
@@ -594,7 +599,7 @@
             a=prop(index+1)
             dh=prop(index+3)
             if(dh.eq.0.d0) then
-               dh=dsqrt(4*a/Pi)
+               dh=dsqrt(4*a/pi)
             endif
             if(inv.eq.0) then
                reynolds=5000.d0
@@ -727,8 +732,6 @@
 !     all types of vorticies
 !
          elseif((lakon(nelem)(4:4).eq.'V')) then
-!
-            pi=4.d0*datan(1.d0)
 !
 !     radius downstream
             r2d=prop(index+1)

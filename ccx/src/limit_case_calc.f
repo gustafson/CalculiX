@@ -56,31 +56,9 @@
       root=2/(km1)*((pt1pt2)**expon2-1.d0)
       Qred=dsqrt(kappa/R)*(pt1pt2)**(-0.5d0*kp1/(kappa*zeta))
      &     *dsqrt(2.d0/km1*((pt1pt2)**(km1/(kappa*zeta))-1d0))
-      i=0
-!     pt2_lim calculation
 !
-      do
-         i=i+1
-         Qred=dsqrt(kappa/R)*(pt1pt2)**(-0.5d0*kp1/(kappa*zeta))
-     &           *dsqrt(2.d0/km1*((pt1pt2)**(km1/(kappa*zeta))-1d0))
-         root=2/(km1)*((pt1pt2)**expon2-1.d0)
-         f=Qred-dsqrt(kappa/R)*dsqrt(root)*(Pt1Pt2)**expon1
-!
-         df=dsqrt(kappa/R)*1/pt2*(Pt1Pt2)**expon1*dsqrt(root)*
-     &        (1/(zeta*kappa)*(Pt1Pt2)**expon2*root**-1-expon1)
-!
-         if(dabs(-f/df)/pt2.le.1E-6) then
-            pt2_lim=pt2-f/df
-            exit
-         endif
-         if(i.gt.25) then
-             pt2_lim=Pt1/(1+0.5d0*(kappa-1))**(zeta*kappa/(kappa-1))
-             exit
-          endif
-!
-         pt2=pt2-f/df
-         pt1pt2=pt1/pt2
-      enddo
+      pt2_lim=pt1/(1+0.5d0*(km1))**(zeta*kappa/(km1))
+
 !
 !     M2_lim calculation
 !
@@ -99,6 +77,7 @@
 !
          if(dabs(-f/df).le.1E-6) then
             M2=M2-f/df
+            
             exit
          endif
 !

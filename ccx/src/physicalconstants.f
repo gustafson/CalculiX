@@ -47,6 +47,12 @@
          elseif(textpart(i)(1:14).eq.'NEWTONGRAVITY=') then
             read(textpart(i)(15:24),'(f20.0)',iostat=istat) physcon(3)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         else
+            write(*,*) 
+     &        '*WARNING in physicalconstants: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

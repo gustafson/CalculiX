@@ -23,7 +23,8 @@
      &  matname,mi,mass,stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  xstiff,xloadold,reltime,
-     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc)
+     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,springarea,
+     &  plicon,nplicon,npmat_,ncmat_,elcon,nelcon)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -49,9 +50,11 @@
      &  ii,jj,id,ipointer,ig,kk,istiff,iperm(20),ipompc(*),
      &  nrhcon(*),ielmat(*),ielorien(*),nodempc(3,*),nmpc,
      &  ntmat_,nope,nopes,norien,iexpl,imat,mint2d,ikmpc(*),
-     &  mint3d,mi(2),ifacet(6,4),nopev,iorien,ilmpc(*),
+     &  mint3d,mi(2),ifacet(6,4),nopev,iorien,ilmpc(*),kode,
      &  ifacew(8,5),intscheme,ipointeri,ipointerj,ncocon(2,*),
-     &  nshcon(*),iinc,istep,jltyp,nfield,node,iflag,iscale
+     &  nshcon(*),iinc,istep,jltyp,nfield,node,iflag,iscale,
+     &  nplicon(0:ntmat_,*),nelcon(2,*),npmat_,ncmat_,i2,
+     &  iemchange
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xstiff(27,mi(1),*),
      &  s(60,60),w(3,3),ff(60),shpj(4,20),sinktemp,xs2(3,7),
@@ -59,9 +62,11 @@
      &  orab(7,*),t0(*),t1(*),coords(3),c1,c2,reltime,
      &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),xload(2,*),
      &  xi,et,ze,xsj,xsjj,sm(60,60),t1l,rho,summass,summ,ttime,time,
-     &  sume,factorm,factore,alp,weight,pgauss(3),tvar(2),
+     &  sume,factorm,factore,alp,weight,pgauss(3),timeend(2),
      &  cocon(0:6,ntmat_,*),shcon(0:3,ntmat_,*),sph,coconloc(6),
-     &  field,areaj,sax(60,60),ffax(60),coefmpc(*),tl2(8)
+     &  field,areaj,sax(60,60),ffax(60),coefmpc(*),tl2(8),
+     &  voldl(0:mi(2),20),springarea(2,*),plicon(0:2*npmat_,ntmat_,*),
+     &  elcon(0:ncmat_,ntmat_,*),elconloc(21)
 !
       real*8 dtime,physcon(*)
 !
@@ -85,8 +90,8 @@
       data iflag /3/
       data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
 !
-      tvar(1)=time
-      tvar(2)=ttime+dtime
+      timeend(1)=time
+      timeend(2)=ttime+dtime
 !
       summass=0.d0
 !
@@ -117,9 +122,11 @@
       elseif(lakonl(4:5).eq.'15') then
          nope=15
          nopev=6
-      else
+      elseif(lakonl(4:4).eq.'6') then
          nope=6
          nopev=6
+      elseif(lakonl(1:2).eq.'ES') then
+         read(lakonl(8:8),'(i1)') nope
       endif
 !
       if(intscheme.eq.0) then
@@ -154,16 +161,20 @@ c               mint3d=4
             mint3d=1
          elseif(lakonl(4:5).eq.'15') then
             mint3d=9
-         else
+         elseif(lakonl(4:4).eq.'6') then
             mint3d=2
+         else
+            mint3d=0
          endif
       else
          if((lakonl(4:4).eq.'8').or.(lakonl(4:4).eq.'2')) then
             mint3d=27
          elseif((lakonl(4:5).eq.'10').or.(lakonl(4:4).eq.'4')) then
             mint3d=15
-         else
+         elseif((lakonl(4:5).eq.'15').or.(lakonl(4:4).eq.'6')) then
             mint3d=18
+         else
+            mint3d=0
          endif
          if(lakonl(4:5).eq.'8R') then
             mint2d=1
@@ -214,11 +225,27 @@ c          do j=1,nope
 !     initialisation of s
 !
       do i=1,nope
-c        do j=1,nope
         do j=i,nope
           s(i,j)=0.d0
         enddo
       enddo
+!
+!     calculating the stiffness matrix for the contact spring elements
+!
+      if(mint3d.eq.0) then
+         do i1=1,nope
+            do i2=1,3
+               voldl(i2,i1)=vold(i2,konl(i1))
+            enddo
+         enddo
+         kode=nelcon(1,imat)
+         if(kode.eq.-51)
+     &      call springstiff_th(xl,voldl,s,imat,elcon,nelcon,
+     &        ncmat_,ntmat_,nope,kode,plicon,
+     &        nplicon,npmat_,iperturb,springarea(1,konl(nope+1)),mi,
+     &        timeend,matname,konl(nope),nelem,istep,iinc)
+         return
+      endif
 !
 !     computation of the matrix: loop over the Gauss points
 !
@@ -306,8 +333,8 @@ c        do j=1,nope
 !           check the jacobian determinant
 !
          if(xsj.lt.1.d-20) then
-            write(*,*) '*WARNING in e_c3d: nonpositive jacobian'
-            write(*,*) '         determinant in element',nelem
+            write(*,*) '*ERROR in e_c3d_th: nonpositive jacobian'
+            write(*,*) '       determinant in element',nelem
             write(*,*)
             xsj=dabs(xsj)
             nmethod=0
@@ -474,7 +501,7 @@ c     &                 weight
                      endif
                      jltyp=1
                      iscale=1
-                     call dflux(xload(1,id),t1l,istep,iinc,tvar,
+                     call dflux(xload(1,id),t1l,istep,iinc,timeend,
      &                 nelem,kk,pgauss,jltyp,temp,press,sideload(id),
      &                 areaj,vold,co,lakonl,konl,ipompc,nodempc,coefmpc,
      &                 nmpc,ikmpc,ilmpc,iscale,mi)
@@ -653,7 +680,7 @@ c         endif
                 jltyp=jltyp+10
                 if(sideload(id)(1:1).eq.'S') then
                    iscale=1
-                   call dflux(xload(1,id),temp,istep,iinc,tvar,
+                   call dflux(xload(1,id),temp,istep,iinc,timeend,
      &               nelem,i,coords,jltyp,temp,press,sideload(id),
      &               areaj,vold,co,lakonl,konl,
      &               ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,iscale,mi)
@@ -663,14 +690,14 @@ c         endif
                 elseif(sideload(id)(1:1).eq.'F') then
 c                   write(*,*) 'nonuniform'
                    call film(xload(1,id),sinktemp,temp,istep,
-     &               iinc,tvar,nelem,i,coords,jltyp,field,nfield,
+     &               iinc,timeend,nelem,i,coords,jltyp,field,nfield,
      &               sideload(id),node,areaj,vold,mi)
                    if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime
                 elseif(sideload(id)(1:1).eq.'R') then
                    call radiate(xload(1,id),xload(2,id),temp,istep,
-     &               iinc,tvar,nelem,i,coords,jltyp,field,nfield,
-     &               sideload(id),node,areaj,vold,mi)
+     &               iinc,timeend,nelem,i,coords,jltyp,field,nfield,
+     &               sideload(id),node,areaj,vold,mi,iemchange)
                    if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime
                 endif

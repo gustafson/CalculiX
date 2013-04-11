@@ -27,7 +27,7 @@
 !
       implicit none
 !
-      logical cload_flag,add
+      logical cload_flag,add,user
 !
       character*1 inpc(*)
       character*80 amplitude,amname(*)
@@ -47,6 +47,7 @@
       idelay=0
       lc=1
       isector=0
+      user=.false.
       add=.false.
 !
       if(istep.lt.1) then
@@ -138,8 +139,23 @@
                stop
             endif
             isector=isector-1
+         elseif(textpart(i)(1:4).eq.'USER') then
+            user=.true.
+         else
+            write(*,*) 
+     &        '*WARNING in cloads: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
+!
+      if(user.and.(iamplitude.ne.0)) then
+         write(*,*) '*WARNING: no amplitude definition is allowed'
+         write(*,*) '          for concentrated loads defined by a'
+         write(*,*) '          user routine'
+         iamplitude=0
+      endif
 !
       do
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -164,6 +180,10 @@
             if(iaxial.ne.0) forcval=forcval/iaxial
          endif
 !
+!        dummy flux consisting of the first primes
+!
+         if(user) forcval=1.2357111317d0
+!
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
          if(istat.eq.0) then
             if(l.gt.nk) then
@@ -178,7 +198,7 @@
             endif
             call forcadd(l,iforcdir,forcval,nodeforc,ndirforc,xforc,
      &        nforc,nforc_,iamforc,iamplitude,nam,ntrans,trab,inotr,co,
-     &        ikforc,ilforc,jsector,add)
+     &        ikforc,ilforc,jsector,add,user)
          else
             read(textpart(1)(1:80),'(a80)',iostat=istat) noset
             noset(81:81)=' '
@@ -205,7 +225,7 @@
                   call forcadd(k,iforcdir,forcval,
      &               nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &               iamplitude,nam,ntrans,trab,inotr,co,ikforc,ilforc,
-     &               jsector,add)
+     &               jsector,add,user)
                else
                   k=ialset(j-2)
                   do
@@ -219,7 +239,7 @@
                      call forcadd(k,iforcdir,forcval,
      &                 nodeforc,ndirforc,xforc,nforc,nforc_,
      &                 iamforc,iamplitude,nam,ntrans,trab,inotr,co,
-     &                 ikforc,ilforc,jsector,add)
+     &                 ikforc,ilforc,jsector,add,user)
                   enddo
                endif
             enddo

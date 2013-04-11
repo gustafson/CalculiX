@@ -27,7 +27,8 @@
       integer ipoinpc(0:*),iline,i
 !
       write(*,*) '*WARNING in the input deck. Card image:'
-      write(*,'(1320a1)') (inpc(i),i=ipoinpc(iline-1)+1,ipoinpc(iline))
+      write(*,'(10x,1320a1)') 
+     &       (inpc(i),i=ipoinpc(iline-1)+1,ipoinpc(iline))
       write(*,*)
 !
       return

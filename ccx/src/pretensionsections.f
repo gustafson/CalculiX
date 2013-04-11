@@ -19,7 +19,7 @@
       subroutine pretensionsections(inpc,textpart,ipompc,nodempc,
      &  coefmpc,nmpc,nmpc_,mpcfree,nk,ikmpc,ilmpc,
      &  labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,lakon,
-     &  kon,ipkon,set,nset,istartset,iendset,ialset,co,ics)
+     &  kon,ipkon,set,nset,istartset,iendset,ialset,co,ics,dcs)
 !
 !     reading the input deck: *PRE-TENSION SECTION
 !
@@ -37,12 +37,17 @@
      &  n,i,j,key,nk,node,ifacequad(3,4),ifacetria(3,3),npt,
      &  mpcfreeold,ikmpc(*),ilmpc(*),id,idof,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),irefnode,lathyp(3,6),inum,
-     &  jn,jt,jd,iside,nelem,jface,nnodelem,nface,nodef(8),nodel(8),
+     &  jn,jt,jd,iside,nelem,jface,nopes,nface,nodef(8),nodel(8),
      &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),indexpret,
      &  k,ipos,nkold,nope,m,kon(*),ipkon(*),indexe,iset,nset,idir,
-     &  istartset(*),iendset(*),ialset(*),index1,ics(2,*)
+     &  istartset(*),iendset(*),ialset(*),index1,ics(2,*),mpcpret,
+     &  mint,iflag
 !
-      real*8 coefmpc(*),xn(3),xt(3),xd(3),dd,co(3,*)
+      real*8 coefmpc(*),xn(3),xt(3),xd(3),dd,co(3,*),dcs(*),area,
+     &  areanodal(8),xl2(3,8),xi,et,weight,shp2(7,8),
+     &  xs2(3,2),xsj2(3),xsj
+!
+      include "gauss.f"
 !     
 !     latin hypercube positions in a 3 x 3 matrix
 !     
@@ -82,16 +87,20 @@
 !
 !     nodes per face for quad elements
 !
-      data ifacequad /1,2,5,
-     &                2,3,6,
-     &                3,4,7,
-     &                4,1,8/
+      data ifacequad /1,5,2,
+     &                2,6,3,
+     &                3,7,4,
+     &                4,8,1/
 !
 !     nodes per face for tria elements
 !
-      data ifacetria /1,2,4,
-     &                2,3,5,
-     &                3,1,6/
+      data ifacetria /1,4,2,
+     &                2,5,3,
+     &                3,6,1/
+!
+!     flag for shape functions
+!
+      data iflag /2/
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR in pretensionsections.f: *EQUATION should'
@@ -112,6 +121,12 @@
                write(*,*) '       node ',irefnode,' is not defined'
                stop
             endif
+         else
+            write(*,*) 
+     &       '*WARNING in pretensionsections: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !
@@ -185,127 +200,11 @@
       indexpret=0
       nkold=nk
       m=iendset(iset)-istartset(iset)+1
-c!
-c!     check whether any MPC was defined in the nodes belonging to
-c!     the pre-tension surface
-c!
-c!     loop over all element faces belonging to the surface
-c!      
-c      do k=1,m
-c         iside=ialset(istartset(iset)+k-1)
-c         nelem=int(iside/10.d0)
-c         indexe=ipkon(nelem)
-c         jface=iside-10*nelem
-c!
-c!        nnodelem: #nodes in the face
-c!        the nodes are stored in nodef(*)
-c!
-c         if(lakon(nelem)(4:4).eq.'2') then
-c            nnodelem=8
-c            nface=6
-c         elseif(lakon(nelem)(3:4).eq.'D8') then
-c            nnodelem=4
-c            nface=6
-c         elseif(lakon(nelem)(4:5).eq.'10') then
-c            nnodelem=6
-c            nface=4
-c            nope=10
-c         elseif(lakon(nelem)(4:4).eq.'4') then
-c            nnodelem=3
-c            nface=4
-c            nope=4
-c         elseif(lakon(nelem)(4:5).eq.'15') then
-c            if(jface.le.2) then
-c               nnodelem=6
-c            else
-c               nnodelem=8
-c            endif
-c            nface=5
-c            nope=15
-c         elseif(lakon(nelem)(3:4).eq.'D6') then
-c            if(jface.le.2) then
-c               nnodelem=3
-c            else
-c               nnodelem=4
-c            endif
-c            nface=5
-c            nope=6
-c         elseif((lakon(nelem)(2:2).eq.'8').or.
-c     &          (lakon(nelem)(4:4).eq.'8')) then
-c            nnodelem=3
-c            nface=4
-c            nope=8
-c            if(lakon(nelem)(4:4).eq.'8') then
-c               jface=jface-2
-c            endif
-c         elseif((lakon(nelem)(2:2).eq.'6').or.
-c     &          (lakon(nelem)(4:4).eq.'6')) then
-c            nnodelem=3
-c            nface=3
-c            if(lakon(nelem)(4:4).eq.'6') then
-c               jface=jface-2
-c            endif
-c         else
-c            cycle
-c         endif
-c!     
-c!     determining the nodes of the face
-c!     
-c         if(nface.eq.3) then
-c            do i=1,nnodelem
-c               nodef(i)=kon(indexe+ifacetria(i,jface))
-c            enddo
-c         elseif(nface.eq.4) then
-c            if(nope.eq.8) then
-c               do i=1,nnodelem
-c                  nodef(i)=kon(indexe+ifacequad(i,jface))
-c               enddo
-c            else
-c               do i=1,nnodelem
-c                  nodef(i)=kon(indexe+ifacet(i,jface))
-c               enddo
-c            endif
-c         elseif(nface.eq.5) then
-c            if(nope.eq.6) then
-c               do i=1,nnodelem
-c                  nodef(i)=kon(indexe+ifacew1(i,jface))
-c               enddo
-c            elseif(nope.eq.15) then
-c               do i=1,nnodelem
-c                  nodef(i)=kon(indexe+ifacew2(i,jface))
-c               enddo
-c            endif
-c         elseif(nface.eq.6) then
-c            do i=1,nnodelem
-c               nodef(i)=kon(indexe+ifaceq(i,jface))
-c            enddo
-c         endif
-c!
-c!        loop over the nodes belonging to the face      
-c!         
-c         do i=1,nnodelem
-c            node=nodef(i)
-c!
-c            idof=8*(node-1)+jt
-c            call nident(ikmpc,idof,nmpc,id)
-c            if(id.gt.0) then
-c               if(ikmpc(id).eq.idof) then
-c!
-c!                 MPC was defined in node: error
-c!
-c                  write(*,*) '*ERROR in pretensionsections:'
-c                  write(*,*) '       a non-pretension MPC is defined'
-c                  write(*,*) '       in node ',node,'.'
-c                  write(*,*) '       This is not allowed'
-c                  stop
-c               endif
-c            endif
-c         enddo
-c      enddo
 !
 !     number of distinct pre-strain nodes for the present keyword
 !
       npt=0
+      area=0.d0
 !
 !     loop over all element faces belonging to the surface
 !      
@@ -316,42 +215,45 @@ c      enddo
          indexe=ipkon(nelem)
          jface=iside-10*nelem
 !
-!        nnodelem: #nodes in the face
+!        nodes: #nodes in the face
 !        the nodes are stored in nodef(*)
 !
          if(lakon(nelem)(4:4).eq.'2') then
-            nnodelem=8
+            nopes=8
             nface=6
          elseif(lakon(nelem)(3:4).eq.'D8') then
-            nnodelem=4
+            nopes=4
             nface=6
          elseif(lakon(nelem)(4:5).eq.'10') then
-            nnodelem=6
+            nopes=6
             nface=4
             nope=10
          elseif(lakon(nelem)(4:4).eq.'4') then
-            nnodelem=3
+            nopes=3
             nface=4
             nope=4
          elseif(lakon(nelem)(4:5).eq.'15') then
             if(jface.le.2) then
-               nnodelem=6
+               nopes=6
             else
-               nnodelem=8
+               nopes=8
             endif
             nface=5
             nope=15
          elseif(lakon(nelem)(3:4).eq.'D6') then
             if(jface.le.2) then
-               nnodelem=3
+               nopes=3
             else
-               nnodelem=4
+               nopes=4
             endif
             nface=5
             nope=6
          elseif((lakon(nelem)(2:2).eq.'8').or.
      &          (lakon(nelem)(4:4).eq.'8')) then
-            nnodelem=3
+!
+!           8-node 2-D elements
+!
+            nopes=3
             nface=4
             nope=8
             if(lakon(nelem)(4:4).eq.'8') then
@@ -360,7 +262,10 @@ c      enddo
             endif
          elseif((lakon(nelem)(2:2).eq.'6').or.
      &          (lakon(nelem)(4:4).eq.'6')) then
-            nnodelem=3
+!
+!           6-node 2-D elements
+!
+            nopes=3
             nface=3
             if(lakon(nelem)(4:4).eq.'6') then
                twod=.true.
@@ -373,44 +278,47 @@ c      enddo
 !     determining the nodes of the face
 !     
          if(nface.eq.3) then
-            do i=1,nnodelem
+            do i=1,nopes
                nodef(i)=kon(indexe+ifacetria(i,jface))
                nodel(i)=ifacetria(i,jface)
             enddo
          elseif(nface.eq.4) then
             if(nope.eq.8) then
-               do i=1,nnodelem
+               do i=1,nopes
                   nodef(i)=kon(indexe+ifacequad(i,jface))
                   nodel(i)=ifacequad(i,jface)
                enddo
             else
-               do i=1,nnodelem
+               do i=1,nopes
                   nodef(i)=kon(indexe+ifacet(i,jface))
                   nodel(i)=ifacet(i,jface)
                enddo
             endif
          elseif(nface.eq.5) then
             if(nope.eq.6) then
-               do i=1,nnodelem
+               do i=1,nopes
                   nodef(i)=kon(indexe+ifacew1(i,jface))
                   nodel(i)=ifacew1(i,jface)
                enddo
             elseif(nope.eq.15) then
-               do i=1,nnodelem
+               do i=1,nopes
                   nodef(i)=kon(indexe+ifacew2(i,jface))
                   nodel(i)=ifacew2(i,jface)
                enddo
             endif
          elseif(nface.eq.6) then
-            do i=1,nnodelem
+            do i=1,nopes
                nodef(i)=kon(indexe+ifaceq(i,jface))
                nodel(i)=ifaceq(i,jface)
             enddo
          endif
 !
-!        loop over the nodes belonging to the face      
+!        loop over the nodes belonging to the face   
+!        ics(1,*): pretension node
+!        ics(2,*): corresponding partner node
+!        dcs(*): area corresponding to pretension node   
 !         
-         do i=1,nnodelem
+         do i=1,nopes
             node=nodef(i)
             call nident2(ics,node,npt,id)
             if(id.gt.0) then
@@ -423,29 +331,6 @@ c      enddo
                   cycle
                endif
             endif
-c
-c            call nident(ikmpc,idof,nmpc,id)
-c            if(id.gt.0) then
-c               if(ikmpc(id).eq.idof) then
-c!
-c!                 node was already treated: replacing the node
-c!                 by the partner node
-c!
-cc                  kon(indexe+nodel(i))=nodempc(1,nodempc(3,
-cc     &                 nodempc(3,nodempc(3,ipompc(ilmpc(id))))))
-c                  index1=ipompc(ilmpc(id))
-c                  do
-c                     if(nodempc(1,index1).ne.node) then
-c                        kon(indexe+nodel(i))=nodempc(1,index1)
-c                        exit
-c                     else
-c                        index1=nodempc(3,index1)
-c                     endif
-c                  enddo
-c!
-c                  cycle
-c               endif
-c            endif
 !
 !           generating a partner node
 !
@@ -467,13 +352,14 @@ c            endif
             do j=npt,id+2,-1
                ics(1,j)=ics(1,j-1)
                ics(2,j)=ics(2,j-1)
+               dcs(j)=dcs(j-1)
             enddo
             ics(1,id+1)=node
             ics(2,id+1)=nk
+            dcs(id+1)=0.d0
 !
 !           first MPC perpendicular to the normal direction
 !
-c            idof=8*(node-1)+jt
             idof=8*(nk-1)+jt
             call nident(ikmpc,idof,nmpc,id)
 !     
@@ -496,7 +382,6 @@ c            idof=8*(node-1)+jt
 !
             idir=jt
             if(dabs(xt(idir)).gt.1.d-10) then
-c               nodempc(1,mpcfree)=node
                nodempc(1,mpcfree)=nk
                nodempc(2,mpcfree)=idir
                coefmpc(mpcfree)=-xt(idir)
@@ -507,7 +392,6 @@ c               nodempc(1,mpcfree)=node
             idir=idir+1
             if(idir.eq.4) idir=1
             if(dabs(xt(idir)).gt.1.d-10) then
-c               nodempc(1,mpcfree)=node
                nodempc(1,mpcfree)=nk
                nodempc(2,mpcfree)=idir
                coefmpc(mpcfree)=-xt(idir)
@@ -518,7 +402,6 @@ c               nodempc(1,mpcfree)=node
             idir=idir+1
             if(idir.eq.4) idir=1
             if(dabs(xt(idir)).gt.1.d-10) then
-c               nodempc(1,mpcfree)=node
                nodempc(1,mpcfree)=nk
                nodempc(2,mpcfree)=idir
                coefmpc(mpcfree)=-xt(idir)
@@ -528,7 +411,6 @@ c               nodempc(1,mpcfree)=node
 !
             idir=jt
             if(dabs(xt(idir)).gt.1.d-10) then
-c               nodempc(1,mpcfree)=nk
                nodempc(1,mpcfree)=node
                nodempc(2,mpcfree)=jt
                coefmpc(mpcfree)=xt(idir)
@@ -539,7 +421,6 @@ c               nodempc(1,mpcfree)=nk
             idir=idir+1
             if(idir.eq.4) idir=1
             if(dabs(xt(idir)).gt.1.d-10) then
-c               nodempc(1,mpcfree)=nk
                nodempc(1,mpcfree)=node
                nodempc(2,mpcfree)=idir
                coefmpc(mpcfree)=xt(idir)
@@ -550,7 +431,6 @@ c               nodempc(1,mpcfree)=nk
             idir=idir+1
             if(idir.eq.4) idir=1
             if(dabs(xt(idir)).gt.1.d-10) then
-c               nodempc(1,mpcfree)=nk
                nodempc(1,mpcfree)=node
                nodempc(2,mpcfree)=idir
                coefmpc(mpcfree)=xt(idir)
@@ -562,7 +442,6 @@ c               nodempc(1,mpcfree)=nk
 !           second MPC perpendicular to the normal direction
 !
             if(.not.twod) then
-c               idof=8*(node-1)+jd
                idof=8*(nk-1)+jd
                call nident(ikmpc,idof,nmpc,id)
 !     
@@ -585,7 +464,6 @@ c               idof=8*(node-1)+jd
 !     
                idir=jd
                if(dabs(xd(idir)).gt.1.d-10) then
-c                  nodempc(1,mpcfree)=node
                   nodempc(1,mpcfree)=nk
                   nodempc(2,mpcfree)=idir
                   coefmpc(mpcfree)=-xd(idir)
@@ -596,7 +474,6 @@ c                  nodempc(1,mpcfree)=node
                idir=idir+1
                if(idir.eq.4) idir=1
                if(dabs(xd(idir)).gt.1.d-10) then
-c                  nodempc(1,mpcfree)=node
                   nodempc(1,mpcfree)=nk
                   nodempc(2,mpcfree)=idir
                   coefmpc(mpcfree)=-xd(idir)
@@ -607,7 +484,6 @@ c                  nodempc(1,mpcfree)=node
                idir=idir+1
                if(idir.eq.4) idir=1
                if(dabs(xd(idir)).gt.1.d-10) then
-c                  nodempc(1,mpcfree)=node
                   nodempc(1,mpcfree)=nk
                   nodempc(2,mpcfree)=idir
                   coefmpc(mpcfree)=-xd(idir)
@@ -617,7 +493,6 @@ c                  nodempc(1,mpcfree)=node
 !     
                idir=jd
                if(dabs(xd(idir)).gt.1.d-10) then
-c                  nodempc(1,mpcfree)=nk
                   nodempc(1,mpcfree)=node
                   nodempc(2,mpcfree)=idir
                   coefmpc(mpcfree)=xd(idir)
@@ -628,7 +503,6 @@ c                  nodempc(1,mpcfree)=nk
                idir=idir+1
                if(idir.eq.4) idir=1
                if(dabs(xd(idir)).gt.1.d-10) then
-c                  nodempc(1,mpcfree)=nk
                   nodempc(1,mpcfree)=node
                   nodempc(2,mpcfree)=idir
                   coefmpc(mpcfree)=xd(idir)
@@ -639,7 +513,6 @@ c                  nodempc(1,mpcfree)=nk
                idir=idir+1
                if(idir.eq.4) idir=1
                if(dabs(xd(idir)).gt.1.d-10) then
-c                  nodempc(1,mpcfree)=nk
                   nodempc(1,mpcfree)=node
                   nodempc(2,mpcfree)=idir
                   coefmpc(mpcfree)=xd(idir)
@@ -654,7 +527,6 @@ c                  nodempc(1,mpcfree)=nk
 !           check whether initialized
 !
             if(indexpret.eq.0) then
-c               idof=8*(node-1)+jn
                idof=8*(nk-1)+jn
                call nident(ikmpc,idof,nmpc,id)
 !
@@ -665,6 +537,7 @@ c               idof=8*(node-1)+jn
                endif
                labmpc(nmpc)='PRETENSION          '
                ipompc(nmpc)=mpcfree
+               mpcpret=nmpc
 !     
 !     updating ikmpc and ilmpc
 !     
@@ -680,39 +553,12 @@ c               idof=8*(node-1)+jn
 !
             idir=jn
             if(dabs(xn(idir)).gt.1.d-10) then
-c               nodempc(1,mpcfree)=node
                nodempc(1,mpcfree)=nk
                nodempc(2,mpcfree)=idir
                coefmpc(mpcfree)=-xn(idir)
                indexpret=mpcfree
                mpcfree=nodempc(3,mpcfree)
-            endif
 !
-            idir=idir+1
-            if(idir.eq.4) idir=1
-            if(dabs(xn(idir)).gt.1.d-10) then
-c               nodempc(1,mpcfree)=node
-               nodempc(1,mpcfree)=nk
-               nodempc(2,mpcfree)=idir
-               coefmpc(mpcfree)=-xn(idir)
-               indexpret=mpcfree
-               mpcfree=nodempc(3,mpcfree)
-            endif
-!
-            idir=idir+1
-            if(idir.eq.4) idir=1
-            if(dabs(xn(idir)).gt.1.d-10) then
-c               nodempc(1,mpcfree)=node
-               nodempc(1,mpcfree)=nk
-               nodempc(2,mpcfree)=idir
-               coefmpc(mpcfree)=-xn(idir)
-               indexpret=mpcfree
-               mpcfree=nodempc(3,mpcfree)
-            endif
-!
-            idir=jn
-            if(dabs(xn(idir)).gt.1.d-10) then
-c               nodempc(1,mpcfree)=nk
                nodempc(1,mpcfree)=node
                nodempc(2,mpcfree)=idir
                coefmpc(mpcfree)=xn(idir)
@@ -723,7 +569,12 @@ c               nodempc(1,mpcfree)=nk
             idir=idir+1
             if(idir.eq.4) idir=1
             if(dabs(xn(idir)).gt.1.d-10) then
-c               nodempc(1,mpcfree)=nk
+               nodempc(1,mpcfree)=nk
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=-xn(idir)
+               indexpret=mpcfree
+               mpcfree=nodempc(3,mpcfree)
+!
                nodempc(1,mpcfree)=node
                nodempc(2,mpcfree)=idir
                coefmpc(mpcfree)=xn(idir)
@@ -734,7 +585,12 @@ c               nodempc(1,mpcfree)=nk
             idir=idir+1
             if(idir.eq.4) idir=1
             if(dabs(xn(idir)).gt.1.d-10) then
-c               nodempc(1,mpcfree)=nk
+               nodempc(1,mpcfree)=nk
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=-xn(idir)
+               indexpret=mpcfree
+               mpcfree=nodempc(3,mpcfree)
+!
                nodempc(1,mpcfree)=node
                nodempc(2,mpcfree)=idir
                coefmpc(mpcfree)=xn(idir)
@@ -743,15 +599,149 @@ c               nodempc(1,mpcfree)=nk
             endif
 !
          enddo
+!
+!        calculating the area of the face and its contributions
+!        to the facial nodes
+!
+!        number of integration points
+!         
+         if(lakon(nelem)(3:5).eq.'D8R') then
+            mint=1
+         elseif(lakon(nelem)(3:4).eq.'D8') then
+            mint=4
+         elseif(lakon(nelem)(4:6).eq.'20R') then
+            mint=4
+         elseif(lakon(nelem)(4:4).eq.'2') then
+            mint=9
+         elseif(lakon(nelem)(4:5).eq.'10') then
+            mint=3
+         elseif(lakon(nelem)(4:4).eq.'4') then
+            mint=1
+         elseif(lakon(nelem)(3:4).eq.'D6') then
+            mint=1
+         elseif(lakon(nelem)(4:5).eq.'15') then
+            if(jface.le.2) then
+               mint=3
+            else
+               mint=4
+            endif
+!
+!        faces of 2-D elements    
+!
+         elseif((lakon(nelem)(3:3).eq.'R').or.
+     &          (lakon(nelem)(5:5).eq.'R')) then
+            mint=2
+         else
+            mint=3
+         endif
+!
+         do i=1,nopes
+            areanodal(i)=0.d0
+            do j=1,3
+               xl2(j,i)=co(j,nodef(i))
+            enddo
+         enddo
+!
+         do m=1,mint
+            if((lakon(nelem)(3:5).eq.'D8R').or.
+     &           ((lakon(nelem)(3:4).eq.'D6').and.(nopes.eq.4))) then
+               xi=gauss2d1(1,m)
+               et=gauss2d1(2,m)
+               weight=weight2d1(m)
+            elseif((lakon(nelem)(3:4).eq.'D8').or.
+     &              (lakon(nelem)(4:6).eq.'20R').or.
+     &              ((lakon(nelem)(4:5).eq.'15').and.
+     &              (nopes.eq.8))) then
+               xi=gauss2d2(1,m)
+               et=gauss2d2(2,m)
+               weight=weight2d2(m)
+            elseif(lakon(nelem)(4:4).eq.'2') then
+               xi=gauss2d3(1,m)
+               et=gauss2d3(2,m)
+               weight=weight2d3(m)
+            elseif((lakon(nelem)(4:5).eq.'10').or.
+     &              ((lakon(nelem)(4:5).eq.'15').and.
+     &              (nopes.eq.6))) then
+               xi=gauss2d5(1,m)
+               et=gauss2d5(2,m)
+               weight=weight2d5(m)
+            elseif((lakon(nelem)(4:4).eq.'4').or.
+     &              ((lakon(nelem)(3:4).eq.'D6').and.
+     &              (nopes.eq.3))) then
+               xi=gauss2d4(1,m)
+               et=gauss2d4(2,m)
+               weight=weight2d4(m)
+!
+!        faces of 2-D elements    
+!
+            elseif((lakon(nelem)(3:3).eq.'R').or.
+     &              (lakon(nelem)(5:5).eq.'R')) then
+               xi=gauss1d2(1,m)
+               weight=weight1d2(m)
+            else
+               xi=gauss1d3(1,m)
+               weight=weight1d3(m)
+            endif
+!     
+            if(nopes.eq.8) then
+               call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
+            elseif(nopes.eq.4) then
+               call shape4q(xi,et,xl2,xsj2,xs2,shp2,iflag)
+            elseif(nopes.eq.6) then
+               call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+            elseif((nopes.eq.3).and.(.not.twod)) then
+               call shape3tri(xi,xl2,xsj,xs2,shp2,iflag)
+            else
+!
+!               3-node line
+!
+                call shape3l(xi,xl2,xsj2,xs2,shp2,iflag)
+            endif
+!
+!           calculating the total area and nodal area
+!
+            if(.not.twod) then
+               xsj=weight*dsqrt(xsj2(1)**2+xsj2(2)**2+xsj2(3)**2)
+            else
+               xsj=weight*xsj2(1)
+            endif
+            area=area+xsj
+            do i=1,nopes
+               areanodal(i)=areanodal(i)+xsj*shp2(4,i)
+            enddo
+!               
+         enddo
+!
+!        inserting the nodal area into field dcs
+!
+         do i=1,nopes
+            node=nodef(i)
+            call nident2(ics,node,npt,id)
+            dcs(id)=dcs(id)+areanodal(i)
+         enddo
+!
       enddo
 !
       nodempc(3,indexpret)=mpcfree
       nodempc(1,mpcfree)=irefnode
       nodempc(2,mpcfree)=1
-      coefmpc(mpcfree)=1.d0*(nk-nkold)
+      coefmpc(mpcfree)=area
       mpcfreeold=mpcfree
       mpcfree=nodempc(3,mpcfree)
       nodempc(3,mpcfreeold)=0
+!
+!     changing the coefficients of the pretension MPC
+!
+      index1=ipompc(mpcpret)
+      do
+         node=nodempc(1,nodempc(3,index1))
+         call nident2(ics,node,npt,id)
+         do j=1,2
+            coefmpc(index1)=coefmpc(index1)*dcs(id)
+            index1=nodempc(3,index1)
+         enddo
+         if(nodempc(1,index1).eq.irefnode) exit
+      enddo
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

@@ -242,7 +242,7 @@ c      endif
 !     check the jacobian determinant
 !     
             if(xsj.lt.1.d-20) then
-               write(*,*) '*WARNING in e_c3d: nonpositive jacobian'
+               write(*,*) '*ERROR in e_c3d_rhs: nonpositive jacobian'
                write(*,*) '         determinant in element',nelem
                write(*,*)
                xsj=dabs(xsj)

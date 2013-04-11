@@ -61,6 +61,12 @@
          elseif(textpart(i)(1:5).eq.'ZERO=') then
             read(textpart(i)(6:25),'(f20.0)',iostat=istat) alzero(nmat)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         else
+            write(*,*) 
+     &        '*WARNING in expansions: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

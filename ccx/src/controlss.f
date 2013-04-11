@@ -117,6 +117,12 @@
             write(*,*) '       cae = ',ctrl(25)
             write(*,*) '       ral = ',ctrl(26)
             exit
+         else
+            write(*,*) 
+     &        '*WARNING in controlss: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !

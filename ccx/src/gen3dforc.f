@@ -29,7 +29,7 @@
 !
       implicit none
 !
-      logical add,fixed
+      logical add,fixed,user
 !
       character*1 type,typeboun(*)
       character*8 lakon(*)
@@ -59,6 +59,7 @@
       fixed=.false.
 !
       add=.false.
+      user=.false.
       pi=4.d0*datan(1.d0)
       isector=0
 !
@@ -66,7 +67,6 @@
       do i=1,nforcold
          node=nodeforc(1,i)
          if(node.gt.iponoelmax) then
-c            if(ndirforc(i).gt.3) then
             if(ndirforc(i).gt.4) then
                write(*,*) '*WARNING: in gen3dforc: node ',i,
      &              ' does not'
@@ -78,7 +78,6 @@ c            if(ndirforc(i).gt.3) then
          endif
          index=iponoel(node)
          if(index.eq.0) then
-c            if(ndirforc(i).gt.3) then
             if(ndirforc(i).gt.4) then
                write(*,*) '*WARNING: in gen3dforc: node ',i,
      &              ' does not'
@@ -96,7 +95,6 @@ c            if(ndirforc(i).gt.3) then
          idir=ndirforc(i)
 !
          if(rig(node).ne.0) then
-c            if(idir.gt.3) then
             if(idir.gt.4) then
                if(rig(node).lt.0) then
                   write(*,*) '*ERROR in gen3dforc: in node ',node
@@ -107,19 +105,17 @@ c            if(idir.gt.3) then
                   stop
                endif
                val=xforc(i)
-c               j=idir-3
-               j=idir-4
+               k=idir-4
                irotnode=rig(node)
-               call forcadd(irotnode,j,val,nodeforc,
+               call forcadd(irotnode,k,val,nodeforc,
      &              ndirforc,xforc,nforc,nforc_,iamforc,
      &              iamplitude,nam,ntrans,trab,inotr,co,
-     &              ikforc,ilforc,isector,add)
+     &              ikforc,ilforc,isector,add,user)
             endif
          else
 !
 !           check for moments defined in any but the first step
 !
-c            if(idir.gt.3) then
             if(idir.gt.4) then
 !
 !              create a knot: determine the knot
@@ -220,8 +216,6 @@ c            if(idir.gt.3) then
 !
 !              determine the first displacements of iexpnode
 !
-c               write(*,*) 'q ',q(1),q(2),q(3)
-c               write(*,*) 'w ',w(1),w(2),w(3)
                alpha=0.d0
                do k=1,ndepnodes
                   nod=idepnodes(k)
@@ -278,14 +272,12 @@ c               write(*,*) 'w ',w(1),w(2),w(3)
 !
                m=3
                nrhs=1
-c               write(*,*) 'xn before ',xn(1),xn(2),xn(3)
                call dgesv(m,nrhs,a,m,ipiv,xn,m,info)
                if(info.ne.0) then
                   write(*,*) '*ERROR in gen3dforc:'
                   write(*,*) '       singular system of equations'
                   stop
                endif
-c               write(*,*) 'xn after ',xn(1),xn(2),xn(3)
 !
                dd=0.d0
                do l=1,3
@@ -295,7 +287,6 @@ c               write(*,*) 'xn after ',xn(1),xn(2),xn(3)
                do l=1,3
                   xn(l)=dasin(dd/alpha)*xn(l)/dd
                enddo
-c               write(*,*) 'xn afterafter ',xn(1),xn(2),xn(3)
 !
 !              determine the displacements of irefnode
 !
@@ -336,34 +327,30 @@ c               write(*,*) 'xn afterafter ',xn(1),xn(2),xn(3)
                   vold(l,irotnode)=xn(l)
                enddo
                vold(1,iexpnode)=alpha
-c               write(*,*) 'w',w(1),w(2),w(3)
-c               write(*,*) 'xn',xn(1),xn(2),xn(3)
-c               write(*,*) 'alpha',alpha
 !
 !              apply the moment
 !               
-c               idir=idir-3
                idir=idir-4
                val=xforc(i)
                call forcadd(irotnode,idir,val,nodeforc,
      &              ndirforc,xforc,nforc,nforc_,iamforc,
      &              iamplitude,nam,ntrans,trab,inotr,co,
-     &              ikforc,ilforc,isector,add)
+     &              ikforc,ilforc,isector,add,user)
 !
 !              check for shells whether the rotation about the normal
 !              on the shell has been eliminated
 !               
                if(lakon(ielem)(7:7).eq.'L') then
                   indexx=iponor(1,indexe+j)
-                  do j=1,3
-                     xnoref(j)=xnor(indexx+j)
+                  do k=1,3
+                     xnoref(k)=xnor(indexx+k)
                   enddo
                   dmax=0.d0
                   imax=0
-                  do j=1,3
-                     if(dabs(xnoref(j)).gt.dmax) then
-                        dmax=dabs(xnoref(j))
-                        imax=j
+                  do k=1,3
+                     if(dabs(xnoref(k)).gt.dmax) then
+                        dmax=dabs(xnoref(k))
+                        imax=k
                      endif
                   enddo
 !     
@@ -386,7 +373,6 @@ c               idir=idir-3
 !     
                      isol=0
                      do l=1,3
-c                        idof=8*(node-1)+3+imax
                         idof=8*(node-1)+4+imax
                         call nident(ikboun,idof,nboun,id)
                         if((id.gt.0).and.(ikboun(id).eq.idof)) then
@@ -462,30 +448,58 @@ c                        idof=8*(node-1)+3+imax
                   endif
                   labmpc(nmpc)='                    '
                   ipompc(nmpc)=mpcfree
-                  do j=nmpc,id+2,-1
-                     ikmpc(j)=ikmpc(j-1)
-                     ilmpc(j)=ilmpc(j-1)
+                  do k=nmpc,id+2,-1
+                     ikmpc(k)=ikmpc(k-1)
+                     ilmpc(k)=ilmpc(k-1)
                   enddo
                   ikmpc(id+1)=idof
                   ilmpc(id+1)=nmpc
+!
+!                 for middle nodes: u_1+u_3-2*u_node=0
+!                 for end nodes: -u_1+4*u_2-u_3-2*u_node=0
+!
+!                 u_1 corresponds to knor(indexk+1)....
+!
                   nodempc(1,mpcfree)=newnode
                   nodempc(2,mpcfree)=idir
-                  coefmpc(mpcfree)=1.d0
+                  if(j.gt.4) then
+                     coefmpc(mpcfree)=1.d0
+                  else
+                     coefmpc(mpcfree)=-1.d0
+                  endif
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
                      write(*,*) 
      &                    '*ERROR in gen3dforc: increase nmpc_'
                      stop
                   endif
+!
+                  if(j.le.4) then
+                     nodempc(1,mpcfree)=knor(indexk+2)
+                     nodempc(2,mpcfree)=idir
+                     coefmpc(mpcfree)=4.d0
+                     mpcfree=nodempc(3,mpcfree)
+                     if(mpcfree.eq.0) then
+                        write(*,*) 
+     &                       '*ERROR in gen3dforc: increase nmpc_'
+                        stop
+                     endif
+                  endif
+!
                   nodempc(1,mpcfree)=knor(indexk+3)
                   nodempc(2,mpcfree)=idir
-                  coefmpc(mpcfree)=1.d0
+                  if(j.gt.4) then
+                     coefmpc(mpcfree)=1.d0
+                  else
+                     coefmpc(mpcfree)=-1.d0
+                  endif
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
                      write(*,*) 
      &                    '*ERROR in gen3dforc: increase nmpc_'
                      stop
                   endif
+!
                   nodempc(1,mpcfree)=node
                   nodempc(2,mpcfree)=idir
                   coefmpc(mpcfree)=-2.d0
@@ -495,6 +509,7 @@ c                        idof=8*(node-1)+3+imax
      &                    '*ERROR in gen3dforc: increase nmpc_'
                      stop
                   endif
+!
                   nodempc(3,mpcfree)=0
                   mpcfree=mpcfreenew
                endif
@@ -514,32 +529,57 @@ c                        idof=8*(node-1)+3+imax
                   endif
                   labmpc(nmpc)='                    '
                   ipompc(nmpc)=mpcfree
-                  do j=nmpc,id+2,-1
-                     ikmpc(j)=ikmpc(j-1)
-                     ilmpc(j)=ilmpc(j-1)
+                  do k=nmpc,id+2,-1
+                     ikmpc(k)=ikmpc(k-1)
+                     ilmpc(k)=ilmpc(k-1)
                   enddo
                   ikmpc(id+1)=idof
                   ilmpc(id+1)=nmpc
-                  nodempc(1,mpcfree)=newnode
-                  nodempc(2,mpcfree)=idir
-                  coefmpc(mpcfree)=1.d0
-                  mpcfree=nodempc(3,mpcfree)
-                  if(mpcfree.eq.0) then
-                     write(*,*) 
-     &                    '*ERROR in gen3dforc: increase nmpc_'
-                     stop
-                  endif
-                  do k=2,4
-                     nodempc(1,mpcfree)=knor(indexk+k)
-                     nodempc(2,mpcfree)=idir
-                     coefmpc(mpcfree)=1.d0
-                     mpcfree=nodempc(3,mpcfree)
-                     if(mpcfree.eq.0) then
-                        write(*,*) 
-     &                       '*ERROR in gen3dforc: increase nmpc_'
-                        stop
-                     endif
-                  enddo
+c                  nodempc(1,mpcfree)=newnode
+c                  nodempc(2,mpcfree)=idir
+c                  coefmpc(mpcfree)=1.d0
+c                  mpcfree=nodempc(3,mpcfree)
+c                  if(mpcfree.eq.0) then
+c                     write(*,*) 
+c     &                    '*ERROR in gen3dforc: increase nmpc_'
+c                     stop
+c                  endif
+c                  if(j.eq.2) then
+                     do k=1,4
+                        nodempc(1,mpcfree)=knor(indexk+k)
+                        nodempc(2,mpcfree)=idir
+                        coefmpc(mpcfree)=1.d0
+                        mpcfree=nodempc(3,mpcfree)
+                        if(mpcfree.eq.0) then
+                           write(*,*) 
+     &                          '*ERROR in gen3dforc: increase nmpc_'
+                           stop
+                        endif
+                     enddo
+c                  else
+c                     do k=1,4
+c                        nodempc(1,mpcfree)=knor(indexk+k)
+c                        nodempc(2,mpcfree)=idir
+c                        coefmpc(mpcfree)=-1.d0/3.d0
+c                        mpcfree=nodempc(3,mpcfree)
+c                        if(mpcfree.eq.0) then
+c                           write(*,*) 
+c     &                          '*ERROR in gen3dforc: increase nmpc_'
+c                           stop
+c                        endif
+c                     enddo
+c                     do k=5,8
+c                        nodempc(1,mpcfree)=knor(indexk+k)
+c                        nodempc(2,mpcfree)=idir
+c                        coefmpc(mpcfree)=4.d0/3.d0
+c                        mpcfree=nodempc(3,mpcfree)
+c                        if(mpcfree.eq.0) then
+c                           write(*,*) 
+c     &                          '*ERROR in gen3dforc: increase nmpc_'
+c                           stop
+c                        endif
+c                     enddo
+c                  endif
                   nodempc(1,mpcfree)=node
                   nodempc(2,mpcfree)=idir
                   coefmpc(mpcfree)=-4.d0
@@ -559,13 +599,10 @@ c                        idof=8*(node-1)+3+imax
 !
                node=knor(indexk+2)
                val=xforc(i)
-c               if(lakon(ielem)(7:7).eq.'A') then
-c                  val=val*thicke(1,indexe+j)/(2.d0*pi)
-c               endif
                call forcadd(node,idir,val,nodeforc,
      &              ndirforc,xforc,nforc,nforc_,iamforc,
      &              iamplitude,nam,ntrans,trab,inotr,co,
-     &              ikforc,ilforc,isector,add)
+     &              ikforc,ilforc,isector,add,user)
             endif
          endif
       enddo

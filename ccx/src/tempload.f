@@ -22,7 +22,8 @@
      &  amta,namta,nam,ampli,time,reltime,ttime,dtime,ithermal,nmethod,
      &  xbounold,xboun,xbounact,iamboun,nboun,
      &  nodeboun,ndirboun,nodeforc,ndirforc,istep,iinc,
-     &  co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi)
+     &  co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
+     &  ntrans,trab,inotr,veold)
 !
 !     calculates the loading at a given time
 !
@@ -39,14 +40,15 @@
      &  iamloadi1,iamloadi2,ibody(3,*),itg(*),ntg,idof,
      &  nbody,iambodyi,nodeboun(*),ndirboun(*),nodeforc(2,*),
      &  ndirforc(*),istep,iinc,msecpt,node,j,ikboun(*),ilboun(*),
-     &  ipresboun,mi(2)
+     &  ipresboun,mi(2),ntrans,inotr(2,*),idummy
 !
       real*8 xforc(*),xforcact(*),xload(2,*),xloadact(2,*),
      &  t1(*),t1act(*),amta(2,*),ampli(*),time,
      &  xforcold(*),xloadold(2,*),t1old(*),reltime,
      &  xbounold(*),xboun(*),xbounact(*),ttime,dtime,reftime,
-     &  xbody(7,*),xbodyold(7,*),
-     &  xbodyact(7,*),co(3,*),vold(0:mi(2),*),abqtime(2),coords(3)
+     &  xbody(7,*),xbodyold(7,*),xbodyact(7,*),co(3,*),
+     &  vold(0:mi(2),*),abqtime(2),coords(3),trab(7,*),
+     &  veold(0:mi(2),*),ddummy
 !
       data msecpt /1/
 !
@@ -93,9 +95,6 @@
 !     scaling the boundary conditions
 !
       do i=1,nboun
-c         if((ithermal.le.1).and.(ndirboun(i).eq.0)) cycle
-c         if((ithermal.eq.2).and.(ndirboun(i).gt.0).and.
-c     &      (ndirboun(i).le.3)) cycle
          if((xboun(i).lt.1.2357111318d0).and.
      &        (xboun(i).gt.1.2357111316d0)) then
 !     
@@ -193,6 +192,26 @@ c     &      (ndirboun(i).le.3)) cycle
 !
                call cflux(xforcact(i),msecpt,istep,iinc,abqtime,node,
      &              coords,vold,mi)
+               cycle
+            endif
+         else
+            if((xforc(i).lt.1.2357111318d0).and.
+     &         (xforc(i).gt.1.2357111316d0)) then
+!
+!              user subroutine for the concentrated load
+!
+               node=nodeforc(1,i)
+!
+               abqtime(1)=time
+               abqtime(2)=ttime+dtime
+!
+               do j=1,3
+                  coords(j)=co(j,node)+vold(j,node)
+               enddo
+!
+               call cload(xforcact(i),istep,iinc,abqtime,node,
+     &              ndirforc(i),coords,vold,mi,ntrans,trab,inotr,veold,
+     &              nmethod,idummy,ddummy)
                cycle
             endif
          endif

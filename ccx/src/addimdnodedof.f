@@ -18,7 +18,7 @@
 !
       subroutine addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
      &  nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,nactdof,mi,
-     &  imdmpc,nmdmpc,imdboun,nmdboun,ikboun,nboun)
+     &  imdmpc,nmdmpc,imdboun,nmdboun,ikboun,nboun,ilboun)
 !
 !     node was kept by the user in a modal dynamics calculation;
 !     the present routine checks DOF k of node; if this DOF belongs
@@ -29,7 +29,7 @@
       integer node,k,idof,ikmpc(*),ilmpc(*),ipompc(*),nodempc(3,*),
      &  nmpc,imdnode(*),nmdnode,imddof(*),nmddof,id,ist,index,jdof,
      &  mi(2),nactdof(0:mi(2),*),imdmpc(*),nmdmpc,imdboun(*),nmdboun,
-     &  ikboun(*),nboun
+     &  ikboun(*),nboun,ilboun(*)
 !
       idof=nactdof(k,node)
 c      write(*,*) 'addimdnodedof ',node,k,idof
@@ -41,7 +41,7 @@ c      write(*,*) 'addimdnodedof ',node,k,idof
          call nident(ikmpc,idof,nmpc,id)
          if(id.gt.0) then
             if(ikmpc(id).eq.idof) then
-               call addimd(imdmpc,nmdmpc,id)
+               call addimd(imdmpc,nmdmpc,ilmpc(id))
                id=ilmpc(id)
                ist=ipompc(id)
                index=nodempc(3,ist)
@@ -60,7 +60,7 @@ c      write(*,*) 'addimdnodedof ',node,k,idof
          call nident(ikboun,idof,nboun,id)
          if(id.gt.0) then
             if(ikboun(id).eq.idof) then
-               call addimd(imdboun,nmdboun,id)
+               call addimd(imdboun,nmdboun,ilboun(id))
             endif
          endif
       else

@@ -116,7 +116,11 @@
 !
 !        linear overclosure
 !
-         elas(1)=-springarea*elcon(2,1,imat)*val
+         pi=4.d0*datan(1.d0)
+         eps=-elcon(1,1,imat)*pi/elcon(2,1,imat)
+         elas(1)=-springarea*elcon(2,1,imat)*val*
+     &            (0.5d0+datan(-val/eps)/pi)
+c     &            -elcon(1,1,imat)*springarea
       endif
 !
 !     forces in the nodes of the contact element
@@ -195,12 +199,15 @@ c      endif
                vertan(i)=ver(i)-dvernor*xn(i)
             enddo
             dvertan=dsqrt(vertan(1)**2+vertan(2)**2+vertan(3)**2)
+c	    write(*,*) 'dvertan ',dvertan
 !     
 !     normalizing the tangent vector
-!     
-            do i=1,3
-               vertan(i)=vertan(i)/dvertan
-            enddo
+!
+      	    if(dvertan.gt.0.d0)then     	 
+               do i=1,3
+                  vertan(i)=vertan(i)/dvertan
+               enddo
+	    endif
 !     
 !     friction constants
 !     
@@ -239,7 +246,7 @@ c               fnv(i,nope)=-fricforc*vertan(i)
          endif
       endif
       if(ncmat_.ge.7) then
-         if(um.gt.0.d0) then
+         if((um.gt.0.d0).and.(val.lt.0.d0)) then
             if(damp.gt.0.d0) then
                do j=1,nope
                   do i=1,3
@@ -252,7 +259,14 @@ c               fnv(i,nope)=-fricforc*vertan(i)
                      fnl(i,j)=fnv(i,j)
                   enddo
                enddo
+c	       write(*,*) 'fnl(2,nope) ',fnl(2,nope)       
             endif
+	 else
+	    do j=1,nope
+                do i=1,3
+                   fnl(i,j)=0.d0
+                enddo
+            enddo 
          endif
       endif
 !

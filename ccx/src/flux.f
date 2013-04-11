@@ -78,8 +78,8 @@
 !
       elseif(lakon(nelem)(2:5).eq.'LICH') then
 !         
-         call liquidchan(node1,node2,nodem,nelem,lakon,nactdog,identity,
-     &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
+         call liquidchannel(node1,node2,nodem,nelem,lakon,nactdog,
+     &           identity,ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
      &           rho,g,co,dvi,numf,mi,ipkon,kon)
 !
       elseif(lakon(nelem)(2:5).eq.'LIPU') then
@@ -92,7 +92,7 @@
 !         
          call liquidpipe(node1,node2,nodem,nelem,lakon,nactdog,identity,
      &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
-     &           rho,g,co,dvi,numf,vold,mi,ipkon,kon)
+     &           rho,g,co,dvi,numf,vold,mi,ipkon,kon,set)
 !      
       elseif(lakon(nelem)(2:4).eq.'MRG') then 
 !     
@@ -112,19 +112,30 @@
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
      &        nshcon,rhcon,nrhcon,ntmat_,mi)
+! 
+      elseif(lakon(nelem)(2:4).eq.'RCV') then   
+!
+         call rcavi(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &     nodef,idirf,df,cp,R,dvi,numf,set,mi)
+!
+      elseif(lakon(nelem)(2:3).eq.'RO') then   
+!
+         call rcavi2(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &     nodef,idirf,df,cp,R,dvi,numf,set,mi)
 !
       elseif(lakon(nelem)(2:5).eq.'RIMS') then   
 !
          call rimseal(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi)
-!
+!     
       elseif(lakon(nelem)(2:6).eq.'SPUMP') then 
 ! 
         call scavenge_pump(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,mi)   
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,ntmat_,mi)   
 !
       elseif(lakon(nelem)(2:3).eq.'VO') then 
 !     

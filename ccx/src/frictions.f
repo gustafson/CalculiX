@@ -17,8 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine frictions(inpc,textpart,elcon,nelcon,
-     &  nmat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,ipoinpc)
+     &  imat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,
+     &  inp,ipoinpc,nstate_,ichangefriction)
 !
 !     reading the input deck: *FRICTION
 !
@@ -27,27 +27,30 @@
       character*1 inpc(*)
       character*132 textpart(16)
 !
-      integer nelcon(2,*),nmat,ntmat_,istep,istat,ipoinpc(0:*),
-     &  n,key,i,ncmat_,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*)
+      integer nelcon(2,*),imat,ntmat_,istep,istat,ipoinpc(0:*),
+     &  n,key,i,ncmat_,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),
+     &  nstate_,ichangefriction
 !
       real*8 elcon(0:ncmat_,ntmat_,*)
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in frictions:'
+      if((istep.gt.0).and.(irstrt.ge.0).and.(ichangefriction.eq.0)) then
+         write(*,*) '*ERROR reading *FRICTION:'
          write(*,*) '       *FRICTION should be placed'
          write(*,*) '       before all step definitions'
          stop
       endif
 !
-      if(nmat.eq.0) then
-         write(*,*) '*ERROR in frictions:'
+      if(imat.eq.0) then
+         write(*,*) '*ERROR reading *FRICTION:'
          write(*,*) '       *FRICTION should be preceded'
          write(*,*) '       by a *SURFACE INTERACTION card'
          stop
       endif
 !
-      nelcon(1,nmat)=7
-      nelcon(2,nmat)=1
+      nstate_=max(nstate_,3)
+!
+      nelcon(1,imat)=7
+      nelcon(2,imat)=1
 !
 !     no temperature dependence allowed; last line is decisive
 !
@@ -57,10 +60,10 @@
          if((istat.lt.0).or.(key.eq.1)) return
          do i=1,2
             read(textpart(i)(1:20),'(f20.0)',iostat=istat)
-     &           elcon(5+i,1,nmat)
+     &           elcon(5+i,1,imat)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          enddo
-         elcon(0,1,nmat)=0.d0
+         elcon(0,1,imat)=0.d0
       enddo
 !     
       return

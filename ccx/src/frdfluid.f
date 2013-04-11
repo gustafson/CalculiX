@@ -17,8 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine frdfluid(co,nk,kon,ipkon,lakon,ne,v,vold,
-     &  kode,time,ielmat,matname,nnstep,vtu,voldtu,voldaux,
-     &  physcon,filab,inomat,ntrans,inotr,trab,mi)
+     &  kode,time,ielmat,matname,nnstep,vtu,voldtu,voldcon,
+     &  physcon,filab,inomat,ntrans,inotr,trab,mi,stn)
 !
 !     stores the results in frd format
 !
@@ -38,8 +38,8 @@
      &  one,ielmat(*),null,nnstep,inotr(2,*),ntrans,mi(2)
 !
       real*8 co(3,*),v(0:mi(2),*),time,vold(0:mi(2),*),vtu(2,*),
-     &  voldtu(2,*),
-     &  pi,oner,voldaux(0:4,*),physcon(*),trab(7,*),a(3,3)
+     &  voldtu(2,*),stn(6,*),
+     &  pi,oner,voldcon(0:4,*),physcon(*),trab(7,*),a(3,3)
 !
       kode=kode+1
       pi=4.d0*datan(1.d0)
@@ -517,6 +517,42 @@
          write(7,'(a3)') m3
       endif
 !
+!     storing the stresses in the nodes
+!
+      if(filab(3)(1:4).eq.'S   ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(7,'(a132)') text
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(25:36),'(i12)') nk
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(7,'(a132)') text
+         text=' -4  STRESS      6    1'
+         write(7,'(a132)') text
+         text=' -5  SXX         1    4    1    1'
+         write(7,'(a132)') text
+         text=' -5  SYY         1    4    2    2'
+         write(7,'(a132)') text
+         text=' -5  SZZ         1    4    3    3'
+         write(7,'(a132)') text
+         text=' -5  SXY         1    4    1    2'
+         write(7,'(a132)') text
+         text=' -5  SYZ         1    4    2    3'
+         write(7,'(a132)') text
+         text=' -5  SZX         1    4    3    1'
+         write(7,'(a132)') text
+         do i=1,nk
+            write(7,100) m1,i,(stn(j,i),j=1,4),
+     &           stn(6,i),stn(5,i)
+         enddo
+         write(7,'(a3)') m3
+      endif
+!
       if(filab(24)(1:4).eq.'CP  ') then
          text='    1PSTEP'
          write(text(25:36),'(i12)') kode
@@ -538,12 +574,6 @@
          do i=1,nk
             write(7,100) m1,i,(vold(4,i)-physcon(6))*2.d0/
      &            (physcon(7)*physcon(5)**2)
-c            write(7,100) m1,i,(vold(4,i)-11.428571)*2.d0
-c            write(7,100) m1,i,(vold(4,i)-1.116071)*2.d0
-c            write(7,100) m1,i,(vold(4,i)-0.791452)*2.d0
-c            write(7,100) m1,i,(vold(4,i)-0.496032)*2.d0
-c            write(7,100) m1,i,(vold(4,i)-0.178571)*2.d0
-c            write(7,100) m1,i,(vold(4,i)-0.988631)*2.d0
          enddo
 !
          write(7,'(a3)') m3
@@ -577,7 +607,7 @@ c            write(7,100) m1,i,(vold(4,i)-0.988631)*2.d0
       endif
       endif
 !
- 100  format(a3,i10,1p,3e12.5)
+ 100  format(a3,i10,1p,6e12.5)
 !
       return
       end

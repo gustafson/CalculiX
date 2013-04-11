@@ -19,7 +19,7 @@
       subroutine mechmodel(elconloc,elas,emec,kode,emec0,ithermal,
      &     icmd,beta,stre,xkl,ckl,vj,xikl,vij,plconloc,xstate,xstateini,
      &     ielas,amat,t1l,dtime,time,ttime,iel,iint,nstate_,mi,
-     &     iorien,pgauss,orab,eloc,mattyp,pnewdt,istep,iinc)
+     &     iorien,pgauss,orab,eloc,mattyp,pnewdt,istep,iinc,ipkon)
 !
 !     kode=-1: Arruda-Boyce
 !          -2: Mooney-Rivlin
@@ -49,7 +49,7 @@
       character*80 amat
 !
       integer kode,ithermal,icmd,ielas,iel,iint,nstate_,mi(2),iorien,
-     &  mattyp,istep,iinc
+     &  mattyp,istep,iinc,ipkon(*)
 !
       real*8 elconloc(*),elas(21),emec(*),emec0(*),beta(*),stre(*),
      &  ckl(*),vj,plconloc(*),t1l,xkl(*),xikl(*),vij,
@@ -81,7 +81,7 @@
          call umat_main(amat,iel,iint,kode,elconloc,emec,emec0,beta,
      &        xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,icmd,ielas,
      &        mi(1),nstate_,xstateini,xstate,stre,elas,iorien,pgauss,
-     &        orab,pnewdt,istep,iinc)
+     &        orab,pnewdt,istep,iinc,ipkon)
       endif
 !
       return

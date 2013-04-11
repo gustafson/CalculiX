@@ -100,7 +100,8 @@
 !
 !        check for contact conditions
 !
-         if(tieset(1,i)(81:81).eq.'C') then
+         if((tieset(1,i)(81:81).eq.'C').or.
+     &      (tieset(1,i)(81:81).eq.'-')) then
             slavset=tieset(2,i)
 !
 !           check whether facial slave surface; 

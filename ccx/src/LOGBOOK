@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 2.2
+LOG-BOOK Version 2.3
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -1701,3 +1701,103 @@ Dec 2002        - started to work on single crystal plasticity
 12 July 2010   - weir calculations work
 
 5 Aug 2010     - made some small corrections
+
+5 Sep 2010     - 2d results are calculated in each iteration so that they
+                 are available in the user subroutines
+
+9 Sep 2010     - added a user subroutine for concentrated loads
+
+10 Sep 2010    - worked on gap conductance
+
+11 Sep 2010    - corrected an error in frdcyc (output of CONT)
+
+13 Sep 2010    - included the C3D8I and C3D8R formulation coded by
+                 otto bernhardi
+
+16 Sep 2010    - gap conductance works (heat transfer through mechanical
+                 contact)
+
+23 Sep 2010    - coded an acoustic material (pressure only)
+               - coded Coulomb friction for penalty contact
+
+6 Oct 2010     - changed MPC's for nodal forces on shells in
+                 gen3dforc.f
+
+9 Oct 2010     - worked on contraction, enlargement, drop and step
+                 for liquid channels
+
+12 Oct 2010    - contraction, enlargement, drop and step for liquid
+                 channels seem to work
+
+20 Oct 2010    - corrected an error in dyna.c and steadystate.c
+
+23 Oct 2010    - changed dyna for cyclic symmetry: only the part of the
+                 eigenvectors which is needed is expanded.
+
+31 Oct 2010    - implemented a slightly different scheme for compressible
+                 CFD-calculations
+
+5 Nov 2010     - original CFD-scheme proved to be superior
+
+7 Nov 2010     - started to work on the acceleration of steadystate
+
+12 Nov 2010    - finished acceleration of dyna and steadystate
+
+15 Nov 2010    - accelerated expand.c
+               - extended the arguments of cload.f
+               - coded MAXE as output variable (for frequency 
+                 calculations with cyclic symmetry)
+		 
+20 Nov 2010    - started acceleration of CFD-code
+
+21 Nov 2010    - corrected small errors in dyna.c, dynacontc. and dfdbj.c
+
+13 Dec 2010    - tried another variant of shock smoothing (exact
+                 simulation of the second order derivative )
+
+1 Jan 2011     - calculating presgradient after applying the pressure
+                 boundary conditions
+
+3 Jan 2011     - calculating the pressure switch as a truely second
+                 derivative (normed such that max in field is 1)
+
+5 Jan 2011     - removed shocksmoothing based on local von Mises stress
+
+20 Jan 2011    - introduced basic smoothing of 0.1 for Euler calculations
+               - included Couette and Poiseuille examples
+
+6 Feb 2011     - changed applybounp.f (MPC's)
+
+9 Feb 2011     - started to work on MPC's for networks
+
+12 Feb 2011    - MPC's for networks work
+
+15 Feb 2011    - updated fridaforc.f
+               - added nonhomogeneous terms to network MPC's
+
+28 Feb 2011    - modified results (network output)
+
+2 Mar 2011     - started changes for contact:
+                 - proportional reduction of penetration for
+                   overclosures
+                 - change friction (*CHANGE FRICTION)
+                 - model change for contact pairs (*MODEL CHANGE)
+
+8 Mar 2011     - improved *PRETENSION-SECTION
+               - *FRICTION CHANGE works
+               - *CHANGE MODEL works
+               - proportional reduction of penetration for 
+                 overclosures works
+
+9 Mar 2011     - corrected an error in pretensionsections.f and all
+                 restart routines (restartread.f, restartwrite.f and 
+                 skip.f)
+
+14 Mar 2011    - ordered nelemload as soon as loading is being read
+                 from file
+
+15 Mar 2011    - the radiation matrix is recalculated only if the
+                 emissivity or the viewfactors changed
+
+24 Mar 2011    - corrected an error in radmatrix.f
+

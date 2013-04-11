@@ -64,7 +64,7 @@
      &  noden(2),ntrans,ntrans_,cfd,mi(2)
 !
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
-     &  csab(7),xn,yn,zn,dd,xap,yap,zap,tietol(*),cs(17,*),xsectors,
+     &  csab(7),xn,yn,zn,dd,xap,yap,zap,tietol(2,*),cs(17,*),xsectors,
      &  gsectors,x3,y3,z3,phi,rcscg(*),rcs0cg(*),zcscg(*),zcs0cg(*),
      &  straight(9,*),x1,y1,z1,x2,y2,z2,zp,rp,dist,trab(7,*),
      &  vold(0:mi(2),*)
@@ -96,6 +96,12 @@
             elset(81:81)=' '
             ipos=index(elset,' ')
             elset(ipos:ipos)='E'
+         else
+            write(*,*) 
+     &        '*WARNING in cycsymmods: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !
@@ -129,7 +135,9 @@
 !
       itie=0
       do i=1,ntie
-         if(tieset(1,i)(1:80).eq.tie) then
+         if((tieset(1,i)(1:80).eq.tie).and.
+     &      (tieset(1,i)(81:81).ne.'C').and.
+     &      (tieset(1,i)(81:81).ne.'T')) then
             itie=i
             exit
          endif
@@ -149,7 +157,7 @@
       cs(17,mcs)=itie+0.5
       depset=tieset(2,itie)
       indepset=tieset(3,itie)
-      tolloc=tietol(itie)
+      tolloc=tietol(1,itie)
 !
 !     determining the element set
 !
@@ -200,6 +208,8 @@
 !     marker for cyclic symmetry axis
 !
       trab(7,ntrans)=2
+!
+c      call writeset(nset,set,istartset,iendset,ialset)
 !
 !     check whether depset and indepset exist
 !

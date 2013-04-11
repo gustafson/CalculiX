@@ -53,6 +53,12 @@
          elseif(textpart(i)(1:32).eq.'PRESSURE-OVERCLOSURE=EXPONENTIAL') 
      &      then
             pressureoverclosure='E'
+         else
+            write(*,*) 
+     &        '*WARNING in surfacebehaviors: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
       if(pressureoverclosure.eq.' ') then
@@ -106,7 +112,6 @@
 !
 !           linear overclosure
 !
-c            elcon(1,1,nmat)=-1.d0
 !
 !           linear spring stiffness
 !
@@ -114,7 +119,7 @@ c            elcon(1,1,nmat)=-1.d0
      &           elcon(2,1,nmat)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
 !
-!           pressure at zero penetration
+!           pressure at large clearances
 !
             read(textpart(2)(1:20),'(f20.0)',iostat=istat)
      &           elcon(1,1,nmat)

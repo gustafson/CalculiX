@@ -81,7 +81,8 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
          *xloadact=NULL,*t1act=NULL,*ampli=NULL,*xstaten=NULL,*eei=NULL,
          *enerini=NULL,*cocon=NULL,*shcon=NULL,*physcon=NULL,*qfx=NULL,
          *qfn=NULL,sigma=0.,*cgr=NULL,*xbodyact=NULL,*vr=NULL,*vi=NULL,
-      *stnr=NULL,*stni=NULL,*vmax=NULL,*stnmax=NULL,*springarea=NULL;
+         *stnr=NULL,*stni=NULL,*vmax=NULL,*stnmax=NULL,*springarea=NULL,
+         *eenmax=NULL;
 
   int *ipneigh=NULL,*neigh=NULL;
 
@@ -133,7 +134,8 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      namta,nam,ampli,&time,&reltime,ttime,&dtime,ithermal,nmethod,
               xbounold,xboun,xbounact,iamboun,nboun,
 	      nodeboun,ndirboun,nodeforc,ndirforc,&istep,&iinc,
-	      co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload,mi));
+	      co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
+              ntrans,trab,inotr,veold));
   *ttime=*ttime+*tper;
 
   /* determining the internal forces and the stiffness coefficients */
@@ -148,6 +150,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   v=NNEW(double,mt**nk);
   fn=NNEW(double,mt**nk);
   stx=NNEW(double,6*mi[0]**ne);
+  inum=NNEW(int,*nk);
   FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	       elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
 	       ielorien,norien,orab,ntmat_,t0,t1act,ithermal,
@@ -160,8 +163,9 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-               fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));
-  free(v);free(fn);free(stx);
+	       fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
+               &reltime));
+  free(v);free(fn);free(stx);free(inum);
   iout=1;
   
   /* determining the system matrix and the external forces */
@@ -182,7 +186,8 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    xstiff,npmat_,&dtime,matname,mi,
             ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
             shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
-		    ibody,xloadold,&reltime,veold,springarea));
+	    ibody,xloadold,&reltime,veold,springarea,nstate_,
+            xstateini,xstate));
 
   /* determining the right hand side */
 
@@ -262,7 +267,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
             ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,sti,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-            nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea));
+	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime));
 
     free(eei);
     if(*nener==1){
@@ -297,7 +302,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    iperturb,ener,mi,output,ithermal,qfn,&mode,&noddiam,
             trab,inotr,ntrans,orab,ielorien,norien,description,
 	    ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs,
-            set,nset,istartset,iendset,ialset));
+	    set,nset,istartset,iendset,ialset,eenmax));
 	if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
     }
 
@@ -322,7 +327,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	 iperturb,ener,mi,output,ithermal,qfn,&mode,&noddiam,
          trab,inotr,ntrans,orab,ielorien,norien,description,
 	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs,
-         set,nset,istartset,iendset,ialset));
+	 set,nset,istartset,iendset,ialset,eenmax));
     if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
     free(inum);FORTRAN(stop,());
 

@@ -18,34 +18,35 @@
 !     
 !     construction of the B matrix      
 !     
-      subroutine resultgas(itg,ieg,ntg,ntm,
+      subroutine resultnet(itg,ieg,ntg,
      &     bc,nload,sideload,nelemload,xloadact,lakon,ntmat_,
      &     v,shcon,nshcon,ipkon,kon,co,nflow,
      &     iinc,istep,dtime,ttime,time,
      &     ikforc,ilforc,xforcact,nforc,ielmat,nteq,prop,ielprop,
      &     nactdog,nacteq,iin,physcon,camt,camf,camp,rhcon,nrhcon,
      &     ipobody,ibody,xbodyact,nbody,dtheta,vold,xloadold,
-     &     reltime,nmethod,set,mi,ineighe,cama,vamt,vamf,vamp,vama)
+     &     reltime,nmethod,set,mi,ineighe,cama,vamt,vamf,vamp,vama,
+     &     nmpc,nodempc,ipompc,coefmpc,labmpc)
 !     
       implicit none
 !     
       logical identity
       character*8 lakonl,lakon(*)
-      character*20 sideload(*)
+      character*20 sideload(*),labmpc(*)
       character*81 set(*)
 !     
       integer itg(*),ieg(*),ntg,nteq,nflow,nload,ielmat(*),iflag,
      &     nelemload(2,*),nope,nopes,mint2d,i,j,k,l,nrhcon(*),
-     &     node,imat,ntmat_,id,ntm,ifaceq(8,6),ifacet(6,4),numf,
+     &     node,imat,ntmat_,id,ifaceq(8,6),ifacet(6,4),numf,
      &     ifacew(8,5),node1,node2,nshcon(*),nelem,ig,index,konl(20),
-     &     ipkon(*),kon(*),idof,mi(2),ineighe(*),
+     &     ipkon(*),kon(*),idof,mi(2),ineighe(*),idir,
      &     iinc,istep,jltyp,nfield,ikforc(*),ipobody(2,*),
      &     ilforc(*),nforc,nodem,idirf(5),ieq,nactdog(0:3,*),nbody,
      &     nacteq(0:3,*),ielprop(*),nodef(5),iin,kflag,ibody(3,*),icase,
      &     inv, index2,nmethod,nelem0,nodem0,nelem1,nodem1,nelem2,
-     &     nodem2,nelemswirl
+     &     nodem2,nelemswirl,nmpc,nodempc(3,*),ipompc(*)
 !     
-      real*8 bc(ntm),xloadact(2,*),cp,h(2),physcon(*),r,dvi,rho,
+      real*8 bc(nteq),xloadact(2,*),cp,h(2),physcon(*),r,dvi,rho,
      &     xl2(3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
      &     gastemp,v(0:mi(2),*),shcon(0:3,ntmat_,*),co(3,*),shp2(7,8),
      &     field,prop(*),tg1,tg2,dtime,ttime,time,g(3),eta,
@@ -54,7 +55,7 @@
      &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,kappa,a,T,Tt,Pt,
      &     dtheta,ts1,ts2,xs2(3,7),xk1,xk2,xdenom1,xdenom2,expon,pt1,
      &     pt2,dt1,dt2,xcst,xnum1,xnum2,Qred_crit,xflow_crit,
-     &     xflow0,xflow1,reltime,
+     &     xflow0,xflow1,reltime,coefmpc(*),
      &     xflow2,R1,R2,Rout,Rin,Uout,Uin,heat,pi,
      &     Cp_cor,U,Ct,vold(0:mi(2),*),xloadold(2,*),omega
 !     
@@ -90,10 +91,16 @@
       camf(1)=0.d0
       camp(1)=0.d0
       cama(1)=0.d0
+!
       camt(2)=0.5d0
       camf(2)=0.5d0
       camp(2)=0.5d0
       cama(2)=0.5d0
+!
+      vamt=0.d0
+      vamf=0.d0
+      vamp=0.d0
+      vama=0.d0
 !     
 !
 c      write(30,*) 'loesung resultgas'
@@ -137,15 +144,15 @@ c      enddo
          do j=0,2
             if(nactdog(j,node).eq.0) cycle
             v(j,node)=v(j,node)+bc(nactdog(j,node))*dtheta
-            if(j.eq.0) then
-               vamt=v(j,node)
-            elseif(j.eq.1) then
-               vamf=v(j,node)
-            elseif(j.eq.2) then
-               vamp=v(j,node)
+            if((j.eq.0).and.(dabs(v(j,node)).gt.vamt)) then
+               vamt=dabs(v(j,node))
+            elseif((j.eq.1).and.(dabs(v(j,node)).gt.vamf)) then
+               vamf=dabs(v(j,node))
+            elseif((j.eq.2).and.(dabs(v(j,node)).gt.vamp)) then
+               vamp=dabs(v(j,node))
             endif
          enddo
-         write(30,*) 'resultgas',node,(v(j,node),j=0,2)
+c         write(30,*) 'resultgas',node,(v(j,node),j=0,2)
       enddo
 !
 !     update geometry changes
@@ -156,14 +163,15 @@ c      enddo
             node=kon(index+2)
             if(nactdog(3,node).eq.0) cycle
             index=ielprop(ieg(i))
-            prop(index+2)=prop(index+2)+bc(nactdog(3,node))*dtheta
-            if(prop(index+2).gt.0.99999d0) then
-               prop(index+2)=0.99999d0
-            elseif(prop(index+2).lt.0.12501) then
-               prop(index+2)=0.12501d0
+            v(3,node)=v(3,node)+bc(nactdog(3,node))*dtheta
+            if(v(3,node).gt.0.99999d0) then
+               v(3,node)=0.99999d0
+            elseif(v(3,node).lt.0.12501) then
+               v(3,node)=0.12501d0
             endif
-            write(30,*) 'resultgas ',node,prop(index+2)
-            vama=prop(index+2)
+c            write(30,*) 'resultgas ',node,prop(index+2)
+c            v(3,node)=prop(index+2)
+            if(dabs(v(3,node)).gt.vama) vama=dabs(v(3,node))
 !
 !     update location of hydraulic jump
 !
@@ -188,6 +196,7 @@ c      enddo
                   prop(index+7)=eta
                   nelem=int(prop(index+9))      
                endif
+               v(3,node)=eta
                vama=eta
 !
 !              check whether 0<=eta<=1. If not, the hydraulic jump
@@ -195,7 +204,7 @@ c      enddo
 !              be forced out of the element by adjusting the
 !              water depth of one of the end nodes
 !               
-                  write(30,*) 'resultgas eta ',eta
+c                  write(30,*) 'resultgas eta ',eta
                if((eta.lt.0.d0).or.(eta.gt.1.d0)) then
 c               if(eta.ne.0.5d0) then
                   index=ipkon(nelem)
@@ -203,24 +212,40 @@ c               if(eta.ne.0.5d0) then
                   nodem=kon(index+2)
                   node2=kon(index+3)
                   xflow=v(1,nodem)
-!     
-                  if(node1.eq.0) then
-                     tg1=v(0,node2)
-                     tg2=tg1
-                     ts1=v(3,node2)
-                     ts2=Ts1
-                  elseif(node2.eq.0) then
-                     tg1=v(0,node1)
-                     tg2=tg1
-                     ts1=v(3,node1)
-                     ts2=ts1
+!   
+!                 determining the temperature for the
+!                 material properties
+!  
+                  if(xflow.gt.0) then
+                     if(node1.eq.0) then
+                        gastemp=v(0,node2)
+                     else
+                        gastemp=v(0,node1)
+                     endif
                   else
-                     tg1=v(0,node1)
-                     tg2=v(0,node2)
-                     ts1=v(3,node1)
-                     ts2=v(3,node2)
+                     if(node2.eq.0) then
+                        gastemp=v(0,node1)
+                     else
+                        gastemp=v(0,node2)
+                     endif
                   endif
-                  gastemp=(ts1+ts2)/2.d0
+c                  if(node1.eq.0) then
+c                     tg1=v(0,node2)
+c                     tg2=tg1
+c                     ts1=v(3,node2)
+c                     ts2=Ts1
+c                  elseif(node2.eq.0) then
+c                     tg1=v(0,node1)
+c                     tg2=tg1
+c                     ts1=v(3,node1)
+c                     ts2=ts1
+c                  else
+c                     tg1=v(0,node1)
+c                     tg2=v(0,node2)
+c                     ts1=v(3,node1)
+c                     ts2=v(3,node2)
+c                  endif
+c                  gastemp=(ts1+ts2)/2.d0
 !     
                   imat=ielmat(nelem)
 !     
@@ -258,10 +283,10 @@ c               if(eta.ne.0.5d0) then
          endif
       enddo
 !
-      do i=1,ntg
-         node=itg(i)
-         write(30,*) 'resultgas',(v(j,node),j=0,3)
-      enddo
+c      do i=1,ntg
+c         node=itg(i)
+c         write(30,*) 'resultgas',(v(j,node),j=0,3)
+c      enddo
 !     
 !     testing the validity of the pressures
 !     
@@ -285,7 +310,9 @@ c               if(eta.ne.0.5d0) then
       enddo
 !     
 !     testing the validity of the solution for branches elements
-!     and restrictor. Since the element properties is dependent on
+!     and restrictor. Since the element properties are dependent on
+!     a predefined flow direcction a change of this will lead to
+!     wrong head losses
 !    
       do i=1, nflow
          nelem=ieg(i)
@@ -344,19 +371,21 @@ c               if(eta.ne.0.5d0) then
       do i=1,ntg
          node=itg(i)
          nelem=ineighe(i)
-         if(nelem.le.0) then
+         if(nelem.eq.-1) then
             v(3,node)=v(0,node)
-         endif
-      enddo
-!     
-!     case 2: gas pipe/restrictor
-!     iteratively solving Tt=T+0.5*v**2/(2*Cp) to obtain T static
-!     
-      do i=1,ntg
-         node=itg(i)
-         nelem=ineighe(i)
-!     
-         if (nelem.gt.0) then 
+c         endif
+c      enddo
+c!     
+c!     case 2: gas pipe/restrictor
+c!     iteratively solving Tt=T+0.5*v**2/(2*Cp) to obtain T static
+c!     
+c      do i=1,ntg
+c         node=itg(i)
+c         nelem=ineighe(i)
+c!     
+c           if (nelem.gt.0) then 
+c
+         elseif(nelem.gt.0) then
 !     
             nodem=kon(ipkon(nelem)+2)
             T=v(3,node)
@@ -486,6 +515,8 @@ c               if(eta.ne.0.5d0) then
          nodem=kon(index+2)
          node2=kon(index+3)
          xflow=v(1,nodem)
+!
+!        gas: the property temperature is the static temperature
 !     
          if((lakon(nelem)(2:3).ne.'LP').and.
      &      (lakon(nelem)(2:3).ne.'LI')) then
@@ -507,6 +538,9 @@ c               if(eta.ne.0.5d0) then
             endif
             gastemp=(ts1+ts2)/2.d0
          else
+!
+!           liquid: only one temperature
+!
             if(xflow.gt.0) then
                if(node1.eq.0) then
                   gastemp=v(0,node2)
@@ -519,6 +553,17 @@ c               if(eta.ne.0.5d0) then
                else
                   gastemp=v(0,node2)
                endif
+            endif
+!
+            if(node1.eq.0) then
+               tg2=v(0,node2)
+               tg1=tg2
+            elseif(node2.eq.0) then
+               tg1=v(0,node1)
+               tg2=tg1
+            else
+               tg1=v(0,node1)
+               tg2=v(0,node2)
             endif
          endif
 !     
@@ -548,11 +593,16 @@ c               if(eta.ne.0.5d0) then
                   ts1=v(3,node1)
                   call ts_calc(xflow,Tg1,Pt1,kappa,r,a,Ts1,icase)
                   call ts_calc(xflow,Tg2,Pt2,kappa,r,a,Ts2,icase)
+                  v(3,node1)=ts1
+                  v(3,node2)=ts2
                else
                   pt1=v(2,node2)
                   pt2=v(2,node1)
-                  if(v(3,nodem).ge.(pt2/pt1))then
-                     pt2=v(3,nodem)*pt1
+c              next line has consequences in gaspipe.f
+c                  if(v(3,nodem).ge.(pt2/pt1))then
+c                     pt2=v(3,nodem)*pt1
+                  if(v(2,nodem).ge.(pt2/pt1))then
+                     pt2=v(2,nodem)*pt1
                   endif
 !
                   tg1=v(0,node2)
@@ -561,17 +611,17 @@ c               if(eta.ne.0.5d0) then
                   call ts_calc(xflow,Tg2,Pt2,kappa,r,a,Ts2,icase)
                endif
 !     
-               dt1=tg1/ts1-1d0
-               dt2=tg2/ts2-1d0
-               xcst=2.d0*Cp*A**2/(R**2)
-               expon=2.d0*kappa/(kappa-1.d0)
-               xk1=pt1**2*(ts1/tg1)**expon
-               xk2=pt2**2*(ts2/tg2)**expon
-!     
-               xnum1=xcst*dt1*xk1-xflow**2*ts1
-               xdenom1=xcst*xk1*(1.d0-expon*dt1)/ts1+2.d0*xflow**2
-               xnum2=xcst*dt2*xk2-xflow**2*ts2
-               xdenom2=xcst*xk2*(1.d0-expon*dt2)/ts2+2.d0*xflow**2
+c               dt1=tg1/ts1-1d0
+c               dt2=tg2/ts2-1d0
+c               xcst=2.d0*Cp*A**2/(R**2)
+c               expon=2.d0*kappa/(kappa-1.d0)
+c               xk1=pt1**2*(ts1/tg1)**expon
+c               xk2=pt2**2*(ts2/tg2)**expon
+c!     
+c               xnum1=xcst*dt1*xk1-xflow**2*ts1
+c               xdenom1=xcst*xk1*(1.d0-expon*dt1)/ts1+2.d0*xflow**2
+c               xnum2=xcst*dt2*xk2-xflow**2*ts2
+c               xdenom2=xcst*xk2*(1.d0-expon*dt2)/ts2+2.d0*xflow**2
 !     
             endif
          endif
@@ -592,7 +642,8 @@ c               if(eta.ne.0.5d0) then
      &                 .or.(lakon(nelem)(2:6).eq.'GAPII')) then
                   if((nacteq(3,node1).eq.node2)) then
 !     
-                     bc(ieq)=(ts2+xnum2/xdenom2-ts1-xnum1/xdenom1)
+c                     bc(ieq)=(ts2+xnum2/xdenom2-ts1-xnum1/xdenom1)
+                     bc(ieq)=(ts2-ts1)
 !     
                   endif
                endif
@@ -622,7 +673,8 @@ c               if(eta.ne.0.5d0) then
      &                .or. (lakon(nelem)(2:6).eq.'GAPII')) then
                   if(nacteq(3,node2).eq.node1) then
 !     
-                     bc(ieq)=(ts2+xnum2/xdenom2-ts1-xnum1/xdenom1) 
+c                     bc(ieq)=(ts2+xnum2/xdenom2-ts1-xnum1/xdenom1) 
+                     bc(ieq)=(ts2-ts1)                                      
 !
                   endif
                endif
@@ -672,7 +724,7 @@ c               if(eta.ne.0.5d0) then
          endif
       enddo
 !     
-!     convection with the walls
+!     convection with the walls: contribution to the energy equations
 !     
       do i=1,nload
          if(sideload(i)(3:4).eq.'FC') then
@@ -749,7 +801,7 @@ c               if(eta.ne.0.5d0) then
 !     
             index=ipkon(nelem)
             if(index.lt.0) then
-               write(*,*) '*ERROR in radflowload: element ',nelem
+               write(*,*) '*ERROR in resultnet: element ',nelem
                write(*,*) '       is not defined'
                stop
             endif
@@ -864,7 +916,7 @@ c               if(eta.ne.0.5d0) then
          endif
       enddo
 !     
-!     prescribed heat generation        
+!     prescribed heat generation: contribution the energy equations        
 !     
       do i=1,ntg
          node=itg(i)
@@ -879,9 +931,9 @@ c               if(eta.ne.0.5d0) then
          endif
       enddo
 !     
-!     in the case of forced vortices when, when temperature change 
-!     is required , an additionnal heat input is added in the energy equation for the 
-!     downstream node
+!     in the case of forced vortices, when temperature change 
+!     is required, additional heat input is added in the energy 
+!     equation for the downstream node
 !     
       do i=1,nflow
          nelem=ieg(i)
@@ -1019,7 +1071,17 @@ c               if(eta.ne.0.5d0) then
 !     
             Tg1=v(0,node1)
             Tg2=v(0,node2)
-            gastemp=(Tg1+Tg2)/2.d0
+c            gastemp=(Tg1+Tg2)/2.d0
+            if((lakon(nelem)(2:3).ne.'LP').and.
+     &           (lakon(nelem)(2:3).ne.'LI')) then
+               gastemp=(tg1+tg2)/2.d0
+            else
+               if(xflow.gt.0) then
+                  gastemp=tg1
+               else
+                  gastemp=tg2
+               endif
+            endif
 !
             imat=ielmat(nelem)
             call materialdata_tg(imat,ntmat_,gastemp,
@@ -1115,7 +1177,24 @@ c                  if(nacteq(0,node1).ne.0)then
          endif
       enddo 
 !
-      write(30,*) 'bc in resultgas'
+!     additional multiple point constraints
+!
+      j=nteq+1
+      do i=nmpc,1,-1
+         if(labmpc(i)(1:7).ne.'NETWORK') cycle
+         j=j-1
+         index=ipompc(i)
+!
+         do
+            node=nodempc(1,index)
+            idir=nodempc(2,index)
+            bc(j)=bc(j)-v(idir,node)*coefmpc(index)
+            index=nodempc(3,index)
+            if(index.eq.0) exit
+         enddo
+      enddo
+!
+c      write(30,*) 'bc in resultgas'
 c      do i=1,9
 c         write(30,'(1x,e11.4)') bc(i)
 c      enddo

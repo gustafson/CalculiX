@@ -37,7 +37,7 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
         double *gap, double *bdd, double **auqdtp, int **irowqdtp,
         int *jqqdt, int *nzsqdt, int *nzlc,double *slavnor,double *bhat,
 	int *icolc, double **aubdp, int **irowbdp, int *jqbd, int *mi,
-        int *ipe, int *ime){
+        int *ipe, int *ime,double *tietol){
     
     int i,j,k,numb,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL,nintpoint=0,
         nzsbd,*irowbd=NULL,l,nstart,kflag,ntri,ii,number,
@@ -47,7 +47,8 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
 
     double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL,*aubd=NULL, 
       *auc=NULL, *pmastsurf=NULL,*auqdt=NULL,*gapmints=NULL,*pslavdual=NULL,
-      *slavtan=NULL,t1,t2,t3,e1,e2,e3,*au=NULL,* auctemp=NULL,*pslavsurf=NULL;
+      *slavtan=NULL,t1,t2,t3,e1,e2,e3,*au=NULL,* auctemp=NULL,*pslavsurf=NULL,
+      *areaslav=NULL;
 	  
     clock_t debut;
     clock_t fin;
@@ -70,7 +71,32 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
         if(itietri[2*i+1]-itietri[2*i]+1>ntrimax)
             ntrimax=itietri[2*i+1]-itietri[2*i]+1;  
     }
-    
+
+    if ((*iinc==1)&&(*iit==1)){
+    xo=NNEW(double,ntrimax);
+    yo=NNEW(double,ntrimax);
+    zo=NNEW(double,ntrimax);
+    x=NNEW(double,ntrimax);
+    y=NNEW(double,ntrimax);
+    z=NNEW(double,ntrimax);
+    nx=NNEW(int,ntrimax);
+    ny=NNEW(int,ntrimax);
+    nz=NNEW(int,ntrimax);
+    areaslav=NNEW(double,itiefac[2*(*ntie-1)+1]);
+    int ifree=0;
+    FORTRAN(genfirstactif,(tieset,ntie,itietri,ne,ipkon,kon,lakon,
+       cg,straight,koncont,
+       co,vold,xo,yo,zo,x,y,z,nx,ny,nz,ielmat,cs,elcon,istep,
+       iinc,iit,ncmat_,ntmat_,ne0,vini,nmethod,mi,
+       imastop,nslavnode,islavnode,islavsurf,itiefac,areaslav,iponoels,
+       inoels,set,nset,istartset,iendset,ialset,islavact,&ifree,
+       tietol));
+    printf("Frist Active Set : %d nodes\n",ifree);
+    free(xo);free(yo);free(zo);free(x);free(y);free(z);free(nx);
+    free(ny);free(nz);
+    free(areaslav);
+    }
+
     xo=NNEW(double,ntrimax);
     yo=NNEW(double,ntrimax);
     zo=NNEW(double,ntrimax);
@@ -96,7 +122,7 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
         iinc,iit,
         islavsurf,imastsurf,pmastsurf,itiefac,
         islavnode,nslavnode,slavnor,slavtan,imastop,
-	islavact,mi,ncont,ipe,ime,pslavsurf,pslavdual));
+	mi,ncont,ipe,ime,pslavsurf,pslavdual));
 	fin= clock();
 	printf("gencontrel : %f s\n",((double)(fin-debut))/CLOCKS_PER_SEC);
     /* Calculating the location of the matched slave/master
@@ -146,6 +172,8 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
 
       }
     }
+
+
 	fin= clock();
 	printf("slavintmortar : %f s\n",((double)(fin-debut))/CLOCKS_PER_SEC);
     printf(" number of slave integration points = %d\n\n",nintpoint);
@@ -195,7 +223,7 @@ void contactmortar(int *ncont, int *ntie, char *tieset, int *nset, char *set,
     bdfill(&irowbd, jqbd, &aubd, bdd, &nzsbd, ntie,
         ipkon, kon, lakon, nslavnode, nmastnode, imastnode, islavnode, 
         islavsurf, imastsurf, pmastsurf, itiefac, neq, nactdof,co,vold,
-	iponoels, inoels,mi,gapmints,gap,pslavsurf,pslavdual,islavact); 
+	iponoels, inoels,mi,gapmints,gap,pslavsurf,pslavdual); 
 
 	fin= clock();
 	printf("bdfill : %f s\n",((double)(fin-debut))/CLOCKS_PER_SEC);

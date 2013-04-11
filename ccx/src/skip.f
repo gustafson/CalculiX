@@ -101,10 +101,10 @@ c      read(15)(r8,i=1,nflow)
       read(15)(i4,i=1,2*nmat)
       read(15)(r8,i=1,2*ntmat_*nmat)
       read(15)(i4,i=1,nmat)
-      read(15)(r8,i=1,2*ntmat_*nmat)
+      read(15)(r8,i=1,4*ntmat_*nmat)
       read(15)(i4,i=1,nmat)
       read(15)(r8,i=1,7*ntmat_*nmat)
-      read(15)(i4,i=1,nmat)
+      read(15)(i4,i=1,2*nmat)
       read(15)(r8,i=1,7*ntmat_*nmat)
       read(15)(i4,i=1,2*nmat)
       read(15)(r8,i=1,nmat)
@@ -162,9 +162,12 @@ c      read(15)(r8,i=1,nflow)
       endif
       if(ntie.gt.0) then
          read(15)(c81,i=1,3*ntie)
+         read(15)(r8,i=1,2*ntie)
       endif
       if(ncs_.gt.0)then
          read(15)(i4,i=1,ncs_)
+      endif
+      if(mcs.gt.0) then
          read(15)(r8,i=1,17*mcs)
       endif
       read(15)(r8,i=1,6*mi(1)*ne)

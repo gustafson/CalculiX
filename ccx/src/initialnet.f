@@ -15,10 +15,15 @@
 !     You should have received a copy of the GNU General Public License
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-
-!     calculate the initial conditions for the gas!     
+!
+!     calculate the initial conditions for the gas 
+!         - the initial pressure
+!         - identifying the chambers and gas pipe nodes
+!           for gas networks
+!         - the initial flow
+!         - calculating the static temperature for gas networks
 !     
-      subroutine initialgas(itg,ieg,ntm,ntg,ac,bc,lakon,v,
+      subroutine initialnet(itg,ieg,ntg,ac,bc,lakon,v,
      &     ipkon,kon,nflow,ikboun,nboun,prop,ielprop,
      &     nactdog,ndirboun,nodeboun,xbounact,
      &     ielmat,ntmat_,shcon,nshcon,physcon,ipiv,nteq,
@@ -32,18 +37,18 @@
       character*8 lakon(*)
       character*81 set(*)
 !           
-      integer ieg(*),nflow,i,j,ntg,ielmat(*),ntmat_,id,ntm,node1,node2,
+      integer ieg(*),nflow,i,j,ntg,ielmat(*),ntmat_,id,node1,node2,
      &     nelem,index,nshcon(*),ipkon(*),kon(*),ikboun(*),nboun,idof,
      &     nodem,idirf(5),nactdog(0:3,*),imat,ielprop(*),id1,id2,
      &     nodef(5),ndirboun(*),nodeboun(*),itg(*),node,kflag,ipiv(*),
      &     nrhs,info,idof1,idof2,nteq,nrhcon(*),ipobody(2,*),ibody(3,*),
      &     nbody,numf,network,iin_abs,icase,index2,index1,nelem1,nelem2,
      &     node11,node21,node12,node22,istep,iit,mi(2),ineighe(*),
-     &     ilboun(*),nelemup,k,node2up
+     &     ilboun(*),nelemup,k,node2up,idir
 !     
-      real*8 ac(ntm,ntm), bc(ntm),prop(*),shcon(0:3,ntmat_,*),
+      real*8 ac(nteq,nteq), bc(nteq),prop(*),shcon(0:3,ntmat_,*),
      &     f,df(5),xflow,xbounact(*),v(0:mi(2),*),cp,r,tg1,
-     &     tg2,gastemp,physcon(*),pressmin,dvi,rho,g(3),
+     &     tg2,gastemp,physcon(*),pressmin,dvi,rho,g(3),z1,z2,
      &     rhcon(0:1,ntmat_,*),co(3,*),xbodyact(7,*),kappa,
      &     a,Tt,Pt,Ts,pressmax,constant,vold(0:mi(2),*),href
 !
@@ -56,7 +61,9 @@
          v(ndirboun(j),nodeboun(j))=xbounact(j)
       enddo
 !     
-!     no initial pressures for purely thermal calculations
+!     determining the initial pressure (not for purely thermal networks)
+!     and identifying the chamber and gas pipe nodes (only for gas
+!     networks)
 !
       if(network.ne.0) then
 !   
@@ -267,7 +274,7 @@
 !           solving the system
 !     
             nrhs=1
-            call dgesv(nteq,nrhs,ac,ntm,ipiv,bc,ntm,info)
+            call dgesv(nteq,nrhs,ac,nteq,ipiv,bc,nteq,info)
             if(info.ne.0) then
                write(*,*) '*ERROR in initialgas: singular matrix'
                stop
@@ -280,12 +287,12 @@
                if(nactdog(2,node).eq.0) then
                   v(2,node)=pressmax
      &                 *datan(v(2,node))/constant
-                  write(30,*) 'initialgas ',node,v(2,node)
+c                  write(30,*) 'initialgas ',node,v(2,node)
                   cycle
                endif
                v(2,node)=pressmax
      &              *datan(bc(nactdog(2,node)))/constant
-               write(30,*) 'initialgas ',node,v(2,node)
+c               write(30,*) 'initialgas ',node,v(2,node)
             enddo
          endif
 !
@@ -328,6 +335,28 @@
                v(2,node1)=v(2,node2)
             endif
          enddo
+      else
+!
+!       identifying the chamber nodes for purely thermal
+!       gas networks (needed to determine the static
+!       temperature which is used for the material properties)
+!         
+         do i=1,nflow
+            nelem=ieg(i)
+            if((lakon(nelem)(2:3).eq.'LP').or.
+     &         (lakon(nelem)(2:3).eq.'LI')) cycle
+            index=ipkon(nelem)
+            node1=kon(index+1)
+            node2=kon(index+3)
+            if(node1.ne.0) then
+               call nident(itg,node1,ntg,id1)
+               ineighe(id1)=-1
+            endif
+            if(node2.ne.0) then
+               call nident(itg,node2,ntg,id2)
+               ineighe(id2)=-1
+            endif
+         enddo
       endif
 !
 !     temperature initial conditions
@@ -348,7 +377,7 @@
 !    
 !     initialisation of bc
 !     
-      do i=1,ntm
+      do i=1,nteq
          bc(i)=0.d0
       enddo
 !  
@@ -388,6 +417,10 @@
                            g(1)=g(1)+xbodyact(1,j)*xbodyact(2,j)
                            g(2)=g(2)+xbodyact(1,j)*xbodyact(3,j)
                            g(3)=g(3)+xbodyact(1,j)*xbodyact(4,j)
+                           z1=-g(1)*co(1,node1)-g(2)*co(2,node1)
+     &                        -g(3)*co(3,node1)
+                           z2=-g(1)*co(1,node2)-g(2)*co(2,node2)
+     &                        -g(3)*co(3,node2)
                            gravity=.true.
                         endif
                         index=ipobody(2,index)
@@ -430,7 +463,12 @@
 !     If inlet and outlet pressure are equal this leads to a massflow rate 
 !     equal to 0 and in turn possibly to a singular matrix configuration
 !     
-               if(v(2,node1).eq.v(2,node2))then
+!gas
+               if(((lakon(nelem)(2:3).ne.'LI').and.
+     &             (v(2,node1).eq.v(2,node2))).or.
+!liquid
+     &            ((lakon(nelem)(2:3).eq.'LI').and.
+     &             (v(2,node1)+z1.eq.v(2,node2)+z2)))    then
 !     
 !     if neither inlet nor outlet pressure are active D.O.F: error-> stop
 !     
@@ -744,21 +782,22 @@
 !     calculating the static temperature for nodes belonging to gas pipes
 !     and restrictors (except RESTRICTOR WALL ORIFICE)
 !     
-         if(gaspipe) then
-            node=nelem
-         endif
-         if(iin_abs.eq.0) then
-            node=nelem
-         endif
+c         if(gaspipe) then
+c            node=nelem
+c         endif
+c         if(iin_abs.eq.0) then
+c            node=nelem
+c         endif
          if (gaspipe.and.(iin_abs.eq.0)) then
 !     
-!     ineighe(i) is set to zero for chamber nodes
+!     ineighe(i) is set to -1 for chamber nodes
 !     
             do i=1,ntg
-               if(ineighe(i).lt.0) ineighe(i)=0
-c     if(ineighe(i).gt.2) ineighe(i)=-ineighe(i)
+c               if(ineighe(i).lt.0) ineighe(i)=0
+cc     if(ineighe(i).gt.2) ineighe(i)=-ineighe(i)
                if(ineighe(i).gt.2) then
-                  ineighe(i)=0
+c                  ineighe(i)=0
+                  ineighe(i)=-1
                   write(*,*) '*WARNING :in subroutine initialgas.f'
                   write(*,*) '          more than 2 elements GASPIPE'
                   write(*,*) '          or RESTRICTOR are connected '
@@ -778,7 +817,8 @@ c     if(ineighe(i).gt.2) ineighe(i)=-ineighe(i)
                call nident(itg,node1,ntg,id1)
                call nident(itg,node2,ntg,id2)
 !     
-!     for each end node i: if ineighe(i)=O: chamber
+!     for each end node i: if ineighe(i)=-1: chamber
+!                          if ineighe(i)=0: middle node
 !     else: ineighe(i)=number of pipe connections
 !     (max. 2 allowed)
 !     
@@ -887,14 +927,21 @@ c     if(ineighe(i).gt.2) ineighe(i)=-ineighe(i)
                   endif
 !     
 !     if the element is not of gaspipe or branch type,
-!     total and static temperatures are equal
+!     total and static temperatures are equal for all endnodes
 !     
-               elseif(node.ne.0) then
-                  v(3,node)=v(0,node)
+c               elseif((node.ne.0).and.(ineighe(i).ne.0)) then
+c                  v(3,node)=v(0,node)
                endif
             enddo
          endif
       endif
+!
+!     for chambers the static temperature equals the total
+!     temperature
+!
+      do i=1,ntg
+         if(ineighe(i).eq.-1) v(3,itg(i))=v(0,itg(i))
+      enddo
 !     
       return
       end

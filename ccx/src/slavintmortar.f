@@ -22,7 +22,7 @@
      &  iinc,iit,
      &  islavsurf,imastsurf,pmastsurf,itiefac,
      &  islavnode,nslavnode,slavnor,slavtan,imastop,gapmints,
-     &  islavact,mi,ncont,ipe,ime,pslavsurf,pslavdual,i,l,ntri)
+     &islavact,mi,ncont,ipe,ime,pslavsurf,pslavdual,i,l,ntri)
 !
 !     Determining the location of the integration points in slave
 !     surface ifaces. This location depends on the triangulation of 
@@ -57,7 +57,8 @@
      &  itria(4),ntria,itriacorner(4,4),inodesin(3*ncont),line,
      &  nnodesin,inodesout(3*ncont),nnodesout,iactiveline(3,3*ncont),
      &  nactiveline,intersec(2,6*ncont),ipe(*),ime(4,*),k1,j1,
-     &  ipiv(4),info,ipnt,ntri,inacttri(4),il
+     &  ipiv(4),info,ipnt,ntri,nintpfirst,
+     &  compt,il
 !
       real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),p(3),
      &  xntersec(3,6*ncont),xo(*),yo(*),zo(*),x(*),y(*),z(*),
@@ -106,23 +107,18 @@
 !
       data iflag /2/
 !     
-c      do j=1,ntri
-c         write(*,*) j,x(j),y(j),z(j),nx(j),ny(j),nz(j)
-c      enddo
       kneigh=1
-      err=1.d-4
-      inacttri(1)=0
-      inacttri(2)=0
-      inacttri(3)=0
-      inacttri(4)=0
+      err=1.d-6
+c      err=1.d-2
+      nintpfirst=nintpoint
+      compt=0
+c      WRITE(*,*) "SLAVINTMORTAR"
 !     
 !     Research of the contact integration points
 !     
             ifaces = islavsurf(1,l)
             nelems = int(ifaces/10)
             jfaces = ifaces - nelems*10
-c            WRITE(*,*) "Slavintmortar surf",l
-c            islavsurf(2,l)=nintpoint
 !     
 !     Decide the max integration points number, just consider 2D situation 
 !     
@@ -136,7 +132,9 @@ c            islavsurf(2,l)=nintpoint
                nopes=8
                nope=20
             elseif(lakon(nelems)(4:4).eq.'2') then
-               nopes=8
+c               nopes=8
+c               nope=20
+               nopes=4
                nope=20
             elseif(lakon(nelems)(4:5).eq.'10') then
                nopes=6
@@ -236,16 +234,14 @@ c     &                    vold(j,konl(ifacew1(m,jfaces)))+err*rand(0)
             elseif(nopes.eq.4) then
                do m = 1, nopes
 !     
-                  if(nope.eq.8) then
+                  if((nope.eq.8).or.(nope.eq.20)) then
                      node = konl(ifaceq(m,jfaces))
                   elseif(nope.eq.6) then
                      node=konl(ifacew1(m,jfaces))
                   endif
 !     
-c                  write(*,*) i,nslavnode(i),nslavnode(i+1),node,id
                   call nident(islavnode(nslavnode(i)+1), node, 
      &                 nslavnode(i+1)-nslavnode(i), id)
-c                  write(*,*) i,nslavnode(i),nslavnode(i+1),node,id
 !     
                   index1=nslavnode(i)+id
                   do k=1,3
@@ -318,13 +314,20 @@ c                  write(*,*) i,nslavnode(i),nslavnode(i+1),node,id
                call neartriangle(xl2s(1,j),xn,xo,yo,zo,x,y,z,nx,ny,nz,
      &           ntri,neigh,kneigh,itietri,ntie,straight,imastop,itri,i)
                if(itri.eq.0) cycle
-c               write(*,*) 'afterneartria ',i,l,j,itri
 !      
+!
+               node = konl(ifaceq(j,jfaces))
+               call nident(islavnode(nslavnode(i)+1), node, 
+     &           nslavnode(i+1)-nslavnode(i), id)
+               if (islavact(nslavnode(i)+id).eq.-1) then
+                      islavact(nslavnode(i)+id)=0
+               endif
+!
+!
                call nident(itria,itri,ntria,id)
                if(id.gt.0) then
                   if(itria(id).eq.itri) then
                      itriacorner(j,id)=1
-                     inacttri(j)=1
                      cycle
                   endif
                endif
@@ -340,7 +343,6 @@ c               write(*,*) 'afterneartria ',i,l,j,itri
                enddo
                itria(id+1)=itri
                itriacorner(j,id+1)=1
-               inacttri(j)=1
                do m=1,j-1
                   itriacorner(m,id+1)=0
                enddo               
@@ -355,7 +357,6 @@ c               write(*,*) 'afterneartria ',i,l,j,itri
 !     
             do j=1,ntria
                itri=itria(j)
-c               write(*,*) 'slavintmortar',ntri,j,itri
                nelemm=int(koncont(4,itri)/10.d0)
                jfacem=koncont(4,itri)-10*nelemm
 !     
@@ -419,8 +420,7 @@ c               write(*,*) 'slavintmortar',ntri,j,itri
                      xl2m(j1,k1) = co(j1,nodef(k1))+vold(j1,nodef(k1))
                   enddo
                enddo
-!
-c            WRITE(*,*) "Slavintmortar treat corn",l,itri     
+!     
                call treattriangle(inodesin,nnodesin,inodesout,
      &              nnodesout,nopes,slavstraight,xn,co,xl2s,ipe,ime,
      &              iactiveline,nactiveline,intersec,xntersec,
@@ -443,18 +443,14 @@ c            WRITE(*,*) "Slavintmortar treat corn",l,itri
 !     corners of the Slave surface have already been treated
 !     
                if(itri.eq.0) then
-                  nactiveline=nactiveline-1
+                nactiveline=nactiveline-1
                   do il=1,nactiveline
                    do k=1,3
                       iactiveline(k,il)=iactiveline(k,il+1)
                    enddo
-                 enddo
-                 cycle
+                  enddo
+                cycle
                endif
-c
-c
-c              no corner triangle
-c
                do j=1,4
                   itriacorner(j,1)=0
                enddo
@@ -522,8 +518,8 @@ c
                      xl2m(j1,k1) = co(j1,nodef(k1))+vold(j1,nodef(k1))
                   enddo
                enddo
-!
-c            WRITE(*,*) "Slavintmortar treat neigh",l,itri     
+!     
+               compt=compt+1
                call treattriangle(inodesin,nnodesin,inodesout,
      &              nnodesout,nopes,slavstraight,xn,co,xl2s,ipe,ime,
      &              iactiveline,nactiveline,intersec,xntersec,
@@ -536,16 +532,5 @@ c            WRITE(*,*) "Slavintmortar treat neigh",l,itri
 !     
 !
 !       
-         do k=1,4
-               if (inacttri(k).eq.0) then
-                     node = konl(ifaceq(k,jfaces))
-                  call nident(islavnode(nslavnode(i)+1), node, 
-     &                 nslavnode(i+1)-nslavnode(i),id)
-          if ((id.gt.0).and.(node.eq.islavnode(nslavnode(i)+id))) then 
-                     islavact(nslavnode(i)+id)=-1
-          endif
-c                  WRITE(*,*) "SLAV node",islavnode(nslavnode(i)+id)
-	       endif
-         enddo
       return
       end

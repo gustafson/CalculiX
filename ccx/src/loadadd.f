@@ -23,38 +23,92 @@
 !
       implicit none
 !
-      integer nelemload(2,*),iamload(2,*)
-!
-      integer nelement,nload,nload_,j,iamplitude,nam,isector
-!
-      real*8 xload(2,*)
-!
-      real*8 value
-!
       character*20 label,sideload(*)
 !
-      do j=1,nload
-         if((nelemload(1,j).eq.nelement).and.
-     &      (nelemload(2,j).eq.isector).and.
-     &      (sideload(j).eq.label)) then
-            xload(1,j)=value
-            if(nam.gt.0) iamload(1,j)=iamplitude
-            return
+      integer nelemload(2,*),iamload(2,*),nelement,nload,nload_,j,
+     &  iamplitude,nam,isector,id
+!
+      real*8 xload(2,*),value
+!
+      call nident2(nelemload,nelement,nload,id)
+      if(id.gt.0) then
+!
+!        it is possible that several *DLOAD, *FILM or
+!        *RADIATE boundary conditions are applied to one
+!        and the same element
+!
+         if(nelemload(1,id).eq.nelement) then
+            do
+               if (sideload(id).eq.label) then
+                  if(nelemload(2,id).eq.isector) then
+!     
+!     loading on same element face and sector
+!     detected: values are replaced
+!     
+                     xload(1,id)=value
+                     xload(2,id)=0.d0
+                     if(nam.gt.0) then
+                        iamload(1,id)=iamplitude
+                        iamload(2,id)=iamplitude
+                     endif
+                     return
+                  elseif(nelemload(2,id).lt.isector) then
+c                     id=id-1
+                     exit
+                  endif
+               elseif(sideload(id).lt.label) then
+c                  id=id-1
+                  exit
+               endif
+               id=id-1
+               if((id.eq.0).or.(nelemload(1,id).ne.nelement)) then
+c                  id=id-1
+                  exit
+               endif
+            enddo
          endif
-      enddo
+      endif
+!
+!     loading a element face on which no previous loading
+!     was applied
+!
+!     loading conditions on one and the same element are
+!     alphabetized based on field sideload
+!
+!     loading conditions on one and the same element and
+!     of one and the same sideload type are ordered based
+!     on field nelemload(2,*)
+!
       nload=nload+1
       if(nload.gt.nload_) then
          write(*,*) '*ERROR in loadadd: increase nload_'
          stop
       endif
-      nelemload(1,nload)=nelement
-      nelemload(2,nload)=isector
-      sideload(nload)=label
-      xload(1,nload)=value
-      xload(2,nload)=0.
+!
+!     shifting existing loading
+!
+      do j=nload,id+2,-1
+         nelemload(1,j)=nelemload(1,j-1)
+         nelemload(2,j)=nelemload(2,j-1)
+         sideload(j)=sideload(j-1)
+         xload(1,j)=xload(1,j-1)
+         xload(2,j)=xload(2,j-1)
+         if(nam.gt.0) then
+            iamload(1,j)=iamload(1,j-1)
+            iamload(2,j)=iamload(2,j-1)
+         endif
+      enddo
+!
+!     inserting new loading
+!
+      nelemload(1,id+1)=nelement
+      nelemload(2,id+1)=isector
+      sideload(id+1)=label
+      xload(1,id+1)=value
+      xload(2,id+1)=0.
       if(nam.gt.0) then
-         iamload(1,nload)=iamplitude
-         iamload(2,nload)=0
+         iamload(1,id+1)=iamplitude
+         iamload(2,id+1)=0
       endif
 !
       return

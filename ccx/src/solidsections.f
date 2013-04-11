@@ -44,6 +44,8 @@
          stop
       endif
 !
+      pi=4.d0*datan(1.d0)
+!
       orientation='
      &                           '
       elset='
@@ -60,6 +62,12 @@
             elset(81:81)=' '
             ipos=index(elset,' ')
             elset(ipos:ipos)='E'
+         else
+            write(*,*) 
+     &        '*WARNING in solidsections: parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
 !
@@ -212,7 +220,6 @@
          do j=istartset(i),iendset(i)
             if(ialset(j).gt.0) then
                if(lakon(ialset(j))(1:2).eq.'CA') then
-                  pi=4.d0*datan(1.d0)
                   if(mcs.gt.1) then
                      write(*,*) '*ERROR in solidsections: '
                      write(*,*) '       axisymmetric elements cannot be
@@ -252,7 +259,8 @@
                do
                   k=k-ialset(j)
                   if(k.ge.ialset(j-1)) exit
-                  if(lakon(ialset(j))(1:2).eq.'CA') then
+c                  if(lakon(ialset(j))(1:2).eq.'CA') then
+                  if(lakon(k)(1:2).eq.'CA') then
                      if(mcs.gt.1) then
                         write(*,*) '*ERROR in solidsections: '
                         write(*,*) '       axisymmetric elements cannot 
