@@ -28,7 +28,7 @@
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
      &  matname,mint_,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
-     &  coriolis,ibody)
+     &  coriolis,ibody,xloadold,reltime)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !     asymmetric contributions
@@ -56,10 +56,10 @@
       integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
-     &  p2(3),ad(*),au(*),bodyf(3),bb(*),
-     &  t0(*),t1(*),prestr(6,mint_,*),vold(0:3,*),s(60,60),ff(60),
+     &  p2(3),ad(*),au(*),bodyf(3),bb(*),xloadold(2,*),
+     &  t0(*),t1(*),prestr(6,mint_,*),vold(0:4,*),s(60,60),ff(60),
      &  sti(6,mint_,*),sm(60,60),stx(6,mint_,*),adb(*),aub(*),
-     &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),
+     &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),reltime,
      &  alcon(0:6,ntmat_,*),physcon(3),cocon(0:6,ntmat_,*),
      &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*)
 !
@@ -90,12 +90,12 @@
         call e_c3d(co,nk,konl,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,i,
      &          nmethod,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
      &          alzero,ielmat,ielorien,norien,orab,ntmat_,
-     &          t0,t1,ithermal,vold,iperturb,
-     &          nelemload,sideload,xload,nload,idist,sti,stx,
-     &          iexpl,plicon,
+     &          t0,t1,ithermal,vold,iperturb,nelemload,sideload,xload,
+     &          nload,idist,sti,stx,iexpl,plicon,
      &          nplicon,plkcon,nplkcon,xstiff,npmat_,
      &          dtime,matname,mint_,ncmat_,mass,stiffness,buckling,rhsi,
-     &          intscheme,ttime,time,istep,iinc,coriolis)
+     &          intscheme,ttime,time,istep,iinc,coriolis,xloadold,
+     &          reltime)
 !
         do jj=1,3*nope
 !

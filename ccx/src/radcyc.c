@@ -125,7 +125,7 @@ void radcyc(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
   }
 
   RENEW(co,double,3**nk*nsegments);
-  RENEW(vold,double,4**nk*nsegments);
+  RENEW(vold,double,5**nk*nsegments);
   nkt=*nk*nsegments;
       
   /* generating the coordinates for the other sectors */

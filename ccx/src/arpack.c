@@ -71,17 +71,19 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   
   char bmat[2]="G", which[3]="LM", howmny[2]="A", fneig[132]="",
       description[13]="            ";
-  int *inum=NULL,k,ido,dz,iparam[11],ipntr[11],lworkl,
+  int *inum=NULL,k,ido,dz,iparam[11],ipntr[11],lworkl,ngraph=1,
     info,rvec=1,*select=NULL,lfin,j,lint,iout,ielas=1,icmd,
     iinc=1,istep=1,nev,ncv,mxiter,jrow,*ipobody=NULL,inewton=0,ifreebody;
   int mass[2]={1,1}, stiffness=1, buckling=0, rhsi=0, intscheme=0,noddiam=-1,
       coriolis=0,symmetryflag=0,inputformat=0;
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,
     *workl=NULL,*aux=NULL,*d=NULL,sigma=1,*temp_array=NULL,
-    *een=NULL,sum,cam[2],*f=NULL,*fn=NULL,qa[2],*fext=NULL,*epn=NULL,
+    *een=NULL,sum,cam[3],*f=NULL,*fn=NULL,qa[2],*fext=NULL,*epn=NULL,
     *xstateini=NULL,*xstiff=NULL,*stiini=NULL,*vini=NULL,freq,*stx=NULL,
     *enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,
-    *physcon=NULL,*qfx=NULL,*qfn=NULL,tol,fmin,fmax,pi,*cgr=NULL;
+    *physcon=NULL,*qfx=NULL,*qfn=NULL,tol,fmin,fmax,pi,*cgr=NULL,
+    *xloadold=NULL,reltime,*vr=NULL,*vi=NULL,*stnr=NULL,*stni=NULL,
+    *vmax=NULL,*stnmax=NULL;
   FILE *f1;
 
   int *ipneigh=NULL,*neigh=NULL;
@@ -109,7 +111,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   if(*nbody>0){
       ifreebody=*ne+1;
-      ipobody=NNEW(int,2*ifreebody);
+      ipobody=NNEW(int,2*ifreebody**nbody);
       for(k=1;k<=*nbody;k++){
 	  FORTRAN(bodyforce,(cbody,ibody,ipobody,nbody,set,istartset,
 			     iendset,ialset,&inewton,nset,&ifreebody,&k));
@@ -141,7 +143,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   xstiff=NNEW(double,27**mint_**ne);
 
   iout=-1;
-  v=NNEW(double,4**nk);
+  v=NNEW(double,5**nk);
   fn=NNEW(double,4**nk);
   stx=NNEW(double,6**mint_**ne);
   if(*ithermal>1){
@@ -202,7 +204,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mint_,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
 	      physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
-              &coriolis,ibody));
+              &coriolis,ibody,xloadold,&reltime));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -217,7 +219,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mint_,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
               physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
-              &coriolis,ibody));
+              &coriolis,ibody,xloadold,&reltime));
   }
 
   free(fext);
@@ -233,7 +235,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
          fn,&time,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
 	 iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,trab,inotr,ntrans,
          orab,ielorien,norien,description,
-                     ipneigh,neigh,sti));
+	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph));
     
     free(inum);free(ipneigh);free(neigh);FORTRAN(stop,());
 
@@ -444,7 +446,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   /* calculating the displacements and the stresses and storing */
   /* the results in frd format for each valid eigenmode */
 
-  v=NNEW(double,4**nk);
+  v=NNEW(double,5**nk);
   fn=NNEW(double,4**nk);
   stn=NNEW(double,6**nk);
   inum=NNEW(int,*nk);
@@ -537,9 +539,10 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
     FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,een,t1,
          fn,&freq,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
-		     iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,
-                     trab,inotr,ntrans,orab,ielorien,norien,description,
-                     ipneigh,neigh,sti));free(ipneigh);free(neigh);
+	 iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,
+         trab,inotr,ntrans,orab,ielorien,norien,description,
+	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph));
+    free(ipneigh);free(neigh);
   }
 
   if((fmax>0.)&&(fmax>d[nev-1])){
@@ -562,6 +565,8 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   if(strcmp1(&filab[18],"E   ")==0) free(een);
   if(strcmp1(&filab[36],"ENER")==0) free(enern);
+
+  for(k=0;k<6**mint_**ne;k++){eme[k]=0.;}
     
   return;
 }

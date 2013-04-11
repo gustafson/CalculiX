@@ -18,7 +18,8 @@
 !
       subroutine e_c3d_rhs(co,nk,konl,lakonl,p1,p2,omx,bodyfx,nbody,
      &  ff,nelem,nmethod,rhcon,ielmat,ntmat_,vold,iperturb,nelemload,
-     &  sideload,xload,nload,idist,ttime,time,istep,iinc,dtime)
+     &  sideload,xload,nload,idist,ttime,time,istep,iinc,dtime,
+     &  xloadold,reltime)
 !
 !     computation of the rhs for the element with
 !     the topology in konl: only for nonlinear calculations (i.e.
@@ -40,19 +41,11 @@
      &  ifacet(6,4),ifacew(8,5),istep,iinc,layer,kspt,jltyp,iflag
 !
       real*8 co(3,*),p1(3,2),p2(3,2),omx(2),bodyfx(3),
-     &  rhcon(0:1,ntmat_,*),xs2(3,2),
+     &  rhcon(0:1,ntmat_,*),xs2(3,2),xloadold(2,*),reltime,
      &  bodyf(3),om(2),rho,bf(3),q(3),shpj(4,20),xl(3,20),
-     &  shp(4,20),voldl(3,20),xl2(0:3,8),xsj2(3),shp2(4,8),vold(0:3,*),
+     &  shp(4,20),voldl(3,20),xl2(0:3,8),xsj2(3),shp2(4,8),vold(0:4,*),
      &  xload(2,*),xi,et,ze,const,xsj,ff(60),weight,ttime,time,tvar(2),
      &  coords(3),dtime
-!
-      real*8 gauss2d1(2,1),gauss2d2(2,4),gauss2d3(2,9),gauss2d4(2,1),
-     &  gauss2d5(2,3),gauss3d1(3,1),gauss3d2(3,8),gauss3d3(3,27),
-     &  gauss3d4(3,1),gauss3d5(3,4),gauss3d6(3,15),gauss3d7(3,2),
-     &  gauss3d8(3,9),gauss3d9(3,18),weight2d1(1),weight2d2(4),
-     &  weight2d3(9),weight2d4(1),weight2d5(3),weight3d1(1),
-     &  weight3d2(8),weight3d3(27),weight3d4(1),weight3d5(4),
-     &  weight3d6(15),weight3d7(2),weight3d8(9),weight3d9(18)
 !
       include "gauss.f"
 !
@@ -428,6 +421,8 @@ c            xi=gauss3d3(1,kk)+1.d0
                jltyp=jltyp+20
                call dload(xload(1,id),istep,iinc,tvar,nelem,i,layer,
      &              kspt,coords,jltyp,sideload(id))
+               if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &              (xload(1,id)-xloadold(1,id))*reltime
             endif
 !
             do k=1,nopes

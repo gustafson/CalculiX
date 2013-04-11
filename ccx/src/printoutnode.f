@@ -27,7 +27,7 @@
 !
       integer ithermal,node,ii,j,inotr(2,*),ntrans
 !
-      real*8 v(0:3,*),t1(*),fn(0:3,*),rftot(0:3),trab(7,*),
+      real*8 v(0:4,*),t1(*),fn(0:3,*),rftot(0:3),trab(7,*),
      &  co(3,*),a(3,3)
 !
       if(prlab(ii)(1:4).eq.'U   ') then

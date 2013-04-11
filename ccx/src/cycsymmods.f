@@ -22,7 +22,8 @@
      &  rcs0,zcs0,ncs_,cs,labmpc,istep,istat,n,iline,ipol,inl,
      &  ipoinp,inp,ntie,mcs,lprev,ithermal,rcscg,rcs0cg,zcscg,
      &  zcs0cg,nrcg,nzcg,jcs,kontri,straight,ne,ipkon,kon,
-     &  lakon,lcs,icounter,ifacetet,inodface,ipoinpc)
+     &  lakon,lcs,icounter,ifacetet,inodface,ipoinpc,maxsectors,
+     &  trab,ntrans,ntrans_)
 !
 !     reading the input deck: *CYCLIC SYMMETRY MODEL
 !
@@ -42,9 +43,6 @@
 !     cs(16,mcs): sin(angle)
 !     cs(17,mcs): number of tie constraint
 !
-!     left = dependent side
-!     right = independent side
-!
       implicit none
 !
       logical triangulation,calcangle,nodesonaxis
@@ -53,21 +51,22 @@
       character*8 lakon(*)
       character*20 labmpc(*)
       character*80 tie
-      character*81 set(*),leftset,rightset,tieset(3,*),elset
+      character*81 set(*),depset,indepset,tieset(3,*),elset
       character*132 textpart(16)
 !
       integer istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
      &  nset,istep,istat,n,key,i,j,k,nk,nmpc,nmpc_,mpcfree,ics(*),
-     &  nr(*),nz(*),ileft,iright,l,nodel,ikmpc(*),ilmpc(*),lcs(*),
+     &  nr(*),nz(*),idep,iindep,l,noded,ikmpc(*),ilmpc(*),lcs(*),
      &  kflag,node,ncsnodes,ncs_,iline,ipol,inl,ipoinp(2,*),nneigh,
      &  inp(3,*),itie,iset,ipos,mcs,lprev,ntie,ithermal,ncounter,
-     &  nrcg(*),nzcg(*),jcs(*),kontri(3,*),ne,ipkon(*),kon(*),noder,
-     &  icounter(*),ifacetet(*),inodface(*),ipoinpc(0:*)
+     &  nrcg(*),nzcg(*),jcs(*),kontri(3,*),ne,ipkon(*),kon(*),nodei,
+     &  icounter(*),ifacetet(*),inodface(*),ipoinpc(0:*),maxsectors,
+     &  noden(2),ntrans,ntrans_
 !
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
-     &  csab(7),xn,yn,zn,dd,xap,yap,zap,tietol(*),cs(17,*),xsegments,
-     &  xsectors,x3,y3,z3,phi,rcscg(*),rcs0cg(*),zcscg(*),zcs0cg(*),
-     &  straight(9,*),x1,y1,z1,x2,y2,z2,zp,rp
+     &  csab(7),xn,yn,zn,dd,xap,yap,zap,tietol(*),cs(17,*),xsectors,
+     &  gsectors,x3,y3,z3,phi,rcscg(*),rcs0cg(*),zcscg(*),zcs0cg(*),
+     &  straight(9,*),x1,y1,z1,x2,y2,z2,zp,rp,dist,trab(7,*)
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR in cycsymmods: *CYCLIC SYMMETRY MODEL'
@@ -75,15 +74,15 @@
          stop
       endif
 !
-      xsectors=1
+      gsectors=1
       elset='
      &                      '
       do i=2,n
          if(textpart(i)(1:2).eq.'N=') then
-            read(textpart(i)(3:22),'(f20.0)',iostat=istat) xsegments
+            read(textpart(i)(3:22),'(f20.0)',iostat=istat) xsectors
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          elseif(textpart(i)(1:7).eq.'NGRAPH=') then
-            read(textpart(i)(8:27),'(f20.0)',iostat=istat) xsectors
+            read(textpart(i)(8:27),'(f20.0)',iostat=istat) gsectors
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          elseif(textpart(i)(1:4).eq.'TIE=') then
             read(textpart(i)(5:84),'(a80)',iostat=istat) tie
@@ -97,30 +96,31 @@
          endif
       enddo
 !
-      if(xsegments.le.0) then
+      if(xsectors.le.0) then
          write(*,*) '*ERROR in cycsymmods: the required parameter N'
          write(*,*) '       is lacking on the *CYCLIC SYMMETRY MODEL'
          write(*,*) '       keyword card or has a value <=0'
          stop
       endif
-      if(xsectors.lt.1) then
+      if(gsectors.lt.1) then
          write(*,*) '*WARNING in cycsymmods: cannot plot less than'
          write(*,*) '         one sector: one sector will be plotted'
-         xsectors=1
+         gsectors=1
       endif
-      if(xsectors.gt.xsegments) then
+      if(gsectors.gt.xsectors) then
          write(*,*) '*WARNING in cycsymmods: cannot plot more than'
-         write(*,*) '         ',xsegments,'sectors;',
-     &           xsegments,' sectors will'
+         write(*,*) '         ',xsectors,'sectors;',
+     &           xsectors,' sectors will'
          write(*,*) '       be plotted'
-         xsectors=xsegments
+         gsectors=xsectors
       endif
+!
+      maxsectors=max(maxsectors,int(xsectors+0.5d0))
 !
       mcs=mcs+1
       cs(2,mcs)=-0.5
       cs(3,mcs)=-0.5
       cs(14,mcs)=lprev+0.5
-c      cs(15,1)=mcs+0.5
 !
 !     determining the tie constraint
 !
@@ -141,11 +141,11 @@ c      cs(15,1)=mcs+0.5
          endif
       endif
 !
-      cs(1,mcs)=xsegments
-      cs(5,mcs)=xsectors+0.5
+      cs(1,mcs)=xsectors
+      cs(5,mcs)=gsectors+0.5
       cs(17,mcs)=itie+0.5
-      leftset=tieset(2,itie)
-      rightset=tieset(3,itie)
+      depset=tieset(2,itie)
+      indepset=tieset(3,itie)
       tolloc=tietol(itie)
 !
 !     determining the element set
@@ -178,8 +178,15 @@ c      cs(15,1)=mcs+0.5
          stop
       endif
 !
+      ntrans=ntrans+1
+      if(ntrans.gt.ntrans_) then
+         write(*,*) '*ERROR in cycsymmods: increase ntrans_'
+         stop
+      endif
+!
       do i=1,6
          read(textpart(i)(1:20),'(f20.0)',iostat=istat) csab(i)
+         trab(i,ntrans)=csab(i)
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
       enddo
 !
@@ -187,27 +194,31 @@ c      cs(15,1)=mcs+0.5
 !
       csab(7)=-1.d0
 !
-!     check whether leftset and rightset exist
+!     marker for cyclic symmetry axis
+!
+      trab(i,7)=2
+!
+!     check whether depset and indepset exist
 !
       do i=1,nset
-         if(set(i).eq.leftset) exit
+         if(set(i).eq.depset) exit
       enddo
       if(i.gt.nset) then
-         write(*,*) '*ERROR in cycsymmods: surface ',leftset
+         write(*,*) '*ERROR in cycsymmods: surface ',depset
          write(*,*) '  has not yet been defined.' 
          stop
       endif
-      ileft=i
+      idep=i
 !
       do i=1,nset
-         if(set(i).eq.rightset) exit
+         if(set(i).eq.indepset) exit
       enddo
       if(i.gt.nset) then
-         write(*,*) '*ERROR in cycsymmods: surface ',rightset
+         write(*,*) '*ERROR in cycsymmods: surface ',indepset
          write(*,*) '  has not yet been defined.' 
          stop
       endif
-      iright=i
+      iindep=i
 !
 !     unit vector along the rotation axis (xn,yn,zn)
 !
@@ -219,17 +230,14 @@ c      cs(15,1)=mcs+0.5
       yn=yn/dd
       zn=zn/dd
 !
-!     defining the rightset as a 2-D data field (axes: r=radial
+!     defining the indepset as a 2-D data field (axes: r=radial
 !     coordinate, z=axial coordinate): needed to allocate a node
-!     of the leftset to a node of the rightset for the cyclic
+!     of the depset to a node of the indepset for the cyclic
 !     symmetry equations
 !
       l=0
-      do j=istartset(iright),iendset(iright)
+      do j=istartset(iindep),iendset(iindep)
          if(ialset(j).gt.0) then
-c            if(j.gt.istartset(iright)) then
-c               if(ialset(j).eq.ialset(j-1)) cycle
-c            endif
             l=l+1
             if(lprev+l.gt.ncs_) then
                write(*,*) '*ERROR in cycsymmods: increase ncs_'
@@ -284,6 +292,44 @@ c            endif
       kflag=2
       call dsort(rcs,nr,ncsnodes,kflag)
       call dsort(zcs,nz,ncsnodes,kflag)
+c      write(*,*) 'independent side'
+c      do i=1,ncsnodes
+c         write(*,'(i5,1x,i5,3(1x,e11.4),1x,i5,1x,e11.4,1x,i5)') 
+c     &       i,ics(i),rcs0(i),zcs0(i),rcs(i),nr(i),zcs(i),nz(i)
+c      enddo
+c      write(*,*)
+!
+!     check whether a tolerance was defined. If not, a tolerance
+!     is calculated as 0.5 % of the mean of the distance of every
+!     independent node to its nearest neighbour
+!
+      if(tolloc.lt.1.d-30) then
+         nneigh=2
+         dist=0.d0
+         do i=1,ncsnodes
+            nodei=ics(i)
+!
+            xap=co(1,nodei)-csab(1)
+            yap=co(2,nodei)-csab(2)
+            zap=co(3,nodei)-csab(3)
+!     
+            zp=xap*xn+yap*yn+zap*zn
+            rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
+!
+            call near2d(rcs0,zcs0,rcs,zcs,nr,nz,rp,zp,ncsnodes,noden,
+     &            nneigh)
+!
+            dist=dist+dsqrt((co(1,nodei)-co(1,noden(2)))**2+
+     &                     (co(2,nodei)-co(2,noden(2)))**2+
+     &                     (co(3,nodei)-co(3,noden(2)))**2)
+         enddo
+         tolloc=0.005d0*dist/ncsnodes
+         write(*,*) '*INFO in cycsymmods: no tolerance was defined'
+         write(*,*) '      in the *TIE option; a tolerance of ',
+     &       tolloc
+         write(*,*) '      will be used'
+         write(*,*)
+      endif
 !
 !     calculating the angle and check for nodes on the axis
 !
@@ -291,16 +337,16 @@ c            endif
       nodesonaxis=.false.
 !
       nneigh=1
-      do i=istartset(ileft),iendset(ileft)
+      do i=istartset(idep),iendset(idep)
          if(ialset(i).gt.0) then
-            if(i.gt.istartset(ileft)) then
+            if(i.gt.istartset(idep)) then
                if(ialset(i).eq.ialset(i-1)) cycle
             endif
-            nodel=ialset(i)
+            noded=ialset(i)
 !
-            xap=co(1,nodel)-csab(1)
-            yap=co(2,nodel)-csab(2)
-            zap=co(3,nodel)-csab(3)
+            xap=co(1,noded)-csab(1)
+            yap=co(2,noded)-csab(2)
+            zap=co(3,noded)-csab(3)
 !     
             zp=xap*xn+yap*yn+zap*zn
             rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
@@ -314,17 +360,17 @@ c            endif
             call near2d(rcs0,zcs0,rcs,zcs,nr,nz,rp,zp,ncsnodes,node,
      &            nneigh)
 !
-            noder=ics(node)
-            if(noder.lt.0) cycle
-            if(noder.eq.nodel) then
-               ics(node)=-noder
+            nodei=ics(node)
+            if(nodei.lt.0) cycle
+            if(nodei.eq.noded) then
+               ics(node)=-nodei
                nodesonaxis=.true.
                cycle
             endif
 !
-            xap=co(1,noder)-csab(1)
-            yap=co(2,noder)-csab(2)
-            zap=co(3,noder)-csab(3)
+            xap=co(1,nodei)-csab(1)
+            yap=co(2,nodei)-csab(2)
+            zap=co(3,nodei)-csab(3)
 !     
             zp=xap*xn+yap*yn+zap*zn
             rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
@@ -349,11 +395,11 @@ c               write(*,*) 'phi ',phi
             do
                k=k-ialset(i)
                if(k.ge.ialset(i-1)) exit
-               nodel=k
+               noded=k
 !
-               xap=co(1,nodel)-csab(1)
-               yap=co(2,nodel)-csab(2)
-               zap=co(3,nodel)-csab(3)
+               xap=co(1,noded)-csab(1)
+               yap=co(2,noded)-csab(2)
+               zap=co(3,noded)-csab(3)
 !     
                zp=xap*xn+yap*yn+zap*zn
                rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
@@ -367,17 +413,17 @@ c               write(*,*) 'phi ',phi
                call near2d(rcs0,zcs0,rcs,zcs,nr,nz,rp,zp,ncsnodes,node,
      &              nneigh)
 !     
-               noder=ics(node)
-               if(noder.lt.0) cycle
-               if(noder.eq.nodel) then
-                  ics(node)=-noder
+               nodei=ics(node)
+               if(nodei.lt.0) cycle
+               if(nodei.eq.noded) then
+                  ics(node)=-nodei
                   nodesonaxis=.true.
                   cycle
                endif
 !
-               xap=co(1,noder)-csab(1)
-               yap=co(2,noder)-csab(2)
-               zap=co(3,noder)-csab(3)
+               xap=co(1,nodei)-csab(1)
+               yap=co(2,nodei)-csab(2)
+               zap=co(3,nodei)-csab(3)
 !     
                zp=xap*xn+yap*yn+zap*zn
                rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
@@ -402,22 +448,23 @@ c                  write(*,*) 'phi ',phi
 !
       enddo
 !
-!     allocating a node of the leftset to each node of the rightset 
+!     allocating a node of the depset to each node of the indepset 
 !
       ncounter=0
       triangulation=.false.
 !
-      do i=istartset(ileft),iendset(ileft)
+      do i=istartset(idep),iendset(idep)
          if(ialset(i).gt.0) then
-            if(i.gt.istartset(ileft)) then
+            if(i.gt.istartset(idep)) then
                if(ialset(i).eq.ialset(i-1)) cycle
             endif
-            nodel=ialset(i)
+            noded=ialset(i)
 !
+c            write(*,*) '101 ',rcs0(101),zcs0(101)
             call generatecycmpcs(tolloc,co,nk,ipompc,nodempc,
      &         coefmpc,nmpc,nmpc_,ikmpc,ilmpc,mpcfree,rcs,zcs,ics,
      &         nr,nz,rcs0,zcs0,ncs_,cs,labmpc,istep,istat,n,
-     &         mcs,ithermal,triangulation,csab,xn,yn,zn,phi,nodel,
+     &         mcs,ithermal,triangulation,csab,xn,yn,zn,phi,noded,
      &         ncsnodes,nodesonaxis,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
      &         nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
      &         ifacetet,inodface)
@@ -427,12 +474,12 @@ c                  write(*,*) 'phi ',phi
             do
                k=k-ialset(i)
                if(k.ge.ialset(i-1)) exit
-               nodel=k
+               noded=k
 !
                call generatecycmpcs(tolloc,co,nk,ipompc,nodempc,
      &              coefmpc,nmpc,nmpc_,ikmpc,ilmpc,mpcfree,rcs,zcs,ics,
      &              nr,nz,rcs0,zcs0,ncs_,cs,labmpc,istep,istat,n,
-     &              mcs,ithermal,triangulation,csab,xn,yn,zn,phi,nodel,
+     &              mcs,ithermal,triangulation,csab,xn,yn,zn,phi,noded,
      &              ncsnodes,nodesonaxis,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
      &              nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
      &              ifacetet,inodface)
@@ -447,6 +494,7 @@ c                  write(*,*) 'phi ',phi
       kflag=1
       call isortii(ics,nr,ncsnodes,kflag)
       cs(4,mcs)=ncsnodes+0.5
+      lprev=lprev+ncsnodes
 !
 !     check orientation of (xn,yn,zn) (important for copying of base
 !     sector in arpackcs)

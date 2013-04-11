@@ -18,10 +18,10 @@
 !
       subroutine dloads(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,nelemload,sideload,xload,nload,nload_,
-     &  ielmat,ntmat_,iamload,
-     &  amname,nam,lakon,ne,dload_flag,istep,istat,n,iline,ipol,
-     &  inl,ipoinp,inp,cbody,ibody,xbody,nbody,nbody_,xbodyold,
-     &  iperturb,physcon,nam_,namtot_,namta,amta,nmethod,ipoinpc)
+     &  ielmat,iamload,amname,nam,lakon,ne,dload_flag,istep,
+     &  istat,n,iline,ipol,inl,ipoinp,inp,cbody,ibody,xbody,nbody,
+     &  nbody_,xbodyold,iperturb,physcon,nam_,namtot_,namta,amta,
+     &  nmethod,ipoinpc,maxsectors)
 !
 !     reading the input deck: *DLOAD
 !
@@ -37,10 +37,11 @@
       character*132 textpart(16)
 !
       integer istartset(*),iendset(*),ialset(*),nelemload(2,*),
-     &  ielmat(*),nset,nload,nload_,ntmat_,istep,istat,n,i,j,l,key,
+     &  ielmat(*),nset,nload,nload_,istep,istat,n,i,j,l,key,
      &  iamload(2,*),nam,iamplitude,ipos,ne,iline,ipol,iperturb,
      &  inl,ipoinp(2,*),inp(3,*),ibody(3,*),nbody,nbody_,nam_,namtot,
-     &  namtot_,namta(3,*),idelay,nmethod,lc,isector,node,ipoinpc(0:*)
+     &  namtot_,namta(3,*),idelay,nmethod,lc,isector,node,ipoinpc(0:*),
+     &  maxsectors,jsector
 !
       real*8 xload(2,*),xbody(7,*),xmagnitude,dd,p1(3),p2(3),bodyf(3),
      &  xbodyold(7,*),physcon(3),amta(2,*)
@@ -138,6 +139,11 @@
                write(*,*) '       STEADY STATE DYNAMICS calculations'
                stop
             endif
+            if(isector.gt.maxsectors) then
+               write(*,*) '*ERROR in dloads: sector ',isector
+               write(*,*) '       exceeds number of sectors'
+               stop
+            endif
             isector=isector-1
          endif
       enddo
@@ -230,11 +236,15 @@
      &                (lakon(l)(7:7).eq.'L')) then
                   label(1:2)='P1'
                endif
-               if(lc.ne.1) l=l+ne
+               if(lc.ne.1) then
+                  jsector=isector+maxsectors
+               else
+                  jsector=isector
+               endif
                if(label(3:4).ne.'NP') then
                   call loadadd(l,label,xmagnitude,nelemload,sideload,
      &                 xload,nload,nload_,iamload,iamplitude,
-     &                 nam,isector)
+     &                 nam,jsector)
                else
                   call loadaddp(l,label,nelemload,sideload,
      &                 xload,nload,nload_,iamload,iamplitude,
@@ -288,11 +298,15 @@
                do j=istartset(i),iendset(i)
                   if(ialset(j).gt.0) then
                      l=ialset(j)
-                     if(lc.ne.1) l=l+ne
+                     if(lc.ne.1) then
+                        jsector=isector+maxsectors
+                     else
+                        jsector=isector
+                     endif
                      if(label(3:4).ne.'NP') then
                         call loadadd(l,label,xmagnitude,nelemload,
      &                       sideload,xload,nload,nload_,iamload,
-     &                       iamplitude,nam,isector)
+     &                       iamplitude,nam,jsector)
                      else
                         call loadaddp(l,label,nelemload,
      &                       sideload,xload,nload,nload_,iamload,
@@ -303,11 +317,15 @@
                      do
                         l=l-ialset(j)
                         if(l.ge.ialset(j-1)) exit
-                        if(lc.ne.1) l=l+ne
+                        if(lc.ne.1) then
+                           jsector=isector+maxsectors
+                        else
+                           jsector=isector
+                        endif
                         if(label(3:4).ne.'NP') then
                            call loadadd(l,label,xmagnitude,nelemload,
      &                          sideload,xload,nload,nload_,
-     &                          iamload,iamplitude,nam,isector)
+     &                          iamload,iamplitude,nam,jsector)
                         else
                            call loadaddp(l,label,nelemload,
      &                          sideload,xload,nload,nload_,

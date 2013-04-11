@@ -28,9 +28,11 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      int *nodeboun, int *ndirboun, int *nboun, int *ipompc,
 	      int *nodempc, int *nmpc, int *nactdof, int *icol,
 	      int *jq, int **mast1p, int **irowp, int *isolver, int *neq,
-	      int *nnn, int *ikmpc, int *ilmpc, int *ikcol,
-	      int *ipointer, int *nsky, int *nzs, int *nmethod,
+	      int *nnn, int *ikmpc, int *ilmpc,
+	      int *ipointer, int *nzs, int *nmethod,
               int *ithermal, int *ikboun, int *ilboun, int *iperturb){
+
+  char lakonl[2]=" \0";
 
   int i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
     ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,
@@ -52,10 +54,11 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 
   /* determining the mechanical active degrees of freedom due to elements */
 
-  if((*ithermal<2)||(*ithermal==3)){
+  if((*ithermal<2)||(*ithermal>=3)){
       for(i=0;i<*ne;++i){
 	  
 	  if(ipkon[i]<0) continue;
+	  if(strcmp1(&lakon[8*i],"F")==0)continue;
 	  indexe=ipkon[i];
 	  if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
 	  else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
@@ -63,8 +66,9 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  else if (strcmp1(&lakon[8*i+3],"4")==0)nope=4;
 	  else if (strcmp1(&lakon[8*i+3],"15")==0)nope=15;
 	  else if (strcmp1(&lakon[8*i+3],"6")==0)nope=6;
-/*	  else if (strcmp1(&lakon[8*i],"E")==0)nope=4;*/
-	  else if (strcmp1(&lakon[8*i],"E")==0)nope=atoi(&lakon[8*i+7]);
+	  else if (strcmp1(&lakon[8*i],"E")==0){
+	      lakonl[0]=lakon[8*i+7];
+	      nope=atoi(lakonl);}
 	  else continue;
 	  
 	  for(j=0;j<nope;++j){
@@ -82,6 +86,7 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       for(i=0;i<*ne;++i){
 	  
 	  if(ipkon[i]<0) continue;
+	  if(strcmp1(&lakon[8*i],"F")==0)continue;
 	  indexe=ipkon[i];
 	  if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
 	  else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
@@ -128,7 +133,7 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   for(i=0;i<*nk;++i){
     for(j=1;j<4;++j){
       if(nactdof[4*nnn[i]+j-4]!=0){
-        if((*ithermal<2)||(*ithermal==3)){
+        if((*ithermal<2)||(*ithermal>=3)){
           ++neq[0];
           nactdof[4*nnn[i]+j-4]=neq[0];
         }
@@ -156,7 +161,7 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   else{neq[2]=neq[1];}
   
   ifree=0;
-  /*for(i=0;i<4**nk;++i){printf("nactdof=%d,%d,%d\n",i/4+1,i-(i/4)*4,nactdof[i]);}*/
+  /* for(i=0;i<4**nk;++i){printf("nactdof=%d,%d,%d\n",i/4+1,i-(i/4)*4,nactdof[i]);}*/
 
     /* determining the position of each nonzero matrix element
 
@@ -168,11 +173,12 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 
     /* mechanical entries */
     
-    if((*ithermal<2)||(*ithermal==3)){
+    if((*ithermal<2)||(*ithermal>=3)){
 
     for(i=0;i<*ne;++i){
       
       if(ipkon[i]<0) continue;
+      if(strcmp1(&lakon[8*i],"F")==0)continue;
       indexe=ipkon[i];
       if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
       else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
@@ -180,8 +186,9 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       else if (strcmp1(&lakon[8*i+3],"4")==0)nope=4;
       else if (strcmp1(&lakon[8*i+3],"15")==0)nope=15;
       else if (strcmp1(&lakon[8*i+3],"6")==0)nope=6;
-/*      else if (strcmp1(&lakon[8*i],"E")==0)nope=4;*/
-      else if (strcmp1(&lakon[8*i],"E")==0)nope=atoi(&lakon[8*i+7]);
+      else if (strcmp1(&lakon[8*i],"E")==0){
+	  lakonl[0]=lakon[8*i+7];
+	  nope=atoi(lakonl);}
       else continue;
       
       for(jj=0;jj<3*nope;++jj){
@@ -212,10 +219,10 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	    
 	    if(jdof1==0){
 	      idof1=jdof2;
-	      idof2=7*node1+k-6;}
+	      idof2=8*node1+k-7;}
 	    else{
 	      idof1=jdof1;
-	      idof2=7*node2+m-6;}
+	      idof2=8*node2+m-7;}
 	    
 	    if(*nmpc>0){
 	      
@@ -253,8 +260,8 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  }
 	  
 	  else{
-	    idof1=7*node1+k-6;
-	    idof2=7*node2+m-6;
+	    idof1=8*node1+k-7;
+	    idof2=8*node2+m-7;
 	    mpc1=0;
 	    mpc2=0;
 	    if(*nmpc>0){
@@ -333,6 +340,7 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     for(i=0;i<*ne;++i){
       
       if(ipkon[i]<0) continue;
+      if(strcmp1(&lakon[8*i],"F")==0)continue;
       indexe=ipkon[i];
       if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
       else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
@@ -368,10 +376,10 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	    
 	    if(jdof1==0){
 	      idof1=jdof2;
-	      idof2=7*node1-7;}
+	      idof2=8*node1-8;}
 	    else{
 	      idof1=jdof1;
-	      idof2=7*node2-7;}
+	      idof2=8*node2-8;}
 	    
 	    if(*nmpc>0){
 	      
@@ -408,8 +416,8 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  }
 	  
 	  else{
-	    idof1=7*node1-7;
-	    idof2=7*node2-7;
+	    idof1=8*node1-8;
+	    idof2=8*node2-8;
 	    mpc1=0;
 	    mpc2=0;
 	    if(*nmpc>0){
@@ -478,39 +486,22 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 
     }
     
-    /* ordering the nonzero nodes in the SUPERdiagonal columns
-       mast1 contains the row numbers column per column,
-       irow the column numbers */
-
-/*    for(i=0;i<neq[2];++i){
-      itot=0;
-      if(ipointer[i]==0){
-	printf("*ERROR in mastruct: zero column\n");
-	FORTRAN(stop,());
-      }
-      istart=ipointer[i];
-      while(1){
-	++itot;
-	ikcol[itot-1]=mast1[istart-1];
-	istart=irow[istart-1];
-	if(istart==0) break;
-      }
-      FORTRAN(isortii,(ikcol,icol,&itot,&kflag));
-      istart=ipointer[i];
-      for(j=0;j<itot-1;++j){
-	mast1[istart-1]=ikcol[j];
-	istartold=istart;
-	istart=irow[istart-1];
-	irow[istartold-1]=i+1;
-      }
-      mast1[istart-1]=ikcol[itot-1];
-      irow[istart-1]=i+1;
-      }*/
-
     for(i=0;i<neq[2];++i){
       if(ipointer[i]==0){
 	if(i>=neq[1]) continue;
+	node1=0;
+	for(j=0;j<*nk;j++){
+	  for(k=0;k<4;++k){
+	    if(nactdof[4*nnn[j]+k-4]==i+1){
+	      node1=nnn[j];
+	      idof1=k;
+	      break;
+	    }
+	  }
+	  if(node1!=0) break;
+	}
 	printf("*ERROR in mastruct: zero column\n");
+	printf("       node=%d,DOF=%d\n",node1,idof1);
 	FORTRAN(stop,());
       }
       istart=ipointer[i];

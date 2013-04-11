@@ -27,8 +27,9 @@
       integer kgas
 !
       real*8 T,dvi
+      kgas=kgas
 !
-      dvi=0.000001d0*0.00001711d0*dsqrt(T/273.15d0)*(1d0+113d0/273.15d0)
+      dvi=0.00001711d0*dsqrt(T/273.15d0)*(1d0+113d0/273.15d0)
      &     /(1.d0+113.d0/T)
 !
       return

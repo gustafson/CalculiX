@@ -29,7 +29,7 @@
       integer i,j,k,istep,istat,n,key,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),ipoinpc(0:*)
 !
-      real*8 ctrl(26)
+      real*8 ctrl(*)
 !
       do i=2,n
          if(textpart(i)(1:5).eq.'RESET') then
@@ -46,7 +46,7 @@
             ctrl(11)=0.25d0
             ctrl(12)=0.5d0
             ctrl(13)=0.75d0
-            ctrl(14)=0.
+            ctrl(14)=0.85d0
             ctrl(15)=0.
             ctrl(16)=0.
             ctrl(17)=1.5d0

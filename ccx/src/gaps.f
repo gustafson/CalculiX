@@ -35,6 +35,8 @@
 !
       implicit none
 !
+      logical fixed
+!
       character*1 typeboun(*),type,inpc(*)
       character*8 lakon(*)
       character*20 labmpc(*),label
@@ -49,9 +51,10 @@
      &  ipoinp(2,*),inp(3,*),l,index1,ibounstart,ibounend,iamplitude,
      &  nam,inotr(2,*),ntrans,nmethod
 !
-      real*8 coefmpc(3,*),co(3,*),xboun(*),ctrl(26),xn(3),clearance,
-     &  bounval,trab(7,*)
+      real*8 coefmpc(3,*),co(3,*),xboun(*),ctrl(*),xn(3),clearance,
+     &  bounval,trab(7,*),vdummy(0:4)
 !
+      fixed=.false.
       type='B'
       iamplitude=0
 !
@@ -145,7 +148,7 @@ c         ctrl(20)=1.d+30
      &              labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &              nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &              nboun,nboun_,xboun,inode,node,co,label,
-     &              typeboun)
+     &              typeboun,iperturb)
             enddo
 !
 !           three terms for node 2
@@ -157,7 +160,7 @@ c         ctrl(20)=1.d+30
      &              labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &              nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &              nboun,nboun_,xboun,inode,node,co,label,
-     &              typeboun)
+     &              typeboun,iperturb)
             enddo
 !
 !           extra node for the gap DOF
@@ -171,7 +174,8 @@ c         ctrl(20)=1.d+30
             call usermpc(ipompc,nodempc,coefmpc,
      &           labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &           nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
-     &           nboun,nboun_,xboun,inode,node,co,label,typeboun)
+     &           nboun,nboun_,xboun,inode,node,co,label,typeboun,
+     &           iperturb)
             do l=1,3
                co(l,nk)=xn(l)
             enddo
@@ -186,7 +190,7 @@ c         ctrl(20)=1.d+30
      &        iamboun,iamplitude,nam,ipompc,nodempc,
      &        coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &        ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &        type,typeboun,nmethod,iperturb)
+     &        type,typeboun,nmethod,iperturb,fixed,vdummy)
 !
 !           nonhomogeneous term for user MPC
 !
@@ -194,7 +198,8 @@ c         ctrl(20)=1.d+30
             call usermpc(ipompc,nodempc,coefmpc,
      &           labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &           nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
-     &           nboun,nboun_,xboun,inode,node,co,label,typeboun)
+     &           nboun,nboun_,xboun,inode,node,co,label,typeboun,
+     &           iperturb)
             co(1,nk)=clearance
          else
             k=ialset(j-2)
@@ -219,7 +224,7 @@ c         ctrl(20)=1.d+30
      &                 labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &                 nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &                 nboun,nboun_,xboun,inode,node,co,label,
-     &                 typeboun)
+     &                 typeboun,iperturb)
                enddo
 !
 !              three terms for node 1
@@ -231,7 +236,7 @@ c         ctrl(20)=1.d+30
      &                 labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &                 nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &                 nboun,nboun_,xboun,inode,node,co,label,
-     &                 typeboun)
+     &                 typeboun,iperturb)
                enddo
 !
 !              extra node for the gap DOF
@@ -245,7 +250,8 @@ c         ctrl(20)=1.d+30
                call usermpc(ipompc,nodempc,coefmpc,
      &              labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &              nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
-     &              nboun,nboun_,xboun,inode,node,co,label,typeboun)
+     &              nboun,nboun_,xboun,inode,node,co,label,typeboun,
+     &              iperturb)
                do l=1,3
                   co(l,nk)=xn(l)
                enddo
@@ -260,7 +266,7 @@ c         ctrl(20)=1.d+30
      &              iamboun,iamplitude,nam,ipompc,nodempc,
      &              coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &              ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &              type,typeboun,nmethod,iperturb)
+     &              type,typeboun,nmethod,iperturb,fixed,vdummy)
 !
 !              nonhomogeneous term for user MPC
 !
@@ -268,7 +274,8 @@ c         ctrl(20)=1.d+30
                call usermpc(ipompc,nodempc,coefmpc,
      &              labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &              nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
-     &              nboun,nboun_,xboun,inode,node,co,label,typeboun)
+     &              nboun,nboun_,xboun,inode,node,co,label,typeboun,
+     &              iperturb)
                co(1,nk)=clearance
             enddo
          endif

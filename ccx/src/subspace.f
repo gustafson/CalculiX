@@ -16,8 +16,8 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine subspace(d,aa,bb,cc,tinc,alpham,betam,nev,xini,
-     &  cd,cv,time,rwork,lrw,k,jout,rpar,bj,iwork,liw,iddebdf)
+      subroutine subspace(d,aa,bb,cc,alpham,betam,nev,xini,
+     &  cd,cv,time,rwork,lrw,m,jout,rpar,bj,iwork,liw,iddebdf)
 !
 !     solves the linear dynamic equations mapped on the subspace
 !     of the eigenvectors (only if there are dashpots in the
@@ -26,9 +26,9 @@
       implicit none
 !
       integer nev,nev2,info(15),idid,lrw,iwork(*),liw,jout,id,
-     &  iab,iaa,ibb,i,j,k,iddebdf
+     &  iab,iaa,ibb,i,j,m,iddebdf
 !
-      real*8 d(*),aa(nev,*),bb(nev,*),cc(nev,*),tinc,alpham,betam,
+      real*8 d(*),aa(nev,*),bb(nev,*),cc(nev,*),alpham,betam,
      &  xini(*),cd(*),cv(*),time0,time,rtol,atol,rwork(*),rpar(*),
      &  bj(*)
 !
@@ -40,18 +40,19 @@
 !
 !     transferring fields into global field rpar
 !     (needed for subroutine fd)
-!     rpar contains (field, size): tinc, 1
+!     rpar contains (field, size): m+0.5, 1
 !                                  alpham, 1
 !                                  betam, 1
 !                                  cc, nev**2
 !                                  d, nev
+!                                  time(1)
 !                                  aa(1,1)..aa(nev,1), nev
 !                                  bb(1,1)..bb(nev,1), nev
+!                                  time(2)
 !                                  aa(1,2)..aa(nev,2), nev
 !                                  ...
 !
-      if(k.eq.0) then
-         rpar(1)=tinc
+      if(m.eq.1) then
          rpar(2)=alpham
          rpar(3)=betam
          do j=1,nev
@@ -73,26 +74,30 @@
             xini(nev+i)=cv(i)
          enddo
       endif
+      rpar(1)=m+0.5d0
       iab=3+nev*(1+nev)
-      do j=k+1,k+jout
-         iaa=iab+(j-1)*nev2
-         ibb=iaa+nev
-         do i=1,nev
-            rpar(iaa+i)=aa(i,j)
-            rpar(ibb+i)=bb(i,j)
-         enddo
+      iaa=iab+(m-1)*(nev2+1)+1
+      rpar(iaa)=time
+      ibb=iaa+nev
+      do i=1,nev
+         rpar(iaa+i)=aa(i,m)
+         rpar(ibb+i)=bb(i,m)
       enddo
 !
-      do i=1,6
+      do i=1,3
          info(i)=0
       enddo
+      info(4)=1
       info(5)=1
+      info(6)=0
+      rwork(1)=time
 !
 !     absolute and relative tolerance for dderkf
 !
       rtol=1.d-5
       atol=1.d-3
 !
+c      write(*,*) 'time0,time ',time0,time
       if(iddebdf.eq.0) then
          call ddeabm(df,nev2,time0,xini,time,info,rtol,atol,idid,rwork,
      &        lrw,iwork,liw,rpar,nev)
@@ -116,6 +121,7 @@
             return
          endif
       else
+c         write(*,*) 'subspace ',time0,time
          call ddebdf(df,nev2,time0,xini,time,info,rtol,atol,idid,rwork,
      &        lrw,iwork,liw,rpar,nev,djac)
          if((idid.ne.2).and.(idid.ne.3)) then
@@ -142,30 +148,33 @@
 !
       implicit none
 !
-      integer nev,i,j,k,id,iab,iaa,ibb
+      integer nev,i,j,id,iab,iaa,ibb,nev2p1,m
 !
       real*8 rpar(*),x,u(*),uprime(*)
 !
-      k=int(x/rpar(1))+1
-      id=3+nev*nev
-      iab=id+nev
-      iaa=iab+(k-1)*2*nev
+      m=int(rpar(1))
+      iab=4+nev*(nev+1)
+      nev2p1=2*nev+1
+      call ident2(rpar(iab),x,m,nev2p1,id)
+      if(id.eq.m) then
+c         write(*,*) 'WARNING in subspace: outside range '
+         id=m-1
+      endif
+c      write(*,*) 'rpar ',x,id,rpar(iab)
+      iaa=iab+id*nev2p1
       ibb=iaa+nev
+      id=3+nev*nev
 !
       do i=1,nev
          uprime(i)=u(nev+i)
          uprime(nev+i)=rpar(iaa+i)+x*rpar(ibb+i)
      &             -rpar(id+i)*rpar(id+i)*u(i)
      &             -(rpar(2)+rpar(3)*rpar(id+i)*rpar(id+i))*u(nev+i)
-c         uprime(nev+i)=aa(i,k)+x*bb(i,k)
-c     &             -d(i)*d(i)*u(i)
-c     &             -(apham+betam*d(i)*d(i))*u(nev+i)
 !
 !        contribution of the dashpots
 !   
          do j=1,nev
             uprime(nev+i)=uprime(nev+i)-rpar(3+(j-1)*nev+i)*u(nev+j)
-c            uprime(nev+i)=uprime(nev+i)-cc(i,j)*u(nev+j)
          enddo
       enddo
 !
@@ -178,11 +187,10 @@ c            uprime(nev+i)=uprime(nev+i)-cc(i,j)*u(nev+j)
 !
       implicit none
 !
-      integer nrowpd,nev,id,i,j,k
+      integer nrowpd,nev,id,i,j
 !
       real*8 rpar(*),x,u(*),pd(nrowpd,*)
 !
-      k=int(x/rpar(1))+1
       id=3+nev*nev
 !
       do i=1,nev

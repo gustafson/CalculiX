@@ -24,7 +24,10 @@ void contact(int *ncont, int *ntie, char *tieset, int *nset, char *set,
 	     int *istartset, int *iendset, int *ialset, int *itietri,
 	     char *lakon, int *ipkon, int *kon, int *koncont, int *ne,
 	     double *cg, double *straight, int *ifree, double *co,
-	     double *vold, int *ielmat, double *cs){
+	     double *vold, int *ielmat, double *cs, double *elcon,
+             int *istep,int *iinc,int *iit,int *ncmat_,int *ntmat_,
+             int *ifcont1, int *ifcont2, int *ne0, double *vini,
+             int *nmethod){
     
     int i,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL;
     
@@ -52,7 +55,8 @@ void contact(int *ncont, int *ntie, char *tieset, int *nset, char *set,
     
     FORTRAN(gencontelem,(tieset,ntie,itietri,ne,ipkon,kon,lakon,set,
        istartset,iendset,ialset,cg,straight,ifree,koncont,
-       co,vold,xo,yo,zo,x,y,z,nx,ny,nz,nset,ielmat,cs));
+       co,vold,xo,yo,zo,x,y,z,nx,ny,nz,nset,ielmat,cs,elcon,istep,
+       iinc,iit,ncmat_,ntmat_,ifcont1,ifcont2,ne0,vini,nmethod));
 
     free(xo);free(yo);free(zo);free(x);free(y);free(z);free(nx);
     free(ny);free(nz);

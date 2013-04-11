@@ -63,7 +63,7 @@
       character*20 loadtype
       integer kstep,kinc,noel,npt,jltyp,nfield,node
       real*8 e(2),sink,time(2),coords(3),temp,field(nfield),area,
-     &  vold(0:3,*)
+     &  vold(0:4,*)
 !
       e(1)=0.72d0
 !

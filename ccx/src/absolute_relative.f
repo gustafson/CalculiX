@@ -17,8 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
       subroutine absolute_relative(node1,node2,nodem,nelem,lakon,
-     &     kon,ipkon, nactdog,identity,ielprop,prop,iflag,voldgas,
-     &     xflow,f,nodef,idirf,df,cp,R,physcon,dvi,numf)
+     &     kon,ipkon, nactdog,identity,ielprop,prop,iflag,v,
+     &     xflow,f,nodef,idirf,df,cp,R,physcon,numf,set)
 !     
 !     orifice element
 !     
@@ -26,17 +26,18 @@
 !     
       logical identity
       character*8 lakon(*)
+      character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
      &     ipkon(*),kon(*),nelemswirl
 !     
-      real*8 prop(*),voldgas(0:3,*),xflow,f,df(4),kappa,R,
-     &     p1,p2,T1,T2,cp,physcon(3),km1,dvi, kp1,kdkm1,
+      real*8 prop(*),v(0:4,*),xflow,f,df(4),kappa,R,
+     &     p1,p2,T1,T2,cp,physcon(3),km1,kp1,kdkm1,
      &     kdkp1,u,pi,Qred_crit,pt1,pt2,Tt1,Tt2,ct,fact,
      &     Cp_cor
 !     
-      numf=4
+!      numf=4
 !     
       if (iflag.eq.0) then
          identity=.true.
@@ -64,12 +65,12 @@
 !     
          node1=kon(ipkon(nelem)+1)
          node2=kon(ipkon(nelem)+3)
-         p1=voldgas(2,node1)
-         p2=voldgas(2,node2)
-         T1=voldgas(0,node1)
-         T2=voldgas(0,node2)
-         
-         if(p1.gt.p2) then
+         p1=v(2,node1)
+         p2=v(2,node2)
+         T1=v(0,node1)
+         T2=v(0,node2)
+!
+        if(p1.gt.p2) then
             xflow=0.75/dsqrt(T1)*P1*qred_crit
          else
             xflow=-0.75/dsqrt(T1)*P1*qred_crit
@@ -77,6 +78,7 @@
 !     
       elseif(iflag.eq.2) then
 !     
+         numf=4
          kappa=(cp/(cp-R))
          km1=kappa-1.d0
          kp1=kappa+1.d0
@@ -108,16 +110,16 @@
             endif
          endif                
 !     
-         pt1=voldgas(2,node1)
-         pt2=voldgas(2,node2)
+         pt1=v(2,node1)
+         pt2=v(2,node2)
 !
          if(lakon(nelem)(2:4).eq.'ATR') then
 !     
             if(u/CT.ge.2) then
 !     
-               xflow=voldgas(1,nodem)
-               Tt1=voldgas(0,node1)+physcon(1)
-               Tt2=voldgas(0,node2)+physcon(1)
+               xflow=v(1,nodem)
+               Tt1=v(0,node1)+physcon(1)
+               Tt2=v(0,node2)+physcon(1)
 !     
                nodef(1)=node1
                nodef(2)=node1
@@ -136,11 +138,11 @@
                endif
 !     
             else
-               pt1=voldgas(2,node2)
-               pt2=voldgas(2,node1)
-               xflow=voldgas(1,nodem)
-               Tt1=voldgas(0,node1)+physcon(1)
-               Tt2=voldgas(0,node2)+physcon(1)
+               pt1=v(2,node2)
+               pt2=v(2,node1)
+               xflow=v(1,nodem)
+               Tt1=v(0,node1)+physcon(1)
+               Tt2=v(0,node2)+physcon(1)
 !
                if(xflow.le.0) then
                   write(*,*)''
@@ -161,9 +163,9 @@
 !
             if(u/CT.lt.2) then
 !     
-               xflow=voldgas(1,nodem)
-               Tt1=voldgas(0,node1)+physcon(1)
-               Tt2=voldgas(0,node2)+physcon(1)
+               xflow=v(1,nodem)
+               Tt1=v(0,node1)+physcon(1)
+               Tt2=v(0,node2)+physcon(1)
 !               
                nodef(1)=node1
                nodef(2)=node1
@@ -181,11 +183,11 @@
 !
             else
 !
-               pt1=voldgas(2,node2)
-               pt2=voldgas(2,node1)
-               xflow=voldgas(1,nodem)
-               Tt1=voldgas(0,node1)+physcon(1)
-               Tt2=voldgas(0,node2)+physcon(1)
+               pt1=v(2,node2)
+               pt2=v(2,node1)
+               xflow=v(1,nodem)
+               Tt1=v(0,node1)+physcon(1)
+               Tt2=v(0,node2)+physcon(1)
 !
                if(xflow.le.0) then
                   write(*,*)''
@@ -263,6 +265,182 @@
             df(4)=1
 !     
          endif
+
+      elseif(iflag.eq.3) then
+            
+         kappa=(cp/(cp-R))
+         km1=kappa-1.d0
+         kp1=kappa+1.d0
+         kdkm1=kappa/km1
+         kdkp1=kappa/kp1
+!     
+         index=ielprop(nelem)
+!         
+         u=prop(index+1)
+         ct=prop(index+2)
+!
+        if(ct.eq.0) then
+            nelemswirl=prop(index+3)
+!
+!     previous element is a preswirl nozzle
+!
+            if(lakon(nelemswirl)(2:5).eq.'ORPN') then
+               ct=prop(ielprop(nelemswirl)+5)
+!
+!     previous element is a forced vortex
+!
+            elseif(lakon(nelemswirl)(2:5).eq.'VOFO') then
+               ct=prop(ielprop(nelemswirl)+7)
+!
+!     previous element is a free vortex
+!
+            elseif(lakon(nelemswirl)(2:5).eq.'VOFR') then
+               ct=prop(ielprop(nelemswirl)+9)
+            endif
+         endif                
+!     
+         pt1=v(2,node1)
+         pt2=v(2,node2)
+!
+         if(lakon(nelem)(2:4).eq.'ATR') then
+!     
+            if(u/CT.ge.2) then
+!     
+               xflow=v(1,nodem)
+               Tt1=v(0,node1)+physcon(1)
+               Tt2=v(0,node2)+physcon(1)
+!     
+               nodef(1)=node1
+               nodef(2)=node1
+               nodef(3)=nodem
+               nodef(4)=node2
+!     
+!     in the case of a negative flow direction
+!     
+               if(xflow.le.0d0) then
+                  write(*,*)''
+                  write(*,*)'*WARNING:'
+                  write(*,*)'in element',nelem
+                  write(*,*)'TYPE=ABSOLUTE TO RELATIVE'
+                  write(*,*)'mass flow negative!'
+                  write(*,*)'check results and element definition'
+               endif
+!     
+            else
+               pt1=v(2,node2)
+               pt2=v(2,node1)
+               xflow=v(1,nodem)
+               Tt1=v(0,node1)+physcon(1)
+               Tt2=v(0,node2)+physcon(1)
+!
+               if(xflow.le.0) then
+                  write(*,*)''
+                  write(*,*)'*WARNING:'
+                  write(*,*)'in element',nelem
+                  write(*,*)'TYPE=ABSOLUTE TO RELATIVE'
+                  write(*,*)'mass flow negative!'
+                  write(*,*)'check results and element definition'
+               endif
+!
+               nodef(1)=node2
+               nodef(2)=node2
+               nodef(3)=nodem
+               nodef(4)=node1
+            endif
+!       
+         elseif(lakon(nelem)(2:4).eq.'RTA') then
+!
+            if(u/CT.lt.2) then
+!     
+               xflow=v(1,nodem)
+               Tt1=v(0,node1)+physcon(1)
+               Tt2=v(0,node2)+physcon(1)
+!               
+               nodef(1)=node1
+               nodef(2)=node1
+               nodef(3)=nodem
+               nodef(4)=node2
+!
+               if(xflow.le.0d0) then
+                  write(*,*)''
+                  write(*,*)'*WARNING:'
+                  write(*,*)'in element',nelem
+                  write(*,*)'TYPE=RELATIVE TO ABSOLUTE'
+                  write(*,*)'mass flow negative!'
+                  write(*,*)'check results and element definition'
+               endif
+!
+            else
+!
+               pt1=v(2,node2)
+               pt2=v(2,node1)
+               xflow=v(1,nodem)
+               Tt1=v(0,node1)+physcon(1)
+               Tt2=v(0,node2)+physcon(1)
+!
+               if(xflow.le.0) then
+                  write(*,*)''
+                  write(*,*)'*WARNING:'
+                  write(*,*)'in element',nelem
+                  write(*,*)'TYPE=RELATIVE TO ABSOLUTE'
+                  write(*,*)'mass flow negative!'
+                  write(*,*)'check results and element definition'
+               endif
+!
+               nodef(1)=node2
+               nodef(2)=node2
+               nodef(3)=nodem
+               nodef(4)=node1
+!              
+            endif
+         endif
+!     
+         idirf(1)=2
+         idirf(2)=0
+         idirf(3)=1
+         idirf(4)=2
+!     
+!     computing temperature corrected Cp=Cp(T) coefficient 
+         call cp_corrected(cp,Tt1,Tt2,cp_cor)
+!     
+         if(Tt1.lt.273) then
+            Tt1= Tt2
+         endif
+!     
+         if(cp_cor.eq.0) then
+            cp_cor=cp
+         endif
+
+                  write(1,*) ''
+         write(1,55) 'In line',int(nodem/100),' from node',node1,
+     &' to node', node2,':   air massflow rate=',xflow,'kg/s'
+!     &,', oil massflow rate=',xflow_oil,'kg/s'
+ 55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
+
+!         if(inv.eq.1) then
+            write(1,56)'       Inlet node ',node1,':     Tt1= ',Tt1,
+     &           'K, Ts1= ',Tt1,'K, Pt1= ',Pt1/1E5,
+     &           'Bar'
+            write(1,*)'             element T    ',set(numf+nelem)(1:20)
+            write(1,57)'             u= ',u,'m/s ,Ct= ',Ct,'m/s'
+            write(1,56)'       Outlet node ',node2,':    Tt2= ',T2,
+     &           'K, Ts2= ',Tt2,'K, Ptt2= ',Pt2/1e5,
+     &           'Bar'
+!     
+c$$$         else if(inv.eq.-1) then
+c$$$            write(1,56)'       Inlet node ',node2,':     Tt1= ',TT1,
+c$$$     &           'K, Ts1= ',Tt1,'K, Pt1= ',Pt1/1E5,
+c$$$     &           'Bar'
+c$$$            write(1,*)'             element T    ',set(numf+nelem)(1:20)
+c$$$            write(1,57)'             u= ',u,'m/s ,Ct= ',CT,'m/s'
+c$$$            write(1,56)'       Outlet node ',node1,'     Tt2= ',
+c$$$     &           Tt2,'K, Ts2= ',Tt2,'K, Pt2= ',Pt2/1e5,
+c$$$     &           'Bar'
+!         endif
+ 56      FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A,f9.5)  
+! 57      FORMAT(1X,A,f9.3,A,f9.3,A,f6.4)
+ 57      FORMAT(1X,A,f6.2,A,f6.2,A)
+
       endif
 !     
       return 

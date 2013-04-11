@@ -17,8 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
       subroutine liquidpipe(node1,node2,nodem,nelem,lakon,
-     &     nactdog,identity,ielprop,prop,iflag,voldgas,xflow,f,
-     &     nodef,idirf,df,cp,R,rho,physcon,g,co,dvi,numf,vold)
+     &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
+     &     nodef,idirf,df,rho,g,co,dvi,numf,vold)
 !
 !     pipe element for incompressible media
 !     
@@ -31,8 +31,8 @@
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
      &     inv,ncoel,ndi,nbe,id,nen,ngv,numf,nodea,nodeb
 !      
-      real*8 prop(*),voldgas(0:3,*),xflow,f,df(4),R,a,d,pi,radius,
-     &     p1,p2,cp,physcon(3),rho,dvi,friction,reynolds,vold(0:3,*),
+      real*8 prop(*),v(0:4,*),xflow,f,df(4),a,d,pi,radius,
+     &     p1,p2,rho,dvi,friction,reynolds,vold(0:4,*),
      &     g(3),a1,a2,xn,xk,xk1,xk2,zeta,dl,dg,rh,a0,alpha,
      &     coarseness,rd,xks,z1,z2,co(3,*),xcoel(11),yel(11),
      &     yco(11),xdi(10),ydi(10),xbe(7),ybe(7),zbe(7),ratio,
@@ -77,8 +77,8 @@
 !     
          index=ielprop(nelem)
 !     
-         p1=voldgas(2,node1)
-         p2=voldgas(2,node2)
+         p1=v(2,node1)
+         p2=v(2,node2)
 !     
          z1=-g(1)*co(1,node1)-g(2)*co(2,node1)-g(3)*co(3,node1)
          z2=-g(1)*co(1,node2)-g(2)*co(2,node2)-g(3)*co(3,node2)
@@ -91,7 +91,7 @@ c               inv=-1
 c            endif
             inv=0
          else
-            xflow=voldgas(1,nodem)
+            xflow=v(1,nodem)
             if(xflow.ge.0.d0) then
                inv=1
             else

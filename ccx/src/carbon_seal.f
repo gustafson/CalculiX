@@ -16,9 +16,9 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-      subroutine carbon_seal(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &     nactdog,identity,ielprop,prop,iflag,voldgas,xflow,f,
-     &     nodef,idirf,df,cp,R,physcon,dvi,numf)
+      subroutine carbon_seal(node1,node2,nodem,nelem,lakon,
+     &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
+     &     nodef,idirf,df,R,physcon,dvi,numf,set)
 !     
 !     carbon seal element calculated with Richter method
 !      Richter "Rohrhydraulik", Springer ,1971,p. 175
@@ -27,15 +27,16 @@
 !     
       logical identity
       character*8 lakon(*)
+      character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
-     &     inv,ipkon(*),kon(*)
+     &     inv
 !
-      real*8 prop(*),voldgas(0:3,*),xflow,f,df(4),R,d,l,
-     &     p1,p2,T1,cp,physcon(3),dvi,pi,s
+      real*8 prop(*),v(0:4,*),xflow,f,df(4),R,d,l,
+     &     p1,p2,T1,physcon(3),dvi,pi,s,T2
 !     
-      numf=4
+!      numf=4
 !     
       if (iflag.eq.0) then
          identity=.true.
@@ -56,16 +57,16 @@
          l=prop(index+3)
          pi=4.d0*datan(1.d0)
 !     
-         p1=voldgas(2,node1)
-         p2=voldgas(2,node2)
+         p1=v(2,node1)
+         p2=v(2,node2)
          if(p1.ge.p2) then
             inv=1
-            T1=voldgas(0,node1)+physcon(1)
+            T1=v(0,node1)+physcon(1)
          else
             inv=-1
-            p1=voldgas(2,node2)
-            p2=voldgas(2,node1)
-            T1=voldgas(0,node2)+physcon(1)
+            p1=v(2,node2)
+            p2=v(2,node1)
+            T1=v(0,node2)+physcon(1)
          endif
 !     
          if(lakon(nelem)(2:6).eq.'CARBS') then
@@ -85,29 +86,30 @@ c         write(*,*) 'xflow',xflow
 !     
       elseif (iflag.eq.2)then
 !     
-         p1=voldgas(2,node1)
-         p2=voldgas(2,node2)
+         numf=4
+         p1=v(2,node1)
+         p2=v(2,node2)
          if(p1.ge.p2) then
             inv=1
-            xflow=voldgas(1,nodem)
-            T1=voldgas(0,node1)+physcon(1)
+            xflow=v(1,nodem)
+            T1=v(0,node1)+physcon(1)
             nodef(1)=node1
             nodef(2)=node1
             nodef(3)=nodem
             nodef(4)=node2
          else
             inv=-1
-            p1=voldgas(2,node2)
-            p2=voldgas(2,node1)
-            xflow=-voldgas(1,nodem)
-            T1=voldgas(0,node2)+physcon(1)
+            p1=v(2,node2)
+            p2=v(2,node1)
+            xflow=-v(1,nodem)
+            T1=v(0,node2)+physcon(1)
             nodef(1)=node2
             nodef(2)=node2
             nodef(3)=nodem
             nodef(4)=node1
          endif
 !     
-c     xflow=voldgas(1,nodem)
+c     xflow=v(1,nodem)
 !     
          idirf(1)=2
          idirf(2)=0
@@ -131,6 +133,63 @@ c     xflow=voldgas(1,nodem)
             df(4)=(pi*d*s**3*P2)/(12.d0*R*dvi*l)
 !       
          endif
+
+      elseif(iflag.eq.3) then
+         p1=v(2,node1)
+         p2=v(2,node2)
+         if(p1.ge.p2) then
+            inv=1
+            xflow=v(1,nodem)
+            T1=v(0,node1)+physcon(1)
+            T2=v(0,node2)+physcon(1)
+            nodef(1)=node1
+            nodef(2)=node1
+            nodef(3)=nodem
+            nodef(4)=node2
+         else
+            inv=-1
+            p1=v(2,node2)
+            p2=v(2,node1)
+            xflow=-v(1,nodem)
+            T1=v(0,node2)+physcon(1)
+            T2=v(0,node1)+physcon(1)
+            nodef(1)=node2
+            nodef(2)=node2
+            nodef(3)=nodem
+            nodef(4)=node1
+         endif
+
+         write(1,*) ''
+         write(1,55) 'In line',int(nodem/100),' from node',node1,
+     &' to node', node2,':   air massflow rate=',xflow,'kg/s'
+!     &,', oil massflow rate=',xflow_oil,'kg/s'
+ 55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
+
+         if(inv.eq.1) then
+            write(1,56)'       Inlet node  ',node1,':   Tt1=',T1,
+     &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
+         
+            write(1,*)'             element G   ',set(numf+nelem)(1:20)
+
+            write(1,56)'       Outlet node ',node2,':   Tt2=',T2,
+     &           'K, Ts2=',T2,'K, Pt2=',P2/1e5,'Bar'
+!     
+         else if(inv.eq.-1) then
+            write(1,56)'       Inlet node  ',node2,':    Tt1=',T1,
+     &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
+     &          
+            write(1,*)'             element G    ',set(numf+nelem)(1:20)
+
+            write(1,56)'       Outlet node ',node1,':    Tt2=',T2,
+     &           'K, Ts2=',T2,'K, Pt2=',P2/1e5, 'Bar'
+               
+         endif
+      
+ 56      FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A)
+
+
+
+
       endif
 !     
 c      do i=1,4

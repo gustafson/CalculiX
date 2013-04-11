@@ -20,11 +20,13 @@
      &  nboun,nboun_,iamboun,iamplitude,nam,ipompc,nodempc,
      &  coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &  ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,type,
-     &  typeboun,nmethod,iperturb)
+     &  typeboun,nmethod,iperturb,fixed,vold)
 !
 !     adds a boundary condition to the data base
 !
       implicit none
+!
+      logical fixed
 !
       character*1 type,typeboun(*)
       character*20 labmpc(*)
@@ -33,9 +35,10 @@
      &  iamboun(*),iamplitude,nam,ipompc(*),nodempc(3,*),nmpc,nmpc_,
      &  mpcfree,inotr(2,*),ntrans,ikboun(*),ilboun(*),ikmpc(*),
      &  ilmpc(*),itr,idof,newnode,number,id,idofnew,idnew,nk,nk_,
-     &  mpcfreenew,nmethod,iperturb
+     &  mpcfreenew,nmethod,iperturb,ii
 !
-      real*8 xboun(*),val,coefmpc(*),trab(7,*),a(3,3),co(3,*)
+      real*8 xboun(*),val,coefmpc(*),trab(7,*),a(3,3),co(3,*),
+     &  vold(0:4)
 !
       if(ntrans.le.0) then
          itr=0
@@ -49,8 +52,32 @@
 !
 !        no transformation applies: simple SPC
 !
-         loop: do i=is,ie
-            idof=7*(node-1)+i
+         loop: do ii=is,ie
+            if(ii.le.3) then
+               i=ii
+            elseif(ii.eq.4) then
+               i=5
+            elseif(ii.eq.5) then
+               i=6
+            elseif(ii.eq.6) then
+               i=7
+            elseif(ii.eq.8) then
+               i=4
+            elseif(ii.eq.11) then
+               i=0
+            else
+               write(*,*) '*ERROR in bounadd: unknown DOF: ',
+     &              ii
+               stop
+            endif
+            if((fixed).and.(i<5)) then
+               val=vold(i)
+            elseif(fixed) then
+               write(*,*) '*ERROR in bounadd: parameter FIXED cannot'
+               write(*,*) '       be used for rotations'
+               stop
+            endif
+            idof=8*(node-1)+i
             call nident(ikboun,idof,nboun,id)
             if(id.gt.0) then
                if(ikboun(id).eq.idof) then
@@ -92,10 +119,34 @@
 !        coordinates
 !
          call transformatrix(trab(1,itr),co(1,node),a)
-         do i=is,ie
+         do ii=is,ie
+            if(ii.le.3) then
+               i=ii
+            elseif(ii.eq.4) then
+               i=5
+            elseif(ii.eq.5) then
+               i=6
+            elseif(ii.eq.6) then
+               i=7
+            elseif(ii.eq.8) then
+               i=4
+            elseif(ii.eq.11) then
+               i=0
+            else
+               write(*,*) '*ERROR in bounadd: unknown DOF: ',
+     &              ii
+               stop
+            endif
+            if((fixed).and.(i<5)) then
+               val=vold(i)
+            elseif(fixed) then
+               write(*,*) '*ERROR in bounadd: parameter FIXED cannot'
+               write(*,*) '       be used for rotations'
+               stop
+            endif
             if(inotr(2,node).ne.0) then
                newnode=inotr(2,node)
-               idofnew=7*(newnode-1)+i
+               idofnew=8*(newnode-1)+i
                call nident(ikboun,idofnew,nboun,idnew)
                if(idnew.gt.0) then
                   if(ikboun(idnew).eq.idofnew) then
@@ -122,19 +173,19 @@
                endif
                newnode=nk
                inotr(2,node)=newnode
-               idofnew=7*(newnode-1)+i
+               idofnew=8*(newnode-1)+i
                idnew=nboun
             endif
 !
 !           new mpc
 !
             do number=1,3
-               idof=7*(node-1)+number
+               idof=8*(node-1)+number
                call nident(ikmpc,idof,nmpc,id)
                if(id.ne.0) then
                   if(ikmpc(id).eq.idof) cycle
                endif
-               if(dabs(a(number,i)).lt.1.d-10) cycle
+               if(dabs(a(number,i)).lt.1.d-5) cycle
                nmpc=nmpc+1
                if(nmpc.gt.nmpc_) then
                   write(*,*) '*ERROR in bounadd: increase nmpc_'
@@ -155,7 +206,7 @@
             do j=1,3
                number=number+1
                if(number.gt.3) number=1
-               if(dabs(a(number,i)).lt.1.d-10) cycle
+               if(dabs(a(number,i)).lt.1.d-5) cycle
                nodempc(1,mpcfree)=node
                nodempc(2,mpcfree)=number
                coefmpc(mpcfree)=a(number,i)

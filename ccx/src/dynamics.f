@@ -28,6 +28,11 @@
 !             4: sgi solver
 !             5: TAUCS
 !
+!      iexpl==0:  structure:implicit, fluid:semi-implicit
+!      iexpl==1:  structure:implicit, fluid:explicit
+!      iexpl==2:  structure:explicit, fluid:semi-implicit
+!      iexpl==3:  structure:explicit, fluid:explicit 
+!
       implicit none
 !
       character*1 inpc(*)
@@ -67,8 +72,6 @@
 !
       if(isolver.eq.0) then
          solver(1:7)='SPOOLES'
-      elseif(isolver.eq.1) then
-         solver(1:7)='PROFILE'
       elseif(isolver.eq.2) then
          solver(1:16)='ITERATIVESCALING'
       elseif(isolver.eq.3) then
@@ -93,8 +96,19 @@
                alpha=0.d0
             endif
          elseif(textpart(i)(1:8).eq.'EXPLICIT') then
-            iexpl=1
-         elseif(textpart(i)(1:6).eq.'DIRECT') then
+            if(textpart(i)(9:10).eq.'=1') then
+               iexpl=1
+            elseif(textpart(i)(9:10).eq.'=2') then
+               iexpl=2
+            elseif(textpart(i)(9:10).eq.'=3') then
+               iexpl=3
+            elseif(textpart(i)(9:10).eq.'  ') then
+               iexpl=3
+            else
+               call inputerror(inpc,ipoinpc,iline)
+            endif
+         elseif((textpart(i)(1:6).eq.'DIRECT').and.
+     &          (textpart(i)(1:9).ne.'DIRECT=NO')) then
             idrct=1
          elseif(textpart(i)(1:7).eq.'SOLVER=') then
             read(textpart(i)(8:27),'(a20)') solver
@@ -103,10 +117,6 @@
 !
       if(solver(1:7).eq.'SPOOLES') then
          isolver=0
-      elseif(solver(1:7).eq.'PROFILE') then
-         write(*,*) '*WARNING in dynamics: the profile solver is not'
-         write(*,*) '         allowed in dynamic calculations;'
-         write(*,*) '         the default solver is used'
       elseif(solver(1:16).eq.'ITERATIVESCALING') then
          isolver=2
       elseif(solver(1:17).eq.'ITERATIVECHOLESKY') then
@@ -160,7 +170,7 @@
 !      
       if(idrct.ne.1) then
          if(dabs(tmin).lt.1.d-10) then
-            if(iexpl.eq.0) then
+            if(iexpl.le.1) then
                tmin=min(tinc,1.d-5*tper)
             else
                tmin=min(tinc,1.d-10*tper)

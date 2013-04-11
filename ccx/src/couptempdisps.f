@@ -18,14 +18,16 @@
 !
       subroutine couptempdisps(inpc,textpart,nmethod,iperturb,isolver,
      &  istep,istat,n,tinc,tper,tmin,tmax,idrct,ithermal,iline,ipol,
-     &  inl,ipoinp,inp,ipoinpc,alpha)
+     &  inl,ipoinp,inp,ipoinpc,alpha,ctrl,iexpl)
 !
 !     reading the input deck: *COUPLED TEMPERATURE-DISPLACEMENT
 !
 !     isolver=0: SPOOLES
-!             1: profile solver
 !             2: iterative solver with diagonal scaling
 !             3: iterative solver with Cholesky preconditioning
+!
+!      iexpl==0:  structure:implicit, fluid:semi-implicit
+!      iexpl==1:  structure:implicit, fluid:explicit
 !
       implicit none
 !
@@ -34,9 +36,10 @@
       character*132 textpart(16)
 !
       integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,
-     &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*)
+     &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
+     &  iexpl
 !
-      real*8 tinc,tper,tmin,tmax,alpha
+      real*8 tinc,tper,tmin,tmax,alpha,ctrl(*)
 !
       idrct=0
       alpha=-0.05d0
@@ -62,8 +65,6 @@
 !
       if(isolver.eq.0) then
          solver(1:7)='SPOOLES'
-      elseif(isolver.eq.1) then
-         solver(1:7)='PROFILE'
       elseif(isolver.eq.2) then
          solver(1:16)='ITERATIVESCALING'
       elseif(isolver.eq.3) then
@@ -89,12 +90,18 @@
             endif
          elseif(textpart(i)(1:7).eq.'SOLVER=') then
             read(textpart(i)(8:27),'(a20)') solver
-         elseif(textpart(i)(1:6).eq.'DIRECT') then
+         elseif(textpart(i)(1:8).eq.'EXPLICIT') then
+            iexpl=1
+         elseif((textpart(i)(1:6).eq.'DIRECT').and.
+     &          (textpart(i)(1:9).ne.'DIRECT=NO')) then
             idrct=1
          elseif(textpart(i)(1:11).eq.'STEADYSTATE') then
             nmethod=1
+         elseif(textpart(i)(1:7).eq.'DELTMX=') then
+            read(textpart(i)(8:27),'(f20.0)',iostat=istat) ctrl(27)
          endif
       enddo
+      if(nmethod.eq.1) ctrl(27)=1.d30
 !
       if((ithermal.eq.0).and.(nmethod.ne.1).and.
      &   (nmethod.ne.2).and.(iperturb.ne.0)) then
@@ -107,10 +114,6 @@
 !
       if(solver(1:7).eq.'SPOOLES') then
          isolver=0
-      elseif(solver(1:7).eq.'PROFILE') then
-         write(*,*) '*WARNING in couptempdisps: the profile solver is'
-         write(*,*) '         not allowed in heat transfer'
-         write(*,*) '         calculations; the default solver is used'
       elseif(solver(1:16).eq.'ITERATIVESCALING') then
          isolver=2
       elseif(solver(1:17).eq.'ITERATIVECHOLESKY') then

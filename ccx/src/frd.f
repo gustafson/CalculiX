@@ -20,7 +20,7 @@
      &  kode,filab,een,t1,fn,time,epn,ielmat,matname,enern,xstaten,
      &  nstate_,istep,iinc,ithermal,qfn,mode,noddiam,trab,inotr,
      &  ntrans,orab,ielorien,norien,description,ipneigh,neigh,
-     &  mint_,sti)
+     &  mint_,sti,vr,vi,stnr,stni,vmax,stnmax,ngraph)
 !
 !     stores the results in frd format
 !
@@ -40,14 +40,15 @@
       integer kon(*),inum(*),nk,ne,nmethod,kode,i,j,ipkon(*),indexe,
      &  one,ielmat(*),lb,nterms,nstate_,l,ithermal,mode,mint_,norien,
      &  noddiam,null,icounter,inotr(2,*),ntrans,ipneigh(*),neigh(2,*),
-     &  ielorien(*),iinc,istep
+     &  ielorien(*),iinc,istep,nkcoords,ngraph
 !
-      real*8 co(3,*),v(0:3,*),stn(6,*),een(6,*),t1(*),fn(0:3,*),time,
+      real*8 co(3,*),v(0:4,*),stn(6,*),een(6,*),t1(*),fn(0:3,*),time,
      &  epn(*),enern(*),xstaten(nstate_,*),pi,qfn(3,*),oner,trab(7,*),
-     &  a(3,3),sti(6,mint_,*),orab(7,*)
+     &  a(3,3),sti(6,mint_,*),orab(7,*),vr(0:4,*),vi(0:4,*),stnr(6,*),
+     &  stni(6,*),vmax(0:3,*),stnmax(0:6,*)
 !
       data icounter /0/
-      save icounter
+      save icounter,nkcoords
 !
       icounter=icounter+1
       pi=4.d0*datan(1.d0)
@@ -150,13 +151,18 @@
         if(nmethod.ne.0) then
           do i=1,nk
              if(inum(i).eq.0) cycle
-             write(7,100) m1,i,(co(j,i),j=1,3)
+             write(7,101) m1,i,(co(j,i),j=1,3)
           enddo
         else
           do i=1,nk
-             write(7,100) m1,i,(co(j,i),j=1,3)
+             write(7,101) m1,i,(co(j,i),j=1,3)
           enddo
         endif
+!
+!       nkcoords is the number of nodes at the time when
+!       the nodal coordinates are stored in the frd file.
+!
+        nkcoords=nk
 !
         write(7,'(a3)') m3
 !
@@ -169,7 +175,8 @@
            if(ipkon(i).lt.0) cycle
            indexe=ipkon(i)
            if(lakon(i)(4:4).eq.'2') then
-              if((lakon(i)(7:7).eq.' ').or.(filab(1)(5:5).eq.'E')) then
+              if((lakon(i)(7:7).eq.' ').or.(filab(1)(5:5).eq.'E').or.
+     &           (lakon(i)(7:7).eq.'I')) then
               write(7,'(a3,i10,3a5)') m1,i,p4,p0,matname(ielmat(i))(1:5)
               write(7,'(a3,10i10)') m2,(kon(indexe+j),j=1,10)
               write(7,'(a3,10i10)') m2,(kon(indexe+j),j=11,12),
@@ -177,7 +184,8 @@
      &             (kon(indexe+j),j=13,16)
               elseif(lakon(i)(7:7).eq.'B') then
               write(7,'(a3,i10,3a5)')m1,i,p12,p0,matname(ielmat(i))(1:5)
-              write(7,'(a3,3i10)') m2,(kon(indexe+20+j),j=1,3)
+              write(7,'(a3,3i10)') m2,kon(indexe+21),kon(indexe+23),
+     &               kon(indexe+22)
               else
               write(7,'(a3,i10,3a5)')m1,i,p10,p0,matname(ielmat(i))(1:5)
               write(7,'(a3,8i10)') m2,(kon(indexe+20+j),j=1,8)
@@ -208,8 +216,9 @@
            elseif(lakon(i)(1:1).eq.'D') then
               if((kon(indexe+1).eq.0).or.(kon(indexe+3).eq.0)) cycle
               write(7,'(a3,i10,3a5)')m1,i,p12,p0,matname(ielmat(i))(1:5)
-              write(7,'(a3,3i10)') m2,(kon(indexe+j),j=1,3)
-           elseif(lakon(i)(1:1).eq.'E') then
+              write(7,'(a3,3i10)') m2,kon(indexe+1),kon(indexe+3),
+     &                 kon(indexe+2)
+           elseif((lakon(i)(1:1).eq.'E').and.(lakon(i)(7:7).eq.'A'))then
               write(7,'(a3,i10,3a5)')m1,i,p11,p0,matname(ielmat(i))(1:5)
               write(7,'(a3,2i10)') m2,(kon(indexe+j),j=1,2)
            endif
@@ -250,7 +259,7 @@
          text(37:48)=description
          if(nmethod.eq.2) text(64:68)='MODAL'
          text(75:75)='1'
-         write(text(8:10),'(i3)') 100+kode
+         write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
          write(7,'(a132)') text
@@ -266,18 +275,18 @@
          write(7,'(a132)') text
 !
          if((ntrans.eq.0).or.(filab(1)(6:6).eq.'G')) then
-            do i=1,nk
-               if(inum(i).eq.0) cycle
-               write(7,100) m1,i,(v(j,i),j=1,3)
+            do i=1,nkcoords
+               if(inum(i).le.0) cycle
+               write(7,101) m1,i,(v(j,i),j=1,3)
             enddo
          else
-            do i=1,nk
-               if(inum(i).eq.0) cycle
+            do i=1,nkcoords
+               if(inum(i).le.0) cycle
                if(inotr(1,i).eq.0) then
-                  write(7,100) m1,i,(v(j,i),j=1,3)
+                  write(7,101) m1,i,(v(j,i),j=1,3)
                else
                   call transformatrix(trab(1,inotr(1,i)),co(1,i),a)
-                  write(7,100) m1,i,
+                  write(7,101) m1,i,
      &               v(1,i)*a(1,1)+v(2,i)*a(2,1)+v(3,i)*a(3,1),
      &               v(1,i)*a(1,2)+v(2,i)*a(2,2)+v(3,i)*a(3,2),
      &               v(1,i)*a(1,3)+v(2,i)*a(2,3)+v(3,i)*a(3,3)
@@ -317,7 +326,7 @@
          text(37:48)=description
          if(nmethod.eq.2) text(64:68)='MODAL'
          text(75:75)='1'
-         write(text(8:10),'(i3)') 100+kode
+         write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
          write(7,'(a132)') text
@@ -326,12 +335,12 @@
          text=' -5  T           1    1    0    0'
          write(7,'(a132)') text
 !
-         do i=1,nk
+         do i=1,nkcoords
             if(inum(i).eq.0) cycle
             if(ithermal.le.1) then
-               write(7,100) m1,i,t1(i)
+               write(7,101) m1,i,t1(i)
             else
-               write(7,100) m1,i,v(0,i)
+               write(7,101) m1,i,v(0,i)
             endif
          enddo
 !
@@ -367,7 +376,7 @@
          text(37:48)=description
          if(nmethod.eq.2) text(64:68)='MODAL'
          text(75:75)='1'
-         write(text(8:10),'(i3)') 100+kode      
+         write(text(8:12),'(i5)') 100+kode      
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
          write(7,'(a132)') text
@@ -386,8 +395,8 @@
          text=' -5  SZX         1    4    3    1'
          write(7,'(a132)') text
 !
-         do i=1,nk
-            if(inum(i).eq.0) cycle
+         do i=1,nkcoords
+            if(inum(i).le.0) cycle
             write(7,101) m1,i,(stn(j,i),j=1,4),
      &           stn(6,i),stn(5,i)
          enddo
@@ -424,7 +433,7 @@
          text(37:48)=description
          if(nmethod.eq.2) text(64:68)='MODAL'
          text(75:75)='1'
-         write(text(8:10),'(i3)') 100+kode      
+         write(text(8:12),'(i5)') 100+kode      
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
          write(7,'(a132)') text
@@ -443,8 +452,8 @@
          text=' -5  EZX         1    4    3    1'
          write(7,'(a132)') text
 !
-         do i=1,nk
-            if(inum(i).eq.0) cycle
+         do i=1,nkcoords
+            if(inum(i).le.0) cycle
             write(7,101) m1,i,(een(j,i),j=1,4),
      &           een(6,i),een(5,i)
          enddo
@@ -481,7 +490,7 @@
          text(37:48)=description
          if(nmethod.eq.2) text(64:68)='MODAL'
          text(75:75)='1'
-         write(text(8:10),'(i3)') 100+kode
+         write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
          write(7,'(a132)') text
@@ -497,18 +506,18 @@
          write(7,'(a132)') text
 !
          if((ntrans.eq.0).or.(filab(5)(6:6).eq.'G')) then
-            do i=1,nk
-               if(inum(i).eq.0) cycle
-               write(7,100) m1,i,(fn(j,i),j=1,3)
+            do i=1,nkcoords
+               if(inum(i).le.0) cycle
+               write(7,101) m1,i,(fn(j,i),j=1,3)
             enddo
          else
-            do i=1,nk
-               if(inum(i).eq.0) cycle
+            do i=1,nkcoords
+               if(inum(i).le.0) cycle
                if(inotr(1,i).eq.0) then
-                  write(7,100) m1,i,(fn(j,i),j=1,3)
+                  write(7,101) m1,i,(fn(j,i),j=1,3)
                else
                   call transformatrix(trab(1,inotr(1,i)),co(1,i),a)
-                  write(7,100) m1,i,
+                  write(7,101) m1,i,
      &                 fn(1,i)*a(1,1)+fn(2,i)*a(2,1)+fn(3,i)*a(3,1),
      &                 fn(1,i)*a(1,2)+fn(2,i)*a(2,2)+fn(3,i)*a(3,2),
      &                 fn(1,i)*a(1,3)+fn(2,i)*a(2,3)+fn(3,i)*a(3,3)
@@ -526,7 +535,7 @@
      & '  100CL       .00000E+00                                 3    1'
          text(37:48)=description
          text(75:75)='1'
-         write(text(8:10),'(i3)') 100+kode
+         write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
          write(7,'(a132)') text
@@ -535,9 +544,9 @@
          text=' -5  PE          1    1    0    0'
          write(7,'(a132)') text
 !
-         do i=1,nk
-            if(inum(i).eq.0) cycle
-            write(7,100) m1,i,epn(i)
+         do i=1,nkcoords
+            if(inum(i).le.0) cycle
+            write(7,101) m1,i,epn(i)
          enddo
 !
          write(7,'(a3)') m3
@@ -572,7 +581,7 @@
          text(37:48)=description
          if(nmethod.eq.2) text(64:68)='MODAL'
          text(75:75)='1'
-         write(text(8:10),'(i3)') 100+kode
+         write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
          write(7,'(a132)') text
@@ -581,9 +590,9 @@
          text=' -5  ENER        1    1    0    0'
          write(7,'(a132)') text
 !
-         do i=1,nk
-            if(inum(i).eq.0) cycle
-            write(7,100) m1,i,enern(i)
+         do i=1,nkcoords
+            if(inum(i).le.0) cycle
+            write(7,101) m1,i,enern(i)
          enddo
 !
          write(7,'(a3)') m3
@@ -598,7 +607,7 @@
      & '  100CL       .00000E+00                                 3    1'
             text(37:48)=description
             text(75:75)='1'
-            write(text(8:10),'(i3)') 100+kode      
+            write(text(8:12),'(i5)') 100+kode      
             write(text(13:24),fmat) time
             write(text(59:63),'(i5)') kode
             write(7,'(a132)') text
@@ -626,13 +635,13 @@
             enddo
 !
             if(l.eq.(nstate_+5)/6) then
-               do i=1,nk
-                  if(inum(i).eq.0) cycle
+               do i=1,nkcoords
+                  if(inum(i).le.0) cycle
                   write(7,101) m1,i,(xstaten(lb+j,i),j=1,nstate_-lb)
                enddo
             else
-               do i=1,nk
-                  if(inum(i).eq.0) cycle
+               do i=1,nkcoords
+                  if(inum(i).le.0) cycle
                   write(7,101) m1,i,(xstaten(lb+j,i),j=1,6)
                enddo
             endif
@@ -648,7 +657,7 @@
      & '  100CL       .00000E+00                                 3    1'
          text(37:48)=description
          text(75:75)='1'
-         write(text(8:10),'(i3)') 100+kode
+         write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
          write(7,'(a132)') text
@@ -663,9 +672,9 @@
          text=' -5  ALL         1    2    0    0    1ALL'
          write(7,'(a132)') text
 !
-         do i=1,nk
-            if(inum(i).eq.0) cycle
-            write(7,100) m1,i,(qfn(j,i),j=1,3)
+         do i=1,nkcoords
+            if(inum(i).le.0) cycle
+            write(7,101) m1,i,(qfn(j,i),j=1,3)
          enddo
 !
          write(7,'(a3)') m3
@@ -678,7 +687,7 @@
      & '  100CL       .00000E+00                                 3    1'
          text(37:48)=description
          text(75:75)='1'
-         write(text(8:10),'(i3)') 100+kode
+         write(text(8:12),'(i5)') 100+kode
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
          write(7,'(a132)') text
@@ -687,102 +696,9 @@
          text=' -5  RFL         1    1    0    0'
          write(7,'(a132)') text
 !
-         do i=1,nk
-            if(inum(i).eq.0) cycle
-            write(7,100) m1,i,fn(0,i)
-         enddo
-!
-         write(7,'(a3)') m3
-      endif
-!
-!     storing the residual forces in the nodes (only in case
-!     of divergence)
-!
-      if(filab(13)(1:5).eq.'RFRES') then
-         text='    1PSTEP'
-         write(text(25:36),'(i12)') icounter
-         write(7,'(a132)') text
-         if(nmethod.eq.2) then
-            text='    1PGM'
-            write(text(25:36),'(e12.6)') oner
-            write(7,'(a132)') text
-            text='    1PGK'
-            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
-            write(7,'(a132)') text
-            text='    1PHID'
-            write(text(25:36),'(i12)') noddiam
-            write(7,'(a132)') text
-            text='    1PSUBC'
-            write(text(25:36),'(i12)') null
-            write(7,'(a132)') text
-            text='    1PMODE'
-            write(text(25:36),'(i12)') mode+1
-            write(7,'(a132)') text
-         endif
-!
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         if(nmethod.eq.2) text(64:68)='MODAL'
-         text(75:75)='1'
-         write(text(8:10),'(i3)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
-         text=' -4  RFRES       4    1'
-         write(7,'(a132)') text
-         text=' -5  F1          1    2    1    0'
-         write(7,'(a132)') text
-         text=' -5  F2          1    2    2    0'
-         write(7,'(a132)') text
-         text=' -5  F3          1    2    3    0'
-         write(7,'(a132)') text
-         text=' -5  ALL         1    2    0    0    1ALL'
-         write(7,'(a132)') text
-!
-         if((ntrans.eq.0).or.(filab(5)(6:6).eq.'G')) then
-            do i=1,nk
-               if(inum(i).eq.0) cycle
-               write(7,100) m1,i,(fn(j,i),j=1,3)
-            enddo
-         else
-            do i=1,nk
-               if(inum(i).eq.0) cycle
-               if(inotr(1,i).eq.0) then
-                  write(7,100) m1,i,(fn(j,i),j=1,3)
-               else
-                  call transformatrix(trab(1,inotr(1,i)),co(1,i),a)
-                  write(7,100) m1,i,
-     &                 fn(1,i)*a(1,1)+fn(2,i)*a(2,1)+fn(3,i)*a(3,1),
-     &                 fn(1,i)*a(1,2)+fn(2,i)*a(2,2)+fn(3,i)*a(3,2),
-     &                 fn(1,i)*a(1,3)+fn(2,i)*a(2,3)+fn(3,i)*a(3,3)
-               endif
-            enddo
-         endif
-!
-         write(7,'(a3)') m3
-      endif
-!
-!     storing the residual heat generation in the nodes (only in the
-!     case of divergence)
-!
-      if((filab(14)(1:6).eq.'RFLRES').and.(ithermal.gt.1)) then
-         text=
-     & '  100CL       .00000E+00                                 3    1'
-         text(37:48)=description
-         text(75:75)='1'
-         write(text(8:10),'(i3)') 100+kode
-         write(text(13:24),fmat) time
-         write(text(59:63),'(i5)') kode
-         write(7,'(a132)') text
-         text=' -4  RFLRES      1    1'
-         write(7,'(a132)') text
-         text=' -5  RFLRES      1    1    0    0'
-         write(7,'(a132)') text
-!
-         do i=1,nk
-            if(inum(i).eq.0) cycle
-            write(7,100) m1,i,fn(0,i)
+         do i=1,nkcoords
+            if(inum(i).le.0) cycle
+            write(7,101) m1,i,fn(0,i)
          enddo
 !
          write(7,'(a3)') m3
@@ -790,7 +706,7 @@
 !
 !     storing the stress errors in the nodes
 !
-      if(filab(15)(1:3).eq.'ZZS') then
+      if(filab(13)(1:3).eq.'ZZS') then
 ! 
          call estimator(co,nk,kon,ipkon,lakon,ne,stn,
      &            ipneigh,neigh,sti,mint_)
@@ -821,7 +737,7 @@
          text(37:48)=description
          if(nmethod.eq.2) text(64:68)='MODAL'
          text(75:75)='1'
-         write(text(8:10),'(i3)') 100+kode      
+         write(text(8:12),'(i5)') 100+kode      
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
          write(7,'(a132)') text
@@ -840,8 +756,8 @@
          text=' -5  SZX         1    4    3    1'
          write(7,'(a132)') text
 !
-         do i=1,nk
-            if(inum(i).eq.0) cycle
+         do i=1,nkcoords
+            if(inum(i).le.0) cycle
             write(7,101) m1,i,(stn(j,i),j=1,4),
      &           stn(6,i),stn(5,i)
          enddo
@@ -849,7 +765,502 @@
          write(7,'(a3)') m3
       endif
 !
- 100  format(a3,i10,1p,3e12.5)
+!     storing the total temperature in the fluid nodes
+!
+      if(filab(14)(1:4).eq.'TT  ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') icounter
+         write(7,'(a132)') text
+         if(nmethod.eq.2) then
+            text='    1PGM'
+            write(text(25:36),'(e12.6)') oner
+            write(7,'(a132)') text
+            text='    1PGK'
+            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
+            write(7,'(a132)') text
+            text='    1PHID'
+            write(text(25:36),'(i12)') noddiam
+            write(7,'(a132)') text
+            text='    1PSUBC'
+            write(text(25:36),'(i12)') null
+            write(7,'(a132)') text
+            text='    1PMODE'
+            write(text(25:36),'(i12)') mode+1
+            write(7,'(a132)') text
+         endif
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(37:48)=description
+         if(nmethod.eq.2) text(64:68)='MODAL'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(7,'(a132)') text
+         text=' -4  TOTEMP      1    1'
+         write(7,'(a132)') text
+         text=' -5  TT          1    1    0    0'
+         write(7,'(a132)') text
+!
+         do i=1,nkcoords
+            if(inum(i).ge.0) cycle
+            write(7,101) m1,i,v(0,i)
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
+!
+!     storing the mass flow in the fluid nodes
+!
+      if(filab(15)(1:4).eq.'MF  ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') icounter
+         write(7,'(a132)') text
+         if(nmethod.eq.2) then
+            text='    1PGM'
+            write(text(25:36),'(e12.6)') oner
+            write(7,'(a132)') text
+            text='    1PGK'
+            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
+            write(7,'(a132)') text
+            text='    1PHID'
+            write(text(25:36),'(i12)') noddiam
+            write(7,'(a132)') text
+            text='    1PSUBC'
+            write(text(25:36),'(i12)') null
+            write(7,'(a132)') text
+            text='    1PMODE'
+            write(text(25:36),'(i12)') mode+1
+            write(7,'(a132)') text
+         endif
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(37:48)=description
+         if(nmethod.eq.2) text(64:68)='MODAL'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(7,'(a132)') text
+         text=' -4  MAFLOW      1    1'
+         write(7,'(a132)') text
+         text=' -5  MF          1    1    0    0'
+         write(7,'(a132)') text
+!
+         do i=1,nkcoords
+            if(inum(i).ge.0) cycle
+            write(7,101) m1,i,v(1,i)
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
+!
+!     storing the total pressure in the fluid nodes
+!
+      if(filab(16)(1:4).eq.'PT  ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') icounter
+         write(7,'(a132)') text
+         if(nmethod.eq.2) then
+            text='    1PGM'
+            write(text(25:36),'(e12.6)') oner
+            write(7,'(a132)') text
+            text='    1PGK'
+            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
+            write(7,'(a132)') text
+            text='    1PHID'
+            write(text(25:36),'(i12)') noddiam
+            write(7,'(a132)') text
+            text='    1PSUBC'
+            write(text(25:36),'(i12)') null
+            write(7,'(a132)') text
+            text='    1PMODE'
+            write(text(25:36),'(i12)') mode+1
+            write(7,'(a132)') text
+         endif
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(37:48)=description
+         if(nmethod.eq.2) text(64:68)='MODAL'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(7,'(a132)') text
+         text=' -4  TOPRES      1    1'
+         write(7,'(a132)') text
+         text=' -5  PT          1    1    0    0'
+         write(7,'(a132)') text
+!
+         do i=1,nkcoords
+            if(inum(i).ge.0) cycle
+            write(7,101) m1,i,v(2,i)
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
+!
+!     storing the static temperature in the fluid nodes
+!
+      if(filab(17)(1:4).eq.'TS  ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') icounter
+         write(7,'(a132)') text
+         if(nmethod.eq.2) then
+            text='    1PGM'
+            write(text(25:36),'(e12.6)') oner
+            write(7,'(a132)') text
+            text='    1PGK'
+            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
+            write(7,'(a132)') text
+            text='    1PHID'
+            write(text(25:36),'(i12)') noddiam
+            write(7,'(a132)') text
+            text='    1PSUBC'
+            write(text(25:36),'(i12)') null
+            write(7,'(a132)') text
+            text='    1PMODE'
+            write(text(25:36),'(i12)') mode+1
+            write(7,'(a132)') text
+         endif
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(37:48)=description
+         if(nmethod.eq.2) text(64:68)='MODAL'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(7,'(a132)') text
+         text=' -4  STTEMP      1    1'
+         write(7,'(a132)') text
+         text=' -5  TS          1    1    0    0'
+         write(7,'(a132)') text
+!
+         do i=1,nkcoords
+            if(inum(i).ge.0) cycle
+            write(7,101) m1,i,v(3,i)
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
+!
+      if((nmethod.ne.2).and.(nmethod.lt.4)) return
+!
+!     for cyclic symmetry frequency calculations only results
+!     for even numbers are stored
+!
+      if(((nmethod.eq.2).or.(nmethod.eq.5)).and.((mode/2)*2.ne.mode)) 
+     &          return
+!
+!     storing the displacements of the nodes (magnitude, phase)
+!
+      if(filab(11)(1:4).eq.'PU  ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(7,'(a132)') text
+!
+         if(nmethod.eq.2) then
+            text='    1PGM'
+            write(text(25:36),'(e12.6)') oner
+            write(7,'(a132)') text
+            text='    1PGK'
+            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
+            write(7,'(a132)') text
+            text='    1PHID'
+            write(text(25:36),'(i12)') noddiam
+            write(7,'(a132)') text
+            text='    1PSUBC'
+            write(text(25:36),'(i12)') null
+            write(7,'(a132)') text
+            text='    1PMODE'
+            write(text(25:36),'(i12)') mode+1
+            write(7,'(a132)') text
+         endif
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         if(nmethod.eq.2) text(64:68)='MODAL'
+         write(7,'(a132)') text
+!
+         text=' -4  PDISP       6    1'
+         write(7,'(a132)') text
+         text=' -5  MAG1        1   12    1    0'
+         write(7,'(a132)') text
+         text=' -5  MAG2        1   12    2    0'
+         write(7,'(a132)') text
+         text=' -5  MAG3        1   12    3    0'
+         write(7,'(a132)') text
+         text=' -5  PHA1        1   12    4    0'
+         write(7,'(a132)') text
+         text=' -5  PHA2        1   12    5    0'
+         write(7,'(a132)') text
+         text=' -5  PHA3        1   12    6    0'
+         write(7,'(a132)') text
+!
+         do i=1,nkcoords/ngraph
+            if(inum(i).eq.0) cycle
+            write(7,101) m1,i,(vr(j,i),j=1,3),(vi(j,i),j=1,3)
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
+!
+!     storing the temperatures of the nodes (magnitude,phase)
+!
+      if(filab(12)(1:4).eq.'PNT ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(7,'(a132)') text
+!
+         if(nmethod.eq.2) then
+            text='    1PGM'
+            write(text(25:36),'(e12.6)') oner
+            write(7,'(a132)') text
+            text='    1PGK'
+            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
+            write(7,'(a132)') text
+            text='    1PHID'
+            write(text(25:36),'(i12)') noddiam
+            write(7,'(a132)') text
+            text='    1PSUBC'
+            write(text(25:36),'(i12)') null
+            write(7,'(a132)') text
+            text='    1PMODE'
+            write(text(25:36),'(i12)') mode+1
+            write(7,'(a132)') text
+         endif
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         if(nmethod.eq.2) text(64:68)='MODAL'
+         write(7,'(a132)') text
+!
+         text=' -4  PNDTEMP     7    1'
+         write(7,'(a132)') text
+         text=' -5  MAG1        1    1    1    0'
+         write(7,'(a132)') text
+         text=' -5  PHA1        1    1    2    0'
+         write(7,'(a132)') text
+         text=' -5  ALL         1   12    0    0    1ALL'
+         write(7,'(a132)') text
+!
+         do i=1,nkcoords/ngraph
+            if(inum(i).eq.0) cycle
+            write(7,101) m1,i,vr(0,i),vr(0,i),vr(0,i),
+     &            vi(0,i),vi(0,i),vi(0,i)
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
+!
+      if(nmethod.ne.2) return
+!
+!     storing the stresses in the nodes (magnitude,phase)
+!
+      if(filab(18)(1:4).eq.'PHS ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(7,'(a132)') text
+!
+         if(nmethod.eq.2) then
+            text='    1PGM'
+            write(text(25:36),'(e12.6)') oner
+            write(7,'(a132)') text
+            text='    1PGK'
+            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
+            write(7,'(a132)') text
+            text='    1PHID'
+            write(text(25:36),'(i12)') noddiam
+            write(7,'(a132)') text
+            text='    1PSUBC'
+            write(text(25:36),'(i12)') null
+            write(7,'(a132)') text
+            text='    1PMODE'
+            write(text(25:36),'(i12)') mode+1
+            write(7,'(a132)') text
+         endif
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         if(nmethod.eq.2) text(64:68)='MODAL'
+         write(7,'(a132)') text
+!
+         text=' -4  PSTRESS    12    1'
+         write(7,'(a132)') text
+         text=' -5  MAGXX       1    4    1    1'
+         write(7,'(a132)') text
+         text=' -5  MAGYY       1    4    2    2'
+         write(7,'(a132)') text
+         text=' -5  MAGZZ       1    4    3    3'
+         write(7,'(a132)') text
+         text=' -5  MAGXY       1    4    1    2'
+         write(7,'(a132)') text
+         text=' -5  MAGYZ       1    4    2    3'
+         write(7,'(a132)') text
+         text=' -5  MAGZX       1    4    3    1'
+         write(7,'(a132)') text
+         text=' -5  PHAXX       1    4    1    1'
+         write(7,'(a132)') text
+         text=' -5  PHAYY       1    4    2    2'
+         write(7,'(a132)') text
+         text=' -5  PHAZZ       1    4    3    3'
+         write(7,'(a132)') text
+         text=' -5  PHAXY       1    4    1    2'
+         write(7,'(a132)') text
+         text=' -5  PHAYZ       1    4    2    3'
+         write(7,'(a132)') text
+         text=' -5  PHAZX       1    4    3    1'
+         write(7,'(a132)') text
+!
+         do i=1,nkcoords/ngraph
+            if(inum(i).le.0) cycle
+            write(7,101) m1,i,(stnr(j,i),j=1,4),
+     &           stnr(6,i),stnr(5,i)
+            write(7,101) m2,i,(stni(j,i),j=1,4),
+     &           stni(6,i),stni(5,i)
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
+!
+!     storing the maximum displacements of the nodes 
+!     in the basis sector
+!         (magnitude, components)
+!
+      if(filab(19)(1:4).eq.'MAXU') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(7,'(a132)') text
+!
+         if(nmethod.eq.2) then
+            text='    1PGM'
+            write(text(25:36),'(e12.6)') oner
+            write(7,'(a132)') text
+            text='    1PGK'
+            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
+            write(7,'(a132)') text
+            text='    1PHID'
+            write(text(25:36),'(i12)') noddiam
+            write(7,'(a132)') text
+            text='    1PSUBC'
+            write(text(25:36),'(i12)') null
+            write(7,'(a132)') text
+            text='    1PMODE'
+            write(text(25:36),'(i12)') mode+1
+            write(7,'(a132)') text
+         endif
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         if(nmethod.eq.2) text(64:68)='MODAL'
+         write(7,'(a132)') text
+!
+         text=' -4  MDISP       4    1'
+         write(7,'(a132)') text
+         text=' -5  D1          1    4    2    0'
+         write(7,'(a132)') text
+         text=' -5  D2          1    4    3    0'
+         write(7,'(a132)') text
+         text=' -5  D3          1    4    4    0'
+         write(7,'(a132)') text
+         text=' -5  MAG         1    4    1    0'
+         write(7,'(a132)') text
+!
+         do i=1,nkcoords/ngraph
+            if(inum(i).eq.0) cycle
+            write(7,101) m1,i,(vmax(j,i),j=1,3),vmax(0,i)
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
+!
+!     storing the worst principal stress at the nodes
+!     in the basis sector (components, magnitude)
+! 
+!     the worst principal stress is the maximum of the
+!     absolute value of all principal stresses
+!
+      if(filab(20)(1:4).eq.'MAXS') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(7,'(a132)') text
+!
+         if(nmethod.eq.2) then
+            text='    1PGM'
+            write(text(25:36),'(e12.6)') oner
+            write(7,'(a132)') text
+            text='    1PGK'
+            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
+            write(7,'(a132)') text
+            text='    1PHID'
+            write(text(25:36),'(i12)') noddiam
+            write(7,'(a132)') text
+            text='    1PSUBC'
+            write(text(25:36),'(i12)') null
+            write(7,'(a132)') text
+            text='    1PMODE'
+            write(text(25:36),'(i12)') mode+1
+            write(7,'(a132)') text
+         endif
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         if(nmethod.eq.2) text(64:68)='MODAL'
+         write(7,'(a132)') text
+!
+         text=' -4  MSTRESS     7    1'
+         write(7,'(a132)') text
+         text=' -5  SRR         1    4    1    1'
+         write(7,'(a132)') text
+         text=' -5  STT         1    4    2    2'
+         write(7,'(a132)') text
+         text=' -5  SZZ         1    4    3    3'
+         write(7,'(a132)') text
+         text=' -5  SRT         1    4    1    2'
+         write(7,'(a132)') text
+         text=' -5  STZ         1    4    2    3'
+         write(7,'(a132)') text
+         text=' -5  SZR         1    4    3    1'
+         write(7,'(a132)') text
+         text=' -5  MAG         1    4    0    0'
+         write(7,'(a132)') text
+!
+         do i=1,nkcoords/ngraph
+            if(inum(i).le.0) cycle
+            write(7,101) m1,i,(stnmax(j,i),j=1,4),
+     &           stnmax(6,i),stnmax(5,i)
+            write(7,101) m2,i,stnmax(0,i)
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
+
+!
  101  format(a3,i10,1p,6e12.5)
 !
       return

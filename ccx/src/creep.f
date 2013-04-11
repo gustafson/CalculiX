@@ -22,7 +22,7 @@
 !
 !     user creep routine
 !
-!     INPUT:
+!     INPUT (general):
 !
 !     statev(1..nstatv)  internal variables
 !     serd               not used
@@ -30,7 +30,6 @@
 !     ec(2)              not used
 !     esw(1..2)          not used
 !     p                  not used
-!     qtild              von Mises stress
 !     temp               temperature at the end of the increment
 !     dtemp              not used
 !     predef             not used
@@ -40,7 +39,8 @@
 !     dtime              time increment
 !     cmname             material name
 !     leximp             not used
-!     lend               not used
+!     lend               if = 2: isotropic creep
+!                        if = 3: anisotropic creep
 !     coords(1..3)       coordinates of the current integration point
 !     nstatv             number of internal variables
 !     noel               element number
@@ -50,8 +50,14 @@
 !     kstep              not used
 !     kinc               not used
 !
+!    INPUT only for elastic isotropic materials:
+!     qtild              von Mises stress
 !
-!     OUTPUT:
+!    INPUT only for elastic anisotropic materials:
+!     decra(1)           equivalent deviatoric creep strain increment
+!
+!
+!     OUTPUT (general):
 !
 !     decra(1)           equivalent deviatoric creep strain increment
 !     decra(2..4)        not used
@@ -59,6 +65,12 @@
 !                        creep strain increment w.r.t. the von Mises
 !                        stress
 !     deswa(1..5)        not used
+!
+!     OUTPUT only for elastic isotropic materials:
+!     decra(1)           equivalent deviatoric creep strain increment
+!
+!     OUTPUT only for elastic anisotropic materials:
+!     qtild              von Mises stress
 !   
       character*80 cmname
 !

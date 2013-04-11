@@ -52,7 +52,11 @@
       integer kstep,kinc,noel,npt,jltyp,layer,kspt
       real*8 f,time(2),coords(3)
 !
-      f=100.d0*coords(2)
+c      f=100.d0*coords(2)
+      f=(1.d0-coords(2))*(1.d0-coords(3))
+c      f=1.d0
+      write(*,100) jltyp-20,coords(1),coords(2),coords(3)
+ 100  format('     &',i5,3(',',d22.15))
 !
       return
       end

@@ -26,7 +26,7 @@
 !
       character*1 type,inpc(*)
       character*8 lakon(*)
-      character*20 label
+      character*20 label,newlabel
       character*81 set(*),noset,elset
       character*132 textpart(16)
 !
@@ -97,6 +97,12 @@
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
             if((istat.lt.0).or.(key.eq.1)) return
+            if(n.gt.1) then
+               write(*,*) '*ERROR in surfaces: only one entry per'
+               write(*,*) '       line allowed'
+               call inputerror(inpc,ipoinpc,iline)
+            endif
+!
             if(nalset+1.gt.nalset_) then
                write(*,*) '*ERROR in surfaces: increase nalset_'
                stop
@@ -168,16 +174,6 @@
                write(*,*) '*ERROR in surfaces: increase nalset_'
                stop
             endif
-!     
-c            read(textpart(2)(2:2),'(i1)',iostat=istat) iside
-c            if(istat.gt.0) then
-c               write(*,*) '*ERROR in surfaces: invalid element side'
-c               stop
-c            endif
-c            if((iside.lt.1).or.(iside.gt.6)) then
-c               write(*,*) '*ERROR in surfaces: invalid element side'
-c               stop
-c            endif
 !
             read(textpart(2)(1:20),'(a20)',iostat=istat) label
 !     
@@ -217,23 +213,24 @@ c            endif
      &                           '*ERROR in surfaces: increase nalset_'
                               stop
                            endif
+                           newlabel=label
                            if((lakon(l)(1:2).eq.'CP').or.
      &                          (lakon(l)(2:2).eq.'A')) then
                               if(label(1:2).eq.'S1') then
-                                 label(1:2)='S3'
+                                 newlabel(1:2)='S3'
                               elseif(label(1:2).eq.'S2') then
-                                 label(1:2)='S4'
+                                 newlabel(1:2)='S4'
                               elseif(label(1:2).eq.'S3') then
-                                 label(1:2)='S5'
+                                 newlabel(1:2)='S5'
                               elseif(label(1:2).eq.'S4') then
-                                 label(1:2)='S6'
+                                 newlabel(1:2)='S6'
                               elseif(label(1:2).eq.'S5') then
-                                 label(1:2)='S1'
+                                 newlabel(1:2)='S1'
                               elseif(label(1:2).eq.'S6') then
-                                 label(1:2)='S2'
+                                 newlabel(1:2)='S2'
                               endif
                            endif
-                           read(label(2:2),'(i1)',iostat=istat) iside
+                           read(newlabel(2:2),'(i1)',iostat=istat) iside
                            ialset(nalset)=iside+10*l
                         else
                            kstart=kstart+1
@@ -245,23 +242,25 @@ c            endif
      &                            '*ERROR in surfaces: increase nalset_'
                                  stop
                               endif
+                              newlabel=label
                               if((lakon(l)(1:2).eq.'CP').or.
      &                             (lakon(l)(2:2).eq.'A')) then
                                  if(label(1:2).eq.'S1') then
-                                    label(1:2)='S3'
+                                    newlabel(1:2)='S3'
                                  elseif(label(1:2).eq.'S2') then
-                                    label(1:2)='S4'
+                                    newlabel(1:2)='S4'
                                  elseif(label(1:2).eq.'S3') then
-                                    label(1:2)='S5'
+                                    newlabel(1:2)='S5'
                                  elseif(label(1:2).eq.'S4') then
-                                    label(1:2)='S6'
+                                    newlabel(1:2)='S6'
                                  elseif(label(1:2).eq.'S5') then
-                                    label(1:2)='S1'
+                                    newlabel(1:2)='S1'
                                  elseif(label(1:2).eq.'S6') then
-                                    label(1:2)='S2'
+                                    newlabel(1:2)='S2'
                                  endif
                               endif
-                              read(label(2:2),'(i1)',iostat=istat) iside
+                              read(newlabel(2:2),'(i1)',iostat=istat) 
+     &                              iside
                               ialset(nalset)=iside+10*l
                            enddo
                         endif
@@ -282,23 +281,24 @@ c            endif
      &                 ialset(nalset+1)
                   write(*,*) '         in set ',set(nset),' > ne'
                else
+                  newlabel=label
                   if((lakon(l)(1:2).eq.'CP').or.
      &                 (lakon(l)(2:2).eq.'A')) then
                      if(label(1:2).eq.'S1') then
-                        label(1:2)='S3'
+                        newlabel(1:2)='S3'
                      elseif(label(1:2).eq.'S2') then
-                        label(1:2)='S4'
+                        newlabel(1:2)='S4'
                      elseif(label(1:2).eq.'S3') then
-                        label(1:2)='S5'
+                        newlabel(1:2)='S5'
                      elseif(label(1:2).eq.'S4') then
-                        label(1:2)='S6'
+                        newlabel(1:2)='S6'
                      elseif(label(1:2).eq.'S5') then
-                        label(1:2)='S1'
+                        newlabel(1:2)='S1'
                      elseif(label(1:2).eq.'S6') then
-                        label(1:2)='S2'
+                        newlabel(1:2)='S2'
                      endif
                   endif
-                  read(label(2:2),'(i1)',iostat=istat) iside
+                  read(newlabel(2:2),'(i1)',iostat=istat) iside
                   nalset=nalset+1
                   ialset(nalset)=iside+10*l
                   iendset(nset)=nalset

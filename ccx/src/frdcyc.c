@@ -36,9 +36,10 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   char *lakont=NULL,description[13]="            ";
   int nkt,icntrl,*kont=NULL,*ipkont=NULL,*inumt=NULL,*ielmatt=NULL,net,i,l,
      imag=0,mode=-1,noddiam=0,ngraph,*inocs=NULL,*ielcs=NULL,l1,l2,is,
-     jj,node,i1,i2,nope,iel,indexe,j,ielset,*inotrt=NULL;
+      jj,node,i1,i2,nope,iel,indexe,j,ielset,*inotrt=NULL;
   double *vt=NULL,*fnt=NULL,*stnt=NULL,*eent=NULL,*cot=NULL,*t1t=NULL,
-         *epnt=NULL,*enernt=NULL,*xstatent=NULL,theta,pi,t[3],*qfnt=NULL;
+         *epnt=NULL,*enernt=NULL,*xstatent=NULL,theta,pi,t[3],*qfnt=NULL,
+         *vr=NULL,*vi=NULL,*stnr=NULL,*stni=NULL,*vmax=NULL,*stnmax=NULL;
 
   int *ipneigh=NULL,*neigh=NULL;
 
@@ -111,7 +112,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
 
   if((strcmp1(&filab[0],"U   ")==0)||
      ((strcmp1(&filab[6],"NT  ")==0)&&(*ithermal>=2)))
-    vt=NNEW(double,4**nk*ngraph);
+    vt=NNEW(double,5**nk*ngraph);
   if((strcmp1(&filab[6],"NT  ")==0)&&(*ithermal<2))
     t1t=NNEW(double,*nk*ngraph);
   if(strcmp1(&filab[12],"S   ")==0)
@@ -220,7 +221,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   
   if((strcmp1(&filab[0],"U   ")==0)||
      ((strcmp1(&filab[6],"NT  ")==0)&&(*ithermal>=2)))
-    for(l=0;l<4**nk;l++){vt[l]=v[l];};
+    for(l=0;l<5**nk;l++){vt[l]=v[l];};
   if((strcmp1(&filab[6],"NT  ")==0)&&(*ithermal<2))
     for(l=0;l<*nk;l++){t1t[l]=t1[l];};
   if(strcmp1(&filab[12],"S   ")==0)
@@ -249,8 +250,8 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
         for(l1=0;l1<*nk;l1++){
           if(inocs[l1]==jj){
             for(l2=0;l2<4;l2++){
-              l=4*l1+l2;
-              vt[l+4**nk*i]=v[l];
+              l=5*l1+l2;
+              vt[l+5**nk*i]=v[l];
             }
           }
         }
@@ -341,8 +342,9 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
 	       filab,eent,t1t,fnt,time,epnt,ielmatt,matname,enernt,
                xstatent,nstate_,istep,iinc,iperturb,ener,mint_,output,
                ithermal,qfnt,&mode,&noddiam,trab,inotrt,ntrans,orab,ielorien,
-               norien,description,
-                     ipneigh,neigh,sti));free(ipneigh);free(neigh);
+               norien,description,ipneigh,neigh,sti,vr,vi,stnr,stni,
+               vmax,stnmax,&ngraph));
+  free(ipneigh);free(neigh);
   
   if((strcmp1(&filab[0],"U   ")==0)||
      ((strcmp1(&filab[6],"NT  ")==0)&&(*ithermal>=2))) free(vt);

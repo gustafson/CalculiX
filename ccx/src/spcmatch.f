@@ -28,7 +28,7 @@
       integer nodeboun(*),ndirboun(*),nboun,nodebounold(*),ilboun(*),
      &  ndirbounold(*),nbounold,i,kflag,idof,id,nreorder(*),ikboun(*)
 !
-      real*8 xboun(*),xbounold(*),vold(0:3,*),reorder(*)
+      real*8 xboun(*),xbounold(*),vold(0:4,*),reorder(*)
 !
       kflag=2
 !
@@ -44,7 +44,7 @@ c!
 c      if(nboun.gt.0) call isortii(ikboun,ilboun,nboun,kflag)
 !
       do i=1,nbounold
-         idof=7*(nodebounold(i)-1)+ndirbounold(i)
+         idof=8*(nodebounold(i)-1)+ndirbounold(i)
          if(nboun.gt.0) then
             call nident(ikboun,idof,nboun,id)
          else

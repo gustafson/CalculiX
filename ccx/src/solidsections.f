@@ -166,11 +166,14 @@
 !        for axial symmetric structures:
 !           thickness for axial symmetric elements: 1 degree
 !           thickness for plane stress elements: reduced by 360
+!           thickness for plane strain elements: reduced by 360
 !
             if(iaxial.ne.0) then
                if(lakon(ialset(istartset(i)))(1:2).eq.'CA') then
                   thickness=datan(1.d0)*8.d0/iaxial
                elseif(lakon(ialset(istartset(i)))(1:3).eq.'CPS') then
+                  thickness=thickness/iaxial
+               elseif(lakon(ialset(istartset(i)))(1:3).eq.'CPE') then
                   thickness=thickness/iaxial
                endif
             endif

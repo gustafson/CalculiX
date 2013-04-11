@@ -25,7 +25,7 @@
 !     calculates stiffness and stresses for a user defined material
 !     law
 !
-!     icmd=3: calcutates stress at mechanical strain
+!     icmd=3: calculates stress at mechanical strain
 !     else: calculates stress at mechanical strain and the stiffness
 !           matrix
 !
@@ -57,7 +57,8 @@
 !     xkl(3,3)           deformation gradient at the end of the increment
 !     vj                 Jacobian at the end of the increment
 !
-!     ithermal           0: no thermal effects are taken into account
+!     ithermal           0: no thermal effects are taken into account: for
+!                        creep this does not make sense.
 !                        1: thermal effects are taken into account (triggered
 !                        by the keyword *INITIAL CONDITIONS,TYPE=TEMPERATURE)
 !     t1l                temperature at the end of the increment
@@ -109,10 +110,13 @@
 !                        is supposed to be symmetric, only the upper half is
 !                        to be given in the same order as for a fully
 !                        anisotropic elastic material (*ELASTIC,TYPE=ANISO).
+!                        Notice that the matrix is an integral part of the 
+!                        fourth order material tensor, i.e. the Voigt notation
+!                        is not used.
 !
       implicit none
 !
-      logical interval
+      logical interval,cauchy,exitcriterion
 !
       character*80 amat
 !
@@ -126,7 +130,7 @@
      &  stri(6),htri,sg(6),r(13),ee(6),dd,gl(6,6),gr(6,6),c0,c1,c2,
      &  skl(3,3),gcreep,gm1,ya(3,3,3,3),dsg,detc,strinv,
      &  depq,svm,dsvm,dg1,dg2,fu,fu1,fu2,expon,ec(2),
-     &  timeabq(2),r1(13),ep1(6),gl1(6,6),sg1(6)
+     &  timeabq(2),r1(13),ep1(6),gl1(6,6),sg1(6),ckl(3,3)
 !
       real*8 elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xokl(3,3),voj,pgauss(3),orab(7,*),
@@ -140,7 +144,19 @@
      &          3,3,1,3,1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,
      &          1,2,2,3,1,3,2,3,2,3,2,3/
 !
+      data leximp /1/
+      data lend /3/
+!
+      if(ithermal.eq.0) then
+         write(*,*)'*ERROR in umat_aniso_creep: no temperature defined;'
+         write(*,*) '       a creep calculation without temperature'
+         write(*,*) '       does not make sense'
+         write(*,*)
+         stop
+      endif
+!
       iloop=0
+      exitcriterion=.false.
 !
       c0=dsqrt(2.d0/3.d0)
       c1=2.d0/3.d0
@@ -189,7 +205,25 @@
       do i=1,6
          ep0(i)=xstateini(1+i,iint,iel)
       enddo
-!
+c!start
+c!     inverse deformation gradient
+c!
+c      ckl(1,1)=(xkl(2,2)*xkl(3,3)-xkl(2,3)*xkl(3,2))/vj
+c      ckl(2,2)=(xkl(1,1)*xkl(3,3)-xkl(1,3)*xkl(3,1))/vj
+c      ckl(3,3)=(xkl(1,1)*xkl(2,2)-xkl(1,2)*xkl(2,1))/vj
+c      ckl(1,2)=(xkl(1,3)*xkl(3,2)-xkl(1,2)*xkl(3,3))/vj
+c      ckl(1,3)=(xkl(1,2)*xkl(2,3)-xkl(2,2)*xkl(1,3))/vj
+c      ckl(2,3)=(xkl(2,1)*xkl(1,3)-xkl(1,1)*xkl(2,3))/vj
+c      ckl(2,1)=(xkl(3,1)*xkl(2,3)-xkl(2,1)*xkl(3,3))/vj
+c      ckl(3,1)=(xkl(2,1)*xkl(3,2)-xkl(2,2)*xkl(3,1))/vj
+c      ckl(3,2)=(xkl(3,1)*xkl(1,2)-xkl(1,1)*xkl(3,2))/vj
+c!     
+c!     converting the Lagrangian strain into Eulerian
+c!     strain
+c!     
+c      cauchy=.false.
+c      call str2mat(emec,ckl,vj,cauchy)
+c!end
 !     elastic strains
 !
       do i=1,6
@@ -241,30 +275,13 @@
 !     evaluation of the yield surface
 !
       ec(1)=epqini 
-      svm=0.001d0 
-	ii=0
-      do
-	ii=ii+1
-         call creep(decra,deswa,xstateini(1,iint,iel),serd,ec,
-     &     esw,p,svm,t1l,dtemp,predef,dpred,timeabq,dtime,
-     &     amat,leximp,lend,pgauss,nstate_,iel,iint,layer,kspt,
-     &     kstep,kinc)
-         dsvm=-decra(1)/decra(5)
-c	if((iel.eq.1).and.(iint.eq.1)) then
-	if(ii.eq.100) then
-	 write(*,*) 'svm, dsvm ',
-     &       svm,t1l,decra(1),decra(5),dtime
-	endif
-         if((dabs(dsvm).lt.1.d-2).or.
-     &          (dabs(dsvm).lt.1.d-3*svm).or.(ii.eq.100)) exit
-	svm=max(0.d0,svm+dsvm)
-      enddo
 !
-      htri=dsg-c0*svm
+      htri=dsg
 !
 !     check whether plasticity occurs
 !
-      if(htri.gt.0.d0) then
+c      if(htri.gt.0.d0) then
+      if(htri.gt.1.d-10) then
          iplas=1
       else
          iplas=0
@@ -411,7 +428,6 @@ c	if((iel.eq.1).and.(iint.eq.1)) then
 !
 !     first attempt: root search with Newton-Raphson 
 !
-c      do iloop=1,100
       loop: do
 !
          iloop=iloop+1
@@ -464,42 +480,41 @@ c      do iloop=1,100
          dsg=dsqrt(sg(1)*sg(1)+sg(2)*sg(2)+sg(3)*sg(3)+
      &        2.d0*(sg(4)*sg(4)+sg(5)*sg(5)+sg(6)*sg(6)))      
 !     
-!        evaluation of the yield surface
-!
-      depq=c0*dg
-      ec(1)=epqini 
-	ii=0
-      do
-	ii=ii+1
+!     evaluation of the yield surface
+!     
+         ec(1)=epqini 
+         decra(1)=c0*dg
          call creep(decra,deswa,xstateini(1,iint,iel),serd,ec,
-     &     esw,p,svm,t1l,dtemp,predef,dpred,timeabq,dtime,
-     &     amat,leximp,lend,pgauss,nstate_,iel,iint,layer,kspt,
-     &     kstep,kinc)
-         dsvm=(depq-decra(1))/decra(5)
-c	if((iel.eq.1).and.(iint.eq.1)) then
-	if(ii.eq.100) then
-	 write(*,*) 'svm, dsvm ',
-     &           svm,t1l,decra(1),decra(5),depq,dtime
-	endif
-         if((dabs(dsvm).lt.1.d-2).or.
-     &       (dabs(dsvm).lt.1.d-3*svm).or.(ii.eq.100)) exit
- 	svm=max(0.d0,svm+dsvm)
-      enddo
+     &        esw,p,svm,t1l,dtemp,predef,dpred,timeabq,dtime,
+     &        amat,leximp,lend,pgauss,nstate_,iel,iint,layer,kspt,
+     &        kstep,kinc)
 !
+!        if the creep routine returns an increased value of decra(1)
+!        it means that there is a lower cut-off for decra(1);
+!        if the routine stays in a range lower than this cut-off,
+!        it will never leave it and the exit conditions are
+!        assumed to be satisfied.
+!
+         if(decra(1).gt.c0*dg) then
+            dg=decra(1)/c0
+            if(iloop.gt.1) exitcriterion=.true.
+         endif
+!     
          htri=dsg-c0*svm
-!
+!     
          do i=1,6
             sg(i)=sg(i)/dsg
          enddo
-!
-!        determining the residual matrix
-!
+!     
+!     determining the residual matrix
+!     
          do i=1,6  
             r(i)=ep0(i)-ep(i)+dg*sg(i)
          enddo
 !     
-!           check convergence
-!
+!     check convergence
+!     
+         if(exitcriterion) exit
          if((dabs(htri).le.1.d-3).and.
      &        ((iloop.gt.1).and.((dabs(ddg).lt.1.d-10).or.
      &        (dabs(ddg).lt.1.d-3*dabs(dg))))) then
@@ -512,11 +527,11 @@ c	if((iel.eq.1).and.(iint.eq.1)) then
                exit
             endif
          endif
-!
-!           determining b.x
-!
+!     
+!     determining b.x
+!     
          b=dg/dsg
-!
+!     
          x(1)=b*(c1-sg(1)*sg(1))
          x(2)=b*(c2-sg(1)*sg(2))
          x(3)=b*(c1-sg(2)*sg(2))
@@ -538,9 +553,9 @@ c	if((iel.eq.1).and.(iint.eq.1)) then
          x(19)=-b*sg(4)*sg(6)
          x(20)=-b*sg(5)*sg(6)
          x(21)=b*(.5d0-sg(6)*sg(6))
-!
-!           filling the LHS
-!
+!     
+!     filling the LHS
+!     
          if(iorien.gt.0) then
             gl(1,1)=cm1(1)+x(1)
             gl(1,2)=cm1(2)+x(2)
@@ -627,19 +642,19 @@ c	if((iel.eq.1).and.(iint.eq.1)) then
          gm1=1.d0/(gm1+gcreep)
          ddg=gm1*(htri-(Pn(1)*r(1)+Pn(2)*r(2)+Pn(3)*r(3)+
      &        (Pn(4)*r(4)+Pn(5)*r(5)+Pn(6)*r(6))))
-	if((iel.eq.1).and.(iint.eq.1)) then
-	write(*,*) 'depq,svm,dsvm ',depq,svm,dsvm
-	write(*,*) 'dg,ddg,gm1 ',dg,ddg,gm1
-	endif
-!
-!        updating the residual matrix
-!
+c         if((iel.eq.380).and.(iint.eq.1)) then
+c            write(*,*) 'depq,svm ',decra(1),svm
+c            write(*,*) 'dg,ddg,gm1 ',dg,ddg,gm1
+c         endif
+!     
+!     updating the residual matrix
+!     
          do i=1,6
             r(i)=r(i)+ddg*sg(i)
          enddo
-!
-!        update the plastic strain
-!
+!     
+!     update the plastic strain
+!     
          gr(1,1)=r(1)
          gr(2,1)=r(2)
          gr(3,1)=r(3)
@@ -683,241 +698,236 @@ c	if((iel.eq.1).and.(iint.eq.1)) then
 !        end of major loop
 !
          if((iloop.gt.15).or.(dg.le.0.d0)) then
-c         if((iloop.gt.0).or.(dg.le.0.d0)) then
+c            write(*,*) dg,iloop,dsg,svm,iel,iint
             iloop=1
             dg=0.d0
             do i=1,6
                ep(i)=ep0(i)
             enddo
-!
-	write(*,*) 'second attempt'
+!     
+            write(*,*) 'second attempt'
 !     
 !     second attempt: root search through interval division
 !     
             do
-!
-!        elastic strains
-!
-         do i=1,6
-            ee(i)=emec(i)-ep(i)
-         enddo
 !     
-!        global trial stress tensor
+!     elastic strains
 !     
-         if(iorien.gt.0) then
-            stri(1)=c(1)*ee(1)+c(2)*ee(2)+c(4)*ee(3)+
-     &           2.d0*(c(7)*ee(4)+c(11)*ee(5)+c(16)*ee(6))
-     &           -beta(1)
-            stri(2)=c(2)*ee(1)+c(3)*ee(2)+c(5)*ee(3)+
-     &           2.d0*(c(8)*ee(4)+c(12)*ee(5)+c(17)*ee(6))
-     &           -beta(2)
-            stri(3)=c(4)*ee(1)+c(5)*ee(2)+c(6)*ee(3)+
-     &           2.d0*(c(9)*ee(4)+c(13)*ee(5)+c(18)*ee(6))
-     &           -beta(3)
-            stri(4)=c(7)*ee(1)+c(8)*ee(2)+c(9)*ee(3)+
-     &           2.d0*(c(10)*ee(4)+c(14)*ee(5)+c(19)*ee(6))
-     &           -beta(4)
-            stri(5)=c(11)*ee(1)+c(12)*ee(2)+c(13)*ee(3)+
-     &           2.d0*(c(14)*ee(4)+c(15)*ee(5)+c(20)*ee(6))
-     &           -beta(5)
-            stri(6)=c(16)*ee(1)+c(17)*ee(2)+c(18)*ee(3)+
-     &           2.d0*(c(19)*ee(4)+c(20)*ee(5)+c(21)*ee(6))
-     &           -beta(6)
-         else
-            stri(1)=c(1)*ee(1)+c(2)*ee(2)+c(4)*ee(3)-beta(1)
-            stri(2)=c(2)*ee(1)+c(3)*ee(2)+c(5)*ee(3)-beta(1)
-            stri(3)=c(4)*ee(1)+c(5)*ee(2)+c(6)*ee(3)-beta(1)
-            stri(4)=2.d0*c(7)*ee(4)-beta(4)
-            stri(5)=2.d0*c(8)*ee(5)-beta(5)
-            stri(6)=2.d0*c(9)*ee(6)-beta(6)
-         endif
+               do i=1,6
+                  ee(i)=emec(i)-ep(i)
+               enddo
 !     
-!        stress radius (only deviatoric part of stress enters)
+!     global trial stress tensor
 !     
-         strinv=(stri(1)+stri(2)+stri(3))/3.d0
-         do i=1,3
-            sg(i)=stri(i)-strinv
-         enddo
-         do i=4,6
-            sg(i)=stri(i)
-         enddo
-         dsg=dsqrt(sg(1)*sg(1)+sg(2)*sg(2)+sg(3)*sg(3)+
-     &        2.d0*(sg(4)*sg(4)+sg(5)*sg(5)+sg(6)*sg(6)))      
-!     
-!        evaluation of the yield surface
-!
-         depq=c0*dg
-         ec(1)=epqini 
-	ii=0
-c         svm=100. 
-c	if((iel.eq.1).and.(iint.eq.1)) then
-c	write(*,*) 'epq,epqini,decra(1) ',epq,epqini,decra(1)
-c	endif
-         do
-	ii=ii+1
-           call creep(decra,deswa,xstateini(1,iint,iel),serd,ec,
-     &     esw,p,svm,t1l,dtemp,predef,dpred,timeabq,dtime,
-     &     amat,leximp,lend,pgauss,nstate_,iel,iint,layer,kspt,
-     &     kstep,kinc)
-            dsvm=(depq-decra(1))/decra(5)
-c	if((iel.eq.1).and.(iint.eq.1)) then
-	if(ii.eq.100) then
-	 write(*,*) 'svm, dsvm ',
-     &          svm,t1l,decra(1),decra(5),depq,dtime
-	endif
-            if((dabs(dsvm).lt.1.d-5).or.
-     &         (dabs(dsvm).lt.1.d-6*svm).or.(ii.eq.100)) exit
-            svm=max(0.d0,svm+dsvm)
-         enddo
-!
-         htri=dsg-c0*svm
-!
-         do i=1,6
-            sg(i)=sg(i)/dsg
-         enddo
-!
-!        determining the residual matrix
-!
-         do i=1,6  
-            r(i)=ep0(i)-ep(i)+dg*sg(i)
-         enddo
-!     
-!           check convergence
-!     
-         if((dabs(htri).le.1.d-3).and.
-     &        ((iloop.gt.2).and.((dabs(ddg).lt.1.d-10).or.
-     &        (dabs(ddg).lt.1.d-3*dabs(dg))))) then
-            dd=0.d0
-            do i=1,6
-               dd=dd+r(i)*r(i)
-            enddo
-            dd=sqrt(dd)
-            if(dd.le.1.d-10) then
-               exit
-            endif
-         endif
-               if(iloop.gt.100) then
-                     write(*,*) 
-     &                    '*ERROR: no convergence in umat_aniso_creep'
-                     write(*,*) '        iloop>100'
-                     write(*,*) 'htri,dd ',htri,dd
-                     exit loop
+               if(iorien.gt.0) then
+                  stri(1)=c(1)*ee(1)+c(2)*ee(2)+c(4)*ee(3)+
+     &                 2.d0*(c(7)*ee(4)+c(11)*ee(5)+c(16)*ee(6))
+     &                 -beta(1)
+                  stri(2)=c(2)*ee(1)+c(3)*ee(2)+c(5)*ee(3)+
+     &                 2.d0*(c(8)*ee(4)+c(12)*ee(5)+c(17)*ee(6))
+     &                 -beta(2)
+                  stri(3)=c(4)*ee(1)+c(5)*ee(2)+c(6)*ee(3)+
+     &                 2.d0*(c(9)*ee(4)+c(13)*ee(5)+c(18)*ee(6))
+     &                 -beta(3)
+                  stri(4)=c(7)*ee(1)+c(8)*ee(2)+c(9)*ee(3)+
+     &                 2.d0*(c(10)*ee(4)+c(14)*ee(5)+c(19)*ee(6))
+     &                 -beta(4)
+                  stri(5)=c(11)*ee(1)+c(12)*ee(2)+c(13)*ee(3)+
+     &                 2.d0*(c(14)*ee(4)+c(15)*ee(5)+c(20)*ee(6))
+     &                 -beta(5)
+                  stri(6)=c(16)*ee(1)+c(17)*ee(2)+c(18)*ee(3)+
+     &                 2.d0*(c(19)*ee(4)+c(20)*ee(5)+c(21)*ee(6))
+     &                 -beta(6)
+               else
+                  stri(1)=c(1)*ee(1)+c(2)*ee(2)+c(4)*ee(3)-beta(1)
+                  stri(2)=c(2)*ee(1)+c(3)*ee(2)+c(5)*ee(3)-beta(1)
+                  stri(3)=c(4)*ee(1)+c(5)*ee(2)+c(6)*ee(3)-beta(1)
+                  stri(4)=2.d0*c(7)*ee(4)-beta(4)
+                  stri(5)=2.d0*c(8)*ee(5)-beta(5)
+                  stri(6)=2.d0*c(9)*ee(6)-beta(6)
                endif
-!
-!           determining b.x
-!
-         b=dg/dsg
-!
-         x(1)=b*(c1-sg(1)*sg(1))
-         x(2)=b*(c2-sg(1)*sg(2))
-         x(3)=b*(c1-sg(2)*sg(2))
-         x(4)=b*(c2-sg(1)*sg(3))
-         x(5)=b*(c2-sg(2)*sg(3))
-         x(6)=b*(c1-sg(3)*sg(3))
-         x(7)=-b*sg(1)*sg(4)
-         x(8)=-b*sg(2)*sg(4)
-         x(9)=-b*sg(3)*sg(4)
-         x(10)=b*(.5d0-sg(4)*sg(4))
-         x(11)=-b*sg(1)*sg(5)
-         x(12)=-b*sg(2)*sg(5)
-         x(13)=-b*sg(3)*sg(5)
-         x(14)=-b*sg(4)*sg(5)
-         x(15)=b*(.5d0-sg(5)*sg(5))
-         x(16)=-b*sg(1)*sg(6)
-         x(17)=-b*sg(2)*sg(6)
-         x(18)=-b*sg(3)*sg(6)
-         x(19)=-b*sg(4)*sg(6)
-         x(20)=-b*sg(5)*sg(6)
-         x(21)=b*(.5d0-sg(6)*sg(6))
-!
-!           filling the LHS
-!
-         if(iorien.gt.0) then
-            gl(1,1)=cm1(1)+x(1)
-            gl(1,2)=cm1(2)+x(2)
-            gl(2,2)=cm1(3)+x(3)
-            gl(1,3)=cm1(4)+x(4)
-            gl(2,3)=cm1(5)+x(5)
-            gl(3,3)=cm1(6)+x(6)
-            gl(1,4)=cm1(7)+x(7)
-            gl(2,4)=cm1(8)+x(8)
-            gl(3,4)=cm1(9)+x(9)
-            gl(4,4)=cm1(10)+x(10)
-            gl(1,5)=cm1(11)+x(11)
-            gl(2,5)=cm1(12)+x(12)
-            gl(3,5)=cm1(13)+x(13)
-            gl(4,5)=cm1(14)+x(14)
-            gl(5,5)=cm1(15)+x(15)
-            gl(1,6)=cm1(16)+x(16)
-            gl(2,6)=cm1(17)+x(17)
-            gl(3,6)=cm1(18)+x(18)
-            gl(4,6)=cm1(19)+x(19)
-            gl(5,6)=cm1(20)+x(20)
-            gl(6,6)=cm1(21)+x(21)
-            do i=1,6
-               do j=1,i-1
-                  gl(i,j)=gl(j,i)
-               enddo
-            enddo
-         else
-            gl(1,1)=cm1(1)+x(1)
-            gl(1,2)=cm1(2)+x(2)
-            gl(2,2)=cm1(3)+x(3)
-            gl(1,3)=cm1(4)+x(4)
-            gl(2,3)=cm1(5)+x(5)
-            gl(3,3)=cm1(6)+x(6)
-            gl(1,4)=x(7)
-            gl(2,4)=x(8)
-            gl(3,4)=x(9)
-            gl(4,4)=cm1(7)+x(10)
-            gl(1,5)=x(11)
-            gl(2,5)=x(12)
-            gl(3,5)=x(13)
-            gl(4,5)=x(14)
-            gl(5,5)=cm1(8)+x(15)
-            gl(1,6)=x(16)
-            gl(2,6)=x(17)
-            gl(3,6)=x(18)
-            gl(4,6)=x(19)
-            gl(5,6)=x(20)
-            gl(6,6)=cm1(9)+x(21)
-            do i=1,6
-               do j=1,i-1
-                  gl(i,j)=gl(j,i)
-               enddo
-            enddo
-         endif
-!
-!           filling the RHS
-!
-         do i=1,6
-            gr(i,1)=sg(i)
-         enddo
 !     
-!           solve gl:(P:n)=gr
-!
-         call dgesv(neq,nrhs,gl,lda,ipiv,gr,ldb,info)
-         if(info.ne.0) then
-            write(*,*) '*ERROR in sc.f: linear equation solver'
-            write(*,*) '       exited with error: info = ',info
-            stop
-         endif
-!
-         do i=1,6
-            Pn(i)=gr(i,1)
-         enddo
-!
-!           calculating the creep contribution
-!
-         gcreep=c1/decra(5)
-!
-!           calculating the correction to the consistency parameter
-!
-         gm1=Pn(1)*sg(1)+Pn(2)*sg(2)+Pn(3)*sg(3)+
-     &        (Pn(4)*sg(4)+Pn(5)*sg(5)+Pn(6)*sg(6))
-         gm1=1.d0/(gm1+gcreep)
-         fu=(htri-(Pn(1)*r(1)+Pn(2)*r(2)+Pn(3)*r(3)+
-     &        (Pn(4)*r(4)+Pn(5)*r(5)+Pn(6)*r(6))))
+!     stress radius (only deviatoric part of stress enters)
+!     
+               strinv=(stri(1)+stri(2)+stri(3))/3.d0
+               do i=1,3
+                  sg(i)=stri(i)-strinv
+               enddo
+               do i=4,6
+                  sg(i)=stri(i)
+               enddo
+               dsg=dsqrt(sg(1)*sg(1)+sg(2)*sg(2)+sg(3)*sg(3)+
+     &              2.d0*(sg(4)*sg(4)+sg(5)*sg(5)+sg(6)*sg(6)))      
+!     
+!     evaluation of the yield surface
+!     
+               ec(1)=epqini 
+               decra(1)=c0*dg
+               call creep(decra,deswa,xstateini(1,iint,iel),serd,ec,
+     &              esw,p,svm,t1l,dtemp,predef,dpred,timeabq,dtime,
+     &              amat,leximp,lend,pgauss,nstate_,iel,iint,layer,kspt,
+     &              kstep,kinc)
+               if(decra(1).gt.c0*dg) then
+c                  write(*,*) 'dg was changed from ',dg,
+c     &                    ' to ',decra(1)/c0
+                  dg=decra(1)/c0
+                  if(abs(iloop).gt.2) exitcriterion=.true.
+               endif
+!     
+!     needed in case decra(1) was changed in subroutine creep,
+!     for instance because it is too small
+!     
+               dg=decra(1)/c0
+!     
+               htri=dsg-c0*svm
+!     
+               do i=1,6
+                  sg(i)=sg(i)/dsg
+               enddo
+!     
+!     determining the residual matrix
+!     
+               do i=1,6  
+                  r(i)=ep0(i)-ep(i)+dg*sg(i)
+               enddo
+!     
+!     check convergence
+!     
+               if(exitcriterion) exit loop
+               if((dabs(htri).le.1.d-3).and.
+     &              ((iloop.gt.2).and.((dabs(ddg).lt.1.d-10).or.
+     &              (dabs(ddg).lt.1.d-3*dabs(dg))))) then
+                  dd=0.d0
+                  do i=1,6
+                     dd=dd+r(i)*r(i)
+                  enddo
+                  dd=sqrt(dd)
+                  if(dd.le.1.d-10) then
+                     exit loop
+                  endif
+               endif
+               if(iloop.gt.100) then
+                  write(*,*) 
+     &               '*ERROR: no convergence in umat_aniso_creep'
+                  write(*,*) '        iloop>100'
+                  write(*,*) 'htri,dd ',htri,dd
+                  exit loop
+               endif
+!     
+!     determining b.x
+!     
+               b=dg/dsg
+!     
+               x(1)=b*(c1-sg(1)*sg(1))
+               x(2)=b*(c2-sg(1)*sg(2))
+               x(3)=b*(c1-sg(2)*sg(2))
+               x(4)=b*(c2-sg(1)*sg(3))
+               x(5)=b*(c2-sg(2)*sg(3))
+               x(6)=b*(c1-sg(3)*sg(3))
+               x(7)=-b*sg(1)*sg(4)
+               x(8)=-b*sg(2)*sg(4)
+               x(9)=-b*sg(3)*sg(4)
+               x(10)=b*(.5d0-sg(4)*sg(4))
+               x(11)=-b*sg(1)*sg(5)
+               x(12)=-b*sg(2)*sg(5)
+               x(13)=-b*sg(3)*sg(5)
+               x(14)=-b*sg(4)*sg(5)
+               x(15)=b*(.5d0-sg(5)*sg(5))
+               x(16)=-b*sg(1)*sg(6)
+               x(17)=-b*sg(2)*sg(6)
+               x(18)=-b*sg(3)*sg(6)
+               x(19)=-b*sg(4)*sg(6)
+               x(20)=-b*sg(5)*sg(6)
+               x(21)=b*(.5d0-sg(6)*sg(6))
+!     
+!     filling the LHS
+!     
+               if(iorien.gt.0) then
+                  gl(1,1)=cm1(1)+x(1)
+                  gl(1,2)=cm1(2)+x(2)
+                  gl(2,2)=cm1(3)+x(3)
+                  gl(1,3)=cm1(4)+x(4)
+                  gl(2,3)=cm1(5)+x(5)
+                  gl(3,3)=cm1(6)+x(6)
+                  gl(1,4)=cm1(7)+x(7)
+                  gl(2,4)=cm1(8)+x(8)
+                  gl(3,4)=cm1(9)+x(9)
+                  gl(4,4)=cm1(10)+x(10)
+                  gl(1,5)=cm1(11)+x(11)
+                  gl(2,5)=cm1(12)+x(12)
+                  gl(3,5)=cm1(13)+x(13)
+                  gl(4,5)=cm1(14)+x(14)
+                  gl(5,5)=cm1(15)+x(15)
+                  gl(1,6)=cm1(16)+x(16)
+                  gl(2,6)=cm1(17)+x(17)
+                  gl(3,6)=cm1(18)+x(18)
+                  gl(4,6)=cm1(19)+x(19)
+                  gl(5,6)=cm1(20)+x(20)
+                  gl(6,6)=cm1(21)+x(21)
+                  do i=1,6
+                     do j=1,i-1
+                        gl(i,j)=gl(j,i)
+                     enddo
+                  enddo
+               else
+                  gl(1,1)=cm1(1)+x(1)
+                  gl(1,2)=cm1(2)+x(2)
+                  gl(2,2)=cm1(3)+x(3)
+                  gl(1,3)=cm1(4)+x(4)
+                  gl(2,3)=cm1(5)+x(5)
+                  gl(3,3)=cm1(6)+x(6)
+                  gl(1,4)=x(7)
+                  gl(2,4)=x(8)
+                  gl(3,4)=x(9)
+                  gl(4,4)=cm1(7)+x(10)
+                  gl(1,5)=x(11)
+                  gl(2,5)=x(12)
+                  gl(3,5)=x(13)
+                  gl(4,5)=x(14)
+                  gl(5,5)=cm1(8)+x(15)
+                  gl(1,6)=x(16)
+                  gl(2,6)=x(17)
+                  gl(3,6)=x(18)
+                  gl(4,6)=x(19)
+                  gl(5,6)=x(20)
+                  gl(6,6)=cm1(9)+x(21)
+                  do i=1,6
+                     do j=1,i-1
+                        gl(i,j)=gl(j,i)
+                     enddo
+                  enddo
+               endif
+!     
+!     filling the RHS
+!     
+               do i=1,6
+                  gr(i,1)=sg(i)
+               enddo
+!     
+!     solve gl:(P:n)=gr
+!     
+               call dgesv(neq,nrhs,gl,lda,ipiv,gr,ldb,info)
+               if(info.ne.0) then
+                  write(*,*) '*ERROR in sc.f: linear equation solver'
+                  write(*,*) '       exited with error: info = ',info
+                  stop
+               endif
+!     
+               do i=1,6
+                  Pn(i)=gr(i,1)
+               enddo
+!     
+!     calculating the creep contribution
+!     
+               gcreep=c1/decra(5)
+!     
+!     calculating the correction to the consistency parameter
+!     
+               gm1=Pn(1)*sg(1)+Pn(2)*sg(2)+Pn(3)*sg(3)+
+     &              (Pn(4)*sg(4)+Pn(5)*sg(5)+Pn(6)*sg(6))
+               gm1=1.d0/(gm1+gcreep)
+               fu=(htri-(Pn(1)*r(1)+Pn(2)*r(2)+Pn(3)*r(3)+
+     &              (Pn(4)*r(4)+Pn(5)*r(5)+Pn(6)*r(6))))
 !     
                if(iloop.eq.1) then
                   write(*,*) 'iloop,dg,fu ',iloop,dg,fu
@@ -956,19 +966,24 @@ c	if((iel.eq.1).and.(iint.eq.1)) then
                      enddo
                   else
                      write(*,*) 'iloop,dg,fu ',iloop,dg,fu
-                     dg1=dg
-                     fu1=fu
+c                     dg1=dg
+c                     fu1=fu
                      if(iloop.eq.2) then
+                        if(dabs(fu).gt.dabs(fu1)) exitcriterion=.true.
+                        dg1=dg
+                        fu1=fu
                         ddg=dg*9.d0
                         dg=dg*10.d0
                      else
+                        dg1=dg
+                        fu1=fu
                         dg=dg+ddg
                         iloop=iloop-1
                      endif
-                     if(dg.gt.1.d0) then
+                     if(dg.gt.10.1d0) then
                         write(*,*) 
-     &                   '*ERROR: no convergence in umat_aniso_creep'
-                        write(*,*) '        dg>1.'
+     &                    '*ERROR: no convergence in umat_aniso_creep'
+                        write(*,*) '        dg>10.'
                         stop
                      endif
 	      	     do i=1,6
@@ -1012,75 +1027,93 @@ c	if((iel.eq.1).and.(iint.eq.1)) then
                      iloop=iloop+1
                   endif
                endif
-!
-!        updating the residual matrix
-!
-         do i=1,6
-            r(i)=r(i)+ddg*sg(i)
-         enddo
-!
-!        update the plastic strain
-!
-         gr(1,1)=r(1)
-         gr(2,1)=r(2)
-         gr(3,1)=r(3)
-         gr(4,1)=r(4)
-         gr(5,1)=r(5)
-         gr(6,1)=r(6)
-!
-         call dgetrs('No transpose',neq,nrhs,gl,lda,ipiv,gr,ldb,info)
-         if(info.ne.0) then
-            write(*,*) '*ERROR in sc.f: linear equation solver'
-            write(*,*) '       exited with error: info = ',info
-            stop
-         endif
-!
-         if(iorien.gt.0) then
-            ep(1)=ep(1)+cm1(1)*gr(1,1)+cm1(2)*gr(2,1)+cm1(4)*gr(3,1)+
-     &           (cm1(7)*gr(4,1)+cm1(11)*gr(5,1)+cm1(16)*gr(6,1))
-            ep(2)=ep(2)+cm1(2)*gr(1,1)+cm1(3)*gr(2,1)+cm1(5)*gr(3,1)+
-     &           (cm1(8)*gr(4,1)+cm1(12)*gr(5,1)+cm1(17)*gr(6,1))
-            ep(3)=ep(3)+cm1(4)*gr(1,1)+cm1(5)*gr(2,1)+cm1(6)*gr(3,1)+
-     &           (cm1(9)*gr(4,1)+cm1(13)*gr(5,1)+cm1(18)*gr(6,1))
-            ep(4)=ep(4)+cm1(7)*gr(1,1)+cm1(8)*gr(2,1)+cm1(9)*gr(3,1)+
-     &           (cm1(10)*gr(4,1)+cm1(14)*gr(5,1)+cm1(19)*gr(6,1))
-            ep(5)=ep(5)+cm1(11)*gr(1,1)+cm1(12)*gr(2,1)+cm1(13)*gr(3,1)+
-     &           (cm1(14)*gr(4,1)+cm1(15)*gr(5,1)+cm1(20)*gr(6,1))
-            ep(6)=ep(6)+cm1(16)*gr(1,1)+cm1(17)*gr(2,1)+cm1(18)*gr(3,1)+
-     &           (cm1(19)*gr(4,1)+cm1(20)*gr(5,1)+cm1(21)*gr(6,1))
-         else
-            ep(1)=ep(1)+cm1(1)*gr(1,1)+cm1(2)*gr(2,1)+cm1(4)*gr(3,1)
-            ep(2)=ep(2)+cm1(2)*gr(1,1)+cm1(3)*gr(2,1)+cm1(5)*gr(3,1)
-            ep(3)=ep(3)+cm1(4)*gr(1,1)+cm1(5)*gr(2,1)+cm1(6)*gr(3,1)
-            ep(4)=ep(4)+cm1(7)*gr(4,1)
-            ep(5)=ep(5)+cm1(8)*gr(5,1)
-            ep(6)=ep(6)+cm1(9)*gr(6,1)
-         endif
-!
-!        update the consistency parameter
-!
-c         dg=dg+ddg
-!
-!        end of major loop
-!
+!     
+!     updating the residual matrix
+!     
+               do i=1,6
+                  r(i)=r(i)+ddg*sg(i)
+               enddo
+!     
+!     update the plastic strain
+!     
+               gr(1,1)=r(1)
+               gr(2,1)=r(2)
+               gr(3,1)=r(3)
+               gr(4,1)=r(4)
+               gr(5,1)=r(5)
+               gr(6,1)=r(6)
+!     
+               call dgetrs('No transpose',neq,nrhs,gl,lda,ipiv,gr,ldb,
+     &                 info)
+               if(info.ne.0) then
+                  write(*,*) '*ERROR in sc.f: linear equation solver'
+                  write(*,*) '       exited with error: info = ',info
+                  stop
+               endif
+!     
+               if(iorien.gt.0) then
+                  ep(1)=ep(1)+cm1(1)*gr(1,1)+cm1(2)*gr(2,1)+
+     &                 cm1(4)*gr(3,1)+
+     &                 (cm1(7)*gr(4,1)+cm1(11)*gr(5,1)+
+     &                 cm1(16)*gr(6,1))
+                  ep(2)=ep(2)+cm1(2)*gr(1,1)+cm1(3)*gr(2,1)+
+     &                 cm1(5)*gr(3,1)+
+     &                 (cm1(8)*gr(4,1)+cm1(12)*gr(5,1)+
+     &                 cm1(17)*gr(6,1))
+                  ep(3)=ep(3)+cm1(4)*gr(1,1)+cm1(5)*gr(2,1)
+     &                 +cm1(6)*gr(3,1)+
+     &                 (cm1(9)*gr(4,1)+cm1(13)*gr(5,1)+
+     &                 cm1(18)*gr(6,1))
+                  ep(4)=ep(4)+cm1(7)*gr(1,1)+cm1(8)*gr(2,1)+
+     &                 cm1(9)*gr(3,1)+
+     &                 (cm1(10)*gr(4,1)+cm1(14)*gr(5,1)+
+     &                 cm1(19)*gr(6,1))
+                  ep(5)=ep(5)+cm1(11)*gr(1,1)+cm1(12)*gr(2,1)+
+     &                 cm1(13)*gr(3,1)+
+     &                 (cm1(14)*gr(4,1)+cm1(15)*gr(5,1)+
+     &                 cm1(20)*gr(6,1))
+                  ep(6)=ep(6)+cm1(16)*gr(1,1)+cm1(17)*gr(2,1)+
+     &                 cm1(18)*gr(3,1)+
+     &                 (cm1(19)*gr(4,1)+cm1(20)*gr(5,1)+
+     &                 cm1(21)*gr(6,1))
+               else
+                  ep(1)=ep(1)+cm1(1)*gr(1,1)+cm1(2)*gr(2,1)+
+     &                  cm1(4)*gr(3,1)
+                  ep(2)=ep(2)+cm1(2)*gr(1,1)+cm1(3)*gr(2,1)+
+     &                  cm1(5)*gr(3,1)
+                  ep(3)=ep(3)+cm1(4)*gr(1,1)+cm1(5)*gr(2,1)+
+     &                  cm1(6)*gr(3,1)
+                  ep(4)=ep(4)+cm1(7)*gr(4,1)
+                  ep(5)=ep(5)+cm1(8)*gr(5,1)
+                  ep(6)=ep(6)+cm1(9)*gr(6,1)
+               endif
+!     
+!     end of major loop
+!     
             enddo
 !     
          endif
 !     
       enddo loop
-!
+!     
 !     storing the stress
-!
+!     
       do i=1,6
          stre(i)=stri(i)
       enddo
 !
+!     converting the stress into the material frame of
+!     reference
+!     
+c      cauchy=.true.
+c      call str2mat(stre,ckl,vj,cauchy)
+!     
 !     calculating the tangent stiffness matrix
-!      
+!     
       if(icmd.ne.3) then
-!
-!        determining p
-!
+!     
+!     determining p
+!     
          gr(1,1)=1.d0 
          gr(1,2)=0. 
          gr(2,2)=1.d0 
@@ -1137,7 +1170,12 @@ c         dg=dg+ddg
          stiff(19)=(gr(4,6)-gm1*Pn(4)*Pn(6))/4.d0
          stiff(20)=(gr(5,6)-gm1*Pn(5)*Pn(6))/4.d0
          stiff(21)=(gr(6,6)-gm1*Pn(6)*Pn(6))/4.d0
-!
+c!start
+c!     conversion of the stiffness matrix from spatial coordinates
+c!     coordinates into material coordinates
+c!     
+c         call stiff2mat(stiff,ckl,vj,cauchy)
+c!end
       endif
 !
 !     updating the state variables

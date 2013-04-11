@@ -71,7 +71,7 @@ c     &        (lakon(i)(7:7).ne.' ')) cycle
                   if(lakon(ielem)(7:7).eq.'L') then
                      newnode=knor(indexk+1)
                      do idir=0,3
-                        idof=7*(newnode-1)+idir
+                        idof=8*(newnode-1)+idir
                         call nident(ikmpc,idof,nmpc,id)
                         if((id.le.0).or.(ikmpc(id).ne.idof)) then
                            nmpc=nmpc+1
@@ -125,7 +125,7 @@ c     &        (lakon(i)(7:7).ne.' ')) cycle
 !
                      newnode=knor(indexk+1)
                      do idir=0,3
-                        idof=7*(newnode-1)+idir
+                        idof=8*(newnode-1)+idir
                         call nident(ikmpc,idof,nmpc,id)
                         if((id.le.0).or.(ikmpc(id).ne.idof)) then
                            nmpc=nmpc+1
@@ -182,7 +182,7 @@ c     &        (lakon(i)(7:7).ne.' ')) cycle
 !
                      newnode=knor(indexk+2)
                      do idir=0,2
-                        idof=7*(newnode-1)+idir
+                        idof=8*(newnode-1)+idir
                         call nident(ikmpc,idof,nmpc,id)
                         if((id.le.0).or.(ikmpc(id).ne.idof)) then
                            nmpc=nmpc+1

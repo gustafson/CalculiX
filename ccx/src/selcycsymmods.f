@@ -34,8 +34,7 @@
      &  iendset(*),ialset(*),id,ipompc(*),nodempc(3,*),nmpc,nmpc_,
      &  ikmpc(*),ilmpc(*),mpcfree,i1(2),i2(2),i3,i4,i5,j,k,
      &  mpcfreeold,idof,node,ileft,nset,irepeat,ipoinpc(0:*),
-     &  mpc,index,indexold,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  mcs,lprev,ij,nmethod
+     &  mpc,iline,ipol,inl,ipoinp(2,*),inp(3,*),mcs,lprev,ij,nmethod
 !
       real*8 coefmpc(*),csab(7),x1(2),x2(2),x3,x4,x5,dd,xn,yn,zn,
      &  cs(17,*)
@@ -117,27 +116,29 @@
                if(node.lt.0) then
                   node=-node
                   do k=1,3
-                     idof=7*(node-1)+k
+                     idof=8*(node-1)+k
                      call nident(ikmpc,idof,nmpc,id)
                      if(id.gt.0) then
                         if(ikmpc(id).eq.idof) then
                            write(*,*) 'removing MPC',node,k
                            mpc=ilmpc(id)
-                           index=ipompc(mpc)
-                           do
-                              indexold=index
-                              index=nodempc(3,index)
-                              if(index.eq.0) exit
-                           enddo
-                           nodempc(3,indexold)=mpcfree
-                           mpcfree=ipompc(mpc)
-                           do j=id,nmpc-1
-                              ikmpc(j)=ikmpc(j+1)
-                              ilmpc(j)=ilmpc(j+1)
-                           enddo
-                           ikmpc(nmpc)=0
-                           ilmpc(nmpc)=0
-                           nmpc=nmpc-1
+                           call mpcrem(mpc,mpcfree,nodempc,nmpc,ikmpc,
+     &                           ilmpc,labmpc,coefmpc,ipompc)
+c                           index=ipompc(mpc)
+c                           do
+c                              indexold=index
+c                              index=nodempc(3,index)
+c                              if(index.eq.0) exit
+c                           enddo
+c                           nodempc(3,indexold)=mpcfree
+c                           mpcfree=ipompc(mpc)
+c                           do j=id,nmpc-1
+c                              ikmpc(j)=ikmpc(j+1)
+c                              ilmpc(j)=ilmpc(j+1)
+c                           enddo
+c                           ikmpc(nmpc)=0
+c                           ilmpc(nmpc)=0
+c                           nmpc=nmpc-1
                         endif
                      endif
                   enddo
@@ -209,7 +210,7 @@
 !     axis
 !     
                   do k=1,2
-                     idof=7*(node-1)+i1(k)
+                     idof=8*(node-1)+i1(k)
                      call nident(ikmpc,idof,nmpc,id)
                      if(id.gt.0) then
                         if(ikmpc(id).eq.idof) then
@@ -284,7 +285,7 @@
 !     generating one MPC expressing that the nodes should
 !     not move along the axis
 !     
-                  idof=7*(node-1)+i3
+                  idof=8*(node-1)+i3
                   call nident(ikmpc,idof,nmpc,id)
                   if(id.gt.0) then
                      if(ikmpc(id).eq.idof) then
@@ -339,7 +340,7 @@
                   nodempc(3,mpcfreeold)=0
                else
                   do k=1,3
-                     idof=7*(node-1)+k
+                     idof=8*(node-1)+k
                      call nident(ikmpc,idof,nmpc,id)
                      if(id.gt.0) then
                         if(ikmpc(id).eq.idof) then
@@ -387,6 +388,10 @@
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
+!    
+c      do j=1,nmpc
+c         call writempc(ipompc,nodempc,coefmpc,labmpc,j)
+c      enddo
 !
       return
       end

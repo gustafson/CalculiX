@@ -25,7 +25,7 @@
 !
       character*81 cbody(*),elset,set(*)
 !
-      integer ibody(3,*),nbody,ipobody(2,*),i,j,l,istartset(*),
+      integer ibody(3,*),ipobody(2,*),i,j,l,istartset(*),nbody,
      &  iendset(*),ialset(*),kindofbodyforce,inewton,nset,istat,
      &  ifreebody,k
 !

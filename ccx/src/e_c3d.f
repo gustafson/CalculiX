@@ -23,7 +23,7 @@
      &  sideload,xload,nload,idist,sti,stx,iexpl,plicon,
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
      &  matname,mint_,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
-     &  ttime,time,istep,iinc,coriolis)
+     &  ttime,time,istep,iinc,coriolis,xloadold,reltime)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -58,24 +58,16 @@
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,2),
      &  s(60,60),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),ff(60),
      &  bf(3),q(3),shpj(4,20),elcon(0:ncmat_,ntmat_,*),
-     &  rhcon(0:1,ntmat_,*),xkl(3,3),eknlsign,
+     &  rhcon(0:1,ntmat_,*),xkl(3,3),eknlsign,reltime,
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
-     &  anisox(3,3,3,3),voldl(3,20),vo(3,3),
-     &  xl2(0:3,8),xsj2(3),shp2(4,8),vold(0:3,*),xload(2,*),v(3,3,3,3),
+     &  anisox(3,3,3,3),voldl(3,20),vo(3,3),xloadold(2,*),
+     &  xl2(0:3,8),xsj2(3),shp2(4,8),vold(0:4,*),xload(2,*),v(3,3,3,3),
      &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(60,60),
      &  sti(6,mint_,*),stx(6,mint_,*),s11,s22,s33,s12,s13,s23,s11b,
      &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,
      &  senergy,senergyb,rho,elas(21),summass,summ,
      &  sume,factorm,factore,alp,elconloc(21),eth(6),
      &  weight,pgauss(3),dmass,xl1(0:3,8),term
-!
-      real*8 gauss2d1(2,1),gauss2d2(2,4),gauss2d3(2,9),gauss2d4(2,1),
-     &  gauss2d5(2,3),gauss3d1(3,1),gauss3d2(3,8),gauss3d3(3,27),
-     &  gauss3d4(3,1),gauss3d5(3,4),gauss3d6(3,15),gauss3d7(3,2),
-     &  gauss3d8(3,9),gauss3d9(3,18),weight2d1(1),weight2d2(4),
-     &  weight2d3(9),weight2d4(1),weight2d5(3),weight3d1(1),
-     &  weight3d2(8),weight3d3(27),weight3d4(1),weight3d5(4),
-     &  weight3d6(15),weight3d7(2),weight3d8(9),weight3d9(18)
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mint_,*),plconloc(82),dtime,ttime,time,tvar(2),
@@ -287,6 +279,9 @@
                weight=weight3d1(kk)
             elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) 
      &              then
+c               xi=gauss3d2(1,kk)/dabs(gauss3d2(1,kk))
+c               et=gauss3d2(2,kk)/dabs(gauss3d2(2,kk))
+c               ze=gauss3d2(3,kk)/dabs(gauss3d2(3,kk))
                xi=gauss3d2(1,kk)
                et=gauss3d2(2,kk)
                ze=gauss3d2(3,kk)
@@ -319,7 +314,6 @@
             endif
          else
             if((lakonl(4:4).eq.'8').or.(lakonl(4:4).eq.'2')) then
-c               xi=gauss3d3(1,kk)+1.d0
                xi=gauss3d3(1,kk)
                et=gauss3d3(2,kk)
                ze=gauss3d3(3,kk)
@@ -347,6 +341,11 @@ c               xi=gauss3d3(1,kk)+1.d0
                call shape20h_pl(xi,et,ze,xl,xsj,shp,iflag)
             else
                call shape20h(xi,et,ze,xl,xsj,shp,iflag)
+c               write(*,*) 'new xi et ze', xi,et,ze,intscheme
+c               do i1=1,20
+c                  write(*,'(i5,4(1x,f5.1))') i1,shp(1,i1),shp(2,i1),
+c     &               shp(3,i1),shp(4,i1)
+c               enddo
             endif
          elseif(nope.eq.8) then
             call shape8h(xi,et,ze,xl,xsj,shp,iflag)
@@ -654,7 +653,7 @@ c            call orthotropic(elas,anisox)
 !               lumping purposes: only for explicit nonlinear
 !               dynamic calculations
 !
-               if(mass.and.(iexpl.eq.1)) then
+               if(mass.and.(iexpl.gt.1)) then
                   summass=summass+rho*xsj
                endif
 !
@@ -960,6 +959,8 @@ c
                    jltyp=jltyp+20
                    call dload(xload(1,id),istep,iinc,tvar,nelem,i,layer,
      &                  kspt,coords,jltyp,sideload(id))
+                   if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &                  (xload(1,id)-xloadold(1,id))*reltime
                 endif
 !
                 do k=1,nopes
@@ -1008,6 +1009,8 @@ c
                    jltyp=jltyp+20
                    call dload(xload(1,id),istep,iinc,tvar,nelem,i,layer,
      &                  kspt,coords,jltyp,sideload(id))
+                   if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &                  (xload(1,id)-xloadold(1,id))*reltime
                 endif
 !
 !               calculation of the deformation gradient
@@ -1132,7 +1135,7 @@ c                            endif
          endif
       endif
 !
-      if(mass.and.(iexpl.eq.1)) then
+      if(mass.and.(iexpl.gt.1)) then
 !
 !        scaling the diagonal terms of the mass matrix such that the total mass
 !        is right (LUMPING; for explicit dynamic calculations)

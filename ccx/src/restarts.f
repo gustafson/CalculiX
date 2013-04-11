@@ -71,7 +71,7 @@
      &  xnor(*),thickn(*),thicke(*),offset(*),
      &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),
      &  ttime,qaold(2),cs(17,*),physcon(3),
-     &  ctrl(26),fmpc(*),xbody(*),xbodyold(*)
+     &  ctrl(*),fmpc(*),xbody(*),xbodyold(*)
 !
       irestartread=0
       irestartstep=0

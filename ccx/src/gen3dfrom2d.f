@@ -29,7 +29,7 @@
 !
       implicit none
 !
-      logical axial
+      logical axial,fixed
 !
       character*1 type,typeboun(*)
       character*8 lakon(*)
@@ -45,9 +45,11 @@
      &  jmin,jmax
 ! 
       real*8 xnor(*),thicke(2,*),offset(2,*),trab(7,*),xboun(*),
-     &  coefmpc(*),co(3,*)
+     &  coefmpc(*),co(3,*),vdummy(0:4)
 !
       real*8 thicks(8),xnors(3,8),dc,ds,val,x,y
+!
+      fixed=.false.
 !
 !              check for axial elements  
 !
@@ -202,7 +204,8 @@
      &              iamplitude,nam,ipompc,nodempc,coefmpc,
      &              nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &              ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,
-     &              labmpc,type,typeboun,nmethod,iperturb)
+     &              labmpc,type,typeboun,nmethod,iperturb,
+     &              fixed,vdummy)
             endif
 !     
 !           specifying that the side planes do the same
@@ -226,7 +229,7 @@
                do idir=jmin,jmax
                   if((idir.eq.3).and.(lakon(i)(1:3).eq.'CPS'))
      &                 cycle
-                  idof=7*(newnode-1)+idir
+                  idof=8*(newnode-1)+idir
                   call nident(ikmpc,idof,nmpc,id)
                   if((id.le.0).or.(ikmpc(id).ne.idof)) then
                      nmpc=nmpc+1

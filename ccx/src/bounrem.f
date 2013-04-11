@@ -33,7 +33,7 @@
       real*8 xboun(*)
 !
       do i=is,ie
-         idof=7*(node-1)+i
+         idof=8*(node-1)+i
          call nident(ikboun,idof,nboun,id)
          if(id.gt.0) then
             if(ikboun(id).eq.idof) then

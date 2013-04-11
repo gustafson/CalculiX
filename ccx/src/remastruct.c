@@ -37,8 +37,8 @@ void remastruct(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
        matrix after a change in MPC's */
 
     int *nodempc=NULL,*npn=NULL,*adj=NULL,*xadj=NULL,*iw=NULL,*mmm=NULL,
-	*xnpn=NULL,*mast1=NULL,*ikcol=NULL,*ipointer=NULL,mpcend,mpcmult,
-        nsky,callfrommain,i,*irow=NULL;
+	*xnpn=NULL,*mast1=NULL,*ipointer=NULL,mpcend,mpcmult,
+        callfrommain,i,*irow=NULL;
 
     double *coefmpc=NULL,*f=NULL,*fext=NULL,*b=NULL,*aux2=NULL,
         *fini=NULL,*fextini=NULL,*adb=NULL,*aub=NULL;
@@ -55,7 +55,8 @@ void remastruct(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
     cascade(ipompc,&coefmpc,&nodempc,nmpc,
 	    mpcfree,nodeboun,ndirboun,nboun,ikmpc,
 	    ilmpc,ikboun,ilboun,&mpcend,&mpcmult,
-	    labmpc,nk,memmpc_,icascade,maxlenmpc,&callfrommain);
+	    labmpc,nk,memmpc_,icascade,maxlenmpc,
+            &callfrommain,iperturb);
 
     /* reallocating nodempc and coefmpc */
  
@@ -86,16 +87,15 @@ void remastruct(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
  
     if(nzs[1]<10) nzs[1]=10;   
     mast1=NNEW(int,nzs[1]);
-    ikcol=NNEW(int,4**nk);
     ipointer=NNEW(int,4**nk);
     RENEW(irow,int,nzs[1]);for(i=0;i<nzs[1];i++) irow[i]=0;
     
     mastruct(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,ipompc,
 	     nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,neq,nnn,
-	     ikmpc,ilmpc,ikcol,ipointer,&nsky,nzs,nmethod,ithermal,
+	     ikmpc,ilmpc,ipointer,nzs,nmethod,ithermal,
              ikboun,ilboun,iperturb);
 
-    free(ikcol);free(ipointer);free(mast1);
+    free(ipointer);free(mast1);
     RENEW(irow,int,nzs[1]);
     
     *nodempcp=nodempc;*coefmpcp=coefmpc;*irowp=irow;

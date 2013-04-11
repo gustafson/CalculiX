@@ -41,7 +41,8 @@
             node=nodempc(1,index1)
             if(node.le.iponoelmax) then
                if(rig(node).ne.0) then
-                  if(nodempc(2,index1).gt.3) then
+c                  if(nodempc(2,index1).gt.3) then
+                  if(nodempc(2,index1).gt.4) then
                      if(rig(node).lt.0) then
                         write(*,*) '*ERROR in gen3dmpc: in node ',node
                         write(*,*) '  a rotational DOF is constrained'
@@ -51,7 +52,8 @@
                         stop
                      endif
                      nodempc(1,index1)=rig(node)
-                     nodempc(2,index1)=nodempc(2,index1)-3
+c                     nodempc(2,index1)=nodempc(2,index1)-3
+                     nodempc(2,index1)=nodempc(2,index1)-4
                   endif
                else
                   index2=iponoel(node)
@@ -65,7 +67,7 @@
                   if(lakon(ielem)(7:7).eq.'L') then
                      newnode=knor(indexk+1)
                      idir=nodempc(2,index1)
-                     idof=7*(newnode-1)+idir
+                     idof=8*(newnode-1)+idir
                      call nident(ikmpc,idof,nmpc,id)
                      if((id.le.0).or.(ikmpc(id).ne.idof)) then
                         nmpc=nmpc+1
@@ -118,7 +120,7 @@
 !
                      newnode=knor(indexk+1)
                      idir=nodempc(2,index1)
-                     idof=7*(newnode-1)+idir
+                     idof=8*(newnode-1)+idir
                      call nident(ikmpc,idof,nmpc,id)
                      if((id.le.0).or.(ikmpc(id).ne.idof)) then
                         nmpc=nmpc+1
@@ -174,7 +176,7 @@
 !
                      newnode=knor(indexk+2)
                      idir=nodempc(2,index1)
-                     idof=7*(newnode-1)+idir
+                     idof=8*(newnode-1)+idir
                      call nident(ikmpc,idof,nmpc,id)
                      if(((id.le.0).or.(ikmpc(id).ne.idof)).and.
      &                    (idir.ne.3)) then

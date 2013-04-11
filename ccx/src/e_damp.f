@@ -22,7 +22,7 @@
      &  t0,t1,ithermal,vold,iperturb,nelemload,
      &  sideload,xload,nload,idist,sti,stx,iexpl,plicon,
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
-     &  matname,mint_,ncmat_,ttime,time,istep,iinc)
+     &  matname,mint_,ncmat_,ttime,time,istep,iinc,nmethod)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -39,21 +39,18 @@
      &  ithermal,iperturb,nload,idist,i,j,i1,i2,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(*),ielorien(*),
      &  ntmat_,nope,norien,iexpl,kode,imat,mint_,ncmat_,
-     &  istep,iinc
+     &  istep,iinc,nmethod
 !
       integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 co(3,*),xl(3,20),
      &  s(60,60),p1(3),p2(3),bodyfx(3),ff(60),elcon(0:ncmat_,ntmat_,*),
      &  rhcon(0:1,ntmat_,*),alcon(0:6,ntmat_,*),alzero(*),orab(7,*),
-     &  t0(*),t1(*),voldl(3,20),vold(0:3,*),xload(2,*),omx,sm(60,60),
+     &  t0(*),t1(*),voldl(3,20),vold(0:4,*),xload(2,*),omx,sm(60,60),
      &  sti(6,mint_,*),stx(6,mint_,*),t0l,t1l,elas(21),elconloc(21)
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
-     &  xstiff(27,mint_,*),dtime,ttime,time,tvar(2)
-!
-      tvar(1)=time
-      tvar(2)=ttime+dtime
+     &  xstiff(27,mint_,*),dtime,ttime,time
 !
       imat=ielmat(nelem)
 !
@@ -101,7 +98,7 @@
          endif
          call dashdamp(xl,elas,konl,voldl,s,imat,elcon,nelcon,
      &      ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,plicon,
-     &      nplicon,npmat_,iperturb)
+     &      nplicon,npmat_,iperturb,time,nmethod)
          return
       return
       end

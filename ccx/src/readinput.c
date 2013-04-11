@@ -114,8 +114,20 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
 		      buff[j]=toupper(buff[j]);
 		  }
 		  if(strcmp1(&buff[0],"*VIEWFACTOR,READ,INPUT=")!=0){
-		      for(j=23;j<k;j++){
-			  buff[j]=toupper(buff[j]);
+		      if(k<25){
+			  for(j=23;j<k;j++){
+			      buff[j]=toupper(buff[j]);
+			  }
+		      }
+		      else{
+			  for(j=23;j<25;j++){
+			      buff[j]=toupper(buff[j]);
+			  }
+			  if(strcmp1(&buff[0],"*VIEWFACTOR,WRITE,OUTPUT=")!=0){
+			      for(j=25;j<k;j++){
+				  buff[j]=toupper(buff[j]);
+			      }
+			  }
 		      }
 		  }
 	      }
@@ -201,12 +213,14 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
       }
       else if((strcmp1(&buff[0],"*NODE")==0)&&
 	      (strcmp1(&buff[0],"*NODEPRINT")!=0)&&
+	      (strcmp1(&buff[0],"*NODEOUTPUT")!=0)&&
 	      (strcmp1(&buff[0],"*NODEFILE")!=0)){
         (*nset)++;
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"NODE",
                           nline,&ikey));
       }
-      else if(strcmp1(&buff[0],"*ELEMENT")==0){
+      else if((strcmp1(&buff[0],"*ELEMENT")==0)&&
+              (strcmp1(&buff[0],"*ELEMENTOUTPUT")!=0)){
         (*nset)++;
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"ELEMENT",
                           nline,&ikey));
@@ -320,6 +334,8 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
 	}else if(strcmp1(&buff[0],"*HEATTRANSFER")==0){
 	    if(ithermal[1]<2) ithermal[1]=ithermal[1]+2;
 	}else if(strcmp1(&buff[0],"*COUPLEDTEMPERATURE-DISPLACEMENT")==0){
+	    ithermal[1]=3;
+	}else if(strcmp1(&buff[0],"*UNCOUPLEDTEMPERATURE-DISPLACEMENT")==0){
 	    ithermal[1]=3;
 	}
       }

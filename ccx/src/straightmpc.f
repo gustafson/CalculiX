@@ -62,7 +62,7 @@
       endif
       do j=1,3
          if(j.eq.jmax) cycle
-         idof=7*(node-1)+j
+         idof=8*(node-1)+j
          call nident(ikmpc,idof,nmpc,id)
          if(id.gt.0) then
             if(ikmpc(id).eq.idof) then
@@ -112,7 +112,7 @@
          mpcfreeold=mpcfree
          mpcfree=nodempc(3,mpcfree)
          nodempc(3,mpcfreeold)=0
-         idof=7*(nk-1)+j
+         idof=8*(nk-1)+j
          call nident(ikboun,idof,nboun,id)
          nboun=nboun+1
          if(nboun.gt.nboun_) then

@@ -43,7 +43,7 @@
       implicit none
 !
       integer msecpt,kstep,kinc,node 
-      real*8 flux(msecpt),time(2),coords(3),vold(0:3,*)
+      real*8 flux(msecpt),time(2),coords(3),vold(0:4,*)
 !
       flux(1)=10.d0
 !

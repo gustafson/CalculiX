@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine dflux(flux,sol,kstep,kinc,time,noel,npt,coords,
-     &     jltyp,temp,press,loadtype,vold)
+     &     jltyp,temp,press,loadtype,area,vold)
 !
 !     user subroutine dflux
 !
@@ -33,6 +33,7 @@
 !     npt                integration point number
 !     coords(1..3)       global coordinates of the integration point
 !     jltyp              loading face kode:
+!                        1  = body flux
 !                        11 = face 1 
 !                        12 = face 2 
 !                        13 = face 3 
@@ -42,6 +43,10 @@
 !     temp               currently not used
 !     press              currently not used
 !     loadtype           load type label
+!     area               for surface flux: area covered by the
+!                            integration point
+!                        for body flux: volume covered by the
+!                            integration point
 !     vold(0..3,1..nk)   solution field in all nodes
 !                        0: temperature
 !                        1: displacement in global x-direction
@@ -57,7 +62,8 @@
 !
       character*20 loadtype
       integer kstep,kinc,noel,npt,jltyp
-      real*8 flux(2),time(2),coords(3),sol,temp,press,vold(0:3,*)
+      real*8 flux(2),time(2),coords(3),sol,temp,press,vold(0:4,*),
+     &  area
 !
 c      flux(1)=-100.d0*coords(2)
       flux(1)=-100.d0

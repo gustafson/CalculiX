@@ -36,7 +36,7 @@
          call pk_cdc_cl3b(lqd,rqd,reynolds,p2p1,beta,kappa,cdc_cl3b)
          cdc_cl3=cdc_cl3b
       else 
-         call pk_cdc_cl3d(lqd,rqd,reynolds,p2p1,beta,kappa,cdc_cl3d)
+         call pk_cdc_cl3d(lqd,rqd,reynolds,p2p1,beta,cdc_cl3d)
          cdc_cl3=cdc_cl3d
 !     
       endif

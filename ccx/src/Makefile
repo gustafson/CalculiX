@@ -1,8 +1,9 @@
+
 CFLAGS = -Wall -O  -I ../../../SPOOLES.2.2 -DARCH="Linux" -DSPOOLES -DARPACK -DMATRIXSTORAGE
 FFLAGS = -Wall -O 
 
 CC=cc
-FC=g77
+FC=gfortran
 
 .c.o :
 	$(CC) $(CFLAGS) -c $<
@@ -14,6 +15,7 @@ absolute_relative.f \
 add_bo_st.f \
 add_pr.f \
 add_sm_ei.f \
+add_sm_fl.f \
 add_sm_st.f \
 add_sm_st_as.f \
 allocation.f \
@@ -22,6 +24,7 @@ amplitudes.f \
 angsum.f \
 anisonl.f \
 anisotropic.f \
+applyboun.f \
 attach.f \
 beamsections.f \
 bodyadd.f \
@@ -30,6 +33,7 @@ bounadd.f \
 boundaries.f \
 bounrem.f \
 buckles.f \
+calcener.f \
 calinput.f \
 carbon_seal.f \
 cd_bleedtapping.f \
@@ -56,8 +60,12 @@ characteristic.f \
 checktime.f \
 chksurf.f \
 cident.f \
+cident20.f \
 cloads.f \
+closefile.f \
+compdt.f \
 conductivities.f \
+contactdampings.f \
 contactpairs.f \
 controlss.f \
 couptempdisps.f \
@@ -69,9 +77,7 @@ cycsymmods.f \
 dashdamp.f \
 dashforc.f \
 dashpots.f \
-dasol.f \
 datest.f \
-datri.f \
 ddeabm.f \
 ddebdf.f \
 dderkf.f \
@@ -96,9 +102,10 @@ dqag.f \
 dredu.f \
 drfftf.f \
 dsort.f \
-dspgv.f \
 dynamics.f \
 dynamic_viscosity.f \
+dynamic_viscosity_oil.f \
+dynresults.f \
 elastics.f \
 elements.f \
 elprints.f \
@@ -110,9 +117,17 @@ estimator.f \
 expansions.f \
 extrapolate.f \
 e_c3d.f \
-e_c3d_th.f \
+e_c3d_krhs.f \
+e_c3d_plhs.f \
+e_c3d_prhs.f \
 e_c3d_rhs.f \
 e_c3d_rhs_th.f \
+e_c3d_th.f \
+e_c3d_tlhs.f \
+e_c3d_trhs.f \
+e_c3d_vlhs.f \
+e_c3d_v1rhs.f \
+e_c3d_v2rhs.f \
 e_damp.f \
 fcrit.f \
 fillknotmpc.f \
@@ -121,19 +136,22 @@ films.f \
 finpro.f \
 flowresult.f \
 fluidconstants.f \
+fluidextrapolate.f \
 fluidsections.f \
 flux.f \
 forcadd.f \
 frd.f \
-frdclose.f \
+frddummy.f \
 frdphase.f \
 frequencies.f \
 friction_coefficient.f \
+frictions.f \
 fsub.f \
 fsuper.f \
 gaps.f \
 gasmechbc.f \
 gaspipe.f \
+gaspipe_fanno.f \
 gen3dboun.f \
 gen3dconnect.f \
 gen3delem.f \
@@ -160,11 +178,13 @@ ident2.f \
 identamta.f \
 includefilename.f \
 incplas.f \
+initialcfd.f \
 initialconditions.f \
 initialgas.f \
 inputerror.f \
 inputwarning.f \
 isorti.f \
+isortic.f \
 isortid.f \
 isortiddc1.f \
 isortiddc2.f \
@@ -187,21 +207,34 @@ loadaddp.f \
 loadaddt.f \
 mafillgas.f \
 mafilldm.f \
+mafillklhs.f \
+mafillkrhs.f \
+mafillplhs.f \
+mafillprhs.f \
 mafillsm.f \
 mafillsmcs.f \
 mafillsmas.f \
+mafilltlhs.f \
+mafilltrhs.f \
+mafillvlhs.f \
+mafillv1rhs.f \
+mafillv2rhs.f \
 map3dto1d2d.f \
+materialdata_fl.f \
 materialdata_me.f \
 materialdata_sp.f \
 materialdata_tg.f \
+materialdata_tg_sec.f \
 materialdata_th.f \
 materials.f \
 mechmodel.f \
 modaldampings.f \
 modaldynamics.f \
 moehring.f \
+mpcrem.f \
 mpcs.f \
 mult.f \
+multistages.f \
 nident.f \
 nident2.f \
 near2d.f \
@@ -242,11 +275,15 @@ pk_cdi_rl.f \
 pk_cdi_se.f \
 pk_y0_yg.f \
 planempc.f \
+plane3.f \
+plane4.f \
 plastics.f \
 plcopy.f \
 plinterpol.f \
 plmix.f \
 polynom.f \
+precfd.f \
+pretensionsections.f \
 printout.f \
 printoutelem.f \
 printoutint.f \
@@ -269,6 +306,11 @@ restartwrite.f \
 restrictor.f \
 resultgas.f \
 results.f \
+resultsk.f \
+resultsp.f \
+resultst.f \
+resultsv1.f \
+resultsv2.f \
 rhs.f \
 rigidbodies.f \
 rigidmpc.f \
@@ -276,6 +318,7 @@ rootls.f \
 rs.f \
 rubber.f \
 saxpb.f \
+sdvini.f \
 selcycsymmods.f \
 shape3tri.f \
 shape4q.f \
@@ -293,6 +336,7 @@ shellsections.f \
 sigini.f \
 skip.f \
 solidsections.f \
+solveeq.f \
 spcmatch.f \
 specificgasconstants.f \
 specificheats.f \
@@ -326,6 +370,8 @@ triangucont.f \
 triangulate.f \
 ts_calc.f \
 twodint.f \
+two_phase_flow.f \
+uamplitude.f \
 uboun.f \
 ucreep.f \
 uenvtemp.f \
@@ -348,7 +394,9 @@ umpc_dist.f \
 umpc_gap.f \
 umpc_mean_rot.f \
 umpc_user.f \
+uncouptempdisps.f \
 uout.f \
+updatecfd.f \
 updatecont.f \
 usermaterials.f \
 usermpc.f \
@@ -357,6 +405,7 @@ viewfactors.f \
 viscos.f \
 vortex.f \
 wcoef.f \
+writeboun.f \
 writebv.f \
 writeev.f \
 writeevcs.f \
@@ -364,6 +413,7 @@ writehe.f \
 writeim.f \
 writeinput.f \
 writempc.f \
+writepf.f \
 writere.f \
 writesummary.f \
 zeta_calc.f
@@ -376,6 +426,8 @@ calcresidual.c \
 cascade.c \
 checkconvergence.c \
 checkconvgas.c \
+checkinclength.c \
+compfluid.c \
 contact.c \
 dyna.c \
 dynboun.c \
@@ -385,6 +437,7 @@ inicont.c \
 insert.c \
 mastruct.c \
 mastructcs.c \
+mastructf.c \
 matrixstorage.c \
 nonlingeo.c \
 pcgsolver.c \
@@ -403,7 +456,7 @@ strcpy1.c \
 tau.c \
 u_calloc.c
 
-SCCXMAIN = ccx_1.7.c
+SCCXMAIN = ccx_1.8.c
 
 OCCXF = $(SCCXF:.f=.o)
 OCCXC = $(SCCXC:.c=.o)
@@ -416,9 +469,9 @@ LIBS = \
 	../../../ARPACK/libarpack_INTEL.a \
        -lm
 
-ccx_1.7: $(OCCXMAIN) ccx_1.7.a  $(LIBS)
-	./date.pl; $(CC) $(CFLAGS) -c ccx_1.7.c; g77 -Wall -O -o $@ $(OCCXMAIN) ccx_1.7.a  $(LIBS)
+ccx_1.8: $(OCCXMAIN) ccx_1.8.a  $(LIBS)
+	./date.pl; $(CC) $(CFLAGS) -c ccx_1.8.c; gfortran -Wall -O -o $@ $(OCCXMAIN) ccx_1.8.a  $(LIBS)
 
-ccx_1.7.a: $(OCCXF) $(OCCXC)
+ccx_1.8.a: $(OCCXF) $(OCCXC)
 	ar vr $@ $?
                                                                                

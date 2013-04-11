@@ -17,10 +17,14 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine allocont(ncont,ntie,tieset,nset,set,istartset,
-     &  iendset,ialset,lakon,ncone)
+     &  iendset,ialset,lakon,ncone,tietol,ismallsliding)
 !
 !     counting the number of triangles needed for the 
 !     triangulation of the contact master surfaces
+!
+!     ismallsliding = 0: large sliding
+!                   = 1: small sliding
+!                   = 2: in-face sliding
 !
       implicit none
 !
@@ -28,7 +32,9 @@
       character*81 tieset(3,*),mastset,set(*),slavset
 !
       integer ncont,ntie,i,j,k,nset,istartset(*),iendset(*),ialset(*),
-     &  imast,nelem,jface,ncone,islav
+     &  imast,nelem,jface,ncone,islav,ismallsliding
+!
+      real*8 tietol(*)
 !
 !     number of master triangles
 !
@@ -43,6 +49,11 @@
 !        check for contact conditions
 !
          if(tieset(1,i)(81:81).eq.'C') then
+            if(tietol(i).lt.-1.5d0) then
+               ismallsliding=2
+            elseif(tietol(i).lt.-0.5d0) then
+               ismallsliding=max(ismallsliding,1)
+            endif
             mastset=tieset(3,i)
 !
 !           determining the master surface

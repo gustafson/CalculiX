@@ -16,7 +16,9 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine storeresidual(nactdof,b,fn,filab,ithermal,nk)
+      subroutine storeresidual(nactdof,b,fn,filab,ithermal,nk,sti,stn,
+     &  ipkon,inum,kon,lakon,ne,mint_,orab,ielorien,co,nelemload,
+     &  nload,nodeboun,nboun,itg,ntg,vold,ndirboun)
 !
 !     This routine is called in case of divergence:
 !     stores the residual forces in fn and changes the
@@ -27,11 +29,18 @@
 !
       implicit none
 !
+      logical fluid
+!
+      character*1 cflag
       character*6 filab(*)
+      character*8 lakon(*)
 !
-      integer nactdof(0:3,*),ithermal,i,j,nk
+      integer nactdof(0:3,*),ithermal,i,j,nk,nfield,ndim,iorienglob,
+     &  nelemload(2,*),nload,nodeboun(*),nboun,ipkon(*),inum(*),kon(*),
+     &  ne,mint_,ielorien,itg(*),ntg,ndirboun(*)
 !
-      real*8 b(*),fn(0:3,*)
+      real*8 b(*),fn(0:3,*),sti(6,mint_,*),stn(6,*),orab(7,*),co(3,*),
+     &  vold(0:4,*)
 !
 !     storing the residual forces in field fn
 !
@@ -47,29 +56,63 @@
 !
 !     adapting the storage labels
 !
-      if(ithermal.ne.2) then
-         filab(1)='U     '
-      else
-         filab(1)='      '
-      endif
-      if(ithermal.gt.1) then
-         filab(2)='NT    '
-      else
-         filab(2)='      '
-      endif
-      do i=3,10
-         filab(i)='      '
+      do i=1,17
+         filab(i)(1:4)='    '
       enddo
+!
       if(ithermal.ne.2) then
-         filab(13)='RFRES '
+         filab(1)(1:4)='U   '
+         filab(5)(1:4)='RF  '
       else
-         filab(13)='      '
+         filab(1)(1:4)='    '
+         filab(5)(1:4)='    '
       endif
+!
       if(ithermal.gt.1) then
-         filab(14)='RFLRES'
+         filab(2)(1:4)='NT  '
+         filab(10)(1:4)='RFL '
+         filab(14)(1:4)='TT  '
+         filab(15)(1:4)='MF  '
+         filab(16)(1:4)='TP  '
+         filab(17)(1:4)='ST  '
       else
-         filab(14)='      '
-      endif      
+         filab(2)(1:4)='    '
+         filab(10)(1:4)='    '
+         filab(14)(1:4)='    '
+         filab(15)(1:4)='    '
+         filab(16)(1:4)='    '
+         filab(17)(1:4)='    '
+      endif
+!
+!     calculating inum
+!
+      fluid=.false.
+      nfield=0
+      ndim=0
+      iorienglob=0
+      cflag=filab(1)(5:5)
+      call extrapolate(sti,stn,ipkon,inum,kon,lakon,nfield,nk,
+     &     ne,mint_,ndim,orab,ielorien,co,iorienglob,cflag,
+     &     nelemload,nload,nodeboun,nboun,fluid,ndirboun)
+!
+      if(fluid) then
+         call fluidextrapolate(vold,ipkon,inum,kon,lakon,ne)
+      endif
+!
+!     interpolation for 1d/2d elements
+!
+      if(filab(1)(5:5).eq.'I') then
+         nfield=5
+         cflag=filab(1)(5:5)
+         call map3dto1d2d(vold,ipkon,inum,kon,lakon,nfield,nk,
+     &        ne,cflag,co)
+      endif
+!
+!     marking gas nodes by multiplying inum by -1
+!
+      do i=1,ntg
+         inum(itg(i))=-inum(itg(i))
+      enddo
 !
       return
       end

@@ -28,6 +28,12 @@
 !     
       real*8 t,s,hst,x,p1,p2,cd_cdrzcdlab
 !
+      t=t
+      s=s
+      hst=hst
+      x=x 
+      p1=p1
+      p2=p2
       cd_cdrzcdlab=1.d0
 !
       write(*,*) '*WARNING while using subroutine cd_lab_cdrzcdlab.f'

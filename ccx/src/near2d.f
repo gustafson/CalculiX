@@ -36,6 +36,7 @@ c
       if(k.gt.n) then
          write(*,*) '*ERROR in near2d: neighbors requested'
          write(*,*) '       supersedes number of nodes'
+c         write(*,*) k,n
          stop
       endif
 c
@@ -149,7 +150,7 @@ C
          RR=SQRT(XR*XR+AAN*AAN)
 C
          IF(RR.GE.R(k)) GO TO 7
-         IT=IZ+1
+         IT=IZ+k
          DO 11 J=1,IT
             IF(NY(M).EQ.NI(J)) GO TO 7
  11      CONTINUE
@@ -163,6 +164,7 @@ C
          AANW=SQRT(AAN*AAN+AAW*AAW)
          AAMIN=MIN(AANO,AASO,AASW,AANW)
 C
+c         write(*,*) iz+k,(ni(j),j=1,iz+k)
          IF(IZ.NE.0) THEN
             IZ=IZ+k
             CALL dsort(R,NI,IZ,kflag)
@@ -183,6 +185,8 @@ C
 C
       do i=1,k
           node(i)=ni(i)
+c          write(*,*) 'near2d ',i,node(i),r(i),
+c     &         xo(ni(i)),yo(ni(i)),xp,yp
       enddo
 c
       RETURN

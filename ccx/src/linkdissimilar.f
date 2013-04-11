@@ -16,10 +16,10 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine linkdissimilar(co,nk,ics,csab,xn,yn,zn,ncsnodes,
+      subroutine linkdissimilar(co,nk,ics,csab,ncsnodes,
      &  rcscg,rcs0cg,zcscg,zcs0cg,nrcg,nzcg,jcs,kontri,straight,
      &  lcs,nodef,ratio,nterms,rp,zp,netri,
-     &  nodesonaxis,nodel,noder,ifacetet,inodface)
+     &  nodesonaxis,nodei,ifacetet,inodface,noded,tolloc,xn,yn,zn)
 !
 !     links dissimilar meshes for cyclic symmetry
 !
@@ -27,15 +27,13 @@
 !
       logical nodesonaxis
 !
-      integer nneigh,jcs(*),j,nk,ics(*),nodef(8),noder,nodel,
-     &  nrcg(*),ncsnodes,nzcg(*),nterms,
-     &  ineigh(20),itrimax,lcs(*),i,
-     &  netri,kontri(3,*),itri,ifirst,ilast,
-     &  ifacetet(*),inodface(*)
+      integer nneigh,jcs(*),j,nk,ics(*),nodef(8),nodei,nrcg(*),ncsnodes,
+     &  nzcg(*),nterms,ineigh(20),itrimax,lcs(*),i,netri,kontri(3,*),
+     &  itri,ifirst,ilast,ifacetet(*),inodface(*),noded
 !
-      real*8 co(3,*),csab(7),xn,yn,zn,rp,zp,xi,et,
+      real*8 co(3,*),csab(7),rp,zp,xi,et,xn,yn,zn,rp1,zp1,rp2,zp2,
      &  straight(9,*),zcscg(*),rcscg(*),zcs0cg(*),rcs0cg(*),distmax,
-     &  dist,ratio(8),pneigh(0:3,8),pnode(3)
+     &  dist,ratio(8),pneigh(0:3,8),pnode(3),tolloc,xap,yap,zap
 !
 !     finding for each node on the right side a corresponding
 !     triangle
@@ -88,16 +86,42 @@
          enddo
       enddo
       do j=1,3
-         pnode(j)=co(j,noder)
+         pnode(j)=co(j,nodei)
       enddo
+!
+      xap=pnode(1)-csab(1)
+      yap=pnode(2)-csab(2)
+      zap=pnode(3)-csab(3)
+!     
+      zp1=xap*xn+yap*yn+zap*zn
+      rp1=dsqrt((xap-zp1*xn)**2+(yap-zp1*yn)**2+(zap-zp1*zn)**2)
 !
       call attach(pneigh,pnode,nterms,ratio,dist,xi,et)
 !
+      xap=pnode(1)-csab(1)
+      yap=pnode(2)-csab(2)
+      zap=pnode(3)-csab(3)
+!     
+      zp2=xap*xn+yap*yn+zap*zn
+      rp2=dsqrt((xap-zp2*xn)**2+(yap-zp2*yn)**2+(zap-zp2*zn)**2)
+!
       do j=1,3
-         co(j,noder)=pnode(j)
+         co(j,nodei)=pnode(j)
       enddo
 !
-      write(*,*) 'distance moved: ',dsqrt(dist)
+!     check whether this distance is inferior to the tolerance
+!
+      dist=dsqrt((rp2-rp1)**2+(zp2-zp1)**2)
+c      write(*,*) '       distance: ',dist
+      if(dist.ge.tolloc) then
+         write(*,*) '*ERROR in linkdissimilar: no suitable partner'
+         write(*,*) '       face found for node', noded,'.'
+         write(*,*) '       Nodes belonging to the best partner face:'
+         write(*,*) (nodef(i),i=1,nterms)
+         write(*,*) '       distance: ',dist
+         write(*,*) 
+         stop
+      endif
 !     
       return
       end

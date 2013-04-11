@@ -68,7 +68,7 @@
      &  vold(*),xbounold(*),xforcold(*),xloadold(*),t1old(*),eme(*),
      &  xnor(*),thickn(*),thicke(*),offset(*),
      &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),prestr(*),ttime,
-     &  qaold(2),physcon(3),ctrl(26),cs(17,*),fmpc(*),xbody(*),
+     &  qaold(2),physcon(3),ctrl(*),cs(17,*),fmpc(*),xbody(*),
      &  xbodyold(*)
 !
       ipos=index(jobnamec(1),char(0))
@@ -327,9 +327,9 @@
       read(15)(matname(i),i=1,nmat)
       read(15)(ielmat(i),i=1,ne)
 !
-!     displacement, velocity and acceleration
+!     temperature, displacement, static pressure, velocity and acceleration
 !
-      read(15)(vold(i),i=1,4*nk)
+      read(15)(vold(i),i=1,5*nk)
       if((nmethod.eq.4).or.((nmethod.eq.1).and.(iperturb.ge.2))) then
          read(15)(veold(i),i=1,4*nk)
       endif
@@ -379,7 +379,7 @@
 !
 !     control parameters
 !
-      read(15) (ctrl(i),i=1,26)
+      read(15) (ctrl(i),i=1,27)
       read(15) (qaold(i),i=1,2)
       read(15) output
       read(15) ttime

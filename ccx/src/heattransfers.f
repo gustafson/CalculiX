@@ -18,12 +18,11 @@
 !
       subroutine heattransfers(inpc,textpart,nmethod,iperturb,isolver,
      &  istep,istat,n,tinc,tper,tmin,tmax,idrct,ithermal,iline,ipol,
-     &  inl,ipoinp,inp,alpha,mei,fei,ipoinpc)
+     &  inl,ipoinp,inp,alpha,mei,fei,ipoinpc,ctrl)
 !
 !     reading the input deck: *HEAT TRANSFER
 !
 !     isolver=0: SPOOLES
-!             1: profile solver
 !             2: iterative solver with diagonal scaling
 !             3: iterative solver with Cholesky preconditioning
 !             4: sgi solver
@@ -37,11 +36,10 @@
 !
       integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,nev,
      &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),mei(4),ncv,mxiter,
-     &  ipoinpc(0:*)
+     &  ipoinpc(0:*),idirect
 !
-      real*8 tinc,tper,tmin,tmax,alpha,fei(3),tol,fmin,fmax
+      real*8 tinc,tper,tmin,tmax,alpha,fei(3),tol,fmin,fmax,ctrl(*)
 !
-      idrct=0
       tmin=0.d0
       tmax=0.d0
       nmethod=4
@@ -66,8 +64,6 @@
 !
       if(isolver.eq.0) then
          solver(1:7)='SPOOLES'
-      elseif(isolver.eq.1) then
-         solver(1:7)='PROFILE'
       elseif(isolver.eq.2) then
          solver(1:16)='ITERATIVESCALING'
       elseif(isolver.eq.3) then
@@ -78,11 +74,15 @@
          solver(1:5)='TAUCS'
       endif
 !
+      idirect=2
       do i=2,n
          if(textpart(i)(1:7).eq.'SOLVER=') then
             read(textpart(i)(8:27),'(a20)') solver
-         elseif(textpart(i)(1:6).eq.'DIRECT') then
-            idrct=1
+         elseif((textpart(i)(1:6).eq.'DIRECT').and.
+     &          (textpart(i)(1:9).ne.'DIRECT=NO')) then
+            idirect=1
+         elseif(textpart(i)(1:9).eq.'DIRECT=NO') then
+            idirect=0
          elseif(textpart(i)(1:11).eq.'STEADYSTATE') then
             nmethod=1
          elseif(textpart(i)(1:9).eq.'FREQUENCY') then
@@ -91,8 +91,22 @@
             iperturb=0
          elseif(textpart(i)(1:11).eq.'STORAGE=YES') then
             mei(4)=1
+         elseif(textpart(i)(1:7).eq.'DELTMX=') then
+            read(textpart(i)(8:27),'(f20.0)',iostat=istat) ctrl(27)
          endif
       enddo
+      if(nmethod.eq.1) ctrl(27)=1.d30
+!
+!     default for modal dynamic calculations is DIRECT,
+!     for static or dynamic calculations DIRECT=NO
+!
+      if(iperturb.eq.0) then
+         idrct=1
+         if(idirect.eq.0)idrct=0
+      else
+         idrct=0
+         if(idirect.eq.1)idrct=1
+      endif
 !
       if((ithermal.eq.0).and.(nmethod.ne.1).and.
      &   (nmethod.ne.2).and.(iperturb.ne.0)) then
@@ -109,10 +123,6 @@
 !
          if(solver(1:7).eq.'SPOOLES') then
             isolver=0
-         elseif(solver(1:7).eq.'PROFILE') then
-            write(*,*)'*WARNING in heattransfers: the profile solver is'
-            write(*,*) '         not allowed in dynamics calculations;'
-            write(*,*) '         the default solver is used'
          elseif(solver(1:16).eq.'ITERATIVESCALING') then
             isolver=2
          elseif(solver(1:17).eq.'ITERATIVECHOLESKY') then
@@ -197,9 +207,9 @@
          ncv=4*nev
          ncv=ncv+nev
          mxiter=1000
-         read(textpart(2)(1:20),'(f20.10)',iostat=istat) fmin
+         read(textpart(2)(1:20),'(f20.0)',iostat=istat) fmin
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-         read(textpart(3)(1:20),'(f20.10)',iostat=istat) fmax
+         read(textpart(3)(1:20),'(f20.0)',iostat=istat) fmax
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
 !
          mei(1)=nev

@@ -24,13 +24,16 @@
 !
       implicit none
 !
+      logical engineering
+!
       character*1 inpc(*)
       character*132 textpart(16)
 !
       integer nelcon(2,*),nmat,ntmat,ntmat_,istep,istat,ipoinpc(0:*),
      &  n,key,i,ityp,ncmat_,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*)
 !
-      real*8 elcon(0:ncmat_,ntmat_,*)
+      real*8 elcon(0:ncmat_,ntmat_,*),e1,e2,e3,un12,un21,un13,un31,
+     &  un23,un32,gam
 !
       ntmat=0
 !
@@ -54,6 +57,10 @@
                ityp=2
             elseif(textpart(i)(6:10).eq.'ORTHO') then
                ityp=9
+               engineering=.false.
+            elseif(textpart(i)(6:25).eq.'ENGINEERINGCONSTANTS') then
+               ityp=9
+               engineering=.true.
             elseif(textpart(i)(6:10).eq.'ANISO') then
                ityp=21
             endif
@@ -123,6 +130,26 @@
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
             else
                elcon(0,ntmat,nmat)=0.d0
+            endif
+            if(engineering) then
+               e1=elcon(1,ntmat,nmat)
+               e2=elcon(2,ntmat,nmat)
+               e3=elcon(3,ntmat,nmat)
+               un12=elcon(4,ntmat,nmat)
+               un13=elcon(5,ntmat,nmat)
+               un23=elcon(6,ntmat,nmat)
+               un21=un12*e2/e1
+               un31=un13*e3/e1
+               un32=un23*e3/e2
+               gam=1.d0/(1.d0-un12*un21-un23*un32-un31*un13
+     &               -2.d0*un21*un32*un13)
+               elcon(1,ntmat,nmat)=e1*(1.d0-un23*un32)*gam
+               elcon(2,ntmat,nmat)=e1*(un21+un31*un23)*gam
+               elcon(3,ntmat,nmat)=e2*(1.d0-un13*un31)*gam
+               elcon(4,ntmat,nmat)=e1*(un31+un21*un32)*gam
+               elcon(5,ntmat,nmat)=e2*(un32+un12*un31)*gam
+               elcon(6,ntmat,nmat)=e3*(1.d0-un12*un21)*gam
+               write(*,'(6(1x,e11.4))') (elcon(i,ntmat,nmat),i=1,6)
             endif
          enddo
       elseif(ityp.eq.21) then

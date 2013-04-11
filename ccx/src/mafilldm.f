@@ -53,7 +53,7 @@
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),
-     &  t0(*),t1(*),prestr(6,mint_,*),vold(0:3,*),s(60,60),ff(60),
+     &  t0(*),t1(*),prestr(6,mint_,*),vold(0:4,*),s(60,60),ff(60),
      &  sti(6,mint_,*),sm(60,60),stx(6,mint_,*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*)
@@ -105,7 +105,8 @@
      &          t0,t1,ithermal,vold,iperturb,
      &          nelemload,sideload,xload,nload,idist,sti,stx,
      &          iexpl,plicon,nplicon,plkcon,nplkcon,xstiff,npmat_,
-     &          dtime,matname,mint_,ncmat_,ttime,time,istep,iinc)
+     &          dtime,matname,mint_,ncmat_,ttime,time,istep,iinc,
+     &          nmethod)
 !
         do jj=1,3*nope
 !
@@ -135,10 +136,10 @@
 !
                if(jdof1.eq.0) then
                   idof1=jdof2
-                  idof2=(node1-1)*7+k
+                  idof2=(node1-1)*8+k
                else
                   idof1=jdof1
-                  idof2=(node2-1)*7+m
+                  idof2=(node2-1)*8+m
                endif
                if(nmpc.gt.0) then
                   call nident(ikmpc,idof2,nmpc,id)
@@ -165,8 +166,8 @@
                   endif
                endif
             else
-               idof1=(node1-1)*7+k
-               idof2=(node2-1)*7+m
+               idof1=(node1-1)*8+k
+               idof2=(node2-1)*8+m
                mpc1=0
                mpc2=0
                if(nmpc.gt.0) then

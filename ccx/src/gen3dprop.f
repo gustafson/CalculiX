@@ -57,7 +57,7 @@ c            write(*,*) 'gen3dprop,node,idir',node,idir
 !
             if(lakon(ielem)(7:7).eq.'L') then
                newnode=knor(indexk+1)
-               idof=7*(newnode-1)+idir
+               idof=8*(newnode-1)+idir
                call nident(ikmpc,idof,nmpc,id)
                if((id.le.0).or.(ikmpc(id).ne.idof)) then
                   nmpc=nmpc+1
@@ -109,7 +109,7 @@ c            write(*,*) 'gen3dprop,node,idir',node,idir
 !                       1d beam element: generate MPC's
 !
                newnode=knor(indexk+1)
-               idof=7*(newnode-1)+idir
+               idof=8*(newnode-1)+idir
                call nident(ikmpc,idof,nmpc,id)
                if((id.le.0).or.(ikmpc(id).ne.idof)) then
                   nmpc=nmpc+1
@@ -164,7 +164,7 @@ c            write(*,*) 'gen3dprop,node,idir',node,idir
 !                       element: SPC
 !
                newnode=knor(indexk+2)
-               idof=7*(newnode-1)+idir
+               idof=8*(newnode-1)+idir
                call nident(ikmpc,idof,nmpc,id)
                if(((id.le.0).or.(ikmpc(id).ne.idof)).and.
      &              (idir.ne.3)) then

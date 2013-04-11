@@ -17,8 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
       subroutine moehring (node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &     nactdog,identity,ielprop,prop,iflag,voldgas,xflow,f,
-     &     nodef,idirf,df,cp,R,physcon,dvi,numf)
+     &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
+     &     nodef,idirf,df,cp,R,dvi,numf,set)
 !     
 !     moehring element
 !     This subroutines computes the evolution of the core swirl ratio 
@@ -35,13 +35,14 @@
 !     
       logical identity
       character*8 lakon(*)
+      character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
      &     ipkon(*),kon(*),kgas,key,neval,ier,limit,lenw,last,
      &     iwork2(400),node_up,node_down
 !     
-      real*8 prop(*),voldgas(0:3,*),xflow,f,df(4),r,physcon(3),dvi,pi,
+      real*8 prop(*),v(0:4,*),xflow,f,df(4),r,dvi,pi,
      &     R_min, R_max,cr, R_shroud,rsrmax,gap,swirl_up,
      &     pup,pdown,tup,tdown,kappa,cp,
      &     Rup,Rdown,rpm,K0,Kup,Cq,Re_phi,phi,lambda1, lambda2,
@@ -52,7 +53,7 @@
 !     
       external dKdX,dKdP,dkdT,dKdm,f_k,f_t,f_p,f_m,f_cm
 !     
-      numf=4
+!      numf=4
 !     
       if (iflag.eq.0) then
          identity=.true.
@@ -80,19 +81,22 @@
 !     
          node1=kon(ipkon(nelem)+1)
          node2=kon(ipkon(nelem)+3)
-         p1=voldgas(2,node1)
-         p2=voldgas(2,node2)
-         T1=voldgas(0,node1)
-         T2=voldgas(0,node2)
+         p1=v(2,node1)
+         p2=v(2,node2)
+         T1=v(0,node1)
+         T2=v(0,node2)
 !     
+!     fictious cross section
+!         A=1E-5
          if(p1.gt.p2) then
-            xflow=dsqrt(T1)*P1*qred_crit/10d0
+            xflow=1/dsqrt(T1)*P1*qred_crit*0.5d0
          else
-            xflow=-dsqrt(T1)*P1*qred_crit/10d0
+            xflow=-1/dsqrt(T1)*P1*qred_crit*0.5d0
          endif
 !     
       elseif (iflag.eq.2)then
 !     
+         numf=4
          index=ielprop(nelem) 
          pi=4.d0*datan(1.d0)
 !     
@@ -120,7 +124,7 @@
 !     defining flow parameters
 !     
 !     massflow
-         xflow=voldgas(1,nodem)
+         xflow=v(1,nodem)
 !     
 !     upstream node
          node_up=int(prop(index+5))
@@ -159,16 +163,16 @@
          endif
 !     
 !     upstream pressure
-         pup=voldgas(2,node_up)
+         pup=v(2,node_up)
 !
 !     downstream pressure
-         pdown=voldgas(2,node_down)
+         pdown=v(2,node_down)
 !
 !     Upstream temperature
-         Tup=voldgas(0,node_up)
+         Tup=v(0,node_up)
 !
 !     downstream temperature
-         Tdown=voldgas(0,node_down)
+         Tdown=v(0,node_down)
 !     
          idirf(1)=2
          idirf(2)=0
@@ -194,8 +198,12 @@
          Kup=swirl_up/(omega*Rup)
 !     
 !     dynamic_viscosity
-         kgas=0
-         call dynamic_viscosity(kgas,Tup,dvi)
+!         kgas=0
+!         call dynamic_viscosity(kgas,Tup,dvi)
+         if(dabs(dvi).lt.1E-30) then
+            kgas=0
+            call dynamic_viscosity(kgas,Tup,dvi)
+         endif 
 !     
 !     defining common coefficients
 !     

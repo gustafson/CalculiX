@@ -23,17 +23,32 @@
 !
       implicit none
 !
+      logical rayleigh
+!
       character*1 inpc(*)
       character*132 textpart(16)
 !
       integer nmethod,istep,istat,n,key,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),ipoinpc(0:*)
+     &  inp(3,*),ipoinpc(0:*),i
 !
       real*8 xmodal(9)
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR in modaldampings: *MODAL DAMPING can only'
          write(*,*) '  be used within a STEP'
+         stop
+      endif
+!
+      rayleigh=.false.
+      do i=2,n
+         if(textpart(i)(1:8).eq.'RAYLEIGH') then
+            rayleigh=.true.
+         endif
+      enddo
+      if(.not.rayleigh) then
+         write(*,*) '*ERROR in modaldampings: only Rayleigh'
+         write(*,*) '       damping is allowed'
+         call inputerror(inpc,ipoinpc,iline)
          stop
       endif
 !

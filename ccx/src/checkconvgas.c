@@ -70,7 +70,7 @@ void checkconvgas(int *icutb, int *iin,
   if(((*ramt<=c1t**qamt)||(*ramt<1.e-8))&&
      ((*ramf<=c1f**qamf)||(*ramf<1.e-15))&&
      ((*ramp<=c1p**qamp)||(*ramp<1.e-8))&&
-     (*iin!=0)){
+     (*iin>=5)){
       
       /* increment convergence reached */
       
@@ -85,7 +85,7 @@ void checkconvgas(int *icutb, int *iin,
 
       /* divergence based on temperatures */
       
-      if((*iin>=5*i0)||(fabs(*ramt)>1.e20)){
+      if((*iin>=10*i0)||(fabs(*ramt)>1.e20)){
 	  if((*ram1t>*ram2t)&&(*ramt>*ram2t)&&(*ramt>c1t**qamt)){
 	      idivergence=1;
 	  }
@@ -93,16 +93,16 @@ void checkconvgas(int *icutb, int *iin,
 
       /* divergence based on the mass flux */
       
-      if((*iin>=5*i0)||(fabs(*ramt)>1.e20)){
-	  if((*ram1t>*ram2t)&&(*ramt>*ram2t)&&(*ramt>c1t**qamt)){
+      if((*iin>=10*i0)||(fabs(*ramf)>1.e20)){
+	  if((*ram1f>*ram2f)&&(*ramf>*ram2f)&&(*ramf>c1f**qamf)){
 	      idivergence=1;
 	  }
       }
 
       /* divergence based on pressures */
       
-      if((*iin>=5*i0)||(fabs(*ramt)>1.e20)){
-	  if((*ram1t>*ram2t)&&(*ramt>*ram2t)&&(*ramt>c1t**qamt)){
+      if((*iin>=10*i0)||(fabs(*ramp)>1.e20)){
+	  if((*ram1p>*ram2p)&&(*ramp>*ram2p)&&(*ramp>c1p**qamp)){
 	      idivergence=1;
 	  }
       }

@@ -75,8 +75,11 @@ c      write(*,*) 'iel,iint ',iel,iint
 !     localizing the plastic fields
 !
       do i=1,6
-         cpl(i)=xstateini(1+i,iint,iel)
+         cpl(i)=2.d0*xstateini(1+i,iint,iel)
          stbl(i)=xstateini(7+i,iint,iel)
+      enddo
+      do i=1,3
+         cpl(i)=cpl(i)+1.d0
       enddo
       epl=xstateini(1,iint,iel)
       epini=xstateini(1,iint,iel)
@@ -102,9 +105,27 @@ c      write(*,*) 'iel,iint ',iel,iint
 !
 !     calculating the Jacobian
 !
-      vj=dsqrt(c(1)*(c(2)*c(3)-c(6)*c(6))
-     &        -c(4)*(c(4)*c(3)-c(6)*c(5))
-     &        +c(5)*(c(4)*c(6)-c(2)*c(5)))
+      vj=c(1)*(c(2)*c(3)-c(6)*c(6))
+     &  -c(4)*(c(4)*c(3)-c(6)*c(5))
+     &  +c(5)*(c(4)*c(6)-c(2)*c(5))
+      if(vj.gt.1.d-30) then
+         vj=dsqrt(vj)
+      else
+         write(*,*) '*WARNING in incplas: deformation inside-out'
+!
+!        deformation is reset to zero in order to continue the
+!        calculation. Alternatively, a flag could be set forcing
+!        a reiteration of the increment with a smaller size (to
+!        be done)
+!
+         c(1)=1.d0
+         c(2)=1.d0
+         c(3)=1.d0
+         c(4)=0.d0
+         c(5)=0.d0
+         c(6)=0.d0
+         vj=1.d0
+      endif
 !
 !     check for user subroutines
 !
@@ -212,18 +233,11 @@ c            a3=1.d0/xxn
       else
          dxitril=dsqrt(dxitril)
       endif
-c      dxitril=dsqrt(g13*g13 + g14*g14 + g15*g15 + g16*(g30 + g29 + 2*
-c     &     g16) + g17*(g29 + g28 + 2*g17) + g18*(g30 + g28 + 2*
-c     &     g18 + 4*g17) + g11*g7*(g31 + 2*g10*g7) + g9*g6*(g32 + 
-c     &     2*g11*g6) + g10*g2*(g33 + 2*g9*g2) + g8*g4*(g31 + 2*
-c     &     g12*g8) + g12*g5*(g32 + 2*g5*g3) + g3*g1*(g33 + 2*g4*
-c     &     g1))
 !
 !        restoring the hardening curves for the actual temperature
 !        plconloc contains the true stresses. By multiplying by
 !        the Jacobian, yiso and ykin are Kirchhoff stresses, as
 !        required by the hyperelastic theory (cf. Simo, 1988).
-!
 !
       niso=int(plconloc(81))
       nkin=int(plconloc(82))
@@ -326,7 +340,6 @@ c         write(*,*) 'no plastic deformation'
 !
          endif
 !
-c         write(*,*) 'return1'
          return
       endif
 !
@@ -417,6 +430,10 @@ c         write(*,*) 'return1'
                timeabq(2)=ttime
                qtild=(ftrial-c2*(fiso-fiso0)
      &              -umbb*(2.d0*cop+c4*(fkin-fkin0)))/(c2*vj)
+!
+!              the Von Mises stress must be positive
+!
+               if(qtild.lt.1.d-10) qtild=1.d-10
                ec(1)=epini
                call creep(decra,deswa,xstateini(1,iint,iel),serd,ec,
      &             esw,p,qtild,t1l,dtemp,predef,dpred,timeabq,dtime,
@@ -428,6 +445,10 @@ c         write(*,*) 'return1'
             else
                qtild=(ftrial-c2*(fiso-fiso0)
      &              -umbb*(2.d0*cop+c4*(fkin-fkin0)))/(c2*vj)
+!
+!              the Von Mises stress must be positive
+!
+               if(qtild.lt.1.d-10) qtild=1.d-10
                decra(1)=a1*qtild**xxn
                decra(5)=xxn*decra(1)/qtild
                dsvm=1.d0/decra(5)
@@ -504,6 +525,10 @@ c         write(*,*) 'return1'
                      timeabq(2)=ttime
                      qtild=(ftrial-c2*(fiso-fiso0)
      &                    -umbb*(2.d0*cop+c4*(fkin-fkin0)))/(c2*vj)
+!
+!                    the Von Mises stress must be positive
+!
+                     if(qtild.lt.1.d-10) qtild=1.d-10
                      ec(1)=epini
                      call creep(decra,deswa,xstateini(1,iint,iel),serd,
      &                    ec,esw,p,qtild,t1l,dtemp,predef,dpred,timeabq,
@@ -514,18 +539,14 @@ c         write(*,*) 'return1'
                   else
                      qtild=(ftrial-c2*(fiso-fiso0)
      &                    -umbb*(2.d0*cop+c4*(fkin-fkin0)))/(c2*vj)
+!
+!                    the Von Mises stress must be positive
+!
+                     if(qtild.lt.1.d-10) qtild=1.d-10
                      decra(1)=a1*qtild**xxn
                      decra(5)=xxn*decra(1)/qtild
                      dsvm=1.d0/decra(5)
                      fu=decra(1)-c2*cop
-c                     if(ep.le.epini) then
-c                        svm=0.d0
-c                     else
-c                        svm=(ep-epini)/a1
-c                        svm=svm**a3*vj
-c                     endif
-c                     fu=(ftrial-c2*(fiso-fiso0)
-c     &                    -umbb*(2.d0*cop+c4*(fkin-fkin0))-c2*svm)
                   endif
                endif
 !
@@ -703,12 +724,14 @@ c     &                    -umbb*(2.d0*cop+c4*(fkin-fkin0))-c2*svm)
 !
 !        updating the plastic fields
 !
+      do i=1,3
+         cpl(i)=cpl(i)-1.d0
+      enddo
       do i=1,6
-         xstate(1+i,iint,iel)=cpl(i)
+         xstate(1+i,iint,iel)=cpl(i)/2.d0
          xstate(7+i,iint,iel)=stbl(i)
       enddo
       xstate(1,iint,iel)=epl
 !
-c      write(*,*) 'return2'
       return
       end

@@ -19,11 +19,13 @@
       subroutine elements(inpc,textpart,kon,ipkon,lakon,nkon,ne,ne_,
      &  set,istartset,iendset,ialset,nset,nset_,nalset,nalset_,mint_,
      &  ixfree,iponor,xnor,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &  iaxial,ipoinpc)
+     &  iaxial,ipoinpc,solid,fluid)
 !
 !     reading the input deck: *ELEMENT
 !
       implicit none
+!
+      logical solid,fluid
 !
       character*1 inpc(*)
       character*8 lakon(*),label
@@ -121,32 +123,82 @@
                label(8:8)=' '
             endif
 !
+!           full integration quadratic hexahedral element
+!           (including such which are expanded into one)
+!
             if((label.eq.'C3D20   ').or.
-     &        (label.eq.'CPE8    ').or.
-     &        (label.eq.'CPS8    ').or.
-     &        (label.eq.'CAX8    ').or.
-     &        (label.eq.'S8      ').or.
-     &        (label.eq.'B32     ')) then
-            elseif((label.eq.'C3D20R  ').or.
-     &             (label.eq.'C3D8    ').or.
-     &             (label.eq.'CPE8R   ').or.
-     &             (label.eq.'CPS8R   ').or.
-     &             (label.eq.'CAX8R   ').or.
-     &             (label.eq.'S8R     ').or.
-     &             (label.eq.'B32R    ')) then
-            elseif(label.eq.'C3D8R   ') then
-            elseif(label.eq.'C3D10   ') then
-            elseif(label.eq.'C3D4    ') then
-            elseif((label.eq.'C3D15   ').or.
-     &             (label.eq.'CPE6    ').or.
-     &             (label.eq.'CPS6    ').or.
-     &             (label.eq.'CAX6    ').or.
-     &             (label.eq.'S6      ')) then
-            elseif(label.eq.'C3D6    ') then
-            elseif(label(1:1).eq.'D') then
-            elseif(label.eq.'GAPUNI  ') then
-            elseif((label.eq.'SPRINGA ').or.(label.eq.'DASHPOTA'))
+     &         (label.eq.'CPE8    ').or.
+     &         (label.eq.'CPS8    ').or.
+     &         (label.eq.'CAX8    ').or.
+     &         (label.eq.'S8      ').or.
+     &         (label.eq.'B32     ').or.
+!
+!           reduced integration quadratic hexahedral element
+!           (including such which are expanded into one)
+!
+     &         (label.eq.'C3D20R  ').or.
+     &         (label.eq.'C3D20RI ').or.
+     &         (label.eq.'C3D8    ').or.
+     &         (label.eq.'CPE8R   ').or.
+     &         (label.eq.'CPS8R   ').or.
+     &         (label.eq.'CAX8R   ').or.
+     &         (label.eq.'S8R     ').or.
+     &         (label.eq.'B32R    ').or.
+!
+!           reduced integration linear hexahedral element
+!
+     &         (label.eq.'C3D8R   ').or.
+!
+!           quadratic tetrahedral element
+!
+     &         (label.eq.'C3D10   ').or.
+!
+!           linear tetrahedral element
+!
+     &         (label.eq.'C3D4    ').or.
+!
+!           quadratic wedge
+!           (including such which are expanded into one)
+!
+     &         (label.eq.'C3D15   ').or.
+     &         (label.eq.'CPE6    ').or.
+     &         (label.eq.'CPS6    ').or.
+     &         (label.eq.'CAX6    ').or.
+     &         (label.eq.'S6      ').or.
+!
+!           linear wedge
+!
+     &         (label.eq.'C3D6    ').or.
+!
+!           gap element
+!
+     &         (label.eq.'GAPUNI  ').or.
+!
+!           spring element
+!
+     &         (label.eq.'SPRINGA ').or.
+!
+!           dashpot element
+!
+     &         (label.eq.'DASHPOTA'))
      &                then
+               solid=.true.
+!
+!           3D fluid element
+!
+            elseif((label.eq.'F3D20   ').or.
+     &             (label.eq.'F3D20R  ').or.
+     &             (label.eq.'F3D8    ').or.
+     &             (label.eq.'F3D8R   ').or.
+     &             (label.eq.'F3D10   ').or.
+     &             (label.eq.'F3D4    ').or.
+     &             (label.eq.'F3D15   ').or.
+     &             (label.eq.'F3D6    ').or.
+!
+!           network element
+!
+     &             (label(1:1).eq.'D')) then
+               fluid=.true.
             else
                write(*,*) '*ERROR in elements:'
                write(*,*) label,' is an unknown element type'

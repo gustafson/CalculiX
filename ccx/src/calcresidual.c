@@ -36,7 +36,7 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
         double *aub, int *icol, int *irow, int *nzl, double *alpha,
         double *fextini, double *fini){
 
-    int k,kk;
+    int j,k;
     double scal1;
       
     /* residual for a static analysis */
@@ -49,8 +49,15 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
       
     /* residual for implicit dynamics */
       
-    else if(*iexpl==0){
-	k=0;
+    else if(*iexpl<=1){
+	for(k=0;k<*nk;++k){
+	    if(nactdof[4*k]!=0){
+		aux2[nactdof[4*k]-1]=(vold[5*k]-vini[5*k])/(*dtime);}
+	    for(j=1;j<4;++j){
+		if(nactdof[4*k+j]!=0){aux2[nactdof[4*k+j]-1]=accold[4*k+j];}
+	    }
+	}
+/*	k=0;
 	do{
 	    if(nactdof[k]!=0){
 		aux2[nactdof[k]-1]=(vold[k]-vini[k])/(*dtime);}
@@ -59,7 +66,7 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
 		if(nactdof[k]!=0){aux2[nactdof[k]-1]=accold[k];}
 		k++;
 	    }
-	}while(k<4**nk);
+	    }while(k<4**nk);*/
 	FORTRAN(op,(&neq[1],aux1,aux2,b,adb,aub,icol,irow,nzl)); 
 	scal1=1.+*alpha;
 	for(k=0;k<neq[0];++k){
@@ -73,7 +80,14 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
     /* residual for explicit dynamics */
     
     else{
-	k=0;
+	for(k=0;k<*nk;++k){
+	    if(nactdof[4*k]!=0){
+		aux2[nactdof[4*k]-1]=(vold[5*k]-vini[5*k])/(*dtime);}
+	    for(j=1;j<4;++j){
+		if(nactdof[4*k+j]!=0){aux2[nactdof[4*k+j]-1]=accold[4*k+j];}
+	    }
+	}
+/*	k=0;
 	do{
 	    if(nactdof[k]!=0){
 		aux2[nactdof[k]-1]=(vold[k]-vini[k])/(*dtime);}
@@ -82,7 +96,7 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
 		if(nactdof[k]!=0){aux2[nactdof[k]-1]=accold[k];}
 		k++;
 	    }
-	}while(k<4**nk);
+	    }while(k<4**nk);*/
 	scal1=1.+*alpha;
 	for(k=0;k<neq[0];++k){
 	    b[k]=scal1*(fext[k]-f[k])-*alpha*(fextini[k]-fini[k])

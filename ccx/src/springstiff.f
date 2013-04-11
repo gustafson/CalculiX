@@ -157,8 +157,10 @@
 !
       if((nterms.eq.8).or.(nterms.eq.4)) then
          alpha=elcon(2,1,imat)*dd*4.d0
+c         alpha=elcon(2,1,imat)*dd*4.d0/konl(nope+1)
       else
          alpha=elcon(2,1,imat)*dd/2.d0
+c         alpha=elcon(2,1,imat)*dd/2.d0/konl(nope+1)
       endif
       beta=elcon(1,1,imat)
       if(-beta*al.gt.23.d0-dlog(alpha)) then

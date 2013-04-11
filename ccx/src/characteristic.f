@@ -16,9 +16,9 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-      subroutine  characteristic(node1,node2,nodem,nelem,lakon,
-     &     nactdog,identity,ielprop,prop,iflag,voldgas,xflow,f,
-     &     nodef,idirf,df,cp,r,physcon,dvi,numf)
+      subroutine  characteristic(node1,node2,nodem,nelem,
+     &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
+     &     nodef,idirf,df,physcon,numf,set)
 !     
 !     This subroutine is used to enables the processing of empiric 
 !     given under the form
@@ -30,17 +30,18 @@
       implicit none
 !     
       logical identity
-      character*8 lakon(*)
+!      character*8 lakon(*)
+      character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
      &     inv,id,numf,npu,i
 !     
-      real*8 prop(*),voldgas(0:3,*),xflow,f,df(4),R,
-     &     p1,p2,cp,physcon(3),dvi,
-     &     xpu(10),ypu(10),Qred,p1mp2zp1,T1,scal
+      real*8 prop(*),v(0:4,*),xflow,f,df(4),
+     &     p1,p2,physcon(3),
+     &     xpu(10),ypu(10),Qred,p1mp2zp1,T1,scal,T2
 !     
-      numf=4
+!      numf=4
 !     
       if (iflag.eq.0) then
          identity=.true.
@@ -65,17 +66,17 @@
             ypu(i)=prop(index+2*i+1)
          enddo
 !     
-         p1=voldgas(2,node1)
-         p2=voldgas(2,node2)       
+         p1=v(2,node1)
+         p2=v(2,node2)       
 !     
          if(p1.ge.p2) then
             inv=1
-            T1=voldgas(0,node1)+physcon(1)
+            T1=v(0,node1)+physcon(1)
          else
             inv=-1
-            p1=voldgas(2,node2)
-            p2=voldgas(2,node1)
-            T1=voldgas(0,node2)+physcon(1)
+            p1=v(2,node2)
+            p2=v(2,node1)
+            T1=v(0,node2)+physcon(1)
          endif
 !     
          p1mp2zp1=(P1-P2)/P1
@@ -101,6 +102,7 @@
             write(*,*) ''
             
          elseif (iflag.eq.2) then
+            numf=4
 !     
 !     index=ielprop(nelem)
 !     
@@ -110,15 +112,15 @@
 !     ypu(i)=prop(index+2*i+1)
 !     enddo
 !     
-            p1=voldgas(2,node1)
-            p2=voldgas(2,node2) 
-            xflow=voldgas(1,nodem)
+            p1=v(2,node1)
+            p2=v(2,node2) 
+            xflow=v(1,nodem)
 !     
             if (p1.ge.p2) then
 !     
                inv=1
-               xflow=voldgas(1,nodem)
-               T1=voldgas(0,node1)+physcon(1)
+               xflow=v(1,nodem)
+               T1=v(0,node1)+physcon(1)
                nodef(1)=node1
                nodef(2)=node1
                nodef(3)=nodem
@@ -127,10 +129,10 @@
             else 
 !     
                inv=-1
-               p1=voldgas(2,node2)
-               p2=voldgas(2,node1) 
-               T1=voldgas(0,node2)+physcon(1)
-               xflow=-voldgas(1,nodem)
+               p1=v(2,node2)
+               p2=v(2,node1) 
+               T1=v(0,node2)+physcon(1)
+               xflow=-v(1,nodem)
                nodef(1)=node2
                nodef(2)=node2
                nodef(3)=nodem
@@ -170,6 +172,64 @@
      &              *(scal*(ypu(id+1)-ypu(id))/(xpu(id+1)-xpu(id)))
             endif
          endif
+
+      elseif(iflag.eq.3)  then
+         p1=v(2,node1)
+         p2=v(2,node2) 
+         xflow=v(1,nodem)
+!     
+         if (p1.ge.p2) then
+!     
+            inv=1
+            xflow=v(1,nodem)
+            T1=v(0,node1)+physcon(1)
+            T2=v(0,node2)+physcon(1)
+            nodef(1)=node1
+            nodef(2)=node1
+            nodef(3)=nodem
+            nodef(4)=node2
+!     
+         else 
+!     
+            inv=-1
+            p1=v(2,node2)
+            p2=v(2,node1) 
+            T1=v(0,node2)+physcon(1)
+            T2=v(0,node1)+physcon(1)
+            xflow=-v(1,nodem)
+            nodef(1)=node2
+            nodef(2)=node2
+            nodef(3)=nodem
+            nodef(4)=node1
+         endif
+!
+         write(1,*) ''
+         write(1,55) 'In line',int(nodem/100),' from node',node1,
+     &        ' to node', node2,':   air massflow rate=',xflow,'kg/s'
+!
+ 55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
+!
+         if(inv.eq.1) then
+            write(1,56)'       Inlet node  ',node1,':   Tt1=',T1,
+     &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
+         
+            write(1,*)'             element G   ',set(numf+nelem)(1:20)
+!
+            write(1,56)'       Outlet node ',node2,':   Tt2=',T2,
+     &           'K, Ts2=',T2,'K, Pt2=',P2/1e5,'Bar'
+!     
+         else if(inv.eq.-1) then
+            write(1,56)'       Inlet node  ',node2,':    Tt1=',T1,
+     &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
+     &          
+            write(1,*)'             element G    ',set(numf+nelem)(1:20)
+!
+            write(1,56)'       Outlet node ',node1,':    Tt2=',T2,
+     &           'K, Ts2=',T2,'K, Pt2=',P2/1e5, 'Bar'
+!               
+         endif
+!      
+ 56      FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A)
 !     
       endif
 !     

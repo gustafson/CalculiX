@@ -19,12 +19,12 @@
 ! cd compressible for class 3 orifices where l/d>0 and r/d>0
 ! type d) with 0.5<=l/d<=2 (eq. 27)
 !
-      subroutine pk_cdc_cl3d(lqd,rqd,reynolds,p2p1,beta,kappa,cdc_cl3d)
+      subroutine pk_cdc_cl3d(lqd,rqd,reynolds,p2p1,beta,cdc_cl3d)
 !
       implicit none
 !
       real*8 lqd,rqd,reynolds,p2p1,beta,cdc_cl3d,cdi_rl,cdc_cl3_choked,
-     &     jpsqpt,zeta,kappa
+     &     jpsqpt,zeta
 !
       cdc_cl3_choked=1.d0-(0.008d0+0.992d0*exp(-5.5d0*rqd
      &     -3.5d0*rqd**2.d0))*(1.d0-0.838d0)

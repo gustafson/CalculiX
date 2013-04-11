@@ -19,22 +19,25 @@
 !     this subroutine solves iteratively the following equation
 !     to determine the pressure for which section A2 is critical
 !
-      subroutine pt2_lim_calc (pt2,pt1,a2,a1,kappa,r,zeta,pt2_lim,
-     &     isothermal)
+      subroutine pt2_lim_calc (pt1,a2,a1,kappa,zeta,pt2_lim)
 !
       implicit none
 !
-      logical isothermal
-!
       integer i 
 !
-      real*8 pt2,pt1,a2,a1,kappa,r,pt2_lim,x,zeta,f,df,expon1,
+      real*8 pt1,a2,a1,kappa,pt2_lim,x,zeta,f,df,expon1,
      &     expon2,expon3,cte,a2a1,kp1,km1,delta_x,fact1,fact2,term
 !
       x=0.999
 !
 !     x belongs to interval [0;1]
 !
+!     modified 25.11.2007 
+!     since Pt1/Pt2=(1+0.5(kappa)-M)**(zeta*kappa)/(kappa-1)
+!     and for zeta1 elements type M_crit=M1=1
+!     and for zeta2 elements type M_crit=M2 =1
+!     it is not necessary to iteratively solve the flow equation.
+!     Instead the previous equation is solved to find pt2_crit
       if(zeta.ge.0d0) then
          kp1=kappa+1d0
          km1=kappa-1d0
@@ -45,7 +48,9 @@
          expon3=-km1/(zeta*kappa)
          i=0
 !
+!        
          do
+            i=i+1
 !     
             f=x**(-1d0)-cte*x**(expon1)
      &           *(2d0/km1*(x**expon3-1.d0))**-0.5d0
@@ -64,6 +69,10 @@
 !
                exit
             endif
+            if(i.gt.25)then
+                pt2_lim=Pt1/(1+0.5*km1)**(zeta*kappa/km1)
+                exit
+             endif
 !     
             x=delta_x+x
 !     

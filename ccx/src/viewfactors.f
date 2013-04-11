@@ -56,20 +56,37 @@ c            endif
          elseif(textpart(i)(1:6).eq.'INPUT=') then
             jobnamec(2)(1:126)=textpart(i)(7:132)
             jobnamec(2)(127:132)='      '
-            loop: do j=1,126
+            loop1: do j=1,126
                if(jobnamec(2)(j:j).eq.'"') then
                   do k=j+1,126
                      if(jobnamec(2)(k:k).eq.'"') then
                         do l=k-1,126
                            jobnamec(2)(l:l)=' '
-                           exit loop
+                           exit loop1
                         enddo
                      endif
                      jobnamec(2)(k-1:k-1)=jobnamec(2)(k:k)
                   enddo
                   jobnamec(2)(126:126)=' '
                endif
-            enddo loop
+            enddo loop1
+         elseif(textpart(i)(1:7).eq.'OUTPUT=') then
+            jobnamec(3)(1:125)=textpart(i)(8:132)
+            jobnamec(3)(126:132)='      '
+            loop2: do j=1,125
+               if(jobnamec(3)(j:j).eq.'"') then
+                  do k=j+1,125
+                     if(jobnamec(3)(k:k).eq.'"') then
+                        do l=k-1,125
+                           jobnamec(3)(l:l)=' '
+                           exit loop2
+                        enddo
+                     endif
+                     jobnamec(3)(k-1:k-1)=jobnamec(3)(k:k)
+                  enddo
+                  jobnamec(3)(125:125)=' '
+               endif
+            enddo loop2
          endif
       enddo
 !

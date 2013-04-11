@@ -22,7 +22,7 @@
      &  sideload,xload,nload,idist,iexpl,dtime,
      &  matname,mint_,mass,stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
-     &  xstiff)
+     &  xstiff,xloadold,reltime)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -54,21 +54,13 @@
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xstiff(27,mint_,*),
      &  s(60,60),w(3,3),ff(60),shpj(4,20),sinktemp,xs2(3,2),
-     &  rhcon(0:1,ntmat_,*),dxsj2,temp,press,
-     &  orab(7,*),t0(*),t1(*),coords(3),c1,c2,
-     &  xl2(0:3,8),xsj2(3),shp2(4,8),vold(0:3,*),xload(2,*),
+     &  rhcon(0:1,ntmat_,*),dxsj2,temp,press,xloadold(2,*),
+     &  orab(7,*),t0(*),t1(*),coords(3),c1,c2,reltime,
+     &  xl2(0:3,8),xsj2(3),shp2(4,8),vold(0:4,*),xload(2,*),
      &  xi,et,ze,xsj,xsjj,sm(60,60),t1l,rho,summass,summ,ttime,time,
      &  sume,factorm,factore,alp,weight,pgauss(3),tvar(2),
      &  cocon(0:6,ntmat_,*),shcon(0:3,ntmat_,*),sph,coconloc(6),
      &  field,areaj,sax(60,60),ffax(60)
-!
-      real*8 gauss2d1(2,1),gauss2d2(2,4),gauss2d3(2,9),gauss2d4(2,1),
-     &  gauss2d5(2,3),gauss3d1(3,1),gauss3d2(3,8),gauss3d3(3,27),
-     &  gauss3d4(3,1),gauss3d5(3,4),gauss3d6(3,15),gauss3d7(3,2),
-     &  gauss3d8(3,9),gauss3d9(3,18),weight2d1(1),weight2d2(4),
-     &  weight2d3(9),weight2d4(1),weight2d5(3),weight3d1(1),
-     &  weight3d2(8),weight3d3(27),weight3d4(1),weight3d5(4),
-     &  weight3d6(15),weight3d7(2),weight3d8(9),weight3d9(18)
 !
       real*8 dtime,physcon(3)
 !
@@ -454,6 +446,7 @@ c     &                 weight
 !
             if(nload.gt.0) then
                call nident2(nelemload,nelem,nload,id)
+               areaj=xsj*weight
                do
                   if((id.eq.0).or.(nelemload(1,id).ne.nelem)) exit
                   if(sideload(id)(1:2).ne.'BF') then
@@ -467,14 +460,15 @@ c     &                 weight
                            do i1=1,nope
                               pgauss(j)=pgauss(j)+
      &                          shp(4,i1)*xl(j,i1)
-c     &                          shp(4,i1)*co(j,konl(i1))
                            enddo
                         enddo
                      endif
                      jltyp=1
                      call dflux(xload(1,id),t1l,istep,iinc,tvar,
      &                 nelem,kk,pgauss,jltyp,temp,press,sideload(id),
-     &                 vold)
+     &                 areaj,vold)
+                     if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &                   (xload(1,id)-xloadold(1,id))*reltime
                   endif
                   do jj=1,nope
                      ff(jj)=ff(jj)+xload(1,id)*shpj(4,jj)*weight
@@ -621,16 +615,22 @@ c         endif
                 if(sideload(id)(1:1).eq.'S') then
                    call dflux(xload(1,id),temp,istep,iinc,tvar,
      &               nelem,i,coords,jltyp,temp,press,sideload(id),
-     &               vold)
+     &               areaj,vold)
+                   if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &                  (xload(1,id)-xloadold(1,id))*reltime
                 elseif(sideload(id)(1:1).eq.'F') then
 c                   write(*,*) 'nonuniform'
                    call film(xload(1,id),sinktemp,temp,istep,
      &               iinc,tvar,nelem,i,coords,jltyp,field,nfield,
      &               sideload(id),node,areaj,vold)
+                   if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &                  (xload(1,id)-xloadold(1,id))*reltime
                 elseif(sideload(id)(1:1).eq.'R') then
                    call radiate(xload(1,id),xload(2,id),temp,istep,
      &               iinc,tvar,nelem,i,coords,jltyp,field,nfield,
      &               sideload(id),node,areaj,vold)
+                   if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &                  (xload(1,id)-xloadold(1,id))*reltime
                 endif
              endif
                 
@@ -757,23 +757,7 @@ c         if((nload.ne.0).and.(lakonl(6:7).ne.'RS')) then
          endif
       endif
 !
-c      write(*,*) 
-c      write(*,*) ' stiffness matrix '
-c      do i=1,60
-c         do j=1,60
-c            write (*,*) nelem,i,j,s(i,j)
-c         enddo
-c      enddo
-c      do i=1,60
-c         do j=1,60
-c            write (*,*) nelem,i,j,sm(i,j)
-c         enddo
-c      enddo
-c      do i=1,60
-c         write(*,*) nelem,i,ff(i)
-c      enddo
-!
-      if(mass.and.(iexpl.eq.1)) then
+      if(mass.and.(iexpl.gt.1)) then
 !
 !        scaling the diagonal terms of the mass matrix such that the total
 !        mass is right (LUMPING; for explicit dynamic calculations)

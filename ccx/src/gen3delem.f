@@ -24,7 +24,7 @@
      &  nforc_,nodeforc,ndirforc,xforc,iamforc,nelemload,sideload,
      &  nload,ithermal,ntrans,co,ixfree,ikfree,inoelfree,iponoelmax,
      &  iperturb,tinc,tper,tmin,tmax,ctrl,typeboun,nmethod,nset,set,
-     &  istartset,iendset,ialset,prop,ielprop)
+     &  istartset,iendset,ialset,prop,ielprop,vold)
 !
 !     generates three-dimensional elements:
 !         for isochoric elements
@@ -35,9 +35,11 @@
 !
       implicit none
 !
+      logical isochoric
+!
       character*1 typeboun(*)
       character*8 lakon(*)
-      character*20 labmpc(*),sideload(*)
+      character*20 labmpc(*),sideload(*),label
       character*81 set(*)
 !
       integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,ikmpc(*),
@@ -49,20 +51,25 @@
      &  nelemload(*),nforc,nforc_,ithermal(2),nload,iamboun(*),
      &  ntrans,inotr(2,*),nam,iponoelmax,iperturb,numnod,itransaxial,
      &  rig(*),nmethod,nset,istartset(*),iendset(*),ialset(*),
-     &  ielprop(*)
+     &  ielprop(*),idir,indexref,indexold,idofold,idold,indexnew,
+     &  idofnew,idnew,ksol,lsol,nmpc0,nmpc01,nmpcdif
 !
-      integer iponor(2,*),knor(*),
-     & ixfree,ikfree
+      integer iponor(2,*),knor(*),ixfree,ikfree
 !
       real*8 coefmpc(*),thicke(2,*),xnor(*),thickn(2,*),tinc,tper,tmin,
-     &  tmax,offset(2,*),t0(*),t1(*),xforc(*),trab(7,*),co(3,*),
-     &  xboun(*),pi,ctrl(26),prop(*)
+     &  tmax,offset(2,*),t0(*),t1(*),xforc(*),trab(7,*),co(3,*),b(3,3),
+     &  xboun(*),pi,ctrl(*),prop(*),vold(0:4,*),xlag(3,20),xeul(3,20),
+     &  a(3,3),xi,et,ze,coloc(3,8),xj
 !
-      data neigh /1,9,2,17,5,12,4,2,9,1,18,6,10,3,
-     &            3,11,4,19,7,10,2,4,11,3,20,8,12,1,
-     &            5,13,6,17,1,16,8,6,13,5,18,2,14,7,
-     &            7,15,8,19,3,14,6,8,15,7,20,4,16,5/
+      data neigh /1,9,2,12,4,17,5,2,9,1,10,3,18,6,
+     &            3,11,4,10,2,19,7,4,11,3,12,1,20,8,
+     &            5,13,6,16,8,17,1,6,13,5,14,7,18,2,
+     &            7,15,8,14,6,19,3,8,15,7,16,5,20,4/
 !
+      data coloc /-1.,-1.,-1.,1.,-1.,-1.,1.,1.,-1.,-1.,1.,-1.,
+     &            -1.,-1.,1.,1.,-1.,1.,1.,1.,1.,-1.,1.,1./
+!
+      isochoric=.false.
       pi=4.d0*datan(1.d0)
 !
 !     catalogueing the element per node relationship for shell/beam
@@ -130,16 +137,19 @@
 !        a dummy. 
 !
          do i=1,nboun
-            if(ndirboun(i).gt.3) rig(nodeboun(i))=-1
+c            if(ndirboun(i).gt.3) rig(nodeboun(i))=-1
+            if(ndirboun(i).gt.4) rig(nodeboun(i))=-1
          enddo
          do i=1,nforc
-            if(ndirforc(i).gt.3) rig(nodeforc(1,i))=-1
+c            if(ndirforc(i).gt.3) rig(nodeforc(1,i))=-1
+            if(ndirforc(i).gt.4) rig(nodeforc(1,i))=-1
          enddo
          do i=1,nmpc
             index=ipompc(i)
             do
                if(index.eq.0) exit
-               if(nodempc(2,index).gt.3) then
+c               if(nodempc(2,index).gt.3) then
+               if(nodempc(2,index).gt.4) then
                   rig(nodempc(1,index))=-1
                endif
                index=nodempc(3,index)
@@ -155,78 +165,142 @@
      &     tper,tmin,tmax,ctrl,ipompc,nodempc,coefmpc,nmpc,nmpc_,
      &     mpcfree,ikmpc,ilmpc,labmpc,ikboun,ilboun,nboun,nboun_,
      &     nodeboun,ndirboun,xboun,iamboun,typeboun,nam,ntrans,inotr,
-     &     trab,ikfree,ixfree,nmethod,ithermal)
+     &     trab,ikfree,ixfree,nmethod,ithermal,istep)
 !
       endif
 !
       if(istep.eq.1) then
 !
-         do i=1,ne
-            if(ipkon(i).lt.0) cycle
-!
 !        incompressible elements
 !
-            if(lakon(i)(1:7).eq.'C3D20RH') then
+         nmpc0=nmpc
+         nmpc01=nmpc0+1
+         do i=1,ne
+            if(ipkon(i).lt.0) cycle
+            if(lakon(i)(1:7).eq.'C3D20RI') then
+               isochoric=.true.
                indexe=ipkon(i)
+!
+               do j=1,20
+                  node=kon(indexe+j)
+                  do k=1,3
+                     xlag(k,j)=co(k,node)
+                     xeul(k,j)=xlag(k,j)+vold(k,node)
+                  enddo
+               enddo
+!
                do j=1,8
                   node=kon(indexe+j)
                   mpc=0
-                  do k=1,3
-                     idof=7*(node-1)+k
-                     call nident(ikmpc,idof,nmpc,id)
-                     if(id.gt.0) then
-                        if(ikmpc(id).eq.idof) then
-                           if(labmpc(ilmpc(i))(1:9).eq.'ISOCHORIC') then
+c                  write(*,*) 'isochoric condition in node ',node
+                  label(1:9)='ISOCHORIC'
+                  write(label(10:20),'(i11)') node
+                  nmpcdif=nmpc-nmpc0
+                  call cident20(labmpc(nmpc01),label,nmpcdif,id)
+                  id=id+nmpc0
+c                  write(*,*) 'newlabel ',label
+c                  do k=1,nmpc
+c                     write(*,*) 'oldlabel ',k,labmpc(k)
+c                  enddo
+                  if(id.gt.0) then
+                     if(labmpc(id).eq.label) then
+                        mpc=id
+                     endif
+                  endif
 !
-!                          existing mpc
+!                 new MPC: look for suitable dependent dof
 !
-                              mpc=ilmpc(id)
-                              exit
-                           else
-                              cycle
+                  if(mpc.eq.0) then
+                     mpc=id+1
+                     ksol=0
+                     loop: do k=1,7
+                        do l=1,3
+                           idof=8*(kon(indexe+neigh(k,j))-1)+l
+!
+!                          check for SPC's using the same DOF
+!
+                           call nident(ikboun,idof,nboun,id)
+                           if(id.gt.0) then
+                              if(ikboun(id).eq.idof) cycle
                            endif
-                        endif
+!
+!                          check for MPC's using the same DOF
+!     
+                           call nident(ikmpc,idof,nmpc,id)
+                           if(id.gt.0) then
+                              if(ikmpc(id).eq.idof) cycle
+                           endif
+!
+                           ksol=k
+                           lsol=l
+                           exit loop
+                        enddo
+                     enddo loop
+!
+!                    no mpc available
+!
+                     if(ksol.eq.0) then
+                        write(*,*) 
+     &                       '*WARNING in gen3delem: no free DOF in'
+                        write(*,*) 
+     &                       '         node ',node,' for isochoric'
+                        write(*,*) '         MPC application'
+                        cycle
                      endif
 !
-!                 new mpc
+!                    new mpc
 !
                      nmpc=nmpc+1
                      if(nmpc.gt.nmpc_) then
                         write(*,*) '*ERROR in gen3delem: increase nmpc_'
                         stop
                      endif
-                     mpc=nmpc
+                     do l=1,nmpc
+                        if(ilmpc(l).ge.mpc) ilmpc(l)=ilmpc(l)+1
+                     enddo
                      do l=nmpc,id+2,-1
                         ikmpc(l)=ikmpc(l-1)
                         ilmpc(l)=ilmpc(l-1)
                      enddo
                      ikmpc(id+1)=idof
-                     ilmpc(id+1)=nmpc
-                  enddo
+                     ilmpc(id+1)=mpc
+                     do l=nmpc,mpc+1,-1
+                        ipompc(l)=ipompc(l-1)
+                        labmpc(l)=labmpc(l-1)
+                     enddo
 !
-                  if(mpc.eq.0) then
-                     write(*,*) '*WARNING in gen3delem: no free DOF in'
-                     write(*,*) '         node ',node,' for isochoric'
-                     write(*,*) '         MPC application'
-                     cycle
-                  endif
+                     labmpc(mpc)(1:9)='ISOCHORIC           '
+                     write(labmpc(mpc)(10:20),'(i11)') node
 !
-                  if(ipompc(mpc).eq.0) then
+!                    terms of the node itself and its neighbors
 !
-!                 new mpc
-!
-                     labmpc(mpc)(1:9)='ISOCHORIC'
                      ipompc(mpc)=mpcfree
-                     nodempc(1,mpcfree)=node
-                     nodempc(2,mpcfree)=k
-                     mpcfree=nodempc(3,mpcfree)
+                     do l=lsol,3
+                        nodempc(1,mpcfree)=kon(indexe+neigh(ksol,j))
+                        nodempc(2,mpcfree)=l
+                        mpcfree=nodempc(3,mpcfree)
+                     enddo
 !
-                     do k=1,7
+                     do k=ksol+1,7
                         do l=1,3
                            nodempc(1,mpcfree)=kon(indexe+neigh(k,j))
                            nodempc(2,mpcfree)=l
                            mpcfree=nodempc(3,mpcfree)
                         enddo
+                     enddo
+!
+                     do k=1,ksol-1
+                        do l=1,3
+                           nodempc(1,mpcfree)=kon(indexe+neigh(k,j))
+                           nodempc(2,mpcfree)=l
+                           mpcfree=nodempc(3,mpcfree)
+                        enddo
+                     enddo
+!
+                     do l=1,lsol-1
+                        nodempc(1,mpcfree)=kon(indexe+neigh(ksol,j))
+                        nodempc(2,mpcfree)=l
+                        mpcfree=nodempc(3,mpcfree)
                      enddo
 !
 !                 add nonhomogeneous term
@@ -238,8 +312,10 @@
                      endif
                      mpcfreeold=mpcfree
                      mpcfree=nodempc(3,mpcfree)
+                     nodempc(1,mpcfreeold)=nk
+                     nodempc(2,mpcfreeold)=1
                      nodempc(3,mpcfreeold)=0
-                     idof=7*(nk-1)+k
+                     idof=8*(nk-1)+1
                      call nident(ikboun,idof,nboun,id)
                      nboun=nboun+1
                      if(nboun.gt.nboun_) then
@@ -247,7 +323,7 @@
                         stop
                      endif
                      nodeboun(nboun)=nk
-                     ndirboun(nboun)=j
+                     ndirboun(nboun)=1
                      typeboun(nboun)='I'
                      do l=nboun,id+2,-1
                         ikboun(l)=ikboun(l-1)
@@ -258,7 +334,8 @@
 !
                   else
 !
-                     index=nodempc(3,ipompc(mpc))
+                     indexref=nodempc(3,nodempc(3,ipompc(mpc)))
+                     index=nodempc(3,indexref)
                      nterm=0
                      do
                         if(index.eq.0) exit
@@ -269,15 +346,15 @@
                            stop
                         endif
                         iterm(nterm)=
-     &                       7*(nodempc(1,index)-1)+nodempc(2,index)
-                        index=nodempc(3,nodempc(3,nodempc(3,index)))
+     &                       8*(nodempc(1,index)-1)+nodempc(2,index)
+                        index=nodempc(3,index)
                      enddo
                      kflag=1
                      call isortii(iterm,idummy,nterm,kflag)
 !
-                     do k=1,7
+                     do k=2,7
                         do l=1,3
-                           m=7*(kon(indexe+neigh(k,j))-1)+l
+                           m=8*(kon(indexe+neigh(k,j))-1)+l
                            call nident(iterm,m,nterm,id)
                            if(id.ne.0) then
                               if(iterm(id).eq.m) then
@@ -286,18 +363,155 @@
                            endif
                            mpcfreeold=mpcfree
                            mpcfree=nodempc(3,mpcfree)
-                           nodempc(3,mpcfree)=ipompc(mpc)
-                           ipompc(mpc)=mpcfreeold
+                           nodempc(3,mpcfreeold)=nodempc(3,indexref)
+                           nodempc(3,indexref)=mpcfreeold
                            nodempc(1,mpcfreeold)=kon(indexe+neigh(k,j))
                            nodempc(2,mpcfreeold)=l
                         enddo
                      enddo
 !
                   endif
+!
+                  xi=coloc(1,j)
+                  et=coloc(2,j)
+                  ze=coloc(3,j)
+!     
+                  call deuldlag(xi,et,ze,xlag,xeul,xj,a)
+!     
+                  b(1,1)=a(2,2)*a(3,3)-a(2,3)*a(3,2)
+                  b(1,2)=a(3,1)*a(2,3)-a(2,1)*a(3,3)
+                  b(1,3)=a(2,1)*a(3,2)-a(3,1)*a(2,2)
+                  b(2,1)=a(3,2)*a(1,3)-a(1,2)*a(3,3)
+                  b(2,2)=a(1,1)*a(3,3)-a(3,1)*a(1,3)
+                  b(2,3)=a(3,1)*a(1,2)-a(1,1)*a(3,2)
+                  b(3,1)=a(1,2)*a(2,3)-a(2,2)*a(1,3)
+                  b(3,2)=a(2,1)*a(1,3)-a(1,1)*a(2,3)
+                  b(3,3)=a(1,1)*a(2,2)-a(1,2)*a(2,1)
+c                  write(*,*) 'b(1,j)',b(1,1),b(1,2),b(1,3)
+c                  write(*,*) 'b(2,j)',b(2,1),b(2,2),b(2,3)
+c                  write(*,*) 'b(3,j)',b(3,1),b(3,2),b(3,3)
+!     
+                  index=ipompc(mpc)
+                  do
+                     if(nodempc(3,index).eq.0) then
+                        coefmpc(index)=1.d0
+                        idof=8*(nodempc(1,index)-1)
+     &                       +nodempc(2,index)
+c                        write(*,*) 
+c     &                   'gen3delem1 node,idir',nodempc(1,index),
+c     &                       nodempc(2,index)
+                        call nident(ikboun,idof,nboun,id)
+                        xboun(ilboun(id))=xboun(ilboun(id))+
+     &                       a(1,1)*b(1,1)+a(1,2)*b(1,2)+a(1,3)*b(1,3)
+     &                       -1.d0/xj
+c                     write(*,*) 'nonlinmpcboun ',nodempc(1,index),
+c     &                        nodempc(2,index),ilboun(id),
+c     &                       xboun(ilboun(id))
+                        exit
+                     else
+                        node=nodempc(1,index)
+                        idir=nodempc(2,index)
+c                        write(*,*) 'gen3delem2 node,idir',node,idir
+                        do k=1,7
+                           if(kon(indexe+neigh(k,j)).eq.node) then
+                              if(k.eq.1) then
+                                 if(idir.eq.1) then
+                                    coefmpc(index)=coefmpc(index)+1.5d0*
+     &                                  (xi*b(1,1)+et*b(1,2)+ze*b(1,3))
+                                 elseif(idir.eq.2) then
+                                    coefmpc(index)=coefmpc(index)+1.5d0*
+     &                                  (xi*b(2,1)+et*b(2,2)+ze*b(2,3))
+                                 elseif(idir.eq.3) then
+                                    coefmpc(index)=coefmpc(index)+1.5d0*
+     &                                  (xi*b(3,1)+et*b(3,2)+ze*b(3,3))
+                                 endif
+                              elseif(k.eq.2) then
+                                 if(idir.eq.1) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    -2.d0*xi*b(1,1)
+                                 elseif(idir.eq.2) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    -2.d0*xi*b(2,1)
+                                 elseif(idir.eq.3) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    -2.d0*xi*b(3,1)
+                                 endif
+                              elseif(k.eq.3) then
+                                 if(idir.eq.1) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    +0.5d0*xi*b(1,1)
+                                 elseif(idir.eq.2) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    +0.5d0*xi*b(2,1)
+                                 elseif(idir.eq.3) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    +0.5d0*xi*b(3,1)
+                                 endif
+                              elseif(k.eq.4) then
+                                 if(idir.eq.1) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    -2.d0*et*b(1,2)
+                                 elseif(idir.eq.2) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    -2.d0*et*b(2,2)
+                                 elseif(idir.eq.3) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    -2.d0*et*b(3,2)
+                                 endif
+                              elseif(k.eq.5) then
+                                 if(idir.eq.1) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    +0.5d0*et*b(1,2)
+                                 elseif(idir.eq.2) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    +0.5d0*et*b(2,2)
+                                 elseif(idir.eq.3) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    +0.5d0*et*b(3,2)
+                                 endif
+                              elseif(k.eq.6) then
+                                 if(idir.eq.1) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    -2.d0*ze*b(1,3)
+                                 elseif(idir.eq.2) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    -2.d0*ze*b(2,3)
+                                 elseif(idir.eq.3) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    -2.d0*ze*b(3,3)
+                                 endif
+                              elseif(k.eq.7) then
+                                 if(idir.eq.1) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    +0.5d0*ze*b(1,3)
+                                 elseif(idir.eq.2) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    +0.5d0*ze*b(2,3)
+                                 elseif(idir.eq.3) then
+                                    coefmpc(index)=coefmpc(index)
+     &                                    +0.5d0*ze*b(3,3)
+                                 endif
+                              endif
+                              exit
+                           endif
+                        enddo
+c                        write(*,*) 'gen3delem2 node,idir',node,idir,
+c     &                    coefmpc(index)
+                     endif
+                     index=nodempc(3,index)
+                  enddo
+!
                enddo
-            elseif((lakon(i)(1:2).eq.'CP').or.
-     &             (lakon(i)(1:1).eq.'S').or.
-     &             (lakon(i)(1:2).eq.'CA')) then
+            endif
+         enddo
+!
+!        1D and 2D elements
+!
+         do i=1,ne
+            if(ipkon(i).lt.0) cycle
+            if((lakon(i)(1:2).eq.'CP').or.
+     &              (lakon(i)(1:1).eq.'S').or.
+     &              (lakon(i)(1:2).eq.'CA')) then
 !
                call gen3dfrom2d(i,kon,ipkon,lakon,ne,iponor,xnor,knor,
      &           thicke,offset,ntrans,inotr,trab,ikboun,ilboun,nboun,
@@ -341,6 +555,85 @@
             endif
          enddo
 !
+!                 check whether the coefficient of the dependent
+!                 terms in ISOCHORIC MPC's is not zero
+!
+         if(isochoric) then
+            do i=1,nmpc
+               if(labmpc(i)(1:9).ne.'ISOCHORIC') cycle
+               index=ipompc(i)
+               if(dabs(coefmpc(index)).gt.1.d-10) cycle
+!
+!              coefficient of dependent term is zero: rearranging
+!              the MPC
+!
+               indexold=index
+               idofold=8*(nodempc(1,index)-1)+nodempc(2,index)
+               call nident(ikmpc,idofold,nmpc,idold)
+               do j=idold,nmpc-1
+                  ikmpc(j)=ikmpc(j+1)
+                  ilmpc(j)=ilmpc(j+1)
+               enddo
+               indexref=index
+               index=nodempc(3,index)
+!
+               do
+                  if(index.eq.0) then
+                     write(*,*) '*ERROR in gen3delem: coefficient'
+                     write(*,*) '       of dependent term is zero'
+                     write(*,*) '       and no other DOF is available'
+                     stop
+                  endif
+                  if(dabs(coefmpc(index)).gt.1.d-10) then
+                     idofnew=8*(nodempc(1,index)-1)+nodempc(2,index)
+!
+!                    check whether DOF is not used in SPC
+!
+                     call nident(ikboun,idofnew,nboun,idnew)
+                     if(idnew.gt.0) then
+                        if(ikboun(idnew).eq.idofnew) then
+                           indexref=index
+                           index=nodempc(3,index)
+                           cycle
+                        endif
+                     endif
+!
+!                    check whether DOF is not used in MPC
+!
+                     call nident(ikmpc,idofnew,nmpc,idnew)
+                     if(idnew.gt.0) then
+                        if(ikmpc(idnew).eq.idofnew) then
+                           indexref=index
+                           index=nodempc(3,index)
+                           cycle
+                        endif
+                     endif
+!
+!                    DOF is OK: take it as dependent term
+!
+                     do j=nmpc,idnew+2,-1
+                        ikmpc(j)=ikmpc(j-1)
+                        ilmpc(j)=ilmpc(j-1)
+                     enddo
+                     ikmpc(idnew+1)=idofnew
+                     ilmpc(idnew+1)=i
+!
+                     indexnew=index
+                     index=nodempc(3,index)
+                     ipompc(i)=indexnew
+                     nodempc(3,indexnew)=indexold
+                     nodempc(3,indexref)=index
+                     exit
+                  endif
+                  indexref=index
+                  index=nodempc(3,index)
+               enddo
+            enddo
+         endif
+c         do i=1,nmpc
+c            write(*,*) 'iklmpc ',i,ikmpc(i),ilmpc(i)
+c         enddo
+!
 !        filling the new KNOT MPC's (needs the coordinates
 !        of the expanded nodes)
 !
@@ -372,7 +665,7 @@
      &     xboun,iamboun,typeboun,iponoel,inoel,iponoelmax,kon,ipkon,
      &     lakon,ne,iponor,xnor,knor,ipompc,nodempc,coefmpc,nmpc,nmpc_,
      &     mpcfree,ikmpc,ilmpc,labmpc,rig,ntrans,inotr,trab,nam,nk,nk_,
-     &     co,nmethod,iperturb)
+     &     co,nmethod,iperturb,istep,vold)
 !
 !        updating the nodal surfaces: establishing links between the user
 !        defined nodes and the newly generated nodes (mid-nodes
@@ -409,7 +702,8 @@
      &     ndirforc,xforc,iamforc,ntrans,inotr,trab,rig,ipompc,nodempc,
      &     coefmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,iponoel,inoel,
      &     iponoelmax,kon,ipkon,lakon,ne,iponor,xnor,knor,nam,nk,nk_,
-     &     co,thicke)
+     &     co,thicke,nodeboun,ndirboun,ikboun,ilboun,nboun,nboun_,
+     &     iamboun,typeboun,xboun,nmethod,iperturb,istep,vold)
       endif
 !
       return

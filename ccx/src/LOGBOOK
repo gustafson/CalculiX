@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 1.7
+LOG-BOOK Version 1.8
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -1147,3 +1147,223 @@ Dec 2002        - started to work on single crystal plasticity
 
 6 Aug 2007     - new fluid elements: free and forced vortex, absolute-
                  to-relative elements and vice-versa, Moehring elements
+
+10 Sep 2007    - closed the .inp, .dat and .sta file properly at the
+                 end of the calculation
+
+11 Sep 2007    - changed ithermal into ithermal(2) in file gen3dnor.f
+
+16 Sep 2007    - introduced an error message in gen3dboun and gen3dforc
+                 to cover the situation in which rotational loadings
+                 or constrains are applied to a node in any but the 
+                 first step
+
+24 Sep 2007    - made a change in results.f (treatment of MPC's)
+
+25 Sep 2007    - made a change to nonlingeo.c and prediction.c: 
+                 mechanical results were not correctly saved during
+                 a heat transfer step.
+
+30 Sep 2007    - resolved the problem from 16 Sep 2007: definition of
+                 rotational BC's and moments in any but the first step
+                 is now OK.
+
+2 Oct 2007     - small corrections to creeps.f, plastics.f, gen3dboun.f,
+                 gen3dforc.f and checkconvergence.c
+
+6 Oct 2007     - made a change in steadystate.c: for cyclic symmetry
+                 only ngraph sectors are stored
+               - allowed for a user-defined amplitude definition
+
+10 Oct 2007    - continued to work on frequency-dependent dashpot
+                 constants
+
+15 Oct 2007    - correction in the expansion of MPC's in expand.c
+
+16 Oct 2007    - replaced umat_aniso_creep.f and expand.c
+                 for an anisotropic creep subroutine the creep
+                 strain goes in and the stress comes out
+
+20 Oct 2007    - started to implement an uncoupled
+                 temperature-displacement procedure
+
+25 Oct 2007    - changed the way the imaginary part of cloads and
+                 dloads is stored
+
+7 Nov 2007     - improvements in frd output in case of divergence
+               - linear application of user defined loads for
+                 static calculations 
+
+14 Nov 2007    - included participation factors for steady state
+                 dynamics calculations in the .dat file
+
+19 Nov 2007    - modified dyna.c in order to take contact
+                 into account
+
+21 Nov 2007    - added the variable OUTPUT to *VIEWFACTOR,WRITE.
+               - P*NP can be used for *STATIC calculations as well
+
+01 Dec 2007    - started to combine contact with modal dynamic 
+                 calculations
+
+15 Dec 2007    - removed an error in rhs.f and mafillsm.f: force on
+                 dependent node in MPC is redistributed among the
+                 independent nodes
+
+18 Dec 2007    - thickness of plane strain elements is reduced if
+                 there are axisymmetric elements in the model
+
+20 Dec 2007    - corrected an error in tempload
+
+9 Jan 2008     - started the implementation of computational fluid
+                 dynamics
+
+10 Jan 2008    - changed the format for elements in the .dat file to
+                 allow for element numbers exceeding 99999
+               - implemented engineering constants for orthotropic
+                 elastic materials
+
+14 Jan 2008    - made a change in gen3dnor.f
+
+22 Jan 2008    - worked on the implementation of isochoric elements
+                 (C3D20RH; was started years ago)
+
+23 Jan 2008    - made a correction in nonlingeo.c, mafillgas.f and
+                 resultgas.f
+
+30 Jan 2008    - corrected the node order of 3-node elements in frd.f
+               - replaced f20.10 by f20.0 in buckles.f, frequencies.f
+                 and heattransfers.f
+
+02 Feb 2008    - finished a preliminary version of cfd (coding only);
+
+05 Feb 2008    - continued work on rotational rigid body motion with
+                 linear dynamics
+               - continued work on incompressible elements
+
+09 Feb 2008    - expanded v,vold,vini,vr,vi and vt to contain 5
+                 entries for the variables (one extra space for
+                 static pressure)
+
+10 Feb 2008    - checking expansion; nearly OK, only segststate
+                 still deviates
+
+11 Feb 2008    - expansion to 5 entries works
+
+12 Feb 2008    - the calculation of idof is changed to allow for 8 dofs:
+                 temperature, 3 displacements or velocities, static
+                 pressure, 3 angles or rotation (instead of 7: static
+                 pressure is new)
+               - changed the internal dofs for rotations to 5,6 and 7.
+                 dof 4 is for static pressure. The external dofs for 
+                 rotations remain 4,5 and 6, for static pressure it is 8.
+                 For temperature the internal dof is 0, the external
+                 dof is 11.
+
+16 Feb 2008    - calculated a default position tolerance in case none is
+                 given by the user.
+
+17 Feb 2008    - removed an error in calinput.f and near2d.f
+               - continued checking of precfd.f
+
+21 Feb 2008    - removed an error in arpackcs.c
+
+24 Feb 2008    - debugged initialcfd.f
+
+1 Mar 2008     - started adaptive increment size in modal dynamic
+                 calculations.
+
+4 Mar 2008     - modal dynamics with adaptive increment size seems to 
+                 run
+
+5 Mar 2008     - corrected an error in dyna.c
+
+11 Mar 2008    - corrected an error in selcycsymmods.f and mpcrem.f
+               - in modal dynamics and steady state dynamics calulations
+                 any previous loading is removed
+
+12 Mar 2008    - isochoric elements seem to work
+               - .sta file is written for modal dynamics calculations
+                 too
+
+21 Mar 2008    - included code for multistage MPC's
+               - continued computational fluid dynamics
+
+27 Mar 2008    - made some changes to multistages.f
+               - modified the header of user subroutine dflux.f
+
+31 Mar 2008    - continued debugging of 3D fluid dynamics
+
+3 April 2008   - modifications to dyna.c
+
+10 April 2008  - started an update of the gas network elements
+
+15 April 2008  - continued update of gas network elements
+
+19 April 2008  - finished update of gas network elements
+               - extended output for cyclic frequency calculations
+                 (PHS,MAXU,MAXS)
+
+23 April 2008  - made some quality improvements in incplas.f
+
+28 April 2008  - continued computational fluid dynamics
+                 ordered nelemface
+               - corrected an error in mafilltrhs.f
+
+29 April 2008  - update of dyna.c
+
+7 Mai 2008     - introduced contact damping and friction for
+                 modal dynamic calculations
+
+15 Mai 2008    - different meaning of MAXU and MAXS in arpackcs.c
+               - correction in steadystate.c
+
+27 Mai 2008    - changed the order of the integration points in
+                 gauss3d6
+
+31 Mai 2008    - coded a linearized version of the mean rotation MPC
+
+3 June 2008    - implemented pre-tension section to simulate
+                 pre-tension in bolts (3D only).
+
+5 June 2008    - connected the linear equations solvers to compfluid.c
+                 for liquids (pressure equation)
+               - improved error message for zero columns in the
+                 stiffness matrix
+
+12 June 2008   - started to work on the improvement of the viewfactor
+                 calculations
+
+18 June 2008   - corrections in expand.c and pretensionsections.c
+
+21 June 2008   - corrected an error in expand.c
+               - introduced the FIXED parameter on the *BOUNDARY card
+
+23 June 2008   - changed 1.d-10 to 1.d-5 as smallest allowable
+                 coefficient in a MPC
+
+28 June 2008   - implemented STEADY STATE calculations for the
+                 linear dynamics procedure
+
+1 July 2008    - coded an update of CYCLIC MPC's for nonlinear 
+                 calculations (nonlinmpc)
+
+3 July 2008    - corrected an error in envtemp.f
+
+6 July 2008    - made some changes in compfluid.c: stable time increment
+                 is calculated in each iteration anew
+
+9 July 2008    - continued fluid dynamics: change of boundary conditions
+                 has to be limited to guarantee stability.
+
+13 July 2008   - improved the time increment management for 
+                 computational fluid dynamics
+
+19 July 2008   - set the mechanical strain to zero at the end of a
+                 frequency step
+               - started changes in the contact formulation: 1. adjust
+                 in the first iteration of the first increment of the
+                 first step; 2. zero force for too large distances
+                 3. contact area division number
+
+30 July 2008   - made a change to surfaces.f

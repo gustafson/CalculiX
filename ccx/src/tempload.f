@@ -22,7 +22,7 @@
      &  amta,namta,nam,ampli,time,reltime,ttime,dtime,ithermal,nmethod,
      &  xbounold,xboun,xbounact,iamboun,nboun,
      &  nodeboun,ndirboun,nodeforc,ndirforc,istep,iinc,
-     &  co,vold,itg,ntg)
+     &  co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload)
 !
 !     calculates the loading at a given time
 !
@@ -30,19 +30,23 @@
 !
       logical gasnode
 !
-      integer iamforc(*),iamload(2,*),iamt1(*),
+      character*20 sideload(*)
+      character*80 amname(*)
+!
+      integer iamforc(*),iamload(2,*),iamt1(*),nelemload(2,*),
      &  nam,i,istart,iend,id,nforc,nload,nk,namta(3,*),ithermal,
      &  nmethod,iamt1i,iamboun(*),nboun,iamforci,iambouni,
-     &  iamloadi1,iamloadi2,ibody(3,*),itg(*),ntg,
+     &  iamloadi1,iamloadi2,ibody(3,*),itg(*),ntg,idof,
      &  nbody,iambodyi,nodeboun(*),ndirboun(*),nodeforc(2,*),
-     &  ndirforc(*),istep,iinc,msecpt,node,j
+     &  ndirforc(*),istep,iinc,msecpt,node,j,ikboun(*),ilboun(*),
+     &  ipresboun
 !
       real*8 xforc(*),xforcact(*),xload(2,*),xloadact(2,*),
      &  t1(*),t1act(*),amta(2,*),ampli(*),time,
      &  xforcold(*),xloadold(2,*),t1old(*),reltime,
      &  xbounold(*),xboun(*),xbounact(*),ttime,dtime,reftime,
      &  xbody(7,*),xbodyold(7,*),
-     &  xbodyact(7,*),co(3,*),vold(0:3,*),abqtime(2),coords(3)
+     &  xbodyact(7,*),co(3,*),vold(0:4,*),abqtime(2),coords(3)
 !
       data msecpt /1/
 !
@@ -63,9 +67,17 @@
             reftime=reftime-amta(1,namta(1,i))
             istart=namta(1,abs(namta(3,i)))
             iend=namta(2,abs(namta(3,i)))
+            if(istart.eq.0) then
+               call uamplitude(reftime,amname(namta(3,i)),ampli(i))
+               cycle
+            endif
          else
             istart=namta(1,i)
             iend=namta(2,i)
+            if(istart.eq.0) then
+               call uamplitude(reftime,amname(i),ampli(i))
+               cycle
+            endif
          endif
          call identamta(amta,reftime,istart,iend,id)
          if(id.lt.istart) then
@@ -75,104 +87,6 @@
          else
             ampli(i)=amta(2,id)+(amta(2,id+1)-amta(2,id))
      &           *(reftime-amta(1,id))/(amta(1,id+1)-amta(1,id))
-         endif
-      enddo
-!
-!     scaling the loading
-!
-      do i=1,nforc
-         if(ndirforc(i).eq.0) then
-            if((xforc(i).lt.1.2357111318d0).and.
-     &         (xforc(i).gt.1.2357111316d0)) then
-!
-!              user subroutine for the concentrated heat flux
-!
-               node=nodeforc(1,i)
-!
-!              check whether node is a gasnode
-!
-               gasnode=.false.
-               call nident(itg,node,ntg,id)
-               if(id.gt.0) then
-                  if(itg(id).eq.node) then
-                     gasnode=.true.
-                  endif
-               endif
-!
-               abqtime(1)=time
-               abqtime(2)=ttime+dtime
-!
-!              a gasnode cannot move (displacement DOFs are used
-!              for other purposes, e.g. mass flow and pressure)
-!
-               if(gasnode) then
-                  do j=1,3
-                     coords(j)=co(j,node)
-                  enddo
-               else
-                  do j=1,3
-                     coords(j)=co(j,node)+vold(j,node)
-                  enddo
-               endif
-!
-               call cflux(xforcact(i),msecpt,istep,iinc,abqtime,node,
-     &              coords,vold)
-               cycle
-            endif
-         endif
-         if(nam.gt.0) then
-            iamforci=iamforc(i)
-         else
-            iamforci=0
-         endif
-         if(iamforci.gt.0) then
-            xforcact(i)=xforc(i)*ampli(iamforci)
-         elseif(nmethod.eq.1) then
-            xforcact(i)=xforcold(i)+
-     &         (xforc(i)-xforcold(i))*reltime
-         else
-            xforcact(i)=xforc(i)
-         endif
-      enddo
-!
-      do i=1,nload
-         if(nam.gt.0) then
-            iamloadi1=iamload(1,i)
-            iamloadi2=iamload(2,i)
-         else
-            iamloadi1=0
-            iamloadi2=0
-         endif
-         if(iamloadi1.gt.0) then
-            xloadact(1,i)=xload(1,i)*ampli(iamloadi1)
-         elseif(nmethod.eq.1) then
-            xloadact(1,i)=xloadold(1,i)+
-     &         (xload(1,i)-xloadold(1,i))*reltime
-         else
-            xloadact(1,i)=xload(1,i)
-         endif
-         if(iamloadi2.gt.0) then
-            xloadact(2,i)=xload(2,i)*ampli(iamloadi2)
-         elseif(nmethod.eq.1) then
-            xloadact(2,i)=xload(2,i)
-         else
-            xloadact(2,i)=xload(2,i)
-         endif
-      enddo
-!
-      do i=1,nbody
-         if(nam.gt.0) then
-            iambodyi=ibody(2,i)
-         else
-            iambodyi=0
-         endif
-         if(iambodyi.gt.0) then
-            xbodyact(1,i)=xbody(1,i)*ampli(iambodyi)
-         elseif(nmethod.eq.1) then
-            xbodyact(1,i)=xbodyold(1,i)+
-     &           (xbody(1,i)-xbodyold(1,i))*reltime
-         else
-            xbodyact(1,i)=xbody(1,i)
          endif
       enddo
 !
@@ -237,6 +151,122 @@
          endif
       enddo
 !
+!     scaling the loading
+!
+      do i=1,nforc
+         if(ndirforc(i).eq.0) then
+            if((xforc(i).lt.1.2357111318d0).and.
+     &         (xforc(i).gt.1.2357111316d0)) then
+!
+!              user subroutine for the concentrated heat flux
+!
+               node=nodeforc(1,i)
+!
+!              check whether node is a gasnode
+!
+               gasnode=.false.
+               call nident(itg,node,ntg,id)
+               if(id.gt.0) then
+                  if(itg(id).eq.node) then
+                     gasnode=.true.
+                  endif
+               endif
+!
+               abqtime(1)=time
+               abqtime(2)=ttime+dtime
+!
+!              a gasnode cannot move (displacement DOFs are used
+!              for other purposes, e.g. mass flow and pressure)
+!
+               if(gasnode) then
+                  do j=1,3
+                     coords(j)=co(j,node)
+                  enddo
+               else
+                  do j=1,3
+                     coords(j)=co(j,node)+vold(j,node)
+                  enddo
+               endif
+!
+               call cflux(xforcact(i),msecpt,istep,iinc,abqtime,node,
+     &              coords,vold)
+               cycle
+            endif
+         endif
+         if(nam.gt.0) then
+            iamforci=iamforc(i)
+         else
+            iamforci=0
+         endif
+         if(iamforci.gt.0) then
+            xforcact(i)=xforc(i)*ampli(iamforci)
+         elseif(nmethod.eq.1) then
+            xforcact(i)=xforcold(i)+
+     &         (xforc(i)-xforcold(i))*reltime
+         else
+            xforcact(i)=xforc(i)
+         endif
+      enddo
+!
+      do i=1,nload
+         ipresboun=0
+!
+!        check for pressure boundary conditions
+!
+         if(sideload(i)(3:4).eq.'NP') then
+            node=nelemload(2,i)
+            idof=8*(node-1)+2
+            call nident(ikboun,idof,nboun,id)
+            if(id.gt.0) then
+               if(ikboun(id).eq.idof) then
+                  ipresboun=1
+                  xloadact(1,i)=xbounact(ilboun(id))
+               endif
+            endif
+         endif
+!
+         if(ipresboun.eq.0) then
+            if(nam.gt.0) then
+               iamloadi1=iamload(1,i)
+               iamloadi2=iamload(2,i)
+            else
+               iamloadi1=0
+               iamloadi2=0
+            endif
+            if(iamloadi1.gt.0) then
+               xloadact(1,i)=xload(1,i)*ampli(iamloadi1)
+            elseif(nmethod.eq.1) then
+               xloadact(1,i)=xloadold(1,i)+
+     &              (xload(1,i)-xloadold(1,i))*reltime
+            else
+               xloadact(1,i)=xload(1,i)
+            endif
+            if(iamloadi2.gt.0) then
+               xloadact(2,i)=xload(2,i)*ampli(iamloadi2)
+            elseif(nmethod.eq.1) then
+               xloadact(2,i)=xload(2,i)
+            else
+               xloadact(2,i)=xload(2,i)
+            endif
+         endif
+      enddo
+!
+      do i=1,nbody
+         if(nam.gt.0) then
+            iambodyi=ibody(2,i)
+         else
+            iambodyi=0
+         endif
+         if(iambodyi.gt.0) then
+            xbodyact(1,i)=xbody(1,i)*ampli(iambodyi)
+         elseif(nmethod.eq.1) then
+            xbodyact(1,i)=xbodyold(1,i)+
+     &           (xbody(1,i)-xbodyold(1,i))*reltime
+         else
+            xbodyact(1,i)=xbody(1,i)
+         endif
+      enddo
+!
 !     scaling the temperatures
 !
       if(ithermal.eq.1) then
@@ -263,7 +293,6 @@
             endif
          enddo
       endif
-!
 c      write(*,*) 'nboun'
 c      do i=1,nboun
 c         write(*,'(i7,1x,e11.4,1x,e11.4)') i,xbounact(i),xboun(i)

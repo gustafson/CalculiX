@@ -32,10 +32,14 @@
      &  xiold(-1:1,-1:1),etold(-1:1,-1:1),distmin,xiopt,etopt,
      &  d1,d2,d3,d4,dist,xil,etl
 !
-      d1=0.25d0
-      d2=3.125d-2
-      d3=3.9063d-3
-      d4=1.d-3
+c      d1=0.25d0
+c      d2=3.125d-2
+c      d3=3.9063d-3
+c      d4=1.d-3
+      d1=1.d-1
+      d2=1.d-2
+      d3=1.d-4
+      d4=1.d-6
 !
 !     initialisation
 !

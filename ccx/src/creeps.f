@@ -84,7 +84,10 @@
                   write(*,*) '       not exceed 69 characters'
                   stop
                else
-                  matname(nmat)(12:80)=matname(nmat)(1:69)
+                  do i=80,12,-1
+                     matname(nmat)(i:i)=matname(nmat)(i-11:i-11)
+                  enddo
+c                  matname(nmat)(12:80)=matname(nmat)(1:69)
                   matname(nmat)(1:11)='ANISO_CREEP'
                endif
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -104,7 +107,10 @@
                   write(*,*) '       must not exceed 70 characters'
                   stop
                else
-                  matname(nmat)(11:80)=matname(nmat)(1:70)
+                  do i=80,11,-1
+                     matname(nmat)(i:i)=matname(nmat)(i-10:i-10)
+                  enddo
+c                  matname(nmat)(11:80)=matname(nmat)(1:70)
                   matname(nmat)(1:10)='ANISO_PLAS'
                endif
             endif
@@ -193,6 +199,12 @@
             elcon(9,ntmat,nmat)=temperature
          enddo
 !
+         if(ntmat.eq.0) then
+            write(*,*) '*ERROR in creeps: Norton law assumed,'
+            write(*,*) '       yet no constants given'
+            stop
+         endif
+!
 !        interpolating the creep data at the elastic temperature
 !        data points
 !
@@ -233,9 +245,9 @@
                write(*,*) '*ERROR in creeps: increase ntmat_'
                stop
             endif
-            do i=1,2
+            do i=1,3
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
-     &               elcon(i+14,ntmat,nmat)
+     &               elcon(i+15,ntmat,nmat)
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
             enddo
             if(textpart(3)(1:1).ne.' ') then
@@ -245,7 +257,7 @@
             else
                temperature=0.d0
             endif
-            elcon(17,ntmat,nmat)=temperature
+            elcon(19,ntmat,nmat)=temperature
          enddo
 !
 !        interpolating the creep data at the elastic temperature
@@ -255,6 +267,12 @@
 !        A,n,m,temperature
 !        after interpolation: data are stored in positions 13-15:
 !        A,n,m
+!
+         if(ntmat.eq.0) then
+            write(*,*) '*ERROR in creeps: Norton law assumed,'
+            write(*,*) '       yet no constants given'
+            stop
+         endif
 !     
          do i=1,nelcon(2,nmat)
             t1l=elcon(0,i,nmat)

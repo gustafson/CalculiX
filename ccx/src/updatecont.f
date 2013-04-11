@@ -24,7 +24,7 @@
 !
       integer koncont(4,*),ncont,i,j,k,node
 !
-      real*8 co(3,*),vold(0:3,*),cg(3,*),straight(16,*),col(3,3)
+      real*8 co(3,*),vold(0:4,*),cg(3,*),straight(16,*),col(3,3)
 !
       do i=1,ncont
          do j=1,3

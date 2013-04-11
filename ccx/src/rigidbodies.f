@@ -41,7 +41,7 @@
      &  nboun,nboun_,key,iperturb,ipos,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),ipoinpc(0:*)
 !
-      real*8 coefmpc(3,*),ctrl(26),co(3,*)
+      real*8 coefmpc(3,*),ctrl(*),co(3,*)
 !
       if(istep.gt.0) then
          write(*,*) 
@@ -185,7 +185,7 @@ c         ctrl(20)=1.d+30
             endif
             if((node.eq.irefnode).or.(node.eq.irotnode)) cycle
             do j=1,3
-               idof=7*(node-1)+j
+               idof=8*(node-1)+j
                call nident(ikmpc,idof,nmpc,id)
                if(id.gt.0) then
                   if(ikmpc(id).eq.idof) then
@@ -229,7 +229,7 @@ c         ctrl(20)=1.d+30
                node=kon(k)
                if((node.eq.irefnode).or.(node.eq.irotnode)) cycle
                do j=1,3
-                  idof=7*(node-1)+j
+                  idof=8*(node-1)+j
                   call nident(ikmpc,idof,nmpc,id)
                   if(id.gt.0) then
                      if(ikmpc(id).eq.idof) then

@@ -27,12 +27,10 @@
       character*1 inpc(*)
       character*132 textpart(16)
 !
-      integer nelcon(2,*),nmat,ntmat,ntmat_,istep,istat,ipoinpc(0:*),
-     &  n,key,i,ityp,ncmat_,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*)
+      integer nelcon(2,*),nmat,ntmat_,istep,istat,ipoinpc(0:*),
+     &  n,key,i,ncmat_,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*)
 !
       real*8 elcon(0:ncmat_,ntmat_,*)
-!
-      ntmat=0
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in surfacebehaviors:'
@@ -48,46 +46,33 @@
          stop
       endif
 !
-      ityp=2
+      nelcon(1,nmat)=2
+      nelcon(2,nmat)=1
 !
-      nelcon(1,nmat)=ityp
+!     no temperature dependence allowed; last line is decisive
 !
-      if(ityp.eq.2) then
-         do
-            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &           ipoinp,inp,ipoinpc)
-            if((istat.lt.0).or.(key.eq.1)) return
-            ntmat=ntmat+1
-            nelcon(2,nmat)=ntmat
-            if(ntmat.gt.ntmat_) then
-               write(*,*) '*ERROR in surfacebehaviors: increase ntmat_'
-               stop
-            endif
-            do i=1,2
-               read(textpart(i)(1:20),'(f20.0)',iostat=istat)
-     &                 elcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-            enddo
-!
-!           transforming the parameters c_0 into
-!           beta such that the pressure p satisfies:
-!           p=p_0*dexp(-beta*distance)
-!           where n is the normal to the master surface, and
-!           distance is the distance between slave node and
-!           master surface (negative for penetration)
-!
-            elcon(1,ntmat,nmat)=dlog(100.d0)/elcon(1,ntmat,nmat)
-!
-            if(textpart(3)(1:1).ne.' ') then
-               read(textpart(3)(1:20),'(f20.0)',iostat=istat)
-     &                   elcon(0,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-            else
-               elcon(0,ntmat,nmat)=0.d0
-            endif
+      do
+         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &        ipoinp,inp,ipoinpc)
+         if((istat.lt.0).or.(key.eq.1)) return
+         do i=1,2
+            read(textpart(i)(1:20),'(f20.0)',iostat=istat)
+     &           elcon(i,1,nmat)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          enddo
-      endif
-!
+!     
+!     transforming the parameters c_0 into
+!     beta such that the pressure p satisfies:
+!     p=p_0*dexp(-beta*distance)
+!     where n is the normal to the master surface, and
+!     distance is the distance between slave node and
+!     master surface (negative for penetration)
+!     
+         elcon(1,1,nmat)=dlog(100.d0)/elcon(1,1,nmat)
+!     
+         elcon(0,1,nmat)=0.d0
+      enddo
+!     
       return
       end
 

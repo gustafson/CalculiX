@@ -15,9 +15,9 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-      subroutine labyrinth(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &     nactdog,identity,ielprop,prop,iflag,voldgas,xflow,f,
-     &     nodef,idirf,df,cp,R,physcon,dvi,numf)
+      subroutine labyrinth(node1,node2,nodem,nelem,lakon,
+     &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
+     &     nodef,idirf,df,cp,R,physcon,dvi,numf,set,co,vold)
 !     
 !     labyrinth element
 !     
@@ -25,22 +25,24 @@
 !     
       logical identity
       character*8 lakon(*)
+      character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
-     &     inv,ipkon(*),kon(*),kgas,n
+     &     inv,kgas,n,iaxial,nodea,nodeb
 !
-      real*8 prop(*),voldgas(0:3,*),xflow,f,df(4),kappa,R,a,d,
+      real*8 prop(*),v(0:4,*),xflow,f,df(4),kappa,R,a,d,
      &     p1,p2,T1,Aeff,C1,C2,C3,cd,cp,physcon(3),p2p1,km1,dvi,
      &     kp1,kdkm1,tdkp1,km1dk,x,y,ca1,cb1,ca2,cb2,dT1,alambda,
-     &     rad,reynolds,pi,ppkrit,
+     &     rad,reynolds,pi,ppkrit,co(0:3,*),
      &     carry_over,lc,hst,e,szt,num,denom,t,s,b,h,cdu,
      &     cd_radius,cst,dh,cd_honeycomb,cd_lab,bdh,
      &     pt0zps1,cd_1spike,cdbragg,rzdh,
-     &     cd_correction,p1p2
+     &     cd_correction,p1p2,xflow_oil,T2,vold(0:4,*)
 !     
-      numf=4
-!     
+      pi=4.d0*datan(1.d0)
+      e=2.718281828459045d0
+!          
       if (iflag.eq.0) then
          identity=.true.
 !     
@@ -54,34 +56,67 @@
 !     
       elseif (iflag.eq.1)then
 !     
-         index=ielprop(nelem)
-         kappa=(cp/(cp-R))
-         t=prop(index+1)
-         s=prop(index+2)
-         d=prop(index+3)
-         n=int(prop(index+4))
-         b=prop(index+5)
-         h=prop(index+6)
+          index=ielprop(nelem)
+          kappa=(cp/(cp-R))
+!
+!     Usual Labyrinth
+!     
+          if(lakon(nelem)(2:5).ne.'LABF') then
+             t=prop(index+1)
+             s=prop(index+2)
+             d=prop(index+3)
+             n=int(prop(index+4))
+             b=prop(index+5)
+             h=prop(index+6)
 !     hc=prop(index+7)
-         lc=prop(index+7)
-         rad=prop(index+8)
-         X=prop(index+9)
-         Hst=prop(index+10)
+             lc=prop(index+7)
+             rad=prop(index+8)
+             X=prop(index+9)
+             Hst=prop(index+10)
+
+             A=pi*D*s
+!
+!    "flexible" labyrinth for thermomechanical coupling
+!
+          elseif(lakon(nelem)(2:5).eq.'LABF') then
+             nodea=int(prop(index+1))
+             nodeb=int(prop(index+2))
+             iaxial=int(prop(index+3))
+             t=prop(index+4)
+             d=prop(index+5)
+             n=int(prop(index+6))
+             b=prop(index+7)
+             h=prop(index+8)
+!     hc=prop(index+7)
+             lc=prop(index+9)
+             rad=prop(index+10)
+             X=prop(index+11)
+             Hst=prop(index+12)
+!
+!     gap definition
+             s=dsqrt((co(1,nodeb)+vold(1,nodeb)-
+     &            co(1,nodea)-vold(1,nodea))**2+
+     &            (co(2,nodeb)+vold(2,nodeb)-
+     &            co(2,nodea)-vold(2,nodea))**2+
+     &            (co(3,nodeb)+vold(3,nodeb)-
+     &            co(3,nodea)-vold(3,nodea))**2)
+             if(iaxial.ne.0) then
+                a=pi*d*s/iaxial
+             else
+                a=pi*d*s
+             endif
+          endif
 !     
-         pi=4.d0*datan(1.d0)
-         A=pi*D*s
-         e=2.718281828459045d0
-!     
-         p1=voldgas(2,node1)
-         p2=voldgas(2,node2)
+         p1=v(2,node1)
+         p2=v(2,node2)
          if(p1.ge.p2) then
             inv=1
-            T1=voldgas(0,node1)+physcon(1)
+            T1=v(0,node1)+physcon(1)
          else
             inv=-1
-            p1=voldgas(2,node2)
-            p2=voldgas(2,node1)
-            T1=voldgas(0,node2)+physcon(1)
+            p1=v(2,node2)
+            p2=v(2,node1)
+            T1=v(0,node2)+physcon(1)
          endif
 !     
          cd=1.d0
@@ -111,7 +146,6 @@
                xflow=inv*p1*Aeff*dsqrt(kappa/r)*tdkp1**(kp1/(2.d0*km1))/
      &              dsqrt(T1)
             endif
-c            write(*,*) 'xflow=',xflow
          endif
 !     
 !***********************
@@ -136,62 +170,92 @@ c            write(*,*) 'xflow=',xflow
             else
                xflow=inv*p1*Aeff/dsqrt(T1)*dsqrt(2.d0/R)*ppkrit
             endif
-c            write(*,*) 'xflow=',xflow
          endif
 !     
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       elseif (iflag.eq.2)then
 !     
+         numf=4
          alambda=10000.d0
 !     
-         p1=voldgas(2,node1)
-         p2=voldgas(2,node2)
+         p1=v(2,node1)
+         p2=v(2,node2)
          if(p1.ge.p2) then
             inv=1
-            xflow=voldgas(1,nodem)
-            T1=voldgas(0,node1)+physcon(1)
+            xflow=v(1,nodem)
+            T1=v(0,node1)+physcon(1)
+            T2=v(0,node2)+physcon(1)
             nodef(1)=node1
             nodef(2)=node1
             nodef(3)=nodem
             nodef(4)=node2
          else
             inv=-1
-            p1=voldgas(2,node2)
-            p2=voldgas(2,node1)
-            xflow=-voldgas(1,nodem)
-            T1=voldgas(0,node2)+physcon(1)
+            p1=v(2,node2)
+            p2=v(2,node1)
+            xflow=-v(1,nodem)
+            T1=v(0,node2)+physcon(1)
+            T2=v(0,node1)+physcon(1)
             nodef(1)=node2
             nodef(2)=node2
             nodef(3)=nodem
             nodef(4)=node1
          endif
 !     
-c     xflow=voldgas(1,nodem)
-!     
          idirf(1)=2
          idirf(2)=0
          idirf(3)=1
          idirf(4)=2
 !     
-         index=ielprop(nelem)
-         kappa=(cp/(cp-R))
-         t=prop(index+1)
-         s=prop(index+2)
-         d=prop(index+3)
-         n=int(prop(index+4))
-         b=prop(index+5)
-         h=prop(index+6)
-!     hc=prop(index+7)
-         lc=prop(index+7)
-         rad=prop(index+8)
-         X=prop(index+9)
-         Hst=prop(index+10)
+!     Usual labyrinth
+!
+         if(lakon(nelem)(2:6).ne. 'LABF') then
+            index=ielprop(nelem)
+            kappa=(cp/(cp-R))
+            t=prop(index+1)
+            s=prop(index+2)
+            d=prop(index+3)
+            n=int(prop(index+4))
+            b=prop(index+5)
+            h=prop(index+6)
+            lc=prop(index+7)
+            rad=prop(index+8)
+            X=prop(index+9)
+            Hst=prop(index+10)
+            A=pi*D*s
+!
+!     Flexible labyrinth for coupled calculations
+!
+         elseif(lakon(nelem)(2:5).eq.'LABF') then
+             nodea=int(prop(index+1))
+             nodeb=int(prop(index+2))
+             iaxial=int(prop(index+3))
+             t=prop(index+4)
+             d=prop(index+5)
+             n=int(prop(index+6))
+             b=prop(index+7)
+             h=prop(index+8)
+             lc=prop(index+9)
+             rad=prop(index+10)
+             X=prop(index+11)
+             Hst=prop(index+12)
+!
+!     gap definition
+             s=dsqrt((co(1,nodeb)+vold(1,nodeb)-
+     &            co(1,nodea)-vold(1,nodea))**2+
+     &            (co(2,nodeb)+vold(2,nodeb)-
+     &            co(2,nodea)-vold(2,nodea))**2+
+     &            (co(3,nodeb)+vold(3,nodeb)-
+     &            co(3,nodea)-vold(3,nodea))**2)
+             if(iaxial.ne.0) then
+                a=pi*d*s/iaxial
+             else
+                a=pi*d*s
+             endif
+          endif
 !     
          p2p1=p2/p1
          dT1=dsqrt(T1)
 !     
-         pi=4.d0*datan(1.d0)
-         A=pi*D*s
          Aeff=A
          e=2.718281828459045d0
 !     
@@ -200,9 +264,7 @@ c     xflow=voldgas(1,nodem)
          cd_honeycomb=1.d0
          if (lc.ne.0.d0)then
             call cd_lab_honeycomb(s,lc,cd_honeycomb)
-c            write(*,*) '1+cd_honeycomb/100',1+cd_honeycomb/100
             cd_honeycomb=1+cd_honeycomb/100
-!            Aeff=Aeff*(1.d0+cd_honeycomb/100.d0)
          endif
 !     
 !     inlet radius correction
@@ -210,8 +272,6 @@ c            write(*,*) '1+cd_honeycomb/100',1+cd_honeycomb/100
          cd_radius=1.d0
          if((rad.ne.0.d0).and.(n.ne.1d0)) then
             call cd_lab_radius(rad,s,Hst,cd_radius)
-c            write(*,*) 'cd_radius',cd_radius
-!            Aeff=Aeff*cd_radius
          endif
 !     
 !     carry over factor (only for straight throught labyrinth)
@@ -220,7 +280,6 @@ c            write(*,*) 'cd_radius',cd_radius
             cst=n/(n-1.d0)
             szt=s/t
             carry_over=cst/dsqrt(cst-szt/(szt+0.02))
-c            write(*,*) 'carry_over=',carry_over
             Aeff=Aeff*carry_over
          endif
 !     
@@ -234,9 +293,6 @@ c            write(*,*) 'carry_over=',carry_over
 !     calculation of the number of reynolds for a gap
 !     
          reynolds=dabs(xflow)*2.d0*s/(dvi*A*cd_honeycomb/cd_radius)
-c         write(*,*) ''
-c         write(*,*) 'dynamic viscosity=',dvi
-c         write(*,*) 'reynolds=',reynolds
 !     
 !**************************************
 !     single fin labyrinth 
@@ -258,7 +314,6 @@ c         write(*,*) 'reynolds=',reynolds
             rzdh=rad/dh
 !     
             call cd_Mcgreehan_Schotsch(rzdh,bdh,reynolds,cdu) 
-c            write(*,*) 'McGreehan incompressible cd:cdu=',cdu
 !     
 !     compressibility correction factor
 !     
@@ -268,8 +323,6 @@ c            write(*,*) 'McGreehan incompressible cd:cdu=',cdu
 !     
             call cd_bragg(cdu,p2p1,cdbragg)
             cd=cdbragg
-c            write(*,*) 'Bragg correction cd=',cdbragg
-c            write(*,*) ''
             Aeff=Aeff*cd 
 !     
             km1=kappa-1.d0
@@ -313,7 +366,6 @@ c            write(*,*) ''
                df(4)=0.d0
             endif
          endif
-!
 !     
 !****************************************
 !     straight labyrinth & stepped labyrinth
@@ -330,7 +382,6 @@ c            write(*,*) ''
 !     
             if((hst.eq.0.d0).and.(n.ne.1)) then
                call cd_lab_straight(n,p2p1,s,b,reynolds,cd_lab)
-c               write(*,*) 'cd_straight=',cd_lab
                Aeff=Aeff*cd_lab*cd_honeycomb*cd_radius
 !     
 !     Stepped Labyrinth
@@ -339,29 +390,21 @@ c               write(*,*) 'cd_straight=',cd_lab
 !     corrective term for the first spike
                p1p2=p1/p2
                pt0zps1=(p1p2)**(1/prop(index+4))
-c               write(*,*) 'p0/pn=',p1/p2
-c               write(*,*) 'p0/p1=',pt0zps1
                call cd_lab_1spike (pt0zps1,s,b,cd_1spike)
-c               write(*,*) 'cd1=',cd_1spike
 !     
 !     corrective term for cd_lab_1spike
 !     
                call cd_lab_correction (p1p2,s,b,cd_correction)
-c               write(*,*) 'cd_correction=', cd_correction
 !     
 !     calculation of the discharge coefficient of the stepped labyrinth
 !     
                cd=cd_1spike*cd_correction
                cd_lab=cd
 !     
-c               write(*,*) 'cd_lab=',cd_lab
-c               write(*,*) ''
-!     
                Aeff=Aeff*cd_lab*cd_radius*cd_honeycomb
             endif
 !     
             call lab_straight_ppkrit(n,ppkrit)
-c            write(*,*) 'ppkrit=',ppkrit
 !     
 !     subcritical case
 !     
@@ -389,6 +432,240 @@ c            write(*,*) 'ppkrit=',ppkrit
                df(4)=0.d0
             endif
          endif
+!
+!     output
+!
+      elseif(iflag.eq.3)then
+!
+
+         p1=v(2,node1)
+         p2=v(2,node2)
+         if(p1.ge.p2) then
+            inv=1
+            xflow=v(1,nodem)
+            T1=v(0,node1)+physcon(1)
+            T2=v(0,node2)+physcon(1)
+            nodef(1)=node1
+            nodef(2)=node1
+            nodef(3)=nodem
+            nodef(4)=node2
+         else
+            inv=-1
+            p1=v(2,node2)
+            p2=v(2,node1)
+            xflow=-v(1,nodem)
+            T1=v(0,node2)+physcon(1)
+            T2=v(0,node2)+physcon(1)
+            nodef(1)=node2
+            nodef(2)=node2
+            nodef(3)=nodem
+            nodef(4)=node1
+         endif
+!     
+         index=ielprop(nelem)
+         kappa=(cp/(cp-R))
+         t=prop(index+1)
+         s=prop(index+2)
+         d=prop(index+3)
+         n=int(prop(index+4))
+         b=prop(index+5)
+         h=prop(index+6)
+         lc=prop(index+7)
+         rad=prop(index+8)
+         X=prop(index+9)
+         Hst=prop(index+10)
+!     
+         p2p1=p2/p1
+         dT1=dsqrt(T1)
+!     
+         pi=4.d0*datan(1.d0)
+         A=pi*D*s
+         Aeff=A
+         e=2.718281828459045d0
+!     
+!     honeycomb stator correction
+!     
+         if (lc.ne.0.d0)then
+            call cd_lab_honeycomb(s,lc,cd_honeycomb)
+            Aeff=Aeff*(1.d0+cd_honeycomb/100.d0)
+         else
+            cd_honeycomb=0
+         endif
+!     
+!     inlet radius correction
+!     
+         if((rad.ne.0.d0).and.(n.ne.1d0)) then
+            call cd_lab_radius(rad,s,Hst,cd_radius)
+            Aeff=Aeff*cd_radius
+         else
+            cd_radius=1
+         endif
+!     
+!     carry over factor (only for straight throught labyrinth)
+!     
+         if((n.gt.1).and.(hst.eq.0d0)) then
+            cst=n/(n-1.d0)
+            szt=s/t
+            carry_over=cst/dsqrt(cst-szt/(szt+0.02))
+            Aeff=Aeff*carry_over
+         endif
+!     
+!     calculation of the dynamic viscosity 
+!     
+         if(dabs(dvi).lt.1E-30) then
+            kgas=0
+            call dynamic_viscosity(kgas,T1,dvi)
+         endif     
+!     
+!     calculation of the number of reynolds for a gap
+!     
+         reynolds=dabs(xflow)*2.d0*s/(dvi*A)
+!**************************************
+!     single fin labyrinth 
+!     the resolution procedure is the same as for the restrictor
+!**************************************
+!     
+         if(n.eq.1)then
+!     
+!     single fin labyrinth
+!     
+!     incompressible basis cd , reynolds correction,and radius correction
+!     
+!     "Flow Characteristics of long orifices with rotation and corner radiusing"
+!     W.F. Mcgreehan and M.J. Schotsch
+!     ASME 87-GT-162
+!     
+            dh=2*s
+            bdh=b/dh
+            rzdh=rad/dh
+!     
+            call cd_Mcgreehan_Schotsch(rzdh,bdh,reynolds,cdu) 
+!     
+!     compressibility correction factor
+!     
+!     S.L.Bragg
+!     "Effect of conpressibility on the discharge coefficient of orifices and convergent nozzles"
+!     Journal of Mechanical engineering vol 2 No 1 1960
+!     
+            call cd_bragg(cdu,p2p1,cdbragg)
+            cd=cdbragg
+            Aeff=Aeff*cd 
+         endif
+!     
+!****************************************
+!     straight labyrinth & stepped labyrinth
+!     method found in "Air system Correlations Part1 Labyrinth Seals"
+!     H.Zimmermann and K.H. Wolff
+!     ASME 98-GT-206
+!****************************************
+!     
+         if(n.ge.2) then
+            num=(1.d0-p2p1**2)
+            denom=R*(n-log(p2p1)/log(e))
+!     
+!     straight labyrinth
+!     
+            if((hst.eq.0.d0).and.(n.ne.1)) then
+               call cd_lab_straight(n,p2p1,s,b,reynolds,cd_lab)
+               Aeff=Aeff*cd_lab*cd_honeycomb*cd_radius
+!     
+!     Stepped Labyrinth
+!     
+            else 
+!     corrective term for the first spike
+               p1p2=p1/p2
+               pt0zps1=(p1p2)**(1/prop(index+4))
+               call cd_lab_1spike (pt0zps1,s,b,cd_1spike)
+!     
+!     corrective term for cd_lab_1spike
+!     
+               call cd_lab_correction (p1p2,s,b,cd_correction)
+!     
+!     calculation of the discharge coefficient of the stepped labyrinth
+!     
+               cd=cd_1spike*cd_correction
+               cd_lab=cd
+!     
+               Aeff=Aeff*cd_lab*cd_radius*cd_honeycomb
+            endif
+!     
+            call lab_straight_ppkrit(n,ppkrit)
+
+         endif
+
+         xflow_oil=0
+
+         write(1,*) ''
+         write(1,55) 'In line',int(nodem/100),' from node',node1,
+     &' to node', node2,':   air massflow rate= ',xflow,'kg/s',
+     &', oil massflow rate= ',xflow_oil,'kg/s'
+ 55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
+         
+         if(inv.eq.1) then
+          write(1,56)'       Inlet node  ',node1,':   Tt1=',T1,
+     &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
+
+            write(1,*)'             element S    ',set(numf+nelem)(1:20)
+            write(1,57)'             eta= ',dvi,'kg/(m*s), Re= ' ,
+     &           reynolds,
+     &', Cd_radius= ',cd_radius,', Cd_honeycomb= ', 1+cd_honeycomb/100
+
+!     straight labyrinth
+           if((hst.eq.0.d0).and.(n.ne.1)) then
+              write(1,58)'             COF= ',carry_over,
+     &             ', Cd_lab= ',cd_lab,', Cd= ',carry_over*cd_lab
+
+!     stepped labyrinth
+           elseif(hst.ne.0d0) then
+              write(1,59)'             Cd_1_fin= ',
+     &             cd_1spike, ', Cd= ',cd,', pt0/ps1= ',pt0zps1,
+     &             ', p0/pn= ',p1/p2
+
+!     single fin labyrinth
+           elseif(n.eq.1) then
+              write(1,60) '             Cd_Mcgreehan= ',cdu,
+     &             ', Cd= ',cdbragg
+           endif
+                 
+            write(1,56)'       Outlet node ',node2,':   Tt2= ',T2,
+     &           'K, Ts2= ',T2,'K, Pt2= ',P2/1e5,'Bar'
+
+!     
+         else if(inv.eq.-1) then
+            write(1,56)'       Inlet node  ',node2,':    Tt1= ',T1,
+     &           'K, Ts1= ',T1,'K, Pt1= ',P1/1E5, 'Bar' 
+         
+            write(1,*)'             element S    ',set(numf+nelem)(1:20)
+            write(1,57)'             eta=',dvi,'kg/(m*s), Re= '
+     &           ,reynolds,
+     & ', Cd_radius= ',cd_radius,', Cd_honeycomb= ',1+cd_honeycomb/100       
+!
+!     straight labyrinth
+            if((hst.eq.0.d0).and.(n.ne.1)) then
+               write(1,58)'                  COF = ',carry_over,
+     &              ', Cd_lab= ',cd_lab,', Cd= ',carry_over*cd_lab
+!
+!     stepped labyrinth
+            elseif(hst.ne.0d0) then
+               write(1,59)'                 Cd_1_fin= ',
+     &              cd_1spike,', Cd= ',cd,', pt0/ps1= ',pt0zps1,
+     &             ', p0/pn= ',p1/p2
+
+!     single fin labyrinth
+            elseif(n.eq.1) then
+               write(1,60) '              Cd_Mcgreehan= ',
+     & cdu,' Cd= ',cdbragg
+           endif
+           write(1,56)'       Outlet node ',node1,':    Tt2= ',T2,
+     &          'K, Ts2= ',T2,'K, Pt2= ',P2/1e5, 'Bar'
+
+        endif
+!         
+ 56      FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A)
+ 57      FORMAT(1X,A,E11.5,A,G9.4,A,f6.4,A,f6.4)
+ 58      FORMAT(1X,A,f7.5,A,f7.5,A,f7.5)
+ 59      FORMAT(1X,A,f7.5,A,f7.5,A,f7.5,A,f5.3)
+ 60      FORMAT(1X,A,f7.5,A,f7.5)
       endif
 !         
       return

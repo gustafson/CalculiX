@@ -42,7 +42,7 @@
 !
 !        no transformation applies to the node
 !
-         idof=7*(node-1)+i
+         idof=8*(node-1)+i
          call nident(ikforc,idof,nforc,id)
          if(id.gt.0) then
             do
@@ -91,7 +91,7 @@ c
 !
          do j=1,3
             idf(j)=0
-            idof=7*(node-1)+j
+            idof=8*(node-1)+j
             call nident(ikforc,idof,nforc,id)
             if(id.gt.0) then
                do
@@ -146,7 +146,7 @@ c
 !
 !              updating ikforc and ilforc
 ! 
-               idof=7*(node-1)+j
+               idof=8*(node-1)+j
                call nident(ikforc,idof,nforc-1,id)
                do k=nforc,id+2,-1
                   ikforc(k)=ikforc(k-1)

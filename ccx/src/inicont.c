@@ -23,14 +23,14 @@
 void inicont(int *ncont, int *ntie, char *tieset, int *nset, char *set,
                int *istartset, int *iendset, int *ialset, int **itietrip,
                char *lakon, int *ipkon, int *kon, int **koncontp,
-               int *ncone){
+	     int *ncone, double *tietol, int *ismallsliding){
 
   int *itietri=NULL,*koncont=NULL;
 
   itietri=*itietrip;koncont=*koncontp;
 
   FORTRAN(allocont,(ncont,ntie,tieset,nset,set,istartset,iendset,
-          ialset,lakon,ncone));
+	      ialset,lakon,ncone,tietol,ismallsliding));
 
   if(ncont==0) return;
 

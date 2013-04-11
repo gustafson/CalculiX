@@ -141,7 +141,7 @@
       endif
       read(15)(c80,i=1,nmat)
       read(15)(i4,i=1,ne)
-      read(15)(r8,i=1,4*nk)
+      read(15)(r8,i=1,5*nk)
       if((nmethod.eq.4).or.((nmethod.eq.1).and.(iperturb.ge.2))) 
      &     then
          read(15)(r8,i=1,4*nk)
@@ -168,7 +168,7 @@
       read(15)(r8,i=1,6*mint_*ne)
       if(nener.eq.1) read(15)(r8,i=1,mint_*ne)
       if(nstate_.gt.0) read(15)(r8,i=1,nstate_*mint_*ne)
-      read(15) (r8,i=1,26)
+      read(15) (r8,i=1,27)
       read(15) (r8,i=1,2)
       read(15) c3
       read(15) r8

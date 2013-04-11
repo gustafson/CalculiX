@@ -31,7 +31,7 @@
      &  i,j,iprestr,jmax,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),
      &  newstep,nbody,ipoinpc(0:*)
 !
-      real*8 t0(*),t1(*),ctrl(26)
+      real*8 t0(*),t1(*),ctrl(*)
 !
       if(newstep.eq.1) then
          write(*,*) '*ERROR in steps: *STEP statement detected'

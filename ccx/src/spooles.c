@@ -567,6 +567,7 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 
 	/* solve it! */
 
+
 #ifdef USE_MT
 	/* Rules for parallel solve:
 	 * - if CCX_NPROC is positive, then use CCX_NPROC cpus, unless

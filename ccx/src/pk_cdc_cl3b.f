@@ -39,7 +39,7 @@
 !     as class 1 (class3 a) for lqd=0.28
       call pk_cdc_cl3a(0.28d0,rqd,reynolds,p2p1,beta,kappa,cdc_cl3a)
 !     as class3 (class 3 d ) for lqd=0.5      
-      call pk_cdc_cl3d(0.5d0,rqd,reynolds,p2p1,beta,kappa,cdc_cl3d)
+      call pk_cdc_cl3d(0.5d0,rqd,reynolds,p2p1,beta,cdc_cl3d)
 !     eq 27 a (linear interpolation)
       cdc_cl3b=cdc_cl3a+(cdc_cl3d-cdc_cl3a)*(cdi_rl_b-cdi_rl1)
      &     /(cdi_rl2-cdi_rl1)

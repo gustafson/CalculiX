@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-      subroutine limit_case_calc(a1,a2,pt1,Tt1,Tt2,xflow,zeta,r,kappa,
+      subroutine limit_case_calc(a2,pt1,Tt2,xflow,zeta,r,kappa,
      &     pt2_lim,M2)
 !     
 !     For restrictor elements A1<A2
@@ -26,18 +26,27 @@
 !     xflow*dsqrt(R*Tt1)/(A1*Pt1*dsqrt(kappa)-dsqrt(2/(kappa-1)*(Pt1/Pt2)
 !     **((kappa-1)-1))/(zeta*kappa)))/(Pt1/Pt2)**((kappa+1)/(2*zeta*kappa))=0
 !
-!     Once Pt2_lim is calculated it is possible in turn to calculate the corresponding
-!     Mach number M2 satisfying
-!     xflow*dsqrt(R*Tt2)/(A2*Pt2*dsqrt(kappa)-M2/(1+(kappa-1)/2*M2**2)
+!     **Changed 15.11.2007**
+!     since we are in the case A1<=A2 
+!     Pt1/Pt2=(1+0.5*(k-1)M1**2)**(zeta*kappa/(kappa-1))
+!     A1 is critical M1=1 which simplifies the previous equation
+!     (Pt1/Pt2)_crit=(1+0.5*(k-1))**(zeta*kappa/(kappa-1))
+!     It is then possible to determine pt2_lim knowing zeta and Pt1
+!
+!     Once Pt2_lim is calculated it is possible in turn to calculate
+!     the corresponding Mach number M2 satisfying the flow equation
+!     for section A2 in terms of M2
+!     xflow*dsqrt(R*Tt2)/(A2*Pt2*dsqrt(kappa))-M2/(1+(kappa-1)/2*M2**2)
 !     **(0.5*(kappa+1)/(kappa-1))
 !
       implicit none
 !
-!      integer
+      integer i
 !
-      real*8 pt1,Tt1,Tt2,xflow,zeta,r,kappa,pt2_lim,M2,Qred,expon1,
-     &     expon2,root,a1,a2,f,df,pt2,km1,kp1,pt1pt2
+      real*8 pt1,Tt2,xflow,zeta,r,kappa,pt2_lim,M2,Qred,expon1,
+     &     expon2,root,a2,f,df,pt2,km1,kp1,pt1pt2
 !
+!     **changed 15.11.2006**
       Pt2=0.99*Pt1
       pt1pt2=pt1/pt2
       km1=kappa-1
@@ -45,13 +54,13 @@
       expon1=-0.5*(kp1)/(zeta*kappa)
       expon2=(km1)/(zeta*kappa)
       root=2/(km1)*((pt1pt2)**expon2-1.d0)
-!      Qred=dsqrt(kappa/R)*(pt1pt2)**(-0.5d0*kp1/(kappa*zeta))
-!     &           *dsqrt(2.d0/km1*((pt1pt2)**(km1/(kappa*zeta))-1d0))
-!xflow*dsqrt(Tt1)/(A1*Pt1)
-!
+      Qred=dsqrt(kappa/R)*(pt1pt2)**(-0.5d0*kp1/(kappa*zeta))
+     &     *dsqrt(2.d0/km1*((pt1pt2)**(km1/(kappa*zeta))-1d0))
+      i=0
 !     pt2_lim calculation
 !
       do
+         i=i+1
          Qred=dsqrt(kappa/R)*(pt1pt2)**(-0.5d0*kp1/(kappa*zeta))
      &           *dsqrt(2.d0/km1*((pt1pt2)**(km1/(kappa*zeta))-1d0))
          root=2/(km1)*((pt1pt2)**expon2-1.d0)
@@ -62,9 +71,12 @@
 !
          if(dabs(-f/df)/pt2.le.1E-6) then
             pt2_lim=pt2-f/df
-            write(*,*) 'Pt2_lim',pt2_lim
             exit
          endif
+         if(i.gt.25) then
+             pt2_lim=Pt1/(1+0.5d0*(kappa-1))**(zeta*kappa/(kappa-1))
+             exit
+          endif
 !
          pt2=pt2-f/df
          pt1pt2=pt1/pt2
@@ -73,19 +85,20 @@
 !     M2_lim calculation
 !
       M2=0.5
-      Qred=xflow*dsqrt(R*Tt2)/(A2*Pt2_lim*dsqrt(kappa))
       expon1=-0.5*(kp1)/(km1)
-      
+      Qred=dabs(xflow)*dsqrt(R*Tt2)/(A2*Pt2_lim*dsqrt(kappa))
+      if(Qred.gt.((1+0.5d0*(km1))**expon1)) then
+         Qred=(1+0.5d0*(km1))**expon1
+      endif
+!
       do 
-         
          root=(1+0.5d0*(km1)*M2**2)
          f=Qred-M2*root**(expon1)
 !
          df=root**expon1*(-1d0+0.5*(kp1)*M2**2*root**-1)
 !
-         if(dabs(-f/df)/M2.le.1E-6) then
+         if(dabs(-f/df).le.1E-6) then
             M2=M2-f/df
-            write(*,*) 'M2',M2
             exit
          endif
 !
@@ -93,6 +106,5 @@
       enddo
 !
       return
-!
       end
          

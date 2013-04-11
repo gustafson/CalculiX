@@ -67,14 +67,16 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     info,rvec=1,*select=NULL,lfin,j,lint,iout,iconverged=0,ielas,icmd,
     iinc=1,istep=1,*ncocon=NULL,*nshcon=NULL,nev,ncv,mxiter,jrow,
     *ipobody=NULL,inewton=0,coriolis=0,ifreebody,symmetryflag=0,
-    inputformat=0;
+      inputformat=0,ngraph=1;
   int mass[2]={0,0}, stiffness=1, buckling=0, rhsi=1, intscheme=0, noddiam=-1;
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,
     *workl=NULL,*aux=NULL,*d=NULL,sigma,*temp_array=NULL,
-    *een=NULL,cam[2],*f=NULL,*fn=NULL,qa[2],*fext=NULL,time=0.,*epn=NULL,
+    *een=NULL,cam[3],*f=NULL,*fn=NULL,qa[2],*fext=NULL,time=0.,*epn=NULL,
     *xstateini=NULL,*xstiff=NULL,*stiini=NULL,*vini=NULL,*stx=NULL,
     *enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,*cocon=NULL,
-    *shcon=NULL,*physcon=NULL,*qfx=NULL,*qfn=NULL,tol, *cgr=NULL;
+    *shcon=NULL,*physcon=NULL,*qfx=NULL,*qfn=NULL,tol, *cgr=NULL,
+    *xloadold=NULL,reltime,*vr=NULL,*vi=NULL,*stnr=NULL,*stni=NULL,
+    *vmax=NULL,*stnmax=NULL;
 
   /* buckling routine; only for mechanical applications */
 
@@ -104,7 +106,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   if(*nbody>0){
       ifreebody=*ne+1;
-      ipobody=NNEW(int,2*ifreebody);
+      ipobody=NNEW(int,2*ifreebody**nbody);
       for(k=1;k<=*nbody;k++){
 	  FORTRAN(bodyforce,(cbody,ibody,ipobody,nbody,set,istartset,
 			     iendset,ialset,&inewton,nset,&ifreebody,&k));
@@ -122,7 +124,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   xstiff=NNEW(double,27**mint_**ne);
 
   iout=-1;
-  v=NNEW(double,4**nk);
+  v=NNEW(double,5**nk);
   fn=NNEW(double,4**nk);
   stx=NNEW(double,6**mint_**ne);
 
@@ -179,7 +181,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mint_,
 	      ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
-              ibody));
+              ibody,xloadold,&reltime));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -194,7 +196,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mint_,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
-              ibody));
+              ibody,xloadold,&reltime));
   }
 
   /* determining the right hand side */
@@ -214,9 +216,9 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
     FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,een,t1,
          fn,&time,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
-		     iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,
-                     trab,inotr,ntrans,orab,ielorien,norien,description,
-                     ipneigh,neigh,sti));
+	 iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,
+         trab,inotr,ntrans,orab,ielorien,norien,description,
+		 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph));
     
     free(inum);free(ipneigh);free(neigh);FORTRAN(stop,());
 
@@ -256,7 +258,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   /* calculating the displacements and the stresses and storing */
   /* the results in frd format for each valid eigenmode */
 
-  v=NNEW(double,4**nk);
+  v=NNEW(double,5**nk);
   fn=NNEW(double,4**nk);
   stn=NNEW(double,6**nk);
   inum=NNEW(int,*nk);
@@ -302,7 +304,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
           nelemload,nload));
   }
 
-  for(k=0;k<4**nk;++k){
+  for(k=0;k<5**nk;++k){
     vold[k]=v[k];
   }
 
@@ -310,9 +312,9 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
   FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,een,t1,
        fn,&time,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
-		     iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,
-                     trab,inotr,ntrans,orab,ielorien,norien,description,
-                     ipneigh,neigh,sti));
+       iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,
+       trab,inotr,ntrans,orab,ielorien,norien,description,
+       ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph));
 
   free(v);free(fn);free(stn);free(inum);free(ipneigh);free(neigh);
 
@@ -344,7 +346,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mint_,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
-              ibody));
+              ibody,xloadold,&reltime));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -359,7 +361,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mint_,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
-              ibody));
+              ibody,xloadold,&reltime));
   }
 
   free(stx);free(fext);if(*nbody>0) free(ipobody);
@@ -538,7 +540,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   /* calculating the displacements and the stresses and storing */
   /* the results in frd format for each valid eigenmode */
 
-  v=NNEW(double,4**nk);
+  v=NNEW(double,5**nk);
   fn=NNEW(double,4**nk);
   stn=NNEW(double,6**nk);
   inum=NNEW(int,*nk);
@@ -593,9 +595,10 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
     FORTRAN(out,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,een,t1,
          fn,&d[j],epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
-		     iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,
-                     trab,inotr,ntrans,orab,ielorien,norien,description,
-                     ipneigh,neigh,sti));free(ipneigh);free(neigh);
+	 iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,
+         trab,inotr,ntrans,orab,ielorien,norien,description,
+	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph));
+    free(ipneigh);free(neigh);
   }
 
   free(v);free(fn);free(stn);free(inum);free(stx);free(z);free(d);free(eei);

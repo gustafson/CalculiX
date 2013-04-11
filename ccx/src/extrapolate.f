@@ -18,7 +18,7 @@
 !
       subroutine extrapolate(yi,yn,ipkon,inum,kon,lakon,nfield,nk,
      &  ne,mint_,ndim,orab,ielorien,co,iorienglob,cflag,nelemload,
-     &  nload,nodeboun,nboun)
+     &  nload,nodeboun,nboun,fluid,ndirboun)
 !
 !     extrapolates field values at the integration points to the 
 !     nodes
@@ -28,6 +28,8 @@
 !
       implicit none
 !
+      logical fluid
+!
       character*1 cflag
       character*8 lakon(*),lakonl
 !
@@ -35,20 +37,12 @@
      &  nonei20(3,12),nfield,nonei10(3,6),nk,i,j,k,l,ndim,
      &  nonei15(3,9),iorienglob,iorien,ielorien(*),konl,
      &  mint3d,m,iflag,nelemload(2,*),nload,node,nboun,
-     &  nodeboun(*)
+     &  nodeboun(*),ndirboun(*)
 !
       real*8 yi(ndim,mint_,*),yn(nfield,*),field(999,20),a8(8,8),
      &  a4(4,4),a27(20,27),a9(6,9),a2(6,2),orab(7,*),co(3,*),
      &  coords(3,27),xi,et,ze,xl(3,20),xsj,shp(4,20),weight,
      &  yiloc(6,27),a(3,3),b(3,3),c(3,3)
-!
-      real*8 gauss2d1(2,1),gauss2d2(2,4),gauss2d3(2,9),gauss2d4(2,1),
-     &  gauss2d5(2,3),gauss3d1(3,1),gauss3d2(3,8),gauss3d3(3,27),
-     &  gauss3d4(3,1),gauss3d5(3,4),gauss3d6(3,15),gauss3d7(3,2),
-     &  gauss3d8(3,9),gauss3d9(3,18),weight2d1(1),weight2d2(4),
-     &  weight2d3(9),weight2d4(1),weight2d5(3),weight3d1(1),
-     &  weight3d2(8),weight3d3(27),weight3d4(1),weight3d5(4),
-     &  weight3d6(15),weight3d7(2),weight3d8(9),weight3d9(18)
 !
       include "gauss.f"
 !
@@ -197,11 +191,12 @@
          elseif(lakonl(4:4).eq.'6') then
             nope=6
          elseif(lakonl(1:1).eq.'D') then
-            if(kon(indexe+1).ne.0) 
-     &           inum(kon(indexe+1))=inum(kon(indexe+1))+1
-            inum(kon(indexe+2))=inum(kon(indexe+2))+1
-            if(kon(indexe+3).ne.0)
-     &           inum(kon(indexe+3))=inum(kon(indexe+3))+1
+c            if(kon(indexe+1).ne.0) 
+c     &           inum(kon(indexe+1))=inum(kon(indexe+1))+1
+c            inum(kon(indexe+2))=inum(kon(indexe+2))+1
+c            if(kon(indexe+3).ne.0)
+c     &           inum(kon(indexe+3))=inum(kon(indexe+3))+1
+            fluid=.true.
             cycle
          else
             cycle
@@ -527,13 +522,14 @@
          call map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,ne,cflag,co)
       endif
 !
-!     printing values for environmental film and radiation nodes
+!     printing values for environmental film, radiation and
+!     pressure nodes
 !
       do i=1,nload
          node=nelemload(2,i)
          if(node.gt.0) then
             if(inum(node).gt.0) cycle
-            inum(node)=1
+            inum(node)=-1
          endif
       enddo
 !
@@ -541,7 +537,8 @@
 !
       do i=1,nboun
          node=nodeboun(i)
-         if(inum(node).gt.0) cycle
+         if(inum(node).ne.0) cycle
+         if((cflag.ne.' ').and.(ndirboun(i).eq.3)) cycle
          inum(node)=1
       enddo
 !

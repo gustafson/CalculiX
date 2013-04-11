@@ -19,7 +19,7 @@
       subroutine e_c3d_rhs_th(co,nk,konl,lakonl,
      &  ff,nelem,nmethod,t0,t1,vold,nelemload,
      &  sideload,xload,nload,idist,dtime,
-     &  ttime,time,istep,iinc)
+     &  ttime,time,istep,iinc,xloadold,reltime)
 !
 !     computation of the rhs for the element with
 !     the topology in konl
@@ -36,18 +36,11 @@
      &  jj,id,ipointer,ig,kk,nope,nopes,mint2d,
      &  mint3d,ifacet(6,4),nopev,ifacew(8,5),iinc,istep,jltyp
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,2),
+      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,2),xloadold(2,*),
      &  ff(60),shpj(4,20),dxsj2,temp,press,t0(*),t1(*),coords(3),
-     &  xl2(0:3,8),xsj2(3),shp2(4,8),vold(0:3,*),xload(2,*),
-     &  xi,et,ze,xsj,xsjj,t1l,ttime,time,weight,pgauss(3),tvar(2)
-!
-      real*8 gauss2d1(2,1),gauss2d2(2,4),gauss2d3(2,9),gauss2d4(2,1),
-     &  gauss2d5(2,3),gauss3d1(3,1),gauss3d2(3,8),gauss3d3(3,27),
-     &  gauss3d4(3,1),gauss3d5(3,4),gauss3d6(3,15),gauss3d7(3,2),
-     &  gauss3d8(3,9),gauss3d9(3,18),weight2d1(1),weight2d2(4),
-     &  weight2d3(9),weight2d4(1),weight2d5(3),weight3d1(1),
-     &  weight3d2(8),weight3d3(27),weight3d4(1),weight3d5(4),
-     &  weight3d6(15),weight3d7(2),weight3d8(9),weight3d9(18)
+     &  xl2(0:3,8),xsj2(3),shp2(4,8),vold(0:4,*),xload(2,*),
+     &  xi,et,ze,xsj,xsjj,t1l,ttime,time,weight,pgauss(3),tvar(2),
+     &  reltime,areaj
 !
       real*8 dtime
 !
@@ -234,6 +227,7 @@
 !
          if(nload.gt.0) then
             call nident2(nelemload,nelem,nload,id)
+            areaj=xsj*weight
             do
                if((id.eq.0).or.(nelemload(1,id).ne.nelem)) exit
                if(sideload(id)(1:2).ne.'BF') then
@@ -251,7 +245,9 @@
                   jltyp=1
                   call dflux(xload(1,id),t1l,istep,iinc,tvar,
      &                 nelem,kk,pgauss,jltyp,temp,press,sideload(id),
-     &                 vold)
+     &                 areaj,vold)
+                   if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &                  (xload(1,id)-xloadold(1,id))*reltime
                endif
                do jj=1,nope
                   ff(jj)=ff(jj)+xload(1,id)*shpj(4,jj)*weight
@@ -364,6 +360,7 @@
 !
                dxsj2=dsqrt(xsj2(1)*xsj2(1)+xsj2(2)*xsj2(2)+
      &              xsj2(3)*xsj2(3))
+               areaj=dxsj2*weight
 !
                temp=0.d0
                do j=1,nopes
@@ -385,7 +382,9 @@
                   if(sideload(id)(1:1).eq.'S') then
                      call dflux(xload(1,id),temp,istep,iinc,tvar,
      &                    nelem,i,coords,jltyp,temp,press,sideload(id),
-     &                    vold)
+     &                    areaj,vold)
+                     if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &                    (xload(1,id)-xloadold(1,id))*reltime
                   endif
                endif
 !

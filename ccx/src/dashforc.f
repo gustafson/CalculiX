@@ -18,7 +18,7 @@
 !
       subroutine dashforc(xl,konl,vl,imat,elcon,nelcon,
      &  elas,fn,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,
-     &  plicon,nplicon,npmat_,vel)
+     &  plicon,nplicon,npmat_,vel,time,nmethod)
 !
 !     calculates the force of the dashpot
 !
@@ -26,16 +26,17 @@
 !
       character*8 lakonl
 !
-      integer konl(20),i,j,imat,ncmat_,ntmat_,nope,
-     &  kode,nelcon(2,*),nplicon(0:ntmat_,*),npmat_
+      integer konl(20),i,j,imat,ncmat_,ntmat_,nope,nmethod,
+     &  kode,nelcon(2,*),nplicon(0:ntmat_,*),npmat_,id,niso
 !
       real*8 xl(3,20),elas(21),t0l,t1l,vl(0:3,20),plconloc(82),
-     &  pl(0:3,9),xn(3),al,dd,fn(0:3,*),vel(1:3,20),
+     &  pl(0:3,9),xn(3),al,dd,fn(0:3,*),vel(1:3,20),time,
      &  elcon(0:ncmat_,ntmat_,*),elconloc(21),xk,fk,
-     &  plicon(0:2*npmat_,ntmat_,*)
+     &  plicon(0:2*npmat_,ntmat_,*),xiso(20),yiso(20)
 !
-!     actual positions of the nodes belonging to the contact spring
+!     actual positions of the nodes belonging to the dashpot
 !
+c      write(*,*) 'dashforc ',time
       do i=1,nope
          do j=1,3
             pl(j,i)=xl(j,i)+vl(j,i)
@@ -58,10 +59,37 @@
       call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t0l,t1l,
      &     elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
 !     
-!     calculating the spring force and the spring constant
+!     calculating the dashpot force and the dashpot constant
 !     
-      xk=elconloc(1)
-      fk=xk*al
+c      write(*,*) 'dashforc ',time
+      if(kode.eq.2)then
+         xk=elconloc(1)
+         fk=xk*al
+      else
+         if(nmethod.ne.5) then
+            write(*,*) '*ERROR in dashdamp: the damping coefficient'
+            write(*,*) '       may depend on temperature and frequency'
+            write(*,*) '       only; the latter is only allowed for'
+            write(*,*) '       steady state dynamics calculations'
+            stop
+         endif
+         niso=int(plconloc(81))
+         do i=1,niso
+            xiso(i)=plconloc(2*i-1)
+            yiso(i)=plconloc(2*i)
+         enddo
+         call ident(xiso,time,niso,id)
+         if(id.eq.0) then
+            xk=yiso(1)
+         elseif(id.eq.niso) then
+            xk=yiso(niso)
+         else
+            xk=yiso(id)+(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))
+     &         *(time-xiso(id))
+         endif
+         fk=xk*al
+      endif
+c      write(*,*) 'dashforc ',time,xk
 !     
       do i=1,3
          fn(i,konl(1))=-fk*xn(i)

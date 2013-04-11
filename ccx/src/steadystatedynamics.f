@@ -18,7 +18,8 @@
 !
       subroutine steadystatedynamics(inpc,textpart,nmethod,
      &  iexpl,istep,istat,n,iline,ipol,inl,ipoinp,inp,iperturb,isolver,
-     &  xmodal,cs,mcs,ipoinpc)
+     &  xmodal,cs,mcs,ipoinpc,nforc,nload,nbody,iprestr,t0,t1,ithermal,
+     &  nk)
 !
 !     reading the input deck: *STEADY STATE DYNAMICS
 !
@@ -31,9 +32,9 @@
 !
       integer nmethod,istep,istat,n,key,iexpl,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),iperturb,isolver,i,ndata,nfour,mcs,
-     &  ipoinpc(0:*)
+     &  ipoinpc(0:*),nforc,nload,nbody,iprestr,ithermal,j,nk
 !
-      real*8 fmin,fmax,bias,tmin,tmax,xmodal(9),cs(17,*)
+      real*8 fmin,fmax,bias,tmin,tmax,xmodal(9),cs(17,*),t0(*),t1(*)
 !
       iexpl=0
       iperturb=0
@@ -49,8 +50,6 @@
 !
       if(isolver.eq.0) then
          solver(1:7)='SPOOLES                          '
-      elseif(isolver.eq.1) then
-         solver(1:7)='PROFILE                          '
       elseif(isolver.eq.2) then
          solver(1:16)='ITERATIVESCALING                '
       elseif(isolver.eq.3) then
@@ -71,10 +70,6 @@
 !
       if(solver(1:7).eq.'SPOOLES') then
          isolver=0
-      elseif(solver(1:7).eq.'PROFILE') then
-         write(*,*) '*WARNING in modaldynamics: the profile solver is'
-         write(*,*) '         not allowed in modal dynamics'
-         write(*,*) '         calculations; the default solver is used'
       elseif(solver(1:16).eq.'ITERATIVESCALING') then
          write(*,*) '*WARNING in modaldynamics: the iterative scaling'
          write(*,*) '         procedure is not available for modal'
@@ -148,6 +143,18 @@
          xmodal(7)=nfour+0.5
          xmodal(8)=tmin
          xmodal(9)=tmax
+      endif
+!
+!     removing the present loading
+!
+      nforc=0
+      nload=0
+      nbody=0
+      iprestr=0
+      if((ithermal.eq.1).or.(ithermal.eq.3)) then
+         do j=1,nk
+            t1(j)=t0(j)
+         enddo
       endif
 !
       nmethod=5

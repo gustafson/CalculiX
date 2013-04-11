@@ -108,6 +108,9 @@
 !                        is supposed to be symmetric, only the upper half is
 !                        to be given in the same order as for a fully
 !                        anisotropic elastic material (*ELASTIC,TYPE=ANISO).
+!                        Notice that the matrix is an integral part of the 
+!                        fourth order material tensor, i.e. the Voigt notation
+!                        is not used.
 !
       implicit none
 !

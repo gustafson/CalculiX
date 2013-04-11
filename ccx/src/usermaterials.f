@@ -130,26 +130,28 @@
          endif
          ncocon(1,nmat)=-100-nconstants
 !
-         call getnewline(inpc,textpart,istat,n,key,iline,ipol,
-     &        inl,ipoinp,inp,ipoinpc)
-         if((istat.lt.0).or.(key.eq.1)) return
-         ntmat=ntmat+1
-         ncocon(2,nmat)=ntmat
-         if(ntmat.gt.ntmat_) then
-            write(*,*) 
-     &           '*ERROR in usermaterials: increase ntmat_'
-            stop
-         endif
-!
-         do i=1,nconstants+1
-            if(i.le.nconstants) then
-               read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
-     &              cocon(i,ntmat,nmat)
-            else
-               read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
-     &              cocon(0,ntmat,nmat)
+         do
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,
+     &           inl,ipoinp,inp,ipoinpc)
+            if((istat.lt.0).or.(key.eq.1)) return
+            ntmat=ntmat+1
+            ncocon(2,nmat)=ntmat
+            if(ntmat.gt.ntmat_) then
+               write(*,*) 
+     &              '*ERROR in usermaterials: increase ntmat_'
+               stop
             endif
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+!     
+            do i=1,nconstants+1
+               if(i.le.nconstants) then
+                  read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
+     &                 cocon(i,ntmat,nmat)
+               else
+                  read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
+     &                 cocon(0,ntmat,nmat)
+               endif
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            enddo
          enddo
 !     
       endif

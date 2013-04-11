@@ -19,44 +19,39 @@
 !     This subroutine creates the matrix ac for gas problems
 !     
       subroutine mafillgas(itg,ieg,ntg,ntm,
-     &     ac,nload,sideload,nelemload,xloadact,lakon,ntmat_,voldgas,
-     &     shcon,nshcon,ipkon,kon,co,nflow,ikboun,xbounact,nboun,iinc,
-     &     istep,dtime,ttime,time,ilboun,ikforc,ilforc,xforcact,
-     &     nforc,ielmat,nteq,prop,ielprop,nactdog,nacteq,physcon,
-     &     rhcon,nrhcon,ipobody,ibody,xbodyact,nbody,vold)
+     &     ac,nload,sideload,nelemload,xloadact,lakon,ntmat_,v,
+     &     shcon,nshcon,ipkon,kon,co,nflow,iinc,
+     &     istep,dtime,ttime,time,
+     &     ielmat,nteq,prop,ielprop,nactdog,nacteq,physcon,
+     &     rhcon,nrhcon,ipobody,ibody,xbodyact,nbody,vold,xloadold,
+     &     reltime,nmethod,set)
 !     
       implicit none
 !     
       logical identity
       character*8 lakonl,lakon(*)
       character*20 sideload(*)
+      character*81 set(*)
 !     
       integer itg(*),ieg(*),ntg,nteq,nflow,nload,ielmat(*),
      &     nelemload(2,*),nope,nopes,mint2d,i,j,k,l,iflag,
      &     node,imat,ntmat_,id,ntm,ifaceq(8,6),ifacet(6,4),
      &     ifacew(8,5),node1,node2,nshcon(*),nelem,ig,index,konl(20),
-     &     ipkon(*),kon(*),ikboun(*),nboun,idof,iinc,ibody(3,*),
-     &     istep,jltyp,nfield,ilboun(*),ikforc(*),ipobody(2,*),
-     &     ilforc(*),nforc,nodem,ieq,kflag,nrhcon(*),numf,
+     &     ipkon(*),kon(*),idof,iinc,ibody(3,*),
+     &     istep,jltyp,nfield,ipobody(2,*),
+     &     nodem,ieq,kflag,nrhcon(*),numf,
      &     idofp1,idofp2,idofm,idoft1,idoft2,idoft,nactdog(0:3,*),
-     &     nacteq(0:3,*),ielprop(*),nodef(5),idirf(5),nbody
+     &     nacteq(0:3,*),ielprop(*),nodef(5),idirf(5),nbody,
+     &     nmethod,case
 !     
       real*8 ac(ntm,*),xloadact(2,*),cp,h(2),physcon(3),dvi,
      &     xl2(0:3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
-     &     gastemp,voldgas(0:3,*),shcon(0:3,ntmat_,*),co(3,*),shp2(4,8),
-     &     xbounact(*),ftot,field,prop(*),f,df(5),tg1,tg2,r,rho,
-     &     dtime,ttime,time,xforcact(*),areaj,xflow,tvar(2),g(3),
+     &     gastemp,v(0:4,*),shcon(0:3,ntmat_,*),co(3,*),shp2(4,8),
+     &     ftot,field,prop(*),f,df(5),tg1,tg2,r,rho,
+     &     dtime,ttime,time,areaj,xflow,tvar(2),g(3),
      &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,ts1,ts2,xs2(3,2),
      &     xdenom1,xdenom2,xcst,xk1,xk2,expon,a,dt1,dt2,kappa,
-     &     pt1,pt2,inv,vold(0:3,*)
-!     
-      real*8 gauss2d1(2,1),gauss2d2(2,4),gauss2d3(2,9),gauss2d4(2,1),
-     &     gauss2d5(2,3),gauss3d1(3,1),gauss3d2(3,8),gauss3d3(3,27),
-     &     gauss3d4(3,1),gauss3d5(3,4),gauss3d6(3,15),gauss3d7(3,2),
-     &     gauss3d8(3,9),gauss3d9(3,18),weight2d1(1),weight2d2(4),
-     &     weight2d3(9),weight2d4(1),weight2d5(3),weight3d1(1),
-     &     weight3d2(8),weight3d3(27),weight3d4(1),weight3d5(4),
-     &     weight3d6(15),weight3d7(2),weight3d8(9),weight3d9(18)
+     &     pt1,pt2,inv,vold(0:4,*),xloadold(2,*),reltime,pi
 !     
       include "gauss.f"
 !     
@@ -80,6 +75,7 @@
 !     
       kflag=2
 !
+      Pi=4.d0*datan(1.d0)
       tvar(1)=time
       tvar(2)=ttime+dtime
 !     
@@ -104,23 +100,23 @@
          nodem=kon(index+2)
          node2=kon(index+3)
 !
-         xflow=voldgas(1,nodem)
+         xflow=v(1,nodem)
 !
          if(node1.eq.0) then
-            tg1=voldgas(0,node2)
+            tg1=v(0,node2)
             tg2=tg1
-            ts1=voldgas(3,node2)
+            ts1=v(3,node2)
             ts2=ts1
          elseif(node2.eq.0) then
-            tg1=voldgas(0,node1)
+            tg1=v(0,node1)
             tg2=tg1
-            ts1=voldgas(3,node1)
+            ts1=v(3,node1)
             ts2=ts1
          else
-            tg1=voldgas(0,node1)
-            tg2=voldgas(0,node2)
-            ts1=voldgas(3,node1)
-            ts2=voldgas(3,node2)
+            tg1=v(0,node1)
+            tg2=v(0,node2)
+            ts1=v(3,node1)
+            ts2=v(3,node2)
          endif
          gastemp=(ts1+ts2)/2.d0
 !
@@ -133,35 +129,52 @@
 !
 !     Definitions of the constant for isothermal flow elements
 !
-         if((lakon(nelem)(2:5).eq.'GAPI').and.
-     &        (int(prop(ielprop(nelem)+5)+0.5).eq.1))then
+         if((lakon(nelem)(2:6).eq.'GAPII')
+     &        .or.(lakon(nelem)(2:6).eq.'GAPXI'))then
             if((node1.ne.0).and.(node2.ne.0)) then
 !
+               case=1
                A=prop(ielprop(nelem)+1)
-               pt1=voldgas(2,node1)
-               pt2=voldgas(2,node2)
+               pt1=v(2,node1)
+               pt2=v(2,node2)
                if(pt1.ge.pt2)then
                   inv=1.d0
-                  pt1=voldgas(2,node1)
-                  pt2=voldgas(2,node2)
-                  if((voldgas(3,nodem)).ge.(pt2/pt1))then
-                     pt2=voldgas(3,nodem)*pt1
+                  pt1=v(2,node1)
+                  pt2=v(2,node2)
+!                  if((v(3,nodem)).ge.(pt2/pt1))then
+!                     pt2=v(3,nodem)*pt1
+!                  endif
+                  if(dabs(tg2/ts2-(1+0.5*(kappa-1)/kappa)).lt.1E-5) then
+                    
+                     pt2=dabs(xflow)*dsqrt(Tg2*R)/A
+     &                    *(1+0.5*(kappa-1)/kappa)
+     &                    **(0.5*(kappa+1)/(kappa-1)) 
                   endif
-                  tg1=voldgas(0,node1)
-                  ts1=voldgas(3,node1)
-                  tg2=voldgas(0,node2)
-                  ts2=voldgas(3,node2)
+                  tg1=v(0,node1)
+!                  ts1=v(3,node1)
+                  call ts_calc(xflow,Tg1,Pt1,kappa,r,a,Ts1,case)
+                  tg2=v(0,node2)
+                  call ts_calc(xflow,Tg2,Pt2,kappa,r,a,Ts2,case)
+!                  ts2=v(3,node2)
                else
                   inv=-1.d0
-                  pt1=voldgas(2,node2)
-                  pt2=voldgas(2,node1)
-                  if(voldgas(3,nodem).ge.(pt2/pt1))then
-                     pt2=voldgas(3,nodem)*pt1
+                  pt1=v(2,node2)
+                  pt2=v(2,node1)
+!                  if(v(3,nodem).ge.(pt2/pt1))then
+!                     pt2=v(3,nodem)*pt1
+!                  endif
+                  if(dabs(tg2/ts2-(1+0.5*(kappa-1)/kappa)).lt.1E-5) then
+                    
+                     pt2=dabs(xflow)*dsqrt(Tg2*R)/A
+     &                    *(1+0.5*(kappa-1)/kappa)
+     &                    **(0.5*(kappa+1)/(kappa-1)) 
                   endif
-                  tg1=voldgas(0,node2)
-                  ts1=voldgas(3,node2)
-                  tg2=voldgas(0,node1)
-                  ts2=voldgas(3,node1)
+                  tg1=v(0,node2)
+!                  ts1=v(3,node2)
+                  call ts_calc(xflow,Tg1,Pt1,kappa,r,a,Ts1,case)
+                  tg2=v(0,node1)
+!                  ts2=v(3,node1)
+                  call ts_calc(xflow,Tg2,Pt2,kappa,r,a,Ts2,case)
                endif
                dt1=tg1/ts1-1d0
                dt2=tg2/ts2-1d0
@@ -412,8 +425,9 @@
 !     
             call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &           nactdog,identity,
-     &           ielprop,prop,kflag,voldgas,xflow,f,nodef,idirf,df,
-     &           cp,r,rho,physcon,g,co,dvi,numf,vold)
+     &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
+     &           cp,r,rho,physcon,g,co,dvi,numf,vold,set,shcon,
+     &           nshcon,rhcon,nrhcon,ntmat_)
 !     
             do k=1,numf
                idof=nactdog(idirf(k),nodef(k))
@@ -513,26 +527,26 @@
 !     
             if((nope.eq.20).or.(nope.eq.8)) then
                do k=1,nopes
-                  xl2(0,k)=voldgas(0,konl(ifaceq(k,ig)))
+                  xl2(0,k)=v(0,konl(ifaceq(k,ig)))
                   do j=1,3
                      xl2(j,k)=co(j,konl(ifaceq(k,ig)))+
-     &                    voldgas(j,konl(ifaceq(k,ig)))
+     &                    v(j,konl(ifaceq(k,ig)))
                   enddo
                enddo
             elseif((nope.eq.10).or.(nope.eq.4)) then
                do k=1,nopes
-                  xl2(0,k)=voldgas(0,konl(ifacet(k,ig)))
+                  xl2(0,k)=v(0,konl(ifacet(k,ig)))
                   do j=1,3
                      xl2(j,k)=co(j,konl(ifacet(k,ig)))+
-     &                    voldgas(j,konl(ifacet(k,ig)))
+     &                    v(j,konl(ifacet(k,ig)))
                   enddo
                enddo
             else
                do k=1,nopes
-                  xl2(0,k)=voldgas(0,konl(ifacew(k,ig)))
+                  xl2(0,k)=v(0,konl(ifacew(k,ig)))
                   do j=1,3
                      xl2(j,k)=co(j,konl(ifacew(k,ig)))+
-     &                    voldgas(j,konl(ifacew(k,ig)))
+     &                    v(j,konl(ifacew(k,ig)))
                   enddo
                enddo
             endif
@@ -598,10 +612,12 @@
                else
                   read(sideload(i)(2:2),'(i1)') jltyp
                   jltyp=jltyp+10
-                  sinktemp=voldgas(0,node)
+                  sinktemp=v(0,node)
                   call film(h,sinktemp,temp,istep,
      &                 iinc,tvar,nelem,l,coords,jltyp,field,nfield,
-     &                 sideload(i),node,areaj,voldgas)
+     &                 sideload(i),node,areaj,v)
+                  if(nmethod.eq.1) h(1)=xloadold(1,i)+
+     &                 (h(1)-xloadold(1,i))*reltime
                endif
 !     
                idoft=nactdog(0,node)
@@ -615,7 +631,7 @@
             enddo
          endif
       enddo
-!     
+!
       return
       end
       

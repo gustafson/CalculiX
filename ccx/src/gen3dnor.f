@@ -21,11 +21,13 @@
      &  tper,tmin,tmax,ctrl,ipompc,nodempc,coefmpc,nmpc,nmpc_,mpcfree,
      &  ikmpc,ilmpc,labmpc,ikboun,ilboun,nboun,nboun_,nodeboun,ndirboun,
      &  xboun,iamboun,typeboun,nam,ntrans,inotr,trab,ikfree,ixfree,
-     &  nmethod,ithermal)
+     &  nmethod,ithermal,istep)
 !
 !     calculates normals on 1-D and 2-D elements
 !
       implicit none
+!
+      logical fixed
 !
       character*1 type,typeboun(*)
       character*8 lakon(*)
@@ -35,15 +37,15 @@
      &  ne,iponor(2,*),knor(*),rig(*),iperturb,ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,mpcfree,ikmpc(*),ilmpc(*),ikboun(*),ilboun(*),nboun,
      &  nboun_,nodeboun(*),ndirboun(*),iamboun(*),nam,ntrans,inotr(2,*),
-     &  isol
+     &  isol,istep
 !
       integer i,ndepnodes,index,nexp,nnor,nel,ielem,indexe,j,iel(100),
      &  jl(100),ial(100),ifi(100),idepnodes(80),indexx,k,l,ifix,nemin,
      &  jact,ixfree,ikfree,node,nelshell,irefnode,idof,id,mpcfreeold,
-     &  irotnode,imax,iamplitude,nmethod,ithermal,iexpnode
+     &  irotnode,imax,iamplitude,nmethod,ithermal(2),iexpnode
 !
       real*8 co(3,*),thicke(2,*),offset(2,*),xnor(*),tinc,tper,tmin,
-     &  tmax,ctrl(26),coefmpc(*),xboun(*),trab(7,*) 
+     &  tmax,ctrl(*),coefmpc(*),xboun(*),trab(7,*),vdummy(0:4) 
 !
       real*8 xno(3,100),xta(3,100),xn1(3,100),thl1(100),thl2(100),
      &  off1(100),off2(100),xi,et,coloc6(2,6),coloc8(2,8),xl(3,8),
@@ -55,12 +57,11 @@
       data coloc8 /-1.d0,-1.d0,1.d0,-1.d0,1.d0,1.d0,-1.d0,1.d0,
      &            0.d0,-1.d0,1.d0,0.d0,0.d0,1.d0,-1.d0,0.d0/
 !
+      fixed=.false.
+!
 !     calculating the normals in nodes belonging to shells/beams
 !
       do i=1,nk
-         if(i.eq.1043) then
-            ndepnodes=0
-         endif
          ndepnodes=0
          index=iponoel(i)
          if(index.eq.0) cycle
@@ -144,7 +145,9 @@
                dd=dsqrt(xno(1,j)**2+xno(2,j)**2+xno(3,j)**2)
                if(dd.lt.1.d-10) then
                   write(*,*) '*ERROR in gen3dnor: size of estimated'
-                  write(*,*)'    shell normal is smaller than 1.e-10'
+                  write(*,*) '       shell normal in node ',i,
+     &              ' element ',j
+                  write(*,*) '       is smaller than 1.e-10'
                   stop
                endif
                do k=1,3
@@ -215,6 +218,9 @@
      &                          ((lakon(iel(j))(1:1).eq.'S').and.
      &                           (lakon(iel(jact))(1:1).eq.'S'))))
      &                          ial(j)=1
+c
+                           if(dot.lt.0.999962) nnor=2
+c
                         else
                            if((lakon(iel(j))(1:1).eq.'S').and.
      &                          (lakon(iel(jact))(1:1).eq.'S')) then
@@ -242,6 +248,9 @@
      &                          ((lakon(iel(j))(1:1).eq.'S').and.
      &                           (lakon(iel(jact))(1:1).eq.'S'))))
      &                          ial(j)=1
+c
+                           if(dot.lt.0.999962) nnor=2
+c
                         else
                            if((lakon(iel(j))(1:1).eq.'S').and.
      &                          (lakon(iel(jact))(1:1).eq.'S')) then
@@ -279,7 +288,7 @@
                   if(dd.lt.1.d-10) then
                      write(*,*) '*ERROR in gen3dnor: size of'
                      write(*,*) '        estimated shell normal is'
-                     write(*,*) '       smaller than 1.e-10'
+                     write(*,*) '        smaller than 1.e-10'
                      stop
                   endif
                   do j=1,3
@@ -396,7 +405,9 @@ c                        endif
                dd=dsqrt(xta(1,j)**2+xta(2,j)**2+xta(3,j)**2)
                if(dd.lt.1.d-10) then
                   write(*,*) '*ERROR in gen3dnor: size of estimated'
-                  write(*,*)'   shell tangent is smaller than 1.e-10'
+                  write(*,*)'       beam tangent in node ',i,' element '
+     &,iel(j)
+                  write(*,*) '       is smaller than 1.e-10'
                   stop
                endif
                do k=1,3
@@ -433,7 +444,9 @@ c                        endif
                dd=dsqrt(xno(1,j)**2+xno(2,j)**2+xno(3,j)**2)
                if(dd.lt.1.d-10) then
                   write(*,*) '*ERROR in gen3dnor: size of estimated'
-                  write(*,*)'    shell normal is smaller than 1.e-10'
+                  write(*,*)'       beam normal in 2-direction in node '
+     &,i,' element ',iel(j)
+                  write(*,*) '       is smaller than 1.e-10'
                   stop
                endif
                do k=1,3
@@ -621,12 +634,11 @@ c                        endif
          endif
 !
 !           check whether the user has specified rotational degrees
-!           of freedom; if so, a rigid MPC must be defined
+!           of freedom (in that case rig(i)=-1 was assigned in 
+!           subroutine gen3delem); if so, a rigid MPC must be defined
 !
          if(rig(i).ne.0) then
-c            if(nnor.lt.1) then
-               rig(i)=0
-c            elseif(nexp.le.1) then
+            rig(i)=0
             if(nexp.le.1) then
                nexp=2
             endif
@@ -660,7 +672,7 @@ c            endif
 !
             rig(i)=-1
 !
-            if(ithermal.ne.2) then
+            if(ithermal(2).ne.2) then
                if(nnor.eq.0) then
 !
 !                 the node belongs to plane stress, plane strain
@@ -676,7 +688,7 @@ c                  changed for purely thermal calculations
                   do k=1,ndepnodes
                      node=idepnodes(k)
                      do j=1,2
-                        idof=7*(node-1)+j
+                        idof=8*(node-1)+j
                         call nident(ikmpc,idof,nmpc,id)
                         nmpc=nmpc+1
                         if(nmpc.gt.nmpc_) then
@@ -731,17 +743,17 @@ c     write(*,*) 'dependent node: ',node
      &                    irotnode,iexpnode,
      &                    labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,nk,nk_,
      &                    nodeboun,ndirboun,ikboun,ilboun,nboun,nboun_,
-     &                    idepnodes(k),typeboun,co)
+     &                    idepnodes(k),typeboun,co,xboun,istep)
                   enddo
                endif
             endif
 !     
 !     MPC's for the temperature DOFs
 !
-            if(ithermal.ge.2) then
+            if(ithermal(2).ge.2) then
                do k=1,ndepnodes
                   node=idepnodes(k)
-                  idof=7*(node-1)
+                  idof=8*(node-1)
                   call nident(ikmpc,idof,nmpc,id)
                   nmpc=nmpc+1
                   if(nmpc.gt.nmpc_) then
@@ -773,8 +785,7 @@ c     write(*,*) 'dependent node: ',node
                enddo
             endif
 !     
-            if((nnor.eq.1).and.(ithermal.ne.2)) then
-c            if(nnor.eq.1) then
+            if((nnor.eq.1).and.(ithermal(2).ne.2)) then
 !
 !                 generate an additional SPC or MPC for rigid body nodes
 !                 lying on a line to prevent rotation about the
@@ -791,9 +802,7 @@ c            if(nnor.eq.1) then
 !
 !                 check whether a SPC suffices
 !
-c                  if(dabs(1.d0-dmax).lt.1.d-5) then
                if(dabs(1.d0-dmax).lt.1.d-3) then
-c                  write(*,*) 'additional SPC! ',i,irotnode,imax
                   val=0.d0
                   if(nam.gt.0) iamplitude=0
                   type='R'
@@ -802,7 +811,7 @@ c                  write(*,*) 'additional SPC! ',i,irotnode,imax
      &                 iamplitude,nam,ipompc,nodempc,coefmpc,
      &                 nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &                 ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &                 type,typeboun,nmethod,iperturb)
+     &                 type,typeboun,nmethod,iperturb,fixed,vdummy)
                else
 !
 !                    check whether the rotational degree of freedom
@@ -810,7 +819,8 @@ c                  write(*,*) 'additional SPC! ',i,irotnode,imax
 !
                   isol=0
                   do l=1,3
-                     idof=7*(i-1)+3+imax
+c                     idof=8*(i-1)+3+imax
+                     idof=8*(i-1)+4+imax
                      call nident(ikboun,idof,nboun,id)
                      if((id.gt.0).and.(ikboun(id).eq.idof)) then
                         imax=imax+1
@@ -827,7 +837,7 @@ c                  write(*,*) 'additional SPC! ',i,irotnode,imax
 !                 no additional equation is needed.
 !
                   if(isol.eq.1) then
-                     idof=7*(irotnode-1)+imax
+                     idof=8*(irotnode-1)+imax
                      call nident(ikmpc,idof,nmpc,id)
                      nmpc=nmpc+1
                      if(nmpc.gt.nmpc_) then

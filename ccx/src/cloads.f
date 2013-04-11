@@ -20,7 +20,8 @@
      &  ialset,nset,nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &  amname,nam,ntrans,trab,inotr,co,ikforc,ilforc,nk,
      &  cload_flag,istep,istat,n,iline,ipol,inl,ipoinp,inp,nam_,
-     &  namtot_,namta,amta,nmethod,iaxial,iperturb,ipoinpc)
+     &  namtot_,namta,amta,nmethod,iaxial,iperturb,ipoinpc,
+     &  maxsectors)
 !
 !     reading the input deck: *CLOADS
 !
@@ -38,7 +39,7 @@
      &  iamforc(*),nam,iamplitude,ntrans,inotr(2,*),ipos,ikforc(*),
      &  ilforc(*),nk,iline,ipol,inl,ipoinp(2,*),inp(3,*),nam_,namtot,
      &  namtot_,namta(3,*),idelay,lc,nmethod,ndirforc(*),isector,
-     &  iperturb,iaxial,ipoinpc(0:*)
+     &  iperturb,iaxial,ipoinpc(0:*),maxsectors,jsector
 !
       real*8 xforc(*),forcval,co(3,*),trab(7,*),amta(2,*)
 !
@@ -131,6 +132,11 @@
                write(*,*) '       STEADY STATE DYNAMICS calculations'
                stop
             endif
+            if(isector.gt.maxsectors) then
+               write(*,*) '*ERROR in cloads: sector ',isector
+               write(*,*) '       exceeds number of sectors'
+               stop
+            endif
             isector=isector-1
          endif
       enddo
@@ -148,6 +154,7 @@
             call inputerror(inpc,ipoinpc,iline)
             stop
          endif
+         if(iforcdir.gt.3) iforcdir=iforcdir+1
 !
          if(textpart(3)(1:1).eq.' ') then
             forcval=0.d0
@@ -164,10 +171,14 @@
                write(*,*) '       is not defined'
                stop
             endif
-            if(lc.ne.1) l=l+nk
+            if(lc.ne.1) then
+               jsector=isector+maxsectors
+            else
+               jsector=isector
+            endif
             call forcadd(l,iforcdir,forcval,nodeforc,ndirforc,xforc,
      &        nforc,nforc_,iamforc,iamplitude,nam,ntrans,trab,inotr,co,
-     &        ikforc,ilforc,isector,add)
+     &        ikforc,ilforc,jsector,add)
          else
             read(textpart(1)(1:80),'(a80)',iostat=istat) noset
             noset(81:81)=' '
@@ -186,21 +197,29 @@
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then
                   k=ialset(j)
-                  if(lc.ne.1) k=k+nk
+                  if(lc.ne.1) then
+                     jsector=isector+maxsectors
+                  else
+                     jsector=isector
+                  endif
                   call forcadd(k,iforcdir,forcval,
      &               nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &               iamplitude,nam,ntrans,trab,inotr,co,ikforc,ilforc,
-     &               isector,add)
+     &               jsector,add)
                else
                   k=ialset(j-2)
                   do
                      k=k-ialset(j)
                      if(k.ge.ialset(j-1)) exit
-                     if(lc.ne.1) k=k+nk
+                     if(lc.ne.1) then
+                        jsector=isector+maxsectors
+                     else
+                        jsector=isector
+                     endif
                      call forcadd(k,iforcdir,forcval,
      &                 nodeforc,ndirforc,xforc,nforc,nforc_,
      &                 iamforc,iamplitude,nam,ntrans,trab,inotr,co,
-     &                 ikforc,ilforc,isector,add)
+     &                 ikforc,ilforc,jsector,add)
                   enddo
                endif
             enddo

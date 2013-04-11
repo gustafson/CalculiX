@@ -18,9 +18,9 @@
 !     
       subroutine envtemp(itg,ieg,ntg,ntr,sideload,nelemload,
      &     ipkon,kon,lakon,ielmat,ne,nload,iptri,kontri,ntri,nloadtr,
-     &     nflow,ndirboun,nactdog,nodeboun,xbounact,nacteq,nboun,
-     &     ielprop,prop,nteq,voldgas,network,physcon,shcon,ntmat_,
-     &     co,ipogn,ign,vold)
+     &     nflow,ndirboun,nactdog,nodeboun,nacteq,nboun,
+     &     ielprop,prop,nteq,v,network,physcon,shcon,ntmat_,
+     &     co,ipogn,ign,vold,set,nshcon,rhcon,nrhcon)
 !     
 !     determines the number of gas temperatures and radiation
 !     temperatures
@@ -28,10 +28,11 @@
       implicit none
 !     
       logical identity,wall,temperaturebc,pressurebc,massflowbcall,
-     &     looseend
+     &     looseend,pressurebcall
 !
       character*8 lakon(*)
       character*20 sideload(*)
+      character*81 set(*)
 !     
       integer itg(*),ntg,ntr,nelemload(2,*),ipkon(*),network,
      &     kon(*),ielmat(*),ne,i,j,k,l,index,id,node,nload,ifaceq(8,6),
@@ -41,11 +42,11 @@
      &     ndirboun(*),nactdog(0:3,*),nboun,nodeboun(*),ntmat_,
      &     idir,ntq,nteq,nacteq(0:3,*),node1,node2,nodem,
      &     ielprop(*),idirf(4),iflag,imat,numf,ipogn(*),ign(2,*),
-     &     ifreegn,indexold,isothermflag
+     &     ifreegn,indexold,isothermflag,nrhcon(*),nshcon(*)
 !     
-      real*8 prop(*),f,xflow,nodef(4),df(4),voldgas(0:3,*),g(3),
-     &     xbounact(*),cp,r,physcon(3),shcon(0:3,ntmat_,*),rho,
-     &     co(3,*),dvi,vold(0:3,*)
+      real*8 prop(*),f,xflow,nodef(4),df(4),v(0:4,*),g(3),
+     &     cp,r,physcon(3),shcon(0:3,ntmat_,*),rho,
+     &     co(3,*),dvi,vold(0:4,*),rhcon(*)
 !     
       data ifaceq /4,3,2,1,11,10,9,12,
      &     5,6,7,8,13,14,15,16,
@@ -75,6 +76,7 @@
       temperaturebc=.false.
       pressurebc=.false.
       massflowbcall=.true.
+      pressurebcall=.true.
 !     
 !     ordering the gas temperature nodes and counting them
 !     counting the radiation temperatures
@@ -335,8 +337,9 @@ c      enddo
             endif
 !   
             call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &           nactdog,identity,ielprop,prop,iflag,voldgas,xflow,f,
-     &           nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,vold)
+     &           nactdog,identity,ielprop,prop,iflag,v,xflow,f,
+     &           nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,
+     &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_)
 !      
             if (.not.identity) then
                nacteq(2,nodem)=1
@@ -369,6 +372,17 @@ c      enddo
          node=itg(i)
          if(nactdog(1,node).ne.0) then
             massflowbcall=.false.
+            exit
+         endif
+      enddo
+!     
+!     check whether all pressures are known
+!
+      do i=1,ntg
+         node=itg(i)
+         if(nactdog(2,node).ne.0) then
+            pressurebcall=.false.
+            exit
          endif
       enddo
 !
@@ -376,7 +390,7 @@ c      enddo
 !
       network=1
 !
-      if(massflowbcall.and.(.not.pressurebc)) then
+      if(massflowbcall.and.((.not.pressurebc).or.(pressurebcall))) then
 !
 !        purely thermal
 !
@@ -388,8 +402,8 @@ c      enddo
             nodem=kon(index+2)
             node2=kon(index+3)
             nacteq(2,nodem)=0
-            nactdog(2,node1)=0
-            nactdog(2,node2)=0
+            if(node1.ne.0) nactdog(2,node1)=0
+            if(node2.ne.0) nactdog(2,node2)=0
          enddo
       elseif((.not.temperaturebc).and.(.not.wall)) then
 !
@@ -491,19 +505,19 @@ c      enddo
 !
       do i=1,nflow
         nelem=ieg(i)
-c        k=int(prop(index+5)+0.5)
-c        if((lakon(nelem)(2:5).eq.'GAPI').and.
-c     &       (int(prop(index+5)+0.5).eq.1))then
-        if(lakon(nelem)(2:5).ne.'GAPI') cycle
+        if(lakon(nelem)(2:4).ne.'GAP') cycle
         index=ielprop(nelem)
-        if(int(prop(index+5)+0.5).eq.1) then
+        
+        if((lakon(nelem)(2:6).eq.'GAPII')
+     &       .or.(lakon(nelem)(2:6).eq.'GAPXI')) then
+           
            isothermflag=nelem
            index=ipkon(nelem)
            node1=kon(index+1)
            node2=kon(index+3)
-!
+!     
            if((node1.eq.0).or.(node2.eq.0))cycle
-!
+!     
            call nident(itg,node1,ntg,id)
            ign(2,ifreegn)=ipogn(id)
            ign(1,ifreegn)=nelem
@@ -522,12 +536,6 @@ c     &       (int(prop(index+5)+0.5).eq.1))then
          loop : do
 !     
 !     looking for a loose end
-!     
-            write(*,*) (ipogn(k),k=1,ntg)
-!     
-         do k=1,2
-            write(*,*) (ign(k,j),j=1,ifreegn)
-         enddo
 !     
          looseend=.false.
          do i=1,ntg
@@ -614,7 +622,7 @@ c     &       (int(prop(index+5)+0.5).eq.1))then
                if(ign(1,index).eq.nelem)then
                   if(indexold.eq.0) then
                      ipogn(id)=ign(2,index)
-                     write(*,*) (ipogn(k),k=1,ntg)
+!                     write(*,*) (ipogn(k),k=1,ntg)
                   else
                      ign(2,indexold)=ign(2,index)
                   endif
@@ -632,11 +640,11 @@ c     &       (int(prop(index+5)+0.5).eq.1))then
             index=ipogn(i)
          enddo
 !
-         write(*,*) (ipogn(k),k=1,ntg)
+!         write(*,*) (ipogn(k),k=1,ntg)
 !
-         do k=1,2
-            write(*,*) (ign(k,j),j=1,ifreegn)
-         enddo
+!         do k=1,2
+!            write(*,*) (ign(k,j),j=1,ifreegn)
+!         enddo
 !     
 !     check for untreated nodes
 !     
@@ -647,6 +655,11 @@ c     &       (int(prop(index+5)+0.5).eq.1))then
          exit
       enddo loop
       endif
+
+!      do i=1,ntg
+!         node=itg(i)
+!         write(*,*) 'node presure', node, v(2,node)
+!      enddo
 !
       return
       end

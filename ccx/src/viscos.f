@@ -24,7 +24,6 @@
 !     reasons with ABAQUS)
 !
 !     isolver=0: SPOOLES
-!             1: profile solver
 !             2: iterative solver with diagonal scaling
 !             3: iterative solver with Cholesky preconditioning
 !             4: sgi solver
@@ -63,8 +62,6 @@
 !
       if(isolver.eq.0) then
          solver(1:7)='SPOOLES'
-      elseif(isolver.eq.1) then
-         solver(1:7)='PROFILE'
       elseif(isolver.eq.2) then
          solver(1:16)='ITERATIVESCALING'
       elseif(isolver.eq.3) then
@@ -78,21 +75,14 @@
       do i=2,n
          if(textpart(i)(1:7).eq.'SOLVER=') then
             read(textpart(i)(8:27),'(a20)') solver
-         elseif(textpart(i)(1:6).eq.'DIRECT') then
+         elseif((textpart(i)(1:6).eq.'DIRECT').and.
+     &          (textpart(i)(1:9).ne.'DIRECT=NO')) then
             idrct=1
          endif
       enddo
 !
       if(solver(1:7).eq.'SPOOLES') then
          isolver=0
-      elseif(solver(1:7).eq.'PROFILE') then
-         if(iperturb.gt.0) then
-            write(*,*) '*WARNING in statics: the profile solver is not'
-            write(*,*) '         allowed in nonlinear calculations;'
-            write(*,*) '         the default solver is used'
-         else
-            isolver=1
-         endif
       elseif(solver(1:16).eq.'ITERATIVESCALING') then
          isolver=2
       elseif(solver(1:17).eq.'ITERATIVECHOLESKY') then

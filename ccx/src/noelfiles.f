@@ -56,14 +56,22 @@
             filab(1)(1:4)='    '
             filab(2)(1:4)='    '
             filab(5)(1:4)='    '
-            filab(10)(1:4)='    '
-            filab(11)(1:4)='    '
+            do j=10,12
+               filab(j)(1:4)='    '
+            enddo
+            do j=14,17
+               filab(j)(1:4)='    '
+            enddo
 !
             filab(1)(6:6)=' '
             filab(2)(6:6)=' '
             filab(5)(6:6)=' '
-            filab(10)(6:6)=' '
-            filab(11)(6:6)=' '
+            do j=10,12
+               filab(j)(6:6)=' '
+            enddo
+            do j=14,17
+               filab(j)(6:6)=' '
+            enddo
          endif
       else
 !
@@ -72,17 +80,17 @@
          if(.not.elfile_flag) then
             filab(3)(1:4)='    '
             filab(4)(1:4)='    '
-            filab(6)(1:4)='    '
-            filab(7)(1:4)='    '
-            filab(8)(1:4)='    '
-            filab(9)(1:4)='    '
+            do j=6,9
+               filab(j)(1:4)='    '
+            enddo
+            filab(13)(1:4)='    '
 !
             filab(3)(6:6)=' '
             filab(4)(6:6)=' '
-            filab(6)(6:6)=' '
-            filab(7)(6:6)=' '
-            filab(8)(6:6)=' '
-            filab(9)(6:6)=' '
+            do j=6,9
+               filab(j)(6:6)=' '
+            enddo
+            filab(13)(6:6)=' '
 !
             sectionforces=.false.
          endif
@@ -209,7 +217,7 @@
                   write(*,*) '          calculations'
                else
                   filab(9)(1:4)='HFL '
-                  if(.not.out3d) filab(9)(5:5)='I'
+c                  if(.not.out3d) filab(9)(5:5)='I'
                   filab(9)(6:6)=elemsys
                endif
             elseif(textpart(ii)(1:4).eq.'RFL ') then
@@ -226,8 +234,29 @@
             elseif(textpart(ii)(1:4).eq.'PNT ') then
                filab(12)(1:4)='PNT '
             elseif(textpart(ii)(1:3).eq.'ZZS') then
-               filab(15)(1:4)='ZZS '
-               filab(15)(6:6)=elemsys
+               filab(13)(1:4)='ZZS '
+               filab(13)(6:6)=elemsys
+            elseif(textpart(ii)(1:4).eq.'TT  ') then
+               filab(14)(1:4)='TT  '
+               filab(14)(6:6)=nodesys
+            elseif(textpart(ii)(1:4).eq.'MF  ') then
+               filab(15)(1:4)='MF  '
+               filab(15)(6:6)=nodesys
+            elseif(textpart(ii)(1:4).eq.'PT  ') then
+               filab(16)(1:4)='PT  '
+               filab(16)(6:6)=nodesys
+            elseif(textpart(ii)(1:4).eq.'TS  ') then
+               filab(17)(1:4)='TS  '
+               filab(17)(6:6)=nodesys
+            elseif(textpart(ii)(1:4).eq.'PHS ') then
+               filab(18)(1:4)='PHS '
+               filab(18)(6:6)=elemsys
+            elseif(textpart(ii)(1:4).eq.'MAXU') then
+               filab(19)(1:4)='MAXU'
+               filab(19)(6:6)=nodesys
+            elseif(textpart(ii)(1:4).eq.'MAXS') then
+               filab(20)(1:4)='MAXS'
+               filab(20)(6:6)=elemsys
             else
                write(*,*) '*WARNING in noelfiles: label not applicable'
                write(*,*) '         or unknown; '

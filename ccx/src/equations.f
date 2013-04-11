@@ -71,7 +71,7 @@
 !
                read(textpart((i-1)*3+1)(1:10),'(i10)',iostat=istat) node
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-               if(node.gt.nk) then
+               if((node.gt.nk).or.(node.le.0)) then
                   write(*,*) '*ERROR in equations:'
                   write(*,*) '       node ',node,' is not defined'
                   stop
@@ -79,12 +79,28 @@
 !
                read(textpart((i-1)*3+2)(1:10),'(i10)',iostat=istat) ndir 
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-               if(ndir.eq.11) ndir=0
-               if(ndir.gt.3) then
+               if(ndir.le.3) then
+               elseif(ndir.eq.4) then
+                  ndir=5
+               elseif(ndir.eq.5) then
+                  ndir=6
+               elseif(ndir.eq.6) then
+                  ndir=7
+               elseif(ndir.eq.8) then
+                  ndir=4
+               elseif(ndir.eq.11) then
+                  ndir=0
+               else
                   write(*,*) '*ERROR in equations:'
                   write(*,*) '       direction',ndir,' is not defined'
                   stop
                endif
+c               if(ndir.eq.11) ndir=0
+c               if(ndir.gt.3) then
+c                  write(*,*) '*ERROR in equations:'
+c                  write(*,*) '       direction',ndir,' is not defined'
+c                  stop
+c               endif
 !
                read(textpart((i-1)*3+3)(1:20),'(f20.0)',iostat=istat) x
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
@@ -107,12 +123,12 @@
 !                 updating ikmpc and ilmpc
 !
                   if(ii.eq.0) then
-                     idof=7*(node-1)+ndir
+                     idof=8*(node-1)+ndir
                      call nident(ikmpc,idof,nmpc-1,id)
                      if(id.gt.0) then
                         if(ikmpc(id).eq.idof) then
                            write(*,100)
-     &                   (ikmpc(id))/7+1,ikmpc(id)-7*((ikmpc(id))/7)
+     &                   (ikmpc(id))/8+1,ikmpc(id)-8*((ikmpc(id))/8)
                            stop
                         endif
                      endif
@@ -145,14 +161,14 @@
                      do j=1,3
                         number=number+1
                         if(number.gt.3) number=1
-                        idof=7*(node-1)+number
+                        idof=8*(node-1)+number
                         call nident(ikmpc,idof,nmpc-1,id)
                         if(id.gt.0) then
                            if(ikmpc(id).eq.idof) then
                               cycle
                            endif
                         endif
-                        if(dabs(a(number,ndir)).lt.1.d-10) cycle
+                        if(dabs(a(number,ndir)).lt.1.d-5) cycle
                         exit
                      enddo
                      if(j.gt.3) then
@@ -178,7 +194,7 @@
                   do j=1,3
                      number=number+1
                      if(number.gt.3) number=1
-                     if(dabs(a(number,ndir)).lt.1.d-10) cycle
+                     if(dabs(a(number,ndir)).lt.1.d-5) cycle
                      nodempc(1,mpcfree)=node
                      nodempc(2,mpcfree)=number
                      coefmpc(mpcfree)=x*a(number,ndir)

@@ -27,7 +27,7 @@
      &  iprestr,vold,iperturb,sti,nzs,stx,adb,aub,iexpl,plicon,
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
      &  matname,mint_,ics,cs,nm,ncmat_,labmpc,mass,stiffness,buckling,
-     &  rhsi,intscheme,mcs,coriolis,ibody)
+     &  rhsi,intscheme,mcs,coriolis,ibody,xloadold,reltime,ielcs)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !     for cyclic symmetry calculations
@@ -53,16 +53,16 @@
      &  mpc1,mpc2,index1,index2,node1,node2,kflag,
      &  ntmat_,indexe,nope,norien,iexpl,mint_,i0,nm,inode,icomplex,
      &  inode1,icomplex1,inode2,icomplex2,ner,ncmat_,intscheme,istep,
-     &  iinc,mcs
+     &  iinc,mcs,ielcs(*)
 !
       integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),bb(*),xbody(7,*),cgr(4,*),
-     &  t0(*),t1(*),prestr(6,mint_,*),vold(0:3,*),s(60,60),ff(60),
+     &  t0(*),t1(*),prestr(6,mint_,*),vold(0:4,*),s(60,60),ff(60),
      &  sti(6,mint_,*),sm(60,60),stx(6,mint_,*),adb(*),aub(*),
-     &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),
-     &  alcon(0:6,ntmat_,*),cs(17,*),alzero(*),orab(7,*)
+     &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),xloadold(2,*),
+     &  alcon(0:6,ntmat_,*),cs(17,*),alzero(*),orab(7,*),reltime
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mint_,*),pi,theta,ti,tr
@@ -196,7 +196,8 @@ c        endif
      &          iexpl,plicon,
      &          nplicon,plkcon,nplkcon,xstiff,npmat_,
      &          dtime,matname,mint_,ncmat_,mass,stiffness,buckling,rhsi,
-     &          intscheme,ttime,time,istep,iinc,coriolis)
+     &          intscheme,ttime,time,istep,iinc,coriolis,xloadold,
+     &          reltime)
 !
         do jj=1,3*nope
 !
@@ -207,7 +208,13 @@ c        endif
           jdof1=nactdof(k,node1)
 !
           do ll=jj,3*nope
-!
+    	    if (mcs.gt.1)then
+               if(cs(1,(ielcs(i)+1)).ne.1.d0) then
+                  s(jj,ll)=(cs(1,(ielcs(i)+1))/cs(1,1))*s(jj,ll)
+                  sm(jj,ll)=(cs(1,(ielcs(i)+1))/cs(1,1))*sm(jj,ll)
+               endif
+  	    endif
+!    
             l=(ll-1)/3+1
             m=ll-3*(l-1)
 !
@@ -228,10 +235,10 @@ c        endif
 !
                if(jdof1.eq.0) then
                   idof1=jdof2
-                  idof2=(node1-1)*7+k
+                  idof2=(node1-1)*8+k
                else
                   idof1=jdof1
-                  idof2=(node2-1)*7+m
+                  idof2=(node2-1)*8+m
                endif
 !
                if(nmpc.gt.0) then
@@ -304,8 +311,8 @@ c                        write(*,*) id1,labmpc(id1)(1:9)
                endif
 !
             else
-               idof1=(node1-1)*7+k
-               idof2=(node2-1)*7+m
+               idof1=(node1-1)*8+k
+               idof2=(node2-1)*8+m
 !
                mpc1=0
                mpc2=0

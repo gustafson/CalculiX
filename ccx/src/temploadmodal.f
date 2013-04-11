@@ -17,13 +17,16 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine temploadmodal(amta,namta,nam,ampli,time,ttime,dtime,
-     &  xbounold,xboun,xbounact,iamboun,nboun,nodeboun,ndirboun)
+     &  xbounold,xboun,xbounact,iamboun,nboun,nodeboun,ndirboun,
+     &  amname)
 !
 !     calculates the SPC boundary conditions at a given time for
 !     a modal dynamic procedure; used to calculate the velocity and
 !     acceleration by use of finite differences
 !
       implicit none
+!
+      character*80 amname(*)
 !
       integer nam,i,istart,iend,id,namta(3,*),
      &  iamboun(*),nboun,iambouni,nodeboun(*),ndirboun(*)
@@ -47,9 +50,17 @@
             reftime=reftime-amta(1,namta(1,i))
             istart=namta(1,abs(namta(3,i)))
             iend=namta(2,abs(namta(3,i)))
+            if(istart.eq.0) then
+               call uamplitude(reftime,amname(namta(3,i)),ampli(i))
+               cycle
+            endif
          else
             istart=namta(1,i)
             iend=namta(2,i)
+            if(istart.eq.0) then
+               call uamplitude(reftime,amname(i),ampli(i))
+               cycle
+            endif
          endif
          call identamta(amta,reftime,istart,iend,id)
          if(id.lt.istart) then

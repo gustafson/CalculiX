@@ -53,8 +53,6 @@
 !
       if(isolver.eq.0) then
          solver(1:7)='SPOOLES                          '
-      elseif(isolver.eq.1) then
-         solver(1:7)='PROFILE                          '
       elseif(isolver.eq.2) then
          solver(1:16)='ITERATIVESCALING                '
       elseif(isolver.eq.3) then
@@ -75,10 +73,6 @@
 !
       if(solver(1:7).eq.'SPOOLES') then
          isolver=0
-      elseif(solver(1:7).eq.'PROFILE') then
-         write(*,*) '*WARNING in frequencies: the profile solver is not'
-         write(*,*) '         allowed in frequency calculations;'
-         write(*,*) '         the default solver is used'
       elseif(solver(1:16).eq.'ITERATIVESCALING') then
          write(*,*) '*WARNING in frequencies: the iterative scaling'
          write(*,*) '         procedure is not available for frequency'
@@ -127,9 +121,9 @@
       ncv=4*nev
       ncv=ncv+nev
       mxiter=1000
-      read(textpart(2)(1:20),'(f20.10)',iostat=istat) fmin
+      read(textpart(2)(1:20),'(f20.0)',iostat=istat) fmin
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-      read(textpart(3)(1:20),'(f20.10)',iostat=istat) fmax
+      read(textpart(3)(1:20),'(f20.0)',iostat=istat) fmax
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
 !
       mei(1)=nev

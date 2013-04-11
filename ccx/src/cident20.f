@@ -16,17 +16,27 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine frdclose()
-      implicit none
 !
-!     closes the frd file
+!     identifies the position id of px in an ordered array
+!     x of integers; 
 !
-      character*5 p9999
+!     id is such that x(id).le.px and x(id+1).gt.px
 !
-      p9999=' 9999'
-!
-      write(7,'(a5)') p9999
-      close(7)
-!
-      return
-      end
+      SUBROUTINE cIDENT20(X,PX,N,ID)
+      IMPLICIT none
+      character*20 x,px
+      integer n,id,n2,m
+      DIMENSION X(N)
+      id=0
+      if(n.eq.0) return
+      N2=N+1
+      do
+         M=(N2+ID)/2
+         IF(PX.GE.X(M)) then
+            ID=M
+         else
+            N2=M
+         endif
+         IF((N2-ID).EQ.1) return
+      enddo
+      END

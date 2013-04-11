@@ -25,7 +25,7 @@
 !     
       integer i,nload,node,nelemload(2,*)
 !     
-      real*8 vold(0:3,*),xload(2,*)
+      real*8 vold(0:4,*),xload(2,*)
 !
 !     updating the boudary conditions in a mechanical
 !     calculation coming from a previous thermal calculation

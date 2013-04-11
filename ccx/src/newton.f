@@ -31,7 +31,7 @@
 !
       real*8 xi,et,ze,weight,xl(3,20),shp(4,20),xsj,rho,cgr(4,*),
      &  t0l,t0(*),rhcon(0:1,ntmat_,*),physcon(3),co(3,*),dd,bodyf(3),
-     &  vold(0:3,*)
+     &  vold(0:4,*)
 !
       data two /2/
 !

@@ -18,7 +18,9 @@
 !
       subroutine gencontelem(tieset,ntie,itietri,ne,ipkon,kon,
      &  lakon,set,istartset,iendset,ialset,cg,straight,ifree,
-     &  koncont,co,vold,xo,yo,zo,x,y,z,nx,ny,nz,nset,ielmat,cs)
+     &  koncont,co,vold,xo,yo,zo,x,y,z,nx,ny,nz,nset,ielmat,cs,
+     &  elcon,istep,iinc,iit,ncmat_,ntmat_,ifcont1,ifcont2,ne0,
+     &  vini,nmethod)
 !
 !     generate contact elements for the slave contact nodes
 !
@@ -30,13 +32,15 @@
       integer ntie,nset,istartset(*),iendset(*),ialset(*),ifree,
      &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),ne,node,
      &  neigh(10),nodeedge(2,10),iflag,kneigh,i,j,k,l,islav,isol,
-     &  itri,ll,kflag,n,ipos,nx(*),ny(*),
+     &  itri,ll,kflag,n,ipos,nx(*),ny(*),ipointer(10),istep,iinc,
      &  nz(*),nstart,ielmat(*),material,ifaceq(8,6),ifacet(6,4),
-     &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,
-     &  nnodelem,nface,nope,nodef(8)
+     &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,iit,
+     &  nnodelem,nface,nope,nodef(8),ncmat_,ntmat_,ifcont1(*),
+     &  ifcont2(*),ne0,ifaceref,isum,nmethod
 !
-      real*8 cg(3,*),straight(16,*),co(3,*),vold(0:3,*),p(3),
-     &  totdist(10),dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),cs(17,*)
+      real*8 cg(3,*),straight(16,*),co(3,*),vold(0:4,*),p(3),
+     &  totdist(10),dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),cs(17,*),
+     &  beta,c0,elcon(0:ncmat_,ntmat_,*),vini(0:4,*)
 !
 !     nodes per face for hex elements
 !
@@ -114,9 +118,6 @@
 !     
          do j=istartset(islav),iendset(islav)
             if(ialset(j).gt.0) then
-c               if(j.gt.istartset(islav)) then
-c                  if(ialset(j).eq.ialset(j-1)) cycle
-c               endif
 !     
                node=ialset(j)
 !     
@@ -177,54 +178,76 @@ c               endif
                      exit
                   endif
                enddo
+!
+!              if no independent face was found, a small
+!              tolerance is applied
+!
+               if(isol.eq.0) then
+                  do k=1,kneigh
+                     ipointer(k)=neigh(k)+itietri(1,i)-1
+                  enddo
+                  call dsort(totdist,ipointer,kneigh,kflag)
+                  do k=1,kneigh
+                     itri=ipointer(k)
+                     dist=dabs(straight(1,itri)*cg(1,itri)+
+     &                         straight(2,itri)*cg(2,itri)+
+     &                         straight(3,itri)*cg(3,itri)+
+     &                         straight(4,itri))
+                     if(totdist(k).lt.1.d-3*dist) then
+                        isol=k
+                        exit
+                     endif
+                  enddo
+               endif
+!
+!              check whether distance is larger than c0:
+!              no element is generated
+!
+               if(isol.ne.0) then
+                  dist=straight(13,itri)*p(1)+
+     &                 straight(14,itri)*p(2)+
+     &                 straight(15,itri)*p(3)+
+     &                 straight(16,itri)
+                  beta=elcon(1,1,material)
+                  c0=dlog(100.d0)/beta
+                  if(dist.gt.c0) then
+c                     isol=0
+!
+!                    adjusting the bodies at the start of the
+!                    calculation such that they touch
+!
+                  elseif((istep.eq.1).and.(iinc.eq.1).and.
+     &                   (iit.le.0).and.(dist.lt.0.d0).and.
+     &                   (nmethod.eq.1)) then
+                     do k=1,3
+                        vold(k,node)=vold(k,node)-
+     &                        dist*straight(12+k,itri)
+                        vini(k,node)=vold(k,node)
+                    enddo
+                  endif
+               endif
 !     
                if(isol.eq.0) then
-c                  do k=1,kneigh
-c                     ipointer(k)=k
-c                  enddo
-c                  call ident(totdist,ipointer,kneigh,kflag)
-c                  index=ipointer(1)
-c                  if(nodeedge(2,index).eq.0) then
-!     
-!                    point spring
-!     
-c                     ne=ne+1
-c                     ipkon(ne)=ifree
-c                     lakon(ne)='PSPRING '
-c                     kon(ifree+1)=node
-c                     kon(ifree+2)=nodeedge(1,index)
-c                     ifree=ifree+2
-c                  else
-!     
-!                    line spring
-!     
-c                     ne=ne+1
-c                     ipkon(ne)=ifree
-c                     lakon(ne)='LSPRING '
-c                     kon(ifree+1)=node
-c                     kon(ifree+2)=nodeedge(1,index)
-c                     kon(ifree+3)=nodeedge(2,index)
-c                     ifree=ifree+3
-c                  endif
+!
+!                 no independent face was found: no spring
+!                 element is generated
+!
                else
 !     
 !                 plane spring
 !     
                   ne=ne+1
                   ipkon(ne)=ifree
-c                  lakon(ne)='ESPRING '
-c                  ielmat(ne)=material
-c                  kon(ifree+1)=koncont(1,itri)
-c                  kon(ifree+2)=koncont(2,itri)
-c                  kon(ifree+3)=koncont(3,itri)
-c                  kon(ifree+4)=node
-c                     write(*,*) 'spring element ',ne,kon(ifree+1),
-c     &                 kon(ifree+2),kon(ifree+3),kon(ifree+4)
-c                  ifree=ifree+4
                   lakon(ne)='ESPRNGC '
                   ielmat(ne)=material
                   nelem=int(koncont(4,itri)/10.d0)
                   jface=koncont(4,itri)-10*nelem
+!
+!                 storing the face in ifcont1 and the
+!                 element number in ifcont2
+!
+                  ifcont1(ne-ne0)=koncont(4,itri)
+                  ifcont2(ne-ne0)=ne
 !
                   indexe=ipkon(nelem)
                   if(lakon(nelem)(4:4).eq.'2') then
@@ -286,11 +309,10 @@ c                  ifree=ifree+4
                   enddo
                   ifree=ifree+nnodelem+1
                   kon(ifree)=node
-c                  write(*,*) 'contact element for node ',node
-c                  write(*,*) (nodef(k),k=1,nnodelem)
-c                  write(*,*)
+                  ifree=ifree+1
 !
                   write(lakon(ne)(8:8),'(i1)') nnodelem+1
+c                  write(*,*) ne,(nodef(k),k=1,nnodelem),node
                endif
 !     
             else
@@ -306,8 +328,8 @@ c                  write(*,*)
 !                 determining the kneigh neighboring master contact
 !                 triangle centers of gravity
 !     
-c                  call near3d(cg(1,itietri(1,i)),n,p,neigh,kneigh,
-c     &                 iflag)
+                  call near3d(xo,yo,zo,x,y,z,nx,ny,nz,p(1),p(2),p(3),
+     &                 n,neigh,kneigh)
 !     
                   isol=0
 !     
@@ -356,54 +378,45 @@ c     &                 iflag)
                         exit
                      endif
                   enddo
+!
+!              if no independent face was found, a small
+!              tolerance is applied
+!
+                  if(isol.eq.0) then
+                     do k=1,kneigh
+                        ipointer(k)=neigh(k)+itietri(1,i)-1
+                     enddo
+                     call dsort(totdist,ipointer,kneigh,kflag)
+                     do k=1,kneigh
+                        itri=ipointer(k)
+                        dist=straight(1,itri)*cg(1,itri)+
+     &                       straight(2,itri)*cg(2,itri)+
+     &                       straight(3,itri)*cg(3,itri)+
+     &                       straight(4,itri)
+                        if(totdist(k).lt.1.d-3*dist) then
+                           isol=k
+                           exit
+                        endif
+                     enddo
+                  endif
 !     
                   if(isol.eq.0) then
-c                     do k=1,kneigh
-c                        ipointer(k)=k
-c                     enddo
-c                     call ident(totdist,ipointer,kneigh,kflag)
-c                     index=ipointer(1)
-c                     if(nodeedge(2,index).eq.0) then
-!     
-!                       point spring
-!     
-c                        ne=ne+1
-c                        ipkon(ne)=ifree
-c                        lakon(ne)='PSPRING '
-c                        kon(ifree+1)=node
-c                        kon(ifree+2)=nodeedge(1,index)
-c                        ifree=ifree+2
-c                     else
-!     
-!                       line spring
-!     
-c                        ne=ne+1
-c                        ipkon(ne)=ifree
-c                        lakon(ne)='LSPRING '
-c                        kon(ifree+1)=node
-c                        kon(ifree+2)=nodeedge(1,index)
-c                        kon(ifree+3)=nodeedge(2,index)
-c                        ifree=ifree+3
-c                     endif
                   else
 !     
 !                   plane spring
 !     
                      ne=ne+1
                      ipkon(ne)=ifree
-c                     lakon(ne)='ESPRING '
-c                     ielmat(ne)=material
-c                     kon(ifree+1)=koncont(1,itri)
-c                     kon(ifree+2)=koncont(2,itri)
-c                     kon(ifree+3)=koncont(3,itri)
-c                     kon(ifree+4)=node
-c                     write(*,*) 'spring element ',ne,kon(ifree+1),
-c     &                 kon(ifree+2),kon(ifree+3),kon(ifree+4)
-c                     ifree=ifree+4
                      lakon(ne)='ESPRNGC '
                      ielmat(ne)=material
                      nelem=int(koncont(4,itri)/10.d0)
                      jface=koncont(4,itri)-10*nelem
+!
+!                    storing the face in ifcont1 and the
+!                    element number in ifcont2
+!
+                     ifcont1(ne-ne0)=koncont(4,itri)
+                     ifcont2(ne-ne0)=ne
 !     
                      indexe=ipkon(nelem)
                      if(lakon(nelem)(4:4).eq.'2') then
@@ -465,12 +478,59 @@ c                     ifree=ifree+4
                      enddo
                      ifree=ifree+nnodelem+1
                      kon(ifree)=node
+                     ifree=ifree+1
                      write(lakon(ne)(8:8),'(i1)') nnodelem+1
                   endif
 !     
                enddo
             endif
          enddo
+      enddo
+!
+!     sorting all used independent faces
+!
+      n=ne-ne0
+      call isortii(ifcont1,ifcont2,n,kflag)
+!
+!     replace the faces by the number of times they were used in 
+!     contact spring elements
+!
+      i=1
+      loop: do
+         ifaceref=ifcont1(i)
+         isum=1
+         j=i+1
+         if(j.gt.ne-ne0) exit loop
+         do
+            if(ifcont1(j).eq.ifaceref) then
+               isum=isum+1
+               j=j+1
+               if(j.gt.ne-ne0) exit loop
+               cycle
+            else
+               do k=i,j-1
+                  ifcont1(k)=isum
+               enddo
+               i=j
+               exit
+            endif
+         enddo
+      enddo loop
+      do k=i,j-1
+         ifcont1(k)=isum
+      enddo
+!
+!     sorting in the original order
+!
+      call isortii(ifcont2,ifcont1,n,kflag)
+!
+!     storing the number of dependent nodes as last entry
+!     in the topology
+!
+      do i=ne0+1,ne
+         read(lakon(i)(8:8),'(i1)') nope
+         kon(ipkon(i)+nope+1)=ifcont1(i-ne0)
+c         write(*,*) 'gencontelem',i,ifcont1(i-ne0)
       enddo
 !     
       return

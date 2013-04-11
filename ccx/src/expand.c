@@ -1,4 +1,4 @@
-/*     CalculiX - A 3-dimensional finite element program                   */
+/*     CalculiX - A 3-Dimensional finite element program                   */
 /*              Copyright (C) 1998-2007 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
@@ -61,16 +61,17 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   
     char *filabt;
     int *inum=NULL,k,idir,lfin,j,lint,iout=0,index,inode,id,i,idof,
-	ielas,icmd,kk,l,nkt,icntrl,imag=1,icomplex,kk4,kk6,
+      ielas,icmd,kk,l,nkt,icntrl,imag=1,icomplex,kk4,kk5,kk6,iterm,
 	lprev,ilength,ij,i1,i2,iel,ielset,node,indexe,nope,ml1,
 	*inocs=NULL,*ielcs=NULL,jj,l1,l2,is,*ncocon=NULL,nlabel,
-        new,nodeleft,noderight[3],numnodes,ileft,kflag=2;
+        new,nodeleft,noderight[3],numnodes,ileft,kflag=2,itr,locdir,
+        neqh,j1,nodenew;
     double *stn=NULL,*v=NULL,*temp_array=NULL,*vini=NULL,
-	*een=NULL,cam[2],*f=NULL,*fn=NULL,qa[2],*epn=NULL,*stiini=NULL,
+	*een=NULL,cam[3],*f=NULL,*fn=NULL,qa[2],*epn=NULL,*stiini=NULL,
 	*xstateini=NULL,theta,pi,*coefmpcnew=NULL,t[3],ctl,stl,
 	*stx=NULL,*enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,*cocon=NULL,
 	*qfx=NULL,*qfn=NULL,xreal,ximag,*vt=NULL,sum,*aux=NULL,coefright[3],
-        coef;
+        coef,a[9],ratio;
     
     /* dummy arguments for the results call */
     
@@ -78,8 +79,8 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
     pi=4.*atan(1.);
     
-    v=NNEW(double,8**nk);
-    vt=NNEW(double,4**nk**nsectors);
+    v=NNEW(double,10**nk);
+    vt=NNEW(double,5**nk**nsectors);
     
     fn=NNEW(double,8**nk);
     stn=NNEW(double,12**nk);
@@ -202,7 +203,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    xboun[i**nboun+j]=xboun[j];
 	    xbounold[i**nboun+j]=xbounold[j];
 	    if(*nam>0) iamboun[i**nboun+j]=iamboun[j];
-	    ikboun[i**nboun+j]=ikboun[j]+7*i**nk;
+	    ikboun[i**nboun+j]=ikboun[j]+8*i**nk;
 	    ilboun[i**nboun+j]=ilboun[j]+i**nboun;
 	}
     }
@@ -210,10 +211,10 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 /* distributed loads */
     
     for(i=0;i<*nload;i++){
-	if(nelemload[2*i]<=*ne){
+	if(nelemload[2*i+1]<*nsectors){
 	    nelemload[2*i]+=*ne*nelemload[2*i+1];
 	}else{
-	    nelemload[2*i]+=*ne*(*nsectors+nelemload[2*i+1]-1);
+	    nelemload[2*i]+=*ne*(nelemload[2*i+1]-(*nsectors));
 	}
     }
 
@@ -230,14 +231,14 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 /* point loads */
     
     for(i=0;i<*nforc;i++){
-	if(nodeforc[2*i]<=*nk){
+	if(nodeforc[2*i+1]<*nsectors){
 	    nodeforc[2*i]+=*nk*nodeforc[2*i+1];
 	}else{
-	    nodeforc[2*i]+=*nk*(*nsectors+nodeforc[2*i+1]-1);
+	    nodeforc[2*i]+=*nk*(nodeforc[2*i+1]-(*nsectors));
 	}
     }
 
-    neq[1]/=2;
+    neqh=neq[1]/2;
 
 /* expand nactdof */
 
@@ -245,28 +246,44 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	lint=i*4**nk;
 	for(j=0;j<4**nk;j++){
 	    if(nactdof[j]!=0){
-		nactdof[lint+j]=nactdof[j]+i*neq[1];
+		nactdof[lint+j]=nactdof[j]+i*neqh;
 	    }else{
 		nactdof[lint+j]=0;
 	    }
 	}
     }
+
+    /*zcopy=NNEW(double,*nev*neq[1]);
+      for(i=0;i<*nev*neq[1];i++) zcopy[i]=z[i];*/
     
+    /* loop over all eigenvalues; the loop starts from the highest eigenvalue
+       so that the reuse of z is not a problem
+       z before: real and imaginary part for a segment for all eigenvalues
+       z after: real part for all segments for all eigenvalues */
+
     lfin=0;
     for(j=*nev-1;j>-1;--j){
-	lint=2*j*neq[1];
+	lint=2*j*neqh;
+
+	/* calculating the cosine and sine of the phase angle */
+
+	for(jj=0;jj<*mcs;jj++){
+	    theta=nm[j]*2.*pi/cs[17*jj];
+	    cs[17*jj+14]=cos(theta);
+	    cs[17*jj+15]=sin(theta);
+	}
 	
 	/* generating the cyclic MPC's (needed for nodal diameters
 	   different from 0 */
 	
 	eei=NNEW(double,6**mint_**ne);
 	
-	for(k=0;k<2*neq[1];k+=neq[1]){
+	for(k=0;k<2*neqh;k+=neqh){
 	    
 	    for(i=0;i<6**mint_**ne;i++){eme[i]=0.;}
 	    
-	    if(k==0) {kk=0;kk4=0;kk6=0;}
-	    else {kk=*nk;kk4=4**nk;kk6=6**nk;}
+	    if(k==0) {kk=0;kk4=0;kk5=0;kk6=0;}
+	    else {kk=*nk;kk4=4**nk;kk5=5**nk;kk6=6**nk;}
 	    for(i=0;i<*nmpc;i++){
 		index=ipompc[i]-1;
 		/* check whether thermal mpc */
@@ -296,7 +313,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 			idir=nodempc[3*index+1];
 			idof=nactdof[4*(inode-1)+idir]-1;
 			if(idof==-1){xreal=1.;ximag=1.;}
-			else{xreal=z[lint+idof];ximag=z[lint+idof+neq[1]];}
+			else{xreal=z[lint+idof];ximag=z[lint+idof+neqh];}
 			if(k==0) {
 			    if(fabs(xreal)<1.e-30)xreal=1.e-30;
 			    coefmpcnew[index]=coefmpc[index]*
@@ -312,14 +329,14 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		}
 	    }
 	    
-	    FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,&v[kk4],&stn[kk6],inum,
+	    FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,&v[kk5],&stn[kk6],inum,
 	      stx,elcon,
 	      nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,ielorien,
 	      norien,orab,ntmat_,t0,t0,ithermal,
 	      prestr,iprestr,filab,eme,&een[kk6],iperturb,
 	      f,&fn[kk4],nactdof,&iout,qa,vold,&z[lint+k],
 	      nodeboun,ndirboun,xboun,nboun,ipompc,
-	      nodempc,coefmpcnew,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
+	      nodempc,coefmpcnew,labmpc,nmpc,nmethod,cam,&neqh,veold,accold,
 	      &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
 	      xstateini,xstiff,xstate,npmat_,epn,matname,mint_,&ielas,&icmd,
 	      ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],sti,
@@ -330,15 +347,24 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	}
 	free(eei);
 	
+	sum=0.;
+
 	/* mapping the results to the other sectors */
 	
-	icntrl=2;
+	icntrl=2;imag=1;
 	
 	FORTRAN(rectcyl,(co,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filabt,&imag));
 	
 	/* basis sector */
 
-	for(l=0;l<4**nk;l++){vt[l]=v[l];}
+	for(l=0;l<5**nk;l++){vt[l]=v[l];}
+
+        for(i=0;i<neq[1];++i) temp_array[i]=0.;
+	FORTRAN(op,(&neq[1],aux,&z[j*neq[1]],temp_array,adb,aub,icol,irow,&neq[1]));
+	for(i=0;i<neq[1];++i){
+	    sum+=z[j*neq[1]+i]*temp_array[i];
+	}
+	/*	printf("j=%d,i=0,sumnew=%e\n",j,sum);*/
 
 	/* other sectors */
 
@@ -361,52 +387,45 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 			if(id!=0){
 			    if(ics[lprev+id-1]==ml1){
 				for(l2=0;l2<4;l2++){
-				    l=4*l1+l2;
-				    vt[l+4**nk*i]=v[l];
+				    l=5*l1+l2;
+				    vt[l+5**nk*i]=v[l];
 				}
 				continue;
 			    }
 			}
 			for(l2=0;l2<4;l2++){
-			    l=4*l1+l2;
-			    vt[l+4**nk*i]=ctl*v[l]-stl*v[l+4**nk];
+			    l=5*l1+l2;
+			    vt[l+5**nk*i]=ctl*v[l]-stl*v[l+5**nk];
 			}
 		    }
 		}
 	    }
 	}
 	
-	icntrl=-2;
+	icntrl=-2;imag=0;
 	
 	FORTRAN(rectcyl,(co,vt,fn,stn,qfn,een,cs,&nkt,&icntrl,t,filabt,
 			 &imag));
 	
 /* storing the displacements into the expanded eigenvectors */
 	
-	for(i=0;i<4**nk;i++){
-	    if(nactdof[i]!=0){
-		for(k=0;k<*nsectors;k++){
-		    z[j**nsectors*neq[1]+k*neq[1]+nactdof[i]-1]=
-			vt[k*4**nk+i];
+	for(i=0;i<*nk;i++){
+	    for(j1=0;j1<4;j1++){
+		if(nactdof[4*i+j1]!=0){
+		    for(k=0;k<*nsectors;k++){
+			z[j**nsectors*neqh+k*neqh+nactdof[4*i+j1]-1]=
+			    vt[k*5**nk+5*i+j1];
+		    }
 		}
 	    }	    
 	}
 
 /* normalizing the eigenvectors with the mass */
 
-	sum=0.;
-	for(k=0;k<*nsectors;k++){
-	    lint=(j**nsectors+k)*neq[1];
-	    for(i=0;i<neq[1];++i)temp_array[i]=0.;
-	    FORTRAN(opcs,(&neq[1],aux,&z[lint],temp_array,adb,aub,icol,irow,&neq[1]));
-	    for(i=0;i<neq[1];++i) 
-		sum+=z[lint+i]*temp_array[i];
-	}
-	lint=j**nsectors*neq[1];
-	for(i=0;i<*nsectors*neq[1];++i) 
-	   z[lint+i]=z[lint+i]/sqrt(sum);
-
-
+	if (nm[j]==0||(nm[j]==(int)((cs[0]/2))&&(fmod(cs[0],2.)==0.))){sum=sqrt(cs[0]);}
+	else{sum=sqrt(cs[0]/2);}
+	lint=j**nsectors*neqh;
+	for(i=0;i<*nsectors*neqh;++i) z[lint+i]=z[lint+i]/sum;
     }
 
 /* copying the multiple point constraints */
@@ -421,7 +440,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	}
 	for(j=0;j<*nmpcold;j++){
 	    ipompc[*nmpc]=*mpcend+1;
-	    ikmpc[*nmpc]=ikmpc[j]+7*i**nk;
+	    ikmpc[*nmpc]=ikmpc[j]+8*i**nk;
 	    ilmpc[*nmpc]=ilmpc[j]+i**nmpcold;
 	    strcpy1(&labmpc[20**nmpc],&labmpcold[20*j],20);
 	    if(strcmp1(&labmpcold[20*j],"CYCLIC")==0){
@@ -440,10 +459,10 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 			}
 		    }
 		    if(new==1){
-			if(numnodes==3){
-			    printf("*ERROR in expand: more than three independent nodes\n");
-			    FORTRAN(stop,());
-			}
+// 			if(numnodes==3){
+// 			    printf("*ERROR in expand: more than three independent nodes\n");
+// 			    FORTRAN(stop,());
+// 			}
 			noderight[numnodes]=node;
 			coefright[numnodes]=coefmpcold[index];
 			numnodes++;
@@ -475,11 +494,80 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		(*mpcend)++;
 	    }else{
 		index=ipompcold[j]-1;
+		iterm=0;
 		do{
+		    iterm++;
 		    node=nodempcold[3*index];
 		    idir=nodempcold[3*index+1];
 		    coef=coefmpcold[index];
-		    nodempc[3**mpcend]=node+i**nk;
+
+		    /* check whether SUBCYCLIC MPC: if the current node
+                       is an independent node of a CYCLIC MPC, the
+                       node in the new MPC should be the cylic previous
+                       one */
+
+		    nodenew=node+i**nk;
+		    if(strcmp1(&labmpcold[20*j],"SUBCYCLIC")==0){
+			for(ij=0;ij<*mcs;ij++){
+			    lprev=cs[ij*17+13];
+			    ilength=cs[ij*17+3];
+			    FORTRAN(nident,(&ics[lprev],&node,&ilength,&id));
+			    if(id!=0){
+				if(ics[lprev+id-1]==node){
+				    nodenew=node+ileft**nk;
+				    break;
+				}
+			    }
+			}
+		    }
+		    
+		    /* modification of the MPC coefficients if
+                       cylindrical coordinate system is active
+                       it is assumed that all terms in the MPC are
+                       either in the radial, the circumferential
+                       or axial direction  */
+		    
+		    if(*ntrans<=0){itr=0;}
+		    else if(inotr[2*node-2]==0){itr=0;}
+		    else{itr=inotr[2*node-2];}
+		    
+		    if(iterm==1) locdir=-1;
+		    
+		    if((itr!=0)&&(idir!=0)){
+			if(trab[7*itr-1]<0){
+			    FORTRAN(transformatrix,(&trab[7*itr-7],
+						    &co[3*node-3],a));
+			    if(iterm==1){
+				for(k=0;k<3;k++){
+				    if(fabs(a[3*k+idir-1]-coef)<1.e-10){
+					FORTRAN(transformatrix,(&trab[7*itr-7],
+								&co[3*nodenew-3],a));
+					coef=a[3*k+idir-1];
+					locdir=k;
+					break;
+				    }
+				    if(fabs(a[3*k+idir-1]+coef)<1.e-10){
+					FORTRAN(transformatrix,(&trab[7*itr-7],
+								&co[3*nodenew-3],a));
+					coef=-a[3*k+idir-1];
+					locdir=k;
+					break;
+				    }
+				}
+			    }else{
+				if(locdir!=-1){
+				    if(fabs(a[3*locdir+idir-1])>1.e-10){
+					ratio=coef/a[3*locdir+idir-1];
+				    }else{ratio=0.;}
+				    FORTRAN(transformatrix,(&trab[7*itr-7],
+							    &co[3*nodenew-3],a));
+				    coef=ratio*a[3*locdir+idir-1];
+				}
+			    }		
+			}
+		    }
+		    
+		    nodempc[3**mpcend]=nodenew;
 		    nodempc[3**mpcend+1]=idir;
 		    coefmpc[*mpcend]=coef;
 		    index=nodempcold[3*index+2]-1;
@@ -493,6 +581,11 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    (*nmpc)++;
 	}
     }
+    
+    /*      for(i=0;i<*nmpc;i++){
+	j=i+1;
+	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
+	}*/
 
     /* copying the temperatures */
 
@@ -517,8 +610,9 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   
     *nk=nkt;
     (*ne)*=(*nsectors);
+    (*nkon)*=(*nsectors);
     (*nboun)*=(*nsectors);
-    (neq[1])*=(*nsectors);
+    (neq[1])*=(*nsectors/2);
     
     free(temp_array);free(coefmpcnew);
     free(v);free(vt);free(fn);free(stn);free(inum);free(stx);

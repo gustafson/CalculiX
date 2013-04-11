@@ -16,23 +16,22 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-      subroutine liquidpump(node1,node2,nodem,nelem,lakon,
-     &     nactdog,identity,ielprop,prop,iflag,voldgas,xflow,f,
-     &     nodef,idirf,df,cp,R,rho,physcon,g,co,dvi,numf)
+      subroutine liquidpump(node1,node2,nodem,nelem,
+     &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
+     &     nodef,idirf,df,rho,g,co,numf)
 !
 !     pump for incompressible media
 !     
       implicit none
 !     
       logical identity
-      character*8 lakon(*)
 !      
       integer nelem,nactdog(0:3,*),node1,node2,nodem,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
      &     inv,id,numf,npu,i
 !      
-      real*8 prop(*),voldgas(0:3,*),xflow,f,df(4),R,
-     &     p1,p2,cp,physcon(3),rho,dvi,g(3),dg,z1,z2,co(3,*),
+      real*8 prop(*),v(0:4,*),xflow,f,df(4),
+     &     p1,p2,rho,g(3),dg,z1,z2,co(3,*),
      &     xpu(10),ypu(10),xxpu(10),yypu(10),dh
 !
       numf=3
@@ -58,14 +57,14 @@
             ypu(i)=prop(index+2*i+1)
          enddo
 !     
-         p1=voldgas(2,node1)
-         p2=voldgas(2,node2)
+         p1=v(2,node1)
+         p2=v(2,node2)
 !     
          z1=-g(1)*co(1,node1)-g(2)*co(2,node1)-g(3)*co(3,node1)
          z2=-g(1)*co(1,node2)-g(2)*co(2,node2)-g(3)*co(3,node2)
 !     
          if(iflag.eq.2) then
-            xflow=voldgas(1,nodem)
+            xflow=v(1,nodem)
             if(xflow.ge.0.d0) then
                inv=1
             else

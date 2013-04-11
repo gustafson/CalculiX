@@ -19,7 +19,7 @@
       subroutine knotmpc(ipompc,nodempc,coefmpc,irefnode,irotnode,
      &  iexpnode,
      &  labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,nk,nk_,nodeboun,ndirboun,
-     &  ikboun,ilboun,nboun,nboun_,node,typeboun,co)
+     &  ikboun,ilboun,nboun,nboun_,node,typeboun,co,xboun,istep)
 !
 !     generates three knot MPC's for node "node" about reference
 !     (translational) node irefnode and rotational node irotnode 
@@ -32,13 +32,13 @@
       integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,nk,nk_,ikmpc(*),
      &  ilmpc(*),node,id,mpcfreeold,j,idof,l,nodeboun(*),
      &  ndirboun(*),ikboun(*),ilboun(*),nboun,nboun_,irefnode,
-     &  irotnode,iexpnode
+     &  irotnode,iexpnode,istep
 !
-      real*8 coefmpc(*),co(3,*)
+      real*8 coefmpc(*),co(3,*),xboun(*),e(3,3,3)
 !
-c      data e /0.,0.,0.,0.,0.,-1.,0.,1.,0.,
-c     &        0.,0.,1.,0.,0.,0.,-1.,0.,0.,
-c     &        0.,-1.,0.,1.,0.,0.,0.,0.,0./
+      data e /0.,0.,0.,0.,0.,-1.,0.,1.,0.,
+     &        0.,0.,1.,0.,0.,0.,-1.,0.,0.,
+     &        0.,-1.,0.,1.,0.,0.,0.,0.,0./
 !
       nk=nk+1
       if(nk.gt.nk_) then
@@ -46,7 +46,7 @@ c     &        0.,-1.,0.,1.,0.,0.,0.,0.,0./
          stop
       endif
       do j=1,3
-         idof=7*(node-1)+j
+         idof=8*(node-1)+j
          call nident(ikmpc,idof,nmpc,id)
          if(id.gt.0) then
             if(ikmpc(id).eq.idof) then
@@ -85,27 +85,36 @@ c     &        0.,-1.,0.,1.,0.,0.,0.,0.,0./
 !
          nodempc(1,mpcfree)=iexpnode
          nodempc(2,mpcfree)=1
+         if(istep.gt.1) then
+            coefmpc(mpcfree)=co(j,irefnode)-co(j,node)
+         endif
          mpcfree=nodempc(3,mpcfree)
 !
 !        rotation terms
 !
          nodempc(1,mpcfree)=irotnode
          nodempc(2,mpcfree)=1
-c         coefmpc(mpcfree)=e(j,1,1)*(co(1,irefnode)-co(1,node))+
-c     &        e(j,2,1)*(co(2,irefnode)-co(2,node))+
-c     &        e(j,3,1)*(co(3,irefnode)-co(3,node))
+         if(istep.gt.1) then
+            coefmpc(mpcfree)=e(j,1,1)*(co(1,irefnode)-co(1,node))+
+     &        e(j,2,1)*(co(2,irefnode)-co(2,node))+
+     &        e(j,3,1)*(co(3,irefnode)-co(3,node))
+         endif
          mpcfree=nodempc(3,mpcfree)
          nodempc(1,mpcfree)=irotnode
          nodempc(2,mpcfree)=2
-c         coefmpc(mpcfree)=e(j,1,2)*(co(1,irefnode)-co(1,node))+
-c     &        e(j,2,2)*(co(2,irefnode)-co(2,node))+
-c     &        e(j,3,2)*(co(3,irefnode)-co(3,node))
+         if(istep.gt.1) then
+            coefmpc(mpcfree)=e(j,1,2)*(co(1,irefnode)-co(1,node))+
+     &        e(j,2,2)*(co(2,irefnode)-co(2,node))+
+     &        e(j,3,2)*(co(3,irefnode)-co(3,node))
+         endif
          mpcfree=nodempc(3,mpcfree)
          nodempc(1,mpcfree)=irotnode
          nodempc(2,mpcfree)=3
-c         coefmpc(mpcfree)=e(j,1,3)*(co(1,irefnode)-co(1,node))+
-c     &        e(j,2,3)*(co(2,irefnode)-co(2,node))+
-c     &        e(j,3,3)*(co(3,irefnode)-co(3,node))
+         if(istep.gt.1) then
+            coefmpc(mpcfree)=e(j,1,3)*(co(1,irefnode)-co(1,node))+
+     &        e(j,2,3)*(co(2,irefnode)-co(2,node))+
+     &        e(j,3,3)*(co(3,irefnode)-co(3,node))
+         endif
          mpcfree=nodempc(3,mpcfree)
          nodempc(1,mpcfree)=nk
          nodempc(2,mpcfree)=j
@@ -113,7 +122,7 @@ c     &        e(j,3,3)*(co(3,irefnode)-co(3,node))
          mpcfreeold=mpcfree
          mpcfree=nodempc(3,mpcfree)
          nodempc(3,mpcfreeold)=0
-         idof=7*(nk-1)+j
+         idof=8*(nk-1)+j
          call nident(ikboun,idof,nboun,id)
          nboun=nboun+1
          if(nboun.gt.nboun_) then
@@ -123,6 +132,9 @@ c     &        e(j,3,3)*(co(3,irefnode)-co(3,node))
          nodeboun(nboun)=nk
          ndirboun(nboun)=j
          typeboun(nboun)='R'
+         if(istep.gt.1) then
+            xboun(nboun)=0.d0
+         endif
          do l=nboun,id+2,-1
             ikboun(l)=ikboun(l-1)
             ilboun(l)=ilboun(l-1)

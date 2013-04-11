@@ -28,14 +28,14 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      int *nodeboun, int *ndirboun, int *nboun, int *ipompc,
 	      int *nodempc, int *nmpc, int *nactdof, int *icol,
 	      int *jq, int **mast1p, int **irowp, int *isolver, int *neq,
-	      int *nnn, int *ikmpc, int *ilmpc, int *ikcol,
-	      int *ipointer, int *nsky, int *nzs, int *nmethod,
+	      int *nnn, int *ikmpc, int *ilmpc,
+	      int *ipointer, int *nzs, int *nmethod,
 	      int *ics, double *cs, char *labmpc, int *mcs){
 
   int i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
-    ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,itot,
+    ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,
     index1,index2,m,node,nzs_,ist,kflag,indexe,nope,isize,*mast1=NULL,
-    *irow=NULL,nsky_exp,nsky_inc,inode,icomplex,inode1,icomplex1,inode2,
+    *irow=NULL,inode,icomplex,inode1,icomplex1,inode2,
     icomplex2,kdof1,kdof2,ilength,lprev,ij;
 
   /* the indices in the comments follow FORTRAN convention, i.e. the
@@ -159,10 +159,10 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  
 	  if(jdof1==0){
 	    idof1=jdof2;
-	    idof2=7*node1+k-6;}
+	    idof2=8*node1+k-7;}
 	  else{
 	    idof1=jdof1;
-	    idof2=7*node2+m-6;}
+	    idof2=8*node2+m-7;}
 	  
 	  if(*nmpc>0){
 	    
@@ -213,8 +213,8 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	}
 	
 	else{
-	  idof1=7*node1+k-6;
-	  idof2=7*node2+m-6;
+	  idof1=8*node1+k-7;
+	  idof2=8*node2+m-7;
 	  mpc1=0;
 	  mpc2=0;
 	  if(*nmpc>0){
@@ -380,7 +380,7 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
      mast1 contains the row numbers column per column,
      irow the column numbers */
   
-  for(i=0;i<neq[0];++i){
+/*  for(i=0;i<neq[0];++i){
     itot=0;
     if(ipointer[i]==0){
       printf("*ERROR in mastruct: zero column");
@@ -403,19 +403,22 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     }
     mast1[istart-1]=ikcol[itot-1];
     irow[istart-1]=i+1;
-  }
-  
-  /* definiing icol and jq */
-  
-  *nsky=0;
-  nsky_exp=0;
-  for(i=1;i<neq[0];++i){
-    nsky_inc=i+1-mast1[ipointer[i]-1];
-    if(2147483647-*nsky<nsky_inc){
-      ++nsky_exp;
-      nsky_inc=nsky_inc-2147483647;
-    }
-    *nsky=*nsky+nsky_inc;
+    }*/
+
+    
+  for(i=0;i<neq[0];++i){
+      if(ipointer[i]==0){
+	  if(i>=neq[1]) continue;
+	  printf("*ERROR in mastruct: zero column\n");
+	  FORTRAN(stop,());
+      }
+      istart=ipointer[i];
+      while(1){
+	  istartold=istart;
+	  istart=irow[istart-1];
+	  irow[istartold-1]=i+1;
+	  if(istart==0) break;
+      }
   }
   
   if(neq[0]==0){
@@ -427,11 +430,6 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   printf(" %d\n",neq[0]);
   printf(" number of nonzero matrix elements\n");
   printf(" %d\n",ifree);
-  printf(" total length of the skyline\n");
-  printf(" %d*2147483647+%d\n",nsky_exp,*nsky);
-  printf(" percentage of nonzero skyline elements\n");
-  printf(" %f\n\n",((double)ifree)/
-	 ((double)(*nsky+neq[0])+nsky_exp*(double)(2147483647))*100.);
   
   /* new meaning of icol,j1,mast1,irow:
      

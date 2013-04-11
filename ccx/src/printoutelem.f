@@ -32,14 +32,6 @@
       real*8 ener(mint_,*),energytot,volumetot,energy,volume,co(3,*),
      &  xl(3,20),xi,et,ze,xsj,shp(4,20),weight
 !
-      real*8 gauss2d1(2,1),gauss2d2(2,4),gauss2d3(2,9),gauss2d4(2,1),
-     &  gauss2d5(2,3),gauss3d1(3,1),gauss3d2(3,8),gauss3d3(3,27),
-     &  gauss3d4(3,1),gauss3d5(3,4),gauss3d6(3,15),gauss3d7(3,2),
-     &  gauss3d8(3,9),gauss3d9(3,18),weight2d1(1),weight2d2(4),
-     &  weight2d3(9),weight2d4(1),weight2d5(3),weight3d1(1),
-     &  weight3d2(8),weight3d3(27),weight3d4(1),weight3d5(4),
-     &  weight3d6(15),weight3d7(2),weight3d8(9),weight3d9(18)
-!
       include "gauss.f"
 !
       data iflag /2/
@@ -160,10 +152,10 @@
 !
       if((prlab(ii)(1:5).eq.'ELSE ').or.
      &   (prlab(ii)(1:5).eq.'ELSET')) then
-         write(5,'(i5,1p,1x,e11.4)') nelem,energy
+         write(5,'(i6,1p,1x,e11.4)') nelem,energy
       elseif((prlab(ii)(1:5).eq.'EVOL ').or.
      &       (prlab(ii)(1:5).eq.'EVOLT')) then
-         write(5,'(i5,1p,1x,e11.4)') nelem,volume
+         write(5,'(i6,1p,1x,e11.4)') nelem,volume
       endif
 !
       return

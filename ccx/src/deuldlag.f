@@ -20,160 +20,140 @@
 !
 !     calculation of the coefficients of the linearization
 !     of J:=det(dx/dX)=1 at (xi,et,ze) for a 20-node quadratic
-!     isoparametric brick element. Watch out: 0<=xi<=2, -1<=et,ze<=1 !!!
-!     X are Lagrangian coordinates, x are Eulerian coordinates
+!     isoparametric brick element, -1<=xi,et,ze<=1
+!     xlag are Lagrangian coordinates, xeul are Eulerian coordinates
 !
       implicit none
 !
       integer i,j,k
 !
-      real*8 shp(3,20),xs(3,3),xlag(3,20),xeul(3,20)
+      real*8 xs(3,3),xlag(3,20),shpe(4,20),dd1,dd2,dd3,xeul(3,20)
 !
-      real*8 xi,et,ze,xj
+      real*8 xi,et,ze,xj,omg,omh,omr,opg,oph,opr,
+     &  tpgphpr,tmgphpr,tmgmhpr,tpgmhpr,tpgphmr,tmgphmr,tmgmhmr,tpgmhmr,
+     &  omgopg,omhoph,omropr,omgmopg,omhmoph,omrmopr
 !
 !     shape functions and their glocal derivatives
 !
+      omg=1.d0-xi
+      omh=1.d0-et
+      omr=1.d0-ze
+      opg=1.d0+xi
+      oph=1.d0+et
+      opr=1.d0+ze
+      tpgphpr=opg+oph+ze
+      tmgphpr=omg+oph+ze
+      tmgmhpr=omg+omh+ze
+      tpgmhpr=opg+omh+ze
+      tpgphmr=opg+oph-ze
+      tmgphmr=omg+oph-ze
+      tmgmhmr=omg+omh-ze
+      tpgmhmr=opg+omh-ze
+      omgopg=omg*opg/4.d0
+      omhoph=omh*oph/4.d0
+      omropr=omr*opr/4.d0
+      omgmopg=(omg-opg)/4.d0
+      omhmoph=(omh-oph)/4.d0
+      omrmopr=(omr-opr)/4.d0
+!
 !     local derivatives of the shape functions: xi-derivative
 !
-      shp(1, 1)=-0.125+et*(0.250+et*(-0.125-ze*0.125)
-     &  +ze*(0.375+ze*0.125))+ze*(-0.250-ze*0.125)
-     &  +xi*(0.250+et*(-0.250-0.250*ze)+ze*0.250)
-      shp(1, 2)=-0.375+et*(0.250+et*(0.125+ze*0.125)
-     &  +ze*(0.125-ze*0.125))+ze*(-0.250+ze*0.125)
-     &  +xi*(0.250+et*(-0.250-0.250*ze)+ze*0.250)
-      shp(1, 3)=-0.375+et*(0.250+et*(0.125-ze*0.125)
-     &  +ze*(-0.125-ze*0.125))+ze*(0.250+ze*0.125)
-     &  +xi*(0.250+et*(-0.250+ze*0.250)-0.250*ze)
-      shp(1, 4)=-0.125+et*(0.250+et*(-0.125+ze*0.125)
-     &  +ze*(-0.375+ze*0.125))+ze*(0.250-ze*0.125)
-     &  +xi*(0.250+et*(-0.250+ze*0.250)-0.250*ze)
-      shp(1, 5)=-0.125+et*(-0.250+et*(-0.125-ze*0.125)
-     &  +ze*(-0.375-ze*0.125))+ze*(-0.250-ze*0.125)
-     &  +xi*(0.250+et*(0.250+ze*0.250)+ze*0.250)
-      shp(1, 6)=-0.375+et*(-0.250+et*(0.125+ze*0.125)
-     &  +ze*(-0.125+ze*0.125))+ze*(-0.250+ze*0.125)
-     &  +xi*(0.250+et*(0.250+ze*0.250)+ze*0.250)
-      shp(1, 7)=-0.375+et*(-0.250+et*(0.125-ze*0.125)
-     &  +ze*(0.125+ze*0.125))+ze*(0.250+ze*0.125)
-     &  +xi*(0.250+et*(0.250-0.250*ze)-0.250*ze)
-      shp(1, 8)=-0.125+et*(-0.250+et*(-0.125+ze*0.125)
-     &  +ze*(0.375-ze*0.125))+ze*(0.250-ze*0.125)
-     &  +xi*(0.250+et*(0.250-0.250*ze)-0.250*ze)
-      shp(1, 9)= 0.500+et*(-0.500-0.500*ze)+ze*0.500
-     &  +xi*(-0.500+et*(0.500+ze*0.500)-0.500*ze)
-      shp(1,10)= 0.250+et*(-0.250+ze*(ze*0.250))+ze*(-ze*0.250)
-      shp(1,11)= 0.500+et*(-0.500+ze*0.500)-0.500*ze
-     &  +xi*(-0.500+et*(0.500-0.500*ze)+ze*0.500)
-      shp(1,12)=-0.250+et*(0.250+ze*(-ze*0.250))+ze*(ze*0.250)
-      shp(1,13)= 0.500+et*(0.500+ze*0.500)+ze*0.500
-     &  +xi*(-0.500+et*(-0.500-0.500*ze)-0.500*ze)
-      shp(1,14)= 0.250+et*(0.250+ze*(-ze*0.250))+ze*(-ze*0.250)
-      shp(1,15)= 0.500+et*(0.500-0.500*ze)-0.500*ze
-     &  +xi*(-0.500+et*(-0.500+ze*0.500)+ze*0.500)
-      shp(1,16)=-0.250+et*(-0.250+ze*(ze*0.250))+ze*(ze*0.250)
-      shp(1,17)=-0.250+et*(et*(0.250+ze*0.250))-0.250*ze
-      shp(1,18)= 0.250+et*(et*(-0.250-ze*0.250))+ze*0.250
-      shp(1,19)= 0.250+et*(et*(-0.250+ze*0.250))-0.250*ze
-      shp(1,20)=-0.250+et*(et*(0.250-ze*0.250))+ze*0.250
+      shpe(1, 1)=omh*omr*(tpgphpr-omg)/8.d0
+      shpe(1, 2)=(opg-tmgphpr)*omh*omr/8.d0
+      shpe(1, 3)=(opg-tmgmhpr)*oph*omr/8.d0
+      shpe(1, 4)=oph*omr*(tpgmhpr-omg)/8.d0
+      shpe(1, 5)=omh*opr*(tpgphmr-omg)/8.d0
+      shpe(1, 6)=(opg-tmgphmr)*omh*opr/8.d0
+      shpe(1, 7)=(opg-tmgmhmr)*oph*opr/8.d0
+      shpe(1, 8)=oph*opr*(tpgmhmr-omg)/8.d0
+      shpe(1, 9)=omgmopg*omh*omr
+      shpe(1,10)=omhoph*omr
+      shpe(1,11)=omgmopg*oph*omr
+      shpe(1,12)=-omhoph*omr
+      shpe(1,13)=omgmopg*omh*opr
+      shpe(1,14)=omhoph*opr
+      shpe(1,15)=omgmopg*oph*opr
+      shpe(1,16)=-omhoph*opr
+      shpe(1,17)=-omropr*omh
+      shpe(1,18)=omropr*omh
+      shpe(1,19)=omropr*oph
+      shpe(1,20)=-omropr*oph
 !
 !     local derivatives of the shape functions: eta-derivative
 !
-      shp(2, 1)=et*(0.500
-     &  +ze*0.500)+ze*(-0.250-ze*0.250)+xi*(0.250+et*(-0.250
-     &  -0.250*ze)+ze*(0.375+ze*0.125)+xi*(-0.125-0.125*ze))
-      shp(2, 2)=xi*(0.250+et*(0.250+ze*0.250)+ze*(0.125-ze*0.125)
-     &  +xi*(-0.125-0.125*ze))
-      shp(2, 3)=xi*(0.250+et*(0.250-0.250*ze)+ze*(-0.125-ze*0.125)
-     &  +xi*(-0.125+ze*0.125))
-      shp(2, 4)=et*(0.500-0.500*ze)+ze*(0.250-ze*0.250)
-     &  +xi*(0.250+et*(-0.250+ze*0.250)+ze*(-0.375+ze*0.125)
-     &  +xi*(-0.125+ze*0.125))
-      shp(2, 5)=et*(0.500+ze*0.500)+ze*(0.250+ze*0.250)
-     &  +xi*(-0.250+et*(-0.250-0.250*ze)+ze*(-0.375-ze*0.125)
-     &  +xi*(0.125+ze*0.125))
-      shp(2, 6)=xi*(-0.250+et*(0.250+ze*0.250)+ze*(-0.125+ze*0.125)
-     &  +xi*(0.125+ze*0.125))
-      shp(2, 7)=xi*(-0.250+et*(0.250-0.250*ze)+ze*(0.125+ze*0.125)
-     &  +xi*(0.125-0.125*ze))
-      shp(2, 8)=et*(0.500-0.500*ze)+ze*(-0.250+ze*0.250)
-     &  +xi*(-0.250+et*(-0.250+ze*0.250)+ze*(0.375-ze*0.125)
-     &  +xi*(0.125-0.125*ze))
-      shp(2, 9)=xi*(-0.500-0.500*ze+xi*(0.250+ze*0.250))
-      shp(2,10)=xi*(-0.250+ze*(ze*0.250))
-      shp(2,11)=xi*(-0.500+ze*0.500+xi*(0.250-0.250*ze))
-      shp(2,12)=-0.500+ze*(ze*0.500)+xi*(0.250+ze*(-ze*0.250))
-      shp(2,13)=xi*(0.500+ze*0.500+xi*(-0.250-0.250*ze))
-      shp(2,14)=xi*(0.250+ze*(-ze*0.250))
-      shp(2,15)=xi*(0.500-0.500*ze+xi*(-0.250+ze*0.250))
-      shp(2,16)= 0.500+ze*(-ze*0.500)+xi*(-0.250+ze*(ze*0.250))
-      shp(2,17)=et*(-1.000+ze*(-1.000))+xi*(et*(0.500+ze*0.500))
-      shp(2,18)=xi*(et*(-0.500-0.500*ze))
-      shp(2,19)=xi*(et*(-0.500+ze*0.500))
-      shp(2,20)=et*(-1.000+ze*( 1.000))+xi*(et*(0.500-0.500*ze))
+      shpe(2, 1)=omg*omr*(tpgphpr-omh)/8.d0
+      shpe(2, 2)=opg*omr*(tmgphpr-omh)/8.d0
+      shpe(2, 3)=opg*(oph-tmgmhpr)*omr/8.d0
+      shpe(2, 4)=omg*(oph-tpgmhpr)*omr/8.d0
+      shpe(2, 5)=omg*opr*(tpgphmr-omh)/8.d0
+      shpe(2, 6)=opg*opr*(tmgphmr-omh)/8.d0
+      shpe(2, 7)=opg*(oph-tmgmhmr)*opr/8.d0
+      shpe(2, 8)=omg*(oph-tpgmhmr)*opr/8.d0
+      shpe(2, 9)=-omgopg*omr
+      shpe(2,10)=omhmoph*opg*omr
+      shpe(2,11)=omgopg*omr
+      shpe(2,12)=omhmoph*omg*omr
+      shpe(2,13)=-omgopg*opr
+      shpe(2,14)=omhmoph*opg*opr
+      shpe(2,15)=omgopg*opr
+      shpe(2,16)=omhmoph*omg*opr
+      shpe(2,17)=-omropr*omg
+      shpe(2,18)=-omropr*opg
+      shpe(2,19)=omropr*opg
+      shpe(2,20)=omropr*omg
 !
 !     local derivatives of the shape functions: zeta-derivative
 !
-      shp(3, 1)=et*(-0.250+et*0.250-0.500*ze)+ze*0.500
-     &  +xi*(-0.250+et*(0.375-0.125*et+ze*0.250)-0.250*ze
-     &  +xi*(0.125+et*(-0.125)))
-      shp(3, 2)=xi*(-0.250+et*(0.125+et*0.125-0.250*ze)+ze*0.250
-     &  +xi*(0.125+et*(-0.125)))
-      shp(3, 3)=xi*(0.250+et*(-0.125-0.125*et-0.250*ze)+ze*0.250
-     &  +xi*(-0.125+et*(0.125)))
-      shp(3, 4)=et*(0.250-0.250*et-0.500*ze)+ze*0.500
-     &  +xi*(0.250+et*(-0.375+et*0.125+ze*0.250)-0.250*ze
-     &  +xi*(-0.125+et*(0.125)))
-      shp(3, 5)=et*(0.250+et*0.250+ze*0.500)+ze*0.500
-     &  +xi*(-0.250+et*(-0.375-0.125*et-0.250*ze)-0.250*ze
-     &  +xi*(0.125+et*(0.125)))
-      shp(3, 6)=xi*(-0.250+et*(-0.125+et*0.125+ze*0.250)+ze*0.250
-     &  +xi*(0.125+et*(0.125)))
-      shp(3, 7)=xi*(0.250+et*(0.125-0.125*et+ze*0.250)+ze*0.250
-     &  +xi*(-0.125+et*(-0.125)))
-      shp(3, 8)=et*(-0.250-0.250*et+ze*0.500)+ze*0.500
-     &  +xi*(0.250+et*(0.375+et*0.125-0.250*ze)-0.250*ze
-     &  +xi*(-0.125+et*(-0.125)))
-      shp(3, 9)=xi*(0.500+et*(-0.500)+xi*(-0.250+et*(0.250)))
-      shp(3,10)=xi*(et*(ze*0.500)-0.500*ze)
-      shp(3,11)=xi*(-0.500+et*(0.500)+xi*(0.250+et*(-0.250)))
-      shp(3,12)=et*(ze*( 1.000))+ze*(-1.000)+xi*(et*(-0.500*ze)+
-     &  ze*0.500)
-      shp(3,13)=xi*(0.500+et*(0.500)+xi*(-0.250+et*(-0.250)))
-      shp(3,14)=xi*(et*(-0.500*ze)-0.500*ze)
-      shp(3,15)=xi*(-0.500+et*(-0.500)+xi*(0.250+et*(0.250)))
-      shp(3,16)=et*(ze*(-1.000))+ze*(-1.000)+xi*(et*(ze*0.500)+ze*0.500)
-      shp(3,17)= 0.500+et*(et*(-0.500))+xi*(-0.250+et*(et*0.250))
-      shp(3,18)=xi*(0.250+et*(et*(-0.250)))
-      shp(3,19)=xi*(-0.250+et*(et*0.250))
-      shp(3,20)=-0.500+et*(et*0.500)+xi*(0.250+et*(et*(-0.250)))
+      shpe(3, 1)=omg*omh*(tpgphpr-omr)/8.d0
+      shpe(3, 2)=opg*omh*(tmgphpr-omr)/8.d0
+      shpe(3, 3)=opg*oph*(tmgmhpr-omr)/8.d0
+      shpe(3, 4)=omg*oph*(tpgmhpr-omr)/8.d0
+      shpe(3, 5)=omg*omh*(opr-tpgphmr)/8.d0
+      shpe(3, 6)=opg*omh*(opr-tmgphmr)/8.d0
+      shpe(3, 7)=opg*oph*(opr-tmgmhmr)/8.d0
+      shpe(3, 8)=omg*oph*(opr-tpgmhmr)/8.d0
+      shpe(3, 9)=-omgopg*omh
+      shpe(3,10)=-omhoph*opg
+      shpe(3,11)=-omgopg*oph
+      shpe(3,12)=-omhoph*omg
+      shpe(3,13)=omgopg*omh
+      shpe(3,14)=omhoph*opg
+      shpe(3,15)=omgopg*oph
+      shpe(3,16)=omhoph*omg
+      shpe(3,17)=omrmopr*omg*omh
+      shpe(3,18)=omrmopr*opg*omh
+      shpe(3,19)=omrmopr*opg*oph
+      shpe(3,20)=omrmopr*omg*oph
 !
-!     computation of the local derivative of the global coordinates
-!     (xs)
+!     computation of the derivative of the global 
+!     material coordinates w.r.t. the local coordinates
 !
       do i=1,3
         do j=1,3
           xs(i,j)=0.d0
           do k=1,20
-            xs(i,j)=xs(i,j)+xlag(i,k)*shp(j,k)
+            xs(i,j)=xs(i,j)+xlag(i,k)*shpe(j,k)
           enddo
         enddo
       enddo
 !
-!     computation of the jacobian determinant
+!     computation of the jacobian determinant of the local
+!     coordinates w.r.t. the global material coordinates
 !
-      xj=xs(1,1)*(xs(2,2)*xs(3,3)-xs(2,3)*xs(3,2))
-     &   -xs(1,2)*(xs(2,1)*xs(3,3)-xs(2,3)*xs(3,1))
-     &   +xs(1,3)*(xs(2,1)*xs(3,2)-xs(2,2)*xs(3,1))
+      dd1=xs(2,2)*xs(3,3)-xs(2,3)*xs(3,2)
+      dd2=xs(2,3)*xs(3,1)-xs(2,1)*xs(3,3)
+      dd3=xs(2,1)*xs(3,2)-xs(2,2)*xs(3,1)
+      xj=xs(1,1)*dd1+xs(1,2)*dd2+xs(1,3)*dd3
       xj=1.d0/xj
 !
-!     computation of the local derivative of the global coordinates
-!     (xs)
+!     computation of the derivative of the global 
+!     spatial coordinates w.r.t. the local coordinates
 !
       do i=1,3
         do j=1,3
           xs(i,j)=0.d0
           do k=1,20
-            xs(i,j)=xs(i,j)+xeul(i,k)*shp(j,k)
+            xs(i,j)=xs(i,j)+xeul(i,k)*shpe(j,k)
           enddo
         enddo
       enddo

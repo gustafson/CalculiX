@@ -20,7 +20,7 @@
      &  istat,n,tinc,tper,tmin,tmax,idrct,iline,ipol,inl,ipoinp,inp,
      &  ithermal,cs,ics,tieset,istartset,
      &  iendset,ialset,ipompc,nodempc,coefmpc,nmpc,nmpc_,ikmpc,
-     &  ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc)
+     &  ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl)
 !
 !     reading the input deck: *STATIC
 !
@@ -30,6 +30,9 @@
 !             4: sgi solver
 !             5: TAUCS
 !
+!      iexpl==0:  structure:implicit, fluid:semi-implicit
+!      iexpl==1:  structure:implicit, fluid:explicit
+!
       implicit none
 !
       character*1 inpc(*)
@@ -38,7 +41,7 @@
       character*132 textpart(16)
 !
       integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,
-     &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,ics(*),
+     &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,ics(*),iexpl,
      &  istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,ikmpc(*),ilmpc(*),mpcfree,nset,mcs,ipoinpc(0:*)
 !
@@ -48,7 +51,8 @@
       tmin=0.d0
       tmax=0.d0
 !
-      if((iperturb.eq.1).and.(istep.gt.1)) then
+c      if((iperturb.eq.1).and.(istep.gt.1)) then
+      if((iperturb.eq.1).and.(istep.ge.1)) then
          write(*,*) '*ERROR in statics: perturbation analysis is'
          write(*,*) '       not provided in a *STATIC step. Perform'
          write(*,*) '       a genuine nonlinear geometric calculation'
@@ -85,7 +89,10 @@
       do i=2,n
          if(textpart(i)(1:7).eq.'SOLVER=') then
             read(textpart(i)(8:27),'(a20)') solver
-         elseif(textpart(i)(1:6).eq.'DIRECT') then
+         elseif(textpart(i)(1:8).eq.'EXPLICIT') then
+            iexpl=1
+         elseif((textpart(i)(1:6).eq.'DIRECT').and.
+     &          (textpart(i)(1:9).ne.'DIRECT=NO')) then
             idrct=1
          endif
       enddo

@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine triangulate(co,nk,ics,rcs0,zcs0,ncsnodes,
+      subroutine triangulate(ics,rcs0,zcs0,ncsnodes,
      &  rcscg,rcs0cg,zcscg,zcs0cg,nrcg,nzcg,jcs,kontri,straight,
      &  ne,ipkon,kon,lakon,lcs,netri,ifacetet,inodface)
 !
@@ -32,7 +32,7 @@
 !
       character*8 lakon(*)
 !
-      integer jcs(*),l,j,nk,ics(*),nodef(8),ifacetet(*),
+      integer jcs(*),l,j,ics(*),nodef(8),ifacetet(*),
      &  nrcg(*),node,ncsnodes,id,ifaceq(8,6),ifacet(6,4),
      &  ifacew1(4,5),iface(8,6),nodelem(20),nnodelem,nzcg(*),
      &  itrifac3(3,1),itrifac4(3,2),itrifac6(3,4),itrifac8(3,6),
@@ -40,7 +40,7 @@
      &  k,kflag,i,ne,ipkon(*),kon(*),indexe,nope,nface,nodface,jface,
      &  netri,ntrifac,kontri(3,*)
 !
-      real*8 co(3,*),straight(9,*),zcscg(*),rcscg(*),zcs0cg(*),
+      real*8 straight(9,*),zcscg(*),rcscg(*),zcs0cg(*),
      &  rcs0cg(*),cgl(2),col(2,3),rcs0(*),zcs0(*)
 !
 !     nodes per face for hex elements
@@ -258,7 +258,9 @@
 !
 !           center of gravity of the triangle
 !
+c            write(*,*) netri,zcs0(101)
             rcscg(netri)=cgl(1)/3.d0
+c            write(*,*) netri,zcs0(101),rcscg(netri)
             zcscg(netri)=cgl(2)/3.d0
 c            write(*,*) 'triangle ',netri,(kontri(k,netri),k=1,3)
 c            write(*,*) col(1,1),col(2,1)

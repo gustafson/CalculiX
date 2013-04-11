@@ -18,7 +18,7 @@
 !
       subroutine contactpairs(inpc,textpart,tieset,cs,istep,
      &                istat,n,iline,ipol,inl,ipoinp,inp,ntie,ntie_,
-     &                iperturb,matname,nmat,ipoinpc)
+     &                iperturb,matname,nmat,ipoinpc,tietol)
 !
 !     reading the input deck: *CONTACT PAIR
 !
@@ -31,7 +31,7 @@
       integer istep,istat,n,i,key,ipos,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),ntie,ntie_,iperturb,nmat,ipoinpc(0:*)
 !
-      real*8 cs(17,*)
+      real*8 cs(17,*),tietol(*)
       character*80 matname(*),material
 !
       if(istep.gt.0) then
@@ -40,17 +40,22 @@
          stop
       endif
 !
-      do i=2,n
-         if(textpart(i)(1:12).eq.'INTERACTION=') then
-            material=textpart(i)(13:92)
-         endif
-      enddo
-!
       ntie=ntie+1
       if(ntie.gt.ntie_) then
          write(*,*) '*ERROR in contactpairs: increase ntie_'
          stop
       endif
+      tietol(ntie)=0.d0
+!
+      do i=2,n
+         if(textpart(i)(1:12).eq.'INTERACTION=') then
+            material=textpart(i)(13:92)
+         elseif(textpart(i)(1:12).eq.'SMALLSLIDING') then
+            tietol(ntie)=-1.d0
+         elseif(textpart(i)(1:14).eq.'IN-FACESLIDING') then
+            tietol(ntie)=-2.d0
+         endif
+      enddo
 !
 !     check for the existence of the surface interaction
 !

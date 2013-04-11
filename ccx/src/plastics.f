@@ -207,7 +207,10 @@
             write(*,*) '       characters'
             stop
          else
-            matname(nmat)(11:80)=matname(nmat)(1:70)
+            do i=80,11,-1
+               matname(nmat)(i:i)=matname(nmat)(i-10:i-10)
+            enddo
+c            matname(nmat)(11:80)=matname(nmat)(1:70)
             matname(nmat)(1:10)='ANISO_PLAS'
          endif
 !

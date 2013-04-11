@@ -23,7 +23,7 @@
 !
       implicit none
 !
-      logical cyclicsymmetry
+      logical cyclicsymmetry,multistage
 !
       character*1 inpc(*)
       character*81 tieset(3,*)
@@ -35,6 +35,7 @@
       real*8 tietol(*)
 !
       cyclicsymmetry=.false.
+      multistage=.false.
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR in ties: *TIE should'
@@ -60,17 +61,19 @@
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          elseif(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
             cyclicsymmetry=.true.
-         endif
+	 elseif(textpart(i)(1:10).eq.'MULTISTAGE') then
+	    multistage=.true.
+	 endif
       enddo
       if(tieset(1,ntie)(1:1).eq.' ') then
          write(*,*) '*ERROR in ties: tie name is lacking'
          call inputerror(inpc,ipoinpc,iline)
          stop
       endif
-      if(.not.cyclicsymmetry) then
+      if((.not.cyclicsymmetry).and.(.not.multistage)) then
          write(*,*) '*ERROR in ties: *TIE can only be used for cyclic'
          write(*,*) '       symmetry calculations; the CYCLIC SYMMETRY'
-         write(*,*) '       parameter is lacking'
+         write(*,*) '       or MULTISTAGE parameter is lacking'
          stop
       endif
 !
@@ -80,6 +83,10 @@
          write(*,*)'*ERROR in ties: definition of the tie'
          write(*,*) '      is not complete.'
          stop
+      endif
+!      
+      if ( multistage ) then
+         tieset(1,ntie)(81:81)='M'
       endif
 !
       tieset(2,ntie)(1:80)=textpart(1)(1:80)

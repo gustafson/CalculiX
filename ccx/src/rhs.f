@@ -24,7 +24,7 @@
      &  nalcon,alzero,ielmat,ielorien,norien,orab,ntmat_,t0,t1,ithermal,
      &  iprestr,vold,iperturb,iexpl,plicon,
      &  nplicon,plkcon,nplkcon,npmat_,ttime,time,istep,iinc,dtime,
-     &  physcon,ibody)
+     &  physcon,ibody,xloadold,reltime)
 !
 !     filling the right hand side load vector b
 !
@@ -49,9 +49,9 @@
 !
       real*8 co(3,*),coefmpc(*),xforc(*),xload(2,*),p1(3,2),
      &  p2(3,2),fext(*),bodyf(3),elcon(0:21,ntmat_,*),
-     &  rhcon(0:1,ntmat_,*),
+     &  rhcon(0:1,ntmat_,*),xloadold(2,*),reltime,
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
-     &  t0(*),t1(*),vold(0:3,*),ff(60),time,ttime,dtime
+     &  t0(*),t1(*),vold(0:4,*),ff(60),time,ttime,dtime
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*)
 !
@@ -153,7 +153,7 @@ c            om=0.d0
          call e_c3d_rhs(co,nk,konl,lakon(i),p1,p2,om,bodyf,nbody,
      &        ff,i,nmethod,rhcon,ielmat,ntmat_,vold,iperturb,
      &        nelemload,sideload,xload,nload,idist,ttime,time,istep,
-     &        iinc,dtime)
+     &        iinc,dtime,xloadold,reltime)
 !
          do jj=1,3*nope
 !
@@ -168,7 +168,7 @@ c            om=0.d0
             if(idist.ne.0) then
                if(jdof1.eq.0) then
                   if(nmpc.ne.0) then
-                     idof1=(node1-1)*7+k
+                     idof1=(node1-1)*8+k
                      call nident(ikmpc,idof1,nmpc,id)
                      if((id.gt.0).and.(ikmpc(id).eq.idof1)) then
                         id=ilmpc(id)
@@ -225,7 +225,7 @@ c            om=0.d0
          call e_c3d_rhs_th(co,nk,konl,lakon(i),
      &        ff,i,nmethod,t0,t1,vold,nelemload,
      &        sideload,xload,nload,idist,dtime,
-     &        ttime,time,istep,iinc)
+     &        ttime,time,istep,iinc,xloadold,reltime)
 !
          do jj=1,nope
 !
@@ -239,7 +239,7 @@ c            om=0.d0
             if(idist.ne.0) then
                if(jdof1.eq.0) then
                   if(nmpc.ne.0) then
-                     idof1=(node1-1)*7
+                     idof1=(node1-1)*8
                      call nident(ikmpc,idof1,nmpc,id)
                      if((id.gt.0).and.(ikmpc(id).eq.idof1)) then
                         id=ilmpc(id)
@@ -274,6 +274,30 @@ c            om=0.d0
          jdof=nactdof(ndirforc(i),nodeforc(1,i))
          if(jdof.ne.0) then
             fext(jdof)=fext(jdof)+xforc(i)
+         else
+!     
+!     node is a dependent node of a MPC: distribute
+!     the forces among the independent nodes
+!     (proportional to their coefficients)
+!     
+            jdof=8*(nodeforc(1,i)-1)+ndirforc(i)
+            call nident(ikmpc,jdof,nmpc,id)
+            if(id.gt.0) then
+               if(ikmpc(id).eq.jdof) then
+                  ist=ipompc(id)
+                  index=nodempc(3,ist)
+                  if(index.eq.0) cycle
+                  do
+                     jdof=nactdof(nodempc(2,index),nodempc(1,index))
+                     if(jdof.ne.0) then
+                        fext(jdof)=fext(jdof)-
+     &                       coefmpc(index)*xforc(i)/coefmpc(ist)
+                     endif
+                     index=nodempc(3,index)
+                     if(index.eq.0) exit
+                  enddo
+               endif
+            endif
          endif
       enddo
 c      write(*,*) 'rhs '

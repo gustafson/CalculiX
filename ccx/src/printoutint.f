@@ -34,14 +34,6 @@
      &  coords(3,27),weight,orab(7,*),co(3,*),a(3,3),b(3,3),c(3,3),
      &  qfxl(3)
 !
-      real*8 gauss2d1(2,1),gauss2d2(2,4),gauss2d3(2,9),gauss2d4(2,1),
-     &  gauss2d5(2,3),gauss3d1(3,1),gauss3d2(3,8),gauss3d3(3,27),
-     &  gauss3d4(3,1),gauss3d5(3,4),gauss3d6(3,15),gauss3d7(3,2),
-     &  gauss3d8(3,9),gauss3d9(3,18),weight2d1(1),weight2d2(4),
-     &  weight2d3(9),weight2d4(1),weight2d5(3),weight3d1(1),
-     &  weight3d2(8),weight3d3(27),weight3d4(1),weight3d5(4),
-     &  weight3d6(15),weight3d7(2),weight3d8(9),weight3d9(18)
-!
       include "gauss.f"
 !
       data iflag /1/
@@ -168,7 +160,7 @@
       if(prlab(ii)(1:4).eq.'S   ') then
          if(iorien.eq.0) then
             do j=1,mint3d
-               write(5,'(2i5,1p,6(1x,e11.4))') nelem,j,
+               write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
      &              (stx(k,j,nelem),k=1,6)
             enddo
          else
@@ -199,14 +191,14 @@
                      enddo
                   enddo
                enddo
-               write(5,'(2i5,1p,6(1x,e11.4))') nelem,j,
+               write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
      &              b(1,1),b(2,2),b(3,3),b(1,2),b(1,3),b(2,3)
             enddo
          endif
       elseif(prlab(ii)(1:4).eq.'E   ') then
          if(iorien.eq.0) then
             do j=1,mint3d
-               write(5,'(2i5,1p,6(1x,e11.4))') nelem,j,
+               write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
      &              (eme(k,j,nelem),k=1,6)
             enddo
          else
@@ -235,18 +227,18 @@
                      enddo
                   enddo
                enddo
-               write(5,'(2i5,1p,6(1x,e11.4))') nelem,j,
+               write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
      &              b(1,1),b(2,2),b(3,3),b(1,2),b(1,3),b(2,3)
             enddo
          endif
       elseif(prlab(ii)(1:4).eq.'PE  ') then
          do j=1,mint3d
-            write(5,'(2i5,1p,6(1x,e11.4))') nelem,j,
+            write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
      &           xstate(1,j,nelem)
          enddo
       elseif(prlab(ii)(1:4).eq.'ENER') then
          do j=1,mint3d
-            write(5,'(2i5,1p,6(1x,e11.4))') nelem,j,
+            write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
      &           ener(j,nelem)
          enddo
       elseif(prlab(ii)(1:4).eq.'SDV ') then
@@ -257,17 +249,17 @@
          endif
          do j=1,mint3d
             if(l.eq.(nstate_+5)/6) then
-               write(5,'(2i5,1p,6(1x,e11.4))') nelem,j,
+               write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
      &              (xstate(lb+k,j,nelem),k=1,nstate_-lb)
             else
-               write(5,'(2i5,1p,6(1x,e11.4))') nelem,j,
+               write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
      &              (xstate(lb+k,j,nelem),k=1,6)
             endif
          enddo
       elseif(prlab(ii)(1:4).eq.'HFL ') then
          if(iorien.eq.0) then
             do j=1,mint3d
-               write(5,'(2i5,1p,3(1x,e11.4))') nelem,j,
+               write(5,'(i6,1x,i3,1p,3(1x,e11.4))') nelem,j,
      &              (qfx(k,j,nelem),k=1,3)
             enddo
          else
@@ -276,7 +268,7 @@
                   qfxl(k)=qfx(k,j,nelem)
                enddo
                call transformatrix(orab(1,iorien),coords(1,j),a)
-               write(5,'(2i5,1p,3(1x,e11.4))') nelem,j,
+               write(5,'(i6,1x,i3,1p,3(1x,e11.4))') nelem,j,
      &              qfxl(1)*a(1,1)+qfxl(2)*a(2,1)+qfxl(3)*a(3,1),
      &              qfxl(1)*a(1,2)+qfxl(2)*a(2,2)+qfxl(3)*a(3,2),
      &              qfxl(1)*a(1,3)+qfxl(2)*a(2,3)+qfxl(3)*a(3,3)

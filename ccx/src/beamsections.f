@@ -18,7 +18,7 @@
 !
       subroutine beamsections(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
-     &  thicke,kon,ipkon,nk,nk_,iponor,xnor,ixfree,
+     &  thicke,ipkon,iponor,xnor,ixfree,
      &  offset,lakon,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,
      &  ipoinpc)
 !
@@ -34,10 +34,10 @@
       character*132 textpart(16)
 !
       integer istartset(*),iendset(*),ialset(*),ielmat(*),ipoinpc(0:*),
-     &  ielorien(*),kon(*),ipkon(*),iline,ipol,inl,ipoinp(2,*),inp(3,*)
+     &  ielorien(*),ipkon(*),iline,ipol,inl,ipoinp(2,*),inp(3,*)
 !
       integer nset,nmat,norien,istep,istat,n,key,i,j,k,l,imaterial,
-     &  iorientation,ipos,m,nk,nk_,iponor(2,*),ixfree,
+     &  iorientation,ipos,m,iponor(2,*),ixfree,
      &  indexx,indexe,irstrt
 !
       real*8 thicke(2,*),thickness1,thickness2,p(3),xnor(*),offset(2,*),

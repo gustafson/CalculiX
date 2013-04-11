@@ -38,7 +38,7 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
              double *aub, int *icol, int *irow, int *neq, int *nzs,
              double *sigma, double *b, int *isolver,
              double *alpham, double *betam, int *nzl,
-             int *init,double *bact, double *bmin, int *jq){
+             int *init,double *bact, double *bmin, int *jq, char *amname){
 
     int idiff[3],i,j,ic,ir;
 
@@ -77,7 +77,8 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
       timemin=*time-deltatime;
       ttimemin=*ttime-deltatime;
       FORTRAN(temploadmodal,(amta,namta,nam,ampli,&timemin,&ttimemin,dtime,
-	   xbounold,xboun,xbounmin,iamboun,nboun,nodeboun,ndirboun));
+	   xbounold,xboun,xbounmin,iamboun,nboun,nodeboun,ndirboun,
+           amname));
   }
 
       /* the SPC value at timeplus is stored in xbounplus */
@@ -85,7 +86,8 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
   timeplus=*time+deltatime;
   ttimeplus=*ttime+deltatime;
   FORTRAN(temploadmodal,(amta,namta,nam,ampli,&timeplus,&ttimeplus,dtime,
-	  xbounold,xboun,xbounplus,iamboun,nboun,nodeboun,ndirboun));
+	  xbounold,xboun,xbounplus,iamboun,nboun,nodeboun,ndirboun,
+          amname));
 
   bplus=NNEW(double,neq[1]);
   bv=NNEW(double,neq[1]);

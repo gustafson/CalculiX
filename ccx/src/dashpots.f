@@ -26,7 +26,7 @@
 !
       implicit none
 !
-      logical linear
+      logical frequency
 !
       character*1 inpc(*)
       character*80 matname(*)
@@ -38,16 +38,16 @@
      &  iendset(*),irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),nmat_,
      &  ialset(*),ipos,nset,j,k,ielmat(*),ielorien(*),ipoinpc(0:*)  
 !
-      real*8 plicon(0:2*npmat_,ntmat_,*),
+      real*8 plicon(0:2*npmat_,ntmat_,*),xfreq,temperature,
      &  elcon(0:ncmat_,ntmat_,*)
 !
-      linear=.true.
+      frequency=.false.
 !
       ntmat=0
       npmat=0
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in springs: *SPRING should be placed'
+         write(*,*) '*ERROR in dashpots: *DASHPOT should be placed'
          write(*,*) '  before all step definitions'
          stop
       endif
@@ -63,9 +63,7 @@
       enddo
 !
       do i=2,n
-         if(textpart(i)(1:9).eq.'NONLINEAR') then
-c            linear=.false.
-         elseif(textpart(i)(1:6).eq.'ELSET=') then
+         if(textpart(i)(1:6).eq.'ELSET=') then
             elset=textpart(i)(7:86)
             elset(81:81)=' '
             ipos=index(elset,' ')
@@ -73,10 +71,22 @@ c            linear=.false.
          endif
       enddo
 !
-      if(linear) then
+!     check for frequency dependency (for steady state dynamics
+!     calculations)
+!
+      call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &     ipoinp,inp,ipoinpc)
+      if((istat.lt.0).or.(key.eq.1)) return
+      read(textpart(2)(1:20),'(f20.0)',iostat=istat)
+     &     xfreq
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(xfreq.gt.0.d0) frequency=.true.
+      iline=iline-1
+!
+      if(.not.frequency) then
          nelcon(1,nmat)=2
 !
-!        linear spring
+!        linear dashpot
 !
          do
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -85,7 +95,7 @@ c            linear=.false.
             ntmat=ntmat+1
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
-               write(*,*) '*ERROR in springs: increase ntmat_'
+               write(*,*) '*ERROR in dashpots: increase ntmat_'
                stop
             endif
             do i=1,2
@@ -102,57 +112,57 @@ c            linear=.false.
             endif
          enddo
       else
-c         nelcon(1,nmat)=-51
-c!
-c!        kinematic hardening coefficients
-c!
-c         do
-c            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-c     &           ipoinp,inp,ipoinpc)
-c            if((istat.lt.0).or.(key.eq.1)) exit
-c            read(textpart(3)(1:20),'(f20.0)',iostat=istat) temperature
-c            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-c!
-c!           first temperature
-c!
-c            if(ntmat.eq.0) then
-c               npmat=0
-c               ntmat=ntmat+1
-c               if(ntmat.gt.ntmat_) then
-c                  write(*,*) '*ERROR in springs: increase ntmat_'
-c                  stop
-c               endif
-c               nplicon(0,nmat)=ntmat
-c               plicon(0,ntmat,nmat)=temperature
-c!
-c!           new temperature
-c!
-c            elseif(plicon(0,ntmat,nmat).ne.temperature) then
-c               npmat=0
-c               ntmat=ntmat+1
-c               if(ntmat.gt.ntmat_) then
-c                  write(*,*) '*ERROR in springs: increase ntmat_'
-c                  stop
-c               endif
-c               nplicon(0,nmat)=ntmat
-c               plicon(0,ntmat,nmat)=temperature
-c            endif
-c            do i=1,2
-c               read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
-c     &              plicon(2*npmat+i,ntmat,nmat)
-c               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-c            enddo
-c            npmat=npmat+1
-c            if(npmat.gt.npmat_) then
-c               write(*,*) '*ERROR in springs: increase npmat_'
-c               stop
-c            endif
-c            nplicon(ntmat,nmat)=npmat
-c         enddo
+         nelcon(1,nmat)=-51
+!
+!        kinematic hardening coefficients
+!
+         do
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+            if((istat.lt.0).or.(key.eq.1)) exit
+            read(textpart(3)(1:20),'(f20.0)',iostat=istat) temperature
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+!
+!           first temperature
+!
+            if(ntmat.eq.0) then
+               npmat=0
+               ntmat=ntmat+1
+               if(ntmat.gt.ntmat_) then
+                  write(*,*) '*ERROR in dashpots: increase ntmat_'
+                  stop
+               endif
+               nplicon(0,nmat)=ntmat
+               plicon(0,ntmat,nmat)=temperature
+!
+!           new temperature
+!
+            elseif(plicon(0,ntmat,nmat).ne.temperature) then
+               npmat=0
+               ntmat=ntmat+1
+               if(ntmat.gt.ntmat_) then
+                  write(*,*) '*ERROR in dashpots: increase ntmat_'
+                  stop
+               endif
+               nplicon(0,nmat)=ntmat
+               plicon(0,ntmat,nmat)=temperature
+            endif
+            do i=1,2
+               read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
+     &              plicon(2*npmat+i,ntmat,nmat)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            enddo
+            npmat=npmat+1
+            if(npmat.gt.npmat_) then
+               write(*,*) '*ERROR in dashpots: increase npmat_'
+               stop
+            endif
+            nplicon(ntmat,nmat)=npmat
+         enddo
       endif
 !
       if(ntmat.eq.0) then
-         write(*,*) '*ERROR in springs: *SPRING card without data'
+         write(*,*) '*ERROR in dashpots: *DASHPOT card without data'
          stop
       endif
       do i=1,nset
@@ -160,7 +170,7 @@ c         enddo
       enddo
       if(i.gt.nset) then
          elset(ipos:ipos)=' '
-         write(*,*) '*ERROR in springs: element set ',elset
+         write(*,*) '*ERROR in dashpots: element set ',elset
          write(*,*) '       has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline)
          stop

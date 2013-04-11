@@ -19,7 +19,7 @@
       subroutine nonlinmpc(co,vold,ipompc,nodempc,coefmpc,labmpc,
      &  nmpc,ikboun,ilboun,nboun,xbounact,aux,iaux,maxlenmpc,ikmpc,
      &  ilmpc,icascade,kon,ipkon,lakon,ne,reltime,newstep,xboun,fmpc,
-     &  iit,idiscon,ncont)
+     &  iit,idiscon,ncont,trab,ntrans)
 !
 !     updates the coefficients in nonlinear MPC's
 !
@@ -28,39 +28,48 @@
       logical isochoric
 !
       character*8 lakon(*)
-      character*20 labmpc(*)
+      character*20 labmpc(*),label
 !
       integer ipompc(*),nodempc(3,*),irefnode,irotnode,idir,
      &  nmpc,index,ii,inode,node,id,ikboun(*),ilboun(*),nboun,
      &  i,j,k,idof,na,nb,nc,np,i1,i2,i3,iaux(*),maxlenmpc,n,
      &  l,m,lmax,mmax,ikmpc(*),ilmpc(*),icascade,neigh(7,8),
-     &  indexold,mpc,kon(*),ipkon(*),indexe,ne,idofrem,idofins,
-     &  newstep,iit,idiscon,ncont,iexpnode,indexexp
+     &  mpc,kon(*),ipkon(*),indexe,ne,idofrem,idofins,nmpc0,nmpc01,
+     &  newstep,iit,idiscon,ncont,iexpnode,indexexp,nmpcdif,ntrans,
+     &  nodei,noded,lathyp(3,6),inum,ndir,number
 !
-      real*8 co(3,*),coefmpc(*),vold(0:3,*),c(3,3),dc(3,3,3),ww,
+      real*8 co(3,*),coefmpc(*),vold(0:4,*),c(3,3),dc(3,3,3),ww,
      &  e(3,3,3),d(3,3),w(3),f(3,3),c1,c2,c3,c4,c5,c6,xbounact(*),
      &  xboun(*),fmpc(*),expan
       real*8 dd,a11,a12,a13,a21,a22,a23,a31,a32,a33,
      &       b11,b12,b13,b21,b22,b23,b31,b32,b33,aux(*),const,
      &       ddmax,a(3,3),b(3,3),xj,xi,et,ze,xlag(3,20),xeul(3,20),
-     &       coloc(3,8),reltime
+     &       coloc(3,8),reltime,csab(7),trab(7,*),pd(3),pi(3),
+     &       ad(3,3),ai(3,3)
 !
       data d /1.,0.,0.,0.,1.,0.,0.,0.,1./
       data e /0.,0.,0.,0.,0.,-1.,0.,1.,0.,
      &        0.,0.,1.,0.,0.,0.,-1.,0.,0.,
      &        0.,-1.,0.,1.,0.,0.,0.,0.,0./
-      data neigh /1,9,2,17,5,12,4,2,9,1,18,6,10,3,
-     &            3,11,4,19,7,10,2,4,11,3,20,8,12,1,
-     &            5,13,6,17,1,16,8,6,13,5,18,2,14,7,
-     &            7,15,8,19,3,14,6,8,15,7,20,4,16,5/
-      data coloc /0.,-1.,1.,2.,-1.,1.,2.,-1.,-1.,0.,-1.,-1.,
-     &            0.,1.,1.,2.,1.,1.,2.,1.,-1.,0.,1.,-1./
+      data neigh /1,9,2,12,4,17,5,2,9,1,10,3,18,6,
+     &            3,11,4,10,2,19,7,4,11,3,12,1,20,8,
+     &            5,13,6,16,8,17,1,6,13,5,14,7,18,2,
+     &            7,15,8,14,6,19,3,8,15,7,16,5,20,4/
+      data coloc /-1.,-1.,-1.,1.,-1.,-1.,1.,1.,-1.,-1.,1.,-1.,
+     &            -1.,-1.,1.,1.,-1.,1.,1.,1.,1.,-1.,1.,1./
+!     
+!     latin hypercube positions in a 3 x 3 matrix
+!     
+      data lathyp /1,2,3,1,3,2,2,1,3,2,3,1,3,1,2,3,2,1/
 !
       irotnode=0
       if((icascade.eq.1).and.(newstep.ne.1).and.(ncont.eq.0)) icascade=0
       isochoric=.false.
 !
-      do ii=1,nmpc
+      ii=0
+      loop: do
+         ii=ii+1
+         if(ii.gt.nmpc) exit
          if(labmpc(ii)(1:5).eq.'RIGID') then
 !
             index=ipompc(ii)
@@ -83,6 +92,7 @@
                w(1)=vold(1,node)
                w(2)=vold(2,node)
                w(3)=vold(3,node)
+c               write(*,*) 'w   ',w(1),w(2),w(3)
                ww=dsqrt(w(1)*w(1)+w(2)*w(2)+w(3)*w(3))
 !
                c1=dcos(ww)
@@ -171,12 +181,9 @@ c     &                                    dc(i,j,3)*w(3)
 !           old value of the nonhomogeneous term must be zero
 !
             vold(nodempc(2,index),nodempc(1,index))=0.d0
-            idof=7*(nodempc(1,index)-1)+nodempc(2,index)
+            idof=8*(nodempc(1,index)-1)+nodempc(2,index)
             call nident(ikboun,idof,nboun,id)
-c            xbounact(ilboun(id))=f(idir,1)*(co(1,irefnode)-co(1,inode))+
-c     &           f(idir,2)*(co(2,irefnode)-co(2,inode))+
-c     &           f(idir,3)*(co(3,irefnode)-co(3,inode))
-           xbounact(ilboun(id))=f(idir,1)*(co(1,irefnode)-co(1,inode))+
+            xbounact(ilboun(id))=f(idir,1)*(co(1,irefnode)-co(1,inode))+
      &           f(idir,2)*(co(2,irefnode)-co(2,inode))+
      &           f(idir,3)*(co(3,irefnode)-co(3,inode))-
      &           vold(idir,irefnode)+vold(idir,inode)
@@ -308,12 +315,9 @@ c     &                                    dc(i,j,3)*w(3)
 !           old value of the nonhomogeneous term must be zero
 !
             vold(nodempc(2,index),nodempc(1,index))=0.d0
-            idof=7*(nodempc(1,index)-1)+nodempc(2,index)
+            idof=8*(nodempc(1,index)-1)+nodempc(2,index)
             call nident(ikboun,idof,nboun,id)
-c            xbounact(ilboun(id))=f(idir,1)*(co(1,irefnode)-co(1,inode))+
-c     &           f(idir,2)*(co(2,irefnode)-co(2,inode))+
-c     &           f(idir,3)*(co(3,irefnode)-co(3,inode))
-           xbounact(ilboun(id))=f(idir,1)*(co(1,irefnode)-co(1,inode))+
+            xbounact(ilboun(id))=f(idir,1)*(co(1,irefnode)-co(1,inode))+
      &           f(idir,2)*(co(2,irefnode)-co(2,inode))+
      &           f(idir,3)*(co(3,irefnode)-co(3,inode))-
      &           vold(idir,irefnode)+vold(idir,inode)
@@ -340,7 +344,7 @@ c     &           f(idir,3)*(co(3,irefnode)-co(3,inode))
                write(*,*) '*WARNING in nonlinmpc: coefficient of'
                write(*,*)
      &     '          dependent node in STRAIGHT MPC is zero'
-               idofrem=7*(np-1)+j
+               idofrem=8*(np-1)+j
 !
 !              determining a new dependent term       
 !               
@@ -361,7 +365,7 @@ c     &           f(idir,3)*(co(3,irefnode)-co(3,inode))
                enddo
                i=lmax
                j=mmax
-               idofins=7*(np-1)+j
+               idofins=8*(np-1)+j
 !
                call changedepterm(ikmpc,ilmpc,nmpc,ii,idofrem,idofins)
 !
@@ -406,7 +410,7 @@ c     &           f(idir,3)*(co(3,irefnode)-co(3,inode))
 !
 !           old value of the nonhomogeneous term must be zero
 !
-            idof=7*(nodempc(1,index)-1)+nodempc(2,index)
+            idof=8*(nodempc(1,index)-1)+nodempc(2,index)
             call nident(ikboun,idof,nboun,id)
             xbounact(ilboun(id))=-c1*c2+c3*c4
             if(newstep.eq.1) xboun(ilboun(id))=xbounact(ilboun(id))
@@ -457,10 +461,10 @@ c     &           f(idir,3)*(co(3,irefnode)-co(3,inode))
                write(*,*) '*WARNING in nonlinmpc: coefficient of'
                write(*,*) '         dependent node in PLANE MPC is zero'
 !
-               idofrem=7*(nodempc(1,index)-1)+i1
+               idofrem=8*(nodempc(1,index)-1)+i1
 !
                if(dabs(b12).gt.dabs(b13)) then
-                  idofins=7*(nodempc(1,index)-1)+i2
+                  idofins=8*(nodempc(1,index)-1)+i2
                   call changedepterm
      &                   (ikmpc,ilmpc,nmpc,ii,idofrem,idofins)
                   coefmpc(index)=b12
@@ -496,7 +500,7 @@ c     &           f(idir,3)*(co(3,irefnode)-co(3,inode))
                   coefmpc(index)=-b13-b23-b33
                   if(icascade.eq.0) icascade=1
                else
-                  idofins=7*(nodempc(1,index)-1)+i3
+                  idofins=8*(nodempc(1,index)-1)+i3
                   call changedepterm
      &                  (ikmpc,ilmpc,nmpc,ii,idofrem,idofins)
                   coefmpc(index)=b13
@@ -559,17 +563,179 @@ c     &           f(idir,3)*(co(3,irefnode)-co(3,inode))
             endif
             index=nodempc(3,index)
             coefmpc(index)=1.d0
-            idof=7*(nodempc(1,index)-1)+nodempc(2,index)
+            idof=8*(nodempc(1,index)-1)+nodempc(2,index)
 !
 !           old value of the nonhomogeneous term must be zero
 !
             call nident(ikboun,idof,nboun,id)
             xbounact(ilboun(id))=a11*b11+a12*b12+a13*b13
             if(newstep.eq.1) xboun(ilboun(id))=xbounact(ilboun(id))
-            vold(nodempc(2,index),nodempc(1,index))=
-     &           (1.d0-reltime)*xboun(ilboun(id))
+            vold(nodempc(2,index),nodempc(1,index))=0.d0
+c     &           (1.d0-reltime)*xboun(ilboun(id))
          elseif(labmpc(ii)(1:9).eq.'ISOCHORIC') then
             isochoric=.true.
+         elseif(labmpc(ii)(1:6).eq.'CYCLID') then
+            index=ipompc(ii)
+            noded=nodempc(1,index)
+!
+!           check whether the next two MPC's are cyclic MPC's
+!           applied to the same dependent node
+!            
+            if((nodempc(1,ipompc(ii+1)).ne.noded).or.
+     &         (labmpc(ii+1)(1:6).ne.'CYCLIC').or.
+     &         (nodempc(1,ipompc(ii+2)).ne.noded).or.
+     &         (labmpc(ii+2)(1:6).ne.'CYCLIC')) then
+               write(*,*) '*WARNING in nonlinmpc: no three'
+               write(*,*) '         cyclic MPCs pertaining'
+               write(*,*) '         to the same dependent node;'
+               write(*,*) '         no update'
+               cycle loop
+            endif
+!
+!           finding the cyclic symmetry axis
+!
+            do i=1,ntrans
+               if(trab(7,i).eq.2) exit
+            enddo
+            if(i.gt.ntrans) then
+               write(*,*) '*ERROR in nonlinmpc: cyclic symmetry'
+               write(*,*) '       axis not found'
+               stop
+            endif
+            do j=1,6
+               csab(j)=trab(j,i)
+            enddo
+            csab(7)=-1
+!
+!           determining the independent node
+!                     
+            nodei=0
+            do
+               if(nodempc(1,index).ne.noded) then
+                  if(nodei.eq.0) then
+                     nodei=nodempc(1,index)
+                  else
+                     write(*,*) '*WARNING in nonlinmpc:'
+                     write(*,*) '          cyclic symmetry conditions'
+                     write(*,*) '          between unequal meshes'
+                     write(*,*) '          no update'
+                     cycle loop
+                  endif
+                  index=nodempc(3,index)
+                  if(index.eq.0) then
+                     if(nodei.eq.0) then
+                        write(*,*) '*ERROR in nonlinmpc:'
+                        write(*,*) '       no independent node found'
+                        stop
+                     else
+                        exit
+                     endif
+                  endif
+               endif
+            enddo
+!
+!           actual location of dependent and independent node
+!
+            do i=1,3
+               pd(i)=co(i,noded)+vold(i,noded)
+               pi(i)=co(i,nodei)+vold(i,nodei)
+            enddo
+!
+!           update transformation matrix
+!
+            call transformatrix(csab,pd,ad)
+            call transformatrix(csab,pi,ai)
+!     
+!     checking for latin hypercube positions in matrix al none of
+!     which are zero
+!     
+            do inum=1,6
+               if((dabs(ad(lathyp(1,inum),1)).gt.1.d-3).and.
+     &            (dabs(ad(lathyp(2,inum),2)).gt.1.d-3).and.
+     &            (dabs(ad(lathyp(3,inum),3)).gt.1.d-3)) exit
+            enddo
+!
+!           remove old DOFs
+!
+            do j=1,3
+               idof=8*(noded-1)+j
+               call nident(ikmpc,idof,nmpc,id)
+               if(id.lt.0) then
+                  write(*,*) '*ERROR in nonlinmpc: error in'
+                  write(*,*) '       MPC database'
+                  stop
+               elseif(ikmpc(id).ne.idof) then
+                  write(*,*) '*ERROR in nonlinmpc: error in'
+                  write(*,*) '       MPC database'
+                  stop
+               endif
+!
+               do k=id,nmpc-1
+                  ikmpc(k)=ikmpc(k+1)
+                  ilmpc(k)=ilmpc(k+1)
+               enddo
+            enddo
+!
+!           add new MPCs
+!
+            ii=ii-1
+            do ndir=1,3
+               ii=ii+1
+               number=lathyp(ndir,inum)
+               idof=8*(noded-1)+number
+               call nident(ikmpc,idof,nmpc-1,id)
+               if(id.gt.0) then
+                  if(ikmpc(id).eq.idof) then
+                     write(*,*) '*WARNING in generatecycmpcs: cyclic MPC
+     & in node'
+                     write(*,*) '         ',noded,' and direction ',ndir
+                     write(*,*) '         cannot be created: the'
+                     write(*,*) '         DOF in this node is already us
+     &ed'
+                     cycle
+                  endif
+               endif
+               number=number-1
+!     
+!     updating ikmpc and ilmpc
+!     
+               do j=nmpc,id+2,-1
+                  ikmpc(j)=ikmpc(j-1)
+                  ilmpc(j)=ilmpc(j-1)
+               enddo
+               ikmpc(id+1)=idof
+               ilmpc(id+1)=nmpc
+!
+!              update the MPC coefficients
+!
+               index=ipompc(ii)
+               do j=1,3
+                  number=number+1
+                  if(number.gt.3) number=1
+                  if(dabs(ad(number,ndir)).lt.1.d-5) cycle
+                  nodempc(1,index)=noded
+                  nodempc(2,index)=number
+                  coefmpc(index)=ad(number,ndir)
+                  index=nodempc(3,index)
+                  if(index.eq.0) then
+                     write(*,*)'*ERROR in nonlinmpc: index=0'
+                     stop
+                  endif
+               enddo
+               do j=1,3
+                  number=number+1
+                  if(number.gt.3) number=1
+                  if(dabs(ai(number,ndir)).lt.1.d-5) cycle
+                  nodempc(1,index)=nodei
+                  nodempc(2,index)=number
+                  coefmpc(index)=-ai(number,ndir)
+                  index=nodempc(3,index)
+                  if(index.eq.0) then
+                     write(*,*)'*ERROR in nonlinmpc: index=0'
+                     stop
+                  endif
+               enddo
+            enddo
          elseif((labmpc(ii)(1:20).ne.'                    ').and.
      &          (labmpc(ii)(1:6).ne.'CYCLIC').and.
      &          (labmpc(ii)(1:9).ne.'SUBCYCLIC')) then
@@ -612,8 +778,8 @@ c     &           f(idir,3)*(co(3,irefnode)-co(3,inode))
 !
 !              dependent MPC has changed
 !  
-               idofrem=7*(nodempc(1,index)-1)+nodempc(2,index)
-               idofins=7*(nodempc(1,index)-1)+iaux(1)
+               idofrem=8*(nodempc(1,index)-1)+nodempc(2,index)
+               idofins=8*(nodempc(1,index)-1)+iaux(1)
                call changedepterm(ikmpc,ilmpc,nmpc,ii,idofrem,idofins)
                if(icascade.eq.0) icascade=1
             endif
@@ -638,19 +804,46 @@ c     &           f(idir,3)*(co(3,irefnode)-co(3,inode))
 !                 old value of the nonhomogeneous term must be zero
 !
                   vold(nodempc(2,index),nodempc(1,index))=0.d0
-                  idof=7*(nodempc(1,index)-1)+nodempc(2,index)
+                  idof=8*(nodempc(1,index)-1)+nodempc(2,index)
                   call nident(ikboun,idof,nboun,id)
                   xbounact(ilboun(id))=const
                endif
                index=nodempc(3,index)
             enddo
          endif
-      enddo
+      enddo loop
 !
 !     incompressible material
 !
+      if(.not.isochoric) return
+!
+!     initialization of the mpc's
+!
+      nmpc01=0
+      nmpcdif=0
+      do i=1,nmpc
+         if(labmpc(i)(1:9).eq.'ISOCHORIC') then
+            if(nmpc01.eq.0) nmpc01=i
+            nmpcdif=i
+            index=ipompc(i)
+            do
+               if(nodempc(3,index).eq.0) then
+                  idof=8*(nodempc(1,index)-1)+nodempc(2,index)
+                  call nident(ikboun,idof,nboun,id)
+                  xbounact(ilboun(id))=0.d0
+                  exit
+               endif
+               coefmpc(index)=0.d0
+               index=nodempc(3,index)
+            enddo
+         endif
+      enddo
+      nmpc0=nmpc01-1
+      nmpcdif=nmpcdif-nmpc0
+!
       do i=1,ne
-         if(lakon(i)(1:7).eq.'C3D20RH') then
+         if(ipkon(i).lt.0) cycle
+         if(lakon(i)(1:7).eq.'C3D20RI') then
             indexe=ipkon(i)
 !
             do j=1,20
@@ -662,20 +855,19 @@ c     &           f(idir,3)*(co(3,irefnode)-co(3,inode))
             enddo
 !
             do j=1,8
-               node=kon(indexe+j)
                mpc=0
-               do k=1,3
-                  idof=7*(node-1)+k
-                  call nident(ikmpc,idof,nmpc,id)
-                  if(id.gt.0) then
-                     if(ikmpc(id).eq.idof) then
-                        if(labmpc(ilmpc(id))(1:9).eq.'ISOCHORIC') then
-                           mpc=ilmpc(id)
-                           exit
-                        endif
-                     endif
+               node=kon(indexe+j)
+               label(1:9)='ISOCHORIC'
+               write(label(10:20),'(i11)') node
+c               write(*,*) 'nonlinmpclab ',label
+               call cident20(labmpc(nmpc01),label,nmpcdif,id)
+               id=id+nmpc0
+c               write(*,*) 'nonlinmpclab ',id,label,labmpc(id)
+               if(id.gt.0) then
+                  if(labmpc(id).eq.label) then
+                     mpc=id
                   endif
-               enddo
+               endif
                if(mpc.eq.0) cycle
 !
                xi=coloc(1,j)
@@ -694,25 +886,18 @@ c     &           f(idir,3)*(co(3,irefnode)-co(3,inode))
                b(3,2)=a(2,1)*a(1,3)-a(1,1)*a(2,3)
                b(3,3)=a(1,1)*a(2,2)-a(1,2)*a(2,1)
 !
-!              initialization of the mpc
-!
-               index=ipompc(ii)
-               do
-                  if(index.eq.0) exit
-                  coefmpc(index)=0.d0
-                  index=nodempc(3,index)
-               enddo
-!
-               indexold=0
                index=ipompc(mpc)
                do
-                  if(index.eq.0) then
-                     coefmpc(indexold)=1.d0
-                     idof=7*(nodempc(1,indexold)-1)+nodempc(2,indexold)
+                  if(nodempc(3,index).eq.0) then
+                     coefmpc(index)=1.d0
+                     idof=8*(nodempc(1,index)-1)+nodempc(2,index)
                      call nident(ikboun,idof,nboun,id)
                      xbounact(ilboun(id))=xbounact(ilboun(id))+
      &                    a(1,1)*b(1,1)+a(1,2)*b(1,2)+a(1,3)*b(1,3)
      &                    -1.d0/xj
+c                     write(*,*) 'nonlinmpcboun ',nodempc(1,index),
+c     &                        nodempc(2,index),ilboun(id),
+c     &                       xbounact(ilboun(id))
                      exit
                   else
                      node=nodempc(1,index)
@@ -722,67 +907,86 @@ c     &           f(idir,3)*(co(3,irefnode)-co(3,inode))
                            if(k.eq.1) then
                               if(idir.eq.1) then
                                  coefmpc(index)=coefmpc(index)+
-     &                                1.5d0*(b(1,1)+b(1,2)+b(1,3))
+     &                             1.5d0*(xi*b(1,1)+et*b(1,2)+ze*b(1,3))
                               elseif(idir.eq.2) then
                                  coefmpc(index)=coefmpc(index)+
-     &                                1.5d0*(b(2,1)+b(2,2)+b(2,3))
+     &                             1.5d0*(xi*b(2,1)+et*b(2,2)+ze*b(2,3))
                               elseif(idir.eq.3) then
                                  coefmpc(index)=coefmpc(index)+
-     &                                1.5d0*(b(3,1)+b(3,2)+b(3,3))
+     &                             1.5d0*(xi*b(3,1)+et*b(3,2)+ze*b(3,3))
                               endif
                            elseif(k.eq.2) then
                               if(idir.eq.1) then
-                               coefmpc(index)=coefmpc(index)-2.d0*b(1,1)
+                               coefmpc(index)=coefmpc(index)-
+     &                                        2.d0*xi*b(1,1)
                               elseif(idir.eq.2) then
-                               coefmpc(index)=coefmpc(index)-2.d0*b(2,1)
+                               coefmpc(index)=coefmpc(index)-
+     &                                        2.d0*xi*b(2,1)
                               elseif(idir.eq.3) then
-                               coefmpc(index)=coefmpc(index)-2.d0*b(3,1)
+                               coefmpc(index)=coefmpc(index)-
+     &                                        2.d0*xi*b(3,1)
                               endif
                            elseif(k.eq.3) then
                               if(idir.eq.1) then
-                              coefmpc(index)=coefmpc(index)+0.5d0*b(1,1)
+                              coefmpc(index)=coefmpc(index)+
+     &                                       0.5d0*xi*b(1,1)
                               elseif(idir.eq.2) then
-                              coefmpc(index)=coefmpc(index)+0.5d0*b(2,1)
+                              coefmpc(index)=coefmpc(index)+
+     &                                       0.5d0*xi*b(2,1)
                               elseif(idir.eq.3) then
-                              coefmpc(index)=coefmpc(index)+0.5d0*b(3,1)
+                              coefmpc(index)=coefmpc(index)+
+     &                                       0.5d0*xi*b(3,1)
                               endif
                            elseif(k.eq.4) then
                               if(idir.eq.1) then
-                               coefmpc(index)=coefmpc(index)-2.d0*b(1,2)
+                               coefmpc(index)=coefmpc(index)-
+     &                                        2.d0*et*b(1,2)
                               elseif(idir.eq.2) then
-                               coefmpc(index)=coefmpc(index)-2.d0*b(2,2)
+                               coefmpc(index)=coefmpc(index)-
+     &                                        2.d0*et*b(2,2)
                               elseif(idir.eq.3) then
-                               coefmpc(index)=coefmpc(index)-2.d0*b(3,2)
+                               coefmpc(index)=coefmpc(index)-
+     &                                        2.d0*et*b(3,2)
                               endif
                            elseif(k.eq.5) then
                               if(idir.eq.1) then
-                              coefmpc(index)=coefmpc(index)+0.5d0*b(1,2)
+                              coefmpc(index)=coefmpc(index)+
+     &                                       0.5d0*et*b(1,2)
                               elseif(idir.eq.2) then
-                              coefmpc(index)=coefmpc(index)+0.5d0*b(2,2)
+                              coefmpc(index)=coefmpc(index)+
+     &                                       0.5d0*et*b(2,2)
                               elseif(idir.eq.3) then
-                              coefmpc(index)=coefmpc(index)+0.5d0*b(3,2)
+                              coefmpc(index)=coefmpc(index)+
+     &                                       0.5d0*et*b(3,2)
                               endif
                            elseif(k.eq.6) then
                               if(idir.eq.1) then
-                              coefmpc(index)=coefmpc(index)-2.d0*b(1,3)
+                              coefmpc(index)=coefmpc(index)-
+     &                                       2.d0*ze*b(1,3)
                               elseif(idir.eq.2) then
-                              coefmpc(index)=coefmpc(index)-2.d0*b(2,3)
+                              coefmpc(index)=coefmpc(index)-
+     &                                       2.d0*ze*b(2,3)
                               elseif(idir.eq.3) then
-                              coefmpc(index)=coefmpc(index)-2.d0*b(3,3)
+                              coefmpc(index)=coefmpc(index)-
+     &                                       2.d0*ze*b(3,3)
                               endif
                            elseif(k.eq.7) then
                               if(idir.eq.1) then
-                              coefmpc(index)=coefmpc(index)+0.5d0*b(1,3)
+                              coefmpc(index)=coefmpc(index)+
+     &                                       0.5d0*ze*b(1,3)
                               elseif(idir.eq.2) then
-                              coefmpc(index)=coefmpc(index)+0.5d0*b(2,3)
+                              coefmpc(index)=coefmpc(index)+
+     &                                       0.5d0*ze*b(2,3)
                               elseif(idir.eq.3) then
-                              coefmpc(index)=coefmpc(index)+0.5d0*b(3,3)
+                              coefmpc(index)=coefmpc(index)+
+     &                                       0.5d0*ze*b(3,3)
                               endif
                            endif
                            exit
                         endif
                      enddo
                   endif
+                  index=nodempc(3,index)
                enddo
 !
             enddo

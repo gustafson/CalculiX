@@ -20,7 +20,7 @@
 !
       implicit none
 !
-      call frdclose()
+      call closefile()
 !
       stop
       end

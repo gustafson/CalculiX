@@ -22,13 +22,13 @@
      &  mpcfree,inotr,trab,ntrans,ikboun,ilboun,ikmpc,ilmpc,nk_,
      &  co,labmpc,boun_flag,typeboun,istep,istat,n,iline,ipol,
      &  inl,ipoinp,inp,nam_,namtot_,namta,amta,nmethod,iperturb,
-     &  iaxial,ipoinpc)
+     &  iaxial,ipoinpc,vold)
 !
 !     reading the input deck: *INITIAL CONDITIONS
 !
       implicit none
 !
-      logical boun_flag,user,massflowrate
+      logical boun_flag,user,massflowrate,fixed
 !
       character*1 typeboun(*),type,inpc(*)
       character*20 labmpc(*)
@@ -42,15 +42,18 @@
      &  nmpc,nmpc_,mpcfree,inotr(2,*),ikboun(*),ilboun(*),ikmpc(*),
      &  ilmpc(*),nmpcold,id,idof,index1,ntrans,nk_,ipos,m,node,is,ie,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),nam_,namtot,namtot_,
-     &  namta(3,*),idelay,nmethod,iperturb,lc,iaxial,ipoinpc(0:*)
+     &  namta(3,*),idelay,nmethod,iperturb,lc,iaxial,ipoinpc(0:*),
+     &  ktrue
 !
-      real*8 xboun(*),bounval,coefmpc(*),trab(7,*),co(3,*),amta(2,*)
+      real*8 xboun(*),bounval,coefmpc(*),trab(7,*),co(3,*),amta(2,*),
+     &  vold(0:4,*)
 !
       type='B'
       iamplitude=0
       idelay=0
       user=.false.
       massflowrate=.false.
+      fixed=.false.
       lc=1
 !
       do i=2,n
@@ -70,7 +73,7 @@
                do j=1,nk
                   if(inotr(2,j).gt.0) then
                      do k=1,3
-                        idof=7*(inotr(2,j)-1)+k
+                        idof=8*(inotr(2,j)-1)+k
                         call nident(ikboun,idof,nboun,id)
                         if(id.gt.0) then
                            if(ikboun(id).eq.idof) then
@@ -85,7 +88,7 @@
 !           the coefficient for this direction might be zero.
 !
                               loop: do l=1,3
-                                 idof=7*(j-1)+l
+                                 idof=8*(j-1)+l
                                  call nident(ikmpc,idof,nmpc,id)
                                  if(id.gt.0) then
                                     if(ikmpc(id).eq.idof) then
@@ -130,7 +133,7 @@
                      ipompc(k)=ipompc(j)
                      labmpc(k)=labmpc(j)
                      index1=ipompc(j)
-                     idof=7*(nodempc(1,index1)-1)+nodempc(2,index1)
+                     idof=8*(nodempc(1,index1)-1)+nodempc(2,index1)
                      call nident(ikmpc,idof,nmpc,id)
                      if(id.eq.0) then
                         write(*,*) '*ERROR in boundaries'
@@ -231,6 +234,8 @@ c            nboun=0
             user=.true.
          elseif(textpart(i)(1:8).eq.'MASSFLOW') then
             massflowrate=.true.
+         elseif(textpart(i)(1:5).eq.'FIXED') then
+            fixed=.true.
          endif
       enddo
 !
@@ -248,20 +253,13 @@ c            nboun=0
 !
          read(textpart(2)(1:10),'(i10)',iostat=istat) ibounstart
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-         if(ibounstart.eq.11) ibounstart=0
+c         if(ibounstart.eq.11) ibounstart=0
 !     
          if(textpart(3)(1:1).eq.' ') then
             ibounend=ibounstart
          else
             read(textpart(3)(1:10),'(i10)',iostat=istat) ibounend
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-            if(ibounend.eq.11) ibounend=0
-         endif
-         if((ibounstart.lt.0).or.(ibounend.gt.6)) then
-            write(*,*) '*ERROR in boundaries: nonexistent degree of'
-            write(*,*) '       freedom; '
-            call inputerror(inpc,ipoinpc,iline)
-            stop
          endif
 !     
          if(textpart(4)(1:1).eq.' ') then
@@ -278,18 +276,19 @@ c            nboun=0
 !
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
          if(istat.eq.0) then
-            if(l.gt.nk) then
+            if((l.gt.nk).or.(l.le.0)) then
                write(*,*) '*ERROR in boundaries:'
                write(*,*) '       node ',l,' is not defined'
                stop
             endif
+            ktrue=l
             if(lc.ne.1) l=l+nk
             call bounadd(l,ibounstart,ibounend,bounval,
      &        nodeboun,ndirboun,xboun,nboun,nboun_,
      &        iamboun,iamplitude,nam,ipompc,nodempc,
      &        coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &        ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &        type,typeboun,nmethod,iperturb)
+     &        type,typeboun,nmethod,iperturb,fixed,vold(0,ktrue))
          else
             read(textpart(1)(1:80),'(a80)',iostat=istat) noset
             noset(81:81)=' '
@@ -308,25 +307,28 @@ c            nboun=0
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then
                   k=ialset(j)
+                  ktrue=k
                   if(lc.ne.1) k=k+nk
                   call bounadd(k,ibounstart,ibounend,bounval,
      &               nodeboun,ndirboun,xboun,nboun,nboun_,
      &               iamboun,iamplitude,nam,ipompc,nodempc,
      &               coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &               ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &               type,typeboun,nmethod,iperturb)
+     &               type,typeboun,nmethod,iperturb,fixed,vold(0,ktrue))
                else
                   k=ialset(j-2)
                   do
                      k=k-ialset(j)
                      if(k.ge.ialset(j-1)) exit
+                     ktrue=k
                      if(lc.ne.1) k=k+nk
                      call bounadd(k,ibounstart,ibounend,bounval,
      &                 nodeboun,ndirboun,xboun,nboun,nboun_,
      &                 iamboun,iamplitude,nam,ipompc,nodempc,
      &                 coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &                 ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,
-     &                 labmpc,type,typeboun,nmethod,iperturb)
+     &                 labmpc,type,typeboun,nmethod,iperturb,fixed,
+     &                 vold(0,ktrue))
                   enddo
                endif
             enddo

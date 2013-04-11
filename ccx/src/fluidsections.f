@@ -18,7 +18,7 @@
 !
       subroutine fluidsections(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,ielmat,matname,nmat,
-     &  kon,ipkon,irstrt,istep,istat,n,iline,ipol,
+     &  irstrt,istep,istat,n,iline,ipol,
      &  inl,ipoinp,inp,lakon,ielprop,nprop,nprop_,prop,iaxial,
      &  ipoinpc)
 !
@@ -29,17 +29,19 @@
       character*1 inpc(*)
       character*7 elname
       character*8 lakon(*)
-      character*80 matname(*),material,typename
+      character*80 matname(*),material,typename,typename_oil
       character*81 set(*),elset
       character*132 textpart(16)
 !
       integer istartset(*),iendset(*),ialset(*),ielmat(*),iaxial,
-     &  kon(*),ipkon(*),irstrt,nset,nmat,ndprop,npropstart,
+     &  irstrt,nset,nmat,ndprop,npropstart,
      &  istep,istat,n,key,i,j,k,imaterial,ipos,lprop,ipoinpc(0:*),
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ielprop(*),nprop,nprop_,
-     &  nodea,nodeb   
+     &  nodea,nodeb,noil _mat
 !
       real*8 prop(*)
+
+      noil_mat=0
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in fluidsections: *FLUID SECTION should'
@@ -58,69 +60,133 @@
             elset(81:81)=' '
             ipos=index(elset,' ')
             elset(ipos:ipos)='E'
+!           
          elseif(textpart(i)(1:5).eq.'TYPE=') then
             read(textpart(i)(6:85),'(a80)',iostat=istat) typename
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+!           
+         elseif(textpart(i)(1:4).eq.'OIL=') then
+            read(textpart(i)(5:85),'(a80)',iostat=istat) typename_oil
+            do j=1, nmat
+               if(matname(j)(1:80).eq. typename_oil(1:80)) then
+                  noil_mat=j
+               endif
+            enddo
          endif
       enddo
 !
 !     types of sections
 !
       if(typename(1:18).eq.'ABSOLUTETORELATIVE') then
-         elname='ATR'
+         elname='ATR    '
          ndprop=3
 !
       elseif(typename(1:18).eq.'RELATIVETOABSOLUTE') then
-         elname='RTA'
+         elname='RTA    '
          ndprop=3
 !
       elseif(typename(1:12).eq.'BLEEDTAPPING') then
-         elname='ORBT'
+         elname='ORBT   '
          ndprop=3
 !
       elseif(typename(1:10).eq.'CARBONSEAL') then
          ndprop=3
-         elname='CARBS   '
+         elname='CARBS  '
 !
       elseif(typename(1:14).eq.'CHARACTERISTIC') then
          ndprop=20
          elname='CHAR   '
 !
       elseif(typename(1:7).eq.'GASPIPE') then
+!     
+!     version Fanno(friction and oil)
+!
          if(typename(8:16).eq.'ADIABATIC') then
-            elname='GAPIA   '
-            ndprop=6
+            if(typename(17:22).eq.'ALBERS') then
+               elname='GAPIAA '
+               ndprop=7
+            elseif(typename(17:23).eq.'FRIEDEL') then
+               elname='GAPIAF '
+               ndprop=7
+            else
+               elname='GAPIA  '
+               ndprop=7
+            endif
+            
          elseif(typename(8:17).eq.'ISOTHERMAL') then
-            elname='GAPII   '
-            ndprop=6
+            if(typename(18:23).eq.'ALBERS') then
+               elname='GAPIIA '
+               ndprop=7
+            elseif(typename(18:24).eq.'FRIEDEL') then
+               elname='GAPIIF '
+               ndprop=7
+            else
+               elname='GAPII  '
+               ndprop=7
+            endif
          endif
 !
-      elseif(typename(1:9).eq.'LABYRINTH') then
-         elname='LAB     '
-         ndprop=10 
+!     generalised version(friction,rotation,oil and section variation)
 !
+      elseif(typename(1:7).eq.'GASPIPX') then
+!     
+         if(typename(8:16).eq.'ADIABATIC') then
+            if(typename(17:22).eq.'ALBERS') then
+               elname='GAPXAA '
+               ndprop=7
+            elseif(typename(17:23).eq.'FRIEDEL') then
+               elname='GAPXAF '
+               ndprop=7
+            else
+               elname='GAPXA  '
+               ndprop=7
+            endif
+         elseif(typename(8:17).eq.'ISOTHERMAL') then
+            if(typename(18:23).eq.'ALBERS') then
+               elname='GAPXIA '
+               ndprop=7
+            elseif(typename(18:24).eq.'FRIEDEL') then
+               elname='GAPXIF '
+               ndprop=7
+            else
+               elname='GAPXI  '
+               ndprop=7
+            endif
+         endif
+!     
+      elseif(typename(1:9).eq.'LABYRINTH') then
+         if(typename(10:17).eq.'FLEXIBLE') then
+            elname='LABF   '
+            ndprop=12 
+         else
+            elname='LAB    '
+            ndprop=10
+         endif 
+!     
       elseif(typename(1:10).eq.'LIQUIDPUMP') then
          ndprop=20
          elname='LIPU   '
-!
+!     
       elseif(typename(1:8).eq.'MOEHRING') then
          if(typename(9:19).eq.'CENTRIFUGAL') then
-            elname='MRGF'
+            elname='MRGF   '
          elseif(typename(9:19).eq.'CENTRIPETAL') then
-            elname='MRGP'
+            elname='MRGP   '
          endif
          ndprop=8
 !
       elseif(typename(1:7).eq.'ORIFICE') then
          ndprop=8
-         if(typename(9:14).eq.'OWN_AL') then
+         if(typename(8:13).eq.'OWN_AL') then
             elname='ORMA   '
-         elseif(typename(9:13).eq.'PK_AL') then
+         elseif(typename(8:12).eq.'PK_AL') then
             elname='ORPA   '
-         elseif(typename(9:13).eq.'MS_MS') then
+         elseif(typename(8:12).eq.'MS_MS') then
             elname='ORMM   '
-         elseif(typename(9:13).eq.'PK_MS') then
+         elseif(typename(8:12).eq.'PK_MS') then
             elname='ORPM   '
+         elseif(typename(8:12).eq.'BRAGG') then
+             elname='ORBG   '
          else 
             elname='ORC1   '
          endif
@@ -166,75 +232,78 @@
          endif
 !
       elseif(typename(1:14).eq.'PRESWIRLNOZZLE') then
-         elname='ORPN'
+         elname='ORPN   '
          ndprop=5
 !      
       elseif(typename(1:10).eq.'RESTRICTOR') then
          if(typename(11:15).eq.'USER') then
-            elname='REUS'
-            ndprop=4
+            elname='REUS   '
+              ndprop=6
+!          
          elseif(typename(11:29).eq.'LONGORIFICEIDELCHIK') then
-            elname='RELOID'
-            ndprop=4
-         elseif(typename(11:21).eq.'WALLORIFICE') then
-            elname='REWAOR'
-            ndprop=3
+            elname='RELOID '
+            ndprop=6
+!            
+         elseif(typename(11:21).eq.'WALLORIFICE') then 
+            elname='REWAOR '
+            ndprop=6
          elseif(typename(11:18).eq.'ENTRANCE') then
-            elname='REEN'
-            ndprop=4 
+            elname='REEN   '
+            ndprop=6
          elseif(typename(11:21).eq.'ENLARGEMENT') then
-            elname='REEL'
-            ndprop=4
+            elname='REEL   '
+             ndprop=5
          elseif(typename(11:21).eq.'CONTRACTION') then
-            elname='RECO'
-            ndprop=5
+            elname='RECO   '
+            ndprop=7
          elseif(typename(11:26).eq.'BENDIDELCHIKCIRC') then
             elname='REBEIDC'
-            ndprop=7
+            ndprop=9
          elseif(typename(11:26).eq.'BENDIDELCHIKRECT') then
             elname='REBEIDR'
-            ndprop=7
+           
+            ndprop=9
          elseif(typename(11:20).eq.'BENDMILLER') then
-            elname='REBEMI'
-            ndprop=5
+            elname='REBEMI '
+            ndprop=7
          elseif(typename(11:17).eq.'BENDMAN') then
-            elname='REBEMA'
-            ndprop=5
+            elname='REBEMA '
+            ndprop=7
          elseif(typename(11:14).eq.'EXIT') then
-            elname='REEX'
-            ndprop=4
+            elname='REEX   '
+            ndprop=6
          elseif(typename(11:33).eq.'LONGORIFICELICHTAROWICZ') then
-            elname='RELOLI'
-            ndprop=5
+            elname='RELOLI '
+            ndprop=6
          endif
 !     
       elseif(typename(1:6).eq.'BRANCH') then
          if(typename(7:13).eq.'JOINTGE')then
-            elname='REBRJG'
-            ndprop=8
+            elname='REBRJG '
+            ndprop=11
          elseif(typename(7:20).eq.'JOINTIDELCHIK1')then
             elname='REBRJI1'
-            ndprop=8
+            ndprop=11
          elseif(typename(7:20).eq.'JOINTIDELCHIK2')then
             elname='REBRJI2'
-            ndprop=8  
+            ndprop=11 
          elseif(typename(7:13).eq.'SPLITGE')then
-            elname='REBRSG'
-            ndprop=8  
+            elname='REBRSG '
+            ndprop=11  
          elseif(typename(7:20).eq.'SPLITIDELCHIK1')then
             elname='REBRSI1'
-            ndprop=8
+            ndprop=11
          elseif(typename(7:20).eq.'SPLITIDELCHIK2')then
             elname='REBRSI2'
-            ndprop=8
+            ndprop=11
          endif
 !
       elseif(typename(1:6).eq.'VORTEX') then
          if(typename(7:10).eq.'FREE') then
-            elname='VOFR'
+            elname='VOFR   '
             ndprop=9
          elseif(typename(7:12).eq.'FORCED') then
-            elname='VOFO'
+            elname='VOFO   '
             ndprop=7
          endif
 !     
@@ -411,20 +480,34 @@
          stop
       endif
 !
-      if((elname(1:7).eq.'REBEIDC').or.
-     &     (elname(1:7).eq.'REBEMI ').or.
-     &     (elname(1:7).eq.'REBEMA ')) then
-         if(elname(1:7).eq.'REBEIDC') then
-            elname='REBEID '
-         endif
+      if((elname(1:6).eq.'REBEMI').or.
+     &     (elname(1:6).eq.'REBEMA')) then
+         prop(npropstart+7)=noil_mat+0.5d0
+         prop(npropstart+6)=prop(npropstart+4)
+            
          prop(npropstart+5)=prop(npropstart+3)
          prop(npropstart+4)=prop(npropstart+2)
-         prop(npropstart+2)=prop(npropstart+1)
          prop(npropstart+3)=dsqrt(4*prop(npropstart+1)
      &        /(4.d0*datan(1.d0)))
+         prop(npropstart+2)=prop(npropstart+1)
+         endif
 !
+      if(elname(1:7).eq.'REBEIDC') then
+         elname= 'REBEID '
+         prop(npropstart+9)=noil_mat+0.5d0
+         prop(npropstart+8)=prop(npropstart+4)
+         prop(npropstart+7)=0
+         prop(npropstart+6)=0
+         prop(npropstart+5)=prop(npropstart+3)
+         prop(npropstart+4)=prop(npropstart+2)
+         prop(npropstart+3)=dsqrt(4*prop(npropstart+1)
+     &        /(4.d0*datan(1.d0)))
+         prop(npropstart+2)=prop(npropstart+1)
+!     
       elseif(elname(1:7).eq.'REBEIDR') then
-         elname='REBEID '
+         elname= 'REBEID '
+         prop(npropstart+9)=noil_mat+0.5d0
+         prop(npropstart+8)=prop(npropstart+5)
          prop(npropstart+7)=prop(npropstart+2)
          prop(npropstart+6)=prop(npropstart+1)
          prop(npropstart+5)=prop(npropstart+4)
@@ -435,40 +518,59 @@
      &        prop(npropstart+7))
 !     
       elseif(elname(1:4).eq.'REEX') then
+!       
+            prop(npropstart+6)=noil_mat+0.5d0
+            prop(npropstart+5)=prop(npropstart+4)
             prop(npropstart+4)=prop(npropstart+3)
             prop(npropstart+3)=prop(npropstart+2)
             prop(npropstart+2)=100000*prop(npropstart+1)
 !     
       elseif(elname(1:4).eq.'REEN') then
-         prop(npropstart+4)=0.5d0
-         prop(npropstart+3)=prop(npropstart+2)
-         prop(npropstart+2)=prop(npropstart+1)
-         prop(npropstart+1)=100000*prop(npropstart+2)
+!        
+            prop(npropstart+6)=noil_mat+0.5d0
+            prop(npropstart+5)=prop(npropstart+3)
+            prop(npropstart+4)=0.5d0
+            prop(npropstart+3)=prop(npropstart+2)
+            prop(npropstart+2)=prop(npropstart+1)
+            prop(npropstart+1)=100000*prop(npropstart+2)
 !
       elseif(elname(1:7).eq.'REBRJI1') then
+         prop(npropstart+11)=noil_mat+0.5d0
+         prop(npropstart+10)=prop(npropstart+9)
+         prop(npropstart+9)=prop(npropstart+8)
          prop(npropstart+8)= prop(npropstart+6)
          prop(npropstart+7)= 0d0
          prop(npropstart+6)=prop(npropstart+5)
          prop(npropstart+5)=prop(npropstart+4)
 !
       elseif(elname(1:7).eq.'REBRJI2') then
+         prop(npropstart+11)=noil_mat+0.5d0
+         prop(npropstart+10)=prop(npropstart+9)
+         prop(npropstart+9)=prop(npropstart+8)
          prop(npropstart+8)=prop(npropstart+7)
          prop(npropstart+7)=0.d0
-         if(prop(npropstart+5)+prop(npropstart+6).ne.
-     &        prop(npropstart+4))then
+         if(1.d0-(prop(npropstart+5)+prop(npropstart+6))/
+     &        prop(npropstart+4).gt.0.01d0)then
             write(*,*) '*ERROR: in fluidsections:'
             write(*,*) '        in element type RESTRICTOR 
      &                           BRANCH JOINT IDELCHIK2'
             write(*,*) '        A0 ist not equal to A1+A2'
+            stop
          endif
 !
       elseif(elname(1:7).eq.'REBRSI1') then
+         prop(npropstart+11)=noil_mat+0.5d0
+         prop(npropstart+10)=prop(npropstart+8)
+         prop(npropstart+9)=prop(npropstart+7)
          prop(npropstart+8)=prop(npropstart+6)
          prop(npropstart+7)=0.d0
          prop(npropstart+6)=prop(npropstart+5)
          prop(npropstart+5)=prop(npropstart+4)
 !     
       elseif(elname(1:7).eq.'REBRSI2') then
+         prop(npropstart+11)=noil_mat+0.5d0
+         prop(npropstart+10)=prop(npropstart+8)
+         prop(npropstart+9)=prop(npropstart+7)
          prop(npropstart+8)=90.d0
          prop(npropstart+7)=90.d0
 !     
@@ -483,37 +585,81 @@
 !     modeling branch 0 , 1 and 2.
 !     Since all inputs are real the "integer input" are augmented by 0.1
 !     and will be converted in integer using fucntion INT
-         prop(npropstart+3)=prop(npropstart+3)+0.1d0
-         prop(npropstart+2)=prop(npropstart+2)+0.1d0
-         prop(npropstart+1)=prop(npropstart+1)+0.1d0
+         prop(npropstart+3)=prop(npropstart+3)+0.5d0
+         prop(npropstart+2)=prop(npropstart+2)+0.5d0
+         prop(npropstart+1)=prop(npropstart+1)+0.5d0
 !
 !     number of the table to be used for Preswirlnozzles
 !
       elseif(elname(1:4).eq.'ORPN') then
-         prop(npropstart+4)=prop(npropstart+4)+0.1d0
+         prop(npropstart+4)=prop(npropstart+4)+0.5d0
 !
 !     number of the table to be used for bleed tappings
 !
       elseif(elname(1:4).eq.'ORBT') then
-         prop(npropstart+3)=prop(npropstart+3)+0.1d0
+         prop(npropstart+3)=prop(npropstart+3)+0.5d0
 !
 !     label number of the swirl generating element for free vortices
 !
       elseif(elname(1:4).eq.'VOFR') then
          if(prop(npropstart+6).ne.0d0) then
-            prop(npropstart+6)=prop(npropstart+6)+0.1d0
+            prop(npropstart+6)=prop(npropstart+6)+0.5d0
          endif
 !
 !     label number of the pipe element preceding the exit loss element
 !
       elseif(elname(1:4).eq.'REEX') then
-         prop(npropstart+3)= prop(npropstart+3)+0.1d0
+         prop(npropstart+3)= prop(npropstart+3)+0.5d0
+!
+!     k_oil for restrictors type USER, ENTRENCE, LONG ORIFICE IDELCHIK,
+!     EXIT, ORIFICE IN A WALL, LONG ORIFICE LICHTAROWICZ
+!
+      elseif((elname(1:4).eq.'REUS').or.
+     &         (elname(1:6).eq.'RELOID').or.  
+     &         (elname(1:4).eq.'REEN').or.  
+     &         (elname(1:4).eq.'REEX').or.   
+     &         (elname(1:6).eq.'REWAOR').or. 
+     &         (elname(1:6).eq.'RELOLI')) then
+
+         prop(npropstart+6)= noil_mat+0.5d0
+!
+!     k_oil for restrictors type ENLARGEMENT
+!
+      elseif (elname(1:4).eq.'REEL') then
+         prop(npropstart+5)= noil_mat+0.5d0
+!
+!     k_oil for restrictors type CONTRACTION, BEN MILLER, BEND MA
+!     (BEND IDELCHICK has already been treated)
+!
+      elseif(elname(1:4).eq.'RECO') then
+        prop(npropstart+7)= noil_mat+0.5d0
 !
 !     label number of the upstream and downstream nodes for Moehrings
 !
       elseif(elname(1:2).eq.'MR') then
          prop(npropstart+5)= prop(npropstart+5)+0.1d0
          prop(npropstart+6)= prop(npropstart+6)+0.1d0
+!
+!     k_oil for pipe elements
+!
+      elseif(elname(1:3).eq.'GAP') then
+         prop(npropstart+7)=noil_mat+0.5 
+!
+!     Node1 and Node2 for LABYRINTH FLEXIBLE
+!
+      elseif(elname(1:4).eq.'LABF') then
+         prop(npropstart+12)= prop(npropstart+11)
+         prop(npropstart+11)= prop(npropstart+10)
+         prop(npropstart+10)= prop(npropstart+9)
+         prop(npropstart+9)= prop(npropstart+8)
+         prop(npropstart+8)= prop(npropstart+7)
+         prop(npropstart+7)= prop(npropstart+6)
+         prop(npropstart+6)= prop(npropstart+5)
+         prop(npropstart+5)= prop(npropstart+4)
+         prop(npropstart+4)= prop(npropstart+3)
+         prop(npropstart+1)=prop(npropstart+1)+0.5d0
+         prop(npropstart+2)=prop(npropstart+2)+0.5d0
+         prop(npropstart+3)=iaxial+0.5d0
       endif         
 !     
 !     check the range of the parameters
@@ -528,7 +674,8 @@
          endif
       endif
 !
-      if((elname(1:2).eq.'OR').and.(elname(1:4).ne.'ORC1')) then
+      if((elname(1:2).eq.'OR').and.(elname(1:4).ne.'ORC1').and.
+     &     (elname(1:4).ne.'ORBT') .and.(elname(1:4).ne.'ORPN')) then
          if(prop(npropstart+2).lt.0.d0) then
             write(*,*) '*ERROR in fluidsections: diameter of the'
             write(*,*) '       orifice is not positive'
@@ -624,6 +771,20 @@
          if(prop(npropstart+3).gt.1.05d0) then
             write(*,*) '*ERROR in fluidsections: k_phi (preswirl'
             write(*,*) '       nozzle) must not exceed 1.05'
+            stop
+         endif
+      elseif(elname(1:4).eq.'ORBG') then
+         if(prop(npropstart+1).lt.0.d0) then
+            write(*,*) '*ERROR in fluidsections: section area'
+            write(*,*) '       is not positive'
+            stop
+         endif
+         if(prop(npropstart+2).lt.0.d0 .or.
+     &      prop(npropstart+2).ge.1.d0) then
+            write(*,*) '*ERROR in fluidsections: using Bragg Method'
+            write(*,*) 'Cd by crtitical pressure ratio '
+            write(*,*) '*FLUIDSECTIONS position 2'
+            write(*,*) '0 < Cd _crit < 1'
             stop
          endif
       endif
@@ -912,9 +1073,9 @@
             endif
          endif
       endif
-      do i=1,9
-         write(*,*) prop(npropstart+i)
-      enddo
+c      do i=1,ndprop
+c         write(*,*) prop(npropstart+i)
+c      enddo
       return
       end
 

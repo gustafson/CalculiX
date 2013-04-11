@@ -200,12 +200,10 @@
      &          +shpe(3,k)*xsi(3,j)
         enddo
       enddo
-c      open(20,file='output.dat',status='unknown')
-c      write(20,*) xi,et,ze
-c      do i=1,4
-c         do j=1,20
-c            write(20,'(2i5,e11.4)') i,j,shp(i,j)
-c         enddo
+c      do k=1,20
+c        do j=1,3
+c          shp(j,k)=shpe(j,k)
+c        enddo
 c      enddo
 !
       return

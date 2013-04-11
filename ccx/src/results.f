@@ -45,7 +45,8 @@
 !
       implicit none
 !
-      logical calcul_fn,calcul_f,calcul_cauchy,calcul_qa,cauchy
+      logical calcul_fn,calcul_f,calcul_cauchy,calcul_qa,cauchy,
+     &  fluid
 !
       character*1 cflag
       character*6 filab(*)
@@ -70,18 +71,18 @@
 !
       integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
-      real*8 co(3,*),v(0:3,*),shp(4,20),stiini(6,mint_,*),
+      real*8 co(3,*),v(0:4,*),shp(4,20),stiini(6,mint_,*),
      &  stx(6,mint_,*),stn(6,*),xl(3,20),vl(0:3,20),stre(6),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),
-     &  alcon(0:6,ntmat_,*),vini(0:3,*),qfx(3,mint_,*),qfn(3,*),
-     &  alzero(*),orab(7,*),elas(21),rho,f(*),fn(0:3,*),
-     &  skl(3,3),beta(6),q(0:3,20),vkl(0:3,3),cam(2),
+     &  alcon(0:6,ntmat_,*),vini(0:4,*),qfx(3,mint_,*),qfn(3,*),
+     &  alzero(*),orab(7,*),elas(21),rho,f(*),fn(0:3,*),fnl(3,9),
+     &  skl(3,3),beta(6),q(0:3,20),vkl(0:3,3),cam(3),
      &  t0(*),t1(*),prestr(6,mint_,*),eme(6,mint_,*),een(6,*),ckl(3,3),
-     &  vold(0:3,*),b(*),xboun(*),coefmpc(*),eloc(9),veold(0:3,*),
+     &  vold(0:4,*),b(*),xboun(*),coefmpc(*),eloc(9),veold(0:3,*),
      &  accold(0:3,*),elconloc(21),eth(6),xkl(3,3),voldl(0:3,20),epn(*),
      &  xikl(3,3),ener(mint_,*),enern(*),sti(6,mint_,*),emec(6),
      &  eei(6,mint_,*),enerini(mint_,*),cocon(0:6,ntmat_,*),emec0(6),
-     &  fmpc(*),shcon,sph,c1,vel(1:3,20)
+     &  fmpc(*),shcon,sph,c1,vel(1:3,20),veoldl(3,9)
 !
       real*8 e,un,al,um,am1,xi,et,ze,tt,exx,eyy,ezz,exy,exz,eyz,
      &  xsj,qa(2),vj,t0l,t1l,bet,gam,dtime,forcempc,scal1,scal2,bnac,
@@ -93,18 +94,12 @@
      &  vokl(3,3),xstateini(nstate_,mint_,*),vikl(3,3),trab(7,*),
      &  xstaten(nstate_,*)
 !
-      real*8 gauss2d1(2,1),gauss2d2(2,4),gauss2d3(2,9),gauss2d4(2,1),
-     &  gauss2d5(2,3),gauss3d1(3,1),gauss3d2(3,8),gauss3d3(3,27),
-     &  gauss3d4(3,1),gauss3d5(3,4),gauss3d6(3,15),gauss3d7(3,2),
-     &  gauss3d8(3,9),gauss3d9(3,18),weight2d1(1),weight2d2(4),
-     &  weight2d3(9),weight2d4(1),weight2d5(3),weight3d1(1),
-     &  weight3d2(8),weight3d3(27),weight3d4(1),weight3d5(4),
-     &  weight3d6(15),weight3d7(2),weight3d8(9),weight3d9(18)
-!
       include "gauss.f"
 !
       data iflag /3/
       data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
+!
+      fluid=.false.
 !
       if(ithermal.le.1) then
          jmin=1
@@ -194,6 +189,9 @@
                   endif
                   v(0,i)=vold(0,i)+bnac
                   cam(2)=max(cam(2),dabs(bnac))
+                  if(nactdof(0,i).ne.0) then
+                     cam(3)=max(cam(3),dabs(v(0,i)-vini(0,i)))
+                  endif
                   veold(0,i)=0.d0
                enddo
             endif
@@ -267,6 +265,7 @@
 !     inserting the boundary conditions
 !
       do i=1,nboun
+c         write(*,*) i,nodeboun(i),ndirboun(i),xboun(i)
          if(ndirboun(i).gt.3) cycle
          fixed_disp=xboun(i)
          if((nmethod.eq.4).and.(iperturb.gt.1)) then
@@ -282,18 +281,8 @@
             endif
          endif
          v(ndirboun(i),nodeboun(i))=fixed_disp
-c         write(*,*) 'boun ',nodeboun(i),ndirboun(i),fixed_disp
       enddo
-c      write(*,*) 'start olddisp'
-c      do i=1,nk
-c         write(*,*) i,(vold(j,i),j=0,3)
-c      enddo
-c      write(*,*) 'end olddisp'
-c      write(*,*) 'start disp'
-c      do i=1,nk
-c         write(*,*) i,(v(j,i),j=0,3)
-c      enddo
-c      write(*,*) 'end disp'
+c      write(*,*) 'resultboun nach boun ',v(3,86)
 !
 !     inserting the mpc information
 !     the parameter incrementalmpc indicates whether the
@@ -303,11 +292,17 @@ c      write(*,*) 'end disp'
       do i=1,nmpc
          if((labmpc(i)(1:20).eq.'                    ').or.
      &      (labmpc(i)(1:6).eq.'CYCLIC').or.
-c     &      (labmpc(i)(1:5).eq.'RIGID').or.
      &      (labmpc(i)(1:9).eq.'SUBCYCLIC')) then
             incrementalmpc=0
          else
-            incrementalmpc=1
+c            if((nmethod.eq.2).or.(nmethod.eq.3).or.(iperturb.eq.0))
+            if((nmethod.eq.2).or.(nmethod.eq.3).or.
+     &            ((iperturb.eq.0).and.(nmethod.eq.1)))
+     &         then
+               incrementalmpc=0
+            else
+               incrementalmpc=1
+            endif
          endif
          ist=ipompc(i)
          node=nodempc(1,ist)
@@ -349,6 +344,7 @@ c     &      (labmpc(i)(1:5).eq.'RIGID').or.
          endif
          v(ndir,node)=fixed_disp
       enddo
+c      write(*,*) 'resultboun after mpc',v(3,86)
 !
 !     check whether there are any strain output requests
 !
@@ -368,19 +364,12 @@ c     &      (labmpc(i)(1:5).eq.'RIGID').or.
       qa(1)=0.d0
       nal=0
 !
-c      write(*,*)
-c      write(*,*) 'displacement'
-c      do i=1,nk
-c         write(*,*) i,v(1,i),v(2,i),v(3,i)
-c      enddo
-!
 !     calculation of the stresses in the integration points
 ! 
-      if((ithermal.le.1).or.(ithermal.eq.3)) then
+      if((ithermal.le.1).or.(ithermal.ge.3)) then
 !
       do i=1,ne
 !
-c         write(*,*) 'element ',i
          if(ipkon(i).lt.0) cycle
          imat=ielmat(i)
          amat=matname(imat)
@@ -405,6 +394,10 @@ c         write(*,*) 'element ',i
             nope=6
          elseif(lakon(i)(1:1).eq.'E') then
             read(lakon(i)(8:8),'(i1)') nope
+!
+!          contact area division number
+!
+            konl(nope+1)=kon(indexe+nope+1)
          else
             cycle
          endif
@@ -435,6 +428,7 @@ c         write(*,*) 'element ',i
                vl(k,j)=v(k,konl(j))
                voldl(k,j)=vold(k,konl(j))
             enddo
+c            write(*,*) 'noeie',i,konl(j),(vl(k,j),k=1,3)
          enddo
 !
 !        check for hyperelastic material
@@ -473,9 +467,24 @@ c         if((iperturb.ge.2).or.((iperturb.eq.0).and.(iout.lt.1))) then
                endif
             endif
             if(lakon(i)(2:2).eq.'S') then
+!
+!              velocity may be needed for contact springs
+!
+               if(lakon(i)(7:7).eq.'C') then
+                  do j=1,nope
+                     do k=1,3
+                        veoldl(k,j)=veold(k,konl(j))
+                     enddo
+                  enddo
+               endif
                call springforc(xl,konl,vl,imat,elcon,nelcon,elas,
-     &              fn,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,
-     &              plicon,nplicon,npmat_)
+     &              fnl,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,
+     &              plicon,nplicon,npmat_,veoldl)
+               do j=1,nope
+                  do k=1,3
+                     fn(k,konl(j))=fn(k,konl(j))+fnl(k,j)
+                  enddo
+               enddo
             elseif((nmethod.eq.4).or.
      &             ((nmethod.eq.1).and.(iperturb.ge.2))) then
                do j=1,nope
@@ -486,7 +495,7 @@ c         if((iperturb.ge.2).or.((iperturb.eq.0).and.(iout.lt.1))) then
                enddo
                call dashforc(xl,konl,vl,imat,elcon,nelcon,
      &              elas,fn,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,
-     &              elconloc,plicon,nplicon,npmat_,vel)
+     &              elconloc,plicon,nplicon,npmat_,vel,time,nmethod)
             endif
          endif
 !
@@ -568,6 +577,7 @@ c               xi=gauss3d3(1,jj)+1.d0
                   do m3=1,3
                      vkl(m2,m3)=vkl(m2,m3)+shp(m3,m1)*vl(m2,m1)
                   enddo
+c                  write(*,*) 'vnoeie',i,konl(m1),(vkl(m2,k),k=1,3)
                enddo
             enddo
 !
@@ -956,7 +966,6 @@ c            if((iperturb.eq.0).and.(iout.lt.0)) then
 ! 
 !           updating the energy
 !
-c            write(*,*) 'stre',(stre(m1),m1=1,6)
             if(iout.gt.0) then
                if(ithermal.eq.0) then
                   do m1=1,6
@@ -1109,12 +1118,6 @@ c            write(*,*) 'stre',(stre(m1),m1=1,6)
             qa(1)=qa(1)/nal
          endif
       endif
-!
-c      write(*,*)
-c      write(*,*) 'nodal force'
-c      do i=1,nk
-c         write(*,*) i,fn(1,i),fn(2,i),fn(3,i)
-c      enddo
 !
       endif
 !
@@ -1383,10 +1386,7 @@ c         if((iperturb.ge.2).or.((iperturb.eq.0).and.(iout.lt.1))) then
             ist=ipompc(i)
             node=nodempc(1,ist)
             ndir=nodempc(2,ist)
-c            write(*,*) 'v 3,129 2,262',v(3,129),v(2,262)
-c            write(*,*) 'forcempc',node,ndir,fn(ndir,node),coefmpc(ist)
             forcempc=fn(ndir,node)/coefmpc(ist)
-c            write(*,*) i,forcempc
             fmpc(i)=forcempc
             fn(ndir,node)=0.d0
             index=nodempc(3,ist)
@@ -1461,15 +1461,12 @@ c         enddo
 !     calculation as boundary condition in a subsequent static
 !     step)
 !
-c      if((filab(1)(1:4).eq.'U   ').or.
-c     &     ((filab(2)(1:4).eq.'NT  ').and.(ithermal.gt.1))) then
-c         if(filab(1)(5:5).eq.'I') then
-            nfield=4
-            cflag=filab(1)(5:5)
-            call map3dto1d2d(v,ipkon,inum,kon,lakon,nfield,nk,
-     &           ne,cflag,co)
-c         endif
-c      endif
+      if(filab(1)(5:5).ne.' ') then
+         nfield=5
+         cflag=filab(1)(5:5)
+         call map3dto1d2d(v,ipkon,inum,kon,lakon,nfield,nk,
+     &        ne,cflag,co)
+      endif
 !
 !     user defined output
 !
@@ -1483,17 +1480,11 @@ c      endif
      &           ne,cflag,co)
          endif
       endif
-c      if((filab(5)(1:4).eq.'RF  ').or.(filab(10)(1:4).eq.'RFL '))then
-c         if(filab(1)(5:5).eq.'I') then
-c            nfield=4
-c            call map3dto1d2d(fn,ipkon,inum,kon,lakon,nfield,nk,
-c     &           ne,filab,co)
-c         endif
-c      endif
 !
 !     determining the stresses in the nodes for output in frd format
 !
-      if(filab(3)(1:4).eq.'S   ') then
+      if((filab(3)(1:4).eq.'S   ').or.(filab(18)(1:4).eq.'PHS ').or.
+     &   (filab(20)(1:4).eq.'MAXS')) then
          nfield=6
          ndim=6
          if((norien.gt.0).and.(filab(3)(6:6).eq.'L')) then
@@ -1502,9 +1493,11 @@ c      endif
             iorienglob=0
          endif
          cflag=filab(3)(5:5)
+!
          call extrapolate(stx,stn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mint_,ndim,orab,ielorien,co,iorienglob,cflag,
-     &        nelemload,nload,nodeboun,nboun)
+     &        nelemload,nload,nodeboun,nboun,fluid,ndirboun)
+!
       endif
 !
 !     determining the strains in the nodes for output in frd format
@@ -1520,7 +1513,7 @@ c      endif
          cflag=filab(4)(5:5)
          call extrapolate(eei,een,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mint_,ndim,orab,ielorien,co,iorienglob,cflag,
-     &        nelemload,nload,nodeboun,nboun)
+     &        nelemload,nload,nodeboun,nboun,fluid,ndirboun)
       endif
 !
 !     determining the plastic equivalent strain in the nodes 
@@ -1533,7 +1526,7 @@ c      endif
          cflag=filab(6)(5:5)
          call extrapolate(xstate,epn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mint_,ndim,orab,ielorien,co,iorienglob,cflag,
-     &        nelemload,nload,nodeboun,nboun)
+     &        nelemload,nload,nodeboun,nboun,fluid,ndirboun)
       endif
 !
 !     determining the total energy in the nodes 
@@ -1546,7 +1539,7 @@ c      endif
          cflag=filab(7)(5:5)
          call extrapolate(ener,enern,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mint_,ndim,orab,ielorien,co,iorienglob,cflag,
-     &        nelemload,nload,nodeboun,nboun)
+     &        nelemload,nload,nodeboun,nboun,fluid,ndirboun)
       endif
 !
 !     determining the internal state variables in the nodes 
@@ -1564,7 +1557,7 @@ c      endif
          cflag=filab(8)(5:5)
          call extrapolate(xstate,xstaten,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mint_,ndim,orab,ielorien,co,iorienglob,cflag,
-     &        nelemload,nload,nodeboun,nboun)
+     &        nelemload,nload,nodeboun,nboun,fluid,ndirboun)
       endif
 !
 !     determining the heat flux in the nodes for output in frd format
@@ -1580,7 +1573,7 @@ c      endif
          cflag=filab(9)(5:5)
          call extrapolate(qfx,qfn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mint_,ndim,orab,ielorien,co,iorienglob,cflag,
-     &        nelemload,nload,nodeboun,nboun)
+     &        nelemload,nload,nodeboun,nboun,fluid,ndirboun)
       endif
 !
 !     if no element quantities requested in the nodes: calculate
@@ -1597,7 +1590,11 @@ c      endif
          cflag=filab(1)(5:5)
          call extrapolate(stx,stn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mint_,ndim,orab,ielorien,co,iorienglob,cflag,
-     &        nelemload,nload,nodeboun,nboun)
+     &        nelemload,nload,nodeboun,nboun,fluid,ndirboun)
+      endif
+!
+      if(fluid) then
+         call fluidextrapolate(v,ipkon,inum,kon,lakon,ne)
       endif
 !
       return

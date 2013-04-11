@@ -18,7 +18,7 @@
 !
       subroutine dashdamp(xl,elas,konl,voldl,s,imat,elcon,nelcon,
      &  ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,plicon,
-     &  nplicon,npmat_,iperturb)
+     &  nplicon,npmat_,iperturb,time,nmethod)
 !
 !     calculates the damping coefficient of a dashpot
 !
@@ -26,12 +26,13 @@
 !
       character*8 lakonl
 !
-      integer konl(20),i,j,imat,ncmat_,ntmat_,nope,iperturb,
-     &  kode,npmat_,nelcon(2,*),nplicon(0:ntmat_,*)
+      integer konl(20),i,j,imat,ncmat_,ntmat_,nope,iperturb,niso,
+     &  kode,npmat_,nelcon(2,*),nplicon(0:ntmat_,*),nmethod,id
 !
       real*8 xl(3,9),elas(21),s(60,60),voldl(3,9),xn(3),dd,
      &  elcon(0:ncmat_,ntmat_,*),t0l,t1l,elconloc(21),damp,
-     &  plicon(0:2*npmat_,ntmat_,*),plconloc(82),pl(3,9)
+     &  plicon(0:2*npmat_,ntmat_,*),plconloc(82),pl(3,9),time,
+     &  xiso(20),yiso(20)
 !
 !     original positions of the nodes belonging to the dashpot
 !
@@ -63,7 +64,32 @@
 !
 !     calculating the damping force and damping coefficient
 !
-      damp=elconloc(1)
+      if(kode.eq.2) then
+         damp=elconloc(1)
+      else
+         if(nmethod.ne.5) then
+            write(*,*) '*ERROR in dashdamp: the damping coefficient'
+            write(*,*) '       may depend on temperature and frequency'
+            write(*,*) '       only; the latter is only allowed for'
+            write(*,*) '       steady state dynamics calculations'
+            stop
+         endif
+         niso=int(plconloc(81))
+         do i=1,niso
+            xiso(i)=plconloc(2*i-1)
+            yiso(i)=plconloc(2*i)
+         enddo
+         call ident(xiso,time,niso,id)
+         if(id.eq.0) then
+            damp=yiso(1)
+         elseif(id.eq.niso) then
+            damp=yiso(niso)
+         else
+            damp=yiso(id)+(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))*
+     &          (time-xiso(id))
+         endif
+      endif
+c      write(*,*) 'dashdamp ',time,damp
 !     
       do i=1,3
          do j=1,3

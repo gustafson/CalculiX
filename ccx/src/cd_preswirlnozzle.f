@@ -43,6 +43,8 @@
 !
       real*8 ps2,pt1,ps2vpt1,cd      
 !
+      number=number
+!
       ps2vpt1=ps2/pt1
       call ident(cdxp,ps2vpt1,11,id)
       if(id.eq.0.6d0) then

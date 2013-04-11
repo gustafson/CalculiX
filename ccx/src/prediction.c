@@ -34,7 +34,7 @@ void prediction(double *uam, int *nmethod, double *bet, double *gam, double *dti
                int *ithermal, int *nk, double *veold, double *accold, double *v,
                int *iinc, int *idiscon, double *vold, int *nactdof){
 
-    int k;
+    int j,k;
     double dextrapol,scal1,scal2;
 
     uam[0]=0.;
@@ -45,32 +45,41 @@ void prediction(double *uam, int *nmethod, double *bet, double *gam, double *dti
 	scal2=(1.-*gam)**dtime;
 	
 	if(*ithermal<2){
-	    for(k=0;k<4**nk;++k){
-		dextrapol=*dtime*veold[k]+scal1*accold[k];
-		if((fabs(dextrapol)>uam[0])&&(nactdof[k]>0)) {uam[0]=fabs(dextrapol);}
-		v[k]=vold[k]+dextrapol;
-		veold[k]=veold[k]+scal2*accold[k];
-		accold[k]=0.;
+	    for(k=0;k<*nk;++k){
+		for(j=0;j<4;j++){
+		    dextrapol=*dtime*veold[4*k+j]+scal1*accold[4*k+j];
+		    if((fabs(dextrapol)>uam[0])&&(nactdof[4*k+j]>0)) {uam[0]=fabs(dextrapol);}
+		    v[5*k+j]=vold[5*k+j]+dextrapol;
+		    veold[4*k+j]=veold[4*k+j]+scal2*accold[4*k+j];
+		    accold[4*k+j]=0.;
+		}
 	    }
 	}else if(*ithermal==2){
-	    for(k=0;k<4**nk;k=k+4){
-		dextrapol=*dtime*veold[k];
+	    for(k=0;k<*nk;++k){
+		for(j=0;j<4;j++){
+		    v[5*k+j]=vold[5*k+j];
+		}
+	    }
+	    for(k=0;k<*nk;++k){
+		dextrapol=*dtime*veold[4*k];
 		if(fabs(dextrapol)>100.) dextrapol=100.*dextrapol/fabs(dextrapol);
-		if((fabs(dextrapol)>uam[1])&&(nactdof[k]>0)) {uam[1]=fabs(dextrapol);}
-		v[k]=vold[k]+dextrapol;
+		if((fabs(dextrapol)>uam[1])&&(nactdof[4*k]>0)) {uam[1]=fabs(dextrapol);}
+		v[5*k]+=dextrapol;
 	    }
 	}else{
-	    for(k=0;k<4**nk;++k){
-		dextrapol=*dtime*veold[k]+scal1*accold[k];
-		if((4*(k/4)==k)&&fabs(dextrapol)>100.) dextrapol=100.*dextrapol/fabs(dextrapol);
-		if(4*(k/4)==k){
-		    if((fabs(dextrapol)>uam[1])&&(nactdof[k]>0)) {uam[1]=fabs(dextrapol);}
-		}else{
-		    if((fabs(dextrapol)>uam[0])&&(nactdof[k]>0)) {uam[0]=fabs(dextrapol);}
+	    for(k=0;k<*nk;++k){
+		for(j=0;j<4;++j){
+		    dextrapol=*dtime*veold[4*k+j]+scal1*accold[4*k+j];
+		    if((j==0)&&fabs(dextrapol)>100.) dextrapol=100.*dextrapol/fabs(dextrapol);
+		    if(j==0){
+			if((fabs(dextrapol)>uam[1])&&(nactdof[4*k]>0)) {uam[1]=fabs(dextrapol);}
+		    }else{
+			if((fabs(dextrapol)>uam[0])&&(nactdof[4*k+j]>0)) {uam[0]=fabs(dextrapol);}
+		    }
+		    v[5*k+j]=vold[5*k+j]+dextrapol;
+		    veold[4*k+j]=veold[4*k+j]+scal2*accold[4*k+j];
+		    accold[4*k+j]=0.;
 		}
-		v[k]=vold[k]+dextrapol;
-		veold[k]=veold[k]+scal2*accold[k];
-		accold[k]=0.;
 	    }
 	}
     }
@@ -81,46 +90,55 @@ void prediction(double *uam, int *nmethod, double *bet, double *gam, double *dti
     else{
 	if(*iinc>1){
 	    if(*ithermal<2){
-		for(k=0;k<4**nk;++k){
-		    if(*idiscon==0){
-			dextrapol=*dtime*veold[k];
-			if((fabs(dextrapol)>uam[0])&&(nactdof[k]>0)) {uam[0]=fabs(dextrapol);}	
-			v[k]=vold[k]+dextrapol;
-		    }else{
-			v[k]=vold[k];
+		for(k=0;k<*nk;++k){
+		    for(j=0;j<4;++j){
+			if(*idiscon==0){
+			    dextrapol=*dtime*veold[4*k+j];
+			    if((fabs(dextrapol)>uam[0])&&(nactdof[4*k+j]>0)) {uam[0]=fabs(dextrapol);}	
+			    v[5*k+j]=vold[5*k+j]+dextrapol;
+			}else{
+			    v[5*k+j]=vold[5*k+j];
+			}
 		    }
 		}
 	    }else if(*ithermal==2){
-		for(k=0;k<4**nk;k=k+4){
+		for(k=0;k<*nk;++k){
+		    for(j=0;j<4;++j){
+			v[5*k+j]=vold[5*k+j];
+		    }
+		}
+		for(k=0;k<*nk;++k){
 		    if(*idiscon==0){
-			dextrapol=*dtime*veold[k];
+			dextrapol=*dtime*veold[4*k];
 			if(fabs(dextrapol)>100.) dextrapol=100.*dextrapol/fabs(dextrapol);
-			if((fabs(dextrapol)>uam[1])&&(nactdof[k]>0)) {uam[1]=fabs(dextrapol);}	
-			v[k]=vold[k]+dextrapol;
-		    }else{
-			v[k]=vold[k];
+			if((fabs(dextrapol)>uam[1])&&(nactdof[4*k]>0)) {uam[1]=fabs(dextrapol);}	
+			v[5*k]+=dextrapol;
 		    }
 		}
 	    }else{
-		for(k=0;k<4**nk;++k){
-		    if(*idiscon==0){
-			dextrapol=*dtime*veold[k];
-			if((4*(k/4)==k)&&fabs(dextrapol)>100.) dextrapol=100.*dextrapol/fabs(dextrapol);
-			if(4*(k/4)==k){
-			    if((fabs(dextrapol)>uam[1])&&(nactdof[k]>0)) {uam[1]=fabs(dextrapol);}
+		for(k=0;k<*nk;++k){
+		    for(j=0;j<4;++j){
+			if(*idiscon==0){
+			    dextrapol=*dtime*veold[4*k+j];
+			    if((j==0)&&fabs(dextrapol)>100.) dextrapol=100.*dextrapol/fabs(dextrapol);
+			    if(j==0){
+				if((fabs(dextrapol)>uam[1])&&(nactdof[4*k+j]>0)) {uam[1]=fabs(dextrapol);}
+			    }else{
+				if((fabs(dextrapol)>uam[0])&&(nactdof[4*k+j]>0)) {uam[0]=fabs(dextrapol);}
+			    }	
+			    v[5*k+j]=vold[5*k+j]+dextrapol;
 			}else{
-			    if((fabs(dextrapol)>uam[0])&&(nactdof[k]>0)) {uam[0]=fabs(dextrapol);}
-			}	
-			v[k]=vold[k]+dextrapol;
-		    }else{
-			v[k]=vold[k];
+			    v[5*k+j]=vold[5*k+j];
+			}
 		    }
 		}
 	    }
 	}
 	else{
-	    for(k=0;k<4**nk;++k){
-		v[k]=vold[k];
+	    for(k=0;k<*nk;++k){
+		for(j=0;j<4;++j){
+		    v[5*k+j]=vold[5*k+j];
+		}
 	    }
 	}
     }

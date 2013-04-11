@@ -29,7 +29,7 @@
 !     ISBN 0-900983-78-7
 !
       subroutine zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &     isothermal,kon,ipkon,R,kappa,voldgas)
+     &     isothermal,kon,ipkon,R,kappa,v)
 !
       implicit none
 !
@@ -40,7 +40,7 @@
       integer ielprop(*),nelem,iexp(2),i,j,ier,write1,iexp3(2),
      &     write2,nelem_ref,ipkon(*),kon(*),nelem0,nelem1,nelem2,node10,
      &     node20,nodem0,node11,node21,nodem1,node12,node22,nodem2,
-     &     iexpbr1(2) /11,11/,case
+     &     iexpbr1(2) /11,11/,case,node0,node1,node2
 !
       real*8 zeta,prop(*),lzd,reynolds,ereo,fa2za1,zetap,zeta0,
      &     lambda,thau,a1,a2,dh,l,a2za1,ldumm,dhdumm,ks,
@@ -49,10 +49,11 @@
      &     zetah,cd,cdu,km,Tt0,Ts0,Tt1,Ts1,Tt2,Ts2,
      &     rho0,rho1,rho2,V0,V1,v2,a0a1,a0a2,zetlin,lam10,lam20,pi,
      &     alpha1,alpha2,R,kappa,ang1s,ang2s,cang1s,cang2s,
-     &     voldgas(0:3,*),node0,node1,node2,V1V0,V2V0,z1_60,z1_90,
+     &     v(0:4,*),V1V0,V2V0,z1_60,z1_90,
      &     z2_60,z2_90,afakt,V2V0L,kb,ks2,a2a0,Z90LIM11,Z90LIM51,
      &     lam11,lam12,lam21,lam22,W2W0,W1W0,dh0,dh2,hq,z2d390,
-     &     z1p090,z90,z60,pt0,pt2,pt1,xflow,M0,M1,M2,W0W1,W0W2
+     &     z1p090,z90,z60,pt0,pt2,pt1,xflow,M0,M1,M2,W0W1,W0W2,
+     &     xflow0,xflow1,xflow2,Qred_0, Qred_1, Qred_2,Qred_crit
 !
 !     THICK EDGED ORIFICE IN STRAIGHT CONDUIT (L/DH > 0.015)
 !     I.E. IDEL' CHIK (SECTION III PAGE 140)
@@ -395,7 +396,7 @@
      & .33, .45, .50, .52, .59, .66, .64, .62, .58, .44, .27, .08,-.34,
      & .50,1.00,1.04,1.06,1.16,1.25,1.25,1.22,1.10, .88, .70, .45,0.  /
 !
-C     table to check the location of V2V0 in Z90TAB 
+!     table to check the location of V2V0 in Z90TAB 
 !
          real*8 Z90LIMX (5),Z90LIMY(5)
          data Z90LIMX    
@@ -765,11 +766,11 @@ c         write(*,*)'MILLER'
          a2=prop(ielprop(nelem)+2)
 !     Hydraulic diameter
          dh=prop(ielprop(nelem)+3)
-         if((dh.eq.0).and.(A1.le.A2)) then
-            dh=dsqrt(4d0*A1/Pi)
-         elseif((dh.eq.0).and.(A1.gt.A2)) then
-            dh=dsqrt(4d0*A2/Pi)
-         endif
+!         if((dh.eq.0).and.(A1.le.A2)) then
+!            dh=dsqrt(4d0*A1/Pi)
+!         elseif((dh.eq.0).and.(A1.gt.A2)) then
+!            dh=dsqrt(4d0*A2/Pi)
+!         endif
 !     Radius:
          rad=prop(ielprop(nelem)+4)
 !     angle delta:
@@ -882,9 +883,6 @@ c         write(*,*)'MILLER'
 !     Length
          l=prop(ielprop(nelem)+4)
 !     Isotermal
-c         if (prop(ielprop(nelem_ref)+5).eq.1) then
-c            isothermal=.true.
-c         endif
 !
          lzd=dabs(l)/dh
 !     
@@ -964,37 +962,62 @@ c         endif
 !     
 !     density
 !     
+         qred_crit=dsqrt(kappa/R)*
+     &        (1+0.5d0*(kappa-1))**(-0.5d0*(kappa+1)/(kappa-1))
+         write(*,*) 'qred_crit',qred_crit
+!
          case=0
-
-         Tt0=voldgas(0,node0)
-         xflow=voldgas(1,nodem0)
-         pt0=voldgas(2,node0)
+!
+         Tt0=v(0,node0)
+         xflow=v(1,nodem0)
+         pt0=v(2,node0)
+!
+         Qred_0=dabs(xflow0)*dsqrt(Tt0)/(A0*pt0)
+         if(Qred_0.gt.qred_crit)
+     &        then
+            xflow0=qred_crit*(A0*pt0)/dsqrt(Tt0)
+         endif
+!
          call ts_calc(xflow,Tt0,Pt0,kappa,r,a0,Ts0,case)
          M0=dsqrt(2/(kappa-1)*(Tt0/Ts0-1))
 !
-         rho0=pt0/(R*Tt0)*(Tt0/Ts0)**(-1/((kappa-1)))
+         rho0=pt0/(R*Tt0)*(Tt0/Ts0)**(-1/(kappa-1))
 !
-         Tt1=voldgas(0,node1)
-         xflow=voldgas(1,nodem1)
-         pt1=voldgas(2,node0)
+         Tt1=v(0,node1)
+         xflow=v(1,nodem1)
+         pt1=v(2,node0)
+!
+         Qred_1=dabs(xflow1)*dsqrt(Tt1)/(A1*pt1)
+!
+         if(Qred_1.gt.qred_crit)
+     &        then
+            xflow1=qred_crit*(A1*pt1)/dsqrt(Tt1)
+         endif
+!
          call ts_calc(xflow,Tt1,Pt1,kappa,r,a1,Ts1,case)
          M1=dsqrt(2/(kappa-1)*(Tt1/Ts1-1))
 !
-         rho1=pt1/(R*Tt1)*(Tt1/Ts1)**(-1/((kappa-1)))
+         rho1=pt1/(R*Tt1)*(Tt1/Ts1)**(-1/(kappa-1))
 !     
-         Tt2=voldgas(0,node0)
-         xflow=voldgas(1,nodem2)
-         pt2=voldgas(2,node0)
+         Tt2=v(0,node0)
+         xflow=v(1,nodem2)
+         pt2=v(2,node0)
+!
+         Qred_2=dabs(xflow2)*dsqrt(Tt2)/(A2*pt2)
+!
+         if(Qred_2.gt.qred_crit) then
+            xflow2=qred_crit*(A2*pt2)/dsqrt(Tt2)
+         endif
+!
          call ts_calc(xflow,Tt2,Pt2,kappa,r,a2,Ts2,case)
          M2=dsqrt(2/(kappa-1)*(Tt2/Ts2-1))
-         rho2=pt2/(R*Tt2)*(Tt2/Ts2)**(-1/((kappa-1)))
-!     
+         rho2=pt2/(R*Tt2)*(Tt2/Ts2)**(-1/(kappa-1))
 !     
 !     volumic flows (positive)
 !     
-         V0=dabs(voldgas(1,nodem0)/rho0)
-         V1=dabs(voldgas(1,nodem1)/rho1)
-         V2=dabs(voldgas(1,nodem2)/rho2)
+         V0=dabs(v(1,nodem0)/rho0)
+         V1=dabs(v(1,nodem1)/rho1)
+         V2=dabs(v(1,nodem2)/rho2)
 !
          V1V0=V1/V0
          V2V0=V2/V0

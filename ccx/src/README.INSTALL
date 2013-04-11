@@ -1,25 +1,29 @@
 This is a short overview of the installation procedure of CalculiX CrunchiX
-Version 1.7
+Version 1.8
 
 ***************************************************************************
 
 A. IF YOU WOULD LIKE TO GENERATE THE EXECUTABLE FROM SCRATCH:
 
-1. copy ccx_1.7.src.tar.bz2, ccx_1.7.doc.tar.bz2,
-   ccx_1.7.test.tar.bz2 and ccx_1.7.README.INSTALL to
+1. copy ccx_1.8.src.tar.bz2, ccx_1.8.doc.tar.bz2,
+   ccx_1.8.test.tar.bz2 and ccx_1.8.README.INSTALL to
    directory /usr/local
 
-2. bunzip2 and untar ccx_1.7.src.tar.bz2, ccx_1.7.doc.tar.bz2 and
- ccx_1.7.test.tar.bz2; the following directory tree is generated:
- /usr/local/CalculiX/ccx_1.7/src
- /usr/local/CalculiX/ccx_1.7/doc
- /usr/local/CalculiX/ccx_1.7/test
+2. bunzip2 and untar ccx_1.8.src.tar.bz2, ccx_1.8.doc.tar.bz2 and
+ ccx_1.8.test.tar.bz2; the following directory tree is generated:
+ /usr/local/CalculiX/ccx_1.8/src
+ /usr/local/CalculiX/ccx_1.8/doc
+ /usr/local/CalculiX/ccx_1.8/test
 
 3. get SPOOLES.2.2 and ARPACK from the internet
    (e.g.
    http://netlib.bell-labs.com/netlib/linalg/spooles/spooles.2.2.html
    and http://www.caam.rice.edu/software/ARPACK/) and install them in
    /usr/local/SPOOLES.2.2 and /urs/local/ARPACK.
+
+   Note: makefile ~/SPOOLES.2.2/Tree/src/makeGlobalLib contains an
+         error: file drawTree.c does not exist and should be replaced
+         by draw.c
 
    If you would like to experiment with TAUCS, or if you have
    access to the SGI scientific library, continue reading. Else, go to
@@ -28,7 +32,7 @@ A. IF YOU WOULD LIKE TO GENERATE THE EXECUTABLE FROM SCRATCH:
    If you like to use TAUCS as solver, install TAUCS in /usr/local/taucs
    (and lapack, blas and metis in /usr/local/taucs/external/lib/linux)
    and change the Makefile in
-   /usr/local/CalculiX/ccx_1.7/src as follows:
+   /usr/local/CalculiX/ccx_1.8/src as follows:
    a) add "-I ../../../taucs/src -I ../../../taucs/build/linux -DTAUCS" to
       the CFLAGS (without double quotes)
    b) add 
@@ -46,10 +50,10 @@ A. IF YOU WOULD LIKE TO GENERATE THE EXECUTABLE FROM SCRATCH:
    changed in file tau.c (for instance the location of the scratch file).
 
    If you have access to the SGI scientific library, change the Makefile in
-   /usr/local/CalculiX/ccx_1.7/src as follows:
+   /usr/local/CalculiX/ccx_1.8/src as follows:
    a) add "-DSGI" to the CFLAGS (without double quotes)
    b) add -lscs to 
-	g77 -Wall -O  -o $@ $(OCCXMAIN) ccx_1.7.a  $(LIBS)
+	g77 -Wall -O  -o $@ $(OCCXMAIN) ccx_1.8.a  $(LIBS)
    The linear equation solver in the SGI library is about twice as
    fast as SPOOLES and comes in an out-of-core version as well. For
    details look at file sgi.c. The out-of-core is automatically
@@ -63,7 +67,7 @@ A. IF YOU WOULD LIKE TO GENERATE THE EXECUTABLE FROM SCRATCH:
 
    If you do not want to link SPOOLES and/or ARPACK, delete -DSPOOLES
    and/or -DARPACK in the CFLAGS in the Makefile in
-   /usr/local/CalculiX/ccx_1.7/src.
+   /usr/local/CalculiX/ccx_1.8/src.
 
    There is a small Perl script in the distribution in file date.pl. Its 
    purpose is to insert the date you made CalculiX CrunchiX into the source
@@ -75,10 +79,10 @@ A. IF YOU WOULD LIKE TO GENERATE THE EXECUTABLE FROM SCRATCH:
    this line to start with a TAB, no blanks, so be careful if you change 
    that line.
 
-4. change to /usr/local/CalculiX/ccx_1.7/src and type make;
-   ccx_1.7 is made; put the executable in /usr/local/bin. 
+4. change to /usr/local/CalculiX/ccx_1.8/src and type make;
+   ccx_1.8 is made; put the executable in /usr/local/bin. 
    Make sure the file access permissions are set by typing  
-   "chmod a+rx ccx_1.7" in directory
+   "chmod a+rx ccx_1.8" in directory
    /usr/local bin. Make sure /usr/local/bin is in your $PATH variable
    (check by typing "echo $PATH". If /usr/local/bin is not in the
    path, add it in your start script (e.g. .bashrc) by adding a line
@@ -105,17 +109,17 @@ CFLAGS = -DARCH="HP"
 FFLAGS = +e +es -C +A3 -K +ppu -g
 LD = c89
 
-5. change to /usr/local/CalculiX/ccx_1.7/doc and type "latex
+5. change to /usr/local/CalculiX/ccx_1.8/doc and type "latex
    ccx.tex" at least three times, followed by "dvips ccx.dvi". A
    postscript version of the documentation is made. Type "mv ccx.ps
-   ccx_1.7.ps" to get the version attached. If available, use
+   ccx_1.8.ps" to get the version attached. If available, use
    latex2html to create a html version by typing "latex2html ccx.tex".
    A new directory is generated with the name
-   /usr/local/CalculiX/ccx_1.7/doc/ccx. This way it can be
+   /usr/local/CalculiX/ccx_1.8/doc/ccx. This way it can be
    called from CalculiX GraphiX. 
 
-6. change to /usr/local/CalculiX/ccx_1.7/test, and type
-   " ccx_1.7 beamp"; check whether a beamp.dat file has been
+6. change to /usr/local/CalculiX/ccx_1.8/test, and type
+   " ccx_1.8 beamp"; check whether a beamp.dat file has been
    created and compare with beamp.dat.ref. Minor differences can occur
    depending on the machine type you are using. Check whether a
    beamp.frd file has been created and look at the results with
@@ -127,32 +131,32 @@ LD = c89
 *****************************************************************************
 
 B. IF YOU WOULD LIKE TO RUN THE EXECUTABLE YOU COPIED FROM THE
-HOMEPAGE (ccx_1.7.tar.bz2):
+HOMEPAGE (ccx_1.8.tar.bz2):
 
-1. copy ccx_1.7.tar.bz2 to /usr/local. Bunzip2 and untar the
-   executable; the file ccx_1.7 is
-   generated and put into /usr/local/CalculiX/ccx_1.7/src. Move
+1. copy ccx_1.8.tar.bz2 to /usr/local. Bunzip2 and untar the
+   executable; the file ccx_1.8 is
+   generated and put into /usr/local/CalculiX/ccx_1.8/src. Move
    the executable to /usr/local/bin. 
 
-2. to run examples, get ccx_1.7.test.tar.bz2 from the homepage
+2. to run examples, get ccx_1.8.test.tar.bz2 from the homepage
    and follow the instructions under A.
 
-3. to get the documentation, get ccx_1.7.ps.tar.bz2 and
-   ccx_1.7.htm.tar.bz2, copy them to /usr/local and bunzip2 and
+3. to get the documentation, get ccx_1.8.ps.tar.bz2 and
+   ccx_1.8.htm.tar.bz2, copy them to /usr/local and bunzip2 and
    untar them. Alternatively, create the documentation from the tex
-   original ccx_1.7.doc.tar.bz2 and proceed as explained under A. 
+   original ccx_1.8.doc.tar.bz2 and proceed as explained under A. 
 
 ******************************************************************************
 
 If you like a slower pace, here some more information:
 
-You should have obtained four files: ccx_1.7.src.tar.bz2,
-ccx_1.7.doc.tar.bz2, ccx_1.7.htm.tar.bz2,
-ccx_1.7.test.tar.bz2 and the present file
-ccx_1.7.README.INSTALL. By typing "bunzip2 ccx_1.7.src.tar.bz2"
-and "tar -xvf ccx_1.7.src.tar" you extract the source code and some
-other useful files into a subdirectory ./CalculiX/ccx_1.7/src of
-the directory in which you copied ccx_1.7.src.tar.bz2, preferably /usr/local.
+You should have obtained four files: ccx_1.8.src.tar.bz2,
+ccx_1.8.doc.tar.bz2, ccx_1.8.htm.tar.bz2,
+ccx_1.8.test.tar.bz2 and the present file
+ccx_1.8.README.INSTALL. By typing "bunzip2 ccx_1.8.src.tar.bz2"
+and "tar -xvf ccx_1.8.src.tar" you extract the source code and some
+other useful files into a subdirectory ./CalculiX/ccx_1.8/src of
+the directory in which you copied ccx_1.8.src.tar.bz2, preferably /usr/local.
 
 The source files include .c, .f and .h files.
 
@@ -181,21 +185,21 @@ for ARPACK: http://www.caam.rice.edu/software/ARPACK/
 The current version of CalculiX assumes you install and use the serial
 version of  SPOOLES 2.2 and the serial double precision version of
 ARPACK. The Makefile of CalculiX assumes that, if CalculiX is
-installed in ./CalculiX/ccx_1.7/src, SPOOLES 2.2 is installed in
+installed in ./CalculiX/ccx_1.8/src, SPOOLES 2.2 is installed in
 ./SPOOLES.2.2 and ARPACK in ./ARPACK (and their
 subdirectories). Change the Makefile if you wish not to comply with
 this  procedure, or if you want to use TAUCS or the SGI solver (see
 A). This also applies if you want to suppress the renumbering (see A).
 
-The file ccx_1.7.doc.tar.bz2 can be unzipped and untarred in a
-similar way as ccx_1.7.src.tar.bz2. The files are expanded in a
-subdirectory ./CalculiX/ccx_1.7/doc/, and contain a User's
-Manual in the form of the tex-file ccx_1.7.tex, in which several
+The file ccx_1.8.doc.tar.bz2 can be unzipped and untarred in a
+similar way as ccx_1.8.src.tar.bz2. The files are expanded in a
+subdirectory ./CalculiX/ccx_1.8/doc/, and contain a User's
+Manual in the form of the tex-file ccx_1.8.tex, in which several
 *.eps and *.ps pictures are included.
 
-The file ccx_1.7.test.tar.bz2 can be unzipped and untarred in a
-similar way as ccx_1.7.src.tar.bz2. The files are expanded in a
-subdirectory ./CalculiX/ccx_1.7/test/, and contain the input
+The file ccx_1.8.test.tar.bz2 can be unzipped and untarred in a
+similar way as ccx_1.8.src.tar.bz2. The files are expanded in a
+subdirectory ./CalculiX/ccx_1.8/test/, and contain the input
 files (*.inp) and result files (*.dat.ref) of several small sample
 problems, each of them testing a specific property of
 CalculiX. Running the script "compare" runs all problems and compares
@@ -210,9 +214,9 @@ generated by a -g version of the program).
 
 Summarizing, after unpacking the above .tar.bz2 files, you obtain the
 following directory structure:
-./CalculiX/ccx_1.7/src
-./CalculiX/ccx_1.7/doc
-./CalculiX/ccx_1.7/test
+./CalculiX/ccx_1.8/src
+./CalculiX/ccx_1.8/doc
+./CalculiX/ccx_1.8/test
 SPOOLES.2.2 and ARPACK are assumed to be in
 ./SPOOLES.2.2
 ./ARPACK

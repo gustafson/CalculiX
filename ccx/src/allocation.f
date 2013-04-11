@@ -20,7 +20,7 @@
      &  nset,nalset,nmat,ntmat,npmat,norien,nam,nprint,
      &  mint,ntrans,set,meminset,rmeminset,ncs,
      &  namtot,ncmat,memmpc,ne1d,ne2d,nflow,jobnamec,irstrt,
-     &  ithermal,nener,nstate,irestartstep,inpc,nline,ipoinp,inp,
+     &  ithermal,nener,nstate,irestartstep,inpc,ipoinp,inp,
      &  ntie,nbody,nprop,ipoinpc)
 !
 !     calculates a conservative estimate of the size of the 
@@ -35,17 +35,18 @@
 !
       implicit none
 !
-      logical igen,lin
+      logical igen,lin,frequency,isochoric
 !
       character*1 selabel,sulabel,inpc(*)
       character*5 llab
       character*8 label
       character*20 mpclabel
-      character*81 set(*),noset,elset,leftset,rightset,noelset
+      character*81 set(*),noset,elset,leftset,rightset,noelset,
+     &  surface
       character*132 jobnamec(*),textpart(16)
 !
       integer nload,nforc,nboun,nk,ne,nmpc,nset,nalset,
-     &  nmat,ntmat,npmat,norien,nam,nprint,kode,nline,iline,
+     &  nmat,ntmat,npmat,norien,nam,nprint,kode,iline,
      &  istat,n,key,meminset(*),i,js,inoset,mint,ii,ipol,inl,
      &  ibounstart,ibounend,ibound,ntrans,ntmatl,npmatl,ityp,l,
      &  ielset,nope,nteller,nterm,ialset(16),ncs,rmeminset(*),
@@ -53,9 +54,9 @@
      &  maxrmeminset,ne1d,ne2d,necper,necpsr,necaxr,nesr,
      &  neb32,nn,nflow,nradiate,irestartread,irestartstep,icntrl,
      &  irstrt,ithermal,nener,nstate,ipoinp(2,*),inp(3,*),
-     &  nentries,ntie,nbody,nprop,ipoinpc(0:*)
+     &  nentries,ntie,nbody,nprop,ipoinpc(0:*),idepvar
 !
-      real*8 temperature,tempact
+      real*8 temperature,tempact,xfreq
 !
 !     initialisation of ipoinp
 !
@@ -214,11 +215,20 @@
                ntmatl=ntmatl+1
                ntmat=max(ntmatl,ntmat)
             enddo
+         elseif(textpart(1)(1:15).eq.'*CONTACTDAMPING') then
+            ncmat=max(5,ncmat)
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:12).eq.'*CONTACTPAIR') then
             ntie=ntie+1
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:6).eq.'*CREEP') then
+            if(ityp.eq.2) then
+               nstate=max(nstate,13)
+            else
+               nstate=max(nstate,7)
+            endif
             ncmat=max(9,ncmat)
             npmat=max(2,npmat)
             if(ncmat.ge.9) ncmat=max(19,ncmat)
@@ -251,21 +261,70 @@
             nk=nk+1
             nmpc=nmpc+4*ncs
             memmpc=memmpc+100*ncs
-c            nmpc=nmpc+4*ncs
-c            memmpc=memmpc+20*ncs
-            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &           ipoinp,inp,ipoinpc)
+            ntrans=ntrans+1
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+            enddo
+c            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+c     &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:8).eq.'*DASHPOT') then
             nmat=nmat+1
-            ntmatl=0
-            ncmat=max(2,ncmat)
-            do
-               call getnewline(inpc,textpart,istat,n,key,iline,ipol,
-     &              inl,ipoinp,inp,ipoinpc)
-               if((istat.lt.0).or.(key.eq.1)) exit
-               ntmatl=ntmatl+1
-               ntmat=max(ntmatl,ntmat)
-            enddo
+            frequency=.false.
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+            if((istat.lt.0).or.(key.eq.1)) return
+            read(textpart(2)(1:20),'(f20.0)',iostat=istat)
+     &           xfreq
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(xfreq.gt.0.d0) frequency=.true.
+            iline=iline-1
+            if(.not.frequency) then
+               ntmatl=0
+               ncmat=max(2,ncmat)
+               do
+                  call getnewline(inpc,textpart,istat,n,key,iline,ipol,
+     &                 inl,ipoinp,inp,ipoinpc)
+                  if((istat.lt.0).or.(key.eq.1)) exit
+                  ntmatl=ntmatl+1
+                  ntmat=max(ntmatl,ntmat)
+               enddo
+            else
+               ntmatl=0
+               do
+                  call getnewline(inpc,textpart,istat,n,key,iline,ipol,
+     &                 inl,ipoinp,inp,ipoinpc)
+                  if((istat.lt.0).or.(key.eq.1)) exit
+                  read(textpart(3)(1:20),'(f20.0)',iostat=istat) 
+     &                 temperature
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(ntmatl.eq.0) then
+                     npmatl=0
+                     ntmatl=ntmatl+1
+                     ntmat=max(ntmatl,ntmat)
+                     tempact=temperature
+                  elseif(temperature.ne.tempact) then
+                     npmatl=0
+                     ntmatl=ntmatl+1
+                     ntmat=max(ntmatl,ntmat)
+                     tempact=temperature
+                  endif
+                  npmatl=npmatl+1
+                  npmat=max(npmatl,npmat)
+               enddo
+               if(ncmat.ge.9) ncmat=max(19,ncmat)
+            endif
+c            nmat=nmat+1
+c            ntmatl=0
+c            ncmat=max(2,ncmat)
+c            do
+c               call getnewline(inpc,textpart,istat,n,key,iline,ipol,
+c     &              inl,ipoinp,inp,ipoinpc)
+c               if((istat.lt.0).or.(key.eq.1)) exit
+c               ntmatl=ntmatl+1
+c               ntmat=max(ntmatl,ntmat)
+c            enddo
          elseif(textpart(1)(1:22).eq.'*DEFORMATIONPLASTICITY') then
             ncmat=max(5,ncmat)
             ntmatl=0
@@ -275,6 +334,14 @@ c            memmpc=memmpc+20*ncs
                if((istat.lt.0).or.(key.eq.1)) exit
                ntmatl=ntmatl+1
                ntmat=max(ntmatl,ntmat)
+            enddo
+         elseif(textpart(1)(1:7).eq.'*DEPVAR') then
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+               read(textpart(1)(1:10),'(i10)',iostat=istat) idepvar
+               nstate=max(nstate,idepvar)
             enddo
          elseif((textpart(1)(1:6).eq.'*DLOAD').or.
      &           (textpart(1)(1:6).eq.'*DFLUX').or.
@@ -380,6 +447,7 @@ c            memmpc=memmpc+20*ncs
          elseif((textpart(1)(1:8).eq.'*ELEMENT').and.
      &          (textpart(1)(1:14).ne.'*ELEMENTOUTPUT')) then
             ielset=0
+            isochoric=.false.
 !
             loop1: do i=2,n
                if(textpart(i)(1:6).eq.'ELSET=') then
@@ -408,32 +476,44 @@ c            memmpc=memmpc+20*ncs
                      label(1:7)=label(2:8)
                      label(8:8)=' '
                   endif
-                  if(label.eq.'C3D20   ') then
+                  if((label.eq.'C3D20   ').or.
+     &               (label.eq.'F3D20   ')) then
                      mint=max(mint,27)
                      nope=20
-                  elseif(label(1:8).eq.'C3D20R  ') then
+                  elseif((label(1:8).eq.'C3D20R  ').or.
+     &                   (label(1:8).eq.'F3D20R  ')) then
                      mint=max(mint,8)
                      nope=20
-                  elseif(label.eq.'C3D8R   ') then
+                  elseif(label(1:8).eq.'C3D20RI ') then
+                     mint=max(mint,8)
+                     nope=20
+                     isochoric=.true.
+                  elseif((label.eq.'C3D8R   ').or.
+     &                   (label.eq.'F3D8R   ')) then
                      mint=max(mint,1)
                      nope=8
-                  elseif(label.eq.'C3D10   ') then
+                  elseif((label.eq.'C3D10   ').or.
+     &                   (label.eq.'F3D10   ')) then
                      mint=max(mint,4)
                      nope=10
-                  elseif(label.eq.'C3D4    ') then
+                  elseif((label.eq.'C3D4    ').or.
+     &                   (label.eq.'F3D4    ')) then
                      mint=max(mint,1)
                      nope=4
-                  elseif(label.eq.'C3D15   ') then
+                  elseif((label.eq.'C3D15   ').or.
+     &                   (label.eq.'F3D15   ')) then
                      mint=max(mint,9)
                      nope=15
-                  elseif(label.eq.'C3D6    ') then
+                  elseif((label.eq.'C3D6    ').or.
+     &                   (label.eq.'F3D6    ')) then
                      mint=max(mint,2)
                      nope=6
                   elseif((label.eq.'CPE8R   ').or.
      &                    (label.eq.'CPS8R   ').or.
      &                    (label.eq.'CAX8R   ').or.
      &                    (label.eq.'S8R     ').or.
-     &                    (label.eq.'C3D8    ')) then
+     &                    (label.eq.'C3D8    ').or.
+     &                    (label.eq.'F3D8    ')) then
                      mint=max(mint,8)
                      nope=8
                   elseif((label.eq.'CPE8    ').or.
@@ -504,6 +584,16 @@ c            memmpc=memmpc+20*ncs
                if(ielset.eq.1) then
                   meminset(js)=meminset(js)+1
                   rmeminset(js)=rmeminset(js)+1
+               endif
+!
+!              up to 8 new mpc's with 22 terms in each mpc
+!              (21 = 7 nodes x 3 dofs + inhomogeneous term)
+!
+               if(isochoric) then
+                  nmpc=nmpc+8
+                  nk=nk+8
+                  nboun=nboun+8
+                  memmpc=memmpc+176
                endif
             enddo loop2
          elseif((textpart(1)(1:5).eq.'*NSET').or.
@@ -634,6 +724,10 @@ c            memmpc=memmpc+20*ncs
      &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:13).eq.'*FLUIDSECTION') then
             nprop=nprop+1
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+         elseif(textpart(1)(1:9).eq.'*FRICTION') then
+            ncmat=max(7,ncmat)
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:13).eq.'*HYPERELASTIC') then
@@ -854,6 +948,11 @@ c            memmpc=memmpc+20*ncs
                if((istat.lt.0).or.(key.eq.1)) exit
             enddo
          elseif(textpart(1)(1:8).eq.'*PLASTIC') then
+            if(ityp.eq.2) then
+               nstate=max(nstate,13)
+            else
+               nstate=max(nstate,14)
+            endif
             ntmatl=0
             do
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -877,6 +976,38 @@ c            memmpc=memmpc+20*ncs
                npmat=max(npmatl,npmat)
             enddo
             if(ncmat.ge.9) ncmat=max(19,ncmat)
+         elseif(textpart(1)(1:19).eq.'*PRE-TENSIONSECTION') then
+            do i=2,n
+               if(textpart(i)(1:8).eq.'SURFACE=') then
+                  surface=textpart(i)(9:88)
+                  ipos=index(surface,' ')
+                  surface(ipos:ipos)='T'
+                  exit
+               endif
+            enddo
+            do i=1,nset
+               if(set(i).eq.surface) then
+!
+!                 worst case: 8 nodes per element face
+!
+                  nk=nk+8*meminset(i)
+!
+!                 2 MPC's per node perpendicular to tension direction
+!                 + 1 MPC in tension direction
+!                  
+                  nmpc=nmpc+16*meminset(i)+1
+!
+!                 6 terms per MPC perpendicular to tension direction
+!                 + 6 terms * # of nodes +1 parallel to tension
+!                 direction
+!
+                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
+                  exit
+!
+               endif
+            enddo
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:8).eq.'*RADIATE') then
             nam=nam+2
             namtot=namtot+2
@@ -1062,6 +1193,10 @@ c                        rmeminset(nset)=rmeminset(nset)+rmeminset(i)
                   rmeminset(nset)=rmeminset(nset)+1
                endif
             enddo
+         elseif(textpart(1)(1:16).eq.'*SURFACEBEHAVIOR') then
+            ncmat=max(2,ncmat)
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:19).eq.'*SURFACEINTERACTION') then
             nmat=nmat+1
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

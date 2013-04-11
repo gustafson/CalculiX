@@ -24,6 +24,8 @@
 !
       implicit none
 !
+      logical user
+!
       character*1 inpc(*)
       character*80 amname(*)
       character*132 textpart(16)
@@ -33,6 +35,8 @@
      &  ipoinpc(0:*)
 !
       real*8 amta(2,*),x,y
+!
+      user=.false.
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in amplitudes: *AMPLITUDE should be'
@@ -60,6 +64,10 @@
             endif
          elseif(textpart(i)(1:14).eq.'TIME=TOTALTIME') then
             namta(3,nam)=-nam
+         elseif(textpart(i)(1:4).eq.'USER') then
+            namta(1,nam)=0
+            namta(2,nam)=0
+            user=.true.
          endif
       enddo
 !
@@ -69,12 +77,14 @@
          call inputerror(inpc,ipoinpc,iline)
       endif
 !
-      if(nam.eq.1) then
-         namtot=0
-      else
-         namtot=namta(2,nam-1)
+      if(.not.user) then
+         if(nam.eq.1) then
+            namtot=0
+         else
+            namtot=namta(2,nam-1)
+         endif
+         namta(1,nam)=namtot+1
       endif
-      namta(1,nam)=namtot+1
 !
       do
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

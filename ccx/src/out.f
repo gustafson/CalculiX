@@ -20,7 +20,7 @@
      &  kode,filab,een,t1,fn,time,epn,ielmat,matname,enern,xstaten,
      &  nstate_,istep,iinc,iperturb,ener,mint_,output,ithermal,qfn,
      &  mode,noddiam,trab,inotr,ntrans,orab,ielorien,norien,description,
-     &  ipneigh,neigh,sti)
+     &  ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,ngraph)
 !
 !     stores the results in frd format
 !
@@ -34,11 +34,12 @@
 !
       integer kon(*),inum(*),nk,ne,nmethod,kode,ipkon(*),mode,noddiam,
      &  ielmat(*),nstate_,istep,iinc,iperturb,mint_,ithermal,inotr(2,*),
-     &  ntrans,ielorien(*),norien
+     &  ntrans,ielorien(*),norien,ngraph
 !
-      real*8 co(3,*),v(0:3,*),stn(6,*),een(6,*),t1(*),fn(0:3,*),time,
+      real*8 co(3,*),v(0:4,*),stn(6,*),een(6,*),t1(*),fn(0:3,*),time,
      &  epn(*),enern(*),xstaten(nstate_,*),ener(mint_,*),qfn(3,*),
-     &  trab(7,*),orab(7,*)
+     &  trab(7,*),orab(7,*),vr(0:4,*),vi(0:4,*),stnr(6,*),
+     &  stni(6,*),pi,vmax(0:3,*),stnmax(0:6,*)
 !
       integer ipneigh(*),neigh(2,*)
       real*8 sti(6,mint_,*)
@@ -48,7 +49,8 @@
      &        kode,filab,een,t1,fn,time,epn,ielmat,matname,enern,
      &        xstaten,nstate_,istep,iinc,ithermal,qfn,mode,noddiam,
      &        trab,inotr,ntrans,orab,ielorien,norien,description,
-     &        ipneigh,neigh,mint_,sti)
+     &        ipneigh,neigh,mint_,sti,vr,vi,stnr,stni,vmax,
+     &        stnmax,ngraph)
       else
          if(nmethod.ne.0) then
             call onf(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,

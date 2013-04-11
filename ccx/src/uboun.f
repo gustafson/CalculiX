@@ -45,7 +45,7 @@
       implicit none
 !
       integer kstep,kinc,node,idof 
-      real*8 boun,time(2),coords(3),vold(0:3,*)
+      real*8 boun,time(2),coords(3),vold(0:4,*)
 !
       boun=10.d0
 !

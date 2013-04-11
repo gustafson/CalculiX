@@ -22,7 +22,7 @@
      &     kontri,ntri,nloadtr,tarea,tenv,physcon,erad,f,
      &     dist,idist,area,ithermal,iinc,iit,
      &     cs,mcs,inocs,ntrit,nk,fenv,istep,dtime,ttime,
-     &     time,iviewfile,jobnamef)
+     &     time,iviewfile,jobnamef,xloadold,reltime,nmethod)
 !     
       implicit none
 !     
@@ -40,11 +40,11 @@
      &     i1,j1,istart,iend,jstart,jend,imin,imid,imax,mcs,inocs(*),
      &     k1,kflag,idist(*),ndist,i2,i3,ng,idi,idj,ntri,
      &     ithermal,iinc,iit,ix,iy,ntrit,jj,is,m,jmod,nkt,
-     &     icntrl,imag,nk,istep,jltyp,nfield,nonzero
+     &     icntrl,imag,nk,istep,jltyp,nfield,nonzero,nmethod
 !     
       real*8 ac(ntm,*),bc(ntm,1),xloadact(2,*),h(2),
      &     xl2(0:3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
-     &     vold(0:3,*),co(3,*),shp2(4,8),xs2(3,2),
+     &     vold(0:4,*),co(3,*),shp2(4,8),xs2(3,2),
      &     pmid(3,*),e3(4,*),e1(3,*),e2(3,*),p1(3),p2(3),p3(3),
      &     areamean,tarea(*),tenv(*),x,y,cs(17,*),
      &     erad(*),fenv(*),e,ec,physcon(3),yymin,yymax,xxmin,
@@ -52,15 +52,7 @@
      &     xx(3),yy(3),ftij,f(ntr,*),dint,cospsij,dir(3),
      &     dirloc(3),dist(*),area(*),dd,p21(3),p32(3),
      &     totarea,fn,stn,qfn,een,t(3),sidemean,tvar(2),field,
-     &     dtime,ttime,time,areaj
-!     
-      real*8 gauss2d1(2,1),gauss2d2(2,4),gauss2d3(2,9),gauss2d4(2,1),
-     &     gauss2d5(2,3),gauss3d1(3,1),gauss3d2(3,8),gauss3d3(3,27),
-     &     gauss3d4(3,1),gauss3d5(3,4),gauss3d6(3,15),gauss3d7(3,2),
-     &     gauss3d8(3,9),gauss3d9(3,18),weight2d1(1),weight2d2(4),
-     &     weight2d3(9),weight2d4(1),weight2d5(3),weight3d1(1),
-     &     weight3d2(8),weight3d3(27),weight3d4(1),weight3d5(4),
-     &     weight3d6(15),weight3d7(2),weight3d8(9),weight3d9(18)
+     &     dtime,ttime,time,areaj,xloadold(2,*),reltime
 !     
       include "gauss.f"
 !     
@@ -81,8 +73,8 @@
      &     4,6,3,1,12,15,9,13/
       data iflag /2/
 !     
-!     tvar(1)=time
-!     tvar(2)=ttime+dtime
+      tvar(1)=time
+      tvar(2)=ttime+dtime
 !     
 !     cavity radiation!            
 !     
@@ -204,6 +196,7 @@ c     do i=2,is
             if(i1.eq.0) cycle
             i2=kontri(2,i)
             i3=kontri(3,i)
+            write(*,*) 'triangle ',i,i1,i2,i3
             do j=1,3
                p1(j)=co(j,i1)+vold(j,i1)
                p2(j)=co(j,i2)+vold(j,i2)
@@ -358,7 +351,8 @@ c     &             nelemload(2,nloadtr(idj))) cycle
                cospsij=-dir(1)*e3(1,j)-dir(2)*e3(2,j)
      &              -dir(3)*e3(3,j)
                ftij=dirloc(3)*cospsij*area(j)*area(i)/dist(k1)**2
-c     write(*,*) i,j,dist(k1),ftij
+c      write(*,*) 'formfactor contri ',i,j,dist(k1),ftij
+      write(*,*) 'formfactor contri ',i,j,ftij
 !     
 !     localizing which surface interaction the
 !     triangle interaction is part of (the modulus is
@@ -545,8 +539,8 @@ c     write(*,*) i,j,dist(k1),ftij
             do j=1,ntr
                fenv(i)=fenv(i)+f(i,j)
             enddo
-c     write(*,*) nelemload(1,i),',',sideload(i),',',fenv(i),
-c     &          ',',1.d0-fenv(i)
+      write(*,*) nelemload(1,i),',',sideload(i),',',fenv(i),
+     &          ',',1.d0-fenv(i)
             if((fenv(i).gt.1.d0).or.(tenv(i).lt.0)) then
                do j=1,ntr
                   f(i,j)=f(i,j)/fenv(i)
@@ -579,11 +573,22 @@ c         write(*,*)
             write(*,*) 'Writing the viewfactors to file'
             write(*,*)
 !     
-            do i=1,132
-               if(jobnamef(1)(i:i).eq.' ') exit
-            enddo
-            i=i-1
-            fnvw=jobnamef(1)(1:i)//'.vwf'
+            if(jobnamef(3)(1:1).eq.' ') then
+               do i=1,132
+                  if(jobnamef(1)(i:i).eq.' ') exit
+               enddo
+               i=i-1
+               fnvw=jobnamef(1)(1:i)//'.vwf'
+            else
+               fnvw=jobnamef(3)
+            endif
+c
+c            do i=1,132
+c               if(jobnamef(1)(i:i).eq.' ') exit
+c            enddo
+c            i=i-1
+c            fnvw=jobnamef(1)(1:i)//'.vwf'
+c
             open(10,file=fnvw,status='unknown',form='unformatted',
      &           access='sequential')
 !
@@ -801,6 +806,8 @@ c            enddo
                   call radiate(h(1),tenv(i1),temp,istep,
      &              iinc,tvar,nelem,l,coords,jltyp,field,nfield,
      &              sideload(i),node,areaj,vold)
+                  if(nmethod.eq.1) h(1)=xloadold(1,i)+
+     &                 (h(1)-xloadold(1,i))*reltime
                   erad(i1)=erad(i1)+h(1)
                endif
 !

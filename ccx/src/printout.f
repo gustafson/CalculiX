@@ -36,7 +36,7 @@
      &  nelem,kon(*),inotr(2,*),ntrans,ielorien(*),norien,nk,ne,
      &  inum(*),nfield
 !
-      real*8 v(0:3,*),t1(*),fn(0:3,*),stx(6,mint_,*),
+      real*8 v(0:4,*),t1(*),fn(0:3,*),stx(6,mint_,*),
      &  eme(6,mint_,*),xstate(nstate_,mint_,*),ener(mint_,*),energytot,
      &  volumetot,co(3,*),qfx(3,mint_,*),rftot(0:3),ttime,
      &  trab(7,*),orab(7,*)
@@ -47,7 +47,7 @@
          if((prlab(ii)(1:4).eq.'U   ').or.
      &      ((prlab(ii)(1:4).eq.'NT  ').and.(ithermal.gt.1))) then
             if(filab(1)(5:5).ne.' ') then
-               nfield=4
+               nfield=5
                cflag=filab(1)(5:5)
                call map3dto1d2d(v,ipkon,inum,kon,lakon,nfield,nk,
      &              ne,cflag,co)
@@ -93,35 +93,27 @@ c      enddo
 !
             if(prlab(ii)(1:4).eq.'U   ') then
                write(5,*)
-c               write(5,*) 'displacements (vx,vy,vz) for set ',
-c     &            noset(1:ipos-2),' and time ',ttime
                write(5,100) noset(1:ipos-2),ttime
  100           format(' displacements (vx,vy,vz) for set ',A,
-     &             ' and time ',e11.4)
+     &             ' and time ',e14.7)
                write(5,*)
             elseif(prlab(ii)(1:4).eq.'NT  ') then
                write(5,*)
-c               write(5,*) 'temperatures for set ',noset(1:ipos-2),
-c     &               ' and time ',ttime
                write(5,101) noset(1:ipos-2),ttime
- 101           format(' temperatures for set ',A,' and time ',e11.4)
+ 101           format(' temperatures for set ',A,' and time ',e14.7)
                write(5,*)
             elseif((prlab(ii)(1:5).eq.'RF   ').or.
      &             (prlab(ii)(1:5).eq.'RF  T')) then
                write(5,*)
-c               write(5,*) 'forces (fx,fy,fz) for set ',noset(1:ipos-2),
-c     &              ' and time ',ttime
                write(5,102) noset(1:ipos-2),ttime
  102           format(' forces (fx,fy,fz) for set ',A,
-     &                ' and time ',e11.4)
+     &                ' and time ',e14.7)
                write(5,*)
             elseif((prlab(ii)(1:5).eq.'RFL ').or.
      &             (prlab(ii)(1:5).eq.'RFL T')) then
                write(5,*)
-c               write(5,*) 'heat generation for set ',noset(1:ipos-2),
-c     &           ' and time ',ttime
                write(5,103) noset(1:ipos-2),ttime
- 103           format(' heat generation for set ',A,' and time ',e11.4)
+ 103           format(' heat generation for set ',A,' and time ',e14.7)
                write(5,*)
             endif
 !
@@ -157,23 +149,17 @@ c     &           ' and time ',ttime
             if((prlab(ii)(1:5).eq.'RF  O').or.
      &           (prlab(ii)(1:5).eq.'RF  T')) then
                write(5,*)
-c               write(5,*) 
-c     &              'total force (fx,fy,fz) for set ',noset(1:ipos-2),
-c     &              ' and time ',ttime
                write(5,104) noset(1:ipos-2),ttime
  104           format(' total force (fx,fy,fz) for set ',A,
-     &                 ' and time ',e11.4)
+     &                 ' and time ',e14.7)
                write(5,*)
                write(5,'(6x,1p,3(1x,e11.4))') rftot(1),rftot(2),rftot(3)
             elseif((prlab(ii)(1:5).eq.'RFL O').or.
      &              (prlab(ii)(1:5).eq.'RFL T')) then
                write(5,*)
-c               write(5,*) 
-c     &              'total heat generation for set ',noset(1:ipos-2),
-c     &              ' and time ',ttime
                write(5,105)noset(1:ipos-2),ttime
  105           format(' total heat generation for set ',A,
-     &                ' and time ',e11.4)
+     &                ' and time ',e14.7)
                write(5,*)
                write(5,'(6x,1p,1x,e11.4)') rftot(0)
             endif
@@ -205,39 +191,27 @@ c     &              ' and time ',ttime
 !
                if(prlab(ii)(1:4).eq.'S   ') then
                   write(5,*)
-c                  write(5,*) 
-c     &                 'stresses (elem, integ.pnt.,sxx,syy,szz,sxy,sxz,s
-c     &yz) for set ',elset(1:ipos-2),' and time ',ttime
                   write(5,106) elset(1:ipos-2),ttime
  106              format(' stresses (elem, integ.pnt.,sxx,syy,szz,sxy,sx
-     &z,syz) for set ',A,' and time ',e11.4)
+     &z,syz) for set ',A,' and time ',e14.7)
                   write(5,*)
                elseif(prlab(ii)(1:4).eq.'E   ') then
                   write(5,*)
-c                  write(5,*) 
-c     &                 'strains (elem, integ.pnt.,exx,eyy,ezz,exy,exz,ey
-c     &z) forset ',elset(1:ipos-2),' and time ',ttime
                   write(5,107) elset(1:ipos-2),ttime
  107              format(' strains (elem, integ.pnt.,exx,eyy,ezz,exy,exz
-     &,eyz) forset ',A,' and time ',e11.4)
+     &,eyz) forset ',A,' and time ',e14.7)
                   write(5,*)
                elseif(prlab(ii)(1:4).eq.'PE  ') then
                   write(5,*)
-c                  write(5,*) 
-c     &                 'equivalent plastic strain (elem, integ.pnt.,pe) 
-c     &for set ',elset(1:ipos-2),' and time ',ttime
                   write(5,108) elset(1:ipos-2),ttime
  108              format(' equivalent plastic strain (elem, integ.pnt.,p 
-     &e)for set ',A,' and time ',e11.4)
+     &e)for set ',A,' and time ',e14.7)
                   write(5,*)
                elseif(prlab(ii)(1:4).eq.'ENER') then
                   write(5,*)
-c                  write(5,*) 
-c     &                 'energy density (elem, integ.pnt.,energy) for set
-c     & ',elset(1:ipos-2),' and time ',ttime
                   write(5,109) elset(1:ipos-2),ttime
  109              format(' energy density (elem, integ.pnt.,energy) for 
-     &set ',A,' and time ',e11.4)
+     &set ',A,' and time ',e14.7)
                   write(5,*)
                elseif(prlab(ii)(1:4).eq.'SDV ') then
                   lb=(l-1)*6
@@ -249,18 +223,14 @@ c     & ',elset(1:ipos-2),' and time ',ttime
                   endif
  300              format(' internal state variables (elem, integ.pnt.,',
      &                    6(i2),')')
-c                  write(5,*) 'for set ',elset,' and time ',ttime
                   write(5,110) elset,ttime
- 110              format(' for set ',A,' and time ',e11.4)
+ 110              format(' for set ',A,' and time ',e14.7)
                   write(5,*)
                elseif(prlab(ii)(1:4).eq.'HFL ') then
                   write(5,*)
-c                  write(5,*) 
-c     &                 'heat flux (elem, integ.pnt.,qx,qy,qz) for set ',
-c     &                    elset(1:ipos-2),' and time ',ttime
                   write(5,111) elset(1:ipos-2),ttime
  111              format(' heat flux (elem, integ.pnt.,qx,qy,qz) for set 
-     & ',A,' and time ',e11.4)
+     & ',A,' and time ',e14.7)
                   write(5,*)
                endif
 !
@@ -307,22 +277,16 @@ c     &                    elset(1:ipos-2),' and time ',ttime
             if((prlab(ii)(1:5).eq.'ELSE ').or.
      &         (prlab(ii)(1:5).eq.'ELSET')) then
                write(5,*)
-c               write(5,*) 
-c     &              'energy (element, energy) for set ',elset(1:ipos-2),
-c     &              ' and time ',ttime
                write(5,112) elset(1:ipos-2),ttime
  112           format(' energy (element, energy) for set ',A,
-     &                ' and time ',e11.4)
+     &                ' and time ',e14.7)
                write(5,*)
             elseif((prlab(ii)(1:5).eq.'EVOL ').or.
      &             (prlab(ii)(1:5).eq.'EVOLT')) then
                write(5,*)
-c               write(5,*) 
-c     &              'volume (element, volume) for set ',elset(1:ipos-2),
-c     &              ' and time ',ttime
                write(5,113) elset(1:ipos-2),ttime
  113           format(' volume (element, volume) for set ',A,
-     &                ' and time ',e11.4)
+     &                ' and time ',e14.7)
                write(5,*)
             endif
 !
@@ -357,21 +321,15 @@ c     &              ' and time ',ttime
             if((prlab(ii)(1:5).eq.'ELSEO').or.
      &           (prlab(ii)(1:5).eq.'ELSET')) then
                write(5,*)
-c               write(5,*) 
-c     &              'total energy for set ',elset(1:ipos-2),
-c     &              ' and time ',ttime
-               write(5,*) elset(1:ipos-2),ttime
- 114           format(' total energy for set ',A,' and time ',e11.4)
+               write(5,114) elset(1:ipos-2),ttime
+ 114           format(' total energy for set ',A,' and time ',e14.7)
                write(5,*)
                write(5,'(6x,1p,1x,e11.4)') energytot
             elseif((prlab(ii)(1:5).eq.'EVOLO').or.
      &              (prlab(ii)(1:5).eq.'EVOLT')) then
                write(5,*)
-c               write(5,*) 
-c     &              'total volume for set ',elset(1:ipos-2),
-c     &              ' and time ',ttime
-               write(5,*) elset(1:ipos-2),ttime
- 116           format(' total volume for set ',A,' and time ',e11.4)
+               write(5,116) elset(1:ipos-2),ttime
+ 116           format(' total volume for set ',A,' and time ',e14.7)
                write(5,*)
                write(5,'(6x,1p,1x,e11.4)') volumetot
             endif

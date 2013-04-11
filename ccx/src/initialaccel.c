@@ -36,7 +36,7 @@
 	      namta,nam,ampli,&time,&reltime,ttime,&dtime,ithermal,nmethod,
               xbounold,xboun,xbounact,iamboun,nboun,
 	      nodeboun,ndirboun,nodeforc,ndirforc,istep,&iinc,
-	      co,vold,itg,&ntg));
+	      co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload));
     
     time=0.;
     dtime=1.;
@@ -53,14 +53,16 @@
        dist,idist,area,nflow,ikboun,xboun,nboun,ithermal,&iinc,&iit,
        cs,mcs,inocs,&ntrit,nk,fenv,istep,&dtime,ttime,&time,ilboun,
        ikforc,ilforc,xforcact,nforc,cam,ielmat,&nteq,prop,ielprop,
-       nactdog,nacteq,nodeboun,ndirboun,voldgas,&network,rhcon,
-       nrhcon,ipobody,ibody,xbodyact,nbody,iviewfile,jobnamef,ctrl);}
+       nactdog,nacteq,nodeboun,ndirboun,&network,rhcon,
+       nrhcon,ipobody,ibody,xbodyact,nbody,iviewfile,jobnamef,ctrl,
+       xloadold,&reltime,nmethod,set);}
 
     if(ncont!=0){
 	*ne=ne0;*nkon=nkon0;
 	contact(&ncont,ntie,tieset,nset,set,istartset,iendset,
              ialset,itietri,lakon,ipkon,kon,koncont,ne,cg,straight,nkon,
-             co,vold,ielmat,cs);
+	     co,vold,ielmat,cs,elcon,istep,&iinc,&iit,ncmat_,ntmat_,
+		ifcont1,ifcont2,&ne0,vini,nmethod);
 	icascade=1;
     }
 
@@ -76,7 +78,7 @@
 		       nmpc,ikboun,ilboun,nboun,xbounold,aux,iaux,
 		       &maxlenmpc,ikmpc,ilmpc,&icascade,
 		       kon,ipkon,lakon,ne,&reltime,&newstep,xboun,fmpc,
-                       &iit,&idiscon,&ncont));
+                       &iit,&idiscon,&ncont,trab,ntrans));
     if(icascade==2){
 	nmpcref=*nmpc;memmpcref_=memmpc_;mpcfreeref=mpcfree;
 	RENEW(nodempcref,int,3*memmpc_);
@@ -122,7 +124,7 @@
     time=0.;
     dtime=0.;
 
-    if(*iexpl==0){intscheme=1;}
+    if(*iexpl<=1){intscheme=1;}
 
     /* in mafillsm the stiffness and mass matrix are computed;
        The primary aim is to calculate the mass matrix (not 
@@ -143,7 +145,7 @@
 	      ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
 	      nforc,nelemload,sideload,xloadact,nload,xbodyact,ipobody,
 	      nbody,cgr,ad,au,fext,nactdof,icol,jq,irow,neq,nzl,
-	      &nmethodact,ikmpc,ilmpc,ikboun,ilboun,
+	      nmethod,ikmpc,ilmpc,ikboun,ilboun,
 	      elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
 	      ielmat,ielorien,norien,orab,ntmat_,
 	      t0,t1act,ithermal,prestr,iprestr,vold,iperturb,sti,
@@ -151,9 +153,9 @@
 	      xstiff,npmat_,&dtime,matname,mint_,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
 	      physcon,shcon,nshcon,cocon,ncocon,ttime,&time,istep,&iinc,
-              &coriolis,ibody));
+              &coriolis,ibody,xloadold,&reltime));
 
-    if(nmethodact==0){
+    if(nmethod==0){
       
       /* error occurred in mafill: storing the geometry in frd format */
 
@@ -163,7 +165,8 @@
            een,t1,fn,ttime,epn,ielmat,matname,enern,xstaten,nstate_,istep,
            &iinc,iperturb,ener,mint_,output,ithermal,qfn,&mode,&noddiam,
            trab,inotr,ntrans,orab,ielorien,norien,description,
-                     ipneigh,neigh,sti));free(ipneigh);free(neigh);
+	   ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph));
+      free(ipneigh);free(neigh);
       
       FORTRAN(stop,());
       
@@ -183,7 +186,7 @@
 	      namta,nam,ampli,&time,&reltime,ttime,&dtime,ithermal,nmethod,
               xbounold,xboun,xbounact,iamboun,nboun,
 	      nodeboun,ndirboun,nodeforc,ndirforc,istep,&iinc,
-	      co,vold,itg,&ntg));*/
+	      co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload));*/
 
     /* determining the external loading vector */
 
@@ -191,7 +194,7 @@
 	 ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
 	 nforc,nelemload,sideload,xloadact,nload,xbodyact,ipobody,
 	 nbody,cgr,fext,nactdof,&neq[1],
-	 &nmethodact,ikmpc,ilmpc,
+	 nmethod,ikmpc,ilmpc,
 	 elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
 	 ielmat,ielorien,norien,orab,ntmat_,
 	 t0,t1act,ithermal,iprestr,vold,iperturb,
@@ -205,13 +208,14 @@
       b[k]=fext[k]-f[k];
     }
 
-    if(*iexpl==0){
+    if(*iexpl<=1){
 
       /* a small amount of stiffness is added to the mass matrix
        otherwise the system leads to huge accelerations in 
        case of discontinuous load changes at the start of the step */
 
 	dtime=*tinc/10.;
+/*	dtime=*tinc/5.; */
 	scal1=bet*dtime*dtime*(1.+*alpha);
 	for(k=0;k<neq[0];++k){
 	    /*ad[k]=adb[k];*/

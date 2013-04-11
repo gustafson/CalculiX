@@ -18,23 +18,32 @@
 !
       subroutine modaldynamics(inpc,textpart,nmethod,tinc,tper,iexpl,
      &  istep,istat,n,iline,ipol,inl,ipoinp,inp,iperturb,isolver,
-     &  cs,mcs,ipoinpc)
+     &  cs,mcs,ipoinpc,idrct,ctrl,tmin,tmax,nforc,nload,nbody,iprestr,
+     &  t0,t1,ithermal,nk,vold,veold)
 !
 !     reading the input deck: *MODAL DYNAMIC
 !
       implicit none
+!
+      logical steadystate
 !
       character*1 inpc(*)
       character*20 solver
       character*132 textpart(16)
 !
       integer nmethod,istep,istat,n,key,iexpl,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),iperturb,isolver,i,mcs,ipoinpc(0:*)
+     &  ipoinp(2,*),inp(3,*),iperturb,isolver,i,mcs,ipoinpc(0:*),
+     &  idrct,nforc,nload,nbody,iprestr,ithermal,j,nk
 !
-      real*8 tinc,tper,cs(17,*)
+      real*8 tinc,tper,cs(17,*),ctrl(*),tmin,tmax,t0(*),t1(*),
+     &  vold(0:4,*),veold(0:3,*)
 !
       iexpl=0
       iperturb=0
+      idrct=1
+      tmin=0.d0
+      tmax=0.d0
+      steadystate=.false.
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR in modaldynamics: *MODAL DYNAMIC can only'
@@ -46,8 +55,6 @@
 !
       if(isolver.eq.0) then
          solver(1:7)='SPOOLES                          '
-      elseif(isolver.eq.1) then
-         solver(1:7)='PROFILE                          '
       elseif(isolver.eq.2) then
          solver(1:16)='ITERATIVESCALING                '
       elseif(isolver.eq.3) then
@@ -61,15 +68,17 @@
       do i=2,n
          if(textpart(i)(1:7).eq.'SOLVER=') then
             read(textpart(i)(8:27),'(a20)') solver
+         elseif(textpart(i)(1:9).eq.'DIRECT=NO') then
+            idrct=0
+         elseif(textpart(i)(1:7).eq.'DELTMX=') then
+            read(textpart(i)(8:27),'(f20.0)',iostat=istat) ctrl(27)
+         elseif(textpart(i)(1:11).eq.'STEADYSTATE') then
+            steadystate=.true.
          endif
       enddo
 !
       if(solver(1:7).eq.'SPOOLES') then
          isolver=0
-      elseif(solver(1:7).eq.'PROFILE') then
-         write(*,*) '*WARNING in modaldynamics: the profile solver is'
-         write(*,*) '         not allowed in modal dynamics'
-         write(*,*) '         calculations; the default solver is used'
       elseif(solver(1:16).eq.'ITERATIVESCALING') then
          write(*,*) '*WARNING in modaldynamics: the iterative scaling'
          write(*,*) '         procedure is not available for modal'
@@ -111,6 +120,88 @@
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
       read(textpart(2)(1:20),'(f20.0)',iostat=istat)tper
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      read(textpart(3)(1:20),'(f20.0)',iostat=istat) tmin
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+!
+      if(steadystate) then
+!
+!        modal dynamics calculation till steady state
+!
+         if(tper.le.0.d0) then
+            write(*,*) '*ERROR in modaldynamics: relative error'
+            write(*,*) '       is nonpositive'
+            stop
+         endif
+         tper=-tper
+         if(tinc.le.0.d0) then
+            write(*,*) '*ERROR in modaldynamics: initial increment'
+            write(*,*) '       size is nonpositive'
+            stop
+         endif
+         if(tmin.lt.0.d0) then
+            tmin=1.d-10
+         endif
+         if(tmax.lt.1.d-10) then
+            tmax=1.d+30
+         endif
+      else
+!
+!        transient modal dynamics calculation
+!
+         if(tper.lt.0.d0) then
+            write(*,*) '*ERROR in modaldynamics: step size is negative'
+            stop
+         elseif(tper.le.0.d0) then
+            tper=1.d0
+         endif
+         if(tinc.lt.0.d0) then
+            write(*,*) '*ERROR in modaldynamics: initial increment size 
+     &is negative'
+            stop
+         elseif(tinc.le.0.d0) then
+            tinc=tper
+         endif
+         if(tinc.gt.tper) then
+            write(*,*) '*ERROR in modaldynamics: initial increment size 
+     &exceeds step size'
+            stop
+         endif
+!      
+         if(idrct.ne.1) then
+            if(tmin.lt.1.d-10*tper) then
+               tmin=min(tinc,1.d-10*tper)
+            endif
+            if(tmax.lt.1.d-10) then
+               tmax=1.d+30
+            endif
+         endif
+      endif
+!
+!     removing the present loading
+!
+      nforc=0
+      nload=0
+      nbody=0
+      iprestr=0
+      if((ithermal.eq.1).or.(ithermal.eq.3)) then
+         do j=1,nk
+            t1(j)=t0(j)
+         enddo
+      endif
+!
+!     resetting fields vold and veold after a frequency or
+!     buckling step
+!
+      if((nmethod.eq.2).or.(nmethod.eq.3)) then
+         do i=1,nk
+            do j=1,3
+               vold(j,i)=0.d0
+               veold(j,i)=0.d0
+            enddo
+         enddo
+      endif
 !
       nmethod=4
 !

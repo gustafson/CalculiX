@@ -35,7 +35,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
    int *mpcfree, int *nodeboun, int *ndirboun, int*nboun, int*ikmpc,
    int *ilmpc, int *ikboun, int *ilboun, int *mpcend, int *mpcmult,
    char *labmpc, int *nk, int *memmpc_, int *icascade, int *maxlenmpc,
-   int *callfrommain){
+   int *callfrommain, int *iperturb){
 
  /*   detects cascaded mpc's and decascades them; checks multiple
      occurrence of the same dependent DOF's in different mpc/spc's
@@ -91,6 +91,11 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 
     nodempc=*nodempcp;
     coefmpc=*coefmpcp;
+    
+    /*   for(i=0;i<*nmpc;i++){
+	j=i+1;
+	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
+	}*/
 
     jmpc=NNEW(int,*nmpc);
     /*   *icascade=0;*/
@@ -106,8 +111,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 	if(id>0){
 	    if(ikboun[id-1]==ikmpc[i]){
 		printf("*ERROR in cascade: the DOF corresponding to \n node %d in direction %d is detected on the \n dependent side of a MPC and a SPC\n",
-		       (ikmpc[i])/7+1,ikmpc[i]-7*((ikmpc[i])/7));
-                /*		       (ikmpc[i]-1)/7+1,ikmpc[i]-7*((ikmpc[i]-1)/7));*/
+		       (ikmpc[i])/8+1,ikmpc[i]-8*((ikmpc[i])/8));
 		FORTRAN(stop,());
 	    }
 	}
@@ -122,15 +126,18 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
         /* linear mpc */
 
 	if((strcmp1(&labmpc[20*i],"                    ")==0) ||
-	   (strcmp1(&labmpc[20*i],"CYCLIC")==0) ||
-	   (strcmp1(&labmpc[20*i],"SUBCYCLIC")==0)) jmpc[i]=0;
+/*	   (strcmp1(&labmpc[20*i],"CYCLIC")==0) ||*/
+	   (strcmp1(&labmpc[20*i],"SUBCYCLIC")==0)||
+           (*iperturb==0)) jmpc[i]=0;
 
         /* nonlinear mpc */
 
 	else if((strcmp1(&labmpc[20*i],"RIGID")==0) ||
 	   (strcmp1(&labmpc[20*i],"KNOT")==0) ||
+	   (strcmp1(&labmpc[20*i],"CYCLIC")==0) ||
 	   (strcmp1(&labmpc[20*i],"PLANE")==0) ||
-	   (strcmp1(&labmpc[20*i],"STRAIGHT")==0)) jmpc[i]=1;
+	   (strcmp1(&labmpc[20*i],"STRAIGHT")==0)||
+           (strcmp1(&labmpc[20*i],"ISOCHORIC")==0)) jmpc[i]=1;
 
         /* user mpc */
 
@@ -155,7 +162,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 	    index=nodempc[3*ipompc[i]-1];
 	    if(index==0) continue;
 	    do{
-		idof=(nodempc[3*index-3]-1)*7+nodempc[3*index-2];
+		idof=(nodempc[3*index-3]-1)*8+nodempc[3*index-2];
 		FORTRAN(nident,(ikmpc,&idof,nmpc,&id));
 		if((id>0)&&(ikmpc[id-1]==idof)){
 		    
@@ -306,7 +313,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 	for(i=*nmpc-1;i>-1;i--){
 	    index=ipompc[i];
 	    while(1){
-		idof=7*(nodempc[3*index-3]-1)+nodempc[3*index-2]-1;
+		idof=8*(nodempc[3*index-3]-1)+nodempc[3*index-2]-1;
 
 /* check whether idof is a independent dof which has not yet been
    stored in indepdof */
@@ -565,8 +572,8 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 		    b=DenseMtx_entries(mtxX)[j];
 		    if(fabs(b)>1.e-10){
 			nodempc[3**mpcfree-1]=ipompc[j];
-			node=(int)((idof+7)/7);
-			idir=idof+1-7*(node-1);
+			node=(int)((idof+8)/8);
+			idir=idof+1-8*(node-1);
 			nodempc[3**mpcfree-3]=node;
 			nodempc[3**mpcfree-2]=idir;
 			coefmpc[*mpcfree-1]=b;
@@ -602,8 +609,8 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 	for(i=0;i<*nmpc;i++){
 	    j=ilmpc[i]-1;
 	    idof=ikmpc[i];
-	    node=(int)((idof+6)/7);
-	    idir=idof-7*(node-1);
+	    node=(int)((idof+7)/8);
+	    idir=idof-8*(node-1);
 	    nodempc[3**mpcfree-1]=ipompc[j];
 	    nodempc[3**mpcfree-3]=node;
 	    nodempc[3**mpcfree-2]=idir;
@@ -650,7 +657,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
     *nodempcp=nodempc;
     *coefmpcp=coefmpc;
     
-/*	      for(i=0;i<*nmpc;i++){
+    /*   for(i=0;i<*nmpc;i++){
 	j=i+1;
 	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
 	}*/

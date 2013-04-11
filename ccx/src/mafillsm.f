@@ -28,7 +28,7 @@
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
      &  matname,mint_,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
-     &  coriolis,ibody)
+     &  coriolis,ibody,xloadold,reltime)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !
@@ -56,8 +56,8 @@
       integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
-     &  p2(3),ad(*),au(*),bodyf(3),fext(*),
-     &  t0(*),t1(*),prestr(6,mint_,*),vold(0:3,*),s(60,60),ff(60),
+     &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
+     &  t0(*),t1(*),prestr(6,mint_,*),vold(0:4,*),s(60,60),ff(60),
      &  sti(6,mint_,*),sm(60,60),stx(6,mint_,*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),
      &  alcon(0:6,ntmat_,*),physcon(3),cocon(0:6,ntmat_,*),
@@ -163,6 +163,10 @@ c      elseif(mass.or.buckling) then
            nope=6
         elseif(lakon(i)(1:2).eq.'ES') then
            read(lakon(i)(8:8),'(i1)') nope
+!
+!          contact area division number
+!
+           konl(nope+1)=kon(indexe+nope+1)
         else
            cycle
         endif
@@ -222,7 +226,8 @@ c        if((rhsi).and.(nbody.gt.0).and.(lakon(i)(1:1).ne.'E')) then
      &          iexpl,plicon,
      &          nplicon,plkcon,nplkcon,xstiff,npmat_,
      &          dtime,matname,mint_,ncmat_,mass(1),stiffness,buckling,
-     &          rhsi,intscheme,ttime,time,istep,iinc,coriolis)
+     &          rhsi,intscheme,ttime,time,istep,iinc,coriolis,xloadold,
+     &          reltime)
 !
         do jj=1,3*nope
 !
@@ -257,10 +262,10 @@ c        if((rhsi).and.(nbody.gt.0).and.(lakon(i)(1:1).ne.'E')) then
 !
                if(jdof1.eq.0) then
                   idof1=jdof2
-                  idof2=(node1-1)*7+k
+                  idof2=(node1-1)*8+k
                else
                   idof1=jdof1
-                  idof2=(node2-1)*7+m
+                  idof2=(node2-1)*8+m
                endif
                if(nmpc.gt.0) then
                   call nident(ikmpc,idof2,nmpc,id)
@@ -307,8 +312,8 @@ c
                   call add_bo_st(au,jq,irow,idof1,icolumn,value)
                endif
             else
-               idof1=(node1-1)*7+k
-               idof2=(node2-1)*7+m
+               idof1=(node1-1)*8+k
+               idof2=(node2-1)*8+m
                mpc1=0
                mpc2=0
                if(nmpc.gt.0) then
@@ -402,27 +407,27 @@ c
                         if(index1.eq.0) exit
                      enddo
                   endif
-               elseif(((mpc1.eq.1).or.(mpc2.eq.1)).and.rhsi)
-     &           then
-                  if(mpc1.eq.1) then
-!
-!                    MPC id1 / SPC
-!
-                     call nident(ikboun,idof2,nboun,id2)
-                     idof2=ilboun(id2)
-                     ist1=ipompc(id1)
-                     index1=nodempc(3,ist1)
-                     if(index1.eq.0) cycle
-                  elseif(mpc2.eq.1) then
-!
-!                    MPC id2 / SPC
-!
-                     call nident(ikboun,idof1,nboun,id1)
-                     idof1=ilboun(id1)
-                     ist2=ipompc(id2)
-                     index2=nodempc(3,ist2)
-                     if(index2.eq.0) cycle
-                  endif
+c               elseif(((mpc1.eq.1).or.(mpc2.eq.1)).and.rhsi)
+c     &           then
+c                  if(mpc1.eq.1) then
+c!
+c!                    MPC id1 / SPC
+c!
+c                     call nident(ikboun,idof2,nboun,id2)
+c                     idof2=ilboun(id2)
+c                     ist1=ipompc(id1)
+c                     index1=nodempc(3,ist1)
+c                     if(index1.eq.0) cycle
+c                  elseif(mpc2.eq.1) then
+c!
+c!                    MPC id2 / SPC
+c!
+c                     call nident(ikboun,idof1,nboun,id1)
+c                     idof1=ilboun(id1)
+c                     ist2=ipompc(id2)
+c                     index2=nodempc(3,ist2)
+c                     if(index2.eq.0) cycle
+c                  endif
                endif
             endif
           enddo
@@ -434,7 +439,7 @@ c
              if(idist.ne.0) then
                 if(jdof1.eq.0) then
                    if(nmpc.ne.0) then
-                      idof1=(node1-1)*7+k
+                      idof1=(node1-1)*8+k
                       call nident(ikmpc,idof1,nmpc,id)
                       if((id.gt.0).and.(ikmpc(id).eq.idof1)) then
                          id=ilmpc(id)
@@ -498,7 +503,7 @@ c
      &  sideload,xload,nload,idist,iexpl,dtime,
      &  matname,mint_,mass(2),stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
-     &  xstiff)
+     &  xstiff,xloadold,reltime)
 !
         do jj=1,nope
 !
@@ -533,10 +538,10 @@ c            m=0
 !
                if(jdof1.eq.0) then
                   idof1=jdof2
-                  idof2=(node1-1)*7
+                  idof2=(node1-1)*8
                else
                   idof1=jdof1
-                  idof2=(node2-1)*7
+                  idof2=(node2-1)*8
                endif
                if(nmpc.gt.0) then
                   call nident(ikmpc,idof2,nmpc,id)
@@ -583,8 +588,8 @@ c
                   call add_bo_st(au,jq,irow,idof1,icolumn,value)
                endif
             else
-               idof1=(node1-1)*7
-               idof2=(node2-1)*7
+               idof1=(node1-1)*8
+               idof2=(node2-1)*8
                mpc1=0
                mpc2=0
                if(nmpc.gt.0) then
@@ -678,33 +683,33 @@ c
                         if(index1.eq.0) exit
                      enddo
                   endif
-               elseif(((mpc1.eq.1).or.(mpc2.eq.1)).and.rhsi)
-     &           then
-                  if(mpc1.eq.1) then
-!
-!                    MPC id1 / SPC
-!
-                     call nident(ikboun,idof2,nboun,id2)
-                     idof2=ilboun(id2)
-                     ist1=ipompc(id1)
-                     index1=nodempc(3,ist1)
-                     if(index1.eq.0) cycle
-                     do
-                        idof1=nactdof(nodempc(2,index1),
-     &                                nodempc(1,index1))
-                        index1=nodempc(3,index1)
-                        if(index1.eq.0) exit
-                     enddo
-                  elseif(mpc2.eq.1) then
-!
-!                    MPC id2 / SPC
-!
-                     call nident(ikboun,idof1,nboun,id1)
-                     idof1=ilboun(id1)
-                     ist2=ipompc(id2)
-                     index2=nodempc(3,ist2)
-                     if(index2.eq.0) cycle
-                  endif
+c               elseif(((mpc1.eq.1).or.(mpc2.eq.1)).and.rhsi)
+c     &           then
+c                  if(mpc1.eq.1) then
+c!
+c!                    MPC id1 / SPC
+c!
+c                     call nident(ikboun,idof2,nboun,id2)
+c                     idof2=ilboun(id2)
+c                     ist1=ipompc(id1)
+c                     index1=nodempc(3,ist1)
+c                     if(index1.eq.0) cycle
+c                     do
+c                        idof1=nactdof(nodempc(2,index1),
+c     &                                nodempc(1,index1))
+c                        index1=nodempc(3,index1)
+c                        if(index1.eq.0) exit
+c                     enddo
+c                  elseif(mpc2.eq.1) then
+c!
+c!                    MPC id2 / SPC
+c!
+c                     call nident(ikboun,idof1,nboun,id1)
+c                     idof1=ilboun(id1)
+c                     ist2=ipompc(id2)
+c                     index2=nodempc(3,ist2)
+c                     if(index2.eq.0) cycle
+c                  endif
                endif
             endif
           enddo
@@ -716,7 +721,7 @@ c
              if(idist.ne.0) then
                 if(jdof1.eq.0) then
                    if(nmpc.ne.0) then
-                      idof1=(node1-1)*7
+                      idof1=(node1-1)*8
                       call nident(ikmpc,idof1,nmpc,id)
                       if((id.gt.0).and.(ikmpc(id).eq.idof1)) then
                          id=ilmpc(id)
@@ -755,8 +760,31 @@ c
             if(ndirforc(i).gt.3) cycle
             jdof=nactdof(ndirforc(i),nodeforc(1,i))
             if(jdof.ne.0) then
-c               b(jdof)=b(jdof)+xforc(i)
                fext(jdof)=fext(jdof)+xforc(i)
+            else
+!
+!              node is a dependent node of a MPC: distribute
+!              the forces among the independent nodes
+!              (proportional to their coefficients)
+!
+               jdof=8*(nodeforc(1,i)-1)+ndirforc(i)
+               call nident(ikmpc,jdof,nmpc,id)
+               if(id.gt.0) then
+                  if(ikmpc(id).eq.jdof) then
+                     ist=ipompc(id)
+                     index=nodempc(3,ist)
+                     if(index.eq.0) cycle
+                     do
+                        jdof=nactdof(nodempc(2,index),nodempc(1,index))
+                        if(jdof.ne.0) then
+                           fext(jdof)=fext(jdof)-
+     &                          coefmpc(index)*xforc(i)/coefmpc(ist)
+                        endif
+                        index=nodempc(3,index)
+                        if(index.eq.0) exit
+                     enddo
+                  endif
+               endif
             endif
          enddo
 !

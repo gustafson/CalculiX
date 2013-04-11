@@ -18,18 +18,19 @@
 
 !     calculate the initial conditions for the gas!     
 !     
-      subroutine initialgas(itg,ieg,ntm,ntg,ac,bc,lakon,voldgas,
+      subroutine initialgas(itg,ieg,ntm,ntg,ac,bc,lakon,v,
      &     ipkon,kon,nflow,ikboun,nboun,prop,ielprop,
      &     nactdog,nacteq,ndirboun,nodeboun,xbounact,
      &     ielmat,ntmat_,shcon,nshcon,physcon,ipiv,nteq,
      &     rhcon,nrhcon,ipobody,ibody,xbodyact,co,nbody,network,
-     &     iin_abs,vold)
+     &     iin_abs,vold,set)
 !     
       implicit none
 !     
       logical identity,calcinitialpressure,gravity,gaspipe
 !
       character*8 lakon(*)
+      character*81 set(*)
 !           
       integer ieg(*),nflow,i,j,ntg,ielmat(*),ntmat_,id,ntm,node1,node2,
      &     nelem,index,nshcon(*),ipkon(*),kon(*),ikboun(*),nboun,idof,
@@ -40,15 +41,15 @@
      &     node11,node21,node12,node22
 !     
       real*8 ac(ntm,ntm), bc(ntm),prop(*),shcon(0:3,ntmat_,*),
-     &     f,df(5),xflow,xbounact(*),voldgas(0:3,*),cp,r,tg1,
+     &     f,df(5),xflow,xbounact(*),v(0:4,*),cp,r,tg1,
      &     tg2,gastemp,physcon(3),pressmin,dvi,rho,g(3),
      &     rhcon(0:1,ntmat_,*),co(3,*),xbodyact(7,*),kappa,
-     &     a,Tt,Pt,Ts,pressmax,constant,vold(0:3,*)
+     &     a,Tt,Pt,Ts,pressmax,constant,vold(0:4,*)
 !
       kflag=1
 !
       do j=1,nboun
-         voldgas(ndirboun(j),nodeboun(j))=xbounact(j)
+         v(ndirboun(j),nodeboun(j))=xbounact(j)
       enddo
 !     
 !     no initial pressures for purely thermal calculations
@@ -61,20 +62,20 @@
          pressmin=-1.d0
          pressmax=0.d0
          constant=1.55d0
-!     
+
          do i=1,ntg
             node=itg(i)
-            if(voldgas(2,node).lt.1.d-10) then
-               voldgas(2,node)=0.d0
+            if(v(2,node).lt.1.d-10) then
+               v(2,node)=0.d0
             else
                if(pressmin.lt.0.d0) then
-                  pressmin=voldgas(2,node)
-               elseif(voldgas(2,node).lt.pressmin) then
-                  pressmin=voldgas(2,node)
+                  pressmin=v(2,node)
+               elseif(v(2,node).lt.pressmin) then
+                  pressmin=v(2,node)
                endif
 !
-               if(voldgas(2,node).gt.pressmax)then
-                  pressmax=voldgas(2,node)
+               if(v(2,node).gt.pressmax)then
+                  pressmax=v(2,node)
                endif
 !
             endif
@@ -86,20 +87,22 @@
             stop
          endif
 !
-!        in nodes in which no initial pressure is given voldgas(2,*)
+!        in nodes in which no initial pressure is given v(2,*)
 !        is replaced by -n, where n is the number of elements the
 !        node belongs to: allows to find boundary nodes of the 
 !        network
 !
          gaspipe=.false.
          calcinitialpressure=.false.
+!
          do i=1,nflow
             nelem=ieg(i)
             index=ipkon(nelem)
             node1=kon(index+1)
             node2=kon(index+3)
 !     
-            if (((lakon(i)(1:5).eq.'DGAPI').and.(iin_abs.eq.0))
+            if ((((lakon(i)(1:5).eq.'DGAPI')
+     &           .or.(lakon(i)(1:5).eq.'DGAPX')).and.(iin_abs.eq.0))
      &           .or.((lakon(i)(1:3).eq.'DRE')
      &           .and.(lakon(i)(1:7).ne.'DREWAOR')
      &           .and.(iin_abs.eq.0))) then 
@@ -145,12 +148,12 @@
             endif
 !     
             if((node1.eq.0).or.(node2.eq.0)) cycle
-            if(voldgas(2,node1).lt.1.d-10) then
-               voldgas(2,node1)=voldgas(2,node1)-1.d0
+            if(v(2,node1).lt.1.d-10) then
+               v(2,node1)=v(2,node1)-1.d0
                calcinitialpressure=.true.
             endif
-            if(voldgas(2,node2).lt.1.d-10) then
-               voldgas(2,node2)=voldgas(2,node2)-1.d0
+            if(v(2,node2).lt.1.d-10) then
+               v(2,node2)=v(2,node2)-1.d0
                calcinitialpressure=.true.
             endif
          enddo
@@ -161,18 +164,26 @@
 !     
             do i=1,ntg
                node=itg(i)
+!     boundary condition nodes
                if(nactdog(2,node).eq.0) then 
-                  voldgas(2,node)=dtan(voldgas(2,node)
+                  v(2,node)=dtan(v(2,node)
      &                 *constant/pressmax) 
                   cycle 
                endif
-               if(abs(voldgas(2,node)+1.d0).lt.1.d-10) then
-                  voldgas(2,node)=0.95d0*pressmin
-                  pressmin=0.95d0*pressmin
-                  voldgas(2,node)=dtan(voldgas(2,node)
-     &                 *constant/pressmax)
+!     initial condition nodes
+               if((nactdog(2,node).ne.0)
+     &              .and.(v(2,node).gt.0d0)) then
+                  v(2,node) = dtan(v(2,node)
+     &                 *constant/pressmax) 
+                  cycle
                endif
-               
+!     nodes neither defined as *BOUNDARY nor as *INITIAL CONDITIONS
+               if(abs(v(2,node)+1.d0).lt.1.d-10) then
+                  v(2,node)=0.95d0*pressmin
+                  pressmin=0.95d0*pressmin
+                  v(2,node)=dtan(v(2,node)
+     &                 *constant/pressmax)
+               endif              
             enddo
 !     
 !           initializing ac and bc
@@ -207,26 +218,26 @@
                idof1=nactdog(2,node1)
                idof2=nactdog(2,node2)
                if(idof1.ne.0) then
-                  if(voldgas(2,node1).gt.0.d0) then
+                  if(v(2,node1).gt.0.d0) then
                      ac(idof1,idof1)=1.d0
-                     bc(idof1)=voldgas(2,node1)
+                     bc(idof1)=v(2,node1)
                   else
                      ac(idof1,idof1)=ac(idof1,idof1)+1.d0
-                     if(voldgas(2,node2).gt.0.d0) then
-                        bc(idof1)=bc(idof1)+voldgas(2,node2)
+                     if(v(2,node2).gt.0.d0) then
+                        bc(idof1)=bc(idof1)+v(2,node2)
                      else
                         ac(idof1,idof2)=ac(idof1,idof2)-1.d0
                      endif
                   endif
                endif
                if(idof2.ne.0) then
-                  if(voldgas(2,node2).gt.0.d0) then
+                  if(v(2,node2).gt.0.d0) then
                      ac(idof2,idof2)=1.d0
-                     bc(idof2)=voldgas(2,node2)
+                     bc(idof2)=v(2,node2)
                   else
                      ac(idof2,idof2)=ac(idof2,idof2)+1.d0
-                     if(voldgas(2,node1).gt.0.d0) then
-                        bc(idof2)=bc(idof2)+voldgas(2,node1)
+                     if(v(2,node1).gt.0.d0) then
+                        bc(idof2)=bc(idof2)+v(2,node1)
                      else
                         ac(idof2,idof1)=ac(idof2,idof1)-1.d0
                      endif
@@ -243,17 +254,16 @@
                stop
             endif
 !     
-!           storing the initial conditions in voldgas
+!           storing the initial conditions in v
 !     
             do i=1,ntg
                node=itg(i)
                if(nactdog(2,node).eq.0) then
-                  voldgas(2,node)=pressmax
-     &                 *datan(voldgas(2,node))/constant
-!     &                 *datan(voldgas(2,node))/constant
+                  v(2,node)=pressmax
+     &                 *datan(v(2,node))/constant
                   cycle
                endif
-               voldgas(2,node)=pressmax
+               v(2,node)=pressmax
      &              *datan(bc(nactdog(2,node)))/constant
             enddo
          endif
@@ -292,27 +302,24 @@
             node2=node12
          endif
 !
-         if(voldgas(2,node1).ge.voldgas(2,node2)) then
-            voldgas(2,node2)=voldgas(2,node1)
+         if(v(2,node1).ge.v(2,node2)) then
+            v(2,node2)=v(2,node1)
          else
-            voldgas(2,node1)=voldgas(2,node2)
+            v(2,node1)=v(2,node2)
          endif
       enddo
-!
-!     determining whether temperature initial conditions 
-!     are provided for all nodes
 !
       do i=1,ntg
          node=itg(i)
          if (nactdog(0,node).eq.0) cycle
-         if (voldgas(0,node)+physcon(1).lt.1.d-10) then
+         if (v(0,node)+physcon(1).lt.1.d-10) then
             write(*,*)
      &           '*WARNING in initialgas : the initial temperature for n
      &ode',node
             write(*,*) 
      &           'is O Kelvin or less; the default is taken (293 K)'
             write(*,*)
-            voldgas(0,node)=293.d0+physcon(1)
+            v(0,node)=293.d0+physcon(1)
          endif
       enddo
 !  
@@ -326,7 +333,7 @@
          node2=kon(index+3)
          if((node1.eq.0).or.(node2.eq.0)) cycle
          nodem=kon(index+2)
-         idof=7*(nodem-1)+1
+         idof=8*(nodem-1)+1
          call nident(ikboun,idof,nboun,id)
          if (id.gt.0) then
             if (ikboun(id).eq.idof) then 
@@ -363,8 +370,8 @@
             endif
          endif
 !
-         tg1=voldgas(0,node1)
-         tg2=voldgas(0,node2)
+         tg1=v(0,node1)
+         tg2=v(0,node2)
          gastemp=(tg1+tg2)/2.d0
          imat=ielmat(nelem)
          call materialdata_tg(imat,ntmat_,gastemp,shcon,nshcon,cp,r,dvi,
@@ -372,11 +379,32 @@
 !
          call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,
-     &        ielprop,prop,kflag,voldgas,xflow,f,nodef,idirf,df,cp,
-     &        r,rho,physcon,g,co,dvi,numf,vold)
-
-         voldgas(1,nodem)=xflow
+     &        ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,cp,
+     &        r,rho,physcon,g,co,dvi,numf,vold,set,shcon,
+     &        nshcon,rhcon,nrhcon,ntmat_)
 !
+         v(1,nodem)=xflow
+!
+         if(lakon(nelem)(2:4).ne.'LIP') then
+            if(v(1,nodem).eq.0d0) then
+               WRITE(*,*) '*****************************************'
+               write(*,*) '*ERROR:in subroutine initialgas.f'
+               write(*,*) '       in element', nelem
+               write(*,*) '       mass flow rate value = 0 !'
+               write(*,*) '       node1',node1,' pressure',v(2,node1)
+               write(*,*) '       node2',node2,' pressure',v(2,node2)
+               stop
+            endif
+            if (v(1,nodem).lt.0) then
+               WRITE(*,*) '*****************************************'
+               write(*,*) '*WARNING: in subroutine initialgas.f'
+               write(*,*) '        in element', nelem
+               write(*,*) '        mass flow rate value .le. 0 !'
+               write(*,*) '        node1',node1,'pressure',v(2,node1)
+               write(*,*) '        node2',node2,'pressure',v(2,node2)
+               write(*,*) '        check element definition'
+            endif
+         endif
       enddo
 !
 !     calculating the static temperature for nodes belonging to gas pipes
@@ -389,6 +417,7 @@
          do i=1,ntg
             node=itg(i)
             if(nactdog(3,node).lt.0) nactdog(3,node)=0
+            if(nactdog(3,node).gt.2) nactdog(3,node)=-nactdog(3,node)        
          enddo
 !
          do i=1,nflow
@@ -405,9 +434,9 @@
                if((nactdog(3,node1).eq.1).or.
      &            (nactdog(3,node1).eq.2)) then
                   if(node2.ne.0)then
-                     nactdog(3,node1)=-nelem
+                     nactdog(3,node1)=nelem
                   endif
-               elseif(nactdog(3,node1).gt.2) then
+               elseif(nactdog(3,node1).lt.-2) then  
                   nactdog(3,node1)=0
                   write(*,*) '*WARNING :in subroutine initialgas.f'
                   write(*,*) '          more than 2 elements GASPIPE'
@@ -423,9 +452,9 @@
                if((nactdog(3,node2).eq.1).or.
      &            (nactdog(3,node2).eq.2)) then
                   if (node1.ne.0) then
-                     nactdog(3,node2)=-nelem
+                     nactdog(3,node2)=nelem
                   endif
-               elseif(nactdog(3,node2).gt.2) then
+               elseif(nactdog(3,node2).lt.-2) then  
                   nactdog(3,node2)=0
                   write(*,*) '*WARNING :in subroutine initialgas.f'
                   write(*,*) '          more than 2 elements GASPIPE'
@@ -438,19 +467,17 @@
             endif
          enddo
 !
-!        for a non-chamber node a gaspipe element this node belongs
+!        for a non-chamber node, the gaspipe element this node belongs
 !        to is stored in nactdog(3,node)
 !
          do i=1,ntg
             node=itg(i)
-            if(nactdog(3,node).lt.0) then
-               nactdog(3,node)=-nactdog(3,node)
-            else
+            if(nactdog(3,node).le.0) then           
                nactdog(3,node)=-1
             endif
          enddo
-!     
-!     The static temperature is calculated and stored in voldgas(3,node)
+!
+!     The static temperature is calculated and stored in v(3,node)
 !     total temperatures are supposed equal (adiabatic pipe)
 !     
          do i=1,ntg
@@ -462,32 +489,35 @@
                nodem=kon(ipkon(nelem)+2)
 !     
                imat=ielmat(nelem)
-               call materialdata_tg(imat,ntmat_,voldgas(0,node),
+               call materialdata_tg(imat,ntmat_,v(0,node),
      &              shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho)
                kappa=cp/(cp-R)
-               xflow=voldgas(1,nodem)
-               Tt=voldgas(0,node)
-               Pt=voldgas(2,node)
+               xflow=v(1,nodem)
+               Tt=v(0,node)
+               Pt=v(2,node)
 !      
-               if(lakon(nelem)(2:5).eq.'GAPI') then
+               if((lakon(nelem)(2:5).eq.'GAPI')
+     &            .or.(lakon(nelem)(2:5).eq.'GAPX')) then
                   A=prop(index+1)
-                  if(lakon(nelem)(2:6).eq.'GAPIA') then
+                  if((lakon(nelem)(2:6).eq.'GAPIA') 
+     &            .or.(lakon(nelem)(2:6).eq.'GAPXA')) then                  
                      case=0
-                  elseif(lakon(nelem)(2:6).eq.'GAPII') then
+                  elseif((lakon(nelem)(2:6).eq.'GAPII')
+     &                .or.(lakon(nelem)(2:6).eq.'GAPXI')) then
                      case=1
                   endif     
-!                     case=0
 !               
                elseif(lakon(nelem)(2:3).eq.'RE') then
                   index2=ipkon(nelem)
                   node1=kon(index2+1)
                   node2=kon(index2+3)
                   if(lakon(nelem)(4:5).eq.'EX') then
-                     if(lakon(prop(index+4))(2:6).eq.'GAPIA') then
+                     if((lakon(prop(index+4))(2:6).eq.'GAPIA')
+     &             .or.(lakon(prop(index+4))(2:6).eq.'GAPXA')) then
                         case=0
-                     elseif(lakon(prop(index+4))(2:6).eq.'GAPII') then
+                     elseif((lakon(prop(index+4))(2:6).eq.'GAPII')
+     &                 .or.(lakon(prop(index+4))(2:6).eq.'GAPXI')) then
                         case=1
-!                     case=prop(ielprop(prop(index+4)+5))
                      endif
                   else
                      case=0
@@ -498,32 +528,16 @@
 !
                   elseif(lakon(nelem)(4:5).eq.'BR') then
                      if(lakon(nelem)(4:6).eq.'BRJ') then
-                        if(nelem.eq.prop(index+2))then
-!                           if(node.eq.node1) then 
+                        if(nelem.eq.nint(prop(index+2)))then
                               A=prop(index+5)
-!                           elseif(node.eq.node2)then
-!                              A=prop(index+5)
-!                           endif
-                        elseif(nelem.eq.prop(index+3)) then
-!                           if(node.eq.node1) then 
+                        elseif(nelem.eq.nint(prop(index+3))) then
                               A=prop(index+6)
-!                           elseif(node.eq.node2)then
-!                             A=prop(index+6)
-!                           endif
                         endif
                      elseif(lakon(nelem)(4:6).eq.'BRS') then
-                        if(nelem.eq.prop(index+2))then
-!                           if(node.eq.node1) then 
+                        if(nelem.eq.nint(prop(index+2)))then
                               A=prop(index+5)
-!                           elseif(node.eq.node2)then
-!                              A=prop(index+5)
-!                           endif
-                        elseif(nelem.eq.prop(index+3)) then
-!                           if(node.eq.node1) then 
+                        elseif(nelem.eq.nint(prop(index+3))) then
                               A=prop(index+6)
-!                           elseif(node.eq.node2)then
-!                              A=prop(index+6)
-!                           endif
                         endif
                      endif
 !                     
@@ -536,16 +550,16 @@
                   endif
                endif
 !     
-               if(voldgas(3,node).eq.0) then
+               if(v(3,node).eq.0) then
                   call ts_calc(xflow,Tt,Pt,kappa,r,a,Ts,case)
-                  voldgas(3,node)=Ts
+                  v(3,node)=Ts
                endif
 !     
-!     if the element is not of gaspipe type, total and static temperatures are 
-!     equal
+!     if the element is not of gaspipe or branch type,
+!     total and static temperatures are equal
 !
             elseif(node.ne.0) then
-               voldgas(3,node)=voldgas(0,node)
+               v(3,node)=v(0,node)
             endif
          enddo
       endif

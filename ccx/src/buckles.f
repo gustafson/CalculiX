@@ -50,8 +50,6 @@
 !
       if(isolver.eq.0) then
          solver(1:7)='SPOOLES'
-      elseif(isolver.eq.1) then
-         solver(1:7)='PROFILE'
       elseif(isolver.eq.2) then
          solver(1:16)='ITERATIVESCALING'
       elseif(isolver.eq.3) then
@@ -70,10 +68,6 @@
 !
       if(solver(1:7).eq.'SPOOLES') then
          isolver=0
-      elseif(solver(1:7).eq.'PROFILE') then
-         write(*,*) '*WARNING in buckles: the profile solver is not'
-         write(*,*) '         allowed in buckling calculations;'
-         write(*,*) '         the default solver is used'
       elseif(solver(1:16).eq.'ITERATIVESCALING') then
          write(*,*) '*WARNING in frequencies: the iterative scaling'
          write(*,*) '         procedure is not available for buckling'
@@ -116,7 +110,7 @@
      &quested'
          stop
       endif
-      read(textpart(2)(1:20),'(f20.10)',iostat=istat) tol
+      read(textpart(2)(1:20),'(f20.0)',iostat=istat) tol
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
       if(tol.le.0.) then
          tol=1.d-2
