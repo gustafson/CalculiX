@@ -19,7 +19,8 @@
       subroutine e_c3d_rhs_th(co,nk,konl,lakonl,
      &  ff,nelem,nmethod,t0,t1,vold,nelemload,
      &  sideload,xload,nload,idist,dtime,
-     &  ttime,time,istep,iinc,xloadold,reltime)
+     &  ttime,time,istep,iinc,xloadold,reltime,
+     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc)
 !
 !     computation of the rhs for the element with
 !     the topology in konl
@@ -32,15 +33,16 @@
       character*20 sideload(*)
 !
       integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nelem,nmethod,
-     &  nload,idist,i,j,k,i1,iflag,
-     &  jj,id,ipointer,ig,kk,nope,nopes,mint2d,
-     &  mint3d,ifacet(6,4),nopev,ifacew(8,5),iinc,istep,jltyp
+     &  nload,idist,i,j,k,i1,iflag,ipompc(*),nodempc(3,*),nmpc,
+     &  jj,id,ipointer,ig,kk,nope,nopes,mint2d,ikmpc(*),ilmpc(*),
+     &  mint3d,ifacet(6,4),nopev,ifacew(8,5),iinc,istep,jltyp,
+     &  iscale
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,2),xloadold(2,*),
+      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),xloadold(2,*),
      &  ff(60),shpj(4,20),dxsj2,temp,press,t0(*),t1(*),coords(3),
-     &  xl2(0:3,8),xsj2(3),shp2(4,8),vold(0:4,*),xload(2,*),
+     &  xl2(0:3,8),xsj2(3),shp2(7,8),vold(0:4,*),xload(2,*),
      &  xi,et,ze,xsj,xsjj,t1l,ttime,time,weight,pgauss(3),tvar(2),
-     &  reltime,areaj
+     &  reltime,areaj,coefmpc(*)
 !
       real*8 dtime
 !
@@ -243,10 +245,13 @@
                      enddo
                   enddo
                   jltyp=1
+                  iscale=1
                   call dflux(xload(1,id),t1l,istep,iinc,tvar,
      &                 nelem,kk,pgauss,jltyp,temp,press,sideload(id),
-     &                 areaj,vold)
-                   if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &                 areaj,vold,co,lakonl,konl,
+     &                 ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,iscale)
+                   if((nmethod.eq.1).and.(iscale.ne.0))
+     &                   xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime
                endif
                do jj=1,nope
@@ -380,10 +385,13 @@
                   read(sideload(id)(2:2),'(i1)') jltyp
                   jltyp=jltyp+10
                   if(sideload(id)(1:1).eq.'S') then
+                     iscale=1
                      call dflux(xload(1,id),temp,istep,iinc,tvar,
      &                    nelem,i,coords,jltyp,temp,press,sideload(id),
-     &                    areaj,vold)
-                     if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &                    areaj,vold,co,lakonl,konl,ipompc,nodempc,
+     &                    coefmpc,nmpc,ikmpc,ilmpc,iscale)
+                     if((nmethod.eq.1).and.(iscale.ne.0))
+     &                     xload(1,id)=xloadold(1,id)+
      &                    (xload(1,id)-xloadold(1,id))*reltime
                   endif
                endif

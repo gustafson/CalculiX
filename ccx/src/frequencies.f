@@ -52,15 +52,17 @@
 !     default solver
 !
       if(isolver.eq.0) then
-         solver(1:7)='SPOOLES                          '
+         solver(1:7)='SPOOLES'
       elseif(isolver.eq.2) then
-         solver(1:16)='ITERATIVESCALING                '
+         solver(1:16)='ITERATIVESCALING'
       elseif(isolver.eq.3) then
-         solver(1:17)='ITERATIVECHOLESKY               '
+         solver(1:17)='ITERATIVECHOLESKY'
       elseif(isolver.eq.4) then
-         solver(1:3)='SGI                              '
+         solver(1:3)='SGI'
       elseif(isolver.eq.5) then
-         solver(1:5)='TAUCS                            '
+         solver(1:5)='TAUCS'
+      elseif(isolver.eq.7) then
+         solver(1:7)='PARDISO'
       endif
 !
       do i=2,n
@@ -87,6 +89,8 @@
          isolver=5
       elseif(solver(1:13).eq.'MATRIXSTORAGE') then
          isolver=6
+      elseif(solver(1:7).eq.'PARDISO') then
+         isolver=7
       else
          write(*,*) '*WARNING in frequencies: unknown solver;'
          write(*,*) '         the default solver is used'

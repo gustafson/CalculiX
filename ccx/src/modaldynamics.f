@@ -25,7 +25,7 @@
 !
       implicit none
 !
-      logical steadystate
+      logical steadystate,cyclicsymmetry
 !
       character*1 inpc(*)
       character*20 solver
@@ -44,6 +44,7 @@
       tmin=0.d0
       tmax=0.d0
       steadystate=.false.
+      cyclicsymmetry=.false.
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR in modaldynamics: *MODAL DYNAMIC can only'
@@ -54,15 +55,17 @@
 !     default solver
 !
       if(isolver.eq.0) then
-         solver(1:7)='SPOOLES                          '
+         solver(1:7)='SPOOLES'
       elseif(isolver.eq.2) then
-         solver(1:16)='ITERATIVESCALING                '
+         solver(1:16)='ITERATIVESCALING'
       elseif(isolver.eq.3) then
-         solver(1:17)='ITERATIVECHOLESKY               '
+         solver(1:17)='ITERATIVECHOLESKY'
       elseif(isolver.eq.4) then
-         solver(1:3)='SGI                              '
+         solver(1:3)='SGI'
       elseif(isolver.eq.5) then
-         solver(1:5)='TAUCS                            '
+         solver(1:5)='TAUCS'
+      elseif(isolver.eq.7) then
+         solver(1:7)='PARDISO'
       endif
 !
       do i=2,n
@@ -74,6 +77,8 @@
             read(textpart(i)(8:27),'(f20.0)',iostat=istat) ctrl(27)
          elseif(textpart(i)(1:11).eq.'STEADYSTATE') then
             steadystate=.true.
+         elseif(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
+            cyclicsymmetry=.true.
          endif
       enddo
 !
@@ -95,6 +100,8 @@
          isolver=5
       elseif(solver(1:13).eq.'MATRIXSTORAGE') then
          isolver=6
+      elseif(solver(1:7).eq.'PARDISO') then
+         isolver=7
       else
          write(*,*) '*WARNING in modaldynamics: unknown solver;'
          write(*,*) '         the default solver is used'
@@ -211,7 +218,8 @@
 !       mastructcs is called instead of mastruct a fictitious
 !       minimum nodal diameter is stored
 !
-      if((mcs.ne.0).and.(cs(2,1)<0.d0)) cs(2,1)=0.d0
+      if((cyclicsymmetry).and.(mcs.ne.0).and.(cs(2,1)<0.d0)) 
+     &       cs(2,1)=0.d0
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

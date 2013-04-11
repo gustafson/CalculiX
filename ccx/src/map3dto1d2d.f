@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,
-     &  ne,cflag,co)
+     &  ne,cflag,co,vold,force)
 !
 !     interpolates 3d field nodal values to 1d/2d nodal locations
 !
@@ -26,24 +26,34 @@
 !
       implicit none
 !
+      logical force
+!
       character*1 cflag
       character*8 lakon(*),lakonl
 !
       integer ipkon(*),inum(*),kon(*),ne,indexe,nfield,nk,i,j,k,l,m,
-     &  node3(4,3),node6(2,6),node8(2,8),node2d,node3d,indexe2d,ne1d2d,
+     &  node3(8,3),node6(3,6),node8(3,8),node2d,node3d,indexe2d,ne1d2d,
      &  node3m(8,3),node(8),m1,m2,nodea,nodeb,nodec,iflag
 !
-      real*8 yn(nfield,*),cg(3),p(3),pcg(3),t(3),xl(0:3,8),shp(4,8),
-     &  xsj(3),e1(3),e2(3),e3(3),s(6),dd,xi,et,co(3,*),xs(3,2)
+      real*8 yn(nfield,*),cg(3),p(3),pcg(3),t(3),xl(0:3,8),shp(7,8),
+     &  xsj(3),e1(3),e2(3),e3(3),s(6),dd,xi,et,co(3,*),xs(3,7),
+     &  vold(0:4,*),ratioe(3)
 !
       include "gauss.f"
 !
-      data node3 /1,4,8,5,9,11,15,13,2,3,7,6/
+c      data node3 /1,4,8,5,9,11,15,13,2,3,7,6/
+      data node3 /1,4,8,5,12,20,16,17,9,11,15,13,
+     &            0,0,0,0,2,3,7,6,10,19,14,18/
       data node3m /1,5,8,4,17,16,20,12,
      &             0,0,0,0,0,0,0,0,
      &             3,7,6,2,19,14,18,10/
-      data node6 /1,4,2,5,3,6,7,10,8,11,9,12/
-      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
+c      data node6 /1,4,2,5,3,6,7,10,8,11,9,12/
+c      data node8 /1,5,2,6,3,7,4,8,9,13,10,14,11,15,12,16/
+      data node6 /1,13,4,2,14,5,3,15,6,7,0,10,8,0,11,9,0,12/
+      data node8 /1,17,5,2,18,6,3,19,7,4,20,8,9,0,13,10,0,14,
+     &      11,0,15,12,0,16/
+      data ratioe /0.16666666666667d0,0.66666666666666d0,
+     &     0.16666666666667d0/
       data iflag /2/
 !
 !     removing any results in 1d/2d nodes
@@ -114,13 +124,66 @@
             indexe2d=indexe+15
             do j=1,6
                node2d=kon(indexe2d+j)
-               do l=1,2
-                  inum(node2d)=inum(node2d)-1
-                  node3d=kon(indexe+node6(l,j))
-                  do k=1,nfield
-                     yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
-                  enddo
-               enddo
+c               do l=1,2
+c                  inum(node2d)=inum(node2d)-1
+c                  node3d=kon(indexe+node6(l,j))
+c                  do k=1,nfield
+c                     yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
+c                  enddo
+c               enddo
+               inum(node2d)=inum(node2d)-1
+               if(.not.force) then
+!
+!                 taking the mean across the thickness
+!
+                  if(j.le.3) then
+!
+!                    end nodes: weights 1/6,2/3 and 1/6
+!
+                     do l=1,3
+                        node3d=kon(indexe+node6(l,j))
+                        do k=1,nfield
+                           yn(k,node2d)=yn(k,node2d)+
+     &                                  yn(k,node3d)*ratioe(l)
+                        enddo
+                     enddo
+                  else
+!
+!                    middle nodes: weights 1/2,1/2
+!
+                     do l=1,3,2
+                        node3d=kon(indexe+node6(l,j))
+                        do k=1,nfield
+                           yn(k,node2d)=yn(k,node2d)+yn(k,node3d)/2.d0
+                        enddo
+                     enddo
+                  endif
+               else
+!
+!                 forces must be summed
+!
+                  if(j.le.3) then
+!
+!                    end nodes
+!
+                     do l=1,3
+                        node3d=kon(indexe+node6(l,j))
+                        do k=1,nfield
+                           yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
+                        enddo
+                     enddo
+                  else
+!
+!                    middle nodes
+!
+                     do l=1,3,2
+                        node3d=kon(indexe+node6(l,j))
+                        do k=1,nfield
+                           yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
+                        enddo
+                     enddo
+                  endif
+               endif
             enddo
          elseif(lakonl(7:7).eq.'B') then
             indexe2d=indexe+20
@@ -130,13 +193,38 @@
 !
                do j=1,3
                   node2d=kon(indexe2d+j)
-                  do l=1,4
-                     inum(node2d)=inum(node2d)-1
-                     node3d=kon(indexe+node3(l,j))
-                     do k=1,nfield
-                        yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
+                  if(.not.force) then
+!
+!                    mean value of vertex values
+!
+                     do l=1,4
+                        inum(node2d)=inum(node2d)-1
+                        node3d=kon(indexe+node3(l,j))
+                        do k=1,nfield
+                           yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
+                        enddo
                      enddo
-                  enddo
+                  else
+!
+!                    forces must be summed across the section
+!
+                     inum(node2d)=inum(node2d)-1
+                     if(j.ne.2) then
+                        do l=1,8
+                           node3d=kon(indexe+node3(l,j))
+                           do k=1,nfield
+                              yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
+                           enddo
+                        enddo
+                     else
+                        do l=1,4
+                           node3d=kon(indexe+node3(l,j))
+                           do k=1,nfield
+                              yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
+                           enddo
+                        enddo
+                     endif
+                  endif
                enddo
             else
 !
@@ -151,7 +239,10 @@
                   do l=1,8
                      node(l)=kon(indexe+node3m(l,j))
                      do m=1,3
-                        xl(m,l)=co(m,node(l))
+c                        xl(m,l)=co(m,node(l))
+                        xl(m,l)=co(m,node(l))+vold(m,node(l))
+c                     write(*,*) 'i,j,l ',i,j,l,co(m,node(l)),
+c     &                    vold(m,node(l)),node(l)
                      enddo
                   enddo
 !
@@ -166,14 +257,41 @@
                      endif
                      e2(m)=(xl(m,7)-xl(m,5))
                   enddo
+!
+!                 normalizing e1
+!
                   dd=dsqrt(e1(1)*e1(1)+e1(2)*e1(2)+e1(3)*e1(3))
                   do m=1,3
                      e1(m)=e1(m)/dd
                   enddo
+!
+!                 making sure that e2 is orthogonal to e1
+!
+                  dd=e1(1)*e2(1)+e1(2)*e2(2)+e1(3)*e2(3)
+                  do m=1,3
+                     e2(m)=e2(m)-dd*e1(m)
+                  enddo
+!
+!                 normalizing e2
+!                  
                   dd=dsqrt(e2(1)*e2(1)+e2(2)*e2(2)+e2(3)*e2(3))
                   do m=1,3
                      e2(m)=e2(m)/dd
                   enddo
+!
+!                 e3 = e1 x e2 for j=3, e3 = e2 x e1 for j=1
+!
+                  if(j.eq.1) then
+                     e3(1)=e2(2)*e1(3)-e1(2)*e2(3)
+                     e3(2)=e2(3)*e1(1)-e1(3)*e2(1)
+                     e3(3)=e2(1)*e1(2)-e1(1)*e2(2)
+                  else
+                     e3(1)=e1(2)*e2(3)-e2(2)*e1(3)
+                     e3(2)=e1(3)*e2(1)-e2(3)*e1(1)
+                     e3(3)=e1(1)*e2(2)-e2(1)*e1(2)
+                  endif
+!
+c                  write(*,*) i,j,e3(1),e3(2),e3(3)
 !
 !                 loop over the integration points (2x2)
 !                  
@@ -184,16 +302,22 @@ c                  do l=1,9
 c                     xi=gauss2d3(1,l)
 c                     et=gauss2d3(2,l)
                      call shape8q(xi,et,xl,xsj,xs,shp,iflag)
-!
-!                    local unit normal (only once per section)
-!
-                     if(l.eq.1) then
-                        dd=dsqrt(xsj(1)*xsj(1)+xsj(2)*xsj(2)+
-     &                        xsj(3)*xsj(3))
-                        do m=1,3
-                           e3(m)=xsj(m)/dd
-                        enddo
-                     endif
+c!
+c!                    local unit normal (only once per section)
+c!
+c                     if(l.eq.1) then
+c                        dd=dsqrt(xsj(1)*xsj(1)+xsj(2)*xsj(2)+
+c     &                        xsj(3)*xsj(3))
+c                        if(j.eq.1) then
+c                           do m=1,3
+c                              e3(m)=-xsj(m)/dd
+c                           enddo
+c                        else
+cc                           do m=1,3
+cc                              e3(m)=xsj(m)/dd
+cc                           enddo
+c                        endif
+c                     endif
 !
 !                    local stress tensor
 !
@@ -234,21 +358,33 @@ c     &                   *weight2d3(l)
 !
 !                    section moments
 !
+!                    about beam axis
+!
                      yn(4,node2d)=yn(4,node2d)+
-     &                     (e1(1)*pcg(2)*t(3)+e1(2)*pcg(3)*t(1)+
-     &                     e1(3)*pcg(1)*t(2)-e1(3)*pcg(2)*t(1)-
-     &                     e1(1)*pcg(3)*t(2)-e1(2)*pcg(1)*t(3))
+     &                     (e3(1)*pcg(2)*t(3)+e3(2)*pcg(3)*t(1)+
+     &                     e3(3)*pcg(1)*t(2)-e3(3)*pcg(2)*t(1)-
+     &                     e3(1)*pcg(3)*t(2)-e3(2)*pcg(1)*t(3))
 c     &                     *weight2d3(l)
+!
+!                    about 2-direction
+!
                      yn(5,node2d)=yn(5,node2d)+
      &                     (e2(1)*pcg(2)*t(3)+e2(2)*pcg(3)*t(1)+
      &                     e2(3)*pcg(1)*t(2)-e2(3)*pcg(2)*t(1)-
      &                     e2(1)*pcg(3)*t(2)-e2(2)*pcg(1)*t(3))
 c     &                     *weight2d3(l)
+!
+!                    about 1-direction
+!
                      yn(6,node2d)=yn(6,node2d)+
-     &                     (e3(1)*pcg(2)*t(3)+e3(2)*pcg(3)*t(1)+
-     &                     e3(3)*pcg(1)*t(2)-e3(3)*pcg(2)*t(1)-
-     &                     e3(1)*pcg(3)*t(2)-e3(2)*pcg(1)*t(3))
+     &                     (e1(1)*pcg(2)*t(3)+e1(2)*pcg(3)*t(1)+
+     &                     e1(3)*pcg(1)*t(2)-e1(3)*pcg(2)*t(1)-
+     &                     e1(1)*pcg(3)*t(2)-e1(2)*pcg(1)*t(3))
 c     &                     *weight2d3(l)
+!
+!                    components 5 and 6 are switched in the frd
+!                    format, so the final order is beam axis,
+!                    1-direction and 2-direction, or s12, s23 and s31
 !
                   enddo
                enddo
@@ -258,14 +394,59 @@ c     &                     *weight2d3(l)
             indexe2d=indexe+20
             do j=1,8
                node2d=kon(indexe2d+j)
-               do l=1,2
-                  inum(node2d)=inum(node2d)-1
-                  node3d=kon(indexe+node8(l,j))
-                  do k=1,nfield
-                     yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
-                  enddo
-c                  write(*,*) node2d,node3d,yn(4,node2d),yn(4,node3d)
-               enddo
+               inum(node2d)=inum(node2d)-1
+               if(.not.force) then
+!
+!                 taking the mean across the thickness
+!
+                  if(j.le.4) then
+!
+!                    end nodes: weights 1/6,2/3 and 1/6
+!
+                     do l=1,3
+                        node3d=kon(indexe+node8(l,j))
+                        do k=1,nfield
+                           yn(k,node2d)=yn(k,node2d)+
+     &                                  yn(k,node3d)*ratioe(l)
+                        enddo
+                     enddo
+                  else
+!
+!                    middle nodes: weights 1/2,1/2
+!
+                     do l=1,3,2
+                        node3d=kon(indexe+node8(l,j))
+                        do k=1,nfield
+                           yn(k,node2d)=yn(k,node2d)+yn(k,node3d)/2.d0
+                        enddo
+                     enddo
+                  endif
+               else
+!
+!                 forces must be summed
+!
+                  if(j.le.4) then
+!
+!                    end nodes
+!
+                     do l=1,3
+                        node3d=kon(indexe+node8(l,j))
+                        do k=1,nfield
+                           yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
+                        enddo
+                     enddo
+                  else
+!
+!                    middle nodes
+!
+                     do l=1,3,2
+                        node3d=kon(indexe+node8(l,j))
+                        do k=1,nfield
+                           yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
+                        enddo
+                     enddo
+                  endif
+               endif
             enddo
          endif
 !

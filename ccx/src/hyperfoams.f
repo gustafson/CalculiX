@@ -28,13 +28,14 @@
       character*132 textpart(16)
 !
       integer nelcon(2,*),nmat,ntmat,ntmat_,istep,istat,ipoinpc(0:*),
-     &  n,key,i,ityp,iperturb,iend,ncmat_,irstrt,iline,ipol,inl,
+     &  n,key,i,ityp,iperturb(*),iend,ncmat_,irstrt,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*)
 !
       real*8 elcon(0:ncmat_,ntmat_,*)
 !
       ntmat=0
-      iperturb=3
+      iperturb(1)=3
+      iperturb(2)=1
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in hyperfoams: *HYPERFOAM should be'

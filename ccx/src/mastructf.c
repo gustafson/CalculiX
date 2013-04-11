@@ -34,12 +34,13 @@ void mastructf(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      int *nzst, int *nzsv, int *nzsp, int *nzsk,
               int *ithermal, int *ikboun, int *ilboun, int *turbulent,
               int *nactdok, int *ifreestream, int *nfreestream,
-              int *isolidface, int *nsolidface, int *nzs){
+	      int *isolidface, int *nsolidface, int *nzs, int *iexplicit,
+	       int *ielmat, int *inomat, char *labmpc){
 
   int i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
-    ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,
+    ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,idir,
     index1,index2,m,node,nzs_,ist,kflag,indexe,nope,isize,*mast1=NULL,
-    *irowt=NULL,*irowv=NULL,*irowp=NULL,*irowk=NULL;
+    *irowt=NULL,*irowv=NULL,*irowp=NULL,*irowk=NULL,fluid,imaterial;
 
   /* the indices in the comments follow FORTRAN convention, i.e. the
      fields start with 1 */
@@ -72,43 +73,68 @@ void mastructf(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  node=kon[indexe+j]-1;
 	  for(k=0;k<5;++k){
 	      nactdoh[5*node+k]=1;
+	      inomat[node]=ielmat[i];
 	  }
       }
   }
   
   /* determining the active degrees of freedom due to mpc's */
   
-  /*for(i=0;i<*nmpc;++i){
-    index=ipompc[i]-1;
-    do{
-    nactdoh[4*nodempc[3*index]+nodempc[3*index+1]-4]=1;
-    index=nodempc[3*index+2];
-    if(index==0) break;
-    index--;
-    }while(1);
-    }*/
-  
-  /* subtracting the SPC and MPC nodes */
-  
-  for(i=0;i<*nboun;++i){
-      if(ndirboun[i]>4){continue;}
-      nactdoh[5*(nodeboun[i]-1)+ndirboun[i]]=0;
-  }
-  
-  /* temperature MPC's are also deemed to apply to pressure; 
-     no mixed temperature-pressure MPC's are allowed */
-
   for(i=0;i<*nmpc;++i){
+
+      /* check whether fluid MPC: a MPC is a fluid MPC if it
+         contains at least one node belonging to a fluid
+	 element */
+
       index=ipompc[i]-1;
-      if(nodempc[3*index+1]>4){continue;}
-      if(nodempc[3*index+1]==0){
-	  nactdoh[5*(nodempc[3*index]-1)]=0;
-	  nactdoh[5*(nodempc[3*index]-1)+4]=0;
-      }else{
-	  nactdoh[5*(nodempc[3*index]-1)+nodempc[3*index+1]]=0;
+      fluid=0;
+      do{
+	  node=nodempc[3*index]-1;
+
+          /* check whether first velocity DOF is active */
+
+	  if(nactdoh[5*node+1]!=0){
+	      fluid=1;
+	      imaterial=inomat[node];
+	      break;
+	  }
+	  index=nodempc[3*index+2];
+	  if(index==0) break;
+	  index--;
+      }while(1);
+
+      if(fluid){
+	  index=ipompc[i]-1;
+	  do{
+	      node=nodempc[3*index]-1;
+	      idir=nodempc[3*index+1];
+	      inomat[node]=imaterial;
+/* next line may be necessary for pressure and semi-implicit scheme */
+/*	      nactdoh[5*node+idir]=1;*/
+	      index=nodempc[3*index+2];
+	      if(index==0) break;
+	      index--;
+	  }while(1);
       }
   }
   
+  /* subtracting pressure SPCs and MPCs (only for the semi-implicit scheme) */
+
+  if(*iexplicit==0){
+      for(i=0;i<*nboun;++i){
+	  if(ndirboun[i]!=4){continue;}
+	  nactdoh[5*(nodeboun[i]-1)+ndirboun[i]]=0;
+      }
+
+      for(i=0;i<*nmpc;++i){
+	  index=ipompc[i]-1;
+	  if(nodempc[3*index+1]>4){continue;}
+	  if(nodempc[3*index+1]==4){
+	      nactdoh[5*(nodempc[3*index]-1)+4]=0;
+	  }
+      }
+  }      
+
   /* numbering the active degrees of freedom */
   
   *neqt=0;*neqv=0;*neqp=0;
@@ -136,7 +162,7 @@ void mastructf(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   
   /* determining the turbulence degrees of freedom */
 
-  if(*turbulent==1){
+  if(*turbulent!=0){
 
       /* initialisation of nactdok */
       
@@ -162,25 +188,25 @@ void mastructf(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      nactdok[node]=1;
 	  }
       }
-      
-      /* subtracting the SPC nodes (freestream and solid face) */
-   
-      for(i=0;i<*nfreestream;i++){
-	  nactdok[ifreestream[i]-1]=0;
-      }
-   
-      for(i=0;i<*nsolidface;i++){
-	  nactdok[isolidface[i]-1]=0;
-      }
-      
-      /* temperature MPC's are also deemed to apply to turbulence;  */
-      
+  
+  /* determining the active degrees of freedom due to mpc's */
+
+      /* if the MPC is a cyclic pressure MPC it is
+	 also applied to the turbulence parameters */
+  
       for(i=0;i<*nmpc;++i){
+	  if(strcmp1(&labmpc[20*i],"CYCLIC")!=0) continue;
 	  index=ipompc[i]-1;
-	  if(nodempc[3*index+1]>4){continue;}
-	  if(nodempc[3*index+1]==0){
-	      nactdok[nodempc[3*index]-1]=0;
-	  }
+	  do{
+	      node=nodempc[3*index]-1;
+	      if(inomat[node]==0) break;
+	      idir=nodempc[3*index+1];
+	      if(idir!=4) break;
+/*	      nactdok[node]=1;*/
+	      index=nodempc[3*index+2];
+	      if(index==0) break;
+	      index--;
+	  }while(1);
       }
       
       /* numbering the active degrees of freedom */
@@ -350,7 +376,7 @@ void mastructf(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       for(i=0;i<*neqt;++i){
 	  if(ipointer[i]==0){
 	      if(i>=*neqt) continue;
-	      printf("*ERROR in mastruct: zero column\n");
+	      printf("*ERROR in mastructf: zero column\n");
 	      FORTRAN(stop,());
 	  }
 	  istart=ipointer[i];
@@ -582,7 +608,8 @@ void mastructf(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   for(i=0;i<*neqv;++i){
       if(ipointer[i]==0){
 	  if(i>=*neqv) continue;
-	  printf("*ERROR in mastrucft: zero column in the velocity matrix\n");
+	  printf("*ERROR in mastructf: zero column in the velocity matrix\n");
+	  printf("       DOF %d\n",i);
 	  FORTRAN(stop,());
       }
       istart=ipointer[i];
@@ -709,10 +736,10 @@ void mastructf(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		  
 		  if(jdof1==0){
 		      idof1=jdof2;
-		      idof2=8*node1-8;}
+		      idof2=8*node1-4;}
 		  else{
 		      idof1=jdof1;
-		      idof2=8*node2-8;}
+		      idof2=8*node2-4;}
 		  
 		  if(*nmpc>0){
 		      
@@ -739,8 +766,8 @@ void mastructf(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      }
 	      
 	      else{
-		  idof1=8*node1-8;
-		  idof2=8*node2-8;
+		  idof1=8*node1-4;
+		  idof2=8*node2-4;
 		  mpc1=0;
 		  mpc2=0;
 		  if(*nmpc>0){
@@ -810,7 +837,7 @@ void mastructf(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   for(i=0;i<*neqp;++i){
       if(ipointer[i]==0){
 	  if(i>=*neqp) continue;
-	  printf("*ERROR in mastruct: zero column\n");
+	  printf("*ERROR in mastructf: zero column\n");
 	  FORTRAN(stop,());
       }
       istart=ipointer[i];
@@ -885,7 +912,7 @@ void mastructf(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   
   /* turbulence entries */
   
-  if(*turbulent==1){
+  if(*turbulent!=0){
       
       ifree=0;
       nzs_=*nzs;
@@ -1040,7 +1067,7 @@ void mastructf(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       for(i=0;i<*neqk;++i){
 	  if(ipointer[i]==0){
 	      if(i>=*neqk) continue;
-	      printf("*ERROR in mastruct: zero column\n");
+	      printf("*ERROR in mastructf: zero column\n");
 	      FORTRAN(stop,());
 	  }
 	  istart=ipointer[i];

@@ -39,7 +39,7 @@
      &  nnn,irstrt,ttime,qaold,output,typeboun,inpc,
      &  nline,ipoinp,inp,tieset,tietol,ntie,fmpc,cbody,ibody,xbody,
      &  nbody,nbody_,xbodyold,nam_,ielprop,nprop,nprop_,prop,itpamp,
-     &  iviewfile,ipoinpc)
+     &  iviewfile,ipoinpc,cfd)
 !
       implicit none
 !
@@ -54,9 +54,9 @@
 !     istat: error indicator (<0:EOF, >0: input error)
 !
       logical boun_flag,cload_flag,dload_flag,temp_flag,elprint_flag,
-     &  nodeprint_flag,elfile_flag,nodefile_flag,node_flag,
+     &  nodeprint_flag,elfile_flag,nodefile_flag,contactfile_flag,
      &  dflux_flag,cflux_flag,film_flag,radiate_flag,out3d,
-     &  solid,fluid
+     &  solid,network,faceprint_flag,contactprint_flag
 !
       character*1 typeboun(*),inpc(*)
       character*3 output
@@ -77,15 +77,16 @@
      &  iponor(2,*),knor(*),ikforc(*),ilforc(*),iponoel(*),inoel(3,*),
      &  infree(4),ixfree,ikfree,inoelfree,iponoelmax,rig(*),nshcon(*),
      &  ncocon(2,*),nodebounold(*),ielprop(*),nprop,nprop_,maxsectors,
-     &  ndirbounold(*),nnn(*),nline,ipoinp(2,*),inp(3,*),nentries
+     &  ndirbounold(*),nnn(*),nline,ipoinp(2,*),inp(3,*),
+     &  ianisoplas,cfd,ifile_output
 !
       integer nalset,nalset_,nmat,nmat_,ntmat_,norien,norien_,
      &  nmethod,nk,ne,nboun,nmpc,nmpc_,mpcfree,i,istat,n,
      &  key,nk_,ne_,nboun_,ncs_,namtot_,nstate_,iviewfile,
-     &  isolver,ithermal(2),iperturb,iprestr,istep,mei(4),nkon,
+     &  isolver,ithermal(2),iperturb(*),iprestr,istep,mei(4),nkon,
      &  nprint,nload,nload_,nforc,nforc_,nlabel,iumat,
-     &  nset,nset_,nprint_,nam,nam_,jout,ncmat_,itpamp,
-     &  ierror,idrct,jmax,iexpl,iplas,npmat_,mint_,ntrans,ntrans_,
+     &  nset,nset_,nprint_,nam,nam_,jout(2),ncmat_,itpamp,
+     &  ierror,idrct,jmax(2),iexpl,iplas,npmat_,mint_,ntrans,ntrans_,
      &  M_or_SPC,nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),nflow,
      &  memmpc_,ne1d,ne2d,nener,irstrt,ii,maxlenmpc,inl,ipol,
      &  iline,mcs,ntie,ntie_,lprev,newstep,nbody,nbody_,ibody(3,*)
@@ -103,12 +104,14 @@
      &  xstate(nstate_,mint_,*),ttime,qaold(2),cs(17,*),tietol(*),
      &  xbody(7,*),xbodyold(7,*)
 !
-      real*8 fei(3),tinc,tper,xmodal(6),tmin,tmax,
-     &  alpha,physcon(3)
+      real*8 fei(3),tinc,tper,xmodal(9),tmin,tmax,
+     &  alpha,physcon(*)
 !
-      save iaxial,solid,fluid
+      save iaxial,solid,ianisoplas,network
 !
-      nentries=12
+      integer nentries
+      parameter(nentries=13)
+!
       newstep=0
       iviewfile=0
 !
@@ -150,6 +153,9 @@
       temp_flag=.false.
       elprint_flag=.false.
       nodeprint_flag=.false.
+      faceprint_flag=.false.
+      contactprint_flag=.false.
+      contactfile_flag=.false.
       elfile_flag=.false.
       nodefile_flag=.false.
       film_flag=.false.
@@ -203,7 +209,8 @@
 !
          iaxial=0
          solid=.false.
-         fluid=.false.
+         network=.false.
+         ianisoplas=0
 !
       endif
 !
@@ -273,11 +280,25 @@
             call contactdampings(inpc,textpart,elcon,nelcon,
      &           nmat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
+         elseif(textpart(1)(1:12).eq.'*CONTACTFILE') then
+            ifile_output=3
+            call noelfiles(inpc,textpart,jout,filab,nmethod,
+     &           nodefile_flag,elfile_flag,ifile_output,nener,ithermal,
+     &           istep,istat,n,iline,ipol,inl,ipoinp,inp,out3d,nlabel,
+     &           amname,nam,itpamp,idrct,ipoinpc,cfd,contactfile_flag)
+            contactfile_flag=.true.
 !
          elseif(textpart(1)(1:12).eq.'*CONTACTPAIR') then
             call contactpairs(inpc,textpart,tieset,cs,istep,
      &           istat,n,iline,ipol,inl,ipoinp,inp,ntie,ntie_,
      &           iperturb,matname,nmat,ipoinpc,tietol)
+!
+         elseif(textpart(1)(1:13).eq.'*CONTACTPRINT') then
+            call contactprints(inpc,textpart,nprint,nprint_,jout,
+     &           prlab,prset,contactprint_flag,ithermal,istep,istat,n,
+     &           iline,ipol,inl,ipoinp,inp,amname,nam,itpamp,idrct,
+     &           ipoinpc,nener)
+            contactprint_flag=.true.
 !
          elseif(textpart(1)(1:9).eq.'*CONTROLS') then
             call controlss(inpc,textpart,ctrl,istep,istat,n,iline,
@@ -293,7 +314,7 @@
             call creeps(inpc,textpart,nelcon,nmat,ntmat_,npmat_,
      &        plicon,nplicon,elcon,iplas,iperturb,nstate_,ncmat_,
      &        matname,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &        ipoinpc)
+     &        ipoinpc,ianisoplas)
 !
          elseif(textpart(1)(1:16).eq.'*CYCLICHARDENING') then
             call cychards(inpc,textpart,nelcon,nmat,ntmat_,
@@ -312,7 +333,7 @@
      &        ics(3*ncs_+1),ics(5*ncs_+1),ics(7*ncs_+1),ics(8*ncs_+1),
      &        dcs(12*ncs_+1),ne,ipkon,kon,lakon,ics(14*ncs_+1),
      &        ics(15*ncs_+1),ics(16*ncs_+1),ics(18*ncs_+1),ipoinpc,
-     &        maxsectors,trab,ntrans,ntrans_)
+     &        maxsectors,trab,ntrans,ntrans_,jobnamec,vold,cfd)
 !
          elseif(textpart(1)(1:8).eq.'*DASHPOT') then
             call dashpots(inpc,textpart,nelcon,nmat,ntmat_,npmat_,
@@ -344,6 +365,12 @@
      &        namta,amta,ipoinpc)
             dflux_flag=.true.
 !
+         elseif(textpart(1)(1:20).eq.'*DISTRIBUTEDCOUPLING') then
+            call distrubutedcouplings(inpc,textpart,ipompc,nodempc,
+     &           coefmpc,nmpc,nmpc_,mpcfree,nk,ikmpc,ilmpc,
+     &           labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,
+     &           lakon,kon,ipkon,set,nset,istartset,iendset,ialset,co)
+!
          elseif(textpart(1)(1:6).eq.'*DLOAD') then
             call dloads(inpc,textpart,set,istartset,iendset,
      &        ialset,nset,nelemload,sideload,xload,nload,nload_,
@@ -357,7 +384,7 @@
          elseif(textpart(1)(1:8).eq.'*DYNAMIC') then
             call dynamics(inpc,textpart,nmethod,iperturb,tinc,tper,
      &        tmin,tmax,idrct,alpha,iexpl,isolver,istep,
-     &        istat,n,iline,ipol,inl,ipoinp,inp,ithermal,ipoinpc)
+     &        istat,n,iline,ipol,inl,ipoinp,inp,ithermal,ipoinpc,cfd)
 !
          elseif(textpart(1)(1:8).eq.'*ELASTIC') then
             call elastics(inpc,textpart,elcon,nelcon,
@@ -369,20 +396,21 @@
             call elements(inpc,textpart,kon,ipkon,lakon,nkon,
      &        ne,ne_,set,istartset,iendset,ialset,nset,nset_,nalset,
      &        nalset_,mint_,ixfree,iponor,xnor,istep,istat,n,iline,
-     &        ipol,inl,ipoinp,inp,iaxial,ipoinpc,solid,fluid)
+     &        ipol,inl,ipoinp,inp,iaxial,ipoinpc,solid,cfd,
+     &        network)
 !
          elseif((textpart(1)(1:7).eq.'*ELFILE').or.
      &          (textpart(1)(1:14).eq.'*ELEMENTOUTPUT')) then
-            node_flag=.false.
+            ifile_output=2
             call noelfiles(inpc,textpart,jout,filab,nmethod,
-     &           nodefile_flag,elfile_flag,node_flag,nener,ithermal,
+     &           nodefile_flag,elfile_flag,ifile_output,nener,ithermal,
      &           istep,istat,n,iline,ipol,inl,ipoinp,inp,out3d,nlabel,
-     &           amname,nam,itpamp,idrct,ipoinpc)
+     &           amname,nam,itpamp,idrct,ipoinpc,cfd,contactfile_flag)
             elfile_flag=.true.
 !
          elseif(textpart(1)(1:8).eq.'*ELPRINT') then
-            call elprints(inpc,textpart,set,istartset,iendset,ialset,
-     &        nset,nset_,nalset,nprint,nprint_,jout,
+            call elprints(inpc,textpart,set,
+     &        nset,nprint,nprint_,jout,
      &        prlab,prset,nmethod,elprint_flag,nener,ithermal,
      &        istep,istat,n,iline,ipol,inl,ipoinp,inp,amname,nam,itpamp,
      &        idrct,ipoinpc)
@@ -406,6 +434,13 @@
             call expansions(inpc,textpart,alcon,nalcon,
      &        alzero,nmat,ntmat_,irstrt,istep,istat,n,iline,
      &        ipol,inl,ipoinp,inp,ipoinpc)
+!
+         elseif(textpart(1)(1:10).eq.'*FACEPRINT') then
+            call faceprints(inpc,textpart,set,istartset,iendset,ialset,
+     &        nset,nset_,nalset,nprint,nprint_,jout,
+     &        prlab,prset,faceprint_flag,ithermal,istep,istat,n,iline,
+     &        ipol,inl,ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc,cfd)
+            faceprint_flag=.true.
 !
          elseif(textpart(1)(1:5).eq.'*FILM') then
             call films(inpc,textpart,set,istartset,iendset,
@@ -512,18 +547,18 @@
 !
          elseif((textpart(1)(1:9).eq.'*NODEFILE').or.
      &          (textpart(1)(1:11).eq.'*NODEOUTPUT')) then
-            node_flag=.true.
+            ifile_output=1
             call noelfiles(inpc,textpart,jout,filab,nmethod,
-     &           nodefile_flag,elfile_flag,node_flag,nener,ithermal,
+     &           nodefile_flag,elfile_flag,ifile_output,nener,ithermal,
      &           istep,istat,n,iline,ipol,inl,ipoinp,inp,out3d,nlabel,
-     &           amname,nam,itpamp,idrct,ipoinpc)
+     &           amname,nam,itpamp,idrct,ipoinpc,cfd,contactfile_flag)
             nodefile_flag=.true.
 !
          elseif(textpart(1)(1:10).eq.'*NODEPRINT') then
             call nodeprints(inpc,textpart,set,istartset,iendset,ialset,
      &        nset,nset_,nalset,nprint,nprint_,jout,
      &        prlab,prset,nodeprint_flag,ithermal,istep,istat,n,iline,
-     &        ipol,inl,ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc)
+     &        ipol,inl,ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc,cfd)
             nodeprint_flag=.true.
 !
          elseif(textpart(1)(1:7).eq.'*NORMAL') then
@@ -548,7 +583,7 @@
             call plastics(inpc,textpart,nelcon,nmat,ntmat_,npmat_,
      &        plicon,nplicon,plkcon,nplkcon,iplas,iperturb,nstate_,
      &        ncmat_,elcon,matname,irstrt,istep,istat,n,iline,ipol,
-     &        inl,ipoinp,inp,ipoinpc)
+     &        inl,ipoinp,inp,ipoinpc,ianisoplas)
 !
          elseif(textpart(1)(1:19).eq.'*PRE-TENSIONSECTION') then
             call pretensionsections(inpc,textpart,ipompc,nodempc,
@@ -636,7 +671,7 @@
      &        istat,n,tinc,tper,tmin,tmax,idrct,iline,ipol,inl,ipoinp,
      &        inp,ithermal,cs,ics,tieset,istartset,
      &        iendset,ialset,ipompc,nodempc,coefmpc,nmpc,nmpc_,ikmpc,
-     &        ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl)
+     &        ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl,cfd)
 !
          elseif(textpart(1)(1:20).eq.'*STEADYSTATEDYNAMICS') then
             call steadystatedynamics(inpc,textpart,nmethod,
@@ -648,7 +683,7 @@
             call steps(inpc,textpart,iperturb,iprestr,nbody,nforc,
      &                 nload,ithermal,t0,t1,nk,irstrt,istep,istat,n,
      &                 jmax,ctrl,iline,ipol,inl,ipoinp,inp,newstep,
-     &                 ipoinpc)
+     &                 ipoinpc,physcon)
 !
          elseif(textpart(1)(1:9).eq.'*SURFACE ') then
             call surfaces(inpc,textpart,set,istartset,iendset,ialset,
@@ -701,6 +736,10 @@
             call usermaterials(inpc,textpart,elcon,nelcon,
      &        nmat,ntmat_,ncmat_,iperturb,iumat,irstrt,istep,istat,n,
      &        iline,ipol,inl,ipoinp,inp,cocon,ncocon,ipoinpc)
+!
+         elseif(textpart(1)(1:17).eq.'*VALUESATINFINITY') then
+            call valuesatinf(inpc,textpart,physcon,
+     &        istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)
 !
          elseif(textpart(1)(1:11).eq.'*VIEWFACTOR') then
             call viewfactors(textpart,iviewfile,istep,inpc,
@@ -796,30 +835,18 @@ c      call writeinput(inpc,ipoinp,inp,nline,ipoinp(2,12))
       infree(3)=inoelfree
       infree(4)=iponoelmax
 !
-!     default file printing options and check of the selected options
+!     check of the selected options
 !
-c      i=0
-c      do
-c         i=i+1
-c         if(i.gt.nlabel) then
-c            filab(1)='U   '
-c            filab(3)='S   '
-c            jout=max(jout,1)
-c            exit
-c         endif
-c         if(filab(i).ne.'    ') exit
-c      enddo
-!
-      if((iplas.eq.0).or.(nmethod.eq.2)) then
-         if(filab(6)(1:2).eq.'PE') then
-            write(*,*) '*WARNING in calinput: PE-output requested'
+      if(((iplas.eq.0).and.(ianisoplas.eq.0)).or.(nmethod.eq.2)) then
+         if(filab(6)(1:4).eq.'PEEQ') then
+            write(*,*) '*WARNING in calinput: PEEQ-output requested'
             write(*,*) '         yet no (visco)plastic calculation'
             filab(6)='      '
          endif
          ii=0
          do i=1,nprint
-            if(prlab(i)(1:4).eq.'PE  ') then
-               write(*,*) '*WARNING in calinput: PE-output requested'
+            if(prlab(i)(1:4).eq.'PEEQ') then
+               write(*,*) '*WARNING in calinput: PEEQ-output requested'
                write(*,*) '         yet no (visco)plastic calculation'
                cycle
             endif
@@ -880,11 +907,10 @@ c      enddo
       if(ierror.eq.1) stop
 !
 !     check whether the density was defined for dynamic calculations
-!     check whether the density and specific heat were defined for 
-!     transient thermal calculations
+!     and transient thermal calculations
 !
-      if((nbody.gt.0).or.
-     &   (nmethod.eq.2).or.(nmethod.eq.4)) then
+      if(((nbody.gt.0).or.
+     &   (nmethod.eq.2).or.(nmethod.eq.4)).and.(cfd.eq.0)) then
          ierror=0
          do i=1,nmat
             if((nrhcon(i).ne.0).or.(matname(i)(1:6).eq.'SPRING').or.
@@ -892,7 +918,7 @@ c      enddo
                ierror=ierror+1
             else
                write(*,*)'*WARNING in calinput: no density was assigned'
-               write(*,*) '         assigned to material ',
+               write(*,*) '         to material ',
      &              matname(i)(1:index(matname(i),' ')-1),
      &              ' in a dynamic'
                write(*,*) '         calculation or a calculation with'
@@ -907,6 +933,12 @@ c      enddo
             write(*,*) '       centrifugal or gravitational loads'
             stop
          endif
+      endif
+!
+!     check whether the specific heat was defined for 
+!     transient thermal calculations
+!
+      if((nmethod.eq.2).or.(nmethod.eq.4)) then
          if(ithermal(1).ge.2) then
             ierror=0
             do i=1,nmat
@@ -928,6 +960,33 @@ c      enddo
                write(*,*) '       heat transfer calculation'
                stop
             endif
+         endif
+      endif
+!
+!     check whether a *FLUID CONSTANTS card was used for 
+!     3D compressible fluid calculations
+!
+c      if((cfd).and.((iexpl.eq.1).or.(iexpl.eq.3))) then
+      if((cfd.eq.1).or.network) then
+         ierror=0
+         do i=1,nmat
+            if(nshcon(i).ne.0) then
+               ierror=ierror+1
+            else
+               write(*,*) '*WARNING in calinput: no specific heat '
+               write(*,*) '         was assigned to material ',
+     &              matname(i)(1:index(matname(i),' ')-1),
+     &              ' in a transient'
+               write(*,*) '         heat transfer calculation'
+               write(*,*)
+            endif
+         enddo
+         if(ierror.eq.0) then
+            write(*,*) '*ERROR in calinput: no specific heat was'
+            write(*,*) '       assigned to any material ',
+     &           ' in a transient'
+            write(*,*) '       heat transfer calculation'
+            stop
          endif
       endif
 !
@@ -957,7 +1016,7 @@ c      enddo
 !
 !     check whether the conductivity was defined for thermal calculations
 !
-      if(ithermal(1).ge.2) then
+      if((ithermal(1).ge.2).and.(cfd.eq.0)) then
          ierror=0
          do i=1,nmat
             if(ncocon(1,i).ne.0) then
@@ -973,10 +1032,37 @@ c      enddo
          enddo
       endif
 !
-      if(fluid) then
-         if(iperturb.eq.0) then
-            iperturb=2
-         elseif(iperturb.eq.1) then
+!     check whether the conductivity was defined for 3D compressible
+!     fluid calculations or 3D incompressible thermal fluid calculations
+!
+c      if(((ithermal(1).ge.1).and.(fluid).and.
+c     &    ((iexpl.eq.0).or.(iexpl.eq.2))).or.
+c     &   ((fluid).and.((iexpl.eq.1).or.(iexpl.eq.3)))) then
+c         ierror=0
+c         do i=1,nmat
+c            if(ncocon(1,i).ne.0) then
+c               ierror=ierror+1
+c            else
+c               write(*,*) '*WARNING in calinput: no conductivity '
+c               write(*,*) 
+c     &              '         constants were assigned to material ',
+c     &                      matname(i)(1:index(matname(i),' ')-1)
+c               write(*,*) '         in a thermo(mechanical) calculation'
+c               write(*,*)
+c            endif
+c         enddo
+c         if(ierror.eq.0) then
+c            write(*,*) '*ERROR in calinput: no conductivity constants'
+c            write(*,*) '       were assigned to any material in a'
+c            write(*,*) '       thermal fluid calculation'
+c            stop
+c         endif
+c      endif
+!
+      if(cfd.eq.1) then
+         if(iperturb(1).eq.0) then
+            iperturb(1)=2
+         elseif(iperturb(1).eq.1) then
             write(*,*) '*ERROR in calinput: PERTURBATION and fluids'
             write(*,*) '       are mutually exclusive; '
             call inputerror(inpc,ipoinpc,iline)
@@ -986,18 +1072,18 @@ c      enddo
 !        copying the initial conditions into vold; for ithermal(1)>1
 !        the thermal conditions are copied in CalculiX.c
 !
-         if(istep.eq.1) then
-            if(ithermal(1).eq.1) then
-               do i=1,nk
-                  vold(0,i)=t0(i)
-               enddo
-            endif
+cc         if(istep.eq.1) then
+cc            if(ithermal(1).eq.1) then
+cc               do i=1,nk
+cc                  vold(0,i)=t0(i)
+cc               enddo
+cc            endif
 c            do i=1,nk
 c               do j=1,3
 c                  vold(j,i)=veold(j,i)
 c               enddo
 c            enddo
-         endif
+cc         endif
       endif
 !
       write(*,*)
@@ -1015,13 +1101,13 @@ c            enddo
          write(*,*) 'Linear dynamic analysis was selected'
       endif
       write(*,*)
-      if(iperturb.eq.1) then
+      if(iperturb(1).eq.1) then
          write(*,*) 'Perturbation parameter is active'
          write(*,*)
-      elseif(iperturb.eq.2) then
+      elseif(iperturb(1).eq.2) then
          write(*,*) 'Nonlinear geometric effects are taken into account'
          write(*,*)
-      elseif(iperturb.eq.3) then
+      elseif(iperturb(1).eq.3) then
          write(*,*) 'Nonlinear geometric effects and nonlinear '
          write(*,*) 'material laws are taken into account'
          write(*,*)

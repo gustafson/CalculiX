@@ -35,7 +35,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
    int *mpcfree, int *nodeboun, int *ndirboun, int*nboun, int*ikmpc,
    int *ilmpc, int *ikboun, int *ilboun, int *mpcend, int *mpcmult,
    char *labmpc, int *nk, int *memmpc_, int *icascade, int *maxlenmpc,
-   int *callfrommain, int *iperturb){
+   int *callfrommain, int *iperturb, int *ithermal){
 
  /*   detects cascaded mpc's and decascades them; checks multiple
      occurrence of the same dependent DOF's in different mpc/spc's
@@ -92,13 +92,12 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
     nodempc=*nodempcp;
     coefmpc=*coefmpcp;
     
-    /*   for(i=0;i<*nmpc;i++){
+    /*    for(i=0;i<*nmpc;i++){
 	j=i+1;
 	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
 	}*/
 
     jmpc=NNEW(int,*nmpc);
-    /*   *icascade=0;*/
     idepend=0;
 
 /*        check whether a node is used as a dependent node in a MPC
@@ -126,15 +125,17 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
         /* linear mpc */
 
 	if((strcmp1(&labmpc[20*i],"                    ")==0) ||
-/*	   (strcmp1(&labmpc[20*i],"CYCLIC")==0) ||*/
+	   (strcmp1(&labmpc[20*i],"CYCLIC")==0) ||
+/*	   ((strcmp1(&labmpc[20*i],"CYCLIC")==0)&&(*ithermal==2)) ||*/
 	   (strcmp1(&labmpc[20*i],"SUBCYCLIC")==0)||
-           (*iperturb==0)) jmpc[i]=0;
+	   (strcmp1(&labmpc[20*i],"CONTACT")==0)||
+           (*iperturb<2)) jmpc[i]=0;
 
         /* nonlinear mpc */
 
 	else if((strcmp1(&labmpc[20*i],"RIGID")==0) ||
 	   (strcmp1(&labmpc[20*i],"KNOT")==0) ||
-	   (strcmp1(&labmpc[20*i],"CYCLIC")==0) ||
+/*	   ((strcmp1(&labmpc[20*i],"CYCLIC")==0)&&(*ithermal!=2)) ||*/
 	   (strcmp1(&labmpc[20*i],"PLANE")==0) ||
 	   (strcmp1(&labmpc[20*i],"STRAIGHT")==0)||
            (strcmp1(&labmpc[20*i],"ISOCHORIC")==0)) jmpc[i]=1;
@@ -146,7 +147,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 	    if(*icascade==0) *icascade=1;
 	}
     }
-
+    
 /*     decascading */
 
     ispooles=0;
@@ -188,10 +189,64 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 			    index=nodempc[3*index-1];
 			    if(index!=0) continue;
 			    else break;}
-                        /*			ip1=i+1;*/
 		    }
+
 /*		    printf("*INFO in cascade: DOF %d of node %d is expanded\n",
 		    nodempc[3*index-2],nodempc[3*index-3]);*/
+
+		    /* collecting terms corresponding to the same DOF */
+		    
+		    index1=ipompc[i];
+		    do{
+			index2old=index1;
+			index2=nodempc[3*index1-1];
+			if(index2==0) break;
+			do{
+			    if((nodempc[3*index1-3]==nodempc[3*index2-3])&&
+			       (nodempc[3*index1-2]==nodempc[3*index2-2])){
+				coefmpc[index1-1]+=coefmpc[index2-1];
+				nodempc[3*index2old-1]=nodempc[3*index2-1];
+				nodempc[3*index2-1]=*mpcfree;
+				*mpcfree=index2;
+				index2=nodempc[3*index2old-1];
+				if(index2==0) break;
+			    }
+			    else{
+				index2old=index2;
+				index2=nodempc[3*index2-1];
+				if(index2==0) break;
+			    }
+			}while(1);
+			index1=nodempc[3*index1-1];
+			if(index1==0) break;
+		    }while(1);
+		    
+		    /* check for zero coefficients on the dependent side */
+		    
+		    	    index1=ipompc[i];
+			    /*   index1old=0;
+				 do {*/
+			if(fabs(coefmpc[index1-1])<1.e-10){
+			    /*	    if(index1old==0){*/
+				printf("*ERROR in cascade: zero coefficient on the\n");
+				printf("       dependent side of an equation\n");
+				printf("       dependent node: %d",nodempc[3*index1-3]);
+				FORTRAN(stop,());
+			    }
+			/*	    else{
+				nodempc[3*index1old-1]=nodempc[3*index1-1];
+				nodempc[3*index1-1]=*mpcfree;
+				*mpcfree=index1;
+				index1=nodempc[3*index1old-1];
+			    }
+			}
+			else{
+			    index1old=index1;
+			    index1=nodempc[3*index1-1];
+			}
+			if(index1==0) break;
+		    }while(1);*/
+		    
 		    ichange=1;iexpand=1;
 		    if((strcmp1(&labmpc[20*i],"                    ")==0)&&
 		       (strcmp1(&labmpc[20*(mpc-1)],"CYCLIC")==0))
@@ -657,7 +712,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
     *nodempcp=nodempc;
     *coefmpcp=coefmpc;
     
-    /*   for(i=0;i<*nmpc;i++){
+    /*    for(i=0;i<*nmpc;i++){
 	j=i+1;
 	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
 	}*/

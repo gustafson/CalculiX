@@ -93,6 +93,9 @@
 !     scaling the boundary conditions
 !
       do i=1,nboun
+c         if((ithermal.le.1).and.(ndirboun(i).eq.0)) cycle
+c         if((ithermal.eq.2).and.(ndirboun(i).gt.0).and.
+c     &      (ndirboun(i).le.3)) cycle
          if((xboun(i).lt.1.2357111318d0).and.
      &        (xboun(i).gt.1.2357111316d0)) then
 !     
@@ -273,11 +276,16 @@
          do i=1,nk
             if((t1(i).lt.1.2357111318d0).and.
      &           (t1(i).gt.1.2357111316d0)) then
+!
+               abqtime(1)=time
+               abqtime(2)=ttime+dtime
+!
                do j=1,3
                   coords(j)=co(j,i)+vold(j,i)
                enddo
-               call utemp(t1(i),msecpt,istep,iinc,abqtime,i,
+               call utemp(t1act(i),msecpt,istep,iinc,abqtime,i,
      &              coords,vold)
+               cycle
             endif
             if(nam.gt.0) then
                iamt1i=iamt1(i)

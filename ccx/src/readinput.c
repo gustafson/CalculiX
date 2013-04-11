@@ -37,7 +37,7 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
       icntrl,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,ntmat,npmat,
       norien,nam,nprint,mint,ntrans,ncs,namtot,ncmat,memmpc,ne1d,
       ne2d,nflow,*meminset=NULL,*rmeminset=NULL, *inp=NULL,ntie,
-      nener,nstate,nentries=12,ifreeinp,ikey,lincludefn,
+      nener,nstate,nentries=13,ifreeinp,ikey,lincludefn,
       nbody,ncharmax=1000000,*ipoinpc=NULL; 
 
   /* initialization */
@@ -320,6 +320,10 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
                           nline,&ikey));
       }
+      else if(strcmp1(&buff[0],"*INITIALCONDITIONS")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"INITIALCONDITIONS",
+                          nline,&ikey));
+			  }
       else if(strcmp1(&buff[0],"*")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
                           nline,&ikey));
@@ -341,14 +345,14 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
       }
   }while(1);
 
-  inp[3*ipoinp[2*nentries-1]-2]=*nline;
+  inp[3*ipoinp[2*ikey-1]-2]=*nline;
   RENEW(inpc,char,(long long)132**nline);
-  RENEW(inp,int,3*ipoinp[2*nentries-1]);
+  RENEW(inp,int,3*ipoinp[2*ikey-1]);
   *inpcp=inpc;
   *ipoinpcp=ipoinpc;
   *inpp=inp;
   
-  /*FORTRAN(writeinput,(inpc,ipoinp,inp,nline,&ipoinp[2*nentries-1]));*/
+  /* FORTRAN(writeinput,(inpc,ipoinp,inp,nline,&ipoinp[2*ikey-1],ipoinpc));*/
 
   return;
 

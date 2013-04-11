@@ -19,28 +19,28 @@
       subroutine mechmodel(elconloc,elas,emec,kode,emec0,ithermal,
      &     icmd,beta,stre,xkl,ckl,vj,xikl,vij,plconloc,xstate,xstateini,
      &     ielas,amat,t1l,dtime,time,ttime,iel,iint,nstate_,mint_,
-     &     iorien,pgauss,orab,eloc,mattyp)
+     &     iorien,pgauss,orab,eloc,mattyp,pnewdt,istep,iinc)
 !
 !     kode=-1: Arruda-Boyce
 !          -2: Mooney-Rivlin
-!	   -3: Neo-Hooke
-!	   -4: Ogden (N=1)
-!	   -5: Ogden (N=2)
-!	   -6: Ogden (N=3)
-!	   -7: Polynomial (N=1)
-!	   -8: Polynomial (N=2)
-!	   -9: Polynomial (N=3)
-!	   -10: Reduced Polynomial (N=1)
-!	   -11: Reduced Polynomial (N=2)
-!	   -12: Reduced Polynomial (N=3)
-!	   -13: Van der Waals (not implemented yet)
-!	   -14: Yeoh
-!	   -15: Hyperfoam (N=1)
-!	   -16: Hyperfoam (N=2)
-!	   -17: Hyperfoam (N=3)
-!	   -50: deformation plasticity
-!	   -51: incremental plasticity (no viscosity)
-!	   -52: viscoplasticity
+!          -3: Neo-Hooke
+!          -4: Ogden (N=1)
+!          -5: Ogden (N=2)
+!          -6: Ogden (N=3)
+!          -7: Polynomial (N=1)
+!          -8: Polynomial (N=2)
+!          -9: Polynomial (N=3)
+!          -10: Reduced Polynomial (N=1)
+!          -11: Reduced Polynomial (N=2)
+!          -12: Reduced Polynomial (N=3)
+!          -13: Van der Waals (not implemented yet)
+!          -14: Yeoh
+!          -15: Hyperfoam (N=1)
+!          -16: Hyperfoam (N=2)
+!          -17: Hyperfoam (N=3)
+!          -50: deformation plasticity
+!          -51: incremental plasticity (no viscosity)
+!          -52: viscoplasticity
 !       < -100: user material routine with -kode-100 user
 !               defined constants with keyword *USER MATERIAL
 !
@@ -49,13 +49,13 @@
       character*80 amat
 !
       integer kode,ithermal,icmd,ielas,iel,iint,nstate_,mint_,iorien,
-     &  mattyp
+     &  mattyp,istep,iinc
 !
       real*8 elconloc(*),elas(21),emec(*),emec0(*),beta(*),stre(*),
      &  ckl(*),vj,plconloc(*),t1l,xkl(*),xikl(*),vij,
      &  dtime,didc(27),d2idc2(243),dibdc(27),d2ibdc2(243),
      &  dudc(9),d2udc2(81),dldc(27),d2ldc2(243),dlbdc(27),d2lbdc2(243),
-     &  pgauss(3),orab(7,*),time,ttime,eloc(6)
+     &  pgauss(3),orab(7,*),time,ttime,eloc(6),pnewdt
 !
       real*8 xstate(nstate_,mint_,*),xstateini(nstate_,mint_,*)
 !
@@ -81,7 +81,7 @@
          call umat_main(amat,iel,iint,kode,elconloc,emec,emec0,beta,
      &        xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,icmd,ielas,
      &        mint_,nstate_,xstateini,xstate,stre,elas,iorien,pgauss,
-     &        orab)
+     &        orab,pnewdt,istep,iinc)
       endif
 !
       return

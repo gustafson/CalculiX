@@ -19,7 +19,7 @@
       subroutine nodeprints(inpc,textpart,set,istartset,iendset,ialset,
      &  nset,nset_,nalset,nprint,nprint_,jout,prlab,prset,
      &  nodeprint_flag,ithermal,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,amname,nam,itpamp,idrct,ipoinpc)
+     &  inp,amname,nam,itpamp,idrct,ipoinpc,cfd)
 !
 !     reading the *NODE PRINT cards in the input deck
 !
@@ -34,9 +34,9 @@
       character*132 textpart(16)
 !
       integer istartset(*),iendset(*),ialset(*),ii,i,nam,itpamp,
-     &  jout,joutl,ithermal,nset,nset_,nalset,nprint,nprint_,istep,
+     &  jout(2),joutl,ithermal,nset,nset_,nalset,nprint,nprint_,istep,
      &  istat,n,key,ipos,iline,ipol,inl,ipoinp(2,*),inp(3,*),idrct,
-     &  ipoinpc(0:*)
+     &  ipoinpc(0:*),cfd
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR in nodeprints: *NODE PRINT should only be'
@@ -46,7 +46,8 @@
 !
       nodesys='L'
 !
-!     reset the nodal print requests
+!     reset the nodal print requests (element print requests, if any,
+!     are kept)
 !
       if(.not.nodeprint_flag) then
          ii=0
@@ -54,7 +55,11 @@
             if((prlab(i)(1:4).eq.'U   ').or.
      &         (prlab(i)(1:4).eq.'NT  ').or.
      &         (prlab(i)(1:4).eq.'RF  ').or.
-     &         (prlab(i)(1:4).eq.'RFL ')) cycle
+     &         (prlab(i)(1:4).eq.'RFL ').or.
+     &         (prlab(i)(1:4).eq.'PS  ').or.
+     &         (prlab(i)(1:4).eq.'PT  ').or.
+     &         (prlab(i)(1:4).eq.'MF  ').or.
+     &         (prlab(i)(1:4).eq.'V   ')) cycle
             ii=ii+1
             prlab(ii)=prlab(i)
             prset(ii)=prset(i)
@@ -77,8 +82,8 @@ c      jout=max(jout,1)
             if(set(i).eq.noset) exit
           enddo
           if(i.gt.nset) then
-             write(*,*) '*WARNING in nodeprints: set ',noset(1:ipos-1),
-     &            ' does not exist'
+             write(*,*) '*WARNING in nodeprints: node set ',
+     &            noset(1:ipos-1),' does not exist'
              call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &            ipoinp,inp,ipoinpc)
              return
@@ -93,8 +98,24 @@ c      jout=max(jout,1)
                  if((key.eq.1).or.(istat.lt.0)) return
               enddo
            endif
-           if(joutl.gt.0) jout=joutl
-c          jout=max(jout,joutl)
+           if(joutl.gt.0) then
+              jout(1)=joutl
+              itpamp=0
+           endif
+        elseif(textpart(ii)(1:11).eq.'FREQUENCYF=') then
+           read(textpart(ii)(12:21),'(i10)',iostat=istat) joutl
+           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+           if(joutl.eq.0) then
+              do
+                 call getnewline(inpc,textpart,istat,n,key,iline,ipol,
+     &                inl,ipoinp,inp,ipoinpc)
+                 if((key.eq.1).or.(istat.lt.0)) return
+              enddo
+           endif
+           if(joutl.gt.0) then
+              jout(2)=joutl
+              itpamp=0
+           endif
         elseif(textpart(ii)(1:10).eq.'TOTALS=YES') then
            total='T'
         elseif(textpart(ii)(1:11).eq.'TOTALS=ONLY') then
@@ -123,6 +144,8 @@ c          jout=max(jout,joutl)
               write(*,*) '       specification'
               stop
            endif
+           jout(1)=1
+           jout(2)=1
         endif
       enddo
 !
@@ -143,7 +166,11 @@ c          jout=max(jout,joutl)
             if((textpart(ii)(1:4).ne.'U   ').and.
      &         (textpart(ii)(1:4).ne.'NT  ').and.
      &         (textpart(ii)(1:4).ne.'RF  ').and.
-     &         (textpart(ii)(1:4).ne.'RFL ')) then
+     &         (textpart(ii)(1:4).ne.'RFL ').and.
+     &         (textpart(ii)(1:4).ne.'PS  ').and.
+     &         (textpart(ii)(1:4).ne.'PT  ').and.
+     &         (textpart(ii)(1:4).ne.'MF  ').and.
+     &         (textpart(ii)(1:4).ne.'V   ')) then
                write(*,*) '*WARNING in nodeprints: label not applicable'
                write(*,*) '         or unknown; '
                call inputwarning(inpc,ipoinpc,iline)
@@ -154,6 +181,13 @@ c          jout=max(jout,joutl)
                   write(*,*) '*WARNING in nodeprints: RFL only makes '
                   write(*,*) '         sense for heat transfer '
                   write(*,*) '          calculations'
+                  cycle
+               endif
+            endif
+            if(textpart(ii)(1:4).eq.'PS  ') then
+               if(cfd.eq.0) then
+                  write(*,*) '*WARNING in nodeprints: PS only makes '
+                  write(*,*) '         sense for 3D fluid calculations'
                   cycle
                endif
             endif

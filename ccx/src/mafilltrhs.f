@@ -23,7 +23,7 @@
      &  ilboun,rhcon,nrhcon,ielmat,ntmat_,t0,ithermal,vold,voldaux,nzst,
      &  dtime,matname,mint_,ncmat_,physcon,shcon,nshcon,ttime,time,
      &  istep,iinc,ibody,xloadold,reltimef,cocon,ncocon,nelemface,
-     &  sideface,nface)
+     &  sideface,nface,compressible,v,voldtu,yy,turbulent,nea,neb)
 !
 !     filling the rhs b of the velocity equations (step 1)
 !
@@ -38,18 +38,17 @@
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),nelemface(*),nface,
      &  ikmpc(*),ilmpc(*),ikboun(*),ilboun(*),nactdoh(0:4,*),konl(20),
      &  nrhcon(*),ielmat(*),ipkon(*),nshcon(*),ipobody(2,*),
-     &  nbody,ibody(3,*),ncocon(2,*)
+     &  nbody,ibody(3,*),ncocon(2,*),compressible,nea,neb
 !
       integer nk,ne,nboun,nmpc,nforc,nload,neqt,nmethod,
-     &  ithermal,nzst,i,j,idist,jj,
-     &  id,ist,index,jdof1,idof1,
-     &  node1,kflag,
-     &  ntmat_,indexe,nope,mint_,i0,ncmat_,istep,iinc
+     &  ithermal,nzst,i,j,idist,jj,id,ist,index,jdof1,idof1,
+     &  node1,kflag,ntmat_,indexe,nope,mint_,i0,ncmat_,istep,iinc,
+     &  turbulent
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),bodyf(3),b(*),xloadold(2,*),reltimef,cocon(0:6,ntmat_,*),
-     &  t0(*),vold(0:4,*),voldaux(0:4,*),ff(60),
-     &  rhcon(0:1,ntmat_,*),physcon(3),
+     &  t0(*),vold(0:4,*),voldaux(0:4,*),ff(60),v(0:4,*),yy(*),
+     &  rhcon(0:1,ntmat_,*),physcon(*),voldtu(2,*),
      &  shcon(0:3,ntmat_,*),xbody(7,*)
 !
       real*8 om,dtime,ttime,time
@@ -71,7 +70,7 @@
          idist=0
       endif
 !     
-      do i=1,ne
+      do i=nea,neb
 !     
          if(ipkon(i).lt.0) cycle
          if(lakon(i)(1:1).ne.'F') cycle
@@ -136,11 +135,9 @@
      &        ielmat,ntmat_,vold,voldaux,nelemload,
      &        sideload,xload,nload,idist,dtime,matname,mint_,
      &        ttime,time,istep,iinc,xloadold,reltimef,shcon,nshcon,
-     &        cocon,ncocon,physcon,nelemface,sideface,nface)
-c            write(*,*) 'mafilltrhs ',i
-c            do jj=1,nope
-c               write(*,*) jj,ff(jj)
-c            enddo
+     &        cocon,ncocon,physcon,nelemface,sideface,nface,
+     &        ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,compressible,v,
+     &        voldtu,yy,turbulent)
 !     
          do jj=1,nope
 !     
@@ -178,6 +175,9 @@ c            enddo
          enddo
       enddo
 !
+c      do i=1,neqt
+c         write(*,*) 'mafilltrhs ',i,b(i)
+c      enddo
 c      write(*,*) 'press 3 ',b(2)
 c      write(*,*) 'press 392 ',b(369)
 c      write(*,*) 'press 256 ',b(241)
@@ -185,6 +185,7 @@ c      write(*,*) 'press 343 ',b(322)
 c      write(*,*) 'press 104 ',b(97)
 c      write(*,*) 'press 256 ',b(241)
 c      write(*,*)
+c      write(*,*) 'voldaux(0,1) ',voldaux(0,1)
 !     
       return
       end

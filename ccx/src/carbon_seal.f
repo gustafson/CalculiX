@@ -34,7 +34,7 @@
      &     inv
 !
       real*8 prop(*),v(0:4,*),xflow,f,df(4),R,d,l,
-     &     p1,p2,T1,physcon(3),dvi,pi,s,T2
+     &     p1,p2,T1,physcon(*),dvi,pi,s,T2
 !     
 !      numf=4
 !     

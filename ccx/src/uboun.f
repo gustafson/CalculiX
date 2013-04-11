@@ -30,12 +30,13 @@
 !     node               node number
 !     idof               degree of freedom
 !     coords  (1..3)     global coordinates of the node
-!     vold(0..3,1..nk)   solution field in all nodes
+!     vold(0..4,1..nk)   solution field in all nodes
 !                        0: temperature
 !                        1: displacement in global x-direction
 !                           (or mass flow rate for fluid nodes)
 !                        2: displacement in global y-direction
 !                        3: displacement in global z-direction
+!                        4: static pressure
 !
 !     OUTPUT:
 !

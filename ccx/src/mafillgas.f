@@ -44,12 +44,12 @@
      &     nacteq(0:3,*),ielprop(*),nodef(5),idirf(5),nbody,
      &     nmethod,case
 !     
-      real*8 ac(ntm,*),xloadact(2,*),cp,h(2),physcon(3),dvi,
+      real*8 ac(ntm,*),xloadact(2,*),cp,h(2),physcon(*),dvi,
      &     xl2(0:3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
-     &     gastemp,v(0:4,*),shcon(0:3,ntmat_,*),co(3,*),shp2(4,8),
+     &     gastemp,v(0:4,*),shcon(0:3,ntmat_,*),co(3,*),shp2(7,8),
      &     ftot,field,prop(*),f,df(5),tg1,tg2,r,rho,
      &     dtime,ttime,time,areaj,xflow,tvar(2),g(3),
-     &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,ts1,ts2,xs2(3,2),
+     &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,ts1,ts2,xs2(3,7),
      &     xdenom1,xdenom2,xcst,xk1,xk2,expon,a,dt1,dt2,kappa,
      &     pt1,pt2,inv,vold(0:4,*),xloadold(2,*),reltime,pi
 !     
@@ -424,11 +424,10 @@
             endif
 !     
             call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &           nactdog,identity,
-     &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
-     &           cp,r,rho,physcon,g,co,dvi,numf,vold,set,shcon,
-     &           nshcon,rhcon,nrhcon,ntmat_)
-!     
+     &           nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &           nodef,idirf,df,cp,R,rho,physcon,g,co,dvi,numf,
+     &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_)
+!
             do k=1,numf
                idof=nactdog(idirf(k),nodef(k))
                if(idof.ne.0)then

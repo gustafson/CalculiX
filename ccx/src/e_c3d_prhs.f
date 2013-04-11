@@ -16,9 +16,10 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine e_c3d_prhs(co,nk,konl,lakonl,sm,gg,nelem,nmethod,rhcon,
+      subroutine e_c3d_prhs(co,nk,konl,lakonl,sm,ff,nelem,nmethod,rhcon,
      &  nrhcon,ielmat,ntmat_,v,vold,voldaux,nelemface,sideface,nface,
-     &  dtime,matname,mint_,shcon,nshcon,theta1,physcon)
+     &  dtime,matname,mint_,shcon,nshcon,theta1,physcon,
+     &  iexplicit)
 !
 !     computation of the pressure element matrix and rhs for the element with
 !     element with the topology in konl: step 2
@@ -37,19 +38,22 @@
       integer konl(20),ifaceq(8,6),nelemface(*),nk,nelem,j1,
      &  nface,i,j,k,i1,i2,nmethod,ii,jj,id,ipointer,ig,kk,
      &  nrhcon(*),ielmat(*),nshcon(*),ntmat_,nope,nopes,imat,mint2d,
-     &  mint3d,mint_,ifacet(6,4),nopev,ifacew(8,5),iflag
+     &  mint3d,mint_,ifacet(6,4),nopev,ifacew(8,5),iflag,iexplicit
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,2),r,cp,dvi,
+      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),r,cp,dvi,
      &  ff(60),theta1,c2i,xsjmod,rhcon(0:1,ntmat_,*),rhovel(3),
-     &  shcon(0:3,ntmat_,*),vl(0:4,20),xl2(0:3,8),xsj2(3),shp2(4,8),
+     &  shcon(0:3,ntmat_,*),vl(0:4,20),xl2(0:3,8),xsj2(3),shp2(7,8),
      &  v(0:4,*),xi,et,ze,xsj,sm(60,60),temp,voldaux(0:4,*),
      &  rho,weight,vold(0:4,*),delrhovel(3),aux(3),voldauxl(0:4,20),
      &  dpress(3),voldauxl2(0:4,8),vl2(0:4,8),voldl(0:4,20),
-     &  physcon(3),gg(60),divrhovel,auxg(3)
+     &  physcon(*),gg(60),divrhovel,auxg(3),
+     &  xi3d,et3d,ze3d,xlocal20(3,9,6),xlocal4(3,1,4),xlocal10(3,3,4),
+     &  xlocal6(3,1,5),xlocal15(3,4,5),xlocal8(3,4,6),xlocal8r(3,1,6)
 !
       real*8 dtime
 !
       include "gauss.f"
+      include "xlocal.f"
 !
       data ifaceq /4,3,2,1,11,10,9,12,
      &            5,6,7,8,13,14,15,16,
@@ -141,7 +145,7 @@ c     &            49,50,-51,52,53,-54,55,56,-57,58,59,-60/
 !     
       do i=1,nope
          ff(i)=0.d0
-         gg(i)=0.d0
+cc         gg(i)=0.d0
       enddo
 !     
 !     temperature, velocity and auxiliary variables
@@ -248,7 +252,9 @@ c     &            49,50,-51,52,53,-54,55,56,-57,58,59,-60/
 !     auxiliary variables delrhovel and dpress
 !     
          temp=0.d0
-c         divrhovel=0.d0
+cc
+cc         divrhovel=0.d0
+cc
          do i1=1,3
             rhovel(i1)=0.d0
             delrhovel(i1)=0.d0
@@ -260,15 +266,21 @@ c         divrhovel=0.d0
                rhovel(j1)=rhovel(j1)+shp(4,i1)*voldauxl(j1,i1)
                delrhovel(j1)=delrhovel(j1)+shp(4,i1)*vl(j1,i1)
                dpress(j1)=dpress(j1)+shp(j1,i1)*voldl(4,i1)
-c               divrhovel=divrhovel+shp(j1,i1)*voldauxl(j1,i1)
+cc
+cc               divrhovel=divrhovel+shp(j1,i1)*voldauxl(j1,i1)
+cc
             enddo
          enddo
-c         divrhovel=divrhovel*xsjmod
+cc
+cc         divrhovel=divrhovel*xsjmod
+cc
          do j1=1,3
             aux(j1)=xsjmod*(rhovel(j1)+
      &            theta1*(delrhovel(j1)-dtime*dpress(j1)))
-            auxg(j1)=xsjmod*(
-     &            theta1*(delrhovel(j1)-dtime*dpress(j1)))
+cc
+cc            auxg(j1)=xsjmod*(
+cc     &            theta1*(delrhovel(j1)-dtime*dpress(j1)))
+cc
          enddo
 !     
 !     determination of lhs and rhs
@@ -277,9 +289,13 @@ c         divrhovel=divrhovel*xsjmod
 !     
             ff(jj)=ff(jj)+
      &         shp(1,jj)*aux(1)+shp(2,jj)*aux(2)+shp(3,jj)*aux(3)
-            gg(jj)=gg(jj)+
-     &         shp(1,jj)*auxg(1)+shp(2,jj)*auxg(2)+shp(3,jj)*auxg(3)-
-     &         shp(4,jj)*divrhovel
+ccd            gg(jj)=gg(jj)+
+ccd     &         shp(1,jj)*auxg(1)+shp(2,jj)*auxg(2)+shp(3,jj)*auxg(3)
+cc
+cc            gg(jj)=gg(jj)+
+cc     &         shp(1,jj)*auxg(1)+shp(2,jj)*auxg(2)+shp(3,jj)*auxg(3)-
+cc     &         shp(4,jj)*divrhovel
+cc
 !
          enddo
 !     
@@ -290,7 +306,8 @@ c         divrhovel=divrhovel*xsjmod
       call nident(nelemface,nelem,nface,id)
       do
          if((id.eq.0).or.(nelemface(id).ne.nelem)) exit
-         read(sideface(id)(1:1),'(i1)') ig
+c         read(sideface(id)(1:1),'(i1)') ig
+         ig=ichar(sideface(id)(1:1))-48
 !     
 !     treatment of wedge faces
 !     
@@ -317,7 +334,9 @@ c         divrhovel=divrhovel*xsjmod
                do j=1,3
                   xl2(j,i)=co(j,konl(ifaceq(i,ig)))
                   vl2(j,i)=v(j,konl(ifaceq(i,ig)))
-                  voldauxl2(j,i)=voldaux(j,konl(ifaceq(i,ig)))
+                     voldauxl2(j,i)=voldaux(j,konl(ifaceq(i,ig)))
+c                  write(*,*) 'e_c3d_prhs1 ',konl(ifaceq(i,ig)),
+c     &                 j,v(j,konl(ifaceq(i,ig)))
                enddo
             enddo
          elseif((nope.eq.10).or.(nope.eq.4)) then
@@ -325,7 +344,7 @@ c         divrhovel=divrhovel*xsjmod
                do j=1,3
                   xl2(j,i)=co(j,konl(ifacet(i,ig)))
                   vl2(j,i)=v(j,konl(ifacet(i,ig)))
-                  voldauxl2(j,i)=voldaux(j,konl(ifacet(i,ig)))
+                     voldauxl2(j,i)=voldaux(j,konl(ifacet(i,ig)))
                enddo
             enddo
          else
@@ -333,7 +352,9 @@ c         divrhovel=divrhovel*xsjmod
                do j=1,3
                   xl2(j,i)=co(j,konl(ifacew(i,ig)))
                   vl2(j,i)=v(j,konl(ifacew(i,ig)))
-                  voldauxl2(j,i)=voldaux(j,konl(ifacew(i,ig)))
+c                  write(*,*) 'e_c3d_prhs1 ',konl(ifacew(i,ig)),
+c     &                 j,v(j,konl(ifacew(i,ig)))
+                     voldauxl2(j,i)=voldaux(j,konl(ifacew(i,ig)))
                enddo
             enddo
          endif
@@ -375,8 +396,62 @@ c         divrhovel=divrhovel*xsjmod
             else
                call shape3tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
             endif
+!
+!     local coordinates of the surface integration
+!     point within the element local coordinate system
+!     
+c            if(lakonl(4:5).eq.'8R') then
+c               xi3d=xlocal8r(1,i,ig)
+c               et3d=xlocal8r(2,i,ig)
+c               ze3d=xlocal8r(3,i,ig)
+c               call shape8h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+c            elseif(lakonl(4:4).eq.'8') then
+c               xi3d=xlocal8(1,i,ig)
+c               et3d=xlocal8(2,i,ig)
+c               ze3d=xlocal8(3,i,ig)
+c               call shape8h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+c            elseif(lakonl(4:6).eq.'20R') then
+c               xi3d=xlocal8(1,i,ig)
+c               et3d=xlocal8(2,i,ig)
+c               ze3d=xlocal8(3,i,ig)
+c               call shape20h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+c            elseif(lakonl(4:4).eq.'2') then
+c               xi3d=xlocal20(1,i,ig)
+c               et3d=xlocal20(2,i,ig)
+c               ze3d=xlocal20(3,i,ig)
+c               call shape20h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+c            elseif(lakonl(4:5).eq.'10') then
+c               xi3d=xlocal10(1,i,ig)
+c               et3d=xlocal10(2,i,ig)
+c               ze3d=xlocal10(3,i,ig)
+c               call shape10tet(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+c            elseif(lakonl(4:4).eq.'4') then
+c               xi3d=xlocal4(1,i,ig)
+c               et3d=xlocal4(2,i,ig)
+c               ze3d=xlocal4(3,i,ig)
+c               call shape4tet(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+c            elseif(lakonl(4:5).eq.'15') then
+c               xi3d=xlocal15(1,i,ig)
+c               et3d=xlocal15(2,i,ig)
+c               ze3d=xlocal15(3,i,ig)
+c               call shape15w(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+c            elseif(lakonl(4:4).eq.'6') then
+c               xi3d=xlocal6(1,i,ig)
+c               et3d=xlocal6(2,i,ig)
+c               ze3d=xlocal6(3,i,ig)
+c               call shape6w(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+c            endif
 !     
             xsjmod=dtime*weight
+!
+c            do i1=1,3
+c               dpress(i1)=0.d0
+c            enddo
+c            do i1=1,nope
+c               do j1=1,3
+c                  dpress(j1)=dpress(j1)+shp(j1,i1)*voldl(4,i1)
+c               enddo
+c            enddo
 !     
 !     calculating rho*velocity after step 1 at the
 !     integration point
@@ -384,13 +459,12 @@ c         divrhovel=divrhovel*xsjmod
             do k=1,3
                rhovel(k)=0.d0
                do j=1,nopes
-cc                  rhovel(k)=rhovel(k)+
-cc     &                (voldauxl2(k,j)+vl2(k,j))*shp2(4,j)
-c                  rhovel(k)=rhovel(k)+
-c     &                (voldauxl2(k,j))*shp2(4,j)
                   rhovel(k)=rhovel(k)+
-     &                (vl2(k,j))*shp2(4,j)
+     &                (voldauxl2(k,j))*shp2(4,j)
+c                  rhovel(k)=rhovel(k)+
+c     &                (voldauxl2(k,j)+theta1*vl2(k,j))*shp2(4,j)
                enddo
+c               rhovel(k)=rhovel(k)-dtime*theta1*dpress(k)
             enddo
 !     
             do k=1,nopes
@@ -402,9 +476,6 @@ c     &                (voldauxl2(k,j))*shp2(4,j)
                   ipointer=ifacew(k,ig)
                endif
                ff(ipointer)=ff(ipointer)-shp2(4,k)*
-     &              (rhovel(1)*xsj2(1)+rhovel(2)*xsj2(2)+
-     &               rhovel(3)*xsj2(3))*xsjmod
-               gg(ipointer)=gg(ipointer)-shp2(4,k)*
      &              (rhovel(1)*xsj2(1)+rhovel(2)*xsj2(2)+
      &               rhovel(3)*xsj2(3))*xsjmod
             enddo
@@ -453,6 +524,9 @@ c            write(*,*) 'ec3dprhs 2',jj,konl(jj),ff(jj),gg(jj)
 c         enddo
 c      endif
 !
+c      do i=1,nope
+c         write(*,*) 'ff,gg ',ff(i),gg(i)
+c      enddo
       return
       end
 

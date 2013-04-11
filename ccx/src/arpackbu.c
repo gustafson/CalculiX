@@ -30,6 +30,9 @@
 #ifdef TAUCS
    #include "tau.h"
 #endif
+#ifdef PARDISO
+   #include "pardiso.h"
+#endif
 
 void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	     int *ne, 
@@ -71,12 +74,12 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   int mass[2]={0,0}, stiffness=1, buckling=0, rhsi=1, intscheme=0, noddiam=-1;
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,
     *workl=NULL,*aux=NULL,*d=NULL,sigma,*temp_array=NULL,
-    *een=NULL,cam[3],*f=NULL,*fn=NULL,qa[2],*fext=NULL,time=0.,*epn=NULL,
+    *een=NULL,cam[3],*f=NULL,*fn=NULL,qa[3],*fext=NULL,time=0.,*epn=NULL,
     *xstateini=NULL,*xstiff=NULL,*stiini=NULL,*vini=NULL,*stx=NULL,
     *enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,*cocon=NULL,
     *shcon=NULL,*physcon=NULL,*qfx=NULL,*qfn=NULL,tol, *cgr=NULL,
     *xloadold=NULL,reltime,*vr=NULL,*vi=NULL,*stnr=NULL,*stni=NULL,
-    *vmax=NULL,*stnmax=NULL;
+    *vmax=NULL,*stnmax=NULL,*cs=NULL;
 
   /* buckling routine; only for mechanical applications */
 
@@ -142,7 +145,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-               fmpc,nelemload,nload));
+	       fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
   }else{
      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	       elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -156,7 +159,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-               fmpc,nelemload,nload));
+               fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
   }
 
   free(v);free(fn);free(stx);
@@ -181,7 +184,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mint_,
 	      ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
-              ibody,xloadold,&reltime));
+		      ibody,xloadold,&reltime,veold));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -196,7 +199,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mint_,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
-              ibody,xloadold,&reltime));
+		      ibody,xloadold,&reltime,veold));
   }
 
   /* determining the right hand side */
@@ -218,7 +221,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
          fn,&time,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
 	 iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,
          trab,inotr,ntrans,orab,ielorien,norien,description,
-		 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph));
+	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs));
     
     free(inum);free(ipneigh);free(neigh);FORTRAN(stop,());
 
@@ -254,6 +257,14 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     FORTRAN(stop,());
 #endif
   }
+  else if(*isolver==7){
+#ifdef PARDISO
+    pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[0],&nzs[0]);
+#else
+    printf("*ERROR in arpackbu: the PARDISO library is not linked\n\n");
+    FORTRAN(stop,());
+#endif
+  }
 
   /* calculating the displacements and the stresses and storing */
   /* the results in frd format for each valid eigenmode */
@@ -286,7 +297,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	  ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,sti,
           xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
           ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-          nelemload,nload));}
+          nelemload,nload,ikmpc,ilmpc,&istep,&iinc));}
   else{
     FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	  stx,elcon,nelcon,
@@ -301,7 +312,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	  ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,sti,
           xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
           ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-          nelemload,nload));
+          nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
   }
 
   for(k=0;k<5**nk;++k){
@@ -314,7 +325,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
        fn,&time,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
        iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,
        trab,inotr,ntrans,orab,ielorien,norien,description,
-       ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph));
+       ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs));
 
   free(v);free(fn);free(stn);free(inum);free(ipneigh);free(neigh);
 
@@ -346,7 +357,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mint_,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
-              ibody,xloadold,&reltime));
+		      ibody,xloadold,&reltime,veold));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -361,7 +372,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mint_,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
-              ibody,xloadold,&reltime));
+		      ibody,xloadold,&reltime,veold));
   }
 
   free(stx);free(fext);if(*nbody>0) free(ipobody);
@@ -373,12 +384,14 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
      else sigma is set to buckling factor/500, and a new iteration is
      started */
 
+  sigma=1.;
+
   do{
 
 
   /* LU decomposition of the left hand matrix */
 
-  sigma=1.;
+//  sigma=1.;
   if(*isolver==0){
 #ifdef SPOOLES
     spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[0],&nzs[0],
@@ -394,6 +407,11 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   else if(*isolver==5){
 #ifdef TAUCS
     tau_factor(ad,&au,adb,aub,&sigma,icol,&irow,&neq[0],&nzs[0]);
+#endif
+  }
+  else if(*isolver==7){
+#ifdef PARDISO
+    pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[0],&nzs[0]);
 #endif
   }
 
@@ -446,6 +464,11 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	  tau_solve(temp_array,&neq[0]);
 #endif
         }
+        else if(*isolver==7){
+#ifdef PARDISO
+          pardiso_solve(temp_array,&neq[0]);
+#endif
+        }
         for(jrow=0;jrow<neq[0];jrow++){
           workd[ipntr[1]-1+jrow]=temp_array[jrow];
         }
@@ -465,6 +488,11 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
         else if(*isolver==5){
 #ifdef TAUCS
           tau_solve(&workd[ipntr[2]-1],&neq[0]);
+#endif
+        }
+        else if(*isolver==7){
+#ifdef PARDISO
+          pardiso_solve(&workd[ipntr[2]-1],&neq[0]);
 #endif
         }
         for(jrow=0;jrow<neq[0];jrow++){
@@ -502,6 +530,11 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   else if(*isolver==5){
 #ifdef TAUCS
     tau_cleanup();
+#endif
+  }
+  else if(*isolver==7){
+#ifdef PARDISO
+    pardiso_cleanup(&neq[0]);
 #endif
   }
 
@@ -573,7 +606,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,sti,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-            nelemload,nload));}
+            nelemload,nload,ikmpc,ilmpc,&istep,&iinc));}
     else{
       FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	    stx,elcon,
@@ -588,7 +621,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,sti,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-            nelemload,nload));
+            nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
     }
 
     ++*kode;
@@ -597,7 +630,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
          fn,&d[j],epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
 	 iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,
          trab,inotr,ntrans,orab,ielorien,norien,description,
-	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph));
+	 ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs));
     free(ipneigh);free(neigh);
   }
 

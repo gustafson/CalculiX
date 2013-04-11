@@ -33,7 +33,7 @@
      &     ielprop(*),nodef(5),idirf(5),kflag,ipkon(*),kon(*),
      &     nshcon(*), nrhcon(*),ntmat_
 !      
-      real*8 prop(*),v(0:4,*),xflow,f,df(5),R,cp,physcon(3),rho,
+      real*8 prop(*),v(0:4,*),xflow,f,df(5),R,cp,physcon(*),rho,
      &     g(3),co(3,*),dvi,vold(0:4,*),shcon(0:3,ntmat_,*),
      &     rhcon(0:1,ntmat_,*)
 !
@@ -52,8 +52,8 @@
       elseif(lakon(nelem)(2:4).eq.'LAB') then 
 !         
          call labyrinth(node1,node2,nodem,nelem,lakon,
-     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,co,vold)
+     &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &     nodef,idirf,df,cp,R,physcon,co,dvi,numf,vold,set,kon,ipkon)
 ! 
       elseif(lakon(nelem)(2:5).eq.'GAPI') then 
 !         
@@ -67,7 +67,7 @@
          call gaspipe_fanno(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_)
+     &        nshcon,rhcon,nrhcon,ntmat_,co,vold)
 !
       elseif(lakon(nelem)(2:5).eq.'LIPI') then
 !         
@@ -91,15 +91,28 @@
 !         
          call orifice(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set)
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,co,vold)
 !
       elseif(lakon(nelem)(2:3).eq.'RE') then 
 !         
          call restrictor(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
+     &        nshcon,rhcon,nrhcon,ntmat_)
+!
+      elseif(lakon(nelem)(2:5).eq.'RIMS') then   
+!
+         call rimseal(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set)
+!
+      elseif(lakon(nelem)(2:6).eq.'SPUMP') then 
+! 
+        call scavenge_pump(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
      &        nshcon,rhcon,nrhcon,ntmat_)   
-!     
+!
       elseif(lakon(nelem)(2:3).eq.'VO') then 
 !     
          call vortex(node1,node2,nodem,nelem,lakon,kon,ipkon,

@@ -23,7 +23,8 @@
      &  sideload,xload,nload,idist,sti,stx,iexpl,plicon,
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
      &  matname,mint_,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
-     &  ttime,time,istep,iinc,coriolis,xloadold,reltime)
+     &  ttime,time,istep,iinc,coriolis,xloadold,reltime,
+     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -45,33 +46,34 @@
       character*80 matname(*),amat
 !
       integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nbody,nelem,
-     &  mattyp,ithermal,iperturb,nload,idist,i,j,k,l,i1,i2,j1,
+     &  mattyp,ithermal,iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
      &  nmethod,k1,l1,ii,jj,ii1,jj1,id,ipointer,ig,m1,m2,m3,m4,kk,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(*),ielorien(*),
      &  ntmat_,nope,nopes,norien,ihyper,iexpl,kode,imat,mint2d,
      &  mint3d,mint_,ifacet(6,4),nopev,iorien,istiff,ncmat_,
      &  ifacew(8,5),intscheme,n,ipointeri,ipointerj,istep,iinc,
-     &  layer,kspt,jltyp,iflag,iperm(60),m
+     &  layer,kspt,jltyp,iflag,iperm(60),m,ipompc(*),nodempc(3,*),
+     &  nmpc,ikmpc(*),ilmpc(*),iscale
 !
       integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,2),
+      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),veold(0:3,*),
      &  s(60,60),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),ff(60),
      &  bf(3),q(3),shpj(4,20),elcon(0:ncmat_,ntmat_,*),
      &  rhcon(0:1,ntmat_,*),xkl(3,3),eknlsign,reltime,
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
      &  anisox(3,3,3,3),voldl(3,20),vo(3,3),xloadold(2,*),
-     &  xl2(0:3,8),xsj2(3),shp2(4,8),vold(0:4,*),xload(2,*),v(3,3,3,3),
+     &  xl2(0:3,8),xsj2(3),shp2(7,8),vold(0:4,*),xload(2,*),v(3,3,3,3),
      &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(60,60),
      &  sti(6,mint_,*),stx(6,mint_,*),s11,s22,s33,s12,s13,s23,s11b,
-     &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,
+     &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,coefmpc(*),
      &  senergy,senergyb,rho,elas(21),summass,summ,
      &  sume,factorm,factore,alp,elconloc(21),eth(6),
-     &  weight,pgauss(3),dmass,xl1(0:3,8),term
+     &  weight,coords(3),dmass,xl1(0:3,8),term
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mint_,*),plconloc(82),dtime,ttime,time,tvar(2),
-     &  coords(3),sax(60,60),ffax(60)
+     &  sax(60,60),ffax(60)
 !
       include "gauss.f"
 !
@@ -221,7 +223,9 @@
 !
 !     displacements for 2nd order static and modal theory
 !
-      if((iperturb.ne.0).and.stiffness.and.(.not.buckling)) then
+c      if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling)) then
+      if(((iperturb(1).eq.1).or.(iperturb(2).eq.1)).and.
+     &          stiffness.and.(.not.buckling)) then
          do i1=1,nope
             do i2=1,3
                voldl(i2,i1)=vold(i2,konl(i1))
@@ -369,8 +373,9 @@ c               enddo
             nmethod=0
          endif
 !
-         if((iperturb.ne.0).and.stiffness.and.(.not.buckling))
-     &        then
+c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
+         if(((iperturb(1).eq.1).or.(iperturb(2).eq.1)).and.
+     &           stiffness.and.(.not.buckling))then
 !
 !              stresses for 2nd order static and modal theory
 !
@@ -424,9 +429,9 @@ c               enddo
 !
          if(iorien.gt.0) then
             do j=1,3
-               pgauss(j)=0.d0
+               coords(j)=0.d0
                do i1=1,nope
-                  pgauss(j)=pgauss(j)+shp(4,i1)*co(j,konl(i1))
+                  coords(j)=coords(j)+shp(4,i1)*co(j,konl(i1))
                enddo
             enddo
          endif
@@ -442,7 +447,7 @@ c               enddo
 !
          istiff=1
          call materialdata_me(elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
-     &        imat,amat,iorien,pgauss,orab,ntmat_,elas,rho,
+     &        imat,amat,iorien,coords,orab,ntmat_,elas,rho,
      &        nelem,ithermal,alzero,mattyp,t0l,t1l,
      &        ihyper,istiff,elconloc,eth,kode,plicon,
      &        nplicon,plkcon,nplkcon,npmat_,
@@ -501,7 +506,8 @@ c            call orthotropic(elas,anisox)
 !
          if(stiffness.or.mass.or.buckling.or.coriolis) then
 !
-            if((iperturb.eq.0).or.buckling)
+c            if((iperturb(1).eq.0).or.buckling)
+            if(((iperturb(1).ne.1).and.(iperturb(2).ne.1)).or.buckling)
      &           then
                jj1=1
                do jj=1,nope
@@ -753,7 +759,57 @@ c            call orthotropic(elas,anisox)
 !
          if(rhsi) then
 !
-!             body forces
+!           distributed body flux
+!
+            if(nload.gt.0) then
+               call nident2(nelemload,nelem,nload,id)
+               do
+                  if((id.eq.0).or.(nelemload(1,id).ne.nelem)) exit
+                  if((sideload(id)(1:2).ne.'BX').and.
+     &               (sideload(id)(1:2).ne.'BY').and.
+     &               (sideload(id)(1:2).ne.'BZ')) then
+                     id=id-1
+                     cycle
+                  endif
+                  if(sideload(id)(3:4).eq.'NU') then
+                     do j=1,3
+                        coords(j)=0.d0
+                        do i1=1,nope
+                           coords(j)=coords(j)+
+     &                          shp(4,i1)*xl(j,i1)
+                        enddo
+                     enddo
+                     if(sideload(id)(1:2).eq.'BX') then
+                        jltyp=1
+                     elseif(sideload(id)(1:2).eq.'BY') then
+                        jltyp=2
+                     elseif(sideload(id)(1:2).eq.'BZ') then
+                        jltyp=3
+                     endif
+                     iscale=1
+                     call dload(xload(1,id),istep,iinc,tvar,nelem,i,
+     &                  layer,kspt,coords,jltyp,sideload(id),vold,co,
+     &                  lakonl,konl,ipompc,nodempc,coefmpc,nmpc,ikmpc,
+     &                  ilmpc,iscale,veold,rho,amat)
+                     if((nmethod.eq.1).and.(iscale.ne.0))
+     &                    xload(1,id)=xloadold(1,id)+
+     &                   (xload(1,id)-xloadold(1,id))*reltime
+                  endif
+                  jj1=1
+                  do jj=1,nope
+                     if(sideload(id)(1:2).eq.'BX')
+     &                    ff(jj1)=ff(jj1)+xload(1,id)*shpj(4,jj)*weight
+                     if(sideload(id)(1:2).eq.'BY')
+     &                 ff(jj1+1)=ff(jj1+1)+xload(1,id)*shpj(4,jj)*weight
+                     if(sideload(id)(1:2).eq.'BZ')
+     &                 ff(jj1+2)=ff(jj1+2)+xload(1,id)*shpj(4,jj)*weight
+                     jj1=jj1+3
+                  enddo
+                  id=id-1
+               enddo
+            endif
+!
+!           body forces
 !
             if(nbody.ne.0) then
                if(om.gt.0.d0) then
@@ -763,7 +819,8 @@ c            call orthotropic(elas,anisox)
 !                   point
 !
                      q(i1)=0.d0
-                     if(iperturb.eq.0) then
+c                     if(iperturb(1).eq.0) then
+                     if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
                         do j1=1,nope
                            q(i1)=q(i1)+shp(4,j1)*xl(i1,j1)
                         enddo
@@ -839,7 +896,8 @@ c
           endif
 !
           if((nope.eq.20).or.(nope.eq.8)) then
-             if(iperturb.eq.0) then
+c             if(iperturb(1).eq.0) then
+             if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
                 do i=1,nopes
                    do j=1,3
                       xl2(j,i)=co(j,konl(ifaceq(i,ig)))
@@ -861,7 +919,8 @@ c
                 enddo
              endif
           elseif((nope.eq.10).or.(nope.eq.4)) then
-             if(iperturb.eq.0) then
+c             if(iperturb(1).eq.0) then
+             if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
                 do i=1,nopes
                    do j=1,3
                       xl2(j,i)=co(j,konl(ifacet(i,ig)))
@@ -883,7 +942,8 @@ c
                 enddo
              endif
           else
-             if(iperturb.eq.0) then
+c             if(iperturb(1).eq.0) then
+             if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
                 do i=1,nopes
                    do j=1,3
                       xl2(j,i)=co(j,konl(ifacew(i,ig)))
@@ -957,9 +1017,13 @@ c
                    enddo
                    read(sideload(id)(2:2),'(i1)') jltyp
                    jltyp=jltyp+20
+                   iscale=1
                    call dload(xload(1,id),istep,iinc,tvar,nelem,i,layer,
-     &                  kspt,coords,jltyp,sideload(id))
-                   if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &                  kspt,coords,jltyp,sideload(id),vold,co,lakonl,
+     &                  konl,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,
+     &                  iscale,veold,rho,amat)
+                   if((nmethod.eq.1).and.(iscale.ne.0))
+     &                   xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime
                 endif
 !
@@ -984,7 +1048,9 @@ c
 !            three-dimensional thermomechanical Applications,
 !            Wiley, 2004, p 153, eqn. (3.54).
 !
-             elseif((mass).and.(iperturb.ne.0)) then
+c             elseif((mass).and.(iperturb(1).ne.0)) then
+             elseif((mass).and.
+     &            ((iperturb(1).eq.1).or.(iperturb(2).eq.1))) then
                 if(nopes.eq.8) then
                    call shape8q(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.4) then
@@ -1007,9 +1073,13 @@ c
                    enddo
                    read(sideload(id)(2:2),'(i1)') jltyp
                    jltyp=jltyp+20
+                   iscale=1
                    call dload(xload(1,id),istep,iinc,tvar,nelem,i,layer,
-     &                  kspt,coords,jltyp,sideload(id))
-                   if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &                  kspt,coords,jltyp,sideload(id),vold,co,lakonl,
+     &                  konl,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,
+     &                  iscale,veold,rho,amat)
+                   if((nmethod.eq.1).and.(iscale.ne.0))
+     &                   xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime
                 endif
 !

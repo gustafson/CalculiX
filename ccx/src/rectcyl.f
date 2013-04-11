@@ -158,7 +158,8 @@
             j=i
             call transformatrix(csab,co(1,i),a)
 !
-            if(filab(1)(1:4).eq.'U   ') then
+            if((filab(1)(1:4).eq.'U   ').or.
+     &         (filab(11)(1:4).eq.'PU'))  then 
                xr=v(1,j)*a(1,1)+v(2,j)*a(2,1)+v(3,j)*a(3,1)
                xt=v(1,j)*a(1,2)+v(2,j)*a(2,2)+v(3,j)*a(3,2)
                xz=v(1,j)*a(1,3)+v(2,j)*a(2,3)+v(3,j)*a(3,3)
@@ -167,7 +168,8 @@
                v(3,j)=xz
             endif
 !
-            if(filab(3)(1:4).eq.'S   ') then
+            if((filab(3)(1:4).eq.'S   ').or.
+     &         (filab(18)(1:4).eq.'PHS ')) then
                b(1,1)=stn(1,j)*a(1,1)+stn(4,j)*a(2,1)+stn(5,j)*a(3,1)
                b(1,2)=stn(1,j)*a(1,2)+stn(4,j)*a(2,2)+stn(5,j)*a(3,2)
                b(1,3)=stn(1,j)*a(1,3)+stn(4,j)*a(2,3)+stn(5,j)*a(3,3)
@@ -229,7 +231,8 @@
 !
                j=i+n
 !
-               if(filab(1)(1:4).eq.'U   ') then
+               if((filab(1)(1:4).eq.'U   ').or.
+     &            (filab(11)(1:4).eq.'PU'))  then 
                   xr=v(1,j)*a(1,1)+v(2,j)*a(2,1)+v(3,j)*a(3,1)
                   xt=v(1,j)*a(1,2)+v(2,j)*a(2,2)+v(3,j)*a(3,2)
                   xz=v(1,j)*a(1,3)+v(2,j)*a(2,3)+v(3,j)*a(3,3)
@@ -238,7 +241,8 @@
                   v(3,j)=xz
                endif
 !
-               if(filab(3)(1:4).eq.'S   ') then
+               if((filab(3)(1:4).eq.'S   ').or.
+     &            (filab(18)(1:4).eq.'PHS ')) then
                   b(1,1)=stn(1,j)*a(1,1)+stn(4,j)*a(2,1)+stn(5,j)*a(3,1)
                   b(1,2)=stn(1,j)*a(1,2)+stn(4,j)*a(2,2)+stn(5,j)*a(3,2)
                   b(1,3)=stn(1,j)*a(1,3)+stn(4,j)*a(2,3)+stn(5,j)*a(3,3)
@@ -300,7 +304,8 @@
             j=i
             call transformatrix(csab,co(1,i),a)
 !
-            if(filab(1)(1:4).eq.'U   ') then
+            if((filab(1)(1:4).eq.'U   ').or.
+     &         (filab(11)(1:4).eq.'PU'))  then 
                xr=v(1,j)*a(1,1)+v(2,j)*a(1,2)+v(3,j)*a(1,3)
                xt=v(1,j)*a(2,1)+v(2,j)*a(2,2)+v(3,j)*a(2,3)
                xz=v(1,j)*a(3,1)+v(2,j)*a(3,2)+v(3,j)*a(3,3)
@@ -309,7 +314,8 @@
                v(3,j)=xz
             endif
 !
-            if(filab(3)(1:4).eq.'S   ') then
+            if((filab(3)(1:4).eq.'S   ').or.
+     &         (filab(18)(1:4).eq.'PHS ')) then
                b(1,1)=stn(1,j)*a(1,1)+stn(4,j)*a(1,2)+stn(5,j)*a(1,3)
                b(1,2)=stn(1,j)*a(2,1)+stn(4,j)*a(2,2)+stn(5,j)*a(2,3)
                b(1,3)=stn(1,j)*a(3,1)+stn(4,j)*a(3,2)+stn(5,j)*a(3,3)
@@ -371,7 +377,8 @@
 !
                j=i+n
 !
-               if(filab(1)(1:4).eq.'U   ') then
+               if((filab(1)(1:4).eq.'U   ').or.
+     &            (filab(11)(1:4).eq.'PU'))  then 
                   xr=v(1,j)*a(1,1)+v(2,j)*a(1,2)+v(3,j)*a(1,3)
                   xt=v(1,j)*a(2,1)+v(2,j)*a(2,2)+v(3,j)*a(2,3)
                   xz=v(1,j)*a(3,1)+v(2,j)*a(3,2)+v(3,j)*a(3,3)
@@ -380,7 +387,8 @@
                   v(3,j)=xz
                endif
 !     
-               if(filab(3)(1:4).eq.'S   ') then
+               if((filab(3)(1:4).eq.'S   ').or.
+     &            (filab(18)(1:4).eq.'PHS ')) then
                   b(1,1)=stn(1,j)*a(1,1)+stn(4,j)*a(1,2)+stn(5,j)*a(1,3)
                   b(1,2)=stn(1,j)*a(2,1)+stn(4,j)*a(2,2)+stn(5,j)*a(2,3)
                   b(1,3)=stn(1,j)*a(3,1)+stn(4,j)*a(3,2)+stn(5,j)*a(3,3)

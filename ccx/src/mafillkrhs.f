@@ -21,8 +21,8 @@
      &  nface,nactdok,neqk,nmethod,ikmpc,ilmpc,
      &  ikboun,ilboun,rhcon,nrhcon,ielmat,ntmat_,vold,voldaux,nzsk,
      &  dtime,matname,mint_,ncmat_,shcon,nshcon,v,theta1,
-     &  bk,bt,voldk,isolidsurf,nsolidsurf,ifreestream,nfreestream,
-     &  xsolidsurf)
+     &  bk,bt,voldtu,isolidsurf,nsolidsurf,ifreestream,nfreestream,
+     &  xsolidsurf,yy,compressible,turbulent)
 !
 !     filling the rhs b of the turbulence equations (step 5)
 !
@@ -37,10 +37,10 @@
       character*80 matname(*)
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
-     &  nelemface(*),ikmpc(*),ilmpc(*),ikboun(*),
+     &  nelemface(*),ikmpc(*),ilmpc(*),ikboun(*),compressible,
      &  ilboun(*),nactdok(*),konl(20),nrhcon(*),ielmat(*),
      &  ipkon(*),nshcon(*),ifreestream(*),nfreestream,isolidsurf(*),
-     &  nsolidsurf
+     &  nsolidsurf,turbulent
 !
       integer nk,ne,nboun,nmpc,nface,neqk,nmethod,nzsk,i,j,k,jj,
      &  id,ist,index,jdof1,idof1,
@@ -48,8 +48,8 @@
      &  mint_,i0,ncmat_
 !
       real*8 co(3,*),xboun(*),coefmpc(*),bk(*),v(0:4,*),vold(0:4,*),
-     &  voldaux(0:4,*),ffk(60),rhcon(0:1,ntmat_,*),
-     &  shcon(0:3,ntmat_,*),theta1,bt(*),fft(60),voldk(2,*),
+     &  voldaux(0:4,*),ffk(60),rhcon(0:1,ntmat_,*),yy(*),
+     &  shcon(0:3,ntmat_,*),theta1,bt(*),fft(60),voldtu(2,*),
      &  xsolidsurf(*)
 !
       real*8 dtime
@@ -87,11 +87,10 @@
           konl(j)=kon(indexe+j) 
         enddo
 !
-        call e_c3d_krhs(co,nk,konl,lakon(i),
-     &       ffk,fft,i,nmethod,rhcon,nrhcon,
-     &       ielmat,ntmat_,vold,voldaux,
-     &       dtime,matname,mint_,
-     &       shcon,nshcon,voldk)
+        call e_c3d_krhs(co,nk,konl,lakon(i),ffk,fft,i,nmethod,rhcon,
+     &       nrhcon,ielmat,ntmat_,vold,voldaux,dtime,matname,mint_,
+     &       shcon,nshcon,voldtu,compressible,yy,nelemface,sideface,
+     &       nface,turbulent)
 !
         do jj=1,nope
 !

@@ -27,7 +27,7 @@
       integer nset,nalset,nload,nforc,nboun,nflow,nk,ne,nkon,mint_,
      &  nmpc,memmpc_,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,nam,
      &  nprint,nlabel,ncs_,ne1d,ne2d,infree(4),i,
-     &  nmethod,iperturb,nener,iplas,ithermal,nstate_,iprestr,i4,
+     &  nmethod,iperturb(*),nener,iplas,ithermal,nstate_,iprestr,i4,
      &  maxamta,mcs,ntie,nbody
 !
       character*1 c1
@@ -142,7 +142,7 @@
       read(15)(c80,i=1,nmat)
       read(15)(i4,i=1,ne)
       read(15)(r8,i=1,5*nk)
-      if((nmethod.eq.4).or.((nmethod.eq.1).and.(iperturb.ge.2))) 
+      if((nmethod.eq.4).or.((nmethod.eq.1).and.(iperturb(1).ge.2))) 
      &     then
          read(15)(r8,i=1,4*nk)
       endif

@@ -16,8 +16,8 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine elprints(inpc,textpart,set,istartset,iendset,ialset,
-     &  nset,nset_,nalset,nprint,nprint_,jout,prlab,prset,
+      subroutine elprints(inpc,textpart,set,
+     &  nset,nprint,nprint_,jout,prlab,prset,
      &  nmethod,elprint_flag,nener,ithermal,istep,istat,n,iline,ipol,
      &  inl,ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc)
 !
@@ -33,9 +33,8 @@
       character*81 set(*),elset,prset(*)
       character*132 textpart(16)
 !
-      integer istartset(*),iendset(*),ialset(*),nset,
-     &  nset_,nalset,nprint,nprint_,istep,istat,n,i,ii,key,
-     &  jout,joutl,ipos,nmethod,nener,ithermal,iline,ipol,inl,
+      integer nset,nprint,nprint_,istep,istat,n,i,ii,key,
+     &  jout(2),joutl,ipos,nmethod,nener,ithermal,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),nam,itpamp,idrct,ipoinpc(0:*)
 !
       if(istep.lt.1) then
@@ -53,10 +52,11 @@
          do i=1,nprint
             if((prlab(i)(1:4).eq.'S   ').or.
      &         (prlab(i)(1:4).eq.'E   ').or.
-     &         (prlab(i)(1:4).eq.'PE  ').or.
+     &         (prlab(i)(1:4).eq.'PEEQ').or.
      &         (prlab(i)(1:4).eq.'ENER').or.
      &         (prlab(i)(1:4).eq.'SDV ').or.
      &         (prlab(i)(1:4).eq.'ELSE').or.
+     &         (prlab(i)(1:4).eq.'ELKE').or.
      &         (prlab(i)(1:4).eq.'EVOL').or.
      &         (prlab(i)(1:4).eq.'HFL ')) cycle
             ii=ii+1
@@ -80,8 +80,8 @@
             if(set(i).eq.elset) exit
           enddo
           if(i.gt.nset) then
-             write(*,*) '*WARNING in elprints: set ',elset(1:ipos-1),
-     &            ' does not exist'
+             write(*,*) '*WARNING in elprints: elementset ',
+     &            elset(1:ipos-1),' does not exist'
              call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &            ipoinp,inp,ipoinpc)
              return
@@ -96,7 +96,24 @@
                  if((key.eq.1).or.(istat.lt.0)) return
               enddo
            endif
-           if(joutl.gt.0) jout=joutl
+           if(joutl.gt.0) then
+              jout(1)=joutl
+              itpamp=0
+           endif
+        elseif(textpart(ii)(1:11).eq.'FREQUENCYF=') then
+           read(textpart(ii)(12:21),'(i10)',iostat=istat) joutl
+           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+           if(joutl.eq.0) then
+              do
+                 call getnewline(inpc,textpart,istat,n,key,iline,ipol,
+     &                inl,ipoinp,inp,ipoinpc)
+                 if((key.eq.1).or.(istat.lt.0)) return
+              enddo
+           endif
+           if(joutl.gt.0) then
+              jout(2)=joutl
+              itpamp=0
+           endif
         elseif(textpart(ii)(1:10).eq.'TOTALS=YES') then
            total='T'
         elseif(textpart(ii)(1:11).eq.'TOTALS=ONLY') then
@@ -125,6 +142,8 @@
               write(*,*) '       specification'
               stop
            endif
+           jout(1)=1
+           jout(2)=1
         endif
       enddo
 !
@@ -142,24 +161,25 @@
      &        ipoinp,inp,ipoinpc)
          if(key.eq.1) exit
          do ii=1,n
-            if(textpart(ii)(1:2).eq.'PE') then
+            if(textpart(ii)(1:4).eq.'PEEQ') then
                if((nmethod.eq.2).or.(nmethod.eq.3)) then
-                  write(*,*) '*WARNING in elprints: selection of PE'
+                  write(*,*) '*WARNING in elprints: selection of PEEQ'
                   write(*,*) '         does not make sense for a'
                   write(*,*) '         frequency or bucking calculation'
                   cycle
                endif
-            elseif(textpart(ii)(1:2).eq.'CE') then
+            elseif(textpart(ii)(1:4).eq.'CEEQ') then
                if((nmethod.eq.2).or.(nmethod.eq.3)) then
-                  write(*,*) '*WARNING in elprints: selection of CE'
+                  write(*,*) '*WARNING in elprints: selection of CEEQ'
                   write(*,*) '         does not make sense for a'
                   write(*,*) '         frequency or bucking calculation'
                   cycle
                endif
-               textpart(ii)(1:2)='PE'
-               write(*,*) '*WARNING in elprints: selection of CE'
-               write(*,*)'         is converted into PE; no distinction'
-               write(*,*) '        is made between PE and CE'
+               textpart(ii)(1:4)='PEEQ'
+               write(*,*) '*WARNING in elprints: selection of CEEQ'
+               write(*,*)
+     &            '         is converted into PEEQ; no distinction'
+               write(*,*) '        is made between PEEQ and CEEQ'
             elseif(textpart(ii)(1:3).eq.'SDV') then
                if((nmethod.eq.2).or.(nmethod.eq.3)) then
                   write(*,*) '*WARNING in elprints: selection of SDV'
@@ -168,7 +188,8 @@
                   cycle
                endif
             elseif((textpart(ii)(1:4).eq.'ENER').or.
-     &             (textpart(ii)(1:4).eq.'ELSE')) then
+     &             (textpart(ii)(1:4).eq.'ELSE').or.
+     &             (textpart(ii)(1:4).eq.'ELKE')) then
                nener=1
             elseif(textpart(ii)(1:4).eq.'HFL ') then
                if(ithermal.lt.2) then

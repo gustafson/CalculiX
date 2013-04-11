@@ -824,7 +824,7 @@ c         write(*,*)'MILLER'
             dh=dsqrt(4d0*A2/Pi)
          endif
 !     Reference element
-         nelem_ref=prop(ielprop(nelem)+4)
+         nelem_ref=int(prop(ielprop(nelem)+4))
 !
          if (lakon(nelem_ref)(2:5).ne.'GAPI') then
             write(*,*) '*ERROR in zeta_calc :the reference element is no
@@ -832,7 +832,6 @@ c         write(*,*)'MILLER'
            stop
          endif
 !
-!     if(lakon(prop(index+4))(2:6).eq.'GAPIA') then
 !     case=0
          if(lakon(nelem_ref)(2:6).eq.'GAPII') then
 !     case=1

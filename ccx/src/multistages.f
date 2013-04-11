@@ -39,7 +39,7 @@
      &     nodel(5),noder(5),nkon,
      &     indcs, node_cycle,itemp(5),nx(*),ny(*),netri,noder0,
      &     nodef(8),nterms,kseg,k2,ndir,idof,number,id,mpcfreeold,
-     &     lathyp(3,6),inum
+     &     lathyp(3,6),inum,ier
 !     
 !    creates multistage MPC's: connection of dissimilar cyclic
 !    symmetric segments 
@@ -333,11 +333,12 @@ c
                co(2,noder0)=coord(2)
                co(3,noder0)=coord(3)
 !     
+               ier=0
                call linkdissimilar(co,nk,ics,csab,
      &              ncsnodes,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,nzcg,jcs,
      &              kontri,straight,lcs,nodef,ratio,nterms,yp,zp,netri,
      &              nodesonaxis,noder0,ifacetet,inodface,ialset(j),
-     &              tolloc,T(1,1),T(1,2),T(1,3))
+     &              tolloc,T(1,1),T(1,2),T(1,3),ier)
 !     
                if ((kseg.eq.(noder(4))-1.d0).and.(replace)) then
                   cs(1,mcs+1)=-noder(4)
@@ -496,7 +497,7 @@ c
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
                         write(*,*)
-     &                     '*ERROR in generatecycmpcs: increase nmpc_'
+     &                     '*ERROR in multistages: increase nmpc_'
                         stop
                      endif
                      
@@ -510,7 +511,7 @@ c
                         endif
                         if(mpcfree.eq.0) then
                            write(*,*) 
-     &                      '*ERROR in generatecycmpcs: increase nmpc_'
+     &                      '*ERROR in multistages: increase nmpc_'
                            stop
                         endif
                      enddo  

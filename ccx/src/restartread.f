@@ -50,7 +50,7 @@
       integer istep,nset,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,
      &  ntmat_,npmat_,norien,nam,nprint,mint_,ntrans,ncs_,
      &  namtot_,ncmat_,mpcfree,ne1d,ne2d,nflow,nlabel,iplas,nkon,
-     &  ithermal,nmethod,iperturb,nstate_,istartset(*),iendset(*),
+     &  ithermal,nmethod,iperturb(*),nstate_,istartset(*),iendset(*),
      &  ialset(*),kon(*),ipkon(*),nodeboun(*),ndirboun(*),iamboun(*),
      &  ikboun(*),ilboun(*),ipompc(*),nodempc(*),ikmpc(*),ilmpc(*),
      &  nodeforc(*),ndirforc(*),iamforc(*),ikforc(*),ilforc(*),
@@ -68,7 +68,7 @@
      &  vold(*),xbounold(*),xforcold(*),xloadold(*),t1old(*),eme(*),
      &  xnor(*),thickn(*),thicke(*),offset(*),
      &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),prestr(*),ttime,
-     &  qaold(2),physcon(3),ctrl(*),cs(17,*),fmpc(*),xbody(*),
+     &  qaold(2),physcon(*),ctrl(*),cs(17,*),fmpc(*),xbody(*),
      &  xbodyold(*)
 !
       ipos=index(jobnamec(1),char(0))
@@ -78,7 +78,8 @@
          fnrstrt(i:i)=' '
       enddo
 !
-      open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED')
+      open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED',
+     &  err=15)
 !
       do
 !
@@ -155,7 +156,7 @@
 !        procedure info
 !
          read(15)nmethod
-         read(15)iperturb
+         read(15)(iperturb(i),i=1,2)
          read(15)nener
          read(15)iplas
          read(15)ithermal
@@ -164,7 +165,7 @@
 !
          if(istep.eq.irestartstep) exit
 !
-!        skipping the next entries
+!        skipping the next entries until the requested step is found
 ! 
          call skip(nset,nalset,nload,nbody,nforc,nboun,nflow,nk,ne,nkon,
      &     mint_,nmpc,mpcend,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,
@@ -330,7 +331,7 @@
 !     temperature, displacement, static pressure, velocity and acceleration
 !
       read(15)(vold(i),i=1,5*nk)
-      if((nmethod.eq.4).or.((nmethod.eq.1).and.(iperturb.ge.2))) then
+      if((nmethod.eq.4).or.((nmethod.eq.1).and.(iperturb(1).ge.2))) then
          read(15)(veold(i),i=1,4*nk)
       endif
 !
@@ -387,6 +388,9 @@
       close(15)
 !
       return
+!
+ 15   write(*,*) '*ERROR in restartread: could not open file ',fnrstrt
+      stop
       end
 
 

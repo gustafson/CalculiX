@@ -35,7 +35,7 @@
      &     nrhcon(*),ntmat_
 !     
       real*8 prop(*),v(0:4,*),xflow,f,df(5),kappa,R,d,
-     &     Tt1,Tt2,pt1,pt2,cp,physcon(3),km1,dvi,
+     &     Tt1,Tt2,pt1,pt2,cp,physcon(*),km1,dvi,
      &     kp1,kdkm1,reynolds,kdkp1,
      &     pt2pt1,pt1pt2,pt1pt2_crit,qred_crit,qred1,qred2,zeta,
      &     A1,A2,root, expon1,expon2,expon3,fact1,fact2,sqrt,pi,

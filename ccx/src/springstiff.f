@@ -30,12 +30,14 @@
      &  i1,kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),
      &  iperturb
 !
-      real*8 xl(3,9),elas(21),ratio(9),pproj(3),dist,shp2(4,8),
+      real*8 xl(3,9),elas(21),ratio(9),q(3),dist,shp2(7,9),
      &  dc(3),s(60,60),voldl(3,9),pl(0:3,9),xn(3),al,dd,
      &  c1,c2,c3,c4,alpha,beta,elcon(0:ncmat_,ntmat_,*),xsj2(3),
-     &  xsju(3,3,8),dxsju(3,8),h(3,8),fpu(3,3,9),xi,et,
-     &  xs2(3,2),t0l,t1l,elconloc(21),plconloc(82),xk,fk,
-     &  xiso(20),yiso(20),dd0,plicon(0:2*npmat_,ntmat_,*)
+     &  xsju(3,3,9),dxsju(3,9),h(3,9),fpu(3,3,9),xi,et,
+     &  xs2(3,7),t0l,t1l,elconloc(21),plconloc(82),xk,fk,
+     &  xiso(20),yiso(20),dd0,plicon(0:2*npmat_,ntmat_,*),
+     &  a11,a12,a22,b1(3,9),b2(3,9),dal(3,3,9),qxxy(3),fnl(3),
+     &  qxyy(3),dxi(3,9),det(3,9),determinant,c11,c12,c22
 !
       data iflag /2/
 !
@@ -122,11 +124,11 @@
 !     on the independent face
 !
       do i=1,3
-         pproj(i)=pl(i,nope)
+         q(i)=pl(i,nope)
       enddo
-      call attach(pl,pproj,nterms,ratio,dist,xi,et)
+      call attach(pl,q,nterms,ratio,dist,xi,et)
       do i=1,3
-         dc(i)=pl(i,nope)-pproj(i)
+         dc(i)=pl(i,nope)-q(i)
       enddo
 !
 !     determining the jacobian vector on the surface 
@@ -141,6 +143,70 @@
          call shape3tri(xi,et,pl,xsj2,xs2,shp2,iflag)
       endif
 !
+!     dxi(i,j) is the derivative of xi w.r.t. pl(i,j),
+!     det(i,j) is the derivative of eta w.r.t. pl(i,j)
+!
+!     dxi and det are determined from the orthogonality
+!     condition
+!
+      a11=-(xs2(1,1)*xs2(1,1)+xs2(2,1)*xs2(2,1)+xs2(3,1)*xs2(3,1))
+     &    +dc(1)*xs2(1,5)+dc(2)*xs2(2,5)+dc(3)*xs2(3,5)
+      a12=-(xs2(1,1)*xs2(1,2)+xs2(2,1)*xs2(2,2)+xs2(3,1)*xs2(3,2))
+     &    +dc(1)*xs2(1,6)+dc(2)*xs2(2,6)+dc(3)*xs2(3,6)
+      a22=-(xs2(1,2)*xs2(1,2)+xs2(2,2)*xs2(2,2)+xs2(3,2)*xs2(3,2))
+     &    +dc(1)*xs2(1,7)+dc(2)*xs2(2,7)+dc(3)*xs2(3,7)
+!
+      do i=1,3
+         do j=1,nterms
+            b1(i,j)=shp2(4,j)*xs2(i,1)-shp2(1,j)*dc(i)
+            b2(i,j)=shp2(4,j)*xs2(i,2)-shp2(2,j)*dc(i)
+         enddo
+         b1(i,nope)=-xs2(i,1)
+         b2(i,nope)=-xs2(i,2)
+      enddo
+!
+      determinant=a11*a22-a12*a12
+      c11=a22/determinant
+      c12=-a12/determinant
+      c22=a11/determinant
+!
+      do i=1,3
+         do j=1,nope
+            dxi(i,j)=c11*b1(i,j)+c12*b2(i,j)
+            det(i,j)=c12*b1(i,j)+c22*b2(i,j)
+         enddo
+      enddo
+!
+!     dal(i,j,k) is the derivative of dc(i) w.r.t pl(j,k)
+!
+      do i=1,nope
+         do j=1,3
+            do k=1,3
+               dal(j,k,i)=-xs2(j,1)*dxi(k,i)-xs2(j,2)*det(k,i)
+            enddo
+         enddo
+      enddo
+      do i=1,nterms
+         do j=1,3
+            dal(j,j,i)=dal(j,j,i)-shp2(4,i)
+         enddo
+      enddo
+      do j=1,3
+         dal(j,j,nope)=dal(j,j,nope)+1.d0
+      enddo
+!
+!     d2q/dxx x dq/dy
+!
+      qxxy(1)=xs2(2,5)*xs2(3,2)-xs2(3,5)*xs2(2,2)
+      qxxy(2)=xs2(3,5)*xs2(1,2)-xs2(1,5)*xs2(3,2)
+      qxxy(3)=xs2(1,5)*xs2(2,2)-xs2(2,5)*xs2(1,2)
+!
+!     dq/dx x d2q/dyy
+!
+      qxyy(1)=xs2(2,1)*xs2(3,7)-xs2(3,1)*xs2(2,7)
+      qxyy(2)=xs2(3,1)*xs2(1,7)-xs2(1,1)*xs2(3,7)
+      qxyy(3)=xs2(1,1)*xs2(2,7)-xs2(2,1)*xs2(1,7)
+!
 !     normal on the surface
 !
       dd=dsqrt(xsj2(1)*xsj2(1)+xsj2(2)*xsj2(2)+xsj2(3)*xsj2(3))
@@ -151,29 +217,40 @@
 !     distance from surface along normal
 !
       al=dc(1)*xn(1)+dc(2)*xn(2)+dc(3)*xn(3)
+c      write(*,*) 'springstiff ',al
 !
 !     alpha and beta, taking the representative area into account
 !     (conversion of pressure into force)
 !
-      if((nterms.eq.8).or.(nterms.eq.4)) then
-         alpha=elcon(2,1,imat)*dd*4.d0
-c         alpha=elcon(2,1,imat)*dd*4.d0/konl(nope+1)
+      if(dabs(elcon(2,1,imat)).lt.1.d-30) then
+         elas(1)=0.d0
+         elas(2)=0.d0
       else
-         alpha=elcon(2,1,imat)*dd/2.d0
-c         alpha=elcon(2,1,imat)*dd/2.d0/konl(nope+1)
+         if((nterms.eq.8).or.(nterms.eq.4)) then
+            alpha=elcon(2,1,imat)*dd*4.d0
+c     alpha=elcon(2,1,imat)*dd*4.d0/konl(nope+1)
+         else
+            alpha=elcon(2,1,imat)*dd/2.d0
+c     alpha=elcon(2,1,imat)*dd/2.d0/konl(nope+1)
+         endif
+         beta=elcon(1,1,imat)
+         if(-beta*al.gt.23.d0-dlog(alpha)) then
+            beta=(dlog(alpha)-23.d0)/al
+         endif
+         elas(1)=dexp(-beta*al+dlog(alpha))
+         elas(2)=-beta*elas(1)
       endif
-      beta=elcon(1,1,imat)
-      if(-beta*al.gt.23.d0-dlog(alpha)) then
-         beta=(dlog(alpha)-23.d0)/al
-      endif
-      elas(1)=alpha*dexp(-beta*al)
-      elas(2)=-beta*elas(1)
+!
+!     contact force
+!
+      do i=1,3
+         fnl(i)=-elas(1)*xn(i)
+      enddo
+!
+!     derivatives of the jacobian vector w.r.t. the displacement
+!     vectors
 !
       do k=1,nterms
-!
-!        derivatives of the jacobian vector w.r.t. the displacement
-!        vectors
-!
          xsju(1,1,k)=0.d0
          xsju(2,2,k)=0.d0
          xsju(3,3,k)=0.d0
@@ -183,10 +260,28 @@ c         alpha=elcon(2,1,imat)*dd/2.d0/konl(nope+1)
          xsju(1,3,k)=-xsju(3,1,k)
          xsju(2,1,k)=-xsju(1,2,k)
          xsju(3,2,k)=-xsju(2,3,k)
+      enddo
+      do i=1,3
+         do j=1,3
+            xsju(i,j,nope)=0.d0
+         enddo
+      enddo
 !
-!        derivatives of the size of the jacobian vector w.r.t. the
-!        displacement vectors
+!     correction due to change of xi and eta
 !
+      do k=1,nope
+         do i=1,3
+            do j=1,3
+               xsju(i,j,k)=xsju(i,j,k)+qxxy(i)*dxi(j,k)
+     &                                +qxyy(i)*det(j,k)
+            enddo
+         enddo
+      enddo
+!     
+!     derivatives of the size of the jacobian vector w.r.t. the
+!     displacement vectors
+!
+      do k=1,nope
          do i=1,3
             dxsju(i,k)=xn(1)*xsju(1,i,k)+xn(2)*xsju(2,i,k)+
      &           xn(3)*xsju(3,i,k)
@@ -208,33 +303,38 @@ c         alpha=elcon(2,1,imat)*dd/2.d0/konl(nope+1)
 !
 !     derivatives of the forces w.r.t. the displacement vectors
 !
-      do k=1,nterms
+      do k=1,nope
          do i=1,3
             do j=1,3
-               fpu(i,j,k)=-c3*xsj2(i)*(h(j,k)-ratio(k)*xsj2(j))
+               fpu(i,j,k)=-c3*xsj2(i)*(h(j,k)
+     &      +(xsj2(1)*dal(1,j,k)+xsj2(2)*dal(2,j,k)+xsj2(3)*dal(3,j,k)))
      &                    +c4*(xn(i)*dxsju(j,k)-xsju(i,j,k))
             enddo
-         enddo
-      enddo
-      do i=1,3
-         do j=1,3
-            fpu(i,j,nope)=-c3*xsj2(i)*xsj2(j)
          enddo
       enddo
 !
 !     determining the stiffness matrix contributions
 !
-      do k=1,nterms
-         ratio(k)=-ratio(k)
-      enddo
-      ratio(nope)=1.d0
+c      do k=1,nterms
+c         ratio(k)=-ratio(k)
+c      enddo
+c      ratio(nope)=1.d0
+!
+!     complete field shp2 
+!
+      shp2(1,nope)=0.d0
+      shp2(2,nope)=0.d0
+      shp2(4,nope)=-1.d0
 !
       do k=1,nope
          do l=1,nope
             do i=1,3
                i1=i+(k-1)*3
                do j=1,3
-                  s(i1,j+(l-1)*3)=ratio(k)*fpu(i,j,l)
+c                  s(i1,j+(l-1)*3)=ratio(k)*fpu(i,j,l)
+                  s(i1,j+(l-1)*3)=-shp2(4,k)*fpu(i,j,l)
+     &                            -shp2(1,k)*fnl(i)*dxi(j,l)
+     &                            -shp2(2,k)*fnl(i)*det(j,l)
                enddo
             enddo
          enddo
@@ -245,6 +345,7 @@ c         alpha=elcon(2,1,imat)*dd/2.d0/konl(nope+1)
       do j=1,3*nope
          do i=1,j-1
             s(i,j)=(s(i,j)+s(j,i))/2.d0
+c            write(*,*) 'springstiff stiffness ',i,j,s(i,j)
          enddo
       enddo
 !

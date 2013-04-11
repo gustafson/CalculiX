@@ -476,7 +476,7 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 
 		mtxA = InpMtx_new();
 
-		if(*inputformat==0){
+		if((*inputformat==0)||(*inputformat==3)){
 		    nent = *nzs + *neq;	/* estimated # of nonzero entries */
 		}else if(*inputformat==1){
 		    nent=2**nzs+*neq;
@@ -554,7 +554,32 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 			    }
 			}
 		    }
-		}
+		}else if(*inputformat==3){
+		  ipoint = 0;
+		  
+		  if(*sigma==0.){
+		    for (row = 0; row < size; row++) {
+		      InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
+		      for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
+			int col = irow[ipo] - 1;
+			InpMtx_inputRealEntry(mtxA, col, row,
+					      au[ipo]);
+		      }
+		      ipoint = ipoint + icol[row];
+		    }
+		  }
+		  else{
+		    for (row = 0; row < size; row++) {
+		      InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
+		      for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
+			int col = irow[ipo] - 1;
+			InpMtx_inputRealEntry(mtxA, col, row, 
+					      au[ipo]-*sigma*aub[ipo]);
+		      }
+		      ipoint = ipoint + icol[row];
+		    }
+		  }
+		}		  
 
                 InpMtx_changeStorageMode(mtxA, INPMTX_BY_VECTORS);
                   
@@ -583,16 +608,16 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 #ifdef _SC_NPROCESSORS_CONF
 		sys_cpus = sysconf(_SC_NPROCESSORS_CONF);
 		if (sys_cpus <= 0)
-			sys_cpus = 256;
+			sys_cpus = 1;
 #else
-		sys_cpus = 256;
+		sys_cpus = 1;
 #endif
       		env = getenv("CCX_NPROC");
 		if (env)
 			num_cpus = atoi(env);
 		if (num_cpus > 0) {
-			if (num_cpus > sys_cpus)
-				num_cpus = sys_cpus;
+//			if (num_cpus > sys_cpus)
+//				num_cpus = sys_cpus;
 		} else if (num_cpus == -1) {
 			num_cpus = sys_cpus;
 		} else {

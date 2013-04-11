@@ -23,13 +23,13 @@
      &  ilboun,rhcon,nrhcon,ielmat,ntmat_,t0,ithermal,vold,voldaux,nzsv,
      &  dtime,matname,mint_,ncmat_,physcon,shcon,nshcon,ttime,time,
      &  istep,iinc,ibody,xloadold,turbulent,voldtu,yy,
-     &  nelemface,sideface,nface)
+     &  nelemface,sideface,nface,compressible,ne1,ne2)
 !
 !     filling the rhs b of the velocity equations (step 1)
 !
       implicit none
 !
-      logical turbulent
+      integer turbulent,compressible
 !
       character*1 sideface(*)
       character*8 lakon(*)
@@ -40,7 +40,7 @@
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icolv(*),jqv(*),
      &  ikmpc(*),ilmpc(*),ikboun(*),ilboun(*),nactdoh(0:4,*),konl(20),
      &  irowv(*),nrhcon(*),ielmat(*),ipkon(*),nshcon(*),ipobody(2,*),
-     &  nbody,ibody(3,*),nelemface(*),nface
+     &  nbody,ibody(3,*),nelemface(*),nface,ne1,ne2
 !
       integer nk,ne,nboun,nmpc,nforc,nload,neqv,nzlv,nmethod,
      &  ithermal,nzsv,i,j,k,idist,jj,id,ist,index,jdof1,idof1,
@@ -49,7 +49,7 @@
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),bodyf(3),b(*),xloadold(2,*),voldtu(2,*),yy(*),
      &  t0(*),vold(0:4,*),voldaux(0:4,*),ff(60),rhcon(0:1,ntmat_,*),
-     &  physcon(3),shcon(0:3,ntmat_,*),xbody(7,*)
+     &  physcon(*),shcon(0:3,ntmat_,*),xbody(7,*)
 !
       real*8 om,dtime,ttime,time
 !
@@ -63,14 +63,14 @@
 !        distributed forces (body forces or thermal loads or
 !        residual stresses or distributed face loads)
 !
-         if((nbody.ne.0).or.(ithermal.ne.0).or.
-     &      (nload.ne.0)) then
-            idist=1
-         else
-            idist=0
-         endif
+      if((nbody.ne.0).or.(ithermal.ne.0).or.
+     &     (nload.ne.0)) then
+         idist=1
+      else
+         idist=0
+      endif
 !
-      do i=1,ne
+      do i=ne1,ne2
 !
         if(ipkon(i).lt.0) cycle
         if(lakon(i)(1:1).ne.'F') cycle
@@ -134,7 +134,7 @@
      &       nbody,ff,i,nmethod,rhcon,nrhcon,ielmat,ntmat_,vold,
      &       voldaux,idist,dtime,matname,mint_,
      &       ttime,time,istep,iinc,shcon,nshcon,
-     &       turbulent,voldtu,yy,nelemface,sideface,nface)
+     &       turbulent,voldtu,yy,nelemface,sideface,nface,compressible)
 !
         do jj=1,3*nope
 !
@@ -177,17 +177,18 @@
 !
 !        point forces
 !      
+      if(ne1.eq.1) then
          do i=1,nforc
             if(ndirforc(i).gt.3) cycle
             jdof=nactdoh(ndirforc(i),nodeforc(1,i))
             if(jdof.ne.0) then
                b(jdof)=b(jdof)+xforc(i)
             else
-!
-!              node is a dependent node of a MPC: distribute
-!              the forces among the independent nodes
-!              (proportional to their coefficients)
-!
+!     
+!     node is a dependent node of a MPC: distribute
+!     the forces among the independent nodes
+!     (proportional to their coefficients)
+!     
                jdof=8*(nodeforc(1,i)-1)+ndirforc(i)
                call nident(ikmpc,jdof,nmpc,id)
                if(id.gt.0) then
@@ -208,6 +209,7 @@
                endif
             endif
          enddo
-!
+      endif
+!     
       return
       end

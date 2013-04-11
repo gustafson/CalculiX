@@ -30,7 +30,7 @@
       real*8 v(0:4,*),t1(*),fn(0:3,*),rftot(0:3),trab(7,*),
      &  co(3,*),a(3,3)
 !
-      if(prlab(ii)(1:4).eq.'U   ') then
+      if((prlab(ii)(1:4).eq.'U   ').or.(prlab(ii)(1:4).eq.'V   ')) then
          if((ntrans.eq.0).or.(prlab(ii)(6:6).eq.'G')) then
             write(5,'(i6,1p,3(1x,e11.4))') node,
      &           (v(j,node),j=1,3)
@@ -52,6 +52,15 @@
             write(5,'(i6,1x,1p,e11.4)') node,
      &           v(0,node)
          endif
+      elseif(prlab(ii)(1:4).eq.'PS  ') then
+         write(5,'(i6,1x,1p,e11.4)') node,
+     &        v(4,node)
+      elseif(prlab(ii)(1:4).eq.'PT  ') then
+            write(5,'(i6,1x,1p,e11.4)') node,
+     &           v(2,node)
+      elseif(prlab(ii)(1:4).eq.'MF  ') then
+         write(5,'(i6,1x,1p,e11.4)') node,
+     &        v(1,node)
       elseif(prlab(ii)(1:4).eq.'RF  ') then
          do j=1,3
             rftot(j)=rftot(j)+fn(j,node)

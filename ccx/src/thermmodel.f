@@ -18,18 +18,22 @@
 !
       subroutine thermmodel(amat,iel,iint,kode,coconloc,vkl,
      &  dtime,time,ttime,mint_,nstate_,xstateini,xstate,qflux,xstiff,
-     &  iorien,pgauss,orab,t1l,t1lold)
+     &  iorien,pgauss,orab,t1l,t1lold,vold,co,lakonl,konl,
+     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc)
 !
+      character*8 lakonl
       character*80 amat
 !
       integer iel,iint,kode,mint_,nstate_,iorien,ntgrd,ncoconst,
-     &  layer,kspt,kstep,kinc,kal(2,6)
+     &  layer,kspt,kstep,kinc,kal(2,6),konl(20),ipompc(*),
+     &  nodempc(3,*),nmpc,ikmpc(*),ilmpc(*)
 !
       real*8 coconloc(*),vkl(0:3,3),dtime,time,ttime,cond(6),
      &  xstateini(nstate_,mint_,*),xstate(nstate_,mint_,*),qflux(3),
      &  pgauss(3),orab(7,*),abqtime(2),u,dudt,dudg(3),dfdt(3),
      &  dfdg(3,3),dtemp,dtemdx(3),predef(1),dpred(1),pnewdt,
-     &  skl(3,3),t1lold,xstiff(27,mint_,*),xa(3,3)
+     &  skl(3,3),t1lold,xstiff(27,mint_,*),xa(3,3),vold(0:4,*),
+     &  co(3,*),coefmpc(*)
 !
       data kal /1,1,2,2,3,3,1,2,1,3,2,3/
 !
@@ -140,7 +144,8 @@
          call umatht(u,dudt,dudg,qflux,dfdt,dfdg,xstate,t1lold,dtemp,
      &     dtemdx,abqtime,dtime,predef,dpred,amat,ntgrd,nstate_,
      &     coconloc,ncoconst,pgauss,pnewdt,iel,iint,layer,kspt,
-     &     kstep,kinc)
+     &     kstep,kinc,vold,co,lakonl,konl,
+     &     ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc)
 !
          cond(1)=dfdg(1,1)
          cond(2)=dfdg(2,2)

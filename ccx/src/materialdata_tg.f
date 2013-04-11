@@ -20,8 +20,8 @@
 !
       implicit none
 !
-!     determines the following gas properties:
-!     specific heat, the dynamic viscosity and the specific gas constant
+!     determines the following gas properties: the density,
+!     the specific heat, the dynamic viscosity and the specific gas constant
 !
       integer imat,ntmat_,id,nshcon(*),two,four,nrhcon(*)
 !

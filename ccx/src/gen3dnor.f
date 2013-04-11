@@ -37,7 +37,7 @@
      &  ne,iponor(2,*),knor(*),rig(*),iperturb,ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,mpcfree,ikmpc(*),ilmpc(*),ikboun(*),ilboun(*),nboun,
      &  nboun_,nodeboun(*),ndirboun(*),iamboun(*),nam,ntrans,inotr(2,*),
-     &  isol,istep
+     &  isol,istep,idummy
 !
       integer i,ndepnodes,index,nexp,nnor,nel,ielem,indexe,j,iel(100),
      &  jl(100),ial(100),ifi(100),idepnodes(80),indexx,k,l,ifix,nemin,
@@ -146,7 +146,7 @@
                if(dd.lt.1.d-10) then
                   write(*,*) '*ERROR in gen3dnor: size of estimated'
                   write(*,*) '       shell normal in node ',i,
-     &              ' element ',j
+     &              ' element ',iel(j)
                   write(*,*) '       is smaller than 1.e-10'
                   stop
                endif
@@ -811,7 +811,8 @@ c     write(*,*) 'dependent node: ',node
      &                 iamplitude,nam,ipompc,nodempc,coefmpc,
      &                 nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &                 ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &                 type,typeboun,nmethod,iperturb,fixed,vdummy)
+     &                 type,typeboun,nmethod,iperturb,fixed,vdummy,
+     &                 idummy)
                else
 !
 !                    check whether the rotational degree of freedom
@@ -822,7 +823,8 @@ c     write(*,*) 'dependent node: ',node
 c                     idof=8*(i-1)+3+imax
                      idof=8*(i-1)+4+imax
                      call nident(ikboun,idof,nboun,id)
-                     if((id.gt.0).and.(ikboun(id).eq.idof)) then
+                     if(((id.gt.0).and.(ikboun(id).eq.idof)).or.
+     &                   (dabs(xnoref(imax)).lt.1.d-10)) then
                         imax=imax+1
                         if(imax.gt.3) imax=imax-3
                         cycle

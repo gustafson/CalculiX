@@ -28,7 +28,7 @@
       character*132 textpart(16)
 !
       integer nelcon(2,*),nmat,ntmat,ntmat_,istep,istat,ipoinpc(0:*),
-     &  n,key,i,j,k,ityp,iperturb,iend,jcoef(3,14),ncmat_,irstrt,
+     &  n,key,i,j,k,ityp,iperturb(*),iend,jcoef(3,14),ncmat_,irstrt,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*)
 !
       real*8 elcon(0:ncmat_,ntmat_,*),um
@@ -41,7 +41,8 @@
      &            6,7,0,12,13,14,2,0,0,3,4,0,4,5,6,5,0,0,4,5,6/
 !
       ntmat=0
-      iperturb=3
+      iperturb(1)=3
+      iperturb(2)=1
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in hyperelastics: *HYPERELASTIC should be'

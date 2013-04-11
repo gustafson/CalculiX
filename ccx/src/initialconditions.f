@@ -84,6 +84,7 @@
                if(istat.eq.0) then
                   t0(l)=temperature
                   t1(l)=temperature
+                  vold(0,l)=temperature
                   if(inoelfree.ne.0) then
                      t0(nk_+l)=tempgrad1
                      t0(2*nk_+l)=tempgrad2
@@ -110,6 +111,7 @@
                      if(ialset(j).gt.0) then
                         t0(ialset(j))=temperature
                         t1(ialset(j))=temperature
+                        vold(0,ialset(j))=temperature
                         if(inoelfree.ne.0) then
                            t0(nk_+ialset(j))=tempgrad1
                            t0(2*nk_+ialset(j))=tempgrad2
@@ -123,6 +125,7 @@
                            if(k.ge.ialset(j-1)) exit
                            t0(k)=temperature
                            t1(k)=temperature
+                           vold(0,k)=temperature
                            if(inoelfree.ne.0) then
                               t0(nk_+k)=tempgrad1
                               t0(2*nk_+k)=tempgrad2
@@ -617,8 +620,6 @@
       write(*,*) '*ERROR in initialconditions: unknown type'
       write(*,*) '  '
       call inputerror(inpc,ipoinpc,iline)
-      call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &              ipoinp,inp,ipoinpc)
 !
       return
       end

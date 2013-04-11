@@ -52,7 +52,7 @@
       integer nset,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,
      &  ntmat_,npmat_,norien,nam,nprint,mint_,ntrans,ncs_,
      &  namtot_,ncmat_,mpcend,ne1d,ne2d,nflow,nlabel,iplas,nkon,
-     &  ithermal,nmethod,iperturb,nstate_,istartset(*),iendset(*),
+     &  ithermal,nmethod,iperturb(*),nstate_,istartset(*),iendset(*),
      &  ialset(*),kon(*),ipkon(*),nodeboun(*),ndirboun(*),iamboun(*),
      &  ikboun(*),ilboun(*),ipompc(*),nodempc(*),ikmpc(*),ilmpc(*),
      &  nodeforc(*),ndirforc(*),iamforc(*),ikforc(*),ilforc(*),
@@ -70,7 +70,7 @@
      &  vold(*),xbounold(*),xforcold(*),xloadold(*),t1old(*),eme(*),
      &  xnor(*),thickn(*),thicke(*),offset(*),
      &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),
-     &  qaold(2),cs(17,*),physcon(3),ctrl(*),
+     &  qaold(2),cs(17,*),physcon(*),ctrl(*),
      &  ttime,fmpc(*),xbody(*),xbodyold(*)
 !
       ipos=index(jobnamec(1),char(0))
@@ -82,10 +82,11 @@
 !
 !     check whether the restart file exists and is opened
 !
-      inquire(FILE=fnrstrt,OPENED=op)
+      inquire(FILE=fnrstrt,OPENED=op,err=152)
 !
       if(.not.op) then
-         open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED')
+         open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED',
+     &      err=151)
       endif
 !
       write(15)istepnew
@@ -156,7 +157,7 @@
 !     procedure info
 !
       write(15)nmethod
-      write(15)iperturb
+      write(15)(iperturb(i),i=1,2)
       write(15)nener
       write(15)iplas
       write(15)ithermal
@@ -333,7 +334,7 @@
 !     temperature, displacement, static pressure, velocity and acceleration
 !
       write(15)(vold(i),i=1,5*nk)
-      if((nmethod.eq.4).or.((nmethod.eq.1).and.(iperturb.ge.2))) then
+      if((nmethod.eq.4).or.((nmethod.eq.1).and.(iperturb(1).ge.2))) then
          write(15)(veold(i),i=1,4*nk)
       endif
 !
@@ -388,6 +389,13 @@
       write(15) ttime
 !
       return
+!
+ 151  write(*,*) '*ERROR in restartwrite: could not open file ',fnrstrt
+      stop
+!
+ 152  write(*,*) '*ERROR in restartwrite: could not inquire file ',
+     &    fnrstrt
+      stop
       end
 
 

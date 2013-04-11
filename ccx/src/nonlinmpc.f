@@ -19,7 +19,7 @@
       subroutine nonlinmpc(co,vold,ipompc,nodempc,coefmpc,labmpc,
      &  nmpc,ikboun,ilboun,nboun,xbounact,aux,iaux,maxlenmpc,ikmpc,
      &  ilmpc,icascade,kon,ipkon,lakon,ne,reltime,newstep,xboun,fmpc,
-     &  iit,idiscon,ncont,trab,ntrans)
+     &  iit,idiscon,ncont,trab,ntrans,ithermal)
 !
 !     updates the coefficients in nonlinear MPC's
 !
@@ -36,7 +36,7 @@
      &  l,m,lmax,mmax,ikmpc(*),ilmpc(*),icascade,neigh(7,8),
      &  mpc,kon(*),ipkon(*),indexe,ne,idofrem,idofins,nmpc0,nmpc01,
      &  newstep,iit,idiscon,ncont,iexpnode,indexexp,nmpcdif,ntrans,
-     &  nodei,noded,lathyp(3,6),inum,ndir,number
+     &  nodei,noded,lathyp(3,6),inum,ndir,number,ithermal
 !
       real*8 co(3,*),coefmpc(*),vold(0:4,*),c(3,3),dc(3,3,3),ww,
      &  e(3,3,3),d(3,3),w(3),f(3,3),c1,c2,c3,c4,c5,c6,xbounact(*),
@@ -571,12 +571,19 @@ c     &                                    dc(i,j,3)*w(3)
             xbounact(ilboun(id))=a11*b11+a12*b12+a13*b13
             if(newstep.eq.1) xboun(ilboun(id))=xbounact(ilboun(id))
             vold(nodempc(2,index),nodempc(1,index))=0.d0
-c     &           (1.d0-reltime)*xboun(ilboun(id))
          elseif(labmpc(ii)(1:9).eq.'ISOCHORIC') then
             isochoric=.true.
-         elseif(labmpc(ii)(1:6).eq.'CYCLID') then
+!
+!           next segment is deactivated (CYCLID instead of CYCLIC):
+!           cylic MPC's are considered to be linear
+!
+         elseif((labmpc(ii)(1:6).eq.'CYCLID').and.(ithermal.ne.2)) then
             index=ipompc(ii)
             noded=nodempc(1,index)
+!
+!           check for thermal MPC
+!
+            if(nodempc(2,index).eq.0) cycle loop
 !
 !           check whether the next two MPC's are cyclic MPC's
 !           applied to the same dependent node
@@ -614,22 +621,22 @@ c     &           (1.d0-reltime)*xboun(ilboun(id))
                if(nodempc(1,index).ne.noded) then
                   if(nodei.eq.0) then
                      nodei=nodempc(1,index)
-                  else
+                  elseif(nodei.ne.nodempc(1,index)) then
                      write(*,*) '*WARNING in nonlinmpc:'
                      write(*,*) '          cyclic symmetry conditions'
                      write(*,*) '          between unequal meshes'
                      write(*,*) '          no update'
                      cycle loop
                   endif
-                  index=nodempc(3,index)
-                  if(index.eq.0) then
-                     if(nodei.eq.0) then
-                        write(*,*) '*ERROR in nonlinmpc:'
-                        write(*,*) '       no independent node found'
-                        stop
-                     else
-                        exit
-                     endif
+               endif
+               index=nodempc(3,index)
+               if(index.eq.0) then
+                  if(nodei.eq.0) then
+                     write(*,*) '*ERROR in nonlinmpc:'
+                     write(*,*) '       no independent node found'
+                     stop
+                  else
+                     exit
                   endif
                endif
             enddo
@@ -713,30 +720,31 @@ c     &           (1.d0-reltime)*xboun(ilboun(id))
                   number=number+1
                   if(number.gt.3) number=1
                   if(dabs(ad(number,ndir)).lt.1.d-5) cycle
-                  nodempc(1,index)=noded
-                  nodempc(2,index)=number
-                  coefmpc(index)=ad(number,ndir)
-                  index=nodempc(3,index)
                   if(index.eq.0) then
                      write(*,*)'*ERROR in nonlinmpc: index=0'
                      stop
                   endif
+                  nodempc(1,index)=noded
+                  nodempc(2,index)=number
+                  coefmpc(index)=ad(number,ndir)
+                  index=nodempc(3,index)
                enddo
                do j=1,3
                   number=number+1
                   if(number.gt.3) number=1
                   if(dabs(ai(number,ndir)).lt.1.d-5) cycle
-                  nodempc(1,index)=nodei
-                  nodempc(2,index)=number
-                  coefmpc(index)=-ai(number,ndir)
-                  index=nodempc(3,index)
                   if(index.eq.0) then
                      write(*,*)'*ERROR in nonlinmpc: index=0'
                      stop
                   endif
+                  nodempc(1,index)=nodei
+                  nodempc(2,index)=number
+                  coefmpc(index)=-ai(number,ndir)
+                  index=nodempc(3,index)
                enddo
             enddo
          elseif((labmpc(ii)(1:20).ne.'                    ').and.
+     &          (labmpc(ii)(1:7).ne.'CONTACT').and.
      &          (labmpc(ii)(1:6).ne.'CYCLIC').and.
      &          (labmpc(ii)(1:9).ne.'SUBCYCLIC')) then
             index=ipompc(ii)

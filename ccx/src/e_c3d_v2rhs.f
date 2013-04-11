@@ -196,18 +196,19 @@ c         write(*,*) 'xsjmodin ec3dv2rhs ',xsjmod
             vel(i1)=0.d0
             dpress(i1)=0.d0
          enddo
-         div=0.d0
+c         div=0.d0
          do i1=1,nope
             do j1=1,3
                vel(j1)=vel(j1)+shp(4,i1)*voldl(j1,i1)
                dpress(j1)=dpress(j1)+shp(j1,i1)*voldl(4,i1)
-               div=div+shp(j1,i1)*voldl(j1,i1)
+c               div=div+shp(j1,i1)*voldl(j1,i1)
             enddo
          enddo
          do i1=1,nope
             shpv(i1)=shp(1,i1)*vel(1)+shp(2,i1)*vel(2)+
-     &           shp(3,i1)*vel(3)+shp(4,i1)*div
-c            write(*,*) 'shpv in ec3dv2rhs ',nelem,i1,shpv(i1)
+     &           shp(3,i1)*vel(3)
+c            shpv(i1)=shp(1,i1)*vel(1)+shp(2,i1)*vel(2)+
+c     &           shp(3,i1)*vel(3)+shp(4,i1)*div
          enddo
 !
 !        only for the semi-implicit procedure: calculate ddpress
@@ -239,11 +240,26 @@ c         write(*,*) 'v2rhs.. ',nelem,kk,(dpress(i1),i1=1,3)
          else
             jj1=1
             do jj=1,nope
+!
+!               without stability term 
+!
+c               ff(jj1)=ff(jj1)-xsjmod*(dpress(1)*(shp(4,jj)
+c     &              )+theta2*shp(4,jj)*ddpress(1))
+c               ff(jj1+1)=ff(jj1+1)-xsjmod*(dpress(2)*(shp(4,jj)
+c     &              )+theta2*shp(4,jj)*ddpress(2))
+c               ff(jj1+2)=ff(jj1+2)-xsjmod*(dpress(3)*(shp(4,jj)
+c     &              )+theta2*shp(4,jj)*ddpress(3))
+!
+!               with stability term 
+!
                ff(jj1)=ff(jj1)-xsjmod*(dpress(1)*(shp(4,jj)+
+     &              (1.d0-theta2)*
      &              dtime*shpv(jj)/2.d0)+theta2*shp(4,jj)*ddpress(1))
                ff(jj1+1)=ff(jj1+1)-xsjmod*(dpress(2)*(shp(4,jj)+
+     &              (1.d0-theta2)*
      &              dtime*shpv(jj)/2.d0)+theta2*shp(4,jj)*ddpress(2))
                ff(jj1+2)=ff(jj1+2)-xsjmod*(dpress(3)*(shp(4,jj)+
+     &              (1.d0-theta2)*
      &              dtime*shpv(jj)/2.d0)+theta2*shp(4,jj)*ddpress(3))
                jj1=jj1+3
             enddo

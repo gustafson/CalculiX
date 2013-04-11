@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine allocont(ncont,ntie,tieset,nset,set,istartset,
-     &  iendset,ialset,lakon,ncone,tietol,ismallsliding)
+     &  iendset,ialset,lakon,ncone,tietol,ismallsliding,kind,mortar)
 !
 !     counting the number of triangles needed for the 
 !     triangulation of the contact master surfaces
@@ -28,11 +28,12 @@
 !
       implicit none
 !
+      character*1 kind
       character*8 lakon(*)
       character*81 tieset(3,*),mastset,set(*),slavset
 !
       integer ncont,ntie,i,j,k,nset,istartset(*),iendset(*),ialset(*),
-     &  imast,nelem,jface,ncone,islav,ismallsliding
+     &  imast,nelem,jface,ncone,islav,ismallsliding,ipos,mortar
 !
       real*8 tietol(*)
 !
@@ -48,7 +49,7 @@
 !
 !        check for contact conditions
 !
-         if(tieset(1,i)(81:81).eq.'C') then
+         if(tieset(1,i)(81:81).eq.kind) then
             if(tietol(i).lt.-1.5d0) then
                ismallsliding=2
             elseif(tietol(i).lt.-0.5d0) then
@@ -62,7 +63,8 @@
                if(set(j).eq.mastset) exit
             enddo
             if(j.gt.nset) then
-               write(*,*) '*ERROR in triangucont: master surface'
+               write(*,*) '*ERROR in triangucont: master surface',
+     &               mastset
                write(*,*) '       does not exist'
                stop
             endif
@@ -137,14 +139,19 @@ c                  endif
 !           counting the slave nodes
 !
             slavset=tieset(2,i)
+            ipos=index(slavset,' ')
+            if(slavset(ipos-1:ipos-1).eq.'T') then
+               mortar=1
+            endif
 !
-!           determining the master surface
+!           determining the slave surface
 !
             do j=1,nset
                if(set(j).eq.slavset) exit
             enddo
             if(j.gt.nset) then
-               write(*,*) '*ERROR in triangucont: master surface'
+               write(*,*) '*ERROR in triangucont: ',
+     &           'slave nodal surface ',slavset
                write(*,*) '       does not exist'
                stop
             endif

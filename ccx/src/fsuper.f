@@ -16,16 +16,24 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      real*8 function fsuper(time,t,a,b,h1,h2,h3,h4,h5,h6)
+      subroutine fsuper(time,t,a,b,h1,h2,h3,h4,h5,h6,func,funcp)
 !
       implicit none
 !
-      real*8 time,t,a,b,h1,h2,h3,h4,h5,h6,h7,h8
+      real*8 time,t,a,b,h1,h2,h3,h4,h5,h6,fexm,fexp,func,funcp
 !
-      h7=dexp(h1*t)
-      h8=dexp(-h2*t)
+      fexm=dexp(h1*t)
+      fexp=dexp(-h2*t)
 !
-      fsuper=(a+b*time)*(h7*h3+h8*h4)-b*(h7*(t*h3-h5)-h8*(-t*h4-h6))
+!     function
+!
+      func=(a+b*time)*(fexm*h3+fexp*h4)
+     &    -b*(fexm*(t*h3-h5)+fexp*(t*h4+h6))
+!
+!     derivative of the function
+!
+      funcp=(a+b*time)*(fexm-fexp)-b*(fexm*(t-h3)-fexp*(t+h4))
+
 !
       return
       end

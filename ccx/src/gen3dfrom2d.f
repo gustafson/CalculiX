@@ -42,7 +42,7 @@
 !
       integer indexe,j,nodel(8),indexx,indexk,k,nedge,nodes(3,8),
      &  iamplitude,l,newnode,idir,idof,id,m,mpcfreenew,node,ithermal(2),
-     &  jmin,jmax
+     &  jmin,jmax,idummy
 ! 
       real*8 xnor(*),thicke(2,*),offset(2,*),trab(7,*),xboun(*),
      &  coefmpc(*),co(3,*),vdummy(0:4)
@@ -205,7 +205,7 @@
      &              nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &              ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,
      &              labmpc,type,typeboun,nmethod,iperturb,
-     &              fixed,vdummy)
+     &              fixed,vdummy,idummy)
             endif
 !     
 !           specifying that the side planes do the same

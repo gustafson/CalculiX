@@ -17,24 +17,26 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine subspace(d,aa,bb,cc,alpham,betam,nev,xini,
-     &  cd,cv,time,rwork,lrw,m,jout,rpar,bj,iwork,liw,iddebdf)
+     &  cd,cv,time,rwork,lrw,m,jout,rpar,bj,iwork,liw,iddebdf,bjp)
 !
 !     solves the linear dynamic equations mapped on the subspace
 !     of the eigenvectors (only if there are dashpots in the
 !     model)
 !
       implicit none
+
+      save time0
+
 !
       integer nev,nev2,info(15),idid,lrw,iwork(*),liw,jout,id,
      &  iab,iaa,ibb,i,j,m,iddebdf
 !
-      real*8 d(*),aa(nev,*),bb(nev,*),cc(nev,*),alpham,betam,
-     &  xini(*),cd(*),cv(*),time0,time,rtol,atol,rwork(*),rpar(*),
-     &  bj(*)
+      real*8 d(*),aa(nev),bb(nev),cc(nev,*),alpham,betam,
+     &  xini(*),cd(*),cv(*),time,time0,rtol,atol,rwork(*),rpar(*),
+     &  bj(*),bjp(*)
 !
       external df,djac
 !
-      save time0
 !
       nev2=2*nev
 !
@@ -45,12 +47,15 @@
 !                                  betam, 1
 !                                  cc, nev**2
 !                                  d, nev
-!                                  time(1)
-!                                  aa(1,1)..aa(nev,1), nev
-!                                  bb(1,1)..bb(nev,1), nev
-!                                  time(2)
-!                                  aa(1,2)..aa(nev,2), nev
-!                                  ...
+!                                  time
+!                                  aa(1)..aa(nev), nev
+!                                  bb(1)..bb(nev), nev
+c!                                  time(1)
+c!                                  aa(1,1)..aa(nev,1), nev
+c!                                  bb(1,1)..bb(nev,1), nev
+c!                                  time(2)
+c!                                  aa(1,2)..aa(nev,2), nev
+c!                                  ...
 !
       if(m.eq.1) then
          rpar(2)=alpham
@@ -64,7 +69,6 @@
          do i=1,nev
             rpar(id+i)=d(i)
          enddo
-         time0=0.d0
 !
 !        copying the initial conditions for the system of first order
 !        differential equations
@@ -73,15 +77,18 @@
             xini(i)=cd(i)
             xini(nev+i)=cv(i)
          enddo
-      endif
-      rpar(1)=m+0.5d0
-      iab=3+nev*(1+nev)
-      iaa=iab+(m-1)*(nev2+1)+1
+       endif
+
+
+c      rpar(1)=m+0.5d0
+c      iab=3+nev*(1+nev)
+c      iaa=iab+(m-1)*(nev2+1)+1
+      iaa=3+nev*(1+nev)+1
       rpar(iaa)=time
       ibb=iaa+nev
       do i=1,nev
-         rpar(iaa+i)=aa(i,m)
-         rpar(ibb+i)=bb(i,m)
+         rpar(iaa+i)=aa(i)
+         rpar(ibb+i)=bb(i)
       enddo
 !
       do i=1,3
@@ -97,7 +104,6 @@
       rtol=1.d-5
       atol=1.d-3
 !
-c      write(*,*) 'time0,time ',time0,time
       if(iddebdf.eq.0) then
          call ddeabm(df,nev2,time0,xini,time,info,rtol,atol,idid,rwork,
      &        lrw,iwork,liw,rpar,nev)
@@ -108,20 +114,9 @@ c      write(*,*) 'time0,time ',time0,time
             write(*,*) '         idid= ',idid
             write(*,*) '         switch to routine ddebdf'
             iddebdf=2
-            time0=0.d0
-!
-!     copying the initial conditions for the system of first order
-!     differential equations
-!
-            do i=1,nev
-               xini(i)=cd(i)
-               xini(nev+i)=cv(i)
-            enddo
-!     
             return
          endif
       else
-c         write(*,*) 'subspace ',time0,time
          call ddebdf(df,nev2,time0,xini,time,info,rtol,atol,idid,rwork,
      &        lrw,iwork,liw,rpar,nev,djac)
          if((idid.ne.2).and.(idid.ne.3)) then
@@ -136,6 +131,7 @@ c         write(*,*) 'subspace ',time0,time
 !
       do i=1,nev
          bj(i)=xini(i)
+         bjp(i)=xini(nev+i)
       enddo
 !
       return
@@ -152,18 +148,19 @@ c         write(*,*) 'subspace ',time0,time
 !
       real*8 rpar(*),x,u(*),uprime(*)
 !
-      m=int(rpar(1))
-      iab=4+nev*(nev+1)
-      nev2p1=2*nev+1
-      call ident2(rpar(iab),x,m,nev2p1,id)
-      if(id.eq.m) then
-c         write(*,*) 'WARNING in subspace: outside range '
-         id=m-1
-      endif
-c      write(*,*) 'rpar ',x,id,rpar(iab)
-      iaa=iab+id*nev2p1
+c      m=int(rpar(1))
+c      iab=4+nev*(nev+1)
+c      nev2p1=2*nev+1
+c      call ident2(rpar(iab),x,m,nev2p1,id)
+c      if(id.eq.m) then
+c         id=m-1
+c      endif
+c      iaa=iab+id*nev2p1
+      iaa=4+nev*(nev+1)
       ibb=iaa+nev
       id=3+nev*nev
+
+
 !
       do i=1,nev
          uprime(i)=u(nev+i)

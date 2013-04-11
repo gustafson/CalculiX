@@ -41,10 +41,10 @@
 !
       real*8 value
 !
-      write(*,*) 'print nactdoh'
-      do i=1,nk
-         write(*,*) i,(nactdoh(j,i),j=0,4)
-      enddo
+c      write(*,*) 'print nactdoh'
+c      do i=1,nk
+c         write(*,*) i,(nactdoh(j,i),j=0,4)
+c      enddo
 !
       i0=0
 !

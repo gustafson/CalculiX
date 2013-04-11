@@ -29,12 +29,16 @@
 !              value of their derivatives w.r.t. the global
 !              coordinates and the Jacobian vector (local normal
 !              to the surface)
+!     iflag=4: calculate the value of the shape functions, the
+!              value of their 1st and 2nd order derivatives 
+!              w.r.t. the local coordinates, the Jacobian vector 
+!              (local normal to the surface)
 !
       implicit none
 !
       integer i,j,k,iflag
 !
-      real*8 shp(4,3),xs(3,2),xsi(2,3),xl(0:3,3),sh(3),xsj(3)
+      real*8 shp(7,3),xs(3,7),xsi(2,3),xl(0:3,3),sh(3),xsj(3)
 !
       real*8 xi,et
 !
@@ -77,29 +81,94 @@
       xsj(2)=xs(1,2)*xs(3,1)-xs(3,2)*xs(1,1)
       xsj(3)=xs(1,1)*xs(2,2)-xs(2,1)*xs(1,2)
 !
-      if(iflag.eq.2) return
-!
+      if(iflag.eq.3) then
+!     
 !     computation of the global derivative of the local coordinates
 !     (xsi) (inversion of xs)
-!
-      xsi(1,1)=xs(2,2)/xsj(3)
-      xsi(2,1)=-xs(2,1)/xsj(3)
-      xsi(1,2)=-xs(1,2)/xsj(3)
-      xsi(2,2)=xs(1,1)/xsj(3)
-      xsi(1,3)=-xs(2,2)/xsj(1)
-      xsi(2,3)=xs(2,1)/xsj(1)
-!
+!     
+         if(dabs(xsj(3)).gt.1.d-10) then
+            xsi(1,1)=xs(2,2)/xsj(3)
+            xsi(2,2)=xs(1,1)/xsj(3)
+            xsi(1,2)=-xs(1,2)/xsj(3)
+            xsi(2,1)=-xs(2,1)/xsj(3)
+            if(dabs(xsj(2)).gt.1.d-10) then
+               xsi(2,3)=xs(1,1)/(-xsj(2))
+               xsi(1,3)=-xs(1,2)/(-xsj(2))
+            elseif(dabs(xsj(1)).gt.1.d-10) then
+               xsi(2,3)=xs(2,1)/xsj(1)
+               xsi(1,3)=-xs(2,2)/xsj(1)
+            else
+               xsi(2,3)=0.d0
+               xsi(1,3)=0.d0
+            endif
+         elseif(dabs(xsj(2)).gt.1.d-10) then
+            xsi(1,1)=xs(3,2)/(-xsj(2))
+            xsi(2,3)=xs(1,1)/(-xsj(2))
+            xsi(1,3)=-xs(1,2)/(-xsj(2))
+            xsi(2,1)=-xs(3,1)/(-xsj(2))
+            if(dabs(xsj(1)).gt.1.d-10) then
+               xsi(1,2)=xs(3,2)/xsj(1)
+               xsi(2,2)=-xs(3,1)/xsj(1)
+            else
+               xsi(1,2)=0.d0
+               xsi(2,2)=0.d0
+            endif
+         else
+            xsi(1,2)=xs(3,2)/xsj(1)
+            xsi(2,3)=xs(2,1)/xsj(1)
+            xsi(1,3)=-xs(2,2)/xsj(1)
+            xsi(2,2)=-xs(3,1)/xsj(1)
+            xsi(1,1)=0.d0
+            xsi(2,1)=0.d0
+         endif
+c         xsi(1,1)=xs(2,2)/xsj(3)
+c         xsi(2,1)=-xs(2,1)/xsj(3)
+c         xsi(1,2)=-xs(1,2)/xsj(3)
+c         xsi(2,2)=xs(1,1)/xsj(3)
+c         xsi(1,3)=-xs(2,2)/xsj(1)
+c         xsi(2,3)=xs(2,1)/xsj(1)
+!     
 !     computation of the global derivatives of the shape functions
+!     
+         do k=1,3
+            do j=1,3
+               sh(j)=shp(1,k)*xsi(1,j)+shp(2,k)*xsi(2,j)
+            enddo
+            do j=1,3
+               shp(j,k)=sh(j)
+            enddo
+         enddo
 !
-      do k=1,3
-        do j=1,3
-          sh(j)=shp(1,k)*xsi(1,j)+shp(2,k)*xsi(2,j)
-        enddo
-        do j=1,3
-          shp(j,k)=sh(j)
-        enddo
-      enddo
+      elseif(iflag.eq.4) then
 !
+!     local 2nd order derivatives of the shape functions: xi,xi-derivative
+!     
+         shp(5,1)=0.d0
+         shp(5,2)=0.d0
+         shp(5,3)=0.d0
+!
+!     local 2nd order derivatives of the shape functions: xi,eta-derivative
+!     
+         shp(6,1)=0.d0
+         shp(6,2)=0.d0
+         shp(6,3)=0.d0
+!     
+!     local 2nd order derivatives of the shape functions: eta,eta-derivative
+!     
+         shp(7,1)=0.d0
+         shp(7,2)=0.d0
+         shp(7,3)=0.d0
+!
+!     computation of the local 2nd derivatives of the global coordinates
+!     (xs)
+!
+         do i=1,3
+            do j=5,7
+               xs(i,j)=0.d0
+            enddo
+         enddo
+      endif
+!     
       return
       end
 

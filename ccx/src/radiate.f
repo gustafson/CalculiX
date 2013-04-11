@@ -45,11 +45,12 @@
 !     loadtype           load type label
 !     node               currently not used
 !     area               area covered by the integration point
-!     vold(0..3,1..nk)   solution field in all nodes
+!     vold(0..4,1..nk)   solution field in all nodes
 !                        0: temperature
 !                        1: displacement in global x-direction
 !                        2: displacement in global y-direction
 !                        3: displacement in global z-direction
+!                        4: static pressure
 !
 !     OUTPUT:
 !

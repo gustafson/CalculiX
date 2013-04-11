@@ -16,11 +16,12 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine frd(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,
+      subroutine frd(co,nk,kon,ipkon,lakon,ne0,v,stn,inum,nmethod,
      &  kode,filab,een,t1,fn,time,epn,ielmat,matname,enern,xstaten,
      &  nstate_,istep,iinc,ithermal,qfn,mode,noddiam,trab,inotr,
      &  ntrans,orab,ielorien,norien,description,ipneigh,neigh,
-     &  mint_,sti,vr,vi,stnr,stni,vmax,stnmax,ngraph)
+     &  mint_,stx,vr,vi,stnr,stni,vmax,stnmax,ngraph,veold,ener,ne,
+     &  cs)
 !
 !     stores the results in frd format
 !
@@ -37,18 +38,20 @@
       character*80 matname(*)
       character*132 text
 !
-      integer kon(*),inum(*),nk,ne,nmethod,kode,i,j,ipkon(*),indexe,
+      integer kon(*),inum(*),nk,ne0,nmethod,kode,i,j,ipkon(*),indexe,
      &  one,ielmat(*),lb,nterms,nstate_,l,ithermal,mode,mint_,norien,
      &  noddiam,null,icounter,inotr(2,*),ntrans,ipneigh(*),neigh(2,*),
-     &  ielorien(*),iinc,istep,nkcoords,ngraph
+     &  ielorien(*),iinc,istep,nkcoords,ngraph,k,nodes,nope,ne,
+     &  ncomment,nout
 !
       real*8 co(3,*),v(0:4,*),stn(6,*),een(6,*),t1(*),fn(0:3,*),time,
      &  epn(*),enern(*),xstaten(nstate_,*),pi,qfn(3,*),oner,trab(7,*),
-     &  a(3,3),sti(6,mint_,*),orab(7,*),vr(0:4,*),vi(0:4,*),stnr(6,*),
-     &  stni(6,*),vmax(0:3,*),stnmax(0:6,*)
+     &  a(3,3),stx(6,mint_,*),orab(7,*),vr(0:4,*),vi(0:4,*),stnr(6,*),
+     &  stni(6,*),vmax(0:3,*),stnmax(0:6,*),veold(0:3,*),ener(mint_,*),
+     &  cs(17,*)
 !
       data icounter /0/
-      save icounter,nkcoords
+      save icounter,nkcoords,nout
 !
       icounter=icounter+1
       pi=4.d0*datan(1.d0)
@@ -149,14 +152,17 @@
         write(7,'(a5,a1,67x,i1)') p2,c,one
 !
         if(nmethod.ne.0) then
+           nout=0
           do i=1,nk
              if(inum(i).eq.0) cycle
              write(7,101) m1,i,(co(j,i),j=1,3)
+             nout=nout+1
           enddo
         else
           do i=1,nk
              write(7,101) m1,i,(co(j,i),j=1,3)
           enddo
+          nout=nk
         endif
 !
 !       nkcoords is the number of nodes at the time when
@@ -170,7 +176,7 @@
 !
         write(7,'(a5,a1,67x,i1)') p3,c,one
 !
-        do i=1,ne
+        do i=1,ne0
 !
            if(ipkon(i).lt.0) cycle
            indexe=ipkon(i)
@@ -233,10 +239,12 @@
 !     storing the displacements of the nodes
 !
       if(filab(1)(1:4).eq.'U   ') then
+         ncomment=7
          text='    1PSTEP'
          write(text(25:36),'(i12)') icounter
          write(7,'(a132)') text
          if(nmethod.eq.2) then
+            ncomment=12
             text='    1PGM'
             write(text(25:36),'(e12.6)') oner
             write(7,'(a132)') text
@@ -246,6 +254,16 @@
             text='    1PHID'
             write(text(25:36),'(i12)') noddiam
             write(7,'(a132)') text
+            if(noddiam.ge.0) then
+               text='    1PAX'
+               write(text(25:36),'(1p,e12.5)') cs(6,1)
+               write(text(37:48),'(1p,e12.5)') cs(7,1)
+               write(text(49:60),'(1p,e12.5)') cs(8,1)
+               write(text(61:72),'(1p,e12.5)') cs(9,1)
+               write(text(73:84),'(1p,e12.5)') cs(10,1)
+               write(text(85:96),'(1p,e12.5)') cs(11,1)
+               write(7,'(a132)') text
+            endif
             text='    1PSUBC'
             write(text(25:36),'(i12)') null
             write(7,'(a132)') text
@@ -256,6 +274,7 @@
 !
          text=
      & '  100CL       .00000E+00                                 3    1'
+         write(text(25:36),'(i12)') ncomment*133+nout*50+4
          text(37:48)=description
          if(nmethod.eq.2) text(64:68)='MODAL'
          text(75:75)='1'
@@ -290,6 +309,73 @@
      &               v(1,i)*a(1,1)+v(2,i)*a(2,1)+v(3,i)*a(3,1),
      &               v(1,i)*a(1,2)+v(2,i)*a(2,2)+v(3,i)*a(3,2),
      &               v(1,i)*a(1,3)+v(2,i)*a(2,3)+v(3,i)*a(3,3)
+               endif
+            enddo
+         endif
+!
+         write(7,'(a3)') m3
+      endif
+!
+!     storing the velocities of the nodes
+!
+      if(filab(21)(1:4).eq.'V   ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') icounter
+         write(7,'(a132)') text
+         if(nmethod.eq.2) then
+            text='    1PGM'
+            write(text(25:36),'(e12.6)') oner
+            write(7,'(a132)') text
+            text='    1PGK'
+            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
+            write(7,'(a132)') text
+            text='    1PHID'
+            write(text(25:36),'(i12)') noddiam
+            write(7,'(a132)') text
+            text='    1PSUBC'
+            write(text(25:36),'(i12)') null
+            write(7,'(a132)') text
+            text='    1PMODE'
+            write(text(25:36),'(i12)') mode+1
+            write(7,'(a132)') text
+         endif
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(37:48)=description
+         if(nmethod.eq.2) text(64:68)='MODAL'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(7,'(a132)') text
+         text=' -4  VELO        4    1'
+         write(7,'(a132)') text
+         text=' -5  V1          1    2    1    0'
+         write(7,'(a132)') text
+         text=' -5  V2          1    2    2    0'
+         write(7,'(a132)') text
+         text=' -5  V3          1    2    3    0'
+         write(7,'(a132)') text
+         text=' -5  ALL         1    2    0    0    1ALL'
+         write(7,'(a132)') text
+!       
+         if((ntrans.eq.0).or.(filab(1)(6:6).eq.'G')) then
+            do i=1,nkcoords
+               if(inum(i).le.0) cycle
+               write(7,101) m1,i,(veold(j,i),j=1,3)
+            enddo
+         else
+            do i=1,nkcoords
+               if(inum(i).le.0) cycle
+               if(inotr(1,i).eq.0) then
+                  write(7,101) m1,i,(veold(j,i),j=1,3)
+               else
+                  call transformatrix(trab(1,inotr(1,i)),co(1,i),a)
+                  write(7,101) m1,i,
+     &            veold(1,i)*a(1,1)+veold(2,i)*a(2,1)+veold(3,i)*a(3,1),
+     &            veold(1,i)*a(1,2)+veold(2,i)*a(2,2)+veold(3,i)*a(3,2),
+     &            veold(1,i)*a(1,3)+veold(2,i)*a(2,3)+veold(3,i)*a(3,3)
                endif
             enddo
          endif
@@ -530,7 +616,7 @@
 !
 !     storing the equivalent plastic strains in the nodes
 !
-      if(filab(6)(1:4).eq.'PE  ') then
+      if(filab(6)(1:4).eq.'PEEQ') then
          text=
      & '  100CL       .00000E+00                                 3    1'
          text(37:48)=description
@@ -598,56 +684,157 @@
          write(7,'(a3)') m3
       endif
 !
+!     storing the contact informations at the nodes
+!     with CDIS,CSTR
+! 
+      if(filab(26)(1:4).eq.'CONT') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(7,'(a132)') text
+!
+         if(nmethod.eq.2) then
+            text='    1PGM'
+            write(text(25:36),'(e12.6)') oner
+            write(7,'(a132)') text
+            text='    1PGK'
+            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
+            write(7,'(a132)') text
+            text='    1PHID'
+            write(text(25:36),'(i12)') noddiam
+            write(7,'(a132)') text
+            text='    1PSUBC'
+            write(text(25:36),'(i12)') null
+            write(7,'(a132)') text
+            text='    1PMODE'
+            write(text(25:36),'(i12)') mode+1
+            write(7,'(a132)') text
+         endif
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         if(nmethod.eq.2) text(64:68)='MODAL'
+         write(7,'(a132)') text
+!
+         text=' -4  CONTACT     6    1'
+         write(7,'(a132)') text
+         text=' -5  CD1         1    4    1    1'
+         write(7,'(a132)') text
+         text=' -5  CD2         1    4    2    2'
+         write(7,'(a132)') text
+         text=' -5  CD3         1    4    3    3'
+         write(7,'(a132)') text
+         text=' -5  CS1         1    4    1    2'
+         write(7,'(a132)') text
+         text=' -5  CS2         1    4    2    3'
+         write(7,'(a132)') text
+         text=' -5  CS3         1    4    3    1'
+         write(7,'(a132)') text
+!
+         do i=ne,1,-1
+            if((lakon(i)(2:2).ne.'S').or.
+     &           (lakon(i)(7:7).ne.'C')) exit
+            read(lakon(i)(8:8),'(i1)') nope
+            nodes=kon(ipkon(i)+nope)
+            write(7,101) m1,nodes,(stx(j,1,i),j=1,6)
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
+!
+!     storing the contact energy in the nodes
+!
+      if(filab(27)(1:4).eq.'CELS') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') icounter
+         write(7,'(a132)') text
+         if(nmethod.eq.2) then
+            text='    1PGM'
+            write(text(25:36),'(e12.6)') oner
+            write(7,'(a132)') text
+            text='    1PGK'
+            write(text(25:36),'(e12.6)') (time*2.d0*pi)**2
+            write(7,'(a132)') text
+            text='    1PHID'
+            write(text(25:36),'(i12)') noddiam
+            write(7,'(a132)') text
+            text='    1PSUBC'
+            write(text(25:36),'(i12)') null
+            write(7,'(a132)') text
+            text='    1PMODE'
+            write(text(25:36),'(i12)') mode+1
+            write(7,'(a132)') text
+         endif
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(37:48)=description
+         if(nmethod.eq.2) text(64:68)='MODAL'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(7,'(a132)') text
+         text=' -4  CELS        1    1'
+         write(7,'(a132)') text
+         text=' -5  CELS        1    1    0    0'
+         write(7,'(a132)') text
+!
+         do i=ne,1,-1
+            if((lakon(i)(2:2).ne.'S').or.
+     &           (lakon(i)(7:7).ne.'C')) exit
+            read(lakon(i)(8:8),'(i1)') nope
+            nodes=kon(ipkon(i)+nope)
+            write(7,101) m2,nodes,ener(1,i)
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
+!
 !     storing the internal state variables in the nodes
 !
       if(filab(8)(1:4).eq.'SDV ') then
-         do l=1,(nstate_+5)/6
-            lb=(l-1)*6
-            text=
+         text=
      & '  100CL       .00000E+00                                 3    1'
-            text(37:48)=description
-            text(75:75)='1'
-            write(text(8:12),'(i5)') 100+kode      
-            write(text(13:24),fmat) time
-            write(text(59:63),'(i5)') kode
+         text(37:48)=description
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode      
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(7,'(a132)') text
+         text=' -4  SDV         6    1'
+         if(nstate_.le.9) then
+            write(text(18:18),'(i1)') nstate_
+         else
+            write(text(17:18),'(i2)') nstate_
+         endif
+         write(7,'(a132)') text
+         do j=1,nstate_
+            text=' -5  SDV         1    1    0    0'
+            if(j.le.9) then
+               write(text(9:9),'(i1)') j
+            else
+               write(text(9:10),'(i2)') j
+            endif
             write(7,'(a132)') text
-            if(l.eq.(nstate_+5)/6) then
-               nterms=nstate_-lb
-            else
-               nterms=6
-            endif
-            text=' -4  SDV         6    1'
-            write(text(18:18),'(i1)') nterms
-            if(lb+1.le.9) then
-               write(text(9:9),'(i1)') lb+1
-            else
-               write(text(9:10),'(i2)') lb+1
-            endif
-            write(7,'(a132)') text
-            do j=1,nterms
-               text=' -5  SDV         1    1    0    0'
-               if(lb+j.le.9) then
-                  write(text(9:9),'(i1)') lb+j
-               else
-                  write(text(9:10),'(i2)') lb+j
-               endif
-               write(7,'(a132)') text
-            enddo
-!
-            if(l.eq.(nstate_+5)/6) then
-               do i=1,nkcoords
-                  if(inum(i).le.0) cycle
-                  write(7,101) m1,i,(xstaten(lb+j,i),j=1,nstate_-lb)
-               enddo
-            else
-               do i=1,nkcoords
-                  if(inum(i).le.0) cycle
-                  write(7,101) m1,i,(xstaten(lb+j,i),j=1,6)
-               enddo
-            endif
-!
-            write(7,'(a3)') m3
          enddo
+!     
+         do i=1,nkcoords
+            if(inum(i).le.0) cycle
+            do k=1,int((nstate_+5)/6)
+               if(k.eq.1) then
+                  write(7,101) m1,i,(xstaten(j,i),j=1,min(6,nstate_))
+               else
+                  write(7,102) m2,(xstaten(j,i),j=(k-1)*6+1,
+     &                min(k*6,nstate_))
+               endif
+            enddo
+         enddo
+!     
+         write(7,'(a3)') m3
       endif
 !
 !     storing the heat flux in the nodes
@@ -708,8 +895,8 @@
 !
       if(filab(13)(1:3).eq.'ZZS') then
 ! 
-         call estimator(co,nk,kon,ipkon,lakon,ne,stn,
-     &            ipneigh,neigh,sti,mint_)
+         call estimator(co,nk,kon,ipkon,lakon,ne0,stn,
+     &            ipneigh,neigh,stx,mint_)
 !
          text='    1PSTEP'
          write(text(25:36),'(i12)') icounter
@@ -1178,13 +1365,13 @@
 !
          text=' -4  MDISP       4    1'
          write(7,'(a132)') text
-         text=' -5  D1          1    4    2    0'
+         text=' -5  DX          1    4    1    0'
          write(7,'(a132)') text
-         text=' -5  D2          1    4    3    0'
+         text=' -5  DY          1    4    2    0'
          write(7,'(a132)') text
-         text=' -5  D3          1    4    4    0'
+         text=' -5  DZ          1    4    3    0'
          write(7,'(a132)') text
-         text=' -5  MAG         1    4    1    0'
+         text=' -5  ANG         1    4    4    0'
          write(7,'(a132)') text
 !
          do i=1,nkcoords/ngraph
@@ -1235,17 +1422,17 @@
 !
          text=' -4  MSTRESS     7    1'
          write(7,'(a132)') text
-         text=' -5  SRR         1    4    1    1'
+         text=' -5  SXX         1    4    1    1'
          write(7,'(a132)') text
-         text=' -5  STT         1    4    2    2'
+         text=' -5  SYY         1    4    2    2'
          write(7,'(a132)') text
          text=' -5  SZZ         1    4    3    3'
          write(7,'(a132)') text
-         text=' -5  SRT         1    4    1    2'
+         text=' -5  SXY         1    4    1    2'
          write(7,'(a132)') text
-         text=' -5  STZ         1    4    2    3'
+         text=' -5  SYZ         1    4    2    3'
          write(7,'(a132)') text
-         text=' -5  SZR         1    4    3    1'
+         text=' -5  SZX         1    4    3    1'
          write(7,'(a132)') text
          text=' -5  MAG         1    4    0    0'
          write(7,'(a132)') text
@@ -1262,6 +1449,7 @@
 
 !
  101  format(a3,i10,1p,6e12.5)
+ 102  format(a3,10x,1p,6e12.5)
 !
       return
       end

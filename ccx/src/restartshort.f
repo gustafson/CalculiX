@@ -51,7 +51,8 @@
 !
 !        opening the restart file
 !
-         open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED')
+         open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED',
+     &      err=15)
 !
          do
 !
@@ -165,7 +166,8 @@
 !
 !     opening the restart file
 !
-      open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED')
+      open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED',
+     &   err=15)
 !
       do
 !
@@ -319,4 +321,7 @@
       close(15)
 !
       return
+!
+ 15   write(*,*) '*ERROR in restartshort: could not open file ',fnrstrt
+      stop
       end

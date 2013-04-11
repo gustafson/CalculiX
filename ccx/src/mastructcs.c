@@ -409,7 +409,7 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   for(i=0;i<neq[0];++i){
       if(ipointer[i]==0){
 	  if(i>=neq[1]) continue;
-	  printf("*ERROR in mastruct: zero column\n");
+	  printf("*ERROR in mastructcs: zero column\n");
 	  FORTRAN(stop,());
       }
       istart=ipointer[i];
@@ -853,7 +853,7 @@ be easier to understand.
       do i=1,neq
          itot=0
          if(ipointer(i).eq.0) then
-            write(*,*) 'error in mastruct: zero column'
+            write(*,*) 'error in mastructcs: zero column'
             stop
          endif
          istart=ipointer(i)

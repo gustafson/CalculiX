@@ -39,7 +39,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
   strcat(fsti,".sti");
 
   printf(" Storing the stiffness matrix in file %s \n\n",fsti);
-  printf(" *INFO: this routine only works in the absence of SPC's! \n\n");
+  printf(" *INFO: this routine only works in the absence of SPC's!\n and in the absence of transformations in combination\n with equations\n\n ");
 
   if((f2=fopen(fsti,"wb"))==NULL){
     printf("*ERROR in matrixstorage: cannot open %s for writing...\n",fsti);

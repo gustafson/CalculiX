@@ -26,7 +26,7 @@
 !
       implicit none
 !
-      logical turbulent
+      integer turbulent
 !
       integer nrhcon(*),ielmat(*),ntmat_,nodeboun(*),isolidsurf(*),
      &  ndirboun(*),nshcon(*),nk,i,nboun,node,imat,ithermal,iponoel(*),
@@ -35,7 +35,7 @@
 !
       real*8 rhcon(0:1,ntmat_,*),rho,vold(0:4,*),xbounact(*),shcon,
      &  voldtu(2,*),t1act(*),temp,r,dvi,xsolidsurf(*),reflength,
-     &  refkin,reftuf,refvel,cp,voldaux(0:4,*),physcon(3)
+     &  refkin,reftuf,refvel,cp,voldaux(0:4,*),physcon(*)
 !
 !     inserting the boundary conditions (temperature, velocity
 !     and pressure)
@@ -91,7 +91,7 @@ c      write(*,*) 'vvvoldaux ',(voldaux(i,307),i=0,4)
 !     boundary conditions for turbulent kinetic energy and
 !     turbulent frequency
 !
-      if(turbulent) then
+      if(turbulent.eq.1) then
 !
 !        solid surface nodes
 !

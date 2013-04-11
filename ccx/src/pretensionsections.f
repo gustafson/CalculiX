@@ -25,6 +25,8 @@
 !
       implicit none
 !
+      logical twod
+!
       character*1 inpc(*)
       character*8 lakon(*)
       character*20 labmpc(*)
@@ -32,13 +34,13 @@
       character*132 textpart(16)
 !
       integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,istep,istat,
-     &  n,i,j,key,nk,node,
+     &  n,i,j,key,nk,node,ifacequad(3,4),ifacetria(3,3),
      &  mpcfreeold,ikmpc(*),ilmpc(*),id,idof,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),irefnode,lathyp(3,6),inum,
      &  jn,jt,jd,iside,nelem,jface,nnodelem,nface,nodef(8),nodel(8),
      &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),indexpret,
      &  k,ipos,nkold,nope,m,kon(*),ipkon(*),indexe,iset,nset,idir,
-     &  istartset(*),iendset(*),ialset(*)
+     &  istartset(*),iendset(*),ialset(*),index1
 !
       real*8 coefmpc(*),xn(3),xt(3),xd(3),dd,co(3,*)
 !     
@@ -77,6 +79,19 @@
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
      &             4,6,3,1,12,15,9,13/
+!
+!     nodes per face for quad elements
+!
+      data ifacequad /1,2,5,
+     &                2,3,6,
+     &                3,4,7,
+     &                4,1,8/
+!
+!     nodes per face for tria elements
+!
+      data ifacetria /1,2,4,
+     &                2,3,5,
+     &                3,1,6/
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR in pretensionsections.f: *EQUATION should'
@@ -188,15 +203,17 @@
          if(lakon(nelem)(4:4).eq.'2') then
             nnodelem=8
             nface=6
-         elseif(lakon(nelem)(4:4).eq.'8') then
+         elseif(lakon(nelem)(3:4).eq.'D8') then
             nnodelem=4
             nface=6
          elseif(lakon(nelem)(4:5).eq.'10') then
             nnodelem=6
             nface=4
+            nope=10
          elseif(lakon(nelem)(4:4).eq.'4') then
             nnodelem=3
             nface=4
+            nope=4
          elseif(lakon(nelem)(4:5).eq.'15') then
             if(jface.le.2) then
                nnodelem=6
@@ -205,7 +222,7 @@
             endif
             nface=5
             nope=15
-         elseif(lakon(nelem)(4:4).eq.'6') then
+         elseif(lakon(nelem)(3:4).eq.'D6') then
             if(jface.le.2) then
                nnodelem=3
             else
@@ -213,16 +230,41 @@
             endif
             nface=5
             nope=6
+         elseif((lakon(nelem)(2:2).eq.'8').or.
+     &          (lakon(nelem)(4:4).eq.'8')) then
+            nnodelem=3
+            nface=4
+            nope=8
+            if(lakon(nelem)(4:4).eq.'8') then
+               jface=jface-2
+            endif
+         elseif((lakon(nelem)(2:2).eq.'6').or.
+     &          (lakon(nelem)(4:4).eq.'6')) then
+            nnodelem=3
+            nface=3
+            if(lakon(nelem)(4:4).eq.'6') then
+               jface=jface-2
+            endif
          else
             cycle
          endif
 !     
 !     determining the nodes of the face
 !     
-         if(nface.eq.4) then
+         if(nface.eq.3) then
             do i=1,nnodelem
-               nodef(i)=kon(indexe+ifacet(i,jface))
+               nodef(i)=kon(indexe+ifacetria(i,jface))
             enddo
+         elseif(nface.eq.4) then
+            if(nope.eq.8) then
+               do i=1,nnodelem
+                  nodef(i)=kon(indexe+ifacequad(i,jface))
+               enddo
+            else
+               do i=1,nnodelem
+                  nodef(i)=kon(indexe+ifacet(i,jface))
+               enddo
+            endif
          elseif(nface.eq.5) then
             if(nope.eq.6) then
                do i=1,nnodelem
@@ -260,11 +302,11 @@
             endif
          enddo
       enddo
-
 !
 !     loop over all element faces belonging to the surface
 !      
       do k=1,m
+         twod=.false.
          iside=ialset(istartset(iset)+k-1)
          nelem=int(iside/10.d0)
          indexe=ipkon(nelem)
@@ -276,15 +318,17 @@
          if(lakon(nelem)(4:4).eq.'2') then
             nnodelem=8
             nface=6
-         elseif(lakon(nelem)(4:4).eq.'8') then
+         elseif(lakon(nelem)(3:4).eq.'D8') then
             nnodelem=4
             nface=6
          elseif(lakon(nelem)(4:5).eq.'10') then
             nnodelem=6
             nface=4
+            nope=10
          elseif(lakon(nelem)(4:4).eq.'4') then
             nnodelem=3
             nface=4
+            nope=4
          elseif(lakon(nelem)(4:5).eq.'15') then
             if(jface.le.2) then
                nnodelem=6
@@ -293,7 +337,7 @@
             endif
             nface=5
             nope=15
-         elseif(lakon(nelem)(4:4).eq.'6') then
+         elseif(lakon(nelem)(3:4).eq.'D6') then
             if(jface.le.2) then
                nnodelem=3
             else
@@ -301,17 +345,46 @@
             endif
             nface=5
             nope=6
+         elseif((lakon(nelem)(2:2).eq.'8').or.
+     &          (lakon(nelem)(4:4).eq.'8')) then
+            nnodelem=3
+            nface=4
+            nope=8
+            if(lakon(nelem)(4:4).eq.'8') then
+               twod=.true.
+               jface=jface-2
+            endif
+         elseif((lakon(nelem)(2:2).eq.'6').or.
+     &          (lakon(nelem)(4:4).eq.'6')) then
+            nnodelem=3
+            nface=3
+            if(lakon(nelem)(4:4).eq.'6') then
+               twod=.true.
+               jface=jface-2
+            endif
          else
             cycle
          endif
 !     
 !     determining the nodes of the face
 !     
-         if(nface.eq.4) then
+         if(nface.eq.3) then
             do i=1,nnodelem
-               nodef(i)=kon(indexe+ifacet(i,jface))
-               nodel(i)=ifacet(i,jface)
+               nodef(i)=kon(indexe+ifacetria(i,jface))
+               nodel(i)=ifacetria(i,jface)
             enddo
+         elseif(nface.eq.4) then
+            if(nope.eq.8) then
+               do i=1,nnodelem
+                  nodef(i)=kon(indexe+ifacequad(i,jface))
+                  nodel(i)=ifacequad(i,jface)
+               enddo
+            else
+               do i=1,nnodelem
+                  nodef(i)=kon(indexe+ifacet(i,jface))
+                  nodel(i)=ifacet(i,jface)
+               enddo
+            endif
          elseif(nface.eq.5) then
             if(nope.eq.6) then
                do i=1,nnodelem
@@ -344,8 +417,18 @@
 !                 node was already treated: replacing the node
 !                 by the partner node
 !
-                  kon(indexe+nodel(i))=nodempc(1,nodempc(3,
-     &                 nodempc(3,nodempc(3,ipompc(ilmpc(id))))))
+c                  kon(indexe+nodel(i))=nodempc(1,nodempc(3,
+c     &                 nodempc(3,nodempc(3,ipompc(ilmpc(id))))))
+                  index1=ipompc(ilmpc(id))
+                  do
+                     if(nodempc(1,index1).ne.node) then
+                        kon(indexe+nodel(i))=nodempc(1,index1)
+                        exit
+                     else
+                        index1=nodempc(3,index1)
+                     endif
+                  enddo
+!
                   cycle
                endif
             endif
@@ -384,113 +467,149 @@
             ilmpc(id+1)=nmpc
 !
             idir=jt
-            nodempc(1,mpcfree)=node
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=xt(idir)
-            mpcfree=nodempc(3,mpcfree)
+            if(dabs(xt(idir)).gt.1.d-10) then
+               nodempc(1,mpcfree)=node
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=xt(idir)
+               mpcfreeold=mpcfree
+               mpcfree=nodempc(3,mpcfree)
+            endif
 !
             idir=idir+1
             if(idir.eq.4) idir=1
-            nodempc(1,mpcfree)=node
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=xt(idir)
-            mpcfree=nodempc(3,mpcfree)
+            if(dabs(xt(idir)).gt.1.d-10) then
+               nodempc(1,mpcfree)=node
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=xt(idir)
+               mpcfreeold=mpcfree
+               mpcfree=nodempc(3,mpcfree)
+            endif
 !
             idir=idir+1
             if(idir.eq.4) idir=1
-            nodempc(1,mpcfree)=node
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=xt(idir)
-            mpcfree=nodempc(3,mpcfree)
+            if(dabs(xt(idir)).gt.1.d-10) then
+               nodempc(1,mpcfree)=node
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=xt(idir)
+               mpcfreeold=mpcfree
+               mpcfree=nodempc(3,mpcfree)
+            endif
 !
             idir=jt
-            nodempc(1,mpcfree)=nk
-            nodempc(2,mpcfree)=jt
-            coefmpc(mpcfree)=-xt(idir)
-            mpcfree=nodempc(3,mpcfree)
+            if(dabs(xt(idir)).gt.1.d-10) then
+               nodempc(1,mpcfree)=nk
+               nodempc(2,mpcfree)=jt
+               coefmpc(mpcfree)=-xt(idir)
+               mpcfreeold=mpcfree
+               mpcfree=nodempc(3,mpcfree)
+            endif
 !
             idir=idir+1
             if(idir.eq.4) idir=1
-            nodempc(1,mpcfree)=nk
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=-xt(idir)
-            mpcfree=nodempc(3,mpcfree)
+            if(dabs(xt(idir)).gt.1.d-10) then
+               nodempc(1,mpcfree)=nk
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=-xt(idir)
+               mpcfreeold=mpcfree
+               mpcfree=nodempc(3,mpcfree)
+            endif
 !
             idir=idir+1
             if(idir.eq.4) idir=1
-            nodempc(1,mpcfree)=nk
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=-xt(idir)
-            mpcfreeold=mpcfree
-            mpcfree=nodempc(3,mpcfree)
+            if(dabs(xt(idir)).gt.1.d-10) then
+               nodempc(1,mpcfree)=nk
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=-xt(idir)
+               mpcfreeold=mpcfree
+               mpcfree=nodempc(3,mpcfree)
+            endif
             nodempc(3,mpcfreeold)=0
 !
 !           second MPC perpendicular to the normal direction
 !
-            idof=8*(node-1)+jd
-            call nident(ikmpc,idof,nmpc,id)
-!
-            nmpc=nmpc+1
-            if(nmpc.gt.nmpc_) then
-               write(*,*) '*ERROR in equations: increase nmpc_'
-               stop
+            if(.not.twod) then
+               idof=8*(node-1)+jd
+               call nident(ikmpc,idof,nmpc,id)
+!     
+               nmpc=nmpc+1
+               if(nmpc.gt.nmpc_) then
+                  write(*,*) '*ERROR in equations: increase nmpc_'
+                  stop
+               endif
+               labmpc(nmpc)='                    '
+               ipompc(nmpc)=mpcfree
+!     
+!     updating ikmpc and ilmpc
+!     
+               do j=nmpc,id+2,-1
+                  ikmpc(j)=ikmpc(j-1)
+                  ilmpc(j)=ilmpc(j-1)
+               enddo
+               ikmpc(id+1)=idof
+               ilmpc(id+1)=nmpc
+!     
+               idir=jd
+               if(dabs(xd(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=node
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=xd(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!     
+               idir=idir+1
+               if(idir.eq.4) idir=1
+               if(dabs(xd(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=node
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=xd(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!     
+               idir=idir+1
+               if(idir.eq.4) idir=1
+               if(dabs(xd(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=node
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=xd(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!     
+               idir=jd
+               if(dabs(xd(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=nk
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=-xd(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!     
+               idir=idir+1
+               if(idir.eq.4) idir=1
+               if(dabs(xd(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=nk
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=-xd(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!     
+               idir=idir+1
+               if(idir.eq.4) idir=1
+               if(dabs(xd(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=nk
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=-xd(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+               nodempc(3,mpcfreeold)=0
             endif
-            labmpc(nmpc)='                    '
-            ipompc(nmpc)=mpcfree
-!
-!           updating ikmpc and ilmpc
-!
-            do j=nmpc,id+2,-1
-               ikmpc(j)=ikmpc(j-1)
-               ilmpc(j)=ilmpc(j-1)
-            enddo
-            ikmpc(id+1)=idof
-            ilmpc(id+1)=nmpc
-!
-            idir=jd
-            nodempc(1,mpcfree)=node
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=xd(idir)
-            mpcfree=nodempc(3,mpcfree)
-!
-            idir=idir+1
-            if(idir.eq.4) idir=1
-            nodempc(1,mpcfree)=node
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=xd(idir)
-            mpcfree=nodempc(3,mpcfree)
-!
-            idir=idir+1
-            if(idir.eq.4) idir=1
-            nodempc(1,mpcfree)=node
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=xd(idir)
-            mpcfree=nodempc(3,mpcfree)
-!
-            idir=jd
-            nodempc(1,mpcfree)=nk
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=-xd(idir)
-            mpcfree=nodempc(3,mpcfree)
-!
-             idir=idir+1
-            if(idir.eq.4) idir=1
-           nodempc(1,mpcfree)=nk
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=-xd(idir)
-            mpcfree=nodempc(3,mpcfree)
-!
-            idir=idir+1
-            if(idir.eq.4) idir=1
-            nodempc(1,mpcfree)=nk
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=-xd(idir)
-            mpcfreeold=mpcfree
-            mpcfree=nodempc(3,mpcfree)
-            nodempc(3,mpcfreeold)=0
-!
-!           MPC in normal direction
-!
+!     
+!     MPC in normal direction
+!     
 !           check whether initialized
 !
             if(indexpret.eq.0) then
@@ -518,45 +637,62 @@
             endif
 !
             idir=jn
-            nodempc(1,mpcfree)=node
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=xn(idir)
-            mpcfree=nodempc(3,mpcfree)
+            if(dabs(xn(idir)).gt.1.d-10) then
+               nodempc(1,mpcfree)=node
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=xn(idir)
+               indexpret=mpcfree
+               mpcfree=nodempc(3,mpcfree)
+            endif
 !
             idir=idir+1
             if(idir.eq.4) idir=1
-            nodempc(1,mpcfree)=node
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=xn(idir)
-            mpcfree=nodempc(3,mpcfree)
+            if(dabs(xn(idir)).gt.1.d-10) then
+               nodempc(1,mpcfree)=node
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=xn(idir)
+               indexpret=mpcfree
+               mpcfree=nodempc(3,mpcfree)
+            endif
 !
             idir=idir+1
             if(idir.eq.4) idir=1
-            nodempc(1,mpcfree)=node
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=xn(idir)
-            mpcfree=nodempc(3,mpcfree)
+            if(dabs(xn(idir)).gt.1.d-10) then
+               nodempc(1,mpcfree)=node
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=xn(idir)
+               indexpret=mpcfree
+               mpcfree=nodempc(3,mpcfree)
+            endif
 !
             idir=jn
-            nodempc(1,mpcfree)=nk
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=-xn(idir)
-            mpcfree=nodempc(3,mpcfree)
+            if(dabs(xn(idir)).gt.1.d-10) then
+               nodempc(1,mpcfree)=nk
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=-xn(idir)
+               indexpret=mpcfree
+               mpcfree=nodempc(3,mpcfree)
+            endif
 !
             idir=idir+1
             if(idir.eq.4) idir=1
-            nodempc(1,mpcfree)=nk
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=-xn(idir)
-            mpcfree=nodempc(3,mpcfree)
+            if(dabs(xn(idir)).gt.1.d-10) then
+               nodempc(1,mpcfree)=nk
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=-xn(idir)
+               indexpret=mpcfree
+               mpcfree=nodempc(3,mpcfree)
+            endif
 !
             idir=idir+1
             if(idir.eq.4) idir=1
-            nodempc(1,mpcfree)=nk
-            nodempc(2,mpcfree)=idir
-            coefmpc(mpcfree)=-xn(idir)
-            indexpret=mpcfree
-            mpcfree=nodempc(3,mpcfree)
+            if(dabs(xn(idir)).gt.1.d-10) then
+               nodempc(1,mpcfree)=nk
+               nodempc(2,mpcfree)=idir
+               coefmpc(mpcfree)=-xn(idir)
+               indexpret=mpcfree
+               mpcfree=nodempc(3,mpcfree)
+            endif
 !
          enddo
       enddo

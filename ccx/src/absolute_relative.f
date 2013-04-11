@@ -33,7 +33,7 @@
      &     ipkon(*),kon(*),nelemswirl
 !     
       real*8 prop(*),v(0:4,*),xflow,f,df(4),kappa,R,
-     &     p1,p2,T1,T2,cp,physcon(3),km1,kp1,kdkm1,
+     &     p1,p2,T1,T2,cp,physcon(*),km1,kp1,kdkm1,
      &     kdkp1,u,pi,Qred_crit,pt1,pt2,Tt1,Tt2,ct,fact,
      &     Cp_cor
 !     

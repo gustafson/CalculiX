@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine printoutint(prlab,ipkon,lakon,stx,eme,xstate,ener,
-     &  mint_,nstate_,l,lb,ii,nelem,qfx,orab,ielorien,norien,co,kon)
+     &  mint_,nstate_,l1,lb,ii,nelem,qfx,orab,ielorien,norien,co,kon)
 !
 !     stores integration point results for element "nelem" in the .dat file
 !
@@ -27,7 +27,7 @@
       character*8 lakon(*)
 !
       integer ipkon(*),mint_,nstate_,nelem,l,lb,ii,mint3d,j,k,nope,
-     &  ielorien(*),norien,kon(*),konl,indexe,m,iorien,iflag
+     &  ielorien(*),norien,kon(*),konl,indexe,m,iorien,iflag,l1
 !
       real*8 stx(6,mint_,*),eme(6,mint_,*),xstate(nstate_,mint_,*),
      &  ener(mint_,*),qfx(3,mint_,*),xi,et,ze,xl(3,20),xsj,shp(4,20),
@@ -231,7 +231,7 @@
      &              b(1,1),b(2,2),b(3,3),b(1,2),b(1,3),b(2,3)
             enddo
          endif
-      elseif(prlab(ii)(1:4).eq.'PE  ') then
+      elseif(prlab(ii)(1:4).eq.'PEEQ') then
          do j=1,mint3d
             write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
      &           xstate(1,j,nelem)
@@ -248,13 +248,8 @@
             write(*,*) '         results are in the global system'
          endif
          do j=1,mint3d
-            if(l.eq.(nstate_+5)/6) then
-               write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
-     &              (xstate(lb+k,j,nelem),k=1,nstate_-lb)
-            else
-               write(5,'(i6,1x,i3,1p,6(1x,e11.4))') nelem,j,
-     &              (xstate(lb+k,j,nelem),k=1,6)
-            endif
+            write(5,'(i6,1x,i3,1p,99(1x,e11.4))') nelem,j,
+     &           (xstate(k,j,nelem),k=1,nstate_)
          enddo
       elseif(prlab(ii)(1:4).eq.'HFL ') then
          if(iorien.eq.0) then

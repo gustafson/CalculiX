@@ -19,7 +19,8 @@
       subroutine initialcfd(yy,nk,co,ne,ipkon,kon,lakon,x,y,z,xo,yo,zo,
      &  nx,ny,nz,isolidsurf,neighsolidsurf,xsolidsurf,dh,nshcon,shcon,
      &  nrhcon,rhcon,vold,voldaux,ntmat_,iponoel,inoel,
-     &  iexplicit,ielmat,nsolidsurf,turbulent,physcon)
+     &  iexplicit,ielmat,nsolidsurf,turbulent,physcon,compressible,
+     &  matname,inomat,voldtu)
 !
 !     initial calculations for cfd applicatons:
 !     - determine the distance from the nearest solid surface
@@ -32,21 +33,22 @@
 !
       implicit none
 !
-      logical iexplicit,turbulent
+      integer iexplicit,turbulent,compressible
 !
       character*8 lakon(*)
+      character*80 matname(*)
 !
       integer ne,ipkon(*),kon(*),indexe,ifaceq(8,6),ifacet(6,4),
      &  ifacew(8,5),kflag,isolidsurf(*),nsolidsurf,nope,node1,node2,
      &  nk,node,i,j,k,iponoel(*),inoel(3,*),nx(*),ny(*),index,nelem,
      &  nz(*),neighsolidsurf(*),kneigh,nodep(4),iplaneq(3,8),iplanet(4),
      &  iplanew(2,6),nshcon(*),nrhcon(*),ntmat_,neigh,nodel,ifacel,
-     &  ielmat(*),imat
+     &  ielmat(*),imat,inomat(*)
 !
       real*8 x(*),y(*),z(*),xo(*),yo(*),zo(*),xsolidsurf(*),
-     &  yy(*),co(3,*),dh(*),dvi,r,cp,rho,shcon(0:3,ntmat_,*),
+     &  yy(*),co(3,*),dh(*),r,cp,rho,shcon(0:3,ntmat_,*),voldtu(2,*),
      &  rhcon(0:1,ntmat_,*),vold(0:4,*),voldaux(0:4,*),px,py,pz,
-     &  a,b,c,d,temp,vel,dtu,dtnu,physcon(3)
+     &  a,b,c,d,temp,vel,dtu,dtnu,physcon(*),xtu,xkin,dvi
 !
 !     nodes belonging to the element faces
 !
@@ -71,7 +73,7 @@
       data iplanet /3,4,2,1/
       data iplanew /2,4,2,5,2,3,1,4,1,5,1,3/
 !
-      if(turbulent) then
+      if(turbulent.ne.0) then
 !
 !     determining the nearest solid boundary node
 !
@@ -115,9 +117,6 @@
      &           (co(2,node)-co(2,neigh))**2+
      &           (co(3,node)-co(3,neigh))**2)
          enddo
-c     do i=1,nk
-c     write(*,*) 'solid distance ',i,yy(i)
-c         enddo
 !     
 !     determining the distance to the nearest in-flow node for
 !     solid surface nodes (middle nodes do not count as valid
@@ -129,7 +128,7 @@ c         enddo
             xsolidsurf(i)=dsqrt((co(1,node1)-co(1,node2))**2+
      &           (co(2,node1)-co(2,node2))**2+
      &           (co(3,node1)-co(3,node2))**2)
-c            write(*,*) 'xsolidsurf ',node1,node2,xsolidsurf(i)
+            write(*,*) 'xsolidsurf ',node1,node2,xsolidsurf(i)
          enddo
 !
       endif
@@ -162,9 +161,6 @@ c            write(*,*) 'xsolidsurf ',node1,node2,xsolidsurf(i)
                      nodep(k)=kon(indexe+ifaceq(k,ifacel))
                   enddo
                   call plane4(co,i,nodep,a,b,c,d)
-c                  write(*,*) i,(nodep(k),k=1,4),a,b,c,d
-c                  write(*,*) 'height ',i,dh(i),
-c     &                 -a*co(1,i)-b*co(2,i)-c*co(3,i)-d
                   dh(i)=min(dh(i),-a*co(1,i)-b*co(2,i)-c*co(3,i)-d)
                enddo
             elseif((lakon(nelem)(4:4).eq.'4').or.
@@ -207,25 +203,39 @@ c     &                 -a*co(1,i)-b*co(2,i)-c*co(3,i)-d
 !     calculate auxiliary fields
 !         
       do node=1,nk
-         index=iponoel(node)
-         if(index.le.0) cycle
-         i=inoel(1,index)
-         imat=ielmat(i)
+         if(inomat(node).eq.0) cycle
+         imat=inomat(node)
          temp=vold(0,node)
-         call materialdata_tg_sec(imat,ntmat_,temp,
-     &        shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho,physcon)
-c         write(*,*) node,imat,temp,cp
+c         call materialdata_tg_sec(imat,ntmat_,temp,
+c     &        shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho,physcon)
+         call materialdata_cp_sec(imat,ntmat_,temp,shcon,nshcon,cp,
+     &        physcon)
 !     
 !     different treatment for gases and liquids
 !     
-         if(dabs(rho).lt.1.d-20) then
+         if(compressible.eq.1) then
+            r=shcon(3,1,imat)
+            if(r.lt.1.d-10) then
+               write(*,*) '*ERROR in initialcfd: specific gas '
+               write(*,*) 'constant for material ',matname(imat)
+               write(*,*) 'is close to zero; maybe it has'
+               write(*,*) 'not been defined'
+               stop
+            endif
+            if(vold(0,node)-physcon(1).le.1.d-10) then
+               write(*,*) '*ERROR in initialcfd: absolute temperature '
+               write(*,*) '       is nearly zero; maybe absolute zero '
+               write(*,*) '       was wrongly defined or not defined'
+               write(*,*) '       at all (*PHYSICAL CONSTANTS card)'
+               stop
+            endif
             rho=vold(4,node)/(r*(vold(0,node)-physcon(1)))
             voldaux(0,node)=rho*(cp*(temp-physcon(1))+
      &           (vold(1,node)**2+vold(2,node)**2+vold(3,node)**2)
      &           /2.d0)-vold(4,node)
-c            write(*,*) 'iniiii ',node,rho,voldaux(0,node),cp,temp,
-c     &               physcon(1)
          else
+            call materialdata_rho(rhcon,nrhcon,imat,rho,
+     &           temp,ntmat_)
             voldaux(0,node)=rho*(cp*(temp-physcon(1))+
      &           (vold(1,node)**2+vold(2,node)**2+vold(3,node)**2)
      &           /2.d0)
@@ -236,9 +246,34 @@ c     &               physcon(1)
          enddo
       enddo
 !
-c      do i=1,nk
-c         write(*,*) 'voldauxout ',(voldaux(j,i),j=0,4)
-c      enddo
-!
+!     initial conditions for turbulence parameters:
+!     freestream conditions
+!     
+      if(turbulent.ne.0) then
+         xtu=5.5d0*physcon(5)/physcon(8)
+c         xkin=10.d0**(-3.5d0)*xtu
+         xkin=10.d0**(-2.d0)*xtu
+         do node=1,nk
+            imat=inomat(node)
+            if(imat.eq.0) cycle
+            temp=vold(0,node)
+            call materialdata_dvi(imat,ntmat_,temp,shcon,nshcon,dvi)
+!     
+!     density for gases
+!     
+            if(compressible.eq.1) then
+               r=shcon(3,1,imat)
+               rho=vold(4,node)/
+     &              (r*(vold(0,node)-physcon(1)))
+            else
+               call materialdata_rho(rhcon,nrhcon,imat,rho,
+     &              temp,ntmat_)
+            endif
+!     
+            voldtu(1,node)=xkin*dvi
+            voldtu(2,node)=xtu*rho
+         enddo
+      endif
+!     
       return
       end

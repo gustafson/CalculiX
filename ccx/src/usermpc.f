@@ -18,7 +18,7 @@
 !
       subroutine usermpc(ipompc,nodempc,coefmpc,
      &  labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,nk,nk_,nodeboun,ndirboun,
-     &  ikboun,ilboun,nboun,nboun_,xboun,inode,node,co,label,typeboun,
+     &  ikboun,ilboun,nboun,nboun_,inode,node,co,label,typeboun,
      &  iperturb)
 !
 !     initializes mpc fields for a user MPC
@@ -29,11 +29,11 @@
       character*20 labmpc(*),label
 !
       integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,nk,nk_,ikmpc(*),
-     &  ilmpc(*),node,id,mpcfreeold,idof,l,nodeboun(*),iperturb,
+     &  ilmpc(*),node,id,mpcfreeold,idof,l,nodeboun(*),iperturb(2),
      &  ndirboun(*),ikboun(*),ilboun(*),nboun,nboun_,inode,nodevector,
-     &  index,index1,node1,i,j,imax,nkn
+     &  index,index1,node1,i,j,imax,nkn,idofrem,idofins
 !
-      real*8 coefmpc(*),co(3,*),xboun(*),aa(3),dd,cgx(3),pi(3),c1,c4,c9,
+      real*8 coefmpc(*),co(3,*),aa(3),dd,cgx(3),pi(3),c1,c4,c9,
      &  c10,a(3),a1,amax
 !
       save nodevector
@@ -248,6 +248,9 @@ c
 !
             index=ipompc(nmpc)
             if(dabs(coefmpc(index)).lt.1.d-5) then
+!
+!              changing the DOF of the dependent degree of freedom
+!
                amax=dabs(coefmpc(index))
                imax=1
                a(1)=coefmpc(index)
@@ -273,13 +276,23 @@ c
                      nodempc(2,index)=i
                   endif
                enddo
+!
+!              updating ikmpc and ilmpc
+!               
+               index=ipompc(nmpc)
+               idofrem=8*(nodempc(1,index)-1)+1
+               idofins=8*(nodempc(1,index)-1)+imax
+               call changedepterm(ikmpc,ilmpc,nmpc,nmpc,idofrem,idofins)
             endif
          elseif(labmpc(nmpc)(1:4).eq.'DIST') then
-            if(iperturb.eq.0) iperturb=2
+            iperturb(2)=1
+            if(iperturb(1).eq.0) iperturb(1)=2
          elseif(labmpc(nmpc)(1:3).eq.'GAP') then
-            if(iperturb.eq.0) iperturb=2
+            iperturb(2)=1
+            if(iperturb(1).eq.0) iperturb(1)=2
          elseif(labmpc(nmpc)(1:4).eq.'USER') then
-            if(iperturb.eq.0) iperturb=2
+            iperturb(2)=1
+            if(iperturb(1).eq.0) iperturb(1)=2
          else
             write(*,*) '*ERROR in usermpc: mpc of type',labmpc(nmpc)
             write(*,*) '       is unknown'

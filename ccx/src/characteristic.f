@@ -38,7 +38,7 @@
      &     inv,id,numf,npu,i
 !     
       real*8 prop(*),v(0:4,*),xflow,f,df(4),
-     &     p1,p2,physcon(3),
+     &     p1,p2,physcon(*),
      &     xpu(10),ypu(10),Qred,p1mp2zp1,T1,scal,T2
 !     
 !      numf=4

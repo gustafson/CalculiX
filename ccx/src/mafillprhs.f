@@ -21,13 +21,11 @@
      &  nface,b,nactdoh,icolp,jqp,irowp,neqp,nzlp,nmethod,ikmpc,ilmpc,
      &  ikboun,ilboun,rhcon,nrhcon,ielmat,ntmat_,vold,voldaux,nzsp,
      &  dtime,matname,mint_,ncmat_,shcon,nshcon,v,theta1,
-     &  iexplicit,physcon)
+     &  iexplicit,physcon,nea,neb)
 !
 !     filling the rhs b of the pressure equations (step 2)
 !
       implicit none
-!
-      logical iexplicit
 !
       character*1 sideface(*)
       character*8 lakon(*)
@@ -36,16 +34,16 @@
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nelemface(*),icolp(*),jqp(*),ikmpc(*),ilmpc(*),ikboun(*),
      &  ilboun(*),nactdoh(0:4,*),konl(20),irowp(*),nrhcon(*),ielmat(*),
-     &  ipkon(*),nshcon(*)
+     &  ipkon(*),nshcon(*),iexplicit,nea,neb
 !
       integer nk,ne,nboun,nmpc,nface,neqp,nzlp,nmethod,nzsp,i,j,k,l,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,node1,node2,kflag,ntmat_,indexe,nope,
-     &  mint_,i0,ncmat_
+     &  mint_,i0,ncmat_,idof3
 !
       real*8 co(3,*),xboun(*),coefmpc(*),b(*),v(0:4,*),vold(0:4,*),
      &  voldaux(0:4,*),ff(60),sm(60,60),rhcon(0:1,ntmat_,*),
-     &  shcon(0:3,ntmat_,*),theta1,physcon(3)
+     &  shcon(0:3,ntmat_,*),theta1,physcon(*)
 !
       real*8 value,dtime
 !
@@ -68,7 +66,7 @@ c      endif
          b(i)=0.d0
       enddo
 !
-      do i=1,ne
+      do i=nea,neb
 !
         if(ipkon(i).lt.0) cycle
         if(lakon(i)(1:1).ne.'F') cycle
@@ -95,7 +93,8 @@ c      endif
 !
         call e_c3d_prhs(co,nk,konl,lakon(i),sm,ff,i,nmethod,rhcon,
      &       nrhcon,ielmat,ntmat_,v,vold,voldaux,nelemface,sideface,
-     &       nface,dtime,matname,mint_,shcon,nshcon,theta1,physcon)
+     &       nface,dtime,matname,mint_,shcon,nshcon,theta1,physcon,
+     &       iexplicit)
 !
         do jj=1,nope
 !
@@ -124,10 +123,10 @@ c     &                sm(jj,ll),jj,ll)
 !
                if(jdof1.eq.0) then
                   idof1=jdof2
-                  idof2=(node1-1)*8
+                  idof2=(node1-1)*8+4
                else
                   idof1=jdof1
-                  idof2=(node2-1)*8
+                  idof2=(node2-1)*8+4
                endif
                if(nmpc.gt.0) then
                   call nident(ikmpc,idof2,nmpc,id)
@@ -145,12 +144,16 @@ c     &                sm(jj,ll),jj,ll)
                         if(idof1.eq.idof2) value=2.d0*value
                         if(idof2.ne.0) then
 c                              call add_sm_fl(aubp,adbp,jqp,irowp,
-c     &                             idof1,idof2,value,i0,i0)
+cd     &                             idof1,idof2,value,i0,i0)
 c                        else
-c                           idof2=8*(nodempc(1,index)-1)+nodempc(2,index)
-c                           call nident(ikboun,idof2,nboun,id)
-c                           b(idof1)=b(idof1)
-c     &                            -xboun(ilboun(id))*value
+c                           if(iexplicit.eq.0) then
+c                              idof2=8*(nodempc(1,index)-1)+
+c     &                            nodempc(2,index)
+c                              call nident(ikboun,idof2,nboun,id)
+c                              b(idof1)=b(idof1)
+c     &                             -xboun(ilboun(id))*value
+c                           endif
+cd
                         endif
                         index=nodempc(3,index)
                         if(index.eq.0) exit
@@ -161,11 +164,16 @@ c     &                            -xboun(ilboun(id))*value
 c!
 c!              regular DOF / SPC
 c!
-c               call nident(ikboun,idof2,nboun,id)
-c               b(idof1)=b(idof1)-xboun(ilboun(id))*sm(jj,ll)
+cd
+c               if(iexplicit.eq.0) then
+cc                  idof2=idof2+4
+c                  call nident(ikboun,idof2,nboun,id)
+c                  b(idof1)=b(idof1)-xboun(ilboun(id))*sm(jj,ll)
+c               endif
+cd
             else
-               idof1=(node1-1)*8
-               idof2=(node2-1)*8
+               idof1=(node1-1)*8+4
+               idof2=(node2-1)*8+4
                mpc1=0
                mpc2=0
                if(nmpc.gt.0) then
@@ -194,8 +202,9 @@ c               b(idof1)=b(idof1)-xboun(ilboun(id))*sm(jj,ll)
                            if((idof1.ne.0).and.(idof2.ne.0)) then
 c                                 call add_sm_fl(aubp,adbp,jqp,
 c     &                             irowp,idof1,idof2,value,i0,i0)
-c                           elseif(
-c     &                       (idof1.ne.0).or.(idof2.ne.0)) then
+cd
+c                           elseif((iexplicit.eq.0).and.
+c     &                       ((idof1.ne.0).or.(idof2.ne.0))) then
 c                              if(idof2.ne.0) then
 c                                 idof3=idof2
 c                                 idof2=8*(nodempc(1,index1)-1)+
@@ -208,6 +217,7 @@ c                              endif
 c                              call nident(ikboun,idof2,nboun,id)
 c                              b(idof3)=b(idof3)
 c     &                             -value*xboun(ilboun(id))
+cd
                            endif
 !
                            index2=nodempc(3,index2)
@@ -243,8 +253,9 @@ c     &                             -value*xboun(ilboun(id))
                            if((idof1.ne.0).and.(idof2.ne.0)) then
 c                                 call add_sm_fl(aubp,adbp,jqp,
 c     &                             irowp,idof1,idof2,value,i0,i0)
-c                           elseif(
-c     &                       (idof1.ne.0).or.(idof2.ne.0)) then
+cd
+c                           elseif((iexplicit.eq.0).and.
+c     &                       ((idof1.ne.0).or.(idof2.ne.0))) then
 c                              if(idof2.ne.0) then
 c                                 idof3=idof2
 c                                 idof2=8*(nodempc(1,index1)-1)+
@@ -257,6 +268,7 @@ c                              endif
 c                              call nident(ikboun,idof2,nboun,id)
 c                              b(idof3)=b(idof3)
 c     &                               -value*xboun(ilboun(id))
+cd
                            endif
 !
                            index2=nodempc(3,index2)
@@ -266,12 +278,14 @@ c     &                               -value*xboun(ilboun(id))
                         if(index1.eq.0) exit
                      enddo
                   endif
-c               elseif((mpc1.eq.1).or.(mpc2.eq.1))
+cd
+c               elseif(((mpc1.eq.1).or.(mpc2.eq.1)).and.(iexplicit.eq.0))
 c     &           then
 c                  if(mpc1.eq.1) then
 c!
 c!                    MPC id1 / SPC
 c!
+cc                     idof2=idof2+4
 c                     call nident(ikboun,idof2,nboun,id2)
 c                     idof2=ilboun(id2)
 c                     ist1=ipompc(id1)
@@ -291,6 +305,7 @@ c                  elseif(mpc2.eq.1) then
 c!
 c!                    MPC id2 / SPC
 c!
+cc                     idof1=idof1+4
 c                     call nident(ikboun,idof1,nboun,id1)
 c                     idof1=ilboun(id1)
 c                     ist2=ipompc(id2)
@@ -307,6 +322,7 @@ c                        index2=nodempc(3,index2)
 c                        if(index2.eq.0) exit
 c                     enddo
 c                  endif
+cd
                endif
             endif
           enddo
@@ -315,7 +331,7 @@ c                  endif
 !
                 if(jdof1.eq.0) then
                    if(nmpc.ne.0) then
-                      idof1=(node1-1)*8
+                      idof1=(node1-1)*8+4
                       call nident(ikmpc,idof1,nmpc,id)
                       if((id.gt.0).and.(ikmpc(id).eq.idof1)) then
                          id=ilmpc(id)
@@ -348,6 +364,10 @@ c      write(*,*) 'press 289 ',b(272)
 c      write(*,*) 'press 243 ',b(322)
 c      write(*,*) 'press 392 ',b(369)
 c      write(*,*)
+c      write(*,*) 'rhspressure'
+c      do i=1,neqp
+c         write(*,*) 'rhs press ',i,b(i)*2.e10
+c      enddo
 !
       return
       end

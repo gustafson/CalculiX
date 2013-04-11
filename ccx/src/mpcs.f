@@ -37,7 +37,7 @@
      &  nset,nset_,nalset,nalset_,nmpc,nmpc_,mpcfree,nk,nk_,ikmpc(*),
      &  ilmpc(*),ipkon(*),kon(*),i,node,ipos,istep,istat,n,ne_,
      &  j,k,nodeboun(*),ndirboun(*),ikboun(*),ilboun(*),ipoinpc(0:*),
-     &  nboun,nboun_,key,iperturb,istart,inode,m,iline,ipol,inl,
+     &  nboun,nboun_,key,iperturb(2),istart,inode,m,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*)
 !
       real*8 coefmpc(3,*),co(3,*),xboun(*),ctrl(*)
@@ -49,13 +49,7 @@
          stop
       endif
 !
-!     the *MPC option implies a nonlinear geometric 
-!     calculation
-!
-c      if(iperturb.eq.0) then
-c         iperturb=2
-c      elseif(iperturb.eq.1) then
-      if(iperturb.eq.1) then
+      if(iperturb(1).eq.1) then
          write(*,*) '*ERROR in rigidbodies: the *MPC option'
          write(*,*) '       cannot be used in a perturbation step'
          stop
@@ -104,7 +98,7 @@ c      elseif(iperturb.eq.1) then
                            call usermpc(ipompc,nodempc,coefmpc,
      &                          labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &                          nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
-     &                          nboun,nboun_,xboun,inode,node,co,label,
+     &                          nboun,nboun_,inode,node,co,label,
      &                          typeboun,iperturb)
                         endif
                      enddo
@@ -139,7 +133,7 @@ c      elseif(iperturb.eq.1) then
                   call usermpc(ipompc,nodempc,coefmpc,
      &                 labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &                 nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
-     &                 nboun,nboun_,xboun,inode,node,co,label,
+     &                 nboun,nboun_,inode,node,co,label,
      &                 typeboun,iperturb)
                endif
             endif
@@ -155,10 +149,15 @@ c      elseif(iperturb.eq.1) then
          call usermpc(ipompc,nodempc,coefmpc,
      &        labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &        nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
-     &        nboun,nboun_,xboun,inode,node,co,label,typeboun,
+     &        nboun,nboun_,inode,node,co,label,typeboun,
      &        iperturb)
       else
-         if(iperturb.eq.0) iperturb=2
+!
+!     the *MPC option implies a nonlinear geometric 
+!     calculation for all MPC's except MEANROT MPC's
+!
+         iperturb(2)=1
+         if(iperturb(1).eq.0) iperturb(1)=2
       endif
 !
       return

@@ -20,7 +20,7 @@
      &  nbody,ff,nelem,nmethod,rhcon,nrhcon,ielmat,ntmat_,vold,voldaux,
      &  idist,dtime,matname,mint_,
      &  ttime,time,istep,iinc,shcon,nshcon,
-     &  turbulent,voldtu,yy,nelemface,sideface,nface)
+     &  turbulent,voldtu,yy,nelemface,sideface,nface,compressible)
 !
 !     computation of the velocity element matrix and rhs for the element with
 !     element with the topology in konl: step 1 (correction *)
@@ -29,7 +29,7 @@
 !
       implicit none
 !
-      logical turbulent
+      integer turbulent,compressible
 !
       character*1 sideface(*)
       character*8 lakonl
@@ -41,16 +41,17 @@
      &  mint2d,mint3d,mint_,ifacet(6,4),nopev,ifacew(8,5),istep,iinc,
      &  iflag,k1,nelemface(*),nface
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,2),r,cp,dvi,p1(3),p2(3),
+      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,p1(3),p2(3),
      &  bodyf(3),bodyfx(3),ff(60),bf(3),q(3),c1,c2,xsjmod,
      &  rhcon(0:1,ntmat_,*),vel(3),div,shcon(0:3,ntmat_,*),
-     &  voldl(0:4,20),xl2(0:3,8),xsj2(3),shp2(4,8),
-     &  vold(0:4,*),om,omx,xi,et,ze,const,xsj,temp,
+     &  voldl(0:4,20),xl2(0:3,8),xsj2(3),shp2(7,8),omcor,
+     &  vold(0:4,*),om,omx,xi,et,ze,const,xsj,temp,theta2,
      &  voldaux(0:4,*),voldauxl(0:4,20),rho,weight,shpv(20),t(3,3),
      &  voldtu(2,*),voldtul(2,20),cvel(3),vkl(3,3),corio(3),xkin,
      &  xtuf,vort,un,yy(*),yyl(20),y,f2,unt,umt,a1,arg2,xlocal20(3,9,6),
-     &  xlocal4(3,1,4),xlocal10(3,3,4),xlocal6(3,1,5),
-     &  xlocal15(3,4,5),xlocal8(3,4,6),xlocal8r(3,1,6),xi3d,et3d,ze3d
+     &  xlocal4(3,1,4),xlocal10(3,3,4),xlocal6(3,1,5),dpress(3),
+     &  xlocal15(3,4,5),xlocal8(3,4,6),xlocal8r(3,1,6),xi3d,et3d,ze3d,
+     &  shpvc(20)
 !
       real*8 dtime,ttime,time,tvar(2)
 !
@@ -79,6 +80,10 @@ c     &            1,2,-3,4,5,-6,7,8,-9,10,11,-12,
 c     &            37,38,-39,40,41,-42,43,44,-45,46,47,-48,
 c     &            25,26,-27,28,29,-30,31,32,-33,34,35,-36,
 c     &            49,50,-51,52,53,-54,55,56,-57,58,59,-60/
+!
+!     for pressure stability term (nithiarasu)
+!
+      theta2=.5d0
 !
       tvar(1)=time
       tvar(2)=ttime+dtime
@@ -157,13 +162,14 @@ c     write(*,*) i,konl(i),(xl(j,i),j=1,3)
 !     rho*turbulence variables
 !     
       do i1=1,nope
-         do i2=0,3
+c         do i2=0,3
+         do i2=0,4
             voldl(i2,i1)=vold(i2,konl(i1))
          enddo
          do i2=1,4
             voldauxl(i2,i1)=voldaux(i2,konl(i1))
          enddo
-         if(turbulent) then
+         if(turbulent.ne.0) then
             voldtul(1,i1)=voldtu(1,konl(i1))
             voldtul(2,i1)=voldtu(2,konl(i1))
             yyl(i1)=yy(konl(i1))
@@ -261,6 +267,7 @@ c         write(*,*) nelem,i1,konl(i1),(voldauxl(j,i1),j=1,4)
          do i1=1,3
             vel(i1)=0.d0
             cvel(i1)=0.d0
+            dpress(i1)=0.d0
             do j1=1,3
                vkl(i1,j1)=0.d0
             enddo
@@ -270,16 +277,23 @@ c         write(*,*) nelem,i1,konl(i1),(voldauxl(j,i1),j=1,4)
             temp=temp+shp(4,i1)*voldl(0,i1)
             do j1=1,3
                vel(j1)=vel(j1)+shp(4,i1)*voldl(j1,i1)
+               dpress(j1)=dpress(j1)+shp(j1,i1)*voldl(4,i1)
                do k1=1,3
                   vkl(j1,k1)=vkl(j1,k1)+shp(k1,i1)*voldl(j1,i1)
                enddo
             enddo
          enddo
-c         write(*,*) 'vkllll ',nelem,((vkl(j1,k1),k1=1,3),j1=1,3)
-         div=vkl(1,1)+vkl(2,2)+vkl(3,3)
+         if(compressible.eq.1) then
+            div=vkl(1,1)+vkl(2,2)+vkl(3,3)
+         else
+            div=0.d0
+         endif
+!
          do i1=1,nope
             shpv(i1)=shp(1,i1)*vel(1)+shp(2,i1)*vel(2)+
      &           shp(3,i1)*vel(3)+shp(4,i1)*div
+cv            shpv(i1)=shp(1,i1)*voldl(1,i1)+shp(2,i1)*voldl(2,i1)+
+cv     &           shp(3,i1)*voldl(3,i1)
             do j1=1,3
                cvel(j1)=cvel(j1)+shpv(i1)*voldauxl(j1,i1)
             enddo
@@ -287,16 +301,19 @@ c         write(*,*) 'vkllll ',nelem,((vkl(j1,k1),k1=1,3),j1=1,3)
 !     
 !     material data (density and dynamic viscosity)
 !     
-         call materialdata_tg(imat,ntmat_,temp,shcon,nshcon,cp,r,dvi,
-     &        rhcon,nrhcon,rho)
+c         call materialdata_tg(imat,ntmat_,temp,shcon,nshcon,cp,r,dvi,
+c     &        rhcon,nrhcon,rho)
+         call materialdata_dvi(imat,ntmat_,temp,shcon,nshcon,dvi)
 !
 !     determining the dissipative stress 
 !
          do i1=1,3
-            do j1=1,3
+            do j1=i1,3
                t(i1,j1)=vkl(i1,j1)+vkl(j1,i1)
             enddo
-            t(i1,i1)=t(i1,i1)-2.d0*div/3.d0
+cccc
+            if(compressible.eq.1) t(i1,i1)=t(i1,i1)-2.d0*div/3.d0
+cccc
          enddo
 !     
 !     calculation of the density for gases
@@ -304,7 +321,7 @@ c         write(*,*) 'vkllll ',nelem,((vkl(j1,k1),k1=1,3),j1=1,3)
 !     calculation of the turbulent kinetic energy, turbulence
 !     frequency and their spatial derivatives for gases and liquids
 !
-         if(dabs(rho).lt.1.d-20) then
+         if(compressible.eq.1) then
 !
 !           gas
 !
@@ -312,33 +329,41 @@ c         write(*,*) 'vkllll ',nelem,((vkl(j1,k1),k1=1,3),j1=1,3)
             do i1=1,nope
                rho=rho+shp(4,i1)*voldauxl(4,i1)
             enddo
-            if(turbulent) then
+            if(turbulent.ne.0) then
                xkin=0.d0
                xtuf=0.d0
                y=0.d0
                do i1=1,nope
-                  xkin=xkin+shp(4,i1)*voldtul(1,i1)/voldauxl(4,i1)
-                  xtuf=xtuf+shp(4,i1)*voldtul(2,i1)/voldauxl(4,i1)
+                  xkin=xkin+shp(4,i1)*voldtul(1,i1)
+                  xtuf=xtuf+shp(4,i1)*voldtul(2,i1)
                   y=y+shp(4,i1)*yyl(i1)
                enddo
+               xkin=xkin/rho
+               xtuf=xtuf/rho
             endif
-         elseif(turbulent) then
+         else
 !
 !           liquid
 !
-            xkin=0.d0
-            xtuf=0.d0
-            y=0.d0
-            do i1=1,nope
-               xkin=xkin+shp(4,i1)*voldtul(1,i1)/rho
-               xtuf=xtuf+shp(4,i1)*voldtul(2,i1)/rho
-               y=y+shp(4,i1)*yyl(i1)
-            enddo
+            call materialdata_rho(rhcon,nrhcon,imat,rho,
+     &           temp,ntmat_)
+            if(turbulent.ne.0) then
+               xkin=0.d0
+               xtuf=0.d0
+               y=0.d0
+               do i1=1,nope
+                  xkin=xkin+shp(4,i1)*voldtul(1,i1)
+                  xtuf=xtuf+shp(4,i1)*voldtul(2,i1)
+                  y=y+shp(4,i1)*yyl(i1)
+               enddo
+               xkin=xkin/rho
+               xtuf=xtuf/rho
+            endif
          endif
 !
 !        calculation of turbulent auxiliary variables
 !
-         if(turbulent) then
+         if(turbulent.ne.0) then
 !     
 !           vorticity
 !     
@@ -361,9 +386,10 @@ c         write(*,*) 'vkllll ',nelem,((vkl(j1,k1),k1=1,3),j1=1,3)
 !     
             unt=a1*xkin/max(a1*xtuf,vort*f2)
             umt=unt*rho
+c            write(*,*) 'e_c3d_v1rhs ',dvi,umt
 !
             do i1=1,3
-               do j1=1,3
+               do j1=i1,3
                   t(i1,j1)=(dvi+umt)*t(i1,j1)
                enddo
                t(i1,i1)=t(i1,i1)-2.d0*rho*xkin/3.d0
@@ -371,16 +397,19 @@ c         write(*,*) 'vkllll ',nelem,((vkl(j1,k1),k1=1,3),j1=1,3)
          else
 !
             do i1=1,3
-               do j1=1,3
+               do j1=i1,3
                   t(i1,j1)=dvi*t(i1,j1)
-c                  write(*,*) 'tstress ',nelem,kk,t(i1,j1)
                enddo
             enddo
          endif
+         t(2,1)=t(1,2)
+         t(3,1)=t(1,3)
+         t(3,2)=t(2,3)
 !     
 !     initialisation for the body forces
 !     
          om=omx*rho
+         omcor=2.d0*rho*dsqrt(omx)
          if(nbody.ne.0) then
             do ii=1,3
                bodyf(ii)=bodyfx(ii)*rho
@@ -391,15 +420,54 @@ c                  write(*,*) 'tstress ',nelem,kk,t(i1,j1)
 !     
          jj1=1
          do jj=1,nope
+c
+c           convective + diffusive
+c
             ff(jj1)=ff(jj1)-xsjmod*
-     &            (cvel(1)*(shp(4,jj)+dtime*shpv(jj)/2.d0)+
-     &             shp(1,jj)*t(1,1)+shp(2,jj)*t(1,2)+shp(3,jj)*t(1,3))
+     &            (cvel(1)*(shp(4,jj)+dtime*shpv(jj)/2.d0)
+     &             +shp(1,jj)*t(1,1)+shp(2,jj)*t(1,2)+shp(3,jj)*t(1,3))
             ff(jj1+1)=ff(jj1+1)-xsjmod*
-     &            (cvel(2)*(shp(4,jj)+dtime*shpv(jj)/2.d0)+
-     &             shp(1,jj)*t(2,1)+shp(2,jj)*t(2,2)+shp(3,jj)*t(2,3))
+     &            (cvel(2)*(shp(4,jj)+dtime*shpv(jj)/2.d0)
+     &             +shp(1,jj)*t(2,1)+shp(2,jj)*t(2,2)+shp(3,jj)*t(2,3))
             ff(jj1+2)=ff(jj1+2)-xsjmod*
-     &            (cvel(3)*(shp(4,jj)+dtime*shpv(jj)/2.d0)+
-     &             shp(1,jj)*t(3,1)+shp(2,jj)*t(3,2)+shp(3,jj)*t(3,3))
+     &            (cvel(3)*(shp(4,jj)+dtime*shpv(jj)/2.d0)
+     &             +shp(1,jj)*t(3,1)+shp(2,jj)*t(3,2)+shp(3,jj)*t(3,3))
+c
+c           convective1
+c
+c            ff(jj1)=ff(jj1)-xsjmod*
+c     &            (cvel(1)*(shp(4,jj)))
+c            ff(jj1+1)=ff(jj1+1)-xsjmod*
+c     &            (cvel(2)*(shp(4,jj)))
+c            ff(jj1+2)=ff(jj1+2)-xsjmod*
+c     &            (cvel(3)*(shp(4,jj)))
+c
+c           convective2
+c
+c            ff(jj1)=ff(jj1)-xsjmod*
+c     &            (cvel(1)*(dtime*shpv(jj)/2.d0))
+c            ff(jj1+1)=ff(jj1+1)-xsjmod*
+c     &            (cvel(2)*(dtime*shpv(jj)/2.d0))
+c            ff(jj1+2)=ff(jj1+2)-xsjmod*
+c     &            (cvel(3)*(dtime*shpv(jj)/2.d0))
+c
+c           diffusive
+c
+c            ff(jj1)=ff(jj1)-xsjmod*
+c     &             (shp(1,jj)*t(1,1)+shp(2,jj)*t(1,2)+shp(3,jj)*t(1,3))
+c            ff(jj1+1)=ff(jj1+1)-xsjmod*
+c     &             (shp(1,jj)*t(2,1)+shp(2,jj)*t(2,2)+shp(3,jj)*t(2,3))
+c            ff(jj1+2)=ff(jj1+2)-xsjmod*
+c     &             (shp(1,jj)*t(3,1)+shp(2,jj)*t(3,2)+shp(3,jj)*t(3,3))
+c
+c           pressure stability term (nithiarasu)
+c
+c            ff(jj1)=ff(jj1)-xsjmod*dpress(1)*(1.d0-theta2)*
+c     &              dtime*shpv(jj)/2.d0
+c            ff(jj1+1)=ff(jj1+1)-xsjmod*dpress(2)*(1.d0-theta2)*
+c     &              dtime*shpv(jj)/2.d0
+c            ff(jj1+2)=ff(jj1+2)-xsjmod*dpress(3)*(1.d0-theta2)*
+c     &              dtime*shpv(jj)/2.d0
             jj1=jj1+3
          enddo
 !     
@@ -430,7 +498,10 @@ c                  write(*,*) 'tstress ',nelem,kk,t(i1,j1)
 !     inclusion of the centrifugal force into the body force
 !     
                do i1=1,3
-                  bf(i1)=bodyf(i1)+(q(i1)-const*p2(i1)+corio(i1))*om
+c
+                  bf(i1)=bodyf(i1)+(q(i1)-const*p2(i1))*om+
+     &                   corio(i1)*omcor
+c                  bf(i1)=bodyf(i1)+(q(i1)-const*p2(i1))*om
                enddo
             else
                do i1=1,3
@@ -458,7 +529,8 @@ c                  write(*,*) 'tstress ',nelem,kk,t(i1,j1)
          call nident(nelemface,nelem,nface,id)
          do
             if((id.eq.0).or.(nelemface(id).ne.nelem)) exit
-            read(sideface(id)(1:1),'(i1)') ig
+c            read(sideface(id)(1:1),'(i1)') ig
+            ig=ichar(sideface(id)(1:1))-48
 !     
 !     treatment of wedge faces
 !     
@@ -588,6 +660,8 @@ c                  write(*,*) 'tstress ',nelem,kk,t(i1,j1)
                   ze3d=xlocal6(3,i,ig)
                   call shape6w(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
                endif
+!
+ce               xsjmod=dtime*weight
 !     
 !     calculating of
 !     the temperature temp
@@ -596,6 +670,8 @@ c                  write(*,*) 'tstress ',nelem,kk,t(i1,j1)
 !     
                temp=0.d0
                do i1=1,3
+ce                  vel(i1)=0.d0
+ce                  cvel(i1)=0.d0
                   do j1=1,3
                      vkl(i1,j1)=0.d0
                   enddo
@@ -603,24 +679,43 @@ c                  write(*,*) 'tstress ',nelem,kk,t(i1,j1)
                do i1=1,nope
                   temp=temp+shp(4,i1)*voldl(0,i1)
                   do j1=1,3
+ce                     vel(j1)=vel(j1)+shp(4,i1)*voldl(j1,i1)
                      do k1=1,3
                         vkl(j1,k1)=vkl(j1,k1)+shp(k1,i1)*voldl(j1,i1)
                      enddo
                   enddo
                enddo
+               if(compressible.eq.1) then
+                  div=vkl(1,1)+vkl(2,2)+vkl(3,3)
+               else
+                  div=0.d0
+               endif
+c               div=vkl(1,1)+vkl(2,2)+vkl(3,3)
+ce               do i1=1,nope
+ce                  shpv(i1)=shp(1,i1)*vel(1)+shp(2,i1)*vel(2)+
+ce     &                 shp(3,i1)*vel(3)
+cec     shpv(i1)=shp(1,i1)*vel(1)+shp(2,i1)*vel(2)+
+cec     &           shp(3,i1)*vel(3)+shp(4,i1)*div
+ce                  do j1=1,3
+ce                    cvel(j1)=cvel(j1)+shpv(i1)*voldauxl(j1,i1)
+ce                  enddo
+ce               enddo
 !     
 !     material data (density and dynamic viscosity)
 !     
-               call materialdata_tg(imat,ntmat_,temp,shcon,nshcon,cp,r,
-     &              dvi,rhcon,nrhcon,rho)
+c               call materialdata_tg(imat,ntmat_,temp,shcon,nshcon,cp,r,
+c     &              dvi,rhcon,nrhcon,rho)
+               call materialdata_dvi(imat,ntmat_,temp,shcon,nshcon,dvi)
 !     
 !     determining the dissipative stress 
 !     
                do i1=1,3
-                  do j1=1,3
+                  do j1=i1,3
                      t(i1,j1)=vkl(i1,j1)+vkl(j1,i1)
                   enddo
-                  t(i1,i1)=t(i1,i1)-2.d0*vkl(i1,i1)/3.d0
+                  if(compressible.eq.1) t(i1,i1)=t(i1,i1)-2.d0*div/3.d0
+c                  t(i1,i1)=t(i1,i1)-2.d0*div/3.d0
+c                  t(i1,i1)=t(i1,i1)
                enddo
 !     
 !              calculation of the density for gases
@@ -628,7 +723,7 @@ c                  write(*,*) 'tstress ',nelem,kk,t(i1,j1)
 !     calculation of the turbulent kinetic energy, turbulence
 !     frequency and their spatial derivatives for gases and liquids
 !     
-               if(dabs(rho).lt.1.d-20) then
+               if(compressible.eq.1) then
 !     
 !                 gas
 !     
@@ -636,7 +731,7 @@ c                  write(*,*) 'tstress ',nelem,kk,t(i1,j1)
                   do i1=1,nope
                      rho=rho+shp(4,i1)*voldauxl(4,i1)
                   enddo
-                  if(turbulent) then
+                  if(turbulent.ne.0) then
                      xkin=0.d0
                      xtuf=0.d0
                      y=0.d0
@@ -646,23 +741,27 @@ c                  write(*,*) 'tstress ',nelem,kk,t(i1,j1)
                         y=y+shp(4,i1)*yyl(i1)
                      enddo
                   endif
-               elseif(turbulent) then
+               else
 !     
 !                 liquid
 !     
-                  xkin=0.d0
-                  xtuf=0.d0
-                  y=0.d0
-                  do i1=1,nope
-                     xkin=xkin+shp(4,i1)*voldtul(1,i1)/rho
-                     xtuf=xtuf+shp(4,i1)*voldtul(2,i1)/rho
-                     y=y+shp(4,i1)*yyl(i1)
-                  enddo
+                  call materialdata_rho(rhcon,nrhcon,imat,rho,
+     &                 temp,ntmat_)
+                  if(turbulent.ne.0) then
+                     xkin=0.d0
+                     xtuf=0.d0
+                     y=0.d0
+                     do i1=1,nope
+                        xkin=xkin+shp(4,i1)*voldtul(1,i1)/rho
+                        xtuf=xtuf+shp(4,i1)*voldtul(2,i1)/rho
+                        y=y+shp(4,i1)*yyl(i1)
+                     enddo
+                  endif
                endif
 !     
 !              calculation of turbulent auxiliary variables
 !     
-               if(turbulent) then
+               if(turbulent.ne.0) then
 !     
 !                 vorticity
 !     
@@ -687,7 +786,7 @@ c                  write(*,*) 'tstress ',nelem,kk,t(i1,j1)
                   umt=unt*rho
 !     
                   do i1=1,3
-                     do j1=1,3
+                     do j1=i1,3
                         t(i1,j1)=(dvi+umt)*t(i1,j1)
                      enddo
                      t(i1,i1)=t(i1,i1)-2.d0*rho*xkin/3.d0
@@ -695,11 +794,58 @@ c                  write(*,*) 'tstress ',nelem,kk,t(i1,j1)
                else
 !     
                   do i1=1,3
-                     do j1=1,3
+                     do j1=i1,3
                         t(i1,j1)=dvi*t(i1,j1)
                      enddo
                   enddo
                endif
+               t(2,1)=t(1,2)
+               t(3,1)=t(1,3)
+               t(3,2)=t(2,3)
+!     
+!     computation of contribution due to body forces
+!     
+ce               if(nbody.ne.0) then
+ce                  if(om.gt.0.d0) then
+ce                     do i1=1,3
+ce!     
+ce!     computation of the global coordinates of the gauss
+ce!     point
+ce!     
+ce                        q(i1)=0.d0
+ce                        do j1=1,nope
+ce                           q(i1)=q(i1)+shp(4,j1)*xl(i1,j1)
+ce                        enddo
+ce!     
+ce                        q(i1)=q(i1)-p1(i1)
+ce                     enddo
+ce                    const=q(1)*p2(1)+q(2)*p2(2)+q(3)*p2(3)
+ce!     
+ce!     Coriolis forces
+ce!     
+ce                     corio(1)=vel(2)*p2(3)-vel(3)*p2(2)
+ce                     corio(2)=vel(3)*p2(1)-vel(1)*p2(3)
+ce                     corio(3)=vel(1)*p2(2)-vel(2)*p2(1)
+ce!     
+ce!     inclusion of the centrifugal force into the body force
+ce!     
+ce                     do i1=1,3
+ce                        bf(i1)=bodyf(i1)+(q(i1)-const*p2(i1)+corio(i1))*om
+ce                     enddo
+ce                  else
+ce                     do i1=1,3
+ce                        bf(i1)=bodyf(i1)
+ce                     enddo
+ce                  endif
+ce               endif
+ce
+ce               do i1=1,3
+ce                  tm(i1)=0.d0
+ce                  do j1=1,3
+ce                     tm(i1)=tm(i1)+xsjmod*(t(i1,j1)+dtime*vel(j1)*
+ce     &                      (cvel(i1)-bf(i1))/2.d0)*xsj2(j1)
+ce                  enddo
+ce               enddo
 !               
                do k=1,nopes
                   if((nope.eq.20).or.(nope.eq.8)) then
@@ -718,17 +864,18 @@ c                  write(*,*) 'tstress ',nelem,kk,t(i1,j1)
                   ff(ipointer+3)=ff(ipointer+3)+shp2(4,k)*
      &              (t(3,1)*xsj2(1)+t(3,2)*xsj2(2)+t(3,3)*xsj2(3))*
      &              weight*dtime
+ce
+ce                  the 9 lines above have to be replaced by the
+ce                  next three
+ce
+ce                  ff(ipointer+1)=ff(ipointer+1)+shp2(4,k)*tm(1)
+ce                  ff(ipointer+2)=ff(ipointer+2)+shp2(4,k)*tm(2)
+ce                  ff(ipointer+3)=ff(ipointer+3)+shp2(4,k)*tm(3)
                enddo
             enddo
             id=id-1
          enddo
       endif
-c      jj1=1
-c      do jj=1,nope
-c         write(*,*) 'force in ec3dv1rhs ',nelem,jj,
-c     &          ff(jj1),ff(jj1+1),ff(jj1+2)
-c         jj1=jj1+3
-c      enddo
 !     
 !     
 !     for axially symmetric and plane stress/strain elements: 

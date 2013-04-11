@@ -705,7 +705,7 @@ c            write(*,*) dg,iloop,dsg,svm,iel,iint
                ep(i)=ep0(i)
             enddo
 !     
-            write(*,*) 'second attempt'
+c            write(*,*) 'second attempt'
 !     
 !     second attempt: root search through interval division
 !     
@@ -930,13 +930,13 @@ c     &                    ' to ',decra(1)/c0
      &              (Pn(4)*r(4)+Pn(5)*r(5)+Pn(6)*r(6))))
 !     
                if(iloop.eq.1) then
-                  write(*,*) 'iloop,dg,fu ',iloop,dg,fu
+c                  write(*,*) 'iloop,dg,fu ',iloop,dg,fu
                   dg1=0.d0
                   fu1=fu
                   iloop=2
                   dg=1.d-10
                   ddg=dg
-	          do i=1,6
+                  do i=1,6
                      ep1(i)=ep(i)
                      r1(i)=r(i)
                      sg1(i)=sg(i)
@@ -946,7 +946,7 @@ c     &                    ' to ',decra(1)/c0
                   enddo
                elseif((iloop.eq.2).or.(iloop.lt.0)) then
                   if(fu*fu1.lt.0.d0) then
-                     write(*,*) 'iloop,dg,fu ',iloop,dg,fu
+c                     write(*,*) 'iloop,dg,fu ',iloop,dg,fu
                      if(iloop.eq.2) then
                         iloop=3
                      else
@@ -956,7 +956,7 @@ c     &                    ' to ',decra(1)/c0
                      dg2=dg
                      dg=(dg1+dg2)/2.d0
                      ddg=(dg2-dg1)/2.d0
-	      	     do i=1,6
+                     do i=1,6
                         ep(i)=ep1(i)
                         r(i)=r1(i)
                         sg(i)=sg1(i)
@@ -965,7 +965,7 @@ c     &                    ' to ',decra(1)/c0
                         enddo
                      enddo
                   else
-                     write(*,*) 'iloop,dg,fu ',iloop,dg,fu
+c                     write(*,*) 'iloop,dg,fu ',iloop,dg,fu
 c                     dg1=dg
 c                     fu1=fu
                      if(iloop.eq.2) then
@@ -986,7 +986,7 @@ c                     fu1=fu
                         write(*,*) '        dg>10.'
                         stop
                      endif
-	      	     do i=1,6
+                     do i=1,6
                         ep1(i)=ep(i)
                         r1(i)=r(i)
                         sg1(i)=sg(i)
@@ -996,13 +996,13 @@ c                     fu1=fu
                      enddo
                   endif
                else
-                  write(*,*) 'iloop,dg,fu ',iloop,dg,fu
+c                  write(*,*) 'iloop,dg,fu ',iloop,dg,fu
                   if(fu*fu1.ge.0.d0) then
                      dg1=dg
                      fu1=fu
                      dg=(dg1+dg2)/2.d0
                      ddg=(dg2-dg1)/2.d0
-	      	     do i=1,6
+                     do i=1,6
                         ep1(i)=ep(i)
                         r1(i)=r(i)
                         sg1(i)=sg(i)
@@ -1010,13 +1010,13 @@ c                     fu1=fu
                            gl1(i,j)=gl(i,j)
                         enddo
                      enddo
-	             iloop=-iloop-1
+                     iloop=-iloop-1
                   else
                      dg2=dg
                      fu2=fu
                      dg=(dg1+dg2)/2.d0
                      ddg=(dg2-dg1)/2.d0
-	      	     do i=1,6
+                     do i=1,6
                         ep(i)=ep1(i)
                         r(i)=r1(i)
                         sg(i)=sg1(i)

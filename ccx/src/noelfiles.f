@@ -17,24 +17,26 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine noelfiles(inpc,textpart,jout,filab,nmethod,
-     &  nodefile_flag,elfile_flag,node_flag,nener,ithermal,
+     &  nodefile_flag,elfile_flag,ifile_output,nener,ithermal,
      &  istep,istat,n,iline,ipol,inl,ipoinp,inp,out3d,nlabel,
-     &  amname,nam,itpamp,idrct,ipoinpc)
+     &  amname,nam,itpamp,idrct,ipoinpc,cfd,contactfile_flag)
 !
-!     reading the *NODE FILE and *EL FILE cards in the input deck
+!     reading the *NODE FILE, *EL FILE and *CONTACT FILE cards in the 
+!     input deck
 !
       implicit none
 !
-      logical node_flag,nodefile_flag,elfile_flag,out3d,sectionforces
+      logical nodefile_flag,elfile_flag,out3d,sectionforces,
+     &  contactfile_flag
 !
       character*1 nodesys,elemsys,inpc(*)
       character*6 filab(*)
       character*80 amname(*),timepointsname
       character*132 textpart(16)
 !
-      integer istep,istat,n,key,ii,jout,joutl,nmethod,nener,ithermal,
+      integer istep,istat,n,key,ii,jout(2),joutl,nmethod,nener,ithermal,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),j,nlabel,nam,itpamp,i,
-     &  idrct,ipoinpc(0:*)
+     &  idrct,ipoinpc(0:*),cfd,ifile_output
 !
       save sectionforces
 !
@@ -42,17 +44,18 @@
       elemsys='L'
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in noelfiles: *NODE FILE and *EL FILE'
+         write(*,*) '*ERROR in noelfiles: *NODE FILE, *EL FILE'
+         write(*,*) '       *CONTACT FILE'
          write(*,*) '       should only be used within a *STEP' 
          write(*,*) '       definition'
          stop
       endif
 !
-      if(node_flag) then
+      if(ifile_output.eq.1) then
 !
 !        reset the nodal print requests
 !
-         if(.not.nodefile_flag) then
+         if(ifile_output.eq.1) then
             filab(1)(1:4)='    '
             filab(2)(1:4)='    '
             filab(5)(1:4)='    '
@@ -60,6 +63,10 @@
                filab(j)(1:4)='    '
             enddo
             do j=14,17
+               filab(j)(1:4)='    '
+            enddo
+            filab(19)(1:4)='    '
+            do j=21,25
                filab(j)(1:4)='    '
             enddo
 !
@@ -72,8 +79,12 @@
             do j=14,17
                filab(j)(6:6)=' '
             enddo
+            filab(19)(6:6)=' '
+            do j=21,25
+               filab(j)(6:6)=' '
+            enddo
          endif
-      else
+      elseif(ifile_output.eq.2) then
 !
 !        reset the element print requests
 !
@@ -84,6 +95,8 @@
                filab(j)(1:4)='    '
             enddo
             filab(13)(1:4)='    '
+            filab(18)(1:4)='    '
+            filab(20)(1:4)='    '
 !
             filab(3)(6:6)=' '
             filab(4)(6:6)=' '
@@ -91,8 +104,18 @@
                filab(j)(6:6)=' '
             enddo
             filab(13)(6:6)=' '
+            filab(18)(6:6)=' '
+            filab(20)(6:6)=' '
 !
             sectionforces=.false.
+         endif
+      elseif(ifile_output.eq.3)then
+!
+!     reset the contact print requests
+!         
+         if(.not.contactfile_flag) then
+            filab(26)(1:4)='    '
+            filab(26)(6:6)='    '
          endif
       endif
 !
@@ -107,7 +130,24 @@
                  if((key.eq.1).or.(istat.lt.0)) return
               enddo
            endif
-           if(joutl.gt.0) jout=joutl
+           if(joutl.gt.0) then
+              jout(1)=joutl
+              itpamp=0
+           endif
+        elseif(textpart(ii)(1:11).eq.'FREQUENCYF=') then
+           read(textpart(ii)(12:21),'(i10)',iostat=istat) joutl
+           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+           if(joutl.eq.0) then
+              do
+                 call getnewline(inpc,textpart,istat,n,key,iline,ipol,
+     &                inl,ipoinp,inp,ipoinpc)
+                 if((key.eq.1).or.(istat.lt.0)) return
+              enddo
+           endif
+           if(joutl.gt.0) then
+              jout(2)=joutl
+              itpamp=0
+           endif
         elseif(textpart(ii)(1:10).eq.'GLOBAL=YES') then
            nodesys='G'
            elemsys='G'
@@ -151,6 +191,8 @@
               write(*,*) '       specification'
               stop
            endif
+           jout(1)=1
+           jout(2)=1
         endif
       enddo
 !
@@ -174,27 +216,27 @@
             elseif(textpart(ii)(1:4).eq.'RF  ') then
                filab(5)(1:4)='RF  '
                filab(5)(6:6)=nodesys
-            elseif(textpart(ii)(1:4).eq.'PE  ') then
+            elseif(textpart(ii)(1:4).eq.'PEEQ') then
                if((nmethod.eq.2).or.(nmethod.eq.3)) then
-                  write(*,*) '*WARNING in noelfiles: selection of PE'
+                  write(*,*) '*WARNING in noelfiles: selection of PEEQ'
                   write(*,*) '         does not make sense for a'
                   write(*,*) '         frequency or bucking calculation'
                else
-                  filab(6)(1:4)='PE  '
+                  filab(6)(1:4)='PEEQ'
                   filab(6)(6:6)=elemsys
                endif
-            elseif(textpart(ii)(1:4).eq.'CE  ') then
-               textpart(ii)(1:2)='PE'
+            elseif(textpart(ii)(1:4).eq.'CEEQ') then
+               textpart(ii)(1:4)='PEEQ'
                if((nmethod.eq.2).or.(nmethod.eq.3)) then
-                  write(*,*) '*WARNING in noelfiles: selection of CE'
+                  write(*,*) '*WARNING in noelfiles: selection of CEEQ'
                   write(*,*) '         does not make sense for a'
                   write(*,*) '         frequency or bucking calculation'
                else
-                  write(*,*) '*WARNING in elprints: selection of CE'
-                  write(*,*) '         is converted into PE; no distinct
-     &ion'
-                  write(*,*) '        is made between PE and CE'
-                  filab(6)(1:4)='PE  '
+                  write(*,*) '*WARNING in elprints: selection of CEEQ'
+                  write(*,*) '         is converted into PEEQ; no distin
+     &ction'
+                  write(*,*) '        is made between PEEQ and CEEQ'
+                  filab(6)(1:4)='PEEQ'
                   filab(6)(6:6)=elemsys
                endif
             elseif(textpart(ii)(1:4).eq.'ENER') then
@@ -212,7 +254,7 @@
                endif
             elseif(textpart(ii)(1:4).eq.'HFL ') then
                if(ithermal.le.1) then
-                  write(*,*) '*WARNING in nodeprints: HFL only makes '
+                  write(*,*) '*WARNING in noelfiles: HFL only makes '
                   write(*,*) '         sense for heat transfer '
                   write(*,*) '          calculations'
                else
@@ -222,7 +264,7 @@ c                  if(.not.out3d) filab(9)(5:5)='I'
                endif
             elseif(textpart(ii)(1:4).eq.'RFL ') then
                if(ithermal.le.1) then
-                  write(*,*) '*WARNING in nodeprints: RFL only makes '
+                  write(*,*) '*WARNING in noelfiles: RFL only makes '
                   write(*,*) '         sense for heat transfer '
                   write(*,*) '          calculations'
                else
@@ -230,7 +272,13 @@ c                  if(.not.out3d) filab(9)(5:5)='I'
                   filab(10)(6:6)=nodesys
                endif
             elseif(textpart(ii)(1:4).eq.'PU  ') then
-               filab(11)(1:4)='PU  '
+               if((nmethod.ne.2).and.(nmethod.ne.5)) then
+                  write(*,*) '*WARNING in noelfiles: PU only makes'
+                  write(*,*) '         sense for frequency and steady'
+                  write(*,*) '         state dynamics calculations'
+               else
+                  filab(11)(1:4)='PU  '
+               endif
             elseif(textpart(ii)(1:4).eq.'PNT ') then
                filab(12)(1:4)='PNT '
             elseif(textpart(ii)(1:3).eq.'ZZS') then
@@ -249,14 +297,78 @@ c                  if(.not.out3d) filab(9)(5:5)='I'
                filab(17)(1:4)='TS  '
                filab(17)(6:6)=nodesys
             elseif(textpart(ii)(1:4).eq.'PHS ') then
-               filab(18)(1:4)='PHS '
-               filab(18)(6:6)=elemsys
+               if(nmethod.ne.2) then
+                  write(*,*) '*WARNING in noelfiles: PHS only makes'
+                  write(*,*) '         sense for frequency calculations'
+               else
+                  filab(18)(1:4)='PHS '
+                  filab(18)(6:6)=elemsys
+               endif
             elseif(textpart(ii)(1:4).eq.'MAXU') then
-               filab(19)(1:4)='MAXU'
-               filab(19)(6:6)=nodesys
+               if(nmethod.ne.2) then
+                  write(*,*) '*WARNING in noelfiles: MAXU only makes'
+                  write(*,*) '         sense for frequency calculations'
+               else
+                  filab(19)(1:4)='MAXU'
+                  filab(19)(6:6)=nodesys
+               endif
             elseif(textpart(ii)(1:4).eq.'MAXS') then
-               filab(20)(1:4)='MAXS'
-               filab(20)(6:6)=elemsys
+               if(nmethod.ne.2) then
+                  write(*,*) '*WARNING in noelfiles: MAXS only makes'
+                  write(*,*) '         sense for frequency calculations'
+               else
+                  filab(20)(1:4)='MAXS'
+                  filab(20)(6:6)=elemsys
+               endif
+            elseif(textpart(ii)(1:4).eq.'V   ') then
+                if((nmethod.eq.1).or.(nmethod.eq.4)) then
+                   filab(21)(1:4)='V   '
+                   filab(21)(6:6)=nodesys
+                else
+                   write(*,*) '*WARNING in noelfiles: V only available'
+                   write(*,*) '         for dynamic calculations and'
+                   write(*,*) '         steady state fluid calculations'
+                endif
+            elseif(textpart(ii)(1:4).eq.'PS  ') then
+               if(cfd.eq.0) then
+                  write(*,*) '*WARNING in noelfiles: PS only makes'
+                  write(*,*) '         sense for 3D fluid calculations'
+               else
+                  filab(22)(1:4)='PS  '
+                  filab(22)(6:6)=nodesys
+               endif
+            elseif(textpart(ii)(1:4).eq.'MACH') then
+               if(cfd.eq.0) then
+                  write(*,*) '*WARNING in noelfiles: MACH only makes'
+                  write(*,*) '         sense for 3D fluid calculations'
+               else
+                  filab(23)(1:4)='MACH'
+                  filab(23)(6:6)=nodesys
+               endif
+            elseif(textpart(ii)(1:4).eq.'CP  ') then
+               if(cfd.eq.0) then
+                  write(*,*) '*WARNING in noelfiles: CP only makes'
+                  write(*,*) '         sense for 3D fluid calculations'
+               else
+                  filab(24)(1:4)='CP  '
+                  filab(24)(6:6)=nodesys
+               endif
+            elseif(textpart(ii)(1:4).eq.'TURB') then
+               if(cfd.eq.0) then
+                  write(*,*) '*WARNING in noelfiles: TURB only makes'
+                  write(*,*) '         sense for 3D fluid calculations'
+               else
+                  filab(25)(1:4)='TURB'
+                  filab(25)(6:6)=nodesys
+               endif
+            elseif((textpart(ii)(1:4).eq.'CSTR').or.
+     &             (textpart(ii)(1:4).eq.'CDIS')) then
+               filab(26)(1:4)='CONT'
+               filab(26)(6:6)=nodesys
+            elseif(textpart(ii)(1:4).eq.'CELS') then
+               filab(27)(1:4)='CELS'
+               filab(27)(6:6)=nodesys
+               nener=1
             else
                write(*,*) '*WARNING in noelfiles: label not applicable'
                write(*,*) '         or unknown; '

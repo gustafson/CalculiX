@@ -39,7 +39,7 @@
 !        stop
 !     endif
 !
- 100  format(4(1x,i5),3(1x,e10.3))
+ 100  format(4(1x,i5),3(1x,e13.6))
 !
       return
       end

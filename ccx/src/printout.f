@@ -1,4 +1,4 @@
-!
+
 !     CalculiX - A 3-dimensional finite element program
 !              Copyright (C) 1998-2007 Guido Dhondt
 !
@@ -19,11 +19,13 @@
       subroutine printout(set,nset,istartset,iendset,ialset,nprint,
      &  prlab,prset,v,t1,fn,ipkon,lakon,stx,eme,xstate,ener,
      &  mint_,nstate_,ithermal,co,kon,qfx,ttime,trab,inotr,ntrans,
-     &  orab,ielorien,norien,nk,ne,inum,filab)
+     &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin)
 !
 !     stores results in the .dat file
 !
       implicit none
+!
+      logical force
 !
       character*1 cflag
       character*6 prlab(*),filab(*)
@@ -32,14 +34,14 @@
       character*81 set(*),prset(*)
 !
       integer nset,istartset(*),iendset(*),ialset(*),nprint,ipkon(*),
-     &  mint_,nstate_,k,ii,jj,iset,l,lb,limit,node,ipos,ithermal,
+     &  mint_,nstate_,ii,jj,iset,l,lb,limit,node,ipos,ithermal,
      &  nelem,kon(*),inotr(2,*),ntrans,ielorien(*),norien,nk,ne,
-     &  inum(*),nfield
+     &  inum(*),nfield,ikin,nodes,ne0,nope
 !
       real*8 v(0:4,*),t1(*),fn(0:3,*),stx(6,mint_,*),
      &  eme(6,mint_,*),xstate(nstate_,mint_,*),ener(mint_,*),energytot,
      &  volumetot,co(3,*),qfx(3,mint_,*),rftot(0:3),ttime,
-     &  trab(7,*),orab(7,*)
+     &  trab(7,*),orab(7,*),vold(0:4,*),enerkintot
 !
 !     interpolation in the original nodes of 1d and 2d elements
 !
@@ -48,9 +50,10 @@
      &      ((prlab(ii)(1:4).eq.'NT  ').and.(ithermal.gt.1))) then
             if(filab(1)(5:5).ne.' ') then
                nfield=5
-               cflag=filab(1)(5:5)
+               cflag=' '
+               force=.false.
                call map3dto1d2d(v,ipkon,inum,kon,lakon,nfield,nk,
-     &              ne,cflag,co)
+     &              ne,cflag,co,vold,force)
             endif
             exit
           endif
@@ -59,30 +62,35 @@
          if((prlab(ii)(1:4).eq.'NT  ').and.(ithermal.le.1)) then
             if(filab(2)(5:5).ne.' ') then
                nfield=1
-               cflag=filab(2)(5:5)
+               cflag=' '
+               force=.false.
                call map3dto1d2d(t1,ipkon,inum,kon,lakon,nfield,nk,
-     &              ne,cflag,co)
+     &              ne,cflag,co,vold,force)
             endif
             exit
           endif
       enddo
-c      do ii=1,nprint
-c         if(prlab(ii)(1:2).eq.'RF') then
-c            if(filab(1)(5:5).ne.' ') then
-c               nfield=4
-c               call map3dto1d2d(fn,ipkon,inum,kon,lakon,nfield,nk,
-c     &              ne,cflag,co)
-c            endif
-c            exit
-c          endif
-c      enddo
+      do ii=1,nprint
+         if(prlab(ii)(1:2).eq.'RF') then
+            if(filab(1)(5:5).ne.' ') then
+               nfield=4
+               cflag=' '
+               force=.true.
+               call map3dto1d2d(fn,ipkon,inum,kon,lakon,nfield,nk,
+     &              ne,cflag,co,vold,force)
+            endif
+            exit
+          endif
+      enddo
 !
       do ii=1,nprint
 !
 !        nodal values
 !
          if((prlab(ii)(1:4).eq.'U   ').or.(prlab(ii)(1:4).eq.'NT  ').or.
-     &      (prlab(ii)(1:4).eq.'RF  ').or.(prlab(ii)(1:4).eq.'RFL ')) 
+     &      (prlab(ii)(1:4).eq.'RF  ').or.(prlab(ii)(1:4).eq.'RFL ').or. 
+     &      (prlab(ii)(1:4).eq.'PS  ').or.(prlab(ii)(1:4).eq.'PT  ').or.
+     &      (prlab(ii)(1:4).eq.'MF  ').or.(prlab(ii)(1:4).eq.'V   ')) 
      &      then
 !
             ipos=index(prset(ii),' ')
@@ -114,6 +122,27 @@ c      enddo
                write(5,*)
                write(5,103) noset(1:ipos-2),ttime
  103           format(' heat generation for set ',A,' and time ',e14.7)
+               write(5,*)
+            elseif(prlab(ii)(1:4).eq.'PS  ') then
+               write(5,*)
+               write(5,115) noset(1:ipos-2),ttime
+ 115           format(' static pressures for set ',A,' and time ',e14.7)
+               write(5,*)
+            elseif(prlab(ii)(1:4).eq.'PT  ') then
+               write(5,*)
+               write(5,117) noset(1:ipos-2),ttime
+ 117           format(' total pressures for set ',A,' and time ',e14.7)
+               write(5,*)
+            elseif(prlab(ii)(1:4).eq.'MF  ') then
+               write(5,*)
+               write(5,118) noset(1:ipos-2),ttime
+ 118           format(' mass flows for set ',A,' and time ',e14.7)
+               write(5,*)
+            elseif(prlab(ii)(1:4).eq.'V   ') then
+               write(5,*)
+               write(5,119) noset(1:ipos-2),ttime
+ 119           format(' velocities (vx,vy,vz) for set ',A,
+     &             ' and time ',e14.7)
                write(5,*)
             endif
 !
@@ -168,7 +197,7 @@ c      enddo
 !
          elseif((prlab(ii)(1:4).eq.'S   ').or.
      &          (prlab(ii)(1:4).eq.'E   ').or.
-     &          (prlab(ii)(1:4).eq.'PE  ').or.
+     &          (prlab(ii)(1:4).eq.'PEEQ').or.
      &          (prlab(ii)(1:4).eq.'ENER').or.
      &          (prlab(ii)(1:4).eq.'SDV ').or.
      &          (prlab(ii)(1:4).eq.'HFL ')) then
@@ -177,13 +206,7 @@ c      enddo
             elset='                    '
             elset(1:ipos-1)=prset(ii)(1:ipos-1)
 !
-!           for SDV more than six columns result
-!
-            if(prlab(ii)(1:4).eq.'SDV ') then
-               limit=(nstate_+5)/6
-            else
-               limit=1
-            endif
+            limit=1
 !
             do l=1,limit
 !
@@ -201,7 +224,7 @@ c      enddo
  107              format(' strains (elem, integ.pnt.,exx,eyy,ezz,exy,exz
      &,eyz) forset ',A,' and time ',e14.7)
                   write(5,*)
-               elseif(prlab(ii)(1:4).eq.'PE  ') then
+               elseif(prlab(ii)(1:4).eq.'PEEQ') then
                   write(5,*)
                   write(5,108) elset(1:ipos-2),ttime
  108              format(' equivalent plastic strain (elem, integ.pnt.,p 
@@ -210,26 +233,20 @@ c      enddo
                elseif(prlab(ii)(1:4).eq.'ENER') then
                   write(5,*)
                   write(5,109) elset(1:ipos-2),ttime
- 109              format(' energy density (elem, integ.pnt.,energy) for 
+ 109              format(' internal energy density (elem, integ.pnt.,energy) for 
      &set ',A,' and time ',e14.7)
                   write(5,*)
                elseif(prlab(ii)(1:4).eq.'SDV ') then
-                  lb=(l-1)*6
                   write(5,*)
-                  if(l.eq.(nstate_+5)/6) then
-                     write(5,300) (lb+k,k=1,nstate_-lb)
-                  else
-                     write(5,300) (lb+k,k=1,6)
-                  endif
- 300              format(' internal state variables (elem, integ.pnt.,',
-     &                    6(i2),')')
-                  write(5,110) elset,ttime
- 110              format(' for set ',A,' and time ',e14.7)
+                  write(5,111) elset(1:ipos-2),ttime
+ 111              format
+     &           (' internal state variables (elem, integ.pnt.,values) f
+     &or set ',A,' and time ',e14.7)
                   write(5,*)
                elseif(prlab(ii)(1:4).eq.'HFL ') then
                   write(5,*)
-                  write(5,111) elset(1:ipos-2),ttime
- 111              format(' heat flux (elem, integ.pnt.,qx,qy,qz) for set 
+                  write(5,112) elset(1:ipos-2),ttime
+ 112              format(' heat flux (elem, integ.pnt.,qx,qy,qz) for set 
      & ',A,' and time ',e14.7)
                   write(5,*)
                endif
@@ -264,76 +281,152 @@ c      enddo
             enddo
 !
 !        whole element values
-!
+!     
          elseif((prlab(ii)(1:4).eq.'ELSE').or.
-     &          (prlab(ii)(1:4).eq.'EVOL')) then
-!
-            ipos=index(prset(ii),' ')
-            elset='                    '
-            elset(1:ipos-1)=prset(ii)(1:ipos-1)
-!
-!           printing the header
-!
+     &           (prlab(ii)(1:4).eq.'ELKE').or.
+     &           (prlab(ii)(1:4).eq.'EVOL').or.
+     &           (prlab(ii)(1:4).eq.'CSTR').or.
+     &           (prlab(ii)(1:4).eq.'CDIS').or.
+     &           (prlab(ii)(1:4).eq.'CELS')) then
+!     
+                 ipos=index(prset(ii),' ')
+                 elset='                    '
+                 elset(1:ipos-1)=prset(ii)(1:ipos-1)
+!     
+!     printing the header
+!     
             if((prlab(ii)(1:5).eq.'ELSE ').or.
-     &         (prlab(ii)(1:5).eq.'ELSET')) then
+     &                (prlab(ii)(1:5).eq.'ELSET')) then
                write(5,*)
-               write(5,112) elset(1:ipos-2),ttime
- 112           format(' energy (element, energy) for set ',A,
-     &                ' and time ',e14.7)
+               write(5,113) elset(1:ipos-2),ttime
+ 113           format(' internal energy (element, energy) for set ',A,
+     &              ' and time ',e14.7)
+               write(5,*)
+            elseif((prlab(ii)(1:5).eq.'ELKE ').or.
+     &              (prlab(ii)(1:5).eq.'ELKET')) then
+               write(5,*)
+               write(5,110) elset(1:ipos-2),ttime
+ 110           format(' kinetic energy (elem, energy) for set '
+     &              ,A,' and time ',e14.7)
                write(5,*)
             elseif((prlab(ii)(1:5).eq.'EVOL ').or.
      &             (prlab(ii)(1:5).eq.'EVOLT')) then
                write(5,*)
-               write(5,113) elset(1:ipos-2),ttime
- 113           format(' volume (element, volume) for set ',A,
+               write(5,114) elset(1:ipos-2),ttime
+ 114           format(' volume (element, volume) for set ',A,
      &                ' and time ',e14.7)
                write(5,*)
+            elseif((prlab(ii)(1:5).eq.'CSTR ').or.
+     &              (prlab(ii)(1:5).eq.'CSTRT')) then
+               write(5,*)
+               write(5,122) ttime
+ 122           format(' contact stress (slave node,press,'
+     &              'tang1,tang2) for all contact elements and time',
+     &              e14.7)
+               write(5,*)
+            elseif((prlab(ii)(1:5).eq.'CDIS ').or.
+     &              (prlab(ii)(1:5).eq.'CDIST')) then
+               write(5,*)
+               write(5,123) ttime
+ 123           format(' relative contact displacement (slave node,'
+     &              'normal,tang1,tang2) for all contact elements and '
+     &              'time',e14.7)
+               write(5,*)
+            elseif((prlab(ii)(1:5).eq.'CELS ').or.
+     &              (prlab(ii)(1:5).eq.'CELST')) then
+               write(5,*)
+               write(5,124) ttime
+ 124           format(' contact print energy (slave node,energy) for'  
+     &              'all contact elements and time',e14.7)
+               write(5,*)
             endif
-!
-!           printing the data
-!
-            do iset=1,nset
-               if(set(iset).eq.prset(ii)) exit
-            enddo
+!     
+!     printing the data
+!     
+            
             volumetot=0.d0
             energytot=0.d0
-            do jj=istartset(iset),iendset(iset)
-               if(ialset(jj).lt.0) cycle
-               if(jj.eq.iendset(iset)) then
-                  nelem=ialset(jj)
+            enerkintot=0.d0
+            
+            if ((prlab(ii)(1:4).eq.'CSTR').or.
+     &           (prlab(ii)(1:4).eq.'CDIS').or.
+     &           (prlab(ii)(1:4).eq.'CELS')) then
+!     
+               do jj=ne,1,-1
+                  if((lakon(jj)(2:2).ne.'S').or.
+     &                 (lakon(jj)(7:7).ne.'C')) then
+                     ne0=jj+1
+                     exit
+                  endif
+               enddo
+               do nelem=ne0,ne
+                  read(lakon(nelem)(8:8),'(i1)') nope
+                  nodes=kon(ipkon(nelem)+nope)
                   call printoutelem(prlab,ipkon,lakon,kon,co,
-     &                 ener,mint_,ii,nelem,energytot,volumetot)
-               elseif(ialset(jj+1).gt.0) then
-                  nelem=ialset(jj)
-                  call printoutelem(prlab,ipkon,lakon,kon,co,
-     &                 ener,mint_,ii,nelem,energytot,volumetot)
-               else
-                  do nelem=ialset(jj-1)-ialset(jj+1),ialset(jj),
-     &                 -ialset(jj+1)
+     &                 ener,mint_,ii,nelem,energytot,volumetot,
+     &                 enerkintot,ikin,ne,stx,nodes)
+               enddo
+            else
+               do iset=1,nset
+                  if(set(iset).eq.prset(ii)) exit
+               enddo
+               do jj=istartset(iset),iendset(iset)
+                  if(ialset(jj).lt.0) cycle
+                  if(jj.eq.iendset(iset)) then
+                     nelem=ialset(jj)
                      call printoutelem(prlab,ipkon,lakon,kon,co,
-     &                    ener,mint_,ii,nelem,energytot,volumetot)
-                  enddo
-               endif
-            enddo
-!
+     &                    ener,mint_,ii,nelem,energytot,volumetot,
+     &                    enerkintot,ikin,ne,stx,nodes)
+                  elseif(ialset(jj+1).gt.0) then
+                     nelem=ialset(jj)
+                     call printoutelem(prlab,ipkon,lakon,kon,co,
+     &                    ener,mint_,ii,nelem,energytot,volumetot,
+     &                    enerkintot,ikin,ne,stx,nodes)
+                  else
+                     do nelem=ialset(jj-1)-ialset(jj+1),ialset(jj),
+     &                    -ialset(jj+1)
+                        call printoutelem(prlab,ipkon,lakon,kon,co,
+     &                       ener,mint_,ii,nelem,energytot,volumetot,
+     &                    enerkintot,ikin,ne,stx,nodes)
+                     enddo
+                  endif
+               enddo
+            endif
+!     
 !     writing total values to file
-!
+!     
             if((prlab(ii)(1:5).eq.'ELSEO').or.
      &           (prlab(ii)(1:5).eq.'ELSET')) then
                write(5,*)
-               write(5,114) elset(1:ipos-2),ttime
- 114           format(' total energy for set ',A,' and time ',e14.7)
+               write(5,116) elset(1:ipos-2),ttime
+ 116           format(' total internal energy for set ',A,' and time ',
+     &              e14.7)
                write(5,*)
                write(5,'(6x,1p,1x,e11.4)') energytot
+            elseif((prlab(ii)(1:5).eq.'ELKEO').or.
+     &              (prlab(ii)(1:5).eq.'ELKET')) then
+               write(5,*)
+               write(5,120) elset(1:ipos-2),ttime
+ 120           format(' total kinetic energy for set ',A,' and time ',
+     &              e14.7)
+               write(5,*)
+               write(5,'(6x,1p,1x,e11.4)') enerkintot
             elseif((prlab(ii)(1:5).eq.'EVOLO').or.
      &              (prlab(ii)(1:5).eq.'EVOLT')) then
                write(5,*)
-               write(5,116) elset(1:ipos-2),ttime
- 116           format(' total volume for set ',A,' and time ',e14.7)
+               write(5,121) elset(1:ipos-2),ttime
+ 121           format(' total volume for set ',A,' and time ',e14.7)
                write(5,*)
                write(5,'(6x,1p,1x,e11.4)') volumetot
+            elseif((prlab(ii)(1:5).eq.'CELSO').or.
+     &              (prlab(ii)(1:5).eq.'CELST')) then
+               write(5,*)
+               write(5,125) ttime
+ 125           format(' total contact spring energy for time ',e14.7)
+               write(5,*)
+               write(5,'(6x,1p,1x,e11.4)') energytot
+!     
             endif
-!
          endif
       enddo
 !                     

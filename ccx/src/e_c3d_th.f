@@ -22,7 +22,8 @@
      &  sideload,xload,nload,idist,iexpl,dtime,
      &  matname,mint_,mass,stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
-     &  xstiff,xloadold,reltime)
+     &  xstiff,xloadold,reltime,
+     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -45,24 +46,24 @@
 !
       integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nelem,nmethod,
      &  mattyp,ithermal,iperturb,nload,idist,i,j,k,i1,j1,l,m,
-     &  ii,jj,id,ipointer,ig,kk,istiff,iperm(20),
-     &  nrhcon(*),ielmat(*),ielorien(*),
-     &  ntmat_,nope,nopes,norien,iexpl,imat,mint2d,
-     &  mint3d,mint_,ifacet(6,4),nopev,iorien,
+     &  ii,jj,id,ipointer,ig,kk,istiff,iperm(20),ipompc(*),
+     &  nrhcon(*),ielmat(*),ielorien(*),nodempc(3,*),nmpc,
+     &  ntmat_,nope,nopes,norien,iexpl,imat,mint2d,ikmpc(*),
+     &  mint3d,mint_,ifacet(6,4),nopev,iorien,ilmpc(*),
      &  ifacew(8,5),intscheme,ipointeri,ipointerj,ncocon(2,*),
-     &  nshcon(*),iinc,istep,jltyp,nfield,node,iflag
+     &  nshcon(*),iinc,istep,jltyp,nfield,node,iflag,iscale
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xstiff(27,mint_,*),
-     &  s(60,60),w(3,3),ff(60),shpj(4,20),sinktemp,xs2(3,2),
+     &  s(60,60),w(3,3),ff(60),shpj(4,20),sinktemp,xs2(3,7),
      &  rhcon(0:1,ntmat_,*),dxsj2,temp,press,xloadold(2,*),
      &  orab(7,*),t0(*),t1(*),coords(3),c1,c2,reltime,
-     &  xl2(0:3,8),xsj2(3),shp2(4,8),vold(0:4,*),xload(2,*),
+     &  xl2(0:3,8),xsj2(3),shp2(7,8),vold(0:4,*),xload(2,*),
      &  xi,et,ze,xsj,xsjj,sm(60,60),t1l,rho,summass,summ,ttime,time,
      &  sume,factorm,factore,alp,weight,pgauss(3),tvar(2),
      &  cocon(0:6,ntmat_,*),shcon(0:3,ntmat_,*),sph,coconloc(6),
-     &  field,areaj,sax(60,60),ffax(60)
+     &  field,areaj,sax(60,60),ffax(60),coefmpc(*)
 !
-      real*8 dtime,physcon(3)
+      real*8 dtime,physcon(*)
 !
       include "gauss.f"
 !
@@ -454,20 +455,21 @@ c     &                 weight
                      cycle
                   endif
                   if(sideload(id)(3:4).eq.'NU') then
-                     if(iorien.le.0) then
-                        do j=1,3
-                           pgauss(j)=0.d0
-                           do i1=1,nope
-                              pgauss(j)=pgauss(j)+
+                     do j=1,3
+                        pgauss(j)=0.d0
+                        do i1=1,nope
+                           pgauss(j)=pgauss(j)+
      &                          shp(4,i1)*xl(j,i1)
-                           enddo
                         enddo
-                     endif
+                     enddo
                      jltyp=1
+                     iscale=1
                      call dflux(xload(1,id),t1l,istep,iinc,tvar,
      &                 nelem,kk,pgauss,jltyp,temp,press,sideload(id),
-     &                 areaj,vold)
-                     if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &                 areaj,vold,co,lakonl,konl,ipompc,nodempc,coefmpc,
+     &                 nmpc,ikmpc,ilmpc,iscale)
+                     if((nmethod.eq.1).and.(iscale.ne.0))
+     &                    xload(1,id)=xloadold(1,id)+
      &                   (xload(1,id)-xloadold(1,id))*reltime
                   endif
                   do jj=1,nope
@@ -544,6 +546,15 @@ c         endif
              enddo
           endif
 !
+!         storing envnode values into xload for non-cavity
+!         radiation
+!
+          if((sideload(id)(1:1).eq.'R').and.
+     &       (sideload(id)(3:4).ne.'CR').and.
+     &       (nelemload(2,id).gt.0)) then
+             xload(2,id)=vold(0,nelemload(2,id))-physcon(1)
+          endif
+!
           do i=1,mint2d
 !
 !            copying the sink temperature to ensure the same
@@ -613,10 +624,13 @@ c         endif
                 read(sideload(id)(2:2),'(i1)') jltyp
                 jltyp=jltyp+10
                 if(sideload(id)(1:1).eq.'S') then
+                   iscale=1
                    call dflux(xload(1,id),temp,istep,iinc,tvar,
      &               nelem,i,coords,jltyp,temp,press,sideload(id),
-     &               areaj,vold)
-                   if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &               areaj,vold,co,lakonl,konl,
+     &               ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,iscale)
+                   if((nmethod.eq.1).and.(iscale.ne.0))
+     &                   xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime
                 elseif(sideload(id)(1:1).eq.'F') then
 c                   write(*,*) 'nonuniform'

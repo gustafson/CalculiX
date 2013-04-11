@@ -16,18 +16,32 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      real*8 function fsub(time,t,a,b,dd,h1,h2,h3,h4)
+      subroutine fsub(time,t,a,b,dd,h1,h2,h3,h4,func,funcp)
 !
       implicit none
 !
-      real*8 time,t,a,b,dd,h1,h2,h3,h4,h5,h6,h7
+      real*8 time,t,a,b,dd,h1,h2,h3,h4,fexp,fsin,fcos,func,funcp,
+     &  h8,h9,h10,h11,h12,h13
 !
-      h5=dexp(-h1*t)
-      h6=dsin(dd*t)
-      h7=dcos(dd*t)
+      fexp=dexp(-h1*t)
+      fsin=dsin(dd*t)
+      fcos=dcos(dd*t)
+      h8=(a+b*time)*fexp/h2
+      h9=-b*fexp/h2
+      h10=-h8*h1
+      h11=h8*dd
+      h12=h9*(-h1*t-h3/h2)
+      h13=h9*(dd*t+h4)
 !
-      fsub=(a+b*time)*h5*(-h1*h6-dd*h7)/h2-b*h5/h2*((-h1*t-h3/h2)*
-     &     h6-(dd*t+h4)*h7)
+!     function
+!
+c      fsub=(a+b*time)*fexp*(-h1*fsin-dd*fcos)/h2-b*fexp/h2*((-h1*t-h3/h2)*
+c     &     fsin-(dd*t+h4)*fcos)
+      func=h10*fsin-h11*fcos+h12*fsin-h13*fcos
+!
+!     derivative of the function
+!
+      funcp=-h1*func+dd*(h10*fcos+h11*fsin+h12*fcos+h13*fsin)
 !
       return
       end

@@ -44,7 +44,7 @@
      &  maxsectors,jsector
 !
       real*8 xload(2,*),xbody(7,*),xmagnitude,dd,p1(3),p2(3),bodyf(3),
-     &  xbodyold(7,*),physcon(3),amta(2,*)
+     &  xbodyold(7,*),physcon(*),amta(2,*)
 !
       iamplitude=0
       idelay=0
@@ -195,7 +195,8 @@
          elseif(((label(1:2).ne.'P1').and.(label(1:2).ne.'P2').and.
      &           (label(1:2).ne.'P3').and.(label(1:2).ne.'P4').and.
      &           (label(1:2).ne.'P5').and.(label(1:2).ne.'P6').and.
-     &           (label(1:2).ne.'P ')).or.
+     &           (label(1:2).ne.'P ').and.(label(1:2).ne.'BX').and.
+     &           (label(1:2).ne.'BY').and.(label(1:2).ne.'BZ')).or.
      &          ((label(3:4).ne.'  ').and.(label(3:4).ne.'NU').and.
      &           (label(3:4).ne.'NP'))) then
             call inputerror(inpc,ipoinpc,iline)

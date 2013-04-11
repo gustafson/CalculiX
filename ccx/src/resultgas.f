@@ -45,13 +45,13 @@
      &     inv, index2,nmethod,nelem0,nodem0,nelem1,nodem1,nelem2,
      &     nodem2,nelemswirl
 !     
-      real*8 bc(ntm),xloadact(2,*),cp,h(2),physcon(3),r,dvi,rho,
+      real*8 bc(ntm),xloadact(2,*),cp,h(2),physcon(*),r,dvi,rho,
      &     xl2(0:3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
-     &     gastemp,v(0:4,*),shcon(0:3,ntmat_,*),co(3,*),shp2(4,8),
+     &     gastemp,v(0:4,*),shcon(0:3,ntmat_,*),co(3,*),shp2(7,8),
      &     field,prop(*),tg1,tg2,dtime,ttime,time,g(3),
      &     xforcact(*),areaj,xflow,tvar(2),f,df(5),camt,camf,camp,
      &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,kappa,a,T,Tt,Pt,
-     &     dtheta,ts1,ts2,xs2(3,2),xk1,xk2,xdenom1,xdenom2,expon,pt1,
+     &     dtheta,ts1,ts2,xs2(3,7),xk1,xk2,xdenom1,xdenom2,expon,pt1,
      &     pt2,dt1,dt2,xcst,xnum1,xnum2,Qred_crit,xflow_crit,
      &     xflow0,xflow1,reltime,
      &     xflow2,R1,R2,Rout,Rin,Uout,Uin,heat,pi,

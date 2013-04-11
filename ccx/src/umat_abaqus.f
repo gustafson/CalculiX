@@ -18,8 +18,8 @@
 !
       subroutine umat_abaqus(amat,iel,iint,kode,elconloc,emec,emec0,
      &        beta,xokl,voj,xkl,vj,ithermal,t1l,dtime,time,ttime,
-     &        icmd,ielas,mint_,
-     &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,orab)
+     &        icmd,ielas,mint_,nstate_,xstateini,xstate,stre,stiff,
+     &        iorien,pgauss,orab,kstep,kinc)
 !
 !     calculates stiffness and stresses for a nonlinear material
 !     defined by an ABAQUS umat routine
@@ -114,7 +114,7 @@
 !
 !     Note that the following fields are not supported
 !     so far: sse,spd,scd,rpl,ddsddt,drplde,drpldt,predef,
-!     dpred,drot,pnewdt,celent,layer,kspt,kstep,kinc
+!     dpred,drot,pnewdt,celent,layer,kspt
 !
 !     Furthermore, the following fields have a different meaning in
 !     ABAQUS and CalculiX:
@@ -172,7 +172,7 @@
       enddo
 !
       abqtime(1)=time-dtime
-      abqtime(2)=ttime-dtime
+      abqtime(2)=ttime
 !
       temp=t1l
       dtemp=0.d0

@@ -312,7 +312,7 @@ c                     isol=0
                   ifree=ifree+1
 !
                   write(lakon(ne)(8:8),'(i1)') nnodelem+1
-c                  write(*,*) ne,(nodef(k),k=1,nnodelem),node
+c                  write(*,*) 'new elem',ne,(nodef(k),k=1,nnodelem),node
                endif
 !     
             else
@@ -480,6 +480,7 @@ c                  write(*,*) ne,(nodef(k),k=1,nnodelem),node
                      kon(ifree)=node
                      ifree=ifree+1
                      write(lakon(ne)(8:8),'(i1)') nnodelem+1
+c                  write(*,*) 'new elem',ne,(nodef(k),k=1,nnodelem),node
                   endif
 !     
                enddo

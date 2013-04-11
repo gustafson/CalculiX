@@ -18,7 +18,7 @@
 !
       subroutine extrapolate(yi,yn,ipkon,inum,kon,lakon,nfield,nk,
      &  ne,mint_,ndim,orab,ielorien,co,iorienglob,cflag,nelemload,
-     &  nload,nodeboun,nboun,fluid,ndirboun)
+     &  nload,nodeboun,nboun,fluid,ndirboun,vold,ithermal,force)
 !
 !     extrapolates field values at the integration points to the 
 !     nodes
@@ -28,7 +28,7 @@
 !
       implicit none
 !
-      logical fluid
+      logical fluid,force
 !
       character*1 cflag
       character*8 lakon(*),lakonl
@@ -37,12 +37,12 @@
      &  nonei20(3,12),nfield,nonei10(3,6),nk,i,j,k,l,ndim,
      &  nonei15(3,9),iorienglob,iorien,ielorien(*),konl,
      &  mint3d,m,iflag,nelemload(2,*),nload,node,nboun,
-     &  nodeboun(*),ndirboun(*)
+     &  nodeboun(*),ndirboun(*),ithermal(2)
 !
       real*8 yi(ndim,mint_,*),yn(nfield,*),field(999,20),a8(8,8),
      &  a4(4,4),a27(20,27),a9(6,9),a2(6,2),orab(7,*),co(3,*),
      &  coords(3,27),xi,et,ze,xl(3,20),xsj,shp(4,20),weight,
-     &  yiloc(6,27),a(3,3),b(3,3),c(3,3)
+     &  yiloc(6,27),a(3,3),b(3,3),c(3,3),vold(0:4,*)
 !
       include "gauss.f"
 !
@@ -178,7 +178,9 @@
          indexe=ipkon(i)
          lakonl=lakon(i)
 !
-         if(lakonl(4:4).eq.'2') then
+         if(lakonl(1:1).eq.'F') then
+            cycle
+         elseif(lakonl(4:4).eq.'2') then
             nope=20
          elseif(lakonl(4:4).eq.'8') then
             nope=8
@@ -470,6 +472,7 @@ c     &           inum(kon(indexe+3))=inum(kon(indexe+3))+1
 !        determining the field values in the midside nodes
 !
          if(lakonl(4:6).eq.'20R') then
+c         if(lakonl(4:5).eq.'20') then
             do j=9,20
                do k=1,nfield
                   field(k,j)=(field(k,nonei20(2,j-8))+
@@ -519,7 +522,8 @@ c     &           inum(kon(indexe+3))=inum(kon(indexe+3))+1
 !     finding the solution in the original nodes
 !
       if((cflag.ne.' ').and.(cflag.ne.'E')) then
-         call map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,ne,cflag,co)
+         call map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,ne,cflag,co,
+     &         vold,force)
       endif
 !
 !     printing values for environmental film, radiation and
@@ -535,12 +539,14 @@ c     &           inum(kon(indexe+3))=inum(kon(indexe+3))+1
 !
 !     printing values of prescribed boundary conditions
 !
-      do i=1,nboun
-         node=nodeboun(i)
-         if(inum(node).ne.0) cycle
-         if((cflag.ne.' ').and.(ndirboun(i).eq.3)) cycle
-         inum(node)=1
-      enddo
+      if(ithermal(2).gt.1) then
+         do i=1,nboun
+            node=nodeboun(i)
+            if(inum(node).ne.0) cycle
+            if((cflag.ne.' ').and.(ndirboun(i).eq.3)) cycle
+            inum(node)=1
+         enddo
+      endif
 !
       return
       end

@@ -18,7 +18,7 @@
 !
       subroutine dynresults(nk,v,ithermal,nactdof,vold,nodeboun,
      &  ndirboun,xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,
-     &  b)
+     &  b,bp,veold,dtime)
 !
 !     calculates the displacements or temperatures in a modal dynamics 
 !     calculation
@@ -32,7 +32,7 @@
      &  nboun,nmpc,ist,ndir,node,incrementalmpc,jmin,jmax
 !
       real*8 v(0:4,*),vold(0:4,*),xboun(*),coefmpc(*),
-     &  fixed_disp,b(*)
+     &  fixed_disp,b(*),veold(0:3,*),bp(*),dtime
 !
       if(ithermal.le.1) then
          jmin=1
@@ -107,6 +107,61 @@
             fixed_disp=fixed_disp+vold(ndir,node)
          endif
          v(ndir,node)=fixed_disp
+      enddo
+!
+!     extracting the velocity information from the solution
+!
+      do i=1,nk
+         do j=jmin,jmax
+            if(nactdof(j,i).ne.0) then
+               veold(j,i)=bp(nactdof(j,i))
+            else
+               veold(j,i)=0.d0
+            endif
+         enddo
+      enddo
+!
+!     inserting the boundary conditions
+!
+      do i=1,nboun
+         if(ndirboun(i).gt.3) cycle
+         fixed_disp=xboun(i)
+         veold(ndirboun(i),nodeboun(i))=
+     &            (fixed_disp-vold(ndirboun(i),nodeboun(i)))/dtime
+      enddo
+!
+!     inserting the mpc information
+!     the parameter incrementalmpc indicates whether the
+!     incremental displacements enter the mpc or the total 
+!     displacements (incrementalmpc=0)
+!
+      do i=1,nmpc
+         if((labmpc(i)(1:20).eq.'                    ').or.
+     &      (labmpc(i)(1:6).eq.'CYCLIC').or.
+     &      (labmpc(i)(1:9).eq.'SUBCYCLIC')) then
+            incrementalmpc=0
+         else
+            incrementalmpc=1
+         endif
+         ist=ipompc(i)
+         node=nodempc(1,ist)
+         ndir=nodempc(2,ist)
+         if(ndir.eq.0) then
+            if(ithermal.lt.2) cycle
+         else
+            if(ithermal.eq.2) cycle
+         endif
+         index=nodempc(3,ist)
+         fixed_disp=0.d0
+         if(index.ne.0) then
+            do
+               fixed_disp=fixed_disp-coefmpc(index)*
+     &              veold(nodempc(2,index),nodempc(1,index))
+               index=nodempc(3,index)
+               if(index.eq.0) exit
+            enddo
+         endif
+         veold(ndir,node)=fixed_disp/coefmpc(ist)
       enddo
 !
       return

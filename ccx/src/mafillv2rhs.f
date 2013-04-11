@@ -19,7 +19,7 @@
       subroutine mafillv2rhs(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
      &  xboun,nboun,ipompc,nodempc,coefmpc,nmpc,
      &  b,nactdoh,icolv,jqv,irowv,neqv,nzlv,nmethod,ikmpc,ilmpc,ikboun,
-     &  ilboun,vold,nzsv,dtime,v,theta2,iexplicit)
+     &  ilboun,vold,nzsv,dtime,v,theta2,iexplicit,nea,neb)
 !
 !     filling the rhs b of the velocity equations (step 3)
 !
@@ -29,7 +29,7 @@
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  icolv(*),jqv(*),ikmpc(*),ilmpc(*),ikboun(*),ilboun(*),
-     &  nactdoh(0:4,*),konl(20),irowv(*),ipkon(*)
+     &  nactdoh(0:4,*),konl(20),irowv(*),ipkon(*),nea,neb
 !
       integer nk,ne,nboun,nmpc,neqv,nzlv,nmethod,nzsv,i,j,k,jj,
      &  id,ist,index,jdof1,idof1,iexplicit,node1,kflag,indexe,nope,i0
@@ -44,7 +44,7 @@
          b(i)=0.d0
       enddo
 !
-      do i=1,ne
+      do i=nea,neb
 !
         if(ipkon(i).lt.0) cycle
         if(lakon(i)(1:1).ne.'F') cycle

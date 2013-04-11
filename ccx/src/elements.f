@@ -19,13 +19,13 @@
       subroutine elements(inpc,textpart,kon,ipkon,lakon,nkon,ne,ne_,
      &  set,istartset,iendset,ialset,nset,nset_,nalset,nalset_,mint_,
      &  ixfree,iponor,xnor,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &  iaxial,ipoinpc,solid,fluid)
+     &  iaxial,ipoinpc,solid,cfd,network)
 !
 !     reading the input deck: *ELEMENT
 !
       implicit none
 !
-      logical solid,fluid
+      logical solid,network
 !
       character*1 inpc(*)
       character*8 lakon(*),label
@@ -36,7 +36,7 @@
      &  nset_,nalset,nalset_,istep,istat,n,key,i,ielset,js,k,nn,
      &  nteller,j,ipkon(*),nkon,nope,indexe,mint_,ipos,indexy,ixfree,
      &  iponor(2,*),nopeexp,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  iaxial,ipoinpc(0:*)
+     &  iaxial,ipoinpc(0:*),cfd
 !
       real*8 xnor(*)
 !
@@ -193,12 +193,13 @@
      &             (label.eq.'F3D10   ').or.
      &             (label.eq.'F3D4    ').or.
      &             (label.eq.'F3D15   ').or.
-     &             (label.eq.'F3D6    ').or.
+     &             (label.eq.'F3D6    ')) then
+               cfd=1
 !
 !           network element
 !
-     &             (label(1:1).eq.'D')) then
-               fluid=.true.
+            elseif(label(1:1).eq.'D') then
+               network=.true.
             else
                write(*,*) '*ERROR in elements:'
                write(*,*) label,' is an unknown element type'

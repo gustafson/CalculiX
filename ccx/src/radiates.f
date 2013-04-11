@@ -42,7 +42,7 @@
      &  inl,ipoinp(2,*),inp(3,*),nam_,namtot,namtot_,namta(3,*),
      &  idelay1,idelay2,ipoinpc(0:*)
 !
-      real*8 xload(2,*),xmagradi,xmagtemp,physcon(3),amta(2,*)
+      real*8 xload(2,*),xmagradi,xmagtemp,physcon(*),amta(2,*)
 !
       iamptemp=0
       iampradi=0
@@ -254,11 +254,15 @@
                   label(1:2)='R5'
                elseif(label(1:2).eq.'R4') then
                   label(1:2)='R6'
+               elseif(label(1:2).eq.'R5') then
+                  label(1:2)='R1'
+               elseif(label(1:2).eq.'R6') then
+                  label(1:2)='R2'
                endif
-            elseif((lakon(l)(1:1).eq.'B').or.
-     &              (lakon(l)(7:7).eq.'B')) then
-            elseif((lakon(l)(1:1).eq.'S').or.
-     &              (lakon(l)(7:7).eq.'L')) then
+c            elseif((lakon(l)(1:1).eq.'B').or.
+c     &              (lakon(l)(7:7).eq.'B')) then
+c            elseif((lakon(l)(1:1).eq.'S').or.
+c     &              (lakon(l)(7:7).eq.'L')) then
             endif
             call loadaddt(l,label,xmagradi,xmagtemp,nelemload,sideload,
      &           xload,nload,nload_,iamload,iamptemp,iampradi,nam,node)
@@ -297,12 +301,10 @@
                elseif(label(1:2).eq.'R6') then
                   label(1:2)='R2'
                endif
-            elseif((lakon(l)(1:1).eq.'B').or.
-     &              (lakon(l)(7:7).eq.'B')) then
-               if(label(1:2).eq.'R2') label(1:2)='R5'
-            elseif((lakon(l)(1:1).eq.'S').or.
-     &              (lakon(l)(7:7).eq.'L')) then
-               label(1:2)='R1'
+c            elseif((lakon(l)(1:1).eq.'B').or.
+c     &              (lakon(l)(7:7).eq.'B')) then
+c            elseif((lakon(l)(1:1).eq.'S').or.
+c     &              (lakon(l)(7:7).eq.'L')) then
             endif
 !
             do j=istartset(i),iendset(i)

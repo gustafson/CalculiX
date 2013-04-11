@@ -17,7 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine compdt(nk,dt,nshcon,shcon,nrhcon,rhcon,vold,ntmat_,
-     &  iponoel,inoel,dtimef,iexplicit,ielmat,physcon,dh)
+     &  iponoel,inoel,dtimef,iexplicit,ielmat,physcon,dh,cocon,
+     &  ncocon,ithermal)
 !
 !     - determine the time step for each node (stored in field dt
 !       and the minimum value across all nodes (dtimef)
@@ -26,12 +27,12 @@
 !
       logical iexplicit
 !
-      integer nk,i,iponoel(*),inoel(3,*),index,nelem,
-     &  nshcon(*),nrhcon(*),ntmat_,ielmat(*),imat
+      integer nk,i,iponoel(*),inoel(3,*),index,nelem,ithermal,
+     &  nshcon(*),nrhcon(*),ntmat_,ielmat(*),imat,ncocon(2,*)
 !
       real*8 dtimef,dt(*),dvi,r,cp,rho,shcon(0:3,ntmat_,*),
-     &  rhcon(0:1,ntmat_,*),vold(0:4,*),temp,vel,dtu,dtnu,physcon(3),
-     &  dh(*)
+     &  rhcon(0:1,ntmat_,*),vold(0:4,*),temp,vel,dtu,dtnu,physcon(*),
+     &  dh(*),cocon(0:6,ntmat_,*),dtal,cond
 !
 !     
 !     determining the time increment dt for each node.
@@ -50,23 +51,34 @@
 !
          imat=ielmat(nelem)
          temp=vold(0,i)
-         call materialdata_tg(imat,ntmat_,temp,shcon,nshcon,cp,r,dvi,
-     &        rhcon,nrhcon,rho)
+c         call materialdata_tg(imat,ntmat_,temp,shcon,nshcon,cp,r,dvi,
+c     &        rhcon,nrhcon,rho)
 !
 !        density for gases
 !         
          vel=dsqrt(vold(1,i)**2+vold(2,i)**2+vold(3,i)**2)
-         if(vel.lt.1.d-10) vel=1.d-10
          if(iexplicit) then
+            call materialdata_cp(imat,ntmat_,temp,shcon,nshcon,cp)
+            r=shcon(3,1,imat)
             dt(i)=dh(i)/(dsqrt(cp*r*temp/(cp-r))+vel)
          else
-            if(dabs(rho).lt.1.d-20) then
-               rho=vold(4,i)/(r*(vold(0,i)-physcon(1)))
-            endif
+            call materialdata_dvi(imat,ntmat_,temp,shcon,nshcon,dvi)
+            call materialdata_rho(rhcon,nrhcon,imat,rho,
+     &           temp,ntmat_)
+            if(vel.lt.1.d-10) vel=1.d-10
             dtu=dh(i)/vel
-            dtnu=(dh(i)*dh(i)*rho)/(2.d0*dvi)
-c            write(*,*) 'dtu ',vel,dtu,dtnu
+            if(dvi.lt.1.d-10) dvi=1.d-10
+            dtnu=dh(i)*dh(i)*rho/(2.d0*dvi)
             dt(i)=dtu*dtnu/(dtu+dtnu)
+            if(ithermal.gt.1) then
+               call materialdata_cond(imat,ntmat_,temp,cocon,ncocon,
+     &                cond)
+               call materialdata_cp(imat,ntmat_,temp,shcon,nshcon,cp)
+               if(cond.lt.1.d-10) cond=1.d-10
+               dtal=dh(i)*dh(i)*rho*cp/(2.d0*cond)
+               dt(i)=(dt(i)*dtal)/(dt(i)+dtal)
+            endif
+c            write(*,*) 'compdt ',i,dtu,dtnu,dt(i),dh(i),rho,dvi,vel
          endif
 !
       enddo
@@ -81,12 +93,6 @@ c            write(*,*) 'dtu ',vel,dtu,dtnu
       do i=1,nk
          if(dt(i).gt.0.d0) dtimef=min(dt(i),dtimef)
       enddo
-!
-!     the factor of 2 is introduced because dtimef is not 
-!     sufficient for stability. Maybe a factor between 1 and 2
-!     also works.
-!
-      dtimef=dtimef/2.d0
 !
       return
       end

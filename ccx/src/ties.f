@@ -23,7 +23,7 @@
 !
       implicit none
 !
-      logical cyclicsymmetry,multistage
+      logical multistage,tied
 !
       character*1 inpc(*)
       character*81 tieset(3,*)
@@ -34,8 +34,8 @@
 !
       real*8 tietol(*)
 !
-      cyclicsymmetry=.false.
       multistage=.false.
+      tied=.true.
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR in ties: *TIE should'
@@ -60,20 +60,15 @@
      &          tieset(1,ntie)(1:80)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          elseif(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
-            cyclicsymmetry=.true.
-	 elseif(textpart(i)(1:10).eq.'MULTISTAGE') then
-	    multistage=.true.
-	 endif
+            tied=.false.
+         elseif(textpart(i)(1:10).eq.'MULTISTAGE') then
+            multistage=.true.
+            tied=.false.
+         endif
       enddo
       if(tieset(1,ntie)(1:1).eq.' ') then
          write(*,*) '*ERROR in ties: tie name is lacking'
          call inputerror(inpc,ipoinpc,iline)
-         stop
-      endif
-      if((.not.cyclicsymmetry).and.(.not.multistage)) then
-         write(*,*) '*ERROR in ties: *TIE can only be used for cyclic'
-         write(*,*) '       symmetry calculations; the CYCLIC SYMMETRY'
-         write(*,*) '       or MULTISTAGE parameter is lacking'
          stop
       endif
 !
@@ -87,17 +82,37 @@
 !      
       if ( multistage ) then
          tieset(1,ntie)(81:81)='M'
+      elseif(tied) then
+         tieset(1,ntie)(81:81)='T'
       endif
 !
-      tieset(2,ntie)(1:80)=textpart(1)(1:80)
-      tieset(2,ntie)(81:81)=' '
-      ipos=index(tieset(2,ntie),' ')
-      tieset(2,ntie)(ipos:ipos)='S'
+      if(tied) then
 !
-      tieset(3,ntie)(1:80)=textpart(2)(1:80)
-      tieset(3,ntie)(81:81)=' '
-      ipos=index(tieset(3,ntie),' ')
-      tieset(3,ntie)(ipos:ipos)='S'
+!        slave surface can be nodal or facial
+!
+         tieset(2,ntie)(1:80)=textpart(1)(1:80)
+         tieset(2,ntie)(81:81)=' '
+!     
+!        master surface must be facial
+!
+         tieset(3,ntie)(1:80)=textpart(2)(1:80)
+         tieset(3,ntie)(81:81)=' '
+         ipos=index(tieset(3,ntie),' ')
+         tieset(3,ntie)(ipos:ipos)='T'
+      else
+!
+!        slave and master surface must be nodal
+!
+         tieset(2,ntie)(1:80)=textpart(1)(1:80)
+         tieset(2,ntie)(81:81)=' '
+         ipos=index(tieset(2,ntie),' ')
+         tieset(2,ntie)(ipos:ipos)='S'
+!     
+         tieset(3,ntie)(1:80)=textpart(2)(1:80)
+         tieset(3,ntie)(81:81)=' '
+         ipos=index(tieset(3,ntie),' ')
+         tieset(3,ntie)(ipos:ipos)='S'
+      endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

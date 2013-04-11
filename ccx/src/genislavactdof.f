@@ -1,0 +1,47 @@
+!
+!     CalculiX - A 3-dimensional finite element program
+!              Copyright (C) 1998-2007 Guido Dhondt
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation(version 2);
+!     
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of 
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+!     GNU General Public License for more details.
+!
+!     You should have received a copy of the GNU General Public License
+!     along with this program; if not, write to the Free Software
+!     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+!
+      subroutine genislavactdof(ntie,neq,nactdof,nslavnode,islavact,
+     &     islavactdof,islavnode)
+!
+!     Author : Samoela Rakotonanahary
+!     genislavactdof get the field islavactdof in order to 
+!     help calculating the tangential matrices.
+!
+!     islavactdof is the inverse of nactdof for active slave nodes:
+!     it links an active slave degree of freedom to the 
+!     corresponding slave node position in field islavnode and the
+!     global (x-y-z) degree of freedom
+!     
+      integer i,j,k,ntie,neq(*),node,nslavnode(*),nactdof(0:3,*),
+     &     islavact(*),islavactdof(*),islavnode(*)
+!     
+      do i=1,ntie
+         do j = nslavnode(i)+1,nslavnode(i+1)
+            node=islavnode(j)
+            if(islavact(j).eq.1) then
+               do k=1,3
+                  if (nactdof(k,node).eq.0) cycle
+                  islavactdof(nactdof(k,node))=10*j+k
+               enddo
+            endif
+         enddo
+      enddo
+!
+      return
+      end

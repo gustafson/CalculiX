@@ -115,7 +115,7 @@ c               endif
                   itr=inotr(1,node)
                endif
 !
-               if((itr.eq.0).or.(ndir.eq.0)) then
+               if((itr.eq.0).or.(ndir.eq.0).or.(ndir.eq.4)) then
                   nodempc(1,mpcfree)=node
                   nodempc(2,mpcfree)=ndir
                   coefmpc(mpcfree)=x

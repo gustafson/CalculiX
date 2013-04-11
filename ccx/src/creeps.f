@@ -19,7 +19,7 @@
       subroutine creeps(inpc,textpart,nelcon,nmat,ntmat_,npmat_,
      &        plicon,nplicon,elcon,iplas,iperturb,nstate_,ncmat_,
      &        matname,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &        ipoinpc)
+     &        ipoinpc,ianisoplas)
 !
 !     reading the input deck: *CREEP
 !
@@ -32,8 +32,9 @@
       character*132 textpart(16)
 !
       integer nelcon(2,*),nmat,ntmat_,ntmat,istep,npmat_,nstate_,
-     &  n,key,i,j,iplas,iperturb,istat,nplicon(0:ntmat_,*),ncmat_,
-     &  k,id,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*)
+     &  n,key,i,j,iplas,iperturb(*),istat,nplicon(0:ntmat_,*),ncmat_,
+     &  k,id,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
+     &  ianisoplas
 !
       real*8 temperature,elcon(0:ncmat_,ntmat_,*),t1l,
      &  plicon(0:2*npmat_,ntmat_,*)
@@ -62,12 +63,16 @@
             write(*,*) '       or an *ELASTIC,TYPE=ORTHO card'
             stop
          endif
+!
+         ianisoplas=1
+!
          if(nelcon(1,nmat).ne.-114) then
 !
 !           viscoplastic material with zero yield surface and
 !           without hardening
 !
-            iperturb=3
+            iperturb(1)=3
+            iperturb(2)=1
             nelcon(1,nmat)=-114
             do i=2,n
                if(textpart(i)(1:8).eq.'LAW=USER') then
@@ -144,7 +149,8 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
             plicon(4,1,nmat)=10.d10
          endif
 !     
-         iperturb=3
+         iperturb(1)=3
+         iperturb(2)=1
          iplas=1
          nelcon(1,nmat)=-52
          nstate_=max(nstate_,13)

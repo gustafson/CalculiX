@@ -45,7 +45,7 @@
      &     ifreegn,indexold,isothermflag,nrhcon(*),nshcon(*)
 !     
       real*8 prop(*),f,xflow,nodef(4),df(4),v(0:4,*),g(3),
-     &     cp,r,physcon(3),shcon(0:3,ntmat_,*),rho,
+     &     cp,r,physcon(*),shcon(0:3,ntmat_,*),rho,
      &     co(3,*),dvi,vold(0:4,*),rhcon(*)
 !     
       data ifaceq /4,3,2,1,11,10,9,12,

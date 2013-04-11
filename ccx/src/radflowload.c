@@ -28,6 +28,9 @@
 #ifdef TAUCS
 #include "tau.h"
 #endif
+#ifdef PARDISO
+#include "pardiso.h"
+#endif
 
 void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
                  double *ac,double *bc,int *nload,char *sideload,
@@ -77,10 +80,11 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
 
 	      FORTRAN(initialgas,(itg,ieg,ntm,ntg,ac,bc,lakon,v,
                            ipkon,kon,nflow,
-			   ikboun,nboun,prop,ielprop,nactdog,nacteq,ndirboun,
+			   ikboun,nboun,prop,ielprop,nactdog,ndirboun,
 			   nodeboun,xbounact,ielmat,ntmat_,shcon,nshcon,
 			   physcon,ipiv,nteq,rhcon,nrhcon,ipobody,ibody,
-			   xbodyact,co,nbody,network,&iin_abs,vold,set));
+			   xbodyact,co,nbody,network,&iin_abs,vold,set,
+			   istep,iit));
       
 	      FORTRAN(resultgas,(itg,ieg,ntg,ntm,bc,nload,sideload,
 			  nelemload,xloadact,
@@ -200,11 +204,13 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,int *ntm,
 			    ithermal,iinc,iit,cs,mcs,inocs,ntrit,nk,fenv,istep,
 			    dtime,ttime,time,iviewfile,jobnamef,xloadold,
                             reltime,nmethod));
-	
-	/*FORTRAN(dgesv, (ntr,&nhrs,ac,ntm,ipiv,bc,ntm,&info));*/
-	
+		
+#ifdef SPOOLES
       spooles(ac,au,adb,aub,&sigma,bc,icol,irow,ntr,ntm,
-		&symmetryflag,&inputformat);
+	      &symmetryflag,&inputformat);
+#else
+      FORTRAN(dgesv,(ntr,&nhrs,ac,ntm,ipiv,bc,ntm,&info));
+#endif
 	
       if (info!=0){
 	  printf("*ERROR IN RADFLOWLOAD: SINGULAR MATRIX*\n");}   

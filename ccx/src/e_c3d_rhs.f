@@ -19,7 +19,8 @@
       subroutine e_c3d_rhs(co,nk,konl,lakonl,p1,p2,omx,bodyfx,nbody,
      &  ff,nelem,nmethod,rhcon,ielmat,ntmat_,vold,iperturb,nelemload,
      &  sideload,xload,nload,idist,ttime,time,istep,iinc,dtime,
-     &  xloadold,reltime)
+     &  xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,
+     &  veold,matname)
 !
 !     computation of the rhs for the element with
 !     the topology in konl: only for nonlinear calculations (i.e.
@@ -34,18 +35,20 @@
 !
       character*8 lakonl
       character*20 sideload(*)
+      character*80 matname(*),amat
 !
       integer nk,konl(20),ielmat(*),nbody,ifaceq(8,6),nelemload(2,*),
      &  nelem,nmethod,iperturb,nload,idist,i,i1,j1,jj,jj1,id,kk,
      &  ipointer,nope,nopes,j,k,ntmat_,i2,imat,ii,ig,mint2d,mint3d,
-     &  ifacet(6,4),ifacew(8,5),istep,iinc,layer,kspt,jltyp,iflag
+     &  ifacet(6,4),ifacew(8,5),istep,iinc,layer,kspt,jltyp,iflag,
+     &  ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),iscale
 !
-      real*8 co(3,*),p1(3,2),p2(3,2),omx(2),bodyfx(3),
-     &  rhcon(0:1,ntmat_,*),xs2(3,2),xloadold(2,*),reltime,
+      real*8 co(3,*),p1(3,2),p2(3,2),omx(2),bodyfx(3),veold(0:3,*),
+     &  rhcon(0:1,ntmat_,*),xs2(3,7),xloadold(2,*),reltime,
      &  bodyf(3),om(2),rho,bf(3),q(3),shpj(4,20),xl(3,20),
-     &  shp(4,20),voldl(3,20),xl2(0:3,8),xsj2(3),shp2(4,8),vold(0:4,*),
+     &  shp(4,20),voldl(3,20),xl2(0:3,8),xsj2(3),shp2(7,8),vold(0:4,*),
      &  xload(2,*),xi,et,ze,const,xsj,ff(60),weight,ttime,time,tvar(2),
-     &  coords(3),dtime
+     &  coords(3),dtime,coefmpc(*)
 !
       include "gauss.f"
 !
@@ -138,6 +141,7 @@
 !     otherwise cfr. e_c3d.f
 !
       imat=ielmat(nelem)
+      amat=matname(imat)
       rho=rhcon(1,1,imat)
 !
 !     computation of the body forces
@@ -229,16 +233,68 @@ c            xi=gauss3d3(1,kk)+1.d0
 !
 !           computation of the right hand side
 !
-!           body forces
+!           incorporating the jacobian determinant in the shape
+!           functions
 !
-            if(nbody.ne.0) then
-!
-!              incorporating the jacobian determinant in the shape
-!              functions
-!
+            if((nload.gt.0).or.(nbody.ne.0)) then
                do i1=1,nope
                   shpj(4,i1)=shp(4,i1)*xsj
                enddo
+            endif
+!
+!           distributed body flux
+!
+            if(nload.gt.0) then
+               call nident2(nelemload,nelem,nload,id)
+               do
+                  if((id.eq.0).or.(nelemload(1,id).ne.nelem)) exit
+                  if((sideload(id)(1:2).ne.'BX').and.
+     &               (sideload(id)(1:2).ne.'BY').and.
+     &               (sideload(id)(1:2).ne.'BZ')) then
+                     id=id-1
+                     cycle
+                  endif
+                  if(sideload(id)(3:4).eq.'NU') then
+                     do j=1,3
+                        coords(j)=0.d0
+                        do i1=1,nope
+                           coords(j)=coords(j)+
+     &                          shp(4,i1)*xl(j,i1)
+                        enddo
+                     enddo
+                     if(sideload(id)(1:2).eq.'BX') then
+                        jltyp=1
+                     elseif(sideload(id)(1:2).eq.'BY') then
+                        jltyp=2
+                     elseif(sideload(id)(1:2).eq.'BZ') then
+                        jltyp=3
+                     endif
+                     iscale=1
+                     call dload(xload(1,id),istep,iinc,tvar,nelem,i,
+     &                  layer,kspt,coords,jltyp,sideload(id),vold,co,
+     &                  lakonl,konl,ipompc,nodempc,coefmpc,nmpc,ikmpc,
+     &                  ilmpc,iscale,veold,rho,amat)
+                     if((nmethod.eq.1).and.(iscale.ne.0))
+     &                    xload(1,id)=xloadold(1,id)+
+     &                   (xload(1,id)-xloadold(1,id))*reltime
+                  endif
+                  jj1=1
+                  do jj=1,nope
+                     if(sideload(id)(1:2).eq.'BX')
+     &                    ff(jj1)=ff(jj1)+xload(1,id)*shpj(4,jj)*weight
+                     if(sideload(id)(1:2).eq.'BY')
+     &                 ff(jj1+1)=ff(jj1+1)+xload(1,id)*shpj(4,jj)*weight
+                     if(sideload(id)(1:2).eq.'BZ')
+     &                 ff(jj1+2)=ff(jj1+2)+xload(1,id)*shpj(4,jj)*weight
+                     jj1=jj1+3
+                  enddo
+                  id=id-1
+               enddo
+            endif
+!
+!           body forces
+!
+            if(nbody.ne.0) then
 !
                do i1=1,3
                   bf(i1)=0.d0
@@ -419,9 +475,13 @@ c            xi=gauss3d3(1,kk)+1.d0
                enddo
                read(sideload(id)(2:2),'(i1)') jltyp
                jltyp=jltyp+20
+               iscale=1
                call dload(xload(1,id),istep,iinc,tvar,nelem,i,layer,
-     &              kspt,coords,jltyp,sideload(id))
-               if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &              kspt,coords,jltyp,sideload(id),vold,co,lakonl,
+     &              konl,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,
+     &              iscale,veold,rho,amat)
+               if((nmethod.eq.1).and.(iscale.ne.0))
+     &               xload(1,id)=xloadold(1,id)+
      &              (xload(1,id)-xloadold(1,id))*reltime
             endif
 !

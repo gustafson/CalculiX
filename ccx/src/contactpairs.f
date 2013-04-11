@@ -24,12 +24,14 @@
 !
       implicit none
 !
+      logical surftosurf  
+!
       character*1 inpc(*)
       character*81 tieset(3,*)
       character*132 textpart(16)
 !
       integer istep,istat,n,i,key,ipos,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),ntie,ntie_,iperturb,nmat,ipoinpc(0:*)
+     &  inp(3,*),ntie,ntie_,iperturb(2),nmat,ipoinpc(0:*)
 !
       real*8 cs(17,*),tietol(*)
       character*80 matname(*),material
@@ -39,6 +41,8 @@
          write(*,*) '  be placed before all step definitions'
          stop
       endif
+!
+      surftosurf=.false.
 !
       ntie=ntie+1
       if(ntie.gt.ntie_) then
@@ -54,6 +58,8 @@
             tietol(ntie)=-1.d0
          elseif(textpart(i)(1:14).eq.'IN-FACESLIDING') then
             tietol(ntie)=-2.d0
+         elseif(textpart(i)(1:21).eq.'TYPE=SURFACETOSURFACE') then
+            surftosurf=.true.   
          endif
       enddo
 !
@@ -80,10 +86,20 @@
          stop
       endif
 !
-      tieset(2,ntie)(1:80)=textpart(1)(1:80)
-      tieset(2,ntie)(81:81)=' '
-      ipos=index(tieset(2,ntie),' ')
-      tieset(2,ntie)(ipos:ipos)='S'
+!
+!     storing the slave surface
+!
+      if(surftosurf) then
+         tieset(2,ntie)(1:80)=textpart(1)(1:80)
+         tieset(2,ntie)(81:81)=' '
+         ipos=index(tieset(2,ntie),' ')
+         tieset(2,ntie)(ipos:ipos)='T'
+      else
+         tieset(2,ntie)(1:80)=textpart(1)(1:80)
+         tieset(2,ntie)(81:81)=' '
+         ipos=index(tieset(2,ntie),' ')
+         tieset(2,ntie)(ipos:ipos)='S'
+      endif
 !
       tieset(3,ntie)(1:80)=textpart(2)(1:80)
       tieset(3,ntie)(81:81)=' '
@@ -93,9 +109,10 @@
 !     the definition of a contact pair triggers a geometrically 
 !     nonlinear calculation
 !
-      if(iperturb.eq.0) then
-         iperturb=2
+      if(iperturb(1).eq.0) then
+         iperturb(1)=2
       endif
+      iperturb(2)=1
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

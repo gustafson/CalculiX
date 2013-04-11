@@ -25,6 +25,9 @@
 !     isolver=0: SPOOLES
 !             2: iterative solver with diagonal scaling
 !             3: iterative solver with Cholesky preconditioning
+!             4: sgi solver
+!             5: TAUCS
+!             7: pardiso
 !
 !      iexpl==0:  structure:implicit, fluid:semi-implicit
 !      iexpl==1:  structure:implicit, fluid:explicit
@@ -73,6 +76,8 @@
          solver(1:3)='SGI'
       elseif(isolver.eq.5) then
          solver(1:5)='TAUCS'
+      elseif(isolver.eq.7) then
+         solver(1:7)='PARDISO'
       endif
 !
       do i=2,n
@@ -122,6 +127,8 @@
          isolver=4
       elseif(solver(1:5).eq.'TAUCS') then
          isolver=5
+      elseif(solver(1:7).eq.'PARDISO') then
+         isolver=7
       else
          write(*,*) '*WARNING in couptempdisps: unknown solver;'
          write(*,*) '         the default solver is used'

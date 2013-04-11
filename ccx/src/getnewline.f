@@ -21,6 +21,9 @@
 !
       implicit none
 !
+      integer nentries
+      parameter(nentries=13)
+!
 !     parser for the input file (original order)
 !
       integer istat,n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),
@@ -36,7 +39,7 @@
 c            ipoinp(1,ipol)=0
             do
                ipol=ipol+1
-               if(ipol.gt.12) then
+               if(ipol.gt.nentries) then
                   istat=-1
                   return
                elseif(ipoinp(1,ipol).ne.0) then

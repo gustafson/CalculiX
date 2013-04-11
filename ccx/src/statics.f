@@ -20,7 +20,7 @@
      &  istat,n,tinc,tper,tmin,tmax,idrct,iline,ipol,inl,ipoinp,inp,
      &  ithermal,cs,ics,tieset,istartset,
      &  iendset,ialset,ipompc,nodempc,coefmpc,nmpc,nmpc_,ikmpc,
-     &  ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl)
+     &  ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl,cfd)
 !
 !     reading the input deck: *STATIC
 !
@@ -29,6 +29,7 @@
 !             3: iterative solver with Cholesky preconditioning
 !             4: sgi solver
 !             5: TAUCS
+!             7: pardiso
 !
 !      iexpl==0:  structure:implicit, fluid:semi-implicit
 !      iexpl==1:  structure:implicit, fluid:explicit
@@ -43,7 +44,8 @@
       integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,ics(*),iexpl,
      &  istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
-     &  nmpc,nmpc_,ikmpc(*),ilmpc(*),mpcfree,nset,mcs,ipoinpc(0:*)
+     &  nmpc,nmpc_,ikmpc(*),ilmpc(*),mpcfree,nset,mcs,ipoinpc(0:*),
+     &  cfd
 !
       real*8 tinc,tper,tmin,tmax,cs(17,*),coefmpc(*)
 !
@@ -51,7 +53,6 @@
       tmin=0.d0
       tmax=0.d0
 !
-c      if((iperturb.eq.1).and.(istep.gt.1)) then
       if((iperturb.eq.1).and.(istep.ge.1)) then
          write(*,*) '*ERROR in statics: perturbation analysis is'
          write(*,*) '       not provided in a *STATIC step. Perform'
@@ -84,6 +85,8 @@ c      if((iperturb.eq.1).and.(istep.gt.1)) then
          solver(1:3)='SGI'
       elseif(isolver.eq.5) then
          solver(1:5)='TAUCS'
+      elseif(isolver.eq.7) then
+         solver(1:7)='PARDISO'
       endif
 !
       do i=2,n
@@ -107,6 +110,8 @@ c      if((iperturb.eq.1).and.(istep.gt.1)) then
          isolver=4
       elseif(solver(1:5).eq.'TAUCS') then
          isolver=5
+      elseif(solver(1:7).eq.'PARDISO') then
+         isolver=7
       else
          write(*,*) '*WARNING in statics: unknown solver;'
          write(*,*) '         the default solver is used'
@@ -140,7 +145,7 @@ c      if((iperturb.eq.1).and.(istep.gt.1)) then
       endif
 !
       if((istat.lt.0).or.(key.eq.1)) then
-         if(iperturb.ge.2) then
+         if((iperturb.ge.2).or.(cfd.eq.1)) then
             write(*,*) '*WARNING in statics: a nonlinear geometric analy
      &sis is requested'
             write(*,*) '         but no time increment nor step is speci

@@ -29,9 +29,9 @@
       character*132 textpart(16)
 !
       integer nmethod,istep,istat,n,key,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),ipoinpc(0:*),i
+     &  inp(3,*),ipoinpc(0:*),i,lowfrequ,highfrequ,k
 !
-      real*8 xmodal(9)
+      real*8 xmodal(*),zeta
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR in modaldampings: *MODAL DAMPING can only'
@@ -45,29 +45,44 @@
             rayleigh=.true.
          endif
       enddo
-      if(.not.rayleigh) then
-         write(*,*) '*ERROR in modaldampings: only Rayleigh'
-         write(*,*) '       damping is allowed'
-         call inputerror(inpc,ipoinpc,iline)
-         stop
+      if(rayleigh) then
+         xmodal(10)=-0.5
+         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &        ipoinp,inp,ipoinpc)
+         if((istat.lt.0).or.(key.eq.1)) then
+            write(*,*) '*ERROR in modaldampings: definition 
+     &                  not complete'
+            write(*,*) '       '
+            call inputerror(inpc,ipoinpc,iline)
+            stop
+         endif
+         read(textpart(3)(1:20),'(f20.0)',iostat=istat) xmodal(1)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         read(textpart(4)(1:20),'(f20.0)',iostat=istat) xmodal(2)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+!
+         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &        ipoinp,inp,ipoinpc)
+!
+      else
+         do
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+            if((istat.lt.0).or.(key.eq.1)) exit
+!
+            read(textpart(1)(1:10),'(i10)',iostat=istat) lowfrequ
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            read(textpart(2)(1:10),'(i10)',iostat=istat) highfrequ
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            read(textpart(3)(1:20),'(f20.0)',iostat=istat) zeta
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+!
+            if(highfrequ<lowfrequ) highfrequ=lowfrequ  
+            do k=lowfrequ,highfrequ
+               xmodal(10+k)=zeta
+            enddo
+         enddo  
       endif
-!
-      call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &     ipoinp,inp,ipoinpc)
-      if((istat.lt.0).or.(key.eq.1)) then
-         write(*,*) '*ERROR in modaldampings: definition not complete'
-         write(*,*) '       '
-         call inputerror(inpc,ipoinpc,iline)
-         stop
-      endif
-      read(textpart(3)(1:20),'(f20.0)',iostat=istat) xmodal(1)
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-      read(textpart(4)(1:20),'(f20.0)',iostat=istat) xmodal(2)
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-!
-      call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &     ipoinp,inp,ipoinpc)
-!
       return
       end
 

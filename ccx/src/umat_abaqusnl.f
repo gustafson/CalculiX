@@ -18,8 +18,8 @@
 !
       subroutine umat_abaqusnl(amat,iel,iint,kode,elconloc,emec,emec0,
      &        beta,xokl,voj,xkl,vj,ithermal,t1l,dtime,time,ttime,
-     &        icmd,ielas,mint_,
-     &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,orab)
+     &        icmd,ielas,mint_,nstate_,xstateini,xstate,stre,stiff,
+     &        iorien,pgauss,orab,kstep,kinc)
 !
 !     calculates stiffness and stresses for a nonlinear material
 !     defined by an ABAQUS umat routine
@@ -114,7 +114,7 @@
 !
 !     Note that the following fields are not supported
 !     so far: sse,spd,scd,rpl,ddsddt,drplde,drpldt,predef,
-!     dpred,pnewdt,celent,layer,kspt,kstep,kinc
+!     dpred,pnewdt,celent,layer,kspt
 !
 !     Furthermore, the following fields have a different meaning in
 !     ABAQUS and CalculiX:
@@ -156,11 +156,11 @@
 !     start of the increment
 !
       e(1,1)=emec0(1)
-      e(2,2)=emec0(4)
-      e(3,3)=emec0(2)
-      e(1,2)=emec0(5)
-      e(1,3)=emec0(6)
-      e(2,3)=emec0(3)
+      e(2,2)=emec0(2)
+      e(3,3)=emec0(3)
+      e(1,2)=emec0(4)
+      e(1,3)=emec0(5)
+      e(2,3)=emec0(6)
       e(2,1)=emec0(4)
       e(3,1)=emec0(5)
       e(3,2)=emec0(6)
@@ -277,11 +277,11 @@
 !     end of the increment
 !
       e(1,1)=emec(1)
-      e(2,2)=emec(4)
-      e(3,3)=emec(2)
-      e(1,2)=emec(5)
-      e(1,3)=emec(6)
-      e(2,3)=emec(3)
+      e(2,2)=emec(2)
+      e(3,3)=emec(3)
+      e(1,2)=emec(4)
+      e(1,3)=emec(5)
+      e(2,3)=emec(6)
       e(2,1)=emec(4)
       e(3,1)=emec(5)
       e(3,2)=emec(6)
@@ -403,7 +403,7 @@ c      write(*,*) 'r',((r(i,j),j=1,3),i=1,3)
       enddo
 !
       abqtime(1)=time-dtime
-      abqtime(2)=ttime-dtime
+      abqtime(2)=ttime
 !
       temp=t1l
       dtemp=0.d0

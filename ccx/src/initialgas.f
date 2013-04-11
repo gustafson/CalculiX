@@ -20,10 +20,10 @@
 !     
       subroutine initialgas(itg,ieg,ntm,ntg,ac,bc,lakon,v,
      &     ipkon,kon,nflow,ikboun,nboun,prop,ielprop,
-     &     nactdog,nacteq,ndirboun,nodeboun,xbounact,
+     &     nactdog,ndirboun,nodeboun,xbounact,
      &     ielmat,ntmat_,shcon,nshcon,physcon,ipiv,nteq,
      &     rhcon,nrhcon,ipobody,ibody,xbodyact,co,nbody,network,
-     &     iin_abs,vold,set)
+     &     iin_abs,vold,set,istep,iit)
 !     
       implicit none
 !     
@@ -34,19 +34,31 @@
 !           
       integer ieg(*),nflow,i,j,ntg,ielmat(*),ntmat_,id,ntm,node1,node2,
      &     nelem,index,nshcon(*),ipkon(*),kon(*),ikboun(*),nboun,idof,
-     &     nodem,idirf(5),nactdog(0:3,*),imat,nacteq(0:3,*),ielprop(*),
+     &     nodem,idirf(5),nactdog(0:3,*),imat,ielprop(*),
      &     nodef(5),ndirboun(*),nodeboun(*),itg(*),node,kflag,ipiv(*),
      &     nrhs,info,idof1,idof2,nteq,nrhcon(*),ipobody(2,*),ibody(3,*),
      &     nbody,numf,network,iin_abs,case,index2,index1,nelem1,nelem2,
-     &     node11,node21,node12,node22
+     &     node11,node21,node12,node22,istep,iit
 !     
       real*8 ac(ntm,ntm), bc(ntm),prop(*),shcon(0:3,ntmat_,*),
      &     f,df(5),xflow,xbounact(*),v(0:4,*),cp,r,tg1,
-     &     tg2,gastemp,physcon(3),pressmin,dvi,rho,g(3),
+     &     tg2,gastemp,physcon(*),pressmin,dvi,rho,g(3),
      &     rhcon(0:1,ntmat_,*),co(3,*),xbodyact(7,*),kappa,
      &     a,Tt,Pt,Ts,pressmax,constant,vold(0:4,*)
 !
       kflag=1
+!
+!     initialization of the pressure to zero except in the first 
+!     iteration of the first step
+!
+      if(network.ne.0) then
+         if((istep.eq.1).and.(iit.eq.-1).and. (iin_abs.ne.0)) then
+            do i=1,ntg
+               node=itg(i)
+                  v(2,node)=0.d0
+            enddo
+         endif
+      endif
 !
       do j=1,nboun
          v(ndirboun(j),nodeboun(j))=xbounact(j)
@@ -101,10 +113,10 @@
             node1=kon(index+1)
             node2=kon(index+3)
 !     
-            if ((((lakon(i)(1:5).eq.'DGAPI')
-     &           .or.(lakon(i)(1:5).eq.'DGAPX')).and.(iin_abs.eq.0))
-     &           .or.((lakon(i)(1:3).eq.'DRE')
-     &           .and.(lakon(i)(1:7).ne.'DREWAOR')
+            if ((((lakon(nelem)(1:5).eq.'DGAPI')
+     &           .or.(lakon(nelem)(1:5).eq.'DGAPX')).and.(iin_abs.eq.0))
+     &           .or.((lakon(nelem)(1:3).eq.'DRE')
+     &           .and.(lakon(nelem)(1:7).ne.'DREWAOR')
      &           .and.(iin_abs.eq.0))) then 
 !     
 !     In the case of a element of type GASPIPE or RESTRICTOR 
@@ -378,10 +390,9 @@
      &        rhcon,nrhcon,rho)
 !
          call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &        nactdog,identity,
-     &        ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,cp,
-     &        r,rho,physcon,g,co,dvi,numf,vold,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_)
+     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &        nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,
+     &        vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_)
 !
          v(1,nodem)=xflow
 !
@@ -417,7 +428,7 @@
          do i=1,ntg
             node=itg(i)
             if(nactdog(3,node).lt.0) nactdog(3,node)=0
-            if(nactdog(3,node).gt.2) nactdog(3,node)=-nactdog(3,node)        
+            if(nactdog(3,node).gt.2) nactdog(3,node)=-nactdog(3,node)
          enddo
 !
          do i=1,nflow
@@ -500,7 +511,7 @@
      &            .or.(lakon(nelem)(2:5).eq.'GAPX')) then
                   A=prop(index+1)
                   if((lakon(nelem)(2:6).eq.'GAPIA') 
-     &            .or.(lakon(nelem)(2:6).eq.'GAPXA')) then                  
+     &            .or.(lakon(nelem)(2:6).eq.'GAPXA')) then
                      case=0
                   elseif((lakon(nelem)(2:6).eq.'GAPII')
      &                .or.(lakon(nelem)(2:6).eq.'GAPXI')) then
@@ -512,11 +523,12 @@
                   node1=kon(index2+1)
                   node2=kon(index2+3)
                   if(lakon(nelem)(4:5).eq.'EX') then
-                     if((lakon(prop(index+4))(2:6).eq.'GAPIA')
-     &             .or.(lakon(prop(index+4))(2:6).eq.'GAPXA')) then
+                     if((lakon(int(prop(index+4)))(2:6).eq.'GAPIA')
+     &             .or.(lakon(int(prop(index+4)))(2:6).eq.'GAPXA')) then
                         case=0
-                     elseif((lakon(prop(index+4))(2:6).eq.'GAPII')
-     &                 .or.(lakon(prop(index+4))(2:6).eq.'GAPXI')) then
+                     elseif((lakon(int(prop(index+4)))(2:6).eq.'GAPII')
+     &                 .or.(lakon(int(prop(index+4)))(2:6).eq.'GAPXI')) 
+     &                  then
                         case=1
                      endif
                   else

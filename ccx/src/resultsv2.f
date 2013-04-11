@@ -43,23 +43,23 @@ c      write(*,*) 'sol307',v(1,307),v(2,307),v(3,307)
 !     
 !     inserting the mpc information
 !     
-      do i=1,nmpc
-         ist=ipompc(i)
-         node=nodempc(1,ist)
-         ndir=nodempc(2,ist)
-         index=nodempc(3,ist)
-         fixed_disp=0.d0
-         if(index.ne.0) then
-            do
-               fixed_disp=fixed_disp-coefmpc(index)*
-     &              v(nodempc(2,index),nodempc(1,index))
-               index=nodempc(3,index)
-               if(index.eq.0) exit
-            enddo
-         endif
-         fixed_disp=fixed_disp/coefmpc(ist)
-         v(ndir,node)=fixed_disp
-      enddo
+c      do i=1,nmpc
+c         ist=ipompc(i)
+c         node=nodempc(1,ist)
+c         ndir=nodempc(2,ist)
+c         index=nodempc(3,ist)
+c         fixed_disp=0.d0
+c         if(index.ne.0) then
+c            do
+c               fixed_disp=fixed_disp-coefmpc(index)*
+c     &              v(nodempc(2,index),nodempc(1,index))
+c               index=nodempc(3,index)
+c               if(index.eq.0) exit
+c            enddo
+c         endif
+c         fixed_disp=fixed_disp/coefmpc(ist)
+c         v(ndir,node)=fixed_disp
+c      enddo
 !
       return
       end

@@ -30,6 +30,9 @@
 #ifdef TAUCS
    #include "tau.h"
 #endif
+#ifdef PARDISO
+   #include "pardiso.h"
+#endif
 
 void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
              double *ttime,double *dtime,double *xbounold,double *xboun,
@@ -38,12 +41,12 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
              double *aub, int *icol, int *irow, int *neq, int *nzs,
              double *sigma, double *b, int *isolver,
              double *alpham, double *betam, int *nzl,
-             int *init,double *bact, double *bmin, int *jq, char *amname){
+             int *init,double *bact, double *bmin, int *jq, char *amname,double *bv){
 
     int idiff[3],i,j,ic,ir;
 
     double *xbounmin=NULL,*xbounplus=NULL,*bplus=NULL,
-	*bv=NULL,*ba=NULL,deltatime,deltatime2,deltatimesq,timemin,ttimemin,
+	*ba=NULL,deltatime,deltatime2,deltatimesq,timemin,ttimemin,
         timeplus,ttimeplus,*aux=NULL,*b1=NULL,*b2=NULL;
 
 #ifdef SGI
@@ -90,7 +93,6 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
           amname));
 
   bplus=NNEW(double,neq[1]);
-  bv=NNEW(double,neq[1]);
   ba=NNEW(double,neq[1]);
   b1=NNEW(double,neq[1]);
   b2=NNEW(double,neq[1]);
@@ -119,6 +121,11 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
       else if(*isolver==5){
 #ifdef TAUCS
 	  tau_solve(bmin,&neq[1]);
+#endif
+      }
+      if(*isolver==7){
+#ifdef PARDISO
+	  pardiso_solve(bmin,&neq[1]);
 #endif
       }
   }
@@ -156,6 +163,11 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
 	  tau_solve(bact,&neq[1]);
 #endif
       }
+      if(*isolver==7){
+#ifdef PARDISO
+	  pardiso_solve(bact,&neq[1]);
+#endif
+      }
   }
 
       /* check whether boundary conditions changed 
@@ -191,6 +203,11 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
 	  tau_solve(bplus,&neq[1]);
 #endif
       }
+      if(*isolver==7){
+#ifdef PARDISO
+	  pardiso_solve(bplus,&neq[1]);
+#endif
+      }
   }
   
   if((idiff[1]!=0)||(idiff[2]!=0)){
@@ -222,7 +239,7 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
   }
   
   free(xbounmin);free(xbounplus);
-  free(bplus);free(bv);free(ba);free(b1);free(b2);
+  free(bplus);free(ba);free(b1);free(b2);
   
   return;
 }

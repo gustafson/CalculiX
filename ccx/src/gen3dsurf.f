@@ -167,9 +167,19 @@
                else
 !     
 !     2d plane stress, plane strain or axisymmetric
-!     element: SPC
+!     element: dependent node is replaced by new node in the middle
+!
+!     keeping the old node and generating an additional MPC leads
+!     to problems since the old node is not restricted in the 
+!     z-direction, only the new node in the middle is. If the old
+!     node is used subsequently in a contact spring element all
+!     its DOFs are used and the unrestricted z-DOF leads to a 
+!     singular equation system
 ! 
 c                  write(*,*) ialset(l),' replaced by ',knor(indexk+2)
+                  co(1,knor(indexk+2))=co(1,ialset(l))
+                  co(2,knor(indexk+2))=co(2,ialset(l))
+                  co(3,knor(indexk+2))=co(3,ialset(l))
                   ialset(l)=knor(indexk+2)
                endif
             endif

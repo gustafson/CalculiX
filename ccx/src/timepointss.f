@@ -30,10 +30,15 @@
 !
       integer namta(3,*),nam,nam_,istep,istat,n,key,i,namtot,
      &  namtot_,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipos,
-     &  ipoinpc(0:*)
+     &  ipoinpc(0:*),nttp
 !
-      real*8 amta(2,*),x
+      logical igen
 !
+!
+      real*8 amta(2,*),x,tpmin,tpmax,tpinc
+!
+      igen=.false.
+
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in amplitudes: *AMPLITUDE should be'
          write(*,*) '  placed before all step definitions'
@@ -60,6 +65,8 @@
             endif
          elseif(textpart(i)(1:14).eq.'TIME=TOTALTIME') then
             namta(3,nam)=-nam
+         elseif(textpart(i)(1:8).eq.'GENERATE') then
+            igen=.true.
          endif
       enddo
 !
@@ -80,21 +87,51 @@
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
          if((istat.lt.0).or.(key.eq.1)) exit
-         do i=1,8
-            if(textpart(i)(1:1).ne.' ') then  
-               namtot=namtot+1
-               if(namtot.gt.namtot_) then
-                  write(*,*) '*ERROR in amplitudes: increase namtot_'
+         if(.not.igen)then
+            do i=1,8
+               if(textpart(i)(1:1).ne.' ') then  
+                  namtot=namtot+1
+                  if(namtot.gt.namtot_) then
+                     write(*,*) '*ERROR in amplitudes: increase namtot_'
+                     stop
+                  endif
+                  read(textpart(i),'(f20.0)',iostat=istat) x
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  amta(1,namtot)=x
+                  namta(2,nam)=namtot
+               else
+                  exit
+               endif
+            enddo
+         else
+c            if((textpart(1)(1:1).ne.' ').and.
+c     &         (textpart(2)(1:1).ne.' ').and.
+c     &         (textpart(3)(1:1).ne.' ')) then
+c
+               read(textpart(1)(1:20),'(f20.0)',iostat=istat) tpmin
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               read(textpart(2)(1:20),'(f20.0)',iostat=istat) tpmax
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               read(textpart(3)(1:20),'(f20.0)',iostat=istat) tpinc
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+
+               nttp=INT((tpmax-tpmin)/tpinc)
+
+               if(namtot+2+nttp.gt.namtot_) then
+                  write(*,*) '*ERROR in timepoints: increase namtot_'
                   stop
                endif
-               read(textpart(i),'(f20.0)',iostat=istat) x
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-               amta(1,namtot)=x
+               amta(1,namtot+1)=tpmin
+               do i=1,nttp
+                  amta(1,namtot+1+i)=tpmin+(i*tpinc)
+               enddo
+               namtot=namtot+2+nttp
+               amta(1,namtot)=tpmax
                namta(2,nam)=namtot
-            else
-               exit
-            endif
-         enddo
+c            else
+c               exit
+c            endif
+         endif
       enddo
 !
       if(namta(1,nam).gt.namta(2,nam)) then

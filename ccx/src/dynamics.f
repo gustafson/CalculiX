@@ -18,7 +18,7 @@
 !
       subroutine dynamics(inpc,textpart,nmethod,iperturb,tinc,tper,
      &  tmin,tmax,idrct,alpha,iexpl,isolver,istep,istat,n,iline,
-     &  ipol,inl,ipoinp,inp,ithermal,ipoinpc)
+     &  ipol,inl,ipoinp,inp,ithermal,ipoinpc,cfd)
 !
 !     reading the input deck: *DYNAMIC
 !
@@ -27,6 +27,7 @@
 !             3: iterative solver with Cholesky preconditioning
 !             4: sgi solver
 !             5: TAUCS
+!             7: pardiso
 !
 !      iexpl==0:  structure:implicit, fluid:semi-implicit
 !      iexpl==1:  structure:implicit, fluid:explicit
@@ -41,7 +42,7 @@
 !
       integer nmethod,istep,istat,n,key,i,iperturb,idrct,iexpl,
      &  isolver,iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,
-     &  ipoinpc(0:*)
+     &  ipoinpc(0:*),cfd
 !
       real*8 tinc,tper,tmin,tmax,alpha
 !
@@ -80,6 +81,8 @@
          solver(1:3)='SGI'
       elseif(isolver.eq.5) then
          solver(1:5)='TAUCS'
+      elseif(isolver.eq.7) then
+         solver(1:7)='PARDISO'
       endif
 !
       do i=2,n
@@ -125,6 +128,8 @@
          isolver=4
       elseif(solver(1:5).eq.'TAUCS') then
          isolver=5
+      elseif(solver(1:7).eq.'PARDISO') then
+         isolver=7
       else
          write(*,*) '*WARNING in dynamics: unknown solver;'
          write(*,*) '         the default solver is used'
@@ -133,7 +138,7 @@
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
-         if(iperturb.ge.2) then
+         if((iperturb.ge.2).or.(cfd.eq.1)) then
             write(*,*)'*WARNING in dynamics: a nonlinear geometric analy
      &sis is requested'
             write(*,*) '         but no time increment nor step is speci
@@ -144,6 +149,7 @@
             tmin=1.d-5
             tmax=1.d+30
          endif
+         nmethod=4
          return
       endif
 !

@@ -156,11 +156,31 @@
 !     
       elseif(typename(1:9).eq.'LABYRINTH') then
          if(typename(10:17).eq.'FLEXIBLE') then
-            elname='LABF   '
-            ndprop=12 
+            ndprop=14 
+            if(typename(18:23).eq.'SINGLE') then
+               elname='LABFSN '
+            elseif(typename(18:25).eq.'STRAIGHT') then
+               elname='LABFSR '
+            elseif(typename(18:24).eq.'STEPPED') then
+               elname='LABFSP '
+            else
+               elname='LABF   '
+            endif
+         elseif(typename(10:14).eq.'DUMMY') then
+            ndprop=1
+            elname='LABD'
          else
-            elname='LAB    '
-            ndprop=10
+            ndprop=10 
+            if(typename(10:15).eq.'SINGLE') then
+               elname='LABSN  '
+            elseif(typename(10:17).eq.'STRAIGHT') then
+               elname='LABSR  '
+            elseif(typename(10:16).eq.'STEPPED') then
+               elname='LABSP  '
+            else
+               elname='LAB    '
+            endif
+            write(*,*) elname(1:5)
          endif 
 !     
       elseif(typename(1:10).eq.'LIQUIDPUMP') then
@@ -234,7 +254,7 @@
       elseif(typename(1:14).eq.'PRESWIRLNOZZLE') then
          elname='ORPN   '
          ndprop=5
-!      
+!
       elseif(typename(1:10).eq.'RESTRICTOR') then
          if(typename(11:15).eq.'USER') then
             elname='REUS   '
@@ -298,6 +318,14 @@
             ndprop=11
          endif
 !
+      elseif(typename(1:8).eq.'RIMSEAL') then
+         elname='RIMS'
+         ndprop=5
+!
+      else if (typename(1:6).eq.'S-PUMP') then
+         elname='SPUMP'
+         ndprop=5
+!         
       elseif(typename(1:6).eq.'VORTEX') then
          if(typename(7:10).eq.'FREE') then
             elname='VOFR   '
@@ -465,7 +493,11 @@
 !     
 !           reducing the area in case of an axisymmetric model
 !
-            if(iaxial.ne.0) prop(nprop+1)=prop(nprop+1)/iaxial
+            if((elname(1:3).ne.'LAB').and.(elname(1:5).ne.'GAPIF')
+     &           .and.(elname(1:3).ne.'ORF')
+     &           .and.(elname(1:5).ne.'GAPXF')) then
+               if(iaxial.ne.0) prop(nprop+1)=prop(nprop+1)/iaxial
+            endif
             nprop=nprop+ndprop
          endif
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -480,17 +512,21 @@
          stop
       endif
 !
+      if(elname(1:4).eq.'RIMS') then
+         prop(npropstart+1)= prop(npropstart+1)+0.5d0
+         prop(npropstart+2)= prop(npropstart+2)+0.5d0
+      endif
+!
       if((elname(1:6).eq.'REBEMI').or.
      &     (elname(1:6).eq.'REBEMA')) then
          prop(npropstart+7)=noil_mat+0.5d0
          prop(npropstart+6)=prop(npropstart+4)
-            
          prop(npropstart+5)=prop(npropstart+3)
          prop(npropstart+4)=prop(npropstart+2)
          prop(npropstart+3)=dsqrt(4*prop(npropstart+1)
      &        /(4.d0*datan(1.d0)))
          prop(npropstart+2)=prop(npropstart+1)
-         endif
+      endif
 !
       if(elname(1:7).eq.'REBEIDC') then
          elname= 'REBEID '
@@ -647,7 +683,12 @@
 !
 !     Node1 and Node2 for LABYRINTH FLEXIBLE
 !
-      elseif(elname(1:4).eq.'LABF') then
+C      elseif(elname(1:3).eq.'LAB') then
+        else if((elname(1:4).eq.'LABF').or.
+     &        (elname(1:4).eq.'LABD')) then
+            prop(npropstart+14)= prop(npropstart+13)+0.5d0
+C         endif
+         prop(npropstart+13)= prop(npropstart+12)
          prop(npropstart+12)= prop(npropstart+11)
          prop(npropstart+11)= prop(npropstart+10)
          prop(npropstart+10)= prop(npropstart+9)
@@ -657,9 +698,13 @@
          prop(npropstart+6)= prop(npropstart+5)
          prop(npropstart+5)= prop(npropstart+4)
          prop(npropstart+4)= prop(npropstart+3)
-         prop(npropstart+1)=prop(npropstart+1)+0.5d0
-         prop(npropstart+2)=prop(npropstart+2)+0.5d0
          prop(npropstart+3)=iaxial+0.5d0
+         if(elname(1:4).eq.'LABF') then
+            prop(npropstart+1)=prop(npropstart+1)+0.5d0
+            prop(npropstart+2)=prop(npropstart+2)+0.5d0
+         elseif(elname(1:4).eq.'LABD') then
+            prop(npropstart+1)=prop(npropstart+1)+0.5d0
+         endif
       endif         
 !     
 !     check the range of the parameters
@@ -675,7 +720,8 @@
       endif
 !
       if((elname(1:2).eq.'OR').and.(elname(1:4).ne.'ORC1').and.
-     &     (elname(1:4).ne.'ORBT') .and.(elname(1:4).ne.'ORPN')) then
+     &     (elname(1:4).ne.'ORBT') .and.(elname(1:4).ne.'ORPN').and.
+     &     (elname(1:4).ne.'ORFL')) then
          if(prop(npropstart+2).lt.0.d0) then
             write(*,*) '*ERROR in fluidsections: diameter of the'
             write(*,*) '       orifice is not positive'
@@ -789,7 +835,8 @@
          endif
       endif
 !
-      if(elname(1:3).eq.'LAB') then
+      if((elname(1:3).eq.'LAB').and.(elname(1:4).ne.'LABF').and.
+     &    (elname(1:4).ne.'LABD') ) then
          if((prop(npropstart+1).gt.1000.d0)
      &        .or.(prop(npropstart+1).lt.0.d0)) then
             write(*,*) '*ERROR in fluidsections: the selected pitch t'

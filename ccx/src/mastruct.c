@@ -37,7 +37,7 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   int i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
     ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,
     index1,index2,m,node,nzs_,ist,kflag,indexe,nope,isize,*mast1=NULL,
-    *irow=NULL,icolumn,nmastboun;
+      *irow=NULL,icolumn,nmastboun,fluid=0;
 
   /* the indices in the comments follow FORTRAN convention, i.e. the
      fields start with 1 */
@@ -58,7 +58,10 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       for(i=0;i<*ne;++i){
 	  
 	  if(ipkon[i]<0) continue;
-	  if(strcmp1(&lakon[8*i],"F")==0)continue;
+	  if(strcmp1(&lakon[8*i],"F")==0){
+	      fluid=1;
+	      continue;
+	  }
 	  indexe=ipkon[i];
 	  if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
 	  else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
@@ -105,14 +108,18 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 
   /* determining the active degrees of freedom due to mpc's */
 
-  for(i=0;i<*nmpc;++i){
-      index=ipompc[i]-1;
-      do{
-	  nactdof[4*nodempc[3*index]+nodempc[3*index+1]-4]=1;
-	  index=nodempc[3*index+2];
-	  if(index==0) break;
-	  index--;
-      }while(1);
+  if(fluid==0){
+      for(i=0;i<*nmpc;++i){
+	  index=ipompc[i]-1;
+	  do{
+	      if(nodempc[3*index+1]<4){
+		  nactdof[4*nodempc[3*index]+nodempc[3*index+1]-4]=1;
+	      }
+	      index=nodempc[3*index+2];
+	      if(index==0) break;
+	      index--;
+	  }while(1);
+      }
   }
 	   
   /* subtracting the SPC and MPC nodes */
@@ -124,6 +131,7 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 
   for(i=0;i<*nmpc;++i){
     index=ipompc[i]-1;
+    if(nodempc[3*index+1]>3) continue;
     nactdof[4*nodempc[3*index]+nodempc[3*index+1]-4]=0;
   }
  

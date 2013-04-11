@@ -28,6 +28,9 @@
 #ifdef TAUCS
    #include "tau.h"
 #endif
+#ifdef PARDISO
+   #include "pardiso.h"
+#endif
 
 void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	     int *ne, 
@@ -70,7 +73,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     *nshcon=NULL,mode=-1,noddiam=-1,*ipobody=NULL,inewton=0,coriolis=0,iout,
     ifreebody,*itg=NULL,ntg=0,symmetryflag=0,inputformat=0,ngraph=1;
   double *stn=NULL,*v=NULL,*een=NULL,cam[3],*xstiff=NULL,*stiini=NULL,
-         *f=NULL,*fn=NULL,qa[2],*fext=NULL,*epn=NULL,*xstateini=NULL,
+         *f=NULL,*fn=NULL,qa[3],*fext=NULL,*epn=NULL,*xstateini=NULL,
          *vini=NULL,*stx=NULL,*enern=NULL,*xbounact=NULL,*xforcact=NULL,
          *xloadact=NULL,*t1act=NULL,*ampli=NULL,*xstaten=NULL,*eei=NULL,
          *enerini=NULL,*cocon=NULL,*shcon=NULL,*physcon=NULL,*qfx=NULL,
@@ -154,7 +157,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-               fmpc,nelemload,nload));
+               fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
   free(v);free(fn);free(stx);
   iout=1;
   
@@ -176,12 +179,12 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    xstiff,npmat_,&dtime,matname,mint_,
             ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
             shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
-            ibody,xloadold,&reltime));
+		    ibody,xloadold,&reltime,veold));
 
   /* determining the right hand side */
 
   b=NNEW(double,*neq);
-  for(k=0;k<neq[1];++k){
+  for(k=0;k<*neq;++k){
       b[k]=fext[k]-f[k];
   }
   free(fext);free(f);
@@ -205,7 +208,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
       token=1;
       sgi_main(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs,token);
 #else
-            printf("*ERROR in nonlingeo: the SGI library is not linked\n\n");
+            printf("*ERROR in prespooles: the SGI library is not linked\n\n");
             FORTRAN(stop,());
 #endif
     }
@@ -213,7 +216,15 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 #ifdef TAUCS
       tau(ad,&au,adb,aub,&sigma,b,icol,&irow,neq,nzs);
 #else
-            printf("*ERROR in nonlingeo: the TAUCS library is not linked\n\n");
+            printf("*ERROR in prespooles: the TAUCS library is not linked\n\n");
+            FORTRAN(stop,());
+#endif
+    }
+    else if(*isolver==7){
+#ifdef PARDISO
+      pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs);
+#else
+            printf("*ERROR in prespooles: the PARDISO library is not linked\n\n");
             FORTRAN(stop,());
 #endif
     }
@@ -248,7 +259,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
             ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,sti,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-            nelemload,nload));
+            nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
 
     free(eei);
     if(*nener==1){
@@ -270,7 +281,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		   fn,ttime,epn,ielmat,matname,cs,mcs,nkon,enern,xstaten,
                    nstate_,&istep,&iinc,iperturb,ener,mint_,output,ithermal,
                    qfn,ialset,istartset,iendset,trab,inotr,ntrans,orab,
-	           ielorien,norien,sti);
+	           ielorien,norien,sti,veold);
     }
     else{
     ipneigh=NNEW(int,*nk);neigh=NNEW(int,40**ne);
@@ -278,7 +289,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    fn,ttime,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
 	    iperturb,ener,mint_,output,ithermal,qfn,&mode,&noddiam,
             trab,inotr,ntrans,orab,ielorien,norien,description,
-	    ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph));
+	    ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs));
 	free(ipneigh);free(neigh);
     }
 
@@ -300,7 +311,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
          fn,ttime,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
 	 iperturb,ener,mint_,output,ithermal,qfn,&mode,&noddiam,
          trab,inotr,ntrans,orab,ielorien,norien,description,
-	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph));
+	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs));
     free(ipneigh);free(neigh);
     free(inum);FORTRAN(stop,());
 
@@ -316,6 +327,7 @@ void prespooles(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   for(k=0;k<7**nbody;k=k+7){xbodyold[k]=xbodyact[k];}
   if(*ithermal==1){
     for(k=0;k<*nk;++k){t1old[k]=t1act[k];}
+    for(k=0;k<*nk;++k){vold[5*k]=t1act[k];}
   }
 
   free(xbounact);free(xforcact);free(xloadact);free(t1act);free(ampli);

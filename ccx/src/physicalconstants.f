@@ -29,7 +29,7 @@
       integer i,istep,istat,n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),
      &  ipoinpc(0:*)
 !
-      real*8 physcon(3)
+      real*8 physcon(*)
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR in physicalconstants: *PHYSICAL CONSTANTS'

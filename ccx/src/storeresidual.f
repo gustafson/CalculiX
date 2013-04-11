@@ -29,13 +29,13 @@
 !
       implicit none
 !
-      logical fluid
+      logical fluid,force
 !
       character*1 cflag
       character*6 filab(*)
       character*8 lakon(*)
 !
-      integer nactdof(0:3,*),ithermal,i,j,nk,nfield,ndim,iorienglob,
+      integer nactdof(0:3,*),ithermal(2),i,j,nk,nfield,ndim,iorienglob,
      &  nelemload(2,*),nload,nodeboun(*),nboun,ipkon(*),inum(*),kon(*),
      &  ne,mint_,ielorien,itg(*),ntg,ndirboun(*)
 !
@@ -60,7 +60,7 @@
          filab(i)(1:4)='    '
       enddo
 !
-      if(ithermal.ne.2) then
+      if(ithermal(1).ne.2) then
          filab(1)(1:4)='U   '
          filab(5)(1:4)='RF  '
       else
@@ -68,7 +68,7 @@
          filab(5)(1:4)='    '
       endif
 !
-      if(ithermal.gt.1) then
+      if(ithermal(1).gt.1) then
          filab(2)(1:4)='NT  '
          filab(10)(1:4)='RFL '
          filab(14)(1:4)='TT  '
@@ -93,7 +93,8 @@
       cflag=filab(1)(5:5)
       call extrapolate(sti,stn,ipkon,inum,kon,lakon,nfield,nk,
      &     ne,mint_,ndim,orab,ielorien,co,iorienglob,cflag,
-     &     nelemload,nload,nodeboun,nboun,fluid,ndirboun)
+     &     nelemload,nload,nodeboun,nboun,fluid,ndirboun,vold,
+     &     ithermal,force)
 !
       if(fluid) then
          call fluidextrapolate(vold,ipkon,inum,kon,lakon,ne)
@@ -104,8 +105,9 @@
       if(filab(1)(5:5).eq.'I') then
          nfield=5
          cflag=filab(1)(5:5)
+         force=.false.
          call map3dto1d2d(vold,ipkon,inum,kon,lakon,nfield,nk,
-     &        ne,cflag,co)
+     &        ne,cflag,co,vold,force)
       endif
 !
 !     marking gas nodes by multiplying inum by -1

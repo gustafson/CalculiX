@@ -17,7 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine printoutelem(prlab,ipkon,lakon,kon,co,
-     &     ener,mint_,ii,nelem,energytot,volumetot)
+     &     ener,mint_,ii,nelem,energytot,volumetot,enerkintot,nkin,ne,
+     &     stx,nodes)
 !
 !     stores whole element results for element "nelem" in the .dat file
 !
@@ -27,10 +28,11 @@
       character*8 lakon(*)
 !
       integer ipkon(*),nelem,ii,kon(*),mint_,nope,indexe,j,k,konl(20),
-     &  mint3d,jj,nener,iflag
+     &  mint3d,jj,nener,iflag,nkin,ne,nodes
 !
       real*8 ener(mint_,*),energytot,volumetot,energy,volume,co(3,*),
-     &  xl(3,20),xi,et,ze,xsj,shp(4,20),weight
+     &  xl(3,20),xi,et,ze,xsj,shp(4,20),weight,enerkintot,enerkin,
+     &  stx(6,mint_,*)
 !
       include "gauss.f"
 !
@@ -38,7 +40,7 @@
 !
       if(ipkon(nelem).lt.0) return
 !
-      if(prlab(ii)(1:4).eq.'ELSE') then
+      if((prlab(ii)(1:4).eq.'ELSE').or.(prlab(ii)(1:4).eq.'CELS')) then
          nener=1
       else
          nener=0
@@ -56,8 +58,10 @@
          nope=4
       elseif(lakon(nelem)(4:5).eq.'15') then
          nope=15
-      else
+      elseif(lakon(nelem)(4:5).eq.'6') then
          nope=6
+      else
+         nope=0
       endif
 !
       do j=1,nope
@@ -69,6 +73,7 @@
 !
       energy=0.d0
       volume=0.d0
+      enerkin=0.d0
 !
       if(lakon(nelem)(4:5).eq.'8R') then
          mint3d=1
@@ -83,8 +88,13 @@
          mint3d=1
       elseif(lakon(nelem)(4:5).eq.'15') then
          mint3d=9
-      else
+      elseif(lakon(nelem)(4:5).eq.'6') then
          mint3d=2
+      else
+         if(nener.eq.1)then
+            energy=ener(1,nelem)
+         endif
+         mint3d=0
       endif
 !
       do jj=1,mint3d
@@ -142,21 +152,38 @@
          endif
 !
          if(nener.eq.1) energy=energy+weight*xsj*ener(jj,nelem)
+         if(nkin.eq.1) enerkin=enerkin+weight*xsj*ener(jj,nelem+ne)
          volume=volume+weight*xsj
       enddo
 !
       volumetot=volumetot+volume
-      energytot=energytot+energy
-!
+      if(nener.eq.1) energytot=energytot+energy
+      if(nkin.eq.1) enerkintot=enerkintot+enerkin
+!     
 !     writing to file
-!
+!     
       if((prlab(ii)(1:5).eq.'ELSE ').or.
-     &   (prlab(ii)(1:5).eq.'ELSET')) then
+     &     (prlab(ii)(1:5).eq.'ELSET')) then
          write(5,'(i6,1p,1x,e11.4)') nelem,energy
+      elseif((prlab(ii)(1:5).eq.'CELS ').or.
+     &        (prlab(ii)(1:5).eq.'CELST')) then
+         write(5,'(i6,1p,1x,e11.4)') nodes,energy
+      elseif((prlab(ii)(1:5).eq.'CDIS ').or.
+     &        (prlab(ii)(1:5).eq.'CDIST')) then
+         write(5,'(i6,1p,1x,e11.4,1p,1x,e11.4,1p,1x,e11.4)') nodes,
+     &        stx(1,1,nelem),stx(2,1,nelem),stx(3,1,nelem)
+      elseif((prlab(ii)(1:5).eq.'CSTR ').or.
+     &        (prlab(ii)(1:5).eq.'CSTRT')) then
+         write(5,'(i6,1p,1x,e11.4,1p,1x,e11.4,1p,1x,e11.4)') nodes,
+     &        stx(4,1,nelem),stx(5,1,nelem),stx(6,1,nelem)
       elseif((prlab(ii)(1:5).eq.'EVOL ').or.
-     &       (prlab(ii)(1:5).eq.'EVOLT')) then
+     &        (prlab(ii)(1:5).eq.'EVOLT')) then
          write(5,'(i6,1p,1x,e11.4)') nelem,volume
+      elseif((prlab(ii)(1:5).eq.'ELKE ').or.
+     &        (prlab(ii)(1:5).eq.'ELKET')) then
+         write(5,'(i6,1p,1x,e11.4)') nelem,enerkin
       endif
-!
+!     
       return
       end
+      

@@ -29,7 +29,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
             int *iinc, int *iperturb, double *ener, int *mint_, char *output,
             int *ithermal, double *qfn, int *ialset, int *istartset,
             int *iendset, double *trab, int *inotr, int *ntrans,
-	    double *orab, int *ielorien, int *norien, double *sti){
+	    double *orab, int *ielorien, int *norien, double *sti,double *veold){
 
   /* duplicates fields for static cyclic symmetric calculations */
 
@@ -121,7 +121,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
     eent=NNEW(double,6**nk*ngraph);
   if((strcmp1(&filab[24],"RF  ")==0)||(strcmp1(&filab[54],"RFL ")==0))
     fnt=NNEW(double,4**nk*ngraph);
-  if(strcmp1(&filab[30],"PE  ")==0)
+  if(strcmp1(&filab[30],"PEEQ")==0)
     epnt=NNEW(double,*nk*ngraph);
   if(strcmp1(&filab[36],"ENER")==0)
     enernt=NNEW(double,*nk*ngraph);
@@ -230,7 +230,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
     for(l=0;l<6**nk;l++){eent[l]=een[l];};
   if((strcmp1(&filab[24],"RF  ")==0)||(strcmp1(&filab[54],"RFL ")==0))
     for(l=0;l<4**nk;l++){fnt[l]=fn[l];};
-  if(strcmp1(&filab[30],"PE  ")==0)
+  if(strcmp1(&filab[30],"PEEQ")==0)
     for(l=0;l<*nk;l++){epnt[l]=epn[l];};
   if(strcmp1(&filab[36],"ENER")==0)
     for(l=0;l<*nk;l++){enernt[l]=enern[l];};
@@ -296,7 +296,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
         }
       }
     
-      if(strcmp1(&filab[30],"PE  ")==0){
+      if(strcmp1(&filab[30],"PEEQ")==0){
         for(l=0;l<*nk;l++){
           if(inocs[l]==jj) epnt[l+*nk*i]=epn[l];
         }
@@ -343,7 +343,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
                xstatent,nstate_,istep,iinc,iperturb,ener,mint_,output,
                ithermal,qfnt,&mode,&noddiam,trab,inotrt,ntrans,orab,ielorien,
                norien,description,ipneigh,neigh,sti,vr,vi,stnr,stni,
-               vmax,stnmax,&ngraph));
+               vmax,stnmax,&ngraph,veold,&net,cs));
   free(ipneigh);free(neigh);
   
   if((strcmp1(&filab[0],"U   ")==0)||
@@ -353,7 +353,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   if(strcmp1(&filab[18],"E   ")==0) free(eent);
   if((strcmp1(&filab[24],"RF  ")==0)||(strcmp1(&filab[54],"RFL ")==0))
         free(fnt);
-  if(strcmp1(&filab[30],"PE  ")==0) free(epnt);
+  if(strcmp1(&filab[30],"PEEQ")==0) free(epnt);
   if(strcmp1(&filab[36],"ENER")==0) free(enernt);
   if(strcmp1(&filab[42],"SDV ")==0) free(xstatent);
   if(strcmp1(&filab[48],"HFL ")==0) free(qfnt);

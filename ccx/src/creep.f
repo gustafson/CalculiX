@@ -59,12 +59,9 @@
 !
 !     OUTPUT (general):
 !
-!     decra(1)           equivalent deviatoric creep strain increment
-!     decra(2..4)        not used
 !     decra(5)           derivative of the equivalent deviatoric
 !                        creep strain increment w.r.t. the von Mises
 !                        stress
-!     deswa(1..5)        not used
 !
 !     OUTPUT only for elastic isotropic materials:
 !     decra(1)           equivalent deviatoric creep strain increment
@@ -79,13 +76,8 @@
       real*8 decra(5),deswa(5),statev(*),serd,ec(2),esw(2),p,qtild,
      &  temp,dtemp,predef(*),dpred(*),time(2),dtime,coords(*)
 !
-      if (cmname .eq. "STRONG") then                             
-        decra(1)= 0.333333333333e-8*qtild*dtime                      
-        decra(5)= 0.333333333333e-8*dtime                            
-      elseif (cmname .eq. "WEAK") then                             
-        decra(1)= 0.333333333333e-8*qtild*dtime                      
-        decra(5)= 0.333333333333e-8*dtime                            
-      endif                                                      
+      qtild=(1.d10*decra(1)/dtime)**0.2d0
+      decra(5)=5.d-10*dtime*qtild**4
 !
       return
       end

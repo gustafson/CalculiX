@@ -44,8 +44,7 @@
 !
       real*8 xboun(*),xnor(*),coefmpc(*),trab(7,*),val,co(3,*),
      &  xnoref(3),dmax,d(3,3),e(3,3,3),alpha,q(3),w(3),xn(3),
-     &  a1(3),a2(3),dd,c1,c2,c3,ww,c(3,3),vold(0:4,*),a(3,3),
-     &  vdummy(0:4)
+     &  a1(3),a2(3),dd,c1,c2,c3,ww,c(3,3),vold(0:4,*),a(3,3)
 !
       data d /1.,0.,0.,0.,1.,0.,0.,0.,1./
       data e /0.,0.,0.,0.,0.,-1.,0.,1.,0.,
@@ -108,7 +107,7 @@ c               j=idir-3
      &              iamplitude,nam,ipompc,nodempc,coefmpc,
      &              nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &              ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &              type,typeboun,nmethod,iperturb,fixed,vdummy)
+     &              type,typeboun,nmethod,iperturb,fixed,vold,irotnode)
             endif
          else
 !
@@ -345,7 +344,7 @@ c               idir=idir-3
      &              iamplitude,nam,ipompc,nodempc,coefmpc,
      &              nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &              ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &              type,typeboun,nmethod,iperturb,fixed,vdummy)
+     &              type,typeboun,nmethod,iperturb,fixed,vold,irotnode)
 !
 !              check for shells whether the rotation about the normal
 !              on the shell has been eliminated
@@ -375,7 +374,8 @@ c               idir=idir-3
      &                    iamplitude,nam,ipompc,nodempc,coefmpc,
      &                    nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &                    ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &                    type,typeboun,nmethod,iperturb,fixed,vdummy)
+     &                    type,typeboun,nmethod,iperturb,fixed,vold,
+     &                    irotnode)
                   else
 !     
 !                    check for an unused rotational DOF
@@ -504,7 +504,8 @@ c                        idof=8*(node-1)+3+imax
      &                 iamplitude,nam,ipompc,nodempc,coefmpc,
      &                 nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &                 ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &                 type,typeboun,nmethod,iperturb,fixed,vdummy)
+     &                 type,typeboun,nmethod,iperturb,fixed,vold,
+     &                 irotnode)
                endif
             elseif(lakon(ielem)(7:7).eq.'B') then
 !
@@ -571,13 +572,14 @@ c                        idof=8*(node-1)+3+imax
      &                    iamplitude,nam,ipompc,nodempc,coefmpc,
      &                    nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &                    ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &                    type,typeboun,nmethod,iperturb,fixed,vdummy)
+     &                    type,typeboun,nmethod,iperturb,fixed,vold,
+     &                    knor(indexk+k))
                   enddo
                endif
             else
 !
 !                       2d plane stress, plane strain or axisymmetric
-!                       element: SPC
+!                       element: MPC in all but z-direction
 !
                newnode=knor(indexk+2)
                idof=8*(newnode-1)+idir

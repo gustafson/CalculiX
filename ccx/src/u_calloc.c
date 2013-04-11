@@ -33,7 +33,7 @@ void *u_calloc(size_t num,size_t size){
   a=calloc(num,size);
   if(a==NULL){
     printf("*ERROR in u_calloc: error allocating memory\n");
-    printf("num=%d,size=%d\n",num,size);
+    printf("num=%ld,size=%ld\n",num,size);
     exit(16);
   }
   else {

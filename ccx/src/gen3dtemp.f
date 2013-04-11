@@ -18,7 +18,7 @@
 !
       subroutine gen3dtemp(iponoel,inoel,iponoelmax,kon,ipkon,lakon,ne,
      &  iponor,xnor,knor,t0,t1,thicke,offset,rig,nk,nk_,co,istep,
-     &  ithermal)
+     &  ithermal,vold)
 !
 !     maps the temperatures and temperature gradients in 1-D and 2-D
 !     elements on their expanded counterparts
@@ -31,7 +31,8 @@
      &  iponor(2,*),knor(*),rig(*),i,i1,nk,nk_,i2,index,ielem,j,
      &  indexe,indexk,k,node,istep,ithermal
 !
-      real*8 xnor(*),t0(*),t1(*),thicke(2,*),offset(2,*),co(3,*)
+      real*8 xnor(*),t0(*),t1(*),thicke(2,*),offset(2,*),co(3,*),
+     &  vold(0:4,*)
 !
 !     initial conditions
 !
@@ -52,45 +53,57 @@
                   do k=1,3
                      node=knor(indexk+k)
                      t0(node)=t0(i)
+                     if(ithermal.gt.1) vold(0,node)=t0(node)
                   enddo
                elseif(lakon(ielem)(7:7).eq.'L') then
                   node=knor(indexk+1)
                   t0(node)=t0(i)
      &                -t0(i1)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+                  if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+2)
                   t0(node)=t0(i)
+                  if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+3)
                   t0(node)=t0(i)
      &                +t0(i1)*thicke(1,indexe+j)*(0.5d0-offset(1,ielem))
+                  if(ithermal.gt.1) vold(0,node)=t0(node)
                elseif(lakon(ielem)(7:7).eq.'B') then
                   node=knor(indexk+1)
                   t0(node)=t0(i)
      &                -t0(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
      &                +t0(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+                  if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+2)
                   t0(node)=t0(i)
      &                -t0(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
      &                -t0(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+                  if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+3)
                   t0(node)=t0(i)
      &                +t0(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
      &                -t0(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+                  if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+4)
                   t0(node)=t0(i)
      &                +t0(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
      &                +t0(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+                  if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+5)
                   t0(node)=t0(i)
      &                -t0(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+                  if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+6)
                   t0(node)=t0(i)
      &                -t0(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+                  if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+7)
                   t0(node)=t0(i)
      &                +t0(i2)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
+                  if(ithermal.gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+8)
                   t0(node)=t0(i)
      &                +t0(i1)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
+                  if(ithermal.gt.1) vold(0,node)=t0(node)
                endif
                if(rig(i).eq.0) exit
                index=inoel(3,index)

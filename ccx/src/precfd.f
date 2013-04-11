@@ -16,10 +16,10 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine precfd(nelemface,sideface,nface,ipoface,nodface,cfd,
+      subroutine precfd(nelemface,sideface,nface,ipoface,nodface,
      &  ne,ipkon,kon,lakon,ikboun,ilboun,xboun,nboun,nk,isolidsurf,
      &  nsolidsurf,ifreestream,nfreestream,neighsolidsurf,iponoel,inoel,
-     &  inoelfree,nef,co)
+     &  inoelfree,nef,co,ipompc,nodempc,ikmpc,ilmpc,nmpc)
 !
 !     preliminary calculations for cfd applicatons:
 !     - determining the external faces of the mesh and storing
@@ -33,7 +33,7 @@
 !
       implicit none
 !
-      logical solidboun,cfd
+      logical solidboun,mpcnode
 !
       character*1 sideface(*)
       character*8 lakon(*)
@@ -44,7 +44,8 @@
      &  ilboun(*),nboun,isolidsurf(*),nsolidsurf,ifreestream(*),
      &  nfreestream,id,nk,node,idof,i,j,k,l,m,neighsolidsurf(*),
      &  iponoel(*),noden,idn,nope,nodemin,ifree,nef,indexold,
-     &  inoel(3,*),ifreenew,inoelfree
+     &  inoel(3,*),ifreenew,inoelfree,mpc,ikmpc(*),nmpc,
+     &  nodempc(3,*),ipompc(*),ilmpc(*)
 !
       real*8 xboun(*),dist,distmin,co(3,*)
 !
@@ -65,8 +66,6 @@
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
      &             4,6,3,1,12,15,9,13/
-!
-      cfd=.true.
 !
       kflag=1
       ithree=3
@@ -413,6 +412,27 @@ c                  write(*,*) j,k,ifaceq(k,j),indexe
          enddo
       enddo
 !
+!     all nodes belonging to MPC's are removed from the
+!     ifreestream stack
+!
+      do i=1,nmpc
+         index=ipompc(i)
+         do
+            if(index.eq.0) exit
+            node=nodempc(1,index)
+            call nident(ifreestream,node,nfreestream,id)
+            if(id.gt.0) then
+               if(ifreestream(id).eq.node) then
+                  nfreestream=nfreestream-1
+                  do j=id,nfreestream
+                     ifreestream(j)=ifreestream(j+1)
+                  enddo
+               endif
+            endif
+            index=nodempc(3,index)
+         enddo
+      enddo
+!
 !     storing the in-stream neighbors of the solid surface external
 !       nodes in neighsolidsurf
 !
@@ -613,18 +633,18 @@ c                  write(*,*) j,k,ifaceq(k,j),indexe
       kflag=2
       call isortic(nelemface,sideface,nface,kflag)
 !
-      write(*,*) 'nfreestream ',nfreestream
-      do i=1,nfreestream
-         write(*,*) i,ifreestream(i)
-      enddo
-      write(*,*) 'nsolidsurf ',nsolidsurf
-      do i=1,nsolidsurf
-         write(*,*) i,isolidsurf(i),neighsolidsurf(i)
-      enddo
-      write(*,*) 'external faces'
-      do i=1,nface
-         write(*,*) nelemface(i),sideface(i)
-      enddo
+c      write(*,*) 'nfreestream ',nfreestream
+c      do i=1,nfreestream
+c         write(*,*) 'nfreestream ',i,ifreestream(i)
+c      enddo
+c      write(*,*) 'nsolidsurf ',nsolidsurf
+c      do i=1,nsolidsurf
+c         write(*,*) 'nsolidsurf ',i,isolidsurf(i),neighsolidsurf(i)
+c      enddo
+c      write(*,*) 'external faces'
+c      do i=1,nface
+c         write(*,*) nelemface(i),sideface(i)
+c      enddo
 !
       return
       end

@@ -48,7 +48,7 @@
       real*8 xforc(*),trab(7,*),coefmpc(*),xnor(*),val,co(3,*),
      &  thicke(2,*),pi,xboun(*),xnoref(3),dmax,d(3,3),e(3,3,3),
      &  alpha,q(3),w(3),xn(3),a(3,3),a1(3),a2(3),dd,c1,c2,c3,ww,c(3,3),
-     &  vold(0:4,*),vdummy(0:4)
+     &  vold(0:4,*)
 !
       data d /1.,0.,0.,0.,1.,0.,0.,0.,1./
       data e /0.,0.,0.,0.,0.,-1.,0.,1.,0.,
@@ -377,7 +377,8 @@ c               idir=idir-3
      &                    iamplitude,nam,ipompc,nodempc,coefmpc,
      &                    nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &                    ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &                    type,typeboun,nmethod,iperturb,fixed,vdummy)
+     &                    type,typeboun,nmethod,iperturb,fixed,vold,
+     &                    irotnode)
                   else
 !     
 !                    check for an unused rotational DOF

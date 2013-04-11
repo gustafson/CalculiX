@@ -1,3 +1,5 @@
+
+
 /*     CalculiX - A 3-Dimensional finite element program                   */
 /*              Copyright (C) 1998-2007 Guido Dhondt                          */
 
@@ -55,30 +57,41 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
              int *nsectors, int *nm,int *icol,int *irow,int *nzl, int *nam,
              int *ipompcold, int *nodempcold, double *coefmpcold,
              char *labmpcold, int *nmpcold, double *xloadold, int *iamload,
-             double *t1old,double *t1,int *iamt1, double *xstiff){
+             double *t1old,double *t1,int *iamt1, double *xstiff,int **icolep,
+	     int **jqep,int **irowep,int *isolver,
+	     int *nzse,double **adbep,double **aubep,int *iexpl,int *ibody,
+	     double *xbody,int *nbody,double *cocon,int *ncocon,
+	     char* tieset,int* ntie, int **nnnp){
 
   /* calls the Arnoldi Package (ARPACK) for cyclic symmetry calculations */
   
-    char *filabt;
+    char *filabt,*tchar1=NULL,*tchar2=NULL,*tchar3=NULL;
+
     int *inum=NULL,k,idir,lfin,j,lint,iout=0,index,inode,id,i,idof,
-      ielas,icmd,kk,l,nkt,icntrl,imag=1,icomplex,kk4,kk5,kk6,iterm,
+        ielas,icmd,kk,l,nkt,icntrl,imag=1,icomplex,kk4,kk5,kk6,iterm,
 	lprev,ilength,ij,i1,i2,iel,ielset,node,indexe,nope,ml1,
-	*inocs=NULL,*ielcs=NULL,jj,l1,l2,is,*ncocon=NULL,nlabel,
+        *inocs=NULL,*ielcs=NULL,jj,l1,l2,is,nlabel,*nshcon=NULL,
         new,nodeleft,noderight[3],numnodes,ileft,kflag=2,itr,locdir,
-        neqh,j1,nodenew;
+        neqh,j1,nodenew,mass[2]={1,1},stiffness=1,buckling=0,
+	rhsi=0,intscheme=0,coriolis=0,istep=1,iinc=1,iperturbmass[2],
+        *mast1e=NULL,*ipointere=NULL,*irowe=*irowep,*ipobody=NULL,*jqe=*jqep,
+        *icole=*icolep,tint=-1,tnstart=-1,tnend=-1,tint2=-1,*nnn=*nnnp;
+
     double *stn=NULL,*v=NULL,*temp_array=NULL,*vini=NULL,
-	*een=NULL,cam[3],*f=NULL,*fn=NULL,qa[2],*epn=NULL,*stiini=NULL,
+	*een=NULL,cam[3],*f=NULL,*fn=NULL,qa[3],*epn=NULL,*stiini=NULL,
 	*xstateini=NULL,theta,pi,*coefmpcnew=NULL,t[3],ctl,stl,
-	*stx=NULL,*enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,*cocon=NULL,
-	*qfx=NULL,*qfn=NULL,xreal,ximag,*vt=NULL,sum,*aux=NULL,coefright[3],
-        coef,a[9],ratio;
+	*stx=NULL,*enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,
+	*qfx=NULL,*qfn=NULL,xreal,ximag,*vt=NULL,sum,*aux=NULL,
+        coefright[3],*physcon=NULL,coef,a[9],ratio,reltime,*ade=NULL,
+        *aue=NULL,*adbe=*adbep,*aube=*aubep,*fext=NULL,*cgr=NULL,
+        *shcon=NULL;
     
     /* dummy arguments for the results call */
     
     double *veold=NULL,*accold=NULL,bet,gam,dtime,time;
 
     pi=4.*atan(1.);
-    
+
     v=NNEW(double,10**nk);
     vt=NNEW(double,5**nk**nsectors);
     
@@ -96,7 +109,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     coefmpcnew=NNEW(double,*mpcend);
     
     nkt=*nsectors**nk;
-    
+ 
     /* assigning nodes and elements to sectors */
     
     inocs=NNEW(int,*nk);
@@ -342,7 +355,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],sti,
 	      xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
 	      ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-	      nelemload,nload));
+	      nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
 	    
 	}
 	free(eei);
@@ -427,7 +440,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	lint=j**nsectors*neqh;
 	for(i=0;i<*nsectors*neqh;++i) z[lint+i]=z[lint+i]/sum;
     }
-
+    
 /* copying the multiple point constraints */
 
     *nmpc=0;
@@ -607,12 +620,203 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    }
 	}
     }
-  
+
+    /* copying the contact definition */
+
+    if(*nmethod==4){
+      
+      /* first find the startposition to append the expanded contact fields*/
+      
+      for(j=0; j<*nset; j++){
+	if(iendset[j]>tint){
+	  tint=iendset[j];
+	}
+      }
+      tint++;
+      /* now append and expand the contact definitons*/
+      tchar1=NNEW(char,81);
+      tchar2=NNEW(char,81);
+      tchar3=NNEW(char,81);
+      for(i=0; i<*ntie; i++){
+	if(tieset[i*(81*3)+80]=='C'){
+	  memcpy(tchar2,&tieset[i*(81*3)+81],81);
+	  tchar2[80]='\0';
+	  memcpy(tchar3,&tieset[i*(81*3)+81+81],81);
+	  tchar3[80]='\0';
+	  //a contact constraint was found, so append and expand the information
+	  for(j=0; j<*nset; j++){
+	    memcpy(tchar1,&set[j*81],81);
+	    tchar1[80]='\0';
+	    if(strcmp(tchar1,tchar2)==0){
+	      /* dependent nodal surface was found,copy the original information first */
+	      tnstart=tint;
+	      for(k=0; k<iendset[j]-istartset[j]+1; k++){
+		ialset[tint-1]=ialset[istartset[j]-1+k];
+		tint++;
+	      }
+	      /* now append the expanded information */
+	      for(l=1; l<*nsectors; l++){
+		for(k=0; k<iendset[j]-istartset[j]+1; k++){
+		  ialset[tint-1]=(ialset[istartset[j]-1+k]!=-1)?ialset[istartset[j]-1+k]+*nk*l:-1;
+		  tint++;
+		}
+	      }
+	      tnend=tint-1;
+	      /* now replace the information in istartset and iendset*/
+	      istartset[j]=tnstart;
+	      iendset[j]=tnend;
+	    }
+	    else if(strcmp(tchar1,tchar3)==0){
+	      /* independent element face surface was found */
+	      tnstart=tint;
+	      for(k=0; k<iendset[j]-istartset[j]+1; k++){
+		ialset[tint-1]=ialset[istartset[j]-1+k];
+		tint++;
+	      }
+	      /* now append the expanded information*/
+	      for(l=1; l<*nsectors; l++){
+		for(k=0; k<iendset[j]-istartset[j]+1; k++){
+		  tint2=((int)(ialset[istartset[j]-1+k]))/10;
+		  ialset[tint-1]=(ialset[istartset[j]-1+k]!=-1)?(tint2+*ne*l)*10+(ialset[istartset[j]-1+k]-(tint2*10)):-1;
+		  tint++;
+		}
+	      }
+	      tnend=tint-1;
+	      /* now replace the information in istartset and iendset*/
+	      istartset[j]=tnstart;
+	      iendset[j]=tnend;
+	    }
+	  }
+	}
+      }
+      free(tchar1);
+      free(tchar2);
+      free(tchar3);
+
+      /* expanding nnn */
+
+      RENEW(nnn,int,nkt);
+      l=0;
+      for(jj=*nk; jj<nkt; jj++){
+	if((jj % *nk)==0){
+	  l++;
+	}
+	nnn[jj]=nnn[jj-(l**nk)]+l**nk;
+      }
+    }    
+    
     *nk=nkt;
     (*ne)*=(*nsectors);
     (*nkon)*=(*nsectors);
     (*nboun)*=(*nsectors);
-    (neq[1])*=(*nsectors/2);
+    neq[1]=neqh**nsectors;
+      
+      /*create the new mass-matrix*/
+      /*create the matrix structure*/
+
+    if(*nmethod==4){
+
+      nzse[0]=nzs[0];
+      nzse[1]=nzs[1];
+      nzse[2]=nzs[2];
+      
+      mast1e=NNEW(int,nzse[1]);
+      irowe=NNEW(int,nzse[1]);
+      icole=NNEW(int,4**nk);
+      jqe=NNEW(int,4**nk+1);
+      ipointere=NNEW(int,4**nk);
+      
+      mastruct(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,ipompc,
+	       nodempc,nmpc,nactdof,icole,jqe,&mast1e,&irowe,isolver,
+	       neq,nnn,ikmpc,ilmpc,ipointere,nzse,nmethod,ithermal,
+	       ikboun,ilboun,iperturb);
+      
+      free(mast1e);free(ipointere);
+
+      /* fill the matrix */
+      
+      /* stiffness matrix */
+
+      ade=NNEW(double,neq[1]);
+      aue=NNEW(double,nzse[2]);
+      
+      /* mass matrix */
+
+      adbe=NNEW(double,neq[1]);
+      aube=NNEW(double,nzse[1]);
+      
+      fext=NNEW(double,neq[1]);
+      
+      /* only the mass matrix must be calculated. Within mafillsm this
+         cannot be done without calculating the stiffness matrix at the
+         same time; to reduce computational cost the stiffness matrix
+         is calculated in a linear way, i.e. without large deformation
+         and stress stiffness; therefore, a new variable iperturbmass
+         is introduced */
+
+      iperturbmass[0]=iperturb[0];
+      iperturbmass[1]=0;
+
+      FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
+	      ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
+	      nforc,nelemload,sideload,xload,nload,xbody,ipobody,nbody,
+	      cgr,ade,aue,fext,nactdof,icole,jqe,irowe,neq,nzl,nmethod,
+	      ikmpc,ilmpc,ikboun,ilboun,
+	      elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
+	      ielorien,norien,orab,ntmat_,
+	      t0,t0,ithermal,prestr,iprestr,vold,iperturbmass,sti,
+	      nzse,stx,adbe,aube,iexpl,plicon,nplicon,plkcon,nplkcon,
+	      xstiff,npmat_,&dtime,matname,mint_,
+	      ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
+	      physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
+	      &coriolis,ibody,xloadold,&reltime,veold));
+      
+      
+      free(fext);
+      
+      /*normalizing the eigenvectors*/
+      
+      /*  lint=0;
+	  RENEW(temp_array,double,neq[1]);
+	  for(j=0; j<*nev; j++){
+	  if((nm[j]==0 && nm[j+1]==0) || ((nm[j]==(int)(cs[0]/2) && nm[j]==(int)(cs[0]/2))&&(fmod(cs[0],2.)==0.))){
+	  //the nd 0 or cs[0]/2 is selected, so the equation Uj^T*M*Uj=0 must be satisfied, therefore set the second j+1 eigenfrequency to 0
+	  for(k=0; k<neq[1]; ++k){
+	  z[(j+1)*neq[1]+k]=0.0;
+	  }
+	  //now normalize the first occurence of the eigenmode
+	  sum=0.;
+	  lint=j*neq[1];
+	  for(k=0;k<neq[1];++k)
+	  temp_array[k]=0.;
+	  FORTRAN(op,(&neq[1],aux,&z[lint],temp_array,adbe,aube,icole,irowe,nzl));
+	  for(k=0;k<neq[1];++k)
+	  sum+=z[lint+k]*temp_array[k];
+	  for(k=0;k<neq[1];++k){
+	  z[lint+k]=z[lint+k]/(sqrt(sum));
+	  }
+	  //now increment j, to jump over the second same eigenmode
+	  j++;
+	  }
+	  else{
+	  sum=0.;
+	  lint=j*neq[1];
+	  for(k=0;k<neq[1];++k)
+	  temp_array[k]=0.;
+	  FORTRAN(op,(&neq[1],aux,&z[lint],temp_array,adbe,aube,icole,irowe,nzl));
+	  for(k=0;k<neq[1];++k)
+	  sum+=z[lint+k]*temp_array[k];
+	  for(k=0;k<neq[1];++k){
+	  z[lint+k]=z[lint+k]/(sqrt(sum));
+	  }
+	  }
+	  }*/
+      
+      free(ade);free(aue);
+      
+      *adbep=adbe;*aubep=aube;*irowep=irowe;*icolep=icole;*jqep=jqe,*nnnp=nnn;
+      
+    }
     
     free(temp_array);free(coefmpcnew);
     free(v);free(vt);free(fn);free(stn);free(inum);free(stx);

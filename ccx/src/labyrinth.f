@@ -17,7 +17,7 @@
 !     
       subroutine labyrinth(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,physcon,dvi,numf,set,co,vold)
+     &     nodef,idirf,df,cp,R,physcon,co,dvi,numf,vold,set,kon,ipkon)
 !     
 !     labyrinth element
 !     
@@ -29,12 +29,12 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
-     &     inv,kgas,n,iaxial,nodea,nodeb
+     &     inv,kgas,n,iaxial,nodea,nodeb,ipkon(*),kon(*)
 !
       real*8 prop(*),v(0:4,*),xflow,f,df(4),kappa,R,a,d,
      &     p1,p2,T1,Aeff,C1,C2,C3,cd,cp,physcon(3),p2p1,km1,dvi,
      &     kp1,kdkm1,tdkp1,km1dk,x,y,ca1,cb1,ca2,cb2,dT1,alambda,
-     &     rad,reynolds,pi,ppkrit,co(0:3,*),
+     &     rad,reynolds,pi,ppkrit,co(3,*),
      &     carry_over,lc,hst,e,szt,num,denom,t,s,b,h,cdu,
      &     cd_radius,cst,dh,cd_honeycomb,cd_lab,bdh,
      &     pt0zps1,cd_1spike,cdbragg,rzdh,
@@ -42,7 +42,7 @@
 !     
       pi=4.d0*datan(1.d0)
       e=2.718281828459045d0
-!          
+!    
       if (iflag.eq.0) then
          identity=.true.
 !     
@@ -73,7 +73,7 @@
              rad=prop(index+8)
              X=prop(index+9)
              Hst=prop(index+10)
-
+!
              A=pi*D*s
 !
 !    "flexible" labyrinth for thermomechanical coupling
@@ -92,14 +92,11 @@
              rad=prop(index+10)
              X=prop(index+11)
              Hst=prop(index+12)
+
 !
 !     gap definition
              s=dsqrt((co(1,nodeb)+vold(1,nodeb)-
-     &            co(1,nodea)-vold(1,nodea))**2+
-     &            (co(2,nodeb)+vold(2,nodeb)-
-     &            co(2,nodea)-vold(2,nodea))**2+
-     &            (co(3,nodeb)+vold(3,nodeb)-
-     &            co(3,nodea)-vold(3,nodea))**2)
+     &            co(1,nodea)-vold(1,nodea))**2)
              if(iaxial.ne.0) then
                 a=pi*d*s/iaxial
              else
@@ -171,9 +168,8 @@
                xflow=inv*p1*Aeff/dsqrt(T1)*dsqrt(2.d0/R)*ppkrit
             endif
          endif
-!     
+!
       elseif (iflag.eq.2)then
-!     
          numf=4
          alambda=10000.d0
 !     
@@ -208,7 +204,7 @@
 !     
 !     Usual labyrinth
 !
-         if(lakon(nelem)(2:6).ne. 'LABF') then
+         if(lakon(nelem)(2:5).ne. 'LABF') then
             index=ielprop(nelem)
             kappa=(cp/(cp-R))
             t=prop(index+1)
@@ -226,26 +222,23 @@
 !     Flexible labyrinth for coupled calculations
 !
          elseif(lakon(nelem)(2:5).eq.'LABF') then
-             nodea=int(prop(index+1))
-             nodeb=int(prop(index+2))
-             iaxial=int(prop(index+3))
-             t=prop(index+4)
-             d=prop(index+5)
-             n=int(prop(index+6))
-             b=prop(index+7)
-             h=prop(index+8)
-             lc=prop(index+9)
-             rad=prop(index+10)
-             X=prop(index+11)
-             Hst=prop(index+12)
-!
+            index=ielprop(nelem)
+            nodea=int(prop(index+1))
+            nodeb=int(prop(index+2))
+            iaxial=int(prop(index+3))
+            t=prop(index+4)
+            d=prop(index+5)
+            n=int(prop(index+6))
+            b=prop(index+7)
+            h=prop(index+8)
+            lc=prop(index+9)
+            rad=prop(index+10)
+            X=prop(index+11)
+            Hst=prop(index+12)
+!     
 !     gap definition
              s=dsqrt((co(1,nodeb)+vold(1,nodeb)-
-     &            co(1,nodea)-vold(1,nodea))**2+
-     &            (co(2,nodeb)+vold(2,nodeb)-
-     &            co(2,nodea)-vold(2,nodea))**2+
-     &            (co(3,nodeb)+vold(3,nodeb)-
-     &            co(3,nodea)-vold(3,nodea))**2)
+     &            co(1,nodea)-vold(1,nodea))**2)
              if(iaxial.ne.0) then
                 a=pi*d*s/iaxial
              else
@@ -257,7 +250,7 @@
          dT1=dsqrt(T1)
 !     
          Aeff=A
-         e=2.718281828459045d0
+C         e=2.718281828459045d0
 !     
 !     honeycomb stator correction
 !     

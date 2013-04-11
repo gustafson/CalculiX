@@ -38,7 +38,12 @@
       real*8 xnor(*),coefmpc(*),trab(7,*),co(3,*),prop(*)
 !
       do i=1,ne
-         if((lakon(i).ne.'DLIPIMAF').and.(lakon(i).ne.'DLIPIWCF')) cycle
+C         if((lakon(i).ne.'DLIPIMAF').and.(lakon(i).ne.'DLIPIWCF')) cycle
+         if((lakon(i).ne.'DLIPIMAF').and.(lakon(i).ne.'DLIPIWCF')
+     &        .and.(lakon(i)(1:5).ne.'DLABF')
+     &        .and.(lakon(i)(1:6).ne.'DGAPIF')
+     &        .and.(lakon(i)(1:5).ne.'DORFL')
+     &        .and.(lakon(i)(1:6).ne.'DGAPXF')) cycle
          do ii=1,6
             node=int(prop(ielprop(i)+int((ii+2.5d0)/3.d0)))
             if(node.gt.iponoelmax) cycle

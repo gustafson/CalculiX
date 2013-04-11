@@ -57,30 +57,34 @@
        nrhcon,ipobody,ibody,xbodyact,nbody,iviewfile,jobnamef,ctrl,
        xloadold,&reltime,nmethod,set);}
 
+    if((icascade==2)||(ncont!=0)){
+	/**nmpc=nmpcref;*/
+	memmpc_=memmpcref_;mpcfree=mpcfreeref;
+	RENEW(nodempc,int,3*memmpcref_);
+	for(k=0;k<3*memmpcref_;k++){nodempc[k]=nodempcref[k];}
+	RENEW(coefmpc,double,memmpcref_);
+	for(k=0;k<memmpcref_;k++){coefmpc[k]=coefmpcref[k];}
+    }
+
     if(ncont!=0){
 	*ne=ne0;*nkon=nkon0;
 	contact(&ncont,ntie,tieset,nset,set,istartset,iendset,
              ialset,itietri,lakon,ipkon,kon,koncont,ne,cg,straight,nkon,
 	     co,vold,ielmat,cs,elcon,istep,&iinc,&iit,ncmat_,ntmat_,
-		ifcont1,ifcont2,&ne0,vini,nmethod);
+	     ifcont1,ifcont2,&ne0,vini,nmethod,nmpc,&mpcfree,&memmpc_,
+	     &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
+             iperturb,ikboun,nboun);
 	icascade=1;
-    }
-
-    if(icascade==2){
-	*nmpc=nmpcref;memmpc_=memmpcref_;mpcfree=mpcfreeref;
-	RENEW(nodempc,int,3*memmpcref_);
-	for(k=0;k<3*memmpcref_;k++){nodempc[k]=nodempcref[k];}
-	RENEW(coefmpc,double,memmpcref_);
-	for(k=0;k<memmpcref_;k++){coefmpc[k]=coefmpcref[k];}
     }
     newstep=0;
     FORTRAN(nonlinmpc,(co,vold,ipompc,nodempc,coefmpc,labmpc,
 		       nmpc,ikboun,ilboun,nboun,xbounold,aux,iaux,
 		       &maxlenmpc,ikmpc,ilmpc,&icascade,
 		       kon,ipkon,lakon,ne,&reltime,&newstep,xboun,fmpc,
-                       &iit,&idiscon,&ncont,trab,ntrans));
-    if(icascade==2){
-	nmpcref=*nmpc;memmpcref_=memmpc_;mpcfreeref=mpcfree;
+                       &iit,&idiscon,&ncont,trab,ntrans,ithermal));
+    if((icascade==2)||(ncont!=0)){
+	/*nmpcref=*nmpc;*/
+	memmpcref_=memmpc_;mpcfreeref=mpcfree;
 	RENEW(nodempcref,int,3*memmpc_);
 	for(k=0;k<3*memmpc_;k++){nodempcref[k]=nodempc[k];}
 	RENEW(coefmpcref,double,memmpc_);
@@ -92,7 +96,7 @@
               labmpc,nk,&memmpc_,&icascade,&maxlenmpc,
               kon,ipkon,lakon,ne,nnn,nactdof,icol,jq,&irow,isolver,
 	      neq,nzs,nmethod,&f,&fext,&b,&aux2,&fini,&fextini,
-	      &adb,&aub,ithermal,iperturb);
+	      &adb,&aub,ithermal,iperturb,mass);
     
     iout=-1;
     ielas=1;
@@ -113,7 +117,7 @@
           ncmat_,nstate_,sti,vini,ikboun,ilboun,ener,enern,sti,xstaten,
           eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
           ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-          nelemload,nload));
+          nelemload,nload,ikmpc,ilmpc,istep,&iinc));
     
     free(fn);free(stx);if(*ithermal>1)free(qfx);
     
@@ -153,7 +157,7 @@
 	      xstiff,npmat_,&dtime,matname,mint_,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
 	      physcon,shcon,nshcon,cocon,ncocon,ttime,&time,istep,&iinc,
-              &coriolis,ibody,xloadold,&reltime));
+		      &coriolis,ibody,xloadold,&reltime,veold));
 
     if(nmethod==0){
       
@@ -165,7 +169,7 @@
            een,t1,fn,ttime,epn,ielmat,matname,enern,xstaten,nstate_,istep,
            &iinc,iperturb,ener,mint_,output,ithermal,qfn,&mode,&noddiam,
            trab,inotr,ntrans,orab,ielorien,norien,description,
-	   ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph));
+	   ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs));
       free(ipneigh);free(neigh);
       
       FORTRAN(stop,());
@@ -251,6 +255,14 @@
           tau(ad,&au,adb,aub,&sigma,b,icol,&irow,&neq[0],&nzs[0]);
 #else
           printf("*ERROR in nonlingeo: the TAUCS library is not linked\n\n");
+          FORTRAN(stop,());
+#endif
+        }
+        else if(*isolver==7){
+#ifdef PARDISO
+          pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[0],&nzs[0]);
+#else
+          printf("*ERROR in nonlingeo: the PARDISO library is not linked\n\n");
           FORTRAN(stop,());
 #endif
         }

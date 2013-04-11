@@ -32,6 +32,7 @@
       N2=N+1
       DO                                                            
          M=(N2+ID)/2
+c         write(*,*) 'ident2',px,ninc,m,1+ninc*(m-1)
          IF(PX.GE.X(1+ninc*(M-1))) then
             ID=M      
          else

@@ -75,7 +75,7 @@ c      write(*,*) 'iel,iint ',iel,iint
 !     localizing the plastic fields
 !
       do i=1,6
-         cpl(i)=2.d0*xstateini(1+i,iint,iel)
+         cpl(i)=-2.d0*xstateini(1+i,iint,iel)
          stbl(i)=xstateini(7+i,iint,iel)
       enddo
       do i=1,3
@@ -189,7 +189,7 @@ c            a3=1.d0/xxn
 !        calculating the trial stress
 !
       do i=1,6
-         stril(i)=um*cplb(i)
+         stril(i)=um*cplb(i)-beta(i)
       enddo
 !
 !        calculating the trial radius vector of the yield surface
@@ -551,21 +551,21 @@ c         write(*,*) 'no plastic deformation'
                endif
 !
                if(iloop.eq.1) then
-                  write(*,*) 'cop,fu ',cop,fu
+c                  write(*,*) 'cop,fu ',cop,fu
                   cop1=0.d0
                   fu1=fu
                   iloop=2
                   cop=1.d-10
                elseif(iloop.eq.2) then
                   if(fu*fu1.le.0.d0) then
-                     write(*,*) cop,fu
+c                     write(*,*) cop,fu
                      iloop=3
                      fu2=fu
                      cop2=cop
                      cop=(cop1+cop2)/2.d0
                      dcop=(cop2-cop1)/2.d0
                   else
-                     write(*,*) cop,fu
+c                     write(*,*) cop,fu
                      cop=cop*10.d0
                      if(cop.gt.100.d0) then
                         write(*,*) '*ERROR: no convergence in incplas'
@@ -573,7 +573,7 @@ c         write(*,*) 'no plastic deformation'
                      endif
                   endif
                else
-                     write(*,*) cop,fu
+c                     write(*,*) cop,fu
                   if(fu*fu1.ge.0.d0) then
                      cop1=cop
                      fu1=fu
@@ -728,7 +728,7 @@ c         write(*,*) 'no plastic deformation'
          cpl(i)=cpl(i)-1.d0
       enddo
       do i=1,6
-         xstate(1+i,iint,iel)=cpl(i)/2.d0
+         xstate(1+i,iint,iel)=-cpl(i)/2.d0
          xstate(7+i,iint,iel)=stbl(i)
       enddo
       xstate(1,iint,iel)=epl

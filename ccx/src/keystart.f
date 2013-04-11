@@ -36,19 +36,29 @@
 !     9)  *SURFACE
 !     10) *TIE
 !     11) *SURFACE INTERACTION
-!     12) everything else
+!     12) *INITIAL CONDITIONS
+!     13) everything else
 !
-      character*20 name,nameref(12)
+      integer nentries
+      parameter(nentries=13)
 !
-      integer ifreeinp,ipoinp(2,*),inp(3,*),namelen(12),i,ikey,iline
+      character*20 name,nameref(nentries)
+!
+      integer ifreeinp,ipoinp(2,*),inp(3,*),namelen(nentries),i,ikey,
+     &  iline
+!
+!     order in which the cards have to be read
 !
       data nameref /'RESTART,READ','NODE','ELEMENT','NSET',
      &              'ELSET','TRANSFORM','MATERIAL','ORIENTATION',
-     &              'SURFACE','TIE','SURFACEINTERACTION','REST'/
+     &              'SURFACE','TIE','SURFACEINTERACTION',
+     &              'INITIALCONDITIONS','REST'/
 !
-      data namelen /12,4,7,4,5,9,8,11,7,3,18,4/
+!     length of the names in field nameref
 !
-      do i=1,12
+      data namelen /12,4,7,4,5,9,8,11,7,3,18,17,4/
+!
+      do i=1,nentries
          if(name(1:namelen(i)).eq.nameref(i)(1:namelen(i))) then
             if(ikey.eq.i) return
             if(ikey.gt.0) inp(2,ipoinp(2,ikey))=iline-1

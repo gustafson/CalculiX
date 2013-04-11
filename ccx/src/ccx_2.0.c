@@ -47,7 +47,7 @@ int *kon=NULL, *nodeboun=NULL, *ndirboun=NULL, *ipompc=NULL,
 	*nplicon=NULL, *nplkcon=NULL, *inotr=NULL, *iponor=NULL, *knor=NULL,
 	*ikforc=NULL, *ilforc=NULL, *iponoel=NULL, *inoel=NULL, *nshcon=NULL,
 	*ncocon=NULL,*ibody=NULL, *inum1=NULL,*ielprop=NULL,
-	*inum2=NULL,*ipoinpc=NULL;
+        *inum2=NULL,*ipoinpc=NULL,cfd=0;
     
 double *co=NULL, *xboun=NULL, *coefmpc=NULL, *xforc=NULL,
 	*xload=NULL, *ad=NULL, *au=NULL, *xbounold=NULL, *xforcold=NULL,
@@ -71,21 +71,22 @@ int nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,
   nmethod,neq[3]={0,0,0},i,mpcfree=1,mei[4],j,nzl,nam,nbounold=0,
   nforcold=0,nloadold=0,nbody,nbody_=0,nbodyold=0,
   k,nzs[3],nmpc_=0,nload_=0,nforc_=0,istep,istat,nboun_=0,
-  iperturb=0,nmat,ntmat_=0,norien,ithermal[2]={0,0},iprestr,kode,isolver=0,
-  jout=1,nlabel,nkon=0,idrct,jmax,iexpl,nevtot=0,
+  iperturb[2]={0,0},nmat,ntmat_=0,norien,ithermal[2]={0,0},
+  iprestr,kode,isolver=0,
+  jout[2]={1,1},nlabel,nkon=0,idrct,jmax[2],iexpl,nevtot=0,
   iplas=0,npmat_=0,mint_=0,ntrans,mpcend=-1,namtot_=0,iumat=0,mpcmult,
   icascade=0,maxlenmpc,mpcinfo[4],ne1d=0,ne2d=0,infree[4]={0,0,0,0},
   callfrommain,nflow=0,jin=0,irstrt=0,nener=0,jrstrt=0,nenerold,
-  nline,ipoinp[24],*inp=NULL,ntie,ntie_=0,mcs=0,kflag=2,nprop_=0,
-  nprop=0,ndprop=21,itpamp=0,iviewfile,nkold;
+  nline,ipoinp[26],*inp=NULL,ntie,ntie_=0,mcs=0,kflag=2,nprop_=0,
+      nprop=0,ndprop=21,itpamp=0,iviewfile,nkold,nevdamp_=0;
 
 int *meminset=NULL,*rmeminset=NULL;
 
 int nzs_,nk_=0,ne_=0,nset_=0,nalset_=0,nmat_=0,norien_=0,nam_=0,
     ntrans_=0,ncs_=0,nstate_=0,ncmat_=0,memmpc_=0,nprint_=0;
 
-double fei[3],tinc,tper,tmin,tmax,xmodal[9]={0.,0.,0.,0.,0.,0.,0.,0.,0.},alpha,
-  ttime=0.,qaold[2]={0.,0.},physcon[3]={0.,0.,0.};
+double fei[3],tinc,tper,tmin,tmax,*xmodal=NULL,
+    alpha,ttime=0.,qaold[2]={0.,0.},physcon[9]={0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
 
 #ifdef CALCULIX_MPI
@@ -101,7 +102,7 @@ else{
     if(strcmp1(argv[i],"-i")==0) {
     strcpy(jobnamec,argv[i+1]);strcpy1(jobnamef,argv[i+1],132);jin++;break;}
     if(strcmp1(argv[i],"-v")==0) {
-	printf("\nThis is version version 1.8\n\n");
+	printf("\nThis is version version 2.0\n\n");
 	FORTRAN(stop,());
     }
   }
@@ -116,12 +117,12 @@ else{
 FORTRAN(openfile,(jobnamef,output));
 
 printf("\n************************************************************\n\n");
-printf("CalculiX version 1.8, Copyright(C) 1998-2007 Guido Dhondt\n");
+printf("CalculiX version 2.0, Copyright(C) 1998-2007 Guido Dhondt\n");
 printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
 printf("************************************************************\n\n");
-printf("You are using an executable made on Do 31. Jul 21:25:52 CEST 2008\n");
+printf("You are using an executable made on Mi 12. Aug 21:56:16 CEST 2009\n");
 fflush(stdout);
 
 istep=0;
@@ -133,6 +134,8 @@ kode=0;
 
 #if defined(SGI)
  isolver=4;
+#elif defined(PARDISO)
+ isolver=7;
 #elif defined(SPOOLES)
  isolver=0;
 #elif defined(TAUCS)
@@ -153,14 +156,14 @@ FORTRAN(allocation,(&nload_,&nforc_,&nboun_,&nk_,&ne_,&nmpc_,&nset_,&nalset_,
    &nmat_,&ntmat_,&npmat_,&norien_,&nam_,&nprint_,&mint_,&ntrans_,
    set,meminset,rmeminset,&ncs_,&namtot_,&ncmat_,&memmpc_,&ne1d,
    &ne2d,&nflow,jobnamec,&irstrt,ithermal,&nener,&nstate_,&istep,
-   inpc,ipoinp,inp,&ntie_,&nbody_,&nprop_,ipoinpc));
+   inpc,ipoinp,inp,&ntie_,&nbody_,&nprop_,ipoinpc,&nevdamp_));
 
 free(set);free(meminset);free(rmeminset);
 
 nzs_=20000000;
 
 nload=0;nbody=0;nforc=0;nboun=0;nk=0;nmpc=0;nam=0;
-nlabel=20;
+nlabel=27;
 
 while(istat>=0) {
 
@@ -304,6 +307,11 @@ while(istat>=0) {
     plkcon=NNEW(double,(2*npmat_+1)*ntmat_*nmat);
     nplkcon=NNEW(int,(ntmat_+1)*nmat);
 
+    /* linear dynamic properties */
+    
+    xmodal=NNEW(double,10+nevdamp_);
+    xmodal[9]=nevdamp_+0.5;
+
     /* internal state variables */
 
     if(nstate_>0){xstate=NNEW(double,nstate_*mint_*ne);}
@@ -365,7 +373,7 @@ while(istat>=0) {
 
     /* allocating and reallocating space for subsequent steps */
 
-    if((nmethod != 4) && ((nmethod != 1) || (iperturb < 2))){
+    if((nmethod != 4) && ((nmethod != 1) || (iperturb[0] < 2))){
       veold=NNEW(double,4*nk_);
     }
     else{
@@ -441,7 +449,7 @@ while(istat>=0) {
     if(ithermal[0]!=0) t1old=NNEW(double,nk_); 
     sti=NNEW(double,6*mint_*ne);
     eme=NNEW(double,6*mint_*ne);
-    if(nener==1)ener=NNEW(double,mint_*ne);
+    if(nener==1)ener=NNEW(double,mint_*ne*2);
     nnn=NNEW(int,nk_);
   }
 
@@ -458,10 +466,10 @@ while(istat>=0) {
 	    ialset,&nset,&nalset,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
 	    alzero,t0,t1,matname,ielmat,orname,orab,ielorien,amname,
             amta,namta,&nam,&nmethod,iamforc,iamload,iamt1,
-	    ithermal,&iperturb,&istat,&istep,&nmat,&ntmat_,&norien,prestr,
+	    ithermal,iperturb,&istat,&istep,&nmat,&ntmat_,&norien,prestr,
 	    &iprestr,&isolver,fei,veold,&tinc,&tper,
-	    xmodal,filab,&jout,&nlabel,&idrct,
-	    &jmax,&tmin,&tmax,&iexpl,&alpha,iamboun,plicon,nplicon,
+	    xmodal,filab,jout,&nlabel,&idrct,
+	    jmax,&tmin,&tmax,&iexpl,&alpha,iamboun,plicon,nplicon,
 	    plkcon,nplkcon,&iplas,&npmat_,&mint_,&nk_,trab,inotr,&ntrans,
 	    ikboun,ilboun,ikmpc,ilmpc,ics,dcs,&ncs_,&namtot_,cs,&nstate_,
 	    &ncmat_,&iumat,&mcs,labmpc,iponor,xnor,knor,thickn,thicke,
@@ -472,7 +480,7 @@ while(istat>=0) {
             sti,ener,xstate,jobnamec,nnn,&irstrt,&ttime,
             qaold,output,typeboun,inpc,&nline,ipoinp,inp,tieset,tietol,
             &ntie,fmpc,cbody,ibody,xbody,&nbody,&nbody_,xbodyold,&nam_,
-            ielprop,&nprop,&nprop_,prop,&itpamp,&iviewfile,ipoinpc));
+	    ielprop,&nprop,&nprop_,prop,&itpamp,&iviewfile,ipoinpc,&cfd));
 
 /*	FORTRAN(writeboun,(nodeboun,ndirboun,xboun,typeboun,&nboun));*/
 
@@ -488,9 +496,6 @@ while(istat>=0) {
     /* allocating and initializing fields pointing to the previous step */
 
     RENEW(vold,double,5*nk);
-    if(ithermal[0]>1){
-	for(i=0;i<nk;i++) vold[5*i]=t0[i];
-    }
     sti=NNEW(double,6*mint_*ne);
 
     /* strains */
@@ -534,7 +539,7 @@ while(istat>=0) {
     if(ithermal[0]>1){
       for(i=0;i<nboun;i++){
 	if(ndirboun[i]==0){
-	  xbounold[i]=t0[nodeboun[i]];
+	  xbounold[i]=vold[5*nodeboun[i]];
 	}
       }
     }
@@ -668,8 +673,15 @@ while(istat>=0) {
       RENEW(ics,int,ncs_);
       free(dcs);}
 
-  }
-  else{
+ 
+  /* tied contact constraints: generate appropriate MPC's */
+
+  tiedcontact(&ntie, tieset, &nset, set,istartset, iendset, ialset,
+       lakon, ipkon, kon,tietol,&nmpc, &mpcfree, &memmpc_,
+       &ipompc, &labmpc, &ikmpc, &ilmpc,&fmpc, &nodempc, &coefmpc,
+       ithermal, co, vold,&cfd,&nmpc_);
+
+ }else{
 
     /* reallocating space in all but the first step (>1) */
 
@@ -752,8 +764,8 @@ while(istat>=0) {
   /* energy */
 
   if((nener==1)&&(nenerold==0)){
-    ener=NNEW(double,mint_*ne);
-    if((istep>1)&&(iperturb>1)){
+    ener=NNEW(double,mint_*ne*2);
+    if((istep>1)&&(iperturb[0]>1)){
       printf("*ERROR in CalculiX: in nonlinear calculations");
       printf("       energy output must be selected in the first step");
       FORTRAN(stop,());
@@ -762,7 +774,7 @@ while(istat>=0) {
 
   /* initial velocities and accelerations */
 
-  if((nmethod == 4) || ((nmethod == 1) && (iperturb >= 2))) {
+  if((nmethod == 4) || ((nmethod == 1) && (iperturb[0] >= 2))) {
     RENEW(veold,double,4*nk);
   }
   else {free(veold);}
@@ -771,7 +783,7 @@ while(istat>=0) {
     accold=NNEW(double,4*nk);
     }*/
 
-  if((nmethod == 4)&&(iperturb>1)) {
+  if((nmethod == 4)&&(iperturb[0]>1)) {
     accold=NNEW(double,4*nk);
     }
 
@@ -819,14 +831,15 @@ while(istat>=0) {
 	    &mpcfree,nodeboun,ndirboun,&nboun,ikmpc,
 	    ilmpc,ikboun,ilboun,&mpcend,&mpcmult,
 	    labmpc,&nk,&memmpc_,&icascade,&maxlenmpc,
-            &callfrommain,&iperturb);
+            &callfrommain,iperturb,ithermal);
 
     if(istep==1) nnn=NNEW(int,nk);
     else RENEW(nnn,int,nk);
     for(i=1;i<=nk;++i)
 	nnn[i-1]=i;
 	
-    if((icascade==0)&&(isolver!=6)){
+    /*   if((icascade==0)&&(isolver!=6)){*/
+    if((icascade==10)&&(isolver!=6)){
 
 	/* renumbering the nodes */
 	
@@ -869,7 +882,7 @@ while(istat>=0) {
 	  mastruct(&nk,kon,ipkon,lakon,&ne,nodeboun,ndirboun,&nboun,ipompc,
 		   nodempc,&nmpc,nactdof,icol,jq,&mast1,&irow,&isolver,neq,nnn,
 		   ikmpc,ilmpc,ipointer,nzs,&nmethod,ithermal,
-                   ikboun,ilboun,&iperturb);
+                   ikboun,ilboun,iperturb);
       }
       else{neq[0]=1;neq[1]=1;neq[2]=1;}
   }
@@ -893,9 +906,9 @@ while(istat>=0) {
   /* nmethod=3: buckling analysis */
   /* nmethod=4: linear dynamic analysis */
 
-  if((nmethod<=1)||(iperturb>1))
+  if((nmethod<=1)||(iperturb[0]>1))
     {
-	if(iperturb<2){
+	if(iperturb[0]<2){
 	
 	prespooles(co,&nk,kon,ipkon,lakon,&ne,nodeboun,ndirboun,xboun,&nboun, 
 	     ipompc,nodempc,coefmpc,labmpc,&nmpc,nodeforc,ndirforc,xforc,
@@ -903,7 +916,7 @@ while(istat>=0) {
 	     ad,au,b,nactdof,&icol,jq,&irow,neq,&nzl,&nmethod,ikmpc, 
 	     ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,nrhcon,
 	     alcon,nalcon,alzero,ielmat,ielorien,&norien,orab,&ntmat_,
-             t0,t1,t1old,ithermal,prestr,&iprestr, vold,&iperturb,sti,nzs,
+             t0,t1,t1old,ithermal,prestr,&iprestr, vold,iperturb,sti,nzs,
 	     &kode,adb,aub,filab,eme,&iexpl,plicon,
              nplicon,plkcon,nplkcon,xstate,&npmat_,matname,
 	     &isolver,&mint_,&ncmat_,&nstate_,cs,&mcs,&nkon,ener,
@@ -921,23 +934,23 @@ while(istat>=0) {
 	mpcinfo[3]=maxlenmpc;
 
 	nonlingeo(&co,&nk,&kon,&ipkon,&lakon,&ne,nodeboun,ndirboun,xboun,&nboun, 
-	     ipompc,&nodempc,&coefmpc,labmpc,&nmpc,nodeforc,ndirforc,xforc,
+	     &ipompc,&nodempc,&coefmpc,&labmpc,&nmpc,nodeforc,ndirforc,xforc,
              &nforc, nelemload,sideload,xload,&nload, 
-	     ad,au,b,nactdof,&icol,jq,&irow,neq,&nzl,&nmethod,ikmpc, 
-	     ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,nrhcon,
+	     ad,au,b,nactdof,&icol,jq,&irow,neq,&nzl,&nmethod,&ikmpc, 
+	     &ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,nrhcon,
 	     alcon,nalcon,alzero,&ielmat,&ielorien,&norien,orab,&ntmat_,
              t0,t1,t1old,ithermal,prestr,&iprestr, 
-	     &vold,&iperturb,sti,nzs,&kode,adb,aub,filab,&idrct,&jmax,
-	     &jout,&tinc,&tper,&tmin,&tmax,eme,xbounold,xforcold,xloadold,
+	     &vold,iperturb,sti,nzs,&kode,adb,aub,filab,&idrct,jmax,
+	     jout,&tinc,&tper,&tmin,&tmax,eme,xbounold,xforcold,xloadold,
 	     veold,accold,amname,amta,namta,
 	     &nam,iamforc,iamload,iamt1,&alpha,
              &iexpl,iamboun,plicon,nplicon,plkcon,nplkcon,
 	     xstate,&npmat_,&istep,&ttime,matname,qaold,&mint_,
-	     &isolver,&ncmat_,&nstate_,&iumat,cs,&mcs,&nkon,ener,
+	     &isolver,&ncmat_,&nstate_,&iumat,cs,&mcs,&nkon,&ener,
 	     mpcinfo,nnn,output,
              shcon,nshcon,cocon,ncocon,physcon,&nflow,ctrl,
              set,&nset,istartset,iendset,ialset,&nprint,prlab,
-             prset,&nener,ikforc,ilforc,trab,inotr,&ntrans,fmpc,
+             prset,&nener,ikforc,ilforc,trab,inotr,&ntrans,&fmpc,
              cbody,ibody,xbody,&nbody,xbodyold,ielprop,prop,
 	     &ntie,tieset,&itpamp,&iviewfile,jobnamec,tietol);
 
@@ -960,7 +973,7 @@ while(istat>=0) {
 	     ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,nrhcon,
 	     shcon,nshcon,cocon,ncocon,
              alcon,nalcon,alzero,ielmat,ielorien,&norien,orab,&ntmat_,
-             t0,t1,t1old,ithermal,prestr,&iprestr,vold,&iperturb,sti,nzs,
+             t0,t1,t1old,ithermal,prestr,&iprestr,vold,iperturb,sti,nzs,
 	     &kode,adb,aub,mei,fei,filab,
 	     eme,&iexpl,plicon,nplicon,plkcon,nplkcon,
 	     xstate,&npmat_,matname,&mint_,&ncmat_,&nstate_,ener,jobnamec,
@@ -981,7 +994,7 @@ while(istat>=0) {
 	     ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,nrhcon,
              alcon,nalcon,alzero,ielmat,ielorien,&norien,orab,&ntmat_,
              t0,t1,t1old,ithermal,prestr,&iprestr, 
-	     vold,&iperturb,sti,nzs,&kode,adb,aub,mei,fei,filab,
+	     vold,iperturb,sti,nzs,&kode,adb,aub,mei,fei,filab,
 	     eme,&iexpl,plicon,nplicon,plkcon,nplkcon,
 	     xstate,&npmat_,matname,&mint_,ics,cs,&mpcend,&ncmat_,
              &nstate_,&mcs,&nkon,ener,jobnamec,output,set,&nset,istartset,
@@ -1005,7 +1018,7 @@ while(istat>=0) {
 	     ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,nrhcon,
              alcon,nalcon,alzero,ielmat,ielorien,&norien,orab,&ntmat_,
              t0,t1,t1old,ithermal,prestr,&iprestr, 
-	     vold,&iperturb,sti,nzs,&kode,adb,aub,mei,fei,filab,
+	     vold,iperturb,sti,nzs,&kode,adb,aub,mei,fei,filab,
 	     eme,&iexpl,plicon,nplicon,plkcon,nplkcon,
 	     xstate,&npmat_,matname,&mint_,&ncmat_,&nstate_,ener,output,
              set,&nset,istartset,iendset,ialset,&nprint,prlab,
@@ -1018,6 +1031,12 @@ while(istat>=0) {
     }
   else if(nmethod==4)
     {
+	if((ne1d!=0)||(ne2d!=0)){
+	    printf(" *WARNING: 1-D or 2-D elements may cause problems in modal dynamic calculations\n");
+	    printf("           ensure that point loads defined in a *MODAL DYNAMIC step\n");
+	    printf("           and applied to nodes belonging to 1-D or 2-D elements have been\n");
+	    printf("           applied to the same nodes in the preceding FREQUENCY step with\n");
+	    printf("           magnitude zero; look at example shellf.inp for a guideline.\n\n");}
 
       printf(" Composing the dynamic response from the eigenmodes\n\n");
 
@@ -1027,22 +1046,26 @@ while(istat>=0) {
 	    &nactdof,neq,&nzl,icol,irow,&nmethod,&ikmpc,&ilmpc,&ikboun,&ilboun,
             elcon,nelcon,rhcon,nrhcon,cocon,ncocon,
             alcon,nalcon,alzero,&ielmat,&ielorien,&norien,orab,&ntmat_,&t0,
-	    &t1,ithermal,prestr,&iprestr,&vold,&iperturb,sti,nzs,
+	    &t1,ithermal,prestr,&iprestr,&vold,iperturb,&sti,nzs,
 	    &tinc,&tper,xmodal,&veold,amname,amta,
 	    namta,&nam,iamforc,iamload,&iamt1,
-	    &jout,&kode,filab,&eme,xforcold,xloadold,
+	    jout,&kode,filab,&eme,xforcold,xloadold,
             &t1old,&iamboun,&xbounold,&iexpl,plicon,
             nplicon,plkcon,nplkcon,xstate,&npmat_,matname,
             &mint_,&ncmat_,&nstate_,&ener,jobnamec,&ttime,set,&nset,
-            istartset,iendset,ialset,&nprint,prlab,
+            istartset,iendset,&ialset,&nprint,prlab,
             prset,&nener,trab,&inotr,&ntrans,&fmpc,cbody,ibody,xbody,&nbody,
             xbodyold,&istep,&isolver,jq,output,&mcs,&nkon,&mpcend,ics,cs,
-	   &ntie,tieset,&idrct,&jmax,&tmin,&tmax,ctrl,&itpamp,tietol);
+	   &ntie,tieset,&idrct,jmax,&tmin,&tmax,ctrl,&itpamp,tietol,&nalset,&nnn);
     }
   else if(nmethod==5)
     {
 	  if((ne1d!=0)||(ne2d!=0)){
-	      printf(" *ERROR: 1-D or 2-D elements cannot be used in a modal dynamic calculation\n\n");}
+	      printf(" *WARNING: 1-D or 2-D elements may cause problems in steady state calculations\n");
+	      printf("           ensure that point loads defined in a *STEADY STATE DYNAMICS step\n");
+	      printf("           and applied to nodes belonging to 1-D or 2-D elements have been\n");
+	      printf("           applied to the same nodes in the preceding FREQUENCY step with\n");
+	      printf("           magnitude zero; look at example shellf.inp for a guideline.\n\n");}
 
       printf(" Composing the steady state response from the eigenmodes\n\n");
 
@@ -1052,16 +1075,16 @@ while(istat>=0) {
 	    &nactdof,neq,&nzl,icol,irow,&nmethod,&ikmpc,&ilmpc,&ikboun,&ilboun,
             elcon,nelcon,rhcon,nrhcon,cocon,ncocon,
             alcon,nalcon,alzero,&ielmat,&ielorien,&norien,orab,&ntmat_,&t0,
-	    &t1,ithermal,prestr,&iprestr,&vold,&iperturb,sti,nzs,
+	    &t1,ithermal,prestr,&iprestr,&vold,iperturb,sti,nzs,
 	    &tinc,&tper,xmodal,veold,amname,amta,
 	    namta,&nam,iamforc,iamload,&iamt1,
-	    &jout,&kode,filab,&eme,xforcold,xloadold,
+	    jout,&kode,filab,&eme,xforcold,xloadold,
             &t1old,&iamboun,&xbounold,&iexpl,plicon,
             nplicon,plkcon,nplkcon,xstate,&npmat_,matname,
             &mint_,&ncmat_,&nstate_,&ener,jobnamec,&ttime,set,&nset,
             istartset,iendset,ialset,&nprint,prlab,
             prset,&nener,trab,&inotr,&ntrans,&fmpc,cbody,ibody,xbody,&nbody,
-            xbodyold,&istep,&isolver,jq,output,&mcs,&nkon,ics,cs,&mpcend);
+            xbodyold,&istep,&isolver,jq,output,&mcs,&nkon,ics,cs,&mpcend,&nnn);
     }
 
   free(nactdof);
@@ -1071,7 +1094,7 @@ while(istat>=0) {
 
   /* deleting the perturbation loads and temperatures */
 
-  if((iperturb == 1)&&(nmethod==3)) {
+  if((iperturb[0] == 1)&&(nmethod==3)) {
     nforc=0;
     nload=0;
     nbody=0;
@@ -1134,7 +1157,7 @@ while(istat>=0) {
   }
 
 
-  if((nmethod == 4)&&(iperturb>1)) free(accold);
+  if((nmethod == 4)&&(iperturb[0]>1)) free(accold);
 
   if(irstrt>0){
     jrstrt++;
@@ -1143,7 +1166,7 @@ while(istat>=0) {
       FORTRAN(restartwrite,(&istep, &nset, &nload, &nforc, &nboun, &nk, &ne, 
         &nmpc, &nalset, &nmat, &ntmat_, &npmat_, &norien, &nam, &nprint,  
         &mint_, &ntrans, &ncs_, &namtot_, &ncmat_, &mpcend,&maxlenmpc, &ne1d, 
-        &ne2d, &nflow, &nlabel, &iplas, &nkon,ithermal,&nmethod,&iperturb, 
+        &ne2d, &nflow, &nlabel, &iplas, &nkon,ithermal,&nmethod,iperturb, 
         &nstate_,&nener, set, istartset, iendset, ialset, co, kon, ipkon, 
         lakon, nodeboun, ndirboun, iamboun, xboun, ikboun, ilboun, ipompc, 
         nodempc, coefmpc, labmpc, ikmpc, ilmpc, nodeforc, ndirforc, iamforc, 

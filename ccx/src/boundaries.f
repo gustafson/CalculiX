@@ -288,7 +288,7 @@ c         if(ibounstart.eq.11) ibounstart=0
      &        iamboun,iamplitude,nam,ipompc,nodempc,
      &        coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &        ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &        type,typeboun,nmethod,iperturb,fixed,vold(0,ktrue))
+     &        type,typeboun,nmethod,iperturb,fixed,vold,ktrue)
          else
             read(textpart(1)(1:80),'(a80)',iostat=istat) noset
             noset(81:81)=' '
@@ -314,7 +314,7 @@ c         if(ibounstart.eq.11) ibounstart=0
      &               iamboun,iamplitude,nam,ipompc,nodempc,
      &               coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &               ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &               type,typeboun,nmethod,iperturb,fixed,vold(0,ktrue))
+     &               type,typeboun,nmethod,iperturb,fixed,vold,ktrue)
                else
                   k=ialset(j-2)
                   do
@@ -328,7 +328,7 @@ c         if(ibounstart.eq.11) ibounstart=0
      &                 coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &                 ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,
      &                 labmpc,type,typeboun,nmethod,iperturb,fixed,
-     &                 vold(0,ktrue))
+     &                 vold,ktrue)
                   enddo
                endif
             enddo

@@ -51,7 +51,7 @@
       integer istep,nset,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,
      &  ntmat_,npmat_,norien,nam,nprint,mint_,ntrans,ncs_,
      &  namtot_,ncmat_,mpcfree,ne1d,ne2d,nflow,nlabel,iplas,nkon,
-     &  ithermal,nmethod,iperturb,nstate_,istartset(*),iendset(*),
+     &  ithermal,nmethod,iperturb(*),nstate_,istartset(*),iendset(*),
      &  ialset(*),kon(*),ipkon(*),nodeboun(*),ndirboun(*),iamboun(*),
      &  ikboun(*),ilboun(*),ipompc(*),nodempc(*),ikmpc(*),ilmpc(*),
      &  nodeforc(*),ndirforc(*),iamforc(*),ikforc(*),ilforc(*),
@@ -70,7 +70,7 @@
      &  vold(*),xbounold(*),xforcold(*),xloadold(*),t1old(*),eme(*),
      &  xnor(*),thickn(*),thicke(*),offset(*),
      &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),
-     &  ttime,qaold(2),cs(17,*),physcon(3),
+     &  ttime,qaold(2),cs(17,*),physcon(*),
      &  ctrl(*),fmpc(*),xbody(*),xbodyold(*)
 !
       irestartread=0

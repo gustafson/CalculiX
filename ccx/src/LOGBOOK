@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 1.8
+LOG-BOOK Version 2.0
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -1367,3 +1367,179 @@ Dec 2002        - started to work on single crystal plasticity
                  3. contact area division number
 
 30 July 2008   - made a change to surfaces.f
+
+8 August 2008  - corrected an error in printoutint.f
+
+4 Sept 2008    - coded 2nd order derivatives in shape3tri,shape6tri,
+                 shape4q and shape8q
+
+9 Sept 2008    - supplemented subroutine springstiff with the derivatives
+                 of xi and eta; contact convergence should improve
+               - corrected errors in nonlinmpc (CYCLIC) and bounadd
+
+14 Sept 2008   - made corrections in radiates.f, incplas.f and
+                 usermaterials.f
+
+20 Sept 2008   - introduced CE for the equivalent creep strain
+                 for anisotropic materials
+
+24 Sept 2008   - changed to another viewfactor calculation
+               - minor changes in radmatrix, e_c3d_th and cascade
+
+11 Oct 2008    - change of extrapolation of the mass flow to the
+                 end nodes (fluidextrapolate.f)
+               - correction in umat_abaqus.f and umat_abaqusnl.f
+               - correction for section forces in map3dto1d2d.f
+
+13 Oct 2008    - the FREQUENCY and TIME POINTS parameters are
+                 mutually exclusive for data storage keyword cards.
+
+28 Oct 2008    - modified the calculation of section forces to
+                 accommodate for large deformations
+
+7 Nov 2008     - modified the output format for SDV in the .dat 
+                 and .frd file
+
+9 Nov 2008     - no correction of dependent node for nonmatching
+                 cyclic symmetry conditions
+               - cyclic conditions are considered to be linear
+                 (no update due to large deformation)
+               - changed interface for umatht and dload (for
+                 lubrication problems)
+
+13 Nov 2008    - wrote user routines for coupled mechanical-
+                 lubrication problems
+
+15 Nov 2008    - made a change in springstiff: consistent tangent
+                 matrix was not correct
+
+17 Nov 2008    - started to change dyna to take contact into account
+
+30 Nov 2008    - driven lid cavity (incompressibile fluid dynamics)
+                 works!
+               - started the implementation of additional MPC's for
+                 middle nodes belonging to dependent contact
+                 surfaces
+
+7 Dec 2008     - additional MPC's for 3D and 2D elements seem to work
+
+10 Dec 2008    - changed PE into PEEQ and CE into CEEQ (print requests
+                 or frd requests for the equivalent plastic/creep
+                 strain)
+               - created printing output (.dat file) for gas networks:
+                 static pressure (PS), total pressure (PT) and
+                 mass flow (MF)
+
+11 Dec 2008    - created printing output (.dat file) for 3D fluid flow:
+                 velocities (V) and static pressure (PT)
+
+15 Dec 2008    - no motion of dependent variables in cyclic
+                 symmetric calculations (generatecycmpcs.f)
+
+16 Dec 2008    - the triangulation file for cyclic symmetry conditions
+                 with dissimilar meshes takes the job name and
+                 ending .tri
+
+18 Dec 2008    - corrected an error in shape8q (calculation of xsi) and
+                 all other 2D shape functions
+
+24 Jan 2009    - got to work airfoil with near zero viscosity and zero
+                 wall conditions (compressible fluid); smoothing is
+                 not exactly the same as in Nithiarasu's program;
+
+25 Jan 2009    - got to work airfoil with Euler conditions (MPC's for
+                 fluids)
+
+2 Feb 2009     - corrected an error in gen3dnor.f
+
+4 Feb 2009     - Zienkiewicz-Zhu error estimator now also works for
+                 frequency, buckling, modal dynamics and steady
+                 state dynamics calculations (stx instead of sti in
+                 the call of out.f)
+
+7 Feb 2009     - coded shock viscosity smoothing
+               - included PARDISO as solver
+
+10 Feb 2009    - corrected an error in remastruct: mass[0]=1
+
+21 Feb 2009    - wrote a routine to calculate the lift and drag force
+
+5 Mar 2009     - calculation of the velocity through derivation
+                 in dyna and dynacont
+               - replaced logical by integer in fluid calculations
+
+7 Mar 2009     - worked on turbulence (SST model)
+
+8 Mar 2009     - started work on pre-tension for 2D elements
+
+10 Mar 2009    - finished pre-tension for 2D elements
+
+19 Mar 2009    - introduced the variable pnewdt in umat_user.f
+
+21 Mar 2009    - coded direct modal damping
+
+22 Mar 2009    - continued to work on 3Dfluids and cyclic MPC's
+
+4 April 2009   - provided for BX, BY and BZ as volumetric loading
+                 including nonuniform loading (BXNU...)
+               - included the velocity in the subroutine parameters
+                 of dload.f
+
+10 April 2009  - started acceleration of dyna
+
+19 April 2009  - added some parameters to user routine dload
+
+21 April 2009  - coded direct damping for steady state dynamics
+
+22 April 2009  - PU and PHS are calculated for all sectors
+                 requested
+
+26 April 2009  - corrected an error in incplas.f (residual stress)
+
+2 May 2009     - started tied contact
+
+10 May 2009    - tied contact works
+               - corrected an error in e_c3d_trhs.f
+
+19 May 2009    - started Mortar contact
+
+15 June 2009   - allowed for local coordinate systems for
+                 fluid output
+ 
+20 June 2009   - changed the calculation of rf for nodes belonging
+                 to MPC's and 1-d or 2-d elements
+               - made an update for gas networks (not finished)
+               - started debugging turbulence
+
+23 June 2009   - made a correction in results.f and pretensionsections.f
+
+26 June 2009   - added the cylic symmetry axis to the displacement
+                 headers in the frd file
+
+27 June 2009   - provided two entries in field iperturb in order to
+                 distinguish between material and geometrical 
+                 nonlinearities; nlgeom not automatically active for
+                 *DYNAMIC and *COMBINED TEMPERATURE-DISPLACEMENT 
+                 procedures
+
+28 June 2009   - started the multithreading version of compfluid
+
+8 July 2009    - update of mortar contact
+
+10 July 2009   - removed an error in radmatrix.f
+               - updated modal dynamic and contact
+
+23 July 2009   - accelerated the execution of dynacont and dfdbj
+
+25 July 2009   - change in nonlingeo: ielas=1 is only active in the first
+                 iteration of the first increment if ilin=1 AND if the
+                 step is not dynamic
+
+3 August 2009  - some small changes to Mortar contact
+
+5 August 2009  - added istep and iinc to the ABAQUS umat files
+               - user material does not automatically imply geometric
+                 nonlinearity
+
+11 August 2009 - checked for SPC's in contact middle slave nodes in
+                 routine gencontmpc.c

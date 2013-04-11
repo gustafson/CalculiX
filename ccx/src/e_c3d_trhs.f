@@ -1,5 +1,5 @@
 !
-!     CalculiX - A 3-dimensional finite element program
+!     CalculiX 3-dimensional finite element program
 !              Copyright (C) 1998-2007 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
@@ -21,7 +21,9 @@
      &  ielmat,ntmat_,vold,voldaux,nelemload,
      &  sideload,xload,nload,idist,dtime,matname,mint_,
      &  ttime,time,istep,iinc,xloadold,reltimef,shcon,nshcon,cocon,
-     &  ncocon,physcon,nelemface,sideface,nface)
+     &  ncocon,physcon,nelemface,sideface,nface,
+     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,compressible,v,
+     &  voldtu,yy,turbulent)
 !
 !     computation of the energy element matrix and rhs for the element with
 !     element with the topology in konl: step 4
@@ -30,7 +32,7 @@
 !
       implicit none
 !
-      logical flux
+      integer flux,compressible
 !
       character*1 sideface(*)
       character*8 lakonl
@@ -42,25 +44,28 @@
      &  nmethod,ii,jj,id,ipointer,ig,kk,nrhcon(*),ielmat(*),nshcon(*),
      &  ntmat_,nope,nopes,imat,mint2d,mint3d,mint_,ifacet(6,4),nopev,
      &  ifacew(8,5),istep,iinc,layer,kspt,jltyp,iflag,nelemface(*),
-     &  nface,igl,idf
+     &  nface,igl,idf,ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),
+     &  iscale,turbulent
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,2),r,cp,dvi,
+      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,
      &  p1(3),p2(3),bodyf(3),bodyfx(3),ff(60),cond,enthalpy,
      &  bf(3),q(3),xsjmod,dtem(3),vkl(3,3),corio(3),sinktemp,
      &  rhcon(0:1,ntmat_,*),reltimef,t(3,3),tv(3),bfv,press,
      &  vel(3),div,shcon(0:3,ntmat_,*),pgauss(3),dxsj2,areaj,
      &  voldl(0:4,20),xloadold(2,*),cocon(0:6,ntmat_,*),
-     &  xl2(0:3,8),xsj2(3),shp2(4,8),vold(0:4,*),xload(2,*),
-     &  om,omx,xi,et,ze,const,xsj,field,physcon(3),tvn,
+     &  xl2(0:3,8),xsj2(3),shp2(7,8),vold(0:4,*),xload(2,*),
+     &  om,omx,xi,et,ze,const,xsj,field,physcon(*),tvn,
      &  temp,voldaux(0:4,*),voldauxl(0:4,20),rho,xi3d,et3d,ze3d,
-     &  weight,shpv(20),xlocal20(3,9,6),
-     &  xlocal4(3,1,4),xlocal10(3,3,4),xlocal6(3,1,5),
-     &  xlocal15(3,4,5),xlocal8(3,4,6),xlocal8r(3,1,6)
+     &  weight,shpv(20),xlocal20(3,9,6),coefmpc(*),v(0:4,*),
+     &  xlocal4(3,1,4),xlocal10(3,3,4),xlocal6(3,1,5),vl(0:4,20),
+     &  xlocal15(3,4,5),xlocal8(3,4,6),xlocal8r(3,1,6),omcor,
+     &  shpvnithi(20),voldtu(2,*),voldtul(2,20),yy(*),yyl(20),
+     &  y,xtuf,xkin,vort,un,unt,umt,f2,arg2,c1,c2,a1
 !
       real*8 dtime,ttime,time,tvar(2),coords(3)
 !
       include "gauss.f"
-c      include "xlocal.f"
+      include "xlocal.f"
 !
       data ifaceq /4,3,2,1,11,10,9,12,
      &            5,6,7,8,13,14,15,16,
@@ -78,6 +83,7 @@ c      include "xlocal.f"
      &             2,3,6,5,8,15,11,14,
      &             4,6,3,1,12,15,9,13/
       data iflag /3/
+      data a1 /0.31d0/
 c      data iperm /13,14,-15,16,17,-18,19,20,-21,22,23,-24,
 c     &            1,2,-3,4,5,-6,7,8,-9,10,11,-12,
 c     &            37,38,-39,40,41,-42,43,44,-45,46,47,-48,
@@ -163,10 +169,14 @@ c     &            49,50,-51,52,53,-54,55,56,-57,58,59,-60/
          do i1=1,nope
             do i2=0,4
                voldl(i2,i1)=vold(i2,konl(i1))
+               voldauxl(i2,i1)=voldaux(i2,konl(i1))
+               vl(i2,i1)=v(i2,konl(i1))
             enddo
-            voldauxl(0,i1)=voldaux(0,konl(i1))
-            voldauxl(4,i1)=voldaux(4,konl(i1))
-c            write(*,*) 'ec3d...',i1,voldauxl(0,i1),voldl(4,i1)
+            if(turbulent.ne.0) then
+               voldtul(1,i1)=voldtu(1,konl(i1))
+               voldtul(2,i1)=voldtu(2,konl(i1))
+               yyl(i1)=yy(konl(i1))
+            endif
          enddo
 !
 !     computation of the matrix: loop over the Gauss points
@@ -274,50 +284,140 @@ c            write(*,*) 'ec3d...',i1,voldauxl(0,i1),voldl(4,i1)
                enddo
             enddo
          enddo
-         div=vkl(1,1)+vkl(2,2)+vkl(3,3)
+         if(compressible.eq.1) then
+            div=vkl(1,1)+vkl(2,2)+vkl(3,3)
+         else
+            div=0.d0
+         endif
+c         write(*,*) 'e_c3d_trhs nelem ',nelem,kk,vel(1),vel(2),vel(3)
          do i1=1,nope
-            shpv(i1)=shp(1,i1)*vel(1)+shp(2,i1)*vel(2)+
-     &           shp(3,i1)*vel(3)+shp(4,i1)*div
-            enthalpy=enthalpy+shpv(i1)*(voldauxl(0,i1)+voldl(4,i1))
-c            if(nelem.eq.145) then
-c            write(*,*) i1,shpv(i1),enthalpy,voldauxl(0,i1),voldl(4,i1)
-c            write(*,*) i1,vel(1),vel(2),vel(3),div,shpv(i1)
-c            endif
+                shpv(i1)=shp(1,i1)*vel(1)+shp(2,i1)*vel(2)+
+     &                   shp(3,i1)*vel(3)+shp(4,i1)*div
+                enthalpy=enthalpy+shpv(i1)*(voldauxl(0,i1)+voldl(4,i1))
+cv                enthalpy=enthalpy+shpv(i1)*(voldauxl(0,i1))
+c            write(*,*) 'e_c3d_trhs ',i1,shpv(i1),voldauxl(0,i1)
          enddo
-c         write(*,*) 'ec3dtrhs.. ',nelem,kk,temp,enthalpy
-c         write(*,*) 'ec3dtrhs... ',vel(3),div,voldauxl(0,i1),voldl(4,i1)
-c         write(*,*) '           ',(vel(j1),j1=1,3)
-c         write(*,*) '           ',(dtem(j1),j1=1,3)
+c         write(*,*) 'e_c3d_trhs ',nelem,kk,enthalpy
 !     
 !     material data (density, dynamic viscosity, heat capacity and
 !     conductivity)
 !     
-         call materialdata_fl(imat,ntmat_,temp,shcon,nshcon,cp,r,dvi,
-     &        rhcon,nrhcon,rho,cocon,ncocon,cond)
+c         call materialdata_fl(imat,ntmat_,temp,shcon,nshcon,cp,r,dvi,
+c     &        rhcon,nrhcon,rho,cocon,ncocon,cond)
+         call materialdata_dvi(imat,ntmat_,temp,shcon,nshcon,dvi)
+         call materialdata_cond(imat,ntmat_,temp,cocon,ncocon,cond)
 !
-!     determining the stress and and stress x velocity + conductivity x
-!     temperature gradient
+!     determining the stress
 !
          do i1=1,3
-            do j1=1,3
+            do j1=i1,3
                t(i1,j1)=vkl(i1,j1)+vkl(j1,i1)
             enddo
-            t(i1,i1)=t(i1,i1)-2.d0*div/3.d0
-            tv(i1)=dvi*(t(i1,1)*vel(1)+t(i1,2)*vel(2)+t(i1,3)*vel(3))+
-     &             cond*dtem(i1)
+            if(compressible.eq.1) t(i1,i1)=t(i1,i1)-2.d0*div/3.d0
          enddo
 !     
-!     interpolating the density for gases
+!     calculation of the density for gases
 !     
-         if(dabs(rho).lt.1.d-20) then
+!     calculation of the turbulent kinetic energy, turbulence
+!     frequency and their spatial derivatives for gases and liquids
+!
+         if(compressible.eq.1) then
+!
+!           gas
+!
+            rho=0.d0
             do i1=1,nope
                rho=rho+shp(4,i1)*voldauxl(4,i1)
             enddo
+            if(turbulent.ne.0) then
+               xkin=0.d0
+               xtuf=0.d0
+               y=0.d0
+               do i1=1,nope
+                  xkin=xkin+shp(4,i1)*voldtul(1,i1)
+                  xtuf=xtuf+shp(4,i1)*voldtul(2,i1)
+                  y=y+shp(4,i1)*yyl(i1)
+               enddo
+               xkin=xkin/rho
+               xtuf=xtuf/rho
+            endif
+         else
+!
+!           liquid
+!
+            call materialdata_rho(rhcon,nrhcon,imat,rho,
+     &           temp,ntmat_)
+            if(turbulent.ne.0) then
+               xkin=0.d0
+               xtuf=0.d0
+               y=0.d0
+               do i1=1,nope
+                  xkin=xkin+shp(4,i1)*voldtul(1,i1)
+                  xtuf=xtuf+shp(4,i1)*voldtul(2,i1)
+                  y=y+shp(4,i1)*yyl(i1)
+               enddo
+               xkin=xkin/rho
+               xtuf=xtuf/rho
+            endif
          endif
+!
+!        calculation of turbulent auxiliary variables
+!
+         if(turbulent.ne.0) then
+!     
+!           vorticity
+!     
+            vort=dsqrt((vkl(3,2)-vkl(2,3))**2+
+     &           (vkl(1,3)-vkl(3,1))**2+
+     &           (vkl(2,1)-vkl(1,2))**2)
+!     
+!           kinematic viscosity
+!     
+            un=dvi/rho
+!     
+!           factor F2
+!     
+            c1=dsqrt(xkin)/(0.09d0*xtuf*y)
+            c2=500.d0*un/(y*y*xtuf)
+            arg2=max(2.d0*c1,c2)
+            f2=dtanh(arg2*arg2)
+!     
+!     kinematic and dynamic turbulent viscosity
+!     
+            unt=a1*xkin/max(a1*xtuf,vort*f2)
+            umt=unt*rho
+!
+            do i1=1,3
+               do j1=i1,3
+                  t(i1,j1)=(dvi+umt)*t(i1,j1)
+               enddo
+               t(i1,i1)=t(i1,i1)-2.d0*rho*xkin/3.d0
+            enddo
+         else
+!
+            do i1=1,3
+               do j1=i1,3
+                  t(i1,j1)=dvi*t(i1,j1)
+               enddo
+            enddo
+         endif
+         t(2,1)=t(1,2)
+         t(3,1)=t(1,3)
+         t(3,2)=t(2,3)
+!
+!     determining stress x velocity + conductivity x
+!     temperature gradient
+!
+         do i1=1,3
+            tv(i1)=dvi*(t(i1,1)*vel(1)+t(i1,2)*vel(2)+t(i1,3)*vel(3))+
+     &             cond*dtem(i1)
+cv            tv(i1)=cond*dtem(i1)
+         enddo
 !     
 !     initialisation for the body forces
 !     
          om=omx*rho
+         omcor=2.d0*rho*dsqrt(omx)
          if(nbody.ne.0) then
             do ii=1,3
                bodyf(ii)=bodyfx(ii)*rho
@@ -327,22 +427,19 @@ c         write(*,*) '           ',(dtem(j1),j1=1,3)
 !     determination of the rhs of the energy equations
 !     
          do jj=1,nope
+c
             ff(jj)=ff(jj)-xsjmod*(
      &           (shp(4,jj)+dtime*shpv(jj)/2.d0)*enthalpy+
      &           shp(1,jj)*tv(1)+shp(2,jj)*tv(2)+shp(3,jj)*tv(3))
-c            if(nelem.eq.145) then
-c               write(*,*) 'xxx ',enthalpy,tv(1),tv(2),tv(3)
-c            endif
-c            if((nelem.eq.33).or.(nelem.eq.113)) then
-c               write(*,*) 'ec3dtrhs ',nelem,kk,jj,ff(jj)
-c            endif
+c         write(*,*) 'e_c3d_trhs ',jj,-xsjmod*(
+c     &           (shp(4,jj)+dtime*shpv(jj)/2.d0)*enthalpy),
+c     &           -xsjmod*(
+c     &           shp(1,jj)*tv(1)+shp(2,jj)*tv(2)+shp(3,jj)*tv(3))
          enddo
-         
 !     
 !     computation of contribution due to body forces
 !     
          if(nbody.ne.0) then
-            write(*,*) 'ec3dtrhs body forces'
             if(om.gt.0.d0) then
                do i1=1,3
 !     
@@ -367,7 +464,8 @@ c            endif
 !     inclusion of the centrifugal force into the body force
 !     
                do i1=1,3
-                  bf(i1)=bodyf(i1)+(q(i1)-const*p2(i1)+corio(i1))*om
+                  bf(i1)=bodyf(i1)+(q(i1)-const*p2(i1))*om+
+     &                   corio(i1)*omcor
                enddo
             else
                do i1=1,3
@@ -378,13 +476,15 @@ c            endif
             do jj=1,nope
                ff(jj)=ff(jj)+xsjmod*(shp(4,jj)+
      &              dtime*shpv(jj)/2.d0)*bfv
+c         write(*,*) 'e_c3d_trhs centri',xsjmod*(shp(4,jj)+
+c     &              dtime*shpv(jj)/2.d0)*bfv
             enddo
          endif
 !
 !           distributed heat flux
 !
          if(nload.gt.0) then
-            write(*,*) 'ec3dtrhs distributed heat'
+c            write(*,*) 'ec3dtrhs distributed heat'
             call nident2(nelemload,nelem,nload,id)
             areaj=xsj*weight
             do
@@ -402,15 +502,20 @@ c            endif
                      enddo
                   enddo
                   jltyp=1
+                  iscale=1
                   call dflux(xload(1,id),temp,istep,iinc,tvar,
      &                 nelem,kk,pgauss,jltyp,temp,press,sideload(id),
-     &                 areaj,vold)
-                  if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &                 areaj,vold,co,lakonl,konl,
+     &                 ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,iscale)
+                  if((nmethod.eq.1).and.(iscale.ne.0))
+     &                  xload(1,id)=xloadold(1,id)+
      &                 (xload(1,id)-xloadold(1,id))*reltimef
                endif
                do jj=1,nope
                   ff(jj)=ff(jj)+xsjmod*(shp(4,jj)+
      &              dtime*shpv(jj)/2.d0)*xload(1,id)
+c         write(*,*) 'e_c3d_trhs distri',xsjmod*(shp(4,jj)+
+c     &              dtime*shpv(jj)/2.d0)*xload(1,id)
                enddo
                exit
             enddo
@@ -437,11 +542,12 @@ c      endif
          call nident(nelemface,nelem,nface,idf)
          do
             if((idf.eq.0).or.(nelemface(idf).ne.nelem)) exit
-            read(sideface(idf)(1:1),'(i1)') ig
+c            read(sideface(idf)(1:1),'(i1)') ig
+            ig=ichar(sideface(idf)(1:1))-48
 !
 !           check for distributed flux
 !
-            flux=.false.
+            flux=0
             call nident2(nelemload,nelem,nload,id)
             do
                if((id.eq.0).or.(nelemload(1,id).ne.nelem)) exit
@@ -451,12 +557,13 @@ c      endif
                   id=id-1
                   cycle
                endif
-               read(sideload(id)(2:2),'(i1)') igl
+c               read(sideload(id)(2:2),'(i1)') igl
+               igl=ichar(sideload(id)(2:2))-48
                if(igl.ne.ig) then
                   id=id-1
                   cycle
                endif
-               flux=.true.
+               flux=1
                exit
             enddo
 !     
@@ -614,12 +721,16 @@ c      endif
                      enddo
                   enddo
                enddo
+               if(compressible.eq.1) div=vkl(1,1)+vkl(2,2)+vkl(3,3)
 !     
 !     material data (density, dynamic viscosity, heat capacity and
 !     conductivity)
 !     
-               call materialdata_fl(imat,ntmat_,temp,shcon,nshcon,cp,r,
-     &              dvi,rhcon,nrhcon,rho,cocon,ncocon,cond)
+c               call materialdata_fl(imat,ntmat_,temp,shcon,nshcon,cp,r,
+c     &              dvi,rhcon,nrhcon,rho,cocon,ncocon,cond)
+               call materialdata_dvi(imat,ntmat_,temp,shcon,nshcon,dvi)
+               call materialdata_cond(imat,ntmat_,temp,cocon,ncocon,
+     &                 cond)
 !     
 !     determining the stress and and stress x velocity + conductivity x
 !     temperature gradient
@@ -628,17 +739,18 @@ c      endif
                   do j1=1,3
                      t(i1,j1)=vkl(i1,j1)+vkl(j1,i1)
                   enddo
-                  t(i1,i1)=t(i1,i1)-2.d0*vkl(i1,i1)/3.d0
+                  if(compressible.eq.1) t(i1,i1)=t(i1,i1)-2.d0*div/3.d0
                   tv(i1)=dvi*(t(i1,1)*vel(1)+t(i1,2)*vel(2)+
      &                 t(i1,3)*vel(3))
-                  if(.not.flux) then
+                  if(flux.eq.0) then
                      tv(i1)=tv(i1)+cond*dtem(i1)
+cv                     tv(i1)=cond*dtem(i1)
                   endif
                enddo
 !
                tvn=tv(1)*xsj2(1)+tv(2)*xsj2(2)+tv(3)*xsj2(3)
 !
-               if(flux) then
+               if(flux.eq.1) then
                   dxsj2=dsqrt(xsj2(1)*xsj2(1)+xsj2(2)*xsj2(2)+
      &                 xsj2(3)*xsj2(3))
                   areaj=dxsj2*weight
@@ -655,13 +767,18 @@ c      endif
                            coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
                         enddo
                      enddo
-                     read(sideload(id)(2:2),'(i1)') jltyp
+c                     read(sideload(id)(2:2),'(i1)') jltyp
+                     jltyp=ichar(sideload(id)(2:2))-48
                      jltyp=jltyp+10
                      if(sideload(id)(1:1).eq.'S') then
+                        iscale=1
                         call dflux(xload(1,id),temp,istep,iinc,tvar,
      &                       nelem,i,coords,jltyp,temp,press,
-     &                       sideload(id),areaj,vold)
-                        if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+     &                       sideload(id),areaj,vold,co,lakonl,konl,
+     &                       ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,
+     &                       iscale)
+                        if((nmethod.eq.1).and.(iscale.ne.0))
+     &                        xload(1,id)=xloadold(1,id)+
      &                       (xload(1,id)-xloadold(1,id))*reltimef
                      elseif(sideload(id)(1:1).eq.'F') then
                         call film(xload(1,id),sinktemp,temp,istep,
@@ -685,9 +802,12 @@ c      endif
 !     
                      tvn=tvn+xload(1,id)*dxsj2
                   elseif(sideload(id)(1:1).eq.'F') then
-                     tvn=tvn+xload(1,id)*(temp-sinktemp)*dxsj2
+c                     write(*,*) 'e_c3d_trhs ',tvn
+                     tvn=tvn-xload(1,id)*(temp-sinktemp)*dxsj2
+c                     write(*,*) 'e_c3d_trhs ',tvn,temp,sinktemp,dxsj2,
+c     &                       xload(1,id)
                   elseif(sideload(id)(1:1).eq.'R') then
-                     tvn=tvn+physcon(2)*
+                     tvn=tvn-physcon(2)*
      &                    xload(1,id)*((temp-physcon(1))**4-
      &                    (xload(2,id)-physcon(1))**4)*dxsj2
                   endif
@@ -704,16 +824,15 @@ c      endif
                   endif
                   ff(ipointer)=ff(ipointer)+
      &                 shp2(4,k)*xsjmod
+c         write(*,*) 'e_c3d_trhs bou',ipointer,shp2(4,k)*xsjmod
                enddo
             enddo
             idf=idf-1
          enddo
       endif
-c      if(nelem.eq.145) then
-c         do jj=1,nope
-c            write(*,*) 'ec3dtrhs 2',jj,konl(jj),ff(jj)
-c         enddo
-c      endif
+c      do i=1,7
+c         write(*,*) i,ff(i)
+c      enddo
 !     
 !     
 !     for axially symmetric and plane stress/strain elements: 

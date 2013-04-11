@@ -30,52 +30,31 @@
 !
       implicit none
 !
-      integer icol(*),irow(*),jq(*),neq,nzs,nzl,i,j,k
+      integer icol(*),irow(*),jq(*),neq,nzs,nzl,i,j,k,maxit
 !
       real*8 adb(*),aub(*),adl(*),addiv(*),b(*),sol(*),aux(*),p
 !
-!     lumping the matrix set (adb,aux) and storing the resulting
-!     diagonal terms in adl
+      data maxit /1/
+!
+!     first iteration
 !
       do i=1,neq
-         adl(i)=adb(i)
+         sol(i)=b(i)*adl(i)
       enddo
+      if(maxit.eq.1) return
 !
-      do j=1,neq
-         do k=jq(j),jq(j+1)-1
-            i=irow(k)
-            adl(i)=adl(i)+aub(k)
-            adl(j)=adl(j)+aub(k)
-         enddo
-      enddo
+!     iterating maxit times
 !
-!     storing the difference in addiv
-!
-      do i=1,neq
-         addiv(i)=adb(i)-adl(i)
-      enddo
-!
-!     setting the solution to zero
-!
-      do i=1,neq
-         sol(i)=0.d0
-      enddo
-!
-!     iterating three times
-!
-c      write(*,*) 'solveeq.... ',adl(1),adl(2),adl(3)
-      do k=1,20
-c      do k=1,5
+      do k=2,maxit
 !
 !        multiplying the difference of the original matrix
 !        with the lumped matrix with the actual solution 
 !
-         call op(neq,p,sol,aux,addiv,aub,icol,irow,nzl)
+         call op(neq,p,sol,aux,adb,aub,icol,irow,nzl)
 !
          do i=1,neq
-            sol(i)=(b(i)-aux(i))/adl(i)
+            sol(i)=(b(i)-aux(i))*adl(i)
          enddo
-c            write(*,*) 'solveeq... ',k,sol(1),sol(2),sol(3)
 !
       enddo
 !

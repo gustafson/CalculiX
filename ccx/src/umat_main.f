@@ -20,7 +20,7 @@
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mint_,
      &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,
-     &        orab)
+     &        orab,pnewdt,istep,iinc)
 !
 !     calculates stiffness and stresses for a user defined material
 !     law
@@ -29,11 +29,12 @@
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mint_,iorien
+      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mint_,iorien,
+     &  istep,iinc
 !
       real*8 elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xikl(3,3),vij,pgauss(3),orab(7,*),
-     &  time,ttime
+     &  time,ttime,pnewdt
 !
       real*8 xstate(nstate_,mint_,*),xstateini(nstate_,mint_,*)
 !
@@ -41,15 +42,15 @@
 !
          call umat_abaqusnl(amat(9:80),iel,iint,kode,elconloc,emec,
      &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
-     &        icmd,ielas,mint_,
-     &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,orab)
+     &        icmd,ielas,mint_,nstate_,xstateini,xstate,stre,stiff,
+     &        iorien,pgauss,orab,istep,iinc)
 !
       elseif(amat(1:6).eq.'ABAQUS') then
 !
          call umat_abaqus(amat(7:80),iel,iint,kode,elconloc,emec,
      &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
-     &        icmd,ielas,mint_,
-     &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,orab)
+     &        icmd,ielas,mint_,nstate_,xstateini,xstate,stre,stiff,
+     &        iorien,pgauss,orab,istep,iinc)
 !
       elseif(amat(1:10).eq.'ANISO_PLAS') then
 !
@@ -95,8 +96,8 @@
 !
          call umat_user(amat(5:80),iel,iint,kode,elconloc,emec,emec0,
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
-     &        icmd,ielas,mint_,
-     &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,orab)
+     &        icmd,ielas,mint_,nstate_,xstateini,xstate,stre,stiff,
+     &        iorien,pgauss,orab,pnewdt)
       else
          write(*,*) '*ERROR in umat: no user material subroutine'
          write(*,*) '       defined for material ',amat

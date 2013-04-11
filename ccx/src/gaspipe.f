@@ -35,7 +35,7 @@
      &     nrhcon(*),ntmat_
 !
       real*8 prop(*),v(0:4,*),xflow,f,df(5),kappa,R,a,d,l,
-     &     p1,p2,T1,T2,Tt1,Tt2,pt1,pt2,cp,physcon(3),p2p1,km1,dvi,
+     &     p1,p2,T1,T2,Tt1,Tt2,pt1,pt2,cp,physcon(*),p2p1,km1,dvi,
      &     kp1,kdkm1,reynolds,pi,e,lambda,lld,kdkp1,T2dTt2,
      &     T1dTt1,X_t1dTt1,X_t2dTt2,X2_den,X1_den,
      &     X1,X2,B1,B2,C1,C2,t_moy,tdkp1,ln,m2r2d2a2,

@@ -392,7 +392,7 @@
          ldb=4
          call dgesv(n,nrhs,a,lda,ipiv,bb,ldb,info)
          if(info.ne.0) then
-            write(*,*) '*ERROR in umat_walker:'
+            write(*,*) '*ERROR in umat_gurson:'
             write(*,*) '       singular system of equations'
             stop
          endif
@@ -447,7 +447,7 @@
          nrhs=1
          call dgesv(n,nrhs,ainv,lda,ipiv,hv,ldb,info)
          if(info.ne.0) then
-            write(*,*) '*ERROR in umat_walker:'
+            write(*,*) '*ERROR in umat_gurson:'
             write(*,*) '       singular system of equations'
             stop
          endif

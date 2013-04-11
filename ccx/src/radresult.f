@@ -24,7 +24,7 @@
       integer i,j,ntm,ntr,nloadtr(*)
 !     
       real*8 xloadact(2,*), tarea(*),tenv(*),
-     &     erad(*),q,fenv(*),physcon(3),f(ntr,*),bc(ntm,1)
+     &     erad(*),q,fenv(*),physcon(*),f(ntr,*),bc(ntm,1)
 !     
 !     calculating the flux and transforming the flux into an
 !     equivalent temperature

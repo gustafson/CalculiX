@@ -30,6 +30,9 @@
 #ifdef TAUCS
    #include "tau.h"
 #endif
+#ifdef PARDISO
+   #include "pardiso.h"
+#endif
 
 void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *ne, 
 	       int **nodebounp, int **ndirbounp, double **xbounp, int *nboun,
@@ -62,7 +65,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
                int **inotrp, int *ntrans, double **fmpcp, char *cbody, int *ibody,
                double *xbody, int *nbody, double *xbodyold, int *istep,
                int *isolver, int *jq, char *output, int *mcs,int *nkon, 
-               int *ics, double *cs, int *mpcend){
+               int *ics, double *cs, int *mpcend, int **nnnp){
 
   char fneig[132]="",description[13]="            ",*lakon=NULL,*labmpc=NULL,
     *labmpcold=NULL;
@@ -77,7 +80,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
     *ilmpc=NULL,*ipompcold=NULL,*nodempcold=NULL,*ikmpcold=NULL,
     *ilmpcold=NULL,nmpcold,mpcendold,kflag=2,*iamt1=NULL,ifreebody,
     *itg=NULL,ntg=0,symmetryflag=0,inputformat=0,dashpot,nrhs=1,
-    *ipiv=NULL,info,nev2,ngraph,nkg,neg,iflag=1,idummy=1,i1,i2;
+    *ipiv=NULL,info,nev2,ngraph,nkg,neg,iflag=1,idummy=1,imax,
+    nzse[3],*nnn=*nnnp;
 
   double *d=NULL, *z=NULL,*stiini=NULL,*vini=NULL,*freqnh=NULL,
     *xforcact=NULL, *xloadact=NULL,y,*fr=NULL,*fi=NULL,*cc=NULL,
@@ -88,7 +92,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
     *enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,*qfn=NULL,
     *qfx=NULL, *xbodyact=NULL, *cgr=NULL, *au=NULL,*xbodyi=NULL,
     time,dtime,reltime,*co=NULL,*xboun=NULL,*xbounold=NULL,
-    physcon[1],qa[2],cam[3],accold[1],bet,gam,*ad=NULL,sigma=0.,alpham,betam,
+    physcon[1],qa[3],cam[3],accold[1],bet,gam,*ad=NULL,sigma=0.,alpham,betam,
     fmin,fmax,bias,*freq=NULL,*xforcr=NULL,dd,pi,vreal,constant,
     *xforci=NULL,*xloadr=NULL,*xloadi=NULL,*xbounr=NULL,*xbouni=NULL,
     *br=NULL,*bi=NULL,*ubr=NULL,*ubi=NULL,*mubr=NULL,*mubi=NULL,
@@ -96,7 +100,13 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
     *vold=NULL,*eme=NULL,*ener=NULL,*coefmpc=NULL,*fmpc=NULL,
     *coefmpcold=NULL,*t0=NULL,*t1=NULL,*t1old=NULL,*adc=NULL,*auc=NULL,
     *am=NULL,*bm=NULL,*zc=NULL,*e=NULL,*stnr=NULL,*stni=NULL,
-    *vmax=NULL,*stnmax=NULL,*va=NULL,*vp=NULL;
+      *vmax=NULL,*stnmax=NULL,*va=NULL,*vp=NULL,*fric=NULL;
+
+  /* dummy arguments for the call of expand*/
+
+  char* tieset=NULL;
+  int *jqe=NULL,*icole=NULL,*irowe=NULL,ntie=0;
+  double *adbe=NULL,*aube=NULL;
 
   FILE *f1;
 
@@ -330,7 +340,9 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
         iendset,ialset,nprint,prlab,prset,nener,trab,
         inotr,ntrans,ttime,fmpc,&nev,z,iamboun,xbounold,
 	&nsectors,nm,icol,irow,nzl,nam,ipompcold,nodempcold,coefmpcold,
-        labmpcold,&nmpcold,xloadold,iamload,t1old,t1,iamt1,xstiff);
+        labmpcold,&nmpcold,xloadold,iamload,t1old,t1,iamt1,xstiff,&icole,&jqe,
+        &irowe,isolver,nzse,&adbe,&aube,iexpl,
+	ibody,xbody,nbody,cocon,ncocon,tieset,&ntie,&nnn);
 
       free(vold);vold=NNEW(double,5**nk);
       RENEW(eme,double,6**mint_**ne);
@@ -339,6 +351,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   }
 
   fclose(f1);
+
+  fric=NNEW(double,nev);
 
   /* check whether there are dashpot elements */
 
@@ -349,6 +363,11 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  dashpot=1;break;}
   }
   if(dashpot){
+
+      if(*mcs!=0){
+	  printf("*ERROR in steadystate: dashpots are not allowed in combination with cyclic symmetry\n");
+	  FORTRAN(stop,());
+      }
        /*  adc=NNEW(double,neq[1]);
       auc=NNEW(double,nzs[1]);
       FORTRAN(mafilldm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -464,6 +483,46 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      break;
 	  }
       }
+
+      if((iprescribedboundary)&&(*mcs!=0)){
+	  printf("*ERROR in steadystate: prescribed boundaries are not allowed in combination with cyclic symmetry\n");
+	  FORTRAN(stop,());
+      }
+
+      /* calculating the damping coefficients = friction coefficient*2*eigenvalue */
+      
+      if(xmodal[9]<0){
+	  for(i=0;i<nev;i++){
+	      if(fabs(d[i])>(1.e-10)){
+		  fric[i]=(alpham+betam*d[i]*d[i]);
+	      }
+	      else {
+		  printf("*WARNING in dyna: one of the frequencies is zero\n");
+		  printf("         no Rayleigh mass damping allowed\n");
+		  fric[i]=0.;
+	      }
+	  }
+      }
+      else{
+	  if(iprescribedboundary){
+	      printf("*ERROR in steadystate: prescribed boundaries are not allowed in combination with direct modal damping\n");
+	      FORTRAN(stop,());
+	  }
+	      
+	  /*copy the damping coefficients for every eigenfrequencie from xmodal[10....] */
+	  if(nev<(int)xmodal[9]){
+	      imax=nev;
+	      printf("*WARNING in dyna: too many modal damping coefficients applied\n");
+	      printf("         damping coefficients corresponding to nonexisting eigenvalues are ignored\n");
+	  }
+	  else{
+	      imax=(int)xmodal[9];
+	  }
+	  for(i=0; i<imax; i++){
+	      fric[i]=2.*d[i]*xmodal[10+i];     
+	  }
+	  
+      }
       
       /* check whether the loading is real or imaginary */
       
@@ -476,7 +535,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       
       iphaseload=NNEW(int,*nload);
       for (i=0;i<*nload;i++){
-	  if(nelemload[2*i+1]>nsectors){
+	  if(nelemload[2*i+1]>=nsectors){
 	      iphaseload[i]=1;
 	  }
       }
@@ -576,7 +635,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
                       &symmetryflag,&inputformat);
 #else
-	      printf("*ERROR in arpack: the SPOOLES library is not linked\n\n");
+	      printf("*ERROR in steadystate: the SPOOLES library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
@@ -585,7 +644,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      token=1;
 	      sgi_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],token);
 #else
-	      printf("*ERROR in arpack: the SGI library is not linked\n\n");
+	      printf("*ERROR in steadystate: the SGI library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
@@ -593,7 +652,15 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 #ifdef TAUCS
 	      tau_factor(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1]);
 #else
-	      printf("*ERROR in arpack: the TAUCS library is not linked\n\n");
+	      printf("*ERROR in steadystate: the TAUCS library is not linked\n\n");
+	      FORTRAN(stop,());
+#endif
+	  }
+	  else if(*isolver==7){
+#ifdef PARDISO
+	      pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1]);
+#else
+	      printf("*ERROR in steadystate: the PARDISO library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
@@ -695,7 +762,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		       t0,t1act,ithermal,iprestr,vold,iperturb,iexpl,plicon,
 		       nplicon,plkcon,nplkcon,
 		       npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
-                       xbodyold,&reltime));
+                       xbodyold,&reltime,veold,matname));
 	  
 	  /* correction for nonzero SPC's */
 	  
@@ -729,6 +796,11 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      else if(*isolver==5){
 #ifdef TAUCS
 		  tau_solve(ubr,&neq[1]);
+#endif
+	      }
+	      else if(*isolver==7){
+#ifdef PARDISO
+		  pardiso_solve(ubr,&neq[1]);
 #endif
 	      }
 	      FORTRAN(op,(&neq[1],aux,ubr,mubr,adb,aub,
@@ -767,7 +839,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		       t0,t1act,ithermal,iprestr,vold,iperturb,iexpl,plicon,
 		       nplicon,plkcon,nplkcon,
 		       npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
-                       xbodyold,&reltime));
+                       xbodyold,&reltime,veold,matname));
 	  
 	  /* correction for nonzero SPC's */
 	  
@@ -801,6 +873,11 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      else if(*isolver==5){
 #ifdef TAUCS
 		  tau_solve(ubi,&neq[1]);
+#endif
+	      }
+	      else if(*isolver==7){
+#ifdef PARDISO
+		  pardiso_solve(ubi,&neq[1]);
 #endif
 	      }
 	      FORTRAN(op,(&neq[1],aux,ubi,mubi,adb,aub,
@@ -837,11 +914,11 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  if(dashpot==0){
 	      for(i=0;i<nev;i++){
 		  dd=pow(pow(d[i],2)-pow(freq[l],2),2)+
-		      pow(alpham+betam*pow(d[i],2),2)*pow(freq[l],2);
+		      pow(fric[i],2)*pow(freq[l],2);
 		  bjr[i]=(aa[i]*(d[i]*d[i]-freq[l]*freq[l])+
-			  bb[i]*(alpham+betam*d[i]*d[i])*freq[l])/dd;
+			  bb[i]*fric[i]*freq[l])/dd;
 		  bji[i]=(bb[i]*(d[i]*d[i]-freq[l]*freq[l])-
-			  aa[i]*(alpham+betam*d[i]*d[i])*freq[l])/dd;
+			  aa[i]*fric[i]*freq[l])/dd;
 	      }
 	      /*    printf("old l=%d,bjr=%f,bji=%f\n",l,bjr[0],bji[0]);*/
 	  }else{
@@ -853,7 +930,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      }
 	      for(i=0;i<nev;i++){
 		  am[i*nev2+i]=d[i]*d[i]-freq[l]*freq[l];
-		  am[(i+nev)*nev2+i]=-(alpham+betam*d[i]*d[i])*freq[l];
+		  am[(i+nev)*nev2+i]=-fric[i]*freq[l];
 		  bm[i]=aa[i];
 		  am[i*nev2+nev+i]=-am[(i+nev)*nev2+i];
 		  am[(i+nev)*nev2+nev+i]=am[i*nev2+i];
@@ -920,7 +997,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,
 		  enern,sti,xstaten,eei,enerini,cocon,ncocon,
 		  set,nset,istartset,iendset,ialset,nprint,prlab,prset,
-		  qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload));}
+		  qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload,
+                  ikmpc,ilmpc,istep,&iinc));}
 	  else{
 	      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,vr,stn,inum,
 		  stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
@@ -935,7 +1013,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,
 		  enern,sti,xstaten,eei,enerini,cocon,ncocon,
 		  set,nset,istartset,iendset,ialset,nprint,prlab,prset,
-		  qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload));}
+		  qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload,
+                  ikmpc,ilmpc,istep,&iinc));}
 	  
 	  (*kode)++;
 	  
@@ -946,7 +1025,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
             nstate_,istep,&iinc,
 	    iperturb,ener,mint_,output,ithermal,qfn,&mode,&noddiam,
             trab,inotr,ntrans,orab,ielorien,norien,description,
-	    ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&idummy));
+	    ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,stnmax,&idummy,veold,
+            &neg,cs));
 	  free(ipneigh);free(neigh);
 	  
 	  /* calculating the imaginary response */
@@ -981,7 +1061,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
                   &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,
                   enern,sti,xstaten,eei,enerini,cocon,ncocon,
                   set,nset,istartset,iendset,ialset,nprint,prlab,prset,
-	          qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload));}
+	          qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload,
+                  ikmpc,ilmpc,istep,&iinc));}
 	  else{ 
 	      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,vi,stn,inum,
                   stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
@@ -996,7 +1077,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
                   &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,
                   enern,sti,xstaten,eei,enerini,cocon,ncocon,
                   set,nset,istartset,iendset,ialset,nprint,prlab,prset,
-	          qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload));}
+	          qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload,
+                  ikmpc,ilmpc,istep,&iinc));}
 	  
 	  /* calculating the magnitude and phase */
 	  
@@ -1048,7 +1130,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
             &iinc,
 	    iperturb,ener,mint_,output,ithermal,qfn,&mode,&noddiam,
             trab,inotr,ntrans,orab,ielorien,norien,description,
-	    ipneigh,neigh,sti,va,vp,stnr,stni,vmax,stnmax,&idummy));
+	    ipneigh,neigh,stx,va,vp,stnr,stni,vmax,stnmax,&idummy,veold,
+            &neg,cs));
 	  free(ipneigh);free(neigh);
 
 	  free(va);free(vp);
@@ -1101,6 +1184,26 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       if(*ithermal==1) free(t1act);
       
       if(iprescribedboundary){
+	  if(*isolver==0){
+#ifdef SPOOLES
+	      spooles_cleanup();
+#endif
+	  }
+	  else if(*isolver==4){
+#ifdef SGI
+	      sgi_cleanup(token);
+#endif
+	  }
+	  else if(*isolver==5){
+#ifdef TAUCS
+	      tau_cleanup();
+#endif
+	  }
+	  else if(*isolver==7){
+#ifdef PARDISO
+	      pardiso_cleanup(&neq[1]);
+#endif
+	  }
 	  free(xbounr);free(xbouni);free(fr);free(fi);free(ubr);free(ubi);
 	  free(mubr);free(mubi);
       }
@@ -1129,6 +1232,46 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      iprescribedboundary=1;
 	      break;
 	  }
+      }
+
+      if((iprescribedboundary)&&(*mcs!=0)){
+	  printf("*ERROR in steadystate: prescribed boundaries are not allowed in combination with cyclic symmetry\n");
+	  FORTRAN(stop,());
+      }
+
+      /* calculating the damping coefficients = friction coefficient*2*eigenvalue */
+      
+      if(xmodal[9]<0){
+	  for(i=0;i<nev;i++){
+	      if(fabs(d[i])>(1.e-10)){
+		  fric[i]=(alpham+betam*d[i]*d[i]);
+	      }
+	      else {
+		  printf("*WARNING in dyna: one of the frequencies is zero\n");
+		  printf("         no Rayleigh mass damping allowed\n");
+		  fric[i]=0.;
+	      }
+	  }
+      }
+      else{
+	  if(iprescribedboundary){
+	      printf("*ERROR in steadystate: prescribed boundaries are not allowed in combination with direct modal damping\n");
+	      FORTRAN(stop,());
+	  }
+	      
+	  /*copy the damping coefficients for every eigenfrequencie from xmodal[10....] */
+	  if(nev<(int)xmodal[9]){
+	      imax=nev;
+	      printf("*WARNING in dyna: too many modal damping coefficients applied\n");
+	      printf("         damping coefficients corresponding to nonexisting eigenvalues are ignored\n");
+	  }
+	  else{
+	      imax=(int)xmodal[9];
+	  }
+	  for(i=0; i<imax; i++){
+	      fric[i]=2.*d[i]*xmodal[10+i];     
+	  }
+	  
       }
 
       /* determining the load time history */
@@ -1212,7 +1355,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
                         &symmetryflag,&inputformat);
 #else
-	      printf("*ERROR in arpack: the SPOOLES library is not linked\n\n");
+	      printf("*ERROR in steadystate: the SPOOLES library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
@@ -1221,7 +1364,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      token=1;
 	      sgi_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],token);
 #else
-	      printf("*ERROR in arpack: the SGI library is not linked\n\n");
+	      printf("*ERROR in steadystate: the SGI library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
@@ -1229,7 +1372,15 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 #ifdef TAUCS
 	      tau_factor(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1]);
 #else
-	      printf("*ERROR in arpack: the TAUCS library is not linked\n\n");
+	      printf("*ERROR in steadystate: the TAUCS library is not linked\n\n");
+	      FORTRAN(stop,());
+#endif
+	  }
+	  else if(*isolver==7){
+#ifdef PARDISO
+	      pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1]);
+#else
+	      printf("*ERROR in steadystate: the PARDISO library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
@@ -1411,7 +1562,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		t0,t1act,ithermal,iprestr,vold,iperturb,iexpl,plicon,
 		nplicon,plkcon,nplkcon,
 		npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
-                xbodyold,&reltime));
+			   xbodyold,&reltime,veold,matname));
 	      
 	      for(i=0;i<neq[1];i++){bi[i]=0.;}
 	      
@@ -1445,6 +1596,11 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		      tau_solve(ubr,&neq[1]);
 #endif
 		  }
+		  else if(*isolver==7){
+#ifdef PARDISO
+		      pardiso_solve(ubr,&neq[1]);
+#endif
+		  }
 		  FORTRAN(op,(&neq[1],aux,ubr,mubr,adb,aub,
 			      icol,irow,nzl));
 		  
@@ -1476,11 +1632,11 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      if(dashpot==0){
 		  for(i=0;i<nev;i++){
 		      dd=pow(pow(d[i],2)-pow(freq[l],2),2)+
-			  pow(alpham+betam*pow(d[i],2),2)*pow(freq[l],2);
+			  pow(fric[i],2)*pow(freq[l],2);
 		      bjr[i]=(aa[i]*(d[i]*d[i]-freq[l]*freq[l])+
-			      bb[i]*(alpham+betam*d[i]*d[i])*freq[l])/dd;
+			      bb[i]*fric[i]*freq[l])/dd;
 		      bji[i]=(bb[i]*(d[i]*d[i]-freq[l]*freq[l])-
-			      aa[i]*(alpham+betam*d[i]*d[i])*freq[l])/dd;
+			      aa[i]*fric[i]*freq[l])/dd;
 		  }
 	      }else{
 		  for(i=0;i<nev2;i++){
@@ -1491,7 +1647,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  }
 		  for(i=0;i<nev;i++){
 		      am[i*nev2+i]=d[i]*d[i]-freq[l]*freq[l];
-		      am[(i+nev)*nev2+i]=-(alpham+betam*d[i]*d[i])*freq[l];
+		      am[(i+nev)*nev2+i]=-fric[i]*freq[l];
 		      bm[i]=aa[i];
 		      am[i*nev2+nev+i]=-am[(i+nev)*nev2+i];
 		      am[(i+nev)*nev2+nev+i]=am[i*nev2+i];
@@ -1590,6 +1746,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
           if(*nbody>0) free(ipobody);
 	  if(iprescribedboundary) free(xbounr);
 	  
+	  
 	  /* result fields */
 	  
 	  vr=NNEW(double,5**nk);
@@ -1626,7 +1783,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,
 		  enern,sti,xstaten,eei,enerini,cocon,ncocon,
 		  set,nset,istartset,iendset,ialset,nprint,prlab,prset,
-		  qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload));
+		  qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload,ikmpc,
+                  ilmpc,istep,&iinc));
 	  
 	      (*kode)++;
 	      mode=-1;
@@ -1636,8 +1794,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		   filab,een,t1,fn,ttime,epn,ielmat,matname,enern,xstaten,
                    nstate_,istep,&iinc,iperturb,ener,mint_,output,ithermal,
                    qfn,&mode,&noddiam,trab,inotr,ntrans,orab,ielorien,norien,
-		   description,ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,
-		   stnmax,&idummy));
+		   description,ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,
+		   stnmax,&idummy,veold,&neg,cs));
 	      free(ipneigh);free(neigh);
 
 	  }
@@ -1654,6 +1812,28 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       free(xforcact);free(xloadact);free(xbodyact);free(xbounact);
       free(xbounacttime);free(freqnh);
       if(*ithermal==1) free(t1act);
+      if(iprescribedboundary){
+	  if(*isolver==0){
+#ifdef SPOOLES
+	      spooles_cleanup();
+#endif
+	  }
+	  else if(*isolver==4){
+#ifdef SGI
+	      sgi_cleanup(token);
+#endif
+	  }
+	  else if(*isolver==5){
+#ifdef TAUCS
+	      tau_cleanup();
+#endif
+	  }
+	  else if(*isolver==7){
+#ifdef PARDISO
+	      pardiso_cleanup(&neq[1]);
+#endif
+	  }
+      }
 
   }
 
@@ -1662,7 +1842,6 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   if(*mcs==0){
       free(ad);free(au);
   }else{
-
       *nk/=nsectors;
       *ne/=nsectors;
       *nboun/=nsectors;
@@ -1746,7 +1925,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       }
   }
 
-  free(xstiff);
+  free(xstiff);free(fric);
 
   if(dashpot){free(cc);free(am);free(bm);free(ipiv);}
 
@@ -1757,7 +1936,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   *xbounoldp=xbounold;*ikbounp=ikboun;*ilbounp=ilboun;*nactdofp=nactdof;
   *voldp=vold;*emep=eme;*enerp=ener;*ipompcp=ipompc;*nodempcp=nodempc;
   *coefmpcp=coefmpc;*labmpcp=labmpc;*ikmpcp=ikmpc;*ilmpcp=ilmpc;
-  *fmpcp=fmpc;*iamt1p=iamt1;*t0p=t0;*t1oldp=t1old;*t1p=t1;
+  *fmpcp=fmpc;*iamt1p=iamt1;*t0p=t0;*t1oldp=t1old;*t1p=t1;*nnnp=nnn;
 
   return;
 }

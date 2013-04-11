@@ -44,29 +44,29 @@
 !     inserting the mpc information: it is assumed that the
 !     temperature MPC's also apply to the turbulence
 !     
-      do i=1,nmpc
-         ist=ipompc(i)
-         node=nodempc(1,ist)
-         ndir=nodempc(2,ist)
-         if(ndir.ne.0) cycle
-         index=nodempc(3,ist)
-         fixed_dispk=0.d0
-         fixed_dispt=0.d0
-         if(index.ne.0) then
-            do
-               fixed_dispk=fixed_dispk-coefmpc(index)*
-     &              vtu(1,nodempc(1,index))
-               fixed_dispt=fixed_dispt-coefmpc(index)*
-     &              vtu(2,nodempc(1,index))
-               index=nodempc(3,index)
-               if(index.eq.0) exit
-            enddo
-         endif
-         fixed_dispk=fixed_dispk/coefmpc(ist)
-         vtu(1,node)=fixed_dispk
-         fixed_dispt=fixed_dispt/coefmpc(ist)
-         vtu(2,node)=fixed_dispt
-      enddo
+c      do i=1,nmpc
+c         ist=ipompc(i)
+c         node=nodempc(1,ist)
+c         ndir=nodempc(2,ist)
+c         if(ndir.ne.0) cycle
+c         index=nodempc(3,ist)
+c         fixed_dispk=0.d0
+c         fixed_dispt=0.d0
+c         if(index.ne.0) then
+c            do
+c               fixed_dispk=fixed_dispk-coefmpc(index)*
+c     &              vtu(1,nodempc(1,index))
+c               fixed_dispt=fixed_dispt-coefmpc(index)*
+c     &              vtu(2,nodempc(1,index))
+c               index=nodempc(3,index)
+c               if(index.eq.0) exit
+c            enddo
+c         endif
+c         fixed_dispk=fixed_dispk/coefmpc(ist)
+c         vtu(1,node)=fixed_dispk
+c         fixed_dispt=fixed_dispt/coefmpc(ist)
+c         vtu(2,node)=fixed_dispt
+c      enddo
 !
       return
       end

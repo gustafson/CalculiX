@@ -34,6 +34,9 @@
 #ifdef MATRIXSTORAGE
    #include "matrixstorage.h"
 #endif
+#ifdef PARDISO
+   #include "pardiso.h"
+#endif
 
 void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	     int *ne, 
@@ -78,12 +81,12 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
       coriolis=0,symmetryflag=0,inputformat=0;
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,
     *workl=NULL,*aux=NULL,*d=NULL,sigma=1,*temp_array=NULL,
-    *een=NULL,sum,cam[3],*f=NULL,*fn=NULL,qa[2],*fext=NULL,*epn=NULL,
+    *een=NULL,sum,cam[3],*f=NULL,*fn=NULL,qa[3],*fext=NULL,*epn=NULL,
     *xstateini=NULL,*xstiff=NULL,*stiini=NULL,*vini=NULL,freq,*stx=NULL,
     *enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,
     *physcon=NULL,*qfx=NULL,*qfn=NULL,tol,fmin,fmax,pi,*cgr=NULL,
     *xloadold=NULL,reltime,*vr=NULL,*vi=NULL,*stnr=NULL,*stni=NULL,
-    *vmax=NULL,*stnmax=NULL;
+    *vmax=NULL,*stnmax=NULL,*cs=NULL;
   FILE *f1;
 
   int *ipneigh=NULL,*neigh=NULL;
@@ -95,7 +98,15 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 #ifdef SGI
   int token;
 #endif
-  
+
+  if((strcmp1(&filab[60],"PU  ")==0)||
+     (strcmp1(&filab[102],"PHS ")==0)||
+     (strcmp1(&filab[108],"MAXU")==0)||
+     (strcmp1(&filab[114],"MAXS")==0)){
+      printf("*ERROR in arpack: PU, PHS, MAXU and MAX was selected in a frequency calculation without cyclic symmetry;\n this is not correct\n");
+      FORTRAN(stop,());
+  }
+
   /* copying the frequency parameters */
 
   pi=4.*atan(1.);
@@ -162,7 +173,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-               fmpc,nelemload,nload));
+               fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
   }else{
      FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	       elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -176,7 +187,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
                sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-               fmpc,nelemload,nload));
+               fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
   }
   free(f);free(v);free(fn);free(stx);if(*ithermal>1){free(qfx);}
   iout=1;
@@ -204,7 +215,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mint_,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
 	      physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
-              &coriolis,ibody,xloadold,&reltime));
+		      &coriolis,ibody,xloadold,&reltime,veold));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -219,7 +230,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstiff,npmat_,&dtime,matname,mint_,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
               physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
-              &coriolis,ibody,xloadold,&reltime));
+		      &coriolis,ibody,xloadold,&reltime,veold));
   }
 
   free(fext);
@@ -235,7 +246,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
          fn,&time,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
 	 iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,trab,inotr,ntrans,
          orab,ielorien,norien,description,
-	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph));
+	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs));
     
     free(inum);free(ipneigh);free(neigh);FORTRAN(stop,());
 
@@ -278,6 +289,14 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     FORTRAN(stop,());
 #endif
   }
+  else if(*isolver==7){
+#ifdef PARDISO
+    pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1]);
+#else
+    printf("*ERROR in arpack: the PARDISO library is not linked\n\n");
+    FORTRAN(stop,());
+#endif
+  }
 
 /*  free(au);free(ad);*/
 
@@ -296,7 +315,8 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   info=0;
 
   resid=NNEW(double,neq[1]);
-  z=NNEW(double,ncv*neq[1]);
+  long long zsize=ncv*neq[1];
+  z=NNEW(double,zsize);
   workd=NNEW(double,3*neq[1]);
   workl=NNEW(double,lworkl);
 
@@ -329,6 +349,11 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
           tau_solve(temp_array,&neq[1]);
 #endif
         }
+        else if(*isolver==7){
+#ifdef PARDISO
+          pardiso_solve(temp_array,&neq[1]);
+#endif
+        }
         for(jrow=0;jrow<neq[1];jrow++){
           workd[ipntr[1]-1+jrow]=temp_array[jrow];
         }
@@ -347,6 +372,11 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
         else if(*isolver==5){
 #ifdef TAUCS
           tau_solve(&workd[ipntr[2]-1],&neq[1]);
+#endif
+        }
+        if(*isolver==7){
+#ifdef PARDISO
+          pardiso_solve(&workd[ipntr[2]-1],&neq[1]);
 #endif
         }
         for(jrow=0;jrow<neq[1];jrow++){
@@ -384,6 +414,11 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   else if(*isolver==5){
 #ifdef TAUCS
     tau_cleanup();
+#endif
+  }
+  else if(*isolver==7){
+#ifdef PARDISO
+    pardiso_cleanup(&neq[1]);
 #endif
   }
 
@@ -513,7 +548,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
             sti,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-            nelemload,nload));}
+            nelemload,nload,ikmpc,ilmpc,&istep,&iinc));}
     else{
       FORTRAN(results,(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	    stx,elcon,
@@ -528,7 +563,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,sti,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-            nelemload,nload));
+            nelemload,nload,ikmpc,ilmpc,&istep,&iinc));
     }
     free(eei);
     if(*nener==1){
@@ -541,7 +576,7 @@ void arpack(double *co, int *nk, int *kon, int *ipkon, char *lakon,
          fn,&freq,epn,ielmat,matname,enern,xstaten,nstate_,&istep,&iinc,
 	 iperturb,ener,mint_,output,ithermal,qfn,&j,&noddiam,
          trab,inotr,ntrans,orab,ielorien,norien,description,
-	 ipneigh,neigh,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph));
+	 ipneigh,neigh,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ne,cs));
     free(ipneigh);free(neigh);
   }
 

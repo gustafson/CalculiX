@@ -29,7 +29,25 @@
 !
       real*8 v(0:4,*)
 !
-!     extrapolating the mass flow to the end nodes
+!     determining all outflowing mass flow in the end nodes and
+!     assigning it to the end nodes
+!
+      do i=1,ne
+!
+         if(ipkon(i).lt.0) cycle
+         lakonl=lakon(i)
+         if(lakonl(1:1).ne.'D') cycle
+!
+         indexe=ipkon(i)
+         if(kon(indexe+1).ne.0)  then
+            node1=kon(indexe+1)
+            v(1,node1)=0.d0
+         endif
+         if(kon(indexe+3).ne.0) then
+            node3=kon(indexe+3)
+            v(1,node3)=0.d0
+         endif
+      enddo
 !
       do i=1,ne
 !
@@ -41,22 +59,14 @@
          node2=kon(indexe+2)
          if(kon(indexe+1).ne.0)  then
             node1=kon(indexe+1)
-            if(inum(node1).ge.0) then
-               inum(node1)=-1
-            else
-               inum(node1)=inum(node1)-1
-            endif
-            v(1,node1)=v(1,node1)+v(1,node2)
+            inum(node1)=1
+            if(v(1,node2).gt.0.d0) v(1,node1)=v(1,node1)+v(1,node2)
          endif
          inum(node2)=inum(node2)+1
          if(kon(indexe+3).ne.0) then
             node3=kon(indexe+3)
-            if(inum(node3).ge.0) then
-               inum(node3)=-1
-            else
-               inum(node3)=inum(node3)-1
-            endif
-            v(1,node3)=v(1,node3)+v(1,node2)
+            inum(node3)=1
+            if(v(1,node2).lt.0.d0) v(1,node3)=v(1,node3)-v(1,node2)
          endif
       enddo
 !
@@ -74,22 +84,22 @@
 !        end node
 !
          node1=kon(indexe+1)
-         if(node1.ne.0)  then
-            if(inum(node1).lt.0) then
-               v(1,node1)=-v(1,node1)/inum(node1)
-               inum(node1)=-inum(node1)
-            endif
-         endif
+c         if(node1.ne.0)  then
+c            if(inum(node1).lt.0) then
+c               v(1,node1)=-v(1,node1)/inum(node1)
+c               inum(node1)=-inum(node1)
+c            endif
+c         endif
 !
 !        other end node
 !
          node3=kon(indexe+3)
-         if(node3.ne.0)  then
-            if(inum(node3).lt.0) then
-               v(1,node3)=-v(1,node3)/inum(node3)
-               inum(node3)=-inum(node3)
-            endif
-         endif
+c         if(node3.ne.0)  then
+c            if(inum(node3).lt.0) then
+c               v(1,node3)=-v(1,node3)/inum(node3)
+c               inum(node3)=-inum(node3)
+c            endif
+c         endif
 !
 !        middle node and zero nodes (network entrances/exits)
 !        interpolating the total temperature, total pressure

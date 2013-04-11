@@ -23,7 +23,7 @@
      &  ipoinp,inp,ntie,mcs,lprev,ithermal,rcscg,rcs0cg,zcscg,
      &  zcs0cg,nrcg,nzcg,jcs,kontri,straight,ne,ipkon,kon,
      &  lakon,lcs,icounter,ifacetet,inodface,ipoinpc,maxsectors,
-     &  trab,ntrans,ntrans_)
+     &  trab,ntrans,ntrans_,jobnamec,vold,cfd)
 !
 !     reading the input deck: *CYCLIC SYMMETRY MODEL
 !
@@ -52,7 +52,7 @@
       character*20 labmpc(*)
       character*80 tie
       character*81 set(*),depset,indepset,tieset(3,*),elset
-      character*132 textpart(16)
+      character*132 textpart(16),jobnamec(*)
 !
       integer istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
      &  nset,istep,istat,n,key,i,j,k,nk,nmpc,nmpc_,mpcfree,ics(*),
@@ -61,12 +61,12 @@
      &  inp(3,*),itie,iset,ipos,mcs,lprev,ntie,ithermal,ncounter,
      &  nrcg(*),nzcg(*),jcs(*),kontri(3,*),ne,ipkon(*),kon(*),nodei,
      &  icounter(*),ifacetet(*),inodface(*),ipoinpc(0:*),maxsectors,
-     &  noden(2),ntrans,ntrans_
+     &  noden(2),ntrans,ntrans_,cfd
 !
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
      &  csab(7),xn,yn,zn,dd,xap,yap,zap,tietol(*),cs(17,*),xsectors,
      &  gsectors,x3,y3,z3,phi,rcscg(*),rcs0cg(*),zcscg(*),zcs0cg(*),
-     &  straight(9,*),x1,y1,z1,x2,y2,z2,zp,rp,dist,trab(7,*)
+     &  straight(9,*),x1,y1,z1,x2,y2,z2,zp,rp,dist,trab(7,*),vold(0:4,*)
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR in cycsymmods: *CYCLIC SYMMETRY MODEL'
@@ -196,7 +196,7 @@
 !
 !     marker for cyclic symmetry axis
 !
-      trab(i,7)=2
+      trab(7,ntrans)=2
 !
 !     check whether depset and indepset exist
 !
@@ -460,14 +460,13 @@ c                  write(*,*) 'phi ',phi
             endif
             noded=ialset(i)
 !
-c            write(*,*) '101 ',rcs0(101),zcs0(101)
             call generatecycmpcs(tolloc,co,nk,ipompc,nodempc,
-     &         coefmpc,nmpc,nmpc_,ikmpc,ilmpc,mpcfree,rcs,zcs,ics,
-     &         nr,nz,rcs0,zcs0,ncs_,cs,labmpc,istep,istat,n,
-     &         mcs,ithermal,triangulation,csab,xn,yn,zn,phi,noded,
+     &         coefmpc,nmpc,ikmpc,ilmpc,mpcfree,rcs,zcs,ics,
+     &         nr,nz,rcs0,zcs0,labmpc,
+     &         mcs,triangulation,csab,xn,yn,zn,phi,noded,
      &         ncsnodes,nodesonaxis,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
      &         nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
-     &         ifacetet,inodface)
+     &         ifacetet,inodface,ncounter,jobnamec,vold,cfd)
 !
          else
             k=ialset(i-2)
@@ -482,11 +481,18 @@ c            write(*,*) '101 ',rcs0(101),zcs0(101)
      &              mcs,ithermal,triangulation,csab,xn,yn,zn,phi,noded,
      &              ncsnodes,nodesonaxis,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
      &              nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
-     &              ifacetet,inodface)
+     &              ifacetet,inodface,ncounter,jobnamec,vold,cfd)
             enddo
          endif
 !
       enddo
+!
+      if(ncounter.ne.0) then
+         write(*,*) '*ERROR in cycsymmods: for at least one dependent'
+         write(*,*) '       node in a cyclic symmetry definition no '
+         write(*,*) '       independent counterpart was found'
+         stop
+      endif
 !
 !     sorting ics
 !     ics contains the master (independent) nodes

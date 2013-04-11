@@ -27,14 +27,37 @@ void contact(int *ncont, int *ntie, char *tieset, int *nset, char *set,
 	     double *vold, int *ielmat, double *cs, double *elcon,
              int *istep,int *iinc,int *iit,int *ncmat_,int *ntmat_,
              int *ifcont1, int *ifcont2, int *ne0, double *vini,
-             int *nmethod){
+             int *nmethod, int *nmpc, int *mpcfree, int *memmpc_,
+             int **ipompcp, char **labmpcp, int **ikmpcp, int **ilmpcp,
+             double **fmpcp, int **nodempcp, double **coefmpcp,
+             int *iperturb, int *ikboun, int *nboun){
     
-    int i,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL;
+    char *labmpc=NULL;
+
+    int i,j,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL,*ipompc=NULL,*ikmpc=NULL,
+	*ilmpc=NULL,*nodempc=NULL,nmpc_;
     
-    double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL;
+    double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL,
+        *fmpc=NULL, *coefmpc=NULL;
+
+    ipompc=*ipompcp;labmpc=*labmpcp;ikmpc=*ikmpcp;ilmpc=*ilmpcp;
+    fmpc=*fmpcp;nodempc=*nodempcp;coefmpc=*coefmpcp;
+    nmpc_=*nmpc;
     
     FORTRAN(updatecont,(koncont,ncont,co,vold,
 			cg,straight));
+    
+/*    printf("before remcontmpc mpcnew=%d\n",*nmpc);
+       for(i=0;i<*nmpc;i++){
+	j=i+1;
+	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
+	}*/
+
+    /* deleting contact MPC's (not for modal dynamics calculations) */
+
+    if(*iperturb>1){
+	remcontmpc(nmpc,labmpc,mpcfree,nodempc,ikmpc,ilmpc,coefmpc,ipompc);
+    }
     
     /* determining the size of the auxiliary fields */
     
@@ -60,6 +83,26 @@ void contact(int *ncont, int *ntie, char *tieset, int *nset, char *set,
 
     free(xo);free(yo);free(zo);free(x);free(y);free(z);free(nx);
     free(ny);free(nz);
+
+    /* generate MPC's for the middle nodes of the dependent contact
+       surface; they are connected to their endnode neighbors 
+       (not for modal dynamic calculations) */
+
+//    printf("mpcold=%d\n",*nmpc);
+    if(*iperturb>1){
+	gencontmpc(ne,ne0,lakon,ipkon,kon,nmpc,&ikmpc,&ilmpc,&ipompc,mpcfree,
+		   &fmpc,&labmpc,&nodempc,memmpc_,&coefmpc,&nmpc_,ikboun,
+                   nboun);
+    }
+//    printf("mpcnew=%d\n",*nmpc);
+    
+    /*    for(i=0;i<*nmpc;i++){
+	j=i+1;
+	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
+	}*/
+
+    *ipompcp=ipompc;*labmpcp=labmpc;*ikmpcp=ikmpc;*ilmpcp=ilmpc;
+    *fmpcp=fmpc;*nodempcp=nodempc;*coefmpcp=coefmpc;
   
     return;
 }

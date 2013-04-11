@@ -24,7 +24,7 @@
      &  nalcon,alzero,ielmat,ielorien,norien,orab,ntmat_,t0,t1,ithermal,
      &  iprestr,vold,iperturb,iexpl,plicon,
      &  nplicon,plkcon,nplkcon,npmat_,ttime,time,istep,iinc,dtime,
-     &  physcon,ibody,xloadold,reltime)
+     &  physcon,ibody,xloadold,reltime,veold,matname)
 !
 !     filling the right hand side load vector b
 !
@@ -34,6 +34,7 @@
 !
       character*8 lakon(*)
       character*20 sideload(*)
+      character*80 matname(*)
 !
       integer kon(*),ipompc(*),nodempc(3,*),ipobody(2,*),nbody,
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),ikmpc(*),
@@ -55,7 +56,7 @@
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*)
 !
-      real*8 om(2),physcon(3)
+      real*8 om(2),physcon(*),veold(0:3,*)
 !
       icalccg=0
 !
@@ -104,7 +105,6 @@
 !       assigning centrifugal forces
 !
          if(nbody.gt.0) then
-c            om=0.d0
             nom=0
             om(1)=0.d0
             om(2)=0.d0
@@ -153,7 +153,8 @@ c            om=0.d0
          call e_c3d_rhs(co,nk,konl,lakon(i),p1,p2,om,bodyf,nbody,
      &        ff,i,nmethod,rhcon,ielmat,ntmat_,vold,iperturb,
      &        nelemload,sideload,xload,nload,idist,ttime,time,istep,
-     &        iinc,dtime,xloadold,reltime)
+     &        iinc,dtime,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,
+     &        ikmpc,ilmpc,veold,matname)
 !
          do jj=1,3*nope
 !
@@ -225,7 +226,8 @@ c            om=0.d0
          call e_c3d_rhs_th(co,nk,konl,lakon(i),
      &        ff,i,nmethod,t0,t1,vold,nelemload,
      &        sideload,xload,nload,idist,dtime,
-     &        ttime,time,istep,iinc,xloadold,reltime)
+     &        ttime,time,istep,iinc,xloadold,reltime,
+     &        ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc)
 !
          do jj=1,nope
 !

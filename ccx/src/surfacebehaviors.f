@@ -60,6 +60,19 @@
      &           elcon(i,1,nmat)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          enddo
+!
+!        checking the values
+!
+         if(elcon(1,1,nmat).le.0.d0) then
+            write(*,*) '*ERROR in surfacebehaviors: c_0 must'
+            write(*,*) '       exceed zero'
+            stop
+         endif
+         if(elcon(2,1,nmat).lt.0.d0) then
+            write(*,*) '*ERROR in surfacebehaviors: p_0 must'
+            write(*,*) '       not be smaller than zero'
+            stop
+         endif
 !     
 !     transforming the parameters c_0 into
 !     beta such that the pressure p satisfies:

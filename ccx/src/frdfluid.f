@@ -16,8 +16,9 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine frddummy(co,nk,kon,ipkon,lakon,ne,v,vold,
-     &  kode,time,ielmat,matname,nnstep,vtu,voldtu,voldaux)
+      subroutine frdfluid(co,nk,kon,ipkon,lakon,ne,v,vold,
+     &  kode,time,ielmat,matname,nnstep,vtu,voldtu,voldaux,
+     &  physcon,filab,inomat,ntrans,inotr,trab)
 !
 !     stores the results in frd format
 !
@@ -26,17 +27,18 @@
       character*1 c
       character*3 m1,m2,m3,m4,m5
       character*5 p0,p1,p2,p3,p4,p5,p6,p8,p10,p11,p12
+      character*6 filab(*)
       character*8 lakon(*),date,newclock,fmat
       character*10 clock
       character*20 newdate
       character*80 matname(*)
       character*132 text
 !
-      integer kon(*),nk,ne,kode,i,j,ipkon(*),indexe,
-     &  one,ielmat(*),null,nnstep
+      integer kon(*),nk,ne,kode,i,j,ipkon(*),indexe,inomat(*),
+     &  one,ielmat(*),null,nnstep,inotr(2,*),ntrans
 !
       real*8 co(3,*),v(0:4,*),time,vold(0:4,*),vtu(2,*),voldtu(2,*),
-     &  pi,oner,voldaux(0:4,*)
+     &  pi,oner,voldaux(0:4,*),physcon(*),trab(7,*),a(3,3)
 !
       kode=kode+1
       pi=4.d0*datan(1.d0)
@@ -231,7 +233,7 @@
          write(7,'(a132)') text
 !
          do i=1,nk
-            write(7,100) m1,i,(v(j,i)/voldaux(4,i),j=1,3)
+            write(7,100) m1,i,(v(j,i),j=1,3)
          enddo
 !     
          write(7,'(a3)') m3
@@ -301,13 +303,13 @@
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
          write(7,'(a132)') text
-         text=' -4  TURBUL      1    1'
+         text=' -4  DTURB1      1    1'
          write(7,'(a132)') text
-         text=' -5  T           1    1    0    0'
+         text=' -5  K           1    1    0    0'
          write(7,'(a132)') text
 !
          do i=1,nk
-            write(7,100) m1,i,voldtu(1,i)+vtu(1,i)
+            write(7,100) m1,i,vtu(1,i)
          enddo
 !
          write(7,'(a3)') m3
@@ -323,17 +325,20 @@
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
          write(7,'(a132)') text
-         text=' -4  TURBUL      1    1'
+         text=' -4  DTURB2      1    1'
          write(7,'(a132)') text
-         text=' -5  T           1    1    0    0'
+         text=' -5  OM          1    1    0    0'
          write(7,'(a132)') text
 !
          do i=1,nk
-            write(7,100) m1,i,voldtu(2,i)+vtu(2,i)
+            write(7,100) m1,i,vtu(2,i)
          enddo
 !
          write(7,'(a3)') m3
+!
       elseif(nnstep.eq.6) then
+!
+      if(filab(21)(1:4).eq.'V   ') then
          text='    1PSTEP'
          write(text(25:36),'(i12)') kode
          write(7,'(a132)') text
@@ -345,7 +350,7 @@
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
          write(7,'(a132)') text
-         text=' -4  FVEL        4    1'
+         text=' -4  V3DF        4    1'
          write(7,'(a132)') text
          text=' -5  V1          1    2    1    0'
          write(7,'(a132)') text
@@ -356,11 +361,30 @@
          text=' -5  ALL         1    2    0    0    1ALL'
          write(7,'(a132)') text
 !
-         do i=1,nk
-            write(7,100) m1,i,(vold(j,i),j=1,3)
-         enddo
+         if((ntrans.eq.0).or.(filab(21)(6:6).eq.'G')) then
+            do i=1,nk
+               if(inomat(i).le.0) cycle
+               write(7,100) m1,i,(vold(j,i),j=1,3)
+            enddo
+         else
+            do i=1,nk
+               if(inomat(i).le.0) cycle
+               if(inotr(1,i).eq.0) then
+                  write(7,100) m1,i,(vold(j,i),j=1,3)
+               else
+                  call transformatrix(trab(1,inotr(1,i)),co(1,i),a)
+                  write(7,100) m1,i,
+     &               vold(1,i)*a(1,1)+vold(2,i)*a(2,1)+vold(3,i)*a(3,1),
+     &               vold(1,i)*a(1,2)+vold(2,i)*a(2,2)+vold(3,i)*a(3,2),
+     &               vold(1,i)*a(1,3)+vold(2,i)*a(2,3)+vold(3,i)*a(3,3)
+               endif
+            enddo
+         endif
 !     
          write(7,'(a3)') m3
+      endif
+!
+      if(filab(22)(1:4).eq.'PS  ') then
          text='    1PSTEP'
          write(text(25:36),'(i12)') kode
          write(7,'(a132)') text
@@ -372,9 +396,9 @@
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
          write(7,'(a132)') text
-         text=' -4  STPRES      1    1'
+         text=' -4  PS3DF       1    1'
          write(7,'(a132)') text
-         text=' -5  P           1    1    0    0'
+         text=' -5  PS          1    1    0    0'
          write(7,'(a132)') text
 !
          do i=1,nk
@@ -382,6 +406,9 @@
          enddo
 !
          write(7,'(a3)') m3
+      endif
+!
+      if(filab(17)(1:4).eq.'TS  ') then
          text='    1PSTEP'
          write(text(25:36),'(i12)') kode
          write(7,'(a132)') text
@@ -393,9 +420,9 @@
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') kode
          write(7,'(a132)') text
-         text=' -4  NDTEMP      1    1'
+         text=' -4  TS3DF       1    1'
          write(7,'(a132)') text
-         text=' -5  T           1    1    0    0'
+         text=' -5  TS          1    1    0    0'
          write(7,'(a132)') text
 !
          do i=1,nk
@@ -403,6 +430,137 @@
          enddo
 !
          write(7,'(a3)') m3
+      endif
+!
+      if(filab(23)(1:4).eq.'MACH') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(7,'(a132)') text
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(7,'(a132)') text
+         text=' -4  M3DF        1    1'
+         write(7,'(a132)') text
+         text=' -5  MACH        1    1    0    0'
+         write(7,'(a132)') text
+!
+         do i=1,nk
+            write(7,100) m1,i,v(1,i)
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
+!
+      if(filab(14)(1:4).eq.'TT  ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(7,'(a132)') text
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(7,'(a132)') text
+         text=' -4  TT3DF       1    1'
+         write(7,'(a132)') text
+         text=' -5  TT          1    1    0    0'
+         write(7,'(a132)') text
+!
+         do i=1,nk
+            write(7,100) m1,i,vold(0,i)*(1.d0+(v(0,i)-1.d0)/2*v(1,i)**2)
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
+!
+      if(filab(16)(1:4).eq.'PT  ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(7,'(a132)') text
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(7,'(a132)') text
+         text=' -4  PT3DF       1    1'
+         write(7,'(a132)') text
+         text=' -5  PT          1    1    0    0'
+         write(7,'(a132)') text
+!
+         do i=1,nk
+            write(7,100) m1,i,vold(4,i)*
+     &        (1.d0+(v(0,i)-1.d0)/2*v(1,i)**2)**(v(0,i)/(v(0,i)-1.d0))
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
+!
+      if(filab(24)(1:4).eq.'CP  ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(7,'(a132)') text
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(7,'(a132)') text
+         text=' -4  CP3DF       1    1'
+         write(7,'(a132)') text
+         text=' -5  CP          1    1    0    0'
+         write(7,'(a132)') text
+!
+         do i=1,nk
+            write(7,100) m1,i,(vold(4,i)-physcon(6))*2.d0/
+     &            (physcon(7)*physcon(5)**2)
+c            write(7,100) m1,i,(vold(4,i)-11.428571)*2.d0
+c            write(7,100) m1,i,(vold(4,i)-1.116071)*2.d0
+c            write(7,100) m1,i,(vold(4,i)-0.791452)*2.d0
+c            write(7,100) m1,i,(vold(4,i)-0.496032)*2.d0
+c            write(7,100) m1,i,(vold(4,i)-0.178571)*2.d0
+c            write(7,100) m1,i,(vold(4,i)-0.988631)*2.d0
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
+!
+      if(filab(25)(1:4).eq.'TURB') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(7,'(a132)') text
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(7,'(a132)') text
+         text=' -4  TURB3DF     2    1'
+         write(7,'(a132)') text
+         text=' -5  K           1    1    1    0'
+         write(7,'(a132)') text
+         text=' -5  OM          1    2    2    0'
+         write(7,'(a132)') text
+!
+         do i=1,nk
+            write(7,100) m1,i,voldtu(1,i),voldtu(2,i)
+         enddo
+!
+         write(7,'(a3)') m3
+      endif
       endif
 !
  100  format(a3,i10,1p,3e12.5)

@@ -28,12 +28,13 @@
       character*132 textpart(16)
 !
       integer nelcon(2,*),nmat,ntmat,ntmat_,istep,istat,ncocon(2,*),
-     &  n,key,i,ncmat_,nconstants,imax,isum,j,iperturb,iumat,
+     &  n,key,i,ncmat_,nconstants,imax,isum,j,iperturb(*),iumat,
      &  irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),imech,ipoinpc(0:*)
 !
       real*8 elcon(0:ncmat_,ntmat_,*),cocon(0:6,ntmat_,*)
 !
-      iperturb=3
+      iperturb(1)=3
+      iperturb(2)=0
       ntmat=0
       iumat=1
 !
@@ -64,13 +65,13 @@
 !
 !        mechanical user material
 !
-         if(nconstants.gt.21) then
-            write(*,*) '*ERROR in usermaterials: number of'
-            write(*,*) '       mechanical constants cannot exceed 21'
-            write(*,*) '       change the source code or'
-            write(*,*) '       contact the author'
-            stop
-         endif
+c         if(nconstants.gt.21) then
+c            write(*,*) '*ERROR in usermaterials: number of'
+c            write(*,*) '       mechanical constants cannot exceed 21'
+c            write(*,*) '       change the source code or'
+c            write(*,*) '       contact the author'
+c            stop
+c         endif
          nelcon(1,nmat)=-100-nconstants
 !
          do

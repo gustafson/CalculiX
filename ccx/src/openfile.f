@@ -41,7 +41,7 @@
       fnin=jobname(1:i)//'.inp'
       inquire(file=fnin,exist=exi)
       if(exi) then
-         open(1,file=fnin,status='old')
+         open(1,file=fnin,status='old',err=1)
       else
          write(*,*) '*ERROR in openfile: input file ',fnin
          write(*,*) 'does not exist'
@@ -49,36 +49,55 @@
       endif
 !
       fndat=jobname(1:i)//'.dat'
-      open(5,file=fndat,status='unknown')
-      close(5,status='delete')
-      open(5,file=fndat,status='unknown')
+      open(5,file=fndat,status='unknown',err=51)
+      close(5,status='delete',err=52)
+      open(5,file=fndat,status='unknown',err=51)
 c      rewind(5)
 !
       if(output.ne.'onf') then
          fnfrd=jobname(1:i)//'.frd'
-         open(7,file=fnfrd,status='unknown')
-         close(7,status='delete')
-         open(7,file=fnfrd,status='unknown')
+         open(7,file=fnfrd,status='unknown',err=71)
+         close(7,status='delete',err=72)
+         open(7,file=fnfrd,status='unknown',err=71)
 c         rewind(7)
       endif
 !
       fnsta=jobname(1:i)//'.sta'
-      open(8,file=fnsta,status='unknown')
-      close(8,status='delete')
-      open(8,file=fnsta,status='unknown')
+      open(8,file=fnsta,status='unknown',err=81)
+      close(8,status='delete',err=82)
+      open(8,file=fnsta,status='unknown',err=81)
 c      rewind(8)
       write(8,100)
       write(8,101)
  100  format('SUMMARY OF JOB INFORMATION')
- 101  format('  STEP   INC   ATT  ITRS   TOT TIME  STEP TIME   INC TIME'
-     &)
+ 101  format('  STEP   INC   ATT  ITRS     TOT TIME       STEP TIME    
+     &       INC TIME')
 !
       if(output.eq.'onf') then
          fnonf=jobname(1:i)//'.onf'
-         open(11,file=fnonf,status='unknown')
-         close(11,status='delete')
-         open(11,file=fnonf,status='new')
+         open(11,file=fnonf,status='unknown',err=111)
+         close(11,status='delete',err=112)
+         open(11,file=fnonf,status='new',err=111)
       endif
 !
       return
+!
+ 1    write(*,*) '*ERROR in openfile: could not open file ',fnin
+      stop
+ 51   write(*,*) '*ERROR in openfile: could not open file ',fndat
+      stop
+ 52   write(*,*) '*ERROR in openfile: could not delete file ',fndat
+      stop
+ 71   write(*,*) '*ERROR in openfile: could not open file ',fnfrd
+      stop
+ 72   write(*,*) '*ERROR in openfile: could not delete file ',fnfrd
+      stop
+ 81   write(*,*) '*ERROR in openfile: could not open file ',fnsta
+      stop
+ 82   write(*,*) '*ERROR in openfile: could not delete file ',fnsta
+      stop
+ 111  write(*,*) '*ERROR in openfile: could not open file ',fnonf
+      stop
+ 112  write(*,*) '*ERROR in openfile: could not delete file ',fnonf
+      stop
       end

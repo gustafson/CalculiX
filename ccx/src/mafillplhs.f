@@ -115,10 +115,10 @@
 !
                if(jdof1.eq.0) then
                   idof1=jdof2
-                  idof2=(node1-1)*8
+                  idof2=(node1-1)*8+4
                else
                   idof1=jdof1
-                  idof2=(node2-1)*8
+                  idof2=(node2-1)*8+4
                endif
                if(nmpc.gt.0) then
                   call nident(ikmpc,idof2,nmpc,id)
@@ -146,8 +146,8 @@
                   endif
                endif
             else
-               idof1=(node1-1)*8
-               idof2=(node2-1)*8
+               idof1=(node1-1)*8+4
+               idof2=(node2-1)*8+4
                mpc1=0
                mpc2=0
                if(nmpc.gt.0) then

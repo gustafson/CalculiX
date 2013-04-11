@@ -17,12 +17,13 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine triangucont(ncont,ntie,tieset,nset,set,istartset,
-     &  iendset,ialset,itietri,lakon,ipkon,kon,koncont)
+     &  iendset,ialset,itietri,lakon,ipkon,kon,koncont,kind)
 !
 !     generate a triangulation of the contact master surfaces
 !
       implicit none
 !
+      character*1 kind
       character*8 lakon(*)
       character*81 tieset(3,*),rightset,set(*)
 !
@@ -86,7 +87,7 @@
 !
 !        check for contact conditions
 !
-         if(tieset(1,i)(81:81).eq.'C') then
+         if(tieset(1,i)(81:81).eq.kind) then
             rightset=tieset(3,i)
 !
 !           determining the master surface
@@ -95,7 +96,8 @@
                if(set(j).eq.rightset) exit
             enddo
             if(j.gt.nset) then
-               write(*,*) '*ERROR in triangucont: master surface'
+               write(*,*) '*ERROR in triangucont: master surface',
+     &               rightset
                write(*,*) '       does not exist'
                stop
             endif

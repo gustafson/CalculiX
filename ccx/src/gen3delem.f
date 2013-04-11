@@ -693,7 +693,7 @@ c         enddo
          if(ithermal(1).gt.0) then
             call gen3dtemp(iponoel,inoel,iponoelmax,kon,ipkon,lakon,ne,
      &           iponor,xnor,knor,t0,t1,thicke,offset,rig,nk,nk_,co,
-     &           istep,ithermal)
+     &           istep,ithermal,vold)
          endif
 !
 !        updating the concentrated loading

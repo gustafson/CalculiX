@@ -20,7 +20,7 @@
      &  nboun,nboun_,iamboun,iamplitude,nam,ipompc,nodempc,
      &  coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &  ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,type,
-     &  typeboun,nmethod,iperturb,fixed,vold)
+     &  typeboun,nmethod,iperturb,fixed,vold,nodetrue)
 !
 !     adds a boundary condition to the data base
 !
@@ -35,10 +35,10 @@
      &  iamboun(*),iamplitude,nam,ipompc(*),nodempc(3,*),nmpc,nmpc_,
      &  mpcfree,inotr(2,*),ntrans,ikboun(*),ilboun(*),ikmpc(*),
      &  ilmpc(*),itr,idof,newnode,number,id,idofnew,idnew,nk,nk_,
-     &  mpcfreenew,nmethod,iperturb,ii
+     &  mpcfreenew,nmethod,iperturb,ii,nodetrue
 !
       real*8 xboun(*),val,coefmpc(*),trab(7,*),a(3,3),co(3,*),
-     &  vold(0:4)
+     &  vold(0:4,*)
 !
       if(ntrans.le.0) then
          itr=0
@@ -48,7 +48,7 @@
          itr=inotr(1,node)
       endif
 !
-      if((itr.eq.0).or.(is.eq.0)) then
+      if((itr.eq.0).or.(is.eq.0).or.(is.eq.11).or.(is.eq.8)) then
 !
 !        no transformation applies: simple SPC
 !
@@ -71,7 +71,7 @@
                stop
             endif
             if((fixed).and.(i<5)) then
-               val=vold(i)
+               val=vold(i,nodetrue)
             elseif(fixed) then
                write(*,*) '*ERROR in bounadd: parameter FIXED cannot'
                write(*,*) '       be used for rotations'
@@ -138,7 +138,7 @@
                stop
             endif
             if((fixed).and.(i<5)) then
-               val=vold(i)
+               val=vold(i,nodetrue)
             elseif(fixed) then
                write(*,*) '*ERROR in bounadd: parameter FIXED cannot'
                write(*,*) '       be used for rotations'
@@ -175,6 +175,13 @@
                inotr(2,node)=newnode
                idofnew=8*(newnode-1)+i
                idnew=nboun
+!
+!              copying the initial conditions from node into newnode
+!
+               do j=0,4
+                  vold(j,newnode)=vold(j,node)
+               enddo
+c               write(*,*) ' bounadd ',nk,vold(0,nk),node,vold(0,node)
             endif
 !
 !           new mpc
