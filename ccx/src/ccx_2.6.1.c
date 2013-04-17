@@ -1415,15 +1415,6 @@ while(istat>=0) {
  fprintf(f1," 9999\n");
  fclose(f1);
 
- strcpy(fneig,jobnamec);
- strcat(fneig,".exo");
- if((f1=fopen(fneig,"ab"))==NULL){
- printf("*ERROR in exo: cannot open exo file for writing...");
- exit(0);
- }
- fprintf(f1," 9999\n");
- fclose(f1);
-
 #ifdef CALCULIX_MPI
 MPI_Finalize();
 #endif
