@@ -75,7 +75,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   int iw;
   float ifl;
   double pi,oner;
-  
+
   strcpy(fneig,jobnamec);
   strcat(fneig,".exo");
   
@@ -118,7 +118,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     int IO_word_size = sizeof(float);
 
     num_dim = 3;  
-    num_elem_blk = 10;
+    num_elem_blk = 19;
     num_ns = 0; 
     num_ss = 0;
     int exoid = ex_create (fneig, /*Filename*/
@@ -148,9 +148,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	//   y[i] = 0.0;
 	//   z[i] = 0.0;
 	//   continue;}
-	printf ("Node map %i\n", i+1);
 	node_map[i] = i+1;
-	printf ("Node map %i\n", node_map[i]);
 	x[i] = co[3*i];
 	y[i] = co[3*i+1];
 	z[i] = co[3*i+2];
@@ -213,20 +211,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       exit(0);
     }
     
- 
-    //SAMPLE    // Cell eltypes = args(1).cell_value();
-    //SAMPLE    // 
-    //SAMPLE    
-    //SAMPLE    for (i = 0; i < num_elem; i++)
-    //SAMPLE      {
-    //SAMPLE    	elementsval(i) = elements.elem (i); 
-    //SAMPLE    	// Pull the first int for the element map
-    //SAMPLE    	elem_map[i] = elementsval(i).matrix_value()(0);
-    //SAMPLE    	eltypesval(i) = eltypes.elem (i);
-    //SAMPLE      }
-    //SAMPLE    
     //SAMPLE    // write out the connectivity array, and write out the element attributes array:
-    //SAMPLE    int num_elem_in_blk, num_nodes_per_elem, num_attr;
     //SAMPLE    float *attrib;
     //SAMPLE    /* write element block parameters */
     //SAMPLE    int blkid = 10; 
@@ -262,8 +247,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     //SAMPLE      }
     //SAMPLE    }
     //SAMPLE    
-    //SAMPLE    int ex_update (exoid);
-    //SAMPLE    
     //SAMPLE    int *idelbs;
     //SAMPLE    idelbs = (int *) calloc(10, sizeof(int));
     //SAMPLE    errr = ex_get_elem_blk_ids (exoid, idelbs);
@@ -281,29 +264,35 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     nemax=*ne0;
     num_elem=nemax;
 
+
+    int num_elem_in_blk, num_attr;
+    
     // Initialize enough memory to store the element numbers
     int *elem_map;
     elem_map = (int *) calloc(num_elem, sizeof(int));
+    char curblk[6]="     ";
+
+    int *blkassign;
+    blkassign = (int *) calloc(num_elem, sizeof(int));
     
+    int num_nodes_per_elem[num_elem_blk];
     for(i=0;i<*ne0;i++){
-      if(ipkon[i]<0) continue;
+      elem_map[i] = i+1;
+      if(ipkon[i]<0){
+	blkassign[i]=0; 
+	continue;}
+      
+      strcpy1(curblk,&lakon[8*i],5);
       strcpy1(material,&matname[80*(ielmat[i*mi[2]]-1)],5);
       indexe=ipkon[i];
-      elem_map[i] = i+1;
       if(strcmp1(&lakon[8*i+3],"2")==0){
 	if(((strcmp1(&lakon[8*i+6]," ")==0)||
 	    (strcmp1(&filab[4],"E")==0)||
 	    (strcmp1(&lakon[8*i+6],"I")==0))&&
 	   (strcmp2(&lakon[8*i+6],"LC",2)!=0)){
-	  printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	  blkassign[i]=1;
+	  printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	  // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p4,p0,material,m2);
-	  // for(j=0;j<10;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	  // fprintf(f1,"\n%3s",m2);
-	  // for(j=10;j<12;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	  // for(j=16;j<19;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	  // for(j=19;j<20;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	  // for(j=12;j<16;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	  // fprintf(f1,"\n");
 	}else if(strcmp2(&lakon[8*i+6],"LC",2)==0){
 	  /* composite material */
 	  nlayer=0;
@@ -325,107 +314,198 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	    // fprintf(f1,"\n");
 	  }
 	}else if(strcmp1(&lakon[8*i+6],"B")==0){
-	  printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	  blkassign[i]=2;
+	  printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	  // fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p12,p0,material);
-	  // fprintf(f1,"%3s%10d%10d%10d\n",m2,kon[indexe+20],kon[indexe+22],kon[indexe+21]);
 	}else{
-	  printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	  blkassign[i]=3;
+	  printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	  // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p10,p0,material,m2);
-	  // for(j=0;j<8;j++)fprintf(f1,"%10d",kon[indexe+20+j]);
-	  // fprintf(f1,"\n");
 	}
       }else if(strcmp1(&lakon[8*i+3],"8")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
-	  printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	  blkassign[i]=4;
+	  printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	  // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p1,p0,material,m2);
-	  // for(j=0;j<8;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	  // fprintf(f1,"\n");
 	}else if(strcmp1(&lakon[8*i+6],"B")==0){
 	  if(strcmp1(&lakon[8*i+4],"R")==0){
-	    printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	    blkassign[i]=5;
+	    printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	    // fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
-	    // fprintf(f1,"%3s%10d%10d\n",m2,kon[indexe+8],kon[indexe+9]);
 	  }else if(strcmp1(&lakon[8*i+4],"I")==0){
-	    printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	    blkassign[i]=6;
+	    printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	    // fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
-	    // fprintf(f1,"%3s%10d%10d\n",m2,kon[indexe+11],kon[indexe+12]);
 	  }
 	}else{
 	  if(strcmp1(&lakon[8*i+4],"R")==0){
-	    printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	    blkassign[i]=7;
+	    printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	    // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p9,p0,material,m2);
-	    // for(j=0;j<4;j++)fprintf(f1,"%10d",kon[indexe+8+j]);
-	    // fprintf(f1,"\n");
 	  }else if(strcmp1(&lakon[8*i+4],"I")==0){
-	    printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	    blkassign[i]=8;
+	    printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	    // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p9,p0,material,m2);
-	    // for(j=0;j<4;j++)fprintf(f1,"%10d",kon[indexe+11+j]);
-	    // fprintf(f1,"\n");
 	  }
 	}
       }else if(strcmp1(&lakon[8*i+3],"10")==0){
-	printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
-	// fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p6,p0,material,m2);
-	// for(j=0;j<10;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	// fprintf(f1,"\n");
+	blkassign[i]=9;
+	printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
       }else if(strcmp1(&lakon[8*i+3],"4")==0){
-	printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	blkassign[i]=10;
+	printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	// fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p3,p0,material,m2);
-	// for(j=0;j<4;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	// fprintf(f1,"\n");
       }else if(strcmp1(&lakon[8*i+3],"15")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
-	  printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	  blkassign[i]=11;
+	  printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	  // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p5,p0,material,m2);
-	  // for(j=0;j<9;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	  // for(j=12;j<13;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	  // fprintf(f1,"\n%3s",m2);
-	  // for(j=13;j<15;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	  // for(j=9;j<12;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	  // fprintf(f1,"\n");
 	}else{
-	  printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	  blkassign[i]=12;
+	  printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	  // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p8,p0,material,m2);
-	  // for(j=0;j<6;j++)fprintf(f1,"%10d",kon[indexe+15+j]);
-	  // fprintf(f1,"\n");
 	}
       }else if(strcmp1(&lakon[8*i+3],"6")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
-	  printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	  blkassign[i]=13;
+	  printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	  // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p2,p0,material,m2);
-	  // for(j=0;j<6;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	  // fprintf(f1,"\n");
 	}else{
-	  printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	  blkassign[i]=14;
+	  printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	  // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p7,p0,material,m2);
-	  // for(j=0;j<3;j++)fprintf(f1,"%10d",kon[indexe+6+j]);
-	  // fprintf(f1,"\n");
 	}
       }else if((strcmp1(&lakon[8*i],"D")==0)&&
 	       (strcmp1(&lakon[8*i],"DCOUP3D")!=0)){
 	if(kon[indexe]==0){
-	  printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	  blkassign[i]=15;
+	  printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	  // fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
-	  // fprintf(f1,"%3s%10d%10d\n",m2,kon[indexe+1],kon[indexe+2]);
 	}else if(kon[indexe+2]==0){
-	  printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	  blkassign[i]=16;
+	  printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	  // fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
-	  // fprintf(f1,"%3s%10d%10d\n",m2,kon[indexe],kon[indexe+1]);
 	}else{
-	  printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	  blkassign[i]=17;
+	  printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	  // fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p12,p0,material);
-	  // fprintf(f1,"%3s%10d%10d%10d\n",m2,kon[indexe],kon[indexe+2],kon[indexe+1]);
 	}
       }else if((strcmp1(&lakon[8*i],"E")==0)&&
 	       (strcmp1(&lakon[8*i+6],"A")==0)){
-	printf ("Element %i type %s material %s\n", i+1, &lakon[8*i], material);
+	blkassign[i]=18;
+	printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
 	// fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
-	// fprintf(f1,"%3s%10d%10d\n",m2,kon[indexe],kon[indexe+1]);
       }
     }
+
+
+    /* write element connectivity */
+    int *connect;
+    int blksize[num_elem_blk];
+    int l, k;
+
+    num_nodes_per_elem[0]=1;
+    num_nodes_per_elem[1]=20;
+    num_nodes_per_elem[2]=3;
+    num_nodes_per_elem[3]=8;
+    num_nodes_per_elem[4]=8;
+    num_nodes_per_elem[5]=2;
+    num_nodes_per_elem[6]=2;
+    num_nodes_per_elem[7]=4;
+    num_nodes_per_elem[8]=4;
+    num_nodes_per_elem[9]=10;
+    num_nodes_per_elem[10]=4;
+    num_nodes_per_elem[11]=15;
+    num_nodes_per_elem[12]=6;
+    num_nodes_per_elem[13]=6;
+    num_nodes_per_elem[14]=3;
+    num_nodes_per_elem[15]=2;
+    num_nodes_per_elem[16]=2;
+    num_nodes_per_elem[17]=3;
+    num_nodes_per_elem[18]=2;
+
+    for(l=0;l<num_elem_blk;l++){
+      
+      // First determine the size of the block
+      j=0;
+      for(i=0;i<*ne0;i++){
+	if(blkassign[i]==l) j++;
+      }
+      blksize[l]=j;
+      num_elem_in_blk=blksize[l];
+      
+      k=num_elem_in_blk*num_nodes_per_elem[l];
+      printf ("Number of ints reserved %i\n",k);
+      connect = (int *) calloc (k, sizeof(int));
+      k=0;
+      // Now connectivity
+      for(i=0;i<*ne0;i++){
+	indexe=ipkon[i];
+	if (blkassign[i]==l){
+	  for (j = 0; j <num_nodes_per_elem[l]; j++){
+	    connect[k++] = kon[indexe+j];
+	  }
+	}
+      }
+
+      int num_attr=0;
+      switch (l)
+	{
+	case 0:
+	  errr = ex_put_elem_block (exoid, l, "SPHERE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 1:
+	  // errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 2:
+	  //errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 3:
+	  // errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 4:
+	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 5:
+	  // errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 6:
+	  // errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 7:
+	  // errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 8:
+	  // errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 9:
+	  // errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 10:
+	  // errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 11:
+	  // errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 12:
+	  // errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 13:
+	  errr = ex_put_elem_block (exoid, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 14:
+	  // errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 15:
+	  // errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 16:
+	  // errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 17:
+	  // errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 18:
+	  // errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  1;
+	};
+	  
+
+
+      if (num_elem_in_blk>0){
+	errr = ex_put_elem_conn (exoid, l, connect);
+	if (errr)
+	  printf ("ERROR in ex_put_elem_conn %i\n", errr);
+      }
+      free (connect);
+    }
+    
+
 
     // Write the element map into the file
     errr = ex_put_elem_num_map (exoid, elem_map); 
@@ -436,7 +516,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     ex_update (exoid);  
     ex_close (exoid);
 
-    // if(*nmethod==0){fclose(f1);return;}
+    if(*nmethod==0){return;}
     
     /* End of if(*kode==1) */
   }
