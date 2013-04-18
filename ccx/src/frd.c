@@ -87,11 +87,20 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
   double pi,oner;
 
+  exo(co,nk,kon,ipkon,lakon,ne0,v,stn,inum,nmethod,kode,
+      filab,een,t1,fn,time,epn,ielmat,matname,enern,
+      xstaten,nstate_,istep,iinc,ithermal,qfn,mode,noddiam,
+      trab,inotr,ntrans,orab,ielorien,norien,description,
+      ipneigh,neigh,mi,stx,vr,vi,stnr,stni,vmax,stnmax,
+      ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
+      ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output);
+
+
   strcpy(fneig,jobnamec);
   strcat(fneig,".frd");
 
   if((f1=fopen(fneig,"ab"))==NULL){
-    printf("*ERROR in frd: cannot open frd file for writing...");
+    printf("ERROR in frd: cannot open frd file for writing...");
     exit(0);
   }
 
