@@ -58,8 +58,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 
   int null,one,i,j,k,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
     nodes,ifield[7],nfield[2],icomp[7],ifieldstate[*nstate_],two,three,
-    icompstate[*nstate_],ip0=0,ip1=1,ip2=2,ip3=3,ip4=4,ip5=5,ip6=6,ip7=7,
-    ip8=8,ip9=9,ip10=10,ip11=11,ip12=12,imaterial=0,nelout;
+    icompstate[*nstate_],imaterial=0,nelout;
 
   // int ncompscalar=1,ifieldscalar[1]={1},icompscalar[1]={0},nfieldscalar[2]={1,0};
   // int ncompvector=3,ifieldvector[3]={1,1,1},icompvector[3]={0,1,2},nfieldvector1[2]={3,0},nfieldvector0[2]={mi[1]+1,0};
@@ -232,7 +231,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     num_elem=nemax;
 
 
-    int num_elem_in_blk, num_attr;
+    int num_elem_in_blk;
     
     // Initialize enough memory to store the element numbers
     int *elem_map;
@@ -258,8 +257,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	    (strcmp1(&lakon[8*i+6],"I")==0))&&
 	   (strcmp2(&lakon[8*i+6],"LC",2)!=0)){
 	  blkassign[i]=1;
-	  // printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	  // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p4,p0,material,m2);
 	}else if(strcmp2(&lakon[8*i+6],"LC",2)==0){
 	  /* composite material */
 	  nlayer=0;
@@ -282,89 +279,56 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  }
 	}else if(strcmp1(&lakon[8*i+6],"B")==0){ // Beams?
 	  blkassign[i]=2;
-	  // printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	  // fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p12,p0,material);
 	}else{
 	  blkassign[i]=3;
-	  // printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	  // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p10,p0,material,m2);
 	}
       }else if(strcmp1(&lakon[8*i+3],"8")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
 	  blkassign[i]=4;
-	  // printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	  // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p1,p0,material,m2);
 	}else if(strcmp1(&lakon[8*i+6],"B")==0){
 	  if(strcmp1(&lakon[8*i+4],"R")==0){
 	    blkassign[i]=5;
-	    // printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	    // fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
 	  }else if(strcmp1(&lakon[8*i+4],"I")==0){
 	    blkassign[i]=6;
-	    // printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	    // fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
 	  }
 	}else{
 	  if(strcmp1(&lakon[8*i+4],"R")==0){
 	    blkassign[i]=7;
-	    // printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	    // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p9,p0,material,m2);
 	  }else if(strcmp1(&lakon[8*i+4],"I")==0){
 	    blkassign[i]=8;
-	    // printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	    // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p9,p0,material,m2);
 	  }
 	}
       }else if(strcmp1(&lakon[8*i+3],"10")==0){
 	blkassign[i]=9;
-	// printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
       }else if(strcmp1(&lakon[8*i+3],"4")==0){
 	blkassign[i]=10;
-	// printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	// fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p3,p0,material,m2);
       }else if(strcmp1(&lakon[8*i+3],"15")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
 	  blkassign[i]=11;
-	  // printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	  // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p5,p0,material,m2);
 	}else{
 	  blkassign[i]=12;
-	  // printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	  // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p8,p0,material,m2);
 	}
       }else if(strcmp1(&lakon[8*i+3],"6")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
 	  blkassign[i]=13;
-	  // printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	  // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p2,p0,material,m2);
 	}else{
 	  blkassign[i]=14;
-	  // printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	  // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,i+1,p7,p0,material,m2);
 	}
       }else if((strcmp1(&lakon[8*i],"D")==0)&&
 	       (strcmp1(&lakon[8*i],"DCOUP3D")!=0)){
 	if(kon[indexe]==0){
 	  blkassign[i]=15;
-	  // printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	  // fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
 	}else if(kon[indexe+2]==0){
 	  blkassign[i]=16;
-	  // printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	  // fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
 	}else{
 	  blkassign[i]=17;
-	  // printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	  // fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p12,p0,material);
 	}
       }else if((strcmp1(&lakon[8*i],"E")==0)&&
 	       (strcmp1(&lakon[8*i+6],"A")==0)){
 	blkassign[i]=18;
-	// printf ("Element %i block %i type %s material %s\n", i+1, blkassign[i], curblk, material);
-	// fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
       }
     }
 
@@ -374,25 +338,49 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     int blksize[num_elem_blk];
     int l, k;
 
-    num_nodes_per_elem[0]=1;
-    num_nodes_per_elem[1]=20;
-    num_nodes_per_elem[2]=3;
-    num_nodes_per_elem[3]=8;
-    num_nodes_per_elem[4]=8;
-    num_nodes_per_elem[5]=2;
-    num_nodes_per_elem[6]=2;
-    num_nodes_per_elem[7]=4;
-    num_nodes_per_elem[8]=4;
-    num_nodes_per_elem[9]=10;
-    num_nodes_per_elem[10]=4;
-    num_nodes_per_elem[11]=15;
-    num_nodes_per_elem[12]=6;
-    num_nodes_per_elem[13]=6;
-    num_nodes_per_elem[14]=3;
-    num_nodes_per_elem[15]=2;
-    num_nodes_per_elem[16]=2;
-    num_nodes_per_elem[17]=3;
-    num_nodes_per_elem[18]=2;
+    j=0;
+    num_nodes_per_elem[j++]=1;
+    num_nodes_per_elem[j++]=20;
+    num_nodes_per_elem[j++]=3;
+    num_nodes_per_elem[j++]=8;
+    num_nodes_per_elem[j++]=8;
+    num_nodes_per_elem[j++]=2;
+    num_nodes_per_elem[j++]=2;
+    num_nodes_per_elem[j++]=4;
+    num_nodes_per_elem[j++]=4;
+    num_nodes_per_elem[j++]=10;
+    num_nodes_per_elem[j++]=4;
+    num_nodes_per_elem[j++]=15;
+    num_nodes_per_elem[j++]=6;
+    num_nodes_per_elem[j++]=6;
+    num_nodes_per_elem[j++]=3;
+    num_nodes_per_elem[j++]=2;
+    num_nodes_per_elem[j++]=2;
+    num_nodes_per_elem[j++]=3;
+    num_nodes_per_elem[j++]=2;
+
+    char *blknames[num_elem_blk];
+    j=0;
+    blknames[j++]="PNT";
+    blknames[j++]="C3D20*";
+    blknames[j++]="TRUSS3?";
+    blknames[j++]="C3D8*?";
+    blknames[j++]="C3D8*?";
+    blknames[j++]="TRUSS2";
+    blknames[j++]="TRUSS2";
+    blknames[j++]="SHELL";
+    blknames[j++]="SHELL";
+    blknames[j++]="TETRA";
+    blknames[j++]="TETRA";
+    blknames[j++]="WEDGE";
+    blknames[j++]="HEX";
+    blknames[j++]="WEDGE";
+    blknames[j++]="WEDGE";
+    blknames[j++]="TRUSS";
+    blknames[j++]="TRUSS";
+    blknames[j++]="TRUSS";
+    blknames[j++]="TRUSS";
+    ex_put_names (exoid, EX_ELEM_BLOCK, blknames);
 
     for(l=0;l<num_elem_blk;l++){
       
@@ -481,46 +469,54 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     /* End of if(*kode==1) */
   }
 
+
+
+
+  /* Start the data storage section */
+  float version;
+  exoid = ex_open (fneig, /*Filename*/
+		   EX_WRITE,	/* create mode */
+		   &CPU_word_size,  /* CPU float word size in bytes */
+		   &IO_word_size, /* I/O float word size in bytes */
+		   &version);
+    
+  int num_time_steps;
+  float fdum;
+  char cdum = 0;
+  char *vname;
+  
+  errr = ex_inquire (exoid, EX_INQ_TIME, &num_time_steps, &fdum, &cdum);
+  printf ("Time periods existing %i\n", num_time_steps);
+  printf ("Time period adding %i at time %f\n", num_time_steps+1, *time);
+  float timet=*time*1.123;
+  errr = ex_put_time(exoid,num_time_steps+1, &timet);
+  
+  printf ("Time step %i and inum %i\n", num_time_steps+1, *inum);
+  int istore=num_time_steps+1;
+
+
+  
 //  /*  for cyclic symmetry frequency calculations only results for
 //      even numbers (= odd modes, numbering starts at 0) are stored */
 //
 //  if((*nmethod==2)&&(((*mode/2)*2!=*mode)&&(*noddiam>=0))){fclose(f1);return;}
 //
+  
+  
   /* storing the displacements in the nodes */
   
   if(strcmp1(filab,"U ")==0){
-    //    iselect=1;
-    //    
-    //    frdset(filab,set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-
-    float version;
-    exoid = ex_open (fneig, /*Filename*/
-		     EX_WRITE,	/* create mode */
-		     &CPU_word_size,  /* CPU float word size in bytes */
-		     &IO_word_size, /* I/O float word size in bytes */
-		     &version);
+    iselect=1;
     
-    int num_time_steps;
-    int *time_values;
-    float fdum;
-    char cdum = 0;
-    int errr;
+    frdset(filab,set,&iset,istartset,iendset,ialset,
+    	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+    	   ngraph);
     
-    errr = ex_inquire (exoid, EX_INQ_TIME, &num_time_steps, &fdum, &cdum);
-    printf ("Time periods existing %i\n", num_time_steps);
-    printf ("Time period adding %i at time %f\n", num_time_steps+1, *time);
-    float timet=*time*1.123;
-    errr = ex_put_time(exoid,num_time_steps+1, &timet);
     
-    printf ("Time step %i and inum %i\n", num_time_steps+1, *inum);
-    int tmptime=num_time_steps+1;
+    vname = "U";
     exovector(v,&iset,ntrans,filab,&nkcoords,inum,inotr,
- 	      trab,co,istartset,iendset,ialset,mi,ngraph,exoid,tmptime);
-    
-    ex_close(exoid);
+	      trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
+	      istore,vname);
   }
 
 //  /*     storing the imaginary part of displacements in the nodes
@@ -1480,5 +1476,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 //                nfield,&iselect,m2,f1,output,m3);
 //
 //  }
+  ex_close(exoid);
   return;
 }
