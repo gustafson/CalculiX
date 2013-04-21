@@ -637,7 +637,7 @@ dynboun.c \
 electromagnetics.c \
 elemChecker.c \
 exo.c \
-exoheader.c \
+exoselect.c \
 exovector.c \
 expand.c \
 frd.c \
