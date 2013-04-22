@@ -8,7 +8,7 @@
 void exovector(double *v,int *iset,int *ntrans,char * filabl,int *nkcoords,
                int *inum,int *inotr,double *trab,double *co,
                int *istartset,int *iendset,int *ialset,int *mi,int *ngraph,
-               int *exoid, int *istore){
+               int *exoid, int *istore, int *countvars){
   
   int nksegment;
   int i,j,k,l,m,ii,jj,kk;

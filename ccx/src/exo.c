@@ -522,7 +522,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     if(strcmp1(filab,"U ")==0){
       
       if (countbool==3){
-	countvars+=3;
       }else if(countbool==2){
      	var_names[countvars++]="Ux";
 	var_names[countvars++]="Uy";
@@ -534,9 +533,11 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 	       ngraph);
 	
+	printf ("Countvars %i\n",countvars);
 	exovector(v,&iset,ntrans,filab,&nkcoords,inum,inotr,
 		  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
-		  istore);
+		  istore,countvars);
+	countvars+=3;
       }
     }
 
@@ -579,7 +580,8 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     
 	exovector(veold,&iset,ntrans,&filab[1740],&nkcoords,inum,inotr,
 		  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
-		  istore);
+		  istore,countvars);
+	countvars+=3;
       }
     }
 
@@ -615,12 +617,12 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       if (countbool==3){
 	countvars+=6;
       }else if(countbool==2){
-	var_names[countvars++]="Sxx";
-	var_names[countvars++]="Syy";
-	var_names[countvars++]="Szz";
-	var_names[countvars++]="Sxy";
-	var_names[countvars++]="Syz";
-	var_names[countvars++]="Szx";
+	var_names[countvars++]="S_XX";
+	var_names[countvars++]="S_YY";
+	var_names[countvars++]="S_ZZ";
+	var_names[countvars++]="S_XY";
+	var_names[countvars++]="S_YZ";
+	var_names[countvars++]="S_XZ";
       }else{
 	iselect=1;
     
@@ -630,8 +632,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     
 	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		  nfieldtensor,&iselect,exoid,istore,"S");
-	printf ("Tensor S should be updated.\n");
+		  nfieldtensor,&iselect,exoid,istore,"S",countvars);
       }
     }
 
@@ -651,9 +652,8 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       }else{
 	if(strcmp1(&filab[174],"S   ")==0){      
 	  exoselect(&stn[6**nk],stn,&iset,&nkcoords,inum,istartset,iendset,
-		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,exoid,istore,"Simag");
-	  printf ("Tensor Si should be updated.\n");
+	  	    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+	  	    nfieldtensor,&iselect,exoid,istore,"Simag",countvars);
 	}
       }
     }
