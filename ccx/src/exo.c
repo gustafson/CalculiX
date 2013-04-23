@@ -485,24 +485,18 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   char cdum = 0;
   
   errr = ex_inquire (exoid, EX_INQ_TIME, &num_time_steps, &fdum, &cdum);
-  printf ("Time periods existing %i\n", num_time_steps);
-  printf ("Time period adding %i at time %f\n", num_time_steps+1, *time);
-
-  errr = ex_put_time(exoid,num_time_steps+1, &time);
+  printf ("Time periods existing in exo file: %i\n", num_time_steps);
+  printf ("Writing time period %i at time %f\n", num_time_steps+1, *time);
+  
+  errr = ex_put_time (exoid, num_time_steps+1, time);
   if (errr) printf ("Error storing time into exo file.\n");
   
-  printf ("Time step %i and inum %i\n", num_time_steps+1, *inum);
   int istore=num_time_steps+1;
 
 
-
-
-  
-  char *var_names[9];
-  for (i=0; i<9; i++){var_names[i]="test";}
-  errr = ex_put_var_param (exoid, "n", 9);
-  if (errr) printf ("Unable to update variable parameters.");
-  
+  // Statically allocate an array of pointers.  Can't figure out how to do this dynamically.
+  // 100 should be enough to store the variable names.
+  char *var_names[100];
 
   int countvars=0;
   int countbool=3;
@@ -522,6 +516,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     if(strcmp1(filab,"U ")==0){
       
       if (countbool==3){
+	countvars+=3;
       }else if(countbool==2){
      	var_names[countvars++]="Ux";
 	var_names[countvars++]="Uy";
@@ -533,7 +528,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 	       ngraph);
 	
-	printf ("Countvars %i\n",countvars);
 	exovector(v,&iset,ntrans,filab,&nkcoords,inum,inotr,
 		  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
 		  istore,countvars);
@@ -633,6 +627,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
 		  nfieldtensor,&iselect,exoid,istore,"S",countvars);
+	countvars+=6;
       }
     }
 
@@ -654,35 +649,36 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  exoselect(&stn[6**nk],stn,&iset,&nkcoords,inum,istartset,iendset,
 	  	    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
 	  	    nfieldtensor,&iselect,exoid,istore,"Simag",countvars);
+	countvars+=6;
 	}
       }
     }
 
     //  /* storing the total strains in the nodes */
-    //  
-    //  if(strcmp1(&filab[261],"E   ")==0){
-    //    iselect=1;
-    //    
-    //    frdset(&filab[261],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  TOSTRAIN    6    1\n");
-    //    fprintf(f1," -5  EXX         1    4    1    1\n");
-    //    fprintf(f1," -5  EYY         1    4    2    2\n");
-    //    fprintf(f1," -5  EZZ         1    4    3    3\n");
-    //    fprintf(f1," -5  EXY         1    4    1    2\n");
-    //    fprintf(f1," -5  EYZ         1    4    2    3\n");
-    //    fprintf(f1," -5  EZX         1    4    3    1\n");
-    //
-    //    frdselect(een,een,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-    //                nfieldtensor,&iselect,m2,f1,output,m3);
-    //
-    //  }
+    if(strcmp1(&filab[261],"E   ")==0){
+      if (countbool==3){
+	countvars+=6;
+      }else if(countbool==2){
+	var_names[countvars++]="E_XX";
+	var_names[countvars++]="E_YY";
+	var_names[countvars++]="E_ZZ";
+	var_names[countvars++]="E_XY";
+	var_names[countvars++]="E_YZ";
+	var_names[countvars++]="E_XZ";
+      }else{
+	iselect=1;
+	
+    
+	frdset(&filab[261],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+	
+	exoselect(een,een,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		  nfieldtensor,&iselect,exoid,istore,"E",countvars);
+	countvars+=6;
+      }
+    }
     //
     //  /* storing the imaginary part of the total strains in the nodes
     //     for the odd modes of cyclic symmetry calculations */
@@ -1499,24 +1495,30 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     //  }
     
     if (countbool==3){
-      // errr = ex_put_var_param (exoid, "n", countvars);
+      errr = ex_put_var_param (exoid, "n", countvars);
       ex_update (exoid);  
-      // float *nodal_var_vals;
-      // nodal_var_vals = (float *) calloc (*nkcoords, sizeof(float));
-      // char *var_names[9];
       // var_names = (char *) calloc (countvars, sizeof (char));
-      printf ("Total count %i\n", countvars);
+      // var_names = (char *) calloc (countvars, MAX_STR_LENGTH);
+      for (i=0; i<countvars; i++)
+	{
+	  var_names[i] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
+	}
+      // printf ("Total count %i\n", countvars);
     }else if(countbool==2){
-      printf ("Total count %i\n", countvars);
-      printf ("Writing %i var_names\n", countvars);
-      errr = ex_put_var_names (exoid, "n", 9, var_names);
+      // printf ("Total count %i\n", countvars);
+      // printf ("Writing %i var_names\n", countvars);
+      errr = ex_put_var_names (exoid, "n", countvars, var_names);
       if (errr) printf ("Unable to update variable names.");
-      // free (var_names);
+      //  for (i=0; i<countvars; i++)
+      // 	{
+      // 	  free(var_names[i]);
+      // 	}
       ex_update (exoid);  
     }
   
     countvars=0;
-    printf ("Decrement countbool to %i\n",--countbool);
+    // printf ("Decrement countbool to %i\n",--countbool);
+    --countbool;
   };
 
 
