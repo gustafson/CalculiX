@@ -8,7 +8,7 @@
 void exovector(double *v,int *iset,int *ntrans,char * filabl,int *nkcoords,
                int *inum,int *inotr,double *trab,double *co,
                int *istartset,int *iendset,int *ialset,int *mi,int *ngraph,
-               int *exoid, int *istore, int *countvars){
+               int *exoid, int *time_step, int *countvars){
   
   int nksegment;
   int i,j,k,l,m,ii,jj,kk;
@@ -108,7 +108,7 @@ void exovector(double *v,int *iset,int *ntrans,char * filabl,int *nkcoords,
       }
     }
     
-    errr = ex_put_nodal_var (exoid, istore, j, *nkcoords, nodal_var_vals);
+    errr = ex_put_nodal_var (exoid, time_step, j, *nkcoords, nodal_var_vals);
     if (errr) printf ("ERROR storing vector data into exo file.\n");
   }  
 
