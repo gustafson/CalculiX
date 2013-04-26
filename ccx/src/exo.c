@@ -78,8 +78,8 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   int IO_word_size = sizeof(float);
 
   /* Filename */
-  strcpy(fneig,jobnamec);
-  strcat(fneig,".exo");
+  strcpy (fneig, jobnamec);
+  strcat (fneig, ".exo");
 
   /* nkcoords is the number of nodes at the time when 
      the nodal coordinates are stored in the exo file */
@@ -180,7 +180,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     printf("Number of side sets %i\n", num_ss);
     errr = ex_put_init (exoid, "CalculiX EXO File", num_dim,
 			num_nodes, num_elem, num_elem_blk, num_ns, num_ss);
-    
+
     if(errr){
       printf("*ERROR in exo: cannot open exo file for writing...");
     }
@@ -486,13 +486,11 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   
   errr = ex_inquire (exoid, EX_INQ_TIME, &num_time_steps, &fdum, &cdum);
   printf ("Time periods existing in exo file: %i\n", num_time_steps);
-  printf ("Writing time period %i at time %f\n", num_time_steps+1, *time);
-  
-  errr = ex_put_time (exoid, num_time_steps+1, time);
+  ++num_time_steps;
+  float timet = (float) *time;
+  printf ("Writing time period %i at time %f\n", num_time_steps, *time);
+  errr = ex_put_time (exoid, num_time_steps, &timet);
   if (errr) printf ("Error storing time into exo file.\n");
-  
-  int istore=num_time_steps+1;
-
 
   // Statically allocate an array of pointers.  Can't figure out how to do this dynamically.
   // 100 should be enough to store the variable names.
@@ -530,7 +528,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	
 	exovector(v,&iset,ntrans,filab,&nkcoords,inum,inotr,
 		  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
-		  istore,countvars);
+		  num_time_steps,countvars);
 	countvars+=3;
       }
     }
@@ -574,7 +572,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     
 	exovector(veold,&iset,ntrans,&filab[1740],&nkcoords,inum,inotr,
 		  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
-		  istore,countvars);
+		  num_time_steps,countvars);
 	countvars+=3;
       }
     }
@@ -626,7 +624,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     
 	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		  nfieldtensor,&iselect,exoid,istore,"S",countvars);
+		  nfieldtensor,&iselect,exoid,num_time_steps,"S",countvars);
 	countvars+=6;
       }
     }
@@ -648,7 +646,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	if(strcmp1(&filab[174],"S   ")==0){      
 	  exoselect(&stn[6**nk],stn,&iset,&nkcoords,inum,istartset,iendset,
 	  	    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-	  	    nfieldtensor,&iselect,exoid,istore,"Simag",countvars);
+	  	    nfieldtensor,&iselect,exoid,num_time_steps,"Simag",countvars);
 	countvars+=6;
 	}
       }
@@ -675,7 +673,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	
 	exoselect(een,een,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		  nfieldtensor,&iselect,exoid,istore,"E",countvars);
+		  nfieldtensor,&iselect,exoid,num_time_steps,"E",countvars);
 	countvars+=6;
       }
     }
