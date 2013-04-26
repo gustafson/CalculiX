@@ -29,7 +29,7 @@
 void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
 	       int *istartset,int *iendset,int *ialset,int *ngraph,int *ncomp,
 	       int *ifield,int *icomp,int *nfield,int *iselect,int *exoid,
-	       int *istore, char *vname, int countvar){
+	       int *time_step, char *vname, int countvar){
     
   /* storing scalars, components of vectors and tensors without additional
      transformations */
@@ -230,7 +230,7 @@ void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
     for (i=0; i<*nkcoords; i++){
       nodal_var_vals_out[i]=nodal_var_vals[rc(i,j)];
     }
-    int errr = ex_put_nodal_var (exoid, istore, j+1+countvar, *nkcoords, nodal_var_vals_out);
+    int errr = ex_put_nodal_var (exoid, time_step, j+1+countvar, *nkcoords, nodal_var_vals_out);
     if (errr) printf ("ERROR storing data into exo file for dim %i record %i.\n", j, countvar+j);
   }
 
