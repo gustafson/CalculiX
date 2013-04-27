@@ -29,7 +29,7 @@
 void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
 	       int *istartset,int *iendset,int *ialset,int *ngraph,int *ncomp,
 	       int *ifield,int *icomp,int *nfield,int *iselect,int *exoid,
-	       int *time_step, char *vname, int countvar){
+	       int *time_step, int countvar){
     
   /* storing scalars, components of vectors and tensors without additional
      transformations */

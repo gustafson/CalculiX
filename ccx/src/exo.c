@@ -60,7 +60,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     nodes,ifield[7],nfield[2],icomp[7],ifieldstate[*nstate_],two,three,
     icompstate[*nstate_],imaterial=0,nelout;
 
-  // int ncompscalar=1,ifieldscalar[1]={1},icompscalar[1]={0},nfieldscalar[2]={1,0};
+  int ncompscalar=1,ifieldscalar[1]={1},icompscalar[1]={0},nfieldscalar[2]={1,0};
   // int ncompvector=3,ifieldvector[3]={1,1,1},icompvector[3]={0,1,2},nfieldvector1[2]={3,0},nfieldvector0[2]={mi[1]+1,0};
   int ncomptensor=6,ifieldtensor[6]={1,1,1,1,1,1},icomptensor[6]={0,1,2,3,5,4},nfieldtensor[2]={6,0};
   // int ncompscalph=2,ifieldscalph[2]={1,2},icompscalph[2]={0,0},nfieldscalph[2]={0,0};
@@ -501,18 +501,15 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 
   while(countbool>0){
     // First time count
-    // Second tmie assign names
+    // Second time assign names
     // Last time save data
     
     /*  for cyclic symmetry frequency calculations only results for
 	even numbers (= odd modes, numbering starts at 0) are stored */
-    
-    // if((*nmethod==2)&&(((*mode/2)*2!=*mode)&&(*noddiam>=0))){ex_close(exoid);return;}
+    if((*nmethod==2)&&(((*mode/2)*2!=*mode)&&(*noddiam>=0))){ex_close(exoid);return;}
     
     /* storing the displacements in the nodes */
-    
     if(strcmp1(filab,"U ")==0){
-      
       if (countbool==3){
 	countvars+=3;
       }else if(countbool==2){
@@ -533,29 +530,27 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       }
     }
 
-    //  /*     storing the imaginary part of displacements in the nodes
-    //         for the odd modes of cyclic symmetry calculations */
-    //
-    //  if(*noddiam>=0){
-    //    if(strcmp1(filab,"U ")==0){
-    //    
-    //      frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //      fprintf(f1," -4  DISP        4    1\n");
-    //      fprintf(f1," -5  D1          1    2    1    0\n");
-    //      fprintf(f1," -5  D2          1    2    2    0\n");
-    //      fprintf(f1," -5  D3          1    2    3    0\n");
-    //      fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
-    //      
-    //      frdvector(&v[*nk*(mi[1]+1)],&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
-    //		trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
-    //    }
-    //  }
-    //
-    //  /* storing the velocities in the nodes */
-    //  
-
+    /*     storing the imaginary part of displacements in the nodes
+	   for the odd modes of cyclic symmetry calculations */
+    if(*noddiam>=0){
+      if(strcmp1(filab,"U ")==0){
+	if (countbool==3){
+	  countvars+=3;
+	}else if(countbool==2){
+	  var_names[countvars++]="U-imag-x";
+	  var_names[countvars++]="U-imag-y";
+	  var_names[countvars++]="U-imag-z";
+	}else{
+	  exovector(&v[*nk*(mi[1]+1)],&iset,ntrans,filab,&nkcoords,inum,inotr,
+		    trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
+		    num_time_steps,countvars);
+	  printf ("Warning: export of imaginary part of displacement to exo not tested.\n");
+	  countvars+=3;
+	}
+      }
+    }
+    
+    /* storing the velocities in the nodes */
     if(strcmp1(&filab[1740],"V   ")==0){
       if (countbool==3){
 	countvars+=3;
@@ -573,36 +568,39 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	exovector(veold,&iset,ntrans,&filab[1740],&nkcoords,inum,inotr,
 		  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
 		  num_time_steps,countvars);
+	printf ("Warning velocity to exo not tested.\n");
 	countvars+=3;
       }
     }
 
-    //  /* storing the temperatures in the nodes */
-    //  
-    //  if(strcmp1(&filab[87],"NT  ")==0){
-    //    iselect=0;
-    //    
-    //    frdset(&filab[87],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  NDTEMP      1    1\n");
-    //    fprintf(f1," -5  T           1    1    0    0\n");
-    //
-    //    if(*ithermal<=1){
-    //      frdselect(t1,t1,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-    //                nfieldscalar,&iselect,m2,f1,output,m3);
-    //    }else{
-    //      frdselect(v,v,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-    //                nfieldvector0,&iselect,m2,f1,output,m3);
-    //    }
-    //  }
-    //
+    /* storing the temperatures in the nodes */
+    if(strcmp1(&filab[87],"NT  ")==0){
+      if (countbool==3){
+	countvars+=1;
+      }else if(countbool==2){
+      	var_names[countvars++]="NT";
+      }else{
+	iselect=0;
+	
+	frdset(&filab[87],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+	
+	if(*ithermal<=1){
+	  exoselect(t1,t1,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
+		    nfieldscalar,&iselect,exoid,num_time_steps,countvars);
+	  printf ("Warning: export temperature to exo not tested.\n");
+	}else{
+	  exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
+		    nfieldscalar,&iselect,exoid,num_time_steps,countvars);
+	  printf ("Warning: export temperature to exo not tested.\n");
+	}
+	countvars+=1;	
+      }
+    }
+    
     /* storing the stresses in the nodes */
   
     if(strcmp1(&filab[174],"S   ")==0){
@@ -624,14 +622,13 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     
 	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		  nfieldtensor,&iselect,exoid,num_time_steps,"S",countvars);
+		  nfieldtensor,&iselect,exoid,num_time_steps,countvars);
 	countvars+=6;
       }
     }
 
     /* storing the imaginary part of the stresses in the nodes
        for the odd modes of cyclic symmetry calculations */
-  
     if(*noddiam>=0){
       if (countbool==3){
 	countvars+=6;
@@ -646,13 +643,14 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	if(strcmp1(&filab[174],"S   ")==0){      
 	  exoselect(&stn[6**nk],stn,&iset,&nkcoords,inum,istartset,iendset,
 	  	    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-	  	    nfieldtensor,&iselect,exoid,num_time_steps,"Simag",countvars);
-	countvars+=6;
+	  	    nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+	  printf ("Warning: export of imaginary part of stress to exo not tested.\n");
+	  countvars+=6;
 	}
       }
     }
 
-    //  /* storing the total strains in the nodes */
+    /* storing the total strains in the nodes */
     if(strcmp1(&filab[261],"E   ")==0){
       if (countbool==3){
 	countvars+=6;
@@ -673,170 +671,168 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	
 	exoselect(een,een,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		  nfieldtensor,&iselect,exoid,num_time_steps,"E",countvars);
+		  nfieldtensor,&iselect,exoid,num_time_steps,countvars);
 	countvars+=6;
       }
     }
-    //
-    //  /* storing the imaginary part of the total strains in the nodes
-    //     for the odd modes of cyclic symmetry calculations */
-    //  
-    //  if(*noddiam>=0){
-    //    if(strcmp1(&filab[261],"E   ")==0){
-    //      
-    //      frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //      
-    //      fprintf(f1," -4  TOSTRAIN    6    1\n");
-    //      fprintf(f1," -5  EXX         1    4    1    1\n");
-    //      fprintf(f1," -5  EYY         1    4    2    2\n");
-    //      fprintf(f1," -5  EZZ         1    4    3    3\n");
-    //      fprintf(f1," -5  EXY         1    4    1    2\n");
-    //      fprintf(f1," -5  EYZ         1    4    2    3\n");
-    //      fprintf(f1," -5  EZX         1    4    3    1\n");
-    //      
-    //      frdselect(&een[6**nk],een,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-    //                nfieldtensor,&iselect,m2,f1,output,m3);
-    //      
-    //    }
-    //  }
-    //
-    //  /* storing the mechanical strains in the nodes */
-    //  
-    //  if(strcmp1(&filab[2697],"ME  ")==0){
-    //    iselect=1;
-    //    
-    //    frdset(&filab[2697],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  MESTRAIN    6    1\n");
-    //    fprintf(f1," -5  MEXX        1    4    1    1\n");
-    //    fprintf(f1," -5  MEYY        1    4    2    2\n");
-    //    fprintf(f1," -5  MEZZ        1    4    3    3\n");
-    //    fprintf(f1," -5  MEXY        1    4    1    2\n");
-    //    fprintf(f1," -5  MEYZ        1    4    2    3\n");
-    //    fprintf(f1," -5  MEZX        1    4    3    1\n");
-    //
-    //
-    //    frdselect(emn,emn,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-    //                nfieldtensor,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
-    //  /* storing the imaginary part of the mechanical strains in the nodes
-    //     for the odd modes of cyclic symmetry calculations */
-    //  
-    //  if(*noddiam>=0){
-    //    if(strcmp1(&filab[2697],"ME  ")==0){
-    //      
-    //      frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //      
-    //      fprintf(f1," -4  MESTRAIN    6    1\n");
-    //      fprintf(f1," -5  MEXX        1    4    1    1\n");
-    //      fprintf(f1," -5  MEYY        1    4    2    2\n");
-    //      fprintf(f1," -5  MEZZ        1    4    3    3\n");
-    //      fprintf(f1," -5  MEXY        1    4    1    2\n");
-    //      fprintf(f1," -5  MEYZ        1    4    2    3\n");
-    //      fprintf(f1," -5  MEZX        1    4    3    1\n");
-    //      
-    //      frdselect(&emn[6**nk],een,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-    //                nfieldtensor,&iselect,m2,f1,output,m3);
-    //      
-    //    }
-    //  }
-    //
-    //  /* storing the forces in the nodes */
-    //  
-    //  if(strcmp1(&filab[348],"RF  ")==0){
-    //    iselect=1;
-    //    
-    //    frdset(&filab[348],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  FORC        4    1\n");
-    //    fprintf(f1," -5  F1          1    2    1    0\n");
-    //    fprintf(f1," -5  F2          1    2    2    0\n");
-    //    fprintf(f1," -5  F3          1    2    3    0\n");
-    //    fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
-    //
-    //    frdvector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,m1,inotr,
-    //	      trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
-    //  }
-    //
-    //  /*     storing the imaginary part of the forces in the nodes
-    //         for the odd modes of cyclic symmetry calculations */
-    //
-    //  if(*noddiam>=0){
-    //    if(strcmp1(&filab[348],"RF  ")==0){
-    //    
-    //      frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //      fprintf(f1," -4  FORC        4    1\n");
-    //      fprintf(f1," -5  F1          1    2    1    0\n");
-    //      fprintf(f1," -5  F2          1    2    2    0\n");
-    //      fprintf(f1," -5  F3          1    2    3    0\n");
-    //      fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
-    //      
-    //      frdvector(&fn[*nk*(mi[1]+1)],&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
-    //		trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
-    //    }
-    //  }
-    //
-    //  /* storing the equivalent plastic strains in the nodes */
-    //  
-    //  if(strcmp1(&filab[435],"PEEQ")==0){
-    //    iselect=1;
-    //    
-    //    frdset(&filab[435],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  PE          1    1\n");
-    //    fprintf(f1," -5  PE          1    1    0    0\n");
-    //
-    //    frdselect(epn,epn,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-    //                nfieldscalar,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
-    //  /* storing the energy in the nodes */
-    //  
-    //  if(strcmp1(&filab[522],"ENER")==0){
-    //    iselect=1;
-    //    
-    //    frdset(&filab[522],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  ENER        1    1\n");
-    //    fprintf(f1," -5  ENER        1    1    0    0\n");
-    //
-    //    frdselect(enern,enern,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-    //                nfieldscalar,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //  
+    
+    /* storing the imaginary part of the total strains in the nodes
+       for the odd modes of cyclic symmetry calculations */
+    if(*noddiam>=0){
+      if(strcmp1(&filab[261],"E   ")==0){
+	if (countbool==3){
+	  countvars+=6;
+	}else if(countbool==2){
+	  var_names[countvars++]="E-imag_XX";
+	  var_names[countvars++]="E-imag_YY";
+	  var_names[countvars++]="E-imag_ZZ";
+	  var_names[countvars++]="E-imag_XY";
+	  var_names[countvars++]="E-imag_YZ";
+	  var_names[countvars++]="E-imag_XZ";
+	}else{
+	  exoselect(&een[6**nk],een,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+	  printf ("Warning: export of imaginary part of strain to exo not tested.\n");
+	  countvars+=6;
+	}
+      }
+    }
+    
+    /* storing the mechanical strains in the nodes */
+    if(strcmp1(&filab[2697],"ME  ")==0){
+      if (countbool==3){
+	countvars+=6;
+      }else if(countbool==2){
+	var_names[countvars++]="ME_XX";
+	var_names[countvars++]="ME_YY";
+	var_names[countvars++]="ME_ZZ";
+	var_names[countvars++]="ME_XY";
+	var_names[countvars++]="ME_YZ";
+	var_names[countvars++]="ME_XZ";
+      }else{
+	iselect=1;
+      
+	frdset(&filab[2697],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+	exoselect(emn,emn,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		  nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+	printf ("Warning: export of mechanical strain to exo not tested.\n");
+	countvars+=6;
+      }    
+    }
+
+    /* storing the imaginary part of the mechanical strains in the nodes
+       for the odd modes of cyclic symmetry calculations */
+    if(*noddiam>=0){
+      if(strcmp1(&filab[2697],"ME  ")==0){
+	if (countbool==3){
+	  countvars+=6;
+	}else if(countbool==2){
+	  var_names[countvars++]="ME-imag_XX";
+	  var_names[countvars++]="ME-imag_YY";
+	  var_names[countvars++]="ME-imag_ZZ";
+	  var_names[countvars++]="ME-imag_XY";
+	  var_names[countvars++]="ME-imag_YZ";
+	  var_names[countvars++]="ME-imag_XZ";
+	}else{
+	  exoselect(&emn[6**nk],een,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+	  printf ("Warning: export of imaginary part of mechanical strain to exo not tested.\n");
+	  countvars+=6;      
+	}
+      }
+    }
+
+    /* storing the forces in the nodes */
+    
+    if(strcmp1(&filab[348],"RF  ")==0){
+      if (countbool==3){
+	countvars+=3;
+      }else if(countbool==2){
+	var_names[countvars++]="RFx";
+	var_names[countvars++]="RFy";
+	var_names[countvars++]="RFz";
+      }else{
+	iselect=1;
+	
+	frdset(&filab[348],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+      
+	exovector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,inotr,
+		  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
+		  num_time_steps,countvars);
+	printf ("Warning force to exo not tested.\n");
+	countvars+=3;
+      }
+    }
+    
+    /*     storing the imaginary part of the forces in the nodes
+	   for the odd modes of cyclic symmetry calculations */
+    if(*noddiam>=0){
+      if(strcmp1(&filab[348],"RF  ")==0){
+	if (countbool==3){
+	  countvars+=3;
+	}else if(countbool==2){
+	  var_names[countvars++]="RF-imagx";
+	  var_names[countvars++]="RF-imagy";
+	  var_names[countvars++]="RF-imagz";
+	}else{
+	  exovector(&fn[*nk*(mi[1]+1)],&iset,ntrans,filab,&nkcoords,inum,inotr,
+		    trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
+		    num_time_steps,countvars);
+	  printf ("Warning imaginary force to exo not tested.\n");
+	  countvars+=3;
+	}
+      }
+    }
+
+    /* storing the equivalent plastic strains in the nodes */
+    if(strcmp1(&filab[435],"PEEQ")==0){
+      if (countbool==3){
+	countvars+=1;
+      }else if(countbool==2){
+	var_names[countvars++]="PEEQ";
+      }else{
+	iselect=1;
+	
+	frdset(&filab[435],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+	exoselect(epn,epn,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
+		  nfieldscalar,&iselect,exoid,num_time_steps,countvars);
+	printf ("Warning: export PEEQ to exo not tested.\n");
+	countvars+=1;
+      }
+    }
+      
+
+  /* storing the energy in the nodes */
+  
+    if(strcmp1(&filab[522],"ENER")==0){
+      if (countbool==3){
+	countvars+=1;
+      }else if(countbool==2){
+	var_names[countvars++]="ENER";
+      }else{
+	iselect=1;
+	
+	frdset(&filab[522],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+	exoselect(enern,enern,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
+		  nfieldscalar,&iselect,exoid,num_time_steps,countvars);
+	printf ("Warning: export ENER to exo not tested.\n");
+	countvars+=1;
+      }
+    }
+  
     //  /* storing the contact displacements and stresses at the slave nodes */
     //  
     //  if(strcmp1(&filab[2175],"CONT")==0){
