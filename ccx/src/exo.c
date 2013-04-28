@@ -24,6 +24,7 @@
 
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
+#define rc(r,c) (r+nkcoords*c)
 
 void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	 double *v,double *stn,int *inum,int *nmethod,int *kode,
@@ -61,7 +62,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     icompstate[*nstate_],imaterial=0,nelout;
 
   int ncompscalar=1,ifieldscalar[1]={1},icompscalar[1]={0},nfieldscalar[2]={1,0};
-  // int ncompvector=3,ifieldvector[3]={1,1,1},icompvector[3]={0,1,2},nfieldvector1[2]={3,0},nfieldvector0[2]={mi[1]+1,0};
+  int ncompvector=3,ifieldvector[3]={1,1,1},icompvector[3]={0,1,2},nfieldvector1[2]={3,0},nfieldvector0[2]={mi[1]+1,0};
   int ncomptensor=6,ifieldtensor[6]={1,1,1,1,1,1},icomptensor[6]={0,1,2,3,5,4},nfieldtensor[2]={6,0};
   // int ncompscalph=2,ifieldscalph[2]={1,2},icompscalph[2]={0,0},nfieldscalph[2]={0,0};
   // int ncompvectph=6,ifieldvectph[6]={1,1,1,2,2,2},icompvectph[6]={1,2,3,1,2,3},nfieldvectph[2]={mi[1]+1,mi[1]+1};
@@ -833,191 +834,196 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       }
     }
   
-    //  /* storing the contact displacements and stresses at the slave nodes */
-    //  
-    //  if(strcmp1(&filab[2175],"CONT")==0){
-    //    
-    //    for(i=*ne-1;i>=0;i--){
-    //      if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
-    //	break;
-    //    }
-    //    noutloc=*ne-i-1;
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //    
-    //    fprintf(f1," -4  CONTACT     6    1\n");
-    //    fprintf(f1," -5  COPEN       1    4    1    1\n");
-    //    fprintf(f1," -5  CSLIP1      1    4    2    2\n");
-    //    fprintf(f1," -5  CSLIP2      1    4    3    3\n");
-    //    fprintf(f1," -5  CPRESS      1    4    1    2\n");
-    //    fprintf(f1," -5  CSHEAR1     1    4    2    3\n");
-    //    fprintf(f1," -5  CSHEAR2     1    4    3    1\n");
-    //    
-    //    for(i=*ne-1;i>=0;i--){
-    //      if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
-    //	break;
-    //      strcpy1(text,&lakon[8*i+7],1);
-    //      nope=atoi(text);
-    ////      nope=atoi(&lakon[8*i+7]);
-    //      nodes=kon[ipkon[i]+nope-1];
-    //      if(strcmp1(output,"asc")==0){
-    //	  fprintf(f1,"%3s%10d",m1,nodes);
-    //	  for(j=0;j<6;j++)fprintf(f1,"%12.5E",stx[6*mi[0]*i+j]);
-    //      }else{
-    //	  iw=(int)(nodes);fwrite(&iw,sizeof(int),1,f1);
-    //	  for(j=0;j<6;j++){
-    //	      ifl=(float)stx[6*mi[0]*i+j];
-    //	      fwrite(&ifl,sizeof(float),1,f1);
-    //	  }
-    //      }
-    //     if(strcmp1(output,"asc")==0)fprintf(f1,"\n");
-    //    }
-    //    
-    //    if(strcmp1(output,"asc")==0)fprintf(f1,"%3s\n",m3);
-    //  }
-    //  
-    //  /* storing the contact energy at the slave nodes */
-    //  
-    //  if(strcmp1(&filab[2262],"CELS")==0){
-    //    
-    //    for(i=*ne-1;i>=0;i--){
-    //      if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
-    //	break;
-    //    }
-    //    noutloc=*ne-i-1;
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //    
-    //    fprintf(f1," -4  CELS        1    1\n");
-    //    fprintf(f1," -5  CELS        1    1    0    0\n");
-    //    
-    //    for(i=*ne-1;i>=0;i--){
-    //      if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
-    //	break;
-    //      nope=atoi(&lakon[8*i+7]);
-    //      nodes=kon[ipkon[i]+nope-1];
-    //      if(strcmp1(output,"asc")==0){
-    //	  fprintf(f1,"%3s%10d%12.5E\n",m1,nodes,ener[i*mi[0]]);
-    //      }else{
-    //	  iw=(int)(nodes);fwrite(&iw,sizeof(int),1,f1);
-    //	  ifl=(float)ener[i*mi[0]];
-    //	  fwrite(&ifl,sizeof(float),1,f1);
-    //      }
-    //    }
-    //    
-    //    if(strcmp1(output,"asc")==0)fprintf(f1,"%3s\n",m3);
-    //  }
-    //  
-    //  /* storing the internal state variables in the nodes */
-    //  
-    //  if(strcmp1(&filab[609],"SDV ")==0){
-    //    iselect=1;
-    //    
-    //    frdset(&filab[609],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  SDV        %2d    1\n",*nstate_);
-    //    for(j=1;j<=*nstate_;j++){
-    //      fprintf(f1," -5  SDV%2d       1    1    0    0\n",j);
-    //    }
-    //
-    //    for(i=0;i<*nstate_;i++){
-    //      ifieldstate[i]=1;icompstate[i]=i;
-    //    }
-    //    nfield[0]=*nstate_;
-    //
-    //    frdselect(xstaten,xstaten,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,nstate_,ifieldstate,icompstate,
-    //                nfield,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //  
-    //  /* storing the heat flux in the nodes
-    //     the heat flux has been extrapolated from the integration points
-    //     in subroutine extropolate.f, taking into account whether the 
-    //     results are requested in the global system or in a local system.
-    //     Therefore, subroutine frdvector cannot be used, since it assumes
-    //     the values are stored in the global system */
-    //  
-    //  if((strcmp1(&filab[696],"HFL ")==0)&&(*ithermal>1)){
-    //    iselect=1;
-    //    
-    //    frdset(&filab[696],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  FLUX        4    1\n");
-    //    fprintf(f1," -5  F1          1    2    1    0\n");
-    //    fprintf(f1," -5  F2          1    2    2    0\n");
-    //    fprintf(f1," -5  F3          1    2    3    0\n");
-    //    fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
-    //
-    //    frdselect(qfn,qfn,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompvector,ifieldvector,icompvector,
-    //                nfieldvector1,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //	  
-    //  /* storing the heat generation in the nodes */
-    //
-    //  if((strcmp1(&filab[783],"RFL ")==0)&&(*ithermal>1)){
-    //    iselect=1;
-    //    
-    //    frdset(&filab[783],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  RFL         1    1\n");
-    //    fprintf(f1," -5  RFL         1    1    0    0\n");
-    //
-    //    frdselect(fn,fn,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-    //                nfieldvector0,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //  
-    //  /* storing the Zienkiewicz-Zhu improved stresses in the nodes */
-    //  
-    //  if(strcmp1(&filab[1044],"ZZS")==0){
-    //
-    //    FORTRAN(zienzhu,(co,nk,kon,ipkon,lakon,ne0,stn,ipneigh,neigh,
-    //		    stx,&mi[0]));
-    //
-    //    iselect=1;
-    //    
-    //    frdset(&filab[1044],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  ZZSTR       6    1\n");
-    //    fprintf(f1," -5  SXX         1    4    1    1\n");
-    //    fprintf(f1," -5  SYY         1    4    2    2\n");
-    //    fprintf(f1," -5  SZZ         1    4    3    3\n");
-    //    fprintf(f1," -5  SXY         1    4    1    2\n");
-    //    fprintf(f1," -5  SYZ         1    4    2    3\n");
-    //    fprintf(f1," -5  SZX         1    4    3    1\n");
-    //
-    //    frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-    //                nfieldtensor,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
+    /* storing the contact displacements and stresses at the slave nodes */
+    if(strcmp1(&filab[2175],"CONT")==0){
+      if (countbool==3){
+	countvars+=6;
+      }else if(countbool==2){
+	var_names[countvars++]="COPEN";
+	var_names[countvars++]="CSLIP1";
+	var_names[countvars++]="CSLIP2";
+	var_names[countvars++]="CPRESS";
+	var_names[countvars++]="CSHEAR1";
+	var_names[countvars++]="CSHEAR2";
+      }else{
+	
+	for(i=*ne-1;i>=0;i--){
+	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
+	    break;
+	}
+	noutloc=*ne-i-1;
+	
+	int num_nod_vars = 6;
+	float *nodal_var_vals;
+	nodal_var_vals = (float *) calloc (nkcoords * num_nod_vars, sizeof(float));
+	for(i=*ne-1;i>=0;i--){
+	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
+	    break;
+	  strcpy1(text,&lakon[8*i+7],1);
+	  nope=atoi(text);
+	  nodes=kon[ipkon[i]+nope-1];
+	  // fprintf(f1,"%3s%10d",m1,nodes);
+	  // for(j=0;j<6;j++)fprintf(f1,"%12.5E",stx[6*mi[0]*i+j]);
+	  for(j=0;j<6;j++){
+	    nodal_var_vals[rc(i,j)]=stx[6*mi[0]*i+j]; 
+	  }
+	}
+
+	float *nodal_var_vals_out;
+	nodal_var_vals_out = (float *) calloc (nkcoords, sizeof(float));
+	for (j=0; j<num_nod_vars; j++){
+	  for (i=0; i<nkcoords; i++){
+	    nodal_var_vals_out[i]=nodal_var_vals[rc(i,j)];
+	  }
+	  int errr = ex_put_nodal_var (exoid, num_time_steps, j+1+countvars, nkcoords, nodal_var_vals_out);
+	  if (errr) printf ("ERROR storing data into exo file for dim %i record %i.\n", j, countvars+j);
+	}
+
+	free(nodal_var_vals);
+	free(nodal_var_vals_out);
+        
+	printf ("Warning: export of Contact Variables to exo not tested and not yet expected to work.\n");
+	countvars+=6;
+      }
+    }
+
+    /* storing the contact energy at the slave nodes */
+    if(strcmp1(&filab[2262],"CELS")==0){
+      if (countbool==3){
+	countvars+=1;
+      }else if(countbool==2){
+	var_names[countvars++]="CELS";
+      }else{
+	for(i=*ne-1;i>=0;i--){
+	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
+	    break;
+	}
+	noutloc=*ne-i-1;
+	    
+	float *nodal_var_vals_out;
+	nodal_var_vals_out = (float *) calloc (nkcoords, sizeof(float));
+	for(i=*ne-1;i>=0;i--){
+	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
+	    break;
+	  nope=atoi(&lakon[8*i+7]);
+	  nodes=kon[ipkon[i]+nope-1];
+	  nodal_var_vals_out[i]=ener[i*mi[0]];
+	}
+	    
+	int errr = ex_put_nodal_var (exoid, num_time_steps, countvars, nkcoords, nodal_var_vals_out);
+	if (errr) printf ("ERROR storing CELS data into exo file.\n");
+	printf ("Warning: export of contact energy to exo not tested and not yet expected to work.\n");
+	countvars+=1;
+      }
+    }
+  
+  /* storing the internal state variables in the nodes */
+    if(strcmp1(&filab[609],"SDV ")==0){
+      if (countbool==3){
+	countvars+=*nstate_;
+      }else if(countbool==2){
+	for(j=1;j<=*nstate_;j++){
+	  char str[6];
+	  sprintf(str, "SDV%2d",j);
+	  var_names[countvars++]=str;
+	}
+      }else{
+	iselect=1;
+	
+	frdset(&filab[609],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+	
+	for(i=0;i<*nstate_;i++){
+	  ifieldstate[i]=1;icompstate[i]=i;
+	}
+	nfield[0]=*nstate_;
+	
+	exoselect(xstaten,xstaten,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,nstate_,ifieldstate,icompstate,
+		  nfield,&iselect,exoid,num_time_steps,countvars);
+	printf ("Warning: export of SDV to exo not tested and not yet expected to work.\n");
+	countvars+=*nstate_;
+      }
+    }
+  
+    /* storing the heat flux in the nodes
+       the heat flux has been extrapolated from the integration points
+       in subroutine extropolate.f, taking into account whether the 
+       results are requested in the global system or in a local system.
+       Therefore, subroutine frdvector cannot be used, since it assumes
+       the values are stored in the global system */
+    if((strcmp1(&filab[696],"HFL ")==0)&&(*ithermal>1)){
+      if (countbool==3){
+	countvars+=3;
+      }else if(countbool==2){
+	var_names[countvars++]="HFLx";
+	var_names[countvars++]="HFLy";
+	var_names[countvars++]="HFLz";
+      }else{
+	iselect=1;
+      
+	frdset(&filab[696],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+    
+	exoselect(qfn,qfn,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompvector,ifieldvector,icompvector,
+		  nfieldvector1,&iselect,exoid,num_time_steps,countvars);
+	countvars+=3;
+	printf ("Warning: export of HFL to exo not tested.\n");
+      }
+    }
+
+    /* storing the heat generation in the nodes */
+    if((strcmp1(&filab[783],"RFL ")==0)&&(*ithermal>1)){
+      if (countbool==3){
+	countvars+=1;
+      }else if(countbool==2){
+	var_names[countvars++]="RFL";
+      }else{
+	iselect=1;
+      
+	frdset(&filab[783],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+	exoselect(fn,fn,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars);
+	countvars+=1;
+	printf ("Warning: export of RFL to exo not tested.\n");
+      }
+    }
+  
+    /* storing the Zienkiewicz-Zhu improved stresses in the nodes */
+    if(strcmp1(&filab[1044],"ZZS")==0){
+      if (countbool==3){
+	countvars+=6;
+      }else if(countbool==2){
+	var_names[countvars++]="ZZSXX";
+	var_names[countvars++]="ZZSYY";
+	var_names[countvars++]="ZZSZZ";
+	var_names[countvars++]="ZZSXY";
+	var_names[countvars++]="ZZSYZ";
+	var_names[countvars++]="ZZSXZ";
+      }else{
+	FORTRAN(zienzhu,(co,nk,kon,ipkon,lakon,ne0,stn,ipneigh,neigh,
+			 stx,&mi[0]));
+
+	iselect=1;
+    
+	frdset(&filab[1044],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+    
+	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		  nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+	printf ("Warning: export of ZZSTR to exo not tested.\n");
+	countvars+=6;
+      }
+    }
+
     //  /* storing the imaginary part of the Zienkiewicz-Zhu 
     //     improved stresses in the nodes
     //     for the odd modes of cyclic symmetry calculations */
