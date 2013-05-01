@@ -54,13 +54,13 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   
   char fneig[132]="",date[8],clock[10],newdate[21],newclock[9],
     material[6]="     ",text[2]=" ";
-
+  
   static int icounter=0,nkcoords,nout,noutmin,noutplus;
-
+  
   int null,one,i,j,k,l,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
     nodes,ifield[7],nfield[2],icomp[7],ifieldstate[*nstate_],two,three,
     icompstate[*nstate_],imaterial=0,nelout;
-
+  
   int ncompscalar=1,ifieldscalar[1]={1},icompscalar[1]={0},nfieldscalar[2]={1,0};
   int ncompvector=3,ifieldvector[3]={1,1,1},icompvector[3]={0,1,2},nfieldvector1[2]={3,0},nfieldvector0[2]={mi[1]+1,0};
   int ncomptensor=6,ifieldtensor[6]={1,1,1,1,1,1},icomptensor[6]={0,1,2,3,5,4},nfieldtensor[2]={6,0};
@@ -74,7 +74,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   int errr, exoid;
   int num_dim, num_elem;
   int num_elem_blk; /* Node element blocks.  One eltype per block*/
-  int num_ns, num_ss; /* Node sets, side sets */
+  int num_ns, num_ss, num_es, num_fs; /* Node sets, side sets, element sets, face sets */
   int CPU_word_size = sizeof(float);
   int IO_word_size = sizeof(float);
 
@@ -120,8 +120,23 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 
     num_dim = 3;  
     num_elem_blk = 19;
+    
+    char tmpstr[81];
+    char *space = " ";
+    char *pos;
     num_ns = 0; 
     num_ss = 0;
+    num_es = 0;
+    num_fs = 0;
+    for (i=0; i<*nset; i++){
+      strncpy(tmpstr,set+i*81,81);
+      pos = strpbrk(tmpstr, space)-1;
+      if(strcmp1(pos,"N")==0){printf ("Node set identified\n"); num_ns++;}
+      if(strcmp1(pos,"E")==0){printf ("Element set identified\n"); num_es++;}
+      if(strcmp1(pos,"S")==0){printf ("Node set surface identified\n"); num_ns++;}
+      if(strcmp1(pos,"T")==0){printf ("Face set surface identified\n"); num_fs++;}
+    }
+
     exoid = ex_create (fneig, /*Filename*/
 		       EX_CLOBBER,	/* create mode */
 		       &CPU_word_size,  /* CPU float word size in bytes */
@@ -1054,134 +1069,137 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       }
     }
 
-    //  /* storing the imaginary part of the Zienkiewicz-Zhu 
-    //     improved stresses in the nodes
-    //     for the odd modes of cyclic symmetry calculations */
-    //  
-    //  if(*noddiam>=0){
-    //    if(strcmp1(&filab[1044],"ZZS")==0){
-    //
-    //      FORTRAN(zienzhu,(co,nk,kon,ipkon,lakon,ne0,stn,ipneigh,neigh,
-    //		      &stx[6*mi[0]**ne],&mi[0]));
-    //      
-    //      frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //      
-    //      fprintf(f1," -4  ZZSTR       6    1\n");
-    //      fprintf(f1," -5  SXX         1    4    1    1\n");
-    //      fprintf(f1," -5  SYY         1    4    2    2\n");
-    //      fprintf(f1," -5  SZZ         1    4    3    3\n");
-    //      fprintf(f1," -5  SXY         1    4    1    2\n");
-    //      fprintf(f1," -5  SYZ         1    4    2    3\n");
-    //      fprintf(f1," -5  SZX         1    4    3    1\n");
-    //      
-    //      frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-    //                nfieldtensor,&iselect,m2,f1,output,m3);
-    //      
-    //    }
-    //  }
-    //  
-    //  /* storing the error estimator in the nodes */
-    //  
-    //  if(strcmp1(&filab[1044],"ERR")==0){
-    //
-    //    FORTRAN(errorestimator,(stx,stn,ipkon,inum,kon,lakon,nk,ne,
-    //            mi,ielmat,thicke));
-    //
-    //    iselect=1;
-    //    
-    //    frdset(&filab[1044],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  ERROR       2    1\n");
-    //    fprintf(f1," -5  PSTD        1    1    1    0\n");
-    //    fprintf(f1," -5  VMSTD       1    2    2    0\n");
-    //
-    //    ncomp=2;
-    //    ifield[0]=1;ifield[1]=1;
-    //    icomp[0]=2;icomp[1]=4;
-    //
-    //    frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncomp,ifield,icomp,
-    //                nfieldtensor,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
-    //  /* storing the imaginary part of the error estimator in the nodes
-    //     for the odd modes of cyclic symmetry calculations */
-    //  
-    //  if(*noddiam>=0){
-    //    if(strcmp1(&filab[1044],"ERR")==0){
-    //
-    //      FORTRAN(errorestimator,(&stx[6*mi[0]**ne],stn,ipkon,inum,kon,lakon,nk,ne,
-    //			      mi,ielmat,thicke));
-    //      
-    //      frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //      fprintf(f1," -4  ERROR       2    1\n");
-    //      fprintf(f1," -5  PSTD        1    1    1    0\n");
-    //      fprintf(f1," -5  VMSTD       1    2    2    0\n");
-    //      
-    //      ncomp=2;
-    //      ifield[0]=1;ifield[1]=1;
-    //      icomp[0]=2;icomp[1]=4;
-    //
-    //      frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncomp,ifield,icomp,
-    //                nfieldtensor,&iselect,m2,f1,output,m3);
-    //      
-    //    }
-    //  }
-    //
-    //  /* storing the total temperatures in the network nodes */
-    //  
-    //  if(strcmp1(&filab[1131],"TT  ")==0){
-    //
-    //    iselect=-1;
-    //    frdset(&filab[1131],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  TOTEMP      1    1\n");
-    //    fprintf(f1," -5  TT          1    1    0    0\n");
-    //
-    //    frdselect(v,v,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-    //                nfieldvector0,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
-    //  /* storing the total temperatures in the network nodes */
-    //  
-    //  if(strcmp1(&filab[1218],"MF  ")==0){
-    //
-    //    iselect=-1;
-    //    frdset(&filab[1218],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  MAFLOW      1    1\n");
-    //    fprintf(f1," -5  MF          1    1    0    0\n");
-    //
-    //    icomp[0]=1;
-    //    frdselect(v,v,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
-    //                nfieldvector0,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
+    /* storing the imaginary part of the Zienkiewicz-Zhu 
+       improved stresses in the nodes
+       for the odd modes of cyclic symmetry calculations */
+    
+    if(*noddiam>=0){
+      if(strcmp1(&filab[1044],"ZZS")==0){
+	if (countbool==3){
+	  countvars+=6;
+	}else if(countbool==2){
+	  var_names[countvars++]="ZZS-imag-XX";
+	  var_names[countvars++]="ZZS-imag-YY";
+	  var_names[countvars++]="ZZS-imag-ZZ";
+	  var_names[countvars++]="ZZS-imag-XY";
+	  var_names[countvars++]="ZZS-imag-YZ";
+	  var_names[countvars++]="ZZS-imag-XZ";
+	}else{  
+
+          FORTRAN(zienzhu,(co,nk,kon,ipkon,lakon,ne0,stn,ipneigh,neigh,
+			   &stx[6*mi[0]**ne],&mi[0]));
+          
+	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+	  printf ("Warning: export of ZZSTR imaginary to exo not tested.\n");
+	  countvars+=6;
+        }
+      }
+    }
+
+    /* storing the error estimator in the nodes */
+  
+    if(strcmp1(&filab[1044],"ERR")==0){
+      if (countbool==3){
+	countvars+=2;
+      }else if(countbool==2){
+	var_names[countvars++]="PSTDERROR";
+	var_names[countvars++]="VMSTDERROR";
+      }else{  
+	
+	FORTRAN(errorestimator,(stx,stn,ipkon,inum,kon,lakon,nk,ne,
+				mi,ielmat,thicke));
+	
+	iselect=1;
+	
+	frdset(&filab[1044],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+	
+	ncomp=2;
+	ifield[0]=1;ifield[1]=1;
+	icomp[0]=2;icomp[1]=4;
+	
+	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncomp,ifield,icomp,
+		  nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+	printf ("Warning: export of error estimation to exo not tested.\n");
+	countvars+=2;
+      }
+    }
+
+
+    /* storing the imaginary part of the error estimator in the nodes
+       for the odd modes of cyclic symmetry calculations */
+    if(*noddiam>=0){
+      if(strcmp1(&filab[1044],"ERR")==0){
+	if (countbool==3){
+	  countvars+=2;
+	}else if(countbool==2){
+	  var_names[countvars++]="PSTD-imag-ERROR";
+	  var_names[countvars++]="VMSTD-imag-ERROR";
+	}else{
+	  
+	  FORTRAN(errorestimator,(&stx[6*mi[0]**ne],stn,ipkon,inum,kon,lakon,nk,ne,
+				  mi,ielmat,thicke));
+	  
+	  ncomp=2;
+	  ifield[0]=1;ifield[1]=1;
+	  icomp[0]=2;icomp[1]=4;
+	
+	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncomp,ifield,icomp,
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+	  printf ("Warning: export of error estimation to exo not tested.\n");
+	  countvars+=2;
+	}
+      }
+    }
+
+    /* storing the total temperatures in the network nodes */
+    if(strcmp1(&filab[1131],"TT  ")==0){
+      if (countbool==3){
+	countvars+=1;
+      }else if(countbool==2){
+	var_names[countvars++]="TT";
+      }else{
+	
+	iselect=-1;
+	frdset(&filab[1131],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+	
+	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars);
+	printf ("Warning: export of TT to exo not tested.\n");
+	countvars+=1;
+      }
+    }
+
+    /* storing the total temperatures in the network nodes */
+    if(strcmp1(&filab[1218],"MF  ")==0){
+      if (countbool==3){
+	countvars+=1;
+      }else if(countbool==2){
+	var_names[countvars++]="MF";
+      }else{
+	
+	iselect=-1;
+	frdset(&filab[1218],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+	
+	icomp[0]=1;
+	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars);
+	printf ("Warning: export of MF to exo not tested.\n");
+	countvars+=1;
+      }
+    }
+
     //  /* storing the total pressure in the network nodes */
     //  
     //  if(strcmp1(&filab[1305],"PT  ")==0){
