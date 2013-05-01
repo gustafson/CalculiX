@@ -57,7 +57,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 
   static int icounter=0,nkcoords,nout,noutmin,noutplus;
 
-  int null,one,i,j,k,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
+  int null,one,i,j,k,l,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
     nodes,ifield[7],nfield[2],icomp[7],ifieldstate[*nstate_],two,three,
     icompstate[*nstate_],imaterial=0,nelout;
 
@@ -165,7 +165,20 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       for(i=0;i<*ne0;i++){
 	if(ipkon[i]<0) continue;
 	if(strcmp1(&lakon[8*i],"ESPRNGC")==0) continue;
-	nelout++;
+	if(strcmp2(&lakon[8*i+6],"LC",2)==0){
+	  // Count the number of layers
+	  nlayer=0;
+	  for(k=0;k<mi[2];k++){
+	    if(ielmat[i*mi[2]+k]==0) break;
+	    nlayer++;
+	  }
+	  // Allow an element for each layer
+	  for(k=0;k<nlayer;k++){
+	    nelout++;
+	  }
+	}else{
+	  nelout++;
+	}
       }
     }else{
       nelout=*ne;
@@ -227,26 +240,23 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     //SAMPLE    errr = ex_get_elem_blk_ids (exoid, idelbs);
     //SAMPLE    
     
-    /* storing the topology */
-    nemax=*ne0;
-    num_elem=nemax;
-
-
     int num_elem_in_blk;
     
     // Initialize enough memory to store the element numbers
     int *elem_map;
     elem_map = (int *) calloc(num_elem, sizeof(int));
     char curblk[6]="     ";
-
+    
     int *blkassign;
     blkassign = (int *) calloc(num_elem, sizeof(int));
     
     int num_nodes_per_elem[num_elem_blk];
-    for(i=0;i<*ne0;i++){
-      elem_map[i] = i+1;
+    
+    l=0;
+    for(i=0;i<*ne0;i++){ // For each element.  Composite elements are one increment in this loop
+      elem_map[l] = i+1;
       if(ipkon[i]<0){
-	blkassign[i]=0; 
+	blkassign[l++]=0; 
 	continue;}
       
       strcpy1(curblk,&lakon[8*i],5);
@@ -257,90 +267,84 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	    (strcmp1(&filab[4],"E")==0)||
 	    (strcmp1(&lakon[8*i+6],"I")==0))&&
 	   (strcmp2(&lakon[8*i+6],"LC",2)!=0)){
-	  blkassign[i]=1;
+	  blkassign[l++]=1;
 	}else if(strcmp2(&lakon[8*i+6],"LC",2)==0){
 	  /* composite material */
 	  nlayer=0;
-	  printf ("Composite materials not implemented in exo file.\n");
-	  return;
 	  for(k=0;k<mi[2];k++){
 	    if(ielmat[i*mi[2]+k]==0) break;
 	    nlayer++;
 	  }
 	  for(k=0;k<nlayer;k++){
 	    nemax++;
-	    // fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",m1,nemax,p4,p0,material,m2);
-	    // for(j=0;j<10;j++)fprintf(f1,"%10d",kon[indexe+28+20*k+j]);
-	    // fprintf(f1,"\n%3s",m2);
-	    // for(j=10;j<12;j++)fprintf(f1,"%10d",kon[indexe+28+20*k+j]);
-	    // for(j=16;j<19;j++)fprintf(f1,"%10d",kon[indexe+28+20*k+j]);
-	    // for(j=19;j<20;j++)fprintf(f1,"%10d",kon[indexe+28+20*k+j]);
-	    // for(j=12;j<16;j++)fprintf(f1,"%10d",kon[indexe+28+20*k+j]);
-	    // fprintf(f1,"\n");
+	    elem_map[l] = i+1;
+	    blkassign[l++]=2;
 	  }
 	}else if(strcmp1(&lakon[8*i+6],"B")==0){ // Beams?
-	  blkassign[i]=2;
+	  blkassign[l++]=3;
 	}else{
-	  blkassign[i]=3;
+	  blkassign[l++]=4;
 	}
       }else if(strcmp1(&lakon[8*i+3],"8")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
-	  blkassign[i]=4;
+	  blkassign[l++]=5;
 	}else if(strcmp1(&lakon[8*i+6],"B")==0){
 	  if(strcmp1(&lakon[8*i+4],"R")==0){
-	    blkassign[i]=5;
+	    blkassign[l++]=6;
 	  }else if(strcmp1(&lakon[8*i+4],"I")==0){
-	    blkassign[i]=6;
+	    blkassign[l++]=7;
 	  }
 	}else{
 	  if(strcmp1(&lakon[8*i+4],"R")==0){
-	    blkassign[i]=7;
+	    blkassign[l++]=8;
 	  }else if(strcmp1(&lakon[8*i+4],"I")==0){
-	    blkassign[i]=8;
+	    blkassign[l++]=9;
 	  }
 	}
       }else if(strcmp1(&lakon[8*i+3],"10")==0){
-	blkassign[i]=9;
+	blkassign[l++]=10;
       }else if(strcmp1(&lakon[8*i+3],"4")==0){
-	blkassign[i]=10;
+	blkassign[l++]=11;
       }else if(strcmp1(&lakon[8*i+3],"15")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
-	  blkassign[i]=11;
+	  blkassign[l++]=12;
 	}else{
-	  blkassign[i]=12;
+	  blkassign[l++]=13;
 	}
       }else if(strcmp1(&lakon[8*i+3],"6")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
-	  blkassign[i]=13;
+	  blkassign[l++]=14;
 	}else{
-	  blkassign[i]=14;
+	  blkassign[l++]=15;
 	}
       }else if((strcmp1(&lakon[8*i],"D")==0)&&
 	       (strcmp1(&lakon[8*i],"DCOUP3D")!=0)){
 	if(kon[indexe]==0){
-	  blkassign[i]=15;
+	  blkassign[l++]=16;
 	}else if(kon[indexe+2]==0){
-	  blkassign[i]=16;
+	  blkassign[l++]=17;
 	}else{
-	  blkassign[i]=17;
+	  blkassign[l++]=18;
 	}
       }else if((strcmp1(&lakon[8*i],"E")==0)&&
 	       (strcmp1(&lakon[8*i+6],"A")==0)){
-	blkassign[i]=18;
+	blkassign[l++]=19;
       }
     }
 
 
+    
+
     /* write element connectivity */
     int *connect;
     int blksize[num_elem_blk];
-    int l, k;
 
     j=0;
     num_nodes_per_elem[j++]=1;
+    num_nodes_per_elem[j++]=20;
     num_nodes_per_elem[j++]=20;
     num_nodes_per_elem[j++]=3;
     num_nodes_per_elem[j++]=8;
@@ -363,7 +367,8 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     char *blknames[num_elem_blk];
     j=0;
     blknames[j++]="PNT";
-    blknames[j++]="C3D20*";
+    blknames[j++]="BEAM C3D20";
+    blknames[j++]="COMPOSITE LAYER C3D20";
     blknames[j++]="TRUSS3?";
     blknames[j++]="C3D8*?";
     blknames[j++]="C3D8*?";
@@ -388,19 +393,42 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       // First determine the size of the block
       j=0;
       for(i=0;i<*ne0;i++){
-	if(blkassign[i]==l) j++;
+	if(blkassign[i]==l){
+	  if(blkassign[i]==2){//composite
+	    for(k=0;k<mi[2];k++){
+	      if(ielmat[i*mi[2]+k]==0) break;
+	      j++;
+	    }
+	  }else{
+	    j++;
+	  }
+	}
       }
       blksize[l]=j;
       num_elem_in_blk=blksize[l];
       
       connect = (int *) calloc (num_elem_in_blk*num_nodes_per_elem[l], sizeof(int));
       k=0;
+      int m,n;
       // Now connectivity
       for(i=0;i<*ne0;i++){
 	indexe=ipkon[i];
 	if (blkassign[i]==l){
-	  for (j = 0; j <num_nodes_per_elem[l]; j++){
-	    connect[k++] = kon[indexe+j];
+	  if (blkassign[i]==2){// Composite
+	    nlayer=0;
+	    for(l=0;l<mi[2];l++){
+	      if(ielmat[i*mi[2]+l]==0) break;
+	      nlayer++;
+	    }
+	    for(n=0;n<nlayer;n++){
+	      for(m=0;m<12;m++){connect[k++] = kon[indexe+28+20*n+m];}
+	      for(m=16;m<20;m++){connect[k++] = kon[indexe+28+20*n+m];}
+	      for(m=12;m<16;m++){connect[k++] = kon[indexe+28+20*n+m];}
+	    }
+	  }else{// Non-composite
+	    for (j = 0; j <num_nodes_per_elem[l]; j++){
+	      connect[k++] = kon[indexe+j];
+	    }
 	  }
 	}
       }
@@ -413,36 +441,38 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	case 1:
 	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	case 2:
-	  errr = ex_put_elem_block (exoid, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
-	case 3:
 	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 3:
+	  errr = ex_put_elem_block (exoid, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	case 4:
 	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	case 5:
-	  errr = ex_put_elem_block (exoid, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	case 6:
 	  errr = ex_put_elem_block (exoid, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	case 7:
-	  errr = ex_put_elem_block (exoid, l, "SHELL", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  errr = ex_put_elem_block (exoid, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	case 8:
 	  errr = ex_put_elem_block (exoid, l, "SHELL", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	case 9:
-	  errr = ex_put_elem_block (exoid, l, "TETRA", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  errr = ex_put_elem_block (exoid, l, "SHELL", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	case 10:
 	  errr = ex_put_elem_block (exoid, l, "TETRA", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	case 11:
-	  errr = ex_put_elem_block (exoid, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  errr = ex_put_elem_block (exoid, l, "TETRA", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	case 12:
-	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
-	case 13:
 	  errr = ex_put_elem_block (exoid, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 13:
+	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	case 14:
 	  errr = ex_put_elem_block (exoid, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	case 15:
+	  errr = ex_put_elem_block (exoid, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	default:
-	  // case 15:
 	  // case 16:
 	  // case 17:
 	  // case 18:
+	  // case 19:
 	  errr = ex_put_elem_block (exoid, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	};
 	  
