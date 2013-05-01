@@ -43,12 +43,6 @@ void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
      - icomp[i]: component: 0...,(nfield[0]-1 or nfield[1]-1) */
  
   int i,j,k,l,m,n,nksegment;
-    
-  int iw;
-
-  float ifl;
-
-
   /* When initializing parameter values:
      "g" (or "G")
      For global variables.
@@ -101,7 +95,6 @@ void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
       }
       
       /* storing the entities */
-      
       for(n=1;n<=(int)((*ncomp+5)/6);n++){
 	if(n==1){
 	  // printf("%3s%10d","\nm1",i+1);
