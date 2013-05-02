@@ -131,10 +131,18 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     for (i=0; i<*nset; i++){
       strncpy(tmpstr,set+i*81,81);
       pos = strpbrk(tmpstr, space)-1;
-      if(strcmp1(pos,"N")==0){printf ("Node set identified\n"); num_ns++;}
-      if(strcmp1(pos,"E")==0){printf ("Element set identified\n"); num_es++;}
-      if(strcmp1(pos,"S")==0){printf ("Node set surface identified\n"); num_ns++;}
-      if(strcmp1(pos,"T")==0){printf ("Face set surface identified\n"); num_fs++;}
+      if(strcmp1(pos,"N")==0){
+	// printf ("Node set identified\n"); 
+	num_ns++;}
+      if(strcmp1(pos,"E")==0){
+	// printf ("Element set identified\n");
+	num_es++;}
+      if(strcmp1(pos,"S")==0){
+	// printf ("Node set surface identified\n");
+	num_ns++;}
+      if(strcmp1(pos,"T")==0){
+	// printf ("Face set surface identified\n"); 
+	num_fs++;}
     }
 
     exoid = ex_create (fneig, /*Filename*/
