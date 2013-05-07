@@ -213,6 +213,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     printf("Number of nodes %i\n", num_nodes);
     printf("Number of elements %i\n", num_elem);
     printf("Number of element blocks %i\n", num_elem_blk);
+    num_ns=0;
     printf("Number of node sets %i\n", num_ns);
     printf("Number of side sets %i\n", num_ss);
     errr = ex_put_init (exoid, "CalculiX EXO File", num_dim,
@@ -656,17 +657,18 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     }
     
     /* storing the stresses in the nodes */
-  
     if(strcmp1(&filab[174],"S   ")==0){
       if (countbool==3){
 	countvars+=6;
       }else if(countbool==2){
-	var_names[countvars++]="S_XX";
-	var_names[countvars++]="S_YY";
-	var_names[countvars++]="S_ZZ";
-	var_names[countvars++]="S_XY";
-	var_names[countvars++]="S_YZ";
-	var_names[countvars++]="S_XZ";
+	// Note reordered (done in exoselect) relative to frd file
+	// Order must be xx  yy  zz  xy  xz  yz
+	var_names[countvars++]="Sxx";
+	var_names[countvars++]="Syy";
+	var_names[countvars++]="Szz";
+	var_names[countvars++]="Sxy";
+	var_names[countvars++]="Sxz"; 
+	var_names[countvars++]="Syz";
       }else{
 	iselect=1;
     
@@ -687,12 +689,14 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       if (countbool==3){
 	countvars+=6;
       }else if(countbool==2){
-	var_names[countvars++]="S-imag-xx";
-	var_names[countvars++]="S-imag-yy";
-	var_names[countvars++]="S-imag-zz";
-	var_names[countvars++]="S-imag-xy";
-	var_names[countvars++]="S-imag-yz";
-	var_names[countvars++]="S-imag-zx";
+	// Note reordered (done in exoselect) relative to frd file
+	// Order must be xx  yy  zz  xy  xz  yz
+	var_names[countvars++]="S-imagxx";
+	var_names[countvars++]="S-imagyy";
+	var_names[countvars++]="S-imagzz";
+	var_names[countvars++]="S-imagxy";
+	var_names[countvars++]="S-imagzx";
+	var_names[countvars++]="S-imagyz";
       }else{
 	if(strcmp1(&filab[174],"S   ")==0){      
 	  exoselect(&stn[6**nk],stn,&iset,&nkcoords,inum,istartset,iendset,
@@ -709,12 +713,14 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       if (countbool==3){
 	countvars+=6;
       }else if(countbool==2){
-	var_names[countvars++]="E_XX";
-	var_names[countvars++]="E_YY";
-	var_names[countvars++]="E_ZZ";
-	var_names[countvars++]="E_XY";
-	var_names[countvars++]="E_YZ";
-	var_names[countvars++]="E_XZ";
+	// Note reordered (done in exoselect) relative to frd file
+	// Order must be xx  yy  zz  xy  xz  yz
+	var_names[countvars++]="Exx";
+	var_names[countvars++]="Eyy";
+	var_names[countvars++]="Ezz";
+	var_names[countvars++]="Exy";
+	var_names[countvars++]="Exz";
+	var_names[countvars++]="Eyz";
       }else{
 	iselect=1;
 	
@@ -737,12 +743,14 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	if (countbool==3){
 	  countvars+=6;
 	}else if(countbool==2){
-	  var_names[countvars++]="E-imag_XX";
-	  var_names[countvars++]="E-imag_YY";
-	  var_names[countvars++]="E-imag_ZZ";
-	  var_names[countvars++]="E-imag_XY";
-	  var_names[countvars++]="E-imag_YZ";
-	  var_names[countvars++]="E-imag_XZ";
+	  // Note reordered (done in exoselect) relative to frd file
+	  // Order must be xx  yy  zz  xy  xz  yz
+	  var_names[countvars++]="E-imagxx";
+	  var_names[countvars++]="E-imagyy";
+	  var_names[countvars++]="E-imagzz";
+	  var_names[countvars++]="E-imagxy";
+	  var_names[countvars++]="E-imagxz";
+	  var_names[countvars++]="E-imagyz";
 	}else{
 	  exoselect(&een[6**nk],een,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
@@ -758,12 +766,14 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       if (countbool==3){
 	countvars+=6;
       }else if(countbool==2){
-	var_names[countvars++]="ME_XX";
-	var_names[countvars++]="ME_YY";
-	var_names[countvars++]="ME_ZZ";
-	var_names[countvars++]="ME_XY";
-	var_names[countvars++]="ME_YZ";
-	var_names[countvars++]="ME_XZ";
+	// Note reordered (done in exoselect) relative to frd file
+	// Order must be xx  yy  zz  xy  xz  yz
+	var_names[countvars++]="MExx";
+	var_names[countvars++]="MEyy";
+	var_names[countvars++]="MEzz";
+	var_names[countvars++]="MExy";
+	var_names[countvars++]="MExz";
+	var_names[countvars++]="MEyz";
       }else{
 	iselect=1;
       
@@ -785,12 +795,14 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	if (countbool==3){
 	  countvars+=6;
 	}else if(countbool==2){
-	  var_names[countvars++]="ME-imag_XX";
-	  var_names[countvars++]="ME-imag_YY";
-	  var_names[countvars++]="ME-imag_ZZ";
-	  var_names[countvars++]="ME-imag_XY";
-	  var_names[countvars++]="ME-imag_YZ";
-	  var_names[countvars++]="ME-imag_XZ";
+	  // Note reordered (done in exoselect) relative to frd file
+	  // Order must be xx  yy  zz  xy  xz  yz
+	  var_names[countvars++]="ME-imagxx";
+	  var_names[countvars++]="ME-imagyy";
+	  var_names[countvars++]="ME-imagzz";
+	  var_names[countvars++]="ME-imagxy";
+	  var_names[countvars++]="ME-imagxz";
+	  var_names[countvars++]="ME-imagyz";
 	}else{
 	  exoselect(&emn[6**nk],een,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
@@ -915,8 +927,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  strcpy1(text,&lakon[8*i+7],1);
 	  nope=atoi(text);
 	  nodes=kon[ipkon[i]+nope-1];
-	  // fprintf(f1,"%3s%10d",m1,nodes);
-	  // for(j=0;j<6;j++)fprintf(f1,"%12.5E",stx[6*mi[0]*i+j]);
 	  for(j=0;j<6;j++){
 	    nodal_var_vals[rc(i,j)]=stx[6*mi[0]*i+j]; 
 	  }
@@ -935,7 +945,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	free(nodal_var_vals);
 	free(nodal_var_vals_out);
         
-	printf ("Warning: export of Contact Variables to exo not tested and not yet expected to work.\n");
+	printf ("Warning: export of Contact Variables to exo not tested.\n");
 	countvars+=6;
       }
     }
@@ -1053,12 +1063,14 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       if (countbool==3){
 	countvars+=6;
       }else if(countbool==2){
-	var_names[countvars++]="ZZSXX";
-	var_names[countvars++]="ZZSYY";
-	var_names[countvars++]="ZZSZZ";
-	var_names[countvars++]="ZZSXY";
-	var_names[countvars++]="ZZSYZ";
-	var_names[countvars++]="ZZSXZ";
+	// Note reordered (done in exoselect) relative to frd file
+	// Order must be xx  yy  zz  xy  xz  yz
+	var_names[countvars++]="ZZSxx";
+	var_names[countvars++]="ZZSyy";
+	var_names[countvars++]="ZZSzz";
+	var_names[countvars++]="ZZSxy";
+	var_names[countvars++]="ZZSxz";
+	var_names[countvars++]="ZZSyz";
       }else{
 	FORTRAN(zienzhu,(co,nk,kon,ipkon,lakon,ne0,stn,ipneigh,neigh,
 			 stx,&mi[0]));
@@ -1086,12 +1098,14 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	if (countbool==3){
 	  countvars+=6;
 	}else if(countbool==2){
-	  var_names[countvars++]="ZZS-imag-XX";
-	  var_names[countvars++]="ZZS-imag-YY";
-	  var_names[countvars++]="ZZS-imag-ZZ";
-	  var_names[countvars++]="ZZS-imag-XY";
-	  var_names[countvars++]="ZZS-imag-YZ";
-	  var_names[countvars++]="ZZS-imag-XZ";
+	  // Note reordered (done in exoselect) relative to frd file
+	  // Order must be xx  yy  zz  xy  xz  yz
+	  var_names[countvars++]="ZZS-imagxx";
+	  var_names[countvars++]="ZZS-imagyy";
+	  var_names[countvars++]="ZZS-imagzz";
+	  var_names[countvars++]="ZZS-imagxy";
+	  var_names[countvars++]="ZZS-imagxz";
+	  var_names[countvars++]="ZZS-imagyz";
 	}else{  
 
           FORTRAN(zienzhu,(co,nk,kon,ipkon,lakon,ne0,stn,ipneigh,neigh,
@@ -1384,6 +1398,8 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
     //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
     //
+    // Note reordered (done in exoselect) relative to frd file
+    // Order must be xx  yy  zz  xy  xz  yz
     //    fprintf(f1," -4  PSTRESS    12    1\n");
     //    fprintf(f1," -5  MAGXX       1    4    1    1\n");
     //    fprintf(f1," -5  MAGYY       1    4    2    2\n");
@@ -1484,6 +1500,8 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
     //
     //    fprintf(f1," -4  MSTRESS     7    1\n");
+    // Note reordered (done in exoselect) relative to frd file
+    // Order must be xx  yy  zz  xy  xz  yz
     //    fprintf(f1," -5  SXX         1    4    1    1\n");
     //    fprintf(f1," -5  SYY         1    4    2    2\n");
     //    fprintf(f1," -5  SZZ         1    4    3    3\n");
@@ -1526,6 +1544,8 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
     //
     //    fprintf(f1," -4  MSTRAIN     7    1\n");
+    // Note reordered (done in exoselect) relative to frd file
+    // Order must be xx  yy  zz  xy  xz  yz
     //    fprintf(f1," -5  EXX         1    4    1    1\n");
     //    fprintf(f1," -5  EYY         1    4    2    2\n");
     //    fprintf(f1," -5  EZZ         1    4    3    3\n");
