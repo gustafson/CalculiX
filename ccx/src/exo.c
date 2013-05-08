@@ -121,7 +121,8 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     num_elem_blk = 19;
     
     // Find the number of sets
-    exosetfind(set, nset, ialset, istartset, iendset, &num_ns, &num_ss, &num_es, &num_fs, exoid, (int) 0);
+    exosetfind(set, nset, ialset, istartset, iendset, 
+	       &num_ns, &num_ss, &num_es, &num_fs, NULL, exoid, (int) 0);
 
     exoid = ex_create (fneig, /*Filename*/
 		       EX_CLOBBER,	/* create mode */
@@ -487,11 +488,18 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     errr = ex_put_elem_num_map (exoid, elem_map); 
     if (errr)
       printf ("ERROR in ex_put_elem_num_map %i\n", errr);
-
+    
+    // Write the node sets into the file
+    exosetfind(set, nset, ialset, istartset, iendset, 
+	       &num_ns, &num_ss, &num_es, &num_fs, node_map_inv, exoid, (int) 1);
+    
+    
+    // Free up memory which is gathering dust
     free (elem_map); 
     free (blkassign);
-   
     free (node_map_inv);
+
+    // Close files
     ex_update (exoid);  
     ex_close (exoid);
 
