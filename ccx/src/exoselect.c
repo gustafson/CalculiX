@@ -24,12 +24,12 @@
 
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
-#define rc(r,c) (r+*nkcoords*c)
+#define rc(r,c) (r+nout*c)
 
 void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
 	       int *istartset,int *iendset,int *ialset,int *ngraph,int *ncomp,
 	       int *ifield,int *icomp,int *nfield,int *iselect,int *exoid,
-	       int *time_step, int countvar){
+	       int *time_step, int countvar, int nout){
     
   /* storing scalars, components of vectors and tensors without additional
      transformations */
@@ -41,8 +41,8 @@ void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
      for each entity i, 0<=i<ncomp:
      - ifield[i]: 1=field1,2=field2
      - icomp[i]: component: 0...,(nfield[0]-1 or nfield[1]-1) */
- 
-  int i,j,k,l,m,n,nksegment;
+  
+  int i,j,k,l,m,n,o,nksegment;
   /* When initializing parameter values:
      "g" (or "G")
      For global variables.
@@ -57,32 +57,11 @@ void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
   */
   int num_nod_vars = min(6,*ncomp);
   float *nodal_var_vals;
-  nodal_var_vals = (float *) calloc (*nkcoords * num_nod_vars, sizeof(float));
-  // float nodal_var_vals[*nkcoords][num_nod_vars];
-
-  // typedef struct {
-  //   int a;
-  //   int b;
-  //   float* data;
-  // } float2d;
+  nodal_var_vals = (float *) calloc (nout * num_nod_vars, sizeof(float));
   
-  // float2d arr2d;
-  // arr2d={2,3};
-
-  // float2d.data = malloc(arr2d.a * arr2d.b * sizeof *arr2d.data);
-  
-  // typedef struct {
-  //   int a;
-  //   int b;
-  //   int* data;
-  // } Int2d;
-
-  // Int2d arr2d = { 2, 3 };
-  // arr2d.data = malloc(arr2d.a * arr2d.b * sizeof *arr2d.data);
-
   if(*iset==0){
+    m=0;
     for(i=0;i<*nkcoords;i++){
-      
       /* check whether output is requested for solid nodes or
 	 network nodes */
       
@@ -97,32 +76,34 @@ void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
       /* storing the entities */
       for(n=1;n<=(int)((*ncomp+5)/6);n++){
 	if(n==1){
-	  // printf("%3s%10d","\nm1",i+1);
 	  for(j=0;j<min(6,*ncomp);j++){
 	    if(ifield[j]==1){
-	      nodal_var_vals[rc(i,j)]=field1[i*nfield[0]+icomp[j]];
+	      nodal_var_vals[rc(m,j)]=field1[i*nfield[0]+icomp[j]];
 	    }else{
-	      nodal_var_vals[rc(i,j)]=field2[i*nfield[1]+icomp[j]];
+	      nodal_var_vals[rc(m,j)]=field2[i*nfield[1]+icomp[j]];
 	    }
 	  }
 	}else{
 	  for(j=(n-1)*6;j<min(n*6,*ncomp);j++){
 	    if(ifield[j]==1){
-	      nodal_var_vals[rc(i,j)]=field1[i*nfield[0]+icomp[j]];
+	      nodal_var_vals[rc(m,j)]=field1[i*nfield[0]+icomp[j]];
 	    }else{
-	      nodal_var_vals[rc(i,j)]=field2[i*nfield[1]+icomp[j]];
+	      nodal_var_vals[rc(m,j)]=field2[i*nfield[1]+icomp[j]];
 	    }
 	  }
 	}
       }
+      m++;
     }
   }else{
     nksegment=(*nkcoords)/(*ngraph);
     for(k=istartset[*iset-1]-1;k<iendset[*iset-1];k++){
       if(ialset[k]>0){
+	
+	m=0;
 	for(l=0;l<*ngraph;l++){
 	  i=ialset[k]+l*nksegment-1;
-
+	  
 	  /* check whether output is requested for solid nodes or
 	     network nodes */
 
@@ -139,28 +120,29 @@ void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
 	    if(n==1){
 	      for(j=0;j<min(6,*ncomp);j++){
 		if(ifield[j]==1){
-		  nodal_var_vals[rc(i,j)]=field1[i*nfield[0]+icomp[j]];
+		  nodal_var_vals[rc(m,j)]=field1[i*nfield[0]+icomp[j]];
 		}else{
-		  nodal_var_vals[rc(i,j)]=field2[i*nfield[1]+icomp[j]];
+		  nodal_var_vals[rc(m,j)]=field2[i*nfield[1]+icomp[j]];
 		}
 	      }
 	    }else{
 	      for(j=(n-1)*6;j<min(n*6,*ncomp);j++){
 		if(ifield[j]==1){
-		  nodal_var_vals[rc(i,j)]=field1[i*nfield[0]+j];
+		  nodal_var_vals[rc(m,j)]=field1[i*nfield[0]+j];
 		}else{
-		  nodal_var_vals[rc(i,j)]=field2[i*nfield[1]+j];
+		  nodal_var_vals[rc(m,j)]=field2[i*nfield[1]+j];
 		}
 	      }
 	    }
 	  }
-	  
+	  m++;
 	}
       }else{
 	l=ialset[k-2];
 	do{
 	  l-=ialset[k];
 	  if(l>=ialset[k-1]) break;
+	  o=0;
 	  for(m=0;m<*ngraph;m++){
 	    i=l+m*nksegment-1;
 	    
@@ -181,46 +163,56 @@ void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
 	      if(n==1){
 		for(j=0;j<min(6,*ncomp);j++){
 		  if(ifield[j]==1){
-		    nodal_var_vals[rc(i,j)]=field1[i*nfield[0]+icomp[j]];
+		    nodal_var_vals[rc(o,j)]=field1[i*nfield[0]+icomp[j]];
 		  }else{
-		    nodal_var_vals[rc(i,j)]=field2[i*nfield[1]+icomp[j]];
+		    nodal_var_vals[rc(o,j)]=field2[i*nfield[1]+icomp[j]];
 		  }
 		}
 	      }else{
 		for(j=(n-1)*6;j<min(n*6,*ncomp);j++){
 		  if(ifield[j]==1){
-		    nodal_var_vals[rc(i,j)]=field1[i*nfield[0]+j];
+		    nodal_var_vals[rc(o,j)]=field1[i*nfield[0]+j];
 		  }else{
-		    nodal_var_vals[rc(i,j)]=field2[i*nfield[1]+j];
+		    nodal_var_vals[rc(o,j)]=field2[i*nfield[1]+j];
 		  }
 		}
 	      }
 	    }
 	  }
+	  o++;
 	}while(1);
       }
     }
   }
-    
+  
   
   float *nodal_var_vals_out;
-  nodal_var_vals_out = (float *) calloc (*nkcoords, sizeof(float));
+  nodal_var_vals_out = (float *) calloc (nout, sizeof(float));
+  
   for (j=0; j<num_nod_vars; j++){
     if (*ncomp==6){
       // Note: reorder the results for exo tensor format
-      if (j==5){
-	k=6;
-      }else if(j==6){
+      if (j==4){
 	k=5;
+      }else if(j==5){
+	k=4;
       }else{k=j;}
     }
+    m=0;
     for (i=0; i<*nkcoords; i++){
-      nodal_var_vals_out[i]=nodal_var_vals[rc(i,k)];
+      if(*iselect==1){
+	if(inum[i]<=0) continue;
+      }else if(*iselect==-1){
+	if(inum[i]>=0) continue;
+      }else{
+	if(inum[i]==0) continue;
+      }
+      nodal_var_vals_out[m]=nodal_var_vals[rc(m++,k)];
     }
-    int errr = ex_put_nodal_var (exoid, time_step, j+1+countvar, *nkcoords, nodal_var_vals_out);
-    if (errr) printf ("ERROR storing data into exo file for dim %i record %i.\n", j, countvar+j);
+    int errr = ex_put_nodal_var (exoid, time_step, j+1+countvar, nout, nodal_var_vals_out);
+    if (errr) printf ("ERROR exoselect data for dim %i record %i.\n", j, countvar+j);
   }
-
+  
   free(nodal_var_vals);
   free(nodal_var_vals_out);
   return;
