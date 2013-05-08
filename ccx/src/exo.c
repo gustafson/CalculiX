@@ -120,23 +120,8 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     num_dim = 3;  
     num_elem_blk = 19;
     
-    char tmpstr[81];
-    char *space = " ";
-    char *pos;
-    num_ns = 0; 
-    num_ss = 0;
-    num_es = 0;
-    num_fs = 0;
-    for (i=0; i<*nset; i++){
-      strncpy(tmpstr,set+i*81,81);
-      pos = strpbrk(tmpstr, space)-1;
-      if(strcmp1(pos,"N")==0) num_ns++; // printf ("Node set identified\n"); 
-      if(strcmp1(pos,"E")==0) num_es++; // printf ("Element set identified\n");
-      if(strcmp1(pos,"S")==0) num_ns++; // printf ("Node set surface identified\n");
-      if(strcmp1(pos,"T")==0) num_fs++; // printf ("Face set surface identified\n"); 
-    }
-    // FIXME temp disable
-    num_ns=0;
+    // Find the number of sets
+    exosetfind(set, nset, ialset, istartset, iendset, &num_ns, &num_ss, &num_es, &num_fs, exoid, (int) 0);
 
     exoid = ex_create (fneig, /*Filename*/
 		       EX_CLOBBER,	/* create mode */
@@ -502,8 +487,10 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     errr = ex_put_elem_num_map (exoid, elem_map); 
     if (errr)
       printf ("ERROR in ex_put_elem_num_map %i\n", errr);
-    free (elem_map);
-    
+
+    free (elem_map); 
+    free (blkassign);
+   
     free (node_map_inv);
     ex_update (exoid);  
     ex_close (exoid);
@@ -1583,7 +1570,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     --countbool;
   };
 
-
+  // free (var_names);
   ex_update (exoid);  
   ex_close(exoid);
   return;
