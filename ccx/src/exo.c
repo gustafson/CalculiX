@@ -24,7 +24,7 @@
 
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
-#define rc(r,c) (r+nkcoords*c)
+#define rc(r,c) (r+nout*c)
 
 void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	 double *v,double *stn,int *inum,int *nmethod,int *kode,
@@ -56,8 +56,8 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     material[6]="     ",text[2]=" ";
   
   static int icounter=0,nkcoords,nout,noutmin,noutplus;
-  
-  int null,one,i,j,k,l,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
+   
+  int null,one,i,j,k,l,m,n,o,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
     nodes,ifield[7],nfield[2],icomp[7],ifieldstate[*nstate_],two,three,
     icompstate[*nstate_],imaterial=0,nelout;
   
@@ -99,7 +99,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
      computational metadata, the nodal coordinates and the
      topology */
   if(*kode==1){
-    
     /* determining nout, noutplus and noutmin 
        nout: number of structural and network nodes
        noutplus: number of structural nodes
@@ -110,14 +109,14 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       noutmin=0;
       for(i=0;i<*nk;i++){
 	if(inum[i]==0) continue;
-	nout++;
 	if(inum[i]>0) noutplus++;
 	if(inum[i]<0) noutmin++;
+	nout++;
       }
     }else{
       nout=*nk;
     }
-
+    
     num_dim = 3;  
     num_elem_blk = 19;
     
@@ -131,56 +130,44 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     for (i=0; i<*nset; i++){
       strncpy(tmpstr,set+i*81,81);
       pos = strpbrk(tmpstr, space)-1;
-      if(strcmp1(pos,"N")==0){
-	// printf ("Node set identified\n"); 
-	num_ns++;}
-      if(strcmp1(pos,"E")==0){
-	// printf ("Element set identified\n");
-	num_es++;}
-      if(strcmp1(pos,"S")==0){
-	// printf ("Node set surface identified\n");
-	num_ns++;}
-      if(strcmp1(pos,"T")==0){
-	// printf ("Face set surface identified\n"); 
-	num_fs++;}
+      if(strcmp1(pos,"N")==0) num_ns++; // printf ("Node set identified\n"); 
+      if(strcmp1(pos,"E")==0) num_es++; // printf ("Element set identified\n");
+      if(strcmp1(pos,"S")==0) num_ns++; // printf ("Node set surface identified\n");
+      if(strcmp1(pos,"T")==0) num_fs++; // printf ("Face set surface identified\n"); 
     }
+    // FIXME temp disable
+    num_ns=0;
 
     exoid = ex_create (fneig, /*Filename*/
 		       EX_CLOBBER,	/* create mode */
 		       &CPU_word_size,  /* CPU float word size in bytes */
 		       &IO_word_size);  /* I/O float word size in bytes */
     
-    
-    float x[*nk], y[*nk], z[*nk];
+    float x[nout], y[nout], z[nout];
     // Write optional node map
     j = 0;
-    // int node_map[*nk];
     int *node_map;
-    node_map = (int *) calloc(*nk, sizeof(int));
+    node_map = (int *) calloc(nout, sizeof(int));
+    int *node_map_inv;
+    node_map_inv = (int *) calloc(nkcoords, sizeof(int));
     
     /* storing the coordinates of the nodes */
     if(*nmethod!=0){
       for(i=0;i<*nk;i++){
-	// if(inum[i]==0){
-	//   // Put other nodes at the origin
-	//   x[i] = 0.0;
-	//   y[i] = 0.0;
-	//   z[i] = 0.0;
-	//   continue;}
-	node_map[i] = i+1;
-	x[i] = co[3*i];
-	y[i] = co[3*i+1];
-	z[i] = co[3*i+2];
+	if(inum[i]==0){continue;}
+	node_map[j] = i+1;
+	node_map_inv[i] = j+1;
+	x[j]   = co[3*i];
+	y[j]   = co[3*i+1];
+	z[j++] = co[3*i+2];
       }
     }else{
-      for(i=0;i<*nk;i++){
-	node_map[i] = i+1;
-	x[i] = co[3*i];
-	y[i] = co[3*i+1];
-	z[i] = co[3*i+2];
-      }
-    }
-
+      node_map[j] = i+1;
+      node_map_inv[i] = j+1;
+      x[j]   = co[3*i];
+      y[j]   = co[3*i+1];
+      z[j++] = co[3*i+2];
+    }    
     
     /* determining the number of elements */
     if(*nmethod!=0){
@@ -210,19 +197,19 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     
     /* initialize file with parameters */
     printf("\nData writen to the .exo file\n");
+    num_nodes=nout;
     printf("Number of nodes %i\n", num_nodes);
     printf("Number of elements %i\n", num_elem);
     printf("Number of element blocks %i\n", num_elem_blk);
-    num_ns=0;
     printf("Number of node sets %i\n", num_ns);
     printf("Number of side sets %i\n", num_ss);
-    errr = ex_put_init (exoid, "CalculiX EXO File", num_dim,
-			num_nodes, num_elem, num_elem_blk, num_ns, num_ss);
-
-    if(errr){
-      printf("*ERROR in exo: cannot open exo file for writing...");
-    }
+    errr = ex_put_init (exoid, "CalculiX EXO File", 
+			num_dim, num_nodes, 
+			num_elem, num_elem_blk, 
+			num_ns, num_ss);
+    if(errr){printf("*ERROR in exo: cannot open exo file for writing...");}
     
+
     /* write values to database */
     errr = ex_put_coord (exoid, x, y, z);
     errr = ex_put_node_num_map (exoid, node_map);
@@ -237,9 +224,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     coord_names[1] = "y";
     coord_names[2] = "z";
     errr = ex_put_coord_names (exoid, coord_names);
-    if(errr){
-      printf("*ERROR in exo: failed to write coordinate names");
-    }
+    if(errr){printf("*ERROR in exo: failed to write coordinate names");}
     
     //SAMPLE    // Property names
     //SAMPLE    char *prop_names[num_elem];
@@ -263,9 +248,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     //SAMPLE    idelbs = (int *) calloc(10, sizeof(int));
     //SAMPLE    errr = ex_get_elem_blk_ids (exoid, idelbs);
     //SAMPLE    
-    
-    int num_elem_in_blk;
-    
+   
     // Initialize enough memory to store the element numbers
     int *elem_map;
     elem_map = (int *) calloc(num_elem, sizeof(int));
@@ -274,14 +257,12 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     int *blkassign;
     blkassign = (int *) calloc(num_elem, sizeof(int));
     
-    int num_nodes_per_elem[num_elem_blk];
-    
     l=0;
-    for(i=0;i<*ne0;i++){ // For each element.  Composite elements are one increment in this loop
+    for(i=0;i<*ne0;i++){ // For each element.  Composite elements are
+			 // one increment in this loop and all layers
+			 // have the same element number.
+      if(ipkon[i]<0) continue;
       elem_map[l] = i+1;
-      if(ipkon[i]<0){
-	blkassign[l++]=0; 
-	continue;}
       
       strcpy1(curblk,&lakon[8*i],5);
       strcpy1(material,&matname[80*(ielmat[i*mi[2]]-1)],5);
@@ -361,11 +342,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 
 
     
-
-    /* write element connectivity */
-    int *connect;
-    int blksize[num_elem_blk];
-
+    int num_nodes_per_elem[num_elem_blk];
     j=0;
     num_nodes_per_elem[j++]=1;
     num_nodes_per_elem[j++]=20;
@@ -410,15 +387,23 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     blknames[j++]="TRUSS";
     blknames[j++]="TRUSS";
     blknames[j++]="TRUSS";
-    ex_put_names (exoid, EX_ELEM_BLOCK, blknames);
+    errr = ex_put_names (exoid, EX_ELEM_BLOCK, blknames);
+    if(errr){printf("*ERROR in exo: cannot write block names");}
+    
 
+    /* write element connectivity */
+    int *connect;
+    int num_elem_in_blk;
+    int blksize[num_elem_blk];
+    
     for(l=0;l<num_elem_blk;l++){
-      
       // First determine the size of the block
       j=0;
+      m=0;
       for(i=0;i<*ne0;i++){
-	if(blkassign[i]==l){
-	  if(blkassign[i]==2){//composite
+	if(ipkon[i]<0) continue;
+	if(blkassign[m]==l){
+	  if(blkassign[m]==2){//composite
 	    for(k=0;k<mi[2];k++){
 	      if(ielmat[i*mi[2]+k]==0) break;
 	      j++;
@@ -427,36 +412,39 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	    j++;
 	  }
 	}
+	m++;
       }
+
       blksize[l]=j;
       num_elem_in_blk=blksize[l];
       
       connect = (int *) calloc (num_elem_in_blk*num_nodes_per_elem[l], sizeof(int));
-      k=0;
-      int m,n;
+      k=0; o=0;
       // Now connectivity
       for(i=0;i<*ne0;i++){
+	if(ipkon[i]<0) continue;
 	indexe=ipkon[i];
-	if (blkassign[i]==l){
-	  if (blkassign[i]==2){// Composite
+	if (blkassign[o]==l){
+	  if (blkassign[o]==2){// Composite
 	    nlayer=0;
 	    for(l=0;l<mi[2];l++){
 	      if(ielmat[i*mi[2]+l]==0) break;
 	      nlayer++;
 	    }
 	    for(n=0;n<nlayer;n++){
-	      for(m=0;m<12;m++){connect[k++] = kon[indexe+28+20*n+m];}
-	      for(m=16;m<20;m++){connect[k++] = kon[indexe+28+20*n+m];}
-	      for(m=12;m<16;m++){connect[k++] = kon[indexe+28+20*n+m];}
+	      for(m=0;m<12;m++){connect[k++] = node_map_inv[kon[indexe+28+20*n+m]-1];}
+	      for(m=16;m<20;m++){connect[k++] = node_map_inv[kon[indexe+28+20*n+m]-1];}
+	      for(m=12;m<16;m++){connect[k++] = node_map_inv[kon[indexe+28+20*n+m]-1];}
 	    }
 	  }else{// Non-composite
 	    for (j = 0; j <num_nodes_per_elem[l]; j++){
-	      connect[k++] = kon[indexe+j];
+	      connect[k++] = node_map_inv[kon[indexe+j]-1];
 	    }
 	  }
 	}
+	o++;
       }
-
+      
       int num_attr=0;
       switch (l)
 	{
@@ -515,7 +503,8 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     if (errr)
       printf ("ERROR in ex_put_elem_num_map %i\n", errr);
     free (elem_map);
-
+    
+    free (node_map_inv);
     ex_update (exoid);  
     ex_close (exoid);
 
@@ -580,7 +569,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	
 	exovector(v,&iset,ntrans,filab,&nkcoords,inum,inotr,
 		  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
-		  num_time_steps,countvars);
+		  num_time_steps,countvars,nout);
 	countvars+=3;
       }
     }
@@ -598,7 +587,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	}else{
 	  exovector(&v[*nk*(mi[1]+1)],&iset,ntrans,filab,&nkcoords,inum,inotr,
 		    trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
-		    num_time_steps,countvars);
+		    num_time_steps,countvars,nout);
 	  printf ("Warning: export of imaginary part of displacement to exo not tested.\n");
 	  countvars+=3;
 	}
@@ -622,7 +611,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     
 	exovector(veold,&iset,ntrans,&filab[1740],&nkcoords,inum,inotr,
 		  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
-		  num_time_steps,countvars);
+		  num_time_steps,countvars,nout);
 	printf ("Warning velocity to exo not tested.\n");
 	countvars+=3;
       }
@@ -644,12 +633,12 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	if(*ithermal<=1){
 	  exoselect(t1,t1,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-		    nfieldscalar,&iselect,exoid,num_time_steps,countvars);
+		    nfieldscalar,&iselect,exoid,num_time_steps,countvars,nout);
 	  printf ("Warning: export temperature to exo not tested.\n");
 	}else{
 	  exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-		    nfieldscalar,&iselect,exoid,num_time_steps,countvars);
+		    nfieldscalar,&iselect,exoid,num_time_steps,countvars,nout);
 	  printf ("Warning: export temperature to exo not tested.\n");
 	}
 	countvars+=1;	
@@ -678,7 +667,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     
 	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		  nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
 	countvars+=6;
       }
     }
@@ -701,7 +690,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	if(strcmp1(&filab[174],"S   ")==0){      
 	  exoselect(&stn[6**nk],stn,&iset,&nkcoords,inum,istartset,iendset,
 	  	    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-	  	    nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+	  	    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
 	  printf ("Warning: export of imaginary part of stress to exo not tested.\n");
 	  countvars+=6;
 	}
@@ -731,7 +720,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	
 	exoselect(een,een,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		  nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
 	countvars+=6;
       }
     }
@@ -754,7 +743,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	}else{
 	  exoselect(&een[6**nk],een,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
 	  printf ("Warning: export of imaginary part of strain to exo not tested.\n");
 	  countvars+=6;
 	}
@@ -782,7 +771,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	       ngraph);
 	exoselect(emn,emn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		  nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
 	printf ("Warning: export of mechanical strain to exo not tested.\n");
 	countvars+=6;
       }    
@@ -806,7 +795,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	}else{
 	  exoselect(&emn[6**nk],een,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
 	  printf ("Warning: export of imaginary part of mechanical strain to exo not tested.\n");
 	  countvars+=6;      
 	}
@@ -831,7 +820,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       
 	exovector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,inotr,
 		  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
-		  num_time_steps,countvars);
+		  num_time_steps,countvars,nout);
 	printf ("Warning force to exo not tested.\n");
 	countvars+=3;
       }
@@ -850,7 +839,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	}else{
 	  exovector(&fn[*nk*(mi[1]+1)],&iset,ntrans,filab,&nkcoords,inum,inotr,
 		    trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
-		    num_time_steps,countvars);
+		    num_time_steps,countvars,nout);
 	  printf ("Warning imaginary force to exo not tested.\n");
 	  countvars+=3;
 	}
@@ -871,7 +860,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	       ngraph);
 	exoselect(epn,epn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-		  nfieldscalar,&iselect,exoid,num_time_steps,countvars);
+		  nfieldscalar,&iselect,exoid,num_time_steps,countvars,nout);
 	printf ("Warning: export PEEQ to exo not tested.\n");
 	countvars+=1;
       }
@@ -893,7 +882,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	       ngraph);
 	exoselect(enern,enern,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-		  nfieldscalar,&iselect,exoid,num_time_steps,countvars);
+		  nfieldscalar,&iselect,exoid,num_time_steps,countvars,nout);
 	printf ("Warning: export ENER to exo not tested.\n");
 	countvars+=1;
       }
@@ -1004,7 +993,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	
 	exoselect(xstaten,xstaten,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,nstate_,ifieldstate,icompstate,
-		  nfield,&iselect,exoid,num_time_steps,countvars);
+		  nfield,&iselect,exoid,num_time_steps,countvars,nout);
 	printf ("Warning: export of SDV to exo not tested and not yet expected to work.\n");
 	countvars+=*nstate_;
       }
@@ -1032,7 +1021,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     
 	exoselect(qfn,qfn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompvector,ifieldvector,icompvector,
-		  nfieldvector1,&iselect,exoid,num_time_steps,countvars);
+		  nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout);
 	countvars+=3;
 	printf ("Warning: export of HFL to exo not tested.\n");
       }
@@ -1052,7 +1041,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	       ngraph);
 	exoselect(fn,fn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-		  nfieldvector0,&iselect,exoid,num_time_steps,countvars);
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
 	countvars+=1;
 	printf ("Warning: export of RFL to exo not tested.\n");
       }
@@ -1083,7 +1072,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     
 	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		  nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
 	printf ("Warning: export of ZZSTR to exo not tested.\n");
 	countvars+=6;
       }
@@ -1113,7 +1102,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
           
 	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
 	  printf ("Warning: export of ZZSTR imaginary to exo not tested.\n");
 	  countvars+=6;
         }
@@ -1145,7 +1134,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	
 	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomp,ifield,icomp,
-		  nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
 	printf ("Warning: export of error estimation to exo not tested.\n");
 	countvars+=2;
       }
@@ -1172,7 +1161,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	
 	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
 	  printf ("Warning: export of error estimation to exo not tested.\n");
 	  countvars+=2;
 	}
@@ -1194,7 +1183,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	
 	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-		  nfieldvector0,&iselect,exoid,num_time_steps,countvars);
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
 	printf ("Warning: export of TT to exo not tested.\n");
 	countvars+=1;
       }
@@ -1216,7 +1205,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	icomp[0]=1;
 	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
-		  nfieldvector0,&iselect,exoid,num_time_steps,countvars);
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
 	printf ("Warning: export of MF to exo not tested.\n");
 	countvars+=1;
       }
@@ -1579,10 +1568,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	{
 	  var_names[i] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
 	}
-      // printf ("Total count %i\n", countvars);
     }else if(countbool==2){
-      // printf ("Total count %i\n", countvars);
-      // printf ("Writing %i var_names\n", countvars);
       errr = ex_put_var_names (exoid, "n", countvars, var_names);
       if (errr) printf ("Unable to update variable names.");
       //  for (i=0; i<countvars; i++)
