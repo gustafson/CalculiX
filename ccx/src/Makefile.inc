@@ -579,6 +579,7 @@ electromagnetics.c \
 elemChecker.c \
 exo.c \
 exoselect.c \
+exosetfind.c \
 exovector.c \
 expand.c \
 frd.c \
