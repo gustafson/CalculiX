@@ -62,7 +62,6 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
 	if (ialset[e]>0){
 	  node_map[n++]=node_map_inv[ialset[e]];
 	  if (ialset[e-1]>0){
-	    printf ("Tacking on the end-1\n");
 	    node_map[n++]=node_map_inv[ialset[e-1]];
 	  }
 	}
@@ -134,16 +133,16 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
       strncpy(tmpstr,set+i*81,81);
       pos = strpbrk(tmpstr, space)-1;
       // This crashed in valgrind
-      if(strcmp1(pos,"N")==0) {strncpy(namesnset[j++], tmpstr, MAX_STR_LENGTH);}
+      // if(strcmp1(pos,"N")==0) {strncpy(namesnset[j++], tmpstr, MAX_STR_LENGTH);}
       // if(strcmp1(pos,"E")==0) {strcpy(nameseset[l++],tmpstr);}
       // if(strcmp1(pos,"S")==0) {strcpy(namessset[k++],tmpstr);}
       // if(strcmp1(pos,"T")==0) {strcpy(namesfset[n++],tmpstr);}
     }
     
-    if (*num_ns>0){
-      errr = ex_put_names (exoid, EX_NODE_SET, namesnset);
-      if (errr) printf ("Error writing node set names\n");
-    }
+    // if (*num_ns>0){
+    //   errr = ex_put_names (exoid, EX_NODE_SET, namesnset);
+    //   if (errr) printf ("Error writing node set names\n");
+    // }
     /* side sets not implemented yet
        if (*num_ss>0){
        errr = ex_put_names (exoid, EX_SIDE_SET, namessset);
@@ -151,6 +150,6 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
        }
     */
   }
-  
+
   return;
 }
