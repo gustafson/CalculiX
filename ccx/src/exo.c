@@ -24,7 +24,6 @@
 
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
-#define rc(r,c) (r+nout*c)
 
 void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	 double *v,double *stn,int *inum,int *nmethod,int *kode,
@@ -87,74 +86,123 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   nkcoords = *nk;
   int num_nodes = nkcoords;
 
-  
   pi=4.*atan(1.);
   null=0;
   one=1;
   two=2;
   three=3;
   oner=1.;
-
-  /* first time something is written in the exo-file: store
-     computational metadata, the nodal coordinates and the
-     topology */
-  if(*kode==1){
-    /* determining nout, noutplus and noutmin 
-       nout: number of structural and network nodes
-       noutplus: number of structural nodes
-       noutmin: number of network nodes */
-    if(*nmethod!=0){
-      nout=0;
-      noutplus=0;
-      noutmin=0;
-      for(i=0;i<*nk;i++){
-	if(inum[i]==0) continue;
-	if(inum[i]>0) noutplus++;
-	if(inum[i]<0) noutmin++;
-	nout++;
-      }
-    }else{
-      nout=*nk;
+  
+  
+  /* determining nout, noutplus and noutmin 
+     nout: number of structural and network nodes
+     noutplus: number of structural nodes
+     noutmin: number of network nodes */
+  if(*nmethod!=0){
+    nout=0;
+    noutplus=0;
+    noutmin=0;
+    for(i=0;i<*nk;i++){
+      if(inum[i]==0) continue;
+      if(inum[i]>0) noutplus++;
+      if(inum[i]<0) noutmin++;
+      nout++;
     }
-    
-    num_dim = 3;  
-    num_elem_blk = 19;
-    
-    // Find the number of sets
-    exosetfind(set, nset, ialset, istartset, iendset, 
-	       &num_ns, &num_ss, &num_es, &num_fs, NULL, exoid, (int) 0);
-
-    exoid = ex_create (fneig, /*Filename*/
-		       EX_CLOBBER,	/* create mode */
-		       &CPU_word_size,  /* CPU float word size in bytes */
-		       &IO_word_size);  /* I/O float word size in bytes */
-    
-    float x[nout], y[nout], z[nout];
-    // Write optional node map
-    j = 0;
-    int *node_map;
-    node_map = (int *) calloc(nout, sizeof(int));
-    int *node_map_inv;
-    node_map_inv = (int *) calloc(nkcoords, sizeof(int));
-    
-    /* storing the coordinates of the nodes */
-    if(*nmethod!=0){
-      for(i=0;i<*nk;i++){
-	if(inum[i]==0){continue;}
-	node_map[j] = i+1;
-	node_map_inv[i] = j+1;
-	x[j]   = co[3*i];
-	y[j]   = co[3*i+1];
-	z[j++] = co[3*i+2];
-      }
-    }else{
+  }else{
+    nout=*nk;
+  }
+  
+  float x[nout], y[nout], z[nout];
+  // Write optional node map
+  j = 0;
+  int *node_map;
+  node_map = (int *) calloc(nout, sizeof(int));
+  int *node_map_inv;
+  node_map_inv = (int *) calloc(nkcoords, sizeof(int));
+  /* storing the coordinates of the nodes */
+  if(*nmethod!=0){
+    for(i=0;i<*nk;i++){
+      if(inum[i]==0){continue;}
+      node_map[j] = i+1;
+      node_map_inv[i] = j+1;
+      x[j]   = co[3*i];
+      y[j]   = co[3*i+1];
+      z[j++] = co[3*i+2];
+    }
+  }else{
+    for(i=0;i<*nk;i++){
       node_map[j] = i+1;
       node_map_inv[i] = j+1;
       x[j]   = co[3*i];
       y[j]   = co[3*i+1];
       z[j++] = co[3*i+2];
     }    
+  }    
+
+  /* first time something is written in the exo-file: store
+     computational metadata, the nodal coordinates and the
+     topology */
+  if(*kode==1){
+
+    num_dim = 3;  
+    num_elem_blk = 19;
     
+    // Find the number of sets
+    exosetfind(set, nset, ialset, istartset, iendset, 
+	       &num_ns, &num_ss, &num_es, &num_fs, NULL, exoid, (int) 0);
+    printf ("Side sets not implemented.\n");
+    num_ss=0;
+
+    exoid = ex_create (fneig, /*Filename*/
+		       EX_CLOBBER,	/* create mode */
+		       &CPU_word_size,  /* CPU float word size in bytes */
+		       &IO_word_size);  /* I/O float word size in bytes */
+    
+//  /* determining nout, noutplus and noutmin 
+//     nout: number of structural and network nodes
+//     noutplus: number of structural nodes
+//     noutmin: number of network nodes */
+//  if(*nmethod!=0){
+//    nout=0;
+//    noutplus=0;
+//    noutmin=0;
+//    for(i=0;i<*nk;i++){
+//      if(inum[i]==0) continue;
+//      if(inum[i]>0) noutplus++;
+//      if(inum[i]<0) noutmin++;
+//      nout++;
+//    }
+//  }else{
+//    nout=*nk;
+//  }
+//    
+//    float x[nout], y[nout], z[nout];
+//    // Write optional node map
+//    j = 0;
+//    int *node_map;
+//    node_map = (int *) calloc(nout, sizeof(int));
+//    int *node_map_inv;
+//    node_map_inv = (int *) calloc(nkcoords, sizeof(int));
+//    /* storing the coordinates of the nodes */
+//    if(*nmethod!=0){
+//      for(i=0;i<*nk;i++){
+//	if(inum[i]==0){continue;}
+//	node_map[j] = i+1;
+//	node_map_inv[i] = j+1;
+//	x[j]   = co[3*i];
+//	y[j]   = co[3*i+1];
+//	z[j++] = co[3*i+2];
+//      }
+//    }else{
+//      for(i=0;i<*nk;i++){
+//	node_map[j] = i+1;
+//	node_map_inv[i] = j+1;
+//	x[j]   = co[3*i];
+//	y[j]   = co[3*i+1];
+//	z[j++] = co[3*i+2];
+//      }    
+//    }    
+//  
     /* determining the number of elements */
     if(*nmethod!=0){
       nelout=0;
@@ -497,7 +545,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     // Free up memory which is gathering dust
     free (elem_map); 
     free (blkassign);
-    free (node_map_inv);
 
     // Close files
     ex_update (exoid);  
@@ -519,6 +566,9 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 		   &IO_word_size, /* I/O float word size in bytes */
 		   &version);
     
+  // Define an output variable for general use  
+  float *nodal_var_vals;
+
   int num_time_steps;
   float fdum;
   char cdum = 0;
@@ -896,73 +946,64 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	var_names[countvars++]="CSHEAR2";
       }else{
 	
+	nodal_var_vals = (float *) calloc (nout, sizeof(float));
+	// ZERO? // for(j=0;j<nout;j++){
+	// ZERO? //   nodal_var_vals[j]=0;
+	// ZERO? // }
+	
 	for(i=*ne-1;i>=0;i--){
 	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
 	    break;
 	}
 	noutloc=*ne-i-1;
 	
-	int num_nod_vars = 6;
-	float *nodal_var_vals;
-	nodal_var_vals = (float *) calloc (nkcoords * num_nod_vars, sizeof(float));
-	for(i=*ne-1;i>=0;i--){
-	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
-	    break;
-	  strcpy1(text,&lakon[8*i+7],1);
-	  nope=atoi(text);
-	  nodes=kon[ipkon[i]+nope-1];
-	  for(j=0;j<6;j++){
-	    nodal_var_vals[rc(i,j)]=stx[6*mi[0]*i+j]; 
+	for(j=0;j<6;j++){
+	  for(i=*ne-1;i>=0;i--){
+	    if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
+	      break;
+	    strcpy1(text,&lakon[8*i+7],1);
+	    nope=atoi(text);
+	    nodes=node_map_inv[kon[ipkon[i]+nope-1]-1];
+	    nodal_var_vals[nodes]=stx[6*mi[0]*i+j]; 
 	  }
+	  
+	  errr = ex_put_nodal_var (exoid, num_time_steps, 1+countvars++, nout, nodal_var_vals);
+	  if (errr) printf ("ERROR storing data into exo file for dim %i record %i.\n", j, countvars);
 	}
-
-	float *nodal_var_vals_out;
-	nodal_var_vals_out = (float *) calloc (nkcoords, sizeof(float));
-	for (j=0; j<num_nod_vars; j++){
-	  for (i=0; i<nkcoords; i++){
-	    nodal_var_vals_out[i]=nodal_var_vals[rc(i,j)];
-	  }
-	  int errr = ex_put_nodal_var (exoid, num_time_steps, j+1+countvars, nkcoords, nodal_var_vals_out);
-	  if (errr) printf ("ERROR storing data into exo file for dim %i record %i.\n", j, countvars+j);
-	}
-
+	
 	free(nodal_var_vals);
-	free(nodal_var_vals_out);
-        
-	printf ("Warning: export of Contact Variables to exo not tested.\n");
-	countvars+=6;
       }
     }
-
-    /* storing the contact energy at the slave nodes */
-    if(strcmp1(&filab[2262],"CELS")==0){
-      if (countbool==3){
-	countvars+=1;
-      }else if(countbool==2){
-	var_names[countvars++]="CELS";
-      }else{
-	for(i=*ne-1;i>=0;i--){
-	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
-	    break;
-	}
-	noutloc=*ne-i-1;
-	    
-	float *nodal_var_vals_out;
-	nodal_var_vals_out = (float *) calloc (nkcoords, sizeof(float));
-	for(i=*ne-1;i>=0;i--){
-	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
-	    break;
-	  nope=atoi(&lakon[8*i+7]);
-	  nodes=kon[ipkon[i]+nope-1];
-	  nodal_var_vals_out[i]=ener[i*mi[0]];
-	}
-	    
-	int errr = ex_put_nodal_var (exoid, num_time_steps, countvars, nkcoords, nodal_var_vals_out);
-	if (errr) printf ("ERROR storing CELS data into exo file.\n");
-	printf ("Warning: export of contact energy to exo not tested and not yet expected to work.\n");
-	countvars+=1;
-      }
-    }
+    
+//    /* storing the contact energy at the slave nodes */
+//    if(strcmp1(&filab[2262],"CELS")==0){
+//      if (countbool==3){
+//	countvars+=1;
+//      }else if(countbool==2){
+//	var_names[countvars++]="CELS";
+//      }else{
+//	for(i=*ne-1;i>=0;i--){
+//	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
+//	    break;
+//	}
+//	noutloc=*ne-i-1;
+//	    
+//	float *nodal_var_vals_out;
+//	nodal_var_vals_out = (float *) calloc (nkcoords, sizeof(float));
+//	for(i=*ne-1;i>=0;i--){
+//	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
+//	    break;
+//	  nope=atoi(&lakon[8*i+7]);
+//	  nodes=kon[ipkon[i]+nope-1];
+//	  nodal_var_vals_out[i]=ener[i*mi[0]];
+//	}
+//	    
+//	int errr = ex_put_nodal_var (exoid, num_time_steps, countvars, nkcoords, nodal_var_vals_out);
+//	if (errr) printf ("ERROR storing CELS data into exo file.\n");
+//	printf ("Warning: export of contact energy to exo not tested and not yet expected to work.\n");
+//	countvars+=1;
+//      }
+//    }
   
   /* storing the internal state variables in the nodes */
     if(strcmp1(&filab[609],"SDV ")==0){
@@ -1579,6 +1620,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   };
 
   // free (var_names);
+  free (node_map_inv);
   ex_update (exoid);  
   ex_close(exoid);
   return;
