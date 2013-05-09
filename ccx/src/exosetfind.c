@@ -10,40 +10,71 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
 		int exoid, 
 		int store){
   
-  int i,j,k,l,n;
+  int i,j,k,l,n,s,e,gen;
   char tmpstr[81];
   char *space = " ";
   char *pos;
   int *node_map;
   int errr;
-  char *names[*nset];
 
   *num_ns = 0; 
   *num_ss = 0;
   *num_es = 0;
   *num_fs = 0; 
   
-
   for (i=0; i<*nset; i++){
+
     if (store) {
       // Find and store the set numbers
-      if (ialset[iendset[i]]<0){ // GENERATE WAS USED
-	n=(ialset[istartset[i]]-ialset[iendset[i]-1])/(-ialset[iendset[i]])+1;
-	node_map = (int *) calloc(n, sizeof(int));
-	n=0;
-	for (j=ialset[istartset[i]]; j<=ialset[iendset[i]-1]; j=j-ialset[iendset[i]]){
-	  node_map[n++]=node_map_inv[j-1];
-	}
-      }else{ // GENERATE WAS NOT USED
-	n=istartset[i]-iendset[i]+1;
-	node_map = (int *) calloc(n, sizeof(int));
-	n=0;
-	for (j=ialset[istartset[i]]; j<=ialset[iendset[i]]; j++){
-	  node_map[n++]=node_map_inv[j-1];
+      // The pointer integers are 1 based (fortran)
+      s=istartset[i]-1;
+      e=iendset[i]-1;
+      // Determine if generate was used
+      gen=0; l=0;
+      for (j=s; j<=e; j++){
+	if (ialset[j]<0) {
+	  gen+=(ialset[j-1]-ialset[j-2])/(-ialset[j])+1;
+	  l-=3;
 	}
       }
-    }
-    
+      
+      // Now set the length of the set allocation
+      l=e-s+1+gen+l;
+      node_map = (int *) calloc(l, sizeof(int));
+      
+      /* Only add the generate code if there are at least
+	 three points in the vector */
+      n=0; j=s;
+      if (l>2){
+	while (j<=e-2){
+	  // Account for generated ids
+	  if (ialset[j+2]<0) {
+	    for (k=ialset[j]; k<=ialset[j+1]; k-=ialset[j+2]){
+	      node_map[n++]=node_map_inv[k];  
+	    }
+	    j+=3;
+	  }else{
+	    // Account for directly added id
+	    node_map[n++]=node_map_inv[ialset[j++]];
+	  }
+	}
+	// Must finish the last two
+	if (ialset[e]>0){
+	  node_map[n++]=node_map_inv[ialset[e]];
+	  if (ialset[e-1]>0){
+	    printf ("Tacking on the end-1\n");
+	    node_map[n++]=node_map_inv[ialset[e-1]];
+	  }
+	}
+      }else if(l>1){
+	node_map[n++]=node_map_inv[ialset[s]];
+	node_map[n++]=node_map_inv[ialset[e]];
+      }else{
+	node_map[n++]=node_map_inv[ialset[e]];
+      }
+    }  
+
+
     strncpy(tmpstr,set+i*81,81);
     pos = strpbrk(tmpstr, space)-1;
     
@@ -91,36 +122,34 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
 	 } */
     } 
     if (store) {free (node_map);}
-    
   }  
   
   if (store){
     char *namesnset[*num_ns]; j=0;
-    char *namessset[*num_ss]; k=0;
-    char *nameseset[*num_es]; l=0;
-    char *namesfset[*num_fs]; n=0;
+    // char *namessset[*num_ss]; k=0;
+    // char *nameseset[*num_es]; l=0;
+    // char *namesfset[*num_fs]; n=0;
+
     for (i=0; i<*nset; i++){
       strncpy(tmpstr,set+i*81,81);
       pos = strpbrk(tmpstr, space)-1;
-      // This doesn't really work yet... don't know why.
-      if(strcmp1(pos,"N")==0) {namesnset[j++]=&names[i];}
-      if(strcmp1(pos,"E")==0) {nameseset[l++]=&names[i];}
-      if(strcmp1(pos,"S")==0) {namessset[k++]=&names[i];}
-      if(strcmp1(pos,"T")==0) {namesfset[n++]=&names[i];}
-      // if(strcmp1(pos,"N")==0) {strcpy(namesnset[j++],names[i]);}
-      // if(strcmp1(pos,"E")==0) {strcpy(nameseset[l++],names[i]);}
-      // if(strcmp1(pos,"S")==0) {strcpy(namessset[k++],names[i]);}
-      // if(strcmp1(pos,"T")==0) {strcpy(namesfset[n++],names[i]);}
+      // This crashed in valgrind
+      if(strcmp1(pos,"N")==0) {strncpy(namesnset[j++], tmpstr, MAX_STR_LENGTH);}
+      // if(strcmp1(pos,"E")==0) {strcpy(nameseset[l++],tmpstr);}
+      // if(strcmp1(pos,"S")==0) {strcpy(namessset[k++],tmpstr);}
+      // if(strcmp1(pos,"T")==0) {strcpy(namesfset[n++],tmpstr);}
     }
     
     if (*num_ns>0){
       errr = ex_put_names (exoid, EX_NODE_SET, namesnset);
       if (errr) printf ("Error writing node set names\n");
     }
-    if (*num_ss>0){
-      errr = ex_put_names (exoid, EX_SIDE_SET, namessset);
-      if (errr) printf ("Error writing side set names\n");
-    }
+    /* side sets not implemented yet
+       if (*num_ss>0){
+       errr = ex_put_names (exoid, EX_SIDE_SET, namessset);
+       if (errr) printf ("Error writing side set names\n");
+       }
+    */
   }
   
   return;
