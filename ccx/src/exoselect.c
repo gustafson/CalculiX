@@ -24,7 +24,6 @@
 
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
-#define rc(r,c) (r+nout*c)
 
 void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
 	       int *istartset,int *iendset,int *ialset,int *ngraph,int *ncomp,
@@ -55,96 +54,42 @@ void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
      "s" (or "S")
      For sideset variables.
   */
-  int num_nod_vars = min(6,*ncomp);
+  int num_nod_vars = *ncomp;
   float *nodal_var_vals;
-  nodal_var_vals = (float *) calloc (nout * num_nod_vars, sizeof(float));
+  nodal_var_vals = (float *) calloc (nout, sizeof(float));
   
-  if(*iset==0){
-    m=0;
-    for(i=0;i<*nkcoords;i++){
-      /* check whether output is requested for solid nodes or
-	 network nodes */
+  
+  for(j=0;j<*ncomp;j++){
+    if(*iset==0){
+      m=0;
+      for(i=0;i<*nkcoords;i++){
+	/* check whether output is requested for solid nodes or
+	   network nodes */
       
-      if(*iselect==1){
-	if(inum[i]<=0) continue;
-      }else if(*iselect==-1){
-	if(inum[i]>=0) continue;
-      }else{
-	if(inum[i]==0) continue;
-      }
-      
-      /* storing the entities */
-      for(n=1;n<=(int)((*ncomp+5)/6);n++){
-	if(n==1){
-	  for(j=0;j<min(6,*ncomp);j++){
-	    if(ifield[j]==1){
-	      nodal_var_vals[rc(m,j)]=field1[i*nfield[0]+icomp[j]];
-	    }else{
-	      nodal_var_vals[rc(m,j)]=field2[i*nfield[1]+icomp[j]];
-	    }
-	  }
+	if(*iselect==1){
+	  if(inum[i]<=0) continue;
+	}else if(*iselect==-1){
+	  if(inum[i]>=0) continue;
 	}else{
-	  for(j=(n-1)*6;j<min(n*6,*ncomp);j++){
-	    if(ifield[j]==1){
-	      nodal_var_vals[rc(m,j)]=field1[i*nfield[0]+icomp[j]];
-	    }else{
-	      nodal_var_vals[rc(m,j)]=field2[i*nfield[1]+icomp[j]];
-	    }
-	  }
+	  if(inum[i]==0) continue;
 	}
+      
+	/* storing the entities */
+	if(ifield[j]==1){
+	  nodal_var_vals[m]=field1[i*nfield[0]+icomp[j]];
+	}else{
+	  nodal_var_vals[m]=field2[i*nfield[1]+icomp[j]];
+	}
+	m++;
       }
-      m++;
-    }
-  }else{
-    nksegment=(*nkcoords)/(*ngraph);
-    for(k=istartset[*iset-1]-1;k<iendset[*iset-1];k++){
-      if(ialset[k]>0){
-	
-	m=0;
-	for(l=0;l<*ngraph;l++){
-	  i=ialset[k]+l*nksegment-1;
+    }else{
+      nksegment=(*nkcoords)/(*ngraph);
+      for(k=istartset[*iset-1]-1;k<iendset[*iset-1];k++){
+	if(ialset[k]>0){
 	  
-	  /* check whether output is requested for solid nodes or
-	     network nodes */
-
-	  if(*iselect==1){
-	    if(inum[i]<=0) continue;
-	  }else if(*iselect==-1){
-	    if(inum[i]>=0) continue;
-	  }else{
-	    if(inum[i]==0) continue;
-	  }
-	  
-	  /* storing the entities */
-	  for(n=1;n<=(int)((*ncomp+5)/6);n++){
-	    if(n==1){
-	      for(j=0;j<min(6,*ncomp);j++){
-		if(ifield[j]==1){
-		  nodal_var_vals[rc(m,j)]=field1[i*nfield[0]+icomp[j]];
-		}else{
-		  nodal_var_vals[rc(m,j)]=field2[i*nfield[1]+icomp[j]];
-		}
-	      }
-	    }else{
-	      for(j=(n-1)*6;j<min(n*6,*ncomp);j++){
-		if(ifield[j]==1){
-		  nodal_var_vals[rc(m,j)]=field1[i*nfield[0]+j];
-		}else{
-		  nodal_var_vals[rc(m,j)]=field2[i*nfield[1]+j];
-		}
-	      }
-	    }
-	  }
-	  m++;
-	}
-      }else{
-	l=ialset[k-2];
-	do{
-	  l-=ialset[k];
-	  if(l>=ialset[k-1]) break;
-	  o=0;
-	  for(m=0;m<*ngraph;m++){
-	    i=l+m*nksegment-1;
+	  m=0;
+	  for(l=0;l<*ngraph;l++){
+	    i=ialset[k]+l*nksegment-1;
 	    
 	    /* check whether output is requested for solid nodes or
 	       network nodes */
@@ -158,63 +103,63 @@ void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
 	    }
 	    
 	    /* storing the entities */
+	    if(ifield[j]==1){
+	      nodal_var_vals[m]=field1[i*nfield[0]+icomp[j]];
+	    }else{
+	      nodal_var_vals[m]=field2[i*nfield[1]+icomp[j]];
+	    }
+	    m++;
+	  }
+	}else{
+	  l=ialset[k-2];
+	  do{
+	    l-=ialset[k];
+	    if(l>=ialset[k-1]) break;
+	    o=0;
+	    for(m=0;m<*ngraph;m++){
+	      i=l+m*nksegment-1;
 	    
-	    for(n=1;n<=(int)((*ncomp+5)/6);n++){
-	      if(n==1){
-		for(j=0;j<min(6,*ncomp);j++){
-		  if(ifield[j]==1){
-		    nodal_var_vals[rc(o,j)]=field1[i*nfield[0]+icomp[j]];
-		  }else{
-		    nodal_var_vals[rc(o,j)]=field2[i*nfield[1]+icomp[j]];
-		  }
-		}
+	      /* check whether output is requested for solid nodes or
+		 network nodes */
+	    
+	      if(*iselect==1){
+		if(inum[i]<=0) continue;
+	      }else if(*iselect==-1){
+		if(inum[i]>=0) continue;
 	      }else{
-		for(j=(n-1)*6;j<min(n*6,*ncomp);j++){
-		  if(ifield[j]==1){
-		    nodal_var_vals[rc(o,j)]=field1[i*nfield[0]+j];
-		  }else{
-		    nodal_var_vals[rc(o,j)]=field2[i*nfield[1]+j];
-		  }
-		}
+		if(inum[i]==0) continue;
+	      }
+	    
+	      /* storing the entities */
+	      if(ifield[j]==1){
+		nodal_var_vals[o]=field1[i*nfield[0]+icomp[j]];
+	      }else{
+		nodal_var_vals[o]=field2[i*nfield[1]+icomp[j]];
 	      }
 	    }
-	  }
-	  o++;
-	}while(1);
+	    o++;
+	    printf ("%f\n",nodal_var_vals[m]);
+	  }while(1);
+	}
       }
     }
-  }
-  
-  
-  float *nodal_var_vals_out;
-  nodal_var_vals_out = (float *) calloc (nout, sizeof(float));
-  
-  for (j=0; j<num_nod_vars; j++){
-    if (*ncomp==6){
-      // Note: reorder the results for exo tensor format
-      if (j==4){
-	k=5;
-      }else if(j==5){
-	k=4;
-      }else{k=j;}
-    }
-    m=0;
-    for (i=0; i<*nkcoords; i++){
-      if(*iselect==1){
-	if(inum[i]<=0) continue;
-      }else if(*iselect==-1){
-	if(inum[i]>=0) continue;
-      }else{
-	if(inum[i]==0) continue;
-      }
-      nodal_var_vals_out[m]=nodal_var_vals[rc(m++,k)];
-    }
-    int errr = ex_put_nodal_var (exoid, time_step, j+1+countvar, nout, nodal_var_vals_out);
+    
+    // Note: reorder the results for exo tensor format
+    if (j==4){
+      k=5;
+    }else if(j==5){
+      k=4;
+    }else if(j==10){
+      k=11;
+    }else if(j==11){
+      k=10;
+    }else{k=j;}
+
+    int errr = ex_put_nodal_var (exoid, time_step, k+1+countvar, nout, nodal_var_vals);
     if (errr) printf ("ERROR exoselect data for dim %i record %i.\n", j, countvar+j);
   }
   
   free(nodal_var_vals);
-  free(nodal_var_vals_out);
   return;
 
 }
