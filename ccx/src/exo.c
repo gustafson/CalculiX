@@ -51,24 +51,19 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   
   /* Note for frd strcmp1(output,"asc")==0 defines ascii file, otherwise binary */
   
-  char fneig[132]="",date[8],clock[10],newdate[21],newclock[9],
-    material[6]="     ",text[2]=" ";
+  char fneig[132]="", material[6]="     ",text[2]=" ";
   
-  static int icounter=0,nkcoords,nout,noutmin,noutplus;
+  static int nkcoords,nout,noutmin,noutplus;
    
-  int null,one,i,j,k,l,m,n,o,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
-    nodes,ifield[7],nfield[2],icomp[7],ifieldstate[*nstate_],two,three,
-    icompstate[*nstate_],imaterial=0,nelout;
+  int i,j,k,l,m,n,o,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
+    nodes,ifield[7],nfield[2],icomp[7],ifieldstate[*nstate_],icompstate[*nstate_],nelout;
   
   int ncompscalar=1,ifieldscalar[1]={1},icompscalar[1]={0},nfieldscalar[2]={1,0};
   int ncompvector=3,ifieldvector[3]={1,1,1},icompvector[3]={0,1,2},nfieldvector1[2]={3,0},nfieldvector0[2]={mi[1]+1,0};
   int ncomptensor=6,ifieldtensor[6]={1,1,1,1,1,1},icomptensor[6]={0,1,2,3,5,4},nfieldtensor[2]={6,0};
-  // int ncompscalph=2,ifieldscalph[2]={1,2},icompscalph[2]={0,0},nfieldscalph[2]={0,0};
-  // int ncompvectph=6,ifieldvectph[6]={1,1,1,2,2,2},icompvectph[6]={1,2,3,1,2,3},nfieldvectph[2]={mi[1]+1,mi[1]+1};
-  // int ncomptensph=12,ifieldtensph[12]={1,1,1,1,1,1,2,2,2,2,2,2},icomptensph[12]={0,1,2,3,5,4,0,1,2,3,5,4},nfieldtensph[2]={6,6};
-  int iw;
-  float ifl;
-  double pi,oner;
+  int ncompscalph=2,ifieldscalph[2]={1,2},icompscalph[2]={0,0},nfieldscalph[2]={0,0};
+  int ncompvectph=6,ifieldvectph[6]={1,1,1,2,2,2},icompvectph[6]={1,2,3,1,2,3},nfieldvectph[2]={mi[1]+1,mi[1]+1};
+  int ncomptensph=12,ifieldtensph[12]={1,1,1,1,1,1,2,2,2,2,2,2},icomptensph[12]={0,1,2,3,5,4,0,1,2,3,5,4},nfieldtensph[2]={6,6};
 
   int errr, exoid;
   int num_dim, num_elem;
@@ -86,13 +81,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   nkcoords = *nk;
   int num_nodes = nkcoords;
 
-  pi=4.*atan(1.);
-  null=0;
-  one=1;
-  two=2;
-  three=3;
-  oner=1.;
-  
   
   /* determining nout, noutplus and noutmin 
      nout: number of structural and network nodes
@@ -158,51 +146,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 		       &CPU_word_size,  /* CPU float word size in bytes */
 		       &IO_word_size);  /* I/O float word size in bytes */
     
-//  /* determining nout, noutplus and noutmin 
-//     nout: number of structural and network nodes
-//     noutplus: number of structural nodes
-//     noutmin: number of network nodes */
-//  if(*nmethod!=0){
-//    nout=0;
-//    noutplus=0;
-//    noutmin=0;
-//    for(i=0;i<*nk;i++){
-//      if(inum[i]==0) continue;
-//      if(inum[i]>0) noutplus++;
-//      if(inum[i]<0) noutmin++;
-//      nout++;
-//    }
-//  }else{
-//    nout=*nk;
-//  }
-//    
-//    float x[nout], y[nout], z[nout];
-//    // Write optional node map
-//    j = 0;
-//    int *node_map;
-//    node_map = (int *) calloc(nout, sizeof(int));
-//    int *node_map_inv;
-//    node_map_inv = (int *) calloc(nkcoords, sizeof(int));
-//    /* storing the coordinates of the nodes */
-//    if(*nmethod!=0){
-//      for(i=0;i<*nk;i++){
-//	if(inum[i]==0){continue;}
-//	node_map[j] = i+1;
-//	node_map_inv[i] = j+1;
-//	x[j]   = co[3*i];
-//	y[j]   = co[3*i+1];
-//	z[j++] = co[3*i+2];
-//      }
-//    }else{
-//      for(i=0;i<*nk;i++){
-//	node_map[j] = i+1;
-//	node_map_inv[i] = j+1;
-//	x[j]   = co[3*i];
-//	y[j]   = co[3*i+1];
-//	z[j++] = co[3*i+2];
-//      }    
-//    }    
-//  
     /* determining the number of elements */
     if(*nmethod!=0){
       nelout=0;
@@ -912,8 +855,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     }
       
 
-  /* storing the energy in the nodes */
-  
+    /* storing the energy in the nodes */
     if(strcmp1(&filab[522],"ENER")==0){
       if (countbool==3){
 	countvars+=1;
@@ -968,44 +910,44 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  }
 	  
 	  errr = ex_put_nodal_var (exoid, num_time_steps, 1+countvars++, nout, nodal_var_vals);
-	  if (errr) printf ("ERROR storing data into exo file for dim %i record %i.\n", j, countvars);
+	  if (errr) printf ("ERROR storing contact data into exo file.\n");
 	}
 	
 	free(nodal_var_vals);
       }
     }
     
-//    /* storing the contact energy at the slave nodes */
-//    if(strcmp1(&filab[2262],"CELS")==0){
-//      if (countbool==3){
-//	countvars+=1;
-//      }else if(countbool==2){
-//	var_names[countvars++]="CELS";
-//      }else{
-//	for(i=*ne-1;i>=0;i--){
-//	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
-//	    break;
-//	}
-//	noutloc=*ne-i-1;
-//	    
-//	float *nodal_var_vals_out;
-//	nodal_var_vals_out = (float *) calloc (nkcoords, sizeof(float));
-//	for(i=*ne-1;i>=0;i--){
-//	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
-//	    break;
-//	  nope=atoi(&lakon[8*i+7]);
-//	  nodes=kon[ipkon[i]+nope-1];
-//	  nodal_var_vals_out[i]=ener[i*mi[0]];
-//	}
-//	    
-//	int errr = ex_put_nodal_var (exoid, num_time_steps, countvars, nkcoords, nodal_var_vals_out);
-//	if (errr) printf ("ERROR storing CELS data into exo file.\n");
-//	printf ("Warning: export of contact energy to exo not tested and not yet expected to work.\n");
-//	countvars+=1;
-//      }
-//    }
+    /* storing the contact energy at the slave nodes */
+    if(strcmp1(&filab[2262],"CELS")==0){
+      if (countbool==3){
+	countvars+=1;
+      }else if(countbool==2){
+	var_names[countvars++]="CELS";
+      }else{
+	for(i=*ne-1;i>=0;i--){
+	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
+	    break;
+	}
+	noutloc=*ne-i-1;
+	    
+	nodal_var_vals = (float *) calloc (nkcoords, sizeof(float));
+	for(i=*ne-1;i>=0;i--){
+	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
+	    break;
+	  nope=atoi(&lakon[8*i+7]);
+	  nodes=node_map_inv[kon[ipkon[i]+nope-1]-1];
+	  nodal_var_vals[nodes]=ener[i*mi[0]];
+	}
+	
+	int errr = ex_put_nodal_var (exoid, num_time_steps, 1+countvars++, nout, nodal_var_vals);
+	if (errr) printf ("ERROR storing CELS data into exo file.\n");
+	countvars+=1;
+
+	free(nodal_var_vals);
+      }
+    }
   
-  /* storing the internal state variables in the nodes */
+    /* storing the internal state variables in the nodes */
     if(strcmp1(&filab[609],"SDV ")==0){
       if (countbool==3){
 	countvars+=*nstate_;
@@ -1247,266 +1189,271 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       }
     }
 
-    //  /* storing the total pressure in the network nodes */
-    //  
-    //  if(strcmp1(&filab[1305],"PT  ")==0){
-    //
-    //    iselect=-1;
-    //    frdset(&filab[1305],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  TOPRES      1    1\n");
-    //    fprintf(f1," -5  PT          1    1    0    0\n");
-    //
-    //    icomp[0]=2;
-    //    frdselect(v,v,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
-    //                nfieldvector0,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
-    //  /* storing the static pressure in the liquid network nodes */
-    //  
-    //  if(strcmp1(&filab[1827],"PS  ")==0){
-    //
-    //    iselect=-1;
-    //    frdset(&filab[1827],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  STPRES      1    1\n");
-    //    fprintf(f1," -5  PS          1    1    0    0\n");
-    //
-    //    icomp[0]=2;
-    //    frdselect(v,v,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
-    //                nfieldvector0,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
-    //  /* storing the liquid depth in the channel nodes */
-    //  
-    //  if(strcmp1(&filab[2349],"PS  ")==0){
-    //
-    //    iselect=-1;
-    //    frdset(&filab[2349],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  DEPTH       1    1\n");
-    //    fprintf(f1," -5  DEPTH       1    1    0    0\n");
-    //
-    //    icomp[0]=2;
-    //    frdselect(v,v,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
-    //                nfieldvector0,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
-    //  /* storing the critical depth in the channel nodes */
-    //  
-    //  if(strcmp1(&filab[2436],"HCRI")==0){
-    //
-    //    iselect=-1;
-    //    frdset(&filab[2436],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  HCRIT       1    1\n");
-    //    fprintf(f1," -5  HCRIT       1    1    0    0\n");
-    //
-    //    icomp[0]=3;
-    //    frdselect(v,v,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
-    //                nfieldvector0,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
-    //  /* storing the static temperature in the network nodes */
-    //  
-    //  if(strcmp1(&filab[1392],"TS  ")==0){
-    //
-    //    iselect=-1;
-    //    frdset(&filab[1392],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  STTEMP      1    1\n");
-    //    fprintf(f1," -5  TS          1    1    0    0\n");
-    //
-    //    icomp[0]=3;
-    //    frdselect(v,v,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
-    //                nfieldvector0,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
+    /* storing the total pressure in the network nodes */
+    if(strcmp1(&filab[1305],"PT  ")==0){
+      if (countbool==3){
+	countvars+=1;
+      }else if(countbool==2){
+	var_names[countvars++]="TOPRESS PT";
+      }else{
+	
+	iselect=-1;
+	frdset(&filab[1305],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+        
+	icomp[0]=2;
+	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export of PT to exo not tested.\n");
+	countvars+=1;
+      }
+    }
+    
+    /* storing the static pressure in the liquid network nodes */
+    if(strcmp1(&filab[1827],"PS  ")==0){
+      if (countbool==3){
+	countvars+=1;
+      }else if(countbool==2){
+	var_names[countvars++]="STPRESS PS";
+      }else{
+	
+	iselect=-1;
+	frdset(&filab[1827],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+        
+	icomp[0]=2;
+	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export of PS to exo not tested.\n");
+	countvars+=1;
+      }    
+    }
+
+    /* storing the liquid depth in the channel nodes */
+    if(strcmp1(&filab[2349],"PS  ")==0){
+      if (countbool==3){
+	countvars+=1;
+      }else if(countbool==2){
+	var_names[countvars++]="DEPTH";
+      }else{
+	
+	iselect=-1;
+	frdset(&filab[2349],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+	
+	icomp[0]=2;
+	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export of DEPTH to exo not tested.\n");
+	countvars+=1;
+      }
+    }
+
+    /* storing the critical depth in the channel nodes */
+    if(strcmp1(&filab[2436],"HCRI")==0){
+      if (countbool==3){
+	countvars+=1;
+      }else if(countbool==2){
+	var_names[countvars++]="HCRIT";
+      }else{
+
+	iselect=-1;
+	frdset(&filab[2436],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+    
+	icomp[0]=3;
+	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export of HCRIT to exo not tested.\n");
+	countvars+=1;
+      }
+    }
+
+    /* storing the static temperature in the network nodes */
+    if(strcmp1(&filab[1392],"TS  ")==0){
+      if (countbool==3){
+	countvars+=1;
+      }else if(countbool==2){
+	var_names[countvars++]="STTEMP";
+      }else{
+
+	iselect=-1;
+	frdset(&filab[1392],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+    
+	icomp[0]=3;
+	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export of STTEMP to exo not tested.\n");
+	countvars+=1;
+      }
+    }
+
     /*  the remaining lines only apply to frequency calculations
 	with cyclic symmetry, complex frequency and steady state calculations */
   
-    // if((*nmethod!=2)&&(*nmethod!=5)&&(*nmethod!=6)){ex_close(exoid);return;}
-    // if((*nmethod==5)&&(*mode==-1)){ex_close(exoid);return;}
+    if((*nmethod!=2)&&(*nmethod!=5)&&(*nmethod!=6)){goto WRITENAMES;}
+    if((*nmethod==5)&&(*mode==-1)){goto WRITENAMES;}
   
-    //  /* storing the displacements in the nodes (magnitude, phase) */
-    //	  
-    //  if(strcmp1(&filab[870],"PU  ")==0){
-    //    iselect=1;
-    //    
-    //    frdset(&filab[870],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  PDISP       6    1\n");
-    //    fprintf(f1," -5  MAG1        1   12    1    0\n");
-    //    fprintf(f1," -5  MAG2        1   12    2    0\n");
-    //    fprintf(f1," -5  MAG3        1   12    3    0\n");
-    //    fprintf(f1," -5  PHA1        1   12    4    0\n");
-    //    fprintf(f1," -5  PHA2        1   12    5    0\n");
-    //    fprintf(f1," -5  PHA3        1   12    6    0\n");
-    //
-    //    frdselect(vr,vi,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompvectph,ifieldvectph,icompvectph,
-    //                nfieldvectph,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
-    //  /* storing the temperatures in the nodes (magnitude, phase) */
-    //	  
-    //  if(strcmp1(&filab[957],"PNT ")==0){
-    //    iselect=1;
-    //    
-    //    frdset(&filab[957],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  PNDTEMP     2    1\n");
-    //    fprintf(f1," -5  MAG1        1    1    1    0\n");
-    //    fprintf(f1," -5  PHA1        1    1    2    0\n");
-    //
-    //    frdselect(vr,vi,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompscalph,ifieldscalph,icompscalph,
-    //                nfieldscalph,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
-    //  /* storing the stresses in the nodes (magnitude, phase) */
-    //	  
-    //  if(strcmp1(&filab[1479],"PHS ")==0){
-    //    iselect=1;
-    //    
-    //    frdset(&filab[1479],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    // Note reordered (done in exoselect) relative to frd file
-    // Order must be xx  yy  zz  xy  xz  yz
-    //    fprintf(f1," -4  PSTRESS    12    1\n");
-    //    fprintf(f1," -5  MAGXX       1    4    1    1\n");
-    //    fprintf(f1," -5  MAGYY       1    4    2    2\n");
-    //    fprintf(f1," -5  MAGZZ       1    4    3    3\n");
-    //    fprintf(f1," -5  MAGXY       1    4    1    2\n");
-    //    fprintf(f1," -5  MAGYZ       1    4    2    3\n");
-    //    fprintf(f1," -5  MAGZX       1    4    3    1\n");
-    //    fprintf(f1," -5  PHAXX       1    4    1    1\n");
-    //    fprintf(f1," -5  PHAYY       1    4    2    2\n");
-    //    fprintf(f1," -5  PHAZZ       1    4    3    3\n");
-    //    fprintf(f1," -5  PHAXY       1    4    1    2\n");
-    //    fprintf(f1," -5  PHAYZ       1    4    2    3\n");
-    //    fprintf(f1," -5  PHAZX       1    4    3    1\n");
-    //
-    //    frdselect(stnr,stni,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncomptensph,ifieldtensph,icomptensph,
-    //                nfieldtensph,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
-    //  /* storing the displacements in the nodes (magnitude, phase) */
-    //	  
-    //  if(strcmp1(&filab[2610],"PRF ")==0){
-    //    iselect=1;
-    //    
-    //    frdset(&filab[2610],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  PFORC       6    1\n");
-    //    fprintf(f1," -5  MAG1        1   12    1    0\n");
-    //    fprintf(f1," -5  MAG2        1   12    2    0\n");
-    //    fprintf(f1," -5  MAG3        1   12    3    0\n");
-    //    fprintf(f1," -5  PHA1        1   12    4    0\n");
-    //    fprintf(f1," -5  PHA2        1   12    5    0\n");
-    //    fprintf(f1," -5  PHA3        1   12    6    0\n");
-    //
-    //    frdselect(fnr,fni,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncompvectph,ifieldvectph,icompvectph,
-    //                nfieldvectph,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
+    /* storing the displacements in the nodes (magnitude, phase) */
+    if(strcmp1(&filab[870],"PU  ")==0){
+      if (countbool==3){
+	countvars+=6;
+      }else if(countbool==2){
+	// Note reordered (done in exoselect) relative to frd file
+	// Order must be xx  yy  zz  xy  xz  yz
+	var_names[countvars++]="PDISP MAG1";
+	var_names[countvars++]="PDISP MAG2";
+	var_names[countvars++]="PDISP MAG3";
+	var_names[countvars++]="PDISP PHA1";
+	var_names[countvars++]="PDISP PHA3";
+	var_names[countvars++]="PDISP PHA2";
+      }else{
+	iselect=1;
+	
+	frdset(&filab[870],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+	
+	exoselect(vr,vi,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompvectph,ifieldvectph,icompvectph,
+		  nfieldvectph,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export of PDISP to exo not tested.\n");
+	countvars+=6;
+      }
+    }
+
+    /* storing the temperatures in the nodes (magnitude, phase) */
+    if(strcmp1(&filab[957],"PNT ")==0){
+      if (countbool==3){
+	countvars+=2;
+      }else if(countbool==2){
+	var_names[countvars++]="PNDTEMP MAG1";
+	var_names[countvars++]="PNDTEMP PHA2";
+      }else{
+	iselect=1;
+	
+	frdset(&filab[957],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+    
+	exoselect(vr,vi,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompscalph,ifieldscalph,icompscalph,
+		  nfieldscalph,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export of PNDTEMP to exo not tested.\n");
+	countvars+=6;
+      }
+    }
+
+    /* storing the stresses in the nodes (magnitude, phase) */
+	  
+    if(strcmp1(&filab[1479],"PHS ")==0){
+      if (countbool==3){
+	countvars+=12;
+      }else if(countbool==2){
+	// Note reordered (done in exoselect) relative to frd file
+	// Order must be xx  yy  zz  xy  xz  yz
+	var_names[countvars++]="PSTRESS MAGXX";
+	var_names[countvars++]="PSTRESS MAGYY";
+	var_names[countvars++]="PSTRESS MAGZZ";
+	var_names[countvars++]="PSTRESS MAGXY";
+	var_names[countvars++]="PSTRESS MAGXZ";
+	var_names[countvars++]="PSTRESS MAGYZ";
+	var_names[countvars++]="PSTRESS PHAXX";
+	var_names[countvars++]="PSTRESS PHAYY";
+	var_names[countvars++]="PSTRESS PHAZZ";
+	var_names[countvars++]="PSTRESS PHAXY";
+	var_names[countvars++]="PSTRESS PHAXZ";
+	var_names[countvars++]="PSTRESS PHAYZ";
+      }else{
+	iselect=1;
+	
+	frdset(&filab[1479],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+	
+	exoselect(stnr,stni,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncomptensph,ifieldtensph,icomptensph,
+		  nfieldtensph,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export of PSTRESS to exo not tested.\n");
+	countvars+=12;
+      }
+    }
+
+    /* storing the displacements in the nodes (magnitude, phase) */
+    if(strcmp1(&filab[2610],"PRF ")==0){
+      if (countbool==3){
+	countvars+=6;
+      }else if(countbool==2){
+	// Note reordered (done in exoselect) relative to frd file
+	// Order must be xx  yy  zz  xy  xz  yz
+	var_names[countvars++]="PFORC MAG1";
+	var_names[countvars++]="PFORC MAG2";
+	var_names[countvars++]="PFORC MAG3";
+	var_names[countvars++]="PFORC PHA1";
+	var_names[countvars++]="PFORC PHA3";
+	var_names[countvars++]="PFORC PHA2";
+      }else{
+	iselect=1;
+    
+	frdset(&filab[2610],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+    
+	exoselect(fnr,fni,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompvectph,ifieldvectph,icompvectph,
+		  nfieldvectph,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export of PFORC to exo not tested.\n");
+	countvars+=6;
+      }
+    }
+
     /* the remaining parts are for frequency calculations with cyclic symmetry only */
-  
-    // if(*nmethod!=2){ex_close(exoid);return;}
-  
-    //  /* storing the maximum displacements of the nodes in the base sector
-    //     (components, magnitude) */
-    //	  
-    //  if(strcmp1(&filab[1566],"MAXU")==0){
-    //    iselect=1;
-    //    
-    //    frdset(&filab[1566],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  MDISP       4    1\n");
-    //    fprintf(f1," -5  DX          1    4    1    0\n");
-    //    fprintf(f1," -5  DY          1    4    2    0\n");
-    //    fprintf(f1," -5  DZ          1    4    3    0\n");
-    //    fprintf(f1," -5  ANG         1    4    4    0\n");
-    //    
-    //    ncomp=4;
-    //    ifield[0]=1;icomp[0]=1;
-    //    ifield[1]=1;icomp[1]=2;
-    //    ifield[2]=1;icomp[2]=3;
-    //    ifield[3]=1;icomp[3]=0;
-    //    nfield[0]=4;nfield[1]=4;
-    //
-    //    frdselect(vmax,vmax,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncomp,ifield,icomp,
-    //                nfield,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
+    if(*nmethod!=2){goto WRITENAMES;}
+    
+    /* storing the maximum displacements of the nodes in the base sector
+       (components, magnitude) */
+	  
+    if(strcmp1(&filab[1566],"MAXU")==0){
+      if (countbool==3){
+	countvars+=4;
+      }else if(countbool==2){
+	var_names[countvars++]="MDISP DX";
+	var_names[countvars++]="MDISP DY";
+	var_names[countvars++]="MDISP DZ";
+	var_names[countvars++]="MDISP ANG";
+      }else{
+	iselect=1;
+      
+	frdset(&filab[1566],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+    
+	ncomp=4;
+	ifield[0]=1;icomp[0]=1;
+	ifield[1]=1;icomp[1]=2;
+	ifield[2]=1;icomp[2]=3;
+	ifield[3]=1;icomp[3]=0;
+	nfield[0]=4;nfield[1]=4;
+
+	exoselect(vmax,vmax,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncomp,ifield,icomp,
+		  nfield,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export of MDISP to exo not tested.\n");
+	countvars+=4;
+      }
+    }
+
     //  /* storing the worst principal stress at the nodes
     //     in the basis sector (components, magnitude)
     //
@@ -1514,87 +1461,89 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     //     absolute value of all principal stresses, times
     //     its original sign */
     //	  
-    //  if(strcmp1(&filab[1653],"MAXS")==0){
-    //    iselect=1;
-    //    
-    //    frdset(&filab[1653],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  MSTRESS     7    1\n");
-    // Note reordered (done in exoselect) relative to frd file
-    // Order must be xx  yy  zz  xy  xz  yz
-    //    fprintf(f1," -5  SXX         1    4    1    1\n");
-    //    fprintf(f1," -5  SYY         1    4    2    2\n");
-    //    fprintf(f1," -5  SZZ         1    4    3    3\n");
-    //    fprintf(f1," -5  SXY         1    4    1    2\n");
-    //    fprintf(f1," -5  SYZ         1    4    2    3\n");
-    //    fprintf(f1," -5  SZX         1    4    3    1\n");
-    //    fprintf(f1," -5  MAG         1    4    0    0\n");
-    //    
-    //    ncomp=7;
-    //    ifield[0]=1;icomp[0]=1;
-    //    ifield[1]=1;icomp[1]=2;
-    //    ifield[2]=1;icomp[2]=3;
-    //    ifield[3]=1;icomp[3]=4;
-    //    ifield[4]=1;icomp[4]=6;
-    //    ifield[5]=1;icomp[5]=5;
-    //    ifield[6]=1;icomp[6]=0;
-    //    nfield[0]=7;nfield[1]=7;
-    //
-    //    frdselect(stnmax,stnmax,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncomp,ifield,icomp,
-    //                nfield,&iselect,m2,f1,output,m3);
-    //
-    //  }
-    //
-    //  /* storing the worst principal strain at the nodes
-    //     in the basis sector (components, magnitude)
-    //
-    //     the worst principal strain is the maximum of the
-    //     absolute value of all principal strains, times
-    //     its original sign */
-    //	  
-    //  if(strcmp1(&filab[2523],"MAXE")==0){
-    //    iselect=1;
-    //    
-    //    frdset(&filab[2523],set,&iset,istartset,iendset,ialset,
-    //	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-    //	   ngraph);
-    //    
-    //    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-    //	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-    //
-    //    fprintf(f1," -4  MSTRAIN     7    1\n");
-    // Note reordered (done in exoselect) relative to frd file
-    // Order must be xx  yy  zz  xy  xz  yz
-    //    fprintf(f1," -5  EXX         1    4    1    1\n");
-    //    fprintf(f1," -5  EYY         1    4    2    2\n");
-    //    fprintf(f1," -5  EZZ         1    4    3    3\n");
-    //    fprintf(f1," -5  EXY         1    4    1    2\n");
-    //    fprintf(f1," -5  EYZ         1    4    2    3\n");
-    //    fprintf(f1," -5  EZX         1    4    3    1\n");
-    //    fprintf(f1," -5  MAG         1    4    0    0\n");
-    //    
-    //    ncomp=7;
-    //    ifield[0]=1;icomp[0]=1;
-    //    ifield[1]=1;icomp[1]=2;
-    //    ifield[2]=1;icomp[2]=3;
-    //    ifield[3]=1;icomp[3]=4;
-    //    ifield[4]=1;icomp[4]=6;
-    //    ifield[5]=1;icomp[5]=5;
-    //    ifield[6]=1;icomp[6]=0;
-    //    nfield[0]=7;nfield[1]=7;
-    //
-    //    frdselect(eenmax,eenmax,&iset,&nkcoords,inum,m1,istartset,iendset,
-    //                ialset,ngraph,&ncomp,ifield,icomp,
-    //                nfield,&iselect,m2,f1,output,m3);
-    //
-    //  }
+    if(strcmp1(&filab[1653],"MAXS")==0){
+      if (countbool==3){
+	countvars+=7;
+      }else if(countbool==2){
+	// Note reordered (done in exoselect) relative to frd file
+	// Order must be xx  yy  zz  xy  xz  yz
+	var_names[countvars++]="MSTRESS SXX";
+	var_names[countvars++]="MSTRESS SYY";
+	var_names[countvars++]="MSTRESS SZZ";
+	var_names[countvars++]="MSTRESS SXY";
+	var_names[countvars++]="MSTRESS SXZ";
+	var_names[countvars++]="MSTRESS SYZ";
+	var_names[countvars++]="MSTRESS MAG";
+      }else{
+	iselect=1;
+      
+	frdset(&filab[1653],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
     
+	ncomp=7;
+	ifield[0]=1;icomp[0]=1;
+	ifield[1]=1;icomp[1]=2;
+	ifield[2]=1;icomp[2]=3;
+	ifield[3]=1;icomp[3]=4;
+	ifield[4]=1;icomp[4]=6;
+	ifield[5]=1;icomp[5]=5;
+	ifield[6]=1;icomp[6]=0;
+	nfield[0]=7;nfield[1]=7;
+
+	exoselect(stnmax,stnmax,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncomp,ifield,icomp,
+		  nfield,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export of MSTRESS to exo not tested.\n");
+	countvars+=7;
+      }
+    }
+
+    /* storing the worst principal strain at the nodes
+       in the basis sector (components, magnitude)
+
+       the worst principal strain is the maximum of the
+       absolute value of all principal strains, times
+       its original sign */
+    if(strcmp1(&filab[2523],"MAXE")==0){
+      if (countbool==3){
+	countvars+=7;
+      }else if(countbool==2){
+	// Note reordered (done in exoselect) relative to frd file
+	// Order must be xx  yy  zz  xy  xz  yz
+	var_names[countvars++]="MAXE EXX";
+	var_names[countvars++]="MAXE EYY";
+	var_names[countvars++]="MAXE EZZ";
+	var_names[countvars++]="MAXE EXY";
+	var_names[countvars++]="MAXE EXZ";
+	var_names[countvars++]="MAXE EYZ";
+	var_names[countvars++]="MAXE MAG";
+      }else{
+	iselect=1;
+    
+	frdset(&filab[2523],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+    
+	ncomp=7;
+	ifield[0]=1;icomp[0]=1;
+	ifield[1]=1;icomp[1]=2;
+	ifield[2]=1;icomp[2]=3;
+	ifield[3]=1;icomp[3]=4;
+	ifield[4]=1;icomp[4]=6;
+	ifield[5]=1;icomp[5]=5;
+	ifield[6]=1;icomp[6]=0;
+	nfield[0]=7;nfield[1]=7;
+
+	exoselect(eenmax,eenmax,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncomp,ifield,icomp,
+		  nfield,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export of MAXE to exo not tested.\n");
+	countvars+=7;
+      }
+    }
+    
+  WRITENAMES:
     if (countbool==3){
       errr = ex_put_var_param (exoid, "n", countvars);
       ex_update (exoid);  
