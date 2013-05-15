@@ -138,7 +138,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     // Find the number of sets
     exosetfind(set, nset, ialset, istartset, iendset, 
 	       &num_ns, &num_ss, &num_es, &num_fs, NULL, exoid, (int) 0);
-    printf ("Side sets not implemented.\n");
+    printf ("Side sets to exo file not implemented.\n");
     num_ss=0;
 
     exoid = ex_create (fneig, /*Filename*/
@@ -576,7 +576,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  exovector(&v[*nk*(mi[1]+1)],&iset,ntrans,filab,&nkcoords,inum,inotr,
 		    trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
 		    num_time_steps,countvars,nout);
-	  printf ("Warning: export of imaginary part of displacement to exo not tested.\n");
+
 	  countvars+=3;
 	}
       }
@@ -600,7 +600,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	exovector(veold,&iset,ntrans,&filab[1740],&nkcoords,inum,inotr,
 		  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
 		  num_time_steps,countvars,nout);
-	printf ("Warning velocity to exo not tested.\n");
+
 	countvars+=3;
       }
     }
@@ -679,7 +679,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  exoselect(&stn[6**nk],stn,&iset,&nkcoords,inum,istartset,iendset,
 	  	    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
 	  	    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
-	  printf ("Warning: export of imaginary part of stress to exo not tested.\n");
 	  countvars+=6;
 	}
       }
@@ -709,6 +708,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	exoselect(een,een,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
 		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+
 	countvars+=6;
       }
     }
@@ -732,7 +732,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  exoselect(&een[6**nk],een,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
 		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
-	  printf ("Warning: export of imaginary part of strain to exo not tested.\n");
+
 	  countvars+=6;
 	}
       }
@@ -753,14 +753,12 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	var_names[countvars++]="MEyz";
       }else{
 	iselect=1;
-      
 	frdset(&filab[2697],set,&iset,istartset,iendset,ialset,
 	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 	       ngraph);
 	exoselect(emn,emn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
 		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
-	printf ("Warning: export of mechanical strain to exo not tested.\n");
 	countvars+=6;
       }    
     }
@@ -784,7 +782,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  exoselect(&emn[6**nk],een,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
 		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
-	  printf ("Warning: export of imaginary part of mechanical strain to exo not tested.\n");
 	  countvars+=6;      
 	}
       }
@@ -801,15 +798,12 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	var_names[countvars++]="RFz";
       }else{
 	iselect=1;
-	
 	frdset(&filab[348],set,&iset,istartset,iendset,ialset,
 	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 	       ngraph);
-      
 	exovector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,inotr,
 		  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
 		  num_time_steps,countvars,nout);
-	printf ("Warning force to exo not tested.\n");
 	countvars+=3;
       }
     }
@@ -828,7 +822,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  exovector(&fn[*nk*(mi[1]+1)],&iset,ntrans,filab,&nkcoords,inum,inotr,
 		    trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
 		    num_time_steps,countvars,nout);
-	  printf ("Warning imaginary force to exo not tested.\n");
 	  countvars+=3;
 	}
       }
@@ -842,7 +835,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	var_names[countvars++]="PEEQ";
       }else{
 	iselect=1;
-	
 	frdset(&filab[435],set,&iset,istartset,iendset,ialset,
 	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 	       ngraph);
@@ -863,7 +855,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	var_names[countvars++]="ENER";
       }else{
 	iselect=1;
-	
 	frdset(&filab[522],set,&iset,istartset,iendset,ialset,
 	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 	       ngraph);
@@ -1113,7 +1104,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomp,ifield,icomp,
 		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
-	printf ("Warning: export of error estimation to exo not tested.\n");
+
 	countvars+=2;
       }
     }
@@ -1140,7 +1131,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
 		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
-	  printf ("Warning: export of error estimation to exo not tested.\n");
+
 	  countvars+=2;
 	}
       }
