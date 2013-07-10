@@ -16,15 +16,16 @@
 
 void pardiso_main(double *ad, double *au, double *adb, double *aub, double *sigma,
          double *b, int *icol, int *irow, 
-         int *neq, int *nzs);
+	 int *neq, int *nzs,int *symmetryflag,int *inputformat,int *jq,int *nzs3);
 
 void pardiso_factor(double *ad, double *au, double *adb, double *aub, 
                 double *sigma,int *icol, int *irow, 
-                int *neq, int *nzs);
+		int *neq, int *nzs,int *symmetryflag,int *inputformat,
+		int *jq,int *nzs3);
 
-void pardiso_solve(double *b,int *neq);
+void pardiso_solve(double *b,int *neq,int *symmetryflag);
 
-void pardiso_cleanup(int *neq);
+void pardiso_cleanup(int *neq,int *symmetryflag);
 
 void FORTRAN(pardiso,(long int *pt,int *maxfct,int *mnum,int *mtype,int *phase,
                    int *neq,double *aupardiso,int *pointers,int *irowpardiso,

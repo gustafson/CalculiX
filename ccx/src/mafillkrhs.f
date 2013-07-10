@@ -23,7 +23,7 @@
      &  dtime,matname,mi,ncmat_,shcon,nshcon,theta1,
      &  bk,bt,vcontu,isolidsurf,nsolidsurf,ifreestream,nfreestream,
      &  xsolidsurf,yy,compressible,turbulent,ithermal,ipvar,var,ipvarf,
-     &  varf,nea,neb,dtc)
+     &  varf,nea,neb,dt)
 !
 !     filling the rhs b of the turbulence equations (step 5)
 !
@@ -48,9 +48,9 @@
      &  i0,ncmat_,nea,neb
 !
       real*8 co(3,*),xboun(*),coefmpc(*),bk(*),
-     &  vold(0:mi(2),*),var(*),varf(*),dtc(*),
-     &  vcon(0:4,*),ffk(60),rhcon(0:1,ntmat_,*),yy(*),
-     &  shcon(0:3,ntmat_,*),theta1,bt(*),fft(60),vcontu(2,*),
+     &  vold(0:mi(2),*),var(*),varf(*),dt(*),
+     &  vcon(0:4,*),ffk(78),rhcon(0:1,ntmat_,*),yy(*),
+     &  shcon(0:3,ntmat_,*),theta1,bt(*),fft(78),vcontu(2,*),
      &  xsolidsurf(*)
 !
       real*8 dtime
@@ -84,15 +84,11 @@
            cycle
         endif
 !
-c        do j=1,nope
-c          konl(j)=kon(indexe+j) 
-c        enddo
-!
         call e_c3d_krhs(co,nk,kon(indexe+1),lakon(i),ffk,fft,i,nmethod,
      &       rhcon,
      &       nrhcon,ielmat,ntmat_,vold,vcon,dtime,matname,mi(1),
      &       shcon,nshcon,vcontu,compressible,yy,nelemface,sideface,
-     &       nface,turbulent,ithermal,ipvar,var,ipvarf,varf,dtc)
+     &       nface,turbulent,ithermal,ipvar,var,ipvarf,varf,dt)
 !
         do jj=1,nope
 !

@@ -16,7 +16,6 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-     
       subroutine multistages (nkon,set,istartset,iendset,
      &  ialset,nset,tieset,tietol,co,nk,ipompc,nodempc,
      &  coefmpc,nmpc,nmpc_,ikmpc,ilmpc,mpcfree,xind,yind,ics,nx,ny,
@@ -26,13 +25,14 @@
 !
       implicit none
 !
-      logical nodesonaxis,cylindrical,replace,left,right
+      logical nodesonaxis,cylindrical,replace,left,right,multistage
 !
       character*8 lakon(*)
       character*20 labmpc(*)
       character*81 set(*),leftset,rightset,tieset(3,*),temp
 !     
-      integer istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
+      integer istartset(*),iendset(*),ialset(*),ipompc(*),
+     &     nodempc(3,*),
      &     nset,i,j,k,nk,nmpc,nmpc_,mpcfree,ics(*),l,ikmpc(*),ilmpc(*),
      &     lcs(*),kflag,ncsnodes,ncs_,mcs,ntie,nrcg(*),nzcg(*),jcs(*),
      &     kontri(3,*),ne,ipkon(*),kon(*),ifacetet(*),inodface(*),
@@ -53,7 +53,8 @@
 !
       data lathyp /1,2,3,1,3,2,2,1,3,2,3,1,3,1,2,3,2,1/
 ! 
-      pi=4.*atan(1.);
+      pi=4.*atan(1.)
+      multistage=.true.
 !     
 !     Find the TIE numbers which describe multistage connections
 !     
@@ -129,6 +130,7 @@
                   nope=6
                elseif(lakon(k)(1:2).eq.'ES') then
                   read(lakon(k)(8:8),'(i1)') nope
+                  nope=nope+1
                endif
 !
                do l=indexe+1,indexe+nope
@@ -385,7 +387,7 @@ c
      &              rcscg,rcs0cg,zcscg,zcs0cg,nrcg,nzcg,
      &              straight,nodef,ratio,nterms,yp,zp,netri,
      &              noder0,ifacetet,inodface,ialset(j),
-     &              T(1,1),T(1,2),T(1,3),ier)
+     &              T(1,1),T(1,2),T(1,3),ier,multistage)
 !     
                if ((kseg.eq.(noder(4))-1.d0).and.(replace)) then
                   cs(1,mcs+1)=-noder(4)

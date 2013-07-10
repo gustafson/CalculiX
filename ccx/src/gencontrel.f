@@ -71,6 +71,8 @@ C> @param   [out]    pslavdual	 (1:4,i)dual shape functions for face i
 !
       implicit none
 !
+      logical checkbiorthogonality
+!
       character*8 lakon(*)
       character*81 tieset(3,*),slavset,set(*)
 !
@@ -85,25 +87,18 @@ C> @param   [out]    pslavdual	 (1:4,i)dual shape functions for face i
      &  mint2d,m,nopes,konl(20),id,indexnode(8),
      &  line,
      &  ipe(*),ime(4,*),nintpoint,
-     &  ipiv(4),ifac,getiface
+     &  ipiv(4),ifac,getiface,nodesf,ifs,
+     &   flagtan
 !
       real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),
      &  pmastsurf(2,*),et,xi,xl2s(3,8),xsj2(3),
      &  shp2(7,8),t1(6),t2(6),xlnode(3),
      &  xs2(3,2),slavnor(3,*),slavtan(6,*), xquad(2,8), xtri(2,6),dd,
      &  al2,xn(3),xnabs(3),e(3,3),
-     &  pslavdual(16,*)
-!
-      real*8 pslavsurf(3,*),err
-      
-      integer nodesf,ifs,
-     &   flagtan
-      real*8  xs2m(3,2),xsj2m(3)
-      
-      logical checkbiorthogonality
+     &  pslavdual(16,*),pslavsurf(3,*),err,xs2m(3,2),xsj2m(3)
 !     
       include "gauss.f"
-
+!
       data iflag /2/
       ijk=0
 !     
@@ -124,14 +119,14 @@ C> @param   [out]    pslavdual	 (1:4,i)dual shape functions for face i
      &          0.5, 0,
      &          0.5, 0.5,
      &          0, 0.5/
-     
+!     
       data e /1.d0 , 0.d0 , 0.d0,
      &        0.d0 , 1.d0 , 0.d0,
      &        0.d0 , 0.d0 , 1.d0/
 !
       checkbiorthogonality=.false.
       flagtan=7
-
+!
       open(40,file='contact.fbd',status='unknown')
       open(50,file='slavtan.fbd',status='unknown')
       open(20,file='slavintmortar.out',status='unknown')
@@ -152,8 +147,7 @@ C> @param   [out]    pslavdual	 (1:4,i)dual shape functions for face i
 !
       do i=1,ntie
          if(tieset(1,i)(81:81).ne.'C') cycle
-         kneigh=1
-!     
+         kneigh=1     
          slavset=tieset(2,i)
          ipos=index(slavset,' ')
          if(slavset(ipos-1:ipos-1).eq.'S') cycle
@@ -185,19 +179,15 @@ C> @param   [out]    pslavdual	 (1:4,i)dual shape functions for face i
                konl(j)=kon(ipkon(nelems)+j)
             enddo
 !     
-
             do m=1,nopes
                ifac=getiface(m,jfaces,nope)
-c               if(l.eq.1)write(*,*)'gencontrel,node',konl(ifac)
                do j=1,3
                   xl2s(j,m)=co(j,konl(ifac))+
-     &                 vold(j,konl(ifac))  
-c        if(l.eq.1)write(*,*)co(j,konl(ifac)),vold(j,konl(ifac)) 
+     &                 vold(j,konl(ifac))   
                enddo
             enddo          
 !     calculate the normal vector in the nodes belonging to the slave surface
 !     
-c            if(nopes.eq.8) then
                do m = 1, nopes
                   if(nopes.eq.4 .or. nopes.eq.8)then
                      xi = xquad(1,m)
@@ -219,11 +209,9 @@ c            if(nopes.eq.8) then
      &                 + xsj2(3)*xsj2(3))
                   xsj2(1) = xsj2(1)/dd
                   xsj2(2) = xsj2(2)/dd
-                  xsj2(3) = xsj2(3)/dd
-!                 
+                  xsj2(3) = xsj2(3)/dd                 
                   ifac=getiface(m,jfaces,nope)
                   node = konl(ifac)
-
                   call nident(islavnode(nslavnode(i)+1), node, 
      &                 nslavnode(i+1)-nslavnode(i), id)
                   index1=nslavnode(i)+id
@@ -235,9 +223,7 @@ c            if(nopes.eq.8) then
                   slavnor(3,index1) = slavnor(3,index1)
      &                 +xsj2(3)
                enddo
-
-
-
+!
  105     format(4(1x,e15.8))
          enddo
 !     
@@ -249,20 +235,9 @@ c            if(nopes.eq.8) then
             node=islavnode(l)
             dd=dsqrt(slavnor(1,l)**2+slavnor(2,l)**2+
      &           slavnor(3,l)**2)
-c            if(node.eq.51 .or.node.eq.52)then
-c             slavnor(1,l)=-1.0
-c             slavnor(2,l)=0.0
-c             slavnor(3,l)=0.0
-c            endif
-c            if(node.eq.67 .or.node.eq.68)then
-c             slavnor(1,l)=-0.5*sqrt(3.0)
-c             slavnor(2,l)=-0.5
-c             slavnor(3,l)=0.0
-c            endif
             do m=1,3
                slavnor(m,l)=slavnor(m,l)/dd
             enddo
-c     write(*,*) 'slavnor(',l,')',(slavnor(m,l),m=1,3)
 !     
 !     determining the tangential directions
 !     
@@ -282,14 +257,13 @@ c     write(*,*) 'slavnor(',l,')',(slavnor(m,l),m=1,3)
             call dsort(xnabs,kmax,number,kflag)
 ! 
 ! tan5    
-
+!
       if(flagtan==5.or.flagtan==4.or.flagtan==1)then
             km1=kmax(3)
             km2=km1+1
             if(km2.gt.3) km2=1
             km3=km2+1
-            if(km3.gt.3) km3=1
-     
+            if(km3.gt.3) km3=1     
             t1(km1)=-slavnor(km3,l)
             t1(km3)=slavnor(km1,l)
             t1(km2)=0.d0
@@ -302,11 +276,7 @@ c     write(*,*) 'slavnor(',l,')',(slavnor(m,l),m=1,3)
             t1(5)=xn(3)*t1(1)
      &           -xn(1)*t1(3)
             t1(6)=xn(1)*t1(2)
-     &           -xn(2)*t1(1)
-c       write(*,*) 'slavnode t1',l,node
-c       write(*,*)(slavnor(m,l),m=1,3)
-c       write(*,*)(t1(m),m=1,3)
-c       write(*,*)(t1(m+3),m=1,3)     
+     &           -xn(2)*t1(1)   
             t2(km1)=-slavnor(km2,l)
             t2(km2)=slavnor(km1,l)
             t2(km3)=0.d0
@@ -319,11 +289,7 @@ c       write(*,*)(t1(m+3),m=1,3)
             t2(5)=xn(3)*t2(1)
      &           -xn(1)*t2(3)
             t2(6)=xn(1)*t2(2)
-     &           -xn(2)*t2(1)
-c       write(*,*) 'slavnode t2',l,node
-c       write(*,*)(slavnor(m,l),m=1,3)
-c       write(*,*)(t2(m),m=1,3)
-c       write(*,*)(t2(m+3),m=1,3)     
+     &           -xn(2)*t2(1)     
             do m=1,3
                if(flagtan==5)then
                   slavtan(m,l)=(t1(m)+t2(m))
@@ -353,7 +319,6 @@ c       write(*,*)(t2(m+3),m=1,3)
                slavtan(m,l)=slavtan(m,l)/dd
             enddo
           elseif(flagtan==6)then
-
 ! A.Popp
              if(abs(xn(2))>1.d-6)then
                 slavtan(1,l)=1.d0
@@ -408,13 +373,7 @@ c       write(*,*)(t2(m+3),m=1,3)
                slavtan(5,l)=-(xn(3)*slavtan(1,l)-xn(1)*slavtan(3,l))
                slavtan(6,l)=-(xn(1)*slavtan(2,l)-xn(2)*slavtan(1,l)) 
           endif
-c        if(node.eq.1450 .or. node.eq.1441 .or. node.eq.1423)then
-c          write(*,*) 'node',node, l
-c          write(*,*) (slavnor(m,l),m=1,3)
-c          write(*,*) (slavtan(m,l),m=1,3)
-c          write(*,*) (slavtan(3+m,l),m=1,3)
-c        endif
-
+!
          ijk=ijk+1
          write(50,100) ijk,(xlnode(m),m=1,3)
          ijk=ijk+1
@@ -431,7 +390,7 @@ c        endif
          enddo
 !     
       enddo
-
+!
       close(50)
       return
       end

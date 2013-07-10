@@ -19,7 +19,7 @@
       subroutine umat_aniso_plas(amat,iel,iint,kode,elconloc,emec,
      &        emec0,beta,xokl,voj,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi,nstate_,xstateini,xstate,stre,stiff,iorien,
-     &        pgauss,orab,nmethod)
+     &        pgauss,orab,nmethod,pnewdt)
 !
 !     calculates stiffness and stresses for a user defined material
 !     law
@@ -120,12 +120,12 @@
 !
       integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien,
      &  i,j,ipiv(6),info,neq,lda,ldb,j1,j2,j3,j4,j5,j6,j7,j8,
-     &  nrhs,iplas,kel(4,21),nmethod,ielastic
+     &  nrhs,iplas,kel(4,21),nmethod,ielastic,iloop
 !
       real*8 ep0(6),al10,al20(6),eeq,ep(6),al1,b,Pn(6),QSn(6),
      &  al2(6),dg,ddg,ca,cn,c(21),r0,x(21),cm1(21),h1,h2,
      &  q1,q2(6),stri(6),htri,sg(6),r(13),au1(21),au2(21),
-     &  ee(6),dd,gl(6,6),gr(6,6),c0,c1,c2,c3,c4,c5,c6,
+     &  ee(6),dd,gl(6,6),gr(6,6),c0,c1,c2,c3,c4,c5,c6,pnewdt,
      &  skl(3,3),gcreep,gm1,ya(3,3,3,3),d1,d2,dsg,detc,strinv,
      &  elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xokl(3,3),voj,pgauss(3),orab(7,*),
@@ -135,6 +135,8 @@
      &          1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,
      &          3,3,1,3,1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,
      &          1,2,2,3,1,3,2,3,2,3,2,3/),(/4,21/))
+!
+      iloop=0
 !
       c0=dsqrt(2.d0/3.d0)
       c1=2.d0/3.d0
@@ -194,16 +196,11 @@
          al20(i)=xstateini(8+i,iint,iel)
       enddo
 !
-      if((iint.eq.1).and.(iel.eq.1)) then
-      endif
-!
 !     elastic strains
 !
       do i=1,6
          ee(i)=emec(i)-ep0(i)
       enddo
-      if((iint.eq.1).and.(iel.eq.1)) then
-      endif
 !
 !     (visco)plastic constants
 !
@@ -239,8 +236,6 @@
       do i=1,6
          q2(i)=-d2*al20(i)
       enddo
-      if((iint.eq.1).and.(iel.eq.1)) then
-      endif
 !
 !     global trial stress tensor
 !
@@ -451,9 +446,20 @@
 !
 !     loop
 !
-      if((iint.eq.1).and.(iel.eq.1)) then
-      endif
       do
+!
+         iloop=iloop+1
+         if(iloop.gt.100) then
+c                  NOTE: write statements cause problems for
+c                        parallellized execution
+c            write(*,*) '*WARNING in umat_aniso_plas: material loop'
+c            write(*,*) '         did not converge in integration'
+c            write(*,*) '         point',iint,'in element',iel,';'
+c            write(*,*) '         the increment size is reduced'
+c            write(*,*)
+            pnewdt=0.25d0
+            return
+         endif
 !
 !        elastic strains
 !

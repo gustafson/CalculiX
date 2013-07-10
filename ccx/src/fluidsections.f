@@ -1,3 +1,4 @@
+
 !
 !     CalculiX - A 3-dimensional finite element program
 !              Copyright (C) 1998-2011 Guido Dhondt
@@ -99,7 +100,16 @@
 !
 !     types of sections
 !
-      if(typename(1:18).eq.'ABSOLUTETORELATIVE') then
+      if(typename(1:5).eq.'INOUT')then
+         elname='IO     '
+         ndprop=0
+      elseif(typename(1:9).eq.'PIPEINOUT')then
+         elname='LIPIO  '
+         ndprop=0
+      elseif(typename(1:12).eq.'CHANNELINOUT')then
+         elname='LICHIO '
+         ndprop=0
+      elseif(typename(1:18).eq.'ABSOLUTETORELATIVE') then
          elname='ATR    '
          ndprop=3
 !
@@ -107,13 +117,32 @@
 !
       elseif(typename(1:10).eq.'ACCTUBEONE') then
          elname ='ACCTUBO'
+!
          ndprop=19 
 !
 !     version of Stefanie Asenbauer
 !
       elseif(typename(1:7).eq.'ACCTUBE') then
          elname ='ACCTUBE'
+!
          ndprop=24
+!
+!     inlets and outlets for the general case (flows, pressures and
+!     temperatures unknown)
+!
+      elseif(typename(1:5).eq.'INLET') then
+         elname='INLT   '
+         ndprop=0
+      elseif(typename(1:6).eq.'OUTLET') then
+         elname='OUTLT  '
+         ndprop=0
+!
+!     elements "BLINDLINK" with boundary massflows
+!     (pressures and temperatures unknown)
+!
+      elseif(typename(1:9).eq.'BLINDLINK') then
+         elname='BCMF  '
+         ndprop=0
 !
       elseif(typename(1:12).eq.'BLEEDTAPPING') then
          elname='ORBT   '
@@ -269,7 +298,7 @@
          elseif(typename(9:19).eq.'CENTRIPETAL') then
             elname='MRGP   '
          endif
-         ndprop=8
+         ndprop=10
 !
       elseif(typename(1:7).eq.'ORIFICE') then
          ndprop=8
@@ -404,20 +433,19 @@
       elseif(typename(1:14).eq.'ROTATINGCAVITY') then
          if(typename(15:20).eq.'LINEAR')then
             elname='RCVL   '
-            ndprop=3
          else if(typename(15:23).eq.'NONLINEAR')then
             elname='RCVN   '
-            ndprop=3
          endif
+         ndprop=5
 !
       elseif(typename(1:13).eq.'RADIALOUTFLOW') then
          if(typename(14:24).eq.'RADIALINLET')then
             elname='RORI   '
-            ndprop=4
+
          else if(typename(14:23).eq.'AXIALINLET')then
             elname='ROAI   '
-            ndprop=4
          endif
+         ndprop=6
 !
       else if (typename(1:6).eq.'S-PUMP') then
          elname='SPUMP  '

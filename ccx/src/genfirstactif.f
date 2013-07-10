@@ -77,7 +77,7 @@ c      character*18 cfile
      &  ne0,iteller,ifaces,jfaces,
      &  imastop(3,*), itriangle(100),ntriangle,ntriangle_,itriold,
      &  itrinew,id,nslavnode(*),islavnode(*),islavsurf(2,*),
-     &  itiefac(2,*),iponoels(*),inoels(3,*),konl(20),nelems,m,
+     &  itiefac(2,*),iponoels(*),inoels(2,*),konl(20),nelems,m,
      &  mint2d,nopes,nmethod,
      &  ipos,nset,istartset(*),iendset(*),
      &  ialset(*),islavact(*),ifree,ifac,getiface
@@ -100,6 +100,7 @@ c      character*18 cfile
 !      
       do i=1,ntie
          if(tieset(1,i)(81:81).ne.'C') cycle
+         write(*,*) 'genfirstactiv tie',tieset(3,i)
          kneigh=1
          slavset=tieset(2,i)
 c         material=int(cs(1,i))
@@ -141,11 +142,10 @@ c         material=int(cs(1,i))
                konl(j)=kon(ipkon(nelems)+j)
             enddo
             do m=1,nopes
-               do j=1,3
-                  ifac=getiface(m,jfaces,nope)
+               ifac=getiface(m,jfaces,nope)
+               do j=1,3                  
                   xl2(j,m)=co(j,konl(ifac))+
-     &                 vold(j,konl(ifac))
-                 
+     &                 vold(j,konl(ifac))                
                enddo
             enddo
 !           
@@ -204,6 +204,7 @@ c         material=int(cs(1,i))
 !     
          nstart=itietri(1,i)-1
          n=itietri(2,i)-nstart
+         write(*,*) 'genfirstactiv: tie',i,'n',nstart,n
          if(n.lt.kneigh) kneigh=n
          do j=1,n
             xo(j)=cg(1,nstart+j)
@@ -223,24 +224,9 @@ c         material=int(cs(1,i))
 !
          do j=nslavnode(i)+1,nslavnode(i+1)
             node=islavnode(j)
-c            write(*,*)'j',j,'node',node
 !
-!                 calculating the area corresponding to the
-!                 slave node; is made up of the area
-!                 of the neighboring slave faces
-!
-            area=0.d0
-            index1=iponoels(node)
-            do
-               if(index1.eq.0) exit
-               area=area+areaslav(inoels(1,index1))/
-     &              inoels(2,index1)
-               index1=inoels(3,index1)
-            enddo
-!     
             do k=1,3
                p(k)=co(k,node)+vold(k,node)
-c               write(*,*) 'vold(',node,k,')=', vold(j,node)
             enddo
 !     
 !              determining the kneigh neighboring master contact
@@ -263,7 +249,6 @@ c               write(*,*) 'vold(',node,k,')=', vold(j,node)
      &                    straight(ll+1,itri)*p(2)+
      &                    straight(ll+2,itri)*p(3)+
      &                    straight(ll+3,itri)
-c                     if(dist.gt.0.d0) then
                      if(dist.gt.1.d-6) then
                         itrinew=imastop(l,itri)
                         if(itrinew.eq.0) then
@@ -311,7 +296,6 @@ c                              write(*,*) '**regular solution'
      &                 straight(15,itri)*p(3)+
      &                 straight(16,itri)
      
-c               if(node.eq.3059)write(*,*)'node',node,'dist',dist
 !
 !                 check for an adjust parameter (only in the first
 !                 increment of the first step)
@@ -352,20 +336,6 @@ c                           write(*,*) (co(k,node),k=1,3)
                      endif
                   endif
 !                           
-c                  beta=elcon(1,1,material)
-c                  if(beta.gt.0.d0) then
-c                    c0=dlog(100.d0)/beta
-c                  else
-c                     if(dabs(area).gt.0.d0) then
-c                        c0=1.d-6*dsqrt(area)
-c                     else
-c                        c0=1.d-10
-c                     endif
-c                  endif
-c               WRITE(*,*) dist
-
-c                 c0=1.27d-4
-c                 c0=6.27d-4
                   c0=1.d-10
                  if(dabs(tietol(1,i)).ge.2.d0) then
                     c0=dabs(tietol(1,i))-2.d0
@@ -393,13 +363,16 @@ c                    enddo
 !     
 !                 Active node
                   islavact(j)=2
-!                  WRITE(*,*) "GENFIRSTACTIF",j
+c                  WRITE(*,*) "GENFIRSTACTIF",j
                   ifree=ifree+1
                else
                   islavact(j)=-1
 !     
                endif
 !     
+c         if(i.eq.2) then
+c         write(*,*) 'node',node,'dist',dist,'activ', islavact(j)
+c         endif
          enddo
       enddo
 !

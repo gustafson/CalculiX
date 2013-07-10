@@ -112,7 +112,7 @@
                write(*,*) '       preceded by the amplitude parameter'
                stop
             endif
-            namta(3,nam)=isign(iamplitude,namta(3,iamplitude))
+            namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
             if(nam.eq.1) then
                namtot=0

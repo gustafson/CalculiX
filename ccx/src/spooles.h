@@ -48,7 +48,7 @@ struct factorinfo
 void spooles_factor(double *ad, double *au, double *adb, double *aub, 
                     double *sigma, int *icol, int *irow,
                     int *neq, int *nzs, int *symmetryflag,
-                    int *inputformat);
+                    int *inputformat, int *nzs3);
 
 void spooles_solve(double *b, int *neq);
 

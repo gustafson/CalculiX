@@ -16,10 +16,10 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine genislavactdof(ntie,neq,nactdof,nslavnode,islavact,
-     &     islavactdof,islavnode,mi)
+      subroutine genislavactdof(ntie,tieset,neq,nactdof,nslavnode,
+     &     islavact,islavactdof,islavnode,mi)
 !
-!     Author : Samoela Rakotonanahary
+!     Author : Samoela Rakotonanahary, Saskia Sitzmann
 !     genislavactdof get the field islavactdof in order to 
 !     help calculating the tangential matrices.
 !
@@ -28,9 +28,10 @@
 !     corresponding slave node position in field islavnode and the
 !     global (x-y-z) degree of freedom
 !     
-      integer i,j,k,ntie,neq(*),node,nslavnode(*),mi(*),
-     &     nactdof(0:mi(2),*),
+      integer i,j,k,ntie,neq(*),node,nslavnode(*),
+     &     mi(*),nactdof(0:mi(2),*),
      &     islavact(*),islavactdof(*),islavnode(*)
+      character*81 tieset(3,*)
 !     
 !     close the contact.fbd file
 !
@@ -39,14 +40,13 @@
       close(40)
 !
       do i=1,ntie
+         if(tieset(1,i)(81:81).ne.'C') cycle
          do j = nslavnode(i)+1,nslavnode(i+1)
             node=islavnode(j)
             if(islavact(j).gt.-1) then
                do k=1,3
                   if (nactdof(k,node).eq.0) cycle
                   islavactdof(nactdof(k,node))=10*j+k
-c                  if(j.eq.28)write(*,*)'dof',
-c     &            nactdof(k,node),'v',islavactdof(nactdof(k,node))
                enddo
             endif         
          enddo

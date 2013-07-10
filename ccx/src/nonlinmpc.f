@@ -36,16 +36,18 @@
      &  l,m,lmax,mmax,ikmpc(*),ilmpc(*),icascade,neigh(7,8),
      &  mpc,kon(*),ipkon(*),indexe,ne,idofrem,idofins,nmpc0,nmpc01,
      &  newstep,iit,idiscon,ncont,iexpnode,indexexp,nmpcdif,ntrans,
-     &  nodei,noded,lathyp(3,6),inum,ndir,number,ithermal,mi(*)
+     &  nodei,noded,lathyp(3,6),inum,ndir,number,ithermal,mi(*),
+     &  newknot,indexexp1,indexexp2,indexexp3,idim
 !
       real*8 co(3,*),coefmpc(*),vold(0:mi(2),*),c(3,3),dc(3,3,3),ww,
      &  e(3,3,3),d(3,3),w(3),f(3,3),c1,c2,c3,c4,c5,c6,xbounact(*),
-     &  xboun(*),fmpc(*),expan
-      real*8 dd,a11,a12,a13,a21,a22,a23,a31,a32,a33,
-     &       b11,b12,b13,b21,b22,b23,b31,b32,b33,aux(*),const,
-     &       ddmax,a(3,3),b(3,3),xj,xi,et,ze,xlag(3,20),xeul(3,20),
-     &       coloc(3,8),reltime,csab(7),trab(7,*),pd(3),pi(3),
-     &       ad(3,3),ai(3,3)
+     &  xboun(*),fmpc(*),expan,dd,a11,a12,a13,a21,a22,a23,a31,a32,a33,
+     &  b11,b12,b13,b21,b22,b23,b31,b32,b33,aux(*),const,e1(3),e2(3),
+     &  ddmax,a(3,3),b(3,3),xj,xi,et,ze,xlag(3,20),xeul(3,20),t1(3),
+     &  coloc(3,8),reltime,csab(7),trab(7,*),pd(3),pi(3),e11(3,3),
+     &  ad(3,3),ai(3,3),e22(3,3),e12(3,3),ru(3,3),ru1(3,3),
+     &  ru2(3,3),ru3(3,3),u1(3,3),u2(3,3),u3(3,3),dcu(3,3,3),u(3,3),
+     &  xi1,xi2,xi3,dco,dsi,dco2,dsi2
 !
       data d /1.,0.,0.,0.,1.,0.,0.,0.,1./
       data e /0.,0.,0.,0.,0.,-1.,0.,1.,0.,
@@ -62,7 +64,9 @@
 !     
       data lathyp /1,2,3,1,3,2,2,1,3,2,3,1,3,1,2,3,2,1/
 !
+c      irotnode=0
       irotnode=0
+      irefnode=0
       if((icascade.eq.1).and.(newstep.ne.1).and.(ncont.eq.0)) icascade=0
       isochoric=.false.
 !
@@ -200,29 +204,68 @@ c     &                                    dc(i,j,3)*w(3)
 !           translation node
 !
             index=nodempc(3,index)
-            irefnode=nodempc(1,index)
+            node=nodempc(1,index)
             coefmpc(index)=-1.d0
+!
+!           check whether knot is the same as in the previous MPC
+!
+            if(node.ne.irefnode) then
+               newknot=1
+               irefnode=node
+            else
+               newknot=0
+            endif
+!
+            read(labmpc(ii)(5:5),'(i1)') idim
 !
 !           expansion node
 !
             index=nodempc(3,index)
             iexpnode=nodempc(1,index)
-            expan=1.d0+vold(1,iexpnode)
-            indexexp=index
+!
+            if((idim.eq.1).or.(idim.eq.3)) then
+!
+!              nodes of knot lie on a straight line (1 term in MPC)
+!
+               indexexp=index
+            elseif(idim.eq.2) then
+!
+!              node of knot lie in a plane (3 terms in MPC)
+!
+               indexexp1=index
+               index=nodempc(3,index)
+!
+               indexexp2=index
+               index=nodempc(3,index)
+!
+               indexexp3=index
+!
+            endif
+!
+            if(newknot.eq.1) then
+               if((idim.eq.1).or.(idim.eq.3)) then
+                  expan=1.d0+vold(1,iexpnode)
+               elseif(idim.eq.2) then
+                  xi1=vold(1,iexpnode)
+                  xi2=1.d0+vold(2,iexpnode)
+                  xi3=1.d0+vold(3,iexpnode)
+                  dco=dcos(xi1)
+                  dsi=dsin(xi1)
+                  dco2=dcos(2.d0*xi1)
+                  dsi2=dsin(2.d0*xi1)
+                  dd=xi2**2-xi3**2
+               endif
+            endif
 !
 !           rotation node
 !
             index=nodempc(3,index)
-            node=nodempc(1,index)
+            irotnode=nodempc(1,index)
 !
-!           check whether the rotational node is the same as in
-!           the last rigid body MPC
-!
-            if(node.ne.irotnode) then
-               irotnode=node
-               w(1)=vold(1,node)
-               w(2)=vold(2,node)
-               w(3)=vold(3,node)
+            if(newknot.eq.1) then
+               w(1)=vold(1,irotnode)
+               w(2)=vold(2,irotnode)
+               w(3)=vold(3,irotnode)
                ww=dsqrt(w(1)*w(1)+w(2)*w(2)+w(3)*w(3))
 !
                c1=dcos(ww)
@@ -275,37 +318,147 @@ c     &                                    dc(i,j,3)*w(3)
                   enddo
                enddo
 !
-!              dummy variable
+               if((idim.eq.1).or.(idim.eq.3)) then
 !
-               do i=1,3
-                  do j=1,3
-c                     f(i,j)=c(i,j)-d(i,j)-dc(i,j,1)*w(1)-dc(i,j,2)*w(2)-
-c     &                                    dc(i,j,3)*w(3)
-                     f(i,j)=expan*c(i,j)-d(i,j)
+!                 dummy variable for constant term
+!
+                  do i=1,3
+                     do j=1,3
+                        f(i,j)=expan*c(i,j)-d(i,j)
+                     enddo
                   enddo
-               enddo
+!
+!                 derivative of the rotation matrix w.r.t the rotation
+!                 vector multiplied by the expansion coefficient
+!
+                  do i=1,3
+                     do j=1,3
+                        do k=1,3
+                           dc(i,j,k)=dc(i,j,k)*expan
+                        enddo
+                     enddo
+                  enddo
+               elseif(idim.eq.2) then
+!
+!                 local unit vectors
+!
+                  do i=1,3
+                     t1(i)=co(i,irotnode)
+                     e1(i)=co(i,iexpnode)
+                  enddo
+                  e2(1)=t1(2)*e1(3)-t1(3)*e1(2)
+                  e2(2)=t1(3)*e1(1)-t1(1)*e1(3)
+                  e2(3)=t1(1)*e1(2)-t1(2)*e1(1)
+!
+                  do i=1,3
+                     do j=1,3
+                        e11(i,j)=e1(i)*e1(j)
+                        e22(i,j)=e2(i)*e2(j)
+                        e12(i,j)=e1(i)*e2(j)+e2(i)*e1(j)
+!
+                        u(i,j)=t1(i)*t1(j)
+     &                        +((xi2*dco)**2+(xi3*dsi)**2)*e11(i,j)
+     &                        +((xi2*dsi)**2+(xi3*dco)**2)*e22(i,j)
+     &                        +dd*dco*dsi*e12(i,j)
+                        u1(i,j)=dd*(dco2*e12(i,j)
+     &                              -dsi2*(e11(i,j)-e22(i,j)))
+                        u2(i,j)=2.d0*xi2*(dco*dco*e11(i,j)
+     &                         +dsi*dsi*e22(i,j))+xi2*dsi2*e12(i,j)
+                        u3(i,j)=2.d0*xi3*(dsi*dsi*e11(i,j)
+     &                         +dco*dco*e22(i,j))-xi3*dsi2*e12(i,j)
+                     enddo
+                  enddo
+!
+!                 calculating r.u, r.u1, r.u2 and r.u3
+!
+                  do i=1,3
+                     do j=1,3
+                        ru(i,j)=0.d0
+                        ru1(i,j)=0.d0
+                        ru2(i,j)=0.d0
+                        ru3(i,j)=0.d0
+!
+                        do k=1,3
+                           ru(i,j)=ru(i,j)+c(i,k)*u(k,j)
+                           ru1(i,j)=ru1(i,j)+c(i,k)*u1(k,j)
+                           ru2(i,j)=ru2(i,j)+c(i,k)*u2(k,j)
+                           ru3(i,j)=ru3(i,j)+c(i,k)*u3(k,j)
+                        enddo
+                        f(i,j)=ru(i,j)-d(i,j)
+                     enddo
+                  enddo
+!
+!                 calculating dc.u
+!
+                  do i=1,3
+                     do j=1,3
+                        do k=1,3
+                           dcu(i,j,k)=0.d0
+                           do l=1,3
+                              dcu(i,j,k)=dcu(i,j,k)+dc(i,l,k)*u(l,j)
+                           enddo
+                           dc(i,j,k)=dcu(i,j,k)
+                        enddo
+                     enddo
+                  enddo
+               endif
+!
             endif
 !
-            coefmpc(indexexp)=c(idir,1)*(co(1,irefnode)-co(1,inode))+
+!           determining the coefficients of the expansion degrees 
+!           of freedom
+!
+            if((idim.eq.1).or.(idim.eq.3)) then
+               coefmpc(indexexp)=c(idir,1)*(co(1,irefnode)-co(1,inode))+
      &           c(idir,2)*(co(2,irefnode)-co(2,inode))+
      &           c(idir,3)*(co(3,irefnode)-co(3,inode))
+            elseif(idim.eq.2) then
+!
+!              if xi2=xi3 xi1 cannot be determined, since its coefficient
+!              is always zero (cf. definition of u1)
+!
+               if(dabs(xi2-xi3).lt.1.d-10) then
+                  coefmpc(indexexp1)=0.d0
+c                  if(nodempc(2,indexexp1).ne.2) then
+                     if(icascade.lt.1) icascade=1
+                     nodempc(2,indexexp1)=2
+c                  endif
+               else
+                  coefmpc(indexexp1)=ru1(idir,1)*
+     &                      (co(1,irefnode)-co(1,inode))+
+     &                 ru1(idir,2)*(co(2,irefnode)-co(2,inode))+
+     &                 ru1(idir,3)*(co(3,irefnode)-co(3,inode))
+c                  if(nodempc(2,indexexp1).ne.1) then
+                     if(icascade.lt.1) icascade=1
+                     nodempc(2,indexexp1)=1
+c                  endif
+               endif
+               coefmpc(indexexp2)=ru2(idir,1)*
+     &                      (co(1,irefnode)-co(1,inode))+
+     &           ru2(idir,2)*(co(2,irefnode)-co(2,inode))+
+     &           ru2(idir,3)*(co(3,irefnode)-co(3,inode))
+               coefmpc(indexexp3)=ru3(idir,1)*
+     &                      (co(1,irefnode)-co(1,inode))+
+     &           ru3(idir,2)*(co(2,irefnode)-co(2,inode))+
+     &           ru3(idir,3)*(co(3,irefnode)-co(3,inode))
+            endif
 !
 !           determining the coefficients of the rotational degrees
 !           of freedom
 !
             coefmpc(index)=(dc(idir,1,1)*(co(1,irefnode)-co(1,inode))+
      &           dc(idir,2,1)*(co(2,irefnode)-co(2,inode))+
-     &           dc(idir,3,1)*(co(3,irefnode)-co(3,inode)))*expan
+     &           dc(idir,3,1)*(co(3,irefnode)-co(3,inode)))
 !
             index=nodempc(3,index)
             coefmpc(index)=(dc(idir,1,2)*(co(1,irefnode)-co(1,inode))+
      &           dc(idir,2,2)*(co(2,irefnode)-co(2,inode))+
-     &           dc(idir,3,2)*(co(3,irefnode)-co(3,inode)))*expan
+     &           dc(idir,3,2)*(co(3,irefnode)-co(3,inode)))
 !
             index=nodempc(3,index)
             coefmpc(index)=(dc(idir,1,3)*(co(1,irefnode)-co(1,inode))+
      &           dc(idir,2,3)*(co(2,irefnode)-co(2,inode))+
-     &           dc(idir,3,3)*(co(3,irefnode)-co(3,inode)))*expan
+     &           dc(idir,3,3)*(co(3,irefnode)-co(3,inode)))
 !
 !           determining the nonhomogeneous part
 !
@@ -747,6 +900,7 @@ c     &                                    dc(i,j,3)*w(3)
      &          (labmpc(ii)(1:10).ne.'PRETENSION').and.
      &          (labmpc(ii)(1:7).ne.'CONTACT').and.
      &          (labmpc(ii)(1:7).ne.'NETWORK').and.
+     &          (labmpc(ii)(1:7).ne.'CFDCYCL').and.
      &          (labmpc(ii)(1:6).ne.'CYCLIC').and.
      &          (labmpc(ii)(1:9).ne.'SUBCYCLIC')) then
             index=ipompc(ii)

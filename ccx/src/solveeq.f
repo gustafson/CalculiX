@@ -40,6 +40,7 @@
 !
       do i=1,neq
          sol(i)=b(i)*adl(i)
+c         write(*,*) 'solveeq ',i,b(i),adl(i)
       enddo
       if(maxit.eq.1) return
 !

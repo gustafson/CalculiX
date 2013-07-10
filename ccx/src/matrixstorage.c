@@ -27,7 +27,8 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
                 int *neq, int *nzs, int *ntrans, int *inotr,
                 double *trab, double *co, int *nk, int *nactdof,
 		char *jobnamec, int *mi, int *ipkon, char *lakon,
-		int *kon, int *ne, int *mei, int *nboun, int *nmpc){
+		int *kon, int *ne, int *mei, int *nboun, int *nmpc,
+		double *cs, int *mcs){
 
   char fsti[132]="",fmas[132]="",fdof[132]="";
   int i,j,l,*irow=NULL,*ai=NULL,*aj=NULL,kflag=2,ndim,jref,kstart,klen,
@@ -42,6 +43,20 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
   strcat(fsti,".sti");
 
   printf(" Storing the stiffness matrix in file %s \n\n",fsti);
+
+  if((*mcs!=0)&&(cs[1]>=0)){
+      printf(" For cyclic symmetric calculations the complex\n");
+      printf(" Hermitian matrix is stored as a symmetric real\n");
+      printf(" matrix double its size; if R stands for the real\n");
+      printf(" part of the matrix and I for the imaginary part,\n");
+      printf(" the resulting matrix takes the form:\n");
+      printf("  _        _\n");
+      printf(" |          |\n");
+      printf(" |  R   -I  |\n");
+      printf(" |  I    R  |\n");
+      printf(" |_        _|\n\n");
+      printf(" This applies to the stiffness and the mas matrix\n\n");
+  }
 
   if((f2=fopen(fsti,"wb"))==NULL){
     printf("*ERROR in matrixstorage: cannot open %s for writing...\n",fsti);
@@ -534,12 +549,20 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
 			 ipkon,lakon,kon,ne));
   free(nodorig);
   
-  for(i=0;i<*neq;i++){
-      inode=(int)((double)nactdofinv[(int)i]/mt)+1;
-      idir=nactdofinv[(int)i]-mt*(inode-1);
-      fprintf(f4,"%d.%d\n",inode,idir);
+  if((*mcs==0)||(cs[1]<0)){
+      for(i=0;i<*neq;i++){
+	  inode=(int)((double)nactdofinv[(int)i]/mt)+1;
+	  idir=nactdofinv[(int)i]-mt*(inode-1);
+	  fprintf(f4,"%d.%d\n",inode,idir);
+      }
+  }else{
+      for(i=0;i<*neq/2;i++){
+	  inode=(int)((double)nactdofinv[(int)i]/mt)+1;
+	  idir=nactdofinv[(int)i]-mt*(inode-1);
+	  fprintf(f4,"%d.%d\n",inode,idir);
+      }
   }
-
+  
   fclose(f4);
 
   FORTRAN(stop,());

@@ -124,7 +124,8 @@
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien,i,
+      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien,
+     &  i,
      &  kk(84),k,l,m,n,nt
 !
       real*8 elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),

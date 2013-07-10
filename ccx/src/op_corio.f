@@ -21,11 +21,12 @@ C-----MATRIX-VECTOR MULTIPLY FOR REAL SPARSE ANTISYMMETRIC MATRICES-----
 C     i.e. the transpose is the negative matrix: A^T=-A
 C
       SUBROUTINE OP_corio(n,p,W,U,ad,asd,icol,irow,nzl)
-      implicit real*8(a-h,o-z)
+!
+      implicit none
 !
 C-----------------------------------------------------------------------
-      DOUBLE PRECISION   U(*),W(*),Asd(*),AD(*),p(*)
-      INTEGER  IROW(*),ICOL(*),n,nzl
+      INTEGER  IROW(*),ICOL(*),n,nzl,l,lfirst,i,j,llast
+      real*8   U(*),W(*),Asd(*),AD(*),p(*)
 C-----------------------------------------------------------------------
 C    SPARSE MATRIX-VECTOR MULTIPLY FOR LANCZS  U = A*W
 c    the vector p is not needed but is kept for compatibility reasons

@@ -54,7 +54,8 @@
       character*81 set(*),depset,indepset,tieset(3,*),elset
       character*132 textpart(16),jobnamec(*)
 !
-      integer istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
+      integer istartset(*),iendset(*),ialset(*),ipompc(*),
+     &  nodempc(3,*),
      &  nset,istep,istat,n,key,i,j,k,nk,nmpc,nmpc_,mpcfree,ics(*),
      &  nr(*),nz(*),jdep,jindep,l,noded,ikmpc(*),ilmpc(*),lcs(*),
      &  kflag,node,ncsnodes,ncs_,iline,ipol,inl,ipoinp(2,*),nneigh,

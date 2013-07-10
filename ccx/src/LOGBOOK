@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 2.5
+LOG-BOOK Version 2.6
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -1818,16 +1818,16 @@ Dec 2002        - started to work on single crystal plasticity
 
 20 April 2011  - changed the allocation of xstiff to (long long)
 
-3 Mai 2011     - started to paralellize results.f
+3 May 2011     - started to paralellize results.f
 
-14 Mai 2011    - paralellization of results.f finished
+14 May 2011    - paralellization of results.f finished
                - changed a parameter in gencontelem.f
 
-19 Mai 2011    - in user subroutine cload fn is provided. To this
+19 May 2011    - in user subroutine cload fn is provided. To this
                  end the elements are determined in dyna.c for
                  which the stresses have to be determined.
 
-24 Mai 2011    - made subroutine frditeration.f available to write
+24 May 2011    - made subroutine frditeration.f available to write
                  the displacements in each iteration to file (for
                  debugging purposes)
 
@@ -2015,31 +2015,31 @@ Dec 2002        - started to work on single crystal plasticity
 29 Apr 2012    - introduced larger time step for the stability terms
                  for incompressible fluid calculations
 
-1 Mai 2012     - removed call to applybounv in between mafillv1rhs and
+1 May 2012     - removed call to applybounv in between mafillv1rhs and
                  mafillv2rhs
 
-5 Mai 2012     - started to change the application of boundary conditions
+5 May 2012     - started to change the application of boundary conditions
                  for incompressible fluids
 
-10 Mai 2012    - made a change in e_c3d.f for contact springs:
+10 May 2012    - made a change in e_c3d.f for contact springs:
                  important in the first iteration for given 
                  displacements
 
-11 Mai 2012    - change in springstiff and springforc: Coulomb friction
+11 May 2012    - change in springstiff and springforc: Coulomb friction
                  is only taken into account for dynamic calculations
                  (linear and nonlinear) and geometrically nonlinear
                  static calculations
 
-14 Mai 2012    - changed applyboun.f to include boundary conditions for
+14 May 2012    - changed applyboun.f to include boundary conditions for
                  the turbulent variables
 
-23 Mai 2012    - corrected small errors (for thermal calculations)
+23 May 2012    - corrected small errors (for thermal calculations)
 
-24 Mai 2012    - accelerated some CFD-routines
+24 May 2012    - accelerated some CFD-routines
 
-29 Mai 2012    - made a change in gen3dboun.f and flowresult.f
+29 May 2012    - made a change in gen3dboun.f and flowresult.f
 
-30 Mai 2012    - updated Mortar contact
+30 May 2012    - updated Mortar contact
 
 3 June 2012    - CFD: MPC's are updated between step 1 and step 2:
                  necessary for cyclic symmetry calculations
@@ -2080,3 +2080,184 @@ Dec 2002        - started to work on single crystal plasticity
 
  29 Sept 2012  - corrected errors pointed out by valgrind while running
                  the test examples
+
+ 7 Oct 2012    - worked on mafillsmas (solution of asymmetric systems
+                 of equations) 
+
+ 20 Oct 2012   - changed c0=1.d-6*dsqrt(area) into c0=1.d-3*dsqrt(area)
+                 in gencontelem.f
+
+ 21 Oct 2012   - worked on CFD + cyclic symmetry
+
+ 22 Oct 2012   - contact penetration is reduced proportionally to the
+                 step time only in the first step (change in gencontelem.f)
+
+ 28 Oct 2012   - changed springstiff: introduced vini
+
+ 3 Nov 2012    - removed change from 28 Oct. 
+
+ 5 Nov 2012    - changed cylindrical into cartesian coordinates in 
+                 interpolcycsymcfd.c
+               - changed 1.d-5 into 1.d-30 in bounadd.f
+
+ 8 Nov 2012    - continued to work on CFD and cyclic symmetry
+
+ 12 Nov 2012   - worked on CFD and cyclic symmetry
+
+ 14 Nov 2012   - added a "C" in sixth position for linear elements after
+                 remeshing of quadratic elements at contact surfaces
+               - removed remeshing of quadratic elements at contact
+                 surfaces in frd-output
+
+ 17 Nov 2012   - made some important changes to springstiff.f (consistent
+                 stiffness matrix: inclusion of normal force contribution
+                 in the tangential stiffness)
+
+ 25 Nov 2012   - made some changes for the automatic generation of a
+                 integer*8 version
+
+ 29 Nov 2012   - cleaning up files: systematic application of
+                 implicit none; replacing numbers in FORTRAN subroutine
+                 calls by variables (needed for the integer*4 ->
+                 integer*8 transition).
+
+ 5 Dec 2012    - checking master and slave facial surfaces for identical
+                 faces (in allocont.f).
+
+ 9 Dec 2012    - started combined solution procedure (instead of 
+                 alternating) of gas and solid temperatures for generic
+                 network elements
+
+ 8 Jan 2013    - worked on dashpot forces in steady state dynamics 
+                 calculations
+
+ 17 Jan 2013   - changed the defaults for penalty contact
+
+ 19 Jan 2013   - modification for axisymmetric and plane strain elements
+                 in e_c3d_th.f, advecforc.f and advecstiff.f
+
+ 28 Jan 2013   - corrected the ASCII output from C-Programme (included
+                 (float))
+
+ 31 Jan 2013   - changed map3dto1d2d for a correct interpolation of the
+                 forces
+               - created networkinum.f 
+
+ 26 Feb 2013   - for cyclic symmetric modal dynamics or steady state dynamics
+                 calculations point forces in other sectors can be defined
+                 in the global carthesian system or local cylindrical 
+                 system.
+               - modification in linkdissimilar for non-multistage
+                 calculations
+               - compressible laminar cfd-calculations work for selected
+                 examples (linear Couette, Carterproblem)
+
+ 28 Feb 2013   - introduced the options REMOVE and REMOVE ALL on the 
+                 *EQUATION card
+
+ 6 March 2013  - started change for inclusion of user-defined pressure-
+                 overclosure relationship for contact
+               - change in restart (storage of plicon, plkcon ...)
+
+ 9 March 2013  - splitted updatecfd.f into updatecon.f and con2phys.f
+
+ 13 March 2013 - changed 4 into 14 in frd.c for PHAXX...
+               - corrections for tabular data underneath *SURFACE
+                 BEHAVIOR
+
+ 17 March 2013 - introduced linear regression for CFD-calculations with
+                 nonzero shock coefficient
+
+ 21 March 2013 - changed CLOAD,DLOAD,CFLUX,DFLUX: if redefined within same
+                 step for same dof: added instead of replaced
+               - add INLET and OUTLET (network elements)
+               - FLUX no also works for non-CFD applications
+
+ 24 March 2013 - started to linearize contact for subsequent frequency
+                 calculations (arpack.c)
+
+ 25 March 2013 - made some important changes to complexfreq.c
+
+ 2 April 2013  - made some corrections in complexfreq.c
+               - reduced CFD time scales to dtimef and dt(*)
+
+ 8 April 2013  - worked on arpack.c and arpackcs.c (taking into account
+                 contact element stiffness; same as on March 24).
+               - selecting CONTACT ELEMENTS on *NODE FILE visualizes
+                 the remeshing of the quadratic elements adjacent to
+                 a contact surface
+
+ 13 April 2013 - removed an error in knotmpc.f and fillknotmpc.f (wrong
+                 sign of field e)
+               - started differentation in dimensionality of knots
+
+ 28 April 2013 - removed an error for S6-elements from gen3dforc.f
+
+ 30 April 2013 - .eig-file modified to accept complex eigenvalues
+               - complexfreq.c modified in order to store complex
+                 eigenvalues and eigenvectors
+
+ 5 May 2013    - started to modify steadystate.c in order to handle
+                 nonorthogonal eigenvectors and complex eigenfrequencies
+
+ 6 May 2013    - continued to work on complexfreq.c and steadystate.c
+               - pre-tension beam elements are removed after generating
+                 the pre-tension MPC's
+
+ 11 May 2013   - coded shape functions for a 21-node hexahedral element
+                 (reduced from a 27-node Lagrange hexahedral element)
+                 and a 9-node quadrilateral element; possible 
+                 applications: penalty contact
+
+ 12 May 2013   - changed .frd output requests V, S and HFL for 
+                 CFD-calculations into VF, SF and HFLF.
+               - changed the fluid frd-file ending into
+                 jobnamef.frd
+ 
+ 16 May 2013   - started to make changes for the remeshing of C3D20
+                 elements into C3D21..C3D26 elements at contact
+
+ 18 May 2013   - removed first change from 12. May 2013.
+
+ 19 May 2013   - changed names of (contact)spring and dashpot elements:
+                 the number in the name is the number of master nodes
+                 (i.e. one less than before; done to accommodate
+                  9-node master faces)
+
+ 26 May 2013   - coded 11-noded up to 14-nodes quadratic tetrahedral
+                 elements (for contact)
+
+ 27 May 2013   - introduced parameter pnewdt in incplas.f
+
+ 28 May 2013   - introduced parameter pnewdt in umat_aniso_plas.f and
+                 umat_aniso_creep.f
+
+ 31 May 2013   - made a change in shellsections.f (allowed for composite
+                 shells with just one layer)
+               - started implementing 2x5x5 integration scheme for beams
+                 (B32R)
+
+ 4 June 2013   - changed the 2x5x5 integration scheme from a Gauss-
+                 Simpson scheme into a Gauss-Kronrod scheme; the latter 
+                 scheme contains the 2x2x2 ordinary Gauss scheme as
+                 subset (only for rectangular cross-section beams)
+               - implemented weights 1/100 and 24/100 for 8-node faces
+                 in contact instead of -1/12 and 1/3
+
+ 6 June 2013   - corrected an error for the output of fluid quantities
+
+ 20 June 2013  - increased the maximum number of points on a plastic stress-
+                 strain curve from 20 to 200.
+
+ 25 June 2013  - switched back to a 2x2x2 integration scheme for 
+                 beams with a circular cross section
+
+ 2 July 2013   - introduced VF, PSF, TSF, MACH, TTF, PTF, SF and HFLF for
+                 output of fluid calculations
+
+ 3 July 2013   - corrected an error in pretensionsections.f
+               - got fluid->structure interactions to work
+
+ 7 July 2013   - made some changes to steps.f, frequencies.f, arpack.c,
+                 arpackcs.c and resultsmech.f in order to take previous
+                 plasticity into account in a frequency calculation

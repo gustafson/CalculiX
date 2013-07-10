@@ -30,7 +30,7 @@ void remeshcontact(int *ntie, char *tieset, int *nset, char *set,
 	       int *ne,int *nk_, int *ithermal, int **ielmatp, 
 	       int **ielorienp,double **t0p,double **voldp,double **veoldp,
 	       int *ncont,double **xstatep,int *nstate_,double **prestrp,
-	       int *iprestr,int *nxstate){
+	       int *iprestr,int *nxstate,int **iamt1p){
 
   char *labmpc=NULL,*lakon=NULL;
 
@@ -38,7 +38,7 @@ void remeshcontact(int *ntie, char *tieset, int *nset, char *set,
       *ilmpc=NULL,*nodempc=NULL,neqterms,*ipoface=NULL,nface,
       nquadface,ninterface,ntotface,*ipkon=NULL,*ielmat=NULL,
       *kon=NULL,*ialset=NULL,nk0,*ielorien=NULL,mt=mi[1]+1,
-      *iponoel=NULL,*inoel=NULL,ntets2remesh;
+      *iponoel=NULL,*inoel=NULL,ntets2remesh,*iamt1=NULL;
 
   double *fmpc=NULL,*coefmpc=NULL,*co=NULL,*t0=NULL,
       *vold=NULL,*veold=NULL,*xstate=NULL,*prestr=NULL;
@@ -47,7 +47,7 @@ void remeshcontact(int *ntie, char *tieset, int *nset, char *set,
   fmpc=*fmpcp;nodempc=*nodempcp;coefmpc=*coefmpcp;ipkon=*ipkonp;
   kon=*konp;co=*cop;lakon=*lakonp;ialset=*ialsetp;ielmat=*ielmatp;
   ielorien=*ielorienp;t0=*t0p;vold=*voldp;veold=*veoldp;xstate=*xstatep;
-  prestr=*prestrp;
+  prestr=*prestrp;iamt1=*iamt1p;
       
   /* allocating the field to catalogue the faces external to the 
      set A of all C3D20(R) elements adjacent to contact surfaces
@@ -81,11 +81,6 @@ void remeshcontact(int *ntie, char *tieset, int *nset, char *set,
   
   RENEW(nodface,int,9*ntotface);
 
-/*  if(ithermal[1]<=1){
-      ninterface*=3;
-  }else if(ithermal[1]>2){
-      ninterface*=4;
-      }*/
   if(ithermal[1]==0){
       ninterface*=3;
   }else if((ithermal[1]==1)||(ithermal[1]>2)){
@@ -103,6 +98,8 @@ void remeshcontact(int *ntie, char *tieset, int *nset, char *set,
       RENEW(co,double,3*(*nk+25*nquadface+ntotface));
 
       RENEW(t0,double,*nk+25*nquadface+ntotface);
+      RENEW(iamt1,int,*nk+25*nquadface+ntotface);
+      for(k=*nk_;k<*nk+25*nquadface+ntotface;k++){iamt1[k]=0;}
 
       RENEW(vold,double,mt*(*nk+25*nquadface+ntotface));
       DMEMSET(vold,mt**nk,mt*(*nk+25*nquadface+ntotface),0.);
@@ -181,26 +178,13 @@ void remeshcontact(int *ntie, char *tieset, int *nset, char *set,
   
   if(nquadface>0){
       *nk_+=(*nk-nk0);
-//      RENEW(co,double,3**nk);
-      
-//      RENEW(ipompc,int,*nmpc);
-//      RENEW(labmpc,char,20**nmpc+1);
-//      RENEW(ikmpc,int,*nmpc);
-//      RENEW(ilmpc,int,*nmpc);
-//      RENEW(fmpc,double,*nmpc);
   }
-  
-//  RENEW(ipkon,int,*ne);
-//  RENEW(kon,int,*nkon);
-//  RENEW(lakon,char,8**ne);
-  
-//  RENEW(ialset,int,*nalset);
   
   *ipompcp=ipompc;*labmpcp=labmpc;*ikmpcp=ikmpc;*ilmpcp=ilmpc;
   *fmpcp=fmpc;*nodempcp=nodempc;*coefmpcp=coefmpc;*ipkonp=ipkon;
   *konp=kon;*lakonp=lakon;*cop=co;*ialsetp=ialset;*ielmatp=ielmat;
   *ielorienp=ielorien;*t0p=t0;*voldp=vold;*veoldp=veold;*xstatep=xstate;
-  *prestrp=prestr;
+  *prestrp=prestr;*iamt1p=iamt1;
   
   /*  for(i=0;i<*nmpc;i++){
       j=i+1;

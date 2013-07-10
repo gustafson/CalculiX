@@ -64,17 +64,19 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  indexe=ipkon[i];
 /* Bernhardi start */
           if (strcmp1(&lakon[8*i+3],"8I")==0)nope=11;
-	  else if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
+	  else if(strcmp1(&lakon[8*i+3],"20")==0)nope=20;
 /* Bernhardi end */
+	  else if(strcmp1(&lakon[8*i+3],"2")==0)nope=26;
 	  else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
 	  else if (strcmp1(&lakon[8*i+3],"10")==0)nope=10;
+	  else if (strcmp1(&lakon[8*i+3],"14")==0)nope=14;
 	  else if ((strcmp1(&lakon[8*i+3],"4")==0)||
                    (strcmp1(&lakon[8*i+2],"4")==0)) nope=4;
 	  else if (strcmp1(&lakon[8*i+3],"15")==0)nope=15;
 	  else if (strcmp1(&lakon[8*i+3],"6")==0)nope=6;
 	  else if (strcmp1(&lakon[8*i],"E")==0){
 	      lakonl[0]=lakon[8*i+7];
-	      nope=atoi(lakonl);}
+	      nope=atoi(lakonl)+1;}
 	  else continue;
 	  
           /* displacement degrees of freedom */
@@ -107,15 +109,30 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  if(ipkon[i]<0) continue;
 	  if(strcmp1(&lakon[8*i],"F")==0)continue;
 	  indexe=ipkon[i];
-	  if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
+	  if(strcmp1(&lakon[8*i+3],"20")==0)nope=20;
+	  else if(strcmp1(&lakon[8*i+3],"2")==0)nope=26;
 	  else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
 	  else if (strcmp1(&lakon[8*i+3],"10")==0)nope=10;
+	  else if (strcmp1(&lakon[8*i+3],"14")==0)nope=14;
 	  else if (strcmp1(&lakon[8*i+3],"4")==0)nope=4;
 	  else if (strcmp1(&lakon[8*i+3],"15")==0)nope=15;
 	  else if (strcmp1(&lakon[8*i+3],"6")==0)nope=6;
 	  else if (strcmp1(&lakon[8*i],"E")==0){
 	      lakonl[0]=lakon[8*i+7];
-	      nope=atoi(lakonl);}
+	      nope=atoi(lakonl)+1;}
+	  else if (strcmp1(&lakon[8*i],"D ")==0){
+
+	      /* check for entry or exit element */
+	      
+	      if((kon[indexe]==0)||(kon[indexe+2]==0)) continue;
+	      
+	      /* generic network element */
+	      
+	      for(j=0;j<3;j=j+2){
+		  node=kon[indexe+j]-1;
+		  nactdof[mt*node]=1;
+	      }
+	      continue;}
 	  else continue;
 	  
 	  for(j=0;j<nope;++j){
@@ -209,16 +226,18 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       indexe=ipkon[i];
 /* Bernhardi start */
       if (strcmp1(&lakon[8*i+3],"8I")==0)nope=11;
-      else if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
+      else if(strcmp1(&lakon[8*i+3],"20")==0)nope=20;
 /* Bernhardi end */
+      else if(strcmp1(&lakon[8*i+3],"2")==0)nope=26;
       else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
       else if (strcmp1(&lakon[8*i+3],"10")==0)nope=10;
+      else if (strcmp1(&lakon[8*i+3],"14")==0)nope=14;
       else if (strcmp1(&lakon[8*i+3],"4")==0)nope=4;
       else if (strcmp1(&lakon[8*i+3],"15")==0)nope=15;
       else if (strcmp1(&lakon[8*i+3],"6")==0)nope=6;
       else if (strcmp1(&lakon[8*i],"E")==0){
 	  lakonl[0]=lakon[8*i+7];
-	  nope=atoi(lakonl);}
+	  nope=atoi(lakonl)+1;}
       else continue;
       
       for(jj=0;jj<mi[1]*nope;++jj){
@@ -367,15 +386,23 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       if(ipkon[i]<0) continue;
       if(strcmp1(&lakon[8*i],"F")==0)continue;
       indexe=ipkon[i];
-      if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
+      if(strcmp1(&lakon[8*i+3],"20")==0)nope=20;
+      else if(strcmp1(&lakon[8*i+3],"2")==0)nope=26;
       else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
       else if (strcmp1(&lakon[8*i+3],"10")==0)nope=10;
+      else if (strcmp1(&lakon[8*i+3],"14")==0)nope=14;
       else if (strcmp1(&lakon[8*i+3],"4")==0)nope=4;
       else if (strcmp1(&lakon[8*i+3],"15")==0)nope=15;
       else if (strcmp1(&lakon[8*i+3],"6")==0)nope=6;
       else if (strcmp1(&lakon[8*i],"E")==0){
 	  lakonl[0]=lakon[8*i+7];
-	  nope=atoi(lakonl);}
+	  nope=atoi(lakonl)+1;}
+      else if (strcmp1(&lakon[8*i],"D ")==0){
+
+	  /* check for entry or exit element */
+
+	  if((kon[indexe]==0)||(kon[indexe+2]==0)) continue;
+	  nope=3;}
       else continue;
       
       for(jj=0;jj<nope;++jj){

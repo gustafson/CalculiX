@@ -23,20 +23,20 @@
 !
 !     id is such that x(1,id).le.px and x(1,id+1).gt.px
 !
-      SUBROUTINE nIDENTk(X,PX,N,ID,k)
-      IMPLICIT none
+      subroutine nidentk(x,px,n,id,k)
+      implicit none
       integer x,px,n,id,n2,m,k
-      DIMENSION X(k,N)
+      dimension x(k,n)
       id=0
       if(n.eq.0) return
-      N2=N+1
+      n2=n+1
       do
-         M=(N2+ID)/2
-         IF(PX.GE.X(1,M)) then
-            ID=M
+         m=(n2+id)/2
+         if(px.ge.x(1,m)) then
+            id=m
          else
-            N2=M
+            n2=m
          endif
-         IF((N2-ID).EQ.1) return
+         if((n2-id).eq.1) return
       enddo
-      END
+      end

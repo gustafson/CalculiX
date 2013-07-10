@@ -35,12 +35,13 @@ void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
              int *itiefac,double *areaslav,int *iponoels,int *inoels,
              double *springarea, double *tietol, double *reltime,
 	     int *imastnode, int *nmastnode, double *xmastnor,
-	     double *xnormastface, char *filab, int *mcs, int *ics){
+	     double *xnormastface, char *filab, int *mcs, int *ics,
+             int *nasym,double *xnoels){
     
     char *labmpc=NULL;
 
     int i,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL,*ipompc=NULL,*ikmpc=NULL,
-	*ilmpc=NULL,*nodempc=NULL,nmpc_;
+	*ilmpc=NULL,*nodempc=NULL,nmpc_,im;
     
     double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL,
         *fmpc=NULL, *coefmpc=NULL;
@@ -48,17 +49,13 @@ void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
     ipompc=*ipompcp;labmpc=*labmpcp;ikmpc=*ikmpcp;ilmpc=*ilmpcp;
     fmpc=*fmpcp;nodempc=*nodempcp;coefmpc=*coefmpcp;
     nmpc_=*nmpc;
+
+    DMEMSET(xmastnor,0,3*nmastnode[*ntie],0.);
     
     FORTRAN(updatecontpen,(koncont,ncont,co,vold,
 			cg,straight,mi,imastnode,nmastnode,xmastnor,
 			ntie,tieset,nset,set,istartset,
 			iendset,ialset,ipkon,lakon,kon,cs,mcs,ics));
-
-    /* deleting contact MPC's (not for modal dynamics calculations) */
-
-/*    if(*iperturb>1){
-	remcontmpc(nmpc,labmpc,mpcfree,nodempc,ikmpc,ilmpc,coefmpc,ipompc);
-	}*/
     
     /* determining the size of the auxiliary fields */
     
@@ -84,22 +81,10 @@ void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
        imastop,nslavnode,islavnode,islavsurf,itiefac,areaslav,iponoels,
        inoels,springarea,ikmpc,ilmpc,nmpc,ipompc,nodempc,coefmpc,
        set,nset,istartset,iendset,ialset,tietol,reltime,xmastnor,
-       xnormastface,imastnode,nmastnode,filab));
+       xnormastface,imastnode,nmastnode,filab,nasym,xnoels));
 
     free(xo);free(yo);free(zo);free(x);free(y);free(z);free(nx);
     free(ny);free(nz);
-
-    /* generate MPC's for the middle nodes of the dependent contact
-       surface; they are connected to their endnode neighbors 
-       (not for modal dynamic calculations) */
-
-//    printf("mpcold=%d\n",*nmpc);
-/*    if(*iperturb>1){
-	gencontmpc(ne,ne0,lakon,ipkon,kon,nmpc,&ikmpc,&ilmpc,&ipompc,mpcfree,
-		   &fmpc,&labmpc,&nodempc,memmpc_,&coefmpc,&nmpc_,ikboun,
-                   nboun);
-		   }*/
-//    printf("mpcnew=%d\n",*nmpc);
 
     *ipompcp=ipompc;*labmpcp=labmpc;*ikmpcp=ikmpc;*ilmpcp=ilmpc;
     *fmpcp=fmpc;*nodempcp=nodempc;*coefmpcp=coefmpc;

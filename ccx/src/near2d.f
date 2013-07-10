@@ -25,7 +25,7 @@ c     order xo and yo before the first call to near2d and
 c     store the results with the corresponding permutation array
 c     in x,y and nx,ny, respectively
 c
-      IMPLICIT none
+      implicit none
 C
       integer node(*),nx(*),ny(*),ni(24),n,m,idx,idy,it,j,iz,kflag,i,
      &  k,ks,nboundary

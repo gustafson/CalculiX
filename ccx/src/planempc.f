@@ -31,7 +31,8 @@
       character*1 typeboun(*)
       character*20 labmpc(*)
 !
-      integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,nk,nk_,ikmpc(*),
+      integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,nk,nk_,
+     &  ikmpc(*),
      &  ilmpc(*),node,id,mpcfreeold,j,idof,l,nodeboun(*),nodea,nodeb,
      &  ndirboun(*),ikboun(*),ilboun(*),nboun,nboun_,inode,jmax,k,nodec,
      &  m

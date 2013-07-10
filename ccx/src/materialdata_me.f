@@ -34,17 +34,15 @@
       integer nelcon(2,*),nrhcon(*),nalcon(2,*),
      &  imat,iorien,ithermal,i,j,k,mattyp,kal(2,6),j1,j2,j3,j4,
      &  jj,ntmat_,istiff,nelconst,ihyper,kode,itemp,kin,nelas,
-     &  iel,iint,mi(*),ncmat_,id,two,seven
-!
-      integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
+     &  iel,iint,mi(*),ncmat_,id,two,seven,
+     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),
      &  alcon(0:6,ntmat_,*),eth(6),xstiff(27,mi(1),*),
      &  orab(7,*),elas(21),alph(6),alzero(*),rho,t0l,t1l,
-     &  skl(3,3),xa(3,3),elconloc(21),emax,pgauss(3)
-!
-      real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
-     &  plconloc(82),dtime
+     &  skl(3,3),xa(3,3),elconloc(21),emax,pgauss(3),
+     &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
+     &  plconloc(802),dtime
 !
       kal=reshape((/1,1,2,2,3,3,1,2,1,3,2,3/),(/2,6/))
 !
@@ -191,8 +189,8 @@
                   plconloc(1)=0.d0
                   plconloc(2)=0.d0
                   plconloc(3)=0.d0
-                  plconloc(81)=nplicon(1,imat)+0.5d0
-                  plconloc(82)=nplkcon(1,imat)+0.5d0
+                  plconloc(801)=nplicon(1,imat)+0.5d0
+                  plconloc(802)=nplkcon(1,imat)+0.5d0
 !     
 !     isotropic hardening
 !     
@@ -307,14 +305,14 @@
 !     
             if((kode.lt.-50).and.(kode.gt.-100)) then
                if(npmat_.eq.0) then
-                  plconloc(81)=0.5d0
-                  plconloc(82)=0.5d0
+                  plconloc(801)=0.5d0
+                  plconloc(802)=0.5d0
                else
                   plconloc(1)=0.d0
                   plconloc(2)=0.d0
                   plconloc(3)=0.d0
-                  plconloc(81)=nplicon(1,imat)+0.5d0
-                  plconloc(82)=nplkcon(1,imat)+0.5d0
+                  plconloc(801)=nplicon(1,imat)+0.5d0
+                  plconloc(802)=nplkcon(1,imat)+0.5d0
 !     
 !     isotropic hardening
 !     

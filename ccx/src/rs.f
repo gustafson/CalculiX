@@ -1,9 +1,10 @@
-      double precision function pythag(a,b)
-      double precision a,b
+      real*8 function pythag(a,b)
+      implicit none
+      real*8 a,b
 c
 c     finds dsqrt(a**2+b**2) without overflow or destructive underflow
 c
-      double precision p,r,s,t,u
+      real*8 p,r,s,t,u
       p = dmax1(dabs(a),dabs(b))
       if (p .eq. 0.0d0) go to 20
       r = (dmin1(dabs(a),dabs(b))/p)**2
@@ -18,10 +19,12 @@ c
    20 pythag = p
       return
       end
+c
       subroutine rs(nm,n,a,w,matz,z,fv1,fv2,ierr)
 c
+      implicit none
       integer n,nm,ierr,matz
-      double precision a(nm,n),w(n),z(nm,n),fv1(n),fv2(n)
+      real*8 a(nm,n),w(n),z(nm,n),fv1(n),fv2(n)
 c
 c     this subroutine calls the recommended sequence of
 c     subroutines from the eigensystem subroutine package (eispack)
@@ -77,11 +80,13 @@ c     .......... find both eigenvalues and eigenvectors ..........
       call  tql2(nm,n,w,fv1,z,ierr)
    50 return
       end
+c
       subroutine tql1(n,d,e,ierr)
 c
+      implicit none
       integer i,j,l,m,n,ii,l1,l2,mml,ierr
-      double precision d(n),e(n)
-      double precision c,c2,c3,dl1,el1,f,g,h,p,r,s,s2,tst1,tst2,pythag
+      real*8 d(n),e(n)
+      real*8 c,c2,c3,dl1,el1,f,g,h,p,r,s,s2,tst1,tst2,pythag
 c
 c     this subroutine is a translation of the algol procedure tql1,
 c     num. math. 11, 293-306(1968) by bowdler, martin, reinsch, and
@@ -212,11 +217,13 @@ c                eigenvalue after 30 iterations ..........
  1000 ierr = l
  1001 return
       end
+c
       subroutine tql2(nm,n,d,e,z,ierr)
 c
+      implicit none
       integer i,j,k,l,m,n,ii,l1,l2,nm,mml,ierr
-      double precision d(n),e(n),z(nm,n)
-      double precision c,c2,c3,dl1,el1,f,g,h,p,r,s,s2,tst1,tst2,pythag
+      real*8 d(n),e(n),z(nm,n)
+      real*8 c,c2,c3,dl1,el1,f,g,h,p,r,s,s2,tst1,tst2,pythag
 c
 c     this subroutine is a translation of the algol procedure tql2,
 c     num. math. 11, 293-306(1968) by bowdler, martin, reinsch, and
@@ -382,11 +389,13 @@ c                eigenvalue after 30 iterations ..........
  1000 ierr = l
  1001 return
       end
+c
       subroutine tred1(nm,n,a,d,e,e2)
 c
+      implicit none
       integer i,j,k,l,n,ii,nm,jp1
-      double precision a(nm,n),d(n),e(n),e2(n)
-      double precision f,g,h,scale
+      real*8 a(nm,n),d(n),e(n),e2(n)
+      real*8 f,g,h,scale
 c
 c     this subroutine is a translation of the algol procedure tred1,
 c     num. math. 11, 181-195(1968) by martin, reinsch, and wilkinson.
@@ -517,11 +526,13 @@ c
 c
       return
       end
+c
       subroutine tred2(nm,n,a,d,e,z)
 c
+      implicit none
       integer i,j,k,l,n,ii,nm,jp1
-      double precision a(nm,n),d(n),e(n),z(nm,n)
-      double precision f,g,h,hh,scale
+      real*8 a(nm,n),d(n),e(n),z(nm,n)
+      real*8 f,g,h,hh,scale
 c
 c     this subroutine is a translation of the algol procedure tred2,
 c     num. math. 11, 181-195(1968) by martin, reinsch, and wilkinson.

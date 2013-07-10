@@ -103,7 +103,7 @@ static void ssolve_creategraph(Graph ** graph, ETree ** frontETree,
 
 static void ssolve_permuteA(IV ** oldToNewIV, IV ** newToOldIV,
 			 IVL ** symbfacIVL, ETree * frontETree,
-			 InpMtx * mtxA, FILE * msgFile, int *symmetryflag)
+			 InpMtx * mtxA, FILE * msgFile, int *symmetryflagi4)
 {
 	int *oldToNew;
 
@@ -112,7 +112,7 @@ static void ssolve_permuteA(IV ** oldToNewIV, IV ** newToOldIV,
 	*newToOldIV = ETree_newToOldVtxPerm(frontETree);
 	ETree_permuteVertices(frontETree, *oldToNewIV);
 	InpMtx_permute(mtxA, oldToNew, oldToNew);
-	if(*symmetryflag!=2) InpMtx_mapToUpperTriangle(mtxA);
+	if(*symmetryflagi4!=2) InpMtx_mapToUpperTriangle(mtxA);
 	InpMtx_changeCoordType(mtxA, INPMTX_BY_CHEVRONS);
 	InpMtx_changeStorageMode(mtxA, INPMTX_BY_VECTORS);
 	*symbfacIVL = SymbFac_initFromInpMtx(frontETree, mtxA);
@@ -163,7 +163,7 @@ static void ssolve_permuteout(DenseMtx *mtxX, IV *newToOldIV, FILE *msgFile)
 }
 
  void factor(struct factorinfo *pfi, InpMtx *mtxA, int size, FILE *msgFile,
-             int *symmetryflag)
+             int *symmetryflagi4)
 {
 	Graph *graph;
 	IVL *symbfacIVL;
@@ -186,7 +186,7 @@ static void ssolve_permuteout(DenseMtx *mtxX, IV *newToOldIV, FILE *msgFile)
 	 *      front tree and get the symbolic factorization
 	 */
 	ssolve_permuteA(&pfi->oldToNewIV, &pfi->newToOldIV, &symbfacIVL, pfi->frontETree,
-		     mtxA, pfi->msgFile, symmetryflag);
+		     mtxA, pfi->msgFile, symmetryflagi4);
 
 	/*
 	 * STEP 3: initialize the front matrix object
@@ -196,7 +196,7 @@ static void ssolve_permuteout(DenseMtx *mtxX, IV *newToOldIV, FILE *msgFile)
 		pfi->mtxmanager = SubMtxManager_new();
 		SubMtxManager_init(pfi->mtxmanager, NO_LOCK, 0);
 		FrontMtx_init(pfi->frontmtx, pfi->frontETree, symbfacIVL, SPOOLES_REAL,
-			      *symmetryflag, FRONTMTX_DENSE_FRONTS,
+			      *symmetryflagi4, FRONTMTX_DENSE_FRONTS,
 			      SPOOLES_PIVOTING, NO_LOCK, 0, NULL,
 			      pfi->mtxmanager, DEBUG_LVL, pfi->msgFile);
 	}
@@ -284,8 +284,7 @@ DenseMtx *fsolve(struct factorinfo *pfi, DenseMtx *mtxB)
 }
 
 #ifdef USE_MT 
-//static void factor_MT(struct factorinfo *pfi, InpMtx *mtxA, int size, FILE *msgFile, int *symmetryflag)
-void factor_MT(struct factorinfo *pfi, InpMtx *mtxA, int size, FILE *msgFile, int *symmetryflag)
+void factor_MT(struct factorinfo *pfi, InpMtx *mtxA, int size, FILE *msgFile, int *symmetryflagi4)
 {
 	Graph *graph;
 	IV *ownersIV;
@@ -308,7 +307,7 @@ void factor_MT(struct factorinfo *pfi, InpMtx *mtxA, int size, FILE *msgFile, in
 	 *      front tree and get the symbolic factorization
 	 */
 	ssolve_permuteA(&pfi->oldToNewIV, &pfi->newToOldIV, &symbfacIVL, pfi->frontETree,
-		     mtxA, msgFile, symmetryflag);
+		     mtxA, msgFile, symmetryflagi4);
 
 	/*
 	 * STEP 3: Prepare distribution to multiple threads/cpus
@@ -325,7 +324,7 @@ void factor_MT(struct factorinfo *pfi, InpMtx *mtxA, int size, FILE *msgFile, in
 
 		cumopsDV = DV_new();
 		DV_init(cumopsDV, pfi->nthread, NULL);
-		ownersIV = ETree_ddMap(pfi->frontETree, SPOOLES_REAL, *symmetryflag,
+		ownersIV = ETree_ddMap(pfi->frontETree, SPOOLES_REAL, *symmetryflagi4,
 				       cumopsDV, 1. / (2. * pfi->nthread));
 		if (DEBUG_LVL > 1) {
 			fprintf(msgFile,
@@ -350,7 +349,7 @@ void factor_MT(struct factorinfo *pfi, InpMtx *mtxA, int size, FILE *msgFile, in
 		pfi->mtxmanager = SubMtxManager_new();
 		SubMtxManager_init(pfi->mtxmanager, LOCK_IN_PROCESS, 0);
 		FrontMtx_init(pfi->frontmtx, pfi->frontETree, symbfacIVL, SPOOLES_REAL,
-			      *symmetryflag, FRONTMTX_DENSE_FRONTS,
+			      *symmetryflagi4, FRONTMTX_DENSE_FRONTS,
 			      SPOOLES_PIVOTING, LOCK_IN_PROCESS, 0, NULL,
 			      pfi->mtxmanager, DEBUG_LVL, pfi->msgFile);
 	}
@@ -396,7 +395,7 @@ void factor_MT(struct factorinfo *pfi, InpMtx *mtxA, int size, FILE *msgFile, in
 	 */
 	{
 		pfi->solvemap = SolveMap_new();
-		SolveMap_ddMap(pfi->solvemap, *symmetryflag,
+		SolveMap_ddMap(pfi->solvemap, *symmetryflagi4,
 			       FrontMtx_upperBlockIVL(pfi->frontmtx),
 			       FrontMtx_lowerBlockIVL(pfi->frontmtx), pfi->nthread, ownersIV,
 			       FrontMtx_frontTree(pfi->frontmtx), RNDSEED, DEBUG_LVL,
@@ -458,13 +457,18 @@ FILE *msgFile;
 struct factorinfo pfi;
 
 void spooles_factor(double *ad, double *au,  double *adb, double *aub, 
-             double *sigma,int *icol, int *irow,
-	     int *neq, int *nzs, int *symmetryflag, int *inputformat)
+             double *sigma,int *icol, int *irow, int *neq, int *nzs, 
+	     int *symmetryflag, int *inputformat, int *nzs3)
 {
 	int size = *neq;
+	int symmetryflagi4=*symmetryflag;
 	InpMtx *mtxA;
 
-	printf(" Factoring the system of equations using the symmetric spooles solver\n");
+	if(symmetryflagi4==0){
+	    printf(" Factoring the system of equations using the symmetric spooles solver\n");
+	}else if(symmetryflagi4==2){
+	    printf(" Factoring the system of equations using the unsymmetric spooles solver\n");
+	}
 
 /*	if(*neq==0) return;*/
  
@@ -479,7 +483,7 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 	 */
 
 	{
-	    int row, ipoint, ipo;
+	    int col, ipoint, ipo;
 	    int nent,i,j;
 	    
 	    mtxA = InpMtx_new();
@@ -492,7 +496,7 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 		nent=0;
 		for(i=0;i<*neq;i++){
 		    for(j=0;j<*neq;j++){
-			if(fabs(ad[i**nzs+j])>1.e-20) nent++;
+			if(fabs(ad[i*(int)*nzs+j])>1.e-20) nent++;
 		    }
 		}
 	    }
@@ -513,62 +517,67 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 		ipoint = 0;
 		
 		if(*sigma==0.){
-		    for (row = 0; row < size; row++) {
-			InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
-			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-			    int col = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, row, col,
+		    for (col = 0; col < size; col++) {
+//			printf("row=%d,col=%d,value=%e\n",col,col,ad[col]);
+			InpMtx_inputRealEntry(mtxA, col, col, ad[col]);
+			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
+			    int row = irow[ipo] - 1;
+//			printf("row=%d,col=%d,value=%e\n",col,row,au[ipo]);
+			    InpMtx_inputRealEntry(mtxA, col, row,
 						  au[ipo]);
 			}
-			ipoint = ipoint + icol[row];
+			ipoint = ipoint + icol[col];
 		    }
 		}
 		else{
-		    for (row = 0; row < size; row++) {
-			InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
-			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-			    int col = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, row, col,
+		    for (col = 0; col < size; col++) {
+			InpMtx_inputRealEntry(mtxA, col, col, ad[col]-*sigma*adb[col]);
+			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
+			    int row = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, col, row,
 						  au[ipo]-*sigma*aub[ipo]);
 			}
-			ipoint = ipoint + icol[row];
+			ipoint = ipoint + icol[col];
 		    }
 		}
 	    }else if(*inputformat==1){
 		ipoint = 0;
 		
 		if(*sigma==0.){
-		    for (row = 0; row < size; row++) {
-			InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
-			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-			    int col = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, col,row,
-						  au[ipo]);
+		    for (col = 0; col < size; col++) {
+//			printf("row=%d,col=%d,value=%e\n",col,col,ad[col]);
+			InpMtx_inputRealEntry(mtxA, col, col, ad[col]);
+			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
+			    int row = irow[ipo] - 1;
+//			printf("row=%d,col=%d,value=%e\n",row,col,au[ipo]);
 			    InpMtx_inputRealEntry(mtxA, row,col,
-						  au[ipo+*nzs]);
+						  au[ipo]);
+//			printf("row=%d,col=%d,value=%e\n",col,row,au[ipo+*nzs]);
+			    InpMtx_inputRealEntry(mtxA, col,row,
+						  au[ipo+(int)*nzs3]);
 			}
-			ipoint = ipoint + icol[row];
+			ipoint = ipoint + icol[col];
 		    }
 		}
 		else{
-		    for (row = 0; row < size; row++) {
-			InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
-			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-			    int col = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, col,row,
-						  au[ipo]-*sigma*aub[ipo]);
+		    for (col = 0; col < size; col++) {
+			InpMtx_inputRealEntry(mtxA, col, col, ad[col]-*sigma*adb[col]);
+			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
+			    int row = irow[ipo] - 1;
 			    InpMtx_inputRealEntry(mtxA, row,col,
-						  au[ipo+*nzs]-*sigma*aub[ipo+*nzs]);
+						  au[ipo]-*sigma*aub[ipo]);
+			    InpMtx_inputRealEntry(mtxA, col,row,
+						  au[ipo+(int)*nzs3]-*sigma*aub[ipo+(int)*nzs3]);
 			}
-			ipoint = ipoint + icol[row];
+			ipoint = ipoint + icol[col];
 		    }
 		}
 	    }else if(*inputformat==2){
 		for(i=0;i<*neq;i++){
 		    for(j=0;j<*neq;j++){
-			if(fabs(ad[i**nzs+j])>1.e-20){
+			if(fabs(ad[i*(int)*nzs+j])>1.e-20){
 			    InpMtx_inputRealEntry(mtxA,j,i,
-						  ad[i**nzs+j]);
+						  ad[i*(int)*nzs+j]);
 			}
 		    }
 		}
@@ -576,25 +585,25 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 		ipoint = 0;
 		
 		if(*sigma==0.){
-		    for (row = 0; row < size; row++) {
-			InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
-			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-			    int col = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, col, row,
+		    for (col = 0; col < size; col++) {
+			InpMtx_inputRealEntry(mtxA, col, col, ad[col]);
+			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
+			    int row = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, row, col,
 						  au[ipo]);
 			}
-			ipoint = ipoint + icol[row];
+			ipoint = ipoint + icol[col];
 		    }
 		}
 		else{
-		    for (row = 0; row < size; row++) {
-			InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
-			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-			    int col = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, col, row, 
+		    for (col = 0; col < size; col++) {
+			InpMtx_inputRealEntry(mtxA, col, col, ad[col]-*sigma*adb[col]);
+			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
+			    int row = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, row, col, 
 						  au[ipo]-*sigma*aub[ipo]);
 			}
-			ipoint = ipoint + icol[row];
+			ipoint = ipoint + icol[col];
 		    }
 		}
 	    }		  
@@ -679,13 +688,13 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 	     * we have multiple threads - avoid the
 		 * locking overhead
 		 */
-		factor_MT(&pfi, mtxA, size, msgFile,symmetryflag);
+		factor_MT(&pfi, mtxA, size, msgFile,&symmetryflagi4);
 	} else {
-		factor(&pfi, mtxA, size, msgFile,symmetryflag);
+		factor(&pfi, mtxA, size, msgFile,&symmetryflagi4);
 	}
 #else
 	printf(" Using 1 cpu for spooles.\n\n");
-	factor(&pfi, mtxA, size, msgFile,symmetryflag);
+	factor(&pfi, mtxA, size, msgFile,&symmetryflagi4);
 #endif
 }
 
@@ -775,10 +784,11 @@ void spooles_factor_rad(double *ad, double *au,  double *adb, double *aub,
              double *sigma,int *icol, int *irow,
 	     int *neq, int *nzs, int *symmetryflag, int *inputformat)
 {
+        int symmetryflagi4=*symmetryflag;
 	int size = *neq;
 	InpMtx *mtxA;
 
-	printf(" Factoring the system of equations using the asymmetric spooles solver\n\n");
+	printf(" Factoring the system of equations using the unsymmetric spooles solver\n\n");
 
 /*	if(*neq==0) return;*/
  
@@ -793,7 +803,7 @@ void spooles_factor_rad(double *ad, double *au,  double *adb, double *aub,
 	 */
 
 	{
-	    int row, ipoint, ipo;
+	    int col, ipoint, ipo;
 	    int nent,i,j;
 	    
 	    mtxA = InpMtx_new();
@@ -806,7 +816,7 @@ void spooles_factor_rad(double *ad, double *au,  double *adb, double *aub,
 		nent=0;
 		for(i=0;i<*neq;i++){
 		    for(j=0;j<*neq;j++){
-			if(fabs(ad[i**nzs+j])>1.e-20) nent++;
+			if(fabs(ad[i*(int)*nzs+j])>1.e-20) nent++;
 		    }
 		}
 	    }
@@ -827,62 +837,62 @@ void spooles_factor_rad(double *ad, double *au,  double *adb, double *aub,
 		ipoint = 0;
 		
 		if(*sigma==0.){
-		    for (row = 0; row < size; row++) {
-			InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
-			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-			    int col = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, row, col,
+		    for (col = 0; col < size; col++) {
+			InpMtx_inputRealEntry(mtxA, col, col, ad[col]);
+			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
+			    int row = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, col, row,
 						  au[ipo]);
 			}
-			ipoint = ipoint + icol[row];
+			ipoint = ipoint + icol[col];
 		    }
 		}
 		else{
-		    for (row = 0; row < size; row++) {
-			InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
-			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-			    int col = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, row, col,
+		    for (col = 0; col < size; col++) {
+			InpMtx_inputRealEntry(mtxA, col, col, ad[col]-*sigma*adb[col]);
+			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
+			    int row = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, col, row,
 						  au[ipo]-*sigma*aub[ipo]);
 			}
-			ipoint = ipoint + icol[row];
+			ipoint = ipoint + icol[col];
 		    }
 		}
 	    }else if(*inputformat==1){
 		ipoint = 0;
 		
 		if(*sigma==0.){
-		    for (row = 0; row < size; row++) {
-			InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
-			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-			    int col = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, col,row,
-						  au[ipo]);
+		    for (col = 0; col < size; col++) {
+			InpMtx_inputRealEntry(mtxA, col, col, ad[col]);
+			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
+			    int row = irow[ipo] - 1;
 			    InpMtx_inputRealEntry(mtxA, row,col,
-						  au[ipo+*nzs]);
+						  au[ipo]);
+			    InpMtx_inputRealEntry(mtxA, col,row,
+						  au[ipo+(int)*nzs]);
 			}
-			ipoint = ipoint + icol[row];
+			ipoint = ipoint + icol[col];
 		    }
 		}
 		else{
-		    for (row = 0; row < size; row++) {
-			InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
-			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-			    int col = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, col,row,
-						  au[ipo]-*sigma*aub[ipo]);
+		    for (col = 0; col < size; col++) {
+			InpMtx_inputRealEntry(mtxA, col, col, ad[col]-*sigma*adb[col]);
+			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
+			    int row = irow[ipo] - 1;
 			    InpMtx_inputRealEntry(mtxA, row,col,
-						  au[ipo+*nzs]-*sigma*aub[ipo+*nzs]);
+						  au[ipo]-*sigma*aub[ipo]);
+			    InpMtx_inputRealEntry(mtxA, col,row,
+						  au[ipo+(int)*nzs]-*sigma*aub[ipo+(int)*nzs]);
 			}
-			ipoint = ipoint + icol[row];
+			ipoint = ipoint + icol[col];
 		    }
 		}
 	    }else if(*inputformat==2){
 		for(i=0;i<*neq;i++){
 		    for(j=0;j<*neq;j++){
-			if(fabs(ad[i**nzs+j])>1.e-20){
+			if(fabs(ad[i*(int)*nzs+j])>1.e-20){
 			    InpMtx_inputRealEntry(mtxA,j,i,
-						  ad[i**nzs+j]);
+						  ad[i*(int)*nzs+j]);
 			}
 		    }
 		}
@@ -890,25 +900,25 @@ void spooles_factor_rad(double *ad, double *au,  double *adb, double *aub,
 		ipoint = 0;
 		
 		if(*sigma==0.){
-		    for (row = 0; row < size; row++) {
-			InpMtx_inputRealEntry(mtxA, row, row, ad[row]);
-			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-			    int col = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, col, row,
+		    for (col = 0; col < size; col++) {
+			InpMtx_inputRealEntry(mtxA, col, col, ad[col]);
+			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
+			    int row = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, row, col,
 						  au[ipo]);
 			}
-			ipoint = ipoint + icol[row];
+			ipoint = ipoint + icol[col];
 		    }
 		}
 		else{
-		    for (row = 0; row < size; row++) {
-			InpMtx_inputRealEntry(mtxA, row, row, ad[row]-*sigma*adb[row]);
-			for (ipo = ipoint; ipo < ipoint + icol[row]; ipo++) {
-			    int col = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, col, row, 
+		    for (col = 0; col < size; col++) {
+			InpMtx_inputRealEntry(mtxA, col, col, ad[col]-*sigma*adb[col]);
+			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
+			    int row = irow[ipo] - 1;
+			    InpMtx_inputRealEntry(mtxA, row, col, 
 						  au[ipo]-*sigma*aub[ipo]);
 			}
-			ipoint = ipoint + icol[row];
+			ipoint = ipoint + icol[col];
 		    }
 		}
 	    }		  
@@ -993,13 +1003,13 @@ void spooles_factor_rad(double *ad, double *au,  double *adb, double *aub,
 		 * we have multiple threads - avoid the
 		 * locking overhead
 		 */
-		factor_MT(&pfj, mtxA, size, msgFilf,symmetryflag);
+		factor_MT(&pfj, mtxA, size, msgFilf,&symmetryflagi4);
 	} else {
-		factor(&pfj, mtxA, size, msgFilf,symmetryflag);
+		factor(&pfj, mtxA, size, msgFilf,&symmetryflagi4);
 	}
 #else
 	printf(" Using 1 cpu for spooles.\n\n");
-	factor(&pfj, mtxA, size, msgFilf,symmetryflag);
+	factor(&pfj, mtxA, size, msgFilf,&symmetryflagi4);
 #endif
 }
 
@@ -1019,7 +1029,7 @@ void spooles_solve_rad(double *b, int *neq)
 	int size = *neq;
 	DenseMtx *mtxB,*mtxX;
 
-	printf(" solving the system of equations using the symmetric spooles solver\n");
+	printf(" solving the system of equations using the unsymmetric spooles solver\n");
 
 	{
 		int i;
@@ -1087,14 +1097,14 @@ void spooles_cleanup_rad()
  */
 
 void spooles(double *ad, double *au, double *adb, double *aub, double *sigma,
-             double *b, int *icol, int *irow,
-	     int *neq, int *nzs, int *symmetryflag, int *inputformat)
+             double *b, int *icol, int *irow, int *neq, int *nzs, 
+             int *symmetryflag, int *inputformat, int *nzs3)
 {
 
   if(*neq==0) return;
 
   spooles_factor(ad,au,adb,aub,sigma,icol,irow,neq,nzs,symmetryflag,
-      inputformat);
+		 inputformat,nzs3);
   
   spooles_solve(b,neq);
   

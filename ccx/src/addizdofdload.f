@@ -30,7 +30,7 @@
 !
       integer mi(*),nelemload(2,*),ipkon(*),kon(*),nactdof(0:mi(2),*),
      &  izdof(*),nzdof,iload,j,ii,nopes,node,indexe,jdof,ifaceq(8,6),
-     &  ifacew(8,5),ifacet(6,4),ig,ielem,nope,iznode(*),nznode,
+     &  ifacew(8,5),ifacet(7,4),ig,ielem,nope,iznode(*),nznode,
      &  nodebasis,nk,imdnode(*),nmdnode
 !
       data ifaceq /4,3,2,1,11,10,9,12,
@@ -39,10 +39,10 @@
      &            2,3,7,6,10,19,14,18,
      &            3,4,8,7,11,20,15,19,
      &            4,1,5,8,12,17,16,20/
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
       data ifacew /1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,

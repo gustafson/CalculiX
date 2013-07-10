@@ -36,9 +36,7 @@
       integer istartset(*),iendset(*),ialset(*),mi(*),ielmat(mi(3),*),
      &  ipoinpc(0:*),
      &  ielorien(mi(3),*),ipkon(*),iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*)
-!
-      integer nset,nmat,norien,istep,istat,n,key,i,j,k,l,imaterial,
+     &  inp(3,*),nset,nmat,norien,istep,istat,n,key,i,j,k,l,imaterial,
      &  iorientation,ipos,m,iponor(2,*),ixfree,
      &  indexx,indexe,irstrt
 !
@@ -58,6 +56,7 @@
       orientation='                    
      &                           '
       section='    '
+      ipos=1
 !
       do i=2,n
          if(textpart(i)(1:9).eq.'MATERIAL=') then
@@ -136,7 +135,8 @@
       enddo
       if(i.gt.nset) then
          elset(ipos:ipos)=' '
-         write(*,*) '*ERROR reading *BEAM SECTION: element set ',elset
+         write(*,*) '*ERROR reading *BEAM SECTION: element set ',
+     &      elset(1:ipos)
          write(*,*) '  has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline)
          stop

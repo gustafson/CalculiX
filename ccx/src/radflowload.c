@@ -496,7 +496,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
          (*iit==-1)||(*iemchange==1)||((*iit==0)&&(abs(*nmethod)==1))){
 
 #if defined(PARDISO)
-	if(ifactorization==1) pardiso_cleanup_as(ntr);
+	if(ifactorization==1) pardiso_cleanup_as(ntr,&symmetryflag);
 	pardiso_factor_as(adrad,aurad,adbrad,aubrad,&sigma,icolrad,
 			  irowrad,ntr,nzsrad,jqrad);
 	ifactorization=1;

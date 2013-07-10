@@ -21,6 +21,8 @@
 !
 !     Sloan routine (Int.J.Num.Meth.Engng. 28,2651-2679(1989))
 !
+      implicit none
+!
       integer root,depth,nbr,maxwid,lstrt,lstop,lwdth,node,nc,width,n,
      & jstrt,jstop,i,j,e2,xadj(n+1),adj(e2),mask(n),xls(n+1),ls(n)
 !

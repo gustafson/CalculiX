@@ -95,7 +95,8 @@
          if((prlab(ii)(1:4).eq.'U   ').or.(prlab(ii)(1:4).eq.'NT  ').or.
      &      (prlab(ii)(1:4).eq.'RF  ').or.(prlab(ii)(1:4).eq.'RFL ').or. 
      &      (prlab(ii)(1:4).eq.'PS  ').or.(prlab(ii)(1:4).eq.'PN  ').or.
-     &      (prlab(ii)(1:4).eq.'MF  ').or.(prlab(ii)(1:4).eq.'V   ')) 
+     &      (prlab(ii)(1:4).eq.'MF  ').or.(prlab(ii)(1:4).eq.'V   ').or.
+     &      (prlab(ii)(1:4).eq.'TS  ')) 
      &      then
 !
             ipos=index(prset(ii),' ')
@@ -110,7 +111,8 @@
  100           format(' displacements (vx,vy,vz) for set ',A,
      &             ' and time ',e14.7)
                write(5,*)
-            elseif(prlab(ii)(1:4).eq.'NT  ') then
+            elseif((prlab(ii)(1:4).eq.'NT  ').or.
+     &             (prlab(ii)(1:4).eq.'TS  ')) then
                write(5,*)
                write(5,101) noset(1:ipos-2),ttime
  101           format(' temperatures for set ',A,' and time ',e14.7)
@@ -369,6 +371,7 @@
                enddo
                do nelem=ne0,ne
                   read(lakon(nelem)(8:8),'(i1)') nope
+                  nope=nope+1
                   nodes=kon(ipkon(nelem)+nope)
                   call printoutelem(prlab,ipkon,lakon,kon,co,
      &                 ener,mi(1),ii,nelem,energytot,volumetot,

@@ -18,12 +18,13 @@
 !
       subroutine resultstherm(co,kon,ipkon,lakon,ne,v,
      &  elcon,nelcon,rhcon,nrhcon,ielmat,ielorien,norien,orab,
-     &  ntmat_,t0,iperturb,fn,
+     &  ntmat_,t0,iperturb,fn,shcon,nshcon,
      &  iout,qa,vold,ipompc,nodempc,coefmpc,nmpc,
-     &  dtime,time,ttime,plicon,nplicon,xstateini,xstiff,xstate,npmat_,
+     &  dtime,time,ttime,plkcon,nplkcon,xstateini,xstiff,xstate,npmat_,
      &  matname,mi,ncmat_,nstate_,cocon,ncocon,
      &  qfx,ikmpc,ilmpc,istep,iinc,springarea,
-     &  calcul_fn,calcul_qa,nal,nea,neb)
+     &  calcul_fn,calcul_qa,nal,nea,neb,ithermal,nelemload,nload,
+     &  nmethod,reltime,sideload,xload,xloadold)
 !
 !     calculates the heat flux and the material tangent at the integration
 !     points and the internal concentrated flux at the nodes
@@ -31,31 +32,32 @@
       implicit none
 !
       character*8 lakon(*),lakonl
+      character*20 sideload(*)
       character*80 amat,matname(*)
 !
-      integer kon(*),konl(20),iperm(20),ikmpc(*),ilmpc(*),mi(*),
+      integer kon(*),konl(26),iperm(20),ikmpc(*),ilmpc(*),mi(*),
      &  nelcon(2,*),nrhcon(*),ielmat(mi(3),*),ielorien(mi(3),*),
      &  ntmat_,ipkon(*),ipompc(*),nodempc(3,*),
-     &  ncocon(2,*),iflag,nshcon,istep,iinc,mt,ne,mattyp,
-     &  i,j,k,m1,jj,i1,m3,indexe,nope,norien,iperturb(*),iout,
+     &  ncocon(2,*),iflag,nshcon(*),istep,iinc,mt,ne,mattyp,
+     &  i,j,k,m1,kk,i1,m3,indexe,nope,norien,iperturb(*),iout,
      &  nal,nmpc,kode,imat,mint3d,iorien,istiff,ncmat_,nstate_,
-     &  nplicon(0:ntmat_,*),npmat_,calcul_fn,calcul_qa,nea,neb
+     &  nplkcon(0:ntmat_,*),npmat_,calcul_fn,calcul_qa,nea,neb,
+     &  nelemload(2,*),nload,ithermal(2),nmethod,nopered
 !
-      real*8 co(3,*),v(0:mi(2),*),shp(4,20),
-     &  xl(3,20),vl(0:mi(2),20),elcon(0:ncmat_,ntmat_,*),
+      real*8 co(3,*),v(0:mi(2),*),shp(4,26),reltime,
+     &  xl(3,26),vl(0:mi(2),26),elcon(0:ncmat_,ntmat_,*),
      &  rhcon(0:1,ntmat_,*),qfx(3,mi(1),*),orab(7,*),
-     &  rho,fn(0:mi(2),*),tnl(9),timeend(2),q(0:mi(2),20),
+     &  rho,fn(0:mi(2),*),tnl(10),timeend(2),q(0:mi(2),26),
      &  vkl(0:3,3),t0(*),vold(0:mi(2),*),coefmpc(*),
      &  springarea(2,*),elconloc(21),cocon(0:6,ntmat_,*),
-     &  shcon,sph,c1,xi,et,ze,xsj,qa(3),t0l,t1l,dtime,
+     &  shcon(0:3,ntmat_,*),sph,c1,xi,et,ze,xsj,qa(3),t0l,t1l,dtime,
      &  weight,pgauss(3),coconloc(6),qflux(3),time,ttime,
-     &  t1lold,plicon(0:2*npmat_,ntmat_,*),xstiff(27,mi(1),*),
-     &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
+     &  t1lold,plkcon(0:2*npmat_,ntmat_,*),xstiff(27,mi(1),*),
+     &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
+     &  xload(2,*),xloadold(2,*)
 !
       include "gauss.f"
 !
-c      data iflag /3/
-c      data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
       iflag=3
       iperm=(/5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/)
 !
@@ -68,6 +70,12 @@ c      data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
       do i=nea,neb
 !
          if(ipkon(i).lt.0) cycle
+!
+!        no 3D-fluid elements
+!
+         if(lakon(i)(1:1).eq.'F') cycle
+         if(lakon(i)(1:7).eq.'DCOUP3D') cycle
+!
          imat=ielmat(1,i)
          amat=matname(imat)
          if(norien.gt.0) then
@@ -77,33 +85,49 @@ c      data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
          endif
 !
          indexe=ipkon(i)
-         if(lakon(i)(4:4).eq.'2') then
+         if(lakon(i)(4:5).eq.'20') then
             nope=20
+         elseif(lakon(i)(4:4).eq.'2') then
+            nope=26
          elseif(lakon(i)(4:4).eq.'8') then
             nope=8
          elseif(lakon(i)(4:5).eq.'10') then
             nope=10
+         elseif(lakon(i)(4:5).eq.'14') then
+            nope=14
          elseif(lakon(i)(4:4).eq.'4') then
             nope=4
          elseif(lakon(i)(4:5).eq.'15') then
             nope=15
          elseif(lakon(i)(4:4).eq.'6') then
             nope=6
-         elseif(lakon(i)(1:1).eq.'E') then
-c            read(lakon(i)(8:8),'(i1)') nope
-            nope=ichar(lakon(i)(8:8))-48
+         elseif((lakon(i)(1:2).eq.'ES').and.(lakon(i)(7:7).ne.'A')) then
+!
+!           contact spring and advection elements (no dashpot elements
+!           = ED... elements)
+!
+            nope=ichar(lakon(i)(8:8))-47
 !
 !           local contact spring number
 !
             if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
+         elseif(lakon(i)(1:2).eq.'D ') then
+!
+!           no entry or exit elements
+!
+            if((kon(indexe+1).eq.0).or.(kon(indexe+3).eq.0)) cycle
+            nope=3
          else
             cycle
          endif
 !
          if(lakon(i)(4:5).eq.'8R') then
             mint3d=1
+         elseif(lakon(i)(4:7).eq.'20RB') then
+            mint3d=50
          elseif((lakon(i)(4:4).eq.'8').or.
-     &          (lakon(i)(4:6).eq.'20R')) then
+     &          (lakon(i)(4:6).eq.'20R').or.
+     &          (lakon(i)(4:6).eq.'26 R')) then
             if(lakon(i)(6:7).eq.'RA') then
                mint3d=4
             else
@@ -111,7 +135,7 @@ c            read(lakon(i)(8:8),'(i1)') nope
             endif
          elseif(lakon(i)(4:4).eq.'2') then
             mint3d=27
-         elseif(lakon(i)(4:5).eq.'10') then
+         elseif((lakon(i)(4:5).eq.'10').or.(lakon(i)(5:5).eq.'14')) then
             mint3d=4
          elseif(lakon(i)(4:4).eq.'4') then
             mint3d=1
@@ -119,7 +143,7 @@ c            read(lakon(i)(8:8),'(i1)') nope
             mint3d=9
          elseif(lakon(i)(4:4).eq.'6') then
             mint3d=2
-         elseif(lakon(i)(1:1).eq.'E') then
+         else
             mint3d=0
          endif
 !
@@ -131,8 +155,6 @@ c            read(lakon(i)(8:8),'(i1)') nope
             enddo
             vl(0,j)=v(0,konl(j))
          enddo
-c         write(*,*) ((xl(k,j),k=1,3),j=1,nope)
-c         write(*,*) ((vl(k,j),k=1,3),j=1,nope)
 !
 !        q contains the nodal forces per element; initialisation of q
 !
@@ -149,66 +171,97 @@ c         write(*,*) ((vl(k,j),k=1,3),j=1,nope)
 !
             lakonl=lakon(i)
 !
+!           initialization of tnl
+!
+            do j=1,nope
+               tnl(j)=0.d0
+            enddo
+!
 !           spring elements (including contact springs)
 !     
             if(lakonl(2:2).eq.'S') then
+               if(lakonl(7:7).eq.'C') then
 !
-!              velocity may be needed for contact springs
+!                 contact element
 !
-               kode=nelcon(1,imat)
-               if(kode.eq.-51) then
-                  timeend(1)=time
-                  timeend(2)=ttime+dtime
-                  call springforc_th(xl,vl,imat,elcon,nelcon,
-     &              tnl,ncmat_,ntmat_,nope,kode,elconloc,
-     &              plicon,nplicon,npmat_,mi,springarea(1,konl(nope+1)),
-     &              timeend,matname,konl(nope),i,istep,iinc,iperturb)
+                  kode=nelcon(1,imat)
+                  if(kode.eq.-51) then
+                     timeend(1)=time
+                     timeend(2)=ttime+dtime
+                     call springforc_th(xl,vl,imat,elcon,nelcon,
+     &                    tnl,ncmat_,ntmat_,nope,kode,elconloc,
+     &                    plkcon,nplkcon,npmat_,mi,
+     &                    springarea(1,konl(nope+1)),timeend,matname,
+     &                    konl(nope),i,istep,iinc,iperturb)
+                  endif
+               elseif(lakonl(7:7).eq.'F') then
+!
+!                 advective element
+!
+                  call advecforc(nope,vl,ithermal,xl,nelemload,
+     &                 i,nload,lakon,xload,istep,time,ttime,
+     &                 dtime,sideload,vold,mi,
+     &                 xloadold,reltime,nmethod,tnl,iinc)
                endif
 !
-               do j=1,nope
-                     fn(0,konl(j))=fn(0,konl(j))+tnl(j)
-               enddo
+            elseif(lakonl(1:2).eq.'D ') then
+!
+!              generic networkelement
+!
+               call networkforc(vl,tnl,imat,konl,mi,ntmat_,shcon,
+     &              nshcon,rhcon,nrhcon)
+               
             endif
+!
+            do j=1,nope
+               fn(0,konl(j))=fn(0,konl(j))+tnl(j)
+            enddo
          endif
 !
-         do jj=1,mint3d
+         do kk=1,mint3d
             if(lakon(i)(4:5).eq.'8R') then
-               xi=gauss3d1(1,jj)
-               et=gauss3d1(2,jj)
-               ze=gauss3d1(3,jj)
-               weight=weight3d1(jj)
+               xi=gauss3d1(1,kk)
+               et=gauss3d1(2,kk)
+               ze=gauss3d1(3,kk)
+               weight=weight3d1(kk)
+            elseif(lakon(i)(4:8).eq.'20RBR') then
+               xi=gauss3d13(1,kk)
+               et=gauss3d13(2,kk)
+               ze=gauss3d13(3,kk)
+               weight=weight3d13(kk)
             elseif((lakon(i)(4:4).eq.'8').or.
-     &             (lakon(i)(4:6).eq.'20R'))
+     &             (lakon(i)(4:6).eq.'20R').or.(lakon(i)(4:6).eq.'26R'))
      &        then
-               xi=gauss3d2(1,jj)
-               et=gauss3d2(2,jj)
-               ze=gauss3d2(3,jj)
-               weight=weight3d2(jj)
+               xi=gauss3d2(1,kk)
+               et=gauss3d2(2,kk)
+               ze=gauss3d2(3,kk)
+               weight=weight3d2(kk)
             elseif(lakon(i)(4:4).eq.'2') then
-               xi=gauss3d3(1,jj)
-               et=gauss3d3(2,jj)
-               ze=gauss3d3(3,jj)
-               weight=weight3d3(jj)
-            elseif(lakon(i)(4:5).eq.'10') then
-               xi=gauss3d5(1,jj)
-               et=gauss3d5(2,jj)
-               ze=gauss3d5(3,jj)
-               weight=weight3d5(jj)
+               xi=gauss3d3(1,kk)
+               et=gauss3d3(2,kk)
+               ze=gauss3d3(3,kk)
+               weight=weight3d3(kk)
+            elseif((lakon(i)(4:5).eq.'10').or.
+     &             (lakon(i)(4:5).eq.'14')) then
+               xi=gauss3d5(1,kk)
+               et=gauss3d5(2,kk)
+               ze=gauss3d5(3,kk)
+               weight=weight3d5(kk)
             elseif(lakon(i)(4:4).eq.'4') then
-               xi=gauss3d4(1,jj)
-               et=gauss3d4(2,jj)
-               ze=gauss3d4(3,jj)
-               weight=weight3d4(jj)
+               xi=gauss3d4(1,kk)
+               et=gauss3d4(2,kk)
+               ze=gauss3d4(3,kk)
+               weight=weight3d4(kk)
             elseif(lakon(i)(4:5).eq.'15') then
-               xi=gauss3d8(1,jj)
-               et=gauss3d8(2,jj)
-               ze=gauss3d8(3,jj)
-               weight=weight3d8(jj)
+               xi=gauss3d8(1,kk)
+               et=gauss3d8(2,kk)
+               ze=gauss3d8(3,kk)
+               weight=weight3d8(kk)
             elseif(lakon(i)(4:4).eq.'6') then
-               xi=gauss3d7(1,jj)
-               et=gauss3d7(2,jj)
-               ze=gauss3d7(3,jj)
-               weight=weight3d7(jj)
+               xi=gauss3d7(1,kk)
+               et=gauss3d7(2,kk)
+               ze=gauss3d7(3,kk)
+               weight=weight3d7(kk)
             endif
 !
             if(nope.eq.20) then
@@ -220,10 +273,14 @@ c         write(*,*) ((vl(k,j),k=1,3),j=1,nope)
                else
                   call shape20h(xi,et,ze,xl,xsj,shp,iflag)
                endif
+            elseif(nope.eq.26) then
+               call shape26h(xi,et,ze,xl,xsj,shp,iflag,konl)
             elseif(nope.eq.8) then
                call shape8h(xi,et,ze,xl,xsj,shp,iflag)
             elseif(nope.eq.10) then
                call shape10tet(xi,et,ze,xl,xsj,shp,iflag)
+            elseif(nope.eq.14) then
+               call shape14tet(xi,et,ze,xl,xsj,shp,iflag,konl)
             elseif(nope.eq.4) then
                call shape4tet(xi,et,ze,xl,xsj,shp,iflag)
             elseif(nope.eq.15) then
@@ -260,9 +317,11 @@ c         write(*,*) ((vl(k,j),k=1,3),j=1,nope)
                   t1lold=t1lold+vold(0,konl(i1))/8.d0
                   t1l=t1l+v(0,konl(i1))/8.d0
                enddo
-            elseif(lakon(i)(4:6).eq.'20 ') then
-               call lintemp_th(t0,vold,konl,nope,jj,t0l,t1lold,mi)
-               call lintemp_th(t0,v,konl,nope,jj,t0l,t1l,mi)
+            elseif((lakon(i)(4:6).eq.'20 ').or.
+     &             (lakon(i)(4:6).eq.'26 ')) then
+               nopered=20
+               call lintemp_th(t0,vold,konl,nopered,kk,t0l,t1lold,mi)
+               call lintemp_th(t0,v,konl,nopered,kk,t0l,t1l,mi)
             else
                do i1=1,nope
                   t1lold=t1lold+shp(4,i1)*vold(0,konl(i1))
@@ -291,20 +350,20 @@ c         write(*,*) ((vl(k,j),k=1,3),j=1,nope)
 !
             call materialdata_th(cocon,ncocon,imat,iorien,pgauss,orab,
      &           ntmat_,coconloc,mattyp,t1l,rhcon,nrhcon,rho,shcon,
-     &           nshcon,sph,xstiff,jj,i,istiff,mi(1))
+     &           nshcon,sph,xstiff,kk,i,istiff,mi(1))
 !
-            call thermmodel(amat,i,jj,kode,coconloc,vkl,dtime,
+            call thermmodel(amat,i,kk,kode,coconloc,vkl,dtime,
      &           time,ttime,mi(1),nstate_,xstateini,xstate,qflux,xstiff,
      &           iorien,pgauss,orab,t1l,t1lold,vold,co,lakon(i),konl,
      &           ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc)
 ! 
-            qfx(1,jj,i)=qflux(1)
-            qfx(2,jj,i)=qflux(2)
-            qfx(3,jj,i)=qflux(3)
+            qfx(1,kk,i)=qflux(1)
+            qfx(2,kk,i)=qflux(2)
+            qfx(3,kk,i)=qflux(3)
             if(lakon(i)(6:7).eq.'RA') then
-               qfx(1,jj+4,i)=qflux(1)
-               qfx(2,jj+4,i)=qflux(2)
-               qfx(3,jj+4,i)=qflux(3)
+               qfx(1,kk+4,i)=qflux(1)
+               qfx(2,kk+4,i)=qflux(2)
+               qfx(3,kk+4,i)=qflux(3)
             endif
 !
 !           calculation of the nodal flux

@@ -44,7 +44,8 @@
      &          v(1,node)*a(1,2)+v(2,node)*a(2,2)+v(3,node)*a(3,2),
      &          v(1,node)*a(1,3)+v(2,node)*a(2,3)+v(3,node)*a(3,3)
          endif
-      elseif(prlab(ii)(1:4).eq.'NT  ') then
+      elseif((prlab(ii)(1:4).eq.'NT  ').or.
+     &       (prlab(ii)(1:4).eq.'TS  ')) then
          if(ithermal.le.1) then
             write(5,'(i10,1x,1p,e13.6)') node,
      &           t1(node)

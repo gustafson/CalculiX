@@ -354,7 +354,7 @@
       function f_k(x,phi,lambda1,zk0,Pup,Tup,rurd,xflow,kup)
 !
       implicit none
-      integer neq,idid,ipar,iwork(60),lrw,liw,j
+      integer neq,idid,ipar,iwork(78),lrw,liw,j
       real*8 f_k,x,rpar(8),rtol,atol,y(1),info(15),
      &     Rurd,zk0,lambda1,Kup,xflow,pup,tup,phi,t,rwork(160)
 !     
@@ -409,7 +409,7 @@
       function f_p(x,phi,lambda1,zk0,Pup,Tup,rurd,xflow,kup)
 !
       implicit none
-      integer neq,idid,ipar,iwork(60),lrw,liw,j
+      integer neq,idid,ipar,iwork(78),lrw,liw,j
       real*8 f_p,x,rpar(8),rtol,atol,y(1),info(15),Rurd,
      &     zk0,lambda1,Kup,xflow,pup,tup,phi,t,rwork(160)
 !     
@@ -461,7 +461,7 @@
       function f_t(x,phi,lambda1,zk0,Pup,Tup,rurd,xflow,kup)
 !     
       implicit none
-      integer neq,idid,ipar,iwork(60),lrw,liw,j
+      integer neq,idid,ipar,iwork(78),lrw,liw,j
       real*8 f_t,x,rpar(8),rtol,atol,y(1),info(15),Rurd,
      &     zk0,lambda1,Kup,xflow, pup,tup,phi,t,rwork(160)
 !     
@@ -518,7 +518,7 @@
       function f_m(x,phi,lambda1,zk0,Pup,Tup,rurd,xflow,kup)
 !     
       implicit none
-      integer neq,idid,ipar,j,iwork(60),lrw,liw
+      integer neq,idid,ipar,j,iwork(78),lrw,liw
       real*8 f_m,x,rpar(8),rtol,atol,y(1),info(15),
      &     Rurd,zk0,lambda1,Kup,xflow,pup,tup,phi,t,rwork(160)
 !     
@@ -573,7 +573,7 @@
       function f_cm(x,phi,lambda1,zk0,Pup,Tup,rurd,xflow,kup)
 !     
       implicit none
-      integer neq,idid,ipar,j,iwork(60),lrw,liw
+      integer neq,idid,ipar,j,iwork(78),lrw,liw
       real*8 f_cm,x,rpar(8),rtol,atol,y(1),info(15),
      &     Rurd,zk0,lambda1,Kup,xflow,pup,tup,phi,t,rwork(160)
 !     

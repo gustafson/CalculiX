@@ -73,15 +73,23 @@ void checkconvnet(int *icutb, int *iin,
   if(*cam1p<*cam2p) {*cam2p=*cam1p;}
   if(*cam1a<*cam2a) {*cam2a=*cam1a;}
   
-  /* check for convergence or divergence 
-     comparison of the latest change with
-        - the largest change in the present calculation
-        - the largest value in the present calculation */
+  /* check for convergence or divergence; 
+     each call of radflowload.c corresponds to a thermomechanical
+     iteration, let's call the iterations within radflowload.c
+     subiterations;
+     the convergence check consists of a comparison of the change in
+     the latest subiteration with
+        - the largest change in the present thermomechanical iteration
+        - the largest value in the present thermomechanical iteration */
 
-  if(((*camt<=c1t**uamt)||(*camt<1.e-8**vamt))&&
+/*  if(((*camt<=c1t**uamt)||(*camt<1.e-8**vamt))&&
      ((*camf<=c1f**uamf)||(*camf<1.e-8**vamf))&&
      ((*camp<=c1p**uamp)||(*camp<1.e-8**vamp))&&
-     ((*cama<=c1a**uama)||(*cama<1.e-8**vama))&&
+     ((*cama<=c1a**uama)||(*cama<1.e-8**vama))&&*/
+  if(((*camt<=c1t**uamt)||(*camt<c1t**vamt))&&
+     ((*camf<=c1f**uamf)||(*camf<c1f**vamf))&&
+     ((*camp<=c1p**uamp)||(*camp<c1p**vamp))&&
+     ((*cama<=c1a**uama)||(*cama<c1a**vama))&&
      (*iin>3)){
       
       /* increment convergence reached */

@@ -41,7 +41,7 @@ void insertas_ws(int **irowp, int *i1,
     if(*ifree>*nzs_){
 //      printf("Insertas RENEW ifree = %d,nzs = %d\n",*ifree,*nzs_);
 //      *nzs_=(int)(1.1**nzs_);
-      *nzs_=(int)(1.5**nzs_);
+      *nzs_=(int)(1.5**nzs_+10);
       RENEW(irow,int,*nzs_);
       if (irow==NULL) printf("WARNING !!!!\n");
       RENEW(bd,double,*nzs_);

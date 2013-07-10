@@ -19,7 +19,7 @@
       subroutine e_c3d_prhs(co,nk,konl,lakonl,sm,ff,nelem,nmethod,rhcon,
      &  nrhcon,ielmat,ntmat_,v,vold,vcon,nelemface,sideface,nface,
      &  dtime,matname,mi,shcon,nshcon,theta1,physcon,
-     &  iexplicit,ipvar,var,ipvarf,varf,dtc)
+     &  iexplicit,ipvar,var,ipvarf,varf,dt)
 !
 !     computation of the pressure element matrix and rhs for the element with
 !     element with the topology in konl: step 2
@@ -40,13 +40,13 @@
      &  mint3d,ifacet(6,4),ifacew(8,5),iflag,iexplicit,
      &  ipvarf(*)
 !
-      real*8 co(3,*),shp(4,20),dtc(*),
-     &  ff(60),theta1,c2i,xsjmod,rhcon(0:1,ntmat_,*),rhovel(3),
+      real*8 co(3,*),shp(4,20),dt(*),
+     &  ff(78),theta1,c2i,xsjmod,rhcon(0:1,ntmat_,*),rhovel(3),
      &  shcon(0:3,ntmat_,*),vl(0:mi(2),20),xsj2(3),shp2(7,8),
-     &  v(0:mi(2),*),xsj,sm(60,60),temp,vcon(0:4,*),
+     &  v(0:mi(2),*),xsj,sm(78,78),temp,vcon(0:4,*),
      &  weight,vold(0:mi(2),*),delrhovel(3),aux(3),vconl(0:4,20),
      &  dpress(3),vconl2(0:4,8),voldl(0:mi(2),20),aux1(3),aux2(3),
-     &  physcon(*),gg(60),divrhovel,auxg(3),var(*),varf(*)
+     &  physcon(*),gg(78),divrhovel,auxg(3),var(*),varf(*)
 !
       real*8 dtime
 !
@@ -196,6 +196,7 @@
             ff(jj)=ff(jj)+
      &           shp(1,jj)*aux1(1)+shp(2,jj)*aux1(2)+shp(3,jj)*aux1(3)-
      &           dtime*
+c     &           dt(konl(jj))*
      &           (shp(1,jj)*aux2(1)+shp(2,jj)*aux2(2)+shp(3,jj)*aux2(3))
 !     
          enddo

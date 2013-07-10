@@ -36,15 +36,18 @@
       ntmat=0
       iperturb(1)=3
       iperturb(2)=1
+      write(*,*) '*INFO reading *HYPERFOAM: nonlinear geometric'
+      write(*,*) '      effects are turned on'
+      write(*,*)
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in hyperfoams: *HYPERFOAM should be'
+         write(*,*) '*ERROR reading *HYPERFOAM: *HYPERFOAM should be'
          write(*,*) '  placed before all step definitions'
          stop
       endif
 !
       if(nmat.eq.0) then
-         write(*,*) '*ERROR in hyperfoams: *HYPERFOAM should be'
+         write(*,*) '*ERROR reading *HYPERFOAM: *HYPERFOAM should be'
          write(*,*) '  preceded by a *MATERIAL card'
          stop
       endif
@@ -59,13 +62,13 @@
             elseif(textpart(i)(3:3).eq.'3') then
                ityp=-17
             else
-               write(*,*) '*WARNING in hyperfoams: only N=1, N=2, or  
-     &N=3 are allowed; '
+               write(*,*) '*WARNING reading *HYPERFOAM: only N=1, N=2, o 
+     &r N=3 are allowed; '
                call inputerror(inpc,ipoinpc,iline)
             endif
          else
             write(*,*) 
-     &        '*WARNING in hyperfoams: parameter not recognized:'
+     &        '*WARNING reading *HYPERFOAM: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline)
@@ -87,7 +90,7 @@
             ntmat=ntmat+1
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
-               write(*,*) '*ERROR in hyperfoams: increase ntmat_'
+               write(*,*) '*ERROR reading *HYPERFOAM: increase ntmat_'
                stop
             endif
             do i=1,iend
@@ -107,7 +110,7 @@
             ntmat=ntmat+1
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
-               write(*,*) '*ERROR in hyperfoams: increase ntmat_'
+               write(*,*) '*ERROR reading *HYPERFOAM: increase ntmat_'
                stop
             endif
             do i=1,8
@@ -120,7 +123,8 @@
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
             if((istat.lt.0).or.(key.eq.1)) then
-               write(*,*) '*ERROR in hyperfoams: orthotropic definition'
+               write(*,*) 
+     &           '*ERROR reading *HYPERFOAM: orthotropic definition'
                write(*,*) '  is not complete. '
                call inputerror(inpc,ipoinpc,iline)
                stop

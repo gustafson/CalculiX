@@ -29,9 +29,8 @@
 !
       character*80 matname(*)
 !
-      integer turbulent,compressible
-!
-      integer nrhcon(*),mi(*),ntmat_,nodeboun(*),isolidsurf(*),j,
+      integer turbulent,compressible,
+     &  nrhcon(*),mi(*),ntmat_,nodeboun(*),isolidsurf(*),j,
      &  ndirboun(*),nshcon(*),nk,i,nboun,node,imat,ithermal,iponoel(*),
      &  inoel(3,*),nsolidsurf,ifreenode,ifreestream(*),nfreestream,k,
      &  index,ismooth,indexi,nodei,nmpc,nodempc(3,*),ipompc(*),

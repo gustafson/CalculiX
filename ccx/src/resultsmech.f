@@ -36,7 +36,7 @@
       character*8 lakon(*),lakonl
       character*80 amat,matname(*)
 !
-      integer kon(*),konl(20),nea,neb,mi(*),mint2d,nopes,
+      integer kon(*),konl(26),nea,neb,mi(*),mint2d,nopes,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),ntmat_,ipkon(*),ne0,iflag,
      &  istep,iinc,mt,ne,mattyp,ithermal(2),iprestr,i,j,k,m1,m2,jj,
@@ -44,26 +44,26 @@
      &  nal,icmd,ihyper,nmethod,kode,imat,mint3d,iorien,ielas,
      &  istiff,ncmat_,nstate_,ikin,ilayer,nlayer,ki,kl,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,calcul_fn,
-     &  calcul_cauchy,calcul_qa
+     &  calcul_cauchy,calcul_qa,nopered
 !
-      real*8 co(3,*),v(0:mi(2),*),shp(4,20),stiini(6,mi(1),*),
-     &  stx(6,mi(1),*),xl(3,20),vl(0:mi(2),20),stre(6),
+      real*8 co(3,*),v(0:mi(2),*),shp(4,26),stiini(6,mi(1),*),
+     &  stx(6,mi(1),*),xl(3,26),vl(0:mi(2),26),stre(6),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),xs2(3,7),
      &  alcon(0:6,ntmat_,*),vini(0:mi(2),*),thickness,
      &  alzero(*),orab(7,*),elas(21),rho,fn(0:mi(2),*),
-     &  fnl(3,9),skl(3,3),beta(6),q(0:mi(2),20),xl2(3,8),
+     &  fnl(3,10),skl(3,3),beta(6),q(0:mi(2),26),xl2(3,8),
      &  vkl(0:3,3),t0(*),t1(*),prestr(6,mi(1),*),eme(6,mi(1),*),
      &  ckl(3,3),vold(0:mi(2),*),eloc(9),veold(0:mi(2),*),
-     &  springarea(2,*),elconloc(21),eth(6),xkl(3,3),voldl(0:mi(2),20),
+     &  springarea(2,*),elconloc(21),eth(6),xkl(3,3),voldl(0:mi(2),26),
      &  xikl(3,3),ener(mi(1),*),emec(6),eei(6,mi(1),*),enerini(mi(1),*),
-     &  emec0(6),vel(1:3,20),veoldl(0:mi(2),20),xsj2(3),shp2(7,8),
+     &  emec0(6),vel(1:3,26),veoldl(0:mi(2),26),xsj2(3),shp2(7,8),
      &  e,un,al,um,am1,xi,et,ze,tt,exx,eyy,ezz,exy,exz,eyz,
      &  xsj,qa(3),vj,t0l,t1l,dtime,weight,pgauss(3),vij,time,ttime,
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
-     &  xstiff(27,mi(1),*),xstate(nstate_,mi(1),*),plconloc(82),
+     &  xstiff(27,mi(1),*),xstate(nstate_,mi(1),*),plconloc(802),
      &  vokl(3,3),xstateini(nstate_,mi(1),*),vikl(3,3),
      &  gs(8,4),a,reltime,tlayer(4),dlayer(4),xlayer(mi(3),4),
-     &  thicke(mi(3),*),xnormastface(3,8,*),emeini(6,mi(1),*)
+     &  thicke(mi(3),*),xnormastface(3,9,*),emeini(6,mi(1),*)
 !
       include "gauss.f"
 !
@@ -78,6 +78,11 @@ c      data iflag /3/
          lakonl=lakon(i)
 !
          if(ipkon(i).lt.0) cycle
+!
+!        no 3D-fluid elements
+!
+         if(lakonl(1:1).eq.'F') cycle
+         if(lakonl(1:7).eq.'DCOUP3D') cycle
 !
          if(lakonl(7:8).ne.'LC') then
 !
@@ -107,12 +112,6 @@ c      data iflag /3/
                if(ielmat(k,i).ne.0) then
                   nlayer=nlayer+1
                endif
-c               do j=1,nopes
-c                  if(dabs(thicke(k,indexe+j)).gt.1.d-30) then
-c                     nlayer=nlayer+1
-c                     exit
-c                  endif
-c               enddo
             enddo
 !     
 !     determining the layer thickness and global thickness
@@ -147,22 +146,29 @@ c               enddo
 c     Bernhardi start
          if(lakonl(1:5).eq.'C3D8I') then
             nope=11
-         elseif(lakonl(4:4).eq.'2') then
+         elseif(lakonl(4:5).eq.'20') then
 c     Bernhardi end
             nope=20
+         elseif(lakonl(4:4).eq.'2') then
+            nope=26
          elseif(lakonl(4:4).eq.'8') then
             nope=8
          elseif(lakonl(4:5).eq.'10') then
             nope=10
+         elseif(lakonl(4:5).eq.'14') then
+            nope=14
          elseif(lakonl(4:4).eq.'4') then
             nope=4
          elseif(lakonl(4:5).eq.'15') then
             nope=15
          elseif(lakonl(4:4).eq.'6') then
             nope=6
-         elseif(lakonl(1:1).eq.'E') then
-c            read(lakonl(8:8),'(i1)') nope
-            nope=ichar(lakonl(8:8))-48
+         elseif((lakonl(1:1).eq.'E').and.(lakonl(7:7).ne.'F')) then
+!
+!           spring elements, contact spring elements and
+!           dashpot elements
+!
+            nope=ichar(lakonl(8:8))-47
 !
 !           local contact spring number
 !
@@ -173,7 +179,9 @@ c            read(lakonl(8:8),'(i1)') nope
 !
          if(lakonl(4:5).eq.'8R') then
             mint3d=1
-         elseif((lakonl(4:4).eq.'8').or.
+         elseif(lakonl(4:8).eq.'20RBR') then
+            mint3d=50
+         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'26R').or.
      &          (lakonl(4:6).eq.'20R')) then
             if(lakonl(7:8).eq.'LC') then
                mint3d=8*nlayer
@@ -182,7 +190,7 @@ c            read(lakonl(8:8),'(i1)') nope
             endif
          elseif(lakonl(4:4).eq.'2') then
             mint3d=27
-         elseif(lakonl(4:5).eq.'10') then
+         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
             mint3d=4
          elseif(lakonl(4:4).eq.'4') then
             mint3d=1
@@ -203,14 +211,6 @@ c            read(lakonl(8:8),'(i1)') nope
             enddo
          enddo
 !
-!        check for hyperelastic material
-!
-c         if(nelcon(1,imat).lt.0) then
-c            ihyper=1
-c         else
-c            ihyper=0
-c         endif
-!
 !        q contains the nodal forces per element; initialisation of q
 !
          if((iperturb(1).ge.2).or.((iperturb(1).le.0).and.(iout.lt.1))) 
@@ -226,12 +226,10 @@ c         endif
 !
          if(mint3d.eq.0) then
 !
-c            lakonl=lakon(i)
-!
 !           "normal" spring and dashpot elements
 !
+            kode=nelcon(1,imat)
             if(lakonl(7:7).eq.'A') then
-               kode=nelcon(1,imat)
                t0l=0.d0
                t1l=0.d0
                if(ithermal(1).eq.1) then
@@ -246,23 +244,23 @@ c            lakonl=lakon(i)
 !           spring elements (including contact springs)
 !     
             if(lakonl(2:2).eq.'S') then
-!
-!              velocity may be needed for contact springs
-!
-               if(lakonl(7:7).eq.'C') then
-                  do j=1,nope
-                     do k=1,3
-                        veoldl(k,j)=veold(k,konl(j))
-                     enddo
-                  enddo
-!
-               endif
+c!
+c!              velocity may be needed for contact springs
+c!
+c               if(lakonl(7:7).eq.'C') then
+c                  do j=1,nope
+c                     do k=1,3
+c                        veoldl(k,j)=veold(k,konl(j))
+c                     enddo
+c                  enddo
+c!
+c               endif
                call springforc(xl,konl,vl,imat,elcon,nelcon,elas,
      &              fnl,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,
      &              plicon,nplicon,npmat_,veoldl,ener(1,i),iener,
      &              stx(1,1,i),mi,springarea(1,konl(nope+1)),nmethod,
      &              ne0,iperturb,nstate_,xstateini,xstate,reltime,
-     &              xnormastface(1,1,konl(nope+1)))
+     &              xnormastface(1,1,konl(nope+1)),ielas)
                do j=1,nope
                   do k=1,3
                      fn(k,konl(j))=fn(k,konl(j))+fnl(k,j)
@@ -271,7 +269,7 @@ c            lakonl=lakon(i)
 !
 !              dashpot elements (including contact dashpots)
 !
-            elseif((nmethod.eq.4).or.
+            elseif((nmethod.eq.4).or.(nmethod.eq.5).or.
      &             ((abs(nmethod).eq.1).and.(iperturb(1).ge.2))) then
                do j=1,nope
                   konl(j)=kon(indexe+j)
@@ -280,8 +278,13 @@ c            lakonl=lakon(i)
                   enddo
                enddo
                call dashforc(xl,konl,vl,imat,elcon,nelcon,
-     &              elas,fn,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,
+     &              elas,fnl,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,
      &              elconloc,plicon,nplicon,npmat_,vel,time,nmethod,mi)
+               do j=1,nope
+                  do k=1,3
+                     fn(k,konl(j))=fn(k,konl(j))+fnl(k,j)
+                  enddo
+               enddo
             endif
          elseif(ikin.eq.1) then
             do j=1,nope
@@ -297,8 +300,13 @@ c            lakonl=lakon(i)
                et=gauss3d1(2,jj)
                ze=gauss3d1(3,jj)
                weight=weight3d1(jj)
+            elseif(lakonl(4:8).eq.'20RBR') then
+               xi=gauss3d13(1,jj)
+               et=gauss3d13(2,jj)
+               ze=gauss3d13(3,jj)
+               weight=weight3d13(jj)
             elseif((lakonl(4:4).eq.'8').or.
-     &             (lakonl(4:6).eq.'20R'))
+     &             (lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R'))
      &        then
                if(lakonl(7:8).ne.'LC') then
                   xi=gauss3d2(1,jj)
@@ -327,11 +335,6 @@ c            lakonl=lakon(i)
                   endif
                   ze=2.d0*(dlayer(ki)+(ze+1.d0)/2.d0*xlayer(ilayer,ki))/
      &                 tlayer(ki)-1.d0
-c                  write(*,*) ilayer
-c                  write(*,*) ki
-c                  write(*,*) xlayer(ilayer,ki)
-c                  write(*,*) tlayer(ki)
-c                  write(*,*) weight
                   weight=weight*xlayer(ilayer,ki)/tlayer(ki)
 !
 !                 material and orientation
@@ -355,7 +358,7 @@ c                  write(*,*) weight
                et=gauss3d3(2,jj)
                ze=gauss3d3(3,jj)
                weight=weight3d3(jj)
-            elseif(lakonl(4:5).eq.'10') then
+            elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
                xi=gauss3d5(1,jj)
                et=gauss3d5(2,jj)
                ze=gauss3d5(3,jj)
@@ -392,10 +395,14 @@ c     Bernhardi end
                else
                   call shape20h(xi,et,ze,xl,xsj,shp,iflag)
                endif
+            elseif(nope.eq.26) then
+               call shape26h(xi,et,ze,xl,xsj,shp,iflag,konl)
             elseif(nope.eq.8) then
                call shape8h(xi,et,ze,xl,xsj,shp,iflag)
             elseif(nope.eq.10) then
                call shape10tet(xi,et,ze,xl,xsj,shp,iflag)
+            elseif(nope.eq.14) then
+               call shape14tet(xi,et,ze,xl,xsj,shp,iflag,konl)
             elseif(nope.eq.4) then
                call shape4tet(xi,et,ze,xl,xsj,shp,iflag)
             elseif(nope.eq.15) then
@@ -460,11 +467,25 @@ c                  write(*,*) 'vnoeie',i,konl(m1),(vkl(m2,k),k=1,3)
             exz=vkl(1,3)+vkl(3,1)
             eyz=vkl(2,3)+vkl(3,2)
 !
+            if(iperturb(2).eq.1) then
+!     
+!                 Lagrangian strain
+!     
+               exx=exx+(vkl(1,1)**2+vkl(2,1)**2+vkl(3,1)**2)/2.d0
+               eyy=eyy+(vkl(1,2)**2+vkl(2,2)**2+vkl(3,2)**2)/2.d0
+               ezz=ezz+(vkl(1,3)**2+vkl(2,3)**2+vkl(3,3)**2)/2.d0
+               exy=exy+vkl(1,1)*vkl(1,2)+vkl(2,1)*vkl(2,2)+
+     &              vkl(3,1)*vkl(3,2)
+               exz=exz+vkl(1,1)*vkl(1,3)+vkl(2,1)*vkl(2,3)+
+     &              vkl(3,1)*vkl(3,3)
+               eyz=eyz+vkl(1,2)*vkl(1,3)+vkl(2,2)*vkl(2,3)+
+     &              vkl(3,2)*vkl(3,3)
+!
 !           for frequency analysis or buckling with preload the
 !           strains are calculated with respect to the deformed
 !           configuration
 !
-            if(iperturb(1).eq.1) then
+            elseif(iperturb(1).eq.1) then
                exx=exx+vokl(1,1)*vkl(1,1)+vokl(2,1)*vkl(2,1)+
      &              vokl(3,1)*vkl(3,1)
                eyy=eyy+vokl(1,2)*vkl(1,2)+vokl(2,2)*vkl(2,2)+
@@ -482,22 +503,21 @@ c                  write(*,*) 'vnoeie',i,konl(m1),(vkl(m2,k),k=1,3)
      &              vokl(3,2)*vkl(3,3)+vokl(3,3)*vkl(3,2)
             endif
 !
-c            if(iperturb(1).ge.2) then
-            if(iperturb(2).eq.1) then
-!     
-!                 Lagrangian strain
-!     
-               exx=exx+(vkl(1,1)**2+vkl(2,1)**2+vkl(3,1)**2)/2.d0
-               eyy=eyy+(vkl(1,2)**2+vkl(2,2)**2+vkl(3,2)**2)/2.d0
-               ezz=ezz+(vkl(1,3)**2+vkl(2,3)**2+vkl(3,3)**2)/2.d0
-               exy=exy+vkl(1,1)*vkl(1,2)+vkl(2,1)*vkl(2,2)+
-     &              vkl(3,1)*vkl(3,2)
-               exz=exz+vkl(1,1)*vkl(1,3)+vkl(2,1)*vkl(2,3)+
-     &              vkl(3,1)*vkl(3,3)
-               eyz=eyz+vkl(1,2)*vkl(1,3)+vkl(2,2)*vkl(2,3)+
-     &              vkl(3,2)*vkl(3,3)
-!     
-            endif
+c            if(iperturb(2).eq.1) then
+c!     
+c!                 Lagrangian strain
+c!     
+c               exx=exx+(vkl(1,1)**2+vkl(2,1)**2+vkl(3,1)**2)/2.d0
+c               eyy=eyy+(vkl(1,2)**2+vkl(2,2)**2+vkl(3,2)**2)/2.d0
+c               ezz=ezz+(vkl(1,3)**2+vkl(2,3)**2+vkl(3,3)**2)/2.d0
+c               exy=exy+vkl(1,1)*vkl(1,2)+vkl(2,1)*vkl(2,2)+
+c     &              vkl(3,1)*vkl(3,2)
+c               exz=exz+vkl(1,1)*vkl(1,3)+vkl(2,1)*vkl(2,3)+
+c     &              vkl(3,1)*vkl(3,3)
+c               eyz=eyz+vkl(1,2)*vkl(1,3)+vkl(2,2)*vkl(2,3)+
+c     &              vkl(3,2)*vkl(3,3)
+c!     
+c            endif
 !
 !              storing the local strains
 !
@@ -658,8 +678,10 @@ c     Bernhardi end
                         t0l=t0l+t0(konl(i1))/8.d0
                         t1l=t1l+t1(konl(i1))/8.d0
                      enddo
-                  elseif(lakonl(4:6).eq.'20 ') then
-                     call lintemp(t0,t1,konl,nope,jj,t0l,t1l)
+                  elseif((lakonl(4:6).eq.'20 ').or.
+     &                   (lakonl(4:6).eq.'26 ')) then
+                     nopered=20
+                     call lintemp(t0,t1,konl,nopered,jj,t0l,t1l)
                   else
                      do i1=1,nope
                         t0l=t0l+shp(4,i1)*t0(konl(i1))
@@ -673,8 +695,10 @@ c     Bernhardi end
                         t0l=t0l+t0(konl(i1))/8.d0
                         t1l=t1l+vold(0,konl(i1))/8.d0
                      enddo
-                  elseif(lakonl(4:6).eq.'20 ') then
-                     call lintemp_th(t0,vold,konl,nope,jj,t0l,t1l,mi)
+                  elseif((lakonl(4:6).eq.'20 ').or.
+     &                   (lakonl(4:6).eq.'26 ')) then
+                     nopered=20
+                     call lintemp_th(t0,vold,konl,nopered,jj,t0l,t1l,mi)
                   else
                      do i1=1,nope
                         t0l=t0l+shp(4,i1)*t0(konl(i1))

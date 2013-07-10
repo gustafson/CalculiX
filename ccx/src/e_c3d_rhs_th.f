@@ -34,14 +34,14 @@
       character*8 lakonl
       character*20 sideload(*)
 !
-      integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nelem,nmethod,
+      integer konl(20),ifaceq(9,6),nelemload(2,*),nk,nelem,nmethod,
      &  nload,idist,i,j,k,i1,iflag,ipompc(*),nodempc(3,*),nmpc,
      &  jj,id,ipointer,ig,kk,nope,nopes,mint2d,ikmpc(*),ilmpc(*),
-     &  mint3d,ifacet(6,4),nopev,ifacew(8,5),iinc,istep,jltyp,
+     &  mint3d,ifacet(7,4),nopev,ifacew(8,5),iinc,istep,jltyp,
      &  iscale,mi(*)
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),xloadold(2,*),
-     &  ff(60),shpj(4,20),dxsj2,temp,press,t0(*),t1(*),coords(3),
+     &  ff(78),shpj(4,20),dxsj2,temp,press,t0(*),t1(*),coords(3),
      &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),xload(2,*),
      &  xi,et,ze,xsj,xsjj,t1l,ttime,time,weight,pgauss(3),tvar(2),
      &  reltime,areaj,coefmpc(*),tl2(8)
@@ -50,16 +50,16 @@
 !
       include "gauss.f"
 !
-      data ifaceq /4,3,2,1,11,10,9,12,
-     &            5,6,7,8,13,14,15,16,
-     &            1,2,6,5,9,18,13,17,
-     &            2,3,7,6,10,19,14,18,
-     &            3,4,8,7,11,20,15,19,
-     &            4,1,5,8,12,17,16,20/
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifaceq /4,3,2,1,11,10,9,12,21,
+     &            5,6,7,8,13,14,15,16,22,
+     &            1,2,6,5,9,18,13,17,23,
+     &            2,3,7,6,10,19,14,18,24,
+     &            3,4,8,7,11,20,15,19,25,
+     &            4,1,5,8,12,17,16,20,26/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
       data ifacew /1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
@@ -97,6 +97,9 @@
       if(lakonl(4:5).eq.'8R') then
          mint2d=1
          mint3d=1
+      elseif(lakonl(4:8).eq.'20RBR') then
+         mint2d=4
+         mint3d=50
       elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) then
          mint2d=4
          mint3d=8
@@ -157,6 +160,11 @@ c     endif
                et=gauss3d1(2,kk)
                ze=gauss3d1(3,kk)
                weight=weight3d1(kk)
+            elseif(lakonl(4:8).eq.'20RBR') then
+               xi=gauss3d13(1,kk)
+               et=gauss3d13(2,kk)
+               ze=gauss3d13(3,kk)
+               weight=weight3d13(kk)
             elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) 
      &              then
                xi=gauss3d2(1,kk)

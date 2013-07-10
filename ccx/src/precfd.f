@@ -20,7 +20,7 @@
      &  ne,ipkon,kon,lakon,ikboun,ilboun,xboun,nboun,nk,isolidsurf,
      &  nsolidsurf,ifreestream,nfreestream,neighsolidsurf,iponoel,inoel,
      &  inoelfree,nef,co,ipompc,nodempc,ikmpc,ilmpc,nmpc,set,istartset,
-     &  iendset,ialset,nset,iturbulent)
+     &  iendset,ialset,nset,iturbulent,inomat,ielmat)
 !
 !     preliminary calculations for cfd applicatons:
 !     - determining the external faces of the mesh and storing
@@ -41,14 +41,15 @@
       character*81 set(*),noset
 !
       integer nelemface(*),nface,ipoface(*),nodface(5,*),nodes(4),
-     &  ne,ipkon(*),kon(*),indexe,ifaceq(8,6),ifacet(6,4),index,
+     &  ne,ipkon(*),kon(*),indexe,ifaceq(8,6),ifacet(7,4),index,
      &  ifacew(8,5),ithree,ifour,iaux,kflag,nnodes,ikboun(*),
      &  ilboun(*),nboun,isolidsurf(*),nsolidsurf,ifreestream(*),
      &  nfreestream,id,nk,node,idof,i,j,k,l,m,neighsolidsurf(*),
      &  iponoel(*),noden,idn,nope,nodemin,ifree,nef,indexold,
      &  inoel(3,*),ifreenew,inoelfree,ikmpc(*),nmpc,indexi,
      &  nodempc(3,*),ipompc(*),ilmpc(*),kmax,impc,idofi,idi,
-     &  iturbulent,istartset(*),iendset(*),ialset(*),nset
+     &  iturbulent,istartset(*),iendset(*),ialset(*),nset,inomat(*),
+     &  ielmat(*)
 !
       real*8 xboun(*),dist,distmin,co(3,*)
 !
@@ -60,10 +61,10 @@
      &            2,3,7,6,10,19,14,18,
      &            3,4,8,7,11,20,15,19,
      &            4,1,5,8,12,17,16,20/
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
       data ifacew /1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
@@ -876,6 +877,22 @@ c      nface=i
 !
       kflag=2
       call isortic(nelemface,sideface,nface,kflag)
+!
+!     filling inomat: asigns a material to fluid nodes. 
+!     (a fluid nodes is not assumed to be part of two
+!      different fluids)
+!
+      do i=1,ne
+         if(ipkon(i).lt.0) cycle
+         if(lakon(i)(1:1).ne.'F') cycle
+!
+         indexe=ipkon(i)
+         read(lakon(i)(4:4),'(i1)')nope
+!
+         do j=1,nope
+            inomat(kon(indexe+j))=ielmat(i)
+         enddo
+      enddo
 !
 c      write(*,*) 'nfreestream ',nfreestream
 c      do i=1,nfreestream

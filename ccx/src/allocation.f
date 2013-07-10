@@ -35,7 +35,8 @@
 !
       implicit none
 !
-      logical igen,lin,frequency,isochoric,cyclicsymmetry,composite
+      logical igen,lin,frequency,isochoric,cyclicsymmetry,composite,
+     &  tabular
 !
       character*1 selabel,sulabel,inpc(*)
       character*5 llab
@@ -54,12 +55,11 @@
      &  maxrmeminset,ne1d,ne2d,necper,necpsr,necaxr,nesr,
      &  neb32,nn,nflow,nradiate,irestartread,irestartstep,icntrl,
      &  irstrt,ithermal(2),nener,nstate,ipoinp(2,*),inp(3,*),
-     &  ntie,nbody,nprop,ipoinpc(0:*),nevdamp,npt,
+     &  ntie,nbody,nprop,ipoinpc(0:*),nevdamp,npt,nentries,
      &  iposs,iposm,nslavs,nlayer,nkon,nopeexp,k
 !
       real*8 temperature,tempact,xfreq,tpinc,tpmin,tpmax
 !
-      integer nentries
       parameter(nentries=14)
 !
 !     in the presence of mechanical steps the highest number
@@ -623,11 +623,12 @@ c    Bernhardi end
                      nope=3
                      nopeexp=23
                   elseif(label.eq.'B32R    ') then
-                     mi(1)=max(mi(1),8)
+c                     mi(1)=max(mi(1),8)
+                     mi(1)=max(mi(1),50)
                      nope=3
                      nopeexp=23
                   elseif(label(1:8).eq.'DASHPOTA') then
-                     label='EDSHPTA2'
+                     label='EDSHPTA1'
                      nope=2
                      nopeexp=2
                   elseif(label(1:7).eq.'DCOUP3D') then
@@ -639,7 +640,7 @@ c    Bernhardi end
                      mi(2)=max(3,mi(2))
                   elseif(label(1:7).eq.'SPRINGA') then
                      mi(1)=max(mi(1),1)
-                     label='ESPRNGA2'
+                     label='ESPRNGA1'
                      nope=2
                      nopeexp=2
                   elseif(label.eq.'GAPUNI  ') then
@@ -852,7 +853,7 @@ c            nstate=max(nstate,9)
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:15).eq.'*GAPCONDUCTANCE') then
-            nmat=nmat+1
+cccc            nmat=nmat+1
             ntmatl=0
             do
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,
@@ -1462,10 +1463,40 @@ c                  if(irestartstep.eq.0) irestartstep=1
                endif
             enddo
          elseif(textpart(1)(1:16).eq.'*SURFACEBEHAVIOR') then
-            ncmat=max(2,ncmat)
+            ncmat=max(4,ncmat)
             ntmat=max(1,ntmat)
-            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &           ipoinp,inp,ipoinpc)
+            tabular=.false.
+            do i=1,n
+               if(textpart(i)(1:38).eq.'PRESSURE-OVERCLOSURE=TABULAR') 
+     &              tabular=.true.
+            enddo
+            if(tabular) then
+               ntmatl=0
+               do
+                  call getnewline(inpc,textpart,istat,n,key,iline,
+     &                 ipol,inl,ipoinp,inp,ipoinpc)
+                  if((istat.lt.0).or.(key.eq.1)) exit
+                  read(textpart(3)(1:20),'(f20.0)',iostat=istat) 
+     &                 temperature
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(ntmatl.eq.0) then
+                     npmatl=0
+                     ntmatl=ntmatl+1
+                     ntmat=max(ntmatl,ntmat)
+                     tempact=temperature
+                  elseif(temperature.ne.tempact) then
+                     npmatl=0
+                     ntmatl=ntmatl+1
+                     ntmat=max(ntmatl,ntmat)
+                     tempact=temperature
+                  endif
+                  npmatl=npmatl+1
+                  npmat=max(npmatl,npmat)
+               enddo
+            else
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+            endif
          elseif(textpart(1)(1:19).eq.'*SURFACEINTERACTION') then
             nmat=nmat+1
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -1510,8 +1541,8 @@ c                  if(irestartstep.eq.0) irestartstep=1
                write(*,*) '       surface or the master surface in a'
                write(*,*) '       cyclic symmetry *TIE option or both'
                write(*,*) '       do not exist or are no nodal surfaces'
-               write(*,*) '       slave set:',slavset(iposs-1:iposs-1)
-               write(*,*) '       master set:',mastset(iposm-1:iposm-1)
+               write(*,*) '       slave set:',slavset(1:iposs-1)
+               write(*,*) '       master set:',mastset(1:iposm-1)
                stop
             endif
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -1645,9 +1676,9 @@ c                  if(irestartstep.eq.0) irestartstep=1
 !
       nmpc=nmpc+3*(3*8*ne2d+8*3*ne1d)
 !
-!     number of terms: 7 per equation
+!     number of terms: 9 per equation
 !
-      memmpc=memmpc+7*3*(3*8*ne2d+8*3*ne1d)
+      memmpc=memmpc+9*3*(3*8*ne2d+8*3*ne1d)
 !
 !     number of SPC's: 1 per DOF per expanded node
 !
@@ -1685,6 +1716,8 @@ c      memmpc=memmpc+15*ne1d+24*ne2d
       write(*,*) '  one-dimensional elements: ',ne1d
       write(*,*) '  two-dimensional elements: ',ne2d
       write(*,*) '  integration points per element: ',mi(1)
+      write(*,*) '  degrees of freedom per node: ',mi(2)
+      write(*,*) '  layers per element: ',mi(3)
       write(*,*)
       write(*,*) '  distributed facial loads: ',nload
       write(*,*) '  distributed volumetric loads: ',nbody

@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine uout(v,mi)
+      subroutine uout(v,mi,ithermal)
 !
 !     This routine allows the user to write user-defined output
 !     to file. The output can be brought into the routine by commons
@@ -30,12 +30,25 @@
 !                        over all elements)
 !     mi(2)              max degree of freedomm per node (max over all
 !                        nodes) in fields like v(0:mi(2))...
+!     ithermal(1)        applies to the present step
+!                        0: no thermal effects are taken into account
+!                        1: thermal boundary conditions for mechanical
+!                           calculations
+!                        2: heat transfer calculation
+!                        3: coupled temperature-displacement calculation
+!     ithermal(2)        applies to the complete input deck:
+!                        0: no thermal effects are taken into account
+!                        1: only mechanical steps
+!                        2: only heat transfer steps
+!                        3: at least one mechanical and one heat transfer
+!                           step, or at least one coupled temperature-
+!                           displacement step
 !
 !     OUTPUT: none
 !           
       implicit none
 !
-      integer mi(*)
+      integer mi(*),ithermal(*)
 !
       real*8 v(0:mi(2),*)
 !

@@ -1,5 +1,5 @@
-*DECK DSORT
-      SUBROUTINE DSORT (DX, IY, N, KFLAG)
+*deck dsort
+      subroutine dsort (dx, iy, n, kflag)
 c
 c    slight change: XERMSG was removed; error messages are
 c                   led to the screen
@@ -58,276 +58,277 @@ C           IF-THEN-ELSE-ENDIF.  (RWC, WRB)
 !     to be sorted, this dimension has to be modified accordingly
 !
 C***END PROLOGUE  DSORT
+      implicit none
 C     .. Scalar Arguments ..
-      INTEGER KFLAG, N,IY(*),TY,TTY
+      integer kflag, n,iy(*),ty,tty
 C     .. Array Arguments ..
-      DOUBLE PRECISION DX(*)
+      double precision dx(*)
 C     .. Local Scalars ..
-      DOUBLE PRECISION R, T, TT
-      INTEGER I, IJ, J, K, KK, L, M, NN
+      double precision r, t, tt
+      integer i, ij, j, k, kk, l, m, nn
 C     .. Local Arrays ..
-      INTEGER IL(31), IU(31)
+      integer il(31), iu(31)
 C     .. External Subroutines ..
 c      EXTERNAL XERMSG
 C     .. Intrinsic Functions ..
-      INTRINSIC ABS, INT
+      intrinsic abs, int
 C***FIRST EXECUTABLE STATEMENT  DSORT
-      NN = N
-      IF (NN .LT. 1) THEN
-         write(*,*) '*ERROR in dsort: the number of values to be'
+      nn = n
+      if (nn .lt. 1) then
+         write(*,*) '*error in dsort: the number of values to be'
          write(*,*) '       sorted is not positive'
          stop
-      ENDIF
+      endif
 C
-      KK = ABS(KFLAG)
-      IF (KK.NE.1 .AND. KK.NE.2) THEN
-         write(*,*) '*ERROR in dsort: the sort control parameter is'
+      kk = abs(kflag)
+      if (kk.ne.1 .and. kk.ne.2) then
+         write(*,*) '*error in dsort: the sort control parameter is'
          write(*,*) '       not 2, 1, -1 or -2'
          stop
-      ENDIF
+      endif
 C
 C     Alter array DX to get decreasing order if needed
 C
-      IF (KFLAG .LE. -1) THEN
-         DO 10 I=1,NN
-            DX(I) = -DX(I)
-   10    CONTINUE
-      ENDIF
+      if (kflag .le. -1) then
+         do 10 i=1,nn
+            dx(i) = -dx(i)
+   10    continue
+      endif
 C
-      IF (KK .EQ. 2) GO TO 100
+      if (kk .eq. 2) go to 100
 C
 C     Sort DX only
 C
-      M = 1
-      I = 1
-      J = NN
-      R = 0.375D0
+      m = 1
+      i = 1
+      j = nn
+      r = 0.375d0
 C
-   20 IF (I .EQ. J) GO TO 60
-      IF (R .LE. 0.5898437D0) THEN
-         R = R+3.90625D-2
-      ELSE
-         R = R-0.21875D0
-      ENDIF
+   20 if (i .eq. j) go to 60
+      if (r .le. 0.5898437d0) then
+         r = r+3.90625d-2
+      else
+         r = r-0.21875d0
+      endif
 C
-   30 K = I
+   30 k = i
 C
 C     Select a central element of the array and save it in location T
 C
-      IJ = I + INT((J-I)*R)
-      T = DX(IJ)
+      ij = i + int((j-i)*r)
+      t = dx(ij)
 C
 C     If first element of array is greater than T, interchange with T
 C
-      IF (DX(I) .GT. T) THEN
-         DX(IJ) = DX(I)
-         DX(I) = T
-         T = DX(IJ)
-      ENDIF
-      L = J
+      if (dx(i) .gt. t) then
+         dx(ij) = dx(i)
+         dx(i) = t
+         t = dx(ij)
+      endif
+      l = j
 C
 C     If last element of array is less than than T, interchange with T
 C
-      IF (DX(J) .LT. T) THEN
-         DX(IJ) = DX(J)
-         DX(J) = T
-         T = DX(IJ)
+      if (dx(j) .lt. t) then
+         dx(ij) = dx(j)
+         dx(j) = t
+         t = dx(ij)
 C
 C        If first element of array is greater than T, interchange with T
 C
-         IF (DX(I) .GT. T) THEN
-            DX(IJ) = DX(I)
-            DX(I) = T
-            T = DX(IJ)
-         ENDIF
-      ENDIF
+         if (dx(i) .gt. t) then
+            dx(ij) = dx(i)
+            dx(i) = t
+            t = dx(ij)
+         endif
+      endif
 C
 C     Find an element in the second half of the array which is smaller
 C     than T
 C
-   40 L = L-1
-      IF (DX(L) .GT. T) GO TO 40
+   40 l = l-1
+      if (dx(l) .gt. t) go to 40
 C
 C     Find an element in the first half of the array which is greater
 C     than T
 C
-   50 K = K+1
-      IF (DX(K) .LT. T) GO TO 50
+   50 k = k+1
+      if (dx(k) .lt. t) go to 50
 C
 C     Interchange these elements
 C
-      IF (K .LE. L) THEN
-         TT = DX(L)
-         DX(L) = DX(K)
-         DX(K) = TT
-         GO TO 40
-      ENDIF
+      if (k .le. l) then
+         tt = dx(l)
+         dx(l) = dx(k)
+         dx(k) = tt
+         go to 40
+      endif
 C
 C     Save upper and lower subscripts of the array yet to be sorted
 C
-      IF (L-I .GT. J-K) THEN
-         IL(M) = I
-         IU(M) = L
-         I = K
-         M = M+1
-      ELSE
-         IL(M) = K
-         IU(M) = J
-         J = L
-         M = M+1
-      ENDIF
-      GO TO 70
+      if (l-i .gt. j-k) then
+         il(m) = i
+         iu(m) = l
+         i = k
+         m = m+1
+      else
+         il(m) = k
+         iu(m) = j
+         j = l
+         m = m+1
+      endif
+      go to 70
 C
 C     Begin again on another portion of the unsorted array
 C
-   60 M = M-1
-      IF (M .EQ. 0) GO TO 190
-      I = IL(M)
-      J = IU(M)
+   60 m = m-1
+      if (m .eq. 0) go to 190
+      i = il(m)
+      j = iu(m)
 C
-   70 IF (J-I .GE. 1) GO TO 30
-      IF (I .EQ. 1) GO TO 20
-      I = I-1
+   70 if (j-i .ge. 1) go to 30
+      if (i .eq. 1) go to 20
+      i = i-1
 C
-   80 I = I+1
-      IF (I .EQ. J) GO TO 60
-      T = DX(I+1)
-      IF (DX(I) .LE. T) GO TO 80
-      K = I
+   80 i = i+1
+      if (i .eq. j) go to 60
+      t = dx(i+1)
+      if (dx(i) .le. t) go to 80
+      k = i
 C
-   90 DX(K+1) = DX(K)
-      K = K-1
-      IF (T .LT. DX(K)) GO TO 90
-      DX(K+1) = T
-      GO TO 80
+   90 dx(k+1) = dx(k)
+      k = k-1
+      if (t .lt. dx(k)) go to 90
+      dx(k+1) = t
+      go to 80
 C
 C     Sort DX and carry IY along
 C
-  100 M = 1
-      I = 1
-      J = NN
-      R = 0.375D0
+  100 m = 1
+      i = 1
+      j = nn
+      r = 0.375d0
 C
-  110 IF (I .EQ. J) GO TO 150
-      IF (R .LE. 0.5898437D0) THEN
-         R = R+3.90625D-2
-      ELSE
-         R = R-0.21875D0
-      ENDIF
+  110 if (i .eq. j) go to 150
+      if (r .le. 0.5898437d0) then
+         r = r+3.90625d-2
+      else
+         r = r-0.21875d0
+      endif
 C
-  120 K = I
+  120 k = i
 C
 C     Select a central element of the array and save it in location T
 C
-      IJ = I + INT((J-I)*R)
-      T = DX(IJ)
-      TY = IY(IJ)
+      ij = i + int((j-i)*r)
+      t = dx(ij)
+      ty = iy(ij)
 C
 C     If first element of array is greater than T, interchange with T
 C
-      IF (DX(I) .GT. T) THEN
-         DX(IJ) = DX(I)
-         DX(I) = T
-         T = DX(IJ)
-         IY(IJ) = IY(I)
-         IY(I) = TY
-         TY = IY(IJ)
-      ENDIF
-      L = J
+      if (dx(i) .gt. t) then
+         dx(ij) = dx(i)
+         dx(i) = t
+         t = dx(ij)
+         iy(ij) = iy(i)
+         iy(i) = ty
+         ty = iy(ij)
+      endif
+      l = j
 C
 C     If last element of array is less than T, interchange with T
 C
-      IF (DX(J) .LT. T) THEN
-         DX(IJ) = DX(J)
-         DX(J) = T
-         T = DX(IJ)
-         IY(IJ) = IY(J)
-         IY(J) = TY
-         TY = IY(IJ)
+      if (dx(j) .lt. t) then
+         dx(ij) = dx(j)
+         dx(j) = t
+         t = dx(ij)
+         iy(ij) = iy(j)
+         iy(j) = ty
+         ty = iy(ij)
 C
 C        If first element of array is greater than T, interchange with T
 C
-         IF (DX(I) .GT. T) THEN
-            DX(IJ) = DX(I)
-            DX(I) = T
-            T = DX(IJ)
-            IY(IJ) = IY(I)
-            IY(I) = TY
-            TY = IY(IJ)
-         ENDIF
-      ENDIF
+         if (dx(i) .gt. t) then
+            dx(ij) = dx(i)
+            dx(i) = t
+            t = dx(ij)
+            iy(ij) = iy(i)
+            iy(i) = ty
+            ty = iy(ij)
+         endif
+      endif
 C
 C     Find an element in the second half of the array which is smaller
 C     than T
 C
-  130 L = L-1
-      IF (DX(L) .GT. T) GO TO 130
+  130 l = l-1
+      if (dx(l) .gt. t) go to 130
 C
 C     Find an element in the first half of the array which is greater
 C     than T
 C
-  140 K = K+1
-      IF (DX(K) .LT. T) GO TO 140
+  140 k = k+1
+      if (dx(k) .lt. t) go to 140
 C
 C     Interchange these elements
 C
-      IF (K .LE. L) THEN
-         TT = DX(L)
-         DX(L) = DX(K)
-         DX(K) = TT
-         TTY = IY(L)
-         IY(L) = IY(K)
-         IY(K) = TTY
-         GO TO 130
-      ENDIF
+      if (k .le. l) then
+         tt = dx(l)
+         dx(l) = dx(k)
+         dx(k) = tt
+         tty = iy(l)
+         iy(l) = iy(k)
+         iy(k) = tty
+         go to 130
+      endif
 C
 C     Save upper and lower subscripts of the array yet to be sorted
 C
-      IF (L-I .GT. J-K) THEN
-         IL(M) = I
-         IU(M) = L
-         I = K
-         M = M+1
-      ELSE
-         IL(M) = K
-         IU(M) = J
-         J = L
-         M = M+1
-      ENDIF
-      GO TO 160
+      if (l-i .gt. j-k) then
+         il(m) = i
+         iu(m) = l
+         i = k
+         m = m+1
+      else
+         il(m) = k
+         iu(m) = j
+         j = l
+         m = m+1
+      endif
+      go to 160
 C
 C     Begin again on another portion of the unsorted array
 C
-  150 M = M-1
-      IF (M .EQ. 0) GO TO 190
-      I = IL(M)
-      J = IU(M)
+  150 m = m-1
+      if (m .eq. 0) go to 190
+      i = il(m)
+      j = iu(m)
 C
-  160 IF (J-I .GE. 1) GO TO 120
-      IF (I .EQ. 1) GO TO 110
-      I = I-1
+  160 if (j-i .ge. 1) go to 120
+      if (i .eq. 1) go to 110
+      i = i-1
 C
-  170 I = I+1
-      IF (I .EQ. J) GO TO 150
-      T = DX(I+1)
-      TY = IY(I+1)
-      IF (DX(I) .LE. T) GO TO 170
-      K = I
+  170 i = i+1
+      if (i .eq. j) go to 150
+      t = dx(i+1)
+      ty = iy(i+1)
+      if (dx(i) .le. t) go to 170
+      k = i
 C
-  180 DX(K+1) = DX(K)
-      IY(K+1) = IY(K)
-      K = K-1
-      IF (T .LT. DX(K)) GO TO 180
-      DX(K+1) = T
-      IY(K+1) = TY
-      GO TO 170
+  180 dx(k+1) = dx(k)
+      iy(k+1) = iy(k)
+      k = k-1
+      if (t .lt. dx(k)) go to 180
+      dx(k+1) = t
+      iy(k+1) = ty
+      go to 170
 C
 C     Clean up
 C
-  190 IF (KFLAG .LE. -1) THEN
-         DO 200 I=1,NN
-            DX(I) = -DX(I)
-  200    CONTINUE
-      ENDIF
-      RETURN
-      END
+  190 if (kflag .le. -1) then
+         do 200 i=1,nn
+            dx(i) = -dx(i)
+  200    continue
+      endif
+      return
+      end

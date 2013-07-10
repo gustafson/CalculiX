@@ -37,7 +37,7 @@
 !
       integer istartset(*),iendset(*),ialset(*),nelemload(2,*),mi(*),
      &  ielmat(mi(3),*),nset,nload,nload_,ntmat_,istep,istat,n,i,
-     &  j,l,key,
+     &  j,l,key,iload,
      &  iamload(2,*),nam,iamptemp,ipos,ne,node,iampfilm,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),nam_,namtot,namtot_,namta(3,*),idelay1,
      &  idelay2,ipoinpc(0:*)
@@ -99,7 +99,7 @@
                write(*,*) '       preceded by the amplitude parameter'
                stop
             endif
-            namta(3,nam)=isign(iamptemp,namta(3,iamptemp))
+            namta(3,nam)=sign(iamptemp,namta(3,iamptemp))
             iamptemp=nam
             if(nam.eq.1) then
                namtot=0
@@ -154,7 +154,7 @@
                write(*,*) '       parameter'
                stop
             endif
-            namta(3,nam)=isign(iampfilm,namta(3,iampfilm))
+            namta(3,nam)=sign(iampfilm,namta(3,iampfilm))
             iampfilm=nam
             if(nam.eq.1) then
                namtot=0
@@ -251,7 +251,7 @@
             endif
             call loadaddt(l,label,xmagfilm,xmagtemp,nelemload,sideload,
      &           xload,nload,nload_,iamload,
-     &           iamptemp,iampfilm,nam,node)
+     &           iamptemp,iampfilm,nam,node,iload)
          else
             read(textpart(1)(1:80),'(a80)',iostat=istat) elset
             elset(81:81)=' '
@@ -294,7 +294,7 @@
                   l=ialset(j)
                   call loadaddt(l,label,xmagfilm,xmagtemp,nelemload,
      &                 sideload,xload,nload,nload_,iamload,
-     &                 iamptemp,iampfilm,nam,node)
+     &                 iamptemp,iampfilm,nam,node,iload)
                else
                   l=ialset(j-2)
                   do
@@ -302,7 +302,7 @@
                      if(l.ge.ialset(j-1)) exit
                      call loadaddt(l,label,xmagfilm,xmagtemp,nelemload,
      &                    sideload,xload,nload,nload_,iamload,
-     &                    iamptemp,iampfilm,nam,node)
+     &                    iamptemp,iampfilm,nam,node,iload)
                   enddo
                endif
             enddo

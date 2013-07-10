@@ -531,7 +531,7 @@
       endif
       
  53   FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A,f8.5)  
- 57   FORMAT(1X,A,G9.4,A,G11.4,A,f8.5,A,f8.5,A,f8.5,A,f8.5)
+ 57   FORMAT(1X,A,G11.4,A,G11.4,A,f8.5,A,f8.5,A,f8.5,A,f8.5)
 !
       return
       end

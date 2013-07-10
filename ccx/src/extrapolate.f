@@ -19,10 +19,15 @@
       subroutine extrapolate(yi,yn,ipkon,inum,kon,lakon,nfield,nk,
      &  ne,mi,ndim,orab,ielorien,co,iorienloc,cflag,nelemload,
      &  nload,nodeboun,nboun,ndirboun,vold,ithermal,force,
-     &  cfd,ielmat,thicke)
+     &  icfdout,ielmat,thicke,filab)
 !
 !     extrapolates field values at the integration points to the 
 !     nodes
+!
+!     the C3D20RB element has 50 integration points, however, the
+!     first 8 integration points coincide with those of a C3D20R
+!     element. In this routine and in errorestimator.f the C3D20RB
+!     element is treated as an ordinary C3D20R element
 !
 !     the number of internal state variables is limited to 999
 !     (cfr. array field)
@@ -33,22 +38,58 @@
 !
       character*1 cflag
       character*8 lakon(*),lakonl
+      character*87 filab(*)
 !
       integer ipkon(*),inum(*),kon(*),mi(*),ne,indexe,nope,
      &  nonei20(3,12),nfield,nonei10(3,6),nk,i,j,k,l,ndim,
      &  nonei15(3,9),iorienloc,iorien,ielorien(mi(3),*),konl,
-     &  mint3d,m,iflag,nelemload(2,*),nload,node,nboun,jj,ll,
-     &  nodeboun(*),ndirboun(*),ithermal(2),cfd,ielmat(mi(3),*),
-     &  nlayer,nopeexp,ilayer,kk,mint2d,nopes,kl,ki
+     &  mint3d,m,iflag,nelemload(2,*),nload,nboun,jj,ll,
+     &  nodeboun(*),ndirboun(*),ithermal(2),icfdout,ielmat(mi(3),*),
+     &  nlayer,nopeexp,ilayer,kk,mint2d,nopes,kl,ki,iel,ielstart,
+     &  ielemremesh,itet(4),iwedge(2,9),mesh_in_original_form
 !
       real*8 yi(ndim,mi(1),*),yn(nfield,*),field(999,20*mi(3)),a8(8,8),
      &  a4(4,4),a27(20,27),a9(6,9),a2(6,2),orab(7,*),co(3,*),
      &  coords(3,27),xi,et,ze,xl(3,20),xsj,shp(4,20),weight,
      &  yiloc(6,27),a(3,3),b(3,3),c(3,3),vold(0:mi(2),*),tlayer(4),
      &  dlayer(4),xlayer(mi(3),4),thickness,xs2(3,7),xl2(3,8),
-     &  xsj2(3),shp2(7,8),thicke(mi(3),*)
+     &  xsj2(3),shp2(7,8),thicke(mi(3),*),coloc(3,8),scale,
+     &  xwedge(2,2,9),a14(8,14)
 !
       include "gauss.f"
+!
+      data coloc /-1.d0,-1.d0,-1.d0,
+     &             1.d0,-1.d0,-1.d0,
+     &            -1.d0,1.d0,-1.d0,
+     &             1.d0,1.d0,-1.d0,
+     &            -1.d0,-1.d0,1.d0,
+     &             1.d0,-1.d0,1.d0,
+     &            -1.d0,1.d0,1.d0,
+     &             1.d0,1.d0,1.d0/
+!
+!     a 10-node tet is remeshed into 10 4-node tets at contact
+!     interfaces; itet contains the linear tet elements to which
+!     the integration points of the parent 10-node tet belong
+!
+      data itet /1,2,3,10/
+!
+      data iwedge /1,0,2,0,3,0,1,5,2,6,3,7,5,0,6,0,7,0/
+!
+      data xwedge /0.975615382715435242d0,0.243846172845647580d-1,
+     &             0.d0,0.d0,
+     &             0.975615382715435242d0,0.243846172845647580d-1,
+     &             0.d0,0.d0,
+     &             0.975615382715435242d0,0.243846172845647580d-1,
+     &             0.d0,0.d0,
+     &             0.d0,.5d0,.5d0,0.d0,
+     &             0.d0,.5d0,.5d0,0.d0,
+     &             0.d0,.5d0,.5d0,0.d0,
+     &             0.243846172845647580d-1,0.975615382715435242d0,
+     &             0.d0,0.d0,
+     &             0.243846172845647580d-1,0.975615382715435242d0,
+     &             0.d0,0.d0,
+     &             0.243846172845647580d-1,0.975615382715435242d0,
+     &             0.d0,0.d0/
 !
       data nonei10 /5,1,2,6,2,3,7,3,1,8,1,4,9,2,4,10,3,4/
 !
@@ -74,6 +115,10 @@
      &         -0.52027, 0.10405, 0.10405, 1.63138,-0.32628,-0.32628,
      &          0.10405,-0.52027, 0.10405,-0.32628, 1.63138,-0.32628,
      &          0.10405, 0.10405,-0.52027,-0.32628,-0.32628, 1.63138/
+!
+!     extrapolation from a 2x2x2=8 integration point scheme in a hex to
+!     the vertex nodes
+!    
       data a8 /2.549,-.683,.183,-.683,-.683,.183,
      &        -.04904,.183,-.683,2.549,-.683,.183,
      &        .183,-.683,.183,-.04904,-.683,.183,
@@ -84,7 +129,44 @@
      &        .183,-.04904,-.683,2.549,-.683,.183,
      &        .183,-.04904,.183,-.683,-.683,.183,
      &        -.683,2.549,-.04904,.183,-.683,.183,
-     &        .183,-.683,2.549,-.683/      
+     &        .183,-.683,2.549,-.683/  
+!
+!     extrapolation from a 14 integration point scheme in a hex to
+!     the vertex nodes
+!    
+      data a14 /
+     &  0.1396E+01,-0.3026E+00,0.1124E-01,-0.3026E+00,
+     &  -0.3026E+00,0.1124E-01,0.4901E-01,0.1124E-01,
+     &  -0.3026E+00,0.1396E+01,-0.3026E+00,0.1124E-01,
+     &  0.1124E-01,-0.3026E+00,0.1124E-01,0.4901E-01,
+     &  0.1124E-01,-0.3026E+00,0.1396E+01,-0.3026E+00,
+     &  0.4901E-01,0.1124E-01,-0.3026E+00,0.1124E-01,
+     &  -0.3026E+00,0.1124E-01,-0.3026E+00,0.1396E+01,
+     &  0.1124E-01,0.4901E-01,0.1124E-01,-0.3026E+00,
+     &  -0.3026E+00,0.1124E-01,0.4901E-01,0.1124E-01,
+     &  0.1396E+01,-0.3026E+00,0.1124E-01,-0.3026E+00,
+     &  0.1124E-01,-0.3026E+00,0.1124E-01,0.4901E-01,
+     &  -0.3026E+00,0.1396E+01,-0.3026E+00,0.1124E-01,
+     &  0.4901E-01,0.1124E-01,-0.3026E+00,0.1124E-01,
+     &  0.1124E-01,-0.3026E+00,0.1396E+01,-0.3026E+00,
+     &  0.1124E-01,0.4901E-01,0.1124E-01,-0.3026E+00,
+     &  -0.3026E+00,0.1124E-01,-0.3026E+00,0.1396E+01,
+     &  0.2069E+00,0.2069E+00,-0.6408E-01,-0.6408E-01,
+     &  0.2069E+00,0.2069E+00,-0.6408E-01,-0.6408E-01,
+     &  -0.6408E-01,0.2069E+00,0.2069E+00,-0.6408E-01,
+     &  -0.6408E-01,0.2069E+00,0.2069E+00,-0.6408E-01,
+     &  -0.6408E-01,-0.6408E-01,0.2069E+00,0.2069E+00,
+     &  -0.6408E-01,-0.6408E-01,0.2069E+00,0.2069E+00,
+     &  0.2069E+00,-0.6408E-01,-0.6408E-01,0.2069E+00,
+     &  0.2069E+00,-0.6408E-01,-0.6408E-01,0.2069E+00,
+     &  0.2069E+00,0.2069E+00,0.2069E+00,0.2069E+00,
+     &  -0.6408E-01,-0.6408E-01,-0.6408E-01,-0.6408E-01,
+     &  -0.6408E-01,-0.6408E-01,-0.6408E-01,-0.6408E-01,
+     &  0.2069E+00,0.2069E+00,0.2069E+00,0.2069E+00/
+!
+!     extrapolation from a 3x3x3=27 integration point scheme in a hex to
+!     the all nodes in a 20-node element
+!    
       data a27 /
      &  2.37499,-0.12559,-0.16145,-0.12559,-0.12559,-0.16145, 0.11575,
      & -0.16145, 0.32628, 0.11111, 0.11111, 0.32628, 0.11111,-0.10405,
@@ -164,7 +246,14 @@
      & -0.12559, 2.37499,-0.12559,-0.10405, 0.11111, 0.11111,-0.10405,
      &  0.11111, 0.32628, 0.32628, 0.11111,-0.10405, 0.11111, 0.32628,
      &  0.11111/
+!
       data iflag /1/
+!
+      if(filab(1)(3:3).eq.'C') then
+         mesh_in_original_form=0
+      else
+         mesh_in_original_form=1
+      endif
 !
       do i=1,nk
          inum(i)=0
@@ -178,8 +267,75 @@
 !
       do i=1,ne
 !
-         if(ipkon(i).lt.0) cycle
-         indexe=ipkon(i)
+         if(ipkon(i).eq.-1) then
+            cycle
+         elseif((lakon(i)(5:6).eq.'IC').and.
+     &          (mesh_in_original_form.eq.1)) then
+            cycle
+         elseif((ipkon(i).lt.-1).and.
+     &          (mesh_in_original_form.eq.1)) then
+!
+!           for C3D20(R) elements remeshed due to contact:
+!           the values at the integration points of the 
+!           corresponding C3D20R element are interpolated
+!           from the values at the integration points of the
+!           substituting C3D8I elements
+!
+!           This means that a C3D20 element 
+!           element is converted into a C3D20R element (having
+!           8 integration points instead of 27)
+!
+            ielstart=kon(-2-ipkon(i)+1)-1
+            if(lakon(i)(4:5).eq.'20') then
+               lakon(i)(6:6)='R'
+               scale=2.d0-dsqrt(3.d0)
+               do j=1,8
+                  iel=ielstart+j
+                  xi=coloc(1,j)*scale
+                  et=coloc(2,j)*scale
+                  ze=coloc(3,j)*scale
+                  call shape8h(xi,et,ze,xl,xsj,shp,iflag)
+                  do k=1,ndim
+                     yi(k,j,i)=0.d0
+                     do l=1,8
+                        yi(k,j,i)=yi(k,j,i)+shp(4,l)*yi(k,l,iel)
+                     enddo
+                  enddo
+               enddo
+c            elseif(lakon(i)(4:5).eq.'10') then
+c               do j=1,4
+c                  iel=ielstart+itet(j)
+c                  do k=1,ndim
+c                     yi(k,j,i)=yi(k,1,iel)
+c                  enddo
+c               enddo
+c            elseif(lakon(i)(4:5).eq.'15') then
+c               do j=1,9
+c                  do k=1,ndim
+c                     yi(k,j,i)=0.d0
+c                     do l=1,2
+c                        iel=ielstart+iwedge(l,j)
+c                        if(iwedge(l,j).eq.0) cycle
+c                        do m=1,2
+c                           yi(k,j,i)=yi(k,j,i)+xwedge(m,l,j)*
+c     &                                     yi(k,m,iel)
+c                        enddo
+c                     enddo
+c                  enddo
+c               enddo
+            else
+               cycle
+            endif
+            indexe=-ipkon(i)-2
+            ielemremesh=kon(indexe+1)
+            kon(indexe+1)=kon(ipkon(ielemremesh)+1)
+         elseif(ipkon(i).lt.-1) then
+            cycle
+         else
+            indexe=ipkon(i)
+         endif
+!
+c         indexe=ipkon(i)
          lakonl=lakon(i)
 !
          if(lakonl(7:8).eq.'LC') then
@@ -199,15 +355,18 @@
             endif
          endif
 !
-         if((lakonl(1:1).eq.'F').and.(cfd.ne.1)) then
+!        if icfdout=1 cfd-output is requested (i.e. this routine
+!        is being called from compfluid.c)
+!
+         if((lakonl(1:1).eq.'F').and.(icfdout.ne.1)) then
             cycle
-         elseif((lakonl(1:1).ne.'F').and.(cfd.eq.1)) then
+         elseif((lakonl(1:1).ne.'F').and.(icfdout.eq.1)) then
             cycle
          elseif(lakonl(4:4).eq.'2') then
             nope=20
          elseif(lakonl(4:4).eq.'8') then
             nope=8
-         elseif(lakonl(4:5).eq.'10') then
+         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
             nope=10
          elseif(lakonl(4:4).eq.'4') then
             nope=4
@@ -222,6 +381,8 @@
          else
             cycle
          endif
+!
+!     storage in local coordinates
 !
 !     calculation of the integration point coordinates for
 !     output in the local system
@@ -249,7 +410,6 @@
 !     determining the layer thickness and global thickness
 !     at the shell integration points
 !     
-               iflag=1
                indexe=ipkon(i)
                do kk=1,mint2d
                   xi=gauss3d2(1,kk)
@@ -265,7 +425,6 @@
                      xlayer(k,kk)=thickness
                   enddo
                enddo
-c               iflag=3
 !     
                ilayer=0
                do k=1,4
@@ -276,7 +435,8 @@ c               iflag=3
             if(lakon(i)(4:5).eq.'8R') then
                mint3d=1
             elseif((lakon(i)(4:4).eq.'8').or.
-     &              (lakon(i)(4:6).eq.'20R')) then
+     &             (lakon(i)(4:6).eq.'20R').or.
+     &             (lakon(i)(4:6).eq.'26R')) then
                if(lakonl(7:8).eq.'LC') then
                   mint3d=8*nlayer
                else
@@ -284,7 +444,8 @@ c               iflag=3
                endif
             elseif(lakon(i)(4:4).eq.'2') then
                mint3d=27
-            elseif(lakon(i)(4:5).eq.'10') then
+            elseif((lakon(i)(4:5).eq.'10').or.
+     &             (lakon(i)(4:5).eq.'14')) then
                mint3d=4
             elseif(lakon(i)(4:4).eq.'4') then
                mint3d=1
@@ -308,7 +469,8 @@ c               iflag=3
                   ze=gauss3d1(3,j)
                   weight=weight3d1(j)
                elseif((lakon(i)(4:4).eq.'8').or.
-     &                 (lakon(i)(4:6).eq.'20R'))
+     &                (lakon(i)(4:6).eq.'20R').or.
+     &                (lakon(i)(4:6).eq.'26R'))
      &                 then
                   if(lakonl(7:8).ne.'LC') then
                      xi=gauss3d2(1,j)
@@ -348,7 +510,8 @@ c               iflag=3
                   et=gauss3d3(2,j)
                   ze=gauss3d3(3,j)
                   weight=weight3d3(j)
-               elseif(lakon(i)(4:5).eq.'10') then
+               elseif((lakon(i)(4:5).eq.'10').or.
+     &                (lakon(i)(4:5).eq.'14')) then
                   xi=gauss3d5(1,j)
                   et=gauss3d5(2,j)
                   ze=gauss3d5(3,j)
@@ -451,10 +614,9 @@ c               iflag=3
             enddo
 !
 c     Bernhardi start
-            if((lakonl(4:6).eq.'20R').or.(lakonl(4:5).eq.'8 ')
-     &           .or.(lakonl(4:5).eq.'8I')) then
+            if((lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R').or.
+     &         (lakonl(4:5).eq.'8 ').or.(lakonl(4:5).eq.'8I')) then
 c     Bernhardi end
-c            if((lakonl(4:6).eq.'20R').or.(lakonl(4:5).eq.'8 ')) then
                if(lakonl(7:8).ne.'LC') then
                   do j=1,8
                      do k=1,nfield
@@ -485,7 +647,7 @@ c            if((lakonl(4:6).eq.'20R').or.(lakonl(4:5).eq.'8 ')) then
                      field(k,j)=yiloc(k,1)
                   enddo
                enddo
-            elseif(lakonl(4:5).eq.'10') then
+            elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
                do j=1,4
                   do k=1,nfield
                      field(k,j)=0.d0
@@ -530,6 +692,8 @@ c            if((lakonl(4:6).eq.'20R').or.(lakonl(4:5).eq.'8 ')) then
             endif
          else
 !
+!        storage in global coordinates
+!
 !        determining the field values in the vertex nodes
 !        for C3D20R and C3D8: trilinear extrapolation (= use of the
 !                             C3D8 linear interpolation functions)
@@ -540,8 +704,8 @@ c            if((lakonl(4:6).eq.'20R').or.(lakonl(4:5).eq.'8 ')) then
 !        for C3D6: use of a linear interpolation function
 !
 c     Bernhardi start
-            if((lakonl(4:6).eq.'20R').or.(lakonl(4:5).eq.'8 ')
-     &        .or.(lakonl(4:5).eq.'8I')) then
+            if((lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R').or.
+     &         (lakonl(4:5).eq.'8 ').or.(lakonl(4:5).eq.'8I')) then
 c     Bernhardi end
                if(lakonl(7:8).ne.'LC') then
                   do j=1,8
@@ -573,7 +737,7 @@ c     Bernhardi end
                      field(k,j)=yi(k,1,i)
                   enddo
                enddo
-            elseif(lakonl(4:5).eq.'10') then
+            elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
                do j=1,4
                   do k=1,nfield
                      field(k,j)=0.d0
@@ -620,7 +784,7 @@ c     Bernhardi end
 !
 !        determining the field values in the midside nodes
 !
-         if(lakonl(4:6).eq.'20R') then
+         if((lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R')) then
             if(lakonl(7:8).ne.'LC') then
                do j=9,20
                   do k=1,nfield
@@ -639,7 +803,7 @@ c     Bernhardi end
                   enddo
                enddo
             endif
-         elseif(lakonl(4:5).eq.'10') then
+         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
             do j=5,10
                do k=1,nfield
                   field(k,j)=(field(k,nonei10(2,j-4))+
@@ -686,6 +850,9 @@ c        incompatible modes elements
             enddo
          endif
 c     Bernhardi end
+!
+         if((ipkon(i).lt.-1).and.
+     &      (mesh_in_original_form.eq.1)) kon(indexe+1)=ielemremesh
 !
       enddo
 !

@@ -32,31 +32,31 @@
       integer koncont(4,*),ncont,i,j,k,node,mi(*),imastnode(*),
      &     nmastnode(*),ntie,imast,iplaneaxial,noeq,
      &     istartset(*),iendset(*),ialset(*),ifacem,nelemm,
-     &     jfacem,indexe,ipkon(*),nopem,nope,konl(20),kon(*),m,
-     &     ifaceq(8,6),ifacet(6,4),ifacew1(4,5),xquad(2,8),
-     &     ifacew2(8,5),id,index1,indexnode(8),l,iflag,nset,itriact,
+     &     jfacem,indexe,ipkon(*),nopem,nope,konl(26),kon(*),m,
+     &     ifaceq(9,6),ifacet(7,4),ifacew1(4,5),
+     &     ifacew2(8,5),id,index1,indexnode(9),l,iflag,nset,itriact,
      &     ipos,ntrifaces,noeq4(2),noeq8(6),mcs,ics(*),icyc(3),
-     &     istart,ilength
+     &     istart,ilength,noeq9(8)
 !     
       real*8 co(3,*),vold(0:mi(2),*),cg(3,*),straight(16,*),col(3,3),
-     &     xmastnor(3,*),xl2m(3,8),xi,et,dd,xsj2(3),shp2(7,8),
-     &     xs2(3,2),xnor(3,3),cs(17,*)
+     &     xmastnor(3,*),xl2m(3,9),xi,et,dd,xsj2(3),shp2(7,9),
+     &     xs2(3,2),xnor(3,3),cs(17,*),xquad(2,9),xtri(2,7)
 !     
 !     nodes per face for hex elements
 !     
-      data ifaceq /4,3,2,1,11,10,9,12,
-     &             5,6,7,8,13,14,15,16,
-     &             1,2,6,5,9,18,13,17,
-     &             2,3,7,6,10,19,14,18,
-     &             3,4,8,7,11,20,15,19,
-     &             4,1,5,8,12,17,16,20/
+      data ifaceq /4,3,2,1,11,10,9,12,21,
+     &            5,6,7,8,13,14,15,16,22,
+     &            1,2,6,5,9,18,13,17,23,
+     &            2,3,7,6,10,19,14,18,24,
+     &            3,4,8,7,11,20,15,19,25,
+     &            4,1,5,8,12,17,16,20,26/
 !     
 !     nodes per face for tet elements
 !
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
 !
 !     nodes per face for linear wedge elements
 !
@@ -78,17 +78,32 @@
 !     
 !     new added data for the local coodinates for nodes
 !
-      data xquad /-1, -1,
-     &             1, -1,
-     &             1, 1,
-     &            -1, 1,
-     &             0, -1,
-     &             1, 0,
-     &             0, 1,
-     &            -1, 0/
+      data xquad /-1.d0, -1.d0,
+     &             1.d0, -1.d0,
+     &             1.d0, 1.d0,
+     &            -1.d0, 1.d0,
+     &             0.d0, -1.d0,
+     &             1.d0, 0.d0,
+     &             0.d0, 1.d0,
+     &            -1.d0, 0.d0,
+     &             0.d0, 0.d0/
+!
+      data xtri /0.d0,0.d0,
+     &           1.d0,0.d0,
+     &           0.d0,1.d0,
+     &           .5d0,0.d0,
+     &           .5d0,.5d0,
+     &           0.d0,.5d0,
+     &           0.333333333333333d0,0.333333333333333d0/
+!
+!     relative node position in the triangle topology the side
+!     opposite of which does not need to be checked for the
+!     slave node/master triangle matching (because of expansion
+!     of plane stress/strain/axisymmetric elements)
 !
       data noeq4 /3,1/
       data noeq8 /3,3,2,1,0,0/
+      data noeq9 /3,3,3,3,3,3,3,3/
 !
       kind1='C'
       kind2='-'
@@ -134,15 +149,18 @@
                   elseif(lakon(nelemm)(4:4).eq.'8') then
                      nopem=4
                      nope=8
-                  elseif(lakon(nelemm)(4:6).eq.'20R') then
+                  elseif(lakon(nelemm)(4:5).eq.'20') then
                      nopem=8
                      nope=20
                   elseif(lakon(nelemm)(4:4).eq.'2') then
-                     nopem=8
-                     nope=20
+                     nopem=9
+                     nope=26
                   elseif(lakon(nelemm)(4:5).eq.'10') then
                      nopem=6
                      nope=10
+                  elseif(lakon(nelemm)(4:5).eq.'14') then
+                     nopem=7
+                     nope=14
                   elseif(lakon(nelemm)(4:4).eq.'4') then
                      nopem=3
                      nope=4
@@ -172,14 +190,15 @@
                      konl(k)=kon(ipkon(nelemm)+k)
                   enddo
 !     
-                  if((nope.eq.20).or.(nope.eq.8)) then
+                  if((nope.eq.20).or.(nope.eq.8).or.(nope.eq.26)) then
                      do m=1,nopem
                         do k=1,3
                            xl2m(k,m)=co(k,konl(ifaceq(m,jfacem)))+
      &                          vold(k,konl(ifaceq(m,jfacem)))
                         enddo
                      enddo
-                  elseif((nope.eq.10).or.(nope.eq.4)) then
+                  elseif((nope.eq.10).or.(nope.eq.4).or.(nope.eq.14)) 
+     &                    then
                      do m=1,nopem
                         do k=1,3
                            xl2m(k,m)=co(k,konl(ifacet(m,jfacem)))+
@@ -204,7 +223,35 @@
                   
 !     calculate the normal vector in the nodes belonging to the master surface
 !     
-                  if(nopem.eq.8) then
+                  if(nopem.eq.9) then
+                     do m = 1, nopem
+                        xi = xquad(1,m)
+                        et = xquad(2,m)
+                        call shape9q(xi,et,xl2m,xsj2,xs2,shp2,iflag)
+                        dd = dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2)
+     &                       + xsj2(3)*xsj2(3))
+                        xsj2(1) = xsj2(1)/dd
+                        xsj2(2) = xsj2(2)/dd
+                        xsj2(3) = xsj2(3)/dd
+!     
+                        if(nope.eq.26) then
+                           node = konl(ifaceq(m,jfacem))
+                        elseif(nope.eq.20) then
+                           node=konl(ifacew2(m,jfacem))
+                        endif
+!     
+                        call nident(imastnode(nmastnode(i)+1), node, 
+     &                       nmastnode(i+1)-nmastnode(i), id)
+                        index1=nmastnode(i)+id
+                        indexnode(m)=index1
+                        xmastnor(1,index1) = xmastnor(1,index1)
+     &                       +xsj2(1)
+                        xmastnor(2,index1) = xmastnor(2,index1)
+     &                       +xsj2(2)
+                        xmastnor(3,index1) = xmastnor(3,index1)
+     &                       +xsj2(3)
+                     enddo
+                  elseif(nopem.eq.8) then
                      do m = 1, nopem
                         xi = xquad(1,m)
                         et = xquad(2,m)
@@ -263,8 +310,8 @@
                      enddo
                   elseif(nopem.eq.6) then
                      do m = 1, nopem
-                        xi = xquad(1,m)
-                        et = xquad(2,m)
+                        xi = xtri(1,m)
+                        et = xtri(2,m)
                         call shape6tri(xi,et,xl2m,xsj2,xs2,shp2,iflag)
                         dd = dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2) 
      &                       + xsj2(3)*xsj2(3))
@@ -289,10 +336,38 @@
                         xmastnor(3,index1) = xmastnor(3,index1)
      &                       +xsj2(3)
                      enddo
+                  elseif(nopem.eq.7) then
+                     do m = 1, nopem
+                        xi = xtri(1,m)
+                        et = xtri(2,m)
+                        call shape7tri(xi,et,xl2m,xsj2,xs2,shp2,iflag)
+                        dd = dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2) 
+     &                       + xsj2(3)*xsj2(3))
+                        xsj2(1) = xsj2(1)/dd
+                        xsj2(2) = xsj2(2)/dd
+                        xsj2(3) = xsj2(3)/dd
+!     
+                        if(nope.eq.14) then
+                           node = konl(ifacet(m,jfacem))
+                        elseif(nope.eq.20) then
+                           node = konl(ifacew2(m,jfacem))
+                        endif
+!     
+                        call nident(imastnode(nmastnode(i)+1), node, 
+     &                       nmastnode(i+1)-nmastnode(i), id)
+                        index1=nmastnode(i)+id
+                        indexnode(m)=index1
+                        xmastnor(1,index1) = xmastnor(1,index1)
+     &                       +xsj2(1)
+                        xmastnor(2,index1) = xmastnor(2,index1)
+     &                       +xsj2(2)
+                        xmastnor(3,index1) = xmastnor(3,index1)
+     &                       +xsj2(3)
+                     enddo
                   else
                      do m = 1, nopem
-                        xi = xquad(1,m)
-                        et = xquad(2,m)
+                        xi = xtri(1,m)
+                        et = xtri(2,m)
                         call shape3tri(xi,et,xl2m,xsj2,xs2,shp2,iflag)
                         dd = dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2) 
      &                       + xsj2(3)*xsj2(3))
@@ -363,12 +438,16 @@
                nelemm=int(ialset(j)/10.d0)
                jfacem=ialset(j)-10*nelemm
 !     
-               if(lakon(nelemm)(4:4).eq.'2') then
+               if(lakon(nelemm)(4:5).eq.'20') then
                   ntrifaces=6
+               elseif(lakon(nelemm)(4:4).eq.'2') then
+                  ntrifaces=8
                elseif(lakon(nelemm)(4:4).eq.'8') then
                   ntrifaces=2
                elseif(lakon(nelemm)(4:5).eq.'10') then
                   ntrifaces=4
+               elseif(lakon(nelemm)(4:5).eq.'14') then
+                  ntrifaces=6
                elseif(lakon(nelemm)(4:4).eq.'4') then
                   ntrifaces=1
                elseif(lakon(nelemm)(4:5).eq.'15') then
@@ -386,18 +465,26 @@
                endif
 !     
 !     check whether plane stress, plane strain or
-!     axisymmetric element (linear or quadratic)
+!     axisymmetric element (linear or quadratic, not
+!     relevant for tets)
 !     
                iplaneaxial=0
                if((lakon(nelemm)(7:7).eq.'S').or.
      &              (lakon(nelemm)(7:7).eq.'E').or.
      &              (lakon(nelemm)(7:7).eq.'A')) then
-                  if((lakon(nelemm)(4:4).eq.'2').or.
-     &                 (lakon(nelemm)(4:5).eq.'15')) then
-                     iplaneaxial=8
-                  else
+                  if(ntrifaces.eq.2) then
                      iplaneaxial=4
+                  elseif(ntrifaces.eq.6) then
+                     iplaneaxial=8
+                  elseif(ntrifaces.eq.8) then
+                     iplaneaxial=9
                   endif
+c                  if((lakon(nelemm)(4:4).eq.'2').or.
+c     &                 (lakon(nelemm)(4:5).eq.'15')) then
+c                     iplaneaxial=8
+c                  else
+c                     iplaneaxial=4
+c                  endif
                endif
 !     
 !     loop over the master triangles
@@ -415,8 +502,10 @@
                      noeq=0
                   elseif(iplaneaxial.eq.4) then
                      noeq=noeq4(k)
-                  else
+                  elseif(iplaneaxial.eq.8) then
                      noeq=noeq8(k)
+                  elseif(iplaneaxial.eq.9) then
+                     noeq=noeq9(k)
                   endif
 !     
 !     check for cyclic symmetric structures; triangle

@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine loadadd(nelement,label,value,nelemload,sideload,
-     &  xload,nload,nload_,iamload,iamplitude,nam,isector)
+     &  xload,nload,nload_,iamload,iamplitude,nam,isector,idefload)
 !
 !     adds a facial dload condition to the data base
 !
@@ -26,7 +26,7 @@
       character*20 label,sideload(*)
 !
       integer nelemload(2,*),iamload(2,*),nelement,nload,nload_,j,
-     &  iamplitude,nam,isector,id
+     &  iamplitude,nam,isector,id,idefload(*)
 !
       real*8 xload(2,*),value
 !
@@ -45,7 +45,12 @@
 !     loading on same element face and sector
 !     detected: values are replaced
 !     
-                     xload(1,id)=value
+                     if(idefload(id).eq.0) then
+                        xload(1,id)=value
+                        idefload(id)=1
+                     else
+                        xload(1,id)=xload(1,id)+value
+                     endif
                      xload(2,id)=0.d0
                      if(nam.gt.0) then
                         iamload(1,id)=iamplitude
@@ -90,6 +95,7 @@ c                  id=id-1
       do j=nload,id+2,-1
          nelemload(1,j)=nelemload(1,j-1)
          nelemload(2,j)=nelemload(2,j-1)
+         idefload(j)=idefload(j-1)
          sideload(j)=sideload(j-1)
          xload(1,j)=xload(1,j-1)
          xload(2,j)=xload(2,j-1)
@@ -103,6 +109,7 @@ c                  id=id-1
 !
       nelemload(1,id+1)=nelement
       nelemload(2,id+1)=isector
+      idefload(id+1)=1
       sideload(id+1)=label
       xload(1,id+1)=value
       xload(2,id+1)=0.

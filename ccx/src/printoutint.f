@@ -29,7 +29,8 @@
 !
       integer ipkon(*),mi(*),nstate_,nelem,l,ii,mint3d,j,k,nope,
      &  ielorien(mi(3),*),norien,kon(*),konl,indexe,m,iorien,iflag,
-     &  ielmat(mi(3),*),nopes,mint2d,kk,ki,kl,nlayer,ilayer
+     &  ielmat(mi(3),*),nopes,mint2d,kk,ki,kl,nlayer,ilayer,
+     &  ielemremesh
 !
       real*8 stx(6,mi(1),*),eei(6,mi(1),*),xstate(nstate_,mi(1),*),
      &  ener(mi(1),*),qfx(3,mi(1),*),xi,et,ze,xl(3,20),xsj,shp(4,20),
@@ -41,7 +42,27 @@
 !
       data iflag /1/
 !
-      if(ipkon(nelem).lt.0) return
+c      if(ipkon(nelem).lt.0) return
+      if(ipkon(nelem).eq.-1) then
+!
+!        linear element corresponding to a remeshing of a quadratic
+!        element adjacent to a contact surface
+!
+         return
+      elseif(ipkon(nelem).lt.-1) then
+!
+!        element is quadratic and adjacent to a contact surface
+!        -> it has been remeshed; the first node of the topology has
+!           been replaced by a pointer to the first linear element
+!           of the remeshing, the first node of which is identical to
+!           the first node of the original quadratic element
+!
+         indexe=-ipkon(nelem)-2
+         ielemremesh=kon(indexe+1)
+         kon(indexe+1)=kon(ipkon(ielemremesh)+1)
+      else
+         indexe=ipkon(nelem)
+      endif
 !
 !     check whether transformation is necessary (if orientation
 !     is applied and output in local system is requested)
@@ -87,7 +108,7 @@
 !     at the shell integration points
 !     
          iflag=1
-         indexe=ipkon(nelem)
+c         indexe=ipkon(nelem)
          do kk=1,mint2d
             xi=gauss3d2(1,kk)
             et=gauss3d2(2,kk)
@@ -115,8 +136,11 @@
 !
       if(lakon(nelem)(4:5).eq.'8R') then
          mint3d=1
+         elseif(lakon(nelem)(4:7).eq.'20RB') then
+            mint3d=50
       elseif((lakon(nelem)(4:4).eq.'8').or.
-     &        (lakon(nelem)(4:6).eq.'20R')) then
+     &       (lakon(nelem)(4:6).eq.'20R').or.
+     &       (lakon(nelem)(4:6).eq.'26R')) then
          if(lakon(nelem)(7:8).eq.'LC') then
             mint3d=8*nlayer
          else
@@ -124,7 +148,8 @@
          endif
       elseif(lakon(nelem)(4:4).eq.'2') then
          mint3d=27
-      elseif(lakon(nelem)(4:5).eq.'10') then
+      elseif((lakon(nelem)(4:5).eq.'10').or.
+     &       (lakon(nelem)(4:5).eq.'14')) then
          mint3d=4
       elseif(lakon(nelem)(4:4).eq.'4') then
          mint3d=1
@@ -144,7 +169,8 @@
             nope=20
          elseif(lakon(nelem)(4:4).eq.'8') then
             nope=8
-         elseif(lakon(nelem)(4:5).eq.'10') then
+         elseif((lakon(nelem)(4:5).eq.'10').or.
+     &          (lakon(nelem)(4:5).eq.'14')) then
             nope=10
          elseif(lakon(nelem)(4:4).eq.'4') then
             nope=4
@@ -154,7 +180,7 @@
             nope=6
          endif
 !
-         indexe=ipkon(nelem)
+c         indexe=ipkon(nelem)
          do j=1,nope
             konl=kon(indexe+j)
             do k=1,3
@@ -168,8 +194,14 @@
                et=gauss3d1(2,j)
                ze=gauss3d1(3,j)
                weight=weight3d1(j)
+            elseif(lakon(nelem)(4:8).eq.'20RBR') then
+               xi=gauss3d13(1,kk)
+               et=gauss3d13(2,kk)
+               ze=gauss3d13(3,kk)
+               weight=weight3d13(kk)
             elseif((lakon(nelem)(4:4).eq.'8').or.
-     &              (lakon(nelem)(4:6).eq.'20R'))
+     &             (lakon(nelem)(4:6).eq.'20R').or.
+     &             (lakon(nelem)(4:6).eq.'26R'))
      &              then
                if(lakon(nelem)(7:8).ne.'LC') then
                   xi=gauss3d2(1,j)
@@ -250,7 +282,7 @@
          enddo
       endif
 !
-      if(prlab(ii)(1:4).eq.'S   ') then
+      if((prlab(ii)(1:4).eq.'S   ').or.(prlab(ii)(1:4).eq.'SF  ')) then
          do j=1,mint3d
 !
 !           composite materials
@@ -430,7 +462,8 @@
             write(5,'(i10,1x,i3,1p,99(1x,e13.6))') nelem,j,
      &           (xstate(k,j,nelem),k=1,nstate_)
          enddo
-      elseif(prlab(ii)(1:4).eq.'HFL ') then
+      elseif((prlab(ii)(1:4).eq.'HFL ').or.(prlab(ii)(1:4).eq.'HFLF'))
+     &         then
          do j=1,mint3d
 !
 !           composite materials
@@ -460,6 +493,13 @@
      &              qfxl(1)*a(1,3)+qfxl(2)*a(2,3)+qfxl(3)*a(3,3)
             endif
          enddo
+      endif
+!
+!     restoring the topology of a quadratic element which has been
+!     remeshed because of its adjacency to a contact surface
+!    
+      if(ipkon(nelem).lt.-1) then
+         kon(indexe+1)=ielemremesh
       endif
 !     
       return

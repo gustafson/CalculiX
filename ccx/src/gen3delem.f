@@ -25,7 +25,7 @@
      &  nload,ithermal,ntrans,co,ixfree,ikfree,inoelfree,iponoelmax,
      &  iperturb,tinc,tper,tmin,tmax,ctrl,typeboun,nmethod,nset,set,
      &  istartset,iendset,ialset,prop,ielprop,vold,mi,nkon,ielmat,
-     &  icomposite,t0g,t1g)
+     &  icomposite,t0g,t1g,idefforc)
 !
 !     generates three-dimensional elements:
 !         for isochoric elements
@@ -54,10 +54,11 @@
      &  rig(*),nmethod,nset,istartset(*),iendset(*),ialset(*),nkon,
      &  ielprop(*),idir,indexref,indexold,idofold,idold,indexnew,
      &  idofnew,idnew,ksol,lsol,nmpc0,nmpc01,nmpcdif,mi(*),nope,
-     &  ielmat(mi(3),*),iponor(2,*),knor(*),ixfree,ikfree,icomposite
+     &  ielmat(mi(3),*),iponor(2,*),knor(*),ixfree,ikfree,icomposite,
+     &  idefforc(*),idim
 !
       real*8 coefmpc(*),thicke(mi(3),*),xnor(*),thickn(2,*),tinc,
-     &  tper,tmin,t0g(2,*),t1g(2,*),
+     &  tper,tmin,t0g(2,*),t1g(2,*),e1(3),e2(3),xt1(3),
      &  tmax,offset(2,*),t0(*),t1(*),xforc(*),trab(7,*),co(3,*),b(3,3),
      &  xboun(*),pi,ctrl(*),prop(*),vold(0:mi(2),*),xlag(3,20),
      &  xeul(3,20),a(3,3),xi,et,ze,coloc(3,8),xj
@@ -722,7 +723,7 @@ c        enddo
 !
          if(inoelfree.ne.0) then
             call fillknotmpc(co,ipompc,nodempc,coefmpc,labmpc,
-     &           nmpc,nmpcold)
+     &           nmpc,nmpcold,mpcfree,idim,e1,e2,xt1)
             call gen3dprop(prop,ielprop,iponoel,inoel,iponoelmax,kon,
      &           ipkon,lakon,ne,iponor,xnor,knor,ipompc,nodempc,coefmpc,
      &           nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,rig,ntrans,inotr,
@@ -788,7 +789,8 @@ c        enddo
      &     coefmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,iponoel,inoel,
      &     iponoelmax,kon,ipkon,lakon,ne,iponor,xnor,knor,nam,nk,nk_,
      &     co,thicke,nodeboun,ndirboun,ikboun,ilboun,nboun,nboun_,
-     &     iamboun,typeboun,xboun,nmethod,iperturb,istep,vold,mi)
+     &     iamboun,typeboun,xboun,nmethod,iperturb,istep,vold,mi,
+     &     idefforc)
       endif
 !
       return

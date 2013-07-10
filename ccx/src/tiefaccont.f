@@ -19,8 +19,7 @@
       subroutine tiefaccont(lakon,ipkon,kon,ntie,tieset,nset,set,
      &  istartset,iendset,ialset,itiefac,islavsurf,islavnode,
      &  imastnode,nslavnode,nmastnode,nslavs,nmasts,ifacecount,
-     &  iponoels,inoels,ifreenoels,
-     &  mortar,ipoface,nodface,nk)
+     &  iponoels,inoels,ifreenoels,mortar,ipoface,nodface,nk,xnoels)
 !
 !     Catalogueing the slave faces (itieface, islavsurf)
 !                  the slave nodes (islavnode, nslavnode)
@@ -41,14 +40,16 @@
       logical exist
 !
       integer ntie,i,j,k,l,nset,istartset(*),iendset(*),ialset(*),
-     &  ifaces,nelems,jfaces,ifacem,nelemm,nslavs,nmasts,
-     &  jfacem,indexe,nopes,nopem,ipkon(*),kon(*),id,
-     &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),node,
+     &  ifaces,nelems,jfaces,ifacem,nelemm,nslavs,nmasts,jface,
+     &  jfacem,indexe,nopes,nopem,ipkon(*),kon(*),id,nodef(9),
+     &  ifaceq(9,6),ifacet(7,4),ifacew1(4,5),ifacew2(8,5),node,
      &  itiefac(2,*),islavsurf(2,*),islavnode(*),imastnode(*),
      &  nslavnode(ntie+1),nmastnode(ntie+1),ifacecount,islav,imast,
-     &  ipos,index1,iponoels(*),inoels(3,*),ifreenoels,ifreenoelold,
+     &  ipos,index1,iponoels(*),inoels(2,*),ifreenoels,ifreenoelold,
      &  mortar,numbern,numberf,iface,kflag,nk,ipoface(*),
-     &  nodface(5,*)
+     &  nodface(5,*),nface,nelem,nope
+!
+      real*8 xnoels(*)
 !
 ! nslavnode: num of slave nodes
 ! islavnode: all slave nodes, tie by tie, ordered within one tie constraint
@@ -59,19 +60,19 @@
 !
 !     nodes per face for hex elements
 !
-      data ifaceq /4,3,2,1,11,10,9,12,
-     &            5,6,7,8,13,14,15,16,
-     &            1,2,6,5,9,18,13,17,
-     &            2,3,7,6,10,19,14,18,
-     &            3,4,8,7,11,20,15,19,
-     &            4,1,5,8,12,17,16,20/
+      data ifaceq /4,3,2,1,11,10,9,12,21,
+     &            5,6,7,8,13,14,15,16,22,
+     &            1,2,6,5,9,18,13,17,23,
+     &            2,3,7,6,10,19,14,18,24,
+     &            3,4,8,7,11,20,15,19,25,
+     &            4,1,5,8,12,17,16,20,26/
 !
 !     nodes per face for tet elements
 !
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
 !
 !     nodes per face for linear wedge elements
 !
@@ -229,20 +230,129 @@
 !                             update info to which faces a slave node
 !                             belongs
 !     
-!                             for node-to-surface contact inoels(2,*)
-!                             contains the number of nodes belonging to
-!                             the face; 
-!     
                               ifreenoelold=iponoels(node)
                               ifreenoels=ifreenoels+1
                               iponoels(node)=ifreenoels
                               inoels(1,ifreenoels)=ifacecount+ipos
-                              if(nodface(4,index1).eq.0) then
-                                 inoels(2,ifreenoels)=3
+!
+!                             determining the area coefficient (= the
+!                             force coefficient corresponding to a 
+!                             uniform pressure on the face)
+!
+                              nelem=int(iface/10.d0)
+                              jface=iface-10*nelem
+!     
+                              indexe=ipkon(nelem)
+                              if(lakon(nelem)(4:4).eq.'2') then
+                                 nopes=8
+                                 nface=6
+                              elseif(lakon(nelem)(4:4).eq.'8') then
+                                 nopes=4
+                                 nface=6
+                              elseif(lakon(nelem)(4:5).eq.'10') then
+                                 nopes=6
+                                 nface=4
+                              elseif(lakon(nelem)(4:4).eq.'4') then
+                                 nopes=3
+                                 nface=4
+                              elseif(lakon(nelem)(4:5).eq.'15') then
+                                 if(jface.le.2) then
+                                    nopes=6
+                                 else
+                                    nopes=8
+                                 endif
+                                 nface=5
+                                 nope=15
+                              elseif(lakon(nelem)(4:4).eq.'6') then
+                                 if(jface.le.2) then
+                                    nopes=3
+                                 else
+                                    nopes=4
+                                 endif
+                                 nface=5
+                                 nope=6
                               else
-                                 inoels(2,ifreenoels)=4
+                                 cycle
                               endif
-                              inoels(3,ifreenoels)=ifreenoelold
+!     
+!     determining the nodes of the face
+!     
+                              if(nface.eq.4) then
+                                 do l=1,nopes
+                                    nodef(l)=kon(indexe+ifacet(l,jface))
+                                    if(nodef(l).eq.node) then
+                                       if(nopes.eq.3) then
+                                          xnoels(ifreenoels)=1.d0/3.d0
+                                       elseif(l.le.3) then
+                                          xnoels(ifreenoels)=0.d0
+                                       else
+                                          xnoels(ifreenoels)=1.d0/3.d0
+                                       endif
+                                    endif
+                                 enddo
+                              elseif(nface.eq.5) then
+                                 if(nope.eq.6) then
+                                    do l=1,nopes
+                                       nodef(l)=
+     &                                    kon(indexe+ifacew1(l,jface))
+                                       if(nodef(l).eq.node) then
+                                          if(nopes.eq.3) then
+                                            xnoels(ifreenoels)=1.d0/3.d0
+                                          else
+                                            xnoels(ifreenoels)=1.d0/4.d0
+                                          endif
+                                       endif
+                                    enddo
+                                 elseif(nope.eq.15) then
+                                    do l=1,nopes
+                                       nodef(l)=
+     &                                    kon(indexe+ifacew2(l,jface))
+                                       if(nodef(l).eq.node) then
+                                          if(nopes.eq.6) then
+                                             if(l.le.3) then
+                                                xnoels(ifreenoels)=0.d0
+                                             else
+                                                xnoels(ifreenoels)=
+     &                                               1.d0/3.d0
+                                             endif
+                                          else
+!
+!           for a 8-node face a distribution of 1/100 at the vertex
+!           nodes and 24/100 at the midnodes (instead of -1/12 and 1/3)
+!
+                                             if(l.le.4) then
+                                                xnoels(ifreenoels)=
+     &                                                   1.d0/100.d0
+                                             else
+                                                xnoels(ifreenoels)=
+     &                                                   24.d0/100.d0
+                                             endif
+                                          endif
+                                       endif
+                                    enddo
+                                 endif
+                              elseif(nface.eq.6) then
+                                 do l=1,nopes
+                                    nodef(l)=kon(indexe+ifaceq(l,jface))
+                                    if(nodef(l).eq.node) then
+                                       if(nopes.eq.4) then
+                                          xnoels(ifreenoels)=1.d0/4.d0
+!
+!           for a 8-node face a distribution of 1/100 at the vertex
+!           nodes and 24/100 at the midnodes (instead of -1/12 and 1/3)
+!
+                                       elseif(l.le.4) then
+                                          xnoels(ifreenoels)=1.d0/100.d0
+                                       else
+                                          xnoels(ifreenoels)=
+     &                                            24.d0/100.d0
+                                       endif
+                                       
+                                    endif
+                                 enddo
+                              endif
+!     
+                              inoels(2,ifreenoels)=ifreenoelold
                            endif
                         endif
                      enddo
@@ -269,7 +379,6 @@
 !           element face slave surface (node-to-surface or
 !           surface-to-surface contact)
 !
-c            islav=j
             nslavnode(i)=nslavs
 !
             itiefac(1,i)=ifacecount+1
@@ -289,14 +398,16 @@ c            islav=j
                   jfaces = ifaces - nelems*10
                   indexe = ipkon(nelems)
 !
-                  if(lakon(nelems)(4:4).eq.'2') then
-c                      nopes=8
-                      nopes=4
+                  if(lakon(nelems)(4:5).eq.'20') then
+                      nopes=8
+                  elseif(lakon(nelems)(4:4).eq.'2') then
+                      nopes=9
                   elseif(lakon(nelems)(4:4).eq.'8') then
                       nopes=4
                   elseif(lakon(nelems)(4:5).eq.'10') then
-c                      nopes=6
-                      nopes=3
+                      nopes=6
+                  elseif(lakon(nelems)(4:5).eq.'14') then
+                      nopes=7
                   elseif(lakon(nelems)(4:4).eq.'4') then
                       nopes=3
                   endif
@@ -310,11 +421,11 @@ c                      nopes=6
                   endif
                   if(lakon(nelems)(4:5).eq.'15') then
                     if(jfaces.le.2) then
-c                       nopes=6
-                       nopes=3
+                       nopes=6
+c                       nopes=3
                     else
-c                       nopes=8
-                       nopes=4
+                       nopes=8
+c                       nopes=4
                     endif
                   endif   
 !                  
@@ -348,29 +459,60 @@ c                       nopes=8
 !
 !                    filling fields iponoels and inoels
 !
-!                    for node-to-surface contact inoels(2,*)
-!                    contains the number of nodes belonging to
-!                    the face; 
-!                    for surface-to-surface contact inoels(2,*)
-!                    contains the local node number
-!
                      ifreenoelold=iponoels(node)
                      ifreenoels=ifreenoels+1
                      iponoels(node)=ifreenoels
                      inoels(1,ifreenoels)=ifacecount
-                     if(mortar.eq.1) then
-                        inoels(2,ifreenoels)=l
-                     else
-                        inoels(2,ifreenoels)=nopes
+!
+!                    filling xnoels with the coefficient corresponding
+!                    to a constant pressure (sum over all nodes must
+!                    be 1)
+!
+                     if(nopes.eq.3) then
+                        xnoels(ifreenoels)=1.d0/3.d0
+                     elseif(nopes.eq.4) then
+                        xnoels(ifreenoels)=1.d0/4.d0
+                     elseif(nopes.eq.6) then
+                        if(l.le.3) then
+                           xnoels(ifreenoels)=0.d0
+                        else
+                           xnoels(ifreenoels)=1.d0/3.d0
+                        endif
+                     elseif(nopes.eq.7) then
+                        if(l.le.3) then
+                           xnoels(ifreenoels)=1.d0/20.d0
+                        elseif(l.le.6) then
+                           xnoels(ifreenoels)=2.d0/15.d0
+                        else
+                           xnoels(ifreenoels)=9.d0/20.d0
+                        endif
+                     elseif(nopes.eq.8) then
+!
+!           for a 8-node face a distribution of 1/100 at the vertex
+!           nodes and 24/100 at the midnodes (instead of -1/12 and 1/3)
+!
+                        if(l.le.4) then
+                           xnoels(ifreenoels)=1.d0/100.d0
+                        else
+                           xnoels(ifreenoels)=24.d0/100.d0
+                        endif
+                     elseif(nopes.eq.9) then
+                        if(l.le.4) then
+                           xnoels(ifreenoels)=1.d0/36.d0
+                        elseif(l.le.8) then
+                           xnoels(ifreenoels)=1.d0/9.d0
+                        else
+                           xnoels(ifreenoels)=4.d0/9.d0
+                        endif
                      endif
-                     inoels(3,ifreenoels)=ifreenoelold
+                     inoels(2,ifreenoels)=ifreenoelold
                   enddo
 !     
                endif
             enddo
             nslavnode(ntie+1)=nslavs
             itiefac(2,i)=ifacecount
-	    endif
+            endif
 !
 !           what follows is only for surface-to-surface contact
 !           determining the master surface
@@ -392,17 +534,21 @@ c                       nopes=8
 !               
 !           Decide imastnode, and nmastnode
 !
-                  ifacem = ialset(j)
-                  nelemm = int(ifacem/10)
-                  jfacem = ifacem - nelemm*10
-                  indexe = ipkon(nelemm)
+                  ifacem=ialset(j)
+                  nelemm=int(ifacem/10)
+                  jfacem=ifacem - nelemm*10
+                  indexe=ipkon(nelemm)
 !
-                  if(lakon(nelemm)(4:4).eq.'2') then
+                  if(lakon(nelemm)(4:5).eq.'20') then
                       nopem=8
+                  elseif(lakon(nelemm)(4:4).eq.'2') then
+                      nopem=9
                   elseif(lakon(nelemm)(4:4).eq.'8') then
                       nopem=4
                   elseif(lakon(nelemm)(4:5).eq.'10') then
                       nopem=6
+                  elseif(lakon(nelemm)(4:5).eq.'14') then
+                      nopem=7
                   elseif(lakon(nelemm)(4:4).eq.'4') then
                       nopem=3
                   endif

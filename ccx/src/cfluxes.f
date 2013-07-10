@@ -20,7 +20,7 @@
      &  ialset,nset,nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &  amname,nam,ntrans,trab,inotr,co,ikforc,ilforc,nk,
      &  cflux_flag,istep,istat,n,iline,ipol,inl,ipoinp,inp,nam_,
-     &  namtot_,namta,amta,iaxial,ipoinpc)
+     &  namtot_,namta,amta,iaxial,ipoinpc,idefforc)
 !
 !     reading the input deck: *CFLUX
 !
@@ -38,7 +38,7 @@
      &  iamforc(*),nam,iamplitude,ntrans,inotr(2,*),ipos,ikforc(*),
      &  ilforc(*),nk,iline,ipol,inl,ipoinp(2,*),inp(3,*),nam_,namtot,
      &  namtot_,namta(3,*),idelay,ndirforc(*),isector,iaxial,
-     &  ipoinpc(0:*)
+     &  ipoinpc(0:*),idefforc(*)
 !
       real*8 xforc(*),forcval,co(3,*),trab(7,*),amta(2,*)
 !
@@ -96,7 +96,7 @@
                write(*,*) '       preceded by the amplitude parameter'
                stop
             endif
-            namta(3,nam)=isign(iamplitude,namta(3,iamplitude))
+            namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
             if(nam.eq.1) then
                namtot=0
@@ -170,7 +170,7 @@
             call forcadd(l,iforcdir,forcval,
      &        nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &        iamplitude,nam,ntrans,trab,inotr,co,ikforc,ilforc,
-     &        isector,add,user)
+     &        isector,add,user,idefforc)
          else
             read(textpart(1)(1:80),'(a80)',iostat=istat) noset
             noset(81:81)=' '
@@ -191,7 +191,7 @@
                call forcadd(ialset(j),iforcdir,forcval,
      &           nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &           iamplitude,nam,ntrans,trab,inotr,co,ikforc,ilforc,
-     &           isector,add,user)
+     &           isector,add,user,idefforc)
                else
                   k=ialset(j-2)
                   do
@@ -200,7 +200,7 @@
                      call forcadd(k,iforcdir,forcval,
      &                 nodeforc,ndirforc,xforc,nforc,nforc_,
      &                 iamforc,iamplitude,nam,ntrans,trab,inotr,co,
-     &                 ikforc,ilforc,isector,add,user)
+     &                 ikforc,ilforc,isector,add,user,idefforc)
                   enddo
                endif
             enddo

@@ -21,10 +21,10 @@
      &  nforc,nelemload,sideload,xload,nload,xbody,ipobody,nbody,
      &  b,nactdoh,neqt,nmethod,ikmpc,ilmpc,ikboun,
      &  ilboun,rhcon,nrhcon,ielmat,ntmat_,t0,ithermal,vold,vcon,nzst,
-     &  dtl,matname,mi,ncmat_,physcon,shcon,nshcon,ttime,time,
+     &  dt,matname,mi,ncmat_,physcon,shcon,nshcon,ttime,time,
      &  istep,iinc,ibody,xloadold,reltimef,cocon,ncocon,nelemface,
      &  sideface,nface,compressible,vcontu,yy,turbulent,nea,neb,
-     &  dtimef,ipvar,var,ipvarf,varf,dtc)
+     &  dtimef,ipvar,var,ipvarf,varf)
 !
 !     filling the rhs b of the velocity equations (step 1)
 !
@@ -49,11 +49,11 @@
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),bodyf(3),b(*),xloadold(2,*),reltimef,cocon(0:6,ntmat_,*),
-     &  t0(*),vold(0:mi(2),*),vcon(0:4,*),ff(60),yy(*),
-     &  rhcon(0:1,ntmat_,*),physcon(*),vcontu(2,*),dtc(*),
+     &  t0(*),vold(0:mi(2),*),vcon(0:4,*),ff(78),yy(*),
+     &  rhcon(0:1,ntmat_,*),physcon(*),vcontu(2,*),dt(*),
      &  shcon(0:3,ntmat_,*),xbody(7,*),var(*),varf(*)
 !
-      real*8 om,dtimef,ttime,time,dtl(*)
+      real*8 om,dtimef,ttime,time
 !
       kflag=2
       i0=0
@@ -139,12 +139,11 @@ c         enddo
      &        ttime,time,istep,iinc,xloadold,reltimef,shcon,nshcon,
      &        cocon,ncocon,physcon,nelemface,sideface,nface,
      &        ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,compressible,
-     &        vcontu,yy,turbulent,ipvar,var,ipvarf,varf,dtc)
+     &        vcontu,yy,turbulent,ipvar,var,ipvarf,varf,dt)
 !     
          do jj=1,nope
 !     
             node1=kon(indexe+jj)
-c            ff(jj)=ff(jj)*dtl(node1)/dtimef
             jdof1=nactdoh(0,node1)
 !     
 !     distributed forces
@@ -177,16 +176,6 @@ c            ff(jj)=ff(jj)*dtl(node1)/dtimef
 !     
          enddo
       enddo
-!
-!     nonlocal time stepping for compressible steady state calculations
-!     
-c      if((compressible.eq.1).and.(nmethod.eq.1)) then
-c         do i=1,nk
-c            if(nactdoh(0,i).gt.0) then
-c               b(nactdoh(0,i))=b(nactdoh(0,i))*dtl(i)/dtimef
-c            endif
-c         enddo
-c      endif
 !     
       return
       end

@@ -24,7 +24,7 @@
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  xstiff,xloadold,reltime,
      &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,springarea,
-     &  plicon,nplicon,npmat_,ncmat_,elcon,nelcon)
+     &  plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,lakon)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -41,54 +41,56 @@
 !
       logical mass,stiffness,buckling,rhsi
 !
-      character*8 lakonl
+      character*8 lakonl,lakon(*)
       character*20 sideload(*)
       character*80 matname(*),amat
 !
-      integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nelem,nmethod,
+      integer konl(26),ifaceq(9,6),nelemload(2,*),nk,nelem,nmethod,
      &  mattyp,ithermal(2),iperturb,nload,idist,i,j,k,i1,j1,l,m,
      &  ii,jj,id,ipointer,ig,kk,istiff,iperm(20),ipompc(*),mi(*),
      &  nrhcon(*),ielmat(mi(3),*),ielorien(mi(3),*),nodempc(3,*),nmpc,
      &  ntmat_,nope,nopes,norien,iexpl,imat,mint2d,ikmpc(*),
-     &  mint3d,ifacet(6,4),nopev,iorien,ilmpc(*),kode,
+     &  mint3d,ifacet(7,4),nopev,iorien,ilmpc(*),kode,
      &  ifacew(8,5),intscheme,ipointeri,ipointerj,ncocon(2,*),
      &  nshcon(*),iinc,istep,jltyp,nfield,node,iflag,iscale,
-     &  nplicon(0:ntmat_,*),nelcon(2,*),npmat_,ncmat_,i2,
+     &  nplkcon(0:ntmat_,*),nelcon(2,*),npmat_,ncmat_,i2,
      &  iemchange
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),xstiff(27,mi(1),*),
-     &  s(60,60),w(3,3),ff(60),shpj(4,20),sinktemp,xs2(3,7),
+      real*8 co(3,*),xl(3,26),shp(4,26),xstiff(27,mi(1),*),
+     &  s(78,78),w(3,3),ff(78),shpj(4,26),sinktemp,xs2(3,7),
      &  rhcon(0:1,ntmat_,*),dxsj2,temp,press,xloadold(2,*),
      &  orab(7,*),t0(*),t1(*),coords(3),c1,c2,reltime,
-     &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),xload(2,*),
-     &  xi,et,ze,xsj,xsjj,sm(60,60),t1l,rho,summass,summ,ttime,time,
+     &  xl2(3,9),xsj2(3),shp2(7,9),vold(0:mi(2),*),xload(2,*),
+     &  xi,et,ze,xsj,xsjj,sm(78,78),t1l,rho,summass,summ,ttime,time,
      &  sume,factorm,factore,alp,weight,pgauss(3),timeend(2),
      &  cocon(0:6,ntmat_,*),shcon(0:3,ntmat_,*),sph,coconloc(6),
-     &  field,areaj,sax(60,60),ffax(60),coefmpc(*),tl2(8),
-     &  voldl(0:mi(2),20),springarea(2,*),plicon(0:2*npmat_,ntmat_,*),
+     &  field,areaj,sax(78,78),ffax(78),coefmpc(*),tl2(8),
+     &  voldl(0:mi(2),26),springarea(2,*),plkcon(0:2*npmat_,ntmat_,*),
      &  elcon(0:ncmat_,ntmat_,*),elconloc(21)
 !
       real*8 dtime,physcon(*)
 !
       include "gauss.f"
 !
-      data ifaceq /4,3,2,1,11,10,9,12,
-     &            5,6,7,8,13,14,15,16,
-     &            1,2,6,5,9,18,13,17,
-     &            2,3,7,6,10,19,14,18,
-     &            3,4,8,7,11,20,15,19,
-     &            4,1,5,8,12,17,16,20/
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifaceq /4,3,2,1,11,10,9,12,21,
+     &            5,6,7,8,13,14,15,16,22,
+     &            1,2,6,5,9,18,13,17,23,
+     &            2,3,7,6,10,19,14,18,24,
+     &            3,4,8,7,11,20,15,19,25,
+     &            4,1,5,8,12,17,16,20,26/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
       data ifacew /1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
      &             4,6,3,1,12,15,9,13/
-      data iflag /3/
+c      data iflag /3/
       data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
+!
+      iflag=3
 !
       timeend(1)=time
       timeend(2)=ttime+dtime
@@ -103,8 +105,12 @@
          iorien=0
       endif
 !
-      if(lakonl(4:4).eq.'2') then
+      if(lakonl(4:5).eq.'20') then
          nope=20
+         nopev=8
+         nopes=8
+      elseif(lakonl(4:4).eq.'2') then
+         nope=26
          nopev=8
          nopes=8
       elseif(lakonl(4:4).eq.'8') then
@@ -113,6 +119,10 @@
          nopes=4
       elseif(lakonl(4:5).eq.'10') then
          nope=10
+         nopev=4
+         nopes=6
+      elseif(lakonl(4:5).eq.'14') then
+         nope=14
          nopev=4
          nopes=6
       elseif(lakonl(4:4).eq.'4') then
@@ -127,25 +137,27 @@
          nopev=6
       elseif(lakonl(1:2).eq.'ES') then
          read(lakonl(8:8),'(i1)') nope
+         nope=nope+1
+      elseif(lakonl(1:2).eq.'D ') then
+         nope=3
       endif
 !
       if(intscheme.eq.0) then
+!
+!        # of 2D and 3D integration points
+!
          if(lakonl(4:5).eq.'8R') then
             mint2d=1
             mint3d=1
-         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) then
-c            if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'S').or.
-c     &         (lakonl(7:7).eq.'E')) then
-            if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'E')) then
+         elseif(lakonl(4:8).eq.'20RBR') then
+            mint2d=4
+            mint3d=50
+         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R').or.
+     &          (lakonl(4:6).eq.'26R')) then
+            if(((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'E')).and.
+     &          (lakonl(4:6).ne.'26R')) then
                mint2d=2
                mint3d=4
-c            elseif(lakonl(7:7).eq.'S') then
-c!
-c!              special treatment for plane stress elements
-c!              since lateral film heating is allowed
-c!
-c               mint2d=4
-c               mint3d=4
             else
                mint2d=4
                mint3d=8
@@ -153,7 +165,7 @@ c               mint3d=4
          elseif(lakonl(4:4).eq.'2') then
             mint2d=9
             mint3d=27
-         elseif(lakonl(4:5).eq.'10') then
+         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
             mint2d=3
             mint3d=4
          elseif(lakonl(4:4).eq.'4') then
@@ -167,18 +179,26 @@ c               mint3d=4
             mint3d=0
          endif
       else
+!
+!        # of 3D integration points
+!
          if((lakonl(4:4).eq.'8').or.(lakonl(4:4).eq.'2')) then
             mint3d=27
-         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:4).eq.'4')) then
+         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:4).eq.'4').or.
+     &          (lakonl(4:5).eq.'14')) then
             mint3d=15
          elseif((lakonl(4:5).eq.'15').or.(lakonl(4:4).eq.'6')) then
             mint3d=18
          else
             mint3d=0
          endif
+!
+!        # of 2D integration points
+!
          if(lakonl(4:5).eq.'8R') then
             mint2d=1
-         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) then
+         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R').or.
+     &          (lakonl(4:6).eq.'26R')) then
             if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'E')) then
                mint2d=2
             else
@@ -186,7 +206,7 @@ c               mint3d=4
             endif
          elseif(lakonl(4:4).eq.'2') then
             mint2d=9
-         elseif(lakonl(4:5).eq.'10') then
+         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
             mint2d=3
          elseif(lakonl(4:4).eq.'4') then
             mint2d=1
@@ -215,7 +235,6 @@ c               mint3d=4
 !
       if(mass.or.buckling) then
         do i=1,nope
-c          do j=1,nope
           do j=i,nope
             sm(i,j)=0.d0
           enddo
@@ -234,17 +253,39 @@ c          do j=1,nope
 !
       if(mint3d.eq.0) then
          do i1=1,nope
-c            do i2=1,3
             do i2=0,3
                voldl(i2,i1)=vold(i2,konl(i1))
             enddo
          enddo
-         kode=nelcon(1,imat)
-         if(kode.eq.-51)
-     &      call springstiff_th(xl,voldl,s,imat,elcon,nelcon,
-     &        ncmat_,ntmat_,nope,kode,plicon,
-     &        nplicon,npmat_,iperturb,springarea(1,konl(nope+1)),mi,
-     &        timeend,matname,konl(nope),nelem,istep,iinc)
+!
+         if(lakonl(1:2).eq.'ES') then
+            if(lakonl(7:7).eq.'C') then
+!
+!              contact element
+!
+               kode=nelcon(1,imat)
+               if(kode.eq.-51)
+     &              call springstiff_th(xl,voldl,s,imat,elcon,nelcon,
+     &              ncmat_,ntmat_,nope,kode,plkcon,nplkcon,
+     &              npmat_,iperturb,springarea(1,konl(nope+1)),mi,
+     &              timeend,matname,konl(nope),nelem,istep,iinc)
+            elseif(lakonl(7:7).eq.'F') then
+!
+!              advective element
+!
+               call advecstiff(nope,voldl,ithermal,xl,nelemload,
+     &              nelem,nload,lakon,xload,istep,time,ttime,dtime,
+     &              sideload,vold,mi,xloadold,reltime,nmethod,s,iinc)
+            endif
+         elseif(lakonl(1:2).eq.'D ') then
+            do i=1,3
+               do j=1,i
+                  s(i,j)=0.d0
+               enddo
+            enddo
+            call networkstiff(voldl,s,imat,konl,mi,ntmat_,shcon,
+     &           nshcon,rhcon,nrhcon)
+         endif
          return
       endif
 !
@@ -257,7 +298,13 @@ c            do i2=1,3
                et=gauss3d1(2,kk)
                ze=gauss3d1(3,kk)
                weight=weight3d1(kk)
-            elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) 
+            elseif(lakonl(4:8).eq.'20RBR') then
+               xi=gauss3d13(1,kk)
+               et=gauss3d13(2,kk)
+               ze=gauss3d13(3,kk)
+               weight=weight3d13(kk)
+            elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R').or.
+     &             (lakonl(4:6).eq.'26R')) 
      &              then
                xi=gauss3d2(1,kk)
                et=gauss3d2(2,kk)
@@ -268,7 +315,7 @@ c            do i2=1,3
                et=gauss3d3(2,kk)
                ze=gauss3d3(3,kk)
                weight=weight3d3(kk)
-            elseif(lakonl(4:5).eq.'10') then
+            elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
                xi=gauss3d5(1,kk)
                et=gauss3d5(2,kk)
                ze=gauss3d5(3,kk)
@@ -319,10 +366,14 @@ c            do i2=1,3
             else
                call shape20h(xi,et,ze,xl,xsj,shp,iflag)
             endif
+         elseif(nope.eq.26) then
+            call shape26h(xi,et,ze,xl,xsj,shp,iflag,konl)
          elseif(nope.eq.8) then
             call shape8h(xi,et,ze,xl,xsj,shp,iflag)
          elseif(nope.eq.10) then
             call shape10tet(xi,et,ze,xl,xsj,shp,iflag)
+         elseif(nope.eq.14) then
+            call shape14tet(xi,et,ze,xl,xsj,shp,iflag,konl)
          elseif(nope.eq.4) then
             call shape4tet(xi,et,ze,xl,xsj,shp,iflag)
          elseif(nope.eq.15) then
@@ -347,7 +398,8 @@ c            do i2=1,3
          t1l=0.d0
 !
          if((lakonl(4:7).eq.'20RA').or.(lakonl(4:7).eq.'20RS').or.
-     &      (lakonl(4:7).eq.'20RE')) then
+     &      (lakonl(4:7).eq.'20RE').or.(lakonl(4:7).eq.'26RA').or.
+     &      (lakonl(4:7).eq.'26RS').or.(lakonl(4:7).eq.'26RE')) then
             t1l=vold(0,konl(1))*(shp(4,1)+shp(4,5)+shp(4,17))
      &         +vold(0,konl(2))*(shp(4,2)+shp(4,6)+shp(4,18))
      &         +vold(0,konl(3))*(shp(4,3)+shp(4,7)+shp(4,19))
@@ -362,10 +414,6 @@ c            do i2=1,3
             enddo
          endif
 !
-c         do i1=1,nope
-c            t1l=t1l+shp(4,i1)*vold(0,konl(i1))
-c         enddo
-!
 !           calculating the coordinates of the integration point
 !           for material orientation purposes (for cylindrical
 !           coordinate systems)
@@ -374,7 +422,6 @@ c         enddo
             do j=1,3
                pgauss(j)=0.d0
                do i1=1,nope
-c                  pgauss(j)=pgauss(j)+shp(4,i1)*co(j,konl(i1))
                   pgauss(j)=pgauss(j)+shp(4,i1)*xl(j,i1)
                enddo
             enddo
@@ -408,15 +455,6 @@ c                  pgauss(j)=pgauss(j)+shp(4,i1)*co(j,konl(i1))
 !
             do ii=1,jj
 !
-!                   all products of the shape functions for a given ii
-!                   and jj
-!
-c               do i1=1,3
-c                  do j1=1,3
-c                     w(i1,j1)=shpj(i1,ii)*shpj(j1,jj)
-c                  enddo
-c               enddo
-!
 !                   the following section calculates the static
 !                   part of the stiffness matrix which, for buckling 
 !                   calculations, is done in a preliminary static
@@ -424,17 +462,12 @@ c               enddo
 !
                if(mattyp.eq.1) then
 !
-c                  s(ii,jj)=s(ii,jj)+coconloc(1)*
-c     &                 (w(1,1)+w(2,2)+w(3,3))*weight
                   s(ii,jj)=s(ii,jj)+c1*
      &                 (shpj(1,ii)*shpj(1,jj)+shpj(2,ii)*shpj(2,jj)
      &                 +shpj(3,ii)*shpj(3,jj))
 !
                elseif(mattyp.eq.2) then
 !
-c                  s(ii,jj)=s(ii,jj)+(coconloc(1)*w(1,1)+
-c     &                 coconloc(2)*w(2,2)+coconloc(3)*w(3,3))*
-c     &                 weight
                   s(ii,jj)=s(ii,jj)+(coconloc(1)*shpj(1,ii)*shpj(1,jj)
      &                +coconloc(2)*shpj(2,ii)*shpj(2,jj)
      &                +coconloc(3)*shpj(3,ii)*shpj(3,jj))*weight
@@ -521,12 +554,10 @@ c     &                 weight
       enddo
 !
       if((.not.buckling).and.(nload.ne.0)) then
+         iflag=2
 !
 !       distributed loads
 !
-c         if(nload.eq.0) then
-c            return
-c         endif
          call nident2(nelemload,nelem,nload,id)
          do
             if((id.eq.0).or.(nelemload(1,id).ne.nelem)) exit
@@ -537,6 +568,22 @@ c         endif
                cycle
             endif
             read(sideload(id)(2:2),'(i1)') ig
+!
+!           check whether 8 or 9-nodes face
+!
+            if(nope.eq.26) then
+               if(konl(20+ig).eq.konl(20)) then
+                  nopes=8
+               else
+                  nopes=9
+               endif
+            elseif(nope.eq.14) then
+               if(konl(10+ig).eq.konl(10)) then
+                  nopes=6
+               else
+                  nopes=7
+               endif
+            endif
 !
 !         treatment of wedge faces
 !
@@ -558,7 +605,7 @@ c         endif
              endif
           endif
 !
-          if((nope.eq.20).or.(nope.eq.8)) then
+          if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8)) then
              do i=1,nopes
                 tl2(i)=vold(0,konl(ifaceq(i,ig)))
                 if(ithermal(2).eq.2) then
@@ -626,8 +673,8 @@ c         endif
                 et=gauss2d1(2,i)
                 weight=weight2d1(i)
              elseif((lakonl(4:4).eq.'8').or.
-     &               (lakonl(4:6).eq.'20R').or.
-     &               ((lakonl(4:5).eq.'15').and.(nopes.eq.8))) then
+     &              (lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R').or.
+     &              ((lakonl(4:5).eq.'15').and.(nopes.eq.8))) then
                 xi=gauss2d2(1,i)
                 et=gauss2d2(2,i)
                 weight=weight2d2(i)
@@ -635,7 +682,7 @@ c         endif
                 xi=gauss2d3(1,i)
                 et=gauss2d3(2,i)
                 weight=weight2d3(i)
-             elseif((lakonl(4:5).eq.'10').or.
+             elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14').or.
      &               ((lakonl(4:5).eq.'15').and.(nopes.eq.6))) then
                 xi=gauss2d5(1,i)
                 et=gauss2d5(2,i)
@@ -647,12 +694,16 @@ c         endif
                 weight=weight2d4(i)
              endif
 !
-             if(nopes.eq.8) then
+             if(nopes.eq.9) then
+                call shape9q(xi,et,xl2,xsj2,xs2,shp2,iflag)
+             elseif(nopes.eq.8) then
                 call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
              elseif(nopes.eq.4) then
                 call shape4q(xi,et,xl2,xsj2,xs2,shp2,iflag)
              elseif(nopes.eq.6) then
                 call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+             elseif(nopes.eq.7) then
+                call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
              else
                 call shape3tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
              endif
@@ -706,9 +757,9 @@ c         endif
                 
 !
              do k=1,nopes
-                if((nope.eq.20).or.(nope.eq.8)) then
+                if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8)) then
                    ipointer=ifaceq(k,ig)
-                elseif((nope.eq.10).or.(nope.eq.4)) then
+                elseif((nope.eq.10).or.(nope.eq.4).or.(nope.eq.14)) then
                    ipointer=ifacet(k,ig)
                 else
                    ipointer=ifacew(k,ig)
@@ -721,7 +772,6 @@ c         endif
                    ff(ipointer)=ff(ipointer)+shp2(4,k)*xload(1,id)
      &                  *areaj
                 elseif(sideload(id)(1:1).eq.'F') then
-c                   write(*,*) nelem,temp,xload(1,id),sinktemp
                    ff(ipointer)=ff(ipointer)-shp2(4,k)*xload(1,id)
      &                  *(temp-sinktemp)*areaj
                 elseif(sideload(id)(1:1).eq.'R') then
@@ -733,24 +783,24 @@ c                   write(*,*) nelem,temp,xload(1,id),sinktemp
              enddo
 !
              do ii=1,nopes
-                if((nope.eq.20).or.(nope.eq.8)) then
+                if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8)) then
                    ipointeri=ifaceq(ii,ig)
-                elseif((nope.eq.10).or.(nope.eq.4)) then
+                elseif((nope.eq.10).or.(nope.eq.4).or.(nope.eq.14)) then
                    ipointeri=ifacet(ii,ig)
                 else
                    ipointeri=ifacew(ii,ig)
                 endif
                 do jj=1,nopes
-                   if((nope.eq.20).or.(nope.eq.8)) then
+                   if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8)) then
                       ipointerj=ifaceq(jj,ig)
-                   elseif((nope.eq.10).or.(nope.eq.4)) then
+                   elseif((nope.eq.10).or.(nope.eq.4).or.
+     &                    (nope.eq.14)) then
                       ipointerj=ifacet(jj,ig)
                    else
                       ipointerj=ifacew(jj,ig)
                    endif
                    if(ipointeri.gt.ipointerj) cycle
                    if(sideload(id)(1:1).eq.'F') then
-c                   write(*,*) nelem,id,xload(1,id),sinktemp
                       s(ipointeri,ipointerj)=s(ipointeri,ipointerj)+
      &                  shp2(4,ii)*shp2(4,jj)*xload(1,id)*areaj
                    elseif(sideload(id)(1:1).eq.'R') then
@@ -770,10 +820,8 @@ c                   write(*,*) nelem,id,xload(1,id),sinktemp
 !     for axially symmetric and plane stress/strain elements: 
 !     complete s and sm
 !
-      if((lakonl(6:7).eq.'RA').or.(lakonl(6:7).eq.'RE')) then
-c      if((lakonl(6:7).eq.'RA').or.(lakonl(6:7).eq.'RS').or.
-c     &   (lakonl(6:7).eq.'RE')) then
-c      if(lakonl(6:7).eq.'RA') then
+      if(((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')).and.
+     &   ((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'E'))) then
          do i=1,20
             do j=i,20
                k=iperm(i)
@@ -795,7 +843,6 @@ c      if(lakonl(6:7).eq.'RA') then
 !        special treatment of plane stress elements since lateral
 !        heating is allowed (orthogonal to the plane)
 !
-c         if((nload.ne.0).and.(lakonl(6:7).ne.'RS')) then
          if(nload.ne.0) then
             do i=1,20
                k=iperm(i)
@@ -841,15 +888,16 @@ c         if((nload.ne.0).and.(lakonl(6:7).ne.'RS')) then
             summ=summ+sm(i,i)
          enddo
 !
-         if(nope.eq.20) then
+         if((nope.eq.26).or.(nope.eq.20)) then
             alp=.2917d0
-         elseif(nope.eq.10) then
+         elseif((nope.eq.10).or.(nope.eq.14)) then
             alp=0.1203d0
          elseif(nope.eq.15) then
             alp=0.2141d0
          endif
 !
-         if((nope.eq.20).or.(nope.eq.10).or.(nope.eq.15)) then
+         if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.10).or.
+     &      (nope.eq.15).or.(nope.eq.14)) then
             factore=summass*alp/(1.d0+alp)/sume
             factorm=summass/(1.d0+alp)/summ
          else

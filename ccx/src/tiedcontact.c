@@ -28,7 +28,8 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
                int **ipompcp, char **labmpcp, int **ikmpcp, int **ilmpcp,
                double **fmpcp, int **nodempcp, double **coefmpcp,
 	       int *ithermal, double *co, double *vold, int *cfd,
-	       int *nmpc_, int *mi, int *nk){
+	       int *nmpc_, int *mi, int *nk,int *istep,int *ikboun,
+               int *nboun){
 
   char kind1[2]="T",kind2[2]="T",*labmpc=NULL;
 
@@ -57,7 +58,7 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
 
   FORTRAN(allocont,(&ncont,ntie,tieset,nset,set,istartset,iendset,
 	  ialset,lakon,&ncone,tietol,&ismallsliding,kind1,
-          kind2,&mortar));
+	  kind2,&mortar,istep));
 
   if(ncont==0) return;
 
@@ -172,7 +173,7 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
 	  koncont,co,xo,yo,zo,x,y,z,nx,ny,nz,nset,
 	  ifaceslave,istartfield,iendfield,ifield,
 	  ipompc,nodempc,coefmpc,nmpc,&nmpctied,mpcfree,ikmpc,ilmpc,
-	  labmpc,ithermal,tietol,cfd,&ncont,imastop));
+	  labmpc,ithermal,tietol,cfd,&ncont,imastop,ikboun,nboun));
 
   (*nmpc_)+=nmpctied;
   

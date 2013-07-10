@@ -36,7 +36,8 @@
       character*81 set(*),noset
       character*132 textpart(16)
 !
-      integer istartset(*),iendset(*),ialset(*),nodeboun(*),ndirboun(*),
+      integer istartset(*),iendset(*),ialset(*),nodeboun(*),
+     &  ndirboun(*),
      &  nset,nboun,nboun_,istep,istat,n,i,j,k,l,ibounstart,ibounend,
      &  key,nk,iamboun(*),nam,iamplitude,ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,mpcfree,inotr(2,*),ikboun(*),ilboun(*),ikmpc(*),
@@ -207,7 +208,7 @@ c            nboun=0
                write(*,*) '       preceded by the amplitude parameter'
                stop
             endif
-            namta(3,nam)=isign(iamplitude,namta(3,iamplitude))
+            namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
             if(nam.eq.1) then
                namtot=0
@@ -338,7 +339,7 @@ c         if(ibounstart.eq.11) ibounstart=0
             if(i.gt.nset) then
                noset(ipos:ipos)=' '
                write(*,*) '*ERROR reading *BOUNDARY: node set ',noset
-               write(*,*) '  has not yet been defined. '
+               write(*,*) '       has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline)
                stop
             endif

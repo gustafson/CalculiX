@@ -28,7 +28,7 @@ void frdheader(int *icounter,double *oner,double *time,double *pi,
 
   char tmp[132],text[132];
 
-  int i;
+  int i,ncomma;
   
   /* icounter counts the number of loadcases in the frd-file 
      kode counts the number of increments in the frd-file */
@@ -43,7 +43,7 @@ void frdheader(int *icounter,double *oner,double *time,double *pi,
 
   /* additional headers for frequency calculations */
 
-  if(*nmethod==2){
+  if((*nmethod==2)||(*nmethod==6)||(*nmethod==7)){
     strcpy1(&text[0],"    1PGM",8);
     for(i=8;i<70;i++)text[i]=' ';text[70]='\0';
     sprintf(&text[24],"%12.6E",*oner);text[36]=' ';
@@ -61,7 +61,7 @@ void frdheader(int *icounter,double *oner,double *time,double *pi,
 
     /* additional headers for cyclic symmetry calculations */
 
-    if(*noddiam>=0){
+    if((*noddiam>=0)&&(cs!=NULL)){
       strcpy1(&text[0],"    1PAX",8);
       for(i=8;i<24;i++)text[i]=' ';
       sprintf(&text[24],"%12.5E",cs[5]);
@@ -110,7 +110,37 @@ void frdheader(int *icounter,double *oner,double *time,double *pi,
   }
   sprintf(tmp,"%5d",100+(*kode));
   strcpy1(&text[7],tmp,5);
-  sprintf(tmp,"%12.5E",*time);
+//  sprintf(tmp,"%12.5E",*time);
+
+  if((*time<=0.)||(*nmethod==2)){
+      sprintf(tmp,"%12.5E",*time);
+  }else if((log10(*time)>=0)&&(log10(*time)<10.)){
+      ncomma=10-floor(log10(*time)+1.);
+      if(ncomma==0){
+	  sprintf(tmp,"%12.0F",*time);
+      }else if(ncomma==1){
+	  sprintf(tmp,"%12.1F",*time);
+      }else if(ncomma==2){
+	  sprintf(tmp,"%12.2F",*time);
+      }else if(ncomma==3){
+	  sprintf(tmp,"%12.3F",*time);
+      }else if(ncomma==4){
+	  sprintf(tmp,"%12.4F",*time);
+      }else if(ncomma==5){
+	  sprintf(tmp,"%12.5F",*time);
+      }else if(ncomma==6){
+	  sprintf(tmp,"%12.6F",*time);
+      }else if(ncomma==7){
+	  sprintf(tmp,"%12.7F",*time);
+      }else if(ncomma==8){
+	  sprintf(tmp,"%12.8F",*time);
+      }else{
+	  sprintf(tmp,"%12.9F",*time);
+      }
+  }else{
+      sprintf(tmp,"%12.5E",*time);
+  }
+
   strcpy1(&text[12],tmp,12);
   sprintf(tmp,"%5d",*kode);
   strcpy1(&text[58],tmp,5);

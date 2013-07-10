@@ -19,7 +19,7 @@
       subroutine umat_aniso_creep(amat,iel,iint,kode,elconloc,emec,
      &        emec0,beta,xokl,voj,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi,nstate_,xstateini,xstate,stre,stiff,iorien,
-     &        pgauss,orab,nmethod)
+     &        pgauss,orab,nmethod,pnewdt)
 !
 !     calculates stiffness and stresses for a user defined material
 !     law
@@ -127,7 +127,7 @@
       real*8 ep0(6),epqini,ep(6),b,Pn(6),dg,ddg,c(21),x(21),cm1(21),
      &  stri(6),htri,sg(6),r(13),ee(6),dd,gl(6,6),gr(6,6),c0,c1,c2,
      &  skl(3,3),gcreep,gm1,ya(3,3,3,3),dsg,detc,strinv,
-     &  depq,svm,dsvm,dg1,dg2,fu,fu1,fu2,expon,ec(2),
+     &  depq,svm,dsvm,dg1,dg2,fu,fu1,fu2,expon,ec(2),pnewdt,
      &  timeabq(2),r1(13),ep1(6),gl1(6,6),sg1(6),ckl(3,3),
      &  elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xokl(3,3),voj,pgauss(3),orab(7,*),
@@ -679,6 +679,18 @@
 !     second attempt: root search through interval division
 !     
             do
+               if(iloop.gt.100) then
+c                  NOTE: write statements cause problems for
+c                        parallellized execution
+c                  write(*,*) 
+c     &               '*WARNING in umat_aniso_creep: material loop'
+c                  write(*,*) '         did not converge in integration'
+c                  write(*,*) '         point',iint,'in element',iel,';'
+c                  write(*,*) '         the increment size is reduced'
+c                  write(*,*)
+                  pnewdt=0.25d0
+                  return
+               endif
 !     
 !     elastic strains
 !     
@@ -927,7 +939,7 @@ c                     write(*,*) 'iloop,dg,fu ',iloop,dg,fu
                         ep(i)=ep1(i)
                         r(i)=r1(i)
                         sg(i)=sg1(i)
-                        do j=1,6	
+                        do j=1,6
                            gl(i,j)=gl1(i,j)
                         enddo
                      enddo
@@ -957,7 +969,7 @@ c                     fu1=fu
                         ep1(i)=ep(i)
                         r1(i)=r(i)
                         sg1(i)=sg(i)
-                        do j=1,6	
+                        do j=1,6
                            gl1(i,j)=gl(i,j)
                         enddo
                      enddo
@@ -973,7 +985,7 @@ c                  write(*,*) 'iloop,dg,fu ',iloop,dg,fu
                         ep1(i)=ep(i)
                         r1(i)=r(i)
                         sg1(i)=sg(i)
-                        do j=1,6	
+                        do j=1,6
                            gl1(i,j)=gl(i,j)
                         enddo
                      enddo
@@ -987,7 +999,7 @@ c                  write(*,*) 'iloop,dg,fu ',iloop,dg,fu
                         ep(i)=ep1(i)
                         r(i)=r1(i)
                         sg(i)=sg1(i)
-                        do j=1,6	
+                        do j=1,6
                            gl(i,j)=gl1(i,j)
                         enddo
                      enddo

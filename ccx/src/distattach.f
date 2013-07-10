@@ -27,12 +27,9 @@
 !
       integer nterms,i,j
 !
-      real*8 ratio(8),pneigh(3,*),pnode(3),a,xi,et,xig,etg,p(3),
-     &  dummy
+      real*8 ratio(9),pneigh(3,*),pnode(3),a,xi,et,xig,etg,p(3),
+     &  dummy,fxi1,fxi2,fxi3,fet1,fet2,fet3,b
 !
-c      write(*,*) xig,etg
-c      write(*,*) ((pneigh(i,j),i=1,3),j=1,nterms)
-c      write(*,*) pnode(1),pnode(2),pnode(3)
       if(nterms.eq.3) then
          xi=(xig+1.d0)/2.d0
          et=(etg+1.d0)/2.d0
@@ -59,12 +56,30 @@ c      write(*,*) pnode(1),pnode(2),pnode(3)
             xi=1.d0-et
             et=1.d0-dummy
          endif
-         ratio(1)=2.d0*(0.5d0-xi-et)*(1.d0-xi-et)
+         a=1.d0-xi-et
+         ratio(1)=a*(2.d0*a-1.d0)
          ratio(2)=xi*(2.d0*xi-1.d0)
          ratio(3)=et*(2.d0*et-1.d0)
-         ratio(4)=4.d0*xi*(1.d0-xi-et)
+         ratio(4)=4.d0*xi*a
          ratio(5)=4.d0*xi*et
-         ratio(6)=4.d0*et*(1.d0-xi-et)  
+         ratio(6)=4.d0*et*a 
+      elseif(nterms.eq.7) then
+         xi=(xig+1.d0)/2.d0
+         et=(etg+1.d0)/2.d0
+         if(xi+et.gt.1.d0) then
+            dummy=xi
+            xi=1.d0-et
+            et=1.d0-dummy
+         endif
+         a=1.d0-xi-et
+         b=a*xi*et
+         ratio(1)=a*(2.d0*a-1.d0)+3.d0*b
+         ratio(2)=xi*(2.d0*xi-1.d0)+3.d0*b
+         ratio(3)=et*(2.d0*et-1.d0)+3.d0*b
+         ratio(4)=4.d0*xi*a-12.d0*b
+         ratio(5)=4.d0*xi*et-12.d0*b
+         ratio(6)=4.d0*et*a-12.d0*b
+         ratio(7)=27.d0*b
       elseif(nterms.eq.8) then
          xi=xig
          et=etg
@@ -76,6 +91,25 @@ c      write(*,*) pnode(1),pnode(2),pnode(3)
          ratio(6)=(1.d0+xi)*(1.d0-et*et)/2.d0
          ratio(7)=(1.d0-xi*xi)*(1.d0+et)/2.d0
          ratio(8)=(1.d0-xi)*(1.d0-et*et)/2.d0
+      elseif(nterms.eq.9) then
+         xi=xig
+         et=etg
+!
+         fxi1=xi*(xi-1.d0)/2.d0
+         fxi2=(1.d0-xi)*(1.d0+xi)
+         fxi3=xi*(xi+1.d0)/2.d0
+         fet1=et*(et-1.d0)/2.d0
+         fet2=(1.d0-et)*(1.d0+et)
+         fet3=et*(et+1.d0)/2.d0
+         ratio(1)=fxi1*fet1
+         ratio(2)=fxi3*fet1
+         ratio(3)=fxi3*fet3
+         ratio(4)=fxi1*fet3
+         ratio(5)=fxi2*fet1
+         ratio(6)=fxi3*fet2
+         ratio(7)=fxi2*fet3
+         ratio(8)=fxi1*fet2
+         ratio(9)=fxi2*fet2
       else
          write(*,*) '*ERROR in distattach: case with ',nterms
          write(*,*) '       terms is not covered'

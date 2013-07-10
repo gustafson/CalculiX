@@ -19,7 +19,7 @@
       subroutine elprints(inpc,textpart,set,
      &  nset,nprint,nprint_,jout,prlab,prset,
      &  nmethod,elprint_flag,nener,ithermal,istep,istat,n,iline,ipol,
-     &  inl,ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc)
+     &  inl,ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc,cfd)
 !
 !     reading the *ELEMENT PRINT cards in the input deck
 !
@@ -35,10 +35,10 @@
 !
       integer nset,nprint,nprint_,istep,istat,n,i,ii,key,
      &  jout(2),joutl,ipos,nmethod,nener,ithermal,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),nam,itpamp,idrct,ipoinpc(0:*)
+     &  ipoinp(2,*),inp(3,*),nam,itpamp,idrct,ipoinpc(0:*),cfd
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in elprints: *EL PRINT should only be'
+         write(*,*) '*ERROR reading *EL PRINT: *EL PRINT should only be'
          write(*,*) '  used within a *STEP definition'
          stop
       endif
@@ -58,6 +58,8 @@
      &         (prlab(i)(1:4).eq.'ELSE').or.
      &         (prlab(i)(1:4).eq.'ELKE').or.
      &         (prlab(i)(1:4).eq.'EVOL').or.
+     &         (prlab(i)(1:4).eq.'SF  ').or.
+     &         (prlab(i)(1:4).eq.'HFLF').or.
      &         (prlab(i)(1:4).eq.'HFL ')) cycle
             ii=ii+1
             prlab(ii)=prlab(i)
@@ -80,7 +82,7 @@
             if(set(i).eq.elset) exit
           enddo
           if(i.gt.nset) then
-             write(*,*) '*WARNING in elprints: elementset ',
+             write(*,*) '*WARNING reading *EL PRINT: elementset ',
      &            elset(1:ipos-1),' does not exist'
              call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &            ipoinp,inp,ipoinpc)
@@ -137,7 +139,7 @@
               stop
            endif
            if(idrct.eq.1) then
-              write(*,*) '*ERROR in elprints: the DIRECT option'
+              write(*,*) '*ERROR reading *EL PRINT: the DIRECT option'
               write(*,*) '       collides with a TIME POINTS '
               write(*,*) '       specification'
               stop
@@ -146,7 +148,7 @@
            jout(2)=1
          else
             write(*,*) 
-     &        '*WARNING in elprints: parameter not recognized:'
+     &        '*WARNING reading *EL PRINT: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(ii)(1:index(textpart(ii),' ')-1)
             call inputwarning(inpc,ipoinpc,iline)
@@ -156,7 +158,7 @@
 !     check whether a set was defined
 !
       if(elset.eq.'                     ') then
-         write(*,*) '*WARNING in elprints: no set was defined'
+         write(*,*) '*WARNING reading *EL PRINT: no set was defined'
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
          return
@@ -169,7 +171,8 @@
          do ii=1,n
             if(textpart(ii)(1:4).eq.'PEEQ') then
                if((nmethod.eq.2).or.(nmethod.eq.3)) then
-                  write(*,*) '*WARNING in elprints: selection of PEEQ'
+                  write(*,*) 
+     &               '*WARNING reading *EL PRINT: selection of PEEQ'
                   write(*,*) '         does not make sense for a'
                   write(*,*) '         frequency or bucking calculation'
                   cycle
@@ -179,21 +182,22 @@
      &             (textpart(ii)(1:2).eq.'PE')) then
                if((nmethod.eq.2).or.(nmethod.eq.3)) then
                   write(*,*) 
-     &            '*WARNING in elprints: selection of CEEQ or CE or PE'
+     &       '*WARNING reading *EL PRINT: selection of CEEQ or CE or PE'
                   write(*,*) '         does not make sense for a'
                   write(*,*) '         frequency or bucking calculation'
                   cycle
                endif
                textpart(ii)(1:4)='PEEQ'
                write(*,*) 
-     &         '*WARNING in elprints: selection of CEEQ or CE or PE'
+     &       '*WARNING reading *EL PRINT: selection of CEEQ or CE or PE'
                write(*,*)
      &            '         is converted into PEEQ; no distinction'
                write(*,*) 
      &          '        is made between PEEQ, CEEQ, CE and PE'
             elseif(textpart(ii)(1:3).eq.'SDV') then
                if((nmethod.eq.2).or.(nmethod.eq.3)) then
-                  write(*,*) '*WARNING in elprints: selection of SDV'
+                  write(*,*) 
+     &              '*WARNING reading *EL PRINT: selection of SDV'
                   write(*,*) '         does not make sense for a'
                   write(*,*) '         frequency or bucking calculation'
                   cycle
@@ -204,22 +208,34 @@
                nener=1
             elseif(textpart(ii)(1:4).eq.'HFL ') then
                if(ithermal.lt.2) then
-                  write(*,*) '*WARNING in elprints: HFL only makes '
+                  write(*,*) 
+     &               '*WARNING reading *EL PRINT: HFL only makes '
                   write(*,*) '         sense for heat transfer '
                   write(*,*) '         calculations'
+                  cycle
+               endif
+            elseif((textpart(ii)(1:4).eq.'SF  ').or.
+     &             (textpart(ii)(1:4).eq.'HFLF')) then
+               if(cfd.eq.0) then
+                  write(*,*) 
+     &               '*WARNING reading *EL PRINT: SF or HFLF only'
+                  write(*,*) '         make sense for 3D fluid'
+                  write(*,*) '         calculations; '
+                  call inputerror(inpc,ipoinpc,iline)
                   cycle
                endif
             elseif((textpart(ii)(1:4).ne.'S   ').and.
      &             (textpart(ii)(1:4).ne.'E   ').and.
      &             (textpart(ii)(1:4).ne.'EVOL')) then
-               write(*,*) '*WARNING in elprints: label not applicable'
+               write(*,*) 
+     &             '*WARNING reading *EL PRINT: label not applicable'
                write(*,*) '         or unknown; '
                call inputerror(inpc,ipoinpc,iline)
                cycle
             endif
             nprint=nprint+1
             if(nprint.gt.nprint_) then
-               write(*,*) '*ERROR in elprints: increase nprint_'
+               write(*,*) '*ERROR reading *EL PRINT: increase nprint_'
                stop
             endif
             prset(nprint)=elset

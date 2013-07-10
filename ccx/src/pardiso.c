@@ -23,21 +23,28 @@
 #include "CalculiX.h"
 #include "pardiso.h"
 
-int *irowpardiso=NULL,*pointers=NULL,iparm[64];
-long int pt[64];
+int *icolpardiso=NULL,*pointers=NULL,iparm[64];
+long long pt[64];
 double *aupardiso=NULL;
+double dparm[64];
 
 void pardiso_factor(double *ad, double *au, double *adb, double *aub, 
                 double *sigma,int *icol, int *irow, 
-                int *neq, int *nzs){
+		int *neq, int *nzs, int *symmetryflag, int *inputformat,
+		int *jq, int *nzs3){
 
   char *env;
-  int i,j,k,l,maxfct=1,mnum=1,mtype=-2,phase=12,nrhs=1,*perm=NULL,
-      msglvl=0,error=0;
-  long long ndim;
+  int i,j,k,l,maxfct=1,mnum=1,phase=12,nrhs=1,*perm=NULL,mtype,
+      msglvl=0,error=0,*irowpardiso=NULL,kflag,kstart,n,ifortran,
+      lfortran,index,id,k2;
+  int ndim;
   double *b=NULL,*x=NULL;
 
-  printf(" Factoring the system of equations using the symmetric pardiso solver\n");
+  if(*symmetryflag==0){
+      printf(" Factoring the system of equations using the symmetric pardiso solver\n");
+  }else{
+      printf(" Factoring the system of equations using the unsymmetric pardiso solver\n");
+  }
 
   iparm[0]=0;
   env=getenv("OMP_NUM_THREADS");
@@ -51,65 +58,238 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
 
   for(i=0;i<64;i++){pt[i]=0;}
 
-  ndim=*neq+*nzs;
+  if(*symmetryflag==0){
 
-  pointers=NNEW(int,*neq+1);
-  irowpardiso=NNEW(int,ndim);
-  aupardiso=NNEW(double,ndim);
+      /* symmetric matrix; the subdiagonal entries are stored
+         column by column in au, the diagonal entries in ad;
+         pardiso needs the entries row per row */      
 
-  k=ndim;
-  l=*nzs;
-
-  if(*sigma==0.){
-    pointers[*neq]=ndim+1;
-    for(i=*neq-1;i>=0;--i){
-      for(j=0;j<icol[i];++j){
-	irowpardiso[--k]=irow[--l];
-	aupardiso[k]=au[l];
+      mtype=-2;
+      
+      ndim=*neq+*nzs;
+      
+      pointers=NNEW(int,*neq+1);
+      icolpardiso=NNEW(int,ndim);
+      aupardiso=NNEW(double,ndim);
+      
+      k=ndim;
+      l=*nzs;
+      
+      if(*sigma==0.){
+	  pointers[*neq]=ndim+1;
+	  for(i=*neq-1;i>=0;--i){
+	      for(j=0;j<icol[i];++j){
+		  icolpardiso[--k]=irow[--l];
+		  aupardiso[k]=au[l];
+	      }
+	      pointers[i]=k--;
+	      icolpardiso[k]=i+1;
+	      aupardiso[k]=ad[i];
+	  }
       }
-      pointers[i]=k--;
-      irowpardiso[k]=i+1;
-      aupardiso[k]=ad[i];
-    }
-  }
-  else{
-    pointers[*neq]=ndim+1;
-    for(i=*neq-1;i>=0;--i){
-      for(j=0;j<icol[i];++j){
-	irowpardiso[--k]=irow[--l];
-	aupardiso[k]=au[l]-*sigma*aub[l];
+      else{
+	  pointers[*neq]=ndim+1;
+	  for(i=*neq-1;i>=0;--i){
+	      for(j=0;j<icol[i];++j){
+		  icolpardiso[--k]=irow[--l];
+		  aupardiso[k]=au[l]-*sigma*aub[l];
+	      }
+	      pointers[i]=k--;
+	      icolpardiso[k]=i+1;
+	      aupardiso[k]=ad[i]-*sigma*adb[i];
+	  }
       }
-      pointers[i]=k--;
-      irowpardiso[k]=i+1;
-      aupardiso[k]=ad[i]-*sigma*adb[i];
-    }
+  }else{
+      mtype=11;
+
+      if(*inputformat==3){
+
+          /* off-diagonal terms  are stored column per
+             column from top to bottom in au;
+             diagonal terms are stored in ad  */
+
+	  ndim=*neq+*nzs;
+	  pointers=NNEW(int,*neq+1);
+	  irowpardiso=NNEW(int,ndim);	  
+	  icolpardiso=NNEW(int,ndim);
+	  aupardiso=NNEW(double,ndim);
+	  
+	  k=0;
+	  k2=0;
+	  for(i=0;i<*neq;i++){
+	      for(j=0;j<icol[i];j++){
+		  if(au[k]>1.e-12||au[k]<-1.e-12){
+		      icolpardiso[k2]=i+1;
+		      irowpardiso[k2]=irow[k];
+		      aupardiso[k2]=au[k];
+		      k2++;		  
+		  }
+		  k++;	      
+	      }	  
+	  }  
+	  /* diagonal terms */  
+	  for(i=0;i<*neq;i++){
+	      icolpardiso[k2]=i+1;
+	      irowpardiso[k2]=i+1;
+	      aupardiso[k2]=ad[i];
+	      k2++;	  
+	  }
+	  ndim=k2;
+	  
+	  /* pardiso needs the entries row per row; so sorting is
+	     needed */ 
+	  
+	  kflag=2;
+	  FORTRAN(isortiid,(irowpardiso,icolpardiso,aupardiso,
+			    &ndim,&kflag));
+	  
+	  /* sorting each row */
+	  
+	  k=0;
+	  pointers[0]=1;
+	  for(i=0;i<*neq;i++){
+	      j=i+1;
+	      kstart=k;
+	      do{
+		  if(irowpardiso[k]!=j ){
+		      n=k-kstart;		  
+		      FORTRAN(isortid,(&icolpardiso[kstart],&aupardiso[kstart],
+				       &n,&kflag));
+		      pointers[i+1]=k+1;
+		      break;  
+		  }else{
+		      if(k+1==ndim){
+			  n=k-kstart+1;	  
+			  FORTRAN(isortid,(&icolpardiso[kstart],
+                                  &aupardiso[kstart],&n,&kflag));
+			  break;	       
+		      }else{
+			  k++;	       
+		      }  
+		  }
+	      }while(1);
+	  }
+	  pointers[*neq]=ndim+1;
+	  free(irowpardiso);
+
+      }else if(*inputformat==1){
+	  
+          /* lower triangular matrix is stored column by column in
+             au, followed by the upper triangular matrix row by row;
+             the diagonal terms are stored in ad */
+
+          /* reordering lower triangular matrix */
+
+	  ndim=*nzs;
+	  pointers=NNEW(int,*neq+1);
+	  irowpardiso=NNEW(int,ndim);
+	  icolpardiso=NNEW(int,ndim);
+	  aupardiso=NNEW(double,ndim);
+	  
+	  k=0;
+	  for(i=0;i<*neq;i++){
+	      for(j=0;j<icol[i];j++){
+		  icolpardiso[k]=i+1;
+		  irowpardiso[k]=irow[k];
+		  aupardiso[k]=au[k];
+		  k++;
+	      }
+	  }
+	  
+	  /* pardiso needs the entries row per row; so sorting is
+	     needed */
+	  
+	  kflag=2;
+	  FORTRAN(isortiid,(irowpardiso,icolpardiso,aupardiso,
+	  &ndim,&kflag));
+	  
+	  /* sorting each row */
+	  
+	  k=0;
+	  pointers[0]=1;
+	  for(i=0;i<*neq;i++){
+	      j=i+1;
+	      kstart=k;
+	      do{
+
+		  /* end of row reached */
+
+		  if(irowpardiso[k]!=j){
+		      n=k-kstart;
+		      FORTRAN(isortid,(&icolpardiso[kstart],&aupardiso[kstart],
+				       &n,&kflag));
+		      pointers[i+1]=k+1;
+		      break;
+		  }else{
+
+		      /* end of last row reached */
+
+		      if(k+1==ndim){
+			  n=k-kstart+1;
+			  FORTRAN(isortid,(&icolpardiso[kstart],&aupardiso[kstart],
+					   &n,&kflag));
+			  break;
+		      }else{
+
+			  /* end of row not yet reached */
+
+			  k++;
+		      }
+		  }
+	      }while(1);
+	  }
+	  pointers[*neq]=ndim+1;
+	  free(irowpardiso);
+
+	  /* composing the matrix: lower triangle + diagonal + upper triangle */
+
+	  ndim=*neq+2**nzs;
+	  RENEW(icolpardiso,int,ndim);
+	  RENEW(aupardiso,double,ndim);
+	  k=ndim;
+	  for(i=*neq-1;i>=0;i--){
+	      l=k+1;
+	      for(j=jq[i+1]-1;j>=jq[i];j--){
+		  icolpardiso[--k]=irow[j-1];
+		  aupardiso[k]=au[j+*nzs3-1];
+	      }
+	      icolpardiso[--k]=i+1;
+	      aupardiso[k]=ad[i];
+	      for(j=pointers[i+1]-1;j>=pointers[i];j--){
+		  icolpardiso[--k]=icolpardiso[j-1];
+		  aupardiso[k]=aupardiso[j-1];
+	      }
+	      pointers[i+1]=l;
+	  }
+	  pointers[0]=1;
+      }
   }
-
-  /*  for(i=0;i<ndim;i++){printf("aupardiso %d %lf\n",i+1,aupardiso[i]);}
-  for(i=0;i<ndim;i++){printf("irowpardiso %d %d\n",i+1,irowpardiso[i]);}
-  for(i=0;i<*neq+1;i++){printf("pointers %d %d\n",i+1,pointers[i]);}
-  printf("maxfct,mnum,mtype,phase,neq,nrhs,msglvl,error=%d,%d,%d,%d,%d,%d,%d,%d\n",maxfct,mnum,mtype,phase,*neq,nrhs,msglvl,error);
-
-  printf(" pardiso_factor: before pardiso\n\n");*/
 
   FORTRAN(pardiso,(pt,&maxfct,&mnum,&mtype,&phase,neq,aupardiso,
-		   pointers,irowpardiso,perm,&nrhs,iparm,&msglvl,
+		   pointers,icolpardiso,perm,&nrhs,iparm,&msglvl,
                    b,x,&error));
-
-  /*printf(" pardiso_factor: after pardiso\n\n");*/
 
   return;
 }
 
-void pardiso_solve(double *b, int *neq){
+void pardiso_solve(double *b, int *neq,int *symmetryflag){
 
   char *env;
-  int maxfct=1,mnum=1,mtype=-2,phase=33,*perm=NULL,nrhs=1,
+  int maxfct=1,mnum=1,phase=33,*perm=NULL,nrhs=1,mtype,
       msglvl=0,i,error=0;
   double *x=NULL;
 
-  printf(" Solving the system of equations using the symmetric pardiso solver\n");
+  if(*symmetryflag==0){
+      printf(" Solving the system of equations using the symmetric pardiso solver\n");
+  }else{
+      printf(" Solving the system of equations using the unsymmetric pardiso solver\n");
+  }
 
+  if(*symmetryflag==0){
+      mtype=-2;
+  }else{
+      mtype=11;
+  }
   iparm[0]=0;
   env=getenv("OMP_NUM_THREADS");
   if(env) {
@@ -122,16 +302,9 @@ void pardiso_solve(double *b, int *neq){
 
   x=NNEW(double,*neq);
 
-  /*printf(" pardiso_solve: before pardiso\n\n");
-    for(i=0;i<*neq;i++){printf("b %d %lf\n",i+1,b[i]);}*/
-
   FORTRAN(pardiso,(pt,&maxfct,&mnum,&mtype,&phase,neq,aupardiso,
-		   pointers,irowpardiso,perm,&nrhs,iparm,&msglvl,
+		   pointers,icolpardiso,perm,&nrhs,iparm,&msglvl,
                    b,x,&error));
-
-  /* printf(" pardiso_solve: after pardiso\n\n");
-     for(i=0;i<*neq;i++){printf("x %d %lf\n",i+1,x[i]);}*/
-
 
   for(i=0;i<*neq;i++){b[i]=x[i];}
   free(x);
@@ -139,46 +312,42 @@ void pardiso_solve(double *b, int *neq){
   return;
 }
 
-void pardiso_cleanup(int *neq){
+void pardiso_cleanup(int *neq,int *symmetryflag){
 
-  int maxfct=1,mnum=1,mtype=-2,phase=-1,*perm=NULL,nrhs=1,
+  int maxfct=1,mnum=1,phase=-1,*perm=NULL,nrhs=1,mtype,
       msglvl=0,error=0;
   double *b=NULL,*x=NULL;
 
-  /* printf(" pardiso_clean: before pardiso\n\n");*/
-
+  if(*symmetryflag==0){
+      mtype=-2;
+  }else{
+      mtype=11;
+  }
 
   FORTRAN(pardiso,(pt,&maxfct,&mnum,&mtype,&phase,neq,aupardiso,
-		   pointers,irowpardiso,perm,&nrhs,iparm,&msglvl,
+		   pointers,icolpardiso,perm,&nrhs,iparm,&msglvl,
                    b,x,&error));
 
-  /*printf(" pardiso_clean: after pardiso\n\n");*/
-
-
-  free(irowpardiso);
+  free(icolpardiso);
   free(aupardiso);
   free(pointers);
 
   return;
 }
 
-void pardiso_main(double *ad, double *au, double *adb, double *aub, double *sigma,
-         double *b, int *icol, int *irow, 
-         int *neq, int *nzs){
+void pardiso_main(double *ad, double *au, double *adb, double *aub, 
+         double *sigma,double *b, int *icol, int *irow, 
+	 int *neq, int *nzs,int *symmetryflag,int *inputformat,
+	 int *jq, int *nzs3){
 
   if(*neq==0) return;
 
   pardiso_factor(ad,au,adb,aub,sigma,icol,irow, 
-             neq,nzs);
+		 neq,nzs,symmetryflag,inputformat,jq,nzs3);
 
-  pardiso_solve(b,neq);
+  pardiso_solve(b,neq,symmetryflag);
 
-  pardiso_cleanup(neq);
-
-
-  /* printf(" pardiso_main: geschaft\n\n");*/
-
-  
+  pardiso_cleanup(neq,symmetryflag);
 
   return;
 }

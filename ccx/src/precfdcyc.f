@@ -37,7 +37,7 @@
       character*81 set(*),noset
 !
       integer nelemface(*),nface,ipoface(*),nodface(5,*),nodes(4),
-     &  ne,ipkon(*),kon(*),indexe,ifaceq(8,6),ifacet(6,4),index,
+     &  ne,ipkon(*),kon(*),indexe,ifaceq(8,6),ifacet(7,4),index,
      &  ifacew(8,5),ithree,ifour,iaux,kflag,nnodes,ikboun(*),
      &  ilboun(*),nboun,isolidsurf(*),nsolidsurf,ifreestream(*),
      &  nfreestream,id,nk,node,idof,i,j,k,l,m,neighsolidsurf(*),
@@ -56,10 +56,10 @@
      &            2,3,7,6,10,19,14,18,
      &            3,4,8,7,11,20,15,19,
      &            4,1,5,8,12,17,16,20/
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
       data ifacew /1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,

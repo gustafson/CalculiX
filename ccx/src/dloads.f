@@ -21,7 +21,7 @@
      &  ielmat,iamload,amname,nam,lakon,ne,dload_flag,istep,
      &  istat,n,iline,ipol,inl,ipoinp,inp,cbody,ibody,xbody,nbody,
      &  nbody_,xbodyold,iperturb,physcon,nam_,namtot_,namta,amta,
-     &  nmethod,ipoinpc,maxsectors,mi)
+     &  nmethod,ipoinpc,maxsectors,mi,idefload,idefbody)
 !
 !     reading the input deck: *DLOAD
 !
@@ -41,7 +41,7 @@
      &  iamload(2,*),nam,iamplitude,ipos,ne,iline,ipol,iperturb,
      &  inl,ipoinp(2,*),inp(3,*),ibody(3,*),nbody,nbody_,nam_,namtot,
      &  namtot_,namta(3,*),idelay,nmethod,lc,isector,node,ipoinpc(0:*),
-     &  maxsectors,jsector,iglobstep
+     &  maxsectors,jsector,iglobstep,idefload(*),idefbody(*)
 !
       real*8 xload(2,*),xbody(7,*),xmagnitude,dd,p1(3),p2(3),bodyf(3),
      &  xbodyold(7,*),physcon(*),amta(2,*)
@@ -106,7 +106,7 @@
                write(*,*) '       preceded by the amplitude parameter'
                stop
             endif
-            namta(3,nam)=isign(iamplitude,namta(3,iamplitude))
+            namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
             if(nam.eq.1) then
                namtot=0
@@ -249,7 +249,7 @@ cBernhardiEnd
                elset(1:80)=textpart(1)(1:80)
                elset(81:81)=' '
                call bodyadd(cbody,ibody,xbody,nbody,nbody_,elset,label,
-     &           iamplitude,xmagnitude,p1,p2,bodyf,xbodyold,lc)
+     &           iamplitude,xmagnitude,p1,p2,bodyf,xbodyold,lc,idefbody)
             else
                if((lakon(l)(1:2).eq.'CP').or.
      &              (lakon(l)(2:2).eq.'A').or.
@@ -292,7 +292,7 @@ cBernhardiEnd
                if(label(3:4).ne.'NP') then
                   call loadadd(l,label,xmagnitude,nelemload,sideload,
      &                 xload,nload,nload_,iamload,iamplitude,
-     &                 nam,jsector)
+     &                 nam,jsector,idefload)
                else
                   call loadaddp(l,label,nelemload,sideload,
      &                 xload,nload,nload_,iamload,iamplitude,
@@ -318,7 +318,7 @@ cBernhardiEnd
             if((label(1:7).eq.'CENTRIF').or.(label(1:4).eq.'GRAV').or.
      &         (label(1:6).eq.'NEWTON')) then
                call bodyadd(cbody,ibody,xbody,nbody,nbody_,elset,label,
-     &           iamplitude,xmagnitude,p1,p2,bodyf,xbodyold,lc)
+     &           iamplitude,xmagnitude,p1,p2,bodyf,xbodyold,lc,idefbody)
             else
                l=ialset(istartset(i))
                if((lakon(l)(1:2).eq.'CP').or.
@@ -366,7 +366,7 @@ cBernhardiEnd
                      if(label(3:4).ne.'NP') then
                         call loadadd(l,label,xmagnitude,nelemload,
      &                       sideload,xload,nload,nload_,iamload,
-     &                       iamplitude,nam,jsector)
+     &                       iamplitude,nam,jsector,idefload)
                      else
                         call loadaddp(l,label,nelemload,
      &                       sideload,xload,nload,nload_,iamload,
@@ -385,7 +385,7 @@ cBernhardiEnd
                         if(label(3:4).ne.'NP') then
                            call loadadd(l,label,xmagnitude,nelemload,
      &                          sideload,xload,nload,nload_,
-     &                          iamload,iamplitude,nam,jsector)
+     &                          iamload,iamplitude,nam,jsector,idefload)
                         else
                            call loadaddp(l,label,nelemload,
      &                          sideload,xload,nload,nload_,

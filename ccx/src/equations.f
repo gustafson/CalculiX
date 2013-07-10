@@ -18,7 +18,8 @@
 !
       subroutine equations(inpc,textpart,ipompc,nodempc,coefmpc,
      &  nmpc,nmpc_,mpcfree,nk,co,trab,inotr,ntrans,ikmpc,ilmpc,
-     &  labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)
+     &  labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,
+     &  set,istartset,iendset,ialset,nset)
 !
 !     reading the input deck: *EQUATION
 !
@@ -26,28 +27,156 @@
 !
       character*1 inpc(*)
       character*20 labmpc(*)
+      character*81 set(*),noset
       character*132 textpart(16)
 !
       integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,istep,istat,
      &  n,i,j,ii,key,nterm,number,nk,inotr(2,*),ntrans,node,ndir,
      &  mpcfreeold,ikmpc(*),ilmpc(*),id,idof,itr,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),ipoinpc(0:*)
+     &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),impcstart,impcend,i1,
+     &  istartset(*),iendset(*),ialset(*),nset,k,l,m,index1,ipos,
+     &  impc
 !
       real*8 coefmpc(*),co(3,*),trab(7,*),a(3,3),x
+!
+      do m=2,n
+         if(textpart(m)(1:9).eq.'REMOVEALL') then
+            do j=1,nmpc
+               index1=ipompc(j)
+               if(index1.eq.0) cycle
+               do
+                  if(nodempc(3,index1).eq.0) then
+                     nodempc(3,index1)=mpcfree
+                     mpcfree=ipompc(j)
+                     exit
+                  endif
+                  index1=nodempc(3,index1)
+               enddo
+               ipompc(j)=0
+               ikmpc(j)=0
+               ilmpc(j)=0
+            enddo
+            nmpc=0
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+            return
+         elseif(textpart(m)(1:6).eq.'REMOVE') then
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) return
+!     
+               read(textpart(2)(1:10),'(i10)',iostat=istat) impcstart
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+!     
+               if(textpart(3)(1:1).eq.' ') then
+                  impcend=impcstart
+               else
+                  read(textpart(3)(1:10),'(i10)',iostat=istat) impcend
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               endif
+!     
+               read(textpart(1)(1:10),'(i10)',iostat=istat) l
+               if(istat.eq.0) then
+                  if((l.gt.nk).or.(l.le.0)) then
+                     write(*,*) '*ERROR reading *BOUNDARY:'
+                     write(*,*) '       node ',l,' is not defined'
+                     stop
+                  endif
+                  do i1=impcstart,impcend
+                     idof=8*(l-1)+i1
+                     call nident(ikmpc,idof,nmpc,id)
+                     if(id.gt.0) then
+                        if(ikmpc(id).eq.idof) then
+                           impc=ilmpc(id)
+                           call mpcrem(impc,mpcfree,nodempc,nmpc,
+     &                          ikmpc,ilmpc,labmpc,coefmpc,ipompc)
+                           cycle
+                        endif
+                     endif
+                     write(*,*) 
+     &                    '*ERROR reading *EQUATION: MPC to remove'
+                     write(*,*) 'is not defined'
+                     stop
+                  enddo
+               else
+                  read(textpart(1)(1:80),'(a80)',iostat=istat) noset
+                  noset(81:81)=' '
+                  ipos=index(noset,' ')
+                  noset(ipos:ipos)='N'
+                  do i=1,nset
+                     if(set(i).eq.noset) exit
+                  enddo
+                  if(i.gt.nset) then
+                     noset(ipos:ipos)=' '
+                     write(*,*) '*ERROR reading *BOUNDARY: node set ',
+     &                       noset
+                     write(*,*) '  has not yet been defined. '
+                     call inputerror(inpc,ipoinpc,iline)
+                     stop
+                  endif
+                  do j=istartset(i),iendset(i)
+                     if(ialset(j).gt.0) then
+                        k=ialset(j)
+                        do i1=impcstart,impcend
+                           idof=8*(k-1)+i1
+                           call nident(ikmpc,idof,nmpc,id)
+                           if(id.gt.0) then
+                              if(ikmpc(id).eq.idof) then
+                                 impc=ilmpc(id)
+                                 call mpcrem(impc,mpcfree,nodempc,
+     &                                nmpc,ikmpc,ilmpc,labmpc,coefmpc,
+     &                                ipompc)
+                                 cycle
+                              endif
+                           endif
+                           write(*,*) 
+     &                         '*ERROR reading *EQUATION: MPC to remove'
+                           write(*,*) 'is not defined'
+                           stop
+                        enddo
+                     else
+                        k=ialset(j-2)
+                        do
+                           k=k-ialset(j)
+                           if(k.ge.ialset(j-1)) exit
+                           do i1=impcstart,impcend
+                              idof=8*(k-1)+i1
+                              call nident(ikmpc,idof,nmpc,id)
+                              if(id.gt.0) then
+                                 if(ikmpc(id).eq.idof) then
+                                    impc=ilmpc(id)
+                                    call mpcrem(impc,mpcfree,
+     &                                 nodempc,nmpc,ikmpc,ilmpc,labmpc,
+     &                                 coefmpc,ipompc)
+                                    cycle
+                                 endif
+                              endif
+                              write(*,*) 
+     &                         '*ERROR reading *EQUATION: MPC to remove'
+                              write(*,*) 'is not defined'
+                              stop
+                           enddo
+                        enddo
+                     endif
+                  enddo
+               endif
+            enddo
+            return
+         else
+             write(*,*) 
+     &            '*WARNING in equations: parameter not recognized:'
+             write(*,*) '         ',
+     &            textpart(m)(1:index(textpart(m),' ')-1)
+             call inputwarning(inpc,ipoinpc,iline)
+          endif
+       enddo
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR in equations: *EQUATION should be placed'
          write(*,*) '  before all step definitions'
          stop
       endif
-!
-      do i=2,n
-         write(*,*) 
-     &        '*WARNING in equations: parameter not recognized:'
-         write(*,*) '         ',
-     &        textpart(i)(1:index(textpart(i),' ')-1)
-         call inputwarning(inpc,ipoinpc,iline)
-      enddo
 !
       do
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

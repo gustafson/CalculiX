@@ -55,8 +55,8 @@
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),
-     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(60,60),ff(60),
-     &  sti(6,mi(1),*),sm(60,60),stx(6,mi(1),*),adb(*),aub(*),
+     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(78,78),ff(78),
+     &  sti(6,mi(1),*),sm(78,78),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*)
 !
@@ -96,6 +96,7 @@
         if(ipkon(i).lt.0) cycle
         indexe=ipkon(i)
         read(lakon(i)(8:8),'(i1)') nope
+        nope=nope+1
 !
         do j=1,nope
           konl(j)=kon(indexe+j) 

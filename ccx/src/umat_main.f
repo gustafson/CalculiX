@@ -64,7 +64,7 @@
      &        iel,iint,kode,elconloc,emec,emec0,
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
-     &        iorien,pgauss,orab,nmethod)
+     &        iorien,pgauss,orab,nmethod,pnewdt)
 !
       elseif(amat(1:11).eq.'ANISO_CREEP') then
 !
@@ -74,7 +74,7 @@
      &        iel,iint,kode,elconloc,emec,emec0,
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
-     &        iorien,pgauss,orab,nmethod)
+     &        iorien,pgauss,orab,nmethod,pnewdt)
 !
       elseif(amat(1:16).eq.'COMPRESSION_ONLY') then
 !

@@ -24,7 +24,7 @@
 #include "pardiso.h"
 
 int *irowpardisoas=NULL,*pointersas=NULL,iparmas[64];
-long int ptas[64];
+long long ptas[64];
 double *aupardisoas=NULL;
 
 /* factorization, solving and cleaning with PARDISO for

@@ -29,7 +29,7 @@
 !
       implicit none
 !
-      integer id
+      integer id,n6
 !
       real*8 reynolds , cd_reynolds
 !
@@ -40,8 +40,10 @@
       real*8 tab_cd(6)
       data tab_cd
      &    / 0.32d0,0.39d0,0.44d0,0.49d0,0.25d0,0.54d0/
-
-      call ident(tab_reynolds,reynolds,6,id)
+!
+      data n6 /6/
+!
+      call ident(tab_reynolds,reynolds,n6,id)
       
       if(id.eq.1) then
          cd_reynolds=tab_cd(1)

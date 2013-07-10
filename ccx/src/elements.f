@@ -25,7 +25,7 @@
 !
       implicit none
 !
-      logical solid,network,beamshell,out3d
+      logical solid,beamshell,out3d
 !
       character*1 inpc(*)
       character*8 lakon(*),label
@@ -37,7 +37,7 @@
      &  nset_,nalset,nalset_,istep,istat,n,key,i,ielset,js,k,nn,
      &  nteller,j,ipkon(*),nkon,nope,indexe,mi(*),ipos,indexy,ixfree,
      &  iponor(2,*),nopeexp,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  iaxial,ipoinpc(0:*),cfd,nlabel
+     &  iaxial,ipoinpc(0:*),cfd,nlabel,network
 !
       real*8 xnor(*)
 !
@@ -232,7 +232,7 @@ c    Bernhardi end
 !           network element
 !
             elseif(label(1:1).eq.'D') then
-               network=.true.
+               network=1
             else
                write(*,*) '*ERROR in elements:'
                write(*,*) label,' is an unknown element type'
@@ -325,7 +325,7 @@ c     Bernhardi end
          nope=3
          nopeexp=9
       elseif(label(1:8).eq.'DASHPOTA') then
-         label='EDSHPTA2'
+         label='EDSHPTA1'
          nope=2
          nopeexp=2
       elseif(label(1:7).eq.'DCOUP3D') then
@@ -338,7 +338,7 @@ c     Bernhardi end
          nope=2
          nopeexp=2
       elseif(label(1:7).eq.'SPRINGA') then
-         label='ESPRNGA2'
+         label='ESPRNGA1'
          nope=2
          nopeexp=2
       endif

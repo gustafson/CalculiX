@@ -150,13 +150,10 @@ c> @param [in]       ssurf
          endif
          oldactive=.false.
          call nidentk(iactiveline,indexl, nactiveline,id,ithree)
-c         write(20,*)'il',indexl,'id',id,'iactivel.',iactiveline(1,id)
          if(id.gt.0)then
             if(iactiveline(1,id).eq.indexl) oldactive=.true.
-         endif
-c         write(20,*) 'oldactive',oldactive     
+         endif    
          if(oldactive)then
-c            write(20,*) 'remove line',indexl
             nactiveline=nactiveline-1
             do ii=id,nactiveline
                do k=1,3
@@ -183,7 +180,6 @@ c            write(20,*) 'remove line',indexl
                else
                   if(abs(Eplane(pa,xcp,t)).gt.1.0d-10)then
                      call intersectionpoint(pa,pb,xcp,t,xinters)
-c                     write(20,103)(xinters(k),k=1,3)
                      diff=(xinters(1)-pa(1))**2+(xinters(2)-pa(2))**2+
      &                    (xinters(3)-pa(3))**2
                      diff=dsqrt(diff)
@@ -209,7 +205,6 @@ c                     write(20,103)(xinters(k),k=1,3)
                      iactiveline(3,id+1)=ifreeintersec
                      ninsertl=ninsertl+1
                      insertl(ninsertl)=indexl
-c                     write(20,*) 'insert line',indexl
                   endif
                endif
             else
@@ -245,7 +240,6 @@ c                     write(20,*) 'insert line',indexl
                         iactiveline(3,id+1)=ifreeintersec
                         ninsertl=ninsertl+1
                         insertl(ninsertl)=indexl
-c                        write(20,*) ' insert line',indexl
                      endif
                   endif
                else
@@ -263,7 +257,6 @@ c                        write(20,*) ' insert line',indexl
                      iactiveline(3,id+1)=ifreeintersec
                      ninsertl=ninsertl+1
                      insertl(ninsertl)=indexl
-c                     write(20,*) ' insert line',indexl
                   endif    
                endif
             endif 
@@ -303,7 +296,6 @@ c         if(area/areaface .lt. 2.e-4) border=.true.
          if(border)write(20,*)'border reached'
       endif
       if(nvertex.lt.3 .or. border)then
-c         write(20,*) 'polygon degenerated, remove inserted lines'
          do i=1,ninsertl
             oldactive=.false.
             indexl=insertl(i)
@@ -318,9 +310,7 @@ c         write(20,*) 'polygon degenerated, remove inserted lines'
                   do k=1,3
                      iactiveline(k,ii)=iactiveline(k,ii+1)
                   enddo
-               enddo 
-c               write(20,*) 'SH: nactiveline',nactiveline,'iactiveline'
-c               write(20,*) (iactiveline(1,k),k=1, nactiveline) 
+               enddo  
             endif
          enddo
       endif 

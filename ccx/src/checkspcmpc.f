@@ -38,45 +38,54 @@ c>
 c>     imastmpc(2,j)=1  directional blocking
 c>     imastmpc(2,j)=2  cyclic symmetry
 c>     imastmpc(2,j)=3  spc with displacement
-
+!
         implicit none
-
-      logical nodeslavsurf
+!
+      logical nodeslavsurf,debug, incompatible,nogap,twod
 !
       character*8 lakon(*)
       character*81 tieset(3,*),slavset,mastset,set(*)
 !
-      logical debug, incompatible,nogap
-!
       integer ntie,i,j,k,l,nset,dir,dirind,dirdep,
      &  ifaces,nelems,jfaces,ifacem,nelemm,
      &  jfacem,indexe,nopes,nopem,ipkon(*),kon(*),id,
-     &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),node,
+     &  ifaceq(8,6),ifacet(7,4),ifacew1(4,5),ifacew2(8,5),node,
      &  itiefac(2,*),islavsurf(2,*),islavnode(*),imastnode(*),
      &  nslavnode(ntie+1),nmastnode(ntie+1),ifacecount,islav,imast,
      &  ipos,index1,ifreenoelold,
      &  numbern,numberf,iface,kflag,nk,
-     &  islavact(*)
-
-      integer nboun,ndirboun(*),nodeboun(*),
+     &  islavact(*),
+     &  nboun,ndirboun(*),nodeboun(*),
      &  nmpc,ipompc(*),nodempc(3,*),index,
      &  ikboun(*),ilboun(*),ikmpc(*),ilmpc(*),
      &  nslavspc(2,*),islavspc(2,*),nsspc,nslavmpc(2,*),islavmpc(2,*),
      &  nsmpc,nmastspc(2,*),imastspc(2,*),nmspc,nmastmpc(2,*),
      &  imastmpc(2,*),nmmpc,islavborder(*),isspc,imspc,ismpc,immpc,
-     &  nodem,nodes,ist,zs(3),dof
-      
+     &  nodem,nodes,ist,zs(3),dof,node2,nsl,nc
+!      
       real*8  xboun(*),coefmpc(*),nn,n(3),fixed_disp,coefdep,
      &  slavnor(3,*),slavtan(6,*),v(3),sp
-
-
-
+!
        debug=.false.
-
+!
        if(nsspc.gt.0 .or. nsmpc.gt.0)then
           do i=1,ntie
+             twod=.false.
+             if(tieset(1,i)(81:81).ne.'C') cycle
+             nsl= nslavnode(i+1)-nslavnode(i)+1
+             nc=0
+             do l=nslavnode(i)+1,nslavnode(i+1)
+                nc=nc+(nslavspc(2,l)-nslavspc(1,l))
+                nc=nc+(nslavmpc(2,l)-nslavmpc(1,l))
+             enddo
+             if(nc.gt.0.88*nsl)then
+                twod=.true.
+             endif
+             write(*,*)'csm:tie',i,'nc',nc,'nsl',nsl                         
              do l=nslavnode(i)+1,nslavnode(i+1)
                 node=islavnode(l)
+                debug=.false.
+                if(node.eq.18)debug=.true.
                 do k=1,3
                    n(k)=slavnor(k,l)
                 enddo
@@ -106,7 +115,6 @@ c>     imastmpc(2,j)=3  spc with displacement
                    v(dir)=1.0
                    sp=v(1)*n(1)+v(2)*n(2)+v(3)*n(3)
                    islavspc(2,j)=1
-c                   write(*,*) 'dir',dir
 !     tolerance of around 1 degrees
                    if(.not.(sp.lt.-0.08 .or. sp.gt.0.08) )then
                     do k=1,3
@@ -131,10 +139,11 @@ c                   write(*,*) 'dir',dir
                       incompatible=.true.
                       islavspc(2,j)=-2
                    endif
-                enddo
-                
-! check for directional blocking
-                
+                   if((islavspc(2,j).eq.1).and.(.not.twod))then
+                      incompatible=.true.
+                   endif
+                enddo                
+! check for directional blocking                
                 do j=nslavmpc(1,l)+1,nslavmpc(2,l)
                    v(1)=0.0
                    v(2)=0.0
@@ -148,7 +157,6 @@ c                   write(*,*) 'dir',dir
                    fixed_disp=0.d0
                    if(index.ne.0) then
                       do
-c                  if(node.eq.1435) write(*,*)'node',nodempc(1,index)
                          if(nodempc(1,index).eq.node)then
                             dirind=nodempc(2,index)
                             v(dirind)=coefmpc(index)
@@ -156,7 +164,6 @@ c                  if(node.eq.1435) write(*,*)'node',nodempc(1,index)
                            dof=8*(nodempc(1,index)-1)+nodempc(2,index)
                            call nident(ikboun, dof, 
      &                        nboun, id)
-c                           write(*,*) 'idspc',id,ikboun(id),xboun(id)
                            if(id.gt.0 .and. ikboun(id).eq.dof)then
                             if(xboun(ilboun(id)).gt.1.e-16 .or.
      &                       xboun(ilboun(id)).lt.-1.e-16)then
@@ -175,21 +182,18 @@ c                           write(*,*) 'idspc',id,ikboun(id),xboun(id)
                          index=nodempc(3,index)
                          if(index.eq.0) exit              
                       enddo
-c                      if(node.eq.1435) write(*,*) 'v', v(1),v(2),v(3)
                       sp=sqrt(v(1)*v(1)+v(2)*v(2)+v(3)*v(3))
-c                      if(node.eq.1435) write(*,*)'node',node,'sp',sp
                       if(sp>1.e-16)then
-                      do k=1,3
+                       do k=1,3
                          v(k)=v(k)/sp 
-                      enddo
-                      sp=v(1)*n(1)+v(2)*n(2)+v(3)*n(3)
-                      if(.not.(sp.lt.-0.08 .or. sp.gt.0.08) )then
-                      do k=1,3
-                       n(k)=n(k)-sp*v(k)
-                      enddo
-                      endif
+                       enddo
+                       sp=v(1)*n(1)+v(2)*n(2)+v(3)*n(3)
+                       if(.not.(sp.lt.-0.08 .or. sp.gt.0.08) )then
+                        do k=1,3
+                         n(k)=n(k)-sp*v(k)
+                        enddo
 !     tolerance of around 2 degrees
-                      if(sp.lt.-0.08 .or. sp.gt.0.08 )then
+                       else
                          if(debug)then
                          write(*,*) 'checkspcmpc: normal direction can', 
      &                        'not be blocked'
@@ -197,29 +201,32 @@ c                      if(node.eq.1435) write(*,*)'node',node,'sp',sp
                          endif
                          incompatible=.true.
                            islavmpc(2,j)=-2
-                      endif
+                       endif
+                      else
+                       islavmpc(2,j)=-2
+
                       endif 
                    endif
-                   
+                   if((islavmpc(2,j).eq.1).and.(.not.twod))then
+                   incompatible=.true.
+                   endif                   
                 enddo
 ! check for zyclic symmetry 
-                   zs(1)=0
-                   zs(2)=0
-                   zs(3)=0              
+                zs(1)=0
+                zs(2)=0
+                zs(3)=0              
                 do j=nslavmpc(1,l)+1,nslavmpc(2,l)
-c                 write(*,*)'j',j,'type',islavmpc(2,j)
                  if(islavmpc(2,j).ne.1)then
                    ist=islavmpc(1,j)
                    dirdep=nodempc(2,ist)
                    coefdep=coefmpc(ist)
-c                   v(dirdep)=coefdep
                    index=nodempc(3,ist)
                    fixed_disp=0.d0
                    zs(dirdep)=nodempc(1,index)
                    call nident(islavnode(nslavnode(i)+1), zs(dirdep), 
      &              nslavnode(i+1)-nslavnode(i), id)
                    if(id>0)then
-                    if(islavnode(id).ne.zs(dirdep))then
+                    if(islavnode(nslavnode(i)+id).ne.zs(dirdep))then
                         if(debug)then
                          write(*,*) 'checkspcmpc: only zyclic ', 
      &                        'symmetry on slave nodes supported'
@@ -240,8 +247,7 @@ c                   v(dirdep)=coefdep
 c check whether ind node is slave node at border
                    if(index.ne.0) then
                       do
-                         if(nodempc(1,index).ne.zs(dirdep).and. 
-     &                    nodempc(1,index).ne.node)then
+                         if(nodempc(1,index).ne.zs(dirdep))then
                   if(debug)then
                          write(*,*) 'checkspcmpc: only zyclic symmetry', 
      &                        'and directional blocking supported'
@@ -249,7 +255,9 @@ c check whether ind node is slave node at border
                   endif
                            incompatible=.true.
                            islavmpc(2,j)=-2
+                          if(debug)then
                           write(*,*) nodempc(1,index),zs(dirdep)
+                          endif
                          endif
                          index=nodempc(3,index)
                          if(index.eq.0) exit              
@@ -258,9 +266,16 @@ c check whether ind node is slave node at border
                        islavmpc(2,j)=2
                       endif
                    endif
-                 endif  
+                 endif 
+                 if((islavmpc(2,j).eq.2) .and. (.not.twod))then
+!                   make cyclic symmetry master node NoLM-node, too
+                    islavact(l)=-2
+                    islavact(nslavnode(i)+id)=-2                
+                  endif
                 enddo
-
+!
+                if(debug)write(*,*) zs(1),zs(2),zs(3)
+!                
                 if(.not.(zs(1).eq.zs(2) .or. zs(2).eq.zs(3)
      &                   .or. zs(1).eq.zs(3)) )then
                   if(debug)then
@@ -271,8 +286,7 @@ c check whether ind node is slave node at border
                   endif
                     incompatible=.true.
                 endif 
-                
-                
+!                                
                 if(incompatible)then
                    islavact(l)=-2
                 else
@@ -293,13 +307,13 @@ c check whether ind node is slave node at border
                 endif
              enddo
           enddo
-          
+!          
        endif
       if(nmspc.gt.0 .or. nmmpc.gt.0)then
           do i=1,ntie
+             if(tieset(1,i)(81:81).ne.'C') cycle
              do l=nmastnode(i)+1,nmastnode(i+1)   
                 node=imastnode(l)             
-c                write(*,*) 'tie',i,'j',l,'nodem',node
 ! check for directional blocking and "hidden" SPCs            
                 do j=nmastmpc(1,l)+1,nmastmpc(2,l)
                    v(1)=0.0
@@ -323,8 +337,6 @@ c                write(*,*) 'tie',i,'j',l,'nodem',node
                            dof=8*(nodempc(1,index)-1)+nodempc(2,index)
                            call nident(ikboun, dof, 
      &                        nboun, id)
-c                           write(*,*) 'idspc',nodeboun(ilboun(id)),
-c     &      ndirboun(ilboun(id)),ikboun(ilboun(id)),xboun(ilboun(id))
                            if(id.gt.0 .and. ikboun(id).eq.dof)then
                             if(xboun(ilboun(id)).gt.1.e-16 .or.
      &                       xboun(ilboun(id)).lt.-1.e-16)then
@@ -338,15 +350,10 @@ c     &      ndirboun(ilboun(id)),ikboun(ilboun(id)),xboun(ilboun(id))
                            endif                           
                          endif
                          index=nodempc(3,index)
-c                         if(j.gt.2 .and. index.eq.0 
-c     &                   .and.imastmpc(2,j).eq.3) then
-c                           imastmpc(2,j)=1
-c                         endif
                          if(index.eq.0) exit              
                       enddo
                    endif
-c                   write(*,*) 'v',v(1),v(2),v(3)
-                   
+!                   
                 enddo
 ! check for zyclic symmetry 
                    zs(1)=0
@@ -357,31 +364,30 @@ c                   write(*,*) 'v',v(1),v(2),v(3)
                    ist=imastmpc(1,j)
                    dirdep=nodempc(2,ist)
                    coefdep=coefmpc(ist)
-c                   v(dirdep)=coefdep
                    index=nodempc(3,ist)
                    fixed_disp=0.d0
                    zs(dirdep)=nodempc(1,index)
                    call nident(imastnode(nmastnode(i)+1), zs(dirdep), 
      &              nmastnode(i+1)-nmastnode(i), id)
                    if(id>0)then
-                    if(imastnode(id).ne.zs(dirdep))then
-                         write(*,*) 'checkspcmpc: only zyclic ', 
-     &                        'symmetry on master nodes supported'
-                         write(*,*) 'nodem',node
+                    if(imastnode(nmastnode(i)+id).ne.zs(dirdep))then
+c                         write(*,*) 'checkspcmpc: only zyclic ', 
+c     &                        'symmetry on master nodes supported'
+c                         write(*,*) 'nodem',node
                     endif
                    else
-                          write(*,*) 'checkspcmpc: only zyclic ', 
-     &                        'symmetry on master nodes supported'
-                         write(*,*) 'nodem',node   
+c                          write(*,*) 'checkspcmpc: only zyclic ', 
+c     &                        'symmetry on master nodes supported'
+c                         write(*,*) 'nodem',node   
                    endif              
                    if(index.ne.0) then
                       do
                          if(nodempc(1,index).ne.zs(dirdep).and. 
      &                    nodempc(1,index).ne.node)then
-                         write(*,*) 'checkspcmpc: only zyclic symmetry', 
-     &                        'and directional blocking supported'
-                         write(*,*) 'nodem',node
-                          write(*,*) nodempc(1,index),zs(dirdep)
+c                         write(*,*) 'checkspcmpc: only zyclic symmetry', 
+c     &                        'and directional blocking supported'
+c                         write(*,*) 'nodem',node
+c                          write(*,*) nodempc(1,index),zs(dirdep)
                          endif
                          index=nodempc(3,index)
                          if(index.eq.0) exit              
@@ -392,15 +398,15 @@ c                   v(dirdep)=coefdep
                    endif
                  endif  
                 enddo
-
+!
                 if(.not.(zs(1).eq.zs(2) .or. zs(2).eq.zs(3)
      &                   .or. zs(1).eq.zs(3)) )then
-                    write(*,*) 'checkspcmpc: only zyclic symmetry', 
-     &                        'and directional blocking supported'
-                    write(*,*) 'nodem',node
-                    write(*,*) zs(1),zs(2),zs(3)
+c                    write(*,*) 'checkspcmpc: only zyclic symmetry', 
+c     &                        'and directional blocking supported'
+c                    write(*,*) 'nodem',node
+c                    write(*,*) zs(1),zs(2),zs(3)
                 endif 
-                
+!                
                 if(debug)then
                 write(*,*)'checkspcmpc:nodem',node
 c                do j=nmastspc(1,l)+1,nmastspc(2,l)
@@ -413,9 +419,47 @@ c                enddo
                 endif
              enddo
           enddo
-          
-       endif       
-c       stop
-       
+!          
+       endif 
+!
+       if(ntie.gt.1)then
+          do i=1,ntie
+             if(tieset(1,i)(81:81).ne.'C') cycle
+             do l=nslavnode(i)+1,nslavnode(i+1)
+                node=islavnode(l)
+                if(islavact(l).gt.-1)then
+                 do j=1,ntie
+                  if(j.ne.i)then
+                   if(tieset(1,j)(81:81).ne.'C') cycle
+                   call nident(islavnode(nslavnode(j)+1), node, 
+     &              nslavnode(j+1)-nslavnode(j), id)
+                   if(id>0)then
+                    if(islavnode(nslavnode(j)+id).eq.node)then
+                     islavact(l)=-2
+                     if(debug)then
+                  write(*,*)'checkspcmpc: node',node,'tie1s',i,'tie2s',j
+                  write(*,*)'in more than one contact tie and set NoLM!'
+                     endif
+                    endif
+                   endif                   
+                   call nident(imastnode(nmastnode(j)+1), node, 
+     &              nmastnode(j+1)-nmastnode(j), id)
+                   if(id>0)then
+                    if(imastnode(nmastnode(j)+id).eq.node)then
+                     islavact(l)=-2
+                     if(debug)then
+                  write(*,*)'checkspcmpc: node',node,'tie1s',i,'tie2m',j
+                  write(*,*)'in more than one contact tie and set NoLM!'
+                     endif
+                    endif
+                   endif                   
+                  endif
+                 enddo
+                endif
+             enddo
+          enddo
+!
+       endif
+!             
        return
        end

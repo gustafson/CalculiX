@@ -56,11 +56,11 @@
 !
 !     local derivatives of the shape functions: xi-derivative
 !
-      shp(1, 1)=1.d0-4.d0*(1.d0-xi-et-ze)
+      shp(1, 1)=1.d0-4.d0*a
       shp(1, 2)=4.d0*xi-1.d0
       shp(1, 3)=0.d0
       shp(1, 4)=0.d0
-      shp(1, 5)=4.d0*(1.d0-2.d0*xi-et-ze)
+      shp(1, 5)=4.d0*(a-xi)
       shp(1, 6)=4.d0*et
       shp(1, 7)=-4.d0*et
       shp(1, 8)=-4.d0*ze
@@ -69,27 +69,27 @@
 !
 !     local derivatives of the shape functions: eta-derivative
 !
-      shp(2, 1)=1.d0-4.d0*(1.d0-xi-et-ze)
+      shp(2, 1)=1.d0-4.d0*a
       shp(2, 2)=0.d0
       shp(2, 3)=4.d0*et-1.d0
       shp(2, 4)=0.d0
       shp(2, 5)=-4.d0*xi
       shp(2, 6)=4.d0*xi
-      shp(2, 7)=4.d0*(1.d0-xi-2.d0*et-ze)
+      shp(2, 7)=4.d0*(a-et)
       shp(2, 8)=-4.d0*ze
       shp(2, 9)=0.d0
       shp(2,10)=4.d0*ze
 !
 !     local derivatives of the shape functions: zeta-derivative
 !
-      shp(3, 1)=1.d0-4.d0*(1.d0-xi-et-ze)
+      shp(3, 1)=1.d0-4.d0*a
       shp(3, 2)=0.d0
       shp(3, 3)=0.d0
       shp(3, 4)=4.d0*ze-1.d0
       shp(3, 5)=-4.d0*xi
       shp(3, 6)=0.d0
       shp(3, 7)=-4.d0*et
-      shp(3, 8)=4.d0*(1.d0-xi-et-2.d0*ze)
+      shp(3, 8)=4.d0*(a-ze)
       shp(3, 9)=4.d0*xi
       shp(3,10)=4.d0*et
 !

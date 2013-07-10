@@ -20,7 +20,7 @@
      &  nzdof,iforc,iznode,nznode,nk,imdnode,nmdnode,xforc)
 !
 !     adds the dof in which a point force was applied to iznode, izdof
-!     and to imdnode if user-defined load
+!     and to ** imdnode if user-defined load **
 !     (needed in dyna.c and steadystate.c)
 !
       implicit none

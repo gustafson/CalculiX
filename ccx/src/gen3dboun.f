@@ -33,7 +33,8 @@
       character*8 lakon(*)
       character*20 labmpc(*)
 !
-      integer ikboun(*),ilboun(*),nboun,nboun_,nodeboun(*),ndirboun(*),
+      integer ikboun(*),ilboun(*),nboun,nboun_,nodeboun(*),
+     &  ndirboun(*),idim,ier,matz,
      &  iamboun(*),iponoel(*),inoel(3,*),iponoelmax,kon(*),ipkon(*),ne,
      &  iponor(2,*),knor(*),ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,
      &  ikmpc(*),ilmpc(*),rig(*),ntrans,inotr(2,*),nbounold,i,node,
@@ -44,7 +45,9 @@
 !
       real*8 xboun(*),xnor(*),coefmpc(*),trab(7,*),val,co(3,*),
      &  xnoref(3),dmax,d(3,3),e(3,3,3),alpha,q(3),w(3),xn(3),
-     &  a1(3),a2(3),dd,c1,c2,c3,ww,c(3,3),vold(0:mi(2),*),a(3,3)
+     &  a1(3),a2(3),dd,c1,c2,c3,ww,c(3,3),vold(0:mi(2),*),a(3,3),
+     &  e1(3),e2(3),t1(3),b(3,3),x(3),y(3),fv1(3),
+     &  fv2(3),z(3,3),xi1,xi2,xi3,u(3,3),r(3,3)
 !
       data d /1.,0.,0.,0.,1.,0.,0.,0.,1./
       data e /0.,0.,0.,0.,0.,-1.,0.,1.,0.,
@@ -123,11 +126,13 @@
                      ndepnodes=ndepnodes+1
                      idepnodes(ndepnodes)=knor(indexk+k)
                   enddo
+                  idim=1
                elseif(lakon(ielem)(7:7).eq.'B') then
                   do k=1,8
                      ndepnodes=ndepnodes+1
                      idepnodes(ndepnodes)=knor(indexk+k)
                   enddo
+                  idim=3
                else
                   write(*,*) 
      &           '*ERROR in gen3dboun: a rotational DOF was applied'
@@ -175,7 +180,8 @@
      &                 irotnode,iexpnode,
      &                 labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,nk,nk_,
      &                 nodeboun,ndirboun,ikboun,ilboun,nboun,nboun_,
-     &                 idepnodes(k),typeboun,co,xboun,istep)
+     &                 idepnodes,typeboun,co,xboun,istep,k,ndepnodes,
+     &                 idim,e1,e2,t1)
                enddo
 !
 !              determine the location of the center of gravity of
@@ -305,17 +311,17 @@
 !
                do k=1,3
                   do l=1,3
-                     c(k,l)=c1*d(k,l)+
+                     r(k,l)=c1*d(k,l)+
      &                  c2*(e(k,1,l)*xn(1)+e(k,2,l)*xn(2)+
      &                  e(k,3,l)*xn(3))+c3*xn(k)*xn(l)
                   enddo
                enddo
 !
-               do l=1,3
-                  w(l)=w(l)+(alpha*c(l,1)-d(l,1))*(co(1,irefnode)-q(1))
-     &                     +(alpha*c(l,2)-d(l,2))*(co(2,irefnode)-q(2))
-     &                     +(alpha*c(l,3)-d(l,3))*(co(3,irefnode)-q(3))
-               enddo
+c               do l=1,3
+c                  w(l)=w(l)+(alpha*r(l,1)-d(l,1))*(co(1,irefnode)-q(1))
+c     &                     +(alpha*r(l,2)-d(l,2))*(co(2,irefnode)-q(2))
+c     &                     +(alpha*r(l,3)-d(l,3))*(co(3,irefnode)-q(3))
+c               enddo
 !
 !              copying the displacements
 !
@@ -323,7 +329,100 @@
                   vold(l,irefnode)=w(l)
                   vold(l,irotnode)=xn(l)
                enddo
-               vold(1,iexpnode)=alpha
+c               vold(1,iexpnode)=alpha
+               vold(1,iexpnode)=alpha-1.d0
+!
+!              correction of the expansion values for beam sections
+!
+               if(idim.eq.2) then
+!
+!              initializing matrices b and c
+!
+                  do l=1,3
+                     do m=1,3
+                        b(l,m)=0.d0
+                        c(l,m)=0.d0
+                     enddo
+                  enddo
+!
+!              solving a least squares problem to determine 
+!              the transpose of the deformation gradient:
+!              c.F^T=b
+!
+                  do k=1,ndepnodes
+                     nod=idepnodes(k)
+                     do l=1,3
+                        x(l)=co(l,nod)-q(l)
+                        y(l)=x(l)+vold(l,nod)-w(l)
+                     enddo
+                     do l=1,3
+                        do m=1,3
+                           c(l,m)=c(l,m)+x(l)*x(m)
+                           b(l,m)=b(l,m)+x(l)*y(m)
+                        enddo
+                     enddo
+                  enddo
+!
+!              solving the linear equation system
+!
+                  m=3
+                  nrhs=3
+                  call dgesv(m,nrhs,c,m,ipiv,b,m,info)
+                  if(info.ne.0) then
+                     write(*,*) '*ERROR in gen3dforc:'
+                     write(*,*) '       singular system of equations'
+                     stop
+                  endif
+!
+!              now b=F^T
+!
+!              constructing the right stretch tensor
+!              U=F^T.R
+!
+                  do l=1,3
+                     do m=l,3
+                        u(l,m)=b(l,1)*r(1,m)+b(l,2)*r(2,m)+
+     &                       b(l,3)*r(3,m)
+                     enddo
+                  enddo
+                  u(2,1)=u(1,2)
+                  u(3,1)=u(1,3)
+                  u(3,2)=u(2,3)
+!
+!              determining the eigenvalues and eigenvectors of U
+!               
+                  m=3
+                  matz=1
+                  ier=0
+                  call rs(m,m,u,w,matz,z,fv1,fv2,ier)
+                  if(ier.ne.0) then
+                     write(*,*) 
+     &                   '*ERROR in knotmpc while calculating the'
+                     write(*,*) '       eigenvalues/eigenvectors'
+                     stop
+                  endif
+!     
+                  if((dabs(w(1)-1.d0).lt.dabs(w(2)-1.d0)).and.
+     &                 (dabs(w(1)-1.d0).lt.dabs(w(3)-1.d0))) then
+                     l=2
+                     m=3
+                  elseif((dabs(w(2)-1.d0).lt.dabs(w(1)-1.d0)).and.
+     &                    (dabs(w(2)-1.d0).lt.dabs(w(3)-1.d0))) then
+                     l=1
+                     m=3
+                  else
+                     l=1
+                     m=2
+                  endif
+                  xi1=datan2((z(1,l)*e2(1)+z(2,l)*e2(2)+z(3,l)*e2(2)),
+     &                 (z(1,l)*e1(1)+z(2,l)*e1(2)+z(3,l)*e1(2)))
+                  xi2=w(l)-1.d0
+                  xi3=w(m)-1.d0
+!
+                  vold(1,iexpnode)=xi1
+                  vold(2,iexpnode)=xi2
+                  vold(3,iexpnode)=xi3
+               endif
 !     
 !              apply the boundary condition
 !               

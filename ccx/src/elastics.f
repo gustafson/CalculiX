@@ -155,7 +155,6 @@
                elcon(4,ntmat,nmat)=e1*(un31+un21*un32)*gam
                elcon(5,ntmat,nmat)=e2*(un32+un12*un31)*gam
                elcon(6,ntmat,nmat)=e3*(1.d0-un12*un21)*gam
-               write(*,'(6(1x,e11.4))') (elcon(i,ntmat,nmat),i=1,6)
             endif
          enddo
       elseif(ityp.eq.21) then

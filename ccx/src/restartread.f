@@ -294,7 +294,7 @@
 !
 !     plastic data
 !
-      if(iplas.ne.0)then
+      if(npmat_.ne.0)then
          read(15)(plicon(i),i=1,(2*npmat_+1)*ntmat_*nmat)
          read(15)(nplicon(i),i=1,(ntmat_+1)*nmat)
          read(15)(plkcon(i),i=1,(2*npmat_+1)*ntmat_*nmat)

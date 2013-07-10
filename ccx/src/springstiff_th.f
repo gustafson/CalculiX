@@ -17,8 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine springstiff_th(xl,voldl,s,imat,elcon,nelcon,
-     &  ncmat_,ntmat_,nope,kode,plicon,
-     &  nplicon,npmat_,iperturb,springarea,mi,timeend,matname,
+     &  ncmat_,ntmat_,nope,kode,plkcon,
+     &  nplkcon,npmat_,iperturb,springarea,mi,timeend,matname,
      &  node,noel,istep,iinc)
 !
 !     calculates the stiffness of a spring
@@ -28,14 +28,14 @@
       character*80 matname(*),slname,msname
 !
       integer i,j,imat,ncmat_,ntmat_,k,nope,nterms,iflag,
-     &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),
+     &  kode,niso,id,nplkcon(0:ntmat_,*),npmat_,nelcon(2,*),
      &  iperturb(*),mi(*),node,noel,istep,iinc,npred
 !
-      real*8 xl(3,9),ratio(9),q(3),val,shp2(7,9),ak(5),
-     &  al(3),s(60,60),voldl(0:mi(2),9),pl(3,9),xn(3),dm,
+      real*8 xl(3,10),ratio(9),q(3),val,shp2(7,9),ak(5),
+     &  al(3),s(78,78),voldl(0:mi(2),10),pl(3,10),xn(3),dm,
      &  alpha,beta,elcon(0:ncmat_,ntmat_,*),xm(3),pressure,
-     &  xi,et,xs2(3,7),t1l,elconloc(21),plconloc(82),xk,
-     &  xiso(20),yiso(20),plicon(0:2*npmat_,ntmat_,*),
+     &  xi,et,xs2(3,7),t1l,elconloc(21),plconloc(802),xk,
+     &  xiso(200),yiso(200),plkcon(0:2*npmat_,ntmat_,*),
      &  springarea,dist,eps,pi,constant,conductance,dtemp,temp(2),
      &  predef(2),coords(3),tmean,d(2),timeend(2),flowm(2)
 !
@@ -74,12 +74,16 @@
 !
 !     determining the jacobian vector on the surface 
 !
-      if(nterms.eq.8) then
+      if(nterms.eq.9) then
+         call shape9q(xi,et,pl,xm,xs2,shp2,iflag)
+      elseif(nterms.eq.8) then
          call shape8q(xi,et,pl,xm,xs2,shp2,iflag)
       elseif(nterms.eq.4) then
          call shape4q(xi,et,pl,xm,xs2,shp2,iflag)
       elseif(nterms.eq.6) then
          call shape6tri(xi,et,pl,xm,xs2,shp2,iflag)
+      elseif(nterms.eq.7) then
+         call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
       else
          call shape3tri(xi,et,pl,xm,xs2,shp2,iflag)
       endif
@@ -150,11 +154,11 @@
 !     interpolating the material data according to temperature
 !
       call materialdata_sp(elcon,nelcon,imat,ntmat_,i,tmean,
-     &     elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
+     &     elconloc,kode,plkcon,nplkcon,npmat_,plconloc,ncmat_)
 !
 !     interpolating the material data according to pressure
 !
-      niso=int(plconloc(81))
+      niso=int(plconloc(801))
 !
       if(niso.eq.0) then
 !

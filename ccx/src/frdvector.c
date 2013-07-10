@@ -26,7 +26,7 @@ void frdvector(double *v,int *iset,int *ntrans,char * filabl,int *nkcoords,
                int *istartset,int *iendset,int *ialset,int *mi,int *ngraph,
                FILE *f1,char *output,char *m3){
 
-  int i,j,k,l,m,nksegment;
+  int i,k,l,m,nksegment;
       
   int iw;
 
@@ -39,8 +39,9 @@ void frdvector(double *v,int *iset,int *ntrans,char * filabl,int *nkcoords,
       for(i=0;i<*nkcoords;i++){
 	if(inum[i]<=0) continue;
 	if(strcmp1(output,"asc")==0){
-	  fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,v[(mi[1]+1)*i+1],
-		  v[(mi[1]+1)*i+2],v[(mi[1]+1)*i+3]);
+	  fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,
+                  (float)v[(mi[1]+1)*i+1],
+		  (float)v[(mi[1]+1)*i+2],(float)v[(mi[1]+1)*i+3]);
 	}else{
 	  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	  ifl=(float)v[(mi[1]+1)*i+1];fwrite(&ifl,sizeof(float),1,f1);
@@ -53,8 +54,9 @@ void frdvector(double *v,int *iset,int *ntrans,char * filabl,int *nkcoords,
 	if(inum[i]<=0) continue;
 	if(inotr[2*i]==0){
 	  if(strcmp1(output,"asc")==0){
-	    fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,v[(mi[1]+1)*i+1],
-		    v[(mi[1]+1)*i+2],v[(mi[1]+1)*i+3]);
+	    fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,
+                    (float)v[(mi[1]+1)*i+1],
+		    (float)v[(mi[1]+1)*i+2],(float)v[(mi[1]+1)*i+3]);
 	  }else{
 	    iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	    ifl=(float)v[(mi[1]+1)*i+1];fwrite(&ifl,sizeof(float),1,f1);
@@ -65,9 +67,9 @@ void frdvector(double *v,int *iset,int *ntrans,char * filabl,int *nkcoords,
 	  FORTRAN(transformatrix,(&trab[7*(inotr[2*i]-1)],&co[3*i],a));
 	  if(strcmp1(output,"asc")==0){
 	    fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,
-		    v[(mi[1]+1)*i+1]*a[0]+v[(mi[1]+1)*i+2]*a[1]+v[(mi[1]+1)*i+3]*a[2],
-		    v[(mi[1]+1)*i+1]*a[3]+v[(mi[1]+1)*i+2]*a[4]+v[(mi[1]+1)*i+3]*a[5],
-		    v[(mi[1]+1)*i+1]*a[6]+v[(mi[1]+1)*i+2]*a[7]+v[(mi[1]+1)*i+3]*a[8]);
+		    (float)(v[(mi[1]+1)*i+1]*a[0]+v[(mi[1]+1)*i+2]*a[1]+v[(mi[1]+1)*i+3]*a[2]),
+		    (float)(v[(mi[1]+1)*i+1]*a[3]+v[(mi[1]+1)*i+2]*a[4]+v[(mi[1]+1)*i+3]*a[5]),
+		    (float)(v[(mi[1]+1)*i+1]*a[6]+v[(mi[1]+1)*i+2]*a[7]+v[(mi[1]+1)*i+3]*a[8]));
 	  }else{
 	    iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	    ifl=(float)v[(mi[1]+1)*i+1]*a[0]+v[(mi[1]+1)*i+2]*a[1]+v[(mi[1]+1)*i+3]*a[2];
@@ -88,14 +90,14 @@ void frdvector(double *v,int *iset,int *ntrans,char * filabl,int *nkcoords,
 	  i=ialset[k]+l*nksegment-1;
 	  if(inum[i]<=0) continue;
 	  if((*ntrans==0)||(strcmp1(&filabl[5],"G")==0)||(inotr[2*i]==0)){
-	    fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,v[(mi[1]+1)*i+1],
-		    v[(mi[1]+1)*i+2],v[(mi[1]+1)*i+3]);
+	    fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,(float)v[(mi[1]+1)*i+1],
+		    (float)v[(mi[1]+1)*i+2],(float)v[(mi[1]+1)*i+3]);
 	  }else{
 	    FORTRAN(transformatrix,(&trab[7*(inotr[2*i]-1)],&co[3*i],a));
 	    fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,   
-   	    v[(mi[1]+1)*i+1]*a[0]+v[(mi[1]+1)*i+2]*a[1]+v[(mi[1]+1)*i+3]*a[2],
-	    v[(mi[1]+1)*i+1]*a[3]+v[(mi[1]+1)*i+2]*a[4]+v[(mi[1]+1)*i+3]*a[5],
-	    v[(mi[1]+1)*i+1]*a[6]+v[(mi[1]+1)*i+2]*a[7]+v[(mi[1]+1)*i+3]*a[8]);
+		    (float)(v[(mi[1]+1)*i+1]*a[0]+v[(mi[1]+1)*i+2]*a[1]+v[(mi[1]+1)*i+3]*a[2]),
+		    (float)(v[(mi[1]+1)*i+1]*a[3]+v[(mi[1]+1)*i+2]*a[4]+v[(mi[1]+1)*i+3]*a[5]),
+		    (float)(v[(mi[1]+1)*i+1]*a[6]+v[(mi[1]+1)*i+2]*a[7]+v[(mi[1]+1)*i+3]*a[8]));
 	  }
 	}
       }else{
@@ -107,17 +109,17 @@ void frdvector(double *v,int *iset,int *ntrans,char * filabl,int *nkcoords,
 	    i=l+m*nksegment-1;
 	    if(inum[i]<=0) continue;
 	    if((*ntrans==0)||(strcmp1(&filabl[5],"G")==0)||(inotr[2*i]==0)){
-	      fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,v[(mi[1]+1)*i+1],
-		    v[(mi[1]+1)*i+2],v[(mi[1]+1)*i+3]);
+	      fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,(float)v[(mi[1]+1)*i+1],
+		    (float)v[(mi[1]+1)*i+2],(float)v[(mi[1]+1)*i+3]);
 	    }else{
 	      FORTRAN(transformatrix,(&trab[7*(inotr[2*i]-1)],&co[3*i],a));
 	      fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,   
-		      v[(mi[1]+1)*i+1]*a[0]+v[(mi[1]+1)*i+2]*a[1]+
-                      v[(mi[1]+1)*i+3]*a[2],
-		      v[(mi[1]+1)*i+1]*a[3]+v[(mi[1]+1)*i+2]*a[4]+
-                      v[(mi[1]+1)*i+3]*a[5],
-		      v[(mi[1]+1)*i+1]*a[6]+v[(mi[1]+1)*i+2]*a[7]+
-                      v[(mi[1]+1)*i+3]*a[8]);
+		      (float)(v[(mi[1]+1)*i+1]*a[0]+v[(mi[1]+1)*i+2]*a[1]+
+			      v[(mi[1]+1)*i+3]*a[2]),
+		      (float)(v[(mi[1]+1)*i+1]*a[3]+v[(mi[1]+1)*i+2]*a[4]+
+			      v[(mi[1]+1)*i+3]*a[5]),
+		      (float)(v[(mi[1]+1)*i+1]*a[6]+v[(mi[1]+1)*i+2]*a[7]+
+			      v[(mi[1]+1)*i+3]*a[8]));
 	    }
 	  }
 	}while(1);

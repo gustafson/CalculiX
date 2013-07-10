@@ -22,21 +22,21 @@
 !  
 !     id is such that x(id).le.px and x(id+1).gt.px
 !                                                                             
-      SUBROUTINE IDENT(X,PX,N,ID)
-      IMPLICIT none
+      subroutine ident(x,px,n,id)
+      implicit none
       integer n,id,n2,m
-      real*8 X(N),px
+      real*8 x(n),px
       id=0
       if(n.eq.0) return
-      N2=N+1
-      DO                                                           
-         M=(N2+ID)/2
-         IF(PX.GE.X(M)) then
-            ID=M   
+      n2=n+1
+      do                                                           
+         m=(n2+id)/2
+         if(px.ge.x(m)) then
+            id=m   
          else
-            N2=M    
+            n2=m    
          endif
-         IF((N2-ID).EQ.1) return                                               
+         if((n2-id).eq.1) return                                               
       enddo
-      END
+      end
 

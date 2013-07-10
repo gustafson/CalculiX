@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine attachpen(pneigh,pnode,nterms,ratio,dist,xil,etl,
-     &	                   xnormastface)
+     &                   xnormastface)
 !
 !     ataches node with coordinates in "pnode" to the face containing 
 !     "nterms" nodes with coordinates in field "pneigh" (nterms < 9).

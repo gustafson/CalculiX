@@ -25,7 +25,7 @@ c     order xo, yo and zo before the first call to near2d and
 c     store the results with the corresponding permutation array
 c     in x,y,z and nx,ny,nz, respectively
 c
-      IMPLICIT none
+      implicit none
 C
       integer node(*),nx(*),ny(*),nz(*),i,j,k,m,n,kflag,ni(26),ks,
      &  it,iz,idx,idy,idz,nboundary
@@ -35,16 +35,11 @@ c
      &  aaswu,aanwd,aanwu,aamin,xr,yr,zr
 c
       if(k.gt.n) then
-c         write(*,*) '*ERROR in near3d: neighbors requested'
-c         write(*,*) '       supersedes number of nodes'
-c         write(*,*) '       number of neighbors requested:',k
-c         write(*,*) '       number of nodes:',n
-c         stop
          k=n
       endif
 c
       if(k.gt.20) then
-         write(*,*) '*ERROR in near2d: no more than 20 neighbors'
+         write(*,*) '*ERROR in near3d: no more than 20 neighbors'
          write(*,*) '       can be identified'
          stop
       endif
@@ -61,7 +56,7 @@ C
         XR=XO(I)-XP
         YR=YO(I)-YP
         zr=zo(i)-zp
-        R(I)=dSQRT(XR*XR+YR*YR+zr*zr)
+        R(I)=DSQRT(XR*XR+YR*YR+zr*zr)
         NI(I)=I
       ENDDO
 C
@@ -88,7 +83,7 @@ C
       AAW=XX-XP
       YR=YY-YP
       zr=zz-zp
-      RR=SQRT(AAW*AAW+YR*YR+zr*zr)
+      RR=DSQRT(AAW*AAW+YR*YR+zr*zr)
 C
       IF(RR.GE.R(K)) GO TO 4
       IT=IZ+K
@@ -113,7 +108,7 @@ C
       AAO=XX-XP
       YR=YY-YP
       zr=zz-zp
-      RR=SQRT(AAO*AAO+YR*YR+zr*zr)
+      RR=DSQRT(AAO*AAO+YR*YR+zr*zr)
 C
       IF(RR.GE.R(K)) GO TO 6
       IT=IZ+K
@@ -138,7 +133,7 @@ C
       XR=XX-XP
       AAS=YY-YP
       zr=zz-zp
-      RR=SQRT(XR*XR+AAS*AAS+zr*zr)
+      RR=DSQRT(XR*XR+AAS*AAS+zr*zr)
 C
       IF(RR.GE.R(K)) GO TO 5
       IT=IZ+K
@@ -163,7 +158,7 @@ C
       XR=XX-XP
       AAN=YY-YP
       zr=zz-zp
-      RR=SQRT(XR*XR+AAN*AAN+zr*zr)
+      RR=DSQRT(XR*XR+AAN*AAN+zr*zr)
 C
       IF(RR.GE.R(K)) GO TO 7
       IT=IZ+K
@@ -188,7 +183,7 @@ C
       XR=XX-XP
       yr=YY-YP
       aau=zz-zp
-      RR=SQRT(XR*XR+yr*yr+aau*aau)
+      RR=DSQRT(XR*XR+yr*yr+aau*aau)
 C
       IF(RR.GE.R(K)) GO TO 20
       IT=IZ+K
@@ -213,7 +208,7 @@ C
       XR=XX-XP
       yr=YY-YP
       aad=zz-zp
-      RR=SQRT(XR*XR+yr*yr+aad*aad)
+      RR=DSQRT(XR*XR+yr*yr+aad*aad)
 C
       IF(RR.GE.R(K)) GO TO 22
       IT=IZ+K
@@ -224,14 +219,14 @@ C
       R(IZ+K)=RR
       NI(IZ+K)=Nz(M)
 C
-22    AANOd=SQRT(AAN*AAN+AAO*AAO+aad*aad)
-      AANOu=SQRT(AAN*AAN+AAO*AAO+aau*aau)
-      AASOd=SQRT(AAS*AAS+AAO*AAO+aad*aad)
-      AASOu=SQRT(AAS*AAS+AAO*AAO+aau*aau)
-      AASWd=SQRT(AAS*AAS+AAW*AAW+aad*aad)
-      AASWu=SQRT(AAS*AAS+AAW*AAW+aau*aau)
-      AANWd=SQRT(AAN*AAN+AAW*AAW+aad*aad)
-      AANWu=SQRT(AAN*AAN+AAW*AAW+aau*aau)
+22    AANOd=DSQRT(AAN*AAN+AAO*AAO+aad*aad)
+      AANOu=DSQRT(AAN*AAN+AAO*AAO+aau*aau)
+      AASOd=DSQRT(AAS*AAS+AAO*AAO+aad*aad)
+      AASOu=DSQRT(AAS*AAS+AAO*AAO+aau*aau)
+      AASWd=DSQRT(AAS*AAS+AAW*AAW+aad*aad)
+      AASWu=DSQRT(AAS*AAS+AAW*AAW+aau*aau)
+      AANWd=DSQRT(AAN*AAN+AAW*AAW+aad*aad)
+      AANWu=DSQRT(AAN*AAN+AAW*AAW+aau*aau)
       AAMIN=MIN(AANOd,aanou,AASOd,aasou,AASWd,aaswu,AANWd,aanwu)
 C
       IF(IZ.NE.0) THEN

@@ -49,6 +49,15 @@
 !
       real*8 doubleglob(*),value(*),coords(3),ratio(20)
 !
+!     if no global file was read, set results to zero
+!
+      if(integerglob(1).eq.0) then
+         do i=1,nselect
+            value(i)=0.d0
+         enddo
+         return
+      endif
+!
 !     determining the submodel to which the entity "nodeface" belongs
 !
       islavset=0

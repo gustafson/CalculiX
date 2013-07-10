@@ -20,8 +20,11 @@
 !
 !     Sloan routine (Int.J.Num.Meth.Engng 28, 2651-2679(1989))
 !
-      integer n,ne,nodej,nodek,mstrt,iadj,i,j,k,jstrt,jstop,lstrt,lstop,
-     & l,nen1,mstop,m,inpn,xnpn(ne+1),npn(inpn),adj(iadj),xadj(n+1)
+      implicit none
+!
+      integer n,ne,nodej,nodek,mstrt,iadj,i,j,k,jstrt,jstop,lstrt,
+     & lstop,l,nen1,mstop,m,inpn,xnpn(ne+1),npn(inpn),adj(iadj),
+     & xadj(n+1)
 !
       do 5 i=1,iadj
          adj(i)=0

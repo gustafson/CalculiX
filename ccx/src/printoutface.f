@@ -17,48 +17,47 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine printoutface(co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
-     &  cocon,ncocon,compressible,istartset,iendset,ipkon,lakon,kon,
+     &  cocon,ncocon,icompressible,istartset,iendset,ipkon,lakon,kon,
      &  ialset,prset,ttime,nset,set,nprint,prlab,ielmat,mi)
 !
 !     calculation and printout of the lift and drag forces
 !
       implicit none
 !
-      integer compressible
+      integer icompressible
 !
       character*8 lakonl,lakon(*)
       character*6 prlab(*)
       character*80 faset
       character*81 set(*),prset(*)
 !
-      integer konl(20),ifaceq(8,6),nelem,ii,nprint,i,j,i1,i2,j1,
+      integer konl(20),ifaceq(9,6),nelem,ii,nprint,i,j,i1,i2,j1,
      &  ncocon(2,*),k1,jj,ig,nrhcon(*),nshcon(*),ntmat_,nope,nopes,imat,
-     &  mint2d,ifacet(6,4),ifacew(8,5),iflag,indexe,jface,istartset(*),
+     &  mint2d,ifacet(7,4),ifacew(8,5),iflag,indexe,jface,istartset(*),
      &  iendset(*),ipkon(*),kon(*),iset,ialset(*),nset,ipos,
      &  mi(*),ielmat(mi(3),*)
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,f(3),
-     &  vkl(3,3),rhcon(0:1,ntmat_,*),t(3,3),div,shcon(0:3,ntmat_,*),
+      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,f(0:3),
+     &  vkl(0:3,3),rhcon(0:1,ntmat_,*),t(3,3),div,shcon(0:3,ntmat_,*),
      &  voldl(0:mi(2),20),cocon(0:6,ntmat_,*),xl2(3,8),xsj2(3),
-     &  shp2(7,8),
-     &  vold(0:mi(2),*),xi,et,xsj,temp,xi3d,et3d,ze3d,weight,
+     &  shp2(7,8),vold(0:mi(2),*),xi,et,xsj,temp,xi3d,et3d,ze3d,weight,
      &  xlocal20(3,9,6),xlocal4(3,1,4),xlocal10(3,3,4),xlocal6(3,1,5),
      &  xlocal15(3,4,5),xlocal8(3,4,6),xlocal8r(3,1,6),ttime,pres,
-     &  tf(3),tn,tt,dd,coords(3)
+     &  tf(0:3),tn,tt,dd,coords(3),cond
 !
       include "gauss.f"
       include "xlocal.f"
 !
-      data ifaceq /4,3,2,1,11,10,9,12,
-     &            5,6,7,8,13,14,15,16,
-     &            1,2,6,5,9,18,13,17,
-     &            2,3,7,6,10,19,14,18,
-     &            3,4,8,7,11,20,15,19,
-     &            4,1,5,8,12,17,16,20/
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifaceq /4,3,2,1,11,10,9,12,21,
+     &            5,6,7,8,13,14,15,16,22,
+     &            1,2,6,5,9,18,13,17,23,
+     &            2,3,7,6,10,19,14,18,24,
+     &            3,4,8,7,11,20,15,19,25,
+     &            4,1,5,8,12,17,16,20,26/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
       data ifacew /1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
@@ -66,17 +65,12 @@
      &             4,6,3,1,12,15,9,13/
       data iflag /3/
 !
-!     initialisierung forces
-!
-      do i=1,3
-         f(i)=0.d0
-      enddo
-!
       do ii=1,nprint
 !
 !        total drag
 !
-         if(prlab(ii)(1:4).eq.'DRAG') then
+         if((prlab(ii)(1:4).eq.'DRAG').or.(prlab(ii)(1:4).eq.'FLUX'))
+     &      then
 !
             ipos=index(prset(ii),' ')
             faset='                    '
@@ -85,10 +79,36 @@
 !     printing the header
 !     
             write(5,*)
-            write(5,120) faset(1:ipos-2),ttime
- 120        format(' surface stress vector  tx            ty           
-     & tz      normal stress  shear stress and coordinates for set ',A,'
-     & and time ',e14.7)
+            if(prlab(ii)(1:4).eq.'DRAG') then
+!
+!              initialisierung forces
+!     
+               do i=1,3
+                  f(i)=0.d0
+               enddo
+!
+               write(5,120) faset(1:ipos-2),ttime
+ 120           format(
+     &            ' surface stress at the integration points for set ',
+     &            A,' and time ',e14.7)
+               write(5,*)
+               write(5,124)
+ 124           format('        el  fa  int     tx            ty           
+     &   tz      normal stress  shear stress and             coordinates
+     &')
+            else
+!
+!              initialisierung of the flux
+!     
+               f(0)=0.d0
+               write(5,121) faset(1:ipos-2),ttime
+ 121           format(' heat flux at the integration points for set ',
+     &                A,' and time ',e14.7)
+               write(5,*)
+               write(5,125)
+ 125           format('        el  fa  int heat flux q and             c
+     &oordinates')
+            endif
             write(5,*)
 !     
 !           printing the data
@@ -161,7 +181,7 @@
 !     (rho*energy density, rho*velocity and rho)
 !     
                do i1=1,nope
-                  do i2=0,4
+                  do i2=0,mi(2)
                      voldl(i2,i1)=vold(i2,konl(i1))
                   enddo
                enddo
@@ -310,66 +330,107 @@
 !     the velocity gradient vkl
 !     in the integration point
 !     
-                  temp=0.d0
-                  pres=0.d0
-                  do i1=1,3
-                     do j1=1,3
-                        vkl(i1,j1)=0.d0
-                     enddo
-                  enddo
-                  do i1=1,nope
-                     temp=temp+shp(4,i1)*voldl(0,i1)
-                     pres=pres+shp(4,i1)*voldl(4,i1)
-                     do j1=1,3
-                        do k1=1,3
-                           vkl(j1,k1)=vkl(j1,k1)+shp(k1,i1)*voldl(j1,i1)
+                  if(prlab(ii)(1:4).eq.'DRAG') then
+                     temp=0.d0
+                     pres=0.d0
+                     do i1=1,3
+                        do j1=1,3
+                           vkl(i1,j1)=0.d0
                         enddo
                      enddo
-                  enddo
-                  if(compressible.eq.1) div=vkl(1,1)+vkl(2,2)+vkl(3,3)
+                     do i1=1,nope
+                        temp=temp+shp(4,i1)*voldl(0,i1)
+                        pres=pres+shp(4,i1)*voldl(4,i1)
+                        do j1=1,3
+                           do k1=1,3
+                              vkl(j1,k1)=vkl(j1,k1)+
+     &                                   shp(k1,i1)*voldl(j1,i1)
+                           enddo
+                        enddo
+                     enddo
+                     if(icompressible.eq.1)
+     &                      div=vkl(1,1)+vkl(2,2)+vkl(3,3)
 !     
 !     material data (density, dynamic viscosity, heat capacity and
 !     conductivity)
 !     
-c                  call materialdata_fl(imat,ntmat_,temp,shcon,nshcon,cp,
-c     &                 r,dvi,rhcon,nrhcon,rho,cocon,ncocon,cond)
-                  call materialdata_dvi(imat,ntmat_,temp,shcon,nshcon,
-     &                          dvi)
+                     call materialdata_dvi(imat,ntmat_,temp,shcon,
+     &                    nshcon,dvi)
 !     
 !     determining the stress 
 !     
-                  do i1=1,3
-                     do j1=1,3
-                        t(i1,j1)=vkl(i1,j1)+vkl(j1,i1)
+                     do i1=1,3
+                        do j1=1,3
+                           t(i1,j1)=vkl(i1,j1)+vkl(j1,i1)
+                        enddo
+                        if(icompressible.eq.1) 
+     &                       t(i1,i1)=t(i1,i1)-2.d0*div/3.d0
                      enddo
-                     if(compressible.eq.1) 
-     &                     t(i1,i1)=t(i1,i1)-2.d0*div/3.d0
-                  enddo
 !     
-                  dd=dsqrt(xsj2(1)*xsj2(1)+xsj2(2)*xsj2(2)+
-     &                     xsj2(3)*xsj2(3))
-                  do i1=1,3
-                     tf(i1)=dvi*(t(i1,1)*xsj2(1)+t(i1,2)*xsj2(2)+
-     &                    t(i1,3)*xsj2(3))-pres*xsj2(i1)
-                     f(i1)=f(i1)+tf(i1)*weight
-                     tf(i1)=tf(i1)/dd
-                  enddo
-                  tn=(tf(1)*xsj2(1)+tf(2)*xsj2(2)+tf(3)*xsj2(3))/dd
-                  tt=dsqrt((tf(1)-tn*xsj2(1)/dd)**2+
-     &                     (tf(2)-tn*xsj2(2)/dd)**2+
-     &                     (tf(3)-tn*xsj2(3)/dd)**2)
-                  write(5,'(i10,1x,i3,1x,i3,1p,8(1x,e13.6))')nelem,ig,i,
-     &                 (tf(i1),i1=1,3),tn,tt,(coords(i1),i1=1,3)
+                     dd=dsqrt(xsj2(1)*xsj2(1)+xsj2(2)*xsj2(2)+
+     &                    xsj2(3)*xsj2(3))
+                     do i1=1,3
+                        tf(i1)=dvi*(t(i1,1)*xsj2(1)+t(i1,2)*xsj2(2)+
+     &                       t(i1,3)*xsj2(3))-pres*xsj2(i1)
+                        f(i1)=f(i1)+tf(i1)*weight
+                        tf(i1)=tf(i1)/dd
+                     enddo
+                     tn=(tf(1)*xsj2(1)+tf(2)*xsj2(2)+tf(3)*xsj2(3))/dd
+                     tt=dsqrt((tf(1)-tn*xsj2(1)/dd)**2+
+     &                    (tf(2)-tn*xsj2(2)/dd)**2+
+     &                    (tf(3)-tn*xsj2(3)/dd)**2)
+                     write(5,'(i10,1x,i3,1x,i3,1p,8(1x,e13.6))')nelem,
+     &                    ig,i,(tf(i1),i1=1,3),tn,tt,(coords(i1),i1=1,3)
 !     
+                  else
+                     temp=0.d0
+                     do j1=1,3
+                        vkl(0,j1)=0.d0
+                     enddo
+                     do i1=1,nope
+                        temp=temp+shp(4,i1)*voldl(0,i1)
+                        do k1=1,3
+                           vkl(0,k1)=vkl(0,k1)+shp(k1,i1)*voldl(0,i1)
+                        enddo
+                     enddo
+!     
+!     material data (conductivity)
+!     
+                     call materialdata_cond(imat,ntmat_,temp,cocon,
+     &                    ncocon,cond)
+!     
+!     determining the stress 
+!     
+                     dd=dsqrt(xsj2(1)*xsj2(1)+xsj2(2)*xsj2(2)+
+     &                    xsj2(3)*xsj2(3))
+!
+                     tf(0)=-cond*(vkl(0,1)*xsj2(1)+
+     &                            vkl(0,2)*xsj2(2)+
+     &                            vkl(0,3)*xsj2(3))
+                     f(0)=f(0)+tf(0)*weight
+                     tf(0)=tf(0)/dd
+                     write(5,'(i10,1x,i3,1x,i3,1p,4(1x,e13.6))')nelem,
+     &                    ig,i,tf(0),(coords(i1),i1=1,3)
+!     
+                  endif
                enddo
             enddo
 !
-            write(5,*)
-            write(5,121) faset(1:ipos-2),ttime
- 121        format(' total surface force (fx,fy,fz) for set ',A,
-     &           ' and time ',e14.7)
-            write(5,*)
-            write(5,'(1p,3(1x,e13.6))') (f(j),j=1,3)
+            if(prlab(ii)(1:4).eq.'DRAG') then
+               write(5,*)
+               write(5,122) faset(1:ipos-2),ttime
+ 122           format(' total surface force (fx,fy,fz) for set ',A,
+     &              ' and time ',e14.7)
+               write(5,*)
+               write(5,'(1p,3(1x,e13.6))') (f(j),j=1,3)
+            else
+               write(5,*)
+               write(5,123) faset(1:ipos-2),ttime
+ 123           format(' total surface flux (q) for set ',A,
+     &              ' and time ',e14.7)
+               write(5,*)
+               write(5,'(1p,1x,e13.6)') f(0)
+            endif
 !     
          endif
       enddo

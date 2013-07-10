@@ -22,21 +22,22 @@
 !  
 !     id is such that amta(1,id).le.reftime and amta(1,id+1).gt.reftime
 !                                                                             
-      SUBROUTINE identamta(amta,reftime,istart,iend,ID)                                               
-      IMPLICIT none
+      subroutine identamta(amta,reftime,istart,iend,id)
+!
+      implicit none
 !
       integer id,istart,iend,n2,m
       real*8 amta(2,*),reftime
       id=istart-1
       if(iend.lt.istart) return
-      N2=iend+1
-      DO                                                         
-         M=(N2+ID)/2
-         IF(reftime.GE.amta(1,M)) then
-            ID=M     
+      n2=iend+1
+      do                                                         
+         m=(n2+id)/2
+         if(reftime.ge.amta(1,m)) then
+            id=m     
          else
-            N2=M  
+            n2=m  
          endif
-         IF((N2-ID).EQ.1) return
+         if((n2-id).eq.1) return
       enddo
-      END
+      end

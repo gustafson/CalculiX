@@ -31,29 +31,31 @@
       character*81 tieset(3,*),rightset,set(*)
       character*88 fntria
 !
-      integer ncont,ntie,i,j,k,l,nset,istartset(*),iendset(*),ialset(*),
+      integer ncont,ntie,i,j,k,l,nset,istartset(*),iendset(*),
+     &  ialset(*),itrifac9(3,8),itrifac7(3,6),
      &  iright,itietri(2,ntie),nelem,jface,indexe,ipkon(*),nope,m,one,
-     &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),node,ilen,
+     &  ifaceq(9,6),ifacet(7,4),ifacew1(4,5),ifacew2(8,5),node,ilen,
      &  ntrifac,itrifac3(3,1),itrifac4(3,2),itrifac6(3,4),itrifac8(3,6),
-     &  itrifac(3,6),nnodelem,nface,nodef(8),kon(*),koncont(4,*),nk
+     &  itrifac(3,6),nnodelem,nface,nodef(9),kon(*),koncont(4,*),nk,
+     &  ncontini
 !
       real*8 co(3,*)
 !
 !     nodes per face for hex elements
 !
-      data ifaceq /4,3,2,1,11,10,9,12,
-     &            5,6,7,8,13,14,15,16,
-     &            1,2,6,5,9,18,13,17,
-     &            2,3,7,6,10,19,14,18,
-     &            3,4,8,7,11,20,15,19,
-     &            4,1,5,8,12,17,16,20/
+      data ifaceq /4,3,2,1,11,10,9,12,21,
+     &            5,6,7,8,13,14,15,16,22,
+     &            1,2,6,5,9,18,13,17,23,
+     &            2,3,7,6,10,19,14,18,24,
+     &            3,4,8,7,11,20,15,19,25,
+     &            4,1,5,8,12,17,16,20,26/
 !
 !     nodes per face for tet elements
 !
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
 !
 !     nodes per face for linear wedge elements
 !
@@ -83,15 +85,25 @@
 !
       data itrifac6 /1,4,6,4,2,5,6,5,3,4,5,6/
 !
+!     triangulation for seven-node face
+!
+      data itrifac7 /1,4,7,4,2,7,2,5,7,5,3,7,3,6,7,6,1,7/
+!
 !     triangulation for eight-node face
 !
       data itrifac8 /1,5,8,5,2,6,7,6,3,8,7,4,8,5,7,5,6,7/
+!
+!     triangulation for nine-node face
+!
+      data itrifac9 /1,5,9,5,2,9,2,6,9,6,3,9,3,7,9,7,4,9,4,8,9,8,1,9/
 !
       ncont=0
 !
       do i=1,ntie
 !
 !        check for contact conditions
+!
+         ncontini=ncont
 !
          if((tieset(1,i)(81:81).eq.kind1).or.
      &      (tieset(1,i)(81:81).eq.kind2)) then
@@ -114,23 +126,26 @@
 !
             do j=istartset(iright),iendset(iright)
                if(ialset(j).gt.0) then
-c                  if(j.gt.istartset(iright)) then
-c                     if(ialset(j).eq.ialset(j-1)) cycle
-c                  endif
 !
                   nelem=int(ialset(j)/10.d0)
                   jface=ialset(j)-10*nelem
 !
                   indexe=ipkon(nelem)
 !
-                  if(lakon(nelem)(4:4).eq.'2') then
+                  if(lakon(nelem)(4:5).eq.'20') then
                      nnodelem=8
+                     nface=6
+                  elseif(lakon(nelem)(4:4).eq.'2') then
+                     nnodelem=9
                      nface=6
                   elseif(lakon(nelem)(4:4).eq.'8') then
                      nnodelem=4
                      nface=6
                   elseif(lakon(nelem)(4:5).eq.'10') then
                      nnodelem=6
+                     nface=4
+                  elseif(lakon(nelem)(4:5).eq.'14') then
+                     nnodelem=7
                      nface=4
                   elseif(lakon(nelem)(4:4).eq.'4') then
                      nnodelem=3
@@ -200,11 +215,25 @@ c                  endif
                            itrifac(k,l)=itrifac6(k,l)
                         enddo
                      enddo
+                  elseif(nnodelem.eq.7) then
+                     ntrifac=6
+                     do l=1,ntrifac
+                        do k=1,3
+                           itrifac(k,l)=itrifac7(k,l)
+                        enddo
+                     enddo
                   elseif(nnodelem.eq.8) then
                      ntrifac=6
                      do l=1,ntrifac
                         do k=1,3
                            itrifac(k,l)=itrifac8(k,l)
+                        enddo
+                     enddo
+                  elseif(nnodelem.eq.9) then
+                     ntrifac=8
+                     do l=1,ntrifac
+                        do k=1,3
+                           itrifac(k,l)=itrifac9(k,l)
                         enddo
                      enddo
                   endif
@@ -234,14 +263,20 @@ c                  endif
 !
                      indexe=ipkon(nelem)
 !     
-                     if(lakon(nelem)(4:4).eq.'2') then
+                     if(lakon(nelem)(4:5).eq.'20') then
                         nnodelem=8
+                        nface=6
+                     elseif(lakon(nelem)(4:4).eq.'2') then
+                        nnodelem=9
                         nface=6
                      elseif(lakon(nelem)(4:4).eq.'8') then
                         nnodelem=4
                         nface=6
                      elseif(lakon(nelem)(4:5).eq.'10') then
                         nnodelem=6
+                        nface=4
+                     elseif(lakon(nelem)(4:5).eq.'14') then
+                        nnodelem=7
                         nface=4
                      elseif(lakon(nelem)(4:4).eq.'4') then
                         nnodelem=3
@@ -311,11 +346,25 @@ c                  endif
                               itrifac(k,l)=itrifac6(k,l)
                            enddo
                         enddo
+                     elseif(nnodelem.eq.7) then
+                        ntrifac=6
+                        do l=1,ntrifac
+                           do k=1,3
+                              itrifac(k,l)=itrifac7(k,l)
+                           enddo
+                        enddo
                      elseif(nnodelem.eq.8) then
                         ntrifac=6
                         do l=1,ntrifac
                            do k=1,3
                               itrifac(k,l)=itrifac8(k,l)
+                           enddo
+                        enddo
+                     elseif(nnodelem.eq.9) then
+                        ntrifac=8
+                        do l=1,ntrifac
+                           do k=1,3
+                              itrifac(k,l)=itrifac9(k,l)
                            enddo
                         enddo
                      endif
@@ -354,32 +403,32 @@ c                  endif
             fntria(j:j)=' '
          enddo
 !
-         open(70,file=fntria,status='unknown')
-         c='C'
-         m1=' -1'
-         m2=' -2'
-         m3=' -3'
-         p0='    0'
-         p1='    1'
-         p2='    2'
-         p3='    3'
-         p7='    7'
-         p9999=' 9999'
-         one=1
-         write(70,'(a5,a1)') p1,c
-         write(70,'(a5,a1,67x,i1)') p2,c,one
-         do j=1,nk
-            write(70,'(a3,i10,1p,3e12.5)') m1,j,(co(k,j),k=1,3)
-         enddo
-         write(70,'(a3)') m3
-         write(70,'(a5,a1,67x,i1)') p3,c,one
-         do j=1,ncont
-            write(70,'(a3,i10,2a5)')m1,j,p7,p0
-            write(70,'(a3,3i10)') m2,(koncont(k,j),k=1,3)
-         enddo
-         write(70,'(a3)') m3
-         write(70,'(a5)') p9999
-         close(70)
+c         open(70,file=fntria,status='unknown')
+c         c='C'
+c         m1=' -1'
+c         m2=' -2'
+c         m3=' -3'
+c         p0='    0'
+c         p1='    1'
+c         p2='    2'
+c         p3='    3'
+c         p7='    7'
+c         p9999=' 9999'
+c         one=1
+c         write(70,'(a5,a1)') p1,c
+c         write(70,'(a5,a1,67x,i1)') p2,c,one
+c         do j=1,nk
+c            write(70,'(a3,i10,1p,3e12.5)') m1,j,(co(k,j),k=1,3)
+c         enddo
+c         write(70,'(a3)') m3
+c         write(70,'(a5,a1,67x,i1)') p3,c,one
+c         do j=ncontini+1,ncont
+c            write(70,'(a3,i10,2a5)')m1,j,p7,p0
+c            write(70,'(a3,3i10)') m2,(koncont(k,j),k=1,3)
+c         enddo
+c         write(70,'(a3)') m3
+c         write(70,'(a5)') p9999
+c         close(70)
 !     
       enddo
 !

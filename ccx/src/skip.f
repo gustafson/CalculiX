@@ -110,7 +110,7 @@ c      read(15)(r8,i=1,nflow)
       read(15)(i4,i=1,2*nmat)
       read(15)(r8,i=1,nmat)
       read(15)(r8,i=1,3)
-      if(iplas.ne.0)then
+      if(npmat_.ne.0)then
          read(15)(r8,i=1,(2*npmat_+1)*ntmat_*nmat)
          read(15)(i4,i=1,(ntmat_+1)*nmat)
          read(15)(r8,i=1,(2*npmat_+1)*ntmat_*nmat)

@@ -22,12 +22,7 @@
      &  nactdoh,iit,compressible,ismooth,vcontu,vtu,turbulent,
      &  inomat,nodeboun,ndirboun,nboun,mi,co,factor)
 !
-!     calculates 
-!       vcon (volumetric energy density, volumetric momentum
-!                density and density) by adding v to vcon from
-!                the previous iteration
-!       vold (temperature,velocity and pressure)
-!       at the nodes    
+!     updating the conservative variables
 !
       implicit none
 !
@@ -56,7 +51,7 @@
 !     pressure (liquid) or density (gas)
 !     
       do i=1,nk
-c         if(inomat(i).eq.0) cycle
+         if(inomat(i).eq.0) cycle
 !
          do j=1,3
             vcon(j,i)=vcon(j,i)+v(j,i)
@@ -73,6 +68,7 @@ c         if(inomat(i).eq.0) cycle
 !     
       if(turbulent.ne.0) then
          do i=1,nk
+            if(inomat(i).eq.0) cycle
             vcontu(1,i)=vcontu(1,i)+vtu(1,i)
             vcontu(2,i)=vcontu(2,i)+vtu(2,i)
          enddo

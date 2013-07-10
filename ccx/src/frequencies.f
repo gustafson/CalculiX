@@ -31,7 +31,8 @@
       character*20 solver,labmpc(*)
       character*132 textpart(16)
 !
-      integer nmethod,mei(4),ncv,mxiter,istep,istat,iperturb(2),i,nboun,
+      integer nmethod,mei(4),ncv,mxiter,istep,istat,iperturb(2),i,
+     &  nboun,
      &  n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),nev,ithermal,isolver,
      &  ipoinpc(0:*),nmpcred,kflag,ipompc(*),ikmpc(*),ilmpc(*),nmpc
 !
@@ -127,7 +128,7 @@
 !
       nmethod=2
       if(iperturb(1).gt.1) iperturb(1)=0
-      iperturb(2)=0
+c      iperturb(2)=0
 !
       if(isolver.ne.6) then
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

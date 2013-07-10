@@ -100,7 +100,8 @@
       character*20 loadtype
       character*80 amat
 !
-      integer kstep,kinc,noel,npt,jltyp,layer,kspt,konl(20),iscale,mi(*)
+      integer kstep,kinc,noel,npt,jltyp,layer,kspt,konl(20),iscale,
+     &  mi(*)
 !
       real*8 f,time(2),coords(3),vold(0:mi(2),*),co(3,*),rho
 !
@@ -108,23 +109,23 @@
 !     an example for combined mechanical-lubrication problems. 
 !     Please replace it by your own code for your concrete application.
 !
-      integer ifaceq(8,6),ifacet(6,4),ifacew(8,5),ig,nelem,nopes,
+      integer ifaceq(9,6),ifacet(7,4),ifacew(8,5),ig,nelem,nopes,
      &  iflag,i,j,nope,ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),
      &  node,idof,id
 !
       real*8 xl2(3,8),pres(8),xi,et,xsj2(3),xs2(3,7),shp2(7,8),
      &  coefmpc(*),veold(0:mi(2),*)
 !
-      data ifaceq /4,3,2,1,11,10,9,12,
-     &            5,6,7,8,13,14,15,16,
-     &            1,2,6,5,9,18,13,17,
-     &            2,3,7,6,10,19,14,18,
-     &            3,4,8,7,11,20,15,19,
-     &            4,1,5,8,12,17,16,20/
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifaceq /4,3,2,1,11,10,9,12,21,
+     &            5,6,7,8,13,14,15,16,22,
+     &            1,2,6,5,9,18,13,17,23,
+     &            2,3,7,6,10,19,14,18,24,
+     &            3,4,8,7,11,20,15,19,25,
+     &            4,1,5,8,12,17,16,20,26/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
       data ifacew /1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,

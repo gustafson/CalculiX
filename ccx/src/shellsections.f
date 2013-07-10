@@ -198,7 +198,7 @@
             stop
          endif
 !
-         icomposite=1
+c         icomposite=1
          nlayer=0
          do
             read(textpart(1)(1:20),'(f20.0)',iostat=istat) thickness
@@ -276,7 +276,7 @@ c            else
                   ielmat(nlayer,ialset(j))=imaterial
                   ielorien(nlayer,ialset(j))=iorientation
                   offset(1,ialset(j))=offset1
-                  lakon(ialset(j))(8:8)='C'
+                  if(nlayer.gt.1) lakon(ialset(j))(8:8)='C'
                else
                   k=ialset(j-2)
                   do
@@ -300,14 +300,17 @@ c            else
                      ielmat(nlayer,k)=imaterial
                      ielorien(nlayer,k)=iorientation
                      offset(1,k)=offset1
-                     lakon(k)(8:8)='C'
+                     if(nlayer.gt.1) lakon(k)(8:8)='C'
                   enddo
                endif
             enddo
 !     
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
-            if((istat.lt.0).or.(key.eq.1)) return
+            if((istat.lt.0).or.(key.eq.1)) then
+               if(nlayer.gt.1) icomposite=1
+               return
+            endif
          enddo
       endif
 !     

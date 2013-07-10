@@ -41,7 +41,7 @@
      &  mpc1,mpc2,index1,index2,node1,node2,
      &  indexe,nope,i0
 !
-      real*8 co(3,*),xboun(*),coefmpc(*),sm(60,60),adbk(*),aubk(*),
+      real*8 co(3,*),xboun(*),coefmpc(*),sm(78,78),adbk(*),aubk(*),
      &  var(*)
 !
       real*8 value

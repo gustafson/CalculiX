@@ -28,7 +28,7 @@
 !
       implicit none
 !      
-      integer id,number,curve
+      integer id,number,curve,n11
 !
       real*8 x_tab(15),y_tab(15)  
 !
@@ -42,13 +42,15 @@
      &     /0.942d0,0.939d0,0.932d0,0.929d0,0.925d0,0.921d0,0.917d0,
      &      0.910d0,0.899d0,0.881d0,0.873d0/
 !
+      data n11 /11/
+!
 !     determination of cd with the caracteristics by interpolation
 !
       real*8 ps2,pt1,ps2vpt1,cd      
 !
       ps2vpt1=ps2/pt1
       if(number.eq.0) then
-         call ident(cdxp,ps2vpt1,11,id)
+         call ident(cdxp,ps2vpt1,n11,id)
          if(id.eq.0.6d0) then
             cd=cdyp(1)
          elseif(id.ge.1) then

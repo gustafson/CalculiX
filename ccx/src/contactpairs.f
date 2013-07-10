@@ -18,13 +18,12 @@
 !
       subroutine contactpairs(inpc,textpart,tieset,cs,istep,
      &                istat,n,iline,ipol,inl,ipoinp,inp,ntie,ntie_,
-     &                iperturb,matname,nmat,ipoinpc,tietol,set,nset)
+     &                iperturb,matname,nmat,ipoinpc,tietol,set,nset,
+     &                mortar)
 !
 !     reading the input deck: *CONTACT PAIR
 !
       implicit none
-!
-      logical surftosurf  
 !
       character*1 inpc(*)
       character*80 matname(*),material
@@ -32,7 +31,8 @@
       character*132 textpart(16)
 !
       integer istep,istat,n,i,key,ipos,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),ntie,ntie_,iperturb(2),nmat,ipoinpc(0:*),nset,j
+     &  inp(3,*),ntie,ntie_,iperturb(2),nmat,ipoinpc(0:*),nset,j,
+     &  mortar
 !
       real*8 cs(17,*),tietol(2,*),adjust
 !
@@ -47,7 +47,7 @@
          stop
       endif
 !
-      surftosurf=.false.
+      mortar=0
 !
       ntie=ntie+1
       if(ntie.gt.ntie_) then
@@ -92,7 +92,7 @@
                tietol(1,ntie)=dsign(1.d0,tietol(1,ntie))*(2.d0+adjust)
             endif
          elseif(textpart(i)(1:21).eq.'TYPE=SURFACETOSURFACE') then
-            surftosurf=.true.   
+            mortar=1
          else
             write(*,*) 
      &        '*WARNING in contactpairs: parameter not recognized:'
@@ -128,7 +128,7 @@
 !
 !     storing the slave surface
 !
-      if(surftosurf) then
+      if(mortar.eq.1) then
          tieset(2,ntie)(1:80)=textpart(1)(1:80)
          tieset(2,ntie)(81:81)=' '
          ipos=index(tieset(2,ntie),' ')

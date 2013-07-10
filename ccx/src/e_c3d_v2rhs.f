@@ -18,7 +18,7 @@
 !
       subroutine e_c3d_v2rhs(co,nk,konl,lakonl,
      &  ff,nelem,nmethod,vold,v,dtime,theta2,iexplicit,mi,
-     &  ipvar,var,ipvarf,varf,dtc)
+     &  ipvar,var,ipvarf,varf,dt)
 !
 !     computation of the velocity element matrix and rhs for the element with
 !     element with the topology in konl: step 3 (correction **)
@@ -33,9 +33,9 @@
      &  nope,mint3d,iflag,iexplicit,mi(*),ipvar(*),index,ii,
      &  ipvarf(*)
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),ff(60),xsjmod,vl(0:mi(2),20),
+      real*8 co(3,*),xl(3,20),shp(4,20),ff(78),xsjmod,vl(0:mi(2),20),
      &  vel(3),div,voldl(0:mi(2),20),v(0:mi(2),*),vold(0:mi(2),*),dtime,
-     &  term,var(*),varf(*),dtc(*),
+     &  term,var(*),varf(*),dt(*),
      &  xi,et,ze,xsj,weight,shpv(20),theta2,dpress(3),ddpress(3)
 !
       include "gauss.f"
@@ -156,7 +156,7 @@
          if(iexplicit.eq.1) then
             jj1=1
             do jj=1,nope
-               term=xsjmod*(shp(4,jj)+dtc(konl(jj))*shpv(jj)/2.d0)
+               term=xsjmod*(shp(4,jj)+dt(konl(jj))*shpv(jj)/2.d0)
                ff(jj1)=ff(jj1)-dpress(1)*term
                ff(jj1+1)=ff(jj1+1)-dpress(2)*term
                ff(jj1+2)=ff(jj1+2)-dpress(3)*term
@@ -169,13 +169,13 @@
 !               with stability term 
 !
                ff(jj1)=ff(jj1)-xsjmod*(dpress(1)*(shp(4,jj)+
-     &              (1.d0-theta2)*dtc(konl(jj))
+     &              (1.d0-theta2)*dt(konl(jj))
      &              *shpv(jj)/2.d0)+theta2*shp(4,jj)*ddpress(1))
                ff(jj1+1)=ff(jj1+1)-xsjmod*(dpress(2)*(shp(4,jj)+
-     &              (1.d0-theta2)*dtc(konl(jj))
+     &              (1.d0-theta2)*dt(konl(jj))
      &              *shpv(jj)/2.d0)+theta2*shp(4,jj)*ddpress(2))
                ff(jj1+2)=ff(jj1+2)-xsjmod*(dpress(3)*(shp(4,jj)+
-     &              (1.d0-theta2)*dtc(konl(jj))
+     &              (1.d0-theta2)*dt(konl(jj))
      &              *shpv(jj)/2.d0)+theta2*shp(4,jj)*ddpress(3))
                jj1=jj1+3
             enddo

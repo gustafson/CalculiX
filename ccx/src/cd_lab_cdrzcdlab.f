@@ -23,8 +23,6 @@
       subroutine  cd_lab_cdrzcdlab (t,s,hst,x,p1,p2,cd_cdrzcdlab)
 !
       implicit none
-!
-!     integer
 !     
       real*8 t,s,hst,x,p1,p2,cd_cdrzcdlab
 !

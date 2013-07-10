@@ -72,6 +72,7 @@ c         endif
             nope=20
          elseif(lakon(i)(1:1).eq.'E') then
             read(lakon(i)(8:8),'(i1)') nope
+            nope=nope+1
          else
             cycle
          endif

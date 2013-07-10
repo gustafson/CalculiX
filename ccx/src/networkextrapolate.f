@@ -38,6 +38,7 @@
          if(ipkon(i).lt.0) cycle
          lakonl=lakon(i)
          if(lakonl(1:1).ne.'D') cycle
+         if(lakonl(1:7).eq.'DCOUP3D') cycle
 !
          indexe=ipkon(i)
          if(kon(indexe+1).ne.0)  then
@@ -55,6 +56,7 @@
          if(ipkon(i).lt.0) cycle
          lakonl=lakon(i)
          if(lakonl(1:1).ne.'D') cycle
+         if(lakonl(1:7).eq.'DCOUP3D') cycle
 !
          indexe=ipkon(i)
          node2=kon(indexe+2)
@@ -79,6 +81,7 @@
          if(ipkon(i).lt.0) cycle
          lakonl=lakon(i)
          if(lakonl(1:1).ne.'D') cycle
+         if(lakonl(1:7).eq.'DCOUP3D') cycle
 !
          indexe=ipkon(i)
 !

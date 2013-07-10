@@ -129,7 +129,7 @@
       call ts_calc(xflow2,Tt1,pt1,kappa,r,A2,Ts1,icase)
       pspt1 = (Ts1/Tt1)**(kappa/(kappa-1))
       call wpi(w2, pspt1, Q1, 
-     &      dsqrt(Tt1),kappa,R) 
+     &      dsqrt(Tt2),kappa,R) 
 !
       w2w1=w2/w1
       w1w2=w1/w2
@@ -162,6 +162,8 @@
 !
       endif
 !
+!     zeta_fac for side branches are all =1
+!     main branch can be set by the user in ACC Designer
       zeta = zeta*zeta_fac
 !
       if(icrit2.ne.1) then
@@ -179,7 +181,29 @@
          write(1,57)'             zeta= ',zeta
  57      format(1x,a,f9.4)
 !
+      else if (iflag.eq.4) then
+!
+!        Calculate Mach numbers
+         call machpi(M1,pspt0,kappa,R)
+         call ts_calc(xflow2,Tt2,pt2,kappa,r,A2,Ts2,icase)
+!        Pressure ratio
+         pspt2 = (Ts2/Tt2)**(kappa/(kappa-1))
+         call machpi(M2,pspt2,kappa,R)
+      
+         write(1,80)'Inlet: Tt1= ',Tt1,
+     &              ', pt1= ',pt1,', M1= ',M1
+     
+         write(1,77)'mass flow = ',xflow2,', kappa = ',kappa,
+     &              ', zeta= ',zeta
+
+         write(1,80)'Outlet: Tt2= ',Tt2,
+     &              ', pt2= ',pt2,', M2= ',M2
+     
+ 80   format(3x,a,f10.6,a,f10.2,a,f10.6)
+ 77   format(3x,a,f10.6,a,f10.2,a,f10.6)
+
       endif
+
 !
       calc_residual_cross_split=f
 !

@@ -20,9 +20,11 @@
 !
 !     Sloan routine (Int.J.Num.Meth.Engng. 28,2651-2679(1989))
 !
-      integer nc,lstnum,jstrt,jstop,istop,nbr,nabor,i,j,next,addres,nn,
-     & node,snode,istrt,maxprt,prty,n,w1,w2,e2,q(nc),xadj(n+1),adj(e2),
-     & p(n),s(n)
+      implicit none
+!
+      integer nc,lstnum,jstrt,jstop,istop,nbr,nabor,i,j,next,addres,
+     & nn,node,snode,istrt,maxprt,prty,n,w1,w2,e2,q(nc),xadj(n+1),
+     & adj(e2),p(n),s(n)
 !
       parameter(w1=1,w2=2)
 !

@@ -46,6 +46,9 @@
             nope=6
          elseif(lakon(i)(1:2).eq.'ES') then
             read(lakon(i)(8:8),'(i1)') nope
+            nope=nope+1
+         else
+            cycle
          endif
 !
          index=ipkon(i)

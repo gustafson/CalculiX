@@ -21,10 +21,10 @@
      &  nforc,nelemload,sideload,xload,nload,xbody,ipobody,nbody,
      &  b,nactdoh,icolv,jqv,irowv,neqv,nzlv,nmethod,ikmpc,ilmpc,ikboun,
      &  ilboun,rhcon,nrhcon,ielmat,ntmat_,t0,ithermal,vold,vcon,nzsv,
-     &  dtl,matname,mi,ncmat_,physcon,shcon,nshcon,ttime,time,
+     &  dt,matname,mi,ncmat_,physcon,shcon,nshcon,ttime,time,
      &  istep,iinc,ibody,xloadold,turbulent,vcontu,yy,
      &  nelemface,sideface,nface,compressible,nea,neb,dtimef,ipvar,var,
-     &  ipvarf,varf,sti,dtc)
+     &  ipvarf,varf,sti)
 !
 !     filling the rhs b of the velocity equations (step 1)
 !
@@ -51,11 +51,11 @@
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),bodyf(3),b(*),xloadold(2,*),vcontu(2,*),yy(*),
-     &  t0(*),vold(0:mi(2),*),vcon(0:4,*),ff(60),rhcon(0:1,ntmat_,*),
+     &  t0(*),vold(0:mi(2),*),vcon(0:4,*),ff(78),rhcon(0:1,ntmat_,*),
      &  physcon(*),shcon(0:3,ntmat_,*),xbody(7,*),var(*),varf(*),
-     &  sti(6,mi(1),*),dtc(*)
+     &  sti(6,mi(1),*),dt(*)
 !
-      real*8 om,dtimef,ttime,time,dtl(*)
+      real*8 om,dtimef,ttime,time
 !
       kflag=2
       i0=0
@@ -135,7 +135,7 @@
      &       vcon,idist,dtimef,matname,mi(1),
      &       ttime,time,istep,iinc,shcon,nshcon,
      &       turbulent,vcontu,yy,nelemface,sideface,nface,compressible,
-     &       ipvar,var,ipvarf,varf,sti,ithermal,dtc)
+     &       ipvar,var,ipvarf,varf,sti,ithermal,dt)
 !
         do jj=1,3*nope
 !
@@ -143,7 +143,6 @@
           k=jj-3*(j-1)
 !
           node1=kon(indexe+j)
-c          ff(jj)=ff(jj)*dtl(node1)/dtimef
           jdof1=nactdoh(k,node1)
 !
 !            distributed forces
@@ -212,18 +211,6 @@ c          ff(jj)=ff(jj)*dtl(node1)/dtimef
             endif
          enddo
       endif
-!
-!     nonlocal time stepping for compressible steady state calculations
-!     
-c      if((compressible.eq.1).and.(nmethod.eq.1)) then
-c         do i=1,nk
-c            do j=1,3
-c               if(nactdoh(j,i).gt.0) then
-c                  b(nactdoh(j,i))=b(nactdoh(j,i))*dtl(i)/dtimef
-c               endif
-c            enddo
-c         enddo
-c      endif
 !
       return
       end

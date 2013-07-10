@@ -29,7 +29,7 @@
      &  nope,mint3d,iflag,index,ipvar(*)
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xi,et,ze,xsj,
-     &   sm(60,60),weight,var(*)
+     &   sm(78,78),weight,var(*)
 !
       include "gauss.f"
 !

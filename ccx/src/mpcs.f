@@ -33,7 +33,8 @@
       character*81 set(*),noset
       character*132 textpart(16)
 !
-      integer istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
+      integer istartset(*),iendset(*),ialset(*),ipompc(*),
+     &  nodempc(3,*),
      &  nset,nset_,nalset,nalset_,nmpc,nmpc_,mpcfree,nk,nk_,ikmpc(*),
      &  ilmpc(*),ipkon(*),kon(*),i,node,ipos,istep,istat,n,ne_,
      &  j,k,nodeboun(*),ndirboun(*),ikboun(*),ilboun(*),ipoinpc(0:*),
@@ -44,20 +45,20 @@
 !
       if(istep.gt.0) then
          write(*,*) 
-     &     '*ERROR in mpcs: *MPC should be placed'
+     &     '*ERROR reading *MPC: *MPC should be placed'
          write(*,*) '  before all step definitions'
          stop
       endif
 !
       if(iperturb(1).eq.1) then
-         write(*,*) '*ERROR in mpcs: the *MPC option'
+         write(*,*) '*ERROR reading *MPC: the *MPC option'
          write(*,*) '       cannot be used in a perturbation step'
          stop
       endif
 !
       do i=2,n
          write(*,*) 
-     &        '*WARNING in mpcs: parameter not recognized:'
+     &        '*WARNING reading *MPC: parameter not recognized:'
          write(*,*) '         ',
      &        textpart(i)(1:index(textpart(i),' ')-1)
          call inputwarning(inpc,ipoinpc,iline)
@@ -165,6 +166,9 @@
 !     calculation for all MPC's except MEANROT MPC's
 !
          iperturb(2)=1
+         write(*,*) '*INFO reading *MPC: nonlinear geometric'
+         write(*,*) '      effects are turned on'
+         write(*,*)
          if(iperturb(1).eq.0) iperturb(1)=2
       endif
 !

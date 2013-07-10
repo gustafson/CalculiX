@@ -43,7 +43,8 @@
       character*81 set(*),elset
       character*132 textpart(16)
 !
-      integer istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
+      integer istartset(*),iendset(*),ialset(*),ipompc(*),
+     &  nodempc(3,*),
      &  nset,nset_,nalset,nalset_,nmpc,nmpc_,mpcfree,nk,nk_,ikmpc(*),
      &  ilmpc(*),ipkon(*),kon(*),i,node,ipos,istep,istat,n,ne_,
      &  j,k,nodeboun(*),ndirboun(*),ikboun(*),ilboun(*),iamboun(*),
@@ -60,7 +61,7 @@
 !
       if(istep.gt.0) then
          write(*,*) 
-     &     '*ERROR in gaps: *GAP should be placed'
+     &     '*ERROR reading *GAP: *GAP should be placed'
          write(*,*) '  before all step definitions'
          stop
       endif
@@ -79,7 +80,7 @@
             elset(ipos:ipos)='E'
          else
             write(*,*) 
-     &        '*WARNING in gaps: parameter not recognized:'
+     &        '*WARNING reading *GAP: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline)
@@ -89,7 +90,7 @@
 !     checking whether the element set exists
 !
       if(ipos.eq.0) then
-         write(*,*) '*ERROR in gaps: no element set ',elset
+         write(*,*) '*ERROR reading *GAP: no element set ',elset
          write(*,*) '       was been defined. '
          call inputerror(inpc,ipoinpc,iline)
          stop
@@ -99,7 +100,7 @@
       enddo
       if(i.gt.nset) then
          elset(ipos:ipos)=' '
-         write(*,*) '*ERROR in gaps: element set ',elset
+         write(*,*) '*ERROR reading *GAP: element set ',elset
          write(*,*) '  has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline)
          stop
@@ -109,10 +110,13 @@
 !     calculation
 !
       iperturb(2)=1
+      write(*,*) '*INFO reading *GAP: nonlinear geometric'
+      write(*,*) '      effects are turned on'
+      write(*,*)
       if(iperturb(1).eq.0) then
          iperturb(1)=2
       elseif(iperturb(1).eq.1) then
-         write(*,*) '*ERROR in rigidbodies: the *MPC option'
+         write(*,*) '*ERROR reading *GAP: the *MPC option'
          write(*,*) '       cannot be used in a perturbation step'
          stop
       endif
@@ -179,7 +183,7 @@
 !
             nk=nk+1
             if(nk.gt.nk_) then
-               write(*,*) '*ERROR in gaps: increase nk_'
+               write(*,*) '*ERROR reading *GAP: increase nk_'
                stop
             endif
             node=nk
@@ -197,7 +201,7 @@
                enddo
                dd=dsqrt(xn(1)*xn(1)+xn(2)*xn(2)+xn(3)*xn(3))
                if(dabs(dd).eq.0.d0) then
-                  write(*,*) '*ERROR in gaps: gap normal cannot '
+                  write(*,*) '*ERROR reading *GAP: gap normal cannot '
                   write(*,*) '       determined'
                   stop
                endif
@@ -238,7 +242,7 @@
                k=k-ialset(j)
                if(k.ge.ialset(j-1)) exit
                if(lakon(k)(1:1).ne.'G') then
-                  write(*,*) '*ERROR in gaps: *GAP can only be used'
+                  write(*,*)'*ERROR reading *GAP: *GAP can only be used'
                   write(*,*) '       for GAPUNI elements'
                   write(*,*) '       Faulty element: ',k
                   stop
@@ -274,7 +278,7 @@
 !
                nk=nk+1
                if(nk.gt.nk_) then
-                  write(*,*) '*ERROR in gaps: increase nk_'
+                  write(*,*) '*ERROR reading *GAP: increase nk_'
                   stop
                endif
                node=nk
@@ -292,7 +296,7 @@
                   enddo
                   dd=dsqrt(xn(1)*xn(1)+xn(2)*xn(2)+xn(3)*xn(3))
                   if(dabs(dd).eq.0.d0) then
-                     write(*,*) '*ERROR in gaps: gap normal cannot '
+                     write(*,*) '*ERROR reading *GAP: gap normal cannot'
                      write(*,*) '       determined'
                      stop
                   endif

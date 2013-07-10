@@ -52,7 +52,7 @@
      &  p2(3,2),fext(*),bodyf(3),elcon(0:21,ntmat_,*),
      &  rhcon(0:1,ntmat_,*),xloadold(2,*),reltime,
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
-     &  t0(*),t1(*),vold(0:mi(2),*),ff(60),time,ttime,dtime,
+     &  t0(*),t1(*),vold(0:mi(2),*),ff(78),time,ttime,dtime,
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  om(2),physcon(*),veold(0:mi(2),*)
 !

@@ -26,7 +26,7 @@
 !
       integer nterms,i,j,imin,jmin
 !
-      real*8 ratio(8),pneigh(3,8),pnode(3),dummy,
+      real*8 ratio(9),pneigh(3,9),pnode(3),dummy,
      &  a(-1:1,-1:1),xi(-1:1,-1:1),et(-1:1,-1:1),p(3),aold(-1:1,-1:1),
      &  xiold(-1:1,-1:1),etold(-1:1,-1:1),distmin,xiopt,etopt,
      &  d1,d2,d3,d4,dist,xil,etl
@@ -321,7 +321,7 @@ c             write(*,*) i,j,a(i,j)
         pnode(i)=p(i)
       enddo
 !
-      dist=a(0,0)
+      dist=dsqrt(a(0,0))
 !
       if(nterms.eq.3) then
          xil=(xi(0,0)+1.d0)/2.d0
@@ -334,7 +334,7 @@ c             write(*,*) i,j,a(i,j)
       elseif(nterms.eq.4) then
          xil=xi(0,0)
          etl=et(0,0)
-      elseif(nterms.eq.6) then
+      elseif((nterms.eq.6).or.(nterms.eq.7)) then
          xil=(xi(0,0)+1.d0)/2.d0
          etl=(et(0,0)+1.d0)/2.d0
          if(xil+etl.gt.1.d0) then
@@ -342,7 +342,7 @@ c             write(*,*) i,j,a(i,j)
             xil=1.d0-etl
             etl=1.d0-dummy
          endif
-      elseif(nterms.eq.8) then
+      elseif((nterms.eq.8).or.(nterms.eq.9)) then
          xil=xi(0,0)
          etl=et(0,0)
       endif

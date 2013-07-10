@@ -26,7 +26,7 @@
 !
       implicit none
 !
-      integer iexp_acc(2),ier,deri
+      integer iexp_acc(2),ier,deri,n1,n9,n10,n11,n13
 !
       real*8
      &zeta,
@@ -54,6 +54,12 @@
      & 30000.d0,    0.048,0.045,0.043, 0.042,0.033,0.029,0.027, 0.023,
      & 50000.d0,    0.046,0.044,0.041, 0.040,0.03, 0.027,0.025, 0.022,
      & 100000.d0,   0.044,0.042,0.04,  0.038,0.028,0.026,0.023, 0.02/
+!
+      data n1 /1/
+      data n9 /9/
+      data n10 /10/
+      data n11 /11/
+      data n13 /13/
 !
 !     Calculation
 !
@@ -85,12 +91,12 @@
 !        constant for Re>100000
          DATA iexp_acc /0,10/
 !
-         call twodint(lambda_el_idel,9,11,R_D,
-     &           reynolds,lambda_el,1,IEXP_ACC,IER)
+         call twodint(lambda_el_idel,n9,n11,R_D,
+     &           reynolds,lambda_el,n1,IEXP_ACC,IER)
       else
 !        Interpolation only about Re         
          call onedint(lambda_el_idel(1,2:14), 
-     &      lambda_el_idel(9,2:14),13,reynolds,lambda_el,1,1,10,ier)       
+     &      lambda_el_idel(9,2:14),n13,reynolds,lambda_el,n1,n1,n10,ier)       
       endif
 !
       if ((reynolds.lt.400.d0).or.(reynolds.gt.100000.d0)) then

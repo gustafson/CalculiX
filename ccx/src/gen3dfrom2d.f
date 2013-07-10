@@ -35,7 +35,8 @@
       character*8 lakon(*)
       character*20 labmpc(*)
 !
-      integer kon(*),ipkon(*),ne,iponor(2,*),knor(*),ntrans,inotr(2,*),
+      integer kon(*),ipkon(*),ne,iponor(2,*),knor(*),ntrans,
+     &  inotr(2,*),
      &  ikboun(*),ilboun(*),nboun,nboun_,nodeboun(*),ndirboun(*),
      &  iamboun(*),nam,ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,
      &  ikmpc(*),ilmpc(*),nk,nk_,i,rig(*),nmethod,iperturb,ishift,
@@ -172,6 +173,17 @@ c         do j=1,2*nedge
             enddo
             do k=1,nedge
                kon(indexe+4*nedge+k)=nodes(2,k)
+               do j=1,3
+                  co(j,nodes(2,k))=co(j,nodel(k))
+     &                 -thicks(k)*xnors(j,k)*offset(1,i)
+               enddo
+            enddo
+!
+!           generating coordinates for the expanded nodes which
+!           are not used by the C3D20(R) element (needed for the
+!           determination of the knot dimension)
+!
+            do k=nedge+1,2*nedge
                do j=1,3
                   co(j,nodes(2,k))=co(j,nodel(k))
      &                 -thicks(k)*xnors(j,k)*offset(1,i)

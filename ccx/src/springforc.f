@@ -20,7 +20,7 @@
      &  elas,fnl,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,
      &  plicon,nplicon,npmat_,veoldl,senergy,iener,cstr,mi,
      &  springarea,nmethod,ne0,iperturb,nstate_,xstateini,
-     &  xstate,reltime,xnormastface)
+     &  xstate,reltime,xnormastface,ielas)
 !
 !     calculates the force of the spring
 !
@@ -30,29 +30,41 @@
 !
       integer konl(9),i,j,imat,ncmat_,ntmat_,nope,nterms,iflag,mi(*),
      &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),iener,
-     &  nmethod,ne0,iperturb(2),nstate_
+     &  nmethod,ne0,iperturb(2),nstate_,ielas
 !
-      real*8 xl(3,9),elas(21),ratio(9),t0l,t1l,al(3),vl(0:mi(2),9),
-     &  pl(3,9),xn(3),dm,alpha,beta,fnl(3,9),tp(3),te(3),ftrial(3),
-     &  veoldl(0:mi(2),9),dist,c2,c3,t(3),dt,dftrial,vertan(3),
-     &  elcon(0:ncmat_,ntmat_,*),pproj(3),xsj2(3),xs2(3,7),val,
-     &  shp2(7,8),xi,et,elconloc(21),plconloc(82),xk,fk,dd,
-     &  xiso(20),yiso(20),dd0,plicon(0:2*npmat_,ntmat_,*),
+      real*8 xl(3,10),elas(21),ratio(9),t0l,t1l,al(3),vl(0:mi(2),10),
+     &  pl(3,10),xn(3),dm,alpha,beta,fnl(3,10),tp(3),te(3),ftrial(3),
+     &  veoldl(0:mi(2),10),dist,c2,c3,t(3),dt,dftrial,vertan(3),
+     &  elcon(0:ncmat_,ntmat_,*),pproj(3),xsj2(3),xs2(3,7),clear,
+     &  shp2(7,9),xi,et,elconloc(21),plconloc(802),xk,fk,dd,val,
+     &  xiso(200),yiso(200),dd0,plicon(0:2*npmat_,ntmat_,*),
      &  um,eps,pi,senergy,cstr(6),dvertan,dg,dfshear,dfnl,
-     &  fricforc,springarea(2),ver(3),dvernor,
+     &  fricforc,springarea(2),ver(3),dvernor,overlap,pres,
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),t1(3),t2(3),
-     &  dt1,dte,alnew(3),reltime,xnormastface(3,8),dm2
+     &  dt1,dte,alnew(3),reltime,xnormastface(3,9),dm2
 !
       iflag=2
 !
 !     actual positions of the nodes belonging to the contact spring
 !     (otherwise no contact force)
-!      
-      do i=1,nope
-         do j=1,3
-            pl(j,i)=xl(j,i)+vl(j,i)
+!     
+      if(nmethod.ne.2) then
+         do i=1,nope
+            do j=1,3
+               pl(j,i)=xl(j,i)+vl(j,i)
+            enddo
          enddo
-      enddo
+      else
+!
+!        for frequency calculations the eigenmodes are freely
+!        scalable, leading to problems with contact finding 
+!
+         do i=1,nope
+            do j=1,3
+               pl(j,i)=xl(j,i)
+            enddo
+         enddo
+      endif
 !     
       if(lakonl(7:7).eq.'A') then
          dd0=dsqrt((xl(1,2)-xl(1,1))**2
@@ -80,7 +92,7 @@
                senergy=fk*val/2.d0
             endif
          else
-            niso=int(plconloc(81))
+            niso=int(plconloc(801))
             do i=1,niso
                xiso(i)=plconloc(2*i-1)
                yiso(i)=plconloc(2*i)
@@ -125,6 +137,9 @@
       endif
 !
       nterms=nope-1
+c      do i=1,nterms
+c         write(*,*) 'springforc ',(pl(j,i),j=1,3),konl(i)
+c      enddo
 !
 !     vector vr connects the dependent node with its projection
 !     on the independent face
@@ -132,12 +147,6 @@
       do i=1,3
          pproj(i)=pl(i,nope)
       enddo
-c      write(*,*) 'springforc ',(pproj(i),i=1,3)
-c      write(*,*) 'springforc ',(konl(i),i=1,nope)
-c      do i=1,nope-1
-c         write(*,*) 'springforc',(pl(j,i),j=1,3)
-c      enddo
-c      write(*,*) 'springforc',(pproj(j),j=1,3)
 c      call attachpen(pl,pproj,nterms,ratio,dist,xi,et,xnormastface)
       call attach(pl,pproj,nterms,ratio,dist,xi,et)
       do i=1,3
@@ -146,12 +155,16 @@ c      call attachpen(pl,pproj,nterms,ratio,dist,xi,et,xnormastface)
 !
 !     determining the jacobian vector on the surface 
 !
-      if(nterms.eq.8) then
+      if(nterms.eq.9) then
+         call shape9q(xi,et,pl,xsj2,xs2,shp2,iflag)
+      elseif(nterms.eq.8) then
          call shape8q(xi,et,pl,xsj2,xs2,shp2,iflag)
       elseif(nterms.eq.4) then
          call shape4q(xi,et,pl,xsj2,xs2,shp2,iflag)
       elseif(nterms.eq.6) then
          call shape6tri(xi,et,pl,xsj2,xs2,shp2,iflag)
+      elseif(nterms.eq.7) then
+         call shape7tri(xi,et,pl,xsj2,xs2,shp2,iflag)
       else
          call shape3tri(xi,et,pl,xsj2,xs2,shp2,iflag)
       endif
@@ -182,14 +195,14 @@ c      dm=dsqrt(xsj2(1)*xsj2(1)+xsj2(2)*xsj2(2)+xsj2(3)*xsj2(3))
 !
 !     distance from surface along normal (= clearance)
 !
-      val=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
+      clear=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
 !
 !     check for a reduction of the initial penetration, if any
 !
       if(nmethod.eq.1) then
-         val=val-springarea(2)*(1.d0-reltime)
+         clear=clear-springarea(2)*(1.d0-reltime)
       endif
-      if(val.le.0.d0) cstr(1)=val
+      if(clear.le.0.d0) cstr(1)=clear
 !
 !     representative area: usually the slave surface stored in
 !     springarea; however, if no area was assigned because the
@@ -204,7 +217,7 @@ c      dm=dsqrt(xsj2(1)*xsj2(1)+xsj2(2)*xsj2(2)+xsj2(3)*xsj2(3))
          endif
       endif
 !
-      if(elcon(1,1,imat).gt.0.d0) then
+      if(int(elcon(3,1,imat)).eq.1) then
 !
 !        exponential overclosure
 !
@@ -215,20 +228,44 @@ c      dm=dsqrt(xsj2(1)*xsj2(1)+xsj2(2)*xsj2(2)+xsj2(3)*xsj2(3))
 !     
             alpha=elcon(2,1,imat)*springarea(1)
             beta=elcon(1,1,imat)
-            if(-beta*val.gt.23.d0-dlog(alpha)) then
-               beta=(dlog(alpha)-23.d0)/val
+            if(-beta*clear.gt.23.d0-dlog(alpha)) then
+               beta=(dlog(alpha)-23.d0)/clear
             endif
-            elas(1)=dexp(-beta*val+dlog(alpha))
+            elas(1)=dexp(-beta*clear+dlog(alpha))
          endif
-      else
+      elseif(int(elcon(3,1,imat)).eq.2) then
 !     
 !        linear overclosure
 !     
          pi=4.d0*datan(1.d0)
          eps=-elcon(1,1,imat)*pi/elcon(2,1,imat)
-         elas(1)=(-springarea(1)*elcon(2,1,imat)*val*
-     &            (0.5d0+datan(-val/eps)/pi)) 
+         elas(1)=(-springarea(1)*elcon(2,1,imat)*clear*
+     &            (0.5d0+datan(-clear/eps)/pi)) 
 c     &	          -elcon(1,1,imat)*springarea(1)
+      elseif(int(elcon(3,1,imat)).eq.3) then
+!     
+!        tabular overclosure
+!
+!        interpolating the material data
+!
+         call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
+     &     elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
+         overlap=-clear
+         niso=int(plconloc(801))
+         do i=1,niso
+            xiso(i)=plconloc(2*i-1)
+            yiso(i)=plconloc(2*i)
+         enddo
+         call ident(xiso,overlap,niso,id)
+         if(id.eq.0) then
+            pres=yiso(1)
+         elseif(id.eq.niso) then
+            pres=yiso(niso)
+         else
+            xk=(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))
+            pres=yiso(id)+xk*(overlap-xiso(id))
+         endif
+         elas(1)=springarea(1)*pres
       endif
 !
 !     forces in the nodes of the contact element
@@ -332,7 +369,8 @@ c         if((iperturb(1).gt.1).or.(nmethod.eq.4)) then
 !
 !              check whether stick or slip
 !
-               if((dftrial.lt.dfshear) .or. (dftrial.le.0.d0)) then
+               if((dftrial.lt.dfshear).or.(dftrial.le.0.d0).or.
+     &            (ielas.eq.1)) then
 !
 !                 stick
 !

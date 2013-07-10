@@ -28,7 +28,7 @@
 !
       implicit none
 !
-      integer id,i,number
+      integer id,i,number,n9
 !
       real*8 rad,s,cd_radius,rzs_tab(9),cd_sharp(9),rzs,hst
 !
@@ -50,12 +50,14 @@
       data cd_sharp2
      &     /1d0,1.10d0,1.15d0,1.20d0,1.26d0,1.31d0,1.34d0,1.36d0,1.37d0/
 !
+      data n9 /9/
+!
       rzs=rad/s
 !
 !     straight labyrinth
 !
       if(hst.eq.0d0) then
-         call ident(rzs_tab1,rzs,9,id)
+         call ident(rzs_tab1,rzs,n9,id)
          number=9
          do i=1,9
             rzs_tab(i)=rzs_tab1(i)
@@ -65,7 +67,7 @@
 !     stepped labyrinth
 !
       else
-         call ident(rzs_tab2,rzs,9,id)
+         call ident(rzs_tab2,rzs,n9,id)
          number=9
          do i=1,9
             rzs_tab(i)=rzs_tab2(i)

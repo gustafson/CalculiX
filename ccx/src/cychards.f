@@ -33,7 +33,7 @@
      &  ndata,ndatamax,kin,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*)
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),temperature,
-     &  elcon(0:ncmat_,ntmat_,*),plconloc(82),t1l
+     &  elcon(0:ncmat_,ntmat_,*),plconloc(802),t1l
 !
       ntmat=0
       npmat=0
@@ -161,7 +161,7 @@
      &              nmat,id+1,t1l,i,kin)
             endif
 !     
-            ndata=int(plconloc(81))
+            ndata=int(plconloc(801))
             if(ndata.eq.1) then
                elcon(10,i,nmat)=plconloc(2)
                elcon(11,i,nmat)=0.d0

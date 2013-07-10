@@ -32,9 +32,8 @@
 !
       implicit none
 !
-      integer convergence,compressible
-!
-      integer nrhcon(*),ntmat_,nactdoh(0:4,*),iit,turbulent,mi(*),
+      integer convergence,compressible,
+     &  nrhcon(*),ntmat_,nactdoh(0:4,*),iit,turbulent,mi(*),
      &  nshcon(*),ielmat(mi(3),*),nk,ithermal,i,j,k,index,iout,
      &  nmethod,imat,nelem,iponoel(*),inoel(3,*),ismooth,
      &  inomat(*),node,nodeboun(*),ndirboun(*),nboun
@@ -45,6 +44,7 @@
      &  shcon(0:3,ntmat_,*),drho,dtemp,physcon(*),dpress,
      &  vcontu(2,*),vtu(2,*),co(3,*),factor
 !     
+!     calculate kappa (cp/cv) and store it in v(0,*)
 !     calculate the Mach number and store it in v(1,*)
 !     
       do i=1,nk

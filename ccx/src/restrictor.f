@@ -63,7 +63,7 @@
          kp1=kappa+1d0
          km1=kappa-1d0
 !     
-!     defining surfaces for branches elements
+!     defining surfaces for branch elements
 !     
          if(lakon(nelem)(2:6).eq.'REBRJ') then
             if(nelem.eq.int(prop(index+2))) then
@@ -213,7 +213,7 @@
             inv=-1
          endif     
 !     
-!     defining surfaces and oil properties for branch elements
+!     defining surfaces and oil properties for branches elements
 !     
          if(lakon(nelem)(2:6).eq.'REBRJ') then
             if(nelem.eq.int(prop(index+2))) then
@@ -783,7 +783,7 @@
             endif
          endif
 !     
-      elseif(iflag.eq.3) then
+      elseif((iflag.eq.3).or.(iflag.eq.4)) then
 !
          isothermal=.false.
          pi=4.d0*datan(1.d0)
@@ -1026,7 +1026,9 @@
          else
             M2=dsqrt(2d0/km1*(Tt2/T2-1d0))
          endif
+
 !     
+         if(iflag.eq.3) then
           write(1,*) ''
           write(1,55) 'In line ',int(nodem/1000),' from node ',node1,
      &        ' to node ', node2,':   air massflow rate= ',xflow,' kg/s'
@@ -1093,9 +1095,82 @@
      &              ' Bar, M2= ',M2
             endif
          endif
+! 56   FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f8.5,A,f8.6)
+! 57   FORMAT(1X,A,G9.4,A,G11.5,A,f8.4,A,f8.4,A,f8.4)
+!
+      elseif (iflag.eq.4) then
+!
+!        Write the main information about the element
+         write(1,*) ''
+         
+         write(1,78)'Element nr.= ',nelem,', type=',lakon(nelem),
+     &                 ', name= ',set(numf)(1:30)
+         
+         write(1,79)'Nodes: ',node1,',',nodem,',',node2
+         
+ 78      FORMAT(A,I4,A,A,A,A)
+ 79      FORMAT(3X,A,I4,A,I4,A,I4)
+
+         if(lakon(nelem)(4:5).ne.'BR') then
+!     
+!           for restrictors
+
+            write(1,80)'Inlet: Tt1= ',Tt1,
+     &              ', pt1= ',pt1,', M1= ',M1
+
+            write(1,77)'mass flow = ',xflow,
+     &              ', oil mass flow =',xflow_oil,
+     &              ', kappa = ',kappa,
+     &              ', phi= ',phi,
+     &              ', zeta= ',zeta,
+     &              ', eta= ',dvi,
+     &              ', Re= ',reynolds,
+     &              ', phi = ',phi,
+     &              ', zeta_phi = ',zeta_phi
+
+            write(1,80)'Outlet: Tt2= ',Tt2,
+     &              ', pt2= ',pt2,', M2= ',M2
+
+
+ 80         format(3x,a,f10.6,a,f10.2,a,f10.6)
+ 77         format(3x,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,
+     &             e11.4,a,f10.2,a,f10.6,a,f10.6)
+         else
+!     
+!     for branches
+!     
+            if(inv.eq.1) then
+               write(1,56)'       Inlet node ',node1,':    Tt1= ',Tt1,
+     &              ' K, Ts1= ',T1,' K, Pt1= ',Pt1/1E5,
+     &              ' Bar, M1= ',M1
+               write(1,*)'             element B    ',set(numf)
+     &              (1:20)
+               write(1,57)'             Eta= ',dvi,' kg/(m*s), Re= '
+     &,reynolds,', PHI= ',phi,', ZETA= ',zeta
+               write(1,56)'       Outlet node ',node2,':   Tt2= ',Tt2,
+     &              ' K, Ts2= ',T2,' K, Pt2= ',Pt2/1E5,
+     &              ' Bar, M2= ',M2
+!     
+            else if(inv.eq.-1) then
+               write(1,56)'       Inlet node ',node2,':    Tt1= ',Tt1,
+     &              'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
+     &              'Bar, M1= ',M1
+               write(1,*)'             element B    ',set(numf)
+     &              (1:20)
+               write(1,57)'                 Eta=',dvi,' kg/(m*s), Re= '
+     &              ,reynolds,', PHI= ',phi,', ZETA= ',zeta
+               write(1,56)'       Outlet node ',node1,':   Tt2= ',Tt2,
+     &              ' K, Ts2= ',T2,' K, Pt2= ',Pt2/1E5,
+     &              ' Bar, M2= ',M2
+            endif
+         endif
       endif
- 56   FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f8.5,A,f8.6)
- 57   FORMAT(1X,A,G9.4,A,G11.5,A,f8.4,A,f8.4,A,f8.4)
+
+
+
+      endif
+ 56   FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f8.5,A,f9.6)
+ 57   FORMAT(1X,A,G11.4,A,G12.5,A,f8.4,A,f8.4,A,f8.4)
 !     
 
       return

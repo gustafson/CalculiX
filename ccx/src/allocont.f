@@ -18,7 +18,7 @@
 !
       subroutine allocont(ncont,ntie,tieset,nset,set,istartset,
      &  iendset,ialset,lakon,ncone,tietol,ismallsliding,kind1,kind2,
-     &  mortar)
+     &  mortar,istep)
 !
 !     counting the number of triangles needed for the 
 !     triangulation of the contact master surfaces
@@ -35,7 +35,8 @@
       character*81 tieset(3,*),mastset,set(*),slavset
 !
       integer ncont,ntie,i,j,k,nset,istartset(*),iendset(*),ialset(*),
-     &  imast,nelem,jface,ncone,islav,ismallsliding,ipos,mortar
+     &  imast,nelem,jface,ncone,islav,ismallsliding,ipos,mortar,istep,
+     &  kflag,idummy,jact
 !
       real*8 tietol(2,*)
 !
@@ -75,18 +76,39 @@
             endif
             imast=j
 !
+!           deleting identical entries in the master facial surface
+!           definition (leads otherwise to problems in the triangulation
+!           and the creation of imastop)
+!
+            if(istep.eq.1) then
+               kflag=1
+               call isortii(ialset(istartset(imast)),idummy,
+     &            iendset(imast)-istartset(imast)+1,kflag)
+               jact=istartset(imast)
+               do j=istartset(imast)+1,iendset(imast)
+                  if(ialset(j).eq.ialset(j-1)) cycle
+                  jact=jact+1
+                  ialset(jact)=ialset(j)
+               enddo
+               iendset(imast)=jact
+            endif
+!
             do j=istartset(imast),iendset(imast)
                if(ialset(j).gt.0) then
 !
                   nelem=int(ialset(j)/10.d0)
                   jface=ialset(j)-10*nelem
 !
-                  if(lakon(nelem)(4:4).eq.'2') then
+                  if(lakon(nelem)(4:5).eq.'20') then
                      ncont=ncont+6
+                  elseif(lakon(nelem)(4:4).eq.'2') then
+                     ncont=ncont+8
                   elseif(lakon(nelem)(4:4).eq.'8') then
                      ncont=ncont+2
                   elseif(lakon(nelem)(4:5).eq.'10') then
                      ncont=ncont+4
+                  elseif(lakon(nelem)(4:5).eq.'14') then
+                     ncont=ncont+6
                   elseif(lakon(nelem)(4:4).eq.'4') then
                      ncont=ncont+1
                   elseif(lakon(nelem)(4:5).eq.'15') then
@@ -112,12 +134,16 @@
                      nelem=int(k/10.d0)
                      jface=k-10*nelem
 !
-                     if(lakon(nelem)(4:4).eq.'2') then
+                     if(lakon(nelem)(4:5).eq.'20') then
                         ncont=ncont+6
+                     elseif(lakon(nelem)(4:4).eq.'2') then
+                        ncont=ncont+8
                      elseif(lakon(nelem)(4:4).eq.'8') then
                         ncont=ncont+2
                      elseif(lakon(nelem)(4:5).eq.'10') then
                         ncont=ncont+4
+                     elseif(lakon(nelem)(4:5).eq.'14') then
+                        ncont=ncont+6
                      elseif(lakon(nelem)(4:4).eq.'4') then
                         ncont=ncont+1
                      elseif(lakon(nelem)(4:5).eq.'15') then
@@ -181,6 +207,27 @@
             endif
 !
             islav=j
+!
+!           deleting identical entries in the slave facial surface
+!           definition (leads otherwise to problems in the calculation
+!           of the are corresponding to the slave nodes)
+!
+            if((istep.eq.1).and.((mortar.eq.1).or.(.not.nodeslavsurf)))
+     &         then
+               kflag=1
+               call isortii(ialset(istartset(islav)),idummy,
+     &            iendset(islav)-istartset(islav)+1,kflag)
+               jact=istartset(islav)
+               do j=istartset(islav)+1,iendset(islav)
+                  if(ialset(j).eq.ialset(j-1)) cycle
+                  jact=jact+1
+                  ialset(jact)=ialset(j)
+               enddo
+               iendset(islav)=jact
+            endif
+!
+!           counting the entities (nodes or faces) in the slave
+!           surface
 !
             do j=istartset(islav),iendset(islav)
                if(ialset(j).gt.0) then

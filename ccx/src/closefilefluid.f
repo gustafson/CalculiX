@@ -16,13 +16,17 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine datest(au,jh,daval)
-      implicit real*8 (a-h,o-z)
-      real*8 au(jh)
-c....test for rank
-      daval = 0.0d0
-      do 100 j = 1,jh
-         daval=daval+abs(au(j))
-  100 continue
+      subroutine closefilefluid()
+!
+      implicit none
+!
+!     closing the fluid frd file
+!
+      close(13);
+!
+!     closing the cvg file
+!
+      close(12);
+!
       return
       end

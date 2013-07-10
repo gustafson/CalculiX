@@ -18,7 +18,7 @@
 !
       subroutine springforc_th(xl,vl,imat,elcon,nelcon,
      &  tnl,ncmat_,ntmat_,nope,kode,elconloc,
-     &  plicon,nplicon,npmat_,mi,springarea,timeend,matname,
+     &  plkcon,nplkcon,npmat_,mi,springarea,timeend,matname,
      &  node,noel,istep,iinc,iperturb)
 !
 !     calculates the heat flux across a contact area
@@ -28,15 +28,15 @@
       character*80 matname(*),slname,msname
 !
       integer i,j,imat,ncmat_,ntmat_,nope,nterms,iflag,mi(*),
-     &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),
+     &  kode,niso,id,nplkcon(0:ntmat_,*),npmat_,nelcon(2,*),
      &  node,noel,istep,iinc,npred,iperturb(*)
 !
-      real*8 xl(3,9),ratio(9),t0l,t1l,al(3),vl(0:mi(2),9),
-     &  pl(3,9),xn(3),dm,alpha,beta,tnl(9),pressure,dtemp,
+      real*8 xl(3,10),ratio(9),t0l,t1l,al(3),vl(0:mi(2),10),
+     &  pl(3,10),xn(3),dm,alpha,beta,tnl(10),pressure,dtemp,
      &  dist,conductance,eps,pi,springarea,timeend(2),ak(5),
      &  elcon(0:ncmat_,ntmat_,*),pproj(3),xsj2(3),xs2(3,7),val,
-     &  shp2(7,8),xi,et,elconloc(21),plconloc(82),xk,d(2),flowm(2),
-     &  xiso(20),yiso(20),plicon(0:2*npmat_,ntmat_,*),temp(2),
+     &  shp2(7,9),xi,et,elconloc(21),plconloc(802),xk,d(2),flowm(2),
+     &  xiso(200),yiso(200),plkcon(0:2*npmat_,ntmat_,*),temp(2),
      &  predef(2),coords(3),tmean
 !
       iflag=2
@@ -60,8 +60,6 @@
       endif
 !
       nterms=nope-1
-c      write(*,*) ((xl(i,j),i=1,3),j=1,nterms)
-c      write(*,*) ((vl(i,j),i=1,3),j=1,nterms)
 !
 !     vector vr connects the dependent node with its projection
 !     on the independent face
@@ -69,7 +67,6 @@ c      write(*,*) ((vl(i,j),i=1,3),j=1,nterms)
       do i=1,3
          pproj(i)=pl(i,nope)
       enddo
-c      write(*,*) ((pl(i,j),i=1,3),j=1,nterms)
       call attach(pl,pproj,nterms,ratio,dist,xi,et)
       do i=1,3
          al(i)=pl(i,nope)-pproj(i)
@@ -77,12 +74,16 @@ c      write(*,*) ((pl(i,j),i=1,3),j=1,nterms)
 !
 !     determining the jacobian vector on the surface 
 !
-      if(nterms.eq.8) then
+      if(nterms.eq.9) then
+         call shape9q(xi,et,pl,xsj2,xs2,shp2,iflag)
+      elseif(nterms.eq.8) then
          call shape8q(xi,et,pl,xsj2,xs2,shp2,iflag)
       elseif(nterms.eq.4) then
          call shape4q(xi,et,pl,xsj2,xs2,shp2,iflag)
       elseif(nterms.eq.6) then
          call shape6tri(xi,et,pl,xsj2,xs2,shp2,iflag)
+      elseif(nterms.eq.7) then
+         call shape7tri(xi,et,pl,xsj2,xs2,shp2,iflag)
       else
          call shape3tri(xi,et,pl,xsj2,xs2,shp2,iflag)
       endif
@@ -151,11 +152,11 @@ c      write(*,*) ((pl(i,j),i=1,3),j=1,nterms)
 !     interpolating the material data according to temperature
 !
       call materialdata_sp(elcon,nelcon,imat,ntmat_,i,tmean,
-     &     elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
+     &     elconloc,kode,plkcon,nplkcon,npmat_,plconloc,ncmat_)
 !
 !     interpolating the material data according to pressure
 !
-      niso=int(plconloc(81))
+      niso=int(plconloc(801))
 !
       if(niso.eq.0) then
          d(1)=val

@@ -1,5 +1,3 @@
-
-
 /*     CalculiX - A 3-Dimensional finite element program                   */
 /*              Copyright (C) 1998-2011 Guido Dhondt                          */
 
@@ -63,11 +61,12 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	     double *xbody,int *nbody,double *cocon,int *ncocon,
 	     char* tieset,int* ntie, int **nnnp,int *imddof,int *nmddof,
 	     int *imdnode,int *nmdnode,int *imdboun,int *nmdboun,
-	     int *imdmpc,int *nmdmpc, int **izdofp, int *nzdof){
+  	     int *imdmpc,int *nmdmpc, int **izdofp, int *nzdof,int *nherm,
+	     double *xmr,double *xmi){
 
   /* calls the Arnoldi Package (ARPACK) for cyclic symmetry calculations */
   
-    char *filabt,*tchar1=NULL,*tchar2=NULL,*tchar3=NULL;
+    char *filabt,*tchar1=NULL,*tchar2=NULL,*tchar3=NULL,lakonl[2]=" \0";
 
     int *inum=NULL,k,idir,lfin,j,iout=0,index,inode,id,i,idof,im,
         ielas,icmd,kk,l,nkt,icntrl,imag=1,icomplex,kkv,kk6,iterm,
@@ -79,7 +78,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
         *mast1e=NULL,*ipointere=NULL,*irowe=*irowep,*ipobody=NULL,*jqe=*jqep,
 	*icole=*icolep,tint=-1,tnstart=-1,tnend=-1,tint2=-1,*nnn=*nnnp,
 	noderight_,*izdof=*izdofp,iload,iforc,*iznode=NULL,nznode,ll,ne0,
-        *integerglob=NULL;
+	*integerglob=NULL,nasym=0,icfd=0,*inomat=NULL;
 
     long long lint;
 
@@ -92,7 +91,8 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
         *coefright=NULL,*physcon=NULL,coef,a[9],ratio,reltime,*ade=NULL,
         *aue=NULL,*adbe=*adbep,*aube=*aubep,*fext=NULL,*cgr=NULL,
         *shcon=NULL,*springarea=NULL,*z=*zp, *zdof=NULL, *thicke=NULL,
-        *doubleglob=NULL;
+        *doubleglob=NULL,atrab[9],acs[9],diff,fin[3],fout[3],*sumi=NULL,
+        *vti=NULL;
     
     /* dummy arguments for the results call */
     
@@ -113,7 +113,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     inum=NNEW(int,*nk);
     stx=NNEW(double,6*mi[0]**ne);
     
-    nlabel=32;
+    nlabel=41;
     filabt=NNEW(char,87*nlabel);
     for(i=1;i<87*nlabel;i++) filabt[i]=' ';
     filabt[0]='U';
@@ -152,7 +152,11 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		  else if (strcmp1(&lakon[8*iel+3],"10")==0)nope=10;
 		  else if (strcmp1(&lakon[8*iel+3],"4")==0)nope=4;
 		  else if (strcmp1(&lakon[8*iel+3],"15")==0)nope=15;
-		  else {nope=6;}
+		  else if (strcmp1(&lakon[8*iel+3],"6")==0)nope=6;
+		  else if (strcmp1(&lakon[8*iel],"ES")==0){
+		      lakonl[0]=lakon[8*iel+7];
+		      nope=atoi(lakonl)+1;}
+		  else continue;
 		}else{
 		  nelem=iel+1;
 		  FORTRAN(calcmass,(ipkon,lakon,kon,co,mi,&nelem,ne,thicke,
@@ -336,9 +340,9 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	}
     }
     
-/* point loads */
+    /* point loads */
     
-    for(i=0;i<*nforc;i++){
+/*    for(i=0;i<*nforc;i++){
 	if(nodeforc[2*i+1]<*nsectors){
 	    nodeforc[2*i]+=*nk*nodeforc[2*i+1];
 	}else{
@@ -347,6 +351,88 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	iforc=i+1;
 	FORTRAN(addizdofcload,(nodeforc,ndirforc,nactdof,mi,izdof,
 	        nzdof,&iforc,iznode,&nznode,nk,imdnode,nmdnode,xforc));
+		}*/
+
+    i=0;
+    while(i<*nforc){
+	node=nodeforc[2*i];
+	
+	/* checking for a cylindrical transformation;
+	   comparison with the cyclic symmetry system */
+	
+	itr=inotr[2*node-2];
+
+	if(itr==0){
+
+            /* carthesian coordinate system */
+
+	    if(nodeforc[2*i+1]<*nsectors){
+		nodeforc[2*i]+=*nk*nodeforc[2*i+1];
+	    }else{
+		nodeforc[2*i]+=*nk*(nodeforc[2*i+1]-(*nsectors));
+	    }
+	    i++;iforc=i;
+	    FORTRAN(addizdofcload,(nodeforc,ndirforc,nactdof,mi,izdof,
+		    nzdof,&iforc,iznode,&nznode,nk,imdnode,nmdnode,xforc));
+	}else{
+
+	    /* cylindrical coordinate system */	
+	    
+	    FORTRAN(transformatrix,(&trab[7*(itr-1)],&co[3*(node-1)],atrab));
+	    FORTRAN(transformatrix,(&cs[5],&co[3*(node-1)],acs));
+	    diff=0.; for(j=0;j<9;j++) diff+=(atrab[j]-acs[j])*(atrab[j]-acs[j]);
+	    
+	    if((ndirforc[i]!=1)||
+	       (nodeforc[2*i+2]!=node)||(ndirforc[i+1]!=2)||
+	       (nodeforc[2*i+4]!=node)||(ndirforc[i+2]!=3)||
+	       ((diff>1.e-10)&&(fabs(diff-8.)>1.e-10))){
+		printf("*ERROR: forces in a modal dynamic or steady state dynamics\n");
+		printf("        calculation with cyclic symmetry must be defined in\n");
+		printf("        the cyclic symmetric cylindrical coordinate system\n");
+		printf("        force at fault is applied in node %d\n",node);
+		FORTRAN(stop,());
+	    }
+	    
+	    /* changing the complete force in the node in the basis sector from
+	       the global rectangular system into the cylindrical system */
+	    
+	    fin[0]=xforc[i];
+	    fin[1]=xforc[i+1];
+	    fin[2]=xforc[i+2];
+	    icntrl=2;
+	    FORTRAN(rectcyltrfm,(&node,co,cs,&icntrl,fin,fout));
+	    
+	    /* new node number (= node number in the target sector) */
+	    
+	    if(nodeforc[2*i+1]<*nsectors){
+		nodeforc[2*i]+=*nk*nodeforc[2*i+1];
+	    }else{
+		nodeforc[2*i]+=*nk*(nodeforc[2*i+1]-(*nsectors));
+	    }
+	    nodeforc[2*i+2]=nodeforc[2*i];
+	    nodeforc[2*i+4]=nodeforc[2*i];
+	    
+	    /* changing the complete force in the node in the target sector from
+	       the cylindrical system into the global rectangular system */
+	    
+	    node=nodeforc[2*i];
+	    fin[0]=fout[0];
+	    fin[1]=fout[1];
+	    fin[2]=fout[2];
+	    icntrl=-2;
+	    FORTRAN(rectcyltrfm,(&node,co,cs,&icntrl,fin,fout));
+	    xforc[i]=fout[0];
+	    xforc[i+1]=fout[1];
+	    xforc[i+2]=fout[2];
+	    
+	    /* storing the node and the dof into iznode and izdof */
+	    
+	    for(j=0;j<3;j++){
+		i++;iforc=i;
+		FORTRAN(addizdofcload,(nodeforc,ndirforc,nactdof,mi,izdof,
+			nzdof,&iforc,iznode,&nznode,nk,imdnode,nmdnode,xforc));
+	    }
+	}
     }
     
     /* loop over all eigenvalues; the loop starts from the highest eigenvalue
@@ -354,7 +440,12 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
        z before: real and imaginary part for a segment for all eigenvalues
        z after: real part for all segments for all eigenvalues */
 
-    zdof=NNEW(double,(long long)*nev**nzdof);
+    if(*nherm==1){
+	zdof=NNEW(double,(long long)*nev**nzdof);
+    }else{
+	zdof=NNEW(double,(long long)2**nev**nzdof);
+	sumi=NNEW(double,*nev);
+    }
 
     lfin=0;
     for(j=*nev-1;j>-1;--j){
@@ -440,12 +531,15 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
 	      ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	      nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
-              &ne0,xforc,nforc,thicke,xnormastface);
+              &ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
+              sideload,xload,xloadold,&icfd,inomat);
 	    
 	}
 	free(eei);
 
 	/* mapping the results to the other sectors */
+
+	if(*nherm!=1)vti=NNEW(double,mt**nk**nsectors);
 	
 	icntrl=2;imag=1;
 	
@@ -459,6 +553,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    for(l2=0;l2<mt;l2++){
 		l=mt*l1+l2;
 		vt[l]=v[l];
+		if(*nherm!=1)vti[l]=v[l+mt**nk];
 	    }
 	}
 
@@ -486,6 +581,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 				for(l2=0;l2<mt;l2++){
 				    l=mt*l1+l2;
 				    vt[l+mt**nk*i]=v[l];
+				    if(*nherm!=1)vti[l+mt**nk*i]=v[l+mt**nk];
 				}
 				continue;
 			    }
@@ -493,6 +589,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 			for(l2=0;l2<mt;l2++){
 			    l=mt*l1+l2;
 			    vt[l+mt**nk*i]=ctl*v[l]-stl*v[l+mt**nk];
+			    if(*nherm!=1)vti[l+mt**nk*i]=stl*v[l]+ctl*v[l+mt**nk];
 			}
 		    }
 		}
@@ -518,13 +615,20 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 			FORTRAN(nident,(izdof,&idof,nzdof,&id));
 			if(id!=0){
 			    if(izdof[id-1]==idof){
-				zdof[(long long)j**nzdof+id-1]=vt[k*mt**nk+mt*i+j1];
+				if(*nherm==1){
+				    zdof[(long long)j**nzdof+id-1]=vt[k*mt**nk+mt*i+j1];
+				}else{
+				    zdof[(long long)2*j**nzdof+id-1]=vt[k*mt**nk+mt*i+j1];
+				    zdof[(long long)(2*j+1)**nzdof+id-1]=vti[k*mt**nk+mt*i+j1];
+				}
 			    }
 			}
 		    }
 		}
 	    }	    
 	}
+
+	if(*nherm!=1) free(vti);
 	
 /* normalizing the eigenvectors with the mass */
 
@@ -551,13 +655,31 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	  FORTRAN(stop,());
 	}
 
-	for(i=0;i<*nzdof;i++){zdof[(long long)j**nzdof+i]/=sum;}
+	if(*nherm==1){
+	    for(i=0;i<*nzdof;i++){zdof[(long long)j**nzdof+i]/=sum;}
+	}else{
+	    for(i=0;i<*nzdof;i++){zdof[(long long)(2*j)**nzdof+i]/=sum;}
+	    for(i=0;i<*nzdof;i++){zdof[(long long)(2*j+1)**nzdof+i]/=sum;}
+	    sumi[j]=sqrt(sum);
+	}
     }
   
 /* copying zdof into z */
   
-    RENEW(z,double,(long long)*nev**nzdof);
-    memcpy(&z[0],&zdof[0],(long long)sizeof(double)**nev**nzdof);
+    if(*nherm==1){
+	RENEW(z,double,(long long)*nev**nzdof);
+	memcpy(&z[0],&zdof[0],(long long)sizeof(double)**nev**nzdof);
+    }else{
+	RENEW(z,double,(long long)2**nev**nzdof);
+	memcpy(&z[0],&zdof[0],(long long)sizeof(double)*2**nev**nzdof);
+	for(i=0;i<*nev;i++){
+	    for(j=0;j<*nev;j++){
+		xmr[i**nev+j]/=(sumi[i]*sumi[j]);
+		xmi[i**nev+j]/=(sumi[i]*sumi[j]);
+	    }
+	}
+	free(sumi);
+    }
     free(zdof);
 
 /* copying the multiple point constraints */
@@ -890,7 +1012,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
 	      &coriolis,ibody,xloadold,&reltime,veold,springarea,nstate_,
               xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
-              tieset,istartset,iendset,ialset,ntie));
+	      tieset,istartset,iendset,ialset,ntie,&nasym));
       
       
       free(fext);

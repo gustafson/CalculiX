@@ -73,7 +73,7 @@ void mastructf(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  node=kon[indexe+j]-1;
 	  for(k=0;k<5;++k){
 	      nactdoh[5*node+k]=1;
-	      inomat[node]=ielmat[i];
+//	      inomat[node]=ielmat[i];
 	  }
       }
   }

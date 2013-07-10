@@ -52,7 +52,8 @@
       if(.not.faceprint_flag) then
          ii=0
          do i=1,nprint
-            if(prlab(i)(1:4).eq.'DRAG') cycle
+            if((prlab(i)(1:4).eq.'DRAG').or.(prlab(i)(1:4).eq.'FLUX'))
+     &           cycle
             ii=ii+1
             prlab(ii)=prlab(i)
             prset(ii)=prset(i)
@@ -139,13 +140,14 @@
      &        ipoinp,inp,ipoinpc)
          if(key.eq.1) exit
          do ii=1,n
-            if(textpart(ii)(1:4).ne.'DRAG') then
+            if((textpart(ii)(1:4).ne.'DRAG').and.
+     &         (textpart(ii)(1:4).ne.'FLUX')) then
                write(*,*) '*WARNING in faceprints: label not applicable'
                write(*,*) '         or unknown; '
                call inputwarning(inpc,ipoinpc,iline)
                cycle
             endif
-            if(cfd.eq.0) then
+            if((cfd.eq.0).and.(textpart(ii)(1:4).eq.'DRAG')) then
                write(*,*) '*WARNING in faceprints: DRAG only makes '
                write(*,*) '         sense for 3D fluid '
                write(*,*) '         calculations'

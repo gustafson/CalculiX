@@ -39,7 +39,7 @@
      &  mpcfreeold,ikmpc(*),ilmpc(*),id,idof,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),irefnode,lathyp(3,6),inum,
      &  jn,jt,jd,iside,nelem,jface,nopes,nface,nodef(8),nodel(8),
-     &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),indexpret,
+     &  ifaceq(9,6),ifacet(7,4),ifacew1(4,5),ifacew2(8,5),indexpret,
      &  k,ipos,nkold,nope,m,kon(*),ipkon(*),indexe,iset,nset,idir,
      &  istartset(*),iendset(*),ialset(*),index1,ics(2,*),mpcpret,
      &  mint,iflag,ithermal(2),ielem,three,in(3),node1,node2,isign,
@@ -47,7 +47,7 @@
 !
       real*8 coefmpc(*),xn(3),xt(3),xd(3),dd,co(3,*),dcs(*),area,
      &  areanodal(8),xl2(3,8),xi,et,weight,shp2(7,8),t0(*),
-     &  xs2(3,2),xsj2(3),xsj,yn(3)
+     &  xs2(3,2),xsj2(3),xsj,yn(3),r
 !
       include "gauss.f"
 !     
@@ -57,19 +57,19 @@
 !
 !     nodes per face for hex elements
 !
-      data ifaceq /4,3,2,1,11,10,9,12,
-     &            5,6,7,8,13,14,15,16,
-     &            1,2,6,5,9,18,13,17,
-     &            2,3,7,6,10,19,14,18,
-     &            3,4,8,7,11,20,15,19,
-     &            4,1,5,8,12,17,16,20/
+      data ifaceq /4,3,2,1,11,10,9,12,21,
+     &            5,6,7,8,13,14,15,16,22,
+     &            1,2,6,5,9,18,13,17,23,
+     &            2,3,7,6,10,19,14,18,24,
+     &            3,4,8,7,11,20,15,19,25,
+     &            4,1,5,8,12,17,16,20,26/
 !
 !     nodes per face for tet elements
 !
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
 !
 !     nodes per face for linear wedge elements
 !
@@ -208,6 +208,15 @@
 !
       if(ielem.gt.0) then
          indexe=ipkon(ielem)
+cc
+!
+!        removing the beam element (is not needed any more; if not removed
+!        the beam should have a small cross section compared to the
+!        pre-tensioned structure in order to get the same results as in 
+!        ABAQUS
+!
+         ipkon(ielem)=-1
+cc
          node1=kon(indexe+1)
          node2=kon(indexe+2)
          do i=1,3
@@ -268,7 +277,8 @@
             ikmpc(id+1)=idof
             ilmpc(id+1)=nmpc
 !
-            jn=in(i)
+c            jn=in(i)
+            idir=in(i)
 !
             if(dabs(xn(idir)).gt.1.d-10) then
                nodempc(1,mpcfree)=ndep
@@ -900,7 +910,7 @@
             elseif(nopes.eq.6) then
                call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
             elseif((nopes.eq.3).and.(.not.twod)) then
-               call shape3tri(xi,xl2,xsj,xs2,shp2,iflag)
+               call shape3tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
             else
 !
 !               3-node line
@@ -912,6 +922,15 @@
 !
             if(.not.twod) then
                xsj=weight*dsqrt(xsj2(1)**2+xsj2(2)**2+xsj2(3)**2)
+            elseif(lakon(nelem)(1:3).eq.'CAX') then
+!
+!              radial distance is taken into account for the area
+!
+               r=0.d0
+               do i=1,nopes
+                  r=r+shp2(4,i)*xl2(1,i)
+               enddo
+               xsj=weight*xsj2(1)*r
             else
                xsj=weight*xsj2(1)
             endif

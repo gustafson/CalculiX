@@ -47,6 +47,9 @@
          elseif((lakon(i)(1:2).eq.'ES').or.
      &          (lakon(i)(1:2).eq.'ED')) then
             read(lakon(i)(8:8),'(i1)') nope
+            nope=nope+1
+         else
+            cycle
          endif
          indexe=ipkon(i)
          do j=1,nope

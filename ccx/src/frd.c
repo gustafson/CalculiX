@@ -37,7 +37,7 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	 int *ngraph,double *veold,double *ener,int *ne,double *cs,
 	 char *set,int *nset,int *istartset,int *iendset,int *ialset,
 	 double *eenmax,double *fnr,double *fni,double *emn,
-	 double *thicke,char *jobnamec,char *output){
+	 double *thicke,char *jobnamec,char *output,double *qfx){
 
      /* stores the results in frd format
 
@@ -62,7 +62,8 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   int null,one,i,j,k,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
       nodes,ifield[7],nfield[2],icomp[7],ifieldstate[*nstate_],two,three,
       icompstate[*nstate_],ip0=0,ip1=1,ip2=2,ip3=3,ip4=4,ip5=5,ip6=6,ip7=7,
-      ip8=8,ip9=9,ip10=10,ip11=11,ip12=12,imaterial=0,nelout;
+      ip8=8,ip9=9,ip10=10,ip11=11,ip12=12,imaterial=0,nelout,ielemremesh,
+      nterms,mesh_in_original_form;
 
   int ncompscalar=1,ifieldscalar[1]={1},icompscalar[1]={0},
       nfieldscalar[2]={1,0};
@@ -89,6 +90,12 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   if((f1=fopen(fneig,"ab"))==NULL){
     printf("*ERROR in frd: cannot open frd file for writing...");
     exit(0);
+  }
+
+  if(strcmp1(&filab[2],"C")==0){
+      mesh_in_original_form=0;
+  }else{
+      mesh_in_original_form=1;
   }
 
   pi=4.*atan(1.);
@@ -200,8 +207,8 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       for(i=0;i<*nk;i++){
 	if(inum[i]==0) continue;
 	if(strcmp1(output,"asc")==0){
-	  fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,co[3*i],
-		  co[3*i+1],co[3*i+2]);
+	    fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,(float)co[3*i],
+		  (float)co[3*i+1],(float)co[3*i+2]);
 	}else{
 	  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	  fwrite(&co[3*i],sizeof(double),1,f1);
@@ -215,16 +222,13 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     }else{
       for(i=0;i<*nk;i++){
 	if(strcmp1(output,"asc")==0){
-	  fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,co[3*i],
-		co[3*i+1],co[3*i+2]);
+	  fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,(float)co[3*i],
+		(float)co[3*i+1],(float)co[3*i+2]);
 	}else{
 	  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	  fwrite(&co[3*i],sizeof(double),1,f1);
 	  fwrite(&co[3*i+1],sizeof(double),1,f1);
 	  fwrite(&co[3*i+2],sizeof(double),1,f1);
-//	  ifl=(float)co[3*i];fwrite(&ifl,sizeof(float),1,f1);
-//	  ifl=(float)co[3*i+1];fwrite(&ifl,sizeof(float),1,f1);
-//	  ifl=(float)co[3*i+2];fwrite(&ifl,sizeof(float),1,f1);
 	}
       }
     }
@@ -240,8 +244,17 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     if(*nmethod!=0){
 	nelout=0;
 	for(i=0;i<*ne0;i++){
-	    if(ipkon[i]<0) continue;
-	    if(strcmp1(&lakon[8*i],"ESPRNGC")==0) continue;
+	    if(ipkon[i]==-1){
+		continue;
+	    }else if(strcmp1(&lakon[8*i],"ESPRNGC")==0){
+		continue;
+	    }else if(strcmp1(&lakon[8*i+5],"C")==0){
+		if(mesh_in_original_form==1) continue;
+	    }else if(ipkon[i]<-1){
+		if(mesh_in_original_form==0) continue;
+            }else if(strcmp1(&lakon[8*i],"DCOUP3D")==0){
+		continue;
+	    }
 	    nelout++;
 	}
     }else{
@@ -258,10 +271,30 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     nemax=*ne0;
 
     for(i=0;i<*ne0;i++){
-      if(ipkon[i]<0) continue;
+      if(ipkon[i]==-1){
+	  continue;
+      }else if(strcmp1(&lakon[8*i],"F")==0){
+	  continue;
+      }else if(strcmp1(&lakon[8*i],"ESPRNGC")==0){
+	  continue;
+      }else if(strcmp1(&lakon[8*i+5],"C")==0){
+	  if(mesh_in_original_form==1) continue;
+	  indexe=ipkon[i];
+      }else if(ipkon[i]<-1){
+	  if(mesh_in_original_form==0) continue;
+	  indexe=-ipkon[i]-2;
+	  ielemremesh=kon[indexe];
+	  kon[indexe]=kon[ipkon[ielemremesh-1]];
+      }else if(strcmp1(&lakon[8*i],"DCOUP3D")==0){
+	  continue;
+      }else{
+	  indexe=ipkon[i];
+      }
       strcpy1(material,&matname[80*(ielmat[i*mi[2]]-1)],5);
-      indexe=ipkon[i];
       if(strcmp1(&lakon[8*i+3],"2")==0){
+
+	  /* 20-node brick element */
+
 	if(((strcmp1(&lakon[8*i+6]," ")==0)||
             (strcmp1(&filab[4],"E")==0)||
 	    (strcmp1(&lakon[8*i+6],"I")==0))&&
@@ -295,6 +328,8 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	}else if(strcmp2(&lakon[8*i+6],"LC",2)==0){
 
           /* composite material */
+
+          /* 20-node brick elements */
 
 	  nlayer=0;
 	  for(k=0;k<mi[2];k++){
@@ -331,6 +366,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	    }
 	  }
 	}else if(strcmp1(&lakon[8*i+6],"B")==0){
+
+	    /* 3-node beam element */
+
 	  if(strcmp1(output,"asc")==0){
 	    fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p12,p0,material);
 	    fprintf(f1,"%3s%10d%10d%10d\n",m2,kon[indexe+20],
@@ -345,6 +383,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	    iw=(int)kon[indexe+21];fwrite(&iw,sizeof(int),1,f1);
 	  }
 	}else{
+
+	    /* 8-node 2d element */
+
 	  if(strcmp1(output,"asc")==0){
 	    fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
                     m1,i+1,p10,p0,material,m2);
@@ -362,6 +403,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       }else if(strcmp1(&lakon[8*i+3],"8")==0){
 	  if((strcmp1(&lakon[8*i+6]," ")==0)||
              (strcmp1(&filab[4],"E")==0)){
+
+              /* 8-node brick element */
+
 	      if(strcmp1(output,"asc")==0){
 		  fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
 			  m1,i+1,p1,p0,material,m2);
@@ -376,6 +420,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 		      fwrite(&iw,sizeof(int),1,f1);}
 	      }
 	  }else if(strcmp1(&lakon[8*i+6],"B")==0){
+
+              /* 2-node 1d element */
+
 	      if(strcmp1(&lakon[8*i+4],"R")==0){
 		  if(strcmp1(output,"asc")==0){
 		      fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
@@ -404,7 +451,11 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 		  }
 	      }
 	  }else{
-	      if(strcmp1(&lakon[8*i+4],"R")==0){
+
+              /* 4-node 2d element */
+
+	      if((strcmp1(&lakon[8*i+4],"R")==0)||
+		 (strcmp1(&lakon[8*i+4]," ")==0)){
 		  if(strcmp1(output,"asc")==0){
 		      fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
 			      m1,i+1,p9,p0,material,m2);
@@ -434,7 +485,11 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 		  }
 	      }
 	  }
-      }else if(strcmp1(&lakon[8*i+3],"10")==0){
+      }else if((strcmp1(&lakon[8*i+3],"10")==0)||
+               (strcmp1(&lakon[8*i+3],"14")==0)){
+
+	/* 10-node tetrahedral element */
+
 	if(strcmp1(output,"asc")==0){
 	  fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
 		  m1,i+1,p6,p0,material,m2);
@@ -449,6 +504,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	                      fwrite(&iw,sizeof(int),1,f1);}
 	}
       }else if(strcmp1(&lakon[8*i+3],"4")==0){
+
+	/* 4-node tetrahedral element */
+
 	if(strcmp1(output,"asc")==0){
 	  fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
 		  m1,i+1,p3,p0,material,m2);
@@ -465,6 +523,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       }else if(strcmp1(&lakon[8*i+3],"15")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
            (strcmp1(&filab[4],"E")==0)){
+
+          /* 15-node wedge element */
+
 	  if(strcmp1(output,"asc")==0){
 	    fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
 		    m1,i+1,p5,p0,material,m2);
@@ -489,6 +550,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	                      fwrite(&iw,sizeof(int),1,f1);}
 	  }
 	}else{
+
+	  /* 6-node 2d element */
+
 	  if(strcmp1(output,"asc")==0){
 	    fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
 		    m1,i+1,p8,p0,material,m2);
@@ -506,6 +570,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       }else if(strcmp1(&lakon[8*i+3],"6")==0){
 	  if((strcmp1(&lakon[8*i+6]," ")==0)||
              (strcmp1(&filab[4],"E")==0)){
+
+              /* 6-node wedge element */
+
 	      if(strcmp1(output,"asc")==0){
 		  fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
 			  m1,i+1,p2,p0,material,m2);
@@ -520,6 +587,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 		      fwrite(&iw,sizeof(int),1,f1);}
 	      }
 	  }else{
+
+              /* 3-node 2d element */
+
 	      if(strcmp1(output,"asc")==0){
 		  fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
 			  m1,i+1,p7,p0,material,m2);
@@ -534,9 +604,13 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 		      fwrite(&iw,sizeof(int),1,f1);}
 	      }
 	  }
-      }else if((strcmp1(&lakon[8*i],"D")==0)&&
-               (strcmp1(&lakon[8*i],"DCOUP3D")!=0)){
+//      }else if((strcmp1(&lakon[8*i],"D")==0)&&
+//               (strcmp1(&lakon[8*i],"DCOUP3D")!=0)){
+      }else if(strcmp1(&lakon[8*i],"D")==0){
 	  if(kon[indexe]==0){
+
+              /* 2-node 1d element (network entry element) */
+
 	      if(strcmp1(output,"asc")==0){
 		  fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
 		  fprintf(f1,"%3s%10d%10d\n",m2,
@@ -550,6 +624,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 		  iw=(int)kon[indexe+2];fwrite(&iw,sizeof(int),1,f1);
 	      }
 	  }else if(kon[indexe+2]==0){
+
+              /* 2-node 1d element (network exit element) */
+
 	      if(strcmp1(output,"asc")==0){
 		  fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
 		  fprintf(f1,"%3s%10d%10d\n",m2,kon[indexe],
@@ -563,6 +640,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 		  iw=(int)kon[indexe+1];fwrite(&iw,sizeof(int),1,f1);
 	      }
 	  }else{
+
+              /* 3-node 1d element (genuine network element) */
+
 	      if(strcmp1(output,"asc")==0){
 		  fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p12,p0,material);
 		  fprintf(f1,"%3s%10d%10d%10d\n",m2,kon[indexe],
@@ -579,6 +659,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  }
       }else if((strcmp1(&lakon[8*i],"E")==0)&&
                (strcmp1(&lakon[8*i+6],"A")==0)){
+
+	  /* 2-node 1d element (spring element) */
+
 	if(strcmp1(output,"asc")==0){
 	  fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
 	  fprintf(f1,"%3s%10d%10d\n",m2,kon[indexe],kon[indexe+1]);
@@ -590,6 +673,11 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  iw=(int)kon[indexe];fwrite(&iw,sizeof(int),1,f1);
 	  iw=(int)kon[indexe+1];fwrite(&iw,sizeof(int),1,f1);
 	}
+      }
+      if(mesh_in_original_form==1){
+	  if(ipkon[i]<-1){
+	      kon[indexe]=ielemremesh;
+	  }
       }
     }
     if(strcmp1(output,"asc")==0)fprintf(f1,"%3s\n",m3);
@@ -952,12 +1040,12 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
 	break;
       strcpy1(text,&lakon[8*i+7],1);
-      nope=atoi(text);
+      nope=atoi(text)+1;
 //      nope=atoi(&lakon[8*i+7]);
       nodes=kon[ipkon[i]+nope-1];
       if(strcmp1(output,"asc")==0){
 	  fprintf(f1,"%3s%10d",m1,nodes);
-	  for(j=0;j<6;j++)fprintf(f1,"%12.5E",stx[6*mi[0]*i+j]);
+	  for(j=0;j<6;j++)fprintf(f1,"%12.5E",(float)stx[6*mi[0]*i+j]);
       }else{
 	  iw=(int)(nodes);fwrite(&iw,sizeof(int),1,f1);
 	  for(j=0;j<6;j++){
@@ -990,10 +1078,10 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     for(i=*ne-1;i>=0;i--){
       if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
 	break;
-      nope=atoi(&lakon[8*i+7]);
+      nope=atoi(&lakon[8*i+7])+1;
       nodes=kon[ipkon[i]+nope-1];
       if(strcmp1(output,"asc")==0){
-	  fprintf(f1,"%3s%10d%12.5E\n",m1,nodes,ener[i*mi[0]]);
+	  fprintf(f1,"%3s%10d%12.5E\n",m1,nodes,(float)ener[i*mi[0]]);
       }else{
 	  iw=(int)(nodes);fwrite(&iw,sizeof(int),1,f1);
 	  ifl=(float)ener[i*mi[0]];
@@ -1144,8 +1232,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   
   if(strcmp1(&filab[1044],"ERR")==0){
 
+    nterms=6;
     FORTRAN(errorestimator,(stx,stn,ipkon,inum,kon,lakon,nk,ne,
-            mi,ielmat,thicke));
+			    mi,ielmat,thicke,&nterms));
 
     iselect=1;
     
@@ -1176,8 +1265,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   if(*noddiam>=0){
     if(strcmp1(&filab[1044],"ERR")==0){
 
+      nterms=6;
       FORTRAN(errorestimator,(&stx[6*mi[0]**ne],stn,ipkon,inum,kon,lakon,nk,ne,
-			      mi,ielmat,thicke));
+			      mi,ielmat,thicke,&nterms));
       
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
@@ -1191,6 +1281,63 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       icomp[0]=2;icomp[1]=4;
 
       frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
+                ialset,ngraph,&ncomp,ifield,icomp,
+                nfieldtensor,&iselect,m2,f1,output,m3);
+      
+    }
+  }
+  
+  /* storing the thermal error estimator in the nodes */
+  
+  if(strcmp1(&filab[2784],"HER")==0){
+
+    nterms=3;
+    FORTRAN(errorestimator,(qfx,qfn,ipkon,inum,kon,lakon,nk,ne,
+			    mi,ielmat,thicke,&nterms));
+
+    iselect=1;
+    
+    frdset(&filab[2784],set,&iset,istartset,iendset,ialset,
+	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	   ngraph);
+    
+    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
+
+    fprintf(f1," -4  ERROR       1    1\n");
+    fprintf(f1," -5  HFLSTD      1    1    1    0\n");
+
+    ncomp=1;
+    ifield[0]=1;
+    icomp[0]=2;
+
+    frdselect(qfn,qfn,&iset,&nkcoords,inum,m1,istartset,iendset,
+                ialset,ngraph,&ncomp,ifield,icomp,
+                nfieldvector1,&iselect,m2,f1,output,m3);
+
+  }
+
+  /* storing the imaginary part of the thermal error estimator in the nodes
+     for the odd modes of cyclic symmetry calculations */
+  
+  if(*noddiam>=0){
+    if(strcmp1(&filab[2784],"HER")==0){
+
+      nterms=3;
+      FORTRAN(errorestimator,(&qfx[3*mi[0]**ne],qfn,ipkon,inum,kon,lakon,nk,ne,
+			      mi,ielmat,thicke,&nterms));
+      
+      frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
+
+      fprintf(f1," -4  ERROR       1    1\n");
+      fprintf(f1," -5  HFLSTD      1    1    1    0\n");
+      
+      ncomp=1;
+      ifield[0]=1;
+      icomp[0]=2;
+
+      frdselect(qfn,qfn,&iset,&nkcoords,inum,m1,istartset,iendset,
                 ialset,ngraph,&ncomp,ifield,icomp,
                 nfieldtensor,&iselect,m2,f1,output,m3);
       
@@ -1353,7 +1500,7 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   /*  the remaining lines only apply to frequency calculations
       with cyclic symmetry, complex frequency and steady state calculations */
 
-  if((*nmethod!=2)&&(*nmethod!=5)&&(*nmethod!=6)){fclose(f1);return;}
+  if((*nmethod!=2)&&(*nmethod!=5)&&(*nmethod!=6)&&(*nmethod!=7)){fclose(f1);return;}
   if((*nmethod==5)&&(*mode==-1)){fclose(f1);return;}
 
   /* storing the displacements in the nodes (magnitude, phase) */
@@ -1417,18 +1564,18 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
     fprintf(f1," -4  PSTRESS    12    1\n");
-    fprintf(f1," -5  MAGXX       1    4    1    1\n");
-    fprintf(f1," -5  MAGYY       1    4    2    2\n");
-    fprintf(f1," -5  MAGZZ       1    4    3    3\n");
-    fprintf(f1," -5  MAGXY       1    4    1    2\n");
-    fprintf(f1," -5  MAGYZ       1    4    2    3\n");
-    fprintf(f1," -5  MAGZX       1    4    3    1\n");
-    fprintf(f1," -5  PHAXX       1    4    1    1\n");
-    fprintf(f1," -5  PHAYY       1    4    2    2\n");
-    fprintf(f1," -5  PHAZZ       1    4    3    3\n");
-    fprintf(f1," -5  PHAXY       1    4    1    2\n");
-    fprintf(f1," -5  PHAYZ       1    4    2    3\n");
-    fprintf(f1," -5  PHAZX       1    4    3    1\n");
+    fprintf(f1," -5  MAGXX       1   14    1    1\n");
+    fprintf(f1," -5  MAGYY       1   14    2    2\n");
+    fprintf(f1," -5  MAGZZ       1   14    3    3\n");
+    fprintf(f1," -5  MAGXY       1   14    1    2\n");
+    fprintf(f1," -5  MAGYZ       1   14    2    3\n");
+    fprintf(f1," -5  MAGZX       1   14    3    1\n");
+    fprintf(f1," -5  PHAXX       1   14    1    1\n");
+    fprintf(f1," -5  PHAYY       1   14    2    2\n");
+    fprintf(f1," -5  PHAZZ       1   14    3    3\n");
+    fprintf(f1," -5  PHAXY       1   14    1    2\n");
+    fprintf(f1," -5  PHAYZ       1   14    2    3\n");
+    fprintf(f1," -5  PHAZX       1   14    3    1\n");
 
     frdselect(stnr,stni,&iset,&nkcoords,inum,m1,istartset,iendset,
                 ialset,ngraph,&ncomptensph,ifieldtensph,icomptensph,

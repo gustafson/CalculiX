@@ -40,7 +40,8 @@
       integer ielprop(*),nelem,iexp(2),i,j,ier,write1,iexp3(2),
      &     write2,nelem_ref,ipkon(*),kon(*),nelem0,nelem1,nelem2,node10,
      &     node20,nodem0,node11,node21,nodem1,node12,node22,nodem2,
-     &     iexpbr1(2) /11,11/,icase,node0,node1,node2,mi(*)
+     &     iexpbr1(2) /11,11/,icase,node0,node1,node2,mi(*),n0,n1,n2,
+     &     n5,n6,n8,n10,n11,n12,n14,n15,n22
 !
       real*8 zeta,prop(*),lzd,reynolds,ereo,fa2za1,zetap,zeta0,
      &     lambda,thau,a1,a2,dh,l,a2za1,ldumm,dhdumm,ks,
@@ -430,6 +431,19 @@
 !
       data Z90LIMY
      &    / 0.1d0,0.1d0,0.3d0,0.5d0,0.7d0/
+!
+      data n0 /0/
+      data n1 /1/
+      data n2 /2/
+      data n5 /5/
+      data n6 /6/
+      data n8 /8/
+      data n10 /10/
+      data n11 /11/
+      data n12 /12/
+      data n14 /14/
+      data n15 /15/
+      data n22 /22/
 !     
       pi=4.d0*datan(1.d0)
 !     
@@ -488,16 +502,16 @@
          call friction_coefficient(ldumm,dhdumm,ks,reynolds,
      &        form_fact,lambda)
 !
-         call onedint(XLZD,YTOR,10,lzd,thau,1,1,0,ier)
+         call onedint(XLZD,YTOR,n10,lzd,thau,n1,n1,n0,ier)
          zeta0 = ((0.5+thau*dsqrt(fa2za1))+fa2za1) * fa2za1
 !
          if(reynolds .gt. 1.E+05 ) then
             zeta=zeta0 + lambda * dabs(lzd)
          else
-            call onedint(XRE,YERE,14,reynolds,ereo,1,1,0,ier)
+            call onedint(XRE,YERE,n14,reynolds,ereo,n1,n1,n0,ier)
 !
-            call twodint(zzeta,15,11,reynolds,
-     &           a2za1,zetap,1,IEXP,IER)
+            call twodint(zzeta,n15,n11,reynolds,
+     &           a2za1,zetap,n1,IEXP,IER)
             zeta = zetap + ereo * zeta0 + lambda * dabs(lzd)
             IF ( a2za1 .gt. 0.95 ) WRITE1=1
          endif
@@ -543,15 +557,15 @@
 !     
          call friction_coefficient(ldumm,dhdumm,ks,reynolds,
      &        form_fact,lambda)
-         call onedint (XLQD,YZETA1,12,lzd,zeta01,1,1,0,IER)
+         call onedint (XLQD,YZETA1,n12,lzd,zeta01,n1,n1,n0,IER)
 !     
          write1=0
          if (lzd.gt.10.) write1=1
 !     
          if(reynolds.le.1.E+05) then
 !     
-            call onedint (XRE2,YZETA2,14,reynolds,zeta02,1,1,10,IER)
-            call onedint (XRE2,YERE2,14,reynolds,EREO,1,1,0,IER)
+            call onedint (XRE2,YZETA2,n14,reynolds,zeta02,n1,n1,n10,IER)
+            call onedint (XRE2,YERE2,n14,reynolds,EREO,n1,n1,n0,IER)
 !     
             zeta=zeta02+0.342*ereo*zeta01+lambda*lzd
 !     
@@ -594,7 +608,8 @@ c         endif
          if (reynolds.LE.10.) then
             zeta=26.0/reynolds
          elseif (reynolds.gt.10.and.reynolds.le.3.5E+03) then
-            call twodint(zzeta3,14,11,reynolds,a2za1,zeta,1,IEXP3,IER)
+            call twodint(zzeta3,n14,n11,reynolds,a2za1,zeta,n1,IEXP3,
+     &               IER)
             if (a2za1.lt.0.01.or.a2za1.gt.0.6) write1=1
          else
             zeta=(1.-a2za1)**2
@@ -637,13 +652,14 @@ c         endif
             if (reynolds.le.10.) then
                zeta=27.0/reynolds
             elseif(reynolds.gt.10.and.reynolds.le.1.E+04) then
-              call twodint(ZZETA41,14,11,reynolds,a2za1,zeta,1,IEXP,IER)
+              call twodint(ZZETA41,n14,n11,reynolds,a2za1,zeta,n1,IEXP,
+     &              IER)
                if (a2za1.le.0.1.or.a2za1.gt.0.6) write1=1
             elseif (reynolds.gt.1.E+04) then
                zeta=0.5*(1.-a2za1)
             endif
          elseif(l.gt.0.) then
-            call twodint(ZZETA42,10,0,alpha,lzd,zeta0,1,IEXP,IER)
+            call twodint(ZZETA42,n10,n0,alpha,lzd,zeta0,n1,IEXP,IER)
             zeta=zeta0*(1.-a2za1)
             if (lzd .lt. 0.025  .or.  lzd .gt. 0.6) write1=1
             if (reynolds  .le. 1.E+04) then
@@ -698,9 +714,9 @@ c         endif
       if(a0.gt.0.) azb=a0/b0
 !
       if (rzdh.le.0.5) then
-         call onedint(XAQB,YC,12,azb,C,1,1,0,IER)
+         call onedint(XAQB,YC,n12,azb,C,n1,n1,n0,IER)
          zeta1=0.95*(SIN(delta*0.0087))**2+2.05*(SIN(delta*0.0087))**4
-         call onedint(XDELTA,YA,10,delta,A,1,1,10,IER)
+         call onedint(XDELTA,YA,n10,delta,A,n1,n1,n10,IER)
          zeta=c*a*zeta1
          if (azb.le.0.25.or.azb.gt.8.0) write2=1
          if (reynolds.lt.4.E+04) then
@@ -719,9 +735,9 @@ c         endif
          endif
 !
       elseif (rzdh.gt.0.5.and.rzdh.lt.1.5) then
-         call onedint(XDELTA,YA1,10,delta,AI,1,1,10,IER)
-         call onedint(XRQDH,YB1,8,rzdh,B1,1,1,10,IER)
-         call onedint(XAQB,YC1,12,azb,C1,1,1,10,IER)
+         call onedint(XDELTA,YA1,n10,delta,AI,n1,n1,n10,IER)
+         call onedint(XRQDH,YB1,n8,rzdh,B1,n1,n1,n10,IER)
+         call onedint(XAQB,YC1,n12,azb,C1,n1,n1,n10,IER)
          REI=MAX(2.E5,reynolds)
          ldumm=1.D0
          dhdumm=-1.D0
@@ -743,9 +759,9 @@ c         endif
          endif
 !
       elseif (rzdh.ge.1.5.and.rzdh.lt.50.) then
-         call onedint(XDELTA,YA1,10,delta,AI,1,1,10,IER)
-         call onedint(XAQB,YC2,12,azb,C2,1,1,10,IER)
-         call onedint(XRZDH,YB2,8,rzdh,B2,1,1,0,IER)
+         call onedint(XDELTA,YA1,n10,delta,AI,n1,n1,n10,IER)
+         call onedint(XAQB,YC2,n12,azb,C2,n1,n1,n10,IER)
+         call onedint(XRZDH,YB2,n8,rzdh,B2,n1,n1,n0,IER)
          REI=MAX(2.E5,reynolds)
          ldumm=1.D0
          dhdumm=-1.D0
@@ -806,8 +822,8 @@ c         endif
          if ( delta .lt. 10.  .or.  delta .gt. 180.  .or.
      &        rzdh  .lt. 0.5  .or.  rzdh.  gt. 10.        ) write1 = 1
 !     
-         call twodint(ZZETAO,14,11,rzdh,delta,zeta0,1,IEXP6,IER)
-         call twodint(KRE, 22,11,reynolds,rzdh, k,1,IEXP6,IER)
+         call twodint(ZZETAO,n14,n11,rzdh,delta,zeta0,n1,IEXP6,IER)
+         call twodint(KRE, n22,n11,reynolds,rzdh, k,n1,IEXP6,IER)
          zeta = zeta0 * k
 !     
          if ( reynolds .lt. 1.E+3  .or.  reynolds .gt. 1.E+6 ) then 
@@ -866,11 +882,11 @@ c         endif
          if (reynolds .le. 2300.) then
 !     (LAMINAR FLOW)
             ldre=l/dh/reynolds
-            call onedint (XDRE,ZETAEX,12,ldre,zeta,1,1,0,IER)
+            call onedint (XDRE,ZETAEX,n12,ldre,zeta,n1,n1,n0,IER)
          elseif ((reynolds .gt. 2300) .and. (reynolds .lt. 3000)) then
 !     (TRANSITION LAMINAR-TURBULENT)
             ldre=l/DH/2300.
-            call onedint (XDRE,ZETAEX,12,ldre,zetah,1,1,0,IER)
+            call onedint (XDRE,ZETAEX,n12,ldre,zetah,n1,n1,n0,IER)
             zeta=zetah-(zetah-1.)*((reynolds-2300.)/700.)
          else
 !     (TURBULENT FLOW, RE .GT. 3000)
@@ -1083,12 +1099,12 @@ c         endif
             zetlin=2.d0*(V1V0**2*a0a1*cang1s+V2V0**2*a0a2*cang2s)
 !
             if(nelem.eq.nelem1) then
-               call onedint(XANG,YANG,11,alpha1,lam10,1,2,22,ier)
+               call onedint(XANG,YANG,n11,alpha1,lam10,n1,n2,n22,ier)
                zeta=lam10/64*(V1V0*a0a1)**2-zetlin+1d0
                zeta=zeta*(W0W1)**2
 !     
             elseif(nelem.eq.nelem2) then
-               call onedint(XANG,YANG,11,alpha2,lam20,1,2,22,ier)
+               call onedint(XANG,YANG,n11,alpha2,lam20,n1,n2,n22,ier)
                zeta=lam20/64*(V2V0*a0a2)**2-zetlin+1d0
                zeta=zeta*(W0W2)**2
             endif
@@ -1140,8 +1156,8 @@ c         endif
                   zeta=zeta*(W0W1)**2
                elseif(nelem.eq.nelem2) then
                   z2_60=z1_60+(a0a2*V2V0)**2-V1V0**2
-                  call onedint(TA2A0,TAFAKT,12,a2a0,afakt,
-     &                 1,1,11,ier)
+                  call onedint(TA2A0,TAFAKT,n12,a2a0,afakt,
+     &                 n1,n1,n11,ier)
                   z2_90=afakt*(1.d0+(a0a2*V2V0)**2-2.d0*V1V0**2)
                   zeta=z2_60+(z2_90-z2_60)*(alpha2-60.d0)/30d0
                   zeta=zeta*(W0W2)**2
@@ -1152,8 +1168,8 @@ c         endif
                   zeta=(1.55d0-V2V0)*V2V0
                   zeta=zeta*(W0W1)**2
                elseif(nelem.eq.nelem2) then
-                  call onedint(TA2A0,TAFAKT,12,a2a0,afakt,
-     &                 1,1,11,ier) 
+                  call onedint(TA2A0,TAFAKT,n12,a2a0,afakt,
+     &                 n1,n1,n11,ier) 
                   zeta=afakt*(1.d0+(a0a2*V2V0)**2-2.d0*V1V0**2)
                   zeta=zeta*(W0W2)**2
                endif
@@ -1174,7 +1190,7 @@ c         endif
                   zeta=1+a0a1*V1V0**2*(a0a1-2.)
      &                 -2d0*a0a2*V2V0**2*dcos(alpha2*pi/180)
 !     correction term
-                  call twodint(KSTAB,6,11,a2a0,alpha2,ks2,1
+                  call twodint(KSTAB,n6,n11,a2a0,alpha2,ks2,n1
      &                 ,iexpbr1,ier)
                   zeta=zeta+ks2
                   zeta=zeta*(W0W1)**2
@@ -1182,7 +1198,7 @@ c         endif
                   zeta=1+a0a1*V1V0**2*(a0a1-2.)
      &                 -2d0*a0a2*V2V0**2*dcos(alpha2*pi/180)
      &                 -(a0a1*V1V0)**2+(a0a2*V2V0)**2
-                  call twodint(KBTAB,6,11,a2a0,alpha2,kb,1,
+                  call twodint(KBTAB,n6,n11,a2a0,alpha2,kb,n1,
      &                 iexpbr1,ier)
                   zeta=zeta+kb
                   zeta=zeta*(W0W2)**2
@@ -1192,14 +1208,14 @@ c         endif
 !     as for alpha2 < 60 , with dcos(alpha2)=0.5
                if(nelem.eq.nelem1) then
                   zeta=1+a0a1*V1V0**2*(a0a1-2.)-a0a2*V2V0**2
-                  call twodint(KSTAB,6,11,a2a0,alpha2,ks2,1,
+                  call twodint(KSTAB,n6,n11,a2a0,alpha2,ks2,n1,
      &                 iexpbr1,ier)
                   zeta=zeta+ks2
                   zeta=zeta*(W0W1)**2
                elseif(nelem.eq.nelem2) then
                   zeta=1+a0a1*V1V0**2*(a0a1-2.)-a0a2*V2V0**2
      &                 -(a0a1*V1V0)**2+(a0a2*V2V0)**2
-                  call twodint(KBTAB,6,11,a2a0,alpha2,kb,1,
+                  call twodint(KBTAB,n6,n11,a2a0,alpha2,kb,n1,
      &                 iexpbr1,ier)
                   zeta=zeta+kb
                   zeta=zeta*(W0W2)**2
@@ -1209,17 +1225,17 @@ c         endif
 !     linear interpolation between alpha2=60 and alpha2=90
                z1_60=1+a0a1*V1V0**2*(a0a1-2.)-a0a2*V2V0**2
 !     correction term
-               call twodint(KSTAB,6,11,a2a0,alpha2,ks2,1,
+               call twodint(KSTAB,n6,n11,a2a0,alpha2,ks2,n1,
      &              iexpbr1,ier)
                z1_60=z1_60+ks2
                if(nelem.eq.nelem1) then
-                  call twodint(Z90TAB,6,11,a2a0,V2V0,z1_90,
-     &                 1,iexpbr1,ier)
+                  call twodint(Z90TAB,n6,n11,a2a0,V2V0,z1_90,
+     &                 n1,iexpbr1,ier)
                   zeta=z1_60+(z1_90-z1_60)*(alpha2-60)/30
                   zeta=zeta*(W0W1)**2
                elseif(nelem.eq.nelem2) then
                   z2_60=z1_60-(a0a1*V1V0)**2+(a0a2*v2v0)**2
-                  call twodint(KBTAB,6,11,a2a0,alpha2,kb,1,
+                  call twodint(KBTAB,n6,n11,a2a0,alpha2,kb,n1,
      &                 iexpbr1,ier)
                   z2_60=z2_60+kb-ks2
                   z2_90=1.+(a0a2*V2V0)**2-2*a0a1*V1V0**2+kb
@@ -1228,14 +1244,14 @@ c         endif
                endif
             elseif(alpha2.eq.90) then
                if(nelem.eq.nelem2) then
-                  call twodint(KBTAB,6,11,a2a0,alpha2,kb,1,
+                  call twodint(KBTAB,n6,n11,a2a0,alpha2,kb,n1,
      &                 iexpbr1,ier)
                   zeta=1.+(a0a2*V2V0)**2-2*a0a1*V1V0**2+kb
                   zeta=zeta*(W0W2)**2
                elseif(nelem.eq.nelem1) then
 !     table interpolation
-                  call twodint(Z90TAB,6,11,a2a0,V2V0,zeta,
-     &                 1,iexpbr1,ier)
+                  call twodint(Z90TAB,n6,n11,a2a0,V2V0,zeta,
+     &                 n1,iexpbr1,ier)
                   zeta=zeta*(W0W1)**2
 !     cheching whether the table eveluation in the eptrapolated domain
 !     (This procedure is guessed from the original table)
@@ -1244,8 +1260,8 @@ c         endif
                   Z90LIM51=Z90LIMX(5)
                   if((a2a0.ge.Z90LIM11)
      &                 .and.(a2a0.le.Z90LIM51))then
-                     call onedint(Z90LIMX,Z90LIMY,5,A2A0,
-     &                    V2V0L,1,1,11,ier)
+                     call onedint(Z90LIMX,Z90LIMY,n5,A2A0,
+     &                    V2V0L,n1,n1,n11,ier)
                      if(V2V0.gt.V2V0L) then
                         write(*,*) 'WARNING in zeta_calc: in element',
      &                                 nelem

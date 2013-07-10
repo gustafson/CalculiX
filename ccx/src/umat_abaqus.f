@@ -136,7 +136,8 @@
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),i,iorien,
+      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),i,
+     &  iorien,
      &  ndi,nshr,ntens,nprops,layer,kspt,kstep,kinc,kal(2,6),kel(4,21),
      &  j1,j2,j3,j4,j5,j6,j7,j8,jj
 !

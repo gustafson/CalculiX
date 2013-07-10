@@ -59,6 +59,12 @@
       open(7,file=fnfrd(1:i+4),status='unknown',err=71)
       close(7,status='delete',err=72)
 !
+!     delete the f.frd file (it is reopened in openfilefluid.f)
+!
+      fnfrd=jobname(1:i)//'f.frd'
+      open(13,file=fnfrd(1:i+5),status='unknown',err=71)
+      close(13,status='delete',err=73)
+!
       fnsta=jobname(1:i)//'.sta'
       open(8,file=fnsta(1:i+4),status='unknown',err=81)
       close(8,status='delete',err=82)
@@ -89,6 +95,9 @@
       stop
  72   write(*,*) '*ERROR in openfile: could not delete file ',
      &  fnfrd(1:i+4)
+      stop
+ 73   write(*,*) '*ERROR in openfile: could not delete file ',
+     &  fnfrd(1:i+5)
       stop
  81   write(*,*) '*ERROR in openfile: could not open file ',fnsta(1:i+4)
       stop

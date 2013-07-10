@@ -37,11 +37,11 @@
          stop
       endif
 !
-      fnfrd=jobname(1:i)//'.frd'
-      open(7,file=fnfrd(1:i+4),status='unknown')
+      fnfrd=jobname(1:i)//'f.frd'
+      open(13,file=fnfrd(1:i+5),status='unknown',position='append')
 !
       fncvg=jobname(1:i)//'.cvg'
-      open(8,file=fncvg(1:i+4),status='unknown')
+      open(12,file=fncvg(1:i+4),status='unknown')
 !
       return
       end

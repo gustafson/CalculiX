@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine gapconductances(inpc,textpart,nelcon,nmat,ntmat_,
-     &        npmat_,plicon,nplicon,iperturb,irstrt,istep,istat,n,iline,
+     &        npmat_,plkcon,nplkcon,iperturb,irstrt,istep,istat,n,iline,
      &        ipol,inl,ipoinp,inp,ipoinpc)
 !
 !     reading the input deck: *GAP CONDUCTANCE
@@ -28,36 +28,42 @@
       character*132 textpart(16)
 !
       integer nelcon(2,*),nmat,ntmat_,ntmat,npmat_,npmat,istep,
-     &  n,key,i,nplicon(0:ntmat_,*),
+     &  n,key,i,nplkcon(0:ntmat_,*),
      &  iperturb(*),istat,
      &  irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*)
 !
-      real*8 plicon(0:2*npmat_,ntmat_,*),
+      real*8 plkcon(0:2*npmat_,ntmat_,*),
      & temperature
 !
       ntmat=0
       npmat=0
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in gapconductances: *GAP CONDUCTANCE should'
-         write(*,*) '        be placed before all step definitions'
+         write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
+         write(*,*) '       *GAP CONDUCTANCE should'
+         write(*,*) '       be placed before all step definitions'
          stop
       endif
 !
       if(nmat.eq.0) then
-         write(*,*) '*ERROR in gapconductances: *GAP CONDUCTANCE should'
+         write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
+         write(*,*) '       *GAP CONDUCTANCE should'
          write(*,*) '       be preceded by a *SURFACE INTERACTION card'
          stop
       endif
 !
       if(nelcon(1,nmat).eq.0) then
-         write(*,*) '*ERROR in gapconductances: *GAP CONDUCTANCE should'
+         write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
+         write(*,*) '       *GAP CONDUCTANCE should'
          write(*,*) '       be preceeded by a *SURFACE BEHAVIOR card'
          stop
       endif
 !
       iperturb(1)=2
       iperturb(2)=1
+      write(*,*) '*INFO reading *GAP CONDUCTANCE: nonlinear geometric'
+      write(*,*) '      effects are turned on'
+      write(*,*)
 !
       nelcon(1,nmat)=-51
 !
@@ -68,7 +74,8 @@
             return
          else
             write(*,*) 
-     &        '*WARNING in gapconductances: parameter not recognized:'
+     &        '*WARNING reading *GAP CONDUCTANCE:'
+            write(*,*) '         parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline)
@@ -88,41 +95,43 @@
                npmat=0
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
-                  write(*,*) '*ERROR in gapconductances:'
+                  write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
                   write(*,*) '       increase ntmat_'
                   stop
                endif
-               nplicon(0,nmat)=ntmat
-               plicon(0,ntmat,nmat)=temperature
+               nplkcon(0,nmat)=ntmat
+               plkcon(0,ntmat,nmat)=temperature
 !
 !           new temperature
 !
-            elseif(plicon(0,ntmat,nmat).ne.temperature) then
+            elseif(plkcon(0,ntmat,nmat).ne.temperature) then
                npmat=0
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
-                  write(*,*) '*ERROR in gapconductances:' 
+                  write(*,*) '*ERROR reading *GAP CONDUCTANCE:' 
                   write(*,*) '       increase ntmat_'
                   stop
                endif
-               nplicon(0,nmat)=ntmat
-               plicon(0,ntmat,nmat)=temperature
+               nplkcon(0,nmat)=ntmat
+               plkcon(0,ntmat,nmat)=temperature
             endif
             do i=1,2
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
-     &              plicon(2*npmat+i,ntmat,nmat)
+     &              plkcon(2*npmat+i,ntmat,nmat)
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
             enddo
             npmat=npmat+1
             if(npmat.gt.npmat_) then
-               write(*,*) '*ERROR in gapconductances: increase npmat_'
+               write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
+               write(*,*) '       increase npmat_'
                stop
             endif
-            nplicon(ntmat,nmat)=npmat
+            nplkcon(ntmat,nmat)=npmat
          enddo
 !
       if(ntmat.eq.0) then
-         write(*,*) '*ERROR in gapconductances: *GAP CONDUCTANCE card'
+         write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
+         write(*,*) '       *GAP CONDUCTANCE card'
          write(*,*) '       without data'
          stop
       endif

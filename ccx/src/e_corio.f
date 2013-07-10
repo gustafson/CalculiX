@@ -43,27 +43,27 @@
       character*20 sideload(*)
       character*80 matname(*),amat
 !
-      integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nbody,nelem,mi(*),
+      integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nbody,nelem,
+     &  mi(*),
      &  mattyp,ithermal,iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
      &  nmethod,k1,l1,ii,jj,ii1,jj1,id,ipointer,ig,m1,m2,m3,m4,kk,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),
      &  ntmat_,nope,nopes,norien,ihyper,iexpl,kode,imat,mint2d,
-     &  mint3d,ifacet(6,4),nopev,iorien,istiff,ncmat_,
+     &  mint3d,ifacet(7,4),nopev,iorien,istiff,ncmat_,
      &  ifacew(8,5),intscheme,n,ipointeri,ipointerj,istep,iinc,
-     &  layer,kspt,jltyp,iflag,iperm(60),m,iscale,ne0
-!
-      integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
+     &  layer,kspt,jltyp,iflag,iperm(60),m,iscale,ne0,
+     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),
-     &  s(60,60),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),ff(60),
+     &  s(78,78),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),ff(78),
      &  bf(3),q(3),shpj(4,20),elcon(0:ncmat_,ntmat_,*),
      &  rhcon(0:1,ntmat_,*),xkl(3,3),eknlsign,reltime,
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
      &  anisox(3,3,3,3),voldl(0:mi(2),20),vo(3,3),
      &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),xload(2,*),
      &  v(3,3,3,3),
-     &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(60,60),
+     &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(78,78),
      &  sti(6,mi(1),*),stx(6,mi(1),*),s11,s22,s33,s12,s13,s23,s11b,
      &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,
      &  senergy,senergyb,rho,elas(21),
@@ -71,8 +71,8 @@
      &  weight,coords(3),dmass,xl1(3,8),term
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
-     &  xstiff(27,mi(1),*),plconloc(82),dtime,ttime,time,
-     &  sax(60,60),ffax(60),gs(8,4),a
+     &  xstiff(27,mi(1),*),plconloc(802),dtime,ttime,time,
+     &  sax(78,78),ffax(78),gs(8,4),a
 !
       data iflag /3/
       data iperm /13,14,-15,16,17,-18,19,20,-21,22,23,-24,
@@ -104,6 +104,7 @@ c     Bernhardi end
          nope=6
       elseif(lakonl(1:2).eq.'ES') then
          read(lakonl(8:8),'(i1)') nope
+         nope=nope+1
       endif
 !
       if(lakonl(4:5).eq.'8R') then

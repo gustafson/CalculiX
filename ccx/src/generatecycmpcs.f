@@ -28,7 +28,7 @@
 !
       implicit none
 !     
-      logical triangulation,interpolation
+      logical triangulation,interpolation,multistage
 !     
       character*1 c
       character*3 m1,m2,m3
@@ -59,6 +59,7 @@
 !     
       data lathyp /1,2,3,1,3,2,2,1,3,2,3,1,3,1,2,3,2,1/
 !     
+      multistage=.false.
       nneigh=10
 !     
       xap=co(1,noded)-csab(1)
@@ -147,32 +148,32 @@ c
                fntria(j:j)=' '
             enddo
 !
-            open(70,file=fntria,status='unknown')
-            c='C'
-            m1=' -1'
-            m2=' -2'
-            m3=' -3'
-            p0='    0'
-            p1='    1'
-            p2='    2'
-            p3='    3'
-            p7='    7'
-            p9999=' 9999'
-            one=1
-            write(70,'(a5,a1)') p1,c
-            write(70,'(a5,a1,67x,i1)') p2,c,one
-            do i=1,nk
-               write(70,'(a3,i10,1p,3e12.5)') m1,i,(co(j,i),j=1,3)
-            enddo
-            write(70,'(a3)') m3
-            write(70,'(a5,a1,67x,i1)') p3,c,one
-            do i=1,netri
-               write(70,'(a3,i10,2a5)')m1,i,p7,p0
-               write(70,'(a3,3i10)') m2,(kontri(j,i),j=1,3)
-            enddo
-            write(70,'(a3)') m3
-            write(70,'(a5)') p9999
-            close(70)
+c            open(70,file=fntria,status='unknown')
+c            c='C'
+c            m1=' -1'
+c            m2=' -2'
+c            m3=' -3'
+c            p0='    0'
+c            p1='    1'
+c            p2='    2'
+c            p3='    3'
+c            p7='    7'
+c            p9999=' 9999'
+c            one=1
+c            write(70,'(a5,a1)') p1,c
+c            write(70,'(a5,a1,67x,i1)') p2,c,one
+c            do i=1,nk
+c               write(70,'(a3,i10,1p,3e12.5)') m1,i,(co(j,i),j=1,3)
+c            enddo
+c            write(70,'(a3)') m3
+c            write(70,'(a5,a1,67x,i1)') p3,c,one
+c            do i=1,netri
+c               write(70,'(a3,i10,2a5)')m1,i,p7,p0
+c               write(70,'(a3,3i10)') m2,(kontri(j,i),j=1,3)
+c            enddo
+c            write(70,'(a3)') m3
+c            write(70,'(a5)') p9999
+c            close(70)
 !     
          endif
 !     
@@ -205,7 +206,7 @@ c
      &        rcscg,rcs0cg,zcscg,zcs0cg,nrcg,nzcg,straight,
      &        nodef,ratio,nterms,rp,zp,netri,
      &        nodei,ifacetet,inodface,noded,xn,yn,
-     &        zn,ier)
+     &        zn,ier,multistage)
 !
          if(ier.ne.0) then
             ncounter=ncounter+1

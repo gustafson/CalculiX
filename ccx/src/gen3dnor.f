@@ -41,13 +41,14 @@
      &  i,ndepnodes,index,nexp,nnor,nel,ielem,indexe,j,iel(100),
      &  jl(100),ial(100),ifi(100),idepnodes(80),indexx,k,l,ifix,nemin,
      &  jact,ixfree,ikfree,node,nelshell,irefnode,idof,id,mpcfreeold,
-     &  irotnode,imax,iamplitude,nmethod,ithermal(2),iexpnode
+     &  irotnode,imax,iamplitude,nmethod,ithermal(2),iexpnode,idim
 !
       real*8 co(3,*),thicke(mi(3),*),offset(2,*),xnor(*),tinc,tper,tmin,
      &  tmax,ctrl(*),coefmpc(*),xboun(*),trab(7,*),vdummy(0:4), 
      &  xno(3,100),xta(3,100),xn1(3,100),thl1(100),thl2(100),
      &  off1(100),off2(100),xi,et,coloc6(2,6),coloc8(2,8),xl(3,8),
-     &  dd,xnoref(3),dot,coloc3(3),dot1,dot2,dmax,val,coloc2(2)
+     &  dd,xnoref(3),dot,coloc3(3),dot1,dot2,dmax,val,coloc2(2),
+     &  e1(3),e2(3),t1(3)
 !
       data coloc2 /-1.d0,1.d0/
       data coloc3 /-1.d0,0.d0,1.d0/
@@ -64,6 +65,7 @@
 !
       do i=1,nkold
          ndepnodes=0
+         idim=0
          index=iponoel(i)
          if(index.eq.0) cycle
 !
@@ -381,9 +383,11 @@ c
      &                 (lakon(iel(jact))(2:2).ne.'A')) then
                      idepnodes(ndepnodes+1)=nk
                      ndepnodes=ndepnodes+1
+                     idim=max(idim,1)
                   elseif(k.eq.2) then
                      idepnodes(ndepnodes+1)=nk
                      ndepnodes=ndepnodes+1
+                     idim=max(idim,1)
                   endif
                enddo
                ikfree=ikfree+3
@@ -713,6 +717,7 @@ c
                enddo
                ikfree=ikfree+8
                ndepnodes=ndepnodes+8
+               idim=max(idim,3)
             enddo
          endif
 !
@@ -826,7 +831,8 @@ c     write(*,*) 'dependent node: ',node
      &                    irotnode,iexpnode,
      &                    labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,nk,nk_,
      &                    nodeboun,ndirboun,ikboun,ilboun,nboun,nboun_,
-     &                    idepnodes(k),typeboun,co,xboun,istep)
+     &                    idepnodes,typeboun,co,xboun,istep,k,
+     &                    ndepnodes,idim,e1,e2,t1)
                   enddo
                endif
             endif

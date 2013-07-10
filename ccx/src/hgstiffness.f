@@ -26,7 +26,7 @@
 !
       implicit none
       integer ii1,jj1,ii,jj,m1
-      real*8 s(60,60),gs(8,4),a,elas(1),hgls,ahr
+      real*8 s(78,78),gs(8,4),a,elas(1),hgls,ahr
 !
       ahr=elas(1)*a
 c     write(6,*) "stiffness:", ahr

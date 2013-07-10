@@ -18,20 +18,18 @@
 !
       subroutine complexfrequencies(inpc,textpart,nmethod,
      &  mei,iperturb,istep,istat,n,iline,ipol,inl,
-     &  ipoinp,inp,ithermal,xboun,nboun,ipoinpc,mcs,cs)
+     &  ipoinp,inp,ithermal,xboun,nboun,ipoinpc,mcs,cs,cyclicsymmetry)
 !
 !     reading the input deck: *COMPLEX FREQUENCY
 !
       implicit none
-!
-      logical cyclicsymmetry
 !
       character*1 inpc(*)
       character*132 textpart(16)
 !
       integer nmethod,mei(4),istep,istat,iperturb(2),i,nboun,
      &  n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),nev,ithermal,
-     &  ipoinpc(0:*),mcs
+     &  ipoinpc(0:*),mcs,cyclicsymmetry
 !
       real*8 xboun(*),cs(17,*)
 !
@@ -53,25 +51,36 @@
 !     check for cyclic symmetry
 !
       if((mcs.ne.0).and.(cs(2,1).ge.0.d0)) then
-         cyclicsymmetry=.true.
-      else
-         cyclicsymmetry=.false.
+         cyclicsymmetry=1
       endif
 !
+      nmethod=0
       do i=2,n
-         if(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
-            cyclicsymmetry=.true.
+         if(textpart(i)(1:8).eq.'CORIOLIS') then
+            nmethod=6
+         elseif(textpart(i)(1:7).eq.'FLUTTER') then
+            nmethod=7
+         elseif(textpart(i)(1:11).eq.'STORAGE=YES') then
+            mei(4)=1
          else
             write(*,*) 
-     &                 '*WARNING reading *COMPLEX FREQUENCY:'
+     &           '*WARNING reading *COMPLEX FREQUENCY:'
             write(*,*) '         parameter not recognized:'
             write(*,*) '         ',
-     &                 textpart(i)(1:index(textpart(i),' ')-1)
+     &           textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline)
          endif
       enddo
+      if(nmethod.eq.0) then
+         write(*,*) 
+     &        '*ERROR reading *COMPLEX FREQUENCY:'
+         write(*,*) '       either parameter CORIOLIS'
+         write(*,*) '       or parameter FLUTTER is required'
+         call inputerror(inpc,ipoinpc,iline)
+         stop
+      endif
 !
-      nmethod=6
+c      nmethod=6
       if(iperturb(1).gt.1) iperturb(1)=0
       iperturb(2)=0
 !
@@ -106,7 +115,7 @@
 !     mastructcs is called instead of mastruct a fictitious
 !     minimum nodal diameter is stored
 !
-      if((cyclicsymmetry).and.(mcs.ne.0).and.(cs(2,1)<0.d0)) 
+      if((cyclicsymmetry.eq.1).and.(mcs.ne.0).and.(cs(2,1)<0.d0)) 
      &       cs(2,1)=0.d0
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

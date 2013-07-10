@@ -20,6 +20,8 @@
 !
 !     Sloan routine (Int.J.Num.Meth.Engng. 28,2651-2679(1989))
 !
+      implicit none
+!
       integer nl,nk,i,j,t,value,list(nl),key(nk)
       do 20 i=2,nl
          t=list(i)

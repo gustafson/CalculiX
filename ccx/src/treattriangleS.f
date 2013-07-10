@@ -62,6 +62,8 @@ c> @param [in]       ssurf
 !     
       implicit none
 !
+      logical debug
+!
       integer nvertex,
      &  nnodesout,nopes,ipe(*),ime(4,*),iactiveline(3,*),nactiveline,
      &  ifreeintersec,itriacornerl(4),
@@ -79,8 +81,6 @@ c> @param [in]       ssurf
      &  shp2m(7,8),ph(3),xilm2,
      &  shp2s(7,8),ps(3),xit(3),etat(3),
      &  areaslav
-!
-      logical debug
 !     
       data ijk /0/
       save ijk
@@ -99,18 +99,6 @@ c> @param [in]       ssurf
          al=-xn(1)*xl2m(1,j)-xn(2)*
      &        xl2m(2,j)-xn(3)*
      &        xl2m(3,j)-slavstraight(nopes*4+4)
-C         if(debug) write(*,*) 'mel',nelemm,'al',al
-c         if(al.lt.-2.0)then  
-c                if(nactiveline.gt.0)then              
-c                  nactiveline=nactiveline-1
-c                  do il=1,nactiveline
-c                   do k=1,3
-c                      iactiveline(k,il)=iactiveline(k,il+1)
-c                   enddo
-c                  enddo
-c                endif
-c           return
-c         endif
          do k=1,3
             xl2mp(k,j)= xl2m(k,j)+al*xn(k)    
          enddo
@@ -183,7 +171,7 @@ c         endif
 !     
 !     storing the triangulation of the slave surfaces
 !     
-         write(40,*) '# islavsurf',issurf,' melem',nelemm
+c         write(40,*) '# islavsurf',issurf,' melem',nelemm
          ijk=ijk+1
          write(40,100) ijk,(cgp(i),i=1,3)
          ijk=ijk+1
@@ -306,7 +294,7 @@ c            write(40,101) ijk-1,ijk-2,ijk
          enddo
 !     
       enddo
-      write(20,*)'********************'
+c      write(20,*)'********************'
       return
       end
 !*************************************************************************

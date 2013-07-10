@@ -28,7 +28,8 @@
       character*8 lakon(*)
       character*80 matname(*),amat
 !
-      integer kon(*),nelem,mi(*),ne,konl(20),ipkon(*),j,i1,i2,j1,ii,jj,
+      integer kon(*),nelem,mi(*),ne,konl(20),ipkon(*),j,i1,i2,j1,ii,
+     &  jj,
      &  indexe,isti,iqfx,kk,ielmat(mi(3),*),nshcon(*),ntmat_,nope,
      &  imat,ncocon(2,*),mint3d,k1,ipvar(*),index,turbulent,compressible
 !

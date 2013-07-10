@@ -27,8 +27,7 @@ c>
         character*8 lakon(*)
 !
         integer  nopes,nope,nelem,jface,mint2d
-
- 
+!
          if(lakon(nelem)(4:5).eq.'8R') then
             mint2d=1
             nopes=4

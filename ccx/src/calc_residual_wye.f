@@ -69,7 +69,10 @@
      &z90,
      &hq,
      &Ts0,
-     &zeta_fac
+     &zeta_fac,
+     &M1,
+     &M2,
+     &pspt2
 !
       real*8 Table_A(2,11)
 !
@@ -162,6 +165,27 @@
       endif
 !
       calc_residual_wye=f
+
+      if(iflag.eq.4) then
+!     Calculate Mach numbers
+         call machpi(M1,pspt0,kappa,R)
+         call ts_calc(xflow2,Tt2,pt2,kappa,r,A2,Ts2,icase)
+!     Pressure ratio
+         pspt2 = (Ts2/Tt2)**(kappa/(kappa-1))
+         call machpi(M2,pspt2,kappa,R)
+         
+         write(1,80)'Inlet: Tt1= ',Tt1,
+     &        ', pt1= ',pt1,', M1= ',M1
+         
+         write(1,77)'mass flow = ',xflow2,', kappa = ',kappa,
+     &        ', zeta= ',zeta
+         
+         write(1,80)'Outlet: Tt2= ',Tt2,
+     &        ', pt2= ',pt2,', M2= ',M2
+         
+ 80      format(3x,a,f10.6,a,f10.2,a,f10.6)
+ 77      format(3x,a,f10.6,a,f10.2,a,f10.6)
+      endif
 !
       return
       end

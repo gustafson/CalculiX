@@ -22,21 +22,21 @@
 !
 !     id is such that x(id).le.px and x(id+1).gt.px
 !
-      SUBROUTINE cIDENT(X,PX,N,ID)
-      IMPLICIT none
+      subroutine cident(x,px,n,id)
+      implicit none
       character*81 x,px
       integer n,id,n2,m
-      DIMENSION X(N)
+      dimension x(n)
       id=0
       if(n.eq.0) return
-      N2=N+1
+      n2=n+1
       do
-         M=(N2+ID)/2
-         IF(PX.GE.X(M)) then
-            ID=M
+         m=(n2+id)/2
+         if(px.ge.x(m)) then
+            id=m
          else
-            N2=M
+            n2=m
          endif
-         IF((N2-ID).EQ.1) return
+         if((n2-id).eq.1) return
       enddo
-      END
+      end

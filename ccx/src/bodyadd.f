@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine bodyadd(cbody,ibody,xbody,nbody,nbody_,set,label,
-     &  iamplitude,xmagnitude,p1,p2,bodyf,xbodyold,lc)
+     &  iamplitude,xmagnitude,p1,p2,bodyf,xbodyold,lc,idefbody)
 !
 !     adds a volumetric dload condition to the data base
 !
@@ -26,7 +26,8 @@
       character*20 label
       character*81 set,cbody(*)
 !
-      integer ibody(3,*),nbody,nbody_,id,iamplitude,ilabel,i,j,id1,lc
+      integer ibody(3,*),nbody,nbody_,id,iamplitude,ilabel,i,j,id1,lc,
+     &  idefbody(*)
 !
       real*8 xbody(7,*),p1(3),p2(3),bodyf(3),xmagnitude,xbodyold(7,*),
      &  dd,p(3)
@@ -108,7 +109,12 @@
                   ibody(2,id)=iamplitude
                   ibody(3,id)=lc
                   if(ilabel.eq.1) then
-                     xbody(1,id)=xmagnitude
+                     if(idefbody(id).eq.0) then
+                        xbody(1,id)=xmagnitude
+                        idefbody(id)=1
+                     else
+                        xbody(1,id)=xbody(1,id)+xmagnitude
+                     endif
                      xbody(2,id)=p1(1)
                      xbody(3,id)=p1(2)
                      xbody(4,id)=p1(3)
@@ -116,7 +122,12 @@
                      xbody(6,id)=p2(2)
                      xbody(7,id)=p2(3)
                   elseif(ilabel.eq.2) then
-                     xbody(1,id)=xmagnitude
+                     if(idefbody(id).eq.0) then
+                        xbody(1,id)=xmagnitude
+                        idefbody(id)=1
+                     else
+                        xbody(1,id)=xbody(1,id)+xmagnitude
+                     endif
                      xbody(2,id)=bodyf(1)
                      xbody(3,id)=bodyf(2)
                      xbody(4,id)=bodyf(3)
@@ -142,6 +153,7 @@
 !
       do i=nbody,id+2,-1
          cbody(i)=cbody(i-1)
+         idefbody(i)=idefbody(i-1)
          do j=1,3
             ibody(j,i)=ibody(j,i-1)
          enddo
@@ -156,6 +168,7 @@
       id1=id+1
 !
       cbody(id1)=set
+      idefbody(id1)=1
       ibody(1,id1)=ilabel
       ibody(2,id1)=iamplitude
       ibody(3,id1)=lc

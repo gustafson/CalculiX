@@ -68,13 +68,13 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   char bmat[2]="G", which[3]="LM", howmny[2]="A",
       description[13]="            ",*tieset=NULL;
 
-  int *inum=NULL,k,ido,dz,iparam[11],ipntr[11],lworkl,im,
+  int *inum=NULL,k,ido,dz,iparam[11],ipntr[11],lworkl,im,nasym=0,
     info,rvec=1,*select=NULL,lfin,j,lint,iout,iconverged=0,ielas,icmd=0,
     iinc=1,istep=1,*ncocon=NULL,*nshcon=NULL,nev,ncv,mxiter,jrow,
     *ipobody=NULL,inewton=0,coriolis=0,ifreebody,symmetryflag=0,
     inputformat=0,ngraph=1,mt=mi[1]+1,mass[2]={0,0}, stiffness=1, buckling=0, 
     rhsi=1, intscheme=0, noddiam=-1,*ipneigh=NULL,*neigh=NULL,ne0,
-    *integerglob=NULL,ntie;
+    *integerglob=NULL,ntie,icfd=0,*inomat=NULL;
 
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,
     *workl=NULL,*aux=NULL,*d=NULL,sigma,*temp_array=NULL,
@@ -151,7 +151,8 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                emeini,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
 	       fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
-	       &reltime,&ne0,xforc,nforc,thicke,xnormastface);
+	       &reltime,&ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
+	       sideload,xload,xloadold,&icfd,inomat);
   }else{
      results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	       elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -166,7 +167,8 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                emeini,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
 	       fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
-	       &reltime,&ne0,xforc,nforc,thicke,xnormastface);
+	       &reltime,&ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
+               sideload,xload,xloadold,&icfd,inomat);
   }
 
   free(v);free(fn);free(stx);free(inum);
@@ -193,7 +195,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
 	      xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
-              tieset,istartset,iendset,ialset,&ntie));
+	      tieset,istartset,iendset,ialset,&ntie,&nasym));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -210,7 +212,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
               xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
-              tieset,istartset,iendset,ialset,&ntie));
+	      tieset,istartset,iendset,ialset,&ntie,&nasym));
   }
 
   /* determining the right hand side */
@@ -237,7 +239,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-	    thicke,jobnamec,output);
+            thicke,jobnamec,output,qfx);
     
     if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
     free(inum);FORTRAN(stop,());
@@ -251,7 +253,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   if(*isolver==0){
 #ifdef SPOOLES
     spooles(ad,au,adb,aub,&sigma,b,icol,irow,&neq[0],&nzs[0],&symmetryflag,
-            &inputformat);
+            &inputformat,&nzs[2]);
 #else
     printf("*ERROR in arpackbu: the SPOOLES library is not linked\n\n");
     FORTRAN(stop,());
@@ -276,7 +278,8 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   }
   else if(*isolver==7){
 #ifdef PARDISO
-    pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[0],&nzs[0]);
+    pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[0],&nzs[0],
+		 &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
     printf("*ERROR in arpackbu: the PARDISO library is not linked\n\n");
     FORTRAN(stop,());
@@ -316,7 +319,8 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
           xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
           ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	  nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
-          &ne0,xforc,nforc,thicke,xnormastface);}
+          &ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
+          sideload,xload,xloadold,&icfd,inomat);}
   else{
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	  stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -331,7 +335,8 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
           xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
           ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	  nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
-          &ne0,xforc,nforc,thicke,xnormastface);
+          &ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
+          sideload,xload,xloadold,&icfd,inomat);
   }
 
   for(k=0;k<mt**nk;++k){
@@ -349,7 +354,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-	    thicke,jobnamec,output);
+            thicke,jobnamec,output,qfx);
 
   if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
   free(v);free(fn);free(stn);free(inum);
@@ -385,7 +390,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
               xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
-              tieset,istartset,iendset,ialset,&ntie));
+	      tieset,istartset,iendset,ialset,&ntie,&nasym));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -402,7 +407,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
               xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
-              tieset,istartset,iendset,ialset,&ntie));
+	      tieset,istartset,iendset,ialset,&ntie,&nasym));
   }
 
   free(stx);free(fext);if(*nbody>0) free(ipobody);
@@ -425,7 +430,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   if(*isolver==0){
 #ifdef SPOOLES
     spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[0],&nzs[0],
-                   &symmetryflag,&inputformat);
+                   &symmetryflag,&inputformat,&nzs[2]);
 #endif
   }
   else if(*isolver==4){
@@ -441,7 +446,8 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   }
   else if(*isolver==7){
 #ifdef PARDISO
-    pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[0],&nzs[0]);
+    pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[0],&nzs[0],
+		   &symmetryflag,&inputformat,jq,&nzs[2]);
 #endif
   }
 
@@ -496,7 +502,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
         }
         else if(*isolver==7){
 #ifdef PARDISO
-          pardiso_solve(temp_array,&neq[0]);
+          pardiso_solve(temp_array,&neq[0],&symmetryflag);
 #endif
         }
         for(jrow=0;jrow<neq[0];jrow++){
@@ -522,7 +528,8 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
         }
         else if(*isolver==7){
 #ifdef PARDISO
-          pardiso_solve(&workd[ipntr[2]-1],&neq[0]);
+          pardiso_solve(&workd[ipntr[2]-1],&neq[0],
+               &symmetryflag);
 #endif
         }
         for(jrow=0;jrow<neq[0];jrow++){
@@ -564,7 +571,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   }
   else if(*isolver==7){
 #ifdef PARDISO
-    pardiso_cleanup(&neq[0]);
+    pardiso_cleanup(&neq[0],&symmetryflag);
 #endif
   }
 
@@ -640,7 +647,8 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
-            &ne0,xforc,nforc,thicke,xnormastface);}
+            &ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
+            sideload,xload,xloadold,&icfd,inomat);}
     else{
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	    stx,elcon,
@@ -656,7 +664,8 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
-            &ne0,xforc,nforc,thicke,xnormastface);
+            &ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
+            sideload,xload,xloadold,&icfd,inomat);
     }
 
     ++*kode;
@@ -670,7 +679,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-	    thicke,jobnamec,output);
+   	    thicke,jobnamec,output,qfx);
 
     if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
   }

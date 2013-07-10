@@ -29,7 +29,6 @@
 !     
       implicit none
 !     
-c      logical covered(160,160)
       character*1 covered(160,160)
 !
       character*20 sideload(*)
@@ -49,8 +48,6 @@ c      logical covered(160,160)
      &     dirloc(3),dist(*),area(*),dd,p21(3),sidemean,p(3,3),
      &     fform,ver(2,3),epsabs,epsrel,abserr,vj(3,3),unitvec(3,3),
      &     rdata(21),vertex(3,3),vertexl(2,3),factor,argument
-!     
-c      common /formfactor/ vj,unitvec,porigin
 !
       external fform
 !     
@@ -70,9 +67,7 @@ c      common /formfactor/ vj,unitvec,porigin
 !
       factor=0.d0
 !     
-c      do i=1,ntri
       do i=ntria,ntrib
-c         write(*,*) 'calcview ',i,auview(53)
          if(area(i).lt.1.d-20) cycle
 !     
 !     vertices of triangle i in local coordinates
@@ -104,7 +99,6 @@ c         write(*,*) 'calcview ',i,auview(53)
 !     checking which triangles face triangle i
 !     
          ndist=0
-c         call nident(iptri,i,ntr,idi)
          idi=kontri(4,i)
          do j=1,ntrit
             if((kontri(1,j).eq.0).or.(area(j).lt.1.d-20)) cycle
@@ -113,14 +107,6 @@ c         call nident(iptri,i,ntr,idi)
             if(pmid(1,i)*e3(1,j)+pmid(2,i)*e3(2,j)+
      &           pmid(3,i)*e3(3,j)+e3(4,j).le.sidemean/800.d0) cycle
 !     
-c            if(j.gt.ntri) then
-c               jmod=mod(j,ntri)
-c               if(jmod.eq.0) jmod=ntri
-c            else
-c               jmod=j
-c            endif
-!     
-c            call nident(iptri,jmod,ntr,idj)
             idj=kontri(4,j)
             if(sideload(nloadtr(idi))(18:20).ne.
      &           sideload(nloadtr(idj))(18:20)) cycle
@@ -140,18 +126,15 @@ c            call nident(iptri,jmod,ntr,idj)
 !     
 !     initializing the coverage matrix
 !     
-c         if(i.eq.213) write(*,*) i,(idist(i1),i1=1,5)
          ncovered=0
          do i1=1,ng
             x=((i1-0.5d0)*dint-1.d0)**2
             do j1=1,ng
                y=((j1-0.5d0)*dint-1.d0)**2
                if(x+y.gt.1.d0) then
-c                  covered(i1,j1)=.true.
                   covered(i1,j1)='T'
                   ncovered=ncovered+1
                else
-c                  covered(i1,j1)=.false.
                   covered(i1,j1)='F'
                endif
             enddo
@@ -159,7 +142,6 @@ c                  covered(i1,j1)=.false.
 !     
          do k1=1,ndist
             j=idist(k1)
-c            if(i.eq.213) write(*,*) 'k1',k1,j,dist(k1)
 !     
 !     determining the 2-D projection of the vertices
 !     of triangle j
@@ -203,18 +185,14 @@ c            if(i.eq.213) write(*,*) 'k1',k1,j,dist(k1)
 !     
             ix=int((dirloc(1)+1.d0)/dint)+1
             iy=int((dirloc(2)+1.d0)/dint)+1
-c            if(covered(ix,iy)) then
             if(covered(ix,iy).eq.'T') then
-c            if(i.eq.213) write(*,*) 'triangle ',j,' was already covered'
                cycle
             endif
-c            if((i.eq.213).and.(j.eq.1157)) write (*,*) 'check',ix,iy
 !     
 !     if surfaces are close, numerical integration with
 !     cubtri is performed
 !     
             if(dist(k1).le.factor*dsqrt(area(i))*dirloc(3)) then
-c               write(*,*) 'cubtri'
 !     
 !     vertices of triangle j
 !     
@@ -261,9 +239,6 @@ c               write(*,*) 'cubtri'
                call cubtri(fform,ver,epsrel,limev,ftij,abserr,ncalls,
      &              w,nw,idata,rdata,ier)
                ftij=ftij/2.d0
-c     write(*,*) 'cubtri'
-c     write(*,*) 'formfactor contri ',i,j,ftij/area(i),ier,
-c     &              abserr,ncalls
             endif
 !     
 !     updating the coverage matrix
@@ -304,8 +279,6 @@ c     &              abserr,ncalls
 !     if the surfaces are far enough away, one-point
 !     integration is used
 !     
-c            if(i.eq.213) write(*,*) 'if ',dist(k1),
-c     &            factor*dsqrt(area(i))*dirloc(3)
             if(dist(k1).gt.factor*dsqrt(area(i))*dirloc(3)) then
                ftij=0.d0
                do k=1,3
@@ -336,26 +309,10 @@ c     &            factor*dsqrt(area(i))*dirloc(3)
      &                 +e3(2,i)*xn(2)
      &                 +e3(3,i)*xn(3))/xxn
      &                 *dacos(argument)
-c     &                    (p(1,k)*p(1,l)+p(2,k)*p(2,l)+p(3,k)*p(3,l))/
-c     &                    (ddd(k)*ddd(l)))
                enddo
                ftij=ftij*area(i)/2.d0
-c               if(i.eq.213) write(*,*) 'formfactor contri: one-point ',
-c     &                  i,j,ftij/area(i)
             endif
 !     
-!     localizing which surface interaction the
-!     triangle interaction is part of (the modulus is
-!     necessary for cyclic structures)
-!     
-c            if(j.gt.ntri) then
-c               jmod=mod(j,ntri)
-c               if(jmod.eq.0) jmod=ntri
-c            else
-c               jmod=j
-c            endif
-!     
-c            call nident(iptri,jmod,ntr,idj)
             idj=kontri(4,j)
             i0=0
             call add_sm_st_as(auview,adview,jqrad,irowrad,
@@ -439,7 +396,6 @@ c            call nident(iptri,jmod,ntr,idj)
                jstart=int((yymin+1.d0+dint/2.d0)/dint)+1
                jend=int((yymax+1.d0+dint/2.d0)/dint)
                do j1=jstart,jend
-c                  covered(i1,j1)=.true.
                   covered(i1,j1)='T'
                enddo
                ncovered=ncovered+jend-jstart+1
@@ -459,7 +415,6 @@ c                  covered(i1,j1)=.true.
                jstart=int((yymin+1.d0+dint/2.d0)/dint)+1
                jend=int((yymax+1.d0+dint/2.d0)/dint)
                do j1=jstart,jend
-c                  covered(i1,j1)=.true.
                   covered(i1,j1)='T'
                enddo
                ncovered=ncovered+jend-jstart+1
@@ -479,15 +434,9 @@ c                  covered(i1,j1)=.true.
       implicit none
 !     
       integer k,l,idata(1)
-c      integer number
 !     
       real*8 pint(3),ddd(3),xn(3),vj(3,3),
      &   unitvec(3,3),p(3,3),xxn,x,y,porigin(3),rdata(21)
-!     
-c      common /formfactor/ vj,unitvec,porigin
-!
-c      data number /0/
-c      save number
 !
 !     retrieving common data from field rdata
 !
@@ -513,7 +462,6 @@ c      save number
       porigin(2)=rdata(20)
       porigin(3)=rdata(21)
 !
-c      number=number+1
       do k=1,3
          pint(k)=porigin(k)+x*unitvec(k,1)+y*unitvec(k,2)
       enddo

@@ -23,7 +23,7 @@
      &  ttime,time,istep,iinc,xloadold,reltimef,shcon,nshcon,cocon,
      &  ncocon,physcon,nelemface,sideface,nface,
      &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,compressible,
-     &  vcontu,yy,turbulent,ipvar,var,ipvarf,varf,dtc)
+     &  vcontu,yy,turbulent,ipvar,var,ipvarf,varf,dt)
 !
 !     computation of the energy element matrix and rhs for the element with
 !     element with the topology in konl: step 4
@@ -31,8 +31,6 @@
 !     ff: rhs 
 !
       implicit none
-!
-      integer flux,compressible
 !
       character*1 sideface(*)
       character*8 lakonl
@@ -42,14 +40,14 @@
       integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nbody,nelem,
      &  nload,idist,i,j,k,i1,i2,j1,ncocon(2,*),k1,node,nfield,mi(*),
      &  nmethod,ii,jj,id,ipointer,ig,kk,nrhcon(*),ielmat(mi(3),*),
-     &  nshcon(*),
+     &  nshcon(*),flux,compressible,
      &  ntmat_,nope,nopes,imat,mint2d,mint3d,ifacet(6,4),nopev,
      &  ifacew(8,5),istep,iinc,layer,kspt,jltyp,iflag,nelemface(*),
      &  nface,igl,idf,ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),
      &  iscale,turbulent,ipvar(*),index,ipvarf(*),iemchange
 !
-      real*8 co(3,*),shp(4,20),xs2(3,7),dvi,dtc(*),
-     &  p1(3),p2(3),bodyf(3),bodyfx(3),ff(60),cond,enthalpy,
+      real*8 co(3,*),shp(4,20),xs2(3,7),dvi,dt(*),
+     &  p1(3),p2(3),bodyf(3),bodyfx(3),ff(78),cond,enthalpy,
      &  bf(3),q(3),xsjmod,dtem(3),vkl(3,3),corio(3),sinktemp,
      &  rhcon(0:1,ntmat_,*),reltimef,t(3,3),tv(3),bfv,press,
      &  vel(3),div,shcon(0:3,ntmat_,*),pgauss(3),dxsj2,areaj,
@@ -223,7 +221,7 @@
 !     
          do jj=1,nope
             ff(jj)=ff(jj)-xsjmod*(
-     &           (shp(4,jj)+dtc(konl(jj))*shpv(jj)/2.d0)*enthalpy+
+     &           (shp(4,jj)+dt(konl(jj))*shpv(jj)/2.d0)*enthalpy+
      &           shp(1,jj)*tv(1)+shp(2,jj)*tv(2)+shp(3,jj)*tv(3))
          enddo
 !     
@@ -240,7 +238,7 @@
 !
             do jj=1,nope
                ff(jj)=ff(jj)+xsjmod*(shp(4,jj)+
-     &              dtc(konl(jj))*shpv(jj)/2.d0)*bfv
+     &              dt(konl(jj))*shpv(jj)/2.d0)*bfv
             enddo
          else
             index=index+10
@@ -277,7 +275,7 @@
                endif
                do jj=1,nope
                   ff(jj)=ff(jj)+xsjmod*(shp(4,jj)+
-     &              dtc(konl(jj))*shpv(jj)/2.d0)*xload(1,id)
+     &              dt(konl(jj))*shpv(jj)/2.d0)*xload(1,id)
                enddo
                exit
             enddo

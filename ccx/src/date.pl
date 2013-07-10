@@ -2,9 +2,9 @@
 
 chomp($date=`date`);
 
-# inserting the date into ccx_2.5.c
+# inserting the date into ccx_2.6.c
 
-@ARGV="ccx_2.5.c";
+@ARGV="ccx_2.6.c";
 $^I="";
 while(<>){
     s/You are using an executable made on.*/You are using an executable made on $date\\n");/g;

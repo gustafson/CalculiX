@@ -20,7 +20,7 @@
      &  ialset,nset,nelemload,sideload,xload,nload,nload_,
      &  ielmat,ntmat_,iamload,
      &  amname,nam,lakon,ne,dflux_flag,istep,istat,n,iline,ipol,inl,
-     &  ipoinp,inp,nam_,namtot_,namta,amta,ipoinpc,mi)
+     &  ipoinp,inp,nam_,namtot_,namta,amta,ipoinpc,mi,idefload)
 !
 !     reading the input deck: *DFLUX
 !
@@ -37,7 +37,7 @@
 !
       integer istartset(*),iendset(*),ialset(*),nelemload(2,*),mi(*),
      &  ielmat(mi(3),*),nset,nload,nload_,ntmat_,istep,istat,n,i,j,l,
-     &  key,
+     &  key,idefload(*),
      &  iamload(2,*),nam,iamplitude,ipos,ne,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),nam_,namtot,namtot_,namta(3,*),idelay,isector,
      &  ipoinpc(0:*)
@@ -99,7 +99,7 @@
                write(*,*) '       preceded by the amplitude parameter'
                stop
             endif
-            namta(3,nam)=isign(iamplitude,namta(3,iamplitude))
+            namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
             if(nam.eq.1) then
                namtot=0
@@ -183,7 +183,7 @@
             endif
             call loadadd(l,label,xmagnitude,nelemload,sideload,
      &           xload,nload,nload_,iamload,iamplitude,
-     &           nam,isector)
+     &           nam,isector,idefload)
          else
             read(textpart(1)(1:80),'(a80)',iostat=istat) elset
             elset(81:81)=' '
@@ -228,7 +228,7 @@
                   l=ialset(j)
                   call loadadd(l,label,xmagnitude,nelemload,sideload,
      &                 xload,nload,nload_,iamload,iamplitude,
-     &                 nam,isector)
+     &                 nam,isector,idefload)
                else
                   l=ialset(j-2)
                   do
@@ -236,7 +236,7 @@
                      if(l.ge.ialset(j-1)) exit
                      call loadadd(l,label,xmagnitude,nelemload,
      &                    sideload,xload,nload,nload_,
-     &                    iamload,iamplitude,nam,isector)
+     &                    iamload,iamplitude,nam,isector,idefload)
                   enddo
                endif
             enddo

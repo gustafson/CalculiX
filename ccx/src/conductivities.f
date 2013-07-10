@@ -27,7 +27,8 @@
       character*1 inpc(*)
       character*132 textpart(16)
 !
-      integer ncocon(2,*),nmat,ntmat,ntmat_,istep,istat,n,ipoinpc(0:*),
+      integer ncocon(2,*),nmat,ntmat,ntmat_,istep,istat,n,
+     &  ipoinpc(0:*),
      &  i,ityp,key,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*)
 !
       real*8 cocon(0:6,ntmat_,*)

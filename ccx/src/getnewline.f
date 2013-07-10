@@ -21,23 +21,21 @@
 !
       implicit none
 !
-      integer nentries
-      parameter(nentries=14)
-!
 !     parser for the input file (original order)
-!
-      integer istat,n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  ipoinpc(0:*),i,j
 !
       character*1 inpc(*)
       character*132 textpart(16)
       character*1320 text
 !
+      integer istat,n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),
+     &  ipoinpc(0:*),i,j,nentries
+!
+      parameter(nentries=14)
+!
 !     reading a new line
 !
       if(iline.eq.inp(2,inl)) then
          if(inp(3,inl).eq.0) then
-c            ipoinp(1,ipol)=0
             do
                ipol=ipol+1
                if(ipol.gt.nentries) then
@@ -56,7 +54,6 @@ c            ipoinp(1,ipol)=0
       else
          iline=iline+1
       endif
-c      text=inpc(iline)
       j=0
       do i=ipoinpc(iline-1)+1,ipoinpc(iline)
          j=j+1
@@ -73,12 +70,7 @@ c      text=inpc(iline)
          key=1
       endif
 !
-c      write(*,*) text
       call splitline(text,textpart,n)
-c      write(*,*) text
-c      write(*,*) textpart(1)
-c      write(*,*) textpart(2)
-c      write(*,*) textpart(3)
 !
       return
       end

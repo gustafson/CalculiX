@@ -39,7 +39,8 @@
      &  ipoinpc(0:*),cfd
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in nodeprints: *NODE PRINT should only be'
+         write(*,*) 
+     &        '*ERROR reading *NODE PRINT: *NODE PRINT should only be'
          write(*,*) '  used within a *STEP definition'
          stop
       endif
@@ -54,11 +55,20 @@
          do i=1,nprint
             if((prlab(i)(1:4).eq.'U   ').or.
      &         (prlab(i)(1:4).eq.'NT  ').or.
+     &         (prlab(i)(1:4).eq.'TS  ').or.
      &         (prlab(i)(1:4).eq.'RF  ').or.
      &         (prlab(i)(1:4).eq.'RFL ').or.
      &         (prlab(i)(1:4).eq.'PS  ').or.
      &         (prlab(i)(1:4).eq.'PN  ').or.
      &         (prlab(i)(1:4).eq.'MF  ').or.
+     &         (prlab(i)(1:4).eq.'VF  ').or.
+     &         (prlab(i)(1:4).eq.'PSF ').or.
+     &         (prlab(i)(1:4).eq.'TSF ').or.
+     &         (prlab(i)(1:4).eq.'MACH').or.
+     &         (prlab(i)(1:4).eq.'TTF ').or.
+     &         (prlab(i)(1:4).eq.'PTF ').or.
+     &         (prlab(i)(1:4).eq.'CP  ').or.
+     &         (prlab(i)(1:4).eq.'TURB').or.
      &         (prlab(i)(1:4).eq.'V   ')) cycle
             ii=ii+1
             prlab(ii)=prlab(i)
@@ -82,7 +92,7 @@ c      jout=max(jout,1)
             if(set(i).eq.noset) exit
           enddo
           if(i.gt.nset) then
-             write(*,*) '*WARNING in nodeprints: node set ',
+             write(*,*) '*WARNING reading *NODE PRINT: node set ',
      &            noset(1:ipos-1),' does not exist'
              call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &            ipoinp,inp,ipoinpc)
@@ -134,12 +144,13 @@ c      jout=max(jout,1)
            enddo
            if(i.gt.nam) then
               ipos=index(timepointsname,' ')
-              write(*,*) '*ERROR in nodeprints: time points definition '
+              write(*,*) 
+     &          '*ERROR reading *NODE PRINT: time points definition '
      &               ,timepointsname(1:ipos-1),' is unknown or empty'
               stop
            endif
            if(idrct.eq.1) then
-              write(*,*) '*ERROR in nodeprints: the DIRECT option'
+              write(*,*) '*ERROR reading *NODE PRINT: the DIRECT option'
               write(*,*) '       collides with a TIME POINTS '
               write(*,*) '       specification'
               stop
@@ -158,7 +169,7 @@ c      jout=max(jout,1)
 !     check whether a set was defined
 !
       if(noset(1:1).eq.' ') then
-         write(*,*) '*WARNING in nodeprints: no set was defined'
+         write(*,*) '*WARNING reading *NODE PRINT: no set was defined'
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
          return
@@ -171,35 +182,55 @@ c      jout=max(jout,1)
          do ii=1,n
             if((textpart(ii)(1:4).ne.'U   ').and.
      &         (textpart(ii)(1:4).ne.'NT  ').and.
+     &         (textpart(ii)(1:4).ne.'TS  ').and.
      &         (textpart(ii)(1:4).ne.'RF  ').and.
      &         (textpart(ii)(1:4).ne.'RFL ').and.
      &         (textpart(ii)(1:4).ne.'PS  ').and.
      &         (textpart(ii)(1:4).ne.'PN  ').and.
      &         (textpart(ii)(1:4).ne.'MF  ').and.
-     &         (textpart(ii)(1:4).ne.'V   ')) then
-               write(*,*) '*WARNING in nodeprints: label not applicable'
+     &         (textpart(ii)(1:4).ne.'V   ').and.
+     &         (textpart(ii)(1:4).ne.'VF  ').and.
+     &         (textpart(ii)(1:4).ne.'PSF ').and.
+     &         (textpart(ii)(1:4).ne.'TSF ').and.
+     &         (textpart(ii)(1:4).ne.'MACH').and.
+     &         (textpart(ii)(1:4).ne.'TTF ').and.
+     &         (textpart(ii)(1:4).ne.'PTF ').and.
+     &         (textpart(ii)(1:4).ne.'CP  ').and.
+     &         (textpart(ii)(1:4).ne.'TURB')) then
+               write(*,*) 
+     &            '*WARNING reading *NODE PRINT: label not applicable'
                write(*,*) '         or unknown; '
                call inputwarning(inpc,ipoinpc,iline)
                cycle
             endif
             if(textpart(ii)(1:4).eq.'RFL ') then
                if(ithermal.lt.2) then
-                  write(*,*) '*WARNING in nodeprints: RFL only makes '
+                  write(*,*) 
+     &              '*WARNING reading *NODE PRINT: RFL only makes '
                   write(*,*) '         sense for heat transfer '
                   write(*,*) '          calculations'
                   cycle
                endif
-            endif
-            if(textpart(ii)(1:4).eq.'PS  ') then
+            elseif((textpart(ii)(1:4).eq.'VF  ').or.
+     &         (textpart(ii)(1:4).eq.'PSF ').or.
+     &         (textpart(ii)(1:4).eq.'TSF ').or.
+     &         (textpart(ii)(1:4).eq.'MACH').or.
+     &         (textpart(ii)(1:4).eq.'TTF ').or.
+     &         (textpart(ii)(1:4).eq.'PTF ').or.
+     &         (textpart(ii)(1:4).eq.'CP  ').or.
+     &         (textpart(ii)(1:4).eq.'TURB')) then
                if(cfd.eq.0) then
-                  write(*,*) '*WARNING in nodeprints: PS only makes '
-                  write(*,*) '         sense for 3D fluid calculations'
+                  write(*,*) 
+     &               '*WARNING reading *NODE PRINT: VF, PSF, TSF,'
+                  write(*,*) '         MACH, TTF, PTF, CP or TURB '
+                  write(*,*) '         only make sense for 3D-fluid'
+                  write(*,*) '         calculations'
                   cycle
                endif
             endif
             nprint=nprint+1
             if(nprint.gt.nprint_) then
-               write(*,*) '*ERROR in nodeprints: increase nprint_'
+               write(*,*) '*ERROR reading *NODE PRINT: increase nprint_'
                stop
             endif
             prset(nprint)=noset

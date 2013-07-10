@@ -16,14 +16,14 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine writeevcomplex(x,nx)
+      subroutine writeevcomplex(x,nx,fmin,fmax)
 !
 !     writes the eigenvalues in the .dat file
 !
       implicit none
 !
       integer j,nx
-      real*8 pi
+      real*8 pi,fmin,fmax
       complex*16 x(nx)
 !     
       pi=4.d0*datan(1.d0)
@@ -33,10 +33,8 @@
       write(5,*)
       write(5,*) 'MODE NO                     FREQUENCY          
      &  '
-      write(5,*) '                     REAL PART          
-     &IMAGINARY PART'
-      write(5,*) '            (RAD/TIME)   (CYCLES/TIME)
-     &  (RAD/TIME)'
+      write(5,*) '                     REAL PART         IMAGINARY PART'
+      write(5,*) '            (RAD/TIME)   (CYCLES/TIME)   (RAD/TIME)'
       write(5,*)
       do j=1,nx
          write(5,'(i7,4(2x,e14.7))') j,dreal(x(j)),

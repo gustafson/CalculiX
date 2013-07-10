@@ -29,7 +29,7 @@
      &  matname,mi,ics,cs,nm,ncmat_,labmpc,mass,stiffness,buckling,
      &  rhsi,intscheme,mcs,coriolis,ibody,xloadold,reltime,ielcs,
      &  veold,springarea,thicke,xnormastface,integerglob,doubleglob,
-     &  tieset,istartset,iendset,ialset,ntie)
+     &  tieset,istartset,iendset,ialset,ntie,nasym)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !     for cyclic symmetry calculations
@@ -46,28 +46,28 @@
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
      &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,
-     &  nactdof(0:mi(2),*),konl(20),irow(*),istartset(*),iendset(*),
+     &  nactdof(0:mi(2),*),konl(26),irow(*),istartset(*),iendset(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),integerglob(*),ialset(*),ntie,
      &  ipkon(*),ics(*),ij,ilength,lprev,ipobody(2,*),nbody,
      &  ibody(3,*),nk,ne,nboun,nmpc,nforc,nload,neq,nzl,nmethod,
      &  ithermal,iprestr,iperturb(*),nzs,i,j,k,l,m,idist,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
-     &  mpc1,mpc2,index1,index2,node1,node2,kflag,
+     &  mpc1,mpc2,index1,index2,node1,node2,kflag,nasym,
      &  ntmat_,indexe,nope,norien,iexpl,i0,nm,inode,icomplex,
      &  inode1,icomplex1,inode2,icomplex2,ner,ncmat_,intscheme,istep,
      &  iinc,mcs,ielcs(*),nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),bb(*),xbody(7,*),cgr(4,*),
-     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(60,60),ff(60),
-     &  sti(6,mi(1),*),sm(60,60),stx(6,mi(1),*),adb(*),aub(*),
+     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(78,78),ff(78),
+     &  sti(6,mi(1),*),sm(78,78),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),xloadold(2,*),
      &  alcon(0:6,ntmat_,*),cs(17,*),alzero(*),orab(7,*),reltime,
      &  springarea(2,*),plicon(0:2*npmat_,ntmat_,*),xstate,xstateini,
      &  plkcon(0:2*npmat_,ntmat_,*),thicke(mi(3),*),doubleglob(*),
      &  xstiff(27,mi(1),*),pi,theta,ti,tr,veold(0:mi(2),*),om,valu2,
-     &  value,dtime,walue,walu2,time,ttime,xnormastface(3,8,*)
+     &  value,dtime,walue,walu2,time,ttime,xnormastface(3,9,*)
 !
 !
 !     calculating the scaling factors for the cyclic symmetry calculation
@@ -136,9 +136,11 @@ c      enddo
 c    Bernhardi start
         if(lakon(i)(4:5).eq.'8I') then
            nope=11
-        elseif(lakon(i)(4:4).eq.'2') then
 c    Bernhardi end
+        elseif(lakon(i)(4:5).eq.'20') then
            nope=20
+        elseif(lakon(i)(4:4).eq.'2') then
+           nope=26
         elseif(lakon(i)(4:4).eq.'8') then
            nope=8
         elseif(lakon(i)(4:5).eq.'10') then
@@ -151,10 +153,14 @@ c    Bernhardi end
            nope=6
         elseif(lakon(i)(1:2).eq.'ES') then
            read(lakon(i)(8:8),'(i1)') nope
+           nope=nope+1
 !     
 !          local contact spring number
 !     
-           if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
+           if(lakon(i)(7:7).eq.'C') then
+              if(nasym.eq.1) cycle
+              konl(nope+1)=kon(indexe+nope+1)
+           endif
         else
            cycle
         endif
@@ -213,7 +219,7 @@ c        endif
      &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
      &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
      &          xnormastface,integerglob,doubleglob,tieset,istartset,
-     &          iendset,ialset,ntie)
+     &          iendset,ialset,ntie,nasym)
 !
         do jj=1,3*nope
 !
@@ -224,12 +230,12 @@ c        endif
           jdof1=nactdof(k,node1)
 !
           do ll=jj,3*nope
-    	    if (mcs.gt.1)then
+             if (mcs.gt.1)then
                if(ielcs(i).gt.0) then
                   s(jj,ll)=(cs(1,(ielcs(i)+1))/cs(1,1))*s(jj,ll)
                   sm(jj,ll)=(cs(1,(ielcs(i)+1))/cs(1,1))*sm(jj,ll)
                endif
-  	    endif
+            endif
 !    
             l=(ll-1)/3+1
             m=ll-3*(l-1)

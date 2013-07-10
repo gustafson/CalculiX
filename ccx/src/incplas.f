@@ -19,7 +19,7 @@
       subroutine incplas(elconloc,plconloc,xstate,xstateini,
      &  elas,emec,ithermal,icmd,beta,stre,vj,kode,
      &  ielas,amat,t1l,dtime,time,ttime,iel,iint,nstate_,mi,
-     &  eloc,pgauss,nmethod)
+     &  eloc,pgauss,nmethod,pnewdt)
 !
 !     calculates stiffness and stresses for the incremental plasticity
 !     material law (Ref: J.C. Simo, A framework for finite strain
@@ -37,20 +37,18 @@
 !
       implicit none
 !
-      integer user_hardening,user_creep
-!
       character*80 amat
 !
       integer ithermal,icmd,i,j,kode,ivisco,ielastic,
      &  niso,nkin,ielas,iel,iint,nstate_,mi(*),id,leximp,lend,layer,
-     &  kspt,kstep,kinc,iloop,nmethod
+     &  kspt,kstep,kinc,iloop,nmethod,user_hardening,user_creep
 !
       real*8 elconloc(21),elas(21),emec(6),beta(6),stre(6),
-     &  vj,plconloc(82),stbl(6),epl,stril(6),xitril(6),
+     &  vj,plconloc(802),stbl(6),epl,stril(6),xitril(6),
      &  ee,un,um,al,xk,cop,umb,umbb,dxitril,f0,d0,f1,d1,d2,xg(3,3),
      &  xs(3,3),xx(3,3),xn(3,3),xd(3,3),cpl(6),c(6),ci(6),
      &  c1,c2,c3,c4,c5,c6,c7,c8,c9,cplb(6),stblb(6),
-     &  ftrial,xiso(20),yiso(20),xkin(20),ykin(20),
+     &  ftrial,xiso(200),yiso(200),xkin(200),ykin(200),
      &  fiso,dfiso,fkin,dfkin,fiso0,fkin0,ep,t1l,dtime,
      &  epini,a1,dsvm,xxa,xxn,vj2,vj23,
      &  cop1,cop2,fu1,fu2,fu,dcop,time,ttime,eloc(6),
@@ -58,13 +56,14 @@
      &  g1,g2,g3,g4,g5,g6,g7,g8,g9,g10,g11,g12,g13,g14,g15,g16,
      &  g17,g18,g28,g29,g30,g31,g32,g33,decra(5),deswa(5),serd,
      &  esw(2),ec(2),p,qtild,predef(1),dpred(1),timeabq(2),pgauss(3),
-     &  dtemp
+     &  dtemp,pnewdt
 !
 c      data kk /1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
 c     &  1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,3,3,1,3,
 c     &  1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,1,2,2,3,1,3,2,3,
 c     &  2,3,2,3/
 !
+      pnewdt=-1.d0
       leximp=1
       lend=2
 !
@@ -134,7 +133,7 @@ ccc         write(*,*) '*WARNING in incplas: deformation inside-out'
 !
 !     check for user subroutines
 !
-      if((plconloc(81).lt.0.8d0).and.(plconloc(82).lt.0.8d0)) then
+      if((plconloc(801).lt.0.8d0).and.(plconloc(802).lt.0.8d0)) then
          user_hardening=1
       else
          user_hardening=0
@@ -243,8 +242,8 @@ ccc         write(*,*) '*WARNING in incplas: dxitril < 0'
 !        the Jacobian, yiso and ykin are Kirchhoff stresses, as
 !        required by the hyperelastic theory (cf. Simo, 1988).
 !
-      niso=int(plconloc(81))
-      nkin=int(plconloc(82))
+      niso=int(plconloc(801))
+      nkin=int(plconloc(802))
       if(niso.ne.0) then
          do i=1,niso
             xiso(i)=plconloc(2*i-1)
@@ -253,8 +252,8 @@ ccc         write(*,*) '*WARNING in incplas: dxitril < 0'
       endif
       if(nkin.ne.0) then
          do i=1,nkin
-            xkin(i)=plconloc(39+2*i)
-            ykin(i)=vj*plconloc(40+2*i)
+            xkin(i)=plconloc(399+2*i)
+            ykin(i)=vj*plconloc(400+2*i)
          enddo
       endif
 !
@@ -612,6 +611,17 @@ ccc                  write(*,*) '*ERROR in incplas: no temperature defined'
             iloop=1
             cop=0.d0
             do
+               if(iloop.gt.100) then
+c                  NOTE: write statements cause problems for
+c                        parallellized execution
+c                  write(*,*) '*WARNING in incplas: material loop'
+c                  write(*,*) '         did not converge in integration'
+c                  write(*,*) '         point',iint,'in element',iel,';'
+c                  write(*,*) '         the increment size is reduced'
+c                  write(*,*)
+                  pnewdt=0.25d0
+                  return
+               endif
                ep=epl+c2*cop
 !
                if(user_hardening.eq.1) then

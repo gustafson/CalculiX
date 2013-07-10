@@ -58,7 +58,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
     double df,dc,db,dd,ran,can,rap,ea,cae,ral,da,*vr=NULL,*vi=NULL,*stnr=NULL,
 	*stni=NULL,*vmax=NULL,*stnmax=NULL,*cs=NULL,c1[2],c2[2],reftime,
-        *fn=NULL,*eenmax=NULL,*fnr=NULL,*fni=NULL;
+        *fn=NULL,*eenmax=NULL,*fnr=NULL,*fni=NULL,*qfx=NULL;
 
     /* next lines are active if the number of contact elements was
        changed in the present increment */
@@ -147,9 +147,8 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     /* reset iflagact */
 
     *iflagact=0;
-
 	
-	/* increment convergence reached */
+    /* increment convergence reached */
 	
     if((iconvergence==1)&&(idivergence==0)){
 	*ttime=*ttime+*dtime;
@@ -216,9 +215,9 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                         trab,inotr,ntrans,orab,ielorien,norien,description,
                         ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
                         &ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
-                        ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output);
+                        ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx);
 
-		    FORTRAN(uout,(vold,mi));
+		    FORTRAN(uout,(vold,mi,ithermal));
 		    FORTRAN(stop,());
 		}
 	    }
@@ -324,9 +323,9 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                         trab,inotr,ntrans,orab,ielorien,norien,description,
                         ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
                         &ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
-                        ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output);
+		        ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx);
 
-	    FORTRAN(uout,(vold,mi));
+	    FORTRAN(uout,(vold,mi,ithermal));
 	    FORTRAN(stop,());
 	}	
 	
@@ -374,9 +373,9 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                         trab,inotr,ntrans,orab,ielorien,norien,description,
                         ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
                         &ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
-                        ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output);
+                        ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx);
 
-		    FORTRAN(uout,(vold,mi));
+		    FORTRAN(uout,(vold,mi,ithermal));
 		    FORTRAN(stop,());
 		}
 		else {
@@ -425,9 +424,9 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                         trab,inotr,ntrans,orab,ielorien,norien,description,
                         ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
                         &ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
-                        ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output);
+                        ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx);
 
-			FORTRAN(uout,(vold,mi));
+			FORTRAN(uout,(vold,mi,ithermal));
 			FORTRAN(stop,());
 		    }
 		    *icntrl=1;
@@ -452,9 +451,9 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                         trab,inotr,ntrans,orab,ielorien,norien,description,
                         ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
                         &ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
-                        ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output);
+                        ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx);
 
-			FORTRAN(uout,(vold,mi));
+			FORTRAN(uout,(vold,mi,ithermal));
 			FORTRAN(stop,());
 		    }
 		    if(*uncoupled){
@@ -521,9 +520,9 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                         trab,inotr,ntrans,orab,ielorien,norien,description,
                         ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
                         &ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
-                        ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output);
+                        ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx);
 
-			FORTRAN(uout,(vold,mi));
+			FORTRAN(uout,(vold,mi,ithermal));
 			FORTRAN(stop,());
 		    }
 		    *icntrl=1;
@@ -545,9 +544,9 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                         trab,inotr,ntrans,orab,ielorien,norien,description,
                         ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
                         &ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
-                        ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output);
+                        ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx);
 
-			FORTRAN(uout,(vold,mi));
+			FORTRAN(uout,(vold,mi,ithermal));
 			FORTRAN(stop,());
 		    }
 		    if(*uncoupled){

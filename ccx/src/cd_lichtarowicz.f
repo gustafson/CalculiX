@@ -25,8 +25,6 @@
 !
       implicit none
 !
-!      integer
-!
       real*8 cdu,reynolds,amod,bdh,eps,A1,cd_diff,cd0,cd
 !
       cd0=cdu

@@ -63,6 +63,17 @@ c               if(debug) write(20,*) al1+al*al2+straight(4*m1,itri)
                if(al1+al*al2+straight(4*m1,itri).gt.1.d-10)then
 c                  if(al.lt.1.d-10) cycle loop1
                   itri=imastop(m1,itri)
+                  if(itri.gt.itietri(2,itie) .or. 
+     &               itri.lt.itietri(1,itie))then
+                   if(itri.ne.0)then
+c                   write(*,*)'nt:tie',itie,'itiri',itri
+c                   write(*,*)' mintri',itietri(1,itie),
+c     &             'maxtri',itietri(2,itie)
+                   endif
+                   itri=0
+                   exit loop1
+                  endif
+
                   if(itel.gt.n) then
 c                     write(20,*) '*INFO in neartriangle: circular'
 c                     write(20,*) 

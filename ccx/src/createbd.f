@@ -50,12 +50,12 @@ c> @param [in] pslavdual         (1:4,*)dual shape functions in nodesf
 !
       implicit none
 !
-      character*8 lakon(*)
-!
       logical debug
 !
+      character*8 lakon(*)
+!
       integer ipkon(*),kon(*),konl(20),iflag,m,l,j,jj,
-     &  indexe,islavsurf(2,*),iponoels(*),inoels(3,*),
+     &  indexe,islavsurf(2,*),iponoels(*),inoels(2,*),
      &  imastsurf(*),itiefac(2,*),ifaces,nelemens,jfaces,ifacem,
      &  mint2d,indexf,nopes1,nopes2,nodem,nodesf,nopes,
      &  locs,locm,mi(*),ns,mint2dloc1,mint2dloc2,
@@ -73,30 +73,25 @@ c> @param [in] pslavdual         (1:4,*)dual shape functions in nodesf
      &  shp2s2(7,8),xs2s2(3,2)
 !
       include "gauss.f"
-      
-      
+!            
       debug=.false.
-c      if(l.eq.214)debug=.true.
       contribution = 0.d0
       dcontribution = 0.d0
       gcontribution = 0.d0
       icounter=0
       icounter2=0
-
       ifaces=islavsurf(1,l)
       nelemens = int(ifaces/10)
       jfaces = ifaces - nelemens*10
       indexe = ipkon(nelemens)
       ict=ict+1
       if(debug)write(*,*) 'createbd:l=',l,'tie',ict
-c      write(*,*) 'createbd:', islavnode(1:30)
       call getnumberofnodes(nelemens,jfaces,lakon,nope1,nopes1,idummy)
       mint2d=islavsurf(2,l+1)-islavsurf(2,l)
       if(mint2d==0) return
       indexf=islavsurf(2,l)
       if(debug)write(*,*) 'createbd:mint2d',mint2d
-c     loop over all nodesf of current slave face
-      
+!     loop over all nodesf of current slave face      
       do j=1,nope1
             konl(j)=kon(ipkon(nelemens)+j)
       enddo
@@ -107,14 +102,14 @@ c     loop over all nodesf of current slave face
      &           vold(j,konl(ifac))       
          enddo
       enddo
-
+!
       do j=1,nopes1
          do jj=1,nopes1
             dcontr(icounter2+nopes1*(j-1)+jj)=0.0
          enddo        
          gcontr(icounter2+j)=0.0
       enddo
-
+!
       mint2dloc1=1
       mint2dloc2=1
       help=0.d0
@@ -122,14 +117,12 @@ c     loop over all nodesf of current slave face
       do 
          if (mint2dloc2>=mint2d) exit
 !        find current master face
-c          write(*,*) 'createbd:find MF',mint2dloc1
          ifacem=imastsurf(indexf+mint2dloc1)
          nelemenm= int (ifacem/10);
          jfacem=ifacem-nelemenm*10
          call getnumberofnodes(nelemenm,jfacem,lakon,
      &         nope2,nopes2,idummy)
 !         find number of integration points belonging to master face     
-c          write(*,*) 'createbd:find MF',mint2dloc1,ifac
          do
             if(ifacem==imastsurf(indexf+mint2dloc2+1))then
                mint2dloc2=mint2dloc2+1
@@ -141,9 +134,7 @@ c          write(*,*) 'createbd:find MF',mint2dloc1,ifac
       if(debug)write(*,*) 'createbd:MF,loc1, loc2',ifacem,
      &    mint2dloc1,mint2dloc2       
          help=0.0
-c         write(44,*) '#createbd:   sf   gap   w    dx'
          do m=mint2dloc1,mint2dloc2
-c     write(*,*)'createbd: MFN IP',m
             xis=pslavsurf(1,indexf+m)
             ets=pslavsurf(2,indexf+m)
             weight=pslavsurf(3,indexf+m)
@@ -173,7 +164,6 @@ c     write(*,*)'createbd: MFN IP',m
             endif    
             xim = pmastsurf(1,indexf+m)
             etm = pmastsurf(2,indexf+m)
-c           write(*,101) xim,etm
  101     format('createbd:xm',2(1x,e15.8))  
 !     
             if(nopes2.eq.8) then
@@ -192,15 +182,11 @@ c           write(*,101) xim,etm
                   enddo
                enddo
             endif
-c           write(*,*) 'shp2s',m
-c           write(*,*)(shp2s(4,j),j=1,4) 
-            dx=dsqrt(xsj2s(1)**2+xsj2s(2)**2+xsj2s(3)**2) 
-c           dx=1.0d0   
+            dx=dsqrt(xsj2s(1)**2+xsj2s(2)**2+xsj2s(3)**2)   
             do j=1,nopes1
                ifs=getiface(j,jfaces,nope1) 
                nodesf=kon(ipkon(nelemens)+ifs)
                locs=j
-c               if(m==1)write(*,*)'j',j,'nodes',nodesf
                gcontribution=shp2s(4,locs)
      &              *(gapmints(indexf+m))
      &              *pslavsurf(3,indexf+m) 
@@ -224,8 +210,6 @@ c               if(m==1)write(*,*)'j',j,'nodes',nodesf
                do jj=1,nopes1
                   ifs=getiface(jj,jfaces,nope1) 
                   nodem=kon(ipkon(nelemens)+ifs)
-c                  if(m==1)write(*,*)'jj',j,'nodem',nodem
-c                  if(m==1)write(*,*)'id',icounter2+nopes1*(j-1)+jj
                   dcontribution=shp2s(4,locs)
      &              *shp2s2(4,jj)  
      &              *pslavsurf(3,indexf+m)
@@ -244,7 +228,7 @@ c                  if(m==1)write(*,*)'id',icounter2+nopes1*(j-1)+jj
      &                 'islavnode'
                        stop
                     endif
-                    
+!                    
                     call nident(islavnode(nslavnode(ict)+1),
      &                 nodem,(nslavnode(ict+1)-nslavnode(ict)),id)
                     if(islavnode(nslavnode(ict)+id)==nodem) then
@@ -256,7 +240,7 @@ c                  if(m==1)write(*,*)'id',icounter2+nopes1*(j-1)+jj
      &                 'islavnode'
                        stop
                     endif
-                    
+!                    
                   endif
                enddo
                do jj=1,nopes2
@@ -274,8 +258,6 @@ c                  if(m==1)write(*,*)'id',icounter2+nopes1*(j-1)+jj
                     if(islavnode(nslavnode(ict)+id)==nodesf) then
                      iscontr(icounter+nopes2*(j-1)+jj)=
      &                 nslavnode(ict)+id
-c       write(*,*)'createbd: node',nodesf,nslavnode(ict)+id,
-c     &  islavnode(nslavnode(ict)+id)
                     else
                        write(*,*)'createbd: node',nodesf
                        write(*,*)'was not catalogued properly in', 
@@ -287,8 +269,6 @@ c     &  islavnode(nslavnode(ict)+id)
                     if(imastnode(nmastnode(ict)+id)==nodem) then
                      imcontr(icounter+nopes2*(j-1)+jj)=
      &                 nmastnode(ict)+id
-c        write(*,*)'createbd: node',nodem,nmastnode(ict)+id,
-c     &      imastnode(nmastnode(ict)+id)
                     else
                        write(*,*)'createbd: node',nodem
                        write(*,*)'was not catalogued properly in', 
@@ -297,19 +277,19 @@ c     &      imastnode(nmastnode(ict)+id)
      &                  nmastnode(ict+1)
                        stop
                     endif
-                     
+!                     
                   endif
                   contribution=0.d0
                enddo
             enddo
-            
+!            
          enddo
          mint2dloc1=mint2dloc2+1
          mint2dloc2=mint2dloc1
          icounter=icounter+nopes1*nopes2
       enddo
       icounter2=icounter2+nopes1*nopes1
-      
+!      
       if(debug)then
          write(*,*) 'createbd: contri,iscontr,imcontr',l
          do j=1, icounter

@@ -29,7 +29,7 @@
 !     
       integer nelem,ielprop(*),index,mi(*),
      &     ipkon(*),kon(*),icase,kgas,k_oil,mtlog,ier,nshcon(*),
-     &     nrhcon(*),ntmat_
+     &     nrhcon(*),ntmat_,n1,n2,n11
 !
       real*8 prop(*),v(0:mi(2),*),kappa,R,a,d,l,
      &     T1,T2,Tt1,Tt2,pt1,pt2,cp,dvi_air,dvi_oil,
@@ -63,6 +63,10 @@
      &     4.20d0,6.20d0,9.50d0,13.7d0,
      &     17.5d0,29.5d0,51.5d0,82.0d0,
      &     111.d0/
+!
+      data n1 /1/
+      data n2 /2/
+      data n11 /11/
 !
       index=ielprop(nelem)
       Tt2=Tt2
@@ -241,7 +245,7 @@
 !
          mtlog=17
 !     Interpolating x in the table
-         call onedint(TX,TF,mtlog,x,phi,1,2,11,IER)
+         call onedint(TX,TF,mtlog,x,phi,n1,n2,n11,IER)
 !
          if((lakon(nelem)(2:4).eq.'GAP'))then
 !

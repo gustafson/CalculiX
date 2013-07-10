@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine writeevcscomplex(x,nx,nm)
+      subroutine writeevcscomplex(x,nx,nm,fmin,fmax)
 !
 !     writes the complex eigenvalues in the .dat file
 !
@@ -25,7 +25,7 @@
       implicit none
 !
       integer j,nx,nm(nx)
-      real*8 pi
+      real*8 pi,fmin,fmax
       complex*16 x(nx)
 !
       pi=4.d0*datan(1.d0)

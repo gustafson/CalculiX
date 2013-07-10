@@ -22,10 +22,11 @@ c> soubroutine to get mu for current contact pair
 !     autor: Saskia Sitzmann 
        
        implicit none
-       
+!       
        integer itie,imat,ncmat_,ntmat_
+!
        real*8 mu,tietol(2,*),elcon(0:ncmat_,ntmat_,*)
-       
+!       
        itie=itie+1
        imat=int(tietol(2,itie))
        if(ncmat_.lt.6)then
@@ -34,6 +35,6 @@ c> soubroutine to get mu for current contact pair
         mu=elcon(6,1,imat)
        endif
        itie=itie-1
-
+!
        return
       end

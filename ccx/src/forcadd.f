@@ -18,7 +18,7 @@
 !
       subroutine forcadd(node,i,val,nodeforc,ndirforc,xforc,
      &  nforc,nforc_,iamforc,iamplitude,nam,ntrans,trab,inotr,co,
-     &  ikforc,ilforc,isector,add,user)
+     &  ikforc,ilforc,isector,add,user,idefforc)
 !
 !     adds a cload condition to the data base
 !
@@ -28,7 +28,7 @@
 !
       integer nodeforc(2,*),ndirforc(*),node,i,nforc,nforc_,j,
      &  iamforc(*),iamplitude,nam,ntrans,inotr(2,*),itr,idf(3),
-     &  ikforc(*),ilforc(*),idof,id,k,isector
+     &  ikforc(*),ilforc(*),idof,id,k,isector,idefforc(*)
 !
       real*8 xforc(*),val,trab(7,*),a(3,3),co(3,*)
 !
@@ -49,10 +49,11 @@
                if(ikforc(id).eq.idof) then
                   k=ilforc(id)
                   if(nodeforc(2,k).eq.isector) then
-                     if(add) then
+                     if(add.or.(idefforc(k).eq.1)) then
                         xforc(k)=xforc(k)+val
                      else
                         xforc(k)=val
+                        idefforc(k)=1
                      endif
                      if(nam.gt.0) iamforc(k)=iamplitude
                      return
@@ -74,6 +75,7 @@ c
          nodeforc(2,nforc)=isector
          ndirforc(nforc)=i
          xforc(nforc)=val
+         idefforc(nforc)=1
          if(nam.gt.0) iamforc(nforc)=iamplitude
 !
 !        updating ikforc and ilforc
@@ -120,13 +122,17 @@ c
 !        if an amplitude is selected, it applies to all components
 !        of the force in the node. No separate amplitudes are allowed.
 !
-            if(.not.add)
+            if((.not.add).and.(idefforc(idf(1)).ne.1))
      &        val=val-xforc(idf(1))*a(1,i)-xforc(idf(2))*a(2,i)
      &             -xforc(idf(3))*a(3,i)
 !
             xforc(idf(1))=xforc(idf(1))+val*a(1,i)
             xforc(idf(2))=xforc(idf(2))+val*a(2,i)
             xforc(idf(3))=xforc(idf(3))+val*a(3,i)
+!
+!           only first entry is tagged
+!
+            idefforc(idf(1))=1
 !
             if(nam.gt.0) then
                do j=1,3
@@ -148,6 +154,7 @@ c
                else
                   xforc(nforc)=val*a(j,i)
                endif
+               idefforc(nforc)=1
                if(nam.gt.0) iamforc(nforc)=iamplitude
 !
 !              updating ikforc and ilforc

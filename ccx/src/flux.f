@@ -43,8 +43,8 @@
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,ider)
 !
-      else if(lakon(nelem)(2:8).eq.'ACCTUBE') then 
-!         
+      elseif(lakon(nelem)(2:8).eq.'ACCTUBE') then 
+!
          call acctube(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,ider)

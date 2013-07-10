@@ -28,7 +28,8 @@
       character*1 typeboun(*)
       character*20 labmpc(*),label
 !
-      integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,nk,nk_,ikmpc(*),
+      integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,nk,nk_,
+     &  ikmpc(*),
      &  ilmpc(*),node,id,mpcfreeold,idof,l,nodeboun(*),iperturb(2),
      &  ndirboun(*),ikboun(*),ilboun(*),nboun,nboun_,inode,nodevector,
      &  index,index1,node1,i,j,imax,nkn,idofrem,idofins
@@ -287,12 +288,21 @@ c
             endif
          elseif(labmpc(nmpc)(1:4).eq.'DIST') then
             iperturb(2)=1
+            write(*,*) '*INFO in usermpc: nonlinear geometric'
+            write(*,*) '      effects are turned on'
+            write(*,*)
             if(iperturb(1).eq.0) iperturb(1)=2
          elseif(labmpc(nmpc)(1:3).eq.'GAP') then
             iperturb(2)=1
+            write(*,*) '*INFO in usermpc: nonlinear geometric'
+            write(*,*) '      effects are turned on'
+            write(*,*)
             if(iperturb(1).eq.0) iperturb(1)=2
          elseif(labmpc(nmpc)(1:4).eq.'USER') then
             iperturb(2)=1
+            write(*,*) '*INFO in usermpc: nonlinear geometric'
+            write(*,*) '      effects are turned on'
+            write(*,*)
             if(iperturb(1).eq.0) iperturb(1)=2
          else
             write(*,*) '*ERROR in usermpc: mpc of type',labmpc(nmpc)

@@ -25,7 +25,8 @@
       character*1 inpc(*)
       character*20 nameref(nentries)
 !
-      integer nline,i,j,ninp,ipoinp(2,nentries),inp(3,ninp),ipoinpc(0:*)
+      integer nline,i,j,ninp,ipoinp(2,nentries),inp(3,ninp),
+     &  ipoinpc(0:*)
 !
       data nameref /'RESTART,READ','NODE','ELEMENT','NSET',
      &              'ELSET','TRANSFORM','MATERIAL','ORIENTATION',

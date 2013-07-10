@@ -36,7 +36,7 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
         double *aub, int *icol, int *irow, int *nzl, double *alpha,
         double *fextini, double *fini, int *islavnode, int *nslavnode,
         int *imastnode, int *nmastnode, int *mortar, int *ntie,double *f_cm,
-	double* f_cs, int *mi){
+	double* f_cs, int *mi,int *nzs,int *nasym){
 
     int j,k,nodes,nodem,i,mt=mi[1]+1;
     double scal1;
@@ -60,7 +60,11 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
 		if(nactdof[mt*k+j]!=0){aux2[nactdof[mt*k+j]-1]=accold[mt*k+j];}
 	    }
 	}
-	FORTRAN(op,(&neq[1],aux1,aux2,b,adb,aub,icol,irow,nzl)); 
+	if(*nasym==0){
+	    FORTRAN(op,(&neq[1],aux1,aux2,b,adb,aub,icol,irow,nzl)); 
+	}else{
+	    FORTRAN(opas,(&neq[1],aux1,aux2,b,adb,aub,icol,irow,nzl,nzs)); 
+	}
 	scal1=1.+*alpha;
 	for(k=0;k<neq[0];++k){
 	    b[k]=scal1*(fext[k]-f[k])-*alpha*(fextini[k]-fini[k])-b[k];

@@ -40,7 +40,8 @@
      &  ipompc(*),nodempc(3,*),mt,nk,ithermal(2),i,j,
      &  iener,iperturb(*),iout,nboun,nmpc,nmethod,ist,ndir,node,index,
      &  neq,incrementalmpc,nprint,ikin,calcul_fn,nforc,
-     &  calcul_f,calcul_cauchy,calcul_qa,intpointvarm,intpointvart
+     &  calcul_f,calcul_cauchy,calcul_qa,intpointvarm,intpointvart,
+     &  irefnode,irotnode,iexpnode,irefnodeprev
 !
       real*8 v(0:mi(2),*),vini(0:mi(2),*),f(*),fn(0:mi(2),*),
      &  cam(5),vold(0:mi(2),*),b(*),xboun(*),coefmpc(*),
@@ -51,7 +52,7 @@
       mt=mi(2)+1
 !
       if((iout.ne.2).and.(iout.gt.-1)) then
-!
+!     
          if((nmethod.ne.4).or.(iperturb(1).le.1)) then
             if(ithermal(1).ne.2) then
                do i=1,nk
@@ -87,12 +88,12 @@
                   endif
                enddo
             endif
-!
+!     
          else
-!
-!           direct integration dynamic step
-!           b contains the acceleration increment
-!
+!     
+!     direct integration dynamic step
+!     b contains the acceleration increment
+!     
             if(ithermal(1).ne.2) then
                scal1=bet*dtime*dtime
                scal2=gam*dtime
@@ -132,20 +133,20 @@
                enddo
             endif
          endif
-!
+!     
       endif
-!
-!        initialization
-!
+!     
+!     initialization
+!     
       calcul_fn=0
       calcul_f=0
       calcul_qa=0
       calcul_cauchy=0
-!
+!     
 !     determining which quantities have to be calculated
-!
+!     
       if((iperturb(1).ge.2).or.((iperturb(1).le.0).and.(iout.lt.0))) 
-     &      then
+     &     then
          if((iout.lt.1).and.(iout.gt.-2)) then
             calcul_fn=1
             calcul_f=1
@@ -154,24 +155,24 @@
             calcul_cauchy=1
          endif
       endif
-!
+!     
       if(iout.gt.0) then
          if((filab(5)(1:4).eq.'RF  ').or.
-     &      (filab(10)(1:4).eq.'RFL ')) then
+     &        (filab(10)(1:4).eq.'RFL ')) then
             calcul_fn=1
          else
             do i=1,nprint
                if((prlab(i)(1:4).eq.'RF  ').or.
-     &            (prlab(i)(1:4).eq.'RFL ')) then
+     &              (prlab(i)(1:4).eq.'RFL ')) then
                   calcul_fn=1
                   exit
                endif
             enddo
          endif
       endif
-!
+!     
 !     check whether user-defined concentrated forces were defined
-!
+!     
       do i=1,nforc
          if((xforc(i).lt.1.2357111318d0).and.
      &        (xforc(i).gt.1.2357111316d0)) then
@@ -179,9 +180,9 @@
             exit
          endif
       enddo
-!
+!     
 !     initializing fn
-!
+!     
       if(calcul_fn.eq.1) then
          do i=1,nk
             do j=0,mi(2)
@@ -189,116 +190,152 @@
             enddo
          enddo
       endif
-!
+!     
 !     initializing f
-!
+!     
       if(calcul_f.eq.1) then
          do i=1,neq
             f(i)=0.d0
          enddo
       endif
-!
+!     
 !     SPC's and MPC's have to be taken into account for 
 !     iout=0,1 and -1
-!
+!     
       if(abs(iout).lt.2) then
-!
+!     
 !     inserting the boundary conditions
-!
-      do i=1,nboun
-         if(ndirboun(i).gt.3) cycle
-         fixed_disp=xboun(i)
-         if((nmethod.eq.4).and.(iperturb(1).gt.1)) then
-            ndir=ndirboun(i)
-            node=nodeboun(i)
-            if(ndir.gt.0) then
-               accold(ndir,node)=(xboun(i)-v(ndir,node))/
-     &              (bet*dtime*dtime)
-               veold(ndir,node)=veold(ndir,node)+
-     &              gam*dtime*accold(ndir,node)
-            else
-               veold(ndir,node)=(xboun(i)-v(ndir,node))/dtime
+!     
+         do i=1,nboun
+            if(ndirboun(i).gt.3) cycle
+            fixed_disp=xboun(i)
+            if((nmethod.eq.4).and.(iperturb(1).gt.1)) then
+               ndir=ndirboun(i)
+               node=nodeboun(i)
+               if(ndir.gt.0) then
+                  accold(ndir,node)=(xboun(i)-v(ndir,node))/
+     &                 (bet*dtime*dtime)
+                  veold(ndir,node)=veold(ndir,node)+
+     &                 gam*dtime*accold(ndir,node)
+               else
+                  veold(ndir,node)=(xboun(i)-v(ndir,node))/dtime
+               endif
             endif
-         endif
-         v(ndirboun(i),nodeboun(i))=fixed_disp
-      enddo
-!
+            v(ndirboun(i),nodeboun(i))=fixed_disp
+         enddo
+!     
 !     inserting the mpc information
 !     the parameter incrementalmpc indicates whether the
 !     incremental displacements enter the mpc or the total 
 !     displacements (incrementalmpc=0)
+!     
+c     
+c     to be checked: should replace the lines underneath do i=1,nmpc
+c     
+c     incrementalmpc=iperturb(2)
 !
-c
-c      to be checked: should replace the lines underneath do i=1,nmpc
-c
-c      incrementalmpc=iperturb(2)
-      do i=1,nmpc
-         if((labmpc(i)(1:20).eq.'                    ').or.
-     &      (labmpc(i)(1:7).eq.'CONTACT').or.
-     &      (labmpc(i)(1:6).eq.'CYCLIC').or.
-     &      (labmpc(i)(1:9).eq.'SUBCYCLIC')) then
-            incrementalmpc=0
-         else
-            if((nmethod.eq.2).or.(nmethod.eq.3).or.
-     &            ((iperturb(1).eq.0).and.(abs(nmethod).eq.1)))
-     &         then
+         do i=1,nmpc
+            if((labmpc(i)(1:20).eq.'                    ').or.
+     &           (labmpc(i)(1:7).eq.'CONTACT').or.
+     &           (labmpc(i)(1:6).eq.'CYCLIC').or.
+     &           (labmpc(i)(1:9).eq.'SUBCYCLIC')) then
                incrementalmpc=0
             else
-               incrementalmpc=1
-            endif
-         endif
-         ist=ipompc(i)
-         node=nodempc(1,ist)
-         ndir=nodempc(2,ist)
-         if(ndir.eq.0) then
-            if(ithermal(1).lt.2) cycle
-         elseif(ndir.gt.3) then
-            cycle
-         else
-            if(ithermal(1).eq.2) cycle
-         endif
-         index=nodempc(3,ist)
-         fixed_disp=0.d0
-         if(index.ne.0) then
-            do
-               if(incrementalmpc.eq.0) then
-                  fixed_disp=fixed_disp-coefmpc(index)*
-     &                 v(nodempc(2,index),nodempc(1,index))
+               if((nmethod.eq.2).or.(nmethod.eq.3).or.
+     &              ((iperturb(1).eq.0).and.(abs(nmethod).eq.1)))
+     &              then
+                  incrementalmpc=0
                else
-                  fixed_disp=fixed_disp-coefmpc(index)*
-     &                 (v(nodempc(2,index),nodempc(1,index))-
-     &                  vold(nodempc(2,index),nodempc(1,index)))
+                  incrementalmpc=1
                endif
-               index=nodempc(3,index)
-               if(index.eq.0) exit
-            enddo
-         endif
-         fixed_disp=fixed_disp/coefmpc(ist)
-         if(incrementalmpc.eq.1) then
-            fixed_disp=fixed_disp+vold(ndir,node)
-         endif
-         if((nmethod.eq.4).and.(iperturb(1).gt.1)) then
-            if(ndir.gt.0) then
-               accold(ndir,node)=(fixed_disp-v(ndir,node))/
-     &              (bet*dtime*dtime)
-               veold(ndir,node)=veold(ndir,node)+
-     &              gam*dtime*accold(ndir,node)
-            else
-               veold(ndir,node)=(fixed_disp-v(ndir,node))/dtime
             endif
-         endif
-         v(ndir,node)=fixed_disp
-      enddo
+            ist=ipompc(i)
+            node=nodempc(1,ist)
+            ndir=nodempc(2,ist)
+            if(ndir.eq.0) then
+               if(ithermal(1).lt.2) cycle
+            elseif(ndir.gt.3) then
+               cycle
+            else
+               if(ithermal(1).eq.2) cycle
+            endif
+            index=nodempc(3,ist)
+            fixed_disp=0.d0
+            if(index.ne.0) then
+               do
+                  if(incrementalmpc.eq.0) then
+                     fixed_disp=fixed_disp-coefmpc(index)*
+     &                    v(nodempc(2,index),nodempc(1,index))
+                  else
+                     fixed_disp=fixed_disp-coefmpc(index)*
+     &                    (v(nodempc(2,index),nodempc(1,index))-
+     &                    vold(nodempc(2,index),nodempc(1,index)))
+                  endif
+                  index=nodempc(3,index)
+                  if(index.eq.0) exit
+               enddo
+            endif
+            fixed_disp=fixed_disp/coefmpc(ist)
+            if(incrementalmpc.eq.1) then
+               fixed_disp=fixed_disp+vold(ndir,node)
+            endif
+            if((nmethod.eq.4).and.(iperturb(1).gt.1)) then
+               if(ndir.gt.0) then
+                  accold(ndir,node)=(fixed_disp-v(ndir,node))/
+     &                 (bet*dtime*dtime)
+                  veold(ndir,node)=veold(ndir,node)+
+     &                 gam*dtime*accold(ndir,node)
+               else
+                  veold(ndir,node)=(fixed_disp-v(ndir,node))/dtime
+               endif
+            endif
+            v(ndir,node)=fixed_disp
+         enddo
       endif
 !
-!     check whether there are any strain output requests
+!     storing the knot information in the .dat-file
 !
+      irefnodeprev=0
+      do i=1,nmpc
+         if(iout.gt.0) then
+            if(labmpc(i)(1:4).eq.'KNOT') then
+               irefnode=nodempc(1,nodempc(3,ipompc(i)))
+               if(irefnode.ne.irefnodeprev) then
+                  irefnodeprev=irefnode
+                  iexpnode=nodempc(1,nodempc(3,nodempc(3,ipompc(i))))
+                  if(labmpc(i)(5:5).ne.'2') then
+                     irotnode=nodempc(1,nodempc(3,nodempc(3,
+     &                    nodempc(3,ipompc(i)))))
+                  else
+                     irotnode=nodempc(1,nodempc(3,nodempc(3,
+     &                    nodempc(3,nodempc(3,nodempc(3,ipompc(i)))))))
+                  endif
+                  write(5,*)
+                  write(5,'(a5)') labmpc(i)(1:5)
+                  write(5,'("tra",i5,3(1x,e11.4))')
+     &                 irefnode,(v(j,irefnode),j=1,3)
+                  write(5,'("rot",i5,3(1x,e11.4))')
+     &                 irotnode,(v(j,irotnode),j=1,3)
+                  if(labmpc(i)(5:5).eq.'2') then
+                     write(5,'("exp",i5,3(1x,e11.4))')
+     &                    iexpnode,(v(j,iexpnode),j=1,3)
+                  else
+                     write(5,'("exp",i5,3(1x,e11.4))')
+     &                    iexpnode,v(1,iexpnode)
+                  endif
+               endif
+            endif
+         endif
+      enddo
+!     
+!     check whether there are any strain output requests
+!     
       iener=0
       ikin=0
       if((filab(7)(1:4).eq.'ENER').or.(filab(27)(1:4).eq.'CELS')) then
          iener=1
       endif
-
+      
       do i=1,nprint
          if((prlab(i)(1:4).eq.'ENER').or.(prlab(i)(1:4).eq.'ELSE').or.
      &        (prlab(i)(1:4).eq.'CELS')) then

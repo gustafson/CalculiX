@@ -18,7 +18,7 @@
 !
       subroutine frictions(inpc,textpart,elcon,nelcon,
      &  imat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,ipoinpc,nstate_,ichangefriction)
+     &  inp,ipoinpc,nstate_,ichangefriction,mortar)
 !
 !     reading the input deck: *FRICTION
 !
@@ -29,7 +29,7 @@
 !
       integer nelcon(2,*),imat,ntmat_,istep,istat,ipoinpc(0:*),
      &  n,key,i,ncmat_,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  nstate_,ichangefriction
+     &  nstate_,ichangefriction,mortar
 !
       real*8 elcon(0:ncmat_,ntmat_,*)
 !
@@ -49,7 +49,7 @@
 !
       nstate_=max(nstate_,9)
 !
-      nelcon(1,imat)=7
+      if(nelcon(1,imat).gt.0) nelcon(1,imat)=7
       nelcon(2,imat)=1
 !
 !     no temperature dependence allowed; last line is decisive
@@ -63,6 +63,18 @@
      &           elcon(5+i,1,imat)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          enddo
+         if(elcon(6,1,imat).le.0.d0) then
+            write(*,*) '*ERROR reading *FRICTION: friction coefficient'
+            write(*,*) '       must be strictly positive'
+            call inputerror(inpc,ipoinpc,iline)
+            stop
+         endif
+         if((elcon(7,1,imat).le.0.d0).and.(mortar.eq.0)) then
+            write(*,*) '*ERROR reading *FRICTION: stick slope'
+            write(*,*) '       must be strictly positive'
+            call inputerror(inpc,ipoinpc,iline)
+            stop
+         endif
          elcon(0,1,imat)=0.d0
       enddo
 !     

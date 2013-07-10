@@ -236,7 +236,7 @@
      &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,R,ider,iflag)
          endif
 !
-      elseif(iflag.eq.3) then
+      elseif((iflag.eq.3).or.(iflag.eq.4)) then
 !
          index=ielprop(nelem)
 !
@@ -312,31 +312,64 @@
          pspt2 = (Ts2/Tt2)**(kappa/(kappa-1))
          call machpi(M2,pspt2,kappa,R)
 !
-         write(1,*) ''
-         write(1,55) 'In line ',int(nodem/1000),' from node ',node1,
+         if(iflag.eq.3) then
+!
+            write(1,*) ''
+            write(1,55) 'In line ',int(nodem/1000),' from node ',node1,
      &        ' to node ', node2,':   air massflow rate= ',xflow,' kg/s'
-!
-         write(1,56)'       Inlet node ',node1,':    Tt1= ',Tt1,
-     &              ' K, Ts1= ',Ts0,' K, Pt1= ',Pt1/1E5,
-     &              ' Bar, M1= ',M1
-         write(1,*)'             element B    ',set(numf)
-     &              (1:30),', Branch ',ichan_num
-!
- 55      format(1x,a,i6.3,a,i6.3,a,i6.3,a,f9.6,a)
- 56      format(1x,a,i6.3,a,f6.1,a,f6.1,a,f8.5,a,f8.6)
-!
-!        Set ider to calculate the residual
-         ider = 0
-!
-!        Calculate the element one last time with enabled output
-         f=calc_residual_wye(pt1,Tt1,xflow1,xflow2,pt2,
-     &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,R,ider,iflag)
-!
-         write(1,56)'       Outlet node ',node2,':   Tt2= ',Tt2,
-     &              ' K, Ts2= ',Ts2,' K, Pt2= ',Pt2/1E5,
-     &              ' Bar, M2= ',M2
-!
+!     
+            write(1,56)'       Inlet node ',node1,':    Tt1= ',Tt1,
+     &           ' K, Ts1= ',Ts0,' K, Pt1= ',Pt1/1E5,
+     &           ' Bar, M1= ',M1
+            write(1,*)'             element B    ',set(numf)
+     &           (1:30),', Branch ',ichan_num
+!     
+ 55         format(1x,a,i6.3,a,i6.3,a,i6.3,a,f9.6,a)
+ 56         format(1x,a,i6.3,a,f6.1,a,f6.1,a,f8.5,a,f9.6)
+!     
+!     Set ider to calculate the residual
+            ider = 0
+!     
+!     Calculate the element one last time with enabled output
+            f=calc_residual_wye(pt1,Tt1,xflow1,xflow2,pt2,
+     &           Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,
+     &           kappa,R,ider,iflag)
+!     
+            write(1,56)'       Outlet node ',node2,':   Tt2= ',Tt2,
+     &           ' K, Ts2= ',Ts2,' K, Pt2= ',Pt2/1E5,
+     &           ' Bar, M2= ',M2
+!     
+         elseif(iflag.eq.4) then
+!     
+!     Write the main information about the element
+            write(1,*) ''
+            
+            if(nelem.eq.int(prop(index+2))) then
+               write(1,78)'Element nr.= ',nelem,
+     &              ', type=Wye Main Branch',
+     &              ', name= ',set(numf)(1:30)
+            elseif(nelem.eq.int(prop(index+3))) then
+               write(1,78)'Element nr.= ',nelem,', type=Wye Branch',
+     &              ', name= ',set(numf)(1:30)
+            endif
+            
+            write(1,79)'Nodes: ',node1,',',nodem,',',node2
+            
+ 78         FORMAT(A,I4,A,A,A)
+ 79         FORMAT(3X,A,I4,A,I4,A,I4)
+            
+!     Set deri to calculate the residual
+            ider = 0
+!     
+!     Calculate the element one last time with enabled output
+            f=calc_residual_wye(pt1,Tt1,xflow1,xflow2,pt2,
+     &           Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,
+     &           kappa,R,ider,iflag)
+            
+         endif
+!     
       endif
-!
+!     
       return
       end
+      

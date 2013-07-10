@@ -66,12 +66,6 @@
      &      (lakonl(1:1).ne.'C')) cycle
          ne1d2d=1
          indexe=ipkon(i)
-c!
-c!        inactivating the 3d expansion nodes of 1d/2d elements
-c!
-c         do j=1,20
-c            inum(kon(indexe+j))=0
-c         enddo
 !
          if((lakonl(4:5).eq.'15').or.(lakonl(4:4).eq.'6')) then
             if(lakonl(4:5).eq.'15') then
@@ -98,6 +92,9 @@ c         enddo
             elseif(lakonl(4:5).eq.'20') then
                indexe2d=indexe+20
                jmax=3
+            elseif(lakonl(4:5).eq.'26') then
+               indexe2d=indexe+26
+               jmax=3
             endif
             do j=1,jmax
                node2d=kon(indexe2d+j)
@@ -116,6 +113,9 @@ c         enddo
             elseif(lakonl(4:5).eq.'20') then
                indexe2d=indexe+20
                jmax=8
+            elseif(lakonl(4:5).eq.'26') then
+               indexe2d=indexe+26
+               jmax=8
             endif
             do j=1,jmax
                node2d=kon(indexe2d+j)
@@ -127,6 +127,9 @@ c         enddo
          endif
 !
 !        inactivating the 3d expansion nodes of 1d/2d elements
+!        in case forces are mapped this field is used to ensure
+!        that the forces in the 3d-nodes are mapped only once onto the
+!        2d-nodes
 !
          do j=1,indexe2d-indexe
             inum(kon(indexe+j))=0
@@ -197,22 +200,32 @@ c         enddo
 !
 !                 forces must be summed
 !
+!                 the contribution of each 3d-node should only be taken
+!                 once. inum(node3d) is used as marker.
+!
+                  inum(node2d)=-1
+!
                   if((j.le.3).and.(quadratic)) then
 !
-!                    end nodes
+!                    end nodes of quadratic 2d-elements
 !
                      do l=1,3
                         node3d=kon(indexe+node6(l,j))
+                        if(inum(node3d).ne.0) cycle
+                        inum(node3d)=1
                         do k=1,nfield
                            yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
                         enddo
                      enddo
                   else
 !
-!                    middle nodes
+!                    middle nodes of quadratic 2d-elements
+!                    or end nodes of linear 2d-elements
 !
                      do l=1,3,2
                         node3d=kon(indexe+node6(l,j))
+                        if(inum(node3d).ne.0) cycle
+                        inum(node3d)=1
                         do k=1,nfield
                            yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
                         enddo
@@ -233,6 +246,11 @@ c         enddo
                nope=4
             elseif(lakonl(4:5).eq.'20') then
                indexe2d=indexe+20
+               jmax=3
+               jinc=2
+               nope=8
+            elseif(lakonl(4:5).eq.'26') then
+               indexe2d=indexe+26
                jmax=3
                jinc=2
                nope=8
@@ -262,21 +280,36 @@ c         enddo
 !
 !                    forces must be summed across the section
 !
-                     inum(node2d)=inum(node2d)-1
+!                    the contribution of each 3d-node should only be taken
+!                    once. inum(node3d) is used as marker.
+!
+                     inum(node2d)=-1
+!
                      if((j.ne.2).and.(quadratic)) then
+!
+!                       end nodes of quadratic beam elements
+!
                         do l=1,8
                            node3d=kon(indexe+node3(l,j))
+                           if(inum(node3d).ne.0) cycle
+                           inum(node3d)=1
                            do k=1,nfield
                               yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
                            enddo
                         enddo
                      else
+!
+!                       middle nodes of quadratic beam elements or
+!                       end nodes of linear beam elements
+!
                         do l=1,4
                            if(quadratic) then
                               node3d=kon(indexe+node3(l,j))
                            else
                               node3d=kon(indexe+node3(l,2*j-1))
                            endif
+                           if(inum(node3d).ne.0) cycle
+                           inum(node3d)=1
                            do k=1,nfield
                               yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
                            enddo
@@ -308,13 +341,6 @@ c         enddo
 !                 center of gravity and unit vectors 1 and 2
 !
                   do m=1,3
-c                     cg(m)=(xl(m,6)+xl(m,8))/2.d0
-c                     if(j.eq.1) then
-c                        e1(m)=(xl(m,8)-xl(m,6))
-c                     else
-c                        e1(m)=(xl(m,6)-xl(m,8))
-c                     endif
-c                     e2(m)=(xl(m,7)-xl(m,5))
                      cg(m)=(xl(m,1)+xl(m,2)+xl(m,3)+xl(m,4))/4.d0
                      if(j.eq.1) then
                         e1(m)=(xl(m,1)+xl(m,4)-xl(m,2)-xl(m,3))
@@ -392,11 +418,6 @@ c                     e2(m)=(xl(m,7)-xl(m,5))
                      t(1)=s(1)*xsj(1)+s(4)*xsj(2)+s(5)*xsj(3)
                      t(2)=s(4)*xsj(1)+s(2)*xsj(2)+s(6)*xsj(3)
                      t(3)=s(5)*xsj(1)+s(6)*xsj(2)+s(3)*xsj(3)
-c                     write(*,*) 'map3dto1d2d',t(1),t(2),t(3)
-c                     write(*,*) 'map3dto1d2d_p',p(1),p(2),p(3)
-c                     write(*,*) 'map3dto1d2d_g',pcg(1),pcg(2),pcg(3)
-c                     write(*,*) 'map3dto1d2d_e',e3(1),e3(2),e3(3)
-c                     write(*,*) 'map3dto1d2d_e',xsj(1),xsj(2),xsj(3)
 !
 !                    section forces
 !
@@ -442,11 +463,14 @@ c                     write(*,*) 'map3dto1d2d_e',xsj(1),xsj(2),xsj(3)
             if(lakonl(4:5).eq.'8I') then
                indexe2d=indexe+11
                jmax=4
-            elseif(lakonl(4:5).eq.'8R') then
+            elseif((lakonl(4:5).eq.'8R').or.(lakonl(4:5).eq.'8 ')) then
                indexe2d=indexe+8
                jmax=4
             elseif(lakonl(4:5).eq.'20') then
                indexe2d=indexe+20
+               jmax=8
+            elseif(lakonl(4:5).eq.'26') then
+               indexe2d=indexe+26
                jmax=8
             endif
             do j=1,jmax
@@ -482,22 +506,32 @@ c                     write(*,*) 'map3dto1d2d_e',xsj(1),xsj(2),xsj(3)
 !
 !                 forces must be summed
 !
+!                 the contribution of each 3d-node should only be taken
+!                 once. inum(node3d) is used as marker.
+!
+                  inum(node2d)=-1
+!
                   if((j.le.4).and.(quadratic)) then
 !
-!                    end nodes
+!                    end nodes of quadratic 2d-elements
 !
                      do l=1,3
                         node3d=kon(indexe+node8(l,j))
+                        if(inum(node3d).ne.0) cycle
+                        inum(node3d)=1
                         do k=1,nfield
                            yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
                         enddo
                      enddo
                   else
 !
-!                    middle nodes
+!                    middle nodes of quadratic 2d-elements
+!                    or end nodes of linear 2d-elements
 !
                      do l=1,3,2
                         node3d=kon(indexe+node8(l,j))
+                        if(inum(node3d).ne.0) cycle
+                        inum(node3d)=1
                         do k=1,nfield
                            yn(k,node2d)=yn(k,node2d)+yn(k,node3d)
                         enddo
@@ -511,14 +545,90 @@ c                     write(*,*) 'map3dto1d2d_e',xsj(1),xsj(2),xsj(3)
 !
 !     taking the mean of nodal contributions coming from different
 !     elements having the node in common
+!     restoring inum for the 3d-nodes to zero
 !
-      do i=1,nk
-         if(inum(i).lt.0) then
-            inum(i)=-inum(i)
-            do j=1,nfield
-               yn(j,i)=yn(j,i)/inum(i)
+      do i=1,ne
+!
+         if(ipkon(i).lt.0) cycle
+         lakonl=lakon(i)
+         if((lakonl(7:7).eq.' ').or.(lakonl(7:7).eq.'I').or.
+     &      (lakonl(1:1).ne.'C')) cycle
+         indexe=ipkon(i)
+!
+         if((lakonl(4:5).eq.'15').or.(lakonl(4:4).eq.'6')) then
+            if(lakonl(4:5).eq.'15') then
+               indexe2d=indexe+15
+               jmax=6
+            else
+               indexe2d=indexe+6
+               jmax=3
+            endif
+            do j=1,jmax
+               node2d=kon(indexe2d+j)
+               if(inum(node2d).lt.0) then
+                  inum(node2d)=-inum(node2d)
+                  do k=1,nfield
+                     yn(k,node2d)=yn(k,node2d)/inum(node2d)
+                  enddo
+               endif
+            enddo
+         elseif(lakonl(7:7).eq.'B') then
+            if(lakonl(4:5).eq.'8I') then
+               indexe2d=indexe+11
+               jmax=2
+            elseif(lakonl(4:5).eq.'8R') then
+               indexe2d=indexe+8
+               jmax=2
+            elseif(lakonl(4:5).eq.'20') then
+               indexe2d=indexe+20
+               jmax=3
+            elseif(lakonl(4:5).eq.'26') then
+               indexe2d=indexe+26
+               jmax=3
+            endif
+            do j=1,jmax
+               node2d=kon(indexe2d+j)
+               if(inum(node2d).lt.0) then
+                  inum(node2d)=-inum(node2d)
+                  do k=1,nfield
+                     yn(k,node2d)=yn(k,node2d)/inum(node2d)
+                  enddo
+               endif
+            enddo
+         else
+            if(lakonl(4:5).eq.'8I') then
+               indexe2d=indexe+11
+               jmax=4
+            elseif((lakonl(4:5).eq.'8R').or.(lakonl(4:5).eq.'8 ')) then
+               indexe2d=indexe+8
+               jmax=4
+            elseif(lakonl(4:5).eq.'20') then
+               indexe2d=indexe+20
+               jmax=8
+            elseif(lakonl(4:5).eq.'26') then
+               indexe2d=indexe+26
+               jmax=8
+            endif
+            do j=1,jmax
+               node2d=kon(indexe2d+j)
+               if(inum(node2d).lt.0) then
+                  inum(node2d)=-inum(node2d)
+                  do k=1,nfield
+                     yn(k,node2d)=yn(k,node2d)/inum(node2d)
+                  enddo
+               endif
             enddo
          endif
+!     
+!        inactivating the 3d expansion nodes of 1d/2d elements
+!        in case forces are mapped this field is used to ensure
+!        that the forces in the 3d-nodes are mapped only once onto the
+!        2d-nodes
+!
+         do j=1,indexe2d-indexe
+            inum(kon(indexe+j))=0
+         enddo
+!
       enddo
 !
 !     beam section forces in the middle nodes
@@ -536,7 +646,11 @@ c                     write(*,*) 'map3dto1d2d_e',xsj(1),xsj(2),xsj(3)
          if((lakonl(4:4).eq.'6').or.(lakonl(4:4).eq.'8')) cycle
 !
          if(lakonl(7:7).eq.'B') then
-            indexe2d=indexe+20
+            if(lakonl(4:5).eq.'20') then
+               indexe2d=indexe+20
+            else
+               indexe2d=indexe+26
+            endif
             if(cflag.eq.'M') then
 !
 !              section forces in the middle node are the mean

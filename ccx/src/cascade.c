@@ -130,7 +130,6 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 
 	if((strcmp1(&labmpc[20*i],"                    ")==0) ||
 	   (strcmp1(&labmpc[20*i],"CYCLIC")==0) ||
-/*	   ((strcmp1(&labmpc[20*i],"CYCLIC")==0)&&(*ithermal==2)) ||*/
 	   (strcmp1(&labmpc[20*i],"SUBCYCLIC")==0)||
 	   (strcmp1(&labmpc[20*i],"CONTACT")==0)||
            (*iperturb<2)) jmpc[i]=0;
@@ -139,7 +138,6 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 
 	else if((strcmp1(&labmpc[20*i],"RIGID")==0) ||
 	   (strcmp1(&labmpc[20*i],"KNOT")==0) ||
-/*	   ((strcmp1(&labmpc[20*i],"CYCLIC")==0)&&(*ithermal!=2)) ||*/
 	   (strcmp1(&labmpc[20*i],"PLANE")==0) ||
 	   (strcmp1(&labmpc[20*i],"STRAIGHT")==0)||
            (strcmp1(&labmpc[20*i],"ISOCHORIC")==0)) jmpc[i]=1;
@@ -178,7 +176,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 		    coef=coefmpc[index-1];
 		    mpc=ilmpc[id-1];
 
-                    /* no expansion of there is a dependence of a
+                    /* no expansion if there is a dependence of a
                        nonlinear MPC on another linear or nonlinear MPC
                        and the call is from main */ 
 
@@ -228,28 +226,12 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 		    /* check for zero coefficients on the dependent side */
 		    
 		    	    index1=ipompc[i];
-			    /*   index1old=0;
-				 do {*/
 			if(fabs(coefmpc[index1-1])<1.e-10){
-			    /*	    if(index1old==0){*/
 				printf("*ERROR in cascade: zero coefficient on the\n");
 				printf("       dependent side of an equation\n");
 				printf("       dependent node: %d",nodempc[3*index1-3]);
 				FORTRAN(stop,());
 			    }
-			/*	    else{
-				nodempc[3*index1old-1]=nodempc[3*index1-1];
-				nodempc[3*index1-1]=*mpcfree;
-				*mpcfree=index1;
-				index1=nodempc[3*index1old-1];
-			    }
-			}
-			else{
-			    index1old=index1;
-			    index1=nodempc[3*index1-1];
-			}
-			if(index1==0) break;
-		    }while(1);*/
 		    
 		    ichange=1;iexpand=1;
 		    if((strcmp1(&labmpc[20*i],"                    ")==0)&&

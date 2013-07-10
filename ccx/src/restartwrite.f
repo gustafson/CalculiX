@@ -285,7 +285,7 @@
 !
 !     plastic data
 !
-      if(iplas.ne.0)then
+      if(npmat_.ne.0)then
          write(15)(plicon(i),i=1,(2*npmat_+1)*ntmat_*nmat)
          write(15)(nplicon(i),i=1,(ntmat_+1)*nmat)
          write(15)(plkcon(i),i=1,(2*npmat_+1)*ntmat_*nmat)

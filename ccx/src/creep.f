@@ -68,6 +68,8 @@
 !
 !     OUTPUT only for elastic anisotropic materials:
 !     qtild              von Mises stress
+!
+      implicit none
 !   
       character*80 cmname
 !

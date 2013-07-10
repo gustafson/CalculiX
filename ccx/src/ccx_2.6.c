@@ -15,6 +15,10 @@
 /*     along with this program; if not, write to the Free Software       */
 /*     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.         */
 
+#ifdef __WIN32
+  _set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
+
 #ifdef CALCULIX_MPI
 #include <spoolesMPI.h>
 #endif
@@ -36,12 +40,12 @@ FILE *f1;
   
 int *kon=NULL, *nodeboun=NULL, *ndirboun=NULL, *ipompc=NULL,
 	*nodempc=NULL, *nodeforc=NULL, *ndirforc=NULL,
-        *nelemload=NULL,im,
+        *nelemload=NULL,im,*inodesd=NULL,nload1,*idefforc=NULL,
 	*nnn=NULL, *nactdof=NULL, *icol=NULL,*ics=NULL,
-	*jq=NULL, *mast1=NULL, *irow=NULL, *rig=NULL,
+        *jq=NULL, *mast1=NULL, *irow=NULL, *rig=NULL,*idefbody=NULL,
 	*ikmpc=NULL, *ilmpc=NULL, *ikboun=NULL, *ilboun=NULL,
 	*npn=NULL, *adj=NULL, *xadj=NULL, *iw=NULL, *nreorder=NULL,
-	*mmm=NULL, *xnpn=NULL, *ipointer=NULL,
+        *mmm=NULL, *xnpn=NULL, *ipointer=NULL,*idefload=NULL,
 	*istartset=NULL, *iendset=NULL, *ialset=NULL, *ielmat=NULL,
 	*ielorien=NULL, *nrhcon=NULL, *nodebounold=NULL, *ndirbounold=NULL,
 	*nelcon=NULL, *nalcon=NULL, *iamforc=NULL,  *iamload=NULL,
@@ -57,7 +61,8 @@ double *co=NULL, *xboun=NULL, *coefmpc=NULL, *xforc=NULL,
 	*reorder=NULL,*dcs=NULL, *thickn=NULL, *thicke=NULL, *offset=NULL,
 	*elcon=NULL, *rhcon=NULL, *alcon=NULL, *alzero=NULL, *t0=NULL, *t1=NULL,
 	*prestr=NULL, *orab=NULL, *amta=NULL, *veold=NULL, *accold=NULL,
-	*adb=NULL, *aub=NULL, *t1old=NULL, *eme=NULL, *plicon=NULL, *plkcon=NULL,
+	*adb=NULL, *aub=NULL, *t1old=NULL, *eme=NULL, *plicon=NULL, 
+        *plkcon=NULL,
 	*xstate=NULL, *trab=NULL, *ener=NULL, *shcon=NULL, *cocon=NULL,
         *cs=NULL,*tietol=NULL,*fmpc=NULL,*prop=NULL,*t0g=NULL,*t1g=NULL,
 	*xbody=NULL,*xbodyold=NULL;
@@ -65,22 +70,22 @@ double *co=NULL, *xboun=NULL, *coefmpc=NULL, *xforc=NULL,
 double ctrl[27]={4.5,8.5,9.5,16.5,10.5,4.5,0.,5.5,0.,0.,0.25,0.5,0.75,0.85,0.,0.,1.5,0.,0.005,0.01,0.,0.,0.02,1.e-5,1.e-3,1.e-8,1.e30};
     
 char *sideload=NULL, *set=NULL, *matname=NULL, *orname=NULL, *amname=NULL,
-	*filab=NULL, *lakon=NULL, *labmpc=NULL, *prlab=NULL, *prset=NULL, 
-	jobnamec[528]="",jobnamef[132]="",output[4]="asc", *typeboun=NULL,
-	*inpc=NULL,*tieset=NULL,*cbody=NULL,fneig[132]="";
+     *filab=NULL, *lakon=NULL, *labmpc=NULL, *prlab=NULL, *prset=NULL, 
+     jobnamec[528]="",jobnamef[132]="",output[4]="asc", *typeboun=NULL,
+     *inpc=NULL,*tieset=NULL,*cbody=NULL,fneig[132]="",*sideloadtemp=NULL;
     
 int nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,nentries=14,
   nmethod,neq[3]={0,0,0},i,mpcfree=1,mei[4],j,nzl,nam,nbounold=0,
-  nforcold=0,nloadold=0,nbody,nbody_=0,nbodyold=0,
+  nforcold=0,nloadold=0,nbody,nbody_=0,nbodyold=0,network=0,
   k,nzs[3],nmpc_=0,nload_=0,nforc_=0,istep,istat,nboun_=0,
   iperturb[2]={0,0},nmat,ntmat_=0,norien,ithermal[2]={0,0},
-  iprestr,kode,isolver=0,nslavs=0,nkon_=0,
+  iprestr,kode,isolver=0,nslavs=0,nkon_=0,ne0,nkon0,
   jout[2]={1,1},nlabel,nkon=0,idrct,jmax[2],iexpl,nevtot=0,
   iplas=0,npmat_=0,mi[3]={0,3,1},ntrans,mpcend=-1,namtot_=0,iumat=0,mpcmult,
   icascade=0,maxlenmpc,mpcinfo[4],ne1d=0,ne2d=0,infree[4]={0,0,0,0},
   callfrommain,nflow=0,jin=0,irstrt=0,nener=0,jrstrt=0,nenerold,
   nline,ipoinp[2*nentries],*inp=NULL,ntie,ntie_=0,mcs=0,nprop_=0,
-  nprop=0,itpamp=0,iviewfile,nkold,nevdamp_=0,npt_=0;
+      nprop=0,itpamp=0,iviewfile,nkold,nevdamp_=0,npt_=0,cyclicsymmetry;
 
 int *meminset=NULL,*rmeminset=NULL;
 
@@ -88,7 +93,7 @@ int nzs_,nk_=0,ne_=0,nset_=0,nalset_=0,nmat_=0,norien_=0,nam_=0,
     ntrans_=0,ncs_=0,nstate_=0,ncmat_=0,memmpc_=0,nprint_=0;
 
 double fei[3],tinc,tper,tmin,tmax,*xmodal=NULL,
-    alpha,ttime=0.,qaold[2]={0.,0.},physcon[9]={0.,0.,0.,0.,0.,0.,0.,0.,0.};
+    alpha,ttime=0.,qaold[2]={0.,0.},physcon[10]={0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
 #ifdef CALCULIX_MPI
 MPI_Init(&argc, &argv) ;
@@ -102,7 +107,7 @@ else{
     if(strcmp1(argv[i],"-i")==0) {
     strcpy(jobnamec,argv[i+1]);strcpy1(jobnamef,argv[i+1],132);jin++;break;}
     if(strcmp1(argv[i],"-v")==0) {
-	printf("\nThis is version version 2.5\n\n");
+	printf("\nThis is version version 2.6\n\n");
 	FORTRAN(stop,());
     }
   }
@@ -123,12 +128,12 @@ FORTRAN(uexternaldb,(&lop,&lrestart,time,&dtime,&kstep,&kinc));
 FORTRAN(openfile,(jobnamef,output));
 
 printf("\n************************************************************\n\n");
-printf("CalculiX version 2.5, Copyright(C) 1998-2011 Guido Dhondt\n");
+printf("CalculiX version 2.6, Copyright(C) 1998-2011 Guido Dhondt\n");
 printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
 printf("************************************************************\n\n");
-printf("You are using an executable made on Sa 6. Okt 15:15:49 CEST 2012\n");
+printf("You are using an executable made on Di 9. Jul 18:27:29 CEST 2013\n");
 fflush(stdout);
 
 istep=0;
@@ -177,7 +182,7 @@ nload=0;nbody=0;nforc=0;nboun=0;nk=0;nmpc=0;nam=0;
      and createmddof.f
    - change the dimension of label in geomview.f */
 
-nlabel=32;
+nlabel=41;
 
 while(istat>=0) {
 
@@ -261,6 +266,7 @@ while(istat>=0) {
     nodeforc=NNEW(int,2*nforc_);
     ndirforc=NNEW(int,nforc_);
     iamforc=NNEW(int,nforc_);
+    idefforc=NNEW(int,nforc_);
     xforc=NNEW(double,nforc_);
     ikforc=NNEW(int,nforc_);
     ilforc=NNEW(int,nforc_);
@@ -269,12 +275,14 @@ while(istat>=0) {
 
     nelemload=NNEW(int,2*nload_);
     iamload=NNEW(int,2*nload_);
+    idefload=NNEW(int,nload_);
     sideload=NNEW(char,20*nload_);
     xload=NNEW(double,2*nload_);
 
     /* distributed volumetric loads */
 
     cbody=NNEW(char,81*nbody_);
+    idefbody=NNEW(int,nbody_);
     ibody=NNEW(int,3*nbody_);
     xbody=NNEW(double,7*nbody_);
     xbodyold=NNEW(double,7*nbody_);
@@ -355,15 +363,6 @@ while(istat>=0) {
     amta=NNEW(double,2*namtot_);
     namta=NNEW(int,3*nam_);
 
-    /* temperatures */
-
-//    if((ne1d==0)&&(ne2d==0)){
-//	t0=NNEW(double,nk_);
-//	t1=NNEW(double,nk_);
-//    }else{
-//	t0=NNEW(double,3*nk_);
-//	t1=NNEW(double,3*nk_);
-//    }
     t0=NNEW(double,nk_);
     t1=NNEW(double,nk_);
     if((ne1d!=0)||(ne2d!=0)){
@@ -417,9 +416,10 @@ while(istat>=0) {
 
     /* allocating and reallocating space for subsequent steps */
 
-    if(ncont==1)nload=nload0;
+//    if(ncont==1)nload=nload0;
 
-    if((nmethod != 4) && ((abs(nmethod) != 1) || (iperturb[0] < 2))){
+      if((nmethod != 4) && (nmethod != 5) && 
+         ((abs(nmethod) != 1) || (iperturb[0] < 2))){
       veold=NNEW(double,mt*nk_);
     }
     else{
@@ -440,15 +440,18 @@ while(istat>=0) {
 
     RENEW(nodeforc,int,2*nforc_);
     RENEW(ndirforc,int,nforc_);
+    idefforc=NNEW(int,nforc_);
     RENEW(xforc,double,nforc_);
     RENEW(ikforc,int,nforc_);
     RENEW(ilforc,int,nforc_);
 
     RENEW(nelemload,int,2*nload_);
+    idefload=NNEW(int,nload_);
     RENEW(sideload,char,20*nload_);
     RENEW(xload,double,2*nload_);
 
     RENEW(cbody,char,81*nbody_);
+    idefbody=NNEW(int,nbody_);
     RENEW(ibody,int,3*nbody_);
     RENEW(xbody,double,7*nbody_);
     RENEW(xbodyold,double,7*nbody_);
@@ -510,6 +513,19 @@ while(istat>=0) {
   nenerold=nener;
   nkold=nk;
 
+  /* opening the eigenvalue file and checking for cyclic symmetry */
+
+  strcpy(fneig,jobnamec);
+  strcat(fneig,".eig");
+  cyclicsymmetry=0;
+  if((f1=fopen(fneig,"rb"))!=NULL){
+      if(fread(&cyclicsymmetry,sizeof(int),1,f1)!=1){
+	  printf("*ERROR reading the information whether cyclic symmetry is involved in the eigenvalue file");
+	  exit(0);
+      }
+      fclose(f1);
+  }
+
   /* reading the input file */
 
   FORTRAN(calinput,(co,&nk,kon,ipkon,lakon,&nkon,&ne,
@@ -535,7 +551,10 @@ while(istat>=0) {
             qaold,output,typeboun,inpc,&nline,ipoinp,inp,tieset,tietol,
             &ntie,fmpc,cbody,ibody,xbody,&nbody,&nbody_,xbodyold,&nam_,
 	    ielprop,&nprop,&nprop_,prop,&itpamp,&iviewfile,ipoinpc,&cfd,
-	    &nslavs,t0g,t1g));
+	    &nslavs,t0g,t1g,&network,&cyclicsymmetry,idefforc,idefload,
+            idefbody));
+
+  nload0=nload;free(idefforc);free(idefload);free(idefbody);
 
   if((abs(nmethod)!=1)||(iperturb[0]<2))icascade=0;
 
@@ -543,28 +562,30 @@ while(istat>=0) {
 
   if(istat<0) break;
 
-  /*RENEW(inpc,char,(long long)132*nline);*/
-  /* RENEW(inp,int,3*ipoinp[23]); */
-
   if(istep == 1) {
 
+  /* tied contact constraints: generate appropriate MPC's */
+
+    tiedcontact(&ntie, tieset, &nset, set,istartset, iendset, ialset,
+       lakon, ipkon, kon,tietol,&nmpc, &mpcfree, &memmpc_,
+       &ipompc, &labmpc, &ikmpc, &ilmpc,&fmpc, &nodempc, &coefmpc,
+       ithermal, co, vold,&cfd,&nmpc_,mi,&nk,&istep,ikboun,&nboun);
 
     /* remeshing quadratic elements into linear elements for contact */
 
-//    if((ntie>0)&&(abs(nmethod)==1)){
-    if((ntie>0)&&(iperturb[0]>1)){
-      for(i=0;i<ntie;i++){
-	if(tietol[2*i+1]>0){ncont=1;break;}
-      }
-//	ncont=0;
-      if(ncont==1){
-	remeshcontact(&ntie,tieset,&nset,set,istartset,iendset,&ialset,
+//    if((ntie>0)&&(iperturb[0]>1)){
+    if(ntie>0){
+	for(i=0;i<ntie;i++){
+	    if(tietol[2*i+1]>0){ncont=1;break;}
+	}
+	if(ncont==1){
+	    remeshcontact(&ntie,tieset,&nset,set,istartset,iendset,&ialset,
                &lakon,&ipkon,&kon,&nalset,&nmpc,&mpcfree,&memmpc_,
                &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc, 
 	       &coefmpc,&co,&nmpc_,mi,&nk,&nkon,&ne,&nk_,ithermal,
 	       &ielmat,&ielorien,&t0,&vold,&veold,&ncont,&xstate,&nstate_,
-	       &prestr,&iprestr,&nxstate);
-      }
+	       &prestr,&iprestr,&nxstate,&iamt1);
+	}
     }
 
     /* reallocating space in the first step */
@@ -699,9 +720,8 @@ while(istat>=0) {
     }else{
 	free(plicon);free(nplicon);
     }
-    /* next statements only for plastic materials */
 
-    if(iplas!=0){
+    if(npmat_>0){
       RENEW(plkcon,double,(2*npmat_+1)*ntmat_*nmat);
       RENEW(nplkcon,int,(ntmat_+1)*nmat);
     }
@@ -756,13 +776,6 @@ while(istat>=0) {
     }else{
 	free(cs);
     }
- 
-  /* tied contact constraints: generate appropriate MPC's */
-
-    tiedcontact(&ntie, tieset, &nset, set,istartset, iendset, ialset,
-       lakon, ipkon, kon,tietol,&nmpc, &mpcfree, &memmpc_,
-       &ipompc, &labmpc, &ikmpc, &ilmpc,&fmpc, &nodempc, &coefmpc,
-       ithermal, co, vold,&cfd,&nmpc_,mi,&nk);
 
  }else{
 
@@ -833,10 +846,6 @@ while(istat>=0) {
   /* temperature loading */
   
   if(ithermal[0] != 0){
-//      if((ne1d==0)&&(ne2d==0)){
-//	  RENEW(t0,double,nk);
-//	  RENEW(t1,double,nk);
-//      }
       RENEW(t0,double,nk);
       RENEW(t1,double,nk);
       if((ne1d!=0)||(ne2d!=0)){
@@ -847,7 +856,7 @@ while(istat>=0) {
   }
 
   if(ncont==1){
-      nload0=nload;
+//      nload0=nload;
       reloadcontact(lakon,ipkon,kon,&nelemload,&sideload,&iamload, 
 		    &xload,&nload,&ne,t1,iamt1,&nam,ithermal,vold,mi,
                     &xloadold);
@@ -881,7 +890,8 @@ while(istat>=0) {
 
   /* initial velocities and accelerations */
 
-  if((nmethod == 4) || ((abs(nmethod) == 1) && (iperturb[0] >= 2))) {
+  if((nmethod == 4) || (nmethod==5) || 
+     ((abs(nmethod) == 1) && (iperturb[0] >= 2))) {
     RENEW(veold,double,mt*nk);
   }
   else {free(veold);}
@@ -896,15 +906,42 @@ while(istat>=0) {
     RENEW(iamboun,int,nboun);
   }
 
-  /* temperature loading */
-  
-//  if(ithermal[0] != 0){
-//      if((ne1d==0)&&(ne2d==0)){
-//	  RENEW(t0,double,nk);
-//	  RENEW(t1,double,nk);
-//      }
-//    if(nam > 0) {RENEW(iamt1,int,nk);}
-//  }
+  /* generate force convection elements */
+
+  if(network==1){
+      ne0=ne;nkon0=nkon;nload1=nload;
+      RENEW(ipkon,int,ne+nload);
+      RENEW(lakon,char,8*(ne+nload));
+      RENEW(kon,int,nkon+9*nload);
+      inodesd=NNEW(int,nk);
+      RENEW(nelemload,int,4*nload);
+      RENEW(sideload,char,40*nload);
+      
+      FORTRAN(genadvecelem,(inodesd,ipkon,&ne,lakon,kon,&nload,
+			    sideload,nelemload,&nkon));
+      
+      free(inodesd);
+      RENEW(ipkon,int,ne);
+      RENEW(lakon,char,8*ne);
+      RENEW(kon,int,nkon);
+      RENEW(sti,double,6*mi[0]*ne);
+      RENEW(eme,double,6*mi[0]*ne);
+      if(iprestr>0) RENEW(prestr,double,6*mi[0]*ne);
+      if(nprop>0) RENEW(ielprop,int,ne);
+      if((ne1d!=0)||(ne2d!=0)) RENEW(offset,double,2*ne);
+      RENEW(nelemload,int,2*nload);
+      RENEW(sideload,char,20*nload);
+      RENEW(xload,double,2*nload);
+      RENEW(xloadold,double,2*nload);
+      if(nam>0){
+	  RENEW(iamload,int,2*nload);
+	  for(i=2*nload1;i<2*nload;i++)iamload[i]=0;
+      }
+      if(nener==1)RENEW(ener,double,mi[0]*ne*2);
+      if(norien>0)RENEW(ielorien,int,mi[2]*ne);
+      RENEW(ielmat,int,mi[2]*ne);
+      for(i=mi[2]*ne0;i<mi[2]*ne;i++)ielmat[i]=1;
+  }
 
   if(ntrans > 0){
     RENEW(inotr,int,2*nk);
@@ -913,7 +950,16 @@ while(istat>=0) {
   /*   calling the user routine ufaceload (can be empty) */
 
   if(ithermal[1]>=2){
-      FORTRAN(ufaceload,(co,ipkon,kon,lakon,nelemload,sideload,&nload));
+      sideloadtemp=NNEW(char,20*nload);
+      for(i=0;i<nload;i++){
+	  strcpy1(&sideloadtemp[20*i],&sideload[20*i],20);
+	  if((strcmp1(&sideload[20*i]," ")==0)&&
+	     (strcmp1(&sideload[20*i+1]," ")!=0)){
+	      strcpy1(&sideloadtemp[20*i],"F",1);
+	  }
+      }
+      FORTRAN(ufaceload,(co,ipkon,kon,lakon,nelemload,sideloadtemp,&nload));
+      free(sideloadtemp);
   }
   
   /* decascading MPC's and renumbering the equations: only necessary
@@ -1003,8 +1049,11 @@ while(istat>=0) {
   /* nmethod=1: static analysis   */
   /* nmethod=2: frequency analysis  */
   /* nmethod=3: buckling analysis */
-  /* nmethod=4: linear dynamic analysis */
+  /* nmethod=4: (linear or nonlinear) dynamic analysis */
   /* nmethod=5: steady state dynamics analysis */
+  /* nmethod=6: Coriolis frequency calculation */
+  /* nmethod=7: flutter frequency calculation */
+     
 
   if((nmethod<=1)||(iperturb[0]>1))
     {
@@ -1070,17 +1119,18 @@ while(istat>=0) {
 	arpack(co,&nk,kon,ipkon,lakon,&ne,nodeboun,ndirboun,xboun,&nboun, 
 	     ipompc,nodempc,coefmpc,labmpc,&nmpc,nodeforc,ndirforc,xforc,
              &nforc, nelemload,sideload,xload,&nload, 
-	     ad,au,b,nactdof,icol,jq,irow,neq,&nzl,&nmethod,ikmpc, 
+	     ad,au,b,nactdof,icol,jq,&irow,neq,&nzl,&nmethod,ikmpc, 
 	     ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,nrhcon,
 	     shcon,nshcon,cocon,ncocon,
              alcon,nalcon,alzero,ielmat,ielorien,&norien,orab,&ntmat_,
              t0,t1,t1old,ithermal,prestr,&iprestr,vold,iperturb,sti,nzs,
 	     &kode,adb,aub,mei,fei,filab,
 	     eme,&iexpl,plicon,nplicon,plkcon,nplkcon,
-	     xstate,&npmat_,matname,mi,&ncmat_,&nstate_,ener,jobnamec,
+	     &xstate,&npmat_,matname,mi,&ncmat_,&nstate_,&ener,jobnamec,
              output,set,&nset,istartset,iendset,ialset,&nprint,prlab,
              prset,&nener,&isolver,trab,inotr,&ntrans,&ttime,fmpc,cbody,
-             ibody,xbody,&nbody,thicke);}
+	     ibody,xbody,&nbody,thicke,&nslavs,tietol,&nkon,mpcinfo,
+	     &ntie,&istep,&mcs,ics,nnn,tieset,cs);}
 #else
             printf("*ERROR in CalculiX: the ARPACK library is not linked\n\n");
             FORTRAN(stop,());}
@@ -1091,17 +1141,18 @@ while(istat>=0) {
 	arpackcs(co,&nk,kon,ipkon,lakon,&ne,nodeboun,ndirboun,xboun,&nboun, 
 	     ipompc,nodempc,coefmpc,labmpc,&nmpc,nodeforc,ndirforc,xforc,
              &nforc, nelemload,sideload,xload,&nload, 
-	     ad,au,b,nactdof,icol,jq,irow,neq,&nzl,&nmethod,ikmpc, 
+	     ad,au,b,nactdof,icol,jq,&irow,neq,&nzl,&nmethod,ikmpc, 
 	     ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,nrhcon,
              alcon,nalcon,alzero,ielmat,ielorien,&norien,orab,&ntmat_,
              t0,t1,t1old,ithermal,prestr,&iprestr, 
 	     vold,iperturb,sti,nzs,&kode,adb,aub,mei,fei,filab,
 	     eme,&iexpl,plicon,nplicon,plkcon,nplkcon,
-	     xstate,&npmat_,matname,mi,ics,cs,&mpcend,&ncmat_,
-             &nstate_,&mcs,&nkon,ener,jobnamec,output,set,&nset,istartset,
+	     &xstate,&npmat_,matname,mi,ics,cs,&mpcend,&ncmat_,
+             &nstate_,&mcs,&nkon,&ener,jobnamec,output,set,&nset,istartset,
              iendset,ialset,&nprint,prlab,
              prset,&nener,&isolver,trab,inotr,&ntrans,&ttime,fmpc,cbody,
-             ibody,xbody,&nbody,&nevtot,thicke);}
+             ibody,xbody,&nbody,&nevtot,thicke,&nslavs,tietol,mpcinfo,
+	     &ntie,&istep,nnn,tieset);}
 #else
             printf("*ERROR in CalculiX: the ARPACK library is not linked\n\n");
             FORTRAN(stop,());}
@@ -1178,7 +1229,7 @@ while(istat>=0) {
             elcon,nelcon,rhcon,nrhcon,cocon,ncocon,
             alcon,nalcon,alzero,&ielmat,&ielorien,&norien,orab,&ntmat_,&t0,
 	    &t1,ithermal,prestr,&iprestr,&vold,iperturb,sti,nzs,
-	    &tinc,&tper,xmodal,veold,amname,amta,
+	    &tinc,&tper,xmodal,&veold,amname,amta,
 	    namta,&nam,iamforc,iamload,&iamt1,
 	    jout,&kode,filab,&eme,xforcold,xloadold,
             &t1old,&iamboun,&xbounold,&iexpl,plicon,
@@ -1189,7 +1240,7 @@ while(istat>=0) {
 	    xbodyold,&istep,&isolver,jq,output,&mcs,&nkon,ics,cs,&mpcend,&nnn,
 	    ctrl,ikforc,ilforc,thicke);
     }
-  else if(nmethod==6)
+  else if((nmethod==6)||(nmethod==7))
     {
 
       printf(" Composing the complex eigenmodes from the real eigenmodes\n\n");
@@ -1211,7 +1262,7 @@ while(istat>=0) {
             prset,&nener,trab,&inotr,&ntrans,&fmpc,cbody,ibody,xbody,&nbody,
             xbodyold,&istep,&isolver,jq,output,&mcs,&nkon,&mpcend,ics,cs,
 	    &ntie,tieset,&idrct,jmax,&tmin,&tmax,ctrl,&itpamp,tietol,&nalset,
-	   &nnn,ikforc,ilforc,thicke);
+	    &nnn,ikforc,ilforc,thicke,jobnamef,mei);
     }
 
   free(nactdof);
@@ -1222,67 +1273,83 @@ while(istat>=0) {
   /* deleting the perturbation loads and temperatures */
 
   if((iperturb[0] == 1)&&(nmethod==3)) {
-    nforc=0;
-    nload=0;
-    nbody=0;
-    if(ithermal[0] == 1) {
-      for(k=0;k<nk;++k){
-	t1[k]=t0[k];
+      nforc=0;
+      nload=0;
+      nbody=0;
+      if(ithermal[0] == 1) {
+	  for(k=0;k<nk;++k){
+	      t1[k]=t0[k];
+	  }
       }
-    }
-  }
-
-  else{
-    nbounold=nboun;
-    for (i=0;i<nboun;i++) {
-	nodebounold[i]=nodeboun[i];
-	ndirbounold[i]=ndirboun[i];
-    }
-    nforcold=nforc;
-    nloadold=nload;
-    nbodyold=nbody;
-
+  }else{
+      nbounold=nboun;
+      for (i=0;i<nboun;i++) {
+	  nodebounold[i]=nodeboun[i];
+	  ndirbounold[i]=ndirboun[i];
+      }
+      nforcold=nforc;
+      nloadold=nload;
+      nbodyold=nbody;
+      
     /* resetting the amplitude to none except for time=total time amplitudes */
 
-    if(nam > 0) {
-	for (i=0;i<nboun;i++) {
-	    if(iamboun[i]>0){
-		if(namta[3*iamboun[i]-1]>0){
-		    iamboun[i]=0;
-		    xboun[i]=xbounold[i];}
-	    }
-	}
-	for (i=0;i<nforc;i++){
-	    if(iamforc[i]>0){
-		if(namta[3*iamforc[i]-1]>0){
-		    iamforc[i]=0;
-		    xforc[i]=xforcold[i];}
-	    }
-	}
-	for (i=0;i<2*nload;i++){
-	    if(iamload[i]>0){
-		if(namta[3*iamload[i]-1]>0){
-		    iamload[i]=0;
-		    xload[i]=xloadold[i];}
-	    }
-	}
-	for (i=1;i<3*nbody;i=i+3){
-	    if(ibody[i]>0){
-		if(namta[3*ibody[i]-1]>0){
-		    ibody[i]=0;
-		    xbody[7*(i-1)/3]=xbodyold[7*(i-1)/3];}
-	    }
-	}
-	if(ithermal[0]==1) {
-	    if(iamt1[i]>0){
-		if(namta[3*iamt1[i]-1]>0){
-		    iamt1[i]=0;
-		    t1[i]=t1old[i];}
-	    }
-	}
-    }
+      if(nam > 0) {
+	  for (i=0;i<nboun;i++) {
+	      if(iamboun[i]>0){
+		  if(namta[3*iamboun[i]-1]>0){
+		      iamboun[i]=0;
+		      xboun[i]=xbounold[i];}
+	      }
+	  }
+	  for (i=0;i<nforc;i++){
+	      if(iamforc[i]>0){
+		  if(namta[3*iamforc[i]-1]>0){
+		      iamforc[i]=0;
+		      xforc[i]=xforcold[i];}
+	      }
+	  }
+	  for (i=0;i<2*nload;i++){
+	      if(iamload[i]>0){
+		  if(namta[3*iamload[i]-1]>0){
+		      iamload[i]=0;
+		      xload[i]=xloadold[i];}
+	      }
+	  }
+	  for (i=1;i<3*nbody;i=i+3){
+	      if(ibody[i]>0){
+		  if(namta[3*ibody[i]-1]>0){
+		      ibody[i]=0;
+		      xbody[7*(i-1)/3]=xbodyold[7*(i-1)/3];}
+	      }
+	  }
+	  if(ithermal[0]==1) {
+	      if(iamt1[i]>0){
+		  if(namta[3*iamt1[i]-1]>0){
+		      iamt1[i]=0;
+		      t1[i]=t1old[i];}
+	      }
+	  }
+      }
   }
 
+  /* removing the advective elements, if any */
+
+  if(network==1){
+      ne=ne0;nkon=nkon0;
+      RENEW(ipkon,int,ne);
+      RENEW(lakon,char,8*ne);
+      RENEW(kon,int,nkon);
+      RENEW(sti,double,6*mi[0]*ne);
+      RENEW(eme,double,6*mi[0]*ne);
+      if(iprestr>0) RENEW(prestr,double,6*mi[0]*ne);
+      if(nprop>0) RENEW(ielprop,int,ne);
+      if((ne1d!=0)||(ne2d!=0)) RENEW(offset,double,2*ne);
+      if(nener==1)RENEW(ener,double,mi[0]*ne*2);
+      if(norien>0)RENEW(ielorien,int,mi[2]*ne);
+      RENEW(ielmat,int,mi[2]*ne);
+  }
+
+  nload=nload0;
 
   if((nmethod == 4)&&(iperturb[0]>1)) free(accold);
 

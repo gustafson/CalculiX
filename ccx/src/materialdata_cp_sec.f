@@ -28,7 +28,7 @@
 !     For the differential value we have:
 !            dh=cp*dT
 !     and consequently
-!            h=int_from_0_to_T cp*dT cp*dT
+!            h=int_from_0_to_T cp*dT
 !     For the secant value one has:
 !            h=cp_secant*T
 !
@@ -54,7 +54,8 @@
      &              (shcon(1,i,imat)+shcon(1,i-1,imat))/2.d0
          enddo
          cp=cp+(t1l-shcon(0,nshcon(imat),imat))*
-     &           (shcon(1,nshcon(imat),imat))/(t1l-physcon(1))
+     &           (shcon(1,nshcon(imat),imat))
+         cp=cp/(t1l-physcon(1))
       else
          cp=shcon(1,id,imat)+
      &        (shcon(1,id+1,imat)-shcon(1,id,imat))*

@@ -56,6 +56,7 @@
             nope=6
          elseif(lakon(i)(1:1).eq.'E') then
             read(lakon(i)(8:8),'(i1)') nope
+            nope=nope+1
          elseif(lakon(i)(1:1).eq.'D') then
             cycle
          endif

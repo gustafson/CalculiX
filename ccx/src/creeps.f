@@ -43,13 +43,13 @@
       ntmat=0
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in creeps: *CREEP should be placed'
+         write(*,*) '*ERROR reading *CREEP: *CREEP should be placed'
          write(*,*) '  before all step definitions'
          stop
       endif
 !
       if(nmat.eq.0) then
-         write(*,*) '*ERROR in creeps: *CREEP should be preceded'
+         write(*,*) '*ERROR reading *CREEP: *CREEP should be preceded'
          write(*,*) '  by a *MATERIAL card'
          stop
       endif
@@ -58,8 +58,8 @@
 !
       if((nelcon(1,nmat).ne.2).and.(nelcon(1,nmat).ne.-51)) then
          if((nelcon(1,nmat).ne.9).and.(nelcon(1,nmat).ne.-114)) then
-            write(*,*) '*ERROR in creeps: *CREEP should be preceded'
-            write(*,*) '       by an *ELASTIC,TYPE=ISO card,'
+            write(*,*) '*ERROR reading *CREEP: *CREEP should be'
+            write(*,*) '       preceded by an *ELASTIC,TYPE=ISO card,'
             write(*,*) '       or an *ELASTIC,TYPE=ORTHO card'
             stop
          endif
@@ -73,6 +73,9 @@
 !
             iperturb(1)=3
             iperturb(2)=1
+            write(*,*) '*INFO reading *CREEP: nonlinear geometric'
+            write(*,*) '      effects are turned on'
+            write(*,*)
             nelcon(1,nmat)=-114
             do i=2,n
                if(textpart(i)(1:8).eq.'LAW=USER') then
@@ -88,8 +91,8 @@
 !
                nstate_=max(nstate_,7)
                if(matname(nmat)(70:80).ne.'           ') then
-                  write(*,*) '*ERROR in creeps: the material name for'
-                  write(*,*) '       an elastically anisotropic'
+                  write(*,*) '*ERROR reading *CREEP: the material name'
+                  write(*,*) '       for an elastically anisotropic'
                   write(*,*) '       material with isotropic creep must'
                   write(*,*) '       not exceed 69 characters'
                   stop
@@ -116,8 +119,8 @@ c                  matname(nmat)(12:80)=matname(nmat)(1:69)
                   elcon(12,i,nmat)=0.d0
                enddo
                if(matname(nmat)(71:80).ne.'          ') then
-                  write(*,*) '*ERROR in creeps: the material name for'
-                  write(*,*) '       an elastically anisotropic'
+                  write(*,*) '*ERROR reading *CREEP: the material name'
+                  write(*,*) '       for an elastically anisotropic'
                   write(*,*) '       material with Norton creep'
                   write(*,*) '       must not exceed 70 characters'
                   stop
@@ -137,7 +140,7 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
 !
             do i=2,n
                if(textpart(i)(1:8).eq.'LAW=USER') then
-                  write(*,*) '*ERROR in creeps: for an elastically'
+                  write(*,*) '*ERROR reading *CREEP: for an elastically'
                   write(*,*) '       anisotropic material with von'
                   write(*,*) '       Mises plasticity only Norton creep'
                   write(*,*) '       is allowed (no user subroutine)'
@@ -173,6 +176,9 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
 !     
          iperturb(1)=3
          iperturb(2)=1
+         write(*,*) '*INFO reading *CREEP: nonlinear geometric'
+         write(*,*) '      effects are turned on'
+         write(*,*)
          iplas=1
          nelcon(1,nmat)=-52
          nstate_=max(nstate_,13)
@@ -187,7 +193,7 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
                return
             else
                write(*,*) 
-     &              '*WARNING in creeps: parameter not recognized:'
+     &              '*WARNING reading *CREEP: parameter not recognized:'
                write(*,*) '         ',
      &              textpart(i)(1:index(textpart(i),' ')-1)
                call inputwarning(inpc,ipoinpc,iline)
@@ -205,7 +211,7 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
             if((istat.lt.0).or.(key.eq.1)) exit
             ntmat=ntmat+1
             if(ntmat.gt.ntmat_) then
-               write(*,*) '*ERROR in creeps: increase ntmat_'
+               write(*,*) '*ERROR reading *CREEP: increase ntmat_'
                stop
             endif
             do i=1,3
@@ -214,12 +220,12 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
             enddo
             if(elcon(6,ntmat,nmat).le.0.d0) then
-               write(*,*) '*ERROR in creeps: parameter A'
+               write(*,*) '*ERROR reading *CREEP: parameter A'
                write(*,*) '       in the Norton law is nonpositive'
                stop
             endif
             if(elcon(7,ntmat,nmat).le.0.d0) then
-               write(*,*) '*ERROR in creeps: parameter n'
+               write(*,*) '*ERROR reading *CREEP: parameter n'
                write(*,*) '       in the Norton law is nonpositive'
                stop
             endif
@@ -234,7 +240,7 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
          enddo
 !
          if(ntmat.eq.0) then
-            write(*,*) '*ERROR in creeps: Norton law assumed,'
+            write(*,*) '*ERROR reading *CREEP: Norton law assumed,'
             write(*,*) '       yet no constants given'
             stop
          endif
@@ -276,7 +282,7 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
             if((istat.lt.0).or.(key.eq.1)) exit
             ntmat=ntmat+1
             if(ntmat.gt.ntmat_) then
-               write(*,*) '*ERROR in creeps: increase ntmat_'
+               write(*,*) '*ERROR reading *CREEP: increase ntmat_'
                stop
             endif
             do i=1,3
@@ -303,7 +309,7 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
 !        A,n,m
 !
          if(ntmat.eq.0) then
-            write(*,*) '*ERROR in creeps: Norton law assumed,'
+            write(*,*) '*ERROR reading *CREEP: Norton law assumed,'
             write(*,*) '       yet no constants given'
             stop
          endif

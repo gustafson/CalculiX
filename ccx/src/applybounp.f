@@ -26,9 +26,8 @@
 !
       implicit none
 !
-      integer turbulent
-!
-      integer nrhcon(*),mi(*),ielmat(mi(3),*),ntmat_,nodeboun(*),
+      integer turbulent,
+     &  nrhcon(*),mi(*),ielmat(mi(3),*),ntmat_,nodeboun(*),
      &  isolidsurf(*),
      &  ndirboun(*),nshcon(*),nk,i,nboun,node,imat,ithermal,iponoel(*),
      &  inoel(3,*),nsolidsurf,ifreenode,ifreestream(*),nfreestream,k,
@@ -63,9 +62,7 @@
          if(imat.eq.0) cycle
 !     
          index=nodempc(3,ist)
-c         residu=coefmpc(ist)*(vold(ndir,node)+v(ndir,node))
          residu=0.d0
-c         size=(coefmpc(ist))**2
          if(index.ne.0) then
             do
                nodei=nodempc(1,index)
@@ -73,32 +70,12 @@ c         size=(coefmpc(ist))**2
 !
                residu=residu+coefmpc(index)*
      &              (vold(ndiri,nodei)+v(ndiri,nodei))
-c               size=size+(coefmpc(index))**2
                index=nodempc(3,index)
                if(index.eq.0) exit
             enddo
          endif
 !
          v(ndir,node)=-residu/coefmpc(ist)-vold(ndir,node)
-c!     
-c!     correcting all terms of the MPC
-c! 
-c         residu=residu/size
-c!     
-c         correction=-residu*coefmpc(ist)
-c         v(ndir,node)=v(ndir,node)+correction
-c         index=nodempc(3,ist)
-c         if(index.ne.0) then
-c            do
-c               nodei=nodempc(1,index)
-c               ndiri=nodempc(2,index)
-c!
-c               correction=-residu*coefmpc(index)
-c               v(ndiri,nodei)=v(ndiri,nodei)+correction
-c               index=nodempc(3,index)
-c               if(index.eq.0) exit
-c            enddo
-c         endif
       enddo
 !     
       return

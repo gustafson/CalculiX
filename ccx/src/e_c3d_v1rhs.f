@@ -21,7 +21,7 @@
      &  idist,dtime,matname,mi,
      &  ttime,time,istep,iinc,shcon,nshcon,
      &  turbulent,vcontu,yy,nelemface,sideface,nface,compressible,
-     &  ipvar,var,ipvarf,varf,sti,ithermal,dtc)
+     &  ipvar,var,ipvarf,varf,sti,ithermal,dt)
 !
 !     computation of the velocity element matrix and rhs for the element with
 !     element with the topology in konl: step 1 (correction *)
@@ -30,8 +30,6 @@
 !
       implicit none
 !
-      integer turbulent,compressible
-!
       character*1 sideface(*)
       character*8 lakonl
       character*80 matname(*),amat
@@ -39,12 +37,12 @@
       integer konl(20),ifaceq(8,6),nk,nbody,nelem,ithermal,mi(*),
      &  idist,i,j,k,i1,i2,j1,nmethod,ii,jj,jj1,id,ipointer,
      &  ig,kk,nrhcon(*),ielmat(mi(3),*),nshcon(*),ntmat_,nope,
-     &  nopes,imat,
+     &  nopes,imat,turbulent,compressible,
      &  mint2d,mint3d,ifacet(6,4),ifacew(8,5),istep,iinc,
      &  iflag,k1,nelemface(*),nface,ipvar(*),index,ipvarf(*)
 !
-      real*8 co(3,*),shp(4,20),dvi,p1(3),p2(3),dtc(*),
-     &  bodyfx(3),ff(60),bf(3),q(3),c1,c2,xsjmod,
+      real*8 co(3,*),shp(4,20),dvi,p1(3),p2(3),dt(*),
+     &  bodyfx(3),ff(78),bf(3),q(3),c1,c2,xsjmod,
      &  rhcon(0:1,ntmat_,*),vel(3),div,shcon(0:3,ntmat_,*),
      &  voldl(0:mi(2),20),xsj2(3),shp2(7,8),omcor,
      &  vold(0:mi(2),*),om,omx,const,xsj,temp,tt(3,3),
@@ -324,9 +322,9 @@ c            unt=a1*xkin/max(a1*xtuf,vort*f2)
                enddo
                tt(i1,i1)=tt(i1,i1)-2.d0*xtuf/3.d0
             enddo
-            tu=umt*(tt(1,1)*vkl(1,1)+tt(1,2)*vkl(1,2)+tt(1,3)*vkl(1,3)+
-     &              tt(2,1)*vkl(2,1)+tt(2,2)*vkl(2,2)+tt(2,3)*vkl(2,3)+
-     &              tt(3,1)*vkl(3,1)+tt(3,2)*vkl(3,2)+tt(3,3)*vkl(3,3))
+            tu=(tt(1,1)*vkl(1,1)+tt(1,2)*vkl(1,2)+tt(1,3)*vkl(1,3)+
+     &          tt(2,1)*vkl(2,1)+tt(2,2)*vkl(2,2)+tt(2,3)*vkl(2,3)+
+     &          tt(3,1)*vkl(3,1)+tt(3,2)*vkl(3,2)+tt(3,3)*vkl(3,3))
 !
             if(compressible.eq.1) then
                tu=tu-2.d0*xtuf*div/3.d0
@@ -337,8 +335,7 @@ c            unt=a1*xkin/max(a1*xtuf,vort*f2)
 !
             do i1=1,3
                do j1=i1,3
-cccc                  t(i1,j1)=dvi*t(i1,j1)+umt*tt(i1,j1)
-                  t(i1,j1)=dvi*t(i1,j1)
+                  t(i1,j1)=dvi*t(i1,j1)+umt*tt(i1,j1)
                enddo
             enddo
          else
@@ -368,13 +365,13 @@ cccc                  t(i1,j1)=dvi*t(i1,j1)+umt*tt(i1,j1)
 !           convective + diffusive
 !
             ff(jj1)=ff(jj1)-xsjmod*
-     &            (cvel(1)*(shp(4,jj)+dtc(konl(jj))*shpv(jj)/2.d0)
+     &            (cvel(1)*(shp(4,jj)+dt(konl(jj))*shpv(jj)/2.d0)
      &             +shp(1,jj)*t(1,1)+shp(2,jj)*t(1,2)+shp(3,jj)*t(1,3))
             ff(jj1+1)=ff(jj1+1)-xsjmod*
-     &            (cvel(2)*(shp(4,jj)+dtc(konl(jj))*shpv(jj)/2.d0)
+     &            (cvel(2)*(shp(4,jj)+dt(konl(jj))*shpv(jj)/2.d0)
      &             +shp(1,jj)*t(1,2)+shp(2,jj)*t(2,2)+shp(3,jj)*t(2,3))
             ff(jj1+2)=ff(jj1+2)-xsjmod*
-     &            (cvel(3)*(shp(4,jj)+dtc(konl(jj))*shpv(jj)/2.d0)
+     &            (cvel(3)*(shp(4,jj)+dt(konl(jj))*shpv(jj)/2.d0)
      &             +shp(1,jj)*t(1,3)+shp(2,jj)*t(2,3)+shp(3,jj)*t(3,3))
             jj1=jj1+3
          enddo
@@ -429,11 +426,11 @@ cccc                  t(i1,j1)=dvi*t(i1,j1)+umt*tt(i1,j1)
             jj1=1
             do jj=1,nope
                ff(jj1)=ff(jj1)+xsjmod*bf(1)*(shp(4,jj)+
-     &              dtc(konl(jj))*shpv(jj)/2.d0)
+     &              dt(konl(jj))*shpv(jj)/2.d0)
                ff(jj1+1)=ff(jj1+1)+xsjmod*bf(2)*(shp(4,jj)+
-     &              dtc(konl(jj))*shpv(jj)/2.d0)
+     &              dt(konl(jj))*shpv(jj)/2.d0)
                ff(jj1+2)=ff(jj1+2)+xsjmod*bf(3)*(shp(4,jj)+
-     &              dtc(konl(jj))*shpv(jj)/2.d0)
+     &              dt(konl(jj))*shpv(jj)/2.d0)
                jj1=jj1+3
             enddo
          else
@@ -649,10 +646,9 @@ c                  unt=a1*xkin/max(a1*xtuf,vort*f2)
 !     
                   do i1=1,3
                      do j1=i1,3
-cccccc                        t(i1,j1)=(dvi+umt)*t(i1,j1)
-                        t(i1,j1)=(dvi)*t(i1,j1)
+                        t(i1,j1)=(dvi+umt)*t(i1,j1)
                      enddo
-cccccc                     t(i1,i1)=t(i1,i1)-2.d0*rho*xkin/3.d0
+                     t(i1,i1)=t(i1,i1)-2.d0*rho*xkin/3.d0
                   enddo
                else
 !     

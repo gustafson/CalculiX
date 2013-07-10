@@ -1,5 +1,5 @@
-*DECK ISORT
-      SUBROUTINE ISORTIID (IX,CY,DY,N,KFLAG)
+*deck isort
+      subroutine isortiid (ix,cy,dy,n,kflag)
 !
 !     modified to sort in addition an integer (cy) and double (dy) array!
 !
@@ -56,297 +56,299 @@ C           IF-THEN-ELSE-ENDIF.  (RWC, WRB)
 !     to be sorted, this dimension has to be modified accordingly
 !
 C***END PROLOGUE  ISORT
+!
+      implicit none
 C     .. Scalar Arguments ..
-      INTEGER KFLAG, N
+      integer kflag, n
 C     .. Array Arguments ..
-      INTEGER IX(*)
+      integer ix(*)
       real*8 dy(*)
       integer cy(*)
 C     .. Local Scalars ..
-      REAL R
-      INTEGER I, IJ, J, K, KK, L, M, NN, T, TT
+      real r
+      integer i, ij, j, k, kk, l, m, nn, t, tt
       real*8 tty,ty
       integer uuy,uy
 C     .. Local Arrays ..
-      INTEGER IL(31), IU(31)
+      integer il(31), iu(31)
 C     .. External Subroutines ..
 !      EXTERNAL XERMSG
 C     .. Intrinsic Functions ..
-      INTRINSIC ABS, INT
+      intrinsic abs, int
 C***FIRST EXECUTABLE STATEMENT  ISORT
-      NN = N
-      IF (NN .LT. 1) THEN
+      nn = n
+      if (nn .lt. 1) then
 !         CALL XERMSG ('SLATEC', 'ISORT',
 !     +      'The number of values to be sorted is not positive.', 1, 1)
-         RETURN
-      ENDIF
+         return
+      endif
 C
-      KK = ABS(KFLAG)
-      IF (KK.NE.1 .AND. KK.NE.2) THEN
+      kk = abs(kflag)
+      if (kk.ne.1 .and. kk.ne.2) then
 !         CALL XERMSG ('SLATEC', 'ISORT',
 !     +      'The sort control parameter, K, is not 2, 1, -1, or -2.', 2,
 !     +      1)
-         RETURN
-      ENDIF
+         return
+      endif
 C
 C     Alter array IX to get decreasing order if needed
 C
-      IF (KFLAG .LE. -1) THEN
-         DO 10 I=1,NN
-            IX(I) = -IX(I)
-   10    CONTINUE
-      ENDIF
+      if (kflag .le. -1) then
+         do 10 i=1,nn
+            ix(i) = -ix(i)
+   10    continue
+      endif
 C
-      IF (KK .EQ. 2) GO TO 100
+      if (kk .eq. 2) go to 100
 C
 C     Sort IX only
 C
-      M = 1
-      I = 1
-      J = NN
-      R = 0.375E0
+      m = 1
+      i = 1
+      j = nn
+      r = 0.375e0
 C
-   20 IF (I .EQ. J) GO TO 60
-      IF (R .LE. 0.5898437E0) THEN
-         R = R+3.90625E-2
-      ELSE
-         R = R-0.21875E0
-      ENDIF
+   20 if (i .eq. j) go to 60
+      if (r .le. 0.5898437e0) then
+         r = r+3.90625e-2
+      else
+         r = r-0.21875e0
+      endif
 C
-   30 K = I
+   30 k = i
 C
 C     Select a central element of the array and save it in location T
 C
-      IJ = I + INT((J-I)*R)
-      T = IX(IJ)
+      ij = i + int((j-i)*r)
+      t = ix(ij)
 C
 C     If first element of array is greater than T, interchange with T
 C
-      IF (IX(I) .GT. T) THEN
-         IX(IJ) = IX(I)
-         IX(I) = T
-         T = IX(IJ)
-      ENDIF
-      L = J
+      if (ix(i) .gt. t) then
+         ix(ij) = ix(i)
+         ix(i) = t
+         t = ix(ij)
+      endif
+      l = j
 C
 C     If last element of array is less than than T, interchange with T
 C
-      IF (IX(J) .LT. T) THEN
-         IX(IJ) = IX(J)
-         IX(J) = T
-         T = IX(IJ)
+      if (ix(j) .lt. t) then
+         ix(ij) = ix(j)
+         ix(j) = t
+         t = ix(ij)
 C
 C        If first element of array is greater than T, interchange with T
 C
-         IF (IX(I) .GT. T) THEN
-            IX(IJ) = IX(I)
-            IX(I) = T
-            T = IX(IJ)
-         ENDIF
-      ENDIF
+         if (ix(i) .gt. t) then
+            ix(ij) = ix(i)
+            ix(i) = t
+            t = ix(ij)
+         endif
+      endif
 C
 C     Find an element in the second half of the array which is smaller
 C     than T
 C
-   40 L = L-1
-      IF (IX(L) .GT. T) GO TO 40
+   40 l = l-1
+      if (ix(l) .gt. t) go to 40
 C
 C     Find an element in the first half of the array which is greater
 C     than T
 C
-   50 K = K+1
-      IF (IX(K) .LT. T) GO TO 50
+   50 k = k+1
+      if (ix(k) .lt. t) go to 50
 C
 C     Interchange these elements
 C
-      IF (K .LE. L) THEN
-         TT = IX(L)
-         IX(L) = IX(K)
-         IX(K) = TT
-         GO TO 40
-      ENDIF
+      if (k .le. l) then
+         tt = ix(l)
+         ix(l) = ix(k)
+         ix(k) = tt
+         go to 40
+      endif
 C
 C     Save upper and lower subscripts of the array yet to be sorted
 C
-      IF (L-I .GT. J-K) THEN
-         IL(M) = I
-         IU(M) = L
-         I = K
-         M = M+1
-      ELSE
-         IL(M) = K
-         IU(M) = J
-         J = L
-         M = M+1
-      ENDIF
-      GO TO 70
+      if (l-i .gt. j-k) then
+         il(m) = i
+         iu(m) = l
+         i = k
+         m = m+1
+      else
+         il(m) = k
+         iu(m) = j
+         j = l
+         m = m+1
+      endif
+      go to 70
 C
 C     Begin again on another portion of the unsorted array
 C
-   60 M = M-1
-      IF (M .EQ. 0) GO TO 190
-      I = IL(M)
-      J = IU(M)
+   60 m = m-1
+      if (m .eq. 0) go to 190
+      i = il(m)
+      j = iu(m)
 C
-   70 IF (J-I .GE. 1) GO TO 30
-      IF (I .EQ. 1) GO TO 20
-      I = I-1
+   70 if (j-i .ge. 1) go to 30
+      if (i .eq. 1) go to 20
+      i = i-1
 C
-   80 I = I+1
-      IF (I .EQ. J) GO TO 60
-      T = IX(I+1)
-      IF (IX(I) .LE. T) GO TO 80
-      K = I
+   80 i = i+1
+      if (i .eq. j) go to 60
+      t = ix(i+1)
+      if (ix(i) .le. t) go to 80
+      k = i
 C
-   90 IX(K+1) = IX(K)
-      K = K-1
-      IF (T .LT. IX(K)) GO TO 90
-      IX(K+1) = T
-      GO TO 80
+   90 ix(k+1) = ix(k)
+      k = k-1
+      if (t .lt. ix(k)) go to 90
+      ix(k+1) = t
+      go to 80
 C
 C     Sort IX and carry IY along
 C
-  100 M = 1
-      I = 1
-      J = NN
-      R = 0.375E0
+  100 m = 1
+      i = 1
+      j = nn
+      r = 0.375e0
 C
-  110 IF (I .EQ. J) GO TO 150
-      IF (R .LE. 0.5898437E0) THEN
-         R = R+3.90625E-2
-      ELSE
-         R = R-0.21875E0
-      ENDIF
+  110 if (i .eq. j) go to 150
+      if (r .le. 0.5898437e0) then
+         r = r+3.90625e-2
+      else
+         r = r-0.21875e0
+      endif
 C
-  120 K = I
+  120 k = i
 C
 C     Select a central element of the array and save it in location T
 C
-      IJ = I + INT((J-I)*R)
-      T = IX(IJ)
-      TY = DY(IJ)
+      ij = i + int((j-i)*r)
+      t = ix(ij)
+      ty = dy(ij)
       uy = cy(ij)
 C
 C     If first element of array is greater than T, interchange with T
 C
-      IF (IX(I) .GT. T) THEN
-         IX(IJ) = IX(I)
-         IX(I) = T
-         T = IX(IJ)
-         DY(IJ) = DY(I)
+      if (ix(i) .gt. t) then
+         ix(ij) = ix(i)
+         ix(i) = t
+         t = ix(ij)
+         dy(ij) = dy(i)
          cy(ij) = cy(i)
-         DY(I) = TY
+         dy(i) = ty
          cy(i) = uy
-         TY = DY(IJ)
+         ty = dy(ij)
          uy = cy(ij)
-      ENDIF
-      L = J
+      endif
+      l = j
 C
 C     If last element of array is less than T, interchange with T
 C
-      IF (IX(J) .LT. T) THEN
-         IX(IJ) = IX(J)
-         IX(J) = T
-         T = IX(IJ)
-         DY(IJ) = DY(J)
+      if (ix(j) .lt. t) then
+         ix(ij) = ix(j)
+         ix(j) = t
+         t = ix(ij)
+         dy(ij) = dy(j)
          cy(ij) = cy(j)
-         DY(J) = TY
+         dy(j) = ty
          cy(j) = uy
-         TY = DY(IJ)
+         ty = dy(ij)
          uy = cy(ij)
 C
 C        If first element of array is greater than T, interchange with T
 C
-         IF (IX(I) .GT. T) THEN
-            IX(IJ) = IX(I)
-            IX(I) = T
-            T = IX(IJ)
-            DY(IJ) = DY(I)
+         if (ix(i) .gt. t) then
+            ix(ij) = ix(i)
+            ix(i) = t
+            t = ix(ij)
+            dy(ij) = dy(i)
             cy(ij) = cy(i)
-            DY(I) = TY
+            dy(i) = ty
             cy(i) = uy
-            TY = DY(IJ)
+            ty = dy(ij)
             uy = cy(ij)
-         ENDIF
-      ENDIF
+         endif
+      endif
 C
 C     Find an element in the second half of the array which is smaller
 C     than T
 C
-  130 L = L-1
-      IF (IX(L) .GT. T) GO TO 130
+  130 l = l-1
+      if (ix(l) .gt. t) go to 130
 C
 C     Find an element in the first half of the array which is greater
 C     than T
 C
-  140 K = K+1
-      IF (IX(K) .LT. T) GO TO 140
+  140 k = k+1
+      if (ix(k) .lt. t) go to 140
 C
 C     Interchange these elements
 C
-      IF (K .LE. L) THEN
-         TT = IX(L)
-         IX(L) = IX(K)
-         IX(K) = TT
-         TTY = DY(L)
+      if (k .le. l) then
+         tt = ix(l)
+         ix(l) = ix(k)
+         ix(k) = tt
+         tty = dy(l)
          uuy = cy(l)
-         DY(L) = DY(K)
+         dy(l) = dy(k)
          cy(l) = cy(k)
-         DY(K) = TTY
+         dy(k) = tty
          cy(k) = uuy
-         GO TO 130
-      ENDIF
+         go to 130
+      endif
 C
 C     Save upper and lower subscripts of the array yet to be sorted
 C
-      IF (L-I .GT. J-K) THEN
-         IL(M) = I
-         IU(M) = L
-         I = K
-         M = M+1
-      ELSE
-         IL(M) = K
-         IU(M) = J
-         J = L
-         M = M+1
-      ENDIF
-      GO TO 160
+      if (l-i .gt. j-k) then
+         il(m) = i
+         iu(m) = l
+         i = k
+         m = m+1
+      else
+         il(m) = k
+         iu(m) = j
+         j = l
+         m = m+1
+      endif
+      go to 160
 C
 C     Begin again on another portion of the unsorted array
 C
-  150 M = M-1
-      IF (M .EQ. 0) GO TO 190
-      I = IL(M)
-      J = IU(M)
+  150 m = m-1
+      if (m .eq. 0) go to 190
+      i = il(m)
+      j = iu(m)
 C
-  160 IF (J-I .GE. 1) GO TO 120
-      IF (I .EQ. 1) GO TO 110
-      I = I-1
+  160 if (j-i .ge. 1) go to 120
+      if (i .eq. 1) go to 110
+      i = i-1
 C
-  170 I = I+1
-      IF (I .EQ. J) GO TO 150
-      T = IX(I+1)
-      TY = DY(I+1)
+  170 i = i+1
+      if (i .eq. j) go to 150
+      t = ix(i+1)
+      ty = dy(i+1)
       uy = cy(i+1)
-      IF (IX(I) .LE. T) GO TO 170
-      K = I
+      if (ix(i) .le. t) go to 170
+      k = i
 C
-  180 IX(K+1) = IX(K)
-      DY(K+1) = DY(K)
+  180 ix(k+1) = ix(k)
+      dy(k+1) = dy(k)
       cy(k+1) = cy(k)
-      K = K-1
-      IF (T .LT. IX(K)) GO TO 180
-      IX(K+1) = T
-      DY(K+1) = TY
+      k = k-1
+      if (t .lt. ix(k)) go to 180
+      ix(k+1) = t
+      dy(k+1) = ty
       cy(k+1) = uy
-      GO TO 170
+      go to 170
 C
 C     Clean up
 C
-  190 IF (KFLAG .LE. -1) THEN
-         DO 200 I=1,NN
-            IX(I) = -IX(I)
-  200    CONTINUE
-      ENDIF
-      RETURN
-      END
+  190 if (kflag .le. -1) then
+         do 200 i=1,nn
+            ix(i) = -ix(i)
+  200    continue
+      endif
+      return
+      end

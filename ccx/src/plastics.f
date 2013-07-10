@@ -38,7 +38,7 @@
      &  ianisoplas
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
-     & temperature,plconloc(82),t1l,elcon(0:ncmat_,ntmat_,*)
+     & temperature,plconloc(802),t1l,elcon(0:ncmat_,ntmat_,*)
 !
       iso=.true.
 !
@@ -46,19 +46,21 @@
       npmat=0
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in plastics: *PLASTIC should be placed'
+         write(*,*) '*ERROR reading *PLASTIC: *PLASTIC should be placed'
          write(*,*) '  before all step definitions'
          stop
       endif
 !
       if(nmat.eq.0) then
-         write(*,*) '*ERROR in plastics: *PLASTIC should be preceded'
+         write(*,*) 
+     &      '*ERROR reading *PLASTIC: *PLASTIC should be preceded'
          write(*,*) '  by a *MATERIAL card'
          stop
       endif
 !
       if((nelcon(1,nmat).ne.2).and.(nelcon(1,nmat).ne.9)) then
-         write(*,*) '*ERROR in plastics: *PLASTIC should be preceded'
+         write(*,*) 
+     &        '*ERROR reading *PLASTIC: *PLASTIC should be preceded'
          write(*,*) '  by an *ELASTIC,TYPE=ISO card or'
          write(*,*) '  by an *ELASTIC,TYPE=ORTHO card'
          stop
@@ -66,6 +68,9 @@
 !
       iperturb(1)=3
       iperturb(2)=1
+      write(*,*) '*INFO reading *PLASTIC: nonlinear geometric'
+      write(*,*) '      effects are turned on'
+      write(*,*)
 !
       if(nelcon(1,nmat).eq.2) then
          iplas=1
@@ -85,7 +90,7 @@
                iso=.false.
             elseif(textpart(i)(11:14).eq.'USER') then
                if(nelcon(1,nmat).eq.-114) then
-                  write(*,*) '*ERROR in plastics: user defined '
+                  write(*,*) '*ERROR reading *PLASTIC: user defined '
                   write(*,*) '       hardening is not allowed for '
                   write(*,*) '       elastically anisotropic materials'
                   stop
@@ -97,7 +102,7 @@
             exit
          else
             write(*,*) 
-     &        '*WARNING in plastics: parameter not recognized:'
+     &        '*WARNING reading *PLASTIC: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline)
@@ -121,7 +126,7 @@
                npmat=0
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
-                  write(*,*) '*ERROR in plastics: increase ntmat_'
+                  write(*,*) '*ERROR reading *PLASTIC: increase ntmat_'
                   stop
                endif
                nplicon(0,nmat)=ntmat
@@ -133,7 +138,7 @@
                npmat=0
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
-                  write(*,*) '*ERROR in plastics: increase ntmat_'
+                  write(*,*) '*ERROR reading *PLASTIC: increase ntmat_'
                   stop
                endif
                nplicon(0,nmat)=ntmat
@@ -146,7 +151,7 @@
             enddo
             npmat=npmat+1
             if(npmat.gt.npmat_) then
-               write(*,*) '*ERROR in plastics: increase npmat_'
+               write(*,*) '*ERROR reading *PLASTIC: increase npmat_'
                stop
             endif
             nplicon(ntmat,nmat)=npmat
@@ -168,7 +173,7 @@
                npmat=0
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
-                  write(*,*) '*ERROR in plastics: increase ntmat_'
+                  write(*,*) '*ERROR reading *PLASTIC: increase ntmat_'
                   stop
                endif
                nplkcon(0,nmat)=ntmat
@@ -180,7 +185,7 @@
                npmat=0
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
-                  write(*,*) '*ERROR in plastics: increase ntmat_'
+                  write(*,*) '*ERROR reading *PLASTIC: increase ntmat_'
                   stop
                endif
                nplkcon(0,nmat)=ntmat
@@ -193,7 +198,7 @@
             enddo
             npmat=npmat+1
             if(npmat.gt.npmat_) then
-               write(*,*) '*ERROR in plastics: increase npmat_'
+               write(*,*) '*ERROR reading *PLASTIC: increase npmat_'
                stop
             endif
             nplkcon(ntmat,nmat)=npmat
@@ -201,7 +206,8 @@
       endif
 !
       if(ntmat.eq.0) then
-         write(*,*) '*ERROR in plastics: *PLASTIC card without data'
+         write(*,*) 
+     &       '*ERROR reading *PLASTIC: *PLASTIC card without data'
          stop
       endif
 !
@@ -210,7 +216,8 @@
 !
       if(nelcon(1,nmat).eq.-114) then
          if(matname(nmat)(71:80).ne.'          ') then
-            write(*,*) '*ERROR in plastics: the material name for an'
+            write(*,*) 
+     &          '*ERROR reading *PLASTIC: the material name for an'
             write(*,*) '       elastically anisotropic material with'
             write(*,*) '       isotropic plasticity must not exceed 70'
             write(*,*) '       characters'
@@ -265,7 +272,7 @@ c               plconloc(81)=nplicon(1,nmat)+0.5d0
      &                 nmat,id+1,t1l,i,kin)
                endif
 !
-               ndata=int(plconloc(81))
+               ndata=int(plconloc(801))
                if(ndata.eq.1) then
                   elcon(10,i,nmat)=plconloc(2)
                   elcon(11,i,nmat)=0.d0
@@ -283,7 +290,8 @@ c               plconloc(81)=nplicon(1,nmat)+0.5d0
                ndatamax=max(ndata,ndatamax)
             enddo
             if(ndatamax.gt.2) then
-               write(*,*) '*WARNING in plastics: isotropic hardening'
+               write(*,*) 
+     &            '*WARNING reading *PLASTIC: isotropic hardening'
                write(*,*) '         curve is possibly nonlinear for'
                write(*,*) '         the elastically anisotropic'
                write(*,*) '         material ',matname(nmat)(11:80)
@@ -330,25 +338,26 @@ c               plconloc(82)=nplkcon(1,nmat)+0.5d0
      &                 nmat,id+1,t1l,i,kin)
                endif
 !
-               ndata=int(plconloc(82))
+               ndata=int(plconloc(802))
                if(ndata.eq.1) then
-                  elcon(10,i,nmat)=plconloc(42)
+                  elcon(10,i,nmat)=plconloc(402)
                   elcon(11,i,nmat)=0.d0
                   elcon(12,i,nmat)=0.d0
                   elcon(13,i,nmat)=-1.d0
                   elcon(14,i,nmat)=1.d0
                else
-                  elcon(10,i,nmat)=plconloc(42)
+                  elcon(10,i,nmat)=plconloc(402)
                   elcon(11,i,nmat)=0.d0
-                  elcon(12,i,nmat)=(plconloc(44)-plconloc(42))/
-     &                             (plconloc(43)-plconloc(41))
+                  elcon(12,i,nmat)=(plconloc(404)-plconloc(402))/
+     &                             (plconloc(403)-plconloc(401))
                   elcon(13,i,nmat)=-1.d0
                   elcon(14,i,nmat)=1.d0
                endif
                ndatamax=max(ndata,ndatamax)
             enddo
             if(ndatamax.gt.2) then
-               write(*,*) '*WARNING in plastics: kinematic hardening'
+               write(*,*) 
+     &             '*WARNING reading *PLASTIC: kinematic hardening'
                write(*,*) '         curve is possibly nonlinear for'
                write(*,*) '         the elastically anisotropic'
                write(*,*) '         material ',matname(nmat)(11:80)

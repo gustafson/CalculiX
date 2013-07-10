@@ -27,9 +27,8 @@
 !
       character*80 matname(*)
 !
-      integer turbulent
-!
-      integer nodeboun(*),ndirboun(*),i,nboun,node,iponoel(*),
+      integer turbulent,
+     &  nodeboun(*),ndirboun(*),i,nboun,node,iponoel(*),
      &  index,nodei,ndiri,ist,ipompc(*),nodempc(3,*),nmpc,
      &  ndir,inomat(*),imat,nshcon(*),nrhcon(*),k,
      &  ntmat_,mi(*)

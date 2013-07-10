@@ -45,7 +45,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   double *vt=NULL,*fnt=NULL,*stnt=NULL,*eent=NULL,*cot=NULL,*t1t=NULL,
          *epnt=NULL,*enernt=NULL,*xstatent=NULL,theta,pi,t[3],*qfnt=NULL,
          *vr=NULL,*vi=NULL,*stnr=NULL,*stni=NULL,*vmax=NULL,*stnmax=NULL,
-      *stit=NULL,*eenmax=NULL,*fnr=NULL,*fni=NULL,*emnt=NULL;
+         *stit=NULL,*eenmax=NULL,*fnr=NULL,*fni=NULL,*emnt=NULL,*qfx=NULL;
 
   pi=4.*atan(1.);
 
@@ -376,7 +376,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stit,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,&net,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emnt,
-	    thicke,jobnamec,output);
+	    thicke,jobnamec,output,qfx);
 
   if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
   

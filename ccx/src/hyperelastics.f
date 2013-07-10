@@ -43,15 +43,20 @@
       ntmat=0
       iperturb(1)=3
       iperturb(2)=1
+      write(*,*) '*INFO reading *HYPERELASTIC: nonlinear geometric'
+      write(*,*) '      effects are turned on'
+      write(*,*)
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in hyperelastics: *HYPERELASTIC should be'
+         write(*,*) 
+     &       '*ERROR reading *HYPERELASTIC: *HYPERELASTIC should be'
          write(*,*) '  placed before all step definitions'
          stop
       endif
 !
       if(nmat.eq.0) then
-         write(*,*) '*ERROR in hyperelastics: *HYPERELASTIC should be'
+         write(*,*) 
+     &        '*ERROR reading *HYPERELASTIC: *HYPERELASTIC should be'
          write(*,*) '  preceded by a *MATERIAL card'
          stop
       endif
@@ -85,8 +90,8 @@
                elseif(ityp.eq.-10) then
                   ityp=-11
                else
-                  write(*,*) '*WARNING in hyperelastics: N=2 is not appl
-     &icable for this material type; '
+                  write(*,*) '*WARNING reading *HYPERELASTIC: N=2 is not
+     & applicable for this material type; '
                   call inputerror(inpc,ipoinpc,iline)
                endif
             elseif(textpart(i)(3:3).eq.'3') then
@@ -97,18 +102,18 @@
                elseif(ityp.eq.-10) then
                   ityp=-12
                else
-                  write(*,*) '*WARNING in hyperelastics: N=3 is not appl
-     &icable for this material type; '
+                  write(*,*) '*WARNING reading *HYPERELASTIC: N=3 is not
+     & applicable for this material type; '
                   call inputerror(inpc,ipoinpc,iline)
                endif
             else
-               write(*,*) '*WARNING in hyperelastics: only N=1, N=2, or  
-     &N=3 are allowed; '
+               write(*,*) '*WARNING reading *HYPERELASTIC: only N=1, N=2  
+     &, or N=3 are allowed; '
                call inputerror(inpc,ipoinpc,iline)
             endif
          else
             write(*,*) 
-     &        '*WARNING in hyperelastics: parameter not recognized:'
+     &       '*WARNING reading *HYPERELASTIC: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline)
@@ -139,7 +144,7 @@
             ntmat=ntmat+1
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
-               write(*,*) '*ERROR in hyperelastics: increase ntmat_'
+               write(*,*)'*ERROR reading *HYPERELASTIC: increase ntmat_'
                stop
             endif
             do i=1,iend
@@ -159,7 +164,7 @@
             ntmat=ntmat+1
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
-               write(*,*) '*ERROR in hyperelastics: increase ntmat_'
+               write(*,*)'*ERROR reading *HYPERELASTIC: increase ntmat_'
                stop
             endif
             do i=1,8
@@ -177,7 +182,7 @@
      &           ipoinp,inp,ipoinpc)
             if((istat.lt.0).or.(key.eq.1)) then
                write(*,*) 
-     &            '*ERROR in hyperelastics: hyperelastic definition'
+     &           '*ERROR reading *HYPERELASTIC: hyperelastic definition'
                write(*,*) '  is not complete. '
                call inputerror(inpc,ipoinpc,iline)
                stop
@@ -229,7 +234,8 @@
             if(k.eq.0) exit
             if(dabs(elcon(k,j,nmat)).lt.1.d-10) then
                elcon(k,j,nmat)=(0.1d0/um)**i
-               write(*,*) '*WARNING in hyperelastics: default value was'
+               write(*,*) 
+     &             '*WARNING reading *HYPERELASTIC: default value was'
                write(*,*) '         used for compressibility coefficient
      &s'
                write(*,100) i,elcon(k,j,nmat)

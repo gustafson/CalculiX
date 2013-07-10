@@ -45,7 +45,7 @@
 !
       implicit none
 !
-      integer id 
+      integer id,n40
 !
       real*8 T,P,FARB,FARU,WAR, H
 !
@@ -64,7 +64,9 @@
      &     2502611,2628944,2755764,2883040,3010742,3138846,3267327,
      &     3396165,3525340,3654835,3784631,3914716,4045073,4175691,
      &     4306558,4437661,4568993,4700543,4832303/
-
+!
+      data n40 /40/
+!
       FARB=FARB
       FARU=FARU
       WAR=WAR
@@ -72,7 +74,7 @@
 !
 !     linear interpolation
 !
-      call ident(tab_temperature,T,40,id)
+      call ident(tab_temperature,T,n40,id)
 !
       if(id.le.1) then
          H=tab_enthalpy(1)

@@ -26,7 +26,8 @@
 !
       logical wantx
 !
-      integer nev,iter(*),n,i,j,k,l,m,iii,ksmall,nincrement,nevcomplex,
+      integer nev,iter(*),n,i,j,k,l,m,iii,ksmall,nincrement,
+     &  nevcomplex,
      &  ninc,id,ipos
 !
       real*8 cc(nev,*),d(*),size

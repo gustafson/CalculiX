@@ -19,13 +19,13 @@
       subroutine steadystatedynamics(inpc,textpart,nmethod,
      &  iexpl,istep,istat,n,iline,ipol,inl,ipoinp,inp,iperturb,isolver,
      &  xmodal,cs,mcs,ipoinpc,nforc,nload,nbody,iprestr,t0,t1,ithermal,
-     &  nk,set,nset)
+     &  nk,set,nset,cyclicsymmetry)
 !
 !     reading the input deck: *STEADY STATE DYNAMICS
 !
       implicit none
 !
-      logical cyclicsymmetry,nodalset
+      logical nodalset
 !
       character*1 inpc(*)
       character*3 harmonic
@@ -35,7 +35,8 @@
 !
       integer nmethod,istep,istat,n,key,iexpl,iline,ipol,inl,nset,
      &  ipoinp(2,*),inp(3,*),iperturb(2),isolver,i,ndata,nfour,mcs,
-     &  ipoinpc(0:*),nforc,nload,nbody,iprestr,ithermal,j,nk,ipos
+     &  ipoinpc(0:*),nforc,nload,nbody,iprestr,ithermal,j,nk,ipos,
+     &  cyclicsymmetry
 !
       real*8 fmin,fmax,bias,tmin,tmax,xmodal(*),cs(17,*),t0(*),t1(*)
 !
@@ -44,9 +45,9 @@
       iperturb(2)=0
       harmonic='YES'
       if((mcs.ne.0).and.(cs(2,1).ge.0.d0)) then
-         cyclicsymmetry=.true.
-      else
-         cyclicsymmetry=.false.
+         cyclicsymmetry=1
+c      else
+c         cyclicsymmetry=.false.
       endif
       nodalset=.false.
 !
@@ -79,8 +80,8 @@
             read(textpart(i)(8:27),'(a20)') solver
          elseif(textpart(i)(1:9).eq.'HARMONIC=') then
             read(textpart(i)(10:12),'(a3)') harmonic
-         elseif(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
-            cyclicsymmetry=.true.
+c         elseif(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
+c            cyclicsymmetry=.true.
 c         elseif(textpart(i)(1:5).eq.'NSET=') then
 c            nodalset=.true.
 c            noset=textpart(i)(6:85)
@@ -217,7 +218,7 @@ c      endif
 !       mastructcs is called instead of mastruct a fictitious
 !       minimum nodal diameter is stored
 !
-      if((cyclicsymmetry).and.(mcs.ne.0).and.(cs(2,1)<0.d0)) 
+      if((cyclicsymmetry.eq.1).and.(mcs.ne.0).and.(cs(2,1)<0.d0)) 
      &         cs(2,1)=0.d0
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

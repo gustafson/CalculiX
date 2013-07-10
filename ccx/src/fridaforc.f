@@ -33,7 +33,7 @@
      &  pl(3,9),xn(3),areamaster,alpha,beta,fnl(3,9),
      &  veoldl(0:mi(2),9),dist,springarea,
      &  elcon(0:ncmat_,ntmat_,*),pproj(3),xsj2(3),xs2(3,7),val,
-     &  shp2(7,8),xi,et,elconloc(21),plconloc(82),
+     &  shp2(7,8),xi,et,elconloc(21),plconloc(802),
      &  plicon(0:2*npmat_,ntmat_,*),fn,
      &  damp,c0,eta,um,eps,fnd(3,9),fnv(3,9),ver(3),dvernor,
      &  dampforc,vertan(3),dvertan,fricforc,pi,senergy,cstr(6)
@@ -199,15 +199,15 @@ c      endif
                vertan(i)=ver(i)-dvernor*xn(i)
             enddo
             dvertan=dsqrt(vertan(1)**2+vertan(2)**2+vertan(3)**2)
-c	    write(*,*) 'dvertan ',dvertan
+c    write(*,*) 'dvertan ',dvertan
 !     
 !     normalizing the tangent vector
 !
-      	    if(dvertan.gt.0.d0)then     	 
+            if(dvertan.gt.0.d0)then      
                do i=1,3
                   vertan(i)=vertan(i)/dvertan
                enddo
-	    endif
+            endif
 !     
 !     friction constants
 !     
@@ -259,10 +259,10 @@ c               fnv(i,nope)=-fricforc*vertan(i)
                      fnl(i,j)=fnv(i,j)
                   enddo
                enddo
-c	       write(*,*) 'fnl(2,nope) ',fnl(2,nope)       
+c       write(*,*) 'fnl(2,nope) ',fnl(2,nope)       
             endif
-	 else
-	    do j=1,nope
+         else
+            do j=1,nope
                 do i=1,3
                    fnl(i,j)=0.d0
                 enddo

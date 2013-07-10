@@ -70,8 +70,9 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 //    else if(strcmp1(&lakon[8*i],"C3D4")==0){nope=4;}
 /* Bernhardi start */
     if (strcmp1(&lakon[8*i+3],"8I")==0)nope=11;
-    else if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
+    else if(strcmp1(&lakon[8*i+3],"20")==0)nope=20;
 /* Bernhardi end */
+    else if(strcmp1(&lakon[8*i+3],"2")==0)nope=26;
     else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
     else if (strcmp1(&lakon[8*i+3],"10")==0)nope=10;
     else if ((strcmp1(&lakon[8*i+3],"4")==0)||
@@ -80,7 +81,7 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     else if (strcmp1(&lakon[8*i+3],"6")==0)nope=6;
     else if (strcmp1(&lakon[8*i],"E")==0){
 	lakonl[0]=lakon[8*i+7];
-	nope=atoi(lakonl);}
+	nope=atoi(lakonl)+1;}
     else continue;
 
     for(j=0;j<nope;++j){
@@ -145,20 +146,11 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       
     if(ipkon[i]<0) continue;
     indexe=ipkon[i];
-///*  Bernhardi start  */
-//    if(strcmp1(&lakon[8*i],"C3D8I")==0){nope=11;}
-//    else if(strcmp1(&lakon[8*i],"C3D20")==0){nope=20;}
-///*  Bernhardi end */
-//    else if (strcmp1(&lakon[8*i],"C3D8")==0){nope=8;}
-//    else if (strcmp1(&lakon[8*i],"C3D10")==0){nope=10;}
-//    else if (strcmp1(&lakon[8*i],"C3D15")==0){nope=15;}
-//    else if (strcmp1(&lakon[8*i],"C3D6")==0){nope=6;}
-//    else if (strcmp1(&lakon[8*i],"C3D4")==0){nope=4;}
-
 /*  Bernhardi start  */
     if(strcmp1(&lakon[8*i],"C3D8I")==0){nope=11;}
-    else if(strcmp1(&lakon[8*i+3],"2")==0)nope=20;
+    else if(strcmp1(&lakon[8*i+3],"20")==0)nope=20;
 /*  Bernhardi end */
+    else if(strcmp1(&lakon[8*i+3],"2")==0)nope=26;
     else if (strcmp1(&lakon[8*i+3],"8")==0)nope=8;
     else if (strcmp1(&lakon[8*i+3],"10")==0)nope=10;
     else if (strcmp1(&lakon[8*i+3],"4")==0)nope=4;
@@ -166,7 +158,7 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     else if (strcmp1(&lakon[8*i+3],"6")==0)nope=6;
     else if (strcmp1(&lakon[8*i],"E")==0){
 	lakonl[0]=lakon[8*i+7];
-	nope=atoi(lakonl);}
+	nope=atoi(lakonl)+1;}
     else continue;
       
     for(jj=0;jj<3*nope;++jj){

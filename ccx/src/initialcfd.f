@@ -33,18 +33,16 @@
 !
       implicit none
 !
-      integer iexplicit,turbulent,compressible
-!
       character*8 lakon(*)
       character*80 matname(*)
 !
-      integer ne,ipkon(*),kon(*),indexe,ifaceq(8,6),ifacet(6,4),
+      integer ne,ipkon(*),kon(*),indexe,ifaceq(8,6),ifacet(7,4),
      &  ifacew(8,5),kflag,isolidsurf(*),nsolidsurf,nope,node1,node2,
      &  nk,node,i,j,k,iponoel(*),inoel(3,*),nx(*),ny(*),index,nelem,
      &  nz(*),neighsolidsurf(*),kneigh,nodep(4),iplaneq(3,8),iplanet(4),
      &  iplanew(2,6),nshcon(*),nrhcon(*),ntmat_,neigh,nodel,ifacel,
      &  mi(*),ielmat(mi(3),*),imat,inomat(*),nonei20(3,12),nonei10(3,6),
-     &  nonei15(3,9),euler,ithermal
+     &  nonei15(3,9),euler,ithermal,iexplicit,turbulent,compressible
 !
       real*8 x(*),y(*),z(*),xo(*),yo(*),zo(*),xsolidsurf(*),
      &  yy(*),co(3,*),dh(*),r,cp,rho,shcon(0:3,ntmat_,*),vcontu(2,*),
@@ -59,10 +57,10 @@
      &            2,3,7,6,10,19,14,18,
      &            3,4,8,7,11,20,15,19,
      &            4,1,5,8,12,17,16,20/
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
       data ifacew /1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
@@ -259,6 +257,11 @@ c            write(*,*) 'xsolidsurf ',node1,node2,xsolidsurf(i)
                write(*,*) '       at all (*PHYSICAL CONSTANTS card)'
                stop
             endif
+            if(vold(4,node).le.0.d0) then
+               write(*,*) '*ERROR in inicialcfd: initial pressure'
+               write(*,*) '       must be strictly positive'
+               stop
+            endif
             rho=vold(4,node)/(r*(vold(0,node)-physcon(1)))
             vcon(0,node)=rho*(cp*(temp-physcon(1))+
      &           (vold(1,node)**2+vold(2,node)**2+vold(3,node)**2)
@@ -266,11 +269,11 @@ c            write(*,*) 'xsolidsurf ',node1,node2,xsolidsurf(i)
 !
 !           check for inviscous (= Euler) calculations
 !
-            if(euler.eq.1) then
-               call materialdata_dvi(imat,ntmat_,temp,shcon,nshcon,dvi)
-c               if(dvi.gt.1.d-20) euler=0
-               euler=0
-            endif
+c            if(euler.eq.1) then
+c               call materialdata_dvi(imat,ntmat_,temp,shcon,nshcon,dvi)
+cc               if(dvi.gt.1.d-20) euler=0
+c               euler=0
+c            endif
 cstart shallow
 c            rho=dsqrt(vold(4,node)/5.d0+(0.005*co(1,node))**2)
 c            vcon(0,node)=rho*(cp*(temp-physcon(1))+
@@ -324,7 +327,6 @@ c         xkin=10.d0**(-3.5d0)*xtu
             endif
 !     
             vcontu(1,node)=xkin*dvi
-c            vcontu(1,node)=0.d0
             vcontu(2,node)=xtu*rho
          enddo
       endif

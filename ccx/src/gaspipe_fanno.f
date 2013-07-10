@@ -364,7 +364,7 @@
 !     
          pt2zpt1=pt2/pt1
 !     
-!     calculation of the dynamic viscosity 
+!     calculation of the dynamic viscosity
 !     
            if(dabs(dvi).lt.1E-30) then
               kgas=0
@@ -736,7 +736,7 @@
 !
 !     output
 !
-      elseif(iflag.eq.3) then
+      elseif((iflag.eq.3).or.(iflag.eq.4)) then
 !
          pi=4.d0*datan(1.d0)
          e=2.7182818d0
@@ -751,6 +751,9 @@
          A=prop(index+1)
          d=prop(index+2)    
          l=prop(index+3)
+!
+         lambda=0.5
+!
          if(l.lt.0d0) then
             l_neg=l
             l=abs(l)
@@ -889,47 +892,82 @@
 !     
          call pt2zpt1_crit(pt2,pt1,Tt1,Tt2,lambda,kappa,r,l,d,A,iflag,
      &     inv,pt2zpt1_c,qred_crit,crit,qred_max1,icase)
-
 !     
 !     definition of the coefficients 
 !     
          M1=dsqrt(2/km1*((Tt1/T1)-1))
          M2=dsqrt(2/km1*((Tt2/T2)-1))
 !
-         write(1,*) ''
-         write(1,55) 'In line',int(nodem/1000),' from node',node1,
-     &' to node', node2,':   air massflow rate= ',xflow,' kg/s',
-     &', oil massflow rate= ',xflow_oil,' kg/s'
- 55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
-! 
-         if(inv.eq.1) then
-            write(1,53)'       Inlet node ',node1,':    Tt1= ',Tt1,
-     &           'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
-     &           'Bar, M1= ',M1
-            write(1,*)'             element W    ',set(numf)(1:30)
-            write(1,57)'             Eta=',dvi,' kg/(m*s), Re= '
-     &           ,reynolds,', PHI= ',phi,', LAMBDA= ',lambda,
-     &         ', LAMBDA*l/d= ',lambda*l/d,', ZETA_PHI= ',phi*lambda*l/d
-             write(1,53)'       Outlet node ',node2,'    Tt2= ',Tt2,
-     &           ' K, Ts2= ',T2,' K, Pt2= ',Pt2/1e5,
-     &           ' Bar, M2= ',M2
- !    
-         else if(inv.eq.-1) then
-            write(1,53)'       Inlet node ',node2,':    Tt1= ',Tt1,
-     &           ' K, Ts1= ',T1,' K, Pt1= ',Pt1/1E5,
-     &           ' Bar, M1= ',M1
-            write(1,*)'             element W    ',set(numf)(1:30)
-           write(1,57)'             Eta= ',dvi,' kg/(m*s), Re= '
-     &           ,reynolds,' ,Phi= ',phi,', lambda= ',lambda,
-     &          ', lamda*l/d= ',lambda*l/d,', zeta_phi= ',phi*lambda*l/d
-            write(1,53)'       Outlet node ',node1,'    Tt2= ',Tt2,
-     &           ' K, Ts2= ',T2,' K, Pt2=',Pt2/1e5,
-     &           ' Bar, M2= ',M2
+         if(iflag.eq.3) then
+!     
+            write(1,*) ''
+            write(1,55) 'In line',int(nodem/1000),' from node',node1,
+     &        ' to node', node2,':   air massflow rate= ',xflow,' kg/s',
+     &           ', oil massflow rate= ',xflow_oil,' kg/s'
+ 55         FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
+ 53         FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A,f8.5)  
+ 57         FORMAT(1X,A,G11.4,A,G12.5,A,f8.4,A,f8.5,A,f8.5,A,f8.5)
+!     
+            if(inv.eq.1) then
+               write(1,53)'       Inlet node ',node1,':    Tt1= ',Tt1,
+     &              'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
+     &              'Bar, M1= ',M1
+               write(1,*)'             element W    ',set(numf)(1:30)
+               write(1,57)'             Eta=',dvi,' kg/(m*s), Re= '
+     &              ,reynolds,', PHI= ',phi,', LAMBDA= ',lambda,
+     &              ', LAMBDA*l/d= ',lambda*l/d,', ZETA_PHI= ',
+     &               phi*lambda*l/d
+               write(1,53)'       Outlet node ',node2,'    Tt2= ',Tt2,
+     &              ' K, Ts2= ',T2,' K, Pt2= ',Pt2/1e5,
+     &              ' Bar, M2= ',M2
+!    
+            else if(inv.eq.-1) then
+               write(1,53)'       Inlet node ',node2,':    Tt1= ',Tt1,
+     &              ' K, Ts1= ',T1,' K, Pt1= ',Pt1/1E5,
+     &              ' Bar, M1= ',M1
+               write(1,*)'             element W    ',set(numf)(1:30)
+               write(1,57)'             Eta= ',dvi,' kg/(m*s), Re= '
+     &              ,reynolds,' ,Phi= ',phi,', lambda= ',lambda,
+     &              ', lamda*l/d= ',lambda*l/d,', zeta_phi= ',
+     &              phi*lambda*l/d
+               write(1,53)'       Outlet node ',node1,'    Tt2= ',Tt2,
+     &              ' K, Ts2= ',T2,' K, Pt2=',Pt2/1e5,
+     &              ' Bar, M2= ',M2
+            endif
+!     
+         else if(iflag.eq.4) then
+!     
+!     Write the main information about the element
+!     
+            write(1,*) ''
+!     
+            write(1,78)'Element nr.= ',nelem,', type=Gas Pipe Fanno',
+     &           ', name= ',set(numf)(1:30)
+!     
+            write(1,79)'Nodes: ',node1,',',nodem,',',node2
+!     
+ 78         FORMAT(A,I4,A,A,A)
+ 79         FORMAT(3X,A,I4,A,I4,A,I4)
+!     
+            write(1,80)'Inlet: Tt1= ',Tt1,
+     &           ', pt1= ',pt1,', M1= ',M1
+            
+            write(1,77)'mass flow = ',xflow,', kappa = ',kappa,
+     &           ', lambda= ',lambda,
+     &           ', phi= ',phi,
+     &           ', zeta= ',phi*lambda*l/d,
+     &           ', eta= ',dvi,
+     &           ', Re= ',reynolds
+            
+            write(1,80)'Outlet: Tt2= ',Tt2,
+     &           ', pt2= ',pt2,', M2= ',M2
+!     
+ 80         format(3x,a,f10.6,a,f10.2,a,f10.6)
+ 77         format(3x,a,f10.6,a,f10.2,a,f10.6,a,f10.6,a,f10.6,a,e11.4
+     &           ,a,f10.2) 
+!     
          endif
       endif
- 53   FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A,f8.5)  
- 57   FORMAT(1X,A,G9.4,A,G11.5,A,f8.4,A,f8.5,A,f8.5,A,f8.5)
-!  
       return
       end
       

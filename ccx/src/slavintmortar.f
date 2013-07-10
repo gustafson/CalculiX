@@ -77,6 +77,8 @@ c> @todo l.353 check if this can be improved. is it possible to reduce complexit
 !
       implicit none
 !
+      logical debug,nogap
+!
       character*8 lakon(*)
       character*81 tieset(3,*),set(*)
 !
@@ -102,16 +104,30 @@ c> @todo l.353 check if this can be improved. is it possible to reduce complexit
      &  pmiddle(3),xl2sr(3,8),xl2sp(3,8),
      &  slavnor(3,*),slavtan(6,*),dd,xns(3,8),areaslav,
      &  al,xn(3),gapmints(*),slavstraight(20),
-     &  pslavdual(16,*),err2,dist,distmin
-!
-      real*4 rand
-      real*8 pslavsurf(3,*),err,pnodesin(3,3*ncont)
-      logical debug
+     &  pslavdual(16,*),err2,dist,distmin,
+     &  pslavsurf(3,*),err,pnodesin(3,3*ncont),xquad(2,8), 
+     &  xtri(2,6),xi,et,xsj2(3),xs2(3,2),shp2(7,8),anglesm
 !     
       include "gauss.f"
 !
       debug=.false.
       data iflag /2/
+!
+      data xquad /-1, -1,
+     &           1, -1,
+     &           1, 1,
+     &           -1, 1,
+     &           0, -1,
+     &          1, 0,
+     &           0, 1,
+     &           -1, 0/
+!
+      data xtri /0, 0,
+     &          1, 0,
+     &          0, 1,
+     &          0.5, 0,
+     &          0.5, 0.5,
+     &          0, 0.5/
 !     
       kneigh=1
       err=0.1
@@ -119,12 +135,10 @@ c> @todo l.353 check if this can be improved. is it possible to reduce complexit
       err2=1.d-4
       nintpfirst=nintpoint
       compt=0
-c      if(debug)then
-c      if(l.eq.249 .or. l.eq.805)debug=.true.
+      islavsurf(2,l)=nintpoint
       if(debug)WRITE(30,*) '#SLAVINTMORTAR iinc',iinc, 'face',l
-      WRITE(20,*) '#SLAVINTMORTAR iinc',iinc, 'face',l      
+c      WRITE(20,*) '#SLAVINTMORTAR iinc',iinc, 'face',l      
 c      WRITE(*,*) '#SLAVINTMORTAR iit',iit, 'face',l
-c      endif
 !     
 !     Research of the contact integration points
 !     
@@ -139,18 +153,13 @@ c      endif
 !     actual position of the nodes belonging to the
 !     slave surface
 !     
-c      write(*,*)' actual position xl2s' 
        do j=1,nope
           konl(j)=kon(ipkon(nelems)+j)
        enddo
 !  
-c       if(l==4 .or. l==8)debug=.true.
        do m=1,nopes
           do j=1,3
              ifac=getiface(m,jfaces,nope)
-       if(konl(ifac).eq.1477 .or. konl(ifac).eq.342)then
-c        debug=.true.
-       endif
              xl2s(j,m)=co(j,konl(ifac))+
      &            vold(j,konl(ifac))     
           enddo
@@ -158,40 +167,55 @@ c        debug=.true.
 !
 !           slightly reducing the size of the slave surface in
 !           an aleatoric way
-!
-c      write(*,*)' actual position xl2sr' 
-            do j=1,3
-               pmiddle(j)=0.d0
-               do m=1,nopes
-                  pmiddle(j)=pmiddle(j)+xl2s(j,m)
-               enddo
-               pmiddle(j)=pmiddle(j)/nopes
-            enddo
-            do j=1,3
-               do m=1,nopes
+! 
+       do j=1,3
+           pmiddle(j)=0.d0
+           do m=1,nopes
+               pmiddle(j)=pmiddle(j)+xl2s(j,m)
+           enddo
+           pmiddle(j)=pmiddle(j)/nopes
+       enddo
+       do j=1,3
+            do m=1,nopes
                 xl2sr(j,m)=xl2s(j,m)-0.5*err*(xl2s(j,m)-pmiddle(j))
-               enddo
+c                xl2sr(j,m)=xl2s(j,m)
             enddo
+       enddo
 !
 !     calculate the mean normal vector on the Slave Surface
-!     
-c      write(*,*)' mean plane' 
-            do k=1,3
-               xn(k)=0.d0
-            enddo
-            
-            do m=1,nopes
-               ifac=getiface(m,jfaces,nope)
-               node=konl(ifac)
-c               if(node.eq.252)debug=.true.
-               call nident(islavnode(nslavnode(i)+1), node, 
-     &              nslavnode(i+1)-nslavnode(i), id)
-               index1=nslavnode(i)+id
-               do k=1,3
-                  xn(k)=slavnor(k,index1)+xn(k)
-                  xns(k,m)=slavnor(k,index1)
-               enddo
-            enddo
+!      
+       do k=1,3
+           xn(k)=0.d0
+       enddo
+!              
+       do m = 1, nopes
+          if(nopes.eq.4 .or. nopes.eq.8)then
+                     xi = xquad(1,m)
+                     et = xquad(2,m)
+          else
+                     xi = xtri(1,m)
+                     et = xtri(2,m)
+          endif
+          if(nopes.eq.8)then
+                     call shape8q(xi,et,xl2s,xsj2,xs2,shp2,iflag)
+          elseif(nopes.eq.4)then
+                     call shape4q(xi,et,xl2s,xsj2,xs2,shp2,iflag)
+          elseif(nopes.eq.6)then
+                     call shape6tri(xi,et,xl2s,xsj2,xs2,shp2,iflag)
+          else
+                     call shape3tri(xi,et,xl2s,xsj2,xs2,shp2,iflag)
+          endif   
+          dd = dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2)
+     &                 + xsj2(3)*xsj2(3))
+          xsj2(1) = xsj2(1)/dd
+          xsj2(2) = xsj2(2)/dd
+          xsj2(3) = xsj2(3)/dd
+!                 
+           do k=1,3
+             xn(k) = xn(k)
+     &               +xsj2(k)
+          enddo
+       enddo            
 !     
 !     normalizing the mean normal on the Slave surface
 !     
@@ -253,14 +277,28 @@ c     write(*,*)'slavm xn',(xn(k),k=1,3)
                 write(20,*) neigh(1),neigh(1)+itietri(1,i)-1
                 write(20,*) 'itri',itri,'node',node
                endif
-               call nident(islavnode(nslavnode(i)+1), node, 
+               anglesm=xn(1)*straight(13,itri)
+     &                +xn(2)*straight(14,itri)
+     &                +xn(3)*straight(15,itri)
+               if(anglesm.lt.-0.2)then
+                call nident(islavnode(nslavnode(i)+1), node, 
      &              nslavnode(i+1)-nslavnode(i), id)
-c     write(*,*) 'itri',itri  
-               if(itri.ne.0.and.islavact(nslavnode(i)+id).eq.-1) then  
+c                write(20,*) ' node',node,islavnode(nslavnode(i)+id),
+c     &            id,islavact(nslavnode(i)+id) 
+                if(itri.ne.0.and.islavact(nslavnode(i)+id).eq.-3) then  
                   islavact(nslavnode(i)+id)=0
-               endif
-               if(itri.eq.0.and.islavact(nslavnode(i)+id).gt.-1) then  
-                  islavact(nslavnode(i)+id)=-1
+                endif
+                if(itri.eq.0.and.islavact(nslavnode(i)+id).gt.-1) then  
+                  islavact(nslavnode(i)+id)=-3
+                endif
+               else
+                call nident(islavnode(nslavnode(i)+1), node, 
+     &              nslavnode(i+1)-nslavnode(i), id)
+c                write(20,*) ' node',node,islavnode(nslavnode(i)+id),
+c     &            id,islavact(nslavnode(i)+id) 
+                if(itri.ne.0.and.islavact(nslavnode(i)+id).gt.-1) then  
+                  islavact(nslavnode(i)+id)=-3
+                endif
                endif
             enddo
 c
@@ -269,8 +307,7 @@ c
                 xl2sr(j,m)=xl2s(j,m)-2*err*(xl2s(j,m)-pmiddle(j))
                enddo
             enddo
-            distmin=1.1
-c< @todo check if this can be improved. is it possible to reduce complexity working with islavact???     
+            distmin=1.1   
             do j=1,nopes
                call neartriangle(xl2sr(1,j),xn,xo,yo,zo,x,y,z,nx,ny,nz,
      &           ntri,neigh,kneigh,itietri,ntie,straight,imastop,itri,i,
@@ -287,16 +324,14 @@ c< @todo check if this can be improved. is it possible to reduce complexity work
      &                (straight(13,itri)*xn(1)+
      &                 straight(14,itri)*xn(2)+
      &                 straight(15,itri)*xn(3))
-c               if(j.eq.1)distmin=dist
                if(dist.lt.distmin)distmin=dist
-               write(20,*) 'j',j,'dist',dist,distmin
+               if(debug)write(20,*) 'j',j,'dist',dist,distmin
                ifacem=koncont(4,itri)
                if(debug)write(20,*)'noder ',node, 'itri',itri,
      &          'ifacem',ifacem
 !
 !
                call nident(itria(1:4,1),itri,ntria,id)
-c     write(*,*) 'id', id
                if(id.gt.0) then
                   if(itria(id,1).eq.itri) then
                      itriacorner(j,id)=1
@@ -304,7 +339,6 @@ c     write(*,*) 'id', id
                   endif
                endif
                call nident(itria(1:4,2),ifacem,ntria,id)
-c     write(*,*) 'id', id
                if(id.gt.0) then
                   if(itria(id,2).eq.ifacem) then
                      itriacorner(j,id)=1
@@ -314,8 +348,16 @@ c     write(*,*) 'id', id
 !     
 !     triangle was not covered yet: add to stack
 !     
-               if(dist.lt.1.0)then
-c               if(dist.lt.0.5)then
+!              angle criteria 
+!
+               anglesm=xn(1)*straight(13,itri)
+     &                +xn(2)*straight(14,itri)
+     &                +xn(3)*straight(15,itri)
+               if(debug)write(20,*)'cos alpa',anglesm
+!
+c               if(dist.lt.1.0)then
+c               if(anglesm.lt.0.0)then
+               if(anglesm.lt.-0.1)then
                ntria=ntria+1
                do k=ntria,id+2,-1
                   itria(k,1)=itria(k-1,1)
@@ -338,17 +380,16 @@ c               if(dist.lt.0.5)then
                   write(20,*) itria (k,1:2),itriacorner(1:nopes,k)
                enddo
             endif
-
-      if(distmin.gt.1.0) then
-c      if(distmin.gt.0.5) then
-       write(20,*) 'face',l,'distmin',distmin
-       write(20,*) 'no integrationpoints generated, too much dist!'
-       islavsurf(2,l+1)=nintpoint
-       return
-      endif           
+!
+c      if(distmin.gt.1.0) then
+c       write(20,*) 'face',l,'distmin',distmin
+c       write(20,*) 'no integrationpoints generated,',
+c     &      'too much dist!'
+c       islavsurf(2,l+1)=nintpoint
+c       return
+c      endif           
       nactiveline=0
       ifreeintersec=0
-
 !     
 !     treating the corner elements first
 !     
@@ -361,15 +402,12 @@ c      if(distmin.gt.0.5) then
          if(debug)write(20,*)itri,itria(j,2), ifacem,nelemm,jfacem
          call getnumberofnodes(nelemm,jfacem,lakon,nopemm,
      &        nnodelem,idummy)     
-
 !     
 !     determining the nodes of the face
-!
-    
+!    
          do j1=1,nopemm
             konl(j1)=kon(ipkon(nelemm)+j1)
          enddo
-c     write(*,*)'konl',(konl(j1),j1=1,nope)
          do k1=1,nnodelem
             ifac=getiface(k1,jfacem,nopemm)
             nodem(k1)=konl(ifac)
@@ -377,8 +415,6 @@ c     write(*,*)'konl',(konl(j1),j1=1,nope)
                xl2m(j1,k1)=co(j1,konl(ifac))+
      &              vold(j1,konl(ifac))
             enddo
-c     write(*,*)'nodem',nodem(k1)
-c     write(*,*) (xl2m(j1,k1),j1=1,3)
          enddo 
          dd=dsqrt(xn(1)**2+xn(2)**2+xn(3)**2)
          if(debug)then
@@ -401,8 +437,7 @@ c     write(*,*) (xl2m(j1,k1),j1=1,3)
 !     
 !     Project master nodes to meanplane, needed for Sutherland-Hodgman
 !     
-c      write(*,*) 'SM xn',(xn(k),k=1,3)
-               call treattriangleS(
+         call treattriangleS(
      &              nopes,slavstraight,xn,xns,co,xl2s,xl2sp,
      &              ipe,ime,iactiveline,nactiveline,
      &              ifreeintersec,ifacem,itriacorner(1,j),
@@ -421,7 +456,14 @@ c      write(*,*) 'SM xn',(xn(k),k=1,3)
                else
                   itri=ime(2,line)
                endif
-
+!              check whether still in contact tie
+               if(itri.gt.itietri(2,i) .or. itri.lt.itietri(1,i))then
+                 if(itri.ne.0)then
+c                 write(*,*)'sim:tie',i,'face',l,'itiri',itri
+c                 write(*,*)' mintri',itietri(1,i),'maxtri',itietri(2,i)
+                 endif
+                 itri=0
+               endif                            
 !     
 !     corners of the Slave surface have already been treated
 !     
@@ -459,8 +501,6 @@ c      write(*,*) 'SM xn',(xn(k),k=1,3)
                      xl2m(j1,k1)=co(j1,konl(ifac))+
      &                    vold(j1,konl(ifac))
                   enddo
-c     write(*,*)'nodem',nodem(k1)
-c     write(*,*) (xl2m(j1,k1),j1=1,3)
                enddo
                compt=compt+1
                if(debug)then
@@ -488,32 +528,39 @@ c     write(*,*) (xl2m(j1,k1),j1=1,3)
                if(areaslav.lt.1.e-12)write(*,*)'areaslav(',l,')=',
      &          areaslav
             endif
-c            if(debug)then
+c            write(20,*)'nintp',nintpoint-nintpfirst
+!           check for N-nodes
+c            if(nintpoint-nintpfirst.gt.0)then
+              do j=1,nope
+                konl(j)=kon(ipkon(nelems)+j)
+              enddo
+c              nogap=.false.
+c              do j=1,nopes
+c                ifac= getiface(j,jfaces,nope)
+c                node= konl(ifac)
+c                call nident(islavnode(nslavnode(i)+1), node, 
+c     &              nslavnode(i+1)-nslavnode(i), id)
+c                if(islavact(nslavnode(i)+id).gt.-1) then  
+c                  nogap=.true.
+c                endif
+c              enddo
+            if(nintpoint-nintpfirst.gt.0)then
+              do j=1,nopes
+                ifac= getiface(j,jfaces,nope)
+                node= konl(ifac)
+                call nident(islavnode(nslavnode(i)+1), node, 
+     &              nslavnode(i+1)-nslavnode(i), id)
+c                write(20,*) ' node',node,islavnode(nslavnode(i)+id),
+c     &            id,islavact(nslavnode(i)+id)
+                if(islavact(nslavnode(i)+id).eq.-3) then  
+                  islavact(nslavnode(i)+id)=-1
+                endif
+              enddo
+            endif
+            if(debug)then
                write(20,*) 'mint2d', (nintpoint-islavsurf(2,l))
                write(20,*)'areaslav(',l,')=',areaslav
-c            endif
-c               write(*,*)'areaslav(',l,')=',areaslav
-      
-c       if(areaslav.gt.(0.80d0*4.0d0))then
-c        write(*,*)'areaslav(',l,')=',areaslav
-c       do j=1,nope
-c          konl(j)=kon(ipkon(nelems)+j)
-c       enddo
-c       do j=1,nopes
-c               ifac= getiface(j,jfaces,nope)
-c               node= konl(ifac)
-c               call nident(islavnode(nslavnode(i)+1), node, 
-c     &           nslavnode(i+1)-nslavnode(i), id)
-c                   
-c               if (islavact(nslavnode(i)+id).eq.-1) then
-c       write(*,*)'slavintmortar: node',node,'set inactiv'
-c       write(*,*)'and no longer no gap node!'
-c                      islavact(nslavnode(i)+id)=0
-c               endif
-c       enddo
-c      endif
-!     
-!
+            endif
 !       
       return
       end

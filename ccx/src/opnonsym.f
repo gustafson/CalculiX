@@ -18,13 +18,16 @@
 !
 C
 C-----MATRIX-VECTOR MULTIPLY FOR REAL SPARSE NONSYMMETRIC MATRICES---------
+c     matrix storage:
+c        au: nondiagonal terms, column by column
+c        ad: diagonal terms
 C
-      SUBROUTINE OPNONSYM(n,p,W,U,ad,asd,jq,irow)
+      SUBROUTINE OPNONSYM(n,p,W,U,ad,au,jq,irow)
       implicit real*8(a-h,o-z)
 !
 C-----------------------------------------------------------------------
-      DOUBLE PRECISION   U(*),W(*),Asd(*),AD(*),p(*)
-      INTEGER  IROW(*),JQ(*),n
+      integer  IROW(*),JQ(*),n
+      real*8   U(*),W(*),Au(*),AD(*),p(*)
 C-----------------------------------------------------------------------
 C    SPARSE MATRIX-VECTOR MULTIPLY FOR LANCZS  U = A*W
 C    SEE USPEC SUBROUTINE FOR DESCRIPTION OF THE ARRAYS THAT DEFINE
@@ -45,7 +48,7 @@ C
          DO 20 L = JQ(J),JQ(J+1)-1
             I = IROW(L)
 C
-            U(I) = U(I) + Asd(L)*W(J)
+            U(I) = U(I) + Au(L)*W(J)
 C
  20      CONTINUE
 C

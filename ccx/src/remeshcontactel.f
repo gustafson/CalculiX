@@ -32,15 +32,15 @@
       character*81 tieset(3,*),surfset,set(*)
 !
       integer ipoface(*),nodface(9,*),nodes(8),nk,jface,iaux,
-     &  ne,ipkon(*),kon(*),indexe,ifaceq(8,6),index1,ialset(*),
+     &  ne,ipkon(*),kon(*),indexe,ifaceq(9,6),index1,ialset(*),
      &  ifacew(8,5),kflag,i,j,k,l,m,n,istartset(*),iendset(*),
      &  ntie,ipos,ij,ifour,nset,konl(27),ipompc(*),nodempc(3,*),
      &  ikmpc(*),ilmpc(*),nmpc,nmpc_,mpcfree,nalset,ielface10(4,4),
      &  ielface15(4,5),ielface20(4,6),idof,ithermal(2),jmin,jmax,
      &  kon10(4,8),kon15(6,8),kon20(8,8),nkon,is,ie,nk0,mpcfreeold,
      &  mi(*),ielmat(mi(3),*),ielorien(mi(3),*),iponoel(*),inoel(2,*),
-     &  ifacet(6,4),ik,node,indexe1,konl1(10),nstate_,iprestr,ll,nope,
-     &  iflag,mm,iy,number,jjface
+     &  ifacet(7,4),ik,node,indexe1,konl1(10),nstate_,iprestr,ll,nope,
+     &  iflag,mm,nf
 !
       real*8 coefmpc(*),co(3,*),xstate(nstate_,mi(1),*),shp(4,20),
      &  prestr(6,mi(1),*),field(6,20),fieldst(nstate_,20),a8(8,8),
@@ -49,16 +49,16 @@
 !
 !     nodes belonging to the element faces
 !
-      data ifaceq /4,3,2,1,11,10,9,12,
-     &            5,6,7,8,13,14,15,16,
-     &            1,2,6,5,9,18,13,17,
-     &            2,3,7,6,10,19,14,18,
-     &            3,4,8,7,11,20,15,19,
-     &            4,1,5,8,12,17,16,20/
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifaceq /4,3,2,1,11,10,9,12,21,
+     &            5,6,7,8,13,14,15,16,22,
+     &            1,2,6,5,9,18,13,17,23,
+     &            2,3,7,6,10,19,14,18,24,
+     &            3,4,8,7,11,20,15,19,25,
+     &            4,1,5,8,12,17,16,20,26/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
       data ifacew /1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
@@ -356,7 +356,7 @@ c      if(ithermal(2).le.1) then
          enddo
       enddo
 !
-!     remeshing the elements and updating the contact information
+!     remeshing the elements
 !
       do ll=1,ntie
 !     
@@ -392,19 +392,11 @@ c               if(surfset(ipos:ipos).eq.'S') cycle
 !
                is=istartset(n)
                ie=iendset(n)
-!
-!              sorting the faces in ascending order
-!
-               number=ie-is+1
-               call isortii(ialset(is),iy,number,kflag)
-!
-               istartset(n)=nalset+1
 !     
                do ij=is,ie
 !     
                   i=int(ialset(ij)/10.d0)
                   jface=ialset(ij)-10*i
-c                  write(*,*) 'remeshcontactel ',i,jface
                   indexe=ipkon(i)
                   if(indexe.lt.0) cycle
 !     
@@ -443,27 +435,6 @@ c                  write(*,*) 'remeshcontactel ',i,jface
                               exit
                            endif
                            index1=nodface(9,index1)
-                        enddo
-                     enddo
-!
-!                    catalogueing the new contact faces
-!
-                     do j=1,4
-                        nalset=nalset+1
-                        ialset(nalset)=10*(ne+ielface20(j,jface))+jface
-!
-!                       treating other faces of the same element
-!
-                        k=0
-                        do
-                           k=k+1
-                           if(ij+k.gt.ie) exit
-                           if(int(ialset(ij+k)/10.d0).ne.i) exit
-                           jjface=ialset(ij+k)-
-     &                          10*int(ialset(ij+k)/10.d0)
-                           nalset=nalset+1
-                           ialset(nalset)=10*(ne+ielface20(j,jjface))
-     &                            +jjface
                         enddo
                      enddo
 !
@@ -581,7 +552,7 @@ c                  write(*,*) 'remeshcontactel ',i,jface
                      do j=1,8
                         ne=ne+1
                         ipkon(ne)=nkon
-                        lakon(ne)='C3D8I   '
+                        lakon(ne)='C3D8IC  '
                         do k=1,mi(3)
                            ielmat(k,ne)=ielmat(k,i)
                            ielorien(k,ne)=ielorien(k,i)
@@ -655,27 +626,6 @@ c                  write(*,*) 'remeshcontactel ',i,jface
                         konl(j)=kon(indexe+j)
                      enddo
 !     
-!                    catalogueing the new contact faces
-!     
-                     do j=1,4
-                        nalset=nalset+1
-                        ialset(nalset)=10*(ne+ielface10(j,jface))+jface
-!
-!                       treating other faces of the same element
-!
-                        k=0
-                        do
-                           k=k+1
-                           if(ij+k.gt.ie) exit
-                           if(int(ialset(ij+k)/10.d0).ne.i) exit
-                           jjface=ialset(ij+k)-
-     &                          10*int(ialset(ij+k)/10.d0)
-                           nalset=nalset+1
-                           ialset(nalset)=10*(ne+ielface10(j,jjface))
-     &                            +jjface
-                        enddo
-                     enddo
-!     
 !                    deactivating the remeshed element
 !     
                      ipkon(i)=-ipkon(i)-2
@@ -719,7 +669,7 @@ c                  write(*,*) 'remeshcontactel ',i,jface
                      do j=1,8
                         ne=ne+1
                         ipkon(ne)=nkon
-                        lakon(ne)='C3D4    '
+                        lakon(ne)='C3D4 C  '
                         do k=1,mi(3)
                            ielmat(k,ne)=ielmat(k,i)
                            ielorien(k,ne)=ielorien(k,i)
@@ -763,10 +713,8 @@ c                  write(*,*) 'remeshcontactel ',i,jface
 !                    of the contact surface but which do not contain a
 !                    face of the contact surface
 !
-c                     write(*,*) 'element ',i,' face',jface
                      do ik=1,3
                         node=konl(ifacet(ik,jface))
-c                        write(*,*) 'node ',node
                         index1=iponoel(node)
                         do
                            if(index1.eq.0) exit
@@ -780,7 +728,6 @@ c                        write(*,*) 'node ',node
                               index1=inoel(2,index1)
                               cycle
                            endif
-c                           write(*,*) 'C3D10 element ',i
                            indexe1=ipkon(i)
                            if(indexe1.ge.0) then
 !
@@ -833,7 +780,7 @@ c                           write(*,*) 'C3D10 element ',i
                               do j=1,8
                                  ne=ne+1
                                  ipkon(ne)=nkon
-                                 lakon(ne)='C3D4    '
+                                 lakon(ne)='C3D4 C  '
                                  do k=1,mi(3)
                                     ielmat(k,ne)=ielmat(k,i)
                                     ielorien(k,ne)=ielorien(k,i)
@@ -919,27 +866,6 @@ c                           write(*,*) 'C3D10 element ',i
                         enddo
                      enddo
 !
-!                    catalogueing the new contact faces
-!
-                     do j=1,4
-                        nalset=nalset+1
-                        ialset(nalset)=10*(ne+ielface15(j,jface))+jface
-!
-!                       treating other faces of the same element
-!
-                        k=0
-                        do
-                           k=k+1
-                           if(ij+k.gt.ie) exit
-                           if(int(ialset(ij+k)/10.d0).ne.i) exit
-                           jjface=ialset(ij+k)-
-     &                          10*int(ialset(ij+k)/10.d0)
-                           nalset=nalset+1
-                           ialset(nalset)=10*(ne+ielface15(j,jjface))
-     &                            +jjface
-                        enddo
-                     enddo
-!
 !                    deactivating the remeshed element
 !
                      ipkon(i)=-ipkon(i)-2
@@ -983,7 +909,7 @@ c                           write(*,*) 'C3D10 element ',i
                      do j=1,8
                         ne=ne+1
                         ipkon(ne)=nkon
-                        lakon(ne)='C3D6    '
+                        lakon(ne)='C3D6 C  '
                         do k=1,mi(3)
                            ielmat(k,ne)=ielmat(k,i)
                            ielorien(k,ne)=ielorien(k,i)
@@ -1022,12 +948,108 @@ c                           write(*,*) 'C3D10 element ',i
                            enddo
                         endif
                      enddo
+                  endif
+               enddo
+!
+            enddo
+         endif
+      enddo
+!
+!     updating the contact faces
+!
+      do ll=1,ntie
 !     
-!         linear elements          
+!     check for contact conditions
+!     
+         if((tieset(1,ll)(81:81).eq.'C').or.
+     &        (tieset(1,ll)(81:81).eq.'-')) then
+!     
+!     contact constraint
+!     
+            do m=2,3
+               surfset=tieset(m,ll)
+!     
+!     check whether facial surface
+!     
+               ipos=index(surfset,' ')-1
+!     
+               do n=1,nset
+                  if(set(n).eq.surfset) exit
+               enddo
+!
+               if(n.le.nset) then
+                  if(surfset(ipos:ipos).eq.'S') cycle
+               else
+                  do n=1,nset
+                     if((set(n)(1:ipos-1).eq.surfset(1:ipos-1)).and.
+     &                  (set(n)(ipos:ipos).eq.'T')) exit
+                  enddo
+               endif
+!
+!              storing the actual starting and ending values
+!
+               is=istartset(n)
+               ie=iendset(n)
+!
+               istartset(n)=nalset+1
+!     
+               do ij=is,ie
+!     
+                  i=int(ialset(ij)/10.d0)
+                  jface=ialset(ij)-10*i
+                  indexe=ipkon(i)
+!
+!                 nf is the number of the element preceding the
+!                 elements used for the remeshing of element i
+!
+                  if(indexe.lt.-1) then
+                     nf=kon(-indexe-1)-1
+                  elseif(indexe.eq.-1) then
+                     cycle
+                  endif
+!     
+!     quadratic hexahedral element (beam and shell inclusive)
+!     
+                  if((lakon(i)(4:4).eq.'2').and.
+     &               ((lakon(i)(7:7).eq.' ').or.
+     &                (lakon(i)(7:7).eq.'L').or.
+     &                (lakon(i)(7:7).eq.'B'))) then
+!
+!                    catalogueing the new contact faces
+!
+                     do j=1,4
+                        nalset=nalset+1
+                        ialset(nalset)=10*(nf+ielface20(j,jface))+jface
+                     enddo
+!     
+!     quadratic tetrahedral element
+!     
+                  elseif((lakon(i)(4:5).eq.'10')) then
+!     
+!                    catalogueing the new contact faces
+!     
+                     do j=1,4
+                        nalset=nalset+1
+                        ialset(nalset)=10*(nf+ielface10(j,jface))+jface
+                     enddo
+!     
+!     quadratic wedge element (beam and shell inclusive)
+!     
+                  elseif((lakon(i)(4:5).eq.'15').and.
+     &               ((lakon(i)(7:7).eq.' ').or.
+     &                (lakon(i)(7:7).eq.'L').or.
+     &                (lakon(i)(7:7).eq.'B'))) then
+!
+!                    catalogueing the new contact faces
+!
+                     do j=1,4
+                        nalset=nalset+1
+                        ialset(nalset)=10*(nf+ielface15(j,jface))+jface
+                     enddo
 !     
                   else
 !
-!                    storing the contact face
+!                    linear elements: storing the contact face
 !
                      nalset=nalset+1
                      ialset(nalset)=ialset(ij)
@@ -1038,7 +1060,6 @@ c                           write(*,*) 'C3D10 element ',i
             enddo
          endif
       enddo
-c      write(*,*) 'nkon=',nkon
 !     
       return
       end

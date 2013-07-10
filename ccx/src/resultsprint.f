@@ -19,10 +19,10 @@
       subroutine resultsprint(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
      &  stx,ielorien,norien,orab,t1,ithermal,filab,een,iperturb,fn,
      &  nactdof,iout,vold,nodeboun,ndirboun,nboun,nmethod,ttime,xstate,
-     &  epn,mi,
-     &  nstate_,ener,enern,xstaten,eei,set,nset,istartset,iendset,
-     &  ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-     &  nelemload,nload,ikin,ielmat,thicke,eme,emn)
+     &  epn,mi,nstate_,ener,enern,xstaten,eei,set,nset,istartset,
+     &  iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
+     &  nelemload,nload,ikin,ielmat,thicke,eme,emn,rhcon,nrhcon,shcon,
+     &  nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat)
 !
 !     - stores the results in the .dat file, if requested
 !       - nodal quantities at the nodes
@@ -39,23 +39,24 @@
       character*1 cflag
       character*6 prlab(*)
       character*8 lakon(*)
+      character*20 sideload(*)
       character*81 set(*),prset(*)
       character*87 filab(*)
 !
       integer kon(*),inum(*),iperm(20),mi(*),ielorien(mi(3),*),
-     &  ipkon(*),cfd,nactdof(0:mi(2),*),nodeboun(*),
-     &  nelemload(2,*),ndirboun(*),ielmat(mi(3),*),
+     &  ipkon(*),icfdout,nactdof(0:mi(2),*),nodeboun(*),icompressible,
+     &  nelemload(2,*),ndirboun(*),ielmat(mi(3),*),nrhcon(*),
      &  inotr(2,*),iorienloc,iflag,nload,mt,nk,ne,ithermal(2),i,
-     &  norien,iperturb(*),iout,nboun,nmethod,node,
+     &  norien,iperturb(*),iout,nboun,nmethod,node,nshcon(*),
      &  nfield,ndim,nstate_,nset,istartset(*),iendset(*),ialset(*),
-     &  nprint,ntrans,ikin
+     &  nprint,ntrans,ikin,ncocon(2,*),ntmat_,icfd,inomat(*)
 !
       real*8 co(3,*),v(0:mi(2),*),stx(6,mi(1),*),stn(6,*),
      &  qfx(3,mi(1),*),qfn(3,*),orab(7,*),fn(0:mi(2),*),
      &  t1(*),een(6,*),vold(0:mi(2),*),epn(*),thicke(mi(3),*),
-     &  ener(mi(1),*),enern(*),eei(6,mi(1),*),
+     &  ener(mi(1),*),enern(*),eei(6,mi(1),*),rhcon(0:1,ntmat_,*),
      &  ttime,xstate(nstate_,mi(1),*),trab(7,*),xstaten(nstate_,*),
-     &  eme(6,mi(1),*),emn(6,*)
+     &  eme(6,mi(1),*),emn(6,*),shcon(0:3,ntmat_,*),cocon(0:6,ntmat_,*)
 !
       data iflag /3/
       data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
@@ -88,6 +89,11 @@
      &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin,ielmat,thicke,
      &  eme)
 !
+      icompressible=0
+      call printoutface(co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
+     &  cocon,ncocon,icompressible,istartset,iendset,ipkon,lakon,kon,
+     &  ialset,prset,ttime,nset,set,nprint,prlab,ielmat,mi)
+!
 !     interpolation in the original nodes of 1d and 2d elements
 !     this operation has to be performed in any case since
 !     the interpolated values may be needed as boundary conditions
@@ -98,26 +104,26 @@
       if(filab(1)(5:5).ne.' ') then
          nfield=mt
          cflag=filab(1)(5:5)
-c         force=.false.
          call map3dto1d2d(v,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,cflag,co,vold,force,mi)
       endif
 !
 !     user defined output
 !
-      call uout(v,mi)
+      call uout(v,mi,ithermal)
 !
       if((filab(2)(1:4).eq.'NT  ').and.(ithermal(1).le.1)) then
          if(filab(2)(5:5).eq.'I') then
             nfield=1
             cflag=filab(2)(5:5)
-c            force=.false.
             call map3dto1d2d(t1,ipkon,inum,kon,lakon,nfield,nk,
      &           ne,cflag,co,vold,force,mi)
          endif
       endif
 !
-      cfd=0
+!     in this routine no 3d-fluid results are stored
+!
+      icfdout=0
 !
 !     for composites:
 !     interpolation of the displacements and temperatures
@@ -153,7 +159,7 @@ c            force=.false.
          call extrapolate(stx,stn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        nelemload,nload,nodeboun,nboun,ndirboun,vold,
-     &        ithermal,force,cfd,ielmat,thicke)
+     &        ithermal,force,icfdout,ielmat,thicke,filab)
 !
       endif
 !
@@ -171,7 +177,7 @@ c            force=.false.
          call extrapolate(eei,een,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        nelemload,nload,nodeboun,nboun,ndirboun,vold,
-     &        ithermal,force,cfd,ielmat,thicke)
+     &        ithermal,force,icfdout,ielmat,thicke,filab)
       endif
 !
 !     determining the mechanical strains in the nodes for output in 
@@ -189,7 +195,7 @@ c            force=.false.
          call extrapolate(eme,emn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        nelemload,nload,nodeboun,nboun,ndirboun,vold,
-     &        ithermal,force,cfd,ielmat,thicke)
+     &        ithermal,force,icfdout,ielmat,thicke,filab)
       endif
 !
 !     determining the plastic equivalent strain in the nodes 
@@ -203,7 +209,7 @@ c            force=.false.
          call extrapolate(xstate,epn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        nelemload,nload,nodeboun,nboun,ndirboun,vold,
-     &        ithermal,force,cfd,ielmat,thicke)
+     &        ithermal,force,icfdout,ielmat,thicke,filab)
       endif
 !
 !     determining the total energy in the nodes 
@@ -217,7 +223,7 @@ c            force=.false.
          call extrapolate(ener,enern,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        nelemload,nload,nodeboun,nboun,ndirboun,vold,
-     &        ithermal,force,cfd,ielmat,thicke)
+     &        ithermal,force,icfdout,ielmat,thicke,filab)
       endif
 !
 !     determining the internal state variables in the nodes 
@@ -236,7 +242,7 @@ c            force=.false.
          call extrapolate(xstate,xstaten,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        nelemload,nload,nodeboun,nboun,ndirboun,vold,
-     &        ithermal,force,cfd,ielmat,thicke)
+     &        ithermal,force,icfdout,ielmat,thicke,filab)
       endif
 !
 !     determining the heat flux in the nodes for output in frd format
@@ -253,7 +259,7 @@ c            force=.false.
          call extrapolate(qfx,qfn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        nelemload,nload,nodeboun,nboun,ndirboun,vold,
-     &        ithermal,force,cfd,ielmat,thicke)
+     &        ithermal,force,icfdout,ielmat,thicke,filab)
       endif
 !
 !     if no element quantities requested in the nodes: calculate
@@ -287,8 +293,16 @@ c            force=.false.
 !     nodes)
 !
          do i=1,nload
+            if((sideload(i)(3:4).ne.'FC').and.
+     &         (sideload(i)(3:4).ne.'CR').and.
+     &         (sideload(i)(3:4).ne.'NP')) cycle
             node=nelemload(2,i)
-            if(node.gt.0) then
+            if(icfd.eq.1) then
+               if(node.gt.0) then
+                  if(inomat(node).ne.0) cycle
+               endif
+            endif
+            if((node.gt.0).and.(sideload(i)(1:1).ne.' ')) then
                if(inum(node).gt.0) cycle
                inum(node)=1
             endif
@@ -300,6 +314,9 @@ c            force=.false.
          do i=1,nboun
             node=nodeboun(i)
             if(inum(node).ne.0) cycle
+            if(icfd.eq.1) then
+               if(inomat(node).ne.0) cycle
+            endif
             if((cflag.ne.' ').and.(ndirboun(i).eq.3)) cycle
             inum(node)=1
          enddo

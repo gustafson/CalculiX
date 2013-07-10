@@ -30,7 +30,7 @@
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  coriolis,ibody,xloadold,reltime,veold,springarea,nstate_,
      &  xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
-     &  tieset,istartset,iendset,ialset,ntie)
+     &  tieset,istartset,iendset,ialset,ntie,nasym)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !
@@ -45,8 +45,8 @@
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
-     &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,
-     &  nactdof(0:mi(2),*),konl(20),irow(*),icolumn,ialset(*),
+     &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,nasym,
+     &  nactdof(0:mi(2),*),konl(26),irow(*),icolumn,ialset(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),ntie,
      &  ielorien(mi(3),*),integerglob(*),istartset(*),iendset(*),
      &  ipkon(*),intscheme,ncocon(2,*),nshcon(*),ipobody(2,*),nbody,
@@ -59,15 +59,15 @@
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
-     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(60,60),ff(60),
-     &  sti(6,mi(1),*),sm(60,60),stx(6,mi(1),*),adb(*),aub(*),
+     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(78,78),ff(78),
+     &  sti(6,mi(1),*),sm(78,78),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),springarea(2,*),
      &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),veold(0:mi(2),*),om,valu2,value,dtime,ttime,
-     &  time,thicke(mi(3),*),xnormastface(3,8,*),doubleglob(*)
+     &  time,thicke(mi(3),*),xnormastface(3,9,*),doubleglob(*)
 !
       kflag=2
       i0=0
@@ -154,25 +154,39 @@ c      elseif(mass.or.buckling) then
 c     Bernhardi start
         if(lakon(i)(1:5).eq.'C3D8I') then
            nope=11
-        elseif(lakon(i)(4:4).eq.'2') then
+        elseif(lakon(i)(4:5).eq.'20') then
 c     Bernhardi end
            nope=20
+        elseif(lakon(i)(4:4).eq.'2') then
+           nope=26
         elseif(lakon(i)(4:4).eq.'8') then
            nope=8
         elseif(lakon(i)(4:5).eq.'10') then
            nope=10
+        elseif(lakon(i)(4:5).eq.'14') then
+           nope=14
         elseif(lakon(i)(4:4).eq.'4') then
            nope=4
         elseif(lakon(i)(4:5).eq.'15') then
            nope=15
         elseif(lakon(i)(4:4).eq.'6') then
            nope=6
-        elseif(lakon(i)(1:2).eq.'ES') then
+        elseif((lakon(i)(1:2).eq.'ES').and.(lakon(i)(7:7).ne.'F')) then
+!
+!          spring and contact spring elements (NO dashpot elements
+!          = ED... elements)
+!
            read(lakon(i)(8:8),'(i1)') nope
+           nope=nope+1
 !     
 !          local contact spring number
+!          if friction is involved, the contact spring element
+!          matrices are determined in mafillsmas.f
 !     
-           if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
+           if(lakon(i)(7:7).eq.'C') then
+              if(nasym.eq.1) cycle
+              konl(nope+1)=kon(indexe+nope+1)
+           endif
         else
            cycle
         endif
@@ -236,7 +250,7 @@ c        write(*,*) 'mafillsm ',i,bodyf(1),bodyf(2),bodyf(3)
      &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
      &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
      &          xnormastface,integerglob,doubleglob,tieset,istartset,
-     &          iendset,ialset,ntie)
+     &          iendset,ialset,ntie,nasym)
 !
         do jj=1,3*nope
 !
@@ -486,25 +500,38 @@ c                  endif
 !
         if(ipkon(i).lt.0) cycle
         indexe=ipkon(i)
-        if(lakon(i)(4:4).eq.'2') then
+        if(lakon(i)(4:5).eq.'20') then
            nope=20
+        elseif(lakon(i)(4:4).eq.'2') then
+           nope=26
         elseif(lakon(i)(4:4).eq.'8') then
            nope=8
         elseif(lakon(i)(4:5).eq.'10') then
            nope=10
+        elseif(lakon(i)(4:5).eq.'14') then
+           nope=14
         elseif(lakon(i)(4:4).eq.'4') then
            nope=4
         elseif(lakon(i)(4:5).eq.'15') then
            nope=15
         elseif(lakon(i)(4:4).eq.'6') then
            nope=6
-         elseif(lakon(i)(1:2).eq.'ES') then
+         elseif((lakon(i)(1:1).eq.'E').and.(lakon(i)(7:7).ne.'A')) then
+!
+!          contact spring and advection elements
+!
            read(lakon(i)(8:8),'(i1)') nope
+           nope=nope+1
 !     
 !          local contact spring number
 !     
            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
-       else
+        elseif(lakon(i)(1:2).eq.'D ') then
+!
+!          asymmetrical contribution -> mafillsmas.f
+!
+           cycle
+        else
            cycle
         endif
 !
@@ -519,7 +546,8 @@ c                  endif
      &  matname,mi(1),mass(2),stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  xstiff,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,
-     &  ilmpc,springarea,plicon,nplicon,npmat_,ncmat_,elcon,nelcon)
+     &  ilmpc,springarea,plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,
+     &  lakon)
 !
         do jj=1,nope
 !

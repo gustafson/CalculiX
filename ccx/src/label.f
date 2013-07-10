@@ -21,6 +21,8 @@
 !
 !     Sloan routine (Int.J.Num.Meth.Engng. 28,2651-2679(1989))
 !
+      implicit none
+!
       integer n,i1,i2,i3,i,snode,lstnum,nc,oldpro,newpro,e2,xadj(n+1),
      & adj(e2),nnn(n),iw(3*n+1),oldpro_exp,newpro_exp
 !

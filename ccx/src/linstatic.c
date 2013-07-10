@@ -71,11 +71,12 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   
   char description[13]="            ";
 
-  int *inum=NULL,k,*icol=NULL,*irow=NULL,ielas,icmd=0,iinc=1,
+  int *inum=NULL,k,*icol=NULL,*irow=NULL,ielas,icmd=0,iinc=1,nasym=0,
       mass[2]={0,0}, stiffness=1, buckling=0, rhsi=1, intscheme=0,*ncocon=NULL,
       *nshcon=NULL,mode=-1,noddiam=-1,*ipobody=NULL,inewton=0,coriolis=0,iout,
       ifreebody,*itg=NULL,ntg=0,symmetryflag=0,inputformat=0,ngraph=1,
-      mt=mi[1]+1,ne0,*integerglob=NULL,iglob=0,*ipneigh=NULL,*neigh=NULL;
+      mt=mi[1]+1,ne0,*integerglob=NULL,iglob=0,*ipneigh=NULL,*neigh=NULL,
+      icfd=0,*inomat=NULL;
 
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*xstiff=NULL,*stiini=NULL,
          *f=NULL,*fn=NULL,qa[3],*fext=NULL,*epn=NULL,*xstateini=NULL,
@@ -177,7 +178,8 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
                emeini,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
                iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
 	       fmpc,nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,
-	       &reltime,&ne0,xforc,nforc,thicke,xnormastface);
+	       &reltime,&ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
+               sideload,xloadact,xloadold,&icfd,inomat);
   free(v);free(fn);free(stx);free(inum);
   iout=1;
   
@@ -201,7 +203,7 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
             shcon,nshcon,cocon,ncocon,ttime,&time,istep,&iinc,&coriolis,
 	    ibody,xloadold,&reltime,veold,springarea,nstate_,
             xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
-            tieset,istartset,iendset,ialset,ntie));
+	    tieset,istartset,iendset,ialset,ntie,&nasym));
 
   /* determining the right hand side */
 
@@ -216,7 +218,7 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     if(*isolver==0){
 #ifdef SPOOLES
       spooles(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs,&symmetryflag,
-              &inputformat);
+              &inputformat,&nzs[2]);
 #else
             printf("*ERROR in linstatic: the SPOOLES library is not linked\n\n");
             FORTRAN(stop,());
@@ -244,7 +246,8 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     }
     else if(*isolver==7){
 #ifdef PARDISO
-      pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs);
+      pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs,
+		   &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
             printf("*ERROR in linstatic: the PARDISO library is not linked\n\n");
             FORTRAN(stop,());
@@ -283,7 +286,8 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	    nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
-            &ne0,xforc,nforc,thicke,xnormastface);
+            &ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
+            sideload,xloadact,xloadold,&icfd,inomat);
 
     free(eei);
     if(*nener==1){
@@ -320,7 +324,7 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-	    thicke,jobnamec,output);
+	    thicke,jobnamec,output,qfx);
 	if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
     }
 
@@ -347,7 +351,7 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-	    thicke,jobnamec,output);
+	    thicke,jobnamec,output,qfx);
     if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
     free(inum);FORTRAN(stop,());
 

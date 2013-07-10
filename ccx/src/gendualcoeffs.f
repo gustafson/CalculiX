@@ -66,6 +66,8 @@ C> @param   [out]    pslavdual	 (1:4,i)dual shape functions for face i
 !     Author: Sitzmann,Saskia ;
 !
       implicit none
+!      
+      logical checkbiorthogonality, checknorm
 !
       character*8 lakon(*)
       character*81 tieset(3,*),slavset,set(*)
@@ -84,7 +86,9 @@ C> @param   [out]    pslavdual	 (1:4,i)dual shape functions for face i
      &  nnodesin,inodesout(3*ncont),nnodesout,iactiveline(3,3*ncont),
      &  nactiveline,intersec(2,6*ncont),ipe(*),ime(4,*),nintpoint,k1,j1,
      &  ipiv(4),info,ipnt,one,number_of_nodes,itel,ifac,getiface,
-     &  lnode(2,4),nnogap,n1,n2,n3,g(3)
+     &  lnode(2,4),nnogap,n1,n2,n3,g(3),iscontr(20),
+     &  imcontr(4*4),jj,locm,locs,nodesf,nodem,ifs,
+     &  ifm,ns, indexf,icounter,idummy,modf
 !
       real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),p(3),
      &  xntersec(3,6*ncont),ph1(3),ph2(3),areax,areay,areaz,area,
@@ -92,20 +96,12 @@ C> @param   [out]    pslavdual	 (1:4,i)dual shape functions for face i
      &  shp2(7,8),shp2s(4,8),dx,help,
      &  xs2(3,2), xquad(2,8), xtri(2,6),
      &  xn(3),xnabs(3),slavstraight(20),
-     &  pslavdual(16,*),diag_els(4),m_els(10),contribution,work(4)
-!      
-      logical checkbiorthogonality, checknorm
-!      
-      integer iscontr(20), imcontr(4*4),jj,locm,locs,nodesf,nodem,ifs,
-     &   ifm,ns, indexf,icounter,idummy,modf
-!
-      real*4 rand
-!
-      real*8  contr(20),xs2m(3,2),xsj2m(3),shp2m(7,8),etm,xim,
+     &  pslavdual(16,*),diag_els(4),m_els(10),contribution,work(4),
+     &  contr(20),xs2m(3,2),xsj2m(3),shp2m(7,8),etm,xim,
      &  pslavsurf(3,*)
 !     
       include "gauss.f"
-
+!
       data iflag /2/
 !     
       checkbiorthogonality=.false.
@@ -159,25 +155,8 @@ C> @param   [out]    pslavdual	 (1:4,i)dual shape functions for face i
             checknorm=.false.            
             do j=1,nope
                konl(j)=kon(ipkon(nelems)+j)
-c               if(konl(j).eq.24713)checknorm=.true.
             enddo
-c            idcontr(icounter2+j)=nodesf
-c            call nident(islavnode(nslavnode(ict)+1),
-c     &            nodesf,(nslavnode(ict+1)-nslavnode(ict)),id)
-c            if(islavnode(nslavnode(ict)+id)==nodesf) then
-c               igcontr(icounter2+j)=nslavnode(ict)+id
-c            else
-c               write(*,*)'createbd: node',nodesf
-c               write(*,*)'was not catalogued properly in islavnode'
-c               stop
-c            endif  
             nnogap=0
-c            checknorm=.false.
-c               if(l.eq.13.or.l.eq.36
-c     &          .or.l.eq.59)then
-c                checknorm=.true.                          
-c               endif
-c            checknorm=.false.
             do m=1,nopes
                ifac=getiface(m,jfaces,nope)
                lnode(1,m)=konl(ifac)
@@ -185,11 +164,6 @@ c            checknorm=.false.
      &            konl(ifac),(nslavnode(i+1)-nslavnode(i)),id)
                if(islavnode(nslavnode(i)+id)==konl(ifac)) then
                 lnode(2,m)=islavact(nslavnode(i)+id)
-c                if(lnode(1,m).eq.28 .or.lnode(1,m).eq.29
-c     &           .or. lnode(1,m).eq.46)then
-c                  lnode(2,m)=-1
-c                  islavact(nslavnode(i)+id)=-1
-c                endif
                 if(lnode(2,m).lt.0) nnogap=nnogap+1
                 if(checknorm)then
                 write(*,*) 'node',lnode(1,m),lnode(2,m)
@@ -247,7 +221,7 @@ c     >     case nopes.eq.8
      &                       *dx  
                      enddo
                   enddo
-                  
+!                  
                elseif(nopes.eq.6) then
 C     > @todo calculation of coeffs of dual shape funktion for quadratic elements not yet implemented
 c     >     case nopes.eq.6
@@ -337,7 +311,6 @@ c     > @todo simple calculation of coeffs of dual shape funktion for 3tri not j
                enddo
                  n1=modf(nopes,ii-2)
                  n2=modf(nopes,ii)
-c                  write(*,*) 'ii',ii,'n',n1,n2
                 do jj=1,nopes
                  pslavdual((n1-1)*4+jj,l)=pslavdual((n1-1)*4+jj,l)
      &            +0.5*pslavdual((ii-1)*4+jj,l)
@@ -355,7 +328,6 @@ c                  write(*,*) 'ii',ii,'n',n1,n2
 c                 write(*,*) 'ii',ii,'n',n1,n2
                   if(lnode(2,n1).lt.0) n1=n2
                   if(lnode(2,n2).lt.0) n2=n1
-c                 write(*,*) 'ii',ii,'n',n1,n2
                  do jj=1,nopes
                   pslavdual((n1-1)*4+jj,l)=pslavdual((n1-1)*4+jj,l)
      &            +0.5*pslavdual((ii-1)*4+jj,l)
@@ -391,7 +363,6 @@ c                 write(*,*) 'ii',ii,'n',n1,n2
                enddo
                  n1=modf(nopes,ii-2)
                  n2=modf(nopes,ii)
-c                 write(*,*) 'ii',ii,'n',n1,n2
                 do jj=1,nopes
                  pslavdual((n1-1)*4+jj,l)=pslavdual((n1-1)*4+jj,l)
      &            +0.5*pslavdual((ii-1)*4+jj,l)
@@ -419,10 +390,6 @@ c                 write(*,*) 'ii',ii,'n',n1,n2
 
              endif
             endif
-
-c>  @todo: case nopes=3 
-c                 n1=modf(nopes,i-1)
-c                 n2=modf(nopes,i+1)
             if(checknorm)then
                write(*,*)'pslavdual2, face',l
                do ii=1,nopes
@@ -438,7 +405,6 @@ c                 n2=modf(nopes,i+1)
 !     
 !     FIRST SLAVE SURFACE LOOP DONE
 !     
-c         checkbiorthogonality=.true.
          if(checkbiorthogonality)then
             do l = itiefac(1,i), itiefac(2,i)
                ifaces = islavsurf(1,l)
@@ -608,12 +574,10 @@ c         checkbiorthogonality=.true.
                      contribution=0.d0
                   enddo   
                enddo  
-c               if(l.lt.53 .and. l.gt.49)then
                   write(*,*) 'checknorm: contri,iscontr,imcontr',l
                   do j=1, nopes
                      write(*,*)contr(j),iscontr(j)
                   enddo 
-c               endif
 !     
             enddo
          endif

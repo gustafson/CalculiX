@@ -22,20 +22,21 @@
 #include <pthread.h>
 #include "CalculiX.h"
 
-char *lakon1,*matname1;
+char *lakon1,*matname1,*sideload1;
 
 int *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *norien1,*ntmat1_,*ithermal1,*iprestr1,*iperturb1,*iout1,*nmethod1,
     *nplicon1,*nplkcon1,*npmat1_,*mi1,*ielas1,*icmd1,*ncmat1_,*nstate1_,
     *istep1,*iinc1,calcul_fn1,calcul_qa1,calcul_cauchy1,iener1,ikin1,
     *nal=NULL,*ipompc1,*nodempc1,*nmpc1,*ncocon1,*ikmpc1,*ilmpc1,
-    num_cpus,mt1,*nk1,*ne01;
+    num_cpus,mt1,*nk1,*ne01,*nshcon1,*nelemload1,*nload1;
 
 double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
     *prestr1,*eme1,*fn1=NULL,*qa1=NULL,*vold1,*veold1,*dtime1,*time1,
     *ttime1,*plicon1,*plkcon1,*xstateini1,*xstiff1,*xstate1,*stiini1,
     *vini1,*ener1,*eei1,*enerini1,*springarea1,*reltime1,*coefmpc1,
-    *cocon1,*qfx1,*xnormastface1,*thicke1,*emeini1;
+    *cocon1,*qfx1,*xnormastface1,*thicke1,*emeini1,*shcon1,*xload1,
+    *xloadold1;
 
 void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
        double *v,double *stn,int *inum,double *stx,double *elcon,int *nelcon,
@@ -62,7 +63,9 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
        int *inotr,int *ntrans,double *fmpc,int *nelemload,int *nload,
        int *ikmpc,int *ilmpc,
        int *istep,int *iinc,double *springarea,double *reltime, int *ne0,
-       double *xforc, int *nforc, double *thicke,double *xnormastface){
+       double *xforc, int *nforc, double *thicke,double *xnormastface,
+       double *shcon,int *nshcon,char *sideload,double *xload,
+       double *xloadold,int *icfd,int *inomat){
 
     int intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,iener,ikin,
         intpointvart,mt=mi[1]+1,i,j,*ithread=NULL;
@@ -271,13 +274,15 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 	ielmat1=ielmat;ielorien1=ielorien;norien1=norien;orab1=orab;
         ntmat1_=ntmat_;t01=t0;iperturb1=iperturb;iout1=iout;vold1=vold;
         ipompc1=ipompc;nodempc1=nodempc;coefmpc1=coefmpc;nmpc1=nmpc;
-        dtime1=dtime;time1=time;ttime1=ttime;plicon1=plicon;
-        nplicon1=nplicon;xstateini1=xstateini;xstiff1=xstiff;
+        dtime1=dtime;time1=time;ttime1=ttime;plkcon1=plkcon;
+        nplkcon1=nplkcon;xstateini1=xstateini;xstiff1=xstiff;
         xstate1=xstate;npmat1_=npmat_;matname1=matname;mi1=mi;
         ncmat1_=ncmat_;nstate1_=nstate_;cocon1=cocon;ncocon1=ncocon;
         qfx1=qfx;ikmpc1=ikmpc;ilmpc1=ilmpc;istep1=istep;iinc1=iinc;
         springarea1=springarea;calcul_fn1=calcul_fn;calcul_qa1=calcul_qa;
-        mt1=mt;nk1=nk;
+        mt1=mt;nk1=nk;shcon1=shcon;nshcon1=nshcon;ithermal1=ithermal;
+        nelemload1=nelemload;nload1=nload;nmethod1=nmethod;reltime1=reltime;
+        sideload1=sideload;xload1=xload;xloadold1=xloadold;
 
 	/* calculating the heat flux */
 	
@@ -355,7 +360,8 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
        epn,mi,
        nstate_,ener,enern,xstaten,eei,set,nset,istartset,iendset,
        ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-       nelemload,nload,&ikin,ielmat,thicke,eme,emn));
+       nelemload,nload,&ikin,ielmat,thicke,eme,emn,rhcon,nrhcon,shcon,
+       nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat));
   
   return;
 
@@ -417,13 +423,14 @@ void *resultsthermmt(int *i){
 
     FORTRAN(resultstherm,(co1,kon1,ipkon1,lakon1,ne1,v1,
 	   elcon1,nelcon1,rhcon1,nrhcon1,ielmat1,ielorien1,norien1,orab1,
-	   ntmat1_,t01,iperturb1,&fn1[indexfn],
+	   ntmat1_,t01,iperturb1,&fn1[indexfn],shcon1,nshcon1,
 	   iout1,&qa1[indexqa],vold1,ipompc1,nodempc1,coefmpc1,nmpc1,
-           dtime1,time1,ttime1,plicon1,nplicon1,xstateini1,xstiff1,xstate1,
+           dtime1,time1,ttime1,plkcon1,nplkcon1,xstateini1,xstiff1,xstate1,
            npmat1_,
            matname1,mi1,ncmat1_,nstate1_,cocon1,ncocon1,
            qfx1,ikmpc1,ilmpc1,istep1,iinc1,springarea1,
-	   &calcul_fn1,&calcul_qa1,&nal[indexnal],&nea,&neb));
+	   &calcul_fn1,&calcul_qa1,&nal[indexnal],&nea,&neb,ithermal1,
+           nelemload1,nload1,nmethod1,reltime1,sideload1,xload1,xloadold1));
 
     return NULL;
 }

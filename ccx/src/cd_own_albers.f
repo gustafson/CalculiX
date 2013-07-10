@@ -18,6 +18,8 @@
 !
       subroutine cd_own_albers(p1,p2,xl,d,cd,u,T1,R,kappa)
 !
+      implicit none
+!
       real*8 d,xl,p1,p2,cd,T1,R,kappa,u
 !
       p1=p1

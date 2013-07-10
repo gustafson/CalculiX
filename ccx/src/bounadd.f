@@ -35,10 +35,11 @@
      &  iamboun(*),iamplitude,nam,ipompc(*),nodempc(3,*),nmpc,nmpc_,
      &  mpcfree,inotr(2,*),ntrans,ikboun(*),ilboun(*),ikmpc(*),
      &  ilmpc(*),itr,idof,newnode,number,id,idofnew,idnew,nk,nk_,
-     &  mpcfreenew,nmethod,iperturb,ii,nodetrue,mi(*)
+     &  mpcfreenew,nmethod,iperturb,ii,nodetrue,mi(*),three,kflag,
+     &  iy(3),inumber
 !
       real*8 xboun(*),val,coefmpc(*),trab(7,*),a(3,3),co(3,*),
-     &  vold(0:mi(2),*)
+     &  vold(0:mi(2),*),dx(3)
 !
       if(ntrans.le.0) then
          itr=0
@@ -181,12 +182,21 @@
                do j=0,mi(2)
                   vold(j,newnode)=vold(j,node)
                enddo
-c               write(*,*) ' bounadd ',nk,vold(0,nk),node,vold(0,node)
             endif
 !
 !           new mpc
 !
-            do number=1,3
+            iy(1)=1
+            iy(2)=2
+            iy(3)=3
+            dx(1)=dabs(a(1,i))
+            dx(2)=dabs(a(2,i))
+            dx(3)=dabs(a(3,i))
+            three=3
+            kflag=-2
+            call dsort(dx,iy,three,kflag)
+            do inumber=1,3
+               number=iy(inumber)
                idof=8*(node-1)+number
                call nident(ikmpc,idof,nmpc,id)
                if(id.ne.0) then
@@ -209,11 +219,13 @@ c               write(*,*) ' bounadd ',nk,vold(0,nk),node,vold(0,node)
                exit
             enddo
 !
-            number=number-1
+            inumber=inumber-1
             do j=1,3
-               number=number+1
-               if(number.gt.3) number=1
-               if(dabs(a(number,i)).lt.1.d-5) cycle
+               inumber=inumber+1
+               if(inumber.gt.3) inumber=1
+               number=iy(inumber)
+c               if(dabs(a(number,i)).lt.1.d-5) cycle
+               if(dabs(a(number,i)).lt.1.d-30) cycle
                nodempc(1,mpcfree)=node
                nodempc(2,mpcfree)=number
                coefmpc(mpcfree)=a(number,i)

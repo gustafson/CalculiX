@@ -25,8 +25,8 @@
 !     The Von Mises stress is interpolated for a given equivalent
 !     plastic strain. If the equivalent strain data points for
 !     temperature j and j-1 do not coincide, the union of both is
-!     taken. If this union exceeds 20 (ierror=1), the equivalent plastic
-!     strain range is divided into 19 intervals yielding 20 new
+!     taken. If this union exceeds 200 (ierror=1), the equivalent plastic
+!     strain range is divided into 199 intervals yielding 200 new
 !     equivalent strain data points, for which the Von Mises stress
 !     is interpolated.
 !     Attention: in plcon the odd storage spaces contain the Von
@@ -39,7 +39,7 @@
      &  kin,k,j,k1,k2,ierror,ndata1,ndata2,itemp
 !
       real*8 eplmin,eplmax,depl,epla,plcon(0:2*npmat_,ntmat_,*),
-     &  plconloc(82),dummy,temp,ep1,ep2,t1,t2,s1,s2,ratio
+     &  plconloc(802),dummy,temp,ep1,ep2,t1,t2,s1,s2,ratio
 !
       ndata=0
       ierror=0
@@ -94,7 +94,7 @@
                k1=k1+1
             else
                ndata=ndata+1
-               if(ndata.gt.20) then
+               if(ndata.gt.200) then
                   ierror=1
                   exit
                endif
@@ -102,8 +102,8 @@
                   plconloc(2*ndata-1)=ep1+ratio*(ep2-ep1)
                   plconloc(2*ndata)=s1+ratio*(s2-s1)
                else
-                  plconloc(39+2*ndata)=ep1+ratio*(ep2-ep1)
-                  plconloc(40+2*ndata)=s1+ratio*(s2-s1)
+                  plconloc(399+2*ndata)=ep1+ratio*(ep2-ep1)
+                  plconloc(400+2*ndata)=s1+ratio*(s2-s1)
                endif
                exit
             endif
@@ -111,7 +111,7 @@
          endif
          if(ep1.lt.ep2) then
             ndata=ndata+1
-            if(ndata.gt.20) then
+            if(ndata.gt.200) then
                ierror=1
                exit
             endif
@@ -121,8 +121,8 @@
                plconloc(2*ndata-1)=ep1
                plconloc(2*ndata)=s1+ratio*(s2-s1)
             else
-               plconloc(39+2*ndata)=ep1
-               plconloc(40+2*ndata)=s1+ratio*(s2-s1)
+               plconloc(399+2*ndata)=ep1
+               plconloc(400+2*ndata)=s1+ratio*(s2-s1)
             endif
             if(k1.lt.ndata1) then
                k1=k1+1
@@ -132,7 +132,7 @@
             endif
          else
             ndata=ndata+1
-            if(ndata.gt.20) then
+            if(ndata.gt.200) then
                ierror=1
                exit
             endif
@@ -142,8 +142,8 @@
                plconloc(2*ndata-1)=ep2
                plconloc(2*ndata)=s1+ratio*(s2-s1)
             else
-               plconloc(39+2*ndata)=ep2
-               plconloc(40+2*ndata)=s1+ratio*(s2-s1)
+               plconloc(399+2*ndata)=ep2
+               plconloc(400+2*ndata)=s1+ratio*(s2-s1)
             endif
             if(k2.lt.ndata2) then
                k2=k2+1
@@ -154,22 +154,22 @@
          endif
       enddo
 !
-!     if more than 20 data points result, the interval is divided into
-!     19 equidistant intervals
+!     if more than 200 data points result, the interval is divided into
+!     199 equidistant intervals
 !
       if(ierror.eq.0) then
          if(kin.eq.0) then
-            plconloc(81)=real(ndata)+0.5d0
+            plconloc(801)=real(ndata)+0.5d0
          else
-            plconloc(82)=real(ndata)+0.5d0
+            plconloc(802)=real(ndata)+0.5d0
          endif
       else
          if(kin.eq.0) then
             eplmin=max(plcon(2,j-1,imat),plcon(2,j,imat))
             eplmax=min(plcon(2*ndata1,j-1,imat),plcon(2*ndata2,j,imat))
      &         -1.d-10
-            depl=(eplmax-eplmin)/19.d0
-            do k=1,20
+            depl=(eplmax-eplmin)/199.d0
+            do k=1,200
                epla=eplmin+(k-1)*depl
                itemp=j-1
                call plinterpol(plcon,nplcon,itemp,s1,
@@ -180,13 +180,13 @@
                plconloc(2*k-1)=epla
                plconloc(2*k)=s1+ratio*(s2-s1)
             enddo
-            plconloc(81)=20.5d0
+            plconloc(801)=200.5d0
          else
             eplmin=max(plcon(2,j-1,imat),plcon(2,j,imat))
             eplmax=min(plcon(2*ndata1,j-1,imat),plcon(2*ndata2,j,imat))
      &         -1.d-10
-            depl=(eplmax-eplmin)/19.d0
-            do k=1,20
+            depl=(eplmax-eplmin)/199.d0
+            do k=1,200
                epla=eplmin+(k-1)*depl
                itemp=j-1
                call plinterpol(plcon,nplcon,itemp,s1,
@@ -194,10 +194,10 @@
                itemp=j
                call plinterpol(plcon,nplcon,itemp,s2,
      &              dummy,npmat_,ntmat_,imat,nelem,epla)
-               plconloc(19+2*k)=epla
-               plconloc(20+2*k)=s1+ratio*(s2-s1)
+               plconloc(399+2*k)=epla
+               plconloc(400+2*k)=s1+ratio*(s2-s1)
             enddo
-            plconloc(82)=20.5d0
+            plconloc(802)=200.5d0
          endif
       endif
 !

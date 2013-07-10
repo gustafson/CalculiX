@@ -75,7 +75,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
     *tchar3=NULL,cflag[1]=" ";
 
   int nev,i,j,k,idof,*inum=NULL,*ipobody=NULL,inewton=0,id,
-    iinc=0,jprint=0,l,iout,ielas,icmd,iprescribedboundary,init,ifreebody,
+    iinc=0,jprint=0,l,iout,ielas=0,icmd,iprescribedboundary,init,ifreebody,
     mode=-1,noddiam=-1,*kon=NULL,*ipkon=NULL,*ielmat=NULL,*ielorien=NULL,
     *inotr=NULL,*nodeboun=NULL,*ndirboun=NULL,*iamboun=NULL,*ikboun=NULL,
     *ilboun=NULL,*nactdof=NULL,*ipompc=NULL,*nodempc=NULL,*ikmpc=NULL,
@@ -96,7 +96,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
     *imdnode=NULL,nmdnode,*imdboun=NULL,nmdboun,*imdmpc=NULL,
     nmdmpc,intpointvar,kmin,kmax,i1,ifricdamp=0,ifacecount,*izdof=NULL,
     nzdof,iload,iforc,*iponoel=NULL,*inoel=NULL,*imdelem=NULL,nmdelem,
-    usercload=0,irenewxstate;
+    usercload=0,irenewxstate,nasym=0,*nshcon=NULL,nherm,icfd=0,*inomat=NULL;
 
   long long i2;
 
@@ -124,7 +124,8 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
     time=0.0,*xforcdiff=NULL,*xloaddiff=NULL,*xbodydiff=NULL,*t1diff=NULL,
     *xboundiff=NULL,*bprev=NULL,*bdiff=NULL,damp,um,*areaslav=NULL,
     *springarea=NULL, *bold=NULL,*eenmax=NULL,*fnr=NULL,*fni=NULL,
-    *xmastnor=NULL,*xnormastface=NULL,*emeini=NULL,*xstate=NULL;
+    *xmastnor=NULL,*xnormastface=NULL,*emeini=NULL,*xstate=NULL,
+    *shcon=NULL,*xmr=NULL,*xmi=NULL,*xnoels=NULL;
 
   FILE *f1;
 
@@ -183,9 +184,37 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       }
   }
 
-  /* check for cyclic symmetry */
+  /* opening the eigenvalue file and checking for cyclic symmetry */
 
-  if((*mcs==0)||(cs[1]<0)){cyclicsymmetry=0;}else{cyclicsymmetry=1;}
+  strcpy(fneig,jobnamec);
+  strcat(fneig,".eig");
+
+  if((f1=fopen(fneig,"rb"))==NULL){
+    printf("*ERROR in dyna: cannot open eigenvalue file for reading");
+    exit(0);
+  }
+
+  printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+  printf("        1) the nonexistence of the .eig file\n");
+  printf("        2) other boundary conditions than in the input deck\n");
+  printf("           which created the .eig file\n\n");
+
+  if(fread(&cyclicsymmetry,sizeof(int),1,f1)!=1){
+      printf("*ERROR in dyna reading the cyclic symmetry flag in the eigenvalue file");
+      exit(0);
+  }
+
+  if(fread(&nherm,sizeof(int),1,f1)!=1){
+      printf("*ERROR in dyna reading the Hermitian flag in the eigenvalue file");
+      exit(0);
+  }
+
+  if(nherm!=1){
+      printf("*ERROR in dyna: the eigenvectors in the .eig-file result\n");
+      printf("       from a non-Hermitian eigenvalue problem. The modal\n");
+      printf("       dynamic procedure cannot handle that yet\n\n");
+      FORTRAN(stop,());
+  }
 
   /* creating imddof containing the degrees of freedom
      retained by the user and imdnode containing the nodes */
@@ -272,15 +301,6 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
   RENEW(imdboun,int,nmdboun);
   RENEW(imdmpc,int,nmdmpc);
 
-  /* reading the eigenvalue and eigenmode information */
-
-  strcpy(fneig,jobnamec);
-  strcat(fneig,".eig");
-
-  if((f1=fopen(fneig,"rb"))==NULL){
-    printf("*ERROR: cannot open eigenvalue file for reading...");
-    exit(0);
-  }
   nsectors=1;
 
   if(!cyclicsymmetry){
@@ -289,14 +309,14 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       neg=*ne;
 
       if(fread(&nev,sizeof(int),1,f1)!=1){
-	  printf("*ERROR reading the eigenvalue file...");
+	  printf("*ERROR in dyna reading the number of eigenvalues in the eigenvalue file");
 	  exit(0);
       }
       
       d=NNEW(double,nev);
       
       if(fread(d,sizeof(double),nev,f1)!=nev){
-	  printf("*ERROR reading the eigenvalue file...");
+	  printf("*ERROR in dyna reading the eigenvalues in the eigenvalue file");
 	  exit(0);
       }
 
@@ -310,29 +330,29 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       aub=NNEW(double,nzs[1]);
       
       if(fread(ad,sizeof(double),neq[1],f1)!=neq[1]){
-	  printf("*ERROR reading the eigenvalue file...");
+	  printf("*ERROR in dyna reading the diagonal of the stiffness matrix in the eigenvalue file");
 	  exit(0);
       }
       
       if(fread(au,sizeof(double),nzs[2],f1)!=nzs[2]){
-	  printf("*ERROR reading the eigenvalue file...");
+	  printf("*ERROR in dyna reading the off-diagonals of the stiffness matrix in the eigenvalue file");
 	  exit(0);
       }
       
       if(fread(adb,sizeof(double),neq[1],f1)!=neq[1]){
-	  printf("*ERROR reading the eigenvalue file...");
+	  printf("*ERROR in dyna reading the diagonal of the mass matrix in the eigenvalue file");
 	  exit(0);
       }
       
       if(fread(aub,sizeof(double),nzs[1],f1)!=nzs[1]){
-	  printf("*ERROR reading the eigenvalue file...");
+	  printf("*ERROR in dyna reading the off-diagonals of the mass matrix in the  eigenvalue file");
 	  exit(0);
       }
       
       z=NNEW(double,neq[1]*nev);
       
       if(fread(z,sizeof(double),neq[1]*nev,f1)!=neq[1]*nev){
-	  printf("*ERROR reading the eigenvalue file...");
+	  printf("*ERROR in dyna reading the eigenvectors in the eigenvalue file");
 	  exit(0);
       }
   }
@@ -343,7 +363,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 	      break;
 	  }
 	  if(fread(&nevd,sizeof(int),1,f1)!=1){
-	      printf("*ERROR reading the eigenvalue file...");
+	      printf("*ERROR in dyna reading the number of eigenvalues for nodal diameter %d in the eigenvalue file",nmd);
 	      exit(0);
 	  }
 	  if(nev==0){
@@ -355,7 +375,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 	  }
 	  
 	  if(fread(&d[nev],sizeof(double),nevd,f1)!=nevd){
-	      printf("*ERROR reading the eigenvalue file...");
+	      printf("*ERROR in dyna reading the eigenvalues for nodal diameter %d in the eigenvalue file",nmd);
 	      exit(0);
 	  }
 
@@ -370,12 +390,12 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 	      aub=NNEW(double,nzs[1]);
 
 	      if(fread(adb,sizeof(double),neq[1],f1)!=neq[1]){
-		  printf("*ERROR reading the eigenvalue file...");
+		  printf("*ERROR in dyna reading the diagonal of the mass matrix in the eigenvalue file");
 		  exit(0);
 	      }
 	      
 	      if(fread(aub,sizeof(double),nzs[1],f1)!=nzs[1]){
-		  printf("*ERROR reading the eigenvalue file...");
+		  printf("*ERROR in dyna reading the off-diagonals of the mass matrix in the eigenvalue file");
 		  exit(0);
 	      }
 	  }
@@ -387,7 +407,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 	  }
 	  
 	  if(fread(&z[(long long)neq[1]*nev],sizeof(double),neq[1]*nevd,f1)!=neq[1]*nevd){
-	      printf("*ERROR reading the eigenvalue file...");
+	      printf("*ERROR in dyna reading the eigenvectors for nodal diameter %d in the eigenvalue file",nmd);
 	      exit(0);
 	  }
 	  nev+=nevd;
@@ -532,7 +552,8 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
         labmpcold,&nmpcold,xloadold,iamload,t1old,t1,iamt1,xstiff,
         &icole,&jqe,&irowe,isolver,nzse,&adbe,&aube,iexpl,
 	ibody,xbody,nbody,cocon,ncocon,tieset,ntie,&nnn,imddof,&nmddof,
-	imdnode,&nmdnode,imdboun,&nmdboun,imdmpc,&nmdmpc,&izdof,&nzdof);
+	imdnode,&nmdnode,imdboun,&nmdboun,imdmpc,&nmdmpc,&izdof,&nzdof,
+	&nherm,xmr,xmi);
 
       RENEW(imddof,int,nmddof);
       RENEW(imdnode,int,nmdnode);
@@ -671,7 +692,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
           &mortar,&imastop,nkon,&iponoels,&inoels,&ipe,&ime,ne,&ifacecount,
           nmpc,&mpcfree,&memmpc_,
 	  &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
-	  iperturb,ikboun,nboun,co);
+	  iperturb,ikboun,nboun,co,istep,&xnoels);
 
   if(ncont!=0){
 
@@ -689,10 +710,10 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 	RENEW(ener,double,mi[0]*(*ne+*nslavs)*2);
       }
 
-      /* 10 instead of 9: last position is reserved for how
+      /* 11 instead of 10: last position is reserved for how
          many dependent nodes are paired to this face */
     
-      RENEW(kon,int,*nkon+10**nslavs);
+      RENEW(kon,int,*nkon+11**nslavs);
       if(*norien>0){
 	  RENEW(ielorien,int,mi[2]*(*ne+*nslavs));
 	  for(k=mi[2]**ne;k<mi[2]*(*ne+*nslavs);k++) ielorien[k]=0;
@@ -718,7 +739,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       }
 
       xmastnor=NNEW(double,3*nmastnode[*ntie]);
-      xnormastface=NNEW(double,3*8**nslavs);
+      xnormastface=NNEW(double,3*9**nslavs);
       areaslav=NNEW(double,ifacecount);
       springarea=NNEW(double,2**nslavs);
       vini=NNEW(double,mt**nk);
@@ -949,7 +970,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       if(*isolver==0){
 #ifdef SPOOLES
 	  spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
-                         &symmetryflag,&inputformat);
+                         &symmetryflag,&inputformat,&nzs[2]);
 #else
 	  printf("*ERROR in dyna: the SPOOLES library is not linked\n\n");
 	  FORTRAN(stop,());
@@ -974,7 +995,8 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       }
       else if(*isolver==7){
 #ifdef PARDISO
-	  pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1]);
+	  pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
+                         &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
 	  printf("*ERROR in dyna: the PARDISO library is not linked\n\n");
 	  FORTRAN(stop,());
@@ -1010,7 +1032,8 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
               &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,iperturb,
               ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
               itiefac,areaslav,iponoels,inoels,springarea,tietol,&reltime,
-	      imastnode,nmastnode,xmastnor,xnormastface,filab,mcs,ics);
+	      imastnode,nmastnode,xmastnor,xnormastface,filab,mcs,ics,
+              &nasym,xnoels);
 
       RENEW(ikactcont,int,nactcont_);
 //      memset(&ikactcont[0],0,sizeof(int)*nactcont_);
@@ -1022,7 +1045,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 	  imat=ielmat[mi[2]*i];
 	  kodem=nelcon[2*imat-2];
 	  for(j=0;j<8;j++){lakonl[j]=lakon[8*i+j];}
-	  nope=atoi(&lakonl[7]);
+	  nope=atoi(&lakonl[7]+1);
 	  for(j=0;j<nope;j++){
 	      konl[j]=kon[indexe+j];
 	      for(j1=0;j1<3;j1++){
@@ -1037,7 +1060,8 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 	      fnl,ncmat_,ntmat_,&nope,lakonl,&t0l,&t1l,&kodem,elconloc,
 	      plicon,nplicon,npmat_,veoldl,&senergy,&iener,cstr,mi,
 	      &springarea[2*(konl[nope]-1)],nmethod,&ne0,iperturb,nstate_,
-	      xstateini,xstate,&reltime,&xnormastface[24*(konl[nope]-1)]));
+	      xstateini,xstate,&reltime,&xnormastface[27*(konl[nope]-1)],
+	      &ielas));
 
 //	  if(i==ne0) printf("spring start step %e\n",fnl[3*nope-3]);
 
@@ -1219,7 +1243,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
     /* check for max. # of increments */
     
     if(iinc>*jmax){
-      printf(" *ERROR: max. # of increments reached\n\n");
+      printf(" *ERROR in dyna: max. # of increments reached\n\n");
       FORTRAN(stop,());
     }
     
@@ -1691,7 +1715,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       FORTRAN(dynresults,(nk,v,ithermal,nactdof,vold,nodeboun,
 	      ndirboun,xbounact,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,
 	      b,bp,veold,&dtime,mi,imdnode,&nmdnode,imdboun,&nmdboun,
-	      imdmpc,&nmdmpc,nmethod));
+	      imdmpc,&nmdmpc,nmethod,&time));
               
      
 //      for(i=0;i<mt**nk;i++){vold[i]=v[i];}
@@ -1726,7 +1750,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 	      imdmpc,&nmdmpc,&itp,&inext,&ifricdamp,aafric,bfric,imastop,
               nslavnode,islavnode,islavsurf,itiefac,areaslav,iponoels,
 	      inoels,springarea,izdof,&nzdof,fn,imastnode,nmastnode,xmastnor,
-	      xnormastface,xstateini,nslavs);
+	      xnormastface,xstateini,nslavs,&cyclicsymmetry,xnoels,&ielas);
       }   
 	  
       theta+=dtheta;
@@ -1789,7 +1813,8 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 		 set,nset,istartset,iendset,ialset,nprint,prlab,prset,
 		 qfx,qfn,trab,inotr,ntrans,fmpc,nelemload,nload,ikmpc,
 		 ilmpc,istep,&iinc,springarea,&reltime,&ne0,xforc,nforc,
-                 thicke,xnormastface);
+                 thicke,xnormastface,shcon,nshcon,
+                 sideload,xload,xloadold,&icfd,inomat);
 
 	/* restoring */
 
@@ -1820,7 +1845,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-	    thicke,jobnamec,output);
+	    thicke,jobnamec,output,qfx);
 	
 	if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
       }
@@ -1893,7 +1918,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       FORTRAN(dynresults,(nk,v,ithermal,nactdof,vold,nodeboun,
 	      ndirboun,xbounact,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,
 	      b,bp,veold,&dtime,mi,imdnode,&nmdnode,imdboun,&nmdboun,
-	      imdmpc,&nmdmpc,nmethod));
+	      imdmpc,&nmdmpc,nmethod,&time));
   }
   
   free(eei);
@@ -1946,7 +1971,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       }
       else if(*isolver==7){
 #ifdef PARDISO
-	  pardiso_cleanup(&neq[1]);
+	  pardiso_cleanup(&neq[1],&symmetryflag);
 #endif
       }
       free(bact);free(bmin);free(bv);free(bprev);free(bdiff);

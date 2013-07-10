@@ -27,22 +27,23 @@
       character*8 lakon(*)
       character*20 sideload(*)
 !
-      integer ne,ipkon(*),kon(*),indexe,ifaceq(8,6),k,node,
+      integer ne,ipkon(*),kon(*),indexe,ifaceq(9,6),k,node,
      &  ifacew(8,5),i,j,ielface10(4,4),konl(27),indexer,nodes(8),
      &  ielface15(4,5),ielface20(4,6),id,ig,nelemload(2,*),
      &  iamload(2,*),nload,kon10(4,8),kon15(6,8),kon20(8,8),
-     &  nelem,iamt1(*),nam,ithermal(2),iamplitude,mi(*)
+     &  nelem,iamt1(*),nam,ithermal(2),iamplitude,mi(*),iload,
+     &  nload_,nelement
 !
       real*8 xload(2,*),t1(*),vold(0:mi(2),*),xloadold(2,*)
 !
 !     nodes belonging to the element faces
 !
-      data ifaceq /4,3,2,1,11,10,9,12,
-     &            5,6,7,8,13,14,15,16,
-     &            1,2,6,5,9,18,13,17,
-     &            2,3,7,6,10,19,14,18,
-     &            3,4,8,7,11,20,15,19,
-     &            4,1,5,8,12,17,16,20/
+      data ifaceq /4,3,2,1,11,10,9,12,21,
+     &            5,6,7,8,13,14,15,16,22,
+     &            1,2,6,5,9,18,13,17,23,
+     &            2,3,7,6,10,19,14,18,24,
+     &            3,4,8,7,11,20,15,19,25,
+     &            4,1,5,8,12,17,16,20,26/
       data ifacew /1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
@@ -88,6 +89,8 @@
      &            26,27,25,20,16,22,15,8,
      &            27,24,19,25,22,14,7,15/
 !
+      nload_=5*nload
+!
       do i=1,ne
          indexe=ipkon(i)
          if(indexe.lt.-1) then
@@ -107,24 +110,28 @@
 !
                nelem=kon(indexe+1)-1
                do j=1,4
-                  nload=nload+1
+c                  nload=nload+1
                   if(lakon(i)(4:4).eq.'2') then
-                     nelemload(1,nload)=nelem+ielface20(j,ig)
+                     nelement=nelem+ielface20(j,ig)
                   elseif(lakon(i)(4:5).eq.'10') then
-                     nelemload(1,nload)=nelem+ielface10(j,ig)
+                     nelement=nelem+ielface10(j,ig)
                   elseif(lakon(i)(4:5).eq.'15') then
-                     nelemload(1,nload)=nelem+ielface15(j,ig)
+                     nelement=nelem+ielface15(j,ig)
                   endif
-                  nelemload(2,nload)=nelemload(2,id)
-                  sideload(nload)=sideload(id)
-                  if(nam.gt.0) then
-                     iamload(1,nload)=iamload(1,id)
-                     iamload(2,nload)=iamload(2,id)
-                  endif
-                  xload(1,nload)=xload(1,id)
-                  xload(2,nload)=xload(2,id)
-                  xloadold(1,nload)=xloadold(1,id)
-                  xloadold(2,nload)=xloadold(2,id)
+                  call loadaddt(nelement,sideload(id),xload(1,id),
+     &                 xload(2,id),nelemload,sideload,xload,nload,
+     &                 nload_,iamload,iamload(2,id),iamload(1,id),
+     &                 nam,nelemload(2,id),iload)
+c                  nelemload(2,nload)=nelemload(2,id)
+c                  sideload(nload)=sideload(id)
+c                  if(nam.gt.0) then
+c                     iamload(1,nload)=iamload(1,id)
+c                     iamload(2,nload)=iamload(2,id)
+c                  endif
+c                  xload(1,nload)=xload(1,id)
+c                  xload(2,nload)=xload(2,id)
+                  xloadold(1,iload)=xloadold(1,id)
+                  xloadold(2,iload)=xloadold(2,id)
                enddo
                id=id-1
             enddo

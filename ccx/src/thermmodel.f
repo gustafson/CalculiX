@@ -21,19 +21,21 @@
      &  iorien,pgauss,orab,t1l,t1lold,vold,co,lakonl,konl,
      &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc)
 !
+      implicit none
+!
       character*8 lakonl
       character*80 amat
 !
       integer iel,iint,kode,mi(*),nstate_,iorien,ntgrd,ncoconst,
      &  layer,kspt,kstep,kinc,kal(2,6),konl(20),ipompc(*),
-     &  nodempc(3,*),nmpc,ikmpc(*),ilmpc(*)
+     &  nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),j3,j2,j4,jj,j,i,j1
 !
       real*8 coconloc(*),vkl(0:3,3),dtime,time,ttime,cond(6),
      &  xstateini(nstate_,mi(1),*),xstate(nstate_,mi(1),*),qflux(3),
      &  pgauss(3),orab(7,*),abqtime(2),u,dudt,dudg(3),dfdt(3),
      &  dfdg(3,3),dtemp,dtemdx(3),predef(1),dpred(1),pnewdt,
      &  skl(3,3),t1lold,xstiff(27,mi(1),*),xa(3,3),vold(0:mi(2),*),
-     &  co(3,*),coefmpc(*)
+     &  co(3,*),coefmpc(*),t1l
 !
       kal=reshape((/1,1,2,2,3,3,1,2,1,3,2,3/),(/2,6/))
 !

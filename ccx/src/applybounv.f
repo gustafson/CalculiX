@@ -27,9 +27,8 @@
 !
       implicit none
 !
-      integer turbulent,compressible
-!
-      integer nrhcon(*),mi(*),ielmat(mi(3),*),ntmat_,nodeboun(*),
+      integer turbulent,compressible,
+     &  nrhcon(*),mi(*),ielmat(mi(3),*),ntmat_,nodeboun(*),
      &  isolidsurf(*),
      &  ndirboun(*),nshcon(*),nk,i,nboun,node,imat,ithermal,iponoel(*),
      &  inoel(3,*),nsolidsurf,ifreenode,ifreestream(*),nfreestream,k,

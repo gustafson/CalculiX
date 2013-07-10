@@ -181,12 +181,37 @@
                endif
 !
             elseif(nelemswirl.gt.0) then
+!     preswirl nozzle
                if(lakon(nelemswirl)(2:5).eq.'ORPN') then
                   cinput=prop(ielprop(nelemswirl)+5)
-               elseif(lakon(nelemswirl)(2:5).eq.'VOFR') then
-                  cinput=prop(ielprop(nelemswirl)+9)
+!     rotating orifices
+               else if((lakon(nelemswirl)(2:5).eq.'ORMM').or.
+     &                 (lakon(nelemswirl)(2:5).eq.'ORMA').or.
+     &                 (lakon(nelemswirl)(2:5).eq.'ORPM').or.
+     &                 (lakon(nelemswirl)(2:5).eq.'ORPA')) then
+                  cinput=prop(ielprop(nelemswirl)+7)
+!     forced vortex
                elseif(lakon(nelemswirl)(2:5).eq.'VOFO') then
                   cinput=prop(ielprop(nelemswirl)+7)
+!     free vortex 
+               elseif(lakon(nelemswirl)(2:5).eq.'VOFR') then
+                  cinput=prop(ielprop(nelemswirl)+9)
+!     Moehring 
+               elseif(lakon(nelemswirl)(2:4).eq.'MRG') then
+                  cinput=prop(ielprop(nelemswirl)+10)
+!     RCAVO 
+               elseif((lakon(nelemswirl)(2:4).eq.'ROR').or.
+     &                 (lakon(nelemswirl)(2:4).eq.'ROA'))then
+                  cinput=prop(ielprop(nelemswirl)+6)
+!     RCAVI 
+               elseif(lakon(nelemswirl)(2:4).eq.'RCV') then
+                  cinput=prop(ielprop(nelemswirl)+5) 
+              else
+                write(*,*) '*ERROR in vortex:'
+                write(*,*) ' element',nelemswirl
+                write(*,*) ' refered by element',nelem
+                write(*,*) ' is not a swirl generating element'
+                cinput=0.d0
                endif
 !
                cinput=U1+K1*(cinput-U1)
@@ -432,12 +457,39 @@
                endif
 !
             elseif(nelemswirl.gt.0) then
+!     swirl generating element
+!              
+!     preswirl nozzle
                if(lakon(nelemswirl)(2:5).eq.'ORPN') then
                   cinput=prop(ielprop(nelemswirl)+5)
-               elseif(lakon(nelemswirl)(2:5).eq.'VOFR') then
-                  cinput=prop(ielprop(nelemswirl)+9)
+!     rotating orifices
+               elseif((lakon(nelemswirl)(2:5).eq.'ORMM').or.
+     &                 (lakon(nelemswirl)(2:5).eq.'ORMA').or.
+     &                 (lakon(nelemswirl)(2:5).eq.'ORPM').or.
+     &                 (lakon(nelemswirl)(2:5).eq.'ORPA')) then
+                  cinput=prop(ielprop(nelemswirl)+7)
+!     forced vortex
                elseif(lakon(nelemswirl)(2:5).eq.'VOFO') then
                   cinput=prop(ielprop(nelemswirl)+7)
+!     free vortex 
+               elseif(lakon(nelemswirl)(2:5).eq.'VOFR') then
+                  cinput=prop(ielprop(nelemswirl)+9)
+!     Moehring 
+               elseif(lakon(nelemswirl)(2:4).eq.'MRG') then
+                  cinput=prop(ielprop(nelemswirl)+10)
+!     RCAVO 
+               elseif((lakon(nelemswirl)(2:4).eq.'ROR').or.
+     &                 (lakon(nelemswirl)(2:4).eq.'ROA'))then
+                  cinput=prop(ielprop(nelemswirl)+6)
+!     RCAVI 
+               elseif(lakon(nelemswirl)(2:4).eq.'RCV') then
+                  cinput=prop(ielprop(nelemswirl)+5) 
+              else
+                write(*,*) '*ERROR in vortex:'
+                write(*,*) ' element',nelemswirl
+                write(*,*) ' refered by element',nelem
+                write(*,*) ' is not a swirl generating element'
+                cinput=0.d0
                endif
 !
                cinput=U1+K1*(cinput-U1)

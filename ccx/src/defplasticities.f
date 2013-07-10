@@ -36,22 +36,28 @@
       ntmat=0
       iperturb(1)=3
       iperturb(2)=1
+      write(*,*) '*INFO reading *DEFORMATION PLASTICITY: nonlinear'
+      write(*,*) '      geometric effects are turned on'
+      write(*,*)
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in defplasticities: *DEFORMATION PLASTICITY'
+         write(*,*) '*ERROR reading *DEFORMATION PLASTICITY:'
+         write(*,*) '       *DEFORMATION PLASTICITY'
          write(*,*) '  should be placed before all step definitions'
          stop
       endif
 !
       if(nmat.eq.0) then
-         write(*,*) '*ERROR in defplasticities: *DEFORMATION PLASTICITY'
+         write(*,*) '*ERROR reading *DEFORMATION PLASTICITY:'
+         write(*,*) '       *DEFORMATION PLASTICITY'
          write(*,*) '  should bepreceded by a *MATERIAL card'
          stop
       endif
 !
       do i=2,n
          write(*,*) 
-     &        '*WARNING in defplasticities: parameter not recognized:'
+     &        '*WARNING reading *DEFORMATION PLASTICITY:'
+         write(*,*) '         parameter not recognized:'
          write(*,*) '         ',
      &        textpart(i)(1:index(textpart(i),' ')-1)
          call inputwarning(inpc,ipoinpc,iline)
@@ -67,7 +73,8 @@
          ntmat=ntmat+1
          nelcon(2,nmat)=ntmat
          if(ntmat.gt.ntmat_) then
-            write(*,*) '*ERROR in defplasticities: increase ntmat_'
+            write(*,*) '*ERROR reading *DEFORMATION PLASTICITY:'
+            write(*,*) '       increase ntmat_'
             stop
          endif
          do i=1,iend

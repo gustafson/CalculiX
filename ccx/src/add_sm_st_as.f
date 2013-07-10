@@ -48,7 +48,7 @@
       ipointer=jq(jj)+id-1
 !
       if(irow(ipointer).ne.ii) then
-         write(*,*) '*ERROR in add_sm_st: coefficient should be 0'
+         write(*,*) '*ERROR in add_sm_st_as: coefficient should be 0'
          stop
       else
          ipointer=ipointer+ioffset

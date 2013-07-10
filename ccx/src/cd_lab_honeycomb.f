@@ -28,7 +28,7 @@
 !
       implicit none
 !
-      integer id
+      integer id,n11
 !
       real*8 s,lc,cd_honeycomb,szlc
 !
@@ -44,6 +44,8 @@
      &     /97.1d0,40d0,32d0,23d0,20d0,0d0,-3.3d0,-5.7d0,-8.5d0,
      &      -11.43d0,-12d0/
 !
+      data n11 /11/
+!
 ! extrapolation
       szlc=s/lc
 !      if (szlc.gt.0.40d0) then
@@ -52,7 +54,7 @@
 !
 !     intrapolation
 !
-          call ident(szl,szlc,11,id)
+          call ident(szl,szlc,n11,id)
 !     call ident(yz,q,11,idy)
             if(id.eq.1) then
               cd_honeycomb=deltamp(1)

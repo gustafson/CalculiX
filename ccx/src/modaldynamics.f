@@ -19,13 +19,13 @@
       subroutine modaldynamics(inpc,textpart,nmethod,tinc,tper,iexpl,
      &  istep,istat,n,iline,ipol,inl,ipoinp,inp,iperturb,isolver,
      &  cs,mcs,ipoinpc,idrct,ctrl,tmin,tmax,nforc,nload,nbody,iprestr,
-     &  t0,t1,ithermal,nk,vold,veold,xmodal,set,nset,mi)
+     &  t0,t1,ithermal,nk,vold,veold,xmodal,set,nset,mi,cyclicsymmetry)
 !
 !     reading the input deck: *MODAL DYNAMIC
 !
       implicit none
 !
-      logical steadystate,cyclicsymmetry,nodalset
+      logical steadystate,nodalset
 !
       character*1 inpc(*)
       character*20 solver
@@ -34,7 +34,8 @@
 !
       integer nmethod,istep,istat,n,key,iexpl,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),iperturb(2),isolver,i,mcs,ipoinpc(0:*),
-     &  idrct,nforc,nload,nbody,iprestr,ithermal,j,nk,ipos,nset,mi(*)
+     &  idrct,nforc,nload,nbody,iprestr,ithermal,j,nk,ipos,nset,mi(*),
+     &  cyclicsymmetry
 !
       real*8 tinc,tper,cs(17,*),ctrl(*),tmin,tmax,t0(*),t1(*),
      &  vold(0:mi(2),*),veold(0:mi(2),*),xmodal(*)
@@ -47,9 +48,9 @@
       tmax=0.d0
       steadystate=.false.
       if((mcs.ne.0).and.(cs(2,1).ge.0.d0)) then
-         cyclicsymmetry=.true.
-      else
-         cyclicsymmetry=.false.
+         cyclicsymmetry=1
+c      else
+c         cyclicsymmetry=0
       endif
       nodalset=.false.
 !
@@ -85,8 +86,8 @@
             read(textpart(i)(8:27),'(f20.0)',iostat=istat) ctrl(27)
          elseif(textpart(i)(1:11).eq.'STEADYSTATE') then
             steadystate=.true.
-         elseif(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
-            cyclicsymmetry=.true.
+c         elseif(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
+c            cyclicsymmetry=.true.
 c         elseif(textpart(i)(1:5).eq.'NSET=') then
 c            nodalset=.true.
 c            noset=textpart(i)(6:85)
@@ -257,7 +258,7 @@ c      endif
 !     mastructcs is called instead of mastruct a fictitious
 !     minimum nodal diameter is stored
 !
-      if((cyclicsymmetry).and.(mcs.ne.0).and.(cs(2,1)<0.d0)) 
+      if((cyclicsymmetry.eq.1).and.(mcs.ne.0).and.(cs(2,1)<0.d0)) 
      &       cs(2,1)=0.d0
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -265,4 +266,3 @@ c      endif
 !
       return
       end
-

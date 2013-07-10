@@ -24,9 +24,8 @@
 !     model)
 !
       implicit none
-
+!
       save time0
-
 !
       integer nev,nev2,info(15),idid,lrw,iwork(*),liw,jout,id,
      &  iab,iaa,ibb,i,j,m,iddebdf
@@ -50,12 +49,6 @@
 !                                  time
 !                                  aa(1)..aa(nev), nev
 !                                  bb(1)..bb(nev), nev
-c!                                  time(1)
-c!                                  aa(1,1)..aa(nev,1), nev
-c!                                  bb(1,1)..bb(nev,1), nev
-c!                                  time(2)
-c!                                  aa(1,2)..aa(nev,2), nev
-c!                                  ...
 !
       if(m.eq.1) then
          rpar(2)=alpham
@@ -78,11 +71,7 @@ c!                                  ...
             xini(nev+i)=cv(i)
          enddo
        endif
-
-
-c      rpar(1)=m+0.5d0
-c      iab=3+nev*(1+nev)
-c      iaa=iab+(m-1)*(nev2+1)+1
+!
       iaa=3+nev*(1+nev)+1
       rpar(iaa)=time
       ibb=iaa+nev
@@ -148,19 +137,9 @@ c      iaa=iab+(m-1)*(nev2+1)+1
 !
       real*8 rpar(*),x,u(*),uprime(*)
 !
-c      m=int(rpar(1))
-c      iab=4+nev*(nev+1)
-c      nev2p1=2*nev+1
-c      call ident2(rpar(iab),x,m,nev2p1,id)
-c      if(id.eq.m) then
-c         id=m-1
-c      endif
-c      iaa=iab+id*nev2p1
       iaa=4+nev*(nev+1)
       ibb=iaa+nev
       id=3+nev*nev
-
-
 !
       do i=1,nev
          uprime(i)=u(nev+i)

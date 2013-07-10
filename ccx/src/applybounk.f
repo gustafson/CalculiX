@@ -28,9 +28,8 @@
 !
       character*20 labmpc(*)
 !
-      integer turbulent
-!
-      integer nodeboun(*),ndirboun(*),i,j,nboun,node,
+      integer turbulent,
+     &  nodeboun(*),ndirboun(*),i,j,nboun,node,
      &  index,nodei,ndiri,ist,ipompc(*),nodempc(3,*),nmpc,
      &  ndir,nfreestream,ifreestream(*),iponoel(*),mi(*),
      &  inoel,imat,ielmat(mi(3),*),ntmat_,nshcon(*),nrhcon(*),

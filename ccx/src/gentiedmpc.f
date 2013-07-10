@@ -21,15 +21,12 @@
      &  koncont,co,xo,yo,zo,x,y,z,nx,ny,nz,nset,
      &  ifaceslave,istartfield,iendfield,ifield,
      &  ipompc,nodempc,coefmpc,nmpc,nmpctied,mpcfree,ikmpc,ilmpc,
-     &  labmpc,ithermal,tietol,cfd,ncont,imastop)
+     &  labmpc,ithermal,tietol,cfd,ncont,imastop,ikboun,nboun)
 !
 !     generates MPC's for the slave tied contact nodes
 !
       implicit none
 !
-      character*1 c
-      character*3 m11,m2,m3
-      character*5 p0,p1,p2,p3,p7,p9999
       character*8 lakon(*)
       character*20 labmpc(*)
       character*81 tieset(3,*),slavset,set(*)
@@ -37,33 +34,33 @@
       integer ntie,nset,istartset(*),iendset(*),ialset(*),
      &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),node,
      &  neigh(1),iflag,kneigh,i,j,k,l,isol,itri,ll,kflag,n,nx(*),
-     &  ny(*),ipointer(1),nz(*),nstart,ifaceq(8,6),ifacet(6,4),
+     &  ny(*),nz(*),nstart,ifaceq(9,6),ifacet(7,4),nboun,
      &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,imastop(3,*),
      &  nnodelem,nface,nope,nodef(8),idof,kstart,kend,jstart,id,
      &  jend,ifield(*),istartfield(*),iendfield(*),ifaceslave(*),
      &  ipompc(*),nodempc(3,*),nmpc,nmpctied,mpcfree,ikmpc(*),
-     &  ilmpc(*),ithermal(2),cfd,ncont,mpcfreeold,m,one,number_of_nodes,
+     &  ilmpc(*),ithermal(2),cfd,ncont,mpcfreeold,m,id1,ikboun(*),
      &  itriold,itrinew,ntriangle,ntriangle_,itriangle(100)
 !
       real*8 cg(3,*),straight(16,*),co(3,*),p(3),
-     &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),pl(3,8),
-     &  ratio(8),xi,et,coefmpc(*),tietol(2,*),tolloc
+     &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),pl(3,9),
+     &  ratio(9),xi,et,coefmpc(*),tietol(2,*),tolloc
 !
 !     nodes per face for hex elements
 !
-      data ifaceq /4,3,2,1,11,10,9,12,
-     &            5,6,7,8,13,14,15,16,
-     &            1,2,6,5,9,18,13,17,
-     &            2,3,7,6,10,19,14,18,
-     &            3,4,8,7,11,20,15,19,
-     &            4,1,5,8,12,17,16,20/
+      data ifaceq /4,3,2,1,11,10,9,12,21,
+     &            5,6,7,8,13,14,15,16,22,
+     &            1,2,6,5,9,18,13,17,23,
+     &            2,3,7,6,10,19,14,18,24,
+     &            3,4,8,7,11,20,15,19,25,
+     &            4,1,5,8,12,17,16,20,26/
 !
 !     nodes per face for tet elements
 !
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
 !
 !     nodes per face for linear wedge elements
 !
@@ -85,41 +82,6 @@
 !
       open(40,file='WarnNodeMissMasterIntersect.nam',status='unknown')
       write(40,*) '*NSET,NSET=WarnNodeMissMasterIntersect'
-!
-!     storing the triangulation of the master surfaces
-!     
-      open(70,file='TriMasterContactTie.frd',status='unknown')
-      c='C'
-      m11=' -1'
-      m2=' -2'
-      m3=' -3'
-      p0='    0'
-      p1='    1'
-      p2='    2'
-      p3='    3' 
-      p7='    7'
-      p9999=' 9999'
-      one=1
-      write(70,'(a5,a1)') p1,c
-      write(70,'(a5,a1,67x,i1)') p2,c,one
-      number_of_nodes=0
-      do i=1,itietri(2,ntie)
-         number_of_nodes=max(number_of_nodes,koncont(1,i))
-         number_of_nodes=max(number_of_nodes,koncont(2,i))
-         number_of_nodes=max(number_of_nodes,koncont(3,i))
-      enddo
-      do i=1,number_of_nodes
-         write(70,'(a3,i10,1p,3e12.5)') m11,i,(co(j,i),j=1,3)
-      enddo
-      write(70,'(a3)') m3
-      write(70,'(a5,a1,67x,i1)') p3,c,one
-      do i=1,itietri(2,ntie)
-         write(70,'(a3,i10,2a5)')m11,i,p7,p0
-         write(70,'(a3,3i10)') m2,(koncont(j,i),j=1,3)
-      enddo
-      write(70,'(a3)') m3
-      write(70,'(a5)') p9999
-      close(70)
 !
       nmpctied=nmpc
 !
@@ -174,20 +136,11 @@
 !     determining the slave set
 !     
          if(ifaceslave(i).eq.0) then
-c            ipos=index(slavset,' ')
-c            slavset(ipos:ipos)='S'
             do j=1,nset
                if(set(j).eq.slavset) then
                   exit
                endif
             enddo
-c            if(j.gt.nset) then
-c               write(*,*) 
-c     &              '*ERROR in gentiedmpc: tied contact slave set',
-c     &              slavset
-c               write(*,*) '       does not exist'
-c               stop
-c            endif
             jstart=istartset(j)
             jend=iendset(j)
          else
@@ -223,7 +176,6 @@ c            endif
                   node=ifield(j)
                endif
 !     
-c               write(*,*) 'gentiedmpc ',j,node
                do k=1,3
                   p(k)=co(k,node)
                enddo
@@ -235,40 +187,6 @@ c               write(*,*) 'gentiedmpc ',j,node
      &             n,neigh,kneigh)
 !     
                isol=0
-!     
-c               do k=1,kneigh
-c                  itri=neigh(k)+itietri(1,i)-1
-c!     
-c                  totdist(k)=0.d0
-c!     
-c                  do l=1,3
-c                     ll=4*l-3
-c                     dist=straight(ll,itri)*p(1)+
-c     &                    straight(ll+1,itri)*p(2)+
-c     &                    straight(ll+2,itri)*p(3)+
-c     &                    straight(ll+3,itri)
-c                     if(dist.gt.0.d0) then
-c                        totdist(k)=totdist(k)+dist
-c                     endif
-c                  enddo
-cc                  write(*,*) 'gentiedmpc ',k,itri,koncont(4,itri),
-cc     &                       totdist(k)
-c                  totdist(k)=dsqrt(totdist(k)**2+
-c     &                (straight(13,itri)*p(1)+
-c     &                 straight(14,itri)*p(2)+
-c     &                 straight(15,itri)*p(3)+
-c     &                 straight(16,itri))**2)
-cc                  cgdist=dsqrt((p(1)-cg(1,itri))**2+
-cc     &                         (p(2)-cg(2,itri))**2+
-cc     &                         (p(3)-cg(3,itri))**2)
-cc                  write(*,*) 'gentiedmpc ',k,itri,koncont(4,itri),
-cc     &                       totdist(k),cgdist
-c!     
-c                  if(totdist(k).le.tietol(1,i)) then
-c                     isol=k
-c                     exit
-c                  endif
-c               enddo
 !     
                isol=0
 !
@@ -433,6 +351,19 @@ c                              write(*,*) '**regular solution'
                      call nident(ikmpc,idof,nmpc,id)
                      if(id.gt.0) then
                         if(ikmpc(id).eq.idof) then
+                           write(*,*) '*WARNING in gentiedmpc:'
+                           write(*,*) '         DOF ',l,' of node ',
+     &                          node,' is not active;'
+                           write(*,*) '         no tied constraint ',
+     &                                'is generated'
+                           write(40,*) node
+                           cycle
+                        endif
+                     endif
+!
+                     call nident(ikboun,idof,nboun,id1)
+                     if(id1.gt.0) then
+                        if(ikboun(id1).eq.idof) then
                            write(*,*) '*WARNING in gentiedmpc:'
                            write(*,*) '         DOF ',l,' of node ',
      &                          node,' is not active;'
@@ -666,6 +597,19 @@ c                              write(*,*) '**regular solution'
                         call nident(ikmpc,idof,nmpc,id)
                         if(id.gt.0) then
                            if(ikmpc(id).eq.idof) then
+                              write(*,*) '*WARNING in gentiedmpc:'
+                              write(*,*) '         DOF ',l,' of node ',
+     &                             node,' is not active;'
+                              write(*,*) '         no tied constraint ',
+     &                             'is generated'
+                              write(40,*) node
+                              cycle
+                           endif
+                        endif
+!
+                        call nident(ikboun,idof,nboun,id1)
+                        if(id1.gt.0) then
+                           if(ikboun(id1).eq.idof) then
                               write(*,*) '*WARNING in gentiedmpc:'
                               write(*,*) '         DOF ',l,' of node ',
      &                             node,' is not active;'

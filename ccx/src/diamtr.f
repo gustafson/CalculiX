@@ -20,6 +20,8 @@
 !
 !     Sloan routine (Int.J.Num.Meth.Engng. 28,2651-2679(1989))
 !
+      implicit none
+!
       integer nc,j,snode,degree,mindeg,istrt,istop,hsize,node,jstrt,
      & jstop,ewidth,i,width,depth,enode,n,sdepth,e2,xadj(n+1),adj(e2),
      & xls(n+1),ls(n),mask(n),hlevel(n)

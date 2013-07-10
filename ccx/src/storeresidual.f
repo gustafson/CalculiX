@@ -36,7 +36,7 @@
       character*87 filab(*)
 !
       integer mi(*),nactdof(0:mi(2),*),ithermal(2),i,j,nk,
-     &  nfield,ndim,iorienglob,cfd,ielmat(mi(3),*),
+     &  nfield,ndim,iorienglob,icfdout,ielmat(mi(3),*),
      &  nelemload(2,*),nload,nodeboun(*),nboun,ipkon(*),inum(*),kon(*),
      &  ne,ielorien,itg(*),ntg,ndirboun(*),mt,nlabel
 !
@@ -45,7 +45,7 @@
 !
       mt=mi(2)+1
 !
-      nlabel=32
+      nlabel=41
 !
 !     storing the residual forces in field fn
 !
@@ -95,11 +95,11 @@
       ndim=0
       iorienglob=0
       cflag=filab(1)(5:5)
-      cfd=0
+      icfdout=0
       call extrapolate(sti,stn,ipkon,inum,kon,lakon,nfield,nk,
      &     ne,mi(1),ndim,orab,ielorien,co,iorienglob,cflag,
      &     nelemload,nload,nodeboun,nboun,ndirboun,vold,
-     &     ithermal,force,cfd,ielmat,thicke)
+     &     ithermal,force,icfdout,ielmat,thicke,filab)
 !
       if(ithermal(1).gt.1) then
          call networkextrapolate(vold,ipkon,inum,kon,lakon,ne,mi)

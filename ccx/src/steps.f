@@ -34,7 +34,7 @@
       real*8 t0(*),t1(*),ctrl(*),physcon(*)
 !
       if(newstep.eq.1) then
-         write(*,*) '*ERROR in steps: *STEP statement detected'
+         write(*,*) '*ERROR reading *STEP: *STEP statement detected'
          write(*,*) '       within step ',istep
          stop
       else
@@ -51,7 +51,10 @@
       do i=2,n
          if(textpart(i)(1:12).eq.'PERTURBATION') then
             iperturb(1)=1
-            iperturb(2)=1
+c            iperturb(2)=1
+            write(*,*) '*INFO reading *STEP: nonlinear geometric'
+            write(*,*) '      effects are turned on'
+            write(*,*)
 !
 !           removing the present loading (check!!)
 !
@@ -69,10 +72,14 @@
 !           geometrically nonlinear calculations
 !
             iperturb(2)=1
+            write(*,*) '*INFO reading *STEP: nonlinear geometric'
+            write(*,*) '      effects are turned on'
+            write(*,*)
             if(iperturb(1).eq.0) then
                iperturb(1)=2
             elseif(iperturb(1).eq.1) then
-               write(*,*) '*ERROR in steps: PERTURBATION and NLGEOM'
+               write(*,*) 
+     &            '*ERROR reading *STEP: PERTURBATION and NLGEOM'
                write(*,*) '       are mutually exclusive; '
                call inputerror(inpc,ipoinpc,iline)
                stop
@@ -104,8 +111,16 @@
             elseif(textpart(i)(17:19).eq.'SST') then
                physcon(9)=3.5d0
             endif
+         elseif(textpart(i)(1:15).eq.'SHOCKSMOOTHING=') then
+!
+!           reading the shock smoothing parameter for compressible
+!           cfd-calculations
+!
+            read(textpart(i)(16:35),'(f20.0)',iostat=istat) physcon(10)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
          else
-            write(*,*) '*WARNING in steps: parameter not recognized:'
+            write(*,*) 
+     &          '*WARNING reading *STEP: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline)

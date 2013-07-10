@@ -33,7 +33,8 @@
       character*81 set(*),elset,noset
       character*132 textpart(16)
 !
-      integer istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
+      integer istartset(*),iendset(*),ialset(*),ipompc(*),
+     &  nodempc(3,*),
      &  nset,nset_,nalset,nalset_,nmpc,nmpc_,mpcfree,nk,nk_,ikmpc(*),
      &  ilmpc(*),ipkon(*),kon(*),inoset,ielset,i,node,ielement,id,
      &  indexe,nope,istep,istat,n,irefnode,irotnode,ne_,

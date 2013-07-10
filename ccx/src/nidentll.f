@@ -24,21 +24,21 @@
 !
 !     id is such that x(id).le.px and x(id+1).gt.px
 !
-      SUBROUTINE nIDENTll(X,PX,N,ID)
-      IMPLICIT none
+      subroutine nidentll(x,px,n,id)
+      implicit none
       integer n,id,n2,m
       integer*8 x,px
-      DIMENSION X(N)
+      dimension x(n)
       id=0
       if(n.eq.0) return
-      N2=N+1
+      n2=n+1
       do
-         M=(N2+id)/2
-         IF(PX.GE.X(M)) then
-            id=M
+         m=(n2+id)/2
+         if(px.ge.x(m)) then
+            id=m
          else
-            N2=M
+            n2=m
          endif
-         IF((N2-id).EQ.1) return
+         if((n2-id).eq.1) return
       enddo
-      END
+      end

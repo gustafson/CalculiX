@@ -18,7 +18,7 @@
 !
       subroutine loadaddt(nelement,label,valfilm,valtemp,nelemload,
      &  sideload,xload,nload,nload_,iamload,iamptemp,
-     &  iampfilm,nam,node)
+     &  iampfilm,nam,node,iload)
 !
 !     adds a thermal dload condition to the data base
 !
@@ -26,7 +26,7 @@
 !
       character*20 label,sideload(*)
 !
-      integer nelemload(2,*),iamload(2,*),id,
+      integer nelemload(2,*),iamload(2,*),id,iload,
      &  nelement,nload,nload_,j,iamptemp,nam,iampfilm,node
 !
       real*8 xload(2,*),valfilm,valtemp
@@ -52,14 +52,13 @@
                      iamload(1,id)=iampfilm
                      iamload(2,id)=iamptemp
                   endif
+                  iload=id
                   return
                elseif(sideload(id).lt.label) then
-c                  id=id-1
                   exit
                endif
                id=id-1
                if((id.eq.0).or.(nelemload(1,id).ne.nelement)) then
-c                  id=id-1
                   exit
                endif
             enddo
@@ -103,6 +102,7 @@ c                  id=id-1
          iamload(1,id+1)=iampfilm
          iamload(2,id+1)=iamptemp
       endif
+      iload=id+1
 !
       return
       end

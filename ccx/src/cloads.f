@@ -21,7 +21,7 @@
      &  amname,nam,ntrans,trab,inotr,co,ikforc,ilforc,nk,
      &  cload_flag,istep,istat,n,iline,ipol,inl,ipoinp,inp,nam_,
      &  namtot_,namta,amta,nmethod,iaxial,iperturb,ipoinpc,
-     &  maxsectors)
+     &  maxsectors,idefforc)
 !
 !     reading the input deck: *CLOADS
 !
@@ -39,7 +39,7 @@
      &  iamforc(*),nam,iamplitude,ntrans,inotr(2,*),ipos,ikforc(*),
      &  ilforc(*),nk,iline,ipol,inl,ipoinp(2,*),inp(3,*),nam_,namtot,
      &  namtot_,namta(3,*),idelay,lc,nmethod,ndirforc(*),isector,
-     &  iperturb,iaxial,ipoinpc(0:*),maxsectors,jsector
+     &  iperturb,iaxial,ipoinpc(0:*),maxsectors,jsector,idefforc(*)
 !
       real*8 xforc(*),forcval,co(3,*),trab(7,*),amta(2,*)
 !
@@ -98,7 +98,7 @@
                write(*,*) '       preceded by the amplitude parameter'
                stop
             endif
-            namta(3,nam)=isign(iamplitude,namta(3,iamplitude))
+            namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
             if(nam.eq.1) then
                namtot=0
@@ -196,21 +196,21 @@
             else
                jsector=isector
             endif
-            if(isector.ne.0) then
-               if(ntrans.ne.0) then
-                  if(inotr(1,l).ne.0) then
-                     write(*,*) '*ERROR in cloads: in node ',l
-                     write(*,*) '       a force is applied in a local'
-                     write(*,*) '       coordinate system in a sector'
-                     write(*,*) '       different from the basis sector'
-                     write(*,*) '       this is not allowed'
-                     stop
-                  endif
-               endif
-            endif
+c            if(isector.ne.0) then
+c               if(ntrans.ne.0) then
+c                  if(inotr(1,l).ne.0) then
+c                     write(*,*) '*ERROR in cloads: in node ',l
+c                     write(*,*) '       a force is applied in a local'
+c                     write(*,*) '       coordinate system in a sector'
+c                     write(*,*) '       different from the basis sector'
+c                     write(*,*) '       this is not allowed'
+c                     stop
+c                  endif
+c               endif
+c            endif
             call forcadd(l,iforcdir,forcval,nodeforc,ndirforc,xforc,
      &        nforc,nforc_,iamforc,iamplitude,nam,ntrans,trab,inotr,co,
-     &        ikforc,ilforc,jsector,add,user)
+     &        ikforc,ilforc,jsector,add,user,idefforc)
          else
             read(textpart(1)(1:80),'(a80)',iostat=istat) noset
             noset(81:81)=' '
@@ -234,25 +234,25 @@
                   else
                      jsector=isector
                   endif
-                  if(isector.ne.0) then
-                     if(ntrans.ne.0) then
-                        if(inotr(1,k).ne.0) then
-                           write(*,*) '*ERROR in cloads: in node ',k
-                           write(*,*) 
-     &                      '       a force is applied in a local'
-                           write(*,*) 
-     &                      '       coordinate system in a sector'
-                           write(*,*)
-     &                      '       different from the basis sector'
-                           write(*,*) '       this is not allowed'
-                           stop
-                        endif
-                     endif
-                  endif
+c                  if(isector.ne.0) then
+c                     if(ntrans.ne.0) then
+c                        if(inotr(1,k).ne.0) then
+c                           write(*,*) '*ERROR in cloads: in node ',k
+c                           write(*,*) 
+c     &                      '       a force is applied in a local'
+c                           write(*,*) 
+c     &                      '       coordinate system in a sector'
+c                           write(*,*)
+c     &                      '       different from the basis sector'
+c                           write(*,*) '       this is not allowed'
+c                           stop
+c                        endif
+c                     endif
+c                  endif
                   call forcadd(k,iforcdir,forcval,
      &               nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &               iamplitude,nam,ntrans,trab,inotr,co,ikforc,ilforc,
-     &               jsector,add,user)
+     &               jsector,add,user,idefforc)
                else
                   k=ialset(j-2)
                   do
@@ -263,25 +263,25 @@
                      else
                         jsector=isector
                      endif
-                     if(isector.ne.0) then
-                        if(ntrans.ne.0) then
-                           if(inotr(1,k).ne.0) then
-                              write(*,*) '*ERROR in cloads: in node ',k
-                              write(*,*) 
-     &                         '       a force is applied in a local'
-                              write(*,*) 
-     &                         '       coordinate system in a sector'
-                              write(*,*) 
-     &                         '       different from the basis sector'
-                              write(*,*) '       this is not allowed'
-                              stop
-                           endif
-                        endif
-                     endif
+c                     if(isector.ne.0) then
+c                        if(ntrans.ne.0) then
+c                           if(inotr(1,k).ne.0) then
+c                              write(*,*) '*ERROR in cloads: in node ',k
+c                              write(*,*) 
+c     &                         '       a force is applied in a local'
+c                              write(*,*) 
+c     &                         '       coordinate system in a sector'
+c                              write(*,*) 
+c     &                         '       different from the basis sector'
+c                              write(*,*) '       this is not allowed'
+c                              stop
+c                           endif
+c                        endif
+c                     endif
                      call forcadd(k,iforcdir,forcval,
      &                 nodeforc,ndirforc,xforc,nforc,nforc_,
      &                 iamforc,iamplitude,nam,ntrans,trab,inotr,co,
-     &                 ikforc,ilforc,jsector,add,user)
+     &                 ikforc,ilforc,jsector,add,user,idefforc)
                   enddo
                endif
             enddo

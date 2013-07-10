@@ -201,6 +201,31 @@ c      do j=1,3
      &              -thickb(1,1)*xnorb(j,1)*offset(1,i)
      &              -thickb(2,1)*xnorb(j+3,1)*(.5d0+offset(2,i))
             enddo
+!
+!           generating coordinates for the expanded nodes which
+!           are not used by the C3D20(R) element (needed for the
+!           determination of the knot dimension)
+!
+            do j=1,3
+               co(j,nodeb(5,2))=co(j,nodel(2))
+     &              -thickb(1,1)*xnorb(j,1)*(.5d0+offset(1,i))
+     &              -thickb(2,1)*xnorb(j+3,1)*offset(2,i)
+            enddo
+            do j=1,3
+               co(j,nodeb(7,2))=co(j,nodel(2))
+     &              +thickb(1,1)*xnorb(j,1)*(.5d0-offset(1,i))
+     &              -thickb(2,1)*xnorb(j+3,1)*offset(2,i)
+            enddo
+            do j=1,3
+               co(j,nodeb(8,2))=co(j,nodel(2))
+     &              -thickb(1,1)*xnorb(j,1)*offset(1,i)
+     &              +thickb(2,1)*xnorb(j+3,1)*(.5d0-offset(2,i))
+            enddo
+            do j=1,3
+               co(j,nodeb(6,2))=co(j,nodel(2))
+     &              -thickb(1,1)*xnorb(j,1)*offset(1,i)
+     &              -thickb(2,1)*xnorb(j+3,1)*(.5d0+offset(2,i))
+            enddo
          endif
       else
 !
@@ -332,6 +357,31 @@ c      do j=1,3
          kon(indexe+20)=nodeb(6,1)
          do j=1,3
             co(j,nodeb(6,1))=co(j,nodel(1))
+     &           -thickb(1,1)*xnorb(j,1)*offset(1,i)
+     &           -thickb(2,1)*xnorb(j+3,1)*(.5d0+offset(2,i))
+         enddo
+!
+!           generating coordinates for the expanded nodes which
+!           are not used by the C3D20(R) element (needed for the
+!           determination of the knot dimension)
+!
+         do j=1,3
+            co(j,nodeb(5,2))=co(j,nodel(2))
+     &           -thickb(1,1)*xnorb(j,1)*(.5d0+offset(1,i))
+     &           -thickb(2,1)*xnorb(j+3,1)*offset(2,i)
+         enddo
+         do j=1,3
+            co(j,nodeb(7,2))=co(j,nodel(2))
+     &           +thickb(1,1)*xnorb(j,1)*(.5d0-offset(1,i))
+     &           -thickb(2,1)*xnorb(j+3,1)*offset(2,i)
+         enddo
+         do j=1,3
+            co(j,nodeb(8,2))=co(j,nodel(2))
+     &           -thickb(1,1)*xnorb(j,1)*offset(1,i)
+     &           +thickb(2,1)*xnorb(j+3,1)*(.5d0-offset(2,i))
+         enddo
+         do j=1,3
+            co(j,nodeb(6,2))=co(j,nodel(2))
      &           -thickb(1,1)*xnorb(j,1)*offset(1,i)
      &           -thickb(2,1)*xnorb(j+3,1)*(.5d0+offset(2,i))
          enddo

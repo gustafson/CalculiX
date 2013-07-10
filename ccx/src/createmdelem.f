@@ -104,7 +104,7 @@ c                  nope=15
 c               elseif(lakon(i)(4:4).eq.'6') then
 c                  nope=6
 c               elseif(lakon(i)(1:1).eq.'E') then
-c                  nope=ichar(lakon(i)(8:8))-48
+c                  nope=ichar(lakon(i)(8:8))-47
 c               else
 c                  cycle
 c               endif
@@ -156,7 +156,7 @@ c     Bernhardi end
          elseif(lakon(i)(4:4).eq.'6') then
             nope=6
          elseif(lakon(i)(1:1).eq.'E') then
-            nope=ichar(lakon(i)(8:8))-48
+            nope=ichar(lakon(i)(8:8))-47
          else
             cycle
          endif
@@ -268,7 +268,7 @@ c     Bernhardi end
                   elseif(lakon(i)(4:4).eq.'6') then
                      nope=6
                   elseif(lakon(i)(1:1).eq.'E') then
-                     nope=ichar(lakon(i)(8:8))-48
+                     nope=ichar(lakon(i)(8:8))-47
                   else
                      cycle
                   endif
@@ -320,7 +320,7 @@ c     Bernhardi end
                      elseif(lakon(i)(4:4).eq.'6') then
                         nope=6
                      elseif(lakon(i)(1:1).eq.'E') then
-                        nope=ichar(lakon(i)(8:8))-48
+                        nope=ichar(lakon(i)(8:8))-47
                      else
                         cycle
                      endif

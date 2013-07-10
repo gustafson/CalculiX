@@ -26,7 +26,8 @@
      &  ttime,time,istep,iinc,coriolis,xloadold,reltime,
      &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,springarea,
      &  nstate_,xstateini,xstate,ne0,ipkon,thicke,xnormastface,
-     &  integerglob,doubleglob,tieset,istartset,iendset,ialset,ntie)
+     &  integerglob,doubleglob,tieset,istartset,iendset,ialset,ntie,
+     &  nasym)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -49,50 +50,50 @@
       character*80 matname(*),amat
       character*81 tieset(3,*)
 !
-      integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nbody,nelem,mi(*),
+      integer konl(26),ifaceq(9,6),nelemload(2,*),nk,nbody,nelem,
+     &  mi(*),
      &  mattyp,ithermal,iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
      &  nmethod,k1,l1,ii,jj,ii1,jj1,id,ipointer,ig,m1,m2,m3,m4,kk,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),six,
      &  ielorien(mi(3),*),ilayer,nlayer,ki,kl,ipkon(*),indexe,
      &  ntmat_,nope,nopes,norien,ihyper,iexpl,kode,imat,mint2d,
-     &  mint3d,ifacet(6,4),nopev,iorien,istiff,ncmat_,iface,
+     &  mint3d,ifacet(7,4),nopev,iorien,istiff,ncmat_,iface,
      &  ifacew(8,5),intscheme,n,ipointeri,ipointerj,istep,iinc,
      &  layer,kspt,jltyp,iflag,iperm(60),m,ipompc(*),nodempc(3,*),
      &  nmpc,ikmpc(*),ilmpc(*),iscale,nstate_,ne0,iselect(6),
-     &  istartset(*),iendset(*),ialset(*),ntie,integerglob(*)
+     &  istartset(*),iendset(*),ialset(*),ntie,integerglob(*),nasym,
+     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,nopered
 !
-      integer nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
-!
-      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),veold(0:mi(2),*),
-     &  s(60,60),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),ff(60),
-     &  bf(3),q(3),shpj(4,20),elcon(0:ncmat_,ntmat_,*),t(3),
+      real*8 co(3,*),xl(3,26),shp(4,26),xs2(3,7),veold(0:mi(2),*),
+     &  s(78,78),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),ff(78),
+     &  bf(3),q(3),shpj(4,26),elcon(0:ncmat_,ntmat_,*),t(3),
      &  rhcon(0:1,ntmat_,*),xkl(3,3),eknlsign,reltime,
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
-     &  anisox(3,3,3,3),voldl(0:mi(2),20),vo(3,3),xloadold(2,*),
-     &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),xload(2,*),
+     &  anisox(3,3,3,3),voldl(0:mi(2),26),vo(3,3),xloadold(2,*),
+     &  xl2(3,9),xsj2(3),shp2(7,9),vold(0:mi(2),*),xload(2,*),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  v(3,3,3,3),springarea(2,*),thickness,tlayer(4),dlayer(4),
-     &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(60,60),
+     &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(78,78),
      &  sti(6,mi(1),*),stx(6,mi(1),*),s11,s22,s33,s12,s13,s23,s11b,
      &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,coefmpc(*),xlayer(mi(3),4),
      &  senergy,senergyb,rho,elas(21),summass,summ,thicke(mi(3),*),
      &  sume,factorm,factore,alp,elconloc(21),eth(6),doubleglob(*),
-     &  weight,coords(3),dmass,xl1(3,8),term,xnormastface(3,8,*)
+     &  weight,coords(3),dmass,xl1(3,9),term,xnormastface(3,9,*)
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
-     &  xstiff(27,mi(1),*),plconloc(82),dtime,ttime,time,tvar(2),
-     &  sax(60,60),ffax(60),gs(8,4),a,stress(6),stre(3,3)
+     &  xstiff(27,mi(1),*),plconloc(802),dtime,ttime,time,tvar(2),
+     &  sax(78,78),ffax(78),gs(8,4),a,stress(6),stre(3,3)
 !
-      data ifaceq /4,3,2,1,11,10,9,12,
-     &            5,6,7,8,13,14,15,16,
-     &            1,2,6,5,9,18,13,17,
-     &            2,3,7,6,10,19,14,18,
-     &            3,4,8,7,11,20,15,19,
-     &            4,1,5,8,12,17,16,20/
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifaceq /4,3,2,1,11,10,9,12,21,
+     &            5,6,7,8,13,14,15,16,22,
+     &            1,2,6,5,9,18,13,17,23,
+     &            2,3,7,6,10,19,14,18,24,
+     &            3,4,8,7,11,20,15,19,25,
+     &            4,1,5,8,12,17,16,20,26/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
       data ifacew /1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
@@ -117,9 +118,17 @@ c     Bernhardi start
          nope=11
          nopev=8
          nopes=4
-      elseif(lakonl(4:4).eq.'2') then
+      elseif(lakonl(4:5).eq.'20') then
 c     Bernhardi end
          nope=20
+         nopev=8
+         nopes=8
+      elseif(lakonl(4:4).eq.'2') then
+!
+!        nopes for C3D26 is a default value which can be overwritten
+!        while integrating over the element faces
+!
+         nope=26
          nopev=8
          nopes=8
       elseif(lakonl(4:4).eq.'8') then
@@ -128,6 +137,14 @@ c     Bernhardi end
          nopes=4
       elseif(lakonl(4:5).eq.'10') then
          nope=10
+         nopev=4
+         nopes=6
+      elseif(lakonl(4:5).eq.'14') then
+!
+!        nopes for C3D14 is a default value which can be overwritten
+!        while integrating over the element faces
+!
+         nope=14
          nopev=4
          nopes=6
       elseif(lakonl(4:4).eq.'4') then
@@ -142,6 +159,7 @@ c     Bernhardi end
          nopev=6
       elseif(lakonl(1:2).eq.'ES') then
          read(lakonl(8:8),'(i1)') nope
+         nope=nope+1
       endif
 !
 !     material and orientation
@@ -215,9 +233,13 @@ c            write(*,*) 'tlayer ',kk,tlayer(kk)
          if(lakonl(4:5).eq.'8R') then
             mint2d=1
             mint3d=1
-         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) then
-            if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'S').or.
-     &         (lakonl(7:7).eq.'E')) then
+         elseif(lakonl(4:8).eq.'20RBR') then
+            mint2d=4
+            mint3d=50
+         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R').or.
+     &          (lakonl(4:6).eq.'26R')) then
+            if(((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'S').or.
+     &         (lakonl(7:7).eq.'E')).and.(lakonl(4:6).ne.'26R')) then
                mint2d=2
                mint3d=4
             else
@@ -231,7 +253,7 @@ c            write(*,*) 'tlayer ',kk,tlayer(kk)
          elseif(lakonl(4:4).eq.'2') then
             mint2d=9
             mint3d=27
-         elseif(lakonl(4:5).eq.'10') then
+         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
             mint2d=3
             mint3d=4
          elseif(lakonl(4:4).eq.'4') then
@@ -260,9 +282,10 @@ c            write(*,*) 'tlayer ',kk,tlayer(kk)
                   mint2d=9
                endif
             endif
-         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:4).eq.'4')) then
+         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:4).eq.'4').or.
+     &          (lakonl(4:5).eq.'14')) then
             mint3d=15
-            if(lakonl(4:5).eq.'10') then
+            if((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
                mint2d=3
             else
                mint2d=1
@@ -338,8 +361,8 @@ c            write(*,*) 'tlayer ',kk,tlayer(kk)
             enddo
          endif
 !
+         kode=nelcon(1,imat)
          if(lakonl(7:7).eq.'A') then
-            kode=nelcon(1,imat)
             t0l=0.d0
             t1l=0.d0
             if(ithermal.eq.1) then
@@ -360,7 +383,7 @@ c            write(*,*) 'tlayer ',kk,tlayer(kk)
      &      ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,plicon,
      &      nplicon,npmat_,iperturb,springarea(1,konl(nope+1)),nmethod,
      &      mi,ne0,nstate_,xstateini,xstate,reltime,
-     &      xnormastface(1,1,konl(nope+1)))
+     &      xnormastface(1,1,konl(nope+1)),nasym)
          return
       endif
 !
@@ -373,7 +396,13 @@ c            write(*,*) 'tlayer ',kk,tlayer(kk)
                et=gauss3d1(2,kk)
                ze=gauss3d1(3,kk)
                weight=weight3d1(kk)
-            elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) 
+            elseif(lakonl(4:8).eq.'20RBR') then
+               xi=gauss3d13(1,kk)
+               et=gauss3d13(2,kk)
+               ze=gauss3d13(3,kk)
+               weight=weight3d13(kk)
+            elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R').or.
+     &             (lakonl(4:6).eq.'26R')) 
      &              then
                if(lakonl(7:8).ne.'LC') then
                   xi=gauss3d2(1,kk)
@@ -425,7 +454,7 @@ c            write(*,*) 'tlayer ',kk,tlayer(kk)
                et=gauss3d3(2,kk)
                ze=gauss3d3(3,kk)
                weight=weight3d3(kk)
-            elseif(lakonl(4:5).eq.'10') then
+            elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
                xi=gauss3d5(1,kk)
                et=gauss3d5(2,kk)
                ze=gauss3d5(3,kk)
@@ -479,7 +508,7 @@ c     Bernhardi start
             call shape8hr(xl,xsj,shp,gs,a)
          elseif(lakonl(1:5).eq.'C3D8I') then
             call shape8hu(xi,et,ze,xl,xsj,shp,iflag)
-         else if(nope.eq.20) then
+         elseif(nope.eq.20) then
 c     Bernhardi end
             if(lakonl(7:7).eq.'A') then
                call shape20h_ax(xi,et,ze,xl,xsj,shp,iflag)
@@ -487,16 +516,15 @@ c     Bernhardi end
                call shape20h_pl(xi,et,ze,xl,xsj,shp,iflag)
             else
                call shape20h(xi,et,ze,xl,xsj,shp,iflag)
-c               write(*,*) 'new xi et ze', xi,et,ze,intscheme
-c               do i1=1,20
-c                  write(*,'(i5,4(1x,f5.1))') i1,shp(1,i1),shp(2,i1),
-c     &               shp(3,i1),shp(4,i1)
-c               enddo
             endif
+         elseif(nope.eq.26) then
+            call shape26h(xi,et,ze,xl,xsj,shp,iflag,konl)
          elseif(nope.eq.8) then
             call shape8h(xi,et,ze,xl,xsj,shp,iflag)
          elseif(nope.eq.10) then
             call shape10tet(xi,et,ze,xl,xsj,shp,iflag)
+         elseif(nope.eq.14) then
+            call shape14tet(xi,et,ze,xl,xsj,shp,iflag,konl)
          elseif(nope.eq.4) then
             call shape4tet(xi,et,ze,xl,xsj,shp,iflag)
          elseif(nope.eq.15) then
@@ -540,8 +568,9 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
                   t0l=t0l+t0(konl(i1))/8.d0
                   t1l=t1l+t1(konl(i1))/8.d0
                enddo
-            elseif(lakonl(4:6).eq.'20 ') then
-               call lintemp(t0,t1,konl,nope,kk,t0l,t1l)
+            elseif((lakonl(4:6).eq.'20 ').or.(lakonl(4:6).eq.'26 '))then
+               nopered=20
+               call lintemp(t0,t1,konl,nopered,kk,t0l,t1l)
             else
                do i1=1,nope
                   t0l=t0l+shp(4,i1)*t0(konl(i1))
@@ -554,8 +583,9 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
                   t0l=t0l+t0(konl(i1))/8.d0
                   t1l=t1l+vold(0,konl(i1))/8.d0
                enddo
-            elseif(lakonl(4:6).eq.'20 ') then
-               call lintemp_th(t0,vold,konl,nope,kk,t0l,t1l,mi)
+            elseif((lakonl(4:6).eq.'20 ').or.(lakonl(4:6).eq.'26 '))then
+               nopered=20
+               call lintemp_th(t0,vold,konl,nopered,kk,t0l,t1l,mi)
             else
                do i1=1,nope
                   t0l=t0l+shp(4,i1)*t0(konl(i1))
@@ -1024,6 +1054,22 @@ c
             endif
             read(sideload(id)(2:2),'(i1)') ig
 !
+!           check whether 8 or 9-nodes face
+!
+            if(nope.eq.26) then
+               if(konl(20+ig).eq.konl(20)) then
+                  nopes=8
+               else
+                  nopes=9
+               endif
+            elseif(nope.eq.14) then
+               if(konl(10+ig).eq.konl(10)) then
+                  nopes=6
+               else
+                  nopes=7
+               endif
+            endif
+!
 !         treatment of wedge faces
 !
             if(lakonl(4:4).eq.'6') then
@@ -1045,7 +1091,8 @@ c
           endif
 !
 c     Bernhardi start
-          if((nope.eq.20).or.(nope.eq.8).or.(nope.eq.11)) then
+          if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8).or.
+     &       (nope.eq.11)) then
 c     Bernhardi end
 c             if(iperturb(1).eq.0) then
              if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
@@ -1124,8 +1171,8 @@ c             if(iperturb(1).eq.0) then
                 et=gauss2d1(2,i)
                 weight=weight2d1(i)
              elseif((lakonl(4:4).eq.'8').or.
-     &               (lakonl(4:6).eq.'20R').or.
-     &               ((lakonl(4:5).eq.'15').and.(nopes.eq.8))) then
+     &              (lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R').or.
+     &              ((lakonl(4:5).eq.'15').and.(nopes.eq.8))) then
                 xi=gauss2d2(1,i)
                 et=gauss2d2(2,i)
                 weight=weight2d2(i)
@@ -1133,7 +1180,7 @@ c             if(iperturb(1).eq.0) then
                 xi=gauss2d3(1,i)
                 et=gauss2d3(2,i)
                 weight=weight2d3(i)
-             elseif((lakonl(4:5).eq.'10').or.
+             elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14').or.
      &               ((lakonl(4:5).eq.'15').and.(nopes.eq.6))) then
                 xi=gauss2d5(1,i)
                 et=gauss2d5(2,i)
@@ -1146,12 +1193,16 @@ c             if(iperturb(1).eq.0) then
              endif
 !
              if(rhsi) then
-                if(nopes.eq.8) then
+                if(nopes.eq.9) then
+                   call shape9q(xi,et,xl2,xsj2,xs2,shp2,iflag)
+                elseif(nopes.eq.8) then
                    call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.4) then
                    call shape4q(xi,et,xl2,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.6) then
                    call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+                elseif(nopes.eq.7) then
+                   call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
                 else
                    call shape3tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
                 endif
@@ -1217,7 +1268,8 @@ c                   write(*,*) 'e_c3d ',(stress(k),k=1,6)
 !
                 do k=1,nopes
 c    Bernhardi start
-                   if((nope.eq.20).or.(nope.eq.8).or.(nope.eq.11)) then
+                   if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8).or.
+     &                (nope.eq.11)) then
 c    Bernhardi end
                       ipointer=(ifaceq(k,ig)-1)*3
                    elseif((nope.eq.10).or.(nope.eq.4)) then
@@ -1241,12 +1293,16 @@ c    Bernhardi end
 c             elseif((mass).and.(iperturb(1).ne.0)) then
              elseif((mass).and.
      &            ((iperturb(1).eq.1).or.(iperturb(2).eq.1))) then
-                if(nopes.eq.8) then
+                if(nopes.eq.9) then
+                   call shape9q(xi,et,xl1,xsj2,xs2,shp2,iflag)
+                elseif(nopes.eq.8) then
                    call shape8q(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.4) then
                    call shape4q(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.6) then
                    call shape6tri(xi,et,xl1,xsj2,xs2,shp2,iflag)
+                elseif(nopes.eq.7) then
+                   call shape7tri(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 else
                    call shape3tri(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 endif
@@ -1319,21 +1375,24 @@ c                   write(*,*) 'e_c3d ',(stress(k),k=1,6)
 !
                 do ii=1,nopes
 c     Bernhardi start
-                   if((nope.eq.20).or.(nope.eq.8).or.(nope.eq.11)) then
+                   if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8).or.
+     &                (nope.eq.11)) then
 c     Bernhardi end
                       ipointeri=(ifaceq(ii,ig)-1)*3
-                   elseif((nope.eq.10).or.(nope.eq.4)) then
+                   elseif((nope.eq.10).or.(nope.eq.4).or.
+     &                    (nope.eq.14))then
                      ipointeri=(ifacet(ii,ig)-1)*3
                    else
                       ipointeri=(ifacew(ii,ig)-1)*3
                    endif
                    do jj=1,nopes
 c     Bernhardi start
-                      if((nope.eq.20).or.(nope.eq.8)
+                      if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8)
      &                 .or.(nope.eq.11)) then
 c     Bernhardi end
                          ipointerj=(ifaceq(jj,ig)-1)*3
-                      elseif((nope.eq.10).or.(nope.eq.4)) then
+                      elseif((nope.eq.10).or.(nope.eq.4).or.
+     &                       (nope.eq.14)) then
                          ipointerj=(ifacet(jj,ig)-1)*3
                       else
                          ipointerj=(ifacew(jj,ig)-1)*3
@@ -1416,8 +1475,8 @@ c     Bernhardi end
 !     for axially symmetric and plane stress/strain elements: 
 !     complete s and sm
 !
-      if((lakonl(6:7).eq.'RA').or.(lakonl(6:7).eq.'RS').or.
-     &   (lakonl(6:7).eq.'RE')) then
+      if(((lakonl(6:7).eq.'RA').or.(lakonl(6:7).eq.'RS').or.
+     &   (lakonl(6:7).eq.'RE')).and.(lakonl(4:5).ne.'26')) then
          do i=1,60
             do j=i,60
                k=abs(iperm(i))
@@ -1482,17 +1541,18 @@ c     Bernhardi end
             summ=summ+sm(i,i)
          enddo
 !
-         if(nope.eq.20) then
+         if((nope.eq.26).or.(nope.eq.20)) then
 c            alp=.2215d0
             alp=.2917d0
 !              maybe alp=.2917d0 is better??
-         elseif(nope.eq.10) then
+         elseif((nope.eq.10).or.(nope.eq.14)) then
             alp=0.1203d0
          elseif(nope.eq.15) then
             alp=0.2141d0
          endif
 !
-         if((nope.eq.20).or.(nope.eq.10).or.(nope.eq.15)) then
+         if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.10).or.
+     &      (nope.eq.15).or.(nope.eq.14)) then
             factore=summass*alp/(1.d0+alp)/sume
             factorm=summass/(1.d0+alp)/summ
          else

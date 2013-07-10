@@ -96,7 +96,7 @@ void remastruct(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
              ikboun,ilboun,iperturb,mi);
 
     free(ipointer);free(mast1);
-    RENEW(irow,int,nzs[1]);
+    RENEW(irow,int,nzs[2]);
     
     *nodempcp=nodempc;*coefmpcp=coefmpc;*irowp=irow;
 

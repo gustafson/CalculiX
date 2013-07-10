@@ -32,13 +32,17 @@
 !     extracting the pressure correction from the solution
 !
       do i=1,nk
+c         write(*,*) i,nactdok(i)
          if(nactdok(i).ne.0) then
             vtu(1,i)=solk(nactdok(i))
             vtu(2,i)=solt(nactdok(i))
+c            write(*,*) i,solk(nactdok(i))
+c            write(*,*) i,solt(nactdok(i))
          else
             vtu(1,i)=0.d0
             vtu(2,i)=0.d0
          endif
+c         write(*,*) 'resultsk ',i,vtu(1,i),vtu(2,i)
       enddo
 !     
 !     inserting the mpc information: it is assumed that the

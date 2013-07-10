@@ -19,6 +19,8 @@
 !     
 !     rcavi element
 ! 
+      implicit none
+!
       real*8 xflow
 !
       write(*,*)'xflow',xflow

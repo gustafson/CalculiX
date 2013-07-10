@@ -32,23 +32,24 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
                int *nmpc, int *mpcfree, int *memmpc_,
                int **ipompcp, char **labmpcp, int **ikmpcp, int **ilmpcp,
                double **fmpcp, int **nodempcp, double **coefmpcp,
-	       int *iperturb, int *ikboun, int *nboun, double *co){
+	       int *iperturb, int *ikboun, int *nboun, double *co,
+	       int *istep,double **xnoelsp){
     
-  char kind1[2]="C",kind2[2]="-", *tchar1=NULL, *tchar3=NULL, *labmpc=NULL;
+  char kind1[2]="C",kind2[2]="-",*tchar1=NULL,*tchar3=NULL,*labmpc=NULL;
     
-  int *itietri=NULL,*koncont=NULL, *itiefac=NULL, *islavsurf=NULL,im,
-	*islavnode=NULL,*imastnode=NULL,*nslavnode=NULL,*nmastnode=NULL,
-	nmasts, *ipe=NULL, *ime=NULL, *imastop=NULL,
-	*iponoels=NULL,*inoels=NULL,ifreenoels,ifreeme, *ipoface=NULL,
-	*nodface=NULL,iface,*ipompc=NULL,*ikmpc=NULL,
+  int *itietri=NULL,*koncont=NULL,*itiefac=NULL, *islavsurf=NULL,im,
+      *islavnode=NULL,*imastnode=NULL,*nslavnode=NULL,*nmastnode=NULL,
+      nmasts,*ipe=NULL,*ime=NULL,*imastop=NULL,
+      *iponoels=NULL,*inoels=NULL,ifreenoels,ifreeme,*ipoface=NULL,
+      *nodface=NULL,iface,*ipompc=NULL,*ikmpc=NULL,
       *ilmpc=NULL,*nodempc=NULL,nmpc_,i,j,k,ncone;
     
-  double *fmpc=NULL, *coefmpc=NULL;
+  double *fmpc=NULL,*coefmpc=NULL,*xnoels=NULL;
     
   itietri=*itietrip;koncont=*koncontp;itiefac=*itiefacp;islavsurf=*islavsurfp;
   islavnode=*islavnodep;imastnode=*imastnodep;nslavnode=*nslavnodep;
-  nmastnode=*nmastnodep;imastop=*imastopp,iponoels=*iponoelsp,
-  inoels=*inoelsp;ipe=*ipep;ime=*imep;
+  nmastnode=*nmastnodep;imastop=*imastopp,iponoels=*iponoelsp;
+  inoels=*inoelsp;ipe=*ipep;ime=*imep;xnoels=*xnoelsp;
 
   ipompc=*ipompcp;labmpc=*labmpcp;ikmpc=*ikmpcp;ilmpc=*ilmpcp;
   fmpc=*fmpcp;nodempc=*nodempcp;coefmpc=*coefmpcp;
@@ -58,7 +59,8 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
      and the number of master triangles (ncont) */
 
   FORTRAN(allocont,(ncont,ntie,tieset,nset,set,istartset,iendset,
-	  ialset,lakon,&ncone,tietol,ismallsliding,kind1,kind2,mortar));
+	  ialset,lakon,&ncone,tietol,ismallsliding,kind1,kind2,mortar,
+          istep));
   if(ncont==0) return;
 
   itietri=NNEW(int,2**ntie);
@@ -96,7 +98,8 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
   islavnode=NNEW(int,8*ncone);
   nslavnode=NNEW(int,*ntie+1);
   iponoels=NNEW(int,*nk);
-  inoels=NNEW(int,3**nkon);
+  inoels=NNEW(int,2**nkon);
+  xnoels=NNEW(double,*nkon);
   
   imastnode=NNEW(int,3**ncont);
   nmastnode=NNEW(int,*ntie+1);
@@ -107,11 +110,13 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
   FORTRAN(tiefaccont,(lakon,ipkon,kon,ntie,tieset,nset,set,
        istartset,iendset,ialset,itiefac,islavsurf,islavnode,
        imastnode,nslavnode,nmastnode,nslavs,&nmasts,ifacecount,
-       iponoels,inoels,&ifreenoels,mortar,ipoface,nodface,nk));
+       iponoels,inoels,&ifreenoels,mortar,ipoface,nodface,nk,
+       xnoels));
 
   RENEW(islavsurf,int,2**ifacecount+2);
   RENEW(islavnode,int,*nslavs);
-  RENEW(inoels,int,3*ifreenoels);
+  RENEW(inoels,int,2*ifreenoels);
+  RENEW(xnoels,double,ifreenoels);
   free(ipoface);free(nodface);
   
   RENEW(imastnode,int,nmasts);
@@ -167,15 +172,14 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
 	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
 	}*/
 
-    }
-      
+  }
 
   *itietrip=itietri;*koncontp=koncont;
   *itiefacp=itiefac;*islavsurfp=islavsurf;
   *islavnodep=islavnode;*imastnodep=imastnode;
   *nslavnodep=nslavnode;*nmastnodep=nmastnode;
   *imastopp=imastop;*iponoelsp=iponoels;*inoelsp=inoels;
-  *ipep=ipe;*imep=ime;
+  *ipep=ipe;*imep=ime;*xnoelsp=xnoels;
 
   *ipompcp=ipompc;*labmpcp=labmpc;*ikmpcp=ikmpc;*ilmpcp=ilmpc;
   *fmpcp=fmpc;*nodempcp=nodempc;*coefmpcp=coefmpc;

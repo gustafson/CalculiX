@@ -76,7 +76,8 @@
          mattyp=3
          call incplas(elconloc,plconloc,xstate,xstateini,elas,emec,
      &     ithermal,icmd,beta,stre,vj,kode,ielas,amat,t1l,dtime,
-     &     time,ttime,iel,iint,nstate_,mi(1),eloc,pgauss,nmethod)
+     &     time,ttime,iel,iint,nstate_,mi(1),eloc,pgauss,nmethod,
+     &     pnewdt)
       else
          mattyp=3
          call umat_main(amat,iel,iint,kode,elconloc,emec,emec0,beta,

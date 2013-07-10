@@ -90,7 +90,8 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
               int *itiefac,double *areaslav,int *iponoels,int *inoels,
               double *springarea,int *izdof,int *nzdof,double *fn,
 	      int *imastnode,int *nmastnode,double *xmastnor,
-              double *xnormastface, double *xstateini, int *nslavs){
+              double *xnormastface, double *xstateini, int *nslavs,
+              int *cyclicsymmetry,double *xnoels,int *ielas){
     
   char lakonl[9]="        \0";
 
@@ -100,7 +101,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       *ikactcont=NULL,*ilactcont=NULL,*ikactcont1=NULL,nactcont1=0,
       i1,icutb=0,iconvergence=0,idivergence=0,mt=mi[1]+1,
       nactcont1_=100,*ikactmech=NULL,iabsload=0,nactfric_,nactfric,
-      *ikactfric=NULL,im,cyclicsymmetry;
+      *ikactfric=NULL,im,nasym=0;
 
   long long i2;
 
@@ -118,7 +119,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 
   /* check for cyclic symmetry */
 
-  if((*mcs==0)||(cs[1]<0)){cyclicsymmetry=0;}else{cyclicsymmetry=1;}
+//  if((*mcs==0)||(cs[1]<0)){cyclicsymmetry=0;}else{cyclicsymmetry=1;}
 
   if(*inonlinmpc==1) iabsload=2;
 
@@ -164,7 +165,8 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
           iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
           itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
-	  imastnode,nmastnode,xmastnor,xnormastface,filab,mcs,ics);
+	  imastnode,nmastnode,xmastnor,xnormastface,filab,mcs,ics,&nasym,
+          xnoels);
 
   ikactcont1=NNEW(int,nactcont1_);
 
@@ -173,7 +175,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       imat=ielmat[mi[2]*i];
       kodem=nelcon[2*imat-2];
       for(j=0;j<8;j++){lakonl[j]=lakon[8*i+j];}
-      nope=atoi(&lakonl[7]);
+      nope=atoi(&lakonl[7])+1;
       for(j=0;j<nope;j++){
 	  konl[j]=kon[indexe+j];
 	  for(j1=0;j1<3;j1++){
@@ -190,7 +192,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 			  veoldl,&senergy,&iener,cstr,mi,
                           &springarea[2*(konl[nope]-1)],nmethod,ne0,iperturb,
                           nstate_,xstateini,xstate,reltime,
-                          &xnormastface[24*(konl[nope]-1)]));
+                          &xnormastface[27*(konl[nope]-1)],ielas));
 
       storecontactdof(&nope,nactdof,&mt,konl,&ikactcont1,&nactcont1,
 		      &nactcont1_,bcont,fnl,ikmpc,nmpc,ilmpc,ipompc,nodempc, 
@@ -368,7 +370,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 
       /* correcting aamech */
 
-      if(!cyclicsymmetry){
+      if(!(*cyclicsymmetry)){
 	  for(i=0;i<*nev;i++){
 	      i2=(long long)i*neq[1];
 	      
@@ -648,7 +650,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  }
       }
       
-      if(!cyclicsymmetry){
+      if(!(*cyclicsymmetry)){
 	  if(*nmdnode==0){
 	      for(i=0;i<neq[1];i++){
 		  for(j=0;j<*nev;j++){
@@ -694,7 +696,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       FORTRAN(dynresults,(nk,v,ithermal,nactdof,vold,nodeboun,
 	      ndirboun,xbounact,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,
 	      b,bp,veold,dtime,mi,imdnode,nmdnode,imdboun,nmdboun,
-	      imdmpc,nmdmpc,nmethod));
+	      imdmpc,nmdmpc,nmethod,time));
       
       if(iconvergence==1){
 	break;
@@ -722,7 +724,8 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
 	      iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
               itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
-	      imastnode,nmastnode,xmastnor,xnormastface,filab,mcs,ics);
+	      imastnode,nmastnode,xmastnor,xnormastface,filab,mcs,ics,&nasym,
+              xnoels);
 
 //      printf("number of contact springs = %d\n",*ne-*ne0);
 
@@ -731,7 +734,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	imat=ielmat[mi[2]*i];
 	kodem=nelcon[2*imat-2];
 	for(j=0;j<8;j++){lakonl[j]=lakon[8*i+j];}
-	nope=atoi(&lakonl[7]);
+	nope=atoi(&lakonl[7])+1;
 	for(j=0;j<nope;j++){
 	  konl[j]=kon[indexe+j];
 	  for(j1=0;j1<3;j1++){
@@ -748,18 +751,18 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 			    veoldl,&senergy,&iener,cstr,mi,
                             &springarea[2*(konl[nope]-1)],nmethod,ne0,iperturb,
                             nstate_,xstateini,xstate,reltime,
-                            &xnormastface[24*(konl[nope]-1)]));
+                            &xnormastface[27*(konl[nope]-1)],ielas));
 	
 	FORTRAN(springstiff,(xl,elas,konl,voldl,s,&imat,elcon,nelcon,
 	        ncmat_,ntmat_,&nope,lakonl,&t0l,&t1l,&kode,elconloc,
 		plicon,nplicon,npmat_,iperturb,&springarea[2*(konl[nope]-1)],
 		nmethod,mi,ne0,nstate_,xstateini,xstate,reltime,
-		&xnormastface[24*(konl[nope]-1)]));
+			     &xnormastface[27*(konl[nope]-1)],&nasym));
 
 	dfdbj(bcont,&dbcont,&neq[1],&nope,konl,nactdof,
 	      s,z,ikmpc,ilmpc,ipompc,nodempc,nmpc,coefmpc,
 	      fnl,nev,&ikactcont,&ilactcont,nactcont,nactcont_,mi,
-              &cyclicsymmetry,izdof,nzdof);
+              cyclicsymmetry,izdof,nzdof);
       }
 
       if(*nactcont>100){*nactcont_=*nactcont;}else{*nactcont_=100;}
@@ -775,7 +778,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       DMEMSET(bbb,0,*nev**nev,0.);
       DMEMSET(aaa,0,*nev,0.);
 
-      if(!cyclicsymmetry){
+      if(!(*cyclicsymmetry)){
 	  for(k=0; k<*nactcont; k++){
 	      i1=ikactcont[k];
 	      i2=(ilactcont[k]-1)**nev;
@@ -903,7 +906,8 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
 	      iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
               itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
-	      imastnode,nmastnode,xmastnor,xnormastface,filab,mcs,ics);
+	      imastnode,nmastnode,xmastnor,xnormastface,filab,mcs,ics,&nasym,
+              xnoels);
 
 //      printf("number of contact springs = %d\n",*ne-*ne0);
 
@@ -912,7 +916,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	imat=ielmat[mi[2]*i];
 	kodem=nelcon[2*imat-2];
 	for(j=0;j<8;j++){lakonl[j]=lakon[8*i+j];}
-	nope=atoi(&lakonl[7]);
+	nope=atoi(&lakonl[7])+1;
 	for(j=0;j<nope;j++){
 	  konl[j]=kon[indexe+j];
 	  for(j1=0;j1<3;j1++){
@@ -937,7 +941,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       /* calculating aafric: contains the force contributions due
          to damping and friction in the contact areas */
 
-      if(!cyclicsymmetry){
+      if(!(*cyclicsymmetry)){
 	  for(i=0;i<*nev;i++){
 	      i2=(long long)i*neq[1];
 	      aafric[i]=0.;
@@ -976,7 +980,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
      mechanical+contact load at the start of the increment with
      the mechanical+contact load at the end of the increment */
   
-  if(!cyclicsymmetry){
+  if(!(*cyclicsymmetry)){
       for(i=0;i<*nev;i++){
 	  i2=(long long)i*neq[1];
 	  

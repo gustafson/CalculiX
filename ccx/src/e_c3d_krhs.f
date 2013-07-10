@@ -19,7 +19,7 @@
       subroutine e_c3d_krhs(co,nk,konl,lakonl,ffk,fft,nelem,nmethod,
      &  rhcon,nrhcon,ielmat,ntmat_,vold,vcon,dtime,matname,mi,
      &  shcon,nshcon,vcontu,compressible,yy,nelemface,sideface,nface,
-     &  turbulent,ithermal,ipvar,var,ipvarf,varf,dtc)
+     &  turbulent,ithermal,ipvar,var,ipvarf,varf,dt)
 !
 !     computation of the turbulence element matrix and rhs for the
 !     element with the topology in konl: step 4
@@ -40,11 +40,11 @@
      &  compressible,idf,igl,nelemface(*),nface,turbulent
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,
-     &  ffk(60),xsjmod,vkl(3,3),rhcon(0:1,ntmat_,*),reltime,
+     &  ffk(78),xsjmod,vkl(3,3),rhcon(0:1,ntmat_,*),reltime,
      &  t(3,3),bfv,press,vel(3),div,shcon(0:3,ntmat_,*),pgauss(3),
      &  xkin,xtuf,voldl(0:mi(2),20),yyl(20),tvk(3),tvt(3),
      &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),tvnk,tvnt,
-     &  om,omx,xi,et,ze,const,xsj,fft(60),dxkin(3),dtc(*),
+     &  om,omx,xi,et,ze,const,xsj,fft(78),dxkin(3),dt(*),
      &  temp,vcon(0:4,*),vconl(0:4,20),rho,dxtuf(3),
      &  weight,shpv(20),rhokin,rhotuf,y,vort,c1,c2,arg2,f2,
      &  a1,unt,umt,cdktuf,arg1,f1,skin,skin1,skin2,stuf,stuf1,
@@ -286,7 +286,7 @@ c
             f1=0.d0
          elseif(turbulent.eq.2) then
 !
-!           q-omega model
+!           k-omega model
 !
             f1=1.d0
          else
@@ -319,20 +319,7 @@ c
          tut=rho*(gamm*tu-beta*xtuf*xtuf+2.d0*f1m*stuf2*
      &       (dxkin(1)*dxtuf(1)+dxkin(2)*dxtuf(2)+dxkin(3)*dxtuf(3))/
      &       xtuf)
-c         write(*,*) 'e_c3d_krhs1',nelem,rho*unt*tu,rho*betas*xtuf*xkin,
-c     &          tuk
-c         write(*,*) 'e_c3d_krhs2',nelem,rho*gamm*tu,
-c     &       rho*beta*xtuf*xtuf+2.d0*f1m*stuf2*
-c     &       (dxkin(1)*dxtuf(1)+dxkin(2)*dxtuf(2)+dxkin(3)*dxtuf(3))/
-c     &       xtuf,tut
-!
-!        modified source terms
-!
-c         tuk=tu
-c         tut=gamm*tu/unt+2.d0*f1m*rho*stuf2*
-c     &       (dxkin(1)*dxtuf(1)+dxkin(2)*dxtuf(2)+dxkin(3)*dxtuf(3))/
-c     &       xtuf
-!
+!     
          do i1=1,3
             dxkin(i1)=dxkin(i1)*umsk
             dxtuf(i1)=dxtuf(i1)*umst
@@ -343,13 +330,14 @@ c     &       xtuf
          do jj=1,nope
 !     
             ffk(jj)=ffk(jj)-
-     %           xsjmod*((shp(4,jj)+dtc(konl(jj))*shpv(jj)/2.d0)*
+     %           xsjmod*((shp(4,jj)+dt(konl(jj))*shpv(jj)/2.d0)*
      &           (rhokin-tuk)+(shp(1,jj)*dxkin(1)+shp(2,jj)*dxkin(2)
      &              +shp(3,jj)*dxkin(3)))
             fft(jj)=fft(jj)-
-     %           xsjmod*((shp(4,jj)+dtc(konl(jj))*shpv(jj)/2.d0)*
+     %           xsjmod*((shp(4,jj)+dt(konl(jj))*shpv(jj)/2.d0)*
      &           (rhotuf-tut)+(shp(1,jj)*dxtuf(1)+shp(2,jj)*dxtuf(2)
      &              +shp(3,jj)*dxtuf(3)))
+c            write(*,*) 'e_c3d_krsh ',jj,ffk(jj),fft(jj)
          enddo
 !     
       enddo
@@ -519,7 +507,7 @@ c               unt=a1*xkin/max(a1*xtuf,vort*f2)
                   f1=0.d0
                elseif(turbulent.eq.2) then
 !     
-!     q-omega model
+!     k-omega model
 !     
                   f1=1.d0
                else

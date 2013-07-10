@@ -45,7 +45,7 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
              char *amname,double *bv, double *bprev, double *bdiff,
              int *nactmech, int *icorrect, int *iprev){
 
-    int idiff[3],i,j,ic,ir,im;
+    int idiff[3],i,j,ic,ir,im,symmetryflag=0;
 
     double *xbounmin=NULL,*xbounplus=NULL,*bplus=NULL,
 	*ba=NULL,deltatime,deltatime2,deltatimesq,timemin,ttimemin,
@@ -127,7 +127,7 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
       }
       if(*isolver==7){
 #ifdef PARDISO
-	  pardiso_solve(bmin,&neq[1]);
+	  pardiso_solve(bmin,&neq[1],&symmetryflag);
 #endif
       }
   }
@@ -167,7 +167,7 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
       }
       if(*isolver==7){
 #ifdef PARDISO
-	  pardiso_solve(bact,&neq[1]);
+	  pardiso_solve(bact,&neq[1],&symmetryflag);
 #endif
       }
   }
@@ -207,7 +207,7 @@ void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
       }
       if(*isolver==7){
 #ifdef PARDISO
-	  pardiso_solve(bplus,&neq[1]);
+	  pardiso_solve(bplus,&neq[1],&symmetryflag);
 #endif
       }
   }

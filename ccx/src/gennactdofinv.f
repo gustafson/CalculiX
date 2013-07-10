@@ -63,7 +63,7 @@
             if(lakonl(4:5).eq.'15') then
                indexe2d=indexe+15
                jmax=6
-            else
+            elseif(lakonl(4:4).eq.'6') then
                indexe2d=indexe+6
                jmax=3
             endif
@@ -86,6 +86,9 @@
                jmax=2
             elseif(lakonl(4:5).eq.'20') then
                indexe2d=indexe+20
+               jmax=3
+            elseif(lakonl(4:5).eq.'26') then
+               indexe2d=indexe+26
                jmax=3
             endif
 !
@@ -122,11 +125,15 @@
             if(lakonl(4:5).eq.'8I') then
                indexe2d=indexe+11
                jmax=4
-            elseif(lakonl(4:5).eq.'8R') then
+c            elseif(lakonl(4:5).eq.'8R') then
+            elseif(lakonl(4:4).eq.'8') then
                indexe2d=indexe+8
                jmax=4
             elseif(lakonl(4:5).eq.'20') then
                indexe2d=indexe+20
+               jmax=8
+            elseif(lakonl(4:5).eq.'26') then
+               indexe2d=indexe+26
                jmax=8
             endif
             do j=1,jmax

@@ -30,6 +30,8 @@
 !
       implicit none
 !
+      logical nodeslavsurf
+!
       character*6 prlab(*)
       character*8 lakon(*)
       character*20 labmpc(*)
@@ -39,27 +41,27 @@
       integer imddof(*),nmddof,nrset,istartset(*),iendset(*),mi(*),
      &  ialset(*),nactdof(0:mi(2),*),node,ithermal,j,k,l,
      &  ikmpc(*),ilmpc(*),ipompc(*),nodempc(3,*),nmpc,
-     &  imdnode(*),nmdnode,imdmpc(*),nmdmpc,nprint,
-     &  imdboun(*),nmdboun,ikboun(*),nboun,index,indexe,islav,
-     &  jface,nset,ntie,nnodelem,nope,nodef(8),nelem,nface,iright,
-     &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),kon(*),
+     &  imdnode(*),nmdnode,imdmpc(*),nmdmpc,nprint,ipos,
+     &  imdboun(*),nmdboun,ikboun(*),nboun,indexe1,indexe,islav,
+     &  jface,nset,ntie,nnodelem,nope,nodef(8),nelem,nface,imast,
+     &  ifaceq(9,6),ifacet(7,4),ifacew1(4,5),ifacew2(8,5),kon(*),
      &  ipkon(*),i,ilboun(*),nlabel,ne,cyclicsymmetry
 !
 !     nodes per face for hex elements
 !
-      data ifaceq /4,3,2,1,11,10,9,12,
-     &            5,6,7,8,13,14,15,16,
-     &            1,2,6,5,9,18,13,17,
-     &            2,3,7,6,10,19,14,18,
-     &            3,4,8,7,11,20,15,19,
-     &            4,1,5,8,12,17,16,20/
+      data ifaceq /4,3,2,1,11,10,9,12,21,
+     &            5,6,7,8,13,14,15,16,22,
+     &            1,2,6,5,9,18,13,17,23,
+     &            2,3,7,6,10,19,14,18,24,
+     &            3,4,8,7,11,20,15,19,25,
+     &            4,1,5,8,12,17,16,20,26/
 !
 !     nodes per face for tet elements
 !
-      data ifacet /1,3,2,7,6,5,
-     &             1,2,4,5,9,8,
-     &             2,3,4,6,10,9,
-     &             1,4,3,8,10,7/
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
 !
 !     nodes per face for linear wedge elements
 !
@@ -77,7 +79,7 @@
      &             2,3,6,5,8,15,11,14,
      &             3,1,4,6,9,13,12,15/
 !
-      data nlabel /32/
+      data nlabel /41/
 !
 !     if 1d/2d elements are part of the mesh, no node selection
 !     is performed (because of the renumbering due to the
@@ -86,7 +88,7 @@
       do i=1,ne
          if((lakon(i)(7:7).eq.'E').or.
      &      (lakon(i)(7:7).eq.'S').or.
-     &      (lakon(i)(7:7).eq.'A').or.
+     &      ((lakon(i)(7:7).eq.'A').and.(lakon(i)(1:1).eq.'C')).or.
      &      (lakon(i)(7:7).eq.'L').or.
      &      (lakon(i)(7:7).eq.'B')) then
             nmdnode=0
@@ -127,7 +129,14 @@
                   write(*,*) '       steady static dynamics calculation'
                   write(*,*) '       a node set MUST be defined on each'
                   write(*,*) '       *NODE FILE, *NODE OUTPUT, *EL FILE'
-                  write(*,*) '       or *ELEMENT OUTPUT card'
+                  write(*,*) '       or *ELEMENT OUTPUT card.'
+                  write(*,*) '       Justification: in a steady state'
+                  write(*,*) '       dynamics calculation with cyclic'
+                  write(*,*) '       symmetry the segment is expanded'
+                  write(*,*) '       into 360 °. Storing results for'
+                  write(*,*) '       this expansion may lead to huge'
+                  write(*,*) '       frd-files. Specifying a set can'
+                  write(*,*) '       reduced this output.'
                   stop
                endif
                nmdnode=0
@@ -273,9 +282,9 @@
                write(*,*) '       does not exist'
                stop
             endif
-            iright=j
+            imast=j
 !     
-            do j=istartset(iright),iendset(iright)
+            do j=istartset(imast),iendset(imast)
 !     
                nelem=int(ialset(j)/10.d0)
                jface=ialset(j)-10*nelem
@@ -354,50 +363,148 @@
 !
             slavset=tieset(2,i)
 !
-!           determining the slave surface
+!           check whether facial slave surface; 
+!
+            ipos=index(slavset,' ')-1
+! 
+!           default for node-to-surface contact is
+!           a nodal slave surface
+!
+            if(slavset(ipos:ipos).eq.'S') then
+               nodeslavsurf=.true.
+            endif
+!
+!           determining the slave surface 
 !
             do j=1,nset
                if(set(j).eq.slavset) exit
             enddo
             if(j.gt.nset) then
-               write(*,*) '*ERROR in createmddof: ',
-     &           'slave nodal surface ',slavset
-               write(*,*) '       does not exist'
-               stop
+               do j=1,nset
+                  if((set(j)(1:ipos-1).eq.slavset(1:ipos-1)).and.
+     &                 (set(j)(ipos:ipos).eq.'T')) then
+                     nodeslavsurf=.false.
+                     exit
+                  endif
+               enddo
             endif
+!
             islav=j
 !
-            do j=istartset(islav),iendset(islav)
-               if(ialset(j).gt.0) then
-                  node=ialset(j)
-                  call addimd(imdnode,nmdnode,node)
-                  if(ithermal.ne.2) then
-                     do k=1,3
-                        call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
-     &                       nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
-     &                       nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
-     &                       ikboun,nboun,ilboun)
-                     enddo
-                  endif
-               else
-                  k=ialset(j-2)
-                  do
-                     k=k-ialset(j)
-                     if(k.ge.ialset(j-1)) exit
-                     node=k
+            if(nodeslavsurf) then
+!
+!              nodal slave surface
+!
+               do j=istartset(islav),iendset(islav)
+                  if(ialset(j).gt.0) then
+                     node=ialset(j)
                      call addimd(imdnode,nmdnode,node)
                      if(ithermal.ne.2) then
                         do k=1,3
-                           call addimdnodedof(node,k,ikmpc,ilmpc,
+                           call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
+     &                       nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
+     &                       nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
+     &                       ikboun,nboun,ilboun)
+                        enddo
+                     endif
+                  else
+                     k=ialset(j-2)
+                     do
+                        k=k-ialset(j)
+                        if(k.ge.ialset(j-1)) exit
+                        node=k
+                        call addimd(imdnode,nmdnode,node)
+                        if(ithermal.ne.2) then
+                           do k=1,3
+                              call addimdnodedof(node,k,ikmpc,ilmpc,
      &                          ipompc,nodempc,nmpc,imdnode,nmdnode,
      &                          imddof,nmddof,nactdof,mi,imdmpc,nmdmpc,
      &                          imdboun,nmdboun,ikboun,nboun,ilboun)
+                           enddo
+                        endif
+                     enddo
+                  endif
+               enddo
+            else
+!     
+!             facial slave surface
+!
+               do j=istartset(islav),iendset(islav)
+!     
+                  nelem=int(ialset(j)/10.d0)
+                  jface=ialset(j)-10*nelem
+!     
+                  indexe=ipkon(nelem)
+!     
+                  if(lakon(nelem)(4:4).eq.'2') then
+                     nnodelem=8
+                     nface=6
+                  elseif(lakon(nelem)(4:4).eq.'8') then
+                     nnodelem=4
+                     nface=6
+                  elseif(lakon(nelem)(4:5).eq.'10') then
+                     nnodelem=6
+                     nface=4
+                  elseif(lakon(nelem)(4:4).eq.'4') then
+                     nnodelem=3
+                     nface=4
+                  elseif(lakon(nelem)(4:5).eq.'15') then
+                     if(jface.le.2) then
+                        nnodelem=6
+                     else
+                        nnodelem=8
+                     endif
+                     nface=5
+                     nope=15
+                  elseif(lakon(nelem)(4:4).eq.'6') then
+                     if(jface.le.2) then
+                        nnodelem=3
+                     else
+                        nnodelem=4
+                     endif
+                     nface=5
+                     nope=6
+                  else
+                     cycle
+                  endif
+!     
+!     determining the slave nodes 
+!     
+                  if(nface.eq.4) then
+                     do k=1,nnodelem
+                        nodef(k)=kon(indexe+ifacet(k,jface))
+                     enddo
+                  elseif(nface.eq.5) then
+                     if(nope.eq.6) then
+                        do k=1,nnodelem
+                           nodef(k)=kon(indexe+ifacew1(k,jface))
+                        enddo
+                     elseif(nope.eq.15) then
+                        do k=1,nnodelem
+                           nodef(k)=kon(indexe+ifacew2(k,jface))
+                        enddo
+                     endif
+                  elseif(nface.eq.6) then
+                     do k=1,nnodelem
+                        nodef(k)=kon(indexe+ifaceq(k,jface))
+                     enddo
+                  endif
+!     
+                  do l=1,nnodelem
+                     node=nodef(l)
+                     call addimd(imdnode,nmdnode,node)
+                     if(ithermal.ne.2) then
+                        do k=1,3
+                           call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
+     &                       nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
+     &                       nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
+     &                       ikboun,nboun,ilboun)
                         enddo
                      endif
                   enddo
-               endif
-            enddo
-!
+               enddo
+            endif
+!     
          endif
       enddo
 !
@@ -408,9 +515,9 @@
      &          (labmpc(i)(1:7).ne.'CONTACT').and.
      &          (labmpc(i)(1:6).ne.'CYCLIC').and.
      &          (labmpc(i)(1:9).ne.'SUBCYCLIC')) then
-            index=ipompc(i)
-            if(index.eq.0) cycle
-            node=nodempc(1,index)
+            indexe1=ipompc(i)
+            if(indexe1.eq.0) cycle
+            node=nodempc(1,indexe1)
             call addimd(imdnode,nmdnode,node)
             if(ithermal.ne.2) then
                do k=1,3

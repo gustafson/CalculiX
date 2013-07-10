@@ -26,7 +26,7 @@
      &  itemp,ncmat_,id,nplicon(0:ntmat_,*),npmat_
 !
       real*8 elcon(0:ncmat_,ntmat_,*),t1l,elconloc(21),
-     &   plicon(0:2*npmat_,ntmat_,*),plconloc(82)
+     &   plicon(0:2*npmat_,ntmat_,*),plconloc(802)
 !
 !     nelconst: # constants read from file
 !     
@@ -34,19 +34,19 @@
 !     
 !     for the calculation of the spring stiffness, the whole curve
 !     has to be stored:
-!     plconloc(2*k-1), k=1...20: displacement
-!     plconloc(2*k),k=1...20:    force
+!     plconloc(2*k-1), k=1...200: displacement
+!     plconloc(2*k),k=1...200:    force
 !     
       if(kode.lt.-50) then
          if(npmat_.eq.0) then
-            plconloc(81)=0.5d0
-            plconloc(82)=0.5d0
+            plconloc(801)=0.5d0
+            plconloc(802)=0.5d0
          else
             plconloc(1)=0.d0
             plconloc(2)=0.d0
             plconloc(3)=0.d0
-            plconloc(81)=nplicon(1,imat)+0.5d0
-            plconloc(82)=0.5d0
+            plconloc(801)=nplicon(1,imat)+0.5d0
+            plconloc(802)=0.5d0
 !     
 !     nonlinear spring characteristic or gap conductance characteristic
 !     

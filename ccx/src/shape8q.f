@@ -39,9 +39,7 @@
 !
       integer i,j,k,iflag
 !
-      real*8 shp(7,8),xs(3,7),xsi(2,3),xl(3,8),sh(3),xsj(3)
-!
-      real*8 xi,et
+      real*8 shp(7,8),xs(3,7),xsi(2,3),xl(3,8),sh(3),xsj(3),xi,et
 !
 !     shape functions and their glocal derivatives for an element
 !     described with two local parameters and three global ones.

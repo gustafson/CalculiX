@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine forcesolve(zc,nev,a,b,x,eiga,eigb,eigxx,iter,d,
-     &  neq,z,istartnmd,iendnmd,nmd,cyclicsymmetry,neqact)
+     &  neq,z,istartnmd,iendnmd,nmd,cyclicsymmetry,neqact,nherm)
 !
 !     solves for the complex eigenfrequencies due to Coriolis 
 !     forces
@@ -27,7 +27,7 @@
       logical wantx
 !
       integer nev,neq,iter(*),i,j,k,l,istartnmd(*),iendnmd(*),nmd,
-     &  cyclicsymmetry,neqact
+     &  cyclicsymmetry,neqact,nherm
 !
       real*8 z(neq,*),d(*)
 !
@@ -41,6 +41,12 @@
                   a(i,j)=a(i,j)+z(k,i)*zc(k,j)
                enddo
             enddo
+!
+!           in the Hermitian case (nherm=1) the eigenvalues are real
+!
+            write(*,*) 
+     &           'aerodynamic stiffness/structural stiffness = ',
+     &           a(i,i)/d(i)
             a(i,i)=a(i,i)+d(i)
             b(i,i)=(1.d0,0.d0)
          enddo
@@ -56,6 +62,12 @@
      &                      z(k+neqact,i)*zc(k,j)*(0.d0,1.d0)
                   enddo
                enddo
+!
+!              in the Hermitian case (nherm=1) the eigenvalues are real
+!
+               write(*,*) 
+     &           'aerodynamic stiffness/structural stiffness = ',
+     &                  a(i,i)/d(i)
                a(i,i)=a(i,i)+d(i)
                b(i,i)=(1.d0,0.d0)
             enddo

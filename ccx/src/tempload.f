@@ -334,7 +334,6 @@ c               xloadact(2,i)=xload(2,i)
          do i=1,nk
             if((t1(i).lt.1.2357111318d0).and.
      &           (t1(i).gt.1.2357111316d0)) then
-               write(*,*) 'tempload.f ',i,t1(i)
 !
                abqtime(1)=time
                abqtime(2)=ttime+dtime

@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine dashforc(xl,konl,vl,imat,elcon,nelcon,
-     &  elas,fn,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,
+     &  elas,fnl,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,
      &  plicon,nplicon,npmat_,vel,time,nmethod,mi)
 !
 !     calculates the force of the dashpot
@@ -29,14 +29,13 @@
       integer konl(20),i,j,imat,ncmat_,ntmat_,nope,nmethod,
      &  kode,nelcon(2,*),nplicon(0:ntmat_,*),npmat_,id,niso,mi(*)
 !
-      real*8 xl(3,20),elas(21),t0l,t1l,vl(0:mi(2),20),plconloc(82),
-     &  pl(0:3,9),xn(3),al,dd,fn(0:mi(2),*),vel(1:3,20),time,
-     &  elcon(0:ncmat_,ntmat_,*),elconloc(21),xk,fk,
-     &  plicon(0:2*npmat_,ntmat_,*),xiso(20),yiso(20)
+      real*8 xl(3,20),elas(21),t0l,t1l,vl(0:mi(2),20),plconloc(802),
+     &  pl(0:3,9),xn(3),al,dd,vel(1:3,20),time,
+     &  elcon(0:ncmat_,ntmat_,*),elconloc(21),xk,fk,fnl(3,9),
+     &  plicon(0:2*npmat_,ntmat_,*),xiso(200),yiso(200)
 !
 !     actual positions of the nodes belonging to the dashpot
 !
-c      write(*,*) 'dashforc ',time
       do i=1,nope
          do j=1,3
             pl(j,i)=xl(j,i)+vl(j,i)
@@ -61,7 +60,6 @@ c      write(*,*) 'dashforc ',time
 !     
 !     calculating the dashpot force and the dashpot constant
 !     
-c      write(*,*) 'dashforc ',time
       if(kode.eq.2)then
          xk=elconloc(1)
          fk=xk*al
@@ -73,7 +71,7 @@ c      write(*,*) 'dashforc ',time
             write(*,*) '       steady state dynamics calculations'
             stop
          endif
-         niso=int(plconloc(81))
+         niso=int(plconloc(801))
          do i=1,niso
             xiso(i)=plconloc(2*i-1)
             yiso(i)=plconloc(2*i)
@@ -89,11 +87,10 @@ c      write(*,*) 'dashforc ',time
          endif
          fk=xk*al
       endif
-c      write(*,*) 'dashforc ',time,xk
 !     
       do i=1,3
-         fn(i,konl(1))=-fk*xn(i)
-         fn(i,konl(2))=fk*xn(i)
+         fnl(i,1)=-fk*xn(i)
+         fnl(i,2)=fk*xn(i)
       enddo
 !
       return

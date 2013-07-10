@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine readforce(zc,neq,nk,nev,nactdof,ikmpc,nmpc,ipompc,
-     &  nodempc,mi,coefmpc)
+     &  nodempc,mi,coefmpc,jobnamef)
 !
 !     reads a complex force (e.g. response of a fluid to a harmonic
 !     structural excitation)
@@ -33,6 +33,9 @@
 !
       implicit none
 !
+      character*132 jobnamef
+      character*144 name
+!
       integer mi(*),neq,nk,nev,i,j,k,nactdof(0:mi(2),*),ikmpc(*),nmpc,
      &  jdof,id,ist,ipompc(*),index,nodempc(3,*),node,istat
 !
@@ -40,7 +43,19 @@
 !
       complex*16 zc(neq,*),force(3)
 !
-      open(27,file='dummy',status='unknown')
+!     creating name for force file
+!
+      do i=1,132
+         if(jobnamef(i:i).eq.' ') exit
+         name(i:i)=jobnamef(i:i)
+      enddo
+      i=i-1
+      name(i+1:i+12)='_complex.clo'
+      do j=i+13,144
+         name(j:j)=' '
+      enddo
+!
+      open(27,file=name,status='unknown')
 !
       do i=1,nev
          do
