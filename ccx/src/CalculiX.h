@@ -1119,7 +1119,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	 int *ngraph,double *veold,double *ener,int *ne,double *cs,
 	 char *set,int *nset,int *istartset,int *iendset,int *ialset,
 	 double *eenmax,double *fnr,double *fni,double *emn,
-	 double *thicke,char *jobnamec, char *output);
+	 double *thicke,char *jobnamec, char *output, double *qfx);
 
 void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v,
 	    double *stn,int *inum,int *nmethod,int *kode,char *filab,

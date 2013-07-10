@@ -38,7 +38,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	 int *ngraph,double *veold,double *ener,int *ne,double *cs,
 	 char *set,int *nset,int *istartset,int *iendset,int *ialset,
 	 double *eenmax,double *fnr,double *fni,double *emn,
-	 double *thicke,char *jobnamec,char *output){
+	 double *thicke,char *jobnamec,char *output,double *qfx){
 
   /* stores the results in exo format
 
@@ -54,7 +54,8 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   char fneig[132]="", material[6]="     ",text[2]=" ";
   
   static int nkcoords,nout,noutmin,noutplus;
-   
+  int nterms,mesh_in_original_form,ielemremesh;
+
   int i,j,k,l,m,n,o,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
     nodes,ifield[7],nfield[2],icomp[7],ifieldstate[*nstate_],icompstate[*nstate_],nelout;
   
@@ -152,6 +153,13 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       for(i=0;i<*ne0;i++){
 	if(ipkon[i]<0) continue;
 	if(strcmp1(&lakon[8*i],"ESPRNGC")==0) continue;
+	if(strcmp1(&lakon[8*i+5],"C")==0){
+	  if(mesh_in_original_form==1) continue;
+	}
+	if(ipkon[i]<-1){
+	  if(mesh_in_original_form==0) continue;
+	}
+	if(strcmp1(&lakon[8*i],"DCOUP3D")==0) continue;
 	if(strcmp2(&lakon[8*i+6],"LC",2)==0){
 	  // Count the number of layers
 	  nlayer=0;
@@ -186,6 +194,11 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 			num_ns, num_ss);
     if(errr){printf("*ERROR in exo: cannot open exo file for writing...");}
     
+    if(strcmp1(&filab[2],"C")==0){
+      mesh_in_original_form=0;
+    }else{
+      mesh_in_original_form=1;
+    }
 
     /* write values to database */
     errr = ex_put_coord (exoid, x, y, z);
@@ -238,13 +251,32 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     for(i=0;i<*ne0;i++){ // For each element.  Composite elements are
 			 // one increment in this loop and all layers
 			 // have the same element number.
-      if(ipkon[i]<0) continue;
+      if(ipkon[i]==-1){
+	continue;
+      }else if(strcmp1(&lakon[8*i],"F")==0){
+	continue;
+      }else if(strcmp1(&lakon[8*i],"ESPRNGC")==0){
+	continue;
+      }else if(strcmp1(&lakon[8*i+5],"C")==0){
+	if(mesh_in_original_form==1) continue;
+	indexe=ipkon[i];
+      }else if(ipkon[i]<-1){
+	if(mesh_in_original_form==0) continue;
+	indexe=-ipkon[i]-2;
+	ielemremesh=kon[indexe];
+	kon[indexe]=kon[ipkon[ielemremesh-1]];
+      }else if(strcmp1(&lakon[8*i],"DCOUP3D")==0){
+	continue;
+      }else{
+	indexe=ipkon[i];
+      }
+
       elem_map[l] = i+1;
       
       strcpy1(curblk,&lakon[8*i],5);
       strcpy1(material,&matname[80*(ielmat[i*mi[2]]-1)],5);
-      indexe=ipkon[i];
       if(strcmp1(&lakon[8*i+3],"2")==0){
+	/* 20-node brick element */
 	if(((strcmp1(&lakon[8*i+6]," ")==0)||
 	    (strcmp1(&filab[4],"E")==0)||
 	    (strcmp1(&lakon[8*i+6],"I")==0))&&
@@ -262,57 +294,74 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	    elem_map[l] = i+1;
 	    blkassign[l++]=2;
 	  }
-	}else if(strcmp1(&lakon[8*i+6],"B")==0){ // Beams?
+	}else if(strcmp1(&lakon[8*i+6],"B")==0){
+	  /* 3-node beam element */
 	  blkassign[l++]=3;
 	}else{
+	  /* 8-node 2d element */
 	  blkassign[l++]=4;
 	}
       }else if(strcmp1(&lakon[8*i+3],"8")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
+	  /* 8-node brick element */
 	  blkassign[l++]=5;
 	}else if(strcmp1(&lakon[8*i+6],"B")==0){
+	  /* 2-node 1d element */
 	  if(strcmp1(&lakon[8*i+4],"R")==0){
 	    blkassign[l++]=6;
 	  }else if(strcmp1(&lakon[8*i+4],"I")==0){
 	    blkassign[l++]=7;
 	  }
 	}else{
+	  /* 4-node 2d element */
 	  if(strcmp1(&lakon[8*i+4],"R")==0){
 	    blkassign[l++]=8;
 	  }else if(strcmp1(&lakon[8*i+4],"I")==0){
 	    blkassign[l++]=9;
 	  }
 	}
-      }else if(strcmp1(&lakon[8*i+3],"10")==0){
+      }else if((strcmp1(&lakon[8*i+3],"10")==0)||
+	(strcmp1(&lakon[8*i+3],"14")==0)){
+	/* 10-node tetrahedral element */
 	blkassign[l++]=10;
       }else if(strcmp1(&lakon[8*i+3],"4")==0){
+	/* 4-node tetrahedral element */
 	blkassign[l++]=11;
       }else if(strcmp1(&lakon[8*i+3],"15")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
+	  /* 15-node wedge element */
 	  blkassign[l++]=12;
 	}else{
+	  /* 6-node 2d element */
 	  blkassign[l++]=13;
 	}
       }else if(strcmp1(&lakon[8*i+3],"6")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
+	  /* 6-node wedge element */
 	  blkassign[l++]=14;
 	}else{
+	  /* 3-node 2d element */
 	  blkassign[l++]=15;
 	}
-      }else if((strcmp1(&lakon[8*i],"D")==0)&&
-	       (strcmp1(&lakon[8*i],"DCOUP3D")!=0)){
+//      }else if((strcmp1(&lakon[8*i],"D")==0)&&
+//	       (strcmp1(&lakon[8*i],"DCOUP3D")!=0)){
+      }else if(strcmp1(&lakon[8*i],"D")==0){
 	if(kon[indexe]==0){
+	  /* 2-node 1d element (network entry element) */
 	  blkassign[l++]=16;
 	}else if(kon[indexe+2]==0){
+	  /* 2-node 1d element (network exit element) */
 	  blkassign[l++]=17;
 	}else{
+	  /* 3-node 1d element (genuine network element) */
 	  blkassign[l++]=18;
 	}
       }else if((strcmp1(&lakon[8*i],"E")==0)&&
 	       (strcmp1(&lakon[8*i+6],"A")==0)){
+	/* 2-node 1d element (spring element) */
 	blkassign[l++]=19;
       }
     }
@@ -484,6 +533,12 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     exosetfind(set, nset, ialset, istartset, iendset, 
 	       &num_ns, &num_ss, &num_es, &num_fs, node_map_inv, exoid, (int) 1);
     
+    // Unknown purpose originating in ccx_2.6
+    if(mesh_in_original_form==1){
+      if(ipkon[i]<-1){
+	kon[indexe]=ielemremesh;
+      }
+    }
     
     // Free up memory which is gathering dust
     free (elem_map); 
@@ -895,7 +950,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	    if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
 	      break;
 	    strcpy1(text,&lakon[8*i+7],1);
-	    nope=atoi(text);
+	    nope=atoi(text)+1;
 	    nodes=node_map_inv[kon[ipkon[i]+nope-1]-1];
 	    nodal_var_vals[nodes]=stx[6*mi[0]*i+j]; 
 	  }
@@ -925,7 +980,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	for(i=*ne-1;i>=0;i--){
 	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
 	    break;
-	  nope=atoi(&lakon[8*i+7]);
+	  nope=atoi(&lakon[8*i+7])+1;
 	  nodes=node_map_inv[kon[ipkon[i]+nope-1]-1];
 	  nodal_var_vals[nodes]=ener[i*mi[0]];
 	}
@@ -1088,8 +1143,10 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	var_names[countvars++]="VMSTDERROR";
       }else{  
 	
+	nterms=6;
+    
 	FORTRAN(errorestimator,(stx,stn,ipkon,inum,kon,lakon,nk,ne,
-				mi,ielmat,thicke));
+				mi,ielmat,thicke,&nterms));
 	
 	iselect=1;
 	
@@ -1120,9 +1177,9 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  var_names[countvars++]="PSTD-imag-ERROR";
 	  var_names[countvars++]="VMSTD-imag-ERROR";
 	}else{
-	  
+	  nterms=6;
 	  FORTRAN(errorestimator,(&stx[6*mi[0]**ne],stn,ipkon,inum,kon,lakon,nk,ne,
-				  mi,ielmat,thicke));
+				  mi,ielmat,thicke,&nterms));
 	  
 	  ncomp=2;
 	  ifield[0]=1;ifield[1]=1;
@@ -1133,6 +1190,60 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
 
 	  countvars+=2;
+	}
+      }
+    }
+
+    /* storing the thermal error estimator in the nodes */
+    if(strcmp1(&filab[2784],"HER")==0){
+      if (countbool==3){
+	countvars+=1;
+      }else if(countbool==2){
+	var_names[countvars++]="HFLSTD";
+      }else{
+	nterms=3;
+	FORTRAN(errorestimator,(qfx,qfn,ipkon,inum,kon,lakon,nk,ne,
+				mi,ielmat,thicke,&nterms));
+	
+	iselect=1;
+	frdset(&filab[2784],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+	
+	ncomp=1;
+	ifield[0]=1;
+	icomp[0]=2;
+	
+	exoselect(qfn,qfn,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncomp,ifield,icomp,
+		  nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout);
+	countvars+=1;
+      }
+    }
+
+  /* storing the imaginary part of the thermal error estimator in the nodes
+     for the odd modes of cyclic symmetry calculations */
+  
+    if(*noddiam>=0){
+      if(strcmp1(&filab[2784],"HER")==0){
+	if (countbool==3){
+	  countvars+=1;
+	}else if(countbool==2){
+	  var_names[countvars++]="HFLSTD-IMG";
+	}else{
+	  nterms=3;
+	  FORTRAN(errorestimator,(&qfx[3*mi[0]**ne],qfn,ipkon,inum,kon,lakon,nk,ne,
+				  mi,ielmat,thicke,&nterms));
+	  
+	  ncomp=1;
+	  ifield[0]=1;
+	  icomp[0]=2;
+	  
+	  exoselect(qfn,qfn,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncomp,ifield,icomp,
+		    nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout);
+	  
+	  countvars+=1;
 	}
       }
     }
@@ -1293,7 +1404,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     /*  the remaining lines only apply to frequency calculations
 	with cyclic symmetry, complex frequency and steady state calculations */
   
-    if((*nmethod!=2)&&(*nmethod!=5)&&(*nmethod!=6)){goto WRITENAMES;}
+    if((*nmethod!=2)&&(*nmethod!=5)&&(*nmethod!=6)&&(*nmethod!=7)){goto WRITENAMES;}
     if((*nmethod==5)&&(*mode==-1)){goto WRITENAMES;}
   
     /* storing the displacements in the nodes (magnitude, phase) */

@@ -90,14 +90,14 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       trab,inotr,ntrans,orab,ielorien,norien,description,
       ipneigh,neigh,mi,stx,vr,vi,stnr,stni,vmax,stnmax,
       ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
-      ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output);
+      ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx);
 
 
   strcpy(fneig,jobnamec);
   strcat(fneig,".frd");
 
   if((f1=fopen(fneig,"ab"))==NULL){
-    printf("ERROR in frd: cannot open frd file for writing...");
+    printf("*ERROR in frd: cannot open frd file for writing...");
     exit(0);
   }
 
