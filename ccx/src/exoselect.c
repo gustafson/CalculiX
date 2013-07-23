@@ -1,6 +1,8 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2011 Guido Dhondt                          */
-
+/*              Copyright (C) 1998-2011 Guido Dhondt                     */
+/*     This subroutine                                                   */
+/*              Copyright (C) 2013 Peter A. Gustafson                    */
+/*                                                                       */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
 /*     published by the Free Software Foundation(version 2);    */
