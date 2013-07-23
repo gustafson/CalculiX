@@ -1,6 +1,8 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2011 Guido Dhondt                          */
-
+/*              Copyright (C) 1998-2011 Guido Dhondt                     */
+/*     This subroutine                                                   */
+/*              Copyright (C) 2013 Peter A. Gustafson                    */
+/*                                                                       */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
 /*     published by the Free Software Foundation(version 2);    */
@@ -216,29 +218,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     errr = ex_put_coord_names (exoid, coord_names);
     if(errr){printf("*ERROR in exo: failed to write coordinate names");}
     
-    //SAMPLE    // Property names
-    //SAMPLE    char *prop_names[num_elem];
-    //SAMPLE    int fakeprop[num_elem];
-    //SAMPLE    int num_props = 2;
-    //SAMPLE    prop_names[0] = "TOP";
-    //SAMPLE    prop_names[1] = "BOT";
-    //SAMPLE    for (i=0; i<num_elem; i++)
-    //SAMPLE      fakeprop[i]=1;
-    //SAMPLE    errr = ex_put_prop_names (exoid, EX_ELEM_BLOCK, num_props, prop_names);
-    //SAMPLE    if (errr)
-    //SAMPLE      printf ("ERROR in ex_put_prop_names %i\n", errr);
-    //SAMPLE    errr = ex_put_prop_array (exoid, EX_ELEM_BLOCK, prop_names[0], fakeprop);
-    //SAMPLE    if (errr)
-    //SAMPLE      printf ("ERROR in ex_put_prop_names %i\n", errr);
-    //SAMPLE    errr = ex_put_elem_block (exoid, blkid, "SHEL", num_elem_in_blk, num_nodes_per_elem, num_attr);
-    //SAMPLE    if (errr){
-    //SAMPLE      printf ("ERROR in ex_put_elem_block %i\n", errr);
-    //SAMPLE    
-    //SAMPLE    int *idelbs;
-    //SAMPLE    idelbs = (int *) calloc(10, sizeof(int));
-    //SAMPLE    errr = ex_get_elem_blk_ids (exoid, idelbs);
-    //SAMPLE    
-   
     // Initialize enough memory to store the element numbers
     int *elem_map;
     elem_map = (int *) calloc(num_elem, sizeof(int));
@@ -369,50 +348,29 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 
     
     int num_nodes_per_elem[num_elem_blk];
-    j=0;
-    num_nodes_per_elem[j++]=1;
-    num_nodes_per_elem[j++]=20;
-    num_nodes_per_elem[j++]=20;
-    num_nodes_per_elem[j++]=3;
-    num_nodes_per_elem[j++]=8;
-    num_nodes_per_elem[j++]=8;
-    num_nodes_per_elem[j++]=2;
-    num_nodes_per_elem[j++]=2;
-    num_nodes_per_elem[j++]=4;
-    num_nodes_per_elem[j++]=4;
-    num_nodes_per_elem[j++]=10;
-    num_nodes_per_elem[j++]=4;
-    num_nodes_per_elem[j++]=15;
-    num_nodes_per_elem[j++]=6;
-    num_nodes_per_elem[j++]=6;
-    num_nodes_per_elem[j++]=3;
-    num_nodes_per_elem[j++]=2;
-    num_nodes_per_elem[j++]=2;
-    num_nodes_per_elem[j++]=3;
-    num_nodes_per_elem[j++]=2;
-
     char *blknames[num_elem_blk];
     j=0;
-    blknames[j++]="PNT";
-    blknames[j++]="BEAM C3D20";
-    blknames[j++]="COMPOSITE LAYER C3D20";
-    blknames[j++]="TRUSS3?";
-    blknames[j++]="C3D8*?";
-    blknames[j++]="C3D8*?";
-    blknames[j++]="TRUSS2";
-    blknames[j++]="TRUSS2";
-    blknames[j++]="SHELL";
-    blknames[j++]="SHELL";
-    blknames[j++]="TETRA";
-    blknames[j++]="TETRA";
-    blknames[j++]="WEDGE";
-    blknames[j++]="HEX";
-    blknames[j++]="WEDGE";
-    blknames[j++]="WEDGE";
-    blknames[j++]="TRUSS";
-    blknames[j++]="TRUSS";
-    blknames[j++]="TRUSS";
-    blknames[j++]="TRUSS";
+    num_nodes_per_elem[j]=1;   blknames[j++]="PNT";
+    num_nodes_per_elem[j]=20;  blknames[j++]="C3D20 or C3D20R";
+    num_nodes_per_elem[j]=20;  blknames[j++]="COMPOSITE LAYER C3D20";
+    num_nodes_per_elem[j]=3;   blknames[j++]="Beam B32 or B32R";
+    num_nodes_per_elem[j]=8;   blknames[j++]="CPS8 or CPE8";
+    num_nodes_per_elem[j]=8;   blknames[j++]="C3D8 or C3D8R";
+    num_nodes_per_elem[j]=2;   blknames[j++]="TRUSS2";
+    num_nodes_per_elem[j]=2;   blknames[j++]="TRUSS2";
+    num_nodes_per_elem[j]=4;   blknames[j++]="CPS4R or CPE4R";
+    num_nodes_per_elem[j]=4;   blknames[j++]="CPS4I or CPE4I";
+    num_nodes_per_elem[j]=10;  blknames[j++]="C3D10";
+    num_nodes_per_elem[j]=4;   blknames[j++]="C3D4";
+    num_nodes_per_elem[j]=15;  blknames[j++]="C3D15";
+    num_nodes_per_elem[j]=6;   blknames[j++]="CPS6 or CPE6";
+    num_nodes_per_elem[j]=6;   blknames[j++]="C3D6";
+    num_nodes_per_elem[j]=3;   blknames[j++]="CPS3 or CPE3";
+    num_nodes_per_elem[j]=2;   blknames[j++]="2-node 1d network entry elem";
+    num_nodes_per_elem[j]=2;   blknames[j++]="2-node 1d network exit elem";
+    num_nodes_per_elem[j]=3;   blknames[j++]="2-node 1d genuine network elem";
+    num_nodes_per_elem[j]=2;   blknames[j++]="2-node 1d spring elem";
+
     errr = ex_put_names (exoid, EX_ELEM_BLOCK, blknames);
     if(errr){printf("*ERROR in exo: cannot write block names");}
     
@@ -985,9 +943,9 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  nodal_var_vals[nodes]=ener[i*mi[0]];
 	}
 	
-	int errr = ex_put_nodal_var (exoid, num_time_steps, 1+countvars++, nout, nodal_var_vals);
-	if (errr) printf ("ERROR storing CELS data into exo file.\n");
 	countvars+=1;
+	int errr = ex_put_nodal_var (exoid, num_time_steps, countvars, nout, nodal_var_vals);
+	if (errr) printf ("ERROR storing CELS data into exo file.\n");
 
 	free(nodal_var_vals);
       }
