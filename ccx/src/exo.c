@@ -909,7 +909,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	      break;
 	    strcpy1(text,&lakon[8*i+7],1);
 	    nope=atoi(text)+1;
-	    nodes=node_map_inv[kon[ipkon[i]+nope-1]-1];
+	    nodes=node_map_inv[kon[ipkon[i]+nope-1]-1]-1;
 	    nodal_var_vals[nodes]=stx[6*mi[0]*i+j]; 
 	  }
 	  
@@ -939,7 +939,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
 	    break;
 	  nope=atoi(&lakon[8*i+7])+1;
-	  nodes=node_map_inv[kon[ipkon[i]+nope-1]-1];
+	  nodes=node_map_inv[kon[ipkon[i]+nope-1]-1]-1;
 	  nodal_var_vals[nodes]=ener[i*mi[0]];
 	}
 	
