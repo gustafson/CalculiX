@@ -639,6 +639,7 @@ dynacont.c \
 dynboun.c \
 electromagnetics.c \
 elemChecker.c \
+exo.c \
 expand.c \
 frd.c \
 frdcyc.c \
