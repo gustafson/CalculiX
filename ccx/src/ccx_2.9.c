@@ -1522,6 +1522,15 @@ if((ne1d!=0)||(ne2d!=0)){
 SFREE(islavsurf);
 if(mortar==1){SFREE(pslavsurf);SFREE(clearini);}
 
+ strcpy(fneig,jobnamec);
+ strcat(fneig,".exo");
+ if((f1=fopen(fneig,"ab"))==NULL){
+ printf("*ERROR in exo: cannot open exo file for writing...");
+ exit(0);
+ }
+ fprintf(f1," 9999\n");
+ fclose(f1);
+
 #ifdef CALCULIX_MPI
 MPI_Finalize();
 #endif
