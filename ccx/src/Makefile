@@ -56,6 +56,10 @@ USE_MT=-DUSE_MT
 USE_MPI= #-DCALCULIX_MPI -fopenmp
 
 ## EXODUSII
+## CFLAGS  += -DEXODUSII
+## LDFLAGS += -lexoIIv2c -lnetcdf
+CFLAGS  += `pkg-config --cflags exodusii` -DEXODUSII
+LDFLAGS += `pkg-config --libs exodusii`
 
 ## CUDACUSP
 
