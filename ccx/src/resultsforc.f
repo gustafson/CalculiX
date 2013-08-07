@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,7 +35,7 @@
 !     force; the actual force in a node belonging to the mpc is
 !     obtained by multiplying this force with the nodal coefficient.
 !     The force has to be subtracted from f, since it does not
-!     appear on the rhs of the equations system
+!     appear on the rhs of the equation system
 !
       if(calcul_fn.eq.1)then
         do i=1,nmpc

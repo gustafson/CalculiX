@@ -32,6 +32,7 @@ applybounpgas.f \
 applybount.f \
 applybounv.f \
 approxplane.f \
+assigndomtonodes.f \
 attach.f \
 attach_3d.f \
 attachline.f \
@@ -39,6 +40,7 @@ attachlineS.f \
 attachpen.f \
 basis.f \
 beamsections.f \
+biotsavart.f \
 bodyadd.f \
 bodyforce.f \
 bounadd.f \
@@ -114,9 +116,11 @@ coriolissolve.f \
 couptempdisps.f \
 cp_corrected.f \
 createbd.f \
+createinterfacempcs.f \
 createinum.f \
 createmddof.f \
 createmdelem.f \
+createtiedsurfs.f \
 creep.f \
 creeps.f \
 cross_split.f \
@@ -165,6 +169,7 @@ dynamics.f \
 dynamic_viscosity.f \
 dynresults.f \
 elastics.f \
+electromagneticss.f \
 elementpernode.f \
 elements.f \
 elprints.f \
@@ -178,6 +183,7 @@ errorestimator.f \
 expansions.f \
 extrapolate.f \
 e_c3d.f \
+e_c3d_em.f \
 e_c3d_krhs.f \
 e_c3d_plhs.f \
 e_c3d_prhs.f \
@@ -236,6 +242,7 @@ gencontrel.f \
 gencycsymelemcfd.f \
 gendualcoeffs.f \
 generatecycmpcs.f \
+generateeminterfaces.f \
 generatetet.f \
 genfirstactif.f \
 genislavactdof.f \
@@ -291,6 +298,8 @@ lab_straight_ppkrit.f \
 limit_case_calc.f \
 linel.f \
 linkdissimilar.f \
+linscal.f \
+linvec.f \
 lintemp.f \
 lintemp_th.f \
 liquidchannel.f \
@@ -302,6 +311,7 @@ loadaddt.f \
 lump.f \
 mafillcorio.f \
 mafilldm.f \
+mafillem.f \
 mafillklhs.f \
 mafillkrhs.f \
 mafillnet.f \
@@ -323,6 +333,7 @@ materialdata_cond.f \
 materialdata_cp.f \
 materialdata_cp_sec.f \
 materialdata_dvi.f \
+materialdata_em.f \
 materialdata_me.f \
 materialdata_rho.f \
 materialdata_sp.f \
@@ -360,6 +371,7 @@ noelfiles.f \
 noelsets.f \
 nonlinmpc.f \
 normals.f \
+normalsoninterface.f \
 norshell3.f \
 norshell4.f \
 norshell6.f \
@@ -445,6 +457,7 @@ restrictor.f \
 resultsforc.f \
 resultsini.f \
 resultnet.f \
+resultsem.f \
 resultsk.f \
 resultsmech.f \
 resultsp.f \
@@ -612,7 +625,9 @@ arpack.c \
 arpackbu.c \
 arpackcs.c \
 bdfill.c \
+biosav.c \
 calcresidual.c \
+calcresidual_em.c \
 calcshapef.c \
 cascade.c \
 checkconvergence.c \
@@ -628,6 +643,7 @@ dfdbj.c \
 dyna.c \
 dynacont.c \
 dynboun.c \
+electromagnetics.c \
 elemChecker.c \
 expand.c \
 frd.c \
@@ -639,6 +655,7 @@ frdvector.c \
 frecord.c \
 gencontmpc.c \
 getglobalresults.c \
+getSystemCPUs.c \
 inicont.c \
 insert.c \
 insertas.c \
@@ -647,6 +664,7 @@ interpolcycsymcfd.c \
 linstatic.c \
 mastruct.c \
 mastructcs.c \
+mastructe.c \
 mastructf.c \
 mastructrad.c \
 matrixsort.c \
@@ -660,6 +678,7 @@ pardiso.c \
 pardiso_as.c \
 pcgsolver.c \
 prediction.c \
+prediction_em.c \
 preiter.c \
 radcyc.c \
 radflowload.c \
@@ -672,6 +691,7 @@ remcontmpc.c \
 remeshcontact.c \
 remeshcontactq.c \
 results.c \
+resultsinduction.c \
 sgi.c \
 spooles.c \
 steadystate.c \

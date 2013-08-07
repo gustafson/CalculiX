@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2011 Guido Dhondt                          */
+/*              Copyright (C) 1998-2013 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -29,9 +29,9 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
                double **fmpcp, int **nodempcp, double **coefmpcp,
 	       int *ithermal, double *co, double *vold, int *cfd,
 	       int *nmpc_, int *mi, int *nk,int *istep,int *ikboun,
-               int *nboun){
+	       int *nboun,char *kind1,char *kind2){
 
-  char kind1[2]="T",kind2[2]="T",*labmpc=NULL;
+  char *labmpc=NULL;
 
   int *itietri=NULL,*koncont=NULL,nconf,i,k,*nx=NULL,im,
       *ny=NULL,*nz=NULL,*ifaceslave=NULL,*istartfield=NULL,
@@ -50,7 +50,7 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
 
   ifaceslave=NNEW(int,*ntie);
 
-  FORTRAN(identifytiedface,(tieset,ntie,set,nset,ifaceslave));
+  FORTRAN(identifytiedface,(tieset,ntie,set,nset,ifaceslave,kind1));
 
   /* determining the number of triangles of the triangulation
      of the master surface and the number of entities on the
@@ -102,9 +102,9 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
   iendfield=NNEW(int,*ntie);
   ifield=NNEW(int,8*ncone);
 
-  FORTRAN(nodestiedface,(tieset,ntie,ipkon,kon,
-       lakon,set,istartset,iendset,ialset,
-       nset,ifaceslave,istartfield,iendfield,ifield,&nconf,&ncone));
+  FORTRAN(nodestiedface,(tieset,ntie,ipkon,kon,lakon,set,istartset,
+       iendset,ialset,nset,ifaceslave,istartfield,iendfield,ifield,
+       &nconf,&ncone,kind1));
 
   /* determining the maximum number of equations neq */
 
@@ -173,7 +173,7 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
 	  koncont,co,xo,yo,zo,x,y,z,nx,ny,nz,nset,
 	  ifaceslave,istartfield,iendfield,ifield,
 	  ipompc,nodempc,coefmpc,nmpc,&nmpctied,mpcfree,ikmpc,ilmpc,
-	  labmpc,ithermal,tietol,cfd,&ncont,imastop,ikboun,nboun));
+	  labmpc,ithermal,tietol,cfd,&ncont,imastop,ikboun,nboun,kind1));
 
   (*nmpc_)+=nmpctied;
   

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -168,25 +168,10 @@ c    Bernhardi end
         do j=1,nope
           konl(j)=kon(indexe+j) 
         enddo
-c!
-c!       assigning centrifugal forces
-c!
-c        j=ipobody(1,i)
-c        if(j.ne.0) then
-c           om=xbody(1,j)
-c           p1(1)=xbody(2,j)
-c           p1(2)=xbody(3,j)
-c           p1(3)=xbody(4,j)
-c           p2(1)=xbody(5,j)
-c           p2(2)=xbody(6,j)
-c           p2(3)=xbody(7,j)
-c        else
-c           om=0.d0
-c        endif
 !
         om=0.d0
 !
-        if(nbody.gt.0) then
+        if((nbody.gt.0).and.(lakon(i)(1:1).ne.'E')) then
 !
 !          assigning centrifugal forces
 !

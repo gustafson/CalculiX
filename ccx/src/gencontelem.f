@@ -44,7 +44,7 @@
      &  nz(*),nstart,ielmat(mi(3),*),imat,ifaceq(9,6),ifacet(7,4),
      &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,iit,
      &  nface,nope,nodef(9),ncmat_,ntmat_,index1,
-     &  ne0,nmethod,iteller,ifaces,jfaces,
+     &  ne0,nmethod,iteller,ifaces,jfaces,irelslavface,
      &  imastop(3,*), itriangle(100),ntriangle,ntriangle_,itriold,
      &  itrinew,id,nslavnode(*),islavnode(*),islavsurf(2,*),
      &  itiefac(2,*),iponoels(*),inoels(2,*),konl(26),nelems,m,
@@ -376,8 +376,12 @@ c         if((istep.eq.1).and.(iinc.eq.1).and.(iit.le.0)) then
             index1=iponoels(node)
             do
                if(index1.eq.0) exit
-               area=area+areaslav(inoels(1,index1))*
-     &              xnoels(index1)
+               irelslavface=inoels(1,index1)
+               if((itiefac(1,i).le.irelslavface).and.
+     &            (irelslavface.le.itiefac(2,i))) then
+                  area=area+areaslav(irelslavface)*
+     &                 xnoels(index1)
+               endif
                index1=inoels(2,index1)
             enddo
 !     

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine ufaceload(co,ipkon,kon,lakon,
-     &  nelemload,sideload,nload)
+     &  nelemload,sideload,nload,ne,nk)
 !
 !
 !     INPUT:
@@ -30,6 +30,8 @@
 !                        2: nodes for environmental temperatures
 !     sideload(*)        load label
 !     nload              number of facial distributed loads
+!     ne                 highest element number
+!     nk                 highest node number
 !
 !     user routine called at the start of each step; possible use:
 !     calculation of the area of sets of elements for
@@ -41,7 +43,7 @@
       character*8 lakon(*)
       character*20 sideload(*)
 !
-      integer nelemload(2,*),nload,kon(*),ipkon(*)
+      integer nelemload(2,*),nload,kon(*),ipkon(*),nk,ne
 !
       real*8 co(3,*)
 !

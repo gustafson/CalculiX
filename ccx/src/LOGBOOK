@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 2.6
+LOG-BOOK Version 2.6.1
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -2261,3 +2261,10 @@ Dec 2002        - started to work on single crystal plasticity
  7 July 2013   - made some changes to steps.f, frequencies.f, arpack.c,
                  arpackcs.c and resultsmech.f in order to take previous
                  plasticity into account in a frequency calculation
+ 
+ 22 July 2013  - started to work on heat induction (electromagnetics).
+
+ 29 July 2013  - continued electromagnetics.
+
+ 3 August 2013 - corrected some errors in connection with frequency
+                 calculations in combination with contact

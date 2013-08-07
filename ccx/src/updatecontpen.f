@@ -78,15 +78,15 @@
 !     
 !     new added data for the local coodinates for nodes
 !
-      data xquad /-1.d0, -1.d0,
-     &             1.d0, -1.d0,
-     &             1.d0, 1.d0,
-     &            -1.d0, 1.d0,
-     &             0.d0, -1.d0,
-     &             1.d0, 0.d0,
-     &             0.d0, 1.d0,
-     &            -1.d0, 0.d0,
-     &             0.d0, 0.d0/
+      data xquad /-1.d0,-1.d0,
+     &             1.d0,-1.d0,
+     &             1.d0,1.d0,
+     &            -1.d0,1.d0,
+     &             0.d0,-1.d0,
+     &             1.d0,0.d0,
+     &             0.d0,1.d0,
+     &            -1.d0,0.d0,
+     &             0.d0,0.d0/
 !
       data xtri /0.d0,0.d0,
      &           1.d0,0.d0,
@@ -135,10 +135,10 @@
             do j=istartset(imast),iendset(imast)
                if(ialset(j).gt.0) then
 !     
-                  ifacem = ialset(j)
-                  nelemm = int(ifacem/10)
-                  jfacem = ifacem - nelemm*10
-                  indexe = ipkon(nelemm)
+                  ifacem=ialset(j)
+                  nelemm=int(ifacem/10)
+                  jfacem=ifacem - nelemm*10
+                  indexe=ipkon(nelemm)
 !     
 !     nopem: # of nodes in the master face
 !     nope: # of nodes in the element
@@ -224,172 +224,172 @@
 !     calculate the normal vector in the nodes belonging to the master surface
 !     
                   if(nopem.eq.9) then
-                     do m = 1, nopem
-                        xi = xquad(1,m)
-                        et = xquad(2,m)
+                     do m=1,nopem
+                        xi=xquad(1,m)
+                        et=xquad(2,m)
                         call shape9q(xi,et,xl2m,xsj2,xs2,shp2,iflag)
-                        dd = dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2)
+                        dd=dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2)
      &                       + xsj2(3)*xsj2(3))
-                        xsj2(1) = xsj2(1)/dd
-                        xsj2(2) = xsj2(2)/dd
-                        xsj2(3) = xsj2(3)/dd
+                        xsj2(1)=xsj2(1)/dd
+                        xsj2(2)=xsj2(2)/dd
+                        xsj2(3)=xsj2(3)/dd
 !     
                         if(nope.eq.26) then
-                           node = konl(ifaceq(m,jfacem))
+                           node=konl(ifaceq(m,jfacem))
                         elseif(nope.eq.20) then
                            node=konl(ifacew2(m,jfacem))
                         endif
 !     
-                        call nident(imastnode(nmastnode(i)+1), node, 
-     &                       nmastnode(i+1)-nmastnode(i), id)
+                        call nident(imastnode(nmastnode(i)+1),node,
+     &                       nmastnode(i+1)-nmastnode(i),id)
                         index1=nmastnode(i)+id
                         indexnode(m)=index1
-                        xmastnor(1,index1) = xmastnor(1,index1)
+                        xmastnor(1,index1)=xmastnor(1,index1)
      &                       +xsj2(1)
-                        xmastnor(2,index1) = xmastnor(2,index1)
+                        xmastnor(2,index1)=xmastnor(2,index1)
      &                       +xsj2(2)
-                        xmastnor(3,index1) = xmastnor(3,index1)
+                        xmastnor(3,index1)=xmastnor(3,index1)
      &                       +xsj2(3)
                      enddo
                   elseif(nopem.eq.8) then
-                     do m = 1, nopem
-                        xi = xquad(1,m)
-                        et = xquad(2,m)
+                     do m=1,nopem
+                        xi=xquad(1,m)
+                        et=xquad(2,m)
                         call shape8q(xi,et,xl2m,xsj2,xs2,shp2,iflag)
-                        dd = dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2)
+                        dd=dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2)
      &                       + xsj2(3)*xsj2(3))
-                        xsj2(1) = xsj2(1)/dd
-                        xsj2(2) = xsj2(2)/dd
-                        xsj2(3) = xsj2(3)/dd
+                        xsj2(1)=xsj2(1)/dd
+                        xsj2(2)=xsj2(2)/dd
+                        xsj2(3)=xsj2(3)/dd
 !     
                         if(nope.eq.20) then
-                           node = konl(ifaceq(m,jfacem))
+                           node=konl(ifaceq(m,jfacem))
                         elseif(nope.eq.15) then
                            node=konl(ifacew2(m,jfacem))
                         endif
 !     
-                        call nident(imastnode(nmastnode(i)+1), node, 
-     &                       nmastnode(i+1)-nmastnode(i), id)
+                        call nident(imastnode(nmastnode(i)+1),node,
+     &                       nmastnode(i+1)-nmastnode(i),id)
                         index1=nmastnode(i)+id
                         indexnode(m)=index1
-                        xmastnor(1,index1) = xmastnor(1,index1)
+                        xmastnor(1,index1)=xmastnor(1,index1)
      &                       +xsj2(1)
-                        xmastnor(2,index1) = xmastnor(2,index1)
+                        xmastnor(2,index1)=xmastnor(2,index1)
      &                       +xsj2(2)
-                        xmastnor(3,index1) = xmastnor(3,index1)
+                        xmastnor(3,index1)=xmastnor(3,index1)
      &                       +xsj2(3)
                      enddo
                   elseif(nopem.eq.4) then
-                     do m = 1, nopem
-                        xi = xquad(1,m)
-                        et = xquad(2,m)
+                     do m=1,nopem
+                        xi=xquad(1,m)
+                        et=xquad(2,m)
                         call shape4q(xi,et,xl2m,xsj2,xs2,shp2,iflag)
-                        dd = dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2) 
+                        dd=dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2) 
      &                       + xsj2(3)*xsj2(3))
-                        xsj2(1) = xsj2(1)/dd
-                        xsj2(2) = xsj2(2)/dd
-                        xsj2(3) = xsj2(3)/dd
+                        xsj2(1)=xsj2(1)/dd
+                        xsj2(2)=xsj2(2)/dd
+                        xsj2(3)=xsj2(3)/dd
 !     
                         if(nope.eq.8) then
-                           node = konl(ifaceq(m,jfacem))
+                           node=konl(ifaceq(m,jfacem))
                         elseif(nope.eq.6) then
                            node=konl(ifacew1(m,jfacem))
                         endif
 !     
-                        call nident(imastnode(nmastnode(i)+1), node, 
-     &                       nmastnode(i+1)-nmastnode(i), id)
+                        call nident(imastnode(nmastnode(i)+1),node,
+     &                       nmastnode(i+1)-nmastnode(i),id)
 !     
                         index1=nmastnode(i)+id
                         indexnode(m)=index1
-                        xmastnor(1,index1) = xmastnor(1,index1)
+                        xmastnor(1,index1)=xmastnor(1,index1)
      &                       +xsj2(1)
-                        xmastnor(2,index1) = xmastnor(2,index1)
+                        xmastnor(2,index1)=xmastnor(2,index1)
      &                       +xsj2(2)
-                        xmastnor(3,index1) = xmastnor(3,index1)
+                        xmastnor(3,index1)=xmastnor(3,index1)
      &                       +xsj2(3)
                      enddo
                   elseif(nopem.eq.6) then
-                     do m = 1, nopem
-                        xi = xtri(1,m)
-                        et = xtri(2,m)
+                     do m=1,nopem
+                        xi=xtri(1,m)
+                        et=xtri(2,m)
                         call shape6tri(xi,et,xl2m,xsj2,xs2,shp2,iflag)
-                        dd = dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2) 
+                        dd=dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2) 
      &                       + xsj2(3)*xsj2(3))
-                        xsj2(1) = xsj2(1)/dd
-                        xsj2(2) = xsj2(2)/dd
-                        xsj2(3) = xsj2(3)/dd
+                        xsj2(1)=xsj2(1)/dd
+                        xsj2(2)=xsj2(2)/dd
+                        xsj2(3)=xsj2(3)/dd
 !     
                         if(nope.eq.10) then
-                           node = konl(ifacet(m,jfacem))
+                           node=konl(ifacet(m,jfacem))
                         elseif(nope.eq.15) then
-                           node = konl(ifacew2(m,jfacem))
+                           node=konl(ifacew2(m,jfacem))
                         endif
 !     
-                        call nident(imastnode(nmastnode(i)+1), node, 
-     &                       nmastnode(i+1)-nmastnode(i), id)
+                        call nident(imastnode(nmastnode(i)+1),node,
+     &                       nmastnode(i+1)-nmastnode(i),id)
                         index1=nmastnode(i)+id
                         indexnode(m)=index1
-                        xmastnor(1,index1) = xmastnor(1,index1)
+                        xmastnor(1,index1)=xmastnor(1,index1)
      &                       +xsj2(1)
-                        xmastnor(2,index1) = xmastnor(2,index1)
+                        xmastnor(2,index1)=xmastnor(2,index1)
      &                       +xsj2(2)
-                        xmastnor(3,index1) = xmastnor(3,index1)
+                        xmastnor(3,index1)=xmastnor(3,index1)
      &                       +xsj2(3)
                      enddo
                   elseif(nopem.eq.7) then
-                     do m = 1, nopem
-                        xi = xtri(1,m)
-                        et = xtri(2,m)
+                     do m=1,nopem
+                        xi=xtri(1,m)
+                        et=xtri(2,m)
                         call shape7tri(xi,et,xl2m,xsj2,xs2,shp2,iflag)
-                        dd = dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2) 
+                        dd=dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2) 
      &                       + xsj2(3)*xsj2(3))
-                        xsj2(1) = xsj2(1)/dd
-                        xsj2(2) = xsj2(2)/dd
-                        xsj2(3) = xsj2(3)/dd
+                        xsj2(1)=xsj2(1)/dd
+                        xsj2(2)=xsj2(2)/dd
+                        xsj2(3)=xsj2(3)/dd
 !     
                         if(nope.eq.14) then
-                           node = konl(ifacet(m,jfacem))
+                           node=konl(ifacet(m,jfacem))
                         elseif(nope.eq.20) then
-                           node = konl(ifacew2(m,jfacem))
+                           node=konl(ifacew2(m,jfacem))
                         endif
 !     
-                        call nident(imastnode(nmastnode(i)+1), node, 
-     &                       nmastnode(i+1)-nmastnode(i), id)
+                        call nident(imastnode(nmastnode(i)+1),node,
+     &                       nmastnode(i+1)-nmastnode(i),id)
                         index1=nmastnode(i)+id
                         indexnode(m)=index1
-                        xmastnor(1,index1) = xmastnor(1,index1)
+                        xmastnor(1,index1)=xmastnor(1,index1)
      &                       +xsj2(1)
-                        xmastnor(2,index1) = xmastnor(2,index1)
+                        xmastnor(2,index1)=xmastnor(2,index1)
      &                       +xsj2(2)
-                        xmastnor(3,index1) = xmastnor(3,index1)
+                        xmastnor(3,index1)=xmastnor(3,index1)
      &                       +xsj2(3)
                      enddo
                   else
-                     do m = 1, nopem
-                        xi = xtri(1,m)
-                        et = xtri(2,m)
+                     do m=1,nopem
+                        xi=xtri(1,m)
+                        et=xtri(2,m)
                         call shape3tri(xi,et,xl2m,xsj2,xs2,shp2,iflag)
-                        dd = dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2) 
+                        dd=dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2) 
      &                       + xsj2(3)*xsj2(3))
-                        xsj2(1) = xsj2(1)/dd
-                        xsj2(2) = xsj2(2)/dd
-                        xsj2(3) = xsj2(3)/dd
+                        xsj2(1)=xsj2(1)/dd
+                        xsj2(2)=xsj2(2)/dd
+                        xsj2(3)=xsj2(3)/dd
 !     
                         if(nope.eq.6) then
-                           node = konl(ifacew1(m,jfacem))
+                           node=konl(ifacew1(m,jfacem))
                         elseif(nope.eq.4) then
-                           node = konl(ifacet(m,jfacem))
+                           node=konl(ifacet(m,jfacem))
                         endif
 !     
-                        call nident(imastnode(nmastnode(i)+1), node, 
-     &                       nmastnode(i+1)-nmastnode(i), id)
+                        call nident(imastnode(nmastnode(i)+1),node,
+     &                       nmastnode(i+1)-nmastnode(i),id)
                         index1=nmastnode(i)+id
                         indexnode(m)=index1
-                        xmastnor(1,nmastnode(i)+id) = xmastnor(1,index1)
+                        xmastnor(1,nmastnode(i)+id)=xmastnor(1,index1)
      &                       +xsj2(1)
-                        xmastnor(2,nmastnode(i)+id) = xmastnor(2,index1)
+                        xmastnor(2,nmastnode(i)+id)=xmastnor(2,index1)
      &                       +xsj2(2)
-                        xmastnor(3,nmastnode(i)+id) = xmastnor(3,index1)
+                        xmastnor(3,nmastnode(i)+id)=xmastnor(3,index1)
      &                       +xsj2(3)
                      enddo
                   endif

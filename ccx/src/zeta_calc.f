@@ -583,8 +583,8 @@
 !     
          return         
 !     
-      elseif((lakon(nelem)(2:7).eq.'REEL').or.
-     &       (lakon(nelem)(2:7).eq.'LPEL')) then
+      elseif((lakon(nelem)(2:5).eq.'REEL').or.
+     &       (lakon(nelem)(2:5).eq.'LPEL')) then
 !     
 !     SUDDEN EXPANSION OF A STREAM WITH UNIFORM VELOCITY DISTRIBUTION
 !     I.E. IDL'CHIK page 160      
@@ -620,8 +620,8 @@ c         endif
          endif
          return
 !     
-      elseif((lakon(nelem)(2:7).eq.'RECO').or.
-     &       (lakon(nelem)(2:7).eq.'LPCO'))then
+      elseif((lakon(nelem)(2:5).eq.'RECO').or.
+     &       (lakon(nelem)(2:5).eq.'LPCO'))then
 !     
 !     SUDDEN CONTRACTION WITH & WITHOUT CONICAL BELLMOUTH ENTRY
 !     I.E. IDL'CHIK p 168
@@ -846,8 +846,8 @@ c         endif
            
       RETURN
 !
-      elseif((lakon(nelem)(2:7).eq.'REEX').or.
-     &       (lakon(nelem)(2:7).eq.'LPEX')) then
+      elseif((lakon(nelem)(2:5).eq.'REEX').or.
+     &       (lakon(nelem)(2:5).eq.'LPEX')) then
 !
 !     EXIT LOSS COEFFICIENT FOR LAMINAR FLOWS DEPENDING ON THE
 !     ACTUAL VELOCITY DISTRIBUTION AT THE EXIT

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -475,6 +475,10 @@
                   iline=iline+2
                enddo
             endif
+         elseif(textpart(1)(1:17).eq.'*ELECTROMAGNETICS') then
+            mi(2)=max(mi(2),5)
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
          elseif((textpart(1)(1:8).eq.'*ELEMENT').and.
      &          (textpart(1)(1:14).ne.'*ELEMENTOUTPUT')) then
             ielset=0

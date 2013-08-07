@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,12 +21,13 @@
      &  koncont,co,xo,yo,zo,x,y,z,nx,ny,nz,nset,
      &  ifaceslave,istartfield,iendfield,ifield,
      &  ipompc,nodempc,coefmpc,nmpc,nmpctied,mpcfree,ikmpc,ilmpc,
-     &  labmpc,ithermal,tietol,cfd,ncont,imastop,ikboun,nboun)
+     &  labmpc,ithermal,tietol,cfd,ncont,imastop,ikboun,nboun,kind)
 !
 !     generates MPC's for the slave tied contact nodes
 !
       implicit none
 !
+      character*1 kind
       character*8 lakon(*)
       character*20 labmpc(*)
       character*81 tieset(3,*),slavset,set(*)
@@ -80,8 +81,8 @@
 !
 !     opening a file to store the nodes which are not connected
 !
-      open(40,file='WarnNodeMissMasterIntersect.nam',status='unknown')
-      write(40,*) '*NSET,NSET=WarnNodeMissMasterIntersect'
+c      open(40,file='WarnNodeMissMasterIntersect.nam',status='unknown')
+c      write(40,*) '*NSET,NSET=WarnNodeMissMasterIntersect'
 !
       nmpctied=nmpc
 !
@@ -96,35 +97,55 @@
       enddo
       tolloc=0.025*tolloc/ncont
 !
-!     determining for which dofs MPC's have to be generated
-!
-      if(cfd.eq.1) then
-         if(ithermal(2).le.1) then
-            kstart=1
-            kend=4
-         else
-            kstart=0
-            kend=4
-         endif
-      else
-         if(ithermal(2).le.1) then
-            kstart=1
-            kend=3
-         elseif(ithermal(2).eq.2) then
-            kstart=0
-            kend=0
-         else
-            kstart=0
-            kend=3
-         endif
-      endif
-!
 !     maximum number of neighboring master triangles for a slave node
 !
       kflag=2
 !
       do i=1,ntie
-         if(tieset(1,i)(81:81).ne.'T') cycle
+         if(tieset(1,i)(81:81).ne.kind) cycle
+!
+!        determining for which dofs MPC's have to be generated
+!
+         if(kind.eq.'T') then
+!
+!           thermomechanical ties or CFD
+!
+            if(cfd.eq.1) then
+               if(ithermal(2).le.1) then
+                  kstart=1
+                  kend=4
+               else
+                  kstart=0
+                  kend=4
+               endif
+            else
+               if(ithermal(2).le.1) then
+                  kstart=1
+                  kend=3
+               elseif(ithermal(2).eq.2) then
+                  kstart=0
+                  kend=0
+               else
+                  kstart=0
+                  kend=3
+               endif
+            endif
+         elseif(kind.eq.'E') then
+!
+!           electromagnetic ties between the domains
+!
+            if((tieset(1,i)(1:2).eq.'12').or.
+     &         (tieset(1,i)(1:2).eq.'13').or.
+     &         (tieset(1,i)(1:2).eq.'23')) then
+               kstart=1
+               kend=3
+            elseif((tieset(1,i)(1:2).eq.'21').or.
+     &             (tieset(1,i)(1:2).eq.'31')) then
+               kstart=5
+               kend=5
+            endif
+         endif
+!
          iflag=0
          kneigh=1
          slavset=tieset(2,i)
@@ -270,7 +291,7 @@ c                              write(*,*) '**regular solution'
                      write(*,*) '         found; tolerance: ',
      &                       tietol(1,i)
                   endif
-                  write(40,*) node
+c                  write(40,*) node
                 else
 !     
                   nelem=int(koncont(4,itri)/10.d0)
@@ -356,7 +377,7 @@ c                              write(*,*) '**regular solution'
      &                          node,' is not active;'
                            write(*,*) '         no tied constraint ',
      &                                'is generated'
-                           write(40,*) node
+c                           write(40,*) node
                            cycle
                         endif
                      endif
@@ -369,7 +390,7 @@ c                              write(*,*) '**regular solution'
      &                          node,' is not active;'
                            write(*,*) '         no tied constraint ',
      &                                'is generated'
-                           write(40,*) node
+c                           write(40,*) node
                            cycle
                         endif
                      endif
@@ -516,7 +537,7 @@ c                              write(*,*) '**regular solution'
                       write(*,*) '         found; tolerance: ',
      &                                tietol(1,i)
                      endif
-                     write(40,*) node
+c                     write(40,*) node
                   else
 !     
                      nelem=int(koncont(4,itri)/10.d0)
@@ -602,7 +623,7 @@ c                              write(*,*) '**regular solution'
      &                             node,' is not active;'
                               write(*,*) '         no tied constraint ',
      &                             'is generated'
-                              write(40,*) node
+c                              write(40,*) node
                               cycle
                            endif
                         endif
@@ -615,7 +636,7 @@ c                              write(*,*) '**regular solution'
      &                             node,' is not active;'
                               write(*,*) '         no tied constraint ',
      &                             'is generated'
-                              write(40,*) node
+c                              write(40,*) node
                               cycle
                            endif
                         endif
@@ -667,7 +688,7 @@ c                              write(*,*) '**regular solution'
 !
       nmpctied=nmpc-nmpctied
 !
-      close(40)
+c      close(40)
 !     
       return
 !

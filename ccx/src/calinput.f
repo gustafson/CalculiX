@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -427,6 +427,12 @@ c
             call elastics(inpc,textpart,elcon,nelcon,
      &        imat,ntmat_,ncmat_,irstrt,istep,istat,n,
      &        iline,ipol,inl,ipoinp,inp,ipoinpc)
+!
+         elseif(textpart(1)(1:17).eq.'*ELECTROMAGNETICS') then
+            call electromagneticss(inpc,textpart,nmethod,iperturb,
+     &           isolver,istep,istat,n,tinc,tper,tmin,tmax,idrct,
+     &           ithermal,iline,ipol,inl,ipoinp,inp,alpha,mei,fei,
+     &           ipoinpc,ctrl,ttime)
 !
          elseif((textpart(1)(1:8).eq.'*ELEMENT').and.
      &          (textpart(1)(1:14).ne.'*ELEMENTOUTPUT')) then

@@ -21,6 +21,8 @@
  * seperated from CalculiX.h: otherwise everyone would have to include
  * the spooles header files
  */
+
+#include <pthread.h>
 #include <misc.h>
 #include <FrontMtx.h>
 #include <SymbFac.h>

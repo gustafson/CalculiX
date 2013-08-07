@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -44,7 +44,8 @@
 !
       ncont=0
 !
-!     number of slave nodes
+!     number of slave entities (nodes for nodal surfaces and
+!     faces for facial surfaces)
 !
       ncone=0
 !
@@ -94,73 +95,34 @@
             endif
 !
             do j=istartset(imast),iendset(imast)
-               if(ialset(j).gt.0) then
-!
-                  nelem=int(ialset(j)/10.d0)
-                  jface=ialset(j)-10*nelem
-!
-                  if(lakon(nelem)(4:5).eq.'20') then
-                     ncont=ncont+6
-                  elseif(lakon(nelem)(4:4).eq.'2') then
-                     ncont=ncont+8
-                  elseif(lakon(nelem)(4:4).eq.'8') then
-                     ncont=ncont+2
-                  elseif(lakon(nelem)(4:5).eq.'10') then
-                     ncont=ncont+4
-                  elseif(lakon(nelem)(4:5).eq.'14') then
-                     ncont=ncont+6
-                  elseif(lakon(nelem)(4:4).eq.'4') then
-                     ncont=ncont+1
-                  elseif(lakon(nelem)(4:5).eq.'15') then
-                     if(jface.le.2) then
-                        ncont=ncont+4
-                     else
-                        ncont=ncont+6
-                     endif
-                  elseif(lakon(nelem)(4:4).eq.'6') then
-                     if(jface.le.2) then
-                        ncont=ncont+1
-                     else
-                        ncont=ncont+2
-                     endif
-                  endif
-!
-               else
-                  k=ialset(j-2)
-                  do
-                     k=k-ialset(j)
-                     if(k.ge.ialset(j-1)) exit
-!
-                     nelem=int(k/10.d0)
-                     jface=k-10*nelem
-!
-                     if(lakon(nelem)(4:5).eq.'20') then
-                        ncont=ncont+6
-                     elseif(lakon(nelem)(4:4).eq.'2') then
-                        ncont=ncont+8
-                     elseif(lakon(nelem)(4:4).eq.'8') then
-                        ncont=ncont+2
-                     elseif(lakon(nelem)(4:5).eq.'10') then
-                        ncont=ncont+4
-                     elseif(lakon(nelem)(4:5).eq.'14') then
-                        ncont=ncont+6
-                     elseif(lakon(nelem)(4:4).eq.'4') then
-                        ncont=ncont+1
-                     elseif(lakon(nelem)(4:5).eq.'15') then
-                        if(jface.le.2) then
-                           ncont=ncont+4
-                        else
-                           ncont=ncont+6
-                        endif
-                     elseif(lakon(nelem)(4:4).eq.'6') then
-                        if(jface.le.2) then
-                           ncont=ncont+1
-                        else
-                           ncont=ncont+2
-                        endif
-                     endif
 !     
-                  enddo
+               nelem=int(ialset(j)/10.d0)
+               jface=ialset(j)-10*nelem
+!     
+               if(lakon(nelem)(4:5).eq.'20') then
+                  ncont=ncont+6
+               elseif(lakon(nelem)(4:4).eq.'2') then
+                  ncont=ncont+8
+               elseif(lakon(nelem)(4:4).eq.'8') then
+                  ncont=ncont+2
+               elseif(lakon(nelem)(4:5).eq.'10') then
+                  ncont=ncont+4
+               elseif(lakon(nelem)(4:5).eq.'14') then
+                  ncont=ncont+6
+               elseif(lakon(nelem)(4:4).eq.'4') then
+                  ncont=ncont+1
+               elseif(lakon(nelem)(4:5).eq.'15') then
+                  if(jface.le.2) then
+                     ncont=ncont+4
+                  else
+                     ncont=ncont+6
+                  endif
+               elseif(lakon(nelem)(4:4).eq.'6') then
+                  if(jface.le.2) then
+                     ncont=ncont+1
+                  else
+                     ncont=ncont+2
+                  endif
                endif
             enddo
 !

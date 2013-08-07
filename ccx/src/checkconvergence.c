@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2011 Guido Dhondt                          */
+/*              Copyright (C) 1998-2013 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -109,8 +109,8 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     /* mechanical */
 
     if(*ithermal<2){
-                if((*iit>1)&&(ram[0]<=c1[0]*qam[0])&&(*iflagact==0)&&
-		   //         if((*iit>1)&&(ram[0]<=c1[0]*qam[0])&&
+	//               if((*iit>1)&&(ram[0]<=c1[0]*qam[0])&&(*iflagact==0)&&
+	if((*iit>1)&&(ram[0]<=c1[0]*qam[0])&&
 	   ((cam[0]<=c2[0]*uam[0])||
 	    (((ram[0]*cam[0]<c2[0]*uam[0]*ram2[0])||(ram[0]<=ral*qam[0])||
 	      (qa[0]<=ea*qam[0]))&&(*ntg==0))||

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2011 Guido Dhondt                     */
+/*              Copyright (C) 1998-2013 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -34,12 +34,12 @@
 #include "pardiso.h"
 #endif
 
-char *sideload1;
+static char *sideload1;
 
-int *kontri1,*nloadtr1,*idist=NULL,*ntrit1,*mi1,*jqrad1,
+static int *kontri1,*nloadtr1,*idist=NULL,*ntrit1,*mi1,*jqrad1,
     *irowrad1,*nzsrad1,num_cpus,*ntri1,*ntr1;
 
-double *vold1,*co1,*pmid1,*e11,*e21,*e31,*adview=NULL,*auview=NULL,*dist=NULL,
+static double *vold1,*co1,*pmid1,*e11,*e21,*e31,*adview=NULL,*auview=NULL,*dist=NULL,
     *area1,sidemean1;
 
 void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
@@ -320,7 +320,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
       /* automatic detection of available number of processors */
       
       if(sys_cpus==0){
-	  sys_cpus = sysconf(_SC_NPROCESSORS_CONF);
+	  sys_cpus = getSystemCPUs();
 	  if(sys_cpus<1) sys_cpus=1;
       }
       

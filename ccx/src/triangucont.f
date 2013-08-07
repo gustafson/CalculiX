@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@
       character*3 m1,m2,m3
       character*5 p0,p1,p2,p3,p7,p9999
       character*8 lakon(*)
-      character*81 tieset(3,*),rightset,set(*)
+      character*81 tieset(3,*),mastset,set(*)
       character*88 fntria
 !
       integer ncont,ntie,i,j,k,l,nset,istartset(*),iendset(*),
@@ -107,16 +107,16 @@
 !
          if((tieset(1,i)(81:81).eq.kind1).or.
      &      (tieset(1,i)(81:81).eq.kind2)) then
-            rightset=tieset(3,i)
+            mastset=tieset(3,i)
 !
 !           determining the master surface
 !
             do j=1,nset
-               if(set(j).eq.rightset) exit
+               if(set(j).eq.mastset) exit
             enddo
             if(j.gt.nset) then
                write(*,*) '*ERROR in triangucont: master surface',
-     &               rightset
+     &               mastset
                write(*,*) '       does not exist'
                stop
             endif
@@ -125,284 +125,150 @@
             itietri(1,i)=ncont+1
 !
             do j=istartset(iright),iendset(iright)
-               if(ialset(j).gt.0) then
-!
-                  nelem=int(ialset(j)/10.d0)
-                  jface=ialset(j)-10*nelem
-!
-                  indexe=ipkon(nelem)
-!
-                  if(lakon(nelem)(4:5).eq.'20') then
-                     nnodelem=8
-                     nface=6
-                  elseif(lakon(nelem)(4:4).eq.'2') then
-                     nnodelem=9
-                     nface=6
-                  elseif(lakon(nelem)(4:4).eq.'8') then
-                     nnodelem=4
-                     nface=6
-                  elseif(lakon(nelem)(4:5).eq.'10') then
+!     
+               nelem=int(ialset(j)/10.d0)
+               jface=ialset(j)-10*nelem
+!     
+               indexe=ipkon(nelem)
+!     
+               if(lakon(nelem)(4:5).eq.'20') then
+                  nnodelem=8
+                  nface=6
+               elseif(lakon(nelem)(4:4).eq.'2') then
+                  nnodelem=9
+                  nface=6
+               elseif(lakon(nelem)(4:4).eq.'8') then
+                  nnodelem=4
+                  nface=6
+               elseif(lakon(nelem)(4:5).eq.'10') then
+                  nnodelem=6
+                  nface=4
+               elseif(lakon(nelem)(4:5).eq.'14') then
+                  nnodelem=7
+                  nface=4
+               elseif(lakon(nelem)(4:4).eq.'4') then
+                  nnodelem=3
+                  nface=4
+               elseif(lakon(nelem)(4:5).eq.'15') then
+                  if(jface.le.2) then
                      nnodelem=6
-                     nface=4
-                  elseif(lakon(nelem)(4:5).eq.'14') then
-                     nnodelem=7
-                     nface=4
-                  elseif(lakon(nelem)(4:4).eq.'4') then
-                     nnodelem=3
-                     nface=4
-                  elseif(lakon(nelem)(4:5).eq.'15') then
-                     if(jface.le.2) then
-                        nnodelem=6
-                     else
-                        nnodelem=8
-                     endif
-                     nface=5
-                     nope=15
-                  elseif(lakon(nelem)(4:4).eq.'6') then
-                     if(jface.le.2) then
-                        nnodelem=3
-                     else
-                        nnodelem=4
-                     endif
-                     nface=5
-                     nope=6
                   else
-                     cycle
+                     nnodelem=8
                   endif
-!
-!                 determining the nodes of the face
-!
-                  if(nface.eq.4) then
-                     do k=1,nnodelem
-                        nodef(k)=kon(indexe+ifacet(k,jface))
-                     enddo
-                  elseif(nface.eq.5) then
-                     if(nope.eq.6) then
-                        do k=1,nnodelem
-                           nodef(k)=kon(indexe+ifacew1(k,jface))
-                        enddo
-                     elseif(nope.eq.15) then
-                        do k=1,nnodelem
-                           nodef(k)=kon(indexe+ifacew2(k,jface))
-                        enddo
-                     endif
-                  elseif(nface.eq.6) then
-                     do k=1,nnodelem
-                        nodef(k)=kon(indexe+ifaceq(k,jface))
-                     enddo
+                  nface=5
+                  nope=15
+               elseif(lakon(nelem)(4:4).eq.'6') then
+                  if(jface.le.2) then
+                     nnodelem=3
+                  else
+                     nnodelem=4
                   endif
-!
-!                 number of triangles
-!
-                  if(nnodelem.eq.3) then
-                     ntrifac=1
-                     do l=1,ntrifac
-                        do k=1,3
-                           itrifac(k,l)=itrifac3(k,l)
-                        enddo
-                     enddo
-                  elseif(nnodelem.eq.4) then
-                     ntrifac=2
-                     do l=1,ntrifac
-                        do k=1,3
-                           itrifac(k,l)=itrifac4(k,l)
-                        enddo
-                     enddo
-                  elseif(nnodelem.eq.6) then
-                     ntrifac=4
-                     do l=1,ntrifac
-                        do k=1,3
-                           itrifac(k,l)=itrifac6(k,l)
-                        enddo
-                     enddo
-                  elseif(nnodelem.eq.7) then
-                     ntrifac=6
-                     do l=1,ntrifac
-                        do k=1,3
-                           itrifac(k,l)=itrifac7(k,l)
-                        enddo
-                     enddo
-                  elseif(nnodelem.eq.8) then
-                     ntrifac=6
-                     do l=1,ntrifac
-                        do k=1,3
-                           itrifac(k,l)=itrifac8(k,l)
-                        enddo
-                     enddo
-                  elseif(nnodelem.eq.9) then
-                     ntrifac=8
-                     do l=1,ntrifac
-                        do k=1,3
-                           itrifac(k,l)=itrifac9(k,l)
-                        enddo
-                     enddo
-                  endif
-!
-!                 storing the topology of the triangles
-!     
-                  do l=1,ntrifac
-!     
-                     ncont=ncont+1
-                     do k=1,3
-                        node=nodef(itrifac(k,l))
-                        koncont(k,ncont)=node
-                     enddo
-!
-                     koncont(4,ncont)=ialset(j)
-!     
-                  enddo
-!
+                  nface=5
+                  nope=6
                else
-                  m=ialset(j-2)
-                  do
-                     m=m-ialset(j)
-                     if(m.ge.ialset(j-1)) exit
-!
-                     nelem=int(m/10.d0)
-                     jface=m-10*nelem
-!
-                     indexe=ipkon(nelem)
+                  cycle
+               endif
 !     
-                     if(lakon(nelem)(4:5).eq.'20') then
-                        nnodelem=8
-                        nface=6
-                     elseif(lakon(nelem)(4:4).eq.'2') then
-                        nnodelem=9
-                        nface=6
-                     elseif(lakon(nelem)(4:4).eq.'8') then
-                        nnodelem=4
-                        nface=6
-                     elseif(lakon(nelem)(4:5).eq.'10') then
-                        nnodelem=6
-                        nface=4
-                     elseif(lakon(nelem)(4:5).eq.'14') then
-                        nnodelem=7
-                        nface=4
-                     elseif(lakon(nelem)(4:4).eq.'4') then
-                        nnodelem=3
-                        nface=4
-                     elseif(lakon(nelem)(4:5).eq.'15') then
-                        if(jface.le.2) then
-                           nnodelem=6
-                        else
-                           nnodelem=8
-                        endif
-                        nface=5
-                        nope=15
-                     elseif(lakon(nelem)(4:4).eq.'6') then
-                        if(jface.le.2) then
-                           nnodelem=3
-                        else
-                           nnodelem=4
-                        endif
-                        nface=5
-                        nope=6
-                     else
-                        cycle
-                     endif
+!     determining the nodes of the face
 !     
-!                    determining the nodes of the face
-!     
-                     if(nface.eq.4) then
-                        do k=1,nnodelem
-                           nodef(k)=kon(indexe+ifacet(k,jface))
-                        enddo
-                     elseif(nface.eq.5) then
-                        if(nope.eq.6) then
-                           do k=1,nnodelem
-                              nodef(k)=kon(indexe+ifacew1(k,jface))
-                           enddo
-                        elseif(nope.eq.15) then
-                           do k=1,nnodelem
-                              nodef(k)=kon(indexe+ifacew2(k,jface))
-                           enddo
-                        endif
-                     elseif(nface.eq.6) then
-                        do k=1,nnodelem
-                           nodef(k)=kon(indexe+ifaceq(k,jface))
-                        enddo
-                     endif
-!     
-!                    number of triangles
-!     
-                     if(nnodelem.eq.3) then
-                        ntrifac=1
-                        do l=1,ntrifac
-                           do k=1,3
-                              itrifac(k,l)=itrifac3(k,l)
-                           enddo
-                        enddo
-                     elseif(nnodelem.eq.4) then
-                        ntrifac=2
-                        do l=1,ntrifac
-                           do k=1,3
-                              itrifac(k,l)=itrifac4(k,l)
-                           enddo
-                        enddo
-                     elseif(nnodelem.eq.6) then
-                        ntrifac=4
-                        do l=1,ntrifac
-                           do k=1,3
-                              itrifac(k,l)=itrifac6(k,l)
-                           enddo
-                        enddo
-                     elseif(nnodelem.eq.7) then
-                        ntrifac=6
-                        do l=1,ntrifac
-                           do k=1,3
-                              itrifac(k,l)=itrifac7(k,l)
-                           enddo
-                        enddo
-                     elseif(nnodelem.eq.8) then
-                        ntrifac=6
-                        do l=1,ntrifac
-                           do k=1,3
-                              itrifac(k,l)=itrifac8(k,l)
-                           enddo
-                        enddo
-                     elseif(nnodelem.eq.9) then
-                        ntrifac=8
-                        do l=1,ntrifac
-                           do k=1,3
-                              itrifac(k,l)=itrifac9(k,l)
-                           enddo
-                        enddo
-                     endif
-!     
-!                    storing the topology of the triangles
-!     
-                     do l=1,ntrifac
-!     
-                        ncont=ncont+1
-                        do k=1,3
-                           node=nodef(itrifac(k,l))
-                           koncont(k,ncont)=node
-                        enddo
-!
-                        koncont(4,ncont)=m
-!     
+               if(nface.eq.4) then
+                  do k=1,nnodelem
+                     nodef(k)=kon(indexe+ifacet(k,jface))
+                  enddo
+               elseif(nface.eq.5) then
+                  if(nope.eq.6) then
+                     do k=1,nnodelem
+                        nodef(k)=kon(indexe+ifacew1(k,jface))
                      enddo
-!
+                  elseif(nope.eq.15) then
+                     do k=1,nnodelem
+                        nodef(k)=kon(indexe+ifacew2(k,jface))
+                     enddo
+                  endif
+               elseif(nface.eq.6) then
+                  do k=1,nnodelem
+                     nodef(k)=kon(indexe+ifaceq(k,jface))
                   enddo
                endif
+!     
+!     number of triangles
+!     
+               if(nnodelem.eq.3) then
+                  ntrifac=1
+                  do l=1,ntrifac
+                     do k=1,3
+                        itrifac(k,l)=itrifac3(k,l)
+                     enddo
+                  enddo
+               elseif(nnodelem.eq.4) then
+                  ntrifac=2
+                  do l=1,ntrifac
+                     do k=1,3
+                        itrifac(k,l)=itrifac4(k,l)
+                     enddo
+                  enddo
+               elseif(nnodelem.eq.6) then
+                  ntrifac=4
+                  do l=1,ntrifac
+                     do k=1,3
+                        itrifac(k,l)=itrifac6(k,l)
+                     enddo
+                  enddo
+               elseif(nnodelem.eq.7) then
+                  ntrifac=6
+                  do l=1,ntrifac
+                     do k=1,3
+                        itrifac(k,l)=itrifac7(k,l)
+                     enddo
+                  enddo
+               elseif(nnodelem.eq.8) then
+                  ntrifac=6
+                  do l=1,ntrifac
+                     do k=1,3
+                        itrifac(k,l)=itrifac8(k,l)
+                     enddo
+                  enddo
+               elseif(nnodelem.eq.9) then
+                  ntrifac=8
+                  do l=1,ntrifac
+                     do k=1,3
+                        itrifac(k,l)=itrifac9(k,l)
+                     enddo
+                  enddo
+               endif
+!     
+!     storing the topology of the triangles
+!     
+               do l=1,ntrifac
+!     
+                  ncont=ncont+1
+                  do k=1,3
+                     node=nodef(itrifac(k,l))
+                     koncont(k,ncont)=node
+                  enddo
+!     
+                  koncont(4,ncont)=ialset(j)
+!     
+               enddo
+!     
             enddo
-!
+!     
             itietri(2,i)=ncont
-!
+!     
          endif
-!
-!        storing the triangulation in .frd format
-!
-         ilen=index(tieset(3,i),' ')
-         fntria(1:3)='Tri'
-         do j=4,ilen+2
-            fntria(j:j)=tieset(3,i)(j-3:j-3)
-         enddo
-         fntria(ilen+3:ilen+6)='.frd'
-         do j=ilen+7,88
-            fntria(j:j)=' '
-         enddo
-!
+!     
+!     storing the triangulation in .frd format
+!     
+c         ilen=index(tieset(3,i),' ')
+c         fntria(1:3)='Tri'
+c         do j=4,ilen+2
+c            fntria(j:j)=tieset(3,i)(j-3:j-3)
+c         enddo
+c         fntria(ilen+3:ilen+6)='.frd'
+c         do j=ilen+7,88
+c            fntria(j:j)=' '
+c         enddo
+c!
 c         open(70,file=fntria,status='unknown')
 c         c='C'
 c         m1=' -1'

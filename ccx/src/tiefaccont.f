@@ -514,7 +514,6 @@ c                       nopes=4
             itiefac(2,i)=ifacecount
             endif
 !
-!           what follows is only for surface-to-surface contact
 !           determining the master surface
 !
             mastset=tieset(3,i)
@@ -530,73 +529,71 @@ c                       nopes=4
             nmastnode(i)=nmasts
 !
             do j=istartset(imast),iendset(imast)
-               if(ialset(j).gt.0) then
 !               
-!           Decide imastnode, and nmastnode
+!              create imastnode, and nmastnode
 !
-                  ifacem=ialset(j)
-                  nelemm=int(ifacem/10)
-                  jfacem=ifacem - nelemm*10
-                  indexe=ipkon(nelemm)
-!
-                  if(lakon(nelemm)(4:5).eq.'20') then
-                      nopem=8
-                  elseif(lakon(nelemm)(4:4).eq.'2') then
-                      nopem=9
-                  elseif(lakon(nelemm)(4:4).eq.'8') then
-                      nopem=4
-                  elseif(lakon(nelemm)(4:5).eq.'10') then
-                      nopem=6
-                  elseif(lakon(nelemm)(4:5).eq.'14') then
-                      nopem=7
-                  elseif(lakon(nelemm)(4:4).eq.'4') then
-                      nopem=3
-                  endif
+               ifacem=ialset(j)
+               nelemm=int(ifacem/10)
+               jfacem=ifacem - nelemm*10
+               indexe=ipkon(nelemm)
 !     
-                  if(lakon(nelemm)(4:4).eq.'6') then
-                    if(jfacem.le.2) then
-                       nopem=3
-                    else
-                       nopem=4
-                    endif
-                  endif
-                  if(lakon(nelemm)(4:5).eq.'15') then
-                    if(jfacem.le.2) then
-                       nopem=6
-                    else
-                       nopem=8
-                    endif
-                  endif   
-!                  
-                  do l=1,nopem
-                     if((lakon(nelemm)(4:4).eq.'2').or.
-     &                    (lakon(nelemm)(4:4).eq.'8')) then
-                        node=kon(indexe+ifaceq(l,jfacem))
-                     elseif((lakon(nelemm)(4:4).eq.'4').or.
-     &                       (lakon(nelemm)(4:5).eq.'10')) then
-                        node=kon(indexe+ifacet(l,jfacem))
-                     elseif(lakon(nelemm)(4:4).eq.'6') then
-                        node=kon(indexe+ifacew1(l,jfacem))
-                     elseif(lakon(nelemm)(4:5).eq.'15') then
-                        node=kon(indexe+ifacew2(l,jfacem))
-                     endif
-                     call nident(imastnode(nmastnode(i)+1),node,
-     &                    nmasts-nmastnode(i),id)
-                     exist=.FALSE.
-                     if(id.gt.0) then
-                        if(imastnode(nmastnode(i)+id).eq.node) then
-                           exist=.TRUE.
-                        endif
-                     endif
-                     if(exist) cycle
-                     nmasts=nmasts+1
-                     do k=nmasts,nmastnode(i)+id+2,-1
-                        imastnode(k)=imastnode(k-1)
-                     enddo
-                     imastnode(nmastnode(i)+id+1)=node
-                  enddo
-! 
+               if(lakon(nelemm)(4:5).eq.'20') then
+                  nopem=8
+               elseif(lakon(nelemm)(4:4).eq.'2') then
+                  nopem=9
+               elseif(lakon(nelemm)(4:4).eq.'8') then
+                  nopem=4
+               elseif(lakon(nelemm)(4:5).eq.'10') then
+                  nopem=6
+               elseif(lakon(nelemm)(4:5).eq.'14') then
+                  nopem=7
+               elseif(lakon(nelemm)(4:4).eq.'4') then
+                  nopem=3
                endif
+!     
+               if(lakon(nelemm)(4:4).eq.'6') then
+                  if(jfacem.le.2) then
+                     nopem=3
+                  else
+                     nopem=4
+                  endif
+               endif
+               if(lakon(nelemm)(4:5).eq.'15') then
+                  if(jfacem.le.2) then
+                     nopem=6
+                  else
+                     nopem=8
+                  endif
+               endif   
+!     
+               do l=1,nopem
+                  if((lakon(nelemm)(4:4).eq.'2').or.
+     &                 (lakon(nelemm)(4:4).eq.'8')) then
+                     node=kon(indexe+ifaceq(l,jfacem))
+                  elseif((lakon(nelemm)(4:4).eq.'4').or.
+     &                    (lakon(nelemm)(4:5).eq.'10')) then
+                     node=kon(indexe+ifacet(l,jfacem))
+                  elseif(lakon(nelemm)(4:4).eq.'6') then
+                     node=kon(indexe+ifacew1(l,jfacem))
+                  elseif(lakon(nelemm)(4:5).eq.'15') then
+                     node=kon(indexe+ifacew2(l,jfacem))
+                  endif
+                  call nident(imastnode(nmastnode(i)+1),node,
+     &                 nmasts-nmastnode(i),id)
+                  exist=.FALSE.
+                  if(id.gt.0) then
+                     if(imastnode(nmastnode(i)+id).eq.node) then
+                        exist=.TRUE.
+                     endif
+                  endif
+                  if(exist) cycle
+                  nmasts=nmasts+1
+                  do k=nmasts,nmastnode(i)+id+2,-1
+                     imastnode(k)=imastnode(k-1)
+                  enddo
+                  imastnode(nmastnode(i)+id+1)=node
+               enddo
+!     
             enddo
             nmastnode(ntie+1)=nmasts
 !
@@ -605,7 +602,8 @@ c                       nopes=4
 !           no contact tie
 !
             nslavnode(i+1)=nslavnode(i)
-            if(mortar.eq.1) nmastnode(i+1)=nmastnode(i)
+c            if(mortar.eq.1) nmastnode(i+1)=nmastnode(i)
+            nmastnode(i+1)=nmastnode(i)
          endif 
       enddo      
 !

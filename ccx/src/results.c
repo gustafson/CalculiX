@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2011 Guido Dhondt                          */
+/*              Copyright (C) 1998-2013 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -22,16 +22,16 @@
 #include <pthread.h>
 #include "CalculiX.h"
 
-char *lakon1,*matname1,*sideload1;
+static char *lakon1,*matname1,*sideload1;
 
-int *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
+static int *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *norien1,*ntmat1_,*ithermal1,*iprestr1,*iperturb1,*iout1,*nmethod1,
     *nplicon1,*nplkcon1,*npmat1_,*mi1,*ielas1,*icmd1,*ncmat1_,*nstate1_,
     *istep1,*iinc1,calcul_fn1,calcul_qa1,calcul_cauchy1,iener1,ikin1,
     *nal=NULL,*ipompc1,*nodempc1,*nmpc1,*ncocon1,*ikmpc1,*ilmpc1,
     num_cpus,mt1,*nk1,*ne01,*nshcon1,*nelemload1,*nload1;
 
-double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
+static double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
     *prestr1,*eme1,*fn1=NULL,*qa1=NULL,*vold1,*veold1,*dtime1,*time1,
     *ttime1,*plicon1,*plkcon1,*xstateini1,*xstiff1,*xstate1,*stiini1,
     *vini1,*ener1,*eei1,*enerini1,*springarea1,*reltime1,*coefmpc1,
@@ -112,7 +112,7 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
     /* automatic detection of available number of processors */
 
     if(sys_cpus==0){
-	sys_cpus = sysconf(_SC_NPROCESSORS_CONF);
+	sys_cpus = getSystemCPUs();
 	if(sys_cpus<1) sys_cpus=1;
     }
 

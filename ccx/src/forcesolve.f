@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine forcesolve(zc,nev,a,b,x,eiga,eigb,eigxx,iter,d,
-     &  neq,z,istartnmd,iendnmd,nmd,cyclicsymmetry,neqact,nherm)
+     &  neq,z,istartnmd,iendnmd,nmd,cyclicsymmetry,neqact,
+     &  igeneralizedforce)
 !
 !     solves for the complex eigenfrequencies due to Coriolis 
 !     forces
@@ -27,53 +28,80 @@
       logical wantx
 !
       integer nev,neq,iter(*),i,j,k,l,istartnmd(*),iendnmd(*),nmd,
-     &  cyclicsymmetry,neqact,nherm
+     &  cyclicsymmetry,neqact,igeneralizedforce
 !
       real*8 z(neq,*),d(*)
 !
       complex*16 a(nev,*),b(nev,*),x(nev,*),eiga(*),eigb(*),eigxx(*),
      &  zc(neqact,*)
 !
-      if(cyclicsymmetry==0) then
-         do i=1,nev
-            do j=1,nev
-               do k=1,neq
-                  a(i,j)=a(i,j)+z(k,i)*zc(k,j)
-               enddo
-            enddo
+      if(igeneralizedforce.eq.0) then
 !
-!           in the Hermitian case (nherm=1) the eigenvalues are real
+!        no generalized force: multiplication with the eigenmodes
+!        is necessary
 !
-            write(*,*) 
-     &           'aerodynamic stiffness/structural stiffness = ',
-     &           a(i,i)/d(i)
-            a(i,i)=a(i,i)+d(i)
-            b(i,i)=(1.d0,0.d0)
-         enddo
-      else
-!
-!        cyclic symmetry
-!
-         do l=1,nmd
-            do i=istartnmd(l),iendnmd(l)
-               do j=istartnmd(l),iendnmd(l)
-                  do k=1,neqact
-                     a(i,j)=a(i,j)+z(k,i)*zc(k,j)-
-     &                      z(k+neqact,i)*zc(k,j)*(0.d0,1.d0)
+         if(cyclicsymmetry==0) then
+            do i=1,nev
+               do j=1,nev
+                  do k=1,neq
+                     a(i,j)=a(i,j)+z(k,i)*zc(k,j)
                   enddo
                enddo
-!
-!              in the Hermitian case (nherm=1) the eigenvalues are real
-!
                write(*,*) 
-     &           'aerodynamic stiffness/structural stiffness = ',
-     &                  a(i,i)/d(i)
+     &              'aerodynamic stiffness/structural stiffness = ',
+     &              a(i,i)/d(i)
                a(i,i)=a(i,i)+d(i)
                b(i,i)=(1.d0,0.d0)
             enddo
-         enddo
-      endif
+         else
+!     
+!     cyclic symmetry
+!     
+            do l=1,nmd
+               do i=istartnmd(l),iendnmd(l)
+                  do j=istartnmd(l),iendnmd(l)
+                     do k=1,neqact
+                        a(i,j)=a(i,j)+z(k,i)*zc(k,j)-
+     &                       z(k+neqact,i)*zc(k,j)*(0.d0,1.d0)
+                     enddo
+                  enddo
+                  write(*,*) 
+     &                 'aerodynamic stiffness/structural stiffness = ',
+     &                 a(i,i)/d(i)
+                  a(i,i)=a(i,i)+d(i)
+                  b(i,i)=(1.d0,0.d0)
+               enddo
+            enddo
+         endif
+      else
 !
+!        generalized force: the a-matrix is (apart from the diagonal)
+!        known
+!
+         if(cyclicsymmetry==0) then
+            do i=1,nev
+               write(*,*) 
+     &              'aerodynamic stiffness/structural stiffness = ',
+     &              a(i,i)/d(i)
+               a(i,i)=a(i,i)+d(i)
+               b(i,i)=(1.d0,0.d0)
+            enddo
+         else
+!     
+!     cyclic symmetry
+!     
+            do l=1,nmd
+               do i=istartnmd(l),iendnmd(l)
+                  write(*,*) 
+     &                 'aerodynamic stiffness/structural stiffness = ',
+     &                 a(i,i)/d(i)
+                  a(i,i)=a(i,i)+d(i)
+                  b(i,i)=(1.d0,0.d0)
+               enddo
+            enddo
+         endif
+      endif
+!     
       wantx=.true.
 !
 !     solving for the complex eigenvalues

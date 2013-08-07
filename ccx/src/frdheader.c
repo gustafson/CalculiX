@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2011 Guido Dhondt                          */
+/*              Copyright (C) 1998-2013 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -117,25 +117,25 @@ void frdheader(int *icounter,double *oner,double *time,double *pi,
   }else if((log10(*time)>=0)&&(log10(*time)<10.)){
       ncomma=10-floor(log10(*time)+1.);
       if(ncomma==0){
-	  sprintf(tmp,"%12.0F",*time);
+	  sprintf(tmp,"%12.0f",*time);
       }else if(ncomma==1){
-	  sprintf(tmp,"%12.1F",*time);
+	  sprintf(tmp,"%12.1f",*time);
       }else if(ncomma==2){
-	  sprintf(tmp,"%12.2F",*time);
+	  sprintf(tmp,"%12.2f",*time);
       }else if(ncomma==3){
-	  sprintf(tmp,"%12.3F",*time);
+	  sprintf(tmp,"%12.3f",*time);
       }else if(ncomma==4){
-	  sprintf(tmp,"%12.4F",*time);
+	  sprintf(tmp,"%12.4f",*time);
       }else if(ncomma==5){
-	  sprintf(tmp,"%12.5F",*time);
+	  sprintf(tmp,"%12.5f",*time);
       }else if(ncomma==6){
-	  sprintf(tmp,"%12.6F",*time);
+	  sprintf(tmp,"%12.6f",*time);
       }else if(ncomma==7){
-	  sprintf(tmp,"%12.7F",*time);
+	  sprintf(tmp,"%12.7f",*time);
       }else if(ncomma==8){
-	  sprintf(tmp,"%12.8F",*time);
+	  sprintf(tmp,"%12.8f",*time);
       }else{
-	  sprintf(tmp,"%12.9F",*time);
+	  sprintf(tmp,"%12.9f",*time);
       }
   }else{
       sprintf(tmp,"%12.5E",*time);
@@ -152,7 +152,7 @@ void frdheader(int *icounter,double *oner,double *time,double *pi,
 /*
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

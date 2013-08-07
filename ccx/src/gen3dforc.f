@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -712,11 +712,6 @@ c               xn(3)=dd*(r(2,1)-r(1,2))
 !
                node=knor(indexk+2)
                val=xforc(i)
-!
-!              next statement seems to be needed for linear elements
-!              it is not quite clear why
-!
-               if(.not.quadratic)val=val/2.d0
 !
                call forcadd(node,idir,val,nodeforc,
      &              ndirforc,xforc,nforc,nforc_,iamforc,

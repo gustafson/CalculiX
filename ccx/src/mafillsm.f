@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -197,7 +197,6 @@ c     Bernhardi end
 !
         om=0.d0
 !
-c        if((rhsi).and.(nbody.gt.0).and.(lakon(i)(1:1).ne.'E')) then
         if((nbody.gt.0).and.(lakon(i)(1:1).ne.'E')) then
 !
 !          assigning centrifugal forces
@@ -237,7 +236,6 @@ c        if((rhsi).and.(nbody.gt.0).and.(lakon(i)(1:1).ne.'E')) then
               if(index.eq.0) exit
            enddo
         endif
-c        write(*,*) 'mafillsm ',i,bodyf(1),bodyf(2),bodyf(3)
 !
         call e_c3d(co,nk,konl,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,i,
      &          nmethod,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,

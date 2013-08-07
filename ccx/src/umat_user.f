@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -121,8 +121,8 @@
 !                        has converged.
 !     ipkon(*)           ipkon(iel) points towards the position in field
 !                        kon prior to the first node of the element's
-!                        topology. If ipkon(iel) is set to -1, the 
-!                        element is removed from the mesh
+!                        topology. If ipkon(iel) is smaller than 0, the 
+!                        element is not used.
 !
       implicit none
 !

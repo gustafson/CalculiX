@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2011 Guido Dhondt                          */
+/*              Copyright (C) 1998-2013 Guido Dhondt                          */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
 /*     published by the Free Software Foundation(version 2);    */
@@ -82,7 +82,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
     ngraph=1,nkg,neg,ne0,ij,lprev,nope,indexe,ilength,
     *ipneigh=NULL,*neigh=NULL,index,im,cyclicsymmetry,inode,
     *ialset=*ialsetp,mt=mi[1]+1,*nnn=*nnnp,kmin,kmax,i1,
-    *iter=NULL,lint,lfin,kk,kkv,kk6,kkx,icomplex,
+    *iter=NULL,lint,lfin,kk,kkv,kk6,kkx,icomplex,igeneralizedforce,
     idir,*inumt=NULL,icntrl,imag,jj,is,l1,*inocs=NULL,ml1,l2,nkt,net,
     *ipkont=NULL,*ielmatt=NULL,*inotrt=NULL,*kont=NULL,node,iel,*ielcs=NULL,
     ielset,*istartnmd=NULL,*iendnmd=NULL,inmd,neqact,*nshcon=NULL,
@@ -563,11 +563,12 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  neqact=neq[1];
       }
       zc=NNEW(double,2*neqact*nev);
-
-      FORTRAN(readforce,(zc,&neqact,nk,&nev,nactdof,ikmpc,nmpc,
-			 ipompc,nodempc,mi,coefmpc,jobnamef));
-
       aa=NNEW(double,4*nev*nev);
+
+      FORTRAN(readforce,(zc,&neqact,&nev,nactdof,ikmpc,nmpc,
+			 ipompc,nodempc,mi,coefmpc,jobnamef,
+                         aa,&igeneralizedforce));
+
       bb=NNEW(double,4*nev*nev);
       xx=NNEW(double,4*nev*nev);
       eiga=NNEW(double,2*nev);
@@ -576,7 +577,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       iter=NNEW(int,nev);
       FORTRAN(forcesolve,(zc,&nev,aa,bb,xx,eiga,eigb,eigxx,iter,d,
       		&neq[1],z,istartnmd,iendnmd,&nmd,&cyclicsymmetry,
-		&neqact,&nherm));
+		&neqact,&igeneralizedforce));
       free(aa);free(bb);free(eiga);free(eigb);free(iter);free(zc);
       
  }

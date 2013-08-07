@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,25 +17,23 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine nodestiedface(tieset,ntie,ipkon,kon,
-     &  lakon,set,istartset,iendset,ialset,
-     &  nset,ifaceslave,istartfield,iendfield,ifield,nconf,ncone)
+     &  lakon,set,istartset,iendset,ialset,nset,ifaceslave,
+     &  istartfield,iendfield,ifield,nconf,ncone,kind)
 !
 !     identifies slave nodes in tied slave faces
 !
       implicit none
 !
+      character*1 kind
       character*8 lakon(*)
       character*81 tieset(3,*),slavset,set(*)
 !
       integer ntie,nset,istartset(*),iendset(*),ialset(*),ifree,
-     &  itietri(2,ntie),ipkon(*),kon(*),ne,node,ifaceslave(*),
-     &  neigh(10),nodeedge(2,10),iflag,kneigh,i,j,k,l,islav,isol,
-     &  itri,ll,kflag,n,ipos,ipointer(10),istep,iinc,
-     &  nstart,ifaceq(9,6),ifacet(7,4),ilength,id,ncone,
-     &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,iit,
-     &  nnodelem,nface,nope,nodef(8),ncmat_,ntmat_,
-     &  ne0,ifaceref,isum,nmethod,kstart,kend,jstart,
-     &  jend,ifield(*),istartfield(*),iendfield(*),nconf
+     &  ipkon(*),kon(*),node,ifaceslave(*),i,j,k,l,
+     &  ifaceq(9,6),ifacet(7,4),ilength,id,ncone,
+     &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,
+     &  nnodelem,nface,nope,nodef(8),
+     &  ifield(*),istartfield(*),iendfield(*),nconf
 !
 !     nodes per face for hex elements
 !
@@ -73,7 +71,7 @@
 !
       do i=1,ntie
          ilength=0
-         if(tieset(1,i)(81:81).ne.'T') cycle
+         if(tieset(1,i)(81:81).ne.kind) cycle
          if(ifaceslave(i).eq.0) cycle
          slavset=tieset(2,i)
          do j=1,nset
@@ -162,12 +160,6 @@
       enddo
 !
       nconf=ifree-1
-!
-c      do i=1,ntie
-c         do j=istartfield(i),iendfield(i)
-c            write(*,*) 'nodestiedface ',i,j,ifield(j)
-c         enddo
-c      enddo
 !     
       return
       end

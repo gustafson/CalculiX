@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2011 Guido Dhondt                          */
+/*              Copyright (C) 1998-2013 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -53,7 +53,7 @@ int *kon=NULL, *nodeboun=NULL, *ndirboun=NULL, *ipompc=NULL,
 	*nplicon=NULL, *nplkcon=NULL, *inotr=NULL, *iponor=NULL, *knor=NULL,
 	*ikforc=NULL, *ilforc=NULL, *iponoel=NULL, *inoel=NULL, *nshcon=NULL,
 	*ncocon=NULL,*ibody=NULL, *inum1=NULL,*ielprop=NULL,
-        *inum2=NULL,*ipoinpc=NULL,cfd=0,mt,nxstate,nload0,ncont=0;
+        *inum2=NULL,*ipoinpc=NULL,icfd=0,mt,nxstate,nload0,ncont=0;
     
 double *co=NULL, *xboun=NULL, *coefmpc=NULL, *xforc=NULL,
 	*xload=NULL, *ad=NULL, *au=NULL, *xbounold=NULL, *xforcold=NULL,
@@ -72,7 +72,8 @@ double ctrl[27]={4.5,8.5,9.5,16.5,10.5,4.5,0.,5.5,0.,0.,0.25,0.5,0.75,0.85,0.,0.
 char *sideload=NULL, *set=NULL, *matname=NULL, *orname=NULL, *amname=NULL,
      *filab=NULL, *lakon=NULL, *labmpc=NULL, *prlab=NULL, *prset=NULL, 
      jobnamec[528]="",jobnamef[132]="",output[4]="asc", *typeboun=NULL,
-     *inpc=NULL,*tieset=NULL,*cbody=NULL,fneig[132]="",*sideloadtemp=NULL;
+     *inpc=NULL,*tieset=NULL,*cbody=NULL,fneig[132]="",*sideloadtemp=NULL,
+     kind1[2]="T",kind2[2]="T";
     
 int nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,nentries=14,
   nmethod,neq[3]={0,0,0},i,mpcfree=1,mei[4],j,nzl,nam,nbounold=0,
@@ -107,7 +108,7 @@ else{
     if(strcmp1(argv[i],"-i")==0) {
     strcpy(jobnamec,argv[i+1]);strcpy1(jobnamef,argv[i+1],132);jin++;break;}
     if(strcmp1(argv[i],"-v")==0) {
-	printf("\nThis is version version 2.6\n\n");
+	printf("\nThis is version version 2.6.1\n\n");
 	FORTRAN(stop,());
     }
   }
@@ -128,12 +129,12 @@ FORTRAN(uexternaldb,(&lop,&lrestart,time,&dtime,&kstep,&kinc));
 FORTRAN(openfile,(jobnamef,output));
 
 printf("\n************************************************************\n\n");
-printf("CalculiX version 2.6, Copyright(C) 1998-2011 Guido Dhondt\n");
+printf("CalculiX version 2.6.1, Copyright(C) 1998-2013 Guido Dhondt\n");
 printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
 printf("************************************************************\n\n");
-printf("You are using an executable made on Di 9. Jul 18:27:29 CEST 2013\n");
+printf("You are using an executable made on Di 6. Aug 21:04:29 CEST 2013\n");
 fflush(stdout);
 
 istep=0;
@@ -550,7 +551,7 @@ while(istat>=0) {
             sti,ener,xstate,jobnamec,nnn,&irstrt,&ttime,
             qaold,output,typeboun,inpc,&nline,ipoinp,inp,tieset,tietol,
             &ntie,fmpc,cbody,ibody,xbody,&nbody,&nbody_,xbodyold,&nam_,
-	    ielprop,&nprop,&nprop_,prop,&itpamp,&iviewfile,ipoinpc,&cfd,
+	    ielprop,&nprop,&nprop_,prop,&itpamp,&iviewfile,ipoinpc,&icfd,
 	    &nslavs,t0g,t1g,&network,&cyclicsymmetry,idefforc,idefload,
             idefbody));
 
@@ -569,7 +570,8 @@ while(istat>=0) {
     tiedcontact(&ntie, tieset, &nset, set,istartset, iendset, ialset,
        lakon, ipkon, kon,tietol,&nmpc, &mpcfree, &memmpc_,
        &ipompc, &labmpc, &ikmpc, &ilmpc,&fmpc, &nodempc, &coefmpc,
-       ithermal, co, vold,&cfd,&nmpc_,mi,&nk,&istep,ikboun,&nboun);
+       ithermal, co, vold,&icfd,&nmpc_,mi,&nk,&istep,ikboun,&nboun,
+       kind1,kind2);
 
     /* remeshing quadratic elements into linear elements for contact */
 
@@ -958,7 +960,8 @@ while(istat>=0) {
 	      strcpy1(&sideloadtemp[20*i],"F",1);
 	  }
       }
-      FORTRAN(ufaceload,(co,ipkon,kon,lakon,nelemload,sideloadtemp,&nload));
+      FORTRAN(ufaceload,(co,ipkon,kon,lakon,nelemload,sideloadtemp,
+              &nload,&ne,&nk));
       free(sideloadtemp);
   }
   
@@ -1107,16 +1110,18 @@ while(istat>=0) {
 	memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
         maxlenmpc=mpcinfo[3];
 
-
       }
-    }
-  else if(nmethod==2)
-    {
+    }else if(nmethod==2){
+      
       /* FREQUENCY ANALYSIS */
-
+      
       if((mcs==0)||(cs[1]<0)){
 #ifdef ARPACK
-	arpack(co,&nk,kon,ipkon,lakon,&ne,nodeboun,ndirboun,xboun,&nboun, 
+	  
+	  mpcinfo[0]=memmpc_;mpcinfo[1]=mpcfree;mpcinfo[2]=icascade;
+	  mpcinfo[3]=maxlenmpc;
+	  
+	  arpack(co,&nk,kon,ipkon,lakon,&ne,nodeboun,ndirboun,xboun,&nboun, 
 	     ipompc,nodempc,coefmpc,labmpc,&nmpc,nodeforc,ndirforc,xforc,
              &nforc, nelemload,sideload,xload,&nload, 
 	     ad,au,b,nactdof,icol,jq,&irow,neq,&nzl,&nmethod,ikmpc, 
@@ -1130,15 +1135,24 @@ while(istat>=0) {
              output,set,&nset,istartset,iendset,ialset,&nprint,prlab,
              prset,&nener,&isolver,trab,inotr,&ntrans,&ttime,fmpc,cbody,
 	     ibody,xbody,&nbody,thicke,&nslavs,tietol,&nkon,mpcinfo,
-	     &ntie,&istep,&mcs,ics,nnn,tieset,cs);}
+	     &ntie,&istep,&mcs,ics,nnn,tieset,cs);
+
+	  memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
+	  maxlenmpc=mpcinfo[3];
+
 #else
-            printf("*ERROR in CalculiX: the ARPACK library is not linked\n\n");
-            FORTRAN(stop,());}
+	  printf("*ERROR in CalculiX: the ARPACK library is not linked\n\n");
+	  FORTRAN(stop,());
 #endif
 
-      else{
+      }else{
+
 #ifdef ARPACK
-	arpackcs(co,&nk,kon,ipkon,lakon,&ne,nodeboun,ndirboun,xboun,&nboun, 
+
+	  mpcinfo[0]=memmpc_;mpcinfo[1]=mpcfree;mpcinfo[2]=icascade;
+	  mpcinfo[3]=maxlenmpc;
+	  
+	  arpackcs(co,&nk,kon,ipkon,lakon,&ne,nodeboun,ndirboun,xboun,&nboun, 
 	     ipompc,nodempc,coefmpc,labmpc,&nmpc,nodeforc,ndirforc,xforc,
              &nforc, nelemload,sideload,xload,&nload, 
 	     ad,au,b,nactdof,icol,jq,&irow,neq,&nzl,&nmethod,ikmpc, 
@@ -1152,15 +1166,19 @@ while(istat>=0) {
              iendset,ialset,&nprint,prlab,
              prset,&nener,&isolver,trab,inotr,&ntrans,&ttime,fmpc,cbody,
              ibody,xbody,&nbody,&nevtot,thicke,&nslavs,tietol,mpcinfo,
-	     &ntie,&istep,nnn,tieset);}
+	     &ntie,&istep,nnn,tieset);
+
+	  memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
+	  maxlenmpc=mpcinfo[3];
+
 #else
-            printf("*ERROR in CalculiX: the ARPACK library is not linked\n\n");
-            FORTRAN(stop,());}
+	  printf("*ERROR in CalculiX: the ARPACK library is not linked\n\n");
+	  FORTRAN(stop,());
 #endif
 
-    }
-  else if(nmethod==3)
-    {
+      }
+  }else if(nmethod==3){
+    
 #ifdef ARPACK
 	arpackbu(co,&nk,kon,ipkon,lakon,&ne,nodeboun,ndirboun,xboun,&nboun, 
 	     ipompc,nodempc,coefmpc,labmpc,&nmpc,nodeforc,ndirforc,xforc,
@@ -1264,6 +1282,37 @@ while(istat>=0) {
 	    &ntie,tieset,&idrct,jmax,&tmin,&tmax,ctrl,&itpamp,tietol,&nalset,
 	    &nnn,ikforc,ilforc,thicke,jobnamef,mei);
     }
+  else if(nmethod>7){
+
+	mpcinfo[0]=memmpc_;mpcinfo[1]=mpcfree;mpcinfo[2]=icascade;
+	mpcinfo[3]=maxlenmpc;
+
+	electromagnetics(&co,&nk,&kon,&ipkon,&lakon,&ne,nodeboun,
+             ndirboun,xboun,&nboun, 
+	     &ipompc,&nodempc,&coefmpc,&labmpc,&nmpc,nodeforc,ndirforc,xforc,
+             &nforc, nelemload,sideload,xload,&nload, 
+	     ad,au,b,nactdof,&icol,jq,&irow,neq,&nzl,&nmethod,&ikmpc, 
+	     &ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,nrhcon,
+	     alcon,nalcon,alzero,&ielmat,&ielorien,&norien,orab,&ntmat_,
+             t0,t1,t1old,ithermal,prestr,&iprestr, 
+	     &vold,iperturb,sti,nzs,&kode,adb,aub,filab,&idrct,jmax,
+	     jout,&tinc,&tper,&tmin,&tmax,eme,xbounold,xforcold,xloadold,
+	     veold,accold,amname,amta,namta,
+	     &nam,iamforc,iamload,iamt1,&alpha,
+             &iexpl,iamboun,plicon,nplicon,plkcon,nplkcon,
+	     &xstate,&npmat_,&istep,&ttime,matname,qaold,mi,
+	     &isolver,&ncmat_,&nstate_,&iumat,cs,&mcs,&nkon,&ener,
+	     mpcinfo,nnn,output,
+             shcon,nshcon,cocon,ncocon,physcon,&nflow,ctrl,
+             set,&nset,istartset,iendset,ialset,&nprint,prlab,
+             prset,&nener,ikforc,ilforc,trab,inotr,&ntrans,&fmpc,
+             cbody,ibody,xbody,&nbody,xbodyold,ielprop,prop,
+	     &ntie,tieset,&itpamp,&iviewfile,jobnamec,tietol,&nslavs,thicke,
+	     ics,&nalset,&nmpc_);
+
+	memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
+        maxlenmpc=mpcinfo[3];
+  }
 
   free(nactdof);
   free(icol);

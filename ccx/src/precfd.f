@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -150,7 +150,7 @@
                do
 !
 !                 adding a surface which has not been 
-!                 catalogues so far
+!                 catalogued so far
 !
                   if(index.eq.0) then
                      ifreenew=nodface(5,ifree)
@@ -200,7 +200,7 @@
                do
 !
 !                 adding a surface which has not been 
-!                 catalogues so far
+!                 catalogued so far
 !
                   if(index.eq.0) then
                      ifreenew=nodface(5,ifree)

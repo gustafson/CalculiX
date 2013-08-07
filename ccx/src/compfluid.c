@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2011 Guido Dhondt                     */
+/*              Copyright (C) 1998-2013 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -34,9 +34,9 @@
 #include "pardiso.h"
 #endif
 
-char *lakon1,*sideload1, *matname1, *sideface1;
+static char *lakon1,*sideload1, *matname1, *sideface1;
 
-int *nk1,*kon1,*ipkon1,*ne1,*nodeboun1,*ndirboun1,*nboun1,*ipompc1,
+static int *nk1,*kon1,*ipkon1,*ne1,*nodeboun1,*ndirboun1,*nboun1,*ipompc1,
     *nodempc1,*nmpc1,*nodeforc1,*ndirforc1,*nforc1,*nelemload1,*nload1,
     *ipobody1,*nbody1,*nactdoh1,*icolv1,*jqv1,*irowv1,neqv1,nzlv1,*nmethod1,
     *ikmpc1,*ilmpc1,*ikboun1,*ilboun1,*nrhcon1,*ielmat1,*ntmat_1,*ithermal1,
@@ -46,7 +46,7 @@ int *nk1,*kon1,*ipkon1,*ne1,*nodeboun1,*ndirboun1,*nboun1,*ipompc1,
     *nactdok1,neqk1,nzsk1,*isolidsurf1,*nsolidsurf1,*ifreestream1,
     *nfreestream1;
 
-double *co1,*xboun1,*coefmpc1,*xforc1,*xload1,*xbody1,*rhcon1,*t01,
+static double *co1,*xboun1,*coefmpc1,*xforc1,*xload1,*xbody1,*rhcon1,*t01,
     *vold1,*vcon1,dtimef1,*physcon1,*shcon1,*ttime1,timef1,*xloadold1,
     *vcontu1,*yy1,*b=NULL,*xbounact1,theta11,*v1,theta21,*cocon1,
     reltimef1,*dt1,*var1,*varf1,*sti1,*bk=NULL,*bt=NULL,*xsolidsurf1;
@@ -158,7 +158,7 @@ void compfluid(double **cop, int *nk, int **ipkonp, int **konp, char **lakonp,
   /* automatic detection of available number of processors */
   
   if(sys_cpus==0){
-      sys_cpus = sysconf(_SC_NPROCESSORS_CONF);
+      sys_cpus = getSystemCPUs();
       if(sys_cpus<1) sys_cpus=1;
   }
   

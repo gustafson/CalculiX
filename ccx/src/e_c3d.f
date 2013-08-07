@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2011 Guido Dhondt
+!              Copyright (C) 1998-2013 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1475,8 +1475,10 @@ c     Bernhardi end
 !     for axially symmetric and plane stress/strain elements: 
 !     complete s and sm
 !
-      if(((lakonl(6:7).eq.'RA').or.(lakonl(6:7).eq.'RS').or.
-     &   (lakonl(6:7).eq.'RE')).and.(lakonl(4:5).ne.'26')) then
+      if(((lakonl(4:5).eq.'8 ').or.
+     &    ((lakonl(4:6).eq.'20R').and.(lakonl(7:8).ne.'BR'))).and.
+     &   ((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'S').or.
+     &    (lakonl(7:7).eq.'E'))) then
          do i=1,60
             do j=i,60
                k=abs(iperm(i))

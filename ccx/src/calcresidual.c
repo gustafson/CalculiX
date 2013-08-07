@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2011 Guido Dhondt                          */
+/*              Copyright (C) 1998-2013 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -35,10 +35,10 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
         double *vini, double *dtime, double *accold, int *nk, double *adb,
         double *aub, int *icol, int *irow, int *nzl, double *alpha,
         double *fextini, double *fini, int *islavnode, int *nslavnode,
-        int *imastnode, int *nmastnode, int *mortar, int *ntie,double *f_cm,
+        int *mortar, int *ntie,double *f_cm,
 	double* f_cs, int *mi,int *nzs,int *nasym){
 
-    int j,k,nodes,nodem,i,mt=mi[1]+1;
+    int j,k,mt=mi[1]+1;
     double scal1;
       
     /* residual for a static analysis */
