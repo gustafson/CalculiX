@@ -31,6 +31,12 @@
 #ifdef PARDISO
    #include "pardiso.h"
 #endif
+#ifdef CUDACUSP
+   #include "cudacusp.h"
+#endif
+#ifdef SUITESPARSE
+   #include "suitesparse.h"
+#endif
 
 
 void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
@@ -1891,7 +1897,39 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      FORTRAN(stop,());
 #endif
 	  }
-	  
+	  else if(*isolver==8){
+#ifdef CUDACUSP
+	    if(*ithermal<2){
+	      cudacusp(ad,au,adb,aub,&sigma,
+		       b,icol,irow,&neq[0],&nzs[0],
+		       &symmetryflag,&inputformat,jq,&nzs[2]);
+	    }else if((*ithermal==2)&&(uncoupled)){
+	      printf("*ERROR in nonlingeo: the CUDACUSP library is not setup for this model\n\n");
+	    }else{
+	      printf("*ERROR in nonlingeo: the CUDACUSP library is not setup for this model\n\n");
+	    }
+#else
+	    printf("*ERROR in nonlingeo: the CUDACUSP library is not linked\n\n");
+	    FORTRAN(stop,());
+#endif
+	  }
+	  else if(*isolver==9){
+#ifdef SUITESPARSE
+	    suitesparsecholmod(ad,au,adb,aub,&sigma,b,icol,irow,&neq[0],&nzs[0]);
+#else
+	    printf("*ERROR in nonlingeo: the SUITESPARSE library is not linked\n\n");
+	    FORTRAN(stop,());
+#endif
+	  }
+	  else if(*isolver==10){
+#ifdef SUITESPARSE
+	  suitesparseqr(ad,au,adb,aub,&sigma,b,icol,irow,&neq[0],&nzs[0]);
+#else
+	  printf("*ERROR in nonlingeo: the SUITESPARSE library is not linked\n\n");
+	  FORTRAN(stop,());
+#endif
+	  }
+      
 	  if(*mortar<=1){SFREE(ad);SFREE(au);} 
       }
       
