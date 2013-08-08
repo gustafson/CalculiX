@@ -756,6 +756,7 @@ strcmp1.c \
 strcmp2.c \
 strcpy1.c \
 strsplt.c \
+suitesparse.c \
 tau.c \
 tiedcontact.c \
 u_calloc.c \
@@ -765,3 +766,6 @@ v_betrag.c \
 v_prod.c \
 v_result.c \
 writeheading.c
+
+SCCXCU = \
+cudacusp.cu
