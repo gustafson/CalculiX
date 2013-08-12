@@ -172,7 +172,7 @@ int cudacusp(double *ad, double *au, double *adb, double *aub, double *sigma,
   // cusp::print(A);
   cusp::hyb_matrix<int, ValueType, MemorySpace> AA = A;
   timee = clock();
-  std::cout << "  Assembled AA in = " << 
+  std::cout << "  Assembled stiffness matrix on CUDA device in = " << 
     (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << "\n\n";
 
   timee = clock();
