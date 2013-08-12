@@ -21,23 +21,22 @@
 
 #include <cusp/hyb_matrix.h>
 #include <cusp/dia_matrix.h>
-// #include <cusp/gallery/poisson.h>
+// #include <cusp/ell_matrix.h>
 #include <cusp/krylov/cg.h>
 // #include <cusp/krylov/cg_m.h>
 // #include <cusp/krylov/bicg.h>
 // #include <cusp/krylov/bicgstab.h>
-#include <cusp/version.h>
-// #include <cusp/print.h>
-#include <cusp/array1d.h>
-#include <cusp/multiply.h>
-#include <cusp/precond/ainv.h> 
-#include <iostream>
-#include <cusp/precond/smoothed_aggregation.h>
 // #include <cusp/krylov/gmres.h>
+#include <cusp/version.h>
+#include <cusp/array1d.h>
+#include <cusp/precond/diagonal.h> 
+// #include <cusp/precond/ainv.h> 
+#include <cusp/precond/smoothed_aggregation.h>
 // #include <cusp/detail/format_utils.h>
 #include <thrust/copy.h>
 #include <thrust/transform.h>
-// #include <cusp/ell_matrix.h>
+// #include <cusp/print.h>
+#include <iostream>
 
 
 template <typename Monitor>
@@ -115,193 +114,104 @@ int cudacusp(double *ad, double *au, double *adb, double *aub, double *sigma,
 
 
   timeb = clock();
-  /* Fill the matrix.  
-     The off diagonal triangle is columnar from ccx
-     irow() identifies the row within the column
-     icol() identifies the number of non zeros within the column
-     Move the the next column after achieving icol() within a column. /*
+  /* Fill the matrix.  ccx stores in modified compressesed sparse row
+     format.  Instead of storing the pivot locations in icol, it
+     stores the distance between pivots.  To make a conventional csr
+     format, you must cumsum the icol vector. */
 
-     Since cusp need be row sorted, we enter the transpose */
-  // Create the row and column indices
-
-  int i,j,k,l,m,n;
   int nvals=0;
 
   // Test for non zero values
-  for (i=0; i<*neq; i++){if (ad[i]<0) nvals++;}
+  for (int i=0; i<*neq; i++){if (ad[i]<0) nvals++;}
   if (nvals) {thrust::transform(ad, ad+*neq, ad, absolute<ValueType>());}
+
+  // Change to a zero based vector by subtracting 1
+  thrust::transform(irow, irow+*nzs, thrust::make_constant_iterator(-1), irow, thrust::plus<int>());
+  // Perform a cumsum on the column index to make a conventional csr index
+  thrust::exclusive_scan(icol, icol+*neq+1, icol);
+
+  // Create a set of "views" which act like pointers to existing memory.
+  typedef typename cusp::array1d_view<int *> HostIndexArrayView;
+  typedef typename cusp::array1d_view<ValueType *> HostValueArrayView;
+
+  HostIndexArrayView row_offsets(icol, icol+*neq+1);
+  HostIndexArrayView column_indices(irow, irow+*nzs);
+  HostValueArrayView values(au, au+*nzs);
+  // combine the three array1d_views into a csr_matrix_view
+  typedef cusp::csr_matrix_view<HostIndexArrayView,HostIndexArrayView,HostValueArrayView> HostView;
+  HostView A(*neq, *neq, *nzs, row_offsets, column_indices, values);
   
-  k=0; // data index
-  l=0; // row index
-  m=0; // column tracker index
-
-  // ASSEMBLE UPPER ONLY // cusp::coo_matrix<int, ValueType, cusp::host_memory> AU(*neq,*neq,*nzs);
-  // ASSEMBLE UPPER ONLY // for (i = 0; i < *neq; i++){
-  // ASSEMBLE UPPER ONLY //   for (j = 0; j < icol[i]; j++){
-  // ASSEMBLE UPPER ONLY //     n = irow[m]-1;
-  // ASSEMBLE UPPER ONLY //     AU.row_indices[k] = l; 
-  // ASSEMBLE UPPER ONLY //     AU.column_indices[k] = n; 
-  // ASSEMBLE UPPER ONLY //     AU.values[k++] = au[m++];
-  // ASSEMBLE UPPER ONLY //   }
-  // ASSEMBLE UPPER ONLY //   l++;
-  // ASSEMBLE UPPER ONLY // }
-  // ASSEMBLE UPPER ONLY // timee = clock();
-  // ASSEMBLE UPPER ONLY // std::cout << "  Assemble upper triangular time = " << 
-  // ASSEMBLE UPPER ONLY //   (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << "\n\n";
-
-  cusp::coo_matrix<int, ValueType, cusp::host_memory> A(*neq,*neq,2*(*nzs)+*neq);
-  // ASSEMBLE FULL MATRIX //
-  for (i = 0; i < *neq; i++){
-    A.row_indices[k] = i; 
-    A.column_indices[k] = i; 
-    A.values[k++] = ad[i];
-    for (j = 0; j < icol[i]; j++){
-      n = irow[m]-1;
-      A.row_indices[k] = l; 
-      A.column_indices[k] = n; 
-      A.values[k++] = au[m];
-      A.row_indices[k] = n; 
-      A.column_indices[k] = l; 
-      A.values[k++] = au[m++];
-    }
-    l++;
+  // TRANSPOSE AND ADD ON HOST //
+  cusp::coo_matrix<int, ValueType, cusp::host_memory> AT;
+  {
+    cusp::transpose(A,AT);
+    cusp::add(A,AT,AT);
+    
+    // Create a diagonal matrix and add it to the A matrix
+    // Store result in AT because A is just a matrix view to the original memory
+    cusp::dia_matrix<int, ValueType, cusp::host_memory> D(*neq,*neq,*neq,1);
+    D.diagonal_offsets[0]=0;
+    for (int i=0; i<*neq; i++){D.values(i,0)=ad[i];}
+    cusp::add(AT,D,AT);
+    // Free DD
   }
+  // Move to the device
+  AT.sort_by_row_and_column();
+  cusp::hyb_matrix<int, ValueType, MemorySpace> AA = AT;
 
-  // cusp::print(A);
-  A.sort_by_row_and_column();
-  // cusp::print(A);
-  cusp::hyb_matrix<int, ValueType, MemorySpace> AA = A;
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS // // Move to the device
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS // cusp::hyb_matrix<int, ValueType, MemorySpace> AA = A;
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS // // Bring the matrices together limiting scope as much as possible
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS // {
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   cusp::hyb_matrix<int, ValueType, MemorySpace> AAT;
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   cusp::transpose(AA,AAT);
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   cusp::add(AA,AAT,AA);
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS // } // free AAT
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS // {
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   // Create a diagonal matrix and add it to the A matrix
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   cusp::dia_matrix<int, ValueType, MemorySpace> DD(*neq,*neq,*neq,1);
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   DD.diagonal_offsets[0]=0;
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   for (int i=0; i<*neq; i++){DD.values(i,0)=ad[i];}
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   cusp::add(AA,DD,AA);
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   // Free DD
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS // }
+
+  // cusp::print(AA);
+
   timee = clock();
-  std::cout << "  Assembled AA in = " << 
-    (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << "\n\n";
+  std::cout << "  Assembled stiffness matrix on CUDA device in = " << 
+    (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << " seconds\n\n";
 
-  timee = clock();
-  // CONVERT UPPER TO FULL MATRIX
-  //
-  // Start on device version
-  // ON DEVICE // cusp::hyb_matrix<int, ValueType, MemorySpace> AA = AU;
-  // ON DEVICE // // Bring the matrices together limiting scope as much as possible
-  // ON DEVICE // {
-  // ON DEVICE //   cusp::hyb_matrix<int, ValueType, MemorySpace> AAT;
-  // ON DEVICE //   cusp::transpose(AA,AAT);
-  // ON DEVICE //   cusp::add(AA,AAT,AA);
-  // ON DEVICE // } // free AAT
-  // ON DEVICE // {
-  // ON DEVICE //   cusp::coo_matrix<int, ValueType, MemorySpace> DD(*neq,*neq,*neq);
-  // ON DEVICE //   // Potentially not the most efficient possible
-  // ON DEVICE //   thrust::sequence (DD.row_indices.begin(),DD.row_indices.end());
-  // ON DEVICE //   thrust::sequence (DD.column_indices.begin(),DD.column_indices.end());
-  // ON DEVICE //   thrust::copy (ad, ad+*neq, DD.values.begin());
-  // ON DEVICE //   cusp::add(AA,DD,AA);
-  // ON DEVICE // }
-  // End on device version
-  // Start on host version
-  // ON HOST // {
-  // ON HOST //   cusp::hyb_matrix<int, ValueType, cusp::host_memory> AAT;
-  // ON HOST //   cusp::transpose(AU,AAT);
-  // ON HOST //   cusp::add(AU,AAT,AU);
-  // ON HOST // } // free AAT
-  // ON HOST // {
-  // ON HOST //   cusp::coo_matrix<int, ValueType, cusp::host_memory> DD(*neq,*neq,*neq);
-  // ON HOST //   // Potentially not the most efficient possible
-  // ON HOST //   thrust::sequence (DD.row_indices.begin(),DD.row_indices.end());
-  // ON HOST //   thrust::sequence (DD.column_indices.begin(),DD.column_indices.end());
-  // ON HOST //   thrust::copy (ad, ad+*neq, DD.values.begin());
-  // ON HOST //   cusp::add(AU,DD,AU);
-  // ON HOST // }
-  // ON HOST // cusp::hyb_matrix<int, ValueType, MemorySpace> AA = AU;
-  // End on host version
-
-  // timee = clock();
-  // std::cout << "  Time to assemble AA = " << 
-  //   (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << "\n\n";
-  
-  // cusp::hyb_matrix<int, ValueType, cusp::host_memory> M;
-  // cusp::hyb_matrix<int, ValueType, MemorySpace> MMM;
-  // if (inccholpre) {
-  //   int ier;
-  //   AT = PreConditionCudaCusp (A,neq,nzs,&ier);  // Lower triangular, reuse AT
-  //   // printf ("A");
-  //   // cusp::print(A);
-  //   cusp::transpose(AT,AU);
-  //   cusp::multiply(AT,AU,M);
-  //   
-  //   // printf ("M");
-  //   // cusp::print(M);
-  //   MMM=M;
-  // } 
-  
   timeb = clock();
-  // set preconditioners
-  // cusp::identity_operator<ValueType, MemorySpace> MM(A.num_rows, A.num_rows);
-  // AINV preconditioner, using standard drop tolerance strategy 
-  // cusp::precond::scaled_bridson_ainv<ValueType, MemorySpace> MM(AA, .1);
-  // printf ("Scaled bridson with .1 drop tolerarance\n");
-  // cusp::precond::scaled_bridson_ainv<ValueType, MemorySpace> MM(AA, .1);
-  // int nunsc = 15;
-  // printf ("Scaled bridson with %i non-zeros per row\n", nunsc);
-  // cusp::precond::scaled_bridson_ainv<ValueType, MemorySpace> MM(AA, 0, nunsc);
-  // printf ("Unscaled bridson with %i non-zeros per row\n", nunsc);
-  // cusp::precond::bridson_ainv<ValueType, MemorySpace> MM(AA, 0, nunsc);
-
-  // The compiler warns about race conditions with smoothed.
-  // printf ("Smoothed aggregation on device\n");
-  // cusp::precond::smoothed_aggregation<int, ValueType, MemorySpace> MM(AA);
+  // set preconditioner
   printf ("Diagnonal preconditioner\n");
   cusp::precond::diagonal<ValueType, MemorySpace> MM(AA);
   timee = clock();
   std::cout << "  Preconditioning time = " << 
-    (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << "\n\n";
+    (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << " seconds\n\n";
   
   // allocate storage for and copy right hand side (BB). 
-  cusp::array1d<ValueType, MemorySpace> BB(*neq, 0.0);
+  cusp::array1d<ValueType, MemorySpace> BB(*neq, 0);
   thrust::copy (b, b+*neq, BB.begin());
   
-  timeb = clock();
   // set stopping criteria 
-  // http://docs.cusp-library.googlecode.com/hg/classcusp_1_1default__monitor.html
-  // ||b - A x|| <= absolute_tolerance + relative_tolerance * ||b||
-  
-  i=50000;
-  // if ((*b)<0.0){
+  int i=50000;
   if (nvals){
     // Non-positive definite.  Give up quickly after spawning an answer
-    // thrust::copy (ad, ad+*neq, DD.begin());
-    // thrust::transform(DD.begin(), DD.end(), DD.begin(), absolute<ValueType>());
     i=0;
     printf ("There are %i negative values on the diagonal.  The attempt is abandoned.\n", nvals);
   }
   cusp::verbose_monitor<ValueType> monitor(BB, i, 1e-6);
-
+    
   // solve the linear system AA * XX = BB 
+  timeb = clock();
   cusp::krylov::cg(AA, BB, BB, monitor, MM); //Conjugate Gradient method
-  // cusp::krylov::cg(AA, BB, BB, monitor); //Conjugate Gradient method
-  // cusp::krylov::bicgstab(AA, BB, BB, monitor, MM); //BiConjugate Gradient Stabilized method
-  // cusp::krylov::bicg(AA, AA, BB, BB, monitor, MM, MM); //BiConjugate Gradient
-  
-  // solve the linear system AA * XX = BB with the GMRES.
-  // Cost grows as O(n^2) with n being number of iterations.  Thus,
-  // can restart with a fraction of the answer as an initial guess
-  // thrust::fill( BB.begin(), BB.end(), ValueType(0) );
-  // int restart = 20;
-  // timeb = clock();
-  // cusp::krylov::gmres(AA, BB, BB, restart, monitor, MM);
-  // cusp::krylov::gmres(AA, BB, BB, restart, monitor);
-  // timee = clock();
-  
   timee = clock();
 
   std::cout << "  CUDA iterative solver time = " << 
-    (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << "\n\n";
+    (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << " seconds\n\n";
 
-  // report status
-  // report_status(monitor);
-  
-  // Works only with smoothed_aggregation
-  // std::cout << "\nPreconditioner statistics" << "\n";
-  // M.print();
-  
-  // Copy the result to the b array
   thrust::copy (BB.begin(), BB.end(), b);
 
   if (!monitor.converged()){
