@@ -27,7 +27,7 @@
 // #include <cusp/krylov/bicg.h>
 // #include <cusp/krylov/bicgstab.h>
 #include <cusp/version.h>
-// #include <cusp/print.h>
+#include <cusp/print.h>
 #include <cusp/array1d.h>
 #include <cusp/multiply.h>
 #include <cusp/precond/ainv.h> 
@@ -99,40 +99,62 @@ int cudacusp(double *ad, double *au, double *adb, double *aub, double *sigma,
      irow() identifies the row within the column
      icol() identifies the number of non zeros within the column
      Move the the next column after achieving icol() within a column. */
+  
   cusp::coo_matrix<int, ValueType, cusp::host_memory> A(*neq,*neq,2*(*nzs)+*neq);
   // ASSEMBLE FULL MATRIX.  No symmetric matrix defined in CUSP //
-  { // Scope for matrix assembly
-    int k=0; // data index
-    int l=0; // row index
-    int m=0; // column tracker index
-  
-    // This is somewhat expensive... can it be parallelized.
+  {// Scope for off-diagonal matrix assembly
+    int k=*neq; 
+    int l=0; 
+    // This is somewhat expensive... can it be parallelized.  Attempted below.
     for (int i = 0; i < *neq; i++){
-      // This is for the diagonal
-      A.row_indices[k] = i; 
-      A.column_indices[k] = i; 
-      A.values[k++] = ad[i];
-
+      // i acts as a column index
+      A.row_indices[i] = i; 
+      A.column_indices[i] = i; 
+      A.values[i] = ad[i];
       for (int j = 0; j < icol[i]; j++){
-      // This is for the off-diagonals
-	int n = irow[m]-1;
-	A.row_indices[k] = l; 
-	A.column_indices[k] = n; 
-	A.values[k++] = au[m];
-	A.row_indices[k] = n; 
-	A.column_indices[k] = l; 
-	A.values[k++] = au[m++];
+	// Looping cols
+	int nrow = irow[l]-1;
+	A.row_indices[k] = nrow; 
+	A.column_indices[k] = i; 
+	A.values[k++] = au[l];
+	// Symmetry
+	A.row_indices[k] = i; 
+	A.column_indices[k] = nrow; 
+	A.values[k++] = au[l++];
       }
-      l++;
     }
   }
+
+// WORKING OMP BUT NOT FASTER //   // Perform a cumsum on the column index to make a conventional csr index
+// WORKING OMP BUT NOT FASTER //   thrust::exclusive_scan(icol, icol+*neq+1, icol);
+// WORKING OMP BUT NOT FASTER //   {// Scope
+// WORKING OMP BUT NOT FASTER //     int i,j,k,nrow;
+// WORKING OMP BUT NOT FASTER // #pragma omp parallel for private(i,j,k,nrow)
+// WORKING OMP BUT NOT FASTER //     for (i = 0; i < *neq; i++){
+// WORKING OMP BUT NOT FASTER //       // Diagonal elements
+// WORKING OMP BUT NOT FASTER //       A.row_indices[i] = i; 
+// WORKING OMP BUT NOT FASTER //       A.column_indices[i] = i; 
+// WORKING OMP BUT NOT FASTER //       A.values[i] = ad[i];
+// WORKING OMP BUT NOT FASTER //       k=*neq+icol[i]*2;
+// WORKING OMP BUT NOT FASTER //       for (j = icol[i]; j < icol[i+1]; j++){
+// WORKING OMP BUT NOT FASTER // 	nrow = irow[j]-1;
+// WORKING OMP BUT NOT FASTER // 	A.row_indices[k] = nrow; 
+// WORKING OMP BUT NOT FASTER // 	A.column_indices[k] = i; 
+// WORKING OMP BUT NOT FASTER // 	A.values[k++] = au[j];
+// WORKING OMP BUT NOT FASTER // 	// Symmetry
+// WORKING OMP BUT NOT FASTER // 	A.row_indices[k] = i; 
+// WORKING OMP BUT NOT FASTER // 	A.column_indices[k] = nrow; 
+// WORKING OMP BUT NOT FASTER // 	A.values[k++] = au[j];
+// WORKING OMP BUT NOT FASTER //       }
+// WORKING OMP BUT NOT FASTER //     }
+// WORKING OMP BUT NOT FASTER //   }
 
   A.sort_by_row_and_column();
   // cusp::print(A);
   cusp::hyb_matrix<int, ValueType, MemorySpace> AA = A;
   timee = clock();
   std::cout << "  Assembled stiffness matrix on CUDA device in = " << 
-    (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << "\n\n";
+    (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << " seconds\n\n";
 
   timee = clock();
   
@@ -141,7 +163,7 @@ int cudacusp(double *ad, double *au, double *adb, double *aub, double *sigma,
   cusp::precond::diagonal<ValueType, MemorySpace> MM(AA);
   timee = clock();
   std::cout << "  Preconditioning time = " << 
-    (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << "\n\n";
+    (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << " seconds\n\n";
   
   // allocate storage for and copy right hand side (BB). 
   cusp::array1d<ValueType, MemorySpace> BB(*neq, 0.0);
@@ -169,7 +191,7 @@ int cudacusp(double *ad, double *au, double *adb, double *aub, double *sigma,
   timee = clock();
 
   std::cout << "  CUDA iterative solver time = " << 
-    (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << "\n\n";
+    (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << " seconds\n\n";
 
   // Copy the result to the b array
   thrust::copy (BB.begin(), BB.end(), b);
