@@ -134,7 +134,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
      computational metadata, the nodal coordinates and the
      topology */
   if(*kode==1){
-
     num_dim = 3;  
     num_elem_blk = 19;
     
@@ -351,10 +350,10 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     char *blknames[num_elem_blk];
     j=0;
     num_nodes_per_elem[j]=1;   blknames[j++]="PNT";
-    num_nodes_per_elem[j]=20;  blknames[j++]="C3D20 or C3D20R";
+    num_nodes_per_elem[j]=20;  blknames[j++]="C3D20 or C3D20R or S8R";
     num_nodes_per_elem[j]=20;  blknames[j++]="COMPOSITE LAYER C3D20";
     num_nodes_per_elem[j]=3;   blknames[j++]="Beam B32 or B32R";
-    num_nodes_per_elem[j]=8;   blknames[j++]="CPS8 or CPE8";
+    num_nodes_per_elem[j]=8;   blknames[j++]="CPS8 or CPE8 or CAX8";
     num_nodes_per_elem[j]=8;   blknames[j++]="C3D8 or C3D8R";
     num_nodes_per_elem[j]=2;   blknames[j++]="TRUSS2";
     num_nodes_per_elem[j]=2;   blknames[j++]="TRUSS2";
@@ -409,7 +408,12 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	if(ipkon[i]<0) continue;
 	indexe=ipkon[i];
 	if (blkassign[o]==l){
-	  if (blkassign[o]==2){// Composite
+	  // printf ("block assignment %i\n", blkassign[o]);
+	  if(blkassign[o]==1){ // S8R and all? C3D20 promotions?
+	    for(m=0;m<12;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
+	    for(m=16;m<20;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
+	    for(m=12;m<16;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
+	  }else if (blkassign[o]==2){ // Composite
 	    nlayer=0;
 	    for(l=0;l<mi[2];l++){
 	      if(ielmat[i*mi[2]+l]==0) break;
@@ -420,7 +424,11 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	      for(m=16;m<20;m++){connect[k++] = node_map_inv[kon[indexe+28+20*n+m]-1];}
 	      for(m=12;m<16;m++){connect[k++] = node_map_inv[kon[indexe+28+20*n+m]-1];}
 	    }
-	  }else{// Non-composite
+	  }else if(blkassign[o]==4){ // 8 Node 2D elements CAX8
+	    for (j = 0; j <num_nodes_per_elem[l]; j++){
+	      connect[k++] = node_map_inv[kon[indexe+20+j]-1];
+	    }
+	  }else {
 	    for (j = 0; j <num_nodes_per_elem[l]; j++){
 	      connect[k++] = node_map_inv[kon[indexe+j]-1];
 	    }
@@ -441,7 +449,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	case 3:
 	  errr = ex_put_elem_block (exoid, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	case 4:
-	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  errr = ex_put_elem_block (exoid, l, "QUAD", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	case 5:
 	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	case 6:
