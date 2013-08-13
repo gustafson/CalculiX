@@ -643,12 +643,10 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  exoselect(t1,t1,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
 		    nfieldscalar,&iselect,exoid,num_time_steps,countvars,nout);
-	  printf ("Warning: export temperature to exo not tested.\n");
 	}else{
 	  exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
 		    nfieldscalar,&iselect,exoid,num_time_steps,countvars,nout);
-	  printf ("Warning: export temperature to exo not tested.\n");
 	}
 	countvars+=1;	
       }
@@ -901,9 +899,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       }else{
 	
 	nodal_var_vals = (float *) calloc (nout, sizeof(float));
-	// ZERO? // for(j=0;j<nout;j++){
-	// ZERO? //   nodal_var_vals[j]=0;
-	// ZERO? // }
 	
 	for(i=*ne-1;i>=0;i--){
 	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
@@ -965,9 +960,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	countvars+=*nstate_;
       }else if(countbool==2){
 	for(j=1;j<=*nstate_;j++){
-	  char str[6];
-	  sprintf(str, "SDV%2d",j);
-	  var_names[countvars++]=str;
+	  sprintf(var_names[countvars++],"SDV%d",j);
 	}
       }else{
 	iselect=1;
@@ -984,7 +977,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	exoselect(xstaten,xstaten,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,nstate_,ifieldstate,icompstate,
 		  nfield,&iselect,exoid,num_time_steps,countvars,nout);
-	printf ("Warning: export of SDV to exo not tested and not yet expected to work.\n");
 	countvars+=*nstate_;
       }
     }
@@ -1013,7 +1005,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 		  ialset,ngraph,&ncompvector,ifieldvector,icompvector,
 		  nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout);
 	countvars+=3;
-	printf ("Warning: export of HFL to exo not tested.\n");
       }
     }
 
@@ -1033,7 +1024,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
 		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
 	countvars+=1;
-	printf ("Warning: export of RFL to exo not tested.\n");
       }
     }
   
@@ -1252,7 +1242,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
 		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
-	printf ("Warning: export of MF to exo not tested.\n");
 	countvars+=1;
       }
     }
@@ -1262,7 +1251,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       if (countbool==3){
 	countvars+=1;
       }else if(countbool==2){
-	var_names[countvars++]="TOPRESS PT";
+	var_names[countvars++]="PT";
       }else{
 	
 	iselect=-1;
@@ -1274,7 +1263,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
 		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
-	printf ("Warning: export of PT to exo not tested.\n");
 	countvars+=1;
       }
     }
@@ -1396,7 +1384,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	exoselect(vr,vi,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompvectph,ifieldvectph,icompvectph,
 		  nfieldvectph,&iselect,exoid,num_time_steps,countvars,nout);
-	printf ("Warning: export of PDISP to exo not tested.\n");
 	countvars+=6;
       }
     }
@@ -1453,7 +1440,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	exoselect(stnr,stni,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensph,ifieldtensph,icomptensph,
 		  nfieldtensph,&iselect,exoid,num_time_steps,countvars,nout);
-	printf ("Warning: export of PSTRESS to exo not tested.\n");
 	countvars+=12;
       }
     }
