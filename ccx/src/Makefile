@@ -12,10 +12,10 @@
 
 CFLAGS=-march=native -g -O0 -pg ## debugging
 FFLAGS=-march=native -g -O0 -pg ## debugging
-CFLAGS=-march=native -O2 -Wall ## conservative
-FFLAGS=-march=native -O2 -Wall ## conservative
-CFLAGS=-march=native -O3 -Wall -flto ## aggressive
-FFLAGS=-march=native -O3 -Wall -flto ## aggressive
+## CFLAGS=-march=native -O2 -Wall ## conservative
+## FFLAGS=-march=native -O2 -Wall ## conservative
+## CFLAGS=-march=native -O3 -Wall -flto ## aggressive
+## FFLAGS=-march=native -O3 -Wall -flto ## aggressive
 
 ## SPOOLES
 ## CFLAGS  += -I/usr/include/spooles -I/usr/include/spooles/MT -DSPOOLES
