@@ -33,16 +33,16 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
   char tmpstr[81];
   char *space = " ";
   char *pos;
-  int *node_map;
+  int *set_nums;
   int errr;
-
+  
   *num_ns = 0; 
   *num_ss = 0;
   *num_es = 0;
   *num_fs = 0; 
   
   for (i=0; i<*nset; i++){
-
+    
     if (store) {
       // Find and store the set numbers
       // The pointer integers are 1 based (fortran)
@@ -59,7 +59,7 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
       
       // Now set the length of the set allocation
       l=e-s+1+gen+l;
-      node_map = (int *) calloc(l, sizeof(int));
+      set_nums = (int *) calloc(l, sizeof(int));
       
       /* Only add the generate code if there are at least
 	 three points in the vector */
@@ -69,41 +69,51 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
 	  // Account for generated ids
 	  if (ialset[j+2]<0) {
 	    for (k=ialset[j]; k<=ialset[j+1]; k-=ialset[j+2]){
-	      node_map[n++]=node_map_inv[k];  
+	      set_nums[n++]=exoset_check(k-1, node_map_inv);
 	    }
 	    j+=3;
 	  }else{
 	    // Account for directly added id
-	    node_map[n++]=node_map_inv[ialset[j++]];
+	    set_nums[n++]=exoset_check(ialset[j++]-1, node_map_inv);
 	  }
 	}
-	// Must finish the last two
-	if (ialset[e]>0){
-	  node_map[n++]=node_map_inv[ialset[e]];
+	// Must finish the last two of directly added set
+	if (ialset[e]>0){ // only if the last set is not a generated set
+	  // 1+n++ and -1+n++ to preserve order
+	  set_nums[1+n++]=exoset_check(ialset[e]-2, node_map_inv);
 	  if (ialset[e-1]>0){
-	    node_map[n++]=node_map_inv[ialset[e-1]];
+	    set_nums[-1+n++]=exoset_check(ialset[e]-3, node_map_inv);
 	  }
 	}
       }else if(l>1){
-	node_map[n++]=node_map_inv[ialset[s]];
-	node_map[n++]=node_map_inv[ialset[e]];
+	set_nums[n++]=exoset_check(ialset[s]-1, node_map_inv);
+	set_nums[n++]=exoset_check(ialset[e]-1, node_map_inv);
       }else{
-	node_map[n++]=node_map_inv[ialset[e]];
+	set_nums[n++]=exoset_check(ialset[e]-1, node_map_inv);
       }
-    }  
-
+    }
 
     strncpy(tmpstr,set+i*81,81);
     pos = strpbrk(tmpstr, space)-1;
-    
+
+    // Remove nodes that no longer exist
+    // gen=-1;
+    // for (j=0; j<n; j++){
+    //   printf ("Update %i\n", set_nums[j]);
+    //   if ( set_nums[j] == gen ){
+    // 	printf ("Update\n");
+    // 	//gen = set_nums[j];
+    //   }
+    // }
+
     if(strcmp1(pos,"N")==0){
       (*num_ns)++; // printf ("Node set identified\n"); 
-      if (store){ 
+      if (store){
 	errr = ex_put_node_set_param (exoid, i, n, 0); // CURRENTLY NO DISTRIBUTIONS ADDED
 	if (errr) printf ("Error writing set parameters\n");
-	errr = ex_put_node_set       (exoid, i, node_map);
+	errr = ex_put_node_set       (exoid, i, set_nums);
 	if (errr) printf ("Error writing set numbers\n");
-	// ex_put_node_set_dist_fact (exoid, i, node_map);  // 
+	// ex_put_node_set_dist_fact (exoid, i, set_nums);  // 
       }
     }    
     if(strcmp1(pos,"E")==0) {
@@ -112,9 +122,9 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
       if (store){ 
       	errr = ex_put_elem_set_param (exoid, i, n, 0);
       	if (errr) printf ("Error writing set parameters\n");
-      	errr = ex_put_elem_set       (exoid, i, node_map);
+      	errr = ex_put_elem_set       (exoid, i, set_nums);
       	if (errr) printf ("Error writing set numbers\n");
-      	// ex_put_elem_set_dist_fact (exoid, i, node_map);  // 
+      	// ex_put_elem_set_dist_fact (exoid, i, set_nums);  // 
 	} */
     } 
     if(strcmp1(pos,"S")==0) {
@@ -123,9 +133,9 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
 	 if (store){ 
       	errr = ex_put_side_set_param (exoid, i, n, 0);
       	if (errr) printf ("Error writing set parameters\n");
-      	errr = ex_put_side_set       (exoid, i, node_map);
+      	errr = ex_put_side_set       (exoid, i, set_nums);
       	if (errr) printf ("Error writing set numbers\n");
-      	// ex_put_side_set_dist_fact (exoid, i, node_map);  // 
+      	// ex_put_side_set_dist_fact (exoid, i, set_nums);  // 
 	} */
     } 
     if(strcmp1(pos,"T")==0) {
@@ -134,12 +144,12 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
 	 if (store){ 
 	 errr = ex_put_face_set_param (exoid, i, n, 0);
 	 if (errr) printf ("Error writing set parameters\n");
-	 errr = ex_put_face_set       (exoid, i, node_map);
+	 errr = ex_put_face_set       (exoid, i, set_nums);
 	 if (errr) printf ("Error writing set numbers\n");
-	 // ex_put_face_set_dist_fact (exoid, i, node_map);  // 
+	 // ex_put_face_set_dist_fact (exoid, i, set_nums);  // 
 	 } */
-    } 
-    if (store) {free (node_map);}
+    }
+    if (store) {free (set_nums);}
   }  
   
   if (store){
@@ -171,4 +181,19 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
   }
 
   return;
+}
+
+
+void exosetwarn(int val){
+  if (val==-1) {
+    printf ("WARNING: A node or element is dropped from a defined set.\n");
+    printf ("  This may be due to 3D expansion (beams, shells, OUTPUT=3D).\n");
+    printf ("  The postprocesser may complain about file integrity.\n");
+  }
+}
+
+int exoset_check(int n, int *node_map_inv){
+  int val = node_map_inv[n]-1;
+  if (val==-1) {exosetwarn(val);}
+  return val;
 }
