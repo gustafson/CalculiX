@@ -32,15 +32,16 @@
 #include <cusp/multiply.h>
 #include <cusp/precond/ainv.h> 
 #include <iostream>
-#include <cusp/precond/smoothed_aggregation.h>
+#include <cusp/precond/aggregation/smoothed_aggregation.h>
 // #include <cusp/krylov/gmres.h>
 // #include <cusp/detail/format_utils.h>
 #include <thrust/copy.h>
 #include <thrust/transform.h>
 // #include <cusp/ell_matrix.h>
-
+#include <time.h>
 
 // which floating point type to use
+typedef int IndexType;
 typedef double ValueType;
 // typedef cusp::host_memory MemorySpace;
 typedef cusp::device_memory MemorySpace;
@@ -99,31 +100,31 @@ int cudacusp(double *ad, double *au, double *adb, double *aub, double *sigma,
      irow() identifies the row within the column
      icol() identifies the number of non zeros within the column
      Move the the next column after achieving icol() within a column. */
-  
+   
   cusp::coo_matrix<int, ValueType, cusp::host_memory> A(*neq,*neq,2*(*nzs)+*neq);
   // ASSEMBLE FULL MATRIX.  No symmetric matrix defined in CUSP //
-  {// Scope for off-diagonal matrix assembly
-    int k=*neq; 
-    int l=0; 
-    // This is somewhat expensive... can it be parallelized.  Attempted below.
-    for (int i = 0; i < *neq; i++){
-      // i acts as a column index
-      A.row_indices[i] = i; 
-      A.column_indices[i] = i; 
-      A.values[i] = ad[i];
-      for (int j = 0; j < icol[i]; j++){
-	// Looping cols
-	int nrow = irow[l]-1;
-	A.row_indices[k] = nrow; 
-	A.column_indices[k] = i; 
-	A.values[k++] = au[l];
-	// Symmetry
-	A.row_indices[k] = i; 
-	A.column_indices[k] = nrow; 
-	A.values[k++] = au[l++];
-      }
+  // Scope for off-diagonal matrix assembly
+  int k=*neq; 
+  int l=0; 
+  // This is somewhat expensive... can it be parallelized.  Attempted below.
+  for (int i = 0; i < *neq; i++){
+    // i acts as a column index
+    A.row_indices[i] = i; 
+    A.column_indices[i] = i; 
+    A.values[i] = ad[i];
+    for (int j = 0; j < icol[i]; j++){
+      // Looping cols
+      int nrow = irow[l]-1;
+      A.row_indices[k] = nrow; 
+      A.column_indices[k] = i; 
+      A.values[k++] = au[l];
+      // Symmetry
+      A.row_indices[k] = i; 
+      A.column_indices[k] = nrow; 
+      A.values[k++] = au[l++];
     }
   }
+  
 
 // WORKING OMP BUT NOT FASTER //   // Perform a cumsum on the column index to make a conventional csr index
 // WORKING OMP BUT NOT FASTER //   thrust::exclusive_scan(icol, icol+*neq+1, icol);
@@ -151,16 +152,30 @@ int cudacusp(double *ad, double *au, double *adb, double *aub, double *sigma,
 
   A.sort_by_row_and_column();
   // cusp::print(A);
-  cusp::hyb_matrix<int, ValueType, MemorySpace> AA = A;
+  cusp::hyb_matrix<int, ValueType, MemorySpace> AA;
+  try {AA = A;}
+  catch(std::bad_alloc &e)
+    {
+      std::cerr << "bad_alloc during transfer of A to GPU" << std::endl;
+      exit(-1);
+    }
+
+  
   timee = clock();
   std::cout << "  Assembled stiffness matrix on CUDA device in = " << 
     (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << " seconds\n\n";
 
-  timee = clock();
-  
   timeb = clock();
+  // printf ("Smoothed aggregation algebraic multigrid preconditioner\n");
+  // cusp::precond::aggregation::smoothed_aggregation<IndexType, ValueType, MemorySpace> MM(AA);
   printf ("Diagnonal preconditioner\n");
   cusp::precond::diagonal<ValueType, MemorySpace> MM(AA);
+  // int nunsc=15;
+  // printf ("Scaled bridson with %i non-zeros per row\n", nunsc);
+  // cusp::precond::scaled_bridson_ainv<ValueType, MemorySpace> MM(AA, 0, nunsc);
+  // printf ("Unscaled bridson with %i non-zeros per row\n", nunsc);
+  // cusp::precond::bridson_ainv<ValueType, MemorySpace> MM(AA, 0, nunsc);
+
   timee = clock();
   std::cout << "  Preconditioning time = " << 
     (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << " seconds\n\n";
@@ -168,11 +183,8 @@ int cudacusp(double *ad, double *au, double *adb, double *aub, double *sigma,
   // allocate storage for and copy right hand side (BB). 
   cusp::array1d<ValueType, MemorySpace> BB(*neq, 0.0);
   thrust::copy (b, b+*neq, BB.begin());
-  
+
   timeb = clock();
-  // set stopping criteria 
-  // http://docs.cusp-library.googlecode.com/hg/classcusp_1_1default__monitor.html
-  // ||b - A x|| <= absolute_tolerance + relative_tolerance * ||b||
   
   int i=50000;
   // if ((*b)<0.0){
@@ -183,12 +195,25 @@ int cudacusp(double *ad, double *au, double *adb, double *aub, double *sigma,
     i=0;
     printf ("There are %i negative values on the diagonal.  The attempt is abandoned.\n", nvals);
   }
-  cusp::verbose_monitor<ValueType> monitor(BB, i, 1e-6);
 
+  // set stopping criteria 
+  // http://docs.cusp-library.googlecode.com/hg/classcusp_1_1default__monitor.html
+  // ||b - A x|| <= absolute_tolerance + relative_tolerance * ||b||
+  // cusp::default_monitor<ValueType> monitor(BB, i, 5e-3);
+  // Abaqus uses a relative tolerance of 1e-3
+  cusp::default_monitor<ValueType> monitor(BB, i, 1e-6);
 
-  // solve the linear system AA * XX = BB 
-  cusp::krylov::cg(AA, BB, BB, monitor, MM); //Conjugate Gradient method
-  timee = clock();
+  try 
+    {
+      // solve the linear system AA * XX = BB 
+      cusp::krylov::cg(AA, BB, BB, monitor, MM); //Conjugate Gradient method
+      timee = clock();
+    }
+  catch(std::bad_alloc &e)
+    {
+      std::cerr << "Couldn't solve system due to memory limits" << std::endl;
+      exit(-1);
+    }
 
   std::cout << "  CUDA iterative solver time = " << 
     (double(timee)-double(timeb))/double(CLOCKS_PER_SEC) << " seconds\n\n";
@@ -196,10 +221,13 @@ int cudacusp(double *ad, double *au, double *adb, double *aub, double *sigma,
   // Copy the result to the b array
   thrust::copy (BB.begin(), BB.end(), b);
 
-  if (!monitor.converged()){
-    printf (" WARNING: Cuda Cusp did not find a solution.\n");
+  if (monitor.converged()){
+    std::cout << "Solver converged to " << monitor.relative_tolerance() << " relative tolerance";
+    std::cout << " after " << monitor.iteration_count() << " iterations" << std::endl;
+  }else{
+    std::cout << "Solver reached iteration limit " << monitor.iteration_limit() << " before converging";
+    std::cout << " to " << monitor.relative_tolerance() << " relative tolerance " << std::endl;
   }
   return 0;
 }
 #endif
-
