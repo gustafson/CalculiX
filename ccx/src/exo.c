@@ -646,7 +646,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	}else{
 	  exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-		    nfieldscalar,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
 	}
 	countvars+=1;	
       }
