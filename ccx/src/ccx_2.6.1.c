@@ -134,7 +134,7 @@ printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
 printf("************************************************************\n\n");
-printf("You are using an executable made on Di 6. Aug 21:04:29 CEST 2013\n");
+printf("You are using an executable made on Sa 28. Dez 17:22:52 CET 2013\n");
 fflush(stdout);
 
 istep=0;
@@ -985,31 +985,6 @@ while(istat>=0) {
     else RENEW(nnn,int,nk);
     for(i=1;i<=nk;++i)
 	nnn[i-1]=i;
-	
-    if((icascade==0)&&(isolver!=6)){
-//    if((icascade==10)&&(isolver!=6)){
-
-	/* renumbering the nodes */
-	
-	printf(" Renumbering the nodes to decrease the profile:\n");
-	fflush(stdout);
-
-	npn=NNEW(int,20*ne+mpcend);
-	adj=NNEW(int,380*ne+mpcmult);
-	xadj=NNEW(int,nk+1);
-	iw=NNEW(int,3*nk+1);
-	mmm=NNEW(int,nk);
-	xnpn=NNEW(int,ne+nmpc+1);
-	inum1=NNEW(int,nk);
-	inum2=NNEW(int,nk);
-	
-	FORTRAN(renumber,(&nk,kon,ipkon,lakon,&ne,ipompc,nodempc,&nmpc,nnn,
-	npn,adj,xadj,iw,mmm,xnpn,inum1,inum2));
-	
-	free(npn);free(adj);free(xadj);free(iw);free(mmm);free(xnpn);
-	free(inum1);free(inum2);
-    }
-
   }
 
   /* determining the matrix structure: changes if SPC's have changed */

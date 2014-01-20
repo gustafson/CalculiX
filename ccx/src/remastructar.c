@@ -58,22 +58,6 @@ void remastructar(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
     
     for(i=1;i<=*nk;++i) nnn[i-1]=i;
 
-    /* renumbering the nodes */
-
-    /*printf(" Renumbering the nodes to decrease the profile:\n");
-    
-    npn=NNEW(int,20**ne+mpcend);
-    adj=NNEW(int,380**ne+mpcmult);
-    xadj=NNEW(int,*nk+1);
-    iw=NNEW(int,4**nk+1);
-    mmm=NNEW(int,*nk);
-    xnpn=NNEW(int,*ne+*nmpc+1);
-    
-     FORTRAN(renumber,(nk,kon,ipkon,lakon,ne,ipompc,nodempc,nmpc,nnn,
-	npn,adj,xadj,iw,mmm,xnpn));
-    
-	free(npn);free(adj);free(xadj);free(iw);free(mmm);free(xnpn);*/
-
     /* determining the matrix structure */
     
     printf(" Determining the structure of the matrix:\n");

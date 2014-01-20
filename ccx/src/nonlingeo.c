@@ -1402,7 +1402,7 @@ void nonlingeo(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
        f_cm=NNEW(double,neq[1]);f_cs=NNEW(double,neq[1]);
       }
       calcresidual(nmethod,neq,b,fext,f,iexpl,nactdof,aux1,aux2,vold,
-	 vini,&dtime,accold,nk,adb,aub,icol,irow,nzl,alpha,fextini,fini,
+	 vini,&dtime,accold,nk,adb,aub,jq,irow,nzl,alpha,fextini,fini,
 	 islavnode,nslavnode,&mortar,ntie,f_cm,f_cs,mi,
 	 nzs,&nasym);
     
@@ -1746,7 +1746,7 @@ void nonlingeo(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       /* calculating the residual */
       
       calcresidual(nmethod,neq,b,fext,f,iexpl,nactdof,aux1,aux2,vold,
-	 vini,&dtime,accold,nk,adb,aub,icol,irow,nzl,alpha,fextini,fini,
+	 vini,&dtime,accold,nk,adb,aub,jq,irow,nzl,alpha,fextini,fini,
 	 islavnode,nslavnode,&mortar,ntie,f_cm,f_cs,mi,
 	 nzs,&nasym);
       

@@ -143,7 +143,6 @@ deuldlag.f \
 dflux.f \
 dfluxes.f \
 dgesv.f \
-diamtr.f \
 distattach.f \
 distattach_3d.f \
 distattachline.f \
@@ -156,7 +155,6 @@ dKdX.f \
 dload.f \
 dloads.f \
 dlz.f \
-dot.f \
 dqag.f \
 drfftf.f \
 dsort.f \
@@ -255,7 +253,6 @@ getiface.f \
 getmu.f \
 getnewline.f \
 getnumberofnodes.f \
-graph.f \
 hcrit.f \
 headings.f \
 heattransfers.f \
@@ -282,7 +279,6 @@ inputwarning.f \
 interpol_alfa2.f \
 interpolsubmodel.f \
 intersectionpoint.f \
-isorti.f \
 isortic.f \
 isortid.f \
 isortiddc1.f \
@@ -292,7 +288,6 @@ isort2i.f \
 isortiid.f \
 keystart.f \
 knotmpc.f \
-label.f \
 labyrinth.f \
 lab_straight_ppkrit.f \
 limit_case_calc.f \
@@ -376,7 +371,6 @@ norshell3.f \
 norshell4.f \
 norshell6.f \
 norshell8.f \
-number.f \
 onedint.f \
 op.f \
 opas.f \
@@ -424,7 +418,6 @@ printoutfluid.f \
 printoutint.f \
 printoutnode.f \
 printoutnodefluid.f \
-profil.f \
 pt2_lim_calc.f \
 pt2zpt1_crit.f \
 radiate.f \
@@ -471,10 +464,8 @@ rigidbodies.f \
 rigidmpc.f \
 rimseal.f \
 rimseal_calc.f \
-rootls.f \
 rs.f \
 rubber.f \
-saxpb.f \
 scavenge_pump.f \
 sdvini.f \
 selcycsymmods.f \

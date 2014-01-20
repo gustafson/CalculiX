@@ -97,7 +97,7 @@ void contactstress_fric3(double *bhat, double *adc, double *auc,int *jqc,
     cstress2=NNEW(double,neq[1]);  
     bhat2=NNEW(double,neq[1]);
     debut = clock();
-    FORTRAN(opnonsym,(&neq[1],&aux,b,cstress2,adc,auc,jqc,irowc));
+    FORTRAN(opnonsym,(&neq[1],b,cstress2,adc,auc,jqc,irowc));
     u_old=NNEW(double,3*nslavnode[*ntie]);
     
     /** get uhat_k-1 **/
@@ -415,7 +415,7 @@ void contactstress_fric3(double *bhat, double *adc, double *auc,int *jqc,
       unitmatrix[j]=1.;	  
       bhat2[j]=b[j];      
     }  
-    FORTRAN(opnonsym, (&neq[1], &aux, bhat2, b, unitmatrix, auqdt, jqqdt, irowqdt));
+    FORTRAN(opnonsym,(&neq[1],bhat2,b,unitmatrix,auqdt,jqqdt,irowqdt));
  
 /*       for (i=0;i<*ntie;i++){
 	for(j=nslavnode[i];j<nslavnode[i+1];j++){
@@ -450,7 +450,7 @@ void contactstress_fric3(double *bhat, double *adc, double *auc,int *jqc,
       }     
     }
     vectornull=NNEW(double,neq[1]);            
-    FORTRAN(opnonsymt,(&neq[1],&aux,cstress2,f_cm,vectornull,aubd,jqbd,irowbd));      
+    FORTRAN(opnonsymt,(&neq[1],cstress2,f_cm,vectornull,aubd,jqbd,irowbd));      
     free(vectornull);      
     f_cs_tot=NNEW(double, 3);      
     f_cm_tot=NNEW(double, 3);      

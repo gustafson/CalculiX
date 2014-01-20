@@ -477,7 +477,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   while((ido==-1)||(ido==1)||(ido==2)){
     if(ido==-1){
-      FORTRAN(op,(&neq[0],aux,&workd[ipntr[0]-1],temp_array,ad,au,icol,irow,nzl));
+      FORTRAN(op,(&neq[0],&workd[ipntr[0]-1],temp_array,ad,au,jq,irow));
     }
     if((ido==-1)||(ido==1)){
 
@@ -540,7 +540,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     }
 
     if(ido==2){
-      FORTRAN(op,(&neq[0],aux,&workd[ipntr[0]-1],&workd[ipntr[1]-1],ad,au,icol,irow,nzl));
+      FORTRAN(op,(&neq[0],&workd[ipntr[0]-1],&workd[ipntr[1]-1],ad,au,jq,irow));
     }
 
     FORTRAN(dsaupd,(&ido,bmat,&neq[0],which,&nev,&tol,resid,&ncv,z,&dz,iparam,ipntr,workd,

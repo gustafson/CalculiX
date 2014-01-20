@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,45 +16,33 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-C
-C-----MATRIX-VECTOR MULTIPLY FOR REAL SPARSE NONSYMMETRIC MATRICES---------
-C
-      SUBROUTINE OPNONSYMt(n,p,W,U,ad,au,jq,irow)
+!     y=A^T*x+y for real sparse nonsymmetric matrices; 
+!
+!     storage of the matrix:
+!        au: first lower triangle
+!        ad: diagonal terms
+!
+      subroutine opnonsymt(n,x,y,ad,au,jq,irow)
 !
       implicit none
 !
-C-----------------------------------------------------------------------
-      integer  IROW(*),JQ(*),n,l,i,j,llast
-      real*8   U(*),W(*),Au(*),AD(*),p(*)
-C-----------------------------------------------------------------------
-C    SPARSE MATRIX-VECTOR MULTIPLY FOR LANCZS  U = A*W
-C    SEE USPEC SUBROUTINE FOR DESCRIPTION OF THE ARRAYS THAT DEFINE
-C    THE MATRIX
-c    the vector p is not needed but is kept for compatibility reasons
-c    with the calling program
-C-----------------------------------------------------------------------
-C
-C     COMPUTE THE DIAGONAL TERMS
-      DO 10 I = 1,N
-         U(I) = AD(I)*W(I)+U(I)
- 10   CONTINUE
-C
-C     COMPUTE BY COLUMN
-      LLAST = 0
-      DO 30 J = 1,N
-C
-         DO 20 L = JQ(J),JQ(J+1)-1
-            I = IROW(L)
-C
-            U(j) = U(j) + Au(L)*W(i)
-C
- 20      CONTINUE
-C
- 30   CONTINUE
-C
-      RETURN
-      END
-
-
-
-
+      integer irow(*),n,j,l,i,jq(*)
+      real*8 y(*),x(*),au(*),ad(*)
+!
+!     diagonal terms
+!
+      do i=1,n
+         y(i)=ad(i)*x(i)+y(i)
+      enddo
+!
+!     off-diagonal terms
+!
+      do j=1,n
+         do l=jq(j),jq(j+1)-1
+            i=irow(l)
+            y(j)=y(j)+au(l)*x(i)
+         enddo
+      enddo
+!
+      return
+      end

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,47 +16,33 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-C
-C-----MATRIX-VECTOR MULTIPLY FOR REAL SPARSE NONSYMMETRIC MATRICES---------
-c     matrix storage:
-c        au: nondiagonal terms, column by column
-c        ad: diagonal terms
-C
-      SUBROUTINE OPNONSYM(n,p,W,U,ad,au,jq,irow)
-      implicit real*8(a-h,o-z)
+!     y=A*x for real sparse nonsymmetric matrices
 !
-C-----------------------------------------------------------------------
-      integer  IROW(*),JQ(*),n
-      real*8   U(*),W(*),Au(*),AD(*),p(*)
-C-----------------------------------------------------------------------
-C    SPARSE MATRIX-VECTOR MULTIPLY FOR LANCZS  U = A*W
-C    SEE USPEC SUBROUTINE FOR DESCRIPTION OF THE ARRAYS THAT DEFINE
-C    THE MATRIX
-c    the vector p is not needed but is kept for compatibility reasons
-c    with the calling program
-C-----------------------------------------------------------------------
-C
-C     COMPUTE THE DIAGONAL TERMS
-      DO 10 I = 1,N
-         U(I) = AD(I)*W(I)
- 10   CONTINUE
-C
-C     COMPUTE BY COLUMN
-      LLAST = 0
-      DO 30 J = 1,N
-C
-         DO 20 L = JQ(J),JQ(J+1)-1
-            I = IROW(L)
-C
-            U(I) = U(I) + Au(L)*W(J)
-C
- 20      CONTINUE
-C
- 30   CONTINUE
-C
-      RETURN
-      END
-
-
-
-
+!     storage of the matrix:
+!        au: nondiagonal terms, column by column
+!        ad: diagonal terms
+!
+      subroutine opnonsym(n,x,y,ad,au,jq,irow)
+!
+      implicit none
+!
+      integer irow(*),n,j,l,i,jq(*)
+      real*8 y(*),x(*),au(*),ad(*)
+!
+!     diagonal terms
+!
+      do i=1,n
+         y(i)=ad(i)*x(i)
+      enddo
+!
+!     off-diagonal terms
+!
+      do j=1,n
+         do l=jq(j),jq(j+1)-1
+            i=irow(l)
+            y(i)=y(i)+au(l)*x(j)
+         enddo
+      enddo
+!
+      return
+      end

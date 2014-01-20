@@ -33,7 +33,7 @@
 void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
         int *iexpl, int *nactdof, double *aux1, double *aux2, double *vold,
         double *vini, double *dtime, double *accold, int *nk, double *adb,
-        double *aub, int *icol, int *irow, int *nzl, double *alpha,
+        double *aub, int *jq, int *irow, int *nzl, double *alpha,
         double *fextini, double *fini, int *islavnode, int *nslavnode,
         int *mortar, int *ntie,double *f_cm,
 	double* f_cs, int *mi,int *nzs,int *nasym){
@@ -61,9 +61,9 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
 	    }
 	}
 	if(*nasym==0){
-	    FORTRAN(op,(&neq[1],aux1,aux2,b,adb,aub,icol,irow,nzl)); 
+	    FORTRAN(op,(&neq[1],aux2,b,adb,aub,jq,irow)); 
 	}else{
-	    FORTRAN(opas,(&neq[1],aux1,aux2,b,adb,aub,icol,irow,nzl,nzs)); 
+	    FORTRAN(opas,(&neq[1],aux2,b,adb,aub,jq,irow,nzs)); 
 	}
 	scal1=1.+*alpha;
 	for(k=0;k<neq[0];++k){

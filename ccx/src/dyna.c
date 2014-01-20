@@ -656,8 +656,8 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 
       zc=NNEW(double,neq[1]*nev);
       for(i=0;i<nev;i++){
-	  FORTRAN(op,(&neq[1],aux,&z[i*neq[1]],&zc[i*neq[1]],adc,auc,
-	  icol,irow,nzl));
+	  FORTRAN(op,(&neq[1],&z[i*neq[1]],&zc[i*neq[1]],adc,auc,
+	  jq,irow));
       }
 
       /* cc is the reduced damping matrix (damping matrix mapped onto
@@ -808,7 +808,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       }
     }
     
-    FORTRAN(op,(&neq[1],aux,temp_array1,temp_array2,adb,aub,icol,irow,nzl));
+    FORTRAN(op,(&neq[1],temp_array1,temp_array2,adb,aub,jq,irow));
     
     for(i=0;i<neq[1];i++){
       for(k=0;k<nev;k++){
@@ -828,7 +828,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       }
     }
     
-    FORTRAN(op,(&neq[1],aux,temp_array1,temp_array2,adb,aub,icol,irow,nzl));
+    FORTRAN(op,(&neq[1],temp_array1,temp_array2,adb,aub,jq,irow));
     
     for(i=0;i<neq[1];i++){
       for(k=0;k<nev;k++){

@@ -509,8 +509,8 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
       zc=NNEW(double,neq[1]*nev);
       for(i=0;i<nev;i++){
-	  FORTRAN(op_corio,(&neq[1],aux,&z[i*neq[1]],&zc[i*neq[1]],adc,auc,
-	  icol,irow,nzl));
+	  FORTRAN(op_corio,(&neq[1],&z[i*neq[1]],&zc[i*neq[1]],adc,auc,
+	  jq,irow));
       }
       free(adc);free(auc);
 
@@ -682,7 +682,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       for(l=0;l<nev;l++){
 	  sum=0.;
 	  DMEMSET(z,0,neq[1],0.);
-	  FORTRAN(op,(&neq[1],aux,&zz[l*neq[1]],z,adb,aub,icol,irow,nzl));
+	  FORTRAN(op,(&neq[1],&zz[l*neq[1]],z,adb,aub,jq,irow));
 	  for(k=0;k<neq[1];k++){
 	      sum+=zz[l*neq[1]+k]*z[k];
 	  }
@@ -708,7 +708,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  
 	  for(l=0;l<nev;l++){
 	      DMEMSET(z,0,neq[1],0.);
-	      FORTRAN(op,(&neq[1],aux,&zz[l*neq[1]],z,adb,aub,icol,irow,nzl));
+	      FORTRAN(op,(&neq[1],&zz[l*neq[1]],z,adb,aub,jq,irow));
 	      for(m=l;m<nev;m++){
 		  for(k=0;k<neq[1];k++){
 		      xmr[l*nev+m]+=zz[m*neq[1]+k]*z[k];
@@ -718,7 +718,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      memcpy(&zi[0],&zz[(2*l+1)*neqact],sizeof(double)*neqact);
 	      for(k=0;k<neqact;k++){zi[neqact+k]=-zz[2*l*neqact+k];}
 	      DMEMSET(z,0,neq[1],0.);
-	      FORTRAN(op,(&neq[1],aux,zi,z,adb,aub,icol,irow,nzl));
+	      FORTRAN(op,(&neq[1],zi,z,adb,aub,jq,irow));
 	      for(m=l;m<nev;m++){
 		  for(k=0;k<neq[1];k++){
 		      xmi[l*nev+m]+=zz[m*neq[1]+k]*z[k];
@@ -792,7 +792,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  /* Ureal^T*M*Ureal */
 	  
 	  DMEMSET(z,0,neq[1],0.);
-	  FORTRAN(op,(&neq[1],aux,&zz[2*l*neq[1]],z,adb,aub,icol,irow,nzl));
+	  FORTRAN(op,(&neq[1],&zz[2*l*neq[1]],z,adb,aub,jq,irow));
 	  for(k=0;k<neq[1];k++){
 	      sum+=zz[2*l*neq[1]+k]*z[k];
 	  }
@@ -800,7 +800,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  /* Uimag^T*M*Uimag */
 	  
 	  DMEMSET(z,0,neq[1],0.);
-	  FORTRAN(op,(&neq[1],aux,&zz[(2*l+1)*neq[1]],z,adb,aub,icol,irow,nzl));
+	  FORTRAN(op,(&neq[1],&zz[(2*l+1)*neq[1]],z,adb,aub,jq,irow));
 	  for(k=0;k<neq[1];k++){
 	      sum+=zz[(2*l+1)*neq[1]+k]*z[k];
 	  }
@@ -829,7 +829,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      /* M*Ureal */
 	      
 	      DMEMSET(z,0,neq[1],0.);
-	      FORTRAN(op,(&neq[1],aux,&zz[2*l*neq[1]],z,adb,aub,icol,irow,nzl));
+	      FORTRAN(op,(&neq[1],&zz[2*l*neq[1]],z,adb,aub,jq,irow));
 	      
 	      /* Ureal^T*M*Ureal and Uimag^T*M*Ureal */
 	      
@@ -845,7 +845,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      /* M*Uimag */
 	      
 	      DMEMSET(z,0,neq[1],0.);
-	      FORTRAN(op,(&neq[1],aux,&zz[(2*l+1)*neq[1]],z,adb,aub,icol,irow,nzl));
+	      FORTRAN(op,(&neq[1],&zz[(2*l+1)*neq[1]],z,adb,aub,jq,irow));
 	      
 	      /* Ureal^T*M*Uimag and Uimag^T*M*Uimag */
 	      

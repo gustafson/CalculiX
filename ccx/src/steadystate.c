@@ -978,8 +978,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      
 	      zc=NNEW(double,neq[1]*nev);
 	      for(i=0;i<nev;i++){
-		  FORTRAN(op,(&neq[1],aux,&z[(long long)i*neq[1]],&zc[i*neq[1]],adc,auc,
-			      icol,irow,nzl));
+		  FORTRAN(op,(&neq[1],&z[(long long)i*neq[1]],&zc[i*neq[1]],adc,auc,
+			      jq,irow));
 	      }
 	      
 	      /* cc is the reduced damping matrix (damping matrix mapped onto
@@ -1158,8 +1158,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  pardiso_solve(ubr,&neq[1],&symmetryflag);
 #endif
 	      }
-	      FORTRAN(op,(&neq[1],aux,ubr,mubr,adb,aub,
-			  icol,irow,nzl));
+	      FORTRAN(op,(&neq[1],ubr,mubr,adb,aub,
+			  jq,irow));
 	  }
 	  
 	  /* imaginary part of forces */
@@ -1304,8 +1304,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  pardiso_solve(ubi,&neq[1],&symmetryflag);
 #endif
 	      }
-	      FORTRAN(op,(&neq[1],aux,ubi,mubi,adb,aub,
-			  icol,irow,nzl));
+	      FORTRAN(op,(&neq[1],ubi,mubi,adb,aub,
+			  jq,irow));
 	  
 	      /* correction for prescribed boundary conditions */
 	  
@@ -2241,8 +2241,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  
 		  zc=NNEW(double,neq[1]*nev);
 		  for(i=0;i<nev;i++){
-		      FORTRAN(op,(&neq[1],aux,&z[(long long)i*neq[1]],&zc[i*neq[1]],
-                                  adc,auc,icol,irow,nzl));
+		      FORTRAN(op,(&neq[1],&z[(long long)i*neq[1]],&zc[i*neq[1]],
+                                  adc,auc,jq,irow));
 		  }
 		  
 		  /* cc is the reduced damping matrix (damping matrix mapped onto
@@ -2375,8 +2375,8 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		      pardiso_solve(ubr,&neq[1],&symmetryflag);
 #endif
 		  }
-		  FORTRAN(op,(&neq[1],aux,ubr,mubr,adb,aub,
-			      icol,irow,nzl));
+		  FORTRAN(op,(&neq[1],ubr,mubr,adb,aub,
+			      jq,irow));
 		  
 		  for(i=0;i<neq[1];i++){
 		      br[i]+=freq[l]*(freq[l]*mubr[i]);

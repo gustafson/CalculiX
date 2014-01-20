@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2011 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,179 +16,164 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine near2d(xo,yo,x,y,nx,ny,xp,yp,n,node,k)
-C
-c     determines the k closest nodes out of n with coordinates in
-c     xo,yo to the point with coordinates (xp,yp);
-c
-c     order xo and yo before the first call to near2d and
-c     store the results with the corresponding permutation array
-c     in x,y and nx,ny, respectively
-c
+      subroutine near2d(xo,yo,x,y,nx,ny,xp,yp,n,neighbor,k)
+!
+!     determines the k closest nodes out of n with coordinates in
+!     (xo,yo) to the point with coordinates (xp,yp);
+!
       implicit none
-C
-      integer node(*),nx(*),ny(*),ni(24),n,m,idx,idy,it,j,iz,kflag,i,
-     &  k,ks,nboundary
-c
-      real*8 x(*),y(*),xo(*),yo(*),r(24),xr,yr,aan,aas,aaw,aao,
-     &  aano,aaso,aasw,aanw,aamin,xx,yy,rr,xp,yp
-c
+!
+      integer n,nx(n),ny(n),ir(k+4),nr,neighbor(k),kflag,iflag,
+     &  i,j,k,l,m,id,idx,idy,four,idummy,node,kfix
+!
+      real*8 x(n),y(n),xo(n),yo(n),xp,yp,r(k+4),xr,yr,c(4),dd,
+     &  xw,xe,ys,yn,sqrt_rmaxini
+!
+      data iflag /1/
+      data kflag /2/
+      data four /4/
+!
       if(k.gt.n) then
-c         write(*,*) '*ERROR in near2d: neighbors requested'
-c         write(*,*) '       supersedes number of nodes'
-c         write(*,*) k,n
-c         stop
          k=n
       endif
-c
-      if(k.gt.20) then
-         write(*,*) '*ERROR in near2d: no more than 20 neighbors'
-         write(*,*) '       can be identified'
-         stop
-      endif
-c
-      CALL IDENT(X,XP,N,IDX)
-      CALL IDENT(Y,YP,N,IDY)
-C
-      kflag=2
-C
+!
+!     identify position of xp and yp
+!      
+      call ident(x,xp,n,idx)
+      call ident(y,yp,n,idy)
+!
+!     initialization of r and ir
+!
       do i=1,k
-         XR=XO(i)-XP
-         YR=YO(i)-YP
-         R(i)=dSQRT(XR*XR+YR*YR)
-         NI(i)=i
+         xr=xo(i)-xp
+         yr=yo(i)-yp
+         r(i)=xr*xr+yr*yr
+         ir(i)=i
       enddo
-      call dsort(r,ni,k,kflag)
-C
+      call dsort(r,ir,k,kflag)
+      sqrt_rmaxini=dsqrt(r(k))
+!
+!     initialization of the maximal distance in each direction
+!
+      xw=0.d0
+      xe=0.d0
+      ys=0.d0
+      yn=0.d0
+!
+      kfix=1
+!
       i=1
-      ks=0
-c
-      loop: do
-c
-         IZ=0
-C
-C     WEST
-C
-         M=IDX-i+1
-         IF(M.LE.0) THEN
-            AAW=R(k)
-            GO TO 4
-         END IF
-C
-         XX=XO(NX(M))
-         YY=YO(NX(M))
-         AAW=XX-XP
-         YR=YY-YP
-         RR=SQRT(AAW*AAW+YR*YR)
-C
-         IF(RR.GE.R(k)) GO TO 4
-         IT=IZ+k
-         DO 8 J=1,IT
-            IF(NX(M).EQ.NI(J)) GO TO 4
- 8       CONTINUE
-         IZ=IZ+1
-         R(IZ+k)=RR
-         NI(IZ+k)=NX(M)
-C
-C     EAST
-C
- 4       M=IDX+i
-         IF(M.GT.N) THEN
-            AAO=R(k)
-            GO TO 6
-         END IF
-C
-         XX=XO(NX(M))
-         YY=YO(NX(M))
-         AAO=XX-XP
-         YR=YY-YP
-         RR=SQRT(AAO*AAO+YR*YR)
-C
-         IF(RR.GE.R(k)) GO TO 6
-         IT=IZ+k
-         DO 10 J=1,IT
-            IF(NX(M).EQ.NI(J)) GO TO 6
- 10      CONTINUE
-         IZ=IZ+1
-         R(IZ+k)=RR
-         NI(IZ+k)=NX(M)
-C
-C     SOUTH
-C
- 6       M=IDY-i+1
-         IF(M.LE.0) THEN
-            AAS=R(k)
-            GO TO 5
-         END IF
-C
-         XX=XO(NY(M))
-         YY=YO(NY(M))
-         XR=XX-XP
-         AAS=YY-YP
-         RR=SQRT(XR*XR+AAS*AAS)
-C
-         IF(RR.GE.R(k)) GO TO 5
-         IT=IZ+k
-         DO 9 J=1,IT
-            IF(NY(M).EQ.NI(J)) GO TO 5
- 9       CONTINUE
-         IZ=IZ+1
-         R(IZ+k)=RR
-         NI(IZ+k)=NY(M)
-C
-C     NORTH
-C
- 5       M=IDY+i
-         IF(M.GT.N) THEN
-            AAN=R(k)
-            GO TO 7
-         END IF
-C
-         XX=XO(NY(M))
-         YY=YO(NY(M))
-         XR=XX-XP
-         AAN=YY-YP
-         RR=SQRT(XR*XR+AAN*AAN)
-C
-         IF(RR.GE.R(k)) GO TO 7
-         IT=IZ+k
-         DO 11 J=1,IT
-            IF(NY(M).EQ.NI(J)) GO TO 7
- 11      CONTINUE
-         IZ=IZ+1
-         R(IZ+k)=RR
-         NI(IZ+k)=NY(M)
-C
- 7       AANO=SQRT(AAN*AAN+AAO*AAO)
-         AASO=SQRT(AAS*AAS+AAO*AAO)
-         AASW=SQRT(AAS*AAS+AAW*AAW)
-         AANW=SQRT(AAN*AAN+AAW*AAW)
-         AAMIN=MIN(AANO,AASO,AASW,AANW)
-C
-c         write(*,*) iz+k,(ni(j),j=1,iz+k)
-         IF(IZ.NE.0) THEN
-            IZ=IZ+k
-            CALL dsort(R,NI,IZ,kflag)
-         ENDIF
-C
-         nboundary=ks
-         do j=nboundary+1,k
-            IF(R(j).LE.AAMIN) THEN
-               ks=j
-               if(ks.eq.k) exit loop
-            ELSE
-               i=i+1
-               cycle loop
-            ENDIF
-         enddo
-C
-      enddo loop
-C
-      do i=1,k
-          node(i)=ni(i)
-c          write(*,*) 'near2d ',i,node(i),r(i),
-c     &         xo(ni(i)),yo(ni(i)),xp,yp
+!
+      do
+!
+         nr=k
+!
+!        west
+!
+         id=idx+1-i
+         if(id.gt.0) then
+            node=nx(id)
+            xw=xo(node)-xp
+            yr=yo(node)-yp
+            dd=xw*xw+yr*yr
+            if(dd.lt.r(k)) then
+               nr=nr+1
+               ir(nr)=node
+               r(nr)=dd
+            endif
+         elseif(id.eq.0) then
+            xw=sqrt_rmaxini
+         endif
+!
+!        east
+!
+         id=idx+i
+         if(id.le.n) then
+            node=nx(id)
+            xe=xo(node)-xp
+            yr=yo(node)-yp
+            dd=xe*xe+yr*yr
+            if(dd.lt.r(k)) then
+               nr=nr+1
+               ir(nr)=node
+               r(nr)=dd
+            endif
+         elseif(id.eq.n+1) then
+            xe=sqrt_rmaxini
+         endif
+!
+!        south
+!
+         id=idy+1-i
+         if(id.gt.0) then
+            node=ny(id)
+            xr=xo(node)-xp
+            ys=yo(node)-yp
+            dd=xr*xr+ys*ys
+            if(dd.lt.r(k)) then
+               nr=nr+1
+               ir(nr)=node
+               r(nr)=dd
+            endif
+         elseif(id.eq.0) then
+            ys=sqrt_rmaxini
+         endif
+!
+!        north
+!
+         id=idy+i
+         if(id.le.n) then
+            node=ny(id)
+            xr=xo(node)-xp
+            yn=yo(node)-yp
+            dd=xr*xr+yn*yn
+            if(dd.lt.r(k)) then
+               nr=nr+1
+               ir(nr)=node
+               r(nr)=dd
+            endif
+         elseif(id.eq.n+1) then
+            yn=sqrt_rmaxini
+         endif
+!
+!        check the corners of the box
+!
+         c(1)=xe*xe+yn*yn
+         c(2)=xw*xw+yn*yn
+         c(3)=xw*xw+ys*ys
+         c(4)=xe*xe+ys*ys
+         call dsort(c,idummy,four,iflag)
+!
+!        check for new entries
+!
+         if(nr.gt.k) then
+            call dsort(r,ir,nr,kflag)
+!     
+!     reject equal entries
+!     
+            m=kfix
+            if(m.lt.k) then
+               loop: do j=kfix+1,nr
+                  do l=m,1,-1
+                     if(ir(j).eq.ir(l)) cycle loop
+                  enddo
+                  m=m+1
+                  r(m)=r(j)
+                  ir(m)=ir(j)
+                  if(r(m).le.c(1)) kfix=m
+                  if(m.eq.k) exit
+               enddo loop
+            endif
+         endif
+         if(c(1).ge.r(k)) exit
+!     
+         i=i+1
+!
       enddo
-c
-      RETURN
-      END
+!
+      do i=1,k
+         neighbor(i)=ir(i)
+      enddo
+!
+      return
+      end

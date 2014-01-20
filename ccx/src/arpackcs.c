@@ -96,7 +96,7 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     kmax1,kmax2,icfd=0,*inomat=NULL;
 
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,*vr=NULL,
-    *workl=NULL,*aux=NULL,*d=NULL,sigma,*temp_array=NULL,*vini=NULL,
+    *workl=NULL,*d=NULL,sigma,*temp_array=NULL,*vini=NULL,
     *een=NULL,cam[5],*f=NULL,*fn=NULL,qa[3],*fext=NULL,*emn=NULL,
     *epn=NULL,*stiini=NULL,*fnr=NULL,*fni=NULL,fnreal,fnimag,*emeini=NULL,
     *xstateini=NULL,theta,pi,*coefmpcnew=NULL,*xstiff=NULL,*vi=NULL,
@@ -553,7 +553,7 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
       while((ido==-1)||(ido==1)||(ido==2)){
 	  if(ido==-1){
 	      if(nasym==1){
-		  FORTRAN(opas,(&neq[1],aux,&workd[ipntr[0]-1],temp_array,adb,aub,icol,irow,nzl,nzs));
+		  FORTRAN(opas,(&neq[1],&workd[ipntr[0]-1],temp_array,adb,aub,jq,irow,nzs));
 		  /*	    for(jrow=0;jrow<neq2;jrow++){
 			    temp_array2[jrow]=workd[ipntr[0]-1+2*jrow];
 			    temp_array2[neq2+jrow]=workd[ipntr[0]+2*jrow];
@@ -561,8 +561,8 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 			    FORTRAN(opas,(&neq[1],aux,temp_array2,temp_array,adb,aub,
 			    icol,irow,nzl,nzs));*/
 	      }else{
-		  FORTRAN(op,(&neq[1],aux,&workd[ipntr[0]-1],temp_array,adb,aub,
-			      icol,irow,nzl));
+		  FORTRAN(op,(&neq[1],&workd[ipntr[0]-1],temp_array,adb,aub,
+			      jq,irow));
 	      }
 	  }
 	  
@@ -663,8 +663,8 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	  
 	  if(ido==2){
 	      if(nasym==1){
-		  FORTRAN(opas,(&neq[1],aux,&workd[ipntr[0]-1],&workd[ipntr[1]-1],
-				adb,aub,icol,irow,nzl,nzs));
+		  FORTRAN(opas,(&neq[1],&workd[ipntr[0]-1],&workd[ipntr[1]-1],
+				adb,aub,jq,irow,nzs));
 		  /*	    for(jrow=0;jrow<neq2;jrow++){
 			    temp_array2[jrow]=workd[ipntr[0]-1+2*jrow];
 			    temp_array2[neq2+jrow]=workd[ipntr[0]+2*jrow];
@@ -676,8 +676,8 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 			    workd[ipntr[1]+2*jrow]=temp_array[neq2+jrow];
 			    }*/
 	      }else{
-		  FORTRAN(op,(neq,aux,&workd[ipntr[0]-1],&workd[ipntr[1]-1],
-			      adb,aub,icol,irow,nzl));
+		  FORTRAN(op,(neq,&workd[ipntr[0]-1],&workd[ipntr[1]-1],
+			      adb,aub,jq,irow));
 	      }
 	  }
 	  

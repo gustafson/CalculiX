@@ -1851,23 +1851,22 @@ void FORTRAN(normalsoninterface,(int *istartset,int *iendset,
 	     int *ialset,int *imast,int *ipkon,int *kon,char *lakon,
              int *imastnode,int *nmastnode,double *xmastnor,double *co));
 
-void FORTRAN(op,(int *,double *,double *,double *,double *,double *,int *,
-	 int *,int *));
+void FORTRAN(op,(int *n,double *x,double *y,double *ad,double *au,int *jq,int *irow));
 
-void FORTRAN(opas,(int *,double *,double *,double *,double *,double *,int *,
-		   int *,int *,int *));
+void FORTRAN(opas,(int *n,double *x,double *y,double *ad,double *au,int *jq,
+		   int *irow,int *nzs));
 
-void FORTRAN(op_corio,(int *,double *,double *,double *,double *,double *,
-		       int *,int *,int *));
+void FORTRAN(op_corio,(int *n,double *x,double *y,double *ad,double *au,
+		       int *jq,int *irow));
 
 void FORTRAN(openfile,(char *jobname,char *output));
 
 void FORTRAN(openfilefluid,(char *jobname));
 
-void FORTRAN(opnonsym, (int *neq,double *aux,double *b,double *bhat, 
+void FORTRAN(opnonsym, (int *neq,double *b,double *bhat, 
           double *bdd,double*bdu,int *jqbd,int *irowbd));
 
-void FORTRAN(opnonsymt, (int *neq,double *aux,double *b,double *bhat, 
+void FORTRAN(opnonsymt, (int *neq,double *b,double *bhat, 
           double *bdd,double*bdu,int *jqbd,int *irowbd));
 
 void FORTRAN(out,(double *co,int *nk,int *kon,int *ipkon,char *lakon,
