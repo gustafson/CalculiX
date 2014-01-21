@@ -85,13 +85,16 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   double pi,oner;
 
 #ifdef EXODUSII
-  exo(co,nk,kon,ipkon,lakon,ne0,v,stn,inum,nmethod,kode,
-      filab,een,t1,fn,time,epn,ielmat,matname,enern,
-      xstaten,nstate_,istep,iinc,ithermal,qfn,mode,noddiam,
-      trab,inotr,ntrans,orab,ielorien,norien,description,
-      ipneigh,neigh,mi,stx,vr,vi,stnr,stni,vmax,stnmax,
-      ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
-      ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx);
+  if(strcmp1(output,"exo")==0){
+    exo(co,nk,kon,ipkon,lakon,ne0,v,stn,inum,nmethod,kode,
+	filab,een,t1,fn,time,epn,ielmat,matname,enern,
+	xstaten,nstate_,istep,iinc,ithermal,qfn,mode,noddiam,
+	trab,inotr,ntrans,orab,ielorien,norien,description,
+	ipneigh,neigh,mi,stx,vr,vi,stnr,stni,vmax,stnmax,
+	ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
+	ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx);
+    return;
+  }
 #endif
 
   strcpy(fneig,jobnamec);
