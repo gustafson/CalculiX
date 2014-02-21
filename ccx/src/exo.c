@@ -413,6 +413,10 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	    for(m=0;m<12;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
 	    for(m=16;m<20;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
 	    for(m=12;m<16;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
+	  }else if(blkassign[o]==12){ // C3D15
+	    for(m=0;m<9;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
+	    for(m=12;m<15;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
+	    for(m=9;m<12;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
 	  }else if (blkassign[o]==2){ // Composite
 	    nlayer=0;
 	    for(l=0;l<mi[2];l++){
