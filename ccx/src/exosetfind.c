@@ -184,16 +184,16 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
 }
 
 
-void exosetwarn(int val){
+void exoset_warn(int val){
   if (val==-1) {
     printf ("WARNING: A node or element is dropped from a defined set.\n");
-    printf ("  This may be due to 3D expansion (beams, shells, OUTPUT=3D).\n");
+    printf ("  This may be due rigid bodies or 3D expansion (beams, shells, OUTPUT=3D).\n");
     printf ("  The postprocesser may complain about file integrity.\n");
   }
 }
 
 int exoset_check(int n, int *node_map_inv){
   int val = node_map_inv[n]-1;
-  if (val==-1) {exosetwarn(val);}
+  if (val==-1) {exoset_warn(val);}
   return val;
 }
