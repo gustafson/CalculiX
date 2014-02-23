@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -80,7 +80,8 @@
             if(j.gt.nam) then
                write(*,*)'*ERROR in dloads: nonexistent amplitude'
                write(*,*) '  '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*DLOAD%")
                stop
             endif
             iamplitude=j
@@ -89,7 +90,8 @@
                write(*,*) '*ERROR in dloads: the parameter TIME DELAY'
                write(*,*) '       is used twice in the same keyword'
                write(*,*) '       '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*DLOAD%")
                stop
             else
                idelay=1
@@ -122,10 +124,12 @@
             namta(2,nam)=namtot
             read(textpart(i)(11:30),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DLOAD%")
          elseif(textpart(i)(1:9).eq.'LOADCASE=') then
             read(textpart(i)(10:19),'(i10)',iostat=istat) lc
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DLOAD%")
             if(nmethod.ne.5) then
                write(*,*) '*ERROR in dloads: the parameter LOAD CASE'
                write(*,*) '       is only allowed in STEADY STATE'
@@ -134,7 +138,8 @@
             endif
          elseif(textpart(i)(1:7).eq.'SECTOR=') then
             read(textpart(i)(8:17),'(i10)',iostat=istat) isector
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DLOAD%")
             if((nmethod.le.3).or.(iperturb.gt.1)) then
                write(*,*) '*ERROR in dloads: the parameter SECTOR'
                write(*,*) '       is only allowed in MODAL DYNAMICS or'
@@ -151,13 +156,15 @@
             submodel=.true.
          elseif(textpart(i)(1:5).eq.'STEP=') then
             read(textpart(i)(6:15),'(i10)',iostat=istat) iglobstep
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DLOAD%")
          else
             write(*,*) 
      &        '*WARNING in dloads: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*DLOAD%")
          endif
       enddo
 !
@@ -166,7 +173,8 @@
       if((submodel).and.(iglobstep.eq.0)) then
          write(*,*) '*ERROR reading *DLOAD: no global step'
          write(*,*) '       step specified for the submodel'
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*DLOAD%")
       endif
 !
       do
@@ -189,15 +197,18 @@
          else
             read(textpart(3)(1:10),'(i10)',iostat=istat) node
          endif
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DLOAD%")
          if(label(1:7).eq.'CENTRIF') then
             do i=1,3
                read(textpart(i+3)(1:20),'(f20.0)',iostat=istat) p1(i)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DLOAD%")
             enddo
             do i=1,3
                read(textpart(i+6)(1:20),'(f20.0)',iostat=istat) p2(i)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DLOAD%")
             enddo
             dd=dsqrt(p2(1)**2+p2(2)**2+p2(3)**2)
             do i=1,3
@@ -206,7 +217,8 @@
          elseif(label(1:4).eq.'GRAV') then
             do i=1,3
                read(textpart(i+3)(1:20),'(f20.0)',iostat=istat) bodyf(i)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DLOAD%")
             enddo
          elseif(label(1:6).eq.'NEWTON') then
             if(iperturb.le.1) then
@@ -234,7 +246,8 @@ cBernhardiStart
 cBernhardiEnd
      &          ((label(3:4).ne.'  ').and.(label(3:4).ne.'NU').and.
      &           (label(3:4).ne.'NP').and.(label(3:4).ne.'SM'))) then
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*DLOAD%")
          endif
 !
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
@@ -311,7 +324,8 @@ cBernhardiEnd
                elset(ipos:ipos)=' '
                write(*,*) '*ERROR in dloads: element set ',elset
                write(*,*) '       has not yet been defined. '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*DLOAD%")
                stop
             endif
 !

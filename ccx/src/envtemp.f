@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -244,6 +244,29 @@ c            iptri(ntr)=ntri+1
                   endif
                enddo
 !
+            endif
+         endif
+!
+!        removing gas nodes belonging to advective elements
+!        (last node in the element topology)
+!        these are usually gas nodes not belonging to any
+!        "D"-element
+!
+         if(lakon(i)(1:7).eq.'ESPRNGF') then
+            read(lakon(i)(8:8),'(i1)') nopes
+            nope=nopes+1
+            node=kon(ipkon(i)+nope)
+!
+            call nident(itg,node,ntg,id)
+            if(id.gt.0) then
+               if(itg(id).eq.node) then
+                  ntg=ntg-1
+                  do k=id,ntg
+                     itg(k)=itg(k+1)
+                  enddo
+                  nactdog(0,node)=0
+                  nactdog(2,node)=0
+               endif
             endif
          endif
       enddo

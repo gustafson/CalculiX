@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -78,14 +78,16 @@
      &        '*WARNING reading *AMPLITUDE: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*AMPLITUDE%")
          endif
       enddo
 !
       if(amname(nam).eq.'                                               
      &                                 ') then
          write(*,*) '*ERROR reading *AMPLITUDE: Amplitude has no name'
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*AMPLITUDE%")
       endif
 !
       if(.not.user) then
@@ -110,9 +112,11 @@
                   stop
                endif
                read(textpart(2*i-1),'(f20.0)',iostat=istat) x
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*AMPLITUDE%")
                read(textpart(2*i),'(f20.0)',iostat=istat) y
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*AMPLITUDE%")
                amta(1,namtot)=x
                amta(2,namtot)=y
                namta(2,nam)=namtot

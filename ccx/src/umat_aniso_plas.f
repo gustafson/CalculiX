@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -62,7 +62,7 @@
 !     t1l                temperature at the end of the increment
 !     dtime              time length of the increment
 !     time               step time at the end of the current increment
-!     ttime              total time at the start of the current increment
+!     ttime              total time at the start of the current step
 !
 !     icmd               not equal to 3: calculate stress and stiffness
 !                        3: calculate only stress
@@ -207,7 +207,7 @@
       r0=elconloc(10)
       d1=elconloc(11)
       d2=elconloc(12)
-      ca=c0/(elconloc(13)*ttime**elconloc(15)*dtime)
+      ca=c0/(elconloc(13)*(ttime+time-dtime)**elconloc(15)*dtime)
       cn=elconloc(14)
 !
       if((ca.lt.0.d0).or.((nmethod.eq.1).and.(ithermal.ne.3))) then

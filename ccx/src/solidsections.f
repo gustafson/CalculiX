@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -68,7 +68,8 @@
      &        '*WARNING in solidsections: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*SOLID SECTION%")
          endif
       enddo
 !
@@ -89,7 +90,8 @@
       if(i.gt.nmat) then
          write(*,*) '*ERROR in solidsections: nonexistent material'
          write(*,*) '  '
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*SOLID SECTION%")
          stop
       endif
       imaterial=i
@@ -103,7 +105,8 @@
          if(i.gt.norien) then
             write(*,*)'*ERROR in solidsections: nonexistent orientation'
             write(*,*) '  '
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*SOLID SECTION%")
             stop
          endif
          iorientation=i
@@ -112,7 +115,8 @@
       if(ipos.eq.0) then
          write(*,*) '*ERROR in solidsections: no element set ',elset
          write(*,*) '       was been defined. '
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*SOLID SECTION%")
          stop
       endif
       do i=1,nset
@@ -122,7 +126,8 @@
          elset(ipos:ipos)=' '
          write(*,*) '*ERROR in solidsections: element set ',elset
          write(*,*) '  has not yet been defined. '
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*SOLID SECTION%")
          stop
       endif
 !
@@ -170,7 +175,8 @@
       if((key.eq.0).or.(lakon(ialset(istartset(i)))(1:2).eq.'CA')) then
          if(key.eq.0) then
             read(textpart(1)(1:20),'(f20.0)',iostat=istat) thickness
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*SOLID SECTION%")
 !
 !        for axial symmetric structures:
 !           thickness for axial symmetric elements: 1 degree

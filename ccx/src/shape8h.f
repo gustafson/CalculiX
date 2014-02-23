@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -60,36 +60,36 @@
 !
 !     local derivatives of the shape functions: xi-derivative
 !
-      shp(1, 1)=-omh*omr/8.d0
-      shp(1, 2)=omh*omr/8.d0
-      shp(1, 3)=oph*omr/8.d0
-      shp(1, 4)=-oph*omr/8.d0
-      shp(1, 5)=-omh*opr/8.d0
-      shp(1, 6)=omh*opr/8.d0
-      shp(1, 7)=oph*opr/8.d0
-      shp(1, 8)=-oph*opr/8.d0
+      shp(1, 1)=-omh*omr
+      shp(1, 2)=omh*omr
+      shp(1, 3)=oph*omr
+      shp(1, 4)=-oph*omr
+      shp(1, 5)=-omh*opr
+      shp(1, 6)=omh*opr
+      shp(1, 7)=oph*opr
+      shp(1, 8)=-oph*opr
 !
 !     local derivatives of the shape functions: eta-derivative
 !
-      shp(2, 1)=-omg*omr/8.d0
-      shp(2, 2)=-opg*omr/8.d0
-      shp(2, 3)=opg*omr/8.d0
-      shp(2, 4)=omg*omr/8.d0
-      shp(2, 5)=-omg*opr/8.d0
-      shp(2, 6)=-opg*opr/8.d0
-      shp(2, 7)=opg*opr/8.d0
-      shp(2, 8)=omg*opr/8.d0
+      shp(2, 1)=-omg*omr
+      shp(2, 2)=-opg*omr
+      shp(2, 3)=opg*omr
+      shp(2, 4)=omg*omr
+      shp(2, 5)=-omg*opr
+      shp(2, 6)=-opg*opr
+      shp(2, 7)=opg*opr
+      shp(2, 8)=omg*opr
 !
 !     local derivatives of the shape functions: zeta-derivative
 !
-      shp(3, 1)=-omg*omh/8.d0
-      shp(3, 2)=-opg*omh/8.d0
-      shp(3, 3)=-opg*oph/8.d0
-      shp(3, 4)=-omg*oph/8.d0
-      shp(3, 5)=omg*omh/8.d0
-      shp(3, 6)=opg*omh/8.d0
-      shp(3, 7)=opg*oph/8.d0
-      shp(3, 8)=omg*oph/8.d0
+      shp(3, 1)=-omg*omh
+      shp(3, 2)=-opg*omh
+      shp(3, 3)=-opg*oph
+      shp(3, 4)=-omg*oph
+      shp(3, 5)=omg*omh
+      shp(3, 6)=opg*omh
+      shp(3, 7)=opg*oph
+      shp(3, 8)=omg*oph
 !
 !     computation of the local derivative of the global coordinates
 !     (xs)
@@ -109,7 +109,10 @@
      &   -xs(1,2)*(xs(2,1)*xs(3,3)-xs(2,3)*xs(3,1))
      &   +xs(1,3)*(xs(2,1)*xs(3,2)-xs(2,2)*xs(3,1))
 !
-      if(iflag.eq.2) return
+      if(iflag.eq.2) then
+         xsj=xsj/512.d0
+         return
+      endif
 !
 !     computation of the global derivative of the local coordinates
 !     (xsi) (inversion of xs)
@@ -134,6 +137,8 @@
           shp(j,k)=sh(j)
         enddo
       enddo
+!
+      xsj=xsj/512.d0
 !
       return
       end

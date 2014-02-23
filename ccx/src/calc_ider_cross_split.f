@@ -16,6 +16,8 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
+!     author: Yannick Muller
+!
       subroutine calc_ider_cross_split(df,pt1,Tt1,xflow1,xflow2,pt2,
      &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,
      &kappa,R,ider,iflag)

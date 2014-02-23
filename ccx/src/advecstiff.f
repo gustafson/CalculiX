@@ -43,7 +43,7 @@
       data iflag /2/
 !
       timeend(1)=time
-      timeend(2)=ttime+dtime
+      timeend(2)=ttime+time
 !
 !     number of nodes in the advective face
 !
@@ -53,6 +53,8 @@
 !
       do i=1,nope
          tl2(i)=voldl(0,i)
+      enddo
+      do i=1,nopes
          if(ithermal(2).eq.2) then
             do j=1,3
                xl2(j,i)=xl(j,i)

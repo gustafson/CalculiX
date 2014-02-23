@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,6 +27,8 @@
 !     H.Zimmermann and K.H. Wollf
 !     ASME 98-GT-206
 !     fig 12 p 7
+!
+!     author: Yannick Muller
 !
       subroutine cd_lab_correction(p1p2,s,b,cd_correction)
 !

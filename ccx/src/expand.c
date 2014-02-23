@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-Dimensional finite element program                   */
-/*              Copyright (C) 1998-2013 Guido Dhondt                          */
+/*              Copyright (C) 1998-2014 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -59,7 +59,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	     int **jqep,int **irowep,int *isolver,
 	     int *nzse,double **adbep,double **aubep,int *iexpl,int *ibody,
 	     double *xbody,int *nbody,double *cocon,int *ncocon,
-	     char* tieset,int* ntie, int **nnnp,int *imddof,int *nmddof,
+	     char* tieset,int* ntie,int *imddof,int *nmddof,
 	     int *imdnode,int *nmdnode,int *imdboun,int *nmdboun,
   	     int *imdmpc,int *nmdmpc, int **izdofp, int *nzdof,int *nherm,
 	     double *xmr,double *xmi){
@@ -76,15 +76,16 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
         neqh,j1,nodenew,mass[2]={1,1},stiffness=1,buckling=0,mt=mi[1]+1,
 	rhsi=0,intscheme=0,coriolis=0,istep=1,iinc=1,iperturbmass[2],
         *mast1e=NULL,*ipointere=NULL,*irowe=*irowep,*ipobody=NULL,*jqe=*jqep,
-	*icole=*icolep,tint=-1,tnstart=-1,tnend=-1,tint2=-1,*nnn=*nnnp,
+	*icole=*icolep,tint=-1,tnstart=-1,tnend=-1,tint2=-1,
 	noderight_,*izdof=*izdofp,iload,iforc,*iznode=NULL,nznode,ll,ne0,
-	*integerglob=NULL,nasym=0,icfd=0,*inomat=NULL;
+	*integerglob=NULL,nasym=0,icfd=0,*inomat=NULL,mortar=0,*islavact=NULL,
+	*islavnode=NULL,*nslavnode=NULL,*islavsurf=NULL;
 
     long long lint;
 
     double *stn=NULL,*v=NULL,*temp_array=NULL,*vini=NULL,*csmass=NULL,
         *een=NULL,cam[5],*f=NULL,*fn=NULL,qa[3],*epn=NULL,summass,
-        *stiini=NULL,*emn=NULL,*xnormastface=NULL,*emeini=NULL,
+        *stiini=NULL,*emn=NULL,*emeini=NULL,*clearini=NULL,
 	*xstateini=NULL,theta,pi,*coefmpcnew=NULL,t[3],ctl,stl,
 	*stx=NULL,*enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,
 	*qfx=NULL,*qfn=NULL,xreal,ximag,*vt=NULL,sum,*aux=NULL,
@@ -92,7 +93,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
         *aue=NULL,*adbe=*adbep,*aube=*aubep,*fext=NULL,*cgr=NULL,
         *shcon=NULL,*springarea=NULL,*z=*zp, *zdof=NULL, *thicke=NULL,
         *doubleglob=NULL,atrab[9],acs[9],diff,fin[3],fout[3],*sumi=NULL,
-        *vti=NULL;
+        *vti=NULL,*pslavsurf=NULL,*pmastsurf=NULL,*cdn=NULL;
     
     /* dummy arguments for the results call */
     
@@ -113,7 +114,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     inum=NNEW(int,*nk);
     stx=NNEW(double,6*mi[0]**ne);
     
-    nlabel=41;
+    nlabel=46;
     filabt=NNEW(char,87*nlabel);
     for(i=1;i<87*nlabel;i++) filabt[i]=' ';
     filabt[0]='U';
@@ -334,9 +335,9 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
     if(*nload>0){
 	if(*nam>0){
-	    FORTRAN(isortiddc2,(nelemload,iamload,xload,xloadold,sideload,nload,&kflag));
+	    FORTRAN(isortiiddc,(nelemload,iamload,xload,xloadold,sideload,nload,&kflag));
 	}else{
-	    FORTRAN(isortiddc1,(nelemload,xload,xloadold,sideload,nload,&kflag));
+	    FORTRAN(isortiddc,(nelemload,xload,xloadold,sideload,nload,&kflag));
 	}
     }
     
@@ -531,8 +532,10 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
 	      ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	      nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
-              &ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
-              sideload,xload,xloadold,&icfd,inomat);
+              &ne0,xforc,nforc,thicke,shcon,nshcon,
+              sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
+	      &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
+              islavsurf);
 	    
 	}
 	free(eei);
@@ -946,17 +949,6 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 //    if(*nmethod==4){
     if(*nmethod==10){
 
-      /* expanding nnn */
-
-      RENEW(nnn,int,nkt);
-      l=0;
-      for(jj=*nk; jj<nkt; jj++){
-	if((jj % *nk)==0){
-	  l++;
-	}
-	nnn[jj]=nnn[jj-(l**nk)]+l**nk;
-      }
-
       nzse[0]=nzs[0];
       nzse[1]=nzs[1];
       nzse[2]=nzs[2];
@@ -969,8 +961,8 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
       
       mastruct(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,ipompc,
 	       nodempc,nmpc,nactdof,icole,jqe,&mast1e,&irowe,isolver,
-	       neq,nnn,ikmpc,ilmpc,ipointere,nzse,nmethod,ithermal,
-	       ikboun,ilboun,iperturb,mi);
+	       neq,ikmpc,ilmpc,ipointere,nzse,nmethod,ithermal,
+	       ikboun,ilboun,iperturb,mi,&mortar);
       
       free(mast1e);free(ipointere);
 
@@ -1011,15 +1003,16 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
 	      physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
 	      &coriolis,ibody,xloadold,&reltime,veold,springarea,nstate_,
-              xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
-	      tieset,istartset,iendset,ialset,ntie,&nasym));
+              xstateini,xstate,thicke,integerglob,doubleglob,
+	      tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
+	      pmastsurf,&mortar,clearini));
       
       
       free(fext);
       
       free(ade);free(aue);
       
-      *adbep=adbe;*aubep=aube;*irowep=irowe;*icolep=icole;*jqep=jqe;*nnnp=nnn;
+      *adbep=adbe;*aubep=aube;*irowep=irowe;*icolep=icole;*jqep=jqe;
       
     }
 

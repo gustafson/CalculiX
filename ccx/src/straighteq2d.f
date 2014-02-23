@@ -27,7 +27,7 @@
 !     opposite of nodet(2) the equation is 
 !     straight(4)*x+straight(5)*y+straight(6)=0 and for the edge
 !     oppositie of nodet(3) it is
-!     straight(7)*x+straight(8)*y+straight(8)=0. Here too, the normals
+!     straight(7)*x+straight(8)*y+straight(9)=0. Here too, the normals
 !     (straight(4),straight(5)) and (straight(7),straight(8)) point
 !     outwards of the triangle.
 !

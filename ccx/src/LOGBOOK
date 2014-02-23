@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 2.6.1
+LOG-BOOK Version 2.7
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -2268,3 +2268,69 @@ Dec 2002        - started to work on single crystal plasticity
 
  3 August 2013 - corrected some errors in connection with frequency
                  calculations in combination with contact
+
+ 8 Oct 2013    - corrected an error in dyna.c
+
+ 15 Oct 2013   - started debugging inductive heating
+
+ 26 Oct 2013   - started properly deallocating all fields in CalculiX.c
+
+ 30 Oct 2013   - actualized frdread.c
+
+ 31 Oct 2013   - removed all finite element fluid subroutines; started
+                 coding finite volume routines
+
+ 4 Nov 2013    - continued to work on electromagnetics
+
+ 27 Nov 2013   - started coding face-to-face penalty contact
+
+ 4 Dec 2013    - worked on electromagnetics and face-to-face penalty
+ 
+ 16 Jan 2014   - finalizing face-to-face penalty contact
+
+ 21 Jan 2014   - worked on finite volume CFD (the CBS-method was removed
+                 from the code in November/December 2013: didn't work well
+                 enough). The finite volume code is based on the book by
+                 Ferziger and Peric.
+
+ 27 Jan 2014   - changed the calculation of inum for networksl
+
+ 28 Jan 2014   - made a change to readinput.c
+               - made some small changes to isort*f
+
+ 29 Jan 2014   - corrected an error in springstiff_f2f.f
+
+ 30 Jan 2014   - corrected two errors in advecforc.f
+               - continued to work on CFD
+
+ 1 Feb 2014    - got rid of field nnn (no separate renumbering any more;
+                 renumbering is assumed to be done by the solver, e.g.
+                 SPOOLES and PARDISO)
+               - coded output of the real and imaginary part (or,
+                 alternatively the magnitude and phase) of
+                 contact values in cyclic symmetry frequency calculations
+
+ 4 Feb 2014    - introduced islavsurfold and pslavsurfold
+
+ 5 Feb 2014    - introduced the parameter NO CHANGE on the *VIEWFACTOR
+                 card (avoids the repeated LU decomposition of the
+                 radiation matrix)
+
+ 8 Feb 2014    - optimized code of shape8h.f
+               - optimized code of springstiff_f2f.f
+               - temporarily removed the *dtime=0. statement in 
+                 checkconvergence.c: to be checked!
+
+ 12 Feb 2014   - updated rewriting for properties and face-to-face
+                 penalty contact entities
+
+ 13 Feb 2014   - changed meaning of ttime: now it is the total time at the
+                 start of the step
+ 
+ 16 Feb 2014   - transferred info from areaslav(3..6,*) to pmastsurf(3..6,*)
+
+ 18 Feb 2014   - got rid of xstiff in subroutines dyna.c and
+                 steadystate.c
+
+ 23 Feb 2014   - change inputinfo.f, inputwarning.f and inputerror.f
+                 keyword card is included in message

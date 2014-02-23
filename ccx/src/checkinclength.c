@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2013 Guido Dhondt                          */
+/*              Copyright (C) 1998-2014 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -55,7 +55,7 @@ void checkinclength(double *time,double *ttime,double *theta, double *dtheta,
     
     if((*itpamp>0)&&(*idrct==0)){
 	if(namta[3**itpamp-1]<0){
-	    reftime=*ttime+(*dtheta)**tper;
+	    reftime=*ttime+*time+(*dtheta)**tper;
 	}else{
 	    reftime=*time+(*dtheta)**tper;
 	}
@@ -90,7 +90,7 @@ void checkinclength(double *time,double *ttime,double *theta, double *dtheta,
 	  //	if((*inext<inew)||(fabs((amta[2**inext-2]-reftime))<1.e-10)){
 	  
 	    if(namta[3**itpamp-1]<0){
-		*dtheta=(amta[2**inext-2]-*ttime)/(*tper);
+		*dtheta=(amta[2**inext-2]-*ttime-*time)/(*tper);
 	    }else{
 		*dtheta=(amta[2**inext-2]-*time)/(*tper);
 	    }
@@ -106,7 +106,7 @@ void checkinclength(double *time,double *ttime,double *theta, double *dtheta,
 	*dtheta=1.-*theta;
 	*dthetaref=*dtheta;
 	printf(" the increment size exceeds the remainder of the step and is decreased to %e\n\n",*dtheta**tper);
-	if(*dtheta<=1.e-6){(*ttime)+=(*dtheta**tper);}
+//	if(*dtheta<=1.e-6){(*ttime)+=(*dtheta**tper);}
     }
     
     return;

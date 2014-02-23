@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,8 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine storeresidual(nactdof,b,fn,filab,ithermal,nk,sti,stn,
-     &  ipkon,inum,kon,lakon,ne,mi,orab,ielorien,co,nelemload,
-     &  nload,nodeboun,nboun,itg,ntg,vold,ndirboun,ielmat,thicke)
+     &  ipkon,inum,kon,lakon,ne,mi,orab,ielorien,co,
+     &  itg,ntg,vold,ielmat,thicke)
 !
 !     This routine is called in case of divergence:
 !     stores the residual forces in fn and changes the
@@ -37,15 +37,15 @@
 !
       integer mi(*),nactdof(0:mi(2),*),ithermal(2),i,j,nk,
      &  nfield,ndim,iorienglob,icfdout,ielmat(mi(3),*),
-     &  nelemload(2,*),nload,nodeboun(*),nboun,ipkon(*),inum(*),kon(*),
-     &  ne,ielorien,itg(*),ntg,ndirboun(*),mt,nlabel
+     &  ipkon(*),inum(*),kon(*),
+     &  ne,ielorien,itg(*),ntg,mt,nlabel
 !
       real*8 b(*),fn(0:mi(2),*),sti(6,mi(1),*),stn(6,*),orab(7,*),
      &  co(3,*),vold(0:mi(2),*),thicke(mi(3),*)
 !
       mt=mi(2)+1
 !
-      nlabel=41
+      nlabel=46
 !
 !     storing the residual forces in field fn
 !
@@ -98,8 +98,7 @@
       icfdout=0
       call extrapolate(sti,stn,ipkon,inum,kon,lakon,nfield,nk,
      &     ne,mi(1),ndim,orab,ielorien,co,iorienglob,cflag,
-     &     nelemload,nload,nodeboun,nboun,ndirboun,vold,
-     &     ithermal,force,icfdout,ielmat,thicke,filab)
+     &     vold,force,ielmat,thicke)
 !
       if(ithermal(1).gt.1) then
          call networkextrapolate(vold,ipkon,inum,kon,lakon,ne,mi)

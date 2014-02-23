@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2013 Guido Dhondt                          */
+/*              Copyright (C) 1998-2014 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -26,24 +26,25 @@ void remastructar(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
               int *ikmpc, int *ilmpc, int *ikboun, int *ilboun,
               char *labmpc, int *nk,
               int *memmpc_, int *icascade, int *maxlenmpc,
-              int *kon, int *ipkon, char *lakon, int *ne, int *nnn,
+              int *kon, int *ipkon, char *lakon, int *ne,
               int *nactdof, int *icol, int *jq, int **irowp, int *isolver,
               int *neq, int *nzs,int *nmethod, int *ithermal,
 	      int *iperturb, int *mass, int *mi, int *ics, double *cs,
-	      int *mcs){
+	      int *mcs,int *mortar){
 
     /* reconstructs the nonzero locations in the stiffness and mass
        matrix after a change in MPC's or the generation of contact
        spring elements: version for frequency calculations (called
        by arpack and arpackcs)  */
 
-    int *nodempc=NULL,*npn=NULL,*adj=NULL,*xadj=NULL,*iw=NULL,*mmm=NULL,
-	*xnpn=NULL,*mast1=NULL,*ipointer=NULL,mpcend,mpcmult,
-        callfrommain,i,*irow=NULL;
+    int *nodempc=NULL,*mast1=NULL,*ipointer=NULL,mpcend,mpcmult,
+        callfrommain,i,*irow=NULL,mt;
 
     double *coefmpc=NULL;
     
     nodempc=*nodempcp;coefmpc=*coefmpcp;irow=*irowp;
+
+    mt=mi[1]+1;
 
     /* decascading the MPC's */
 
@@ -55,8 +56,6 @@ void remastructar(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 	    ilmpc,ikboun,ilboun,&mpcend,&mpcmult,
 	    labmpc,nk,memmpc_,icascade,maxlenmpc,
             &callfrommain,iperturb,ithermal);
-    
-    for(i=1;i<=*nk;++i) nnn[i-1]=i;
 
     /* determining the matrix structure */
     
@@ -68,12 +67,12 @@ void remastructar(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
   
     if((*mcs==0)||(cs[1]<0)){
 
-	ipointer=NNEW(int,4**nk);
+	ipointer=NNEW(int,mt**nk);
     
 	mastruct(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,ipompc,
-	     nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,neq,nnn,
+	     nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,neq,
 	     ikmpc,ilmpc,ipointer,nzs,nmethod,ithermal,
-             ikboun,ilboun,iperturb,mi);
+	     ikboun,ilboun,iperturb,mi,mortar);
 
     }else{
       
@@ -81,8 +80,8 @@ void remastructar(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
       
       mastructcs(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,
 		 ipompc,nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,
-		 neq,nnn,ikmpc,ilmpc,ipointer,nzs,nmethod,
-		 ics,cs,labmpc,mcs,mi);
+		 neq,ikmpc,ilmpc,ipointer,nzs,nmethod,
+		 ics,cs,labmpc,mcs,mi,mortar);
     }
 
     free(ipointer);free(mast1);

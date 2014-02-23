@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,6 +20,8 @@
 !     "Discharge coeffcients for incompressible non-cavitating flowthrough long orifices"
 !     A. Lichtarowicz, R.K duggins and E. Markland
 !     Journal  Mechanical Engineering Science , vol 7, No. 2, 1965
+!
+!     author: Yannick Muller
 !
       subroutine cd_lichtarowicz(cd,cdu,reynolds,amod,bdh) 
 !

@@ -27,6 +27,7 @@ int *icolpardiso=NULL,*pointers=NULL,iparm[64];
 long long pt[64];
 double *aupardiso=NULL;
 double dparm[64];
+char env1[32];
 
 void pardiso_factor(double *ad, double *au, double *adb, double *aub, 
                 double *sigma,int *icol, int *irow, 
@@ -34,10 +35,11 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
 		int *jq, int *nzs3){
 
   char *env;
+/*  char env1[32]; */
   int i,j,k,l,maxfct=1,mnum=1,phase=12,nrhs=1,*perm=NULL,mtype,
       msglvl=0,error=0,*irowpardiso=NULL,kflag,kstart,n,ifortran,
       lfortran,index,id,k2;
-  int ndim;
+  int ndim,nthread,nthread_v;
   double *b=NULL,*x=NULL;
 
   if(*symmetryflag==0){
@@ -47,14 +49,28 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
   }
 
   iparm[0]=0;
-  env=getenv("OMP_NUM_THREADS");
-  if(env) {
-    iparm[2]=atoi(env);}
-  else{
-    iparm[2]=1;
-  }
 
-  printf(" number of threads =% d\n\n",iparm[2]);
+/* set MKL_NUM_THREADS to min(CCX_NPROC_EQUATION_SOLVER,OMP_NUM_THREADS)
+   must be done once  */
+  
+  nthread=1;
+  env=getenv("MKL_NUM_THREADS");
+  if(env) {
+      nthread=atoi(env);}
+  else{
+      env=getenv("OMP_NUM_THREADS");
+      if(env) {nthread=atoi(env);}
+  }
+  env=getenv("CCX_NPROC_EQUATION_SOLVER");
+  if(env) {
+      nthread_v=atoi(env);
+      if (nthread_v <= nthread) {nthread=nthread_v;}
+  }
+  if (nthread < 1) {nthread=1;}
+  sprintf(env1,"MKL_NUM_THREADS=%d",nthread);  
+  putenv(env1);
+    
+  printf(" number of threads =% d\n\n",nthread);
 
   for(i=0;i<64;i++){pt[i]=0;}
 
@@ -274,7 +290,9 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
 
 void pardiso_solve(double *b, int *neq,int *symmetryflag){
 
-  char *env;
+    char *env;
+/*    char env1[32];*/ 
+  int nthread,nthread_v;
   int maxfct=1,mnum=1,phase=33,*perm=NULL,nrhs=1,mtype,
       msglvl=0,i,error=0;
   double *x=NULL;
@@ -291,14 +309,25 @@ void pardiso_solve(double *b, int *neq,int *symmetryflag){
       mtype=11;
   }
   iparm[0]=0;
-  env=getenv("OMP_NUM_THREADS");
+  
+  nthread=1;
+  env=getenv("MKL_NUM_THREADS");
   if(env) {
-    iparm[2]=atoi(env);}
+      nthread=atoi(env);}
   else{
-    iparm[2]=1;
+      env=getenv("OMP_NUM_THREADS");
+      if(env) {nthread=atoi(env);}
   }
+  env=getenv("CCX_NPROC_EQUATION_SOLVER");
+  if(env) {
+      nthread_v=atoi(env);
+      if (nthread_v <= nthread) {nthread=nthread_v;}
+  }
+  if (nthread < 1) {nthread=1;}
+  sprintf(env1,"MKL_NUM_THREADS=%d",nthread);  
+  putenv(env1);
 
-  printf(" number of threads =% d\n\n",iparm[2]);
+  printf(" number of threads =% d\n\n",nthread);
 
   x=NNEW(double,*neq);
 

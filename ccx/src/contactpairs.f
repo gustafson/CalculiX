@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,10 +16,10 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine contactpairs(inpc,textpart,tieset,cs,istep,
+      subroutine contactpairs(inpc,textpart,tieset,istep,
      &                istat,n,iline,ipol,inl,ipoinp,inp,ntie,ntie_,
      &                iperturb,matname,nmat,ipoinpc,tietol,set,nset,
-     &                mortar)
+     &                mortar,ncmat_,ntmat_,elcon)
 !
 !     reading the input deck: *CONTACT PAIR
 !
@@ -32,9 +32,9 @@
 !
       integer istep,istat,n,i,key,ipos,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),ntie,ntie_,iperturb(2),nmat,ipoinpc(0:*),nset,j,
-     &  mortar
+     &  mortar,ncmat_,ntmat_
 !
-      real*8 cs(17,*),tietol(2,*),adjust
+      real*8 tietol(3,*),adjust,elcon(0:ncmat_,ntmat_,*)
 !
 !     tietol contains information on:
 !            - small (tietol<0) or large (tietol>0) sliding
@@ -42,7 +42,7 @@
 !                 adjust=dabs(tietol)-2
 !
       if(istep.gt.0) then
-         write(*,*) '*ERROR in contactpairs: *CONTACT PAIR should'
+         write(*,*) '*ERROR reading *CONTACT PAIR: *CONTACT PAIR should'
          write(*,*) '  be placed before all step definitions'
          stop
       endif
@@ -51,10 +51,14 @@
 !
       ntie=ntie+1
       if(ntie.gt.ntie_) then
-         write(*,*) '*ERROR in contactpairs: increase ntie_'
+         write(*,*) '*ERROR reading *CONTACT PAIR: increase ntie_'
          stop
       endif
       tietol(1,ntie)=1.d0
+!
+!     default for "no clearance"
+!
+      tietol(3,ntie)=1.2357111317d0
       do j=1,80
          tieset(1,ntie)(j:j)=' '
       enddo
@@ -76,10 +80,12 @@
                enddo
                if(j.gt.nset) then
                   noset(ipos:ipos)=' '
-                  write(*,*) '*ERROR in contactpairs: adjust node set',
+                  write(*,*) 
+     &               '*ERROR reading *CONTACT PAIR: adjust node set',
      &                   noset
                   write(*,*) '       has not been defined'
-                  call inputerror(inpc,ipoinpc,iline)
+                  call inputerror(inpc,ipoinpc,iline,
+     &"*CONTACT PAIR%")
                   stop
                endif
                do j=1,ipos-1
@@ -95,12 +101,24 @@
             mortar=1
          else
             write(*,*) 
-     &        '*WARNING in contactpairs: parameter not recognized:'
+     &       '*WARNING reading *CONTACT PAIR: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*CONTACT PAIR%")
          endif
       enddo
+!
+!     SMALL SLIDING significates that the number of contact elements
+!     within one increment is frozen. This is not allowed for
+!     SURFACE TO SURFACE contact.
+!
+      if((tietol(1,ntie).lt.0.d0).and.(mortar.eq.1)) then
+         write(*,*) '*WARNING reading *CONTACT PAIR'
+         write(*,*) '         The option SMALL SLIDING cannot be'
+         write(*,*) '         used with SURFACE TO SURFACE contact'
+         tietol(1,ntie)=-tietol(1,ntie)
+      endif
 !
 !     check for the existence of the surface interaction
 !
@@ -108,23 +126,42 @@
          if(matname(i).eq.material) exit
       enddo
       if(i.gt.nmat) then
-         write(*,*) '*ERROR in contactpairs: nonexistent surface'
+         write(*,*) '*ERROR reading *CONTACT PAIR: nonexistent surface'
          write(*,*) '       interaction; '
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*CONTACT PAIR%")
          stop
       endif
       tietol(2,ntie)=i+0.5d0
+!
+!     check whether sigma_at_infinity is given for node-to-face penalty 
+!     contact with a linear pressure-overclosure relationship
+!
+      if(int(elcon(3,1,i)).eq.2) then
+         if(mortar.eq.0) then
+            if(elcon(1,1,i).lt.1.d-30) then
+               write(*,*) '*ERROR reading *CONTACT PAIR:'
+               write(*,*) '       for node-to-face penalty contact'
+               write(*,*) '       with linear pressure-overclosure'
+               write(*,*) '       relationship, the'
+               write(*,*) '       tension at large clearances'
+               write(*,*) '       must exceed 1.e-30'
+               call inputerror(inpc,ipoinpc,iline,
+     &"*CONTACT PAIR%")
+               stop
+            endif
+         endif
+      endif
 !
       tieset(1,ntie)(81:81)='C'
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
-         write(*,*)'*ERROR in contactpairs: definition of the '
+         write(*,*)'*ERROR reading *CONTACT PAIR: definition of the '
          write(*,*) '      contact pair is not complete.'
          stop
       endif
-!
 !
 !     storing the slave surface
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -45,7 +45,8 @@
      &        '*WARNING in normals: parameter not recognized:'
          write(*,*) '         ',
      &        textpart(i)(1:index(textpart(i),' ')-1)
-         call inputwarning(inpc,ipoinpc,iline)
+         call inputwarning(inpc,ipoinpc,iline,
+     &"*NORMAL%")
       enddo
 !
       loop:do
@@ -54,22 +55,27 @@
          if((istat.lt.0).or.(key.eq.1)) exit
 !
          read(textpart(1)(1:10),'(i10)',iostat=istat) ielement
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NORMAL%")
          read(textpart(2)(1:10),'(i10)',iostat=istat) node
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NORMAL%")
          read(textpart(3)(1:20),'(f20.0)',iostat=istat) x
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NORMAL%")
          if(n.le.3) then
             y=0.d0
          else
             read(textpart(4)(1:20),'(f20.0)',iostat=istat) y
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NORMAL%")
          endif
          if(n.le.4) then
             z=0.d0
          else
             read(textpart(5)(1:20),'(f20.0)',iostat=istat) z
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NORMAL%")
          endif
 !
 !        normalizing the normal

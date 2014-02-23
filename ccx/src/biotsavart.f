@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,12 +28,12 @@
       integer ipkon(*),kon(*),ne,i,nka,nkb,mint3d,konl(26),
      &  j,k,indexe,kk,iflag,mi(*),nope,l
 !
-      real*8 co(3,*),qfx(3,mi(1),*),h0(3,*),xl(3,26),r(3),
-     &  con(3),pgauss(3),c,xi,et,ze,xsj,shp(4,20),weight,dd
+      real*8 co(3,*),qfx(3,mi(1),*),h0(3,*),xl(3,26),r(3),c2,
+     &  con(3),pgauss(3),c1,xi,et,ze,xsj,shp(4,20),weight
 !
       include "gauss.f"
 !
-      c=1.d0/(16.d0*datan(1.d0))
+      c1=1.d0/(16.d0*datan(1.d0))
       iflag=2
 !
       do j=nka,nkb
@@ -52,15 +52,22 @@
 !
             if(lakon(i)(4:5).eq.'8R') then
                mint3d=1
-            elseif((lakon(i)(4:4).eq.'8').or.
-     &             (lakon(i)(4:6).eq.'20R')) then
+               nope=8
+            elseif(lakon(i)(4:4).eq.'8') then
                mint3d=8
+               nope=8
+            elseif(lakon(i)(4:6).eq.'20R') then
+               mint3d=8
+               nope=20
             elseif(lakon(i)(4:4).eq.'2') then
                mint3d=27
+               nope=20
             elseif(lakon(i)(4:5).eq.'15') then
                mint3d=9
+               nope=15
             elseif(lakon(i)(4:4).eq.'6') then
                mint3d=2
+               nope=6
             endif
 !
             indexe=ipkon(i)
@@ -120,28 +127,29 @@
                do k=1,3
                   pgauss(k)=0.d0
                   do l=1,nope
-                     pgauss(k)=pgauss(k)+shp(4,l)*co(k,konl(l))
+                     pgauss(k)=pgauss(k)+shp(4,l)*xl(k,l)
                   enddo
                enddo
 !
 !              distance from node to gauss point
 !
                do k=1,3
-                  r(k)=co(k,j)-pgauss(k)
+                  r(k)=con(k)-pgauss(k)
                enddo
-               dd=dsqrt(r(1)*r(1)+r(2)*r(2)+r(3)*r(3))
+
+               c2=weight*xsj/((r(1)*r(1)+r(2)*r(2)+r(3)*r(3))**(1.5d0))
 !
-               h0(1,j)=h0(1,j)+weight*xsj*
-     &                   (qfx(2,kk,i)*r(3)-qfx(3,kk,i)*r(2))/dd**3
-               h0(2,j)=h0(2,j)+weight*xsj*
-     &                   (qfx(3,kk,i)*r(1)-qfx(1,kk,i)*r(3))/dd**3
-               h0(3,j)=h0(3,j)+weight*xsj*
-     &                   (qfx(1,kk,i)*r(2)-qfx(2,kk,i)*r(1))/dd**3
+               h0(1,j)=h0(1,j)+c2*
+     &                   (qfx(2,kk,i)*r(3)-qfx(3,kk,i)*r(2))
+               h0(2,j)=h0(2,j)+c2*
+     &                   (qfx(3,kk,i)*r(1)-qfx(1,kk,i)*r(3))
+               h0(3,j)=h0(3,j)+c2*
+     &                   (qfx(1,kk,i)*r(2)-qfx(2,kk,i)*r(1))
             enddo
          enddo
 !
          do k=1,3
-            h0(k,j)=h0(k,j)*c
+            h0(k,j)=h0(k,j)*c1
          enddo
       enddo
 !     

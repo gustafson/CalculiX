@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,6 +25,8 @@
 !     "Flow characteristics of long orifices with rotation and 
 !     corner radiusing"
 !     ASME 87-GT-162
+!
+!     author: Yannick Muller
 !
       implicit none 
 !

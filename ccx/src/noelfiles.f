@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@
       implicit none
 !
       logical nodefile_flag,elfile_flag,out3d,sectionforces,
-     &  contactfile_flag,lastiterations
+     &  contactfile_flag
 !
       character*1 nodesys,elemsys,inpc(*)
       character*80 amname(*),timepointsname
@@ -65,7 +65,7 @@
 !
       if(ifile_output.eq.1) then
 !
-!        reset the nodal print requests
+!        reset the nodal output requests
 !
          if(.not.nodefile_flag) then
             filab(1)(1:4)='    '
@@ -87,6 +87,7 @@
             do j=34,38
                filab(j)(1:4)='    '
             enddo
+            filab(43)(1:4)='    '
 !
             filab(1)(6:87)=' '
             filab(2)(6:87)=' '
@@ -107,10 +108,11 @@
             do j=34,38
                filab(j)(6:87)=' '
             enddo
+            filab(43)(6:87)=' '
          endif
       elseif(ifile_output.eq.2) then
 !
-!        reset the element print requests
+!        reset the element output requests
 !
          if(.not.elfile_flag) then
             filab(3)(1:4)='    '
@@ -123,8 +125,9 @@
             filab(20)(1:4)='    '
             filab(30)(1:4)='    '
             filab(32)(1:4)='    '
-            filab(39)(1:4)='    '
-            filab(40)(1:4)='    '
+            do j=39,42
+               filab(j)(1:4)='    '
+            enddo
 !
             filab(3)(6:87)=' '
             filab(4)(6:87)=' '
@@ -136,8 +139,11 @@
             filab(20)(6:87)=' '
             filab(30)(6:87)=' '
             filab(32)(6:87)=' '
-            filab(39)(6:87)=' '
-            filab(40)(6:87)=' '
+            do j=39,42
+               filab(j)(6:87)=' '
+            enddo
+            filab(44)(6:87)=' '
+            filab(45)(6:87)=' '
 !
             sectionforces=.false.
          endif
@@ -156,7 +162,8 @@
       do ii=2,n
         if(textpart(ii)(1:10).eq.'FREQUENCY=') then
            read(textpart(ii)(11:20),'(i10)',iostat=istat) joutl
-           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NODE FILE/OUTPUT or *EL FILE/OUTPUT or *CONTACT FILE/OUTPUT %")
            if(joutl.eq.0) then
               do
                  call getnewline(inpc,textpart,istat,n,key,iline,ipol,
@@ -170,7 +177,8 @@
            endif
         elseif(textpart(ii)(1:11).eq.'FREQUENCYF=') then
            read(textpart(ii)(12:21),'(i10)',iostat=istat) joutl
-           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NODE FILE/OUTPUT or *EL FILE/OUTPUT or *CONTACT FILE/OUTPUT %")
            if(joutl.eq.0) then
               do
                  call getnewline(inpc,textpart,istat,n,key,iline,ipol,
@@ -252,7 +260,8 @@
             write(*,*) '         parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(ii)(1:index(textpart(ii),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*NODE FILE/OUTPUT or *EL FILE/OUTPUT or *CONTACT FILE/OUTPUT %")
         endif
       enddo
 !
@@ -262,7 +271,8 @@
          write(*,*) 
      &'*ERROR reading *NODE FILE or *EL FILE: SECTION FORCES and'
          write(*,*) '       OUTPUT=3D are mutually exclusive'
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*NODE FILE/OUTPUT or *EL FILE/OUTPUT or *CONTACT FILE/OUTPUT %")
       endif
 !
 !     check the existence of the node set (if any was specified)
@@ -354,7 +364,7 @@
                   filab(8)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'HFL ') then
-               if(ithermal.le.1) then
+               if((ithermal.le.1).and.(nmethod.le.7)) then
                   write(*,*) 
      &'*WARNING reading *NODE FILE or *EL FILE: HFL only makes '
                   write(*,*) '         sense for heat transfer '
@@ -428,7 +438,7 @@
                   filab(18)(1:4)='PHS '
                   filab(18)(6:6)=elemsys
                   filab(18)(7:87)=noset
-            endif
+               endif
             elseif(textpart(ii)(1:4).eq.'MAXU') then
                if(nmethod.ne.2) then
                   write(*,*) 
@@ -596,16 +606,6 @@
                   filab(38)(6:6)=nodesys
                   filab(38)(7:87)=noset
                endif
-            elseif(textpart(ii)(1:4).eq.'SVF ') then
-               if(cfd.eq.0) then
-                  write(*,*) 
-     &'*WARNING reading *NODE FILE or *EL FILE: SVF only makes'
-                  write(*,*) '         sense for 3D fluid calculations'
-               else
-                  filab(41)(1:4)='SVF '
-                  filab(41)(6:6)=nodesys
-                  filab(41)(7:87)=noset
-               endif
             elseif(textpart(ii)(1:4).eq.'SF  ') then
                if(cfd.eq.0) then
                   write(*,*) 
@@ -613,7 +613,7 @@
                   write(*,*) '         sense for 3D fluid calculations'
                else
                   filab(39)(1:4)='SF  '
-                  filab(39)(6:6)=nodesys
+                  filab(39)(6:6)=elemsys
                   filab(39)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'HFLF') then
@@ -623,14 +623,80 @@
                   write(*,*) '         sense for 3D fluid calculations'
                else
                   filab(40)(1:4)='HFLF'
-                  filab(40)(6:6)=nodesys
+                  filab(40)(6:6)=elemsys
                   filab(40)(7:87)=noset
+               endif
+            elseif(textpart(ii)(1:4).eq.'SVF ') then
+               if(cfd.eq.0) then
+                  write(*,*) 
+     &'*WARNING reading *NODE FILE or *EL FILE: SVF only makes'
+                  write(*,*) '         sense for 3D fluid calculations'
+               else
+                  filab(41)(1:4)='SVF '
+                  filab(41)(6:6)=elemsys
+                  filab(41)(7:87)=noset
+               endif
+            elseif(textpart(ii)(1:3).eq.'ECD') then
+               if(nmethod.lt.8) then
+                  write(*,*) 
+     &'*WARNING reading *NODE FILE or *EL FILE: ECD only makes'
+                  write(*,*) 
+     &         '         sense for electromagnetic calculations'
+               else
+                  filab(42)(1:4)='ECD '
+                  filab(42)(6:6)=elemsys
+                  filab(42)(7:87)=noset
+               endif
+            elseif(textpart(ii)(1:3).eq.'POT') then
+               if(nmethod.lt.8) then
+                  write(*,*) 
+     &'*WARNING reading *NODE FILE or *EL FILE: POT only makes'
+                  write(*,*) 
+     &         '         sense for electromagnetic calculations'
+               else
+                  filab(43)(1:4)='POT '
+                  filab(43)(6:6)=nodesys
+                  filab(43)(7:87)=noset
+               endif
+            elseif(textpart(ii)(1:4).eq.'EMFE') then
+               if(nmethod.lt.8) then
+                  write(*,*) 
+     &'*WARNING reading *NODE FILE or *EL FILE: EMFE only makes'
+                  write(*,*) 
+     &         '         sense for electromagnetic calculations'
+               else
+                  filab(44)(1:4)='EMFE'
+                  filab(44)(6:6)=elemsys
+                  filab(44)(7:87)=noset
+               endif
+            elseif(textpart(ii)(1:4).eq.'EMFB') then
+               if(nmethod.lt.8) then
+                  write(*,*) 
+     &'*WARNING reading *NODE FILE or *EL FILE: EMFB only makes'
+                  write(*,*) 
+     &         '         sense for electromagnetic calculations'
+               else
+                  filab(45)(1:4)='EMFB'
+                  filab(45)(6:6)=elemsys
+                  filab(45)(7:87)=noset
+               endif
+            elseif(textpart(ii)(1:4).eq.'PCON') then
+               if((nmethod.ne.2).and.(nmethod.ne.5)) then
+                  write(*,*) 
+     &'*WARNING reading *NODE FILE or *EL FILE: PCON only makes'
+                  write(*,*) '         sense for frequency and steady'
+                  write(*,*) '         state dynamics calculations'
+               else
+                  filab(46)(1:4)='PCON'
+                  filab(46)(6:6)=elemsys
+                  filab(46)(7:87)=noset
                endif
             else
                write(*,*) 
      &'*WARNING reading *NODE FILE or *EL FILE: label not applicable'
                write(*,*) '         or unknown; '
-               call inputwarning(inpc,ipoinpc,iline)
+               call inputwarning(inpc,ipoinpc,iline,
+     &"*NODE FILE/OUTPUT or *EL FILE/OUTPUT or *CONTACT FILE/OUTPUT %")
             endif
          enddo
       enddo

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &  labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,lakon,ipkon,kon,nk,nk_,
      &  nodeboun,ndirboun,ikboun,ilboun,nboun,nboun_,iperturb,ne_,
      &  co,xboun,ctrl,typeboun,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,iamboun,nam,inotr,trab,ntrans,nmethod,ipoinpc,mi)
+     &  inp,iamboun,nam,inotr,trab,ntrans,nmethod,ipoinpc,mi,vold)
 !
 !     reading the input deck: *GAP
 !
@@ -53,7 +53,7 @@
      &  nam,inotr(2,*),ntrans,nmethod,idummy,mi(*),node1,node2
 !
       real*8 coefmpc(3,*),co(3,*),xboun(*),ctrl(*),xn(3),clearance,
-     &  bounval,trab(7,*),vdummy(0:4),dd
+     &  bounval,trab(7,*),dd,vold(0:mi(2),*)
 !
       fixed=.false.
       type='B'
@@ -83,7 +83,8 @@
      &        '*WARNING reading *GAP: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*GAP%")
          endif
       enddo
 !
@@ -92,7 +93,8 @@
       if(ipos.eq.0) then
          write(*,*) '*ERROR reading *GAP: no element set ',elset
          write(*,*) '       was been defined. '
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*GAP%")
          stop
       endif
       do i=1,nset
@@ -102,7 +104,8 @@
          elset(ipos:ipos)=' '
          write(*,*) '*ERROR reading *GAP: element set ',elset
          write(*,*) '  has not yet been defined. '
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*GAP%")
          stop
       endif
 !
@@ -127,13 +130,17 @@
      &     ipoinp,inp,ipoinpc)
 !
       read(textpart(1)(1:20),'(f20.0)',iostat=istat) clearance
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*GAP%")
       read(textpart(2)(1:20),'(f20.0)',iostat=istat) xn(1)
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*GAP%")
       read(textpart(3)(1:20),'(f20.0)',iostat=istat) xn(2)
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*GAP%")
       read(textpart(4)(1:20),'(f20.0)',iostat=istat) xn(3)
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*GAP%")
 !
 !     check whether size of gap normal is zero; if so, the 
 !     gap normal is calculated from the coordinates
@@ -224,7 +231,7 @@
      &        iamboun,iamplitude,nam,ipompc,nodempc,
      &        coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &        ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &        type,typeboun,nmethod,iperturb,fixed,vdummy,
+     &        type,typeboun,nmethod,iperturb,fixed,vold,
      &        idummy,mi)
 !
 !           nonhomogeneous term for user MPC
@@ -319,7 +326,7 @@
      &              iamboun,iamplitude,nam,ipompc,nodempc,
      &              coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &              ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &              type,typeboun,nmethod,iperturb,fixed,vdummy,idummy,
+     &              type,typeboun,nmethod,iperturb,fixed,vold,idummy,
      &              mi)
 !
 !              nonhomogeneous term for user MPC

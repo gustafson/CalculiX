@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,6 +21,8 @@
      &     kon,ipkon,mi)
 !     
 !     labyrinth element
+!
+!     author: Yannick Muller
 !     
       implicit none
 !     
@@ -585,11 +587,11 @@
             endif
 !     
             call lab_straight_ppkrit(n,ppkrit)
-
+!
          endif
-
+!
          xflow_oil=0
-
+!
          write(1,*) ''
          write(1,55) 'In line',int(nodem/100),' from node',node1,
      &' to node', node2,':   air massflow rate= ',xflow,'kg/s',
@@ -604,7 +606,7 @@
             write(1,57)'             eta= ',dvi,'kg/(m*s), Re= ' ,
      &           reynolds,
      &', Cd_radius= ',cd_radius,', Cd_honeycomb= ', 1+cd_honeycomb/100
-
+!
 !     straight labyrinth
            if((hst.eq.0.d0).and.(n.ne.1)) then
               write(1,58)'             COF= ',carry_over,
@@ -633,7 +635,7 @@
             write(1,*)'             element S    ',set(numf)(1:20)
             write(1,57)'             eta=',dvi,'kg/(m*s), Re= '
      &           ,reynolds,
-     & ', Cd_radius= ',cd_radius,', Cd_honeycomb= ',1+cd_honeycomb/100       
+     & ', Cd_radius= ',cd_radius,', Cd_honeycomb= ',1+cd_honeycomb/100
 !
 !     straight labyrinth
             if((hst.eq.0.d0).and.(n.ne.1)) then

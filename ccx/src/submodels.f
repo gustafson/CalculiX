@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,7 +36,7 @@
      &  iglobset,kincrement,nsubmodel,kflag,idummy,nalsetold,ntie,ntie_,
      &  nlength,namta(3,*),nam,nam_,namtot_
 !
-      real*8 tietol(2,*),amta(2,*)
+      real*8 tietol(3,*),amta(2,*)
 !
       data kflag /1/
 !
@@ -149,7 +149,8 @@ c      globset(1:1)=' '
      &        '*WARNING reading *SUBMODEL: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*SUBMODEL%")
          endif
       enddo
 !

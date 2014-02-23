@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -23,6 +23,8 @@
 !
 !     2)the ratio of the critical pressure ratio  Qred_1/Qred_2crit=Pt2/Pt1
 !     =D(M1)/D(M2_crit)is computed [D(M)=M*(1+0.5*(kappa-1)*M)**(-0.5*(kappa+1)/(kappa-1))]
+!
+!     author: Yannick Muller
 !   
       subroutine pt2zpt1_crit(pt2,pt1,Tt1,Tt2,lambda,kappa,r,l,d,A,
      &     iflag,inv,pt2zpt1_c,qred_crit,crit,qred_max1,icase)

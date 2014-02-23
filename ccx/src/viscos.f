@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -96,7 +96,8 @@ c      endif
      &        '*WARNING in viscos: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*VISCO%")
          endif
       enddo
 !
@@ -137,13 +138,17 @@ c      endif
       endif
 !
       read(textpart(1)(1:20),'(f20.0)',iostat=istat) tinc
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*VISCO%")
       read(textpart(2)(1:20),'(f20.0)',iostat=istat) tper
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*VISCO%")
       read(textpart(3)(1:20),'(f20.0)',iostat=istat) tmin
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*VISCO%")
       read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*VISCO%")
 !
       if(tinc.le.0.d0) then
          write(*,*) '*ERROR in viscos: initial increment size is negativ

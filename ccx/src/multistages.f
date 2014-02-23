@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,9 +43,11 @@
 !     
 !    creates multistage MPC's: connection of dissimilar cyclic
 !    symmetric segments 
+!
+!     author: Konrad Mottl
 !     
       real*8 tolloc,co(3,* ),coefmpc(*),xind(*),yind(*),xind0(*),
-     &     yind0(*),dd,xap,yap,zap,tietol(2,*),cs(17,*),xp,yp,
+     &     yind0(*),dd,xap,yap,zap,tietol(3,*),cs(17,*),xp,yp,
      &     phi,rcscg(*),rcs0cg(*),zcscg(*),zcs0cg(*),zp,rp,
      &     straight(9,*),T(3,3),csab(7),ratio(8),Tinv(3,3),
      &     coord(3),node(3),T2D(3,3),phi0,al(3,3),ar(3,3),

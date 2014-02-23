@@ -15,6 +15,8 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
+!     author: Yannick Muller
+!
       subroutine calc_ider_tee(df,pt1,Tt1,xflow1,xflow2,pt2,
      &Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag)
 !

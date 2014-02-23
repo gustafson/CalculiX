@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,11 +29,18 @@
      &  ielorien,trab,inotr,amname,amta,namta,t0,t1,iamt1,veold,
      &  ielmat,matname,prlab,prset,filab,vold,nodebounold,
      &  ndirbounold,xbounold,xforcold,xloadold,t1old,eme,
-     &  iponor,xnor,knor,thickn,thicke,offset,iponoel,inoel,rig,
+     &  iponor,xnor,knor,thicke,offset,iponoel,inoel,rig,
      &  shcon,nshcon,cocon,ncocon,ics,sti,
-     &  ener,xstate,jobnamec,infree,nnn,prestr,iprestr,cbody, 
+     &  ener,xstate,jobnamec,infree,prestr,iprestr,cbody, 
      &  ibody,xbody,nbody,xbodyold,ttime,qaold,cs,mcs,output,
-     &  physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol,nslavs,t0g,t1g)
+     &  physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol,nslavs,t0g,t1g,
+     &  nprop,ielprop,prop,mortar,nintpoint,ifacecount,islavsurf,
+     &  pslavsurf,clearini)
+!
+!     writes all information needed for a restart to file
+!
+!     ONLY ONE-DIMENSIONAL FIELDS ALLOWED! More-dimensional fields
+!     must be stored as one-dimensional ones.
 !
       implicit none
 !
@@ -45,7 +52,7 @@
       character*8 lakon(*)
       character*20 labmpc(*),sideload(*)
       character*80 orname(*),amname(*),matname(*)
-      character*81 set(*),prset(*),tieset(3,*),cbody(*)
+      character*81 set(*),prset(*),tieset(*),cbody(*)
       character*87 filab(*)
       character*132 fnrstrt,jobnamec(*)
 !
@@ -56,22 +63,22 @@
      &  ialset(*),kon(*),ipkon(*),nodeboun(*),ndirboun(*),iamboun(*),
      &  ikboun(*),ilboun(*),ipompc(*),nodempc(*),ikmpc(*),ilmpc(*),
      &  nodeforc(*),ndirforc(*),iamforc(*),ikforc(*),ilforc(*),
-     &  nelemload(*),iamload(*),nelcon(*),
+     &  nelemload(*),iamload(*),nelcon(*),nprop,mortar,
      &  nrhcon(*),nalcon(*),nplicon(*),nplkcon(*),ielorien(*),
-     &  inotr(*),
+     &  inotr(*),nintpoint,ifacecount,islavsurf(*),ielprop(*),
      &  namta(*),iamt1(*),ielmat(*),nodebounold(*),ndirbounold(*),
      &  iponor(*),knor(*),iponoel(*),inoel(*),rig(*),
-     &  nshcon(*),ncocon(*),ics(*),infree(*),nnn(*),i,ipos,
-     &  nener,iprestr,istepnew,maxlenmpc,mcs,j,ntie,
+     &  nshcon(*),ncocon(*),ics(*),infree(*),i,ipos,
+     &  nener,iprestr,istepnew,maxlenmpc,mcs,ntie,
      &  ibody(*),nbody,mt,nslavs
 !
       real*8 co(*),xboun(*),coefmpc(*),xforc(*),xload(*),elcon(*),
      &  rhcon(*),alcon(*),alzero(*),plicon(*),plkcon(*),orab(*),
-     &  trab(*),amta(*),t0(*),t1(*),prestr(*),veold(*),tietol(2,*),
+     &  trab(*),amta(*),t0(*),t1(*),prestr(*),veold(*),tietol(*),
      &  vold(*),xbounold(*),xforcold(*),xloadold(*),t1old(*),eme(*),
-     &  xnor(*),thickn(*),thicke(*),offset(*),t0g(*),t1g(*),
-     &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),
-     &  qaold(2),cs(17,*),physcon(*),ctrl(*),
+     &  xnor(*),thicke(*),offset(*),t0g(*),t1g(*),clearini(*),
+     &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),pslavsurf(*),
+     &  qaold(2),cs(*),physcon(*),ctrl(*),prop(*),
      &  ttime,fmpc(*),xbody(*),xbodyold(*)
 !
       mt=mi(2)+1
@@ -127,6 +134,10 @@
       write(15)npmat_
       write(15)ncmat_
 !
+!     property info
+!
+      write(15)nprop
+!
 !     transformation size
 !
       write(15)norien
@@ -167,6 +178,11 @@
       write(15)nstate_
       write(15)nslavs
       write(15)iprestr
+      write(15)mortar
+      if(mortar.eq.1) then
+         write(15)ifacecount
+         write(15)nintpoint
+      endif
 !
 !     sets
 !
@@ -300,6 +316,13 @@
          write(15)(ielorien(i),i=1,mi(3)*ne)
       endif
 !
+!     fluid section properties
+!
+      if(nprop.ne.0) then
+         write(15)(ielprop(i),i=1,ne)
+         write(15)(prop(i),i=1,nprop)
+      endif
+!
 !     transformations
 !
       if(ntrans.ne.0)then
@@ -341,10 +364,6 @@
          write(15)(veold(i),i=1,mt*nk)
       endif
 !
-!     reordering
-!
-      write(15)(nnn(i),i=1,nk)
-!
 !     1d and 2d elements
 !
       if((ne1d.gt.0).or.(ne2d.gt.0))then
@@ -361,8 +380,8 @@
 !     tie constraints
 !
       if(ntie.gt.0) then
-         write(15)((tieset(i,j),i=1,3),j=1,ntie)
-         write(15)((tietol(i,j),i=1,2),j=1,ntie)
+         write(15)(tieset(i),i=1,3*ntie)
+         write(15)(tietol(i),i=1,3*ntie)
       endif
 !
 !     cyclic symmetry
@@ -371,7 +390,7 @@
          write(15)(ics(i),i=1,ncs_)
       endif
       if(mcs.gt.0) then
-         write(15)((cs(i,j),i=1,17),j=1,mcs)
+         write(15)(cs(i),i=1,17*mcs)
       endif
 !
 !     integration point variables
@@ -382,7 +401,19 @@
          write(15)(ener(i),i=1,mi(1)*ne)
       endif
       if(nstate_.gt.0)then
-         write(15)(xstate(i),i=1,nstate_*mi(1)*(ne+nslavs))
+         if(mortar.eq.0) then
+            write(15)(xstate(i),i=1,nstate_*mi(1)*(ne+nslavs))
+         elseif(mortar.eq.1) then
+            write(15)(xstate(i),i=1,nstate_*mi(1)*(ne+nintpoint))
+         endif
+      endif
+!
+!     face-to-face penalty contact variables
+!
+      if(mortar.eq.1) then
+         write(15) (islavsurf(i),i=1,2*ifacecount+2)
+         write(15) (pslavsurf(i),i=1,3*nintpoint)
+         write(15) (clearini(i),i=1,3*9*nslavs)
       endif
 !
 !     control parameters

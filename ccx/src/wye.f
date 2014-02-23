@@ -23,6 +23,8 @@
 !     Written by Yavor Dobrev
 !     For an explanation of the parameters see tee.f
 !
+!     author: Yannick Muller
+!
       implicit none
 !
       logical identity

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2013 Guido Dhondt                          */
+/*              Copyright (C) 1998-2014 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -31,7 +31,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
             int *iendset, double *trab, int *inotr, int *ntrans,
 	    double *orab, int *ielorien, int *norien, double *sti,
             double *veold, int *noddiam,char *set,int *nset, double *emn,
-            double *thicke,char* jobnamec,int *ne0){
+            double *thicke,char* jobnamec,int *ne0,double *cdn,int *mortar){
 
   /* duplicates fields for static cyclic symmetric calculations */
 
@@ -45,7 +45,8 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   double *vt=NULL,*fnt=NULL,*stnt=NULL,*eent=NULL,*cot=NULL,*t1t=NULL,
          *epnt=NULL,*enernt=NULL,*xstatent=NULL,theta,pi,t[3],*qfnt=NULL,
          *vr=NULL,*vi=NULL,*stnr=NULL,*stni=NULL,*vmax=NULL,*stnmax=NULL,
-         *stit=NULL,*eenmax=NULL,*fnr=NULL,*fni=NULL,*emnt=NULL,*qfx=NULL;
+         *stit=NULL,*eenmax=NULL,*fnr=NULL,*fni=NULL,*emnt=NULL,*qfx=NULL,
+         *cdnr=NULL,*cdni=NULL;
 
   pi=4.*atan(1.);
 
@@ -376,7 +377,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stit,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,&net,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emnt,
-	    thicke,jobnamec,output,qfx);
+	    thicke,jobnamec,output,qfx,cdn,mortar,cdnr,cdni);
 
   if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
   
@@ -397,10 +398,9 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
      (strcmp1(&filab[2175],"CONT")==0)) free(stit);
   if(strcmp1(&filab[2697],"ME  ")==0) free(emnt);
 
-//  if(*kode==1){
-    free(kont);free(ipkont);free(lakont);free(ielmatt);
-//  }
+  free(kont);free(ipkont);free(lakont);free(ielmatt);
   free(inumt);free(cot);if(*ntrans>0)free(inotrt);
+  free(inocs);free(ielcs);
   return;
 }
 

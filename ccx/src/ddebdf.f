@@ -1,3 +1,6 @@
+!
+!    SLATEC: public domain
+!
 *DECK DDEBDF
       SUBROUTINE DDEBDF (DF, NEQ, T, Y, TOUT, INFO, RTOL, ATOL, IDID,
      +   RWORK, LRW, IWORK, LIW, RPAR, IPAR, DJAC)

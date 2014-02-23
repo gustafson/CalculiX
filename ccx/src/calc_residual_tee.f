@@ -20,6 +20,8 @@
 !
 !     Function for calculating the residual of both branches of a tee
 !
+!     author: Yannick Muller
+!
       implicit none
 !
       integer 

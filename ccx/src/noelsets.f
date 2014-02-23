@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -65,7 +65,8 @@
      &              '*WARNING in noelsets: parameter not recognized:'
                write(*,*) '         ',
      &              textpart(i)(1:index(textpart(i),' ')-1)
-               call inputwarning(inpc,ipoinpc,iline)
+               call inputwarning(inpc,ipoinpc,iline,
+     &"*NSET or *ELSET%")
             endif
          enddo
       else
@@ -89,7 +90,8 @@
      &              '*WARNING in noelsets: parameter not recognized:'
                write(*,*) '         ',
      &              textpart(i)(1:index(textpart(i),' ')-1)
-               call inputwarning(inpc,ipoinpc,iline)
+               call inputwarning(inpc,ipoinpc,iline,
+     &"*NSET or *ELSET%")
             endif
          enddo
       endif
@@ -166,7 +168,8 @@
             do i=1,3
                read(textpart(i)(1:10),'(i10)',iostat=istat) 
      &                   ialset(nalset+i)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NSET or *ELSET%")
             enddo
             if(kode.eq.0) then
                if(ialset(nalset+1).gt.nk) then

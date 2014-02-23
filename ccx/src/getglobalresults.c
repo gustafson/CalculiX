@@ -398,7 +398,7 @@ void getglobalresults (char *jobnamec,int **integerglobp,double **doubleglobp,
 	    }
 	}
 	if((istep_global==istep)&&
-	   (strcmp1(lcase[i].name,"DISP ")==0)){
+	   (strcmp1(lcase[i].name,"DISPR")==0)){
 	    loadcase=i;
 	}else if(istep_global>istep){
 	    break;
@@ -468,9 +468,12 @@ void getglobalresults (char *jobnamec,int **integerglobp,double **doubleglobp,
 	}
     }
     
-    free(lcase);free(kontet);free(inodfa);
-    free(node);
-    free(elem);
+    free(kontet);free(inodfa);
+    free(node);free(elem);
+    for(j=0;j<anz->l;j++){
+      freeDatasets(lcase,j);
+    }
+    free(lcase);lcase=NULL;
     
     /* storing the global data in a common block */
     

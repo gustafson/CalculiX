@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2013 Guido Dhondt                          */
+/*              Copyright (C) 1998-2014 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -29,14 +29,14 @@ static int *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *nplicon1,*nplkcon1,*npmat1_,*mi1,*ielas1,*icmd1,*ncmat1_,*nstate1_,
     *istep1,*iinc1,calcul_fn1,calcul_qa1,calcul_cauchy1,iener1,ikin1,
     *nal=NULL,*ipompc1,*nodempc1,*nmpc1,*ncocon1,*ikmpc1,*ilmpc1,
-    num_cpus,mt1,*nk1,*ne01,*nshcon1,*nelemload1,*nload1;
+    num_cpus,mt1,*nk1,*ne01,*nshcon1,*nelemload1,*nload1,*mortar1;
 
 static double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
     *prestr1,*eme1,*fn1=NULL,*qa1=NULL,*vold1,*veold1,*dtime1,*time1,
     *ttime1,*plicon1,*plkcon1,*xstateini1,*xstiff1,*xstate1,*stiini1,
     *vini1,*ener1,*eei1,*enerini1,*springarea1,*reltime1,*coefmpc1,
-    *cocon1,*qfx1,*xnormastface1,*thicke1,*emeini1,*shcon1,*xload1,
-    *xloadold1;
+    *cocon1,*qfx1,*thicke1,*emeini1,*shcon1,*xload1,
+    *xloadold1,*pslavsurf1,*pmastsurf1,*clearini1;
 
 void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
        double *v,double *stn,int *inum,double *stx,double *elcon,int *nelcon,
@@ -63,9 +63,12 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
        int *inotr,int *ntrans,double *fmpc,int *nelemload,int *nload,
        int *ikmpc,int *ilmpc,
        int *istep,int *iinc,double *springarea,double *reltime, int *ne0,
-       double *xforc, int *nforc, double *thicke,double *xnormastface,
+       double *xforc, int *nforc, double *thicke,
        double *shcon,int *nshcon,char *sideload,double *xload,
-       double *xloadold,int *icfd,int *inomat){
+       double *xloadold,int *icfd,int *inomat,double *pslavsurf,
+       double *pmastsurf,int *mortar,int *islavact,double *cdn,
+       int *islavnode,int *nslavnode,int *ntie,double *clearini,
+       int *islavsurf){
 
     int intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,iener,ikin,
         intpointvart,mt=mi[1]+1,i,j,*ithread=NULL;
@@ -163,7 +166,7 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 
     if((strcmp1(&filab[3],"I")==0)&&(*iout==0)){
 	FORTRAN(frditeration,(co,nk,kon,ipkon,lakon,ne,v,
-			      ttime,ielmat,matname,mi,istep,iinc));
+		ttime,ielmat,matname,mi,istep,iinc,ithermal));
     }
 
     /* calculating the stresses and material tangent at the 
@@ -190,7 +193,8 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
         istep1=istep;iinc1=iinc;springarea1=springarea;reltime1=reltime;
         calcul_fn1=calcul_fn;calcul_qa1=calcul_qa;calcul_cauchy1=calcul_cauchy;
         iener1=iener;ikin1=ikin;mt1=mt;nk1=nk;ne01=ne0;thicke1=thicke;
-        xnormastface1=xnormastface;emeini1=emeini;
+        emeini1=emeini;pslavsurf1=pslavsurf;clearini1=clearini;
+        pmastsurf1=pmastsurf;mortar1=mortar;
 
 	/* calculating the stresses */
 	
@@ -269,7 +273,7 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 	qa1=NNEW(double,num_cpus*3);
 	nal=NNEW(int,num_cpus);
 
-	co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;ne1=ne;v1=v;
+	co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;v1=v;
         elcon1=elcon;nelcon1=nelcon;rhcon1=rhcon;nrhcon1=nrhcon;
 	ielmat1=ielmat;ielorien1=ielorien;norien1=norien;orab1=orab;
         ntmat1_=ntmat_;t01=t0;iperturb1=iperturb;iout1=iout;vold1=vold;
@@ -283,6 +287,8 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
         mt1=mt;nk1=nk;shcon1=shcon;nshcon1=nshcon;ithermal1=ithermal;
         nelemload1=nelemload;nload1=nload;nmethod1=nmethod;reltime1=reltime;
         sideload1=sideload;xload1=xload;xloadold1=xloadold;
+        pslavsurf1=pslavsurf;pmastsurf1=pmastsurf;mortar1=mortar;
+        clearini1=clearini;plicon1=plicon;nplicon1=nplicon;ne1=ne;
 
 	/* calculating the heat flux */
 	
@@ -361,7 +367,8 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
        nstate_,ener,enern,xstaten,eei,set,nset,istartset,iendset,
        ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
        nelemload,nload,&ikin,ielmat,thicke,eme,emn,rhcon,nrhcon,shcon,
-       nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat));
+       nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,islavact,
+       cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time));
   
   return;
 
@@ -384,20 +391,18 @@ void *resultsmechmt(int *i){
     neb=(*i+1)*nedelta;
 // next line! -> all parallel sections
     if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
-//    if(neb>*ne1) neb=*ne1;
-
-//    printf("mech i=%d,nea=%d,neb=%d\n",i,nea,neb);
-//    printf("indexfn=%d,indexqa=%d,indexnal=%d\n",indexfn,indexqa,indexnal);
 
     FORTRAN(resultsmech,(co1,kon1,ipkon1,lakon1,ne1,v1,
           stx1,elcon1,nelcon1,rhcon1,nrhcon1,alcon1,nalcon1,alzero1,
           ielmat1,ielorien1,norien1,orab1,ntmat1_,t01,t11,ithermal1,prestr1,
-          iprestr1,eme1,iperturb1,&fn1[indexfn],iout1,&qa1[indexqa],vold1,nmethod1,
+          iprestr1,eme1,iperturb1,&fn1[indexfn],iout1,&qa1[indexqa],vold1,
+          nmethod1,
           veold1,dtime1,time1,ttime1,plicon1,nplicon1,plkcon1,nplkcon1,
           xstateini1,xstiff1,xstate1,npmat1_,matname1,mi1,ielas1,icmd1,
           ncmat1_,nstate1_,stiini1,vini1,ener1,eei1,enerini1,istep1,iinc1,
           springarea1,reltime1,&calcul_fn1,&calcul_qa1,&calcul_cauchy1,&iener1,
-	  &ikin1,&nal[indexnal],ne01,thicke1,xnormastface1,emeini1,&nea,&neb));
+	  &ikin1,&nal[indexnal],ne01,thicke1,emeini1,
+	  pslavsurf1,pmastsurf1,mortar1,clearini1,&nea,&neb));
 
     return NULL;
 }
@@ -416,12 +421,8 @@ void *resultsthermmt(int *i){
     nea=*i*nedelta+1;
     neb=(*i+1)*nedelta;
     if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
-//    if(neb>*ne1) neb=*ne1;
 
-//    printf("therm i=%d,nea=%d,neb=%d\n",i,nea,neb);
-//    printf("indexfn=%d,indexqa=%d,indexnal=%d\n",indexfn,indexqa,indexnal);
-
-    FORTRAN(resultstherm,(co1,kon1,ipkon1,lakon1,ne1,v1,
+    FORTRAN(resultstherm,(co1,kon1,ipkon1,lakon1,v1,
 	   elcon1,nelcon1,rhcon1,nrhcon1,ielmat1,ielorien1,norien1,orab1,
 	   ntmat1_,t01,iperturb1,&fn1[indexfn],shcon1,nshcon1,
 	   iout1,&qa1[indexqa],vold1,ipompc1,nodempc1,coefmpc1,nmpc1,
@@ -430,7 +431,8 @@ void *resultsthermmt(int *i){
            matname1,mi1,ncmat1_,nstate1_,cocon1,ncocon1,
            qfx1,ikmpc1,ilmpc1,istep1,iinc1,springarea1,
 	   &calcul_fn1,&calcul_qa1,&nal[indexnal],&nea,&neb,ithermal1,
-           nelemload1,nload1,nmethod1,reltime1,sideload1,xload1,xloadold1));
+	   nelemload1,nload1,nmethod1,reltime1,sideload1,xload1,xloadold1,
+	   pslavsurf1,pmastsurf1,mortar1,clearini1,plicon1,nplicon1));
 
     return NULL;
 }

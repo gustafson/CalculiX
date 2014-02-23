@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@
 !     integer iostat
       real*8 ttime,time,dtime
 !
-      write(8,100) istep,j,icutb+1,l,ttime,time,dtime
+      write(8,100) istep,j,icutb+1,l,ttime+time-dtime,time,dtime
 c      call flush(8)
       flush(8)
 !

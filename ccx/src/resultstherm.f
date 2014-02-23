@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine resultstherm(co,kon,ipkon,lakon,ne,v,
+      subroutine resultstherm(co,kon,ipkon,lakon,v,
      &  elcon,nelcon,rhcon,nrhcon,ielmat,ielorien,norien,orab,
      &  ntmat_,t0,iperturb,fn,shcon,nshcon,
      &  iout,qa,vold,ipompc,nodempc,coefmpc,nmpc,
@@ -24,7 +24,8 @@
      &  matname,mi,ncmat_,nstate_,cocon,ncocon,
      &  qfx,ikmpc,ilmpc,istep,iinc,springarea,
      &  calcul_fn,calcul_qa,nal,nea,neb,ithermal,nelemload,nload,
-     &  nmethod,reltime,sideload,xload,xloadold)
+     &  nmethod,reltime,sideload,xload,xloadold,pslavsurf,
+     &  pmastsurf,mortar,clearini,plicon,nplicon)
 !
 !     calculates the heat flux and the material tangent at the integration
 !     points and the internal concentrated flux at the nodes
@@ -37,12 +38,13 @@
 !
       integer kon(*),konl(26),iperm(20),ikmpc(*),ilmpc(*),mi(*),
      &  nelcon(2,*),nrhcon(*),ielmat(mi(3),*),ielorien(mi(3),*),
-     &  ntmat_,ipkon(*),ipompc(*),nodempc(3,*),
-     &  ncocon(2,*),iflag,nshcon(*),istep,iinc,mt,ne,mattyp,
+     &  ntmat_,ipkon(*),ipompc(*),nodempc(3,*),mortar,igauss,
+     &  ncocon(2,*),iflag,nshcon(*),istep,iinc,mt,mattyp,
      &  i,j,k,m1,kk,i1,m3,indexe,nope,norien,iperturb(*),iout,
      &  nal,nmpc,kode,imat,mint3d,iorien,istiff,ncmat_,nstate_,
      &  nplkcon(0:ntmat_,*),npmat_,calcul_fn,calcul_qa,nea,neb,
-     &  nelemload(2,*),nload,ithermal(2),nmethod,nopered
+     &  nelemload(2,*),nload,ithermal(2),nmethod,nopered,iloc,
+     &  jfaces,node,nplicon(0:ntmat_,*)
 !
       real*8 co(3,*),v(0:mi(2),*),shp(4,26),reltime,
      &  xl(3,26),vl(0:mi(2),26),elcon(0:ncmat_,ntmat_,*),
@@ -54,7 +56,8 @@
      &  weight,pgauss(3),coconloc(6),qflux(3),time,ttime,
      &  t1lold,plkcon(0:2*npmat_,ntmat_,*),xstiff(27,mi(1),*),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
-     &  xload(2,*),xloadold(2,*)
+     &  xload(2,*),xloadold(2,*),clearini(3,9,*),pslavsurf(3,*),
+     &  pmastsurf(6,*),plicon(0:2*npmat_,ntmat_,*)
 !
       include "gauss.f"
 !
@@ -104,13 +107,35 @@
          elseif((lakon(i)(1:2).eq.'ES').and.(lakon(i)(7:7).ne.'A')) then
 !
 !           contact spring and advection elements (no dashpot elements
-!           = ED... elements)
+!           = ED... elements and no genuine spring elements)
 !
-            nope=ichar(lakon(i)(8:8))-47
+            if(lakon(i)(7:7).eq.'C') then
 !
-!           local contact spring number
+!              contact spring elements
 !
-            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
+               if(mortar.eq.1) then
+!
+!                 face-to-face penalty
+!
+                  nope=kon(ipkon(i))
+               elseif(mortar.eq.0) then
+!
+!                 node-to-face penalty
+!
+                  nope=ichar(lakon(i)(8:8))-47
+                  konl(nope+1)=kon(indexe+nope+1)
+               endif
+            else
+!
+!              advection elements
+!
+               nope=ichar(lakon(i)(8:8))-47
+            endif
+c            nope=ichar(lakon(i)(8:8))-47
+c!
+c!           local contact spring number
+c!
+c            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
          elseif(lakon(i)(1:2).eq.'D ') then
 !
 !           no entry or exit elements
@@ -127,7 +152,7 @@
             mint3d=50
          elseif((lakon(i)(4:4).eq.'8').or.
      &          (lakon(i)(4:6).eq.'20R').or.
-     &          (lakon(i)(4:6).eq.'26 R')) then
+     &          (lakon(i)(4:6).eq.'26R')) then
             if(lakon(i)(6:7).eq.'RA') then
                mint3d=4
             else
@@ -187,12 +212,25 @@
                   kode=nelcon(1,imat)
                   if(kode.eq.-51) then
                      timeend(1)=time
-                     timeend(2)=ttime+dtime
-                     call springforc_th(xl,vl,imat,elcon,nelcon,
+                     timeend(2)=ttime+time
+                     if(mortar.eq.0) then
+                        call springforc_n2f_th(xl,vl,imat,elcon,nelcon,
      &                    tnl,ncmat_,ntmat_,nope,kode,elconloc,
      &                    plkcon,nplkcon,npmat_,mi,
      &                    springarea(1,konl(nope+1)),timeend,matname,
      &                    konl(nope),i,istep,iinc,iperturb)
+                     elseif(mortar.eq.1) then
+                        iloc=kon(indexe+nope+1)
+                        jfaces=kon(indexe+nope+2)
+                        igauss=kon(indexe+nope+3)
+                        node=0
+                        call springforc_f2f_th(xl,vl,imat,elcon,nelcon,
+     &                    tnl,ncmat_,ntmat_,nope,lakonl,kode,elconloc,
+     &                    plicon,nplicon,npmat_,mi,springarea(1,iloc),
+     &                    nmethod,reltime,jfaces,igauss,
+     &                    pslavsurf,pmastsurf,clearini,timeend,istep,
+     &                    iinc,plkcon,nplkcon,node,i,matname)
+                     endif
                   endif
                elseif(lakonl(7:7).eq.'F') then
 !
@@ -355,7 +393,8 @@
             call thermmodel(amat,i,kk,kode,coconloc,vkl,dtime,
      &           time,ttime,mi(1),nstate_,xstateini,xstate,qflux,xstiff,
      &           iorien,pgauss,orab,t1l,t1lold,vold,co,lakon(i),konl,
-     &           ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc)
+     &           ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,nmethod,
+     &           iperturb)
 ! 
             qfx(1,kk,i)=qflux(1)
             qfx(2,kk,i)=qflux(2)

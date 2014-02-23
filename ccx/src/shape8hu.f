@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,6 +27,8 @@
 !     iflag=3: calculate the value of the shape functions, the
 !              value of their derivatives w.r.t. the global
 !              coordinates and the Jacobian determinant
+!
+!     author: Otto-Ernst Bernhardi
 !
       implicit none
 !

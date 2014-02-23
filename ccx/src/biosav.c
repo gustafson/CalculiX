@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2013 Guido Dhondt                          */
+/*              Copyright (C) 1998-2014 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -105,7 +105,7 @@ void biosav(int *ipkon,int *kon,char *lakon,int *ne,double *co,
     isum=0;
     for(i=0;i<num_cpus;i++){
 	nkapar[i]=isum;
-	if(i!=num_cpus){
+	if(i!=num_cpus-1){
 	    isum+=idelta;
 	}else{
 	    isum=nkphi;
@@ -120,6 +120,7 @@ void biosav(int *ipkon,int *kon,char *lakon,int *ne,double *co,
     nkphi=-1;
 
     do{
+	if(j==num_cpus) break;
 	do{
 	    if(nkapar[j]==nkphi){
 		nkapar[j]=i;
@@ -162,11 +163,11 @@ void biosav(int *ipkon,int *kon,char *lakon,int *ne,double *co,
     pthread_t tid[num_cpus];
     
     ithread=NNEW(int,num_cpus);
-    for(i=0; i<num_cpus; i++)  {
+    for(i=0;i<num_cpus;i++){
 	ithread[i]=i;
-	pthread_create(&tid[i], NULL, (void *)biotsavartmt, (void *)&ithread[i]);
+	pthread_create(&tid[i],NULL,(void *)biotsavartmt,(void *)&ithread[i]);
     }
-    for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
+    for(i=0;i<num_cpus;i++)pthread_join(tid[i], NULL);
     
     free(ithread);free(nkapar);free(nkepar);
     
@@ -180,8 +181,8 @@ void *biotsavartmt(int *i){
 
     int nka,nkb;
 
-    nka=nkapar[*i];
-    nkb=nkepar[*i];
+    nka=nkapar[*i]+1;
+    nkb=nkepar[*i]+1;
 
     FORTRAN(biotsavart,(ipkon1,kon1,lakon1,ne1,co1,qfx1,h01,mi1,&nka,
 			&nkb));

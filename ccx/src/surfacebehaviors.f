@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,10 +18,15 @@
 !
       subroutine surfacebehaviors(inpc,textpart,elcon,nelcon,
      &  nmat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,ipoinpc,npmat_,plicon,nplicon)
+     &  inp,ipoinpc,npmat_,plicon,nplicon,nstate_)
 !
 !     reading the input deck: *SURFACE BEHAVIOR
 !
+!     nint(elcon(3,1,imat))=1: exponential
+!     nint(elcon(3,1,imat))=2: linear
+!     nint(elcon(3,1,imat))=3: tabular
+!     nint(elcon(3,1,imat))=4: tied
+! 
       implicit none
 !
       character*1 inpc(*),pressureoverclosure
@@ -29,7 +34,7 @@
 !
       integer nelcon(2,*),nmat,ntmat_,istep,istat,ipoinpc(0:*),
      &  n,key,i,ncmat_,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  ntmat,npmat,npmat_,nplicon(0:ntmat_,*)
+     &  ntmat,npmat,npmat_,nplicon(0:ntmat_,*),nstate_
 !
       real*8 elcon(0:ncmat_,ntmat_,*),plicon(0:2*npmat_,ntmat_,*),
      &  temperature
@@ -58,12 +63,16 @@
          elseif(textpart(i)(1:38).eq.'PRESSURE-OVERCLOSURE=TABULAR') 
      &      then
             pressureoverclosure='T'
+         elseif(textpart(i)(1:35).eq.'PRESSURE-OVERCLOSURE=TIED') 
+     &      then
+            pressureoverclosure='D'
          else
             write(*,*) 
      &   '*WARNING reading *SURFACE BEHAVIOR: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*SURFACE BEHAVIOR%")
          endif
       enddo
       if(pressureoverclosure.eq.' ') then
@@ -84,7 +93,8 @@
             write(*,*) '*ERROR reading *SURFACE BEHAVIOR: data'
             write(*,*) '       line is lacking for exponential'
             write(*,*) '       behavior'
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*SURFACE BEHAVIOR%")
          endif
 !     
          elcon(3,1,nmat)=1.5d0
@@ -94,7 +104,8 @@
          do i=1,2
             read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &           elcon(i,1,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*SURFACE BEHAVIOR%")
          enddo
 !     
 !     checking the values
@@ -122,7 +133,8 @@
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
 !     
-      elseif(pressureoverclosure.eq.'L') then
+      elseif((pressureoverclosure.eq.'L').or.
+     &       (pressureoverclosure.eq.'D')) then
 !     
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
@@ -130,10 +142,16 @@
             write(*,*) '*ERROR reading *SURFACE BEHAVIOR: data'
             write(*,*) '       line is lacking for linear'
             write(*,*) '       behavior'
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*SURFACE BEHAVIOR%")
          endif
 !     
-         elcon(3,1,nmat)=2.5d0
+         if(pressureoverclosure.eq.'L') then
+            elcon(3,1,nmat)=2.5d0
+         else
+            nstate_=max(nstate_,9)
+            elcon(3,1,nmat)=4.5d0
+         endif
 !     
 !     linear overclosure
 !     
@@ -141,7 +159,8 @@
 !     
          read(textpart(1)(1:20),'(f20.0)',iostat=istat)
      &        elcon(2,1,nmat)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*SURFACE BEHAVIOR%")
 !     
          if(elcon(2,1,nmat).le.0.d0) then
             write(*,*) '*ERROR reading *SURFACE BEHAVIOR: K must'
@@ -153,20 +172,10 @@
 !     
          read(textpart(2)(1:20),'(f20.0)',iostat=istat)
      &        elcon(1,1,nmat)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
-!     
-!     if nonpositive: error
-!     elcon(1,1,nmat)<0 indicates linear spring stiffness
-!     
-         if(elcon(1,1,nmat).lt.1.d-30) then
-            write(*,*) '*ERROR reading *SURFACE BEHAVIOR:'
-            write(*,*) '       tension at large clearances'
-            write(*,*) '       < 1.e-30'
-            call inputerror(inpc,ipoinpc,iline)
-            stop
-         else
-            elcon(1,1,nmat)=-elcon(1,1,nmat)
-         endif
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*SURFACE BEHAVIOR%")
+!
+c         elcon(1,1,nmat)=-elcon(1,1,nmat)
 !     
 !     value of c0coef. If the clearance is inferior to 
 !     c0coef*sqrt(slave_area) a contact spring element
@@ -174,7 +183,8 @@
 !     
          read(textpart(3)(1:20),'(f20.0)',iostat=istat)
      &        elcon(4,1,nmat)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*SURFACE BEHAVIOR%")
 !     
 !     default value
 !     
@@ -201,7 +211,8 @@
      &           ipoinp,inp,ipoinpc)
             if((istat.lt.0).or.(key.eq.1)) exit
             read(textpart(3)(1:20),'(f20.0)',iostat=istat)temperature
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*SURFACE BEHAVIOR%")
 !     
 !     first temperature
 !     
@@ -232,7 +243,8 @@
             do i=1,2
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &              plicon(2*npmat+i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*SURFACE BEHAVIOR%")
             enddo
             npmat=npmat+1
             if(npmat.gt.npmat_) then

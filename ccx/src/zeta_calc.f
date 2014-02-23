@@ -28,6 +28,8 @@
 !     1978,vol.5 B.H.R.A FLUID ENGINEERING 
 !     ISBN 0-900983-78-7
 !
+!     author: Yannick Muller
+!
       subroutine zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
      &     isothermal,kon,ipkon,R,kappa,v,mi)
 !
@@ -927,7 +929,7 @@ c         endif
 !     
          cdu=0.827-0.0085*lzd
          km=a1/a2
-         call  cd_lichtarowicz(cd,cdu,reynolds,km,lzd)
+         call cd_lichtarowicz(cd,cdu,reynolds,km,lzd)
          if (reynolds .gt. 2.E04) then
             write(*,*) 
      &        '*WARNING in zeta_calc: range of application exceeded !'

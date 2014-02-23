@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2013 Guido Dhondt                          */
+/*              Copyright (C) 1998-2014 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -55,7 +55,7 @@ void mastructrad(int *ntr,int *nloadtr,char *sideload,int *ipointerrad,
 	  strcpy1(crcav,&sideload[20*j+17],three);
 	  jcav=atoi(crcav);
 	  if(icav==jcav){
-	      insert(ipointerrad,&mast1rad,&irowrad,&ii,
+	      insertrad(ipointerrad,&mast1rad,&irowrad,&ii,
                      &jj,&ifree,&nzsrad_);
 	  }
       }

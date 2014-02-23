@@ -104,6 +104,7 @@ typedef struct {
   int *nmin;          /* node with minimum datum */
 } Datasets;
 
+void freeDatasets(Datasets *lcase, int nr);
 int readfrd(char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets **lptr, int read_mode );
 int readfrdblock( int lc, Summen *anz,   Nodes     *node, Datasets *lcase );
 int stoi(char *string, int a, int b);

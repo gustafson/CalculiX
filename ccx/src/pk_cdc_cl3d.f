@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,6 +18,8 @@
 !     
 ! cd compressible for class 3 orifices where l/d>0 and r/d>0
 ! type d) with 0.5<=l/d<=2 (eq. 27)
+!
+!     author: Yannick Muller
 !
       subroutine pk_cdc_cl3d(lqd,rqd,reynolds,p2p1,beta,cdc_cl3d)
 !

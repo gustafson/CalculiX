@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,8 +29,9 @@
      &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  coriolis,ibody,xloadold,reltime,veold,springarea,nstate_,
-     &  xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
-     &  tieset,istartset,iendset,ialset,ntie,nasym)
+     &  xstateini,xstate,thicke,integerglob,doubleglob,
+     &  tieset,istartset,iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,
+     &  mortar,clearini)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !
@@ -46,7 +47,7 @@
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
      &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,nasym,
-     &  nactdof(0:mi(2),*),konl(26),irow(*),icolumn,ialset(*),
+     &  nactdof(0:mi(2),*),irow(*),icolumn,ialset(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),ntie,
      &  ielorien(mi(3),*),integerglob(*),istartset(*),iendset(*),
      &  ipkon(*),intscheme,ncocon(2,*),nshcon(*),ipobody(2,*),nbody,
@@ -55,7 +56,7 @@
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,jdof,node1,node2,kflag,icalccg,
      &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
-     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
+     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
@@ -67,7 +68,8 @@
      &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),veold(0:mi(2),*),om,valu2,value,dtime,ttime,
-     &  time,thicke(mi(3),*),xnormastface(3,9,*),doubleglob(*)
+     &  time,thicke(mi(3),*),doubleglob(*),clearini(3,9,*),
+     &  pslavsurf(3,*),pmastsurf(6,*)
 !
       kflag=2
       i0=0
@@ -185,15 +187,11 @@ c     Bernhardi end
 !     
            if(lakon(i)(7:7).eq.'C') then
               if(nasym.eq.1) cycle
-              konl(nope+1)=kon(indexe+nope+1)
+              if(mortar.eq.1) nope=kon(indexe)
            endif
         else
            cycle
         endif
-!
-        do j=1,nope
-          konl(j)=kon(indexe+j) 
-        enddo
 !
         om=0.d0
 !
@@ -237,7 +235,7 @@ c     Bernhardi end
            enddo
         endif
 !
-        call e_c3d(co,nk,konl,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,i,
+        call e_c3d(co,kon,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,i,
      &          nmethod,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
      &          alzero,ielmat,ielorien,norien,orab,ntmat_,
      &          t0,t1,ithermal,vold,iperturb,nelemload,sideload,xload,
@@ -247,8 +245,9 @@ c     Bernhardi end
      &          rhsi,intscheme,ttime,time,istep,iinc,coriolis,xloadold,
      &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
      &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
-     &          xnormastface,integerglob,doubleglob,tieset,istartset,
-     &          iendset,ialset,ntie,nasym)
+     &          integerglob,doubleglob,tieset,istartset,
+     &          iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,
+     &          clearini)
 !
         do jj=1,3*nope
 !
@@ -523,7 +522,9 @@ c                  endif
 !     
 !          local contact spring number
 !     
-           if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
+           if(lakon(i)(7:7).eq.'C') then
+              if(mortar.eq.1) nope=kon(indexe)
+           endif
         elseif(lakon(i)(1:2).eq.'D ') then
 !
 !          asymmetrical contribution -> mafillsmas.f
@@ -533,11 +534,7 @@ c                  endif
            cycle
         endif
 !
-        do j=1,nope
-          konl(j)=kon(indexe+j) 
-        enddo
-!
-        call e_c3d_th(co,nk,konl,lakon(i),s,sm,
+        call e_c3d_th(co,nk,kon,lakon(i),s,sm,
      &  ff,i,nmethod,rhcon,nrhcon,ielmat,ielorien,norien,orab,
      &  ntmat_,t0,t1,ithermal,vold,iperturb,nelemload,
      &  sideload,xload,nload,idist,iexpl,dtime,
@@ -545,12 +542,11 @@ c                  endif
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  xstiff,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,
      &  ilmpc,springarea,plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,
-     &  lakon)
+     &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon)
 !
         do jj=1,nope
 !
           j=jj
-c          k=0
 !
           node1=kon(indexe+j)
           jdof1=nactdof(0,node1)

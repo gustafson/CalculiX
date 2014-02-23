@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,7 +27,9 @@
 !     d(1)               separation between the surfaces
 !     d(2)               pressure transmitted across the surfaces
 !     flowm              not used
-!     temp(1)            temperature at the slave node
+!     temp(1)            temperature at the slave node (node-to-face
+!                        contact) or at the slave integration point
+!                        (face-to-face contact)
 !     temp(2)            temperature at the corresponding master
 !                        position
 !     predef             not used
@@ -36,9 +38,11 @@
 !     ciname             surface interaction name
 !     slname             not used
 !     msname             not used
-!     coords(1..3)       coordinates of the slave node
+!     coords(1..3)       coordinates of the slave node (node-to-face
+!                        contact) or of the slave integration point
+!                        (face-to-face contact)
 !     noel               element number of the contact spring element
-!     node               slave node number
+!     node               slave node number; zero for face-to-face contact
 !     npred              not used
 !     kstep              step number
 !     kinc               increment number

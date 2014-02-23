@@ -1,3 +1,6 @@
+c
+c     EISPACK -> SLATEC: public domain (cf. gams.nist.gov)
+c
       real*8 function pythag(a,b)
       implicit none
       real*8 a,b

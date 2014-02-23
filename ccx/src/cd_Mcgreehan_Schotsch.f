@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -23,7 +23,9 @@
 !     "Flow Characteristics of long orifices with rotation and corner radiusing"
 !     W.F. Mcgreehan and M.J. Schotsch
 !     ASME 87-GT-162
-      
+!
+!     author: Yannick Muller
+!      
       subroutine cd_Mcgreehan_Schotsch(rzdh,bdh,reynolds,cdu)
 !     
       implicit none

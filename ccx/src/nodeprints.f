@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -100,7 +100,8 @@ c      jout=max(jout,1)
           endif
         elseif(textpart(ii)(1:10).eq.'FREQUENCY=') then
            read(textpart(ii)(11:20),'(i10)',iostat=istat) joutl
-           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NODE PRINT%")
            if(joutl.eq.0) then
               do
                  call getnewline(inpc,textpart,istat,n,key,iline,ipol,
@@ -114,7 +115,8 @@ c      jout=max(jout,1)
            endif
         elseif(textpart(ii)(1:11).eq.'FREQUENCYF=') then
            read(textpart(ii)(12:21),'(i10)',iostat=istat) joutl
-           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NODE PRINT%")
            if(joutl.eq.0) then
               do
                  call getnewline(inpc,textpart,istat,n,key,iline,ipol,
@@ -162,7 +164,8 @@ c      jout=max(jout,1)
      &        '*WARNING in modaldynamics: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(ii)(1:index(textpart(ii),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*NODE PRINT%")
         endif
       enddo
 !
@@ -200,7 +203,8 @@ c      jout=max(jout,1)
                write(*,*) 
      &            '*WARNING reading *NODE PRINT: label not applicable'
                write(*,*) '         or unknown; '
-               call inputwarning(inpc,ipoinpc,iline)
+               call inputwarning(inpc,ipoinpc,iline,
+     &"*NODE PRINT%")
                cycle
             endif
             if(textpart(ii)(1:4).eq.'RFL ') then

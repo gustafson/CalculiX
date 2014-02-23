@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -71,7 +71,8 @@
      &        '*WARNING in buckles: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*BUCKLE%")
          endif
       enddo
 !
@@ -112,29 +113,34 @@
       if((istat.lt.0).or.(key.eq.1)) then
          write(*,*) '*ERROR in buckles: definition not complete'
          write(*,*) '  '
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*BUCKLE%")
          stop
       endif
       read(textpart(1)(1:10),'(i10)',iostat=istat) nev
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BUCKLE%")
       if(nev.le.0) then
          write(*,*) '*ERROR in buckles: less than 1 eigenvalue re
      &quested'
          stop
       endif
       read(textpart(2)(1:20),'(f20.0)',iostat=istat) tol
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BUCKLE%")
       if(tol.le.0.) then
          tol=1.d-2
       endif
       read(textpart(3)(1:10),'(i10)',iostat=istat) ncv
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BUCKLE%")
       if(ncv.le.0) then
          ncv=4*nev
       endif
       ncv=ncv+nev
       read(textpart(4)(1:10),'(i10)',iostat=istat) mxiter
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BUCKLE%")
       if(mxiter.le.0) then
          mxiter=1000
       endif

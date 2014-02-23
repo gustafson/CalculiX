@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -70,14 +70,16 @@
      &           ipoinp,inp,ipoinpc)
             do j=1,n
                read(textpart(j)(1:10),'(i10)',iostat=istat) k
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*CONTROLS%")
                ctrl(j)=dble(k)+0.5d0
             enddo
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
             do j=1,n
                read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+10)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*CONTROLS%")
             enddo
             write(*,*) '*INFO: time control parameters set to:'
             write(*,*) '       i0 = ',int(ctrl(1))
@@ -105,7 +107,8 @@
      &           ipoinp,inp,ipoinpc)
             do j=1,n
                read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+18)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*CONTROLS%")
             enddo
             write(*,*) '*INFO: field control parameters set to:'
             write(*,*) '       ran = ',ctrl(19)
@@ -122,7 +125,8 @@
      &        '*WARNING in controlss: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*CONTROLS%")
          endif
       enddo
 !

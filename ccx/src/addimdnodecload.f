@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &              ikmpc,ilmpc,ipompc,
      &              nodempc,nmpc,imddof,nmddof,
      &              nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
-     &              ikboun,nboun,ilboun,ithermal,usercload)
+     &              ikboun,nboun,ilboun,ithermal)
 !
 !     adds the dof in which a user-defined point force was applied to imdnode
 !     (needed in dyna.c and steadystate.c)
@@ -30,7 +30,7 @@
       integer nodeforc(2,*),iforc,node,imdnode(*),nmdnode,ikmpc(*),
      &  ilmpc(*),ipompc(*),nodempc(3,*),nmpc,imddof(*),nmddof,
      &  mi(*),nactdof(0:mi(2),*),imdmpc(*),nmdmpc,imdboun(*),nmdboun,
-     &  ikboun(*),nboun,ilboun(*),ithermal,k,usercload
+     &  ikboun(*),nboun,ilboun(*),ithermal,k
 !
       real*8 xforc(*)
 !
@@ -40,8 +40,6 @@
 !
       if((xforc(iforc).lt.1.2357111318d0).and.
      &     (xforc(iforc).gt.1.2357111316d0)) then
-!
-         usercload=1
 !
          call addimd(imdnode,nmdnode,node)
 !

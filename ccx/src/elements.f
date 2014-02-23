@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -255,14 +255,16 @@ c    Bernhardi end
      &        '*WARNING in elements: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*ELEMENT%")
          endif
       enddo loop
 !
       if(label.eq.'        ') then
          write(*,*) '*ERROR in elements: element type is lacking'
          write(*,*) '       '
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*ELEMENT%")
          stop
       endif
 !
@@ -359,7 +361,8 @@ c     Bernhardi end
             return
          endif
          read(textpart(1)(1:10),'(i10)',iostat=istat) i
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*ELEMENT%")
          if(i.gt.ne_) then
             write(*,*) '*ERROR in elements: increase ne_'
             stop
@@ -371,7 +374,8 @@ c     Bernhardi end
             write(*,*) '*ERROR in elements: element',i
             write(*,*) '       is already defined'
             write(*,*) '       '
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*ELEMENT%")
          endif
 !            
 !        new element
@@ -384,7 +388,8 @@ c     Bernhardi end
 !
          do j=2,min(n,nope+1)
             read(textpart(j)(1:10),'(i10)',iostat=istat) kon(indexe+j-1)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*ELEMENT%")
          enddo
          nteller=n-1
          if(nteller.lt.nope) then
@@ -400,7 +405,8 @@ c     Bernhardi end
                do j=1,n
                   read(textpart(j)(1:10),'(i10)',iostat=istat) 
      &                  kon(indexe+nteller+j)
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*ELEMENT%")
                enddo
                nteller=nteller+n
                if(nteller.eq.nope) exit

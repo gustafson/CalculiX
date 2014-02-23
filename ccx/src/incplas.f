@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -144,7 +144,7 @@ c      if(kode.eq.-52) then
             user_creep=1
          else
             user_creep=0
-            xxa=elconloc(3)*(ttime+dtime)**elconloc(5)
+            xxa=elconloc(3)*(ttime+time)**elconloc(5)
             if(xxa.lt.1.d-20) xxa=1.d-20
             xxn=elconloc(4)
             a1=xxa*dtime
@@ -570,7 +570,7 @@ ccc                  write(*,*) '*ERROR in incplas: no temperature defined'
                   stop
                endif
                timeabq(1)=time
-               timeabq(2)=ttime
+               timeabq(2)=ttime+time
                qtild=(ftrial-c2*(fiso-fiso0)
      &              -umbb*(2.d0*cop+c4*(fkin-fkin0)))/(c2*vj)
 !
@@ -676,7 +676,7 @@ c                  write(*,*)
                else
                   if(user_creep.eq.1) then
                      timeabq(1)=time
-                     timeabq(2)=ttime
+                     timeabq(2)=ttime+time
                      qtild=(ftrial-c2*(fiso-fiso0)
      &                    -umbb*(2.d0*cop+c4*(fkin-fkin0)))/(c2*vj)
 !

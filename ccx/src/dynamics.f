@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -89,7 +89,8 @@
       do i=2,n
          if(textpart(i)(1:6).eq.'ALPHA=') then
             read(textpart(i)(7:26),'(f20.0)',iostat=istat) alpha
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DYNAMIC%")
             if(alpha.lt.-1.d0/3.d0) then
                write(*,*) '*WARNING in dynamics: alpha is smaller'
                write(*,*) '  than -1/3 and is reset to -1/3'
@@ -109,7 +110,8 @@
             elseif(textpart(i)(9:10).eq.'  ') then
                iexpl=3
             else
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*DYNAMIC%")
             endif
          elseif((textpart(i)(1:6).eq.'DIRECT').and.
      &          (textpart(i)(1:9).ne.'DIRECT=NO')) then
@@ -121,7 +123,8 @@
      &        '*WARNING in dynamics: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*DYNAMIC%")
          endif
       enddo
 !
@@ -161,13 +164,17 @@
       endif
 !
       read(textpart(1)(1:20),'(f20.0)',iostat=istat) tinc
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DYNAMIC%")
       read(textpart(2)(1:20),'(f20.0)',iostat=istat) tper
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DYNAMIC%")
       read(textpart(3)(1:20),'(f20.0)',iostat=istat) tmin
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DYNAMIC%")
       read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DYNAMIC%")
 !
       if(tinc.le.0.d0) then
          write(*,*)'*ERROR in dynamics: initial increment size is negati

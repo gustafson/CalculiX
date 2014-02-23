@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -122,14 +122,16 @@
                write(*,*) '*ERROR reading PRE-TENSION SECTION:'
                write(*,*) '       ELEMENT and SURFACE are'
                write(*,*) '       mutually exclusive'
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*PRE-TENSION SECTION%")
             endif
             surface=textpart(i)(9:88)
             ipos=index(surface,' ')
             surface(ipos:ipos)='T'
          elseif(textpart(i)(1:5).eq.'NODE=') then
             read(textpart(i)(6:15),'(i10)',iostat=istat) irefnode
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*PRE-TENSION SECTION%")
             if((irefnode.gt.nk).or.(irefnode.le.0)) then
                write(*,*) '*ERROR reading *PRE-TENSION SECTION:'
                write(*,*) '       node ',irefnode,' is not defined'
@@ -140,14 +142,17 @@
                write(*,*) '*ERROR reading PRE-TENSION SECTION:'
                write(*,*) '       ELEMENT and SURFACE are'
                write(*,*) '       mutually exclusive'
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*PRE-TENSION SECTION%")
             endif
             read(textpart(i)(9:18),'(i10)',iostat=istat) ielem
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*PRE-TENSION SECTION%")
             if((ielem.gt.ne).or.(ielem.le.0)) then
                write(*,*) '*ERROR reading PRE-TENSION SECTION:'
                write(*,*) '       element',ielem,'is not defined'
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*PRE-TENSION SECTION%")
             endif
          else
             write(*,*) 
@@ -155,7 +160,8 @@
      &nized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*PRE-TENSION SECTION%")
          endif
       enddo
 !
@@ -174,7 +180,8 @@
             write(*,*) 
      &      '*ERROR reading *PRE-TENSION SECTION: nonexistent surface'
             write(*,*) '       or surface consists of nodes'
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*PRE-TENSION SECTION%")
          endif
       elseif(ielem.gt.0) then
          if(lakon(ielem)(1:3).ne.'B31') then
@@ -187,7 +194,8 @@
          write(*,*) '*ERROR reading PRE-TENSION SECTION:'
          write(*,*) '       either the parameter SURFACE or the'
          write(*,*) '       parameter ELEMENT must be used'
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*PRE-TENSION SECTION%")
       endif
 !         
 !     reading the normal vector and normalizing
@@ -197,7 +205,8 @@
 !
       do i=1,3
          read(textpart(i)(1:20),'(f20.0)',iostat=istat) xn(i)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*PRE-TENSION SECTION%")
       enddo
       dd=dsqrt(xn(1)*xn(1)+xn(2)*xn(2)+xn(3)*xn(3))
       do i=1,3

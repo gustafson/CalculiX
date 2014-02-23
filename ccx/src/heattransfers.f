@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -108,12 +108,15 @@
             read(textpart(i)(8:27),'(f20.0)',iostat=istat) ctrl(27)
          elseif(textpart(i)(1:9).eq.'TIMERESET') then
             timereset=.true.
+         elseif(textpart(i)(1:17).eq.'TOTALTIMEATSTART=') then
+            read(textpart(1)(18:37),'(f20.0)',iostat=istat) ttime
          else
             write(*,*) 
      &        '*WARNING in heattransfers: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*HEAT TRANSFER%")
          endif
       enddo
       if(nmethod.eq.1) ctrl(27)=1.d30
@@ -178,13 +181,17 @@
          endif
 !
          read(textpart(1)(1:20),'(f20.0)',iostat=istat) tinc
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HEAT TRANSFER%")
          read(textpart(2)(1:20),'(f20.0)',iostat=istat) tper
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HEAT TRANSFER%")
          read(textpart(3)(1:20),'(f20.0)',iostat=istat) tmin
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HEAT TRANSFER%")
          read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HEAT TRANSFER%")
 !
          if(tinc.le.0.d0) then
             write(*,*) '*ERROR in heattransfers: initial increment size 
@@ -217,11 +224,13 @@
          if((istat.lt.0).or.(key.eq.1)) then
             write(*,*)'*ERROR in heattransfers: definition not complete'
             write(*,*) '  '
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*HEAT TRANSFER%")
             stop
          endif
          read(textpart(1)(1:10),'(i10)',iostat=istat) nev
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HEAT TRANSFER%")
          if(nev.le.0) then
             write(*,*) '*ERROR in frequencies: less than 1 eigenvalue re
      &quested'
@@ -233,11 +242,13 @@
          mxiter=1000
          if(textpart(2)(1:1).ne.' ') then
             read(textpart(2)(1:20),'(f20.0)',iostat=istat) fmin
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HEAT TRANSFER%")
          endif
          if(textpart(3)(1:1).ne.' ') then
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) fmax
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HEAT TRANSFER%")
          endif
 !
          mei(1)=nev
@@ -256,13 +267,16 @@
          if((istat.lt.0).or.(key.eq.1)) then
             write(*,*)'*ERROR in heattransfers: definition not complete'
             write(*,*) '  '
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*HEAT TRANSFER%")
             stop
          endif
          read(textpart(1)(1:20),'(f20.0)',iostat=istat) tinc
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HEAT TRANSFER%")
          read(textpart(2)(1:20),'(f20.0)',iostat=istat) tper
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HEAT TRANSFER%")
       endif
 !
       if(timereset)ttime=ttime-tper

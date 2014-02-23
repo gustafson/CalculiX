@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -22,10 +22,10 @@
 !
       logical exi
       character*3 output
-      character*132 jobname,fnin,fndat,fnfrd,fnsta,fnonf
+      character*132 jobname,fnin,fndat,fnfrd,fnsta
       integer i
 !
-!     opening the input  and output file
+!     opening the input and output file
 !
       do i=1,132
          if(jobname(i:i).eq.' ') exit
@@ -75,13 +75,6 @@
  101  format('  STEP      INC     ATT  ITRS     TOT TIME     STEP TIME      
      &    INC TIME')
 !
-      if(output.eq.'onf') then
-         fnonf=jobname(1:i)//'.onf'
-         open(11,file=fnonf(1:i+4),status='unknown',err=111)
-         close(11,status='delete',err=112)
-         open(11,file=fnonf(1:i+4),status='new',err=111)
-      endif
-!
       return
 !
  1    write(*,*) '*ERROR in openfile: could not open file ',fnin(1:i+4)
@@ -103,10 +96,5 @@
       stop
  82   write(*,*) '*ERROR in openfile: could not delete file ',
      &  fnsta(1:i+4)
-      stop
- 111  write(*,*) '*ERROR in openfile: could not open file ',fnonf(1:i+4)
-      stop
- 112  write(*,*) '*ERROR in openfile: could not delete file ',
-     &  fnonf(1:i+4)
       stop
       end

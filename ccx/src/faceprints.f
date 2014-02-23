@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -83,7 +83,8 @@
           endif
         elseif(textpart(ii)(1:11).eq.'FREQUENCYF=') then
            read(textpart(ii)(12:21),'(i10)',iostat=istat) joutl
-           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FACE PRINT%")
            if(joutl.eq.0) then
               do
                  call getnewline(inpc,textpart,istat,n,key,iline,ipol,
@@ -122,7 +123,8 @@
      &        '*WARNING in faceprints: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(ii)(1:index(textpart(ii),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*FACE PRINT%")
         endif
       enddo
 !
@@ -144,7 +146,8 @@
      &         (textpart(ii)(1:4).ne.'FLUX')) then
                write(*,*) '*WARNING in faceprints: label not applicable'
                write(*,*) '         or unknown; '
-               call inputwarning(inpc,ipoinpc,iline)
+               call inputwarning(inpc,ipoinpc,iline,
+     &"*FACE PRINT%")
                cycle
             endif
             if((cfd.eq.0).and.(textpart(ii)(1:4).eq.'DRAG')) then

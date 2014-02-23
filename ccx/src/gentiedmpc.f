@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -45,7 +45,7 @@
 !
       real*8 cg(3,*),straight(16,*),co(3,*),p(3),
      &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),pl(3,9),
-     &  ratio(9),xi,et,coefmpc(*),tietol(2,*),tolloc
+     &  ratio(9),xi,et,coefmpc(*),tietol(3,*),tolloc
 !
 !     nodes per face for hex elements
 !

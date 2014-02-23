@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -83,6 +83,8 @@
      &           .5d0,.5d0,
      &           0.d0,.5d0,
      &           0.333333333333333d0,0.333333333333333d0/
+!
+      data iflag /2/
 !
 !     creates the normals for the interface condition A.n=0 
 !     for electromagnetic calculations

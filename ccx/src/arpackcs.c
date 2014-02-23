@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2013 Guido Dhondt                          */
+/*              Copyright (C) 1998-2014 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -38,25 +38,24 @@
    #include "pardiso.h"
 #endif
 
-void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
+void arpackcs(double *co, int *nk, int **konp, int **ipkonp, char **lakonp,
 	     int *ne, 
 	     int *nodeboun, int *ndirboun, double *xboun, int *nboun, 
 	     int *ipompc, int *nodempc, double *coefmpc, char *labmpc,
              int *nmpc, 
 	     int *nodeforc, int *ndirforc,double *xforc, int *nforc, 
 	     int *nelemload, char *sideload, double *xload,
-	     int *nload, 
-	     double *ad, double *au, double *b, int *nactdof, 
+	     int *nload, int *nactdof, 
 	     int *icol, int *jq, int **irowp, int *neq, int *nzl, 
 	     int *nmethod, int *ikmpc, int *ilmpc, int *ikboun, 
 	     int *ilboun,
 	     double *elcon, int *nelcon, double *rhcon, int *nrhcon,
-	     double *alcon, int *nalcon, double *alzero, int *ielmat,
-	     int *ielorien, int *norien, double *orab, int *ntmat_,
+	     double *alcon, int *nalcon, double *alzero, int **ielmatp,
+	     int **ielorienp, int *norien, double *orab, int *ntmat_,
 	     double *t0, double *t1, double *t1old, 
 	     int *ithermal,double *prestr, int *iprestr, 
 	     double *vold,int *iperturb, double *sti, int *nzs,  
-	     int *kode, double *adb, double *aub,int *mei, double *fei,
+	     int *kode, int *mei, double *fei,
 	     char *filab, double *eme,
              int *iexpl, double *plicon, int *nplicon, double *plkcon,
              int *nplkcon,
@@ -70,14 +69,16 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
              int *inotr, int *ntrans, double *ttime, double *fmpc,
              char *cbody, int *ibody, double *xbody, int *nbody,
 	     int *nevtot, double *thicke, int *nslavs, double *tietol, 
-	      int *mpcinfo,int *ntie,int *istep,
-	     int *nnn,char *tieset){
+	     int *mpcinfo,int *ntie,int *istep,
+	     char *tieset,
+	     int *nintpoint,int *mortar,int *ifacecount,
+	     int **islavsurfp,double **pslavsurfp,double **clearinip){
 
   /* calls the Arnoldi Package (ARPACK) for cyclic symmetry calculations */
   
   char bmat[2]="G", which[3]="LM", howmny[2]="A",*lakont=NULL,
       description[13]="            ",fneig[132]="",
-      lakonl[2]=" \0";
+      lakonl[2]=" \0",*lakon=NULL;
 
   int *inum=NULL,k,ido,ldz,iparam[11],ipntr[14],lworkl,idir,nherm=1,
     info,rvec=1,*select=NULL,lfin,j,lint,iout=1,nm,index,inode,id,i,idof,
@@ -88,30 +89,35 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     *inotrt=NULL,symmetryflag=0,inputformat=0,inewton=0,ifreebody,
     mass=1, stiffness=1, buckling=0, rhsi=0, intscheme=0,*ncocon=NULL,
     coriolis=0,iworsttime,l3,iray,mt,kkx,im,ne0,*integerglob=NULL,
-    *nshcon=NULL,one=1,irenewxstate,ncont,*itietri=NULL,neq2,*nmc=NULL,
+    *nshcon=NULL,one=1,irenewxstate,ncont,*itietri=NULL,neq2,
     *koncont=NULL,ismallsliding=0,*itiefac=NULL,*islavsurf=NULL,
-    *islavnode=NULL,*imastnode=NULL,*nslavnode=NULL,*nmastnode=NULL,mortar=0,
-    *imastop=NULL,*iponoels=NULL,*inoels=NULL,*ipe=NULL,*ime=NULL,ifacecount,
+    *islavnode=NULL,*imastnode=NULL,*nslavnode=NULL,*nmastnode=NULL,
+    *imastop=NULL,*iponoels=NULL,*inoels=NULL,*ipe=NULL,*ime=NULL,
     mpcfree,memmpc_,icascade,maxlenmpc,nkon0,iit=-1,*irow=NULL,nasym=0,
-    kmax1,kmax2,icfd=0,*inomat=NULL;
+    kmax1,kmax2,icfd=0,*inomat=NULL,*ipkon=NULL,*kon=NULL,*ielmat=NULL,
+    *ielorien=NULL,*islavact=NULL,*islavsurfold=NULL,nslavs_prev_step,
+    maxprevcontel,iex,iflagact=0;
 
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,*vr=NULL,
-    *workl=NULL,*d=NULL,sigma,*temp_array=NULL,*vini=NULL,
+      *workl=NULL,*d=NULL,sigma,*temp_array=NULL,*vini=NULL,
     *een=NULL,cam[5],*f=NULL,*fn=NULL,qa[3],*fext=NULL,*emn=NULL,
     *epn=NULL,*stiini=NULL,*fnr=NULL,*fni=NULL,fnreal,fnimag,*emeini=NULL,
-    *xstateini=NULL,theta,pi,*coefmpcnew=NULL,*xstiff=NULL,*vi=NULL,
+    *xstateini=NULL,theta=0,pi,*coefmpcnew=NULL,*xstiff=NULL,*vi=NULL,
     *vt=NULL,*fnt=NULL,*stnt=NULL,*eent=NULL,*cot=NULL,t[3],ctl,stl,
     *t1t=NULL,freq,*stx=NULL,*enern=NULL,*enernt=NULL,*xstaten=NULL,
     *eei=NULL,*enerini=NULL,*cocon=NULL,*qfx=NULL,*qfn=NULL,*qfnt=NULL,
-    tol,fmin,fmax,xreal,ximag,*cgr=NULL,*xloadold=NULL,reltime,constant,
+    tol,fmin,fmax,xreal,ximag,*cgr=NULL,*xloadold=NULL,reltime=1.,constant,
     vreal,vimag,*stnr=NULL,*stni=NULL,stnreal,stnimag,*vmax=NULL,
     *stnmax=NULL,vl[4],stnl[6],dd,v1,v2,v3,bb,cc,al[3],cm,cn,tt,
     worstpsmax,vray[3],worstumax,p1[3],p2[3],q[3],tan[3],*springarea=NULL,
-    *stxt=NULL,*eenmax=NULL,eenl[6],*emnt=NULL,*xnormastface=NULL,
-    *doubleglob=NULL,*shcon=NULL,*cg=NULL,*straight=NULL,
+    *stxt=NULL,*eenmax=NULL,eenl[6],*emnt=NULL,*clearini=NULL,
+    *doubleglob=NULL,*shcon=NULL,*cg=NULL,*straight=NULL,*cdn=NULL,
     *xmastnor=NULL,*areaslav=NULL,*dc=NULL,*di=NULL,*xnoels=NULL,
-    *workev=NULL,sigmaz[2]={0.,0.},*temp_array2=NULL,*ener=NULL,*xstate=NULL,
-    *rwork=NULL,sigmai=0,amp,ampmax,*zstorage=NULL;
+    *workev=NULL,*temp_array2=NULL,*ener=NULL,*xstate=NULL,cdnimag,
+    sigmai=0,amp,ampmax,*zstorage=NULL,*au=NULL,*ad=NULL,cdnreal,
+    *b=NULL,*aub=NULL,*adb=NULL,*pslavsurf=NULL,*pmastsurf=NULL,
+    *cdnt=NULL,*cdnr=NULL,*cdni=NULL,
+    *pslavsurfold=NULL;
 
   FILE *f1;
 
@@ -125,7 +131,17 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   int token;
 #endif
   
-  irow=*irowp;ener=*enerp;xstate=*xstatep;
+  irow=*irowp;ener=*enerp;xstate=*xstatep;ipkon=*ipkonp;lakon=*lakonp;
+  kon=*konp;ielmat=*ielmatp;ielorien=*ielorienp;
+
+  islavsurf=*islavsurfp;pslavsurf=*pslavsurfp;clearini=*clearinip;
+  
+  if(*mortar==0){
+      maxprevcontel=*nslavs;
+  }else if(*mortar==1){
+      maxprevcontel=*nintpoint;
+  }
+  nslavs_prev_step=*nslavs;
   
   mt=mi[1]+1;
   pi=4.*atan(1.);
@@ -170,44 +186,92 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
       inicont(nk,&ncont,ntie,tieset,nset,set,istartset,iendset,ialset,&itietri,
 	      lakon,ipkon,kon,&koncont,nslavs,tietol,&ismallsliding,&itiefac,
 	      &islavsurf,&islavnode,&imastnode,&nslavnode,&nmastnode,
-	      &mortar,&imastop,nkon,&iponoels,&inoels,&ipe,&ime,ne,&ifacecount,
+	      mortar,&imastop,nkon,&iponoels,&inoels,&ipe,&ime,ne,ifacecount,
 	      nmpc,&mpcfree,&memmpc_,
 	      &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
 	      iperturb,ikboun,nboun,co,istep,&xnoels);
       
       if(ncont!=0){
-	  
-	  if(*nener==1){
-	      RENEW(ener,double,mi[0]*(*ne+*nslavs)*2);
-	  }
-	  RENEW(ipkon,int,*ne+*nslavs);
-	  RENEW(lakon,char,8*(*ne+*nslavs));
-	  
-	  if(*norien>0){
-	      RENEW(ielorien,int,mi[2]*(*ne+*nslavs));
-	      for(k=mi[2]**ne;k<mi[2]*(*ne+*nslavs);k++) ielorien[k]=0;
-	  }
-	  RENEW(ielmat,int,mi[2]*(*ne+*nslavs));
-	  for(k=mi[2]**ne;k<mi[2]*(*ne+*nslavs);k++) ielmat[k]=1;
+
 	  cg=NNEW(double,3*ncont);
-	  printf("arpackcs1 cg=%e\n",cg[0]);
 	  straight=NNEW(double,16*ncont);
 	  
 	  /* 11 instead of 10: last position is reserved for the
 	     local contact spring element number; needed as
 	     pointer into springarea */
 	  
-	  RENEW(kon,int,*nkon+11**nslavs);
-	  if((irenewxstate==1)&&(*nslavs!=0)){
-	      RENEW(xstate,double,*nstate_*mi[0]*(*ne+*nslavs));
-	      for(k=*nstate_*mi[0]**ne;k<*nstate_*mi[0]*(*ne+*nslavs);k++){
-		  xstate[k]=0.;
+	  if(*mortar==0){
+	      RENEW(kon,int,*nkon+11**nslavs);
+	      springarea=NNEW(double,2**nslavs);
+	      if(*nener==1){
+		  RENEW(ener,double,mi[0]*(*ne+*nslavs)*2);
 	      }
+	      RENEW(ipkon,int,*ne+*nslavs);
+	      RENEW(lakon,char,8*(*ne+*nslavs));
+	      
+	      if(*norien>0){
+		  RENEW(ielorien,int,mi[2]*(*ne+*nslavs));
+		  for(k=mi[2]**ne;k<mi[2]*(*ne+*nslavs);k++) ielorien[k]=0;
+	      }
+	      
+	      RENEW(ielmat,int,mi[2]*(*ne+*nslavs));
+	      for(k=mi[2]**ne;k<mi[2]*(*ne+*nslavs);k++) ielmat[k]=1;
+	      
+	      if((maxprevcontel==0)&&(*nslavs!=0)){
+		  RENEW(xstate,double,*nstate_*mi[0]*(*ne+*nslavs));
+		  for(k=*nstate_*mi[0]**ne;k<*nstate_*mi[0]*(*ne+*nslavs);k++){
+		      xstate[k]=0.;
+		  }
+	      }
+	      maxprevcontel=*nslavs;
+	      
+	      areaslav=NNEW(double,*ifacecount);
+	  }else if(*mortar==1){
+	      islavact=NNEW(int,nslavnode[*ntie]);
+	      DMEMSET(islavact,0,nslavnode[*ntie],1);
+	      if((*istep==1)||(nslavs_prev_step==0)) clearini=NNEW(double,3*9**nslavs);
+	      xmastnor=NNEW(double,3*nmastnode[*ntie]);
+
+	      if(*nstate_!=0){
+		  if(maxprevcontel!=0){
+		      islavsurfold=NNEW(int,2**ifacecount+2);
+		      pslavsurfold=NNEW(double,3**nintpoint);
+		      memcpy(&islavsurfold[0],&islavsurf[0],
+			     sizeof(int)*(2**ifacecount+2));
+		      memcpy(&pslavsurfold[0],&pslavsurf[0],
+			     sizeof(double)*(3**nintpoint));
+		  }
+	      }
+
+	      *nintpoint=0;
+	      
+	      precontact(&ncont,ntie,tieset,nset,set,istartset,
+			 iendset,ialset,itietri,lakon,ipkon,kon,koncont,ne,
+			 cg,straight,co,vold,istep,&iinc,&iit,itiefac,
+			 islavsurf,islavnode,imastnode,nslavnode,nmastnode,
+			 imastop,mi,ipe,ime,tietol,&iflagact,
+			 nintpoint,&pslavsurf,xmastnor,cs,mcs,ics,clearini,
+                         nslavs);
+	      
+	      /* changing the dimension of element-related fields */
+	      
+	      RENEW(kon,int,*nkon+22**nintpoint);
+	      RENEW(springarea,double,2**nintpoint);
+	      RENEW(pmastsurf,double,6**nintpoint);
+	      
+	      if(*nener==1){
+		  RENEW(ener,double,mi[0]*(*ne+*nintpoint)*2);
+	      }
+	      RENEW(ipkon,int,*ne+*nintpoint);
+	      RENEW(lakon,char,8*(*ne+*nintpoint));
+	      
+	      if(*norien>0){
+		  RENEW(ielorien,int,mi[2]*(*ne+*nintpoint));
+		  for(k=mi[2]**ne;k<mi[2]*(*ne+*nintpoint);k++) ielorien[k]=0;
+	      }
+	      RENEW(ielmat,int,mi[2]*(*ne+*nintpoint));
+	      for(k=mi[2]**ne;k<mi[2]*(*ne+*nintpoint);k++) ielmat[k]=1;
 	  }
-	  xmastnor=NNEW(double,3*nmastnode[*ntie]);
-	  xnormastface=NNEW(double,3*9**nslavs);
-	  areaslav=NNEW(double,ifacecount);
-	  springarea=NNEW(double,2**nslavs);
 	  
           /* generating contact spring elements */
 	  
@@ -218,25 +282,69 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		  &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
 		  iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
 		  itiefac,areaslav,iponoels,inoels,springarea,tietol,&reltime,
-		  imastnode,nmastnode,xmastnor,xnormastface,filab,mcs,ics,&nasym,
-		  xnoels);
-	  printf("arpackcs2 cg=%e\n",cg[0]);
+		  imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
+		  xnoels,mortar,pslavsurf,pmastsurf,clearini,&theta);
+	  
+	  printf("number of contact spring elements=%d\n\n",*ne-ne0);
+		  
+	  /* interpolating the state variables */
+
+	  if(*mortar==1){
+	      if(*nstate_!=0){
+		  if(maxprevcontel!=0){
+		      RENEW(xstateini,double,
+			    *nstate_*mi[0]*(ne0+maxprevcontel));
+		      for(k=*nstate_*mi[0]*ne0;
+			  k<*nstate_*mi[0]*(ne0+maxprevcontel);++k){
+			  xstateini[k]=xstate[k];
+		      }
+		  }
+		  
+		  RENEW(xstate,double,*nstate_*mi[0]*(ne0+*nintpoint));
+		  for(k=*nstate_*mi[0]*ne0;k<*nstate_*mi[0]*(ne0+*nintpoint);k++){
+		      xstate[k]=0.;
+		  }
+		  
+		  if((*nintpoint>0)&&(maxprevcontel>0)){
+		      iex=2;
+		      
+		      /* interpolation of xstate */
+		      
+		      FORTRAN(interpolatestate,(ne,ipkon,kon,lakon,
+			       &ne0,mi,xstate,pslavsurf,nstate_,
+			       xstateini,islavsurf,islavsurfold,
+                               pslavsurfold));
+		      
+		  }
+		  
+		  if(maxprevcontel!=0){
+		      free(islavsurfold);free(pslavsurfold);
+		  }
+
+		  maxprevcontel=*nintpoint;
+		  
+		  RENEW(xstateini,double,*nstate_*mi[0]*(ne0+*nintpoint));
+		  for(k=0;k<*nstate_*mi[0]*(ne0+*nintpoint);++k){
+		      xstateini[k]=xstate[k];
+		  }
+	      }
+	  }
 	  
           /* determining the structure of the stiffness/mass matrix */
 	  
 	  remastructar(ipompc,&coefmpc,&nodempc,nmpc,
 		       &mpcfree,nodeboun,ndirboun,nboun,ikmpc,ilmpc,ikboun,ilboun,
 		       labmpc,nk,&memmpc_,&icascade,&maxlenmpc,
-		       kon,ipkon,lakon,ne,nnn,nactdof,icol,jq,&irow,isolver,
+		       kon,ipkon,lakon,ne,nactdof,icol,jq,&irow,isolver,
 		       neq,nzs,nmethod,ithermal,iperturb,&mass,mi,ics,cs,
-		       mcs);
+		       mcs,mortar);
       }
   }
   
   /* field for initial values of state variables (needed if
      previous static step was viscoplastic and for contact */
   
-  if(*nstate_!=0){
+  if((*nstate_!=0)&&(*mortar==0)){
       xstateini=NNEW(double,*nstate_*mi[0]*(ne0+*nslavs));
       for(k=0;k<*nstate_*mi[0]*(ne0+*nslavs);++k){
 	  xstateini[k]=xstate[k];
@@ -271,8 +379,9 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      emeini,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
 	      iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
 	      fmpc,nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,
-	      &reltime,&ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
-	      sideload,xload,xloadold,&icfd,inomat);
+	      &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
+	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
+              mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,islavsurf);
   }else{
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	      elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -287,8 +396,9 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      emeini,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
 	      iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
 	      fmpc,nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,
-	      &reltime,&ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
-	      sideload,xload,xloadold,&icfd,inomat);
+	      &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
+	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
+              mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,islavsurf);
   }
   free(f);free(v);free(fn);free(stx);free(inum);
   iout=1;
@@ -389,8 +499,9 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		xstiff,npmat_,&dtime,matname,mi,
 		ics,cs,&nm,ncmat_,labmpc,&mass,&stiffness,&buckling,&rhsi,
 		&intscheme,mcs,&coriolis,ibody,xloadold,&reltime,ielcs,veold,
-		springarea,thicke,xnormastface,integerglob,doubleglob,
-		tieset,istartset,iendset,ialset,ntie,&nasym));
+		springarea,thicke,integerglob,doubleglob,
+		tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
+		pmastsurf,mortar,clearini));
       }
       else{
 	  FORTRAN(mafillsmcs,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -405,8 +516,9 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		xstiff,npmat_,&dtime,matname,mi,
 		ics,cs,&nm,ncmat_,labmpc,&mass,&stiffness,&buckling,&rhsi,
 		&intscheme,mcs,&coriolis,ibody,xloadold,&reltime,ielcs,veold,
-		springarea,thicke,xnormastface,integerglob,doubleglob,
-		tieset,istartset,iendset,ialset,ntie,&nasym));
+		springarea,thicke,integerglob,doubleglob,
+		tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
+		pmastsurf,mortar,clearini));
 	  
 	  if(nasym==1){
 	      RENEW(au,double,nzs[2]+nzs[1]);
@@ -426,9 +538,9 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		nplicon,plkcon,nplkcon,xstiff,npmat_,&dtime,
 		matname,mi,ics,cs,&nm,ncmat_,labmpc,&mass,&stiffness,&buckling,
 		&rhsi,&intscheme,mcs,&coriolis,ibody,xloadold,&reltime,ielcs,
-		veold,springarea,thicke,xnormastface,integerglob,doubleglob,
+		veold,springarea,thicke,integerglob,doubleglob,
 		tieset,istartset,iendset,ialset,ntie,&nasym,nstate_,xstateini,
-		xstate));
+		xstate,pslavsurf,pmastsurf,mortar,clearini));
 	      
 	  }
       }
@@ -450,8 +562,8 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      nstate_,istep,&iinc,ithermal,qfn,&j,&nm,trab,inotr,
 	      ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	      mi,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
-	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-	    thicke,jobnamec,output,qfx);
+	      cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
+	      thicke,jobnamec,output,qfx,cdn,mortar,cdnr,cdni);
 	  
 	  if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
 	  free(inum);FORTRAN(stop,());
@@ -910,6 +1022,8 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	  een=NNEW(double,12**nk);
       if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,2**nk);
       if(strcmp1(&filab[2697],"ME  ")==0) emn=NNEW(double,12**nk);
+      if(((strcmp1(&filab[2175],"CONT")==0)||(strcmp1(&filab[3915],"PCON")==0))
+         &&(*mortar==1)) cdn=NNEW(double,12**nk);
       
       inum=NNEW(int,*nk);
       stx=NNEW(double,2*6*mi[0]**ne);
@@ -939,10 +1053,12 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	  
 	  fnt=NNEW(double,2*mt**nk*ngraph);
       if(strcmp1(&filab[2697],"ME  ")==0) emnt=NNEW(double,2*6**nk*ngraph);
+      if(((strcmp1(&filab[2175],"CONT")==0)||(strcmp1(&filab[3915],"PCON")==0))
+         &&(*mortar==1)) cdnt=NNEW(double,2*6**nk*ngraph);
       if(strcmp1(&filab[522],"ENER")==0)
 	  enernt=NNEW(double,*nk*ngraph);
       if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)||
-	 (strcmp1(&filab[2175],"CONT")==0))
+	 ((strcmp1(&filab[2175],"CONT")==0)&&(*mortar==0)))
 	  stxt=NNEW(double,2*6*mi[0]**ne*ngraph);
       
       kont=NNEW(int,*nkon*ngraph);
@@ -1056,6 +1172,16 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	  stni=NNEW(double,6*nkt);
       }
       
+      if(strcmp1(&filab[2610],"PRF")==0){
+	  fnr=NNEW(double,mt*nkt);
+	  fni=NNEW(double,mt*nkt);
+      }
+      
+      if(strcmp1(&filab[3915],"PCON")==0){
+	  cdnr=NNEW(double,6*nkt);
+	  cdni=NNEW(double,6*nkt);
+      }
+      
       if(strcmp1(&filab[1566],"MAXU")==0){
 	  vmax=NNEW(double,4*nkt);
       }
@@ -1066,11 +1192,6 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
       
       if(strcmp1(&filab[2523],"MAXE")==0){
 	  eenmax=NNEW(double,7*nkt);
-      }
-      
-      if(strcmp1(&filab[2610],"PRF")==0){
-	  fnr=NNEW(double,mt*nkt);
-	  fni=NNEW(double,mt*nkt);
       }
       
       /* start of output calculations */
@@ -1163,38 +1284,42 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      
 	      if(*iperturb==0){
 		  results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
-			  &stx[kkx],elcon,
-			  nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,ielorien,
-			  norien,orab,ntmat_,t0,t0,ithermal,
-			  prestr,iprestr,filab,eme,&emn[kk6],&een[kk6],iperturb,
-			  f,&fn[kkv],nactdof,&iout,qa,vold,&z[lint+k],
-			  nodeboun,ndirboun,xboun,nboun,ipompc,
-			  nodempc,coefmpcnew,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
-			  &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
-			  xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
-			  ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],emeini,
-			  xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
-			  ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-			  nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
-			  &ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
-			  sideload,xload,xloadold,&icfd,inomat);}
+		    &stx[kkx],elcon,
+		    nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,ielorien,
+		    norien,orab,ntmat_,t0,t0,ithermal,
+		    prestr,iprestr,filab,eme,&emn[kk6],&een[kk6],iperturb,
+		    f,&fn[kkv],nactdof,&iout,qa,vold,&z[lint+k],
+		    nodeboun,ndirboun,xboun,nboun,ipompc,
+		    nodempc,coefmpcnew,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
+		    &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
+		    xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
+		    ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],emeini,
+		    xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
+		    ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
+		    nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
+		    &ne0,xforc,nforc,thicke,shcon,nshcon,
+		    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
+		    mortar,islavact,&cdn[kk6],islavnode,nslavnode,ntie,clearini,
+                    islavsurf);}
 	      else{
 		  results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
-			  &stx[kkx],elcon,
-			  nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,ielorien,
-			  norien,orab,ntmat_,t0,t1old,ithermal,
-			  prestr,iprestr,filab,eme,&emn[kk6],&een[kk6],iperturb,
-			  f,&fn[kkv],nactdof,&iout,qa,vold,&z[lint+k],
-			  nodeboun,ndirboun,xboun,nboun,ipompc,
-			  nodempc,coefmpcnew,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
-			  &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
-			  xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
-			  ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],emeini,
-			  xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
-			  ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-			  nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
-			  &ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
-			  sideload,xload,xloadold,&icfd,inomat);
+		    &stx[kkx],elcon,
+		    nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,ielorien,
+		    norien,orab,ntmat_,t0,t1old,ithermal,
+		    prestr,iprestr,filab,eme,&emn[kk6],&een[kk6],iperturb,
+		    f,&fn[kkv],nactdof,&iout,qa,vold,&z[lint+k],
+		    nodeboun,ndirboun,xboun,nboun,ipompc,
+		    nodempc,coefmpcnew,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
+		    &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
+		    xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
+		    ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],emeini,
+		    xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
+		    ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
+		    nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
+		    &ne0,xforc,nforc,thicke,shcon,nshcon,
+		    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
+		    mortar,islavact,&cdn[kk6],islavnode,nslavnode,ntie,clearini,
+                    islavsurf);
 	      }
 	      
 	  }
@@ -1618,12 +1743,16 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     if(strcmp1(&filab[522],"ENER")==0)
       for(l=0;l<*nk;l++){enernt[l]=enern[l];};
     if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)||
-       (strcmp1(&filab[2175],"CONT")==0)){
+       ((strcmp1(&filab[2175],"CONT")==0)&&(*mortar==0))){
       for(l=0;l<6*mi[0]**ne;l++){stxt[l]=stx[l];}
       for(l=0;l<6*mi[0]**ne;l++){stxt[l+6*mi[0]**ne*ngraph]=stx[l+6*mi[0]**ne];}}
     if(strcmp1(&filab[2697],"ME  ")==0){
 	for(l=0;l<6**nk;l++){emnt[l]=emn[l];};
 	for(l=0;l<6**nk;l++){emnt[l+6**nk*ngraph]=emn[l+6**nk];}}
+    if(((strcmp1(&filab[2175],"CONT")==0)||(strcmp1(&filab[3915],"PCON")==0))
+       &&(*mortar==1)){
+	for(l=0;l<6**nk;l++){cdnt[l]=cdn[l];}
+	for(l=0;l<6**nk;l++){cdnt[l+6**nk*ngraph]=cdn[l+6**nk];}}
 
     for(jj=0;jj<*mcs;jj++){
       ilength=cs[17*jj+3];
@@ -1857,6 +1986,62 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
           }
         }
         
+        /* real part of the contact stresses */
+
+        if(((strcmp1(&filab[2175],"CONT")==0)||(strcmp1(&filab[3915],"PCON")==0))
+           &&(*mortar==1)){
+          for(l1=0;l1<*nk;l1++){
+            if(inocs[l1]==jj){
+
+              /* check whether node lies on axis */
+
+	      ml1=-l1-1;
+              FORTRAN(nident,(&ics[lprev],&ml1,&ilength,&id));
+	      if(id!=0){
+		  if(ics[lprev+id-1]==ml1){
+		      for(l2=0;l2<6;l2++){
+			  l=6*l1+l2;
+			  cdnt[l+6**nk*i]=cdn[l];
+		      }
+		      continue;
+		  }
+	      }
+              for(l2=0;l2<6;l2++){
+                l=6*l1+l2;
+                cdnt[l+6**nk*i]=ctl*cdn[l]-stl*cdn[l+6**nk];
+              }
+            }
+          }
+        }
+        
+        /* imaginary part of the contact stresses */
+        
+	if(((strcmp1(&filab[2175],"CONT")==0)||(strcmp1(&filab[3915],"PCON")==0))
+           &&(*mortar==1)){
+          for(l1=0;l1<*nk;l1++){
+            if(inocs[l1]==jj){
+
+              /* check whether node lies on axis */
+
+	      ml1=-l1-1;
+              FORTRAN(nident,(&ics[lprev],&ml1,&ilength,&id));
+	      if(id!=0){
+		  if(ics[lprev+id-1]==ml1){
+		      for(l2=0;l2<6;l2++){
+			  l=6*l1+l2;
+			  cdnt[l+6**nk*(i+ngraph)]=cdn[l+6**nk];
+		      }
+		      continue;
+		  }
+	      }
+              for(l2=0;l2<6;l2++){
+                l=6*l1+l2;
+                cdnt[l+6**nk*(i+ngraph)]=stl*cdn[l]+ctl*cdn[l+6**nk];
+              }
+            }
+          }
+        }
+        
         if((strcmp1(&filab[348],"RF  ")==0)||(strcmp1(&filab[2610],"PRF ")==0)){
           for(l1=0;l1<*nk;l1++){
             if(inocs[l1]==jj){
@@ -1990,6 +2175,27 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
       }
     }
 
+    /* determining magnitude and phase for the contact stress */
+
+    if((strcmp1(&filab[3915],"PCON")==0)&&(*mortar==1)){
+      for(l1=0;l1<nkt;l1++){
+	for(l2=0;l2<6;l2++){
+	  l=6*l1+l2;
+	  cdnreal=cdnt[l];
+	  cdnimag=cdnt[l+6**nk*ngraph];
+	  cdnr[l]=sqrt(cdnreal*cdnreal+cdnimag*cdnimag);
+	  if(fabs(cdnreal)<1.e-10){
+	    if(cdnimag>0){cdni[l]=90.;}
+	    else{cdni[l]=-90.;}
+	  }
+	  else{
+	    cdni[l]=atan(cdnimag/cdnreal)*constant;
+	    if(cdnreal<0) cdni[l]+=180.;
+	  }
+	}
+      }
+    }
+
     ++*kode;
     if(d[j]>=0.){
 	freq=sqrt(d[j])/6.283185308;
@@ -2007,10 +2213,15 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stxt,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,&net,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emnt,
-	    thicke,jobnamec,output,qfx);
+	    thicke,jobnamec,output,qfx,cdnt,mortar,cdnr,cdni);
 
     if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
 
+    if(*iperturb!=0){
+	for(k=0;k<*nstate_*mi[0]*(ne0+maxprevcontel);++k){
+	    xstate[k]=xstateini[k];
+	}	  
+    }
   }
 
   if((fmax>-0.5)&&(fmax*fmax>d[nev-1])){
@@ -2038,8 +2249,10 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   if((strcmp1(&filab[348],"RF  ")==0)||(strcmp1(&filab[2610],"PRF ")==0)) free(fnt);
   if(strcmp1(&filab[522],"ENER")==0) free(enernt);
   if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)||
-     (strcmp1(&filab[2175],"CONT")==0)) free(stxt);
+     ((strcmp1(&filab[2175],"CONT")==0)&&(*mortar==0))) free(stxt);
   if(strcmp1(&filab[2697],"ME  ")==0) free(emnt);
+  if(((strcmp1(&filab[2175],"CONT")==0)||(strcmp1(&filab[3915],"PCON")==0))
+     &&(*mortar==1)) free(cdnt);
 
   free(cot);free(kont);free(ipkont);free(lakont);free(inumt);free(ielmatt);
   if(*ntrans>0){free(inotrt);}
@@ -2066,21 +2279,30 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      RENEW(ielorien,int,mi[2]**ne);
 	  }
 	  RENEW(ielmat,int,mi[2]**ne);
-	  printf("arpackcs3 cg=%e\n",cg[0]);
 	  free(cg);
 	  free(straight);
-	  free(imastop);free(itiefac);free(islavsurf);free(islavnode);
+	  free(imastop);free(itiefac);free(islavnode);
 	  free(nslavnode);free(iponoels);free(inoels);free(imastnode);
-	  free(nmastnode);free(itietri);free(koncont);
-	  free(areaslav);free(springarea);free(xmastnor);free(xnormastface);
+	  free(nmastnode);free(itietri);free(koncont);free(xnoels);
+	  free(springarea);free(xmastnor);
+
+	  if(*mortar==0){
+	      free(areaslav);
+	  }else if(*mortar==1){
+	      free(pmastsurf);free(ipe);free(ime);
+	      free(islavact);
+	  }
       }
   }
 
   free(inocs);free(ielcs);free(xstiff);
   free(ipobody);
 
+  if(*nstate_!=0) free(xstateini);
+
   if(strcmp1(&filab[870],"PU")==0){free(vr);free(vi);}
   if(strcmp1(&filab[1479],"PHS")==0){free(stnr);free(stni);}
+  if(strcmp1(&filab[3915],"PCON")==0){free(cdnr);free(cdni);}
   if(strcmp1(&filab[1566],"MAXU")==0){free(vmax);}
   if(strcmp1(&filab[1653],"MAXS")==0){free(stnmax);}
   if(strcmp1(&filab[2523],"MAXE")==0){free(eenmax);}
@@ -2093,7 +2315,10 @@ void arpackcs(double *co, int *nk, int *kon, int *ipkon, char *lakon,
       mpcinfo[3]=maxlenmpc;
   }
 
-  *irowp=irow;*enerp=ener;*xstatep=xstate;
+  *irowp=irow;*enerp=ener;*xstatep=xstate;*ipkonp=ipkon;*lakonp=lakon;
+  *konp=kon;*ielmatp=ielmat;*ielorienp=ielorien;
+
+  *islavsurfp=islavsurf;*pslavsurfp=pslavsurf;*clearinip=clearini;
 
   return;
 }

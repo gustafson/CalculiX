@@ -24,7 +24,7 @@
 !
       implicit none
 !
-      integer nterms,i,j,k,imin,jmin,kmin,ix(3),kflag,n,iy
+      integer nterms,i,j,k,imin,jmin,kmin,kflag,n,iy
 !
       real*8 ratio(20),pneigh(3,20),pnode(3),dummy,
      &  a(-1:1,-1:1,-1:1),xi(-1:1,-1:1,-1:1),et(-1:1,-1:1,-1:1),p(3),

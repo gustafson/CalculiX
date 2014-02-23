@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -81,7 +81,8 @@ c            iperturb(2)=1
                write(*,*) 
      &            '*ERROR reading *STEP: PERTURBATION and NLGEOM'
                write(*,*) '       are mutually exclusive; '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*STEP%")
                stop
             endif
 !
@@ -90,14 +91,16 @@ c            iperturb(2)=1
 !           maximum number of increments
 !
             read(textpart(i)(5:14),'(i10)',iostat=istat) jmax(1)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*STEP%")
 !
          elseif(textpart(i)(1:5).eq.'INCF=') then
 !
 !           maximum number of fluid increments
 !
             read(textpart(i)(6:15),'(i10)',iostat=istat) jmax(2)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*STEP%")
          elseif(textpart(i)(1:16).eq.'TURBULENCEMODEL=') then
 !
 !           turbulence model
@@ -117,13 +120,15 @@ c            iperturb(2)=1
 !           cfd-calculations
 !
             read(textpart(i)(16:35),'(f20.0)',iostat=istat) physcon(10)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*STEP%")
          else
             write(*,*) 
      &          '*WARNING reading *STEP: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*STEP%")
          endif
       enddo
 !

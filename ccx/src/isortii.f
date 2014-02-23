@@ -1,3 +1,6 @@
+!
+!     SLATEC: public domain
+!
 *deck isort
       subroutine isortii (ix, iy, n, kflag)
 C***BEGIN PROLOGUE  ISORT

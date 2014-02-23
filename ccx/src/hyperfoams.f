@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -64,14 +64,16 @@
             else
                write(*,*) '*WARNING reading *HYPERFOAM: only N=1, N=2, o 
      &r N=3 are allowed; '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERFOAM%")
             endif
          else
             write(*,*) 
      &        '*WARNING reading *HYPERFOAM: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*HYPERFOAM%")
          endif
       enddo
 !
@@ -96,11 +98,13 @@
             do i=1,iend
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                    elcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERFOAM%")
             enddo
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) 
      &              elcon(0,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERFOAM%")
          enddo
       else
          do
@@ -116,7 +120,8 @@
             do i=1,8
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                       elcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERFOAM%")
             enddo
 !
             iend=1
@@ -126,17 +131,20 @@
                write(*,*) 
      &           '*ERROR reading *HYPERFOAM: orthotropic definition'
                write(*,*) '  is not complete. '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERFOAM%")
                stop
             endif
             do i=1,iend
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &                 elcon(8+i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERFOAM%")
             enddo
             read(textpart(2)(1:20),'(f20.0)',iostat=istat) 
      &                  elcon(0,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERFOAM%")
          enddo
       endif
 !

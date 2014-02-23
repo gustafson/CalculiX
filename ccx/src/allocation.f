@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,8 @@
      &  mi,ntrans,set,meminset,rmeminset,ncs,
      &  namtot,ncmat,memmpc,ne1d,ne2d,nflow,jobnamec,irstrt,
      &  ithermal,nener,nstate,irestartstep,inpc,ipoinp,inp,
-     &  ntie,nbody,nprop,ipoinpc,nevdamp,npt,nslavs,nkon)
+     &  ntie,nbody,nprop,ipoinpc,nevdamp,npt,nslavs,nkon,mcs,
+     &  mortar,ifacecount,nintpoint)
 !
 !     calculates a conservative estimate of the size of the 
 !     fields to be allocated
@@ -56,11 +57,12 @@
      &  neb32,nn,nflow,nradiate,irestartread,irestartstep,icntrl,
      &  irstrt,ithermal(2),nener,nstate,ipoinp(2,*),inp(3,*),
      &  ntie,nbody,nprop,ipoinpc(0:*),nevdamp,npt,nentries,
-     &  iposs,iposm,nslavs,nlayer,nkon,nopeexp,k
+     &  iposs,iposm,nslavs,nlayer,nkon,nopeexp,k,iremove,mcs,
+     &  ifacecount,nintpoint,mortar
 !
       real*8 temperature,tempact,xfreq,tpinc,tpmin,tpmax
 !
-      parameter(nentries=14)
+      parameter(nentries=15)
 !
 !     in the presence of mechanical steps the highest number
 !     of DOF is at least 3
@@ -118,13 +120,15 @@
                if((istat.lt.0).or.(key.eq.1)) exit
 !
                read(textpart(2)(1:10),'(i10)',iostat=istat) ibounstart
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BOUNDARY%")
 !
                if(textpart(3)(1:1).eq.' ') then
                   ibounend=ibounstart
                else
                   read(textpart(3)(1:10),'(i10)',iostat=istat) ibounend
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BOUNDARY%")
                endif
                ibound=ibounend-ibounstart+1
                ibound=max(1,ibound)
@@ -216,7 +220,8 @@
      &          (textpart(1)(1:8).eq.'*DENSITY').or.
      &          (textpart(1)(1:10).eq.'*EXPANSION').or.
      &          (textpart(1)(1:15).eq.'*FLUIDCONSTANTS').or.
-     &          (textpart(1)(1:13).eq.'*SPECIFICHEAT')) then
+     &          (textpart(1)(1:13).eq.'*SPECIFICHEAT').or.
+     &          (textpart(1)(1:23).eq.'*ELECTRICALCONDUCTIVITY')) then
             ntmatl=0
             do
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -254,7 +259,8 @@
                if((istat.lt.0).or.(key.eq.1)) exit
                read(textpart(3)(1:20),'(f20.0)',iostat=istat) 
      &                 temperature
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*CYCLIC HARDENING%")
                if(ntmatl.eq.0) then
                   npmatl=0
                   ntmatl=ntmatl+1
@@ -291,7 +297,8 @@
             if((istat.lt.0).or.(key.eq.1)) return
             read(textpart(2)(1:20),'(f20.0)',iostat=istat)
      &           xfreq
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DASHPOT%")
             if(xfreq.gt.0.d0) frequency=.true.
             iline=iline-1
             if(.not.frequency) then
@@ -312,7 +319,8 @@
                   if((istat.lt.0).or.(key.eq.1)) exit
                   read(textpart(3)(1:20),'(f20.0)',iostat=istat) 
      &                 temperature
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DASHPOT%")
                   if(ntmatl.eq.0) then
                      npmatl=0
                      ntmatl=ntmatl+1
@@ -504,7 +512,8 @@
                      write(*,*) 
      &                   '*ERROR in allocation: element type is lacking'
                      write(*,*) '       '
-                     call inputerror(inpc,ipoinpc,iline)
+                     call inputerror(inpc,ipoinpc,iline,
+     &"*ELEMENT or *ELEMENT OUTPUT%")
                      stop
                   endif
                   if((label(1:2).eq.'DC').and.(label(1:7).ne.'DCOUP3D'))
@@ -610,9 +619,6 @@ c    Bernhardi end
                      mi(1)=max(mi(1),27)
                      nope=8
                      nopeexp=28
-                  elseif(label.eq.'SB4     ') then
-                     mi(2)=max(mi(2),7)
-                     nope=4
                   elseif(label.eq.'B31     ') then
                      mi(1)=max(mi(1),8)
                      nope=2
@@ -660,7 +666,8 @@ c                     mi(1)=max(mi(1),8)
      &           ipoinp,inp,ipoinpc)
                if((istat.lt.0).or.(key.eq.1)) exit
                read(textpart(1)(1:10),'(i10)',iostat=istat) i
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*ELEMENT or *ELEMENT OUTPUT%")
 c    Bernhardi start
 c              space for incompatible mode nodes
                if(label(1:5).eq.'C3D8I') then
@@ -757,7 +764,8 @@ c    Bernhardi end
                   do i=1,3
                      read(textpart(i)(1:10),'(i10)',iostat=istat) 
      &                         ialset(i)
-                     if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                     if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NSET or *ELSET%")
                   enddo
                   meminset(nn)=meminset(nn)+
      &                 (ialset(2)-ialset(1))/ialset(3)+1
@@ -792,9 +800,14 @@ c    Bernhardi end
                endif
             enddo
          elseif(textpart(1)(1:9).eq.'*EQUATION') then
+            iremove=0
+            do i=2,n
+               if(textpart(i)(1:6).eq.'REMOVE') iremove=1
+            enddo
             do
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &              ipoinp,inp,ipoinpc)
+               if(iremove.eq.1) exit
                if((istat.lt.0).or.(key.eq.1)) exit 
                read(textpart(1)(1:10),'(i10)',iostat=istat) nterm
                if(ntrans.eq.0) then
@@ -865,7 +878,8 @@ cccc            nmat=nmat+1
                if((istat.lt.0).or.(key.eq.1)) exit
                read(textpart(3)(1:20),'(f20.0)',iostat=istat) 
      &              temperature
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*GAP CONDUCTANCE%")
                if(ntmatl.eq.0) then
                   npmatl=0
                   ntmatl=ntmatl+1
@@ -988,6 +1002,17 @@ cccc            nmat=nmat+1
                   iline=iline+1
                enddo
             endif
+         elseif(textpart(1)(1:21).eq.'*MAGNETICPERMEABILITY') then
+            ntmatl=0
+            ityp=2
+            ncmat=max(2,ncmat)
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,
+     &              inl,ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+               ntmatl=ntmatl+1
+               ntmat=max(ntmatl,ntmat)
+            enddo
          elseif(textpart(1)(1:9).eq.'*MATERIAL') then
             nmat=nmat+1
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -1000,10 +1025,12 @@ cccc            nmat=nmat+1
      &                 inl,ipoinp,inp,ipoinpc)
                   if((istat.lt.0).or.(key.eq.1)) exit
                   read(textpart(1)(1:10),'(i10)',iostat=istat) i
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*MODAL DAMPING%")
                   nevdamp = max(nevdamp,i)
                   read(textpart(2)(1:10),'(i10)',iostat=istat) i
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*MODAL DAMPING%")
                   nevdamp = max(nevdamp,i)
                enddo
             else
@@ -1094,7 +1121,8 @@ cccc            nmat=nmat+1
      &              ipoinp,inp,ipoinpc)
                if((istat.lt.0).or.(key.eq.1)) exit
                read(textpart(1)(1:10),'(i10)',iostat=istat) i
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NODE or *NODE PRINT or *NODE FILE or *NODE OUTPUT%")
                nk=max(nk,i)
                if(inoset.eq.1) then
                   meminset(js)=meminset(js)+1
@@ -1123,7 +1151,8 @@ cccc            nmat=nmat+1
                if((istat.lt.0).or.(key.eq.1)) exit
                read(textpart(3)(1:20),'(f20.0)',iostat=istat) 
      &                temperature
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*PLASTIC%")
                if(ntmatl.eq.0) then
                   npmatl=0
                   ntmatl=ntmatl+1
@@ -1216,12 +1245,12 @@ c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
             do i=1,n
                if(textpart(i)(1:4).eq.'READ') then
                   irestartread=1
-c                  if(irestartstep.eq.0) irestartstep=1
                endif
                if(textpart(i)(1:5).eq.'STEP=') then
                   read(textpart(i)(6:15),'(i10)',iostat=istat) 
      &                  irestartstep
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*RESTART%")
                endif
             enddo
             if(irestartread.eq.1) then
@@ -1231,7 +1260,7 @@ c                  if(irestartstep.eq.0) irestartstep=1
      &              mi,ntrans,ncs,namtot,ncmat,memmpc,
      &              ne1d,ne2d,nflow,set,meminset,rmeminset,jobnamec,
      &              irestartstep,icntrl,ithermal,nener,nstate,ntie,
-     &              nslavs,nkon)
+     &              nslavs,nkon,mcs,nprop,mortar,ifacecount,nintpoint)
                irstrt=-1
             else
             endif
@@ -1342,7 +1371,8 @@ c                  if(irestartstep.eq.0) irestartstep=1
                   if((istat.lt.0).or.(key.eq.1)) exit
                   read(textpart(3)(1:20),'(f20.0)',iostat=istat) 
      &                 temperature
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*SPRING%")
                   if(ntmatl.eq.0) then
                      npmatl=0
                      ntmatl=ntmatl+1
@@ -1482,7 +1512,8 @@ c                  if(irestartstep.eq.0) irestartstep=1
                   if((istat.lt.0).or.(key.eq.1)) exit
                   read(textpart(3)(1:20),'(f20.0)',iostat=istat) 
      &                 temperature
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*SURFACE BEHAVIOR%")
                   if(ntmatl.eq.0) then
                      npmatl=0
                      ntmatl=ntmatl+1
@@ -1567,22 +1598,27 @@ c                  if(irestartstep.eq.0) irestartstep=1
                if(igen)then
                   if(n.lt.3)then
                      write(*,*)'*ERROR in allocation: *TIMEPOINTS'
-                     call inputerror(inpc,ipoinpc,iline)
+                     call inputerror(inpc,ipoinpc,iline,
+     &"*TIME POINTS%")
                      stop
                   else
                      read(textpart(1)(1:20),'(f20.0)',iostat=istat) 
      &                 tpmin
-                     if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                     if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*TIME POINTS%")
                      read(textpart(2)(1:20),'(f20.0)',iostat=istat) 
      &                 tpmax
-                     if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                     if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*TIME POINTS%")
                      read(textpart(3)(1:20),'(f20.0)',iostat=istat) 
      &                 tpinc
-                     if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                     if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*TIME POINTS%")
 !
                      if((tpinc.le.0).or.(tpmin.ge.tpmax)) then
                         write(*,*) '*ERROR in allocation: *TIMEPOINTS'
-                        call inputerror(inpc,ipoinpc,iline)
+                        call inputerror(inpc,ipoinpc,iline,
+     &"*TIME POINTS%")
                         stop
                      else
                         namtot=namtot+2+INT((tpmax-tpmin)/tpinc)
@@ -1605,8 +1641,9 @@ c                  if(irestartstep.eq.0) irestartstep=1
             do i=2,n
                if(textpart(i)(1:10).eq.'CONSTANTS=') then
                   read(textpart(i)(11:20),'(i10)',iostat=istat) 
-     %                  nconstants
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+     &                  nconstants
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*USER MATERIAL%")
                   ncmat=max(nconstants,ncmat)
                   exit
                endif

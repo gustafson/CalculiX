@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,6 +18,8 @@
 !
 !     this subroutine solves iteratively the following equation
 !     to determine the pressure for which section A2 is critical
+!
+!     author: Yannick Muller
 !
       subroutine pt2_lim_calc (pt1,a2,a1,kappa,zeta,pt2_lim)
 !

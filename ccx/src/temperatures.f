@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -84,7 +84,8 @@
                write(*,*)
      &           '*ERROR reading *TEMPERATURE: nonexistent amplitude'
                write(*,*) '  '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*TEMPERATURE%")
                stop
             endif
             iamplitude=j
@@ -94,7 +95,8 @@
      &           '*ERROR reading *TEMPERATURE: the parameter TIME'
                write(*,*) '       DELAY is used twice in the same'
                write(*,*) '       keyword; '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*TEMPERATURE%")
                stop
             else
                idelay=1
@@ -128,20 +130,23 @@
             namta(2,nam)=namtot
             read(textpart(i)(11:30),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*TEMPERATURE%")
          elseif(textpart(i)(1:4).eq.'USER') then
             user=.true.
          elseif(textpart(i)(1:8).eq.'SUBMODEL') then
             submodel=.true.
          elseif(textpart(i)(1:5).eq.'STEP=') then
             read(textpart(i)(6:15),'(i10)',iostat=istat) iglobstep
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*TEMPERATURE%")
          else
             write(*,*) 
      &        '*WARNING reading *TEMPERATURE: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*TEMPERATURE%")
          endif
       enddo
 !
@@ -150,7 +155,8 @@
       if((submodel).and.(iglobstep.eq.0)) then
          write(*,*) '*ERROR reading *TEMPERATURE: no global step'
          write(*,*) '       step specified for the submodel'
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*TEMPERATURE%")
       endif
 !
 !     storing the step for submodels in iamboun
@@ -170,7 +176,8 @@
      &        ipoinp,inp,ipoinpc)
          if((istat.lt.0).or.(key.eq.1)) return
          read(textpart(2)(1:20),'(f20.0)',iostat=istat) temperature
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*TEMPERATURE%")
 !
 !        dummy temperature consisting of the first primes
 !
@@ -182,11 +189,13 @@
             tempgrad2=0.d0
             if(n.gt.2) then
                read(textpart(3)(1:20),'(f20.0)',iostat=istat) tempgrad1
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*TEMPERATURE%")
             endif
             if(n.gt.3) then
                read(textpart(4)(1:20),'(f20.0)',iostat=istat) tempgrad2
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*TEMPERATURE%")
             endif
          endif
 !            
@@ -216,7 +225,8 @@
                noset(ipos:ipos)=' '
                write(*,*) '*ERROR reading *TEMPERATURE: node set ',noset
                write(*,*) '       has not yet been defined. '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*TEMPERATURE%")
                stop
             endif
             do j=istartset(i),iendset(i)

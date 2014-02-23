@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,8 +30,8 @@
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  coriolis,ibody,xloadold,reltime,veold,springarea,nstate_,
      &  xstateini,xstate,thicke,
-     &  xnormastface,integerglob,doubleglob,tieset,istartset,iendset,
-     &  ialset,ntie,nasym)
+     &  integerglob,doubleglob,tieset,istartset,iendset,
+     &  ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,clearini)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !     asymmetric contributions
@@ -48,7 +48,7 @@
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
      &  ilmpc(*),ikboun(*),ilboun(*),mi(*),integerglob(*),ist,mpc1,
-     &  nactdof(0:mi(2),*),konl(20),irow(*),istartset(*),iendset(*),
+     &  nactdof(0:mi(2),*),irow(*),istartset(*),iendset(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),index,
      &  ielorien(mi(3),*),ialset(*),ntie,ne0,nstate_,index1,index2,
      &  ipkon(*),intscheme,ncocon(2,*),nshcon(*),ipobody(2,*),nbody,
@@ -56,7 +56,8 @@
      &  ithermal(2),iprestr,iperturb(*),nzs(3),i,j,k,l,m,idist,jj,
      &  ll,jdof1,jdof2,node1,node2,id,i0,id1,id2,idof1,idof2,nasym,
      &  ntmat_,indexe,nope,norien,iexpl,ncmat_,istep,iinc,mpc2,
-     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,ist1,ist2
+     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,ist1,ist2,
+     &  mortar
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),bb(*),xloadold(2,*),value,
@@ -66,10 +67,10 @@
      &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),
      &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
-     &  springarea(2,*),thicke(mi(3),*),xnormastface(3,9,*),
+     &  springarea(2,*),thicke(mi(3),*),clearini(3,9,*),
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),veold(0:mi(2),*),doubleglob(*),
-     &  om,dtime,ttime,time
+     &  om,dtime,ttime,time,pslavsurf(3,*),pmastsurf(6,*)
 !
       i0=0
 !
@@ -117,16 +118,12 @@
 !     local contact spring number
 !     
         if(lakon(i)(7:7).eq.'C') then
-           konl(nope+1)=kon(indexe+nope+1)
+           if(mortar.eq.1) nope=kon(indexe)
         else
            cycle
         endif
 !
-        do j=1,nope
-          konl(j)=kon(indexe+j) 
-        enddo
-!
-        call e_c3d(co,nk,konl,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,i,
+        call e_c3d(co,kon,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,i,
      &          nmethod,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
      &          alzero,ielmat,ielorien,norien,orab,ntmat_,
      &          t0,t1,ithermal,vold,iperturb,nelemload,sideload,xload,
@@ -136,8 +133,9 @@
      &          intscheme,ttime,time,istep,iinc,coriolis,xloadold,
      &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
      &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
-     &          xnormastface,integerglob,
-     &          doubleglob,tieset,istartset,iendset,ialset,ntie,nasym)
+     &          integerglob,
+     &          doubleglob,tieset,istartset,iendset,ialset,ntie,nasym,
+     &          pslavsurf,pmastsurf,mortar,clearini)
 !
         do jj=1,3*nope
 !
@@ -333,11 +331,7 @@ c     &                            s(jj,ll)/coefmpc(ist)/coefmpc(ist)
         if((kon(indexe+1).eq.0).or.(kon(indexe+3).eq.0)) cycle
         nope=3
 !
-        do j=1,nope
-          konl(j)=kon(indexe+j) 
-        enddo
-!
-        call e_c3d_th(co,nk,konl,lakon(i),s,sm,
+        call e_c3d_th(co,nk,kon,lakon(i),s,sm,
      &  ff,i,nmethod,rhcon,nrhcon,ielmat,ielorien,norien,orab,
      &  ntmat_,t0,t1,ithermal,vold,iperturb,nelemload,
      &  sideload,xload,nload,idist,iexpl,dtime,
@@ -345,7 +339,7 @@ c     &                            s(jj,ll)/coefmpc(ist)/coefmpc(ist)
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  xstiff,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,
      &  ilmpc,springarea,plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,
-     &  lakon)
+     &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon)
 !
         do jj=1,nope
 !

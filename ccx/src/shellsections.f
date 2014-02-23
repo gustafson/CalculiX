@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -68,7 +68,8 @@
             nodalthickness=.true.
          elseif(textpart(i)(1:7).eq.'OFFSET=') then
             read(textpart(i)(8:27),'(f20.0)',iostat=istat) offset1
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*SHELL SECTION%")
          elseif(textpart(i)(1:9).eq.'COMPOSITE') then
             composite=.true.
          else
@@ -76,7 +77,8 @@
      &   '*WARNING reading *SHELL SECTION: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*SHELL SECTION%")
          endif
       enddo
 !
@@ -89,7 +91,8 @@
          if(i.gt.nmat) then
             write(*,*) 
      &        '*ERROR reading *SHELL SECTION: nonexistent material'
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*SHELL SECTION%")
             stop
          endif
          imaterial=i
@@ -110,7 +113,8 @@
          if(i.gt.norien) then
             write(*,*)
      &         '*ERROR reading *SHELL SECTION: nonexistent orientation'
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*SHELL SECTION%")
             stop
          endif
          iorientation=i
@@ -125,7 +129,8 @@
          elset(ipos:ipos)=' '
          write(*,*) '*ERROR reading *SHELL SECTION: element set ',elset
          write(*,*) '       has not yet been defined. '
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*SHELL SECTION%")
          stop
       endif
       iset=i
@@ -141,7 +146,8 @@
             if(istat.gt.0) then
                write(*,*) 
      &    '*ERROR reading *SHELL SECTION: shell thickness is lacking'
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*SHELL SECTION%")
             endif
             if(iaxial.ne.0) thickness=thickness/iaxial
             do j=istartset(iset),iendset(iset)
@@ -205,7 +211,8 @@ c         icomposite=1
             if(istat.gt.0) then
                write(*,*) 
      &     '*ERROR reading *SHELL SECTION: shell thickness is lacking'
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*SHELL SECTION%")
             endif
             if(iaxial.ne.0) thickness=thickness/iaxial
 !     
@@ -215,7 +222,8 @@ c         icomposite=1
             if(istat.gt.0) then
                write(*,*) 
      &              '*ERROR reading *SHELL SECTION: no material defined'
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*SHELL SECTION%")
             endif
 !     
 !     check for the existence of the material
@@ -226,7 +234,8 @@ c         icomposite=1
             if(i.gt.nmat) then
                write(*,*) 
      &      '*ERROR reading *SHELL SECTION: nonexistent material'
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*SHELL SECTION%")
                stop
             endif
             imaterial=i
@@ -248,7 +257,8 @@ c            else
                   write(*,*)
      &        '*ERROR reading *SHELL SECTION: nonexistent orientation'
                   write(*,*) '  '
-                  call inputerror(inpc,ipoinpc,iline)
+                  call inputerror(inpc,ipoinpc,iline,
+     &"*SHELL SECTION%")
                   stop
                endif
                iorientation=i

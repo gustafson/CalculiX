@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,15 +16,13 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      real*8 function Eplane(x,n,t)
+      real*8 function eplane(x,n,t)
 !     
       implicit none
 !     
       real*8 x(*),n(*),t
 !     
-      integer k
-!     
-      Eplane= x(1)*n(1)+x(2)*n(2)+x(3)*n(3)+t
+      eplane= x(1)*n(1)+x(2)*n(2)+x(3)*n(3)+t
 !     
       return
       end

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -77,7 +77,7 @@
 !
       Pi=4.d0*datan(1.d0)
       tvar(1)=time
-      tvar(2)=ttime+dtime
+      tvar(2)=ttime+time
 !     
 !     reinitialisation of the Ac matrix
 !

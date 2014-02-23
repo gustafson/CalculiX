@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,6 +20,8 @@
      & ipoints,members,linpatch,co,lakon,iavflag)
 !
 !     computes the smoothed nodal stresses for an element patch
+!
+!     author: Sascha Merz
 !
       implicit none
 !

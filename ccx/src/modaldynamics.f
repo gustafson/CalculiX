@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -99,7 +99,8 @@ c            noset(ipos:ipos)='N'
      &        '*WARNING in modaldynamics: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*MODAL DYNAMIC%")
          endif
       enddo
 !
@@ -160,17 +161,22 @@ c      endif
       if((istat.lt.0).or.(key.eq.1)) then
          write(*,*) '*ERROR in modaldynamics: definition not complete'
          write(*,*) '       '
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*MODAL DYNAMIC%")
          stop
       endif
       read(textpart(1)(1:20),'(f20.0)',iostat=istat)tinc
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*MODAL DYNAMIC%")
       read(textpart(2)(1:20),'(f20.0)',iostat=istat)tper
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*MODAL DYNAMIC%")
       read(textpart(3)(1:20),'(f20.0)',iostat=istat) tmin
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*MODAL DYNAMIC%")
       read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*MODAL DYNAMIC%")
 !
       if(steadystate) then
 !

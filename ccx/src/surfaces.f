@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -71,7 +71,8 @@
      &        '*WARNING in surfaces: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*SURFACE%")
          endif
       enddo
 !
@@ -147,7 +148,8 @@
             if(n.gt.1) then
                write(*,*) '*ERROR in surfaces: only one entry per'
                write(*,*) '       line allowed'
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*SURFACE%")
             endif
 !
             if(nalset+1.gt.nalset_) then
@@ -244,7 +246,8 @@
             if((label(1:2).ne.'S1').and.(label(1:2).ne.'S2').and.
      &         (label(1:2).ne.'S3').and.(label(1:2).ne.'S4').and.
      &         (label(1:2).ne.'S5').and.(label(1:2).ne.'S6')) then
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*SURFACE%")
             endif
 !            
             read(textpart(1)(1:10),'(i10)',iostat=istat)l

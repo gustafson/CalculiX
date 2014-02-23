@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -92,7 +92,8 @@
                else
                   write(*,*) '*WARNING reading *HYPERELASTIC: N=2 is not
      & applicable for this material type; '
-                  call inputerror(inpc,ipoinpc,iline)
+                  call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERELASTIC%")
                endif
             elseif(textpart(i)(3:3).eq.'3') then
                if(ityp.eq.-4) then
@@ -104,19 +105,22 @@
                else
                   write(*,*) '*WARNING reading *HYPERELASTIC: N=3 is not
      & applicable for this material type; '
-                  call inputerror(inpc,ipoinpc,iline)
+                  call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERELASTIC%")
                endif
             else
                write(*,*) '*WARNING reading *HYPERELASTIC: only N=1, N=2  
      &, or N=3 are allowed; '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERELASTIC%")
             endif
          else
             write(*,*) 
      &       '*WARNING reading *HYPERELASTIC: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*HYPERELASTIC%")
          endif
       enddo
 !
@@ -150,11 +154,13 @@
             do i=1,iend
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                  elcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERELASTIC%")
             enddo
             read(textpart(iend+1)(1:20),'(f20.0)',iostat=istat) 
      &                  elcon(0,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERELASTIC%")
          enddo
       else
          do
@@ -170,7 +176,8 @@
             do i=1,8
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                     elcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERELASTIC%")
             enddo
 !
             if(ityp.eq.-6) then
@@ -184,17 +191,20 @@
                write(*,*) 
      &           '*ERROR reading *HYPERELASTIC: hyperelastic definition'
                write(*,*) '  is not complete. '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERELASTIC%")
                stop
             endif
             do i=1,iend
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &                  elcon(8+i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERELASTIC%")
             enddo
             read(textpart(iend+1)(1:20),'(f20.0)',iostat=istat) 
      &                  elcon(0,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*HYPERELASTIC%")
          enddo
       endif
 !

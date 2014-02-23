@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,8 @@
      &  nmpc,nalset,nmat,ntmat,npmat,norien,nam,nprint,mi,
      &  ntrans,ncs,namtot,ncmat,memmpc,ne1d,ne2d,nflow,
      &  set,meminset,rmeminset,jobnamec,irestartstep,icntrl,ithermal,
-     &  nener,nstate_,ntie,nslavs,nkon)
+     &  nener,nstate_,ntie,nslavs,nkon,mcs,nprop,mortar,ifacecount,
+     &  nintpoint)
 !
 !     istartset := meminset
 !     iendset := rmeminset
@@ -31,12 +32,12 @@
       character*132 fnrstrt,jobnamec(*)
 !
       integer istep,nset,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,
-     &  ntmat,npmat,norien,nam,nprint,mi(*),ntrans,ncs,
-     &  namtot,ncmat,memmpc,ne1d,ne2d,nflow,infree(4),
-     &  nmethod,iperturb(2),meminset(*),rmeminset(*),
+     &  ntmat,npmat,norien,nam,nprint,mi(*),ntrans,ncs,nprop,
+     &  namtot,ncmat,memmpc,ne1d,ne2d,nflow,infree(4),mortar,
+     &  nmethod,iperturb(2),meminset(*),rmeminset(*),nintpoint,
      &  i,j,k,ipos,icntrl,nener,irestartstep,im0,im1,im2,mem,iact,
      &  istat,nkon,nlabel,iplas,ithermal,nstate_,iprestr,maxlenmpc,
-     &  mcs,ntie,nbody,nslavs
+     &  mcs,ntie,nbody,nslavs,ifacecount
 !
       if(icntrl.eq.0) then
 !
@@ -110,6 +111,10 @@
             read(15)npmat
             read(15)ncmat
 !
+!           property info
+!
+            read(15)nprop
+!
 !           transformation size
 !
             read(15)norien
@@ -150,15 +155,20 @@
             read(15)nstate_
             read(15)nslavs
             read(15)iprestr
+            read(15)mortar
+            if(mortar.eq.1) then
+               read(15)ifacecount
+               read(15)nintpoint
+            endif
 !
 !        skipping the next entries
 !     
             call skip(nset,nalset,nload,nbody,
-     &         nforc,nboun,nflow,nk,ne,nkon,
+     &         nforc,nboun,nk,ne,nkon,
      &         mi,nmpc,memmpc,nmat,ntmat,npmat,ncmat,norien,
      &         ntrans,nam,nprint,nlabel,ncs,ne1d,ne2d,infree,
-     &         nmethod,iperturb,nener,iplas,ithermal,nstate_,iprestr,
-     &         mcs,ntie,nslavs)
+     &         nmethod,iperturb,nener,ithermal,nstate_,iprestr,
+     &         mcs,ntie,nslavs,nprop,mortar,ifacecount,nintpoint)
 !
          enddo
 !
@@ -234,6 +244,10 @@
          read(15)npmat
          read(15)ncmat
 !
+!        property info
+!
+         read(15)nprop
+!
 !        transformation size
 !
          read(15)norien
@@ -274,16 +288,21 @@
          read(15)nstate_
          read(15)nslavs
          read(15)iprestr
+         read(15)mortar
+         if(mortar.eq.1) then
+            read(15)ifacecount
+            read(15)nintpoint
+         endif
 !
          if(istep.eq.irestartstep) exit
 !
 !        skipping the next entries
 !     
-         call skip(nset,nalset,nload,nbody,nforc,nboun,nflow,nk,ne,nkon,
+         call skip(nset,nalset,nload,nbody,nforc,nboun,nk,ne,nkon,
      &      mi,nmpc,memmpc,nmat,ntmat,npmat,ncmat,norien,ntrans,
      &      nam,nprint,nlabel,ncs,ne1d,ne2d,infree,nmethod,
-     &      iperturb,nener,iplas,ithermal,nstate_,iprestr,mcs,ntie,
-     &      nslavs)
+     &      iperturb,nener,ithermal,nstate_,iprestr,mcs,ntie,
+     &      nslavs,nprop,mortar,ifacecount,nintpoint)
 !
       enddo
 !

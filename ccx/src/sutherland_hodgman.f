@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,40 +16,9 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-c>
-c>    Sutherland-Hodgman-Algo for polygon clipping combined with active line search
-c>    
-c> @see checktriaedge
-c> @param [in,out]   inodesin,nnodesin !
-c> @param [in,out]   inodesout, nnodesout ! 
-c> @param [in]       nopes
-c> @param [in]       slavstraight
-c> @param [in]       xn
-c> @param [in]       co
-c> @param [in]       xl2s
-c> @param [in]       ipe
-c> @param [in]       ime
-c> @param [in,out]   iactiveline !
-c> @param [in,out]   nactiveline !
-c> @param [in,out]   intersec !
-c> @param [in,out]   xntersec !
-c> @param [in,out]   ifreeintersec !
-c> @param [in]       itri
-c> @param [in]       koncont
-c> @param [in]       itriacornerl
-c> @param [in,out]   nintpoint
-c> @param [out]      pslavsurf
-c> @param [in]       ncont
-c> @param [out]      imastsurf
-c> @param [out]      pmastsurf
-c> @param [in]       xl2m
-c> @param [in]       nnodelem
-c> @param [in]       vold
-c> @param [in]       mi
-c> @param [in]       pnodesin
-c> @param [in]       straight
-c> @param [out]      gapmints
-c> @param [in]       ssurf
+!
+!     Sutherland-Hodgman-Algo for polygon clipping combined with 
+!     active line search
 !
       subroutine sutherland_hodgman(nopes,xn,xl2sp,xl2mp,
      &  nodem,ipe,ime,iactiveline,nactiveline,ifreeintersec,
@@ -66,7 +35,7 @@ c> @param [in]       ssurf
 !
       real*8 pvertex(3,*),xn(3),xl2sp(3,*),pa(3),pb(3),xinters(3),
      &  xcp(3),diff,dd,xl2mp(3,*),c_pvertex(3,13),t,cedge(3),xtest(3),
-     &  Eplane,area,areax,areay,areaz,p1(3),p2(3),areaface
+     &  eplane,area,areax,areay,areaz,p1(3),p2(3),areaface
 !     
       data ithree /3/
 !     
@@ -82,7 +51,7 @@ c> @param [in]       ssurf
             pvertex(k,nvertex)=xl2sp(k,j)
          enddo
       enddo
-        areaface=0.0
+        areaface=0.d0
         do k=1,nvertex-2
          p1(1)=pvertex(1,k+1)-pvertex(1,1)
          p1(2)=pvertex(2,k+1)-pvertex(2,1)
@@ -98,7 +67,7 @@ c> @param [in]       ssurf
 !     
 !     loop over clipping edges
 !     
-      do i=0,(nnodelem-1)
+      do i=1,(nnodelem)
          ncvertex=0
          altered=.false.
 !     
@@ -115,9 +84,9 @@ c> @param [in]       ssurf
          endif
          indexl=ipe(node1)
          do
-            if(ime(1,indexl) .eq. node2) exit
+            if(ime(1,indexl).eq.node2) exit
             indexl=ime(4,indexl)
-            if(indexl .eq. 0) then
+            if(indexl.eq.0) then
                write(*,*) 
      &        '*ERROR in SH:line was not properly catalogued'
                write(*,*) 'itri',itri,'node1',node1,'node2',node2
@@ -135,14 +104,14 @@ c> @param [in]       ssurf
          do k=1,3
             xcp(k)=xcp(k)/dd
          enddo
-         t=- Eplane(xl2mp(1:3,modf(nnodelem,i)),xcp,0.d0)
+         t=-eplane(xl2mp(1:3,modf(nnodelem,i)),xcp,0.d0)
 !     
 !     inside-outside-test 
 !     
          do k=1,3 
-            xtest(k)= xl2mp(k,modf(nnodelem,i+2))
+            xtest(k)=xl2mp(k,modf(nnodelem,i+2))
          enddo
-         if (Eplane(xtest,xcp,t).gt.0)then
+         if (eplane(xtest,xcp,t).gt.0)then
             t=-t
             do k=1,3
                xcp(k)=-xcp(k)
@@ -150,8 +119,8 @@ c> @param [in]       ssurf
          endif
          oldactive=.false.
          call nidentk(iactiveline,indexl, nactiveline,id,ithree)
-         if(id.gt.0)then
-            if(iactiveline(1,id).eq.indexl) oldactive=.true.
+         if(id.gt.0.and.iactiveline(1,id).eq.indexl)then
+            oldactive=.true.
          endif    
          if(oldactive)then
             nactiveline=nactiveline-1
@@ -168,17 +137,17 @@ c> @param [in]       ssurf
 !     
          do j=0, (nvertex-1)
             do k=1,3
-               pa(k)= pvertex(k,modf(nvertex,j))
-               pb(k)= pvertex(k,modf(nvertex,j+1))
+               pa(k)=pvertex(k,modf(nvertex,j))
+               pb(k)=pvertex(k,modf(nvertex,j+1))
             enddo 
-            if(Eplane(pa,xcp,t) .le. 1.0d-12) then
-               if(Eplane(pb,xcp,t) .le. 1.0d-12)then
+            if(eplane(pa,xcp,t).le.1.0d-12) then
+               if(eplane(pb,xcp,t).le.1.0d-12)then
                   ncvertex=ncvertex+1
                   do k=1,3
                      c_pvertex(k,ncvertex)=pb(k)
                   enddo 
                else
-                  if(abs(Eplane(pa,xcp,t)).gt.1.0d-10)then
+                  if(abs(eplane(pa,xcp,t)).gt.1.0d-10)then
                      call intersectionpoint(pa,pb,xcp,t,xinters)
                      diff=(xinters(1)-pa(1))**2+(xinters(2)-pa(2))**2+
      &                    (xinters(3)-pa(3))**2
@@ -208,8 +177,8 @@ c> @param [in]       ssurf
                   endif
                endif
             else
-               if(Eplane(pb,xcp,t) .le. 1.0d-12)then
-                  if(abs(Eplane(pb,xcp,t)).lt.1.0d-10)then
+               if(eplane(pb,xcp,t).le.1.0d-12)then
+                  if(abs(eplane(pb,xcp,t)).lt.1.0d-10)then
                      do ii=1,3
                         xinters(ii)=pb(ii)
                      enddo
@@ -226,7 +195,7 @@ c> @param [in]       ssurf
                      enddo
                   endif       
                   if((.not.oldactive).and.(.not.altered))then
-                     if(Eplane(pb,xcp,t).lt.0.0 .and. nvertex.gt.2)then
+                     if(eplane(pb,xcp,t).lt.0.d0.and.nvertex.gt.2)then
                         altered=.true.
                         nactiveline=nactiveline+1
                         ifreeintersec=ifreeintersec+1
@@ -290,12 +259,10 @@ c> @param [in]       ssurf
          areay=(-(p1(1)*p2(3))+(p2(1)*p1(3)))**2
          areaz=((p1(1)*p2(2))-(p2(1)*p1(2)))**2
          area=area+dsqrt(areax+areay+areaz)/2.
-c         write(20,*)'SH:area',area,areaface,area/areaface
        enddo
-c         if(area/areaface .lt. 2.e-4) border=.true.
          if(border)write(20,*)'border reached'
       endif
-      if(nvertex.lt.3 .or. border)then
+      if(nvertex.lt.3.or.border)then
          do i=1,ninsertl
             oldactive=.false.
             indexl=insertl(i)
@@ -314,6 +281,6 @@ c         if(area/areaface .lt. 2.e-4) border=.true.
             endif
          enddo
       endif 
- 103  format(2x,' SH: xinters',3(3x,e15.8))
+!
       return
       end  

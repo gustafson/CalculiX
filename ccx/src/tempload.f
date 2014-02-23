@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -67,7 +67,7 @@
 !
       do i=1,nam
          if(namta(3,i).lt.0) then
-            reftime=ttime+dtime
+            reftime=ttime+time
          else
             reftime=time
          endif
@@ -119,7 +119,7 @@
             endif
 !
             abqtime(1)=time
-            abqtime(2)=ttime+dtime
+            abqtime(2)=ttime+time
 !
 !           a gasnode cannot move (displacement DOFs are used
 !           for other purposes, e.g. mass flow and pressure)
@@ -214,7 +214,7 @@ c            write(*,*) 'tempload ',node,ndirboun(i),xbounact(i)
                endif
 !
                abqtime(1)=time
-               abqtime(2)=ttime+dtime
+               abqtime(2)=ttime+time
 !
 !              a gasnode cannot move (displacement DOFs are used
 !              for other purposes, e.g. mass flow and pressure)
@@ -242,7 +242,7 @@ c            write(*,*) 'tempload ',node,ndirboun(i),xbounact(i)
                node=nodeforc(1,i)
 !
                abqtime(1)=time
-               abqtime(2)=ttime+dtime
+               abqtime(2)=ttime+time
 !
                do j=1,3
                   coords(j)=co(j,node)+vold(j,node)
@@ -336,7 +336,7 @@ c               xloadact(2,i)=xload(2,i)
      &           (t1(i).gt.1.2357111316d0)) then
 !
                abqtime(1)=time
-               abqtime(2)=ttime+dtime
+               abqtime(2)=ttime+time
 !
                do j=1,3
                   coords(j)=co(j,i)+vold(j,i)

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2013 Guido Dhondt                          */
+/*              Copyright (C) 1998-2014 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -60,7 +60,9 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
 	  ialset,lakon,&ncone,tietol,&ismallsliding,kind1,
 	  kind2,&mortar,istep));
 
-  if(ncont==0) return;
+  if(ncont==0){
+      free(ifaceslave);return;
+  }
 
   /* allocation of space for the triangulation; 
      koncont(1..3,i): nodes belonging to triangle i

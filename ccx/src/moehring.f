@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,6 +30,8 @@
 !     ebene Radwand und bei Anvendung von Rückenschaufeln"
 !     Uwe Klaus Möhring , Dissertation, 
 !     An der Üniversität Carolo-Wilhelmina zu Braunschweig 1976
+!
+!     author: Yannick Muller
 !     
       implicit none
 !     

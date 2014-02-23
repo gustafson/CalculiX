@@ -39,6 +39,8 @@
 !     xflow*dsqrt(R*Tt2)/(A2*Pt2*dsqrt(kappa))-M2/(1+(kappa-1)/2*M2**2)
 !     **(0.5*(kappa+1)/(kappa-1))
 !
+!     author: Yannick Muller
+!
       implicit none
 !
       integer i

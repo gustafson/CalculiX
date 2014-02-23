@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -68,7 +68,7 @@
       data iflag /3/
 !
       tvar(1)=time
-      tvar(2)=ttime+dtime
+      tvar(2)=ttime+time
 !
       if(lakonl(4:4).eq.'2') then
          nope=20

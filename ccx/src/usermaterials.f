@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -55,7 +55,8 @@
       do i=2,n
          if(textpart(i)(1:10).eq.'CONSTANTS=') then
             read(textpart(i)(11:20),'(i10)',iostat=istat) nconstants
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*USER MATERIAL%")
          elseif(textpart(i)(1:12).eq.'TYPE=THERMAL') then
             imech=0
          else
@@ -63,7 +64,8 @@
      &        '*WARNING in usermaterials: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*USER MATERIAL%")
          endif
       enddo
 !
@@ -101,7 +103,8 @@ c         endif
                      write(*,*) 
      &                 '*ERROR in usermaterials: anisotropic definition'
                      write(*,*) '  is not complete. '
-                     call inputerror(inpc,ipoinpc,iline)
+                     call inputerror(inpc,ipoinpc,iline,
+     &"*USER MATERIAL%")
                      stop
                   endif
                endif
@@ -117,7 +120,8 @@ c         endif
                      read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &                    elcon(0,ntmat,nmat)
                   endif
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*USER MATERIAL%")
                enddo
                isum=isum+imax
 !     
@@ -157,7 +161,8 @@ c         endif
                   read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &                 cocon(0,ntmat,nmat)
                endif
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*USER MATERIAL%")
             enddo
          enddo
 !     

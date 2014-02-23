@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,9 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine extrapolate(yi,yn,ipkon,inum,kon,lakon,nfield,nk,
-     &  ne,mi,ndim,orab,ielorien,co,iorienloc,cflag,nelemload,
-     &  nload,nodeboun,nboun,ndirboun,vold,ithermal,force,
-     &  icfdout,ielmat,thicke,filab)
+     &  ne,mi,ndim,orab,ielorien,co,iorienloc,cflag,
+     &  vold,force,ielmat,thicke)
 !
 !     extrapolates field values at the integration points to the 
 !     nodes
@@ -38,22 +37,20 @@
 !
       character*1 cflag
       character*8 lakon(*),lakonl
-      character*87 filab(*)
 !
       integer ipkon(*),inum(*),kon(*),mi(*),ne,indexe,nope,
      &  nonei20(3,12),nfield,nonei10(3,6),nk,i,j,k,l,ndim,
      &  nonei15(3,9),iorienloc,iorien,ielorien(mi(3),*),konl,
-     &  mint3d,m,iflag,nelemload(2,*),nload,nboun,jj,ll,
-     &  nodeboun(*),ndirboun(*),ithermal(2),icfdout,ielmat(mi(3),*),
-     &  nlayer,nopeexp,ilayer,kk,mint2d,nopes,kl,ki,iel,ielstart,
-     &  ielemremesh,itet(4),iwedge(2,9),mesh_in_original_form
+     &  mint3d,m,iflag,jj,ll,ielmat(mi(3),*),
+     &  nlayer,nopeexp,ilayer,kk,mint2d,nopes,kl,ki,
+     &  itet(4),iwedge(2,9)
 !
       real*8 yi(ndim,mi(1),*),yn(nfield,*),field(999,20*mi(3)),a8(8,8),
      &  a4(4,4),a27(20,27),a9(6,9),a2(6,2),orab(7,*),co(3,*),
      &  coords(3,27),xi,et,ze,xl(3,20),xsj,shp(4,20),weight,
      &  yiloc(6,27),a(3,3),b(3,3),c(3,3),vold(0:mi(2),*),tlayer(4),
      &  dlayer(4),xlayer(mi(3),4),thickness,xs2(3,7),xl2(3,8),
-     &  xsj2(3),shp2(7,8),thicke(mi(3),*),coloc(3,8),scale,
+     &  xsj2(3),shp2(7,8),thicke(mi(3),*),coloc(3,8),
      &  xwedge(2,2,9),a14(8,14)
 !
       include "gauss.f"
@@ -249,12 +246,6 @@
 !
       data iflag /1/
 !
-      if(filab(1)(3:3).eq.'C') then
-         mesh_in_original_form=0
-      else
-         mesh_in_original_form=1
-      endif
-!
       do i=1,nk
          inum(i)=0
       enddo
@@ -267,75 +258,9 @@
 !
       do i=1,ne
 !
-         if(ipkon(i).eq.-1) then
-            cycle
-         elseif((lakon(i)(5:6).eq.'IC').and.
-     &          (mesh_in_original_form.eq.1)) then
-            cycle
-         elseif((ipkon(i).lt.-1).and.
-     &          (mesh_in_original_form.eq.1)) then
+         if(ipkon(i).lt.0) cycle
 !
-!           for C3D20(R) elements remeshed due to contact:
-!           the values at the integration points of the 
-!           corresponding C3D20R element are interpolated
-!           from the values at the integration points of the
-!           substituting C3D8I elements
-!
-!           This means that a C3D20 element 
-!           element is converted into a C3D20R element (having
-!           8 integration points instead of 27)
-!
-            ielstart=kon(-2-ipkon(i)+1)-1
-            if(lakon(i)(4:5).eq.'20') then
-               lakon(i)(6:6)='R'
-               scale=2.d0-dsqrt(3.d0)
-               do j=1,8
-                  iel=ielstart+j
-                  xi=coloc(1,j)*scale
-                  et=coloc(2,j)*scale
-                  ze=coloc(3,j)*scale
-                  call shape8h(xi,et,ze,xl,xsj,shp,iflag)
-                  do k=1,ndim
-                     yi(k,j,i)=0.d0
-                     do l=1,8
-                        yi(k,j,i)=yi(k,j,i)+shp(4,l)*yi(k,l,iel)
-                     enddo
-                  enddo
-               enddo
-c            elseif(lakon(i)(4:5).eq.'10') then
-c               do j=1,4
-c                  iel=ielstart+itet(j)
-c                  do k=1,ndim
-c                     yi(k,j,i)=yi(k,1,iel)
-c                  enddo
-c               enddo
-c            elseif(lakon(i)(4:5).eq.'15') then
-c               do j=1,9
-c                  do k=1,ndim
-c                     yi(k,j,i)=0.d0
-c                     do l=1,2
-c                        iel=ielstart+iwedge(l,j)
-c                        if(iwedge(l,j).eq.0) cycle
-c                        do m=1,2
-c                           yi(k,j,i)=yi(k,j,i)+xwedge(m,l,j)*
-c     &                                     yi(k,m,iel)
-c                        enddo
-c                     enddo
-c                  enddo
-c               enddo
-            else
-               cycle
-            endif
-            indexe=-ipkon(i)-2
-            ielemremesh=kon(indexe+1)
-            kon(indexe+1)=kon(ipkon(ielemremesh)+1)
-         elseif(ipkon(i).lt.-1) then
-            cycle
-         else
-            indexe=ipkon(i)
-         endif
-!
-c         indexe=ipkon(i)
+         indexe=ipkon(i)
          lakonl=lakon(i)
 !
          if(lakonl(7:8).eq.'LC') then
@@ -355,14 +280,7 @@ c         indexe=ipkon(i)
             endif
          endif
 !
-!        if icfdout=1 cfd-output is requested (i.e. this routine
-!        is being called from compfluid.c)
-!
-         if((lakonl(1:1).eq.'F').and.(icfdout.ne.1)) then
-            cycle
-         elseif((lakonl(1:1).ne.'F').and.(icfdout.eq.1)) then
-            cycle
-         elseif(lakonl(4:4).eq.'2') then
+         if(lakonl(4:4).eq.'2') then
             nope=20
          elseif(lakonl(4:4).eq.'8') then
             nope=8
@@ -374,9 +292,14 @@ c         indexe=ipkon(i)
             nope=15
          elseif(lakonl(4:4).eq.'6') then
             nope=6
-         elseif((lakon(i)(1:1).eq.'E').and.(lakon(i)(7:7).eq.'A'))then
+         elseif((lakonl(1:1).eq.'E').and.(lakonl(7:7).eq.'A'))then
             inum(kon(indexe+1))=inum(kon(indexe+1))+1
             inum(kon(indexe+2))=inum(kon(indexe+2))+1
+            cycle
+         elseif(lakonl(1:7).eq.'ESPRNGF') then
+            read(lakonl(8:8),'(i1)') nope
+            nope=nope+1
+            inum(kon(indexe+nope))=-1
             cycle
          else
             cycle
@@ -846,13 +769,9 @@ c        incompatible modes elements
                do k=1,nfield
                   yn(k,kon(indexe+nope+j))=0.0d0
                enddo
-               inum(kon(indexe+nope+j))=inum(kon(indexe+nope+j))+1
             enddo
          endif
 c     Bernhardi end
-!
-         if((ipkon(i).lt.-1).and.
-     &      (mesh_in_original_form.eq.1)) kon(indexe+1)=ielemremesh
 !
       enddo
 !

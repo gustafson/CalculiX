@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -68,7 +68,8 @@
      &        '*WARNING in orientations: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*ORIENTATION%")
          endif
       enddo
 !
@@ -82,7 +83,8 @@
 !
       do i=1,6
          read(textpart(i)(1:20),'(f20.0)',iostat=istat) orab(i,norien)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*ORIENTATION%")
       enddo
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

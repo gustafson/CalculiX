@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -106,7 +106,8 @@
      &        '*WARNING in nodes: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*NODE%")
          endif
       enddo loop
 !
@@ -115,24 +116,28 @@
      &        ipoinp,inp,ipoinpc)
          if((istat.lt.0).or.(key.eq.1)) return
          read(textpart(1)(1:10),'(i10)',iostat=istat) i
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NODE%")
          if(n.eq.1) then
             co(1,i)=0.d0
          else
             read(textpart(2)(1:20),'(f20.0)',iostat=istat) co(1,i)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NODE%")
          endif
          if(n.le.2) then
             co(2,i)=0.d0
          else
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) co(2,i)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NODE%")
          endif
          if(n.le.3) then
             co(3,i)=0.d0
          else
             read(textpart(4)(1:20),'(f20.0)',iostat=istat) co(3,i)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*NODE%")
          endif
          nk=max(nk,i)
          if(nk.gt.nk_) then

@@ -1,7 +1,11 @@
-*deck isort
-      subroutine isortiid (ix,cy,dy,n,kflag)
 !
-!     modified to sort in addition an integer (cy) and double (dy) array!
+!     SLATEC: public domain
+!
+*deck isort
+      subroutine isortiid (ix,iy,dy,n,kflag)
+!
+!     modified to make the same interchanges in an integer (iy) 
+!     and double (dy) array!
 !
 C***BEGIN PROLOGUE  ISORT
 C***PURPOSE  Sort an array and optionally make the same interchanges in
@@ -63,7 +67,7 @@ C     .. Scalar Arguments ..
 C     .. Array Arguments ..
       integer ix(*)
       real*8 dy(*)
-      integer cy(*)
+      integer iy(*)
 C     .. Local Scalars ..
       real r
       integer i, ij, j, k, kk, l, m, nn, t, tt
@@ -227,7 +231,7 @@ C
       ij = i + int((j-i)*r)
       t = ix(ij)
       ty = dy(ij)
-      uy = cy(ij)
+      uy = iy(ij)
 C
 C     If first element of array is greater than T, interchange with T
 C
@@ -236,11 +240,11 @@ C
          ix(i) = t
          t = ix(ij)
          dy(ij) = dy(i)
-         cy(ij) = cy(i)
+         iy(ij) = iy(i)
          dy(i) = ty
-         cy(i) = uy
+         iy(i) = uy
          ty = dy(ij)
-         uy = cy(ij)
+         uy = iy(ij)
       endif
       l = j
 C
@@ -251,11 +255,11 @@ C
          ix(j) = t
          t = ix(ij)
          dy(ij) = dy(j)
-         cy(ij) = cy(j)
+         iy(ij) = iy(j)
          dy(j) = ty
-         cy(j) = uy
+         iy(j) = uy
          ty = dy(ij)
-         uy = cy(ij)
+         uy = iy(ij)
 C
 C        If first element of array is greater than T, interchange with T
 C
@@ -264,11 +268,11 @@ C
             ix(i) = t
             t = ix(ij)
             dy(ij) = dy(i)
-            cy(ij) = cy(i)
+            iy(ij) = iy(i)
             dy(i) = ty
-            cy(i) = uy
+            iy(i) = uy
             ty = dy(ij)
-            uy = cy(ij)
+            uy = iy(ij)
          endif
       endif
 C
@@ -291,11 +295,11 @@ C
          ix(l) = ix(k)
          ix(k) = tt
          tty = dy(l)
-         uuy = cy(l)
+         uuy = iy(l)
          dy(l) = dy(k)
-         cy(l) = cy(k)
+         iy(l) = iy(k)
          dy(k) = tty
-         cy(k) = uuy
+         iy(k) = uuy
          go to 130
       endif
 C
@@ -329,18 +333,18 @@ C
       if (i .eq. j) go to 150
       t = ix(i+1)
       ty = dy(i+1)
-      uy = cy(i+1)
+      uy = iy(i+1)
       if (ix(i) .le. t) go to 170
       k = i
 C
   180 ix(k+1) = ix(k)
       dy(k+1) = dy(k)
-      cy(k+1) = cy(k)
+      iy(k+1) = iy(k)
       k = k-1
       if (t .lt. ix(k)) go to 180
       ix(k+1) = t
       dy(k+1) = ty
-      cy(k+1) = uy
+      iy(k+1) = uy
       go to 170
 C
 C     Clean up

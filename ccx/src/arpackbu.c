@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2013 Guido Dhondt                          */
+/*              Copyright (C) 1998-2014 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -42,7 +42,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	     int *nodeforc, int *ndirforc,double *xforc, int *nforc, 
 	     int *nelemload, char *sideload, double *xload,
 	     int *nload, 
-	     double *ad, double *au, double *b,int *nactdof, 
+	     int *nactdof, 
 	     int *icol, int *jq, int *irow, int *neq, int *nzl, 
 	     int *nmethod, int *ikmpc, int *ilmpc, int *ikboun, 
 	     int *ilboun,
@@ -52,7 +52,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	     double *t0, double *t1, double *t1old, 
 	     int *ithermal,double *prestr, int *iprestr, 
 	     double *vold,int *iperturb, double *sti, int *nzs,  
-	     int *kode, double *adb, double *aub,int *mei, double *fei,
+	     int *kode, int *mei, double *fei,
 	     char *filab, double *eme,
              int *iexpl, double *plicon, int *nplicon, double *plkcon,
              int *nplkcon,
@@ -74,18 +74,21 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     *ipobody=NULL,inewton=0,coriolis=0,ifreebody,symmetryflag=0,
     inputformat=0,ngraph=1,mt=mi[1]+1,mass[2]={0,0}, stiffness=1, buckling=0, 
     rhsi=1, intscheme=0, noddiam=-1,*ipneigh=NULL,*neigh=NULL,ne0,
-    *integerglob=NULL,ntie,icfd=0,*inomat=NULL;
+    *integerglob=NULL,ntie,icfd=0,*inomat=NULL,mortar=0,*islavnode=NULL,
+    *islavact=NULL,*nslavnode=NULL,*islavsurf=NULL;
 
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,
-    *workl=NULL,*aux=NULL,*d=NULL,sigma,*temp_array=NULL,
+    *workl=NULL,*d=NULL,sigma,*temp_array=NULL,
     *een=NULL,cam[5],*f=NULL,*fn=NULL,qa[3],*fext=NULL,
-    time=0.,*epn=NULL,*fnr=NULL,*fni=NULL,*emn=NULL,
+    time=0.,*epn=NULL,*fnr=NULL,*fni=NULL,*emn=NULL,*cdn=NULL,
     *xstateini=NULL,*xstiff=NULL,*stiini=NULL,*vini=NULL,*stx=NULL,
     *enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,*cocon=NULL,
     *shcon=NULL,*physcon=NULL,*qfx=NULL,*qfn=NULL,tol, *cgr=NULL,
     *xloadold=NULL,reltime,*vr=NULL,*vi=NULL,*stnr=NULL,*stni=NULL,
     *vmax=NULL,*stnmax=NULL,*cs=NULL,*springarea=NULL,*eenmax=NULL,
-    *xnormastface=NULL,*emeini=NULL,*doubleglob=NULL;
+    *emeini=NULL,*doubleglob=NULL,*au=NULL,*clearini=NULL,
+    *ad=NULL,*b=NULL,*aub=NULL,*adb=NULL,*pslavsurf=NULL,*pmastsurf=NULL,
+    *cdnr=NULL,*cdni=NULL;
 
   /* buckling routine; only for mechanical applications */
 
@@ -139,36 +142,38 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   inum=NNEW(int,*nk);
   if(*iperturb==0){
      results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
-	       elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
-	       ielorien,norien,orab,ntmat_,t0,t0,ithermal,
-	       prestr,iprestr,filab,eme,emn,een,iperturb,
-	       f,fn,nactdof,&iout,qa,vold,b,nodeboun,
-	       ndirboun,xboun,nboun,ipompc,
-	       nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[0],veold,accold,
-	       &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
-	       xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,
-               &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
-               emeini,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
-               iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-	       fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
-	       &reltime,&ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
-	       sideload,xload,xloadold,&icfd,inomat);
+	     elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
+	     ielorien,norien,orab,ntmat_,t0,t0,ithermal,
+	     prestr,iprestr,filab,eme,emn,een,iperturb,
+	     f,fn,nactdof,&iout,qa,vold,b,nodeboun,
+	     ndirboun,xboun,nboun,ipompc,
+	     nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[0],veold,accold,
+	     &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
+	     xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,
+	     &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
+	     emeini,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
+	     iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
+	     fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
+	     &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
+	     sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
+	     &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,islavsurf);
   }else{
      results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
-	       elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
-	       ielorien,norien,orab,ntmat_,t0,t1old,ithermal,
-	       prestr,iprestr,filab,eme,emn,een,iperturb,
-	       f,fn,nactdof,&iout,qa,vold,b,nodeboun,
-	       ndirboun,xboun,nboun,ipompc,
-	       nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[0],veold,accold,
-	       &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
-	       xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,
-               &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
-               emeini,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
-               iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-	       fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
-	       &reltime,&ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
-               sideload,xload,xloadold,&icfd,inomat);
+	     elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
+	     ielorien,norien,orab,ntmat_,t0,t1old,ithermal,
+	     prestr,iprestr,filab,eme,emn,een,iperturb,
+	     f,fn,nactdof,&iout,qa,vold,b,nodeboun,
+	     ndirboun,xboun,nboun,ipompc,
+	     nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[0],veold,accold,
+	     &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
+	     xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,
+	     &icmd,ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,
+	     emeini,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
+	     iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
+	     fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
+	     &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
+	     sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
+	     &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,islavsurf);
   }
 
   free(v);free(fn);free(stx);free(inum);
@@ -194,8 +199,9 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
-	      xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
-	      tieset,istartset,iendset,ialset,&ntie,&nasym));
+	      xstateini,xstate,thicke,integerglob,doubleglob,
+	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,pmastsurf,
+	      &mortar,clearini));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -211,8 +217,9 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
-              xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
-	      tieset,istartset,iendset,ialset,&ntie,&nasym));
+              xstateini,xstate,thicke,integerglob,doubleglob,
+	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,
+	      pmastsurf,&mortar,clearini));
   }
 
   /* determining the right hand side */
@@ -239,7 +246,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-            thicke,jobnamec,output,qfx);
+   	    thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni);
     
     if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
     free(inum);FORTRAN(stop,());
@@ -306,37 +313,39 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   if(*iperturb==0){
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
-	  stx,elcon,nelcon,
-	  rhcon,nrhcon,alcon,nalcon,alzero,ielmat,ielorien,norien,orab,
-	  ntmat_,t0,t0,ithermal,
-	  prestr,iprestr,filab,eme,emn,een,iperturb,
-          f,fn,nactdof,&iout,qa,vold,b,nodeboun,
-	  ndirboun,xboun,nboun,ipompc,
-	  nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[0],veold,accold,&bet,
-          &gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
-	  xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
-	  ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,emeini,
-          xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
-          ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-	  nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
-          &ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
-          sideload,xload,xloadold,&icfd,inomat);}
+	    stx,elcon,nelcon,
+	    rhcon,nrhcon,alcon,nalcon,alzero,ielmat,ielorien,norien,orab,
+	    ntmat_,t0,t0,ithermal,
+	    prestr,iprestr,filab,eme,emn,een,iperturb,
+	    f,fn,nactdof,&iout,qa,vold,b,nodeboun,
+	    ndirboun,xboun,nboun,ipompc,
+	    nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[0],veold,accold,&bet,
+	    &gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
+	    xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
+	    ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,emeini,
+	    xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
+	    ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
+	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
+	    &ne0,xforc,nforc,thicke,shcon,nshcon,
+	    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
+	    &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,islavsurf);}
   else{
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
-	  stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
-          ielorien,norien,orab,ntmat_,t0,t1old,ithermal,
-	  prestr,iprestr,filab,eme,emn,een,iperturb,
-          f,fn,nactdof,&iout,qa,vold,b,nodeboun,
-	  ndirboun,xboun,nboun,ipompc,
-	  nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[0],veold,accold,&bet,
-          &gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
-	  xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
-	  ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,emeini,
-          xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
-          ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-	  nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
-          &ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
-          sideload,xload,xloadold,&icfd,inomat);
+	    stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
+	    ielorien,norien,orab,ntmat_,t0,t1old,ithermal,
+	    prestr,iprestr,filab,eme,emn,een,iperturb,
+	    f,fn,nactdof,&iout,qa,vold,b,nodeboun,
+	    ndirboun,xboun,nboun,ipompc,
+	    nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[0],veold,accold,&bet,
+	    &gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
+	    xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
+	    ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,emeini,
+	    xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
+	    ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
+	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
+	    &ne0,xforc,nforc,thicke,shcon,nshcon,
+	    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
+	    &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,islavsurf);
   }
 
   for(k=0;k<mt**nk;++k){
@@ -354,7 +363,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-            thicke,jobnamec,output,qfx);
+            thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni);
 
   if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
   free(v);free(fn);free(stn);free(inum);
@@ -389,8 +398,9 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
-              xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
-	      tieset,istartset,iendset,ialset,&ntie,&nasym));
+              xstateini,xstate,thicke,integerglob,doubleglob,
+	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,
+	      pmastsurf,&mortar,clearini));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -406,8 +416,9 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
               ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
               shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,&coriolis,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
-              xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
-	      tieset,istartset,iendset,ialset,&ntie,&nasym));
+              xstateini,xstate,thicke,integerglob,doubleglob,
+	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,
+	      pmastsurf,&mortar,clearini));
   }
 
   free(stx);free(fext);if(*nbody>0) free(ipobody);
@@ -603,7 +614,7 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   } while(iconverged<0);
 
-  free(aub);free(adb);free(au);free(ad);
+  free(aub);free(adb);free(au);free(ad);free(b);
 
   FORTRAN(writebv,(d,&nev));
 
@@ -634,38 +645,40 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     DMEMSET(v,0,mt**nk,0.);
     if(*iperturb==0){
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
-	    stx,elcon,
-	    nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,ielorien,
-	    norien,orab,ntmat_,t0,t0,ithermal,
-	    prestr,iprestr,filab,eme,emn,een,iperturb,
-            f,fn,nactdof,&iout,qa,vold,&z[lint],
-	    nodeboun,ndirboun,xboun,nboun,ipompc,
-	    nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[0],veold,accold,&bet,
-            &gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
-	    xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
-	    ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,emeini,
-            xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
-            ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
-            &ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
-            sideload,xload,xloadold,&icfd,inomat);}
+	      stx,elcon,
+	      nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,ielorien,
+	      norien,orab,ntmat_,t0,t0,ithermal,
+	      prestr,iprestr,filab,eme,emn,een,iperturb,
+	      f,fn,nactdof,&iout,qa,vold,&z[lint],
+	      nodeboun,ndirboun,xboun,nboun,ipompc,
+	      nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[0],veold,accold,&bet,
+	      &gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
+	      xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
+	      ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,emeini,
+	      xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
+	      ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
+	      nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
+	      &ne0,xforc,nforc,thicke,shcon,nshcon,
+	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
+	      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,islavsurf);}
     else{
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
-	    stx,elcon,
-	    nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,ielorien,
-	    norien,orab,ntmat_,t0,t1old,ithermal,
-	    prestr,iprestr,filab,eme,emn,een,iperturb,
-            f,fn,nactdof,&iout,qa,vold,&z[lint],
-	    nodeboun,ndirboun,xboun,nboun,ipompc,
-	    nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[0],veold,accold,&bet,
-            &gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
-	    xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
-	    ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,emeini,
-            xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
-            ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
-            &ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
-            sideload,xload,xloadold,&icfd,inomat);
+	      stx,elcon,
+	      nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,ielorien,
+	      norien,orab,ntmat_,t0,t1old,ithermal,
+	      prestr,iprestr,filab,eme,emn,een,iperturb,
+	      f,fn,nactdof,&iout,qa,vold,&z[lint],
+	      nodeboun,ndirboun,xboun,nboun,ipompc,
+	      nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[0],veold,accold,&bet,
+	      &gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
+	      xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
+	      ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,emeini,
+	      xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
+	      ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
+	      nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
+	      &ne0,xforc,nforc,thicke,shcon,nshcon,
+	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
+	      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,islavsurf);
     }
 
     ++*kode;
@@ -679,12 +692,13 @@ void arpackbu(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-   	    thicke,jobnamec,output,qfx);
+   	    thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni);
 
     if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
   }
 
   free(v);free(fn);free(stn);free(inum);free(stx);free(z);free(d);free(eei);
+  free(xstiff);
   if(*nener==1){
       free(stiini);free(enerini);}
 

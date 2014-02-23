@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -23,6 +23,8 @@
       real*8 p2p1,beta,kappa,y0,yg,pcrit
 !
 !     adiabatic expansion factor y0 measured (eq.15-17) 
+!
+!     author: Yannick Muller
 !     
       pcrit=(2.d0/(kappa+1.d0))**(kappa/(kappa-1.d0))
 

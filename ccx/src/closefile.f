@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -33,24 +33,9 @@
 !
       close(5)
 !
-c      inquire(7,opened=frd)
-c      if(frd) then
-c!
-c!        closing the .frd file
-c!
-c         p9999=' 9999'
-c         write(7,'(a5)') p9999
-c         close(7)
-c      else
-c!
-c!        closing the .onf file
-c!
-c         close(11)
-c      endif
-!
 !     closing the .sta file
 !
-      close(11)
+      close(8)
 !
 !     closing the .rout file
 !

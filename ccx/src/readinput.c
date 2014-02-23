@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2013 Guido Dhondt                          */
+/*              Copyright (C) 1998-2014 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -37,9 +37,10 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
       icntrl,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,ntmat,npmat,
       norien,nam,nprint,mi[3],ntrans,ncs,namtot,ncmat,memmpc,ne1d,
       ne2d,nflow,*meminset=NULL,*rmeminset=NULL, *inp=NULL,ntie,
-      nener,nstate,nentries=14,ifreeinp,ikey,lincludefn,nslavs,
+      nener,nstate,nentries=15,ifreeinp,ikey,lincludefn,nslavs,
       nbody,ncharmax=1000000,*ipoinpc=NULL,ichangefriction=0,nkon,
-      ifile; 
+      ifile,mcs,initialtemperature=0,nprop,mortar,ifacecount,
+      nintpoint; 
 
   /* initialization */
 
@@ -228,7 +229,7 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
               &nprint,mi,&ntrans,&ncs,&namtot,&ncmat,&memmpc,
               &ne1d,&ne2d,&nflow,set,meminset,rmeminset,jobnamec,
 	      &irestartstep,&icntrl,ithermal,&nener,&nstate,&ntie,
-	      &nslavs,&nkon));           
+	      &nslavs,&nkon,&mcs,&nprop,&mortar,&ifacecount,&nintpoint));
             FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"RESTART,READ",
                               nline,&ikey));
 	  }
@@ -330,6 +331,14 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
       }
+      else if(strcmp1(&buff[0],"*MAGNETICPERMEABILITY")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
+                          nline,&ikey));
+      }
+      else if(strcmp1(&buff[0],"*ELECTRICALCONDUCTIVITY")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
+                          nline,&ikey));
+      }
       else if(strcmp1(&buff[0],"*ORIENTATION")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"ORIENTATION",
                           nline,&ikey));
@@ -360,11 +369,22 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
                           nline,&ikey));
       }
       else if(strcmp1(&buff[0],"*INITIALCONDITIONS")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"INITIALCONDITIONS",
-                          nline,&ikey));
-			  }
+	  FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"INITIALCONDITIONS",
+			    nline,&ikey));
+	  FORTRAN(splitline,(buff,textpart,&n));
+	  for(i=0;i<n;i++){
+	      if(strcmp1(&textpart[(long long)132*i],"TYPE=TEMPERATURE")==0){
+//		  if(ithermal[1]==0) ithermal[1]=1;
+		  initialtemperature=1;
+	      }
+          }
+      }
       else if(strcmp1(&buff[0],"*AMPLITUDE")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"AMPLITUDE",
+                          nline,&ikey));
+			  }
+      else if(strcmp1(&buff[0],"*CONTACTPAIR")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"CONTACTPAIR",
                           nline,&ikey));
 			  }
       else if(strcmp1(&buff[0],"*CHANGEFRICTION")==0){
@@ -386,8 +406,11 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
            which mpc's to apply to 2-D elements */
 
 	if(strcmp1(&buff[0],"*STATIC")==0){
-	    if(ithermal[1]==0) ithermal[1]=1;
-	    else if(ithermal[1]==2) ithermal[1]=3;
+	    if(ithermal[1]==0){
+		if(initialtemperature==1)ithermal[1]=1;
+	    }else if(ithermal[1]==2){
+		ithermal[1]=3;
+	    }
 	}else if(strcmp1(&buff[0],"*HEATTRANSFER")==0){
 	    if(ithermal[1]<2) ithermal[1]=ithermal[1]+2;
 	}else if(strcmp1(&buff[0],"*COUPLEDTEMPERATURE-DISPLACEMENT")==0){

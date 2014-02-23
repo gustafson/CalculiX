@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,8 +30,8 @@
      &  inp(3,*),key,j,k,l,ipoinpc(0:*)
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in viscos: *VISCO can only be used'
-         write(*,*) '  within a STEP'
+         write(*,*) '*ERROR reading *VIEWFACTOR: *VIEWFACTOR can '
+         write(*,*) '       only be used within a STEP'
          stop
       endif
 !
@@ -39,20 +39,46 @@
          if(textpart(i)(1:4).eq.'READ') then
             if(iviewfile.eq.0) then
                iviewfile=-1
-            else
-               iviewfile=-abs(iviewfile)
+            elseif(iviewfile.gt.0) then
+               write(*,*) '*ERROR reading *VIEWFACTOR: READ and WRITE/'
+               write(*,*) '       WRITE ONLY are mutually exclusive'
+               call inputerror(inpc,ipoinpc,iline,
+     &"*VIEWFACTOR%")
+            endif
+         elseif(textpart(i)(1:8).eq.'NOCHANGE') then
+            if(istep.eq.1) then
+               write(*,*) '*ERROR reading *VIEWFACTOR: NO CHANGE cannot'
+               write(*,*) '       be used in the first step'
+               call inputwarning(inpc,ipoinpc,iline,
+     &"*VIEWFACTOR%")
+            elseif(iviewfile.le.0) then
+               iviewfile=-2
+            elseif(iviewfile.gt.0) then
+               write(*,*) '*ERROR reading *VIEWFACTOR: NO CHANGE and'
+               write(*,*) '       WRITE/WRITE ONLY are mutually'
+               write(*,*) '       exclusive'
+               call inputerror(inpc,ipoinpc,iline,
+     &"*VIEWFACTOR%")
             endif
          elseif(textpart(i)(1:9).eq.'WRITEONLY') then
             if(iviewfile.eq.0) then
                iviewfile=3
-            else
-               iviewfile=3*iviewfile/abs(iviewfile)
+            elseif(iviewfile.lt.0) then
+               write(*,*) '*ERROR reading *VIEWFACTOR: '
+               write(*,*) '       WRITE ONLY and READ/NO CHANGE'
+               write(*,*) '       are mutually exclusive'
+               call inputerror(inpc,ipoinpc,iline,
+     &"*VIEWFACTOR%")
             endif
          elseif(textpart(i)(1:5).eq.'WRITE') then
             if(iviewfile.eq.0) then
                iviewfile=2
-            else
-               iviewfile=2*iviewfile/abs(iviewfile)
+            elseif(iviewfile.lt.0) then
+               write(*,*) '*ERROR reading *VIEWFACTOR: WRITE'
+               write(*,*) '       and READ/NO CHANGE'
+               write(*,*) '       are mutually exclusive'
+               call inputerror(inpc,ipoinpc,iline,
+     &"*VIEWFACTOR%")
             endif
          elseif(textpart(i)(1:6).eq.'INPUT=') then
             jobnamec(2)(1:126)=textpart(i)(7:132)
@@ -90,10 +116,11 @@
             enddo loop2
          else
             write(*,*) 
-     &        '*WARNING in viewfactors: parameter not recognized:'
+     &        '*WARNING reading *VIEWFACTOR: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*VIEWFACTOR%")
          endif
       enddo
 !

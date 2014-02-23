@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -72,7 +72,8 @@
             if(j.gt.nam) then
                write(*,*)'*ERROR in cloads: nonexistent amplitude'
                write(*,*) '  '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*CLOAD%")
                stop
             endif
             iamplitude=j
@@ -81,7 +82,8 @@
                write(*,*) '*ERROR in cloads: the parameter TIME DELAY'
                write(*,*) '       is used twice in the same keyword'
                write(*,*) '       '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*CLOAD%")
                stop
             else
                idelay=1
@@ -114,10 +116,12 @@
             namta(2,nam)=namtot
             read(textpart(i)(11:30),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*CLOAD%")
          elseif(textpart(i)(1:9).eq.'LOADCASE=') then
             read(textpart(i)(10:19),'(i10)',iostat=istat) lc
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*CLOAD%")
             if(nmethod.ne.5) then
                write(*,*) '*ERROR in cloads: the parameter LOAD CASE'
                write(*,*) '       is only allowed in STEADY STATE'
@@ -126,7 +130,8 @@
             endif
          elseif(textpart(i)(1:7).eq.'SECTOR=') then
             read(textpart(i)(8:17),'(i10)',iostat=istat) isector
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*CLOAD%")
             if((nmethod.le.3).or.(iperturb.gt.1)) then
                write(*,*) '*ERROR in cloads: the parameter SECTOR'
                write(*,*) '       is only allowed in MODAL DYNAMICS or'
@@ -146,7 +151,8 @@
      &        '*WARNING in cloads: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*CLOAD%")
          endif
       enddo
 !
@@ -163,11 +169,13 @@
          if((istat.lt.0).or.(key.eq.1)) return
 !
          read(textpart(2)(1:10),'(i10)',iostat=istat) iforcdir
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*CLOAD%")
          if((iforcdir.lt.1).or.(iforcdir.gt.6)) then
             write(*,*) '*ERROR in cloads: nonexistent degree of freedom'
             write(*,*) '       '
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*CLOAD%")
             stop
          endif
          if(iforcdir.gt.3) iforcdir=iforcdir+1
@@ -176,7 +184,8 @@
             forcval=0.d0
          else
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) forcval
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*CLOAD%")
             if(iaxial.ne.0) forcval=forcval/iaxial
          endif
 !
@@ -223,7 +232,8 @@ c            endif
                noset(ipos:ipos)=' '
                write(*,*) '*ERROR in cloads: node set ',noset
                write(*,*) '  has not yet been defined. '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*CLOAD%")
                stop
             endif
             do j=istartset(i),iendset(i)

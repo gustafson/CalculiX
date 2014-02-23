@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -41,25 +41,17 @@
       character*8 lakonl
       character*80 matname(*),amat
 !
-      integer konl(26),ifaceq(9,6),nelem,nmethod,
-     &  ithermal,idist,i,j,k,i1,m,one,
-     &  ii,jj,id,ipointer,ig,kk,mi(*),
-     &  ielmat(mi(3),*),
-     &  ntmat_,nope,nopes,imat,mint2d,
-     &  mint3d,ifacet(7,4),nopev,
-     &  ifacew(8,5),ipointeri,ipointerj,
-     &  iflag,
-     &  nelcon(2,*),ncmat_,
-     &  nalcon(2,*),iel,ii1,ilength,istart,iset,isurf,
-     &  jj1,istartset(*),iendset(*),ialset(*)
+      integer konl(26),ifaceq(9,6),nelem,nmethod,iactive(3),
+     &  ithermal,idist,i,j,k,i1,m,one,ii,jj,id,ipointer,ig,kk,mi(*),
+     &  ielmat(mi(3),*),ntmat_,nope,nopes,imat,mint2d,mint3d,
+     &  ifacet(7,4),nopev,ifacew(8,5),ipointeri,ipointerj,iflag,
+     &  nelcon(2,*),ncmat_,nalcon(2,*),iel,ii1,ilength,istart,iset,
+     &  isurf,jj1,istartset(*),iendset(*),ialset(*)
 !
-      real*8 co(3,*),xl(3,26),shp(4,26),
-     &  s(100,100),ff(100),shpj(4,26),xs2(3,7),
-     &  t1(*),h0(3,*),
-     &  xl2(3,9),xsj2(3),shp2(7,9),vold(0:mi(2),*),
-     &  xi,et,ze,xsj,xsjj,sm(100,100),t1l,
-     &  weight,
-     &  elcon(0:ncmat_,ntmat_,*),elconloc(21),sigma,iactive(3),
+      real*8 co(3,*),xl(3,26),shp(4,26),s(100,100),ff(100),xs2(3,7),
+     &  t1(*),h0(3,*),xl2(3,9),xsj2(3),shp2(7,9),vold(0:mi(2),*),
+     &  xi,et,ze,xsj,sm(100,100),t1l,weight,
+     &  elcon(0:ncmat_,ntmat_,*),elconloc(21),sigma,
      &  h0l(3),h0l2(3,8),alcon(0:6,ntmat_,*),diag,um,uminv,alpha(6),
      &  d(3,3)
 !
@@ -147,7 +139,7 @@
 !
       if(rhsi) then
         if(idist.ne.0) then
-          do i=1,nope
+          do i=1,5*nope
             ff(i)=0.d0
           enddo
         endif
@@ -156,8 +148,8 @@
 !     initialisation of sm
 !
       if(mass) then
-        do i=1,nope
-          do j=i,nope
+        do i=1,5*nope
+          do j=i,5*nope
             sm(i,j)=0.d0
           enddo
         enddo
@@ -165,8 +157,8 @@
 !
 !     initialisation of s
 !
-      do i=1,nope
-        do j=i,nope
+      do i=1,5*nope
+        do j=i,5*nope
           s(i,j)=0.d0
         enddo
       enddo
@@ -239,74 +231,72 @@
             nmethod=0
          endif
 !
-!           calculating the temperature and the magnetic intensity
-!           in the integration point (one order lower than the
-!           interpolation of the primary unknowns)
+!        calculating the temperature and the magnetic intensity
+!        in the integration point (one order lower than the
+!        interpolation of the primary unknowns)
 !
          do j=1,3
             h0l(j)=0.d0
          enddo
          t1l=0.d0
+!
+!        calculating the magnetic intensity
+!
+         if(lakonl(4:5).eq.'8 ') then
+            do i1=1,nope
+               do j=1,3
+                  h0l(j)=h0l(j)+h0(j,konl(i1))/8.d0
+               enddo
+            enddo
+         elseif(lakonl(4:6).eq.'20 ')then
+            call linvec(h0,konl,nope,kk,h0l)
+         else
+            do i1=1,nope
+               do j=1,3
+                  h0l(j)=h0l(j)+shp(4,i1)*h0(j,konl(i1))
+               enddo
+            enddo
+         endif
+!
+!        calculating the temperature
+!
          if(ithermal.eq.1) then
             if(lakonl(4:5).eq.'8 ') then
                do i1=1,nope
-                  do j=1,3
-                     h0l(j)=h0l(j)+h0(j,konl(i1))/8.d0
-                  enddo
                   t1l=t1l+t1(konl(i1))/8.d0
                enddo
             elseif(lakonl(4:6).eq.'20 ')then
                call linscal(t1,konl,nope,kk,t1l,one)
-               call linvec(h0,konl,nope,kk,h0l)
             else
                do i1=1,nope
                   t1l=t1l+shp(4,i1)*t1(konl(i1))
-                  do j=1,3
-                     h0l(j)=h0l(j)+shp(4,i1)*h0(j,konl(i1))
-                  enddo
                enddo
             endif
          elseif(ithermal.ge.2) then
             if(lakonl(4:5).eq.'8 ') then
                do i1=1,nope
-                  do j=1,3
-                     h0l(j)=h0l(j)+h0(j,konl(i1))/8.d0
-                  enddo
                   t1l=t1l+vold(0,konl(i1))/8.d0
                enddo
             elseif(lakonl(4:6).eq.'20 ')then
                call linscal(vold,konl,nope,kk,t1l,mi(2))
-               call linvec(h0,konl,nope,kk,h0l)
             else
                do i1=1,nope
-                  do j=1,3
-                     h0l(j)=h0l(j)+shp(4,i1)*h0(j,konl(i1))
-                  enddo
                   t1l=t1l+shp(4,i1)*vold(0,konl(i1))
                enddo
             endif
          endif
 !
-!           material data (electric conductivity and
-!           magnetic permeability)
+!        material data (electric conductivity and
+!        magnetic permeability)
 !
          call materialdata_em(elcon,nelcon,alcon,nalcon,
      &        imat,ntmat_,t1l,elconloc,ncmat_,alpha)
 !
+         weight=weight*xsj
+!
          uminv=weight/elconloc(1)
          um=weight*elconloc(1)
          sigma=weight*alpha(1)
-!
-!           incorporating the jacobian determinant in the shape
-!           functions
-!
-         xsjj=dsqrt(xsj)
-         do i1=1,nope
-            shpj(1,i1)=shp(1,i1)*xsjj
-            shpj(2,i1)=shp(2,i1)*xsjj
-            shpj(3,i1)=shp(3,i1)*xsjj
-            shpj(4,i1)=shp(4,i1)*xsj
-         enddo
 !
          jj1=0
          do jj=1,nope
@@ -349,7 +339,7 @@
                ii1=ii1+5
             enddo
 !          
-            if(rhsi) then
+            if((rhsi).and.(int(elconloc(2)).eq.1)) then
                ff(jj1+5)=ff(jj1+5)-um*(shp(1,jj)*h0l(1)+
      &                                 shp(2,jj)*h0l(2)+
      &                                 shp(3,jj)*h0l(3))

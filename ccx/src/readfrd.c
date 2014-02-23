@@ -30,11 +30,49 @@
 #define TEST     0
 
 #define INI_FIELD_SIZE 1000000
-#define INC_FIELD_SIZE 100000
 
 
 /* ToDo:
 */
+
+
+void freeDatasets(Datasets *lcase, int nr)
+{
+  register int i;
+
+  printf(" free lc[%d] ncomps:%d\n",nr,lcase[nr].ncomps);
+  if(lcase[nr].loaded)
+  {
+    for(i=0; i<lcase[nr].ncomps; i++) free(lcase[nr].dat[i]);
+  }
+  if(lcase[nr].npheader)
+  {
+    for(i=0; i<lcase[nr].npheader; i++) free(lcase[nr].pheader[i]);
+    free(lcase[nr].pheader);
+  }
+  for(i=0; i<lcase[nr].ncomps; i++)
+  {
+    free(lcase[nr].compName[i]);
+    free(lcase[nr].icname[i]);
+  }
+  free(lcase[nr].compName);
+  free(lcase[nr].icname);
+  free(lcase[nr].ictype);
+  free(lcase[nr].icind1);
+  free(lcase[nr].icind2);
+  free(lcase[nr].iexist);
+  free(lcase[nr].max);
+  free(lcase[nr].menu);
+  free(lcase[nr].min);
+  free(lcase[nr].nmax);
+  free(lcase[nr].nmin);
+  free(lcase[nr].dat);
+  free(lcase[nr].fileptr);
+
+  /* edat not propper implemented or deleted */
+  // for(i=0; i<3; i++) for(e=0; e<anz->e; e++) free(lcase[nr].edat[i][e]);
+}
+
 
 /* read_mode=0: jump '100C' data-blocks and read them later on demand */
 /* in any case for each results of a new step the first data-block is readed to see how much nodes are included */
@@ -47,7 +85,7 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
   int n;  /* used in format_flag */
   long offset=0;
   fpos_t *filepntr=NULL;
-  int elem_data,nod_data, nod_1st_block=0; /* nodes in resultblock, nodes in 1st block (if no "nr of nodes" are given in frd file, 100C-line) */
+  int elem_data=0,nod_data=0, nod_1st_block=0; /* nodes in resultblock, nodes in 1st block (if no "nr of nodes" are given in frd file, 100C-line) */
 
   int  ncomps, maxcomps=0, nvals, nentities;
   char rec_str[MAX_LINE_LENGTH];
@@ -70,37 +108,6 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
 
   if ( (lcase = (Datasets *)malloc( 1 * sizeof(Datasets))) == NULL )
     printf("\n\n ERROR: malloc failed\n\n") ;
-
-  node_field_size=INI_FIELD_SIZE;
-  do
-  {
-    if ( (node = (Nodes *)realloc( (Nodes *)node, (node_field_size+1) * sizeof(Nodes))) == NULL )
-    {
-      printf("WARNING: in readfrd() is INI_FIELD_SIZE:%d to large and is reduced\n", node_field_size );
-      node_field_size/=2;
-    }
-    if(node_field_size<100)
-    {
-      printf("\n\n ERROR: not enough memory in readfrd()\n\n");
-      exit(-1);
-    }
-    for(i=0; i<node_field_size; i++) node[i].indx=-1;
-  }while(!node);
-
-  elem_field_size=INI_FIELD_SIZE;
-  do
-  {
-    if((elem = (Elements *)realloc( (Elements *)elem, (elem_field_size+1) * sizeof(Elements))) == NULL )
-    {
-      printf("WARNING: in readfrd() is INI_FIELD_SIZE:%d to large and is reduced\n", elem_field_size );
-      elem_field_size/=2;
-    }
-    if(elem_field_size<100)
-    {
-      printf("\n\n ERROR: not enough memory in readfrd()\n\n");
-      exit(-1);
-    }
-  }while(!elem);
 
   anz->u=anz->n=anz->e=anz->l=-1;
   length = 1;
@@ -129,13 +136,14 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
 
   while(length)
   {
-    read_again:;
 
     /* store the beginning of the data-block for later reading */
-    if( (filepntr=(fpos_t *)malloc(1*sizeof(fpos_t))) == NULL ) printf(" ERROR: malloc failed\n");
+    if(filepntr==NULL)
+    {  if( (filepntr=(fpos_t *)malloc(1*sizeof(fpos_t))) == NULL ) printf(" ERROR: malloc failed\n"); }
 
     if(fgetpos( handle, (fpos_t *)filepntr)!=0) { printf("error in fgetpos"); return(-1); }
 
+    read_again:;
     length = frecord( handle, rec_str);
     if (rec_str[length] == (char)EOF) break;
     else rec_str[length] =(char)0;
@@ -195,6 +203,25 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
       // anz->nmax=-MAX_INTEGER;  anz->nmin= MAX_INTEGER;
       nodeflag=1;
 
+      /* nr of nodes per block can be read from the frd file, this is not documented in the original frd-spec. */
+      nod_data=stoi( rec_str, 25, 36 );
+      if(nod_data>0) node_field_size=nod_data;
+      else node_field_size=INI_FIELD_SIZE;
+      do
+      {
+        if ( (node = (Nodes *)realloc( (Nodes *)node, (node_field_size+1) * sizeof(Nodes))) == NULL )
+        {
+          printf("WARNING: in readfrd() is INI_FIELD_SIZE:%d to large and is reduced\n", node_field_size );
+          node_field_size/=2;
+        }
+        if(node_field_size<0)
+        {
+          printf("\n\n ERROR: not enough memory in readfrd()\n\n");
+          exit(-1);
+        }
+      }while(!node);
+      for(i=0; i<node_field_size; i++) node[i].indx=-1;
+
       if (format_flag < 2)
       { 
        do
@@ -208,12 +235,21 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
         else              node[anz->n].nr = stoi(rec_str,4,13);
         if (node[anz->n].nr>=node_field_size)
 	{
-          node_field_size=node[anz->n].nr+100;
-          if ( (node = (Nodes *)realloc((Nodes *)node, (node_field_size+1) * sizeof(Nodes))) == NULL )
+          if(node[anz->n].nr<MAX_INTEGER/2) node_field_size=node[anz->n].nr*2+1; else node_field_size=MAX_INTEGER-2;
+          nodenr=node[anz->n].nr;
+          do
           {
-            printf("\n\n ERROR: realloc failed, nodenr:%d\n\n", node[anz->n].nr) ;
-            return(-1);
-          }
+            if ( (node = (Nodes *)realloc( (Nodes *)node, (node_field_size+1) * sizeof(Nodes))) == NULL )
+            {
+              printf("WARNING: in readfrd() is INI_FIELD_SIZE:%d to large and is reduced\n", node_field_size );
+              node_field_size=nodenr+(node_field_size-nodenr)/2;
+            }
+            if(node_field_size<=nodenr)
+            {
+              printf("\n\n ERROR: not enough memory in readfrd() for node-nr:%d available\n\n", nodenr);
+              exit(-1);
+            }
+          }while(!node);
           for(i=anz->nmax+1; i<node_field_size; i++) node[i].indx=-1;
         }
         /* save only nodes which are not already stored */
@@ -246,9 +282,6 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
       /* binary format */
       else
       { 
-       /* nr of nodes per block can be read from the frd file, this is not documented in the original frd-spec. */
-       nod_data=stoi( rec_str, 25, 36 );
-
        if ( (value = (float *)realloc((float *)value, (3) * sizeof(float))) == NULL )
          printf("\n\n ERROR: realloc failed, value\n\n") ;
        for(i=0; i<nod_data; i++)
@@ -258,12 +291,21 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
 	//printf("n:%d\n", node[anz->n].nr);
         if (node[anz->n].nr>=node_field_size)
 	{
-          node_field_size=node[anz->n].nr+INC_FIELD_SIZE;
-          if ( (node = (Nodes *)realloc((Nodes *)node, (node_field_size+1) * sizeof(Nodes))) == NULL )
+          if(node[anz->n].nr<MAX_INTEGER/2) node_field_size=node[anz->n].nr*2+1; else node_field_size=MAX_INTEGER-2;
+          nodenr= node[anz->n].nr;
+          do
           {
-            printf("\n\n ERROR: realloc failed, nodenr:%d\n\n", node[anz->n].nr) ;
-            return(-1);
-          }
+            if ( (node = (Nodes *)realloc( (Nodes *)node, (node_field_size+1) * sizeof(Nodes))) == NULL )
+            {
+              printf("WARNING: in readfrd() is INI_FIELD_SIZE:%d to large and is reduced\n", node_field_size );
+              node_field_size=nodenr+(node_field_size-nodenr)/2;
+            }
+            if(node_field_size<=nodenr)
+            {
+              printf("\n\n ERROR: not enough memory in readfrd() for the node-nr:%d available\n\n", nodenr);
+              exit(-1);
+            }
+          }while(!node);
           for(n=node[anz->n].nr; n<node_field_size; n++) node[n].indx=-1;
         }
         /* save only nodes which are not already stored */
@@ -290,6 +332,11 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
 	}
         if (node[anz->n].nr >  anz->nmax)  anz->nmax=node[anz->n].nr;
         if (node[anz->n].nr <  anz->nmin)  anz->nmin=node[anz->n].nr;
+#if TEST
+        printf (" n=%d x=%lf y=%lf z=%lf \n",  node[anz->n].nr,
+          node[node[anz->n].nr].nx, node[node[anz->n].nr].ny,
+          node[node[anz->n].nr].nz); 
+#endif
        }
        anz->n++;
       }
@@ -307,11 +354,27 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
       elemflag=1;
       e_nmax=-MAX_INTEGER;  e_nmin=MAX_INTEGER;
 
+      /* nr of nodes per block can be read from the frd file, this is not documented in the original frd-spec. */
+      elem_data=stoi( rec_str, 25, 36 );
+      if(elem_data>0) elem_field_size=elem_data;
+      else elem_field_size=INI_FIELD_SIZE;
+      do
+      {
+        if((elem = (Elements *)realloc( (Elements *)elem, (elem_field_size+1) * sizeof(Elements))) == NULL )
+        {
+          printf("WARNING: in readfrd() is INI_FIELD_SIZE:%d to large and is reduced\n", elem_field_size );
+          elem_field_size/=2;
+        }
+        if(elem_field_size<0)
+        {
+          printf("\n\n ERROR: not enough memory in readfrd()\n\n");
+          exit(-1);
+        }
+      }while(!elem);
+
       /* binary format */
       if (format_flag == 2)
       { 
-        /* nr of nodes per block can be read from the frd file, this is not documented in the original frd-spec. */
-        elem_data=stoi( rec_str, 25, 36 );
         if ( (elem = (Elements *)realloc((Elements *)elem, elem_data * sizeof(Elements))) == NULL )
           printf("\n\n ERROR: in readfrd realloc failed\n\n") ;
         else
@@ -359,12 +422,20 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
         {
           if (anz->e>=elem_field_size)
           {
-            elem_field_size=anz->e+INC_FIELD_SIZE;
-            if((elem=(Elements *)realloc((Elements *)elem,(elem_field_size+1)*sizeof(Elements)))==NULL)
-	    {
-              printf("\n\n ERROR: realloc failed, elem-index:%d\n\n", anz->e);
-              return(-1);
-            }
+            if(anz->e<MAX_INTEGER/2) elem_field_size=anz->e*2+1; else elem_field_size=MAX_INTEGER-2;
+            do
+            {
+              if((elem = (Elements *)realloc( (Elements *)elem, (elem_field_size+1) * sizeof(Elements))) == NULL )
+              {
+                printf("WARNING: in readfrd() is INI_FIELD_SIZE:%d to large and is reduced\n", elem_field_size );
+                elem_field_size=anz->e+(elem_field_size-anz->e)/2;
+              }
+              if(elem_field_size<=anz->e)
+              {
+                printf("\n\n ERROR: not enough memory in readfrd()\n\n");
+                exit(-1);
+              }
+            }while(!elem);
           }
           if (!format_flag)
           {
@@ -397,7 +468,7 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
           else if (elem[anz->e].type == 11) ipuf = 2;  /* BEAM2   */
           else if (elem[anz->e].type == 12) ipuf = 3;  /* BEAM3   */
 #if TEST
-          printf ("\n%i e=%d typ=%d mat=%d \n", flag, elem[anz->e].nr,
+          printf ("\n%d e=%d typ=%d grp=%d mat=%d \n", flag, elem[anz->e].nr,
                     elem[anz->e].type, elem[anz->e].group, elem[anz->e].mat );
 #endif
           length = frecord( handle, rec_str );
@@ -459,10 +530,12 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
       if ( (lcase = (Datasets *)realloc((Datasets *)lcase, (anz->l+2) * sizeof(Datasets))) == NULL )
       { printf("\n\n ERROR: malloc failure\n\n" ); exit(1); }
 
+      lcase[anz->l].handle=(FILE *)NULL;
+
       /* store the pheaders which are leading this block */
       lcase[anz->l].npheader=anz_p+1;
       lcase[anz->l].pheader=pheader;
-      lcase[anz->l].fileptr=0;
+      lcase[anz->l].fileptr=NULL;
       lcase[anz->l].loaded=1;
       lcase[anz->l].format_flag=format_flag;
       anz_p=-1;
@@ -544,6 +617,7 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
 
               /* store the beginning of the data-block for later reading */
               lcase[anz->l].fileptr=filepntr;
+              filepntr=NULL;
               lcase[anz->l].handle=handle;
               strcpy(lcase[anz->l].filename,datin);
 
@@ -588,6 +662,7 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
 
               /* store the beginning of the data-block for later reading */
               lcase[anz->l].fileptr=filepntr;
+              filepntr=NULL;
               lcase[anz->l].handle=handle;
               strcpy(lcase[anz->l].filename,datin);
 
@@ -689,6 +764,7 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
             printf("\n\n ERROR: malloc failure\n\n" );
           if ( (lcase[anz->l].dat = (float **)malloc( (lcase[anz->l].ncomps) * sizeof(float *))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
+  printf(" gen lc[%d] ncomps:%d\n",anz->l,lcase[anz->l].ncomps);
           for(i=0; i<(lcase[anz->l].ncomps); i++)
 	  {
             if ( (lcase[anz->l].compName[i] = (char *)malloc( MAX_LINE_LENGTH * sizeof(char))) == NULL )
@@ -711,8 +787,12 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
             lcase[anz->l].iexist[ncomps] = stoi(rec_str,34,38);
 
             /* requests for additional components are not supported so far */
-            lcase[anz->l].icname[ncomps]=NULL;
-            if(lcase[anz->l].iexist[ncomps]!=1) ncomps++;
+            if(!lcase[anz->l].iexist[ncomps]) ncomps++;
+            else
+	    {
+              free(lcase[anz->l].compName[ncomps]); lcase[anz->l].compName[ncomps]=NULL;
+              free(lcase[anz->l].icname[ncomps]); lcase[anz->l].icname[ncomps]=NULL;
+	    }
 	  }
           else
 	  {
@@ -1202,9 +1282,12 @@ int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
   }
 
   for(i=0; i<anz_p; i++) free(pheader[i]); free(pheader);
+  free( filepntr);
 
   anz->u++;
   anz->l++;
+  if(anz->n<0) anz->n=0;
+  if(anz->e<0) anz->e=0;
 
   if ( e_nmax > (anz->nmax) )
   {
@@ -1246,7 +1329,7 @@ int readfrdblock(int lc, Summen *anz,   Nodes     *node, Datasets *lcase )
   handle = lcase[lc].handle;
   if ( handle== NULL )  { printf ("ERROR: The input file \"%s\" could not be opened.\n\n", lcase[lc].filename); return(-1); }
 
-  if( fsetpos( handle, (fpos_t *)lcase[lc].fileptr)!=0) { printf("error in fsetpos"); return(-1); }
+  if( fsetpos( handle, (fpos_t *)lcase[lc].fileptr)!=NULL) { printf("error in fsetpos"); return(-1); }
   lcase[lc].loaded=1;
   
   length = frecord( handle, rec_str);
@@ -1434,7 +1517,7 @@ int readOneNode( int lc, Summen *anz, Datasets *lcase, int nodenr, double **vptr
   handle = lcase[lc].handle;
   if ( handle== NULL )  { printf ("ERROR: The input file \"%s\" could not be opened.\n\n", lcase[lc].filename); return(-1); }
 
-  if( fsetpos( handle, (fpos_t *)lcase[lc].fileptr)!=0) { printf("error in fsetpos"); return(-1); }
+  if( fsetpos( handle, (fpos_t *)lcase[lc].fileptr)!=NULL) { printf("error in fsetpos"); return(-1); }
 
   /* the header-lines must be skipped in case byte_offset==0 and format == 2(bin) */
   if((lcase[lc].format_flag==2)&&(!*byte_offset))
@@ -1510,7 +1593,7 @@ int readOneNode( int lc, Summen *anz, Datasets *lcase, int nodenr, double **vptr
     {
       /* offset obviously false */
       offset=0;
-      if( fsetpos( handle, (fpos_t *)lcase[lc].fileptr)!=0) { printf("error in fsetpos"); return(-1); }
+      if( fsetpos( handle, (fpos_t *)lcase[lc].fileptr)!=NULL) { printf("error in fsetpos"); return(-1); }
     }
     flag = stoi(rec_str,1,3);
 
@@ -1596,7 +1679,7 @@ int readOneNode( int lc, Summen *anz, Datasets *lcase, int nodenr, double **vptr
     bailout=1;
     offset=0;
     //printf("repeat search\n");
-    if( fsetpos( handle, (fpos_t *)lcase[lc].fileptr)!=0) { printf("error in fsetpos"); return(-1); }
+    if( fsetpos( handle, (fpos_t *)lcase[lc].fileptr)!=NULL) { printf("error in fsetpos"); return(-1); }
     goto repeat_search;
   }
   return(-1);

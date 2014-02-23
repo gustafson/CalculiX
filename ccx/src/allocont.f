@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -38,7 +38,7 @@
      &  imast,nelem,jface,ncone,islav,ismallsliding,ipos,mortar,istep,
      &  kflag,idummy,jact
 !
-      real*8 tietol(2,*)
+      real*8 tietol(3,*)
 !
 !     number of master triangles
 !
@@ -131,11 +131,20 @@
             slavset=tieset(2,i)
             ipos=index(slavset,' ')-1
             if(slavset(ipos:ipos).eq.'T') then
+!
+!              face-to-face penalty contact (facial slave surface)
+!
                mortar=1
+            elseif(slavset(ipos:ipos).eq.'M') then
+!
+!              Mortar contact (facial slave surface)
+!
+               slavset(ipos:ipos)='T'
+               mortar=2
             else
 !
-!              default for node-to-surface contact is
-!              a nodal slave surface
+!              node-to-face contact
+!              default is a nodal slave surface
 !
                nodeslavsurf=.true.
             endif

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  thicke,offset,ntrans,inotr,trab,ikboun,ilboun,nboun,nboun_,
      &  nodeboun,ndirboun,xboun,iamboun,typeboun,ipompc,nodempc,coefmpc,
      &  nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,nk,nk_,co,rig,nmethod,
-     &  iperturb,ithermal,mi,nam,icomposite,ielmat)
+     &  iperturb,ithermal,mi,nam,icomposite,ielmat,vold)
 !
 !     expands 2d element i into a 3d element
 !
@@ -46,8 +46,8 @@
      &  nope
 ! 
       real*8 xnor(*),thicke(mi(3),*),offset(2,*),trab(7,*),xboun(*),
-     &  coefmpc(*),co(3,*),vdummy(0:4),thicks(8),xnors(3,8),dc,ds,val,
-     &  x,y,thickness(8)
+     &  coefmpc(*),co(3,*),thicks(8),xnors(3,8),dc,ds,val,
+     &  x,y,thickness(8),vold(0:mi(2),*)
 !
       fixed=.false.
 c      write(*,*) 'gen3dfrom2d element ',i
@@ -337,7 +337,7 @@ c                 write(*,*) nodec(2,k),(co(j,nodec(2,k)),j=1,3)
      &              nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &              ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,
      &              labmpc,type,typeboun,nmethod,iperturb,
-     &              fixed,vdummy,idummy,mi)
+     &              fixed,vold,idummy,mi)
             endif
 !     
 !           specifying that the side planes do the same

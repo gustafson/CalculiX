@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,8 @@
      &  elcon,ncmat_,ntmat_,mi)
 !
 !     assigns the domain a node belongs to, to this node
-!     (for electromagnetic calculations)
+!     (for electromagnetic calculations, only for nodes not
+!      belonging to shells)
 !
       implicit none
 !
@@ -33,6 +34,7 @@
 !
       do i=1,ne
          if(ipkon(i).lt.0) cycle
+         if(lakon(i)(7:7).eq.'L') cycle
          indexe=ipkon(i)
 !
          if(lakon(i)(4:5).eq.'20') then

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -41,7 +41,7 @@
 !     14) everything else
 !
       integer nentries
-      parameter(nentries=14)
+      parameter(nentries=15)
 !
       character*20 name,nameref(nentries)
 !
@@ -53,11 +53,12 @@
       data nameref /'RESTART,READ','NODE','ELEMENT','NSET',
      &              'ELSET','TRANSFORM','MATERIAL','ORIENTATION',
      &              'SURFACE','TIE','SURFACEINTERACTION',
-     &              'INITIALCONDITIONS','AMPLITUDE','REST'/
+     &              'INITIALCONDITIONS','AMPLITUDE',
+     &              'CONTACTPAIR','REST'/
 !
 !     length of the names in field nameref
 !
-      data namelen /12,4,7,4,5,9,8,11,7,3,18,17,9,4/
+      data namelen /12,4,7,4,5,9,8,11,7,3,18,17,9,11,4/
 !
       do i=1,nentries
          if(name(1:namelen(i)).eq.nameref(i)(1:namelen(i))) then

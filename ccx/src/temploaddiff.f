@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -65,7 +65,7 @@
 !
       do i=1,nam
          if(namta(3,i).lt.0) then
-            reftime=ttime+dtime
+            reftime=ttime+time
          else
             reftime=time
          endif
@@ -118,7 +118,7 @@
                endif
 !     
                abqtime(1)=time
-               abqtime(2)=ttime+dtime
+               abqtime(2)=ttime+time
 !     
 !     a gasnode cannot move (displacement DOFs are used
 !     for other purposes, e.g. mass flow and pressure)
@@ -195,7 +195,7 @@
                endif
 !
                abqtime(1)=time
-               abqtime(2)=ttime+dtime
+               abqtime(2)=ttime+time
 !
 !              a gasnode cannot move (displacement DOFs are used
 !              for other purposes, e.g. mass flow and pressure)
@@ -230,7 +230,7 @@
                node=nodeforc(1,i)
 !
                abqtime(1)=time
-               abqtime(2)=ttime+dtime
+               abqtime(2)=ttime+time
 !
                do j=1,3
                   coords(j)=co(j,node)+vold(j,node)
@@ -363,52 +363,6 @@
          endif
          xbodydiff(1,i)=xbodyact(1,i)-xbodydiff(1,i)
       enddo
-!
-!     scaling the temperatures
-!     set inactive for modal dynamics calculations
-!
-c      if(ithermal.eq.1) then
-c         do i=1,nk
-c            if((t1(i).lt.1.2357111318d0).and.
-c     &           (t1(i).gt.1.2357111316d0)) then
-c!
-c               abqtime(1)=time
-c               abqtime(2)=ttime+dtime
-c!
-c               do j=1,3
-c                  coords(j)=co(j,i)+vold(j,i)
-c               enddo
-c               if(iabsload.eq.0) then
-c                  t1diff(i)=t1act(i)
-c               else
-c                  t1diff(i)=t1act(i)-t1diff(i)
-c               endif
-c               call utemp(t1act(i),msecpt,istep,iinc,abqtime,i,
-c     &              coords,vold,mi)
-c               t1diff(i)=t1act(i)-t1diff(i)
-c               cycle
-c            endif
-c            if(nam.gt.0) then
-c               iamt1i=iamt1(i)
-c            else
-c               iamt1i=0
-c            endif
-c!
-c            if(iabsload.eq.0) then
-c               t1diff(i)=t1act(i)
-c            else
-c               t1diff(i)=t1act(i)-t1diff(i)
-c            endif
-c            if(iamt1i.gt.0) then
-c               t1act(i)=t1(i)*ampli(iamt1i)
-c            elseif(nmethod.eq.1) then
-c               t1act(i)=t1old(i)+(t1(i)-t1old(i))*reltime
-c            else
-c               t1act(i)=t1(i)
-c            endif
-c            t1diff(i)=t1act(i)-t1diff(i)
-c         enddo
-c      endif
 !
       return
       end

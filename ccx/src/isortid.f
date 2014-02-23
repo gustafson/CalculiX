@@ -1,3 +1,6 @@
+!
+!     SLATEC: public domain
+!
 *deck isort
       subroutine isortid (ix, dy, n, kflag)
 c

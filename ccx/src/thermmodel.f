@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine thermmodel(amat,iel,iint,kode,coconloc,vkl,
      &  dtime,time,ttime,mi,nstate_,xstateini,xstate,qflux,xstiff,
      &  iorien,pgauss,orab,t1l,t1lold,vold,co,lakonl,konl,
-     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc)
+     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,nmethod,iperturb)
 !
       implicit none
 !
@@ -27,8 +27,9 @@
       character*80 amat
 !
       integer iel,iint,kode,mi(*),nstate_,iorien,ntgrd,ncoconst,
-     &  layer,kspt,kstep,kinc,kal(2,6),konl(20),ipompc(*),
-     &  nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),j3,j2,j4,jj,j,i,j1
+     &  layer,kspt,kstep,kinc,kal(2,6),konl(20),ipompc(*),nmethod,
+     &  nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),j3,j2,j4,jj,j,i,j1,
+     &  iperturb(*)
 !
       real*8 coconloc(*),vkl(0:3,3),dtime,time,ttime,cond(6),
      &  xstateini(nstate_,mi(1),*),xstate(nstate_,mi(1),*),qflux(3),
@@ -135,7 +136,7 @@
          enddo
 !
          abqtime(1)=time-dtime
-         abqtime(2)=ttime-dtime
+         abqtime(2)=ttime+time-dtime
 !
          ntgrd=3
          dtemp=t1l-t1lold
@@ -158,9 +159,12 @@
 !
       endif
 !
-      do i=1,6
-         xstiff(21+i,iint,iel)=cond(i)
-      enddo
+      if(((nmethod.ne.4).or.(iperturb(1).ne.0)).and.
+     &    (nmethod.ne.5)) then
+         do i=1,6
+            xstiff(21+i,iint,iel)=cond(i)
+         enddo
+      endif
 !
       return
       end

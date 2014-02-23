@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2013 Guido Dhondt                          */
+/*              Copyright (C) 1998-2014 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -92,14 +92,6 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
 	for(k=neq[0];k<neq[1];++k){
 	    b[k]=fext[k]-f[k]-adb[k]*aux2[k];
 	} 
-    }
-    
-    if(*mortar==1){
-      /* removing the forces in the slave nodes */
-      for(k=0;k<neq[1];++k){
-	b[k]-=f_cs[k];
-	b[k]-=f_cm[k];
-      }	
     }
 
     return;

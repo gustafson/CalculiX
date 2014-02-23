@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine e_c3d(co,nk,konl,lakonl,p1,p2,omx,bodyfx,nbody,s,sm,
+      subroutine e_c3d(co,kon,lakonl,p1,p2,omx,bodyfx,nbody,s,sm,
      &  ff,nelem,nmethod,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
      &  ielmat,ielorien,norien,orab,ntmat_,
      &  t0,t1,ithermal,vold,iperturb,nelemload,
@@ -25,9 +25,9 @@
      &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  ttime,time,istep,iinc,coriolis,xloadold,reltime,
      &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,springarea,
-     &  nstate_,xstateini,xstate,ne0,ipkon,thicke,xnormastface,
+     &  nstate_,xstateini,xstate,ne0,ipkon,thicke,
      &  integerglob,doubleglob,tieset,istartset,iendset,ialset,ntie,
-     &  nasym)
+     &  nasym,pslavsurf,pmastsurf,mortar,clearini)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -50,8 +50,8 @@
       character*80 matname(*),amat
       character*81 tieset(3,*)
 !
-      integer konl(26),ifaceq(9,6),nelemload(2,*),nk,nbody,nelem,
-     &  mi(*),
+      integer konl(26),ifaceq(9,6),nelemload(2,*),nbody,nelem,
+     &  mi(*),iloc,jfaces,igauss,mortar,kon(*),
      &  mattyp,ithermal,iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
      &  nmethod,k1,l1,ii,jj,ii1,jj1,id,ipointer,ig,m1,m2,m3,m4,kk,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),six,
@@ -78,11 +78,11 @@
      &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,coefmpc(*),xlayer(mi(3),4),
      &  senergy,senergyb,rho,elas(21),summass,summ,thicke(mi(3),*),
      &  sume,factorm,factore,alp,elconloc(21),eth(6),doubleglob(*),
-     &  weight,coords(3),dmass,xl1(3,9),term,xnormastface(3,9,*)
-!
-      real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
+     &  weight,coords(3),dmass,xl1(3,9),term,clearini(3,9,*),
+     &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),plconloc(802),dtime,ttime,time,tvar(2),
-     &  sax(78,78),ffax(78),gs(8,4),a,stress(6),stre(3,3)
+     &  sax(78,78),ffax(78),gs(8,4),a,stress(6),stre(3,3),
+     &  pslavsurf(3,*),pmastsurf(6,*)
 !
       data ifaceq /4,3,2,1,11,10,9,12,21,
      &            5,6,7,8,13,14,15,16,22,
@@ -109,10 +109,11 @@
       include "gauss.f"
 !
       tvar(1)=time
-      tvar(2)=ttime+dtime
+      tvar(2)=ttime+time
 !
       summass=0.d0
 !
+      indexe=ipkon(nelem)
 c     Bernhardi start
       if(lakonl(1:5).eq.'C3D8I') then
          nope=11
@@ -158,8 +159,18 @@ c     Bernhardi end
          nope=6
          nopev=6
       elseif(lakonl(1:2).eq.'ES') then
-         read(lakonl(8:8),'(i1)') nope
-         nope=nope+1
+         if(lakonl(7:7).eq.'C') then
+            if(mortar.eq.0) then
+               read(lakonl(8:8),'(i1)') nope
+               nope=nope+1
+               konl(nope+1)=kon(indexe+nope+1)
+            elseif(mortar.eq.1) then
+               nope=kon(indexe)
+            endif
+         else
+            read(lakonl(8:8),'(i1)') nope
+            nope=nope+1
+         endif
       endif
 !
 !     material and orientation
@@ -190,12 +201,6 @@ c     Bernhardi end
             if(ielmat(k,nelem).ne.0) then
                nlayer=nlayer+1
             endif
-c            do j=1,nopes
-c               if(dabs(thicke(i,indexe+j)).gt.1.d-30) then
-c                  nlayer=nlayer+1
-c                  exit
-c               endif
-c            enddo
          enddo
          mint2d=4
 !
@@ -203,7 +208,6 @@ c            enddo
 !        at the shell integration points
 !
          iflag=1
-         indexe=ipkon(nelem)
          do kk=1,mint2d
             xi=gauss3d2(1,kk)
             et=gauss3d2(2,kk)
@@ -216,9 +220,7 @@ c            enddo
                enddo
                tlayer(kk)=tlayer(kk)+thickness
                xlayer(i,kk)=thickness
-c               write(*,*) 'xlayer ',i,kk,xlayer(i,kk)
             enddo
-c            write(*,*) 'tlayer ',kk,tlayer(kk)
          enddo
          iflag=3
 !
@@ -300,6 +302,7 @@ c            write(*,*) 'tlayer ',kk,tlayer(kk)
 !     computation of the coordinates of the local nodes
 !
       do i=1,nope
+        konl(i)=kon(indexe+i)
         do j=1,3
           xl(j,i)=co(j,konl(i))
         enddo
@@ -379,11 +382,22 @@ c            write(*,*) 'tlayer ',kk,tlayer(kk)
 !
             if(ne0.eq.0) ne0=nelem-1
          endif
-         call springstiff(xl,elas,konl,voldl,s,imat,elcon,nelcon,
-     &      ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,plicon,
+         if((lakonl(7:7).eq.'A').or.(mortar.eq.0)) then
+            call springstiff_n2f(xl,elas,konl,voldl,s,imat,elcon,nelcon,
+     &      ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,plicon,
      &      nplicon,npmat_,iperturb,springarea(1,konl(nope+1)),nmethod,
-     &      mi,ne0,nstate_,xstateini,xstate,reltime,
-     &      xnormastface(1,1,konl(nope+1)),nasym)
+     &      mi,ne0,nstate_,xstateini,xstate,reltime,nasym)
+         elseif(mortar.eq.1) then
+            iloc=kon(indexe+nope+1)
+            jfaces=kon(indexe+nope+2)
+            igauss=kon(indexe+nope+3) 
+            call springstiff_f2f(xl,elas,voldl,s,imat,elcon,nelcon,
+     &        ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,plicon,
+     &        nplicon,npmat_,iperturb,springarea(1,iloc),nmethod,
+     &        mi,ne0,nstate_,xstateini,xstate,reltime,
+     &        nasym,iloc,jfaces,igauss,pslavsurf,
+     &        pmastsurf,clearini)
+         endif
          return
       endif
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,28 +16,25 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine add_sm_fl(aub,adb,jq,irow,i,j,value,
-     &  i0,i1)
+      subroutine add_sm_fl(au,ad,jq,irow,i,j,value,nzs)
 !
-!     stores the coefficient (i,j) with value "value" in the
-!     fluid matrix
+!     stores the stiffness coefficient (i,j) with value "value"
+!     in the stiffness matrix stored in spare matrix format
 !
       implicit none
 !
-      integer jq(*),irow(*),i,j,ii,jj,ipointer,id,i0,i1
-      real*8 adb(*),aub(*),value
+      integer jq(*),irow(*),i,j,ii,jj,ipointer,id,nzs,ioffset
+      real*8 ad(*),au(*),value
 !
       if(i.eq.j) then
-         if(i0.eq.i1) then
-            adb(i)=adb(i)+value
-         else
-            adb(i)=adb(i)+2.d0*value
-         endif
+         ad(i)=ad(i)+value
          return
       elseif(i.gt.j) then
+         ioffset=0
          ii=i
          jj=j
       else
+         ioffset=nzs
          ii=j
          jj=i
       endif
@@ -47,10 +44,11 @@
       ipointer=jq(jj)+id-1
 !
       if(irow(ipointer).ne.ii) then
-         write(*,*) '*ERROR in add_sm_ei: coefficient should be 0'
-c         write(*,*) i,j,ii,jj,ipointer,irow(ipointer)
+         write(*,*) '*ERROR in add_sm_st_as: coefficient should be 0'
+         stop
       else
-         aub(ipointer)=aub(ipointer)+value
+         ipointer=ipointer+ioffset
+         au(ipointer)=au(ipointer)+value
       endif
 !
       return

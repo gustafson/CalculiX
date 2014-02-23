@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -62,7 +62,7 @@
 !     t1l                temperature at the end of the increment
 !     dtime              time length of the increment
 !     time               step time at the end of the current increment
-!     ttime              total time at the start of the current increment
+!     ttime              total time at the start of the current step
 !
 !     icmd               not equal to 3: calculate stress and stiffness
 !                        3: calculate only stress
@@ -174,7 +174,7 @@
       enddo
 !
       abqtime(1)=time-dtime
-      abqtime(2)=ttime
+      abqtime(2)=ttime+time-dtime
 !
       temp=t1l
       dtemp=0.d0

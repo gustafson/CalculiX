@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2013 Guido Dhondt                          */
+/*              Copyright (C) 1998-2014 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -28,9 +28,13 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	      int *nodeboun, int *ndirboun, int *nboun, int *ipompc,
 	      int *nodempc, int *nmpc, int *nactdof, int *icol,
 	      int *jq, int **mast1p, int **irowp, int *isolver, int *neq,
-	      int *nnn, int *ikmpc, int *ilmpc,
-	      int *ipointer, int *nzs, int *nmethod,
-	      int *ics, double *cs, char *labmpc, int *mcs, int *mi){
+	      int *ikmpc, int *ilmpc,int *ipointer, int *nzs, 
+              int *nmethod,int *ics, double *cs, char *labmpc, int *mcs, 
+              int *mi,int *mortar){
+
+  /* determines the structure of the thermo-mechanical matrices with
+     cyclic symmetry;
+     (i.e. the location of the nonzeros */
 
   char lakonl[2]=" \0";
 
@@ -59,15 +63,6 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     
     if(ipkon[i]<0) continue;
     indexe=ipkon[i];
-///*  Bernhardi start  */
-//    if(strcmp1(&lakon[8*i],"C3D8I")==0){nope=11;}
-//    else if(strcmp1(&lakon[8*i],"C3D20")==0){nope=20;}
-///*  Bernhardi end */
-//    else if(strcmp1(&lakon[8*i],"C3D8")==0){nope=8;}
-//    else if(strcmp1(&lakon[8*i],"C3D10")==0){nope=10;}
-//    else if(strcmp1(&lakon[8*i],"C3D15")==0){nope=15;}
-//    else if(strcmp1(&lakon[8*i],"C3D6")==0){nope=6;}
-//    else if(strcmp1(&lakon[8*i],"C3D4")==0){nope=4;}
 /* Bernhardi start */
     if (strcmp1(&lakon[8*i+3],"8I")==0)nope=11;
     else if(strcmp1(&lakon[8*i+3],"20")==0)nope=20;
@@ -80,9 +75,18 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     else if (strcmp1(&lakon[8*i+3],"15")==0)nope=15;
     else if (strcmp1(&lakon[8*i+3],"6")==0)nope=6;
     else if (strcmp1(&lakon[8*i],"E")==0){
+	if((strcmp1(&lakon[8*i+6],"C")==0)&&(*mortar==1)){
+	    nope=kon[ipkon[i]-1];
+	}else{
+	    lakonl[0]=lakon[8*i+7];
+	    nope=atoi(lakonl)+1;
+	}
+    }else continue;
+
+/*    else if (strcmp1(&lakon[8*i],"E")==0){
 	lakonl[0]=lakon[8*i+7];
 	nope=atoi(lakonl)+1;}
-    else continue;
+	else continue;*/
 
     for(j=0;j<nope;++j){
       node=kon[indexe+j]-1;
@@ -114,7 +118,6 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 
   for(i=0;i<*nmpc;++i){
     index=ipompc[i]-1;
-//    nactdof[mt*nodempc[3*index]+nodempc[3*index+1]-4]=0;
     nactdof[mt*(nodempc[3*index]-1)+nodempc[3*index+1]]=0;
   }
   
@@ -123,11 +126,9 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   neq[0]=0;
   for(i=0;i<*nk;++i){
     for(j=1;j<4;++j){
-//      if(nactdof[mt*nnn[i]+j-4]!=0){
-	if(nactdof[mt*(nnn[i]-1)+j]!=0){
+	if(nactdof[mt*i+j]!=0){
 	++neq[0];
-//	nactdof[mt*nnn[i]+j-4]=neq[0];
-	nactdof[mt*(nnn[i]-1)+j]=neq[0];
+	nactdof[mt*i+j]=neq[0];
       }
     }
   }
@@ -157,9 +158,18 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     else if (strcmp1(&lakon[8*i+3],"15")==0)nope=15;
     else if (strcmp1(&lakon[8*i+3],"6")==0)nope=6;
     else if (strcmp1(&lakon[8*i],"E")==0){
+	if((strcmp1(&lakon[8*i+6],"C")==0)&&(*mortar==1)){
+	    nope=kon[ipkon[i]-1];
+	}else{
+	    lakonl[0]=lakon[8*i+7];
+	    nope=atoi(lakonl)+1;
+	}
+    }else continue;
+
+/*    else if (strcmp1(&lakon[8*i],"E")==0){
 	lakonl[0]=lakon[8*i+7];
 	nope=atoi(lakonl)+1;}
-    else continue;
+	else continue;*/
       
     for(jj=0;jj<3*nope;++jj){
 	
@@ -522,476 +532,3 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   return;
   
 }
-	  
-/*
-
-What follows is the original FORTRAN code. The C Code is a one-to-one
-manual translation of the FORTRAN code. However, the FORTRAN code might
-be easier to understand.
-
-!
-!     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
-!
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation(version 2);
-!     
-!
-!     This program is distributed in the hope that it will be useful,
-!     but WITHOUT ANY WARRANTY; without even the implied warranty of 
-!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
-!     GNU General Public License for more details.
-!
-!     You should have received a copy of the GNU General Public License
-!     along with this program; if not, write to the Free Software
-!     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-!
-      subroutine mastructcs(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
-     &  nboun,ipompc,
-     &  nodempc,nmpc,nactdof,icol,jq,mast1,irow,isolver,neq,nnn,
-     &  ikmpc,ilmpc,ikcol,ipointer,nsky,nzs,nmethod,ics,ns,labmpc)
-!
-      implicit none
-!
-      character*6 lakon(*)
-      character*20 labmpc(*)
-!
-      integer kon(*),nodeboun(*),ndirboun(*),nodempc(3,*),ipompc(*),
-     &  nactdof(3,*),icol(*),jq(*),ipointer(*),nnn(*),ikmpc(*),ilmpc(*),
-     &  ikcol(*),mast1(*),irow(*),ipkon(*),inode,icomplex,inode1,
-     &  icomplex1,inode2,icomplex2,nsky_exp,nsky_inc,ns(5),ics(*)
-!
-      integer nk,ne,nboun,nmpc,isolver,neq,nsky,nzs,i,j,k,l,jj,ll,id,
-     &  index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,ist1,ist2,node1,
-     &  node2,isubtract,nmast,ifree,istart,istartold,itot,index1,index2,
-     &  m,node,nzs_,ist,kflag,nmethod,indexe,nope
-!
-      kflag=2
-      nzs_=nzs
-!
-!     initialisation of nactmpc
-!
-      do i=1,nk
-        do j=1,3
-          nactdof(j,i)=0
-        enddo
-      enddo
-!
-!     determining the active degrees of freedom due to elements
-!
-      do i=1,ne
-!
-         if(ipkon(i).lt.0) cycle
-         indexe=ipkon(i)
-         if((lakon(i).eq.'C3D20R').or.(lakon(i).eq.'C3D20 ')) then
-            nope=20
-         elseif((lakon(i).eq.'C3D8R ').or.(lakon(i).eq.'C3D8  ')) then
-            nope=8
-         else
-            nope=10
-         endif
-!
-         do j=1,nope
-            node=kon(indexe+j)
-            do k=1,3
-               nactdof(k,node)=1
-            enddo
-         enddo
-      enddo
-!
-!     determining the active degrees of freedom due to mpc's
-!
-      do i=1,nmpc
-         index=ipompc(i)
-         do
-            nactdof(nodempc(2,index),nodempc(1,index))=1
-            index=nodempc(3,index)
-	    if(index.eq.0) exit
-	 enddo
-      enddo
-!      
-!     subtracting the SPC and MPC nodes
-!
-      do i=1,nboun
-        nactdof(ndirboun(i),nodeboun(i))=0
-      enddo
-!
-      do i=1,nmpc
-         index=ipompc(i)
-         nactdof(nodempc(2,index),nodempc(1,index))=0
-      enddo
-!
-!     numbering the active degrees of freedom
-!
-      neq=0
-      do i=1,nk
-        do j=1,3
-          if(nactdof(j,nnn(i)).ne.0) then
-            neq=neq+1
-            nactdof(j,nnn(i))=neq
-          endif
-        enddo
-      enddo
-!
-      ifree=0
-!
-!
-!     determining the position of each nonzero matrix element
-!
-!       mast1(ipointer(i)) = first nonzero row in column i
-!       irow(ipointer(i)) points to further nonzero elements in
-!         column i
-!
-      do i=1,6*nk
-         ipointer(i)=0
-      enddo
-!
-      do i=1,ne
-!
-         if(ipkon(i).lt.0) cycle
-         indexe=ipkon(i)
-         if((lakon(i).eq.'C3D20R').or.(lakon(i).eq.'C3D20 ')) then
-            nope=20
-         elseif((lakon(i).eq.'C3D8R ').or.(lakon(i).eq.'C3D8  ')) then
-            nope=8
-         else
-            nope=10
-         endif
-!
-         do jj=1,3*nope
-!
-            j=(jj-1)/3+1
-            k=jj-3*(j-1)
-!
-            node1=kon(indexe+j)
-            jdof1=nactdof(k,node1)
-!
-            do ll=jj,3*nope
-!
-               l=(ll-1)/3+1
-               m=ll-3*(l-1)
-!
-               node2=kon(indexe+l)
-               jdof2=nactdof(m,node2)
-!
-!             check whether one of the DOF belongs to a SPC or MPC
-!
-               if((jdof1.ne.0).and.(jdof2.ne.0)) then
-                  call inserf(ipointer,mast1,irow,
-     &                 jdof1,jdof2,ifree,nzs_)
-                  call inserf(ipointer,mast1,irow,
-     &                 jdof1+neq,jdof2+neq,ifree,nzs_)
-               elseif((jdof1.ne.0).or.(jdof2.ne.0)) then
-!
-!              idof1: genuine DOF
-!              idof2: nominal DOF of the SPC/MPC
-!
-                  if(jdof1.eq.0) then
-                     idof1=jdof2
-                     idof2=(node1-1)*3+k
-                  else
-                     idof1=jdof1
-                     idof2=(node2-1)*3+m
-                  endif
-                  if(nmpc.gt.0) then
-                     call nident(ikmpc,idof2,nmpc,id)
-                     if((id.gt.0).and.(ikmpc(id).eq.idof2)) then
-!
-!                    regular DOF / MPC
-!
-                        id1=ilmpc(id)
-                        ist=ipompc(id1)
-                        index=nodempc(3,ist)
-                        if(index.eq.0) cycle
-                        do
-                           inode=nodempc(1,index)
-                           icomplex=0
-			   if(labmpc(id1)(1:6).eq.'CYCLIC') then
-			      icomplex=1
-			   elseif(labmpc(id1)(1:9).eq.'SUBCYCLIC') then
-                              call nident(ics,inode,ns(4),id)
-                              if(id.gt.0) then
-                                 if(ics(id).eq.inode) then
-                                    icomplex=1
-                                 endif   
-			      endif
-			   endif
-                           idof2=nactdof(nodempc(2,index),inode)
-                           if(idof2.ne.0) then
-                              call inserf(ipointer,mast1,irow,
-     &                             idof1,idof2,ifree,nzs_)
-                              call inserf(ipointer,mast1,irow,
-     &                             idof1+neq,idof2+neq,ifree,nzs_)
-                              if((icomplex.eq.1).and.(idof1.ne.idof2)) then
-                                 call inserf(ipointer,mast1,irow,
-     &                                idof1+neq,idof2,ifree,nzs_)
-                                 call inserf(ipointer,mast1,irow,
-     &                                idof1,idof2+neq,ifree,nzs_)
-                              endif
-                           endif
-                           index=nodempc(3,index)
-                           if(index.eq.0) exit
-                        enddo
-                        cycle
-                     endif
-                  endif
-!
-               else
-                  idof1=(node1-1)*3+k
-                  idof2=(node2-1)*3+m
-                  mpc1=0
-                  mpc2=0
-                  if(nmpc.gt.0) then
-                     call nident(ikmpc,idof1,nmpc,id1)
-                     if((id1.gt.0).and.(ikmpc(id1).eq.idof1)) mpc1=1
-                     call nident(ikmpc,idof2,nmpc,id2)
-                     if((id2.gt.0).and.(ikmpc(id2).eq.idof2)) mpc2=1
-                  endif
-                  if((mpc1.eq.1).and.(mpc2.eq.1)) then
-                     id1=ilmpc(id1)
-                     id2=ilmpc(id2)
-                     if(id1.eq.id2) then
-!
-!                    MPC id1 / MPC id1
-!
-                        ist=ipompc(id1)
-                        index1=nodempc(3,ist)
-                        if(index1.eq.0) cycle
-                        do
-                           inode1=nodempc(1,index1)
-                           icomplex1=0
-			   if(labmpc(id1)(1:6).eq.'CYCLIC') then
-			      icomplex1=1
-			   elseif(labmpc(id1)(1:9).eq.'SUBCYCLIC') then
-                              call nident(ics,inode1,ns(4),id)
-                              if(id.gt.0) then
-                                 if(ics(id).eq.inode1) then
-                                    icomplex1=1
-                                 endif
-                              endif
-			   endif
-                           idof1=nactdof(nodempc(2,index1),inode1)
-                           index2=index1
-                           do
-                              inode2=nodempc(1,index2)
-                              call nident(ics,inode2,ns(4),id)
-                              icomplex2=0
-			      if(labmpc(id1)(1:6).eq.'CYCLIC') then
-			         icomplex2=1
-			      elseif(labmpc(id1)(1:9).eq.'SUBCYCLIC') then
-                                 call nident(ics,inode2,ns(4),id)
-                                 if(id.gt.0) then
-                                    if(ics(id).eq.inode2) then
-                                       icomplex2=1
-                                    endif
-                                 endif
-			      endif
-                              idof2=nactdof(nodempc(2,index2),inode2)
-                              if((idof1.ne.0).and.(idof2.ne.0)) then
-                                 call inserf(ipointer,mast1,irow,
-     &                                idof1,idof2,ifree,nzs_)
-                                 call inserf(ipointer,mast1,irow,
-     &                                idof1+neq,idof2+neq,ifree,nzs_)
-                                 if(((icomplex1.eq.1).or.(icomplex2.eq.1)).
-     &                           and.((icomplex1.eq.0).or.(icomplex2.eq.0)))
-     &                           then
-                                    call inserf(ipointer,mast1,irow,
-     &                                   idof1+neq,idof2,ifree,nzs_)
-                                    call inserf(ipointer,mast1,irow,
-     &                                   idof1,idof2+neq,ifree,nzs_)
-                                 endif
-                              endif
-                              index2=nodempc(3,index2)
-                              if(index2.eq.0) exit
-                           enddo
-                           index1=nodempc(3,index1)
-                           if(index1.eq.0) exit
-                        enddo
-                     else
-!
-!                    MPC id1 / MPC id2
-!
-                        ist1=ipompc(id1)
-                        index1=nodempc(3,ist1)
-                        if(index1.eq.0) cycle
-                        do
-                           inode1=nodempc(1,index1)
-                           icomplex1=0
-			   if(labmpc(id1)(1:6).eq.'CYCLIC') then
-			      icomplex1=1
-			   elseif(labmpc(id1)(1:9).eq.'SUBCYCLIC') then
-                              call nident(ics,inode1,ns(4),id)
-                              if(id.gt.0) then
-                                 if(ics(id).eq.inode1) then
-                                    icomplex1=1
-                                 endif
-                              endif
-			   endif
-                           idof1=nactdof(nodempc(2,index1),inode1)
-                           ist2=ipompc(id2)
-                           index2=nodempc(3,ist2)
-                           if(index2.eq.0) then
-                              index1=nodempc(3,index1)
-                              if(index1.eq.0) then
-                                 exit
-                              else
-                                 cycle
-                              endif
-                           endif
-                           do
-                              inode2=nodempc(1,index2)
-                              icomplex2=0
-			      if(labmpc(id2)(1:6).eq.'CYCLIC') then
-			         icomplex2=1
-			      elseif(labmpc(id2)(1:9).eq.'SUBCYCLIC') then
-                                 call nident(ics,inode2,ns(4),id)
-                                 if(id.gt.0) then
-                                    if(ics(id).eq.inode2) then
-                                       icomplex2=1
-                                    endif
-                                 endif
-			      endif
-                              idof2=nactdof(nodempc(2,index2),inode2)
-                              if((idof1.ne.0).and.(idof2.ne.0)) then
-                                 call inserf(ipointer,mast1,irow,
-     &                                idof1,idof2,ifree,nzs_)
-                                 call inserf(ipointer,mast1,irow,
-     &                                idof1+neq,idof2+neq,ifree,nzs_)
-                                 if(((icomplex1.eq.1).or.(icomplex2.eq.1)).
-     &                           and.((icomplex1.eq.0).or.(icomplex2.eq.0)).
-     &                           and.(idof1.ne.idof2))
-     &                           then
-                                    call inserf(ipointer,mast1,irow,
-     &                                   idof1+neq,idof2,ifree,nzs_)
-                                    call inserf(ipointer,mast1,irow,
-     &                                   idof1,idof2+neq,ifree,nzs_)
-                                endif
-                             endif
-                             index2=nodempc(3,index2)
-                             if(index2.eq.0) exit
-                          enddo
-                          index1=nodempc(3,index1)
-                          if(index1.eq.0) exit
-                       enddo
-                    endif
-                 endif
-              endif
-           enddo
-        enddo
-      enddo
-!
-!       ordering the nonzero nodes in the SUPERdiagonal columns
-!       mast1 contains the row numbers column per column,
-!       irow the column numbers
-!
-      neq=2*neq
-!
-      do i=1,neq
-         itot=0
-         if(ipointer(i).eq.0) then
-            write(*,*) 'error in mastructcs: zero column'
-            stop
-         endif
-         istart=ipointer(i)
-         do
-            itot=itot+1
-            ikcol(itot)=mast1(istart)
-            istart=irow(istart)
-            if(istart.eq.0) exit
-         enddo
-         call isortii(ikcol,icol,itot,kflag)
-         istart=ipointer(i)
-         do j=1,itot-1
-            mast1(istart)=ikcol(j)
-            istartold=istart
-            istart=irow(istart)
-            irow(istartold)=i
-         enddo
-         mast1(istart)=ikcol(itot)
-         irow(istart)=i
-      enddo
-!
-!       defining icol and jq
-!
-      nsky=0
-      nsky_exp=0
-      do i=2,neq
-         nsky_inc=i-mast1(ipointer(i))
-         if(2147483647-nsky.lt.nsky_inc) then
-            nsky_exp=nsky_exp+1
-            nsky_inc=nsky_inc-2147483647
-         endif
-         nsky=nsky+nsky_inc
-      enddo
-!
-      if(neq.eq.0) then
-         write(*,*) '*WARNING: no degrees of freedom in the model'
-         stop
-      endif
-!
-      write(*,*) 'number of equations'
-      write(*,*) neq
-      write(*,*) 'number of nonzero matrix elements'
-      write(*,*) ifree
-      write(*,*) 'total length of the skyline'
-      write(*,*) nsky_exp,'*2147483647+',nsky
-      write(*,*) 'percentage of nonzero skyline elements'
-      write(*,*) real(ifree)/
-     &     (real(nsky+neq)+nsky_exp*real(2147483647))*100.
-      write(*,*)
-!
-!       new meaning of icol,j1,mast1,irow:
-!       - irow is going to contain the row numbers of the SUBdiagonal
-!         nonzero's, column per column
-!       - mast1 contains the column numbers
-!       - icol(i)=# SUBdiagonal nonzero's in column i
-!       - jq(i)= location in field irow of the first SUBdiagonal
-!         nonzero in column i
-!
-      nmast=ifree
-!
-!       switching from a SUPERdiagonal inventary to a SUBdiagonal one
-!
-      call isortii(mast1,irow,nmast,kflag)
-!
-!       filtering out the diagonal elements and generating icol and jq
-!
-      isubtract=0
-      do i=1,neq
-         icol(i)=0
-      enddo
-      k=0
-      do i=1,nmast
-         if(mast1(i).eq.irow(i)) then
-            isubtract=isubtract+1
-         else
-            mast1(i-isubtract)=mast1(i)
-            irow(i-isubtract)=irow(i)
-            if(k.ne.mast1(i)) then
-               do l=k+1,mast1(i)
-                  jq(l)=i-isubtract
-               enddo
-               k=mast1(i)
-            endif
-            icol(k)=icol(k)+1
-         endif
-      enddo
-      nmast=nmast-isubtract
-      do l=k+1,neq+1
-         jq(l)=nmast+1
-      enddo
-!
-      do i=1,neq
-         if(jq(i+1)-jq(i).gt.0) then
-            call isortii(irow(jq(i)),mast1(jq(i)),jq(i+1)-jq(i),
-     &           kflag)
-         endif
-      enddo
-!
-      nzs=jq(neq)-1
-!
-      return
-      end
-
-      */

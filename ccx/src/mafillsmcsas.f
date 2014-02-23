@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,9 +28,9 @@
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
      &  matname,mi,ics,cs,nm,ncmat_,labmpc,mass,stiffness,buckling,
      &  rhsi,intscheme,mcs,coriolis,ibody,xloadold,reltime,ielcs,
-     &  veold,springarea,thicke,xnormastface,integerglob,doubleglob,
+     &  veold,springarea,thicke,integerglob,doubleglob,
      &  tieset,istartset,iendset,ialset,ntie,nasym,nstate_,xstateini,
-     &  xstate)
+     &  xstate,pslavsurf,pmastsurf,mortar,clearini)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !     for cyclic symmetry calculations
@@ -47,14 +47,14 @@
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
      &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,
-     &  nactdof(0:mi(2),*),konl(20),irow(*),istartset(*),iendset(*),
+     &  nactdof(0:mi(2),*),irow(*),istartset(*),iendset(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),integerglob(*),ialset(*),ntie,
      &  ipkon(*),ics(*),ij,ilength,lprev,ipobody(2,*),nbody,
      &  ibody(3,*),nk,ne,nboun,nmpc,nforc,nload,neq,nzl,nmethod,
      &  ithermal,iprestr,iperturb(*),nzs(3),i,j,k,l,m,idist,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
-     &  mpc1,mpc2,index1,index2,node1,node2,kflag,nasym,
+     &  mpc1,mpc2,index1,index2,node1,node2,kflag,nasym,mortar,
      &  ntmat_,indexe,nope,norien,iexpl,i0,nm,inode,icomplex,
      &  inode1,icomplex1,inode2,icomplex2,ner,ncmat_,intscheme,istep,
      &  iinc,mcs,ielcs(*),nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
@@ -69,7 +69,8 @@
      &  plkcon(0:2*npmat_,ntmat_,*),thicke(mi(3),*),doubleglob(*),
      &  xstiff(27,mi(1),*),pi,theta,ti,tr,veold(0:mi(2),*),om,
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
-     &  value,dtime,walue,time,ttime,xnormastface(3,9,*)
+     &  value,dtime,walue,time,ttime,clearini(3,9,*),
+     &  pslavsurf(3,*),pmastsurf(6,*)
 !
       pi=4.d0*datan(1.d0)
       nstate_=0
@@ -106,16 +107,12 @@
 !          local contact spring number
 !     
         if(lakon(i)(7:7).eq.'C') then
-           konl(nope+1)=kon(indexe+nope+1)
+           if(mortar.eq.1) nope=kon(indexe)
         else
            cycle
         endif
-!
-        do j=1,nope
-          konl(j)=kon(indexe+j) 
-        enddo
 !     
-        call e_c3d(co,nk,konl,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,i,
+        call e_c3d(co,kon,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,i,
      &          nmethod,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
      &          alzero,ielmat,ielorien,norien,orab,ntmat_,
      &          t0,t1,ithermal,vold,iperturb,nelemload,sideload,xload,
@@ -125,8 +122,9 @@
      &          intscheme,ttime,time,istep,iinc,coriolis,xloadold,
      &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
      &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
-     &          xnormastface,integerglob,doubleglob,tieset,istartset,
-     &          iendset,ialset,ntie,nasym)
+     &          integerglob,doubleglob,tieset,istartset,
+     &          iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,
+     &          clearini)
 !
         do jj=1,3*nope
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -62,13 +62,13 @@
          node2=kon(indexe+2)
          if(kon(indexe+1).ne.0)  then
             node1=kon(indexe+1)
-            inum(node1)=1
+            inum(node1)=-1
             if(v(1,node2).gt.0.d0) v(1,node1)=v(1,node1)+v(1,node2)
          endif
-         inum(node2)=inum(node2)+1
+         inum(node2)=inum(node2)-1
          if(kon(indexe+3).ne.0) then
             node3=kon(indexe+3)
-            inum(node3)=1
+            inum(node3)=-1
             if(v(1,node2).lt.0.d0) v(1,node3)=v(1,node3)-v(1,node2)
          endif
       enddo

@@ -1,4 +1,5 @@
-!
+! 
+!     part of SLATEC (en.wikipedia.org/wiki/FFTPACK): public domain
 !
 !                      FFTPACK
 !

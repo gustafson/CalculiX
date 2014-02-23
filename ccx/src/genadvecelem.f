@@ -64,13 +64,18 @@
      &             2,3,6,5,8,15,11,14,
      &             3,1,4,6,9,13,12,15/
 !
-!     catalogueing the nodes belonging to "D "-elements (generic
-!     network elements)
+!     catalogueing the nodes belonging to "Dx"-elements (specific
+!     network elements, for which "D" is followed by some
+!     specification such as restrictor or vortex)
 !
       nnodesd=0
       do i=1,ne
          if(ipkon(i).lt.0) cycle
-         if(lakon(i)(1:2).ne.'D ') cycle
+cccc
+c         if(lakon(i)(1:2).ne.'D ') cycle
+         if(lakon(i)(1:1).ne.'D') cycle
+         if(lakon(i)(2:2).eq.' ') cycle
+cccc
          indexe=ipkon(i)
          do j=1,3,2
             node=kon(indexe+j)
@@ -94,8 +99,13 @@
          if(sideload(i)(3:4).eq.'FC') then
             node=nelemload(2,i)
             call nident(inodesd,node,nnodesd,id)
+ccccc
+c            if(id.gt.0) then
+c               if(inodesd(id).eq.node) then
             if(id.gt.0) then
-               if(inodesd(id).eq.node) then
+               if(inodesd(id).eq.node) cycle
+            endif
+ccccc
                   nelem=nelemload(1,i)
                   indexe=ipkon(nelem)
                   if(indexe.lt.0) cycle
@@ -168,7 +178,6 @@
                   kon(nkon)=node
 !
                   write(lakon(ne)(8:8),'(i1)') nopes
-c                  write(lakon(ne)(8:8),'(i1)') nopes+1
 !
 !                 copying the loading
 !
@@ -179,14 +188,13 @@ c                  write(lakon(ne)(8:8),'(i1)') nopes+1
 !
                   nelemload(2,nload)=i
                   sideload(nload)='                    '
-c                  sideload(nload)=sideload(i)
 !
 !                 deactivating the original load
 !
                   sideload(i)(1:1)=' '
 !
-               endif
-            endif
+c               endif
+c            endif
          endif
       enddo
 !

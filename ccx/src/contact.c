@@ -35,8 +35,9 @@ void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
              int *itiefac,double *areaslav,int *iponoels,int *inoels,
              double *springarea, double *tietol, double *reltime,
 	     int *imastnode, int *nmastnode, double *xmastnor,
-	     double *xnormastface, char *filab, int *mcs, int *ics,
-             int *nasym,double *xnoels){
+	     char *filab, int *mcs, int *ics,
+             int *nasym,double *xnoels,int *mortar,double *pslavsurf,
+             double *pmastsurf,double *clearini,double *theta){
     
     char *labmpc=NULL;
 
@@ -50,12 +51,19 @@ void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
     fmpc=*fmpcp;nodempc=*nodempcp;coefmpc=*coefmpcp;
     nmpc_=*nmpc;
 
-    DMEMSET(xmastnor,0,3*nmastnode[*ntie],0.);
+    /* next call is only for node-to-face penalty contact
+       setting up bordering planes for the master triangles;
+       these planes are common between neighboring traingles */
+
+    if(*mortar==0){
+
+	DMEMSET(xmastnor,0,3*nmastnode[*ntie],0.);
     
-    FORTRAN(updatecontpen,(koncont,ncont,co,vold,
+	FORTRAN(updatecontpen,(koncont,ncont,co,vold,
 			cg,straight,mi,imastnode,nmastnode,xmastnor,
 			ntie,tieset,nset,set,istartset,
 			iendset,ialset,ipkon,lakon,kon,cs,mcs,ics));
+    }
     
     /* determining the size of the auxiliary fields */
     
@@ -74,14 +82,26 @@ void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
     ny=NNEW(int,ntrimax);
     nz=NNEW(int,ntrimax);
     
-    FORTRAN(gencontelem,(tieset,ntie,itietri,ne,ipkon,kon,lakon,
-       cg,straight,ifree,koncont,
-       co,vold,xo,yo,zo,x,y,z,nx,ny,nz,ielmat,cs,elcon,istep,
-       iinc,iit,ncmat_,ntmat_,ne0,vini,nmethod,mi,
-       imastop,nslavnode,islavnode,islavsurf,itiefac,areaslav,iponoels,
-       inoels,springarea,ikmpc,ilmpc,nmpc,ipompc,nodempc,coefmpc,
-       set,nset,istartset,iendset,ialset,tietol,reltime,xmastnor,
-       xnormastface,imastnode,nmastnode,filab,nasym,xnoels));
+    if(*mortar==0){
+    
+	FORTRAN(gencontelem_n2f,(tieset,ntie,itietri,ne,ipkon,kon,lakon,
+	  cg,straight,ifree,koncont,
+          co,vold,xo,yo,zo,x,y,z,nx,ny,nz,ielmat,elcon,istep,
+          iinc,iit,ncmat_,ntmat_,nmethod,mi,
+          imastop,nslavnode,islavnode,islavsurf,itiefac,areaslav,iponoels,
+          inoels,springarea,
+          set,nset,istartset,iendset,ialset,tietol,reltime,
+          imastnode,nmastnode,filab,nasym,xnoels));
+
+    }else if(*mortar==1){
+
+	FORTRAN(gencontelem_f2f,(tieset,ntie,itietri,ne,ipkon,kon,
+	  lakon,cg,straight,ifree,koncont,co,vold,xo,yo,zo,x,y,z,nx,ny,nz,
+          ielmat,elcon,istep,iinc,iit,ncmat_,ntmat_,mi,imastop,islavsurf,
+	  itiefac,springarea,tietol,reltime,filab,nasym,pslavsurf,pmastsurf,
+	  clearini,theta));
+
+    }
 
     free(xo);free(yo);free(zo);free(x);free(y);free(z);free(nx);
     free(ny);free(nz);

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -106,12 +106,15 @@
             read(textpart(i)(8:27),'(f20.0)',iostat=istat) ctrl(27)
          elseif(textpart(i)(1:9).eq.'TIMERESET') then
             timereset=.true.
+         elseif(textpart(i)(1:17).eq.'TOTALTIMEATSTART=') then
+            read(textpart(1)(18:37),'(f20.0)',iostat=istat) ttime
          else
             write(*,*) 
      &   '*WARNING reading *ELECTROMAGNETICS: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*ELECTROMAGNETICS%")
          endif
       enddo
       if(nmethod.eq.8) ctrl(27)=1.d30
@@ -127,15 +130,13 @@
          if(idirect.eq.1)idrct=1
       endif
 !
-      if((ithermal.eq.0).and.(nmethod.ne.8).and.
-     &   (nmethod.ne.10).and.(iperturb.ne.0)) then
-         write(*,*) 
-     &     '*ERROR reading *ELECTROMAGNETICS: please define initial '
-         write(*,*) '       conditions for the temperature'
-         stop
-      else
-         ithermal=2
-      endif
+c      if((ithermal.eq.0).and.(nmethod.eq.9)) then
+c         write(*,*) 
+c     &     '*ERROR reading *ELECTROMAGNETICS: please define initial '
+c         write(*,*) '       conditions for the temperature'
+c         stop
+c      endif
+c      if(nmethod.eq.9) ithermal=3
 !
       if((nmethod.ne.10).and.(iperturb.ne.0)) then
 !
@@ -178,13 +179,17 @@
          endif
 !
          read(textpart(1)(1:20),'(f20.0)',iostat=istat) tinc
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*ELECTROMAGNETICS%")
          read(textpart(2)(1:20),'(f20.0)',iostat=istat) tper
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*ELECTROMAGNETICS%")
          read(textpart(3)(1:20),'(f20.0)',iostat=istat) tmin
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*ELECTROMAGNETICS%")
          read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*ELECTROMAGNETICS%")
 !
          if(tinc.le.0.d0) then
             write(*,*) '*ERROR reading *ELECTROMAGNETICS: initial increm 
@@ -219,11 +224,13 @@
             write(*,*)
      &       '*ERROR reading *ELECTROMAGNETICS: definition not complete'
             write(*,*) '  '
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*ELECTROMAGNETICS%")
             stop
          endif
          read(textpart(1)(1:10),'(i10)',iostat=istat) nev
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*ELECTROMAGNETICS%")
          if(nev.le.0) then
             write(*,*) '*ERROR reading *ELECTROMAGNETICS: less than 1 ei
      &genvalue requested'
@@ -235,11 +242,13 @@
          mxiter=1000
          if(textpart(2)(1:1).ne.' ') then
             read(textpart(2)(1:20),'(f20.0)',iostat=istat) fmin
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*ELECTROMAGNETICS%")
          endif
          if(textpart(3)(1:1).ne.' ') then
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) fmax
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*ELECTROMAGNETICS%")
          endif
 !
          mei(1)=nev

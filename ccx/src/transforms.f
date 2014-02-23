@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -69,7 +69,8 @@
      &        '*WARNING reading *TRANSFORM: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*TRANSFORM%")
          endif
       enddo
 !
@@ -78,13 +79,15 @@
       if((istat.lt.0).or.(key.eq.1)) then
          write(*,*)'*ERROR reading *TRANSFORM: definition of a'
          write(*,*) '  transformation is not complete'
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*TRANSFORM%")
          stop
       endif
 !
       do i=1,6
          read(textpart(i)(1:20),'(f20.0)',iostat=istat) trab(i,ntrans)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*TRANSFORM%")
       enddo
 !
       do i=1,nset

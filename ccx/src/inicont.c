@@ -61,7 +61,7 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
   FORTRAN(allocont,(ncont,ntie,tieset,nset,set,istartset,iendset,
 	  ialset,lakon,&ncone,tietol,ismallsliding,kind1,kind2,mortar,
           istep));
-  if(ncont==0) return;
+  if(*ncont==0) return;
 
   itietri=NNEW(int,2**ntie);
   koncont=NNEW(int,4**ncont);
@@ -70,11 +70,9 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
   
   FORTRAN(triangucont,(ncont,ntie,tieset,nset,set,istartset,iendset,
 	  ialset,itietri,lakon,ipkon,kon,koncont,kind1,kind2,co,nk));
-    
-  RENEW(ipe,int,*nk);
-  RENEW(ime,int,12**ncont);
-//  memset(&ipe[0],0,sizeof(int)**nk);
-//  memset(&ime[0],0,sizeof(int)*12**ncont);
+
+  ipe=NNEW(int,*nk);
+  ime=NNEW(int,12**ncont);
   DMEMSET(ipe,0,*nk,0.);
   DMEMSET(ime,0,12**ncont,0.);
   imastop=NNEW(int,3**ncont);
@@ -94,7 +92,8 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
 		 tieset));
     
   itiefac=NNEW(int,2**ntie);
-  islavsurf=NNEW(int,2*6**ne);
+//  islavsurf=NNEW(int,2*6**ne);
+  RENEW(islavsurf,int,2*6**ne);DMEMSET(islavsurf,0,12**ne,0.);
   islavnode=NNEW(int,8*ncone);
   nslavnode=NNEW(int,*ntie+1);
   iponoels=NNEW(int,*nk);
@@ -120,59 +119,6 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
   free(ipoface);free(nodface);
   
   RENEW(imastnode,int,nmasts);
-  
-  /* constraining the middle nodes for the slave surfaces (not
-     for modal dynamics calculations) */
-
-  if(*iperturb>1){
-      for(i=0;i<*ifacecount;i++){
-	  iface=islavsurf[2*i];
-	  gencontmpc(ne,&iface,lakon,ipkon,kon,nmpc,&ikmpc,&ilmpc,&ipompc,
-               mpcfree,&fmpc,&labmpc,&nodempc,memmpc_,&coefmpc,&nmpc_,ikboun,
-	       nboun);
-      }
-
-  /* constraining the middle nodes for the master surfaces (not
-     for modal dynamics calculations) */
-
-      tchar1=NNEW(char,81);
-      tchar3=NNEW(char,81);
-      for(i=0; i<*ntie; i++){
-	if(tieset[i*(81*3)+80]=='C'){
-	  //a contact constraint was found, so increase nalset
-	  memcpy(tchar3,&tieset[i*(81*3)+81+81],81);
-	  tchar3[80]='\0';
-	  for(j=0; j<*nset; j++){
-	    memcpy(tchar1,&set[j*81],81);
-	    tchar1[80]='\0';
-	    if(strcmp(tchar1,tchar3)==0){
-	      //independent element face surface was found
-		for(k=istartset[j]-1;k<iendset[j];k++){
-		    iface=ialset[k];
-		    gencontmpc(ne,&iface,lakon,ipkon,kon,nmpc,&ikmpc,&ilmpc,
-                               &ipompc,mpcfree,&fmpc,&labmpc,&nodempc,
-                               memmpc_,&coefmpc,&nmpc_,ikboun,nboun);
-		}
-		    
-	    }
-	  }
-	}
-      }
-      free(tchar1);
-      free(tchar3);
-
-      RENEW(ipompc,int,*nmpc);
-      RENEW(labmpc,char,20**nmpc+1);
-      RENEW(ikmpc,int,*nmpc);
-      RENEW(ilmpc,int,*nmpc);
-      RENEW(fmpc,double,*nmpc);
-    
-      /*   for(i=0;i<*nmpc;i++){
-	j=i+1;
-	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
-	}*/
-
-  }
 
   *itietrip=itietri;*koncontp=koncont;
   *itiefacp=itiefac;*islavsurfp=islavsurf;

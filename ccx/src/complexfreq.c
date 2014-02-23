@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2013 Guido Dhondt                          */
+/*              Copyright (C) 1998-2014 Guido Dhondt                          */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
 /*     published by the Free Software Foundation(version 2);    */
@@ -67,7 +67,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
                int *mpcend, int *ics, double *cs, int *ntie, char *tieset,
                int *idrct, int *jmax, double *tmin, double *tmax,
 	       double *ctrl, int *itpamp, double *tietol,int *nalset,
-	       int **nnnp, int *ikforc, int *ilforc, double *thicke,
+	       int *ikforc, int *ilforc, double *thicke,
 	       char *jobnamef,int *mei){
 
   char fneig[132]="",description[13]="            ",*lakon=NULL,*labmpc=NULL,
@@ -75,24 +75,24 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
   int nev,i,j,k,idof,*inum=NULL,*ipobody=NULL,inewton=0,id,
     iinc=0,l,iout=1,ielas,icmd,ifreebody,mode,m,nherm,
-    *kon=NULL,*ipkon=NULL,*ielmat=NULL,*ielorien=NULL,
+    *kon=NULL,*ipkon=NULL,*ielmat=NULL,*ielorien=NULL,*islavact=NULL,
     *inotr=NULL,*nodeboun=NULL,*ndirboun=NULL,*iamboun=NULL,*ikboun=NULL,
     *ilboun=NULL,*nactdof=NULL,*ipompc=NULL,*nodempc=NULL,*ikmpc=NULL,
-    *ilmpc=NULL,nsectors,nmd,nevd,*nm=NULL,*iamt1=NULL,
-    ngraph=1,nkg,neg,ne0,ij,lprev,nope,indexe,ilength,
+    *ilmpc=NULL,nsectors,nmd,nevd,*nm=NULL,*iamt1=NULL,*islavnode=NULL,
+    ngraph=1,nkg,neg,ne0,ij,lprev,nope,indexe,ilength,*nslavnode=NULL,
     *ipneigh=NULL,*neigh=NULL,index,im,cyclicsymmetry,inode,
-    *ialset=*ialsetp,mt=mi[1]+1,*nnn=*nnnp,kmin,kmax,i1,
+    *ialset=*ialsetp,mt=mi[1]+1,kmin,kmax,i1,
     *iter=NULL,lint,lfin,kk,kkv,kk6,kkx,icomplex,igeneralizedforce,
     idir,*inumt=NULL,icntrl,imag,jj,is,l1,*inocs=NULL,ml1,l2,nkt,net,
     *ipkont=NULL,*ielmatt=NULL,*inotrt=NULL,*kont=NULL,node,iel,*ielcs=NULL,
     ielset,*istartnmd=NULL,*iendnmd=NULL,inmd,neqact,*nshcon=NULL,
-    *ipev=NULL,icfd=0,*inomat=NULL;
+    *ipev=NULL,icfd=0,*inomat=NULL,mortar=0,*islavsurf=NULL;
 
   long long i2;
 
   double *d=NULL, *z=NULL,*stiini=NULL,*cc=NULL,*v=NULL,*zz=NULL,*emn=NULL,
-    *stn=NULL, *stx=NULL, *een=NULL, *adb=NULL,*xstiff=NULL,
-    *aub=NULL,*aux=NULL,*f=NULL, *fn=NULL,*epn=NULL,*xstateini=NULL,
+    *stn=NULL, *stx=NULL, *een=NULL, *adb=NULL,*xstiff=NULL,*cdn=NULL,
+    *aub=NULL,*f=NULL, *fn=NULL,*epn=NULL,*xstateini=NULL,
     *enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,*qfn=NULL,
     *qfx=NULL, *cgr=NULL, *au=NULL,dtime,reltime,*t0=NULL,*t1=NULL,*t1old=NULL,
     sum,qa[3],cam[5],accold[1],bet,gam,*ad=NULL,alpham,betam,
@@ -105,9 +105,10 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
     *eiga=NULL,*eigb=NULL,*eigxx=NULL,*temp=NULL,*coefmpcnew=NULL,xreal,
     ximag,t[3],*vt=NULL,*t1t=NULL,*stnt=NULL,*eent=NULL,*fnt=NULL,*enernt=NULL,
     *stxt=NULL,pi,ctl,stl,*cot=NULL,*qfnt=NULL,vreal,vimag,constant,stnreal,
-    stnimag,freq,*emnt=NULL,*xnormastface=NULL,*shcon=NULL,*eig=NULL,
+    stnimag,freq,*emnt=NULL,*shcon=NULL,*eig=NULL,*clearini=NULL,
     *eigxr=NULL,*eigxi=NULL,*xmac=NULL,*bett=NULL,*betm=NULL,*xmaccpx=NULL,
-    fmin=0.,fmax=1.e30,*xmr=NULL,*xmi=NULL,*zi=NULL,*eigx=NULL;
+    fmin=0.,fmax=1.e30,*xmr=NULL,*xmi=NULL,*zi=NULL,*eigx=NULL,
+    *pslavsurf=NULL,*pmastsurf=NULL,*cdnr=NULL,*cdni=NULL;
 
   FILE *f1;
 
@@ -1343,8 +1344,9 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	    nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
-            &ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
-            sideload,xload,xloadold,&icfd,inomat);}
+            &ne0,xforc,nforc,thicke,shcon,nshcon,
+            sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
+	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,islavsurf);}
       else{
 	results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
             &stx[kkx],elcon,
@@ -1360,8 +1362,9 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	    nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
-            &ne0,xforc,nforc,thicke,xnormastface,shcon,nshcon,
-            sideload,xload,xloadold,&icfd,inomat);
+            &ne0,xforc,nforc,thicke,shcon,nshcon,
+            sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
+	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,islavsurf);
       }
 
     }
@@ -1768,7 +1771,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stxt,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,&net,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emnt,
-	    thicke,jobnamec,output,qfx);
+	    thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni);
     if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
   }
 
@@ -1789,7 +1792,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   *voldp=vold;*emep=eme;*enerp=ener;*ipompcp=ipompc;*nodempcp=nodempc;
   *coefmpcp=coefmpc;*labmpcp=labmpc;*ikmpcp=ikmpc;*ilmpcp=ilmpc;
   *fmpcp=fmpc;*veoldp=veold;*iamt1p=iamt1;*t0p=t0;*t1oldp=t1old;*t1p=t1;
-  *nnnp=nnn;*stip=sti;
+  *stip=sti;
 
   return;
 }

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2013 Guido Dhondt                          */
+/*              Copyright (C) 1998-2014 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -35,30 +35,11 @@ void calcresidual_em(int *nmethod, int *neq, double *b, double *fext, double *f,
         double *vini, double *dtime, double *accold, int *nk, double *adb,
         double *aub, int *jq, int *irow, int *nzl, double *alpha,
         double *fextini, double *fini, int *islavnode, int *nslavnode,
-        int *mortar, int *ntie,double *f_cm,double* f_cs, int *mi,int *nzs,
-        int *nasym, double *ad, double *au){
+        int *mortar, int *ntie,double *f_cm,
+	double* f_cs, int *mi,int *nzs,int *nasym,int *ithermal){
 
-    int j,k,mt=mi[1]+1;
-    double scal1;
+    int j,k,mt=mi[1]+1,jstart;
       
-    /* calculating the internal forces for the electromagnetic
-       degrees of freedom */
-
-    for(k=0;k<*nk;++k){
-	for(j=0;j<mt;++j){
-	    if(nactdof[mt*k+j]!=0){aux2[nactdof[mt*k+j]-1]=vold[mt*k+j];}
-	}
-    }
-    if(*nasym==0){
-	FORTRAN(op,(&neq[1],aux2,b,ad,au,jq,irow)); 
-    }else{
-	FORTRAN(opas,(&neq[1],aux2,b,ad,au,jq,irow,nzs)); 
-    }
-    for(k=0;k<neq[0];++k){
-	f[k]=b[k];
-    } 
-
-
     /* residual for a static analysis */
       
     if(*nmethod!=4){
@@ -69,34 +50,32 @@ void calcresidual_em(int *nmethod, int *neq, double *b, double *fext, double *f,
       
     /* residual for implicit dynamics */
       
-    else if(*iexpl<=1){
+    else{
+
+	if(*ithermal<2){
+	    jstart=1;
+	}else{
+	    jstart=0;
+	}
+
+        /* calculating a pseudo-velocity */
+
 	for(k=0;k<*nk;++k){
-	    for(j=0;j<mt;++j){
-		if(nactdof[mt*k+j]!=0){
-		    aux2[nactdof[mt*k+j]-1]=(vold[mt*k+j]-vini[mt*k+j])/(*dtime);}
+	    for(j=jstart;j<mt;++j){
+		if(nactdof[mt*k+j]!=0){aux2[nactdof[mt*k+j]-1]=(vold[mt*k+j]-vini[mt*k+j])/(*dtime);}
 	    }
 	}
+
+        /* calculating "capacity"-matrix times pseudo-velocity */
+
 	if(*nasym==0){
 	    FORTRAN(op,(&neq[1],aux2,b,adb,aub,jq,irow)); 
 	}else{
 	    FORTRAN(opas,(&neq[1],aux2,b,adb,aub,jq,irow,nzs)); 
 	}
+
 	for(k=0;k<neq[1];++k){
 	    b[k]=fext[k]-f[k]-b[k];
-	} 
-    }
-    
-    /* residual for explicit dynamics */
-    
-    else{
-	for(k=0;k<*nk;++k){
-	    for(j=0;j<mt;++j){
-		if(nactdof[mt*k+j]!=0){
-		    aux2[nactdof[mt*k+j]-1]=(vold[mt*k+j]-vini[mt*k+j])/(*dtime);}
-	    }
-	}
-	for(k=0;k<neq[1];++k){
-	    b[k]=fext[k]-f[k]-adb[k]*aux2[k];
 	} 
     }
 

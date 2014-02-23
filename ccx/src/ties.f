@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,7 +32,7 @@
       integer istep,istat,n,i,key,ipos,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),ntie,ntie_,ipoinpc(0:*)
 !
-      real*8 tietol(2,*)
+      real*8 tietol(3,*)
 !
       multistage=.false.
       tied=.true.
@@ -50,16 +50,19 @@
       endif
 !
       tietol(1,ntie)=-1.d0
+      tieset(1,ntie)(1:1)=' '
 !
       do i=2,n
          if(textpart(i)(1:18).eq.'POSITIONTOLERANCE=') then
             read(textpart(i)(19:38),'(f20.0)',iostat=istat) 
      &             tietol(1,ntie)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*TIE%")
          elseif(textpart(i)(1:5).eq.'NAME=') then
             read(textpart(i)(6:85),'(a80)',iostat=istat) 
      &          tieset(1,ntie)(1:80)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*TIE%")
          elseif(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
             tied=.false.
          elseif(textpart(i)(1:10).eq.'MULTISTAGE') then
@@ -70,12 +73,14 @@
      &        '*WARNING in ties: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*TIE%")
          endif
       enddo
       if(tieset(1,ntie)(1:1).eq.' ') then
          write(*,*) '*ERROR in ties: tie name is lacking'
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*TIE%")
          stop
       endif
 !

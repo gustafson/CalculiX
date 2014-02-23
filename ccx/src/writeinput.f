@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
       implicit none
 !
       integer nentries
-      parameter(nentries=14)
+      parameter(nentries=15)
 !
       character*1 inpc(*)
       character*20 nameref(nentries)
@@ -31,7 +31,8 @@
       data nameref /'RESTART,READ','NODE','ELEMENT','NSET',
      &              'ELSET','TRANSFORM','MATERIAL','ORIENTATION',
      &              'SURFACE','TIE','SURFACEINTERACTION',
-     &              'INITIALCONDITIONS','AMPLITUDE','REST'/
+     &              'INITIALCONDITIONS','AMPLITUDE',
+     &              'CONTACTPAIR','REST'/
 !
       open(16,file='input.inpc',status='unknown',err=161)
       do i=1,nline

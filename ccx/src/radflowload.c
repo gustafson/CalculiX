@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2013 Guido Dhondt                     */
+/*              Copyright (C) 1998-2014 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -454,21 +454,21 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 
 	      free(area);
 
-	  }
+	      if(*iviewfile>=2){
+		  
+		  /* writing viewfactors to file */
+		  
+		  FORTRAN(writeview,(ntr,adview,auview,fenv,nzsrad,
+				     jobnamef));
+	      }
+	      
+	      if(*iviewfile==3){
+		  
+		  /* calculation of viewfactors only */
+		  
+		  FORTRAN(stop,());
+	      }
 
-	  if(fabs(*iviewfile)>=2){
-
-	      /* writing viewfactors to file */
-
-	      FORTRAN(writeview,(ntr,adview,auview,fenv,nzsrad,
-				 jobnamef));
-	  }
-
-	  if(fabs(*iviewfile)==3){
-
-	      /* calculation of viewfactors only */
-
-	      FORTRAN(stop,());
 	  }
       }
 
@@ -485,7 +485,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
       /* the left hand side of the radiation matrix has probably
          changed if
          - the viewfactors were updated
-         - a new step was started
+         - a new step was started and NO CHANGE is not active
          - the emissivity coefficients were changed
          - a new increment was started in a stationary calculation
            (since the emissivity coefficients are ramped)
@@ -493,7 +493,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
            (i.e. call of dgesv) */
 
       if(((*ithermal==3)&&(*iviewfile>=0))||
-         (*iit==-1)||(*iemchange==1)||((*iit==0)&&(abs(*nmethod)==1))){
+         ((*iit==-1)&&(*iviewfile!=-2))||(*iemchange==1)||((*iit==0)&&(abs(*nmethod)==1))){
 
 #if defined(PARDISO)
 	if(ifactorization==1) pardiso_cleanup_as(ntr,&symmetryflag);
@@ -527,7 +527,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
       
       else{ 
 	  q=NNEW(double,*ntr);
-	  FORTRAN(radresult, (ntr,xloadact,bcr,nloadtr,tarea,
+	  FORTRAN(radresult,(ntr,xloadact,bcr,nloadtr,tarea,
 				tenv,physcon,erad,auview,fenv,
 			        irowrad,jqrad,nzsrad,q));
 	  free(q);

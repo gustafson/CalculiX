@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine printoutface(co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
      &  cocon,ncocon,icompressible,istartset,iendset,ipkon,lakon,kon,
-     &  ialset,prset,ttime,nset,set,nprint,prlab,ielmat,mi)
+     &  ialset,prset,ttime,nset,set,nprint,prlab,ielmat,mi,time)
 !
 !     calculation and printout of the lift and drag forces
 !
@@ -37,7 +37,7 @@
      &  iendset(*),ipkon(*),kon(*),iset,ialset(*),nset,ipos,
      &  mi(*),ielmat(mi(3),*)
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,f(0:3),
+      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,f(0:3),time,
      &  vkl(0:3,3),rhcon(0:1,ntmat_,*),t(3,3),div,shcon(0:3,ntmat_,*),
      &  voldl(0:mi(2),20),cocon(0:6,ntmat_,*),xl2(3,8),xsj2(3),
      &  shp2(7,8),vold(0:mi(2),*),xi,et,xsj,temp,xi3d,et3d,ze3d,weight,
@@ -87,7 +87,7 @@
                   f(i)=0.d0
                enddo
 !
-               write(5,120) faset(1:ipos-2),ttime
+               write(5,120) faset(1:ipos-2),ttime+time
  120           format(
      &            ' surface stress at the integration points for set ',
      &            A,' and time ',e14.7)
@@ -101,7 +101,7 @@
 !              initialisierung of the flux
 !     
                f(0)=0.d0
-               write(5,121) faset(1:ipos-2),ttime
+               write(5,121) faset(1:ipos-2),ttime+time
  121           format(' heat flux at the integration points for set ',
      &                A,' and time ',e14.7)
                write(5,*)
@@ -418,14 +418,14 @@
 !
             if(prlab(ii)(1:4).eq.'DRAG') then
                write(5,*)
-               write(5,122) faset(1:ipos-2),ttime
+               write(5,122) faset(1:ipos-2),ttime+time
  122           format(' total surface force (fx,fy,fz) for set ',A,
      &              ' and time ',e14.7)
                write(5,*)
                write(5,'(1p,3(1x,e13.6))') (f(j),j=1,3)
             else
                write(5,*)
-               write(5,123) faset(1:ipos-2),ttime
+               write(5,123) faset(1:ipos-2),ttime+time
  123           format(' total surface flux (q) for set ',A,
      &              ' and time ',e14.7)
                write(5,*)

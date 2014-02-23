@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -61,18 +61,21 @@
          do i=1,2
             read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &           elcon(5+i,1,imat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FRICTION%")
          enddo
          if(elcon(6,1,imat).le.0.d0) then
             write(*,*) '*ERROR reading *FRICTION: friction coefficient'
             write(*,*) '       must be strictly positive'
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*FRICTION%")
             stop
          endif
          if((elcon(7,1,imat).le.0.d0).and.(mortar.eq.0)) then
             write(*,*) '*ERROR reading *FRICTION: stick slope'
             write(*,*) '       must be strictly positive'
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*FRICTION%")
             stop
          endif
          elcon(0,1,imat)=0.d0

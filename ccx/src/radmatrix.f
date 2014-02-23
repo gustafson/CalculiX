@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -71,7 +71,7 @@
       include "gauss.f"
 !     
       tvar(1)=time
-      tvar(2)=ttime+dtime
+      tvar(2)=ttime+time
 !     
 !     filling acr and bcr
 !     
@@ -289,7 +289,7 @@ c         write(*,*) 'radmatrix ',bcr(i1,1)
 !     or the emissivity changed
 !
       if(((ithermal.eq.3).and.(iviewfile.ge.0)).or.
-     &      (iit.eq.-1).or.(iemchange.eq.1).or.
+     &      ((iit.eq.-1).and.(iviewfile.ne.-2)).or.(iemchange.eq.1).or.
      &      ((iit.eq.0).and.(abs(nmethod).eq.1))) then
 !
          do i=1,ntr

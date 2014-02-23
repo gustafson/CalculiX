@@ -365,7 +365,7 @@
 !           contact
 !
                kflag=2
-               call isort2i(islavsurf(1,ifacecount+1),numberf,kflag)
+               call isorti(islavsurf(1,ifacecount+1),numberf,kflag)
 !
 !              update ifacecount and itiefac
 !     

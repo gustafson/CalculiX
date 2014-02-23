@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &  tper,tmin,tmax,ctrl,ipompc,nodempc,coefmpc,nmpc,nmpc_,mpcfree,
      &  ikmpc,ilmpc,labmpc,ikboun,ilboun,nboun,nboun_,nodeboun,ndirboun,
      &  xboun,iamboun,typeboun,nam,ntrans,inotr,trab,ikfree,ixfree,
-     &  nmethod,ithermal,istep,mi,icomposite,ielmat)
+     &  nmethod,ithermal,istep,mi,icomposite,ielmat,vold)
 !
 !     calculates normals on 1-D and 2-D elements
 !
@@ -44,7 +44,7 @@
      &  irotnode,imax,iamplitude,nmethod,ithermal(2),iexpnode,idim
 !
       real*8 co(3,*),thicke(mi(3),*),offset(2,*),xnor(*),tinc,tper,tmin,
-     &  tmax,ctrl(*),coefmpc(*),xboun(*),trab(7,*),vdummy(0:4), 
+     &  tmax,ctrl(*),coefmpc(*),xboun(*),trab(7,*),vold(0:mi(2),*),
      &  xno(3,100),xta(3,100),xn1(3,100),thl1(100),thl2(100),
      &  off1(100),off2(100),xi,et,coloc6(2,6),coloc8(2,8),xl(3,8),
      &  dd,xnoref(3),dot,coloc3(3),dot1,dot2,dmax,val,coloc2(2),
@@ -900,7 +900,7 @@ c     write(*,*) 'dependent node: ',node
      &                 iamplitude,nam,ipompc,nodempc,coefmpc,
      &                 nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &                 ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &                 type,typeboun,nmethod,iperturb,fixed,vdummy,
+     &                 type,typeboun,nmethod,iperturb,fixed,vold,
      &                 idummy,mi)
                else
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,6 +18,8 @@
 !     
 !     this function enable to determine the discharge coefficient of
 !     preswirl nozzles
+!
+!     author: Yannick Muller
 !
       subroutine cd_preswirlnozzle(ps2,pt1,number,curve,x_tab,y_tab,cd)
 !

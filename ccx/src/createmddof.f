@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -79,7 +79,7 @@
      &             2,3,6,5,8,15,11,14,
      &             3,1,4,6,9,13,12,15/
 !
-      data nlabel /41/
+      data nlabel /46/
 !
 !     if 1d/2d elements are part of the mesh, no node selection
 !     is performed (because of the renumbering due to the
@@ -136,7 +136,7 @@
                   write(*,*) '       into 360 °. Storing results for'
                   write(*,*) '       this expansion may lead to huge'
                   write(*,*) '       frd-files. Specifying a set can'
-                  write(*,*) '       reduced this output.'
+                  write(*,*) '       reduce this output.'
                   stop
                endif
                nmdnode=0

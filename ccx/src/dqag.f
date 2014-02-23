@@ -1,3 +1,6 @@
+c
+c     CMLIB - public domain
+c
       subroutine dqag(f,a,b,epsabs,epsrel,key,result,abserr,neval,ier,
      *    limit,lenw,last,iwork,work,phi,lambda1,zk0,Pup,Tup,rurd,xflow,
      *     kup)

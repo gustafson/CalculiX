@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,8 +19,13 @@
       subroutine generateeminterfaces(istartset,iendset,
      &  ialset,iactive,ipkon,lakon,kon,ikmpc,nmpc,nafaces)
 !
-!     determines the interfaces between the domains in an
-!     electromagnetic calculation; 
+!     determines the interfaces in between the phi-domain and any
+!     other domain, i.e.
+!
+!     faces belonging to the phi domain and adjacent to the A- or
+!           A-V-domain 
+!     faces belonging to the A-domain adjacent to the phi-domain
+!     faces belonging to the A-V-domain adjacent to the phi-domain
 !
       implicit none
 !
@@ -91,7 +96,7 @@
             iset=iactive(m)
             ntotal=0
             loop1: do j=istartset(iset),iendset(iset)
-               iface=ialset(iset)
+               iface=ialset(j)
                nelem=int(iface/10.d0)
                jface=iface-10*nelem
 !     
@@ -175,17 +180,18 @@
                   cycle loop1
                enddo
 !
-               ntotal=ntotal+1
                ialset(istartset(iset)+ntotal)=iface
+               ntotal=ntotal+1
                cycle
             enddo loop1
-            iendset(iset)=istartset(iset)+ntotal
+            iendset(iset)=istartset(iset)+ntotal-1
          endif
       enddo
 !
 !     sorting the sets
 !
       do m=1,3
+         if(iactive(m).eq.0) cycle
          nlength=iendset(iactive(m))-istartset(iactive(m))+1
          call isortii(ialset(istartset(iactive(m))),idummy,
      &                 nlength,kflag)
@@ -195,8 +201,16 @@
 !     or A-domain and adjacent to the phi-domain. The nodes on these
 !     faces are subject to A.n=0
 !
-      nafaces=iendset(iactive(2))-istartset(iactive(2))+1
-     &       +iendset(iactive(3))-istartset(iactive(3))+1
-!
+      if((iactive(2).eq.0).and.(iactive(3).eq.0)) then
+         nafaces=0
+      elseif(iactive(2).eq.0) then
+         nafaces=iendset(iactive(3))-istartset(iactive(3))+1
+      elseif(iactive(3).eq.0) then
+         nafaces=iendset(iactive(2))-istartset(iactive(2))+1
+      else
+         nafaces=iendset(iactive(2))-istartset(iactive(2))+1
+     &        +iendset(iactive(3))-istartset(iactive(3))+1
+      endif
+!     
       return
       end

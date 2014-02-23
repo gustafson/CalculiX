@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,7 +24,8 @@
      &  xstateini,xstiff,xstate,npmat_,matname,mi,ielas,icmd,
      &  ncmat_,nstate_,stiini,vini,ener,eei,enerini,istep,iinc,
      &  springarea,reltime,calcul_fn,calcul_qa,calcul_cauchy,iener,
-     &  ikin,nal,ne0,thicke,xnormastface,emeini,nea,neb)
+     &  ikin,nal,ne0,thicke,emeini,pslavsurf,
+     &  pmastsurf,mortar,clearini,nea,neb)
 !
 !     calculates stresses and the material tangent at the integration
 !     points and the internal forces at the nodes
@@ -44,7 +45,7 @@
      &  nal,icmd,ihyper,nmethod,kode,imat,mint3d,iorien,ielas,
      &  istiff,ncmat_,nstate_,ikin,ilayer,nlayer,ki,kl,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,calcul_fn,
-     &  calcul_cauchy,calcul_qa,nopered
+     &  calcul_cauchy,calcul_qa,nopered,mortar,jfaces,iloc,igauss
 !
       real*8 co(3,*),v(0:mi(2),*),shp(4,26),stiini(6,mi(1),*),
      &  stx(6,mi(1),*),xl(3,26),vl(0:mi(2),26),stre(6),
@@ -63,7 +64,8 @@
      &  xstiff(27,mi(1),*),xstate(nstate_,mi(1),*),plconloc(802),
      &  vokl(3,3),xstateini(nstate_,mi(1),*),vikl(3,3),
      &  gs(8,4),a,reltime,tlayer(4),dlayer(4),xlayer(mi(3),4),
-     &  thicke(mi(3),*),xnormastface(3,9,*),emeini(6,mi(1),*)
+     &  thicke(mi(3),*),emeini(6,mi(1),*),clearini(3,9,*),
+     &  pslavsurf(3,*),pmastsurf(6,*)
 !
       include "gauss.f"
 !
@@ -168,11 +170,42 @@ c     Bernhardi end
 !           spring elements, contact spring elements and
 !           dashpot elements
 !
-            nope=ichar(lakonl(8:8))-47
+            if(lakonl(7:7).eq.'C') then
 !
-!           local contact spring number
+!              contact spring elements
 !
-            if(lakonl(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
+               if(mortar.eq.1) then
+!
+!                 face-to-face penalty
+!
+                  nope=kon(ipkon(i))
+               elseif(mortar.eq.0) then
+!
+!                 node-to-face penalty
+!
+                  nope=ichar(lakonl(8:8))-47
+                  konl(nope+1)=kon(indexe+nope+1)
+               endif
+            else
+!
+!              genuine spring elements and dashpot elements
+!
+               nope=ichar(lakonl(8:8))-47
+            endif
+c            if((lakonl(7:7).eq.'C').and.(mortar.eq.1)) then
+c!
+c!              face-to-face penalty
+c!
+c               nope=kon(ipkon(i))
+c            else
+c               nope=ichar(lakonl(8:8))-47
+c               if((lakonl(7:7).eq.'C').and.mortar.eq.0)) then
+c!
+c!                 node-to-face penalty
+c!
+c                  konl(nope+1)=kon(indexe+nope+1)
+c               endif
+c            endif
          else
             cycle
          endif
@@ -244,23 +277,26 @@ c     Bernhardi end
 !           spring elements (including contact springs)
 !     
             if(lakonl(2:2).eq.'S') then
-c!
-c!              velocity may be needed for contact springs
-c!
-c               if(lakonl(7:7).eq.'C') then
-c                  do j=1,nope
-c                     do k=1,3
-c                        veoldl(k,j)=veold(k,konl(j))
-c                     enddo
-c                  enddo
-c!
-c               endif
-               call springforc(xl,konl,vl,imat,elcon,nelcon,elas,
-     &              fnl,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,elconloc,
-     &              plicon,nplicon,npmat_,veoldl,ener(1,i),iener,
+               if((lakonl(7:7).eq.'A').or.(mortar.eq.0)) then
+                  call springforc_n2f(xl,konl,vl,imat,elcon,nelcon,elas,
+     &              fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
+     &              plicon,nplicon,npmat_,ener(1,i),iener,
      &              stx(1,1,i),mi,springarea(1,konl(nope+1)),nmethod,
-     &              ne0,iperturb,nstate_,xstateini,xstate,reltime,
-     &              xnormastface(1,1,konl(nope+1)),ielas)
+     &              ne0,nstate_,xstateini,xstate,reltime,
+     &              ielas)
+               elseif(mortar.eq.1) then
+                  iloc=kon(indexe+nope+1)
+                  jfaces=kon(indexe+nope+2)
+                  igauss=kon(indexe+nope+3)
+                  call springforc_f2f(xl,vl,imat,elcon,nelcon,elas,
+     &              fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
+     &              plicon,nplicon,npmat_,ener(1,i),iener,
+     &              stx(1,1,i),mi,springarea(1,iloc),nmethod,
+     &              ne0,nstate_,xstateini,xstate,reltime,
+     &              ielas,iloc,jfaces,igauss,pslavsurf,pmastsurf,
+     &              clearini)
+               endif
+!                  
                do j=1,nope
                   do k=1,3
                      fn(k,konl(j))=fn(k,konl(j))+fnl(k,j)
@@ -771,9 +807,12 @@ c                 emec0(m1)=emeini(m1,jj,i)
      &           iorien,pgauss,orab,eloc,mattyp,qa(3),istep,iinc,
      &           ipkon,nmethod)
 !
-            do m1=1,21
-               xstiff(m1,jj,i)=elas(m1)
-            enddo
+            if(((nmethod.ne.4).or.(iperturb(1).ne.0)).and.
+     &         (nmethod.ne.5)) then
+               do m1=1,21
+                  xstiff(m1,jj,i)=elas(m1)
+               enddo
+            endif
 !
             if(iperturb(1).eq.-1) then
 !

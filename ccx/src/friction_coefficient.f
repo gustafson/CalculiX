@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,6 +19,8 @@
 !     This subroutine computes the friction coefficient of
 !     the pipe flow for laminar and turbulent flow including the
 !     transition region
+!
+!     author: Yannick Muller
 !     
       subroutine friction_coefficient(l,d,ks,reynolds,form_fact,lambda)
 !     

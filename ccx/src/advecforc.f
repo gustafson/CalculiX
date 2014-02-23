@@ -43,7 +43,7 @@
       data iflag /2/
 !
       timeend(1)=time
-      timeend(2)=ttime+dtime
+      timeend(2)=ttime+time
 !
 !     number of nodes in the advective face
 !
@@ -53,6 +53,8 @@
 !
       do i=1,nope
          tl2(i)=voldl(0,i)
+      enddo
+      do i=1,nopes
          if(ithermal(2).eq.2) then
             do j=1,3
                xl2(j,i)=xl(j,i)
@@ -75,7 +77,13 @@
 !
       nelem=nelemload(1,id)
       lakonl=lakon(nelem)
-      read(sideload(id)(2:2),'(i1)') ig
+!
+!     the next line originally ran:
+!     read(sideload(id)(2:2),'(i1)') ig
+!     it was replaced since the read statement might
+!     cause problems in the multithreading version
+!
+      ig=ichar(sideload(id)(2:2))-48
 !
 !     number of integration points
 !
@@ -169,8 +177,9 @@
                   coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
                enddo
             enddo
-            read(sideload(id)(2:2),'(i1)') jltyp
-            jltyp=jltyp+10
+c            read(sideload(id)(2:2),'(i1)') jltyp
+c            jltyp=jltyp+10
+            jltyp=ichar(sideload(id)(2:2))-38
             node=nelemload(2,id)
             sideloadl=sideload(id)
             sideloadl(1:1)='F'

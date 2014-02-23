@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -83,7 +83,8 @@
             if(j.eq.0) then
                write(*,*)'*ERROR in radiates: nonexistent amplitude'
                write(*,*) '  '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*RADIATE%")
                stop
             endif
             iamptemp=j
@@ -92,7 +93,8 @@
                write(*,*) '*ERROR in radiates: the parameter TIME DELAY'
                write(*,*) '       is used twice in the same keyword'
                write(*,*) '       '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*RADIATE%")
                stop
             else
                idelay1=1
@@ -125,7 +127,8 @@
             namta(2,nam)=namtot
             read(textpart(i)(11:30),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*RADIATE%")
          elseif(textpart(i)(1:19).eq.'RADIATIONAMPLITUDE=') then
             read(textpart(i)(20:99),'(a80)') amplitude
             do j=nam,1,-1
@@ -137,7 +140,8 @@
             if(j.eq.0) then
                write(*,*)'*ERROR in radiates: nonexistent amplitude'
                write(*,*) '  '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*RADIATE%")
                stop
             endif
             iampradi=j
@@ -146,7 +150,8 @@
                write(*,*) '*ERROR in radiates: the parameter RADIATION'
                write(*,*) '       TIME DELAY is used twice in the'
                write(*,*) '       same keyword; '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*RADIATE%")
                stop
             else
                idelay2=1
@@ -180,7 +185,8 @@
             namta(2,nam)=namtot
             read(textpart(i)(20:39),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*RADIATE%")
          elseif(textpart(i)(1:7).eq.'ENVNODE') THEN
             environmentnode=.true.
          elseif(textpart(i)(1:7).eq.'CAVITY=') THEN
@@ -190,7 +196,8 @@
      &        '*WARNING in radiates: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*RADIATE%")
          endif
       enddo
 !
@@ -220,9 +227,11 @@
                read(textpart(3)(1:20),'(f20.0)',iostat=istat) xmagtemp
                node=0
             endif
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*RADIATE%")
             read(textpart(4)(1:20),'(f20.0)',iostat=istat) xmagradi
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*RADIATE%")
          else
             if(environmentnode) then
                read(textpart(3)(1:10),'(i10)',iostat=istat) node
@@ -230,14 +239,16 @@
                read(textpart(3)(1:20),'(f20.0)',iostat=istat) xmagtemp
                node=0
             endif
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*RADIATE%")
          endif
          if(((label(1:2).ne.'R1').and.(label(1:2).ne.'R2').and.
      &       (label(1:2).ne.'R3').and.(label(1:2).ne.'R4').and.
      &       (label(1:2).ne.'R5').and.(label(1:2).ne.'R6')).or.
      &      ((label(3:5).ne.'   ').and.(label(3:5).ne.'NU ').and.
      &       (label(3:5).ne.'CR ').and.(label(3:5).ne.'CRN'))) then
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*RADIATE%")
          endif
 !
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
@@ -282,7 +293,8 @@
                elset(ipos:ipos)=' '
                write(*,*) '*ERROR in radiates: element set ',elset
                write(*,*) '       has not yet been defined. '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*RADIATE%")
                stop
             endif
 !

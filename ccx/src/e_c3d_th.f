@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine e_c3d_th(co,nk,konl,lakonl,s,sm,
+      subroutine e_c3d_th(co,nk,kon,lakonl,s,sm,
      &  ff,nelem,nmethod,rhcon,nrhcon,ielmat,ielorien,norien,orab,
      &  ntmat_,t0,t1,ithermal,vold,iperturb,nelemload,
      &  sideload,xload,nload,idist,iexpl,dtime,
@@ -24,7 +24,8 @@
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  xstiff,xloadold,reltime,
      &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,springarea,
-     &  plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,lakon)
+     &  plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,lakon,
+     &  pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -49,12 +50,12 @@
      &  mattyp,ithermal(2),iperturb,nload,idist,i,j,k,i1,j1,l,m,
      &  ii,jj,id,ipointer,ig,kk,istiff,iperm(20),ipompc(*),mi(*),
      &  nrhcon(*),ielmat(mi(3),*),ielorien(mi(3),*),nodempc(3,*),nmpc,
-     &  ntmat_,nope,nopes,norien,iexpl,imat,mint2d,ikmpc(*),
-     &  mint3d,ifacet(7,4),nopev,iorien,ilmpc(*),kode,
+     &  ntmat_,nope,nopes,norien,iexpl,imat,mint2d,ikmpc(*),iloc,
+     &  mint3d,ifacet(7,4),nopev,iorien,ilmpc(*),kode,jfaces,
      &  ifacew(8,5),intscheme,ipointeri,ipointerj,ncocon(2,*),
      &  nshcon(*),iinc,istep,jltyp,nfield,node,iflag,iscale,
-     &  nplkcon(0:ntmat_,*),nelcon(2,*),npmat_,ncmat_,i2,
-     &  iemchange
+     &  nplkcon(0:ntmat_,*),nelcon(2,*),npmat_,ncmat_,i2,ipkon(*),
+     &  iemchange,kon(*),mortar,nplicon(0:ntmat_,*),indexe,igauss
 !
       real*8 co(3,*),xl(3,26),shp(4,26),xstiff(27,mi(1),*),
      &  s(78,78),w(3,3),ff(78),shpj(4,26),sinktemp,xs2(3,7),
@@ -66,7 +67,8 @@
      &  cocon(0:6,ntmat_,*),shcon(0:3,ntmat_,*),sph,coconloc(6),
      &  field,areaj,sax(78,78),ffax(78),coefmpc(*),tl2(8),
      &  voldl(0:mi(2),26),springarea(2,*),plkcon(0:2*npmat_,ntmat_,*),
-     &  elcon(0:ncmat_,ntmat_,*),elconloc(21)
+     &  elcon(0:ncmat_,ntmat_,*),elconloc(21),pslavsurf(3,*),
+     &  pmastsurf(2,*),clearini(3,9,*),plicon(0:2*npmat_,ntmat_,*)
 !
       real*8 dtime,physcon(*)
 !
@@ -93,10 +95,11 @@ c      data iflag /3/
       iflag=3
 !
       timeend(1)=time
-      timeend(2)=ttime+dtime
+      timeend(2)=ttime+time
 !
       summass=0.d0
 !
+      indexe=ipkon(nelem)
       imat=ielmat(1,nelem)
       amat=matname(imat)
       if(norien.gt.0) then
@@ -136,8 +139,20 @@ c      data iflag /3/
          nope=6
          nopev=6
       elseif(lakonl(1:2).eq.'ES') then
-         read(lakonl(8:8),'(i1)') nope
-         nope=nope+1
+         if(lakonl(7:7).eq.'C') then
+            if(mortar.eq.0) then
+               read(lakonl(8:8),'(i1)') nope
+               nope=nope+1
+               konl(nope+1)=kon(indexe+nope+1)
+            elseif(mortar.eq.1) then
+               nope=kon(indexe)
+            endif
+         else
+            read(lakonl(8:8),'(i1)') nope
+            nope=nope+1
+         endif
+c         read(lakonl(8:8),'(i1)') nope
+c         nope=nope+1
       elseif(lakonl(1:2).eq.'D ') then
          nope=3
       endif
@@ -216,6 +231,7 @@ c      data iflag /3/
 !     computation of the coordinates of the local nodes
 !
       do i=1,nope
+        konl(i)=kon(indexe+i)
         do j=1,3
           xl(j,i)=co(j,konl(i))
         enddo
@@ -264,11 +280,26 @@ c      data iflag /3/
 !              contact element
 !
                kode=nelcon(1,imat)
-               if(kode.eq.-51)
-     &              call springstiff_th(xl,voldl,s,imat,elcon,nelcon,
-     &              ncmat_,ntmat_,nope,kode,plkcon,nplkcon,
-     &              npmat_,iperturb,springarea(1,konl(nope+1)),mi,
-     &              timeend,matname,konl(nope),nelem,istep,iinc)
+               if(kode.eq.-51) then
+                  if(mortar.eq.0) then
+                     call springstiff_n2f_th(xl,voldl,s,imat,elcon,
+     &                 nelcon,ncmat_,ntmat_,nope,kode,plkcon,nplkcon,
+     &                 npmat_,iperturb,springarea(1,konl(nope+1)),mi,
+     &                 timeend,matname,konl(nope),nelem,istep,iinc)
+                  elseif(mortar.eq.1) then
+                     iloc=kon(indexe+nope+1)
+                     jfaces=kon(indexe+nope+2)
+                     igauss=kon(indexe+nope+3) 
+                     node=0
+                     call springstiff_f2f_th(xl,voldl,s,imat,elcon,
+     &                    nelcon,ncmat_,ntmat_,nope,lakonl,kode,
+     &                    elconloc,plicon,nplicon,npmat_,
+     &                    springarea(1,iloc),
+     &                    nmethod,mi,reltime,jfaces,igauss,pslavsurf,
+     &                    pmastsurf,clearini,matname,plkcon,nplkcon,
+     &                    node,nelem,istep,iinc)
+                  endif
+               endif
             elseif(lakonl(7:7).eq.'F') then
 !
 !              advective element

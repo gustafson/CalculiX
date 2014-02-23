@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &  mpcfree,ikmpc,ilmpc,labmpc,rig,ntrans,inotr,trab,nam,nk,nk_,co,
      &  nmethod,iperturb,nset,set,istartset,iendset,ialset,
      &  ikboun,ilboun,nboun,nboun_,nodeboun,ndirboun,xboun,iamboun,
-     &  typeboun,mi)
+     &  typeboun,mi,vold)
 !
 !     connects nodes of 1-D and 2-D elements, belonging to nodal
 !     surfaces, to the nodes of their expanded counterparts
@@ -43,7 +43,7 @@
      &  iendset(*),ialset(*),nset,ipos,l,idummy,ikboun(*),ilboun(*),
      &  nboun,nboun_,nodeboun(*),ndirboun(*),iamboun(*),mi(*)
 !
-      real*8 coefmpc(*),trab(7,*),co(3,*),val,vdummy(0:4),xboun(*)
+      real*8 coefmpc(*),trab(7,*),co(3,*),val,xboun(*),vold(0:mi(2),*)
 !
       fixed=.false.
 !
@@ -251,7 +251,7 @@ c                  ialset(l)=knor(indexk+2)
      &                 nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &                 ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,
      &                 labmpc,type,typeboun,nmethod,iperturb,
-     &                 fixed,vdummy,idummy,mi)
+     &                 fixed,vold,idummy,mi)
 !                  
                endif
             endif

@@ -1,7 +1,7 @@
 
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -69,7 +69,8 @@
 !           
          elseif(textpart(i)(1:5).eq.'TYPE=') then
             read(textpart(i)(6:85),'(a80)',iostat=istat) typename
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
 !           
          elseif(textpart(i)(1:4).eq.'OIL=') then
             read(textpart(i)(5:85),'(a80)',iostat=istat) typename_oil
@@ -94,7 +95,8 @@
      &        '*WARNING in fluidsections: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
          endif
       enddo
 !
@@ -196,7 +198,8 @@
          else
             write(*,*) '*ERROR in fluidsections:'
             write(*,*) '       unknown channel section'
-            call inputerror(inpc,ipoinpc,iline) 
+            call inputerror(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
          endif
 !
       elseif(typename(1:14).eq.'CHARACTERISTIC') then
@@ -481,7 +484,8 @@
       if(i.gt.nmat) then
          write(*,*) '*ERROR in fluidsections: nonexistent material'
          write(*,*) '  '
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
          stop
       endif
       imaterial=i
@@ -493,7 +497,8 @@
          elset(ipos:ipos)=' '
          write(*,*) '*ERROR in fluidsections: element set ',elset
          write(*,*) '  has not yet been defined. '
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
          stop
       endif
 !
@@ -529,7 +534,8 @@
                   ndprop=ndprop+1
                   read(textpart(j),'(f40.0)',iostat=istat) 
      &                 prop(nprop+ndprop)
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
                enddo
                nstart=nfix+1
 !
@@ -549,7 +555,8 @@
                ndprop=ndprop+1
                read(textpart(j),'(f40.0)',iostat=istat) 
      &              prop(nprop+ndprop+1)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
             enddo
          enddo
 !
@@ -608,7 +615,8 @@
                read(textpart(k),'(f40.0)',iostat=istat)
      &                 prop(nprop+lprop)
                
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
                
 !              If 20 elements have been read, check how many more
 !              are to be read
@@ -634,7 +642,8 @@
                   read(textpart(k),'(f40.0)',iostat=istat)
      &                 prop(nprop+lprop)
                
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
                enddo
             enddo
          endif
@@ -652,21 +661,25 @@
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
             read(textpart(1),'(i10)',iostat=istat) nodea
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
             prop(nprop+1)=nodea+0.5d0
             read(textpart(2),'(i10)',iostat=istat) nodeb
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
             prop(nprop+2)=nodeb+0.5d0
             if(elname.eq.'LIPIMAF') then
                read(textpart(3),'(f40.0)',iostat=istat)
      &              prop(nprop+3)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
                prop(nprop+4)=iaxial+0.5d0
             else
                do j=3,5
                   read(textpart(j),'(f40.0)',iostat=istat)
      &                 prop(nprop+j)
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
                enddo            
                prop(nprop+6)=iaxial+0.5d0
             endif
@@ -688,7 +701,8 @@
                   if(lprop.gt.ndpropread) exit
                   read(textpart(k),'(f40.0)',iostat=istat)
      &                 prop(nprop+lprop)
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
                enddo
             enddo
 !     
@@ -1044,7 +1058,7 @@ c     &         (elname(1:6).eq.'REWAOR').or.
      &      prop(npropstart+2).ge.1.d0) then
             write(*,*) '*ERROR in fluidsections: using Bragg Method'
             write(*,*) 'Cd by crtitical pressure ratio '
-            write(*,*) '*FLUIDSECTIONS position 2'
+            write(*,*) '*FLUID SECTIONS position 2'
             write(*,*) '0 < Cd _crit < 1'
             stop
          endif

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -80,16 +80,19 @@
             endif
          elseif(textpart(i)(1:8).eq.'OFFSET1=') then
             read(textpart(i)(9:28),'(f20.0)',iostat=istat) offset1
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BEAM SECTION%")
          elseif(textpart(i)(1:8).eq.'OFFSET2=') then
             read(textpart(i)(9:28),'(f20.0)',iostat=istat) offset2
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BEAM SECTION%")
          else
             write(*,*) 
      &       '*WARNING reading *BEAM SECTION: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*BEAM SECTION%")
          endif
       enddo
 !
@@ -108,7 +111,8 @@
       if(i.gt.nmat) then
          write(*,*) '*ERROR reading *BEAM SECTION: nonexistent material'
          write(*,*) '  '
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*BEAM SECTION%")
          stop
       endif
       imaterial=i
@@ -124,7 +128,8 @@
             write(*,*)
      &         '*ERROR reading *BEAM SECTION: nonexistent orientation'
             write(*,*) '  '
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*BEAM SECTION%")
             stop
          endif
          iorientation=i
@@ -138,7 +143,8 @@
          write(*,*) '*ERROR reading *BEAM SECTION: element set ',
      &      elset(1:ipos)
          write(*,*) '  has not yet been defined. '
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*BEAM SECTION%")
          stop
       endif
 !
@@ -199,7 +205,8 @@
       if(istat.gt.0) then
          write(*,*) 
      &   '*ERROR reading *BEAM SECTION: first beam thickness is lacking'
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*BEAM SECTION%")
       endif
       if(n.gt.1) then
          read(textpart(2)(1:20),'(f20.0)',iostat=istat) thickness2
@@ -207,7 +214,8 @@
             write(*,*) 
      &        '*ERROR reading *BEAM SECTION: ',
      &        'second beam thickness is lacking'
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*BEAM SECTION%")
          endif
       else
          thickness2=thickness1
@@ -241,11 +249,14 @@
 !
       indexx=-1
       read(textpart(1)(1:20),'(f20.0)',iostat=istat) p(1)
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BEAM SECTION%")
       read(textpart(2)(1:20),'(f20.0)',iostat=istat) p(2)
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BEAM SECTION%")
       read(textpart(3)(1:20),'(f20.0)',iostat=istat) p(3)
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BEAM SECTION%")
       dd=dsqrt(p(1)*p(1)+p(2)*p(2)+p(3)*p(3))
       if(dd.lt.1.d-10) then
          write(*,*) 

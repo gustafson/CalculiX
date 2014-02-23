@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,7 +30,8 @@
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  coriolis,ibody,xloadold,reltime,veold,springarea,nstate_,
      &  xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
-     &  tieset,istartset,iendset,ialset,ntie,nasym)
+     &  tieset,istartset,iendset,ialset,ntie,nasym,iactive,h0,
+     &  pslavsurf,pmastsurf,mortar,clearini)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !
@@ -54,20 +55,21 @@
      &  ithermal(2),iprestr,iperturb(*),nzs(3),i,j,k,l,m,idist,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,jdof,node1,node2,kflag,icalccg,
-     &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
-     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
+     &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,mortar,
+     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,iactive(3)
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
-     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(78,78),ff(78),
-     &  sti(6,mi(1),*),sm(78,78),stx(6,mi(1),*),adb(*),aub(*),
+     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(100,100),
+     &  sti(6,mi(1),*),sm(100,100),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),springarea(2,*),
-     &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),
+     &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),ff(100),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),veold(0:mi(2),*),om,valu2,value,dtime,ttime,
-     &  time,thicke(mi(3),*),xnormastface(3,9,*),doubleglob(*)
+     &  time,thicke(mi(3),*),xnormastface(3,9,*),doubleglob(*),h0(3,*),
+     &  pslavsurf(3,*),pmastsurf(6,*),clearini(3,9,*)
 !
       kflag=2
       i0=0
@@ -126,19 +128,9 @@
          enddo
       endif
 !
-      if(rhsi) then
+!     electromagnetic force should always be taken into account
 !
-!        distributed forces (body forces or thermal loads or
-!        residual stresses or distributed face loads)
-!
-         if((nbody.ne.0).or.(ithermal(1).ne.0).or.
-     &      (iprestr.ne.0).or.(nload.ne.0)) then
-            idist=1
-         else
-            idist=0
-         endif
-!
-      endif
+      if(rhsi) idist=1
 !
       if((ithermal(1).le.1).or.(ithermal(1).eq.3)) then
 !
@@ -169,18 +161,11 @@
           konl(j)=kon(indexe+j) 
         enddo
 !
-        call e_c3d_em(co,nk,konl,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,
-     &          i,nmethod,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
-     &          alzero,ielmat,ielorien,norien,orab,ntmat_,
-     &          t0,t1,ithermal,vold,iperturb,nelemload,sideload,xload,
-     &          nload,idist,sti,stx,iexpl,plicon,
-     &          nplicon,plkcon,nplkcon,xstiff,npmat_,
-     &          dtime,matname,mi(1),ncmat_,mass(1),stiffness,buckling,
-     &          rhsi,intscheme,ttime,time,istep,iinc,coriolis,xloadold,
-     &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
-     &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
-     &          xnormastface,integerglob,doubleglob,tieset,istartset,
-     &          iendset,ialset,ntie,nasym)
+        call e_c3d_em(co,konl,lakon(i),s,sm,ff,i,nmethod,
+     &          ielmat,ntmat_,t1,ithermal,vold,
+     &          idist,matname,mi,mass(1),rhsi,
+     &          ncmat_,elcon,nelcon,h0,iactive,
+     &          alcon,nalcon,istartset,iendset,ialset)
 !
         do jj=1,5*nope
 !
@@ -436,11 +421,7 @@ c
            cycle
         endif
 !
-        do j=1,nope
-          konl(j)=kon(indexe+j) 
-        enddo
-!
-        call e_c3d_th(co,nk,konl,lakon(i),s,sm,
+        call e_c3d_th(co,nk,kon,lakon(i),s,sm,
      &  ff,i,nmethod,rhcon,nrhcon,ielmat,ielorien,norien,orab,
      &  ntmat_,t0,t1,ithermal,vold,iperturb,nelemload,
      &  sideload,xload,nload,idist,iexpl,dtime,
@@ -448,7 +429,7 @@ c
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  xstiff,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,
      &  ilmpc,springarea,plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,
-     &  lakon)
+     &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon)
 !
         do jj=1,nope
 !

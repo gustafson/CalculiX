@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,6 +25,8 @@
 !     this equation can be found by using the formula for the ideal mass flow in a straight labyrinth
 !     see "Air system Correlations Part 1 : Labyrith Seals" H.Zimmermann and K.H. Wollf ASME98-GT-206
 !     and determining the maximum flow for a given number of fin.
+!
+!     author: Yannick Muller
 !
       subroutine lab_straight_ppkrit (n,ppkrit)
 !

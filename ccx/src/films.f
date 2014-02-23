@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -73,7 +73,8 @@
             if(j.eq.0) then
                write(*,*)'*ERROR in films: nonexistent amplitude'
                write(*,*) '  '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*FILM%")
                stop
             endif
             iamptemp=j
@@ -82,7 +83,8 @@
                write(*,*) '*ERROR in films: the parameter TIME DELAY'
                write(*,*) '       is used twice in the same keyword'
                write(*,*) '       '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*FILM%")
                stop
             else
                idelay1=1
@@ -115,7 +117,8 @@
             namta(2,nam)=namtot
             read(textpart(i)(11:30),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FILM%")
          elseif(textpart(i)(1:14).eq.'FILMAMPLITUDE=') then
             read(textpart(i)(15:94),'(a80)') amplitude
             do j=nam,1,-1
@@ -127,7 +130,8 @@
             if(j.eq.0) then
                write(*,*)'*ERROR in films: nonexistent amplitude'
                write(*,*) '  '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*FILM%")
                stop
             endif
             iampfilm=j
@@ -136,7 +140,8 @@
                write(*,*) '*ERROR in films: the parameter FILM TIME'
                write(*,*) '       DELAY is used twice in the same'
                write(*,*) '       keyword; '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*FILM%")
                stop
             else
                idelay2=1
@@ -170,13 +175,15 @@
             namta(2,nam)=namtot
             read(textpart(i)(15:34),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FILM%")
          else
             write(*,*) 
      &        '*WARNING in films: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*FILM%")
          endif
       enddo
 !
@@ -199,9 +206,11 @@
 !
          if((label(3:4).ne.'NU').and.(label(3:4).ne.'FC')) then
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) xmagtemp
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FILM%")
             read(textpart(4)(1:20),'(f20.0)',iostat=istat) xmagfilm
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FILM%")
             node=0
 !
 !        for forced convection: reference node and, optionally,
@@ -209,7 +218,8 @@
 !
          elseif(label(3:4).eq.'FC') then
             read(textpart(3)(1:10),'(i10)',iostat=istat) node
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FILM%")
             xmagtemp=0.d0
             read(textpart(4)(1:20),'(f20.0)',iostat=istat) xmagfilm
             if(istat.gt.0) xmagfilm=-1.d0
@@ -219,7 +229,8 @@
      &       (label(1:2).ne.'F5').and.(label(1:2).ne.'F6')).or.
      &      ((label(3:4).ne.'  ').and.(label(3:4).ne.'NU').and.
      &       (label(3:4).ne.'FC'))) then
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*FILM%")
          endif
 !
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
@@ -264,7 +275,8 @@
                elset(ipos:ipos)=' '
                write(*,*) '*ERROR in films: element set ',elset
                write(*,*) '       has not yet been defined. '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*FILM%")
                stop
             endif
 !

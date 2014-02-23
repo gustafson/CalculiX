@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,6 +26,8 @@
 !     characteristics the subroutine proceeds using 
 !     linear interpolation to estimate the values for the whole characteristic
 !     note that the characteristic is implicitely containing the point (0,0)
+!
+!     author: Yannick Muller
 !     
       implicit none
 !     

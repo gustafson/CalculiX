@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -64,6 +64,11 @@
          elseif((lakon(i)(1:1).eq.'E').and.(lakon(i)(7:7).eq.'A'))then
             inum(kon(indexe+1))=inum(kon(indexe+1))+1
             inum(kon(indexe+2))=inum(kon(indexe+2))+1
+            cycle
+         elseif(lakonl(1:7).eq.'ESPRNGF') then
+            read(lakonl(8:8),'(i1)') nope
+            nope=nope+1
+            inum(kon(indexe+nope))=-1
             cycle
          else
             cycle

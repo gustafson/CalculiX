@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -78,7 +78,8 @@
             write(*,*) '         parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*GAP CONDUCTANCE%")
          endif
       enddo
 !
@@ -87,7 +88,8 @@
      &           ipoinp,inp,ipoinpc)
             if((istat.lt.0).or.(key.eq.1)) exit
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) temperature
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*GAP CONDUCTANCE%")
 !
 !           first temperature
 !
@@ -118,7 +120,8 @@
             do i=1,2
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &              plkcon(2*npmat+i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*GAP CONDUCTANCE%")
             enddo
             npmat=npmat+1
             if(npmat.gt.npmat_) then

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -73,14 +73,16 @@
      &        '*WARNING in timepointss: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*TIME POINTS%")
          endif
       enddo
 !
       if(amname(nam).eq.'                                               
      &                                 ') then
          write(*,*) '*ERROR in timepointss: Amplitude has no name'
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*TIME POINTS%")
       endif
 !
       if(nam.eq.1) then
@@ -104,7 +106,8 @@
                      stop
                   endif
                   read(textpart(i),'(f20.0)',iostat=istat) x
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*TIME POINTS%")
                   amta(1,namtot)=x
                   namta(2,nam)=namtot
                else
@@ -117,11 +120,14 @@ c     &         (textpart(2)(1:1).ne.' ').and.
 c     &         (textpart(3)(1:1).ne.' ')) then
 c
                read(textpart(1)(1:20),'(f20.0)',iostat=istat) tpmin
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*TIME POINTS%")
                read(textpart(2)(1:20),'(f20.0)',iostat=istat) tpmax
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*TIME POINTS%")
                read(textpart(3)(1:20),'(f20.0)',iostat=istat) tpinc
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*TIME POINTS%")
 
                nttp=INT((tpmax-tpmin)/tpinc)
 

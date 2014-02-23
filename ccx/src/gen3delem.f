@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -195,7 +195,7 @@ c               if(nodempc(2,index).gt.3) then
      &     mpcfree,ikmpc,ilmpc,labmpc,ikboun,ilboun,nboun,nboun_,
      &     nodeboun,ndirboun,xboun,iamboun,typeboun,nam,ntrans,inotr,
      &     trab,ikfree,ixfree,nmethod,ithermal,istep,mi,icomposite,
-     &     ielmat)
+     &     ielmat,vold)
 !
       endif
 !
@@ -564,7 +564,7 @@ c                  endif
      &           nboun_,nodeboun,ndirboun,xboun,iamboun,typeboun,ipompc,
      &           nodempc,coefmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,
      &           nk,nk_,co,rig,nmethod,iperturb,ithermal,mi,nam,
-     &           icomposite,ielmat)
+     &           icomposite,ielmat,vold)
 !            
               elseif(lakon(i)(1:1).eq.'B') then
                  call gen3dfrom1d(i,kon,ipkon,lakon,ne,iponor,xnor,knor,
@@ -761,7 +761,7 @@ c        enddo
      &        mpcfree,ikmpc,ilmpc,labmpc,rig,ntrans,inotr,trab,nam,nk,
      &        nk_,co,nmethod,iperturb,nset,set,istartset,iendset,ialset,
      &        ikboun,ilboun,nboun,nboun_,nodeboun,ndirboun,xboun,
-     &        iamboun,typeboun,mi)
+     &        iamboun,typeboun,mi,vold)
          endif
 !
 !        updating the MPCs: establishing links between the user

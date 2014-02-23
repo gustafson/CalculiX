@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine frditeration(co,nk,kon,ipkon,lakon,ne,v,
-     &  time,ielmat,matname,mi,istep,iinc)
+     &  time,ielmat,matname,mi,istep,iinc,ithermal)
 !
 !     stores the results in frd format
 !
@@ -33,7 +33,7 @@
       character*80 matname(*)
       character*132 text
 !
-      integer kon(*),nk,ne,iteller,i,j,ipkon(*),indexe,
+      integer kon(*),nk,ne,iteller,i,j,ipkon(*),indexe,ithermal,
      &  one,mi(*),ielmat(mi(3),*),null,istep,iinc,istep0,iinc0
 !
       real*8 co(3,*),v(0:mi(2),*),time,pi,oner
@@ -229,47 +229,80 @@
 !     
       write(27,'(a3)') m3
       endif
+!
+      if(ithermal.ne.2) then
 !     
 !     storing the displacements in the nodes
 !     
-      text='    1PSTEP'
-      write(text(25:36),'(i12)') iteller
-      write(text(25:27),'(a3)') 'STP'
-      write(text(28:29),'(i2)') istep
-      write(text(30:32),'(a3)') 'INC'
-      write(text(33:36),'(i4)') iinc
-      write(27,'(a132)') text
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') iteller
+         write(text(25:27),'(a3)') 'STP'
+         write(text(28:29),'(i2)') istep
+         write(text(30:32),'(a3)') 'INC'
+         write(text(33:36),'(i4)') iinc
+         write(27,'(a132)') text
 !     
-      text=
+         text=
      &'  100CL       .00000E+00                                 3    1'
-      text(75:75)='1'
-      write(text(25:36),'(i12)') nk
-      write(text(8:12),'(i5)') 100+iteller
-      write(text(13:24),fmat) time
-c      write(text(59:63),'(i5)') istep
-      write(text(59:63),'(i5)') iteller
-      write(27,'(a132)') text
-      text=' -4  DISP        4    1'
-      write(27,'(a132)') text
-      text=' -5  D1          1    2    1    0'
-      write(27,'(a132)') text
-      text=' -5  D2          1    2    2    0'
-      write(27,'(a132)') text
-      text=' -5  D3          1    2    3    0'
-      write(27,'(a132)') text
-      text=' -5  ALL         1    2    0    0    1ALL'
-      write(27,'(a132)') text
+         text(75:75)='1'
+         write(text(25:36),'(i12)') nk
+         write(text(8:12),'(i5)') 100+iteller
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') iteller
+         write(27,'(a132)') text
+         text=' -4  DISPR       4    1'
+         write(27,'(a132)') text
+         text=' -5  D1          1    2    1    0'
+         write(27,'(a132)') text
+         text=' -5  D2          1    2    2    0'
+         write(27,'(a132)') text
+         text=' -5  D3          1    2    3    0'
+         write(27,'(a132)') text
+         text=' -5  ALL         1    2    0    0    1ALL'
+         write(27,'(a132)') text
 !     
-      do i=1,nk
-         write(27,100) m1,i,(v(j,i),j=1,3)
-      enddo
+         do i=1,nk
+            write(27,100) m1,i,(v(j,i),j=1,3)
+         enddo
 !     
-      write(27,'(a3)') m3
+         write(27,'(a3)') m3
+      endif
+!
+      if(ithermal.ge.2) then
+!     
+!     storing the temperatures in the nodes
+!     
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') iteller
+         write(text(25:27),'(a3)') 'STP'
+         write(text(28:29),'(i2)') istep
+         write(text(30:32),'(a3)') 'INC'
+         write(text(33:36),'(i4)') iinc
+         write(27,'(a132)') text
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(25:36),'(i12)') nk
+         write(text(8:12),'(i5)') 100+iteller
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') iteller
+         write(27,'(a132)') text
+         text=' -4  NDTEMP      1    1'
+         write(27,'(a132)') text
+         text=' -5  NT          1    1    0    0'
+         write(27,'(a132)') text
+!
+         do i=1,nk
+            write(27,100) m1,i,v(0,i)
+         enddo
+!
+         write(27,'(a3)') m3
+      endif
 !     
  100  format(a3,i10,1p,6e12.5)
 !
       close(27)
-c      flush(27)
 !     
       return
       end

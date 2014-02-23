@@ -1,3 +1,6 @@
+!
+!     SLATEC: public domain
+!
 *deck dsort
       subroutine dsort (dx, iy, n, kflag)
 c

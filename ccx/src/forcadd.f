@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -53,7 +53,7 @@
                         xforc(k)=xforc(k)+val
                      else
                         xforc(k)=val
-                        idefforc(k)=1
+                        if(.not.user) idefforc(k)=1
                      endif
                      if(nam.gt.0) iamforc(k)=iamplitude
                      return
@@ -75,7 +75,7 @@ c
          nodeforc(2,nforc)=isector
          ndirforc(nforc)=i
          xforc(nforc)=val
-         idefforc(nforc)=1
+         if(.not.user) idefforc(nforc)=1
          if(nam.gt.0) iamforc(nforc)=iamplitude
 !
 !        updating ikforc and ilforc

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -33,7 +33,7 @@
      &  ifacet(7,4),ifacew(8,5),ifree,ifreenew,index,indexold,kflag,
      &  i,j,k,iactive(3),ntie,nodes(4),iaux,nalset,nk,nset,indexe
 !
-      real*8 tietol(2,*)
+      real*8 tietol(3,*)
 !
 !     nodes belonging to the element faces
 !
@@ -236,7 +236,7 @@
          iactive(1)=0
          nset=nset-1
       else
-         iactive(1)=1
+         iactive(1)=nset
          set(nset)(1:22)='ELECTROMAGNETICSZONE1T'
          do i=23,81
             set(nset)(i:i)=' '
@@ -260,10 +260,10 @@
          enddo
       enddo
       if(istartset(nset).gt.nalset) then
-         iactive(1)=0
+         iactive(2)=0
          nset=nset-1
       else
-         iactive(1)=1
+         iactive(2)=nset
          set(nset)(1:22)='ELECTROMAGNETICSZONE2T'
          do i=23,81
             set(nset)(i:i)=' '
@@ -287,10 +287,10 @@
          enddo
       enddo
       if(istartset(nset).gt.nalset) then
-         iactive(1)=0
+         iactive(3)=0
          nset=nset-1
       else
-         iactive(1)=1
+         iactive(3)=nset
          set(nset)(1:22)='ELECTROMAGNETICSZONE3T'
          do i=23,81
             set(nset)(i:i)=' '
@@ -303,7 +303,7 @@
       do i=1,3
          do j=1,3
             if((i.eq.j).or.((i.eq.3).and.(j.eq.2))) cycle
-            if(iactive(i)*iactive(j).eq.1) then
+            if(iactive(i)*iactive(j).gt.0) then
                ntie=ntie+1
                tietol(1,ntie)=0.d0
                tietol(2,ntie)=0.d0
@@ -314,17 +314,19 @@
                enddo
                tieset(1,ntie)(81:81)='E'
 !
-!              slave set
+!              slave set 
+!              this set does not have to be identified as nodal
+!              or facial at this stage
 !
-               tieset(2,ntie)(1:22)='ELECTROMEGNETICSZONE T'
+               tieset(2,ntie)(1:20)='ELECTROMAGNETICSZONE'
                write(tieset(2,ntie)(21:21),'(i1)')i
-               do k=23,81
+               do k=22,81
                   tieset(2,ntie)(k:k)=' '
                enddo
 !
 !              master set
 !
-               tieset(3,ntie)(1:22)='ELECTROMEGNETICSZONE T'
+               tieset(3,ntie)(1:22)='ELECTROMAGNETICSZONE T'
                write(tieset(3,ntie)(21:21),'(i1)')j
                do k=23,81
                   tieset(3,ntie)(k:k)=' '

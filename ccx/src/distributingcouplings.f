@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -52,14 +52,16 @@
             write(*,*) '         parameter not recognized:'
             write(*,*) '         ',
      &           textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*DISTRIBUTING COUPLING%")
          endif
       enddo
 !
       if(elset(1:1).eq.' ') then
          write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
          write(*,*) '       no element set given'
-         call inputerror(inpc,ipoinpc,iline)
+         call inputerror(inpc,ipoinpc,iline,
+     &"*DISTRIBUTING COUPLING%")
       endif
 !
 !     check whether the element set exists
@@ -154,7 +156,8 @@
 !           reading the weight
 !
             read(textpart(2)(1:20),'(f20.0)',iostat=istat) weight
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DISTRIBUTING COUPLING%")
             totweight=totweight+weight
 !
 !           new term in MPC
@@ -170,7 +173,8 @@
 !
             read(textpart(1)(1:80),'(a80)',iostat=istat) noset
             read(textpart(2)(1:20),'(f20.0)',iostat=istat) weight
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DISTRIBUTING COUPLING%")
             noset(81:81)=' '
             ipos=index(noset,' ')
             noset(ipos:ipos)='N'
@@ -182,7 +186,8 @@
                write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
                write(*,*) '       node set ',noset
                write(*,*) '       has not yet been defined. '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*DISTRIBUTING COUPLING%")
                stop
             endif
             do j=istartset(i),iendset(i)

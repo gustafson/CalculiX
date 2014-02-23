@@ -27,7 +27,7 @@ void pardiso_solve(double *b,int *neq,int *symmetryflag);
 
 void pardiso_cleanup(int *neq,int *symmetryflag);
 
-void FORTRAN(pardiso,(long int *pt,int *maxfct,int *mnum,int *mtype,int *phase,
+void FORTRAN(pardiso,(long long *pt,int *maxfct,int *mnum,int *mtype,int *phase,
                    int *neq,double *aupardiso,int *pointers,int *irowpardiso,
                    int *perm,int *nrhs,int *iparm,int *msglvl,double *b,
                    double *x,int *error));

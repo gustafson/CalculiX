@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -48,7 +48,8 @@
      &        '*WARNING in modaldampings: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
-            call inputwarning(inpc,ipoinpc,iline)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*MODAL DAMPING%")
          endif
       enddo
       if(rayleigh) then
@@ -59,13 +60,16 @@
             write(*,*) '*ERROR in modaldampings: definition 
      &                  not complete'
             write(*,*) '       '
-            call inputerror(inpc,ipoinpc,iline)
+            call inputerror(inpc,ipoinpc,iline,
+     &"*MODAL DAMPING%")
             stop
          endif
          read(textpart(3)(1:20),'(f20.0)',iostat=istat) xmodal(1)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*MODAL DAMPING%")
          read(textpart(4)(1:20),'(f20.0)',iostat=istat) xmodal(2)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*MODAL DAMPING%")
 !
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
@@ -77,11 +81,14 @@
             if((istat.lt.0).or.(key.eq.1)) exit
 !
             read(textpart(1)(1:10),'(i10)',iostat=istat) lowfrequ
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*MODAL DAMPING%")
             read(textpart(2)(1:10),'(i10)',iostat=istat) highfrequ
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*MODAL DAMPING%")
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) zeta
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*MODAL DAMPING%")
 !
             if(highfrequ<lowfrequ) highfrequ=lowfrequ  
             do k=lowfrequ,highfrequ

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,7 +30,7 @@
 !
 !     change following line if nlabel is increased
 !     
-      character*87 label(41)
+      character*87 label(46)
 !     
       integer i,j,l,mi(*),kontri(4,*),i1,mcs,inocs(*),i2,i3,
      &     ntrit,jj,is,m,nkt,icntrl,imag,nk,nlabel
@@ -46,7 +46,7 @@
 !     change following line if nlabel is increased and the dimension
 !     of field label above!
 !     
-      nlabel=41
+      nlabel=46
 !     
 !     updating the displacements for cyclic symmetric structures
 !     

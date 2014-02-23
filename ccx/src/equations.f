@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -67,13 +67,15 @@
                if((istat.lt.0).or.(key.eq.1)) return
 !     
                read(textpart(2)(1:10),'(i10)',iostat=istat) impcstart
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*EQUATION%")
 !     
                if(textpart(3)(1:1).eq.' ') then
                   impcend=impcstart
                else
                   read(textpart(3)(1:10),'(i10)',iostat=istat) impcend
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*EQUATION%")
                endif
 !     
                read(textpart(1)(1:10),'(i10)',iostat=istat) l
@@ -112,7 +114,8 @@
                      write(*,*) '*ERROR reading *BOUNDARY: node set ',
      &                       noset
                      write(*,*) '  has not yet been defined. '
-                     call inputerror(inpc,ipoinpc,iline)
+                     call inputerror(inpc,ipoinpc,iline,
+     &"*EQUATION%")
                      stop
                   endif
                   do j=istartset(i),iendset(i)
@@ -168,7 +171,8 @@
      &            '*WARNING in equations: parameter not recognized:'
              write(*,*) '         ',
      &            textpart(m)(1:index(textpart(m),' ')-1)
-             call inputwarning(inpc,ipoinpc,iline)
+             call inputwarning(inpc,ipoinpc,iline,
+     &"*EQUATION%")
           endif
        enddo
 !
@@ -200,22 +204,25 @@
             if((istat.lt.0).or.(key.eq.1)) then
                write(*,*) '*ERROR in equations: mpc definition ',nmpc
                write(*,*) '  is not complete. '
-               call inputerror(inpc,ipoinpc,iline)
+               call inputerror(inpc,ipoinpc,iline,
+     &"*EQUATION%")
                stop
             endif
 !
             do i=1,n/3
 !
                read(textpart((i-1)*3+1)(1:10),'(i10)',iostat=istat) node
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*EQUATION%")
                if((node.gt.nk).or.(node.le.0)) then
                   write(*,*) '*ERROR in equations:'
                   write(*,*) '       node ',node,' is not defined'
                   stop
                endif
 !
-               read(textpart((i-1)*3+2)(1:10),'(i10)',iostat=istat) ndir 
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               read(textpart((i-1)*3+2)(1:10),'(i10)',iostat=istat) ndir
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*EQUATION%")
                if(ndir.le.3) then
                elseif(ndir.eq.4) then
                   ndir=5
@@ -240,7 +247,8 @@ c                  stop
 c               endif
 !
                read(textpart((i-1)*3+3)(1:20),'(f20.0)',iostat=istat) x
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*EQUATION%")
 !
 !              check whether the node is transformed
 !

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2013 Guido Dhondt
+!     Copyright (C) 1998-2014 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -83,7 +83,7 @@
       ider=0
 !     
       tvar(1)=time
-      tvar(2)=ttime+dtime
+      tvar(2)=ttime+time
 !     
       pi=4.d0*datan(1.d0)
 !     
@@ -681,7 +681,7 @@ c                     bc(ieq)=(ts2+xnum2/xdenom2-ts1-xnum1/xdenom1)
                   if(nacteq(3,node2).eq.node1) then
 !     
 c                     bc(ieq)=(ts2+xnum2/xdenom2-ts1-xnum1/xdenom1) 
-                     bc(ieq)=(ts2-ts1)                                      
+                     bc(ieq)=(ts2-ts1)
 !
                   endif
                endif

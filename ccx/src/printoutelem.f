@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2013 Guido Dhondt
+!              Copyright (C) 1998-2014 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine printoutelem(prlab,ipkon,lakon,kon,co,
      &     ener,mi,ii,nelem,energytot,volumetot,enerkintot,nkin,ne,
-     &     stx,nodes,thicke,ielmat)
+     &     stx,nodes,thicke,ielmat,ielem,iface,mortar)
 !
 !     stores whole element results for element "nelem" in the .dat file
 !
@@ -28,7 +28,7 @@
       character*8 lakon(*)
 !
       integer ipkon(*),nelem,ii,kon(*),mi(*),nope,indexe,i,j,k,
-     &  konl(20),ielemremesh,
+     &  konl(20),ielemremesh,iface,mortar,ielem,
      &  mint3d,jj,nener,iflag,nkin,ne,nodes,ki,kl,ilayer,nlayer,kk,
      &  nopes,ielmat(mi(3),*),mint2d
 !
@@ -268,15 +268,31 @@ c      indexe=ipkon(nelem)
          write(5,'(i10,1p,1x,e13.6)') nelem,energy
       elseif((prlab(ii)(1:5).eq.'CELS ').or.
      &        (prlab(ii)(1:5).eq.'CELST')) then
-         write(5,'(i10,1p,1x,e13.6)') nodes,energy
+         if(mortar.eq.0) then
+            write(5,'(i10,1p,1x,e13.6)') nodes,energy
+         elseif(mortar.eq.1) then
+            write(5,'(i10,1x,i10,1p,1x,e13.6)') ielem,iface,energy
+         endif
       elseif((prlab(ii)(1:5).eq.'CDIS ').or.
      &        (prlab(ii)(1:5).eq.'CDIST')) then
-         write(5,'(i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') nodes,
-     &        stx(1,1,nelem),stx(2,1,nelem),stx(3,1,nelem)
+         if(mortar.eq.0) then
+            write(5,'(i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') nodes,
+     &           stx(1,1,nelem),stx(2,1,nelem),stx(3,1,nelem)
+         elseif(mortar.eq.1) then
+            write(5,'(i10,1x,i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') 
+     &           ielem,iface,
+     &           stx(1,1,nelem),stx(2,1,nelem),stx(3,1,nelem)
+         endif
       elseif((prlab(ii)(1:5).eq.'CSTR ').or.
      &        (prlab(ii)(1:5).eq.'CSTRT')) then
-         write(5,'(i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') nodes,
-     &        stx(4,1,nelem),stx(5,1,nelem),stx(6,1,nelem)
+         if(mortar.eq.0) then
+            write(5,'(i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') nodes,
+     &           stx(4,1,nelem),stx(5,1,nelem),stx(6,1,nelem)
+         elseif(mortar.eq.1) then
+            write(5,'(i10,1x,i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') 
+     &           ielem,iface,
+     &           stx(4,1,nelem),stx(5,1,nelem),stx(6,1,nelem)
+         endif
       elseif((prlab(ii)(1:5).eq.'EVOL ').or.
      &        (prlab(ii)(1:5).eq.'EVOLT')) then
          write(5,'(i10,1p,1x,e13.6)') nelem,volume
