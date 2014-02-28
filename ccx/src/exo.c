@@ -84,7 +84,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   nkcoords = *nk;
   int num_nodes = nkcoords;
 
-  
   /* determining nout, noutplus and noutmin 
      nout: number of structural and network nodes
      noutplus: number of structural nodes
@@ -378,7 +377,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     int *connect;
     int num_elem_in_blk;
     int blksize[num_elem_blk];
-    
+
     for(l=0;l<num_elem_blk;l++){
       // First determine the size of the block
       j=0;
@@ -445,43 +444,60 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       switch (l)
 	{
 	case 0:
-	  errr = ex_put_elem_block (exoid, l, "SPHERE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  errr = ex_put_elem_block (exoid, l, "SPHERE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);
+	  break;
 	case 1:
 	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	case 2:
 	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	case 3:
 	  errr = ex_put_elem_block (exoid, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	case 4:
 	  errr = ex_put_elem_block (exoid, l, "QUAD", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	case 5:
 	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	case 6:
 	  errr = ex_put_elem_block (exoid, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	case 7:
 	  errr = ex_put_elem_block (exoid, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	case 8:
 	  errr = ex_put_elem_block (exoid, l, "SHELL", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	case 9:
 	  errr = ex_put_elem_block (exoid, l, "SHELL", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	case 10:
 	  errr = ex_put_elem_block (exoid, l, "TETRA", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	case 11:
 	  errr = ex_put_elem_block (exoid, l, "TETRA", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	case 12:
 	  errr = ex_put_elem_block (exoid, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	case 13:
 	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	case 14:
 	  errr = ex_put_elem_block (exoid, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	case 15:
 	  errr = ex_put_elem_block (exoid, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	default:
 	  // case 16:
 	  // case 17:
 	  // case 18:
 	  // case 19:
 	  errr = ex_put_elem_block (exoid, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  break;
 	};
 	  
 
