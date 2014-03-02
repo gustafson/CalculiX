@@ -16,53 +16,28 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine add_sm_fl(au,ad,jq,irow,i,j,value,nzs)
+      subroutine extrapolate_ad(nface,ielfa,xrlfa,ad,adfa,nactdoh)
 !
-!     stores the stiffness coefficient (i,j) with value "value"
-!     in the stiffness matrix stored in spare matrix format
+!     inter/extrapolation of ad at the center of the elements
+!     to the center of the faces in the form 1/ad
 !
       implicit none
 !
-      integer jq(*),irow(*),i,j,ii,jj,ipointer,id,nzs,ioffset
-      real*8 ad(*),au(*),value
+      integer nface,ielfa(3,*),ipo1,iel2,ipo3,i,nactdoh(*)
 !
-      if(i.eq.j) then
-         ad(i)=ad(i)+value
-         return
-      elseif(i.gt.j) then
-         ioffset=0
-         ii=i
-         jj=j
-      else
-         ioffset=nzs
-         ii=j
-         jj=i
-      endif
+      real*8 xrlfa(3,*),xl1,adfa(*),ad(*)
 !
-      call nident(irow(jq(jj)),ii,jq(jj+1)-jq(jj),id)
-!
-      ipointer=jq(jj)+id-1
-!
-      if(irow(ipointer).ne.ii) then
-         write(*,*) '*ERROR in add_sm_fl: coefficient should be 0'
-         stop
-      else
-         ipointer=ipointer+ioffset
-         au(ipointer)=au(ipointer)+value
-      endif
-!
+      do i=1,nface
+         ipo1=nactdoh(ielfa(1,i))
+         xl1=xrlfa(1,i)
+         iel2=ielfa(2,i)
+         if(iel2.gt.0) then
+            adfa(i)=xl1/ad(ipo1)+xrlfa(2,i)/ad(nactdoh(iel2))
+         else
+            ipo3=nactdoh(ielfa(3,i))
+            adfa(i)=xl1/ad(ipo1)+xrlfa(3,i)/ad(ipo3)
+         endif
+      enddo
+!            
       return
       end
-
-
-
-
-
-
-
-
-
-
-
-
-

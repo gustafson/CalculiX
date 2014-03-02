@@ -21,22 +21,22 @@
 #include <string.h>
 #include "CalculiX.h"
 
-void remastruct(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
-              int *mpcfree, int *nodeboun, int *ndirboun, int *nboun,
-              int *ikmpc, int *ilmpc, int *ikboun, int *ilboun,
-              char *labmpc, int *nk,
-              int *memmpc_, int *icascade, int *maxlenmpc,
-              int *kon, int *ipkon, char *lakon, int *ne,
-              int *nactdof, int *icol, int *jq, int **irowp, int *isolver,
-              int *neq, int *nzs,int *nmethod, double **fp,
+void remastruct(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
+              ITG *mpcfree, ITG *nodeboun, ITG *ndirboun, ITG *nboun,
+              ITG *ikmpc, ITG *ilmpc, ITG *ikboun, ITG *ilboun,
+              char *labmpc, ITG *nk,
+              ITG *memmpc_, ITG *icascade, ITG *maxlenmpc,
+              ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
+              ITG *nactdof, ITG *icol, ITG *jq, ITG **irowp, ITG *isolver,
+              ITG *neq, ITG *nzs,ITG *nmethod, double **fp,
               double **fextp, double **bp, double **aux2p, double **finip,
-              double **fextinip,double **adbp, double **aubp, int *ithermal,
-	      int *iperturb, int *mass, int *mi,int *iexpl,int *mortar){
+              double **fextinip,double **adbp, double **aubp, ITG *ithermal,
+	      ITG *iperturb, ITG *mass, ITG *mi,ITG *iexpl,ITG *mortar){
 
     /* reconstructs the nonzero locations in the stiffness and mass
        matrix after a change in MPC's */
 
-    int *nodempc=NULL,*mast1=NULL,*ipointer=NULL,mpcend,mpcmult,
+    ITG *nodempc=NULL,*mast1=NULL,*ipointer=NULL,mpcend,mpcmult,
         callfrommain,i,*irow=NULL,mt;
 
     double *coefmpc=NULL,*f=NULL,*fext=NULL,*b=NULL,*aux2=NULL,
@@ -64,9 +64,9 @@ void remastruct(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
     printf(" Determining the structure of the matrix:\n");
  
     if(nzs[1]<10) nzs[1]=10;   
-    mast1=NNEW(int,nzs[1]);
-    ipointer=NNEW(int,mt**nk);
-    RENEW(irow,int,nzs[1]);for(i=0;i<nzs[1];i++) irow[i]=0;
+    mast1=NNEW(ITG,nzs[1]);
+    ipointer=NNEW(ITG,mt**nk);
+    RENEW(irow,ITG,nzs[1]);for(i=0;i<nzs[1];i++) irow[i]=0;
     
     mastruct(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,ipompc,
 	     nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,neq,
@@ -74,7 +74,7 @@ void remastruct(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
              ikboun,ilboun,iperturb,mi,mortar);
 
     free(ipointer);free(mast1);
-    RENEW(irow,int,nzs[2]);
+    RENEW(irow,ITG,nzs[2]);
     
     *nodempcp=nodempc;*coefmpcp=coefmpc;*irowp=irow;
 

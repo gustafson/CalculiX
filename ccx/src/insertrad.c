@@ -21,8 +21,8 @@
 #include <string.h>
 #include "CalculiX.h"
 
-void insertrad(int *ipointer, int **irowp, int **nextp, int *i1,
-	    int *i2, int *ifree, int *nzs_){
+void insertrad(ITG *ipointer, ITG **irowp, ITG **nextp, ITG *i1,
+	    ITG *i2, ITG *ifree, ITG *nzs_){
 
   /*   inserts a new nonzero matrix position into the data structure 
        in FORTRAN notation: 
@@ -39,16 +39,16 @@ void insertrad(int *ipointer, int **irowp, int **nextp, int *i1,
        notice that in C the positions start at 0 and not at 1 as in 
        FORTRAN; the present routine is written in FORTRAN convention */
 
-  int *irow=NULL,*next=NULL;
+  ITG *irow=NULL,*next=NULL;
 
   irow=*irowp;
   next=*nextp;
 
   ++*ifree;
   if(*ifree>*nzs_){
-      *nzs_=(int)(1.1**nzs_);
-      RENEW(irow,int,*nzs_);
-      RENEW(next,int,*nzs_);
+      *nzs_=(ITG)(1.1**nzs_);
+      RENEW(irow,ITG,*nzs_);
+      RENEW(next,ITG,*nzs_);
   }
   
   irow[*ifree-1]=*i2;

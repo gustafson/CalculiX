@@ -15,22 +15,21 @@
 /*     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.         */
 
 void pardiso_main(double *ad, double *au, double *adb, double *aub, double *sigma,
-         double *b, int *icol, int *irow, 
-	 int *neq, int *nzs,int *symmetryflag,int *inputformat,int *jq,int *nzs3);
+         double *b, ITG *icol, ITG *irow, 
+	 ITG *neq, ITG *nzs,ITG *symmetryflag,ITG *inputformat,ITG *jq,ITG *nzs3);
 
 void pardiso_factor(double *ad, double *au, double *adb, double *aub, 
-                double *sigma,int *icol, int *irow, 
-		int *neq, int *nzs,int *symmetryflag,int *inputformat,
-		int *jq,int *nzs3);
+                double *sigma,ITG *icol, ITG *irow, 
+		ITG *neq, ITG *nzs,ITG *symmetryflag,ITG *inputformat,
+		ITG *jq,ITG *nzs3);
 
-void pardiso_solve(double *b,int *neq,int *symmetryflag);
+void pardiso_solve(double *b,ITG *neq,ITG *symmetryflag);
 
-void pardiso_cleanup(int *neq,int *symmetryflag);
+void pardiso_cleanup(ITG *neq,ITG *symmetryflag);
 
-void FORTRAN(pardiso,(long long *pt,int *maxfct,int *mnum,int *mtype,int *phase,
-                   int *neq,double *aupardiso,int *pointers,int *irowpardiso,
-                   int *perm,int *nrhs,int *iparm,int *msglvl,double *b,
-                   double *x,int *error));
+void FORTRAN(pardiso,(long long *pt,ITG *maxfct,ITG *mnum,ITG *mtype,ITG *phase,
+                   ITG *neq,double *aupardiso,ITG *pointers,ITG *irowpardiso,
+                   ITG *perm,ITG *nrhs,ITG *iparm,ITG *msglvl,double *b,
+                   double *x,ITG *error));
 
-
-
+char envMKL[32];

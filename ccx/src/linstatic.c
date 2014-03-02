@@ -32,44 +32,44 @@
    #include "pardiso.h"
 #endif
 
-void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
-	     int *ne, 
-	     int *nodeboun, int *ndirboun, double *xboun, int *nboun, 
-	     int *ipompc, int *nodempc, double *coefmpc, char *labmpc,
-             int *nmpc, 
-	     int *nodeforc, int *ndirforc,double *xforc, int *nforc, 
-	     int *nelemload, char *sideload, double *xload,
-	     int *nload, int *nactdof, 
-	     int **icolp, int *jq, int **irowp, int *neq, int *nzl, 
-	     int *nmethod, int *ikmpc, int *ilmpc, int *ikboun, 
-	     int *ilboun,
-	     double *elcon, int *nelcon, double *rhcon, int *nrhcon,
-	     double *alcon, int *nalcon, double *alzero, int *ielmat,
-	     int *ielorien, int *norien, double *orab, int *ntmat_,
+void linstatic(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
+	     ITG *ne, 
+	     ITG *nodeboun, ITG *ndirboun, double *xboun, ITG *nboun, 
+	     ITG *ipompc, ITG *nodempc, double *coefmpc, char *labmpc,
+             ITG *nmpc, 
+	     ITG *nodeforc, ITG *ndirforc,double *xforc, ITG *nforc, 
+	     ITG *nelemload, char *sideload, double *xload,
+	     ITG *nload, ITG *nactdof, 
+	     ITG **icolp, ITG *jq, ITG **irowp, ITG *neq, ITG *nzl, 
+	     ITG *nmethod, ITG *ikmpc, ITG *ilmpc, ITG *ikboun, 
+	     ITG *ilboun,
+	     double *elcon, ITG *nelcon, double *rhcon, ITG *nrhcon,
+	     double *alcon, ITG *nalcon, double *alzero, ITG *ielmat,
+	     ITG *ielorien, ITG *norien, double *orab, ITG *ntmat_,
 	     double *t0, double *t1, double *t1old,
-	     int *ithermal,double *prestr, int *iprestr, 
-	     double *vold,int *iperturb, double *sti, int *nzs,  
-	     int *kode, char *filab, double *eme,
-             int *iexpl, double *plicon, int *nplicon, double *plkcon,
-             int *nplkcon,
-             double *xstate, int *npmat_, char *matname, int *isolver,
-             int *mi, int *ncmat_, int *nstate_, double *cs, int *mcs,
-             int *nkon, double *ener, double *xbounold,
+	     ITG *ithermal,double *prestr, ITG *iprestr, 
+	     double *vold,ITG *iperturb, double *sti, ITG *nzs,  
+	     ITG *kode, char *filab, double *eme,
+             ITG *iexpl, double *plicon, ITG *nplicon, double *plkcon,
+             ITG *nplkcon,
+             double *xstate, ITG *npmat_, char *matname, ITG *isolver,
+             ITG *mi, ITG *ncmat_, ITG *nstate_, double *cs, ITG *mcs,
+             ITG *nkon, double *ener, double *xbounold,
 	     double *xforcold, double *xloadold,
-             char *amname, double *amta, int *namta,
-	     int *nam, int *iamforc, int *iamload,
-             int *iamt1, int *iamboun, double *ttime, char *output, 
-             char *set, int *nset, int *istartset,
-             int *iendset, int *ialset, int *nprint, char *prlab,
-             char *prset, int *nener, double *trab, 
-             int *inotr, int *ntrans, double *fmpc, char *cbody, int *ibody,
-	     double *xbody, int *nbody, double *xbodyold, double *tper,
-	     double *thicke, char *jobnamec,char *tieset,int *ntie,
-             int *istep){
+             char *amname, double *amta, ITG *namta,
+	     ITG *nam, ITG *iamforc, ITG *iamload,
+             ITG *iamt1, ITG *iamboun, double *ttime, char *output, 
+             char *set, ITG *nset, ITG *istartset,
+             ITG *iendset, ITG *ialset, ITG *nprint, char *prlab,
+             char *prset, ITG *nener, double *trab, 
+             ITG *inotr, ITG *ntrans, double *fmpc, char *cbody, ITG *ibody,
+	     double *xbody, ITG *nbody, double *xbodyold, double *tper,
+	     double *thicke, char *jobnamec,char *tieset,ITG *ntie,
+             ITG *istep){
   
   char description[13]="            ";
 
-  int *inum=NULL,k,*icol=NULL,*irow=NULL,ielas,icmd=0,iinc=1,nasym=0,
+  ITG *inum=NULL,k,*icol=NULL,*irow=NULL,ielas,icmd=0,iinc=1,nasym=0,
       mass[2]={0,0}, stiffness=1, buckling=0, rhsi=1, intscheme=0,*ncocon=NULL,
       *nshcon=NULL,mode=-1,noddiam=-1,*ipobody=NULL,inewton=0,coriolis=0,iout,
       ifreebody,*itg=NULL,ntg=0,symmetryflag=0,inputformat=0,ngraph=1,
@@ -89,7 +89,7 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
          *adb=NULL,*pslavsurf=NULL,*pmastsurf=NULL,*cdn=NULL,*cdnr=NULL,*cdni=NULL;
 
 #ifdef SGI
-  int token;
+  ITG token;
 #endif
 
   /* dummy arguments for the results call */
@@ -128,13 +128,13 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
   if(*nbody>0){
       ifreebody=*ne+1;
-      ipobody=NNEW(int,2*ifreebody**nbody);
+      ipobody=NNEW(ITG,2*ifreebody**nbody);
       for(k=1;k<=*nbody;k++){
 	  FORTRAN(bodyforce,(cbody,ibody,ipobody,nbody,set,istartset,
 			     iendset,ialset,&inewton,nset,&ifreebody,&k));
-	  RENEW(ipobody,int,2*(*ne+ifreebody));
+	  RENEW(ipobody,ITG,2*(*ne+ifreebody));
       }
-      RENEW(ipobody,int,2*(ifreebody-1));
+      RENEW(ipobody,ITG,2*(ifreebody-1));
   }
 
   /* allocating a field for the instantaneous amplitude */
@@ -163,7 +163,7 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
   v=NNEW(double,mt**nk);
   fn=NNEW(double,mt**nk);
   stx=NNEW(double,6*mi[0]**ne);
-  inum=NNEW(int,*nk);
+  inum=NNEW(ITG,*nk);
   results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	  elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
 	  ielorien,norien,orab,ntmat_,t0,t1act,ithermal,
@@ -263,7 +263,7 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     v=NNEW(double,mt**nk);
     fn=NNEW(double,mt**nk);
     stn=NNEW(double,6**nk);
-    inum=NNEW(int,*nk);
+    inum=NNEW(ITG,*nk);
     stx=NNEW(double,6*mi[0]**ne);
   
     if(strcmp1(&filab[261],"E   ")==0) een=NNEW(double,6**nk);
@@ -319,7 +319,7 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     }
     else{
 	if(strcmp1(&filab[1044],"ZZS")==0){
-	    neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
+	    neigh=NNEW(ITG,40**ne);ipneigh=NNEW(ITG,*nk);
 	}
 	ptime=*ttime+time;
 	frd(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,
@@ -345,9 +345,9 @@ void linstatic(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     /* error occurred in mafill: storing the geometry in frd format */
 
     ++*kode;
-    inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
+    inum=NNEW(ITG,*nk);for(k=0;k<*nk;k++) inum[k]=1;
     if(strcmp1(&filab[1044],"ZZS")==0){
-	neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
+	neigh=NNEW(ITG,40**ne);ipneigh=NNEW(ITG,*nk);
     }
     ptime=*ttime+time;
     frd(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,

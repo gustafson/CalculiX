@@ -30,7 +30,7 @@
 #include "CalculiX.h"
 
 #ifdef CALCULIX_MPI
-int myid = 0, nproc = 0;
+ITG myid = 0, nproc = 0;
 #endif
 
 int main(int argc,char *argv[])
@@ -38,7 +38,7 @@ int main(int argc,char *argv[])
   
 FILE *f1;
   
-int *kon=NULL, *nodeboun=NULL, *ndirboun=NULL, *ipompc=NULL,
+ITG *kon=NULL, *nodeboun=NULL, *ndirboun=NULL, *ipompc=NULL,
 	*nodempc=NULL, *nodeforc=NULL, *ndirforc=NULL,
         *nelemload=NULL,im,*inodesd=NULL,nload1,*idefforc=NULL,
 	*nactdof=NULL, *icol=NULL,*ics=NULL,
@@ -73,7 +73,7 @@ char *sideload=NULL, *set=NULL, *matname=NULL, *orname=NULL, *amname=NULL,
      *inpc=NULL,*tieset=NULL,*cbody=NULL,fneig[132]="",*sideloadtemp=NULL,
      kind1[2]="T",kind2[2]="T";
     
-int nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,nentries=15,
+ITG nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,nentries=15,
   nmethod,neq[3]={0,0,0},i,mpcfree=1,mei[4],j,nzl,nam,nbounold=0,
   nforcold=0,nloadold=0,nbody,nbody_=0,nbodyold=0,network=0,
   k,nzs[3],nmpc_=0,nload_=0,nforc_=0,istep,istat,nboun_=0,nintpoint=0,
@@ -86,9 +86,9 @@ int nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,nentries=15,
   nline,ipoinp[2*nentries],*inp=NULL,ntie,ntie_=0,mcs=0,nprop_=0,
   nprop=0,itpamp=0,iviewfile,nkold,nevdamp_=0,npt_=0,cyclicsymmetry;
 
-int *meminset=NULL,*rmeminset=NULL;
+ITG *meminset=NULL,*rmeminset=NULL;
 
-int nzs_,nk_=0,ne_=0,nset_=0,nalset_=0,nmat_=0,norien_=0,nam_=0,
+ITG nzs_,nk_=0,ne_=0,nset_=0,nalset_=0,nmat_=0,norien_=0,nam_=0,
     ntrans_=0,ncs_=0,nstate_=0,ncmat_=0,memmpc_=0,nprint_=0;
 
 double fei[3],tinc,tper,tmin,tmax,*xmodal=NULL,
@@ -119,7 +119,7 @@ else{
 }
 
 #ifdef BAM
-int lop=0,lrestart=0,kstep=1,kinc=1;
+ITG lop=0,lrestart=0,kstep=1,kinc=1;
 double time[2],dtime;
 FORTRAN(uexternaldb,(&lop,&lrestart,time,&dtime,&kstep,&kinc));
 #endif
@@ -132,7 +132,7 @@ printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
 printf("************************************************************\n\n");
-printf("You are using an executable made on So 23. Feb 13:14:40 CET 2014\n");
+printf("You are using an executable made on So 2. Mär 15:36:03 CET 2014\n");
 fflush(stdout);
 
 istep=0;
@@ -159,8 +159,8 @@ kode=0;
 readinput(jobnamec,&inpc,&nline,&nset_,ipoinp,&inp,&ipoinpc,ithermal); 
 
 set=NNEW(char,81*nset_);
-meminset=NNEW(int,nset_);
-rmeminset=NNEW(int,nset_);
+meminset=NNEW(ITG,nset_);
+rmeminset=NNEW(ITG,nset_);
 
 FORTRAN(allocation,(&nload_,&nforc_,&nboun_,&nk_,&ne_,&nmpc_,&nset_,&nalset_,
    &nmat_,&ntmat_,&npmat_,&norien_,&nam_,&nprint_,mi,&ntrans_,
@@ -208,14 +208,14 @@ while(istat>=0) {
     /* coordinates and topology */
 
     co=NNEW(double,3*nk_);
-    kon=NNEW(int,nkon_);
-    ipkon=NNEW(int,ne_);
+    kon=NNEW(ITG,nkon_);
+    ipkon=NNEW(ITG,ne_);
     lakon=NNEW(char,8*ne_);
 
     /* property cards */
 
     if(nprop_>0){
-	ielprop=NNEW(int,ne_);
+	ielprop=NNEW(ITG,ne_);
 	for(i=0;i<ne_;i++) ielprop[i]=-1;
 	prop=NNEW(double,nprop_);
     }
@@ -223,64 +223,64 @@ while(istat>=0) {
     /* fields for 1-D and 2-D elements */
 
     if((ne1d!=0)||(ne2d!=0)){
-	iponor=NNEW(int,2*nkon_);
+	iponor=NNEW(ITG,2*nkon_);
 	for(i=0;i<2*nkon_;i++) iponor[i]=-1;
 	xnor=NNEW(double,36*ne1d+24*ne2d);
-	knor=NNEW(int,24*(ne1d+ne2d)*(mi[2]+1));
+	knor=NNEW(ITG,24*(ne1d+ne2d)*(mi[2]+1));
 	thickn=NNEW(double,2*nk_);
 	thicke=NNEW(double,mi[2]*nkon_);
 	offset=NNEW(double,2*ne_);
-	iponoel=NNEW(int,nk_);
-	inoel=NNEW(int,9*ne1d+24*ne2d);
-	rig=NNEW(int,nk_);
+	iponoel=NNEW(ITG,nk_);
+	inoel=NNEW(ITG,9*ne1d+24*ne2d);
+	rig=NNEW(ITG,nk_);
 	infree[2]=1;
     }
 
     /* SPC's */
 
-    nodeboun=NNEW(int,nboun_);
-    ndirboun=NNEW(int,nboun_);
+    nodeboun=NNEW(ITG,nboun_);
+    ndirboun=NNEW(ITG,nboun_);
     typeboun=NNEW(char,nboun_);
-    if((istep == 0)||((irstrt<0)&&(nam_>0)))iamboun=NNEW(int,nboun_);
+    if((istep == 0)||((irstrt<0)&&(nam_>0)))iamboun=NNEW(ITG,nboun_);
     xboun=NNEW(double,nboun_);
-    ikboun=NNEW(int,nboun_);
-    ilboun=NNEW(int,nboun_);
+    ikboun=NNEW(ITG,nboun_);
+    ilboun=NNEW(ITG,nboun_);
 
     /* MPC's */
 
-    ipompc=NNEW(int,nmpc_);
-    nodempc=NNEW(int,3*memmpc_);
+    ipompc=NNEW(ITG,nmpc_);
+    nodempc=NNEW(ITG,3*memmpc_);
     for(i=0;i<3*memmpc_;i+=3){nodempc[i+2]=i/3+2;}
     nodempc[3*memmpc_-1]=0;
     coefmpc=NNEW(double,memmpc_);
     labmpc=NNEW(char,20*nmpc_+1);
-    ikmpc=NNEW(int,nmpc_);
-    ilmpc=NNEW(int,nmpc_);
+    ikmpc=NNEW(ITG,nmpc_);
+    ilmpc=NNEW(ITG,nmpc_);
     fmpc=NNEW(double,nmpc_);
 
     /* nodal loads */
 
-    nodeforc=NNEW(int,2*nforc_);
-    ndirforc=NNEW(int,nforc_);
-    if((istep == 0)||((irstrt<0)&&(nam_>0)))iamforc=NNEW(int,nforc_);
-    idefforc=NNEW(int,nforc_);
+    nodeforc=NNEW(ITG,2*nforc_);
+    ndirforc=NNEW(ITG,nforc_);
+    if((istep == 0)||((irstrt<0)&&(nam_>0)))iamforc=NNEW(ITG,nforc_);
+    idefforc=NNEW(ITG,nforc_);
     xforc=NNEW(double,nforc_);
-    ikforc=NNEW(int,nforc_);
-    ilforc=NNEW(int,nforc_);
+    ikforc=NNEW(ITG,nforc_);
+    ilforc=NNEW(ITG,nforc_);
 
     /* distributed facial loads */
 
-    nelemload=NNEW(int,2*nload_);
-    if((istep == 0)||((irstrt<0)&&(nam_>0)))iamload=NNEW(int,2*nload_);
-    idefload=NNEW(int,nload_);
+    nelemload=NNEW(ITG,2*nload_);
+    if((istep == 0)||((irstrt<0)&&(nam_>0)))iamload=NNEW(ITG,2*nload_);
+    idefload=NNEW(ITG,nload_);
     sideload=NNEW(char,20*nload_);
     xload=NNEW(double,2*nload_);
 
     /* distributed volumetric loads */
 
     cbody=NNEW(char,81*nbody_);
-    idefbody=NNEW(int,nbody_);
-    ibody=NNEW(int,3*nbody_);
+    idefbody=NNEW(ITG,nbody_);
+    ibody=NNEW(ITG,3*nbody_);
     xbody=NNEW(double,7*nbody_);
     xbodyold=NNEW(double,7*nbody_);
 
@@ -292,43 +292,43 @@ while(istat>=0) {
     /* set definitions */
 
     set=NNEW(char,81*nset);
-    istartset=NNEW(int,nset);
-    iendset=NNEW(int,nset);
-    ialset=NNEW(int,nalset);
+    istartset=NNEW(ITG,nset);
+    iendset=NNEW(ITG,nset);
+    ialset=NNEW(ITG,nalset);
 
     /* (hyper)elastic constants */
 
     elcon=NNEW(double,(ncmat_+1)*ntmat_*nmat);
-    nelcon=NNEW(int,2*nmat);
+    nelcon=NNEW(ITG,2*nmat);
 
     /* density */
 
     rhcon=NNEW(double,2*ntmat_*nmat);
-    nrhcon=NNEW(int,nmat);
+    nrhcon=NNEW(ITG,nmat);
 
     /* specific heat */
 
     shcon=NNEW(double,4*ntmat_*nmat);
-    nshcon=NNEW(int,nmat);
+    nshcon=NNEW(ITG,nmat);
 
     /* thermal expansion coefficients */
 
     alcon=NNEW(double,7*ntmat_*nmat);
-    nalcon=NNEW(int,2*nmat);
+    nalcon=NNEW(ITG,2*nmat);
     alzero=NNEW(double,nmat);
 
     /* conductivity */
 
     cocon=NNEW(double,7*ntmat_*nmat);
-    ncocon=NNEW(int,2*nmat);
+    ncocon=NNEW(ITG,2*nmat);
 
     /* isotropic and kinematic hardening coefficients*/
 
     if(npmat_>0){
 	plicon=NNEW(double,(2*npmat_+1)*ntmat_*nmat);
-	nplicon=NNEW(int,(ntmat_+1)*nmat);
+	nplicon=NNEW(ITG,(ntmat_+1)*nmat);
 	plkcon=NNEW(double,(2*npmat_+1)*ntmat_*nmat);
-	nplkcon=NNEW(int,(ntmat_+1)*nmat);
+	nplkcon=NNEW(ITG,(ntmat_+1)*nmat);
     }
 
     /* linear dynamic properties */
@@ -352,14 +352,14 @@ while(istat>=0) {
     if((istep == 0)||((irstrt<0)&&(norien>0))) {
 	orname=NNEW(char,80*norien);
 	orab=NNEW(double,7*norien);
-	ielorien=NNEW(int,mi[2]*ne_);
+	ielorien=NNEW(ITG,mi[2]*ne_);
     }
 
     /* transformations */
 
     if((istep == 0)||((irstrt<0)&&(ntrans>0))) {
 	trab=NNEW(double,7*ntrans);
-	inotr=NNEW(int,2*nk_);
+	inotr=NNEW(ITG,2*nk_);
     }
 
     /* amplitude definitions */
@@ -367,7 +367,7 @@ while(istat>=0) {
     if((istep == 0)||((irstrt<0)&&(nam_>0))) {
 	amname=NNEW(char,80*nam_);
 	amta=NNEW(double,2*namtot_);
-	namta=NNEW(int,3*nam_);
+	namta=NNEW(ITG,3*nam_);
     }
 
     if((istep == 0)||((irstrt<0)&&(ithermal[0]>0))) {
@@ -388,14 +388,14 @@ while(istat>=0) {
 	DMEMSET(t1,0,nk_,1.2357111319);
     }
     
-    if((istep == 0)||((irstrt<0)&&(ithermal[0]>0)&&(nam_>0)))iamt1=NNEW(int,nk_);
+    if((istep == 0)||((irstrt<0)&&(ithermal[0]>0)&&(nam_>0)))iamt1=NNEW(ITG,nk_);
 
     if((istep==0)||((irstrt<0)&&(iprestr>0)))prestr=NNEW(double,6*mi[0]*ne_);
 
     vold=NNEW(double,mt*nk_);
     veold=NNEW(double,mt*nk_);
 
-    ielmat=NNEW(int,mi[2]*ne_);
+    ielmat=NNEW(ITG,mi[2]*ne_);
 
     matname=NNEW(char,80*nmat);
 
@@ -413,9 +413,9 @@ while(istat>=0) {
 
     if((ncs_>0)||(npt_>0)){
       if(2*npt_>24*ncs_){
-	ics=NNEW(int,2*npt_);
+	ics=NNEW(ITG,2*npt_);
       }else{
-	ics=NNEW(int,24*ncs_);
+	ics=NNEW(ITG,24*ncs_);
       }
       if(npt_>30*ncs_){
 	  dcs=NNEW(double,npt_);
@@ -444,50 +444,50 @@ while(istat>=0) {
 
  /*   if(nmethod != 4){free(accold);}*/
 
-    RENEW(nodeboun,int,nboun_);
-    RENEW(ndirboun,int,nboun_);
+    RENEW(nodeboun,ITG,nboun_);
+    RENEW(ndirboun,ITG,nboun_);
     RENEW(typeboun,char,nboun_);
     RENEW(xboun,double,nboun_);
-    RENEW(ikboun,int,nboun_);
-    RENEW(ilboun,int,nboun_);
+    RENEW(ikboun,ITG,nboun_);
+    RENEW(ilboun,ITG,nboun_);
 
-    RENEW(nodeforc,int,2*nforc_);
-    RENEW(ndirforc,int,nforc_);
-    idefforc=NNEW(int,nforc_);
+    RENEW(nodeforc,ITG,2*nforc_);
+    RENEW(ndirforc,ITG,nforc_);
+    idefforc=NNEW(ITG,nforc_);
     RENEW(xforc,double,nforc_);
-    RENEW(ikforc,int,nforc_);
-    RENEW(ilforc,int,nforc_);
+    RENEW(ikforc,ITG,nforc_);
+    RENEW(ilforc,ITG,nforc_);
 
-    RENEW(nelemload,int,2*nload_);
-    idefload=NNEW(int,nload_);
+    RENEW(nelemload,ITG,2*nload_);
+    idefload=NNEW(ITG,nload_);
     RENEW(sideload,char,20*nload_);
     RENEW(xload,double,2*nload_);
 
     RENEW(cbody,char,81*nbody_);
-    idefbody=NNEW(int,nbody_);
-    RENEW(ibody,int,3*nbody_);
+    idefbody=NNEW(ITG,nbody_);
+    RENEW(ibody,ITG,3*nbody_);
     RENEW(xbody,double,7*nbody_);
     RENEW(xbodyold,double,7*nbody_);
     for(i=7*nbodyold;i<7*nbody_;i++) xbodyold[i]=0;
 
     if(nam > 0) {
-      RENEW(iamforc,int,nforc_);
-      RENEW(iamload,int,2*nload_);
-      RENEW(iamboun,int,nboun_);
+      RENEW(iamforc,ITG,nforc_);
+      RENEW(iamload,ITG,2*nload_);
+      RENEW(iamboun,ITG,nboun_);
       RENEW(amname,char,80*nam_);
       RENEW(amta,double,2*namtot_);
-      RENEW(namta,int,3*nam_);
+      RENEW(namta,ITG,3*nam_);
     }
 
-    RENEW(ipompc,int,nmpc_);
+    RENEW(ipompc,ITG,nmpc_);
 
     RENEW(labmpc,char,20*nmpc_+1);
-    RENEW(ikmpc,int,nmpc_);
-    RENEW(ilmpc,int,nmpc_);
+    RENEW(ikmpc,ITG,nmpc_);
+    RENEW(ilmpc,ITG,nmpc_);
     RENEW(fmpc,double,nmpc_);
 
     if(ntrans > 0){
-      RENEW(inotr,int,2*nk_);DMEMSET(inotr,2*nk,2*nk_,0);
+      RENEW(inotr,ITG,2*nk_);DMEMSET(inotr,2*nk,2*nk_,0);
     }
 
     RENEW(co,double,3*nk_);DMEMSET(co,3*nk,3*nk_,0.);
@@ -499,7 +499,7 @@ while(istat>=0) {
 	    RENEW(t0g,double,2*nk_);DMEMSET(t0g,2*nk,2*nk_,0.);
 	    RENEW(t1g,double,2*nk_);DMEMSET(t1g,2*nk,2*nk_,0.);
 	}
-	if(nam > 0) {RENEW(iamt1,int,nk_);}
+	if(nam > 0) {RENEW(iamt1,ITG,nk_);}
     }
 
   }
@@ -507,8 +507,8 @@ while(istat>=0) {
   /* allocation of fields in the restart file */
 
   if(irstrt<0){
-    nodebounold=NNEW(int,nboun_);
-    ndirbounold=NNEW(int,nboun_);
+    nodebounold=NNEW(ITG,nboun_);
+    ndirbounold=NNEW(ITG,nboun_);
     xbounold=NNEW(double,nboun_);
     xforcold=NNEW(double,nforc_);
     xloadold=NNEW(double,2*nload_);
@@ -518,7 +518,7 @@ while(istat>=0) {
     if(nener==1)ener=NNEW(double,mi[0]*ne*2);
     if(mcs>ntie_) RENEW(cs,double,17*mcs);
     if(mortar==1){
-	islavsurf=NNEW(int,2*ifacecount+2);
+	islavsurf=NNEW(ITG,2*ifacecount+2);
 	pslavsurf=NNEW(double,3*nintpoint);
 	clearini=NNEW(double,3*9*nslavs);
     }
@@ -534,7 +534,7 @@ while(istat>=0) {
   strcat(fneig,".eig");
   cyclicsymmetry=0;
   if((f1=fopen(fneig,"rb"))!=NULL){
-      if(fread(&cyclicsymmetry,sizeof(int),1,f1)!=1){
+      if(fread(&cyclicsymmetry,sizeof(ITG),1,f1)!=1){
 	  printf("*ERROR reading the information whether cyclic symmetry is involved in the eigenvalue file");
 	  exit(0);
       }
@@ -624,8 +624,8 @@ while(istat>=0) {
 	free(prestr);
     }
 
-    nodebounold=NNEW(int,nboun);
-    ndirbounold=NNEW(int,nboun);
+    nodebounold=NNEW(ITG,nboun);
+    ndirbounold=NNEW(ITG,nboun);
     xbounold=NNEW(double,nboun);
     xforcold=NNEW(double,nforc);
     xloadold=NNEW(double,2*nload);
@@ -649,14 +649,14 @@ while(istat>=0) {
 
     /* element definition */
 
-    RENEW(kon,int,nkon);
-    RENEW(ipkon,int,ne);
+    RENEW(kon,ITG,nkon);
+    RENEW(ipkon,ITG,ne);
     RENEW(lakon,char,8*ne);
 
     /* property cards */
 
     if(nprop>0){
-	RENEW(ielprop,int,ne);
+	RENEW(ielprop,ITG,ne);
 	RENEW(prop,double,nprop);
     }else{
 	free(ielprop);free(prop);
@@ -665,44 +665,44 @@ while(istat>=0) {
     /* fields for 1-D and 2-D elements */
 
     if((ne1d!=0)||(ne2d!=0)){
-	RENEW(iponor,int,2*nkon);
+	RENEW(iponor,ITG,2*nkon);
 	RENEW(xnor,double,infree[0]);
-	RENEW(knor,int,infree[1]);
+	RENEW(knor,ITG,infree[1]);
 	free(thickn);
 	RENEW(thicke,double,mi[2]*nkon);
 	RENEW(offset,double,2*ne);
-	RENEW(inoel,int,3*(infree[2]-1));
-	RENEW(iponoel,int,infree[3]);
-	RENEW(rig,int,infree[3]);
+	RENEW(inoel,ITG,3*(infree[2]-1));
+	RENEW(iponoel,ITG,infree[3]);
+	RENEW(rig,ITG,infree[3]);
     }
 
     /* set definitions */ 
 
     RENEW(set,char,81*nset);
-    RENEW(istartset,int,nset);
-    RENEW(iendset,int,nset);
-    RENEW(ialset,int,nalset);
+    RENEW(istartset,ITG,nset);
+    RENEW(iendset,ITG,nset);
+    RENEW(ialset,ITG,nalset);
 
     /* material properties */
 
     RENEW(elcon,double,(ncmat_+1)*ntmat_*nmat);
-    RENEW(nelcon,int,2*nmat);
+    RENEW(nelcon,ITG,2*nmat);
 
     RENEW(rhcon,double,2*ntmat_*nmat);
-    RENEW(nrhcon,int,nmat);
+    RENEW(nrhcon,ITG,nmat);
 
     RENEW(shcon,double,4*ntmat_*nmat);
-    RENEW(nshcon,int,nmat);
+    RENEW(nshcon,ITG,nmat);
 
     RENEW(cocon,double,7*ntmat_*nmat);
-    RENEW(ncocon,int,2*nmat);
+    RENEW(ncocon,ITG,2*nmat);
 
     RENEW(alcon,double,7*ntmat_*nmat);
-    RENEW(nalcon,int,2*nmat);
+    RENEW(nalcon,ITG,2*nmat);
     RENEW(alzero,double,nmat);
 
     RENEW(matname,char,80*nmat);
-    RENEW(ielmat,int,mi[2]*ne);
+    RENEW(ielmat,ITG,mi[2]*ne);
 
     /* allocating space for the state variables */
 
@@ -718,16 +718,16 @@ while(istat>=0) {
 
     if(npmat_>0){
 	RENEW(plicon,double,(2*npmat_+1)*ntmat_*nmat);
-	RENEW(nplicon,int,(ntmat_+1)*nmat);
+	RENEW(nplicon,ITG,(ntmat_+1)*nmat);
 	RENEW(plkcon,double,(2*npmat_+1)*ntmat_*nmat);
-	RENEW(nplkcon,int,(ntmat_+1)*nmat);
+	RENEW(nplkcon,ITG,(ntmat_+1)*nmat);
     }
 
     /* material orientation */
 
     if(norien > 0) {
       RENEW(orname,char,80*norien);
-      RENEW(ielorien,int,mi[2]*ne);
+      RENEW(ielorien,ITG,mi[2]*ne);
       RENEW(orab,double,7*norien);
     }
     else {
@@ -740,7 +740,7 @@ while(istat>=0) {
 
     if(nam > 0) {
       RENEW(amname,char,80*nam);
-      RENEW(namta,int,3*nam);
+      RENEW(namta,ITG,3*nam);
       RENEW(amta,double,2*namta[3*nam-2]);
     }
     else {
@@ -761,7 +761,7 @@ while(istat>=0) {
     if((ithermal[0] == 0)||(nam<=0)){free(iamt1);}
 
     if(ncs_>0){
-      RENEW(ics,int,ncs_);
+      RENEW(ics,ITG,ncs_);
       free(dcs);
     }else if(npt_>0){free(ics);}
 
@@ -784,18 +784,18 @@ while(istat>=0) {
        a removed SPC constraint does not have a numerical value any more) */
        
     reorder=NNEW(double,nboun);
-    nreorder=NNEW(int,nboun);
+    nreorder=NNEW(ITG,nboun);
     if(nbounold<nboun){
       RENEW(xbounold,double,nboun);
-      RENEW(nodebounold,int,nboun);
-      RENEW(ndirbounold,int,nboun);
+      RENEW(nodebounold,ITG,nboun);
+      RENEW(ndirbounold,ITG,nboun);
     }
     FORTRAN(spcmatch,(xboun,nodeboun,ndirboun,&nboun,xbounold,nodebounold,
 		      ndirbounold,&nbounold,ikboun,ilboun,vold,reorder,nreorder,
                       mi));
     RENEW(xbounold,double,nboun);
-    RENEW(nodebounold,int,nboun);
-    RENEW(ndirbounold,int,nboun);
+    RENEW(nodebounold,ITG,nboun);
+    RENEW(ndirbounold,ITG,nboun);
     free(reorder); free(nreorder);
 
     /* for additional forces or loads in the present step, the
@@ -814,7 +814,7 @@ while(istat>=0) {
 
     if(nam > 0) {
       RENEW(amname,char,80*nam);
-      RENEW(namta,int,3*nam);
+      RENEW(namta,ITG,3*nam);
       RENEW(amta,double,2*namta[3*nam-2]);
     }
     
@@ -824,18 +824,18 @@ while(istat>=0) {
 
   RENEW(co,double,3*nk);
 
-  RENEW(nodeboun,int,nboun);
-  RENEW(ndirboun,int,nboun);
+  RENEW(nodeboun,ITG,nboun);
+  RENEW(ndirboun,ITG,nboun);
   RENEW(typeboun,char,nboun);
   RENEW(xboun,double,nboun);
-  RENEW(ikboun,int,nboun);
-  RENEW(ilboun,int,nboun);
+  RENEW(ikboun,ITG,nboun);
+  RENEW(ilboun,ITG,nboun);
     
-  RENEW(nodeforc,int,2*nforc);
-  RENEW(ndirforc,int,nforc);
+  RENEW(nodeforc,ITG,2*nforc);
+  RENEW(ndirforc,ITG,nforc);
   RENEW(xforc,double,nforc);
-  RENEW(ikforc,int,nforc);
-  RENEW(ilforc,int,nforc);
+  RENEW(ikforc,ITG,nforc);
+  RENEW(ilforc,ITG,nforc);
 
   /* temperature loading */
   
@@ -846,22 +846,22 @@ while(istat>=0) {
 	  RENEW(t0g,double,2*nk);
 	  RENEW(t1g,double,2*nk);
       }
-      if(nam > 0) {RENEW(iamt1,int,nk);}
+      if(nam > 0) {RENEW(iamt1,ITG,nk);}
   }
 
-  RENEW(nelemload,int,2*nload);
+  RENEW(nelemload,ITG,2*nload);
   RENEW(sideload,char,20*nload);
   RENEW(xload,double,2*nload);
 
   RENEW(cbody,char,81*nbody);
-  RENEW(ibody,int,3*nbody);
+  RENEW(ibody,ITG,3*nbody);
   RENEW(xbody,double,7*nbody);
   RENEW(xbodyold,double,7*nbody);
 
-  RENEW(ipompc,int,nmpc);
+  RENEW(ipompc,ITG,nmpc);
   RENEW(labmpc,char,20*nmpc+1);
-  RENEW(ikmpc,int,nmpc);
-  RENEW(ilmpc,int,nmpc);
+  RENEW(ikmpc,ITG,nmpc);
+  RENEW(ilmpc,ITG,nmpc);
   RENEW(fmpc,double,nmpc);
 
   /* energy */
@@ -888,50 +888,50 @@ while(istat>=0) {
     }
 
   if(nam > 0) {
-    RENEW(iamforc,int,nforc);
-    RENEW(iamload,int,2*nload);
-    RENEW(iamboun,int,nboun);
+    RENEW(iamforc,ITG,nforc);
+    RENEW(iamload,ITG,2*nload);
+    RENEW(iamboun,ITG,nboun);
   }
 
   /* generate force convection elements */
 
   if(network==1){
       ne0=ne;nkon0=nkon;nload1=nload;
-      RENEW(ipkon,int,ne+nload);
+      RENEW(ipkon,ITG,ne+nload);
       RENEW(lakon,char,8*(ne+nload));
-      RENEW(kon,int,nkon+9*nload);
-      inodesd=NNEW(int,nk);
-      RENEW(nelemload,int,4*nload);
+      RENEW(kon,ITG,nkon+9*nload);
+      inodesd=NNEW(ITG,nk);
+      RENEW(nelemload,ITG,4*nload);
       RENEW(sideload,char,40*nload);
       
       FORTRAN(genadvecelem,(inodesd,ipkon,&ne,lakon,kon,&nload,
 			    sideload,nelemload,&nkon));
       
       free(inodesd);
-      RENEW(ipkon,int,ne);
+      RENEW(ipkon,ITG,ne);
       RENEW(lakon,char,8*ne);
-      RENEW(kon,int,nkon);
+      RENEW(kon,ITG,nkon);
       RENEW(sti,double,6*mi[0]*ne);
       RENEW(eme,double,6*mi[0]*ne);
       if(iprestr>0) RENEW(prestr,double,6*mi[0]*ne);
-      if(nprop>0) RENEW(ielprop,int,ne);
+      if(nprop>0) RENEW(ielprop,ITG,ne);
       if((ne1d!=0)||(ne2d!=0)) RENEW(offset,double,2*ne);
-      RENEW(nelemload,int,2*nload);
+      RENEW(nelemload,ITG,2*nload);
       RENEW(sideload,char,20*nload);
       RENEW(xload,double,2*nload);
       RENEW(xloadold,double,2*nload);
       if(nam>0){
-	  RENEW(iamload,int,2*nload);
+	  RENEW(iamload,ITG,2*nload);
 	  for(i=2*nload1;i<2*nload;i++)iamload[i]=0;
       }
       if(nener==1)RENEW(ener,double,mi[0]*ne*2);
-      if(norien>0)RENEW(ielorien,int,mi[2]*ne);
-      RENEW(ielmat,int,mi[2]*ne);
+      if(norien>0)RENEW(ielorien,ITG,mi[2]*ne);
+      RENEW(ielmat,ITG,mi[2]*ne);
       for(i=mi[2]*ne0;i<mi[2]*ne;i++)ielmat[i]=1;
   }
 
   if(ntrans > 0){
-    RENEW(inotr,int,2*nk);
+    RENEW(inotr,ITG,2*nk);
   }
   
   /*   calling the user routine ufaceload (can be empty) */
@@ -970,15 +970,15 @@ while(istat>=0) {
   
   if((icascade==0)&&(nmethod<8)) printf(" Determining the structure of the matrix:\n");
   
-  nactdof=NNEW(int,mt*nk);  
-  mast1=NNEW(int,nzs[1]);
-  irow=NNEW(int,nzs[1]);
+  nactdof=NNEW(ITG,mt*nk);  
+  mast1=NNEW(ITG,nzs[1]);
+  irow=NNEW(ITG,nzs[1]);
   
   if((mcs==0)||(cs[1]<0)){
       
-      icol=NNEW(int,mt*nk);
-      jq=NNEW(int,mt*nk+1);
-      ipointer=NNEW(int,mt*nk);
+      icol=NNEW(ITG,mt*nk);
+      jq=NNEW(ITG,mt*nk+1);
+      ipointer=NNEW(ITG,mt*nk);
       
       if((icascade==0)&&(nmethod<8)){
 	  mastruct(&nk,kon,ipkon,lakon,&ne,nodeboun,ndirboun,&nboun,ipompc,
@@ -990,9 +990,9 @@ while(istat>=0) {
   }
   else{
       
-      icol=NNEW(int,8*nk);
-      jq=NNEW(int,8*nk+1);
-      ipointer=NNEW(int,8*nk);
+      icol=NNEW(ITG,8*nk);
+      jq=NNEW(ITG,8*nk+1);
+      ipointer=NNEW(ITG,8*nk);
       
       mastructcs(&nk,kon,ipkon,lakon,&ne,nodeboun,ndirboun,&nboun,
 		 ipompc,nodempc,&nmpc,nactdof,icol,jq,&mast1,&irow,&isolver,
@@ -1001,7 +1001,7 @@ while(istat>=0) {
   }
   
   free(ipointer);free(mast1);
-  if((icascade==0)&&(nmethod<8))RENEW(irow,int,nzs[2]);
+  if((icascade==0)&&(nmethod<8))RENEW(irow,ITG,nzs[2]);
 
   /* nmethod=1: static analysis   */
   /* nmethod=2: frequency analysis  */
@@ -1343,17 +1343,17 @@ while(istat>=0) {
 
   if(network==1){
       ne=ne0;nkon=nkon0;
-      RENEW(ipkon,int,ne);
+      RENEW(ipkon,ITG,ne);
       RENEW(lakon,char,8*ne);
-      RENEW(kon,int,nkon);
+      RENEW(kon,ITG,nkon);
       RENEW(sti,double,6*mi[0]*ne);
       RENEW(eme,double,6*mi[0]*ne);
       if(iprestr>0) RENEW(prestr,double,6*mi[0]*ne);
-      if(nprop>0) RENEW(ielprop,int,ne);
+      if(nprop>0) RENEW(ielprop,ITG,ne);
       if((ne1d!=0)||(ne2d!=0)) RENEW(offset,double,2*ne);
       if(nener==1)RENEW(ener,double,mi[0]*ne*2);
-      if(norien>0)RENEW(ielorien,int,mi[2]*ne);
-      RENEW(ielmat,int,mi[2]*ne);
+      if(norien>0)RENEW(ielorien,ITG,mi[2]*ne);
+      RENEW(ielmat,ITG,mi[2]*ne);
   }
 
   nload=nload0;

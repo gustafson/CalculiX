@@ -33,48 +33,48 @@
    #include "pardiso.h"
 #endif
 
-void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *ne, 
-	       int **nodebounp, int **ndirbounp, double **xbounp, int *nboun,
-	       int **ipompcp, int **nodempcp, double **coefmpcp, char **labmpcp,
-               int *nmpc, int *nodeforc,int *ndirforc,double *xforc, 
-               int *nforc,int *nelemload, char *sideload,double *xload,
-	       int *nload, 
-	       int **nactdofp,int *neq, int *nzl,int *icol, int *irow, 
-	       int *nmethod, int **ikmpcp, int **ilmpcp, int **ikbounp, 
-	       int **ilbounp,double *elcon, int *nelcon, double *rhcon, 
-	       int *nrhcon,double *cocon, int *ncocon,
-               double *alcon, int *nalcon, double *alzero, 
-               int **ielmatp,int **ielorienp, int *norien, double *orab, 
-               int *ntmat_,double **t0p, 
-	       double **t1p,int *ithermal,double *prestr, int *iprestr, 
-	       double **voldp,int *iperturb, double **stip, int *nzs, 
+void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *ne, 
+	       ITG **nodebounp, ITG **ndirbounp, double **xbounp, ITG *nboun,
+	       ITG **ipompcp, ITG **nodempcp, double **coefmpcp, char **labmpcp,
+               ITG *nmpc, ITG *nodeforc,ITG *ndirforc,double *xforc, 
+               ITG *nforc,ITG *nelemload, char *sideload,double *xload,
+	       ITG *nload, 
+	       ITG **nactdofp,ITG *neq, ITG *nzl,ITG *icol, ITG *irow, 
+	       ITG *nmethod, ITG **ikmpcp, ITG **ilmpcp, ITG **ikbounp, 
+	       ITG **ilbounp,double *elcon, ITG *nelcon, double *rhcon, 
+	       ITG *nrhcon,double *cocon, ITG *ncocon,
+               double *alcon, ITG *nalcon, double *alzero, 
+               ITG **ielmatp,ITG **ielorienp, ITG *norien, double *orab, 
+               ITG *ntmat_,double **t0p, 
+	       double **t1p,ITG *ithermal,double *prestr, ITG *iprestr, 
+	       double **voldp,ITG *iperturb, double **stip, ITG *nzs, 
 	       double *tinc, double *tper, double *xmodal,
 	       double **veoldp, char *amname, double *amta,
-	       int *namta, int *nam, int *iamforc, int *iamload,
-	       int **iamt1p,int *jout,
-	       int *kode, char *filab,double **emep, double *xforcold, 
+	       ITG *namta, ITG *nam, ITG *iamforc, ITG *iamload,
+	       ITG **iamt1p,ITG *jout,
+	       ITG *kode, char *filab,double **emep, double *xforcold, 
 	       double *xloadold,
-               double **t1oldp, int **iambounp, double **xbounoldp, int *iexpl,
-               double *plicon, int *nplicon, double *plkcon,int *nplkcon,
-               double **xstatep, int *npmat_, char *matname, int *mi,
-               int *ncmat_, int *nstate_, double **enerp, char *jobnamec,
-               double *ttime, char *set, int *nset, int *istartset,
-               int *iendset, int **ialsetp, int *nprint, char *prlab,
-               char *prset, int *nener, double *trab, 
-               int **inotrp, int *ntrans, double **fmpcp, char *cbody, int *ibody,
-               double *xbody, int *nbody, double *xbodyold, int *istep,
-               int *isolver,int *jq, char *output, int *mcs, int *nkon,
-               int *mpcend, int *ics, double *cs, int *ntie, char *tieset,
-               int *idrct, int *jmax, double *tmin, double *tmax,
-	       double *ctrl, int *itpamp, double *tietol,int *nalset,
-	       int *ikforc, int *ilforc,double *thicke, 
-               int *nslavs){
+               double **t1oldp, ITG **iambounp, double **xbounoldp, ITG *iexpl,
+               double *plicon, ITG *nplicon, double *plkcon,ITG *nplkcon,
+               double **xstatep, ITG *npmat_, char *matname, ITG *mi,
+               ITG *ncmat_, ITG *nstate_, double **enerp, char *jobnamec,
+               double *ttime, char *set, ITG *nset, ITG *istartset,
+               ITG *iendset, ITG **ialsetp, ITG *nprint, char *prlab,
+               char *prset, ITG *nener, double *trab, 
+               ITG **inotrp, ITG *ntrans, double **fmpcp, char *cbody, ITG *ibody,
+               double *xbody, ITG *nbody, double *xbodyold, ITG *istep,
+               ITG *isolver,ITG *jq, char *output, ITG *mcs, ITG *nkon,
+               ITG *mpcend, ITG *ics, double *cs, ITG *ntie, char *tieset,
+               ITG *idrct, ITG *jmax, double *tmin, double *tmax,
+	       double *ctrl, ITG *itpamp, double *tietol,ITG *nalset,
+	       ITG *ikforc, ITG *ilforc,double *thicke, 
+               ITG *nslavs){
 
   char fneig[132]="",description[13]="            ",*lakon=NULL,*labmpc=NULL,
     *labmpcold=NULL,lakonl[9]="        \0",*tchar1=NULL,*tchar2=NULL,
     *tchar3=NULL,cflag[1]=" ";
 
-  int nev,i,j,k,idof,*inum=NULL,*ipobody=NULL,inewton=0,id,
+  ITG nev,i,j,k,idof,*inum=NULL,*ipobody=NULL,inewton=0,id,
     iinc=0,jprint=0,l,iout,ielas=0,icmd,iprescribedboundary,init,ifreebody,
     mode=-1,noddiam=-1,*kon=NULL,*ipkon=NULL,*ielmat=NULL,*ielorien=NULL,
     *inotr=NULL,*nodeboun=NULL,*ndirboun=NULL,*iamboun=NULL,*ikboun=NULL,
@@ -132,10 +132,10 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 
   /* dummy variables for nonlinmpc */
 
-  int *iaux=NULL,maxlenmpc,icascade=0,newstep=0,iit=-1,idiscon;
+  ITG *iaux=NULL,maxlenmpc,icascade=0,newstep=0,iit=-1,idiscon;
 
 #ifdef SGI
-  int token;
+  ITG token;
 #endif
 
   /*    if iabsload=0: aamech is modified by the present incremental 
@@ -200,12 +200,12 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
   printf("        2) other boundary conditions than in the input deck\n");
   printf("           which created the .eig file\n\n");
 
-  if(fread(&cyclicsymmetry,sizeof(int),1,f1)!=1){
+  if(fread(&cyclicsymmetry,sizeof(ITG),1,f1)!=1){
       printf("*ERROR in dyna reading the cyclic symmetry flag in the eigenvalue file");
       exit(0);
   }
 
-  if(fread(&nherm,sizeof(int),1,f1)!=1){
+  if(fread(&nherm,sizeof(ITG),1,f1)!=1){
       printf("*ERROR in dyna reading the Hermitian flag in the eigenvalue file");
       exit(0);
   }
@@ -222,10 +222,10 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 
   nmddof=0;nmdnode=0;nmdboun=0;nmdmpc=0;nmdelem=0;
 
-  imddof=NNEW(int,*nk*3);
-  imdnode=NNEW(int,*nk);
-  imdboun=NNEW(int,*nboun);
-  imdmpc=NNEW(int,*nmpc);
+  imddof=NNEW(ITG,*nk*3);
+  imdnode=NNEW(ITG,*nk);
+  imdboun=NNEW(ITG,*nboun);
+  imdmpc=NNEW(ITG,*nmpc);
   FORTRAN(createmddof,(imddof,&nmddof,istartset,iendset,
 		       ialset,nactdof,ithermal,mi,imdnode,&nmdnode,
 		       ikmpc,ilmpc,ipompc,nodempc,nmpc,
@@ -270,10 +270,10 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 	  
       /* determining the elements belonging to a given node */
       
-      iponoel=NNEW(int,*nk);
-      inoel=NNEW(int,2**nkon);
+      iponoel=NNEW(ITG,*nk);
+      inoel=NNEW(ITG,2**nkon);
       FORTRAN(elementpernode,(iponoel,inoel,lakon,ipkon,kon,ne));
-      imdelem=NNEW(int,*ne);
+      imdelem=NNEW(ITG,*ne);
 
       /* storing the elements in which integration point results
          are needed; storing the nodes which are needed to
@@ -287,7 +287,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
                    ialset,ipkon,kon,istartset,iendset,nforc,
 		   ikforc,ilforc));
 
-      RENEW(imdelem,int,nmdelem);
+      RENEW(imdelem,ITG,nmdelem);
       free(iponoel);free(inoel);
   }
 
@@ -301,10 +301,10 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
   /* subtracting 1 to comply with the C-convention */
 
   for(i=0;i<nmddof;i++){imddof[i]-=1;}
-  RENEW(imddof,int,nmddof);
-  RENEW(imdnode,int,nmdnode);
-  RENEW(imdboun,int,nmdboun);
-  RENEW(imdmpc,int,nmdmpc);
+  RENEW(imddof,ITG,nmddof);
+  RENEW(imdnode,ITG,nmdnode);
+  RENEW(imdboun,ITG,nmdboun);
+  RENEW(imdmpc,ITG,nmdmpc);
 
   nsectors=1;
 
@@ -315,7 +315,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       nkg=*nk;
       neg=*ne;
 
-      if(fread(&nev,sizeof(int),1,f1)!=1){
+      if(fread(&nev,sizeof(ITG),1,f1)!=1){
 	  printf("*ERROR in dyna reading the number of eigenvalues in the eigenvalue file");
 	  exit(0);
       }
@@ -366,23 +366,23 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
   else{
       nev=0;
       do{
-	  if(fread(&nmd,sizeof(int),1,f1)!=1){
+	  if(fread(&nmd,sizeof(ITG),1,f1)!=1){
 	      break;
 	  }
-	  if(fread(&nevd,sizeof(int),1,f1)!=1){
-	      printf("*ERROR in dyna reading the number of eigenvalues for nodal diameter %d in the eigenvalue file",nmd);
+	  if(fread(&nevd,sizeof(ITG),1,f1)!=1){
+	      printf("*ERROR in dyna reading the number of eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
 	      exit(0);
 	  }
 	  if(nev==0){
 	      d=NNEW(double,nevd);
-	      nm=NNEW(int,nevd);
+	      nm=NNEW(ITG,nevd);
 	  }else{
 	      RENEW(d,double,nev+nevd);
-	      RENEW(nm,int,nev+nevd);
+	      RENEW(nm,ITG,nev+nevd);
 	  }
 	  
 	  if(fread(&d[nev],sizeof(double),nevd,f1)!=nevd){
-	      printf("*ERROR in dyna reading the eigenvalues for nodal diameter %d in the eigenvalue file",nmd);
+	      printf("*ERROR in dyna reading the eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
 	      exit(0);
 	  }
 
@@ -414,7 +414,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 	  }
 	  
 	  if(fread(&z[(long long)neq[1]*nev],sizeof(double),neq[1]*nevd,f1)!=neq[1]*nevd){
-	      printf("*ERROR in dyna reading the eigenvectors for nodal diameter %d in the eigenvalue file",nmd);
+	      printf("*ERROR in dyna reading the eigenvectors for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
 	      exit(0);
 	  }
 	  nev+=nevd;
@@ -424,13 +424,13 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 
       for(i=0;i<*mcs;i++){
 //	  if(cs[17*i]>nsectors) nsectors=cs[17*i];
-	  if(cs[17*i]>nsectors) nsectors=(int)(cs[17*i]+0.5);
+	  if(cs[17*i]>nsectors) nsectors=(ITG)(cs[17*i]+0.5);
       }
 
         /* determining the maximum number of sectors to be plotted */
 
       for(j=0;j<*mcs;j++){
-	  if(cs[17*j+4]>ngraph) ngraph=(int)cs[17*j+4];
+	  if(cs[17*j+4]>ngraph) ngraph=(ITG)cs[17*j+4];
       }
       nkg=*nk*ngraph;
       neg=*ne*ngraph;
@@ -447,32 +447,32 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 	  RENEW(t0,double,*nk*nsectors);
 	  RENEW(t1old,double,*nk*nsectors);
 	  RENEW(t1,double,*nk*nsectors);
-	  if(*nam>0) RENEW(iamt1,int,*nk*nsectors);
+	  if(*nam>0) RENEW(iamt1,ITG,*nk*nsectors);
       }
-      RENEW(nactdof,int,mt**nk*nsectors);
-      if(*ntrans>0) RENEW(inotr,int,2**nk*nsectors);
-      RENEW(kon,int,*nkon*nsectors);
-      RENEW(ipkon,int,*ne*nsectors);
+      RENEW(nactdof,ITG,mt**nk*nsectors);
+      if(*ntrans>0) RENEW(inotr,ITG,2**nk*nsectors);
+      RENEW(kon,ITG,*nkon*nsectors);
+      RENEW(ipkon,ITG,*ne*nsectors);
       for(i=*ne;i<*ne*nsectors;i++){ipkon[i]=-1;}
       RENEW(lakon,char,8**ne*nsectors);
-      RENEW(ielmat,int,mi[2]**ne*nsectors);
-      if(*norien>0) RENEW(ielorien,int,mi[2]**ne*nsectors);
+      RENEW(ielmat,ITG,mi[2]**ne*nsectors);
+      if(*norien>0) RENEW(ielorien,ITG,mi[2]**ne*nsectors);
 //      RENEW(z,double,(long long)neq[1]*nev*nsectors/2);
 
-      RENEW(nodeboun,int,*nboun*nsectors);
-      RENEW(ndirboun,int,*nboun*nsectors);
-      if(*nam>0) RENEW(iamboun,int,*nboun*nsectors);
+      RENEW(nodeboun,ITG,*nboun*nsectors);
+      RENEW(ndirboun,ITG,*nboun*nsectors);
+      if(*nam>0) RENEW(iamboun,ITG,*nboun*nsectors);
       RENEW(xboun,double,*nboun*nsectors);
       RENEW(xbounold,double,*nboun*nsectors);
-      RENEW(ikboun,int,*nboun*nsectors);
-      RENEW(ilboun,int,*nboun*nsectors);
+      RENEW(ikboun,ITG,*nboun*nsectors);
+      RENEW(ilboun,ITG,*nboun*nsectors);
 
-      ipompcold=NNEW(int,*nmpc);
-      nodempcold=NNEW(int,3**mpcend);
+      ipompcold=NNEW(ITG,*nmpc);
+      nodempcold=NNEW(ITG,3**mpcend);
       coefmpcold=NNEW(double,*mpcend);
       labmpcold=NNEW(char,20**nmpc);
-      ikmpcold=NNEW(int,*nmpc);
-      ilmpcold=NNEW(int,*nmpc);
+      ikmpcold=NNEW(ITG,*nmpc);
+      ilmpcold=NNEW(ITG,*nmpc);
 
       for(i=0;i<*nmpc;i++){ipompcold[i]=ipompc[i];}
       for(i=0;i<3**mpcend;i++){nodempcold[i]=nodempc[i];}
@@ -483,12 +483,12 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       nmpcold=*nmpc;
       mpcendold=*mpcend;
 
-      RENEW(ipompc,int,*nmpc*nsectors);
-      RENEW(nodempc,int,3**mpcend*nsectors);
+      RENEW(ipompc,ITG,*nmpc*nsectors);
+      RENEW(nodempc,ITG,3**mpcend*nsectors);
       RENEW(coefmpc,double,*mpcend*nsectors);
       RENEW(labmpc,char,20**nmpc*nsectors+1);
-      RENEW(ikmpc,int,*nmpc*nsectors);
-      RENEW(ilmpc,int,*nmpc*nsectors);
+      RENEW(ikmpc,ITG,*nmpc*nsectors);
+      RENEW(ilmpc,ITG,*nmpc*nsectors);
       RENEW(fmpc,double,*nmpc*nsectors);
 
       /* determining the space needed to expand the
@@ -528,12 +528,12 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       free(tchar2);
       free(tchar3);
 
-      RENEW(ialset,int,*nalset);
+      RENEW(ialset,ITG,*nalset);
 
       /* save the information in istarset and isendset */
 
-      istartset_=NNEW(int,*nset);
-      iendset_=NNEW(int,*nset);
+      istartset_=NNEW(ITG,*nset);
+      iendset_=NNEW(ITG,*nset);
       for(j=0; j<*nset; j++){
 	istartset_[j]=istartset[j];
 	iendset_[j]=iendset[j];
@@ -542,12 +542,12 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       /* reallocating the fields for the nodes in which the
          solution has to be calculated */
 
-      RENEW(imddof,int,neq[1]/2*nsectors);
-      RENEW(imdnode,int,*nk*nsectors);
-      RENEW(imdboun,int,*nboun*nsectors);
-      RENEW(imdmpc,int,*nmpc*nsectors);
+      RENEW(imddof,ITG,neq[1]/2*nsectors);
+      RENEW(imdnode,ITG,*nk*nsectors);
+      RENEW(imdboun,ITG,*nboun*nsectors);
+      RENEW(imdmpc,ITG,*nmpc*nsectors);
 
-      izdof=NNEW(int,1);
+      izdof=NNEW(ITG,1);
       
       expand(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
 	ipompc,nodempc,coefmpc,labmpc,nmpc,nodeforc,ndirforc,xforc,
@@ -567,10 +567,10 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 	imdnode,&nmdnode,imdboun,&nmdboun,imdmpc,&nmdmpc,&izdof,&nzdof,
 	&nherm,xmr,xmi);
 
-      RENEW(imddof,int,nmddof);
-      RENEW(imdnode,int,nmdnode);
-      RENEW(imdboun,int,nmdboun);
-      RENEW(imdmpc,int,nmdmpc);
+      RENEW(imddof,ITG,nmddof);
+      RENEW(imdnode,ITG,nmdnode);
+      RENEW(imdboun,ITG,nmdboun);
+      RENEW(imdmpc,ITG,nmdmpc);
 
       free(vold);vold=NNEW(double,mt**nk);
       free(veold);veold=NNEW(double,mt**nk);
@@ -646,7 +646,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       }
 
       liw=51;
-      iwork=NNEW(int,liw);
+      iwork=NNEW(ITG,liw);
       lrw=130+42*nev;
       rwork=NNEW(double,lrw);
       xini=NNEW(double,2*nev);
@@ -717,7 +717,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 	  printf("*ERROR in dyna: contact is not allowed in combination with dashpots\n");
 	  FORTRAN(stop,());
       }
-      RENEW(ipkon,int,*ne+*nslavs);
+      RENEW(ipkon,ITG,*ne+*nslavs);
       RENEW(lakon,char,8*(*ne+*nslavs));
       if(*nener==1){
 	RENEW(ener,double,mi[0]*(*ne+*nslavs)*2);
@@ -726,12 +726,12 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       /* 11 instead of 10: last position is reserved for how
          many dependent nodes are paired to this face */
     
-      RENEW(kon,int,*nkon+11**nslavs);
+      RENEW(kon,ITG,*nkon+11**nslavs);
       if(*norien>0){
-	  RENEW(ielorien,int,mi[2]*(*ne+*nslavs));
+	  RENEW(ielorien,ITG,mi[2]*(*ne+*nslavs));
 	  for(k=mi[2]**ne;k<mi[2]*(*ne+*nslavs);k++) ielorien[k]=0;
       }
-      RENEW(ielmat,int,mi[2]*(*ne+*nslavs));
+      RENEW(ielmat,ITG,mi[2]*(*ne+*nslavs));
       for(k=mi[2]**ne;k<mi[2]*(*ne+*nslavs);k++) ielmat[k]=1;
       cg=NNEW(double,3*ncont);
       straight=NNEW(double,16*ncont);
@@ -757,7 +757,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       vini=NNEW(double,mt**nk);
       bcontini=NNEW(double,neq[1]);
       bcont=NNEW(double,neq[1]);
-      ikactcont=NNEW(int,nactcont_);
+      ikactcont=NNEW(ITG,nactcont_);
   }
 
   /* storing the element and topology information before introducing 
@@ -786,13 +786,13 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 
     /*copy the damping coefficients for every eigenfrequency from xmodal[11....] */
 
-    if(nev<(int)xmodal[10]){
+    if(nev<(ITG)xmodal[10]){
       imax=nev;
       printf("*WARNING in dyna: too many modal damping coefficients applied\n");
       printf("         damping coefficients corresponding to nonexisting eigenvalues are ignored\n");
     }
     else{
-      imax=(int)xmodal[10];
+      imax=(ITG)xmodal[10];
     }
     for(i=0; i<imax; i++){
       zeta[i]=xmodal[11+i];     
@@ -873,13 +873,13 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 
   if(*nbody>0){
       ifreebody=*ne+1;
-      ipobody=NNEW(int,2**ne);
+      ipobody=NNEW(ITG,2**ne);
       for(k=1;k<=*nbody;k++){
 	  FORTRAN(bodyforce,(cbody,ibody,ipobody,nbody,set,istartset,
 			     iendset,ialset,&inewton,nset,&ifreebody,&k));
-	  RENEW(ipobody,int,2*(*ne+ifreebody));
+	  RENEW(ipobody,ITG,2*(*ne+ifreebody));
       }
-      RENEW(ipobody,int,2*(ifreebody-1));
+      RENEW(ipobody,ITG,2*(ifreebody-1));
   }
 	       
   b=NNEW(double,neq[1]); /* load rhs vector and displacement solution vector */
@@ -901,7 +901,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
   v=NNEW(double,mt**nk);
   fn=NNEW(double,mt**nk);
   stn=NNEW(double,6**nk);
-  inum=NNEW(int,*nk);
+  inum=NNEW(ITG,*nk);
   strcpy1(&cflag[0],&filab[4],1);
   FORTRAN(createinum,(ipkon,inum,kon,lakon,nk,ne,&cflag[0],nelemload,
 	      nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi));
@@ -957,7 +957,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 
   /*  calculating the instantaneous loading vector at time 0 */
 
-  ikactmech=NNEW(int,neq[1]);
+  ikactmech=NNEW(ITG,neq[1]);
   nactmech=0;
   FORTRAN(rhs,(co,nk,kon,ipkon,lakon,ne,
        ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
@@ -1052,7 +1052,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 	      imastnode,nmastnode,xmastnor,filab,mcs,ics,
               &nasym,xnoels,&mortar,pslavsurf,pmastsurf,clearini,&theta);
 
-      RENEW(ikactcont,int,nactcont_);
+      RENEW(ikactcont,ITG,nactcont_);
       DMEMSET(ikactcont,0,nactcont_,0.);
       nactcont=0;
      
@@ -1084,7 +1084,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 
       }
       if(nactcont>100){nactcont_=nactcont;}else{nactcont_=100;}
-      RENEW(ikactcont,int,nactcont_);
+      RENEW(ikactcont,ITG,nactcont_);
 
   }
 
@@ -1509,7 +1509,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
 			    iwork,&liw,&iddebdf,bjp));
 	  if(iddebdf==2){
 	      liw=56+2*nev;
-	      RENEW(iwork,int,liw);
+	      RENEW(iwork,ITG,liw);
 	      for(i=0;i<liw;i++){iwork[i]=0;}
 	      lrw=250+20*nev+4*nev*nev;
 	      RENEW(rwork,double,lrw);
@@ -1809,7 +1809,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       if(iout==2){
     	(*kode)++;
 	if(strcmp1(&filab[1044],"ZZS")==0){
-	    neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
+	    neigh=NNEW(ITG,40**ne);ipneigh=NNEW(ITG,*nk);
 	}
 
 	ptime=*ttime+time;
@@ -1956,13 +1956,13 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       if(*nener==1){
 	RENEW(ener,double,mi[0]**ne*2);
       }
-      RENEW(ipkon,int,*ne);
+      RENEW(ipkon,ITG,*ne);
       RENEW(lakon,char,8**ne);
-      RENEW(kon,int,*nkon);
+      RENEW(kon,ITG,*nkon);
       if(*norien>0){
-	  RENEW(ielorien,int,mi[2]**ne);
+	  RENEW(ielorien,ITG,mi[2]**ne);
       }
-      RENEW(ielmat,int,mi[2]**ne);
+      RENEW(ielmat,ITG,mi[2]**ne);
       free(cg);free(straight);
 
       free(vini);free(bcont);free(bcontini);free(ikactcont);
@@ -1989,7 +1989,7 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       *nboun/=nsectors;
       neq[1]=neq[1]*2/nsectors;
 
-      RENEW(ialset,int,nalset_);
+      RENEW(ialset,ITG,nalset_);
 
       /* restore the infomration in istartset and iendset */
 
@@ -2001,30 +2001,30 @@ void dyna(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *n
       free(iendset_);
 
       RENEW(co,double,3**nk);
-      if((*ithermal!=0)&&(*nam>0)) RENEW(iamt1,int,*nk);
-      RENEW(nactdof,int,mt**nk);
-      if(*ntrans>0) RENEW(inotr,int,2**nk);
-      RENEW(kon,int,*nkon);
-      RENEW(ipkon,int,*ne);
+      if((*ithermal!=0)&&(*nam>0)) RENEW(iamt1,ITG,*nk);
+      RENEW(nactdof,ITG,mt**nk);
+      if(*ntrans>0) RENEW(inotr,ITG,2**nk);
+      RENEW(kon,ITG,*nkon);
+      RENEW(ipkon,ITG,*ne);
       RENEW(lakon,char,8**ne);
-      RENEW(ielmat,int,mi[2]**ne);
-      if(*norien>0) RENEW(ielorien,int,mi[2]**ne);
-      RENEW(nodeboun,int,*nboun);
-      RENEW(ndirboun,int,*nboun);
-      if(*nam>0) RENEW(iamboun,int,*nboun);
+      RENEW(ielmat,ITG,mi[2]**ne);
+      if(*norien>0) RENEW(ielorien,ITG,mi[2]**ne);
+      RENEW(nodeboun,ITG,*nboun);
+      RENEW(ndirboun,ITG,*nboun);
+      if(*nam>0) RENEW(iamboun,ITG,*nboun);
       RENEW(xboun,double,*nboun);
       RENEW(xbounold,double,*nboun);
-      RENEW(ikboun,int,*nboun);
-      RENEW(ilboun,int,*nboun);
+      RENEW(ikboun,ITG,*nboun);
+      RENEW(ilboun,ITG,*nboun);
 
       /* recovering the original multiple point constraints */
 
-      RENEW(ipompc,int,*nmpc);
-      RENEW(nodempc,int,3**mpcend);
+      RENEW(ipompc,ITG,*nmpc);
+      RENEW(nodempc,ITG,3**mpcend);
       RENEW(coefmpc,double,*mpcend);
       RENEW(labmpc,char,20**nmpc+1);
-      RENEW(ikmpc,int,*nmpc);
-      RENEW(ilmpc,int,*nmpc);
+      RENEW(ikmpc,ITG,*nmpc);
+      RENEW(ilmpc,ITG,*nmpc);
       RENEW(fmpc,double,*nmpc);
 
       *nmpc=nmpcold;

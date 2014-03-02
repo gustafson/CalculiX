@@ -35,68 +35,68 @@
    #include "tau.h"
 #endif
 
-void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne, 
-	      int *nodeboun, int *ndirboun, double *xboun, int *nboun,
-	      int *ipompc, int *nodempc, double *coefmpc, char *labmpc,
-	      int *nmpc, int *nodeforc,int *ndirforc,double *xforc, 
-	      int *nforc,int *nelemload, char *sideload,double *xload,
-	      int *nload, 
-	      int *nactdof,int *neq, int *nzl,int *icol, int *irow, 
-	      int *nmethod, int *ikmpc, int *ilmpc, int *ikboun, 
-	      int *ilboun,double *elcon, int *nelcon, double *rhcon, 
-	      int *nrhcon,double *cocon, int *ncocon,
-	      double *alcon, int *nalcon, double *alzero, 
-	      int *ielmat,int *ielorien, int *norien, double *orab, 
-	      int *ntmat_,double *t0, 
-	      double *t1,int *ithermal,double *prestr, int *iprestr, 
-	      double *vold,int *iperturb, double *sti, int *nzs, 
+void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne, 
+	      ITG *nodeboun, ITG *ndirboun, double *xboun, ITG *nboun,
+	      ITG *ipompc, ITG *nodempc, double *coefmpc, char *labmpc,
+	      ITG *nmpc, ITG *nodeforc,ITG *ndirforc,double *xforc, 
+	      ITG *nforc,ITG *nelemload, char *sideload,double *xload,
+	      ITG *nload, 
+	      ITG *nactdof,ITG *neq, ITG *nzl,ITG *icol, ITG *irow, 
+	      ITG *nmethod, ITG *ikmpc, ITG *ilmpc, ITG *ikboun, 
+	      ITG *ilboun,double *elcon, ITG *nelcon, double *rhcon, 
+	      ITG *nrhcon,double *cocon, ITG *ncocon,
+	      double *alcon, ITG *nalcon, double *alzero, 
+	      ITG *ielmat,ITG *ielorien, ITG *norien, double *orab, 
+	      ITG *ntmat_,double *t0, 
+	      double *t1,ITG *ithermal,double *prestr, ITG *iprestr, 
+	      double *vold,ITG *iperturb, double *sti, ITG *nzs, 
 	      double *tinc, double *tper, double *xmodalsteady,
 	      double *veold, char *amname, double *amta,
-	      int *namta, int *nam, int *iamforc, int *iamload,
-	      int *iamt1,int *jout,char *filab,double *eme, double *xforcold, 
+	      ITG *namta, ITG *nam, ITG *iamforc, ITG *iamload,
+	      ITG *iamt1,ITG *jout,char *filab,double *eme, double *xforcold, 
 	      double *xloadold,
-	      double *t1old, int *iamboun, double *xbounold, int *iexpl,
-	      double *plicon, int *nplicon, double *plkcon,int *nplkcon,
-	      double *xstate, int *npmat_, char *matname, int *mi,
-	      int *ncmat_, int *nstate_, double *ener, char *jobnamec,
-	      double *ttime, char *set, int *nset, int *istartset,
-	      int *iendset, int *ialset, int *nprint, char *prlab,
-	      char *prset, int *nener, double *trab, 
-	      int *inotr, int *ntrans, double *fmpc, char *cbody, int *ibody,
-	      double *xbody, int *nbody, double *xbodyold, int *istep,
-	      int *isolver,int *jq, char *output, int *mcs, int *nkon,
-	      int *mpcend, int *ics, double *cs, int *ntie, char *tieset,
-	      int *idrct, int *jmax, double *tmin, double *tmax,
-	      double *ctrl, int *itpamp, double *tietol,int *iit,
-	      int *ncont,int *ne0, double *reltime, double *dtime,
-	      double *bcontini, double *bj, double *aux, int *iaux,
-	      double *bcont, int *nev, double *v,
-              int *nkon0, double *deltmx, double *dtheta, double *theta,
-              int *iprescribedboundary, int *mpcfree, int *memmpc_,
-              int *itietri, int *koncont, double *cg, double *straight,
-              int *iinc, double *vini,
+	      double *t1old, ITG *iamboun, double *xbounold, ITG *iexpl,
+	      double *plicon, ITG *nplicon, double *plkcon,ITG *nplkcon,
+	      double *xstate, ITG *npmat_, char *matname, ITG *mi,
+	      ITG *ncmat_, ITG *nstate_, double *ener, char *jobnamec,
+	      double *ttime, char *set, ITG *nset, ITG *istartset,
+	      ITG *iendset, ITG *ialset, ITG *nprint, char *prlab,
+	      char *prset, ITG *nener, double *trab, 
+	      ITG *inotr, ITG *ntrans, double *fmpc, char *cbody, ITG *ibody,
+	      double *xbody, ITG *nbody, double *xbodyold, ITG *istep,
+	      ITG *isolver,ITG *jq, char *output, ITG *mcs, ITG *nkon,
+	      ITG *mpcend, ITG *ics, double *cs, ITG *ntie, char *tieset,
+	      ITG *idrct, ITG *jmax, double *tmin, double *tmax,
+	      double *ctrl, ITG *itpamp, double *tietol,ITG *iit,
+	      ITG *ncont,ITG *ne0, double *reltime, double *dtime,
+	      double *bcontini, double *bj, double *aux, ITG *iaux,
+	      double *bcont, ITG *nev, double *v,
+              ITG *nkon0, double *deltmx, double *dtheta, double *theta,
+              ITG *iprescribedboundary, ITG *mpcfree, ITG *memmpc_,
+              ITG *itietri, ITG *koncont, double *cg, double *straight,
+              ITG *iinc, double *vini,
               double *aa, double *bb, double *aanew, double *d, 
 	      double *z, double *zeta,double *b, double *time0,double *time, 
-	      int *ipobody,
+	      ITG *ipobody,
               double *xforcact, double *xloadact, double *t1act, 
               double *xbounact, double *xbodyact, double *cd, double *cv,
               double *ampli, double *dthetaref, double *bjp, double *bp,
-              double *cstr,int *imddof, int *nmddof, 
-              int **ikactcontp, int *nactcont,int *nactcont_,
-              double *aamech, double *bprev, int *iprev, int *inonlinmpc,
-              int **ikactmechp, int *nactmech,int *imdnode,int *nmdnode,
-              int *imdboun,int *nmdboun,int *imdmpc,int *nmdmpc,
-              int *itp, int *inext,int *imastop,int *nslavnode,int *islavnode,
-              int *islavsurf,
-              int *itiefac,double *areaslav,int *iponoels,int *inoels,
-              double *springarea,int *izdof,int *nzdof,double *fn,
-	      int *imastnode,int *nmastnode,double *xmastnor,
-              double *xstateini, int *nslavs,
-              int *cyclicsymmetry,double *xnoels,int *ielas){
+              double *cstr,ITG *imddof, ITG *nmddof, 
+              ITG **ikactcontp, ITG *nactcont,ITG *nactcont_,
+              double *aamech, double *bprev, ITG *iprev, ITG *inonlinmpc,
+              ITG **ikactmechp, ITG *nactmech,ITG *imdnode,ITG *nmdnode,
+              ITG *imdboun,ITG *nmdboun,ITG *imdmpc,ITG *nmdmpc,
+              ITG *itp, ITG *inext,ITG *imastop,ITG *nslavnode,ITG *islavnode,
+              ITG *islavsurf,
+              ITG *itiefac,double *areaslav,ITG *iponoels,ITG *inoels,
+              double *springarea,ITG *izdof,ITG *nzdof,double *fn,
+	      ITG *imastnode,ITG *nmastnode,double *xmastnor,
+              double *xstateini, ITG *nslavs,
+              ITG *cyclicsymmetry,double *xnoels,ITG *ielas){
     
   char lakonl[9]="        \0";
 
-  int i,j,k,l,init,*itg=NULL,ntg=0,maxlenmpc,icascade=0,loop,
+  ITG i,j,k,l,init,*itg=NULL,ntg=0,maxlenmpc,icascade=0,loop,
       konl[20],imat,nope,kodem,indexe,j1,jdof,kmin,kmax,
       id,newstep=0,idiscon,*ipiv=NULL,info,nrhs=1,kode,iener=0,
       *ikactcont=NULL,*ilactcont=NULL,*ikactcont1=NULL,nactcont1=0,
@@ -164,7 +164,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
           xnoels,&mortar,pslavsurf,pmastsurf,clearini,theta);
 
-  ikactcont1=NNEW(int,nactcont1_);
+  ikactcont1=NNEW(ITG,nactcont1_);
 
   for(i=*ne0;i<*ne;i++){
       indexe=ipkon[i];
@@ -194,7 +194,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		      coefmpc);
 
   }
-  RENEW(ikactcont1,int,nactcont1);
+  RENEW(ikactcont1,ITG,nactcont1);
 
   /* merging ikactcont with ikactcont1; the result ist
      stored in ikactcont */
@@ -210,8 +210,8 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  }
 	  (*nactcont)++;
 	  if(*nactcont>*nactcont_){
-	      *nactcont_=(int)(1.1**nactcont_);
-	      RENEW(ikactcont,int,*nactcont_);
+	      *nactcont_=(ITG)(1.1**nactcont_);
+	      RENEW(ikactcont,ITG,*nactcont_);
 	  }
 	  k=*nactcont-1;
 	  l=k-1;
@@ -243,7 +243,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   
   /* major loop to calculate the correction of bj due to contact */
 
-  ilactcont=NNEW(int,*nactcont_);
+  ilactcont=NNEW(ITG,*nactcont_);
   dbcont=NNEW(double,*nactcont_**nev);
 
   icutb=0;
@@ -598,7 +598,7 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     aaa=NNEW(double,*nev);
     bbb=NNEW(double,*nev**nev);
     lhs=NNEW(double,*nev**nev);
-    ipiv=NNEW(int,*nev);
+    ipiv=NNEW(ITG,*nev);
     dbj=NNEW(double,*nev); /* change in bj */
     dbjp=NNEW(double,*nev); /* change in djp */
     
@@ -696,8 +696,8 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 	  for(j=0;j<*nactcont;j++){bcont[ikactcont[j]]=0.;}
 
       RENEW(dbcont,double,*nactcont_**nev);
-      RENEW(ikactcont,int,*nactcont_);
-      RENEW(ilactcont,int,*nactcont_);
+      RENEW(ikactcont,ITG,*nactcont_);
+      RENEW(ilactcont,ITG,*nactcont_);
       *nactcont=0;
       
       DMEMSET(dbcont,0,*nactcont_**nev,0.);
@@ -750,8 +750,8 @@ void dynacont(double *co, int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       }
 
       if(*nactcont>100){*nactcont_=*nactcont;}else{*nactcont_=100;}
-      RENEW(ikactcont,int,*nactcont_);
-      RENEW(ilactcont,int,*nactcont_);
+      RENEW(ikactcont,ITG,*nactcont_);
+      RENEW(ilactcont,ITG,*nactcont_);
       RENEW(dbcont,double,*nactcont_**nev);
 
       /* aaa(i) is the internal product of the contact force at the end of the

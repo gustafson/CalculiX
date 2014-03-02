@@ -31,11 +31,11 @@
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
-void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
-   int *mpcfree, int *nodeboun, int *ndirboun, int*nboun, int*ikmpc,
-   int *ilmpc, int *ikboun, int *ilboun, int *mpcend, int *mpcmult,
-   char *labmpc, int *nk, int *memmpc_, int *icascade, int *maxlenmpc,
-   int *callfrommain, int *iperturb, int *ithermal){
+void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
+   ITG *mpcfree, ITG *nodeboun, ITG *ndirboun, ITG*nboun, ITG*ikmpc,
+   ITG *ilmpc, ITG *ikboun, ITG *ilboun, ITG *mpcend, ITG *mpcmult,
+   char *labmpc, ITG *nk, ITG *memmpc_, ITG *icascade, ITG *maxlenmpc,
+   ITG *callfrommain, ITG *iperturb, ITG *ithermal){
 
  /*   detects cascaded mpc's and decascades them; checks multiple
      occurrence of the same dependent DOF's in different mpc/spc's
@@ -56,7 +56,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
        present routine. The mpc's must be homogeneous, otherwise a
        error message is generated and the program stops. */
 
-    int i,j,index,id,idof,nterm,idepend,*nodempc=NULL,
+    ITG i,j,index,id,idof,nterm,idepend,*nodempc=NULL,
 	ispooles,iexpand,ichange,indexold,
         mpc,indexnew,index1,index2,index1old,index2old,*jmpc=NULL,nl;
 
@@ -64,7 +64,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 
 #ifdef SPOOLES
 
-    int irow,icolumn,node,idir,irownl,icolnl,*ipointer=NULL,*icoef=NULL,
+    ITG irow,icolumn,node,idir,irownl,icolnl,*ipointer=NULL,*icoef=NULL,
 	ifree,*indepdof=NULL,nindep;
 
     double *xcoef=NULL,b;
@@ -80,11 +80,11 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
     ETree           *frontETree ;
     FILE            *msgFile ;
     Graph           *graph ;
-    int             jrhs, msglvl=0, nedges,error,
+    ITG             jrhs, msglvl=0, nedges,error,
                     nent, neqns, nrhs, pivotingflag=1, seed=389,
                     symmetryflag=2, type=1,maxdomainsize,maxzeros,maxsize;
-    int             *oldToNew ;
-    int             stats[20] ;
+    ITG             *oldToNew ;
+    ITG             stats[20] ;
     IV              *newToOldIV, *oldToNewIV ;
     IVL             *adjIVL, *symbfacIVL ;
 #endif
@@ -97,7 +97,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
 	}*/
 
-    jmpc=NNEW(int,*nmpc);
+    jmpc=NNEW(ITG,*nmpc);
     idepend=0;
 
 /*        check whether a node is used as a dependent node in a MPC
@@ -109,7 +109,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 	else{id=0;}
 	if(id>0){
 	    if(ikboun[id-1]==ikmpc[i]){
-		printf("*ERROR in cascade: the DOF corresponding to \n node %d in direction %d is detected on the \n dependent side of a MPC and a SPC\n",
+		printf("*ERROR in cascade: the DOF corresponding to \n node %" ITGFORMAT " in direction %" ITGFORMAT " is detected on the \n dependent side of a MPC and a SPC\n",
 		       (ikmpc[i])/8+1,ikmpc[i]-8*((ikmpc[i])/8));
 		FORTRAN(stop,());
 	    }
@@ -185,7 +185,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 			if(idepend==0){
 			    printf("*INFO in cascade: linear MPCs and\n");
 			    printf("       nonlinear MPCs depend on each other\n");
-			    printf("       common node: %d in direction %d\n\n",nodempc[3*index-3],nodempc[3*index-2]);
+			    printf("       common node: %" ITGFORMAT " in direction %" ITGFORMAT "\n\n",nodempc[3*index-3],nodempc[3*index-2]);
 			    idepend=1;}
 			if(*callfrommain==1){
 			    index=nodempc[3*index-1];
@@ -193,7 +193,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 			    else break;}
 		    }
 
-/*		    printf("*INFO in cascade: DOF %d of node %d is expanded\n",
+/*		    printf("*INFO in cascade: DOF %" ITGFORMAT " of node %" ITGFORMAT " is expanded\n",
 		    nodempc[3*index-2],nodempc[3*index-3]);*/
 
 		    /* collecting terms corresponding to the same DOF */
@@ -229,7 +229,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 			if(fabs(coefmpc[index1-1])<1.e-10){
 				printf("*ERROR in cascade: zero coefficient on the\n");
 				printf("       dependent side of an equation\n");
-				printf("       dependent node: %d",nodempc[3*index1-3]);
+				printf("       dependent node: %" ITGFORMAT "",nodempc[3*index1-3]);
 				FORTRAN(stop,());
 			    }
 		    
@@ -252,9 +252,9 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 			    if(*mpcfree==0){
 				*mpcfree=*memmpc_+1;
 				nodempc[3*index-1]=*mpcfree;
-				*memmpc_=(int)(1.1**memmpc_);
-				printf("*INFO in cascade: reallocating nodempc; new size = %d\n\n",*memmpc_);
-				RENEW(nodempc,int,3**memmpc_);
+				*memmpc_=(ITG)(1.1**memmpc_);
+				printf("*INFO in cascade: reallocating nodempc; new size = %" ITGFORMAT "\n\n",*memmpc_);
+				RENEW(nodempc,ITG,3**memmpc_);
 				RENEW(coefmpc,double,*memmpc_);
 				for(j=*mpcfree;j<*memmpc_;j++){
 				    nodempc[3*j-1]=j+1;
@@ -316,7 +316,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 		    if(index1old==0){
 			printf("*ERROR in cascade: zero coefficient on the\n");
 			printf("       dependent side of an equation\n");
-			printf("       dependent node: %d",nodempc[3*index1-3]);
+			printf("       dependent node: %" ITGFORMAT "",nodempc[3*index1-3]);
 			FORTRAN(stop,());
 		    }
 		    else{
@@ -344,9 +344,9 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 	    fprintf(stderr, "\n fatal error in spooles.c"
 		    "\n unable to open file spooles.out\n") ;
 	}
-	ipointer=NNEW(int,7**nk);
-	indepdof=NNEW(int,7**nk);
-	icoef=NNEW(int,2**memmpc_);
+	ipointer=NNEW(ITG,7**nk);
+	indepdof=NNEW(ITG,7**nk);
+	icoef=NNEW(ITG,2**memmpc_);
 	xcoef=NNEW(double,*memmpc_);
 	ifree=0;
 	nindep=0;
@@ -516,7 +516,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 	    exit(-1) ;
 	}
 	if(error>=0){
-	    fprintf(msgFile,"\n\nerror encountered at front %d",error);
+	    fprintf(msgFile,"\n\nerror encountered at front %" ITGFORMAT "",error);
 	    exit(-1);
 	}
 /*--------------------------------------------------------------------*/
@@ -613,15 +613,15 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 		    b=DenseMtx_entries(mtxX)[j];
 		    if(fabs(b)>1.e-10){
 			nodempc[3**mpcfree-1]=ipompc[j];
-			node=(int)((idof+8)/8);
+			node=(ITG)((idof+8)/8);
 			idir=idof+1-8*(node-1);
 			nodempc[3**mpcfree-3]=node;
 			nodempc[3**mpcfree-2]=idir;
 			coefmpc[*mpcfree-1]=b;
 			ipompc[j]=(*mpcfree)++;
 			if(*mpcfree>*memmpc_){
-			    *memmpc_=(int)(1.1**memmpc_);
-			    RENEW(nodempc,int,3**memmpc_);
+			    *memmpc_=(ITG)(1.1**memmpc_);
+			    RENEW(nodempc,ITG,3**memmpc_);
 			    RENEW(coefmpc,double,*memmpc_);
 			}
 		    }
@@ -650,7 +650,7 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 	for(i=0;i<*nmpc;i++){
 	    j=ilmpc[i]-1;
 	    idof=ikmpc[i];
-	    node=(int)((idof+7)/8);
+	    node=(ITG)((idof+7)/8);
 	    idir=idof-8*(node-1);
 	    nodempc[3**mpcfree-1]=ipompc[j];
 	    nodempc[3**mpcfree-3]=node;
@@ -658,8 +658,8 @@ void cascade(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 	    coefmpc[*mpcfree-1]=1.;
 	    ipompc[j]=(*mpcfree)++;
 	    if(*mpcfree>*memmpc_){
-		*memmpc_=(int)(1.1**memmpc_);
-		RENEW(nodempc,int,3**memmpc_);
+		*memmpc_=(ITG)(1.1**memmpc_);
+		RENEW(nodempc,ITG,3**memmpc_);
 		RENEW(coefmpc,double,*memmpc_);
 	    }
 	}

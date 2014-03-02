@@ -33,12 +33,12 @@
    #include "pardiso.h"
 #endif
 
-void storecontactdof(int *nope,int *nactdof, int *mt, int *konl, int **ikactcontp, 
-          int *nactcont,int *nactcont_, double *bcont, double *fnl, 
-          int *ikmpc, int *nmpc, int *ilmpc,int *ipompc, int *nodempc, 
+void storecontactdof(ITG *nope,ITG *nactdof, ITG *mt, ITG *konl, ITG **ikactcontp, 
+          ITG *nactcont,ITG *nactcont_, double *bcont, double *fnl, 
+          ITG *ikmpc, ITG *nmpc, ITG *ilmpc,ITG *ipompc, ITG *nodempc, 
           double *coefmpc){
 
-  int j,j1,jdof,id,k,l,ist,index,node,ndir,*ikactcont=*ikactcontp;
+  ITG j,j1,jdof,id,k,l,ist,index,node,ndir,*ikactcont=*ikactcontp;
 
   for(j=0;j<*nope;j++){
       for(j1=0;j1<3;j1++){
@@ -55,8 +55,8 @@ void storecontactdof(int *nope,int *nactdof, int *mt, int *konl, int **ikactcont
 		  }
 		  (*nactcont)++;
 		  if(*nactcont>*nactcont_){
-		      *nactcont_=(int)(1.1**nactcont_);
-		      RENEW(ikactcont,int,*nactcont_);
+		      *nactcont_=(ITG)(1.1**nactcont_);
+		      RENEW(ikactcont,ITG,*nactcont_);
 		  }
 		  k=*nactcont-1;
 		  l=k-1;
@@ -93,8 +93,8 @@ void storecontactdof(int *nope,int *nactdof, int *mt, int *konl, int **ikactcont
 				  }
 				  (*nactcont)++;
 				  if(*nactcont>*nactcont_){
-				      *nactcont_=(int)(1.1**nactcont_);
-				      RENEW(ikactcont,int,*nactcont_);
+				      *nactcont_=(ITG)(1.1**nactcont_);
+				      RENEW(ikactcont,ITG,*nactcont_);
 				  }
 				  k=*nactcont-1;
 				  l=k-1;

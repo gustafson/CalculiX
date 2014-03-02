@@ -21,23 +21,23 @@
 #include <string.h>
 #include "CalculiX.h"
 
-void remastructar(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
-              int *mpcfree, int *nodeboun, int *ndirboun, int *nboun,
-              int *ikmpc, int *ilmpc, int *ikboun, int *ilboun,
-              char *labmpc, int *nk,
-              int *memmpc_, int *icascade, int *maxlenmpc,
-              int *kon, int *ipkon, char *lakon, int *ne,
-              int *nactdof, int *icol, int *jq, int **irowp, int *isolver,
-              int *neq, int *nzs,int *nmethod, int *ithermal,
-	      int *iperturb, int *mass, int *mi, int *ics, double *cs,
-	      int *mcs,int *mortar){
+void remastructar(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
+              ITG *mpcfree, ITG *nodeboun, ITG *ndirboun, ITG *nboun,
+              ITG *ikmpc, ITG *ilmpc, ITG *ikboun, ITG *ilboun,
+              char *labmpc, ITG *nk,
+              ITG *memmpc_, ITG *icascade, ITG *maxlenmpc,
+              ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
+              ITG *nactdof, ITG *icol, ITG *jq, ITG **irowp, ITG *isolver,
+              ITG *neq, ITG *nzs,ITG *nmethod, ITG *ithermal,
+	      ITG *iperturb, ITG *mass, ITG *mi, ITG *ics, double *cs,
+	      ITG *mcs,ITG *mortar){
 
     /* reconstructs the nonzero locations in the stiffness and mass
        matrix after a change in MPC's or the generation of contact
        spring elements: version for frequency calculations (called
        by arpack and arpackcs)  */
 
-    int *nodempc=NULL,*mast1=NULL,*ipointer=NULL,mpcend,mpcmult,
+    ITG *nodempc=NULL,*mast1=NULL,*ipointer=NULL,mpcend,mpcmult,
         callfrommain,i,*irow=NULL,mt;
 
     double *coefmpc=NULL;
@@ -62,12 +62,12 @@ void remastructar(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
     printf(" Determining the structure of the matrix:\n");
  
     if(nzs[1]<10) nzs[1]=10;   
-    mast1=NNEW(int,nzs[1]);
-    RENEW(irow,int,nzs[1]);for(i=0;i<nzs[1];i++) irow[i]=0;
+    mast1=NNEW(ITG,nzs[1]);
+    RENEW(irow,ITG,nzs[1]);for(i=0;i<nzs[1];i++) irow[i]=0;
   
     if((*mcs==0)||(cs[1]<0)){
 
-	ipointer=NNEW(int,mt**nk);
+	ipointer=NNEW(ITG,mt**nk);
     
 	mastruct(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,ipompc,
 	     nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,neq,
@@ -76,7 +76,7 @@ void remastructar(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
 
     }else{
       
-      ipointer=NNEW(int,8**nk);
+      ipointer=NNEW(ITG,8**nk);
       
       mastructcs(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,
 		 ipompc,nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,
@@ -85,7 +85,7 @@ void remastructar(int *ipompc, double **coefmpcp, int **nodempcp, int *nmpc,
     }
 
     free(ipointer);free(mast1);
-    RENEW(irow,int,nzs[2]);
+    RENEW(irow,ITG,nzs[2]);
     
     *nodempcp=nodempc;*coefmpcp=coefmpc;*irowp=irow;
 

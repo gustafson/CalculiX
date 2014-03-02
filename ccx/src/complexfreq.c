@@ -33,47 +33,47 @@
    #include "pardiso.h"
 #endif
 
-void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *ne, 
-	       int **nodebounp, int **ndirbounp, double **xbounp, int *nboun,
-	       int **ipompcp, int **nodempcp, double **coefmpcp, char **labmpcp,
-               int *nmpc, int *nodeforc,int *ndirforc,double *xforc, 
-               int *nforc,int *nelemload, char *sideload,double *xload,
-	       int *nload, 
-	       int **nactdofp,int *neq, int *nzl,int *icol, int *irow, 
-	       int *nmethod, int **ikmpcp, int **ilmpcp, int **ikbounp, 
-	       int **ilbounp,double *elcon, int *nelcon, double *rhcon, 
-	       int *nrhcon,double *cocon, int *ncocon,
-               double *alcon, int *nalcon, double *alzero, 
-               int **ielmatp,int **ielorienp, int *norien, double *orab, 
-               int *ntmat_,double **t0p, 
-	       double **t1p,int *ithermal,double *prestr, int *iprestr, 
-	       double **voldp,int *iperturb, double **stip, int *nzs, 
+void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *ne, 
+	       ITG **nodebounp, ITG **ndirbounp, double **xbounp, ITG *nboun,
+	       ITG **ipompcp, ITG **nodempcp, double **coefmpcp, char **labmpcp,
+               ITG *nmpc, ITG *nodeforc,ITG *ndirforc,double *xforc, 
+               ITG *nforc,ITG *nelemload, char *sideload,double *xload,
+	       ITG *nload, 
+	       ITG **nactdofp,ITG *neq, ITG *nzl,ITG *icol, ITG *irow, 
+	       ITG *nmethod, ITG **ikmpcp, ITG **ilmpcp, ITG **ikbounp, 
+	       ITG **ilbounp,double *elcon, ITG *nelcon, double *rhcon, 
+	       ITG *nrhcon,double *cocon, ITG *ncocon,
+               double *alcon, ITG *nalcon, double *alzero, 
+               ITG **ielmatp,ITG **ielorienp, ITG *norien, double *orab, 
+               ITG *ntmat_,double **t0p, 
+	       double **t1p,ITG *ithermal,double *prestr, ITG *iprestr, 
+	       double **voldp,ITG *iperturb, double **stip, ITG *nzs, 
 	       double *tinc, double *tper, double *xmodal,
 	       double **veoldp, char *amname, double *amta,
-	       int *namta, int *nam, int *iamforc, int *iamload,
-	       int **iamt1p,int *jout,
-	       int *kode, char *filab,double **emep, double *xforcold, 
+	       ITG *namta, ITG *nam, ITG *iamforc, ITG *iamload,
+	       ITG **iamt1p,ITG *jout,
+	       ITG *kode, char *filab,double **emep, double *xforcold, 
 	       double *xloadold,
-               double **t1oldp, int **iambounp, double **xbounoldp, int *iexpl,
-               double *plicon, int *nplicon, double *plkcon,int *nplkcon,
-               double *xstate, int *npmat_, char *matname, int *mi,
-               int *ncmat_, int *nstate_, double **enerp, char *jobnamec,
-               double *ttime, char *set, int *nset, int *istartset,
-               int *iendset, int **ialsetp, int *nprint, char *prlab,
-               char *prset, int *nener, double *trab, 
-               int **inotrp, int *ntrans, double **fmpcp, char *cbody, int *ibody,
-               double *xbody, int *nbody, double *xbodyold, int *istep,
-               int *isolver,int *jq, char *output, int *mcs, int *nkon,
-               int *mpcend, int *ics, double *cs, int *ntie, char *tieset,
-               int *idrct, int *jmax, double *tmin, double *tmax,
-	       double *ctrl, int *itpamp, double *tietol,int *nalset,
-	       int *ikforc, int *ilforc, double *thicke,
-	       char *jobnamef,int *mei){
+               double **t1oldp, ITG **iambounp, double **xbounoldp, ITG *iexpl,
+               double *plicon, ITG *nplicon, double *plkcon,ITG *nplkcon,
+               double *xstate, ITG *npmat_, char *matname, ITG *mi,
+               ITG *ncmat_, ITG *nstate_, double **enerp, char *jobnamec,
+               double *ttime, char *set, ITG *nset, ITG *istartset,
+               ITG *iendset, ITG **ialsetp, ITG *nprint, char *prlab,
+               char *prset, ITG *nener, double *trab, 
+               ITG **inotrp, ITG *ntrans, double **fmpcp, char *cbody, ITG *ibody,
+               double *xbody, ITG *nbody, double *xbodyold, ITG *istep,
+               ITG *isolver,ITG *jq, char *output, ITG *mcs, ITG *nkon,
+               ITG *mpcend, ITG *ics, double *cs, ITG *ntie, char *tieset,
+               ITG *idrct, ITG *jmax, double *tmin, double *tmax,
+	       double *ctrl, ITG *itpamp, double *tietol,ITG *nalset,
+	       ITG *ikforc, ITG *ilforc, double *thicke,
+	       char *jobnamef,ITG *mei){
 
   char fneig[132]="",description[13]="            ",*lakon=NULL,*labmpc=NULL,
     *lakont=NULL;
 
-  int nev,i,j,k,idof,*inum=NULL,*ipobody=NULL,inewton=0,id,
+  ITG nev,i,j,k,idof,*inum=NULL,*ipobody=NULL,inewton=0,id,
     iinc=0,l,iout=1,ielas,icmd,ifreebody,mode,m,nherm,
     *kon=NULL,*ipkon=NULL,*ielmat=NULL,*ielorien=NULL,*islavact=NULL,
     *inotr=NULL,*nodeboun=NULL,*ndirboun=NULL,*iamboun=NULL,*ikboun=NULL,
@@ -113,7 +113,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   FILE *f1;
 
 #ifdef SGI
-  int token;
+  ITG token;
 #endif
 
   pi=4.*atan(1.);
@@ -169,12 +169,12 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   printf("        2) other boundary conditions than in the input deck\n");
   printf("           which created the .eig file\n\n");
 
-  if(fread(&cyclicsymmetry,sizeof(int),1,f1)!=1){
+  if(fread(&cyclicsymmetry,sizeof(ITG),1,f1)!=1){
       printf("*ERROR in complexfreq reading the cyclic symmetry flag in the eigenvalue file");
       exit(0);
   }
 
-  if(fread(&nherm,sizeof(int),1,f1)!=1){
+  if(fread(&nherm,sizeof(ITG),1,f1)!=1){
       printf("*ERROR in complexfreq reading the Hermitian flag in the eigenvalue file");
       exit(0);
   }
@@ -193,7 +193,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       nkg=*nk;
       neg=*ne;
 
-      if(fread(&nev,sizeof(int),1,f1)!=1){
+      if(fread(&nev,sizeof(ITG),1,f1)!=1){
 	  printf("*ERROR in complexfreq reading the number of eigenvalues in the eigenvalue file...");
 	  exit(0);
       }
@@ -258,7 +258,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  }
       }
 
-      nm=NNEW(int,nev);
+      nm=NNEW(ITG,nev);
       for(i=0;i<nev;i++){nm[i]=-1;}
   }
   else{
@@ -271,16 +271,16 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
       nev=0;
       do{
-	  if(fread(&nmd,sizeof(int),1,f1)!=1){
+	  if(fread(&nmd,sizeof(ITG),1,f1)!=1){
 	      break;
 	  }
-	  if(fread(&nevd,sizeof(int),1,f1)!=1){
+	  if(fread(&nevd,sizeof(ITG),1,f1)!=1){
 	      printf("*ERROR in complexfreq reading the number of eigenvalues in the eigenvalue file...");
 	      exit(0);
 	      }
 	  if(nev==0){
 	      if(nherm==1){d=NNEW(double,nevd);}else{d=NNEW(double,2*nevd);}
-	      nm=NNEW(int,nevd);
+	      nm=NNEW(ITG,nevd);
 	  }else{
 	      printf("*ERROR in complexfreq: flutter forces cannot\n");
 	      printf("       be combined with multiple modal diameters\n");
@@ -348,19 +348,19 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       }
       nev=j+1;
       if(nherm==1){RENEW(d,double,nev);}else{RENEW(d,double,2*nev);}
-      RENEW(nm,int,nev);
+      RENEW(nm,ITG,nev);
       RENEW(z,double,neq[1]*nev);
 
       /* determining the maximum amount of segments */
 
       for(i=0;i<*mcs;i++){
-	  if(cs[17*i]>nsectors) nsectors=(int)(cs[17*i]+0.5);
+	  if(cs[17*i]>nsectors) nsectors=(ITG)(cs[17*i]+0.5);
       }
 
         /* determining the maximum number of sectors to be plotted */
 
       for(j=0;j<*mcs;j++){
-	  if(cs[17*j+4]>ngraph) ngraph=(int)cs[17*j+4];
+	  if(cs[17*j+4]>ngraph) ngraph=(ITG)cs[17*j+4];
       }
       nkg=*nk*ngraph;
       neg=*ne*ngraph;
@@ -372,8 +372,8 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   /* assigning nodes and elements to sectors */
 
   if(cyclicsymmetry){
-    inocs=NNEW(int,*nk);
-    ielcs=NNEW(int,*ne);
+    inocs=NNEW(ITG,*nk);
+    ielcs=NNEW(ITG,*ne);
     ielset=cs[12];
     if((*mcs!=1)||(ielset!=0)){
       for(i=0;i<*nk;i++) inocs[i]=-1;
@@ -451,8 +451,8 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
      and the same nodal diameter */
 
   if(cyclicsymmetry){
-      istartnmd=NNEW(int,nev);
-      iendnmd=NNEW(int,nev);
+      istartnmd=NNEW(ITG,nev);
+      iendnmd=NNEW(ITG,nev);
       nmd=0;
       inmd=nm[0];
       istartnmd[0]=1;
@@ -465,8 +465,8 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       }
       iendnmd[nmd]=nev;
       nmd++;
-      RENEW(istartnmd,int,nmd);
-      RENEW(iendnmd,int,nmd);
+      RENEW(istartnmd,ITG,nmd);
+      RENEW(iendnmd,ITG,nmd);
   }
 
   if(*nmethod==6){
@@ -478,13 +478,13 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   /* assigning the body forces to the elements */ 
 
       ifreebody=*ne+1;
-      ipobody=NNEW(int,2**ne);
+      ipobody=NNEW(ITG,2**ne);
       for(k=1;k<=*nbody;k++){
 	  FORTRAN(bodyforce,(cbody,ibody,ipobody,nbody,set,istartset,
 			     iendset,ialset,&inewton,nset,&ifreebody,&k));
-	  RENEW(ipobody,int,2*(*ne+ifreebody));
+	  RENEW(ipobody,ITG,2*(*ne+ifreebody));
       }
-      RENEW(ipobody,int,2*(ifreebody-1));
+      RENEW(ipobody,ITG,2*(ifreebody-1));
       
       if(cyclicsymmetry){
 	  printf("*ERROR in complexfreq: dashpots are not allowed in combination with cyclic symmetry\n");
@@ -545,7 +545,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       eiga=NNEW(double,2*nev);
       eigb=NNEW(double,2*nev);
       eigxx=NNEW(double,2*nev);
-      iter=NNEW(int,nev);
+      iter=NNEW(ITG,nev);
 
       FORTRAN(coriolissolve,(cc,&nev,aa,bb,xx,eiga,eigb,eigxx,
               iter,d,temp));
@@ -575,7 +575,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       eiga=NNEW(double,2*nev);
       eigb=NNEW(double,2*nev);
       eigxx=NNEW(double,2*nev);
-      iter=NNEW(int,nev);
+      iter=NNEW(ITG,nev);
       FORTRAN(forcesolve,(zc,&nev,aa,bb,xx,eiga,eigb,eigxx,iter,d,
       		&neq[1],z,istartnmd,iendnmd,&nmd,&cyclicsymmetry,
 		&neqact,&igeneralizedforce));
@@ -586,7 +586,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 /* sorting the eigenvalues and eigenmodes according to the size of the
    eigenvalues */
       
-  ipev=NNEW(int,nev);
+  ipev=NNEW(ITG,nev);
   eigxr=NNEW(double,nev);
   aa=NNEW(double,2*nev);
   bb=NNEW(double,4*nev*nev);
@@ -903,21 +903,21 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  /* storing a zero as indication that this was not a
 	     cyclic symmetry calculation */
 	  
-	  if(fwrite(&cyclicsymmetry,sizeof(int),1,f1)!=1){
+	  if(fwrite(&cyclicsymmetry,sizeof(ITG),1,f1)!=1){
 	      printf("*ERROR in complexfreq saving the cyclic symmetry flag to the eigenvalue file...");
 	      exit(0);
 	  }
 	  
 	  /* not Hermitian */
 	  
-	  if(fwrite(&nherm,sizeof(int),1,f1)!=1){
+	  if(fwrite(&nherm,sizeof(ITG),1,f1)!=1){
 	      printf("*ERROR in complexfreq saving the Hermitian flag to the eigenvalue file...");
 	      exit(0);
 	  }
 	  
 	  /* storing the number of eigenvalues */
 	  
-	  if(fwrite(&nev,sizeof(int),1,f1)!=1){
+	  if(fwrite(&nev,sizeof(ITG),1,f1)!=1){
 	      printf("*ERROR in complexfreq saving the number of eigenfrequencies to the eigenvalue file...");
 	      exit(0);
 	  }
@@ -997,23 +997,23 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  /* storing a one as indication that this was a
 	     cyclic symmetry calculation */
 	  
-	  if(fwrite(&cyclicsymmetry,sizeof(int),1,f1)!=1){
+	  if(fwrite(&cyclicsymmetry,sizeof(ITG),1,f1)!=1){
 	      printf("*ERROR in complexfreq saving the cyclic symmetry flag to the eigenvalue file...");
 	      exit(0);
 	  }
 	  
 	  /* not Hermitian */
 	  
-	  if(fwrite(&nherm,sizeof(int),1,f1)!=1){
+	  if(fwrite(&nherm,sizeof(ITG),1,f1)!=1){
 	      printf("*ERROR in complexfreq saving the Hermitian flag to the eigenvalue file...");
 	      exit(0);
 	  }
 	  
-	  if(fwrite(&nm[0],sizeof(int),1,f1)!=1){
+	  if(fwrite(&nm[0],sizeof(ITG),1,f1)!=1){
 	      printf("*ERROR in complexfreq saving the nodal diameter to the eigenvalue file...");
 	      exit(0);
 	  }
-	  if(fwrite(&nev,sizeof(int),1,f1)!=1){
+	  if(fwrite(&nev,sizeof(ITG),1,f1)!=1){
 	      printf("*ERROR in complexfreq saving the number of eigenvalues to the eigenvalue file...");
 	      exit(0);
 	  }
@@ -1089,13 +1089,13 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,2**nk);
   if(strcmp1(&filab[2697],"ME  ")==0) emn=NNEW(double,12**nk);
 
-  inum=NNEW(int,*nk);
+  inum=NNEW(ITG,*nk);
   stx=NNEW(double,2*6*mi[0]**ne);
   
   coefmpcnew=NNEW(double,*mpcend);
 
   cot=NNEW(double,3**nk*ngraph);
-  if(*ntrans>0){inotrt=NNEW(int,2**nk*ngraph);}
+  if(*ntrans>0){inotrt=NNEW(ITG,2**nk*ngraph);}
   if((strcmp1(&filab[0],"U  ")==0)||(strcmp1(&filab[870],"PU  ")==0))
 
 // real and imaginary part of the displacements
@@ -1123,12 +1123,12 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   if(strcmp1(&filab[2697],"ME  ")==0) 
       emnt=NNEW(double,2*6**nk*ngraph);
 
-  kont=NNEW(int,*nkon*ngraph);
-  ipkont=NNEW(int,*ne*ngraph);
+  kont=NNEW(ITG,*nkon*ngraph);
+  ipkont=NNEW(ITG,*ne*ngraph);
   for(l=0;l<*ne*ngraph;l++)ipkont[l]=-1;
   lakont=NNEW(char,8**ne*ngraph);
-  inumt=NNEW(int,*nk*ngraph);
-  ielmatt=NNEW(int,mi[2]**ne*ngraph);
+  inumt=NNEW(ITG,*nk*ngraph);
+  ielmatt=NNEW(ITG,mi[2]**ne*ngraph);
 
   nkt=ngraph**nk;
   net=ngraph**ne;
@@ -1763,7 +1763,7 @@ void complexfreq(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
     freq=eigxx[2*j]/6.283185308;
     if(strcmp1(&filab[1044],"ZZS")==0){
-	neigh=NNEW(int,40*net);ipneigh=NNEW(int,nkt);
+	neigh=NNEW(ITG,40*net);ipneigh=NNEW(ITG,nkt);
     }
     frd(cot,&nkt,kont,ipkont,lakont,&net,vt,stnt,inumt,nmethod,
 	    kode,filab,eent,t1t,fnt,&freq,epn,ielmatt,matname,enernt,xstaten,

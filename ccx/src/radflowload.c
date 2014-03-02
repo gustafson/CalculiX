@@ -36,48 +36,48 @@
 
 static char *sideload1;
 
-static int *kontri1,*nloadtr1,*idist=NULL,*ntrit1,*mi1,*jqrad1,
+static ITG *kontri1,*nloadtr1,*idist=NULL,*ntrit1,*mi1,*jqrad1,
     *irowrad1,*nzsrad1,num_cpus,*ntri1,*ntr1;
 
 static double *vold1,*co1,*pmid1,*e11,*e21,*e31,*adview=NULL,*auview=NULL,*dist=NULL,
     *area1,sidemean1;
 
-void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
-                 double *aurad,double *bcr,int *ipivr,
-                 double *ac,double *bc,int *nload,char *sideload,
-                 int *nelemload,double *xloadact,char *lakon,int *ipiv,
-                 int *ntmat_,double *vold,double *shcon,
-                 int *nshcon,int *ipkon,int *kon,double *co,
-                 int *kontri,
-                 int *ntri,int *nloadtr,double *tarea,double *tenv,
+void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
+                 double *aurad,double *bcr,ITG *ipivr,
+                 double *ac,double *bc,ITG *nload,char *sideload,
+                 ITG *nelemload,double *xloadact,char *lakon,ITG *ipiv,
+                 ITG *ntmat_,double *vold,double *shcon,
+                 ITG *nshcon,ITG *ipkon,ITG *kon,double *co,
+                 ITG *kontri,
+                 ITG *ntri,ITG *nloadtr,double *tarea,double *tenv,
                  double *physcon,double *erad,double **adviewp, 
                  double **auviewp,
-                 int *nflow,int *ikboun,
-                 double *xbounact,int *nboun,int *ithermal,
-                 int *iinc,int *iit,double *cs, int *mcs, int *inocs, 
-                 int *ntrit,int *nk, double *fenv,int *istep,double *dtime,
-                 double *ttime,double *time,int *ilboun,int *ikforc,
-                 int *ilforc,double *xforcact,int *nforc,double *cam,
-                 int *ielmat,int *nteq,double *prop,int *ielprop,int *nactdog,
-                 int *nacteq,int *nodeboun,int *ndirboun,
-                 int *network, double *rhcon, int *nrhcon, int *ipobody,
-                 int *ibody, double *xbodyact, int *nbody,int *iviewfile,
+                 ITG *nflow,ITG *ikboun,
+                 double *xbounact,ITG *nboun,ITG *ithermal,
+                 ITG *iinc,ITG *iit,double *cs, ITG *mcs, ITG *inocs, 
+                 ITG *ntrit,ITG *nk, double *fenv,ITG *istep,double *dtime,
+                 double *ttime,double *time,ITG *ilboun,ITG *ikforc,
+                 ITG *ilforc,double *xforcact,ITG *nforc,double *cam,
+                 ITG *ielmat,ITG *nteq,double *prop,ITG *ielprop,ITG *nactdog,
+                 ITG *nacteq,ITG *nodeboun,ITG *ndirboun,
+                 ITG *network, double *rhcon, ITG *nrhcon, ITG *ipobody,
+                 ITG *ibody, double *xbodyact, ITG *nbody,ITG *iviewfile,
                  char *jobnamef, double *ctrl, double *xloadold,
-                 double *reltime, int *nmethod, char *set, int *mi,
-		 int * istartset,int* iendset,int *ialset,int *nset,
-                 int *ineighe, int *nmpc, int *nodempc,int *ipompc,
-                 double *coefmpc,char *labmpc, int *iemchange,int *nam, 
-                 int *iamload,int *jqrad,int *irowrad,int *nzsrad,
-                 int *icolrad,int *ne){
+                 double *reltime, ITG *nmethod, char *set, ITG *mi,
+		 ITG * istartset,ITG* iendset,ITG *ialset,ITG *nset,
+                 ITG *ineighe, ITG *nmpc, ITG *nodempc,ITG *ipompc,
+                 double *coefmpc,char *labmpc, ITG *iemchange,ITG *nam, 
+                 ITG *iamload,ITG *jqrad,ITG *irowrad,ITG *nzsrad,
+                 ITG *icolrad,ITG *ne){
   
   /* network=0: purely thermal
      network=1: general case (temperatures, fluxes and pressures unknown)
      network=2: purely aerodynamic, i.e. only fluxes and pressures unknown */
 
-  int nhrs=1,info=0,i,j,iin=0,icntrl,icutb=0,iin_abs=0,mt=mi[1]+1,im,
+  ITG nhrs=1,info=0,i,j,iin=0,icntrl,icutb=0,iin_abs=0,mt=mi[1]+1,im,
       symmetryflag=2,inputformat=1,node,channel,*ithread=NULL;
 
-  static int ifactorization=0;
+  static ITG ifactorization=0;
 
   double uamt=0,uamf=0,uamp=0,camt[2],camf[2],camp[2],
     cam1t=0.,cam1f=0.,cam1p=0.,sidemean,
@@ -146,7 +146,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 	  
 	  iin++;
 	  iin_abs++;
-	  printf("      gas iteration %d \n \n",iin);
+	  printf("      gas iteration %" ITGFORMAT " \n \n",iin);
 	  
           /* filling the lhs matrix */
          
@@ -207,14 +207,14 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 		  if (camt[0]>uamt) {uamt=camt[0];}
 		  printf
                     ("      largest increment of gas temperature= %e\n",uamt);
-		  if((int)camt[1]==0){
+		  if((ITG)camt[1]==0){
 		      printf
 		      ("      largest correction to gas temperature= %e\n",
                        camt[0]);
 		  }else{
 		      printf
-		      ("      largest correction to gas temperature= %e in node %d\n",
-                       camt[0],(int)camt[1]);
+		      ("      largest correction to gas temperature= %e in node %" ITGFORMAT "\n",
+                       camt[0],(ITG)camt[1]);
 		  }
 	      }
 	      
@@ -224,12 +224,12 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 		  cam0f=camf[0];
 		  if (camf[0]>uamf) {uamf=camf[0];}
 		  printf("      largest increment of gas massflow= %e\n",uamf);
-		  if((int)camf[1]==0){
+		  if((ITG)camf[1]==0){
 		      printf("      largest correction to gas massflow= %e\n",
 			 camf[0]);
 		  }else{
-		      printf("      largest correction to gas massflow= %e in node %d\n",
-			 camf[0],(int)camf[1]);
+		      printf("      largest correction to gas massflow= %e in node %" ITGFORMAT "\n",
+			 camf[0],(ITG)camf[1]);
 		  }
 		  
 		  cam2p=cam1p;
@@ -237,12 +237,12 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 		  cam0p=camp[0];
 		  if (camp[0]>uamp) {uamp=camp[0];}
 		  printf("      largest increment of gas pressure= %e\n",uamp);
-		  if((int)camp[1]==0){
+		  if((ITG)camp[1]==0){
 		      printf("      largest correction to gas pressure= %e\n",
                          camp[0]);
 		  }else{
-		      printf("      largest correction to gas pressure= %e in node %d\n",
-                         camp[0],(int)camp[1]);
+		      printf("      largest correction to gas pressure= %e in node %" ITGFORMAT "\n",
+                         camp[0],(ITG)camp[1]);
 		  }
 		  
 		  cam2a=cam1a;
@@ -250,12 +250,12 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 		  cam0a=cama[0];
 		  if (cama[0]>uama) {uama=cama[0];}
 		  printf("      largest increment of geometry= %e\n",uama);
-		  if((int)cama[1]==0){
+		  if((ITG)cama[1]==0){
 		      printf("      largest correction to geometry= %e\n",
                          cama[0]);
 		  }else{
-		      printf("      largest correction to geometry= %e in node %d\n",
-                         cama[0],(int)cama[1]);
+		      printf("      largest correction to geometry= %e in node %" ITGFORMAT "\n",
+                         cama[0],(ITG)cama[1]);
 		  }
 	      }	      
 	  }
@@ -303,7 +303,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
       
       /* variables for multithreading procedure */
       
-      int sys_cpus;
+      ITG sys_cpus;
       char *env,*envloc,*envsys;
       
       num_cpus = 0;
@@ -398,7 +398,7 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 	      RENEW(auview,double,num_cpus*2**nzsrad);
 	      
 	      dist=NNEW(double,num_cpus**ntrit);
-	      idist=NNEW(int,num_cpus**ntrit);
+	      idist=NNEW(ITG,num_cpus**ntrit);
 
 	      DMEMSET(adview,0,num_cpus**ntr,0.);
 	      DMEMSET(auview,0,num_cpus*2**nzsrad,0.);
@@ -411,11 +411,11 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 
 	      /* calculating the viewfactors */
 	      
-	      printf(" Using up to %d cpu(s) for the viewfactor calculation.\n\n", num_cpus);
+	      printf(" Using up to %" ITGFORMAT " cpu(s) for the viewfactor calculation.\n\n", num_cpus);
   
 	      /* create threads and wait */
 	      
-	      ithread=NNEW(int,num_cpus);
+	      ithread=NNEW(ITG,num_cpus);
 	      for(i=0; i<num_cpus; i++)  {
 		  ithread[i]=i;
 		  pthread_create(&tid[i], NULL, (void *)calcviewmt, (void *)&ithread[i]);
@@ -437,10 +437,10 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 	      RENEW(auview,double,2**nzsrad);
 
 /*	      for(i=0;i<*ntr;i++){
-		  printf("radflowload adview = %d %e\n",i,adview[i]);
+		  printf("radflowload adview = %" ITGFORMAT " %e\n",i,adview[i]);
 	      }
 	      for(i=0;i<2**nzsrad;i++){
-		  printf("radflowload auview = %d %e\n",i,auview[i]);
+		  printf("radflowload auview = %" ITGFORMAT " %e\n",i,auview[i]);
 		  }*/
 
 	      free(dist);free(idist);free(e1);free(e2);free(e3);
@@ -545,21 +545,21 @@ void radflowload(int *itg,int *ieg,int *ntg,int *ntr,double *adrad,
 
 /* subroutine for multithreading of calcview */
 
-void *calcviewmt(int *i){
+void *calcviewmt(ITG *i){
 
-    int indexad,indexau,indexdi,ntria,ntrib,nedelta;
+    ITG indexad,indexau,indexdi,ntria,ntrib,nedelta;
 
     indexad=*i**ntr1;
     indexau=*i*2**nzsrad1;
     indexdi=*i**ntrit1;
     
-    nedelta=(int)ceil(*ntri1/(double)num_cpus);
+    nedelta=(ITG)ceil(*ntri1/(double)num_cpus);
     ntria=*i*nedelta+1;
     ntrib=(*i+1)*nedelta;
     if(ntrib>*ntri1) ntrib=*ntri1;
 
-//    printf("i=%d,ntria=%d,ntrib=%d\n",i,ntria,ntrib);
-//    printf("indexad=%d,indexau=%d,indexdi=%d\n",indexad,indexau,indexdi);
+//    printf("i=%" ITGFORMAT ",ntria=%" ITGFORMAT ",ntrib=%" ITGFORMAT "\n",i,ntria,ntrib);
+//    printf("indexad=%" ITGFORMAT ",indexau=%" ITGFORMAT ",indexdi=%" ITGFORMAT "\n",indexad,indexau,indexdi);
 
     FORTRAN(calcview,(sideload1,vold1,co1,pmid1,e11,e21,e31,
                       kontri1,nloadtr1,&adview[indexad],

@@ -34,44 +34,44 @@
    #include "pardiso.h"
 #endif
 
-void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp, int *ne, 
-	       int **nodebounp, int **ndirbounp, double **xbounp, int *nboun,
-	       int **ipompcp, int **nodempcp, double **coefmpcp, char **labmpcp,
-               int *nmpc, int *nodeforc,int *ndirforc,double *xforc, 
-               int *nforc,int *nelemload, char *sideload,double *xload,
-	       int *nload, 
-	       int **nactdofp,int *neq, int *nzl,int *icol, int *irow, 
-	       int *nmethod, int **ikmpcp, int **ilmpcp, int **ikbounp, 
-	       int **ilbounp,double *elcon, int *nelcon, double *rhcon, 
-	       int *nrhcon,double *cocon, int *ncocon,
-               double *alcon, int *nalcon, double *alzero, 
-               int **ielmatp,int **ielorienp, int *norien, double *orab, 
-               int *ntmat_,double **t0p, 
-	       double **t1p,int *ithermal,double *prestr, int *iprestr, 
-	       double **voldp,int *iperturb, double *sti, int *nzs, 
+void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *ne, 
+	       ITG **nodebounp, ITG **ndirbounp, double **xbounp, ITG *nboun,
+	       ITG **ipompcp, ITG **nodempcp, double **coefmpcp, char **labmpcp,
+               ITG *nmpc, ITG *nodeforc,ITG *ndirforc,double *xforc, 
+               ITG *nforc,ITG *nelemload, char *sideload,double *xload,
+	       ITG *nload, 
+	       ITG **nactdofp,ITG *neq, ITG *nzl,ITG *icol, ITG *irow, 
+	       ITG *nmethod, ITG **ikmpcp, ITG **ilmpcp, ITG **ikbounp, 
+	       ITG **ilbounp,double *elcon, ITG *nelcon, double *rhcon, 
+	       ITG *nrhcon,double *cocon, ITG *ncocon,
+               double *alcon, ITG *nalcon, double *alzero, 
+               ITG **ielmatp,ITG **ielorienp, ITG *norien, double *orab, 
+               ITG *ntmat_,double **t0p, 
+	       double **t1p,ITG *ithermal,double *prestr, ITG *iprestr, 
+	       double **voldp,ITG *iperturb, double *sti, ITG *nzs, 
 	       double *tinc, double *tper, double *xmodal,
 	       double **veoldp, char *amname, double *amta,
-	       int *namta, int *nam, int *iamforc, int *iamload,
-	       int **iamt1p,int *jout,
-	       int *kode, char *filab,double **emep, double *xforcold, 
+	       ITG *namta, ITG *nam, ITG *iamforc, ITG *iamload,
+	       ITG **iamt1p,ITG *jout,
+	       ITG *kode, char *filab,double **emep, double *xforcold, 
 	       double *xloadold,
-               double **t1oldp, int **iambounp, double **xbounoldp, int *iexpl,
-               double *plicon, int *nplicon, double *plkcon,int *nplkcon,
-               double *xstate, int *npmat_, char *matname, int *mi,
-               int *ncmat_, int *nstate_, double **enerp, char *jobnamec,
-               double *ttime, char *set, int *nset, int *istartset,
-               int *iendset, int *ialset, int *nprint, char *prlab,
-               char *prset, int *nener, double *trab, 
-               int **inotrp, int *ntrans, double **fmpcp, char *cbody, int *ibody,
-               double *xbody, int *nbody, double *xbodyold, int *istep,
-               int *isolver, int *jq, char *output, int *mcs,int *nkon, 
-	       int *ics, double *cs, int *mpcend,double *ctrl,
-	       int *ikforc, int *ilforc, double *thicke){
+               double **t1oldp, ITG **iambounp, double **xbounoldp, ITG *iexpl,
+               double *plicon, ITG *nplicon, double *plkcon,ITG *nplkcon,
+               double *xstate, ITG *npmat_, char *matname, ITG *mi,
+               ITG *ncmat_, ITG *nstate_, double **enerp, char *jobnamec,
+               double *ttime, char *set, ITG *nset, ITG *istartset,
+               ITG *iendset, ITG *ialset, ITG *nprint, char *prlab,
+               char *prset, ITG *nener, double *trab, 
+               ITG **inotrp, ITG *ntrans, double **fmpcp, char *cbody, ITG *ibody,
+               double *xbody, ITG *nbody, double *xbodyold, ITG *istep,
+               ITG *isolver, ITG *jq, char *output, ITG *mcs,ITG *nkon, 
+	       ITG *ics, double *cs, ITG *mpcend,double *ctrl,
+	       ITG *ikforc, ITG *ilforc, double *thicke){
 
   char fneig[132]="",description[13]="            ",*lakon=NULL,*labmpc=NULL,
     *labmpcold=NULL,cflag[1]=" ";
 
-  int nev,i,j,k, *inum=NULL,*ipobody=NULL,inewton=0,nsectors,im,
+  ITG nev,i,j,k, *inum=NULL,*ipobody=NULL,inewton=0,nsectors,im,
     iinc=0,l,iout,ielas,icmd,iprescribedboundary,ndata,nmd,nevd,
     ndatatot,*iphaseforc=NULL,*iphaseload=NULL,*iphaseboun=NULL,
     *isave=NULL,nfour,ii,ir,ic,mode,noddiam=-1,*nm=NULL,*islavact=NULL,
@@ -119,15 +119,15 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   /* dummy arguments for the call of expand*/
 
   char* tieset=NULL;
-  int *jqe=NULL,*icole=NULL,*irowe=NULL,ntie=0;
+  ITG *jqe=NULL,*icole=NULL,*irowe=NULL,ntie=0;
   double *adbe=NULL,*aube=NULL;
 
   FILE *f1;
 
-  int *ipneigh=NULL,*neigh=NULL;
+  ITG *ipneigh=NULL,*neigh=NULL;
 
 #ifdef SGI
-  int token;
+  ITG token;
 #endif
 
   co=*cop;kon=*konp;ipkon=*ipkonp;lakon=*lakonp;ielmat=*ielmatp;
@@ -181,12 +181,12 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   printf("        2) other boundary conditions than in the input deck\n");
   printf("           which created the .eig file\n\n");
 
-  if(fread(&cyclicsymmetry,sizeof(int),1,f1)!=1){
+  if(fread(&cyclicsymmetry,sizeof(ITG),1,f1)!=1){
       printf("*ERROR in steadystate reading the cyclic symmetry flag in the eigenvalue file");
       exit(0);
   }
 
-  if(fread(&nherm,sizeof(int),1,f1)!=1){
+  if(fread(&nherm,sizeof(ITG),1,f1)!=1){
       printf("*ERROR in steadystate reading the Hermitian flag in the eigenvalue file");
       exit(0);
   }
@@ -196,10 +196,10 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
   nmddof=0;nmdnode=0;nmdboun=0;nmdmpc=0;nmdelem=0;
 
-  imddof=NNEW(int,*nk*3);
-  imdnode=NNEW(int,*nk);
-  imdboun=NNEW(int,*nboun);
-  imdmpc=NNEW(int,*nmpc);
+  imddof=NNEW(ITG,*nk*3);
+  imdnode=NNEW(ITG,*nk);
+  imdboun=NNEW(ITG,*nboun);
+  imdmpc=NNEW(ITG,*nmpc);
   FORTRAN(createmddof,(imddof,&nmddof,istartset,iendset,
 		       ialset,nactdof,ithermal,mi,imdnode,&nmdnode,
 		       ikmpc,ilmpc,ipompc,nodempc,nmpc,
@@ -245,10 +245,10 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  
       /* determining the elements belonging to a given node */
       
-      iponoel=NNEW(int,*nk);
-      inoel=NNEW(int,2**nkon);
+      iponoel=NNEW(ITG,*nk);
+      inoel=NNEW(ITG,2**nkon);
       FORTRAN(elementpernode,(iponoel,inoel,lakon,ipkon,kon,ne));
-      imdelem=NNEW(int,*ne);
+      imdelem=NNEW(ITG,*ne);
 
       /* storing the elements in which integration point results
          are needed; storing the nodes which are needed to
@@ -262,7 +262,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
                    ialset,ipkon,kon,istartset,iendset,nforc,
 		   ikforc,ilforc));
 
-      RENEW(imdelem,int,nmdelem);
+      RENEW(imdelem,ITG,nmdelem);
       free(iponoel);free(inoel);
   }
 
@@ -277,10 +277,10 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
   for(i=0;i<nmddof;i++){imddof[i]-=1;}
 
-  RENEW(imddof,int,nmddof);
-  RENEW(imdnode,int,nmdnode);
-  RENEW(imdboun,int,nmdboun);
-  RENEW(imdmpc,int,nmdmpc);
+  RENEW(imddof,ITG,nmddof);
+  RENEW(imdnode,ITG,nmdnode);
+  RENEW(imdboun,ITG,nmdboun);
+  RENEW(imdmpc,ITG,nmdmpc);
 
   nsectors=1;
 
@@ -289,7 +289,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       nkg=*nk;
       neg=*ne;
 
-      if(fread(&nev,sizeof(int),1,f1)!=1){
+      if(fread(&nev,sizeof(ITG),1,f1)!=1){
 	  printf("*ERROR in steadystate reading the number of eigenvalues in the eigenvalue file");
 	  exit(0);
       }
@@ -376,12 +376,12 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
   else{
       nev=0;
       do{
-	  if(fread(&nmd,sizeof(int),1,f1)!=1){
+	  if(fread(&nmd,sizeof(ITG),1,f1)!=1){
 	      break;
 	  }
 
-	  if(fread(&nevd,sizeof(int),1,f1)!=1){
-	      printf("*ERROR in steadystate reading the number of eigenvalues for nodal diameter %d in the eigenvalue file",nmd);
+	  if(fread(&nevd,sizeof(ITG),1,f1)!=1){
+	      printf("*ERROR in steadystate reading the number of eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
 	      exit(0);
 	  }
 
@@ -389,7 +389,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
 	  if(nev==0){
 	      if(nherm==1){d=NNEW(double,nevd);}else{d=NNEW(double,2*nevd);}
-	      nm=NNEW(int,nevd);
+	      nm=NNEW(ITG,nevd);
 	  }else{
 	      if(nherm!=1){
 		  printf("*ERROR in steadystate: non-Hermitian systems cannot\n");
@@ -398,12 +398,12 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  FORTRAN(stop,());
 	      }
 	      RENEW(d,double,nev+nevd);
-	      RENEW(nm,int,nev+nevd);
+	      RENEW(nm,ITG,nev+nevd);
 	  }
 	  
 	  if(nherm==1){
 	      if(fread(&d[nev],sizeof(double),nevd,f1)!=nevd){
-		  printf("*ERROR in steadystate reading the eigenvalues for nodal diameter %d in the eigenvalue file",nmd);
+		  printf("*ERROR in steadystate reading the eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
 		  exit(0);
 	      }
 	      for(i=nev;i<nev+nevd;i++){
@@ -442,7 +442,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  }
 	  
 	  if(fread(&z[(long long)neq[1]*nev],sizeof(double),neq[1]*nevd,f1)!=neq[1]*nevd){
-	      printf("*ERROR in steadystate reading the eigenvectors for nodal diameter %d in the eigenvalue file",nmd);
+	      printf("*ERROR in steadystate reading the eigenvectors for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
 	      exit(0);
 	  }
 
@@ -468,13 +468,13 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       /* determining the maximum amount of sectors */
 
       for(i=0;i<*mcs;i++){
-	  if(cs[17*i]>nsectors) nsectors=(int)(cs[17*i]+0.5);
+	  if(cs[17*i]>nsectors) nsectors=(ITG)(cs[17*i]+0.5);
       }
 
         /* determining the maximum number of sectors to be plotted */
 
       for(j=0;j<*mcs;j++){
-	  if(cs[17*j+4]>ngraph) ngraph=(int)cs[17*j+4];
+	  if(cs[17*j+4]>ngraph) ngraph=(ITG)cs[17*j+4];
       }
       nkg=*nk*ngraph;
       neg=*ne*ngraph;
@@ -491,32 +491,32 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  RENEW(t0,double,*nk*nsectors);
 	  RENEW(t1old,double,*nk*nsectors);
 	  RENEW(t1,double,*nk*nsectors);
-	  if(*nam>0) RENEW(iamt1,int,*nk*nsectors);
+	  if(*nam>0) RENEW(iamt1,ITG,*nk*nsectors);
       }
-      RENEW(nactdof,int,mt**nk*nsectors);
-      if(*ntrans>0) RENEW(inotr,int,2**nk*nsectors);
-      RENEW(kon,int,*nkon*nsectors);
-      RENEW(ipkon,int,*ne*nsectors);
+      RENEW(nactdof,ITG,mt**nk*nsectors);
+      if(*ntrans>0) RENEW(inotr,ITG,2**nk*nsectors);
+      RENEW(kon,ITG,*nkon*nsectors);
+      RENEW(ipkon,ITG,*ne*nsectors);
       for(i=*ne;i<*ne*nsectors;i++){ipkon[i]=-1;}
       RENEW(lakon,char,8**ne*nsectors);
-      RENEW(ielmat,int,mi[2]**ne*nsectors);
-      if(*norien>0) RENEW(ielorien,int,mi[2]**ne*nsectors);
+      RENEW(ielmat,ITG,mi[2]**ne*nsectors);
+      if(*norien>0) RENEW(ielorien,ITG,mi[2]**ne*nsectors);
 //      RENEW(z,double,(long long)neq[1]*nev*nsectors/2);
 
-      RENEW(nodeboun,int,*nboun*nsectors);
-      RENEW(ndirboun,int,*nboun*nsectors);
-      if(*nam>0) RENEW(iamboun,int,*nboun*nsectors);
+      RENEW(nodeboun,ITG,*nboun*nsectors);
+      RENEW(ndirboun,ITG,*nboun*nsectors);
+      if(*nam>0) RENEW(iamboun,ITG,*nboun*nsectors);
       RENEW(xboun,double,*nboun*nsectors);
       RENEW(xbounold,double,*nboun*nsectors);
-      RENEW(ikboun,int,*nboun*nsectors);
-      RENEW(ilboun,int,*nboun*nsectors);
+      RENEW(ikboun,ITG,*nboun*nsectors);
+      RENEW(ilboun,ITG,*nboun*nsectors);
 
-      ipompcold=NNEW(int,*nmpc);
-      nodempcold=NNEW(int,3**mpcend);
+      ipompcold=NNEW(ITG,*nmpc);
+      nodempcold=NNEW(ITG,3**mpcend);
       coefmpcold=NNEW(double,*mpcend);
       labmpcold=NNEW(char,20**nmpc);
-      ikmpcold=NNEW(int,*nmpc);
-      ilmpcold=NNEW(int,*nmpc);
+      ikmpcold=NNEW(ITG,*nmpc);
+      ilmpcold=NNEW(ITG,*nmpc);
 
       for(i=0;i<*nmpc;i++){ipompcold[i]=ipompc[i];}
       for(i=0;i<3**mpcend;i++){nodempcold[i]=nodempc[i];}
@@ -527,23 +527,23 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       nmpcold=*nmpc;
       mpcendold=*mpcend;
 
-      RENEW(ipompc,int,*nmpc*nsectors);
-      RENEW(nodempc,int,3**mpcend*nsectors);
+      RENEW(ipompc,ITG,*nmpc*nsectors);
+      RENEW(nodempc,ITG,3**mpcend*nsectors);
       RENEW(coefmpc,double,*mpcend*nsectors);
       RENEW(labmpc,char,20**nmpc*nsectors+1);
-      RENEW(ikmpc,int,*nmpc*nsectors);
-      RENEW(ilmpc,int,*nmpc*nsectors);
+      RENEW(ikmpc,ITG,*nmpc*nsectors);
+      RENEW(ilmpc,ITG,*nmpc*nsectors);
       RENEW(fmpc,double,*nmpc*nsectors);
 
       /* reallocating the fields for the nodes in which the
          solution has to be calculated */
 
-      RENEW(imddof,int,neq[1]/2*nsectors);
-      RENEW(imdnode,int,*nk*nsectors);
-      RENEW(imdboun,int,*nboun*nsectors);
-      RENEW(imdmpc,int,*nmpc*nsectors);
+      RENEW(imddof,ITG,neq[1]/2*nsectors);
+      RENEW(imdnode,ITG,*nk*nsectors);
+      RENEW(imdboun,ITG,*nboun*nsectors);
+      RENEW(imdmpc,ITG,*nmpc*nsectors);
 
-//      izdof=NNEW(int,1);
+//      izdof=NNEW(ITG,1);
 
       expand(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
 	ipompc,nodempc,coefmpc,labmpc,nmpc,nodeforc,ndirforc,xforc,
@@ -563,10 +563,10 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	imdnode,&nmdnode,imdboun,&nmdboun,imdmpc,&nmdmpc,&izdof,&nzdof,
 	&nherm,xmr,xmi);
 
-      RENEW(imddof,int,nmddof);
-      RENEW(imdnode,int,nmdnode);
-      RENEW(imdboun,int,nmdboun);
-      RENEW(imdmpc,int,nmdmpc);
+      RENEW(imddof,ITG,nmddof);
+      RENEW(imdnode,ITG,nmdnode);
+      RENEW(imdboun,ITG,nmdboun);
+      RENEW(imdmpc,ITG,nmdmpc);
 
       free(vold);vold=NNEW(double,mt**nk);
       free(veold);veold=NNEW(double,mt**nk);
@@ -613,10 +613,10 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 /*      nev2=2*nev;
       am=NNEW(double,nev2*nev2);
       bm=NNEW(double,nev2);
-      ipiv=NNEW(int,nev2);*/
+      ipiv=NNEW(ITG,nev2);*/
   }
 
-  inum=NNEW(int,*nk);
+  inum=NNEW(ITG,*nk);
   strcpy1(&cflag[0],&filab[4],1);
   FORTRAN(createinum,(ipkon,inum,kon,lakon,nk,ne,&cflag[0],nelemload,
 	      nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi));
@@ -665,7 +665,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
       /* harmonic excitation */
 
-      ikactmechr=NNEW(int,neq[1]);ikactmechi=NNEW(int,neq[1]);
+      ikactmechr=NNEW(ITG,neq[1]);ikactmechi=NNEW(ITG,neq[1]);
       nactmechr=0;nactmechi=0;
       
       /* result fields */
@@ -798,13 +798,13 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  }
 	      
 	  /*copy the damping coefficients for every eigenfrequencie from xmodal[11....] */
-	  if(nev<(int)xmodal[10]){
+	  if(nev<(ITG)xmodal[10]){
 	      imax=nev;
 	      printf("*WARNING in steadystate: too many modal damping coefficients applied\n");
 	      printf("         damping coefficients corresponding to nonexisting eigenvalues are ignored\n");
 	  }
 	  else{
-	      imax=(int)xmodal[10];
+	      imax=(ITG)xmodal[10];
 	  }
 	  for(i=0; i<imax; i++){
 	      if(nherm==1){
@@ -824,14 +824,14 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       
       /* check whether the loading is real or imaginary */
       
-      iphaseforc=NNEW(int,*nforc);
+      iphaseforc=NNEW(ITG,*nforc);
       for (i=0;i<*nforc;i++){
 	  if(nodeforc[2*i+1]>=nsectors){
 	      iphaseforc[i]=1;
 	  }
       }
       
-      iphaseload=NNEW(int,*nload);
+      iphaseload=NNEW(ITG,*nload);
       for (i=0;i<*nload;i++){
 	  if(nelemload[2*i+1]>=nsectors){
 	      iphaseload[i]=1;
@@ -839,7 +839,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
       }
       
       if(iprescribedboundary){
-	  iphaseboun=NNEW(int,*nboun);
+	  iphaseboun=NNEW(ITG,*nboun);
 	  for (i=0;i<*nboun;i++){
 	      if(nodeboun[i]>*nk){
 		  iphaseboun[i]=1;
@@ -872,13 +872,13 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
       if(*nbody>0){
 	  ifreebody=*ne+1;
-	  ipobody=NNEW(int,2*ifreebody**nbody);
+	  ipobody=NNEW(ITG,2*ifreebody**nbody);
 	  for(k=1;k<=*nbody;k++){
 	      FORTRAN(bodyforce,(cbody,ibody,ipobody,nbody,set,istartset,
 				 iendset,ialset,&inewton,nset,&ifreebody,&k));
-	      RENEW(ipobody,int,2*(*ne+ifreebody));
+	      RENEW(ipobody,ITG,2*(*ne+ifreebody));
 	  }
-	  RENEW(ipobody,int,2*(ifreebody-1));
+	  RENEW(ipobody,ITG,2*(ifreebody-1));
       }
       
       br=NNEW(double,neq[1]); /* load rhs vector */
@@ -1349,12 +1349,12 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		      bji[i]=(bb[i]*(d[i]-freq[l]*freq[l])-
 			      aa[i]*fric[i]*freq[l])/dd;
 		  }
-		  /*    printf("old l=%d,bjr=%f,bji=%f\n",l,bjr[0],bji[0]);*/
+		  /*    printf("old l=%" ITGFORMAT ",bjr=%f,bji=%f\n",l,bjr[0],bji[0]);*/
 	      }else{
 		  nev2=2*nev;
 		  am=NNEW(double,nev2*nev2);
 		  bm=NNEW(double,nev2);
-		  ipiv=NNEW(int,nev2);
+		  ipiv=NNEW(ITG,nev2);
 		  
 		  for(i=0;i<nev2;i++){
 		      for(j=0;j<nev2;j++){
@@ -1382,7 +1382,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  FORTRAN(dgesv,(&nev2,&nrhs,am,&nev2,ipiv,bm,&nev2,&info));
 		  if(info!=0){
 		      printf("*ERROR in steadystate: fatal termination of dgesv\n");
-		      printf("       info=%d\n",info);
+		      printf("       info=%" ITGFORMAT "\n",info);
 		      FORTRAN(stop,());
 		  }
 		  
@@ -1399,7 +1399,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      nev2=2*nev;
 	      am=NNEW(double,nev2*nev2);
 	      bm=NNEW(double,nev2);
-	      ipiv=NNEW(int,nev2);
+	      ipiv=NNEW(ITG,nev2);
 		  
 	      ax=NNEW(double,nev);
 	      bx=NNEW(double,nev);
@@ -1424,7 +1424,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      FORTRAN(dgesv,(&nev2,&nrhs,am,&nev2,ipiv,bm,&nev2,&info));
 	      if(info!=0){
 		  printf("*ERROR in steadystate: fatal termination of dgesv\n");
-		  printf("       info=%d\n",info);
+		  printf("       info=%" ITGFORMAT "\n",info);
 		  FORTRAN(stop,());
 	      }
 	      
@@ -1652,7 +1652,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  
 	  mode=-1;
 	  if(strcmp1(&filab[1044],"ZZS")==0){
-	      neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
+	      neigh=NNEW(ITG,40**ne);ipneigh=NNEW(ITG,*nk);
 	  }
 
 	  frd(co,&nkg,kon,ipkon,lakon,&neg,vr,stnr,inum,nmethod,
@@ -1853,7 +1853,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  mode=0;
 	  
 	  if(strcmp1(&filab[1044],"ZZS")==0){
-	      neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
+	      neigh=NNEW(ITG,40**ne);ipneigh=NNEW(ITG,*nk);
 	  }
 
 	  frd(co,&nkg,kon,ipkon,lakon,&neg,vi,stni,inum,nmethod,
@@ -1949,7 +1949,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
       /* steady state response to a nonharmonic periodic loading */
 
-      ikactmech=NNEW(int,neq[1]);
+      ikactmech=NNEW(ITG,neq[1]);
       nactmech=0;
       
       xforcact=NNEW(double,nfour**nforc);
@@ -1961,7 +1961,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
       r=NNEW(double,nfour);
       wsave=NNEW(double,2*nfour);
-      isave=NNEW(int,15);
+      isave=NNEW(ITG,15);
       
       /*  check for nonzero SPC's */
       
@@ -1999,13 +1999,13 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  }
 	      
 	  /*copy the damping coefficients for every eigenfrequencie from xmodal[11....] */
-	  if(nev<(int)xmodal[10]){
+	  if(nev<(ITG)xmodal[10]){
 	      imax=nev;
 	      printf("*WARNING in steadystate: too many modal damping coefficients applied\n");
 	      printf("         damping coefficients corresponding to nonexisting eigenvalues are ignored\n");
 	  }
 	  else{
-	      imax=(int)xmodal[10];
+	      imax=(ITG)xmodal[10];
 	  }
 	  for(i=0; i<imax; i++){
 	      fric[i]=2.*sqrt(d[i])*xmodal[11+i];     
@@ -2204,13 +2204,13 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 
 	  if(*nbody>0){
 	      ifreebody=*ne+1;
-	      ipobody=NNEW(int,2*ifreebody**nbody);
+	      ipobody=NNEW(ITG,2*ifreebody**nbody);
 	      for(k=1;k<=*nbody;k++){
 		  FORTRAN(bodyforce,(cbody,ibody,ipobody,nbody,set,istartset,
 			    iendset,ialset,&inewton,nset,&ifreebody,&k));
-		  RENEW(ipobody,int,2*(*ne+ifreebody));
+		  RENEW(ipobody,ITG,2*(*ne+ifreebody));
 	      }
-	      RENEW(ipobody,int,2*(ifreebody-1));
+	      RENEW(ipobody,ITG,2*(ifreebody-1));
 	  }
 	  
 	  br=NNEW(double,neq[1]); /* load rhs vector (real part) */
@@ -2429,7 +2429,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  nev2=2*nev;
 		  am=NNEW(double,nev2*nev2);
 		  bm=NNEW(double,nev2);
-		  ipiv=NNEW(int,nev2);
+		  ipiv=NNEW(ITG,nev2);
 		  
 		  for(i=0;i<nev2;i++){
 		      for(j=0;j<nev2;j++){
@@ -2457,7 +2457,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  FORTRAN(dgesv,(&nev2,&nrhs,am,&nev2,ipiv,bm,&nev2,&info));
 		  if(info!=0){
 		      printf("*ERROR in steadystate: fatal termination of dgesv\n");
-		      printf("       info=%d\n",info);
+		      printf("       info=%" ITGFORMAT "\n",info);
 /*		  FORTRAN(stop,());*/
 		  }
 		  
@@ -2575,7 +2575,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  
 		  /* correction for the sinus terms */
 		  
-		  if((l!=0)&&(2*(int)floor(l/2.+0.1)==l)){
+		  if((l!=0)&&(2*(ITG)floor(l/2.+0.1)==l)){
 		      for(i=0;i<neq[1];i++){
 //			  bi[i]-=pi/2.;}
 			  bi[i]+=pi/2.;}
@@ -2610,7 +2610,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 		  
 		  /* correction for the sinus terms */
 		  
-		  if((l!=0)&&(2*(int)floor(l/2.+0.1)==l)){
+		  if((l!=0)&&(2*(ITG)floor(l/2.+0.1)==l)){
 		      for(jj=0;jj<nmddof;jj++){
 			  i=imddof[jj];
 //			  bi[i]-=pi/2.;}
@@ -2724,7 +2724,7 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	      mode=-1;
 	      
 	      if(strcmp1(&filab[1044],"ZZS")==0){
-		  neigh=NNEW(int,40**ne);ipneigh=NNEW(int,*nk);
+		  neigh=NNEW(ITG,40**ne);ipneigh=NNEW(ITG,*nk);
 	      }
 
 	      frd(co,&nkg,kon,ipkon,lakon,&neg,vr,stn,inum,nmethod,
@@ -2800,31 +2800,31 @@ void steadystate(double **cop, int *nk, int **konp, int **ipkonp, char **lakonp,
 	  RENEW(t0,double,*nk);
 	  RENEW(t1old,double,*nk);
 	  RENEW(t1,double,*nk);
-	  if(*nam>0) RENEW(iamt1,int,*nk);
+	  if(*nam>0) RENEW(iamt1,ITG,*nk);
       }
-      RENEW(nactdof,int,mt**nk);
-      if(*ntrans>0) RENEW(inotr,int,2**nk);
-      RENEW(kon,int,*nkon);
-      RENEW(ipkon,int,*ne);
+      RENEW(nactdof,ITG,mt**nk);
+      if(*ntrans>0) RENEW(inotr,ITG,2**nk);
+      RENEW(kon,ITG,*nkon);
+      RENEW(ipkon,ITG,*ne);
       RENEW(lakon,char,8**ne);
-      RENEW(ielmat,int,mi[2]**ne);
-      if(*norien>0) RENEW(ielorien,int,mi[2]**ne);
-      RENEW(nodeboun,int,*nboun);
-      RENEW(ndirboun,int,*nboun);
-      if(*nam>0) RENEW(iamboun,int,*nboun);
+      RENEW(ielmat,ITG,mi[2]**ne);
+      if(*norien>0) RENEW(ielorien,ITG,mi[2]**ne);
+      RENEW(nodeboun,ITG,*nboun);
+      RENEW(ndirboun,ITG,*nboun);
+      if(*nam>0) RENEW(iamboun,ITG,*nboun);
       RENEW(xboun,double,*nboun);
       RENEW(xbounold,double,*nboun);
-      RENEW(ikboun,int,*nboun);
-      RENEW(ilboun,int,*nboun);
+      RENEW(ikboun,ITG,*nboun);
+      RENEW(ilboun,ITG,*nboun);
 
       /* recovering the original multiple point constraints */
 
-      RENEW(ipompc,int,*nmpc);
-      RENEW(nodempc,int,3**mpcend);
+      RENEW(ipompc,ITG,*nmpc);
+      RENEW(nodempc,ITG,3**mpcend);
       RENEW(coefmpc,double,*mpcend);
       RENEW(labmpc,char,20**nmpc+1);
-      RENEW(ikmpc,int,*nmpc);
-      RENEW(ilmpc,int,*nmpc);
+      RENEW(ikmpc,ITG,*nmpc);
+      RENEW(ilmpc,ITG,*nmpc);
       RENEW(fmpc,double,*nmpc);
 
       *nmpc=nmpcold;

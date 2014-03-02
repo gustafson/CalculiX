@@ -21,23 +21,23 @@
 #include <string.h>
 #include "CalculiX.h"
 
-void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
-               int *istartset, int *iendset, int *ialset, int **itietrip,
-               char *lakon, int *ipkon, int *kon, int **koncontp,
-               int *nslavs, double *tietol, int *ismallsliding, int **itiefacp,
-               int **islavsurfp, int **islavnodep, int **imastnodep,
-               int **nslavnodep, int **nmastnodep, int *mortar,
-               int **imastopp,int *nkon,int **iponoelsp,int **inoelsp,
-	       int **ipep, int **imep, int *ne, int *ifacecount,
-               int *nmpc, int *mpcfree, int *memmpc_,
-               int **ipompcp, char **labmpcp, int **ikmpcp, int **ilmpcp,
-               double **fmpcp, int **nodempcp, double **coefmpcp,
-	       int *iperturb, int *ikboun, int *nboun, double *co,
-	       int *istep,double **xnoelsp){
+void inicont(ITG * nk,ITG *ncont, ITG *ntie, char *tieset, ITG *nset, char *set,
+               ITG *istartset, ITG *iendset, ITG *ialset, ITG **itietrip,
+               char *lakon, ITG *ipkon, ITG *kon, ITG **koncontp,
+               ITG *nslavs, double *tietol, ITG *ismallsliding, ITG **itiefacp,
+               ITG **islavsurfp, ITG **islavnodep, ITG **imastnodep,
+               ITG **nslavnodep, ITG **nmastnodep, ITG *mortar,
+               ITG **imastopp,ITG *nkon,ITG **iponoelsp,ITG **inoelsp,
+	       ITG **ipep, ITG **imep, ITG *ne, ITG *ifacecount,
+               ITG *nmpc, ITG *mpcfree, ITG *memmpc_,
+               ITG **ipompcp, char **labmpcp, ITG **ikmpcp, ITG **ilmpcp,
+               double **fmpcp, ITG **nodempcp, double **coefmpcp,
+	       ITG *iperturb, ITG *ikboun, ITG *nboun, double *co,
+	       ITG *istep,double **xnoelsp){
     
   char kind1[2]="C",kind2[2]="-",*tchar1=NULL,*tchar3=NULL,*labmpc=NULL;
     
-  int *itietri=NULL,*koncont=NULL,*itiefac=NULL, *islavsurf=NULL,im,
+  ITG *itietri=NULL,*koncont=NULL,*itiefac=NULL, *islavsurf=NULL,im,
       *islavnode=NULL,*imastnode=NULL,*nslavnode=NULL,*nmastnode=NULL,
       nmasts,*ipe=NULL,*ime=NULL,*imastop=NULL,
       *iponoels=NULL,*inoels=NULL,ifreenoels,ifreeme,*ipoface=NULL,
@@ -63,45 +63,45 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
           istep));
   if(*ncont==0) return;
 
-  itietri=NNEW(int,2**ntie);
-  koncont=NNEW(int,4**ncont);
+  itietri=NNEW(ITG,2**ntie);
+  koncont=NNEW(ITG,4**ncont);
   
   /* triangulation of the master side */
   
   FORTRAN(triangucont,(ncont,ntie,tieset,nset,set,istartset,iendset,
 	  ialset,itietri,lakon,ipkon,kon,koncont,kind1,kind2,co,nk));
 
-  ipe=NNEW(int,*nk);
-  ime=NNEW(int,12**ncont);
+  ipe=NNEW(ITG,*nk);
+  ime=NNEW(ITG,12**ncont);
   DMEMSET(ipe,0,*nk,0.);
   DMEMSET(ime,0,12**ncont,0.);
-  imastop=NNEW(int,3**ncont);
+  imastop=NNEW(ITG,3**ncont);
 
   FORTRAN(trianeighbor,(ipe,ime,imastop,ncont,koncont,
 		        &ifreeme));
 
   if(*mortar==0){free(ipe);free(ime);}
-  else{RENEW(ime,int,4*ifreeme);}
+  else{RENEW(ime,ITG,4*ifreeme);}
 
   /* catalogueing the external faces (only for node-to-face
      contact with a nodal slave surface */
 
-  ipoface=NNEW(int,*nk);
-  nodface=NNEW(int,5*6**ne);
+  ipoface=NNEW(ITG,*nk);
+  nodface=NNEW(ITG,5*6**ne);
   FORTRAN(findsurface,(ipoface,nodface,ne,ipkon,kon,lakon,ntie,
 		 tieset));
     
-  itiefac=NNEW(int,2**ntie);
-//  islavsurf=NNEW(int,2*6**ne);
-  RENEW(islavsurf,int,2*6**ne);DMEMSET(islavsurf,0,12**ne,0.);
-  islavnode=NNEW(int,8*ncone);
-  nslavnode=NNEW(int,*ntie+1);
-  iponoels=NNEW(int,*nk);
-  inoels=NNEW(int,2**nkon);
+  itiefac=NNEW(ITG,2**ntie);
+//  islavsurf=NNEW(ITG,2*6**ne);
+  RENEW(islavsurf,ITG,2*6**ne);DMEMSET(islavsurf,0,12**ne,0.);
+  islavnode=NNEW(ITG,8*ncone);
+  nslavnode=NNEW(ITG,*ntie+1);
+  iponoels=NNEW(ITG,*nk);
+  inoels=NNEW(ITG,2**nkon);
   xnoels=NNEW(double,*nkon);
   
-  imastnode=NNEW(int,3**ncont);
-  nmastnode=NNEW(int,*ntie+1);
+  imastnode=NNEW(ITG,3**ncont);
+  nmastnode=NNEW(ITG,*ntie+1);
   
   /* catalogueing the slave faces and slave nodes 
      catalogueing the master nodes (only for Mortar contact) */
@@ -112,13 +112,13 @@ void inicont(int * nk,int *ncont, int *ntie, char *tieset, int *nset, char *set,
        iponoels,inoels,&ifreenoels,mortar,ipoface,nodface,nk,
        xnoels));
 
-  RENEW(islavsurf,int,2**ifacecount+2);
-  RENEW(islavnode,int,*nslavs);
-  RENEW(inoels,int,2*ifreenoels);
+  RENEW(islavsurf,ITG,2**ifacecount+2);
+  RENEW(islavnode,ITG,*nslavs);
+  RENEW(inoels,ITG,2*ifreenoels);
   RENEW(xnoels,double,ifreenoels);
   free(ipoface);free(nodface);
   
-  RENEW(imastnode,int,nmasts);
+  RENEW(imastnode,ITG,nmasts);
 
   *itietrip=itietri;*koncontp=koncont;
   *itiefacp=itiefac;*islavsurfp=islavsurf;

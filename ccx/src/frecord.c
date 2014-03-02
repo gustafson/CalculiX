@@ -1,3 +1,10 @@
+
+#include <unistd.h>
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include "CalculiX.h"
 /* ---------------------------------------------------------------- */
 /* ---------------------------------------------------------------- */
 
@@ -7,9 +14,9 @@
 
 
 /* liest einen Record bis '\n'; uebergibt Anzahl gelesene Zeichen */
-int frecord( FILE *handle1,  char *string)
+ITG frecord( FILE *handle1,  char *string)
 {
-  register int i, n, c;
+  register ITG i, n, c;
 
   for (i=0; i<MAX_LINE_LENGTH-1; i++)
   {

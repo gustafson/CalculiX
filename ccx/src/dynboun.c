@@ -34,25 +34,25 @@
    #include "pardiso.h"
 #endif
 
-void dynboun(double *amta,int *namta,int *nam,double *ampli, double *time,
+void dynboun(double *amta,ITG *namta,ITG *nam,double *ampli, double *time,
              double *ttime,double *dtime,double *xbounold,double *xboun,
-             double *xbounact,int *iamboun,int *nboun,int *nodeboun,
-             int *ndirboun, double *ad, double *au, double *adb,
-             double *aub, int *icol, int *irow, int *neq, int *nzs,
-             double *sigma, double *b, int *isolver,
-             double *alpham, double *betam, int *nzl,
-             int *init,double *bact, double *bmin, int *jq, 
+             double *xbounact,ITG *iamboun,ITG *nboun,ITG *nodeboun,
+             ITG *ndirboun, double *ad, double *au, double *adb,
+             double *aub, ITG *icol, ITG *irow, ITG *neq, ITG *nzs,
+             double *sigma, double *b, ITG *isolver,
+             double *alpham, double *betam, ITG *nzl,
+             ITG *init,double *bact, double *bmin, ITG *jq, 
              char *amname,double *bv, double *bprev, double *bdiff,
-             int *nactmech, int *icorrect, int *iprev){
+             ITG *nactmech, ITG *icorrect, ITG *iprev){
 
-    int idiff[3],i,j,ic,ir,im,symmetryflag=0;
+    ITG idiff[3],i,j,ic,ir,im,symmetryflag=0;
 
     double *xbounmin=NULL,*xbounplus=NULL,*bplus=NULL,
 	*ba=NULL,deltatime,deltatime2,deltatimesq,timemin,ttimemin,
         timeplus,ttimeplus,*aux=NULL,*b1=NULL,*b2=NULL,*bnew=NULL;
 
 #ifdef SGI
-  int token=1;
+  ITG token=1;
 #endif
     
   xbounmin=NNEW(double,*nboun);

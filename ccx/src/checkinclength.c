@@ -30,14 +30,14 @@
 #endif
 
 void checkinclength(double *time,double *ttime,double *theta, double *dtheta,
-          int *idrct, double *tper,double *tmax, double *tmin, double *ctrl, 
-          double *amta,int *namta, int *itpamp, int *inext, double *dthetaref, 
-          int *itp,int *jprint, int *jout){
+          ITG *idrct, double *tper,double *tmax, double *tmin, double *ctrl, 
+          double *amta,ITG *namta, ITG *itpamp, ITG *inext, double *dthetaref, 
+          ITG *itp,ITG *jprint, ITG *jout){
 
-    int id,istart,iend,inew,ireduceincrement;
+    ITG id,istart,iend,inew,ireduceincrement;
     double reftime;
 
-    int i0,ir,ip,ic,il,ig,ia;
+    ITG i0,ir,ip,ic,il,ig,ia;
     double df,dc,db,dd,ran,can,rap,ea,cae,ral,da;
     i0=ctrl[0];ir=ctrl[1];ip=ctrl[2];ic=ctrl[3];il=ctrl[4];ig=ctrl[5];ia=ctrl[7];
     df=ctrl[10];dc=ctrl[11];db=ctrl[12];da=ctrl[13];dd=ctrl[16];
@@ -67,7 +67,7 @@ void checkinclength(double *time,double *ttime,double *theta, double *dtheta,
 	}else{
 	    inew=id+1;
 	}
-//	printf("istart=%d,iend=%d,inext=%d,inew=%d\n",istart,iend,*inext,inew);
+//	printf("istart=%" ITGFORMAT ",iend=%" ITGFORMAT ",inext=%" ITGFORMAT ",inew=%" ITGFORMAT "\n",istart,iend,*inext,inew);
 
             /* inew: smallest time point exceeding time+dtheta*tper
                inext: smallest time point exceeding time */

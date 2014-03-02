@@ -20,20 +20,20 @@
 #include <stdlib.h>
 #include "CalculiX.h"
 
-void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
-               int *istartset, int *iendset, int *ialset,
-               char *lakon, int *ipkon, int *kon,
+void tiedcontact(ITG *ntie, char *tieset, ITG *nset, char *set,
+               ITG *istartset, ITG *iendset, ITG *ialset,
+               char *lakon, ITG *ipkon, ITG *kon,
 	       double *tietol,
-               int *nmpc, int *mpcfree, int *memmpc_,
-               int **ipompcp, char **labmpcp, int **ikmpcp, int **ilmpcp,
-               double **fmpcp, int **nodempcp, double **coefmpcp,
-	       int *ithermal, double *co, double *vold, int *cfd,
-	       int *nmpc_, int *mi, int *nk,int *istep,int *ikboun,
-	       int *nboun,char *kind1,char *kind2){
+               ITG *nmpc, ITG *mpcfree, ITG *memmpc_,
+               ITG **ipompcp, char **labmpcp, ITG **ikmpcp, ITG **ilmpcp,
+               double **fmpcp, ITG **nodempcp, double **coefmpcp,
+	       ITG *ithermal, double *co, double *vold, ITG *cfd,
+	       ITG *nmpc_, ITG *mi, ITG *nk,ITG *istep,ITG *ikboun,
+	       ITG *nboun,char *kind1,char *kind2){
 
   char *labmpc=NULL;
 
-  int *itietri=NULL,*koncont=NULL,nconf,i,k,*nx=NULL,im,
+  ITG *itietri=NULL,*koncont=NULL,nconf,i,k,*nx=NULL,im,
       *ny=NULL,*nz=NULL,*ifaceslave=NULL,*istartfield=NULL,
       *iendfield=NULL,*ifield=NULL,ntrimax,index,
       ncont,ncone,*ipompc=NULL,*ikmpc=NULL,
@@ -48,7 +48,7 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
 
   /* identifying the slave surfaces as nodal or facial surfaces */
 
-  ifaceslave=NNEW(int,*ntie);
+  ifaceslave=NNEW(ITG,*ntie);
 
   FORTRAN(identifytiedface,(tieset,ntie,set,nset,ifaceslave,kind1));
 
@@ -69,8 +69,8 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
      koncont(4,i): face label to which the triangle belongs =
      10*element+side number */
 
-  itietri=NNEW(int,2**ntie);
-  koncont=NNEW(int,4*ncont);
+  itietri=NNEW(ITG,2**ntie);
+  koncont=NNEW(ITG,4*ncont);
 
   /* triangulation of the master surface */
 
@@ -79,11 +79,11 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
   
   /* catalogueing the neighbors of the master triangles */
   
-  RENEW(ipe,int,*nk);
-  RENEW(ime,int,12*ncont);
+  RENEW(ipe,ITG,*nk);
+  RENEW(ime,ITG,12*ncont);
   DMEMSET(ipe,0,*nk,0.);
   DMEMSET(ime,0,12*ncont,0.);
-  imastop=NNEW(int,3*ncont);
+  imastop=NNEW(ITG,3*ncont);
 
   FORTRAN(trianeighbor,(ipe,ime,imastop,&ncont,koncont,
 		        &ifreeme));
@@ -100,9 +100,9 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
   
   /* determining the nodes belonging to the slave face surfaces */
 
-  istartfield=NNEW(int,*ntie);
-  iendfield=NNEW(int,*ntie);
-  ifield=NNEW(int,8*ncone);
+  istartfield=NNEW(ITG,*ntie);
+  iendfield=NNEW(ITG,*ntie);
+  ifield=NNEW(ITG,8*ncone);
 
   FORTRAN(nodestiedface,(tieset,ntie,ipkon,kon,lakon,set,istartset,
        iendset,ialset,nset,ifaceslave,istartfield,iendfield,ifield,
@@ -131,10 +131,10 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
      ncone: number of MPC'S due to nodal slave surfaces
      nconf: number of MPC's due to facal slave surfaces */  
 
-  RENEW(ipompc,int,*nmpc_+neq);
+  RENEW(ipompc,ITG,*nmpc_+neq);
   RENEW(labmpc,char,20*(*nmpc_+neq)+1);
-  RENEW(ikmpc,int,*nmpc_+neq);
-  RENEW(ilmpc,int,*nmpc_+neq);
+  RENEW(ikmpc,ITG,*nmpc_+neq);
+  RENEW(ilmpc,ITG,*nmpc_+neq);
   RENEW(fmpc,double,*nmpc_+neq);
 
   /* determining the maximum number of terms;
@@ -144,7 +144,7 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
   neqterms=9*neq;
   index=*memmpc_;
   (*memmpc_)+=neqterms;
-  RENEW(nodempc,int,3**memmpc_);
+  RENEW(nodempc,ITG,3**memmpc_);
   RENEW(coefmpc,double,*memmpc_);
   for(k=index;k<*memmpc_;k++){
       nodempc[3*k-1]=k+1;
@@ -164,9 +164,9 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
   x=NNEW(double,ntrimax);
   y=NNEW(double,ntrimax);
   z=NNEW(double,ntrimax);
-  nx=NNEW(int,ntrimax);
-  ny=NNEW(int,ntrimax);
-  nz=NNEW(int,ntrimax);
+  nx=NNEW(ITG,ntrimax);
+  ny=NNEW(ITG,ntrimax);
+  nz=NNEW(ITG,ntrimax);
   
   /* generating the tie MPC's */
 
@@ -187,10 +187,10 @@ void tiedcontact(int *ntie, char *tieset, int *nset, char *set,
 
   /* reallocating the MPC fields */
 
-  /*  RENEW(ipompc,int,nmpc_);
+  /*  RENEW(ipompc,ITG,nmpc_);
   RENEW(labmpc,char,20*nmpc_+1);
-  RENEW(ikmpc,int,nmpc_);
-  RENEW(ilmpc,int,nmpc_);
+  RENEW(ikmpc,ITG,nmpc_);
+  RENEW(ilmpc,ITG,nmpc_);
   RENEW(fmpc,double,nmpc_);*/
 
   *ipompcp=ipompc;*labmpcp=labmpc;*ikmpcp=ikmpc;*ilmpcp=ilmpc;

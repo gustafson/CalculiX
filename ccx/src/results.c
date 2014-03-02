@@ -24,7 +24,7 @@
 
 static char *lakon1,*matname1,*sideload1;
 
-static int *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
+static ITG *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *norien1,*ntmat1_,*ithermal1,*iprestr1,*iperturb1,*iout1,*nmethod1,
     *nplicon1,*nplkcon1,*npmat1_,*mi1,*ielas1,*icmd1,*ncmat1_,*nstate1_,
     *istep1,*iinc1,calcul_fn1,calcul_qa1,calcul_cauchy1,iener1,ikin1,
@@ -38,39 +38,39 @@ static double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
     *cocon1,*qfx1,*thicke1,*emeini1,*shcon1,*xload1,
     *xloadold1,*pslavsurf1,*pmastsurf1,*clearini1;
 
-void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
-       double *v,double *stn,int *inum,double *stx,double *elcon,int *nelcon,
-       double *rhcon,int *nrhcon,double *alcon,int *nalcon,double *alzero,
-       int *ielmat,int *ielorien,int *norien,double *orab,int *ntmat_,
+void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
+       double *v,double *stn,ITG *inum,double *stx,double *elcon,ITG *nelcon,
+       double *rhcon,ITG *nrhcon,double *alcon,ITG *nalcon,double *alzero,
+       ITG *ielmat,ITG *ielorien,ITG *norien,double *orab,ITG *ntmat_,
        double *t0,
-       double *t1,int *ithermal,double *prestr,int *iprestr,char *filab,
+       double *t1,ITG *ithermal,double *prestr,ITG *iprestr,char *filab,
        double *eme,double *emn,
-       double *een,int *iperturb,double *f,double *fn,int *nactdof,int *iout,
-       double *qa,double *vold,double *b,int *nodeboun,int *ndirboun,
-       double *xboun,int *nboun,int *ipompc,int *nodempc,double *coefmpc,
-       char *labmpc,int *nmpc,int *nmethod,double *cam,int *neq,double *veold,
+       double *een,ITG *iperturb,double *f,double *fn,ITG *nactdof,ITG *iout,
+       double *qa,double *vold,double *b,ITG *nodeboun,ITG *ndirboun,
+       double *xboun,ITG *nboun,ITG *ipompc,ITG *nodempc,double *coefmpc,
+       char *labmpc,ITG *nmpc,ITG *nmethod,double *cam,ITG *neq,double *veold,
        double *accold,double *bet,double *gam,double *dtime,double *time,
-       double *ttime,double *plicon,int *nplicon,double *plkcon,
-       int *nplkcon,double *xstateini,double *xstiff,double *xstate,int *npmat_,
-       double *epn,char *matname,int *mi,int *ielas,int *icmd,int *ncmat_,
-       int *nstate_,
-       double *stiini,double *vini,int *ikboun,int *ilboun,double *ener,
+       double *ttime,double *plicon,ITG *nplicon,double *plkcon,
+       ITG *nplkcon,double *xstateini,double *xstiff,double *xstate,ITG *npmat_,
+       double *epn,char *matname,ITG *mi,ITG *ielas,ITG *icmd,ITG *ncmat_,
+       ITG *nstate_,
+       double *stiini,double *vini,ITG *ikboun,ITG *ilboun,double *ener,
        double *enern,double *emeini,double *xstaten,double *eei,double *enerini,
-       double *cocon,int *ncocon,char *set,int *nset,int *istartset,
-       int *iendset,
-       int *ialset,int *nprint,char *prlab,char *prset,double *qfx,double *qfn,
+       double *cocon,ITG *ncocon,char *set,ITG *nset,ITG *istartset,
+       ITG *iendset,
+       ITG *ialset,ITG *nprint,char *prlab,char *prset,double *qfx,double *qfn,
        double *trab,
-       int *inotr,int *ntrans,double *fmpc,int *nelemload,int *nload,
-       int *ikmpc,int *ilmpc,
-       int *istep,int *iinc,double *springarea,double *reltime, int *ne0,
-       double *xforc, int *nforc, double *thicke,
-       double *shcon,int *nshcon,char *sideload,double *xload,
-       double *xloadold,int *icfd,int *inomat,double *pslavsurf,
-       double *pmastsurf,int *mortar,int *islavact,double *cdn,
-       int *islavnode,int *nslavnode,int *ntie,double *clearini,
-       int *islavsurf){
+       ITG *inotr,ITG *ntrans,double *fmpc,ITG *nelemload,ITG *nload,
+       ITG *ikmpc,ITG *ilmpc,
+       ITG *istep,ITG *iinc,double *springarea,double *reltime, ITG *ne0,
+       double *xforc, ITG *nforc, double *thicke,
+       double *shcon,ITG *nshcon,char *sideload,double *xload,
+       double *xloadold,ITG *icfd,ITG *inomat,double *pslavsurf,
+       double *pmastsurf,ITG *mortar,ITG *islavact,double *cdn,
+       ITG *islavnode,ITG *nslavnode,ITG *ntie,double *clearini,
+       ITG *islavsurf){
 
-    int intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,iener,ikin,
+    ITG intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,iener,ikin,
         intpointvart,mt=mi[1]+1,i,j,*ithread=NULL;
 
     /*
@@ -98,7 +98,7 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
       
     /* variables for multithreading procedure */
     
-    int sys_cpus;
+    ITG sys_cpus;
     char *env,*envloc,*envsys;
     
     num_cpus = 0;
@@ -176,7 +176,7 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 
 	fn1=NNEW(double,num_cpus*mt**nk);
 	qa1=NNEW(double,num_cpus*3);
-	nal=NNEW(int,num_cpus);
+	nal=NNEW(ITG,num_cpus);
 
 	co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;ne1=ne;v1=v;
         stx1=stx;elcon1=elcon;nelcon1=nelcon;rhcon1=rhcon;
@@ -199,12 +199,12 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 	/* calculating the stresses */
 	
 	if(((*nmethod!=4)&&(*nmethod!=5))||(iperturb[0]>1)){
-		printf(" Using up to %d cpu(s) for the stress calculation.\n\n", num_cpus);
+		printf(" Using up to %" ITGFORMAT " cpu(s) for the stress calculation.\n\n", num_cpus);
 	}
 	
 	/* create threads and wait */
 	
-	ithread=NNEW(int,num_cpus);
+	ithread=NNEW(ITG,num_cpus);
 	for(i=0; i<num_cpus; i++)  {
 	    ithread[i]=i;
 	    pthread_create(&tid[i], NULL, (void *)resultsmechmt, (void *)&ithread[i]);
@@ -254,7 +254,7 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 	for(j=1;j<num_cpus;j++){
 	    nal[0]+=nal[j];
 	}
-//	printf("resultsnewmech qa=%e nal=%d",qa[0],nal[0]);
+//	printf("resultsnewmech qa=%e nal=%" ITGFORMAT "",qa[0],nal[0]);
 
 	if(calcul_qa==1){
 	    if(nal[0]>0){
@@ -271,7 +271,7 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 
 	fn1=NNEW(double,num_cpus*mt**nk);
 	qa1=NNEW(double,num_cpus*3);
-	nal=NNEW(int,num_cpus);
+	nal=NNEW(ITG,num_cpus);
 
 	co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;v1=v;
         elcon1=elcon;nelcon1=nelcon;rhcon1=rhcon;nrhcon1=nrhcon;
@@ -292,11 +292,11 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 
 	/* calculating the heat flux */
 	
-	printf(" Using up to %d cpu(s) for the heat flux calculation.\n\n", num_cpus);
+	printf(" Using up to %" ITGFORMAT " cpu(s) for the heat flux calculation.\n\n", num_cpus);
 	
 	/* create threads and wait */
 	
-	ithread=NNEW(int,num_cpus);
+	ithread=NNEW(ITG,num_cpus);
 	for(i=0; i<num_cpus; i++)  {
 	    ithread[i]=i;
 	    pthread_create(&tid[i], NULL, (void *)resultsthermmt, (void *)&ithread[i]);
@@ -342,7 +342,7 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 	    nal[0]+=nal[j];
 	}
 
-//	printf("resultsnewtherm qa=%e nal=%d",qa[1],nal[0]);
+//	printf("resultsnewtherm qa=%e nal=%" ITGFORMAT "",qa[1],nal[0]);
 	if(calcul_qa==1){
 	    if(nal[0]>0){
 		qa[1]/=nal[0];
@@ -376,9 +376,9 @@ void results(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 
 /* subroutine for multithreading of resultsmech */
 
-void *resultsmechmt(int *i){
+void *resultsmechmt(ITG *i){
 
-    int indexfn,indexqa,indexnal,nea,neb,nedelta;
+    ITG indexfn,indexqa,indexnal,nea,neb,nedelta;
 
     indexfn=*i*mt1**nk1;
     indexqa=*i*3;
@@ -386,7 +386,7 @@ void *resultsmechmt(int *i){
     
 // ceil -> floor
 
-    nedelta=(int)floor(*ne1/(double)num_cpus);
+    nedelta=(ITG)floor(*ne1/(double)num_cpus);
     nea=*i*nedelta+1;
     neb=(*i+1)*nedelta;
 // next line! -> all parallel sections
@@ -409,15 +409,15 @@ void *resultsmechmt(int *i){
 
 /* subroutine for multithreading of resultsmech */
 
-void *resultsthermmt(int *i){
+void *resultsthermmt(ITG *i){
 
-    int indexfn,indexqa,indexnal,nea,neb,nedelta;
+    ITG indexfn,indexqa,indexnal,nea,neb,nedelta;
 
     indexfn=*i*mt1**nk1;
     indexqa=*i*3;
     indexnal=*i;
     
-    nedelta=(int)floor(*ne1/(double)num_cpus);
+    nedelta=(ITG)floor(*ne1/(double)num_cpus);
     nea=*i*nedelta+1;
     neb=(*i+1)*nedelta;
     if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;

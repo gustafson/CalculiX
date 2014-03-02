@@ -21,23 +21,23 @@
 #include <string.h>
 #include "CalculiX.h"
 
-void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v,
-	    double *stn,int *inum,int *nmethod,int *kode,char *filab,
+void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v,
+	    double *stn,ITG *inum,ITG *nmethod,ITG *kode,char *filab,
 	    double *een,double *t1,double *fn,double *time,double *epn,
-	    int *ielmat,char *matname, double *cs, int *mcs, int *nkon,
-            double *enern, double *xstaten, int *nstate_, int *istep,
-            int *iinc, int *iperturb, double *ener, int *mi, char *output,
-            int *ithermal, double *qfn, int *ialset, int *istartset,
-            int *iendset, double *trab, int *inotr, int *ntrans,
-	    double *orab, int *ielorien, int *norien, double *sti,
-            double *veold, int *noddiam,char *set,int *nset, double *emn,
-            double *thicke,char* jobnamec,int *ne0,double *cdn,int *mortar){
+	    ITG *ielmat,char *matname, double *cs, ITG *mcs, ITG *nkon,
+            double *enern, double *xstaten, ITG *nstate_, ITG *istep,
+            ITG *iinc, ITG *iperturb, double *ener, ITG *mi, char *output,
+            ITG *ithermal, double *qfn, ITG *ialset, ITG *istartset,
+            ITG *iendset, double *trab, ITG *inotr, ITG *ntrans,
+	    double *orab, ITG *ielorien, ITG *norien, double *sti,
+            double *veold, ITG *noddiam,char *set,ITG *nset, double *emn,
+            double *thicke,char* jobnamec,ITG *ne0,double *cdn,ITG *mortar){
 
   /* duplicates fields for static cyclic symmetric calculations */
 
   char *lakont=NULL,description[13]="            ";
 
-  int nkt,icntrl,*kont=NULL,*ipkont=NULL,*inumt=NULL,*ielmatt=NULL,net,i,l,
+  ITG nkt,icntrl,*kont=NULL,*ipkont=NULL,*inumt=NULL,*ielmatt=NULL,net,i,l,
      imag=0,mode=-1,ngraph,*inocs=NULL,*ielcs=NULL,l1,l2,is,
       jj,node,i1,i2,nope,iel,indexe,j,ielset,*inotrt=NULL,mt=mi[1]+1,
       *ipneigh=NULL,*neigh=NULL,net0;
@@ -59,8 +59,8 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
 
   /* assigning nodes and elements to sectors */
 
-  inocs=NNEW(int,*nk);
-  ielcs=NNEW(int,*ne);
+  inocs=NNEW(ITG,*nk);
+  ielcs=NNEW(ITG,*ne);
   ielset=cs[12];
   if((*mcs!=1)||(ielset!=0)){
     for(i=0;i<*nk;i++) inocs[i]=-1;
@@ -113,7 +113,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
   }
 
   cot=NNEW(double,3**nk*ngraph);
-  if(*ntrans>0)inotrt=NNEW(int,2**nk*ngraph);
+  if(*ntrans>0)inotrt=NNEW(ITG,2**nk*ngraph);
 
   if((strcmp1(&filab[0],"U ")==0)||
      ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2)))
@@ -147,12 +147,12 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
      contact information in frd.f */
 
 //  if(*kode==1){
-    kont=NNEW(int,*nkon*ngraph);
-    ipkont=NNEW(int,*ne*ngraph);
+    kont=NNEW(ITG,*nkon*ngraph);
+    ipkont=NNEW(ITG,*ne*ngraph);
     lakont=NNEW(char,8**ne*ngraph);
-    ielmatt=NNEW(int,mi[2]**ne*ngraph);
+    ielmatt=NNEW(ITG,mi[2]**ne*ngraph);
 //  }
-  inumt=NNEW(int,*nk*ngraph);
+  inumt=NNEW(ITG,*nk*ngraph);
   
   nkt=ngraph**nk;
   net0=(ngraph-1)**ne+(*ne0);
@@ -368,7 +368,7 @@ void frdcyc(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne,double *v
 		   &imag,mi,emn));
   
   if(strcmp1(&filab[1044],"ZZS")==0){
-      neigh=NNEW(int,40*net);ipneigh=NNEW(int,nkt);
+      neigh=NNEW(ITG,40*net);ipneigh=NNEW(ITG,nkt);
   }
 
   frd(cot,&nkt,kont,ipkont,lakont,&net0,vt,stnt,inumt,nmethod,

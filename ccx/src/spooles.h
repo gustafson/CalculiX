@@ -35,33 +35,33 @@
 
 struct factorinfo 
 {
-	int size;
+	ITG size;
 	double cpus[11];
 	IV *newToOldIV, *oldToNewIV;
 	SolveMap *solvemap;
 	FrontMtx *frontmtx;
 	SubMtxManager *mtxmanager;
 	ETree *frontETree;
-	int nthread;
+	ITG nthread;
 	FILE *msgFile;
 
 };
 
 void spooles_factor(double *ad, double *au, double *adb, double *aub, 
-                    double *sigma, int *icol, int *irow,
-                    int *neq, int *nzs, int *symmetryflag,
-                    int *inputformat, int *nzs3);
+                    double *sigma, ITG *icol, ITG *irow,
+                    ITG *neq, ITG *nzs, ITG *symmetryflag,
+                    ITG *inputformat, ITG *nzs3);
 
-void spooles_solve(double *b, int *neq);
+void spooles_solve(double *b, ITG *neq);
 
 void spooles_cleanup();
 
 void spooles_factor_rad(double *ad, double *au, double *adb, double *aub, 
-                    double *sigma, int *icol, int *irow,
-                    int *neq, int *nzs, int *symmetryflag,
-                    int *inputformat);
+                    double *sigma, ITG *icol, ITG *irow,
+                    ITG *neq, ITG *nzs, ITG *symmetryflag,
+                    ITG *inputformat);
 
-void spooles_solve_rad(double *b, int *neq);
+void spooles_solve_rad(double *b, ITG *neq);
 
 void spooles_cleanup_rad();
 

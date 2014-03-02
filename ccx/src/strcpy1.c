@@ -21,9 +21,9 @@
 #include <string.h>
 #include "CalculiX.h"
 
-int strcpy1(char *s1, const char *s2, int length)
+ITG strcpy1(char *s1, const char *s2, ITG length)
 {
-  int b,i,blank=0;
+  ITG b,i,blank=0;
 
   for(i=0;i<length;i++) {
       if(blank==0){

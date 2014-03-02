@@ -30,12 +30,12 @@
 #endif
 
 
-void prediction_em(double *uam, int *nmethod, double *bet, double *gam, 
+void prediction_em(double *uam, ITG *nmethod, double *bet, double *gam, 
                double *dtime,
-               int *ithermal, int *nk, double *veold, double *v,
-	       int *iinc, int *idiscon, double *vold, int *nactdof, int *mi){
+               ITG *ithermal, ITG *nk, double *veold, double *v,
+	       ITG *iinc, ITG *idiscon, double *vold, ITG *nactdof, ITG *mi){
 
-    int j,k,mt=mi[1]+1,jstart;
+    ITG j,k,mt=mi[1]+1,jstart;
     double dextrapol;
 
     uam[0]=0.;

@@ -29,20 +29,20 @@
 
 /* Prototyping	*/
 
-int cgsolver (double *A, double *x, double *b, int neq, int len, int *ia, 
-	       int *iz,double *eps, int *niter, int precFlg);
-void PCG (double *A, double *x, double *b, int neq, int len, int *ia, 
-	  int *iz,double *eps, int *niter, int precFlg,
+ITG cgsolver (double *A, double *x, double *b, ITG neq, ITG len, ITG *ia, 
+	       ITG *iz,double *eps, ITG *niter, ITG precFlg);
+void PCG (double *A, double *x, double *b, ITG neq, ITG len, ITG *ia, 
+	  ITG *iz,double *eps, ITG *niter, ITG precFlg,
 	  double *rho, double *r, double *g, double *C, double *z);
-void CG (double *A, double *x, double *b, int neq, int len, int *ia, 
-	 int *iz,double *eps, int *niter,double *r, double *p, double *z);
-void Scaling (double *A, double *b, int neq, int *ia, int *iz, double *d);
-void MatVecProduct (double *A, double *p, int neq, int *ia, int *iz, 
+void CG (double *A, double *x, double *b, ITG neq, ITG len, ITG *ia, 
+	 ITG *iz,double *eps, ITG *niter,double *r, double *p, double *z);
+void Scaling (double *A, double *b, ITG neq, ITG *ia, ITG *iz, double *d);
+void MatVecProduct (double *A, double *p, ITG neq, ITG *ia, ITG *iz, 
 		    double *z);
-void PreConditioning (double *A, int neq, int len, int *ia, int *iz, 
-		      double alpha, int precFlg,double *C, int *ier);
-void Mrhor (double *C, int neq, int *ia, int *iz, double *r, double *rho);
-void InnerProduct (double *a, double *b, int n, double *Sum);
+void PreConditioning (double *A, ITG neq, ITG len, ITG *ia, ITG *iz, 
+		      double alpha, ITG precFlg,double *C, ITG *ier);
+void Mrhor (double *C, ITG neq, ITG *ia, ITG *iz, double *r, double *rho);
+void InnerProduct (double *a, double *b, ITG n, double *Sum);
 	
 /* **********************************************************************
 
@@ -67,11 +67,11 @@ Teubner, 1981
 ********************************************************************** 
 */
 
-int cgsolver (double *A, double *x, double *b, int neq, int len, 
-	       int *ia, int *iz, 
-				double *eps, int *niter, int precFlg)
+ITG cgsolver (double *A, double *x, double *b, ITG neq, ITG len, 
+	       ITG *ia, ITG *iz, 
+				double *eps, ITG *niter, ITG precFlg)
 {
-  int i=0;
+  ITG i=0;
   double *Factor=NULL,*r=NULL,*p=NULL,*z=NULL,*C=NULL,*g=NULL,*rho=NULL;
 
   /*  reduce row and column indices by 1 (FORTRAN->C)   */
@@ -144,11 +144,11 @@ int cgsolver (double *A, double *x, double *b, int neq, int len,
 ********************************************************************** 
 */
 
-void PCG (double *A, double *x, double *b, int neq, int len, int *ia, 
-	  int *iz,double *eps, int *niter, int precFlg,
+void PCG (double *A, double *x, double *b, ITG neq, ITG len, ITG *ia, 
+	  ITG *iz,double *eps, ITG *niter, ITG precFlg,
 	  double *rho, double *r, double *g, double *C, double *z)
 {
-  int			i=0, k=0, ncg=0,iam,ier=0;
+  ITG			i=0, k=0, ncg=0,iam,ier=0;
   double		alpha=0.0, ekm1=0.0, rrho=0.0;
   double		rrho1=0.0, gz=0.0, qk=0.0;
   double          c1=0.005,qam,err,ram=0;
@@ -204,7 +204,7 @@ void PCG (double *A, double *x, double *b, int neq, int len, int *ia,
       
       /*  convergency check */
       
-      printf("iteration= %d, error= %e, limit=%e\n",ncg,ram,c1*qam);
+      printf("iteration= %" ITGFORMAT ", error= %e, limit=%e\n",ncg,ram,c1*qam);
       if (k!=1 && (ram<=c1*qam))	break;
       if (k!=1)
 	{
@@ -278,9 +278,9 @@ void PCG (double *A, double *x, double *b, int neq, int len, int *ia,
 ********************************************************************** 
 */
 
-void Scaling (double *A, double *b, int neq, int *ia, int *iz, double *d)
+void Scaling (double *A, double *b, ITG neq, ITG *ia, ITG *iz, double *d)
 {
-  int			i=0, j=0, jlo=0, jup=0;
+  ITG			i=0, j=0, jlo=0, jup=0;
   
   /*  extract diagonal vector from matrix A  */
   
@@ -320,10 +320,10 @@ Computation of matrix vector product z = A p
 ********************************************************************** 
 */
 
-void MatVecProduct (double *A, double *p, int neq, int *ia, int *iz, 
+void MatVecProduct (double *A, double *p, ITG neq, ITG *ia, ITG *iz, 
 		    double *z)
 {
-  int				i=0, j=0, jlo=0, jup=0, k=0;
+  ITG				i=0, j=0, jlo=0, jup=0, k=0;
   
   /*  matrix vector product  */
   
@@ -370,12 +370,12 @@ void MatVecProduct (double *A, double *p, int neq, int *ia, int *iz,
 /*--The function corresponds to function PARTCH() in H.R. Schwarz: FORTRAN-Pro-  --	*/
 /*--gramme zur Methode der finiten Elemente, p.117, Teubner, 1981                --	*/
 /*---------------------------------------------------------------------------------	*/
-void PreConditioning (double *A, int neq, int len, int *ia, int *iz, 
-							double alpha, int precFlg,
-		      double *C, int *ier)
+void PreConditioning (double *A, ITG neq, ITG len, ITG *ia, ITG *iz, 
+							double alpha, ITG precFlg,
+		      double *C, ITG *ier)
 {
-	int				i=0, j=0, jlo=0, jup=0, k=0, klo=0, kup=0, l=0, llo=0, lup=0;
-	int				id=0, nILU=0, m=0;
+	ITG				i=0, j=0, jlo=0, jup=0, k=0, klo=0, kup=0, l=0, llo=0, lup=0;
+	ITG				id=0, nILU=0, m=0;
 	double			factor;
 		factor = 1.0/(1.0+alpha);
 /*..division of the off-diagonal elements of A by factor (1.0+alpha)...............	*/
@@ -442,9 +442,9 @@ void PreConditioning (double *A, int neq, int len, int *ia, int *iz,
 /*--The function corresponds to function CRHOER() in H.R. Schwarz: FORTRAN-Pro-  --	*/
 /*--gramme zur Methode der finiten Elemente, p.118, Teubner, 1981                --	*/
 /*---------------------------------------------------------------------------------	*/
-void Mrhor (double *C, int neq, int *ia, int *iz, double *r, double *rho)
+void Mrhor (double *C, ITG neq, ITG *ia, ITG *iz, double *r, double *rho)
 {
-	int				i=0, j=0, jlo=0, jup=0;
+	ITG				i=0, j=0, jlo=0, jup=0;
 	double			s=0.0;
 /*..solve equation sytem by forward/backward substitution..........................	*/
 	rho[0] = r[0];
@@ -474,9 +474,9 @@ void Mrhor (double *C, int neq, int *ia, int *iz, double *r, double *rho)
 
 /*--Calculation of the inner product of two (distributed) vectors------------------	*/
 /*---------------------------------------------------------------------------------	*/
-void InnerProduct (double *a, double *b, int n, double *Sum)
+void InnerProduct (double *a, double *b, ITG n, double *Sum)
 {
-	int 		i=0;
+	ITG 		i=0;
 /*..local vectors..................................................................	*/
 	*Sum=0.;
 		for (i=0; i<n; i++)	       *Sum += a[i]*b[i];
@@ -501,10 +501,10 @@ void InnerProduct (double *a, double *b, int n, double *Sum)
 /*--           eps     required accuracy -> residual                             --	*/
 /*--           niter   maximum number of iterations -> number of iterations      --	*/
 /*---------------------------------------------------------------------------------	*/
-void CG (double *A, double *x, double *b, int neq, int len, int *ia, int *iz,
-		double *eps, int *niter, double *r, double *p, double *z)
+void CG (double *A, double *x, double *b, ITG neq, ITG len, ITG *ia, ITG *iz,
+		double *eps, ITG *niter, double *r, double *p, double *z)
 {
-	int			i=0, k=0, ncg=0,iam;
+	ITG			i=0, k=0, ncg=0,iam;
 	double		ekm1=0.0,c1=0.005,qam,ram=0.,err;
 	double		rr=0.0, pz=0.0, qk=0.0, rro=0.0;
 
@@ -531,7 +531,7 @@ void CG (double *A, double *x, double *b, int neq, int len, int *ia, int *iz,
 	{
 /*......inner product rT r......................................................... */
 		InnerProduct(r,r,neq,&rr);
-		printf("iteration= %d, error= %e, limit=%e\n",ncg,ram,c1*qam);
+		printf("iteration= %" ITGFORMAT ", error= %e, limit=%e\n",ncg,ram,c1*qam);
 /*......If working with Penalty-terms for boundary conditions you can get nume-....	*/
 /*......rical troubles because RR becomes a very large value. With at least two....	*/
 /*......iterations the result may be better !!!....................................	*/

@@ -2,13 +2,20 @@
 /* ---------------------------------------------------------------- */
 
 
+#include <unistd.h>
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include "CalculiX.h"
+
 #include "readfrd.h"
 
 
 /* liefert puffer aus string von position a bis b */
-void stos(char *string, int a, int b, char *puffer)
+void stos(char *string, ITG a, ITG b, char *puffer)
 {
-  register int n, i;
+  register ITG n, i;
 
   n=-1;
   for (i=a-1; i<b; i++)
@@ -21,9 +28,9 @@ void stos(char *string, int a, int b, char *puffer)
 }
 
 /* schreibt string in puffer von position a bis b */
-void stos_inv(char *string, int a, int b, char *puffer)
+void stos_inv(char *string, ITG a, ITG b, char *puffer)
 {
-  register int n, i;
+  register ITG n, i;
 
   n=-1;
   for (i=a-1; i<b; i++)

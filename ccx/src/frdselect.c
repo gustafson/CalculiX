@@ -24,9 +24,9 @@
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
-void frdselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
-     char *m1,int *istartset,int *iendset,int *ialset,int *ngraph,int *ncomp,
-     int *ifield,int *icomp,int *nfield,int *iselect,char *m2,FILE *f1,
+void frdselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
+     char *m1,ITG *istartset,ITG *iendset,ITG *ialset,ITG *ngraph,ITG *ncomp,
+     ITG *ifield,ITG *icomp,ITG *nfield,ITG *iselect,char *m2,FILE *f1,
      char *output, char*m3){
 
   /* storing scalars, components of vectors and tensors without additional
@@ -40,7 +40,7 @@ void frdselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
          - ifield[i]: 1=field1,2=field2
          - icomp[i]: component: 0...,(nfield[0]-1 or nfield[1]-1) */
  
-  int i,j,k,l,m,n,nksegment;
+  ITG i,j,k,l,m,n,nksegment;
       
   int iw;
 
@@ -62,10 +62,10 @@ void frdselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
 
       /* storing the entities */
 
-	for(n=1;n<=(int)((*ncomp+5)/6);n++){
+	for(n=1;n<=(ITG)((*ncomp+5)/6);n++){
 	  if(n==1){
 	    if(strcmp1(output,"asc")==0){
-	      fprintf(f1,"%3s%10d",m1,i+1);
+	      fprintf(f1,"%3s%10" ITGFORMAT "",m1,i+1);
 	    }else{
 	      iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	    }
@@ -131,10 +131,10 @@ void frdselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
 	  
 	  /* storing the entities */
 
-	  for(n=1;n<=(int)((*ncomp+5)/6);n++){
+	  for(n=1;n<=(ITG)((*ncomp+5)/6);n++){
 	    if(n==1){
 	      if(strcmp1(output,"asc")==0){
-		fprintf(f1,"%3s%10d",m1,i+1);
+		fprintf(f1,"%3s%10" ITGFORMAT "",m1,i+1);
 	      }else{
 		iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	      }
@@ -201,10 +201,10 @@ void frdselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
 	    
 	    /* storing the entities */
 	    
-	    for(n=1;n<=(int)((*ncomp+5)/6);n++){
+	    for(n=1;n<=(ITG)((*ncomp+5)/6);n++){
 	      if(n==1){
 		if(strcmp1(output,"asc")==0){
-		  fprintf(f1,"%3s%10d",m1,i+1);
+		  fprintf(f1,"%3s%10" ITGFORMAT "",m1,i+1);
 		}else{
 		  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 		}

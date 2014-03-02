@@ -22,8 +22,8 @@
 #include <ctype.h>
 #include "CalculiX.h"
 
-void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
-   int *ipoinp, int **inpp, int **ipoinpcp, int *ithermal){
+void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
+   ITG *ipoinp, ITG **inpp, ITG **ipoinpcp, ITG *ithermal){
 
   /*   reads and stores the input deck in inpcp; determines the
        number of sets  */
@@ -33,7 +33,7 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
   char buff[1320]="", fninp[132]="", includefn[132]="", *inpc=NULL,
        textpart[2112]="",*set=NULL;
 
-  int i,j,k,n,in=0,nlinemax=100000,irestartread,irestartstep,
+  ITG i,j,k,n,in=0,nlinemax=100000,irestartread,irestartstep,
       icntrl,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,ntmat,npmat,
       norien,nam,nprint,mi[3],ntrans,ncs,namtot,ncmat,memmpc,ne1d,
       ne2d,nflow,*meminset=NULL,*rmeminset=NULL, *inp=NULL,ntie,
@@ -48,8 +48,8 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
      the input deck order is important, cf keystart.f */
 
   inpc=NNEW(char,ncharmax);
-  ipoinpc=NNEW(int,nlinemax+1);
-  inp=NNEW(int,3*nlinemax);
+  ipoinpc=NNEW(ITG,nlinemax+1);
+  inp=NNEW(ITG,3*nlinemax);
   *nline=0;
   for(i=0;i<2*nentries;i++){ipoinp[i]=0;}
   ifreeinp=1;
@@ -188,15 +188,15 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
 	  
       (*nline)++;
       if(*nline>nlinemax){
-	  nlinemax=(int)(1.1*nlinemax);
-	  RENEW(ipoinpc,int,nlinemax+1);
-	  RENEW(inp,int,3*nlinemax);
+	  nlinemax=(ITG)(1.1*nlinemax);
+	  RENEW(ipoinpc,ITG,nlinemax+1);
+	  RENEW(inp,ITG,3*nlinemax);
       }
 
       /* checking the total number of characters */
 
       if(ipoinpc[*nline-1]+k>ncharmax){
-	  ncharmax=(int)(1.1*ncharmax);
+	  ncharmax=(ITG)(1.1*ncharmax);
 	  RENEW(inpc,char,ncharmax);
       }
 	  
@@ -423,7 +423,7 @@ void readinput(char *jobnamec, char **inpcp, int *nline, int *nset,
 
   inp[3*ipoinp[2*ikey-1]-2]=*nline;
   RENEW(inpc,char,(long long)132**nline);
-  RENEW(inp,int,3*ipoinp[2*ikey-1]);
+  RENEW(inp,ITG,3*ipoinp[2*ikey-1]);
   *inpcp=inpc;
   *ipoinpcp=ipoinpc;
   *inpp=inp;

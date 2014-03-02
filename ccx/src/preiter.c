@@ -20,10 +20,10 @@
 #include <stdlib.h>
 #include "CalculiX.h"
 
-void preiter(double *ad, double **aup, double *b, int **icolp, int **irowp, 
-	     int *neq, int *nzs, int *isolver, int *iperturb){
+void preiter(double *ad, double **aup, double *b, ITG **icolp, ITG **irowp, 
+	     ITG *neq, ITG *nzs, ITG *isolver, ITG *iperturb){
   
-  int precFlg,niter=5000000,ndim,i,j,k,ier,*icol=NULL,*irow=NULL,
+  ITG precFlg,niter=5000000,ndim,i,j,k,ier,*icol=NULL,*irow=NULL,
     *irow_save=NULL,*icol_save=NULL;
   double eps=1.e-4,*u=NULL,*au=NULL;
 
@@ -40,8 +40,8 @@ void preiter(double *ad, double **aup, double *b, int **icolp, int **irowp,
   icol=*icolp;
 
   if(*iperturb>1){
-    irow_save=NNEW(int,*nzs);
-    icol_save=NNEW(int,*neq);
+    irow_save=NNEW(ITG,*nzs);
+    icol_save=NNEW(ITG,*neq);
     for(i=0;i<*nzs;++i){
       irow_save[i]=irow[i];
     }
@@ -56,8 +56,8 @@ void preiter(double *ad, double **aup, double *b, int **icolp, int **irowp,
   ndim=*neq+*nzs;
 
   RENEW(au,double,ndim);
-  RENEW(irow,int,ndim);
-  RENEW(icol,int,ndim);
+  RENEW(irow,ITG,ndim);
+  RENEW(icol,ITG,ndim);
 
   k=*nzs;
   for(i=*neq-1;i>=0;--i){
@@ -79,14 +79,14 @@ void preiter(double *ad, double **aup, double *b, int **icolp, int **irowp,
 
   FORTRAN(rearrange,(au,irow,icol,&ndim,neq));
 
-  RENEW(irow,int,*neq);
+  RENEW(irow,ITG,*neq);
 
   u=NNEW(double,*neq);
 
   ier=cgsolver(au,u,b,*neq,ndim,icol,irow,&eps,&niter,precFlg);
 
-  printf("error condition (0=good, 1=bad) = %d\n",ier);
-  printf("# of iterations = %d\n",niter);
+  printf("error condition (0=good, 1=bad) = %" ITGFORMAT "\n",ier);
+  printf("# of iterations = %" ITGFORMAT "\n",niter);
 
   for(i=0;i<*neq;++i){
     b[i]=u[i];
@@ -95,8 +95,8 @@ void preiter(double *ad, double **aup, double *b, int **icolp, int **irowp,
   free(u);
 
   if(*iperturb>1){
-    RENEW(irow,int,*nzs);
-    RENEW(icol,int,*neq);
+    RENEW(irow,ITG,*nzs);
+    RENEW(icol,ITG,*neq);
     for(i=0;i<*nzs;++i){
       irow[i]=irow_save[i];
     }

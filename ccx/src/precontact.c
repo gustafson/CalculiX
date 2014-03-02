@@ -21,20 +21,20 @@
 #include <time.h>
 #include "CalculiX.h"
 
-void precontact(int *ncont, int *ntie, char *tieset, int *nset, char *set,
-        int *istartset, int *iendset, int *ialset, int *itietri,
-        char *lakon, int *ipkon, int *kon, int *koncont, int *ne,
+void precontact(ITG *ncont, ITG *ntie, char *tieset, ITG *nset, char *set,
+        ITG *istartset, ITG *iendset, ITG *ialset, ITG *itietri,
+        char *lakon, ITG *ipkon, ITG *kon, ITG *koncont, ITG *ne,
         double *cg, double *straight, double *co,double *vold,
-        int *istep,int *iinc,int *iit,int *itiefac,
-        int *islavsurf, int *islavnode, int *imastnode,
-        int *nslavnode, int *nmastnode,int *imastop,int *mi,
-	int *ipe, int *ime,double *tietol,int *iflagact,
-	int *nintpoint,double **pslavsurfp,double *xmastnor,double *cs,
-	int *mcs,int *ics,double *clearini,int *nslavs){
+        ITG *istep,ITG *iinc,ITG *iit,ITG *itiefac,
+        ITG *islavsurf, ITG *islavnode, ITG *imastnode,
+        ITG *nslavnode, ITG *nmastnode,ITG *imastop,ITG *mi,
+	ITG *ipe, ITG *ime,double *tietol,ITG *iflagact,
+	ITG *nintpoint,double **pslavsurfp,double *xmastnor,double *cs,
+	ITG *mcs,ITG *ics,double *clearini,ITG *nslavs){
 
     /* authors: S. Rakotonanahary, S. Sitzmann and J. Hokkanen */
 
-    int i,j,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL,im,
+    ITG i,j,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL,im,
         l,nstart,kflag,ntri,ii;
     
     double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL,
@@ -76,9 +76,9 @@ void precontact(int *ncont, int *ntie, char *tieset, int *nset, char *set,
 	x=NNEW(double,ntrimax);	    
 	y=NNEW(double,ntrimax);	    
 	z=NNEW(double,ntrimax);	   
-	nx=NNEW(int,ntrimax);	   
-	ny=NNEW(int,ntrimax);	    
-	nz=NNEW(int,ntrimax);
+	nx=NNEW(ITG,ntrimax);	   
+	ny=NNEW(ITG,ntrimax);	    
+	nz=NNEW(ITG,ntrimax);
 
 	clearslavnode=NNEW(double,3**nslavs);
 	    
@@ -99,9 +99,9 @@ void precontact(int *ncont, int *ntie, char *tieset, int *nset, char *set,
     x=NNEW(double,ntrimax);	
     y=NNEW(double,ntrimax);	
     z=NNEW(double,ntrimax);	
-    nx=NNEW(int,ntrimax);	
-    ny=NNEW(int,ntrimax);	
-    nz=NNEW(int,ntrimax);
+    nx=NNEW(ITG,ntrimax);	
+    ny=NNEW(ITG,ntrimax);	
+    nz=NNEW(ITG,ntrimax);
     
     /* Calculating the location of the matched slave/master
        integration points */

@@ -21,9 +21,9 @@
 #include <string.h>
 #include "CalculiX.h"
 
-void mastructrad(int *ntr,int *nloadtr,char *sideload,int *ipointerrad,
-              int **mast1radp,int **irowradp,int *nzsrad,
-              int *jqrad,int *icolrad){
+void mastructrad(ITG *ntr,ITG *nloadtr,char *sideload,ITG *ipointerrad,
+              ITG **mast1radp,ITG **irowradp,ITG *nzsrad,
+              ITG *jqrad,ITG *icolrad){
 
 /* determining the structure of the viewfactor and the radiation
    matrix (both have the same structure). Only the structure of the
@@ -32,7 +32,7 @@ void mastructrad(int *ntr,int *nloadtr,char *sideload,int *ipointerrad,
 
   char crcav[4]="   \0";
 
-  int three=3,i,j,k,l,ii,jj,icav,jcav,*mast1rad=NULL,*irowrad=NULL,
+  ITG three=3,i,j,k,l,ii,jj,icav,jcav,*mast1rad=NULL,*irowrad=NULL,
       ifree,nzsrad_,nmast,isubtract,isize,kflag,istart,istartold;
 
   mast1rad=*mast1radp;
@@ -68,7 +68,7 @@ void mastructrad(int *ntr,int *nloadtr,char *sideload,int *ipointerrad,
   for(i=0;i<*ntr;++i){
       if(ipointerrad[i]==0){
 	  printf("*ERROR in mastructrad: zero column\n");
-	  printf("       DOF=%d\n",i);
+	  printf("       DOF=%" ITGFORMAT "\n",i);
 	  FORTRAN(stop,());
       }
       istart=ipointerrad[i];
@@ -85,9 +85,9 @@ void mastructrad(int *ntr,int *nloadtr,char *sideload,int *ipointerrad,
   /* summary */
   
   printf(" number of radiation equations\n");
-  printf(" %d\n",*ntr);
+  printf(" %" ITGFORMAT "\n",*ntr);
   printf(" number of nonzero radiation matrix elements\n");
-  printf(" %d\n",2*nmast-*ntr);
+  printf(" %" ITGFORMAT "\n",2*nmast-*ntr);
   printf(" \n");
 
     /* switching from a SUPERdiagonal inventory to a SUBdiagonal one:

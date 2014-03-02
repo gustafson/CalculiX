@@ -21,11 +21,11 @@
 #include <string.h>
 #include "CalculiX.h"
 
-void frdset(char *filabl,char *set,int *iset,int *istartset,int *iendset,
-	    int *ialset,int *inum,int *noutloc,int *nout,int *nset,
-	    int *noutmin,int *noutplus,int *iselect,int *ngraph){
+void frdset(char *filabl,char *set,ITG *iset,ITG *istartset,ITG *iendset,
+	    ITG *ialset,ITG *inum,ITG *noutloc,ITG *nout,ITG *nset,
+	    ITG *noutmin,ITG *noutplus,ITG *iselect,ITG *ngraph){
 
-  int j,k;
+  ITG j,k;
 
   char noset[81];
      
@@ -37,7 +37,7 @@ void frdset(char *filabl,char *set,int *iset,int *istartset,int *iendset,
   }
   (*iset)++;
   if(*iset>*nset)*iset=0;
-  //    printf("iset,noutplus %d %d\n",*iset,*noutplus);
+  //    printf("iset,noutplus %" ITGFORMAT " %" ITGFORMAT "\n",*iset,*noutplus);
 
   /* determining the number of nodes in the set */
 
@@ -45,7 +45,7 @@ void frdset(char *filabl,char *set,int *iset,int *istartset,int *iendset,
 
     /* no set defined */
 
-    //    printf("iselect,noutplus %d %d\n",*iselect,*noutplus);
+    //    printf("iselect,noutplus %" ITGFORMAT " %" ITGFORMAT "\n",*iselect,*noutplus);
 
     if(*iselect==1){
       *noutloc=*noutplus;

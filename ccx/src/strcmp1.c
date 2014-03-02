@@ -21,9 +21,9 @@
 #include <string.h>
 #include "CalculiX.h"
 
-int strcmp1(const char *s1, const char *s2)
+ITG strcmp1(const char *s1, const char *s2)
 {
-  int a,b;
+  ITG a,b;
 
   do {
     a=*s1++;

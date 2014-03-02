@@ -21,14 +21,14 @@
 #include <string.h>
 #include "CalculiX.h"
 
-void frdheader(int *icounter,double *oner,double *time,double *pi,
-	       int *noddiam,double *cs,int *null,int *mode,
-	       int *noutloc,char *description,int *kode,int *nmethod,
-               FILE *f1, char *output,int *istep,int *iinc){
+void frdheader(ITG *icounter,double *oner,double *time,double *pi,
+	       ITG *noddiam,double *cs,ITG *null,ITG *mode,
+	       ITG *noutloc,char *description,ITG *kode,ITG *nmethod,
+               FILE *f1, char *output,ITG *istep,ITG *iinc){
 
   char tmp[132],text[132];
 
-  int i,ncomma;
+  ITG i,ncomma;
   
   /* icounter counts the number of loadcases in the frd-file 
      kode counts the number of increments in the frd-file */
@@ -36,9 +36,9 @@ void frdheader(int *icounter,double *oner,double *time,double *pi,
   strcpy1(&text[0],"    1PSTEP",10);
   for(i=10;i<70;i++)text[i]=' ';text[70]='\0';
   (*icounter)++;
-  sprintf(&text[24],"%12d",*icounter);
-  sprintf(&text[36],"%12d",*iinc);
-  sprintf(&text[48],"%12d",*istep);text[60]=' ';
+  sprintf(&text[24],"%12" ITGFORMAT "",*icounter);
+  sprintf(&text[36],"%12" ITGFORMAT "",*iinc);
+  sprintf(&text[48],"%12" ITGFORMAT "",*istep);text[60]=' ';
   fprintf(f1,"%s\n",text);
 
   /* additional headers for frequency calculations */
@@ -56,7 +56,7 @@ void frdheader(int *icounter,double *oner,double *time,double *pi,
 
     strcpy1(&text[0],"    1PHID",9);
     for(i=9;i<70;i++)text[i]=' ';text[70]='\0';
-    sprintf(&text[24],"%12d",*noddiam);text[36]=' ';
+    sprintf(&text[24],"%12" ITGFORMAT "",*noddiam);text[36]=' ';
     fprintf(f1,"%s\n",text);
 
     /* additional headers for cyclic symmetry calculations */
@@ -75,12 +75,12 @@ void frdheader(int *icounter,double *oner,double *time,double *pi,
 
     strcpy1(&text[0],"    1PSUBC",10);
     for(i=10;i<70;i++)text[i]=' ';text[70]='\0';
-    sprintf(&text[24],"%12d",*null);text[36]=' ';
+    sprintf(&text[24],"%12" ITGFORMAT "",*null);text[36]=' ';
     fprintf(f1,"%s\n",text);
 
     strcpy1(&text[0],"    1PMODE",10);
     for(i=10;i<70;i++)text[i]=' ';text[70]='\0';
-    sprintf(&text[24],"%12d",*mode+1);text[36]=' ';
+    sprintf(&text[24],"%12" ITGFORMAT "",*mode+1);text[36]=' ';
     fprintf(f1,"%s\n",text);
   }
   writeBasisParameter(f1);
@@ -100,7 +100,7 @@ void frdheader(int *icounter,double *oner,double *time,double *pi,
     strcpy1(&text[0],"  100CL       .00000E+00                                 3    1",63);
   }
 
-  sprintf(tmp,"%12d",*noutloc);
+  sprintf(tmp,"%12" ITGFORMAT "",*noutloc);
   strcpy1(&text[24],tmp,12);
   strcpy1(&text[36],description,12);
   if(*nmethod==2)strcpy1(&text[63],"MODAL",5);
@@ -109,7 +109,7 @@ void frdheader(int *icounter,double *oner,double *time,double *pi,
   }else{
     strcpy1(&text[74],"2",1);
   }
-  sprintf(tmp,"%5d",100+(*kode));
+  sprintf(tmp,"%5" ITGFORMAT "",100+(*kode));
   strcpy1(&text[7],tmp,5);
 //  sprintf(tmp,"%12.5E",*time);
 
@@ -143,7 +143,7 @@ void frdheader(int *icounter,double *oner,double *time,double *pi,
   }
 
   strcpy1(&text[12],tmp,12);
-  sprintf(tmp,"%5d",*kode);
+  sprintf(tmp,"%5" ITGFORMAT "",*kode);
   strcpy1(&text[58],tmp,5);
   text[75]='\0';
   fprintf(f1,"%s\n",text);

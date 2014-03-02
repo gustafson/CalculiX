@@ -39,14 +39,17 @@ boundarys.f \
 bounrem.f \
 bsort.f \
 buckles.f \
+calcbody.f \
 calcdvifa.f \
 calceigenvalues.f \
 calcgradpp.f \
 calcgradv.f \
 calcmac.f \
 calcmass.f \
+calcppel.f \
 calcrhoel.f \
 calcrhofa.f \
+calcvel.f \
 calcview.f \
 calc_ider_cross_split.f \
 calc_ider_tee.f \
@@ -158,6 +161,7 @@ errorestimator.f \
 evalshapefunc.f \
 expansions.f \
 extrapolate.f \
+extrapolate_ad.f \
 extrapolatecontact.f \
 extrapolate_gradv.f \
 extrapolate_p.f \
@@ -278,6 +282,8 @@ mafillcorio.f \
 mafilldm.f \
 mafillem.f \
 mafillnet.f \
+mafillp.f \
+mafillppprhs.f \
 mafillsm.f \
 mafillsmcs.f \
 mafillsmcsas.f \
@@ -344,6 +350,7 @@ orientations.f \
 orifice.f \
 orthonl.f \
 orthotropic.f \
+outputs.f \
 patch.f \
 physicalconstantss.f \
 pk_cdc_cl1.f \

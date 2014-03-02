@@ -33,53 +33,53 @@
 #endif
 
 
-void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp, 
-             char **lakonp,int *ne, 
-	     int *nodeboun, int *ndirboun, double *xboun, int *nboun, 
-	     int **ipompcp, int **nodempcp, double **coefmpcp, char **labmpcp,
-             int *nmpc, 
-	     int *nodeforc, int *ndirforc,double *xforc, int *nforc, 
-	     int *nelemload, char *sideload, double *xload,int *nload, 
-	     int *nactdof, 
-	     int **icolp, int *jq, int **irowp, int *neq, int *nzl, 
-	     int *nmethod, int **ikmpcp, int **ilmpcp, int *ikboun, 
-	     int *ilboun,
-             double *elcon, int *nelcon, double *rhcon, int *nrhcon,
-	     double *alcon, int *nalcon, double *alzero, int **ielmatp,
-	     int **ielorienp, int *norien, double *orab, int *ntmat_,
+void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, 
+             char **lakonp,ITG *ne, 
+	     ITG *nodeboun, ITG *ndirboun, double *xboun, ITG *nboun, 
+	     ITG **ipompcp, ITG **nodempcp, double **coefmpcp, char **labmpcp,
+             ITG *nmpc, 
+	     ITG *nodeforc, ITG *ndirforc,double *xforc, ITG *nforc, 
+	     ITG *nelemload, char *sideload, double *xload,ITG *nload, 
+	     ITG *nactdof, 
+	     ITG **icolp, ITG *jq, ITG **irowp, ITG *neq, ITG *nzl, 
+	     ITG *nmethod, ITG **ikmpcp, ITG **ilmpcp, ITG *ikboun, 
+	     ITG *ilboun,
+             double *elcon, ITG *nelcon, double *rhcon, ITG *nrhcon,
+	     double *alcon, ITG *nalcon, double *alzero, ITG **ielmatp,
+	     ITG **ielorienp, ITG *norien, double *orab, ITG *ntmat_,
 	     double *t0, double *t1, double *t1old, 
-	     int *ithermal,double *prestr, int *iprestr, 
-	     double **voldp,int *iperturb, double *sti, int *nzs,  
-	     int *kode,char *filab, 
-             int *idrct, int *jmax, int *jout, double *tinc,
+	     ITG *ithermal,double *prestr, ITG *iprestr, 
+	     double **voldp,ITG *iperturb, double *sti, ITG *nzs,  
+	     ITG *kode,char *filab, 
+             ITG *idrct, ITG *jmax, ITG *jout, double *tinc,
              double *tper, double *tmin, double *tmax, double *eme,
 	     double *xbounold, double *xforcold, double *xloadold,
              double *veold, double *accold,
-	     char *amname, double *amta, int *namta, int *nam,
-             int *iamforc, int *iamload,
-             int *iamt1, double *alpha, int *iexpl,
-	     int *iamboun, double *plicon, int *nplicon, double *plkcon,
-             int *nplkcon,
-             double **xstatep, int *npmat_, int *istep, double *ttime,
-             char *matname, double *qaold, int *mi,
-             int *isolver, int *ncmat_, int *nstate_, int *iumat,
-             double *cs, int *mcs, int *nkon, double **enerp, int *mpcinfo,
+	     char *amname, double *amta, ITG *namta, ITG *nam,
+             ITG *iamforc, ITG *iamload,
+             ITG *iamt1, double *alpha, ITG *iexpl,
+	     ITG *iamboun, double *plicon, ITG *nplicon, double *plkcon,
+             ITG *nplkcon,
+             double **xstatep, ITG *npmat_, ITG *istep, double *ttime,
+             char *matname, double *qaold, ITG *mi,
+             ITG *isolver, ITG *ncmat_, ITG *nstate_, ITG *iumat,
+             double *cs, ITG *mcs, ITG *nkon, double **enerp, ITG *mpcinfo,
              char *output,
-             double *shcon, int *nshcon, double *cocon, int *ncocon,
-             double *physcon, int *nflow, double *ctrl, 
-             char **setp, int *nset, int **istartsetp,
-             int **iendsetp, int **ialsetp, int *nprint, char *prlab,
-             char *prset, int *nener,int *ikforc,int *ilforc, double *trab, 
-             int *inotr, int *ntrans, double **fmpcp, char *cbody,
-             int *ibody, double *xbody, int *nbody, double *xbodyold,
-             int *ielprop, double *prop, int *ntie, char **tiesetp,
-	     int *itpamp, int *iviewfile, char *jobnamec, double **tietolp,
-	     int *nslavs, double *thicke, int *ics, int *nalset, int *nmpc_){
+             double *shcon, ITG *nshcon, double *cocon, ITG *ncocon,
+             double *physcon, ITG *nflow, double *ctrl, 
+             char **setp, ITG *nset, ITG **istartsetp,
+             ITG **iendsetp, ITG **ialsetp, ITG *nprint, char *prlab,
+             char *prset, ITG *nener,ITG *ikforc,ITG *ilforc, double *trab, 
+             ITG *inotr, ITG *ntrans, double **fmpcp, char *cbody,
+             ITG *ibody, double *xbody, ITG *nbody, double *xbodyold,
+             ITG *ielprop, double *prop, ITG *ntie, char **tiesetp,
+	     ITG *itpamp, ITG *iviewfile, char *jobnamec, double **tietolp,
+	     ITG *nslavs, double *thicke, ITG *ics, ITG *nalset, ITG *nmpc_){
 
   char description[13]="            ",*lakon=NULL,jobnamef[396]="",
       *labmpc=NULL,kind1[2]="E",kind2[2]="E",*set=NULL,*tieset=NULL,cflag[1]=" "; 
  
-  int *inum=NULL,k,iout=0,icntrl,iinc=0,jprint=0,iit=-1,jnz=0,
+  ITG *inum=NULL,k,iout=0,icntrl,iinc=0,jprint=0,iit=-1,jnz=0,
       icutb=0,istab=0,ifreebody,uncoupled=0,maxfaces,
       iperturb_sav[2],*icol=NULL,*irow=NULL,ielas=0,icmd=0,
       memmpc_,mpcfree,icascade,maxlenmpc,*nodempc=NULL,*iaux=NULL,
@@ -126,7 +126,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
          *cdnr=NULL,*cdni=NULL;
 
 #ifdef SGI
-  int token;
+  ITG token;
 #endif
  
   /* next line is needed to avoid that elements with negative ipkon
@@ -164,7 +164,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
   
   /* invert nactdof */
   
-  nactdofinv=NNEW(int,mt**nk);nodorig=NNEW(int,*nk);
+  nactdofinv=NNEW(ITG,mt**nk);nodorig=NNEW(ITG,*nk);
   FORTRAN(gennactdofinv,(nactdof,nactdofinv,nk,mi,nodorig,
 			 ipkon,lakon,kon,ne));
   free(nodorig);
@@ -182,7 +182,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
   vini=NNEW(double,mt**nk);
   
   aux=NNEW(double,7*maxlenmpc);
-  iaux=NNEW(int,maxlenmpc);
+  iaux=NNEW(ITG,maxlenmpc);
   
   /* allocating fields for the actual external loading */
   
@@ -199,26 +199,26 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
   
   if(*nbody>0){
       ifreebody=*ne+1;
-      ipobody=NNEW(int,2*ifreebody**nbody);
+      ipobody=NNEW(ITG,2*ifreebody**nbody);
       for(k=1;k<=*nbody;k++){
 	  FORTRAN(bodyforce,(cbody,ibody,ipobody,nbody,set,istartset,
 			     iendset,ialset,&inewton,nset,&ifreebody,&k));
-	  RENEW(ipobody,int,2*(*ne+ifreebody));
+	  RENEW(ipobody,ITG,2*(*ne+ifreebody));
       }
-      RENEW(ipobody,int,2*(ifreebody-1));
+      RENEW(ipobody,ITG,2*(ifreebody-1));
   }
   
   /* for thermal calculations: forced convection and cavity
      radiation*/
   
   if(*ithermal>1){
-      itg=NNEW(int,*nload+3**nflow);
-      ieg=NNEW(int,*nflow);
+      itg=NNEW(ITG,*nload+3**nflow);
+      ieg=NNEW(ITG,*nflow);
       /* max 6 triangles per face, 4 entries per triangle */
-      kontri=NNEW(int,24**nload);
-      nloadtr=NNEW(int,*nload);
-      nacteq=NNEW(int,4**nk);
-      nactdog=NNEW(int,4**nk);
+      kontri=NNEW(ITG,24**nload);
+      nloadtr=NNEW(ITG,*nload);
+      nacteq=NNEW(ITG,4**nk);
+      nactdog=NNEW(ITG,4**nk);
       v=NNEW(double,mt**nk);
       FORTRAN(envtemp,(itg,ieg,&ntg,&ntr,sideload,nelemload,
 		       ipkon,kon,lakon,ielmat,ne,nload,
@@ -230,18 +230,18 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
       free(v);
       
       if((*mcs>0)&&(ntr>0)){
-	  inocs=NNEW(int,*nk);
+	  inocs=NNEW(ITG,*nk);
 	  radcyc(nk,kon,ipkon,lakon,ne,cs,mcs,nkon,ialset,istartset,
                iendset,&kontri,&ntri,&co,&vold,&ntrit,inocs,mi);
       }
       else{ntrit=ntri;}
       
       nzsrad=100*ntr;
-      mast1rad=NNEW(int,nzsrad);
-      irowrad=NNEW(int,nzsrad);
-      icolrad=NNEW(int,ntr);
-      jqrad=NNEW(int,ntr+1);
-      ipointerrad=NNEW(int,ntr);
+      mast1rad=NNEW(ITG,nzsrad);
+      irowrad=NNEW(ITG,nzsrad);
+      icolrad=NNEW(ITG,ntr);
+      jqrad=NNEW(ITG,ntr+1);
+      ipointerrad=NNEW(ITG,ntr);
       
       if(ntr>0){
 	  mastructrad(&ntr,nloadtr,sideload,ipointerrad,
@@ -250,12 +250,12 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
       }
       
       free(ipointerrad);free(mast1rad);
-      RENEW(irowrad,int,nzsrad);
+      RENEW(irowrad,ITG,nzsrad);
       
-      RENEW(itg,int,ntg);
-      ineighe=NNEW(int,ntg);
-      RENEW(kontri,int,4*ntrit);
-      RENEW(nloadtr,int,ntr);
+      RENEW(itg,ITG,ntg);
+      ineighe=NNEW(ITG,ntg);
+      RENEW(kontri,ITG,4*ntrit);
+      RENEW(nloadtr,ITG,ntr);
       
       adview=NNEW(double,ntr);
       auview=NNEW(double,2*nzsrad);
@@ -266,11 +266,11 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
       
       ac=NNEW(double,nteq*nteq);
       bc=NNEW(double,nteq);
-      ipiv=NNEW(int,nteq);
+      ipiv=NNEW(ITG,nteq);
       adrad=NNEW(double,ntr);
       aurad=NNEW(double,2*nzsrad);
       bcr=NNEW(double,ntr);
-      ipivr=NNEW(int,ntr);
+      ipivr=NNEW(ITG,ntr);
   }
   if(*ithermal>1){qfx=NNEW(double,3*mi[0]**ne);}
   
@@ -387,7 +387,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
   
   /* invert nactdof */
   
-  free(nactdofinv);nactdofinv=NNEW(int,mt**nk);nodorig=NNEW(int,*nk);
+  free(nactdofinv);nactdofinv=NNEW(ITG,mt**nk);nodorig=NNEW(ITG,*nk);
   FORTRAN(gennactdofinv,(nactdof,nactdofinv,nk,mi,nodorig,
 			 ipkon,lakon,kon,ne));
   free(nodorig);
@@ -395,7 +395,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
   iout=-1;
   
   fn=NNEW(double,mt**nk);
-  inum=NNEW(int,*nk);
+  inum=NNEW(ITG,*nk);
   v=NNEW(double,mt**nk);
 
   results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
@@ -508,7 +508,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
   
   fn=NNEW(double,mt**nk);
   
-  inum=NNEW(int,*nk);
+  inum=NNEW(ITG,*nk);
   results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	  elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
 	  ielorien,norien,orab,ntmat_,t0,t1act,&ithermalact,
@@ -565,7 +565,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
   }
   free(inum);free(v);free(fn);
 
-  inomat=NNEW(int,*nk);
+  inomat=NNEW(ITG,*nk);
 
   /* calculating the magnetic intensity caused by the current */
 
@@ -595,13 +595,13 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
 
   if(*istep==1){
       
-      nodface=NNEW(int,5*6**ne);
-      ipoface=NNEW(int,*nk);
+      nodface=NNEW(ITG,5*6**ne);
+      ipoface=NNEW(ITG,*nk);
       
       RENEW(set,char,81*(*nset+3));
-      RENEW(istartset,int,*nset+3);
-      RENEW(iendset,int,*nset+3);
-      RENEW(ialset,int,*nalset+6**ne);
+      RENEW(istartset,ITG,*nset+3);
+      RENEW(iendset,ITG,*nset+3);
+      RENEW(ialset,ITG,*nalset+6**ne);
       RENEW(tieset,char,243*(*ntie+5));
       RENEW(tietol,double,3*(*ntie+5));
       
@@ -611,9 +611,9 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
       
       free(nodface);free(ipoface);
       RENEW(set,char,81**nset);
-      RENEW(istartset,int,*nset);
-      RENEW(iendset,int,*nset);
-      RENEW(ialset,int,*nalset);
+      RENEW(istartset,ITG,*nset);
+      RENEW(iendset,ITG,*nset);
+      RENEW(ialset,ITG,*nalset);
       RENEW(tieset,char,243**ntie);
       RENEW(tietol,double,3**ntie);
       
@@ -639,7 +639,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
 
       /* determining the normals on the face */
 
-      imastnode=NNEW(int,8*maxfaces);
+      imastnode=NNEW(ITG,8*maxfaces);
       xmastnor=NNEW(double,3*8*maxfaces);
 
       FORTRAN(normalsoninterface,(istartset,iendset,
@@ -649,10 +649,10 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
       /* enlarging the fields for MPC's */
 
       *nmpc_=*nmpc_+nmastnode;
-      RENEW(ipompc,int,*nmpc_);
+      RENEW(ipompc,ITG,*nmpc_);
       RENEW(labmpc,char,20**nmpc_+1);
-      RENEW(ikmpc,int,*nmpc_);
-      RENEW(ilmpc,int,*nmpc_);
+      RENEW(ikmpc,ITG,*nmpc_);
+      RENEW(ilmpc,ITG,*nmpc_);
       RENEW(fmpc,double,*nmpc_);
       
       /* determining the maximum number of terms;
@@ -662,7 +662,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
       neqterms=3*nmastnode;
       index=memmpc_;
       (memmpc_)+=neqterms;
-      RENEW(nodempc,int,3*memmpc_);
+      RENEW(nodempc,ITG,3*memmpc_);
       RENEW(coefmpc,double,memmpc_);
       for(k=index;k<memmpc_;k++){
 	  nodempc[3*k-1]=k+1;
@@ -727,7 +727,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
 	  printf(" *ERROR: max. # of increments reached\n\n");
 	  FORTRAN(stop,());
       }
-      printf(" increment %d attempt %d \n",iinc,icutb+1);
+      printf(" increment %" ITGFORMAT " attempt %" ITGFORMAT " \n",iinc,icutb+1);
       printf(" increment size= %e\n",dtheta**tper);
       printf(" sum of previous increments=%e\n",theta**tper);
       printf(" actual step time=%e\n",(theta+dtheta)**tper);
@@ -786,7 +786,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
       
       /* first iteration in first increment: heat tangent */
       
-      inum=NNEW(int,*nk);
+      inum=NNEW(ITG,*nk);
       resultsinduction(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	      elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
 	      ielorien,norien,orab,ntmat_,t0,t1act,ithermal,
@@ -828,7 +828,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
 	  
 	  if(iit!=1){
 	      
-	      printf(" iteration %d\n\n",iit);
+	      printf(" iteration %" ITGFORMAT "\n\n",iit);
 	      
 	      FORTRAN(tempload,(xforcold,xforc,xforcact,iamforc,nforc,
 	       xloadold,xload,
@@ -900,7 +900,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
 	      
 	      *nmethod=0;
 	      ++*kode;
-	      inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
+	      inum=NNEW(ITG,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 	      
 	      ptime=*ttime+time;
 	      frd(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,
@@ -1029,7 +1029,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
 	  
 	  fn=NNEW(double,mt**nk);
 	  
-	  inum=NNEW(int,*nk);
+	  inum=NNEW(ITG,*nk);
 	  resultsinduction(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 		  elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
 		  ielorien,norien,orab,ntmat_,t0,t1act,ithermal,
@@ -1099,22 +1099,22 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
 	      if(ram[1]<1.e-6) ram[1]=0.;      
 	      printf(" average flux= %f\n",qa[1]);
 	      printf(" time avg. flux= %f\n",qam[1]);
-	      if((int)((double)nactdofinv[(int)ram[3]]/mt)+1==0){
+	      if((ITG)((double)nactdofinv[(ITG)ram[3]]/mt)+1==0){
 		  printf(" largest residual flux= %f\n",
 			 ram[1]);
 	      }else{
-		  inode=(int)((double)nactdofinv[(int)ram[3]]/mt)+1;
-		  idir=nactdofinv[(int)ram[3]]-mt*(inode-1);
-		  printf(" largest residual flux= %f in node %d and dof %d\n",ram[1],inode,idir);
+		  inode=(ITG)((double)nactdofinv[(ITG)ram[3]]/mt)+1;
+		  idir=nactdofinv[(ITG)ram[3]]-mt*(inode-1);
+		  printf(" largest residual flux= %f in node %" ITGFORMAT " and dof %" ITGFORMAT "\n",ram[1],inode,idir);
 	      }
 	      printf(" largest increment of temp= %e\n",uam[1]);
-	      if((int)cam[4]==0){
+	      if((ITG)cam[4]==0){
 		  printf(" largest correction to temp= %e\n\n",
 			 cam[1]);
 	      }else{
-		  inode=(int)((double)nactdofinv[(int)cam[4]]/mt)+1;
-		  idir=nactdofinv[(int)cam[4]]-mt*(inode-1);
-		  printf(" largest correction to temp= %e in node %d and dof %d\n\n",cam[1],inode,idir);
+		  inode=(ITG)((double)nactdofinv[(ITG)cam[4]]/mt)+1;
+		  idir=nactdofinv[(ITG)cam[4]]-mt*(inode-1);
+		  printf(" largest correction to temp= %e in node %" ITGFORMAT " and dof %" ITGFORMAT "\n\n",cam[1],inode,idir);
 	      }
 	  }
 	  
@@ -1184,7 +1184,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
 	  if(*ithermal>1) qfn=NNEW(double,3**nk);
 	  if((strcmp1(&filab[3741],"EMFE")==0)||
              (strcmp1(&filab[3828],"EMFB")==0)) stn=NNEW(double,6**nk);
-	  inum=NNEW(int,*nk);
+	  inum=NNEW(ITG,*nk);
 	  
 	  memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
 	  
@@ -1258,7 +1258,7 @@ void electromagnetics(double **cop, int *nk, int **konp, int **ipkonp,
       fn=NNEW(double,mt**nk);
       if(*ithermal>1) qfn=NNEW(double,3**nk);
       if(strcmp1(&filab[3741],"EMF ")==0) stn=NNEW(double,6**nk);
-      inum=NNEW(int,*nk);
+      inum=NNEW(ITG,*nk);
       
       memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
       iout=2;

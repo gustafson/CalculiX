@@ -30,12 +30,12 @@
 #endif
 
 
-void prediction(double *uam, int *nmethod, double *bet, double *gam, 
+void prediction(double *uam, ITG *nmethod, double *bet, double *gam, 
                double *dtime,
-               int *ithermal, int *nk, double *veold, double *accold, double *v,
-	       int *iinc, int *idiscon, double *vold, int *nactdof, int *mi){
+               ITG *ithermal, ITG *nk, double *veold, double *accold, double *v,
+	       ITG *iinc, ITG *idiscon, double *vold, ITG *nactdof, ITG *mi){
 
-    int j,k,mt=mi[1]+1;
+    ITG j,k,mt=mi[1]+1;
     double dextrapol,scal1,scal2;
 
     uam[0]=0.;

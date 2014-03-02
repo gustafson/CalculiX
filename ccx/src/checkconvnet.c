@@ -29,16 +29,16 @@
    #include "tau.h"
 #endif
 
-void checkconvnet(int *icutb, int *iin,
+void checkconvnet(ITG *icutb, ITG *iin,
 		  double *uamt, double *uamf, double *uamp, 
 		  double *cam1t, double *cam1f, double *cam1p,
 		  double *cam2t, double *cam2f, double *cam2p,
 		  double *camt, double *camf, double *camp,
-		  int *icntrl, double *dtheta, double *ctrl,
+		  ITG *icntrl, double *dtheta, double *ctrl,
                   double *uama,double *cam1a,double *cam2a,double *cama,
                   double *vamt, double *vamf, double *vamp, double *vama){
   
-  int i0,ir,ip,ic,il,ig,ia,idivergence;
+  ITG i0,ir,ip,ic,il,ig,ia,idivergence;
   
   double c1t,c1f,c1p,c1a;
   double df,dc,db,dd,ran,can,rap,ea,cae,ral;
@@ -94,7 +94,7 @@ void checkconvnet(int *icutb, int *iin,
       
       /* increment convergence reached */
       
-      printf("      flow network: convergence in gas iteration %d \n\n",*iin);
+      printf("      flow network: convergence in gas iteration %" ITGFORMAT " \n\n",*iin);
       *icntrl=1;
       *icutb=0;
   }

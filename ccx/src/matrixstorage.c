@@ -23,15 +23,15 @@
 #include "matrixstorage.h"
 
 void matrixstorage(double *ad, double **aup, double *adb, double *aub, 
-                double *sigma,int *icol, int **irowp, 
-                int *neq, int *nzs, int *ntrans, int *inotr,
-                double *trab, double *co, int *nk, int *nactdof,
-		char *jobnamec, int *mi, int *ipkon, char *lakon,
-		int *kon, int *ne, int *mei, int *nboun, int *nmpc,
-		double *cs, int *mcs){
+                double *sigma,ITG *icol, ITG **irowp, 
+                ITG *neq, ITG *nzs, ITG *ntrans, ITG *inotr,
+                double *trab, double *co, ITG *nk, ITG *nactdof,
+		char *jobnamec, ITG *mi, ITG *ipkon, char *lakon,
+		ITG *kon, ITG *ne, ITG *mei, ITG *nboun, ITG *nmpc,
+		double *cs, ITG *mcs){
 
   char fsti[132]="",fmas[132]="",fdof[132]="";
-  int i,j,l,*irow=NULL,*ai=NULL,*aj=NULL,kflag=2,ndim,jref,kstart,klen,
+  ITG i,j,l,*irow=NULL,*ai=NULL,*aj=NULL,kflag=2,ndim,jref,kstart,klen,
     npoint_,npoint,neq3,index,i3l,i3c,i3lo,i3co,idof,n,il,
     ic,id,itrans,ndim2,*ipoindex=NULL,mt=mi[1]+1,*nactdofinv=NULL,
     *nodorig=NULL,inode,idir;
@@ -85,8 +85,8 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
     /* no transformation */
 
     aa=NNEW(double,ndim);
-    ai=NNEW(int,ndim);
-    aj=NNEW(int,ndim);
+    ai=NNEW(ITG,ndim);
+    aj=NNEW(ITG,ndim);
     
     k=0;
     for(i=0;i<*neq;i++){
@@ -126,8 +126,8 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
     /* aa3 contains the linear storage of the 3x3 matrices */
 
     aa3=NNEW(double,ndim2);
-    ai=NNEW(int,ndim2);
-    aj=NNEW(int,ndim2);
+    ai=NNEW(ITG,ndim2);
+    aj=NNEW(ITG,ndim2);
     
     k=0;
     for(i=0;i<*neq;i++){
@@ -175,7 +175,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
     npoint_=*neq;
     npoint=0;
     ipoint=NNEW(long long,npoint_);
-    ipoindex=NNEW(int,npoint_);
+    ipoindex=NNEW(ITG,npoint_);
 
     neq3=*neq/3;
     index=0;
@@ -199,9 +199,9 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
       else if(ipoint[id-1]!=k){
         npoint++;
         if(npoint>npoint_){
-          npoint_=(int)(1.1*npoint_);
+          npoint_=(ITG)(1.1*npoint_);
           RENEW(ipoint,long long,npoint_);
-          RENEW(ipoindex,int,npoint_);
+          RENEW(ipoindex,ITG,npoint_);
         }
         index+=9;
         ipoint[npoint-1]=k;
@@ -291,7 +291,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
   }
 
   for(i=0;i<ndim;i++){
-    fprintf(f2,"%d %d %20.13e\n",ai[i],aj[i],aa[i]);
+    fprintf(f2,"%" ITGFORMAT " %" ITGFORMAT " %20.13e\n",ai[i],aj[i],aa[i]);
   }
 
   fclose(f2);
@@ -315,8 +315,8 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
     /* no transformation */
 
     aa=NNEW(double,ndim);
-    ai=NNEW(int,ndim);
-    aj=NNEW(int,ndim);
+    ai=NNEW(ITG,ndim);
+    aj=NNEW(ITG,ndim);
     
     k=0;
     for(i=0;i<*neq;i++){
@@ -350,8 +350,8 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
     /* aa3 contains the linear storage of the 3x3 matrices */
 
     aa3=NNEW(double,ndim2);
-    ai=NNEW(int,ndim2);
-    aj=NNEW(int,ndim2);
+    ai=NNEW(ITG,ndim2);
+    aj=NNEW(ITG,ndim2);
     
     k=0;
     for(i=0;i<*neq;i++){
@@ -399,7 +399,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
     npoint_=*neq;
     npoint=0;
     ipoint=NNEW(long long,npoint_);
-    ipoindex=NNEW(int,npoint_);
+    ipoindex=NNEW(ITG,npoint_);
 
     neq3=*neq/3;
     index=0;
@@ -423,9 +423,9 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
       else if(ipoint[id-1]!=k){
         npoint++;
         if(npoint>npoint_){
-          npoint_=(int)(1.1*npoint_);
+          npoint_=(ITG)(1.1*npoint_);
           RENEW(ipoint,long long,npoint_);
-          RENEW(ipoindex,int,npoint_);
+          RENEW(ipoindex,ITG,npoint_);
         }
         index+=9;
         ipoint[npoint-1]=k;
@@ -515,7 +515,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
   }
 
   for(i=0;i<ndim;i++){
-    fprintf(f3,"%d %d %20.13e\n",ai[i],aj[i],aa[i]);
+    fprintf(f3,"%" ITGFORMAT " %" ITGFORMAT " %20.13e\n",ai[i],aj[i],aa[i]);
   }
 
   fclose(f3);
@@ -544,22 +544,22 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
 
   /* invert nactdof */
 
-  nactdofinv=NNEW(int,mt**nk);nodorig=NNEW(int,*nk);
+  nactdofinv=NNEW(ITG,mt**nk);nodorig=NNEW(ITG,*nk);
   FORTRAN(gennactdofinv,(nactdof,nactdofinv,nk,mi,nodorig,
 			 ipkon,lakon,kon,ne));
   free(nodorig);
   
   if((*mcs==0)||(cs[1]<0)){
       for(i=0;i<*neq;i++){
-	  inode=(int)((double)nactdofinv[(int)i]/mt)+1;
-	  idir=nactdofinv[(int)i]-mt*(inode-1);
-	  fprintf(f4,"%d.%d\n",inode,idir);
+	  inode=(ITG)((double)nactdofinv[(ITG)i]/mt)+1;
+	  idir=nactdofinv[(ITG)i]-mt*(inode-1);
+	  fprintf(f4,"%" ITGFORMAT ".%" ITGFORMAT "\n",inode,idir);
       }
   }else{
       for(i=0;i<*neq/2;i++){
-	  inode=(int)((double)nactdofinv[(int)i]/mt)+1;
-	  idir=nactdofinv[(int)i]-mt*(inode-1);
-	  fprintf(f4,"%d.%d\n",inode,idir);
+	  inode=(ITG)((double)nactdofinv[(ITG)i]/mt)+1;
+	  idir=nactdofinv[(ITG)i]-mt*(inode-1);
+	  fprintf(f4,"%" ITGFORMAT ".%" ITGFORMAT "\n",inode,idir);
       }
   }
   

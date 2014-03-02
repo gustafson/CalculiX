@@ -457,8 +457,8 @@ FILE *msgFile;
 struct factorinfo pfi;
 
 void spooles_factor(double *ad, double *au,  double *adb, double *aub, 
-             double *sigma,int *icol, int *irow, int *neq, int *nzs, 
-	     int *symmetryflag, int *inputformat, int *nzs3)
+             double *sigma,ITG *icol, ITG *irow, ITG *neq, ITG *nzs, 
+	     ITG *symmetryflag, ITG *inputformat, ITG *nzs3)
 {
 	int size = *neq;
 	int symmetryflagi4=*symmetryflag;
@@ -705,7 +705,7 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
  * 
 */
 
-void spooles_solve(double *b, int *neq)
+void spooles_solve(double *b, ITG *neq)
 {
 	/* rhs vector B
 	 * Note that there is only one rhs vector, thus
@@ -781,8 +781,8 @@ FILE *msgFilf;
 struct factorinfo pfj;
 
 void spooles_factor_rad(double *ad, double *au,  double *adb, double *aub, 
-             double *sigma,int *icol, int *irow,
-	     int *neq, int *nzs, int *symmetryflag, int *inputformat)
+             double *sigma,ITG *icol, ITG *irow,
+	     ITG *neq, ITG *nzs, ITG *symmetryflag, ITG *inputformat)
 {
         int symmetryflagi4=*symmetryflag;
 	int size = *neq;
@@ -1020,7 +1020,7 @@ void spooles_factor_rad(double *ad, double *au,  double *adb, double *aub,
  * 
 */
 
-void spooles_solve_rad(double *b, int *neq)
+void spooles_solve_rad(double *b, ITG *neq)
 {
 	/* rhs vector B
 	 * Note that there is only one rhs vector, thus
@@ -1097,8 +1097,8 @@ void spooles_cleanup_rad()
  */
 
 void spooles(double *ad, double *au, double *adb, double *aub, double *sigma,
-             double *b, int *icol, int *irow, int *neq, int *nzs, 
-             int *symmetryflag, int *inputformat, int *nzs3)
+             double *b, ITG *icol, ITG *irow, ITG *neq, ITG *nzs, 
+             ITG *symmetryflag, ITG *inputformat, ITG *nzs3)
 {
 
   if(*neq==0) return;

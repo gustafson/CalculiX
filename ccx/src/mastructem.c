@@ -24,20 +24,20 @@
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
-void mastructem(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
-	      int *nodeboun, int *ndirboun, int *nboun, int *ipompc,
-	      int *nodempc, int *nmpc, int *nactdof, int *icol,
-	      int *jq, int **mast1p, int **irowp, int *isolver, int *neq,
-	      int *ikmpc, int *ilmpc,int *ipointer, int *nzs, 
-	      int *ithermal,int *mi,int *ielmat, double *elcon, int *ncmat_, 
-	      int *ntmat_,int *inomat){
+void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
+	      ITG *nodeboun, ITG *ndirboun, ITG *nboun, ITG *ipompc,
+	      ITG *nodempc, ITG *nmpc, ITG *nactdof, ITG *icol,
+	      ITG *jq, ITG **mast1p, ITG **irowp, ITG *isolver, ITG *neq,
+	      ITG *ikmpc, ITG *ilmpc,ITG *ipointer, ITG *nzs, 
+	      ITG *ithermal,ITG *mi,ITG *ielmat, double *elcon, ITG *ncmat_, 
+	      ITG *ntmat_,ITG *inomat){
 
   /* determines the structure of the thermo-electromagnetic matrices;
      (i.e. the location of the nonzeros */
 
   char lakonl[2]=" \0";
 
-  int i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
+  ITG i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
     ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,
     index1,index2,m,node,nzs_,ist,kflag,indexe,nope,isize,*mast1=NULL,
     *irow=NULL,mt=mi[1]+1,imat,idomain,jmin,jmax;
@@ -75,7 +75,7 @@ void mastructem(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
              in domain 3: A  */
 
 	  imat=ielmat[i*mi[2]];
-	  idomain=(int)elcon[(*ncmat_+1)**ntmat_*(imat-1)+2];
+	  idomain=(ITG)elcon[(*ncmat_+1)**ntmat_*(imat-1)+2];
 	  if(idomain==1){
 	      jmin=5;jmax=6;
 	  }else if(idomain==2){
@@ -108,7 +108,7 @@ void mastructem(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
           /* only the A-V domain (domain 2) has temperature variables */
 
 	  imat=ielmat[i*mi[2]];
-	  idomain=(int)elcon[(*ncmat_+1)**ntmat_*(imat-1)+2];
+	  idomain=(ITG)elcon[(*ncmat_+1)**ntmat_*(imat-1)+2];
 	  if(idomain!=2) continue;
 
 	  indexe=ipkon[i];
@@ -367,7 +367,7 @@ void mastructem(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
       /* only the A-V domain (domain 2) has temperature variables */
       
       imat=ielmat[i*mi[2]];
-      idomain=(int)elcon[(*ncmat_+1)**ntmat_*(imat-1)+2];
+      idomain=(ITG)elcon[(*ncmat_+1)**ntmat_*(imat-1)+2];
       if(idomain!=2) continue;
 
       indexe=ipkon[i];
@@ -533,7 +533,7 @@ void mastructem(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		if(node1!=0) break;
 	    }
 	    printf("*ERROR in mastruct: zero column\n");
-	    printf("       node=%d,DOF=%d\n",node1,idof1);
+	    printf("       node=%" ITGFORMAT ",DOF=%" ITGFORMAT "\n",node1,idof1);
 	    FORTRAN(stop,());
 	}
 	istart=ipointer[i];
@@ -554,9 +554,9 @@ void mastructem(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     /* summary */
 
     printf(" number of equations\n");
-    printf(" %d\n",neq[1]);
+    printf(" %" ITGFORMAT "\n",neq[1]);
     printf(" number of nonzero lower triangular matrix elements\n");
-    printf(" %d\n",nmast-neq[1]);
+    printf(" %" ITGFORMAT "\n",nmast-neq[1]);
     printf("\n");
 
     /* switching from a SUPERdiagonal inventory to a SUBdiagonal one:

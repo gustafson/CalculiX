@@ -18,8 +18,8 @@
 !
       subroutine calcgradpp(ne,lakon,ipnei,ppfa,area,xxn,gradpp,neifa)
 !
-!     calculation of the gradient of the velocity at the center
-!     of the elements from the velocity values at the neighboring
+!     calculation of the gradient of p' at the center
+!     of the elements from the p' values at the neighboring
 !     faces
 !
       implicit none

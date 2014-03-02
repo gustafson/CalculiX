@@ -17,16 +17,16 @@
 #include <scsl_sparse.h>
 
 void sgi_main(double *ad, double *au, double *adb, double *aub, double *sigma,
-         double *b, int *icol, int *irow, 
-         int *neq, int *nzs, int token);
+         double *b, ITG *icol, ITG *irow, 
+         ITG *neq, ITG *nzs, ITG token);
 
 void sgi_factor(double *ad, double *au, double *adb, double *aub, 
-                double *sigma,int *icol, int *irow, 
-                int *neq, int *nzs, int token);
+                double *sigma,ITG *icol, ITG *irow, 
+                ITG *neq, ITG *nzs, ITG token);
 
-void sgi_solve(double *b,int token);
+void sgi_solve(double *b,ITG token);
 
-void sgi_cleanup(int token);
+void sgi_cleanup(ITG token);
 
 
 

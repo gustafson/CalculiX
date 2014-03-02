@@ -2334,3 +2334,6 @@ Dec 2002        - started to work on single crystal plasticity
 
  23 Feb 2014   - change inputinfo.f, inputwarning.f and inputerror.f
                  keyword card is included in message
+
+ 24 Feb 2014   - created one version for integer*4 and integer*8
+                 introduced macros ITG and ITGFORMAT

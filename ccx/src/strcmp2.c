@@ -21,13 +21,13 @@
 #include <string.h>
 #include "CalculiX.h"
 
-int strcmp2(const char *s1, const char *s2, int length)
+ITG strcmp2(const char *s1, const char *s2, ITG length)
 {
 
 /* comparison of the first "length" characters unless s1
    and/or s2 has less characters */
 
-  int a,b,i;
+  ITG a,b,i;
 
   i=0;
   do {

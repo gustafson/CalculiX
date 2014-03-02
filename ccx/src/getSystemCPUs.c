@@ -18,10 +18,17 @@
 	for both *NIX and Windows systems. Convergent Mechanical, Dec 5, 2012
 */
 
+#include <unistd.h>
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include "CalculiX.h"
+
 #ifdef __WIN32
 #include <windows.h>
 
-int getSystemCPUs(){
+ITG getSystemCPUs(){
 	SYSTEM_INFO sysinfo;
 	GetSystemInfo( &sysinfo );
 	return sysinfo.dwNumberOfProcessors;
@@ -30,7 +37,7 @@ int getSystemCPUs(){
 #else
 #include <unistd.h>
 
-int getSystemCPUs(){
+ITG getSystemCPUs(){
 	return sysconf(_SC_NPROCESSORS_CONF);;
 }
 #endif

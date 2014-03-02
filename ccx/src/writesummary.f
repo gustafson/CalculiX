@@ -28,7 +28,7 @@
 !     integer iostat
       real*8 ttime,time,dtime
 !
-      write(8,100) istep,j,icutb+1,l,ttime+time-dtime,time,dtime
+      write(8,100) istep,j,icutb+1,l,ttime+time,time,dtime
 c      call flush(8)
       flush(8)
 !

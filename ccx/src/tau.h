@@ -15,14 +15,14 @@
 /*     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.         */
 
 void tau(double *ad, double **aup, double *adb, double *aubp, double *sigma,
-         double *b, int *icol, int **irowp, 
-         int *neq, int *nzs);
+         double *b, ITG *icol, ITG **irowp, 
+         ITG *neq, ITG *nzs);
 
 void tau_factor(double *ad, double **aup, double *adb, double *aub, 
-                double *sigma,int *icol, int **irowp, 
-                int *neq, int *nzs);
+                double *sigma,ITG *icol, ITG **irowp, 
+                ITG *neq, ITG *nzs);
 
-void tau_solve(double *b,int *neq);
+void tau_solve(double *b,ITG *neq);
 
 void tau_cleanup();
 

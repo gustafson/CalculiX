@@ -20,28 +20,28 @@
 #include <stdlib.h>
 #include "CalculiX.h"
 
-void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
-	     int *istartset, int *iendset, int *ialset,int *itietri,
-	     char *lakon, int *ipkon, int *kon, int *koncont, int *ne,
-	     double *cg, double *straight, int *ifree, double *co,
-	     double *vold, int *ielmat, double *cs, double *elcon,
-             int *istep,int *iinc,int *iit,int *ncmat_,int *ntmat_,
-             int *ne0, double *vini,
-             int *nmethod, int *nmpc, int *mpcfree, int *memmpc_,
-             int **ipompcp, char **labmpcp, int **ikmpcp, int **ilmpcp,
-             double **fmpcp, int **nodempcp, double **coefmpcp,
-             int *iperturb, int *ikboun, int *nboun, int *mi,
-             int *imastop,int *nslavnode,int *islavnode,int *islavsurf,
-             int *itiefac,double *areaslav,int *iponoels,int *inoels,
+void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
+	     ITG *istartset, ITG *iendset, ITG *ialset,ITG *itietri,
+	     char *lakon, ITG *ipkon, ITG *kon, ITG *koncont, ITG *ne,
+	     double *cg, double *straight, ITG *ifree, double *co,
+	     double *vold, ITG *ielmat, double *cs, double *elcon,
+             ITG *istep,ITG *iinc,ITG *iit,ITG *ncmat_,ITG *ntmat_,
+             ITG *ne0, double *vini,
+             ITG *nmethod, ITG *nmpc, ITG *mpcfree, ITG *memmpc_,
+             ITG **ipompcp, char **labmpcp, ITG **ikmpcp, ITG **ilmpcp,
+             double **fmpcp, ITG **nodempcp, double **coefmpcp,
+             ITG *iperturb, ITG *ikboun, ITG *nboun, ITG *mi,
+             ITG *imastop,ITG *nslavnode,ITG *islavnode,ITG *islavsurf,
+             ITG *itiefac,double *areaslav,ITG *iponoels,ITG *inoels,
              double *springarea, double *tietol, double *reltime,
-	     int *imastnode, int *nmastnode, double *xmastnor,
-	     char *filab, int *mcs, int *ics,
-             int *nasym,double *xnoels,int *mortar,double *pslavsurf,
+	     ITG *imastnode, ITG *nmastnode, double *xmastnor,
+	     char *filab, ITG *mcs, ITG *ics,
+             ITG *nasym,double *xnoels,ITG *mortar,double *pslavsurf,
              double *pmastsurf,double *clearini,double *theta){
     
     char *labmpc=NULL;
 
-    int i,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL,*ipompc=NULL,*ikmpc=NULL,
+    ITG i,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL,*ipompc=NULL,*ikmpc=NULL,
 	*ilmpc=NULL,*nodempc=NULL,nmpc_,im;
     
     double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL,
@@ -78,9 +78,9 @@ void contact(int *ncont, int *ntie, char *tieset,int *nset,char *set,
     x=NNEW(double,ntrimax);
     y=NNEW(double,ntrimax);
     z=NNEW(double,ntrimax);
-    nx=NNEW(int,ntrimax);
-    ny=NNEW(int,ntrimax);
-    nz=NNEW(int,ntrimax);
+    nx=NNEW(ITG,ntrimax);
+    ny=NNEW(ITG,ntrimax);
+    nz=NNEW(ITG,ntrimax);
     
     if(*mortar==0){
     

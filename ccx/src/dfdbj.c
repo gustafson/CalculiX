@@ -25,14 +25,14 @@
 #include <string.h>
 #include "CalculiX.h"
 
-void dfdbj(double *bcont,double **dbcontp,int *neq,int *nope,int *konl,
-	   int* nactdof,double *s,double *z,int *ikmpc,int *ilmpc,
-	   int *ipompc,int *nodempc,int *nmpc,double *coefmpc,
-	   double *fnl,int *nev,int **ikactcontp,int **ilactcontp,
-           int *nactcont,int *nactcont_,int *mi, int *cyclicsymmetry,
-           int *izdof, int *nzdof){
+void dfdbj(double *bcont,double **dbcontp,ITG *neq,ITG *nope,ITG *konl,
+	   ITG* nactdof,double *s,double *z,ITG *ikmpc,ITG *ilmpc,
+	   ITG *ipompc,ITG *nodempc,ITG *nmpc,double *coefmpc,
+	   double *fnl,ITG *nev,ITG **ikactcontp,ITG **ilactcontp,
+           ITG *nactcont,ITG *nactcont_,ITG *mi, ITG *cyclicsymmetry,
+           ITG *izdof, ITG *nzdof){
 
-  int j,j1,jdof,kdof,k,k1,l,id,index,ist,id1,ist1,index1,id2,ist2,index2,
+  ITG j,j1,jdof,kdof,k,k1,l,id,index,ist,id1,ist1,index1,id2,ist2,index2,
       jdbcontcol,i1,i3,i4,mt=mi[1]+1,im,*ikactcont=*ikactcontp,
       *ilactcont=*ilactcontp,kdofm1;
 
@@ -54,9 +54,9 @@ void dfdbj(double *bcont,double **dbcontp,int *neq,int *nope,int *konl,
 		  }
 		  (*nactcont)++;
 		  if(*nactcont>*nactcont_){
-		      *nactcont_=(int)(1.1**nactcont_);
-		      RENEW(ikactcont,int,*nactcont_);
-		      RENEW(ilactcont,int,*nactcont_);
+		      *nactcont_=(ITG)(1.1**nactcont_);
+		      RENEW(ikactcont,ITG,*nactcont_);
+		      RENEW(ilactcont,ITG,*nactcont_);
 		      RENEW(dbcont,double,*nev**nactcont_);
 		  }
 		  k=*nactcont-1;
@@ -163,9 +163,9 @@ void dfdbj(double *bcont,double **dbcontp,int *neq,int *nope,int *konl,
 				  }
 				  (*nactcont)++;
 				  if(*nactcont>*nactcont_){
-				      *nactcont_=(int)(1.1**nactcont_);
-				      RENEW(ikactcont,int,*nactcont_);
-				      RENEW(ilactcont,int,*nactcont_);
+				      *nactcont_=(ITG)(1.1**nactcont_);
+				      RENEW(ikactcont,ITG,*nactcont_);
+				      RENEW(ilactcont,ITG,*nactcont_);
 				      RENEW(dbcont,double,*nev**nactcont_);
 				  }
 				  k=*nactcont-1;

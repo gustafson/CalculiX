@@ -24,12 +24,12 @@
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
-void mastructf(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
-	       int *nactdoh,int *icol,int *jq, int **mast1p, int **irowp,
-	       int *isolver, int *neq,int *ipointer, int *nzs,
-               int *ipnei,int *neiel,int *mi){
+void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
+	       ITG *nactdoh,ITG *icol,ITG *jq, ITG **mast1p, ITG **irowp,
+	       ITG *isolver, ITG *neq,ITG *ipointer, ITG *nzs,
+               ITG *ipnei,ITG *neiel,ITG *mi){
 
-  int i,j,k,l,index,idof1,idof2,node1,isubtract,nmast,ifree,istart,istartold,
+  ITG i,j,k,l,index,idof1,idof2,node1,isubtract,nmast,ifree,istart,istartold,
     nzs_,kflag,isize,*mast1=NULL,*irow=NULL,neighbor,mt=mi[1]+1;
 
   /* the indices in the comments follow FORTRAN convention, i.e. the
@@ -95,7 +95,7 @@ void mastructf(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 	      if(node1!=0) break;
 	  }
 	  printf("*ERROR in mastruct: zero column\n");
-	  printf("       node=%d,DOF=%d\n",node1,idof1);
+	  printf("       node=%" ITGFORMAT ",DOF=%" ITGFORMAT "\n",node1,idof1);
 	  FORTRAN(stop,());
       }
       istart=ipointer[i];
@@ -116,9 +116,9 @@ void mastructf(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
   /* summary */
   
   printf(" number of equations\n");
-  printf(" %d\n",*neq);
+  printf(" %" ITGFORMAT "\n",*neq);
   printf(" number of nonzero lower triangular matrix elements\n");
-  printf(" %d\n",nmast-(*neq));
+  printf(" %" ITGFORMAT "\n",nmast-(*neq));
   printf("\n");
   
 /* switching from a SUPERdiagonal inventory to a SUBdiagonal one:

@@ -662,6 +662,10 @@ c
             call orientations(inpc,textpart,orname,orab,norien,
      &        norien_,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)
 !
+         elseif(textpart(1)(1:7).eq.'*OUTPUT') then
+            call outputs(inpc,textpart,jout,itpamp,istep,istat,n,iline,
+     &           ipol,inl,ipoinp,inp,ipoinpc)
+!
          elseif(textpart(1)(1:18).eq.'*PHYSICALCONSTANTS') then
             call physicalconstantss(inpc,textpart,physcon,
      &        istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)

@@ -16,25 +16,25 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine extrapolate_pp(nface,ielfa,xrlfa,pp,ppfa,ipbou,
+      subroutine extrapolate_pp(nface,ielfa,xrlfa,ppel,ppfa,
      &  ifabou)
 !
 !     inter/extrapolation of p' element values to the faces
 !
       implicit none
 !
-      integer nface,ielfa(3,*),ipbou(*),ifabou(*),i,iel1,iel2
+      integer nface,ielfa(3,*),ifabou(*),i,iel1,iel2
 !
-      real*8 xrlfa(3,*),pp(*),ppfa(*),xl1
+      real*8 xrlfa(3,*),ppel(*),ppfa(*),xl1
 !     
       do i=1,nface
          iel1=ielfa(1,i)
          xl1=xrlfa(1,i)
          iel2=ielfa(2,i)
-         if(iel2.ne.0) then
-            ppfa(i)=xl1*pp(iel1)+xrlfa(2,i)*pp(iel2)
-         elseif(ipbou(i).ne.0) then
-            if(ifabou(ipbou(i)+5).ne.0) then
+         if(iel2.gt.0) then
+            ppfa(i)=xl1*ppel(iel1)+xrlfa(2,i)*ppel(iel2)
+         elseif(iel2.lt.0) then
+            if(ifabou(-iel2)+4.ne.0) then
 !
 !              p given
 !               
@@ -43,13 +43,13 @@
 !
 !              extrapolation
 !
-               ppfa(i)=xl1*pp(iel1)+xrlfa(3,i)*pp(ielfa(3,i))
+               ppfa(i)=xl1*ppel(iel1)+xrlfa(3,i)*ppel(ielfa(3,i))
             endif
          else
 !
 !           extrapolation
 !
-            ppfa(i)=xl1*pp(iel1)+xrlfa(3,i)*pp(ielfa(3,i))
+            ppfa(i)=xl1*ppel(iel1)+xrlfa(3,i)*ppel(ielfa(3,i))
          endif
       enddo
 !            

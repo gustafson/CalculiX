@@ -16,53 +16,20 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine add_sm_fl(au,ad,jq,irow,i,j,value,nzs)
+      subroutine calcppel(ne,nactdoh,ppel,b)
 !
-!     stores the stiffness coefficient (i,j) with value "value"
-!     in the stiffness matrix stored in spare matrix format
+!     stores the first pressure correction p' into field ppel
 !
       implicit none
 !
-      integer jq(*),irow(*),i,j,ii,jj,ipointer,id,nzs,ioffset
-      real*8 ad(*),au(*),value
+      integer ne,nactdoh(*),i
 !
-      if(i.eq.j) then
-         ad(i)=ad(i)+value
-         return
-      elseif(i.gt.j) then
-         ioffset=0
-         ii=i
-         jj=j
-      else
-         ioffset=nzs
-         ii=j
-         jj=i
-      endif
+      real*8 ppel(*),b(*)
 !
-      call nident(irow(jq(jj)),ii,jq(jj+1)-jq(jj),id)
-!
-      ipointer=jq(jj)+id-1
-!
-      if(irow(ipointer).ne.ii) then
-         write(*,*) '*ERROR in add_sm_fl: coefficient should be 0'
-         stop
-      else
-         ipointer=ipointer+ioffset
-         au(ipointer)=au(ipointer)+value
-      endif
-!
+      do i=1,ne
+         if(nactdoh(i).eq.0) cycle
+         ppel(i)=b(nactdoh(i))
+      enddo
+!     
       return
       end
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -569,12 +569,12 @@ c     write(*,*) '**regular solution'
 !                 distance from surface along normal (= clearance)
 !
                   clear=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
-                  if((istep.eq.1).and.(iit.le.0.d0)) then
-                     if(clear.lt.0.d0) then
-                        springarea(2,iloc)=clear/(1.d0-theta)
-                     endif
-                  endif
-                  clear=clear-springarea(2,iloc)*(1.d0-reltime)
+c                  if((istep.eq.1).and.(iit.le.0.d0)) then
+c                     if(clear.lt.0.d0) then
+c                        springarea(2,iloc)=clear/(1.d0-theta)
+c                     endif
+c                  endif
+c                  clear=clear-springarea(2,iloc)*(1.d0-reltime)
 !
 !                 no contact element for positive gap unless tied contact 
 !     

@@ -33,21 +33,21 @@ char* taufactorooc[]={ "taucs.factor.LLT=true","taucs.ooc=true",
                   "taucs.ooc.memory=500000000.0",NULL };
 char* tausolve[]={ "taucs.factor=false",NULL };
 char* tausolveooc[]={"taucs.factor=false",NULL };
-int *irowtau=NULL,*pointtau=NULL;
+ITG *irowtau=NULL,*pointtau=NULL;
 double *autau=NULL;
-int* perm;
+ITG* perm;
 
 
 void tau_factor(double *ad, double **aup, double *adb, double *aub, 
-                double *sigma,int *icol, int **irowp, 
-                int *neq, int *nzs){
+                double *sigma,ITG *icol, ITG **irowp, 
+                ITG *neq, ITG *nzs){
 
-  int i,j,k,l,*irow=NULL;
+  ITG i,j,k,l,*irow=NULL;
   long long ndim;
   double *au=NULL;
   double memory_mb = -1.0;
-  int    mb = -1;
-  int ret;
+  ITG    mb = -1;
+  ITG ret;
 
   printf(" Factoring the system of equations using TAUCS\n\n");
 
@@ -59,8 +59,8 @@ void tau_factor(double *ad, double **aup, double *adb, double *aub,
   ndim=*neq+*nzs;
 
   autau= NNEW(double,ndim);
-  irowtau=NNEW(int,ndim);
-  pointtau=NNEW(int,*neq+1);
+  irowtau=NNEW(ITG,ndim);
+  pointtau=NNEW(ITG,*neq+1);
 
   k=ndim;
   l=*nzs;
@@ -114,7 +114,7 @@ void tau_factor(double *ad, double **aup, double *adb, double *aub,
         
       ret = taucs_ooc_factor_llt(aa,F,memory_mb*1048576.0);
             
-      printf(" Return Code from Factoring %d\n\n",ret);
+      printf(" Return Code from Factoring %" ITGFORMAT "\n\n",ret);
   }
   
   *aup=au;
@@ -123,12 +123,12 @@ void tau_factor(double *ad, double **aup, double *adb, double *aub,
   return;
 }
 
-void tau_solve(double *b,int *neq){
+void tau_solve(double *b,ITG *neq){
 
-  int i;
-  /*static int j;*/
+  ITG i;
+  /*static ITG j;*/
   double *x=NULL;
-  int ret;
+  ITG ret;
 
   x=NNEW(double,*neq);
   
@@ -140,7 +140,7 @@ void tau_solve(double *b,int *neq){
       
       ret = taucs_ooc_solve_llt(F, x, b);
        
-      printf(" Return Code from Solving %d\n\n",ret);
+      printf(" Return Code from Solving %" ITGFORMAT "\n\n",ret);
       
       taucs_io_delete(F);
   }
@@ -154,7 +154,7 @@ void tau_solve(double *b,int *neq){
   else
     memory_mb = ((double) (-mb)) * taucs_available_memory_size()/1048576.0;  
   */
-  /*j++;printf("%d\n",j);*/
+  /*j++;printf("%" ITGFORMAT "\n",j);*/
 
   return;
 }
@@ -170,8 +170,8 @@ void tau_cleanup(){
 }
 
 void tau(double *ad, double **aup, double *adb, double *aub, double *sigma,
-         double *b, int *icol, int **irowp, 
-         int *neq, int *nzs){
+         double *b, ITG *icol, ITG **irowp, 
+         ITG *neq, ITG *nzs){
 
   if(*neq==0) return;
 

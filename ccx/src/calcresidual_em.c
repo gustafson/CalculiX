@@ -30,15 +30,15 @@
 #endif
 
 
-void calcresidual_em(int *nmethod, int *neq, double *b, double *fext, double *f,
-        int *iexpl, int *nactdof, double *aux1, double *aux2, double *vold,
-        double *vini, double *dtime, double *accold, int *nk, double *adb,
-        double *aub, int *jq, int *irow, int *nzl, double *alpha,
-        double *fextini, double *fini, int *islavnode, int *nslavnode,
-        int *mortar, int *ntie,double *f_cm,
-	double* f_cs, int *mi,int *nzs,int *nasym,int *ithermal){
+void calcresidual_em(ITG *nmethod, ITG *neq, double *b, double *fext, double *f,
+        ITG *iexpl, ITG *nactdof, double *aux1, double *aux2, double *vold,
+        double *vini, double *dtime, double *accold, ITG *nk, double *adb,
+        double *aub, ITG *jq, ITG *irow, ITG *nzl, double *alpha,
+        double *fextini, double *fini, ITG *islavnode, ITG *nslavnode,
+        ITG *mortar, ITG *ntie,double *f_cm,
+	double* f_cs, ITG *mi,ITG *nzs,ITG *nasym,ITG *ithermal){
 
-    int j,k,mt=mi[1]+1,jstart;
+    ITG j,k,mt=mi[1]+1,jstart;
       
     /* residual for a static analysis */
       

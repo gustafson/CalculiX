@@ -24,21 +24,21 @@
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
-void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
-	 double *v,double *stn,int *inum,int *nmethod,int *kode,
+void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
+	 double *v,double *stn,ITG *inum,ITG *nmethod,ITG *kode,
 	 char *filab,double *een,double *t1,double *fn,double *time,
-	 double *epn,int *ielmat,char *matname,double *enern,
-	 double *xstaten,int *nstate_,int *istep,int *iinc,
-	 int *ithermal,double *qfn,int *mode,int *noddiam,
-	 double *trab,int *inotr,int *ntrans,double *orab,
-	 int *ielorien,int *norien,char *description,int *ipneigh,
-	 int *neigh,int *mi,double *stx,double *vr,double *vi,
+	 double *epn,ITG *ielmat,char *matname,double *enern,
+	 double *xstaten,ITG *nstate_,ITG *istep,ITG *iinc,
+	 ITG *ithermal,double *qfn,ITG *mode,ITG *noddiam,
+	 double *trab,ITG *inotr,ITG *ntrans,double *orab,
+	 ITG *ielorien,ITG *norien,char *description,ITG *ipneigh,
+	 ITG *neigh,ITG *mi,double *stx,double *vr,double *vi,
 	 double *stnr,double *stni,double *vmax,double *stnmax,
-	 int *ngraph,double *veold,double *ener,int *ne,double *cs,
-	 char *set,int *nset,int *istartset,int *iendset,int *ialset,
+	 ITG *ngraph,double *veold,double *ener,ITG *ne,double *cs,
+	 char *set,ITG *nset,ITG *istartset,ITG *iendset,ITG *ialset,
 	 double *eenmax,double *fnr,double *fni,double *emn,
 	 double *thicke,char *jobnamec,char *output,double *qfx,
-         double *cdn,int *mortar,double *cdnr,double *cdni){
+         double *cdn,ITG *mortar,double *cdnr,double *cdni){
 
      /* stores the results in frd format
 
@@ -58,27 +58,27 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     p12[6]="   12", fneig[132]="",date[8],clock[10],newdate[21],newclock[9],
     material[6]="     ",text[2]=" ";
 
-//  static int icounter=0,nkcoords,nout,noutmin,noutplus;
-  static int icounter=0,nkcoords;
+//  static ITG icounter=0,nkcoords,nout,noutmin,noutplus;
+  static ITG icounter=0,nkcoords;
 
-  int null,one,i,j,k,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
+  ITG null,one,i,j,k,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
       nodes,ifield[7],nfield[2],icomp[7],ifieldstate[*nstate_],two,three,
       icompstate[*nstate_],ip0=0,ip1=1,ip2=2,ip3=3,ip4=4,ip5=5,ip6=6,ip7=7,
       ip8=8,ip9=9,ip10=10,ip11=11,ip12=12,imaterial=0,nelout,ielemremesh,
       nterms,mesh_in_original_form,nout,noutplus,noutmin;
 
-  int ncompscalar=1,ifieldscalar[1]={1},icompscalar[1]={0},
+  ITG ncompscalar=1,ifieldscalar[1]={1},icompscalar[1]={0},
       nfieldscalar[2]={1,0};
-  int ncompvector=3,ifieldvector[3]={1,1,1},icompvector[3]={0,1,2},
+  ITG ncompvector=3,ifieldvector[3]={1,1,1},icompvector[3]={0,1,2},
       nfieldvector1[2]={3,0},nfieldvector0[2]={mi[1]+1,0},
       icompvectorlast[3]={3,4,5};
-  int ncomptensor=6,ifieldtensor[6]={1,1,1,1,1,1},icomptensor[6]={0,1,2,3,5,4},
+  ITG ncomptensor=6,ifieldtensor[6]={1,1,1,1,1,1},icomptensor[6]={0,1,2,3,5,4},
       nfieldtensor[2]={6,0};
-  int ncompscalph=2,ifieldscalph[2]={1,2},icompscalph[2]={0,0},
+  ITG ncompscalph=2,ifieldscalph[2]={1,2},icompscalph[2]={0,0},
       nfieldscalph[2]={0,0};
-  int ncompvectph=6,ifieldvectph[6]={1,1,1,2,2,2},icompvectph[6]={1,2,3,1,2,3},
+  ITG ncompvectph=6,ifieldvectph[6]={1,1,1,2,2,2},icompvectph[6]={1,2,3,1,2,3},
       nfieldvectph[2]={mi[1]+1,mi[1]+1};
-  int ncomptensph=12,ifieldtensph[12]={1,1,1,1,1,1,2,2,2,2,2,2},
+  ITG ncomptensph=12,ifieldtensph[12]={1,1,1,1,1,1,2,2,2,2,2,2},
       icomptensph[12]={0,1,2,3,5,4,0,1,2,3,5,4},nfieldtensph[2]={6,6};
       
   int iw;
@@ -218,9 +218,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     /* storing the header of the coordinates */
 
     if(strcmp1(output,"asc")==0){
-      fprintf(f1,"%5s%1s                  %12d%38d\n",p2,c,nout,one);
+      fprintf(f1,"%5s%1s                  %12" ITGFORMAT "%38" ITGFORMAT "\n",p2,c,nout,one);
     }else{
-      fprintf(f1,"%5s%1s                  %12d%38d\n",p2,c,nout,three);
+      fprintf(f1,"%5s%1s                  %12" ITGFORMAT "%38" ITGFORMAT "\n",p2,c,nout,three);
     }
 
     /* storing the coordinates themselves */
@@ -229,7 +229,7 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       for(i=0;i<*nk;i++){
 	if(inum[i]==0) continue;
 	if(strcmp1(output,"asc")==0){
-	    fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,(float)co[3*i],
+	    fprintf(f1,"%3s%10" ITGFORMAT "%12.5E%12.5E%12.5E\n",m1,i+1,(float)co[3*i],
 		  (float)co[3*i+1],(float)co[3*i+2]);
 	}else{
 	  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -244,7 +244,7 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     }else{
       for(i=0;i<*nk;i++){
 	if(strcmp1(output,"asc")==0){
-	  fprintf(f1,"%3s%10d%12.5E%12.5E%12.5E\n",m1,i+1,(float)co[3*i],
+	  fprintf(f1,"%3s%10" ITGFORMAT "%12.5E%12.5E%12.5E\n",m1,i+1,(float)co[3*i],
 		(float)co[3*i+1],(float)co[3*i+2]);
 	}else{
 	  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -288,9 +288,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     /* storing the topology */
 
     if(strcmp1(output,"asc")==0){
-      fprintf(f1,"%5s%1s                  %12d%38d\n",p3,c,nelout,one);
+      fprintf(f1,"%5s%1s                  %12" ITGFORMAT "%38" ITGFORMAT "\n",p3,c,nelout,one);
     }else{
-      fprintf(f1,"%5s%1s                  %12d%38d\n",p3,c,nelout,two);
+      fprintf(f1,"%5s%1s                  %12" ITGFORMAT "%38" ITGFORMAT "\n",p3,c,nelout,two);
     }
     nemax=*ne0;
 
@@ -326,14 +326,14 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	    (strcmp1(&lakon[8*i+6],"I")==0))&&
            (strcmp2(&lakon[8*i+6],"LC",2)!=0)){
 	  if(strcmp1(output,"asc")==0){
-	    fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
+	    fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
 		    m1,i+1,p4,p0,material,m2);
-	    for(j=0;j<10;j++)fprintf(f1,"%10d",kon[indexe+j]);
+	    for(j=0;j<10;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
 	    fprintf(f1,"\n%3s",m2);
-	    for(j=10;j<12;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	    for(j=16;j<19;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	    for(j=19;j<20;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	    for(j=12;j<16;j++)fprintf(f1,"%10d",kon[indexe+j]);
+	    for(j=10;j<12;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
+	    for(j=16;j<19;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
+	    for(j=19;j<20;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
+	    for(j=12;j<16;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
 	    fprintf(f1,"\n");
 	  }else{
 	    iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -365,14 +365,14 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  for(k=0;k<nlayer;k++){
 	    nemax++;
 	    if(strcmp1(output,"asc")==0){
-	      fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
+	      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
 		      m1,nemax,p4,p0,material,m2);
-	      for(j=0;j<10;j++)fprintf(f1,"%10d",kon[indexe+28+20*k+j]);
+	      for(j=0;j<10;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+28+20*k+j]);
 	      fprintf(f1,"\n%3s",m2);
-	      for(j=10;j<12;j++)fprintf(f1,"%10d",kon[indexe+28+20*k+j]);
-	      for(j=16;j<19;j++)fprintf(f1,"%10d",kon[indexe+28+20*k+j]);
-	      for(j=19;j<20;j++)fprintf(f1,"%10d",kon[indexe+28+20*k+j]);
-	      for(j=12;j<16;j++)fprintf(f1,"%10d",kon[indexe+28+20*k+j]);
+	      for(j=10;j<12;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+28+20*k+j]);
+	      for(j=16;j<19;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+28+20*k+j]);
+	      for(j=19;j<20;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+28+20*k+j]);
+	      for(j=12;j<16;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+28+20*k+j]);
 	      fprintf(f1,"\n");
 	    }else{
 	      iw=(int)nemax;fwrite(&iw,sizeof(int),1,f1);
@@ -396,8 +396,8 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	    /* 3-node beam element */
 
 	  if(strcmp1(output,"asc")==0){
-	    fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p12,p0,material);
-	    fprintf(f1,"%3s%10d%10d%10d\n",m2,kon[indexe+20],
+	    fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n",m1,i+1,p12,p0,material);
+	    fprintf(f1,"%3s%10" ITGFORMAT "%10" ITGFORMAT "%10" ITGFORMAT "\n",m2,kon[indexe+20],
 		    kon[indexe+22],kon[indexe+21]);
 	  }else{
 	    iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -413,9 +413,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	    /* 8-node 2d element */
 
 	  if(strcmp1(output,"asc")==0){
-	    fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
+	    fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
                     m1,i+1,p10,p0,material,m2);
-	    for(j=0;j<8;j++)fprintf(f1,"%10d",kon[indexe+20+j]);
+	    for(j=0;j<8;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+20+j]);
 	    fprintf(f1,"\n");
 	  }else{
 	    iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -433,9 +433,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
               /* 8-node brick element */
 
 	      if(strcmp1(output,"asc")==0){
-		  fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
+		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
 			  m1,i+1,p1,p0,material,m2);
-		  for(j=0;j<8;j++)fprintf(f1,"%10d",kon[indexe+j]);
+		  for(j=0;j<8;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
 		  fprintf(f1,"\n");
 	      }else{
 		  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -451,8 +451,8 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 
 	      if(strcmp1(&lakon[8*i+4],"R")==0){
 		  if(strcmp1(output,"asc")==0){
-		      fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
-		      fprintf(f1,"%3s%10d%10d\n",m2,kon[indexe+8],
+		      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n",m1,i+1,p11,p0,material);
+		      fprintf(f1,"%3s%10" ITGFORMAT "%10" ITGFORMAT "\n",m2,kon[indexe+8],
 			      kon[indexe+9]);
 		  }else{
 		      iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -464,8 +464,8 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 		  }
 	      }else if(strcmp1(&lakon[8*i+4],"I")==0){
 		  if(strcmp1(output,"asc")==0){
-		      fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
-		      fprintf(f1,"%3s%10d%10d\n",m2,kon[indexe+11],
+		      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n",m1,i+1,p11,p0,material);
+		      fprintf(f1,"%3s%10" ITGFORMAT "%10" ITGFORMAT "\n",m2,kon[indexe+11],
 			      kon[indexe+12]);
 		  }else{
 		      iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -483,9 +483,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	      if((strcmp1(&lakon[8*i+4],"R")==0)||
 		 (strcmp1(&lakon[8*i+4]," ")==0)){
 		  if(strcmp1(output,"asc")==0){
-		      fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
+		      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
 			      m1,i+1,p9,p0,material,m2);
-		      for(j=0;j<4;j++)fprintf(f1,"%10d",kon[indexe+8+j]);
+		      for(j=0;j<4;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+8+j]);
 		      fprintf(f1,"\n");
 		  }else{
 		      iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -497,9 +497,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 		  }
 	      }else if(strcmp1(&lakon[8*i+4],"I")==0){
 		  if(strcmp1(output,"asc")==0){
-		      fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
+		      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
 			      m1,i+1,p9,p0,material,m2);
-		      for(j=0;j<4;j++)fprintf(f1,"%10d",kon[indexe+11+j]);
+		      for(j=0;j<4;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+11+j]);
 		      fprintf(f1,"\n");
 		  }else{
 		      iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -517,9 +517,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	/* 10-node tetrahedral element */
 
 	if(strcmp1(output,"asc")==0){
-	  fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
+	  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
 		  m1,i+1,p6,p0,material,m2);
-	  for(j=0;j<10;j++)fprintf(f1,"%10d",kon[indexe+j]);
+	  for(j=0;j<10;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
 	  fprintf(f1,"\n");
 	}else{
 	  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -534,9 +534,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	/* 4-node tetrahedral element */
 
 	if(strcmp1(output,"asc")==0){
-	  fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
+	  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
 		  m1,i+1,p3,p0,material,m2);
-	  for(j=0;j<4;j++)fprintf(f1,"%10d",kon[indexe+j]);
+	  for(j=0;j<4;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
 	  fprintf(f1,"\n");
 	}else{
 	  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -553,13 +553,13 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
           /* 15-node wedge element */
 
 	  if(strcmp1(output,"asc")==0){
-	    fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
+	    fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
 		    m1,i+1,p5,p0,material,m2);
-	    for(j=0;j<9;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	    for(j=12;j<13;j++)fprintf(f1,"%10d",kon[indexe+j]);
+	    for(j=0;j<9;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
+	    for(j=12;j<13;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
 	    fprintf(f1,"\n%3s",m2);
-	    for(j=13;j<15;j++)fprintf(f1,"%10d",kon[indexe+j]);
-	    for(j=9;j<12;j++)fprintf(f1,"%10d",kon[indexe+j]);
+	    for(j=13;j<15;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
+	    for(j=9;j<12;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
 	    fprintf(f1,"\n");
 	  }else{
 	    iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -580,9 +580,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  /* 6-node 2d element */
 
 	  if(strcmp1(output,"asc")==0){
-	    fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
+	    fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
 		    m1,i+1,p8,p0,material,m2);
-	    for(j=0;j<6;j++)fprintf(f1,"%10d",kon[indexe+15+j]);
+	    for(j=0;j<6;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+15+j]);
 	    fprintf(f1,"\n");
 	  }else{
 	    iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -600,9 +600,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
               /* 6-node wedge element */
 
 	      if(strcmp1(output,"asc")==0){
-		  fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
+		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
 			  m1,i+1,p2,p0,material,m2);
-		  for(j=0;j<6;j++)fprintf(f1,"%10d",kon[indexe+j]);
+		  for(j=0;j<6;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
 		  fprintf(f1,"\n");
 	      }else{
 		  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -617,9 +617,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
               /* 3-node 2d element */
 
 	      if(strcmp1(output,"asc")==0){
-		  fprintf(f1,"%3s%10d%5s%5s%5s\n%3s",
+		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
 			  m1,i+1,p7,p0,material,m2);
-		  for(j=0;j<3;j++)fprintf(f1,"%10d",kon[indexe+6+j]);
+		  for(j=0;j<3;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+6+j]);
 		  fprintf(f1,"\n");
 	      }else{
 		  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -638,8 +638,8 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
               /* 2-node 1d element (network entry element) */
 
 	      if(strcmp1(output,"asc")==0){
-		  fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
-		  fprintf(f1,"%3s%10d%10d\n",m2,
+		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n",m1,i+1,p11,p0,material);
+		  fprintf(f1,"%3s%10" ITGFORMAT "%10" ITGFORMAT "\n",m2,
 			  kon[indexe+1],kon[indexe+2]);
 	      }else{
 		  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -654,8 +654,8 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
               /* 2-node 1d element (network exit element) */
 
 	      if(strcmp1(output,"asc")==0){
-		  fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
-		  fprintf(f1,"%3s%10d%10d\n",m2,kon[indexe],
+		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n",m1,i+1,p11,p0,material);
+		  fprintf(f1,"%3s%10" ITGFORMAT "%10" ITGFORMAT "\n",m2,kon[indexe],
 			  kon[indexe+1]);
 	      }else{
 		  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -670,8 +670,8 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
               /* 3-node 1d element (genuine network element) */
 
 	      if(strcmp1(output,"asc")==0){
-		  fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p12,p0,material);
-		  fprintf(f1,"%3s%10d%10d%10d\n",m2,kon[indexe],
+		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n",m1,i+1,p12,p0,material);
+		  fprintf(f1,"%3s%10" ITGFORMAT "%10" ITGFORMAT "%10" ITGFORMAT "\n",m2,kon[indexe],
 			  kon[indexe+2],kon[indexe+1]);
 	      }else{
 		  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
@@ -689,8 +689,8 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  /* 2-node 1d element (spring element) */
 
 	if(strcmp1(output,"asc")==0){
-	  fprintf(f1,"%3s%10d%5s%5s%5s\n",m1,i+1,p11,p0,material);
-	  fprintf(f1,"%3s%10d%10d\n",m2,kon[indexe],kon[indexe+1]);
+	  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n",m1,i+1,p11,p0,material);
+	  fprintf(f1,"%3s%10" ITGFORMAT "%10" ITGFORMAT "\n",m2,kon[indexe],kon[indexe+1]);
 	}else{
 	  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	  iw=(int)ip11;fwrite(&iw,sizeof(int),1,f1);
@@ -1139,7 +1139,7 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       nope=atoi(text)+1;
       nodes=kon[ipkon[i]+nope-1];
       if(strcmp1(output,"asc")==0){
-	  fprintf(f1,"%3s%10d",m1,nodes);
+	  fprintf(f1,"%3s%10" ITGFORMAT "",m1,nodes);
 	  for(j=0;j<6;j++)fprintf(f1,"%12.5E",(float)stx[6*mi[0]*i+j]);
       }else{
 	  iw=(int)(nodes);fwrite(&iw,sizeof(int),1,f1);
@@ -1225,7 +1225,7 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       nope=atoi(&lakon[8*i+7])+1;
       nodes=kon[ipkon[i]+nope-1];
       if(strcmp1(output,"asc")==0){
-	  fprintf(f1,"%3s%10d%12.5E\n",m1,nodes,(float)ener[i*mi[0]]);
+	  fprintf(f1,"%3s%10" ITGFORMAT "%12.5E\n",m1,nodes,(float)ener[i*mi[0]]);
       }else{
 	  iw=(int)(nodes);fwrite(&iw,sizeof(int),1,f1);
 	  ifl=(float)ener[i*mi[0]];
@@ -1248,9 +1248,9 @@ void frd(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
-    fprintf(f1," -4  SDV        %2d    1\n",*nstate_);
+    fprintf(f1," -4  SDV        %2" ITGFORMAT "    1\n",*nstate_);
     for(j=1;j<=*nstate_;j++){
-      fprintf(f1," -5  SDV%2d       1    1    0    0\n",j);
+      fprintf(f1," -5  SDV%2" ITGFORMAT "       1    1    0    0\n",j);
     }
 
     for(i=0;i<*nstate_;i++){

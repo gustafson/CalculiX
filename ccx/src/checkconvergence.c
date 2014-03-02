@@ -30,29 +30,29 @@
 #endif
 
 
-void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
-	  int *ne, double *stn, int *nmethod, 
-	  int *kode, char *filab, double *een, double *t1act,
-          double *time, double *epn,int *ielmat,char *matname,
-          double *enern, double *xstaten, int *nstate_, int *istep,
-          int *iinc, int *iperturb, double *ener, int *mi, char *output,
-          int *ithermal, double *qfn, int *mode, int *noddiam, double *trab,
-          int *inotr, int *ntrans, double *orab, int *ielorien, int *norien,
+void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
+	  ITG *ne, double *stn, ITG *nmethod, 
+	  ITG *kode, char *filab, double *een, double *t1act,
+          double *time, double *epn,ITG *ielmat,char *matname,
+          double *enern, double *xstaten, ITG *nstate_, ITG *istep,
+          ITG *iinc, ITG *iperturb, double *ener, ITG *mi, char *output,
+          ITG *ithermal, double *qfn, ITG *mode, ITG *noddiam, double *trab,
+          ITG *inotr, ITG *ntrans, double *orab, ITG *ielorien, ITG *norien,
           char *description,double *sti,
-	  int *icutb, int *iit, double *dtime, double *qa, double *vold,
+	  ITG *icutb, ITG *iit, double *dtime, double *qa, double *vold,
           double *qam, double *ram1, double *ram2, double *ram,
-          double *cam, double *uam, int *ntg, double *ttime,
-          int *icntrl, double *theta, double *dtheta, double *veold,
-          double *vini, int *idrct, double *tper,int *istab, double *tmax, 
-          int *nactdof, double *b, double *tmin, double *ctrl, double *amta,
-          int *namta, int *itpamp, int *inext, double *dthetaref, int *itp,
-          int *jprint, int *jout, int *uncoupled, double *t1, int *iitterm,
-          int *nelemload, int *nload, int *nodeboun, int *nboun, int *itg,
-          int *ndirboun, double *deltmx, int *iflagact,char *set,int *nset,
-	  int *istartset,int *iendset,int *ialset, double *emn, double *thicke,
-          char *jobnamec,int *mortar){
+          double *cam, double *uam, ITG *ntg, double *ttime,
+          ITG *icntrl, double *theta, double *dtheta, double *veold,
+          double *vini, ITG *idrct, double *tper,ITG *istab, double *tmax, 
+          ITG *nactdof, double *b, double *tmin, double *ctrl, double *amta,
+          ITG *namta, ITG *itpamp, ITG *inext, double *dthetaref, ITG *itp,
+          ITG *jprint, ITG *jout, ITG *uncoupled, double *t1, ITG *iitterm,
+          ITG *nelemload, ITG *nload, ITG *nodeboun, ITG *nboun, ITG *itg,
+          ITG *ndirboun, double *deltmx, ITG *iflagact,char *set,ITG *nset,
+	  ITG *istartset,ITG *iendset,ITG *ialset, double *emn, double *thicke,
+          char *jobnamec,ITG *mortar){
 
-    int i0,ir,ip,ic,il,ig,ia,iest,iest1=0,iest2=0,iconvergence,idivergence,
+    ITG i0,ir,ip,ic,il,ig,ia,iest,iest1=0,iest2=0,iconvergence,idivergence,
 	ngraph=1,k,*ipneigh=NULL,*neigh=NULL,*inum=NULL,id,istart,iend,inew,
         i,j,mt=mi[1]+1,iexceed;
 
@@ -202,7 +202,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		    printf("\n *ERROR: increment size smaller than minimum\n");
 		    printf(" best solution and residuals are in the frd file\n\n");
 		    fn=NNEW(double,mt**nk);
-		    inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
+		    inum=NNEW(ITG,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 		    FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,
                       nk,sti,stn,ipkon,inum,kon,lakon,ne,mi,orab,
 		      ielorien,co,itg,ntg,vold,ielmat,thicke));
@@ -296,13 +296,13 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
 	if(*dtheta>=1.-*theta){
 	    if(*dtheta>1.-*theta){iexceed=1;}else{iexceed=0;}
-	    if((*mortar==1)&&(1.-*theta>0.01)){
-		*dtheta=0.999-*theta;
+//	    if((*mortar==1)&&(1.-*theta>0.01)){
+//		*dtheta=0.999-*theta;
 //	    if((*mortar==1)&&(1.-*theta>0.5)){
 //		*dtheta=0.900-*theta;
-	    }else{
+//	    }else{
 		*dtheta=1.-*theta;
-	    }
+//	    }
 	    *dthetaref=*dtheta;
 	    if(iexceed==1)
 	    printf(" the increment size exceeds the remainder of the step and is decreased to %e\n\n",*dtheta**tper);
@@ -325,7 +325,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    FORTRAN(writesummarydiv,(istep,iinc,icutb,iit,ttime,time,dtime));
 
 	    fn=NNEW(double,mt**nk);
-	    inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
+	    inum=NNEW(ITG,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 	    FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,nk,sti,stn,
 		ipkon,inum,kon,lakon,ne,mi,orab,ielorien,co,itg,ntg,vold,
                 ielmat,thicke));
@@ -397,7 +397,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
                 /* number of contact elements does not change */
 
-		if(((int)ram[6]==0)&&((int)ram1[6]==0)){
+		if(((ITG)ram[6]==0)&&((ITG)ram1[6]==0)){
 		    printf("divergence allowed: number of contact elements stabilized\n");
 		    if((ram1[0]>ram2[0])&&(ram[0]>ram2[0])&&(ram[0]>c1[0]*qam[0]))
 			idivergence=1;
@@ -405,7 +405,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	    
                 /* rate of number of contact elements is increasing */
 
-		if(((int)ram[6]>=(int)ram1[6])&&((int)ram[6]>=(int)ram2[6])){
+		if(((ITG)ram[6]>=(ITG)ram1[6])&&((ITG)ram[6]>=(ITG)ram2[6])){
 		    
 		    if(((ram[4]>0.98*ram1[4])&&(ram[4]<1.02*ram1[4]))&&
 		       ((ram[4]>0.98*ram2[4])&&(ram[4]<1.02*ram2[4]))){
@@ -423,13 +423,13 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 
 		    if(((ram[4]>(1.-1.e-3)*ram1[4])&&(ram[4]<(1.+1.e-3)*ram1[4]))&&
 		       ((ram[4]>(1.-1.e-3)*ram2[4])&&(ram[4]<(1.+1.e-3)*ram2[4]))&&
-		       ((int)ram[6]==(int)ram1[6])&&((int)ram[6]==(int)ram2[6])){
+		       ((ITG)ram[6]==(ITG)ram1[6])&&((ITG)ram[6]==(ITG)ram2[6])){
 			printf("infinite loop -> divergence\n");
 			idivergence=1;
 			}*/
 		}
 		
-		/*	if(((int)ram1[7]==1)&&((int)ram2[7]!=-1)){
+		/*	if(((ITG)ram1[7]==1)&&((ITG)ram2[7]!=-1)){
 		    printf("divergence if ram>ram1>ram2: contact elements not stabilizing\n");
 		    if((ram1[0]>ram2[0])&&(ram[0]>ram2[0])&&(ram[0]>c1[0]*qam[0]))
 			idivergence=1;
@@ -458,7 +458,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 					     dtime));
 
 		    fn=NNEW(double,mt**nk);
-		    inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
+		    inum=NNEW(ITG,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 		    FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,nk,
                        sti,stn,ipkon,inum,kon,lakon,ne,mi,orab,
 	               ielorien,co,itg,ntg,vold,ielmat,thicke));
@@ -510,7 +510,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 			printf("\n *ERROR: increment size smaller than minimum\n");
 			printf(" best solution and residuals are in the frd file\n\n");
 			fn=NNEW(double,mt**nk);
-			inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
+			inum=NNEW(ITG,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 			FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,
                            nk,sti,stn,ipkon,inum,kon,lakon,ne,mi,orab,
 			   ielorien,co,itg,ntg,vold,ielmat,thicke));
@@ -538,7 +538,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 			printf("\n *ERROR: too many cutbacks\n");
 			printf(" best solution and residuals are in the frd file\n\n");
 			fn=NNEW(double,mt**nk);
-			inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
+			inum=NNEW(ITG,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 			FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,
                            nk,sti,stn,ipkon,inum,kon,lakon,ne,mi,orab,
 			   ielorien,co,itg,ntg,vold,ielmat,thicke));
@@ -577,16 +577,16 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	
 	if(*iit>=ir){
 	    if(*ithermal!=2){
-		iest1=(int)ceil(*iit+log(ran*qam[0]/(ram[0]))/
+		iest1=(ITG)ceil(*iit+log(ran*qam[0]/(ram[0]))/
 				log(ram[0]/(ram1[0])));
 	    }
 	    if(*ithermal>1){
-		iest2=(int)ceil(*iit+log(ran*qam[1]/(ram[1]))/
+		iest2=(ITG)ceil(*iit+log(ran*qam[1]/(ram[1]))/
 				log(ram[1]/(ram1[1])));
 	    }
 	    if(iest1>iest2){iest=iest1;}else{iest=iest2;}
 	    if((iest>0)&&(*mortar==0)){
-	    printf(" estimated number of iterations till convergence = %d\n",
+	    printf(" estimated number of iterations till convergence = %" ITGFORMAT "\n",
 		   iest);
 	    }
 	    if((((iest>ic)||(*iit==ic))&&(*mortar==0))||((*mortar==1)&&(*iit==60))){
@@ -608,7 +608,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 			printf("\n *ERROR: increment size smaller than minimum\n");
 			printf(" best solution and residuals are in the frd file\n\n");
 			fn=NNEW(double,mt**nk);
-			inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
+			inum=NNEW(ITG,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 			FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,
                            nk,sti,stn,ipkon,inum,kon,lakon,ne,mi,orab,
 			   ielorien,co,itg,ntg,vold,ielmat,thicke));
@@ -633,7 +633,7 @@ void checkconvergence(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 			printf("\n *ERROR: too many cutbacks\n");
 			printf(" best solution and residuals are in the frd file\n\n");
 			fn=NNEW(double,mt**nk);
-			inum=NNEW(int,*nk);for(k=0;k<*nk;k++) inum[k]=1;
+			inum=NNEW(ITG,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 			FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,
                            nk,sti,stn,ipkon,inum,kon,lakon,ne,mi,orab,
 			   ielorien,co,itg,ntg,vold,ielmat,thicke));

@@ -23,15 +23,15 @@
 #include "CalculiX.h"
 #include "sgi.h"
 
-int *irowsgi=NULL;
+ITG *irowsgi=NULL;
 double *ausgi=NULL;
 
 void sgi_factor(double *ad, double *au, double *adb, double *aub, 
-                double *sigma,int *icol, int *irow, 
-                int *neq, int *nzs, int token){
+                double *sigma,ITG *icol, ITG *irow, 
+                ITG *neq, ITG *nzs, ITG token){
 
   char *oocpath="/yatmp/scr1",*env;
-  int i,j,k,l,*pointers=NULL,method;
+  ITG i,j,k,l,*pointers=NULL,method;
   long long ndim;
   double ops=0,ooclimit=2000.;
 
@@ -42,8 +42,8 @@ void sgi_factor(double *ad, double *au, double *adb, double *aub,
 
   ndim=*neq+*nzs;
 
-  pointers=NNEW(int,*neq+1);
-  irowsgi=NNEW(int,ndim);
+  pointers=NNEW(ITG,*neq+1);
+  irowsgi=NNEW(ITG,ndim);
   ausgi=NNEW(double,ndim);
 
   k=ndim;
@@ -94,14 +94,14 @@ void sgi_factor(double *ad, double *au, double *adb, double *aub,
   return;
 }
 
-void sgi_solve(double *b,int token){
+void sgi_solve(double *b,ITG token){
 
   DPSLDLT_Solve(token,b,b);
 
   return;
 }
 
-void sgi_cleanup(int token){
+void sgi_cleanup(ITG token){
 
   DPSLDLT_Destroy(token);
   free(irowsgi);
@@ -111,8 +111,8 @@ void sgi_cleanup(int token){
 }
 
 void sgi_main(double *ad, double *au, double *adb, double *aub, double *sigma,
-         double *b, int *icol, int *irow, 
-         int *neq, int *nzs, int token){
+         double *b, ITG *icol, ITG *irow, 
+         ITG *neq, ITG *nzs, ITG token){
 
   if(*neq==0) return;
 

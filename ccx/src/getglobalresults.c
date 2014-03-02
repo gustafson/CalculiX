@@ -26,9 +26,9 @@
 #include "CalculiX.h"
 #include "readfrd.h"
 
-void getglobalresults (char *jobnamec,int **integerglobp,double **doubleglobp,
-                       int *nboun,int *iamboun,double *xboun, int *nload,
-                       char *sideload,int *iamload, int *iglob)
+void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
+                       ITG *nboun,ITG *iamboun,double *xboun, ITG *nload,
+                       char *sideload,ITG *iamload, ITG *iglob)
 {
  
     char  datin[MAX_LINE_LENGTH],text[13]="            ";
@@ -37,25 +37,25 @@ void getglobalresults (char *jobnamec,int **integerglobp,double **doubleglobp,
     Elements  *elem=NULL;
     Datasets *lcase=NULL;
     
-    int *kontet=NULL,*ifatet=NULL,*inodfa=NULL,*ipofa=NULL,type,n1,n2,n3,n4,
+    ITG *kontet=NULL,*ifatet=NULL,*inodfa=NULL,*ipofa=NULL,type,n1,n2,n3,n4,
 	*nnx=NULL,*nny=NULL,*nnz=NULL,*kon=NULL,*ipkon=NULL,*kontyp=NULL,
 	*iparent=NULL,ifreefa=1,kflag=2,ne,netet,numnodes,nkon,
 	indexe,istep,loadcase,nfaces,netet_,nktet=0,nfield,j,nodes[4],i,
 	read_mode=1,nodenr,*integerglob=NULL,*ielemnr=NULL,istep_global;
     
-    int i1[24]={3,7,8,6,4,3,8,1,3,8,5,6,3,5,8,1,2,3,5,6,2,5,3,1};
-    int i2[12]={1,2,3,5,1,5,3,4,4,5,3,6};
-    int i4[88]={5,20,17,13,20,8,19,16,19,7,18,15,18,6,17,14,
+    ITG i1[24]={3,7,8,6,4,3,8,1,3,8,5,6,3,5,8,1,2,3,5,6,2,5,3,1};
+    ITG i2[12]={1,2,3,5,1,5,3,4,4,5,3,6};
+    ITG i4[88]={5,20,17,13,20,8,19,16,19,7,18,15,18,6,17,14,
 		1,9,12,13,12,11,4,16,11,10,3,15,9,2,10,14,
 		9,13,11,12,11,13,16,12,13,17,19,20,13,19,16,20,
 		17,14,19,18,19,14,15,18,9,11,14,10,11,15,14,10,
 		11,19,16,13,11,15,19,14,11,14,19,17,11,19,13,17,
               11,14,17,9,11,17,13,9};
-    int i5[56]={1,7,9,10,7,2,8,11,8,3,9,12,5,13,14,11,
+    ITG i5[56]={1,7,9,10,7,2,8,11,8,3,9,12,5,13,14,11,
               13,4,15,10,14,15,6,12,11,12,7,10,7,12,9,10,
 		11,7,12,8,12,7,9,8,13,15,11,10,11,15,12,10,
 		13,11,15,14,15,11,12,14};
-    int i6[32]={8,9,10,4,1,5,7,8,7,6,3,10,9,8,10,7,
+    ITG i6[32]={8,9,10,4,1,5,7,8,7,6,3,10,9,8,10,7,
 		8,9,5,7,9,10,6,7,5,6,7,9,5,2,6,9};
     
     double *planfa=NULL,*cotet=NULL,*cgtet=NULL,*field=NULL,
@@ -150,10 +150,10 @@ void getglobalresults (char *jobnamec,int **integerglobp,double **doubleglobp,
     /* storing the topology */
     
     indexe=0;
-    ielemnr=NNEW(int,ne);
-    kontyp=NNEW(int,ne);
-    ipkon=NNEW(int,ne);
-    kon=NNEW(int,20*ne);
+    ielemnr=NNEW(ITG,ne);
+    kontyp=NNEW(ITG,ne);
+    ipkon=NNEW(ITG,ne);
+    kon=NNEW(ITG,20*ne);
     for(i=0;i<anz[0].e;i++){
 	ielemnr[i]=elem[i].nr;
 	kontyp[i]=elem[i].type;
@@ -172,7 +172,7 @@ void getglobalresults (char *jobnamec,int **integerglobp,double **doubleglobp,
 	    numnodes=10;
 	}else{
 	    printf("*WARNING in getglobalresults.c: element in global\n");
-	    printf("         mesh not recognized; cgx element type=%d\n",kontyp[i]);
+	    printf("         mesh not recognized; cgx element type=%" ITGFORMAT "\n",kontyp[i]);
 	    continue;
 	}
 	for(j=0;j<numnodes;j++){
@@ -180,18 +180,18 @@ void getglobalresults (char *jobnamec,int **integerglobp,double **doubleglobp,
 	}
     }
     nkon=indexe;
-    RENEW(kon,int,nkon);
+    RENEW(kon,ITG,nkon);
     
     /* generating the tetrahedral elements */
     
     netet=0;
     netet_=22*ne;
     
-    iparent=NNEW(int,netet_);
-    kontet=NNEW(int,4*netet_);
-    ipofa=NNEW(int,4*netet_);
-    inodfa=NNEW(int,16*netet_);
-    ifatet=NNEW(int,4*netet_);
+    iparent=NNEW(ITG,netet_);
+    kontet=NNEW(ITG,4*netet_);
+    ipofa=NNEW(ITG,4*netet_);
+    inodfa=NNEW(ITG,16*netet_);
+    ifatet=NNEW(ITG,4*netet_);
     planfa=NNEW(double,16*netet_);
     
     /* initialization of fields */
@@ -294,8 +294,8 @@ void getglobalresults (char *jobnamec,int **integerglobp,double **doubleglobp,
     
     nfaces=ifreefa-1;
     
-    RENEW(ifatet,int,4*netet);
-    RENEW(iparent,int,netet);
+    RENEW(ifatet,ITG,4*netet);
+    RENEW(iparent,ITG,netet);
     RENEW(planfa,double,4*nfaces);
     
     /* writing the tet mesh in frd format */
@@ -323,9 +323,9 @@ void getglobalresults (char *jobnamec,int **integerglobp,double **doubleglobp,
     xo=NNEW(double,netet);
     yo=NNEW(double,netet);
     zo=NNEW(double,netet);
-    nnx=NNEW(int,netet);
-    nny=NNEW(int,netet);
-    nnz=NNEW(int,netet);
+    nnx=NNEW(ITG,netet);
+    nny=NNEW(ITG,netet);
+    nnz=NNEW(ITG,netet);
     for(i=0;i<netet;i++){
 	nnx[i]=i+1;
 	nny[i]=i+1;
@@ -373,7 +373,7 @@ void getglobalresults (char *jobnamec,int **integerglobp,double **doubleglobp,
 //	if( readfrdblock(loadcase, anz, node, lcase )==-1) 
 	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
 	{
-	    printf("ERROR in getglobalresults: Could not read data for Dataset:%d\n", i+1); 
+	    printf("ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
 	    FORTRAN(stop,());
 	}
 	
@@ -411,7 +411,7 @@ void getglobalresults (char *jobnamec,int **integerglobp,double **doubleglobp,
 //	if( readfrdblock(loadcase, anz, node, lcase )==-1) 
 	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
 	{
-	    printf("ERROR in getglobalresults: Could not read data for Dataset:%d\n", i+1); 
+	    printf("ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
 	    FORTRAN(stop,());
 	}
 	
@@ -451,7 +451,7 @@ void getglobalresults (char *jobnamec,int **integerglobp,double **doubleglobp,
 //	if( readfrdblock(loadcase, anz, node, lcase )==-1) 
 	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
 	{
-	    printf("ERROR in getglobalresults: Could not read data for Dataset:%d\n", i+1); 
+	    printf("ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
 	    FORTRAN(stop,());
 	}
 	
@@ -478,22 +478,22 @@ void getglobalresults (char *jobnamec,int **integerglobp,double **doubleglobp,
     /* storing the global data in a common block */
     
     
-    integerglob=NNEW(int,5+3*ne+nkon+8*netet);
+    integerglob=NNEW(ITG,5+3*ne+nkon+8*netet);
     
     integerglob[0]=nktet;
     integerglob[1]=netet;
     integerglob[2]=ne;
     integerglob[3]=nkon;
     integerglob[4]=nfaces;
-    memcpy(&integerglob[5],&nnx[0],sizeof(int)*netet);
-    memcpy(&integerglob[netet+5],&nny[0],sizeof(int)*netet);
-    memcpy(&integerglob[2*netet+5],&nnz[0],sizeof(int)*netet);
-    memcpy(&integerglob[3*netet+5],&ifatet[0],sizeof(int)*4*netet);
-    memcpy(&integerglob[7*netet+5],&kontyp[0],sizeof(int)*ne);
-    memcpy(&integerglob[ne+7*netet+5],&ipkon[0],sizeof(int)*ne);
-    memcpy(&integerglob[2*ne+7*netet+5],&kon[0],sizeof(int)*nkon);
-    memcpy(&integerglob[nkon+2*ne+7*netet+5],&iparent[0],sizeof(int)*netet);
-    memcpy(&integerglob[nkon+2*ne+8*netet+5],&ielemnr[0],sizeof(int)*ne);
+    memcpy(&integerglob[5],&nnx[0],sizeof(ITG)*netet);
+    memcpy(&integerglob[netet+5],&nny[0],sizeof(ITG)*netet);
+    memcpy(&integerglob[2*netet+5],&nnz[0],sizeof(ITG)*netet);
+    memcpy(&integerglob[3*netet+5],&ifatet[0],sizeof(ITG)*4*netet);
+    memcpy(&integerglob[7*netet+5],&kontyp[0],sizeof(ITG)*ne);
+    memcpy(&integerglob[ne+7*netet+5],&ipkon[0],sizeof(ITG)*ne);
+    memcpy(&integerglob[2*ne+7*netet+5],&kon[0],sizeof(ITG)*nkon);
+    memcpy(&integerglob[nkon+2*ne+7*netet+5],&iparent[0],sizeof(ITG)*netet);
+    memcpy(&integerglob[nkon+2*ne+8*netet+5],&ielemnr[0],sizeof(ITG)*ne);
     
     doubleglob=NNEW(double,13*nktet+4*nfaces+6*netet);
     

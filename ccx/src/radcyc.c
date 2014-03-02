@@ -21,17 +21,17 @@
 #include <string.h>
 #include "CalculiX.h"
 
-void radcyc(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
-	    double *cs, int *mcs, int *nkon,int *ialset, int *istartset,
-            int *iendset,int **kontrip,int *ntri,
-            double **cop, double **voldp,int *ntrit, int *inocs,
-            int *mi){
+void radcyc(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
+	    double *cs, ITG *mcs, ITG *nkon,ITG *ialset, ITG *istartset,
+            ITG *iendset,ITG **kontrip,ITG *ntri,
+            double **cop, double **voldp,ITG *ntrit, ITG *inocs,
+            ITG *mi){
 
   /* duplicates triangular faces for cyclic radiation conditions */
 
   char *filab=NULL;
 
-  int i,is,nsegments,idtie,nkt,icntrl,imag=0,*kontri=NULL,mt=mi[1]+1,
+  ITG i,is,nsegments,idtie,nkt,icntrl,imag=0,*kontri=NULL,mt=mi[1]+1,
      node,i1,i2,nope,iel,indexe,j,k,ielset,node1,node2,node3,l,jj;
 
   double *vt=NULL,*fnt=NULL,*stnt=NULL,*eent=NULL,*qfnt=NULL,t[3],theta,
@@ -46,7 +46,7 @@ void radcyc(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
 
   nsegments=1;
   for(j=0;j<*mcs;j++){
-      if(cs[17*j]>nsegments) nsegments=(int)(cs[17*j]);
+      if(cs[17*j]>nsegments) nsegments=(ITG)(cs[17*j]);
   }
 
   /* assigning nodes and elements to sectors */
@@ -105,7 +105,7 @@ void radcyc(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
      reduced to the next lower integer. */
 
   *ntrit=nsegments**ntri;
-  RENEW(kontri,int,4**ntrit);
+  RENEW(kontri,ITG,4**ntrit);
   for(i=4**ntri;i<4**ntrit;i++) kontri[i]=0;
 
   for(i=0;i<*ntri;i++){
@@ -137,7 +137,7 @@ void radcyc(int *nk,int *kon,int *ipkon,char *lakon,int *ne,
   FORTRAN(rectcyl,(co,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filab,&imag,mi,emn));
   
   for(jj=0;jj<*mcs;jj++){
-    is=(int)(cs[17*jj]);
+    is=(ITG)(cs[17*jj]);
     for(i=1;i<is;i++){
       
       theta=i*2.*pi/cs[17*jj];

@@ -23,23 +23,24 @@
 #include "CalculiX.h"
 #include "pardiso.h"
 
-int *icolpardiso=NULL,*pointers=NULL,iparm[64];
+ITG *icolpardiso=NULL,*pointers=NULL,iparm[64];
 long long pt[64];
 double *aupardiso=NULL;
-double dparm[64];
-char env1[32];
+/* double dparm[64];  not used */
+ITG nthread_mkl=0;
+/* char envMKL[32];   moved to pardiso.h */
 
 void pardiso_factor(double *ad, double *au, double *adb, double *aub, 
-                double *sigma,int *icol, int *irow, 
-		int *neq, int *nzs, int *symmetryflag, int *inputformat,
-		int *jq, int *nzs3){
+                double *sigma,ITG *icol, ITG *irow, 
+		ITG *neq, ITG *nzs, ITG *symmetryflag, ITG *inputformat,
+		ITG *jq, ITG *nzs3){
 
   char *env;
 /*  char env1[32]; */
-  int i,j,k,l,maxfct=1,mnum=1,phase=12,nrhs=1,*perm=NULL,mtype,
+  ITG i,j,k,l,maxfct=1,mnum=1,phase=12,nrhs=1,*perm=NULL,mtype,
       msglvl=0,error=0,*irowpardiso=NULL,kflag,kstart,n,ifortran,
       lfortran,index,id,k2;
-  int ndim,nthread,nthread_v;
+  ITG ndim,nthread,nthread_v;
   double *b=NULL,*x=NULL;
 
   if(*symmetryflag==0){
@@ -49,28 +50,29 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
   }
 
   iparm[0]=0;
-
 /* set MKL_NUM_THREADS to min(CCX_NPROC_EQUATION_SOLVER,OMP_NUM_THREADS)
    must be done once  */
-  
-  nthread=1;
-  env=getenv("MKL_NUM_THREADS");
-  if(env) {
+  if (nthread_mkl == 0) {
+    nthread=1;
+    env=getenv("MKL_NUM_THREADS");
+    if(env) {
       nthread=atoi(env);}
-  else{
+    else {
       env=getenv("OMP_NUM_THREADS");
       if(env) {nthread=atoi(env);}
-  }
-  env=getenv("CCX_NPROC_EQUATION_SOLVER");
-  if(env) {
+    }
+    env=getenv("CCX_NPROC_EQUATION_SOLVER");
+    if(env) {
       nthread_v=atoi(env);
       if (nthread_v <= nthread) {nthread=nthread_v;}
+    }
+    if (nthread < 1) {nthread=1;}
+    sprintf(envMKL,"MKL_NUM_THREADS=%" ITGFORMAT "",nthread);  
+    putenv(envMKL);
+    nthread_mkl=nthread;
   }
-  if (nthread < 1) {nthread=1;}
-  sprintf(env1,"MKL_NUM_THREADS=%d",nthread);  
-  putenv(env1);
     
-  printf(" number of threads =% d\n\n",nthread);
+  printf(" number of threads =% d\n\n",nthread_mkl);
 
   for(i=0;i<64;i++){pt[i]=0;}
 
@@ -84,8 +86,8 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
       
       ndim=*neq+*nzs;
       
-      pointers=NNEW(int,*neq+1);
-      icolpardiso=NNEW(int,ndim);
+      pointers=NNEW(ITG,*neq+1);
+      icolpardiso=NNEW(ITG,ndim);
       aupardiso=NNEW(double,ndim);
       
       k=ndim;
@@ -125,9 +127,9 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
              diagonal terms are stored in ad  */
 
 	  ndim=*neq+*nzs;
-	  pointers=NNEW(int,*neq+1);
-	  irowpardiso=NNEW(int,ndim);	  
-	  icolpardiso=NNEW(int,ndim);
+	  pointers=NNEW(ITG,*neq+1);
+	  irowpardiso=NNEW(ITG,ndim);	  
+	  icolpardiso=NNEW(ITG,ndim);
 	  aupardiso=NNEW(double,ndim);
 	  
 	  k=0;
@@ -197,9 +199,9 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
           /* reordering lower triangular matrix */
 
 	  ndim=*nzs;
-	  pointers=NNEW(int,*neq+1);
-	  irowpardiso=NNEW(int,ndim);
-	  icolpardiso=NNEW(int,ndim);
+	  pointers=NNEW(ITG,*neq+1);
+	  irowpardiso=NNEW(ITG,ndim);
+	  icolpardiso=NNEW(ITG,ndim);
 	  aupardiso=NNEW(double,ndim);
 	  
 	  k=0;
@@ -260,7 +262,7 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
 	  /* composing the matrix: lower triangle + diagonal + upper triangle */
 
 	  ndim=*neq+2**nzs;
-	  RENEW(icolpardiso,int,ndim);
+	  RENEW(icolpardiso,ITG,ndim);
 	  RENEW(aupardiso,double,ndim);
 	  k=ndim;
 	  for(i=*neq-1;i>=0;i--){
@@ -288,12 +290,12 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
   return;
 }
 
-void pardiso_solve(double *b, int *neq,int *symmetryflag){
+void pardiso_solve(double *b, ITG *neq,ITG *symmetryflag){
 
-    char *env;
-/*    char env1[32];*/ 
-  int nthread,nthread_v;
-  int maxfct=1,mnum=1,phase=33,*perm=NULL,nrhs=1,mtype,
+/*  char *env;
+  char env1[32]; 
+  ITG nthread,nthread_v; */
+  ITG maxfct=1,mnum=1,phase=33,*perm=NULL,nrhs=1,mtype,
       msglvl=0,i,error=0;
   double *x=NULL;
 
@@ -309,25 +311,9 @@ void pardiso_solve(double *b, int *neq,int *symmetryflag){
       mtype=11;
   }
   iparm[0]=0;
-  
-  nthread=1;
-  env=getenv("MKL_NUM_THREADS");
-  if(env) {
-      nthread=atoi(env);}
-  else{
-      env=getenv("OMP_NUM_THREADS");
-      if(env) {nthread=atoi(env);}
-  }
-  env=getenv("CCX_NPROC_EQUATION_SOLVER");
-  if(env) {
-      nthread_v=atoi(env);
-      if (nthread_v <= nthread) {nthread=nthread_v;}
-  }
-  if (nthread < 1) {nthread=1;}
-  sprintf(env1,"MKL_NUM_THREADS=%d",nthread);  
-  putenv(env1);
+/* pardiso_factor has been called befor, MKL_NUM_THREADS=nthread_mkl is set*/
 
-  printf(" number of threads =% d\n\n",nthread);
+  printf(" number of threads =% d\n\n",nthread_mkl);
 
   x=NNEW(double,*neq);
 
@@ -341,9 +327,9 @@ void pardiso_solve(double *b, int *neq,int *symmetryflag){
   return;
 }
 
-void pardiso_cleanup(int *neq,int *symmetryflag){
+void pardiso_cleanup(ITG *neq,ITG *symmetryflag){
 
-  int maxfct=1,mnum=1,phase=-1,*perm=NULL,nrhs=1,mtype,
+  ITG maxfct=1,mnum=1,phase=-1,*perm=NULL,nrhs=1,mtype,
       msglvl=0,error=0;
   double *b=NULL,*x=NULL;
 
@@ -365,9 +351,9 @@ void pardiso_cleanup(int *neq,int *symmetryflag){
 }
 
 void pardiso_main(double *ad, double *au, double *adb, double *aub, 
-         double *sigma,double *b, int *icol, int *irow, 
-	 int *neq, int *nzs,int *symmetryflag,int *inputformat,
-	 int *jq, int *nzs3){
+         double *sigma,double *b, ITG *icol, ITG *irow, 
+	 ITG *neq, ITG *nzs,ITG *symmetryflag,ITG *inputformat,
+	 ITG *jq, ITG *nzs3){
 
   if(*neq==0) return;
 

@@ -24,13 +24,13 @@
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
-void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
-	      int *nodeboun, int *ndirboun, int *nboun, int *ipompc,
-	      int *nodempc, int *nmpc, int *nactdof, int *icol,
-	      int *jq, int **mast1p, int **irowp, int *isolver, int *neq,
-	      int *ikmpc, int *ilmpc,int *ipointer, int *nzs, 
-              int *nmethod,int *ics, double *cs, char *labmpc, int *mcs, 
-              int *mi,int *mortar){
+void mastructcs(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
+	      ITG *nodeboun, ITG *ndirboun, ITG *nboun, ITG *ipompc,
+	      ITG *nodempc, ITG *nmpc, ITG *nactdof, ITG *icol,
+	      ITG *jq, ITG **mast1p, ITG **irowp, ITG *isolver, ITG *neq,
+	      ITG *ikmpc, ITG *ilmpc,ITG *ipointer, ITG *nzs, 
+              ITG *nmethod,ITG *ics, double *cs, char *labmpc, ITG *mcs, 
+              ITG *mi,ITG *mortar){
 
   /* determines the structure of the thermo-mechanical matrices with
      cyclic symmetry;
@@ -38,7 +38,7 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 
   char lakonl[2]=" \0";
 
-  int i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
+  ITG i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
     ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,
     index1,index2,m,node,nzs_,ist,kflag,indexe,nope,isize,*mast1=NULL,
     *irow=NULL,inode,icomplex,inode1,icomplex1,inode2,
@@ -474,9 +474,9 @@ void mastructcs(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
   }
   
   printf(" number of equations\n");
-  printf(" %d\n",neq[0]);
+  printf(" %" ITGFORMAT "\n",neq[0]);
   printf(" number of nonzero lower triangular matrix elements\n");
-  printf(" %d\n",ifree-neq[0]);
+  printf(" %" ITGFORMAT "\n",ifree-neq[0]);
   
   /* new meaning of icol,j1,mast1,irow:
      

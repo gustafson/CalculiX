@@ -18,7 +18,7 @@
 !
       subroutine mafillv(ne,nactdoh,ipnei,neifa,neiel,vfa,xxn,area,
      &  au,ad,jq,irow,nzs,b,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
-     &  body,volume,compressible,ielfa,lakon,ifabou)
+     &  body,volume,compressible,ielfa,lakon,ifabou,nbody)
 !
       implicit none
 !
@@ -26,11 +26,11 @@
 !
       integer i,ne,jdof1,nactdoh(*),indexf,ipnei(*),j,ifa,iel,neifa(*),
      &  neiel(*),jdof2,jq(*),irow(*),nzs,iwall,compressible,ielfa(4,*),
-     &  ipointer,ifabou(*)
+     &  ipointer,ifabou(*),nbody
 !
       real*8 flux,vfa(0:5,*),xxn(3,*),area(*),au(*),ad(*),b(ne,3),
      &  vel(0:5,*),cosa(*),umfa(*),xlet(*),xle(*),coef,gradvfa(3,3,*),
-     &  xxi(3,*),body(3),volume(*),alphav
+     &  xxi(3,*),body(3,*),volume(*),alphav
 !
       do i=1,ne
          if(lakon(i)(1:1).ne.'F') cycle
@@ -161,9 +161,11 @@
 !     
 !     body force
 !     
-            b(jdof1,1)=b(jdof1,1)+vel(5,i)*body(1)*volume(i)
-            b(jdof1,2)=b(jdof1,2)+vel(5,i)*body(2)*volume(i)
-            b(jdof1,3)=b(jdof1,3)+vel(5,i)*body(3)*volume(i)
+            if(nbody.gt.0) then
+               b(jdof1,1)=b(jdof1,1)+vel(5,i)*body(1,i)*volume(i)
+               b(jdof1,2)=b(jdof1,2)+vel(5,i)*body(2,i)*volume(i)
+               b(jdof1,3)=b(jdof1,3)+vel(5,i)*body(3,i)*volume(i)
+            endif
 !     
 !     underrelaxation      
 !     

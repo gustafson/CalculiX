@@ -30,15 +30,15 @@
 #endif
 
 
-void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
-        int *iexpl, int *nactdof, double *aux1, double *aux2, double *vold,
-        double *vini, double *dtime, double *accold, int *nk, double *adb,
-        double *aub, int *jq, int *irow, int *nzl, double *alpha,
-        double *fextini, double *fini, int *islavnode, int *nslavnode,
-        int *mortar, int *ntie,double *f_cm,
-	double* f_cs, int *mi,int *nzs,int *nasym){
+void calcresidual(ITG *nmethod, ITG *neq, double *b, double *fext, double *f,
+        ITG *iexpl, ITG *nactdof, double *aux1, double *aux2, double *vold,
+        double *vini, double *dtime, double *accold, ITG *nk, double *adb,
+        double *aub, ITG *jq, ITG *irow, ITG *nzl, double *alpha,
+        double *fextini, double *fini, ITG *islavnode, ITG *nslavnode,
+        ITG *mortar, ITG *ntie,double *f_cm,
+	double* f_cs, ITG *mi,ITG *nzs,ITG *nasym){
 
-    int j,k,mt=mi[1]+1;
+    ITG j,k,mt=mi[1]+1;
     double scal1;
       
     /* residual for a static analysis */
@@ -46,7 +46,7 @@ void calcresidual(int *nmethod, int *neq, double *b, double *fext, double *f,
     if(*nmethod!=4){
 	for(k=0;k<neq[1];++k){
 	    b[k]=fext[k]-f[k];
-//	   printf("calcresidual dof=%d,fext=%e,f=%e,resi=%e\n",k,fext[k],f[k],b[k]);
+//	   printf("calcresidual dof=%" ITGFORMAT ",fext=%e,f=%e,resi=%e\n",k,fext[k],f[k],b[k]);
 	}
     }
       

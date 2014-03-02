@@ -34,53 +34,55 @@
 #include "pardiso.h"
 #endif
 
-static int num_cpus;
+static ITG num_cpus;
 
-void compfluid(double **cop, int *nk, int **ipkonp, int **konp, char **lakonp,
-    int *ne, char **sidefacep, int *ifreestream, 
-    int *nfreestream, int *isolidsurf, int *neighsolidsurf,
-    int *nsolidsurf, int **iponoelp, int **inoelp, int *nshcon, double *shcon,
-    int *nrhcon, double *rhcon, double **voldp, int *ntmat_,int *nodeboun, 
-    int *ndirboun, int *nboun, int **ipompcp,int **nodempcp, int *nmpc,
-    int **ikmpcp, int **ilmpcp, int *ithermal, int *ikboun, int *ilboun,
-    int *iturbulent, int *isolver, int *iexpl, double *vcontu, double *ttime,
-    double *time, double *dtime, int *nodeforc,int *ndirforc,double *xforc,
-    int *nforc, int *nelemload, char *sideload, double *xload,int *nload,
-    double *xbody,int *ipobody,int *nbody, int **ielmatp, char *matname,
-    int *mi, int *ncmat_, double *physcon, int *istep, int *iinc,
-    int *ibody, double *xloadold, double *xboun,
-    double **coefmpcp, int *nmethod, double *xforcold, double *xforcact,
-    int *iamforc,int *iamload, double *xbodyold, double *xbodyact,
-    double *t1old, double *t1, double *t1act, int *iamt1, double *amta,
-    int *namta, int *nam, double *ampli, double *xbounold, double *xbounact,
-    int *iamboun, int *itg, int *ntg, char *amname, double *t0, 
-    int **nelemfacep,
-    int *nface, double *cocon, int *ncocon, double *xloadact, double *tper,
-    int *jmax, int *jout, char *set, int *nset, int *istartset,
-    int *iendset, int *ialset, char *prset, char *prlab, int *nprint,
-    double *trab, int *inotr, int *ntrans, char *filab, char **labmpcp, 
-    double *sti, int *norien, double *orab, char *jobnamef,char *tieset,
-    int *ntie, int *mcs, int *ics, double *cs, int *nkon, int *mpcfree,
-    int *memmpc_,double **fmpcp,int *nef,int **inomatp,double *qfx,
-    int *neifa,int *neiel,int *ielfa,int *ifaext,double *vfa,double *vel,
-    int *ipnei,int *nflnei,int *nfaext,char *typeboun){
+void compfluid(double **cop, ITG *nk, ITG **ipkonp, ITG **konp, char **lakonp,
+    ITG *ne, char **sidefacep, ITG *ifreestream, 
+    ITG *nfreestream, ITG *isolidsurf, ITG *neighsolidsurf,
+    ITG *nsolidsurf, ITG **iponoelp, ITG **inoelp, ITG *nshcon, double *shcon,
+    ITG *nrhcon, double *rhcon, double **voldp, ITG *ntmat_,ITG *nodeboun, 
+    ITG *ndirboun, ITG *nboun, ITG **ipompcp,ITG **nodempcp, ITG *nmpc,
+    ITG **ikmpcp, ITG **ilmpcp, ITG *ithermal, ITG *ikboun, ITG *ilboun,
+    ITG *iturbulent, ITG *isolver, ITG *iexpl, double *vcontu, double *ttime,
+    double *time, double *dtime, ITG *nodeforc,ITG *ndirforc,double *xforc,
+    ITG *nforc, ITG *nelemload, char *sideload, double *xload,ITG *nload,
+    double *xbody,ITG *ipobody,ITG *nbody, ITG **ielmatp, char *matname,
+    ITG *mi, ITG *ncmat_, double *physcon, ITG *istep, ITG *iinc,
+    ITG *ibody, double *xloadold, double *xboun,
+    double **coefmpcp, ITG *nmethod, double *xforcold, double *xforcact,
+    ITG *iamforc,ITG *iamload, double *xbodyold, double *xbodyact,
+    double *t1old, double *t1, double *t1act, ITG *iamt1, double *amta,
+    ITG *namta, ITG *nam, double *ampli, double *xbounold, double *xbounact,
+    ITG *iamboun, ITG *itg, ITG *ntg, char *amname, double *t0, 
+    ITG **nelemfacep,
+    ITG *nface, double *cocon, ITG *ncocon, double *xloadact, double *tper,
+    ITG *jmax, ITG *jout, char *set, ITG *nset, ITG *istartset,
+    ITG *iendset, ITG *ialset, char *prset, char *prlab, ITG *nprint,
+    double *trab, ITG *inotr, ITG *ntrans, char *filab, char **labmpcp, 
+    double *sti, ITG *norien, double *orab, char *jobnamef,char *tieset,
+    ITG *ntie, ITG *mcs, ITG *ics, double *cs, ITG *nkon, ITG *mpcfree,
+    ITG *memmpc_,double **fmpcp,ITG *nef,ITG **inomatp,double *qfx,
+    ITG *neifa,ITG *neiel,ITG *ielfa,ITG *ifaext,double *vfa,double *vel,
+    ITG *ipnei,ITG *nflnei,ITG *nfaext,char *typeboun){
 
     /* main computational fluid dynamics routine */
   
   char *labmpc=NULL,*lakon=NULL,*sideface=NULL;
 
-  int *ipointer=NULL,*mast1=NULL,*irow=NULL,*icol=NULL,*jq=NULL,
-      *nactdoh=NULL,nzs,neq,kode,compressible,mt=mi[1]+1,*ifabou=NULL,
+  ITG *ipointer=NULL,*mast1=NULL,*irow=NULL,*icol=NULL,*jq=NULL,
+      *nactdoh=NULL,nzs=20000000,neq,kode,compressible,mt=mi[1]+1,*ifabou=NULL,
       *nodempc=NULL,*ipompc=NULL,*ikmpc=NULL,*ilmpc=NULL,nfabou,
       *ipkon=NULL,*kon=NULL,*ielmat=NULL,*nelemface=NULL,*inoel=NULL,
       *iponoel=NULL,*inomat=NULL,ithermalref,*integerglob=NULL,iit,
-      iconvergence;
+      iconvergence,symmetryflag=2,inputformat=1,i,*neij=NULL;
 
   double *coefmpc=NULL,*fmpc=NULL,*umfa=NULL,reltime,*doubleglob=NULL,
       *co=NULL,*vold=NULL,*coel=NULL,*cosa=NULL,*gradv=NULL,*gradvfa=NULL,
       *xxn=NULL,*xxi=NULL,*xle=NULL,*xlen=NULL,*xlet=NULL,timef,dtimef,
       *cofa=NULL,*area=NULL,*xrlfa=NULL,reltimef,ttimef,sumfix,sumfree,
-      *au=NULL,*ad=NULL,*b=NULL,*volume=NULL,body[3];
+      *au=NULL,*ad=NULL,*b=NULL,*volume=NULL,*body=NULL,sigma=0.,
+      *adb=NULL,*aub=NULL,*adfa=NULL,*ap=NULL,*ppel=NULL,*ppfa=NULL,
+      *gradpp=NULL;
 
   nodempc=*nodempcp;ipompc=*ipompcp;ikmpc=*ikmpcp;ilmpc=*ilmpcp;
   coefmpc=*coefmpcp;labmpc=*labmpcp;fmpc=*fmpcp;co=*cop;
@@ -91,7 +93,7 @@ void compfluid(double **cop, int *nk, int **ipkonp, int **konp, char **lakonp,
   /* standard: shockcoef=0 */
 
 #ifdef SGI
-  int token;
+  ITG token;
 #endif
 
   /* open frd-file for fluids */
@@ -100,7 +102,7 @@ void compfluid(double **cop, int *nk, int **ipkonp, int **konp, char **lakonp,
 
   /* variables for multithreading procedure */
 
-  int sys_cpus;
+  ITG sys_cpus;
   char *env,*envloc,*envsys;
       
   num_cpus = 0;
@@ -150,7 +152,7 @@ void compfluid(double **cop, int *nk, int **ipkonp, int **konp, char **lakonp,
   
   if(*ne<num_cpus) num_cpus=*ne;
   
-  printf(" Using up to %d cpu(s) for CFD.\n", num_cpus);
+  printf(" Using up to %" ITGFORMAT " cpu(s) for CFD.\n", num_cpus);
   
   pthread_t tid[num_cpus];
 
@@ -178,12 +180,12 @@ void compfluid(double **cop, int *nk, int **ipkonp, int **konp, char **lakonp,
 
   /* determining the matrix structure */
   
-  ipointer=NNEW(int,3**nk);
-  mast1=NNEW(int,nzs);
-  irow=NNEW(int,nzs);
-  icol=NNEW(int,3**nk);
-  jq=NNEW(int,3**nk+1);
-  nactdoh=NNEW(int,mt**nk);
+  ipointer=NNEW(ITG,3**nk);
+  mast1=NNEW(ITG,nzs);
+  irow=NNEW(ITG,nzs);
+  icol=NNEW(ITG,3**nk);
+  jq=NNEW(ITG,3**nk+1);
+  nactdoh=NNEW(ITG,mt**nk);
 
   mastructf(nk,kon,ipkon,lakon,ne,nactdoh,icol,jq,&mast1,&irow,
 	    isolver,&neq,ipointer,&nzs,ipnei,neiel,mi);
@@ -209,11 +211,11 @@ void compfluid(double **cop, int *nk, int **ipkonp, int **konp, char **lakonp,
 
   /* storing pointers to the boundary conditions in ielfa */
 
-  ifabou=NNEW(int,7**nfaext);
+  ifabou=NNEW(ITG,7**nfaext);
   FORTRAN(applyboun,(ifaext,nfaext,ielfa,ikboun,ilboun,
        nboun,typeboun,nelemload,nload,sideload,isolidsurf,nsolidsurf,
        ifabou,&nfabou));
-  RENEW(ifabou,int,nfabou);
+  RENEW(ifabou,ITG,nfabou);
 
   /* material properties for athermal calculations 
      = calculation for which no initial thermal conditions
@@ -240,6 +242,8 @@ void compfluid(double **cop, int *nk, int **ipkonp, int **konp, char **lakonp,
 
   }
 
+  if(*nbody>0) body=NNEW(double,3**ne);
+
   /* next section is for stationary calculations */
   
   if(*nmethod==1){
@@ -256,6 +260,12 @@ void compfluid(double **cop, int *nk, int **ipkonp, int **konp, char **lakonp,
 	     co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
 	     ntrans,trab,inotr,vold,integerglob,doubleglob,tieset,istartset,
              iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc));
+
+      /* body forces (gravity, centrifugal and Coriolis forces */
+
+      if(*nbody>0){
+	  FORTRAN(calcbody,(ne,body,ipobody,ibody,xbody,coel,vel,lakon));
+      }
   }
 
   /* extrapolating the velocity from the elements centers to the face
@@ -275,10 +285,16 @@ void compfluid(double **cop, int *nk, int **ipkonp, int **konp, char **lakonp,
 
   gradv=NNEW(double,9**ne);
   gradvfa=NNEW(double,9**nface);
+  adfa=NNEW(double,*nface);
+  ap=NNEW(double,*nface);
 
   au=NNEW(double,nzs);
-  ad=NNEW(double,*nef);
-  b=NNEW(double,3**nef);
+  ad=NNEW(double,neq);
+  b=NNEW(double,3*neq);
+
+  ppel=NNEW(double,*ne);
+  ppfa=NNEW(double,*nface);
+  gradpp=NNEW(double,3**ne);
 
   iit=0;
 
@@ -312,6 +328,12 @@ void compfluid(double **cop, int *nk, int **ipkonp, int **konp, char **lakonp,
 	     co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
              ntrans,trab,inotr,vold,integerglob,doubleglob,tieset,istartset,
              iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc));
+
+	  /* body forces (gravity, centrifugal and Coriolis forces */
+	  
+	  if(*nbody>0){
+	      FORTRAN(calcbody,(ne,body,ipobody,ibody,xbody,coel,vel,lakon));
+	  }
       }
 
       /* calculating the gradient of the velocity at the element
@@ -329,9 +351,140 @@ void compfluid(double **cop, int *nk, int **ipkonp, int **konp, char **lakonp,
 
       FORTRAN(mafillv,(ne,nactdoh,ipnei,neifa,neiel,vfa,xxn,area,
           au,ad,jq,irow,&nzs,b,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
-	  body,volume,&compressible,ielfa,lakon,ifabou));
+	  body,volume,&compressible,ielfa,lakon,ifabou,nbody));
 
+      /* LU decomposition */
 
+      if(*isolver==0){
+#ifdef SPOOLES
+	  spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq,&nzs,
+			 &symmetryflag,&inputformat,&nzs);
+#else
+	  printf("*ERROR in arpack: the SPOOLES library is not linked\n\n");
+	  FORTRAN(stop,());
+#endif
+      }
+      else if(*isolver==7){
+#ifdef PARDISO
+	  pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq,&nzs,
+			 &symmetryflag,&inputformat,jq,&nzs);
+#else
+	  printf("*ERROR in arpack: the PARDISO library is not linked\n\n");
+	  FORTRAN(stop,());
+#endif
+      }
+
+      /* solving the system of equations (for x, y and z
+         separately */
+
+      for(i=0;i<3;i++){
+
+        if(*isolver==0){
+#ifdef SPOOLES
+          spooles_solve(&b[i*neq],&neq);
+#endif
+        }
+        else if(*isolver==7){
+#ifdef PARDISO
+          pardiso_solve(&b[i*neq],&neq,&symmetryflag);
+#endif
+        }
+      }
+
+      /* free memory */
+      
+      if(*isolver==0){
+#ifdef SPOOLES
+	  spooles_cleanup();
+#endif
+      }
+      else if(*isolver==7){
+#ifdef PARDISO
+	  pardiso_cleanup(&neq,&symmetryflag);
+#endif
+      }
+
+      /* storing the solution into vel */
+
+      FORTRAN(calcvel,(nk,nactdoh,vel,b,&neq));
+
+      /* generating 1/ad at the face centers */
+
+      FORTRAN(extrapolate_ad,(nface,ielfa,xrlfa,ad,adfa,nactdoh));
+
+      /* extrapolating the velocity from the elements centers to the face
+	 centers, thereby taking the boundary conditions into account */
+      
+      FORTRAN(extrapolate_v,(nface,ielfa,xrlfa,vel,vfa,
+			     ifabou,xboun,&sumfix,&sumfree,xxn,area));
+      
+      /*   modifying the velocity values along the boundary which are not fixed
+	   by boundary conditions such that the mass conservation holds */
+      
+      
+      FORTRAN(integral_boundary,(&sumfix,&sumfree,ifaext,nfaext,ielfa,
+				 ifabou,vfa));
+
+      /* calculating the lhs and rhs of the equation system to determine
+         p' (balance of mass) */
+
+      FORTRAN(mafillp,(ne,lakon,nactdoh,ipnei,neifa,neiel,vfa,area,
+              adfa,xlet,cosa,volume,au,ad,jq,irow,&nzs,ap,ielfa,ifabou,xle,
+	      b,xxn,&compressible));
+
+      /* LU decomposition of the p' system*/
+
+      if(*isolver==0){
+#ifdef SPOOLES
+	  spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq,&nzs,
+			 &symmetryflag,&inputformat,&nzs);
+#else
+	  printf("*ERROR in arpack: the SPOOLES library is not linked\n\n");
+	  FORTRAN(stop,());
+#endif
+      }
+      else if(*isolver==7){
+#ifdef PARDISO
+	  pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq,&nzs,
+			 &symmetryflag,&inputformat,jq,&nzs);
+#else
+	  printf("*ERROR in arpack: the PARDISO library is not linked\n\n");
+	  FORTRAN(stop,());
+#endif
+      }
+      
+      /* solving the system of equations for p'  */
+      
+      if(*isolver==0){
+#ifdef SPOOLES
+          spooles_solve(b,&neq);
+#endif
+      }
+      else if(*isolver==7){
+#ifdef PARDISO
+          pardiso_solve(b,&neq,&symmetryflag);
+#endif
+      }
+
+      /* storing the solution p' into ppel */
+
+      FORTRAN(calcppel,(ne,nactdoh,ppel,b));
+
+      /* extrapolating the p' from the elements centers to the face
+	 centers  */
+      
+      FORTRAN(extrapolate_pp,(nface,ielfa,xrlfa,ppel,ppfa,ifabou));
+
+      /* calculation of the gradient of p' at the center
+	 of the elements from the p' values at the neighboring
+	 faces */
+
+      FORTRAN(calcgradpp,(ne,lakon,ipnei,ppfa,area,xxn,gradpp,neifa));
+
+      /* calculating the right hand side of the equations to determine p'' */
+
+      FORTRAN(mafillppprhs,(ne,lakon,nactdoh,ipnei,neifa,neiel,neij,
+	      gradpp,xxi,cosa,xxn,ap,xle,xlen,b,ielfa,ifabou));
 
 
 
@@ -347,7 +500,10 @@ void compfluid(double **cop, int *nk, int **ipkonp, int **konp, char **lakonp,
 
   free(ifabou);free(umfa);
 
-  free(gradv);free(gradvfa);free(au);free(ad);free(b);
+  free(gradv);free(gradvfa);free(au);free(ad);free(b);free(adfa);
+  free(ap);free(ppel);free(ppfa);free(gradpp);
+
+  if(*nbody>0) free(body);
 
   return;
   

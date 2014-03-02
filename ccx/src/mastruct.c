@@ -24,20 +24,20 @@
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
-void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
-	      int *nodeboun, int *ndirboun, int *nboun, int *ipompc,
-	      int *nodempc, int *nmpc, int *nactdof, int *icol,
-	      int *jq, int **mast1p, int **irowp, int *isolver, int *neq,
-	      int *ikmpc, int *ilmpc,int *ipointer, int *nzs, 
-              int *nmethod,int *ithermal, int *ikboun, int *ilboun, 
-              int *iperturb, int *mi,int *mortar){
+void mastruct(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
+	      ITG *nodeboun, ITG *ndirboun, ITG *nboun, ITG *ipompc,
+	      ITG *nodempc, ITG *nmpc, ITG *nactdof, ITG *icol,
+	      ITG *jq, ITG **mast1p, ITG **irowp, ITG *isolver, ITG *neq,
+	      ITG *ikmpc, ITG *ilmpc,ITG *ipointer, ITG *nzs, 
+              ITG *nmethod,ITG *ithermal, ITG *ikboun, ITG *ilboun, 
+              ITG *iperturb, ITG *mi,ITG *mortar){
 
   /* determines the structure of the thermo-mechanical matrices;
      (i.e. the location of the nonzeros */
 
   char lakonl[2]=" \0";
 
-  int i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
+  ITG i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
     ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,
     index1,index2,m,node,nzs_,ist,kflag,indexe,nope,isize,*mast1=NULL,
       *irow=NULL,icolumn,nmastboun,fluid=0,mt=mi[1]+1,jmax;
@@ -568,7 +568,7 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
 		if(node1!=0) break;
 	    }
 	    printf("*ERROR in mastruct: zero column\n");
-	    printf("       node=%d,DOF=%d\n",node1,idof1);
+	    printf("       node=%" ITGFORMAT ",DOF=%" ITGFORMAT "\n",node1,idof1);
 	    FORTRAN(stop,());
 	}
 	istart=ipointer[i];
@@ -601,9 +601,9 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     /* summary */
 
     printf(" number of equations\n");
-    printf(" %d\n",neq[1]);
+    printf(" %" ITGFORMAT "\n",neq[1]);
     printf(" number of nonzero lower triangular matrix elements\n");
-    printf(" %d\n",nmast-neq[1]);
+    printf(" %" ITGFORMAT "\n",nmast-neq[1]);
     printf("\n");
 
     /* switching from a SUPERdiagonal inventory to a SUBdiagonal one:
@@ -691,16 +691,16 @@ void mastruct(int *nk, int *kon, int *ipkon, char *lakon, int *ne,
     else{nzs[2]=nzs[1];}
 
 /*  for(i=nzs[1];i<nzs[2];i++){
-      printf("i=%d,irow[i]=%d,icolumn[i]=%d\n",i+1,irow[i],mast1[i]);
+      printf("i=%" ITGFORMAT ",irow[i]=%" ITGFORMAT ",icolumn[i]=%" ITGFORMAT "\n",i+1,irow[i],mast1[i]);
   }
   for(i=neq[1];i<neq[2]+1;i++){
-      printf("i=%d,jq[i]=%d\n",i+1,jq[i]);
+      printf("i=%" ITGFORMAT ",jq[i]=%" ITGFORMAT "\n",i+1,jq[i]);
       }*/
 
   *mast1p=mast1;
   *irowp=irow;
 
-  /*for(i=0;i<4**nk;++i){printf("nactdof=%d,%d\n",i,nactdof[i]);}*/
+  /*for(i=0;i<4**nk;++i){printf("nactdof=%" ITGFORMAT ",%" ITGFORMAT "\n",i,nactdof[i]);}*/
 
   return;
 

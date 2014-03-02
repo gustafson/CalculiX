@@ -21,8 +21,8 @@
 #include <string.h>
 #include "CalculiX.h"
 
-void insert(int *ipointer, int **irowp, int **nextp, int *i1,
-	    int *i2, int *ifree, int *nzs_){
+void insert(ITG *ipointer, ITG **irowp, ITG **nextp, ITG *i1,
+	    ITG *i2, ITG *ifree, ITG *nzs_){
 
   /*   inserts a new nonzero matrix position into the data structure 
        in FORTRAN notation: 
@@ -37,7 +37,7 @@ void insert(int *ipointer, int **irowp, int **nextp, int *i1,
        notice that in C the positions start at 0 and not at 1 as in 
        FORTRAN; the present routine is written in FORTRAN convention */
 
-  int idof1,idof2,istart,*irow=NULL,*next=NULL;
+  ITG idof1,idof2,istart,*irow=NULL,*next=NULL;
 
   irow=*irowp;
   next=*nextp;
@@ -54,9 +54,9 @@ void insert(int *ipointer, int **irowp, int **nextp, int *i1,
   if(ipointer[idof2-1]==0){
     ++*ifree;
     if(*ifree>*nzs_){
-      *nzs_=(int)(1.1**nzs_);
-      RENEW(irow,int,*nzs_);
-      RENEW(next,int,*nzs_);
+      *nzs_=(ITG)(1.1**nzs_);
+      RENEW(irow,ITG,*nzs_);
+      RENEW(next,ITG,*nzs_);
     }
     ipointer[idof2-1]=*ifree;
     irow[*ifree-1]=idof1;
@@ -69,9 +69,9 @@ void insert(int *ipointer, int **irowp, int **nextp, int *i1,
       if(next[istart-1]==0){
 	++*ifree;
 	if(*ifree>*nzs_){
-	  *nzs_=(int)(1.1**nzs_);
-	  RENEW(irow,int,*nzs_);
-	  RENEW(next,int,*nzs_);
+	  *nzs_=(ITG)(1.1**nzs_);
+	  RENEW(irow,ITG,*nzs_);
+	  RENEW(next,ITG,*nzs_);
 	}
 	next[istart-1]=*ifree;
 	irow[*ifree-1]=idof1;

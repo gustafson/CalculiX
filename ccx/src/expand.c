@@ -30,45 +30,45 @@
    #include "tau.h"
 #endif
 
-void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
-	     int *ne, int *nodeboun, int *ndirboun, double *xboun, int *nboun, 
-	     int *ipompc, int *nodempc, double *coefmpc, char *labmpc,
-             int *nmpc, int *nodeforc, int *ndirforc,double *xforc, 
-             int *nforc, int *nelemload, char *sideload, double *xload,
-             int *nload, int *nactdof, int *neq, 
-	     int *nmethod, int *ikmpc, int *ilmpc, int *ikboun, int *ilboun,
-	     double *elcon, int *nelcon, double *rhcon, int *nrhcon,
-	     double *alcon, int *nalcon, double *alzero, int *ielmat,
-	     int *ielorien, int *norien, double *orab, int *ntmat_,
-	     double *t0,int *ithermal,double *prestr, int *iprestr, 
-	     double *vold,int *iperturb, double *sti, int *nzs,  
+void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
+	     ITG *ne, ITG *nodeboun, ITG *ndirboun, double *xboun, ITG *nboun, 
+	     ITG *ipompc, ITG *nodempc, double *coefmpc, char *labmpc,
+             ITG *nmpc, ITG *nodeforc, ITG *ndirforc,double *xforc, 
+             ITG *nforc, ITG *nelemload, char *sideload, double *xload,
+             ITG *nload, ITG *nactdof, ITG *neq, 
+	     ITG *nmethod, ITG *ikmpc, ITG *ilmpc, ITG *ikboun, ITG *ilboun,
+	     double *elcon, ITG *nelcon, double *rhcon, ITG *nrhcon,
+	     double *alcon, ITG *nalcon, double *alzero, ITG *ielmat,
+	     ITG *ielorien, ITG *norien, double *orab, ITG *ntmat_,
+	     double *t0,ITG *ithermal,double *prestr, ITG *iprestr, 
+	     double *vold,ITG *iperturb, double *sti, ITG *nzs,  
 	     double *adb, double *aub,char *filab, double *eme,
-             double *plicon, int *nplicon, double *plkcon,int *nplkcon,
-             double *xstate, int *npmat_, char *matname, int *mi,
-	     int *ics, double *cs, int *mpcend, int *ncmat_,
-             int *nstate_, int *mcs, int *nkon, double *ener,
-             char *jobnamec, char *output, char *set, int *nset,int *istartset,
-             int *iendset, int *ialset, int *nprint, char *prlab,
-             char *prset, int *nener, double *trab, 
-             int *inotr, int *ntrans, double *ttime, double *fmpc,
-	     int *nev, double **zp, int *iamboun, double *xbounold,
-             int *nsectors, int *nm,int *icol,int *irow,int *nzl, int *nam,
-             int *ipompcold, int *nodempcold, double *coefmpcold,
-             char *labmpcold, int *nmpcold, double *xloadold, int *iamload,
-             double *t1old,double *t1,int *iamt1, double *xstiff,int **icolep,
-	     int **jqep,int **irowep,int *isolver,
-	     int *nzse,double **adbep,double **aubep,int *iexpl,int *ibody,
-	     double *xbody,int *nbody,double *cocon,int *ncocon,
-	     char* tieset,int* ntie,int *imddof,int *nmddof,
-	     int *imdnode,int *nmdnode,int *imdboun,int *nmdboun,
-  	     int *imdmpc,int *nmdmpc, int **izdofp, int *nzdof,int *nherm,
+             double *plicon, ITG *nplicon, double *plkcon,ITG *nplkcon,
+             double *xstate, ITG *npmat_, char *matname, ITG *mi,
+	     ITG *ics, double *cs, ITG *mpcend, ITG *ncmat_,
+             ITG *nstate_, ITG *mcs, ITG *nkon, double *ener,
+             char *jobnamec, char *output, char *set, ITG *nset,ITG *istartset,
+             ITG *iendset, ITG *ialset, ITG *nprint, char *prlab,
+             char *prset, ITG *nener, double *trab, 
+             ITG *inotr, ITG *ntrans, double *ttime, double *fmpc,
+	     ITG *nev, double **zp, ITG *iamboun, double *xbounold,
+             ITG *nsectors, ITG *nm,ITG *icol,ITG *irow,ITG *nzl, ITG *nam,
+             ITG *ipompcold, ITG *nodempcold, double *coefmpcold,
+             char *labmpcold, ITG *nmpcold, double *xloadold, ITG *iamload,
+             double *t1old,double *t1,ITG *iamt1, double *xstiff,ITG **icolep,
+	     ITG **jqep,ITG **irowep,ITG *isolver,
+	     ITG *nzse,double **adbep,double **aubep,ITG *iexpl,ITG *ibody,
+	     double *xbody,ITG *nbody,double *cocon,ITG *ncocon,
+	     char* tieset,ITG* ntie,ITG *imddof,ITG *nmddof,
+	     ITG *imdnode,ITG *nmdnode,ITG *imdboun,ITG *nmdboun,
+  	     ITG *imdmpc,ITG *nmdmpc, ITG **izdofp, ITG *nzdof,ITG *nherm,
 	     double *xmr,double *xmi){
 
   /* calls the Arnoldi Package (ARPACK) for cyclic symmetry calculations */
   
     char *filabt,*tchar1=NULL,*tchar2=NULL,*tchar3=NULL,lakonl[2]=" \0";
 
-    int *inum=NULL,k,idir,lfin,j,iout=0,index,inode,id,i,idof,im,
+    ITG *inum=NULL,k,idir,lfin,j,iout=0,index,inode,id,i,idof,im,
         ielas,icmd,kk,l,nkt,icntrl,imag=1,icomplex,kkv,kk6,iterm,
         lprev,ilength,ij,i1,i2,iel,ielset,node,indexe,nope,ml1,nelem,
         *inocs=NULL,*ielcs=NULL,jj,l1,l2,is,nlabel,*nshcon=NULL,
@@ -103,7 +103,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     neqh=neq[1]/2;
 
     noderight_=10;
-    noderight=NNEW(int,noderight_);
+    noderight=NNEW(ITG,noderight_);
     coefright=NNEW(double,noderight_);
 
     v=NNEW(double,2*mt**nk);
@@ -111,7 +111,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     
     fn=NNEW(double,2*mt**nk);
     stn=NNEW(double,12**nk);
-    inum=NNEW(int,*nk);
+    inum=NNEW(ITG,*nk);
     stx=NNEW(double,6*mi[0]**ne);
     
     nlabel=46;
@@ -126,8 +126,8 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
  
     /* assigning nodes and elements to sectors */
     
-    inocs=NNEW(int,*nk);
-    ielcs=NNEW(int,*ne);
+    inocs=NNEW(ITG,*nk);
+    ielcs=NNEW(ITG,*ne);
     ielset=cs[12];
     if((*mcs!=1)||(ielset!=0)){
 	for(i=0;i<*nk;i++) inocs[i]=-1;
@@ -197,14 +197,14 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		}while(1);
 	    }
 	} 
-//	printf("expand.c mass = %d,%e\n",i,csmass[i]);
+//	printf("expand.c mass = %" ITGFORMAT ",%e\n",i,csmass[i]);
     }
 
     /* copying imdnode into iznode 
        iznode contains the nodes in which output is requested and
        the nodes in which loading is applied */
 
-    iznode=NNEW(int,*nk);
+    iznode=NNEW(ITG,*nk);
     for(j=0;j<*nmdnode;j++){iznode[j]=imdnode[j];}
     nznode=*nmdnode;
 
@@ -235,7 +235,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
    2. all dofs in which loading was applied
  */	
 
-    izdof=NNEW(int,neqh**nsectors);
+    izdof=NNEW(ITG,neqh**nsectors);
     for(j=0;j<*nmddof;j++){izdof[j]=imddof[j];}
     *nzdof=*nmddof;
     
@@ -246,7 +246,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
     FORTRAN(rectcyl,(co,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filabt,&imag,mi,emn));
     
     for(jj=0;jj<*mcs;jj++){
-	is=(int)(cs[17*jj]+0.5);
+	is=(ITG)(cs[17*jj]+0.5);
 	for(i=1;i<is;i++){
 	    
 	    theta=i*2.*pi/cs[17*jj];
@@ -390,7 +390,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 		printf("*ERROR: forces in a modal dynamic or steady state dynamics\n");
 		printf("        calculation with cyclic symmetry must be defined in\n");
 		printf("        the cyclic symmetric cylindrical coordinate system\n");
-		printf("        force at fault is applied in node %d\n",node);
+		printf("        force at fault is applied in node %" ITGFORMAT "\n",node);
 		FORTRAN(stop,());
 	    }
 	    
@@ -635,14 +635,14 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	
 /* normalizing the eigenvectors with the mass */
 
-/*	if (nm[j]==0||(nm[j]==(int)((cs[0]/2))&&(fmod(cs[0],2.)==0.)))
+/*	if (nm[j]==0||(nm[j]==(ITG)((cs[0]/2))&&(fmod(cs[0],2.)==0.)))
                  {sum=sqrt(cs[0]);}
 		 else{sum=sqrt(cs[0]/2);}*/
 
 	sum=0.;
 	summass=0.;
 	for(i=0;i<*mcs;i++){
-	  if (nm[j]==0||(nm[j]==(int)((cs[17*i]/2))&&(fmod(cs[17*i],2.)==0.))){
+	  if (nm[j]==0||(nm[j]==(ITG)((cs[17*i]/2))&&(fmod(cs[17*i],2.)==0.))){
 	    sum+=cs[17*i]*csmass[i];
 	  }else{
 	    sum+=cs[17*i]*csmass[i]/2.;
@@ -698,7 +698,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	for(j=0;j<*nmpcold;j++){
 	    if(noderight_>10){
 		noderight_=10;
-		RENEW(noderight,int,noderight_);
+		RENEW(noderight,ITG,noderight_);
 		RENEW(coefright,double,noderight_);
 	    }
 	    ipompc[*nmpc]=*mpcend+1;
@@ -718,8 +718,8 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 			coefright[numnodes]=coefmpcold[index];
 			numnodes++;
 			if(numnodes>=noderight_){
-			    noderight_=(int)(1.5*noderight_);
-			    RENEW(noderight,int,noderight_);
+			    noderight_=(ITG)(1.5*noderight_);
+			    RENEW(noderight,ITG,noderight_);
 			    RENEW(coefright,double,noderight_);
 			}
 		    }
@@ -914,7 +914,7 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
 	      /* now append the expanded information*/
 	      for(l=1; l<*nsectors; l++){
 		for(k=0; k<iendset[j]-istartset[j]+1; k++){
-		  tint2=((int)(ialset[istartset[j]-1+k]))/10;
+		  tint2=((ITG)(ialset[istartset[j]-1+k]))/10;
 		  ialset[tint-1]=(ialset[istartset[j]-1+k]!=-1)?(tint2+*ne*l)*10+(ialset[istartset[j]-1+k]-(tint2*10)):-1;
 		  tint++;
 		}
@@ -953,11 +953,11 @@ void expand(double *co, int *nk, int *kon, int *ipkon, char *lakon,
       nzse[1]=nzs[1];
       nzse[2]=nzs[2];
       
-      mast1e=NNEW(int,nzse[1]);
-      irowe=NNEW(int,nzse[1]);
-      icole=NNEW(int,4**nk);
-      jqe=NNEW(int,4**nk+1);
-      ipointere=NNEW(int,4**nk);
+      mast1e=NNEW(ITG,nzse[1]);
+      irowe=NNEW(ITG,nzse[1]);
+      icole=NNEW(ITG,4**nk);
+      jqe=NNEW(ITG,4**nk+1);
+      ipointere=NNEW(ITG,4**nk);
       
       mastruct(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,ipompc,
 	       nodempc,nmpc,nactdof,icole,jqe,&mast1e,&irowe,isolver,

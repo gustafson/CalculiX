@@ -24,21 +24,21 @@
 
 static char *lakon1;
 
-static int *kon1,*ipkon1,*ne1,*mi1,num_cpus,*nkapar=NULL,*nkepar=NULL;
+static ITG *kon1,*ipkon1,*ne1,*mi1,num_cpus,*nkapar=NULL,*nkepar=NULL;
 
 static double *co1,*qfx1,*h01;
 
-void biosav(int *ipkon,int *kon,char *lakon,int *ne,double *co,
-                double *qfx,double *h0,int *mi,int *inomat,int *nk){
+void biosav(ITG *ipkon,ITG *kon,char *lakon,ITG *ne,double *co,
+                double *qfx,double *h0,ITG *mi,ITG *inomat,ITG *nk){
 
-    int i,j,*ithread=NULL,nkphi,idelta,isum;
+    ITG i,j,*ithread=NULL,nkphi,idelta,isum;
 
     /* calculates the magnetic intensity due to currents in the phi-
        domain of an electromagnetic calculation */
       
     /* variables for multithreading procedure */
     
-    int sys_cpus;
+    ITG sys_cpus;
     char *env,*envloc,*envsys;
     
     num_cpus = 0;
@@ -86,8 +86,8 @@ void biosav(int *ipkon,int *kon,char *lakon,int *ne,double *co,
     
     /* determining the nodal bounds in each thread */
 
-    nkapar=NNEW(int,num_cpus);
-    nkepar=NNEW(int,num_cpus);
+    nkapar=NNEW(ITG,num_cpus);
+    nkepar=NNEW(ITG,num_cpus);
 
     /* n1 is the number of nodes in the phi(magnetostatic)-domain in
        an electromagnetic calculation */
@@ -156,13 +156,13 @@ void biosav(int *ipkon,int *kon,char *lakon,int *ne,double *co,
     ipkon1=ipkon;kon1=kon;lakon1=lakon;ne1=ne;co1=co;qfx1=qfx;
     h01=h0;mi1=mi;
     
-    printf(" Using up to %d cpu(s) for the Biot-Savart calculation.\n\n", num_cpus);
+    printf(" Using up to %" ITGFORMAT " cpu(s) for the Biot-Savart calculation.\n\n", num_cpus);
     
     /* create threads and wait */
     
     pthread_t tid[num_cpus];
     
-    ithread=NNEW(int,num_cpus);
+    ithread=NNEW(ITG,num_cpus);
     for(i=0;i<num_cpus;i++){
 	ithread[i]=i;
 	pthread_create(&tid[i],NULL,(void *)biotsavartmt,(void *)&ithread[i]);
@@ -177,9 +177,9 @@ void biosav(int *ipkon,int *kon,char *lakon,int *ne,double *co,
 
 /* subroutine for multithreading of biotsavart */
 
-void *biotsavartmt(int *i){
+void *biotsavartmt(ITG *i){
 
-    int nka,nkb;
+    ITG nka,nkb;
 
     nka=nkapar[*i]+1;
     nkb=nkepar[*i]+1;

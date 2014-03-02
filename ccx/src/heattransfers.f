@@ -109,7 +109,7 @@
          elseif(textpart(i)(1:9).eq.'TIMERESET') then
             timereset=.true.
          elseif(textpart(i)(1:17).eq.'TOTALTIMEATSTART=') then
-            read(textpart(1)(18:37),'(f20.0)',iostat=istat) ttime
+            read(textpart(i)(18:37),'(f20.0)',iostat=istat) ttime
          else
             write(*,*) 
      &        '*WARNING in heattransfers: parameter not recognized:'

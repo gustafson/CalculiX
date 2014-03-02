@@ -1,19 +1,26 @@
 
+#include <unistd.h>
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include "CalculiX.h"
+
 /* ----------------------------------------------------------------  */
 /* elemChecker korrigiert falsch orientierte elemente 24.06.97 wi    */
-/* ACHTUNG! liefert jetzt einen pointer auf ein int-feld:            */
+/* ACHTUNG! liefert jetzt einen pointer auf ein ITG-feld:            */
 /* sum_korrelems,elemnr(1),elemnr(2)...                              */
 /* ----------------------------------------------------------------  */
 
 #include "readfrd.h"
 
-int elemChecker(int sum_e, Nodes *node, Elements *elem)
+ITG elemChecker(ITG sum_e, Nodes *node, Elements *elem)
 {
-  int i, j;
+  ITG i, j;
   double v12[3], v13[3], v15[3], v15n[3], vn[3];
   double bv15, bvn, bv15n, bgrenz;
-  int epuf[27];
-  int e_korr=0;
+  ITG epuf[27];
+  ITG e_korr=0;
 
   for (i=0; i<sum_e; i++)
   {
@@ -29,10 +36,10 @@ int elemChecker(int sum_e, Nodes *node, Elements *elem)
       bgrenz=sqrt(bvn*bvn+bv15*bv15);
       bv15n=v_betrag(v15n);
   
-      /* printf ("elemcheck:%d vn x=%e y=%e z=%e\n",elem[i].nr,vn[0],vn[1],vn[2]); */
+      /* printf ("elemcheck:%" ITGFORMAT " vn x=%e y=%e z=%e\n",elem[i].nr,vn[0],vn[1],vn[2]); */
       if (bv15n > bgrenz)
         {
-        /* printf ("elem %d wrong defined, v15n=%e vgrenz=%e\n", elem[i].nr,bv15n,bgrenz);  */
+        /* printf ("elem %" ITGFORMAT " wrong defined, v15n=%e vgrenz=%e\n", elem[i].nr,bv15n,bgrenz);  */
         for (j=0; j<8; j++)
           {
           epuf[j] = elem[i].nod[j];
@@ -78,10 +85,10 @@ int elemChecker(int sum_e, Nodes *node, Elements *elem)
       bgrenz=sqrt(bvn*bvn+bv15*bv15);
       bv15n=v_betrag(v15n);
   
-      /* printf ("elemcheck:%d vn x=%e y=%e z=%e\n",elem[i].nr,vn[0],vn[1],vn[2]); */
+      /* printf ("elemcheck:%" ITGFORMAT " vn x=%e y=%e z=%e\n",elem[i].nr,vn[0],vn[1],vn[2]); */
       if (bv15n > bgrenz)
         {
-        /* printf ("elem %d wrong defined, v15n=%e vgrenz=%e\n", elem[i].nr,bv15n,bgrenz);  */
+        /* printf ("elem %" ITGFORMAT " wrong defined, v15n=%e vgrenz=%e\n", elem[i].nr,bv15n,bgrenz);  */
         for (j=0; j<6; j++)
           {
           epuf[j] = elem[i].nod[j];
@@ -123,10 +130,10 @@ int elemChecker(int sum_e, Nodes *node, Elements *elem)
       bgrenz=sqrt(bvn*bvn+bv15*bv15);
       bv15n=v_betrag(v15n);
   
-      /* printf ("elemcheck:%d vn x=%e y=%e z=%e\n",elem[i].nr,vn[0],vn[1],vn[2]); */
+      /* printf ("elemcheck:%" ITGFORMAT " vn x=%e y=%e z=%e\n",elem[i].nr,vn[0],vn[1],vn[2]); */
       if (bv15n > bgrenz)
       {
-        /* printf ("elem %d wrong defined, v15n=%e vgrenz=%e\n", elem[i].nr,bv15n,bgrenz);  */
+        /* printf ("elem %" ITGFORMAT " wrong defined, v15n=%e vgrenz=%e\n", elem[i].nr,bv15n,bgrenz);  */
         for (j=0; j<4; j++) epuf[j] = elem[i].nod[j];
         elem[i].nod[0] = epuf[1];
         elem[i].nod[1] = epuf[2];

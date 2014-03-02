@@ -23,22 +23,23 @@
 #include "CalculiX.h"
 #include "pardiso.h"
 
-int *irowpardisoas=NULL,*pointersas=NULL,iparmas[64];
+ITG *irowpardisoas=NULL,*pointersas=NULL,iparmas[64];
 long long ptas[64];
 double *aupardisoas=NULL;
-char env1[32];
+ITG nthread_mkl_as=0;
 
 /* factorization, solving and cleaning with PARDISO for
    real unsymmetric matrices */
 
 void pardiso_factor_as(double *ad, double *au, double *adb, double *aub, 
-                double *sigma,int *icol, int *irow, 
-                int *neq, int *nzs, int *jq){
+                double *sigma,ITG *icol, ITG *irow, 
+                ITG *neq, ITG *nzs, ITG *jq){
 
   char *env;
-  int i,j,k,maxfct=1,mnum=1,mtype=11,phase=12,nrhs=1,*perm=NULL,
-      msglvl=0,error=0,ifortran,lfortran,index,id,nthread,nthread_v;
+  ITG i,j,k,maxfct=1,mnum=1,mtype=11,phase=12,nrhs=1,*perm=NULL,
+      msglvl=0,error=0,ifortran,lfortran,index,id;
   long long ndim;
+  ITG nthread,nthread_v;
   double *b=NULL,*x=NULL;
 
   printf(" Factoring the system of equations using the asymmetric pardiso solver\n");
@@ -46,32 +47,34 @@ void pardiso_factor_as(double *ad, double *au, double *adb, double *aub,
   iparmas[0]=0;
 /* set MKL_NUM_THREADS to min(CCX_NPROC_EQUATION_SOLVER,OMP_NUM_THREADS)
    must be done once  */
-  
-  nthread=1;
-  env=getenv("MKL_NUM_THREADS");
-  if(env) {
+  if (nthread_mkl_as == 0) {
+    nthread=1;
+    env=getenv("MKL_NUM_THREADS");
+    if(env) {
       nthread=atoi(env);}
-  else{
+    else {
       env=getenv("OMP_NUM_THREADS");
       if(env) {nthread=atoi(env);}
-  }
-  env=getenv("CCX_NPROC_EQUATION_SOLVER");
-  if(env) {
+    }
+    env=getenv("CCX_NPROC_EQUATION_SOLVER");
+    if(env) {
       nthread_v=atoi(env);
       if (nthread_v <= nthread) {nthread=nthread_v;}
+    }
+    if (nthread < 1) {nthread=1;}
+    sprintf(envMKL,"MKL_NUM_THREADS=%" ITGFORMAT "",nthread);  
+    putenv(envMKL);
+    nthread_mkl_as=nthread;
   }
-  if (nthread < 1) {nthread=1;}
-  sprintf(env1,"MKL_NUM_THREADS=%d",nthread);  
-  putenv(env1);
-  
-  printf(" number of threads =% d\n\n",nthread);
+    
+  printf(" number of threads =% d\n\n",nthread_mkl_as);
 
   for(i=0;i<64;i++){ptas[i]=0;}
 
-  ndim=*neq+2*(long long)*nzs;
+  ndim=*neq+(long long)2**nzs;
 
-  pointersas=NNEW(int,*neq+1);
-  irowpardisoas=NNEW(int,ndim);
+  pointersas=NNEW(ITG,*neq+1);
+  irowpardisoas=NNEW(ITG,ndim);
   aupardisoas=NNEW(double,ndim);
 
   k=0;
@@ -162,35 +165,19 @@ void pardiso_factor_as(double *ad, double *au, double *adb, double *aub,
   return;
 }
 
-void pardiso_solve_as(double *b, int *neq){
+void pardiso_solve_as(double *b, ITG *neq){
 
   char *env;
-  int maxfct=1,mnum=1,mtype=11,phase=33,*perm=NULL,nrhs=1,
-      msglvl=0,i,error=0,nthread,nthread_v;
+  ITG maxfct=1,mnum=1,mtype=11,phase=33,*perm=NULL,nrhs=1,
+      msglvl=0,i,error=0;
   double *x=NULL;
 
   printf(" Solving the system of equations using the asymmetric pardiso solver\n");
 
   iparmas[0]=0;
-  
-  nthread=1;
-  env=getenv("MKL_NUM_THREADS");
-  if(env) {
-      nthread=atoi(env);}
-  else{
-      env=getenv("OMP_NUM_THREADS");
-      if(env) {nthread=atoi(env);}
-  }
-  env=getenv("CCX_NPROC_EQUATION_SOLVER");
-  if(env) {
-      nthread_v=atoi(env);
-      if (nthread_v <= nthread) {nthread=nthread_v;}
-  }
-  if (nthread < 1) {nthread=1;}
-  sprintf(env1,"MKL_NUM_THREADS=%d",nthread);  
-  putenv(env1);
+/* pardiso_factor has been called befor, MKL_NUM_THREADS=nthread_mkl_as is set*/
 
-  printf(" number of threads =% d\n\n",nthread);
+  printf(" number of threads =% d\n\n",nthread_mkl_as);
 
   x=NNEW(double,*neq);
 
@@ -204,9 +191,9 @@ void pardiso_solve_as(double *b, int *neq){
   return;
 }
 
-void pardiso_cleanup_as(int *neq){
+void pardiso_cleanup_as(ITG *neq){
 
-  int maxfct=1,mnum=1,mtype=11,phase=-1,*perm=NULL,nrhs=1,
+  ITG maxfct=1,mnum=1,mtype=11,phase=-1,*perm=NULL,nrhs=1,
       msglvl=0,error=0;
   double *b=NULL,*x=NULL;
 
@@ -222,8 +209,8 @@ void pardiso_cleanup_as(int *neq){
 }
 
 void pardiso_main_as(double *ad, double *au, double *adb, double *aub, double *sigma,
-         double *b, int *icol, int *irow, 
-         int *neq, int *nzs, int *jq){
+         double *b, ITG *icol, ITG *irow, 
+         ITG *neq, ITG *nzs, ITG *jq){
 
   if(*neq==0) return;
 

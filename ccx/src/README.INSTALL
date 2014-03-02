@@ -314,3 +314,18 @@ like
 
 The file is empty if the single threaded solver was used.
 
+******************************************************************************
+USING CALCULIX with 8 byte per integer
+******************************************************************************
+
+This may be necessary for really big models. Right now, there is a file
+Makefile_i8 showing you how it works. The integers in the FORTRAN files must
+be compiled with the option -fdefault-integer-8 (for the GNU compiler). This
+tells the compiler to consider all integers in the FORTRAN files as
+8-byte integers. For the C-files, the flag -DLONGLONG must be added to the
+CFLAGS. Right now, the CalculiX distribution assumes that you also generate
+a integer*8 version of ARPACK (use the above FORTRAN flag) and an
+integer*8 version of PARDISO (of course only if you use any if these, i.e.
+if you have the flags -DPARDISO and -DARPACK in your Makefile). The 
+SPOOLES distribution, however, is assumed to be an integer *4, since it
+is not known that an integer*8 version of SPOOLES has already been made.
