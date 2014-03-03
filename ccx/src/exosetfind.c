@@ -23,6 +23,7 @@
 #include <string.h>
 #include "CalculiX.h"
 #include "exodusII.h"
+#include "exo.h"
 
 void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset, 
 		int *num_ns, int *num_ss, int *num_es, int *num_fs, int *node_map_inv,
@@ -60,7 +61,7 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
       // Now set the length of the set allocation
       l=e-s+1+gen+l;
       set_nums = (int *) calloc(l, sizeof(int));
-      
+
       /* Only add the generate code if there are at least
 	 three points in the vector */
       n=0; j=s;
@@ -153,7 +154,7 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
   }  
   
   if (store){
-    char *namesnset[*num_ns]; j=0;
+    // char *namesnset[*num_ns]; j=0;
     // char *namessset[*num_ss]; k=0;
     // char *nameseset[*num_es]; l=0;
     // char *namesfset[*num_fs]; n=0;

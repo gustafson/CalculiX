@@ -23,14 +23,15 @@
 #include <string.h>
 #include "CalculiX.h"
 #include "exodusII.h"
+#include "exo.h"
 
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
 void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
 	       int *istartset,int *iendset,int *ialset,int *ngraph,int *ncomp,
-	       int *ifield,int *icomp,int *nfield,int *iselect,int *exoid,
-	       int *time_step, int countvar, int nout){
+	       int *ifield,int *icomp,int *nfield,int *iselect,int exoid,
+	       int time_step, int countvar, int nout){
     
   /* storing scalars, components of vectors and tensors without additional
      transformations */
@@ -43,7 +44,7 @@ void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
      - ifield[i]: 1=field1,2=field2
      - icomp[i]: component: 0...,(nfield[0]-1 or nfield[1]-1) */
   
-  int i,j,k,l,m,n,o,nksegment;
+  int i,j,k,l,m,o,nksegment;
   /* When initializing parameter values:
      "g" (or "G")
      For global variables.
@@ -56,7 +57,7 @@ void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
      "s" (or "S")
      For sideset variables.
   */
-  int num_nod_vars = *ncomp;
+  // int num_nod_vars = *ncomp;
   float *nodal_var_vals;
   nodal_var_vals = (float *) calloc (nout, sizeof(float));
   
