@@ -23,11 +23,13 @@
 #include <string.h>
 #include "CalculiX.h"
 #include "exodusII.h"
+#include "exo.h"
 
-void exovector(double *v,int *iset,int *ntrans,char * filabl,int *nkcoords,
-               int *inum,int *inotr,double *trab,double *co,
-               int *istartset,int *iendset,int *ialset,int *mi,int *ngraph,
-               int *exoid, int *time_step, int countvar, int nout){
+void exovector(double *v, int *iset, int *ntrans, char * filabl, 
+	       int *nkcoords, int *inum, int *inotr, double *trab,
+	       double *co, int *istartset, int *iendset, int *ialset, 
+	       int *mi, int *ngraph, int exoid, int time_step, 
+	       int countvar, int nout){
   
   int nksegment;
   int i,j,k,l,m,n,ii,jj,kk;
