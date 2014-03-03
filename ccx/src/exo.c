@@ -23,6 +23,7 @@
 #include <string.h>
 #include "CalculiX.h"
 #include "exodusII.h"
+#include "exo.h"
 
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
