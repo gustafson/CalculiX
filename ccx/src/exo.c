@@ -1,7 +1,7 @@
-/*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2011 Guido Dhondt                     */
+/*     Calculix - A 3-dimensional finite element program                 */
+/*              Copyright (C) 1998-2014 Guido Dhondt                     */
 /*     This subroutine                                                   */
-/*              Copyright (C) 2013 Peter A. Gustafson                    */
+/*              Copyright (C) 2013-2014 Peter A. Gustafson               */
 /*                                                                       */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -69,7 +69,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   int ncompvectph=6,ifieldvectph[6]={1,1,1,2,2,2},icompvectph[6]={1,2,3,1,2,3},nfieldvectph[2]={mi[1]+1,mi[1]+1};
   int ncomptensph=12,ifieldtensph[12]={1,1,1,1,1,1,2,2,2,2,2,2},icomptensph[12]={0,1,2,3,5,4,0,1,2,3,5,4},nfieldtensph[2]={6,6};
 
-  int errr, exoid;
+  int errr=0, exoid=0;
   int num_dim, num_elem;
   int num_elem_blk; /* Node element blocks.  One eltype per block*/
   int num_ns, num_ss, num_es, num_fs; /* Node sets, side sets, element sets, face sets */
