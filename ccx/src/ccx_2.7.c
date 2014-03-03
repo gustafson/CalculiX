@@ -128,11 +128,12 @@ FORTRAN(openfile,(jobnamef,output));
 
 printf("\n************************************************************\n\n");
 printf("CalculiX version 2.7, Copyright(C) 1998-2014 Guido Dhondt\n");
+printf("CalculiX Extras 2.7, Copyright(C) 2013-2014 Peter Gustafson\n");
 printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
 printf("************************************************************\n\n");
-printf("You are using an executable made on So 2. Mär 15:36:03 CET 2014\n");
+printf("You are using an executable made on Mon Mar  3 09:11:56 EST 2014\n");
 fflush(stdout);
 
 istep=0;

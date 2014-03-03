@@ -83,7 +83,7 @@ OCCXMAIN = $(SCCXMAIN:.c=.o)
 CFLAGS += -lm -lc
 
 ccx_2.7: $(OCCXMAIN) ccx_2.7.a
-	## ./date.pl; 
+	./date.pl; 
 	$(CC) $(CFLAGS) -c ccx_2.7.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.7.a $(LDFLAGS)
 
 ccx_2.7.a: $(OCCXF) $(OCCXC)
