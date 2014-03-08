@@ -27,8 +27,7 @@
 
 void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset, 
 		int *num_ns, int *num_ss, int *num_es, int *num_fs, int *node_map_inv,
-		int exoid, 
-		int store){
+		int exoid, int store, int *nk){
   
   int i,j,k,l,n,s,e,gen;
   char tmpstr[81];
@@ -70,42 +69,33 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
 	  // Account for generated ids
 	  if (ialset[j+2]<0) {
 	    for (k=ialset[j]; k<=ialset[j+1]; k-=ialset[j+2]){
-	      set_nums[n++]=exoset_check(k-1, node_map_inv);
+	      set_nums[n++]=exoset_check(k-1, node_map_inv, nk);
 	    }
 	    j+=3;
 	  }else{
 	    // Account for directly added id
-	    set_nums[n++]=exoset_check(ialset[j++]-1, node_map_inv);
+	    gen=ialset[j++]-1;
+	    set_nums[n++]=exoset_check(gen, node_map_inv, nk);
 	  }
 	}
 	// Must finish the last two of directly added set
 	if (ialset[e]>0){ // only if the last set is not a generated set
 	  // 1+n++ and -1+n++ to preserve order
-	  set_nums[1+n++]=exoset_check(ialset[e]-2, node_map_inv);
+	  set_nums[1+n++]=exoset_check(ialset[e]-2, node_map_inv, nk);
 	  if (ialset[e-1]>0){
-	    set_nums[-1+n++]=exoset_check(ialset[e]-3, node_map_inv);
+	    set_nums[-1+n++]=exoset_check(ialset[e]-3, node_map_inv, nk);
 	  }
 	}
       }else if(l>1){
-	set_nums[n++]=exoset_check(ialset[s]-1, node_map_inv);
-	set_nums[n++]=exoset_check(ialset[e]-1, node_map_inv);
+	set_nums[n++]=exoset_check(ialset[s]-1, node_map_inv, nk);
+	set_nums[n++]=exoset_check(ialset[e]-1, node_map_inv, nk);
       }else{
-	set_nums[n++]=exoset_check(ialset[e]-1, node_map_inv);
+	set_nums[n++]=exoset_check(ialset[e]-1, node_map_inv, nk);
       }
     }
 
     strncpy(tmpstr,set+i*81,81);
     pos = strpbrk(tmpstr, space)-1;
-
-    // Remove nodes that no longer exist
-    // gen=-1;
-    // for (j=0; j<n; j++){
-    //   printf ("Update %i\n", set_nums[j]);
-    //   if ( set_nums[j] == gen ){
-    // 	printf ("Update\n");
-    // 	//gen = set_nums[j];
-    //   }
-    // }
 
     if(strcmp1(pos,"N")==0){
       (*num_ns)++; // printf ("Node set identified\n"); 
@@ -185,16 +175,16 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
 }
 
 
-void exoset_warn(int val){
-  if (val==-1) {
-    printf ("WARNING: A node or element is dropped from a defined set.\n");
-    printf ("  This may be due rigid bodies or 3D expansion (beams, shells, OUTPUT=3D).\n");
-    printf ("  The postprocesser may complain about file integrity.\n");
+int exoset_check(int n, int *node_map_inv, int *nk){
+  int val=0;
+  if (n<=*nk){
+    val = node_map_inv[n]-1;
+    if (val==-1) {
+      printf ("WARNING: A node or element is dropped from a set.\n");
+      printf ("  This may be due rigid bodies or 3D expansion (beams, shells, OUTPUT=3D).\n");
+    }
+  }else{
+    printf ("WARNING: An undefined node or element is dropped from a set.\n");
   }
-}
-
-int exoset_check(int n, int *node_map_inv){
-  int val = node_map_inv[n]-1;
-  if (val==-1) {exoset_warn(val);}
   return val;
 }
