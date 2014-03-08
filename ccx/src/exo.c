@@ -139,7 +139,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     
     // Find the number of sets
     exosetfind(set, nset, ialset, istartset, iendset, 
-	       &num_ns, &num_ss, &num_es, &num_fs, NULL, exoid, (int) 0);
+	       &num_ns, &num_ss, &num_es, &num_fs, NULL, exoid, (int) 0, nk);
     printf ("Side sets to exo file not implemented.\n");
     num_ss=0;
 
@@ -518,7 +518,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     
     // Write the node sets into the file
     exosetfind(set, nset, ialset, istartset, iendset, 
-	       &num_ns, &num_ss, &num_es, &num_fs, node_map_inv, exoid, (int) 1);
+	       &num_ns, &num_ss, &num_es, &num_fs, node_map_inv, exoid, (int) 1, nk);
     
     // Unknown purpose originating in ccx_2.6
     if(mesh_in_original_form==1){
