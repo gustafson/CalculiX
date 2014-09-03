@@ -10,8 +10,8 @@
 ## such as -L/path/to/lib -I/path/to/include -llib.  Examples of this
 ## on my distribution are in the comments below
 
-## CFLAGS=-march=native -g -O0 -pg ## debugging
-## FFLAGS=-march=native -g -O0 -pg ## debugging
+## CFLAGS=-march=native -g -Og -pg ## debugging
+## FFLAGS=-march=native -g -Og -pg ## debugging
 ## CFLAGS=-march=native -O2 -Wall ## conservative
 ## FFLAGS=-march=native -O2 -Wall ## conservative
 CFLAGS=-march=native -O3 -Wall -flto ## aggressive

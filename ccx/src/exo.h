@@ -36,7 +36,7 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
 		int *num_ns, int *num_ss, int *num_es, int *num_fs, int *node_map_inv,
 		int exoid, int store, int *nk);
 
-int exoset_check(int n, int *node_map_inv, int *nk);
+int exoset_check(int n, int *node_map_inv, int *nk, int *dropped, int *unidentified);
 
 void exovector(double *v,int *iset,int *ntrans,char * filabl,int *nkcoords,
                int *inum,int *inotr,double *trab,double *co,
