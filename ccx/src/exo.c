@@ -102,8 +102,13 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   }else{
     nout=*nk;
   }
-  
-  float x[nout], y[nout], z[nout];
+
+  // Allocate memory for node positions
+  float *x, *y, *z;
+  x = (float *) calloc(nout, sizeof(float));
+  y = (float *) calloc(nout, sizeof(float));
+  z = (float *) calloc(nout, sizeof(float));
+
   // Write optional node map
   j = 0;
   int *node_map;
@@ -201,21 +206,25 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       mesh_in_original_form=1;
     }
 
-    /* write values to database */
+    // Write values to database
     errr = ex_put_coord (exoid, x, y, z);
+    if(errr)printf("*ERROR in exo: failed node positions");
     errr = ex_put_node_num_map (exoid, node_map);
-    if(errr){
-      printf("*ERROR in exo: failed to write node map");
-    }
-    free (node_map);
+    if(errr)printf("*ERROR in exo: failed node map");
 
-    //Write coordinate names
+    // Deallocate
+    free (node_map);
+    free (x);
+    free (y);
+    free (z);
+
+    // Write coordinate names
     char *coord_names[3];
     coord_names[0] = "x";
     coord_names[1] = "y";
     coord_names[2] = "z";
     errr = ex_put_coord_names (exoid, coord_names);
-    if(errr){printf("*ERROR in exo: failed to write coordinate names");}
+    if(errr){printf("*ERROR in exo: failed coordinate names");}
     
     // Initialize enough memory to store the element numbers
     int *elem_map;

@@ -35,6 +35,7 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
   char *pos;
   int *set_nums;
   int errr;
+  int dropped=0, unidentified=0;
   
   *num_ns = 0; 
   *num_ss = 0;
@@ -69,28 +70,28 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
 	  // Account for generated ids
 	  if (ialset[j+2]<0) {
 	    for (k=ialset[j]; k<=ialset[j+1]; k-=ialset[j+2]){
-	      set_nums[n++]=exoset_check(k-1, node_map_inv, nk);
+	      set_nums[n++]=exoset_check(k-1, node_map_inv, nk, &dropped, &unidentified);
 	    }
 	    j+=3;
 	  }else{
 	    // Account for directly added id
 	    gen=ialset[j++]-1;
-	    set_nums[n++]=exoset_check(gen, node_map_inv, nk);
+	    set_nums[n++]=exoset_check(gen, node_map_inv, nk, &dropped, &unidentified);
 	  }
 	}
 	// Must finish the last two of directly added set
 	if (ialset[e]>0){ // only if the last set is not a generated set
 	  // 1+n++ and -1+n++ to preserve order
-	  set_nums[1+n++]=exoset_check(ialset[e]-2, node_map_inv, nk);
+	  set_nums[1+n++]=exoset_check(ialset[e]-2, node_map_inv, nk, &dropped, &unidentified);
 	  if (ialset[e-1]>0){
-	    set_nums[-1+n++]=exoset_check(ialset[e]-3, node_map_inv, nk);
+	    set_nums[-1+n++]=exoset_check(ialset[e]-3, node_map_inv, nk, &dropped, &unidentified);
 	  }
 	}
       }else if(l>1){
-	set_nums[n++]=exoset_check(ialset[s]-1, node_map_inv, nk);
-	set_nums[n++]=exoset_check(ialset[e]-1, node_map_inv, nk);
+	set_nums[n++]=exoset_check(ialset[s]-1, node_map_inv, nk, &dropped, &unidentified);
+	set_nums[n++]=exoset_check(ialset[e]-1, node_map_inv, nk, &dropped, &unidentified);
       }else{
-	set_nums[n++]=exoset_check(ialset[e]-1, node_map_inv, nk);
+	set_nums[n++]=exoset_check(ialset[e]-1, node_map_inv, nk, &dropped, &unidentified);
       }
     }
 
@@ -171,20 +172,28 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
     */
   }
 
+  if (dropped){
+    printf ("\nExodus Output WARNING: At least one node or element is dropped from a set.\n");
+    printf ("  This may be due rigid bodies or 3D expansion (beams, shells, OUTPUT=3D).\n\n");
+  }
+
+  if (unidentified){
+    printf ("\nExodus Output WARNING: At least one unidentified node or element is dropped from a set.\n\n");
+  }
+
   return;
 }
 
 
-int exoset_check(int n, int *node_map_inv, int *nk){
+int exoset_check(int n, int *node_map_inv, int *nk, int *dropped, int *unidentified){
   int val=0;
   if (n<=*nk){
     val = node_map_inv[n]-1;
     if (val==-1) {
-      printf ("WARNING: A node or element is dropped from a set.\n");
-      printf ("  This may be due rigid bodies or 3D expansion (beams, shells, OUTPUT=3D).\n");
+      *dropped = 1;
     }
   }else{
-    printf ("WARNING: An undefined node or element is dropped from a set.\n");
+    *unidentified = 1;
   }
   return val;
 }
