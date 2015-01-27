@@ -19,10 +19,10 @@
 CFLAGS=-march=native -O3 -Wall -flto ## aggressive
 FFLAGS=-march=native -O3 -Wall -flto ## aggressive
 
-## Integer8.  Note at least Arpack and Spooles need to be compiled for
-## Integer8 as well.
-CFLAGS  += -DLONGLONG
-FFLAGS  += -fdefault-integer-8
+## Integer8.  Note at least Arpack and Pardiso need to be compiled for
+## Integer8 as well.  Spooles does not appear to be int8 according to Guido
+## CFLAGS  += -DLONGLONG
+## FFLAGS  += -fdefault-integer-8
 
 ## SPOOLES
 ## CFLAGS  += -I/usr/include/spooles -I/usr/include/spooles/MT -DSPOOLES
