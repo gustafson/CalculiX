@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -44,7 +44,7 @@
      &  kspt,kstep,kinc,iloop,nmethod,user_hardening,user_creep
 !
       real*8 elconloc(21),elas(21),emec(6),beta(6),stre(6),
-     &  vj,plconloc(802),stbl(6),epl,stril(6),xitril(6),
+     &  vj,plconloc(802),stbl(6),stril(6),xitril(6),
      &  ee,un,um,al,xk,cop,umb,umbb,dxitril,f0,d0,f1,d1,d2,xg(3,3),
      &  xs(3,3),xx(3,3),xn(3,3),xd(3,3),cpl(6),c(6),ci(6),
      &  c1,c2,c3,c4,c5,c6,c7,c8,c9,cplb(6),stblb(6),
@@ -66,6 +66,7 @@ c     &  2,3,2,3/
       pnewdt=-1.d0
       leximp=1
       lend=2
+      user_creep=0
 !
 !     localizing the plastic fields
 !
@@ -76,7 +77,6 @@ c     &  2,3,2,3/
       do i=1,3
          cpl(i)=cpl(i)+1.d0
       enddo
-      epl=xstateini(1,iint,iel)
       epini=xstateini(1,iint,iel)
 !
       ee=elconloc(1)
@@ -86,7 +86,7 @@ c     &  2,3,2,3/
       xk=al+um/3.d0
       um=um/2.d0
 !
-      ep=epl
+      ep=epini
 !
 !     right Cauchy-Green tensor (eloc contains the Lagrange strain,
 !     including thermal strain)
@@ -200,42 +200,54 @@ c      if(kode.eq.-52) then
       do i=1,6
          xitril(i)=stril(i)-stblb(i)
       enddo
-      g1=c(6)
-      g2=xitril(6)
-      g3=xitril(3)
-      g4=xitril(2)
-      g5=c(5)
-      g6=xitril(5)
-      g7=xitril(4)
-      g8=c(4)
-      g9=c(3)
-      g10=c(2)
-      g11=c(1)
-      g12=xitril(1)
-      g13=g12*g11
-      g14=g10*g4
-      g15=g9*g3
-      g16=g8*g7
-      g17=g6*g5
-      g18=g2*g1
-      g28=4*(g16 + g15)
-      g29=4*g13
-      g30=4*g14
-      g31=4*g6*g1
-      g32=4*g8*g2
-      g33=4*g7*g5
-      dxitril=(g13*g13 + g14*g14 + g15*g15 + g16*(g30 + g29 + 2*
-     &     g16) + g17*(g29 + g28 + 2*g17) + g18*(g30 + g28 + 2*
-     &     g18 + 4*g17) + g11*g7*(g31 + 2*g10*g7) + g9*g6*(g32 + 
-     &     2*g11*g6) + g10*g2*(g33 + 2*g9*g2) + g8*g4*(g31 + 2*
-     &     g12*g8) + g12*g5*(g32 + 2*g5*g3) + g3*g1*(g33 + 2*g4*
-     &     g1))
-      if(dxitril.lt.0.d0) then
-ccc         write(*,*) '*WARNING in incplas: dxitril < 0'
-         dxitril=0.d0
-      else
-         dxitril=dsqrt(dxitril)
-      endif
+!
+      dxitril=
+     & (xitril(1)*c(1)+xitril(4)*c(4)+xitril(5)*c(5))**2+
+     & (xitril(1)*c(4)+xitril(4)*c(1)+xitril(5)*c(6))**2+
+     & (xitril(1)*c(5)+xitril(4)*c(6)+xitril(5)*c(3))**2+
+     & (xitril(4)*c(1)+xitril(1)*c(4)+xitril(6)*c(5))**2+
+     & (xitril(4)*c(4)+xitril(1)*c(1)+xitril(6)*c(6))**2+
+     & (xitril(4)*c(5)+xitril(1)*c(6)+xitril(6)*c(3))**2+
+     & (xitril(5)*c(1)+xitril(6)*c(4)+xitril(3)*c(5))**2+
+     & (xitril(5)*c(4)+xitril(6)*c(1)+xitril(3)*c(6))**2+
+     & (xitril(5)*c(5)+xitril(6)*c(6)+xitril(3)*c(3))**2
+      dxitril=dsqrt(dxitril)
+c      g1=c(6)
+c      g2=xitril(6)
+c      g3=xitril(3)
+c      g4=xitril(2)
+c      g5=c(5)
+c      g6=xitril(5)
+c      g7=xitril(4)
+c      g8=c(4)
+c      g9=c(3)
+c      g10=c(2)
+c      g11=c(1)
+c      g12=xitril(1)
+c      g13=g12*g11
+c      g14=g10*g4
+c      g15=g9*g3
+c      g16=g8*g7
+c      g17=g6*g5
+c      g18=g2*g1
+c      g28=4*(g16 + g15)
+c      g29=4*g13
+c      g30=4*g14
+c      g31=4*g6*g1
+c      g32=4*g8*g2
+c      g33=4*g7*g5
+c      dxitril=(g13*g13 + g14*g14 + g15*g15 + g16*(g30 + g29 + 2*
+c     &     g16) + g17*(g29 + g28 + 2*g17) + g18*(g30 + g28 + 2*
+c     &     g18 + 4*g17) + g11*g7*(g31 + 2*g10*g7) + g9*g6*(g32 + 
+c     &     2*g11*g6) + g10*g2*(g33 + 2*g9*g2) + g8*g4*(g31 + 2*
+c     &     g12*g8) + g12*g5*(g32 + 2*g5*g3) + g3*g1*(g33 + 2*g4*
+c     &     g1))
+c      if(dxitril.lt.0.d0) then
+cccc         write(*,*) '*WARNING in incplas: dxitril < 0'
+c         dxitril=0.d0
+c      else
+c         dxitril=dsqrt(dxitril)
+c      endif
 !
 !        restoring the hardening curves for the actual temperature
 !        plconloc contains the true stresses. By multiplying by
@@ -295,7 +307,8 @@ ccc         write(*,*) '*WARNING in incplas: dxitril < 0'
       endif
 !
       ftrial=dxitril-dsqrt(2.d0/3.d0)*fiso
-      if((ftrial.le.1.d-10).or.(ielas.eq.1).or.(ielastic.eq.1)) then
+      if((ftrial.le.1.d-10).or.(ielas.eq.1).or.(ielastic.eq.1)
+     &    .or.(dtime.lt.1.d-30)) then
 !
 !        no plastic deformation
 !        beta contains the Cauchy residual stresses
@@ -312,6 +325,17 @@ c         write(*,*) 'no plastic deformation'
          stre(4)=c8*ci(4)+stril(4)-beta(4)
          stre(5)=c8*ci(5)+stril(5)-beta(5)
          stre(6)=c8*ci(6)+stril(6)-beta(6)
+!
+!        updating the plastic fields
+!
+         do i=1,3
+            cpl(i)=cpl(i)-1.d0
+         enddo
+         do i=1,6
+            xstate(1+i,iint,iel)=-cpl(i)/2.d0
+            xstate(7+i,iint,iel)=stbl(i)
+         enddo
+         xstate(1,iint,iel)=ep
 !
          if(icmd.ne.3) then
 !
@@ -503,7 +527,7 @@ c            enddo
 !
       loop: do
          iloop=iloop+1
-         ep=epl+c2*cop
+         ep=epini+c2*cop
 !
          if(user_hardening.eq.1) then
             call uhardening(amat,iel,iint,t1l,epini,ep,dtime,
@@ -567,7 +591,7 @@ c            enddo
             if(user_creep.eq.1) then
                if(ithermal.eq.0) then
 ccc                  write(*,*) '*ERROR in incplas: no temperature defined'
-                  stop
+                  call exit(201)
                endif
                timeabq(1)=time
                timeabq(2)=ttime+time
@@ -622,7 +646,7 @@ c                  write(*,*)
                   pnewdt=0.25d0
                   return
                endif
-               ep=epl+c2*cop
+               ep=epini+c2*cop
 !
                if(user_hardening.eq.1) then
                   call uhardening(amat,iel,iint,t1l,epini,ep,dtime,
@@ -723,7 +747,9 @@ c                     write(*,*) cop,fu
                      cop=cop*10.d0
                      if(cop.gt.100.d0) then
                         write(*,*) '*ERROR: no convergence in incplas'
-                        stop
+                        pnewdt=0.25d0
+                        return
+c                        call exit(201)
                      endif
                   endif
                else
@@ -747,7 +773,7 @@ c                     write(*,*) cop,fu
 !
 !        updating the equivalent plastic strain
 !
-      epl=epl+c2*cop
+      ep=epini+c2*cop
 !
 !        updating the back stress
 !
@@ -1006,44 +1032,6 @@ c                     write(*,*) cop,fu
      &        xd(2,3)*xn(2,3))/2.d0+xk*vj2*xg(2,3)*xg(2,3)
      &        -xk*(vj2-1.d0)*(xg(2,2)*xg(3,3)+xg(2,3)*xg(3,2))/2.d0
 !     
-c     nt=0
-c     do i=1,21
-c            k=kk(nt+1)
-c            l=kk(nt+2)
-c            m=kk(nt+3)
-c            n=kk(nt+4)
-c            nt=nt+4
-c            elas(i)=(umb-f0*umbb)*(xg(k,m)*xg(l,n)+xg(k,n)*xg(l,m)-
-c     &        2.d0*xg(k,l)*xg(m,n)/3.d0)
-c     &        -2.d0*(xs(k,l)*xg(m,n)+xg(k,l)*xs(m,n))/3.d0
-c     &        +f0*2.d0*(xx(k,l)*xg(m,n)+xg(k,l)*xx(m,n))/3.d0
-c     &        -d1*xn(k,l)*xn(m,n)-d2*(xn(k,l)*xd(m,n)+
-c     &        xd(k,l)*xn(m,n))/2.d0+xk*vj2*xg(k,l)*xg(m,n)
-c     &        -xk*(vj2-1.d0)*(xg(k,m)*xg(l,n)+xg(k,n)*xg(l,m))/2.d0
-c               write(*,301) i,k,m,l,n,k,n,l,m
-c               write(*,302) k,l,m,n
-c               write(*,303) k,l,m,n,k,l,m,n
-c               write(*,304) k,l,m,n,k,l,m,n
-c               write(*,305) k,l,m,n,k,l,m,n
-c               write(*,306) k,l,m,n,k,l,m,n
-c               write(*,307) k,m,l,n,k,n,l,m
-c 301           format(6x,'elas(',i1,')=(umb-f0*umbb)*(xg(',i1,',',i1,
-c     &           ')*xg(',i1,',',i1,')+xg(',i1,',',i1,')*xg(',i1,',',
-c     &           i1,')-')
-c 302           format(5x,'&2.d0*xg(',i1,',',i1,')*xg(',i1,',',i1,
-c     &              ')/3.d0)')
-c 303           format(5x,'&-2.d0*(xs(',i1,',',i1,')*xg(',i1,',',i1,
-c     &            ')+xg(',i1,',',i1,')*xs(',i1,',',i1,'))/3.d0')
-c 304           format(5x,'&+f0*2.d0*(xx(',i1,',',i1,')*xg(',i1,',',i1,
-c     &           ')+xg(',i1,',',i1,')*xx(',i1,',',i1,'))/3.d0')
-c 305           format(5x,'&-d1*xn(',i1,',',i1,')*xn(',i1,',',i1,
-c     &           ')-d2*(xn(',i1,',',i1,')*xd(',i1,',',i1,')+')
-c 306           format(5x,'&xd(',i1,',',i1,')*xn(',i1,',',i1,
-c     &           '))/2.d0+xk*vj2*xg(',i1,',',i1,')*xg(',i1,',',i1,')')
-c 307           format(5x,'&-xk*(vj2-1.d0)*(xg(',i1,',',i1,')*xg(',i1,
-c     &           ',',i1,')+xg(',i1,',',i1,')*xg(',i1,',',i1,'))/2.d0')
-c         enddo
-!
       endif
 !
 !        updating the plastic fields
@@ -1055,7 +1043,7 @@ c         enddo
          xstate(1+i,iint,iel)=-cpl(i)/2.d0
          xstate(7+i,iint,iel)=stbl(i)
       enddo
-      xstate(1,iint,iel)=epl
+      xstate(1,iint,iel)=ep
 !
       return
       end

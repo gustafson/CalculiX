@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,7 +37,7 @@
       if(istep.gt.0) then
          write(*,*) '*ERROR in nodes: *NODE should be placed'
          write(*,*) '  before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       inoset=0
@@ -51,7 +51,7 @@
                write(*,*) '*ERROR in nodes: set name too long'
                write(*,*) '       (more than 80 characters)'
                write(*,*) '       set name:',textpart(i)(1:132)
-               stop
+               call exit(201)
             endif
             noset(81:81)=' '
             ipos=index(noset,' ')
@@ -68,7 +68,7 @@
                      nn=iendset(js)-istartset(js)+1
                      if(nalset+nn.gt.nalset_) then
                         write(*,*) '*ERROR in nodes: increase nalset_'
-                        stop
+                        call exit(201)
                      endif
                      do k=1,nn
                         ialset(nalset+k)=ialset(istartset(js)+k-1)
@@ -94,7 +94,7 @@
             nset=nset+1
             if(nset.gt.nset_) then
                write(*,*) '*ERROR in nodes: increase nset_'
-               stop
+               call exit(201)
             endif
             js=nset
             istartset(js)=nalset+1
@@ -142,7 +142,7 @@
          nk=max(nk,i)
          if(nk.gt.nk_) then
             write(*,*) '*ERROR in nodes: increase nk_'
-            stop
+            call exit(201)
          endif
 !
 !        assigning node to set
@@ -150,7 +150,7 @@
          if(inoset.eq.1) then
             if(nalset+1.gt.nalset_) then
                write(*,*) '*ERROR in nodes: increase nalset_'
-               stop
+               call exit(201)
             endif
             nalset=nalset+1
             ialset(nalset)=i

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -86,8 +86,8 @@ void biosav(ITG *ipkon,ITG *kon,char *lakon,ITG *ne,double *co,
     
     /* determining the nodal bounds in each thread */
 
-    nkapar=NNEW(ITG,num_cpus);
-    nkepar=NNEW(ITG,num_cpus);
+    NNEW(nkapar,ITG,num_cpus);
+    NNEW(nkepar,ITG,num_cpus);
 
     /* n1 is the number of nodes in the phi(magnetostatic)-domain in
        an electromagnetic calculation */
@@ -162,14 +162,14 @@ void biosav(ITG *ipkon,ITG *kon,char *lakon,ITG *ne,double *co,
     
     pthread_t tid[num_cpus];
     
-    ithread=NNEW(ITG,num_cpus);
+    NNEW(ithread,ITG,num_cpus);
     for(i=0;i<num_cpus;i++){
 	ithread[i]=i;
 	pthread_create(&tid[i],NULL,(void *)biotsavartmt,(void *)&ithread[i]);
     }
     for(i=0;i<num_cpus;i++)pthread_join(tid[i], NULL);
     
-    free(ithread);free(nkapar);free(nkepar);
+    SFREE(ithread);SFREE(nkapar);SFREE(nkepar);
     
     return;
     

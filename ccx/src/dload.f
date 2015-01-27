@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -187,7 +187,7 @@
             if((id.eq.0).or.(ikmpc(id).ne.idof)) then
                write(*,*) '*ERROR in dload: node ',node
                write(*,*) '       is not connected to the oil film'
-               stop
+               call exit(201)
             endif
             node=nodempc(1,nodempc(3,ipompc(ilmpc(id))))
             pres(i)=vold(0,node)
@@ -201,7 +201,7 @@
             if((id.eq.0).or.(ikmpc(id).ne.idof)) then
                write(*,*) '*ERROR in dload: node ',node
                write(*,*) '       is not connected to the oil film'
-               stop
+               call exit(201)
             endif
             node=nodempc(1,nodempc(3,ipompc(ilmpc(id))))
             pres(i)=vold(0,node)
@@ -215,7 +215,7 @@
             if((id.eq.0).or.(ikmpc(id).ne.idof)) then
                write(*,*) '*ERROR in dload: node ',node
                write(*,*) '       is not connected to the oil film'
-               stop
+               call exit(201)
             endif
             node=nodempc(1,nodempc(3,ipompc(ilmpc(id))))
             pres(i)=vold(0,node)

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -26,15 +26,16 @@ static char *lakon1,*matname1,*sideload1;
 
 static ITG *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *norien1,*ntmat1_,*ithermal1,*iperturb1,*iout1,*nmethod1,
-    *nplkcon1,*npmat1_,*mi1,*ncmat1_,*nstate1_,
+    *nplkcon1,*npmat1_,*mi1,*ncmat1_,*nstate1_,*ielprop1,
     *istep1,*iinc1,calcul_fn1,calcul_qa1,*nplicon1,
     *nal=NULL,*ipompc1,*nodempc1,*nmpc1,*ncocon1,*ikmpc1,*ilmpc1,
-    num_cpus,mt1,*nk1,*nshcon1,*nelemload1,*nload1,mortar1;
+    num_cpus,mt1,*nk1,*nshcon1,*nelemload1,*nload1,mortar1,
+    *istartset1,*iendset1,*ialset1,*iactive1;
 
 static double *co1,*v1,*elcon1,*rhcon1,*alcon1,*orab1,*t01,
-    *fn1=NULL,*qa1=NULL,*vold1,*dtime1,*time1,
+    *fn1=NULL,*qa1=NULL,*vold1,*dtime1,*time1,*prop1,
     *ttime1,*plkcon1,*xstateini1,*xstiff1,*xstate1,*sti1,
-    *springarea1,*reltime1,*coefmpc1,
+    *springarea1,*reltime1,*coefmpc1,*vini1,
     *cocon1,*qfx1,*shcon1,*xload1,*plicon1,
     *xloadold1,*h01,*pslavsurf1,*pmastsurf1,*clearini1;
 
@@ -67,7 +68,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
        double *xforc, ITG *nforc, double *thicke,
        double *shcon,ITG *nshcon,char *sideload,double *xload,
        double *xloadold,ITG *icfd,ITG *inomat,double *h0,ITG *islavnode,
-       ITG *nslavnode,ITG *ntie){
+       ITG *nslavnode,ITG *ntie,ITG *ielprop,double *prop,ITG *iactive){
       
     /* variables for multithreading procedure */
     
@@ -156,7 +157,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
        2. determination which derived variables have to be calculated */
 
     FORTRAN(resultsini_em,(nk,v,ithermal,filab,iperturb,f,fn,
-       nactdof,iout,qa,vold,b,nodeboun,ndirboun,
+       nactdof,iout,qa,b,nodeboun,ndirboun,
        xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
        veold,dtime,mi,vini,nprint,prlab,
        &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,&iener,
@@ -182,9 +183,10 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     if(((ithermal[0]<=1)||(ithermal[0]>=3))&&(intpointvarm==1)){
 
 	co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;v1=v;elcon1=elcon;
-        nelcon1=nelcon;ielmat1=ielmat;ntmat1_=ntmat_;vold1=vold;dtime1=dtime;
+        nelcon1=nelcon;ielmat1=ielmat;ntmat1_=ntmat_;vini1=vini;dtime1=dtime;
         matname1=matname;mi1=mi;ncmat1_=ncmat_;sti1=sti;alcon1=alcon;
-	nalcon1=nalcon;h01=h0;ne1=ne;
+	nalcon1=nalcon;h01=h0;ne1=ne;istartset1=istartset;iendset1=iendset;
+        ialset1=ialset;iactive1=iactive;fn1=fn;
 
 	/* calculating the magnetic field */
 	
@@ -194,13 +196,13 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	
 	/* create threads and wait */
 	
-	ithread=NNEW(ITG,num_cpus);
+	NNEW(ithread,ITG,num_cpus);
 	for(i=0; i<num_cpus; i++)  {
 	    ithread[i]=i;
 	    pthread_create(&tid[i], NULL, (void *)resultsemmt, (void *)&ithread[i]);
 	}
 	for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
-	free(ithread);
+	SFREE(ithread);
 
 	qa[0]=0.;
     }
@@ -210,9 +212,9 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 
     if((ithermal[0]>=2)&&(intpointvart==1)){
 
-	fn1=NNEW(double,num_cpus*mt**nk);
-	qa1=NNEW(double,num_cpus*3);
-	nal=NNEW(ITG,num_cpus);
+	NNEW(fn1,double,num_cpus*mt**nk);
+	NNEW(qa1,double,num_cpus*3);
+	NNEW(nal,ITG,num_cpus);
 
 	co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;v1=v;
         elcon1=elcon;nelcon1=nelcon;rhcon1=rhcon;nrhcon1=nrhcon;
@@ -229,7 +231,8 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
         nelemload1=nelemload;nload1=nload;nmethod1=nmethod;reltime1=reltime;
         sideload1=sideload;xload1=xload;xloadold1=xloadold;
         pslavsurf1=pslavsurf;pmastsurf1=pmastsurf;mortar1=mortar;
-        clearini1=clearini;plicon1=plicon;nplicon1=nplicon;
+        clearini1=clearini;plicon1=plicon;nplicon1=nplicon;ielprop1=ielprop;
+        prop1=prop;
 
 	/* calculating the heat flux */
 	
@@ -237,7 +240,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	
 	/* create threads and wait */
 	
-	ithread=NNEW(ITG,num_cpus);
+	NNEW(ithread,ITG,num_cpus);
 	for(i=0; i<num_cpus; i++)  {
 	    ithread[i]=i;
 	    pthread_create(&tid[i], NULL, (void *)resultsthermemmt, (void *)&ithread[i]);
@@ -252,7 +255,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 		fn[mt*i]+=fn1[mt*i+j*mt**nk];
 	    }
 	}
-	free(fn1);free(ithread);
+	SFREE(fn1);SFREE(ithread);
 	
         /* determine the internal concentrated heat flux */
 
@@ -261,7 +264,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	    qa[1]+=qa1[1+j*3];
 	}
 	
-	free(qa1);
+	SFREE(qa1);
 	
 	for(j=1;j<num_cpus;j++){
 	    nal[0]+=nal[j];
@@ -272,12 +275,12 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 		qa[1]/=nal[0];
 	    }
 	}
-	free(nal);
+	SFREE(nal);
     }
 
     /* calculating the thermal internal forces */
 
-    FORTRAN(resultsforcem,(nk,f,fn,nactdof,ipompc,nodempc,
+    FORTRAN(resultsforc_em,(nk,f,fn,nactdof,ipompc,nodempc,
 	    coefmpc,labmpc,nmpc,mi,fmpc,&calcul_fn,&calcul_f,inomat));
 
     /* storing results in the .dat file
@@ -292,7 +295,8 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
        ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
        nelemload,nload,&ikin,ielmat,thicke,eme,emn,rhcon,nrhcon,shcon,
        nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,islavact,
-       cdn,&mortar,islavnode,nslavnode,ntie,islavsurf,time));
+       cdn,&mortar,islavnode,nslavnode,ntie,islavsurf,time,ielprop,prop,
+       veold));
   
   return;
 
@@ -311,8 +315,8 @@ void *resultsemmt(ITG *i){
     if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
 
     FORTRAN(resultsem,(co1,kon1,ipkon1,lakon1,v1,elcon1,nelcon1,ielmat1,
-       ntmat1_,vold1,dtime1,matname1,mi1,ncmat1_,&nea,&neb,sti1,alcon1,
-       nalcon1,h01));
+       ntmat1_,vini1,dtime1,matname1,mi1,ncmat1_,&nea,&neb,sti1,alcon1,
+       nalcon1,h01,istartset1,iendset1,ialset1,iactive1,fn1));
 
     return NULL;
 }
@@ -342,7 +346,8 @@ void *resultsthermemmt(ITG *i){
            qfx1,ikmpc1,ilmpc1,istep1,iinc1,springarea1,
 	   &calcul_fn1,&calcul_qa1,&nal[indexnal],&nea,&neb,ithermal1,
            nelemload1,nload1,nmethod1,reltime1,sideload1,xload1,xloadold1,
-	   pslavsurf1,pmastsurf1,&mortar1,clearini1,plicon1,nplicon1));
+	   pslavsurf1,pmastsurf1,&mortar1,clearini1,plicon1,nplicon1,
+	   ielprop1,prop1));
 
     return NULL;
 }

@@ -220,7 +220,7 @@ c         endif
       else
          write(*,*) '*ERROR in distattach: case with ',nterms
          write(*,*) '       terms is not covered'
-         stop
+         call exit(201)
       endif
 !
 !     calculating the position in the face

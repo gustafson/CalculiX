@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -50,7 +50,7 @@
          write(*,*)'*ERROR in selcycsymmods:'
          write(*,*)'       *SELECT CYCLIC SYMMETRY MODES'
          write(*,*)'       should be placed within a step definition'
-         stop
+         call exit(201)
       endif
 !
 !     check whether in case of cyclic symmetry the frequency procedure
@@ -60,7 +60,7 @@
          write(*,*) '*ERROR in selcycsymmods: the only valid procedure'
          write(*,*) '       for cyclic symmetry calculations'
          write(*,*) '       with nodal diameters is *FREQUENCY'
-         stop
+         call exit(201)
       endif
 !
       ns(2)=0
@@ -95,7 +95,7 @@
       if(ns(3).lt.ns(2)) then
          write(*,*) '*ERROR in selcycsymmods: maximum nodal'
          write(*,*) '       diameter should not exceed minimal one'
-         stop
+         call exit(201)
       endif
 !
 !     loop over all cyclic symmetry parts
@@ -152,7 +152,7 @@ c                           write(*,*) 'removing MPC',node,k
                      write(*,*) '        nodal diameters 0, 1, and'
                      write(*,*) '        those above must be each in'
                      write(*,*) '        separate steps.'
-                     stop
+                     call exit(201)
                   endif
                endif
 !     
@@ -213,7 +213,7 @@ c                           write(*,*) 'removing MPC',node,k
                            write(*,*) '       node',node,
      &                          ' on cyclic symmetry'
                            write(*,*) '       axis is used in other MPC'
-                           stop
+                           call exit(201)
                         endif
                      endif
                      nmpc=nmpc+1
@@ -236,7 +236,7 @@ c                           write(*,*) 'removing MPC',node,k
                      if(mpcfree.eq.0) then
                         write(*,*) '*ERROR in selcycsymmods:'
                         write(*,*) '       increase nmpc_'
-                        stop
+                        call exit(201)
                      endif
                      nodempc(1,mpcfree)=node
                      nodempc(2,mpcfree)=i2(k)
@@ -246,7 +246,7 @@ c                           write(*,*) 'removing MPC',node,k
                      if(mpcfree.eq.0) then
                         write(*,*) '*ERROR in selcycsymmods:'
                         write(*,*) '       increase nmpc_'
-                        stop
+                        call exit(201)
                      endif
                      nodempc(3,mpcfreeold)=0
                   enddo
@@ -288,7 +288,7 @@ c                           write(*,*) 'removing MPC',node,k
                         write(*,*) '       node',node,
      &                       ' on cyclic symmetry'
                         write(*,*) '       axis is used in other MPC'
-                        stop
+                        call exit(201)
                      endif
                   endif
                   nmpc=nmpc+1
@@ -311,7 +311,7 @@ c                           write(*,*) 'removing MPC',node,k
                   if(mpcfree.eq.0) then
                      write(*,*) '*ERROR in selcycsymmods:'
                      write(*,*) '       increase nmpc_'
-                     stop
+                     call exit(201)
                   endif
                   nodempc(1,mpcfree)=node
                   nodempc(2,mpcfree)=i4
@@ -320,7 +320,7 @@ c                           write(*,*) 'removing MPC',node,k
                   if(mpcfree.eq.0) then
                      write(*,*) '*ERROR in selcycsymmods:'
                      write(*,*) '       increase nmpc_'
-                     stop
+                     call exit(201)
                   endif
                   nodempc(1,mpcfree)=node
                   nodempc(2,mpcfree)=i5
@@ -330,7 +330,7 @@ c                           write(*,*) 'removing MPC',node,k
                   if(mpcfree.eq.0) then
                      write(*,*) '*ERROR in selcycsymmods:'
                      write(*,*) '       increase nmpc_'
-                     stop
+                     call exit(201)
                   endif
                   nodempc(3,mpcfreeold)=0
                else
@@ -343,7 +343,7 @@ c                           write(*,*) 'removing MPC',node,k
                            write(*,*) '       node',node,
      &                          ' on cyclic symmetry'
                            write(*,*) '       axis is used in other MPC'
-                           stop
+                           call exit(201)
                         endif
                      endif
                      nmpc=nmpc+1
@@ -367,7 +367,7 @@ c                           write(*,*) 'removing MPC',node,k
                      if(mpcfree.eq.0) then
                         write(*,*) '*ERROR in selcycsymmods:'
                         write(*,*) '       increase nmpc_'
-                        stop
+                        call exit(201)
                      endif
                      nodempc(3,mpcfreeold)=0
                   enddo

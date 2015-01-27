@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,14 +39,14 @@
          write(*,*) '*ERROR reading *MAGNETIC PERMEABILITY:'
          write(*,*) '       *MAGNETIC PERMEABILITY should be placed'
          write(*,*) '        before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       if(nmat.eq.0) then
          write(*,*) '*ERROR reading *MAGNETIC PERMEABILITY:'
          write(*,*) '       *MAGNETIC PERMEABILITY should be preceded'
          write(*,*) '       by a *MATERIAL card'
-         stop
+         call exit(201)
       endif
 !
       ityp=2
@@ -79,7 +79,7 @@
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *MAGNETIC PERMEABILITY:'
                write(*,*) '       increase ntmat_'
-               stop
+               call exit(201)
             endif
 !
             read(textpart(1)(1:20),'(f20.0)',iostat=istat)
@@ -104,7 +104,7 @@
       else
          write(*,*) '*ERROR reading *MAGNETIC PERMEABILITY:'
          write(*,*) '       no anisotropy allowed'
-         stop
+         call exit(201)
       endif
 !
       if(ntmat.eq.0) nelcon(1,nmat)=0

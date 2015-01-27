@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2014 Guido Dhondt
+!     Copyright (C) 1998-2015 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     
       subroutine rimseal(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,physcon,dvi,numf,set,mi)
+     &     nodef,idirf,df,cp,R,physcon,dvi,numf,set,mi,iaxial)
 !     
 !     rimseal element
 !
@@ -31,7 +31,7 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,mi(*),
-     &     inv,ipkon(*),kon(*),kgas,nelem_in,nelem_out,
+     &     inv,ipkon(*),kon(*),kgas,nelem_in,nelem_out,iaxial,
      &     element0,node10,node20,node11,node21,node12,node22,node_cav,
      &     node_main,node_main2,node_in1,node_out1,node_in2,node_out2
 !

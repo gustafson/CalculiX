@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -60,7 +60,7 @@
          write(*,*) '       *CONTACT FILE'
          write(*,*) '       should only be used within a *STEP' 
          write(*,*) '       definition'
-         stop
+         call exit(201)
       endif
 !
       if(ifile_output.eq.1) then
@@ -234,14 +234,14 @@
               write(*,*) '*ERROR reading *NODE FILE or *EL FILE: time'
               write(*,*) '       points definition',
      &               timepointsname,' is unknown'
-              stop
+              call exit(201)
            endif
            if(idrct.eq.1) then
               write(*,*) 
      &'*ERROR reading *NODE FILE or *EL FILE: the DIRECT option'
               write(*,*) '       collides with a TIME POINTS '
               write(*,*) '       specification'
-              stop
+              call exit(201)
            endif
            jout(1)=1
            jout(2)=1
@@ -285,7 +285,7 @@
             noset(ipos:ipos)=' '
             write(*,*) '*ERROR in transforms: node set ',noset
             write(*,*) '  has not yet been defined.'
-            stop
+            call exit(201)
          endif
       endif
 !

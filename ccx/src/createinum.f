@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine createinum(ipkon,inum,kon,lakon,nk,ne,cflag,nelemload,
-     &  nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi)
+     &  nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat)
 !
 !     determines inum in case no extrapolation is requested in the
 !     input deck (e.g. only nodal variables are requested)
@@ -30,8 +30,8 @@
       character*8 lakon(*),lakonl
 !
       integer ipkon(*),inum(*),kon(*),ne,indexe,nope,nfield,mi(*),
-     &  nk,i,j,nelemload(2,*),nload,node,nboun,
-     &  nodeboun(*),ndirboun(*),ithermal(2)
+     &  nk,i,j,nelemload(2,*),nload,node,nboun,nlayer,nopeexp,
+     &  nodeboun(*),ndirboun(*),ithermal(2),ielmat(mi(3),*)
 !
       real*8 yn,co(3,*),vold(0:mi(2),*)
 !
@@ -46,6 +46,23 @@
          if(ipkon(i).lt.0) cycle
          indexe=ipkon(i)
          lakonl=lakon(i)
+!
+         if(lakonl(7:8).eq.'LC') then
+            nlayer=0
+            do j=1,mi(3)
+               if(ielmat(j,i).gt.0) then
+                  nlayer=nlayer+1
+               else
+                  exit
+               endif
+            enddo
+!
+            if(lakonl(4:4).eq.'2') then
+               nopeexp=28
+            elseif(lakonl(4:5).eq.'15') then
+               nopeexp=21
+            endif
+         endif
 !
          if(lakonl(1:1).eq.'F') then
             cycle
@@ -76,16 +93,22 @@
 !
 !        counting the number of elements a node belongs to
 !
-         do j=1,nope
-            inum(kon(indexe+j))=inum(kon(indexe+j))+1
-         enddo
-c     Bernhardi start
-c        incompatible modes elements
-         if(lakonl(1:5).eq.'C3D8I') then
-            do j=1,3
-               inum(kon(indexe+nope+j))=inum(kon(indexe+nope+j))+1
+         if(lakonl(7:8).ne.'LC') then
+            do j=1,nope
+               inum(kon(indexe+j))=inum(kon(indexe+j))+1
+            enddo
+         else
+            do j=1,nope*nlayer
+               inum(kon(indexe+nopeexp+j))=inum(kon(indexe+nopeexp+j))+1
             enddo
          endif
+c     Bernhardi start
+c        incompatible modes elements
+c         if(lakonl(1:5).eq.'C3D8I') then
+c            do j=1,3
+c               inum(kon(indexe+nope+j))=inum(kon(indexe+nope+j))+1
+c            enddo
+c         endif
 c     Bernhardi end
 !
       enddo

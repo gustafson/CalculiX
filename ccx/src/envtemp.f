@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2014 Guido Dhondt
+!     Copyright (C) 1998-2015 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &     nflow,ndirboun,nactdog,nodeboun,nacteq,nboun,
      &     ielprop,prop,nteq,v,network,physcon,shcon,ntmat_,
      &     co,vold,set,nshcon,rhcon,nrhcon,mi,
-     &     nmpc,nodempc,ipompc,labmpc,ikboun,nasym)
+     &     nmpc,nodempc,ipompc,labmpc,ikboun,nasym,iaxial)
 !     
 !     determines the number of gas temperatures and radiation
 !     temperatures
@@ -38,7 +38,7 @@
 !     
       integer itg(*),ntg,ntr,nelemload(2,*),ipkon(*),network,mi(*),
      &     kon(*),ielmat(mi(3),*),ne,i,j,k,l,index,id,node,nload,
-     &     ifaceq(9,6),ider,nasym,indexe,
+     &     ifaceq(9,6),ider,nasym,indexe,iaxial,
      &     ifacet(7,4),ifacew(8,5),kontri3(3,1),kontri4(3,2),
      &     kontri6(3,4),kontri8(3,6),kontri(4,*),ntri,
      &     konf(8),nloadtr(*),nelem,nope,nopes,ig,nflow,ieg(*),
@@ -413,7 +413,7 @@ c         nodem=kon(index+2)
 c         if((nactdog(1,nodem).eq.1).and.(nactdog(3,nodem).eq.1)) then
 c            write(*,*) '*ERROR in envtemp: both the geometry and the'
 c            write(*,*) '       mass flow is unknown in element ',ieg(i)
-c            stop
+c            call exit(201)
 c         endif
 c      enddo
 !
@@ -463,7 +463,8 @@ c      enddo
             call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &           nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &           nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,
-     &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider)
+     &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,
+     &           iaxial)
 !      
             if (.not.identity) then
                nacteq(2,nodem)=1                       ! momentum equation
@@ -546,11 +547,11 @@ c      enddo
       elseif((.not.temperaturebc).and.walltemp) then
          write(*,*) '*ERROR in envtemp: at least one temperature'
          write(*,*) '       boundary condition must be given'
-         stop
+         call exit(201)
       elseif(.not.pressurebc) then
          write(*,*) '*ERROR in envtemp: at least one pressure'
          write(*,*) '       boundary condition must be given'
-         stop
+         call exit(201)
       endif
 !
 !     check whether a specific gas constant was defined for all fluid
@@ -567,7 +568,7 @@ c      enddo
             if(r.lt.1.d-10) then
                write(*,*)'*ERROR in envtemp: specific gas',
      &              'constant is close to zero'
-               stop
+               call exit(201)
             endif
          enddo
       endif
@@ -648,7 +649,7 @@ c      enddo
      &                  nodempc(1,ipompc(i)),' as well as'
                      write(*,*) '       other nodes, e.g. node ',
      &                  node
-                     stop
+                     call exit(201)
                   enddo
                endif
                labmpc(i)(1:7)='NETWORK'
@@ -663,7 +664,7 @@ c      enddo
          write(*,*) ' number of active degrees of freedom*****'
          write(*,*) ' # of network equations = ',nteq
          write(*,*) ' # of active degrees of freedom= ',ntq
-         stop
+         call exit(201)
       endif   
       write(*,*) ''
 !  

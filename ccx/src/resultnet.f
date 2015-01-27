@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2014 Guido Dhondt
+!     Copyright (C) 1998-2015 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,7 +26,7 @@
      &     nactdog,nacteq,iin,physcon,camt,camf,camp,rhcon,nrhcon,
      &     ipobody,ibody,xbodyact,nbody,dtheta,vold,xloadold,
      &     reltime,nmethod,set,mi,ineighe,cama,vamt,vamf,vamp,vama,
-     &     nmpc,nodempc,ipompc,coefmpc,labmpc)
+     &     nmpc,nodempc,ipompc,coefmpc,labmpc,iaxial)
 !     
       implicit none
 !     
@@ -36,7 +36,7 @@
       character*81 set(*)
 !     
       integer mi(*),itg(*),ieg(*),ntg,nteq,nflow,nload,
-     &     ielmat(mi(3),*),iflag,ider,
+     &     ielmat(mi(3),*),iflag,ider,iaxial,
      &     nelemload(2,*),nope,nopes,mint2d,i,j,k,l,nrhcon(*),
      &     node,imat,ntmat_,id,ifaceq(9,6),ifacet(7,4),numf,
      &     ifacew(8,5),node1,node2,nshcon(*),nelem,ig,index,konl(20),
@@ -282,7 +282,7 @@ c                  write(30,*) 'resultgas eta ',eta
      &                 nactdog,identity,
      &                 ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
      &                 cp,r,rho,physcon,g,co,dvi,numf,vold,set,shcon,
-     &                 nshcon,rhcon,nrhcon,ntmat_,mi,ider)
+     &                 nshcon,rhcon,nrhcon,ntmat_,mi,ider,iaxial)
                   kflag=2
 !     
                endif
@@ -300,7 +300,7 @@ c      enddo
       do i=1,ntg
          node=itg(i)
          if(v(2,node).lt.0) then
-            write(*,*) 'wrong pressure node ',node
+            write(*,*) 'wrong pressure; node ',node
             iin=0
             return
          endif
@@ -739,7 +739,7 @@ c                     bc(ieq)=(ts2+xnum2/xdenom2-ts1-xnum1/xdenom1)
      &           nactdog,identity,
      &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
      &           cp,r,rho,physcon,g,co,dvi,numf,vold,set,shcon,
-     &           nshcon,rhcon,nrhcon,ntmat_,mi,ider)
+     &           nshcon,rhcon,nrhcon,ntmat_,mi,ider,iaxial)
             bc(ieq)=-f
          endif
       enddo

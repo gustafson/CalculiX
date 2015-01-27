@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,9 +21,7 @@
 !
 !     closes files at the end of the calculation
 !
-      logical frd,rout
-!
-      character*5 p9999
+      logical rout
 !
 !     closing the .inp file
 !
@@ -36,6 +34,10 @@
 !     closing the .sta file
 !
       close(8)
+!
+!     closing the .cvg file
+!
+      close(11)
 !
 !     closing the .rout file
 !

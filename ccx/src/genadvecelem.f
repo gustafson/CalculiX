@@ -96,7 +96,8 @@ cccc
 !     network nodes as sink nodes
 !
       do i=1,nload
-         if(sideload(i)(3:4).eq.'FC') then
+         if((sideload(i)(1:1).eq.'F').and.
+     &      (sideload(i)(3:4).eq.'FC')) then
             node=nelemload(2,i)
             call nident(inodesd,node,nnodesd,id)
 ccccc

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -40,16 +40,16 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
       nener,nstate,nentries=15,ifreeinp,ikey,lincludefn,nslavs,
       nbody,ncharmax=1000000,*ipoinpc=NULL,ichangefriction=0,nkon,
       ifile,mcs,initialtemperature=0,nprop,mortar,ifacecount,
-      nintpoint; 
+      nintpoint,infree[4],iheading=0; 
 
   /* initialization */
 
   /* nentries is the number of different keyword cards for which
      the input deck order is important, cf keystart.f */
 
-  inpc=NNEW(char,ncharmax);
-  ipoinpc=NNEW(ITG,nlinemax+1);
-  inp=NNEW(ITG,3*nlinemax);
+  NNEW(inpc,char,ncharmax);
+  NNEW(ipoinpc,ITG,nlinemax+1);
+  NNEW(inp,ITG,3*nlinemax);
   *nline=0;
   for(i=0;i<2*nentries;i++){ipoinp[i]=0;}
   ifreeinp=1;
@@ -76,96 +76,77 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
 	  else{break;}
       }
 	  
+      /* check for heading lines: should not be changed */
+
+      if(iheading==1){
+	  if((buff[0]=='*')&&(buff[1]!='*')){
+	      iheading=0;
+	  }
+      }
+
       /* storing the significant characters */
       /* get rid of blanks  */
 	
       k=0;
       i=-1;
-      do{
-	  i++;
-	  if((buff[i]=='\0')||(buff[i]=='\n')||(buff[i]=='\r')||(k==1320)) break;
-	  if((buff[i]==' ')||(buff[i]=='\t')) continue;
-          buff[k]=buff[i];
-	  k++;
-      }while(1);
+      if(iheading==0){
+	  do{
+	      i++;
+	      if((buff[i]=='\0')||(buff[i]=='\n')||(buff[i]=='\r')||(k==1320)) break;
+	      if((buff[i]==' ')||(buff[i]=='\t')) continue;
+	      buff[k]=buff[i];
+	      k++;
+	  }while(1);
+      }else{
+	  do{
+	      i++;
+	      if((buff[i]=='\0')||(buff[i]=='\n')||(buff[i]=='\r')||(k==1320)) break;
+	      buff[k]=buff[i];
+	      k++;
+	  }while(1);
+      }
 	
       /* check for blank lines and comments */
 
       if(k==0) continue;
       if(strcmp1(&buff[0],"**")==0) continue;
 
-      /* changing to uppercase except include filenames */
+      /* changing to uppercase except filenames */
 
-      j=0;
-      ifile=0;
-      do{
-	  if(j>=6){
-	      if(strcmp1(&buff[j-6],"INPUT=")==0) ifile=1;
-	  }
-	  if(j>=7){
-	      if(strcmp1(&buff[j-7],"OUTPUT=")==0) ifile=1;
-	  }
-	  if(ifile==1){
-	      do{
-		  if(strcmp1(&buff[j],",")!=0){
-		      j++;
-		  }else{
-		      ifile=0;
-		      break;
-		  }
-	      }while(j<k);
-	  }else{
-	      buff[j]=toupper(buff[j]);
-	  }
-	  j++;
-      }while(j<k);
-
-
-/*      if(k<15){
-	  for(j=0;j<k;j++){
-	      buff[j]=toupper(buff[j]);
-	  }
+      if(iheading==0){
+	  j=0;
+	  ifile=0;
+	  do{
+	      if(j>=6){
+		  if(strcmp1(&buff[j-6],"INPUT=")==0) ifile=1;
+	      }
+	      if(j>=7){
+		  if(strcmp1(&buff[j-7],"OUTPUT=")==0) ifile=1;
+	      }
+	      if(j>=9){
+		  if(strcmp1(&buff[j-9],"FILENAME=")==0) ifile=1;
+	      }
+	      if(ifile==1){
+		  do{
+		      if(strcmp1(&buff[j],",")!=0){
+			  j++;
+		      }else{
+			  ifile=0;
+			  break;
+		      }
+		  }while(j<k);
+	      }else{
+		  buff[j]=toupper(buff[j]);
+	      }
+	      j++;
+	  }while(j<k);
       }
-      else{
-	  for(j=0;j<15;j++){
-	      buff[j]=toupper(buff[j]);
-	  }
-	  if(strcmp1(&buff[0],"*INCLUDE,INPUT=")!=0){
-	      if(k<23){
-		  for(j=15;j<k;j++){
-		      buff[j]=toupper(buff[j]);
-		  }
-	      }
-	      else{
-		  for(j=15;j<23;j++){
-		      buff[j]=toupper(buff[j]);
-		  }
-		  if(strcmp1(&buff[0],"*VIEWFACTOR,READ,INPUT=")!=0){
-		      if(k<25){
-			  for(j=23;j<k;j++){
-			      buff[j]=toupper(buff[j]);
-			  }
-		      }
-		      else{
-			  for(j=23;j<25;j++){
-			      buff[j]=toupper(buff[j]);
-			  }
-			  if(strcmp1(&buff[0],"*VIEWFACTOR,WRITE,OUTPUT=")!=0){
-			      for(j=25;j<k;j++){
-				  buff[j]=toupper(buff[j]);
-			      }
-			  }
-		      }
-		  }
-	      }
-          }
-	  }*/
-  
-      /* filling with blanks */
-	  
-      /*   for(j=k;j<132;j++){
-	  buff[j]=' ';
-	  }*/
+
+      /* check for a *HEADING card */
+
+      if(strcmp1(&buff[0],"*HEADING")==0){
+	  iheading=1;
+      }
 	  
       /* check for include statements */
 	  
@@ -212,6 +193,7 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
       if(strcmp1(&buff[0],"*RESTART")==0){
 	  irestartread=0;
 	  irestartstep=0;
+	  strcpy1(&buff[k]," ",1);
 	  FORTRAN(splitline,(buff,textpart,&n));
 	  for(i=0;i<n;i++){
 	      if(strcmp1(&textpart[(long long)132*i],"READ")==0){
@@ -229,7 +211,8 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
               &nprint,mi,&ntrans,&ncs,&namtot,&ncmat,&memmpc,
               &ne1d,&ne2d,&nflow,set,meminset,rmeminset,jobnamec,
 	      &irestartstep,&icntrl,ithermal,&nener,&nstate,&ntie,
-	      &nslavs,&nkon,&mcs,&nprop,&mortar,&ifacecount,&nintpoint));
+	      &nslavs,&nkon,&mcs,&nprop,&mortar,&ifacecount,&nintpoint,
+              infree));
             FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"RESTART,READ",
                               nline,&ikey));
 	  }
@@ -368,6 +351,10 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
                           nline,&ikey));
       }
+      else if(strcmp1(&buff[0],"*CONTACTDAMPING")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
+                          nline,&ikey));
+      }
       else if(strcmp1(&buff[0],"*INITIALCONDITIONS")==0){
 	  FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"INITIALCONDITIONS",
 			    nline,&ikey));
@@ -405,7 +392,9 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
            thermal or thermomechanical: needed to know
            which mpc's to apply to 2-D elements */
 
-	if(strcmp1(&buff[0],"*STATIC")==0){
+	if((strcmp1(&buff[0],"*STATIC")==0)||
+	   (strcmp1(&buff[0],"*VISCO")==0)||
+	   (strcmp1(&buff[0],"*DYNAMIC")==0)){
 	    if(ithermal[1]==0){
 		if(initialtemperature==1)ithermal[1]=1;
 	    }else if(ithermal[1]==2){

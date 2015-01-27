@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -50,13 +50,13 @@
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in springs: *SPRING should be placed'
          write(*,*) '  before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       nmat=nmat+1
       if(nmat.gt.nmat_) then
          write(*,*) '*ERROR in materials: increase nmat_'
-         stop
+         call exit(201)
       endif
       matname(nmat)(1:6)='SPRING'
       do i=7,80
@@ -94,7 +94,7 @@
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR in springs: increase ntmat_'
-               stop
+               call exit(201)
             endif
             do i=1,2
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
@@ -131,7 +131,7 @@
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR in springs: increase ntmat_'
-                  stop
+                  call exit(201)
                endif
                nplicon(0,nmat)=ntmat
                plicon(0,ntmat,nmat)=temperature
@@ -143,7 +143,7 @@
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR in springs: increase ntmat_'
-                  stop
+                  call exit(201)
                endif
                nplicon(0,nmat)=ntmat
                plicon(0,ntmat,nmat)=temperature
@@ -157,7 +157,7 @@
             npmat=npmat+1
             if(npmat.gt.npmat_) then
                write(*,*) '*ERROR in springs: increase npmat_'
-               stop
+               call exit(201)
             endif
             nplicon(ntmat,nmat)=npmat
          enddo
@@ -165,7 +165,7 @@
 !
       if(ntmat.eq.0) then
          write(*,*) '*ERROR in springs: *SPRING card without data'
-         stop
+         call exit(201)
       endif
       do i=1,nset
          if(set(i).eq.elset) exit
@@ -176,7 +176,7 @@
          write(*,*) '       has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
      &"*SPRING%")
-         stop
+         call exit(201)
       endif
 !
 !     assigning the elements of the set the appropriate material

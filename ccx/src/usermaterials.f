@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -41,13 +41,13 @@
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*)'*ERROR in usermaterials: *USER MATERIAL should be'
          write(*,*) '  placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       if(nmat.eq.0) then
          write(*,*) '*ERROR in usermaterials: *USER MATERIAL should be'
          write(*,*) '  preceded by a *MATERIAL card'
-         stop
+         call exit(201)
       endif
 !
       imech=1
@@ -78,7 +78,7 @@ c            write(*,*) '*ERROR in usermaterials: number of'
 c            write(*,*) '       mechanical constants cannot exceed 21'
 c            write(*,*) '       change the source code or'
 c            write(*,*) '       contact the author'
-c            stop
+c            call exit(201)
 c         endif
          nelcon(1,nmat)=-100-nconstants
 !
@@ -94,7 +94,7 @@ c         endif
                   if(ntmat.gt.ntmat_) then
                      write(*,*) 
      &                    '*ERROR in usermaterials: increase ntmat_'
-                     stop
+                     call exit(201)
                   endif
                else
                   call getnewline(inpc,textpart,istat,n,key,iline,ipol,
@@ -105,7 +105,7 @@ c         endif
                      write(*,*) '  is not complete. '
                      call inputerror(inpc,ipoinpc,iline,
      &"*USER MATERIAL%")
-                     stop
+                     call exit(201)
                   endif
                endif
                imax=8
@@ -137,7 +137,7 @@ c         endif
             write(*,*) '       thermal constants cannot exceed 6'
             write(*,*) '       change the source code or'
             write(*,*) '       contact the author'
-            stop
+            call exit(201)
          endif
          ncocon(1,nmat)=-100-nconstants
 !
@@ -150,7 +150,7 @@ c         endif
             if(ntmat.gt.ntmat_) then
                write(*,*) 
      &              '*ERROR in usermaterials: increase ntmat_'
-               stop
+               call exit(201)
             endif
 !     
             do i=1,nconstants+1

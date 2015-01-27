@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -46,9 +46,9 @@
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) 
-     &       '*ERROR reading *BEAM SECTION: *SOLID SECTION should'
+     &       '*ERROR reading *BEAM SECTION: *BEAM SECTION should'
          write(*,*) '  be placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       offset1=0.d0
@@ -76,7 +76,7 @@
             else
                write(*,*) 
      &           '*ERROR reading *BEAM SECTION: unknown section'
-               stop
+               call exit(201)
             endif
          elseif(textpart(i)(1:8).eq.'OFFSET1=') then
             read(textpart(i)(9:28),'(f20.0)',iostat=istat) offset1
@@ -100,7 +100,7 @@
 !
       if(section.eq.'    ') then
          write(*,*) '*ERROR reading *BEAM SECTION: no section defined'
-         stop
+         call exit(201)
       endif
 !
 !     check for the existence of the set,the material and orientation
@@ -113,7 +113,7 @@
          write(*,*) '  '
          call inputerror(inpc,ipoinpc,iline,
      &"*BEAM SECTION%")
-         stop
+         call exit(201)
       endif
       imaterial=i
 !
@@ -130,7 +130,7 @@
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
      &"*BEAM SECTION%")
-            stop
+            call exit(201)
          endif
          iorientation=i
       endif
@@ -145,7 +145,7 @@
          write(*,*) '  has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
      &"*BEAM SECTION%")
-         stop
+         call exit(201)
       endif
 !
 !     assigning the elements of the set the appropriate material,
@@ -159,7 +159,7 @@
                write(*,*) '       only be used for beam elements.'
                write(*,*) '       Element ',ialset(j),' is not a beam el
      &ement.'
-               stop
+               call exit(201)
             endif
             ielmat(1,ialset(j))=imaterial
             ielorien(1,ialset(j))=iorientation
@@ -181,7 +181,7 @@
                   write(*,*) '       only be used for beam elements.'
                   write(*,*) '       Element ',k,' is not a beam element
      &.'
-                  stop
+                  call exit(201)
                endif
                ielmat(1,k)=imaterial
                ielorien(1,k)=iorientation
@@ -262,7 +262,7 @@
          write(*,*) 
      &       '*ERROR reading *BEAM SECTION: normal in direction 1'
          write(*,*) '       has zero size'
-         stop
+         call exit(201)
       endif
       do j=1,3
          p(j)=p(j)/dd

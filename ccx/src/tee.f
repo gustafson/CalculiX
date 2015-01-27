@@ -17,7 +17,7 @@
 !     
       subroutine tee(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider)
+     &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,iaxial)
 !
 !     A tee split element(zeta calculation according to Idel'chik)
 !     Written by Yavor Dobrev
@@ -70,7 +70,7 @@
 !     0 if a residual is to be calculated, 1 for derivatives
      &ider,
      &chan_num,
-     &icase
+     &icase,iaxial
 !
       real*8 
 !     Array with the properties of all elements
@@ -218,12 +218,12 @@
 !        Inlet conditions
          pt1=v(2,node1)
          Tt1=v(0,node1)+physcon(1)
-         xflow1=v(1,nodem1)
+         xflow1=v(1,nodem1)*iaxial
          A1 = prop(index+4)
 !
 !        Outlet conditions
          Tt2=v(0,node2)
-         xflow2=v(1,nodem)
+         xflow2=v(1,nodem)*iaxial
          pt2=v(2,node2)
          if(nelem.eq.int(prop(index+2))) then
             A2 = prop(index+5)
@@ -283,12 +283,12 @@
 !        Inlet conditions
          pt1=v(2,node1)
          Tt1=v(0,node1)+physcon(1)
-         xflow1=v(1,nodem1)
+         xflow1=v(1,nodem1)*iaxial
          A1 = prop(index+4)
 !
 !        Outlet conditions
          Tt2=v(0,node2)
-         xflow2=v(1,nodem)
+         xflow2=v(1,nodem)*iaxial
          pt2=v(2,node2)
          if(nelem.eq.int(prop(index+2))) then
             A2 = prop(index+5)
@@ -366,6 +366,10 @@
 !     
          endif
       endif
+!     
+      xflow=xflow/iaxial
+      df(3)=df(3)*iaxial
+      df(4)=df(4)*iaxial
 !     
       return
       end

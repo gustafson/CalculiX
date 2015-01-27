@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -56,12 +56,12 @@
       return
 !
  161  write(*,*) '*ERROR in writeinput: could not open file input.inpc'
-      stop
+      call exit(201)
 !
  162  write(*,*) 
      &    '*ERROR in writeinput: could not open file input.ipoinp'
-      stop
+      call exit(201)
 !
  163  write(*,*) '*ERROR in writeinput: could not open file input.inp'
-      stop
+      call exit(201)
       end

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -48,14 +48,14 @@
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR reading *PLASTIC: *PLASTIC should be placed'
          write(*,*) '  before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       if(nmat.eq.0) then
          write(*,*) 
      &      '*ERROR reading *PLASTIC: *PLASTIC should be preceded'
          write(*,*) '  by a *MATERIAL card'
-         stop
+         call exit(201)
       endif
 !
       if((nelcon(1,nmat).ne.2).and.(nelcon(1,nmat).ne.9)) then
@@ -63,14 +63,14 @@
      &        '*ERROR reading *PLASTIC: *PLASTIC should be preceded'
          write(*,*) '  by an *ELASTIC,TYPE=ISO card or'
          write(*,*) '  by an *ELASTIC,TYPE=ORTHO card'
-         stop
+         call exit(201)
       endif
 !
       iperturb(1)=3
-      iperturb(2)=1
-      write(*,*) '*INFO reading *PLASTIC: nonlinear geometric'
-      write(*,*) '      effects are turned on'
-      write(*,*)
+c      iperturb(2)=1
+c      write(*,*) '*INFO reading *PLASTIC: nonlinear geometric'
+c      write(*,*) '      effects are turned on'
+c      write(*,*)
 !
       if(nelcon(1,nmat).eq.2) then
          iplas=1
@@ -93,7 +93,7 @@
                   write(*,*) '*ERROR reading *PLASTIC: user defined '
                   write(*,*) '       hardening is not allowed for '
                   write(*,*) '       elastically anisotropic materials'
-                  stop
+                  call exit(201)
                endif
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &              ipoinp,inp,ipoinpc)
@@ -129,7 +129,7 @@
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *PLASTIC: increase ntmat_'
-                  stop
+                  call exit(201)
                endif
                nplicon(0,nmat)=ntmat
                plicon(0,ntmat,nmat)=temperature
@@ -141,7 +141,7 @@
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *PLASTIC: increase ntmat_'
-                  stop
+                  call exit(201)
                endif
                nplicon(0,nmat)=ntmat
                plicon(0,ntmat,nmat)=temperature
@@ -155,7 +155,7 @@
             npmat=npmat+1
             if(npmat.gt.npmat_) then
                write(*,*) '*ERROR reading *PLASTIC: increase npmat_'
-               stop
+               call exit(201)
             endif
             nplicon(ntmat,nmat)=npmat
          enddo
@@ -178,7 +178,7 @@
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *PLASTIC: increase ntmat_'
-                  stop
+                  call exit(201)
                endif
                nplkcon(0,nmat)=ntmat
                plkcon(0,ntmat,nmat)=temperature
@@ -190,7 +190,7 @@
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *PLASTIC: increase ntmat_'
-                  stop
+                  call exit(201)
                endif
                nplkcon(0,nmat)=ntmat
                plkcon(0,ntmat,nmat)=temperature
@@ -204,7 +204,7 @@
             npmat=npmat+1
             if(npmat.gt.npmat_) then
                write(*,*) '*ERROR reading *PLASTIC: increase npmat_'
-               stop
+               call exit(201)
             endif
             nplkcon(ntmat,nmat)=npmat
          enddo
@@ -213,7 +213,7 @@
       if(ntmat.eq.0) then
          write(*,*) 
      &       '*ERROR reading *PLASTIC: *PLASTIC card without data'
-         stop
+         call exit(201)
       endif
 !
 !     elastically anisotropic materials: recasting the input data
@@ -226,7 +226,7 @@
             write(*,*) '       elastically anisotropic material with'
             write(*,*) '       isotropic plasticity must not exceed 70'
             write(*,*) '       characters'
-            stop
+            call exit(201)
          else
             do i=80,11,-1
                matname(nmat)(i:i)=matname(nmat)(i-10:i-10)

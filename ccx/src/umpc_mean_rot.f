@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,7 +16,8 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine umpc_mean_rot(x,u,f,a,jdof,n,force,iit,idiscon)
+      subroutine umpc_mean_rot(x,u,f,a,jdof,n,force,iit,idiscon,
+     &          jnode,ikmpc,nmpc,ikboun,nboun,label)
 !
 !     updates the coefficients in a mean rotation mpc
 !
@@ -45,16 +46,21 @@
 !
       implicit none
 !
-      integer jdof(*),n,nkn,i,j,k,imax,iit,idiscon
+      character*20 label
 !
-      real*8 x(3,*),u(3,*),f,a(*),aa(3),cgx(3),cgu(3),pi(3),
-     &  xi(3),dd,al,a1,amax,c1,c2,c3,c4,c9,c10,force
+      integer jdof(*),n,nkn,i,j,k,imax,iit,idiscon,node,nodeold,
+     &  nodemax,idirold,idirmax,jnode(*),idof,id,iold(3),inew(3),
+     &  ikmpc(*),nmpc,ikboun(*),nboun,idir,nendnode
+!
+      real*8 x(3,*),u(3,*),f,a(*),aa(3),cgx(3),cgu(3),pi(3),b(3),
+     &  xi(3),dd,al,a1,amax,c1,c2,c3,c4,c9,c10,force,xcoef,
+     &  transcoef(3)
 !
       nkn=(n-1)/3
       if(3*nkn.ne.n-1) then
          write(*,*)
      &     '*ERROR in meanrotmpc: MPC has wrong number of terms'
-         stop
+         call exit(201)
       endif
 !
 !     normal along the rotation axis
@@ -68,7 +74,7 @@
       if(dd.lt.1.d-10) then
          write(*,*) 
      &     '*ERROR in meanrotmpc: rotation vector has zero length'
-         stop
+         call exit(201)
       endif
       do i=1,3
          aa(i)=aa(i)/dd
@@ -117,9 +123,30 @@ c      write(*,*) 'cgu ',(cgu(i),i=1,3)
             xi(j)=u(j,3*i-2)-cgu(j)+pi(j)
          enddo
 !
+!              projection on a plane orthogonal to the rotation vector
+!
+         c1=pi(1)*aa(1)+pi(2)*aa(2)+pi(3)*aa(3)
+         do j=1,3
+            pi(j)=pi(j)-c1*aa(j)
+         enddo
+!
+         c1=xi(1)*aa(1)+xi(2)*aa(2)+xi(3)*aa(3)
+         do j=1,3
+            xi(j)=xi(j)-c1*aa(j)
+         enddo
+!
          c1=pi(1)*pi(1)+pi(2)*pi(2)+pi(3)*pi(3)
          if(c1.lt.1.d-20) then
-            write(*,*) '*WARNING in meanrotmpc: node on rotation axis'
+            if(label(8:9).ne.'BS') then
+               write(*,*) '*WARNING in meanrotmpc: node ',jnode(3*i-2)
+               write(*,*) '         is very close to the '
+               write(*,*) '         rotation axis through the'
+               write(*,*) '         center of gravity of'
+               write(*,*) '         the nodal cloud in a'
+               write(*,*) '         mean rotation MPC.'
+               write(*,*) '         This node is not taken'
+               write(*,*) '         into account in the MPC'
+            endif
             cycle
          endif
          c3=xi(1)*xi(1)+xi(2)*xi(2)+xi(3)*xi(3)
@@ -156,8 +183,16 @@ c         write(*,*) 'f ',dasin(al)
       f=f-nkn*u(1,n)
 !
 !     assigning the degrees of freedom
+!     the first three dofs may not be in ascending order
 !
-      do i=1,nkn
+      do i=1,3
+         b(i)=a(i)
+      enddo
+      do i=1,3
+         a(i)=b(jdof(i))
+      enddo
+!
+      do i=4,nkn
          jdof(i*3-2)=1
          jdof(i*3-1)=2
          jdof(i*3)=3
@@ -168,32 +203,142 @@ c         write(*,*) 'f ',dasin(al)
 !     taken to be the dependent one
 !
       if(dabs(a(1)).lt.1.d-5) then
-         amax=0.d0
-         do i=1,3
+!
+!        special treatment of beam and shell mean rotation MPC's
+!        cf. usermpc.f
+!
+         if(label(8:9).eq.'BS') then
+            do i=1,3
+               transcoef(i)=a(n-4+i)
+            enddo
+         endif
+!
+         imax=0
+         amax=1.d-5
+!
+         if(label(8:9).eq.'BS') then
+            nendnode=n-4
+         else
+            nendnode=n-1
+         endif
+         do i=2,nendnode
             if(dabs(a(i)).gt.amax) then
-               amax=abs(a(i))
+               idir=jdof(i)
+!
+               if(label(8:9).eq.'BS') then
+                  if(a(i)*transcoef(idir).gt.0) cycle
+               endif
+!
+               node=jnode(i)
+               idof=8*(node-1)+idir
+!
+!              check whether dof is not used in another MPC
+!
+               call nident(ikmpc,idof,nmpc,id)
+               if(id.gt.0) then
+                  if(ikmpc(id).eq.idof) cycle
+               endif
+!
+!              check whether dof is not used in a SPC
+!
+               call nident(ikboun,idof,nboun,id)
+               if(id.gt.0) then
+                  if(ikboun(id).eq.idof) cycle
+               endif
+!
+               amax=dabs(a(i))
                imax=i
             endif
          enddo
-c         write(*,*) 'a(1),a(2),a(3) ',a(1),a(2),a(3)
-c         write(*,*) 'jdof ',jdof(1),jdof(2),jdof(3)
 !
-         jdof(1)=imax
-         a1=a(1)
-         a(1)=a(imax)
-         do i=2,3
-            if(i.eq.imax) then
-               jdof(i)=1
-               a(i)=a1
-               write(*,*) '*INFO: DOF in umpc_mean_rot changed'
-c     stop
-            else
-               jdof(i)=i
+         if(imax.eq.0) then
+            write(*,*) '*ERROR in umpc_mean_rot'
+            write(*,*) '       no mean rotation MPC can be'
+            write(*,*) '       generated for the MPC containing'
+            write(*,*) '       node ',jnode(1)
+            call exit(201)
+         endif
+!
+         nodeold=jnode(1)
+         idirold=jdof(1)
+         nodemax=jnode(imax)
+         idirmax=jdof(imax)
+!
+!        exchange the node information, if needed
+!
+         if(nodemax.ne.nodeold) then
+            do i=1,3
+               iold(jdof(i))=i
+            enddo
+            do i=4,n-4
+               if(jnode(i).eq.nodemax) then
+                  if(jdof(i).eq.1) then
+                     inew(1)=i
+                  elseif(jdof(i).eq.2) then
+                     inew(2)=i
+                  else
+                     inew(3)=i
+                  endif
+               endif
+            enddo
+!
+            do j=1,3
+               node=jnode(iold(j))
+               idir=jdof(iold(j))
+               xcoef=a(iold(j))
+               jnode(iold(j))=jnode(inew(j))
+               jdof(iold(j))=jdof(inew(j))
+               a(iold(j))=a(inew(j))
+               jnode(inew(j))=node
+               jdof(inew(j))=idir
+               a(inew(j))=xcoef
+            enddo
+         endif
+!
+!        exchange the direction information, if needed
+!
+         iold(1)=1
+         do i=1,3
+            if(jdof(i).eq.idirmax) then
+               inew(1)=i
+               exit
             endif
          enddo
+!
+         if(iold(1).ne.inew(1)) then
+            do j=1,1
+               idir=jdof(iold(j))
+               xcoef=a(iold(j))
+               jdof(iold(j))=jdof(inew(j))
+               a(iold(j))=a(inew(j))
+               jdof(inew(j))=idir
+               a(inew(j))=xcoef
+            enddo
+         endif
       endif
-c      write(*,*) 'a(1),a(2),a(3) ',a(1),a(2),a(3)
-c      write(*,*) 'jdof ',jdof(1),jdof(2),jdof(3)
+!
+c      if(dabs(a(1)).lt.1.d-5) then
+c         amax=0.d0
+c         do i=1,3
+c            if(dabs(a(i)).gt.amax) then
+c               amax=abs(a(i))
+c               imax=i
+c            endif
+c         enddo
+c!
+c         jdof(1)=imax
+c         a1=a(1)
+c         a(1)=a(imax)
+c         do i=2,3
+c            if(i.eq.imax) then
+c               jdof(i)=1
+c               a(i)=a1
+c               write(*,*) '*INFO: DOF in umpc_mean_rot changed'
+c            else
+c               jdof(i)=i
+c            endif
+c         enddo
+c      endif
 !
       return
       end

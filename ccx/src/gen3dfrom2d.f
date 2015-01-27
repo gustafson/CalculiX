@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -33,7 +33,7 @@
 !
       character*1 type,typeboun(*)
       character*8 lakon(*)
-      character*20 labmpc(*)
+      character*20 labmpc(*),label
 !
       integer kon(*),ipkon(*),ne,iponor(2,*),knor(*),ntrans,
      &  inotr(2,*),
@@ -49,10 +49,8 @@
      &  coefmpc(*),co(3,*),thicks(8),xnors(3,8),dc,ds,val,
      &  x,y,thickness(8),vold(0:mi(2),*)
 !
+      label='                    '
       fixed=.false.
-c      write(*,*) 'gen3dfrom2d element ',i
-!
-!              check for axial elements  
 !
       if(lakon(i)(1:2).eq.'CA') then
          axial=.true.
@@ -138,6 +136,8 @@ c         do j=1,2*nedge
             endif
          enddo
 !
+!        vertex nodes
+!
          do k=1,nedge
             kon(indexe+k)=nodes(1,k)
 !
@@ -195,7 +195,9 @@ c         do j=1,2*nedge
 !        only for S8R elements
 !
          if(lakon(i)(8:8).eq.'C') then
-            thickness=0.d0
+            do k=1,2*nedge
+               thickness(k)=0.d0
+            enddo
             indexc=indexe+2*nedge
             indexl=0
             do l=1,mi(3)
@@ -209,24 +211,31 @@ c         do j=1,2*nedge
                   enddo
                enddo
 !
+!              nodes 1 to 4 (vertex nodes face 1)
+!
                do k=1,nedge
                   kon(indexc+k)=nodec(1,k)
-!     
                   do j=1,3
                      co(j,nodec(1,k))=co(j,nodel(k))+
      &                    (thickness(k)-thicks(k)*(.5d0+offset(1,i)))
      &                    *xnors(j,k)
                   enddo
                enddo
+!
+!              nodes 5 to 8 (vertex nodes face 2)
+!
                do k=1,nedge
                   kon(indexc+nedge+k)=nodec(3,k)
                   do j=1,3
                      co(j,nodec(3,k))=co(j,nodel(k))+
      &                   (thickness(k)+thicke(l,indexe+k)
-     &                    -thicks(k)*(.5d0-offset(1,i)))
+     &                    -thicks(k)*(.5d0+offset(1,i)))
      &                   *xnors(j,k)
                   enddo
                enddo
+!
+!              nodes 9 to 12 (middle nodes face 1)
+!
                do k=nedge+1,2*nedge
                   kon(indexc+nedge+k)=nodec(1,k)
                   do j=1,3
@@ -235,27 +244,31 @@ c         do j=1,2*nedge
      &                     *xnors(j,k)
                   enddo
                enddo
+!
+!              nodes 13 to 16 (middle nodes face 2)
+!
                do k=nedge+1,2*nedge
                   kon(indexc+2*nedge+k)=
      &              nodec(3,k)
                   do j=1,3
                      co(j,nodec(3,k))=co(j,nodel(k))+
      &                   (thickness(k)+thicke(l,indexe+k)
-     &                    -thicks(k)*(.5d0-offset(1,i)))
+     &                    -thicks(k)*(.5d0+offset(1,i)))
      &                   *xnors(j,k)
                   enddo
-c                 write(*,*) nodec(3,k),(co(j,nodec(3,k)),j=1,3)
                enddo
+!
+!              nodes 17 to 20 (middle nodes in between face 1 and 2)
+!
                do k=1,nedge
                   kon(indexc+4*nedge+k)=
      &                  nodec(2,k)
                   do j=1,3
                      co(j,nodec(2,k))=co(j,nodel(k))+
      &                    (thickness(k)+thicke(l,indexe+k)/2.d0
-     &                    -thicks(k)*(.5d0-offset(1,i)))
+     &                    -thicks(k)*(.5d0+offset(1,i)))
      &                    *xnors(j,k)
                   enddo
-c                 write(*,*) nodec(2,k),(co(j,nodec(2,k)),j=1,3)
                enddo
 !
                do k=1,2*nedge
@@ -337,7 +350,7 @@ c                 write(*,*) nodec(2,k),(co(j,nodec(2,k)),j=1,3)
      &              nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &              ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,
      &              labmpc,type,typeboun,nmethod,iperturb,
-     &              fixed,vold,idummy,mi)
+     &              fixed,vold,idummy,mi,label)
             endif
 !     
 !           specifying that the side planes do the same
@@ -378,7 +391,7 @@ c                 write(*,*) nodec(2,k),(co(j,nodec(2,k)),j=1,3)
                            if(nmpc.gt.nmpc_) then
                               write(*,*) 
      &                          '*ERROR in gen3dfrom2d: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                            labmpc(nmpc)='                    '
                            ipompc(nmpc)=mpcfree
@@ -395,7 +408,7 @@ c                 write(*,*) nodec(2,k),(co(j,nodec(2,k)),j=1,3)
                            if(mpcfree.eq.0) then
                               write(*,*) 
      &                          '*ERROR in gen3dfrom2d: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                            nodempc(1,mpcfree)=nodes(3,j)
                            nodempc(2,mpcfree)=3
@@ -404,7 +417,7 @@ c                 write(*,*) nodec(2,k),(co(j,nodec(2,k)),j=1,3)
                            if(mpcfreenew.eq.0) then
                               write(*,*) 
      &                          '*ERROR in gen3dfrom2d: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                            nodempc(3,mpcfree)=0
                            mpcfree=mpcfreenew
@@ -420,7 +433,7 @@ c                 write(*,*) nodec(2,k),(co(j,nodec(2,k)),j=1,3)
                      if(nmpc.gt.nmpc_) then
                         write(*,*) 
      &                       '*ERROR in gen3dfrom2d: increase nmpc_'
-                        stop
+                        call exit(201)
                      endif
                      labmpc(nmpc)='                    '
                      ipompc(nmpc)=mpcfree
@@ -437,7 +450,7 @@ c                 write(*,*) nodec(2,k),(co(j,nodec(2,k)),j=1,3)
                      if(mpcfree.eq.0) then
                         write(*,*) 
      &                       '*ERROR in gen3dfrom2d: increase nmpc_'
-                        stop
+                        call exit(201)
                      endif
                      nodempc(1,mpcfree)=nodes(2,j)
                      if((lakon(i)(2:2).eq.'A').and.(idir.eq.3))
@@ -465,7 +478,7 @@ c                 write(*,*) nodec(2,k),(co(j,nodec(2,k)),j=1,3)
                      if(mpcfreenew.eq.0) then
                         write(*,*) 
      &                       '*ERROR in gen3dfrom2d: increase nmpc_'
-                        stop
+                        call exit(201)
                      endif
                      nodempc(3,mpcfree)=0
                      mpcfree=mpcfreenew

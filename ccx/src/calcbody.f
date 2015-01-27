@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,8 +16,8 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine calcbody(ne,body,ipobody,ibody,xbody,coel,vel,
-     &  lakon)
+      subroutine calcbody(nef,body,ipobody,ibody,xbody,coel,vel,
+     &  lakon,nactdohinv)
 !
 !     calculation of the actual body force in each element. The body
 !     force is the sum of gravity and centrifugal/Coriolis forces
@@ -26,19 +26,18 @@
 !
       character*8 lakon(*)
 !
-      integer i,j,ne,index,ipobody(2,*),ibody(3,*)
+      integer i,j,nef,index,ipobody(2,*),ibody(3,*),nactdohinv(*)
 !
-      real*8 om,body(3,*),p1(3),p2(3),xbody(7,*),omcor,q(3),coel(3,*),
-     &  vel(0:5,*),const,corio(3)
+      real*8 om,body(0:3,*),p1(3),p2(3),xbody(7,*),omcor,q(3),coel(3,*),
+     &  vel(nef,0:5),const,corio(3)
 !
-      do i=1,ne
-         if(lakon(i)(1:1).ne.'F') cycle
+      do i=1,nef
          om=0.d0
          do j=1,3
             body(j,i)=0.d0
          enddo
 !
-         index=i
+         index=nactdohinv(i)
 !
          do
             j=ipobody(1,index)
@@ -75,9 +74,9 @@
 !     
 !     Coriolis forces
 !     
-            corio(1)=vel(2,i)*p2(3)-vel(3,i)*p2(2)
-            corio(2)=vel(3,i)*p2(1)-vel(1,i)*p2(3)
-            corio(3)=vel(1,i)*p2(2)-vel(2,i)*p2(1)
+            corio(1)=vel(i,2)*p2(3)-vel(i,3)*p2(2)
+            corio(2)=vel(i,3)*p2(1)-vel(i,1)*p2(3)
+            corio(3)=vel(i,1)*p2(2)-vel(i,2)*p2(1)
 !     
 !     inclusion of the centrifugal force into the body force
 !     

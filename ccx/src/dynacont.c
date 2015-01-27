@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -92,7 +92,8 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
               double *springarea,ITG *izdof,ITG *nzdof,double *fn,
 	      ITG *imastnode,ITG *nmastnode,double *xmastnor,
               double *xstateini, ITG *nslavs,
-              ITG *cyclicsymmetry,double *xnoels,ITG *ielas){
+              ITG *cyclicsymmetry,double *xnoels,ITG *ielas,ITG *ielprop,
+              double *prop){
     
   char lakonl[9]="        \0";
 
@@ -128,15 +129,15 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       kmin=0;kmax=3;
   }
 
-  xforcdiff=NNEW(double,*nforc);
-  xloaddiff=NNEW(double,2**nload);
-  xbodydiff=NNEW(double,7**nbody);
+  NNEW(xforcdiff,double,*nforc);
+  NNEW(xloaddiff,double,2**nload);
+  NNEW(xbodydiff,double,7**nbody);
 
   /* copying the rotation axis and/or acceleration vector */
 
   for(k=0;k<7**nbody;k++){xbodydiff[k]=xbody[k];}
-  xboundiff=NNEW(double,*nboun);
-  if(*ithermal==1) t1diff=NNEW(double,*nk);
+  NNEW(xboundiff,double,*nboun);
+  if(*ithermal==1) NNEW(t1diff,double,*nk);
 
   /* load the convergence constants from ctrl*/
 
@@ -164,7 +165,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	  imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
           xnoels,&mortar,pslavsurf,pmastsurf,clearini,theta);
 
-  ikactcont1=NNEW(ITG,nactcont1_);
+  NNEW(ikactcont1,ITG,nactcont1_);
 
   for(i=*ne0;i<*ne;i++){
       indexe=ipkon[i];
@@ -238,13 +239,13 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
   /* removing entries in bcont */
 
   for(j=0;j<nactcont1;j++){bcont[ikactcont1[j]]=0.;}
-  free(ikactcont1);
+  SFREE(ikactcont1);
   *nactcont=0;
   
   /* major loop to calculate the correction of bj due to contact */
 
-  ilactcont=NNEW(ITG,*nactcont_);
-  dbcont=NNEW(double,*nactcont_**nev);
+  NNEW(ilactcont,ITG,*nactcont_);
+  NNEW(dbcont,double,*nactcont_**nev);
 
   icutb=0;
 
@@ -333,7 +334,8 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		   t0,t1diff,ithermal,iprestr,vold,iperturb,iexpl,plicon,
 		   nplicon,plkcon,nplkcon,
 		   npmat_,ttime,time,istep,iinc,dtime,physcon,ibody,
-		   xbodyold,reltime,veold,matname,mi,ikactmech,nactmech));
+		   xbodyold,reltime,veold,matname,mi,ikactmech,nactmech,
+                   ielprop,prop));
       }else{
 	  FORTRAN(rhs,(co,nk,kon,ipkon,lakon,ne,
 		   ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
@@ -344,7 +346,8 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		   t0,t1act,ithermal,iprestr,vold,iperturb,iexpl,plicon,
 		   nplicon,plkcon,nplkcon,
 		   npmat_,ttime,time,istep,iinc,dtime,physcon,ibody,
-		   xbodyold,reltime,veold,matname,mi,ikactmech,nactmech));
+		   xbodyold,reltime,veold,matname,mi,ikactmech,nactmech,
+                   ielprop,prop));
       }
       
       /* correction for nonzero SPC's */
@@ -410,8 +413,8 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
     
     /* calculating the base response */
 
-    bjbas=NNEW(double,*nev); /* basis response modal decomposition */
-    bjbasp=NNEW(double,*nev);
+    NNEW(bjbas,double,*nev); /* basis response modal decomposition */
+    NNEW(bjbasp,double,*nev);
     for(l=0;l<*nev;l++){
       zetaj=zeta[l];
       dj=d[l];
@@ -509,8 +512,8 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
     aai=-(*time-*dtime)/(*dtime);
     bbi=1./(*dtime);
     
-    bjinc=NNEW(double,*nev); /* incremental response modal decomposition */
-    bjincp=NNEW(double,*nev);
+    NNEW(bjinc,double,*nev); /* incremental response modal decomposition */
+    NNEW(bjincp,double,*nev);
     for(l=0;l<*nev;l++){
       zetaj=zeta[l];
       dj=d[l];
@@ -595,12 +598,12 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       }
     }
 
-    aaa=NNEW(double,*nev);
-    bbb=NNEW(double,*nev**nev);
-    lhs=NNEW(double,*nev**nev);
-    ipiv=NNEW(ITG,*nev);
-    dbj=NNEW(double,*nev); /* change in bj */
-    dbjp=NNEW(double,*nev); /* change in djp */
+    NNEW(aaa,double,*nev);
+    NNEW(bbb,double,*nev**nev);
+    NNEW(lhs,double,*nev**nev);
+    NNEW(ipiv,ITG,*nev);
+    NNEW(dbj,double,*nev); /* change in bj */
+    NNEW(dbjp,double,*nev); /* change in djp */
     
     /* starting solution for the iteration loop = base solution */
 
@@ -914,12 +917,12 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       }
   }
   
-  free(aaa);free(bbb);free(bjbas);free(bjinc);free(dbj);free(lhs);
-  free(ipiv);free(bjbasp);free(bjincp);free(dbjp);free(ilactcont);
-  free(dbcont);
-  free(xforcdiff);free(xloaddiff);free(xboundiff),free(xbodydiff);
+  SFREE(aaa);SFREE(bbb);SFREE(bjbas);SFREE(bjinc);SFREE(dbj);SFREE(lhs);
+  SFREE(ipiv);SFREE(bjbasp);SFREE(bjincp);SFREE(dbjp);SFREE(ilactcont);
+  SFREE(dbcont);
+  SFREE(xforcdiff);SFREE(xloaddiff);SFREE(xboundiff),SFREE(xbodydiff);
 
-  if(*ithermal==1) free(t1diff);
+  if(*ithermal==1) SFREE(t1diff);
   
   *ikactcontp=ikactcont;*ikactmechp=ikactmech;
   

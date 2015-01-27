@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -969,7 +969,7 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
          icounter=icounter+1
          if(icounter.gt.100) then
             write(*,*) '*ERROR in umat_single_crystal: no convergence'
-            stop
+            call exit(201)
          endif
 !
 !        elastic strains
@@ -1203,12 +1203,23 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
                   t(6+2*j)=0.d0
                enddo
                t(6+2*i)=c(i)*sg(i)/(1.d0+dg(i)*d(i))
+c
+c              next lines should be correct.
+c
+c               if(creep.eq.1) then
+c                  gr(index(i),1)=htri(i)
+c     &                 -ck(i)*(dg(i)/dtime)**(1.d0/cn(i))
+c               else
+c                  gr(index(i),1)=htri(i)
+c               endif
+!
                if(creep.eq.1) then
                   gr(index(i),1)=htri(i)
                else
                   gr(index(i),1)=htri(i)
      &                 +ck(i)*(dg(i)/dtime)**(1.d0/cn(i))
                endif
+!
                do j=1,42
                   gr(index(i),1)=gr(index(i),1)-t(j)*r(j)
                enddo
@@ -1222,7 +1233,7 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
             if(info.ne.0) then
                write(*,*) '*ERROR in sc.f: linear equation solver'
                write(*,*) '       exited with error: info = ',info
-               stop
+               call exit(201)
             endif
 !
             do i=1,18
@@ -1302,7 +1313,7 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
       if(info.ne.0) then
          write(*,*) '*ERROR in sc.f: linear equation solver'
          write(*,*) '       exited with error: info = ',info
-         stop
+         call exit(201)
       endif
 !
 !     storing the stress

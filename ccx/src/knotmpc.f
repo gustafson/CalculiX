@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -116,7 +116,7 @@ c         write(*,*) 'sxx...',sxx,sxy,sxz,syy,syz,szz
          if(ier.ne.0) then
             write(*,*) '*ERROR in knotmpc while calculating the'
             write(*,*) '       eigenvalues/eigenvectors'
-            stop
+            call exit(201)
          endif
 !
 !        the eigenvalues are the moments of inertia w.r.t. the
@@ -176,7 +176,7 @@ c            write(*,*) 'e2 ',e2(1),e2(2),e2(3)
       nk=nk+1
       if(nk.gt.nk_) then
          write(*,*) '*ERROR in knotmpc: increase nk_'
-         stop
+         call exit(201)
       endif
 !
       ispcnode=nk
@@ -196,7 +196,7 @@ c            write(*,*) 'e2 ',e2(1),e2(2),e2(3)
             nmpc=nmpc+1
             if(nmpc.gt.nmpc_) then
                write(*,*) '*ERROR in knotmpc: increase nmpc_'
-               stop
+               call exit(201)
             endif
 !     
             ipompc(nmpc)=mpcfree
@@ -268,7 +268,7 @@ c            write(*,*) 'e2 ',e2(1),e2(2),e2(3)
             nboun=nboun+1
             if(nboun.gt.nboun_) then
                write(*,*) '*ERROR in knotmpc: increase nboun_'
-               stop
+               call exit(201)
             endif
             nodeboun(nboun)=ispcnode
             ndirboun(nboun)=j
@@ -305,7 +305,7 @@ c            write(*,*) 'e2 ',e2(1),e2(2),e2(3)
             nmpc=nmpc+1
             if(nmpc.gt.nmpc_) then
                write(*,*) '*ERROR in knotmpc: increase nmpc_'
-               stop
+               call exit(201)
             endif
 !     
             ipompc(nmpc)=mpcfree
@@ -391,7 +391,7 @@ c            write(*,*) 'e2 ',e2(1),e2(2),e2(3)
             nboun=nboun+1
             if(nboun.gt.nboun_) then
                write(*,*) '*ERROR in knotmpc: increase nboun_'
-               stop
+               call exit(201)
             endif
             nodeboun(nboun)=ispcnode
             ndirboun(nboun)=j

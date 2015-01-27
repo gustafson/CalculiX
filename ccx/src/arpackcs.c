@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -70,9 +70,9 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
              char *cbody, ITG *ibody, double *xbody, ITG *nbody,
 	     ITG *nevtot, double *thicke, ITG *nslavs, double *tietol, 
 	     ITG *mpcinfo,ITG *ntie,ITG *istep,
-	     char *tieset,
-	     ITG *nintpoint,ITG *mortar,ITG *ifacecount,
-	     ITG **islavsurfp,double **pslavsurfp,double **clearinip){
+	     char *tieset,ITG *nintpoint,ITG *mortar,ITG *ifacecount,
+	     ITG **islavsurfp,double **pslavsurfp,double **clearinip,
+	     ITG *nmat,char *typeboun,ITG *ielprop,double *prop){
 
   /* calls the Arnoldi Package (ARPACK) for cyclic symmetry calculations */
   
@@ -89,14 +89,14 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     *inotrt=NULL,symmetryflag=0,inputformat=0,inewton=0,ifreebody,
     mass=1, stiffness=1, buckling=0, rhsi=0, intscheme=0,*ncocon=NULL,
     coriolis=0,iworsttime,l3,iray,mt,kkx,im,ne0,*integerglob=NULL,
-    *nshcon=NULL,one=1,irenewxstate,ncont,*itietri=NULL,neq2,
+    *nshcon=NULL,one=1,irenewxstate,ncont=0,*itietri=NULL,neq2,
     *koncont=NULL,ismallsliding=0,*itiefac=NULL,*islavsurf=NULL,
     *islavnode=NULL,*imastnode=NULL,*nslavnode=NULL,*nmastnode=NULL,
     *imastop=NULL,*iponoels=NULL,*inoels=NULL,*ipe=NULL,*ime=NULL,
     mpcfree,memmpc_,icascade,maxlenmpc,nkon0,iit=-1,*irow=NULL,nasym=0,
     kmax1,kmax2,icfd=0,*inomat=NULL,*ipkon=NULL,*kon=NULL,*ielmat=NULL,
     *ielorien=NULL,*islavact=NULL,*islavsurfold=NULL,nslavs_prev_step,
-    maxprevcontel,iex,iflagact=0;
+    maxprevcontel,iex,iflagact=0,*nmc=NULL;
 
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,*vr=NULL,
       *workl=NULL,*d=NULL,sigma,*temp_array=NULL,*vini=NULL,
@@ -123,7 +123,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
   /* dummy arguments for the results call */
 
-  double *veold=NULL,*accold=NULL,bet,gam,dtime,time;
+  double *veold=NULL,*accold=NULL,bet,gam,dtime,time=1.;
 
   ITG *ipneigh=NULL,*neigh=NULL;
   
@@ -160,7 +160,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   
   if(*nbody>0){
       ifreebody=*ne+1;
-      ipobody=NNEW(ITG,2*ifreebody**nbody);
+      NNEW(ipobody,ITG,2*ifreebody**nbody);
       for(k=1;k<=*nbody;k++){
 	  FORTRAN(bodyforce,(cbody,ibody,ipobody,nbody,set,istartset,
 			     iendset,ialset,&inewton,nset,&ifreebody,&k));
@@ -193,8 +193,8 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       
       if(ncont!=0){
 
-	  cg=NNEW(double,3*ncont);
-	  straight=NNEW(double,16*ncont);
+	  NNEW(cg,double,3*ncont);
+	  NNEW(straight,double,16*ncont);
 	  
 	  /* 11 instead of 10: last position is reserved for the
 	     local contact spring element number; needed as
@@ -202,7 +202,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  
 	  if(*mortar==0){
 	      RENEW(kon,ITG,*nkon+11**nslavs);
-	      springarea=NNEW(double,2**nslavs);
+	      NNEW(springarea,double,2**nslavs);
 	      if(*nener==1){
 		  RENEW(ener,double,mi[0]*(*ne+*nslavs)*2);
 	      }
@@ -225,18 +225,18 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      }
 	      maxprevcontel=*nslavs;
 	      
-	      areaslav=NNEW(double,*ifacecount);
-	      xmastnor=NNEW(double,3*nmastnode[*ntie]);
+	      NNEW(areaslav,double,*ifacecount);
+	      NNEW(xmastnor,double,3*nmastnode[*ntie]);
 	  }else if(*mortar==1){
-	      islavact=NNEW(ITG,nslavnode[*ntie]);
+	      NNEW(islavact,ITG,nslavnode[*ntie]);
 	      DMEMSET(islavact,0,nslavnode[*ntie],1);
-	      if((*istep==1)||(nslavs_prev_step==0)) clearini=NNEW(double,3*9**nslavs);
-	      xmastnor=NNEW(double,3*nmastnode[*ntie]);
+	      if((*istep==1)||(nslavs_prev_step==0)) NNEW(clearini,double,3*9**ifacecount);
+	      NNEW(xmastnor,double,3*nmastnode[*ntie]);
 
 	      if(*nstate_!=0){
 		  if(maxprevcontel!=0){
-		      islavsurfold=NNEW(ITG,2**ifacecount+2);
-		      pslavsurfold=NNEW(double,3**nintpoint);
+		      NNEW(islavsurfold,ITG,2**ifacecount+2);
+		      NNEW(pslavsurfold,double,3**nintpoint);
 		      memcpy(&islavsurfold[0],&islavsurf[0],
 			     sizeof(ITG)*(2**ifacecount+2));
 		      memcpy(&pslavsurfold[0],&pslavsurf[0],
@@ -319,7 +319,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  }
 		  
 		  if(maxprevcontel!=0){
-		      free(islavsurfold);free(pslavsurfold);
+		      SFREE(islavsurfold);SFREE(pslavsurfold);
 		  }
 
 		  maxprevcontel=*nintpoint;
@@ -338,15 +338,15 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		       labmpc,nk,&memmpc_,&icascade,&maxlenmpc,
 		       kon,ipkon,lakon,ne,nactdof,icol,jq,&irow,isolver,
 		       neq,nzs,nmethod,ithermal,iperturb,&mass,mi,ics,cs,
-		       mcs,mortar);
+		       mcs,mortar,typeboun);
       }
   }
   
   /* field for initial values of state variables (needed if
      previous static step was viscoplastic and for contact */
   
-  if((*nstate_!=0)&&(*mortar==0)){
-      xstateini=NNEW(double,*nstate_*mi[0]*(ne0+*nslavs));
+  if((*nstate_!=0)&&((*mortar==0)||(ncont==0))){
+      NNEW(xstateini,double,*nstate_*mi[0]*(ne0+*nslavs));
       for(k=0;k<*nstate_*mi[0]*(ne0+*nslavs);++k){
 	  xstateini[k]=xstate[k];
       }
@@ -354,18 +354,18 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   
   /* determining the internal forces and the stiffness coefficients */
   
-  f=NNEW(double,neq[1]);
+  NNEW(f,double,neq[1]);
   
   /* allocating a field for the stiffness matrix */
   
-  xstiff=NNEW(double,(long long)27*mi[0]**ne);
+  NNEW(xstiff,double,(long long)27*mi[0]**ne);
   
   iout=-1;
-  v=NNEW(double,mt**nk);
+  NNEW(v,double,mt**nk);
   memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
-  fn=NNEW(double,mt**nk);
-  stx=NNEW(double,6*mi[0]**ne);
-  inum=NNEW(ITG,*nk);
+  NNEW(fn,double,mt**nk);
+  NNEW(stx,double,6*mi[0]**ne);
+  NNEW(inum,ITG,*nk);
   if(*iperturb==0){
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	      elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -382,7 +382,8 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      fmpc,nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,
 	      &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
-              mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,islavsurf);
+              mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
+	      islavsurf,ielprop,prop);
   }else{
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	      elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -399,9 +400,10 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      fmpc,nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,
 	      &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
-              mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,islavsurf);
+              mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
+	      islavsurf,ielprop,prop);
   }
-  free(f);free(v);free(fn);free(stx);free(inum);
+  SFREE(f);SFREE(v);SFREE(fn);SFREE(stx);SFREE(inum);
   iout=1;
   
   /* for the frequency analysis linear strain and elastic properties
@@ -418,8 +420,8 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   
   /* assigning nodes and elements to sectors */
   
-  inocs=NNEW(ITG,*nk);
-  ielcs=NNEW(ITG,*ne);
+  NNEW(inocs,ITG,*nk);
+  NNEW(ielcs,ITG,*ne);
   ielset=cs[12];
   if((*mcs!=1)||(ielset!=0)){
       for(i=0;i<*nk;i++) inocs[i]=-1;
@@ -480,13 +482,13 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   
   for(nm=cs[1];nm<=cs[2];++nm){
       
-      ad=NNEW(double,neq[1]);
-      au=NNEW(double,nzs[1]);
+      NNEW(ad,double,neq[1]);
+      NNEW(au,double,nzs[1]);
       
-      adb=NNEW(double,neq[1]);
-      aub=NNEW(double,nzs[1]);
+      NNEW(adb,double,neq[1]);
+      NNEW(aub,double,nzs[1]);
       
-      fext=NNEW(double,neq[1]);
+      NNEW(fext,double,neq[1]);
       if(*iperturb==0){
 	  FORTRAN(mafillsmcs,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
 		ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
@@ -502,7 +504,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		&intscheme,mcs,&coriolis,ibody,xloadold,&reltime,ielcs,veold,
 		springarea,thicke,integerglob,doubleglob,
 		tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
-		pmastsurf,mortar,clearini));
+		pmastsurf,mortar,clearini,ielprop,prop));
       }
       else{
 	  FORTRAN(mafillsmcs,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -519,7 +521,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		&intscheme,mcs,&coriolis,ibody,xloadold,&reltime,ielcs,veold,
 		springarea,thicke,integerglob,doubleglob,
 		tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
-		pmastsurf,mortar,clearini));
+		pmastsurf,mortar,clearini,ielprop,prop));
 	  
 	  if(nasym==1){
 	      RENEW(au,double,nzs[2]+nzs[1]);
@@ -541,21 +543,22 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		&rhsi,&intscheme,mcs,&coriolis,ibody,xloadold,&reltime,ielcs,
 		veold,springarea,thicke,integerglob,doubleglob,
 		tieset,istartset,iendset,ialset,ntie,&nasym,nstate_,xstateini,
-		xstate,pslavsurf,pmastsurf,mortar,clearini));
+		xstate,pslavsurf,pmastsurf,mortar,clearini,ielprop,prop));
 	      
 	  }
       }
       
-      free(fext);
+      SFREE(fext);
       
       if(*nmethod==0){
 	  
 	  /* error occurred in mafill: storing the geometry in frd format */
 	  
-	  ++*kode;time=0.;
-	  inum=NNEW(ITG,*nk);for(k=0;k<*nk;k++) inum[k]=1;
+	  ++*kode;
+	  NNEW(inum,ITG,*nk);for(k=0;k<*nk;k++) inum[k]=1;
 	  if(strcmp1(&filab[1044],"ZZS")==0){
-	      neigh=NNEW(ITG,40**ne);ipneigh=NNEW(ITG,*nk);
+	      NNEW(neigh,ITG,40**ne);
+	      NNEW(ipneigh,ITG,*nk);
 	  }
 	  
 	  frd(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,
@@ -564,10 +567,10 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	      mi,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	      cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-	      thicke,jobnamec,output,qfx,cdn,mortar,cdnr,cdni);
+	      thicke,jobnamec,output,qfx,cdn,mortar,cdnr,cdni,nmat);
 	  
-	  if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
-	  free(inum);FORTRAN(stop,());
+	  if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
+	  SFREE(inum);FORTRAN(stop,());
 	  
       }
       
@@ -621,10 +624,9 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 #endif
       }
       
-      free(au);free(ad);
+      SFREE(au);SFREE(ad);
       
-      /* calculating the ei
-	 genvalues and eigenmodes */
+      /* calculating the eigenvalues and eigenmodes */
       
       printf(" Calculating the eigenvalues and the eigenmodes\n");
       
@@ -638,30 +640,30 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       
       info=0;
       
-      resid=NNEW(double,neq[1]);
-      z=NNEW(double,(long long)ncv*neq[1]);
-      workd=NNEW(double,3*neq[1]);
+      NNEW(resid,double,neq[1]);
+      NNEW(z,double,(long long)ncv*neq[1]);
+      NNEW(workd,double,3*neq[1]);
       
       if(nasym==1){
 	  lworkl=3*ncv*(2+ncv);
-	  workl=NNEW(double,lworkl);
+	  NNEW(workl,double,lworkl);
 	  FORTRAN(dnaupd,(&ido,bmat,&neq[1],which,&nev,&tol,resid,&ncv,z,&ldz,iparam,ipntr,workd,
 			  workl,&lworkl,&info));
 	  /*      neq2=neq[1]/2;
 		  lworkl=6*ncv*ncv+10*ncv;
-		  workl=NNEW(double,lworkl);
-		  rwork=NNEW(double,ncv);
+		  NNEW(workl,double,lworkl);
+		  NNEW(rwork,double,ncv);
 		  FORTRAN(znaupd,(&ido,bmat,&neq2,which,&nev,&tol,resid,&ncv,z,&neq2,
 		  iparam,ipntr,workd,workl,&lworkl,rwork,&info));
-		  temp_array2=NNEW(double,neq[1]);*/
+		  NNEW(temp_array2,double,neq[1]);*/
       }else{
 	  lworkl=ncv*(8+ncv);
-	  workl=NNEW(double,lworkl);
+	  NNEW(workl,double,lworkl);
 	  FORTRAN(dsaupd,(&ido,bmat,&neq[1],which,&nev,&tol,resid,&ncv,z,&ldz,
 			  iparam,ipntr,workd,workl,&lworkl,&info));
       }
       
-      temp_array=NNEW(double,neq[1]);
+      NNEW(temp_array,double,neq[1]);
       
       while((ido==-1)||(ido==1)||(ido==2)){
 	  if(ido==-1){
@@ -811,7 +813,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   free memory
   -----------
 */
-      free(temp_array);free(temp_array2);
+      SFREE(temp_array);SFREE(temp_array2);
       if(*isolver==0){
 #ifdef SPOOLES
 	  spooles_cleanup();
@@ -838,17 +840,18 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  printf("       # of converged eigenvalues=%" ITGFORMAT "\n\n",iparam[4]);
       }         
       
-      select=NNEW(ITG,ncv);
+      NNEW(select,ITG,ncv);
       
       if(nasym==1){
-	  d=NNEW(double,nev+1);
-	  di=NNEW(double,nev+1);
-	  workev=NNEW(double,3*ncv);
+	  NNEW(d,double,nev+1);
+	  NNEW(di,double,nev+1);
+	  NNEW(workev,double,3*ncv);
 	  FORTRAN(dneupd,(&rvec,howmny,select,d,di,z,&ldz,&sigma,&sigmai,
 			  workev,bmat,&neq[1],which,&nev,&tol,resid,
 			  &ncv,z,&ldz,iparam,ipntr,workd,workl,&lworkl,&info));
-	  free(workev);
-	  dc=NNEW(double,2*nev);
+	  SFREE(workev);
+	  NNEW(dc,double,2*nev);
+	  NNEW(nmc,ITG,nev);
 	  
 	  /* storing as complex number and taking the square root */
 	  
@@ -856,20 +859,22 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      dc[2*j]=sqrt(sqrt(d[j]*d[j]+di[j]*di[j])+d[j])/sqrt(2.);
 	      dc[2*j+1]=sqrt(sqrt(d[j]*d[j]+di[j]*di[j])-d[j])/sqrt(2.);
 	      if(di[j]<0.) dc[2*j+1]=-dc[2*j+1];
+	      nmc[j]=nm;
 	  }
-	  FORTRAN(writeevcomplex,(dc,&nev,&fmin,&fmax));
-	  free(di);free(dc);
-	  /*      d=NNEW(double,2*nev+2);
-		  workev=NNEW(double,4*ncv);
+//	  FORTRAN(writeevcomplex,(dc,&nev,&fmin,&fmax));
+	  FORTRAN(writeevcscomplex,(dc,&nev,nmc,&fmin,&fmax));
+	  SFREE(di);SFREE(dc);SFREE(nmc);
+	  /*      dNNEW(      d,double,2*nev+2);
+		  NNEW(workev,double,4*ncv);
 		  FORTRAN(zneupd,(&rvec,howmny,select,d,z,&neq2,sigmaz,workev,bmat,&neq2,
 		  which,&nev,&tol,resid,&ncv,
 		  z,&neq2,iparam,ipntr,workd,workl,&lworkl,rwork,&info));
-		  free(workev);free(rwork);*/
+		  SFREE(workev);SFREE(rwork);*/
 	  
 	  /* taking the square root */
 	  
-	  /*      dc=NNEW(double,2*nev);
-		  nmc=NNEW(ITG,nev);
+	  /*      dcNNEW(     dc,double,2*nev);
+		  NNEW(nmc,ITG,nev);
 		  for(j=0;j<nev;j++){
 		  dc[2*j]=sqrt(sqrt(d[2*j]*d[2*j]+d[2*j+1]*d[2*j+1])+d[2*j])/sqrt(2.);
 		  dc[2*j+1]=sqrt(sqrt(d[2*j]*d[2*j]+d[2*j+1]*d[2*j+1])-d[2*j])/sqrt(2.);
@@ -877,7 +882,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  nmc[j]=nm;
 		  }
 		  FORTRAN(writeevcscomplex,(d,&nev,nmc,&fmin,&fmax));
-		  FORTRAN(writeevcscomplex,(dc,&nev,nmc,&fmin,&fmax));free(dc);free(nmc);*/
+		  FORTRAN(writeevcscomplex,(dc,&nev,nmc,&fmin,&fmax));SFREE(dc);SFREE(nmc);*/
 	  
 	  /* rearranging the real part of the eigenvalues */
 	  
@@ -887,7 +892,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  /* rearranging the eigenvectors 
 	     (first all real parts, then all imaginary parts */
 	  
-	  /*      v=NNEW(double,neq[1]);
+	  /*      vNNEW(      v,double,neq[1]);
 		  for(j=0;j<nev;j++){
 		  for(k=0;k<neq[1];k++){
 		  v[k]=z[j*neq[1]+k];
@@ -897,14 +902,14 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  z[j*neq[1]+neq2+k]=v[2*k+1];
 		  }
 		  }
-		  free(v);*/
+		  SFREE(v);*/
       }else{
-	  d=NNEW(double,nev);
+	  NNEW(d,double,nev);
 	  FORTRAN(dseupd,(&rvec,howmny,select,d,z,&ldz,&sigma,bmat,&neq[1],which,&nev,
 			  &tol,resid,&ncv,z,&ldz,iparam,ipntr,workd,workl,&lworkl,&info));
 	  FORTRAN(writeevcs,(d,&nev,&nm,&fmin,&fmax));
       }
-      free(select);free(resid);free(workd);free(workl);
+      SFREE(select);SFREE(resid);SFREE(workd);SFREE(workl);
       
       /* for double eigenmodes: the eigenmode for which the largest
 	 amplitude has the lowest dof comes first */
@@ -928,11 +933,11 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  
 	  if(kmax2<kmax1){
 	      printf("exchange!\n");
-	      zstorage=NNEW(double,neq[1]);
+	      NNEW(zstorage,double,neq[1]);
 	      memcpy(zstorage,&z[2*j*neq[1]],sizeof(double)*neq[1]);
 	      memcpy(&z[2*j*neq[1]],&z[(2*j+1)*neq[1]],sizeof(double)*neq[1]);
 	      memcpy(&z[(2*j+1)*neq[1]],zstorage,sizeof(double)*neq[1]);
-	      free(zstorage);
+	      SFREE(zstorage);
 	  }
       }
       
@@ -1008,66 +1013,73 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      }
 	  }
       }
+
+      /* calculating the participation factors and the relative effective
+	 modal mass */
+
+      if(*ithermal!=2){
+	  FORTRAN(effectivemodalmass,(neq,nactdof,mi,adb,aub,jq,irow,&nev,z,co,nk));
+      }
       
       /* calculating the displacements and the stresses and storing */
       /* the results in frd format for each valid eigenmode */
       
-      v=NNEW(double,2*mt**nk);
-      fn=NNEW(double,2*mt**nk);
+      NNEW(v,double,2*mt**nk);
+      NNEW(fn,double,2*mt**nk);
       if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1653],"MAXS")==0)|| 
 	 (strcmp1(&filab[1479],"PHS ")==0)||(strcmp1(&filab[1044],"ZZS ")==0)||
 	 (strcmp1(&filab[1044],"ERR ")==0)) 
-	  stn=NNEW(double,12**nk);
+	  NNEW(stn,double,12**nk);
       
       if((strcmp1(&filab[261],"E   ")==0)||(strcmp1(&filab[2523],"MAXE")==0)) 
-	  een=NNEW(double,12**nk);
-      if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,2**nk);
-      if(strcmp1(&filab[2697],"ME  ")==0) emn=NNEW(double,12**nk);
+	  NNEW(een,double,12**nk);
+      if(strcmp1(&filab[522],"ENER")==0) NNEW(enern,double,2**nk);
+      if(strcmp1(&filab[2697],"ME  ")==0) NNEW(emn,double,12**nk);
       if(((strcmp1(&filab[2175],"CONT")==0)||(strcmp1(&filab[3915],"PCON")==0))
-         &&(*mortar==1)) cdn=NNEW(double,12**nk);
+         &&(*mortar==1)) NNEW(cdn,double,12**nk);
       
-      inum=NNEW(ITG,*nk);
-      stx=NNEW(double,2*6*mi[0]**ne);
+      NNEW(inum,ITG,*nk);
+      NNEW(stx,double,2*6*mi[0]**ne);
       
-      temp_array=NNEW(double,neq[1]);
-      coefmpcnew=NNEW(double,*mpcend);
+      NNEW(temp_array,double,neq[1]);
+      NNEW(coefmpcnew,double,*mpcend);
       
-      cot=NNEW(double,3**nk*ngraph);
-      if(*ntrans>0){inotrt=NNEW(ITG,2**nk*ngraph);}
+      NNEW(cot,double,3**nk*ngraph);
+      if(*ntrans>0){NNEW(inotrt,ITG,2**nk*ngraph);}
       if((strcmp1(&filab[0],"U  ")==0)||(strcmp1(&filab[870],"PU  ")==0))
 	  
 // real and imaginary part of the displacements
 	  
-	  vt=NNEW(double,2*mt**nk*ngraph);
+	  NNEW(vt,double,2*mt**nk*ngraph);
       if(strcmp1(&filab[87],"NT  ")==0)
-	  t1t=NNEW(double,*nk*ngraph);
+	  NNEW(t1t,double,*nk*ngraph);
       if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1479],"PHS ")==0)||
 	 (strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0))
 	  
 // real and imaginary part of the stresses
 	  
-	  stnt=NNEW(double,2*6**nk*ngraph);
-      if(strcmp1(&filab[261],"E   ")==0) eent=NNEW(double,2*6**nk*ngraph);
+	  NNEW(stnt,double,2*6**nk*ngraph);
+      if(strcmp1(&filab[261],"E   ")==0) NNEW(eent,double,2*6**nk*ngraph);
       if((strcmp1(&filab[348],"RF  ")==0)||(strcmp1(&filab[2610],"PRF ")==0))
 	  
 // real and imaginary part of the forces
 	  
-	  fnt=NNEW(double,2*mt**nk*ngraph);
-      if(strcmp1(&filab[2697],"ME  ")==0) emnt=NNEW(double,2*6**nk*ngraph);
+	  NNEW(fnt,double,2*mt**nk*ngraph);
+      if(strcmp1(&filab[2697],"ME  ")==0) NNEW(emnt,double,2*6**nk*ngraph);
       if(((strcmp1(&filab[2175],"CONT")==0)||(strcmp1(&filab[3915],"PCON")==0))
-         &&(*mortar==1)) cdnt=NNEW(double,2*6**nk*ngraph);
+         &&(*mortar==1)) NNEW(cdnt,double,2*6**nk*ngraph);
       if(strcmp1(&filab[522],"ENER")==0)
-	  enernt=NNEW(double,*nk*ngraph);
+	  NNEW(enernt,double,*nk*ngraph);
       if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)||
 	 ((strcmp1(&filab[2175],"CONT")==0)&&(*mortar==0)))
-	  stxt=NNEW(double,2*6*mi[0]**ne*ngraph);
+	  NNEW(stxt,double,2*6*mi[0]**ne*ngraph);
       
-      kont=NNEW(ITG,*nkon*ngraph);
-      ipkont=NNEW(ITG,*ne*ngraph);
+      NNEW(kont,ITG,*nkon*ngraph);
+      NNEW(ipkont,ITG,*ne*ngraph);
       for(l=0;l<*ne*ngraph;l++)ipkont[l]=-1;
-      lakont=NNEW(char,8**ne*ngraph);
-      inumt=NNEW(ITG,*nk*ngraph);
-      ielmatt=NNEW(ITG,mi[2]**ne*ngraph);
+      NNEW(lakont,char,8**ne*ngraph);
+      NNEW(inumt,ITG,*nk*ngraph);
+      NNEW(ielmatt,ITG,mi[2]**ne*ngraph);
       
       nkt=ngraph**nk;
       net=ngraph**ne;
@@ -1164,35 +1176,35 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	 displacements and stresses */
       
       if(strcmp1(&filab[870],"PU")==0){
-	  vr=NNEW(double,mt*nkt);
-	  vi=NNEW(double,mt*nkt);
+	  NNEW(vr,double,mt*nkt);
+	  NNEW(vi,double,mt*nkt);
       }
       
       if(strcmp1(&filab[1479],"PHS")==0){
-	  stnr=NNEW(double,6*nkt);
-	  stni=NNEW(double,6*nkt);
+	  NNEW(stnr,double,6*nkt);
+	  NNEW(stni,double,6*nkt);
       }
       
       if(strcmp1(&filab[2610],"PRF")==0){
-	  fnr=NNEW(double,mt*nkt);
-	  fni=NNEW(double,mt*nkt);
+	  NNEW(fnr,double,mt*nkt);
+	  NNEW(fni,double,mt*nkt);
       }
       
       if(strcmp1(&filab[3915],"PCON")==0){
-	  cdnr=NNEW(double,6*nkt);
-	  cdni=NNEW(double,6*nkt);
+	  NNEW(cdnr,double,6*nkt);
+	  NNEW(cdni,double,6*nkt);
       }
       
       if(strcmp1(&filab[1566],"MAXU")==0){
-	  vmax=NNEW(double,4*nkt);
+	  NNEW(vmax,double,4*nkt);
       }
       
       if(strcmp1(&filab[1653],"MAXS")==0){
-	  stnmax=NNEW(double,7*nkt);
+	  NNEW(stnmax,double,7*nkt);
       }
       
       if(strcmp1(&filab[2523],"MAXE")==0){
-	  eenmax=NNEW(double,7*nkt);
+	  NNEW(eenmax,double,7*nkt);
       }
       
       /* start of output calculations */
@@ -1221,10 +1233,10 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  
 	  if(*nprint>0)FORTRAN(writehe,(&j));
 	  
-	  eei=NNEW(double,6*mi[0]*ne0);
+	  NNEW(eei,double,6*mi[0]*ne0);
 	  if(*nener==1){
-	      stiini=NNEW(double,6*mi[0]*ne0);
-	      enerini=NNEW(double,mi[0]*ne0);}
+	      NNEW(stiini,double,6*mi[0]*ne0);
+	      NNEW(enerini,double,mi[0]*ne0);}
 	  
 //    memset(&v[0],0.,sizeof(double)*2*mt**nk);
 	  DMEMSET(v,0,2*mt**nk,0.);
@@ -1301,7 +1313,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		    &ne0,xforc,nforc,thicke,shcon,nshcon,
 		    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		    mortar,islavact,&cdn[kk6],islavnode,nslavnode,ntie,clearini,
-                    islavsurf);}
+                    islavsurf,ielprop,prop);}
 	      else{
 		  results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
 		    &stx[kkx],elcon,
@@ -1320,12 +1332,12 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		    &ne0,xforc,nforc,thicke,shcon,nshcon,
 		    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		    mortar,islavact,&cdn[kk6],islavnode,nslavnode,ntie,clearini,
-                    islavsurf);
+                    islavsurf,ielprop,prop);
 	      }
 	      
 	  }
-	  free(eei);
-	  if(*nener==1){free(stiini);free(enerini);}
+	  SFREE(eei);
+	  if(*nener==1){SFREE(stiini);SFREE(enerini);}
 	  
 	  if(strcmp1(&filab[1566],"MAXU")==0){
 	      
@@ -2205,7 +2217,8 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     }
 
     if(strcmp1(&filab[1044],"ZZS")==0){
-	neigh=NNEW(ITG,40*net);ipneigh=NNEW(ITG,nkt);
+	NNEW(neigh,ITG,40*net);
+	NNEW(ipneigh,ITG,nkt);
     }
 
     frd(cot,&nkt,kont,ipkont,lakont,&net,vt,stnt,inumt,nmethod,
@@ -2214,9 +2227,9 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stxt,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,&net,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emnt,
-	    thicke,jobnamec,output,qfx,cdnt,mortar,cdnr,cdni);
+	    thicke,jobnamec,output,qfx,cdnt,mortar,cdnr,cdni,nmat);
 
-    if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
+    if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
 
     if(*iperturb!=0){
 	for(k=0;k<*nstate_*mi[0]*(ne0+maxprevcontel);++k){
@@ -2229,34 +2242,34 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     printf("\n*WARNING: not all frequencies in the requested interval might be found;\nincrease the number of requested frequencies\n");
   }
 
-  free(adb);free(aub);free(temp_array);free(coefmpcnew);
+  SFREE(adb);SFREE(aub);SFREE(temp_array);SFREE(coefmpcnew);
 
   if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1653],"MAXS")==0)|| 
      (strcmp1(&filab[1479],"PHS ")==0)||(strcmp1(&filab[1044],"ZZS ")==0)||
      (strcmp1(&filab[1044],"ERR ")==0)) 
-     free(stn);
+     SFREE(stn);
 
-  free(v);free(fn);free(inum);free(stx);free(z);free(d);
+  SFREE(v);SFREE(fn);SFREE(inum);SFREE(stx);SFREE(z);SFREE(d);
 
-  if((strcmp1(&filab[261],"E   ")==0)||(strcmp1(&filab[2523],"MAXE")==0)) free(een);
-  if(strcmp1(&filab[522],"ENER")==0) free(enern);
-  if(strcmp1(&filab[2697],"ME  ")==0) free(emn);
+  if((strcmp1(&filab[261],"E   ")==0)||(strcmp1(&filab[2523],"MAXE")==0)) SFREE(een);
+  if(strcmp1(&filab[522],"ENER")==0) SFREE(enern);
+  if(strcmp1(&filab[2697],"ME  ")==0) SFREE(emn);
 
-  if((strcmp1(&filab[0],"U  ")==0)||(strcmp1(&filab[870],"PU  ")==0)) free(vt);
-  if(strcmp1(&filab[87],"NT  ")==0) free(t1t);
+  if((strcmp1(&filab[0],"U  ")==0)||(strcmp1(&filab[870],"PU  ")==0)) SFREE(vt);
+  if(strcmp1(&filab[87],"NT  ")==0) SFREE(t1t);
   if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1479],"PHS ")==0)||
-     (strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)) free(stnt);
-  if(strcmp1(&filab[261],"E   ")==0) free(eent);
-  if((strcmp1(&filab[348],"RF  ")==0)||(strcmp1(&filab[2610],"PRF ")==0)) free(fnt);
-  if(strcmp1(&filab[522],"ENER")==0) free(enernt);
+     (strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)) SFREE(stnt);
+  if(strcmp1(&filab[261],"E   ")==0) SFREE(eent);
+  if((strcmp1(&filab[348],"RF  ")==0)||(strcmp1(&filab[2610],"PRF ")==0)) SFREE(fnt);
+  if(strcmp1(&filab[522],"ENER")==0) SFREE(enernt);
   if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)||
-     ((strcmp1(&filab[2175],"CONT")==0)&&(*mortar==0))) free(stxt);
-  if(strcmp1(&filab[2697],"ME  ")==0) free(emnt);
+     ((strcmp1(&filab[2175],"CONT")==0)&&(*mortar==0))) SFREE(stxt);
+  if(strcmp1(&filab[2697],"ME  ")==0) SFREE(emnt);
   if(((strcmp1(&filab[2175],"CONT")==0)||(strcmp1(&filab[3915],"PCON")==0))
-     &&(*mortar==1)) free(cdnt);
+     &&(*mortar==1)) SFREE(cdnt);
 
-  free(cot);free(kont);free(ipkont);free(lakont);free(inumt);free(ielmatt);
-  if(*ntrans>0){free(inotrt);}
+  SFREE(cot);SFREE(kont);SFREE(ipkont);SFREE(lakont);SFREE(inumt);SFREE(ielmatt);
+  if(*ntrans>0){SFREE(inotrt);}
 
   if(mei[3]==1){
       (*nevtot)+=nev;
@@ -2280,34 +2293,34 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      RENEW(ielorien,ITG,mi[2]**ne);
 	  }
 	  RENEW(ielmat,ITG,mi[2]**ne);
-	  free(cg);
-	  free(straight);
-	  free(imastop);free(itiefac);free(islavnode);
-	  free(nslavnode);free(iponoels);free(inoels);free(imastnode);
-	  free(nmastnode);free(itietri);free(koncont);free(xnoels);
-	  free(springarea);free(xmastnor);
+	  SFREE(cg);
+	  SFREE(straight);
+	  SFREE(imastop);SFREE(itiefac);SFREE(islavnode);
+	  SFREE(nslavnode);SFREE(iponoels);SFREE(inoels);SFREE(imastnode);
+	  SFREE(nmastnode);SFREE(itietri);SFREE(koncont);SFREE(xnoels);
+	  SFREE(springarea);SFREE(xmastnor);
 
 	  if(*mortar==0){
-	      free(areaslav);
+	      SFREE(areaslav);
 	  }else if(*mortar==1){
-	      free(pmastsurf);free(ipe);free(ime);
-	      free(islavact);
+	      SFREE(pmastsurf);SFREE(ipe);SFREE(ime);
+	      SFREE(islavact);
 	  }
       }
   }
 
-  free(inocs);free(ielcs);free(xstiff);
-  free(ipobody);
+  SFREE(inocs);SFREE(ielcs);SFREE(xstiff);
+  SFREE(ipobody);
 
-  if(*nstate_!=0) free(xstateini);
+  if(*nstate_!=0) SFREE(xstateini);
 
-  if(strcmp1(&filab[870],"PU")==0){free(vr);free(vi);}
-  if(strcmp1(&filab[1479],"PHS")==0){free(stnr);free(stni);}
-  if(strcmp1(&filab[3915],"PCON")==0){free(cdnr);free(cdni);}
-  if(strcmp1(&filab[1566],"MAXU")==0){free(vmax);}
-  if(strcmp1(&filab[1653],"MAXS")==0){free(stnmax);}
-  if(strcmp1(&filab[2523],"MAXE")==0){free(eenmax);}
-  if(strcmp1(&filab[2610],"PRF")==0){free(fnr);free(fni);}
+  if(strcmp1(&filab[870],"PU")==0){SFREE(vr);SFREE(vi);}
+  if(strcmp1(&filab[1479],"PHS")==0){SFREE(stnr);SFREE(stni);}
+  if(strcmp1(&filab[3915],"PCON")==0){SFREE(cdnr);SFREE(cdni);}
+  if(strcmp1(&filab[1566],"MAXU")==0){SFREE(vmax);}
+  if(strcmp1(&filab[1653],"MAXS")==0){SFREE(stnmax);}
+  if(strcmp1(&filab[2523],"MAXE")==0){SFREE(eenmax);}
+  if(strcmp1(&filab[2610],"PRF")==0){SFREE(fnr);SFREE(fni);}
 
   for(i=0;i<6*mi[0]*ne0;i++){eme[i]=0.;}
 

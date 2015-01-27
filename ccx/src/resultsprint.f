@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -23,7 +23,8 @@
      &  iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
      &  nelemload,nload,ikin,ielmat,thicke,eme,emn,rhcon,nrhcon,shcon,
      &  nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,
-     &  islavact,cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time)
+     &  islavact,cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time,
+     &  ielprop,prop,veold)
 !
 !     - stores the results in the .dat file, if requested
 !       - nodal quantities at the nodes
@@ -35,7 +36,7 @@
 !
       implicit none
 !
-      logical force
+      logical force,rfprint
 !
       character*1 cflag
       character*6 prlab(*)
@@ -51,14 +52,16 @@
      &  norien,iperturb(*),iout,nboun,nmethod,node,nshcon(*),
      &  nfield,ndim,nstate_,nset,istartset(*),iendset(*),ialset(*),
      &  nprint,ntrans,ikin,ncocon(2,*),ntmat_,icfd,inomat(*),mortar,
-     &  islavact(*),islavnode(*),nslavnode(*),ntie,islavsurf(2,*)
+     &  islavact(*),islavnode(*),nslavnode(*),ntie,islavsurf(2,*),
+     &  ielprop(*)
 !
       real*8 co(3,*),v(0:mi(2),*),stx(6,mi(1),*),stn(6,*),cdn(6,*),
      &  qfx(3,mi(1),*),qfn(3,*),orab(7,*),fn(0:mi(2),*),pslavsurf(3,*),
      &  t1(*),een(6,*),vold(0:mi(2),*),epn(*),thicke(mi(3),*),time,
      &  ener(mi(1),*),enern(*),eei(6,mi(1),*),rhcon(0:1,ntmat_,*),
      &  ttime,xstate(nstate_,mi(1),*),trab(7,*),xstaten(nstate_,*),
-     &  eme(6,mi(1),*),emn(6,*),shcon(0:3,ntmat_,*),cocon(0:6,ntmat_,*)
+     &  eme(6,mi(1),*),emn(6,*),shcon(0:3,ntmat_,*),cocon(0:6,ntmat_,*),
+     &  prop(*),veold(0:mi(2),*)
 !
       data iflag /3/
       data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
@@ -89,7 +92,7 @@
      &  prlab,prset,v,t1,fn,ipkon,lakon,stx,eei,xstate,ener,
      &  mi(1),nstate_,ithermal,co,kon,qfx,ttime,trab,inotr,ntrans,
      &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin,ielmat,thicke,
-     &  eme,islavsurf,mortar,time)
+     &  eme,islavsurf,mortar,time,ielprop,prop,veold)
 !
       icompressible=0
       call printoutface(co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
@@ -110,16 +113,35 @@
      &        ne,cflag,co,vold,force,mi)
       endif
 !
-!     user defined output
-!
-      call uout(v,mi,ithermal)
-!
       if((filab(2)(1:4).eq.'NT  ').and.(ithermal(1).le.1)) then
          if(filab(2)(5:5).eq.'I') then
             nfield=1
             cflag=filab(2)(5:5)
             call map3dto1d2d(t1,ipkon,inum,kon,lakon,nfield,nk,
      &           ne,cflag,co,vold,force,mi)
+         endif
+      endif
+!
+!     check whether forces are requested in the frd-file. If so, but
+!     none are requested in the .dat file, and output=2d, 
+!     map3dto1d2d has to be called
+!
+      if(filab(5)(1:2).eq.'RF') then
+         if(filab(5)(5:5).eq.'I') then
+            rfprint=.false.
+            do i=1,nprint
+               if(prlab(i)(1:2).eq.'RF') then
+                  rfprint=.true.
+                  exit
+               endif
+            enddo
+            if(.not.rfprint) then
+               nfield=mt
+               cflag=' '
+               force=.true.
+               call map3dto1d2d(fn,ipkon,inum,kon,lakon,nfield,nk,
+     &              ne,cflag,co,vold,force,mi)
+            endif
          endif
       endif
 !
@@ -187,7 +209,7 @@
 !
          call extrapolate(stx,stn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
-     &        vold,force,ielmat,thicke)
+     &        vold,force,ielmat,thicke,ielprop,prop)
 !
       endif
 !
@@ -204,7 +226,7 @@
          cflag=filab(4)(5:5)
          call extrapolate(eei,een,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
-     &        vold,force,ielmat,thicke)
+     &        vold,force,ielmat,thicke,ielprop,prop)
       endif
 !
 !     determining the mechanical strains in the nodes for output in 
@@ -221,7 +243,7 @@
          cflag=filab(4)(5:5)
          call extrapolate(eme,emn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
-     &        vold,force,ielmat,thicke)
+     &        vold,force,ielmat,thicke,ielprop,prop)
       endif
 !
 !     determining the plastic equivalent strain in the nodes 
@@ -234,7 +256,7 @@
          cflag=filab(6)(5:5)
          call extrapolate(xstate,epn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
-     &        vold,force,ielmat,thicke)
+     &        vold,force,ielmat,thicke,ielprop,prop)
       endif
 !
 !     determining the total energy in the nodes 
@@ -247,7 +269,7 @@
          cflag=filab(7)(5:5)
          call extrapolate(ener,enern,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
-     &        vold,force,ielmat,thicke)
+     &        vold,force,ielmat,thicke,ielprop,prop)
       endif
 !
 !     determining the internal state variables in the nodes 
@@ -265,7 +287,7 @@
          cflag=filab(8)(5:5)
          call extrapolate(xstate,xstaten,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
-     &        vold,force,ielmat,thicke)
+     &        vold,force,ielmat,thicke,ielprop,prop)
       endif
 !
 !     determining the heat flux in the nodes for output in frd format
@@ -282,7 +304,7 @@
          cflag=filab(9)(5:5)
          call extrapolate(qfx,qfn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
-     &        vold,force,ielmat,thicke)
+     &        vold,force,ielmat,thicke,ielprop,prop)
       endif
 !
 !     if no element quantities requested in the nodes: calculate
@@ -300,7 +322,7 @@
          iorienloc=0
          cflag=filab(1)(5:5)
          call createinum(ipkon,inum,kon,lakon,nk,ne,cflag,nelemload,
-     &       nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi)
+     &       nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat)
       endif
 !
 c      if(ithermal(1).gt.1) then

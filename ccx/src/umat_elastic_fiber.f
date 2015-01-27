@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -181,7 +181,7 @@
          if(dd.gt.1.d0) then
             write(*,*) '*ERROR in umat_el_fiber: components of'
             write(*,*) '       direction vector ',k,' are too big'
-            stop
+            call exit(201)
          endif
          a(3)=dsqrt(1.d0-dd)
 !
@@ -318,7 +318,7 @@
                   write(*,*) '*ERROR in umat_elastic_fiber'
                   write(*,*) '       fiber extension is too large'
                   write(*,*) '       for exponential function'
-                  stop
+                  call exit(201)
                endif
                ioffset=4*j
                xk1=constant(ioffset+1)

@@ -81,7 +81,7 @@ ITG cgsolver (double *A, double *x, double *b, ITG neq, ITG len,
 
   /*  Scaling the equation system A x + b = 0  */
 
-  Factor=NNEW(double,neq);
+  NNEW(Factor,double,neq);
   Scaling(A,b,neq,ia,iz,Factor);
 
   /*  SOLVER/PRECONDITIONING TYPE  */
@@ -90,11 +90,11 @@ ITG cgsolver (double *A, double *x, double *b, ITG neq, ITG len,
 
   if (!precFlg)
     {
-      r=NNEW(double,neq);
-      p=NNEW(double,neq);
-      z=NNEW(double,neq);
+      NNEW(r,double,neq);
+      NNEW(p,double,neq);
+      NNEW(z,double,neq);
       CG(A,x,b,neq,len,ia,iz,eps,niter,r,p,z);
-      free(r);free(p);free(z);
+      SFREE(r);SFREE(p);SFREE(z);
     }
   
   /* Conjugate gradient solver with incomplete Cholesky preconditioning on
@@ -102,13 +102,13 @@ ITG cgsolver (double *A, double *x, double *b, ITG neq, ITG len,
   
   else if (precFlg==3)
     {
-      rho=NNEW(double,neq);
-      r=NNEW(double,neq);
-      g=NNEW(double,neq);
-      C=NNEW(double,len);
-      z=NNEW(double,neq);
+      NNEW(rho,double,neq);
+      NNEW(r,double,neq);
+      NNEW(g,double,neq);
+      NNEW(C,double,len);
+      NNEW(z,double,neq);
       PCG(A,x,b,neq,len,ia,iz,eps,niter,precFlg,rho,r,g,C,z);
-      free(rho);free(r);free(g);free(C);free(z);
+      SFREE(rho);SFREE(r);SFREE(g);SFREE(C);SFREE(z);
     }
   
   /*  Backscaling of the solution vector  */
@@ -117,7 +117,7 @@ ITG cgsolver (double *A, double *x, double *b, ITG neq, ITG len,
   
   /*  That's it  */
   
-  free(Factor);
+  SFREE(Factor);
   return GOOD;
 }
 

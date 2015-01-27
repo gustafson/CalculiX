@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -31,20 +31,21 @@ void remastruct(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
               ITG *neq, ITG *nzs,ITG *nmethod, double **fp,
               double **fextp, double **bp, double **aux2p, double **finip,
               double **fextinip,double **adbp, double **aubp, ITG *ithermal,
-	      ITG *iperturb, ITG *mass, ITG *mi,ITG *iexpl,ITG *mortar){
+	      ITG *iperturb, ITG *mass, ITG *mi,ITG *iexpl,ITG *mortar,
+	      char *typeboun,double **cvp,double **cvinip,ITG *iit){
 
     /* reconstructs the nonzero locations in the stiffness and mass
        matrix after a change in MPC's */
 
     ITG *nodempc=NULL,*mast1=NULL,*ipointer=NULL,mpcend,mpcmult,
-        callfrommain,i,*irow=NULL,mt;
+        callfrommain,i,*irow=NULL,mt,im;
 
     double *coefmpc=NULL,*f=NULL,*fext=NULL,*b=NULL,*aux2=NULL,
-        *fini=NULL,*fextini=NULL,*adb=NULL,*aub=NULL;
+        *fini=NULL,*fextini=NULL,*adb=NULL,*aub=NULL,*cv=NULL,*cvini=NULL;
     
     nodempc=*nodempcp;coefmpc=*coefmpcp;irow=*irowp;
     f=*fp;fext=*fextp;b=*bp;aux2=*aux2p;fini=*finip;
-    fextini=*fextinip;adb=*adbp;aub=*aubp;
+    fextini=*fextinip;adb=*adbp;aub=*aubp;cv=*cvp;cvini=*cvinip;
 
     mt=mi[1]+1;
 
@@ -64,30 +65,40 @@ void remastruct(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     printf(" Determining the structure of the matrix:\n");
  
     if(nzs[1]<10) nzs[1]=10;   
-    mast1=NNEW(ITG,nzs[1]);
-    ipointer=NNEW(ITG,mt**nk);
+    NNEW(mast1,ITG,nzs[1]);
+    NNEW(ipointer,ITG,mt**nk);
     RENEW(irow,ITG,nzs[1]);for(i=0;i<nzs[1];i++) irow[i]=0;
     
     mastruct(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,ipompc,
 	     nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,neq,
 	     ikmpc,ilmpc,ipointer,nzs,nmethod,ithermal,
-             ikboun,ilboun,iperturb,mi,mortar);
+             ikboun,ilboun,iperturb,mi,mortar,typeboun,labmpc);
 
-    free(ipointer);free(mast1);
+    SFREE(ipointer);SFREE(mast1);
     RENEW(irow,ITG,nzs[2]);
     
     *nodempcp=nodempc;*coefmpcp=coefmpc;*irowp=irow;
 
     /* reallocating fields the size of which depends on neq[1] or *nzs */
 
-    RENEW(f,double,neq[1]);for(i=0;i<neq[1];i++) f[i]=0.;
-    RENEW(fext,double,neq[1]);for(i=0;i<neq[1];i++) fext[i]=0.;
-    RENEW(b,double,neq[1]);for(i=0;i<neq[1];i++) b[i]=0.;
-    RENEW(fini,double,neq[1]);for(i=0;i<neq[1];i++) fini[i]=0.;
+    RENEW(f,double,neq[1]);DMEMSET(f,0,neq[1],0.);
+    RENEW(fext,double,neq[1]);DMEMSET(fext,0,neq[1],0.);
+    RENEW(b,double,neq[1]);DMEMSET(b,0,neq[1],0.);
+    RENEW(fini,double,neq[1]);
+
+    /* for static calculations fini has to be set to f at the
+       start of the calculation; in dynamic calculations this is
+       not needed, since the initial accelerations has already
+       been calculated */
+
+    if((*nmethod!=4)&&(*iit==-1)) DMEMSET(fini,0,neq[1],0.);
 
     if(*nmethod==4){
-	RENEW(aux2,double,neq[1]);for(i=0;i<neq[1];i++) aux2[i]=0.;
-	RENEW(fextini,double,neq[1]);for(i=0;i<neq[1];i++) fextini[i]=0.;
+	RENEW(aux2,double,neq[1]);DMEMSET(aux2,0,neq[1],0.);
+	RENEW(cv,double,neq[1]);
+	RENEW(cvini,double,neq[1]);
+	RENEW(fextini,double,neq[1]);
+//	for(i=0;i<neq[1];i++) fextini[i]=0.;
 
         /* the mass matrix is diagonal in an explicit dynamic
            calculation and is not changed by contact; this
@@ -102,7 +113,7 @@ void remastruct(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     }
 
     *fp=f;*fextp=fext;*bp=b;*aux2p=aux2;*finip=fini;
-    *fextinip=fextini;*adbp=adb;*aubp=aub;
+    *fextinip=fextini;*adbp=adb;*aubp=aub;*cvp=cv;*cvinip=cvini;
 
     return;
 }

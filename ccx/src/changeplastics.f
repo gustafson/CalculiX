@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -44,7 +44,7 @@
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *CHANGE PLASTIC: *CHANGE PLASTIC'
          write(*,*) '       should only be used within a STEP'
-         stop
+         call exit(201)
       endif
 !
       if((nelcon(1,imat).ne.-51).and.
@@ -53,7 +53,7 @@
          write(*,*) '       can only be used to change the plastic'
          write(*,*) '       definition of an elastically isotropic'
          write(*,*) '       material with *PLASTIC data'
-         stop
+         call exit(201)
       endif
 !
       do i=2,n
@@ -63,11 +63,11 @@
             elseif(textpart(i)(11:18).eq.'COMBINED') then
                write(*,*) '*ERROR reading *CHANGE PLASTIC'
                write(*,*) '       combined hardening is not allowed'
-               stop
+               call exit(201)
             elseif(textpart(i)(11:14).eq.'USER') then
                write(*,*) '*ERROR reading *CHANGE PLASTIC'
                write(*,*) '       parameter USER is not allowed'
-               stop
+               call exit(201)
             endif
             exit
          else
@@ -101,7 +101,7 @@
                   write(*,*) '*ERROR reading *CHANGE PLASTIC:'
                   write(*,*) '       more temperature data points'
                   write(*,*) '       than underneath the *PLASTIC card'
-                  stop
+                  call exit(201)
                endif
                nplicon(0,imat)=ntmat
                plicon(0,ntmat,imat)=temperature
@@ -115,7 +115,7 @@
                   write(*,*) '*ERROR reading *CHANGE PLASTIC:'
                   write(*,*) '       more temperature data points'
                   write(*,*) '       than underneath the *PLASTIC card'
-                  stop
+                  call exit(201)
                endif
                nplicon(0,imat)=ntmat
                plicon(0,ntmat,imat)=temperature
@@ -132,7 +132,7 @@
                   write(*,*) '       more stress versus equivalent'
                   write(*,*) '       plastic strain data points'
                   write(*,*) '       than underneath the *PLASTIC card'
-               stop
+               call exit(201)
             endif
             nplicon(ntmat,imat)=npmat
          enddo
@@ -157,7 +157,7 @@
                   write(*,*) '*ERROR reading *CHANGE PLASTIC:'
                   write(*,*) '       more temperature data points'
                   write(*,*) '       than underneath the *PLASTIC card'
-                  stop
+                  call exit(201)
                endif
                nplkcon(0,imat)=ntmat
                plkcon(0,ntmat,imat)=temperature
@@ -171,7 +171,7 @@
                   write(*,*) '*ERROR reading *CHANGE PLASTIC:'
                   write(*,*) '       more temperature data points'
                   write(*,*) '       than underneath the *PLASTIC card'
-                  stop
+                  call exit(201)
                endif
                nplkcon(0,imat)=ntmat
                plkcon(0,ntmat,imat)=temperature
@@ -188,7 +188,7 @@
                write(*,*) '       more stress versus equivalent'
                write(*,*) '       plastic strain data points'
                write(*,*) '       than underneath the *PLASTIC card'
-               stop
+               call exit(201)
             endif
             nplkcon(ntmat,imat)=npmat
          enddo
@@ -197,7 +197,7 @@
       if(ntmat.eq.0) then
          write(*,*) '*ERROR reading *CHANGE PLASTIC:'
          write(*,*) '       *CHANGE PLASTIC card without data'
-         stop
+         call exit(201)
       endif
 !
       return

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -57,7 +57,7 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
        error message is generated and the program stops. */
 
     ITG i,j,index,id,idof,nterm,idepend,*nodempc=NULL,
-	ispooles,iexpand,ichange,indexold,
+	ispooles,iexpand,ichange,indexold,ifluidmpc,
         mpc,indexnew,index1,index2,index1old,index2old,*jmpc=NULL,nl;
 
     double coef,*coefmpc=NULL;
@@ -92,12 +92,12 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     nodempc=*nodempcp;
     coefmpc=*coefmpcp;
     
-    /*      for(i=0;i<*nmpc;i++){
+    /*           for(i=0;i<*nmpc;i++){
 	j=i+1;
 	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
 	}*/
 
-    jmpc=NNEW(ITG,*nmpc);
+    NNEW(jmpc,ITG,*nmpc);
     idepend=0;
 
 /*        check whether a node is used as a dependent node in a MPC
@@ -109,8 +109,13 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	else{id=0;}
 	if(id>0){
 	    if(ikboun[id-1]==ikmpc[i]){
-		printf("*ERROR in cascade: the DOF corresponding to \n node %" ITGFORMAT " in direction %" ITGFORMAT " is detected on the \n dependent side of a MPC and a SPC\n",
-		       (ikmpc[i])/8+1,ikmpc[i]-8*((ikmpc[i])/8));
+		if(strcmp1(&labmpc[20*i],"FLUID")!=0){
+		    printf("*ERROR in cascade: the DOF corresponding to \n node %" ITGFORMAT " in direction %" ITGFORMAT " is detected on the \n dependent side of a MPC and a SPC\n",
+			   (ikmpc[i])/8+1,ikmpc[i]-8*((ikmpc[i])/8));
+		}else{
+		    printf("*ERROR in cascade: the DOF corresponding to \n face %" ITGFORMAT " in direction %" ITGFORMAT " is detected on the \n dependent side of a MPC and a SPC\n",
+			   (-ikmpc[i])/8+1,-ikmpc[i]-8*((-ikmpc[i])/8));
+		}
 		FORTRAN(stop,());
 	    }
 	}
@@ -132,6 +137,7 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	   (strcmp1(&labmpc[20*i],"CYCLIC")==0) ||
 	   (strcmp1(&labmpc[20*i],"SUBCYCLIC")==0)||
 	   (strcmp1(&labmpc[20*i],"CONTACT")==0)||
+	   (strcmp1(&labmpc[20*i],"FLUID")==0)||
            (*iperturb<2)) jmpc[i]=0;
 
         /* nonlinear mpc */
@@ -159,13 +165,35 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     do{
         ichange=0;
         for(i=0;i<*nmpc;i++){
+
+	    if(strcmp1(&labmpc[20*i],"FLUID")!=0){
+		ifluidmpc=0;
+	    }else{
+		ifluidmpc=1;
+	    }
+
 	    if(jmpc[i]==1) nl=1;
 	    else nl=0;
 	    iexpand=0;
 	    index=nodempc[3*ipompc[i]-1];
 	    if(index==0) continue;
 	    do{
-		idof=(nodempc[3*index-3]-1)*8+nodempc[3*index-2];
+		if(ifluidmpc==0){
+		    /* MPC on node */
+		    idof=(nodempc[3*index-3]-1)*8+nodempc[3*index-2];
+		}else{
+		    if(nodempc[3*index-3]>0){
+			/* MPC on face */
+			idof=-((nodempc[3*index-3]-1)*8+nodempc[3*index-2]);
+		    }else{
+			/* MPC on node 
+                           SPC number: -nodempc[3*index-3]
+                           node: nodeboun[-nodempc[3*index-3]-1] */
+
+			idof=(nodeboun[-nodempc[3*index-3]-1]-1)*8+nodempc[3*index-2];
+		    }
+		}
+		
 		FORTRAN(nident,(ikmpc,&idof,nmpc,&id));
 		if((id>0)&&(ikmpc[id-1]==idof)){
 		    
@@ -230,6 +258,7 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 				printf("*ERROR in cascade: zero coefficient on the\n");
 				printf("       dependent side of an equation\n");
 				printf("       dependent node: %" ITGFORMAT "",nodempc[3*index1-3]);
+				printf("       direction: %" ITGFORMAT "",nodempc[3*index1-2]);
 				FORTRAN(stop,());
 			    }
 		    
@@ -317,6 +346,7 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 			printf("*ERROR in cascade: zero coefficient on the\n");
 			printf("       dependent side of an equation\n");
 			printf("       dependent node: %" ITGFORMAT "",nodempc[3*index1-3]);
+			printf("       direction: %" ITGFORMAT "",nodempc[3*index1-2]);
 			FORTRAN(stop,());
 		    }
 		    else{
@@ -344,10 +374,10 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	    fprintf(stderr, "\n fatal error in spooles.c"
 		    "\n unable to open file spooles.out\n") ;
 	}
-	ipointer=NNEW(ITG,7**nk);
-	indepdof=NNEW(ITG,7**nk);
-	icoef=NNEW(ITG,2**memmpc_);
-	xcoef=NNEW(double,*memmpc_);
+	NNEW(ipointer,ITG,7**nk);
+	NNEW(indepdof,ITG,7**nk);
+	NNEW(icoef,ITG,2**memmpc_);
+	NNEW(xcoef,double,*memmpc_);
 	ifree=0;
 	nindep=0;
 
@@ -664,7 +694,7 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	    }
 	}
 	
-	free(ipointer);free(indepdof);free(icoef);free(xcoef);
+	SFREE(ipointer);SFREE(indepdof);SFREE(icoef);SFREE(xcoef);
 
 	fclose(msgFile);
 
@@ -693,12 +723,12 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	}
     }
 
-    free(jmpc);
+    SFREE(jmpc);
 
     *nodempcp=nodempc;
     *coefmpcp=coefmpc;
     
-    /*     for(i=0;i<*nmpc;i++){
+/*           for(i=0;i<*nmpc;i++){
 	j=i+1;
 	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
 	}*/

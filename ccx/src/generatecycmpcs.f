@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -132,7 +132,7 @@ c            else
 c               write(*,*) '*ERROR in generatecycmpcs: no more than'
 c               write(*,*) '       99 cyclic symmetry model cards'
 c               write(*,*) '       allowed'
-c               stop
+c               call exit(201)
 c            endif
 c            do i=ipos,132
 c               fntria(i:i)=' '
@@ -185,7 +185,7 @@ c            close(70)
          else
             write(*,*)'*ERROR in generatecycmpcs: no more than 99'
             write(*,*)'       cyclic symmetry definitions allowed'
-            stop
+            call exit(201)
          endif
 !     
          nodei=nk+1
@@ -264,7 +264,7 @@ c            close(70)
          else
             write(*,*)'*ERROR in generatecycmpcs: no more than 99'
             write(*,*)'       cyclic symmetry definitions allowed'
-            stop
+            call exit(201)
          endif
          ipompc(nmpc)=mpcfree 
 !     
@@ -287,7 +287,7 @@ c            close(70)
             mpcfree=nodempc(3,mpcfree)
             if(mpcfree.eq.0) then
                write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
-               stop
+               call exit(201)
             endif
          enddo
          do j=1,3
@@ -302,7 +302,7 @@ c            close(70)
                mpcfree=nodempc(3,mpcfree)
                if(mpcfree.eq.0) then
                   write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
-                  stop
+                  call exit(201)
                endif
             else
                do k=1,nterms
@@ -314,7 +314,7 @@ c            close(70)
                   if(mpcfree.eq.0) then
                      write(*,*) '*ERROR in generatecycmpcs: increase nmp
      &c_'
-                     stop
+                     call exit(201)
                   endif
                enddo
             endif
@@ -334,7 +334,7 @@ c            close(70)
       else
          write(*,*)'*ERROR in generatecycmpcs: no more than 99'
          write(*,*)'       cyclic symmetry definitions allowed'
-         stop
+         call exit(201)
       endif
       ipompc(nmpc)=mpcfree 
       idof=8*(noded-1)
@@ -343,7 +343,7 @@ c            close(70)
          if(ikmpc(id).eq.idof) then
             write(*,*) '*ERROR in generatecycmpcs: temperature'
             write(*,*) '       in node',noded,'is already used'
-            stop
+            call exit(201)
          endif
       endif
 !     
@@ -362,7 +362,7 @@ c            close(70)
       mpcfree=nodempc(3,mpcfree)
       if(mpcfree.eq.0) then
          write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
-         stop
+         call exit(201)
       endif
       if(.not.interpolation) then
          nodempc(1,mpcfree)=nodei
@@ -372,7 +372,7 @@ c            close(70)
          mpcfree=nodempc(3,mpcfree)
          if(mpcfree.eq.0) then
             write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
-            stop
+            call exit(201)
          endif
       else
          do k=1,nterms
@@ -383,7 +383,7 @@ c            close(70)
             mpcfree=nodempc(3,mpcfree)
             if(mpcfree.eq.0) then
                write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
-               stop
+               call exit(201)
             endif
          enddo
       endif
@@ -402,7 +402,7 @@ c            close(70)
          else
             write(*,*)'*ERROR in generatecycmpcs: no more than 99'
             write(*,*)'       cyclic symmetry definitions allowed'
-            stop
+            call exit(201)
          endif
          ipompc(nmpc)=mpcfree 
          idof=8*(noded-1)+4
@@ -411,7 +411,7 @@ c            close(70)
             if(ikmpc(id).eq.idof) then
                write(*,*) '*ERROR in generatecycmpcs: temperature'
                write(*,*) '       in node',noded,'is already used'
-               stop
+               call exit(201)
             endif
          endif
 !     
@@ -430,7 +430,7 @@ c            close(70)
          mpcfree=nodempc(3,mpcfree)
          if(mpcfree.eq.0) then
             write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
-            stop
+            call exit(201)
          endif
          if(.not.interpolation) then
             nodempc(1,mpcfree)=nodei
@@ -440,7 +440,7 @@ c            close(70)
             mpcfree=nodempc(3,mpcfree)
             if(mpcfree.eq.0) then
                write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
-               stop
+               call exit(201)
             endif
          else
             do k=1,nterms
@@ -451,7 +451,7 @@ c            close(70)
                mpcfree=nodempc(3,mpcfree)
                if(mpcfree.eq.0) then
                   write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
-                  stop
+                  call exit(201)
                endif
             enddo
          endif

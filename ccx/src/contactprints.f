@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -42,19 +42,20 @@
          write(*,*) '*ERROR in contactprints: *CONTACT PRINT 
      &        should only be'
          write(*,*) '  used within a *STEP definition'
-         stop
+         call exit(201)
       endif
 !
       nodesys='L'
 !
-!     reset the nodal print requests (element print requests, if any,
-!     are kept)
+!     reset the contact print requests (node and element print requests,
+!     if any, are kept)
 !
       if(.not.contactprint_flag) then
          ii=0
          do i=1,nprint
             if((prlab(i)(1:4).eq.'CSTR').or.
      &         (prlab(i)(1:4).eq.'CDIS').or.
+     &         (prlab(i)(1:4).eq.'CNUM').or.
      &         (prlab(i)(1:4).eq.'CELS')) cycle
             ii=ii+1
             prlab(ii)=prlab(i)
@@ -102,13 +103,13 @@ c      jout=max(jout,1)
               write(*,*) '*ERROR in contactprints: time points
      &             definition '
      &               ,timepointsname(1:ipos-1),' is unknown or empty'
-              stop
+              call exit(201)
            endif
            if(idrct.eq.1) then
               write(*,*) '*ERROR in contactprints: the DIRECT option'
               write(*,*) '       collides with a TIME POINTS '
               write(*,*) '       specification'
-              stop
+              call exit(201)
            endif
            jout(1)=1
            jout(2)=1
@@ -129,6 +130,7 @@ c      jout=max(jout,1)
          do ii=1,n
             if((textpart(ii)(1:4).ne.'CSTR').and.
      &         (textpart(ii)(1:4).ne.'CELS').and.
+     &         (textpart(ii)(1:4).ne.'CNUM').and.
      &         (textpart(ii)(1:4).ne.'CDIS')) then
                write(*,*) '*WARNING in contactprints: label not
      &              applicable'
@@ -145,7 +147,7 @@ c      jout=max(jout,1)
             nprint=nprint+1
             if(nprint.gt.nprint_) then
                write(*,*) '*ERROR in contatcprints: increase nprint_'
-               stop
+               call exit(201)
             endif
             prset(nprint)=noset
             prlab(nprint)(1:4)=textpart(ii)(1:4)

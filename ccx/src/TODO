@@ -1,9 +1,7 @@
 ===================================================
-Things which might be useful if built into CalculiX Version 2.7
+Things which might be useful if built into CalculiX Version 2.8
 ===================================================
 
-- gap/contact elements
+- compressible CFD based on the finite volume method
 
-- incompressible elements
-
-- tension-only material
+- turbulence models in CFD

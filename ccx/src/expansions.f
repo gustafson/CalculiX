@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,14 +40,14 @@
          write(*,*) 
      &       '*ERROR reading *EXPANSION: *EXPANSION should be placed'
          write(*,*) '  before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       if(nmat.eq.0) then
          write(*,*)
      &     '*ERROR reading *EXPANSION: *EXPANSION should be preceded'
          write(*,*) '  by a *MATERIAL card'
-         stop
+         call exit(201)
       endif
 !
       ityp=1
@@ -86,7 +86,7 @@
             nalcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *EXPANSION: increase ntmat_'
-               stop
+               call exit(201)
             endif
             do i=1,1
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
@@ -108,7 +108,7 @@
             nalcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *EXPANSION: increase ntmat_'
-               stop
+               call exit(201)
             endif
             do i=1,3
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
@@ -130,7 +130,7 @@
             nalcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *EXPANSION: increase ntmat_'
-               stop
+               call exit(201)
             endif
             do i=1,6
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)

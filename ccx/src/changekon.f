@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -49,6 +49,7 @@
       nkondiff=0
       do i=1,ne
          if(ipkon(i).lt.0) cycle
+         if(lakon(i)(1:1).ne.'S') cycle
          if(lakon(i)(8:8).ne.'C') cycle
          do  j=1,mi(3)
             if(ielmat(j,i).ne.0) then
@@ -104,8 +105,9 @@
          elseif(lakon(i)(1:7).eq.'SPRINGA') then
             nopeexp=2
          else
-            write(*,*) '*ERROR in changekon: nopeexp unknown'
-            stop
+            write(*,*) '*ERROR in changekon: element type unknown:',
+     &                 ' element: ',i,' type: ',lakon(i)
+            call exit(201)
          endif
 !
          nlayer=0

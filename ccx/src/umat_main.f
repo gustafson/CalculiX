@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -76,6 +76,16 @@
      &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
      &        iorien,pgauss,orab,nmethod,pnewdt)
 !
+      elseif(amat(1:10).eq.'CIARLET_EL') then
+!
+         amatloc(1:70)=amat(11:80)
+         amatloc(71:80)='          '
+         call umat_ciarlet_el(amatloc,
+     &        iel,iint,kode,elconloc,emec,
+     &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
+     &        icmd,ielas,mi(1),
+     &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,orab)
+!
       elseif(amat(1:16).eq.'COMPRESSION_ONLY') then
 !
          amatloc(1:64)=amat(17:80)
@@ -116,6 +126,17 @@
      &        icmd,ielas,mi(1),
      &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,orab)
 !
+      elseif(amat(1:20).eq.'SINGLE_CRYSTAL_CREEP') then
+!
+         amatloc(1:60)=amat(21:80)
+         amatloc(61:80)='                    '
+         call umat_single_crystal_creep(amatloc,
+     &        iel,iint,kode,elconloc,emec,
+     &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
+     &        icmd,ielas,mi(1),
+     &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,orab,
+     &        pnewdt)
+!
       elseif(amat(1:14).eq.'SINGLE_CRYSTAL') then
 !
          amatloc(1:66)=amat(15:80)
@@ -147,7 +168,7 @@
       else
          write(*,*) '*ERROR in umat: no user material subroutine'
          write(*,*) '       defined for material ',amat
-         stop
+         call exit(201)
       endif
 !
       return

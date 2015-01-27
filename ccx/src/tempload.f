@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -130,7 +130,8 @@
                enddo
             else
                do j=1,3
-                  coords(j)=co(j,node)+vold(j,node)
+c                  coords(j)=co(j,node)+vold(j,node)
+                  coords(j)=co(j,node)
                enddo
             endif
 !
@@ -225,7 +226,8 @@ c            write(*,*) 'tempload ',node,ndirboun(i),xbounact(i)
                   enddo
                else
                   do j=1,3
-                     coords(j)=co(j,node)+vold(j,node)
+c                     coords(j)=co(j,node)+vold(j,node)
+                     coords(j)=co(j,node)
                   enddo
                endif
 !
@@ -245,15 +247,37 @@ c            write(*,*) 'tempload ',node,ndirboun(i),xbounact(i)
                abqtime(2)=ttime+time
 !
                do j=1,3
-                  coords(j)=co(j,node)+vold(j,node)
+c                  coords(j)=co(j,node)+vold(j,node)
+                  coords(j)=co(j,node)
                enddo
 !
                call cload(xforcact(i),istep,iinc,abqtime,node,
-     &              ndirforc(i),coords,vold,mi,ntrans,trab,inotr,veold,
-     &              nmethod,idummy,ddummy,ddummy)
+     &              ndirforc(i),coords,vold,mi,ntrans,trab,inotr,veold)
+               cycle
+            elseif((xforc(i).lt.1.9232931375d0).and.
+     &             (xforc(i).gt.1.9232931373d0)) then
+!     
+!     boundary conditions for submodel
+!     
+               node=nodeforc(1,i)
+!     
+!     for the interpolation of submodels the undeformed
+!     geometry is taken
+!     
+               do j=1,3
+                  coords(j)=co(j,node)
+               enddo
+!     
+               entity='N'
+               one=1
+               iselect(1)=ndirforc(i)+10
+               call interpolsubmodel(integerglob,doubleglob,xforcact(i),
+     &              coords,iselect,one,node,tieset,istartset,iendset,
+     &              ialset,ntie,entity)
                cycle
             endif
          endif
+!
          if(nam.gt.0) then
             iamforci=iamforc(i)
          else
@@ -339,7 +363,8 @@ c               xloadact(2,i)=xload(2,i)
                abqtime(2)=ttime+time
 !
                do j=1,3
-                  coords(j)=co(j,i)+vold(j,i)
+c                  coords(j)=co(j,i)+vold(j,i)
+                  coords(j)=co(j,i)
                enddo
                call utemp(t1act(i),msecpt,istep,iinc,abqtime,i,
      &              coords,vold,mi)

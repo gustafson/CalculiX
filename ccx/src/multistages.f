@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,14 +29,14 @@
 !
       character*8 lakon(*)
       character*20 labmpc(*)
-      character*81 set(*),leftset,rightset,tieset(3,*),temp
+      character*81 set(*),leftset,rightset,tieset(3,*),temp,indepties,
+     &  indeptiet
 !     
-      integer istartset(*),iendset(*),ialset(*),ipompc(*),
-     &     nodempc(3,*),
+      integer istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
      &     nset,i,j,k,nk,nmpc,nmpc_,mpcfree,ics(*),l,ikmpc(*),ilmpc(*),
      &     lcs(*),kflag,ncsnodes,ncs_,mcs,ntie,nrcg(*),nzcg(*),jcs(*),
      &     kontri(3,*),ne,ipkon(*),kon(*),ifacetet(*),inodface(*),
-     &     nodel(5),noder(5),nkon,indexe,nope,
+     &     nodel(5),noder(5),nkon,indexe,nope,ipos,nelem,
      &     indcs, node_cycle,itemp(5),nx(*),ny(*),netri,noder0,
      &     nodef(8),nterms,kseg,k2,ndir,idof,number,id,mpcfreeold,
      &     lathyp(3,6),inum,ier
@@ -217,11 +217,33 @@ c            enddo
 !     
 !     Looking for a node on the independent cyclic symmetry side
 !     
+            indepties=tieset(3,int(cs(17,indcs)))
+            indeptiet=indepties
+            ipos=index(indepties,' ')
+            indepties(ipos:ipos)='S'
+            indeptiet(ipos:ipos)='T'
             do j=1,nset
-               if(tieset(3,int(cs(17,indcs))).eq.set(j)) then
-                  node_cycle=ialset(istartset(j))       
-               endif    
+               if(indepties.eq.set(j)) then
+!
+!                 nodal independent surface
+!
+                  node_cycle=ialset(istartset(j))
+                  exit
+               elseif(indeptiet.eq.set(j)) then
+!
+!                 facial independent surface
+!
+                  nelem=int(ialset(istartset(j))/10)
+                  node_cycle=kon(ipkon(nelem)+1)
+                  exit
+               endif
             enddo
+!
+c            do j=1,nset
+c               if(tieset(3,int(cs(17,indcs))).eq.set(j)) then
+c                  node_cycle=ialset(istartset(j))       
+c               endif    
+c            enddo
 !     
 !     Defining the rotary matrix for the tie level
 !     
@@ -436,7 +458,7 @@ c
      &                       '*ERROR in multistages: no more than 49'
                            write(*,*)
      &                      '       cyclic symmetry definitions allowed'
-                           stop
+                           call exit(201)
                         endif
                      endif
                      number=ndir-1 
@@ -483,7 +505,7 @@ c
                         if(mpcfree.eq.0) then
                            write(*,*)
      &                       '*ERROR in multistages: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                      enddo
                      do k=1,3
@@ -502,7 +524,7 @@ c
                            if(mpcfree.eq.0) then
                               write(*,*) 
      &                         '*ERROR in multistages: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                         enddo
                      enddo
@@ -549,7 +571,7 @@ c
                      if(mpcfree.eq.0) then
                         write(*,*)
      &                     '*ERROR in multistages: increase nmpc_'
-                        stop
+                        call exit(201)
                      endif
                      
                      do k2=1,nterms
@@ -563,7 +585,7 @@ c
                         if(mpcfree.eq.0) then
                            write(*,*) 
      &                      '*ERROR in multistages: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                      enddo  
                   endif

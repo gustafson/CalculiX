@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine bounrem(node,is,ie,nodeboun,ndirboun,xboun,
+      subroutine bounrem(node,is,iboun,nodeboun,ndirboun,xboun,
      &  nboun,iamboun,nam,ikboun,ilboun,typeboun)
 !
 !     removes boundary conditions in directions is up to and including
@@ -32,12 +32,13 @@
 !
       real*8 xboun(*)
 !
-      do i=is,ie
+c      do i=is,ie
+      do i=is,is
          idof=8*(node-1)+i
          call nident(ikboun,idof,nboun,id)
          if(id.gt.0) then
             if(ikboun(id).eq.idof) then
-               iboun=ilboun(id)
+c               iboun=ilboun(id)
                do j=iboun,nboun-1
                   nodeboun(j)=nodeboun(j+1)
                   ndirboun(j)=ndirboun(j+1)
@@ -59,13 +60,13 @@
                write(*,*) '*ERROR in bounrem: the boundary condition'
                write(*,*) '       cannot be removed since it has'
                write(*,*) '       not been defined'
-               stop
+               call exit(201)
             endif
          else
             write(*,*) '*ERROR in bounrem: the boundary condition'
             write(*,*) '       cannot be removed since it has'
             write(*,*) '       not been defined'
-            stop
+            call exit(201)
          endif
       enddo
 !

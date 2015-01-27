@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -42,14 +42,14 @@
          write(*,*) '*ERROR in cychards: *CYCLIC HARDENING'
          write(*,*) '       should be placed before all step'
          write(*,*) '       definitions'
-         stop
+         call exit(201)
       endif
 !
       if(nmat.eq.0) then
          write(*,*) '*ERROR in cychards: *CYCLIC HARDENING'
          write(*,*) '       should be preceded'
          write(*,*) '       by a *MATERIAL card'
-         stop
+         call exit(201)
       endif
 !
       if(((nelcon(1,nmat).ne.-51).and.(nelcon(1,nmat).ne.-114)).or.
@@ -57,7 +57,7 @@
          write(*,*) '*ERROR in cychards: *CYCLIC HARDENING'
          write(*,*) '       should be preceded'
          write(*,*) '  by an *PLASTIC,HARDENING=COMBINED card'
-         stop
+         call exit(201)
       endif
 !
       do i=2,n
@@ -86,7 +86,7 @@
             ntmat=ntmat+1
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR in cychards: increase ntmat_'
-               stop
+               call exit(201)
             endif
             nplicon(0,nmat)=ntmat
             plicon(0,ntmat,nmat)=temperature
@@ -98,7 +98,7 @@
             ntmat=ntmat+1
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR in cychards: increase ntmat_'
-               stop
+               call exit(201)
             endif
             nplicon(0,nmat)=ntmat
             plicon(0,ntmat,nmat)=temperature
@@ -112,7 +112,7 @@
          npmat=npmat+1
          if(npmat.gt.npmat_) then
             write(*,*) '*ERROR in cychards: increase npmat_'
-            stop
+            call exit(201)
          endif
          nplicon(ntmat,nmat)=npmat
       enddo
@@ -120,7 +120,7 @@
       if(ntmat.eq.0) then
          write(*,*) '*ERROR in cychards: *CYCLIC HARDENING card'
          write(*,*) '       without data encountered'
-         stop
+         call exit(201)
       endif
 !
 !     elastically anisotropic materials: recasting the input data

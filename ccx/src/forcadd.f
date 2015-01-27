@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -69,7 +69,7 @@ c
          nforc=nforc+1
          if(nforc.gt.nforc_) then
             write(*,*) '*ERROR in forcadd: increase nforc_'
-            stop
+            call exit(201)
          endif
          nodeforc(1,nforc)=node
          nodeforc(2,nforc)=isector
@@ -122,7 +122,7 @@ c
 !        if an amplitude is selected, it applies to all components
 !        of the force in the node. No separate amplitudes are allowed.
 !
-            if((.not.add).and.(idefforc(idf(1)).ne.1))
+            if((.not.add).and.(idefforc(idf(i)).ne.1))
      &        val=val-xforc(idf(1))*a(1,i)-xforc(idf(2))*a(2,i)
      &             -xforc(idf(3))*a(3,i)
 !
@@ -132,7 +132,7 @@ c
 !
 !           only first entry is tagged
 !
-            idefforc(idf(1))=1
+            idefforc(idf(i))=1
 !
             if(nam.gt.0) then
                do j=1,3
@@ -144,7 +144,7 @@ c
                nforc=nforc+1
                if(nforc.gt.nforc_) then
                   write(*,*) '*ERROR in forcadd: increase nforc_'
-                  stop
+                  call exit(201)
                endif
                nodeforc(1,nforc)=node
                nodeforc(2,nforc)=isector

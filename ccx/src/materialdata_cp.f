@@ -1,5 +1,5 @@
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
 !
       four=4
 !     
-!     calculating the specific heat and the dynamic viscosity
+!     calculating the specific heat
 !
       call ident2(shcon(0,1,imat),t1l,nshcon(imat),four,id)
       if(nshcon(imat).eq.0) then

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2014 Guido Dhondt
+!     Copyright (C) 1998-2015 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -95,7 +95,7 @@
          if(pressmin.lt.0.d0) then
             write(*,*) '*ERROR in initialgas: minimum initial pressure'
             write(*,*) '       is smaller than zero'
-            stop
+            call exit(201)
          endif
 !
 !        in nodes in which no initial pressure is given v(2,*)
@@ -295,7 +295,7 @@
                   write(*,*)'*ERROR in initialgas: no gravity vector'
                   write(*,*) '       was defined for liquid element',
      &                 nelem
-                  stop
+                  call exit(201)
                endif
 !     
                tg1=v(0,node1)
@@ -326,7 +326,7 @@
             else
                write(*,*) '*ERROR in initialgas: initial mass flow'
                write(*,*) '       cannot be determined'
-               stop
+               call exit(201)
             endif
          endif
 !     
@@ -373,7 +373,7 @@
                   write(*,*)'*ERROR in initialgas: no gravity vector'
                   write(*,*) '       was defined for liquid element',
      &                 nelem
-                  stop
+                  call exit(201)
                endif
 !     
                tg1=v(0,node1)

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2014 Guido Dhondt
+!     Copyright (C) 1998-2015 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !     
       subroutine carbon_seal(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,R,physcon,dvi,numf,set,mi)
+     &     nodef,idirf,df,R,physcon,dvi,numf,set,mi,iaxial)
 !     
 !     carbon seal element calculated with Richter method
 !      Richter "Rohrhydraulik", Springer ,1971,p. 175
@@ -33,7 +33,7 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
-     &     inv,mi(*)
+     &     inv,mi(*),iaxial
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),R,d,l,
      &     p1,p2,T1,physcon(*),dvi,pi,s,T2
@@ -89,7 +89,7 @@
          p2=v(2,node2)
          if(p1.ge.p2) then
             inv=1
-            xflow=v(1,nodem)
+            xflow=v(1,nodem)*iaxial
             T1=v(0,node1)+physcon(1)
             nodef(1)=node1
             nodef(2)=node1
@@ -99,7 +99,7 @@
             inv=-1
             p1=v(2,node2)
             p2=v(2,node1)
-            xflow=-v(1,nodem)
+            xflow=-v(1,nodem)*iaxial
             T1=v(0,node2)+physcon(1)
             nodef(1)=node2
             nodef(2)=node2
@@ -135,7 +135,7 @@
          p2=v(2,node2)
          if(p1.ge.p2) then
             inv=1
-            xflow=v(1,nodem)
+            xflow=v(1,nodem)*iaxial
             T1=v(0,node1)+physcon(1)
             T2=v(0,node2)+physcon(1)
             nodef(1)=node1
@@ -146,7 +146,7 @@
             inv=-1
             p1=v(2,node2)
             p2=v(2,node1)
-            xflow=-v(1,nodem)
+            xflow=-v(1,nodem)*iaxial
             T1=v(0,node2)+physcon(1)
             T2=v(0,node1)+physcon(1)
             nodef(1)=node2
@@ -182,12 +182,11 @@
          endif
       
  56      FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A)
-
-
-
-
       endif
 !     
+      xflow=xflow/iaxial
+      df(3)=df(3)*iaxial
+!
       return
       end
       

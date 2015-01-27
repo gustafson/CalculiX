@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,7 +40,7 @@
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *EL PRINT: *EL PRINT should only be'
          write(*,*) '  used within a *STEP definition'
-         stop
+         call exit(201)
       endif
 !
       elemsys='L'
@@ -58,7 +58,7 @@
      &         (prlab(i)(1:4).eq.'ELSE').or.
      &         (prlab(i)(1:4).eq.'ELKE').or.
      &         (prlab(i)(1:4).eq.'EVOL').or.
-     &         (prlab(i)(1:4).eq.'SF  ').or.
+     &         (prlab(i)(1:4).eq.'SVF ').or.
      &         (prlab(i)(1:4).eq.'HFLF').or.
      &         (prlab(i)(1:4).eq.'HFL ')) cycle
             ii=ii+1
@@ -138,13 +138,13 @@
               write(*,*) '*ERROR elprints: time'
               write(*,*) '       points definition',
      &               timepointsname,' is unknown'
-              stop
+              call exit(201)
            endif
            if(idrct.eq.1) then
               write(*,*) '*ERROR reading *EL PRINT: the DIRECT option'
               write(*,*) '       collides with a TIME POINTS '
               write(*,*) '       specification'
-              stop
+              call exit(201)
            endif
            jout(1)=1
            jout(2)=1
@@ -217,11 +217,11 @@
                   write(*,*) '         calculations'
                   cycle
                endif
-            elseif((textpart(ii)(1:4).eq.'SF  ').or.
+            elseif((textpart(ii)(1:4).eq.'SVF ').or.
      &             (textpart(ii)(1:4).eq.'HFLF')) then
                if(cfd.eq.0) then
                   write(*,*) 
-     &               '*WARNING reading *EL PRINT: SF or HFLF only'
+     &               '*WARNING reading *EL PRINT: SVF or HFLF only'
                   write(*,*) '         make sense for 3D fluid'
                   write(*,*) '         calculations; '
                   call inputerror(inpc,ipoinpc,iline,
@@ -241,7 +241,7 @@
             nprint=nprint+1
             if(nprint.gt.nprint_) then
                write(*,*) '*ERROR reading *EL PRINT: increase nprint_'
-               stop
+               call exit(201)
             endif
             prset(nprint)=elset
             prlab(nprint)(1:4)=textpart(ii)(1:4)

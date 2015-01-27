@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,7 +31,7 @@
      &  coriolis,ibody,xloadold,reltime,veold,springarea,nstate_,
      &  xstateini,xstate,thicke,integerglob,doubleglob,
      &  tieset,istartset,iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,
-     &  mortar,clearini)
+     &  mortar,clearini,ielprop,prop)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !
@@ -47,7 +47,7 @@
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
      &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,nasym,
-     &  nactdof(0:mi(2),*),irow(*),icolumn,ialset(*),
+     &  nactdof(0:mi(2),*),irow(*),icolumn,ialset(*),ielprop(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),ntie,
      &  ielorien(mi(3),*),integerglob(*),istartset(*),iendset(*),
      &  ipkon(*),intscheme,ncocon(2,*),nshcon(*),ipobody(2,*),nbody,
@@ -60,10 +60,11 @@
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
-     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(78,78),ff(78),
-     &  sti(6,mi(1),*),sm(78,78),stx(6,mi(1),*),adb(*),aub(*),
+     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(100,100),
+     &  ff(100),
+     &  sti(6,mi(1),*),sm(100,100),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),springarea(2,*),
-     &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),
+     &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),prop(*),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
@@ -247,7 +248,7 @@ c     Bernhardi end
      &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
      &          integerglob,doubleglob,tieset,istartset,
      &          iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,
-     &          clearini)
+     &          clearini,ielprop,prop)
 !
         do jj=1,3*nope
 !
@@ -542,7 +543,8 @@ c                  endif
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  xstiff,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,
      &  ilmpc,springarea,plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,
-     &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon)
+     &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,
+     &  ipkon,ielprop,prop)
 !
         do jj=1,nope
 !
@@ -809,6 +811,7 @@ c                  endif
                call nident(ikmpc,jdof,nmpc,id)
                if(id.gt.0) then
                   if(ikmpc(id).eq.jdof) then
+                     id=ilmpc(id)
                      ist=ipompc(id)
                      index=nodempc(3,ist)
                      if(index.eq.0) cycle

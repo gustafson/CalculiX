@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -299,6 +299,17 @@
             stre(i)=stri(i)
          enddo
 !
+!     updating the state variables
+!
+         xstate(1,iint,iel)=eeq
+         do i=1,6
+            xstate(1+i,iint,iel)=ep0(i)
+         enddo
+         xstate(8,iint,iel)=al10
+         do i=1,6
+            xstate(8+i,iint,iel)=al20(i)
+         enddo
+!
 !        elastic stiffness
 !
          if(icmd.ne.3) then
@@ -405,7 +416,7 @@
          if(info.ne.0) then
             write(*,*) '*ERROR in sc.f: linear equation solver'
             write(*,*) '       exited with error: info = ',info
-            stop
+            call exit(201)
          endif
          nrhs=1
          cm1(1)=gr(1,1)
@@ -709,7 +720,7 @@ c            write(*,*)
          if(info.ne.0) then
             write(*,*) '*ERROR in sc.f: linear equation solver'
             write(*,*) '       exited with error: info = ',info
-            stop
+            call exit(201)
          endif
 !
          do i=1,6
@@ -803,7 +814,7 @@ c            write(*,*)
          if(info.ne.0) then
             write(*,*) '*ERROR in sc.f: linear equation solver'
             write(*,*) '       exited with error: info = ',info
-            stop
+            call exit(201)
          endif
 !
          if(iorien.gt.0) then
@@ -936,7 +947,7 @@ c            write(*,*)
          if(info.ne.0) then
             write(*,*) '*ERROR in sc.f: linear equation solver'
             write(*,*) '       exited with error: info = ',info
-            stop
+            call exit(201)
          endif
 !
          stiff(1)=gr(1,1)-gm1*Pn(1)*Pn(1)

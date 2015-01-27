@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,7 +31,8 @@
      &  coriolis,ibody,xloadold,reltime,veold,springarea,nstate_,
      &  xstateini,xstate,thicke,
      &  integerglob,doubleglob,tieset,istartset,iendset,
-     &  ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,clearini)
+     &  ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,clearini,ielprop,
+     &  prop)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !     asymmetric contributions
@@ -57,17 +58,18 @@
      &  ll,jdof1,jdof2,node1,node2,id,i0,id1,id2,idof1,idof2,nasym,
      &  ntmat_,indexe,nope,norien,iexpl,ncmat_,istep,iinc,mpc2,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,ist1,ist2,
-     &  mortar
+     &  mortar,ielprop(*)
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),bb(*),xloadold(2,*),value,
-     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(78,78),ff(78),
-     &  sti(6,mi(1),*),sm(78,78),stx(6,mi(1),*),adb(*),aub(*),
+     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(100,100),
+     &  ff(100),
+     &  sti(6,mi(1),*),sm(100,100),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),reltime,
      &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),
      &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
-     &  springarea(2,*),thicke(mi(3),*),clearini(3,9,*),
+     &  springarea(2,*),thicke(mi(3),*),clearini(3,9,*),prop(*),
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),veold(0:mi(2),*),doubleglob(*),
      &  om,dtime,ttime,time,pslavsurf(3,*),pmastsurf(6,*)
@@ -135,7 +137,7 @@
      &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
      &          integerglob,
      &          doubleglob,tieset,istartset,iendset,ialset,ntie,nasym,
-     &          pslavsurf,pmastsurf,mortar,clearini)
+     &          pslavsurf,pmastsurf,mortar,clearini,ielprop,prop)
 !
         do jj=1,3*nope
 !
@@ -339,7 +341,8 @@ c     &                            s(jj,ll)/coefmpc(ist)/coefmpc(ist)
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  xstiff,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,
      &  ilmpc,springarea,plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,
-     &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon)
+     &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon,
+     &  ielprop,prop)
 !
         do jj=1,nope
 !

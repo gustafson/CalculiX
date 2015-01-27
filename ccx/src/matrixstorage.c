@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -84,9 +84,9 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
     
     /* no transformation */
 
-    aa=NNEW(double,ndim);
-    ai=NNEW(ITG,ndim);
-    aj=NNEW(ITG,ndim);
+    NNEW(aa,double,ndim);
+    NNEW(ai,ITG,ndim);
+    NNEW(aj,ITG,ndim);
     
     k=0;
     for(i=0;i<*neq;i++){
@@ -121,13 +121,13 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
 
     /* aa contains the linear storage of the individual matrix elements */
 
-    aa=NNEW(double,ndim2);
+    NNEW(aa,double,ndim2);
 
     /* aa3 contains the linear storage of the 3x3 matrices */
 
-    aa3=NNEW(double,ndim2);
-    ai=NNEW(ITG,ndim2);
-    aj=NNEW(ITG,ndim2);
+    NNEW(aa3,double,ndim2);
+    NNEW(ai,ITG,ndim2);
+    NNEW(aj,ITG,ndim2);
     
     k=0;
     for(i=0;i<*neq;i++){
@@ -174,8 +174,8 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
 
     npoint_=*neq;
     npoint=0;
-    ipoint=NNEW(long long,npoint_);
-    ipoindex=NNEW(ITG,npoint_);
+    NNEW(ipoint,long long,npoint_);
+    NNEW(ipoindex,ITG,npoint_);
 
     neq3=*neq/3;
     index=0;
@@ -216,7 +216,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
     /* defining the transformation matrix (diagonal matrix of
        3x3 submatrices */
 
-    trans=NNEW(double,9*neq3);
+    NNEW(trans,double,9*neq3);
     for (i=0;i<*nk;i++){
       idof=nactdof[mt*i+1];
       if(idof==0) continue;
@@ -273,7 +273,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
         aa[k]=aa3[9*i+j];
       }
     }
-    free(aa3);free(ipoint);free(ipoindex);free(trans);
+    SFREE(aa3);SFREE(ipoint);SFREE(ipoindex);SFREE(trans);
   }
 
   FORTRAN(isortiid,(aj,ai,aa,&ndim,&kflag));
@@ -296,7 +296,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
 
   fclose(f2);
 
-  free(ai);free(aj);free(aa);
+  SFREE(ai);SFREE(aj);SFREE(aa);
 
   /* mass matrix */
 
@@ -314,9 +314,9 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
     
     /* no transformation */
 
-    aa=NNEW(double,ndim);
-    ai=NNEW(ITG,ndim);
-    aj=NNEW(ITG,ndim);
+    NNEW(aa,double,ndim);
+    NNEW(ai,ITG,ndim);
+    NNEW(aj,ITG,ndim);
     
     k=0;
     for(i=0;i<*neq;i++){
@@ -345,13 +345,13 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
 
     /* aa contains the linear storage of the individual matrix elements */
 
-    aa=NNEW(double,ndim2);
+    NNEW(aa,double,ndim2);
 
     /* aa3 contains the linear storage of the 3x3 matrices */
 
-    aa3=NNEW(double,ndim2);
-    ai=NNEW(ITG,ndim2);
-    aj=NNEW(ITG,ndim2);
+    NNEW(aa3,double,ndim2);
+    NNEW(ai,ITG,ndim2);
+    NNEW(aj,ITG,ndim2);
     
     k=0;
     for(i=0;i<*neq;i++){
@@ -398,8 +398,8 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
 
     npoint_=*neq;
     npoint=0;
-    ipoint=NNEW(long long,npoint_);
-    ipoindex=NNEW(ITG,npoint_);
+    NNEW(ipoint,long long,npoint_);
+    NNEW(ipoindex,ITG,npoint_);
 
     neq3=*neq/3;
     index=0;
@@ -440,7 +440,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
     /* defining the transformation matrix (diagonal matrix of
        3x3 submatrices */
 
-    trans=NNEW(double,9*neq3);
+    NNEW(trans,double,9*neq3);
     for (i=0;i<*nk;i++){
       idof=nactdof[mt*i+1];
       if(idof==0) continue;
@@ -497,7 +497,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
         aa[k]=aa3[9*i+j];
       }
     }
-    free(aa3);free(ipoint);free(ipoindex);free(trans);
+    SFREE(aa3);SFREE(ipoint);SFREE(ipoindex);SFREE(trans);
   }
 
   FORTRAN(isortiid,(aj,ai,aa,&ndim,&kflag));
@@ -520,7 +520,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
 
   fclose(f3);
 
-  free(ai);free(aj);free(aa);
+  SFREE(ai);SFREE(aj);SFREE(aa);
 
   *aup=au;
   *irowp=irow;
@@ -544,10 +544,11 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
 
   /* invert nactdof */
 
-  nactdofinv=NNEW(ITG,mt**nk);nodorig=NNEW(ITG,*nk);
+  NNEW(nactdofinv,ITG,mt**nk);
+  NNEW(nodorig,ITG,*nk);
   FORTRAN(gennactdofinv,(nactdof,nactdofinv,nk,mi,nodorig,
 			 ipkon,lakon,kon,ne));
-  free(nodorig);
+  SFREE(nodorig);
   
   if((*mcs==0)||(cs[1]<0)){
       for(i=0;i<*neq;i++){

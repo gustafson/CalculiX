@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -48,7 +48,7 @@
          write(*,*) 
      &     '*ERROR in rigidbodies: *RIGID BODY should be placed'
          write(*,*) '  before all step definitions'
-         stop
+         call exit(201)
       endif
 !
 !     the *RIGID BODY option implies a nonlinear geometric 
@@ -57,7 +57,7 @@
       if(iperturb.eq.1) then
          write(*,*) '*ERROR in rigidbodies: the *RIGID BODY option'
          write(*,*) '       cannot be used in a perturbation step'
-         stop
+         call exit(201)
       endif
 !
       elset='
@@ -76,7 +76,7 @@
             else
                write(*,*) '*ERROR in rigidbodies: either NSET or'
                write(*,*) '       ELSET can be specified, not both'
-               stop
+               call exit(201)
             endif
          elseif(textpart(i)(1:8).eq.'PINNSET=') then
             if(elset(1:1).eq.' ') then
@@ -86,7 +86,7 @@
             else
                write(*,*) '*ERROR in rigidbodies: either NSET or'
                write(*,*) '       ELSET can be specified, not both'
-               stop
+               call exit(201)
             endif
          elseif(textpart(i)(1:5).eq.'NSET=') then
             if(elset(1:1).eq.' ') then
@@ -96,7 +96,7 @@
             else
                write(*,*) '*ERROR in rigidbodies: either NSET or'
                write(*,*) '       ELSET can be specified, not both'
-               stop
+               call exit(201)
             endif
          elseif(textpart(i)(1:8).eq.'REFNODE=') then
             read(textpart(i)(9:18),'(i10)',iostat=istat) irefnode
@@ -105,7 +105,7 @@
             if(irefnode.gt.nk) then
                write(*,*) '*ERROR in rigidbodies: ref node',irefnode
                write(*,*) '       has not been defined'
-               stop
+               call exit(201)
             endif
          elseif(textpart(i)(1:8).eq.'ROTNODE=') then
             read(textpart(i)(9:18),'(i10)',iostat=istat) irotnode
@@ -114,7 +114,7 @@
             if(irotnode.gt.nk) then
                write(*,*) '*ERROR in rigidbodies: rot node',irotnode
                write(*,*) '       has not been defined'
-               stop
+               call exit(201)
             endif
          else
             write(*,*) 
@@ -180,7 +180,7 @@
          nk=nk+1
          if(nk.gt.nk_) then
             write(*,*) '*ERROR in rigidbodies: increase nk_'
-            stop
+            call exit(201)
          endif
          irefnode=nk
 !
@@ -195,7 +195,7 @@
          nk=nk+1
          if(nk.gt.nk_) then
             write(*,*) '*ERROR in rigidbodies: increase nk_'
-            stop
+            call exit(201)
          endif
          irotnode=nk
       endif
@@ -209,7 +209,7 @@
                write(*,*) '*ERROR in rigidbodies: node ',node
                write(*,*) '       belonging to set ',noset
                write(*,*) '       has not been defined'
-               stop
+               call exit(201)
             endif
             if((node.eq.irefnode).or.(node.eq.irotnode)) cycle
             do j=1,3
@@ -236,7 +236,7 @@
                write(*,*) '*ERROR in rigidbodies: element ',ielement
                write(*,*) '       belonging to set ',elset
                write(*,*) '       has not been defined'
-               stop
+               call exit(201)
             endif
             if(ipkon(ielement).lt.0) cycle
             indexe=ipkon(ielement)

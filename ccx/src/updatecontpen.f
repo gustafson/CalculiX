@@ -126,7 +126,7 @@
             if(j.gt.nset) then
                write(*,*) '*ERROR in tiefaccont: master surface'
                write(*,*) '       does not exist'
-               stop
+               call exit(201)
             endif
             imast=j
 !     
@@ -430,7 +430,7 @@
      &              mastset(1:ipos-2)
                write(*,*) '       does not exist or does not contain'
                write(*,*) '       element faces'
-               stop
+               call exit(201)
             endif
             imast=j
             

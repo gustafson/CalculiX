@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,13 +35,13 @@
       if(istep.gt.0) then
          write(*,*) '*ERROR in orientations: *ORIENTATION should be'
          write(*,*) '  placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       norien=norien+1
       if(norien.gt.norien_) then
          write(*,*) '*ERROR in orientations: increase norien_'
-         stop
+         call exit(201)
       endif
 !
 !     rectangular coordinate system: orab(7,norien)=1
@@ -57,7 +57,7 @@
                write(*,*) '*ERROR in orientations: name too long'
                write(*,*) '       (more than 80 characters)'
                write(*,*) '       orientation name:',textpart(i)(1:132)
-               stop
+               call exit(201)
             endif
          elseif(textpart(i)(1:7).eq.'SYSTEM=') then
             if(textpart(i)(8:8).eq.'C') then
@@ -78,7 +78,7 @@
       if((istat.lt.0).or.(key.eq.1)) then
          write(*,*)'*ERROR in orientations: definition of the following'
          write(*,*) '  orientation is not complete: ',orname(norien)
-         stop
+         call exit(201)
       endif
 !
       do i=1,6

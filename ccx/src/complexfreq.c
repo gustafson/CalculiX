@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
 /*     published by the Free Software Foundation(version 2);    */
@@ -48,7 +48,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
                ITG *ntmat_,double **t0p, 
 	       double **t1p,ITG *ithermal,double *prestr, ITG *iprestr, 
 	       double **voldp,ITG *iperturb, double **stip, ITG *nzs, 
-	       double *tinc, double *tper, double *xmodal,
+	       double *timepar, double *xmodal,
 	       double **veoldp, char *amname, double *amta,
 	       ITG *namta, ITG *nam, ITG *iamforc, ITG *iamload,
 	       ITG **iamt1p,ITG *jout,
@@ -61,14 +61,15 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
                double *ttime, char *set, ITG *nset, ITG *istartset,
                ITG *iendset, ITG **ialsetp, ITG *nprint, char *prlab,
                char *prset, ITG *nener, double *trab, 
-               ITG **inotrp, ITG *ntrans, double **fmpcp, char *cbody, ITG *ibody,
+               ITG **inotrp, ITG *ntrans, double **fmpcp, char *cbody, 
+	       ITG *ibody,
                double *xbody, ITG *nbody, double *xbodyold, ITG *istep,
                ITG *isolver,ITG *jq, char *output, ITG *mcs, ITG *nkon,
                ITG *mpcend, ITG *ics, double *cs, ITG *ntie, char *tieset,
-               ITG *idrct, ITG *jmax, double *tmin, double *tmax,
+               ITG *idrct, ITG *jmax,
 	       double *ctrl, ITG *itpamp, double *tietol,ITG *nalset,
 	       ITG *ikforc, ITG *ilforc, double *thicke,
-	       char *jobnamef,ITG *mei){
+	       char *jobnamef,ITG *mei,ITG *nmat,ITG *ielprop,double *prop){
 
   char fneig[132]="",description[13]="            ",*lakon=NULL,*labmpc=NULL,
     *lakont=NULL;
@@ -108,7 +109,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     stnimag,freq,*emnt=NULL,*shcon=NULL,*eig=NULL,*clearini=NULL,
     *eigxr=NULL,*eigxi=NULL,*xmac=NULL,*bett=NULL,*betm=NULL,*xmaccpx=NULL,
     fmin=0.,fmax=1.e30,*xmr=NULL,*xmi=NULL,*zi=NULL,*eigx=NULL,
-    *pslavsurf=NULL,*pmastsurf=NULL,*cdnr=NULL,*cdni=NULL;
+    *pslavsurf=NULL,*pmastsurf=NULL,*cdnr=NULL,*cdni=NULL,*tinc,*tper,*tmin,*tmax;
 
   FILE *f1;
 
@@ -127,6 +128,11 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   coefmpc=*coefmpcp;labmpc=*labmpcp;ikmpc=*ikmpcp;ilmpc=*ilmpcp;
   fmpc=*fmpcp;veold=*veoldp;iamt1=*iamt1p;t0=*t0p;t1=*t1p;t1old=*t1oldp;
 
+  tinc=&timepar[0];
+  tper=&timepar[1];
+  tmin=&timepar[2];
+  tmax=&timepar[3];
+
   if(ithermal[0]<=1){
       kmin=1;kmax=3;
   }else if(ithermal[0]==2){
@@ -135,7 +141,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       kmin=0;kmax=3;
   }
 
-  xstiff=NNEW(double,(long long)27*mi[0]**ne);
+  NNEW(xstiff,double,(long long)27*mi[0]**ne);
 
   dtime=*tinc;
 
@@ -200,23 +206,23 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       
 
       if(nherm==1){
-	  d=NNEW(double,nev);
+	  NNEW(d,double,nev);
 	  if(fread(d,sizeof(double),nev,f1)!=nev){
 	      printf("*ERROR in complexfreq reading the eigenvalues in the eigenvalue file...");
 	      exit(0);
 	  }
       }else{
-	  d=NNEW(double,2*nev);
+	  NNEW(d,double,2*nev);
 	  if(fread(d,sizeof(double),2*nev,f1)!=2*nev){
 	      printf("*ERROR in complexfreq reading the eigenvalues in the eigenvalue file...");
 	      exit(0);
 	  }
       }
       
-      ad=NNEW(double,neq[1]);
-      adb=NNEW(double,neq[1]);
-      au=NNEW(double,nzs[2]);
-      aub=NNEW(double,nzs[1]);
+      NNEW(ad,double,neq[1]);
+      NNEW(adb,double,neq[1]);
+      NNEW(au,double,nzs[2]);
+      NNEW(aub,double,nzs[1]);
       
       /* reading the stiffness matrix */
 
@@ -245,20 +251,20 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       /* reading the eigenvectors */
 
       if(nherm==1){
-	  z=NNEW(double,neq[1]*nev);
+	  NNEW(z,double,neq[1]*nev);
 	  if(fread(z,sizeof(double),neq[1]*nev,f1)!=neq[1]*nev){
 	      printf("*ERROR in complexfreq reading the eigenvectors in the eigenvalue file...");
 	      exit(0);
 	  }
       }else{
-	  z=NNEW(double,2*neq[1]*nev);
+	  NNEW(z,double,2*neq[1]*nev);
 	  if(fread(z,sizeof(double),2*neq[1]*nev,f1)!=2*neq[1]*nev){
 	      printf("*ERROR in complexfreq reading the eigenvectors in the eigenvalue file...");
 	      exit(0);
 	  }
       }
 
-      nm=NNEW(ITG,nev);
+      NNEW(nm,ITG,nev);
       for(i=0;i<nev;i++){nm[i]=-1;}
   }
   else{
@@ -279,8 +285,9 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      exit(0);
 	      }
 	  if(nev==0){
-	      if(nherm==1){d=NNEW(double,nevd);}else{d=NNEW(double,2*nevd);}
-	      nm=NNEW(ITG,nevd);
+	      if(nherm==1){NNEW(d,double,nevd);
+	      }else{NNEW(d,double,2*nevd);}
+	      NNEW(nm,ITG,nevd);
 	  }else{
 	      printf("*ERROR in complexfreq: flutter forces cannot\n");
 	      printf("       be combined with multiple modal diameters\n");
@@ -302,8 +309,8 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  for(i=nev;i<nev+nevd;i++){nm[i]=nmd;}
 	  
 	  if(nev==0){
-	      adb=NNEW(double,neq[1]);
-	      aub=NNEW(double,nzs[1]);
+	      NNEW(adb,double,neq[1]);
+	      NNEW(aub,double,nzs[1]);
 
 	      if(fread(adb,sizeof(double),neq[1],f1)!=neq[1]){
 		  printf("*ERROR in complexfreq reading the diagonal of the mass matrix in the eigenvalue file...");
@@ -317,7 +324,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  }
 	  
 	  if(nev==0){
-	      z=NNEW(double,neq[1]*nevd);
+	      NNEW(z,double,neq[1]*nevd);
 	  }else{
 	      RENEW(z,double,(long long)neq[1]*(nev+nevd));
 	  }
@@ -372,8 +379,8 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   /* assigning nodes and elements to sectors */
 
   if(cyclicsymmetry){
-    inocs=NNEW(ITG,*nk);
-    ielcs=NNEW(ITG,*ne);
+    NNEW(inocs,ITG,*nk);
+    NNEW(ielcs,ITG,*ne);
     ielset=cs[12];
     if((*mcs!=1)||(ielset!=0)){
       for(i=0;i<*nk;i++) inocs[i]=-1;
@@ -451,8 +458,8 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
      and the same nodal diameter */
 
   if(cyclicsymmetry){
-      istartnmd=NNEW(ITG,nev);
-      iendnmd=NNEW(ITG,nev);
+      NNEW(istartnmd,ITG,nev);
+      NNEW(iendnmd,ITG,nev);
       nmd=0;
       inmd=nm[0];
       istartnmd[0]=1;
@@ -478,7 +485,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   /* assigning the body forces to the elements */ 
 
       ifreebody=*ne+1;
-      ipobody=NNEW(ITG,2**ne);
+      NNEW(ipobody,ITG,2**ne);
       for(k=1;k<=*nbody;k++){
 	  FORTRAN(bodyforce,(cbody,ibody,ipobody,nbody,set,istartset,
 			     iendset,ialset,&inewton,nset,&ifreebody,&k));
@@ -491,8 +498,8 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  FORTRAN(stop,());
       }
 
-      adc=NNEW(double,neq[1]);
-      auc=NNEW(double,nzs[1]);
+      NNEW(adc,double,neq[1]);
+      NNEW(auc,double,nzs[1]);
       FORTRAN(mafillcorio,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
               xboun,nboun,
 	      ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
@@ -508,17 +515,17 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
       /*  zc = damping matrix * eigenmodes */
 
-      zc=NNEW(double,neq[1]*nev);
+      NNEW(zc,double,neq[1]*nev);
       for(i=0;i<nev;i++){
 	  FORTRAN(op_corio,(&neq[1],&z[i*neq[1]],&zc[i*neq[1]],adc,auc,
 	  jq,irow));
       }
-      free(adc);free(auc);
+      SFREE(adc);SFREE(auc);
 
       /* cc is the reduced damping matrix (damping matrix mapped onto
          space spanned by eigenmodes) */
 
-      cc=NNEW(double,nev*nev);
+      NNEW(cc,double,nev*nev);
       for(i=0;i<nev;i++){
 	  for(j=0;j<=i;j++){
 	      for(k=0;k<neq[1];k++){
@@ -534,23 +541,23 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      cc[i*nev+j]=-cc[j*nev+i];
 	  }
       }
-      free(zc);
+      SFREE(zc);
 
       /* solving for the complex eigenvalues */
 
-      aa=NNEW(double,4*nev*nev);
-      bb=NNEW(double,4*nev*nev);
-      xx=NNEW(double,4*nev*nev);
-      temp=NNEW(double,4*nev*nev);
-      eiga=NNEW(double,2*nev);
-      eigb=NNEW(double,2*nev);
-      eigxx=NNEW(double,2*nev);
-      iter=NNEW(ITG,nev);
+      NNEW(aa,double,4*nev*nev);
+      NNEW(bb,double,4*nev*nev);
+      NNEW(xx,double,4*nev*nev);
+      NNEW(temp,double,4*nev*nev);
+      NNEW(eiga,double,2*nev);
+      NNEW(eigb,double,2*nev);
+      NNEW(eigxx,double,2*nev);
+      NNEW(iter,ITG,nev);
 
       FORTRAN(coriolissolve,(cc,&nev,aa,bb,xx,eiga,eigb,eigxx,
               iter,d,temp));
       
-      free(aa);free(bb);free(temp);free(eiga);free(eigb);free(iter);free(cc);
+      SFREE(aa);SFREE(bb);SFREE(temp);SFREE(eiga);SFREE(eigb);SFREE(iter);SFREE(cc);
 
   }else{
 
@@ -563,38 +570,38 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       }else{
 	  neqact=neq[1];
       }
-      zc=NNEW(double,2*neqact*nev);
-      aa=NNEW(double,4*nev*nev);
+      NNEW(zc,double,2*neqact*nev);
+      NNEW(aa,double,4*nev*nev);
 
       FORTRAN(readforce,(zc,&neqact,&nev,nactdof,ikmpc,nmpc,
 			 ipompc,nodempc,mi,coefmpc,jobnamef,
                          aa,&igeneralizedforce));
 
-      bb=NNEW(double,4*nev*nev);
-      xx=NNEW(double,4*nev*nev);
-      eiga=NNEW(double,2*nev);
-      eigb=NNEW(double,2*nev);
-      eigxx=NNEW(double,2*nev);
-      iter=NNEW(ITG,nev);
+      NNEW(bb,double,4*nev*nev);
+      NNEW(xx,double,4*nev*nev);
+      NNEW(eiga,double,2*nev);
+      NNEW(eigb,double,2*nev);
+      NNEW(eigxx,double,2*nev);
+      NNEW(iter,ITG,nev);
       FORTRAN(forcesolve,(zc,&nev,aa,bb,xx,eiga,eigb,eigxx,iter,d,
       		&neq[1],z,istartnmd,iendnmd,&nmd,&cyclicsymmetry,
 		&neqact,&igeneralizedforce));
-      free(aa);free(bb);free(eiga);free(eigb);free(iter);free(zc);
+      SFREE(aa);SFREE(bb);SFREE(eiga);SFREE(eigb);SFREE(iter);SFREE(zc);
       
  }
 
 /* sorting the eigenvalues and eigenmodes according to the size of the
    eigenvalues */
       
-  ipev=NNEW(ITG,nev);
-  eigxr=NNEW(double,nev);
-  aa=NNEW(double,2*nev);
-  bb=NNEW(double,4*nev*nev);
+  NNEW(ipev,ITG,nev);
+  NNEW(eigxr,double,nev);
+  NNEW(aa,double,2*nev);
+  NNEW(bb,double,4*nev*nev);
   
   FORTRAN(sortev,(&nev,&nmd,eigxx,&cyclicsymmetry,xx,
 		  eigxr,ipev,istartnmd,iendnmd,aa,bb));
   
-  free(ipev);free(eigxr);free(aa);free(bb);
+  SFREE(ipev);SFREE(eigxr);SFREE(aa);SFREE(bb);
 
   /* storing the eigenvalues in the .dat file */
 
@@ -606,10 +613,10 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
   /* storing the participation factors */
 
-  eigxr=NNEW(double,nev);
-  eigxi=NNEW(double,nev);
+  NNEW(eigxr,double,nev);
+  NNEW(eigxi,double,nev);
   if(nherm==1){
-      eig=NNEW(double,nev);
+      NNEW(eig,double,nev);
       for(l=0;l<nev;l++){
 	  if(d[l]<0.){
 	      eig[l]=0.;
@@ -619,7 +626,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       }
   }else{
 
-      eig=NNEW(double,2*nev);
+      NNEW(eig,double,2*nev);
       for(l=0;l<nev;l++){
 	  eig[2*l]=sqrt(sqrt(d[2*l]*d[2*l]+d[2*l+1]*d[2*l+1])+d[2*l])/sqrt(2.);
 	  eig[2*l+1]=sqrt(sqrt(d[2*l]*d[2*l]+d[2*l+1]*d[2*l+1])-d[2*l])/sqrt(2.);
@@ -634,7 +641,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       }
       FORTRAN(writepf,(eig,eigxr,eigxi,&zero,&nev,&mode,&nherm));
   }
-  free(eigxr);free(eigxi);free(eig);free(d);
+  SFREE(eigxr);SFREE(eigxi);SFREE(eig);SFREE(d);
 
   if(cyclicsymmetry){
       
@@ -643,7 +650,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       /* storage in zz: per eigenmode first the complete real part of
          the eigenvector, then the complete imaginary part */
       
-      zz=NNEW(double,(long long)2*nev*neqact);
+      NNEW(zz,double,(long long)2*nev*neqact);
       for(l=0;l<nev;l++){
 	  for(i=0;i<neqact;i++){
 	      for(k=0;k<nev;k++){
@@ -666,20 +673,20 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       /* calculating the scalar product of all old eigenmodes with
          all new eigenmodes => nev x nev matrix */
 
-      xmac=NNEW(double,nev*nev);
-      xmaccpx=NNEW(double,4*nev*nev);
-      bett=NNEW(double,nev);
-      betm=NNEW(double,nev);
+      NNEW(xmac,double,nev*nev);
+      NNEW(xmaccpx,double,4*nev*nev);
+      NNEW(bett,double,nev);
+      NNEW(betm,double,nev);
       FORTRAN(calcmac,(&neq[1],z,zz,&nev,xmac,xmaccpx,istartnmd,
       		       iendnmd,&nmd,&cyclicsymmetry,&neqact,bett,betm));
       FORTRAN(writemaccs,(xmac,&nev,nm));
 
-      free(xmac);free(bett);free(betm);free(xmaccpx);
-      free(z);
+      SFREE(xmac);SFREE(bett);SFREE(betm);SFREE(xmaccpx);
+      SFREE(z);
       
       /* normalizing the eigenmodes */
       
-      z=NNEW(double,neq[1]);
+      NNEW(z,double,neq[1]);
       for(l=0;l<nev;l++){
 	  sum=0.;
 	  DMEMSET(z,0,neq[1],0.);
@@ -693,7 +700,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      zz[l*neq[1]+k]/=sum;
 	  }
       }
-      free(z);
+      SFREE(z);
 
       /* calculating the mass-weighted internal products (eigenvectors are not 
          necessarily orthogonal, since the matrix of the eigenvalue problem is
@@ -702,10 +709,10 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
       if(mei[3]==1){
 	  
-	  xmr=NNEW(double,nev*nev);
-	  xmi=NNEW(double,nev*nev);
-	  z=NNEW(double,neq[1]);
-	  zi=NNEW(double,neq[1]);
+	  NNEW(xmr,double,nev*nev);
+	  NNEW(xmi,double,nev*nev);
+	  NNEW(z,double,neq[1]);
+	  NNEW(zi,double,neq[1]);
 	  
 	  for(l=0;l<nev;l++){
 	      DMEMSET(z,0,neq[1],0.);
@@ -749,7 +756,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      }
 	      printf("\n");
 	  }
-	  free(z);free(zi);
+	  SFREE(z);SFREE(zi);
       }
 
   }else{
@@ -758,7 +765,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       
       /* assembling the new eigenmodes */
       
-      zz=NNEW(double,2*nev*neq[1]);
+      NNEW(zz,double,2*nev*neq[1]);
       for(l=0;l<nev;l++){
 	  for(j=0;j<2;j++){
 	      for(i=0;i<neq[1];i++){
@@ -773,20 +780,20 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       /* calculating the scalar product of all old eigenmodes with
          all new eigenmodes => nev x nev matrix */
 
-      xmac=NNEW(double,nev*nev);
-      xmaccpx=NNEW(double,4*nev*nev);
-      bett=NNEW(double,nev);
-      betm=NNEW(double,nev);
+      NNEW(xmac,double,nev*nev);
+      NNEW(xmaccpx,double,4*nev*nev);
+      NNEW(bett,double,nev);
+      NNEW(betm,double,nev);
       FORTRAN(calcmac,(&neq[1],z,zz,&nev,xmac,xmaccpx,istartnmd,
       		     iendnmd,&nmd,&cyclicsymmetry,&neqact,bett,betm));
       FORTRAN(writemac,(xmac,&nev));
-      free(xmac);free(bett);free(betm);free(xmaccpx);
+      SFREE(xmac);SFREE(bett);SFREE(betm);SFREE(xmaccpx);
 
-      free(z);
+      SFREE(z);
       
       /* normalizing the eigenmodes */
       
-      z=NNEW(double,neq[1]);
+      NNEW(z,double,neq[1]);
       for(l=0;l<nev;l++){
 	  sum=0.;
 	  
@@ -811,7 +818,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      zz[2*l*neq[1]+k]/=sum;
 	  }
       }
-      free(z);
+      SFREE(z);
 
       /* calculating the mass-weighted internal products (eigenvectors are not 
          necessarily orthogonal, since the matrix of the eigenvalue problem is
@@ -820,9 +827,9 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
       if(mei[3]==1){
 	  
-	  xmr=NNEW(double,nev*nev);
-	  xmi=NNEW(double,nev*nev);
-	  z=NNEW(double,neq[1]);
+	  NNEW(xmr,double,nev*nev);
+	  NNEW(xmi,double,nev*nev);
+	  NNEW(z,double,neq[1]);
 	  
 	  for(l=0;l<nev;l++){
 	      sum=0.;
@@ -882,7 +889,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      }
 	      printf("\n");
 	  }
-	  free(z);
+	  SFREE(z);
       }
 
   }
@@ -925,7 +932,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  /* the eigenfrequencies are stored as (radians/time)**2
 	     squaring the complexe eigenvalues first */
 	  
-	  eigx=NNEW(double,2*nev);
+	  NNEW(eigx,double,2*nev);
 	  for(i=0;i<nev;i++){
 	      eigx[2*i]=eigxx[2*i]*eigxx[2*i]-eigxx[2*i+1]*eigxx[2*i+1];
 	      eigx[2*i+1]=2.*eigxx[2*i]*eigxx[2*i+1];
@@ -936,7 +943,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      exit(0);
 	  }
 	  
-	  free(eigx);
+	  SFREE(eigx);
 	  
 	  /* storing the stiffness matrix */
 	  
@@ -948,7 +955,6 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      printf("*ERROR in complexfreq saving the off-diagonal entries of the stiffness matrix to the eigenvalue file...");
 	      exit(0);
 	  }
-	  free(ad);free(au);
 	  
 	  /* storing the mass matrix */
 	  
@@ -1021,7 +1027,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  /* the eigenfrequencies are stored as (radians/time)**2
 	     squaring the complexe eigenvalues first */
 	  
-	  eigx=NNEW(double,2*nev);
+	  NNEW(eigx,double,2*nev);
 	  for(i=0;i<nev;i++){
 	      eigx[2*i]=eigxx[2*i]*eigxx[2*i]-eigxx[2*i+1]*eigxx[2*i+1];
 	      eigx[2*i+1]=2.*eigxx[2*i]*eigxx[2*i+1];
@@ -1032,7 +1038,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      exit(0);
 	  }
 	  
-	  free(eigx);
+	  SFREE(eigx);
 	  
 	  /* storing the mass matrix */
 	  
@@ -1069,66 +1075,69 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      exit(0);
 	  }
       }
-      free(adb);free(aub);free(xmr);free(xmi);
+      SFREE(xmr);SFREE(xmi);
       
       fclose(f1);
   }
 
+  SFREE(adb);SFREE(aub);
+  if(!cyclicsymmetry){SFREE(ad);SFREE(au);}
+
   /* calculating the displacements and the stresses and storing */
   /* the results in frd format for each valid eigenmode */
 
-  v=NNEW(double,2*mt**nk);
-  fn=NNEW(double,2*mt**nk);
+  NNEW(v,double,2*mt**nk);
+  NNEW(fn,double,2*mt**nk);
   if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1653],"MAXS")==0)|| 
      (strcmp1(&filab[1479],"PHS ")==0)||(strcmp1(&filab[1044],"ZZS ")==0)||
      (strcmp1(&filab[1044],"ERR ")==0)) 
-      stn=NNEW(double,12**nk);
+      NNEW(stn,double,12**nk);
 
   if((strcmp1(&filab[261],"E   ")==0)||(strcmp1(&filab[2523],"MAXE")==0)) 
-      een=NNEW(double,12**nk);
-  if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,2**nk);
-  if(strcmp1(&filab[2697],"ME  ")==0) emn=NNEW(double,12**nk);
+      NNEW(een,double,12**nk);
+  if(strcmp1(&filab[522],"ENER")==0) NNEW(enern,double,2**nk);
+  if(strcmp1(&filab[2697],"ME  ")==0) NNEW(emn,double,12**nk);
 
-  inum=NNEW(ITG,*nk);
-  stx=NNEW(double,2*6*mi[0]**ne);
+  NNEW(inum,ITG,*nk);
+  NNEW(stx,double,2*6*mi[0]**ne);
   
-  coefmpcnew=NNEW(double,*mpcend);
+  NNEW(coefmpcnew,double,*mpcend);
 
-  cot=NNEW(double,3**nk*ngraph);
-  if(*ntrans>0){inotrt=NNEW(ITG,2**nk*ngraph);}
+  NNEW(cot,double,3**nk*ngraph);
+  if(*ntrans>0){NNEW(inotrt,ITG,2**nk*ngraph);}
   if((strcmp1(&filab[0],"U  ")==0)||(strcmp1(&filab[870],"PU  ")==0))
 
 // real and imaginary part of the displacements
 
-    vt=NNEW(double,2*mt**nk*ngraph);
+    NNEW(vt,double,2*mt**nk*ngraph);
   if(strcmp1(&filab[87],"NT  ")==0)
-    t1t=NNEW(double,*nk*ngraph);
+    NNEW(t1t,double,*nk*ngraph);
   if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1479],"PHS ")==0)||
      (strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0))
 
 // real and imaginary part of the stresses
 
-    stnt=NNEW(double,2*6**nk*ngraph);
+    NNEW(stnt,double,2*6**nk*ngraph);
   if(strcmp1(&filab[261],"E   ")==0) 
-      eent=NNEW(double,2*6**nk*ngraph);
+      NNEW(eent,double,2*6**nk*ngraph);
   if((strcmp1(&filab[348],"RF  ")==0)||(strcmp1(&filab[2610],"PRF ")==0))
 
 // real and imaginary part of the forces
 
-    fnt=NNEW(double,2*mt**nk*ngraph);
+    NNEW(fnt,double,2*mt**nk*ngraph);
   if(strcmp1(&filab[522],"ENER")==0)
-    enernt=NNEW(double,*nk*ngraph);
+    NNEW(enernt,double,*nk*ngraph);
   if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0))
-    stxt=NNEW(double,2*6*mi[0]**ne*ngraph);
+    NNEW(stxt,double,2*6*mi[0]**ne*ngraph);
   if(strcmp1(&filab[2697],"ME  ")==0) 
-      emnt=NNEW(double,2*6**nk*ngraph);
+      NNEW(emnt,double,2*6**nk*ngraph);
 
-  kont=NNEW(ITG,*nkon*ngraph);
-  ipkont=NNEW(ITG,*ne*ngraph);
+  NNEW(kont,ITG,*nkon*ngraph);
+  NNEW(ipkont,ITG,*ne*ngraph);
   for(l=0;l<*ne*ngraph;l++)ipkont[l]=-1;
-  lakont=NNEW(char,8**ne*ngraph);
-  inumt=NNEW(ITG,*nk*ngraph);
-  ielmatt=NNEW(ITG,mi[2]**ne*ngraph);
+  NNEW(lakont,char,8**ne*ngraph);
+  NNEW(inumt,ITG,*nk*ngraph);
+  NNEW(ielmatt,ITG,mi[2]**ne*ngraph);
 
   nkt=ngraph**nk;
   net=ngraph**ne;
@@ -1228,25 +1237,25 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
      displacements and stresses */
 
   if(strcmp1(&filab[870],"PU")==0){
-    vr=NNEW(double,mt*nkt);
-    vi=NNEW(double,mt*nkt);
+    NNEW(vr,double,mt*nkt);
+    NNEW(vi,double,mt*nkt);
   }
 
   if(strcmp1(&filab[1479],"PHS")==0){
-    stnr=NNEW(double,6*nkt);
-    stni=NNEW(double,6*nkt);
+    NNEW(stnr,double,6*nkt);
+    NNEW(stni,double,6*nkt);
   }
 
   if(strcmp1(&filab[1566],"MAXU")==0){
-    vmax=NNEW(double,4*nkt);
+    NNEW(vmax,double,4*nkt);
   }
 
   if(strcmp1(&filab[1653],"MAXS")==0){
-    stnmax=NNEW(double,7*nkt);
+    NNEW(stnmax,double,7*nkt);
   }
 
   if(strcmp1(&filab[2523],"MAXE")==0){
-    eenmax=NNEW(double,7*nkt);
+    NNEW(eenmax,double,7*nkt);
   }
 
   /* storing the results */
@@ -1268,10 +1277,10 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
     if(*nprint>0)FORTRAN(writehe,(&j));
 
-    eei=NNEW(double,6*mi[0]**ne);
+    NNEW(eei,double,6*mi[0]**ne);
     if(*nener==1){
-	stiini=NNEW(double,6*mi[0]**ne);
-	enerini=NNEW(double,mi[0]**ne);}
+	NNEW(stiini,double,6*mi[0]**ne);
+	NNEW(enerini,double,mi[0]**ne);}
 
     DMEMSET(v,0,2*mt**nk,0.);
 
@@ -1346,7 +1355,8 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
             &ne0,xforc,nforc,thicke,shcon,nshcon,
             sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
-	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,islavsurf);}
+	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
+	    islavsurf,ielprop,prop);}
       else{
 	results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
             &stx[kkx],elcon,
@@ -1364,12 +1374,13 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
             &ne0,xforc,nforc,thicke,shcon,nshcon,
             sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
-	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,islavsurf);
+	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
+	    islavsurf,ielprop,prop);
       }
 
     }
-    free(eei);
-    if(*nener==1){free(stiini);free(enerini);}
+    SFREE(eei);
+    if(*nener==1){SFREE(stiini);SFREE(enerini);}
    
     /* changing the basic results into cylindrical coordinates
        (only for cyclic symmetry structures */
@@ -1763,7 +1774,8 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
     freq=eigxx[2*j]/6.283185308;
     if(strcmp1(&filab[1044],"ZZS")==0){
-	neigh=NNEW(ITG,40*net);ipneigh=NNEW(ITG,nkt);
+	NNEW(neigh,ITG,40*net);
+	NNEW(ipneigh,ITG,nkt);
     }
     frd(cot,&nkt,kont,ipkont,lakont,&net,vt,stnt,inumt,nmethod,
 	    kode,filab,eent,t1t,fnt,&freq,epn,ielmatt,matname,enernt,xstaten,
@@ -1771,18 +1783,44 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stxt,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,&net,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emnt,
-	    thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni);
-    if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
+	    thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat);
+    if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
   }
 
-  free(xstiff);if(*nbody>0) free(ipobody);
-  free(cstr);free(zz);free(eigxx);free(xx);
+  SFREE(xstiff);if(*nbody>0) SFREE(ipobody);
+  SFREE(cstr);SFREE(zz);SFREE(eigxx);SFREE(xx);
 
   if(cyclicsymmetry){
-      free(istartnmd);free(iendnmd);
+      SFREE(istartnmd);SFREE(iendnmd);
   }else{
       (neq[1])/=2;
   }
+
+  SFREE(nm);SFREE(coefmpcnew);
+
+  if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1653],"MAXS")==0)|| 
+     (strcmp1(&filab[1479],"PHS ")==0)||(strcmp1(&filab[1044],"ZZS ")==0)||
+     (strcmp1(&filab[1044],"ERR ")==0)) 
+     SFREE(stn);
+
+  SFREE(v);SFREE(fn);SFREE(inum);SFREE(stx);
+
+  if((strcmp1(&filab[261],"E   ")==0)||(strcmp1(&filab[2523],"MAXE")==0)) SFREE(een);
+  if(strcmp1(&filab[522],"ENER")==0) SFREE(enern);
+  if(strcmp1(&filab[2697],"ME  ")==0) SFREE(emn);
+
+  if((strcmp1(&filab[0],"U  ")==0)||(strcmp1(&filab[870],"PU  ")==0)) SFREE(vt);
+  if(strcmp1(&filab[87],"NT  ")==0) SFREE(t1t);
+  if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1479],"PHS ")==0)||
+     (strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)) SFREE(stnt);
+  if(strcmp1(&filab[261],"E   ")==0) SFREE(eent);
+  if((strcmp1(&filab[348],"RF  ")==0)||(strcmp1(&filab[2610],"PRF ")==0)) SFREE(fnt);
+  if(strcmp1(&filab[522],"ENER")==0) SFREE(enernt);
+  if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)) SFREE(stxt);
+  if(strcmp1(&filab[2697],"ME  ")==0) SFREE(emnt);
+
+  SFREE(cot);SFREE(kont);SFREE(ipkont);SFREE(lakont);SFREE(inumt);SFREE(ielmatt);
+  if(*ntrans>0){SFREE(inotrt);}
 
   *ialsetp=ialset;
   *cop=co;*konp=kon;*ipkonp=ipkon;*lakonp=lakon;*ielmatp=ielmat;

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,7 +37,7 @@
       if(istep.gt.0) then
          write(*,*) '*ERROR in nodalthicknesses: *NODAL THICKNESS'
          write(*,*) '      should be placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       do i=2,n
@@ -56,7 +56,7 @@
          read(textpart(2)(1:20),'(f20.0)',iostat=istat) thickness1
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*NODAL THICKNESS%")
-         if(iaxial.ne.0) thickness1=thickness1/iaxial
+         if(iaxial.eq.180) thickness1=thickness1/iaxial
          if(n.eq.2) then
             thickness2=0.d0
          else
@@ -82,7 +82,7 @@
                write(*,*) '  has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline,
      &"*NODAL THICKNESS%")
-               stop
+               call exit(201)
             endif
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then

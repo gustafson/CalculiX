@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -115,7 +115,7 @@
                         write(*,*) '       upstream of sluice gate is '
                         write(*,*) '       smaller than downstream heigh
      &t'
-                        stop
+                        call exit(201)
                      else
                         xflow=dsqrt(xflow)
                      endif
@@ -166,7 +166,7 @@
                         write(*,*) '*ERROR in liquidchannel'
                         write(*,*) '       weir height exceeds'
                         write(*,*) '       upstream level'
-                        stop
+                        call exit(201)
                       endif
                       xflow=rho*c*b*(h1-p)**(1.5d0)
                    endif

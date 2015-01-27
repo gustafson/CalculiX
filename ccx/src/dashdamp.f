@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,7 +29,7 @@
       integer konl(20),i,j,imat,ncmat_,ntmat_,nope,iperturb,niso,
      &  kode,npmat_,nelcon(2,*),nplicon(0:ntmat_,*),nmethod,id
 !
-      real*8 xl(3,9),elas(21),s(78,78),voldl(3,9),xn(3),dd,
+      real*8 xl(3,9),elas(21),s(100,100),voldl(3,9),xn(3),dd,
      &  elcon(0:ncmat_,ntmat_,*),t0l,t1l,elconloc(21),damp,
      &  plicon(0:2*npmat_,ntmat_,*),plconloc(802),pl(3,9),time,
      &  xiso(200),yiso(200)
@@ -72,7 +72,7 @@
             write(*,*) '       may depend on temperature and frequency'
             write(*,*) '       only; the latter is only allowed for'
             write(*,*) '       steady state dynamics calculations'
-            stop
+            call exit(201)
          endif
          niso=int(plconloc(801))
          do i=1,niso

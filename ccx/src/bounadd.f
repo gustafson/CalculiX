@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  nboun,nboun_,iamboun,iamplitude,nam,ipompc,nodempc,
      &  coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &  ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,type,
-     &  typeboun,nmethod,iperturb,fixed,vold,nodetrue,mi)
+     &  typeboun,nmethod,iperturb,fixed,vold,nodetrue,mi,label)
 !
 !     adds a boundary condition to the data base
 !
@@ -29,7 +29,7 @@
       logical fixed
 !
       character*1 type,typeboun(*)
-      character*20 labmpc(*)
+      character*20 labmpc(*),label
 !
       integer nodeboun(*),ndirboun(*),node,is,ie,nboun,nboun_,i,j,
      &  iamboun(*),iamplitude,nam,ipompc(*),nodempc(3,*),nmpc,nmpc_,
@@ -49,11 +49,20 @@
          itr=inotr(1,node)
       endif
 !
-      if((itr.eq.0).or.(is.eq.0).or.(is.eq.11).or.(is.eq.8)) then
+      loop: do ii=is,ie
+!
+!     change: transformations on rotations are taken into account
+!     by the normal of the mean rotation MPC, not by expanding the
+!     MPC in Carthesian coordinates
+!
+c      if((itr.eq.0).or.(is.eq.0).or.(is.eq.11).or.(is.eq.8)) then
+c
+c         if((itr.eq.0).or.(is.eq.0).or.(is.gt.3)) then
+         if((itr.eq.0).or.(ii.eq.0).or.(ii.gt.3)) then
 !
 !        no transformation applies: simple SPC
 !
-         loop: do ii=is,ie
+c         loop: do ii=is,ie
             if(ii.le.3) then
                i=ii
             elseif(ii.eq.4) then
@@ -69,22 +78,25 @@
             else
                write(*,*) '*ERROR in bounadd: unknown DOF: ',
      &              ii
-               stop
+               call exit(201)
             endif
             if((fixed).and.(i.lt.5)) then
                val=vold(i,nodetrue)
             elseif(fixed) then
                write(*,*) '*ERROR in bounadd: parameter FIXED cannot'
                write(*,*) '       be used for rotations'
-               stop
+               call exit(201)
             endif
             idof=8*(node-1)+i
             call nident(ikboun,idof,nboun,id)
             if(id.gt.0) then
                if(ikboun(id).eq.idof) then
                   j=ilboun(id)
+c
+                  if(typeboun(j).ne.type) cycle loop
+c
                   xboun(j)=val
-                  typeboun(j)=type
+c                  typeboun(j)=type
                   if(nam.gt.0) iamboun(j)=iamplitude
                   cycle loop
                endif
@@ -92,12 +104,12 @@
             nboun=nboun+1
             if(nboun.gt.nboun_) then
                write(*,*) '*ERROR in bounadd: increase nboun_'
-               stop
+               call exit(201)
             endif
             if((nmethod.eq.4).and.(iperturb.le.1)) then
                write(*,*) '*ERROR in bounadd: in a modal dynamic step'
                write(*,*) '       new SPCs are not allowed'
-               stop
+               call exit(201)
             endif
             nodeboun(nboun)=node
             ndirboun(nboun)=i
@@ -113,14 +125,14 @@
             enddo
             ikboun(id+1)=idof
             ilboun(id+1)=nboun
-         enddo loop
+c         enddo loop
       else
 !
 !        transformation applies: SPC is MPC in global carthesian
 !        coordinates
 !
          call transformatrix(trab(1,itr),co(1,node),a)
-         do ii=is,ie
+c         do ii=is,ie
             if(ii.le.3) then
                i=ii
             elseif(ii.eq.4) then
@@ -136,14 +148,14 @@
             else
                write(*,*) '*ERROR in bounadd: unknown DOF: ',
      &              ii
-               stop
+               call exit(201)
             endif
             if((fixed).and.(i.lt.5)) then
                val=vold(i,nodetrue)
             elseif(fixed) then
                write(*,*) '*ERROR in bounadd: parameter FIXED cannot'
                write(*,*) '       be used for rotations'
-               stop
+               call exit(201)
             endif
             if(inotr(2,node).ne.0) then
                newnode=inotr(2,node)
@@ -152,8 +164,11 @@
                if(idnew.gt.0) then
                   if(ikboun(idnew).eq.idofnew) then
                      j=ilboun(idnew)
+c
+                     if(typeboun(j).ne.type) cycle
+c
                      xboun(j)=val
-                     typeboun(j)=type
+c                     typeboun(j)=type
                      if(nam.gt.0) iamboun(j)=iamplitude
                      cycle
                   endif
@@ -165,12 +180,12 @@
                if((nmethod.eq.4).and.(iperturb.le.1)) then
                   write(*,*)'*ERROR in bounadd: in a modal dynamic step'
                   write(*,*) '       new SPCs are not allowed'
-                  stop
+                  call exit(201)
                endif
                nk=nk+1
                if(nk.gt.nk_) then
                   write(*,*) '*ERROR in bounadd: increase nk_'
-                  stop
+                  call exit(201)
                endif
                newnode=nk
                inotr(2,node)=newnode
@@ -206,9 +221,9 @@
                nmpc=nmpc+1
                if(nmpc.gt.nmpc_) then
                   write(*,*) '*ERROR in bounadd: increase nmpc_'
-                  stop
+                  call exit(201)
                endif
-               labmpc(nmpc)='                    '
+               labmpc(nmpc)=label
                ipompc(nmpc)=mpcfree
                do j=nmpc,id+2,-1
                   ikmpc(j)=ikmpc(j-1)
@@ -218,6 +233,24 @@
                ilmpc(id+1)=nmpc
                exit
             enddo
+!
+!           check whether a dependent term was found; if none was
+!           found this can be due to the fact that:
+!           - all dofs were used by other MPC's
+!           - the MPC coefficients were too small
+!           - or a combination of both
+!
+            if(inumber.gt.3) then
+               write(*,*) '*ERROR in bounadd'
+               write(*,*) '       SPC in node',node
+               write(*,*) '       and local direction',ii
+               write(*,*) '       cannot be applied: all'
+               write(*,*) '       degrees of freedom have'
+               write(*,*) '       been used by other MPCs'
+               write(*,*) '       or the coefficient is'
+               write(*,*) '       too small'
+               call exit(201)
+            endif
 !
             inumber=inumber-1
             do j=1,3
@@ -232,7 +265,7 @@ c               if(dabs(a(number,i)).lt.1.d-5) cycle
                mpcfree=nodempc(3,mpcfree)
                if(mpcfree.eq.0) then
                   write(*,*) '*ERROR in bounadd: increase nmpc_'
-                  stop
+                  call exit(201)
                endif
             enddo
             nodempc(1,mpcfree)=newnode
@@ -241,7 +274,7 @@ c               if(dabs(a(number,i)).lt.1.d-5) cycle
             mpcfreenew=nodempc(3,mpcfree)
             if(mpcfreenew.eq.0) then
                write(*,*) '*ERROR in bounadd: increase nmpc_'
-               stop
+               call exit(201)
             endif
             nodempc(3,mpcfree)=0
             mpcfree=mpcfreenew
@@ -251,7 +284,7 @@ c               if(dabs(a(number,i)).lt.1.d-5) cycle
             nboun=nboun+1
             if(nboun.gt.nboun_) then
                write(*,*) '*ERROR in bounadd: increase nboun_'
-               stop
+               call exit(201)
             endif
             nodeboun(nboun)=newnode
             ndirboun(nboun)=i
@@ -268,8 +301,9 @@ c               if(dabs(a(number,i)).lt.1.d-5) cycle
             ikboun(idnew+1)=idofnew
             ilboun(idnew+1)=nboun
 !            
-         enddo
-      endif
+c         enddo
+         endif
+      enddo loop
 !
       return
       end

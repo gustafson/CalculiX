@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -74,9 +74,9 @@ c      do j=1,3
 !
 !     generating the 3-D element topology for beam elements
 !
-!     rectangular cross section
+!     rectangular cross section (or parent section)
 !
-      if(lakon(i)(8:8).eq.'R') then
+      if(lakon(i)(8:8).ne.'C') then
          kon(indexe+1)=nodeb(1,1)
          do j=1,3
             co(j,nodeb(1,1))=co(j,nodel(1))
@@ -236,7 +236,7 @@ c      do j=1,3
      &        'is a linear beam element with circular cross section'
             write(*,*) '       Please use quadratic elements for beams
      &with circular cross section.'
-            stop
+            call exit(201)
          endif
 !
          sc=.5d0/dsqrt(2.d0)

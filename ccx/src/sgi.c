@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -42,9 +42,9 @@ void sgi_factor(double *ad, double *au, double *adb, double *aub,
 
   ndim=*neq+*nzs;
 
-  pointers=NNEW(ITG,*neq+1);
-  irowsgi=NNEW(ITG,ndim);
-  ausgi=NNEW(double,ndim);
+  NNEW(pointers,ITG,*neq+1);
+  NNEW(irowsgi,ITG,ndim);
+  NNEW(ausgi,double,ndim);
 
   k=ndim;
   l=*nzs;
@@ -89,7 +89,7 @@ void sgi_factor(double *ad, double *au, double *adb, double *aub,
     DPSLDLT_Factor(token,*neq,pointers,irowsgi,ausgi);
   }
 
-  free(pointers);
+  SFREE(pointers);
 
   return;
 }
@@ -104,8 +104,8 @@ void sgi_solve(double *b,ITG token){
 void sgi_cleanup(ITG token){
 
   DPSLDLT_Destroy(token);
-  free(irowsgi);
-  free(ausgi);
+  SFREE(irowsgi);
+  SFREE(ausgi);
 
   return;
 }

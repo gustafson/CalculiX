@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,7 +35,7 @@
       endif
 !
  100  format('P A R T I C I P A T I O N   F A C T O R S   F O R',
-     &'   F R E Q U E N C Y   ',e11.4,' (CYCLES/TIME)')
+     &'   F R E Q U E N C Y   ',e20.13,' (CYCLES/TIME)')
  101  format('P A R T I C I P A T I O N   F A C T O R S   F O R',
      &'   M O D E   ',i5)
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2014 Guido Dhondt
+!     Copyright (C) 1998-2015 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,8 @@
 !     
       subroutine scavenge_pump(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,ntmat_,mi)
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,ntmat_,mi,
+     &        iaxial)
 !     
 !     scavenge pump element
 !
@@ -31,7 +32,7 @@
 !     
       integer nelem,nactdog(0:3,*),numf,node1,node2,nodem,
      &     ielprop(*),nodef(5),idirf(5),index,iflag,
-     &     ipkon(*),kon(*),mi(*),ntmat_
+     &     ipkon(*),kon(*),mi(*),ntmat_,iaxial
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(5),kappa,cp,physcon(*)
      &     ,dvi,R

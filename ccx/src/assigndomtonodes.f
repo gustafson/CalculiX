@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine assigndomtonodes(ne,lakon,ipkon,kon,ielmat,inomat,
-     &  elcon,ncmat_,ntmat_,mi)
+     &  elcon,ncmat_,ntmat_,mi,ne2)
 !
 !     assigns the domain a node belongs to, to this node
 !     (for electromagnetic calculations, only for nodes not
@@ -28,7 +28,7 @@
       character*8 lakon(*)
 !
       integer i,j,nope,ne,imat,mi(*),ielmat(mi(3),*),ipkon(*),inomat(*),
-     &  ncmat_,ntmat_,node,kon(*),indexe
+     &  ncmat_,ntmat_,node,kon(*),indexe,ne2
 !
       real*8 elcon(0:ncmat_,ntmat_,*)
 !
@@ -55,6 +55,10 @@
 !
          imat=ielmat(1,i)
 !
+!        ne2 is the number of elements in domain 2 = A,V-domain
+!
+         if(int(elcon(2,1,imat)).eq.2) ne2=ne2+1
+!
          do j=1,nope
             node=kon(indexe+j)
             if(inomat(node).ne.0) then
@@ -62,7 +66,7 @@
                   write(*,*) '*ERROR in assigndomtonodes: a node'
                   write(*,*) '       cannot belong to more than'
                   write(*,*) '       one domain'
-                  stop
+                  call exit(201)
                else
                   cycle
                endif

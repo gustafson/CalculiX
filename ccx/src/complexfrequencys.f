@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,7 +39,7 @@
          write(*,*) '*ERROR reading *COMPLEX FREQUENCY:'
          write(*,*) '       *COMPLEX FREQUENCY can only be used'
          write(*,*) '       within a STEP'
-         stop
+         call exit(201)
       endif
 !
 !     no heat transfer analysis
@@ -79,7 +79,7 @@
          write(*,*) '       or parameter FLUTTER is required'
          call inputerror(inpc,ipoinpc,iline,
      &"*COMPLEX FREQUENCY%")
-         stop
+         call exit(201)
       endif
 !
 c      nmethod=6
@@ -94,7 +94,7 @@ c      nmethod=6
          write(*,*) '  '
          call inputerror(inpc,ipoinpc,iline,
      &"*COMPLEX FREQUENCY%")
-         stop
+         call exit(201)
       endif
       read(textpart(1)(1:10),'(i10)',iostat=istat) nev
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
@@ -102,7 +102,7 @@ c      nmethod=6
       if(nev.le.0) then
          write(*,*) '*ERROR reading *COMPLEX FREQUENCY:'
          write(*,*) '       less than 1 eigenvalue requested'
-         stop
+         call exit(201)
       endif
 !
       mei(1)=nev

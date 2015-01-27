@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -147,7 +147,7 @@
          write(*,*) '       a creep calculation without temperature'
          write(*,*) '       does not make sense'
          write(*,*)
-         stop
+         call exit(201)
       endif
 !
       iloop=0
@@ -262,13 +262,20 @@
          iplas=0
       endif
 !
-      if((iplas.eq.0).or.(ielas.eq.1).or.
+      if((iplas.eq.0).or.(ielas.eq.1).or.(dtime.lt.1.d-30).or.
      &                   ((nmethod.eq.1).and.(ithermal.ne.3))) then
 !
 !        elastic stress
 !
          do i=1,6
             stre(i)=stri(i)
+         enddo
+!
+!     updating the state variables
+!
+         xstate(1,iint,iel)=epqini
+         do i=1,6
+            xstate(1+i,iint,iel)=ep0(i)
          enddo
 !
 !        elastic stiffness
@@ -363,7 +370,7 @@
          if(info.ne.0) then
             write(*,*) '*ERROR in sc.f: linear equation solver'
             write(*,*) '       exited with error: info = ',info
-            stop
+            call exit(201)
          endif
          nrhs=1
          cm1(1)=gr(1,1)
@@ -600,7 +607,7 @@
          if(info.ne.0) then
             write(*,*) '*ERROR in sc.f: linear equation solver'
             write(*,*) '       exited with error: info = ',info
-            stop
+            call exit(201)
          endif
 !
          do i=1,6
@@ -638,7 +645,7 @@
          if(info.ne.0) then
             write(*,*) '*ERROR in sc.f: linear equation solver'
             write(*,*) '       exited with error: info = ',info
-            stop
+            call exit(201)
          endif
 !
          if(iorien.gt.0) then
@@ -889,7 +896,7 @@ c                  write(*,*) 'htri,dd ',htri,dd
                if(info.ne.0) then
                   write(*,*) '*ERROR in sc.f: linear equation solver'
                   write(*,*) '       exited with error: info = ',info
-                  stop
+                  call exit(201)
                endif
 !     
                do i=1,6
@@ -963,7 +970,7 @@ c                     fu1=fu
                         write(*,*) 
      &                    '*ERROR: no convergence in umat_aniso_creep'
                         write(*,*) '        dg>10.'
-                        stop
+                        call exit(201)
                      endif
                      do i=1,6
                         ep1(i)=ep(i)
@@ -1027,7 +1034,7 @@ c                  write(*,*) 'iloop,dg,fu ',iloop,dg,fu
                if(info.ne.0) then
                   write(*,*) '*ERROR in sc.f: linear equation solver'
                   write(*,*) '       exited with error: info = ',info
-                  stop
+                  call exit(201)
                endif
 !     
                if(iorien.gt.0) then
@@ -1125,7 +1132,7 @@ c      call str2mat(stre,ckl,vj,cauchy)
          if(info.ne.0) then
             write(*,*) '*ERROR in sc.f: linear equation solver'
             write(*,*) '       exited with error: info = ',info
-            stop
+            call exit(201)
          endif
 !
          stiff(1)=gr(1,1)-gm1*Pn(1)*Pn(1)

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -86,14 +86,14 @@
          if(entity.eq.'N') then
             write(*,*) '*ERROR in interpolsubmodel: node',nodeface
             write(*,*) '       does not belong to any submodel'
-            stop
+            call exit(201)
          else
             nelems=int(nodeface/10)
             jfaces=nodeface-nelems*10
             write(*,*) '*ERROR in interpolsubmodel: face',jfaces
             write(*,*) '       of element',nelems
             write(*,*) '       does not belong to any submodel'
-            stop
+            call exit(201)
          endif
       endif
 !
@@ -110,7 +110,7 @@
       ne=integerglob(3)
       nkon=integerglob(4)
       nfaces=integerglob(5)
-      nfield=10
+      nfield=13
 !
 !     perform the interpolation
 !
@@ -121,7 +121,7 @@
      &   integerglob(2*netet+6),doubleglob(6*netet+1),
      &   integerglob(3*netet+6),nktet,netet,
      &   doubleglob(4*nfaces+6*netet+1),nfield,
-     &   doubleglob(10*nktet+4*nfaces+6*netet+1),
+     &   doubleglob(13*nktet+4*nfaces+6*netet+1),
      &   integerglob(7*netet+6),integerglob(ne+7*netet+6),
      &   integerglob(2*ne+7*netet+6),integerglob(nkon+2*ne+7*netet+6),
      &   coords(1),coords(2),coords(3),value,ratio,iselect,nselect,

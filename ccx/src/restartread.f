@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -100,7 +100,7 @@
             else
                write(*,*) '*ERROR reading *RESTART,READ: requested step'
                write(*,*) '       is not in the restart file'
-               stop
+               call exit(201)
             endif
          endif
 !
@@ -371,8 +371,8 @@
 !
       if((ne1d.gt.0).or.(ne2d.gt.0))then
          read(15)(iponor(i),i=1,2*nkon)
-         read(15)(xnor(i),i=1,infree(1)-1)
-         read(15)(knor(i),i=1,infree(2)-1)
+         read(15)(xnor(i),i=1,infree(1))
+         read(15)(knor(i),i=1,infree(2))
          read(15)(thicke(i),i=1,mi(3)*nkon)
          read(15)(offset(i),i=1,2*ne)
          read(15)(iponoel(i),i=1,infree(4))
@@ -416,7 +416,7 @@
       if(mortar.eq.1) then
          read(15) (islavsurf(i),i=1,2*ifacecount+2)
          read(15) (pslavsurf(i),i=1,3*nintpoint)
-         read(15) (clearini(i),i=1,3*9*nslavs)
+         read(15) (clearini(i),i=1,3*9*ifacecount)
       endif
 !
 !     control parameters
@@ -432,7 +432,7 @@
 !
  15   write(*,*) '*ERROR reading *RESTART,READ: could not open file ',
      &   fnrstrt
-      stop
+      call exit(201)
       end
 
 

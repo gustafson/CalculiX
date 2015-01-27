@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,14 +16,15 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine checktime(itpamp,namta,tinc,ttime,amta,tmin,inext,itp)
+      subroutine checktime(itpamp,namta,tinc,ttime,amta,tmin,inext,itp,
+     &  istep)
 !
 !     checks whether tmin does not exceed the first time point,
 !     in case a time points amplitude is active
 !
       implicit none
 !
-      integer namta(3,*),itpamp,id,inew,inext,istart,iend,itp
+      integer namta(3,*),itpamp,id,inew,inext,istart,iend,itp,istep
 !
       real*8 amta(2,*),tinc,ttime,tmin,reftime
 !
@@ -32,18 +33,24 @@
 !        identifying the location in the time points amplitude
 !        of the starting time of the step
 !
-         if(namta(3,itpamp).lt.0) then
-            reftime=ttime
-         else
-            reftime=0
-         endif
-         istart=namta(1,itpamp)
-         iend=namta(2,itpamp)
-         call identamta(amta,reftime,istart,iend,id)
-         if(id.lt.istart) then
-            inext=istart
-         else
-            inext=id+1
+!        for time points amplitudes based on total time the inext
+!        value from the previous step should be used starting with the
+!        second step
+!
+         if((namta(3,itpamp).ge.0).or.(inext.eq.0)) then
+            if(namta(3,itpamp).lt.0) then
+               reftime=ttime
+            else
+               reftime=0
+            endif
+            istart=namta(1,itpamp)
+            iend=namta(2,itpamp)
+            call identamta(amta,reftime,istart,iend,id)
+            if(id.lt.istart) then
+               inext=istart
+            else
+               inext=id+1
+            endif
          endif
 !
 !        identifying the location in the time points amplitude
@@ -77,13 +84,30 @@
             if(tinc.lt.tmin) then
                write(*,*) '*ERROR in checktime: a time point'
                write(*,*) '       precedes the minimum time tmin'
-               stop
+               call exit(201)
             else
                write(*,*) '*WARNING in checktime: a time point'
                write(*,*) '         precedes the initial time'
                write(*,*) '         increment tinc; tinc is'
                write(*,*) '         decreased to ',tinc
             endif
+c!
+c!           possible replacement of the above if the time points
+c!           are not used for all steps consecutively
+c!
+c            do i=inext,inew-1
+c               if(namta(3,itpamp).lt.0) then
+c                  tinc=amta(1,i)-ttime
+c               else
+c                  tinc=amta(1,i)
+c               endif
+c               if(tinc.lt.tmin) cycle
+c               if(tinc.ge.tmin) then
+c                  itp=1
+c                  inext=i
+c                  exit
+c               endif
+c            enddo
          endif
       endif
 !

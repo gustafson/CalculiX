@@ -393,10 +393,10 @@
 !                 store the nodes belonging to the slave face
 !                 in islavnode
 !
-                  ifaces = ialset(j)
-                  nelems = int(ifaces/10)
-                  jfaces = ifaces - nelems*10
-                  indexe = ipkon(nelems)
+                  ifaces=ialset(j)
+                  nelems=int(ifaces/10)
+                  jfaces=ifaces - nelems*10
+                  indexe=ipkon(nelems)
 !
                   if(lakon(nelems)(4:5).eq.'20') then
                       nopes=8
@@ -422,10 +422,8 @@
                   if(lakon(nelems)(4:5).eq.'15') then
                     if(jfaces.le.2) then
                        nopes=6
-c                       nopes=3
                     else
                        nopes=8
-c                       nopes=4
                     endif
                   endif   
 !                  
@@ -523,7 +521,7 @@ c                       nopes=4
             if(j.gt.nset) then
                write(*,*) '*ERROR in tiefaccont: master surface'
                write(*,*) '       does not exist'
-               stop
+               call exit(201)
             endif
             imast=j
             nmastnode(i)=nmasts

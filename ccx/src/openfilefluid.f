@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,14 +34,11 @@
      &     '*ERROR in openfilefluid: input file name is too long:'
          write(*,'(a132)') jobname(1:132)
          write(*,*) '       exceeds 128 characters'
-         stop
+         call exit(201)
       endif
 !
       fnfrd=jobname(1:i)//'f.frd'
       open(13,file=fnfrd(1:i+5),status='unknown',position='append')
-!
-      fncvg=jobname(1:i)//'.cvg'
-      open(12,file=fncvg(1:i+4),status='unknown')
 !
       return
       end

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -38,7 +38,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	 char *set,ITG *nset,ITG *istartset,ITG *iendset,ITG *ialset,
 	 double *eenmax,double *fnr,double *fni,double *emn,
 	 double *thicke,char *jobnamec,char *output,double *qfx,
-         double *cdn,ITG *mortar,double *cdnr,double *cdni){
+         double *cdn,ITG *mortar,double *cdnr,double *cdni,ITG *nmat){
 
      /* stores the results in frd format
 
@@ -56,16 +56,16 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     p5[6]="    5",p6[6]="    6",p7[6]="    7",p8[6]="    8",p9[6]="    9",
     p10[6]="   10",p11[6]="   11",
     p12[6]="   12", fneig[132]="",date[8],clock[10],newdate[21],newclock[9],
-    material[6]="     ",text[2]=" ";
+    material[59]="                                                          ",
+    text[2]=" ";
 
-//  static ITG icounter=0,nkcoords,nout,noutmin,noutplus;
-  static ITG icounter=0,nkcoords;
+  static ITG icounter=0,nkcoords,iaxial;
 
   ITG null,one,i,j,k,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
       nodes,ifield[7],nfield[2],icomp[7],ifieldstate[*nstate_],two,three,
       icompstate[*nstate_],ip0=0,ip1=1,ip2=2,ip3=3,ip4=4,ip5=5,ip6=6,ip7=7,
-      ip8=8,ip9=9,ip10=10,ip11=11,ip12=12,imaterial=0,nelout,ielemremesh,
-      nterms,mesh_in_original_form,nout,noutplus,noutmin;
+      ip8=8,ip9=9,ip10=10,ip11=11,ip12=12,imat,nelout,
+      nterms,nout,noutplus,noutmin,mt=mi[1]+1;
 
   ITG ncompscalar=1,ifieldscalar[1]={1},icompscalar[1]={0},
       nfieldscalar[2]={1,0};
@@ -95,16 +95,11 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     exit(0);
   }
 
-  if(strcmp1(&filab[2],"C")==0){
-      mesh_in_original_form=0;
-  }else{
-      mesh_in_original_form=1;
-  }
-
   pi=4.*atan(1.);
   null=0;
   one=1;two=2;three=3;
   oner=1.;
+  iaxial=0.;
 
   /* determining nout, noutplus and noutmin 
               nout: number of structural and network nodes
@@ -130,7 +125,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
      topology */
 
   if(*kode==1){
-    fprintf(f1,"%5s%1s\n",p1,c);
+//    fprintf(f1,"%5s%1s\n",p1,c);
 
     /* date and time */
 
@@ -193,27 +188,11 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     fprintf(f1,"%5sUPGM               CalculiX                                        \n",p1);
     fprintf(f1,"%5sUDIR                                                               \n",p1);
     fprintf(f1,"%5sUDBN                                                               \n",p1);
-
-    /* storing the coordinates of the nodes */
-
-    /* determining nout, noutplus and noutmin 
-              nout: number of structural and network nodes
-              noutplus: number of structural nodes
-              noutmin: number of network nodes */
-
-/*    if(*nmethod!=0){
-      nout=0;
-      noutplus=0;
-      noutmin=0;
-      for(i=0;i<*nk;i++){
-	if(inum[i]==0) continue;
-	nout++;
-	if(inum[i]>0) noutplus++;
-	if(inum[i]<0) noutmin++;
-      }
-    }else{
-      nout=*nk;
-      }*/
+    
+    for(i=0;i<*nmat;i++){
+	strcpy1(material,&matname[80*i],58);
+	fprintf(f1,"%5sUMAT%5" ITGFORMAT "%58s\n",p1,i+1,material);
+    }
 
     /* storing the header of the coordinates */
 
@@ -236,9 +215,6 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  fwrite(&co[3*i],sizeof(double),1,f1);
 	  fwrite(&co[3*i+1],sizeof(double),1,f1);
 	  fwrite(&co[3*i+2],sizeof(double),1,f1);
-//	  ifl=(float)co[3*i];fwrite(&ifl,sizeof(float),1,f1);
-//	  ifl=(float)co[3*i+1];fwrite(&ifl,sizeof(float),1,f1);
-//        ifl=(float)co[3*i+2];fwrite(&ifl,sizeof(float),1,f1);
 	}
       }
     }else{
@@ -266,16 +242,12 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     if(*nmethod!=0){
 	nelout=0;
 	for(i=0;i<*ne0;i++){
-	    if(ipkon[i]==-1){
+	    if(ipkon[i]<=-1){
 		continue;
 	    }else if(strcmp1(&lakon[8*i],"ESPRNGC")==0){
 		continue;
 	    }else if(strcmp1(&lakon[8*i],"ESPRNGF")==0){
 		continue;
-	    }else if(strcmp1(&lakon[8*i+5],"C")==0){
-		if(mesh_in_original_form==1) continue;
-	    }else if(ipkon[i]<-1){
-		if(mesh_in_original_form==0) continue;
             }else if(strcmp1(&lakon[8*i],"DCOUP3D")==0){
 		continue;
 	    }
@@ -295,7 +267,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     nemax=*ne0;
 
     for(i=0;i<*ne0;i++){
-      if(ipkon[i]==-1){
+      if(ipkon[i]<=-1){
 	  continue;
       }else if(strcmp1(&lakon[8*i],"F")==0){
 	  continue;
@@ -303,20 +275,12 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  continue;
       }else if(strcmp1(&lakon[8*i],"ESPRNGF")==0){
 	  continue;
-      }else if(strcmp1(&lakon[8*i+5],"C")==0){
-	  if(mesh_in_original_form==1) continue;
-	  indexe=ipkon[i];
-      }else if(ipkon[i]<-1){
-	  if(mesh_in_original_form==0) continue;
-	  indexe=-ipkon[i]-2;
-	  ielemremesh=kon[indexe];
-	  kon[indexe]=kon[ipkon[ielemremesh-1]];
       }else if(strcmp1(&lakon[8*i],"DCOUP3D")==0){
 	  continue;
       }else{
 	  indexe=ipkon[i];
       }
-      strcpy1(material,&matname[80*(ielmat[i*mi[2]]-1)],5);
+      imat=ielmat[i*mi[2]];
       if(strcmp1(&lakon[8*i+3],"2")==0){
 
 	  /* 20-node brick element */
@@ -326,8 +290,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    (strcmp1(&lakon[8*i+6],"I")==0))&&
            (strcmp2(&lakon[8*i+6],"LC",2)!=0)){
 	  if(strcmp1(output,"asc")==0){
-	    fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
-		    m1,i+1,p4,p0,material,m2);
+	    fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n%3s",
+		    m1,i+1,p4,p0,imat,m2);
 	    for(j=0;j<10;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
 	    fprintf(f1,"\n%3s",m2);
 	    for(j=10;j<12;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
@@ -339,7 +303,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	    iw=(int)ip4;fwrite(&iw,sizeof(int),1,f1);
 	    iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-	    iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+	    iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 	    for(j=0;j<10;j++){iw=(int)kon[indexe+j];
 	                      fwrite(&iw,sizeof(int),1,f1);}
 	    for(j=10;j<12;j++){iw=(int)kon[indexe+j];
@@ -365,8 +329,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  for(k=0;k<nlayer;k++){
 	    nemax++;
 	    if(strcmp1(output,"asc")==0){
-	      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
-		      m1,nemax,p4,p0,material,m2);
+	      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n%3s",
+		      m1,nemax,p4,p0,imat,m2);
 	      for(j=0;j<10;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+28+20*k+j]);
 	      fprintf(f1,"\n%3s",m2);
 	      for(j=10;j<12;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+28+20*k+j]);
@@ -378,7 +342,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	      iw=(int)nemax;fwrite(&iw,sizeof(int),1,f1);
 	      iw=(int)ip4;fwrite(&iw,sizeof(int),1,f1);
 	      iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-	      iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+	      iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 	      for(j=0;j<10;j++){iw=(int)kon[indexe+28+20*k+j];
 	                      fwrite(&iw,sizeof(int),1,f1);}
 	      for(j=10;j<12;j++){iw=(int)kon[indexe+28+20*k+j];
@@ -396,14 +360,14 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    /* 3-node beam element */
 
 	  if(strcmp1(output,"asc")==0){
-	    fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n",m1,i+1,p12,p0,material);
+	    fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n",m1,i+1,p12,p0,imat);
 	    fprintf(f1,"%3s%10" ITGFORMAT "%10" ITGFORMAT "%10" ITGFORMAT "\n",m2,kon[indexe+20],
 		    kon[indexe+22],kon[indexe+21]);
 	  }else{
 	    iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	    iw=(int)ip12;fwrite(&iw,sizeof(int),1,f1);
 	    iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-	    iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+	    iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 	    iw=(int)kon[indexe+20];fwrite(&iw,sizeof(int),1,f1);
 	    iw=(int)kon[indexe+22];fwrite(&iw,sizeof(int),1,f1);
 	    iw=(int)kon[indexe+21];fwrite(&iw,sizeof(int),1,f1);
@@ -411,17 +375,18 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}else{
 
 	    /* 8-node 2d element */
-
+	    
+	  if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
 	  if(strcmp1(output,"asc")==0){
-	    fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
-                    m1,i+1,p10,p0,material,m2);
+	    fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n%3s",
+                    m1,i+1,p10,p0,imat,m2);
 	    for(j=0;j<8;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+20+j]);
 	    fprintf(f1,"\n");
 	  }else{
 	    iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	    iw=(int)ip10;fwrite(&iw,sizeof(int),1,f1);
 	    iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-	    iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+	    iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 	    for(j=0;j<8;j++){iw=(int)kon[indexe+20+j];
 	                      fwrite(&iw,sizeof(int),1,f1);}
 	  }
@@ -433,15 +398,15 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
               /* 8-node brick element */
 
 	      if(strcmp1(output,"asc")==0){
-		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
-			  m1,i+1,p1,p0,material,m2);
+		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n%3s",
+			  m1,i+1,p1,p0,imat,m2);
 		  for(j=0;j<8;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
 		  fprintf(f1,"\n");
 	      }else{
 		  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)ip1;fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-		  iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+		  iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 		  for(j=0;j<8;j++){iw=(int)kon[indexe+j];
 		      fwrite(&iw,sizeof(int),1,f1);}
 	      }
@@ -451,27 +416,27 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	      if(strcmp1(&lakon[8*i+4],"R")==0){
 		  if(strcmp1(output,"asc")==0){
-		      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n",m1,i+1,p11,p0,material);
+		      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n",m1,i+1,p11,p0,imat);
 		      fprintf(f1,"%3s%10" ITGFORMAT "%10" ITGFORMAT "\n",m2,kon[indexe+8],
 			      kon[indexe+9]);
 		  }else{
 		      iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 		      iw=(int)ip11;fwrite(&iw,sizeof(int),1,f1);
 		      iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-		      iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+		      iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 		      iw=(int)kon[indexe+8];fwrite(&iw,sizeof(int),1,f1);
 		      iw=(int)kon[indexe+9];fwrite(&iw,sizeof(int),1,f1);
 		  }
 	      }else if(strcmp1(&lakon[8*i+4],"I")==0){
 		  if(strcmp1(output,"asc")==0){
-		      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n",m1,i+1,p11,p0,material);
+		      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n",m1,i+1,p11,p0,imat);
 		      fprintf(f1,"%3s%10" ITGFORMAT "%10" ITGFORMAT "\n",m2,kon[indexe+11],
 			      kon[indexe+12]);
 		  }else{
 		      iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 		      iw=(int)ip11;fwrite(&iw,sizeof(int),1,f1);
 		      iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-		      iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+		      iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 		      iw=(int)kon[indexe+11];fwrite(&iw,sizeof(int),1,f1);
 		      iw=(int)kon[indexe+12];fwrite(&iw,sizeof(int),1,f1);
 		  }
@@ -480,32 +445,33 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
               /* 4-node 2d element */
 
+	      if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
 	      if((strcmp1(&lakon[8*i+4],"R")==0)||
 		 (strcmp1(&lakon[8*i+4]," ")==0)){
 		  if(strcmp1(output,"asc")==0){
-		      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
-			      m1,i+1,p9,p0,material,m2);
+		      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n%3s",
+			      m1,i+1,p9,p0,imat,m2);
 		      for(j=0;j<4;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+8+j]);
 		      fprintf(f1,"\n");
 		  }else{
 		      iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 		      iw=(int)ip9;fwrite(&iw,sizeof(int),1,f1);
 		      iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-		      iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+		      iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 		      for(j=0;j<4;j++){iw=(int)kon[indexe+8+j];
 			  fwrite(&iw,sizeof(int),1,f1);}
 		  }
 	      }else if(strcmp1(&lakon[8*i+4],"I")==0){
 		  if(strcmp1(output,"asc")==0){
-		      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
-			      m1,i+1,p9,p0,material,m2);
+		      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n%3s",
+			      m1,i+1,p9,p0,imat,m2);
 		      for(j=0;j<4;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+11+j]);
 		      fprintf(f1,"\n");
 		  }else{
 		      iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 		      iw=(int)ip9;fwrite(&iw,sizeof(int),1,f1);
 		      iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-		      iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+		      iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 		      for(j=0;j<4;j++){iw=(int)kon[indexe+11+j];
 			  fwrite(&iw,sizeof(int),1,f1);}
 		  }
@@ -517,15 +483,15 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	/* 10-node tetrahedral element */
 
 	if(strcmp1(output,"asc")==0){
-	  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
-		  m1,i+1,p6,p0,material,m2);
+	  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n%3s",
+		  m1,i+1,p6,p0,imat,m2);
 	  for(j=0;j<10;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
 	  fprintf(f1,"\n");
 	}else{
 	  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	  iw=(int)ip6;fwrite(&iw,sizeof(int),1,f1);
 	  iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-	  iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+	  iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 	  for(j=0;j<10;j++){iw=(int)kon[indexe+j];
 	                      fwrite(&iw,sizeof(int),1,f1);}
 	}
@@ -534,15 +500,15 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	/* 4-node tetrahedral element */
 
 	if(strcmp1(output,"asc")==0){
-	  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
-		  m1,i+1,p3,p0,material,m2);
+	  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n%3s",
+		  m1,i+1,p3,p0,imat,m2);
 	  for(j=0;j<4;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
 	  fprintf(f1,"\n");
 	}else{
 	  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	  iw=(int)ip3;fwrite(&iw,sizeof(int),1,f1);
 	  iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-	  iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+	  iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 	  for(j=0;j<4;j++){iw=(int)kon[indexe+j];
 	                      fwrite(&iw,sizeof(int),1,f1);}
 	}
@@ -553,8 +519,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
           /* 15-node wedge element */
 
 	  if(strcmp1(output,"asc")==0){
-	    fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
-		    m1,i+1,p5,p0,material,m2);
+	    fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n%3s",
+		    m1,i+1,p5,p0,imat,m2);
 	    for(j=0;j<9;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
 	    for(j=12;j<13;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
 	    fprintf(f1,"\n%3s",m2);
@@ -565,7 +531,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	    iw=(int)ip5;fwrite(&iw,sizeof(int),1,f1);
 	    iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-	    iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+	    iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 	    for(j=0;j<9;j++){iw=(int)kon[indexe+j];
 	                      fwrite(&iw,sizeof(int),1,f1);}
 	    for(j=12;j<13;j++){iw=(int)kon[indexe+j];
@@ -579,16 +545,17 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	  /* 6-node 2d element */
 
+	  if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
 	  if(strcmp1(output,"asc")==0){
-	    fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
-		    m1,i+1,p8,p0,material,m2);
+	    fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n%3s",
+		    m1,i+1,p8,p0,imat,m2);
 	    for(j=0;j<6;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+15+j]);
 	    fprintf(f1,"\n");
 	  }else{
 	    iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	    iw=(int)ip8;fwrite(&iw,sizeof(int),1,f1);
 	    iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-	    iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+	    iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 	    for(j=0;j<6;j++){iw=(int)kon[indexe+15+j];
 	                      fwrite(&iw,sizeof(int),1,f1);}
 	  }
@@ -600,15 +567,15 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
               /* 6-node wedge element */
 
 	      if(strcmp1(output,"asc")==0){
-		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
-			  m1,i+1,p2,p0,material,m2);
+		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n%3s",
+			  m1,i+1,p2,p0,imat,m2);
 		  for(j=0;j<6;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+j]);
 		  fprintf(f1,"\n");
 	      }else{
 		  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)ip2;fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-		  iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+		  iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 		  for(j=0;j<6;j++){iw=(int)kon[indexe+j];
 		      fwrite(&iw,sizeof(int),1,f1);}
 	      }
@@ -616,36 +583,35 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
               /* 3-node 2d element */
 
+	      if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
 	      if(strcmp1(output,"asc")==0){
-		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n%3s",
-			  m1,i+1,p7,p0,material,m2);
+		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n%3s",
+			  m1,i+1,p7,p0,imat,m2);
 		  for(j=0;j<3;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+6+j]);
 		  fprintf(f1,"\n");
 	      }else{
 		  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)ip7;fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-		  iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+		  iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 		  for(j=0;j<3;j++){iw=(int)kon[indexe+6+j];
 		      fwrite(&iw,sizeof(int),1,f1);}
 	      }
 	  }
-//      }else if((strcmp1(&lakon[8*i],"D")==0)&&
-//               (strcmp1(&lakon[8*i],"DCOUP3D")!=0)){
-      }else if(strcmp1(&lakon[8*i],"D")==0){
+      }else if((strcmp1(&lakon[8*i],"D")==0)&&(ithermal[1]>1)){
 	  if(kon[indexe]==0){
 
               /* 2-node 1d element (network entry element) */
 
 	      if(strcmp1(output,"asc")==0){
-		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n",m1,i+1,p11,p0,material);
+		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n",m1,i+1,p11,p0,imat);
 		  fprintf(f1,"%3s%10" ITGFORMAT "%10" ITGFORMAT "\n",m2,
 			  kon[indexe+1],kon[indexe+2]);
 	      }else{
 		  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)ip11;fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-		  iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+		  iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)kon[indexe+1];fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)kon[indexe+2];fwrite(&iw,sizeof(int),1,f1);
 	      }
@@ -654,14 +620,14 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
               /* 2-node 1d element (network exit element) */
 
 	      if(strcmp1(output,"asc")==0){
-		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n",m1,i+1,p11,p0,material);
+		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n",m1,i+1,p11,p0,imat);
 		  fprintf(f1,"%3s%10" ITGFORMAT "%10" ITGFORMAT "\n",m2,kon[indexe],
 			  kon[indexe+1]);
 	      }else{
 		  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)ip11;fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-		  iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+		  iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)kon[indexe];fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)kon[indexe+1];fwrite(&iw,sizeof(int),1,f1);
 	      }
@@ -670,14 +636,14 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
               /* 3-node 1d element (genuine network element) */
 
 	      if(strcmp1(output,"asc")==0){
-		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n",m1,i+1,p12,p0,material);
+		  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n",m1,i+1,p12,p0,imat);
 		  fprintf(f1,"%3s%10" ITGFORMAT "%10" ITGFORMAT "%10" ITGFORMAT "\n",m2,kon[indexe],
 			  kon[indexe+2],kon[indexe+1]);
 	      }else{
 		  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)ip12;fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-		  iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+		  iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)kon[indexe];fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)kon[indexe+2];fwrite(&iw,sizeof(int),1,f1);
 		  iw=(int)kon[indexe+1];fwrite(&iw,sizeof(int),1,f1);
@@ -689,21 +655,16 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  /* 2-node 1d element (spring element) */
 
 	if(strcmp1(output,"asc")==0){
-	  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5s\n",m1,i+1,p11,p0,material);
+	  fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n",m1,i+1,p11,p0,imat);
 	  fprintf(f1,"%3s%10" ITGFORMAT "%10" ITGFORMAT "\n",m2,kon[indexe],kon[indexe+1]);
 	}else{
 	  iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	  iw=(int)ip11;fwrite(&iw,sizeof(int),1,f1);
 	  iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-	  iw=(int)imaterial;fwrite(&iw,sizeof(int),1,f1);
+	  iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
 	  iw=(int)kon[indexe];fwrite(&iw,sizeof(int),1,f1);
 	  iw=(int)kon[indexe+1];fwrite(&iw,sizeof(int),1,f1);
 	}
-      }
-      if(mesh_in_original_form==1){
-	  if(ipkon[i]<-1){
-	      kon[indexe]=ielemremesh;
-	  }
       }
     }
     if(strcmp1(output,"asc")==0)fprintf(f1,"%3s\n",m3);
@@ -728,7 +689,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
-    fprintf(f1," -4  DISPR       4    1\n");
+    fprintf(f1," -4  DISP        4    1\n");
     fprintf(f1," -5  D1          1    2    1    0\n");
     fprintf(f1," -5  D2          1    2    2    0\n");
     fprintf(f1," -5  D3          1    2    3    0\n");
@@ -753,7 +714,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       fprintf(f1," -5  D3          1    2    3    0\n");
       fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
       
-      frdvector(&v[*nk*(mi[1]+1)],&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
+      frdvector(&v[*nk*mt],&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
 		trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
     }
   }
@@ -838,7 +799,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
-    fprintf(f1," -4  STRESSR     6    1\n");
+    fprintf(f1," -4  STRESS      6    1\n");
     fprintf(f1," -5  SXX         1    4    1    1\n");
     fprintf(f1," -5  SYY         1    4    2    2\n");
     fprintf(f1," -5  SZZ         1    4    3    3\n");
@@ -936,7 +897,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
-    fprintf(f1," -4  TOSTRAIR    6    1\n");
+    fprintf(f1," -4  TOSTRAIN    6    1\n");
     fprintf(f1," -5  EXX         1    4    1    1\n");
     fprintf(f1," -5  EYY         1    4    2    2\n");
     fprintf(f1," -5  EZZ         1    4    3    3\n");
@@ -986,7 +947,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
-    fprintf(f1," -4  MESTRAIR    6    1\n");
+    fprintf(f1," -4  MESTRAIN    6    1\n");
     fprintf(f1," -5  MEXX        1    4    1    1\n");
     fprintf(f1," -5  MEYY        1    4    2    2\n");
     fprintf(f1," -5  MEZZ        1    4    3    3\n");
@@ -1037,14 +998,16 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
-    fprintf(f1," -4  FORCR       4    1\n");
+    fprintf(f1," -4  FORC        4    1\n");
     fprintf(f1," -5  F1          1    2    1    0\n");
     fprintf(f1," -5  F2          1    2    2    0\n");
     fprintf(f1," -5  F3          1    2    3    0\n");
     fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
 
+    if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]*=180.;fn[2+i*mt]*=180.;fn[3+i*mt]*=180.;}}
     frdvector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,m1,inotr,
 	      trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+    if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]/=180.;fn[2+i*mt]/=180.;fn[3+i*mt]/=180.;}}
   }
 
   /*     storing the imaginary part of the forces in the nodes
@@ -1062,7 +1025,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       fprintf(f1," -5  F3          1    2    3    0\n");
       fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
       
-      frdvector(&fn[*nk*(mi[1]+1)],&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
+      frdvector(&fn[*nk*mt],&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
 		trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
     }
   }
@@ -1113,7 +1076,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
   /* node-to-face penalty */
   
-  if((strcmp1(&filab[2175],"CONT")==0)&&(*mortar==0)&&(*ithermal!=2)&&(*nmethod!=2)){
+  if((strcmp1(&filab[2175],"CONT")==0)&&(*mortar!=1)&&(*ithermal!=2)&&(*nmethod!=2)){
     
     for(i=*ne-1;i>=0;i--){
       if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
@@ -1124,7 +1087,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
     
-    fprintf(f1," -4  CONTACTR    6    1\n");
+    fprintf(f1," -4  CONTACT     6    1\n");
     fprintf(f1," -5  COPEN       1    4    1    1\n");
     fprintf(f1," -5  CSLIP1      1    4    2    2\n");
     fprintf(f1," -5  CSLIP2      1    4    3    3\n");
@@ -1165,7 +1128,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-      fprintf(f1," -4  CONTACTR    6    1\n");
+      fprintf(f1," -4  CONTACT     6    1\n");
       fprintf(f1," -5  COPEN       1    4    1    1\n");
       fprintf(f1," -5  CSLIP1      1    4    2    2\n");
       fprintf(f1," -5  CSLIP2      1    4    3    3\n");
@@ -1307,9 +1270,9 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
     fprintf(f1," -4  CURR        4    1\n");
-    fprintf(f1," -5  I1          1    2    1    0\n");
-    fprintf(f1," -5  I2          1    2    2    0\n");
-    fprintf(f1," -5  I3          1    2    3    0\n");
+    fprintf(f1," -5  j1          1    2    1    0\n");
+    fprintf(f1," -5  j2          1    2    2    0\n");
+    fprintf(f1," -5  j3          1    2    3    0\n");
     fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
 
     frdselect(qfn,qfn,&iset,&nkcoords,inum,m1,istartset,iendset,
@@ -1355,7 +1318,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
-    fprintf(f1," -4  ZZSTRR      6    1\n");
+    fprintf(f1," -4  ZZSTR       6    1\n");
     fprintf(f1," -5  SXX         1    4    1    1\n");
     fprintf(f1," -5  SYY         1    4    2    2\n");
     fprintf(f1," -5  SZZ         1    4    3    3\n");
@@ -1414,7 +1377,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
-    fprintf(f1," -4  ERRORR      2    1\n");
+    fprintf(f1," -4  ERROR       2    1\n");
     fprintf(f1," -5  PSTD        1    1    1    0\n");
     fprintf(f1," -5  VMSTD       1    2    2    0\n");
 
@@ -1473,7 +1436,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
-    fprintf(f1," -4  HERRORR     1    1\n");
+    fprintf(f1," -4  HERROR      1    1\n");
     fprintf(f1," -5  HFLSTD      1    1    1    0\n");
 
     ncomp=1;
@@ -1550,9 +1513,11 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     fprintf(f1," -5  MF          1    1    0    0\n");
 
     icomp[0]=1;
+    if((iaxial==1)&&(strcmp1(&filab[1222],"I")==0)){for(i=0;i<*nk;i++)v[1+i*mt]*=180.;}
     frdselect(v,v,&iset,&nkcoords,inum,m1,istartset,iendset,
                 ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
                 nfieldvector0,&iselect,m2,f1,output,m3);
+    if((iaxial==1)&&(strcmp1(&filab[1222],"I")==0)){for(i=0;i<*nk;i++)v[1+i*mt]/=180.;}
 
   }
 

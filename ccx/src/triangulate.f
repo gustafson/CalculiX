@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -280,7 +280,7 @@ c         if(jface.eq.0) cycle
       if(netri.eq.0) then
          write(*,*) '*ERROR in triangulate: no faces found on the'
          write(*,*) '       independent side'
-         stop
+         call exit(201)
       endif
 !
 !     initialization of near2d

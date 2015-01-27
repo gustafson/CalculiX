@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,8 @@
 !     
       subroutine liquidpipe(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,rho,g,co,dvi,numf,vold,mi,ipkon,kon,set)
+     &     nodef,idirf,df,rho,g,co,dvi,numf,vold,mi,ipkon,kon,set,
+     &     iaxial)
 !
 !     pipe element for incompressible media
 !     
@@ -101,10 +102,10 @@
                flowunknown=.true.
             else
                flowunknown=.false.
-               xflow=v(1,nodem)
+               xflow=v(1,nodem)*iaxial
             endif
          else
-            xflow=v(1,nodem)
+            xflow=v(1,nodem)*iaxial
             if(xflow.ge.0.d0) then
                inv=1
             else
@@ -129,18 +130,18 @@
                nodea=int(prop(index+1))
                nodeb=int(prop(index+2))
                xn=prop(index+3)
-               iaxial=int(prop(index+4))
+c               iaxial=int(prop(index+4))
                radius=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &                       co(1,nodea)-vold(1,nodea))**2+
      &                      (co(2,nodeb)+vold(2,nodeb)-
      &                       co(2,nodea)-vold(2,nodea))**2+
      &                      (co(3,nodeb)+vold(3,nodeb)-
      &                       co(3,nodea)-vold(3,nodea))**2)
-               if(iaxial.ne.0) then
-                  a=pi*radius*radius/iaxial
-               else
+c               if(iaxial.ne.0) then
+c                  a=pi*radius*radius/iaxial
+c               else
                   a=pi*radius*radius
-               endif
+c               endif
                rh=radius/2.d0
             else
                a=prop(index+1)
@@ -167,18 +168,18 @@
                nodea=int(prop(index+1))
                nodeb=int(prop(index+2))
                xn=prop(index+3)
-               iaxial=int(prop(index+4))
+c               iaxial=int(prop(index+4))
                radius=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &                       co(1,nodea)-vold(1,nodea))**2+
      &                       (co(2,nodeb)+vold(2,nodeb)-
      &                       co(2,nodea)-vold(2,nodea))**2+
      &                       (co(3,nodeb)+vold(3,nodeb)-
      &                       co(3,nodea)-vold(3,nodea))**2)
-               if(iaxial.ne.0) then
-                  a=pi*radius*radius/iaxial
-               else
+c               if(iaxial.ne.0) then
+c                  a=pi*radius*radius/iaxial
+c               else
                   a=pi*radius*radius
-               endif
+c               endif
                d=2.d0*radius
             else
                a=prop(index+1)
@@ -441,7 +442,7 @@
                write(*,*) '*ERROR in liquidpipe: loss coefficients'
                write(*,*) '       for entrance (Idelchik) do not apply'
                write(*,*) '       to reversed flow'
-               stop
+               call exit(201)
             endif
 !
             dh=prop(index+3)
@@ -472,7 +473,7 @@
                write(*,*) '*ERROR in liquidpipe: loss coefficients'
                write(*,*) '       for exit (Idelchik) do not apply to'
                write(*,*) '       reversed flow'
-               stop
+               call exit(201)
             endif
 !
             dh=prop(index+3)
@@ -503,7 +504,7 @@
                write(*,*) '*ERROR in liquidpipe: loss coefficients'
                write(*,*) '       for a user element do not apply to'
                write(*,*) '       reversed flow'
-               stop
+               call exit(201)
             endif
             if(a1.lt.a2) then
                a=a1
@@ -663,7 +664,7 @@
                write(*,*) '*ERROR in liquidpipe: loss coefficients'
                write(*,*) '       for wall orifice do not apply to'
                write(*,*) '       reversed flow'
-               stop
+               call exit(201)
             endif
             if(inv.ne.0) then
                xk=zeta/(a2*a2)
@@ -690,7 +691,7 @@
                write(*,*) '*ERROR in liquidpipe: loss coefficients'
                write(*,*) '       for branches do not apply to'
                write(*,*) '       reversed flow'
-               stop
+               call exit(201)
             endif
             if(inv.ne.0) then
                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
@@ -757,7 +758,7 @@
                R2=r1d
                p1=v(2,node2)
                p2=v(2,node1)
-               xflow=-v(1,nodem)
+               xflow=-v(1,nodem)*iaxial
 !     
                nodef(1)=node2
                nodef(2)=nodem
@@ -1044,7 +1045,8 @@
 !     
       endif
 !     
+      xflow=xflow/iaxial
+      df(2)=df(2)*iaxial
+!     
       return
       end
-      
-

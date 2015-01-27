@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -63,7 +63,7 @@ c     &             ctext=char(ichar(ctext)-32)
                         write(*,*)'       be more than 16 entries in a '
                         write(*,*) '       line; '
                         write(*,'(a1320)') text(1:k-1)
-                        stop
+                        call exit(201)
                      endif
                   endif
                   ierror=1

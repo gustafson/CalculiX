@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -45,7 +45,7 @@
          write(*,*) 
      &        '*ERROR reading *SHELL SECTION: *SHELL SECTION should'
          write(*,*) '  be placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       nodalthickness=.false.
@@ -93,13 +93,13 @@
      &        '*ERROR reading *SHELL SECTION: nonexistent material'
             call inputerror(inpc,ipoinpc,iline,
      &"*SHELL SECTION%")
-            stop
+            call exit(201)
          endif
          imaterial=i
       elseif(material(1:1).ne.' ') then
          write(*,*) '*ERROR reading *SHELL SECTION: COMPOSITE and'
          write(*,*) '       MATERIAL are mutually exclusive parameters'
-         stop
+         call exit(201)
       endif
 !
 !     check for the existence of the orientation, if any
@@ -115,7 +115,7 @@
      &         '*ERROR reading *SHELL SECTION: nonexistent orientation'
             call inputerror(inpc,ipoinpc,iline,
      &"*SHELL SECTION%")
-            stop
+            call exit(201)
          endif
          iorientation=i
       endif
@@ -131,7 +131,7 @@
          write(*,*) '       has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
      &"*SHELL SECTION%")
-         stop
+         call exit(201)
       endif
       iset=i
 !
@@ -149,7 +149,7 @@
                call inputerror(inpc,ipoinpc,iline,
      &"*SHELL SECTION%")
             endif
-            if(iaxial.ne.0) thickness=thickness/iaxial
+            if(iaxial.eq.180) thickness=thickness/iaxial
             do j=istartset(iset),iendset(iset)
                if(ialset(j).gt.0) then
                   if(lakon(ialset(j))(1:1).ne.'S') then
@@ -159,7 +159,7 @@
      &                 '       only be used for shell elements.'
                      write(*,*) '       Element ',ialset(j),
      &                 ' is not a shell element.'
-                     stop
+                     call exit(201)
                   endif
                   indexe=ipkon(ialset(j))
                   do l=1,8
@@ -180,7 +180,7 @@
      &                    '       only be used for shell elements.'
                         write(*,*) '       Element ',k,
      &                    ' is not a shell element.'
-                        stop
+                        call exit(201)
                      endif
                      indexe=ipkon(k)
                      do l=1,8
@@ -201,7 +201,7 @@
             write(*,*) '*ERROR reading shellsections: for composite'
             write(*,*) '       materials is the parameter NODAL'
             write(*,*) '       THICKNESS not allowed'
-            stop
+            call exit(201)
          endif
 !
 c         icomposite=1
@@ -214,7 +214,7 @@ c         icomposite=1
                call inputerror(inpc,ipoinpc,iline,
      &"*SHELL SECTION%")
             endif
-            if(iaxial.ne.0) thickness=thickness/iaxial
+            if(iaxial.eq.180) thickness=thickness/iaxial
 !     
 !     reading the material name
 !     
@@ -236,7 +236,7 @@ c         icomposite=1
      &      '*ERROR reading *SHELL SECTION: nonexistent material'
                call inputerror(inpc,ipoinpc,iline,
      &"*SHELL SECTION%")
-               stop
+               call exit(201)
             endif
             imaterial=i
 !     
@@ -259,7 +259,7 @@ c            else
                   write(*,*) '  '
                   call inputerror(inpc,ipoinpc,iline,
      &"*SHELL SECTION%")
-                  stop
+                  call exit(201)
                endif
                iorientation=i
             endif
@@ -277,7 +277,7 @@ c            else
      &                 '       only be used for S8R shell elements.'
                      write(*,*) '       Element ',ialset(j),
      &                 ' is not a S8R shell element.'
-                     stop
+                     call exit(201)
                   endif
                   indexe=ipkon(ialset(j))
                   do l=1,8
@@ -301,7 +301,7 @@ c            else
      &                    '       only be used for shell elements.'
                         write(*,*) '       Element ',k,
      &                    ' is not a S8R shell element.'
-                        stop
+                        call exit(201)
                      endif
                      indexe=ipkon(k)
                      do l=1,8

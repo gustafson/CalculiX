@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2014 Guido Dhondt
+!     Copyright (C) 1998-2015 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,7 +28,8 @@
      &     nactdog,ndirboun,nodeboun,xbounact,
      &     ielmat,ntmat_,shcon,nshcon,physcon,ipiv,nteq,
      &     rhcon,nrhcon,ipobody,ibody,xbodyact,co,nbody,network,
-     &     iin_abs,vold,set,istep,iit,mi,ineighe,ilboun,channel)
+     &     iin_abs,vold,set,istep,iit,mi,ineighe,ilboun,channel,
+     &     iaxial)
 !     
       implicit none
 !     
@@ -38,7 +39,7 @@
       character*81 set(*)
 !           
       integer mi(*),ieg(*),nflow,i,j,ntg,ielmat(mi(3),*),ntmat_,id,
-     &     node1,node2,ider,
+     &     node1,node2,ider,iaxial,
      &     nelem,index,nshcon(*),ipkon(*),kon(*),ikboun(*),nboun,idof,
      &     nodem,idirf(8),nactdog(0:3,*),imat,ielprop(*),id1,id2,
      &     nodef(8),ndirboun(*),nodeboun(*),itg(*),node,kflag,ipiv(*),
@@ -118,7 +119,7 @@
             write(*,*) 
      &           '*ERROR in initialgas: minimum initial pressure'
             write(*,*) '       is smaller than zero'
-            stop
+            call exit(201)
          endif
 !     
 !     in nodes in which no initial pressure is given v(2,*)
@@ -359,7 +360,7 @@
          call dgesv(nteq,nrhs,ac,nteq,ipiv,bc,nteq,info)
          if(info.ne.0) then
             write(*,*) '*ERROR in initialgas: singular matrix'
-            stop
+            call exit(201)
          endif
       endif
 !     
@@ -507,7 +508,7 @@
      &                 '*ERROR in initialgas: no gravity vector'
                   write(*,*) 
      &                 '       was defined for liquid element',nelem
-                  stop
+                  call exit(201)
                endif
             endif
 !     
@@ -559,7 +560,7 @@
      &                 v(2,node1)
                   write(*,*) '       node2',node2,' pressure',
      &                 v(2,node2)
-                  stop
+                  call exit(201)
 !     
 !     if inlet pressure is an active degree of freedom
 !     
@@ -627,7 +628,8 @@
                call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &           nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &           nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,
-     &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider)
+     &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,
+     &           iaxial)
                v(1,nodem)=xflow
             endif
 !     
@@ -644,7 +646,7 @@ c            if(nactdog(1,nodem).ne.0) v(1,nodem)=xflow
      &                 v(2,node1)
                   write(*,*) '       node2',node2,' pressure',
      &                 v(2,node2)
-                  stop
+                  call exit(201)
                endif
                if (v(1,nodem).lt.0) then
                   WRITE(*,*) '**************************************'

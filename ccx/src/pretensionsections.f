@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -108,7 +108,7 @@
          write(*,*) 
      &      '*ERROR reading *PRE-TENSION SECTION: *EQUATION should'
          write(*,*) '       be placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       ielem=0
@@ -135,7 +135,7 @@
             if((irefnode.gt.nk).or.(irefnode.le.0)) then
                write(*,*) '*ERROR reading *PRE-TENSION SECTION:'
                write(*,*) '       node ',irefnode,' is not defined'
-               stop
+               call exit(201)
             endif
          elseif(textpart(i)(1:8).eq.'ELEMENT=') then
             if(surface(1:1).ne.' ') then
@@ -188,7 +188,7 @@
             write(*,*) '*ERROR reading PRE-TENSION SECTION:'
             write(*,*) '       element',ielem,' is not a linear'
             write(*,*) '       beam element'
-            stop
+            call exit(201)
          endif
       else
          write(*,*) '*ERROR reading PRE-TENSION SECTION:'
@@ -272,7 +272,7 @@ cc
             nmpc=nmpc+1
             if(nmpc.gt.nmpc_) then
                write(*,*) '*ERROR in equations: increase nmpc_'
-               stop
+               call exit(201)
             endif
             labmpc(nmpc)='PRETENSION          '
             ipompc(nmpc)=mpcfree
@@ -343,7 +343,7 @@ c            jn=in(i)
          write(*,*) '*ERROR reading *PRE-TENSION SECTION'
          write(*,*) '       all DOFS of the beam elements'
          write(*,*) '       have been used previously'
-         stop
+         call exit(201)
       endif
 !
 !     finding a unit vector xt perpendicular to the normal vector
@@ -552,7 +552,7 @@ c            jn=in(i)
             nmpc=nmpc+1
             if(nmpc.gt.nmpc_) then
                write(*,*) '*ERROR in equations: increase nmpc_'
-               stop
+               call exit(201)
             endif
             ipompc(nmpc)=mpcfree
             labmpc(nmpc)='                    '
@@ -634,7 +634,7 @@ c            jn=in(i)
                nmpc=nmpc+1
                if(nmpc.gt.nmpc_) then
                   write(*,*) '*ERROR in equations: increase nmpc_'
-                  stop
+                  call exit(201)
                endif
                labmpc(nmpc)='                    '
                ipompc(nmpc)=mpcfree
@@ -719,7 +719,7 @@ c            jn=in(i)
                nmpc=nmpc+1
                if(nmpc.gt.nmpc_) then
                   write(*,*) '*ERROR in equations: increase nmpc_'
-                  stop
+                  call exit(201)
                endif
                labmpc(nmpc)='PRETENSION          '
                ipompc(nmpc)=mpcfree
@@ -793,7 +793,7 @@ c            jn=in(i)
                nmpc=nmpc+1
                if(nmpc.gt.nmpc_) then
                   write(*,*) '*ERROR in equations: increase nmpc_'
-                  stop
+                  call exit(201)
                endif
                labmpc(nmpc)='                    '
                ipompc(nmpc)=mpcfree

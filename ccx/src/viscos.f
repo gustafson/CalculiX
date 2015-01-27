@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -51,13 +51,13 @@
          write(*,*) '       not provided in a *VISCO step. Perform'
          write(*,*) '       a genuine nonlinear geometric calculation'
          write(*,*) '       instead (parameter NLGEOM)'
-         stop
+         call exit(201)
       endif
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR in viscos: *VISCO can only be used'
          write(*,*) '  within a STEP'
-         stop
+         call exit(201)
       endif
 c!
 c!     activating creep if deactivated in a previous *STATIC step
@@ -124,8 +124,8 @@ c      endif
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
          if(iperturb.ge.2) then
-            write(*,*) '*WARNING in viscos: a nonlinear geometric analys
-     &is is requested'
+            write(*,*) '*WARNING in viscos: a nonlinear analysis is req
+     &uested'
             write(*,*) '         but no time increment nor step is speci
      &fied'
             write(*,*) '         the defaults (1,1) are used'
@@ -163,8 +163,10 @@ c      endif
       endif
 !      
       if(idrct.ne.1) then
-         if(dabs(tmin).lt.1.d-10) then
-            tmin=min(tinc,1.d-5*tper)
+c         if(dabs(tmin).lt.1.d-10) then
+c            tmin=min(tinc,1.d-5*tper)
+         if(dabs(tmin).lt.1.d-6*tper) then
+            tmin=min(tinc,1.d-6*tper)
          endif
          if(dabs(tmax).lt.1.d-10) then
             tmax=1.d+30

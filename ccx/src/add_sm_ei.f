@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -54,7 +54,7 @@ c      write(*,*) ii,jj,value,valuem
       if(irow(ipointer).ne.ii) then
          write(*,*) '*ERROR in add_sm_ei: coefficient should be 0'
 c         write(*,*) i,j,ii,jj,ipointer,irow(ipointer)
-c         stop
+c         call exit(201)
       else
          au(ipointer)=au(ipointer)+value
          aub(ipointer)=aub(ipointer)+valuem

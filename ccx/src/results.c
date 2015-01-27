@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -29,13 +29,14 @@ static ITG *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *nplicon1,*nplkcon1,*npmat1_,*mi1,*ielas1,*icmd1,*ncmat1_,*nstate1_,
     *istep1,*iinc1,calcul_fn1,calcul_qa1,calcul_cauchy1,iener1,ikin1,
     *nal=NULL,*ipompc1,*nodempc1,*nmpc1,*ncocon1,*ikmpc1,*ilmpc1,
-    num_cpus,mt1,*nk1,*ne01,*nshcon1,*nelemload1,*nload1,*mortar1;
+    num_cpus,mt1,*nk1,*ne01,*nshcon1,*nelemload1,*nload1,*mortar1,
+    *ielprop1;
 
 static double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
     *prestr1,*eme1,*fn1=NULL,*qa1=NULL,*vold1,*veold1,*dtime1,*time1,
     *ttime1,*plicon1,*plkcon1,*xstateini1,*xstiff1,*xstate1,*stiini1,
     *vini1,*ener1,*eei1,*enerini1,*springarea1,*reltime1,*coefmpc1,
-    *cocon1,*qfx1,*thicke1,*emeini1,*shcon1,*xload1,
+    *cocon1,*qfx1,*thicke1,*emeini1,*shcon1,*xload1,*prop1,
     *xloadold1,*pslavsurf1,*pmastsurf1,*clearini1;
 
 void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
@@ -68,7 +69,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        double *xloadold,ITG *icfd,ITG *inomat,double *pslavsurf,
        double *pmastsurf,ITG *mortar,ITG *islavact,double *cdn,
        ITG *islavnode,ITG *nslavnode,ITG *ntie,double *clearini,
-       ITG *islavsurf){
+       ITG *islavsurf,ITG *ielprop,double *prop){
 
     ITG intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,iener,ikin,
         intpointvart,mt=mi[1]+1,i,j,*ithread=NULL;
@@ -174,9 +175,9 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 
     if(((ithermal[0]<=1)||(ithermal[0]>=3))&&(intpointvarm==1)){
 
-	fn1=NNEW(double,num_cpus*mt**nk);
-	qa1=NNEW(double,num_cpus*3);
-	nal=NNEW(ITG,num_cpus);
+	NNEW(fn1,double,num_cpus*mt**nk);
+	NNEW(qa1,double,num_cpus*3);
+	NNEW(nal,ITG,num_cpus);
 
 	co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;ne1=ne;v1=v;
         stx1=stx;elcon1=elcon;nelcon1=nelcon;rhcon1=rhcon;
@@ -194,7 +195,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
         calcul_fn1=calcul_fn;calcul_qa1=calcul_qa;calcul_cauchy1=calcul_cauchy;
         iener1=iener;ikin1=ikin;mt1=mt;nk1=nk;ne01=ne0;thicke1=thicke;
         emeini1=emeini;pslavsurf1=pslavsurf;clearini1=clearini;
-        pmastsurf1=pmastsurf;mortar1=mortar;
+        pmastsurf1=pmastsurf;mortar1=mortar;ielprop1=ielprop;prop1=prop;
 
 	/* calculating the stresses */
 	
@@ -204,7 +205,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	
 	/* create threads and wait */
 	
-	ithread=NNEW(ITG,num_cpus);
+	NNEW(ithread,ITG,num_cpus);
 	for(i=0; i<num_cpus; i++)  {
 	    ithread[i]=i;
 	    pthread_create(&tid[i], NULL, (void *)resultsmechmt, (void *)&ithread[i]);
@@ -219,7 +220,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 		fn[i]+=fn1[i+j*mt**nk];
 	    }
 	}
-	free(fn1);free(ithread);
+	SFREE(fn1);SFREE(ithread);
 	
         /* determine the internal force */
 
@@ -241,27 +242,18 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	    }
 	}
 
-/*	for(i=0;i<3;i++){
-	    qa[i]=qa1[i];
-	}
-	for(i=0;i<3;i++){
-	    for(j=1;j<num_cpus;j++){
-		qa[i]+=qa1[i+j*3];
-	    }
-	    }*/
-	free(qa1);
+	SFREE(qa1);
 	
 	for(j=1;j<num_cpus;j++){
 	    nal[0]+=nal[j];
 	}
-//	printf("resultsnewmech qa=%e nal=%" ITGFORMAT "",qa[0],nal[0]);
 
 	if(calcul_qa==1){
 	    if(nal[0]>0){
 		qa[0]/=nal[0];
 	    }
 	}
-	free(nal);
+	SFREE(nal);
     }
 
     /* calculating the thermal flux and material tangent at the 
@@ -269,9 +261,9 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 
     if((ithermal[0]>=2)&&(intpointvart==1)){
 
-	fn1=NNEW(double,num_cpus*mt**nk);
-	qa1=NNEW(double,num_cpus*3);
-	nal=NNEW(ITG,num_cpus);
+	NNEW(fn1,double,num_cpus*mt**nk);
+	NNEW(qa1,double,num_cpus*3);
+	NNEW(nal,ITG,num_cpus);
 
 	co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;v1=v;
         elcon1=elcon;nelcon1=nelcon;rhcon1=rhcon;nrhcon1=nrhcon;
@@ -289,6 +281,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
         sideload1=sideload;xload1=xload;xloadold1=xloadold;
         pslavsurf1=pslavsurf;pmastsurf1=pmastsurf;mortar1=mortar;
         clearini1=clearini;plicon1=plicon;nplicon1=nplicon;ne1=ne;
+        ielprop1=ielprop,prop1=prop;
 
 	/* calculating the heat flux */
 	
@@ -296,21 +289,13 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	
 	/* create threads and wait */
 	
-	ithread=NNEW(ITG,num_cpus);
+	NNEW(ithread,ITG,num_cpus);
 	for(i=0; i<num_cpus; i++)  {
 	    ithread[i]=i;
 	    pthread_create(&tid[i], NULL, (void *)resultsthermmt, (void *)&ithread[i]);
 	}
 	for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
 	
-	/*	for(i=0;i<mt**nk;i++){
-		fn[i]=fn1[i];
-	}
-	for(i=0;i<mt**nk;i++){
-	    for(j=1;j<num_cpus;j++){
-		fn[i]+=fn1[i+j*mt**nk];
-	    }
-	    }*/
 	for(i=0;i<*nk;i++){
 		fn[mt*i]=fn1[mt*i];
 	}
@@ -319,7 +304,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 		fn[mt*i]+=fn1[mt*i+j*mt**nk];
 	    }
 	}
-	free(fn1);free(ithread);
+	SFREE(fn1);SFREE(ithread);
 	
         /* determine the internal concentrated heat flux */
 
@@ -328,27 +313,18 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	    qa[1]+=qa1[1+j*3];
 	}
 	
-/*	for(i=0;i<3;i++){
-	    qa[i]=qa1[i];
-	}
-	for(i=0;i<3;i++){
-	    for(j=1;j<num_cpus;j++){
-		qa[i]+=qa1[i+j*3];
-	    }
-	    }*/
-	free(qa1);
+	SFREE(qa1);
 	
 	for(j=1;j<num_cpus;j++){
 	    nal[0]+=nal[j];
 	}
 
-//	printf("resultsnewtherm qa=%e nal=%" ITGFORMAT "",qa[1],nal[0]);
 	if(calcul_qa==1){
 	    if(nal[0]>0){
 		qa[1]/=nal[0];
 	    }
 	}
-	free(nal);
+	SFREE(nal);
     }
 
     /* calculating the matrix system internal force vector */
@@ -368,7 +344,8 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
        nelemload,nload,&ikin,ielmat,thicke,eme,emn,rhcon,nrhcon,shcon,
        nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,islavact,
-       cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time));
+       cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time,ielprop,prop,
+       veold));
   
   return;
 
@@ -402,7 +379,7 @@ void *resultsmechmt(ITG *i){
           ncmat1_,nstate1_,stiini1,vini1,ener1,eei1,enerini1,istep1,iinc1,
           springarea1,reltime1,&calcul_fn1,&calcul_qa1,&calcul_cauchy1,&iener1,
 	  &ikin1,&nal[indexnal],ne01,thicke1,emeini1,
-	  pslavsurf1,pmastsurf1,mortar1,clearini1,&nea,&neb));
+	  pslavsurf1,pmastsurf1,mortar1,clearini1,&nea,&neb,ielprop1,prop1));
 
     return NULL;
 }
@@ -427,12 +404,12 @@ void *resultsthermmt(ITG *i){
 	   ntmat1_,t01,iperturb1,&fn1[indexfn],shcon1,nshcon1,
 	   iout1,&qa1[indexqa],vold1,ipompc1,nodempc1,coefmpc1,nmpc1,
            dtime1,time1,ttime1,plkcon1,nplkcon1,xstateini1,xstiff1,xstate1,
-           npmat1_,
-           matname1,mi1,ncmat1_,nstate1_,cocon1,ncocon1,
+           npmat1_,matname1,mi1,ncmat1_,nstate1_,cocon1,ncocon1,
            qfx1,ikmpc1,ilmpc1,istep1,iinc1,springarea1,
 	   &calcul_fn1,&calcul_qa1,&nal[indexnal],&nea,&neb,ithermal1,
 	   nelemload1,nload1,nmethod1,reltime1,sideload1,xload1,xloadold1,
-	   pslavsurf1,pmastsurf1,mortar1,clearini1,plicon1,nplicon1));
+	   pslavsurf1,pmastsurf1,mortar1,clearini1,plicon1,nplicon1,ielprop1,
+           prop1));
 
     return NULL;
 }

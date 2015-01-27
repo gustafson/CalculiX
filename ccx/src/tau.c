@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -59,8 +59,8 @@ void tau_factor(double *ad, double **aup, double *adb, double *aub,
   ndim=*neq+*nzs;
 
   autau= NNEW(double,ndim);
-  irowtau=NNEW(ITG,ndim);
-  pointtau=NNEW(ITG,*neq+1);
+  NNEW(irowtau,ITG,ndim);
+  NNEW(pointtau,ITG,*neq+1);
 
   k=ndim;
   l=*nzs;
@@ -130,7 +130,7 @@ void tau_solve(double *b,ITG *neq){
   double *x=NULL;
   ITG ret;
 
-  x=NNEW(double,*neq);
+  NNEW(x,double,*neq);
   
   if(*neq<150){
       taucs_linsolve(aa,&F,1,x,b,tausolve,NULL);
@@ -148,7 +148,7 @@ void tau_solve(double *b,ITG *neq){
   for(i=0;i<=*neq-1;++i){
     b[i]=x[i];
   }
-  free(x);/*
+  SFREE(x);/*
   if (mb > 0)
     memory_mb = (double) mb;
   else
@@ -162,9 +162,9 @@ void tau_solve(double *b,ITG *neq){
 void tau_cleanup(){
 
   /*taucs_linsolve(NULL,&F,0,NULL,NULL,NULL,NULL);*/
-  free(pointtau);
-  free(irowtau);
-  free(autau);
+  SFREE(pointtau);
+  SFREE(irowtau);
+  SFREE(autau);
 
   return;
 }

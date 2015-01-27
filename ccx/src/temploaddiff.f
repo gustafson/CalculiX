@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -242,8 +242,7 @@
                   xforcdiff(i)=xforcact(i)-xforcdiff(i)
                endif
                call cload(xforcact(i),istep,iinc,abqtime,node,
-     &              ndirforc(i),coords,vold,mi,ntrans,trab,inotr,veold,
-     &              nmethod,nactdof,bcont,fn)
+     &              ndirforc(i),coords,vold,mi,ntrans,trab,inotr,veold)
                xforcdiff(i)=xforcact(i)-xforcdiff(i)
                cycle
             endif

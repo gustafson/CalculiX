@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &  ithermal,cs,ics,tieset,istartset,
      &  iendset,ialset,ipompc,nodempc,coefmpc,nmpc,nmpc_,ikmpc,
      &  ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl,cfd,ttime,
-     &  iaxial,nelcon,nmat)
+     &  iaxial,nelcon,nmat,tincf)
 !
 !     reading the input deck: *STATIC
 !
@@ -50,7 +50,7 @@
      &  nmpc,nmpc_,ikmpc(*),ilmpc(*),mpcfree,nset,mcs,ipoinpc(0:*),
      &  cfd,iaxial,nelcon(2,*),nmat
 !
-      real*8 tinc,tper,tmin,tmax,cs(17,*),coefmpc(*),ttime
+      real*8 tinc,tper,tmin,tmax,cs(17,*),coefmpc(*),ttime,tincf
 !
       idrct=0
       tmin=0.d0
@@ -58,17 +58,17 @@
       timereset=.false.
 !
       if((iperturb.eq.1).and.(istep.ge.1)) then
-         write(*,*) '*ERROR in statics: perturbation analysis is'
+         write(*,*) '*ERROR reading *STATIC: perturbation analysis is'
          write(*,*) '       not provided in a *STATIC step. Perform'
          write(*,*) '       a genuine nonlinear geometric calculation'
          write(*,*) '       instead (parameter NLGEOM)'
-         stop
+         call exit(201)
       endif
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in statics: *STATIC can only be used'
-         write(*,*) '  within a STEP'
-         stop
+         write(*,*) '*ERROR reading *STATIC: *STATIC can only be used'
+         write(*,*) '       within a STEP'
+         call exit(201)
       endif
 c!
 c!     no creep allowed in a *STATIC step
@@ -114,7 +114,7 @@ c      enddo
             read(textpart(i)(18:37),'(f20.0)',iostat=istat) ttime
          else
             write(*,*) 
-     &        '*WARNING in statics: parameter not recognized:'
+     &        '*WARNING reading *STATIC: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -135,7 +135,7 @@ c      enddo
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
       else
-         write(*,*) '*WARNING in statics: unknown solver;'
+         write(*,*) '*WARNING reading *STATIC: unknown solver;'
          write(*,*) '         the default solver is used'
       endif
 !
@@ -143,7 +143,7 @@ c      enddo
 !
 !     check for nodes on a cyclic symmetry axis
 !
-      if((mcs.eq.0).or.(iaxial.ne.0)) then
+      if((mcs.eq.0).or.(iaxial.eq.180)) then
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
       else
@@ -169,8 +169,8 @@ c      enddo
 !
       if((istat.lt.0).or.(key.eq.1)) then
          if((iperturb.ge.2).or.(cfd.eq.1)) then
-            write(*,*) '*WARNING in statics: a nonlinear geometric analy
-     &sis is requested'
+            write(*,*) '*WARNING reading *STATIC: a nonlinear analysis i
+     &s requested'
             write(*,*) '         but no time increment nor step is speci
      &fied'
             write(*,*) '         the defaults (1,1) are used'
@@ -179,6 +179,8 @@ c      enddo
             tper=1.d0
             tmin=1.d-5
             tmax=1.d+30
+            tincf=-1.d0
+c            tincf=1.d-2
          else
             tper=1.d0
          endif
@@ -198,29 +200,39 @@ c      enddo
       read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*STATIC%")
+      read(textpart(5)(1:20),'(f20.0)',iostat=istat) tincf
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*STATIC%")
 !
       if(tper.lt.0.d0) then
-         write(*,*) '*ERROR in statics: step size is negative'
-         stop
+         write(*,*) '*ERROR reading *STATIC: step size is negative'
+         call exit(201)
       elseif(tper.le.0.d0) then
          tper=1.d0
       endif
       if(tinc.lt.0.d0) then
-         write(*,*) '*ERROR in statics: initial increment size is negati
-     &ve'
-         stop
+         write(*,*) '*ERROR reading *STATIC: initial increment size is n
+     &egative'
+         call exit(201)
       elseif(tinc.le.0.d0) then
          tinc=tper
       endif
       if(tinc.gt.tper) then
-         write(*,*) '*ERROR in statics: initial increment size exceeds s
-     &tep size'
-         stop
+         write(*,*) '*ERROR reading *STATIC: initial increment size exce
+     &eds step size'
+         call exit(201)
       endif
+c      if((cfd.eq.1).and.(tincf.le.0.d0)) then
+c         write(*,*) '*WARNING reading *STATIC: initial CFD increment siz
+c     &e is zero or negative; the default of 0.01 is taken'
+c         tincf=1.d-2
+c      endif
 !      
       if(idrct.ne.1) then
-         if(dabs(tmin).lt.1.d-10) then
-            tmin=min(tinc,1.d-5*tper)
+c         if(dabs(tmin).lt.1.d-10) then
+c            tmin=min(tinc,1.d-5*tper)
+         if(dabs(tmin).lt.1.d-6*tper) then
+            tmin=min(tinc,1.d-6*tper)
          endif
          if(dabs(tmax).lt.1.d-10) then
             tmax=1.d+30

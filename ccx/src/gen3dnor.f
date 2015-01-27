@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,20 +25,30 @@
 !
 !     calculates normals on 1-D and 2-D elements
 !
+!     degrees of freedom:
+!     0: Temperature
+!     1: tra_in_x
+!     2: tra_in_y
+!     3: tra_in_z
+!     4: pressure
+!     5: rot_abou_x
+!     6: rot_abou_y
+!     7: rot_about_z
+!
       implicit none
 !
       logical fixed,composite
 !
       character*1 type,typeboun(*)
       character*8 lakon(*)
-      character*20 labmpc(*)
+      character*20 labmpc(*),label
 !
       integer nk,nk_,iponoel(*),inoel(3,*),iponoelmax,kon(*),ipkon(*),
      &  ne,iponor(2,*),knor(*),rig(*),iperturb,ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,mpcfree,ikmpc(*),ilmpc(*),ikboun(*),ilboun(*),nboun,
      &  nboun_,nodeboun(*),ndirboun(*),iamboun(*),nam,ntrans,inotr(2,*),
      &  isol,istep,idummy,mi(*),icomposite,ielmat(mi(3),*),nkold,
-     &  i,ndepnodes,index,nexp,nnor,nel,ielem,indexe,j,iel(100),
+     &  i,ndepnodes,index,nexp,nnor,nel,ielem,indexe,j,iel(100),idmpc,
      &  jl(100),ial(100),ifi(100),idepnodes(800),indexx,k,l,ifix,nemin,
      &  jact,ixfree,ikfree,node,nelshell,irefnode,idof,id,mpcfreeold,
      &  irotnode,imax,iamplitude,nmethod,ithermal(2),iexpnode,idim
@@ -57,6 +67,7 @@
       data coloc8 /-1.d0,-1.d0,1.d0,-1.d0,1.d0,1.d0,-1.d0,1.d0,
      &            0.d0,-1.d0,1.d0,0.d0,0.d0,1.d0,-1.d0,0.d0/
 !
+      label='                    '
       fixed=.false.
 !
 !     calculating the normals in nodes belonging to shells/beams
@@ -93,12 +104,19 @@
                   write(*,*) '*ERROR in gen3dnor: more than 100'
                   write(*,*) '       shell elements share the'
                   write(*,*) '       same node'
-                  stop
+                  call exit(201)
                endif
                j=inoel(2,index)
                jl(nel)=j
                iel(nel)=ielem
                thl1(nel)=thicke(1,indexe+j)
+!
+!              correcting the thickness for more than one layer (composite)
+!
+               do k=2,mi(3)
+                  thl1(nel)=thl1(nel)+thicke(k,indexe+j)
+               enddo
+!
                off1(nel)=offset(1,ielem)
             endif
             index=inoel(3,index)
@@ -178,7 +196,7 @@
                   write(*,*) '       shell normal in node ',i,
      &              ' element ',iel(j)
                   write(*,*) '       is smaller than 1.e-10'
-                  stop
+                  call exit(201)
                endif
                do k=1,3
                   xno(k,j)=xno(k,j)/dd
@@ -249,7 +267,7 @@
      &                           (lakon(iel(jact))(1:1).eq.'S'))))
      &                          ial(j)=1
 c
-                           if(dot.lt.0.999962) nnor=2
+                           if(dot.lt.0.999962d0) nnor=2
 c
                         else
                            if((lakon(iel(j))(1:1).eq.'S').and.
@@ -279,7 +297,7 @@ c
      &                           (lakon(iel(jact))(1:1).eq.'S'))))
      &                          ial(j)=1
 c
-                           if(dot.lt.0.999962) nnor=2
+c                           if(dot.lt.0.999962) nnor=2
 c
                         else
                            if((lakon(iel(j))(1:1).eq.'S').and.
@@ -319,7 +337,7 @@ c
                      write(*,*) '*ERROR in gen3dnor: size of'
                      write(*,*) '        estimated shell normal is'
                      write(*,*) '        smaller than 1.e-10'
-                     stop
+                     call exit(201)
                   endif
                   do j=1,3
                      xnoref(j)=xnoref(j)/dd
@@ -371,7 +389,7 @@ c
                   nk=nk+1
                   if(nk.gt.nk_) then
                      write(*,*) '*ERROR in gen3dnor: increase nk_'
-                     stop
+                     call exit(201)
                   endif
                   knor(ikfree+k)=nk
 !
@@ -400,7 +418,7 @@ c
                         nk=nk+1
                         if(nk.gt.nk_) then
                            write(*,*) '*ERROR in gen3dnor: increase nk_'
-                           stop
+                           call exit(201)
                         endif
                         knor(ikfree+k)=nk
                      enddo
@@ -426,7 +444,7 @@ c
                   write(*,*) '*ERROR in gen3dnor: more than 100'
                   write(*,*) '        beam/shell elements share'
                   write(*,*) '        the same node'
-                  stop
+                  call exit(201)
                endif
                j=inoel(2,index)
                jl(nel)=j
@@ -493,7 +511,7 @@ c
                   write(*,*)'       beam tangent in node ',i,' element '
      &,iel(j)
                   write(*,*) '       is smaller than 1.e-10'
-                  stop
+                  call exit(201)
                endif
                do k=1,3
                   xta(k,j)=xta(k,j)/dd
@@ -534,7 +552,7 @@ c
                   write(*,*)'       beam normal in 2-direction in node '
      &,i,' element ',iel(j)
                   write(*,*) '       is smaller than 1.e-10'
-                  stop
+                  call exit(201)
                endif
                do k=1,3
                   xno(k,j)=xno(k,j)/dd
@@ -651,7 +669,7 @@ c
                if(dd.lt.1.d-10) then
                   write(*,*) '*ERROR in gen3dnor: size of mean'
                   write(*,*)'    beam tangent is smaller than 1.e-10'
-                  stop
+                  call exit(201)
                endif
                do k=1,3
                   xta(k,jact)=xta(k,jact)/dd
@@ -670,7 +688,7 @@ c
                   write(*,*) '*ERROR in gen3dnor: size of'
                   write(*,*) '        estimated beam normal is'
                   write(*,*) '        smaller than 1.e-10'
-                  stop
+                  call exit(201)
                endif
                do j=1,3
                   xnoref(j)=xnoref(j)/dd
@@ -710,7 +728,7 @@ c
                   nk=nk+1
                   if(nk.gt.nk_) then
                      write(*,*) '*ERROR in gen3dnor: increase nk_'
-                     stop
+                     call exit(201)
                   endif
                   knor(ikfree+k)=nk
                   idepnodes(ndepnodes+k)=nk
@@ -734,7 +752,6 @@ c
 !
 !        storing the expanded nodes
 !
-c         write(*,*) i,(idepnodes(k),k=1,ndepnodes)
 !
 !        generate rigid MPC's if necessary
 !
@@ -754,7 +771,7 @@ c               write(*,*) '       creation of rigid body MPCs.'
 c               write(*,*) '       This is not allowed in a'
 c               write(*,*) '       perturbation analysis. Please'
 c               write(*,*) '       generate a truely 3D structure'
-c               stop
+c               call exit(201)
 c            endif
             irefnode=i
 !
@@ -782,7 +799,7 @@ c                  changed for purely thermal calculations
                         if(nmpc.gt.nmpc_) then
                            write(*,*) 
      &                          '*ERROR in rigidmpc: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
 !     
                         ipompc(nmpc)=mpcfree
@@ -816,14 +833,14 @@ c     write(*,*) 'dependent node: ',node
                   nk=nk+1
                   if(nk.gt.nk_) then
                      write(*,*) '*ERROR in rigidbodies: increase nk_'
-                     stop
+                     call exit(201)
                   endif
                   irotnode=nk
                   rig(i)=irotnode
                   nk=nk+1
                   if(nk.gt.nk_) then
                      write(*,*) '*ERROR in rigidbodies: increase nk_'
-                     stop
+                     call exit(201)
                   endif
                   iexpnode=nk
                   do k=1,ndepnodes
@@ -848,7 +865,7 @@ c     write(*,*) 'dependent node: ',node
                   if(nmpc.gt.nmpc_) then
                      write(*,*) 
      &                    '*ERROR in gen3dnor: increase nmpc_'
-                     stop
+                     call exit(201)
                   endif
 !     
                   ipompc(nmpc)=mpcfree
@@ -895,13 +912,22 @@ c     write(*,*) 'dependent node: ',node
                   val=0.d0
                   if(nam.gt.0) iamplitude=0
                   type='R'
-                  call bounadd(irotnode,imax,imax,val,nodeboun,
+!
+!                 check whether the dof has been used as dependent
+!                 term of a MPC
+!
+                  idof=8*(i-1)+4+imax
+                  call nident(ikmpc,idof,nmpc,idmpc)
+!
+                  if((idmpc.le.0).or.(ikmpc(idmpc).ne.idof)) then
+                     call bounadd(irotnode,imax,imax,val,nodeboun,
      &                 ndirboun,xboun,nboun,nboun_,iamboun,
      &                 iamplitude,nam,ipompc,nodempc,coefmpc,
      &                 nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &                 ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
      &                 type,typeboun,nmethod,iperturb,fixed,vold,
-     &                 idummy,mi)
+     &                 idummy,mi,label)
+                  endif
                else
 !
 !                    check whether the rotational degree of freedom
@@ -909,11 +935,14 @@ c     write(*,*) 'dependent node: ',node
 !
                   isol=0
                   do l=1,3
-c                     idof=8*(i-1)+3+imax
                      idof=8*(i-1)+4+imax
                      call nident(ikboun,idof,nboun,id)
-                     if(((id.gt.0).and.(ikboun(id).eq.idof)).or.
-     &                   (dabs(xnoref(imax)).lt.1.d-10)) then
+                     call nident(ikmpc,idof,nmpc,idmpc)
+                     if(((idmpc.gt.0).and.(ikmpc(idmpc).eq.idof)).or.
+     &                  ((id.gt.0).and.(ikboun(id).eq.idof)).or.
+     &                   (dabs(xnoref(imax)).lt.1.d-2)) then
+c   changed 24.11.2014
+c     &                   (dabs(xnoref(imax)).lt.1.d-10)) then
                         imax=imax+1
                         if(imax.gt.3) imax=imax-3
                         cycle
@@ -934,7 +963,7 @@ c                     idof=8*(i-1)+3+imax
                      if(nmpc.gt.nmpc_) then
                         write(*,*) 
      &                       '*ERROR in gen3dnor: increase nmpc_'
-                        stop
+                        call exit(201)
                      endif
 !     
                      ipompc(nmpc)=mpcfree
@@ -980,5 +1009,3 @@ c      enddo
 !
       return
       end
-
-

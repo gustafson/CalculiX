@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -56,13 +56,13 @@
       if(istep.lt.1) then
          write(*,*) '*ERROR in radiates: *RADIATE should only be used'
          write(*,*) '  within a STEP'
-         stop
+         call exit(201)
       endif
 !
       if(physcon(2).le.0.d0) then
          write(*,*) '*ERROR in radiates: *RADIATE card was selected'
          write(*,*) '       but no *PHYSICAL CONSTANTS card encountered'
-         stop
+         call exit(201)
       endif
 !
       do i=2,n
@@ -85,7 +85,7 @@
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
      &"*RADIATE%")
-               stop
+               call exit(201)
             endif
             iamptemp=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
@@ -95,21 +95,21 @@
                write(*,*) '       '
                call inputerror(inpc,ipoinpc,iline,
      &"*RADIATE%")
-               stop
+               call exit(201)
             else
                idelay1=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
                write(*,*) '*ERROR in radiates: increase nam_'
-               stop
+               call exit(201)
             endif
             amname(nam)='
      &                                 '
             if(iamptemp.eq.0) then
                write(*,*) '*ERROR in radiates: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
-               stop
+               call exit(201)
             endif
             namta(3,nam)=sign(iamptemp,namta(3,iamptemp))
             iamptemp=nam
@@ -121,7 +121,7 @@
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR radiates: increase namtot_'
-               stop
+               call exit(201)
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
@@ -142,7 +142,7 @@
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
      &"*RADIATE%")
-               stop
+               call exit(201)
             endif
             iampradi=j
          elseif(textpart(i)(1:19).eq.'RADIATIONTIMEDELAY=') THEN
@@ -152,14 +152,14 @@
                write(*,*) '       same keyword; '
                call inputerror(inpc,ipoinpc,iline,
      &"*RADIATE%")
-               stop
+               call exit(201)
             else
                idelay2=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
                write(*,*) '*ERROR in radiates: increase nam_'
-               stop
+               call exit(201)
             endif
             amname(nam)='
      &                                 '
@@ -167,7 +167,7 @@
                write(*,*) '*ERROR in radiates: radiation time delay'
                write(*,*) '       must be preceded by the radiation'
                write(*,*) '       amplitude parameter'
-               stop
+               call exit(201)
             endif
             namta(3,nam)=sign(iampradi,namta(3,iampradi))
             iampradi=nam
@@ -179,7 +179,7 @@
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR radiates: increase namtot_'
-               stop
+               call exit(201)
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
@@ -256,7 +256,7 @@
             if(l.gt.ne) then
                write(*,*) '*ERROR in radiates: element ',l
                write(*,*) '       is not defined'
-               stop
+               call exit(201)
             endif
 !
             if((lakon(l)(1:2).eq.'CP').or.
@@ -295,7 +295,7 @@
                write(*,*) '       has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline,
      &"*RADIATE%")
-               stop
+               call exit(201)
             endif
 !
             l=ialset(istartset(i))

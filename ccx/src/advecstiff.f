@@ -36,7 +36,7 @@
       real*8 tl2(9),voldl(0:mi(2),9),xl(3,9),sinktemp,xi,et,weight,
      &  xl2(3,8),xsj2(3),shp2(7,9),coords(3),xs2(3,7),dxsj2,areaj,
      &  temp,xload(2,*),timeend(2),time,ttime,dtime,field,reltime,
-     &  vold(0:mi(2),*),xloadold(2,*),s(78,78),sref,sref2
+     &  vold(0:mi(2),*),xloadold(2,*),s(100,100),sref,sref2
 !
       include "gauss.f"
 !

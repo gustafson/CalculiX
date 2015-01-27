@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -73,7 +73,7 @@
      &               mastset(1:ipos-2)
                write(*,*) '       does not exist or does not contain'
                write(*,*) '       element faces'
-               stop
+               call exit(201)
             endif
             imast=j
 !
@@ -137,10 +137,28 @@
                mortar=1
             elseif(slavset(ipos:ipos).eq.'M') then
 !
-!              Mortar contact (facial slave surface)
+!              quad-quad Mortar contact (facial slave surface)
 !
-               slavset(ipos:ipos)='T'
                mortar=2
+               nodeslavsurf=.false.
+            elseif(slavset(ipos:ipos).eq.'P') then
+!
+!              quad-lin Petrov Galerkin Mortar contact (facial slave surface)
+!
+               mortar=4
+               nodeslavsurf=.false.
+            elseif(slavset(ipos:ipos).eq.'G') then
+!
+!              quad-quad Petrov Galerkin Mortar contact (facial slave surface)
+!
+               mortar=5
+               nodeslavsurf=.false.
+            elseif(slavset(ipos:ipos).eq.'O') then
+!
+!              quad-lin Mortar contact (facial slave surface)
+!
+               mortar=3
+               nodeslavsurf=.false.
             else
 !
 !              node-to-face contact
@@ -160,7 +178,7 @@
      &              '*ERROR in allocont: element slave surface ',
      &              slavset(1:ipos-1)
                   write(*,*) '       does not exist'
-                  stop
+                  call exit(201)
                endif
                do j=1,nset
                   if((set(j)(1:ipos-1).eq.slavset(1:ipos-1)).and.
@@ -173,7 +191,7 @@
                   write(*,*) '*ERROR in allocont: slave surface ',
      &                 slavset(1:ipos-1)
                   write(*,*) '       does not exist'
-                  stop
+                  call exit(201)
                endif
             endif
 !

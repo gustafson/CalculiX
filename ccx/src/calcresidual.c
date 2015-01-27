@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -31,12 +31,13 @@
 
 
 void calcresidual(ITG *nmethod, ITG *neq, double *b, double *fext, double *f,
-        ITG *iexpl, ITG *nactdof, double *aux1, double *aux2, double *vold,
+        ITG *iexpl, ITG *nactdof, double *aux2, double *vold,
         double *vini, double *dtime, double *accold, ITG *nk, double *adb,
         double *aub, ITG *jq, ITG *irow, ITG *nzl, double *alpha,
         double *fextini, double *fini, ITG *islavnode, ITG *nslavnode,
         ITG *mortar, ITG *ntie,double *f_cm,
-	double* f_cs, ITG *mi,ITG *nzs,ITG *nasym){
+	double* f_cs, ITG *mi,ITG *nzs,ITG *nasym,ITG *idamping,
+        double *veold,double *adc,double *auc,double *cvini,double *cv){
 
     ITG j,k,mt=mi[1]+1;
     double scal1;
@@ -46,7 +47,6 @@ void calcresidual(ITG *nmethod, ITG *neq, double *b, double *fext, double *f,
     if(*nmethod!=4){
 	for(k=0;k<neq[1];++k){
 	    b[k]=fext[k]-f[k];
-//	   printf("calcresidual dof=%" ITGFORMAT ",fext=%e,f=%e,resi=%e\n",k,fext[k],f[k],b[k]);
 	}
     }
       
@@ -72,8 +72,28 @@ void calcresidual(ITG *nmethod, ITG *neq, double *b, double *fext, double *f,
 	for(k=neq[0];k<neq[1];++k){
 	    b[k]=fext[k]-f[k]-b[k];
 	} 
+
+	/* correction for damping */
+
+	if(*idamping==1){
+	    for(k=0;k<*nk;++k){
+		if(nactdof[mt*k]!=0){aux2[nactdof[mt*k]-1]=0.;}
+		for(j=1;j<mt;++j){
+		    if(nactdof[mt*k+j]!=0){
+			aux2[nactdof[mt*k+j]-1]=veold[mt*k+j];}
+		}
+	    }
+	    if(*nasym==0){
+		FORTRAN(op,(&neq[1],aux2,cv,adc,auc,jq,irow));
+	    }else{
+		FORTRAN(opas,(&neq[1],aux2,cv,adc,auc,jq,irow,nzs)); 
+	    }
+	    for(k=0;k<neq[0];++k){
+		b[k]-=scal1*cv[k]-*alpha*cvini[k];
+	    }
+	}
     }
-    
+
     /* residual for explicit dynamics */
     
     else{

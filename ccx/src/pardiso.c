@@ -86,9 +86,9 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
       
       ndim=*neq+*nzs;
       
-      pointers=NNEW(ITG,*neq+1);
-      icolpardiso=NNEW(ITG,ndim);
-      aupardiso=NNEW(double,ndim);
+      NNEW(pointers,ITG,*neq+1);
+      NNEW(icolpardiso,ITG,ndim);
+      NNEW(aupardiso,double,ndim);
       
       k=ndim;
       l=*nzs;
@@ -127,10 +127,10 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
              diagonal terms are stored in ad  */
 
 	  ndim=*neq+*nzs;
-	  pointers=NNEW(ITG,*neq+1);
-	  irowpardiso=NNEW(ITG,ndim);	  
-	  icolpardiso=NNEW(ITG,ndim);
-	  aupardiso=NNEW(double,ndim);
+	  NNEW(pointers,ITG,*neq+1);
+	  NNEW(irowpardiso,ITG,ndim);	  
+	  NNEW(icolpardiso,ITG,ndim);
+	  NNEW(aupardiso,double,ndim);
 	  
 	  k=0;
 	  k2=0;
@@ -188,7 +188,7 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
 	      }while(1);
 	  }
 	  pointers[*neq]=ndim+1;
-	  free(irowpardiso);
+	  SFREE(irowpardiso);
 
       }else if(*inputformat==1){
 	  
@@ -199,10 +199,10 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
           /* reordering lower triangular matrix */
 
 	  ndim=*nzs;
-	  pointers=NNEW(ITG,*neq+1);
-	  irowpardiso=NNEW(ITG,ndim);
-	  icolpardiso=NNEW(ITG,ndim);
-	  aupardiso=NNEW(double,ndim);
+	  NNEW(pointers,ITG,*neq+1);
+	  NNEW(irowpardiso,ITG,ndim);
+	  NNEW(icolpardiso,ITG,ndim);
+	  NNEW(aupardiso,double,ndim);
 	  
 	  k=0;
 	  for(i=0;i<*neq;i++){
@@ -257,7 +257,7 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
 	      }while(1);
 	  }
 	  pointers[*neq]=ndim+1;
-	  free(irowpardiso);
+	  SFREE(irowpardiso);
 
 	  /* composing the matrix: lower triangle + diagonal + upper triangle */
 
@@ -315,14 +315,14 @@ void pardiso_solve(double *b, ITG *neq,ITG *symmetryflag){
 
   printf(" number of threads =% d\n\n",nthread_mkl);
 
-  x=NNEW(double,*neq);
+  NNEW(x,double,*neq);
 
   FORTRAN(pardiso,(pt,&maxfct,&mnum,&mtype,&phase,neq,aupardiso,
 		   pointers,icolpardiso,perm,&nrhs,iparm,&msglvl,
                    b,x,&error));
 
   for(i=0;i<*neq;i++){b[i]=x[i];}
-  free(x);
+  SFREE(x);
 
   return;
 }
@@ -343,9 +343,9 @@ void pardiso_cleanup(ITG *neq,ITG *symmetryflag){
 		   pointers,icolpardiso,perm,&nrhs,iparm,&msglvl,
                    b,x,&error));
 
-  free(icolpardiso);
-  free(aupardiso);
-  free(pointers);
+  SFREE(icolpardiso);
+  SFREE(aupardiso);
+  SFREE(pointers);
 
   return;
 }

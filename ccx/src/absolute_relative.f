@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2014 Guido Dhondt
+!     Copyright (C) 1998-2015 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !     
       subroutine absolute_relative(node1,node2,nodem,nelem,lakon,
      &     kon,ipkon, nactdog,identity,ielprop,prop,iflag,v,
-     &     xflow,f,nodef,idirf,df,cp,R,physcon,numf,set,mi)
+     &     xflow,f,nodef,idirf,df,cp,R,physcon,numf,set,mi,iaxial)
 !     
 !     orifice element
 !
@@ -32,7 +32,7 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
-     &     ipkon(*),kon(*),nelemswirl,mi(*)
+     &     ipkon(*),kon(*),nelemswirl,mi(*),iaxial
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,
      &     p1,p2,T1,T2,cp,physcon(*),km1,kp1,kdkm1,
@@ -117,7 +117,7 @@
 !     
             if(u/CT.ge.2) then
 !     
-               xflow=v(1,nodem)
+               xflow=v(1,nodem)*iaxial
                Tt1=v(0,node1)+physcon(1)
                Tt2=v(0,node2)+physcon(1)
 !     
@@ -140,7 +140,7 @@
             else
                pt1=v(2,node2)
                pt2=v(2,node1)
-               xflow=v(1,nodem)
+               xflow=v(1,nodem)*iaxial
                Tt1=v(0,node1)+physcon(1)
                Tt2=v(0,node2)+physcon(1)
 !
@@ -163,7 +163,7 @@
 !
             if(u/CT.lt.2) then
 !     
-               xflow=v(1,nodem)
+               xflow=v(1,nodem)*iaxial
                Tt1=v(0,node1)+physcon(1)
                Tt2=v(0,node2)+physcon(1)
 !               
@@ -185,7 +185,7 @@
 !
                pt1=v(2,node2)
                pt2=v(2,node1)
-               xflow=v(1,nodem)
+               xflow=v(1,nodem)*iaxial
                Tt1=v(0,node1)+physcon(1)
                Tt2=v(0,node2)+physcon(1)
 !
@@ -306,7 +306,7 @@
 !     
             if(u/CT.ge.2) then
 !     
-               xflow=v(1,nodem)
+               xflow=v(1,nodem)*iaxial
                Tt1=v(0,node1)+physcon(1)
                Tt2=v(0,node2)+physcon(1)
 !     
@@ -329,7 +329,7 @@
             else
                pt1=v(2,node2)
                pt2=v(2,node1)
-               xflow=v(1,nodem)
+               xflow=v(1,nodem)*iaxial
                Tt1=v(0,node1)+physcon(1)
                Tt2=v(0,node2)+physcon(1)
 !
@@ -352,7 +352,7 @@
 !
             if(u/CT.lt.2) then
 !     
-               xflow=v(1,nodem)
+               xflow=v(1,nodem)*iaxial
                Tt1=v(0,node1)+physcon(1)
                Tt2=v(0,node2)+physcon(1)
 !               
@@ -374,7 +374,7 @@
 !
                pt1=v(2,node2)
                pt2=v(2,node1)
-               xflow=v(1,nodem)
+               xflow=v(1,nodem)*iaxial
                Tt1=v(0,node1)+physcon(1)
                Tt2=v(0,node2)+physcon(1)
 !
@@ -431,6 +431,9 @@
  57      FORMAT(1X,A,f6.2,A,f6.2,A)
 
       endif
+!     
+      xflow=xflow/iaxial
+      df(3)=df(3)*iaxial
 !     
       return 
       end

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,12 +39,12 @@
 !
       character*1 typeboun(*),type,inpc(*)
       character*8 lakon(*)
-      character*20 labmpc(*),label
+      character*20 labmpc(*),label,labelb
       character*81 set(*),elset
       character*132 textpart(16)
 !
       integer istartset(*),iendset(*),ialset(*),ipompc(*),
-     &  nodempc(3,*),
+     &  nodempc(3,*),noderef,idirref,
      &  nset,nset_,nalset,nalset_,nmpc,nmpc_,mpcfree,nk,nk_,ikmpc(*),
      &  ilmpc(*),ipkon(*),kon(*),i,node,ipos,istep,istat,n,ne_,
      &  j,k,nodeboun(*),ndirboun(*),ikboun(*),ilboun(*),iamboun(*),
@@ -55,6 +55,7 @@
       real*8 coefmpc(3,*),co(3,*),xboun(*),ctrl(*),xn(3),clearance,
      &  bounval,trab(7,*),dd,vold(0:mi(2),*)
 !
+      labelb='                    '
       fixed=.false.
       type='B'
       iamplitude=0
@@ -63,7 +64,7 @@
          write(*,*) 
      &     '*ERROR reading *GAP: *GAP should be placed'
          write(*,*) '  before all step definitions'
-         stop
+         call exit(201)
       endif
 !
 !     reading the element set
@@ -95,7 +96,7 @@
          write(*,*) '       was been defined. '
          call inputerror(inpc,ipoinpc,iline,
      &"*GAP%")
-         stop
+         call exit(201)
       endif
       do i=1,nset
          if(set(i).eq.elset) exit
@@ -106,7 +107,7 @@
          write(*,*) '  has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
      &"*GAP%")
-         stop
+         call exit(201)
       endif
 !
 !     the *GAP option implies a nonlinear geometric 
@@ -121,7 +122,7 @@
       elseif(iperturb(1).eq.1) then
          write(*,*) '*ERROR reading *GAP: the *MPC option'
          write(*,*) '       cannot be used in a perturbation step'
-         stop
+         call exit(201)
       endif
 !
       label='GAP                 '
@@ -157,7 +158,7 @@
                write(*,*) '*ERROR gaps: *GAP can only be used for'
                write(*,*) '       GAPUNI elements'
                write(*,*) '       Faulty element: ',ialset(j)
-               stop
+               call exit(201)
             endif
             index1=ipkon(ialset(j))
 !
@@ -171,7 +172,7 @@
      &              labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &              nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &              nboun,nboun_,inode,node1,co,label,
-     &              typeboun,iperturb)
+     &              typeboun,iperturb,noderef,idirref,xboun)
             enddo
 !
 !           three terms for node 2
@@ -183,7 +184,7 @@
      &              labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &              nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &              nboun,nboun_,inode,node2,co,label,
-     &              typeboun,iperturb)
+     &              typeboun,iperturb,noderef,idirref,xboun)
             enddo
 !
 !           extra node for the gap DOF
@@ -191,14 +192,14 @@
             nk=nk+1
             if(nk.gt.nk_) then
                write(*,*) '*ERROR reading *GAP: increase nk_'
-               stop
+               call exit(201)
             endif
             node=nk
             call usermpc(ipompc,nodempc,coefmpc,
      &           labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &           nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &           nboun,nboun_,inode,node,co,label,typeboun,
-     &           iperturb)
+     &           iperturb,noderef,idirref,xboun)
 !
 !           calculating the gap normal
 !
@@ -210,7 +211,7 @@
                if(dabs(dd).eq.0.d0) then
                   write(*,*) '*ERROR reading *GAP: gap normal cannot '
                   write(*,*) '       determined'
-                  stop
+                  call exit(201)
                endif
                do l=1,3
                   xn(l)=xn(l)/dd
@@ -232,7 +233,7 @@
      &        coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &        ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
      &        type,typeboun,nmethod,iperturb,fixed,vold,
-     &        idummy,mi)
+     &        idummy,mi,labelb)
 !
 !           nonhomogeneous term for user MPC
 !
@@ -241,7 +242,7 @@
      &           labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &           nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &           nboun,nboun_,inode,node,co,label,typeboun,
-     &           iperturb)
+     &           iperturb,noderef,idirref,xboun)
             co(1,nk)=clearance
          else
             k=ialset(j-2)
@@ -252,7 +253,7 @@
                   write(*,*)'*ERROR reading *GAP: *GAP can only be used'
                   write(*,*) '       for GAPUNI elements'
                   write(*,*) '       Faulty element: ',k
-                  stop
+                  call exit(201)
                endif
                index1=ipkon(k)
 !
@@ -266,7 +267,7 @@
      &                 labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &                 nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &                 nboun,nboun_,inode,node1,co,label,
-     &                 typeboun,iperturb)
+     &                 typeboun,iperturb,noderef,idirref,xboun)
                enddo
 !
 !              three terms for node 2
@@ -278,7 +279,7 @@
      &                 labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &                 nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &                 nboun,nboun_,inode,node2,co,label,
-     &                 typeboun,iperturb)
+     &                 typeboun,iperturb,noderef,idirref,xboun)
                enddo
 !
 !              extra node for the gap DOF
@@ -286,14 +287,14 @@
                nk=nk+1
                if(nk.gt.nk_) then
                   write(*,*) '*ERROR reading *GAP: increase nk_'
-                  stop
+                  call exit(201)
                endif
                node=nk
                call usermpc(ipompc,nodempc,coefmpc,
      &              labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &              nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &              nboun,nboun_,inode,node,co,label,typeboun,
-     &              iperturb)
+     &              iperturb,noderef,idirref,xboun)
 !
 !              calculating the gap normal
 !
@@ -305,7 +306,7 @@
                   if(dabs(dd).eq.0.d0) then
                      write(*,*) '*ERROR reading *GAP: gap normal cannot'
                      write(*,*) '       determined'
-                     stop
+                     call exit(201)
                   endif
                   do l=1,3
                      xn(l)=xn(l)/dd
@@ -327,7 +328,7 @@
      &              coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &              ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
      &              type,typeboun,nmethod,iperturb,fixed,vold,idummy,
-     &              mi)
+     &              mi,labelb)
 !
 !              nonhomogeneous term for user MPC
 !
@@ -336,7 +337,7 @@
      &              labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &              nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &              nboun,nboun_,inode,node,co,label,typeboun,
-     &              iperturb)
+     &              iperturb,noderef,idirref,xboun)
                co(1,nk)=clearance
             enddo
          endif

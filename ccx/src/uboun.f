@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,12 +31,13 @@
 !     idof               degree of freedom
 !     coords  (1..3)     global coordinates of the node
 !     vold(0..4,1..nk)   solution field in all nodes
+!                        (not available for CFD-calculations)
 !                        0: temperature
 !                        1: displacement in global x-direction
 !                           (or mass flow rate for fluid nodes)
 !                        2: displacement in global y-direction
 !                        3: displacement in global z-direction
-!                        4: static pressure
+!                        4: not used
 !     mi(1)              max # of integration points per element (max
 !                        over all elements)
 !     mi(2)              max degree of freedomm per node (max over all
@@ -52,7 +53,7 @@
       integer kstep,kinc,node,idof,mi(*) 
       real*8 boun,time(2),coords(3),vold(0:mi(2),*)
 !
-      boun=10.d0
+      boun=300.d0/8.d0*(4.d0-coords(2)*coords(2))
 !
       return
       end

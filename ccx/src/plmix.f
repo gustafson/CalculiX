@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -66,7 +66,7 @@
             write(*,*) '*ERROR in plmix: there exist two temperatures'
             write(*,*) '       for which the hardening curves are'
             write(*,*) '       disjunct'
-            stop
+            call exit(201)
          endif
       elseif(ep2.gt.ep1) then
          do k1=1,ndata1
@@ -77,7 +77,7 @@
             write(*,*) '*ERROR in plmix: there exist two temperatures'
             write(*,*) '       for which the hardening curves are'
             write(*,*) '       disjunct'
-            stop
+            call exit(201)
          endif
       endif
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -73,7 +73,7 @@
          write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
          write(*,*) '       element set ',elset(1:ipos-1),
      &         ' is not defined'
-         stop
+         call exit(201)
       endif
 !
 !     check whether only one element belongs
@@ -83,7 +83,7 @@
          write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
          write(*,*) '       element set ',elset(1:ipos-1),
      &        ' contains more than one element'
-         stop
+         call exit(201)
       endif
 !
 !     check whether the element is a DCOUP3D element
@@ -93,7 +93,7 @@
          write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
          write(*,*) '       element ',ielem,' is not a'
          write(*,*) '       DCOUP3D element'
-         stop
+         call exit(201)
       endif
 !
 !     the reference node belongs to the DCOUP3D element
@@ -114,7 +114,7 @@
             if(node.gt.nk) then
                write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
                write(*,*) '       node ',node,' is not defined'
-               stop
+               call exit(201)
             endif
 !     
 !           if first node : new MPC
@@ -127,7 +127,7 @@
                      write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
                      write(*,*) '       dof 1 of node ',node,
      &                    ' is already used'
-                     stop
+                     call exit(201)
                   endif
                endif
 !
@@ -135,7 +135,7 @@
                if(nmpc.gt.nmpc_) then
                   write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
                   write(*,*) '       increase nmpc_'
-                  stop
+                  call exit(201)
                endif
                ipompc(nmpc)=mpcfree
                labmpc(nmpc)='                    '
@@ -188,7 +188,7 @@
                write(*,*) '       has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline,
      &"*DISTRIBUTING COUPLING%")
-               stop
+               call exit(201)
             endif
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then
@@ -204,7 +204,7 @@
      &                       '*ERROR reading *DISTRIBUTING COUPLING:'
                            write(*,*) '       dof 1 of node ',node,
      &                          ' is already used'
-                           stop
+                           call exit(201)
                         endif
                      endif
 !
@@ -213,7 +213,7 @@
                         write(*,*) 
      &                    '*ERROR reading *DISTRIBUTING COUPLING:'
                         write(*,*) '       increase nmpc_'
-                        stop
+                        call exit(201)
                      endif
                      ipompc(nmpc)=mpcfree
                      labmpc(nmpc)='                    '
@@ -280,7 +280,7 @@
                write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
                write(*,*) '       dof',idir,' of node ',node,
      &              ' is already used'
-               stop
+               call exit(201)
             endif
          endif
 !     
@@ -288,7 +288,7 @@
          if(nmpc.gt.nmpc_) then
             write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
             write(*,*) '       increase nmpc_'
-            stop
+            call exit(201)
          endif
          ipompc(nmpc)=mpcfree
          labmpc(nmpc)='                    '

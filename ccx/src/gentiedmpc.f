@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -269,10 +269,10 @@ c                              write(*,*) '**regular solution'
 !              perpendicular to the triangle
 !
                if(isol.gt.0) then
-                  dist=dsqrt(straight(13,itri)*p(1)+
+                  dist=dabs(straight(13,itri)*p(1)+
      &                 straight(14,itri)*p(2)+
      &                 straight(15,itri)*p(3)+
-     &                 straight(16,itri))**2
+     &                 straight(16,itri))
                   if(dist.gt.tietol(1,i)) isol=0
                endif
 !
@@ -415,7 +415,7 @@ c                           write(40,*) node
                      if(mpcfree.eq.0) then
                         write(*,*)
      &                    '*ERROR in gentiedmpc: increase memmpc_'
-                        stop
+                        call exit(201)
                      endif
                      do k=1,nnodelem
                         nodempc(1,mpcfree)=nodef(k)
@@ -426,7 +426,7 @@ c                           write(40,*) node
                         if(mpcfree.eq.0) then
                            write(*,*)
      &                      '*ERROR in gentiedmpc: increase memmpc_'
-                           stop
+                           call exit(201)
                         endif
                      enddo
                      nodempc(3,mpcfreeold)=0
@@ -512,10 +512,10 @@ c                              write(*,*) '**regular solution'
 !              perpendicular to the triangle
 !
                if(isol.gt.0) then
-                  dist=dsqrt(straight(13,itri)*p(1)+
+                  dist=dabs(straight(13,itri)*p(1)+
      &                 straight(14,itri)*p(2)+
      &                 straight(15,itri)*p(3)+
-     &                 straight(16,itri))**2
+     &                 straight(16,itri))
                   if(dist.gt.tietol(1,i)) isol=0
                endif
 !     
@@ -661,7 +661,7 @@ c                              write(40,*) node
                         if(mpcfree.eq.0) then
                            write(*,*)
      &                      '*ERROR in gentiedmpc: increase memmpc_'
-                           stop
+                           call exit(201)
                         endif
                         do k=1,nnodelem
                            nodempc(1,mpcfree)=nodef(k)
@@ -672,7 +672,7 @@ c                              write(40,*) node
                            if(mpcfree.eq.0) then
                               write(*,*)
      &                    '*ERROR in gentiedmpc: increase memmpc_'
-                              stop
+                              call exit(201)
                            endif
                         enddo
                         nodempc(3,mpcfreeold)=0

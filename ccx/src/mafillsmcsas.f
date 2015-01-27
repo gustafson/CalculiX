@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,7 +30,7 @@
      &  rhsi,intscheme,mcs,coriolis,ibody,xloadold,reltime,ielcs,
      &  veold,springarea,thicke,integerglob,doubleglob,
      &  tieset,istartset,iendset,ialset,ntie,nasym,nstate_,xstateini,
-     &  xstate,pslavsurf,pmastsurf,mortar,clearini)
+     &  xstate,pslavsurf,pmastsurf,mortar,clearini,ielprop,prop)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !     for cyclic symmetry calculations
@@ -46,7 +46,7 @@
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
-     &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,
+     &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,ielprop(*),
      &  nactdof(0:mi(2),*),irow(*),istartset(*),iendset(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),integerglob(*),ialset(*),ntie,
@@ -61,11 +61,12 @@
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xbody(7,*),cgr(4,*),
-     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(78,78),ff(78),
-     &  sti(6,mi(1),*),sm(78,78),stx(6,mi(1),*),adb(*),aub(*),
+     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(100,100),
+     &  ff(100),
+     &  sti(6,mi(1),*),sm(100,100),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),xloadold(2,*),
      &  alcon(0:6,ntmat_,*),cs(17,*),alzero(*),orab(7,*),reltime,
-     &  springarea(2,*),plicon(0:2*npmat_,ntmat_,*),
+     &  springarea(2,*),plicon(0:2*npmat_,ntmat_,*),prop(*),
      &  plkcon(0:2*npmat_,ntmat_,*),thicke(mi(3),*),doubleglob(*),
      &  xstiff(27,mi(1),*),pi,theta,ti,tr,veold(0:mi(2),*),om,
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
@@ -73,7 +74,7 @@
      &  pslavsurf(3,*),pmastsurf(6,*)
 !
       pi=4.d0*datan(1.d0)
-      nstate_=0
+c      nstate_=0
 !
       do i=1,mcs
          theta=nm*2.d0*pi/cs(1,i)
@@ -124,7 +125,7 @@
      &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
      &          integerglob,doubleglob,tieset,istartset,
      &          iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,
-     &          clearini)
+     &          clearini,ielprop,prop)
 !
         do jj=1,3*nope
 !

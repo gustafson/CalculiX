@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -65,8 +65,8 @@ void remastructem(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     printf(" Determining the structure of the matrix:\n");
  
     if(nzs[1]<10) nzs[1]=10;   
-    mast1=NNEW(ITG,nzs[1]);
-    ipointer=NNEW(ITG,mt**nk);
+    NNEW(mast1,ITG,nzs[1]);
+    NNEW(ipointer,ITG,mt**nk);
     RENEW(irow,ITG,nzs[1]);for(i=0;i<nzs[1];i++) irow[i]=0;
     
     mastructem(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,ipompc,
@@ -74,7 +74,7 @@ void remastructem(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	     ikmpc,ilmpc,ipointer,nzs,ithermal,mi,ielmat,elcon,
 	     ncmat_,ntmat_,inomat);
 
-    free(ipointer);free(mast1);
+    SFREE(ipointer);SFREE(mast1);
     RENEW(irow,ITG,nzs[2]);
     
     *nodempcp=nodempc;*coefmpcp=coefmpc;*irowp=irow;

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,16 +32,17 @@
      &  ipoinp(2,*),inp(3,*),nrhcon(*),ipoinpc(0:*),imat
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in surfaceinteractions:'
+         write(*,*) '*ERROR reading *SURFACE INTERACTION:'
          write(*,*) '       *SURFACE INTERACTION should be placed'
          write(*,*) '       before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       nmat=nmat+1
       if(nmat.gt.nmat_) then
-         write(*,*) '*ERROR in surfaceinteractions: increase nmat_'
-         stop
+         write(*,*) 
+     &       '*ERROR reading *SURFACE INTERACTION: increase nmat_'
+         call exit(201)
       endif
       imat=nmat
 !
@@ -49,12 +50,20 @@
          if(textpart(i)(1:5).eq.'NAME=') then
             matname(nmat)=textpart(i)(6:85)
             if(textpart(i)(86:86).ne.' ') then
-               write(*,*) '*ERROR in surfaceinteractions: name too long'
+               write(*,*) '*ERROR reading *SURFACE INTERACTION:'
+               write(*,*) '       name too long'
                write(*,*) '       (more than 80 characters)'
                write(*,*) '       interaction name:',textpart(i)(1:132)
-               stop
+               call exit(201)
             endif
             exit
+         else
+            write(*,*) '*WARNING reading *SURFACE INTERACTION:'
+            write(*,*) '         parameter not recognized:'
+            write(*,*) '         ',
+     &                 textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*SURFACE INTERACTION%")
          endif
       enddo
 !

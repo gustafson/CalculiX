@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@
 !
       implicit none
       integer ii1,jj1,ii,jj,m1
-      real*8 s(78,78),gs(8,4),a,elas(1),hgls,ahr
+      real*8 s(100,100),gs(8,4),a,elas(1),hgls,ahr
 !
       ahr=elas(1)*a
 c     write(6,*) "stiffness:", ahr

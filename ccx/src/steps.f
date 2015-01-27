@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,7 +36,7 @@
       if(newstep.eq.1) then
          write(*,*) '*ERROR reading *STEP: *STEP statement detected'
          write(*,*) '       within step ',istep
-         stop
+         call exit(201)
       else
          newstep=1
       endif
@@ -83,7 +83,7 @@ c            iperturb(2)=1
                write(*,*) '       are mutually exclusive; '
                call inputerror(inpc,ipoinpc,iline,
      &"*STEP%")
-               stop
+               call exit(201)
             endif
 !
          elseif(textpart(i)(1:4).eq.'INC=') then

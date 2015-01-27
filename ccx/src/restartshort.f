@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &  ntrans,ncs,namtot,ncmat,memmpc,ne1d,ne2d,nflow,
      &  set,meminset,rmeminset,jobnamec,irestartstep,icntrl,ithermal,
      &  nener,nstate_,ntie,nslavs,nkon,mcs,nprop,mortar,ifacecount,
-     &  nintpoint)
+     &  nintpoint,infree)
 !
 !     istartset := meminset
 !     iendset := rmeminset
@@ -71,7 +71,7 @@
                else
                   write(*,*) '*ERROR in restartshort: requested step'
                   write(*,*) '       is not in the restart file'
-                  stop
+                  call exit(201)
                endif
             endif
 !
@@ -207,7 +207,7 @@
             else
                write(*,*) '*ERROR in restartshort: requested step'
                write(*,*) '       is not in the restart file'
-               stop
+               call exit(201)
             endif
          endif
 !
@@ -367,5 +367,5 @@
       return
 !
  15   write(*,*) '*ERROR in restartshort: could not open file ',fnrstrt
-      stop
+      call exit(201)
       end

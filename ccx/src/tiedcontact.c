@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -48,7 +48,7 @@ void tiedcontact(ITG *ntie, char *tieset, ITG *nset, char *set,
 
   /* identifying the slave surfaces as nodal or facial surfaces */
 
-  ifaceslave=NNEW(ITG,*ntie);
+  NNEW(ifaceslave,ITG,*ntie);
 
   FORTRAN(identifytiedface,(tieset,ntie,set,nset,ifaceslave,kind1));
 
@@ -61,7 +61,7 @@ void tiedcontact(ITG *ntie, char *tieset, ITG *nset, char *set,
 	  kind2,&mortar,istep));
 
   if(ncont==0){
-      free(ifaceslave);return;
+      SFREE(ifaceslave);return;
   }
 
   /* allocation of space for the triangulation; 
@@ -69,8 +69,8 @@ void tiedcontact(ITG *ntie, char *tieset, ITG *nset, char *set,
      koncont(4,i): face label to which the triangle belongs =
      10*element+side number */
 
-  itietri=NNEW(ITG,2**ntie);
-  koncont=NNEW(ITG,4*ncont);
+  NNEW(itietri,ITG,2**ntie);
+  NNEW(koncont,ITG,4*ncont);
 
   /* triangulation of the master surface */
 
@@ -83,26 +83,26 @@ void tiedcontact(ITG *ntie, char *tieset, ITG *nset, char *set,
   RENEW(ime,ITG,12*ncont);
   DMEMSET(ipe,0,*nk,0.);
   DMEMSET(ime,0,12*ncont,0.);
-  imastop=NNEW(ITG,3*ncont);
+  NNEW(imastop,ITG,3*ncont);
 
   FORTRAN(trianeighbor,(ipe,ime,imastop,&ncont,koncont,
 		        &ifreeme));
 
-  free(ipe);free(ime);
+  SFREE(ipe);SFREE(ime);
 
   /* allocation of space for the center of gravity of the triangles
      and the 4 describing planes */
 
-  cg=NNEW(double,3*ncont);
-  straight=NNEW(double,16*ncont);
+  NNEW(cg,double,3*ncont);
+  NNEW(straight,double,16*ncont);
   
   FORTRAN(updatecont,(koncont,&ncont,co,vold,cg,straight,mi));
   
   /* determining the nodes belonging to the slave face surfaces */
 
-  istartfield=NNEW(ITG,*ntie);
-  iendfield=NNEW(ITG,*ntie);
-  ifield=NNEW(ITG,8*ncone);
+  NNEW(istartfield,ITG,*ntie);
+  NNEW(iendfield,ITG,*ntie);
+  NNEW(ifield,ITG,8*ncone);
 
   FORTRAN(nodestiedface,(tieset,ntie,ipkon,kon,lakon,set,istartset,
        iendset,ialset,nset,ifaceslave,istartfield,iendfield,ifield,
@@ -158,15 +158,15 @@ void tiedcontact(ITG *ntie, char *tieset, ITG *nset, char *set,
     if(itietri[2*i+1]-itietri[2*i]+1>ntrimax)
       ntrimax=itietri[2*i+1]-itietri[2*i]+1;
   }
-  xo=NNEW(double,ntrimax);
-  yo=NNEW(double,ntrimax);
-  zo=NNEW(double,ntrimax);
-  x=NNEW(double,ntrimax);
-  y=NNEW(double,ntrimax);
-  z=NNEW(double,ntrimax);
-  nx=NNEW(ITG,ntrimax);
-  ny=NNEW(ITG,ntrimax);
-  nz=NNEW(ITG,ntrimax);
+  NNEW(xo,double,ntrimax);
+  NNEW(yo,double,ntrimax);
+  NNEW(zo,double,ntrimax);
+  NNEW(x,double,ntrimax);
+  NNEW(y,double,ntrimax);
+  NNEW(z,double,ntrimax);
+  NNEW(nx,ITG,ntrimax);
+  NNEW(ny,ITG,ntrimax);
+  NNEW(nz,ITG,ntrimax);
   
   /* generating the tie MPC's */
 
@@ -179,11 +179,11 @@ void tiedcontact(ITG *ntie, char *tieset, ITG *nset, char *set,
 
   (*nmpc_)+=nmpctied;
   
-  free(xo);free(yo);free(zo);free(x);free(y);free(z);free(nx);
-  free(ny);free(nz);free(imastop);
+  SFREE(xo);SFREE(yo);SFREE(zo);SFREE(x);SFREE(y);SFREE(z);SFREE(nx);
+  SFREE(ny);SFREE(nz);SFREE(imastop);
 
-  free(ifaceslave);free(istartfield);free(iendfield);free(ifield);
-  free(itietri);free(koncont);free(cg);free(straight);
+  SFREE(ifaceslave);SFREE(istartfield);SFREE(iendfield);SFREE(ifield);
+  SFREE(itietri);SFREE(koncont);SFREE(cg);SFREE(straight);
 
   /* reallocating the MPC fields */
 

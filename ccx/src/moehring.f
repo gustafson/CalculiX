@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2014 Guido Dhondt
+!     Copyright (C) 1998-2015 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !     
       subroutine moehring (node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,dvi,numf,set,mi)
+     &     nodef,idirf,df,cp,R,dvi,numf,set,mi,iaxial)
 !     
 !     moehring element
 !     This subroutines computes the evolution of the core swirl ratio 
@@ -40,7 +40,7 @@
       character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,
+     &     ielprop(*),nodef(4),idirf(4),index,iflag,iaxial,
      &     ipkon(*),kon(*),kgas,key,neval,ier,limit,lenw,last,
      &     iwork2(400),node_up,node_down,mi(*)
 !     
@@ -126,7 +126,7 @@
 !     defining flow parameters
 !     
 !     massflow
-         xflow=v(1,nodem)
+         xflow=v(1,nodem)*iaxial
 !     
 !     upstream node
          node_up=int(prop(index+5))
@@ -349,6 +349,10 @@
          endif
 !   
       endif
+!     
+      xflow=xflow/iaxial
+      df(3)=df(3)*iaxial
+!
       return
       end
 !
@@ -356,7 +360,7 @@
       function f_k(x,phi,lambda1,zk0,Pup,Tup,rurd,xflow,kup)
 !
       implicit none
-      integer neq,idid,ipar,iwork(78),lrw,liw,j
+      integer neq,idid,ipar,iwork(100),lrw,liw,j
       real*8 f_k,x,rpar(8),rtol,atol,y(1),info(15),
      &     Rurd,zk0,lambda1,Kup,xflow,pup,tup,phi,t,rwork(160)
 !     
@@ -411,7 +415,7 @@
       function f_p(x,phi,lambda1,zk0,Pup,Tup,rurd,xflow,kup)
 !
       implicit none
-      integer neq,idid,ipar,iwork(78),lrw,liw,j
+      integer neq,idid,ipar,iwork(100),lrw,liw,j
       real*8 f_p,x,rpar(8),rtol,atol,y(1),info(15),Rurd,
      &     zk0,lambda1,Kup,xflow,pup,tup,phi,t,rwork(160)
 !     
@@ -463,7 +467,7 @@
       function f_t(x,phi,lambda1,zk0,Pup,Tup,rurd,xflow,kup)
 !     
       implicit none
-      integer neq,idid,ipar,iwork(78),lrw,liw,j
+      integer neq,idid,ipar,iwork(100),lrw,liw,j
       real*8 f_t,x,rpar(8),rtol,atol,y(1),info(15),Rurd,
      &     zk0,lambda1,Kup,xflow, pup,tup,phi,t,rwork(160)
 !     
@@ -520,7 +524,7 @@
       function f_m(x,phi,lambda1,zk0,Pup,Tup,rurd,xflow,kup)
 !     
       implicit none
-      integer neq,idid,ipar,j,iwork(78),lrw,liw
+      integer neq,idid,ipar,j,iwork(100),lrw,liw
       real*8 f_m,x,rpar(8),rtol,atol,y(1),info(15),
      &     Rurd,zk0,lambda1,Kup,xflow,pup,tup,phi,t,rwork(160)
 !     
@@ -575,7 +579,7 @@
       function f_cm(x,phi,lambda1,zk0,Pup,Tup,rurd,xflow,kup)
 !     
       implicit none
-      integer neq,idid,ipar,j,iwork(78),lrw,liw
+      integer neq,idid,ipar,j,iwork(100),lrw,liw
       real*8 f_cm,x,rpar(8),rtol,atol,y(1),info(15),
      &     Rurd,zk0,lambda1,Kup,xflow,pup,tup,phi,t,rwork(160)
 !     

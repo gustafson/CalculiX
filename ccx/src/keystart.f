@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,8 +21,7 @@
       implicit none
 !
 !     stores the order in which the input is to be read in fields
-!     ipoinp and inp; for details on these fields, look at file
-!     variables.txt
+!     ipoinp and inp; 
 !
 !     order:
 !     1)  *RESTART,READ
@@ -30,10 +29,10 @@
 !     3)  *ELEMENT
 !     4)  *NSET
 !     5)  *ELSET
-!     6)  *TRANSFORM
-!     7)  *MATERIAL
-!     8)  *ORIENTATION
-!     9)  *SURFACE
+!     6)  *SURFACE
+!     7)  *TRANSFORM
+!     8)  *MATERIAL
+!     9)  *ORIENTATION
 !     10) *TIE
 !     11) *SURFACE INTERACTION
 !     12) *INITIAL CONDITIONS
@@ -51,14 +50,14 @@
 !     order in which the cards have to be read
 !
       data nameref /'RESTART,READ','NODE','ELEMENT','NSET',
-     &              'ELSET','TRANSFORM','MATERIAL','ORIENTATION',
-     &              'SURFACE','TIE','SURFACEINTERACTION',
+     &              'ELSET','SURFACE','TRANSFORM','MATERIAL',
+     &              'ORIENTATION','TIE','SURFACEINTERACTION',
      &              'INITIALCONDITIONS','AMPLITUDE',
      &              'CONTACTPAIR','REST'/
 !
 !     length of the names in field nameref
 !
-      data namelen /12,4,7,4,5,9,8,11,7,3,18,17,9,11,4/
+      data namelen /12,4,7,4,5,7,9,8,11,3,18,17,9,11,4/
 !
       do i=1,nentries
          if(name(1:namelen(i)).eq.nameref(i)(1:namelen(i))) then

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -30,7 +30,8 @@ void mastruct(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	      ITG *jq, ITG **mast1p, ITG **irowp, ITG *isolver, ITG *neq,
 	      ITG *ikmpc, ITG *ilmpc,ITG *ipointer, ITG *nzs, 
               ITG *nmethod,ITG *ithermal, ITG *ikboun, ITG *ilboun, 
-              ITG *iperturb, ITG *mi,ITG *mortar){
+              ITG *iperturb, ITG *mi,ITG *mortar,char *typeboun,
+              char *labmpc){
 
   /* determines the structure of the thermo-mechanical matrices;
      (i.e. the location of the nonzeros */
@@ -40,7 +41,7 @@ void mastruct(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
   ITG i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
     ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,
     index1,index2,m,node,nzs_,ist,kflag,indexe,nope,isize,*mast1=NULL,
-      *irow=NULL,icolumn,nmastboun,fluid=0,mt=mi[1]+1,jmax;
+      *irow=NULL,icolumn,nmastboun,mt=mi[1]+1,jmax;
 
   /* the indices in the comments follow FORTRAN convention, i.e. the
      fields start with 1 */
@@ -60,10 +61,7 @@ void mastruct(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       for(i=0;i<*ne;++i){
 	  
 	  if(ipkon[i]<0) continue;
-	  if(strcmp1(&lakon[8*i],"F")==0){
-	      fluid=1;
-	      continue;
-	  }
+	  if(strcmp1(&lakon[8*i],"F")==0)continue;
 	  indexe=ipkon[i];
 /* Bernhardi start */
           if (strcmp1(&lakon[8*i+3],"8I")==0)nope=11;
@@ -144,31 +142,32 @@ void mastruct(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 
   /* determining the active degrees of freedom due to mpc's */
 
-  if(fluid==0){
-      for(i=0;i<*nmpc;++i){
-	  index=ipompc[i]-1;
-	  do{
-	      if(nodempc[3*index+1]<4){
-		  nactdof[mt*(nodempc[3*index]-1)+nodempc[3*index+1]]=1;
-	      }
-	      index=nodempc[3*index+2];
-	      if(index==0) break;
-	      index--;
-	  }while(1);
-      }
+  for(i=0;i<*nmpc;++i){
+      if (strcmp1(&labmpc[20*i],"FLUID")==0) continue;
+      index=ipompc[i]-1;
+      do{
+	  if(nodempc[3*index+1]<4){
+	      nactdof[mt*(nodempc[3*index]-1)+nodempc[3*index+1]]=1;
+	  }
+	  index=nodempc[3*index+2];
+	  if(index==0) break;
+	  index--;
+      }while(1);
   }
 	   
   /* subtracting the SPC and MPC nodes */
 
   for(i=0;i<*nboun;++i){
-      if(ndirboun[i]>mi[1]){continue;}
+      if(ndirboun[i]>mi[1]) continue;
+      if (strcmp1(&typeboun[i],"F")==0) continue;
       nactdof[mt*(nodeboun[i]-1)+ndirboun[i]]=0;
   }
 
   for(i=0;i<*nmpc;++i){
-    index=ipompc[i]-1;
-    if(nodempc[3*index+1]>mi[1]) continue;
-    nactdof[mt*(nodempc[3*index]-1)+nodempc[3*index+1]]=0;
+      if (strcmp1(&labmpc[20*i],"FLUID")==0) continue;
+      index=ipompc[i]-1;
+      if(nodempc[3*index+1]>mi[1]) continue;
+      nactdof[mt*(nodempc[3*index]-1)+nodempc[3*index+1]]=0;
   }
  
   /* numbering the active degrees of freedom */

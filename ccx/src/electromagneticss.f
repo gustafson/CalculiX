@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,7 +39,7 @@
 !
       integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,nev,
      &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),mei(4),ncv,mxiter,
-     &  ipoinpc(0:*),idirect
+     &  ipoinpc(0:*),idirect,iheat
 !
       real*8 tinc,tper,tmin,tmax,alpha,fei(3),tol,fmin,fmax,ctrl(*),
      &  ttime
@@ -62,14 +62,14 @@
          write(*,*) 
      &  '*ERROR reading *ELECTROMAGNETICS: perturbation analysis is'
          write(*,*) '       not provided in a *HEAT TRANSFER step.'
-         stop
+         call exit(201)
       endif
 !
       if(istep.lt.1) then
          write(*,*) 
      &     '*ERROR reading *ELECTROMAGNETICS: *HEAT TRANSFER can only'
          write(*,*) '       be used within a STEP'
-         stop
+         call exit(201)
       endif
 !
 !     default solver
@@ -90,6 +90,8 @@
       endif
 !
       idirect=2
+      iheat=1
+!
       do i=2,n
          if(textpart(i)(1:7).eq.'SOLVER=') then
             read(textpart(i)(8:27),'(a20)') solver
@@ -108,6 +110,8 @@
             timereset=.true.
          elseif(textpart(i)(1:17).eq.'TOTALTIMEATSTART=') then
             read(textpart(i)(18:37),'(f20.0)',iostat=istat) ttime
+         elseif(textpart(i)(1:14).eq.'NOHEATTRANSFER') then
+            iheat=0
          else
             write(*,*) 
      &   '*WARNING reading *ELECTROMAGNETICS: parameter not recognized:'
@@ -130,13 +134,17 @@
          if(idirect.eq.1)idrct=1
       endif
 !
-c      if((ithermal.eq.0).and.(nmethod.eq.9)) then
-c         write(*,*) 
-c     &     '*ERROR reading *ELECTROMAGNETICS: please define initial '
-c         write(*,*) '       conditions for the temperature'
-c         stop
-c      endif
-c      if(nmethod.eq.9) ithermal=3
+      if(nmethod.eq.9) then
+         if(iheat.eq.1) then
+            if(ithermal.eq.0) then
+               write(*,*) 
+     &        '*ERROR reading *ELECTROMAGNETICS: please define initial '
+               write(*,*) '       conditions for the temperature'
+               call exit(201)
+            endif
+            ithermal=3
+         endif
+      endif
 !
       if((nmethod.ne.10).and.(iperturb.ne.0)) then
 !
@@ -205,8 +213,10 @@ c      if(nmethod.eq.9) ithermal=3
          endif
 !      
          if(idrct.ne.1) then
-            if(dabs(tmin).lt.1.d-10) then
-               tmin=min(tinc,1.d-5*tper)
+c            if(dabs(tmin).lt.1.d-10) then
+c               tmin=min(tinc,1.d-5*tper)
+            if(dabs(tmin).lt.1.d-6*tper) then
+               tmin=min(tinc,1.d-6*tper)
             endif
             if(dabs(tmax).lt.1.d-10) then
                tmax=1.d+30
@@ -226,7 +236,7 @@ c      if(nmethod.eq.9) ithermal=3
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
      &"*ELECTROMAGNETICS%")
-            stop
+            call exit(201)
          endif
          read(textpart(1)(1:10),'(i10)',iostat=istat) nev
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
@@ -234,7 +244,7 @@ c      if(nmethod.eq.9) ithermal=3
          if(nev.le.0) then
             write(*,*) '*ERROR reading *ELECTROMAGNETICS: less than 1 ei
      &genvalue requested'
-            stop
+            call exit(201)
          endif
          tol=1.d-2
          ncv=4*nev

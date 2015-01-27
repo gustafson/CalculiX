@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,7 +25,8 @@
      &  xstiff,xloadold,reltime,
      &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,springarea,
      &  plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,lakon,
-     &  pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon)
+     &  pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon,
+     &  ielprop,prop)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -51,21 +52,21 @@
      &  ii,jj,id,ipointer,ig,kk,istiff,iperm(20),ipompc(*),mi(*),
      &  nrhcon(*),ielmat(mi(3),*),ielorien(mi(3),*),nodempc(3,*),nmpc,
      &  ntmat_,nope,nopes,norien,iexpl,imat,mint2d,ikmpc(*),iloc,
-     &  mint3d,ifacet(7,4),nopev,iorien,ilmpc(*),kode,jfaces,
+     &  mint3d,ifacet(7,4),nopev,iorien,ilmpc(*),kode,jfaces,null,
      &  ifacew(8,5),intscheme,ipointeri,ipointerj,ncocon(2,*),
-     &  nshcon(*),iinc,istep,jltyp,nfield,node,iflag,iscale,
+     &  nshcon(*),iinc,istep,jltyp,nfield,node,iflag,iscale,ielprop(*),
      &  nplkcon(0:ntmat_,*),nelcon(2,*),npmat_,ncmat_,i2,ipkon(*),
      &  iemchange,kon(*),mortar,nplicon(0:ntmat_,*),indexe,igauss
 !
       real*8 co(3,*),xl(3,26),shp(4,26),xstiff(27,mi(1),*),
-     &  s(78,78),w(3,3),ff(78),shpj(4,26),sinktemp,xs2(3,7),
+     &  s(100,100),w(3,3),ff(100),shpj(4,26),sinktemp,xs2(3,7),
      &  rhcon(0:1,ntmat_,*),dxsj2,temp,press,xloadold(2,*),
-     &  orab(7,*),t0(*),t1(*),coords(3),c1,c2,reltime,
+     &  orab(7,*),t0(*),t1(*),coords(3),c1,c2,reltime,prop(*),
      &  xl2(3,9),xsj2(3),shp2(7,9),vold(0:mi(2),*),xload(2,*),
-     &  xi,et,ze,xsj,xsjj,sm(78,78),t1l,rho,summass,summ,ttime,time,
+     &  xi,et,ze,xsj,xsjj,sm(100,100),t1l,rho,summass,summ,ttime,time,
      &  sume,factorm,factore,alp,weight,pgauss(3),timeend(2),
      &  cocon(0:6,ntmat_,*),shcon(0:3,ntmat_,*),sph,coconloc(6),
-     &  field,areaj,sax(78,78),ffax(78),coefmpc(*),tl2(8),
+     &  field,areaj,sax(100,100),ffax(100),coefmpc(*),tl2(8),
      &  voldl(0:mi(2),26),springarea(2,*),plkcon(0:2*npmat_,ntmat_,*),
      &  elcon(0:ncmat_,ntmat_,*),elconloc(21),pslavsurf(3,*),
      &  pmastsurf(2,*),clearini(3,9,*),plicon(0:2*npmat_,ntmat_,*)
@@ -89,7 +90,7 @@
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
      &             4,6,3,1,12,15,9,13/
-c      data iflag /3/
+      data null /0/
       data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
 !
       iflag=3
@@ -164,9 +165,15 @@ c         nope=nope+1
          if(lakonl(4:5).eq.'8R') then
             mint2d=1
             mint3d=1
-         elseif(lakonl(4:8).eq.'20RBR') then
-            mint2d=4
-            mint3d=50
+         elseif(lakonl(4:7).eq.'20RB') then
+            if((lakonl(8:8).eq.'R').or.(lakonl(8:8).eq.'C')) then
+               mint2d=4
+               mint3d=50
+            else
+               mint2d=4
+               call beamintscheme(lakonl,mint3d,ielprop(nelem),prop,
+     &              null,xi,et,ze,weight)
+            endif
          elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R').or.
      &          (lakonl(4:6).eq.'26R')) then
             if(((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'E')).and.
@@ -329,11 +336,16 @@ c         nope=nope+1
                et=gauss3d1(2,kk)
                ze=gauss3d1(3,kk)
                weight=weight3d1(kk)
-            elseif(lakonl(4:8).eq.'20RBR') then
-               xi=gauss3d13(1,kk)
-               et=gauss3d13(2,kk)
-               ze=gauss3d13(3,kk)
-               weight=weight3d13(kk)
+            elseif(lakonl(4:7).eq.'20RB') then
+               if((lakonl(8:8).eq.'R').or.(lakonl(8:8).eq.'C')) then
+                  xi=gauss3d13(1,kk)
+                  et=gauss3d13(2,kk)
+                  ze=gauss3d13(3,kk)
+                  weight=weight3d13(kk)
+               else
+                  call beamintscheme(lakonl,mint3d,ielprop(nelem),prop,
+     &                 kk,xi,et,ze,weight)
+               endif
             elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R').or.
      &             (lakonl(4:6).eq.'26R')) 
      &              then

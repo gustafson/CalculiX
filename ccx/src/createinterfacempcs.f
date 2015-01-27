@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -77,7 +77,7 @@
             if(mpcfree.eq.0) then
                write(*,*)
      &            '*ERROR in createinterfacempcs: increase memmpc_'
-               stop
+               call exit(201)
             endif
 !     
             j=j+1
@@ -89,7 +89,7 @@
             if(mpcfree.eq.0) then
                write(*,*)
      &            '*ERROR in createinterfacempcs: increase memmpc_'
-               stop
+               call exit(201)
             endif
 !     
             j=j+1
@@ -102,7 +102,7 @@
             if(mpcfree.eq.0) then
                write(*,*)
      &            '*ERROR in createinterfacempcs: increase memmpc_'
-               stop
+               call exit(201)
             endif
             nodempc(3,mpcfreeold)=0
 !

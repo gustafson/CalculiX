@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  ialset,nset,nodeboun,ndirboun,xboun,nboun,nboun_,nk,
      &  iamboun,amname,nam,ipompc,nodempc,coefmpc,nmpc,nmpc_,
      &  mpcfree,inotr,trab,ntrans,ikboun,ilboun,ikmpc,ilmpc,nk_,
-     &  co,labmpc,boun_flag,typeboun,istep,istat,n,iline,ipol,
+     &  co,labmpc,boun_flag,typeboun,istat,n,iline,ipol,
      &  inl,ipoinp,inp,nam_,namtot_,namta,amta,nmethod,iperturb,
      &  iaxial,ipoinpc,vold,mi)
 !
@@ -31,14 +31,14 @@
       logical boun_flag,user,massflowrate,fixed,submodel
 !
       character*1 typeboun(*),type,inpc(*)
-      character*20 labmpc(*)
+      character*20 labmpc(*),label
       character*80 amname(*),amplitude
       character*81 set(*),noset
       character*132 textpart(16)
 !
       integer istartset(*),iendset(*),ialset(*),nodeboun(*),
      &  ndirboun(*),
-     &  nset,nboun,nboun_,istep,istat,n,i,j,k,l,ibounstart,ibounend,
+     &  nset,nboun,nboun_,istat,n,i,j,k,l,ibounstart,ibounend,
      &  key,nk,iamboun(*),nam,iamplitude,ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,mpcfree,inotr(2,*),ikboun(*),ilboun(*),ikmpc(*),
      &  ilmpc(*),nmpcold,id,idof,index1,ntrans,nk_,ipos,m,node,is,ie,
@@ -50,6 +50,7 @@
      &  vold(0:mi(2),*)
 !
       type='B'
+      label='                    '
       iamplitude=0
       idelay=0
       user=.false.
@@ -140,10 +141,10 @@
                      call nident(ikmpc,idof,nmpc,id)
                      if(id.eq.0) then
                         write(*,*) '*ERROR reading *BOUNDARY'
-                        stop
+                        call exit(201)
                      elseif(ikmpc(id).ne.idof) then
                         write(*,*) '*ERROR reading *BOUNDARY'
-                        stop
+                        call exit(201)
                      endif
                      ilmpc(id)=k
                   endif
@@ -160,7 +161,9 @@
                         node=nodeboun(j)
                         is=ndirboun(j)
                         ie=ndirboun(j)
-                        call bounrem(node,is,ie,nodeboun,ndirboun,xboun,
+c                        call bounrem(node,is,ie,nodeboun,ndirboun,xboun,
+c     &                       nboun,iamboun,nam,ikboun,ilboun,typeboun)
+                        call bounrem(node,is,j,nodeboun,ndirboun,xboun,
      &                       nboun,iamboun,nam,ikboun,ilboun,typeboun)
                         cycle loop1
                      endif
@@ -169,7 +172,6 @@
                endif
                exit
             enddo loop1
-c            nboun=0
          elseif(textpart(i)(1:10).eq.'AMPLITUDE=') then
             read(textpart(i)(11:90),'(a80)') amplitude
             do j=nam,1,-1
@@ -184,7 +186,7 @@ c            nboun=0
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
      &"*BOUNDARY%")
-               stop
+               call exit(201)
             endif
             iamplitude=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
@@ -194,21 +196,21 @@ c            nboun=0
                write(*,*) '       keyword; '
                call inputerror(inpc,ipoinpc,iline,
      &"*BOUNDARY%")
-               stop
+               call exit(201)
             else
                idelay=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
                write(*,*) '*ERROR reading *BOUNDARY: increase nam_'
-               stop
+               call exit(201)
             endif
             amname(nam)='
      &                                 '
             if(iamplitude.eq.0) then
                write(*,*) '*ERROR reading *BOUNDARY: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
-               stop
+               call exit(201)
             endif
             namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
@@ -220,7 +222,7 @@ c            nboun=0
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR boundaries: increase namtot_'
-               stop
+               call exit(201)
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
@@ -236,7 +238,7 @@ c            nboun=0
                write(*,*) '*ERROR reading *BOUNDARY: the parameter LOAD'
                write(*,*) '       CASE is only allowed in STEADY STATE'
                write(*,*) '       DYNAMICS calculations'
-               stop
+               call exit(201)
             endif
          elseif(textpart(i)(1:4).eq.'USER') then
             user=.true.
@@ -263,7 +265,7 @@ c            nboun=0
 !     check whether global step was specified for submodel
 !
       if((submodel).and.(iglobstep.eq.0)) then
-         write(*,*) '*ERROR reading *DLOAD: no global step'
+         write(*,*) '*ERROR reading *BOUNDARY: no global step'
          write(*,*) '       step specified for the submodel'
          call inputerror(inpc,ipoinpc,iline,
      &"*BOUNDARY%")
@@ -305,7 +307,7 @@ c         if(ibounstart.eq.11) ibounstart=0
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*BOUNDARY%")
          endif
-         if((massflowrate).and.(iaxial.ne.0)) bounval=bounval/iaxial
+         if((massflowrate).and.(iaxial.eq.180)) bounval=bounval/iaxial
 !     
 !        dummy boundary condition consisting of the first primes
 !
@@ -317,7 +319,7 @@ c         if(ibounstart.eq.11) ibounstart=0
             if((l.gt.nk).or.(l.le.0)) then
                write(*,*) '*ERROR reading *BOUNDARY:'
                write(*,*) '       node ',l,' is not defined'
-               stop
+               call exit(201)
             endif
             if(submodel) then
                if(ntrans.gt.0) then
@@ -326,7 +328,7 @@ c         if(ibounstart.eq.11) ibounstart=0
                      write(*,*) '       node',l,' a local coordinate'
                      write(*,*) '       system was defined. This is not'
                      write(*,*) '       allowed'
-                     stop
+                     call exit(201)
                   endif
                endif
             endif
@@ -337,7 +339,8 @@ c         if(ibounstart.eq.11) ibounstart=0
      &        iamboun,iamplitude,nam,ipompc,nodempc,
      &        coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &        ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &        type,typeboun,nmethod,iperturb,fixed,vold,ktrue,mi)
+     &        type,typeboun,nmethod,iperturb,fixed,vold,ktrue,
+     &        mi,label)
          else
             read(textpart(1)(1:80),'(a80)',iostat=istat) noset
             noset(81:81)=' '
@@ -352,7 +355,7 @@ c         if(ibounstart.eq.11) ibounstart=0
                write(*,*) '       has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline,
      &"*BOUNDARY%")
-               stop
+               call exit(201)
             endif
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then
@@ -367,7 +370,7 @@ c         if(ibounstart.eq.11) ibounstart=0
                            write(*,*) 
      &                       '       system was defined. This is not'
                            write(*,*) '       allowed'
-                           stop
+                           call exit(201)
                         endif
                      endif
                   endif
@@ -378,7 +381,8 @@ c         if(ibounstart.eq.11) ibounstart=0
      &               iamboun,iamplitude,nam,ipompc,nodempc,
      &               coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &               ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,labmpc,
-     &               type,typeboun,nmethod,iperturb,fixed,vold,ktrue,mi)
+     &               type,typeboun,nmethod,iperturb,fixed,vold,ktrue,
+     &               mi,label)
                else
                   k=ialset(j-2)
                   do
@@ -394,7 +398,7 @@ c         if(ibounstart.eq.11) ibounstart=0
                               write(*,*) 
      &                          '       system was defined. This is not'
                               write(*,*) '       allowed'
-                              stop
+                              call exit(201)
                            endif
                         endif
                      endif
@@ -406,7 +410,7 @@ c         if(ibounstart.eq.11) ibounstart=0
      &                 coefmpc,nmpc,nmpc_,mpcfree,inotr,trab,
      &                 ntrans,ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,
      &                 labmpc,type,typeboun,nmethod,iperturb,fixed,
-     &                 vold,ktrue,mi)
+     &                 vold,ktrue,mi,label)
                   enddo
                endif
             enddo

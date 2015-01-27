@@ -1,7 +1,7 @@
 
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -50,9 +50,10 @@
       manning=.false.
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in fluidsections: *FLUID SECTION should'
+         write(*,*) 
+     &      '*ERROR reading *FLUID SECTION: *FLUID SECTION should'
          write(*,*) '  be placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       typename='
@@ -81,9 +82,10 @@
                endif
             enddo
             if(j.gt.nmat) then
-               write(*,*) '*ERROR in fluidsections: no oil with the'
+               write(*,*) 
+     &            '*ERROR reading *FLUID SECTION: no oil with the'
                write(*,*) '       name',typename_oil,'has been defined'
-               stop
+               call exit(201)
             endif
 !
          elseif(textpart(i)(1:6).eq.'LIQUID') then
@@ -92,7 +94,7 @@
             manning=.true.
          else
             write(*,*) 
-     &        '*WARNING in fluidsections: parameter not recognized:'
+     &      '*WARNING reading *FLUID SECTION: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -196,7 +198,7 @@
             elname='LICHDR '
             ndprop=6
          else
-            write(*,*) '*ERROR in fluidsections:'
+            write(*,*) '*ERROR reading *FLUID SECTION:'
             write(*,*) '       unknown channel section'
             call inputerror(inpc,ipoinpc,iline,
      &"*FLUID SECTION%")
@@ -266,6 +268,18 @@
                ndprop=10
             endif
          endif
+!       
+      elseif (typename(1:16).eq.'FREEDISCPUMPFLOW') then
+         elname='FDPF '
+         ndprop=6
+!     
+      elseif (typename(1:18).eq.'FREECONVECTIONFLOW') then
+         elname='FCVF '
+         ndprop=5
+!     
+      elseif (typename(1:15).eq.'MASSFLOWPERCENT') then
+         elname='MFPC '
+         ndprop=10
 !     
       elseif(typename(1:9).eq.'LABYRINTH') then
          if(typename(10:17).eq.'FLEXIBLE') then
@@ -471,9 +485,9 @@
          elname='       '
          ndprop=0
       else
-         write(*,*) '*ERROR in fluidsections: ',typename
+         write(*,*) '*ERROR reading *FLUID SECTION: ',typename
          write(*,*) '       is an unknown fluid section type'
-         stop
+         call exit(201)
       endif
 !
 !     check for the existence of the set and the material
@@ -482,11 +496,12 @@
          if(matname(i).eq.material) exit
       enddo
       if(i.gt.nmat) then
-         write(*,*) '*ERROR in fluidsections: nonexistent material'
+         write(*,*) 
+     &     '*ERROR reading *FLUID SECTION: nonexistent material'
          write(*,*) '  '
          call inputerror(inpc,ipoinpc,iline,
      &"*FLUID SECTION%")
-         stop
+         call exit(201)
       endif
       imaterial=i
 !
@@ -495,11 +510,11 @@
       enddo
       if(i.gt.nset) then
          elset(ipos:ipos)=' '
-         write(*,*) '*ERROR in fluidsections: element set ',elset
+         write(*,*) '*ERROR reading *FLUID SECTION: element set ',elset
          write(*,*) '  has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
      &"*FLUID SECTION%")
-         stop
+         call exit(201)
       endif
 !
       npropstart=nprop
@@ -563,10 +578,10 @@
 !        check whether data points are paired
 !
          if(2*(npu/2).ne.npu) then
-            write(*,*) '*ERROR in fluidsections: less y data'
+            write(*,*) '*ERROR reading *FLUID SECTION: less y data'
             write(*,*) '       points x data points for fluid'
             write(*,*) '       section type',elname(1:4)
-            stop
+            call exit(201)
          endif
 !
          prop(nprop+nfix+1)=npu/2
@@ -577,25 +592,25 @@
          if(elname(1:4).eq.'LIPU') then
             do j=2,npu/2,2
                if(prop(nprop+nfix+2*j).le.prop(nprop+nfix+2*j-2)) then
-                  write(*,*) '*ERROR in fluidsections: volumetric'
+                  write(*,*) '*ERROR reading *FLUID SECTION: volumetric'
                   write(*,*) '       flow data points must be in'
                   write(*,*) '       strict increasing order'
-                  stop
+                  call exit(201)
                elseif(prop(nprop+nfix+2*j+1).gt.prop(nprop+nfix+2*j-1))
      &              then
-                  write(*,*) '*ERROR in fluidsections: total'
+                  write(*,*) '*ERROR reading *FLUID SECTION: total'
                   write(*,*) '       head data points must be '
                   write(*,*) '       decreasing'
-                  stop
+                  call exit(201)
                endif
             enddo
          endif
 !
-         if(iaxial.ne.0) then
-            do j=1,npu/2,2
-               prop(nprop+nfix+j+1)=prop(nprop+nfix+j+1)/iaxial
-            enddo
-         endif
+c         if(iaxial.ne.0) then
+c            do j=1,npu/2,2
+c               prop(nprop+nfix+j+1)=prop(nprop+nfix+j+1)/iaxial
+c            enddo
+c         endif
          nprop=nprop+ndprop+1
 ! 
       elseif(elname.eq.'ACCTUBE') then
@@ -708,11 +723,11 @@
 !     
 !           reducing the area in case of an axisymmetric model
 !
-            if((elname(1:3).ne.'LAB').and.(elname(1:5).ne.'GAPFF')
-     &           .and.(elname(1:3).ne.'ORF')
-     &           .and.(elname(1:5).ne.'GAPIF')) then
-               if(iaxial.ne.0) prop(nprop+1)=prop(nprop+1)/iaxial
-            endif
+c            if((elname(1:3).ne.'LAB').and.(elname(1:5).ne.'GAPFF')
+c     &           .and.(elname(1:3).ne.'ORF')
+c     &           .and.(elname(1:5).ne.'GAPIF')) then
+c               if(iaxial.ne.0) prop(nprop+1)=prop(nprop+1)/iaxial
+c            endif
             nprop=nprop+ndprop
          endif
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -723,8 +738,8 @@
       endif
 !
       if(nprop.gt.nprop_) then
-         write(*,*) '*ERROR in fluidsections: increase nprop_'
-         stop
+         write(*,*) '*ERROR reading *FLUID SECTION: increase nprop_'
+         call exit(201)
       endif
 !
       if(elname(1:4).eq.'RIMS') then
@@ -777,11 +792,11 @@
          prop(npropstart+11)=noil_mat+0.5d0
          if(1.d0-(prop(npropstart+5)+prop(npropstart+6))/
      &        prop(npropstart+4).gt.0.01d0)then
-            write(*,*) '*ERROR: in fluidsections:'
+            write(*,*) '*ERROR: reading *FLUID SECTION:'
             write(*,*) '        in element type RESTRICTOR 
      &                           BRANCH JOINT IDELCHIK2'
             write(*,*) '        A0 ist not equal to A1+A2'
-            stop
+            call exit(201)
          endif
       elseif(elname(1:6).eq.'REBRJG') then
          prop(npropstart+11)=noil_mat+0.5d0
@@ -942,9 +957,9 @@ c     &         (elname(1:6).eq.'REWAOR').or.
      &   (elname(1:3).ne.'LAB').and.(elname(1:4).ne.'CHAR').and.
      &   (elname(1:5).ne.'CARBS')) then
          if(prop(npropstart+1).lt.0.d0) then
-            write(*,*) '*ERROR in fluidsections: section area'
+            write(*,*) '*ERROR reading *FLUID SECTION: section area'
             write(*,*) '       is not positive'
-            stop
+            call exit(201)
          endif
       endif
 !
@@ -952,115 +967,123 @@ c     &         (elname(1:6).eq.'REWAOR').or.
      &     (elname(1:4).ne.'ORBT') .and.(elname(1:4).ne.'ORPN').and.
      &     (elname(1:4).ne.'ORFL')) then
          if(prop(npropstart+2).lt.0.d0) then
-            write(*,*) '*ERROR in fluidsections: diameter of the'
+            write(*,*) '*ERROR reading *FLUID SECTION: diameter of the'
             write(*,*) '       orifice is not positive'
-            stop
+            call exit(201)
          endif
          if(prop(npropstart+3).lt.0.d0) then
-            write(*,*) '*ERROR in fluidsections: length of the'
+            write(*,*) '*ERROR reading *FLUID SECTION: length of the'
             write(*,*) '       orifice is not positive'
-            stop
+            call exit(201)
          endif
          if((prop(npropstart+4).gt.1.d-20).and.
      &      (prop(npropstart+5).gt.1.d-20)) then
-            write(*,*) '*ERROR in fluidsections: either the radius'
+            write(*,*) 
+     &         '*ERROR reading *FLUID SECTION: either the radius'
             write(*,*) '       of the orifice must be zero or the'
             write(*,*) '       chamfer angle'
-            stop
+            call exit(201)
          endif
          if(prop(npropstart+4)/prop(npropstart+2).lt.0.d0) then
-            write(*,*) '*ERROR in fluidsections: r/d of an orifice'
+            write(*,*) 
+     &          '*ERROR reading *FLUID SECTION: r/d of an orifice'
             write(*,*) '       must not be negative'
-            stop
+            call exit(201)
          endif
          if(prop(npropstart+4)/prop(npropstart+2).gt.0.82) then
-            write(*,*) '*ERROR in fluidsections: r/d of an orifice'
+            write(*,*) 
+     &         '*ERROR reading *FLUID SECTION: r/d of an orifice'
             write(*,*) '       must not not exceed 0.82'
-            stop
+c            call exit(201)
          endif
          if(prop(npropstart+5).lt.0.d0) then
-            write(*,*) '*ERROR in fluidsections: the chamfer angle'
+            write(*,*) 
+     &         '*ERROR reading *FLUID SECTION: the chamfer angle'
             write(*,*) '       of an orifice must not be negative'
-            stop
+            call exit(201)
          endif
          if(prop(npropstart+5).gt.90.d0) then
-            write(*,*) '*ERROR in fluidsections: the chamfer angle'
+            write(*,*) 
+     &         '*ERROR reading *FLUID SECTION: the chamfer angle'
             write(*,*) '       of an orifice must not exceed 90°'
-            stop
+c            call exit(201)
          endif
          if(prop(npropstart+6).lt.0.d0) then
-            write(*,*) '*ERROR in fluidsections: d/D (orifice)'
+            write(*,*) '*ERROR reading *FLUID SECTION: d/D (orifice)'
             write(*,*) '       must not be negative'
-            stop
+            call exit(201)
          endif
          if(prop(npropstart+6).gt.0.5d0) then
-            write(*,*) '*ERROR in fluidsections: d/D (orifice)'
+            write(*,*) '*ERROR reading *FLUID SECTION: d/D (orifice)'
             write(*,*) '       must not exceed 0.5'
-            stop
+c            call exit(201)
          endif
          if(prop(npropstart+3)/prop(npropstart+2).lt.0.d0) then
-            write(*,*) '*ERROR in fluidsections: L/d of an orifice'
+            write(*,*) 
+     &         '*ERROR reading *FLUID SECTION: L/d of an orifice'
             write(*,*) '       must not be negative'
-            stop
+            call exit(201)
          endif
          if(elname(3:3).eq.'P') then
             if(prop(npropstart+3)/prop(npropstart+2).gt.2.d0) then
-               write(*,*) '*ERROR in fluidsections: L/d of an orifice'
+               write(*,*) 
+     &           '*ERROR reading *FLUID SECTION: L/d of an orifice'
                write(*,*) '       with Parker must not exceed 2'
-               stop
+               call exit(201)
             endif
 !         else
 !            if(prop(npropstart+3)/prop(npropstart+2).gt.10.d0) then
-!               write(*,*) '*ERROR in fluidsections: L/d of an orifice'
+!               write(*,*) '*ERROR reading *FLUID SECTION: L/d of an orifice'
 !               write(*,*) '        must not exceed 10'
-!               stop
+!               call exit(201)
 !            endif
          endif
       elseif(elname(1:4).eq.'ORBT') then
          if(prop(npropstart+2).lt.0.d0) then
-            write(*,*) '*ERROR in fluidsections: ps1/pt1 (bleed'
+            write(*,*) '*ERROR reading *FLUID SECTION: ps1/pt1 (bleed'
             write(*,*) '       tapping) must not be negative'
-            stop
+            call exit(201)
          endif
          if(prop(npropstart+2).gt.1.d0) then
-            write(*,*) '*ERROR in fluidsections: ps1/pt1 (bleed'
+            write(*,*) '*ERROR reading *FLUID SECTION: ps1/pt1 (bleed'
             write(*,*) '       tapping) must not exceed 1'
-            stop
+c            call exit(201)
          endif
       elseif(elname(1:4).eq.'ORPN') then
          if(prop(npropstart+2).lt.0.d0) then
-            write(*,*) '*ERROR in fluidsections: theta (preswirl'
+            write(*,*) '*ERROR reading *FLUID SECTION: theta (preswirl'
             write(*,*) '       nozzle) must not be negative'
-            stop
+            call exit(201)
          endif
          if(prop(npropstart+2).gt.90.d0) then
-            write(*,*) '*ERROR in fluidsections: theta (preswirl'
+            write(*,*) '*ERROR reading *FLUID SECTION: theta (preswirl'
             write(*,*) '       nozzle) must not exceed 90°'
-            stop
+c            call exit(201)
          endif
          if(prop(npropstart+3).lt.0.d0) then
-            write(*,*) '*ERROR in fluidsections: k_phi (preswirl'
+            write(*,*) '*ERROR reading *FLUID SECTION: k_phi (preswirl'
             write(*,*) '       nozzle) must not be negative'
-            stop
+            call exit(201)
          endif
          if(prop(npropstart+3).gt.1.05d0) then
-            write(*,*) '*ERROR in fluidsections: k_phi (preswirl'
+            write(*,*) '*ERROR reading *FLUID SECTION: k_phi (preswirl'
             write(*,*) '       nozzle) must not exceed 1.05'
-            stop
+c            call exit(201)
          endif
       elseif(elname(1:4).eq.'ORBG') then
          if(prop(npropstart+1).lt.0.d0) then
-            write(*,*) '*ERROR in fluidsections: section area'
+            write(*,*) '*ERROR reading *FLUID SECTION: section area'
             write(*,*) '       is not positive'
-            stop
+            call exit(201)
          endif
          if(prop(npropstart+2).lt.0.d0 .or.
      &      prop(npropstart+2).ge.1.d0) then
-            write(*,*) '*ERROR in fluidsections: using Bragg Method'
+            write(*,*) 
+     &         '*ERROR reading *FLUID SECTION: using Bragg Method'
             write(*,*) 'Cd by crtitical pressure ratio '
             write(*,*) '*FLUID SECTIONS position 2'
             write(*,*) '0 < Cd _crit < 1'
-            stop
+c            call exit(201)
          endif
       endif
 !
@@ -1068,125 +1091,127 @@ c     &         (elname(1:6).eq.'REWAOR').or.
      &    (elname(1:4).ne.'LABD') ) then
          if((prop(npropstart+1).gt.1000.d0)
      &        .or.(prop(npropstart+1).lt.0.d0)) then
-            write(*,*) '*ERROR in fluidsections: the selected pitch t'
+            write(*,*) 
+     &         '*ERROR reading *FLUID SECTION: the selected pitch t'
             write(*,*) 'for the labyrinth is not correct'
             write(*,*) '0<=t<=1000 mm'
-            stop
+c            call exit(201)
          endif
          if((prop(npropstart+2).gt.100d0)
      &        .or.(prop(npropstart+2).lt.0.d0)) then
-            write(*,*) '*ERROR in fluidsections: the selected gap s'
+            write(*,*) 
+     &          '*ERROR reading *FLUID SECTION: the selected gap s'
             write(*,*) 'for the labyrinth is not correct'
             write(*,*) '0<=s<=100 mm'
-            stop
+c            call exit(201)
          endif
          if((prop(npropstart+3).gt.5000.d0)
      &        .or.(prop(npropstart+3).lt.0.d0)) then
-            write(*,*) '*ERROR in fluidsections:'
+            write(*,*) '*ERROR reading *FLUID SECTION:'
             write(*,*) 'the selected diameter d'
             write(*,*) 'for the labyrinth is not correct'
             write(*,*) '0<=d<=5000'
-            stop
+c            call exit(201)
          endif
          if((prop(npropstart+5).gt.9.d0)
      &        .or.(prop(npropstart+5).lt.0.d0)) then
-            write(*,*) '*ERROR in fluidsections:'
+            write(*,*) '*ERROR reading *FLUID SECTION:'
             write(*,*)'the selected spike number n'
             write(*,*) 'for the labyrinth is not correct'
             write(*,*) '0<=n<=9'
             write(*,*) prop(npropstart+4)
-           stop
+c           call exit(201)
         endif
          if((prop(npropstart+5).gt.100.d0)
      &       .or.(prop(npropstart+5).lt.0.d0)) then
-            write(*,*) '*ERROR in fluidsections:'
+            write(*,*) '*ERROR reading *FLUID SECTION:'
             write(*,*) 'the selected spike breadth'
             write(*,*) 'for the labyrinth is not correct'
             write(*,*) '0<=b<=100 mm'
-            stop
+c            call exit(201)
          endif
          if((prop(npropstart+6).gt.9.d0)
      &        .or.(prop(npropstart+6).lt.0.d0)) then
-            write(*,*) '*ERROR in fluidsections:'
+            write(*,*) '*ERROR reading *FLUID SECTION:'
             write(*,*) 'the selected spike height'
             write(*,*) 'for the labyrinth is not correct'
             write(*,*) '0<=b<=20 mm'
-            stop
+c            call exit(201)
          endif
          if((prop(npropstart+7).gt.4.d0)
      &        .or.(prop(npropstart+7).lt.0.d0)) then
-            write(*,*) '*ERROR in fluidsections:'
+            write(*,*) '*ERROR reading *FLUID SECTION:'
             write(*,*) 'the selected Honeycomb cell width'
             write(*,*) 'for the labyrinth is not correct'
             write(*,*) '0<=L<=4 mm'
-            stop
+c            call exit(201)
          endif
          if((prop(npropstart+8).gt.5.d0)
      &        .or.(prop(npropstart+8).lt.0.d0)) then
-            write(*,*) '*ERROR in fluidsections:'
+            write(*,*) '*ERROR reading *FLUID SECTION:'
             write(*,*) 'the selected edge radius'
             write(*,*) 'for the labyrinth is not correct'
             write(*,*) '0<=r<=5 mm'
-            stop
+c            call exit(201)
          endif
          if((prop(npropstart+9).gt.100.d0)
      &        .or.(prop(npropstart+9).lt.0.d0)) then
-            write(*,*) '*ERROR in fluidsections:'
+            write(*,*) '*ERROR reading *FLUID SECTION:'
             write(*,*) 'the selected position of the spike'
             write(*,*) 'for the labyrinth is not correct'
             write(*,*) '0<=X<=0.1 mm'
-            stop
+c            call exit(201)
          endif
          if((prop(npropstart+10).gt.100.d0)
      &        .or.(prop(npropstart+10).lt.0.d0)) then
-            write(*,*) '*ERROR in fluidsections:'
+            write(*,*) '*ERROR reading *FLUID SECTION:'
             write(*,*) 'the selected height of the step'
             write(*,*) 'for the labyrinth is not correct'
             write(*,*) '0<=Hst<=0.1 mm'
-            stop
+c            call exit(201)
          endif
       endif
 !
       if(elname(1:5).eq.'CARBS') then
          if(elname(1:7).eq.'CARBSGE') then
             if(prop(npropstart+1).le.0.d0) then
-               write(*,*) '*ERROR in fluidsections:'
+               write(*,*) '*ERROR reading *FLUID SECTION:'
                write(*,*) 'the selected diameter of the carbon seal'
                write(*,*) 'has been defined as less or equal to 0'
-               stop
+               call exit(201)
             endif
          else
             if((prop(npropstart+1).le.0.d0)
      &           .or.(prop(npropstart+2).le.0.d0)
      &           .or.(prop(npropstart+3).le.0.d0)) then
-               write(*,*) '*ERROR in fluidsections:'
+               write(*,*) '*ERROR reading *FLUID SECTION:'
                write(*,*) 'the selected diameter'
                write(*,*) 'or the selected length' 
                write(*,*) 'or the selected gap of the carbon seal'
                write(*,*) 'has been defined as less or equal to 0'
-               stop
+               call exit(201)
             endif
          endif
       endif
 !
       if(elname(1:3).eq.'RCVL') then
          if(prop(npropstart+2).lt.(prop(npropstart+3))) then
-             write(*,*) '*ERROR in fluidsections: '
+             write(*,*) '*ERROR reading *FLUID SECTION: '
              write(*,*) 'element TYPE=ROTATING CAVITY(Radial inflow)'
              write(*,*) 'the specified upstream radius is smaller than'
              write(*,*) 'the specified downstream radius!'
              write(*,*) 'Please check the element definition.'
-             stop
+             call exit(201)
          endif
       endif 
       if(elname(1:3).eq.'RCVN') then
          if(prop(npropstart+1).lt.(prop(npropstart+2))) then
-             write(*,*) '*ERROR in fluidsections: '
+             write(*,*) '*ERROR reading *FLUID SECTION: '
              write(*,*) 'element TYPE=ROTATING CAVITY(Radial inflow)'
              write(*,*) 'the specified upstream radius is smaller than'
              write(*,*) 'the specified downstream radius!'
              write(*,*) 'Please check the element definition.'
-             stop
+             call exit(201)
          endif
       endif
 !
@@ -1194,22 +1219,22 @@ c     &         (elname(1:6).eq.'REWAOR').or.
          if((prop(npropstart+1).le.0)
      &        .or.(prop(npropstart+2).le.0) 
      &        .or.(prop(npropstart+3).le.0))then
-            write(*,*) '*ERROR in fluidsections:'
+            write(*,*) '*ERROR reading *FLUID SECTION:'
             write(*,*) 'A1,A2 or Dh less or equal 0'
-            stop
+            call exit(201)
 !     
          elseif(elname(1:4).eq.'REEL') then
             if(prop(npropstart+1).ge.(prop(npropstart+2))) then
-               write(*,*) '*ERROR in fluidsections:'
+               write(*,*) '*ERROR reading *FLUID SECTION:'
                write(*,*) 'Section A1 is greater than section A2'
-               stop
+               call exit(201)
             endif
 !
          elseif(elname(1:4).eq.'RECO') then
             if(prop(npropstart+1).lt.(prop(npropstart+2))) then
-               write(*,*) '*ERROR in fluidsections:'
+               write(*,*) '*ERROR reading *FLUID SECTION:'
                write(*,*) 'Section A2 is greater than section A1'
-               stop
+               call exit(201)
             endif
          endif
 !     
@@ -1217,62 +1242,62 @@ c     &         (elname(1:6).eq.'REWAOR').or.
             if((prop(npropstart+1).le.0)
      &           .or.(prop(npropstart+2).le.0) 
      &           .or.(prop(npropstart+3).le.0))then
-               write(*,*) '*ERROR in fluidsections:'
+               write(*,*) '*ERROR reading *FLUID SECTION:'
                write(*,*) 'trying to define a branch '
                write(*,*) 'all three elements must be different from 0'
-               stop
+               call exit(201)
 !     
             elseif((prop(npropstart+4).le.0)
      &              .or.(prop(npropstart+5).le.0) 
      &              .or.(prop(npropstart+6).le.0))then 
-               write(*,*) '*ERROR in fluidsections:'
+               write(*,*) '*ERROR reading *FLUID SECTION:'
                write(*,*) 'trying to define a branch '
                write(*,*) 'all sections must be positive'
-               stop
+               call exit(201)
 !
             elseif((prop(npropstart+7).lt.0)
      &              .or.(prop(npropstart+8).lt.0))then
-               write(*,*) '*ERROR in fluidsections:'
+               write(*,*) '*ERROR reading *FLUID SECTION:'
                write(*,*) 'trying to define a branch '
                write(*,*) 'alpha1 & 2 cannot be negative'
-               stop
+               call exit(201)
 !     
             elseif((prop(npropstart+7).gt.90)
      &              .or.(prop(npropstart+8).gt.90)) then
-               write(*,*) '*ERROR in fluidsections:'
+               write(*,*) '*ERROR reading *FLUID SECTION:'
                write(*,*) 'trying to define a branch '
                write(*,*) 'alpha1 & 2 cannot greater than 90 gegrees'
-               stop
+               call exit(201)
 !     
             elseif((elname(5:7).eq.'SI1')
      &              .or.(elname(5:7).eq.'JI1')
      &              .or.(elname(5:7).eq.'JI2')) then
                if(prop(npropstart+7).gt.0) then
-                  write(*,*) '*ERROR in fluidsections:'
+                  write(*,*) '*ERROR reading *FLUID SECTION:'
                   write(*,*) 'trying to define a branch '
                   write(*,*) 'Type IDELCHIK JOINT1 or SPLIT1&2'
                   write(*,*) 'alpha1 must be 0 degrees'
-                  stop
+                  call exit(201)
                endif
 !
             elseif((elname(5:7).eq.'SI1').or.
      &              (elname(5:7).eq.'JI1'))then
                if(prop(npropstart+4).ne.(prop(npropstart+5)))then
-                  write(*,*) '*ERROR in fluidsections:'
+                  write(*,*) '*ERROR reading *FLUID SECTION:'
                   write(*,*) 'trying to define a branch '
                   write(*,*) 'Type IDELCHIK SPLIT1 or JOINT1 '
                   write(*,*) 'A1=A0'
-                  stop
+                  call exit(201)
                endif
 ! 
             elseif(elname(5:7).eq.'JI2') then
                if((prop(npropstart+5)+(prop(npropstart+6)))
      &              .ne.prop(npropstart+4))then
-                  write(*,*) '*ERROR in fluidsections:'
+                  write(*,*) '*ERROR reading *FLUID SECTION:'
                   write(*,*) 'trying to define a branch '
                   write(*,*) 'Type IDELCHIK JOINT2 '
                   write(*,*) 'A1+A2 must be equal to A0'
-                  stop
+                  call exit(201)
                endif
             endif
 !
@@ -1283,16 +1308,16 @@ c     &         (elname(1:6).eq.'REWAOR').or.
 !     inner and outer radius less or equal to 0
             if((prop(npropstart+1).le.0) .or.
      &           (prop(npropstart+2).le.0)) then
-               write(*,*)'*ERROR in fluidsections:'
+               write(*,*)'*ERROR reading *FLUID SECTION:'
                write(*,*)'trying to define a VORTEX'
                write(*,*)'R1 and R2 must be positive'
-               stop
+               call exit(201)
 !     
             elseif(prop(npropstart+3).le.0) then
-               write(*,*)'*ERROR in fluidsections:'
+               write(*,*)'*ERROR reading *FLUID SECTION:'
                write(*,*)'trying to define a VORTEX'
                write(*,*)'eta must be different positive'
-               stop
+               call exit(201)
             endif
 !
 !     FREE VORTEX
@@ -1304,11 +1329,11 @@ c     &         (elname(1:6).eq.'REWAOR').or.
 !     
 !     the rotation speed must be 0
                if(prop(npropstart+7).ne.0) then
-                  write(*,*)'*ERROR in fluidsections:'
+                  write(*,*)'*ERROR reading *FLUID SECTION:'
                   write(*,*)'trying to define a FREE VORTEX'
                   write(*,*)'rotation speed and upstream element'
                   write(*,*)'cannot be simultaneously used '
-                  stop
+                  call exit(201)
                endif
             endif
 !
@@ -1318,21 +1343,21 @@ c     &         (elname(1:6).eq.'REWAOR').or.
 !
 !     Core swirl ratio must be defined and positive
             if(prop(npropstart+4).le.0) then
-               write(*,*)'*ERROR in fluidsections:'
+               write(*,*)'*ERROR reading *FLUID SECTION:'
                write(*,*)'trying to define a FORCED VORTEX'
                write(*,*)'Core swirl ratio Kr is strictly positive'
-               stop
+               call exit(201)
             endif
             if(prop(npropstart+4).gt.1) then
-               write(*,*)'*ERROR in fluidsections:'
+               write(*,*)'*ERROR reading *FLUID SECTION:'
                write(*,*)'trying to define a FORCED VORTEX'
                write(*,*)'Core swirl ratio Kr cannot be greater than 1'
-               stop
+               call exit(201)
             endif
 !
 !     Rotation speed must be defined and positive
             if(prop(npropstart+5).le.0) then
-               write(*,*)'*ERROR in fluidsections:'
+               write(*,*)'*ERROR reading *FLUID SECTION:'
                write(*,*)'trying to define a FORCED VORTEX'
                write(*,*)'Rotation speed n is strictly positive'
             endif
@@ -1343,31 +1368,31 @@ c     &         (elname(1:6).eq.'REWAOR').or.
          if((elname(1:3).eq.'ATR').or.
      &        (elname(1:3).eq.'RTA')) then
             if(prop(npropstart+1).eq.0) then
-               write(*,*)'*ERROR in fluidsections:'
+               write(*,*)'*ERROR reading *FLUID SECTION:'
                write(*,*)'trying to define an element' 
                write(*,*)'TYPE= ABSOLUTE TO RELATIVE or'
                write(*,*)'TYPE= RELATIVE TO ABSOLUTE'
                write(*,*)'Rotation speed is strictly positive'
-               stop
+               call exit(201)
             elseif(prop(npropstart+2).eq.0) then
                if(prop(npropstart+3).eq.0) then
-                  write(*,*)'*ERROR in fluidsections:'
+                  write(*,*)'*ERROR reading *FLUID SECTION:'
                   write(*,*)'trying to define an element' 
                   write(*,*)'TYPE= ABSOLUTE TO RELATIVE or'
                   write(*,*)'TYPE= RELATIVE TO ABSOLUTE'
                   write(*,*)'Tengential velocity is 0 but'
                   write(*,*)'no reference element has been provided'
-                  stop
+                  call exit(201)
                endif
             elseif(prop(npropstart+3).ne.0) then
                if(prop(npropstart+2).ne.0) then
-                  write(*,*)'*ERROR in fluidsections:'
+                  write(*,*)'*ERROR reading *FLUID SECTION:'
                   write(*,*)'trying to define an element' 
                   write(*,*)'TYPE= ABSOLUTE TO RELATIVE or'
                   write(*,*)'TYPE= RELATIVE TO ABSOLUTE'
                   write(*,*)'reference element has been provided'
                   write(*,*)'but tengential velocity is already defined'
-                  stop
+                  call exit(201)
                endif 
             endif
          endif
@@ -1379,9 +1404,9 @@ c     &         (elname(1:6).eq.'REWAOR').or.
       do j=istartset(i),iendset(i)
          if(ialset(j).gt.0) then
             if(lakon(ialset(j))(1:1).ne.'D') then
-               write(*,*) '*ERROR in fluidsections: element ',
+               write(*,*) '*ERROR reading *FLUID SECTION: element ',
      &            ialset(j),' is no fluid element.'
-               stop
+               call exit(201)
             endif
             lakon(ialset(j))(2:8)=elname(1:7)
 !
@@ -1409,12 +1434,12 @@ c     &         (elname(1:6).eq.'REWAOR').or.
      &           (lakon(ialset(j))(4:5).eq.'PM').or.
      &           (lakon(ialset(j))(4:5).eq.'PN'))) then
                write(*,*) ''
-               write(*,*) '*ERROR in fluidsections: element ',k,
+               write(*,*) '*ERROR reading *FLUID SECTION: element ',k,
      &' is no valid incompressible orifice element.'
                write(*,*) ' Please change element type', 
      &' and/or definition.'
                write(*,*) ' Calculation stopped.'
-               stop
+               call exit(201)
             endif
 !
             ielmat(1,ialset(j))=imaterial
@@ -1425,9 +1450,9 @@ c     &         (elname(1:6).eq.'REWAOR').or.
                k=k-ialset(j)
                if(k.ge.ialset(j-1)) exit
                if(lakon(k)(1:1).ne.'D') then
-                  write(*,*) '*ERROR in fluidsections: element ',
+                  write(*,*) '*ERROR reading *FLUID SECTION: element ',
      &                 k,' is no fluid element.'
-                  stop
+                  call exit(201)
                endif
                lakon(k)(2:8)=elname(1:7)
 !
@@ -1455,12 +1480,12 @@ c     &         (elname(1:6).eq.'REWAOR').or.
      &              (lakon(ialset(j))(4:5).eq.'PM').or.
      &              (lakon(ialset(j))(4:5).eq.'PN'))) then
                   write(*,*) ''
-                  write(*,*) '*ERROR in fluidsections: element ',k,
+                  write(*,*)'*ERROR reading *FLUID SECTION: element ',k,
      &                 ' is no valid incompressible orifice element.'
                   write(*,*) ' Please change element type ',
      &'and/or definition.'
                   write(*,*) ' Calculation stopped.'
-                  stop
+                  call exit(201)
                endif
                ielmat(1,k)=imaterial
                if(ndprop.gt.0) ielprop(k)=npropstart

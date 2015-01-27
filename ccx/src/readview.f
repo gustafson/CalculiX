@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2014 Guido Dhondt
+!     Copyright (C) 1998-2015 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -64,7 +64,7 @@
       else
          write(*,*) '*ERROR in radmatrix: viewfactor file ',fnvw
          write(*,*) 'does not exist'
-         stop
+         call exit(201)
       endif
 !     
 c      do k=1,ntr
@@ -80,6 +80,6 @@ c      enddo
       return
 !
  10   write(*,*) '*ERROR in radmatrix: could not open file ',fnvw
-      stop
+      call exit(201)
       end
       

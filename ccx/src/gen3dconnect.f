@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -101,7 +101,7 @@ c         endif
                            if(nmpc.gt.nmpc_) then
                               write(*,*) 
      &                          '*ERROR in gen3dconnect: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                            labmpc(nmpc)='                    '
                            ipompc(nmpc)=mpcfree
@@ -118,7 +118,7 @@ c         endif
                            if(mpcfree.eq.0) then
                               write(*,*) 
      &                          '*ERROR in gen3dconnect: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                            nodempc(1,mpcfree)=knor(indexk+3)
                            nodempc(2,mpcfree)=idir
@@ -127,7 +127,7 @@ c         endif
                            if(mpcfree.eq.0) then
                               write(*,*) 
      &                          '*ERROR in gen3dconnect: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                            nodempc(1,mpcfree)=node
                            nodempc(2,mpcfree)=idir
@@ -136,7 +136,7 @@ c         endif
                            if(mpcfreenew.eq.0) then
                               write(*,*) 
      &                          '*ERROR in gen3dconnect: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                            nodempc(3,mpcfree)=0
                            mpcfree=mpcfreenew
@@ -156,7 +156,7 @@ c         endif
                            if(nmpc.gt.nmpc_) then
                               write(*,*) 
      &                          '*ERROR in gen3dconnect: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                            labmpc(nmpc)='                    '
                            ipompc(nmpc)=mpcfree
@@ -173,7 +173,7 @@ c         endif
                            if(mpcfree.eq.0) then
                               write(*,*) 
      &                          '*ERROR in gen3dconnect: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                            do k=2,4
                               nodempc(1,mpcfree)=knor(indexk+k)
@@ -183,7 +183,7 @@ c         endif
                               if(mpcfree.eq.0) then
                                  write(*,*) 
      &                          '*ERROR in gen3dconnect: increase nmpc_'
-                                 stop
+                                 call exit(201)
                               endif
                            enddo
                            nodempc(1,mpcfree)=node
@@ -193,7 +193,7 @@ c         endif
                            if(mpcfreenew.eq.0) then
                               write(*,*) 
      &                          '*ERROR in gen3dconnect: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                            nodempc(3,mpcfree)=0
                            mpcfree=mpcfreenew
@@ -215,7 +215,7 @@ c         endif
                            if(nmpc.gt.nmpc_) then
                               write(*,*) 
      &                          '*ERROR in gen3dconnect: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                            labmpc(nmpc)='                    '
                            ipompc(nmpc)=mpcfree
@@ -232,7 +232,7 @@ c         endif
                            if(mpcfree.eq.0) then
                               write(*,*) 
      &                          '*ERROR in gen3dconnect: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                            nodempc(1,mpcfree)=node
                            nodempc(2,mpcfree)=idir
@@ -241,7 +241,7 @@ c         endif
                            if(mpcfreenew.eq.0) then
                               write(*,*) 
      &                          '*ERROR in gen3dconnect: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                            nodempc(3,mpcfree)=0
                            mpcfree=mpcfreenew

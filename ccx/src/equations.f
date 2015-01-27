@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -83,7 +83,7 @@
                   if((l.gt.nk).or.(l.le.0)) then
                      write(*,*) '*ERROR reading *BOUNDARY:'
                      write(*,*) '       node ',l,' is not defined'
-                     stop
+                     call exit(201)
                   endif
                   do i1=impcstart,impcend
                      idof=8*(l-1)+i1
@@ -97,9 +97,9 @@
                         endif
                      endif
                      write(*,*) 
-     &                    '*ERROR reading *EQUATION: MPC to remove'
-                     write(*,*) 'is not defined'
-                     stop
+     &                    '*WARNING reading *EQUATION: MPC to remove'
+                     write(*,*) '         is not defined; node:',l
+                     write(*,*) '         degree of freedom:',i1
                   enddo
                else
                   read(textpart(1)(1:80),'(a80)',iostat=istat) noset
@@ -116,7 +116,7 @@
                      write(*,*) '  has not yet been defined. '
                      call inputerror(inpc,ipoinpc,iline,
      &"*EQUATION%")
-                     stop
+                     call exit(201)
                   endif
                   do j=istartset(i),iendset(i)
                      if(ialset(j).gt.0) then
@@ -134,9 +134,9 @@
                               endif
                            endif
                            write(*,*) 
-     &                         '*ERROR reading *EQUATION: MPC to remove'
-                           write(*,*) 'is not defined'
-                           stop
+     &                       '*WARNING reading *EQUATION: MPC to remove'
+                           write(*,*) '         is not defined; node:',k
+                           write(*,*) '         degree of freedom:',i1
                         enddo
                      else
                         k=ialset(j-2)
@@ -156,9 +156,10 @@
                                  endif
                               endif
                               write(*,*) 
-     &                         '*ERROR reading *EQUATION: MPC to remove'
-                              write(*,*) 'is not defined'
-                              stop
+     &                       '*WARNING reading *EQUATION: MPC to remove'
+                              write(*,*) 
+     &                            '         is not defined; node:',k
+                              write(*,*)'         degree of freedom:',i1
                            enddo
                         enddo
                      endif
@@ -168,7 +169,7 @@
             return
          else
              write(*,*) 
-     &            '*WARNING in equations: parameter not recognized:'
+     &          '*WARNING reading *EQUATION: parameter not recognized:'
              write(*,*) '         ',
      &            textpart(m)(1:index(textpart(m),' ')-1)
              call inputwarning(inpc,ipoinpc,iline,
@@ -177,9 +178,10 @@
        enddo
 !
       if(istep.gt.0) then
-         write(*,*) '*ERROR in equations: *EQUATION should be placed'
+         write(*,*) 
+     &       '*ERROR reading *EQUATION: *EQUATION should be placed'
          write(*,*) '  before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       do
@@ -190,8 +192,8 @@
 !
          nmpc=nmpc+1
          if(nmpc.gt.nmpc_) then
-            write(*,*) '*ERROR in equations: increase nmpc_'
-            stop
+            write(*,*) '*ERROR reading *EQUATION: increase nmpc_'
+            call exit(201)
          endif
 !
          labmpc(nmpc)='                    '
@@ -202,11 +204,12 @@
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
             if((istat.lt.0).or.(key.eq.1)) then
-               write(*,*) '*ERROR in equations: mpc definition ',nmpc
+               write(*,*) '*ERROR reading *EQUATION: mpc definition ',
+     &               nmpc
                write(*,*) '  is not complete. '
                call inputerror(inpc,ipoinpc,iline,
      &"*EQUATION%")
-               stop
+               call exit(201)
             endif
 !
             do i=1,n/3
@@ -215,9 +218,9 @@
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*EQUATION%")
                if((node.gt.nk).or.(node.le.0)) then
-                  write(*,*) '*ERROR in equations:'
+                  write(*,*) '*ERROR reading *EQUATION:'
                   write(*,*) '       node ',node,' is not defined'
-                  stop
+                  call exit(201)
                endif
 !
                read(textpart((i-1)*3+2)(1:10),'(i10)',iostat=istat) ndir
@@ -235,16 +238,10 @@
                elseif(ndir.eq.11) then
                   ndir=0
                else
-                  write(*,*) '*ERROR in equations:'
+                  write(*,*) '*ERROR reading *EQUATION:'
                   write(*,*) '       direction',ndir,' is not defined'
-                  stop
+                  call exit(201)
                endif
-c               if(ndir.eq.11) ndir=0
-c               if(ndir.gt.3) then
-c                  write(*,*) '*ERROR in equations:'
-c                  write(*,*) '       direction',ndir,' is not defined'
-c                  stop
-c               endif
 !
                read(textpart((i-1)*3+3)(1:20),'(f20.0)',iostat=istat) x
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
@@ -274,7 +271,7 @@ c               endif
                         if(ikmpc(id).eq.idof) then
                            write(*,100)
      &                   (ikmpc(id))/8+1,ikmpc(id)-8*((ikmpc(id))/8)
-                           stop
+                           call exit(201)
                         endif
                      endif
                      do j=nmpc,id+2,-1
@@ -288,8 +285,9 @@ c               endif
                   mpcfreeold=mpcfree
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
-                     write(*,*) '*ERROR in equations: increase nmpc_'
-                     stop
+                     write(*,*) 
+     &                  '*ERROR reading *EQUATION: increase nmpc_'
+                     call exit(201)
                   endif
                else
                   call transformatrix(trab(1,inotr(1,node)),
@@ -317,12 +315,13 @@ c               endif
                         exit
                      enddo
                      if(j.gt.3) then
-                        write(*,*) '*ERROR in equations: SPC in node'
+                        write(*,*) 
+     &                    '*ERROR reading *EQUATION: SPC in node'
                         write(*,*) node,' in transformed coordinates'
                         write(*,*) ' cannot be converted in MPC: all'
                         write(*,*) ' DOFs in the node are used as'
                         write(*,*) ' dependent nodes in other MPCs'
-                        stop
+                        call exit(201)
                      endif
                      number=number-1
 !
@@ -346,8 +345,9 @@ c               endif
                      mpcfreeold=mpcfree
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
-                        write(*,*) '*ERROR in equations: increase nmpc_'
-                        stop
+                        write(*,*) 
+     &                    '*ERROR reading *EQUATION: increase nmpc_'
+                        call exit(201)
                      endif
                   enddo
                endif
@@ -362,8 +362,8 @@ c               endif
          enddo
       enddo
 !
- 100  format(/,'*ERROR in equations: the DOF corresponding to',
-     &           /,'node ',i7,' in direction',i5,' is detected on',
+ 100  format(/,'*ERROR reading *EQUATION: the DOF corresponding to',
+     &           /,'node ',i10,' in direction',i1,' is detected on',
      &           /,'the dependent side of two different MPC''s') 
       return
       end

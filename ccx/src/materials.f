@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,13 +34,13 @@
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in materials: *MATERIAL should be placed'
          write(*,*) '  before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       nmat=nmat+1
       if(nmat.gt.nmat_) then
          write(*,*) '*ERROR in materials: increase nmat_'
-         stop
+         call exit(201)
       endif
 !
       imat=nmat
@@ -52,7 +52,7 @@
                write(*,*) '*ERROR in materials: material name too long'
                write(*,*) '       (more than 80 characters)'
                write(*,*) '       material name:',textpart(i)(1:132)
-               stop
+               call exit(201)
             endif
             exit
          else

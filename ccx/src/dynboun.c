@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -55,8 +55,8 @@ void dynboun(double *amta,ITG *namta,ITG *nam,double *ampli, double *time,
   ITG token=1;
 #endif
     
-  xbounmin=NNEW(double,*nboun);
-  xbounplus=NNEW(double,*nboun);
+  NNEW(xbounmin,double,*nboun);
+  NNEW(xbounplus,double,*nboun);
 
       /* time increment for the calculation of the change of the
          particular solution (needed to account for nonzero
@@ -94,10 +94,10 @@ void dynboun(double *amta,ITG *namta,ITG *nam,double *ampli, double *time,
 	  xbounold,xboun,xbounplus,iamboun,nboun,nodeboun,ndirboun,
           amname));
 
-  bplus=NNEW(double,neq[1]);
-  ba=NNEW(double,neq[1]);
-  b1=NNEW(double,neq[1]);
-  b2=NNEW(double,neq[1]);
+  NNEW(bplus,double,neq[1]);
+  NNEW(ba,double,neq[1]);
+  NNEW(b1,double,neq[1]);
+  NNEW(b2,double,neq[1]);
 
       /* check whether boundary conditions changed 
          comparision of min with prev */
@@ -235,7 +235,7 @@ void dynboun(double *amta,ITG *namta,ITG *nam,double *ampli, double *time,
 	  bmin[i]=bact[i];
 	  bact[i]=bplus[i];
       }
-      bnew=NNEW(double,neq[1]);
+      NNEW(bnew,double,neq[1]);
       FORTRAN(op,(&neq[1],b1,bplus,adb,aub,jq,irow));
       for(i=0;i<neq[1];i++){bnew[i]=-bplus[i];}
       FORTRAN(op,(&neq[1],b2,bplus,ad,au,jq,irow));
@@ -260,7 +260,7 @@ void dynboun(double *amta,ITG *namta,ITG *nam,double *ampli, double *time,
 	  }
 	  memcpy(&bprev[0],&bnew[0],sizeof(double)*neq[1]);
       }
-      free(bnew);
+      SFREE(bnew);
       *nactmech=neq[1];
       *iprev=1;
   }else if((*iprev!=0)&&(*icorrect!=2)){
@@ -287,8 +287,8 @@ void dynboun(double *amta,ITG *namta,ITG *nam,double *ampli, double *time,
       *iprev=0;
   }
   
-  free(xbounmin);free(xbounplus);
-  free(bplus);free(ba);free(b1);free(b2);
+  SFREE(xbounmin);SFREE(xbounplus);
+  SFREE(bplus);SFREE(ba);SFREE(b1);SFREE(b2);
   
   return;
 }

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -57,7 +57,7 @@ c         cyclicsymmetry=0
       if(istep.lt.1) then
          write(*,*) '*ERROR in modaldynamics: *MODAL DYNAMIC can only'
          write(*,*) '  be used within a STEP'
-         stop
+         call exit(201)
       endif
 !
 !     default solver
@@ -134,7 +134,7 @@ c         isolver=6
      & solver
          write(*,*) '       cannot be used for modal dynamic'
          write(*,*) '       calculations '
-         stop
+         call exit(201)
       endif
 !
 c      if(nodalset) then
@@ -145,14 +145,14 @@ c         if(i.gt.nset) then
 c            noset(ipos:ipos)=' '
 c            write(*,*) '*ERROR in modaldynamics: node set ',noset
 c            write(*,*) '  has not yet been defined.'
-c            stop
+c            call exit(201)
 c         endif
 c         xmodal(10)=i+0.5d0
 c      else
 c         if(cyclicsymmetry) then
 c            write(*,*) '*ERROR in modaldynamics: cyclic symmetric'
 c            write(*,*) '       structure, yet no node set defined'
-c            stop
+c            call exit(201)
 c         endif
 c      endif
 !
@@ -163,7 +163,7 @@ c      endif
          write(*,*) '       '
          call inputerror(inpc,ipoinpc,iline,
      &"*MODAL DYNAMIC%")
-         stop
+         call exit(201)
       endif
       read(textpart(1)(1:20),'(f20.0)',iostat=istat)tinc
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
@@ -185,13 +185,13 @@ c      endif
          if(tper.le.0.d0) then
             write(*,*) '*ERROR in modaldynamics: relative error'
             write(*,*) '       is nonpositive'
-            stop
+            call exit(201)
          endif
          tper=-tper
          if(tinc.le.0.d0) then
             write(*,*) '*ERROR in modaldynamics: initial increment'
             write(*,*) '       size is nonpositive'
-            stop
+            call exit(201)
          endif
          if(tmin.lt.0.d0) then
             tmin=1.d-10
@@ -205,21 +205,21 @@ c      endif
 !
          if(tper.lt.0.d0) then
             write(*,*) '*ERROR in modaldynamics: step size is negative'
-            stop
+            call exit(201)
          elseif(tper.le.0.d0) then
             tper=1.d0
          endif
          if(tinc.lt.0.d0) then
             write(*,*) '*ERROR in modaldynamics: initial increment size 
      &is negative'
-            stop
+            call exit(201)
          elseif(tinc.le.0.d0) then
             tinc=tper
          endif
          if(tinc.gt.tper) then
             write(*,*) '*ERROR in modaldynamics: initial increment size 
      &exceeds step size'
-            stop
+            call exit(201)
          endif
 !      
          if(idrct.ne.1) then

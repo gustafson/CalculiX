@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -44,14 +44,14 @@
          write(*,*) '*ERROR reading *DEFORMATION PLASTICITY:'
          write(*,*) '       *DEFORMATION PLASTICITY'
          write(*,*) '  should be placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       if(nmat.eq.0) then
          write(*,*) '*ERROR reading *DEFORMATION PLASTICITY:'
          write(*,*) '       *DEFORMATION PLASTICITY'
          write(*,*) '  should bepreceded by a *MATERIAL card'
-         stop
+         call exit(201)
       endif
 !
       do i=2,n
@@ -76,7 +76,7 @@
          if(ntmat.gt.ntmat_) then
             write(*,*) '*ERROR reading *DEFORMATION PLASTICITY:'
             write(*,*) '       increase ntmat_'
-            stop
+            call exit(201)
          endif
          do i=1,iend
             read(textpart(i)(1:20),'(f20.0)',iostat=istat) 

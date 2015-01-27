@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,12 +36,12 @@
          else
             write(*,*) '*ERROR in changedepterm'
             write(*,*) '       ikmpc database corrupted'
-            stop
+            call exit(201)
          endif
       else
          write(*,*) '*ERROR in changedepterm'
          write(*,*) '       ikmpc database corrupted'
-         stop
+         call exit(201)
       endif
 !
 !     insert new MPC
@@ -52,7 +52,7 @@
          write(*,*) '       of nonlinear MPC cannot be changed'
          write(*,*) '       since new dependent DOF is already'
          write(*,*) '       used in another MPC'
-         stop
+         call exit(201)
       else
          do k=nmpc,id+2,-1
             ikmpc(k)=ikmpc(k-1)

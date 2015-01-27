@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,7 +32,7 @@
 !
       character*1 type,typeboun(*)
       character*8 lakon(*)
-      character*20 labmpc(*)
+      character*20 labmpc(*),label
       character*81 set(*)
 !
       integer iponoel(*),inoel(3,*),iponoelmax,kon(*),ipkon(*),ne,
@@ -45,6 +45,7 @@
 !
       real*8 coefmpc(*),trab(7,*),co(3,*),val,xboun(*),vold(0:mi(2),*)
 !
+      label='                    '
       fixed=.false.
 !
       do i=1,nset
@@ -77,7 +78,7 @@
                         if(nmpc.gt.nmpc_) then
                            write(*,*) 
      &                          '*ERROR in gen3dboun: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         labmpc(nmpc)='                    '
                         ipompc(nmpc)=mpcfree
@@ -94,7 +95,7 @@
                         if(mpcfree.eq.0) then
                            write(*,*) 
      &                          '*ERROR in gen3dboun: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         nodempc(1,mpcfree)=knor(indexk+3)
                         nodempc(2,mpcfree)=idir
@@ -103,7 +104,7 @@
                         if(mpcfree.eq.0) then
                            write(*,*) 
      &                          '*ERROR in gen3dboun: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         nodempc(1,mpcfree)=node
                         nodempc(2,mpcfree)=idir
@@ -112,7 +113,7 @@
                         if(mpcfreenew.eq.0) then
                            write(*,*) 
      &                          '*ERROR in gen3dboun: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         nodempc(3,mpcfree)=0
                         mpcfree=mpcfreenew
@@ -131,7 +132,7 @@
                         if(nmpc.gt.nmpc_) then
                            write(*,*) 
      &                          '*ERROR in gen3dboun: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         labmpc(nmpc)='                    '
                         ipompc(nmpc)=mpcfree
@@ -148,7 +149,7 @@
                         if(mpcfree.eq.0) then
                            write(*,*) 
      &                          '*ERROR in gen3dboun: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         do k=2,4
                            nodempc(1,mpcfree)=knor(indexk+k)
@@ -158,7 +159,7 @@
                            if(mpcfree.eq.0) then
                               write(*,*) 
      &                           '*ERROR in gen3dboun: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                         enddo
                         nodempc(1,mpcfree)=node
@@ -168,7 +169,7 @@
                         if(mpcfreenew.eq.0) then
                            write(*,*) 
      &                          '*ERROR in gen3dboun: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         nodempc(3,mpcfree)=0
                         mpcfree=mpcfreenew
@@ -206,7 +207,7 @@ c                  ialset(l)=knor(indexk+2)
                         if(nmpc.gt.nmpc_) then
                            write(*,*) 
      &                          '*ERROR in gen3dmpc: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         labmpc(nmpc)='                    '
                         ipompc(nmpc)=mpcfree
@@ -223,7 +224,7 @@ c                  ialset(l)=knor(indexk+2)
                         if(mpcfree.eq.0) then
                            write(*,*) 
      &                          '*ERROR in gen3dmpc: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         nodempc(1,mpcfree)=node
                         nodempc(2,mpcfree)=idir
@@ -232,7 +233,7 @@ c                  ialset(l)=knor(indexk+2)
                         if(mpcfreenew.eq.0) then
                            write(*,*) 
      &                          '*ERROR in gen3dmpc: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         nodempc(3,mpcfree)=0
                         mpcfree=mpcfreenew
@@ -251,7 +252,7 @@ c                  ialset(l)=knor(indexk+2)
      &                 nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
      &                 ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,
      &                 labmpc,type,typeboun,nmethod,iperturb,
-     &                 fixed,vold,idummy,mi)
+     &                 fixed,vold,idummy,mi,label)
 !                  
                endif
             endif

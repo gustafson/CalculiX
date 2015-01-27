@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  ff,nelem,nmethod,rhcon,ielmat,ntmat_,vold,iperturb,nelemload,
      &  sideload,xload,nload,idist,ttime,time,istep,iinc,dtime,
      &  xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,
-     &  veold,matname,mi)
+     &  veold,matname,mi,ielprop,prop)
 !
 !     computation of the rhs for the element with
 !     the topology in konl: only for nonlinear calculations (i.e.
@@ -40,7 +40,7 @@
       character*80 matname(*),amat
 !
       integer mi(*),nk,konl(20),ielmat(mi(3),*),nbody,ifaceq(9,6),
-     &  nelemload(2,*),
+     &  nelemload(2,*),ielprop(*),null,
      &  nelem,nmethod,iperturb,nload,idist,i,i1,j1,jj,jj1,id,kk,
      &  ipointer,nope,nopes,j,k,ntmat_,i2,imat,ii,ig,mint2d,mint3d,
      &  ifacet(7,4),ifacew(8,5),istep,iinc,layer,kspt,jltyp,iflag,
@@ -50,8 +50,8 @@
      &  rhcon(0:1,ntmat_,*),xs2(3,7),xloadold(2,*),reltime,
      &  bodyf(3),om(2),rho,bf(3),q(3),shpj(4,20),xl(3,20),
      &  shp(4,20),voldl(3,20),xl2(3,8),xsj2(3),shp2(7,8),
-     &  vold(0:mi(2),*),
-     &  xload(2,*),xi,et,ze,const,xsj,ff(78),weight,ttime,time,tvar(2),
+     &  vold(0:mi(2),*),prop(*),
+     &  xload(2,*),xi,et,ze,const,xsj,ff(100),weight,ttime,time,tvar(2),
      &  coords(3),dtime,coefmpc(*)
 !
       include "gauss.f"
@@ -72,6 +72,7 @@
      &             2,3,6,5,8,15,11,14,
      &             4,6,3,1,12,15,9,13/
       data iflag /3/
+      data null /0/
 !
       tvar(1)=time
       tvar(2)=ttime+time
@@ -97,9 +98,15 @@
       if(lakonl(4:5).eq.'8R') then
          mint2d=1
          mint3d=1
-      elseif(lakonl(4:8).eq.'20RBR') then
-         mint2d=4
-         mint3d=50
+      elseif(lakonl(4:7).eq.'20RB') then
+         if((lakonl(8:8).eq.'R').or.(lakonl(8:8).eq.'C')) then
+            mint2d=4
+            mint3d=50
+         else
+            mint2d=4
+            call beamintscheme(lakonl,mint3d,ielprop(nelem),prop,
+     &           null,xi,et,ze,weight)
+         endif
       elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) then
          mint2d=4
          mint3d=8
@@ -187,11 +194,16 @@ c      endif
                et=gauss3d1(2,kk)
                ze=gauss3d1(3,kk)
                weight=weight3d1(kk)
-            elseif(lakonl(4:8).eq.'20RBR') then
-               xi=gauss3d13(1,kk)
-               et=gauss3d13(2,kk)
-               ze=gauss3d13(3,kk)
-               weight=weight3d13(kk)
+            elseif(lakonl(4:7).eq.'20RB') then
+               if((lakonl(8:8).eq.'R').or.(lakonl(8:8).eq.'C')) then
+                  xi=gauss3d13(1,kk)
+                  et=gauss3d13(2,kk)
+                  ze=gauss3d13(3,kk)
+                  weight=weight3d13(kk)
+               else
+                  call beamintscheme(lakonl,mint3d,ielprop(nelem),prop,
+     &                 kk,xi,et,ze,weight)
+               endif
             elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) 
      &              then
                xi=gauss3d2(1,kk)

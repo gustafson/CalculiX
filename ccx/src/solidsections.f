@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -42,7 +42,7 @@
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in solidsections: *SOLID SECTION should'
          write(*,*) '  be placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       pi=4.d0*datan(1.d0)
@@ -92,7 +92,7 @@
          write(*,*) '  '
          call inputerror(inpc,ipoinpc,iline,
      &"*SOLID SECTION%")
-         stop
+         call exit(201)
       endif
       imaterial=i
 !
@@ -107,7 +107,7 @@
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
      &"*SOLID SECTION%")
-            stop
+            call exit(201)
          endif
          iorientation=i
       endif
@@ -117,7 +117,7 @@
          write(*,*) '       was been defined. '
          call inputerror(inpc,ipoinpc,iline,
      &"*SOLID SECTION%")
-         stop
+         call exit(201)
       endif
       do i=1,nset
          if(set(i).eq.elset) exit
@@ -128,7 +128,7 @@
          write(*,*) '  has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
      &"*SOLID SECTION%")
-         stop
+         call exit(201)
       endif
 !
 !     assigning the elements of the set the appropriate material
@@ -142,7 +142,7 @@
                write(*,*) '       not be used for beam or shell elements
      &'
                write(*,*) '       Faulty element: ',ialset(j)
-               stop
+               call exit(201)
             endif
             ielmat(1,ialset(j))=imaterial
             ielorien(1,ialset(j))=iorientation
@@ -158,7 +158,7 @@
                   write(*,*) '       not be used for beam or shell eleme
      &nts'
                   write(*,*) '       Faulty element: ',k
-                  stop
+                  call exit(201)
                endif
                ielmat(1,k)=imaterial
                ielorien(1,k)=iorientation
@@ -179,11 +179,11 @@
      &"*SOLID SECTION%")
 !
 !        for axial symmetric structures:
-!           thickness for axial symmetric elements: 1 degree
-!           thickness for plane stress elements: reduced by 360
-!           thickness for plane strain elements: reduced by 360
+!           thickness for axial symmetric elements: 2 degrees
+!           thickness for plane stress elements: reduced by 180
+!           thickness for plane strain elements: reduced by 180
 !
-            if(iaxial.ne.0) then
+            if(iaxial.eq.180) then
                if(lakon(ialset(istartset(i)))(1:2).eq.'CA') then
                   thickness=datan(1.d0)*8.d0/iaxial
                elseif(lakon(ialset(istartset(i)))(1:3).eq.'CPS') then
@@ -231,7 +231,7 @@
                      write(*,*) '*ERROR in solidsections: '
                      write(*,*) '       axisymmetric elements cannot be
      &combined with cyclic symmetry'
-                     stop
+                     call exit(201)
                   elseif(mcs.eq.1) then
                      if(int(cs(1,1)).ne.int(2.d0*pi/thickness+0.5d0)) 
      &                 then
@@ -240,7 +240,7 @@
      &wo different'
                         write(*,*) '       angles for an axisymmetric st
      &ructure'
-                        stop
+                        call exit(201)
                      else
                         exit
                      endif
@@ -272,7 +272,7 @@ c                  if(lakon(ialset(j))(1:2).eq.'CA') then
                         write(*,*) '*ERROR in solidsections: '
                         write(*,*) '       axisymmetric elements cannot 
      &be combined with cyclic symmetry'
-                        stop
+                        call exit(201)
                      elseif(mcs.eq.1) then
                         if(int(cs(1,1)).ne.int(2.d0*pi/thickness+0.5d0)) 
      &                       then
@@ -281,7 +281,7 @@ c                  if(lakon(ialset(j))(1:2).eq.'CA') then
      &e two different'
                            write(*,*) '       angles for an axisymmetric
      & structure'
-                           stop
+                           call exit(201)
                         else
                            exit
                         endif

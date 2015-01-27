@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,10 +43,11 @@
      &  npmat_
 !
       real*8 co(3,*),xl(3,20),
-     &  s(78,78),p1(3),p2(3),bodyfx(3),ff(78),elcon(0:ncmat_,ntmat_,*),
+     &  s(100,100),p1(3),p2(3),bodyfx(3),ff(100),
+     &  elcon(0:ncmat_,ntmat_,*),
      &  rhcon(0:1,ntmat_,*),alcon(0:6,ntmat_,*),alzero(*),orab(7,*),
      &  t0(*),t1(*),voldl(3,20),vold(0:mi(2),*),xload(2,*),omx,
-     &  sm(78,78),
+     &  sm(100,100),
      &  sti(6,mi(1),*),stx(6,mi(1),*),t0l,t1l,elas(21),elconloc(21)
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),

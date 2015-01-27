@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -44,7 +44,7 @@
       if(istep.gt.0) then
          write(*,*) '*ERROR in elements: *ELEMENT should be placed'
          write(*,*) '  before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       indexy=-1
@@ -62,7 +62,7 @@
                write(*,*) '*ERROR in elements: set name too long'
                write(*,*) '       (more than 80 characters)'
                write(*,*) '       set name:',textpart(i)(1:132)
-               stop
+               call exit(201)
             endif
             elset(81:81)=' '
             ipos=index(elset,' ')
@@ -82,7 +82,7 @@
                      nn=iendset(js)-istartset(js)+1
                      if(nalset+nn.gt.nalset_) then
                         write(*,*)'*ERROR in elements: increase nalset_'
-                        stop
+                        call exit(201)
                      endif
                      do k=1,nn
                         ialset(nalset+k)=ialset(istartset(js)+k-1)
@@ -108,7 +108,7 @@
             nset=nset+1
             if(nset.gt.nset_) then
                write(*,*) '*ERROR in elements: increase nset_'
-               stop
+               call exit(201)
             endif
             js=nset
             istartset(js)=nalset+1
@@ -139,7 +139,7 @@
 !           (including such which are expanded into one)
 !
      &         (label.eq.'C3D20R  ').or.
-     &         (label.eq.'C3D20RI ').or.
+c     &         (label.eq.'C3D20RI ').or.
      &         (label.eq.'CPE8R   ').or.
      &         (label.eq.'CPS8R   ').or.
      &         (label.eq.'CAX8R   ').or.
@@ -214,14 +214,8 @@ c    Bernhardi end
 !
 !           3D fluid element
 !
-            elseif((label.eq.'F3D20   ').or.
-     &             (label.eq.'F3D20R  ').or.
-     &             (label.eq.'F3D8    ').or.
-     &             (label.eq.'F3D8R   ').or.
-     &             (label.eq.'F3D10   ').or.
+            elseif((label.eq.'F3D8    ').or.
      &             (label.eq.'F3D4    ').or.
-     &             (label.eq.'F3D15   ').or.
-     &             (label.eq.'F3D6R   ').or.
      &             (label.eq.'F3D6    ')) then
                cfd=1
 !
@@ -236,7 +230,7 @@ c    Bernhardi end
             else
                write(*,*) '*ERROR in elements:'
                write(*,*) label,' is an unknown element type'
-               stop
+               call exit(201)
             endif
 !
             if(label(1:3).eq.'CAX') then
@@ -265,7 +259,7 @@ c    Bernhardi end
          write(*,*) '       '
          call inputerror(inpc,ipoinpc,iline,
      &"*ELEMENT%")
-         stop
+         call exit(201)
       endif
 !
 !     nope is the number of nodes per element as defined in the input
@@ -365,7 +359,7 @@ c     Bernhardi end
      &"*ELEMENT%")
          if(i.gt.ne_) then
             write(*,*) '*ERROR in elements: increase ne_'
-            stop
+            call exit(201)
          endif
 !
 !        check whether element was already defined
@@ -399,7 +393,7 @@ c     Bernhardi end
                if((istat.lt.0).or.(key.eq.1)) then
                   write(*,*) '*ERROR in elements: element definition'
                   write(*,*) '       incomplete for element ',i
-                  stop
+                  call exit(201)
                endif
                if(nteller+n.gt.nope) n=nope-nteller
                do j=1,n
@@ -419,7 +413,7 @@ c     Bernhardi end
          if(ielset.eq.1) then
             if(nalset+1.gt.nalset_) then
                write(*,*) '*ERROR in elements: increase nalset_'
-               stop
+               call exit(201)
             endif
             nalset=nalset+1
             ialset(nalset)=i

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -54,9 +54,9 @@
       iglobstep=0
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in dloads: *DLOAD should only be used'
+         write(*,*) '*ERROR reading *DLOAD: *DLOAD should only be used'
          write(*,*) '  within a STEP'
-         stop
+         call exit(201)
       endif
 !
       do i=2,n
@@ -78,35 +78,36 @@
                endif
             enddo
             if(j.gt.nam) then
-               write(*,*)'*ERROR in dloads: nonexistent amplitude'
+               write(*,*)'*ERROR reading *DLOAD: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
      &"*DLOAD%")
-               stop
+               call exit(201)
             endif
             iamplitude=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
             if(idelay.ne.0) then
-               write(*,*) '*ERROR in dloads: the parameter TIME DELAY'
+               write(*,*) 
+     &            '*ERROR reading *DLOAD: the parameter TIME DELAY'
                write(*,*) '       is used twice in the same keyword'
                write(*,*) '       '
                call inputerror(inpc,ipoinpc,iline,
      &"*DLOAD%")
-               stop
+               call exit(201)
             else
                idelay=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
-               write(*,*) '*ERROR in dloads: increase nam_'
-               stop
+               write(*,*) '*ERROR reading *DLOAD: increase nam_'
+               call exit(201)
             endif
             amname(nam)='
      &                                 '
             if(iamplitude.eq.0) then
-               write(*,*) '*ERROR in dloads: time delay must be'
+               write(*,*) '*ERROR reading *DLOAD: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
-               stop
+               call exit(201)
             endif
             namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
@@ -118,7 +119,7 @@
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR dloads: increase namtot_'
-               stop
+               call exit(201)
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
@@ -131,25 +132,26 @@
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*DLOAD%")
             if(nmethod.ne.5) then
-               write(*,*) '*ERROR in dloads: the parameter LOAD CASE'
+               write(*,*) 
+     &            '*ERROR reading *DLOAD: the parameter LOAD CASE'
                write(*,*) '       is only allowed in STEADY STATE'
                write(*,*) '       DYNAMICS calculations'
-               stop
+               call exit(201)
             endif
          elseif(textpart(i)(1:7).eq.'SECTOR=') then
             read(textpart(i)(8:17),'(i10)',iostat=istat) isector
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*DLOAD%")
             if((nmethod.le.3).or.(iperturb.gt.1)) then
-               write(*,*) '*ERROR in dloads: the parameter SECTOR'
+               write(*,*) '*ERROR reading *DLOAD: the parameter SECTOR'
                write(*,*) '       is only allowed in MODAL DYNAMICS or'
                write(*,*) '       STEADY STATE DYNAMICS calculations'
-               stop
+               call exit(201)
             endif
             if(isector.gt.maxsectors) then
-               write(*,*) '*ERROR in dloads: sector ',isector
+               write(*,*) '*ERROR reading *DLOAD: sector ',isector
                write(*,*) '       exceeds number of sectors'
-               stop
+               call exit(201)
             endif
             isector=isector-1
          elseif(textpart(i)(1:8).eq.'SUBMODEL') then
@@ -160,7 +162,7 @@
      &"*DLOAD%")
          else
             write(*,*) 
-     &        '*WARNING in dloads: parameter not recognized:'
+     &        '*WARNING reading *DLOAD: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -222,17 +224,17 @@
             enddo
          elseif(label(1:6).eq.'NEWTON') then
             if(iperturb.le.1) then
-               write(*,*) '*ERROR in dloads: NEWTON gravity force'
+               write(*,*) '*ERROR reading *DLOAD: NEWTON gravity force'
                write(*,*) '       can only be used in a nonlinear'
                write(*,*) '       procedure'
-               stop
+               call exit(201)
             endif
             if(physcon(3).le.0.d0) then
-               write(*,*) '*ERROR in dloads: NEWTON gravity force'
+               write(*,*) '*ERROR reading *DLOAD: NEWTON gravity force'
                write(*,*) '       requires the definition of a'
                write(*,*) '       positive gravity constant with'
                write(*,*) '       a *PHYSICAL CONSTANTS card'
-               stop
+               call exit(201)
             endif
          elseif(((label(1:2).ne.'P1').and.(label(1:2).ne.'P2').and.
      &           (label(1:2).ne.'P3').and.(label(1:2).ne.'P4').and.
@@ -253,9 +255,9 @@ cBernhardiEnd
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
          if(istat.eq.0) then
             if(l.gt.ne) then
-               write(*,*) '*ERROR in dloads: element ',l
+               write(*,*) '*ERROR reading *DLOAD: element ',l
                write(*,*) '       is not defined'
-               stop
+               call exit(201)
             endif
             if((label(1:7).eq.'CENTRIF').or.(label(1:4).eq.'GRAV').or.
      &         (label(1:6).eq.'NEWTON')) then
@@ -322,11 +324,11 @@ cBernhardiEnd
             enddo
             if(i.gt.nset) then
                elset(ipos:ipos)=' '
-               write(*,*) '*ERROR in dloads: element set ',elset
+               write(*,*) '*ERROR reading *DLOAD: element set ',elset
                write(*,*) '       has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline,
      &"*DLOAD%")
-               stop
+               call exit(201)
             endif
 !
             if((label(1:7).eq.'CENTRIF').or.(label(1:4).eq.'GRAV').or.

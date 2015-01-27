@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -38,14 +38,14 @@
          write(*,*)
      &     '*ERROR in fluidconstants: *FLUID CONSTANTS should be'
          write(*,*) '  placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       if(nmat.eq.0) then
          write(*,*)
      &      '*ERROR in fluidconstants: *FLUID CONSTANTS should be'
          write(*,*) '  preceded by a *MATERIAL card'
-         stop
+         call exit(201)
       endif
 !
       do i=2,n
@@ -65,7 +65,7 @@
          nshcon(nmat)=ntmat
          if(ntmat.gt.ntmat_) then
             write(*,*) '*ERROR in fluidconstants: increase ntmat_'
-            stop
+            call exit(201)
          endif
          read(textpart(1)(1:20),'(f20.0)',iostat=istat) 
      &        shcon(1,ntmat,nmat)

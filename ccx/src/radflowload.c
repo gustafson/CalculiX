@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                     */
+/*              Copyright (C) 1998-2015 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -68,7 +68,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
                  ITG *ineighe, ITG *nmpc, ITG *nodempc,ITG *ipompc,
                  double *coefmpc,char *labmpc, ITG *iemchange,ITG *nam, 
                  ITG *iamload,ITG *jqrad,ITG *irowrad,ITG *nzsrad,
-                 ITG *icolrad,ITG *ne){
+                 ITG *icolrad,ITG *ne,ITG *iaxial){
   
   /* network=0: purely thermal
      network=1: general case (temperatures, fluxes and pressures unknown)
@@ -93,7 +93,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
      of the gas nodes with boundary conditions must be stored in v
      (in initialgas) */ 
 
-  v=NNEW(double,mt**nk);
+  NNEW(v,double,mt**nk);
 
   /* gas networks */
 
@@ -115,7 +115,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 			   nodeboun,xbounact,ielmat,ntmat_,shcon,nshcon,
 			   physcon,ipiv,nteq,rhcon,nrhcon,ipobody,ibody,
 			   xbodyact,co,nbody,network,&iin_abs,vold,set,
-			   istep,iit,mi,ineighe,ilboun,&channel));
+			   istep,iit,mi,ineighe,ilboun,&channel,iaxial));
       
               /* initialization for channels with free surface */
 
@@ -141,7 +141,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 			  ibody,xbodyact,nbody,&dtheta,vold,xloadold,
 			  reltime,nmethod,set,mi,ineighe,cama,&vamt,
 			  &vamf,&vamp,&vama,nmpc,nodempc,ipompc,coefmpc,
-                          labmpc));
+			  labmpc,iaxial));
 	  }
 	  
 	  iin++;
@@ -157,7 +157,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 			     ielmat,nteq,prop,ielprop,nactdog,nacteq,
 			     physcon,rhcon,nrhcon,ipobody,ibody,xbodyact,
 			     nbody,vold,xloadold,reltime,nmethod,set,mi,
-                             nmpc,nodempc,ipompc,coefmpc,labmpc));
+                             nmpc,nodempc,ipompc,coefmpc,labmpc,iaxial));
 	  
           /* solving the system of equations */
 
@@ -178,7 +178,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 				 ielmat,nteq,prop,ielprop,nactdog,nacteq,
 				 physcon,rhcon,nrhcon,ipobody,ibody,xbodyact,
 				 nbody,vold,xloadold,reltime,nmethod,set,mi,
-                                 nmpc,nodempc,ipompc,coefmpc,labmpc));
+                                 nmpc,nodempc,ipompc,coefmpc,labmpc,iaxial));
 	    
 	      FORTRAN(equationcheck,(ac,nteq,nactdog,itg,ntg,nacteq,network));
 	    
@@ -196,7 +196,8 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 	       &iin,physcon,camt,camf,camp,rhcon,nrhcon,ipobody,
 	       ibody,xbodyact,nbody,&dtheta,vold,xloadold,
 	       reltime,nmethod,set,mi,ineighe,cama,&vamt,
-	       &vamf,&vamp,&vama,nmpc,nodempc,ipompc,coefmpc,labmpc));
+	       &vamf,&vamp,&vama,nmpc,nodempc,ipompc,coefmpc,labmpc,
+               iaxial));
 
               /* printing the largest corrections */
 	    
@@ -385,11 +386,11 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 
 	      /* determining geometric data to calculate the viewfactors */
 
-	      area=NNEW(double,*ntrit);
-	      pmid=NNEW(double,3**ntrit);
-	      e1=NNEW(double,3**ntrit);
-	      e2=NNEW(double,3**ntrit);
-	      e3=NNEW(double,4**ntrit);
+	      NNEW(area,double,*ntrit);
+	      NNEW(pmid,double,3**ntrit);
+	      NNEW(e1,double,3**ntrit);
+	      NNEW(e2,double,3**ntrit);
+	      NNEW(e3,double,4**ntrit);
 
 	      FORTRAN(geomview,(vold,co,pmid,e1,e2,e3,kontri,area,
 				cs,mcs,inocs,ntrit,nk,mi,&sidemean));
@@ -397,8 +398,8 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 	      RENEW(adview,double,num_cpus**ntr);
 	      RENEW(auview,double,num_cpus*2**nzsrad);
 	      
-	      dist=NNEW(double,num_cpus**ntrit);
-	      idist=NNEW(ITG,num_cpus**ntrit);
+	      NNEW(dist,double,num_cpus**ntrit);
+	      NNEW(idist,ITG,num_cpus**ntrit);
 
 	      DMEMSET(adview,0,num_cpus**ntr,0.);
 	      DMEMSET(auview,0,num_cpus*2**nzsrad,0.);
@@ -415,7 +416,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
   
 	      /* create threads and wait */
 	      
-	      ithread=NNEW(ITG,num_cpus);
+	      NNEW(ithread,ITG,num_cpus);
 	      for(i=0; i<num_cpus; i++)  {
 		  ithread[i]=i;
 		  pthread_create(&tid[i], NULL, (void *)calcviewmt, (void *)&ithread[i]);
@@ -443,8 +444,8 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		  printf("radflowload auview = %" ITGFORMAT " %e\n",i,auview[i]);
 		  }*/
 
-	      free(dist);free(idist);free(e1);free(e2);free(e3);
-              free(pmid);free(ithread);
+	      SFREE(dist);SFREE(idist);SFREE(e1);SFREE(e2);SFREE(e3);
+              SFREE(pmid);SFREE(ithread);
 
 	      /* postprocessing the viewfactors */
 
@@ -452,7 +453,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 				tenv,adview,auview,area,fenv,jqrad,irowrad,
                                 nzsrad));
 
-	      free(area);
+	      SFREE(area);
 
 	      if(*iviewfile>=2){
 		  
@@ -526,16 +527,16 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 	  printf("*ERROR IN RADFLOWLOAD: SINGULAR MATRIX*\n");}   
       
       else{ 
-	  q=NNEW(double,*ntr);
+	  NNEW(q,double,*ntr);
 	  FORTRAN(radresult,(ntr,xloadact,bcr,nloadtr,tarea,
 				tenv,physcon,erad,auview,fenv,
 			        irowrad,jqrad,nzsrad,q));
-	  free(q);
+	  SFREE(q);
       }
       
   }
 
-  free(v);
+  SFREE(v);
 
   *adviewp=adview;*auviewp=auview;
 

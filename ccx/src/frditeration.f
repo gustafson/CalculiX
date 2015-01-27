@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -250,7 +250,7 @@
          write(text(13:24),fmat) time
          write(text(59:63),'(i5)') iteller
          write(27,'(a132)') text
-         text=' -4  DISPR       4    1'
+         text=' -4  DISP        4    1'
          write(27,'(a132)') text
          text=' -5  D1          1    2    1    0'
          write(27,'(a132)') text

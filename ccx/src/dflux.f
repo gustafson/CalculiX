@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -182,7 +182,7 @@
             if((id.eq.0).or.(ikmpc(id).ne.idof)) then
                write(*,*) '*ERROR in dflux: node ',node
                write(*,*) '       is not connected to the structure'
-               stop
+               call exit(201)
             endif
             node=nodempc(1,nodempc(3,ipompc(ilmpc(id))))
             do j=1,3
@@ -193,7 +193,7 @@
       elseif((nope.eq.10).or.(nope.eq.4)) then
          write(*,*) '*ERROR in dload: tetrahedral elements'
          write(*,*) '       are not allowed'
-         stop
+         call exit(201)
       else
          do i=1,nopes
             node=konl(ifacew(i,ig))
@@ -202,7 +202,7 @@
             if((id.eq.0).or.(ikmpc(id).ne.idof)) then
                write(*,*) '*ERROR in dflux: node ',node
                write(*,*) '       is not connected to the structure'
-               stop
+               call exit(201)
             endif
             node=nodempc(1,nodempc(3,ipompc(ilmpc(id))))
             do j=1,3
@@ -257,7 +257,7 @@
             if((id.eq.0).or.(ikmpc(id).ne.idof)) then
                write(*,*) '*ERROR in dflux: node ',node
                write(*,*) '       is not connected to the structure'
-               stop
+               call exit(201)
             endif
             node=nodempc(1,nodempc(3,ipompc(ilmpc(id))))
             do j=1,3
@@ -268,7 +268,7 @@
       elseif((nope.eq.10).or.(nope.eq.4)) then
          write(*,*) '*ERROR in dload: tetrahedral elements'
          write(*,*) '       are not allowed'
-         stop
+         call exit(201)
       else
          do i=1,nopes
             node=konl(ifacew(i,ig))
@@ -277,7 +277,7 @@
             if((id.eq.0).or.(ikmpc(id).ne.idof)) then
                write(*,*) '*ERROR in dflux: node ',node
                write(*,*) '       is not connected to the structure'
-               stop
+               call exit(201)
             endif
             node=nodempc(1,nodempc(3,ipompc(ilmpc(id))))
             do j=1,3

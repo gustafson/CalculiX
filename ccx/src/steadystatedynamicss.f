@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -55,7 +55,7 @@ c         cyclicsymmetry=.false.
          write(*,*) '*ERROR in steadystatedynamics: *STEADY STATE DYNAMI
      &CS'
          write(*,*) '  can only be used within a STEP'
-         stop
+         call exit(201)
       endif
 !
 !     default solver
@@ -130,7 +130,7 @@ c         isolver=6
      & ,solver
          write(*,*) '       cannot be used for modal dynamic'
          write(*,*) '       calculations '
-         stop
+         call exit(201)
       endif
 !
 c      if(nodalset) then
@@ -141,14 +141,14 @@ c         if(i.gt.nset) then
 c            noset(ipos:ipos)=' '
 c            write(*,*) '*ERROR in steadystatedynamics: node set ',noset
 c            write(*,*) '  has not yet been defined.'
-c            stop
+c            call exit(201)
 c         endif
 c         xmodal(10)=i+0.5d0
 c      else
 c         if(cyclicsymmetry) then
 c            write(*,*) '*ERROR in steadystatedynamics: cyclic symmetric'
 c            write(*,*) '       structure, yet no node set defined'
-c            stop
+c            call exit(201)
 c         endif
 c      endif
 !
@@ -160,7 +160,7 @@ c      endif
          write(*,*) '       '
          call inputerror(inpc,ipoinpc,iline,
      &"*STEADY STATE DYNAMICS%")
-         stop
+         call exit(201)
       endif
       read(textpart(1)(1:20),'(f20.0)',iostat=istat) fmin
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,

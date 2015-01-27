@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -101,8 +101,7 @@ void mastructcs(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
   for(i=0;i<*nmpc;++i){
       index=ipompc[i]-1;
       do{
-	  if(nodempc[3*index+1]!=0){
-//	      nactdof[mt*nodempc[3*index]+nodempc[3*index+1]-4]=1;}
+	  if((nodempc[3*index+1]!=0)&&(nodempc[3*index+1]<4)){
 	      nactdof[mt*(nodempc[3*index]-1)+nodempc[3*index+1]]=1;}
 	  index=nodempc[3*index+2];
 	  if(index==0) break;
@@ -113,12 +112,14 @@ void mastructcs(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
   /* subtracting the SPC and MPC nodes */
 
   for(i=0;i<*nboun;++i){
-    nactdof[mt*(nodeboun[i]-1)+ndirboun[i]]=0;
+      if(ndirboun[i]>mi[1]) continue;
+      nactdof[mt*(nodeboun[i]-1)+ndirboun[i]]=0;
   }
 
   for(i=0;i<*nmpc;++i){
-    index=ipompc[i]-1;
-    nactdof[mt*(nodempc[3*index]-1)+nodempc[3*index+1]]=0;
+      index=ipompc[i]-1;
+      if(nodempc[3*index+1]>mi[1]) continue;
+      nactdof[mt*(nodempc[3*index]-1)+nodempc[3*index+1]]=0;
   }
   
   /* numbering the active degrees of freedom */

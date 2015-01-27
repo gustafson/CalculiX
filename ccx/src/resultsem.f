@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine resultsem(co,kon,ipkon,lakon,v,elcon,nelcon,ielmat,
-     &  ntmat_,vold,dtime,matname,mi,ncmat_,nea,neb,sti,alcon,
+     &  ntmat_,vini,dtime,matname,mi,ncmat_,nea,neb,sti,alcon,
      &  nalcon,h0,istartset,iendset,ialset,iactive,fn)
 !
 !     calculates the heat flux and the material tangent at the integration
@@ -31,16 +31,16 @@
       integer kon(*),konl(26),mi(*),nelcon(2,*),ielmat(mi(3),*),
      &  ntmat_,ipkon(*),null,three,iflag,mt,i,j,k,m1,kk,i1,m3,indexe,
      &  nope,imat,mint3d,ncmat_,nea,neb,nalcon(2,*),mm,l,istart,iset,
-     &  isurf,ilength,istartset(*),iendset(*),ialset(*),nelem,nopes,m,
+     &  isurf,ilength,istartset(*),iendset(*),ialset(*),nopes,m,
      &  m2,ig,id,iactive(3),konl2(9),ifaceq(9,6),ifacet(7,4),iel,
-     &  ifacew(8,5),mint2d
+     &  ifacew(8,5),mint2d,nfaces,one
 !
       real*8 co(3,*),v(0:mi(2),*),shp(4,26),xl(3,26),vl(0:mi(2),26),
-     &  elcon(0:ncmat_,ntmat_,*),vkl(0:mi(2),3),vold(0:mi(2),*),c1,
+     &  elcon(0:ncmat_,ntmat_,*),vkl(0:mi(2),3),vini(0:mi(2),*),c1,
      &  elconloc(21),xi,et,ze,xsj,t1l,dtime,weight,xsj2(3),shp2(7,9),
-     &  voldkl(0:mi(2),3),alpha(6),vl2(0:mi(2),9),xl2(1:3,9),
-     &  h0l(3),al(3),aoldl(3),sti(6,mi(1),*),xs2(3,7),phi,
-     &  um,alcon(0:6,ntmat_,*),h0(3,*),voldl(0:mi(2),26),
+     &  vinikl(0:mi(2),3),alpha(6),vl2(0:mi(2),9),xl2(1:3,9),
+     &  h0l(3),al(3),ainil(3),sti(6,mi(1),*),xs2(3,7),phi,
+     &  um,alcon(0:6,ntmat_,*),h0(3,*),vinil(0:mi(2),26),
      &  fn(0:mi(2),*)
 !
       include "gauss.f"
@@ -63,6 +63,7 @@
 !
       iflag=3
       null=0
+      one=1
       three=3
 !
       mt=mi(2)+1
@@ -81,12 +82,16 @@
          indexe=ipkon(i)
          if(lakonl(4:5).eq.'20') then
             nope=20
+            nopes=8
          elseif(lakonl(4:4).eq.'8') then
             nope=8
+            nopes=4
          elseif(lakonl(4:5).eq.'10') then
             nope=10
+            nopes=6
          elseif(lakonl(4:4).eq.'4') then
             nope=4
+            nopes=3
          elseif(lakonl(4:5).eq.'15') then
             nope=15
          elseif(lakonl(4:4).eq.'6') then
@@ -97,15 +102,20 @@
 !
          if(lakonl(4:5).eq.'8R') then
             mint3d=1
+            mint2d=1
          elseif((lakonl(4:4).eq.'8').or.
      &          (lakonl(4:6).eq.'20R')) then
             mint3d=8
+            mint2d=4
          elseif(lakonl(4:4).eq.'2') then
             mint3d=27
+            mint2d=9
          elseif(lakonl(4:5).eq.'10') then
             mint3d=4
+            mint2d=3
          elseif(lakonl(4:4).eq.'4') then
             mint3d=1
+            mint2d=1
          elseif(lakonl(4:5).eq.'15') then
             mint3d=9
          elseif(lakonl(4:4).eq.'6') then
@@ -117,10 +127,10 @@
             do k=1,3
                xl(k,j)=co(k,konl(j))
             enddo
-            do k=0,5
+            do k=1,5
                vl(k,j)=v(k,konl(j))
             enddo
-            voldl(4,j)=vold(4,konl(j))
+            vinil(4,j)=vini(4,konl(j))
          enddo
 !
          do kk=1,mint3d
@@ -195,9 +205,12 @@
                enddo
             enddo
 !     
+            do m3=1,3
+               vinikl(4,m3)=0.d0
+            enddo
             do m1=1,nope
                do m3=1,3
-                  voldkl(4,m3)=vkl(4,m3)+shp(m3,m1)*voldl(4,m1)
+                  vinikl(4,m3)=vinikl(4,m3)+shp(m3,m1)*vinil(4,m1)
                enddo
             enddo
 !
@@ -208,29 +221,29 @@
             do j=1,3
                h0l(j)=0.d0
                al(j)=0.d0
-               aoldl(j)=0.d0
+               ainil(j)=0.d0
             enddo
             if(lakonl(4:5).eq.'8 ') then
                do i1=1,8
                   do j=1,3
                      h0l(j)=h0l(j)+h0(j,konl(i1))/8.d0
                      al(j)=al(j)+v(j,konl(i1))/8.d0
-                     aoldl(j)=aoldl(j)+vold(j,konl(i1))/8.d0
+                     ainil(j)=ainil(j)+vini(j,konl(i1))/8.d0
                   enddo
                   t1l=t1l+v(0,konl(i1))/8.d0
                enddo
             elseif(lakonl(4:6).eq.'20 ') then
                call linscal(v,konl,nope,kk,t1l,mi(2))
-               call linvec(h0,konl,nope,kk,h0l,null,three)
+               call linvec(h0,konl,nope,kk,h0l,one,three)
                call linvec(v,konl,nope,kk,al,null,mi(2))
-               call linvec(vold,konl,nope,kk,aoldl,null,mi(2))
+               call linvec(vini,konl,nope,kk,ainil,null,mi(2))
             else
                do i1=1,nope
                   t1l=t1l+shp(4,i1)*v(0,konl(i1))
                   do j=1,3
                      h0l(j)=h0l(j)+shp(4,i1)*h0(j,konl(i1))
                      al(j)=al(j)+shp(4,i1)*v(j,konl(i1))
-                     aoldl(j)=aoldl(j)+shp(4,i1)*vold(j,konl(i1))
+                     ainil(j)=ainil(j)+shp(4,i1)*vini(j,konl(i1))
                   enddo
                enddo
             endif
@@ -250,7 +263,7 @@
                   sti(k+3,kk,i)=um*(h0l(k)-vkl(5,k))
                enddo
 !
-!     calculating the electromagnetic force
+!     calculating the electromagnetic force K_phiphi
 !     
                do m1=1,nope
                   do m3=1,3
@@ -270,12 +283,12 @@
 !
                if(int(elconloc(2)).eq.2) then
                   do k=1,3
-                     sti(k,kk,i)=(aoldl(k)-al(k)+
-     &                            voldkl(4,k)-vkl(4,k))/dtime
+                     sti(k,kk,i)=(ainil(k)-al(k)+
+     &                            vinikl(4,k)-vkl(4,k))/dtime
                   enddo
                endif
 !
-!     calculating the electromagnetic force
+!     calculating the electromagnetic force K_AA
 !     
                do m1=1,nope
                   do m2=1,3
@@ -291,22 +304,32 @@
 !
          enddo
 !     
-!     surface integrals
+!        surface integrals
 !     
-         do m=1,3
+!        determining the number of faces per element
+!
+         if((lakonl(4:4).eq.'8').or.(lakonl(4:4).eq.'2')) then
+            nfaces=6
+         elseif((lakonl(4:4).eq.'6').or.(lakonl(4:5).eq.'15')) then
+            nfaces=5
+         elseif((lakonl(4:4).eq.'4').or.(lakonl(4:5).eq.'10')) then
+            nfaces=4
+         endif
+!
+         m=int(elconloc(2))
             if(iactive(m).eq.0) cycle
             iset=iactive(m)
             istart=istartset(iset)
             ilength=iendset(iset)-istart+1
 !     
-            isurf=10*nelem+1
+            isurf=10*i+nfaces
             call nident(ialset(istart),isurf,ilength,id)
 !     
             do
                if(id.eq.0) exit
                isurf=ialset(istart+id-1)
                iel=int(isurf/10.d0)
-               if(iel.ne.nelem) exit
+               if(iel.ne.i) exit
                ig=isurf-10*iel
 !     
 !     treatment of wedge faces
@@ -352,7 +375,7 @@
                      xl2(k,j)=co(k,konl2(j))
                      vl2(k,j)=v(k,konl2(j))
                   enddo
-                  vl2(4,j)=v(4,konl2(j))
+                  vl2(5,j)=v(5,konl2(j))
                enddo
 !     
                do kk=1,mint2d
@@ -405,14 +428,14 @@
                      enddo
 !
                      do m1=1,nopes
-                        do m2=1,3
-                           l=m2+1
+                        do k=1,3
+                           l=k+1
                            if(l.gt.3) l=1
                            mm=l+1
                            if(mm.gt.3) mm=1
-                           fn(m2,konl2(i1))=fn(m2,konl2(i1))-
+                           fn(k,konl2(m1))=fn(k,konl2(m1))-
      &                        (shp2(l,m1)*xsj2(mm)-shp2(mm,m1)*xsj2(l))
-     &                          *phi
+     &                          *phi*weight
                         enddo
                      enddo
                   elseif(m.eq.1) then
@@ -431,20 +454,21 @@
                      enddo
 !
                      do m1=1,nopes
-                        do m2=1,3
-                           l=m2+1
+                        do k=1,3
+                           l=k+1
                            if(l.gt.3) l=1
                            mm=l+1
                            if(mm.gt.3) mm=1
-                           fn(5,konl2(i1))=fn(5,konl2(i1))+
-     &                        shp2(4,m1)*(vkl(mm,l)-vkl(l,mm))*xsj2(m2)
+                           fn(5,konl2(m1))=fn(5,konl2(m1))+
+     &                        shp2(4,m1)*(vkl(mm,l)-vkl(l,mm))*xsj2(k)
+     &                        *weight
                         enddo
                      enddo
                   endif
 !                        
                enddo
+               id=id-1
             enddo
-         enddo
       enddo
 !
       return

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -158,13 +158,13 @@
       if(elconloc(1).lt.1.d-30) then
          write(*,*) '*ERROR in umat_tension_only: the Young modulus'
          write(*,*) '       is too small'
-         stop
+         call exit(201)
       endif
 !
       if(elconloc(2).lt.1.d-30) then
          write(*,*) '*ERROR in umat_tension_only: maximum pressure'
          write(*,*) '       value is too small'
-         stop
+         call exit(201)
       endif
       young=elconloc(1)
       eps=elconloc(2)*pi/young
@@ -193,7 +193,7 @@ c      if(iint.eq.1) write(*,100) (emec(i),i=1,6)
       if(ier.ne.0) then
          write(*,*) '
      &  *ERROR calculating the eigenvalues/vectors in umat_tension'
-         stop
+         call exit(201)
       endif
 !
 !     calculating the eigenvalues of the Cauchy tensor

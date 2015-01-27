@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -33,19 +33,19 @@
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in depvars: *DEPVAR should be placed'
          write(*,*) '  before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       if(nmat.eq.0) then
          write(*,*) '*ERROR in depvars: *DEPVAR should be preceded'
          write(*,*) '  by a *MATERIAL card'
-         stop
+         call exit(201)
       endif
 !
 c      if((nelcon(1,nmat).gt.-100).and.(ncocon(1,nmat).gt.-100)) then
 c         write(*,*) '*ERROR in depvars: *DEPVAR should be preceded'
 c         write(*,*) '  by an *USER MATERIAL card'
-c         stop
+c         call exit(201)
 c      endif
 !
       do i=2,n
@@ -61,7 +61,7 @@ c      endif
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
          write(*,*) '*ERROR in depvars: incomplete definition'
-         stop
+         call exit(201)
       endif
       read(textpart(1)(1:10),'(i10)',iostat=istat) nstate
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,

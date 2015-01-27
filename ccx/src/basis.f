@@ -115,7 +115,7 @@ c            write(*,*) 'basis dface ',dface
                else
                   write(*,*) '*ERROR: no suitable global element found'
                   write(*,*) '        for location (',xp,yp,zp,')'
-                  stop
+                  call exit(201)
                endif
             endif
          endif

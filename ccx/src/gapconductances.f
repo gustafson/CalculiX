@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -42,25 +42,25 @@
          write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
          write(*,*) '       *GAP CONDUCTANCE should'
          write(*,*) '       be placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       if(nmat.eq.0) then
          write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
          write(*,*) '       *GAP CONDUCTANCE should'
          write(*,*) '       be preceded by a *SURFACE INTERACTION card'
-         stop
+         call exit(201)
       endif
 !
       if(nelcon(1,nmat).eq.0) then
          write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
          write(*,*) '       *GAP CONDUCTANCE should'
          write(*,*) '       be preceeded by a *SURFACE BEHAVIOR card'
-         stop
+         call exit(201)
       endif
 !
       iperturb(1)=2
-      iperturb(2)=1
+c      iperturb(2)=1
       write(*,*) '*INFO reading *GAP CONDUCTANCE: nonlinear geometric'
       write(*,*) '      effects are turned on'
       write(*,*)
@@ -99,7 +99,7 @@
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
                   write(*,*) '       increase ntmat_'
-                  stop
+                  call exit(201)
                endif
                nplkcon(0,nmat)=ntmat
                plkcon(0,ntmat,nmat)=temperature
@@ -112,7 +112,7 @@
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *GAP CONDUCTANCE:' 
                   write(*,*) '       increase ntmat_'
-                  stop
+                  call exit(201)
                endif
                nplkcon(0,nmat)=ntmat
                plkcon(0,ntmat,nmat)=temperature
@@ -127,7 +127,7 @@
             if(npmat.gt.npmat_) then
                write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
                write(*,*) '       increase npmat_'
-               stop
+               call exit(201)
             endif
             nplkcon(ntmat,nmat)=npmat
          enddo
@@ -136,7 +136,7 @@
          write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
          write(*,*) '       *GAP CONDUCTANCE card'
          write(*,*) '       without data'
-         stop
+         call exit(201)
       endif
 !
       return

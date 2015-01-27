@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@
      &  ipoinp,inp,ntie,mcs,lprev,ithermal,rcscg,rcs0cg,zcscg,
      &  zcs0cg,nrcg,nzcg,jcs,kontri,straight,ne,ipkon,kon,
      &  lakon,lcs,ifacetet,inodface,ipoinpc,maxsectors,
-     &  trab,ntrans,ntrans_,jobnamec,vold,cfd,mi)
+     &  trab,ntrans,ntrans_,jobnamec,vold,cfd,mi,iaxial)
 !
 !     reading the input deck: *CYCLIC SYMMETRY MODEL
 !
@@ -46,24 +46,25 @@
 !
       implicit none
 !
-      logical triangulation,calcangle,nodesonaxis,check
+      logical triangulation,calcangle,nodesonaxis,check,exist
 !
-      character*1 inpc(*)
+      character*1 inpc(*),depkind,indepkind
       character*8 lakon(*)
       character*20 labmpc(*)
       character*80 tie
       character*81 set(*),depset,indepset,tieset(3,*),elset
       character*132 textpart(16),jobnamec(*)
 !
-      integer istartset(*),iendset(*),ialset(*),ipompc(*),
-     &  nodempc(3,*),itiecyc,ntiecyc,
+      integer istartset(*),iendset(*),ialset(*),ipompc(*),ifaces,
+     &  nodempc(3,*),itiecyc,ntiecyc,iaxial,nopes,nelems,m,indexe,
      &  nset,istep,istat,n,key,i,j,k,nk,nmpc,nmpc_,mpcfree,ics(*),
      &  nr(*),nz(*),jdep,jindep,l,noded,ikmpc(*),ilmpc(*),lcs(*),
      &  kflag,node,ncsnodes,ncs_,iline,ipol,inl,ipoinp(2,*),nneigh,
      &  inp(3,*),itie,iset,ipos,mcs,lprev,ntie,ithermal,ncounter,
      &  nrcg(*),nzcg(*),jcs(*),kontri(3,*),ne,ipkon(*),kon(*),nodei,
-     &  ifacetet(*),inodface(*),ipoinpc(0:*),maxsectors,
-     &  noden(2),ntrans,ntrans_,cfd,mi(*)
+     &  ifacetet(*),inodface(*),ipoinpc(0:*),maxsectors,id,jfaces,
+     &  noden(2),ntrans,ntrans_,cfd,mi(*),ifaceq(9,6),ifacet(7,4),
+     &  ifacew1(4,5),ifacew2(8,5),idof
 !
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
      &  csab(7),xn,yn,zn,dd,xap,yap,zap,tietol(3,*),cs(17,*),xsectors,
@@ -71,11 +72,43 @@
      &  straight(9,*),x1,y1,z1,x2,y2,z2,zp,rp,dist,trab(7,*),
      &  vold(0:mi(2),*),calculated_angle,user_angle
 !
+!     nodes per face for hex elements
+!
+      data ifaceq /4,3,2,1,11,10,9,12,21,
+     &            5,6,7,8,13,14,15,16,22,
+     &            1,2,6,5,9,18,13,17,23,
+     &            2,3,7,6,10,19,14,18,24,
+     &            3,4,8,7,11,20,15,19,25,
+     &            4,1,5,8,12,17,16,20,26/
+!
+!     nodes per face for tet elements
+!
+      data ifacet /1,3,2,7,6,5,11,
+     &             1,2,4,5,9,8,12,
+     &             2,3,4,6,10,9,13,
+     &             1,4,3,8,10,7,14/
+!
+!     nodes per face for linear wedge elements
+!
+      data ifacew1 /1,3,2,0,
+     &             4,5,6,0,
+     &             1,2,5,4,
+     &             2,3,6,5,
+     &             3,1,4,6/
+!
+!     nodes per face for quadratic wedge elements
+!
+      data ifacew2 /1,3,2,9,8,7,0,0,
+     &             4,5,6,10,11,12,0,0,
+     &             1,2,5,4,7,14,10,13,
+     &             2,3,6,5,8,15,11,14,
+     &             3,1,4,6,9,13,12,15/
+!
       if(istep.gt.0) then
          write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
          write(*,*) '       *CYCLIC SYMMETRY MODEL should'
          write(*,*) '       be placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       check=.true.
@@ -122,7 +155,7 @@
          write(*,*) '       the required parameter N'
          write(*,*) '       is lacking on the *CYCLIC SYMMETRY MODEL'
          write(*,*) '       keyword card or has a value <=0'
-         stop
+         call exit(201)
       endif
       if(gsectors.lt.1) then
          write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
@@ -140,6 +173,7 @@
       endif
 !
       maxsectors=max(maxsectors,int(xsectors+0.5d0))
+c      iaxial=max(iaxial,maxsectors)
 !
       mcs=mcs+1
       cs(2,mcs)=-0.5
@@ -213,14 +247,14 @@
          write(*,*)'*ERROR reading *CYCLIC SYMMETRY MODEL:'
          write(*,*) '      definition of the cyclic'
          write(*,*) '      symmetry model is not complete'
-         stop
+         call exit(201)
       endif
 !
       ntrans=ntrans+1
       if(ntrans.gt.ntrans_) then
          write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
          write(*,*) '       increase ntrans_'
-         stop
+         call exit(201)
       endif
 !
       do i=1,6
@@ -239,26 +273,47 @@
       trab(7,ntrans)=2
 !
 !     check whether depset and indepset exist
+!     determine the kind of set (nodal or facial)
 !
+      ipos=index(depset,' ')
+      depkind='S'
+      depset(ipos:ipos)=depkind
       do i=1,nset
          if(set(i).eq.depset) exit
       enddo
       if(i.gt.nset) then
-         write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
-         write(*,*) '       surface ',depset
-         write(*,*) '       has not yet been defined.' 
-         stop
+         depkind='T'
+         depset(ipos:ipos)=depkind
+         do i=1,nset
+            if(set(i).eq.depset) exit
+         enddo
+         if(i.gt.nset) then
+            write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+            write(*,*) '       surface ',depset
+            write(*,*) '       has not yet been defined.' 
+            call exit(201)
+         endif
       endif
       jdep=i
 !
+      ipos=index(indepset,' ')
+      indepkind='S'
+      indepset(ipos:ipos)=indepkind
       do i=1,nset
          if(set(i).eq.indepset) exit
       enddo
       if(i.gt.nset) then
-         write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
-         write(*,*) '       surface ',indepset
-         write(*,*) '       has not yet been defined.' 
-         stop
+         indepkind='T'
+         indepset(ipos:ipos)=indepkind
+         do i=1,nset
+            if(set(i).eq.indepset) exit
+         enddo
+         if(i.gt.nset) then
+            write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+            write(*,*) '       surface ',indepset
+            write(*,*) '       has not yet been defined.' 
+            call exit(201)
+         endif
       endif
       jindep=i
 !
@@ -280,23 +335,109 @@
       l=0
       do j=istartset(jindep),iendset(jindep)
          if(ialset(j).gt.0) then
-            l=l+1
-            if(lprev+l.gt.ncs_) then
-               write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
-               write(*,*) '       increase ncs_'
-               stop
+            if(indepkind.eq.'T') then
+!
+!              facial independent surface
+!               
+               ifaces=ialset(j)
+               nelems=int(ifaces/10)
+               jfaces=ifaces - nelems*10
+               indexe=ipkon(nelems)
+!
+               if(lakon(nelems)(4:5).eq.'20') then
+                  nopes=8
+               elseif(lakon(nelems)(4:4).eq.'2') then
+                  nopes=9
+               elseif(lakon(nelems)(4:4).eq.'8') then
+                  nopes=4
+               elseif(lakon(nelems)(4:5).eq.'10') then
+                  nopes=6
+               elseif(lakon(nelems)(4:5).eq.'14') then
+                  nopes=7
+               elseif(lakon(nelems)(4:4).eq.'4') then
+                  nopes=3
+               endif
+!     
+               if(lakon(nelems)(4:4).eq.'6') then
+                  if(jfaces.le.2) then
+                     nopes=3
+                  else
+                     nopes=4
+                  endif
+               endif
+               if(lakon(nelems)(4:5).eq.'15') then
+                  if(jfaces.le.2) then
+                     nopes=6
+                  else
+                     nopes=8
+                  endif
+               endif   
+            else
+               nopes=1
             endif
-            node =ialset(j)
 !
-            xap=co(1,node)-csab(1)
-            yap=co(2,node)-csab(2)
-            zap=co(3,node)-csab(3)
+            do m=1,nopes
+               if(indepkind.eq.'T') then
+                  if((lakon(nelems)(4:4).eq.'2').or.
+     &                 (lakon(nelems)(4:4).eq.'8')) then
+                     node=kon(indexe+ifaceq(m,jfaces))
+                  elseif((lakon(nelems)(4:4).eq.'4').or.
+     &                    (lakon(nelems)(4:5).eq.'10')) then
+                     node=kon(indexe+ifacet(m,jfaces))
+                  elseif(lakon(nelems)(4:4).eq.'6') then
+                     node=kon(indexe+ifacew1(m,jfaces))
+                  elseif(lakon(nelems)(4:5).eq.'15') then
+                     node=kon(indexe+ifacew2(m,jfaces))
+                  endif
+                  call nident(ics(lprev+1),node,l,id)
+                  exist=.FALSE.
+                  if(id.gt.0) then
+                     if(ics(lprev+id).eq.node) then
+                        exist=.TRUE.
+                     endif
+                  endif
+                  if(exist) cycle
+                  l=l+1
+                  if(lprev+l.gt.ncs_) then
+                     write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+                     write(*,*) '       increase ncs_'
+                     call exit(201)
+                  endif
+                  do k=lprev+l,lprev+id+2,-1
+                     ics(k)=ics(k-1)
+                     zcs(k)=zcs(k-1)
+                     rcs(k)=rcs(k-1)
+                  enddo
 !
-            ics(l)=node
-            zcs(l)=xap*xn+yap*yn+zap*zn
-            rcs(l)=dsqrt((xap-zcs(l)*xn)**2+
-     &                   (yap-zcs(l)*yn)**2+
-     &                   (zap-zcs(l)*zn)**2)
+                  xap=co(1,node)-csab(1)
+                  yap=co(2,node)-csab(2)
+                  zap=co(3,node)-csab(3)
+!     
+                  ics(lprev+id+1)=node
+                  zcs(lprev+id+1)=xap*xn+yap*yn+zap*zn
+                  rcs(lprev+id+1)=dsqrt((xap-zcs(lprev+id+1)*xn)**2+
+     &                                  (yap-zcs(lprev+id+1)*yn)**2+
+     &                                  (zap-zcs(lprev+id+1)*zn)**2)
+               else
+                  l=l+1
+                  if(lprev+l.gt.ncs_) then
+                     write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+                     write(*,*) '       increase ncs_'
+                     call exit(201)
+                  endif
+                  node =ialset(j)
+!     
+                  xap=co(1,node)-csab(1)
+                  yap=co(2,node)-csab(2)
+                  zap=co(3,node)-csab(3)
+!     
+                  ics(l)=node
+                  zcs(l)=xap*xn+yap*yn+zap*zn
+                  rcs(l)=dsqrt((xap-zcs(l)*xn)**2+
+     &                 (yap-zcs(l)*yn)**2+
+     &                 (zap-zcs(l)*zn)**2)
+               endif
+            enddo
          else
             k=ialset(j-2)
             do
@@ -306,7 +447,7 @@
                if(l.gt.ncs_) then
                   write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
                   write(*,*) '       increase ncs_'
-                  stop
+                  call exit(201)
                endif
                node=k
 !
@@ -389,73 +530,133 @@
       nodesonaxis=.false.
 !
       nneigh=1
-      do i=istartset(jdep),iendset(jdep)
+      loop1: do i=istartset(jdep),iendset(jdep)
          if(ialset(i).gt.0) then
-            if(i.gt.istartset(jdep)) then
-               if(ialset(i).eq.ialset(i-1)) cycle
-            endif
-            noded=ialset(i)
 !
-            xap=co(1,noded)-csab(1)
-            yap=co(2,noded)-csab(2)
-            zap=co(3,noded)-csab(3)
+!           check whether dependent side is node based or
+!           face based
+!
+            if(depkind.eq.'T') then
+               ifaces=ialset(i)
+               nelems=int(ifaces/10)
+               jfaces=ifaces - nelems*10
+               indexe=ipkon(nelems)
 !     
-            zp=xap*xn+yap*yn+zap*zn
-            rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
-!
-            if((.not.calcangle).and.(rp.gt.1.d-10)) then
-               x2=(xap-zp*xn)/rp
-               y2=(yap-zp*yn)/rp
-               z2=(zap-zp*zn)/rp
-            endif
-!
-            call near2d(rcs0,zcs0,rcs,zcs,nr,nz,rp,zp,ncsnodes,node,
-     &            nneigh)
-!
-            nodei=ics(node)
-            if(nodei.lt.0) cycle
-            if(nodei.eq.noded) then
-               ics(node)=-nodei
-               nodesonaxis=.true.
-               cycle
-            endif
-!
-            xap=co(1,nodei)-csab(1)
-            yap=co(2,nodei)-csab(2)
-            zap=co(3,nodei)-csab(3)
+               if(lakon(nelems)(4:5).eq.'20') then
+                  nopes=8
+               elseif(lakon(nelems)(4:4).eq.'2') then
+                  nopes=9
+               elseif(lakon(nelems)(4:4).eq.'8') then
+                  nopes=4
+               elseif(lakon(nelems)(4:5).eq.'10') then
+                  nopes=6
+               elseif(lakon(nelems)(4:5).eq.'14') then
+                  nopes=7
+               elseif(lakon(nelems)(4:4).eq.'4') then
+                  nopes=3
+               endif
 !     
-            zp=xap*xn+yap*yn+zap*zn
-            rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
-!
-            if((.not.calcangle).and.(rp.gt.1.d-10)) then
-               x3=(xap-zp*xn)/rp
-               y3=(yap-zp*yn)/rp
-               z3=(zap-zp*zn)/rp
-!
-               x1=y2*z3-y3*z2
-               y1=x3*z2-x2*z3
-               z1=x2*y3-x3*y2
-!
-               phi=(x1*xn+y1*yn+z1*zn)/dabs(x1*xn+y1*yn+z1*zn)*
-     &              dacos(x2*x3+y2*y3+z2*z3)
-               if(check) then
-                  calculated_angle=dacos(x2*x3+y2*y3+z2*z3)
-                  user_angle=6.28318531d0/cs(1,mcs)
-                  if(dabs(calculated_angle-user_angle)/calculated_angle
-     &                 .gt.0.01d0) then
-                     write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL'
-                     write(*,*) '       number of segments does not'
-                     write(*,*) '       agree with the geometry'
-                     write(*,*) '       angle based on N:',
-     &                  user_angle*57.29577951d0
-                     write(*,*) '       angle based on the geometry:',
-     &                       calculated_angle*57.29577951d0
-                     stop
+               if(lakon(nelems)(4:4).eq.'6') then
+                  if(jfaces.le.2) then
+                     nopes=3
+                  else
+                     nopes=4
                   endif
                endif
-               calcangle=.true.
+               if(lakon(nelems)(4:5).eq.'15') then
+                  if(jfaces.le.2) then
+                     nopes=6
+                  else
+                     nopes=8
+                  endif
+               endif 
+            else
+               nopes=1
             endif
 !
+            do m=1,nopes
+               if(depkind.eq.'T') then
+                  if((lakon(nelems)(4:4).eq.'2').or.
+     &                 (lakon(nelems)(4:4).eq.'8')) then
+                     noded=kon(indexe+ifaceq(m,jfaces))
+                  elseif((lakon(nelems)(4:4).eq.'4').or.
+     &                    (lakon(nelems)(4:5).eq.'10')) then
+                     noded=kon(indexe+ifacet(m,jfaces))
+                  elseif(lakon(nelems)(4:4).eq.'6') then
+                     noded=kon(indexe+ifacew1(m,jfaces))
+                  elseif(lakon(nelems)(4:5).eq.'15') then
+                     noded=kon(indexe+ifacew2(m,jfaces))
+                  endif
+               else
+                  if(i.gt.istartset(jdep)) then
+                     if(ialset(i).eq.ialset(i-1)) cycle loop1
+                  endif
+                  noded=ialset(i)
+               endif
+c            enddo
+!
+               xap=co(1,noded)-csab(1)
+               yap=co(2,noded)-csab(2)
+               zap=co(3,noded)-csab(3)
+!     
+               zp=xap*xn+yap*yn+zap*zn
+               rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
+!     
+               if((.not.calcangle).and.(rp.gt.1.d-10)) then
+                  x2=(xap-zp*xn)/rp
+                  y2=(yap-zp*yn)/rp
+                  z2=(zap-zp*zn)/rp
+               endif
+!
+               call near2d(rcs0,zcs0,rcs,zcs,nr,nz,rp,zp,ncsnodes,node,
+     &            nneigh)
+!
+               nodei=ics(node)
+               if(nodei.lt.0) cycle
+               if(nodei.eq.noded) then
+                  ics(node)=-nodei
+                  nodesonaxis=.true.
+                  cycle
+               endif
+!     
+               xap=co(1,nodei)-csab(1)
+               yap=co(2,nodei)-csab(2)
+               zap=co(3,nodei)-csab(3)
+!     
+               zp=xap*xn+yap*yn+zap*zn
+               rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
+!     
+               if((.not.calcangle).and.(rp.gt.1.d-10)) then
+                  x3=(xap-zp*xn)/rp
+                  y3=(yap-zp*yn)/rp
+                  z3=(zap-zp*zn)/rp
+!     
+                  x1=y2*z3-y3*z2
+                  y1=x3*z2-x2*z3
+                  z1=x2*y3-x3*y2
+!     
+                  phi=(x1*xn+y1*yn+z1*zn)/dabs(x1*xn+y1*yn+z1*zn)*
+     &                 dacos(x2*x3+y2*y3+z2*z3)
+                  if(check) then
+                     calculated_angle=dacos(x2*x3+y2*y3+z2*z3)
+                     user_angle=6.28318531d0/cs(1,mcs)
+                     if(dabs(calculated_angle-user_angle)/
+     &                       calculated_angle.gt.0.01d0) then
+                        write(*,*) 
+     &                          '*ERROR reading *CYCLIC SYMMETRY MODEL'
+                        write(*,*) '       number of segments does not'
+                        write(*,*) '       agree with the geometry'
+                        write(*,*) '       angle based on N:',
+     &                       user_angle*57.29577951d0
+                        write(*,*)'       angle based on the geometry:',
+     &                       calculated_angle*57.29577951d0
+                        call exit(201)
+                     endif
+                  endif
+                  calcangle=.true.
+               endif
+            enddo
+!     
          else
             k=ialset(i-2)
             do
@@ -518,7 +719,7 @@
      &                    user_angle*57.29577951d0
                         write(*,*) '       angle based on the geometry:'
      &                       ,calculated_angle*57.29577951d0
-                        stop
+                        call exit(201)
                      endif
                   endif
                   calcangle=.true.
@@ -527,21 +728,91 @@
             enddo
          endif
 !
-      enddo
+      enddo loop1
 !
 !     allocating a node of the depset to each node of the indepset 
 !
       ncounter=0
       triangulation=.false.
 !
-      do i=istartset(jdep),iendset(jdep)
+      loop2: do i=istartset(jdep),iendset(jdep)
          if(ialset(i).gt.0) then
-            if(i.gt.istartset(jdep)) then
-               if(ialset(i).eq.ialset(i-1)) cycle
-            endif
-            noded=ialset(i)
 !
-            call generatecycmpcs(tolloc,co,nk,ipompc,nodempc,
+!           check whether dependent side is node based or
+!           face based
+!
+            if(depkind.eq.'T') then
+               ifaces=ialset(i)
+               nelems=int(ifaces/10)
+               jfaces=ifaces - nelems*10
+               indexe=ipkon(nelems)
+!     
+               if(lakon(nelems)(4:5).eq.'20') then
+                  nopes=8
+               elseif(lakon(nelems)(4:4).eq.'2') then
+                  nopes=9
+               elseif(lakon(nelems)(4:4).eq.'8') then
+                  nopes=4
+               elseif(lakon(nelems)(4:5).eq.'10') then
+                  nopes=6
+               elseif(lakon(nelems)(4:5).eq.'14') then
+                  nopes=7
+               elseif(lakon(nelems)(4:4).eq.'4') then
+                  nopes=3
+               endif
+!     
+               if(lakon(nelems)(4:4).eq.'6') then
+                  if(jfaces.le.2) then
+                     nopes=3
+                  else
+                     nopes=4
+                  endif
+               endif
+               if(lakon(nelems)(4:5).eq.'15') then
+                  if(jfaces.le.2) then
+                     nopes=6
+                  else
+                     nopes=8
+                  endif
+               endif 
+            else
+               nopes=1
+            endif
+!
+            do m=1,nopes
+               if(depkind.eq.'T') then
+                  if((lakon(nelems)(4:4).eq.'2').or.
+     &                 (lakon(nelems)(4:4).eq.'8')) then
+                     noded=kon(indexe+ifaceq(m,jfaces))
+                  elseif((lakon(nelems)(4:4).eq.'4').or.
+     &                    (lakon(nelems)(4:5).eq.'10')) then
+                     noded=kon(indexe+ifacet(m,jfaces))
+                  elseif(lakon(nelems)(4:4).eq.'6') then
+                     noded=kon(indexe+ifacew1(m,jfaces))
+                  elseif(lakon(nelems)(4:5).eq.'15') then
+                     noded=kon(indexe+ifacew2(m,jfaces))
+                  endif
+               else
+                  if(i.gt.istartset(jdep)) then
+                     if(ialset(i).eq.ialset(i-1)) cycle loop2
+                  endif
+                  noded=ialset(i)
+               endif
+c            enddo
+!
+!           check whether cyclic MPC's have already been
+!           generated (e.g. for nodes belonging to several
+!           faces for face based dependent surfaces)
+!
+               idof=8*(noded-1)+1
+               call nident(ikmpc,idof,nmpc,id)
+               if(id.gt.0) then
+                  if(ikmpc(id).eq.idof) then
+                     if(labmpc(ilmpc(id))(1:6).eq.'CYCLIC') cycle
+                  endif
+               endif
+!
+               call generatecycmpcs(tolloc,co,nk,ipompc,nodempc,
      &         coefmpc,nmpc,ikmpc,ilmpc,mpcfree,rcs,zcs,ics,
      &         nr,nz,rcs0,zcs0,labmpc,
      &         mcs,triangulation,csab,xn,yn,zn,phi,noded,
@@ -549,6 +820,7 @@
      &         nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
      &         ifacetet,inodface,ncounter,jobnamec,vold,cfd,mi,
      &         indepset)
+            enddo
 !
          else
             k=ialset(i-2)
@@ -556,6 +828,18 @@
                k=k-ialset(i)
                if(k.ge.ialset(i-1)) exit
                noded=k
+!
+!              check whether cyclic MPC's have already been
+!              generated (e.g. for nodes belonging to several
+!              faces for face based dependent surfaces)
+!
+               idof=8*(noded-1)+1
+               call nident(ikmpc,idof,nmpc,id)
+               if(id.gt.0) then
+                  if(ikmpc(id).eq.idof) then
+                     if(labmpc(ilmpc(id))(1:6).eq.'CYCLIC') cycle
+                  endif
+               endif
 !
                call generatecycmpcs(tolloc,co,nk,ipompc,nodempc,
      &           coefmpc,nmpc,ikmpc,ilmpc,mpcfree,rcs,zcs,ics,
@@ -568,7 +852,7 @@
             enddo
          endif
 !
-      enddo
+      enddo loop2
 !
       if(ncounter.ne.0) then
          write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
@@ -576,7 +860,7 @@
          write(*,*) '        node in a cyclic symmetry definition no '
          write(*,*) '        independent counterpart was found'
 c     next line was commented on 19/04/2012
-c         stop
+c         call exit(201)
       endif
 !
 !     sorting ics

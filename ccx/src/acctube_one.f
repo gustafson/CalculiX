@@ -18,7 +18,8 @@
 !     
       subroutine acctube_one(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,ider)
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,ider,
+     &        iaxial)
 !
 !     An element representing an ACC tube
 !     The holes in the PDM are handled here
@@ -32,7 +33,7 @@
       character*81 set(*)
 !
       integer node1,node2,nodem,nelem,kon(*),ipkon(*),nactdog(0:3,*),
-     &  ielprop(*),iflag,nodef(5),idirf(5),numf,mi(*),ider
+     &  ielprop(*),iflag,nodef(5),idirf(5),numf,mi(*),ider,iaxial
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(5),cp,r,physcon(*),dvi
 !

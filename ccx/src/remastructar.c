@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -30,7 +30,7 @@ void remastructar(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
               ITG *nactdof, ITG *icol, ITG *jq, ITG **irowp, ITG *isolver,
               ITG *neq, ITG *nzs,ITG *nmethod, ITG *ithermal,
 	      ITG *iperturb, ITG *mass, ITG *mi, ITG *ics, double *cs,
-	      ITG *mcs,ITG *mortar){
+	      ITG *mcs,ITG *mortar,char *typeboun){
 
     /* reconstructs the nonzero locations in the stiffness and mass
        matrix after a change in MPC's or the generation of contact
@@ -62,21 +62,21 @@ void remastructar(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     printf(" Determining the structure of the matrix:\n");
  
     if(nzs[1]<10) nzs[1]=10;   
-    mast1=NNEW(ITG,nzs[1]);
+    NNEW(mast1,ITG,nzs[1]);
     RENEW(irow,ITG,nzs[1]);for(i=0;i<nzs[1];i++) irow[i]=0;
   
     if((*mcs==0)||(cs[1]<0)){
 
-	ipointer=NNEW(ITG,mt**nk);
+	NNEW(ipointer,ITG,mt**nk);
     
 	mastruct(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,ipompc,
 	     nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,neq,
 	     ikmpc,ilmpc,ipointer,nzs,nmethod,ithermal,
-	     ikboun,ilboun,iperturb,mi,mortar);
+		 ikboun,ilboun,iperturb,mi,mortar,typeboun,labmpc);
 
     }else{
       
-      ipointer=NNEW(ITG,8**nk);
+      NNEW(ipointer,ITG,8**nk);
       
       mastructcs(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,
 		 ipompc,nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,
@@ -84,7 +84,7 @@ void remastructar(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 		 ics,cs,labmpc,mcs,mi,mortar);
     }
 
-    free(ipointer);free(mast1);
+    SFREE(ipointer);SFREE(mast1);
     RENEW(irow,ITG,nzs[2]);
     
     *nodempcp=nodempc;*coefmpcp=coefmpc;*irowp=irow;

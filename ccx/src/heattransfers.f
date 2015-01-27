@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -61,13 +61,13 @@
       elseif((iperturb.eq.1).and.(istep.gt.1)) then
          write(*,*) '*ERROR in heattransfers: perturbation analysis is'
          write(*,*) '       not provided in a *HEAT TRANSFER step.'
-         stop
+         call exit(201)
       endif
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR in heattransfers: *HEAT TRANSFER can only'
          write(*,*) '       be used within a STEP'
-         stop
+         call exit(201)
       endif
 !
 !     default solver
@@ -136,7 +136,7 @@
      &   (nmethod.ne.2).and.(iperturb.ne.0)) then
          write(*,*) '*ERROR in heattransfers: please define initial '
          write(*,*) '       conditions for the temperature'
-         stop
+         call exit(201)
       else
          ithermal=2
       endif
@@ -206,8 +206,10 @@
          endif
 !      
          if(idrct.ne.1) then
-            if(dabs(tmin).lt.1.d-10) then
-               tmin=min(tinc,1.d-5*tper)
+c            if(dabs(tmin).lt.1.d-10) then
+c               tmin=min(tinc,1.d-5*tper)
+            if(dabs(tmin).lt.1.d-6*tper) then
+               tmin=min(tinc,1.d-6*tper)
             endif
             if(dabs(tmax).lt.1.d-10) then
                tmax=1.d+30
@@ -226,7 +228,7 @@
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
      &"*HEAT TRANSFER%")
-            stop
+            call exit(201)
          endif
          read(textpart(1)(1:10),'(i10)',iostat=istat) nev
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
@@ -234,7 +236,7 @@
          if(nev.le.0) then
             write(*,*) '*ERROR in frequencies: less than 1 eigenvalue re
      &quested'
-            stop
+            call exit(201)
          endif
          tol=1.d-2
          ncv=4*nev
@@ -269,7 +271,7 @@
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
      &"*HEAT TRANSFER%")
-            stop
+            call exit(201)
          endif
          read(textpart(1)(1:20),'(f20.0)',iostat=istat) tinc
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,

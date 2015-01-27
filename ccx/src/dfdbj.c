@@ -1,6 +1,6 @@
 /*
      CalculiX - A 3-dimensional finite element program
-              Copyright (C) 1998-2014 Guido Dhondt
+              Copyright (C) 1998-2015 Guido Dhondt
 
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License as
@@ -77,7 +77,7 @@ void dfdbj(double *bcont,double **dbcontp,ITG *neq,ITG *nope,ITG *konl,
 	      i3=(3*j+j1);
 	      for(k=0; k<*nope; k++){
 		  for(k1=0; k1<3; k1++){
-		      sl=s[(3*k+k1)*78+i3];
+		      sl=s[(3*k+k1)*100+i3];
 		      kdof=nactdof[mt*(konl[k]-1)+k1+1];
 		      if(kdof!=0){
 			  if(!(*cyclicsymmetry)){
@@ -186,7 +186,7 @@ void dfdbj(double *bcont,double **dbcontp,ITG *neq,ITG *nope,ITG *konl,
 			      i3=(3*j+j1);
 			      for(k=0; k<*nope; k++){
 				  for(k1=0; k1<3; k1++){
-				      sl=s[(3*k+k1)*78+i3];
+				      sl=s[(3*k+k1)*100+i3];
 				      kdof=nactdof[mt*(konl[k]-1)+k1+1];
 				      if(kdof!=0){
 					  d1=sl*coefmpc[index1]/coefmpc[ist1];
@@ -264,7 +264,7 @@ void dfdbj(double *bcont,double **dbcontp,ITG *neq,ITG *nope,ITG *konl,
 
 /*!
   !     CalculiX - A 3-dimensional finite element program
-  !              Copyright (C) 1998-2014 Guido Dhondt
+  !              Copyright (C) 1998-2015 Guido Dhondt
   !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

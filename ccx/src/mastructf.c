@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -25,12 +25,12 @@
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
 void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
-	       ITG *nactdoh,ITG *icol,ITG *jq, ITG **mast1p, ITG **irowp,
+	       ITG *icol,ITG *jq, ITG **mast1p, ITG **irowp,
 	       ITG *isolver, ITG *neq,ITG *ipointer, ITG *nzs,
                ITG *ipnei,ITG *neiel,ITG *mi){
 
-  ITG i,j,k,l,index,idof1,idof2,node1,isubtract,nmast,ifree,istart,istartold,
-    nzs_,kflag,isize,*mast1=NULL,*irow=NULL,neighbor,mt=mi[1]+1;
+  ITG i,j,k,l,index,idof1,idof2,node1,isubtract,nmast,ifree=0,istart,istartold,
+      nzs_,kflag,isize,*mast1=NULL,*irow=NULL,neighbor,mt=mi[1]+1,numfaces;
 
   /* the indices in the comments follow FORTRAN convention, i.e. the
      fields start with 1 */
@@ -38,43 +38,31 @@ void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
   mast1=*mast1p;irow=*irowp;
 
   kflag=2;
-  
-  /* determining the active degrees of freedom due to elements */
-  
-  for(i=0;i<*ne;++i){
-      
-      nactdoh[i]=0;
-      if(strcmp1(&lakon[8*i],"F")!=0) continue;
-      if(strcmp1(&lakon[8*i+3],"8")!=0) continue;
-      nactdoh[i]=1;
+  nzs_=*nzs;
 
-  }
-
-  /* numbering the active degrees of freedom */
-  
-  *neq=0;
-  for(i=0;i<*ne;i++){
-      if(nactdoh[i]!=0){
-	  ++(*neq);
-	  nactdoh[i]=*neq;
-      }
-  }
+  *neq=*ne;
 
   /* determining the nonzero locations */
 
   for(i=0;i<*ne;i++){
-      if(nactdoh[i]==0) continue;
-      idof1=nactdoh[i];
+      idof1=i+1;
       if(strcmp1(&lakon[8*i+3],"8")==0){
-	  index=ipnei[i];
-	  insert(ipointer,&mast1,&irow,&idof1,&idof1,&ifree,&nzs_);
-	  for(j=0;j<6;j++){
-	      neighbor=neiel[index+j];
-	      if(neighbor==0) continue;
-	      idof2=nactdoh[neighbor-1];
-	      insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);
-	  }
+	  numfaces=6;
+      }else if(strcmp1(&lakon[8*i+3],"6")==0){
+	  numfaces=5;
+      }else{
+	  numfaces=4;
       }
+
+      index=ipnei[i];
+      insert(ipointer,&mast1,&irow,&idof1,&idof1,&ifree,&nzs_);
+      for(j=0;j<numfaces;j++){
+	  neighbor=neiel[index+j];
+	  if(neighbor==0) continue;
+	  idof2=neighbor;
+	  insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);
+      }
+
   }
   
   /*   storing the nonzero nodes in the SUPERdiagonal columns:
@@ -83,19 +71,8 @@ void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
   
   for(i=0;i<*neq;++i){
       if(ipointer[i]==0){
-	  node1=0;
-	  for(j=0;j<*nk;j++){
-	      for(k=0;k<4;++k){
-		  if(nactdoh[mt*(j-1)+k]==i+1){
-		      node1=j;
-		      idof1=k;
-		      break;
-		  }
-	      }
-	      if(node1!=0) break;
-	  }
-	  printf("*ERROR in mastruct: zero column\n");
-	  printf("       node=%" ITGFORMAT ",DOF=%" ITGFORMAT "\n",node1,idof1);
+	  printf("*ERROR in mastructf: zero column\n");
+	  printf("       element=%" ITGFORMAT "\n",i+1);
 	  FORTRAN(stop,());
       }
       istart=ipointer[i];

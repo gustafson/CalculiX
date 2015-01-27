@@ -73,9 +73,9 @@ void pardiso_factor_as(double *ad, double *au, double *adb, double *aub,
 
   ndim=*neq+(long long)2**nzs;
 
-  pointersas=NNEW(ITG,*neq+1);
-  irowpardisoas=NNEW(ITG,ndim);
-  aupardisoas=NNEW(double,ndim);
+  NNEW(pointersas,ITG,*neq+1);
+  NNEW(irowpardisoas,ITG,ndim);
+  NNEW(aupardisoas,double,ndim);
 
   k=0;
 
@@ -179,14 +179,14 @@ void pardiso_solve_as(double *b, ITG *neq){
 
   printf(" number of threads =% d\n\n",nthread_mkl_as);
 
-  x=NNEW(double,*neq);
+  NNEW(x,double,*neq);
 
   FORTRAN(pardiso,(ptas,&maxfct,&mnum,&mtype,&phase,neq,aupardisoas,
 		   pointersas,irowpardisoas,perm,&nrhs,iparmas,&msglvl,
                    b,x,&error));
 
   for(i=0;i<*neq;i++){b[i]=x[i];}
-  free(x);
+  SFREE(x);
 
   return;
 }
@@ -201,9 +201,9 @@ void pardiso_cleanup_as(ITG *neq){
 		   pointersas,irowpardisoas,perm,&nrhs,iparmas,&msglvl,
                    b,x,&error));
 
-  free(irowpardisoas);
-  free(aupardisoas);
-  free(pointersas);
+  SFREE(irowpardisoas);
+  SFREE(aupardisoas);
+  SFREE(pointersas);
 
   return;
 }

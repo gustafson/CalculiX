@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine resultsini_em(nk,v,ithermal,filab,iperturb,f,fn,
-     &  nactdof,iout,qa,vold,b,nodeboun,ndirboun,
+     &  nactdof,iout,qa,b,nodeboun,ndirboun,
      &  xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
      &  veold,dtime,mi,vini,nprint,prlab,
      &  intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,iener,
@@ -39,12 +39,12 @@
       integer mi(*),nactdof(0:mi(2),*),nodeboun(*),ndirboun(*),
      &  ipompc(*),nodempc(3,*),mt,nk,ithermal(2),i,j,
      &  iener,iperturb(*),iout,nboun,nmpc,nmethod,ist,ndir,node,index,
-     &  neq,incrementalmpc,nprint,ikin,calcul_fn,nforc,
+     &  neq,nprint,ikin,calcul_fn,nforc,
      &  calcul_f,calcul_cauchy,calcul_qa,intpointvarm,intpointvart,
      &  irefnode,irotnode,iexpnode,irefnodeprev
 !
       real*8 v(0:mi(2),*),vini(0:mi(2),*),f(*),fn(0:mi(2),*),
-     &  cam(5),vold(0:mi(2),*),b(*),xboun(*),coefmpc(*),
+     &  cam(5),b(*),xboun(*),coefmpc(*),
      &  veold(0:mi(2),*),xforc(*),
      &  qa(3),dtime,bnac,
      &  fixed_disp
@@ -204,39 +204,17 @@
          do i=1,nboun
             if(ndirboun(i).gt.mi(2)) cycle
             fixed_disp=xboun(i)
-            if((nmethod.eq.4).and.(iperturb(1).gt.1)) then
-               ndir=ndirboun(i)
-               node=nodeboun(i)
-               veold(ndir,node)=(xboun(i)-v(ndir,node))/dtime
-            endif
+c            if((nmethod.eq.4).and.(iperturb(1).gt.1)) then
+c               ndir=ndirboun(i)
+c               node=nodeboun(i)
+c               veold(ndir,node)=(xboun(i)-v(ndir,node))/dtime
+c            endif
             v(ndirboun(i),nodeboun(i))=fixed_disp
          enddo
 !     
 !     inserting the mpc information
-!     the parameter incrementalmpc indicates whether the
-!     incremental displacements enter the mpc or the total 
-!     displacements (incrementalmpc=0)
-!     
-c     
-c     to be checked: should replace the lines underneath do i=1,nmpc
-c     
-c     incrementalmpc=iperturb(2)
 !
          do i=1,nmpc
-            if((labmpc(i)(1:20).eq.'                    ').or.
-     &           (labmpc(i)(1:7).eq.'CONTACT').or.
-     &           (labmpc(i)(1:6).eq.'CYCLIC').or.
-     &           (labmpc(i)(1:9).eq.'SUBCYCLIC')) then
-               incrementalmpc=0
-            else
-               if((nmethod.eq.2).or.(nmethod.eq.3).or.
-     &              ((iperturb(1).eq.0).and.(abs(nmethod).eq.1)))
-     &              then
-                  incrementalmpc=0
-               else
-                  incrementalmpc=1
-               endif
-            endif
             ist=ipompc(i)
             node=nodempc(1,ist)
             ndir=nodempc(2,ist)
@@ -251,25 +229,13 @@ c     incrementalmpc=iperturb(2)
             fixed_disp=0.d0
             if(index.ne.0) then
                do
-                  if(incrementalmpc.eq.0) then
-                     fixed_disp=fixed_disp-coefmpc(index)*
-     &                    v(nodempc(2,index),nodempc(1,index))
-                  else
-                     fixed_disp=fixed_disp-coefmpc(index)*
-     &                    (v(nodempc(2,index),nodempc(1,index))-
-     &                    vold(nodempc(2,index),nodempc(1,index)))
-                  endif
+                  fixed_disp=fixed_disp-coefmpc(index)*
+     &                 v(nodempc(2,index),nodempc(1,index))
                   index=nodempc(3,index)
                   if(index.eq.0) exit
                enddo
             endif
             fixed_disp=fixed_disp/coefmpc(ist)
-            if(incrementalmpc.eq.1) then
-               fixed_disp=fixed_disp+vold(ndir,node)
-            endif
-            if((nmethod.eq.4).and.(iperturb(1).gt.1)) then
-               veold(ndir,node)=(fixed_disp-v(ndir,node))/dtime
-            endif
             v(ndir,node)=fixed_disp
          enddo
       endif

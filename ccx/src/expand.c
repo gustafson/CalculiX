@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-Dimensional finite element program                   */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -62,7 +62,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	     char* tieset,ITG* ntie,ITG *imddof,ITG *nmddof,
 	     ITG *imdnode,ITG *nmdnode,ITG *imdboun,ITG *nmdboun,
   	     ITG *imdmpc,ITG *nmdmpc, ITG **izdofp, ITG *nzdof,ITG *nherm,
-	     double *xmr,double *xmi){
+	     double *xmr,double *xmi,char *typeboun,ITG *ielprop,double *prop){
 
   /* calls the Arnoldi Package (ARPACK) for cyclic symmetry calculations */
   
@@ -73,12 +73,10 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
         lprev,ilength,ij,i1,i2,iel,ielset,node,indexe,nope,ml1,nelem,
         *inocs=NULL,*ielcs=NULL,jj,l1,l2,is,nlabel,*nshcon=NULL,
         nodeleft,*noderight=NULL,numnodes,ileft,kflag=2,itr,locdir,
-        neqh,j1,nodenew,mass[2]={1,1},stiffness=1,buckling=0,mt=mi[1]+1,
-	rhsi=0,intscheme=0,coriolis=0,istep=1,iinc=1,iperturbmass[2],
-        *mast1e=NULL,*ipointere=NULL,*irowe=*irowep,*ipobody=NULL,*jqe=*jqep,
-	*icole=*icolep,tint=-1,tnstart=-1,tnend=-1,tint2=-1,
+        neqh,j1,nodenew,mt=mi[1]+1,istep=1,iinc=1,
+	tint=-1,tnstart=-1,tnend=-1,tint2=-1,
 	noderight_,*izdof=*izdofp,iload,iforc,*iznode=NULL,nznode,ll,ne0,
-	*integerglob=NULL,nasym=0,icfd=0,*inomat=NULL,mortar=0,*islavact=NULL,
+	icfd=0,*inomat=NULL,mortar=0,*islavact=NULL,
 	*islavnode=NULL,*nslavnode=NULL,*islavsurf=NULL;
 
     long long lint;
@@ -88,11 +86,10 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
         *stiini=NULL,*emn=NULL,*emeini=NULL,*clearini=NULL,
 	*xstateini=NULL,theta,pi,*coefmpcnew=NULL,t[3],ctl,stl,
 	*stx=NULL,*enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,
-	*qfx=NULL,*qfn=NULL,xreal,ximag,*vt=NULL,sum,*aux=NULL,
-        *coefright=NULL,*physcon=NULL,coef,a[9],ratio,reltime,*ade=NULL,
-        *aue=NULL,*adbe=*adbep,*aube=*aubep,*fext=NULL,*cgr=NULL,
+	*qfx=NULL,*qfn=NULL,xreal,ximag,*vt=NULL,sum,
+        *coefright=NULL,coef,a[9],ratio,reltime,
         *shcon=NULL,*springarea=NULL,*z=*zp, *zdof=NULL, *thicke=NULL,
-        *doubleglob=NULL,atrab[9],acs[9],diff,fin[3],fout[3],*sumi=NULL,
+        atrab[9],acs[9],diff,fin[3],fout[3],*sumi=NULL,
         *vti=NULL,*pslavsurf=NULL,*pmastsurf=NULL,*cdn=NULL;
     
     /* dummy arguments for the results call */
@@ -103,37 +100,37 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     neqh=neq[1]/2;
 
     noderight_=10;
-    noderight=NNEW(ITG,noderight_);
-    coefright=NNEW(double,noderight_);
+    NNEW(noderight,ITG,noderight_);
+    NNEW(coefright,double,noderight_);
 
-    v=NNEW(double,2*mt**nk);
-    vt=NNEW(double,mt**nk**nsectors);
+    NNEW(v,double,2*mt**nk);
+    NNEW(vt,double,mt**nk**nsectors);
     
-    fn=NNEW(double,2*mt**nk);
-    stn=NNEW(double,12**nk);
-    inum=NNEW(ITG,*nk);
-    stx=NNEW(double,6*mi[0]**ne);
+    NNEW(fn,double,2*mt**nk);
+    NNEW(stn,double,12**nk);
+    NNEW(inum,ITG,*nk);
+    NNEW(stx,double,6*mi[0]**ne);
     
     nlabel=46;
-    filabt=NNEW(char,87*nlabel);
+    NNEW(filabt,char,87*nlabel);
     for(i=1;i<87*nlabel;i++) filabt[i]=' ';
     filabt[0]='U';
     
-    temp_array=NNEW(double,neq[1]);
-    coefmpcnew=NNEW(double,*mpcend);
+    NNEW(temp_array,double,neq[1]);
+    NNEW(coefmpcnew,double,*mpcend);
     
     nkt=*nsectors**nk;
  
     /* assigning nodes and elements to sectors */
     
-    inocs=NNEW(ITG,*nk);
-    ielcs=NNEW(ITG,*ne);
+    NNEW(inocs,ITG,*nk);
+    NNEW(ielcs,ITG,*ne);
     ielset=cs[12];
     if((*mcs!=1)||(ielset!=0)){
 	for(i=0;i<*nk;i++) inocs[i]=-1;
 	for(i=0;i<*ne;i++) ielcs[i]=-1;
     }
-    csmass=NNEW(double,*mcs);
+    NNEW(csmass,double,*mcs);
     if(*mcs==1) csmass[0]=1.;
     
     for(i=0;i<*mcs;i++){
@@ -204,7 +201,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
        iznode contains the nodes in which output is requested and
        the nodes in which loading is applied */
 
-    iznode=NNEW(ITG,*nk);
+    NNEW(iznode,ITG,*nk);
     for(j=0;j<*nmdnode;j++){iznode[j]=imdnode[j];}
     nznode=*nmdnode;
 
@@ -235,7 +232,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
    2. all dofs in which loading was applied
  */	
 
-    izdof=NNEW(ITG,neqh**nsectors);
+    NNEW(izdof,ITG,neqh**nsectors);
     for(j=0;j<*nmddof;j++){izdof[j]=imddof[j];}
     *nzdof=*nmddof;
     
@@ -442,10 +439,10 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
        z after: real part for all segments for all eigenvalues */
 
     if(*nherm==1){
-	zdof=NNEW(double,(long long)*nev**nzdof);
+	NNEW(zdof,double,(long long)*nev**nzdof);
     }else{
-	zdof=NNEW(double,(long long)2**nev**nzdof);
-	sumi=NNEW(double,*nev);
+	NNEW(zdof,double,(long long)2**nev**nzdof);
+	NNEW(sumi,double,*nev);
     }
 
     lfin=0;
@@ -463,7 +460,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	/* generating the cyclic MPC's (needed for nodal diameters
 	   different from 0 */
 	
-	eei=NNEW(double,6*mi[0]**ne);
+	NNEW(eei,double,6*mi[0]**ne);
 
 	DMEMSET(v,0,2*mt**nk,0.);
 	
@@ -535,14 +532,14 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
               &ne0,xforc,nforc,thicke,shcon,nshcon,
               sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-              islavsurf);
+              islavsurf,ielprop,prop);
 	    
 	}
-	free(eei);
+	SFREE(eei);
 
 	/* mapping the results to the other sectors */
 
-	if(*nherm!=1)vti=NNEW(double,mt**nk**nsectors);
+	if(*nherm!=1)NNEW(vti,double,mt**nk**nsectors);
 	
 	icntrl=2;imag=1;
 	
@@ -631,7 +628,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    }	    
 	}
 
-	if(*nherm!=1) free(vti);
+	if(*nherm!=1) SFREE(vti);
 	
 /* normalizing the eigenvectors with the mass */
 
@@ -681,9 +678,9 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		xmi[i**nev+j]/=(sumi[i]*sumi[j]);
 	    }
 	}
-	free(sumi);
+	SFREE(sumi);
     }
-    free(zdof);
+    SFREE(zdof);
 
 /* copying the multiple point constraints */
 
@@ -872,9 +869,9 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
       }
       tint++;
       /* now append and expand the contact definitons*/
-      tchar1=NNEW(char,81);
-      tchar2=NNEW(char,81);
-      tchar3=NNEW(char,81);
+      NNEW(tchar1,char,81);
+      NNEW(tchar2,char,81);
+      NNEW(tchar3,char,81);
       for(i=0; i<*ntie; i++){
 	if(tieset[i*(81*3)+80]=='C'){
 	  memcpy(tchar2,&tieset[i*(81*3)+81],81);
@@ -927,9 +924,9 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	  }
 	}
       }
-      free(tchar1);
-      free(tchar2);
-      free(tchar3);
+      SFREE(tchar1);
+      SFREE(tchar2);
+      SFREE(tchar3);
     }    
     
     *nk=nkt;
@@ -937,90 +934,12 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     (*nkon)*=(*nsectors);
     (*nboun)*=(*nsectors);
     neq[1]=neqh**nsectors;
-      
-      /*create the new mass-matrix*/
-      /*create the matrix structure*/
-
-      /* next major section is not used: no mass matrix nor stiffness matrix
-         is calculated for cyclic symmetric structures; thus, the initial
-         conditions have to be zero and no nonzero boundary conditions are
-         allowed */
-
-//    if(*nmethod==4){
-    if(*nmethod==10){
-
-      nzse[0]=nzs[0];
-      nzse[1]=nzs[1];
-      nzse[2]=nzs[2];
-      
-      mast1e=NNEW(ITG,nzse[1]);
-      irowe=NNEW(ITG,nzse[1]);
-      icole=NNEW(ITG,4**nk);
-      jqe=NNEW(ITG,4**nk+1);
-      ipointere=NNEW(ITG,4**nk);
-      
-      mastruct(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,ipompc,
-	       nodempc,nmpc,nactdof,icole,jqe,&mast1e,&irowe,isolver,
-	       neq,ikmpc,ilmpc,ipointere,nzse,nmethod,ithermal,
-	       ikboun,ilboun,iperturb,mi,&mortar);
-      
-      free(mast1e);free(ipointere);
-
-      /* fill the matrix */
-      
-      /* stiffness matrix */
-
-      ade=NNEW(double,neq[1]);
-      aue=NNEW(double,nzse[2]);
-      
-      /* mass matrix */
-
-      adbe=NNEW(double,neq[1]);
-      aube=NNEW(double,nzse[1]);
-      
-      fext=NNEW(double,neq[1]);
-      
-      /* only the mass matrix must be calculated. Within mafillsm this
-         cannot be done without calculating the stiffness matrix at the
-         same time; to reduce computational cost the stiffness matrix
-         is calculated in a linear way, i.e. without large deformation
-         and stress stiffness; therefore, a new variable iperturbmass
-         is introduced */
-
-      iperturbmass[0]=iperturb[0];
-      iperturbmass[1]=0;
-
-      FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
-	      ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
-	      nforc,nelemload,sideload,xload,nload,xbody,ipobody,nbody,
-	      cgr,ade,aue,fext,nactdof,icole,jqe,irowe,neq,nzl,nmethod,
-	      ikmpc,ilmpc,ikboun,ilboun,
-	      elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
-	      ielorien,norien,orab,ntmat_,
-	      t0,t0,ithermal,prestr,iprestr,vold,iperturbmass,sti,
-	      nzse,stx,adbe,aube,iexpl,plicon,nplicon,plkcon,nplkcon,
-	      xstiff,npmat_,&dtime,matname,mi,
-	      ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
-	      physcon,shcon,nshcon,cocon,ncocon,ttime,&time,&istep,&iinc,
-	      &coriolis,ibody,xloadold,&reltime,veold,springarea,nstate_,
-              xstateini,xstate,thicke,integerglob,doubleglob,
-	      tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
-	      pmastsurf,&mortar,clearini));
-      
-      
-      free(fext);
-      
-      free(ade);free(aue);
-      
-      *adbep=adbe;*aubep=aube;*irowep=irowe;*icolep=icole;*jqep=jqe;
-      
-    }
 
     *zp=z;*izdofp=izdof;
     
-    free(temp_array);free(coefmpcnew);free(noderight);free(coefright);
-    free(v);free(vt);free(fn);free(stn);free(inum);free(stx);
-    free(inocs);free(ielcs);free(filabt);free(iznode);free(csmass);
+    SFREE(temp_array);SFREE(coefmpcnew);SFREE(noderight);SFREE(coefright);
+    SFREE(v);SFREE(vt);SFREE(fn);SFREE(stn);SFREE(inum);SFREE(stx);
+    SFREE(inocs);SFREE(ielcs);SFREE(filabt);SFREE(iznode);SFREE(csmass);
 
     return;
 }

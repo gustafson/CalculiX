@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,7 +37,7 @@ c      call flush(8)
 !     call flush(8,iostat)
 !     if(iostat.lt.0) then
 !        write(*,*) '*ERROR in writesummary: cannot flush buffer'
-!        stop
+!        call exit(201)
 !     endif
 !
  100  format(1x,i5,1x,i10,2(1x,i5),3(1x,e13.6))

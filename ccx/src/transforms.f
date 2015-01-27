@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,13 +37,13 @@
       if(istep.gt.0) then
          write(*,*) '*ERROR reading *TRANSFORM: *TRANSFORM should be'
          write(*,*) '  placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       ntrans=ntrans+1
       if(ntrans.gt.ntrans_) then
          write(*,*) '*ERROR reading *TRANSFORM: increase ntrans_'
-         stop
+         call exit(201)
       endif
 !
       ipos=1
@@ -81,7 +81,7 @@
          write(*,*) '  transformation is not complete'
          call inputerror(inpc,ipoinpc,iline,
      &"*TRANSFORM%")
-         stop
+         call exit(201)
       endif
 !
       do i=1,6
@@ -97,7 +97,7 @@
          noset(ipos:ipos)=' '
          write(*,*) '*ERROR reading *TRANSFORM: node set ',noset
          write(*,*) '  has not yet been defined.'
-         stop
+         call exit(201)
       endif
       do j=istartset(i),iendset(i)
          if(ialset(j).gt.0) then

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
 !
       implicit none
 !
-      logical cload_flag,add,user
+      logical cload_flag,add,user,submodel
 !
       character*1 inpc(*)
       character*80 amplitude,amname(*)
@@ -39,7 +39,8 @@
      &  iamforc(*),nam,iamplitude,ntrans,inotr(2,*),ipos,ikforc(*),
      &  ilforc(*),nk,iline,ipol,inl,ipoinp(2,*),inp(3,*),nam_,namtot,
      &  namtot_,namta(3,*),idelay,lc,nmethod,ndirforc(*),isector,
-     &  iperturb,iaxial,ipoinpc(0:*),maxsectors,jsector,idefforc(*)
+     &  iperturb,iaxial,ipoinpc(0:*),maxsectors,jsector,idefforc(*),
+     &  iglobstep
 !
       real*8 xforc(*),forcval,co(3,*),trab(7,*),amta(2,*)
 !
@@ -49,11 +50,13 @@
       isector=0
       user=.false.
       add=.false.
+      iglobstep=0
+      submodel=.false.
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR in cloads: *CLOAD should only be used'
          write(*,*) '  within a STEP'
-         stop
+         call exit(201)
       endif
 !
       do i=2,n
@@ -74,7 +77,7 @@
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
      &"*CLOAD%")
-               stop
+               call exit(201)
             endif
             iamplitude=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
@@ -84,21 +87,21 @@
                write(*,*) '       '
                call inputerror(inpc,ipoinpc,iline,
      &"*CLOAD%")
-               stop
+               call exit(201)
             else
                idelay=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
                write(*,*) '*ERROR in cloads: increase nam_'
-               stop
+               call exit(201)
             endif
             amname(nam)='
      &                                 '
             if(iamplitude.eq.0) then
                write(*,*) '*ERROR in cloads: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
-               stop
+               call exit(201)
             endif
             namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
@@ -110,7 +113,7 @@
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR cloads: increase namtot_'
-               stop
+               call exit(201)
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
@@ -126,7 +129,7 @@
                write(*,*) '*ERROR in cloads: the parameter LOAD CASE'
                write(*,*) '       is only allowed in STEADY STATE'
                write(*,*) '       DYNAMICS calculations'
-               stop
+               call exit(201)
             endif
          elseif(textpart(i)(1:7).eq.'SECTOR=') then
             read(textpart(i)(8:17),'(i10)',iostat=istat) isector
@@ -136,16 +139,22 @@
                write(*,*) '*ERROR in cloads: the parameter SECTOR'
                write(*,*) '       is only allowed in MODAL DYNAMICS or'
                write(*,*) '       STEADY STATE DYNAMICS calculations'
-               stop
+               call exit(201)
             endif
             if(isector.gt.maxsectors) then
                write(*,*) '*ERROR in cloads: sector ',isector
                write(*,*) '       exceeds number of sectors'
-               stop
+               call exit(201)
             endif
             isector=isector-1
          elseif(textpart(i)(1:4).eq.'USER') then
             user=.true.
+         elseif(textpart(i)(1:8).eq.'SUBMODEL') then
+            submodel=.true.
+         elseif(textpart(i)(1:5).eq.'STEP=') then
+            read(textpart(i)(6:15),'(i10)',iostat=istat) iglobstep
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*CLOAD%")
          else
             write(*,*) 
      &        '*WARNING in cloads: parameter not recognized:'
@@ -155,6 +164,19 @@
      &"*CLOAD%")
          endif
       enddo
+!
+!     check whether global step was specified for submodel
+!
+      if((submodel).and.(iglobstep.eq.0)) then
+         write(*,*) '*ERROR reading *CLOAD: no global step'
+         write(*,*) '       step specified for the submodel'
+         call inputerror(inpc,ipoinpc,iline,
+     &"*CLOAD%")
+      endif
+!
+!     storing the step for submodels in iamboun
+!
+      if(submodel) iamplitude=iglobstep
 !
       if(user.and.(iamplitude.ne.0)) then
          write(*,*) '*WARNING: no amplitude definition is allowed'
@@ -176,7 +198,7 @@
             write(*,*) '       '
             call inputerror(inpc,ipoinpc,iline,
      &"*CLOAD%")
-            stop
+            call exit(201)
          endif
          if(iforcdir.gt.3) iforcdir=iforcdir+1
 !
@@ -186,37 +208,37 @@
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) forcval
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*CLOAD%")
-            if(iaxial.ne.0) forcval=forcval/iaxial
+            if(iaxial.eq.180) forcval=forcval/iaxial
          endif
 !
 !        dummy flux consisting of the first primes
 !
          if(user) forcval=1.2357111317d0
+         if(submodel) forcval=1.9232931374d0
 !
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
          if(istat.eq.0) then
             if(l.gt.nk) then
                write(*,*) '*ERROR in cloads: node ',l
                write(*,*) '       is not defined'
-               stop
+               call exit(201)
+            endif
+            if(submodel) then
+               if(ntrans.gt.0) then
+                  if(inotr(1,l).gt.0) then
+                     write(*,*) '*ERROR reading *CLOAD: in submodel'
+                     write(*,*) '       node',l,' a local coordinate'
+                     write(*,*) '       system was defined. This is not'
+                     write(*,*) '       allowed'
+                     call exit(201)
+                  endif
+               endif
             endif
             if(lc.ne.1) then
                jsector=isector+maxsectors
             else
                jsector=isector
             endif
-c            if(isector.ne.0) then
-c               if(ntrans.ne.0) then
-c                  if(inotr(1,l).ne.0) then
-c                     write(*,*) '*ERROR in cloads: in node ',l
-c                     write(*,*) '       a force is applied in a local'
-c                     write(*,*) '       coordinate system in a sector'
-c                     write(*,*) '       different from the basis sector'
-c                     write(*,*) '       this is not allowed'
-c                     stop
-c                  endif
-c               endif
-c            endif
             call forcadd(l,iforcdir,forcval,nodeforc,ndirforc,xforc,
      &        nforc,nforc_,iamforc,iamplitude,nam,ntrans,trab,inotr,co,
      &        ikforc,ilforc,jsector,add,user,idefforc)
@@ -234,31 +256,30 @@ c            endif
                write(*,*) '  has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline,
      &"*CLOAD%")
-               stop
+               call exit(201)
             endif
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then
                   k=ialset(j)
+                  if(submodel) then
+                     if(ntrans.gt.0) then
+                        if(inotr(1,k).gt.0) then
+                           write(*,*) 
+     &                       '*ERROR reading *CLOAD: in submodel'
+                           write(*,*) '       node',k,
+     &                       ' a local coordinate'
+                           write(*,*) 
+     &                       '       system was defined. This is not'
+                           write(*,*) '       allowed'
+                           call exit(201)
+                        endif
+                     endif
+                  endif
                   if(lc.ne.1) then
                      jsector=isector+maxsectors
                   else
                      jsector=isector
                   endif
-c                  if(isector.ne.0) then
-c                     if(ntrans.ne.0) then
-c                        if(inotr(1,k).ne.0) then
-c                           write(*,*) '*ERROR in cloads: in node ',k
-c                           write(*,*) 
-c     &                      '       a force is applied in a local'
-c                           write(*,*) 
-c     &                      '       coordinate system in a sector'
-c                           write(*,*)
-c     &                      '       different from the basis sector'
-c                           write(*,*) '       this is not allowed'
-c                           stop
-c                        endif
-c                     endif
-c                  endif
                   call forcadd(k,iforcdir,forcval,
      &               nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &               iamplitude,nam,ntrans,trab,inotr,co,ikforc,ilforc,
@@ -268,26 +289,25 @@ c                  endif
                   do
                      k=k-ialset(j)
                      if(k.ge.ialset(j-1)) exit
+                     if(submodel) then
+                        if(ntrans.gt.0) then
+                           if(inotr(1,k).gt.0) then
+                              write(*,*) 
+     &                          '*ERROR reading *CLOAD: in submodel'
+                              write(*,*) '       node',k,
+     &                          ' a local coordinate'
+                              write(*,*) 
+     &                          '       system was defined. This is not'
+                              write(*,*) '       allowed'
+                              call exit(201)
+                           endif
+                        endif
+                     endif
                      if(lc.ne.1) then
                         jsector=isector+maxsectors
                      else
                         jsector=isector
                      endif
-c                     if(isector.ne.0) then
-c                        if(ntrans.ne.0) then
-c                           if(inotr(1,k).ne.0) then
-c                              write(*,*) '*ERROR in cloads: in node ',k
-c                              write(*,*) 
-c     &                         '       a force is applied in a local'
-c                              write(*,*) 
-c     &                         '       coordinate system in a sector'
-c                              write(*,*) 
-c     &                         '       different from the basis sector'
-c                              write(*,*) '       this is not allowed'
-c                              stop
-c                           endif
-c                        endif
-c                     endif
                      call forcadd(k,iforcdir,forcval,
      &                 nodeforc,ndirforc,xforc,nforc,nforc_,
      &                 iamforc,iamplitude,nam,ntrans,trab,inotr,co,

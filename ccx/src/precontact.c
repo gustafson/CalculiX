@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                     */
+/*              Copyright (C) 1998-2015 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -53,9 +53,6 @@ void precontact(ITG *ncont, ITG *ntie, char *tieset, ITG *nset, char *set,
 			   ntie,tieset,nset,set,istartset,
 			   iendset,ialset,ipkon,lakon,kon,cs,mcs,ics));
     
-/*      FORTRAN(updatecont,(koncont,ncont,co,vold,
-	cg,straight,mi));*/	
-    
     /* determining the size of the auxiliary fields 
        (needed for the master triangle search for any
 	   given location on the slave faces */	
@@ -68,19 +65,18 @@ void precontact(ITG *ncont, ITG *ntie, char *tieset, ITG *nset, char *set,
     
     /* only at the start of a new step */
     
-//    if ((*iinc==1)&&(*iit<=0)){	    
     if ((*istep==1)&&(*iinc==1)&&(*iit<=0)){	    
-	xo=NNEW(double,ntrimax);	    
-	yo=NNEW(double,ntrimax);	    
-	zo=NNEW(double,ntrimax);	    
-	x=NNEW(double,ntrimax);	    
-	y=NNEW(double,ntrimax);	    
-	z=NNEW(double,ntrimax);	   
-	nx=NNEW(ITG,ntrimax);	   
-	ny=NNEW(ITG,ntrimax);	    
-	nz=NNEW(ITG,ntrimax);
+	NNEW(xo,double,ntrimax);	    
+	NNEW(yo,double,ntrimax);	    
+	NNEW(zo,double,ntrimax);	    
+	NNEW(x,double,ntrimax);	    
+	NNEW(y,double,ntrimax);	    
+	NNEW(z,double,ntrimax);	   
+	NNEW(nx,ITG,ntrimax);	   
+	NNEW(ny,ITG,ntrimax);	    
+	NNEW(nz,ITG,ntrimax);
 
-	clearslavnode=NNEW(double,3**nslavs);
+	NNEW(clearslavnode,double,3**nslavs);
 	    
 	FORTRAN(adjustcontactnodes,(tieset,ntie,itietri,cg,straight,
 		co,vold,xo,yo,zo,x,y,z,nx,ny,nz,istep,iinc,iit,
@@ -88,20 +84,20 @@ void precontact(ITG *ncont, ITG *ntie, char *tieset, ITG *nset, char *set,
 		iendset,ialset,tietol,clearini,clearslavnode,itiefac,
                 ipkon,kon,lakon,islavsurf));
 	    
-	free(clearslavnode);
-	free(xo);free(yo);free(zo);free(x);free(y);free(z);free(nx);	    
-	free(ny);free(nz);	    
+	SFREE(clearslavnode);
+	SFREE(xo);SFREE(yo);SFREE(zo);SFREE(x);SFREE(y);SFREE(z);SFREE(nx);	    
+	SFREE(ny);SFREE(nz);	    
     }
     
-    xo=NNEW(double,ntrimax);	
-    yo=NNEW(double,ntrimax);	
-    zo=NNEW(double,ntrimax);	
-    x=NNEW(double,ntrimax);	
-    y=NNEW(double,ntrimax);	
-    z=NNEW(double,ntrimax);	
-    nx=NNEW(ITG,ntrimax);	
-    ny=NNEW(ITG,ntrimax);	
-    nz=NNEW(ITG,ntrimax);
+    NNEW(xo,double,ntrimax);	
+    NNEW(yo,double,ntrimax);	
+    NNEW(zo,double,ntrimax);	
+    NNEW(x,double,ntrimax);	
+    NNEW(y,double,ntrimax);	
+    NNEW(z,double,ntrimax);	
+    NNEW(nx,ITG,ntrimax);	
+    NNEW(ny,ITG,ntrimax);	
+    NNEW(nz,ITG,ntrimax);
     
     /* Calculating the location of the matched slave/master
        integration points */
@@ -151,8 +147,8 @@ void precontact(ITG *ncont, ITG *ntie, char *tieset, ITG *nset, char *set,
 	    }	    
 	}	
     }
-    free(xo);free(yo);free(zo);free(x);free(y);free(z);free(nx);	    
-    free(ny);free(nz);
+    SFREE(xo);SFREE(yo);SFREE(zo);SFREE(x);SFREE(y);SFREE(z);SFREE(nx);	    
+    SFREE(ny);SFREE(nz);
     
     *pslavsurfp=pslavsurf;
     

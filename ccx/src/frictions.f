@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,19 +37,20 @@
          write(*,*) '*ERROR reading *FRICTION:'
          write(*,*) '       *FRICTION should be placed'
          write(*,*) '       before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       if(imat.eq.0) then
          write(*,*) '*ERROR reading *FRICTION:'
          write(*,*) '       *FRICTION should be preceded'
          write(*,*) '       by a *SURFACE INTERACTION card'
-         stop
+         call exit(201)
       endif
 !
       nstate_=max(nstate_,9)
 !
-      if(nelcon(1,imat).gt.0) nelcon(1,imat)=7
+c      if(nelcon(1,imat).gt.0) nelcon(1,imat)=max(nelcon(1,imat),7)
+      nelcon(1,imat)=max(nelcon(1,imat),8)
       nelcon(2,imat)=1
 !
 !     no temperature dependence allowed; last line is decisive
@@ -58,7 +59,7 @@
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
          if((istat.lt.0).or.(key.eq.1)) return
-         do i=1,2
+         do i=1,3
             read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &           elcon(5+i,1,imat)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
@@ -69,14 +70,14 @@
             write(*,*) '       must be strictly positive'
             call inputerror(inpc,ipoinpc,iline,
      &"*FRICTION%")
-            stop
+            call exit(201)
          endif
          if((elcon(7,1,imat).le.0.d0).and.(mortar.eq.0)) then
             write(*,*) '*ERROR reading *FRICTION: stick slope'
             write(*,*) '       must be strictly positive'
             call inputerror(inpc,ipoinpc,iline,
      &"*FRICTION%")
-            stop
+            call exit(201)
          endif
          elcon(0,1,imat)=0.d0
       enddo

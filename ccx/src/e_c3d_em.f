@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -46,7 +46,7 @@
      &  ielmat(mi(3),*),ntmat_,nope,nopes,imat,mint2d,mint3d,
      &  ifacet(7,4),nopev,ifacew(8,5),ipointeri,ipointerj,iflag,
      &  nelcon(2,*),ncmat_,nalcon(2,*),iel,ii1,ilength,istart,iset,
-     &  isurf,jj1,istartset(*),iendset(*),ialset(*)
+     &  isurf,jj1,istartset(*),iendset(*),ialset(*),three,nfaces
 !
       real*8 co(3,*),xl(3,26),shp(4,26),s(100,100),ff(100),xs2(3,7),
      &  t1(*),h0(3,*),xl2(3,9),xsj2(3),shp2(7,9),vold(0:mi(2),*),
@@ -75,6 +75,7 @@
       data d /1.d0,0.d0,0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,1.d0/
 !
       one=1
+      three=3
       iflag=3
 !
       imat=ielmat(1,nelem)
@@ -249,7 +250,7 @@
                enddo
             enddo
          elseif(lakonl(4:6).eq.'20 ')then
-            call linvec(h0,konl,nope,kk,h0l)
+            call linvec(h0,konl,nope,kk,h0l,one,three)
          else
             do i1=1,nope
                do j=1,3
@@ -305,6 +306,9 @@
 !
                if((int(elconloc(2)).eq.2).or.(int(elconloc(2)).eq.3))
      &             then
+!
+!                 K_AA matrix
+!
                   diag=shp(1,ii)*shp(1,jj)+shp(2,ii)*shp(2,jj)+
      &                 shp(3,ii)*shp(3,jj)
                   do k=1,3
@@ -315,21 +319,36 @@
                      enddo
                   enddo
 !
-                  if((int(elconloc(2)).eq.2).and.mass) then
+!                 M_AA matrix
+!
+                  if(mass) then
                      do k=1,3
                         sm(ii1+k,jj1+k)=sm(ii1+k,jj1+k)+
      &                       sigma*shp(4,ii)*shp(4,jj)
+                     enddo
+                  endif
+                  if((int(elconloc(2)).eq.2).and.mass) then
+!
+!                    M_AV and M_VA matrix
+!
+                     do k=1,3
                         sm(ii1+k,jj1+4)=sm(ii1+k,jj1+4)+
      &                       sigma*shp(4,ii)*shp(k,jj)
                         sm(ii1+4,jj1+k)=sm(ii1+4,jj1+k)+
      &                       sigma*shp(k,ii)*shp(4,jj)
                      enddo
+!
+!                    M_VV matrix
+!
                      sm(ii1+4,jj1+4)=sm(ii1+4,jj1+4)+
      &                    sigma*(shp(1,ii)*shp(1,jj)+
      &                    shp(2,ii)*shp(2,jj)+
      &                    shp(3,ii)*shp(3,jj))
                   endif
                else if(int(elconloc(2)).eq.1) then
+!
+!                 K_phiphi matrix
+!
                   s(ii1+5,jj1+5)=s(ii1+5,jj1+5)-
      &                     um*(shp(1,ii)*shp(1,jj)+
      &                    shp(2,ii)*shp(2,jj)+
@@ -339,6 +358,8 @@
                ii1=ii1+5
             enddo
 !          
+!           F_phi matrix
+!
             if((rhsi).and.(int(elconloc(2)).eq.1)) then
                ff(jj1+5)=ff(jj1+5)-um*(shp(1,jj)*h0l(1)+
      &                                 shp(2,jj)*h0l(2)+
@@ -351,13 +372,23 @@
 !
 !     surface integrals
 !                  
-      do m=1,3
-         if(iactive(m).eq.0) cycle
+!     determining the number of faces per element
+!
+      if((lakonl(4:4).eq.'8').or.(lakonl(4:4).eq.'2')) then
+         nfaces=6
+      elseif((lakonl(4:4).eq.'6').or.(lakonl(4:5).eq.'15')) then
+         nfaces=5
+      elseif((lakonl(4:4).eq.'4').or.(lakonl(4:5).eq.'10')) then
+         nfaces=4
+      endif
+!     
+      m=int(elconloc(2))
+      if(iactive(m).eq.0) return
          iset=iactive(m)
          istart=istartset(iset)
          ilength=iendset(iset)-istart+1
 !     
-         isurf=10*nelem+1
+         isurf=10*nelem+nfaces
          call nident(ialset(istart),isurf,ilength,id)
 !     
          do
@@ -465,6 +496,8 @@
                         ipointer=5*(ifacew(k,ig)-1)
                      endif
 !     
+!                    F_A vector
+!
                      ff(ipointer+1)=ff(ipointer+1)+
      &                  shp2(4,k)*(h0l(2)*xsj2(3)-h0l(3)*xsj2(2))*weight
                      ff(ipointer+2)=ff(ipointer+2)+
@@ -493,48 +526,49 @@
                      endif
 !     
                      if(m.gt.1) then
-                        ipointerj=ipointerj+4
-!     
-                        if((ipointeri+1).gt.ipointerj) cycle
-                        s(ipointeri+1,ipointerj)=
-     &                       s(ipointeri+1,ipointerj)
+!
+!                       K_Aphi matrix
+!
+                        if((ipointeri+1).gt.ipointerj+5) cycle
+                        s(ipointeri+1,ipointerj+5)=
+     &                       s(ipointeri+1,ipointerj+5)
      &                       +shp2(4,jj)*(shp2(3,ii)*xsj2(2)
      &                                   -shp2(2,ii)*xsj2(3))
      &                       *weight
 !     
-                        if((ipointeri+2).gt.ipointerj) cycle
-                        s(ipointeri+2,ipointerj)=
-     &                       s(ipointeri+2,ipointerj)
+                        if((ipointeri+2).gt.ipointerj+5) cycle
+                        s(ipointeri+2,ipointerj+5)=
+     &                       s(ipointeri+2,ipointerj+5)
      &                       +shp2(4,jj)*(shp2(1,ii)*xsj2(3)
      &                                   -shp2(3,ii)*xsj2(1))
      &                       *weight
 !     
-                        if((ipointeri+3).gt.ipointerj) cycle
-                        s(ipointeri+3,ipointerj)=
-     &                       s(ipointeri+3,ipointerj)
+                        if((ipointeri+3).gt.ipointerj+5) cycle
+                        s(ipointeri+3,ipointerj+5)=
+     &                       s(ipointeri+3,ipointerj+5)
      &                       +shp2(4,jj)*(shp2(2,ii)*xsj2(1)
      &                                   -shp2(1,ii)*xsj2(2))
      &                       *weight
-                     else if(m.eq.1) then
-                        ipointerj=ipointerj+4
-!     
-                        if(ipointeri.gt.(ipointerj+1)) cycle
-                        s(ipointeri,ipointerj+1)=
-     &                       s(ipointeri,ipointerj+1)
+!
+!                       K_phiA matrix
+!
+                        if(ipointeri+5.gt.(ipointerj+1)) cycle
+                        s(ipointeri+5,ipointerj+1)=
+     &                       s(ipointeri+5,ipointerj+1)
      &                       +shp2(4,ii)*(shp2(3,jj)*xsj2(2)
      &                                   -shp2(2,jj)*xsj2(3))
      &                       *weight
 !     
-                        if(ipointeri.gt.(ipointerj+2)) cycle
-                        s(ipointeri,ipointerj+2)=
-     &                       s(ipointeri,ipointerj+2)
+                        if(ipointeri+5.gt.(ipointerj+2)) cycle
+                        s(ipointeri+5,ipointerj+2)=
+     &                       s(ipointeri+5,ipointerj+2)
      &                       +shp2(4,ii)*(shp2(1,jj)*xsj2(3)
      &                                   -shp2(3,jj)*xsj2(1))
      &                       *weight
 !     
-                        if(ipointeri.gt.(ipointerj+3)) cycle
-                        s(ipointeri,ipointerj+3)=
-     &                       s(ipointeri,ipointerj+3)
+                        if(ipointeri+5.gt.(ipointerj+3)) cycle
+                        s(ipointeri+5,ipointerj+3)=
+     &                       s(ipointeri+5,ipointerj+3)
      &                       +shp2(4,ii)*(shp2(2,jj)*xsj2(1)
      &                                   -shp2(1,jj)*xsj2(2))
      &                       *weight
@@ -544,9 +578,8 @@
 !     
             enddo
 !     
-            id=id+1
+            id=id-1
          enddo
-      enddo
 !     
       return
       end

@@ -63,45 +63,44 @@ void inicont(ITG * nk,ITG *ncont, ITG *ntie, char *tieset, ITG *nset, char *set,
           istep));
   if(*ncont==0) return;
 
-  itietri=NNEW(ITG,2**ntie);
-  koncont=NNEW(ITG,4**ncont);
+  NNEW(itietri,ITG,2**ntie);
+  NNEW(koncont,ITG,4**ncont);
   
   /* triangulation of the master side */
   
   FORTRAN(triangucont,(ncont,ntie,tieset,nset,set,istartset,iendset,
 	  ialset,itietri,lakon,ipkon,kon,koncont,kind1,kind2,co,nk));
 
-  ipe=NNEW(ITG,*nk);
-  ime=NNEW(ITG,12**ncont);
+  NNEW(ipe,ITG,*nk);
+  NNEW(ime,ITG,12**ncont);
   DMEMSET(ipe,0,*nk,0.);
   DMEMSET(ime,0,12**ncont,0.);
-  imastop=NNEW(ITG,3**ncont);
+  NNEW(imastop,ITG,3**ncont);
 
   FORTRAN(trianeighbor,(ipe,ime,imastop,ncont,koncont,
 		        &ifreeme));
 
-  if(*mortar==0){free(ipe);free(ime);}
+  if(*mortar==0){SFREE(ipe);SFREE(ime);}
   else{RENEW(ime,ITG,4*ifreeme);}
 
   /* catalogueing the external faces (only for node-to-face
      contact with a nodal slave surface */
 
-  ipoface=NNEW(ITG,*nk);
-  nodface=NNEW(ITG,5*6**ne);
+  NNEW(ipoface,ITG,*nk);
+  NNEW(nodface,ITG,5*6**ne);
   FORTRAN(findsurface,(ipoface,nodface,ne,ipkon,kon,lakon,ntie,
 		 tieset));
     
-  itiefac=NNEW(ITG,2**ntie);
-//  islavsurf=NNEW(ITG,2*6**ne);
-  RENEW(islavsurf,ITG,2*6**ne);DMEMSET(islavsurf,0,12**ne,0.);
-  islavnode=NNEW(ITG,8*ncone);
-  nslavnode=NNEW(ITG,*ntie+1);
-  iponoels=NNEW(ITG,*nk);
-  inoels=NNEW(ITG,2**nkon);
-  xnoels=NNEW(double,*nkon);
+  NNEW(itiefac,ITG,2**ntie);
+  RENEW(islavsurf,ITG,2*6**ne);DMEMSET(islavsurf,0,12**ne,0);
+  NNEW(islavnode,ITG,8*ncone);
+  NNEW(nslavnode,ITG,*ntie+1);
+  NNEW(iponoels,ITG,*nk);
+  NNEW(inoels,ITG,2**nkon);
+  NNEW(xnoels,double,*nkon);
   
-  imastnode=NNEW(ITG,3**ncont);
-  nmastnode=NNEW(ITG,*ntie+1);
+  NNEW(imastnode,ITG,3**ncont);
+  NNEW(nmastnode,ITG,*ntie+1);
   
   /* catalogueing the slave faces and slave nodes 
      catalogueing the master nodes (only for Mortar contact) */
@@ -116,7 +115,7 @@ void inicont(ITG * nk,ITG *ncont, ITG *ntie, char *tieset, ITG *nset, char *set,
   RENEW(islavnode,ITG,*nslavs);
   RENEW(inoels,ITG,2*ifreenoels);
   RENEW(xnoels,double,ifreenoels);
-  free(ipoface);free(nodface);
+  SFREE(ipoface);SFREE(nodface);
   
   RENEW(imastnode,ITG,nmasts);
 

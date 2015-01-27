@@ -145,7 +145,7 @@
          else
             write(*,*) '*ERROR in gencontelem: more than 1000'
             write(*,*) '       contact element files'
-            stop
+            call exit(201)
          endif
          open(27,file=cfile,status='unknown')
       endif
@@ -569,12 +569,12 @@ c     write(*,*) '**regular solution'
 !                 distance from surface along normal (= clearance)
 !
                   clear=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
-c                  if((istep.eq.1).and.(iit.le.0.d0)) then
-c                     if(clear.lt.0.d0) then
-c                        springarea(2,iloc)=clear/(1.d0-theta)
-c                     endif
-c                  endif
-c                  clear=clear-springarea(2,iloc)*(1.d0-reltime)
+                  if((istep.eq.1).and.(iit.le.0.d0)) then
+                     if(clear.lt.0.d0) then
+                        springarea(2,iloc)=clear/(1.d0-theta)
+                     endif
+                  endif
+                  clear=clear-springarea(2,iloc)*(1.d0-reltime)
 !
 !                 no contact element for positive gap unless tied contact 
 !     
@@ -600,6 +600,11 @@ c                  clear=clear-springarea(2,iloc)*(1.d0-reltime)
 !
                   if(ncmat_.ge.7) then
                      if(elcon(6,1,imat).gt.0) then
+                        nasym=1
+                     endif
+                  endif
+                  if(ncmat_.ge.8) then
+                     if(elcon(8,1,imat).gt.0) then
                         nasym=1
                      endif
                   endif

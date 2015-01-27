@@ -17,7 +17,7 @@
 !     
       subroutine wye(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider)
+     &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,iaxial)
 !
 !     A wye split element(zeta calculation according to Idel'chik)
 !     Written by Yavor Dobrev
@@ -53,7 +53,7 @@
      &ichan_num,
      &ider,
      &icase,
-     &i
+     &i,iaxial
 !
       real*8 
      &prop(*),
@@ -169,12 +169,12 @@
 !        Inlet conditions
          pt1=v(2,node1)
          Tt1=v(0,node1)+physcon(1)
-         xflow1=v(1,nodem1)
+         xflow1=v(1,nodem1)*iaxial
          A1 = prop(ielprop(nelem)+4)
 !
 !        Outlet conditions
          Tt2=v(0,node2)
-         xflow2=v(1,nodem)
+         xflow2=v(1,nodem)*iaxial
          pt2=v(2,node2)
 !
          if(nelem.eq.int(prop(index+2))) then
@@ -258,12 +258,12 @@
 !        Inlet conditions
          pt1=v(2,node1)
          Tt1=v(0,node1)+physcon(1)
-         xflow1=v(1,nodem1)
+         xflow1=v(1,nodem1)*iaxial
          A1 = prop(ielprop(nelem)+4)
 !
 !        Outlet conditions
          Tt2=v(0,node2)
-         xflow2=v(1,nodem)
+         xflow2=v(1,nodem)*iaxial
          pt2=v(2,node2)
 !
          if(nelem.eq.int(prop(index+2))) then
@@ -372,6 +372,9 @@
 !     
       endif
 !     
+      xflow=xflow/iaxial
+      df(3)=df(3)*iaxial
+      df(4)=df(4)*iaxial
+!     
       return
       end
-      

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,7 +37,7 @@
       if(istep.lt.1) then
          write(*,*) '*ERROR in buckles: *BUCKLE can only be used'
          write(*,*) '  within a STEP'
-         stop
+         call exit(201)
       endif
 !
 !     no heat transfer analysis
@@ -101,7 +101,7 @@
          write(*,*) '*ERROR in buckles: the default solver ',
      & solver
          write(*,*) '       cannot be used for buckling calculations '
-         stop
+         call exit(201)
       endif
 !
       nmethod=3
@@ -115,7 +115,7 @@
          write(*,*) '  '
          call inputerror(inpc,ipoinpc,iline,
      &"*BUCKLE%")
-         stop
+         call exit(201)
       endif
       read(textpart(1)(1:10),'(i10)',iostat=istat) nev
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
@@ -123,7 +123,7 @@
       if(nev.le.0) then
          write(*,*) '*ERROR in buckles: less than 1 eigenvalue re
      &quested'
-         stop
+         call exit(201)
       endif
       read(textpart(2)(1:20),'(f20.0)',iostat=istat) tol
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,

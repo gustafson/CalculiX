@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2014 Guido Dhondt
+!     Copyright (C) 1998-2015 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -145,7 +145,7 @@
          if(index.lt.0) then
             write(*,*) '*ERROR in radmatrix: element ',nelem
             write(*,*) '       is not defined'
-            stop
+            call exit(201)
          endif
          do k=1,nope
             konl(k)=kon(index+k)

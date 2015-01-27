@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -262,7 +262,7 @@
       if(mortar.eq.1) then
          read(15) (i4,i=1,2*ifacecount+2)
          read(15) (r8,i=1,3*nintpoint)
-         read(15) (r8,i=1,3*9*nslavs)
+         read(15) (r8,i=1,3*9*ifacecount)
       endif
 !
 !     control parameters

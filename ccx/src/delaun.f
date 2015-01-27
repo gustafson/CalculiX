@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -140,7 +140,7 @@
       if(numtri.ne.2*n+1) then
          write(6,'("o***error in subroutine delaun***")')
          write(6,'(" ***incorrect number of triangls formed***")')
-         stop
+         call exit(201)
       end if
       do 120 t=1,numtri
          if((v(1,t).gt.numpts).or.

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2014 Guido Dhondt
+!     Copyright (C) 1998-2015 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,9 +18,9 @@
 !     
       subroutine vortex(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,numf,set,mi)
+     &     nodef,idirf,df,cp,R,numf,set,mi,iaxial)
 !     
-!     orifice element
+!     vortex element
 !
 !     author: Yannick Muller
 !     
@@ -31,7 +31,7 @@
       character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,
+     &     ielprop(*),nodef(4),idirf(4),index,iflag,iaxial,
      &     inv,ipkon(*),kon(*),t_chang,nelemswirl,mi(*)
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,r,cp,
@@ -101,7 +101,7 @@
          p1=v(2,node1)
          p2=v(2,node2)
 !     
-         xflow=v(1,nodem)
+         xflow=v(1,nodem)*iaxial
 !
          if(xflow.gt.0.d0) then
             inv=1.d0
@@ -125,7 +125,7 @@
             p2=v(2,node1)
             T1=v(0,node2)
             T2=v(0,node1)
-            xflow=-v(1,nodem)
+            xflow=-v(1,nodem)*iaxial
 !            
             nodef(1)=node2
             nodef(2)=node2
@@ -211,7 +211,7 @@
               else
                 write(*,*) '*ERROR in vortex:'
                 write(*,*) ' element',nelemswirl
-                write(*,*) ' refered by element',nelem
+                write(*,*) ' referred by element',nelem
                 write(*,*) ' is not a swirl generating element'
                 cinput=0.d0
                endif
@@ -377,7 +377,7 @@
          p1=v(2,node1)
          p2=v(2,node2)
 !     
-         xflow=v(1,nodem)
+         xflow=v(1,nodem)*iaxial
 !
          if(xflow.gt.0.d0) then
             inv=1.d0
@@ -401,7 +401,7 @@
             p2=v(2,node1)
             T1=v(0,node2)
             T2=v(0,node1)
-            xflow=v(1,nodem)
+            xflow=v(1,nodem)*iaxial
 !            
             nodef(1)=node2
             nodef(2)=node2
@@ -489,7 +489,7 @@
               else
                 write(*,*) '*ERROR in vortex:'
                 write(*,*) ' element',nelemswirl
-                write(*,*) ' refered by element',nelem
+                write(*,*) ' referred by element',nelem
                 write(*,*) ' is not a swirl generating element'
                 cinput=0.d0
                endif
@@ -599,63 +599,40 @@
          xflow_oil=0.d0
 !
          write(1,*) ''
-         write(1,55) 'In line',int(nodem/1000),' from node',node1,
-     &' to node', node2,':   air massflow rate=',xflow,'kg/s',
-     &', oil massflow rate=',xflow_oil,'kg/s'
- 55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.5,A,A,F9.5,A)
-
+         write(1,55) 'In line ',int(nodem/1000),' from node ',node1,
+     &' to node ', node2,' :   air massflow rate = ',xflow,' kg/s',
+     &' , oil massflow rate = ',xflow_oil,' kg/s'
+!
          if(inv.eq.1) then
-            write(1,56)'       Inlet node ',node1,':     Tt1= ',T1,
-     &           'K, Ts1= ',T1,'K, Pt1= ',P1/1E5,
-     &           'Bar'
-            write(1,*)'             element V    ',set(numf)(1:20)
-            write(1,57)'             C1u= ',C1u,'m/s ,C2u= ',C2u,'m/s'
-            write(1,56)'       Outlet node ',node2,':    Tt2= ',T2,
-     &           'K, Ts2= ',T2,'K, Pt2= ',P2/1e5,
-     &           'Bar'
+            write(1,56)'       Inlet node ',node1,' :     Tt1 = ',T1,
+     &           ' K , Ts1 = ',T1,' K , Pt1 = ',P1/1E5,
+     &           ' Bar'
+            write(1,*)'             Element V    ',set(numf)(1:20)
+            write(1,57)'             C1u = ',C1u,
+     &' m/s , C2u = ',C2u,' m/s'
+            write(1,56)'       Outlet node ',node2,' :    Tt2 = ',T2,
+     &           ' K , Ts2 = ',T2,' K , Pt2 = ',P2/1e5,
+     &           ' Bar'
 !     
          else if(inv.eq.-1) then
-            write(1,56)'       Inlet node ',node2,':     Tt1= ',T1,
-     &           'K, Ts1= ',T1,'K, Pt1= ',P1/1E5,
-     &           'Bar'
+            write(1,56)'       Inlet node ',node2,':     Tt1 = ',T1,
+     &           ' K , Ts1 = ',T1,' K , Pt1 = ',P1/1E5,
+     &           ' Bar'
             write(1,*)'             element V    ',set(numf)(1:20)
-            write(1,57)'             C1u= ',C1u,'m/s ,C2u= ',C2u,'m/s'
-            write(1,56)'       Outlet node ',node1,'     Tt2= ',
-     &           T2,'K, Ts2= ',T2,'K, Pt2= ',P2/1e5,
-     &           'Bar'
+            write(1,57)'             C1u = ',C1u,
+     &' m/s , C2u = ',C2u,'m/s'
+            write(1,56)'       Outlet node ',node1,'     Tt2 = ',
+     &           T2,' K , Ts2 = ',T2,' K , Pt2 = ',P2/1e5,
+     &           ' Bar'
          endif
- 56      FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A,f9.5)  
- 57      FORMAT(1X,A,f6.2,A,f6.2,A)
       endif
-!      
+!
+ 55   format(1x,a,i6.3,a,i6.3,a,i6.3,a,f9.5,a,a,f9.5,a)
+ 56   format(1x,a,i6.3,a,f6.1,a,f6.1,a,f9.5,a,f9.5)  
+ 57   format(1x,a,f6.2,a,f6.2,a)
+!     
+      xflow=xflow/iaxial
+      df(3)=df(3)*iaxial
+!     
       return
       end
-      
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                  
-
-
-

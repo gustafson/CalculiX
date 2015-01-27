@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2014 Guido Dhondt
+!     Copyright (C) 1998-2015 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine gaspipe(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,mi)
+     &        nshcon,rhcon,nrhcon,ntmat_,mi,iaxial)
 !     
 !     pipe with friction losses 
 !
@@ -34,7 +34,7 @@
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(5),idirf(5),index,iflag,
      &     inv,ipkon(*),kon(*),icase,kgas,k_oil,nshcon(*),
-     &     nrhcon(*),ntmat_,mi(*)
+     &     nrhcon(*),ntmat_,mi(*),iaxial
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(5),kappa,R,a,d,l,
      &     p1,p2,T1,T2,Tt1,Tt2,pt1,pt2,cp,physcon(*),p2p1,km1,dvi,
@@ -193,11 +193,11 @@
 !
          pt1=v(2,node1)
          pt2=v(2,node2)
-         xflow=v(1,nodem) 
+         xflow=v(1,nodem)*iaxial 
 !
          if(xflow.ge.0d0) then
             inv=1
-            xflow=v(1,nodem)
+            xflow=v(1,nodem)*iaxial
             Tt1=v(0,node1)+physcon(1)
             Tt2=v(0,node2)+physcon(1)
 !
@@ -214,7 +214,7 @@
             inv=-1
             pt1=v(2,node2)
             pt2=v(2,node1)
-            xflow=-v(1,nodem)
+            xflow=-v(1,nodem)*iaxial
             Tt1=v(0,node2)+physcon(1)
             Tt2=v(0,node1)+physcon(1)
             call ts_calc(xflow,Tt1,Pt1,kappa,r,a,T1,icase)
@@ -246,7 +246,7 @@
                write(*,*) ' the type of oil is not defined'
                write(*,*) ' check element ',nelem,' definition'
                write(*,*) ' Current calculation stops here'
-               stop
+               call exit(201)
             else
                call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
@@ -415,7 +415,7 @@
 !     
          if(xflow.ge.0d0) then
             inv=1
-            xflow=v(1,nodem)
+            xflow=v(1,nodem)*iaxial
             Tt1=v(0,node1)+physcon(1)
             Tt2=v(0,node2)+physcon(1)
 !     
@@ -427,7 +427,7 @@
             inv=-1
             pt1=v(2,node2)
             pt2=v(2,node1)
-            xflow=-v(1,nodem)
+            xflow=-v(1,nodem)*iaxial
             Tt1=v(0,node2)+physcon(1)
             Tt2=v(0,node1)+physcon(1)
 !
@@ -466,7 +466,7 @@
                write(*,*) ' the type of oil is not defined'
                write(*,*) ' check element ',nelem,' definition'
                write(*,*) ' Current calculation stops here'
-               stop
+               call exit(201)
             elseif(xflow_oil.eq.0) then
                write(*,*) '*WARNING:in gaspipe.f'
                write(*,*) ' using two phase flow'
@@ -534,9 +534,9 @@
       
  53   FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A,f8.5)  
  57   FORMAT(1X,A,G11.4,A,G11.4,A,f8.5,A,f8.5,A,f8.5,A,f8.5)
+!     
+      xflow=xflow/iaxial
+      df(3)=df(3)*iaxial
 !
       return
       end
-      
-      
- 

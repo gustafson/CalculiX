@@ -50,34 +50,34 @@ void freeDatasets(Datasets *lcase, ITG nr)
   printf(" free lc[%" ITGFORMAT "] ncomps:%" ITGFORMAT "\n",nr,lcase[nr].ncomps);
   if(lcase[nr].loaded)
   {
-    for(i=0; i<lcase[nr].ncomps; i++) free(lcase[nr].dat[i]);
+    for(i=0; i<lcase[nr].ncomps; i++) SFREE(lcase[nr].dat[i]);
   }
   if(lcase[nr].npheader)
   {
-    for(i=0; i<lcase[nr].npheader; i++) free(lcase[nr].pheader[i]);
-    free(lcase[nr].pheader);
+    for(i=0; i<lcase[nr].npheader; i++) SFREE(lcase[nr].pheader[i]);
+    SFREE(lcase[nr].pheader);
   }
   for(i=0; i<lcase[nr].ncomps; i++)
   {
-    free(lcase[nr].compName[i]);
-    free(lcase[nr].icname[i]);
+    SFREE(lcase[nr].compName[i]);
+    SFREE(lcase[nr].icname[i]);
   }
-  free(lcase[nr].compName);
-  free(lcase[nr].icname);
-  free(lcase[nr].ictype);
-  free(lcase[nr].icind1);
-  free(lcase[nr].icind2);
-  free(lcase[nr].iexist);
-  free(lcase[nr].max);
-  free(lcase[nr].menu);
-  free(lcase[nr].min);
-  free(lcase[nr].nmax);
-  free(lcase[nr].nmin);
-  free(lcase[nr].dat);
-  free(lcase[nr].fileptr);
+  SFREE(lcase[nr].compName);
+  SFREE(lcase[nr].icname);
+  SFREE(lcase[nr].ictype);
+  SFREE(lcase[nr].icind1);
+  SFREE(lcase[nr].icind2);
+  SFREE(lcase[nr].iexist);
+  SFREE(lcase[nr].max);
+  SFREE(lcase[nr].menu);
+  SFREE(lcase[nr].min);
+  SFREE(lcase[nr].nmax);
+  SFREE(lcase[nr].nmin);
+  SFREE(lcase[nr].dat);
+  SFREE(lcase[nr].fileptr);
 
   /* edat not propper implemented or deleted */
-  // for(i=0; i<3; i++) for(e=0; e<anz->e; e++) free(lcase[nr].edat[i][e]);
+  // for(i=0; i<3; i++) for(e=0; e<anz->e; e++) SFREE(lcase[nr].edat[i][e]);
 }
 
 
@@ -797,8 +797,8 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
             if(!lcase[anz->l].iexist[ncomps]) ncomps++;
             else
 	    {
-              free(lcase[anz->l].compName[ncomps]); lcase[anz->l].compName[ncomps]=NULL;
-              free(lcase[anz->l].icname[ncomps]); lcase[anz->l].icname[ncomps]=NULL;
+              SFREE(lcase[anz->l].compName[ncomps]); lcase[anz->l].compName[ncomps]=NULL;
+              SFREE(lcase[anz->l].icname[ncomps]); lcase[anz->l].icname[ncomps]=NULL;
 	    }
 	  }
           else
@@ -895,16 +895,16 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
           for (i=0; i<ipuf; i++) iexist[i] = lcase[anz->l].iexist[atoi(dat[i+3])-1];
           for (i=0; i<ipuf; i++) lcase[anz->l].iexist[i] =iexist[i];
 	  
-          for(i=0; i<length; i++) free(dat[i]);
-          free(dat); 
+          for(i=0; i<length; i++) SFREE(dat[i]);
+          SFREE(dat); 
 	  
-          for(i=0; i<ipuf; i++) free(compName[i]);
-          free(compName); 
-          free(menu); 
-          free(ictype); 
-          free(icind1); 
-          free(icind2); 
-          free(iexist); 
+          for(i=0; i<ipuf; i++) SFREE(compName[i]);
+          SFREE(compName); 
+          SFREE(menu); 
+          SFREE(ictype); 
+          SFREE(icind1); 
+          SFREE(icind2); 
+          SFREE(iexist); 
 	}
       }while(flag!=-3);
 
@@ -1288,8 +1288,8 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
     }
   }
 
-  for(i=0; i<anz_p; i++) free(pheader[i]); free(pheader);
-  free( filepntr);
+  for(i=0; i<anz_p; i++) SFREE(pheader[i]); SFREE(pheader);
+  SFREE( filepntr);
 
   anz->u++;
   anz->l++;

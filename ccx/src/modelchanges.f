@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,7 +35,7 @@
       if(istep.eq.0) then
          write(*,*) '*ERROR reading *MODEL CHANGE: *MODEL CHANGE'
          write(*,*) '       cannot be used before the first step'
-         stop
+         call exit(201)
       endif
 !
       contactpair=.false.
@@ -64,19 +64,19 @@
       if(.not.contactpair) then
          write(*,*) '*ERROR reading *MODEL CHANGE: model change can'
          write(*,*) '       only be used for contact pairs'
-         stop
+         call exit(201)
       endif
 !
       if((.not.add).and.(.not.remove)) then
          write(*,*) '*ERROR reading *MODEL CHANGE: at least ADD or'
          write(*,*) '        REMOVE has to be selected'
-         stop
+         call exit(201)
       endif
 !
       if(add.and.remove) then
          write(*,*) '*ERROR reading *MODEL CHANGE: ADD and REMOVE'
          write(*,*) '       cannot both be selected'
-         stop
+         call exit(201)
       endif
 !
 !     reading the slave and the master surface
@@ -86,7 +86,7 @@
       if((istat.lt.0).or.(key.eq.1)) then
          write(*,*)'*ERROR reading *MODEL CHANGE: definition of the '
          write(*,*) '      contact pair is not complete.'
-         stop
+         call exit(201)
       endif
 !
 !     selecting the appropriate action

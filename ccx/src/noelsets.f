@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,7 +37,7 @@
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in noelsets: *NSET/*ELSET should be placed'
          write(*,*) '  before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       igen=.false.
@@ -52,7 +52,7 @@
                   write(*,*) '*ERROR in noelsets: set name too long'
                   write(*,*) '       (more than 80 characters)'
                   write(*,*) '       set name:',textpart(2)(1:132)
-                  stop
+                  call exit(201)
                endif
                noelset(81:81)=' '
                ipos=index(noelset,' ')
@@ -77,7 +77,7 @@
                   write(*,*) '*ERROR in noelsets: set name too long'
                   write(*,*) '       (more than 80 characters)'
                   write(*,*) '       set name',textpart(2)(1:132)
-                  stop
+                  call exit(201)
                endif
                noelset(81:81)=' '
                ipos=index(noelset,' ')
@@ -112,7 +112,7 @@
                nn=iendset(iset)-istartset(iset)+1
                if(nalset+nn.gt.nalset_) then
                   write(*,*)'*ERROR in noelsets: increase nalset_'
-                  stop
+                  call exit(201)
                endif
                do k=1,nn
                   ialset(nalset+k)=ialset(istartset(iset)+k-1)
@@ -136,7 +136,7 @@
          nset=nset+1
          if(nset.gt.nset_) then
             write(*,*) '*ERROR in noelsets: increase nset_'
-            stop
+            call exit(201)
          endif
          set(nset)=noelset
          istartset(nset)=nalset+1
@@ -156,7 +156,7 @@
          if(igen) n=3
          if(nalset+n.gt.nalset_) then
             write(*,*) '*ERROR in noelsets: increase nalset_'
-            stop
+            call exit(201)
          endif
 !
          if(igen) then
@@ -175,7 +175,7 @@
                if(ialset(nalset+1).gt.nk) then
                   write(*,*) '*ERROR in noelsets: starting value in'
                   write(*,*) '       set ',set(iset),' > nk'
-                  stop
+                  call exit(201)
                elseif(ialset(nalset+2).gt.nk) then
                   write(*,*) '*WARNING in noelsets: end value in'
                   write(*,*) '         set ',set(iset),' > nk;'
@@ -184,13 +184,13 @@
                elseif(ialset(nalset+3).le.0) then
                   write(*,*) '*ERROR in noelsets: increment in'
                   write(*,*) '       set ',set(iset),' <=0'
-                  stop
+                  call exit(201)
                endif
             else
                if(ialset(nalset+1).gt.ne) then
                   write(*,*) '*ERROR in noelsets: starting value in'
                   write(*,*) '       set ',set(iset),' > ne'
-                  stop
+                  call exit(201)
                elseif(ialset(nalset+2).gt.ne) then
                   write(*,*) '*WARNING in noelsets: end value in'
                   write(*,*) '         set ',set(iset),' > ne;'
@@ -199,7 +199,7 @@
                elseif(ialset(nalset+3).le.0) then
                   write(*,*) '*ERROR in noelsets: increment in'
                   write(*,*) '       set ',set(iset),' <=0'
-                  stop
+                  call exit(201)
                endif
             endif
             if(ialset(nalset+1).eq.ialset(nalset+2)) then
@@ -248,7 +248,7 @@
      &                    noelset
                      endif
                      write(*,*) '       has not been defined yet'
-                     stop
+                     call exit(201)
                   endif
                else
 !

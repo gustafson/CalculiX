@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -22,7 +22,7 @@
      &  namtot,ncmat,memmpc,ne1d,ne2d,nflow,jobnamec,irstrt,
      &  ithermal,nener,nstate,irestartstep,inpc,ipoinp,inp,
      &  ntie,nbody,nprop,ipoinpc,nevdamp,npt,nslavs,nkon,mcs,
-     &  mortar,ifacecount,nintpoint)
+     &  mortar,ifacecount,nintpoint,infree,nheading)
 !
 !     calculates a conservative estimate of the size of the 
 !     fields to be allocated
@@ -36,7 +36,7 @@
 !
       implicit none
 !
-      logical igen,lin,frequency,isochoric,cyclicsymmetry,composite,
+      logical igen,lin,frequency,cyclicsymmetry,composite,
      &  tabular
 !
       character*1 selabel,sulabel,inpc(*)
@@ -44,7 +44,7 @@
       character*8 label
       character*20 mpclabel
       character*81 set(*),noset,elset,slavset,mastset,noelset,
-     &  surface
+     &  surface,slavsets,slavsett,mastsets,mastsett
       character*132 jobnamec(*),textpart(16)
 !
       integer nload,nforc,nboun,nk,ne,nmpc,nset,nalset,
@@ -58,11 +58,19 @@
      &  irstrt,ithermal(2),nener,nstate,ipoinp(2,*),inp(3,*),
      &  ntie,nbody,nprop,ipoinpc(0:*),nevdamp,npt,nentries,
      &  iposs,iposm,nslavs,nlayer,nkon,nopeexp,k,iremove,mcs,
-     &  ifacecount,nintpoint,mortar
+     &  ifacecount,nintpoint,mortar,infree(4),nheading,icfd,
+     &  multslav,multmast
 !
       real*8 temperature,tempact,xfreq,tpinc,tpmin,tpmax
 !
       parameter(nentries=15)
+!
+!     icfd=-1: initial value
+!         =0: pure mechanical analysis
+!         =1: pure CFD analysis
+!         =2: mixed mechanical/cfd analysis
+!
+      icfd=-1
 !
 !     in the presence of mechanical steps the highest number
 !     of DOF is at least 3
@@ -107,10 +115,70 @@
                if((istat.lt.0).or.(key.eq.1)) exit
                namtot=namtot+4
             enddo
+         elseif(textpart(1)(1:19).eq.'*BEAMGENERALSECTION') then
+            mi(3)=max(mi(3),2)
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) then
+                  nprop=nprop-8
+                  exit
+               endif
+               nprop=nprop+8
+            enddo
          elseif(textpart(1)(1:12).eq.'*BEAMSECTION') then
             mi(3)=max(mi(3),2)
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,
      &           inl,ipoinp,inp,ipoinpc)
+         elseif(textpart(1)(1:10).eq.'*BOUNDARYF') then
+            nam=nam+1
+            namtot=namtot+1
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+!
+               read(textpart(3)(1:10),'(i10)',iostat=istat) ibounstart
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BOUNDARYF%")
+!
+               if(textpart(4)(1:1).eq.' ') then
+                  ibounend=ibounstart
+               else
+                  read(textpart(4)(1:10),'(i10)',iostat=istat) ibounend
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BOUNDARYF%")
+               endif
+               ibound=ibounend-ibounstart+1
+               ibound=max(1,ibound)
+               ibound=min(3,ibound)
+!
+               read(textpart(1)(1:10),'(i10)',iostat=istat) l
+               if(istat.eq.0) then
+                  nboun=nboun+ibound
+                  if(ntrans.gt.0) then
+                     nmpc=nmpc+ibound
+                     memmpc=memmpc+4*ibound
+                     nk=nk+1
+                  endif
+               else
+                  read(textpart(1)(1:80),'(a80)',iostat=istat) elset
+                  elset(81:81)=' '
+                  ipos=index(elset,' ')
+                  elset(ipos:ipos)='E'
+                  do i=1,nset
+                     if(set(i).eq.elset) then
+                        nboun=nboun+ibound*meminset(i)
+                        if(ntrans.gt.0)then
+                           nmpc=nmpc+ibound*meminset(i)
+                           memmpc=memmpc+4*ibound*meminset(i)
+                           nk=nk+meminset(i)
+                        endif
+                        exit
+                     endif
+                  enddo
+               endif
+            enddo
          elseif(textpart(1)(1:9).eq.'*BOUNDARY') then
             nam=nam+1
             namtot=namtot+1
@@ -231,7 +299,8 @@
                ntmat=max(ntmatl,ntmat)
             enddo
          elseif(textpart(1)(1:15).eq.'*CONTACTDAMPING') then
-            ncmat=max(5,ncmat)
+            ncmat=max(8,ncmat)
+            ntmat=max(1,ntmat)
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:12).eq.'*CONTACTPAIR') then
@@ -420,12 +489,18 @@
          elseif((textpart(1)(1:8).eq.'*DYNAMIC').or.
      &      (textpart(1)(1:32).eq.'*COUPLEDTEMPERATURE-DISPLACEMENT'))
      &          then
-            if((mi(1).eq.1).or.(mi(1).eq.8).or.(mi(1).eq.27)) then
-               mi(1)=27
-            elseif(mi(1).eq.4) then
-               mi(1)=15
-            else
-               mi(1)=18
+!
+!           change of number of integration points except for a pure
+!           CFD-calculation
+!
+            if(icfd.ne.1) then
+               if((mi(1).eq.1).or.(mi(1).eq.8).or.(mi(1).eq.27)) then
+                  mi(1)=27
+               elseif(mi(1).eq.4) then
+                  mi(1)=15
+               else
+                  mi(1)=18
+               endif
             endif
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
@@ -490,7 +565,7 @@
          elseif((textpart(1)(1:8).eq.'*ELEMENT').and.
      &          (textpart(1)(1:14).ne.'*ELEMENTOUTPUT')) then
             ielset=0
-            isochoric=.false.
+c            isochoric=.false.
 !
             loop1: do i=2,n
                if(textpart(i)(1:6).eq.'ELSET=') then
@@ -514,35 +589,32 @@
                      write(*,*) '       '
                      call inputerror(inpc,ipoinpc,iline,
      &"*ELEMENT or *ELEMENT OUTPUT%")
-                     stop
+                     call exit(201)
                   endif
                   if((label(1:2).eq.'DC').and.(label(1:7).ne.'DCOUP3D'))
      &                  then
                      label(1:7)=label(2:8)
                      label(8:8)=' '
                   endif
-                  if((label.eq.'C3D20   ').or.
-     &               (label.eq.'F3D20   ')) then
+                  if(label.eq.'C3D20   ') then
                      mi(1)=max(mi(1),27)
                      nope=20
                      nopeexp=20
-                  elseif((label(1:8).eq.'C3D20R  ').or.
-     &                   (label(1:8).eq.'F3D20R  ')) then
+                  elseif(label(1:8).eq.'C3D20R  ') then
                      mi(1)=max(mi(1),8)
                      nope=20
                      nopeexp=20
-                  elseif(label(1:8).eq.'C3D20RI ') then
-                     mi(1)=max(mi(1),8)
-                     nope=20
-                     nopeexp=20
-                     isochoric=.true.
-                  elseif((label.eq.'C3D8R   ').or.
-     &                   (label.eq.'F3D8R   ')) then
+c                  elseif(label(1:8).eq.'C3D20RI ') then
+c                     mi(1)=max(mi(1),8)
+c                     nope=20
+c                     nopeexp=20
+c                     isochoric=.true.
+                  elseif((label.eq.'C3D8R   ').or.(label.eq.'F3D8    '))
+     &               then
                      mi(1)=max(mi(1),1)
                      nope=8
                      nopeexp=8
-                  elseif((label.eq.'C3D10   ').or.
-     &                   (label.eq.'F3D10   ')) then
+                  elseif(label.eq.'C3D10   ') then
                      mi(1)=max(mi(1),4)
                      nope=10
                      nopeexp=10
@@ -551,25 +623,26 @@
                      mi(1)=max(mi(1),1)
                      nope=4
                      nopeexp=4
-                  elseif((label.eq.'C3D15   ').or.
-     &                   (label.eq.'F3D15   ')) then
+                  elseif(label.eq.'C3D15   ') then
                      mi(1)=max(mi(1),9)
                      nope=15
                      nopeexp=15
-                  elseif((label.eq.'C3D6    ').or.
-     &                   (label.eq.'F3D6    ')) then
+                  elseif(label.eq.'C3D6    ') then
                      mi(1)=max(mi(1),2)
                      nope=6
                      nopeexp=6
-                  elseif(label.eq.'F3D6R   ') then
+                  elseif(label.eq.'F3D6    ') then
                      mi(1)=max(mi(1),1)
                      nope=6
                      nopeexp=6
-                  elseif((label.eq.'C3D8    ').or.
-     &                    (label.eq.'F3D8    ')) then
+                  elseif(label.eq.'C3D8    ') then
                      mi(1)=max(mi(1),8)
                      nope=8
                      nopeexp=8
+c                  elseif(label.eq.'F3D8    ') then
+c                     mi(1)=max(mi(1),1)
+c                     nope=8
+c                     nopeexp=8
 c    Bernhardi start
                   elseif(label.eq.'C3D8I   ') then
                      mi(1)=max(mi(1),8)
@@ -657,7 +730,20 @@ c                     mi(1)=max(mi(1),8)
                      nope=2
                      nopeexp=2
                   endif
-                  if(label(1:1).eq.'F') mi(2)=max(mi(2),4)
+                  if(label(1:1).eq.'F') then
+                     mi(2)=max(mi(2),4)
+                     if(icfd.eq.-1) then
+                        icfd=1
+                     elseif(icfd.eq.0) then
+                        icfd=2
+                     endif
+                  else
+                     if(icfd.eq.-1) then
+                        icfd=0
+                     elseif(icfd.eq.1) then
+                        icfd=2
+                     endif
+                  endif
                endif
             enddo loop1
 !
@@ -706,16 +792,16 @@ c    Bernhardi end
                   meminset(js)=meminset(js)+1
                   rmeminset(js)=rmeminset(js)+1
                endif
-!
-!              up to 8 new mpc's with 22 terms in each mpc
-!              (21 = 7 nodes x 3 dofs + inhomogeneous term)
-!
-               if(isochoric) then
-                  nmpc=nmpc+8
-                  nk=nk+8
-                  nboun=nboun+8
-                  memmpc=memmpc+176
-               endif
+c!
+c!              up to 8 new mpc's with 22 terms in each mpc
+c!              (21 = 7 nodes x 3 dofs + inhomogeneous term)
+c!
+c               if(isochoric) then
+c                  nmpc=nmpc+8
+c                  nk=nk+8
+c                  nboun=nboun+8
+c                  memmpc=memmpc+176
+c               endif
             enddo loop2
          elseif((textpart(1)(1:5).eq.'*NSET').or.
      &           (textpart(1)(1:6).eq.'*ELSET')) then
@@ -799,7 +885,8 @@ c    Bernhardi end
                   enddo
                endif
             enddo
-         elseif(textpart(1)(1:9).eq.'*EQUATION') then
+         elseif((textpart(1)(1:9).eq.'*EQUATION').or.
+     &          (textpart(1)(1:10).eq.'*EQUATIONF')) then
             iremove=0
             do i=2,n
                if(textpart(i)(1:6).eq.'REMOVE') iremove=1
@@ -864,13 +951,16 @@ c    Bernhardi end
                nprop=nprop+8
             enddo
          elseif(textpart(1)(1:9).eq.'*FRICTION') then
-            ncmat=max(7,ncmat)
+c            ncmat=max(7,ncmat)
+!
+!           '8' is for Mortar.
+!
+            ncmat=max(8,ncmat)
             ntmat=max(1,ntmat)
-c            nstate=max(nstate,9)
+            nstate=max(9,nstate)
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:15).eq.'*GAPCONDUCTANCE') then
-cccc            nmat=nmat+1
             ntmatl=0
             do
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,
@@ -893,6 +983,18 @@ cccc            nmat=nmat+1
                endif
                npmatl=npmatl+1
                npmat=max(npmatl,npmat)
+            enddo
+         elseif(textpart(1)(1:8).eq.'*HEADING') then
+            if(nheading.ne.0) then
+               write(*,*) '*ERROR in allocation: more than 1'
+               write(*,*) '       *HEADING card in the input deck'
+               call exit(201)
+            endif
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+               nheading=nheading+1
             enddo
          elseif(textpart(1)(1:13).eq.'*HYPERELASTIC') then
             ntmatl=0
@@ -1260,12 +1362,50 @@ c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
      &              mi,ntrans,ncs,namtot,ncmat,memmpc,
      &              ne1d,ne2d,nflow,set,meminset,rmeminset,jobnamec,
      &              irestartstep,icntrl,ithermal,nener,nstate,ntie,
-     &              nslavs,nkon,mcs,nprop,mortar,ifacecount,nintpoint)
+     &              nslavs,nkon,mcs,nprop,mortar,ifacecount,nintpoint,
+     &              infree)
                irstrt=-1
             else
             endif
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
+         elseif(textpart(1)(1:18).eq.'*RETAINEDNODALDOFS') then
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+!
+               read(textpart(2)(1:10),'(i10)',iostat=istat) ibounstart
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BOUNDARY%")
+!
+               if(textpart(3)(1:1).eq.' ') then
+                  ibounend=ibounstart
+               else
+                  read(textpart(3)(1:10),'(i10)',iostat=istat) ibounend
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BOUNDARY%")
+               endif
+               ibound=ibounend-ibounstart+1
+               ibound=max(1,ibound)
+               ibound=min(3,ibound)
+!
+               read(textpart(1)(1:10),'(i10)',iostat=istat) l
+               if(istat.eq.0) then
+                  nboun=nboun+ibound
+               else
+                  read(textpart(1)(1:80),'(a80)',iostat=istat) noset
+                  noset(81:81)=' '
+                  ipos=index(noset,' ')
+                  noset(ipos:ipos)='N'
+                  do i=1,nset
+                     if(set(i).eq.noset) then
+                        nboun=nboun+ibound*meminset(i)
+                        exit
+                     endif
+                  enddo
+               endif
+            enddo
          elseif(textpart(1)(1:10).eq.'*RIGIDBODY') then
             noset='
      &                           '
@@ -1332,7 +1472,7 @@ c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
                   if((istat.lt.0).or.(key.eq.1)) then
                      mi(1)=max(mi(1),8*nlayer)
                      mi(3)=max(mi(3),nlayer)
-                     if(js.lt.nset) then
+                     if(js.le.nset) then
                         nk=nk+20*nlayer*meminset(js)
                         nkon=nkon+20*nlayer*meminset(js)
                      endif
@@ -1496,6 +1636,11 @@ c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
                   rmeminset(nset)=rmeminset(nset)+1
                endif
             enddo
+!
+!           for CFD-calculations: local coordinate systems are
+!           stored as distributed load
+!
+            if(icfd>0) nload=nload+rmeminset(nset)
          elseif(textpart(1)(1:16).eq.'*SURFACEBEHAVIOR') then
             ncmat=max(4,ncmat)
             ntmat=max(1,ntmat)
@@ -1552,25 +1697,44 @@ c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
      &           ipoinp,inp,ipoinpc)
             if(.not.cyclicsymmetry) cycle
             if((istat.lt.0).or.(key.eq.1)) cycle
+!
             slavset=textpart(1)(1:80)
             slavset(81:81)=' '
             iposs=index(slavset,' ')
-            slavset(iposs:iposs)='S'
+            slavsets=slavset
+            slavsets(iposs:iposs)='S'
+            slavsett=slavset
+            slavsett(iposs:iposs)='T'
+!
             mastset=textpart(2)(1:80)
             mastset(81:81)=' '
             iposm=index(mastset,' ')
-            mastset(iposm:iposm)='S'
+            mastsets=mastset
+            mastsets(iposm:iposm)='S'
+            mastsett=mastset
+            mastsett(iposm:iposm)='T'
+!
             islavset=0
             imastset=0
+!
             do i=1,nset
-               if(set(i).eq.slavset) then
+               if(set(i).eq.slavsets) then
                   islavset=i
-               elseif(set(i).eq.mastset) then
+                  multslav=1
+               elseif(set(i).eq.slavsett) then
+                  islavset=i
+                  multslav=8
+               elseif(set(i).eq.mastsets) then
                   imastset=i
+                  multmast=1
+               elseif(set(i).eq.mastsett) then
+                  imastset=i
+                  multmast=8
                endif
             enddo
             if((islavset.ne.0).and.(imastset.ne.0)) then
-               ncs=ncs+max(meminset(islavset),meminset(imastset))
+               ncs=ncs+max(multslav*meminset(islavset),
+     &                     multmast*meminset(imastset))
             else
                write(*,*) '*ERROR in allocation: either the slave'
                write(*,*) '       surface or the master surface in a'
@@ -1578,7 +1742,7 @@ c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
                write(*,*) '       do not exist or are no nodal surfaces'
                write(*,*) '       slave set:',slavset(1:iposs-1)
                write(*,*) '       master set:',mastset(1:iposm-1)
-               stop
+               call exit(201)
             endif
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
@@ -1600,7 +1764,7 @@ c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
                      write(*,*)'*ERROR in allocation: *TIMEPOINTS'
                      call inputerror(inpc,ipoinpc,iline,
      &"*TIME POINTS%")
-                     stop
+                     call exit(201)
                   else
                      read(textpart(1)(1:20),'(f20.0)',iostat=istat) 
      &                 tpmin
@@ -1619,7 +1783,7 @@ c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
                         write(*,*) '*ERROR in allocation: *TIMEPOINTS'
                         call inputerror(inpc,ipoinpc,iline,
      &"*TIME POINTS%")
-                        stop
+                        call exit(201)
                      else
                         namtot=namtot+2+INT((tpmax-tpmin)/tpinc)
                      endif
@@ -1631,6 +1795,30 @@ c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
             enddo
          elseif(textpart(1)(1:10).eq.'*TRANSFORM') then
             ntrans=ntrans+1
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+            enddo
+         elseif(textpart(1)(1:11).eq.'*TRANSFORMF') then
+            ntrans=ntrans+1
+            surface(1:1)=' '
+            do i=2,n
+               if(textpart(i)(1:8).eq.'SURFACE=') then
+                  surface=textpart(i)(9:88)
+                  ipos=index(surface,' ')
+                  surface(ipos:ipos)='T'
+                  exit
+               endif
+            enddo
+            if(surface(1:1).ne.' ') then
+               do i=1,nset
+                  if(set(i).eq.surface) then
+                     nload=nload+meminset(i)
+                     exit
+                  endif
+               enddo
+            endif
             do
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &              ipoinp,inp,ipoinpc)

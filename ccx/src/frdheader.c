@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -83,7 +83,10 @@ void frdheader(ITG *icounter,double *oner,double *time,double *pi,
     sprintf(&text[24],"%12" ITGFORMAT "",*mode+1);text[36]=' ';
     fprintf(f1,"%s\n",text);
   }
-  writeBasisParameter(f1);
+
+#ifdef COMPANY
+  writeBasisParameter(f1,istep,iinc);
+#endif	  
      
   /* 100CL line */
  
@@ -153,7 +156,7 @@ void frdheader(ITG *icounter,double *oner,double *time,double *pi,
 /*
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

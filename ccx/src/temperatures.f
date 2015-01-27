@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -51,20 +51,20 @@
          write(*,*) '       loading is not allowed in a linear'
          write(*,*) '       buckling step; perform a static'
          write(*,*) '       nonlinear calculation instead'
-         stop
+         call exit(201)
       endif
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *TEMPERATURE: *TEMPERATURE'
          write(*,*) '  should only be used within a STEP'
-         stop
+         call exit(201)
       endif
 !
       if(ithermal.ne.1) then
          write(*,*) '*ERROR reading *TEMPERATURE: a *TEMPERATURE'
          write(*,*) '  card is detected but no thermal'
          write(*,*) '  *INITIAL CONDITIONS are given'
-         stop
+         call exit(201)
       endif
 !
       do i=2,n
@@ -86,7 +86,7 @@
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
      &"*TEMPERATURE%")
-               stop
+               call exit(201)
             endif
             iamplitude=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
@@ -97,14 +97,14 @@
                write(*,*) '       keyword; '
                call inputerror(inpc,ipoinpc,iline,
      &"*TEMPERATURE%")
-               stop
+               call exit(201)
             else
                idelay=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
                write(*,*) '*ERROR reading *TEMPERATURE: increase nam_'
-               stop
+               call exit(201)
             endif
             amname(nam)='
      &                                 '
@@ -112,7 +112,7 @@
                write(*,*) 
      &           '*ERROR reading *TEMPERATURE: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
-               stop
+               call exit(201)
             endif
             namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
@@ -124,7 +124,7 @@
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR temperatures: increase namtot_'
-               stop
+               call exit(201)
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
@@ -227,7 +227,7 @@
                write(*,*) '       has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline,
      &"*TEMPERATURE%")
-               stop
+               call exit(201)
             endif
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then

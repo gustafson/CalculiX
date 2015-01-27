@@ -18,7 +18,7 @@
 !     
       subroutine cross_split(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider)
+     &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,iaxial)
 !
 !     A cross split element(zeta calculation according to Idel'chik)
 !     Written by Yavor Dobrev
@@ -50,7 +50,7 @@
      &nelem1,
      &ichan_num,
      &ider,
-     &icase
+     &icase,iaxial
 !
       real*8 
      &prop(*),
@@ -165,7 +165,7 @@
 !        Inlet conditions
          pt1=v(2,node1)
          Tt1=v(0,node1)+physcon(1)
-         xflow1=v(1,nodem1)
+         xflow1=v(1,nodem1)*iaxial
          A1 = prop(ielprop(nelem)+5)
          dh1 = prop(ielprop(nelem)+9)
 !
@@ -188,7 +188,7 @@
             ichan_num = 1
 !
             Tt2=v(0,node2)
-            xflow2=v(1,nodem)
+            xflow2=v(1,nodem)*iaxial
             pt2=v(2,node2)
             A2 = A1
             A_s = prop(ielprop(nelem)+6)
@@ -200,7 +200,7 @@
             ichan_num = 2
 !
             Tt2=v(0,node2)
-            xflow2=v(1,nodem)
+            xflow2=v(1,nodem)*iaxial
             pt2=v(2,node2)
             A2 = prop(ielprop(nelem)+6)
             dh2 = prop(ielprop(nelem)+10)
@@ -211,7 +211,7 @@
             ichan_num = 3
 !
             Tt2=v(0,node2)
-            xflow2=v(1,nodem)
+            xflow2=v(1,nodem)*iaxial
             pt2=v(2,node2)
             A1 = prop(ielprop(nelem)+5)
             A2 = prop(ielprop(nelem)+6)
@@ -251,7 +251,7 @@
 !        Inlet conditions
          pt1=v(2,node1)
          Tt1=v(0,node1)+physcon(1)
-         xflow1=v(1,nodem1)
+         xflow1=v(1,nodem1)*iaxial
          A1 = prop(ielprop(nelem)+5)
          dh1 = prop(ielprop(nelem)+9)      
 !
@@ -259,7 +259,7 @@
             ichan_num = 1
 !
             Tt2=v(0,node2)
-            xflow2=v(1,nodem)
+            xflow2=v(1,nodem)*iaxial
             pt2=v(2,node2)
             A2 = A1
             A_s = prop(ielprop(nelem)+6)
@@ -271,7 +271,7 @@
             ichan_num = 2
 !
             Tt2=v(0,node2)
-            xflow2=v(1,nodem)
+            xflow2=v(1,nodem)*iaxial
             pt2=v(2,node2)
             A2 = prop(ielprop(nelem)+6)
             dh2 = prop(ielprop(nelem)+10)
@@ -282,7 +282,7 @@
             ichan_num = 3
 !
             Tt2=v(0,node2)
-            xflow2=v(1,nodem)
+            xflow2=v(1,nodem)*iaxial
             pt2=v(2,node2)
             A1 = prop(ielprop(nelem)+5)
             A2 = prop(ielprop(nelem)+6)
@@ -363,6 +363,10 @@
          endif
 !     
       endif
+!     
+      xflow=xflow/iaxial
+      df(3)=df(3)*iaxial
+      df(4)=df(4)*iaxial
 !     
       return
       end

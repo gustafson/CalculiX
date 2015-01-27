@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine dynamics(inpc,textpart,nmethod,iperturb,tinc,tper,
      &  tmin,tmax,idrct,alpha,iexpl,isolver,istep,istat,n,iline,
-     &  ipol,inl,ipoinp,inp,ithermal,ipoinpc,cfd)
+     &  ipol,inl,ipoinp,inp,ithermal,ipoinpc,cfd,ctrl,tincf)
 !
 !     reading the input deck: *DYNAMIC
 !
@@ -44,12 +44,12 @@
      &  isolver,iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,
      &  ipoinpc(0:*),cfd
 !
-      real*8 tinc,tper,tmin,tmax,alpha
+      real*8 tinc,tper,tmin,tmax,alpha,ctrl(*),tincf
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in dynamics: *DYNAMIC can only'
+         write(*,*) '*ERROR reading *DYNAMIC: *DYNAMIC can only'
          write(*,*) '  be used within a STEP'
-         stop
+         call exit(201)
       endif
 !
 !     no heat transfer analysis
@@ -68,6 +68,7 @@
       alpha=-0.05d0
       tmin=0.d0
       tmax=0.d0
+      tincf=1.d-2
 !
 !     default solver
 !
@@ -92,11 +93,11 @@
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*DYNAMIC%")
             if(alpha.lt.-1.d0/3.d0) then
-               write(*,*) '*WARNING in dynamics: alpha is smaller'
+               write(*,*) '*WARNING reading *DYNAMIC: alpha is smaller'
                write(*,*) '  than -1/3 and is reset to -1/3'
                alpha=-1.d0/3.d0
             elseif(alpha.gt.0.d0) then
-               write(*,*) '*WARNING in dynamics: alpha is greater'
+               write(*,*) '*WARNING reading *DYNAMIC: alpha is greater'
                write(*,*) '  than 0 and is reset to 0'
                alpha=0.d0
             endif
@@ -120,7 +121,7 @@
             read(textpart(i)(8:27),'(a20)') solver
          else
             write(*,*) 
-     &        '*WARNING in dynamics: parameter not recognized:'
+     &        '*WARNING reading *DYNAMIC: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -141,7 +142,7 @@
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
       else
-         write(*,*) '*WARNING in dynamics: unknown solver;'
+         write(*,*) '*WARNING reading *DYNAMIC: unknown solver;'
          write(*,*) '         the default solver is used'
       endif
 !
@@ -149,8 +150,8 @@
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
          if((iperturb.ge.2).or.(cfd.eq.1)) then
-            write(*,*)'*WARNING in dynamics: a nonlinear geometric analy
-     &sis is requested'
+            write(*,*)'*WARNING reading *DYNAMIC: a nonlinear analysis i
+     &s requested'
             write(*,*) '         but no time increment nor step is speci
      &fied'
             write(*,*) '         the defaults (1,1) are used'
@@ -158,6 +159,7 @@
             tper=1.d0
             tmin=1.d-5
             tmax=1.d+30
+            tincf=1.d-2
          endif
          nmethod=4
          return
@@ -175,31 +177,46 @@
       read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*DYNAMIC%")
+      read(textpart(4)(1:20),'(f20.0)',iostat=istat) tincf
+      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*DYNAMIC%")
 !
       if(tinc.le.0.d0) then
-         write(*,*)'*ERROR in dynamics: initial increment size is negati
-     &ve'
+         write(*,*)'*ERROR reading *DYNAMIC: initial increment size is n
+     &egative'
       endif
       if(tper.le.0.d0) then
-         write(*,*) '*ERROR in dynamics: step size is negative'
+         write(*,*) '*ERROR reading *DYNAMIC: step size is negative'
       endif
       if(tinc.gt.tper) then
-         write(*,*)'*ERROR in dynamics: initial increment size exceeds s
-     &tep size'
+         write(*,*)'*ERROR reading *DYNAMIC: initial increment size exce
+     &eds step size'
+      endif
+      if(tincf.le.0.d0) then
+         write(*,*) '*WARNING reading *DYNAMIC: initial CFD increment si
+     &ze is zero or negative; the default of 0.01 is taken'
+         tincf=1.d-2
       endif
 !      
       if(idrct.ne.1) then
-         if(dabs(tmin).lt.1.d-10) then
-            if(iexpl.le.1) then
-               tmin=min(tinc,1.d-5*tper)
-            else
-               tmin=min(tinc,1.d-10*tper)
-            endif
+         if(dabs(tmin).lt.1.d-10*tper) then
+            tmin=min(tinc,1.e-10*tper)
          endif
+c         if(dabs(tmin).lt.1.d-10) then
+c            if(iexpl.le.1) then
+c               tmin=min(tinc,1.d-5*tper)
+c            else
+c               tmin=min(tinc,1.d-10*tper)
+c            endif
+c         endif
          if(dabs(tmax).lt.1.d-10) then
             tmax=1.d+30
          endif
       endif
+!
+!     10 cutbacks allowed for dynamics (because of contact)
+!
+      ctrl(8)=10.5d0
 !
       nmethod=4
 !

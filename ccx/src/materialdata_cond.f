@@ -1,5 +1,5 @@
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,10 +31,10 @@
 !
       ncoconst=ncocon(1,imat)
       if(ncoconst.ne.1) then
-         write(*,*) '*ERROR in materialdata_fl'
+         write(*,*) '*ERROR in materialdata_cond'
          write(*,*) 
      &        '       conductivity for fluids must be isotropic'
-         stop
+         call exit(201)
       endif
 !     
       call ident2(cocon(0,1,imat),t1l,ncocon(2,imat),seven,id)

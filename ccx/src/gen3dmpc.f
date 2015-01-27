@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,23 +25,26 @@
 !
       implicit none
 !
+      logical dependent
+!
       character*8 lakon(*)
       character*20 labmpc(*)
 !
       integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,ikmpc(*),
      &  ilmpc(*),iponoel(*),inoel(3,*),iponoelmax,kon(*),ipkon(*),
      &  ne,iponor(2,*),knor(*),rig(*),i,index1,node,index2,ielem,
-     &  indexe,j,indexk,newnode,idir,idof,id,mpcfreenew,k
+     &  indexe,j,indexk,newnode,idir,idof,id,mpcfreenew,k,idofold,
+     &  idofnew,idold,idnew
 !
       real*8 coefmpc(*),xnor(*)
 !
       do i=1,nmpc
          index1=ipompc(i)
+         dependent=.true.
          do
             node=nodempc(1,index1)
             if(node.le.iponoelmax) then
                if(rig(node).ne.0) then
-c                  if(nodempc(2,index1).gt.3) then
                   if(nodempc(2,index1).gt.4) then
                      if(rig(node).lt.0) then
                         write(*,*) '*ERROR in gen3dmpc: in node ',node
@@ -49,19 +52,43 @@ c                  if(nodempc(2,index1).gt.3) then
                         write(*,*) '  by a SPC; however, the elements'
                         write(*,*) '  to which this node belongs do not'
                         write(*,*) '  have rotational DOFs'
-                        stop
+                        call exit(201)
                      endif
                      nodempc(1,index1)=rig(node)
-c                     nodempc(2,index1)=nodempc(2,index1)-3
                      nodempc(2,index1)=nodempc(2,index1)-4
+!
+!                    adapting ikmpc and ilmpc (only for the dependent
+!                    term)
+!
+                     if(dependent) then
+                        idofold=8*(node-1)+nodempc(2,index1)+4
+                        call nident(ikmpc,idofold,nmpc,idold)
+                        idofnew=8*(rig(node)-1)+nodempc(2,index1)
+                        call nident(ikmpc,idofnew,nmpc,idnew)
+                        if(idold.le.idnew) then
+                           do j=idold,idnew-1
+                              ikmpc(j)=ikmpc(j+1)
+                              ilmpc(j)=ilmpc(j+1)
+                           enddo
+                        else
+                           do j=idold,idnew+1,-1
+                              ikmpc(j)=ikmpc(j-1)
+                              ilmpc(j)=ilmpc(j-1)
+                           enddo
+                        endif
+                        ikmpc(idnew)=idofnew
+                        ilmpc(idnew)=i
+                     endif
+!
                   endif
                else
                   index2=iponoel(node)
-c
-c                 check for nodes not belonging to 1d or 2d elements
-c
+!
+!                 check for nodes not belonging to 1d or 2d elements
+!
                   if(index2.eq.0) then
                      index1=nodempc(3,index1)
+                     dependent=.false.
                      if(index1.eq.0) exit
                      cycle
                   endif
@@ -83,7 +110,7 @@ c
                         if(nmpc.gt.nmpc_) then
                            write(*,*) 
      &                          '*ERROR in gen3dmpc: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         labmpc(nmpc)='                    '
                         ipompc(nmpc)=mpcfree
@@ -100,7 +127,7 @@ c
                         if(mpcfree.eq.0) then
                            write(*,*) 
      &                          '*ERROR in gen3dmpc: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         nodempc(1,mpcfree)=knor(indexk+3)
                         nodempc(2,mpcfree)=idir
@@ -109,7 +136,7 @@ c
                         if(mpcfree.eq.0) then
                            write(*,*) 
      &                          '*ERROR in gen3dmpc: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         nodempc(1,mpcfree)=node
                         nodempc(2,mpcfree)=idir
@@ -118,10 +145,57 @@ c
                         if(mpcfreenew.eq.0) then
                            write(*,*) 
      &                          '*ERROR in gen3dmpc: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         nodempc(3,mpcfree)=0
                         mpcfree=mpcfreenew
+                     endif
+!
+!                    fixing the temperature degrees of freedom
+!
+                     if(idir.eq.0) then
+!     
+!                       t(n_3)=t(n)
+!
+                        newnode=knor(indexk+3)
+                        idof=8*(newnode-1)+idir
+                        call nident(ikmpc,idof,nmpc,id)
+                        if((id.le.0).or.(ikmpc(id).ne.idof)) then
+                           nmpc=nmpc+1
+                           if(nmpc.gt.nmpc_) then
+                              write(*,*) 
+     &                             '*ERROR in gen3dboun: increase nmpc_'
+                              call exit(201)
+                           endif
+                           labmpc(nmpc)='                    '
+                           ipompc(nmpc)=mpcfree
+                           do j=nmpc,id+2,-1
+                              ikmpc(j)=ikmpc(j-1)
+                              ilmpc(j)=ilmpc(j-1)
+                           enddo
+                           ikmpc(id+1)=idof
+                           ilmpc(id+1)=nmpc
+                           nodempc(1,mpcfree)=newnode
+                           nodempc(2,mpcfree)=idir
+                           coefmpc(mpcfree)=1.d0
+                           mpcfree=nodempc(3,mpcfree)
+                           if(mpcfree.eq.0) then
+                              write(*,*) 
+     &                             '*ERROR in gen3dboun: increase nmpc_'
+                              call exit(201)
+                           endif
+                           nodempc(1,mpcfree)=node
+                           nodempc(2,mpcfree)=idir
+                           coefmpc(mpcfree)=-1.d0
+                           mpcfreenew=nodempc(3,mpcfree)
+                           if(mpcfreenew.eq.0) then
+                              write(*,*) 
+     &                             '*ERROR in gen3dboun: increase nmpc_'
+                              call exit(201)
+                           endif
+                           nodempc(3,mpcfree)=0
+                           mpcfree=mpcfreenew
+                        endif
                      endif
                   elseif(lakon(ielem)(7:7).eq.'B') then
 !
@@ -136,7 +210,7 @@ c
                         if(nmpc.gt.nmpc_) then
                            write(*,*) 
      &                          '*ERROR in gen3dmpc: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         labmpc(nmpc)='                    '
                         ipompc(nmpc)=mpcfree
@@ -153,7 +227,7 @@ c
                         if(mpcfree.eq.0) then
                            write(*,*) 
      &                          '*ERROR in gen3dmpc: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         do k=2,4
                            nodempc(1,mpcfree)=knor(indexk+k)
@@ -163,7 +237,7 @@ c
                            if(mpcfree.eq.0) then
                               write(*,*) 
      &                             '*ERROR in gen3dmpc: increase nmpc_'
-                              stop
+                              call exit(201)
                            endif
                         enddo
                         nodempc(1,mpcfree)=node
@@ -173,10 +247,59 @@ c
                         if(mpcfreenew.eq.0) then
                            write(*,*) 
      &                          '*ERROR in gen3dmpc: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         nodempc(3,mpcfree)=0
                         mpcfree=mpcfreenew
+                     endif
+!
+!              fixing the temperature degrees of freedom
+!
+                     if(idir.eq.0) then
+                        do k=2,4
+!
+!                    t(n_k)=t(n), k=2,4
+!
+                           newnode=knor(indexk+k)
+                           idof=8*(newnode-1)+idir
+                           call nident(ikmpc,idof,nmpc,id)
+                           if((id.le.0).or.(ikmpc(id).ne.idof)) then
+                              nmpc=nmpc+1
+                              if(nmpc.gt.nmpc_) then
+                                 write(*,*) 
+     &                             '*ERROR in gen3dboun: increase nmpc_'
+                                 call exit(201)
+                              endif
+                              labmpc(nmpc)='                    '
+                              ipompc(nmpc)=mpcfree
+                              do j=nmpc,id+2,-1
+                                 ikmpc(j)=ikmpc(j-1)
+                                 ilmpc(j)=ilmpc(j-1)
+                              enddo
+                              ikmpc(id+1)=idof
+                              ilmpc(id+1)=nmpc
+                              nodempc(1,mpcfree)=newnode
+                              nodempc(2,mpcfree)=idir
+                              coefmpc(mpcfree)=1.d0
+                              mpcfree=nodempc(3,mpcfree)
+                              if(mpcfree.eq.0) then
+                                 write(*,*) 
+     &                             '*ERROR in gen3dboun: increase nmpc_'
+                                 call exit(201)
+                              endif
+                              nodempc(1,mpcfree)=node
+                              nodempc(2,mpcfree)=idir
+                              coefmpc(mpcfree)=-1.d0
+                              mpcfreenew=nodempc(3,mpcfree)
+                              if(mpcfreenew.eq.0) then
+                                 write(*,*) 
+     &                             '*ERROR in gen3dboun: increase nmpc_'
+                                 call exit(201)
+                              endif
+                              nodempc(3,mpcfree)=0
+                              mpcfree=mpcfreenew
+                           endif
+                        enddo
                      endif
                   else
 !
@@ -193,7 +316,7 @@ c
                         if(nmpc.gt.nmpc_) then
                            write(*,*) 
      &                          '*ERROR in gen3dmpc: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         labmpc(nmpc)='                    '
                         ipompc(nmpc)=mpcfree
@@ -210,7 +333,7 @@ c
                         if(mpcfree.eq.0) then
                            write(*,*) 
      &                          '*ERROR in gen3dmpc: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         nodempc(1,mpcfree)=node
                         nodempc(2,mpcfree)=idir
@@ -219,7 +342,7 @@ c
                         if(mpcfreenew.eq.0) then
                            write(*,*) 
      &                          '*ERROR in gen3dmpc: increase nmpc_'
-                           stop
+                           call exit(201)
                         endif
                         nodempc(3,mpcfree)=0
                         mpcfree=mpcfreenew
@@ -228,6 +351,7 @@ c
                endif
             endif
             index1=nodempc(3,index1)
+            dependent=.false.
             if(index1.eq.0) exit
          enddo
       enddo

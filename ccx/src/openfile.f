@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -22,7 +22,7 @@
 !
       logical exi
       character*3 output
-      character*132 jobname,fnin,fndat,fnfrd,fnsta
+      character*132 jobname,fnin,fndat,fnfrd,fnsta,fncvg
       integer i
 !
 !     opening the input and output file
@@ -35,7 +35,7 @@
          write(*,*) '*ERROR in openfile: input file name is too long:'
          write(*,'(a132)') jobname(1:132)
          write(*,*) '       exceeds 128 characters'
-         stop
+         call exit(201)
       endif
 !
       fnin=jobname(1:i)//'.inp'
@@ -45,7 +45,7 @@
       else
          write(*,*) '*ERROR in openfile: input file ',fnin
          write(*,*) 'does not exist'
-         stop
+         call exit(201)
       endif
 !
       fndat=jobname(1:i)//'.dat'
@@ -65,6 +65,8 @@
       open(13,file=fnfrd(1:i+5),status='unknown',err=71)
       close(13,status='delete',err=73)
 !
+!     .sta-file
+!
       fnsta=jobname(1:i)//'.sta'
       open(8,file=fnsta(1:i+4),status='unknown',err=81)
       close(8,status='delete',err=82)
@@ -75,26 +77,48 @@
  101  format('  STEP      INC     ATT  ITRS     TOT TIME     STEP TIME      
      &    INC TIME')
 !
+!     .cvg-file
+!
+      fncvg=jobname(1:i)//'.cvg'
+      open(11,file=fncvg(1:i+4),status='unknown',err=91)
+      close(11,status='delete',err=92)
+      open(11,file=fncvg(1:i+4),status='unknown',err=91)
+      write(11,102)
+      write(11,103)
+      write(11,104)
+      write(11,105)
+ 102  format('SUMMARY OF C0NVERGENCE INFORMATION')
+ 103  format('  STEP   INC  ITER    CONT.   RESID.        CORR.      RES
+     &ID.      CORR.'     )
+ 104  format('                       EL.    FORCE         DISP       FLU
+     &X        TEMP.'   )
+ 105  format('                       (#)     (%)           (%)        (%
+     &)         (%)')
+!
       return
 !
  1    write(*,*) '*ERROR in openfile: could not open file ',fnin(1:i+4)
-      stop
+      call exit(201)
  51   write(*,*) '*ERROR in openfile: could not open file ',fndat(1:i+4)
-      stop
+      call exit(201)
  52   write(*,*) '*ERROR in openfile: could not delete file ',
      &  fndat(1:i+4)
-      stop
+      call exit(201)
  71   write(*,*) '*ERROR in openfile: could not open file ',fnfrd(1:i+4)
-      stop
+      call exit(201)
  72   write(*,*) '*ERROR in openfile: could not delete file ',
      &  fnfrd(1:i+4)
-      stop
+      call exit(201)
  73   write(*,*) '*ERROR in openfile: could not delete file ',
      &  fnfrd(1:i+5)
-      stop
+      call exit(201)
  81   write(*,*) '*ERROR in openfile: could not open file ',fnsta(1:i+4)
-      stop
+      call exit(201)
  82   write(*,*) '*ERROR in openfile: could not delete file ',
      &  fnsta(1:i+4)
-      stop
+ 91   write(*,*) '*ERROR in openfile: could not open file ',fncvg(1:i+4)
+      call exit(201)
+ 92   write(*,*) '*ERROR in openfile: could not delete file ',
+     &  fncvg(1:i+4)
+      call exit(201)
       end

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,11 +29,16 @@
      &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  coriolis,ibody,xloadold,reltime,veold,springarea,nstate_,
-     &  xstateini,xstate,thicke,xnormastface,integerglob,doubleglob,
+     &  xstateini,xstate,thicke,integerglob,doubleglob,
      &  tieset,istartset,iendset,ialset,ntie,nasym,iactive,h0,
-     &  pslavsurf,pmastsurf,mortar,clearini)
+     &  pslavsurf,pmastsurf,mortar,clearini,ielprop,prop)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
+!
+!     domain 1: phi-domain (air)
+!     domain 2: A,V-domain (body)
+!     domain 3: A-domain (air, the union of domain 2 and 3 should
+!               be simple connected)
 !
       implicit none
 !
@@ -56,7 +61,8 @@
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,jdof,node1,node2,kflag,icalccg,
      &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,mortar,
-     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,iactive(3)
+     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,iactive(3),
+     &  ielprop(*)
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
@@ -68,8 +74,8 @@
      &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),veold(0:mi(2),*),om,valu2,value,dtime,ttime,
-     &  time,thicke(mi(3),*),xnormastface(3,9,*),doubleglob(*),h0(3,*),
-     &  pslavsurf(3,*),pmastsurf(6,*),clearini(3,9,*)
+     &  time,thicke(mi(3),*),doubleglob(*),h0(3,*),
+     &  pslavsurf(3,*),pmastsurf(6,*),clearini(3,9,*),prop(*)
 !
       kflag=2
       i0=0
@@ -393,6 +399,11 @@ c
       do i=1,ne
 !
         if(ipkon(i).lt.0) cycle
+!
+!       only elements belonging to the A-V-domain should be
+!       included in the thermal analysis
+!
+        if(int(elcon(2,1,ielmat(1,i))).ne.2) cycle
         indexe=ipkon(i)
         if(lakon(i)(4:5).eq.'20') then
            nope=20
@@ -429,7 +440,8 @@ c
      &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
      &  xstiff,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,
      &  ilmpc,springarea,plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,
-     &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon)
+     &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,
+     &  ipkon,ielprop,prop)
 !
         do jj=1,nope
 !

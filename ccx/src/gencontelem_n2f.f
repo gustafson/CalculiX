@@ -150,7 +150,7 @@
          else
             write(*,*) '*ERROR in gencontelem: more than 1000'
             write(*,*) '       contact element files'
-            stop
+            call exit(201)
          endif
          open(27,file=cfile,status='unknown')
       endif
@@ -659,6 +659,11 @@ c     &                 straight(16,itri)
 !
                   if(ncmat_.ge.7) then
                      if(elcon(6,1,imat).gt.0) then
+                        nasym=1
+                     endif
+                  endif
+                  if(ncmat_.ge.8) then
+                     if(elcon(8,1,imat).gt.0) then
                         nasym=1
                      endif
                   endif

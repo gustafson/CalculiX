@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,7 +25,7 @@
      &  iprestr,vold,iperturb,iexpl,plicon,
      &  nplicon,plkcon,nplkcon,npmat_,ttime,time,istep,iinc,dtime,
      &  physcon,ibody,xloadold,reltime,veold,matname,mi,ikactmech,
-     &  nactmech)
+     &  nactmech,ielprop,prop)
 !
 !     filling the right hand side load vector b
 !
@@ -41,7 +41,7 @@
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),ikmpc(*),mi(*),
      &  ilmpc(*),nactdof(0:mi(2),*),konl(20),nelcon(2,*),ibody(3,*),
      &  nrhcon(*),nalcon(2,*),ielmat(mi(3),*),ielorien(mi(3),*),
-     &  ipkon(*),
+     &  ipkon(*),ielprop(*),
      &  nk,ne,nmpc,nforc,nload,neq,nmethod,nom,m,idm,
      &  ithermal,iprestr,iperturb,i,j,k,idist,jj,
      &  id,ist,index,jdof1,jdof,node1,ntmat_,indexe,nope,norien,
@@ -50,9 +50,9 @@
 !
       real*8 co(3,*),coefmpc(*),xforc(*),xload(2,*),p1(3,2),
      &  p2(3,2),fext(*),bodyf(3),elcon(0:21,ntmat_,*),
-     &  rhcon(0:1,ntmat_,*),xloadold(2,*),reltime,
+     &  rhcon(0:1,ntmat_,*),xloadold(2,*),reltime,prop(*),
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
-     &  t0(*),t1(*),vold(0:mi(2),*),ff(78),time,ttime,dtime,
+     &  t0(*),t1(*),vold(0:mi(2),*),ff(100),time,ttime,dtime,
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  om(2),physcon(*),veold(0:mi(2),*)
 !
@@ -132,7 +132,7 @@ c      if((ithermal.le.1).or.(ithermal.eq.3)) then
                   if(nom.gt.2) then
                      write(*,*)'*ERROR in rhs: no more than two centri-'
                      write(*,*)'       fugal loading cards allowed'
-                     stop
+                     call exit(201)
                   endif
                   om(nom)=xbody(1,j)
                   p1(1,nom)=xbody(2,j)
@@ -166,7 +166,7 @@ c      if((ithermal.le.1).or.(ithermal.eq.3)) then
      &        ff,i,nmethod,rhcon,ielmat,ntmat_,vold,iperturb,
      &        nelemload,sideload,xload,nload,idist,ttime,time,istep,
      &        iinc,dtime,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,
-     &        ikmpc,ilmpc,veold,matname,mi)
+     &        ikmpc,ilmpc,veold,matname,mi,ielprop,prop)
 !
 !        modal dynamics and steady state dynamics: 
 !        location of nonzeros is stored
@@ -314,7 +314,8 @@ c      else
      &        ff,i,nmethod,t0,t1,vold,nelemload,
      &        sideload,xload,nload,idist,dtime,
      &        ttime,time,istep,iinc,xloadold,reltime,
-     &        ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,mi)
+     &        ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,mi,
+     &        ielprop,prop)
 !
 !        modal dynamics and steady state dynamics: 
 !        location of nonzeros is stored

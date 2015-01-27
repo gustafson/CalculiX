@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,7 +25,7 @@ c     Bernhardi start
 !
       character*8 lakon(*)
 c
-      real*8 co(3,*)
+      real*8 co(3,*),coords(3)
 c
       integer i,kon(*),ipkon(*),ne,nope,nopeexp,
      &  nk,nk_,j,indexe,k,nodeb(8,3)
@@ -36,21 +36,32 @@ c
          nope=8
          nopeexp=3
       else
-         write(6,*) "error wrong element type in genmodes, element=",
+         write(*,*) "*ERROR in genmodes: wrong element type, element=",
      &               lakon(i)
+         call exit(201)
       endif
 !
 !     generating additional nodes for the incompatible element. 
-!            
+!      
+!     determining the mean value of the coordinates of the element
+!      
+      do k=1,3
+         coords(k)=0.d0
+         do j=1,nope
+            coords(k)=coords(k)+co(k,kon(indexe+j))
+         enddo
+         coords(k)=coords(k)/8.d0
+      enddo
+!
       do j=1,nopeexp
          nk=nk+1
            if(nk.gt.nk_) then
               write(*,*) '*ERROR in genmodes: increase nk_'
-              stop
+              call exit(201)
            endif
          kon(indexe+nope+j)=nk
          do k=1,3
-            co(k,nk)=0.0d0
+            co(k,nk)=coords(k)
          enddo
       enddo
 !

@@ -1,6 +1,6 @@
 
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  prlab,prset,v,t1,fn,ipkon,lakon,stx,eei,xstate,ener,
      &  mi,nstate_,ithermal,co,kon,qfx,ttime,trab,inotr,ntrans,
      &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin,ielmat,thicke,
-     &  eme,islavsurf,mortar,time)
+     &  eme,islavsurf,mortar,time,ielprop,prop,veold)
 !
 !     stores results in the .dat file
 !
@@ -39,13 +39,13 @@
      &  mi(*),nstate_,ii,jj,iset,l,limit,node,ipos,ithermal,ielem,
      &  nelem,kon(*),inotr(2,*),ntrans,ielorien(mi(3),*),norien,nk,ne,
      &  inum(*),nfield,ikin,nodes,ne0,nope,mt,ielmat(mi(3),*),iface,
-     &  jfaces,mortar,islavsurf(2,*)
+     &  jfaces,mortar,islavsurf(2,*),ielprop(*)
 !
       real*8 v(0:mi(2),*),t1(*),fn(0:mi(2),*),stx(6,mi(1),*),
      &  eei(6,mi(1),*),xstate(nstate_,mi(1),*),ener(mi(1),*),energytot,
      &  volumetot,co(3,*),qfx(3,mi(1),*),rftot(0:3),ttime,time,
      &  trab(7,*),orab(7,*),vold(0:mi(2),*),enerkintot,thicke(mi(3),*),
-     &  eme(6,mi(1),*)
+     &  eme(6,mi(1),*),prop(*),veold(0:mi(2),*)
 !
       mt=mi(2)+1
 !
@@ -169,16 +169,16 @@
                if(jj.eq.iendset(iset)) then
                   node=ialset(jj)
                   call printoutnode(prlab,v,t1,fn,ithermal,ii,node,
-     &              rftot,trab,inotr,ntrans,co,mi)
+     &              rftot,trab,inotr,ntrans,co,mi,veold)
                elseif(ialset(jj+1).gt.0) then
                   node=ialset(jj)
                   call printoutnode(prlab,v,t1,fn,ithermal,ii,node,
-     &              rftot,trab,inotr,ntrans,co,mi)
+     &              rftot,trab,inotr,ntrans,co,mi,veold)
                else
                   do node=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                 -ialset(jj+1)
                   call printoutnode(prlab,v,t1,fn,ithermal,ii,node,
-     &              rftot,trab,inotr,ntrans,co,mi)
+     &              rftot,trab,inotr,ntrans,co,mi,veold)
                   enddo
                endif
             enddo
@@ -272,19 +272,21 @@
                      nelem=ialset(jj)
                      call printoutint(prlab,ipkon,lakon,stx,eei,xstate,
      &                    ener,mi(1),nstate_,ii,nelem,qfx,
-     &                    orab,ielorien,norien,co,kon,ielmat,thicke,eme)
+     &                    orab,ielorien,norien,co,kon,ielmat,thicke,eme,
+     &                    ielprop,prop,nelem)
                   elseif(ialset(jj+1).gt.0) then
                      nelem=ialset(jj)
                      call printoutint(prlab,ipkon,lakon,stx,eei,xstate,
      &                    ener,mi(1),nstate_,ii,nelem,qfx,orab,
-     &                    ielorien,norien,co,kon,ielmat,thicke,eme)
+     &                    ielorien,norien,co,kon,ielmat,thicke,eme,
+     &                    ielprop,prop,nelem)
                   else
                      do nelem=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                    -ialset(jj+1)
                         call printoutint(prlab,ipkon,lakon,stx,eei,
      &                       xstate,ener,mi(1),nstate_,ii,nelem,
      &                       qfx,orab,ielorien,norien,co,kon,ielmat,
-     &                       thicke,eme)
+     &                       thicke,eme,ielprop,prop,nelem)
                      enddo
                   endif
                enddo
@@ -298,6 +300,7 @@
      &           (prlab(ii)(1:4).eq.'EVOL').or.
      &           (prlab(ii)(1:4).eq.'CSTR').or.
      &           (prlab(ii)(1:4).eq.'CDIS').or.
+     &           (prlab(ii)(1:4).eq.'CNUM').or.
      &           (prlab(ii)(1:4).eq.'CELS')) then
 !     
                  ipos=index(prset(ii),' ')
@@ -371,7 +374,6 @@
      &              ' contact print energy (slave element+face,energy)'  
      &              'for all contact elements and time',e14.7)
                endif
-               write(5,*)
             endif
 !     
 !     printing the data
@@ -383,8 +385,11 @@
             
             if ((prlab(ii)(1:4).eq.'CSTR').or.
      &           (prlab(ii)(1:4).eq.'CDIS').or.
+     &           (prlab(ii)(1:4).eq.'CNUM').or.
      &           (prlab(ii)(1:4).eq.'CELS')) then
 !     
+!              ne0 is the number of the first contact element
+!
                do jj=ne,1,-1
                   if((lakon(jj)(2:2).ne.'S').or.
      &                 (lakon(jj)(7:7).ne.'C')) then
@@ -392,27 +397,30 @@
                      exit
                   endif
                enddo
-               if(mortar.eq.0) then
-                  do nelem=ne0,ne
-                     read(lakon(nelem)(8:8),'(i1)') nope
-                     nope=nope+1
-                     nodes=kon(ipkon(nelem)+nope)
-                     call printoutelem(prlab,ipkon,lakon,kon,co,
-     &                 ener,mi(1),ii,nelem,energytot,volumetot,
-     &                 enerkintot,ikin,ne,stx,nodes,thicke,ielmat,
-     &                 ielem,iface,mortar)
-                  enddo
-               elseif(mortar.eq.1) then
-                  do nelem=ne0,ne
-                     jfaces=
+!
+               if(prlab(ii)(1:4).ne.'CNUM') then
+                  if(mortar.eq.0) then
+                     do nelem=ne0,ne
+                        read(lakon(nelem)(8:8),'(i1)') nope
+                        nope=nope+1
+                        nodes=kon(ipkon(nelem)+nope)
+                        call printoutelem(prlab,ipkon,lakon,kon,co,
+     &                       ener,mi(1),ii,nelem,energytot,volumetot,
+     &                       enerkintot,ikin,ne,stx,nodes,thicke,ielmat,
+     &                       ielem,iface,mortar)
+                     enddo
+                  elseif(mortar.eq.1) then
+                     do nelem=ne0,ne
+                        jfaces=
      &                islavsurf(1,kon(ipkon(nelem)+kon(ipkon(nelem))+2))
-                     ielem=int(jfaces/10.d0)
-                     iface=jfaces-10*ielem
-                     call printoutelem(prlab,ipkon,lakon,kon,co,
-     &                 ener,mi(1),ii,nelem,energytot,volumetot,
-     &                 enerkintot,ikin,ne,stx,nodes,thicke,ielmat,
-     &                 ielem,iface,mortar)
-                  enddo
+                        ielem=int(jfaces/10.d0)
+                        iface=jfaces-10*ielem
+                        call printoutelem(prlab,ipkon,lakon,kon,co,
+     &                       ener,mi(1),ii,nelem,energytot,volumetot,
+     &                       enerkintot,ikin,ne,stx,nodes,thicke,ielmat,
+     &                       ielem,iface,mortar)
+                     enddo
+                  endif
                endif
             else
                do iset=1,nset
@@ -476,6 +484,13 @@
  125           format(' total contact spring energy for time ',e14.7)
                write(5,*)
                write(5,'(6x,1p,1x,e13.6)') energytot
+            elseif(prlab(ii)(1:4).eq.'CNUM') then
+               write(5,*)
+               write(5,129) ttime+time
+ 129           format
+     &           (' total number of contact elements for time ',e14.7)
+               write(5,*)
+               write(5,'(6x,1p,1x,i10)') ne-ne0+1
 !     
             endif
          endif

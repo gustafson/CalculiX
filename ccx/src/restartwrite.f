@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -368,8 +368,8 @@
 !
       if((ne1d.gt.0).or.(ne2d.gt.0))then
          write(15)(iponor(i),i=1,2*nkon)
-         write(15)(xnor(i),i=1,infree(1)-1)
-         write(15)(knor(i),i=1,infree(2)-1)
+         write(15)(xnor(i),i=1,infree(1))
+         write(15)(knor(i),i=1,infree(2))
          write(15)(thicke(i),i=1,mi(3)*nkon)
          write(15)(offset(i),i=1,2*ne)
          write(15)(iponoel(i),i=1,infree(4))
@@ -413,7 +413,7 @@
       if(mortar.eq.1) then
          write(15) (islavsurf(i),i=1,2*ifacecount+2)
          write(15) (pslavsurf(i),i=1,3*nintpoint)
-         write(15) (clearini(i),i=1,3*9*nslavs)
+         write(15) (clearini(i),i=1,3*9*ifacecount)
       endif
 !
 !     control parameters
@@ -426,11 +426,11 @@
       return
 !
  151  write(*,*) '*ERROR in restartwrite: could not open file ',fnrstrt
-      stop
+      call exit(201)
 !
  152  write(*,*) '*ERROR in restartwrite: could not inquire file ',
      &    fnrstrt
-      stop
+      call exit(201)
       end
 
 

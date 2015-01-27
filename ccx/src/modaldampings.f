@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,7 +36,7 @@
       if(istep.lt.1) then
          write(*,*) '*ERROR in modaldampings: *MODAL DAMPING can only'
          write(*,*) '  be used within a STEP'
-         stop
+         call exit(201)
       endif
 !
       rayleigh=.false.
@@ -62,7 +62,7 @@
             write(*,*) '       '
             call inputerror(inpc,ipoinpc,iline,
      &"*MODAL DAMPING%")
-            stop
+            call exit(201)
          endif
          read(textpart(3)(1:20),'(f20.0)',iostat=istat) xmodal(1)
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,

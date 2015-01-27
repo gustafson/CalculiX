@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -41,13 +41,13 @@
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR reading *AMPLITUDE: *AMPLITUDE should be'
          write(*,*) '  placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       nam=nam+1
       if(nam.gt.nam_) then
          write(*,*) '*ERROR reading *AMPLITUDE: increase nam_'
-         stop
+         call exit(201)
       endif
       namta(3,nam)=nam
       amname(nam)='
@@ -61,7 +61,7 @@
                write(*,*) '      name is too long'
                write(*,*) '      (more than 80 characters)'
                write(*,*) '      amplitude name:',textpart(i)(1:132)
-               stop
+               call exit(201)
             endif
          elseif(textpart(i)(1:14).eq.'TIME=TOTALTIME') then
             namta(3,nam)=-nam
@@ -109,7 +109,7 @@
                if(namtot.gt.namtot_) then
                   write(*,*) 
      &               '*ERROR reading *AMPLITUDE: increase namtot_'
-                  stop
+                  call exit(201)
                endif
                read(textpart(2*i-1),'(f20.0)',iostat=istat) x
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,

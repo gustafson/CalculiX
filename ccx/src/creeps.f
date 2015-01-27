@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -45,13 +45,13 @@
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR reading *CREEP: *CREEP should be placed'
          write(*,*) '  before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       if(nmat.eq.0) then
          write(*,*) '*ERROR reading *CREEP: *CREEP should be preceded'
          write(*,*) '  by a *MATERIAL card'
-         stop
+         call exit(201)
       endif
 !
 !     check for anisotropic creep: assumes a ucreep routine
@@ -61,7 +61,7 @@
             write(*,*) '*ERROR reading *CREEP: *CREEP should be'
             write(*,*) '       preceded by an *ELASTIC,TYPE=ISO card,'
             write(*,*) '       or an *ELASTIC,TYPE=ORTHO card'
-            stop
+            call exit(201)
          endif
 !
          ianisoplas=1
@@ -72,10 +72,10 @@
 !           without hardening: no plasticity
 !
             iperturb(1)=3
-            iperturb(2)=1
-            write(*,*) '*INFO reading *CREEP: nonlinear geometric'
-            write(*,*) '      effects are turned on'
-            write(*,*)
+c            iperturb(2)=1
+c            write(*,*) '*INFO reading *CREEP: nonlinear geometric'
+c            write(*,*) '      effects are turned on'
+c            write(*,*)
             nelcon(1,nmat)=-114
             do i=2,n
                if(textpart(i)(1:8).eq.'LAW=USER') then
@@ -95,7 +95,7 @@
                   write(*,*) '       for an elastically anisotropic'
                   write(*,*) '       material with isotropic creep must'
                   write(*,*) '       not exceed 69 characters'
-                  stop
+                  call exit(201)
                else
                   do i=80,12,-1
                      matname(nmat)(i:i)=matname(nmat)(i-11:i-11)
@@ -123,7 +123,7 @@ c                  matname(nmat)(12:80)=matname(nmat)(1:69)
                   write(*,*) '       for an elastically anisotropic'
                   write(*,*) '       material with Norton creep'
                   write(*,*) '       must not exceed 70 characters'
-                  stop
+                  call exit(201)
                else
                   do i=80,11,-1
                      matname(nmat)(i:i)=matname(nmat)(i-10:i-10)
@@ -144,7 +144,7 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
                   write(*,*) '       anisotropic material with von'
                   write(*,*) '       Mises plasticity only Norton creep'
                   write(*,*) '       is allowed (no user subroutine)'
-                  stop
+                  call exit(201)
                endif
             enddo
          endif
@@ -175,10 +175,10 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
          endif
 !     
          iperturb(1)=3
-         iperturb(2)=1
-         write(*,*) '*INFO reading *CREEP: nonlinear geometric'
-         write(*,*) '      effects are turned on'
-         write(*,*)
+c         iperturb(2)=1
+c         write(*,*) '*INFO reading *CREEP: nonlinear geometric'
+c         write(*,*) '      effects are turned on'
+c         write(*,*)
          iplas=1
          nelcon(1,nmat)=-52
          nstate_=max(nstate_,13)
@@ -213,7 +213,7 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
             ntmat=ntmat+1
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *CREEP: increase ntmat_'
-               stop
+               call exit(201)
             endif
             do i=1,3
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
@@ -224,12 +224,12 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
             if(elcon(6,ntmat,nmat).le.0.d0) then
                write(*,*) '*ERROR reading *CREEP: parameter A'
                write(*,*) '       in the Norton law is nonpositive'
-               stop
+               call exit(201)
             endif
             if(elcon(7,ntmat,nmat).le.0.d0) then
                write(*,*) '*ERROR reading *CREEP: parameter n'
                write(*,*) '       in the Norton law is nonpositive'
-               stop
+               call exit(201)
             endif
             if(textpart(4)(1:1).ne.' ') then
                read(textpart(4)(1:20),'(f20.0)',iostat=istat)
@@ -245,7 +245,7 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
          if(ntmat.eq.0) then
             write(*,*) '*ERROR reading *CREEP: Norton law assumed,'
             write(*,*) '       yet no constants given'
-            stop
+            call exit(201)
          endif
 !
 !        interpolating the creep data at the elastic temperature
@@ -286,7 +286,7 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
             ntmat=ntmat+1
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *CREEP: increase ntmat_'
-               stop
+               call exit(201)
             endif
             do i=1,3
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
@@ -316,7 +316,7 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
          if(ntmat.eq.0) then
             write(*,*) '*ERROR reading *CREEP: Norton law assumed,'
             write(*,*) '       yet no constants given'
-            stop
+            call exit(201)
          endif
 !     
          do i=1,nelcon(2,nmat)
@@ -349,7 +349,7 @@ c         write(*,*) 'anisotropic elasticity+viscoplasticity'
 c         do i=1,nelcon(2,nmat)
 c            write(*,*) (elcon(j,i,nmat),j=0,14)
 c         enddo
-cc         stop
+cc         call exit(201)
 c      endif
 !
       return

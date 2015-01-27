@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -51,7 +51,7 @@
          write(*,*) 
      &     '*ERROR reading *INITIAL CONDITIONS: *INITIAL CONDITIONS'
          write(*,*) '  should be placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       do ij=2,n
@@ -119,7 +119,7 @@
                      write(*,*)'  has not yet been defined. '
                      call inputerror(inpc,ipoinpc,iline,
      &"*INITIAL CONDITIONS%")
-                     stop
+                     call exit(201)
                   endif
                   do j=istartset(ii),iendset(ii)
                      if(ialset(j).gt.0) then
@@ -386,7 +386,7 @@
                      write(*,*)'  has not yet been defined. '
                      call inputerror(inpc,ipoinpc,iline,
      &"*INITIAL CONDITIONS%")
-                     stop
+                     call exit(201)
                   endif
                   do j=istartset(ii),iendset(ii)
                      if(ialset(j).gt.0) then
@@ -441,7 +441,7 @@
                      write(*,*)'  has not yet been defined. '
                      call inputerror(inpc,ipoinpc,iline,
      &"*INITIAL CONDITIONS%")
-                     stop
+                     call exit(201)
                   endif
                   do j=istartset(ii),iendset(ii)
                      if(ialset(j).gt.0) then
@@ -493,7 +493,7 @@
                      write(*,*)'  has not yet been defined. '
                      call inputerror(inpc,ipoinpc,iline,
      &"*INITIAL CONDITIONS%")
-                     stop
+                     call exit(201)
                   endif
                   do j=istartset(ii),iendset(ii)
                      if(ialset(j).gt.0) then
@@ -545,7 +545,7 @@
                      write(*,*)'  has not yet been defined. '
                      call inputerror(inpc,ipoinpc,iline,
      &"*INITIAL CONDITIONS%")
-                     stop
+                     call exit(201)
                   endif
                   do j=istartset(ii),iendset(ii)
                      if(ialset(j).gt.0) then
@@ -597,7 +597,7 @@
                      write(*,*)'  has not yet been defined. '
                      call inputerror(inpc,ipoinpc,iline,
      &"*INITIAL CONDITIONS%")
-                     stop
+                     call exit(201)
                   endif
                   do j=istartset(ii),iendset(ii)
                      if(ialset(j).gt.0) then
@@ -625,7 +625,7 @@ c               write(*,*)
 c     &            '*ERROR reading *INITIAL CONDITIONS: TYPE=SOLUTION'
 c               write(*,*) '       can only be used in combination with'
 c               write(*,*) '       USER'
-c               stop
+c               call exit(201)
 c            endif
             if(user) then
 !

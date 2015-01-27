@@ -198,12 +198,18 @@ c      endif
             endif
             elas(1)=dexp(-beta*clear+dlog(alpha))
          endif
+         if(iener.eq.1) then
+            senergy=elas(1)/beta;
+         endif
       elseif((int(elcon(3,1,imat)).eq.2).or.
      &       (int(elcon(3,1,imat)).eq.4)) then
 !     
 !        linear overclosure/tied overclosure
 !     
          elas(1)=-springarea(1)*elcon(2,1,imat)*clear
+         if(iener.eq.1) then
+            senergy=-elas(1)*clear/2.d0;
+         endif
       elseif(int(elcon(3,1,imat)).eq.3) then
 !     
 !        tabular overclosure
@@ -221,13 +227,33 @@ c      endif
          call ident(xiso,overlap,niso,id)
          if(id.eq.0) then
             pres=yiso(1)
+            if(iener.eq.1) then
+               senergy=yiso(1)*overlap;
+            endif
          elseif(id.eq.niso) then
             pres=yiso(niso)
+            if(iener.eq.1) then
+               senergy=yiso(1)*xiso(1)
+               do i=2,niso
+                  senergy=senergy+(xiso(i)-xiso(i-1))*
+     &                            (yiso(i)+yiso(i-1))/2.d0
+               enddo
+               senergy=senergy+(pres-xiso(niso))*yiso(niso)
+            endif
          else
             xk=(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))
             pres=yiso(id)+xk*(overlap-xiso(id))
+            if(iener.eq.1) then
+               senergy=yiso(1)*xiso(1)
+               do i=2, id
+                  senergy=senergy+(xiso(i)-xiso(i-1))*
+     &                 (yiso(i)+yiso(i-1))/2.d0
+               enddo
+               senergy=senergy+(overlap-xiso(id))*(pres+yiso(id))/2.d0
+            endif
          endif
          elas(1)=springarea(1)*pres
+         if(iener.eq.1) senergy=springarea(1)*senergy
       endif
 !
 !     forces in the nodes of the contact element
@@ -235,9 +261,6 @@ c      endif
       do i=1,3
          fnl(i,nopep)=-elas(1)*xn(i)
       enddo
-      if(iener.eq.1) then
-         senergy=elas(1)/beta;
-      endif
       cstr(4)=elas(1)/springarea(1)
 !
 !     Coulomb friction for static calculations
@@ -349,6 +372,7 @@ c            stickslope=elcon(7,1,imat)
 !     
                do i=1,3
                   fnl(i,nopep)=fnl(i,nopep)+ftrial(i)
+                  xstate(i,1,ne0+iloc)=tp(i)
                enddo
                cstr(5)=(ftrial(1)*t1(1)+ftrial(2)*t1(2)+
      &              ftrial(3)*t1(3))/springarea(1)

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -51,7 +51,7 @@
       if(istep.lt.1) then
          write(*,*) '*ERROR in dfluxes: *DFLUX should only be used'
          write(*,*) '  within a STEP'
-         stop
+         call exit(201)
       endif
 !
       do i=2,n
@@ -75,7 +75,7 @@
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
      &"*DFLUX%")
-               stop
+               call exit(201)
             endif
             iamplitude=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
@@ -85,21 +85,21 @@
                write(*,*) '       '
                call inputerror(inpc,ipoinpc,iline,
      &"*DFLUX%")
-               stop
+               call exit(201)
             else
                idelay=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
                write(*,*) '*ERROR in dfluxes: increase nam_'
-               stop
+               call exit(201)
             endif
             amname(nam)='
      &                                 '
             if(iamplitude.eq.0) then
                write(*,*) '*ERROR in dfluxes: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
-               stop
+               call exit(201)
             endif
             namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
@@ -111,7 +111,7 @@
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR dfluxes: increase namtot_'
-               stop
+               call exit(201)
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
@@ -161,7 +161,7 @@
             if(l.gt.ne) then
                write(*,*) '*ERROR in dfluxes: element ',l
                write(*,*) '       is not defined'
-               stop
+               call exit(201)
             endif
 !
             if((lakon(l)(1:2).eq.'CP').or.
@@ -204,7 +204,7 @@
                write(*,*) '       has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline,
      &"*DFLUX%")
-               stop
+               call exit(201)
             endif
 !
             l=ialset(istartset(i))

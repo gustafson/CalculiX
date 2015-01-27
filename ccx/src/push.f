@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,7 +30,7 @@
       if(topstk.gt.maxstk) then
          write(6,'("0***error in subroutine push***")')
          write(6,'("***stack overflow***")')
-         stop
+         call exit(201)
       else
          stack(topstk)=item
       endif

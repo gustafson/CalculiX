@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2014 Guido Dhondt
+!     Copyright (C) 1998-2015 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
       subroutine labyrinth(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &     nodef,idirf,df,cp,R,physcon,co,dvi,numf,vold,set,
-     &     kon,ipkon,mi)
+     &     kon,ipkon,mi,iaxial)
 !     
 !     labyrinth element
 !
@@ -68,7 +68,7 @@
           if(lakon(nelem)(2:5).ne.'LABF') then
              t=prop(index+1)
              s=prop(index+2)
-             iaxial=int(prop(index+3))
+c             iaxial=int(prop(index+3))
              d=prop(index+4)
              n=int(prop(index+5))
              b=prop(index+6)
@@ -85,7 +85,7 @@
           elseif(lakon(nelem)(2:5).eq.'LABF') then
              nodea=int(prop(index+1))
              nodeb=int(prop(index+2))
-             iaxial=int(prop(index+3))
+c             iaxial=int(prop(index+3))
              t=prop(index+4)
              d=prop(index+5)
              n=int(prop(index+6))
@@ -101,11 +101,11 @@
 !     gap definition
              s=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &            co(1,nodea)-vold(1,nodea))**2)
-             if(iaxial.ne.0) then
-                a=pi*d*s/iaxial
-             else
+c             if(iaxial.ne.0) then
+c                a=pi*d*s/iaxial
+c             else
                 a=pi*d*s
-             endif
+c             endif
           endif
 !     
          p1=v(2,node1)
@@ -181,7 +181,7 @@
          p2=v(2,node2)
          if(p1.ge.p2) then
             inv=1
-            xflow=v(1,nodem)
+            xflow=v(1,nodem)*iaxial
             T1=v(0,node1)+physcon(1)
             T2=v(0,node2)+physcon(1)
             nodef(1)=node1
@@ -192,7 +192,7 @@
             inv=-1
             p1=v(2,node2)
             p2=v(2,node1)
-            xflow=-v(1,nodem)
+            xflow=-v(1,nodem)*iaxial
             T1=v(0,node2)+physcon(1)
             T2=v(0,node1)+physcon(1)
             nodef(1)=node2
@@ -213,7 +213,7 @@
             kappa=(cp/(cp-R))
             t=prop(index+1)
             s=prop(index+2)
-            iaxial=int(prop(index+3))
+c            iaxial=int(prop(index+3))
             d=prop(index+4)
             n=int(prop(index+5))
             b=prop(index+6)
@@ -230,7 +230,7 @@
             index=ielprop(nelem)
             nodea=int(prop(index+1))
             nodeb=int(prop(index+2))
-            iaxial=int(prop(index+3))
+c            iaxial=int(prop(index+3))
             t=prop(index+4)
             d=prop(index+5)
             n=int(prop(index+6))
@@ -244,11 +244,11 @@
 !     gap definition
              s=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &            co(1,nodea)-vold(1,nodea))**2)
-             if(iaxial.ne.0) then
-                a=pi*d*s/iaxial
-             else
+c             if(iaxial.ne.0) then
+c                a=pi*d*s/iaxial
+c             else
                 a=pi*d*s
-             endif
+c             endif
           endif
 !     
          p2p1=p2/p1
@@ -439,7 +439,7 @@
          p2=v(2,node2)
          if(p1.ge.p2) then
             inv=1
-            xflow=v(1,nodem)
+            xflow=v(1,nodem)*iaxial
             T1=v(0,node1)+physcon(1)
             T2=v(0,node2)+physcon(1)
             nodef(1)=node1
@@ -450,7 +450,7 @@
             inv=-1
             p1=v(2,node2)
             p2=v(2,node1)
-            xflow=-v(1,nodem)
+            xflow=-v(1,nodem)*iaxial
             T1=v(0,node2)+physcon(1)
             T2=v(0,node2)+physcon(1)
             nodef(1)=node2
@@ -664,8 +664,9 @@
  59      FORMAT(1X,A,f7.5,A,f7.5,A,f7.5,A,f5.3)
  60      FORMAT(1X,A,f7.5,A,f7.5)
       endif
+!     
+      xflow=xflow/iaxial
+      df(3)=df(3)*iaxial
 !         
       return
       end
-      
-      

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,7 +25,7 @@
      &  qfx,ikmpc,ilmpc,istep,iinc,springarea,
      &  calcul_fn,calcul_qa,nal,nea,neb,ithermal,nelemload,nload,
      &  nmethod,reltime,sideload,xload,xloadold,pslavsurf,
-     &  pmastsurf,mortar,clearini,plicon,nplicon)
+     &  pmastsurf,mortar,clearini,plicon,nplicon,ielprop,prop)
 !
 !     calculates the heat flux and the material tangent at the integration
 !     points and the internal concentrated flux at the nodes
@@ -44,7 +44,7 @@
      &  nal,nmpc,kode,imat,mint3d,iorien,istiff,ncmat_,nstate_,
      &  nplkcon(0:ntmat_,*),npmat_,calcul_fn,calcul_qa,nea,neb,
      &  nelemload(2,*),nload,ithermal(2),nmethod,nopered,iloc,
-     &  jfaces,node,nplicon(0:ntmat_,*)
+     &  jfaces,node,nplicon(0:ntmat_,*),null,ielprop(*)
 !
       real*8 co(3,*),v(0:mi(2),*),shp(4,26),reltime,
      &  xl(3,26),vl(0:mi(2),26),elcon(0:ncmat_,ntmat_,*),
@@ -57,11 +57,12 @@
      &  t1lold,plkcon(0:2*npmat_,ntmat_,*),xstiff(27,mi(1),*),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  xload(2,*),xloadold(2,*),clearini(3,9,*),pslavsurf(3,*),
-     &  pmastsurf(6,*),plicon(0:2*npmat_,ntmat_,*)
+     &  pmastsurf(6,*),plicon(0:2*npmat_,ntmat_,*),prop(*)
 !
       include "gauss.f"
 !
       iflag=3
+      null=0
       iperm=(/5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/)
 !
       mt=mi(2)+1
@@ -149,7 +150,12 @@ c            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
          if(lakon(i)(4:5).eq.'8R') then
             mint3d=1
          elseif(lakon(i)(4:7).eq.'20RB') then
-            mint3d=50
+            if((lakon(i)(8:8).eq.'R').or.(lakon(i)(8:8).eq.'C')) then
+               mint3d=50
+            else
+               call beamintscheme(lakon(i),mint3d,ielprop(i),prop,
+     &              null,xi,et,ze,weight)
+            endif
          elseif((lakon(i)(4:4).eq.'8').or.
      &          (lakon(i)(4:6).eq.'20R').or.
      &          (lakon(i)(4:6).eq.'26R')) then
@@ -262,11 +268,16 @@ c            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
                et=gauss3d1(2,kk)
                ze=gauss3d1(3,kk)
                weight=weight3d1(kk)
-            elseif(lakon(i)(4:8).eq.'20RBR') then
-               xi=gauss3d13(1,kk)
-               et=gauss3d13(2,kk)
-               ze=gauss3d13(3,kk)
-               weight=weight3d13(kk)
+            elseif(lakon(i)(4:7).eq.'20RB') then
+               if((lakon(i)(8:8).eq.'R').or.(lakon(i)(8:8).eq.'C')) then
+                  xi=gauss3d13(1,kk)
+                  et=gauss3d13(2,kk)
+                  ze=gauss3d13(3,kk)
+                  weight=weight3d13(kk)
+               else
+                  call beamintscheme(lakon(i),mint3d,ielprop(i),
+     &                 prop,kk,xi,et,ze,weight)
+               endif
             elseif((lakon(i)(4:4).eq.'8').or.
      &             (lakon(i)(4:6).eq.'20R').or.(lakon(i)(4:6).eq.'26R'))
      &        then

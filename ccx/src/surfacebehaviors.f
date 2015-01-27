@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,14 +43,14 @@
          write(*,*) '*ERROR reading *SURFACE BEHAVIOR:'
          write(*,*) '       *SURFACE BEHAVIOR should be placed'
          write(*,*) '       before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       if(nmat.eq.0) then
          write(*,*) '*ERROR reading *SURFACE BEHAVIOR:'
          write(*,*) '       *SURFACE BEHAVIOR should be preceded'
          write(*,*) '       by a *SURFACE INTERACTION card'
-         stop
+         call exit(201)
       endif
       pressureoverclosure=' '
 !
@@ -79,10 +79,10 @@
          write(*,*) '*ERROR reading *SURFACE BEHAVIOR:'
          write(*,*) '       no PRESSURE-OVERCLOSURE defined on the'
          write(*,*) '       *SURFACE BEHAVIOR card'
-         stop
+         call exit(201)
       endif
 !
-      nelcon(1,nmat)=2
+      nelcon(1,nmat)=max(nelcon(1,nmat),2)
       nelcon(2,nmat)=1
 !
       if(pressureoverclosure.eq.'E') then
@@ -113,12 +113,12 @@
          if(elcon(1,1,nmat).le.0.d0) then
             write(*,*) '*ERROR reading *SURFACE BEHAVIOR: c_0 must'
             write(*,*) '       exceed zero'
-            stop
+            call exit(201)
          endif
          if(elcon(2,1,nmat).lt.0.d0) then
             write(*,*) '*ERROR reading *SURFACE BEHAVIOR: p_0 must'
             write(*,*) '       not be smaller than zero'
-            stop
+            call exit(201)
          endif
 !     
 !     transforming the parameters c_0 into
@@ -165,7 +165,7 @@
          if(elcon(2,1,nmat).le.0.d0) then
             write(*,*) '*ERROR reading *SURFACE BEHAVIOR: K must'
             write(*,*) '       be strictly positive'
-            stop
+            call exit(201)
          endif
 !     
 !     tension at large clearances
@@ -222,7 +222,7 @@ c         elcon(1,1,nmat)=-elcon(1,1,nmat)
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *SURFACE BEHAVIOR:'
                   write(*,*) '       increase ntmat_'
-                  stop
+                  call exit(201)
                endif
                nplicon(0,nmat)=ntmat
                plicon(0,ntmat,nmat)=temperature
@@ -235,7 +235,7 @@ c         elcon(1,1,nmat)=-elcon(1,1,nmat)
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *SURFACE BEHAVIOR:' 
                   write(*,*) '       increase ntmat_'
-                  stop
+                  call exit(201)
                endif
                nplicon(0,nmat)=ntmat
                plicon(0,ntmat,nmat)=temperature
@@ -250,7 +250,7 @@ c         elcon(1,1,nmat)=-elcon(1,1,nmat)
             if(npmat.gt.npmat_) then
                write(*,*) 
      &              '*ERROR reading *SURFACE BEHAVIOR: increase npmat_'
-               stop
+               call exit(201)
             endif
             nplicon(ntmat,nmat)=npmat
          enddo
@@ -259,7 +259,7 @@ c         elcon(1,1,nmat)=-elcon(1,1,nmat)
             write(*,*) 
      &           '*ERROR reading *SURFACE BEHAVIOR: *SURFACE BEHAVIOR'
             write(*,*) '       card without data'
-            stop
+            call exit(201)
          endif
 !
 !        check whether the difference between the overclosure data

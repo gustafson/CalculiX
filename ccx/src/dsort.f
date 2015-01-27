@@ -80,14 +80,14 @@ C***FIRST EXECUTABLE STATEMENT  DSORT
       if (nn .lt. 1) then
          write(*,*) '*error in dsort: the number of values to be'
          write(*,*) '       sorted is not positive'
-         stop
+         call exit(201)
       endif
 C
       kk = abs(kflag)
       if (kk.ne.1 .and. kk.ne.2) then
          write(*,*) '*error in dsort: the sort control parameter is'
          write(*,*) '       not 2, 1, -1 or -2'
-         stop
+         call exit(201)
       endif
 C
 C     Alter array DX to get decreasing order if needed

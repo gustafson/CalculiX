@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -63,7 +63,8 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
              char *prset, ITG *nener, ITG *isolver, double *trab, 
              ITG *inotr, ITG *ntrans, double *ttime,double *fmpc,
 	     char *cbody, ITG *ibody,double *xbody, ITG *nbody, 
-	     double *thicke,char *jobnamec){
+	     double *thicke,char *jobnamec,ITG *nmat,ITG *ielprop,
+             double *prop){
   
   char bmat[2]="G", which[3]="LM", howmny[2]="A",
       description[13]="            ",*tieset=NULL;
@@ -116,7 +117,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
   if(*nbody>0){
       ifreebody=*ne+1;
-      ipobody=NNEW(ITG,2*ifreebody**nbody);
+      NNEW(ipobody,ITG,2*ifreebody**nbody);
       for(k=1;k<=*nbody;k++){
 	  FORTRAN(bodyforce,(cbody,ibody,ipobody,nbody,set,istartset,
 			     iendset,ialset,&inewton,nset,&ifreebody,&k));
@@ -127,19 +128,19 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
   /* determining the internal forces and the stiffness coefficients */
 
-  f=NNEW(double,neq[0]);
+  NNEW(f,double,neq[0]);
 
   /* allocating a field for the stiffness matrix */
 
-  xstiff=NNEW(double,(long long)27*mi[0]**ne);
+  NNEW(xstiff,double,(long long)27*mi[0]**ne);
 
 //  iout=-1;
-  v=NNEW(double,mt**nk);
-  fn=NNEW(double,mt**nk);
-  stx=NNEW(double,6*mi[0]**ne);
+  NNEW(v,double,mt**nk);
+  NNEW(fn,double,mt**nk);
+  NNEW(stx,double,6*mi[0]**ne);
 
   iout=-1;
-  inum=NNEW(ITG,*nk);
+  NNEW(inum,ITG,*nk);
   if(*iperturb==0){
      results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	     elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -156,7 +157,8 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	     fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
 	     &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 	     sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
-	     &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,islavsurf);
+	     &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
+	     islavsurf,ielprop,prop);
   }else{
      results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	     elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -173,17 +175,18 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	     fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
 	     &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 	     sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
-	     &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,islavsurf);
+	     &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
+	     islavsurf,ielprop,prop);
   }
 
-  free(v);free(fn);free(stx);free(inum);
+  SFREE(v);SFREE(fn);SFREE(stx);SFREE(inum);
   iout=1;
 
   /* determining the system matrix and the external forces */
 
-  ad=NNEW(double,neq[0]);
-  au=NNEW(double,nzs[0]);
-  fext=NNEW(double,neq[0]);
+  NNEW(ad,double,neq[0]);
+  NNEW(au,double,nzs[0]);
+  NNEW(fext,double,neq[0]);
 
   if(*iperturb==0){
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -201,7 +204,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
 	      xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,pmastsurf,
-	      &mortar,clearini));
+	      &mortar,clearini,ielprop,prop));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -219,25 +222,26 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
               xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,
-	      pmastsurf,&mortar,clearini));
+	      pmastsurf,&mortar,clearini,ielprop,prop));
   }
 
   /* determining the right hand side */
 
-  b=NNEW(double,neq[0]);
+  NNEW(b,double,neq[0]);
   for(k=0;k<neq[0];++k){
       b[k]=fext[k]-f[k];
   }
-  free(fext);free(f);
+  SFREE(fext);SFREE(f);
 
   if(*nmethod==0){
 
     /* error occurred in mafill: storing the geometry in frd format */
 
     ++*kode;
-    inum=NNEW(ITG,*nk);for(k=0;k<*nk;k++) inum[k]=1;
+    NNEW(inum,ITG,*nk);for(k=0;k<*nk;k++) inum[k]=1;
     if(strcmp1(&filab[1044],"ZZS")==0){
-	neigh=NNEW(ITG,40**ne);ipneigh=NNEW(ITG,*nk);
+	NNEW(neigh,ITG,40**ne);
+	NNEW(ipneigh,ITG,*nk);
     }
 
     frd(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,
@@ -246,10 +250,10 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-   	    thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni);
+	    thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat);
     
-    if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
-    free(inum);FORTRAN(stop,());
+    if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
+    SFREE(inum);FORTRAN(stop,());
 
   }
 
@@ -296,20 +300,20 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
   /* calculating the displacements and the stresses and storing */
   /* the results in frd format for each valid eigenmode */
 
-  v=NNEW(double,mt**nk);
-  fn=NNEW(double,mt**nk);
-  stn=NNEW(double,6**nk);
-  inum=NNEW(ITG,*nk);
-  stx=NNEW(double,6*mi[0]**ne);
+  NNEW(v,double,mt**nk);
+  NNEW(fn,double,mt**nk);
+  NNEW(stn,double,6**nk);
+  NNEW(inum,ITG,*nk);
+  NNEW(stx,double,6*mi[0]**ne);
   
-  if(strcmp1(&filab[261],"E   ")==0) een=NNEW(double,6**nk);
-  if(strcmp1(&filab[2697],"ME  ")==0) emn=NNEW(double,6**nk);
-  if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,*nk);
+  if(strcmp1(&filab[261],"E   ")==0) NNEW(een,double,6**nk);
+  if(strcmp1(&filab[2697],"ME  ")==0) NNEW(emn,double,6**nk);
+  if(strcmp1(&filab[522],"ENER")==0) NNEW(enern,double,*nk);
 
-  eei=NNEW(double,6*mi[0]**ne);
+  NNEW(eei,double,6*mi[0]**ne);
   if(*nener==1){
-      stiini=NNEW(double,6*mi[0]**ne);
-      enerini=NNEW(double,mi[0]**ne);}
+      NNEW(stiini,double,6*mi[0]**ne);
+      NNEW(enerini,double,mi[0]**ne);}
 
   if(*iperturb==0){
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
@@ -328,7 +332,8 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
 	    &ne0,xforc,nforc,thicke,shcon,nshcon,
 	    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
-	    &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,islavsurf);}
+	    &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
+	    islavsurf,ielprop,prop);}
   else{
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	    stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -345,7 +350,8 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
 	    &ne0,xforc,nforc,thicke,shcon,nshcon,
 	    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
-	    &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,islavsurf);
+	    &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
+	    islavsurf,ielprop,prop);
   }
 
   for(k=0;k<mt**nk;++k){
@@ -354,7 +360,8 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
   ++*kode;
   if(strcmp1(&filab[1044],"ZZS")==0){
-      neigh=NNEW(ITG,40**ne);ipneigh=NNEW(ITG,*nk);
+      NNEW(neigh,ITG,40**ne);
+      NNEW(ipneigh,ITG,*nk);
   }
 
   frd(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,
@@ -363,14 +370,14 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-            thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni);
+            thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat);
 
-  if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
-  free(v);free(fn);free(stn);free(inum);
+  if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
+  SFREE(v);SFREE(fn);SFREE(stn);SFREE(inum);
 
-  if(strcmp1(&filab[261],"E   ")==0) free(een);
-  if(strcmp1(&filab[2697],"ME  ")==0) free(emn);
-  if(strcmp1(&filab[522],"ENER")==0) free(enern);
+  if(strcmp1(&filab[261],"E   ")==0) SFREE(een);
+  if(strcmp1(&filab[2697],"ME  ")==0) SFREE(emn);
+  if(strcmp1(&filab[522],"ENER")==0) SFREE(enern);
 
   /* in buckling mode stx and sti are kept */
 
@@ -379,10 +386,10 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
      hand matrix (adb and aub); stx are the stresses due to the buckling
      load, sti due to previous loads, if any */
 
-  aub=NNEW(double,nzs[0]);
-  adb=NNEW(double,neq[0]);
+  NNEW(aub,double,nzs[0]);
+  NNEW(adb,double,neq[0]);
 
-  fext=NNEW(double,neq[0]);
+  NNEW(fext,double,neq[0]);
 
   if(*iperturb==0){
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -400,7 +407,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
               xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,
-	      pmastsurf,&mortar,clearini));
+	      pmastsurf,&mortar,clearini,ielprop,prop));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -418,10 +425,10 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
               xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,
-	      pmastsurf,&mortar,clearini));
+	      pmastsurf,&mortar,clearini,ielprop,prop));
   }
 
-  free(stx);free(fext);if(*nbody>0) free(ipobody);
+  SFREE(stx);SFREE(fext);if(*nbody>0) SFREE(ipobody);
 
   if(*nmethod==1){return;}
 
@@ -476,15 +483,15 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
   lworkl=ncv*(8+ncv);
   info=0;
 
-  resid=NNEW(double,neq[0]);
-  z=NNEW(double,ncv*neq[0]);
-  workd=NNEW(double,3*neq[0]);
-  workl=NNEW(double,lworkl);
+  NNEW(resid,double,neq[0]);
+  NNEW(z,double,ncv*neq[0]);
+  NNEW(workd,double,3*neq[0]);
+  NNEW(workl,double,lworkl);
 
   FORTRAN(dsaupd,(&ido,bmat,&neq[0],which,&nev,&tol,resid,&ncv,z,&dz,iparam,ipntr,workd,
 	  workl,&lworkl,&info));
 
-  temp_array=NNEW(double,neq[0]);
+  NNEW(temp_array,double,neq[0]);
 
   while((ido==-1)||(ido==1)||(ido==2)){
     if(ido==-1){
@@ -591,8 +598,8 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     printf("       # of converged eigenvalues=%" ITGFORMAT "\n\n",iparam[4]);
   }         
 
-  select=NNEW(ITG,ncv);
-  d=NNEW(double,nev);
+  NNEW(select,ITG,ncv);
+  NNEW(d,double,nev);
 
   FORTRAN(dseupd,(&rvec,howmny,select,d,z,&dz,&sigma,bmat,&neq[0],which,&nev,&tol,resid,
 	  &ncv,z,&dz,iparam,ipntr,workd,workl,&lworkl,&info));
@@ -606,30 +613,30 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     sigma=d[0]/500.;
     printf("no convergence; new iteration\n\n");
     --iconverged;
-    free(z);free(d);
+    SFREE(z);SFREE(d);
   }
   else{iconverged=0;}
      
-  free(resid);free(workd);free(workl);free(select);free(temp_array);
+  SFREE(resid);SFREE(workd);SFREE(workl);SFREE(select);SFREE(temp_array);
 
   } while(iconverged<0);
 
-  free(aub);free(adb);free(au);free(ad);free(b);
+  SFREE(aub);SFREE(adb);SFREE(au);SFREE(ad);SFREE(b);
 
   FORTRAN(writebv,(d,&nev));
 
   /* calculating the displacements and the stresses and storing */
   /* the results in frd format for each valid eigenmode */
 
-  v=NNEW(double,mt**nk);
-  fn=NNEW(double,mt**nk);
-  stn=NNEW(double,6**nk);
-  inum=NNEW(ITG,*nk);
-  stx=NNEW(double,6*mi[0]**ne);
+  NNEW(v,double,mt**nk);
+  NNEW(fn,double,mt**nk);
+  NNEW(stn,double,6**nk);
+  NNEW(inum,ITG,*nk);
+  NNEW(stx,double,6*mi[0]**ne);
   
-  if(strcmp1(&filab[261],"E   ")==0) een=NNEW(double,6**nk);
-  if(strcmp1(&filab[2697],"ME  ")==0) emn=NNEW(double,6**nk);
-  if(strcmp1(&filab[522],"ENER")==0) enern=NNEW(double,*nk);
+  if(strcmp1(&filab[261],"E   ")==0) NNEW(een,double,6**nk);
+  if(strcmp1(&filab[2697],"ME  ")==0) NNEW(emn,double,6**nk);
+  if(strcmp1(&filab[522],"ENER")==0) NNEW(enern,double,*nk);
 
   lfin=0;
   for(j=0;j<nev;++j){
@@ -660,7 +667,8 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
 	      &ne0,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
-	      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,islavsurf);}
+	      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
+	      islavsurf,ielprop,prop);}
     else{
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	      stx,elcon,
@@ -678,12 +686,14 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
 	      &ne0,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
-	      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,islavsurf);
+	      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
+	      islavsurf,ielprop,prop);
     }
 
     ++*kode;
     if(strcmp1(&filab[1044],"ZZS")==0){
-	neigh=NNEW(ITG,40**ne);ipneigh=NNEW(ITG,*nk);
+	NNEW(neigh,ITG,40**ne);
+	NNEW(ipneigh,ITG,*nk);
     }
 
     frd(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,
@@ -692,19 +702,19 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-   	    thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni);
+   	    thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat);
 
-    if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
+    if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
   }
 
-  free(v);free(fn);free(stn);free(inum);free(stx);free(z);free(d);free(eei);
-  free(xstiff);
+  SFREE(v);SFREE(fn);SFREE(stn);SFREE(inum);SFREE(stx);SFREE(z);SFREE(d);SFREE(eei);
+  SFREE(xstiff);
   if(*nener==1){
-      free(stiini);free(enerini);}
+      SFREE(stiini);SFREE(enerini);}
 
-  if(strcmp1(&filab[261],"E   ")==0) free(een);
-  if(strcmp1(&filab[2697],"ME  ")==0) free(emn);
-  if(strcmp1(&filab[522],"ENER")==0) free(enern);
+  if(strcmp1(&filab[261],"E   ")==0) SFREE(een);
+  if(strcmp1(&filab[2697],"ME  ")==0) SFREE(emn);
+  if(strcmp1(&filab[522],"ENER")==0) SFREE(enern);
 
   return;
 }

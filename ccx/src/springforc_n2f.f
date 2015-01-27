@@ -110,8 +110,8 @@
                if(iener.eq.1) then
                   senergy=yiso(1)*xiso(1)
                   do i=2,niso
-                     senergy=senergy+(xiso(i)-xiso(i-1))*(yiso(i)+yiso(
-     &               i-1))/2.d0
+                     senergy=senergy+(xiso(i)-xiso(i-1))*
+     &                               (yiso(i)+yiso(i-1))/2.d0
                   enddo
                   senergy=senergy+(val-xiso(niso))*yiso(niso)
                endif
@@ -212,6 +212,9 @@
             endif
             elas(1)=dexp(-beta*clear+dlog(alpha))
          endif
+         if(iener.eq.1) then
+            senergy=elas(1)/beta;
+         endif
       elseif(int(elcon(3,1,imat)).eq.2) then
 !     
 !        linear overclosure
@@ -220,6 +223,9 @@
          eps=elcon(1,1,imat)*pi/elcon(2,1,imat)
          elas(1)=(-springarea(1)*elcon(2,1,imat)*clear*
      &            (0.5d0+datan(-clear/eps)/pi)) 
+         if(iener.eq.1) then
+            senergy=-elas(1)*clear/2.d0;
+         endif
       elseif(int(elcon(3,1,imat)).eq.3) then
 !     
 !        tabular overclosure
@@ -237,19 +243,39 @@
          call ident(xiso,overlap,niso,id)
          if(id.eq.0) then
             pres=yiso(1)
+            if(iener.eq.1) then
+               senergy=yiso(1)*overlap;
+            endif
          elseif(id.eq.niso) then
             pres=yiso(niso)
+            if(iener.eq.1) then
+               senergy=yiso(1)*xiso(1)
+               do i=2,niso
+                  senergy=senergy+(xiso(i)-xiso(i-1))*
+     &                            (yiso(i)+yiso(i-1))/2.d0
+               enddo
+               senergy=senergy+(pres-xiso(niso))*yiso(niso)
+            endif
          else
             xk=(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))
             pres=yiso(id)+xk*(overlap-xiso(id))
+            if(iener.eq.1) then
+               senergy=yiso(1)*xiso(1)
+               do i=2, id
+                  senergy=senergy+(xiso(i)-xiso(i-1))*
+     &                 (yiso(i)+yiso(i-1))/2.d0
+               enddo
+               senergy=senergy+(overlap-xiso(id))*(pres+yiso(id))/2.d0
+            endif
          endif
          elas(1)=springarea(1)*pres
+         if(iener.eq.1) senergy=springarea(1)*senergy
       else
          write(*,*) '*ERROR in springforc: no overclosure model'
          write(*,*) '       selected. This is mandatory in a penalty'
          write(*,*) '       contact calculation. Please use the'
          write(*,*) '       *SURFACE BEHAVIOR card.'
-         stop
+         call exit(201)
       endif
 !
 !     forces in the nodes of the contact element
@@ -257,9 +283,6 @@
       do i=1,3
          fnl(i,nope)=-elas(1)*xn(i)
       enddo
-      if(iener.eq.1) then
-         senergy=elas(1)/beta;
-      endif
       cstr(4)=elas(1)/springarea(1)
 !
 !     Coulomb friction for static calculations
@@ -360,6 +383,7 @@
 c     write(*,*)'STICK'
                do i=1,3
                   fnl(i,nope)=fnl(i,nope)+ftrial(i)
+                  xstate(i,1,ne0+konl(nope+1))=tp(i)
                enddo
                cstr(5)=(ftrial(1)*t1(1)+ftrial(2)*t1(2)+
      &              ftrial(3)*t1(3))/springarea(1)

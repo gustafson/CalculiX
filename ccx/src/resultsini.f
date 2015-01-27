@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -116,6 +116,11 @@
             endif
             if(ithermal(1).gt.1) then
                do i=1,nk
+!
+!                 no extrapolation is performed for the solution
+!                 of parabolic differential equations (e.g. heat
+!                 equation)
+!
                   veold(0,i)=0.d0
                   if(nactdof(0,i).ne.0) then
                      bnac=b(nactdof(0,i))
@@ -168,16 +173,16 @@
             enddo
          endif
       endif
-!     
-!     check whether user-defined concentrated forces were defined
-!     
-      do i=1,nforc
-         if((xforc(i).lt.1.2357111318d0).and.
-     &        (xforc(i).gt.1.2357111316d0)) then
-            calcul_fn=1
-            exit
-         endif
-      enddo
+c!     
+c!     check whether user-defined concentrated forces were defined
+c!     
+c      do i=1,nforc
+c         if((xforc(i).lt.1.2357111318d0).and.
+c     &        (xforc(i).gt.1.2357111316d0)) then
+c            calcul_fn=1
+c            exit
+c         endif
+c      enddo
 !     
 !     initializing fn
 !     
@@ -211,12 +216,16 @@
                ndir=ndirboun(i)
                node=nodeboun(i)
                if(ndir.gt.0) then
-                  accold(ndir,node)=(xboun(i)-v(ndir,node))/
+!
+!                 bnac is the change of acceleration
+!
+                  bnac=(xboun(i)-v(ndir,node))/
      &                 (bet*dtime*dtime)
                   veold(ndir,node)=veold(ndir,node)+
-     &                 gam*dtime*accold(ndir,node)
-               else
-                  veold(ndir,node)=(xboun(i)-v(ndir,node))/dtime
+     &                 gam*dtime*bnac
+                  accold(ndir,node)=accold(ndir,node)+bnac
+c               else
+c                  veold(ndir,node)=(xboun(i)-v(ndir,node))/dtime
                endif
             endif
             v(ndirboun(i),nodeboun(i))=fixed_disp
@@ -279,12 +288,16 @@ c     incrementalmpc=iperturb(2)
             endif
             if((nmethod.eq.4).and.(iperturb(1).gt.1)) then
                if(ndir.gt.0) then
-                  accold(ndir,node)=(fixed_disp-v(ndir,node))/
+!
+!                 bnac is the change of acceleration
+!
+                  bnac=(fixed_disp-v(ndir,node))/
      &                 (bet*dtime*dtime)
                   veold(ndir,node)=veold(ndir,node)+
-     &                 gam*dtime*accold(ndir,node)
-               else
-                  veold(ndir,node)=(fixed_disp-v(ndir,node))/dtime
+     &                 gam*dtime*bnac
+                  accold(ndir,node)=accold(ndir,node)+bnac
+c               else
+c                  veold(ndir,node)=(fixed_disp-v(ndir,node))/dtime
                endif
             endif
             v(ndir,node)=fixed_disp
@@ -311,15 +324,15 @@ c     incrementalmpc=iperturb(2)
                      endif
                      write(5,*)
                      write(5,'(a5)') labmpc(i)(1:5)
-                     write(5,'("tra",i5,3(1x,e11.4))')
+                     write(5,'("tra",i10,3(1x,e11.4))')
      &                    irefnode,(v(j,irefnode),j=1,3)
-                     write(5,'("rot",i5,3(1x,e11.4))')
+                     write(5,'("rot",i10,3(1x,e11.4))')
      &                    irotnode,(v(j,irotnode),j=1,3)
                      if(labmpc(i)(5:5).eq.'2') then
-                        write(5,'("exp",i5,3(1x,e11.4))')
+                        write(5,'("exp",i10,3(1x,e11.4))')
      &                       iexpnode,(v(j,iexpnode),j=1,3)
                      else
-                        write(5,'("exp",i5,3(1x,e11.4))')
+                        write(5,'("exp",i10,3(1x,e11.4))')
      &                       iexpnode,v(1,iexpnode)
                      endif
                   endif

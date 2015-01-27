@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,8 @@
 !
       subroutine applyboun(ifaext,nfaext,ielfa,ikboun,ilboun,
      &  nboun,typeboun,nelemload,nload,sideload,isolidsurf,nsolidsurf,
-     &  ifabou,nfabou)
+     &  ifabou,nfabou,nface,nodeboun,ndirboun,ikmpc,ilmpc,labmpc,nmpc,
+     &  nactdohinv)
 !
 !     stores pointers to ifabou in ielfa(2,*) at those locations
 !     which are zero (external faces)
@@ -27,11 +28,13 @@
       implicit none
 !
       character*1 typeboun(*)
-      character*20 sideload(*)
+      character*20 sideload(*),labmpc(*)
 !
-      integer nfabou,ifaext(*),nfaext,ielem,ielfa(4,*),iface,jface,
-     &  j,ikbounfa,ikboun(*),nboun,id,ilboun(*),iboun,nelemload(2,*),
-     &  nload,isolidsurf(*),nsolidsurf,ifabou(*),i
+      integer nfabou,ifaext(*),nfaext,ielem,ielfa(4,*),ifa,jface,
+     &  j,idof,ikboun(*),nboun,id,ilboun(*),iboun,nelemload(2,*),
+     &  nload,isolidsurf(*),nsolidsurf,ifabou(*),i,nface,indexb,
+     &  nodeboun(*),ndirboun(*),jsum,ig,ikmpc(*),ilmpc(*),nmpc,mpc,
+     &  nactdohinv(*)
 !
       nfabou=1
 !
@@ -39,30 +42,91 @@
 !
 !        number of the face in field ielfa
 !
-         iface=ifaext(i)
+         ifa=ifaext(i)
 !
-!        adjacent element number
+!        adjacent element number (global number)
 !
-         ielem=ielfa(1,iface)
+         ielem=nactdohinv(ielfa(1,ifa))
 !
 !        face label used to apply the SPC
 !
-         jface=10*ielem+ielfa(4,iface)
+         jface=10*ielem+ielfa(4,ifa)
 !
-!        loop over the degrees of freedom
+!        SPC's: loop over the degrees of freedom
 !
+         jsum=0
          do j=0,4
-            ikbounfa=10*jface+j
-            call nident(ikboun,ikbounfa,nboun,id)
+            idof=-(8*(jface-1)+j)
+            call nident(ikboun,idof,nboun,id)
             if(id.gt.0) then
-               if(ikboun(id).eq.ikbounfa) then
+               if(ikboun(id).eq.idof) then
                   iboun=ilboun(id)
                   if(typeboun(iboun).ne.'F') cycle
-                  if(ielfa(2,iface).eq.0) then
-                     ielfa(2,iface)=-nfabou
+                  if(ielfa(2,ifa).eq.0) then
+                     ielfa(2,ifa)=-nfabou
                      nfabou=nfabou+7
                   endif
-                  ifabou(-ielfa(2,iface)+j)=iboun
+!
+!                 if all velocity components are known no pressure
+!                 should be defined
+!
+                  if(j.eq.4) then
+                     if(jsum.eq.6) then
+                        write(*,*) '*WARNING in applyboun: a pressure SP
+     &C is being applied to'
+                        write(*,*) '         face ',ielfa(4,ifa),
+     &                      'of element ',ielfa(1,ifa),'for which all'
+                        write(*,*) '         velocities are known (by SP
+     &Cs or MPCs). The pressure'
+                        write(*,*) '         SPC is discarded'
+                        exit
+                     endif
+                  endif
+                  jsum=jsum+j
+!
+                  ifabou(-ielfa(2,ifa)+j)=iboun
+               endif
+            endif
+!
+!           MPC's: loop over the degrees of freedom
+!
+            call nident(ikmpc,idof,nmpc,id)
+            if(id.gt.0) then
+               if(ikmpc(id).eq.idof) then
+                  mpc=ilmpc(id)
+                  if(labmpc(mpc)(1:5).ne.'FLUID') cycle
+                  if(ielfa(2,ifa).eq.0) then
+                     ielfa(2,ifa)=-nfabou
+                     nfabou=nfabou+7
+                  else if(ifabou(-ielfa(2,ifa)+j).ne.0) then
+                     write(*,*) '*ERROR in applyboun: MPC is applied'
+                     write(*,*) '       to degree of freedom ',j
+                     write(*,*) '       in face ',ielfa(4,ifa)
+                     write(*,*) '       of element ',ielem,'.'
+                     write(*,*) '       To this degree of freedom '
+                     write(*,*) '       another SPC or MPC has already'
+                     write(*,*) '       been applied'
+                     call exit(201)
+                  endif
+!
+!                 if all velocity components are known no pressure
+!                 should be defined
+!
+                  if(j.eq.4) then
+                     if(jsum.eq.6) then
+                        write(*,*) '*WARNING in applyboun: a pressure MP
+     &C is being applied to'
+                        write(*,*) '         face ',ielfa(4,ifa),
+     &                      'of element ',ielfa(1,ifa),'for which all'
+                        write(*,*) '         velocities are known (by SP
+     &Cs or MPCs). The pressure'
+                        write(*,*) '         MPC is discarded'
+                        exit
+                     endif
+                  endif
+                  jsum=jsum+j
+!
+                  ifabou(-ielfa(2,ifa)+j)=-mpc
                endif
             endif
          enddo
@@ -75,17 +139,22 @@
             if(id.gt.0) then
                if(nelemload(1,id).eq.ielem) then
                   if(sideload(id)(1:1).eq.'S') then
-                     if(ielfa(2,iface).eq.0) then
-                        ielfa(2,iface)=-nfabou
-                        nfabou=nfabou+7
+                     read(sideload(id)(2:2),'(i1)') ig
+                     if(ig.eq.ielfa(4,ifa)) then
+                        if(ielfa(2,ifa).eq.0) then
+                           ielfa(2,ifa)=-nfabou
+                           nfabou=nfabou+7
+                        endif
+                        ifabou(-ielfa(2,ifa)+6)=id
                      endif
-                     ifabou(-ielfa(2,iface)+6)=id
                   endif
                   id=id-1
                   cycle
                else
                   exit
                endif
+            else
+               exit
             endif
          enddo
 !
@@ -94,11 +163,22 @@
          call nident(isolidsurf,jface,nsolidsurf,id)
          if(id.gt.0) then
             if(isolidsurf(id).eq.jface) then
-               if(ielfa(2,iface).eq.0) then
-                  ielfa(2,iface)=-nfabou
+               if(ielfa(2,ifa).eq.0) then
+                  ielfa(2,ifa)=-nfabou
                   nfabou=nfabou+7
                endif
-               ifabou(-ielfa(2,iface)+5)=1
+               indexb=-ielfa(2,ifa)
+               if((ifabou(indexb+1).eq.0).or.
+     &            (ifabou(indexb+2).eq.0).or.
+     &            (ifabou(indexb+3).eq.0)) then
+                  write(*,*) '*ERROR in applyboun: face',ielfa(4,ifa)
+                  write(*,*) '       of element ',ielem,'is defined'
+                  write(*,*) '       as solid surface but not all'
+                  write(*,*) '       velocity components are defined'
+                  write(*,*) '       as boundary conditions'
+                  call exit(201)
+               endif
+               ifabou(indexb+5)=1
             endif
          endif
       enddo
@@ -107,6 +187,18 @@
 !     boundary conditions
 !
       nfabou=nfabou-1
+!
+c      write(*,*)
+c      do i=1,nface
+c         write(*,*) 'applyboun ielfa ',i,(ielfa(j,i),j=1,4)
+c      enddo
+c      do i=1,nfabou
+c         write(*,*) 'applyboun ifabou',i,ifabou(i)
+c      enddo
+c      do i=1,nboun
+c         write(*,*) 'applyboun nodeboun',i,nodeboun(i),ndirboun(i)
+c      enddo
+c      write(*,*)
 !     
       return
       end

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &     icmd,beta,stre,xkl,ckl,vj,xikl,vij,plconloc,xstate,xstateini,
      &     ielas,amat,t1l,dtime,time,ttime,iel,iint,nstate_,mi,
      &     iorien,pgauss,orab,eloc,mattyp,pnewdt,istep,iinc,ipkon,
-     &     nmethod)
+     &     nmethod,iperturb)
 !
 !     kode=-1: Arruda-Boyce
 !          -2: Mooney-Rivlin
@@ -50,7 +50,7 @@
       character*80 amat
 !
       integer kode,ithermal,icmd,ielas,iel,iint,nstate_,mi(*),iorien,
-     &  mattyp,istep,iinc,ipkon(*),nmethod
+     &  mattyp,istep,iinc,ipkon(*),nmethod,iperturb(*)
 !
       real*8 elconloc(*),elas(21),emec(*),emec0(*),beta(*),stre(*),
      &  ckl(*),vj,plconloc(*),t1l,xkl(*),xikl(*),vij,
@@ -74,10 +74,18 @@
      &     ckl,vj)
       elseif(kode.gt.-100) then
          mattyp=3
-         call incplas(elconloc,plconloc,xstate,xstateini,elas,emec,
-     &     ithermal,icmd,beta,stre,vj,kode,ielas,amat,t1l,dtime,
-     &     time,ttime,iel,iint,nstate_,mi(1),eloc,pgauss,nmethod,
-     &     pnewdt)
+         if(iperturb(2).eq.1) then
+            call incplas(elconloc,plconloc,xstate,xstateini,elas,emec,
+     &           ithermal,icmd,beta,stre,vj,kode,ielas,amat,t1l,dtime,
+     &           time,ttime,iel,iint,nstate_,mi(1),eloc,pgauss,nmethod,
+     &           pnewdt)
+         else
+            call incplas_lin(elconloc,plconloc,xstate,xstateini,elas,
+     &           emec,
+     &           ithermal,icmd,beta,stre,vj,kode,ielas,amat,t1l,dtime,
+     &           time,ttime,iel,iint,nstate_,mi(1),eloc,pgauss,nmethod,
+     &           pnewdt)
+         endif
       else
          mattyp=3
          call umat_main(amat,iel,iint,kode,elconloc,emec,emec0,beta,

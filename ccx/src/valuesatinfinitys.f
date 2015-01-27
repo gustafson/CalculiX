@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,7 +34,7 @@
       if(istep.gt.0) then
          write(*,*) '*ERROR in valuesatinf: *VALUES AT INFINITY'
          write(*,*) '        should only be used before the first STEP'
-         stop
+         call exit(201)
       endif
 !
       do i=2,n

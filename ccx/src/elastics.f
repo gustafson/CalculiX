@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,14 +40,14 @@
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR reading *ELASTIC: *ELASTIC should be placed'
          write(*,*) '       before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       if(nmat.eq.0) then
          write(*,*) 
      &       '*ERROR reading *ELASTIC: *ELASTIC should be preceded'
          write(*,*) '  by a *MATERIAL card'
-         stop
+         call exit(201)
       endif
 !
       ityp=2
@@ -87,7 +87,7 @@
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *ELASTIC: increase ntmat_'
-               stop
+               call exit(201)
             endif
             do i=1,2
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
@@ -113,7 +113,7 @@
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *ELASTIC: increase ntmat_'
-               stop
+               call exit(201)
             endif
             do i=1,8
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
@@ -130,7 +130,7 @@
                write(*,*) '  is not complete. '
                call inputerror(inpc,ipoinpc,iline,
      &"*ELASTIC%")
-               stop
+               call exit(201)
             endif
             do i=1,1
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
@@ -175,7 +175,7 @@
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *ELASTIC: increase ntmat_'
-               stop
+               call exit(201)
             endif
             do i=1,8
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
@@ -192,7 +192,7 @@
                write(*,*) '  is not complete. '
                call inputerror(inpc,ipoinpc,iline,
      &"*ELASTIC%")
-               stop
+               call exit(201)
             endif
             do i=1,8
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
@@ -209,7 +209,7 @@
                write(*,*) '  is not complete. '
                call inputerror(inpc,ipoinpc,iline,
      &"*ELASTIC%")
-               stop
+               call exit(201)
             endif
             do i=1,5
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 

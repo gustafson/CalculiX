@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2014 Guido Dhondt
+!     Copyright (C) 1998-2015 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !     
       subroutine  characteristic(node1,node2,nodem,nelem,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,physcon,numf,set,mi)
+     &     nodef,idirf,df,physcon,numf,set,mi,iaxial)
 !     
 !     This subroutine is used to enables the processing of empiric 
 !     given under the form
@@ -36,7 +36,7 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
-     &     inv,id,numf,npu,i,mi(*)
+     &     inv,id,numf,npu,i,mi(*),iaxial
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),
      &     p1,p2,physcon(*),
@@ -105,12 +105,12 @@
 !     
             p1=v(2,node1)
             p2=v(2,node2) 
-            xflow=v(1,nodem)
+            xflow=v(1,nodem)*iaxial
 !     
             if (p1.ge.p2) then
 !     
                inv=1
-               xflow=v(1,nodem)
+               xflow=v(1,nodem)*iaxial
                T1=v(0,node1)+physcon(1)
                nodef(1)=node1
                nodef(2)=node1
@@ -123,7 +123,7 @@
                p1=v(2,node2)
                p2=v(2,node1) 
                T1=v(0,node2)+physcon(1)
-               xflow=-v(1,nodem)
+               xflow=-v(1,nodem)*iaxial
                nodef(1)=node2
                nodef(2)=node2
                nodef(3)=nodem
@@ -166,12 +166,12 @@
       elseif(iflag.eq.3)  then
          p1=v(2,node1)
          p2=v(2,node2) 
-         xflow=v(1,nodem)
+         xflow=v(1,nodem)*iaxial
 !     
          if (p1.ge.p2) then
 !     
             inv=1
-            xflow=v(1,nodem)
+            xflow=v(1,nodem)*iaxial
             T1=v(0,node1)+physcon(1)
             T2=v(0,node2)+physcon(1)
             nodef(1)=node1
@@ -186,7 +186,7 @@
             p2=v(2,node1) 
             T1=v(0,node2)+physcon(1)
             T2=v(0,node1)+physcon(1)
-            xflow=-v(1,nodem)
+            xflow=-v(1,nodem)*iaxial
             nodef(1)=node2
             nodef(2)=node2
             nodef(3)=nodem
@@ -223,8 +223,8 @@
 !     
       endif
 !     
+      xflow=xflow/iaxial
+      df(3)=df(3)*iaxial
+!     
       return
       end
-      
-      
-      

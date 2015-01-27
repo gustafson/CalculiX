@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -41,7 +41,7 @@
       if(istep.lt.1) then
          write(*,*) '*ERROR in faceprints: *FACE PRINT should only be'
          write(*,*) '  used within a *STEP definition'
-         stop
+         call exit(201)
       endif
 !
       nodesys='L'
@@ -108,13 +108,13 @@
               ipos=index(timepointsname,' ')
               write(*,*) '*ERROR in faceprints: time points definition '
      &               ,timepointsname(1:ipos-1),' is unknown or empty'
-              stop
+              call exit(201)
            endif
            if(idrct.eq.1) then
               write(*,*) '*ERROR in faceprints: the DIRECT option'
               write(*,*) '       collides with a TIME POINTS '
               write(*,*) '       specification'
-              stop
+              call exit(201)
            endif
            jout(1)=1
            jout(2)=1
@@ -159,7 +159,7 @@
             nprint=nprint+1
             if(nprint.gt.nprint_) then
                write(*,*) '*ERROR in faceprints: increase nprint_'
-               stop
+               call exit(201)
             endif
             prset(nprint)=noset
             prlab(nprint)(1:4)=textpart(ii)(1:4)

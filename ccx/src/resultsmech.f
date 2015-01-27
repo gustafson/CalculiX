@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,7 +25,7 @@
      &  ncmat_,nstate_,stiini,vini,ener,eei,enerini,istep,iinc,
      &  springarea,reltime,calcul_fn,calcul_qa,calcul_cauchy,iener,
      &  ikin,nal,ne0,thicke,emeini,pslavsurf,
-     &  pmastsurf,mortar,clearini,nea,neb)
+     &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop)
 !
 !     calculates stresses and the material tangent at the integration
 !     points and the internal forces at the nodes
@@ -39,16 +39,16 @@
 !
       integer kon(*),konl(26),nea,neb,mi(*),mint2d,nopes,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
-     &  ielorien(mi(3),*),ntmat_,ipkon(*),ne0,iflag,
+     &  ielorien(mi(3),*),ntmat_,ipkon(*),ne0,iflag,null,
      &  istep,iinc,mt,ne,mattyp,ithermal(2),iprestr,i,j,k,m1,m2,jj,
      &  i1,m3,m4,kk,iener,indexe,nope,norien,iperturb(*),iout,
      &  nal,icmd,ihyper,nmethod,kode,imat,mint3d,iorien,ielas,
-     &  istiff,ncmat_,nstate_,ikin,ilayer,nlayer,ki,kl,
+     &  istiff,ncmat_,nstate_,ikin,ilayer,nlayer,ki,kl,ielprop(*),
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,calcul_fn,
      &  calcul_cauchy,calcul_qa,nopered,mortar,jfaces,iloc,igauss
 !
       real*8 co(3,*),v(0:mi(2),*),shp(4,26),stiini(6,mi(1),*),
-     &  stx(6,mi(1),*),xl(3,26),vl(0:mi(2),26),stre(6),
+     &  stx(6,mi(1),*),xl(3,26),vl(0:mi(2),26),stre(6),prop(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),xs2(3,7),
      &  alcon(0:6,ntmat_,*),vini(0:mi(2),*),thickness,
      &  alzero(*),orab(7,*),elas(21),rho,fn(0:mi(2),*),
@@ -69,8 +69,8 @@
 !
       include "gauss.f"
 !
-c      data iflag /3/
       iflag=3
+      null=0
 !
       mt=mi(2)+1
       nal=0
@@ -192,28 +192,19 @@ c     Bernhardi end
 !
                nope=ichar(lakonl(8:8))-47
             endif
-c            if((lakonl(7:7).eq.'C').and.(mortar.eq.1)) then
-c!
-c!              face-to-face penalty
-c!
-c               nope=kon(ipkon(i))
-c            else
-c               nope=ichar(lakonl(8:8))-47
-c               if((lakonl(7:7).eq.'C').and.mortar.eq.0)) then
-c!
-c!                 node-to-face penalty
-c!
-c                  konl(nope+1)=kon(indexe+nope+1)
-c               endif
-c            endif
          else
             cycle
          endif
 !
          if(lakonl(4:5).eq.'8R') then
             mint3d=1
-         elseif(lakonl(4:8).eq.'20RBR') then
-            mint3d=50
+         elseif(lakonl(4:7).eq.'20RB') then
+            if((lakonl(8:8).eq.'R').or.(lakonl(8:8).eq.'C')) then
+               mint3d=50
+            else
+               call beamintscheme(lakonl,mint3d,ielprop(i),prop,
+     &              null,xi,et,ze,weight)
+            endif
          elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'26R').or.
      &          (lakonl(4:6).eq.'20R')) then
             if(lakonl(7:8).eq.'LC') then
@@ -307,20 +298,20 @@ c            endif
 !
             elseif((nmethod.eq.4).or.(nmethod.eq.5).or.
      &             ((abs(nmethod).eq.1).and.(iperturb(1).ge.2))) then
-               do j=1,nope
-                  konl(j)=kon(indexe+j)
-                  do k=1,3
-                     vel(k,j)=veold(k,konl(j))
-                  enddo
-               enddo
-               call dashforc(xl,konl,vl,imat,elcon,nelcon,
-     &              elas,fnl,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,
-     &              elconloc,plicon,nplicon,npmat_,vel,time,nmethod,mi)
-               do j=1,nope
-                  do k=1,3
-                     fn(k,konl(j))=fn(k,konl(j))+fnl(k,j)
-                  enddo
-               enddo
+c               do j=1,nope
+c                  konl(j)=kon(indexe+j)
+c                  do k=1,3
+c                     vel(k,j)=veold(k,konl(j))
+c                  enddo
+c               enddo
+c               call dashforc(xl,konl,vl,imat,elcon,nelcon,
+c     &              elas,fnl,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,
+c     &              elconloc,plicon,nplicon,npmat_,vel,time,nmethod,mi)
+c               do j=1,nope
+c                  do k=1,3
+c                     fn(k,konl(j))=fn(k,konl(j))+fnl(k,j)
+c                  enddo
+c               enddo
             endif
          elseif(ikin.eq.1) then
             do j=1,nope
@@ -336,11 +327,16 @@ c            endif
                et=gauss3d1(2,jj)
                ze=gauss3d1(3,jj)
                weight=weight3d1(jj)
-            elseif(lakonl(4:8).eq.'20RBR') then
-               xi=gauss3d13(1,jj)
-               et=gauss3d13(2,jj)
-               ze=gauss3d13(3,jj)
-               weight=weight3d13(jj)
+            elseif(lakonl(4:7).eq.'20RB') then
+               if((lakonl(8:8).eq.'R').or.(lakonl(8:8).eq.'C')) then
+                  xi=gauss3d13(1,jj)
+                  et=gauss3d13(2,jj)
+                  ze=gauss3d13(3,jj)
+                  weight=weight3d13(jj)
+               else
+                  call beamintscheme(lakonl,mint3d,ielprop(i),prop,
+     &                 jj,xi,et,ze,weight)
+               endif
             elseif((lakonl(4:4).eq.'8').or.
      &             (lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R'))
      &        then
@@ -805,7 +801,7 @@ c                 emec0(m1)=emeini(m1,jj,i)
      &           plconloc,xstate,xstateini,ielas,
      &           amat,t1l,dtime,time,ttime,i,jj,nstate_,mi(1),
      &           iorien,pgauss,orab,eloc,mattyp,qa(3),istep,iinc,
-     &           ipkon,nmethod)
+     &           ipkon,nmethod,iperturb)
 !
             if(((nmethod.ne.4).or.(iperturb(1).ne.0)).and.
      &         (nmethod.ne.5)) then

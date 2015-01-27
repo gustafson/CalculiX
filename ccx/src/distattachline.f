@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -78,7 +78,7 @@
       else
          write(*,*) '*ERROR in distattach: case with ',nterms
          write(*,*) '       terms is not covered'
-         stop
+         call exit(201)
       endif
 !
 !     calculating the position in the face

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -52,7 +52,7 @@
       if(istep.lt.1) then
          write(*,*) '*ERROR in frequencies: *FREQUENCY can only be used'
          write(*,*) '  within a STEP'
-         stop
+         call exit(201)
       endif
 !
 !     no heat transfer analysis
@@ -124,7 +124,7 @@
          write(*,*) '*ERROR in frequencies: the default solver ',
      & solver
          write(*,*) '       cannot be used for frequency calculations '
-         stop
+         call exit(201)
       endif
 !
       nmethod=2
@@ -139,7 +139,7 @@ c      iperturb(2)=0
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
      &"*FREQUENCY%")
-            stop
+            call exit(201)
          endif
          read(textpart(1)(1:10),'(i10)',iostat=istat) nev
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
@@ -147,7 +147,7 @@ c      iperturb(2)=0
          if(nev.le.0) then
             write(*,*) '*ERROR in frequencies: less than 1 eigenvalue re
      &quested'
-            stop
+            call exit(201)
          endif
          tol=1.d-2
          ncv=4*nev

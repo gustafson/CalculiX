@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 2.7
+LOG-BOOK Version 2.8
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -2337,3 +2337,142 @@ Dec 2002        - started to work on single crystal plasticity
 
  24 Feb 2014   - created one version for integer*4 and integer*8
                  introduced macros ITG and ITGFORMAT
+
+ 8 March 2014  - added a mechanism to check for negative pressures in
+                 face-to-face contact
+
+ 29 March 2014 - changed the definition of NNEW
+ 
+ 8 April 2014  - worked on beams with a pipe section
+
+ 14 Mai 2014   - finite volume CFD seems to work for incompressible 
+                 laminar flow without thermal effects; the pressure
+                 boundary condition is given at one element center,
+                 the convection scheme is purely upwind.
+               - beams with pipe section work
+               - removed some errors in multiple step shell calculations
+                 and shell calculations with restart
+
+ 15 Mai 2014   - tried upwind difference with central difference as 
+                 deferred correction; is better than pure upwind
+                 difference.
+
+ 21 Mai 2014   - text underneath *HEADING is stored at the top of the
+                 frd-file
+               - for axisymmetric structures with output=2d the
+                 mass flow is the integral over 360 deg.
+               - gamma differencing is ok, but not as good as upwind with
+                 deferred central differencing
+
+ 22 Mai 2014   - for axisymmetric structures with output=2d the
+                 force is the integral over 360 deg.
+               - removed an error in mafillsmcs.f and mafillsmcsas.f
+
+ 16 June 2014  - corrected an error in mafillsm.f
+
+ 25 June 2014  - created incplas_lin.f for geometrically linear
+                 calculations (not linked yet) 
+
+ 30 June 2014  - corrected an important error in incplas.f, incplas_lin.f,
+                 umat_aniso_plas.f and umat_aniso_creep.f
+
+ 10 July 2014  - created a .cvg file containing convergence information
+
+ 12 July 2014  - corrected the contact energy for all but the 
+                 exponential pressure-overclosure relationship
+
+ 14 July 2014  - coded the participation factors and the relative effective
+                 modal mass in arpack.c and arpackcs.c
+               - corrected an error in files springstiff*f and 
+                 springforc*f
+
+ 15 July 2014  - coded Rayleigh damping for implicit dynamics
+               - coded forces as boundary condition for submodels
+
+ 26 July 2014  - buoyancy seems to work
+
+ 30 July 2014  - wrote incplas_lin.f for small deformation plasticity
+                 (no nlgeom).
+               - changed the convergence defaults for *dynamic
+                 (more cutbacks allowed, smallest relative increment
+                  = 1.e-10)
+
+ 4 Aug 2014    - changed the reading order: moved *SURFACE on 
+                 position 6 before *TRANSFORM (because of 
+                 TRANSFORMF)
+
+ 7 Aug 2014    - removed an error in remastruct.c: fini and fextini should
+                 not be set to zero in each iteration.
+
+ 2 Sept 2014   - removed an error in  printoutnode
+               - removed usercload in dyna.c and createmdelem.f: fn will
+                 be removed from cload.f (too time consuming)
+ 
+ 4 Sept 2014   - activated dashpots for *DYNAMIC calculations
+               - nmethod,nactdof,bcont and fn were removed from 
+                 subroutine cload.f
+
+ 14 Sept 2014  - switched arrays and columns of field vel for CFD
+                 preparation to use dgmres
+
+ 15 Sept 2014  - switched to an GMRES iterative solver for the velocity and
+                 temperature CFD equations
+
+ 21 Sept 2014  - introduced iaxial in all subroutines of flux.f: for the
+                 networks the mass flow variable is the partial mass 
+                 flow (2 %), for the element equations, however, the
+                 total mass flow is to be taken
+
+ 11 Oct 2014   - introduced openmp in routines op*f
+               - made some changes to the inductive heating routines
+
+ 14 Oct 2014   - cylindrical incompressible Couette flow works
+
+ 15 Oct 2014   - made a correction involving the variable iaxial
+
+ 16 Oct 2014   - made a correction to forcadd.f
+
+ 22 Oct 2014   - added again a small amount of stiffness to the mass
+                 matrix to determine the initial acceleration (this
+                 section was removed during a couple of weeks, however,
+                 the stiffness as proven to be necessary)
+
+ 23 Oct 2014   - implemented SF,SVF and HFLF for fluids (.dat-file and
+                 .frd-file)
+
+ 1 Nov 2014    - incompressible laminar CFD with wedge elements seems to
+                 work
+
+ 4 Nov 2014    - the coordinates transferred to the user subroutines in
+                 tempload.f are the ones in the material frame
+
+ 5 Nov 2014    - made a change in incplas.f (dxitril)
+
+ 9 Nov 2014    - increased the number of pressure iterations for CFD from 1
+                 to 2 (necessary for deformed meshes)
+
+ 19 Nov 2014   - removed an error related to time points using total
+                 time accross several steps
+               - replaced stop by "stop 201" -> can be used to detect
+                 if the program stopped in an irregular way
+
+ 20 Nov 2014   - replaced "stop 201" by "call exit(201)"
+
+ 25 Nov 2014   - enhanced and corrected the mean rotation formulation      
+               - did an important change to gen3delem/gen3dboun: rotations
+                 are not expanded any more using expandable rigid bodies, 
+                 instead mean rotation MPC's are used        
+
+ 28 Nov 2014   - made a change to bounadd.f
+
+ 9 Dec 2014    - electromagnetism without heat induction might work
+               - eliminated c3d20ri (isochoric) elements
+
+ 11 Dec 2014   - worked on heat transfer within electromagnetism
+
+ 21 Dec 2014   - worked on the documentation of electromagnetism
+ 
+ 23 Dec 2014   - took the stick as internal variable in
+                 springforc_f2f and springstiff_f2f
+
+ 8 Jan 2014    - allowed for facial surfaces in cyclic symmetry definitions

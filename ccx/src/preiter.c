@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -40,8 +40,8 @@ void preiter(double *ad, double **aup, double *b, ITG **icolp, ITG **irowp,
   icol=*icolp;
 
   if(*iperturb>1){
-    irow_save=NNEW(ITG,*nzs);
-    icol_save=NNEW(ITG,*neq);
+    NNEW(irow_save,ITG,*nzs);
+    NNEW(icol_save,ITG,*neq);
     for(i=0;i<*nzs;++i){
       irow_save[i]=irow[i];
     }
@@ -81,7 +81,7 @@ void preiter(double *ad, double **aup, double *b, ITG **icolp, ITG **irowp,
 
   RENEW(irow,ITG,*neq);
 
-  u=NNEW(double,*neq);
+  NNEW(u,double,*neq);
 
   ier=cgsolver(au,u,b,*neq,ndim,icol,irow,&eps,&niter,precFlg);
 
@@ -92,7 +92,7 @@ void preiter(double *ad, double **aup, double *b, ITG **icolp, ITG **irowp,
     b[i]=u[i];
   }
 
-  free(u);
+  SFREE(u);
 
   if(*iperturb>1){
     RENEW(irow,ITG,*nzs);
@@ -103,7 +103,7 @@ void preiter(double *ad, double **aup, double *b, ITG **icolp, ITG **irowp,
     for(i=0;i<*neq;++i){
       icol[i]=icol_save[i];
     }
-    free(irow_save);free(icol_save);
+    SFREE(irow_save);SFREE(icol_save);
   }
 
   *aup=au;

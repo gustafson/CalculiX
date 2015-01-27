@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -38,7 +38,9 @@
          call materialdata_rho(rhcon,nrhcon,imat,rho,t1l,ntmat_,
      &            ithermal)
          vfa(5,i)=rho
+c         write(*,*) 'calcrhofa rho',i,rho
       enddo
+c      write(*,*)
 !            
       return
       end

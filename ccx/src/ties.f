@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,13 +40,13 @@
       if(istep.gt.0) then
          write(*,*) '*ERROR in ties: *TIE should'
          write(*,*) '  be placed before all step definitions'
-         stop
+         call exit(201)
       endif
 !
       ntie=ntie+1
       if(ntie.gt.ntie_) then
          write(*,*) '*ERROR in ties: increase ntie_'
-         stop
+         call exit(201)
       endif
 !
       tietol(1,ntie)=-1.d0
@@ -81,7 +81,7 @@
          write(*,*) '*ERROR in ties: tie name is lacking'
          call inputerror(inpc,ipoinpc,iline,
      &"*TIE%")
-         stop
+         call exit(201)
       endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -89,7 +89,7 @@
       if((istat.lt.0).or.(key.eq.1)) then
          write(*,*)'*ERROR in ties: definition of the tie'
          write(*,*) '      is not complete.'
-         stop
+         call exit(201)
       endif
 !      
       if ( multistage ) then
@@ -111,7 +111,7 @@
          tieset(3,ntie)(81:81)=' '
          ipos=index(tieset(3,ntie),' ')
          tieset(3,ntie)(ipos:ipos)='T'
-      else
+      elseif(multistage) then
 !
 !        slave and master surface must be nodal
 !
@@ -124,6 +124,16 @@
          tieset(3,ntie)(81:81)=' '
          ipos=index(tieset(3,ntie),' ')
          tieset(3,ntie)(ipos:ipos)='S'
+      else
+!
+!        cyclic symmetry tie
+!        slave and master surface may be nodal or facial
+!
+         tieset(2,ntie)(1:80)=textpart(1)(1:80)
+         tieset(2,ntie)(81:81)=' '
+!     
+         tieset(3,ntie)(1:80)=textpart(2)(1:80)
+         tieset(3,ntie)(81:81)=' '
       endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

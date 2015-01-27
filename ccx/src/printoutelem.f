@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@
       character*8 lakon(*)
 !
       integer ipkon(*),nelem,ii,kon(*),mi(*),nope,indexe,i,j,k,
-     &  konl(20),ielemremesh,iface,mortar,ielem,
+     &  konl(20),iface,mortar,ielem,
      &  mint3d,jj,nener,iflag,nkin,ne,nodes,ki,kl,ilayer,nlayer,kk,
      &  nopes,ielmat(mi(3),*),mint2d
 !
@@ -43,27 +43,27 @@
       data iflag /2/
 !
       if(ipkon(nelem).lt.0) return
-c      indexe=ipkon(nelem)
-      if(ipkon(nelem).eq.-1) then
-!
-!        linear element corresponding to a remeshing of a quadratic
-!        element adjacent to a contact surface
-!
-         return
-      elseif(ipkon(nelem).lt.-1) then
-!
-!        element is quadratic and adjacent to a contact surface
-!        -> it has been remeshed; the first node of the topology has
-!           been replaced by a pointer to the first linear element
-!           of the remeshing, the first node of which is identical to
-!           the first node of the original quadratic element
-!
-         indexe=-ipkon(nelem)-2
-         ielemremesh=kon(indexe+1)
-         kon(indexe+1)=kon(ipkon(ielemremesh)+1)
-      else
-         indexe=ipkon(nelem)
-      endif
+      indexe=ipkon(nelem)
+c      if(ipkon(nelem).eq.-1) then
+c!
+c!        linear element corresponding to a remeshing of a quadratic
+c!        element adjacent to a contact surface
+c!
+c         return
+c      elseif(ipkon(nelem).lt.-1) then
+c!
+c!        element is quadratic and adjacent to a contact surface
+c!        -> it has been remeshed; the first node of the topology has
+c!           been replaced by a pointer to the first linear element
+c!           of the remeshing, the first node of which is identical to
+c!           the first node of the original quadratic element
+c!
+c         indexe=-ipkon(nelem)-2
+c         ielemremesh=kon(indexe+1)
+c         kon(indexe+1)=kon(ipkon(ielemremesh)+1)
+c      else
+c         indexe=ipkon(nelem)
+c      endif
 !
       if((prlab(ii)(1:4).eq.'ELSE').or.(prlab(ii)(1:4).eq.'CELS')) then
          nener=1
@@ -300,13 +300,13 @@ c      indexe=ipkon(nelem)
      &        (prlab(ii)(1:5).eq.'ELKET')) then
          write(5,'(i10,1p,1x,e13.6)') nelem,enerkin
       endif
-!
-!     restoring the topology of a quadratic element which has been
-!     remeshed because of its adjacency to a contact surface
-!    
-      if(ipkon(nelem).lt.-1) then
-         kon(indexe+1)=ielemremesh
-      endif
+c!
+c!     restoring the topology of a quadratic element which has been
+c!     remeshed because of its adjacency to a contact surface
+c!    
+c      if(ipkon(nelem).lt.-1) then
+c         kon(indexe+1)=ielemremesh
+c      endif
 !
       return
       end

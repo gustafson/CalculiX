@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2014 Guido Dhondt                          */
+/*              Copyright (C) 1998-2015 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -31,7 +31,7 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
             ITG *iendset, double *trab, ITG *inotr, ITG *ntrans,
 	    double *orab, ITG *ielorien, ITG *norien, double *sti,
             double *veold, ITG *noddiam,char *set,ITG *nset, double *emn,
-            double *thicke,char* jobnamec,ITG *ne0,double *cdn,ITG *mortar){
+            double *thicke,char* jobnamec,ITG *ne0,double *cdn,ITG *mortar,ITG *nmat){
 
   /* duplicates fields for static cyclic symmetric calculations */
 
@@ -59,8 +59,8 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
 
   /* assigning nodes and elements to sectors */
 
-  inocs=NNEW(ITG,*nk);
-  ielcs=NNEW(ITG,*ne);
+  NNEW(inocs,ITG,*nk);
+  NNEW(ielcs,ITG,*ne);
   ielset=cs[12];
   if((*mcs!=1)||(ielset!=0)){
     for(i=0;i<*nk;i++) inocs[i]=-1;
@@ -112,34 +112,34 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
     } 
   }
 
-  cot=NNEW(double,3**nk*ngraph);
-  if(*ntrans>0)inotrt=NNEW(ITG,2**nk*ngraph);
+  NNEW(cot,double,3**nk*ngraph);
+  if(*ntrans>0)NNEW(inotrt,ITG,2**nk*ngraph);
 
   if((strcmp1(&filab[0],"U ")==0)||
      ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2)))
-    vt=NNEW(double,mt**nk*ngraph);
+    NNEW(vt,double,mt**nk*ngraph);
   if((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal<2))
-    t1t=NNEW(double,*nk*ngraph);
+    NNEW(t1t,double,*nk*ngraph);
   if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1044],"ZZS ")==0)||
      (strcmp1(&filab[1044],"ERR ")==0))
-    stnt=NNEW(double,6**nk*ngraph);
+    NNEW(stnt,double,6**nk*ngraph);
   if(strcmp1(&filab[261],"E   ")==0)
-    eent=NNEW(double,6**nk*ngraph);
+    NNEW(eent,double,6**nk*ngraph);
   if((strcmp1(&filab[348],"RF  ")==0)||(strcmp1(&filab[783],"RFL ")==0))
-    fnt=NNEW(double,mt**nk*ngraph);
+    NNEW(fnt,double,mt**nk*ngraph);
   if(strcmp1(&filab[435],"PEEQ")==0)
-    epnt=NNEW(double,*nk*ngraph);
+    NNEW(epnt,double,*nk*ngraph);
   if(strcmp1(&filab[522],"ENER")==0)
-    enernt=NNEW(double,*nk*ngraph);
+    NNEW(enernt,double,*nk*ngraph);
   if(strcmp1(&filab[609],"SDV ")==0)
-    xstatent=NNEW(double,*nstate_**nk*ngraph);
+    NNEW(xstatent,double,*nstate_**nk*ngraph);
   if(strcmp1(&filab[696],"HFL ")==0)
-    qfnt=NNEW(double,3**nk*ngraph);
+    NNEW(qfnt,double,3**nk*ngraph);
   if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)||
      (strcmp1(&filab[2175],"CONT")==0))
-    stit=NNEW(double,6*mi[0]**ne*ngraph);
+    NNEW(stit,double,6*mi[0]**ne*ngraph);
   if(strcmp1(&filab[2697],"ME  ")==0)
-    emnt=NNEW(double,6**nk*ngraph);
+    NNEW(emnt,double,6**nk*ngraph);
 
   /* the topology only needs duplication the first time it is
      stored in the frd file (*kode=1)
@@ -147,12 +147,12 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
      contact information in frd.f */
 
 //  if(*kode==1){
-    kont=NNEW(ITG,*nkon*ngraph);
-    ipkont=NNEW(ITG,*ne*ngraph);
-    lakont=NNEW(char,8**ne*ngraph);
-    ielmatt=NNEW(ITG,mi[2]**ne*ngraph);
+    NNEW(kont,ITG,*nkon*ngraph);
+    NNEW(ipkont,ITG,*ne*ngraph);
+    NNEW(lakont,char,8**ne*ngraph);
+    NNEW(ielmatt,ITG,mi[2]**ne*ngraph);
 //  }
-  inumt=NNEW(ITG,*nk*ngraph);
+  NNEW(inumt,ITG,*nk*ngraph);
   
   nkt=ngraph**nk;
   net0=(ngraph-1)**ne+(*ne0);
@@ -368,7 +368,8 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
 		   &imag,mi,emn));
   
   if(strcmp1(&filab[1044],"ZZS")==0){
-      neigh=NNEW(ITG,40*net);ipneigh=NNEW(ITG,nkt);
+      NNEW(neigh,ITG,40*net);
+      NNEW(ipneigh,ITG,nkt);
   }
 
   frd(cot,&nkt,kont,ipkont,lakont,&net0,vt,stnt,inumt,nmethod,
@@ -377,30 +378,30 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stit,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,&net,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emnt,
-	    thicke,jobnamec,output,qfx,cdn,mortar,cdnr,cdni);
+	    thicke,jobnamec,output,qfx,cdn,mortar,cdnr,cdni,nmat);
 
-  if(strcmp1(&filab[1044],"ZZS")==0){free(ipneigh);free(neigh);}
+  if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
   
   if((strcmp1(&filab[0],"U ")==0)||
-     ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2))) free(vt);
-  if((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal<2)) free(t1t);
+     ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2))) SFREE(vt);
+  if((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal<2)) SFREE(t1t);
   if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1044],"ZZS ")==0)||
      (strcmp1(&filab[1044],"ERR ")==0)) 
-     free(stnt);
-  if(strcmp1(&filab[261],"E   ")==0) free(eent);
+     SFREE(stnt);
+  if(strcmp1(&filab[261],"E   ")==0) SFREE(eent);
   if((strcmp1(&filab[348],"RF  ")==0)||(strcmp1(&filab[783],"RFL ")==0))
-        free(fnt);
-  if(strcmp1(&filab[435],"PEEQ")==0) free(epnt);
-  if(strcmp1(&filab[522],"ENER")==0) free(enernt);
-  if(strcmp1(&filab[609],"SDV ")==0) free(xstatent);
-  if(strcmp1(&filab[696],"HFL ")==0) free(qfnt);
+        SFREE(fnt);
+  if(strcmp1(&filab[435],"PEEQ")==0) SFREE(epnt);
+  if(strcmp1(&filab[522],"ENER")==0) SFREE(enernt);
+  if(strcmp1(&filab[609],"SDV ")==0) SFREE(xstatent);
+  if(strcmp1(&filab[696],"HFL ")==0) SFREE(qfnt);
   if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)||
-     (strcmp1(&filab[2175],"CONT")==0)) free(stit);
-  if(strcmp1(&filab[2697],"ME  ")==0) free(emnt);
+     (strcmp1(&filab[2175],"CONT")==0)) SFREE(stit);
+  if(strcmp1(&filab[2697],"ME  ")==0) SFREE(emnt);
 
-  free(kont);free(ipkont);free(lakont);free(ielmatt);
-  free(inumt);free(cot);if(*ntrans>0)free(inotrt);
-  free(inocs);free(ielcs);
+  SFREE(kont);SFREE(ipkont);SFREE(lakont);SFREE(ielmatt);
+  SFREE(inumt);SFREE(cot);if(*ntrans>0)SFREE(inotrt);
+  SFREE(inocs);SFREE(ielcs);
   return;
 }
 

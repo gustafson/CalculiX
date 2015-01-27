@@ -872,7 +872,7 @@ c         endif
          if (lakon(nelem_ref)(2:5).ne.'GAPF') then
             write(*,*) '*ERROR in zeta_calc :the reference element is no
      &t of type GASPIPE'
-           stop
+           call exit(201)
          endif
 !
          if(lakon(nelem_ref)(2:6).eq.'GAPFI') then

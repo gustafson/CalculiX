@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -46,7 +46,7 @@
               write(*,*) '*ERROR in the input deck. Card image:'
               write(*,'(132a1)') 
      &             (text(kk:kk),kk=1,lincludefn)
-              stop
+              call exit(201)
            else
               nstart=jj
               nend=lincludefn
@@ -59,7 +59,7 @@
          write(*,*) '*ERROR in the input deck. Card image:'
          write(*,'(132a1)')
      &             (text(kk:kk),kk=1,lincludefn)
-         stop
+         call exit(201)
       endif
 !
       if(nend.ge.nstart) then
@@ -71,14 +71,14 @@
             write(*,*) '*ERROR in the input deck. Card image:'
             write(*,'(132a1)')
      &             (text(kk:kk),kk=1,lincludefn)
-            stop
+            call exit(201)
          endif
       else
          write(*,*) '*ERROR in includefilename: file name is lacking'
          write(*,*) '*ERROR in the input deck. Card image:'
          write(*,'(132a1)')
      &             (text(kk:kk),kk=1,lincludefn)
-         stop
+         call exit(201)
       endif
 !
       return

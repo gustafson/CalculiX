@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2014 Guido Dhondt
+!              Copyright (C) 1998-2015 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine extrapolate(yi,yn,ipkon,inum,kon,lakon,nfield,nk,
      &  ne,mi,ndim,orab,ielorien,co,iorienloc,cflag,
-     &  vold,force,ielmat,thicke)
+     &  vold,force,ielmat,thicke,ielprop,prop)
 !
 !     extrapolates field values at the integration points to the 
 !     nodes
@@ -41,12 +41,12 @@
       integer ipkon(*),inum(*),kon(*),mi(*),ne,indexe,nope,
      &  nonei20(3,12),nfield,nonei10(3,6),nk,i,j,k,l,ndim,
      &  nonei15(3,9),iorienloc,iorien,ielorien(mi(3),*),konl,
-     &  mint3d,m,iflag,jj,ll,ielmat(mi(3),*),
-     &  nlayer,nopeexp,ilayer,kk,mint2d,nopes,kl,ki,
+     &  mint3d,m,iflag,jj,ll,ielmat(mi(3),*),ielprop(*),
+     &  nlayer,nopeexp,ilayer,kk,mint2d,nopes,kl,ki,null,
      &  itet(4),iwedge(2,9)
 !
       real*8 yi(ndim,mi(1),*),yn(nfield,*),field(999,20*mi(3)),a8(8,8),
-     &  a4(4,4),a27(20,27),a9(6,9),a2(6,2),orab(7,*),co(3,*),
+     &  a4(4,4),a27(20,27),a9(6,9),a2(6,2),orab(7,*),co(3,*),prop(*),
      &  coords(3,27),xi,et,ze,xl(3,20),xsj,shp(4,20),weight,
      &  yiloc(6,27),a(3,3),b(3,3),c(3,3),vold(0:mi(2),*),tlayer(4),
      &  dlayer(4),xlayer(mi(3),4),thickness,xs2(3,7),xl2(3,8),
@@ -63,6 +63,7 @@
      &             1.d0,-1.d0,1.d0,
      &            -1.d0,1.d0,1.d0,
      &             1.d0,1.d0,1.d0/
+      data null /0/
 !
 !     a 10-node tet is remeshed into 10 4-node tets at contact
 !     interfaces; itet contains the linear tet elements to which
@@ -355,8 +356,13 @@
                enddo
             endif
 !     
-            if(lakon(i)(4:5).eq.'8R') then
+            if((lakon(i)(4:5).eq.'8R').or.(lakon(i)(1:1).eq.'F')) then
                mint3d=1
+            elseif((lakon(i)(4:7).eq.'20RB').and.
+     &         (lakon(i)(8:8).ne.'R').and.
+     &         (lakon(i)(8:8).ne.'C')) then
+               call beamintscheme(lakon(i),mint3d,ielprop(i),prop,
+     &              null,xi,et,ze,weight)
             elseif((lakon(i)(4:4).eq.'8').or.
      &             (lakon(i)(4:6).eq.'20R').or.
      &             (lakon(i)(4:6).eq.'26R')) then
@@ -386,11 +392,17 @@
             enddo
 !
             do j=1,mint3d
-               if(lakon(i)(4:5).eq.'8R') then
+               if((lakon(i)(4:5).eq.'8R').or.
+     &            (lakon(i)(1:4).eq.'F3D8')) then
                   xi=gauss3d1(1,j)
                   et=gauss3d1(2,j)
                   ze=gauss3d1(3,j)
                   weight=weight3d1(j)
+               elseif((lakon(i)(4:7).eq.'20RB').and.
+     &                 (lakon(i)(8:8).ne.'R').and.
+     &                 (lakon(i)(8:8).ne.'C')) then
+                  call beamintscheme(lakon(i),mint3d,ielprop(i),prop,
+     &                 j,xi,et,ze,weight)
                elseif((lakon(i)(4:4).eq.'8').or.
      &                (lakon(i)(4:6).eq.'20R').or.
      &                (lakon(i)(4:6).eq.'26R'))
@@ -449,11 +461,16 @@
                   et=gauss3d8(2,j)
                   ze=gauss3d8(3,j)
                   weight=weight3d8(j)
-               elseif(lakon(i)(4:4).eq.'6') then
+               elseif(lakon(i)(1:4).eq.'C3D6') then
                   xi=gauss3d7(1,j)
                   et=gauss3d7(2,j)
                   ze=gauss3d7(3,j)
                   weight=weight3d7(j)
+               elseif(lakon(i)(1:4).eq.'F3D6') then
+                  xi=gauss3d14(1,j)
+                  et=gauss3d14(2,j)
+                  ze=gauss3d14(3,j)
+                  weight=weight3d14(j)
                endif
 !
                if(nope.eq.20) then
@@ -536,8 +553,19 @@
                endif
             enddo
 !
+            if(lakonl(1:1).eq.'F') then
+               do j=1,8
+                  do k=1,nfield
+                     field(k,j)=yiloc(k,1)
+                  enddo
+               enddo
+            elseif((lakonl(4:7).eq.'20RB').and.
+     &         (lakonl(8:8).ne.'R').and.
+     &         (lakonl(8:8).ne.'C')) then
+               call beamextscheme(yi(1,1,i),ndim,nfield,lakonl,
+     &              ielprop(i),prop,field,mi)
 c     Bernhardi start
-            if((lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R').or.
+            elseif((lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R').or.
      &         (lakonl(4:5).eq.'8 ').or.(lakonl(4:5).eq.'8I')) then
 c     Bernhardi end
                if(lakonl(7:8).ne.'LC') then
@@ -626,8 +654,20 @@ c     Bernhardi end
 !        for C3D15: use of the C3D6 linear interpolation functions
 !        for C3D6: use of a linear interpolation function
 !
+            if(lakonl(1:1).eq.'F') then
+               do j=1,8
+                  do k=1,nfield
+                     field(k,j)=yi(k,1,i)
+                  enddo
+               enddo
+            elseif((lakonl(4:7).eq.'20RB').and.
+     &         (lakonl(8:8).ne.'R').and.
+     &         (lakonl(8:8).ne.'C')) then
+               call beamextscheme(yi(1,1,i),ndim,nfield,lakonl,
+     &              ielprop(i),prop,field,mi)
+!               
 c     Bernhardi start
-            if((lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R').or.
+            elseif((lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R').or.
      &         (lakonl(4:5).eq.'8 ').or.(lakonl(4:5).eq.'8I')) then
 c     Bernhardi end
                if(lakonl(7:8).ne.'LC') then

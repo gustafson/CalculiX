@@ -28,7 +28,9 @@
 
 void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
                        ITG *nboun,ITG *iamboun,double *xboun, ITG *nload,
-                       char *sideload,ITG *iamload, ITG *iglob)
+                       char *sideload,ITG *iamload, ITG *iglob,ITG *nforc,
+                       ITG *iamforc,double *xforc,ITG *ithermal,ITG *nk,
+                       double *t1,ITG *iamt1)
 {
  
     char  datin[MAX_LINE_LENGTH],text[13]="            ";
@@ -63,6 +65,14 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
 	*doubleglob=NULL;
     
     integerglob=*integerglobp;doubleglob=*doubleglobp;
+
+    /*  The global mesh is remeshed into tetrahedral elements
+
+        cotet(j,i):    j-coordinate of node i of tet mesh
+        iparent(i):    parent element from global mesh for tet i
+        kontet(4,i):   topology of tet i
+        netet:         total # of tets
+        cgtet(3,i):    center of gravity of tet i */
     
     /* reading the global coordinates and the topology from file
        (if any, else return) */
@@ -88,9 +98,25 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
 	}
     }
     if(istep==0){
+	for(i=0;i<*nforc;i++){
+	    if((xforc[i]<1.9232931375)&&(xforc[i]>1.9232931373)){
+		istep=iamforc[i];
+		break;
+	    }
+	}
+    }
+    if(istep==0){
 	for(i=0;i<*nload;i++){
 	    if(strcmp1(&sideload[20*i+2],"SM")==0){
 		istep=iamload[2*i];
+		break;
+	    }
+	}
+    }
+    if((istep==0)&&(*ithermal>0)){
+	for(i=0;i<*nk;i++){
+	    if((t1[i]<1.9232931375)&&(t1[i]>1.9232931373)){
+		istep=iamt1[i];
 		break;
 	    }
 	}
@@ -130,7 +156,7 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     for(i=0;i<anz[0].n;i++){
 	if(node[i].nr>nktet) nktet=node[i].nr;
     }
-    cotet=NNEW(double,3*nktet);
+    NNEW(cotet,double,3*nktet);
     
     /* storing the global coordinates */
     
@@ -150,10 +176,10 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     /* storing the topology */
     
     indexe=0;
-    ielemnr=NNEW(ITG,ne);
-    kontyp=NNEW(ITG,ne);
-    ipkon=NNEW(ITG,ne);
-    kon=NNEW(ITG,20*ne);
+    NNEW(ielemnr,ITG,ne);
+    NNEW(kontyp,ITG,ne);
+    NNEW(ipkon,ITG,ne);
+    NNEW(kon,ITG,20*ne);
     for(i=0;i<anz[0].e;i++){
 	ielemnr[i]=elem[i].nr;
 	kontyp[i]=elem[i].type;
@@ -187,12 +213,12 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     netet=0;
     netet_=22*ne;
     
-    iparent=NNEW(ITG,netet_);
-    kontet=NNEW(ITG,4*netet_);
-    ipofa=NNEW(ITG,4*netet_);
-    inodfa=NNEW(ITG,16*netet_);
-    ifatet=NNEW(ITG,4*netet_);
-    planfa=NNEW(double,16*netet_);
+    NNEW(iparent,ITG,netet_);
+    NNEW(kontet,ITG,4*netet_);
+    NNEW(ipofa,ITG,4*netet_);
+    NNEW(inodfa,ITG,16*netet_);
+    NNEW(ifatet,ITG,4*netet_);
+    NNEW(planfa,double,16*netet_);
     
     /* initialization of fields */
     
@@ -290,7 +316,7 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
 	    }
 	}
     }
-    free(ipofa);
+    SFREE(ipofa);
     
     nfaces=ifreefa-1;
     
@@ -304,7 +330,7 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     
     /* calculating the center of gravity of the tetrahedra */
     
-    cgtet=NNEW(double,3*netet);
+    NNEW(cgtet,double,3*netet);
     for(i=0;i<netet;i++){
 	n1=kontet[4*i]-1;
 	n2=kontet[4*i+1]-1;
@@ -317,15 +343,15 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     
     /* initialization of additional fields */
     
-    x=NNEW(double,netet);
-    y=NNEW(double,netet);
-    z=NNEW(double,netet);
-    xo=NNEW(double,netet);
-    yo=NNEW(double,netet);
-    zo=NNEW(double,netet);
-    nnx=NNEW(ITG,netet);
-    nny=NNEW(ITG,netet);
-    nnz=NNEW(ITG,netet);
+    NNEW(x,double,netet);
+    NNEW(y,double,netet);
+    NNEW(z,double,netet);
+    NNEW(xo,double,netet);
+    NNEW(yo,double,netet);
+    NNEW(zo,double,netet);
+    NNEW(nnx,ITG,netet);
+    NNEW(nny,ITG,netet);
+    NNEW(nnz,ITG,netet);
     for(i=0;i<netet;i++){
 	nnx[i]=i+1;
 	nny[i]=i+1;
@@ -340,12 +366,12 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     FORTRAN(dsort,(x,nnx,&netet,&kflag));
     FORTRAN(dsort,(y,nny,&netet,&kflag));
     FORTRAN(dsort,(z,nnz,&netet,&kflag));
-    free(cgtet);
+    SFREE(cgtet);
     
     /* loading the step data : NDTEMP (1 variable), DISP (3 variables) and
        STRESS (6 variables), if present */
     
-    field=NNEW(double,10*nktet);
+    NNEW(field,double,13*nktet);
     
     /* reading the temperatures */
     /* 1. determining the last temperature loadcase in the step */
@@ -381,7 +407,7 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     
 	for(i=0;i<anz[0].n;i++){
 	    nodenr=node[i].nr;
-	    field[10*(nodenr-1)]=lcase[loadcase].dat[0][nodenr];
+	    field[13*(nodenr-1)]=lcase[loadcase].dat[0][nodenr];
 	}
     }
     
@@ -398,7 +424,8 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
 	    }
 	}
 	if((istep_global==istep)&&
-	   (strcmp1(lcase[i].name,"DISPR")==0)){
+//	   (strcmp1(lcase[i].name,"DISPR")==0)){
+	   (strcmp1(lcase[i].name,"DISP")==0)){
 	    loadcase=i;
 	}else if(istep_global>istep){
 	    break;
@@ -419,9 +446,9 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     
 	for(i=0;i<anz[0].n;i++){
 	    nodenr=node[i].nr;
-	    field[10*(nodenr-1)+1]=lcase[loadcase].dat[0][nodenr];
-	    field[10*(nodenr-1)+2]=lcase[loadcase].dat[1][nodenr];
-	    field[10*(nodenr-1)+3]=lcase[loadcase].dat[2][nodenr];
+	    field[13*(nodenr-1)+1]=lcase[loadcase].dat[0][nodenr];
+	    field[13*(nodenr-1)+2]=lcase[loadcase].dat[1][nodenr];
+	    field[13*(nodenr-1)+3]=lcase[loadcase].dat[2][nodenr];
 	}
     }
     
@@ -459,26 +486,65 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     
 	for(i=0;i<anz[0].n;i++){
 	    nodenr=node[i].nr;
-	    field[10*(nodenr-1)+4]=lcase[loadcase].dat[0][nodenr];
-	    field[10*(nodenr-1)+5]=lcase[loadcase].dat[1][nodenr];
-	    field[10*(nodenr-1)+6]=lcase[loadcase].dat[2][nodenr];
-	    field[10*(nodenr-1)+7]=lcase[loadcase].dat[3][nodenr];
-	    field[10*(nodenr-1)+8]=lcase[loadcase].dat[4][nodenr];
-	    field[10*(nodenr-1)+9]=lcase[loadcase].dat[5][nodenr];
+	    field[13*(nodenr-1)+4]=lcase[loadcase].dat[0][nodenr];
+	    field[13*(nodenr-1)+5]=lcase[loadcase].dat[1][nodenr];
+	    field[13*(nodenr-1)+6]=lcase[loadcase].dat[2][nodenr];
+	    field[13*(nodenr-1)+7]=lcase[loadcase].dat[3][nodenr];
+	    field[13*(nodenr-1)+8]=lcase[loadcase].dat[4][nodenr];
+	    field[13*(nodenr-1)+9]=lcase[loadcase].dat[5][nodenr];
 	}
     }
     
-    free(kontet);free(inodfa);
-    free(node);free(elem);
+    /* reading the forces */
+    /* 1. determining the last force loadcase in the step */
+    
+    loadcase=-1;
+    for(i=0;i<anz[0].l;i++){
+	for(j=0;j<lcase[i].npheader;j++){
+	    if(strcmp1(&lcase[i].pheader[j][5],"PSTEP")==0){
+		strcpy1(text,&lcase[i].pheader[j][48],12);
+		istep_global=atoi(text);
+		break;
+	    }
+	}
+	if((istep_global==istep)&&
+	   (strcmp1(lcase[i].name,"FORC")==0)){
+	    loadcase=i;
+	}else if(istep_global>istep){
+	    break;
+	}
+    }
+    
+    /* 2. reading the data */
+    
+    if(loadcase>-1){
+	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
+	{
+	    printf("ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
+	    FORTRAN(stop,());
+	}
+	
+    /* 3. storing the data */
+    
+	for(i=0;i<anz[0].n;i++){
+	    nodenr=node[i].nr;
+	    field[13*(nodenr-1)+10]=lcase[loadcase].dat[0][nodenr];
+	    field[13*(nodenr-1)+11]=lcase[loadcase].dat[1][nodenr];
+	    field[13*(nodenr-1)+12]=lcase[loadcase].dat[2][nodenr];
+	}
+    }
+    
+    SFREE(kontet);SFREE(inodfa);
+    SFREE(node);SFREE(elem);
     for(j=0;j<anz->l;j++){
       freeDatasets(lcase,j);
     }
-    free(lcase);lcase=NULL;
+    SFREE(lcase);lcase=NULL;
     
     /* storing the global data in a common block */
     
     
-    integerglob=NNEW(ITG,5+3*ne+nkon+8*netet);
+    NNEW(integerglob,ITG,5+3*ne+nkon+8*netet);
     
     integerglob[0]=nktet;
     integerglob[1]=netet;
@@ -495,7 +561,7 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     memcpy(&integerglob[nkon+2*ne+7*netet+5],&iparent[0],sizeof(ITG)*netet);
     memcpy(&integerglob[nkon+2*ne+8*netet+5],&ielemnr[0],sizeof(ITG)*ne);
     
-    doubleglob=NNEW(double,13*nktet+4*nfaces+6*netet);
+    NNEW(doubleglob,double,16*nktet+4*nfaces+6*netet);
     
     memcpy(&doubleglob[0],&x[0],sizeof(double)*netet);
     memcpy(&doubleglob[netet],&y[0],sizeof(double)*netet);
@@ -504,14 +570,14 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     memcpy(&doubleglob[4*netet],&yo[0],sizeof(double)*netet);
     memcpy(&doubleglob[5*netet],&zo[0],sizeof(double)*netet);
     memcpy(&doubleglob[6*netet],&planfa[0],sizeof(double)*4*nfaces);
-    memcpy(&doubleglob[4*nfaces+6*netet],&field[0],sizeof(double)*10*nktet);
-    memcpy(&doubleglob[10*nktet+4*nfaces+6*netet],&cotet[0],sizeof(double)*3*nktet);
+    memcpy(&doubleglob[4*nfaces+6*netet],&field[0],sizeof(double)*13*nktet);
+    memcpy(&doubleglob[13*nktet+4*nfaces+6*netet],&cotet[0],sizeof(double)*3*nktet);
     
-    free(nnx);free(nny);free(nnz);free(ifatet);free(kontyp);free(ipkon);
-    free(kon);free(iparent);free(ielemnr);
+    SFREE(nnx);SFREE(nny);SFREE(nnz);SFREE(ifatet);SFREE(kontyp);SFREE(ipkon);
+    SFREE(kon);SFREE(iparent);SFREE(ielemnr);
 
-    free(x);free(y);free(z);free(xo);free(yo);free(zo);
-    free(planfa);free(field);free(cotet);
+    SFREE(x);SFREE(y);SFREE(z);SFREE(xo);SFREE(yo);SFREE(zo);
+    SFREE(planfa);SFREE(field);SFREE(cotet);
 
     *integerglobp=integerglob;*doubleglobp=doubleglob;
     
