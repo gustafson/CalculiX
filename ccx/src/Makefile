@@ -12,10 +12,17 @@
 
 ## CFLAGS=-march=native -g -O0 -pg ## debugging
 ## FFLAGS=-march=native -g -O0 -pg ## debugging
+## CFLAGS=-march=native -g -Og -pg ## debugging
+## FFLAGS=-march=native -g -Og -pg ## debugging
 ## CFLAGS=-march=native -O2 -Wall ## conservative
 ## FFLAGS=-march=native -O2 -Wall ## conservative
 CFLAGS=-march=native -O3 -Wall -flto ## aggressive
 FFLAGS=-march=native -O3 -Wall -flto ## aggressive
+
+## Integer8.  Note at least Arpack and Spooles need to be compiled for
+## Integer8 as well.
+CFLAGS  += -DLONGLONG
+FFLAGS  += -fdefault-integer-8
 
 ## SPOOLES
 ## CFLAGS  += -I/usr/include/spooles -I/usr/include/spooles/MT -DSPOOLES
@@ -56,6 +63,10 @@ CFLAGS += -DUSE_MT
 #CFLAGS += -DCALCULIX_MPI -fopenmp
 
 ## EXODUSII
+## CFLAGS  += -DEXODUSII
+## LDFLAGS += -lexoIIv2c -lnetcdf
+CFLAGS  += `pkg-config --cflags exodusii` -DEXODUSII
+LDFLAGS += `pkg-config --libs exodusii`
 
 ## CUDACUSP
 
