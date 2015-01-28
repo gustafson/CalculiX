@@ -28,20 +28,21 @@
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
-void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
-	 double *v,double *stn,int *inum,int *nmethod,int *kode,
+void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
+	 double *v,double *stn,ITG *inum,ITG *nmethod,ITG *kode,
 	 char *filab,double *een,double *t1,double *fn,double *time,
-	 double *epn,int *ielmat,char *matname,double *enern,
-	 double *xstaten,int *nstate_,int *istep,int *iinc,
-	 int *ithermal,double *qfn,int *mode,int *noddiam,
-	 double *trab,int *inotr,int *ntrans,double *orab,
-	 int *ielorien,int *norien,char *description,int *ipneigh,
-	 int *neigh,int *mi,double *stx,double *vr,double *vi,
+	 double *epn,ITG *ielmat,char *matname,double *enern,
+	 double *xstaten,ITG *nstate_,ITG *istep,ITG *iinc,
+	 ITG *ithermal,double *qfn,ITG *mode,ITG *noddiam,
+	 double *trab,ITG *inotr,ITG *ntrans,double *orab,
+	 ITG *ielorien,ITG *norien,char *description,ITG *ipneigh,
+	 ITG *neigh,ITG *mi,double *stx,double *vr,double *vi,
 	 double *stnr,double *stni,double *vmax,double *stnmax,
-	 int *ngraph,double *veold,double *ener,int *ne,double *cs,
-	 char *set,int *nset,int *istartset,int *iendset,int *ialset,
+	 ITG *ngraph,double *veold,double *ener,ITG *ne,double *cs,
+	 char *set,ITG *nset,ITG *istartset,ITG *iendset,ITG *ialset,
 	 double *eenmax,double *fnr,double *fni,double *emn,
-	 double *thicke,char *jobnamec,char *output,double *qfx){
+	 double *thicke,char *jobnamec,char *output,double *qfx,
+         double *cdn,ITG *mortar,double *cdnr,double *cdni,ITG *nmat){
 
   /* stores the results in exo format
 
@@ -56,23 +57,23 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   
   char fneig[132]="", material[6]="     ",text[2]=" ";
   
-  static int nkcoords,nout,noutmin,noutplus;
-  int nterms,mesh_in_original_form,ielemremesh;
+  static ITG nkcoords,nout,noutmin,noutplus;
+  ITG nterms;
 
-  int i,j,k,l,m,n,o,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
+  ITG i,j,k,l,m,n,o,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
     nodes,ifield[7],nfield[2],icomp[7],ifieldstate[*nstate_],icompstate[*nstate_],nelout;
   
-  int ncompscalar=1,ifieldscalar[1]={1},icompscalar[1]={0},nfieldscalar[2]={1,0};
-  int ncompvector=3,ifieldvector[3]={1,1,1},icompvector[3]={0,1,2},nfieldvector1[2]={3,0},nfieldvector0[2]={mi[1]+1,0};
-  int ncomptensor=6,ifieldtensor[6]={1,1,1,1,1,1},icomptensor[6]={0,1,2,3,5,4},nfieldtensor[2]={6,0};
-  int ncompscalph=2,ifieldscalph[2]={1,2},icompscalph[2]={0,0},nfieldscalph[2]={0,0};
-  int ncompvectph=6,ifieldvectph[6]={1,1,1,2,2,2},icompvectph[6]={1,2,3,1,2,3},nfieldvectph[2]={mi[1]+1,mi[1]+1};
-  int ncomptensph=12,ifieldtensph[12]={1,1,1,1,1,1,2,2,2,2,2,2},icomptensph[12]={0,1,2,3,5,4,0,1,2,3,5,4},nfieldtensph[2]={6,6};
+  ITG ncompscalar=1,ifieldscalar[1]={1},icompscalar[1]={0},nfieldscalar[2]={1,0};
+  ITG ncompvector=3,ifieldvector[3]={1,1,1},icompvector[3]={0,1,2},nfieldvector1[2]={3,0},nfieldvector0[2]={mi[1]+1,0};
+  ITG ncomptensor=6,ifieldtensor[6]={1,1,1,1,1,1},icomptensor[6]={0,1,2,3,5,4},nfieldtensor[2]={6,0};
+  ITG ncompscalph=2,ifieldscalph[2]={1,2},icompscalph[2]={0,0},nfieldscalph[2]={0,0};
+  ITG ncompvectph=6,ifieldvectph[6]={1,1,1,2,2,2},icompvectph[6]={1,2,3,1,2,3},nfieldvectph[2]={mi[1]+1,mi[1]+1};
+  ITG ncomptensph=12,ifieldtensph[12]={1,1,1,1,1,1,2,2,2,2,2,2},icomptensph[12]={0,1,2,3,5,4,0,1,2,3,5,4},nfieldtensph[2]={6,6};
 
   int errr=0, exoid=0;
-  int num_dim, num_elem;
-  int num_elem_blk; /* Node element blocks.  One eltype per block*/
-  int num_ns, num_ss, num_es, num_fs; /* Node sets, side sets, element sets, face sets */
+  ITG num_dim, num_elem;
+  ITG num_elem_blk; /* Node element blocks.  One eltype per block*/
+  ITG num_ns, num_ss, num_es, num_fs; /* Node sets, side sets, element sets, face sets */
   int CPU_word_size = sizeof(float);
   int IO_word_size = sizeof(float);
 
@@ -83,7 +84,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   /* nkcoords is the number of nodes at the time when 
      the nodal coordinates are stored in the exo file */
   nkcoords = *nk;
-  int num_nodes = nkcoords;
+  ITG num_nodes = nkcoords;
 
   /* determining nout, noutplus and noutmin 
      nout: number of structural and network nodes
@@ -110,15 +111,16 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   z = (float *) calloc(nout, sizeof(float));
 
   // Write optional node map
-  j = 0;
-  int *node_map;
-  node_map = (int *) calloc(nout, sizeof(int));
-  int *node_map_inv;
-  node_map_inv = (int *) calloc(nkcoords, sizeof(int));
+  j = 0; // Counter for the exo order of the nodes
+  ITG *node_map,*node_map_inv;
+  node_map = (ITG *) calloc(nout, sizeof(ITG));
+  node_map_inv = (ITG *) calloc(nkcoords, sizeof(ITG));
   /* storing the coordinates of the nodes */
   if(*nmethod!=0){
     for(i=0;i<*nk;i++){
       if(inum[i]==0){continue;}
+      // The difference between i and j is that not all values of i
+      // increment j.
       node_map[j] = i+1;
       node_map_inv[i] = j+1;
       x[j]   = co[3*i];
@@ -148,25 +150,33 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     printf ("Side sets to exo file not implemented.\n");
     num_ss=0;
 
+#ifdef LONGLONG
+    // This handles LONGLONG transparently
+    remove(fneig);
+    exoid = ex_create (fneig, /*Filename*/
+    		       EX_ALL_INT64_API,	/* create mode */
+    		       &CPU_word_size,  /* CPU float word size in bytes */
+    		       &IO_word_size);  /* I/O float word size in bytes */
+#else
     exoid = ex_create (fneig, /*Filename*/
 		       EX_CLOBBER,	/* create mode */
 		       &CPU_word_size,  /* CPU float word size in bytes */
 		       &IO_word_size);  /* I/O float word size in bytes */
+#endif
     
     /* determining the number of elements */
     if(*nmethod!=0){
       nelout=0;
       for(i=0;i<*ne0;i++){
-	if(ipkon[i]<0) continue;
-	if(strcmp1(&lakon[8*i],"ESPRNGC")==0) continue;
-	if(strcmp1(&lakon[8*i+5],"C")==0){
-	  if(mesh_in_original_form==1) continue;
-	}
 	if(ipkon[i]<-1){
-	  if(mesh_in_original_form==0) continue;
-	}
-	if(strcmp1(&lakon[8*i],"DCOUP3D")==0) continue;
-	if(strcmp2(&lakon[8*i+6],"LC",2)==0){
+	  continue;
+	}else if(strcmp1(&lakon[8*i],"ESPRNGC")==0){
+	  continue;
+	}else if(strcmp1(&lakon[8*i],"ESPRNGF")==0){
+	  continue;
+	}else if(strcmp1(&lakon[8*i],"DCOUP3D")==0){
+	  continue;
+	}else if(strcmp2(&lakon[8*i+6],"LC",2)==0){
 	  // Count the number of layers
 	  nlayer=0;
 	  for(k=0;k<mi[2];k++){
@@ -189,29 +199,23 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     /* initialize file with parameters */
     printf("\nData writen to the .exo file\n");
     num_nodes=nout;
-    printf("Number of nodes %i\n", num_nodes);
-    printf("Number of elements %i\n", num_elem);
-    printf("Number of element blocks %i\n", num_elem_blk);
-    printf("Number of node sets %i\n", num_ns);
-    printf("Number of side sets %i\n", num_ss);
+    printf("Number of nodes: %" ITGFORMAT "\n", num_nodes);
+    printf("Number of elements %" ITGFORMAT "\n", num_elem);
+    printf("Number of element blocks %" ITGFORMAT "\n", num_elem_blk);
+    printf("Number of node sets %" ITGFORMAT "\n", num_ns);
+    printf("Number of side sets %" ITGFORMAT "\n", num_ss);
+
     errr = ex_put_init (exoid, "CalculiX EXO File", 
 			num_dim, num_nodes, 
 			num_elem, num_elem_blk, 
 			num_ns, num_ss);
-    if(errr){printf("*ERROR in exo: cannot open exo file for writing...");}
     
-    if(strcmp1(&filab[2],"C")==0){
-      mesh_in_original_form=0;
-    }else{
-      mesh_in_original_form=1;
-    }
-
     // Write values to database
     errr = ex_put_coord (exoid, x, y, z);
     if(errr)printf("*ERROR in exo: failed node positions");
     errr = ex_put_node_num_map (exoid, node_map);
     if(errr)printf("*ERROR in exo: failed node map");
-
+    
     // Deallocate
     free (node_map);
     free (x);
@@ -227,37 +231,31 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     if(errr){printf("*ERROR in exo: failed coordinate names");}
     
     // Initialize enough memory to store the element numbers
-    int *elem_map;
-    elem_map = (int *) calloc(num_elem, sizeof(int));
+    ITG *elem_map;
+    elem_map = (ITG *) calloc(num_elem, sizeof(ITG));
     char curblk[6]="     ";
     
-    int *blkassign;
-    blkassign = (int *) calloc(num_elem, sizeof(int));
+    ITG *blkassign;
+    blkassign = (ITG *) calloc(num_elem, sizeof(ITG));
     
     l=0;
     for(i=0;i<*ne0;i++){ // For each element.  Composite elements are
 			 // one increment in this loop and all layers
 			 // have the same element number.
-      if(ipkon[i]==-1){
+      if(ipkon[i]<=-1){
 	continue;
       }else if(strcmp1(&lakon[8*i],"F")==0){
 	continue;
       }else if(strcmp1(&lakon[8*i],"ESPRNGC")==0){
 	continue;
-      }else if(strcmp1(&lakon[8*i+5],"C")==0){
-	if(mesh_in_original_form==1) continue;
-	indexe=ipkon[i];
-      }else if(ipkon[i]<-1){
-	if(mesh_in_original_form==0) continue;
-	indexe=-ipkon[i]-2;
-	ielemremesh=kon[indexe];
-	kon[indexe]=kon[ipkon[ielemremesh-1]];
+      }else if(strcmp1(&lakon[8*i],"ESPRNGF")==0){
+	continue;
       }else if(strcmp1(&lakon[8*i],"DCOUP3D")==0){
 	continue;
       }else{
 	indexe=ipkon[i];
       }
-
+      
       elem_map[l] = i+1;
       
       strcpy1(curblk,&lakon[8*i],5);
@@ -309,7 +307,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  }
 	}
       }else if((strcmp1(&lakon[8*i+3],"10")==0)||
-	(strcmp1(&lakon[8*i+3],"14")==0)){
+	       (strcmp1(&lakon[8*i+3],"14")==0)){
 	/* 10-node tetrahedral element */
 	blkassign[l++]=10;
       }else if(strcmp1(&lakon[8*i+3],"4")==0){
@@ -333,8 +331,8 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	  /* 3-node 2d element */
 	  blkassign[l++]=15;
 	}
-//      }else if((strcmp1(&lakon[8*i],"D")==0)&&
-//	       (strcmp1(&lakon[8*i],"DCOUP3D")!=0)){
+	//      }else if((strcmp1(&lakon[8*i],"D")==0)&&
+	//	       (strcmp1(&lakon[8*i],"DCOUP3D")!=0)){
       }else if(strcmp1(&lakon[8*i],"D")==0){
 	if(kon[indexe]==0){
 	  /* 2-node 1d element (network entry element) */
@@ -384,9 +382,9 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     
 
     /* write element connectivity */
-    int *connect;
-    int num_elem_in_blk;
-    int blksize[num_elem_blk];
+    ITG *connect;
+    ITG num_elem_in_blk;
+    ITG blksize[num_elem_blk];
 
     for(l=0;l<num_elem_blk;l++){
       // First determine the size of the block
@@ -410,14 +408,15 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       blksize[l]=j;
       num_elem_in_blk=blksize[l];
       
-      connect = (int *) calloc (num_elem_in_blk*num_nodes_per_elem[l], sizeof(int));
+      connect = (ITG *) calloc (num_elem_in_blk*num_nodes_per_elem[l], sizeof(ITG));
+      // printf ("Size of connect %" ITGFORMAT "\n", num_elem_in_blk*num_nodes_per_elem[l]*sizeof(ITG));
       k=0; o=0;
       // Now connectivity
       for(i=0;i<*ne0;i++){
 	if(ipkon[i]<0) continue;
 	indexe=ipkon[i];
 	if (blkassign[o]==l){
-	  // printf ("block assignment %i\n", blkassign[o]);
+	  // printf ("block assignment %" ITGFORMAT "\n", blkassign[o]);
 	  if(blkassign[o]==1){ // S8R and all? C3D20 promotions?
 	    for(m=0;m<12;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
 	    for(m=16;m<20;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
@@ -529,13 +528,6 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
     exosetfind(set, nset, ialset, istartset, iendset, 
 	       &num_ns, &num_ss, &num_es, &num_fs, node_map_inv, exoid, (int) 1, nk);
     
-    // Unknown purpose originating in ccx_2.6
-    if(mesh_in_original_form==1){
-      if(ipkon[i]<-1){
-	kon[indexe]=ielemremesh;
-      }
-    }
-    
     // Free up memory which is gathering dust
     free (elem_map); 
     free (blkassign);
@@ -571,7 +563,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
   printf ("Time periods existing in exo file: %i\n", num_time_steps);
   ++num_time_steps;
   float timet = (float) *time;
-  printf ("Writing time period %i at time %f\n", num_time_steps, *time);
+  // printf ("Writing time period %" ITGFORMAT " at time %f\n", num_time_steps, *time);
   errr = ex_put_time (exoid, num_time_steps, &timet);
   if (errr) printf ("Error storing time into exo file.\n");
 
@@ -990,7 +982,7 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
 	countvars+=*nstate_;
       }else if(countbool==2){
 	for(j=1;j<=*nstate_;j++){
-	  sprintf(var_names[countvars++],"SDV%d",j);
+	  sprintf(var_names[countvars++],"SDV%" ITGFORMAT,j);
 	}
       }else{
 	iselect=1;
@@ -1207,8 +1199,8 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       }
     }
 
-  /* storing the imaginary part of the thermal error estimator in the nodes
-     for the odd modes of cyclic symmetry calculations */
+    /* storing the imaginary part of the thermal error estimator in the nodes
+       for the odd modes of cyclic symmetry calculations */
   
     if(*noddiam>=0){
       if(strcmp1(&filab[2784],"HER")==0){
@@ -1633,13 +1625,14 @@ void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
       ex_update (exoid);  
       // var_names = (char *) calloc (countvars, sizeof (char));
       // var_names = (char *) calloc (countvars, MAX_STR_LENGTH);
-      for (i=0; i<countvars; i++)
+      int ii=0; // 4 bit integer
+      for (ii=0; ii<countvars; ii++)
 	{
-	  var_names[i] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
+	  var_names[ii] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
 	}
     }else if(countbool==2){
       errr = ex_put_var_names (exoid, "n", countvars, var_names);
-      if (errr) printf ("Unable to update variable names.");
+      if (errr) printf ("Unable to update variable names.  Was output data requested?\n");
       //  for (i=0; i<countvars; i++)
       // 	{
       // 	  free(var_names[i]);

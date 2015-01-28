@@ -17,33 +17,34 @@
 /*     along with this program; if not, write to the Free Software       */
 /*     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.         */
 
-void exo(double *co,int *nk,int *kon,int *ipkon,char *lakon,int *ne0,
-	 double *v,double *stn,int *inum,int *nmethod,int *kode,
+void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
+	 double *v,double *stn,ITG *inum,ITG *nmethod,ITG *kode,
 	 char *filab,double *een,double *t1,double *fn,double *time,
-	 double *epn,int *ielmat,char *matname,double *enern,
-	 double *xstaten,int *nstate_,int *istep,int *iinc,
-	 int *ithermal,double *qfn,int *mode,int *noddiam,
-	 double *trab,int *inotr,int *ntrans,double *orab,
-	 int *ielorien,int *norien,char *description,int *ipneigh,
-	 int *neigh,int *mi,double *stx,double *vr,double *vi,
+	 double *epn,ITG *ielmat,char *matname,double *enern,
+	 double *xstaten,ITG *nstate_,ITG *istep,ITG *iinc,
+	 ITG *ithermal,double *qfn,ITG *mode,ITG *noddiam,
+	 double *trab,ITG *inotr,ITG *ntrans,double *orab,
+	 ITG *ielorien,ITG *norien,char *description,ITG *ipneigh,
+	 ITG *neigh,ITG *mi,double *stx,double *vr,double *vi,
 	 double *stnr,double *stni,double *vmax,double *stnmax,
-	 int *ngraph,double *veold,double *ener,int *ne,double *cs,
-	 char *set,int *nset,int *istartset,int *iendset,int *ialset,
+	 ITG *ngraph,double *veold,double *ener,ITG *ne,double *cs,
+	 char *set,ITG *nset,ITG *istartset,ITG *iendset,ITG *ialset,
 	 double *eenmax,double *fnr,double *fni,double *emn,
-	 double *thicke,char *jobnamec,char *output,double *qfx);
+	 double *thicke,char *jobnamec,char *output,double *qfx,
+         double *cdn,ITG *mortar,double *cdnr,double *cdni,ITG *nmat);
 
-void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset, 
-		int *num_ns, int *num_ss, int *num_es, int *num_fs, int *node_map_inv,
-		int exoid, int store, int *nk);
+void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset, 
+		ITG *num_ns, ITG *num_ss, ITG *num_es, ITG *num_fs, ITG *node_map_inv,
+		int exoid, int store, ITG *nk);
 
-int exoset_check(int n, int *node_map_inv, int *nk, int *dropped, int *unidentified);
+ITG exoset_check(ITG n, ITG *node_map_inv, ITG *nk, int *dropped, int *unidentified);
 
-void exovector(double *v,int *iset,int *ntrans,char * filabl,int *nkcoords,
-               int *inum,int *inotr,double *trab,double *co,
-               int *istartset,int *iendset,int *ialset,int *mi,int *ngraph,
-               int exoid, int time_step, int countvar, int nout);
+void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
+               ITG *inum,ITG *inotr,double *trab,double *co,
+               ITG *istartset,ITG *iendset,ITG *ialset,ITG *mi,ITG *ngraph,
+               int, ITG time_step, int countvar, ITG nout);
 
-void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
-	       int *istartset,int *iendset,int *ialset,int *ngraph,int *ncomp,
-	       int *ifield,int *icomp,int *nfield,int *iselect,int exoid,
-	       int time_step, int countvar, int nout);
+void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
+	       ITG *istartset,ITG *iendset,ITG *ialset,ITG *ngraph,ITG *ncomp,
+	       ITG *ifield,ITG *icomp,ITG *nfield,ITG *iselect,ITG exoid,
+	       ITG time_step, int countvar, ITG nout);

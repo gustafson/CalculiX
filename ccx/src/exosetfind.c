@@ -25,15 +25,15 @@
 #include "exodusII.h"
 #include "exo.h"
 
-void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset, 
-		int *num_ns, int *num_ss, int *num_es, int *num_fs, int *node_map_inv,
-		int exoid, int store, int *nk){
+void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset, 
+		ITG *num_ns, ITG *num_ss, ITG *num_es, ITG *num_fs, ITG *node_map_inv,
+		int exoid, int store, ITG *nk){
   
-  int i,j,k,l,n,s,e,gen;
+  ITG i,j,k,l,n,s,e,gen;
   char tmpstr[81];
   char *space = " ";
   char *pos;
-  int *set_nums;
+  ITG *set_nums;
   int errr;
   int dropped=0, unidentified=0;
   
@@ -60,7 +60,7 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
       
       // Now set the length of the set allocation
       l=e-s+1+gen+l;
-      set_nums = (int *) calloc(l, sizeof(int));
+      set_nums = (ITG *) calloc(l, sizeof(ITG));
 
       /* Only add the generate code if there are at least
 	 three points in the vector */
@@ -93,7 +93,7 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
       }else{
 	set_nums[n++]=exoset_check(ialset[e]-1, node_map_inv, nk, &dropped, &unidentified);
       }
-    }
+    } // if (store)
 
     strncpy(tmpstr,set+i*81,81);
     pos = strpbrk(tmpstr, space)-1;
@@ -142,7 +142,7 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
 	 } */
     }
     if (store) {free (set_nums);}
-  }  
+  }
   
   if (store){
     // char *namesnset[*num_ns]; j=0;
@@ -185,14 +185,17 @@ void exosetfind(char *set, int *nset, int *ialset, int *istartset, int *iendset,
 }
 
 
-int exoset_check(int n, int *node_map_inv, int *nk, int *dropped, int *unidentified){
-  int val=0;
+ITG exoset_check(ITG n, ITG *node_map_inv, ITG *nk, int *dropped, int *unidentified){
+  ITG val=0;
+  // printf ("%" ITGFORMAT ", %" ITGFORMAT "\n", n, *nk);
   if (n<=*nk){
     val = node_map_inv[n]-1;
+    // printf ("val node number %" ITGFORMAT "\n", val+1);
     if (val==-1) {
       *dropped = 1;
     }
   }else{
+    // printf("UNIDENTIFIED %" ITGFORMAT "\n", n);
     *unidentified = 1;
   }
   return val;

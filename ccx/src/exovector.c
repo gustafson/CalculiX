@@ -25,14 +25,14 @@
 #include "exodusII.h"
 #include "exo.h"
 
-void exovector(double *v, int *iset, int *ntrans, char * filabl, 
-	       int *nkcoords, int *inum, int *inotr, double *trab,
-	       double *co, int *istartset, int *iendset, int *ialset, 
-	       int *mi, int *ngraph, int exoid, int time_step, 
-	       int countvar, int nout){
+void exovector(double *v, ITG *iset, ITG *ntrans, char * filabl, 
+	       ITG *nkcoords, ITG *inum, ITG *inotr, double *trab,
+	       double *co, ITG *istartset, ITG *iendset, ITG *ialset, 
+	       ITG *mi, ITG *ngraph, int exoid, ITG time_step, 
+	       int countvar, ITG nout){
   
-  int nksegment;
-  int i,j,k,l,m,n,ii,jj,kk;
+  ITG nksegment;
+  ITG i,j,k,l,m,n,ii,jj,kk;
   
   double a[9];
   

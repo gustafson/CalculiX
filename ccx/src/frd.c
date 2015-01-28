@@ -95,7 +95,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	trab,inotr,ntrans,orab,ielorien,norien,description,
 	ipneigh,neigh,mi,stx,vr,vi,stnr,stni,vmax,stnmax,
 	ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
-	ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx);
+	ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx,
+	cdn,mortar,cdnr,cdni,nmat);
     return;
   }
 #endif

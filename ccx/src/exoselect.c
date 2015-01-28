@@ -28,10 +28,10 @@
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
-void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
-	       int *istartset,int *iendset,int *ialset,int *ngraph,int *ncomp,
-	       int *ifield,int *icomp,int *nfield,int *iselect,int exoid,
-	       int time_step, int countvar, int nout){
+void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
+	       ITG *istartset,ITG *iendset,ITG *ialset,ITG *ngraph,ITG *ncomp,
+	       ITG *ifield,ITG *icomp,ITG *nfield,ITG *iselect,ITG exoid,
+	       ITG time_step, int countvar, ITG nout){
     
   /* storing scalars, components of vectors and tensors without additional
      transformations */
@@ -44,7 +44,7 @@ void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
      - ifield[i]: 1=field1,2=field2
      - icomp[i]: component: 0...,(nfield[0]-1 or nfield[1]-1) */
   
-  int i,j,k,l,m,o,nksegment;
+  ITG i,j,k,l,m,o,nksegment;
   /* When initializing parameter values:
      "g" (or "G")
      For global variables.
@@ -57,7 +57,7 @@ void exoselect(double *field1,double *field2,int *iset,int *nkcoords,int *inum,
      "s" (or "S")
      For sideset variables.
   */
-  // int num_nod_vars = *ncomp;
+  // ITG num_nod_vars = *ncomp;
   float *nodal_var_vals;
   nodal_var_vals = (float *) calloc (nout, sizeof(float));
   
