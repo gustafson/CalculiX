@@ -3,9 +3,13 @@
 #include <iostream>
 
 
+// NOTE TO SELF: This was a c++ version of the cholmod solver
+// interface but didn't appear to be better or faster than the c
+// version.  Thus, for now, it is left as unmaintained code.
+
 extern "C"
 int cholmodsolve (double *ad, double *au, double *adb, double *aub, double *sigma, 
-		  double *b, int *icol, int *irow, int *neq, int *nzs)
+		  double *b, ITG *icol, ITG *irow, ITG *neq, ITG *nzs)
 {
   cholmod_common com ;
   cholmod_sparse *A ;
@@ -21,9 +25,9 @@ int cholmodsolve (double *ad, double *au, double *adb, double *aub, double *sigm
   AU = cholmod_allocate_triplet(*neq, *neq, *nzs+*neq, 1, CHOLMOD_REAL, &com);
   // cholmod_print_triplet (AU, "AU", &com);
   
-  int i,j,l,m;
-  int *AUi=(int*)AU->i;
-  int *AUj=(int*)AU->j;
+  ITG i,j,l,m;
+  ITG *AUi=(ITG*)AU->i;
+  ITG *AUj=(ITG*)AU->j;
   double *AUx=(double*)AU->x;
 
   l=0; // row index

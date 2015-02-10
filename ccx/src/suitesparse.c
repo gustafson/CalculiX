@@ -20,6 +20,8 @@
 #ifdef SUITESPARSE
 
 #include "cholmod.h"
+#include <time.h>
+#include "CalculiX.h"
 #include "suitesparse.h"
 #include "SuiteSparseQR_C.h"
 
@@ -28,35 +30,43 @@
 // extern "C"
 
 int suitesparsecholmod (double *ad, double *au, double *adb, double *aub, double *sigma, 
-			double *b, int *icol, int *irow, int *neq, int *nzs)
+			double *b, ITG *icol, ITG *irow, ITG *neq, ITG *nzs)
 {
   
   cholmod_common Common, *ccc ;
   cholmod_sparse *A ;
   cholmod_dense *X, *B;
-  double one[2] = {1,0}, mone [2] = {-1,0};
+  double one[2] = {1,0};
 
-  int symmetric = 1; typedef int itype;
-  // int symmetric = 0; typedef long itype;
+  int symmetric = 1;
 
   // start CHOLMOD
   ccc = &Common;
+#ifdef LONGLONG
+  cholmod_l_start (ccc);
+#else
   cholmod_start (ccc);
+#endif  
   
   // load A 
   // Square symmetric upper triangular. 
   cholmod_triplet *AUT;
   cholmod_triplet *ADT;
+#ifdef LONGLONG
+  AUT = cholmod_l_allocate_triplet(*neq, *neq, *nzs, issymmetric, CHOLMOD_REAL, ccc);
+  ADT = cholmod_l_allocate_triplet(*neq, *neq, *neq, issymmetric, CHOLMOD_REAL, ccc);
+#else
   AUT = cholmod_allocate_triplet(*neq, *neq, *nzs, 1, CHOLMOD_REAL, ccc);
   ADT = cholmod_allocate_triplet(*neq, *neq, *neq, 1, CHOLMOD_REAL, ccc);
+#endif
   
-  itype i,j,l,m;
+  ITG i,j,l,m;
   l=0; // row index
   m=0; // column tracker index
   for (i = 0; i < *neq; i++){
     for (j = 0; j < icol[i]; j++){
-      ((itype*)AUT->i)[AUT->nnz] = l; 
-      ((itype*)AUT->j)[AUT->nnz] = (irow[m]-1); 
+      ((ITG*)AUT->i)[AUT->nnz] = l; 
+      ((ITG*)AUT->j)[AUT->nnz] = (irow[m]-1); 
       ((double*)AUT->x)[AUT->nnz] = au[m++];
       (AUT->nnz)++;
     } l++;
@@ -64,13 +74,22 @@ int suitesparsecholmod (double *ad, double *au, double *adb, double *aub, double
   
   // Now add the Diagonal matrix
   for (i = 0; i < *neq; i++){
-    ((itype*)ADT->i)[ADT->nnz] = i; 
-    ((itype*)ADT->j)[ADT->nnz] = i;
+    ((ITG*)ADT->i)[ADT->nnz] = i; 
+    ((ITG*)ADT->j)[ADT->nnz] = i;
     ((double*)ADT->x)[ADT->nnz] = ad[i];
     (ADT->nnz)++;
   }
   
   cholmod_sparse *AU;
+#ifdef LONGLONG
+  A = cholmod_l_triplet_to_sparse (ADT, 0, ccc) ;
+  AU = cholmod_l_triplet_to_sparse (AUT, 0, ccc) ;
+  cholmod_l_free_triplet (&AUT, ccc) ;
+  cholmod_l_free_triplet (&ADT, ccc) ;
+  
+  A = cholmod_l_add (AU, A, one, one, 1, 1, ccc);
+  cholmod_l_free_sparse (&AU, ccc) ;
+#else
   A = cholmod_triplet_to_sparse (ADT, 0, ccc) ;
   AU = cholmod_triplet_to_sparse (AUT, 0, ccc) ;
   cholmod_free_triplet (&AUT, ccc) ;
@@ -78,9 +97,14 @@ int suitesparsecholmod (double *ad, double *au, double *adb, double *aub, double
   
   A = cholmod_add (AU, A, one, one, 1, 1, ccc);
   cholmod_free_sparse (&AU, ccc) ;
+#endif
 
   // B = ones (size (A,1),1)
+#ifdef LONGLONG
+  B = cholmod_l_zeros (A->nrow, 1, A->xtype, ccc) ;
+#else
   B = cholmod_zeros (A->nrow, 1, A->xtype, ccc) ;
+#endif
 
   // Copy the rhs to the BB array
   for (i = 0; i < *neq; i++){
@@ -118,14 +142,23 @@ int suitesparsecholmod (double *ad, double *au, double *adb, double *aub, double
   // ccc->maxrank=8;
 
   cholmod_factor *L ;
+#ifdef LONGLONG
+  L = cholmod_l_analyze (A, ccc) ;
+  cholmod_l_factorize (A, L, ccc) ;
+#else
   L = cholmod_analyze (A, ccc) ;
   cholmod_factorize (A, L, ccc) ;
+#endif
 
   if (ccc->status==CHOLMOD_NOT_POSDEF) {
-    printf("  Stiffnessmatrix is not positive definite in column %i.\n\n", L->minor);
+    printf("  Stiffnessmatrix is not positive definite in column %" ITGFORMAT ".\n\n", L->minor);
   }
   printf("  Factoring with cholmod_solve using %i threads\n\n", num_cpus);
+#ifdef LONGLONG
+  X = cholmod_l_solve (CHOLMOD_A, L, B, ccc) ;
+#else
   X = cholmod_solve (CHOLMOD_A, L, B, ccc) ;
+#endif
   cholmod_print_common("Common", ccc);
   cholmod_free_factor (&L, ccc) ;
 
@@ -151,9 +184,15 @@ int suitesparsecholmod (double *ad, double *au, double *adb, double *aub, double
     b[i] = ((double*)X->x)[i];
   }
   // free and finish CHOLMOD
+#ifdef LONGLONG
+  cholmod_l_free_sparse (&A, ccc) ;
+  cholmod_l_free_dense (&X, ccc) ;
+  cholmod_l_free_dense (&B, ccc) ;
+#else
   cholmod_free_sparse (&A, ccc) ;
   cholmod_free_dense (&X, ccc) ;
   cholmod_free_dense (&B, ccc) ;
+#endif
   cholmod_finish (ccc) ;
 
   /* Note, the memory used during solve can be modified with Common->maxrank */  
@@ -162,16 +201,15 @@ int suitesparsecholmod (double *ad, double *au, double *adb, double *aub, double
 
 
 int suitesparseqr (double *ad, double *au, double *adb, double *aub, double *sigma, 
-		   double *b, int *icol, int *irow, int *neq, int *nzs)
+		   double *b, ITG *icol, ITG *irow, ITG *neq, ITG *nzs)
 {
   
   cholmod_common Common, *ccc ;
   cholmod_sparse *A ;
   cholmod_dense *X, *B;
-  double one[2] = {1,0}, mone [2] = {-1,0};
+  double one[2] = {1,0};
 
-  // int symmetric = 1; typedef int itype;
-  int symmetric = 0; typedef long itype;
+  int symmetric = 0;
 
   // start CHOLMOD
   ccc = &Common;
@@ -184,13 +222,13 @@ int suitesparseqr (double *ad, double *au, double *adb, double *aub, double *sig
   AUT = cholmod_l_allocate_triplet(*neq, *neq, *nzs, 0, CHOLMOD_REAL, ccc);
   ADT = cholmod_l_allocate_triplet(*neq, *neq, *neq, 0, CHOLMOD_REAL, ccc);
   
-  itype i,j,l,m;
+  ITG i,j,l,m;
   l=0; // row index
   m=0; // column tracker index
   for (i = 0; i < *neq; i++){
     for (j = 0; j < icol[i]; j++){
-      ((itype*)AUT->i)[AUT->nnz] = l; 
-      ((itype*)AUT->j)[AUT->nnz] = (irow[m]-1); 
+      ((ITG*)AUT->i)[AUT->nnz] = l; 
+      ((ITG*)AUT->j)[AUT->nnz] = (irow[m]-1); 
       ((double*)AUT->x)[AUT->nnz] = au[m++];
       (AUT->nnz)++;
     } l++;
@@ -198,8 +236,8 @@ int suitesparseqr (double *ad, double *au, double *adb, double *aub, double *sig
   
   // Now add the Diagonal matrix
   for (i = 0; i < *neq; i++){
-    ((itype*)ADT->i)[ADT->nnz] = i; 
-    ((itype*)ADT->j)[ADT->nnz] = i;
+    ((ITG*)ADT->i)[ADT->nnz] = i; 
+    ((ITG*)ADT->j)[ADT->nnz] = i;
     ((double*)ADT->x)[ADT->nnz] = ad[i];
     (ADT->nnz)++;
   }
@@ -245,8 +283,9 @@ int suitesparseqr (double *ad, double *au, double *adb, double *aub, double *sig
 
   printf("  Factoring with SuiteSparseQR using %i threads\n", num_cpus);
   // X = SuiteSparseQR <double> (A, B, ccc); // Could be used for c++ version
+  printf ("SPQR Bonks here but has been so slow that I'm not fixing it for now.:\n");
   X = SuiteSparseQR_C_backslash_default (A, B, ccc);
-  printf ("    Number of equations %i: rank of the matrix %ld\n\n", *neq, ccc->SPQR_istat[4]) ;
+  printf ("    Number of equations %" ITGFORMAT ": rank of the matrix %ld\n\n", *neq, ccc->SPQR_istat[4]) ;
   cholmod_l_print_common("Common", ccc);
 
   printf ("\n");
