@@ -129,7 +129,8 @@ FORTRAN(uexternaldb,(&lop,&lrestart,time,&dtime,&kstep,&kinc));
 FORTRAN(openfile,(jobnamef,output));
 
 printf("\n************************************************************\n\n");
-printf("CalculiX Version 2.9, Copyright(C) 1998-2015 Guido Dhondt\n");
+printf("CalculiX version 2.9, Copyright(C) 1998-2015 Guido Dhondt\n");
+printf("CalculiX Extras version 2.9, Copyright(C) 2013-2015 Peter Gustafson\n");
 printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
