@@ -50,7 +50,7 @@
      &  c1,c2,c3,c4,c5,c6,c7,c8,c9,cplb(6),stblb(6),
      &  ftrial,xiso(200),yiso(200),xkin(200),ykin(200),
      &  fiso,dfiso,fkin,dfkin,fiso0,fkin0,ep,t1l,dtime,
-     &  epini,a1,dsvm,xxa,xxn,vj2,vj23,
+     &  epini,a1,dsvm,xxa,xxn,vj2,vj23,sc(3,3),
      &  cop1,cop2,fu1,fu2,fu,dcop,time,ttime,eloc(6),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  g1,g2,g3,g4,g5,g6,g7,g8,g9,g10,g11,g12,g13,g14,g15,g16,
@@ -201,17 +201,18 @@ c      if(kode.eq.-52) then
          xitril(i)=stril(i)-stblb(i)
       enddo
 !
-      dxitril=
-     & (xitril(1)*c(1)+xitril(4)*c(4)+xitril(5)*c(5))**2+
-     & (xitril(1)*c(4)+xitril(4)*c(1)+xitril(5)*c(6))**2+
-     & (xitril(1)*c(5)+xitril(4)*c(6)+xitril(5)*c(3))**2+
-     & (xitril(4)*c(1)+xitril(1)*c(4)+xitril(6)*c(5))**2+
-     & (xitril(4)*c(4)+xitril(1)*c(1)+xitril(6)*c(6))**2+
-     & (xitril(4)*c(5)+xitril(1)*c(6)+xitril(6)*c(3))**2+
-     & (xitril(5)*c(1)+xitril(6)*c(4)+xitril(3)*c(5))**2+
-     & (xitril(5)*c(4)+xitril(6)*c(1)+xitril(3)*c(6))**2+
-     & (xitril(5)*c(5)+xitril(6)*c(6)+xitril(3)*c(3))**2
-      dxitril=dsqrt(dxitril)
+      sc(1,1)=xitril(1)*c(1)+xitril(4)*c(4)+xitril(5)*c(5)
+      sc(1,2)=xitril(1)*c(4)+xitril(4)*c(2)+xitril(5)*c(6)
+      sc(1,3)=xitril(1)*c(5)+xitril(4)*c(6)+xitril(5)*c(3)
+      sc(2,1)=xitril(4)*c(1)+xitril(2)*c(4)+xitril(6)*c(5)
+      sc(2,2)=xitril(4)*c(4)+xitril(2)*c(2)+xitril(6)*c(6)
+      sc(2,3)=xitril(4)*c(5)+xitril(2)*c(6)+xitril(6)*c(3)
+      sc(3,1)=xitril(5)*c(1)+xitril(6)*c(4)+xitril(3)*c(5)
+      sc(3,2)=xitril(5)*c(4)+xitril(6)*c(2)+xitril(3)*c(6)
+      sc(3,3)=xitril(5)*c(5)+xitril(6)*c(6)+xitril(3)*c(3)
+!
+      dxitril=sc(1,1)*sc(1,1)+sc(2,2)*sc(2,2)+sc(3,3)*sc(3,3)+
+     &  2.d0*(sc(1,2)*sc(2,1)+sc(1,3)*sc(3,1)+sc(2,3)*sc(3,2))
 c      g1=c(6)
 c      g2=xitril(6)
 c      g3=xitril(3)
@@ -242,12 +243,20 @@ c     &     g18 + 4*g17) + g11*g7*(g31 + 2*g10*g7) + g9*g6*(g32 +
 c     &     2*g11*g6) + g10*g2*(g33 + 2*g9*g2) + g8*g4*(g31 + 2*
 c     &     g12*g8) + g12*g5*(g32 + 2*g5*g3) + g3*g1*(g33 + 2*g4*
 c     &     g1))
-c      if(dxitril.lt.0.d0) then
-cccc         write(*,*) '*WARNING in incplas: dxitril < 0'
-c         dxitril=0.d0
-c      else
-c         dxitril=dsqrt(dxitril)
-c      endif
+!
+!     in principal dxitril is a norm and cannot be less than zero
+!     however, due to round-off it can happen anyway.
+!     In order to avoid this, one would have to use the deformation
+!     gradient and calculate tau_ij*tau_kl*g_ik*g_jl instead of
+!     S_IJ*S_KL*C_IK*C_JL, however, this would increase the
+!     calculational effort substantially.
+!
+      if(dxitril.lt.0.d0) then
+ccc         write(*,*) '*WARNING in incplas: dxitril < 0'
+         dxitril=0.d0
+      else
+         dxitril=dsqrt(dxitril)
+      endif
 !
 !        restoring the hardening curves for the actual temperature
 !        plconloc contains the true stresses. By multiplying by

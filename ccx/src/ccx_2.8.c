@@ -107,7 +107,7 @@ else{
     if(strcmp1(argv[i],"-i")==0) {
     strcpy(jobnamec,argv[i+1]);strcpy1(jobnamef,argv[i+1],132);jin++;break;}
     if(strcmp1(argv[i],"-v")==0) {
-	printf("\nThis is version version 2.8\n\n");
+	printf("\nThis is version version 2.8p1\n\n");
 	FORTRAN(stop,());
     }
   }
@@ -128,12 +128,12 @@ FORTRAN(uexternaldb,(&lop,&lrestart,time,&dtime,&kstep,&kinc));
 FORTRAN(openfile,(jobnamef,output));
 
 printf("\n************************************************************\n\n");
-printf("CalculiX version 2.8, Copyright(C) 1998-2015 Guido Dhondt\n");
+printf("CalculiX version 2.8p1, Copyright(C) 1998-2015 Guido Dhondt\n");
 printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
 printf("************************************************************\n\n");
-printf("You are using an executable made on Sa 17. Jan 19:47:30 CET 2015\n");
+printf("You are using an executable made on So 8. Feb 13:14:01 CET 2015\n");
 fflush(stdout);
 
 istep=0;

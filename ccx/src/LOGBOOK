@@ -2475,4 +2475,8 @@ Dec 2002        - started to work on single crystal plasticity
  23 Dec 2014   - took the stick as internal variable in
                  springforc_f2f and springstiff_f2f
 
- 8 Jan 2014    - allowed for facial surfaces in cyclic symmetry definitions
+ 8 Jan 2015    - allowed for facial surfaces in cyclic symmetry definitions
+
+ 8 Feb 2015    - implemented two patches (1) removed an error from incplas.f
+                 (2) returned to expandable ridid bodies for dynamics in
+                 combination with moments/rotations
