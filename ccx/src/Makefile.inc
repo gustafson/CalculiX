@@ -1025,4 +1025,7 @@ writeheading.c
 
 SCCXCXX = umat_dl.cpp
 
-SCCXCU = cudacusp.cu
+SCCXCU = \
+cudacusp.cu \
+cudacusp.thrustassembly.cu
+

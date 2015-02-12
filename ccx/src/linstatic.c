@@ -913,7 +913,10 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     }
     else if(*isolver==10){
 #ifdef SUITESPARSE
-      suitesparseqr(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs);
+      printf("NOTE: suitesparseqr is not enabled.  Using an alternative version of cudacusp.\n\n");
+      cudacusp(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs,
+	       &symmetryflag,&inputformat,jq,&nzs[2]);
+      //       suitesparseqr(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs);
 #else
       printf("*ERROR in linstatic: the SUITESPARSE library is not linked\n\n");
       FORTRAN(stop,());
