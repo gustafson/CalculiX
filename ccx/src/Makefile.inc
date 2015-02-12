@@ -738,4 +738,5 @@ v_result.c \
 writeheading.c
 
 SCCXCU = \
-cudacusp.cu
+cudacusp.cu \
+cudacusp.thrustassembly.cu

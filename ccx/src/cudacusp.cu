@@ -1,7 +1,7 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
 /*              Copyright (C) 1998-2011 Guido Dhondt                     */
 /*     This subroutine                                                   */
-/*              Copyright (C) 2013 Peter A. Gustafson                    */
+/*              Copyright (C) 2013-2015 Peter A. Gustafson               */
 /*                                                                       */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -40,8 +40,16 @@
 // #include <cusp/ell_matrix.h>
 #include <time.h>
 
+#ifdef LONGLONG
+#define ITG long long
+#define ITGFORMAT "lld"
+#else
+#define ITG int
+#define ITGFORMAT "d"
+#endif
+
 // which floating point type to use
-typedef int IndexType;
+typedef ITG IndexType;
 typedef double ValueType;
 // typedef cusp::host_memory MemorySpace;
 typedef cusp::device_memory MemorySpace;
@@ -68,8 +76,8 @@ struct absolute : public thrust::unary_function<T,T>
 
 extern "C"
 int cudacusp(double *ad, double *au, double *adb, double *aub, double *sigma, 
-	     double *b, int *icol, int *irow, int *neq, int *nzs, 
-	     int *symmetryflag, int *inputformat, int *jq, int *nzs3)
+	     double *b, ITG *icol, ITG *irow, ITG *neq, ITG *nzs, 
+	     int *symmetryflag, int *inputformat, ITG *jq, ITG *nzs3)
 {
   int cuda_major =  CUDA_VERSION / 1000;
   int cuda_minor = (CUDA_VERSION % 1000) / 10;

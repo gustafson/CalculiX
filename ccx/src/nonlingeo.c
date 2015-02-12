@@ -1923,7 +1923,11 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  }
 	  else if(*isolver==10){
 #ifdef SUITESPARSE
-	  suitesparseqr(ad,au,adb,aub,&sigma,b,icol,irow,&neq[0],&nzs[0]);
+	    printf("NOTE: suitesparseqr is not enabled.  Using an alternative version of cudacusp.\n\n");
+	    cudacusp_thrustassembly(ad,au,adb,aub,&sigma,
+				    b,icol,irow,&neq[0],&nzs[0],
+				    &symmetryflag,&inputformat,jq,&nzs[2]);
+	    // suitesparseqr(ad,au,adb,aub,&sigma,b,icol,irow,&neq[0],&nzs[0]);
 #else
 	  printf("*ERROR in nonlingeo: the SUITESPARSE library is not linked\n\n");
 	  FORTRAN(stop,());
