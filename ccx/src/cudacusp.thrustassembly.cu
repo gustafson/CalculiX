@@ -1,7 +1,7 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2011 Guido Dhondt                     */
+/*              Copyright (C) 1998-2015 Guido Dhondt                     */
 /*     This subroutine                                                   */
-/*              Copyright (C) 2013 Peter A. Gustafson                    */
+/*              Copyright (C) 2013-2015 Peter A. Gustafson               */
 /*                                                                       */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -31,13 +31,20 @@
 #include <cusp/array1d.h>
 #include <cusp/precond/diagonal.h> 
 // #include <cusp/precond/ainv.h> 
-#include <cusp/precond/smoothed_aggregation.h>
+#include <cusp/precond/aggregation/smoothed_aggregation.h>
 // #include <cusp/detail/format_utils.h>
 #include <thrust/copy.h>
 #include <thrust/transform.h>
 // #include <cusp/print.h>
 #include <iostream>
 
+#ifdef LONGLONG
+#define ITG long long
+#define ITGFORMAT "lld"
+#else
+#define ITG int
+#define ITGFORMAT "d"
+#endif
 
 template <typename Monitor>
 void report_status(Monitor& monitor)
@@ -91,9 +98,9 @@ struct absolute : public thrust::unary_function<T,T>
 };
 
 extern "C"
-int cudacusp(double *ad, double *au, double *adb, double *aub, double *sigma, 
-	     double *b, int *icol, int *irow, int *neq, int *nzs, 
-	     int *symmetryflag, int *inputformat, int *jq, int *nzs3)
+int cudacusp_thrustassembly(double *ad, double *au, double *adb, double *aub, double *sigma, 
+			    double *b, ITG *icol, ITG *irow, ITG *neq, ITG *nzs, 
+			    int *symmetryflag, int *inputformat, ITG *jq, ITG *nzs3)
 {
   int cuda_major =  CUDA_VERSION / 1000;
   int cuda_minor = (CUDA_VERSION % 1000) / 10;
@@ -119,19 +126,19 @@ int cudacusp(double *ad, double *au, double *adb, double *aub, double *sigma,
      stores the distance between pivots.  To make a conventional csr
      format, you must cumsum the icol vector. */
 
-  int nvals=0;
+  ITG nvals=0;
 
   // Test for non zero values
-  for (int i=0; i<*neq; i++){if (ad[i]<0) nvals++;}
+  for (ITG i=0; i<*neq; i++){if (ad[i]<0) nvals++;}
   if (nvals) {thrust::transform(ad, ad+*neq, ad, absolute<ValueType>());}
 
   // Change to a zero based vector by subtracting 1
-  thrust::transform(irow, irow+*nzs, thrust::make_constant_iterator(-1), irow, thrust::plus<int>());
+  thrust::transform(irow, irow+*nzs, thrust::make_constant_iterator(-1), irow, thrust::plus<ITG>());
   // Perform a cumsum on the column index to make a conventional csr index
   thrust::exclusive_scan(icol, icol+*neq+1, icol);
 
   // Create a set of "views" which act like pointers to existing memory.
-  typedef typename cusp::array1d_view<int *> HostIndexArrayView;
+  typedef typename cusp::array1d_view<ITG *> HostIndexArrayView;
   typedef typename cusp::array1d_view<ValueType *> HostValueArrayView;
 
   HostIndexArrayView row_offsets(icol, icol+*neq+1);
@@ -142,37 +149,37 @@ int cudacusp(double *ad, double *au, double *adb, double *aub, double *sigma,
   HostView A(*neq, *neq, *nzs, row_offsets, column_indices, values);
   
   // TRANSPOSE AND ADD ON HOST //
-  cusp::coo_matrix<int, ValueType, cusp::host_memory> AT;
+  cusp::coo_matrix<ITG, ValueType, cusp::host_memory> AT;
   {
     cusp::transpose(A,AT);
     cusp::add(A,AT,AT);
     
     // Create a diagonal matrix and add it to the A matrix
     // Store result in AT because A is just a matrix view to the original memory
-    cusp::dia_matrix<int, ValueType, cusp::host_memory> D(*neq,*neq,*neq,1);
+    cusp::dia_matrix<ITG, ValueType, cusp::host_memory> D(*neq,*neq,*neq,1);
     D.diagonal_offsets[0]=0;
-    for (int i=0; i<*neq; i++){D.values(i,0)=ad[i];}
+    for (ITG i=0; i<*neq; i++){D.values(i,0)=ad[i];}
     cusp::add(AT,D,AT);
     // Free DD
   }
   // Move to the device
   AT.sort_by_row_and_column();
-  cusp::hyb_matrix<int, ValueType, MemorySpace> AA = AT;
+  cusp::hyb_matrix<ITG, ValueType, MemorySpace> AA = AT;
 
   // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //
   // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS // // Move to the device
-  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS // cusp::hyb_matrix<int, ValueType, MemorySpace> AA = A;
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS // cusp::hyb_matrix<ITG, ValueType, MemorySpace> AA = A;
   // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS // // Bring the matrices together limiting scope as much as possible
   // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS // {
-  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   cusp::hyb_matrix<int, ValueType, MemorySpace> AAT;
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   cusp::hyb_matrix<ITG, ValueType, MemorySpace> AAT;
   // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   cusp::transpose(AA,AAT);
   // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   cusp::add(AA,AAT,AA);
   // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS // } // free AAT
   // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS // {
   // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   // Create a diagonal matrix and add it to the A matrix
-  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   cusp::dia_matrix<int, ValueType, MemorySpace> DD(*neq,*neq,*neq,1);
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   cusp::dia_matrix<ITG, ValueType, MemorySpace> DD(*neq,*neq,*neq,1);
   // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   DD.diagonal_offsets[0]=0;
-  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   for (int i=0; i<*neq; i++){DD.values(i,0)=ad[i];}
+  // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   for (ITG i=0; i<*neq; i++){DD.values(i,0)=ad[i];}
   // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   cusp::add(AA,DD,AA);
   // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS //   // Free DD
   // TRANSPOSE AND ADD ON DEVICE: EXHAUSTS DEVICE MEMORY FOR LARGE MODELS // }
@@ -196,7 +203,7 @@ int cudacusp(double *ad, double *au, double *adb, double *aub, double *sigma,
   thrust::copy (b, b+*neq, BB.begin());
   
   // set stopping criteria 
-  int i=50000;
+  ITG i=50000;
   if (nvals){
     // Non-positive definite.  Give up quickly after spawning an answer
     i=0;
