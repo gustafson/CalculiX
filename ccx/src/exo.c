@@ -364,7 +364,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     num_nodes_per_elem[j]=8;   blknames[j++]="C3D8 or C3D8R";
     num_nodes_per_elem[j]=2;   blknames[j++]="TRUSS2";
     num_nodes_per_elem[j]=2;   blknames[j++]="TRUSS2";
-    num_nodes_per_elem[j]=4;   blknames[j++]="CPS4R or CPE4R";
+    num_nodes_per_elem[j]=4;   blknames[j++]="CPS4R or CPE4R or S4R";
     num_nodes_per_elem[j]=4;   blknames[j++]="CPS4I or CPE4I";
     num_nodes_per_elem[j]=10;  blknames[j++]="C3D10";
     num_nodes_per_elem[j]=4;   blknames[j++]="C3D4";
@@ -442,7 +442,10 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    }
 	  }else {
 	    for (j = 0; j <num_nodes_per_elem[l]; j++){
-	      connect[k++] = node_map_inv[kon[indexe+j]-1];
+	      // RETAIN FOR A TIME TO SEE IF THIS BREAKS ANYTHING... CHANGED
+	      // WITH VERSION 2.8 WHERE 3 and 4 NODE SHELLS WERE ADDED
+	      // connect[k++] = node_map_inv[kon[indexe+j]-1];
+	      connect[k++] = node_map_inv[kon[indexe+8+j]-1];
 	    }
 	  }
 	}
