@@ -259,6 +259,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       elem_map[l] = i+1;
       
       strcpy1(curblk,&lakon[8*i],5);
+      // strcpy1(curblk,&lakon[8*i],10);
+      // printf ("%s\n", curblk);
       strcpy1(material,&matname[80*(ielmat[i*mi[2]]-1)],5);
       if(strcmp1(&lakon[8*i+3],"2")==0){
 	/* 20-node brick element */
@@ -328,7 +330,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  /* 6-node wedge element */
 	  blkassign[l++]=14;
 	}else{
-	  /* 3-node 2d element */
+	  /* 3-node 2d element */ /* Shells and triangles */
 	  blkassign[l++]=15;
 	}
 	//      }else if((strcmp1(&lakon[8*i],"D")==0)&&
@@ -371,7 +373,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     num_nodes_per_elem[j]=15;  blknames[j++]="C3D15";
     num_nodes_per_elem[j]=6;   blknames[j++]="CPS6 or CPE6";
     num_nodes_per_elem[j]=6;   blknames[j++]="C3D6";
-    num_nodes_per_elem[j]=3;   blknames[j++]="CPS3 or CPE3";
+    num_nodes_per_elem[j]=3;   blknames[j++]="CPS3 or CPE3 or S3";
     num_nodes_per_elem[j]=2;   blknames[j++]="2-node 1d network entry elem";
     num_nodes_per_elem[j]=2;   blknames[j++]="2-node 1d network exit elem";
     num_nodes_per_elem[j]=3;   blknames[j++]="2-node 1d genuine network elem";
@@ -440,11 +442,19 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    for (j = 0; j <num_nodes_per_elem[l]; j++){
 	      connect[k++] = node_map_inv[kon[indexe+20+j]-1];
 	    }
-	  }else {
+	  }else if(blkassign[o]==10 || blkassign[o]==11){ // Tetra elements
+	    for (j = 0; j <num_nodes_per_elem[l]; j++){
+	      connect[k++] = node_map_inv[kon[indexe+j]-1];
+	    }
+	  }else if(blkassign[o]==15){ // 2D triangle or 3-node shell
+	    for (j = 0; j <num_nodes_per_elem[l]; j++){
+	      connect[k++] = node_map_inv[kon[indexe+6+j]-1];
+	    }
+	  }else { // 4 node shell element?
 	    for (j = 0; j <num_nodes_per_elem[l]; j++){
 	      // RETAIN FOR A TIME TO SEE IF THIS BREAKS ANYTHING... CHANGED
-	      // WITH VERSION 2.8 WHERE 3 and 4 NODE SHELLS WERE ADDED
 	      // connect[k++] = node_map_inv[kon[indexe+j]-1];
+	      // 3 and 4 NODE SHELLS WERE ADDED WITH VERSION 2.8
 	      connect[k++] = node_map_inv[kon[indexe+8+j]-1];
 	    }
 	  }
@@ -501,7 +511,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  errr = ex_put_elem_block (exoid, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	  break;
 	case 15:
-	  errr = ex_put_elem_block (exoid, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  // KEEP FOR AWHILE CHECKING BREAKAGE
+	  // errr = ex_put_elem_block (exoid, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
+	  errr = ex_put_elem_block (exoid, l, "TRIANGLE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	  
 	  break;
 	default:
 	  // case 16:
