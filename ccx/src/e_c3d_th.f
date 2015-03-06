@@ -296,7 +296,7 @@ c         nope=nope+1
                   elseif(mortar.eq.1) then
                      iloc=kon(indexe+nope+1)
                      jfaces=kon(indexe+nope+2)
-                     igauss=kon(indexe+nope+3) 
+                     igauss=kon(indexe+nope+1) 
                      node=0
                      call springstiff_f2f_th(xl,voldl,s,imat,elcon,
      &                    nelcon,ncmat_,ntmat_,nope,lakonl,kode,

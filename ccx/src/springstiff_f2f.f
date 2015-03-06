@@ -36,13 +36,13 @@
       real*8 xl(3,19),elas(21),pproj(3),val,shp2m(7,9),
      &  al(3),s(100,100),voldl(0:mi(2),19),pl(3,19),xn(3),
      &  c1,c3,alpha,beta,elcon(0:ncmat_,ntmat_,*),xm(3),
-     &  dval(3,19),fpu(3,3,19),xi,et,dal(3,3,19),fnl(3),
+     &  fpu(3,3),xi,et,fnl(3),
      &  xs2(3,7),t1l,elconloc(21),plconloc(82),xk,stickslope,
      &  xiso(20),yiso(20),plicon(0:2*npmat_,ntmat_,*),
-     &  springarea(2),t(3),tu(3,3,19),overlap,pres,dpresdoverlap,
+     &  springarea(2),t(3),tu(3,3),overlap,pres,dpresdoverlap,
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  um,dftdt(3,3),tp(3),te(3),ftrial(3),clear,
-     &  dftrial,dfnl,dfshear,dg,dte,alnew(3),dfn(3,19),reltime,
+     &  dftrial,dfnl,dfshear,dg,dte,alnew(3),dfn(3),reltime,
      &  xsj2s(3),xs2s(3,7),shp2s(7,9),weight,pslavsurf(3,*),
      &  pmastsurf(6,*),clearini(3,9,*)
 !
@@ -149,31 +149,6 @@
          al(i)=pl(i,nopep)-pproj(i)
       enddo
 !
-!     dal(i,j,k) is the derivative of al(i) w.r.t pl(j,k)
-!     ( d al / d u_k)
-!
-      do k=1,nopem
-         do i=1,3
-            do j=1,3
-               dal(i,j,k)=0.d0
-            enddo
-         enddo
-      enddo
-      do i=1,3
-         do j=1,3
-            dal(i,j,nopep)=0.d0
-         enddo
-      enddo
-!
-      do i=1,nopem
-         do j=1,3
-            dal(j,j,i)=-shp2m(4,i)
-         enddo
-      enddo
-      do j=1,3
-         dal(j,j,nopep)=1.d0
-      enddo
-!
 !     normal vector on master face
 !
       xn(1)=pmastsurf(4,igauss)
@@ -248,37 +223,13 @@
          fnl(i)=-elas(1)*xn(i)
       enddo
 !     
-!     derivatives of the size of the jacobian vector w.r.t. the
-!     displacement vectors (d ||m||/d u_k)
-!
-      do k=1,nopem
-!
-!        auxiliary variable: (d clear d u_k)*||m||
-!
-         do i=1,3
-            dval(i,k)=xn(1)*dal(1,i,k)+xn(2)*dal(2,i,k)+xn(3)*dal(3,i,k)
-         enddo
-!
-      enddo
-      do i=1,3
-         dval(i,nopep)=xn(1)*dal(1,i,nopep)+xn(2)*dal(2,i,nopep)+
-     &        xn(3)*dal(3,i,nopep)
-      enddo
-!
       c3=elas(2)
 !
 !     derivatives of the forces w.r.t. the displacement vectors
 !
-      do k=1,nopem
-         do j=1,3
-            do i=1,3
-               fpu(i,j,k)=-c3*xn(i)*dval(j,k)
-            enddo
-         enddo
-      enddo
       do j=1,3
          do i=1,3
-            fpu(i,j,nopep)=-c3*xn(i)*dval(j,nopep)
+            fpu(i,j)=-c3*xn(i)*xn(j)
          enddo
       enddo
 !
@@ -338,32 +289,13 @@ c            stickslope=elcon(7,1,imat)
                xstate(6+i,1,ne0+iloc)=t(i)
             enddo
 !     
-!     (d al/d u_k).||m|| -> (d al^*/d u_k).||m||
-!     
-            do k=1,nopem
-               do i=1,3
-                  dval(i,k)=xn(1)*dal(1,i,k)+xn(2)*dal(2,i,k)
-     &                 +xn(3)*dal(3,i,k)
-               enddo
-            enddo
-            do i=1,3
-               dval(i,nopep)=xn(1)*dal(1,i,nopep)+xn(2)*dal(2,i,nopep)
-     &              +xn(3)*dal(3,i,nopep)
-            enddo
-!     
 !     d t/d u_k
 !     
-            do k=1,nopem
-               do j=1,3
-                  do i=1,3
-                     tu(i,j,k)=dal(i,j,k)-xn(i)*dval(j,k)
-                  enddo
-               enddo
-            enddo
             do j=1,3
                do i=1,3
-                  tu(i,j,nopep)=dal(i,j,nopep)-xn(i)*dval(j,nopep)
+                  tu(i,j)=-xn(i)*xn(j)
                enddo
+               tu(j,j)=tu(j,j)+1.d0
             enddo
 !     
 !     size of normal force
@@ -379,20 +311,6 @@ c            stickslope=elcon(7,1,imat)
             do i=1,3
                tp(i)=xstateini(i,1,ne0+iloc)
                te(i)=t(i)-tp(i)
-            enddo
-!     
-!     the force due to normal contact is in -xn
-!     direction (internal force) -> minus signs
-!     
-            do k=1,nopem
-               do i=1,3
-                  dfn(i,k)=-xn(1)*fpu(1,i,k)-xn(2)*fpu(2,i,k)-
-     &                 xn(3)*fpu(3,i,k)  
-               enddo
-            enddo
-            do i=1,3
-               dfn(i,nopep)=-xn(1)*fpu(1,i,nopep)-xn(2)*fpu(2,i,nopep)-
-     &              xn(3)*fpu(3,i,nopep)  
             enddo
 !     
             dte=dsqrt(te(1)*te(1)+te(2)*te(2)+te(3)*te(3))
@@ -417,16 +335,9 @@ c            stickslope=elcon(7,1,imat)
 !     
 !     stick stiffness
 !     
-               do k=1,nopem
-                  do j=1,3
-                     do i=1,3
-                        fpu(i,j,k)=fpu(i,j,k)+xk*tu(i,j,k)
-                     enddo
-                  enddo
-               enddo  
                do j=1,3
                   do i=1,3
-                     fpu(i,j,nopep)=fpu(i,j,nopep)+xk*tu(i,j,nopep)
+                     fpu(i,j)=fpu(i,j)+xk*tu(i,j)
                   enddo
                enddo
             else
@@ -442,6 +353,11 @@ c            stickslope=elcon(7,1,imat)
 !     
 !     slip stiffness
 !     
+               do i=1,3
+                  dfn(i)=-xn(1)*fpu(1,i)-xn(2)*fpu(2,i)-
+     &                 xn(3)*fpu(3,i)  
+               enddo
+!
                c1=xk*dfshear/dftrial
                do i=1,3
                   do j=1,3
@@ -450,27 +366,15 @@ c            stickslope=elcon(7,1,imat)
                   dftdt(i,i)=dftdt(i,i)+c1
                enddo
 !     
-               do k=1,nopem
-                  do j=1,3
-                     do i=1,3
-                        do l=1,3
-                           fpu(i,j,k)=fpu(i,j,k)+dftdt(i,l)*tu(l,j,k)
-                        enddo
-                        if((nmethod.ne.4).or.(iperturb(1).gt.1)) then
-                           fpu(i,j,k)=fpu(i,j,k)+um*ftrial(i)*dfn(j,k)
-                        endif
-                     enddo
-                  enddo
-               enddo
                do j=1,3
                   do i=1,3
                      do l=1,3
-                        fpu(i,j,nopep)=fpu(i,j,nopep)+
-     &                                 dftdt(i,l)*tu(l,j,nopep)
+                        fpu(i,j)=fpu(i,j)+
+     &                                 dftdt(i,l)*tu(l,j)
                      enddo
                      if((nmethod.ne.4).or.(iperturb(1).gt.1)) then
-                        fpu(i,j,nopep)=fpu(i,j,nopep)+
-     &                                 um*ftrial(i)*dfn(j,nopep)
+                        fpu(i,j)=fpu(i,j)+
+     &                                 um*ftrial(i)*dfn(j)
                      endif
                   enddo
                enddo
@@ -486,7 +390,8 @@ c            stickslope=elcon(7,1,imat)
          do i=1,3
              do l=1,nopem
                do j=1,3
-                  s(i+(k-1)*3,j+(l-1)*3)=-shp2m(4,k)*fpu(i,j,l)
+                  s(i+(k-1)*3,j+(l-1)*3)=
+     &                 shp2m(4,k)*shp2m(4,l)*fpu(i,j)
                enddo
             enddo
          enddo
@@ -499,7 +404,7 @@ c            stickslope=elcon(7,1,imat)
             do l=nopem+1,nopem+nopes
                do j=1,3
                   s(i+(k-1)*3,j+(l-1)*3)=shp2s(4,k-nopem)*
-     &                                shp2s(4,l-nopem)*fpu(i,j,nopep)
+     &                                shp2s(4,l-nopem)*fpu(i,j)
                enddo
             enddo
          enddo
@@ -512,7 +417,7 @@ c            stickslope=elcon(7,1,imat)
             do l=nopem+1,nopem+nopes
                do j=1,3
                   s(i+(k-1)*3,j+(l-1)*3)=-shp2s(4,l-nopem)*
-     &                shp2m(4,k)*fpu(i,j,nopep)
+     &                shp2m(4,k)*fpu(i,j)
                enddo
             enddo
          enddo
@@ -524,7 +429,8 @@ c            stickslope=elcon(7,1,imat)
          do i=1,3
             do l=1,nopem
                do j=1,3
-                  s(i+(k-1)*3,j+(l-1)*3)=shp2s(4,k-nopem)*fpu(i,j,l)
+                  s(i+(k-1)*3,j+(l-1)*3)=
+     &                -shp2s(4,k-nopem)*shp2m(4,l)*fpu(i,j)
                enddo
             enddo
          enddo

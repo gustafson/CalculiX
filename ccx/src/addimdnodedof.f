@@ -45,13 +45,15 @@ c      write(*,*) 'addimdnodedof ',node,k,idof
                id=ilmpc(id)
                ist=ipompc(id)
                index=nodempc(3,ist)
-               do
-                  call addimd(imdnode,nmdnode,nodempc(1,index))
-                  jdof=nactdof(nodempc(2,index),nodempc(1,index))
-                  if(jdof.ne.0) call addimd(imddof,nmddof,jdof)
-                  index=nodempc(3,index)
-                  if(index.eq.0) exit
-               enddo
+               if(index.ne.0) then
+                  do
+                     call addimd(imdnode,nmdnode,nodempc(1,index))
+                     jdof=nactdof(nodempc(2,index),nodempc(1,index))
+                     if(jdof.ne.0) call addimd(imddof,nmddof,jdof)
+                     index=nodempc(3,index)
+                     if(index.eq.0) exit
+                  enddo
+               endif
             endif
          endif
 !

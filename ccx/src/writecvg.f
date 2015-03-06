@@ -16,14 +16,15 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine writecvg(istep,iinc,iit,ne,ne0,ram,qam,cam,uam,
+      subroutine writecvg(istep,iinc,icutb,iit,ne,ne0,ram,qam,cam,uam,
      &  ithermal)
 !
       implicit none
 !
 !     writes convergence information in the .cvg-file
 !
-      integer istep,iinc,iit,ne,ne0,ithermal
+      integer istep,iinc,iit,ne,ne0,ithermal,icutb
+!
       real*8 ram(*),qam(*),cam(*),uam(*),residforce,corrdisp,
      &  residflux,corrtemp
 !
@@ -76,8 +77,10 @@
          endif
       endif
 !     
-      write(11,'(2x,i4,2x,i4,2x,i4,2x,i6,4(1x,e11.4))') istep,iinc,
-     &  iit,ne-ne0,residforce,corrdisp,residflux,corrtemp
+      write(11,'(2x,i4,2x,i4,2x,i4,2x,i4,2x,i6,4(1x,e11.4))') istep,
+     &  iinc,icutb+1,iit,ne-ne0,residforce,corrdisp,residflux,corrtemp
+!
+      flush(11)
 !
       return
       end

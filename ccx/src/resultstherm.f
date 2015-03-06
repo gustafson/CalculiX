@@ -228,7 +228,7 @@ c            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
                      elseif(mortar.eq.1) then
                         iloc=kon(indexe+nope+1)
                         jfaces=kon(indexe+nope+2)
-                        igauss=kon(indexe+nope+3)
+                        igauss=kon(indexe+nope+1)
                         node=0
                         call springforc_f2f_th(xl,vl,imat,elcon,nelcon,
      &                    tnl,ncmat_,ntmat_,nope,lakonl,kode,elconloc,

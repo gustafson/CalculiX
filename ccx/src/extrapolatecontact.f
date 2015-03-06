@@ -191,7 +191,7 @@
                   enddo
                   indexcj=ipkon(j)
                   nopespringj=kon(indexcj)
-                  igauss=kon(indexcj+nopespringj+3)
+                  igauss=kon(indexcj+nopespringj+1)
                   xi=pslavsurf(1,igauss)
                   et=pslavsurf(2,igauss)
                   if((n-i).lt.2) exit
@@ -321,7 +321,7 @@
                   enddo
                   indexcj=ipkon(j)
                   nopespringj=kon(indexcj)
-                  igauss=kon(indexcj+nopespringj+3)
+                  igauss=kon(indexcj+nopespringj+1)
                   xi=pslavsurf(1,igauss)
                   et=pslavsurf(2,igauss)
                   if((n-i).lt.2) exit

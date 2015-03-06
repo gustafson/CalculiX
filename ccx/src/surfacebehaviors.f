@@ -17,8 +17,9 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine surfacebehaviors(inpc,textpart,elcon,nelcon,
-     &  nmat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,ipoinpc,npmat_,plicon,nplicon,nstate_)
+     &  imat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,
+     &  inp,ipoinpc,npmat_,plicon,nplicon,nstate_,
+     &  ichangesurfacebehavior)
 !
 !     reading the input deck: *SURFACE BEHAVIOR
 !
@@ -32,21 +33,23 @@
       character*1 inpc(*),pressureoverclosure
       character*132 textpart(16)
 !
-      integer nelcon(2,*),nmat,ntmat_,istep,istat,ipoinpc(0:*),
+      integer nelcon(2,*),imat,ntmat_,istep,istat,ipoinpc(0:*),
      &  n,key,i,ncmat_,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  ntmat,npmat,npmat_,nplicon(0:ntmat_,*),nstate_
+     &  ntmat,npmat,npmat_,nplicon(0:ntmat_,*),nstate_,
+     &  ichangesurfacebehavior
 !
       real*8 elcon(0:ncmat_,ntmat_,*),plicon(0:2*npmat_,ntmat_,*),
      &  temperature
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt.ge.0).and.
+     &   (ichangesurfacebehavior.eq.0)) then
          write(*,*) '*ERROR reading *SURFACE BEHAVIOR:'
          write(*,*) '       *SURFACE BEHAVIOR should be placed'
          write(*,*) '       before all step definitions'
          call exit(201)
       endif
 !
-      if(nmat.eq.0) then
+      if(imat.eq.0) then
          write(*,*) '*ERROR reading *SURFACE BEHAVIOR:'
          write(*,*) '       *SURFACE BEHAVIOR should be preceded'
          write(*,*) '       by a *SURFACE INTERACTION card'
@@ -82,8 +85,8 @@
          call exit(201)
       endif
 !
-      nelcon(1,nmat)=max(nelcon(1,nmat),2)
-      nelcon(2,nmat)=1
+      nelcon(1,imat)=max(nelcon(1,imat),2)
+      nelcon(2,imat)=1
 !
       if(pressureoverclosure.eq.'E') then
 !     
@@ -97,25 +100,25 @@
      &"*SURFACE BEHAVIOR%")
          endif
 !     
-         elcon(3,1,nmat)=1.5d0
+         elcon(3,1,imat)=1.5d0
 !     
 !     exponential overclosure
 !     
          do i=1,2
             read(textpart(i)(1:20),'(f20.0)',iostat=istat)
-     &           elcon(i,1,nmat)
+     &           elcon(i,1,imat)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*SURFACE BEHAVIOR%")
          enddo
 !     
 !     checking the values
 !     
-         if(elcon(1,1,nmat).le.0.d0) then
+         if(elcon(1,1,imat).le.0.d0) then
             write(*,*) '*ERROR reading *SURFACE BEHAVIOR: c_0 must'
             write(*,*) '       exceed zero'
             call exit(201)
          endif
-         if(elcon(2,1,nmat).lt.0.d0) then
+         if(elcon(2,1,imat).lt.0.d0) then
             write(*,*) '*ERROR reading *SURFACE BEHAVIOR: p_0 must'
             write(*,*) '       not be smaller than zero'
             call exit(201)
@@ -128,7 +131,7 @@
 !     distance is the distance between slave node and
 !     master surface (negative for penetration)
 !     
-         elcon(1,1,nmat)=dlog(100.d0)/elcon(1,1,nmat)
+         elcon(1,1,imat)=dlog(100.d0)/elcon(1,1,imat)
 !     
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
@@ -147,10 +150,10 @@
          endif
 !     
          if(pressureoverclosure.eq.'L') then
-            elcon(3,1,nmat)=2.5d0
+            elcon(3,1,imat)=2.5d0
          else
             nstate_=max(nstate_,9)
-            elcon(3,1,nmat)=4.5d0
+            elcon(3,1,imat)=4.5d0
          endif
 !     
 !     linear overclosure
@@ -158,11 +161,11 @@
 !     linear spring stiffness
 !     
          read(textpart(1)(1:20),'(f20.0)',iostat=istat)
-     &        elcon(2,1,nmat)
+     &        elcon(2,1,imat)
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*SURFACE BEHAVIOR%")
 !     
-         if(elcon(2,1,nmat).le.0.d0) then
+         if(elcon(2,1,imat).le.0.d0) then
             write(*,*) '*ERROR reading *SURFACE BEHAVIOR: K must'
             write(*,*) '       be strictly positive'
             call exit(201)
@@ -171,34 +174,34 @@
 !     tension at large clearances
 !     
          read(textpart(2)(1:20),'(f20.0)',iostat=istat)
-     &        elcon(1,1,nmat)
+     &        elcon(1,1,imat)
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*SURFACE BEHAVIOR%")
 !
-c         elcon(1,1,nmat)=-elcon(1,1,nmat)
+c         elcon(1,1,imat)=-elcon(1,1,imat)
 !     
 !     value of c0coef. If the clearance is inferior to 
 !     c0coef*sqrt(slave_area) a contact spring element
 !     is generated
 !     
          read(textpart(3)(1:20),'(f20.0)',iostat=istat)
-     &        elcon(4,1,nmat)
+     &        elcon(4,1,imat)
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*SURFACE BEHAVIOR%")
 !     
 !     default value
 !     
-         if(elcon(4,1,nmat).le.0.d0) then
-            elcon(4,1,nmat)=1.d-3
+         if(elcon(4,1,imat).le.0.d0) then
+            elcon(4,1,imat)=1.d-3
          endif
 !     
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
 !     
       elseif(pressureoverclosure.eq.'T') then
-         elcon(3,1,nmat)=3.5d0
-         elcon(4,1,nmat)=1.d-3
-         nelcon(1,nmat)=-51
+         elcon(3,1,imat)=3.5d0
+         elcon(4,1,imat)=1.d-3
+         nelcon(1,imat)=-51
 !     
 !     tabular
 !     
@@ -224,12 +227,12 @@ c         elcon(1,1,nmat)=-elcon(1,1,nmat)
                   write(*,*) '       increase ntmat_'
                   call exit(201)
                endif
-               nplicon(0,nmat)=ntmat
-               plicon(0,ntmat,nmat)=temperature
+               nplicon(0,imat)=ntmat
+               plicon(0,ntmat,imat)=temperature
 !     
 !     new temperature
 !     
-            elseif(plicon(0,ntmat,nmat).ne.temperature) then
+            elseif(plicon(0,ntmat,imat).ne.temperature) then
                npmat=0
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
@@ -237,12 +240,12 @@ c         elcon(1,1,nmat)=-elcon(1,1,nmat)
                   write(*,*) '       increase ntmat_'
                   call exit(201)
                endif
-               nplicon(0,nmat)=ntmat
-               plicon(0,ntmat,nmat)=temperature
+               nplicon(0,imat)=ntmat
+               plicon(0,ntmat,imat)=temperature
             endif
             do i=1,2
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
-     &              plicon(2*npmat+i,ntmat,nmat)
+     &              plicon(2*npmat+i,ntmat,imat)
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*SURFACE BEHAVIOR%")
             enddo
@@ -252,7 +255,7 @@ c         elcon(1,1,nmat)=-elcon(1,1,nmat)
      &              '*ERROR reading *SURFACE BEHAVIOR: increase npmat_'
                call exit(201)
             endif
-            nplicon(ntmat,nmat)=npmat
+            nplicon(ntmat,imat)=npmat
          enddo
 !     
          if(ntmat.eq.0) then
@@ -268,14 +271,14 @@ c         elcon(1,1,nmat)=-elcon(1,1,nmat)
 !        versus overclosure curve allowed)
 !
          do i=1,npmat-1
-            if(plicon(2*i+2,1,nmat)-plicon(2*i,1,nmat).lt.1.d-10) then
-               plicon(2*i+2,1,nmat)=plicon(2*i,1,nmat)+1.d-10
+            if(plicon(2*i+2,1,imat)-plicon(2*i,1,imat).lt.1.d-10) then
+               plicon(2*i+2,1,imat)=plicon(2*i,1,imat)+1.d-10
             endif
          enddo
 !     
       endif
 !     
-      elcon(0,1,nmat)=0.d0
+      elcon(0,1,imat)=0.d0
 !     
       return
       end

@@ -50,6 +50,9 @@
       nstate_=max(nstate_,9)
 !
 c      if(nelcon(1,imat).gt.0) nelcon(1,imat)=max(nelcon(1,imat),7)
+!
+!     "8" is for Mortar contact
+!
       nelcon(1,imat)=max(nelcon(1,imat),8)
       nelcon(2,imat)=1
 !

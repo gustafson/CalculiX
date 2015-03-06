@@ -40,7 +40,7 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
       nener,nstate,nentries=15,ifreeinp,ikey,lincludefn,nslavs,
       nbody,ncharmax=1000000,*ipoinpc=NULL,ichangefriction=0,nkon,
       ifile,mcs,initialtemperature=0,nprop,mortar,ifacecount,
-      nintpoint,infree[4],iheading=0; 
+      nintpoint,infree[4],iheading=0,ichangesurfacebehavior=0; 
 
   /* initialization */
 
@@ -190,70 +190,32 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
 
       /* counting sets */
       
-      if(strcmp1(&buff[0],"*RESTART")==0){
-	  irestartread=0;
-	  irestartstep=0;
-	  strcpy1(&buff[k]," ",1);
-	  FORTRAN(splitline,(buff,textpart,&n));
-	  for(i=0;i<n;i++){
-	      if(strcmp1(&textpart[(long long)132*i],"READ")==0){
-		  irestartread=1;
-//		  if(irestartstep==0) irestartstep=1;
-	      }
-	      if(strcmp1(&textpart[(long long)132*i],"STEP")==0){
-		  irestartstep=atoi(&textpart[(long long)132*i+5]);
-	      }
-          }
-          if(irestartread==1){
-            icntrl=0;
-            FORTRAN(restartshort,(nset,&nload,&nbody,&nforc,&nboun,&nk,
-              &ne,&nmpc,&nalset,&nmat,&ntmat,&npmat,&norien,&nam,
-              &nprint,mi,&ntrans,&ncs,&namtot,&ncmat,&memmpc,
-              &ne1d,&ne2d,&nflow,set,meminset,rmeminset,jobnamec,
-	      &irestartstep,&icntrl,ithermal,&nener,&nstate,&ntie,
-	      &nslavs,&nkon,&mcs,&nprop,&mortar,&ifacecount,&nintpoint,
-              infree));
-            FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"RESTART,READ",
-                              nline,&ikey));
-	  }
-          else{
-            FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
-                              nline,&ikey));
-          }
-
-      }
-      else if((strcmp1(&buff[0],"*NODE")==0)&&
-	      (strcmp1(&buff[0],"*NODEPRINT")!=0)&&
-	      (strcmp1(&buff[0],"*NODEOUTPUT")!=0)&&
-	      (strcmp1(&buff[0],"*NODEFILE")!=0)){
-        (*nset)++;
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"NODE",
+      if(strcmp1(&buff[0],"*AMPLITUDE")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"AMPLITUDE",
                           nline,&ikey));
-      }
-      else if((strcmp1(&buff[0],"*ELEMENT")==0)&&
-              (strcmp1(&buff[0],"*ELEMENTOUTPUT")!=0)){
-        (*nset)++;
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"ELEMENT",
+			  }
+      else if(strcmp1(&buff[0],"*CHANGEFRICTION")==0){
+	ichangefriction=1;
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
                           nline,&ikey));
-      }
-      else if(strcmp1(&buff[0],"*NSET")==0){
-        (*nset)++;
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"NSET",
+			  }
+      else if(strcmp1(&buff[0],"*CHANGESURFACEBEHAVIOR")==0){
+	ichangesurfacebehavior=1;
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
                           nline,&ikey));
-      }
-      else if(strcmp1(&buff[0],"*ELSET")==0){
-        (*nset)++;
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"ELSET",
-                          nline,&ikey));
-      }
-      else if(strcmp1(&buff[0],"*TRANSFORM")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"TRANSFORM",
-                          nline,&ikey));
-      }
-      else if(strcmp1(&buff[0],"*MATERIAL")==0){
+			  }
+      else if(strcmp1(&buff[0],"*CONDUCTIVITY")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
       }
+      else if(strcmp1(&buff[0],"*CONTACTDAMPING")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
+                          nline,&ikey));
+      }
+      else if(strcmp1(&buff[0],"*CONTACTPAIR")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"CONTACTPAIR",
+                          nline,&ikey));
+			  }
       else if(strcmp1(&buff[0],"*CREEP")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
@@ -278,12 +240,35 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
       }
+      else if(strcmp1(&buff[0],"*ELECTRICALCONDUCTIVITY")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
+                          nline,&ikey));
+      }
+      else if((strcmp1(&buff[0],"*ELEMENT")==0)&&
+              (strcmp1(&buff[0],"*ELEMENTOUTPUT")!=0)){
+        (*nset)++;
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"ELEMENT",
+                          nline,&ikey));
+      }
+      else if(strcmp1(&buff[0],"*ELSET")==0){
+        (*nset)++;
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"ELSET",
+                          nline,&ikey));
+      }
       else if(strcmp1(&buff[0],"*EXPANSION")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
       }
       else if(strcmp1(&buff[0],"*FLUIDCONSTANTS")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
+                          nline,&ikey));
+      }
+      else if((strcmp1(&buff[0],"*FRICTION")==0)&&(ichangefriction==0)){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
+                          nline,&ikey));
+      }
+      else if(strcmp1(&buff[0],"*GAPCONDUCTANCE")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
                           nline,&ikey));
       }
       else if(strcmp1(&buff[0],"*HYPERELASTIC")==0){
@@ -294,17 +279,75 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
       }
+      else if(strcmp1(&buff[0],"*INITIALCONDITIONS")==0){
+	  FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"INITIALCONDITIONS",
+			    nline,&ikey));
+	  FORTRAN(splitline,(buff,textpart,&n));
+	  for(i=0;i<n;i++){
+	      if(strcmp1(&textpart[(long long)132*i],"TYPE=TEMPERATURE")==0){
+		  initialtemperature=1;
+	      }
+          }
+      }
+      else if(strcmp1(&buff[0],"*MAGNETICPERMEABILITY")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
+                          nline,&ikey));
+      }
+      else if(strcmp1(&buff[0],"*MATERIAL")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
+                          nline,&ikey));
+      }
+      else if((strcmp1(&buff[0],"*NODE")==0)&&
+	      (strcmp1(&buff[0],"*NODEPRINT")!=0)&&
+	      (strcmp1(&buff[0],"*NODEOUTPUT")!=0)&&
+	      (strcmp1(&buff[0],"*NODEFILE")!=0)){
+        (*nset)++;
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"NODE",
+                          nline,&ikey));
+      }
+      else if(strcmp1(&buff[0],"*NSET")==0){
+        (*nset)++;
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"NSET",
+                          nline,&ikey));
+      }
+      else if(strcmp1(&buff[0],"*ORIENTATION")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"ORIENTATION",
+                          nline,&ikey));
+      }
       else if(strcmp1(&buff[0],"*PLASTIC")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
       }
-      else if(strcmp1(&buff[0],"*USERMATERIAL")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
-                          nline,&ikey));
-      }
-      else if(strcmp1(&buff[0],"*CONDUCTIVITY")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
-                          nline,&ikey));
+      else if(strcmp1(&buff[0],"*RESTART")==0){
+	  irestartread=0;
+	  irestartstep=0;
+	  strcpy1(&buff[k]," ",1);
+	  FORTRAN(splitline,(buff,textpart,&n));
+	  for(i=0;i<n;i++){
+	      if(strcmp1(&textpart[(long long)132*i],"READ")==0){
+		  irestartread=1;
+	      }
+	      if(strcmp1(&textpart[(long long)132*i],"STEP")==0){
+		  irestartstep=atoi(&textpart[(long long)132*i+5]);
+	      }
+          }
+          if(irestartread==1){
+            icntrl=0;
+            FORTRAN(restartshort,(nset,&nload,&nbody,&nforc,&nboun,&nk,
+              &ne,&nmpc,&nalset,&nmat,&ntmat,&npmat,&norien,&nam,
+              &nprint,mi,&ntrans,&ncs,&namtot,&ncmat,&memmpc,
+              &ne1d,&ne2d,&nflow,set,meminset,rmeminset,jobnamec,
+	      &irestartstep,&icntrl,ithermal,&nener,&nstate,&ntie,
+	      &nslavs,&nkon,&mcs,&nprop,&mortar,&ifacecount,&nintpoint,
+              infree));
+            FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"RESTART,READ",
+                              nline,&ikey));
+	  }
+          else{
+            FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
+                              nline,&ikey));
+          }
+
       }
       else if(strcmp1(&buff[0],"*SPECIFICGASCONSTANT")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
@@ -314,17 +357,23 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
       }
-      else if(strcmp1(&buff[0],"*MAGNETICPERMEABILITY")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
+      else if(strcmp1(&buff[0],"*SUBMODEL")==0){
+	(*nset)+=2;
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
                           nline,&ikey));
       }
-      else if(strcmp1(&buff[0],"*ELECTRICALCONDUCTIVITY")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
+      else if(strcmp1(&buff[0],"*SURFACEINTERACTION")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
                           nline,&ikey));
       }
-      else if(strcmp1(&buff[0],"*ORIENTATION")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"ORIENTATION",
+      else if(strcmp1(&buff[0],"*SURFACEBEHAVIOR")==0){
+	  if(ichangesurfacebehavior==0){
+	      FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
                           nline,&ikey));
+	  }else{
+	      FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
+				nline,&ikey));
+	  }
       }
       else if(strcmp1(&buff[0],"*SURFACE")==0){
         (*nset)++;
@@ -335,53 +384,12 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"TIE",
                           nline,&ikey));
       }
-      else if(strcmp1(&buff[0],"*SURFACEINTERACTION")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
+      else if(strcmp1(&buff[0],"*TRANSFORM")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"TRANSFORM",
                           nline,&ikey));
       }
-      else if(strcmp1(&buff[0],"*SURFACEBEHAVIOR")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
-                          nline,&ikey));
-      }
-      else if(strcmp1(&buff[0],"*GAPCONDUCTANCE")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
-                          nline,&ikey));
-      }
-      else if((strcmp1(&buff[0],"*FRICTION")==0)&&(ichangefriction==0)){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
-                          nline,&ikey));
-      }
-      else if(strcmp1(&buff[0],"*CONTACTDAMPING")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
-                          nline,&ikey));
-      }
-      else if(strcmp1(&buff[0],"*INITIALCONDITIONS")==0){
-	  FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"INITIALCONDITIONS",
-			    nline,&ikey));
-	  FORTRAN(splitline,(buff,textpart,&n));
-	  for(i=0;i<n;i++){
-	      if(strcmp1(&textpart[(long long)132*i],"TYPE=TEMPERATURE")==0){
-//		  if(ithermal[1]==0) ithermal[1]=1;
-		  initialtemperature=1;
-	      }
-          }
-      }
-      else if(strcmp1(&buff[0],"*AMPLITUDE")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"AMPLITUDE",
-                          nline,&ikey));
-			  }
-      else if(strcmp1(&buff[0],"*CONTACTPAIR")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"CONTACTPAIR",
-                          nline,&ikey));
-			  }
-      else if(strcmp1(&buff[0],"*CHANGEFRICTION")==0){
-	ichangefriction=1;
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
-                          nline,&ikey));
-			  }
-      else if(strcmp1(&buff[0],"*SUBMODEL")==0){
-	(*nset)+=2;
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
+      else if(strcmp1(&buff[0],"*USERMATERIAL")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
       }
       else if(strcmp1(&buff[0],"*")==0){

@@ -163,7 +163,8 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
           iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
           itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
 	  imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
-          xnoels,&mortar,pslavsurf,pmastsurf,clearini,theta);
+          xnoels,&mortar,pslavsurf,pmastsurf,clearini,theta,
+	  xstateini,xstate,nstate_,&icutb);
 
   NNEW(ikactcont1,ITG,nactcont1_);
 
@@ -716,7 +717,8 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	      iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
               itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
 	      imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
-              xnoels,&mortar,pslavsurf,pmastsurf,clearini,theta);
+              xnoels,&mortar,pslavsurf,pmastsurf,clearini,theta,
+	      xstateini,xstate,nstate_,&icutb);
 
       for(i=*ne0;i<*ne;i++){
 	indexe=ipkon[i];

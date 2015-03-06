@@ -84,13 +84,13 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     iinc=1,nev,ncv,mxiter,jrow,*ipobody=NULL,inewton=0,ifreebody,
     mass[2]={1,1}, stiffness=1, buckling=0, rhsi=0, intscheme=0,noddiam=-1,
     coriolis=0,symmetryflag=0,inputformat=0,*ipneigh=NULL,*neigh=NULL,ne0,
-    *integerglob=NULL,nasym=0,zero=0,irenewxstate,ncont=0,*itietri=NULL,
+    *integerglob=NULL,nasym=0,zero=0,ncont=0,*itietri=NULL,
     *koncont=NULL,ismallsliding=0,*itiefac=NULL,*islavsurf=NULL,
     *islavnode=NULL,*imastnode=NULL,*nslavnode=NULL,*nmastnode=NULL,
     *imastop=NULL,*iponoels=NULL,*inoels=NULL,*ipe=NULL,*ime=NULL,
-    mpcfree,memmpc_,icascade,maxlenmpc,nkon0,iit=-1,*irow=NULL,nherm=1,
+    mpcfree,memmpc_,icascade,maxlenmpc,iit=-1,*irow=NULL,nherm=1,
     icfd=0,*inomat=NULL,*ipkon=NULL,*kon=NULL,*ielmat=NULL,*ielorien=NULL,
-    *islavact=NULL,maxprevcontel,iex,nslavs_prev_step,
+    *islavact=NULL,maxprevcontel,iex,nslavs_prev_step,icutb=0,
     iflagact=0,*islavsurfold=NULL;
 
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,
@@ -124,10 +124,20 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
   islavsurf=*islavsurfp;pslavsurf=*pslavsurfp;clearini=*clearinip;
   
-  if(*mortar==0){
+  if(*mortar!=1){
       maxprevcontel=*nslavs;
   }else if(*mortar==1){
       maxprevcontel=*nintpoint;
+      if(*nstate_!=0){
+	  if(maxprevcontel!=0){
+	      NNEW(islavsurfold,ITG,2**ifacecount+2);
+	      NNEW(pslavsurfold,double,3**nintpoint);
+	      memcpy(&islavsurfold[0],&islavsurf[0],
+		     sizeof(ITG)*(2**ifacecount+2));
+	      memcpy(&pslavsurfold[0],&pslavsurf[0],
+		     sizeof(double)*(3**nintpoint));
+	  }
+      }
   }
   nslavs_prev_step=*nslavs;
 
@@ -170,7 +180,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       }
   }
 
-  ne0=*ne;nkon0=*nkon;
+  ne0=*ne;
 
   /* contact conditions */
   
@@ -179,7 +189,6 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
       maxlenmpc=mpcinfo[3];
 
-      if(*nslavs==0){irenewxstate=1;}else{irenewxstate=0;}
       inicont(nk,&ncont,ntie,tieset,nset,set,istartset,iendset,ialset,&itietri,
 	  lakon,ipkon,kon,&koncont,nslavs,tietol,&ismallsliding,&itiefac,
           &islavsurf,&islavnode,&imastnode,&nslavnode,&nmastnode,
@@ -230,17 +239,6 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      if((*istep==1)||(nslavs_prev_step==0)) NNEW(clearini,double,3*9**ifacecount);
 	      NNEW(xmastnor,double,3*nmastnode[*ntie]);
 
-	      if(*nstate_!=0){
-		  if(maxprevcontel!=0){
-		      NNEW(islavsurfold,ITG,2**ifacecount+2);
-		      NNEW(pslavsurfold,double,3**nintpoint);
-		      memcpy(&islavsurfold[0],&islavsurf[0],
-			     sizeof(ITG)*(2**ifacecount+2));
-		      memcpy(&pslavsurfold[0],&pslavsurf[0],
-			     sizeof(double)*(3**nintpoint));
-		  }
-	      }
-
 	      *nintpoint=0;
 	      
 	      precontact(&ncont,ntie,tieset,nset,set,istartset,
@@ -269,25 +267,9 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      }
 	      RENEW(ielmat,ITG,mi[2]*(*ne+*nintpoint));
 	      for(k=mi[2]**ne;k<mi[2]*(*ne+*nintpoint);k++) ielmat[k]=1;
-	  }
-	  
-          /* generating contact spring elements */
 
-	  contact(&ncont,ntie,tieset,nset,set,istartset,iendset,
-	     ialset,itietri,lakon,ipkon,kon,koncont,ne,cg,straight,nkon,
-	     co,vold,ielmat,cs,elcon,istep,&iinc,&iit,ncmat_,ntmat_,
-	     &ne0,vini,nmethod,nmpc,&mpcfree,&memmpc_,
-	     &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
-	     iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
-	     itiefac,areaslav,iponoels,inoels,springarea,tietol,&reltime,
-	     imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
-	     xnoels,mortar,pslavsurf,pmastsurf,clearini,&theta);
-	  
-	  printf("number of contact spring elements=%" ITGFORMAT "\n\n",*ne-ne0);
-		  
-	  /* interpolating the state variables */
+              /* interpolating the state variables */
 
-	  if(*mortar==1){
 	      if(*nstate_!=0){
 		  if(maxprevcontel!=0){
 		      RENEW(xstateini,double,
@@ -311,7 +293,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      FORTRAN(interpolatestate,(ne,ipkon,kon,lakon,
                                &ne0,mi,xstate,pslavsurf,nstate_,
                                xstateini,islavsurf,islavsurfold,
-                               pslavsurfold));
+			       pslavsurfold,tieset,ntie,itiefac));
 		      
 		  }
 
@@ -327,6 +309,21 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  }
 	      }
 	  }
+	  
+          /* generating contact spring elements */
+
+	  contact(&ncont,ntie,tieset,nset,set,istartset,iendset,
+	     ialset,itietri,lakon,ipkon,kon,koncont,ne,cg,straight,nkon,
+	     co,vold,ielmat,cs,elcon,istep,&iinc,&iit,ncmat_,ntmat_,
+	     &ne0,vini,nmethod,nmpc,&mpcfree,&memmpc_,
+	     &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
+	     iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
+	     itiefac,areaslav,iponoels,inoels,springarea,tietol,&reltime,
+	     imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
+	     xnoels,mortar,pslavsurf,pmastsurf,clearini,&theta,
+	     xstateini,xstate,nstate_,&icutb);
+	  
+	  printf("number of contact spring elements=%" ITGFORMAT "\n\n",*ne-ne0);
 	  
           /* determining the structure of the stiffness/mass matrix */
 	  
@@ -960,7 +957,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
   if(*iperturb!=0){
       if(ncont!=0){
-	  *ne=ne0;*nkon=nkon0;
+	  *ne=ne0;
 	  if(*nener==1){
 	      RENEW(ener,double,mi[0]**ne*2);
 	  }

@@ -22,7 +22,7 @@
 !
       logical exi
       character*3 output
-      character*132 jobname,fnin,fndat,fnfrd,fnsta,fncvg
+      character*132 jobname,fnin,fndat,fnfrd,fnsta,fncvg,fncel
       integer i
 !
 !     opening the input and output file
@@ -88,12 +88,18 @@
       write(11,104)
       write(11,105)
  102  format('SUMMARY OF C0NVERGENCE INFORMATION')
- 103  format('  STEP   INC  ITER    CONT.   RESID.        CORR.      RES
-     &ID.      CORR.'     )
- 104  format('                       EL.    FORCE         DISP       FLU
-     &X        TEMP.'   )
- 105  format('                       (#)     (%)           (%)        (%
-     &)         (%)')
+ 103  format('  STEP   INC  ATT   ITER    CONT.   RESID.        CORR.   
+     &   RESID.      CORR.'     )
+ 104  format('                             EL.    FORCE         DISP    
+     &   FLUX        TEMP.'   )
+ 105  format('                             (#)     (%)           (%)    
+     &    (%)         (%)')
+!
+!     contact elemengts
+!
+      fncel='contactelements.inp'
+      open(27,file=fncel(1:19),status='unknown',err=93)
+      close(27,status='delete',err=94)
 !
       return
 !
@@ -120,5 +126,9 @@
       call exit(201)
  92   write(*,*) '*ERROR in openfile: could not delete file ',
      &  fncvg(1:i+4)
+ 93   write(*,*) '*ERROR in openfile: could not open file ',fncel(1:19)
+      call exit(201)
+ 94   write(*,*) '*ERROR in openfile: could not delete file ',
+     &  fncel(1:19)
       call exit(201)
       end

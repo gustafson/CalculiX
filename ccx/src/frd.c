@@ -99,7 +99,6 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   null=0;
   one=1;two=2;three=3;
   oner=1.;
-  iaxial=0.;
 
   /* determining nout, noutplus and noutmin 
               nout: number of structural and network nodes
@@ -125,6 +124,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
      topology */
 
   if(*kode==1){
+    iaxial=0.;
 //    fprintf(f1,"%5s%1s\n",p1,c);
 
     /* date and time */

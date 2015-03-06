@@ -25,18 +25,18 @@
 !   by: Jaro Hokkanen
 !
 !
-      subroutine interpolateinface(kon,ipkon,i_int,n_int,kk,
-     &   xstate,xstateini,numpts,nstate_,mi,pslavsurf,
+      subroutine interpolateinface(kk,xstate,xstateini,numpts,nstate_,
+     &   mi,islavsurf,pslavsurf,
      &   ne0,islavsurfold,pslavsurfold)
 !
       implicit none
 !
-      integer numpts,i_int,n_int,i,j,k,kk,l,ll,nn,kon(*),ipkon(*),
+      integer numpts,i_int,n_int,i,j,k,kk,l,ll,nn,
      &  koncont(3,2*numpts+1),itri,kflag,neigh(1),kneigh,
      &  imastop(3,2*numpts+1),indexcj,nopespringj,list(numpts),
      &  igauss,mi(*),nstate_,itriangle(100),itriold,
      &  ifaceq(9,6),ip(numpts),ne0,iloc,itrinew,ntriangle,
-     &  ifacet(7,4),ifacew1(4,5),ifacew2(8,5),n,
+     &  ifacet(7,4),ifacew1(4,5),ifacew2(8,5),n,islavsurf(2,*),
      &  ibin(numpts),ivert1,ntriangle_,nterms,m,islavsurfold(2,*),
      &  nx(2*numpts+1),ny(2*numpts+1),isol,id
 !
@@ -86,13 +86,19 @@
 !
 !       Loop over the old integration points within the face
 !
+c      write(*,*) 
+c      write(*,*) 'master'
       ll=0
       do l=islavsurfold(2,kk)+1,islavsurfold(2,kk+1)
          ll=ll+1
          coi(1,ll)=pslavsurfold(1,l)
          coi(2,ll)=pslavsurfold(2,l)
          ip(ll)=ne0+l
+c         write(*,300) l,coi(1,ll),coi(2,ll),
+c     &        (xstateini(i,1,ne0+l),i=4,6)
       enddo
+c      write(*,*) 
+c      write(*,*) 'slave'
 !
 !     Calling deltri for triangulation
 !     
@@ -132,12 +138,14 @@
 !
 !       Loop over the new integration points
 !
-      do j=i_int,n_int
+      do iloc=islavsurf(2,kk)+1,islavsurf(2,kk+1)
+c      do j=i_int,n_int
          xdist=9.d0
-         indexcj=ipkon(j)
-         nopespringj=kon(indexcj)
-         iloc=kon(indexcj+nopespringj+1)
-         igauss=kon(indexcj+nopespringj+3)
+c         indexcj=ipkon(j)
+c         nopespringj=kon(indexcj)
+c         iloc=kon(indexcj+nopespringj+1)
+c         igauss=kon(indexcj+nopespringj+1)
+         igauss=iloc
 !
 !        coordinates of the new integration point
 !
@@ -243,6 +251,8 @@ c     write(*,*) '**regular solution'
      &           coi(1,koncont(3,itri)),coi(2,koncont(3,itri)),z(i,3),
      &           p(1),p(2),xstate(i,1,ne0+iloc))
          enddo
+c         write(*,300) iloc,p(1),p(2),(xstate(i,1,ne0+iloc),i=4,6)
+c 300     format('interpolateinface',i10,6(1x,e20.13))
 !     
       enddo
 !     

@@ -25,6 +25,8 @@
 !
       implicit none
 !
+      logical linear
+!
       character*1 inpc(*)
       character*80 matname(*),material
       character*81 tieset(3,*),noset,set(*)
@@ -47,7 +49,8 @@
          call exit(201)
       endif
 !
-      mortar=0
+      mortar=1
+      linear=.false.
 !
       ntie=ntie+1
       if(ntie.gt.ntie_) then
@@ -68,6 +71,8 @@
             material=textpart(i)(13:92)
          elseif(textpart(i)(1:12).eq.'SMALLSLIDING') then
             tietol(1,ntie)=-tietol(1,ntie)
+         elseif(textpart(i)(1:6).eq.'LINEAR') then
+            linear=.true.
          elseif(textpart(i)(1:7).eq.'ADJUST=') then
             read(textpart(i)(8:25),'(f20.0)',iostat=istat) adjust
             if(istat.gt.0) then
@@ -97,6 +102,8 @@
             else
                tietol(1,ntie)=dsign(1.d0,tietol(1,ntie))*(2.d0+adjust)
             endif
+         elseif(textpart(i)(1:18).eq.'TYPE=NODETOSURFACE') then
+            mortar=0
          elseif(textpart(i)(1:21).eq.'TYPE=SURFACETOSURFACE') then
             mortar=1
          elseif(textpart(i)(1:11).eq.'TYPE=MORTAR') then
@@ -215,7 +222,7 @@
 !     to the nonlinear calculation of strains (i.e.
 !     iperturb(2) should be zero unless NLGEOM is activated)
 !
-      if(iperturb(1).eq.0) then
+      if((iperturb(1).eq.0).and.(.not.linear)) then
          iperturb(1)=2
       endif
 !

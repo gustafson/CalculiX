@@ -75,6 +75,11 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     ran=ctrl[18];can=ctrl[19];rap=ctrl[22];
     ea=ctrl[23];cae=ctrl[24];ral=ctrl[25];
 
+    /* for face-to-face penalty contact: increase the number of iterations
+       in two subsequent increments in order to increase the increment size */
+
+    if(*mortar==1){ig+=4;}
+
     /* check for forced divergence (due to divergence of a user material
        routine */
 

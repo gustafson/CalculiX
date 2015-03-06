@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 2.8
+LOG-BOOK Version 2.8p2
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -2476,7 +2476,38 @@ Dec 2002        - started to work on single crystal plasticity
                  springforc_f2f and springstiff_f2f
 
  8 Jan 2015    - allowed for facial surfaces in cyclic symmetry definitions
+ 
+ 21 Jan 2015   - started a major change in face-to-face penalty contact  
 
- 8 Feb 2015    - implemented two patches (1) removed an error from incplas.f
-                 (2) returned to expandable ridid bodies for dynamics in
-                 combination with moments/rotations
+ 28 Jan 2015   - replaced mean rotation MPC's by expandable rigid bodies
+                 for nonlinear dynamics: knots can take on arbitrary
+                 rotational values, mean rotation MPC's are limited to
+                 90 degrees
+
+ 31 Jan 2015   - changed the sign of the damping coefficient for
+                 nodal diameters > number of sectors/2 in dyna.c
+               - continued changes for face-to-face contact
+                 (semi-smooth Newton)
+
+ 4 Feb 2015    - removed the change in face-to-face penalty contact.
+               - removed an error in incplas.f.
+
+ 8 Feb 2015    - adapted *MODEL CHANGE to (de)activate elements
+               - code *CHANGE SURFACE INTERACTION
+               - made xstate and xstateini available in gencontelem_f2f
+               - with "contact elements" all contact elements are stored
+                 in file contactelement.inp. They can be loaded into cgx
+                 and visualized according to step, increment, attempt
+                 and iteration
+
+ 11 Feb 2015   - changed interpolatestate.f
+               - reversed the first change from 31 Jan 2015
+
+ 24 Feb 2015   - introduced the possibility to take contact into account
+                 in a linear elastic calculation (application: fracture
+                 mechanics)
+
+ 28 Feb 2015   - introduced a line search for face-to-face penalty.
+
+ 3 Mar 2015    - checked for loss of contact at the start of a new
+                 increment in gencontelem_f2f

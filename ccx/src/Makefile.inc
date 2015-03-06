@@ -100,6 +100,8 @@ changedepterm.f \
 changefrictions.f \
 changematerials.f \
 changeplastics.f \
+changesolidsections.f \
+changesurfacebehaviors.f \
 changekon.f \
 characteristic.f \
 checktemp.f \

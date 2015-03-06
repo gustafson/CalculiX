@@ -278,7 +278,7 @@ c     Bernhardi end
                elseif(mortar.eq.1) then
                   iloc=kon(indexe+nope+1)
                   jfaces=kon(indexe+nope+2)
-                  igauss=kon(indexe+nope+3)
+                  igauss=kon(indexe+nope+1)
                   call springforc_f2f(xl,vl,imat,elcon,nelcon,elas,
      &              fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
      &              plicon,nplicon,npmat_,ener(1,i),iener,
@@ -287,12 +287,17 @@ c     Bernhardi end
      &              ielas,iloc,jfaces,igauss,pslavsurf,pmastsurf,
      &              clearini)
                endif
-!                  
-               do j=1,nope
-                  do k=1,3
-                     fn(k,konl(j))=fn(k,konl(j))+fnl(k,j)
+!             
+!              next lines are not executed if the parameter "LINEAR"
+!              is used on the *CONTACT PAIR card
+!
+               if((iperturb(1).ge.2).or.(lakonl(7:7).eq.'A')) then
+                  do j=1,nope
+                     do k=1,3
+                        fn(k,konl(j))=fn(k,konl(j))+fnl(k,j)
+                     enddo
                   enddo
-               enddo
+               endif
 !
 !              dashpot elements (including contact dashpots)
 !

@@ -269,34 +269,38 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 		    indexnew=ipompc[mpc-1];
 		    coef=-coef/coefmpc[indexnew-1];
 		    indexnew=nodempc[3*indexnew-1];
-		    do{
-			coefmpc[index-1]=coef*coefmpc[indexnew-1];
-			nodempc[3*index-3]=nodempc[3*indexnew-3];
-			nodempc[3*index-2]=nodempc[3*indexnew-2];
-			indexnew=nodempc[3*indexnew-1];
-			if(indexnew!=0){
-			    nodempc[3*index-1]=*mpcfree;
-			    index=*mpcfree;
-			    *mpcfree=nodempc[3**mpcfree-1];
-			    if(*mpcfree==0){
-				*mpcfree=*memmpc_+1;
+		    if(indexnew!=0){
+			do{
+			    coefmpc[index-1]=coef*coefmpc[indexnew-1];
+			    nodempc[3*index-3]=nodempc[3*indexnew-3];
+			    nodempc[3*index-2]=nodempc[3*indexnew-2];
+			    indexnew=nodempc[3*indexnew-1];
+			    if(indexnew!=0){
 				nodempc[3*index-1]=*mpcfree;
-				*memmpc_=(ITG)(1.1**memmpc_);
-				printf("*INFO in cascade: reallocating nodempc; new size = %" ITGFORMAT "\n\n",*memmpc_);
-				RENEW(nodempc,ITG,3**memmpc_);
-				RENEW(coefmpc,double,*memmpc_);
-				for(j=*mpcfree;j<*memmpc_;j++){
-				    nodempc[3*j-1]=j+1;
+				index=*mpcfree;
+				*mpcfree=nodempc[3**mpcfree-1];
+				if(*mpcfree==0){
+				    *mpcfree=*memmpc_+1;
+				    nodempc[3*index-1]=*mpcfree;
+				    *memmpc_=(ITG)(1.1**memmpc_);
+				    printf("*INFO in cascade: reallocating nodempc; new size = %" ITGFORMAT "\n\n",*memmpc_);
+				    RENEW(nodempc,ITG,3**memmpc_);
+				    RENEW(coefmpc,double,*memmpc_);
+				    for(j=*mpcfree;j<*memmpc_;j++){
+					nodempc[3*j-1]=j+1;
+				    }
+				    nodempc[3**memmpc_-1]=0;
 				}
-				nodempc[3**memmpc_-1]=0;
+				continue;
 			    }
-			    continue;
-			}
-			else{
-			    nodempc[3*index-1]=indexold;
-			    break;
-			}
-		    }while(1);
+			    else{
+				nodempc[3*index-1]=indexold;
+				break;
+			    }
+			}while(1);
+		    }else{
+			coefmpc[index-1]=0.;
+		    }
 		    break;
 		}
 		else{

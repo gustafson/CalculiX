@@ -75,7 +75,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
     *tchar3=NULL,cflag[1]=" ";
 
   ITG nev,i,j,k,idof,*inum=NULL,*ipobody=NULL,inewton=0,id,
-    iinc=0,jprint=0,l,iout,ielas=0,icmd,iprescribedboundary,init,ifreebody,
+    iinc=0,jprint=0,l,iout,ielas=0,icmd=3,iprescribedboundary,init,ifreebody,
     mode=-1,noddiam=-1,*kon=NULL,*ipkon=NULL,*ielmat=NULL,*ielorien=NULL,
     *inotr=NULL,*nodeboun=NULL,*ndirboun=NULL,*iamboun=NULL,*ikboun=NULL,
     *ilboun=NULL,*nactdof=NULL,*ipompc=NULL,*nodempc=NULL,*ikmpc=NULL,
@@ -83,7 +83,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
     *ikmpcold=NULL,*ilmpcold=NULL,kflag=2,nmd,nevd,*nm=NULL,*iamt1=NULL,
     *itg=NULL,ntg=0,symmetryflag=0,inputformat=0,dashpot,lrw,liw,iddebdf=0,
     *iwork=NULL,ngraph=1,nkg,neg,ncont,ne0,nkon0, *itietri=NULL,
-    *koncont=NULL,konl[20],imat,nope,kodem,indexe,j1,jdof,
+    *koncont=NULL,konl[20],imat,nope,kodem,indexe,j1,jdof,icutb=0,
     *ipneigh=NULL,*neigh=NULL,inext,itp=0,*islavact=NULL,
     ismallsliding=0,isteadystate,mpcfree,im,cyclicsymmetry,
     memmpc_,imax,iener=0,*icole=NULL,*irowe=NULL,*jqe=NULL,nzse[3],
@@ -171,7 +171,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
       kmin=0;kmax=3;
   }
 
-//xstiffNNEW(//  xstiff,double,(long long)27*mi[0]**ne);
+//NNEW(xstiff,double,(long long)27*mi[0]**ne);
 
   dtime=*tinc;
 
@@ -778,6 +778,13 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 	  printf("         no Rayleigh mass damping allowed\n");
 	  zeta[i]=0.;
 	}
+
+        /* if the nodal diameter exceeds half the number of sectors
+           the sign of the damping has to be reversed (omega is negative) */
+
+/*	if(cyclicsymmetry){
+	    if(nm[i]>nsectors/2) zeta[i]*=-1.;
+	    }*/
       }
   }
   else{
@@ -794,6 +801,13 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
     }
     for(i=0; i<imax; i++){
       zeta[i]=xmodal[11+i];     
+
+      /* if the nodal diameter exceeds half the number of sectors
+           the sign of the damping has to be reversed (omega is negative) */
+
+      /*   if(cyclicsymmetry){
+	  if(nm[i]>nsectors/2) zeta[i]*=-1.;
+	  }*/
     }
     
   }
@@ -1050,7 +1064,8 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
               ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
               itiefac,areaslav,iponoels,inoels,springarea,tietol,&reltime,
 	      imastnode,nmastnode,xmastnor,filab,mcs,ics,
-              &nasym,xnoels,&mortar,pslavsurf,pmastsurf,clearini,&theta);
+              &nasym,xnoels,&mortar,pslavsurf,pmastsurf,clearini,&theta,
+	      xstateini,xstate,nstate_,&icutb);
 
       RENEW(ikactcont,ITG,nactcont_);
       DMEMSET(ikactcont,0,nactcont_,0.);
@@ -2080,7 +2095,8 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
       }
   }
 
-  SFREE(xstiff);if(*nbody>0) SFREE(ipobody);
+//  SFREE(xstiff);
+  if(*nbody>0) SFREE(ipobody);
 
   if(dashpot){
       SFREE(xini);SFREE(rwork);SFREE(adc);SFREE(auc);SFREE(cc);

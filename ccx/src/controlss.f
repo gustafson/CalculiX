@@ -120,6 +120,22 @@
             write(*,*) '       cae = ',ctrl(25)
             write(*,*) '       ral = ',ctrl(26)
             exit
+!
+         elseif(textpart(i)(1:21).eq.'PARAMETERS=LINESEARCH') then
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+            do j=1,n
+               read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+27)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*CONTROLS%")
+            enddo
+            write(*,*) '*INFO: field control parameters set to:'
+            write(*,*) '       nls = ',ctrl(28)
+            write(*,*) '       smaxls = ',ctrl(29)
+            write(*,*) '       sminls = ',ctrl(30)
+            write(*,*) '       fls = ',ctrl(31)
+            write(*,*) '       etls = ',ctrl(32)
+            exit
          else
             write(*,*) 
      &        '*WARNING in controlss: parameter not recognized:'

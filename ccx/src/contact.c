@@ -37,7 +37,8 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
 	     ITG *imastnode, ITG *nmastnode, double *xmastnor,
 	     char *filab, ITG *mcs, ITG *ics,
              ITG *nasym,double *xnoels,ITG *mortar,double *pslavsurf,
-             double *pmastsurf,double *clearini,double *theta){
+             double *pmastsurf,double *clearini,double *theta,
+             double *xstateini,double *xstate,ITG *nstate_,ITG *icutb){
     
     char *labmpc=NULL;
 
@@ -91,7 +92,7 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
           imastop,nslavnode,islavnode,islavsurf,itiefac,areaslav,iponoels,
           inoels,springarea,
           set,nset,istartset,iendset,ialset,tietol,reltime,
-          imastnode,nmastnode,filab,nasym,xnoels));
+	  filab,nasym,xnoels,icutb));
 
     }else if(*mortar==1){
 
@@ -99,7 +100,7 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
 	  lakon,cg,straight,ifree,koncont,co,vold,xo,yo,zo,x,y,z,nx,ny,nz,
           ielmat,elcon,istep,iinc,iit,ncmat_,ntmat_,mi,imastop,islavsurf,
 	  itiefac,springarea,tietol,reltime,filab,nasym,pslavsurf,pmastsurf,
-	  clearini,theta));
+	  clearini,theta,xstateini,xstate,nstate_,ne0,icutb));
 
     }
 

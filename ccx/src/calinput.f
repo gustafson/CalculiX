@@ -93,7 +93,8 @@
      &  M_or_SPC,nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),nflow,
      &  ne1d,ne2d,nener,irstrt,ii,maxlenmpc,inl,ipol,network,
      &  iline,mcs,ntie,ntie_,lprev,newstep,nbody,nbody_,ibody(3,*),
-     &  cyclicsymmetry,idefforc(*),idefload(*),idefbody(*)
+     &  cyclicsymmetry,idefforc(*),idefload(*),idefbody(*),
+     &  ichangesurfacebehavior
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),fmpc(*),
      &  xload(2,*),alzero(*),offset(2,*),prop(*),pslavsurf(3,*),
@@ -118,6 +119,7 @@
       newstep=0
       iviewfile=0
       ichangefriction=0
+      ichangesurfacebehavior=0
       icomposite=0
 !
       maxsectors=1
@@ -300,6 +302,18 @@ c         iaxial=0
             call changeplastics(inpc,textpart,imat,ntmat_,npmat_,
      &        plicon,nplicon,plkcon,nplkcon,istep,istat,n,iline,ipol,
      &        inl,ipoinp,inp,ipoinpc,nelcon)
+!
+         elseif(textpart(1)(1:19).eq.'*CHANGESOLIDSECTION') then
+            call changesolidsections(inpc,textpart,set,istartset,
+     &        iendset,ialset,nset,ielmat,matname,nmat,ielorien,orname,
+     &        norien,lakon,thicke,kon,ipkon,irstrt,istep,istat,n,iline,
+     &        ipol,inl,ipoinp,inp,cs,mcs,iaxial,ipoinpc,mi)
+!
+         elseif(textpart(1)(1:22).eq.'*CHANGESURFACEBEHAVIOR') then
+            ichangesurfacebehavior=1
+            call changesurfacebehaviors(inpc,textpart,matname,nmat,
+     &           ntmat_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,
+     &           ipoinpc,imat)
 !
          elseif(textpart(1)(1:10).eq.'*CLEARANCE') then
             call clearances(inpc,textpart,tieset,istat,n,iline,
@@ -631,7 +645,8 @@ c
 !
          elseif(textpart(1)(1:12).eq.'*MODELCHANGE') then
             call modelchanges(inpc,textpart,tieset,istat,n,iline,
-     &           ipol,inl,ipoinp,inp,ntie,ipoinpc,istep)
+     &           ipol,inl,ipoinp,inp,ntie,ipoinpc,istep,ipkon,nset,
+     &           istartset,iendset,set,ialset,ne)
 !
          elseif(textpart(1)(1:4).eq.'*MPC') then
             call mpcs(inpc,textpart,set,istartset,iendset,
@@ -845,8 +860,9 @@ c
 !
          elseif(textpart(1)(1:16).eq.'*SURFACEBEHAVIOR') then
             call surfacebehaviors(inpc,textpart,elcon,nelcon,
-     &           nmat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,
-     &           ipoinp,inp,ipoinpc,npmat_,plicon,nplicon,nstate_)
+     &           imat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc,npmat_,plicon,nplicon,nstate_,
+     &           ichangesurfacebehavior)
 !
          elseif(textpart(1)(1:19).eq.'*SURFACEINTERACTION') then
             call surfaceinteractions(inpc,textpart,matname,nmat,nmat_,

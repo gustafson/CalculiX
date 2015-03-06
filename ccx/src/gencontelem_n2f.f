@@ -22,33 +22,30 @@
      &  elcon,istep,iinc,iit,ncmat_,ntmat_,
      &  nmethod,mi,imastop,nslavnode,islavnode,islavsurf,
      &  itiefac,areaslav,iponoels,inoels,springarea,set,nset,istartset,
-     &  iendset,ialset,tietol,reltime,imastnode,
-     &  nmastnode,filab,nasym,xnoels)
+     &  iendset,ialset,tietol,reltime,filab,nasym,xnoels,icutb)
 !
 !     generate contact elements for the slave contact nodes
 !
       implicit none
 !
-      logical exi
-!
       character*8 lakon(*)
       character*33 cfile
-      character*81 tieset(3,*),slavset,set(*),noset
+      character*81 tieset(3,*),slavset,set(*),noset,setname
       character*87 filab(*)
 !
-      integer ntie,ifree,istep0,iinc0,nasym,
+      integer ntie,ifree,nasym,icutb,
      &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),ne,node,
      &  neigh(1),iflag,kneigh,i,j,k,l,isol,iset,idummy,
      &  itri,ll,kflag,n,nx(*),ny(*),istep,iinc,mi(*),
      &  nz(*),nstart,ielmat(mi(3),*),imat,ifaceq(9,6),ifacet(7,4),
      &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,iit,
-     &  nface,nope,nodef(9),ncmat_,ntmat_,index1,
-     &  nmethod,iteller,ifaces,jfaces,irelslavface,
+     &  nface,nope,nodef(9),ncmat_,ntmat_,index1,indexel,
+     &  nmethod,iteller,ifaces,jfaces,irelslavface,number(4),lenset,
      &  imastop(3,*), itriangle(100),ntriangle,ntriangle_,itriold,
      &  itrinew,id,nslavnode(*),islavnode(*),islavsurf(2,*),
      &  itiefac(2,*),iponoels(*),inoels(2,*),konl(26),nelems,m,
      &  mint2d,nopes,ipos,nset,istartset(*),iendset(*),
-     &  ialset(*),imastnode(*),nmastnode(*)
+     &  ialset(*)
 !
       real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),p(3),
      &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),c0coef,
@@ -93,66 +90,55 @@
 !     flag for shape functions
 !
       data iflag /2/
+      data indexel /0/
 !
-      data iteller /0/
-      data istep0 /-1/
-      data iinc0 /-1/
-!
-      save iteller,istep0,iinc0
+      save indexel
 !
       include "gauss.f"
 !
 !     opening a file to store the contact spring elements
 !    
       if(filab(1)(3:3).eq.'C') then
-         if((istep.eq.istep0).and.(iinc.eq.iinc0)) then
-            iteller=iteller+1
-         else
-            istep0=istep
-            iinc0=iinc
-            iteller=1
-         endif
+         iteller=iteller+1
 !
-!        deleting old files if new increment was started
+         cfile='contactelements.inp'
+         open(27,file=cfile,status='unknown',position='append')
 !
-         if(iteller.eq.1) then
-            do i=1,999
-               cfile(1:26)='ContactElementsInIteration'
-               if(i.lt.10) then
-                  write(cfile(27:27),'(i1)') i
-                  cfile(28:33)='.inp  '
-               elseif(i.lt.100) then
-                  write(cfile(27:28),'(i2)') i
-                  cfile(29:33)='.inp '
-               elseif(i.lt.1000) then
-                  write(cfile(27:29),'(i3)') i
-                  cfile(30:33)='.inp'
-               endif
-               inquire(file=cfile,exist=exi)
-               if(exi) then
-                  open(27,file=cfile,status='unknown')
-                  close(27,status='delete')
-               else
-                  exit
-               endif
-            enddo
-         endif
-         cfile(1:26)='ContactElementsInIteration'
-         if(iteller.lt.10) then
-            write(cfile(27:27),'(i1)') iteller
-            cfile(28:33)='.inp  '
-         elseif(iteller.lt.100) then
-            write(cfile(27:28),'(i2)') iteller
-            cfile(29:33)='.inp '
-         elseif(iteller.lt.1000) then
-            write(cfile(27:29),'(i3)') iteller
-            cfile(30:33)='.inp'
-         else
-            write(*,*) '*ERROR in gencontelem: more than 1000'
-            write(*,*) '       contact element files'
-            call exit(201)
-         endif
-         open(27,file=cfile,status='unknown')
+         setname(1:15)='contactelements'
+         lenset=15
+         number(1)=istep
+         number(2)=iinc
+         number(3)=icutb+1
+         number(4)=iit
+         if(number(4).le.0) number(4)=1
+         do i=1,4
+            setname(lenset+1:lenset+1)='_'
+            if(i.eq.1) then
+               setname(lenset+2:lenset+3)='st'
+            elseif(i.eq.2) then
+               setname(lenset+2:lenset+3)='in'
+            elseif(i.eq.3) then
+               setname(lenset+2:lenset+3)='at'
+            else
+               setname(lenset+2:lenset+3)='it'
+            endif
+            if(number(i).lt.10) then
+               write(setname(lenset+4:lenset+4),'(i1)') number(i)
+               lenset=lenset+4
+            elseif(number(i).lt.100) then
+               write(setname(lenset+4:lenset+5),'(i2)') number(i)
+               lenset=lenset+5
+            elseif(number(i).lt.1000) then
+               write(setname(lenset+4:lenset+6),'(i3)') number(i)
+               lenset=lenset+6
+            else
+               write(*,*) '*ERROR in gencontelem_f2f: no more than 1000'
+               write(*,*) '       steps/increments/cutbacks/iterations'
+               write(*,*) '       allowed (for output in '
+               write(*,*) '       contactelements.inp)'
+               stop
+            endif
+         enddo
       endif
 !
       do i=1,ntie
@@ -693,20 +679,21 @@ c                  endif
                   kon(ifree)=j
 !
                   write(lakon(ne)(8:8),'(i1)') nopes
-c                  write(lakon(ne)(8:8),'(i1)') nopes+1
-c                  write(*,*) 'new elem',ne,(nodef(k),k=1,nopes),node
+!
+                  indexel=indexel+1
+!
                   if((nopes.eq.3).or.(nopes.eq.6)) then
                      if(filab(1)(3:3).eq.'C') then
-                        write(27,100)
- 100                    format('*ELEMENT,TYPE=C3D4')
-                        write(27,*) ne,',',nodef(1),',',nodef(2),',',
-     &                       nodef(3),',',node
+                        write(27,100) setname(1:lenset)
+ 100                    format('*ELEMENT,TYPE=C3D4,ELSET=',A)
+                        write(27,*) ne+indexel,',',nodef(1),',',
+     &                       nodef(2),',',nodef(3),',',node
                      endif
                   else
                      if(filab(1)(3:3).eq.'C') then
-                        write(27,101)
- 101                    format('*ELEMENT,TYPE=C3D6')
-                        write(27,*) ne,',',nodef(2),',',node,',',
+                        write(27,101) setname(1:lenset)
+ 101                    format('*ELEMENT,TYPE=C3D6,ELSET=',A)
+                        write(27,*)ne+indexel,',',nodef(2),',',node,',',
      &                     nodef(3),',',nodef(1),',',node,',',nodef(4)
                      endif
                   endif

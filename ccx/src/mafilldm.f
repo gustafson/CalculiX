@@ -151,7 +151,7 @@ c      enddo
                elseif(mortar.eq.1) then
                   iloc=kon(indexe+nope+1)
                   jfaces=kon(indexe+nope+2)
-                  igauss=kon(indexe+nope+3) 
+                  igauss=kon(indexe+nope+1) 
                   call springdamp_f2f(xl,elas,voldl,s,imat,elcon,
      &                 ncmat_,ntmat_,nope,lakon(i),iperturb,
      &                 springarea(1,iloc),
