@@ -126,7 +126,8 @@
       call exit(201)
  92   write(*,*) '*ERROR in openfile: could not delete file ',
      &  fncvg(1:i+4)
- 93   write(*,*) '*ERROR in openfile: could not open file ',fncel(1:19)
+ 93   write(*,*) '*ERROR in openfile: could not open file ',fncel(1:19),
+     $     ' which is a reserved file name for ccx contact output'
       call exit(201)
  94   write(*,*) '*ERROR in openfile: could not delete file ',
      &  fncel(1:19)

@@ -69,7 +69,7 @@
             enddo
             if(j.gt.nset) then
                ipos=index(mastset,' ')
-               write(*,*) '*ERROR in allocont: master surface',
+               write(*,*) '*ERROR in allocont: master surface ',
      &               mastset(1:ipos-2)
                write(*,*) '       does not exist or does not contain'
                write(*,*) '       element faces'
@@ -135,6 +135,7 @@
 !              face-to-face penalty contact (facial slave surface)
 !
                mortar=1
+               nodeslavsurf=.false.
             elseif(slavset(ipos:ipos).eq.'M') then
 !
 !              quad-quad Mortar contact (facial slave surface)

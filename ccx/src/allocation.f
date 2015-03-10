@@ -99,6 +99,11 @@
       neb32=0
       nradiate=0
       nkon=0
+      nope=0
+      nopeexp=0
+      multslav=0
+      multmast=0
+      npt=0
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
