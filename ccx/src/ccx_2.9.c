@@ -52,7 +52,7 @@ ITG *kon=NULL, *nodeboun=NULL, *ndirboun=NULL, *ipompc=NULL,
 	*nplicon=NULL, *nplkcon=NULL, *inotr=NULL, *iponor=NULL, *knor=NULL,
 	*ikforc=NULL, *ilforc=NULL, *iponoel=NULL, *inoel=NULL, *nshcon=NULL,
         *ncocon=NULL,*ibody=NULL,*ielprop=NULL,*islavsurf=NULL,
-        *ipoinpc=NULL,icfd=0,mt,nxstate,nload0,iload;
+        *ipoinpc=NULL,icfd=0,mt,nxstate=0,nload0,iload;
     
 double *co=NULL, *xboun=NULL, *coefmpc=NULL, *xforc=NULL,*clearini=NULL,
 	*xload=NULL, *xbounold=NULL, *xforcold=NULL,
@@ -79,7 +79,7 @@ ITG nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,nentries=15,
   nforcold=0,nloadold=0,nbody,nbody_=0,nbodyold=0,network=0,nheading_=0,
   k,nzs[3],nmpc_=0,nload_=0,nforc_=0,istep,istat,nboun_=0,nintpoint=0,
   iperturb[2]={0,0},nmat,ntmat_=0,norien,ithermal[2]={0,0},nmpcold,
-  iprestr,kode,isolver=0,nslavs=0,nkon_=0,ne0,nkon0,mortar=0,
+  iprestr,kode,isolver=0,nslavs=0,nkon_=0,ne0=0,nkon0=0,mortar=0,
   jout[2]={1,1},nlabel,nkon=0,idrct,jmax[2],iexpl,nevtot=0,ifacecount=0,
   iplas=0,npmat_=0,mi[3]={0,3,1},ntrans,mpcend=-1,namtot_=0,iumat=0,mpcmult,
   icascade=0,maxlenmpc,mpcinfo[4],ne1d=0,ne2d=0,infree[4]={0,0,0,0},
