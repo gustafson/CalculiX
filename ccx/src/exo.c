@@ -442,7 +442,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    for (j = 0; j <num_nodes_per_elem[l]; j++){
 	      connect[k++] = node_map_inv[kon[indexe+20+j]-1];
 	    }
-	  }else if(blkassign[o]==10 || blkassign[o]==11){ // Tetra elements
+	  }else if(blkassign[o]==10 || blkassign[o]==11 || blkassign[o]==14){ // C3D10, C3D4, C3D6
 	    for (j = 0; j <num_nodes_per_elem[l]; j++){
 	      connect[k++] = node_map_inv[kon[indexe+j]-1];
 	    }
