@@ -359,21 +359,21 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     char *blknames[num_elem_blk];
     j=0;
     num_nodes_per_elem[j]=1;   blknames[j++]="PNT";
-    num_nodes_per_elem[j]=20;  blknames[j++]="C3D20 or C3D20R or S8R";
+    num_nodes_per_elem[j]=20;  blknames[j++]="C3D20 C3D20R";
     num_nodes_per_elem[j]=20;  blknames[j++]="COMPOSITE LAYER C3D20";
-    num_nodes_per_elem[j]=3;   blknames[j++]="Beam B32 or B32R";
-    num_nodes_per_elem[j]=8;   blknames[j++]="CPS8 or CPE8 or CAX8";
-    num_nodes_per_elem[j]=8;   blknames[j++]="C3D8 or C3D8R";
+    num_nodes_per_elem[j]=3;   blknames[j++]="Beam B32 B32R";
+    num_nodes_per_elem[j]=8;   blknames[j++]="CPS8 CPE8 CAX8 S8 S8R";
+    num_nodes_per_elem[j]=8;   blknames[j++]="C3D8 C3D8R";
     num_nodes_per_elem[j]=2;   blknames[j++]="TRUSS2";
     num_nodes_per_elem[j]=2;   blknames[j++]="TRUSS2";
-    num_nodes_per_elem[j]=4;   blknames[j++]="CPS4R or CPE4R or S4R";
-    num_nodes_per_elem[j]=4;   blknames[j++]="CPS4I or CPE4I";
+    num_nodes_per_elem[j]=4;   blknames[j++]="CPS4R CPE4R S4 S4R";
+    num_nodes_per_elem[j]=4;   blknames[j++]="CPS4I CPE4I";
     num_nodes_per_elem[j]=10;  blknames[j++]="C3D10";
     num_nodes_per_elem[j]=4;   blknames[j++]="C3D4";
     num_nodes_per_elem[j]=15;  blknames[j++]="C3D15";
-    num_nodes_per_elem[j]=6;   blknames[j++]="CPS6 or CPE6";
+    num_nodes_per_elem[j]=6;   blknames[j++]="CPS6 CPE6 S6";
     num_nodes_per_elem[j]=6;   blknames[j++]="C3D6";
-    num_nodes_per_elem[j]=3;   blknames[j++]="CPS3 or CPE3 or S3";
+    num_nodes_per_elem[j]=3;   blknames[j++]="CPS3 CPE3 S3";
     num_nodes_per_elem[j]=2;   blknames[j++]="2-node 1d network entry elem";
     num_nodes_per_elem[j]=2;   blknames[j++]="2-node 1d network exit elem";
     num_nodes_per_elem[j]=3;   blknames[j++]="2-node 1d genuine network elem";
@@ -419,7 +419,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	indexe=ipkon[i];
 	if (blkassign[o]==l){
 	  // printf ("block assignment %" ITGFORMAT "\n", blkassign[o]);
-	  if(blkassign[o]==1){ // S8R and all? C3D20 promotions?
+	  if(blkassign[o]==1){ // C3D20
 	    for(m=0;m<12;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
 	    for(m=16;m<20;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
 	    for(m=12;m<16;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
@@ -438,13 +438,20 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	      for(m=16;m<20;m++){connect[k++] = node_map_inv[kon[indexe+28+20*n+m]-1];}
 	      for(m=12;m<16;m++){connect[k++] = node_map_inv[kon[indexe+28+20*n+m]-1];}
 	    }
-	  }else if(blkassign[o]==4){ // 8 Node 2D elements CAX8
+	  }else if(blkassign[o]==4){ // 8 Node 2D elements CAX8 S8 S8R etc
 	    for (j = 0; j <num_nodes_per_elem[l]; j++){
 	      connect[k++] = node_map_inv[kon[indexe+20+j]-1];
 	    }
-	  }else if(blkassign[o]==10 || blkassign[o]==11 || blkassign[o]==14){ // C3D10, C3D4, C3D6
+	  }else if(blkassign[o]== 5 || // C3D8 or C3D8R
+		   blkassign[o]==10 || // C3D10
+		   blkassign[o]==11 || // C3D4
+		   blkassign[o]==14){  // C3D6
 	    for (j = 0; j <num_nodes_per_elem[l]; j++){
 	      connect[k++] = node_map_inv[kon[indexe+j]-1];
+	    }
+	  }else if(blkassign[o]==13){ // 6-node 2D element (S6)
+	    for (j = 0; j <num_nodes_per_elem[l]; j++){
+	      connect[k++] = node_map_inv[kon[indexe+15+j]-1];
 	    }
 	  }else if(blkassign[o]==15){ // 2D triangle or 3-node shell
 	    for (j = 0; j <num_nodes_per_elem[l]; j++){
@@ -452,9 +459,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    }
 	  }else { // 4 node shell element?
 	    for (j = 0; j <num_nodes_per_elem[l]; j++){
-	      // RETAIN FOR A TIME TO SEE IF THIS BREAKS ANYTHING... CHANGED
-	      // connect[k++] = node_map_inv[kon[indexe+j]-1];
-	      // 3 and 4 NODE SHELLS WERE ADDED WITH VERSION 2.8
+	      // RETAIN FOR A TIME TO SEE IF ANYTHING BREAKS.
+	      // Introduced new element classifications above in 2.8
 	      connect[k++] = node_map_inv[kon[indexe+8+j]-1];
 	    }
 	  }
