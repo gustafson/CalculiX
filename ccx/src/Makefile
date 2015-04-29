@@ -10,12 +10,55 @@
 ## such as -L/path/to/lib -I/path/to/include -llib.  Examples of this
 ## on my distribution are in the comments below
 
-## CFLAGS=-march=native -g -O0 -pg ## debugging
-## FFLAGS=-march=native -g -O0 -pg ## debugging
+
+
+
+################################################################################
+################################################################################
+##                                                                            ##
+## Flags related to CPU, optimizations, etc                                   ##
+## GPU based optimization later in the make file                              ##
+##                                                                            ##
+################################################################################
+################################################################################
+
+CC=gcc
+FC=gfortran
+
+## CFLAGS=-march=native -g -O0 ## debugging  -pg
+## FFLAGS=-march=native -g -O0 ## debugging  -pg
+## LDFLAGS += -g
 ## CFLAGS=-march=native -O2 -Wall ## conservative
 ## FFLAGS=-march=native -O2 -Wall ## conservative
-CFLAGS=-march=native -O3 -Wall ## -flto ## aggressive
-FFLAGS=-march=native -O3 -Wall ## -flto ## aggressive
+CFLAGS=-march=native -O3 -Wall ## -flto ## aggressive -fprofile-generate -fprofile-use 
+FFLAGS=-march=native -O3 -Wall ## -flto ## aggressive -fprofile-generate -fprofile-use 
+
+## Integer8.  Note at least Arpack and Pardiso need to be compiled for
+## Integer8 as well.  Spooles does not appear to be int8 according to Guido
+## LONGLONG = -DLONGLONG
+## CFLAGS  += $(LONGLONG)
+## FFLAGS  += -fdefault-integer-8
+## INTEXT = 64
+
+## Other CCX Options
+CFLAGS  += -DARCH="Linux" -DMATRIXSTORAGE 
+LDFLAGS += 
+
+## Multi Threaded and MPI
+CFLAGS += -DUSE_MT
+#CFLAGS += -DCALCULIX_MPI -fopenmp
+
+
+
+
+
+################################################################################
+################################################################################
+##                                                                            ##
+## Flags related to CPU based solvers                                         ##
+##                                                                            ##
+################################################################################
+################################################################################
 
 ## SPOOLES
 ## CFLAGS  += -I/usr/include/spooles -I/usr/include/spooles/MT -DSPOOLES
@@ -26,8 +69,8 @@ LDFLAGS += `pkg-config --libs spooles`
 ## ARPACK
 ## CFLAGS  += -DARPACK
 ## LDFLAGS += -larpack
-CFLAGS  += `pkg-config --cflags arpack` -DARPACK
-LDFLAGS += `pkg-config --libs arpack`
+CFLAGS  += `pkg-config --cflags arpack$(INTEXT)` -DARPACK
+LDFLAGS += `pkg-config --libs arpack$(INTEXT)`
 
 ## TAUCS 
 ## CFLAGS  += -DTAUCS
@@ -36,14 +79,14 @@ LDFLAGS += `pkg-config --libs arpack`
 ## LAPACK
 ## CFLAGS  += -I/usr/include/openblas
 ## LDFLAGS += -lreflapack -lopenblas
-CFLAGS  += `pkg-config --cflags lapack`
-LDFLAGS += `pkg-config --libs lapack`
+CFLAGS  += `pkg-config --cflags lapack$(INTEXT)`
+LDFLAGS += `pkg-config --libs lapack$(INTEXT)`
 
 ## BLAS
 ## CFLAGS  += -I/usr/include/openblas
 ## LDFLAGS += -lopenblas
-CFLAGS  += `pkg-config --cflags blas`
-LDFLAGS += `pkg-config --libs blas`
+CFLAGS  += `pkg-config --cflags blas$(INTEXT)`
+LDFLAGS += `pkg-config --libs blas$(INTEXT)`
 
 ## PARDISO
 ## CFLAGS  += -DPARDISO
@@ -51,30 +94,90 @@ LDFLAGS += `pkg-config --libs blas`
 CFLAGS  += `pkg-config --cflags pardiso` -DPARDISO
 LDFLAGS += `pkg-config --libs pardiso`
 
-## Multi Threaded and MPI
-CFLAGS += -DUSE_MT
-#CFLAGS += -DCALCULIX_MPI -fopenmp
 
-## EXODUSII
+
+################################################################################
+################################################################################
+##                                                                            ##
+## Flags related to GPU based solvers                                         ##
+##                                                                            ##
+################################################################################
+################################################################################
+
+## Flags for the gpu compiler
+## NVCCCFLAGS = -arch=sm_35
+## NVCCLDFLAGS = -lstdc++
+## 
+## NVCC=nvcc -O3 $(LONGLONG) `pkg-config --cflags cusp` `pkg-config --libs cusp` $(NVCCCFLAGS) # -Xcompiler -fopenmp
 
 ## CUDACUSP
+## This is unique because it a template library rather than binary library
+## CFLAGS  += -I/home/pete/local/include -L/opt/cuda/lib64 -lcuda -lcudart -DCUDACUSP
+## LDFLAGS += -L/opt/cuda/lib64 -lcuda -lcudart
+## CFLAGS  += `pkg-config --cflags cusp` `pkg-config --libs cusp` -DCUDACUSP
+## LDFLAGS += `pkg-config --libs cusp`
 
-## Other CCX Options
-CFLAGS  += -DARCH="Linux" -DMATRIXSTORAGE 
-LDFLAGS += 
+## CHOLDMOD
+## This is unique because it can be CPU or GPU based, depending on how
+## SuiteSparse was compiled.  Here it is assumed that SuiteSparse also
+## uses CUDA
+## CFLAGS  += -DSUITESPARSE
+## LDFLAGS += `pkg-config --libs cublas$(INTEXT)`
+## LDFLAGS += `pkg-config --libs cholmod$(INTEXT)`
+## LDFLAGS += `pkg-config --libs metis$(INTEXT)`
+## LDFLAGS += `pkg-config --libs colamd$(INTEXT)`
+## LDFLAGS += `pkg-config --libs ccolamd$(INTEXT)`
+## LDFLAGS += `pkg-config --libs amd$(INTEXT)`
+## LDFLAGS += `pkg-config --libs camd$(INTEXT)`
+## LDFLAGS += `pkg-config --libs rbio$(INTEXT)`
+## LDFLAGS += `pkg-config --libs ldl$(INTEXT)`
+## LDFLAGS += `pkg-config --libs cxsparse$(INTEXT)`
+## LDFLAGS += `pkg-config --libs btf$(INTEXT)`
 
-CC=gcc
-FC=gfortran
+
+
+################################################################################
+################################################################################
+##                                                                            ##
+## Flags related to ExodusII output                                           ##
+##                                                                            ##
+################################################################################
+################################################################################
+
+
+## EXODUSII
+## CFLAGS  += -DEXODUSII
+## LDFLAGS += -lexoIIv2c -lnetcdf
+## CFLAGS  += `pkg-config --cflags exodusii` -DEXODUSII
+## LDFLAGS += `pkg-config --libs exodusii`
+
+
+
+
+################################################################################
+################################################################################
+##                                                                            ##
+## Recipes                                                                    ##
+##                                                                            ##
+################################################################################
+################################################################################
+
+## .cu file so not have a default implicit rule.  Define all implicit rules used.
+.SUFFIXES: .o .c .cu
 
 .c.o :
 	$(CC) $(CFLAGS) -c $<
 .f.o :
 	$(FC) $(FFLAGS) -c $<
+.cu.o:
+	$(NVCC) -DCUDACUSP -c $<
 
 include Makefile.inc
 
 SCCXMAIN = ccx_2.10.c
 
+## Define all the object file rules to identify dependencies
+OCCXCU = $(SCCXCU:.cu=.o)
 OCCXF = $(SCCXF:.f=.o)
 OCCXC = $(SCCXC:.c=.o)
 OCCXMAIN = $(SCCXMAIN:.c=.o)
