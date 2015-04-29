@@ -1060,6 +1060,7 @@ stress_sen_2ndorder.c \
 stress_sen_dv.c \
 stress_sen_dx.c \
 strsplt.c \
+suitesparse.c \
 tau.c \
 thicknessmain.c \
 tiedcontact.c \
@@ -1080,3 +1081,5 @@ worparll.c \
 writeheading.c
 
 SCCXCXX = umat_dl.cpp
+
+SCCXCU = cudacusp.cu

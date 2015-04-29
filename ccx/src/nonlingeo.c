@@ -32,6 +32,12 @@
 #ifdef PARDISO
    #include "pardiso.h"
 #endif
+#ifdef CUDACUSP
+   #include "cudacusp.h"
+#endif
+#ifdef SUITESPARSE
+   #include "suitesparse.h"
+#endif
 
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
