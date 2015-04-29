@@ -31,6 +31,8 @@
 !             4: sgi solver
 !             5: TAUCS
 !             7: pardiso
+!             8: cuda cusp
+!             9: cholmod
 !
 !      iexpl==0:  structure:implicit, fluid:incompressible
 !
@@ -99,6 +101,12 @@ c      enddo
          solver(1:5)='TAUCS'
       elseif(isolver.eq.7) then
          solver(1:7)='PARDISO'
+      elseif(isolver.eq.8) then
+         solver(1:8)='CUDACUSP'
+      elseif(isolver.eq.9) then
+         solver(1:7)='CHOLMOD'
+      elseif(isolver.eq.10) then
+         solver(1:13)='SUITESPARSEQR'
       endif
 !
       do i=2,n
@@ -133,6 +141,12 @@ c      enddo
          isolver=5
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
+      elseif(solver(1:8).eq.'CUDACUSP') then
+         isolver=8
+      elseif(solver(1:7).eq.'CHOLMOD') then
+         isolver=9
+      elseif(solver(1:13).eq.'SUITESPARSEQR') then
+         isolver=10
       else
          write(*,*) '*WARNING reading *STATIC: unknown solver;'
          write(*,*) '         the default solver is used'

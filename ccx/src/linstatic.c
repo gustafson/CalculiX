@@ -31,6 +31,12 @@
 #ifdef PARDISO
    #include "pardiso.h"
 #endif
+#ifdef CUDACUSP
+   #include "cudacusp.h"
+#endif
+#ifdef SUITESPARSE
+   #include "suitesparse.h"
+#endif
 
 void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	     ITG *ne, 
@@ -884,8 +890,33 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs,
 		   &symmetryflag,&inputformat,jq,&nzs[2],&nrhs);
 #else
-            printf("*ERROR in linstatic: the PARDISO library is not linked\n\n");
-            FORTRAN(stop,());
+      printf("*ERROR in linstatic: the PARDISO library is not linked\n\n");
+      FORTRAN(stop,());
+#endif
+    }
+    else if(*isolver==8){
+#ifdef CUDACUSP
+      cudacusp(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs,
+	       &symmetryflag,&inputformat,jq,&nzs[2]);
+#else
+      printf("*ERROR in linstatic: the CUDA CUSP library is not linked\n\n");
+      FORTRAN(stop,());
+#endif
+    }
+    else if(*isolver==9){
+#ifdef SUITESPARSE
+      suitesparsecholmod(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs);
+#else
+      printf("*ERROR in linstatic: the SUITESPARSE library is not linked\n\n");
+      FORTRAN(stop,());
+#endif
+    }
+    else if(*isolver==10){
+#ifdef SUITESPARSE
+      suitesparseqr(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs);
+#else
+      printf("*ERROR in linstatic: the SUITESPARSE library is not linked\n\n");
+      FORTRAN(stop,());
 #endif
     }
 
