@@ -187,9 +187,9 @@ OCCXMAIN = $(SCCXMAIN:.c=.o)
 ## Link to math and standard c
 CFLAGS += -lm -lc
 
-ccx_2.11: $(OCCXMAIN) ccx_2.10.a
+ccx_2.11: $(OCCXMAIN) ccx_2.11.a
 	./date.pl; 
-	$(CC) $(CFLAGS) -c ccx_2.11.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.10.a $(LDFLAGS)
+	$(CC) $(CFLAGS) -c ccx_2.11.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.11.a $(LDFLAGS)
 
 ccx_2.11.a: $(OCCXF) $(OCCXC)
 	ar vr $@ $?
