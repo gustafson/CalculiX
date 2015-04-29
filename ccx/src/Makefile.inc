@@ -912,6 +912,7 @@ stress_sen_dv.c \
 stress_sen_dx.c \
 stress_sen_2ndorder.c \
 strsplt.c \
+suitesparse.c \
 tau.c \
 thicknessmain.c \
 tiedcontact.c \
@@ -925,3 +926,5 @@ v_result.c \
 writeheading.c
 
 SCCXCXX = umat_dl.cpp
+
+SCCXCU = cudacusp.cu
