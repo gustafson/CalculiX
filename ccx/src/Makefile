@@ -187,9 +187,9 @@ CFLAGS += -lm -lc
 
 ccx_2.10: $(OCCXMAIN) ccx_2.10.a
 	./date.pl; 
-	$(CC) $(CFLAGS) -c ccx_2.10.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.10.a $(LDFLAGS)
+	$(CC) $(CFLAGS) -c ccx_2.10.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.10.a $(LDFLAGS) $(NVCCLDFLAGS)
 
-ccx_2.10.a: $(OCCXF) $(OCCXC)
+ccx_2.10.a: $(OCCXCU) $(OCCXF) $(OCCXC)
 	ar vr $@ $?
 
 clean:
