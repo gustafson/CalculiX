@@ -25,10 +25,10 @@
 #include "exodusII.h"
 #include "exo.h"
 
-void exovector(double *v, ITG *iset, ITG *ntrans, char * filabl, 
-	       ITG *nkcoords, ITG *inum, ITG *inotr, double *trab,
-	       double *co, ITG *istartset, ITG *iendset, ITG *ialset, 
-	       ITG *mi, ITG *ngraph, int exoid, ITG time_step, 
+void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
+               ITG *inum,char *m1,ITG *inotr,double *trab,double *co,
+               ITG *istartset,ITG *iendset,ITG *ialset,ITG *mi,ITG *ngraph,
+               FILE *f1,char *output,char *m3, int exoid, ITG time_step, 
 	       int countvar, ITG nout){
   
   ITG nksegment;
@@ -81,9 +81,9 @@ void exovector(double *v, ITG *iset, ITG *ntrans, char * filabl,
       }
     }else{
       nksegment=(*nkcoords)/(*ngraph);
+      m=0;
       for(k=istartset[*iset-1]-1;k<iendset[*iset-1];k++){
 	if(ialset[k]>0){
-	  m=0;
 	  for(l=0;l<*ngraph;l++){
 	    i=ialset[k]+l*nksegment-1;
 	    if(inum[i]<=0) continue;
