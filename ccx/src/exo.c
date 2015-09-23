@@ -55,13 +55,17 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   
   /* Note for frd strcmp1(output,"asc")==0 defines ascii file, otherwise binary */
   
-  char fneig[132]="", material[6]="     ",text[2]=" ";
+  char fneig[132]="",
+    material[59]="                                                          ",
+    text[2]=" ";
   
-  static ITG nkcoords,nout,noutmin,noutplus;
+  static ITG nkcoords,nout,noutmin,noutplus,iaxial;
   ITG nterms;
 
   ITG i,j,k,l,m,n,o,indexe,nemax,nlayer,noutloc,iset,iselect,ncomp,nope,
     nodes,ifield[7],nfield[2],icomp[7],ifieldstate[*nstate_],icompstate[*nstate_],nelout;
+
+  ITG mt=mi[1]+1;
   
   ITG ncompscalar=1,ifieldscalar[1]={1},icompscalar[1]={0},nfieldscalar[2]={1,0};
   ITG ncompvector=3,ifieldvector[3]={1,1,1},icompvector[3]={0,1,2},nfieldvector1[2]={3,0},nfieldvector0[2]={mi[1]+1,0};
@@ -141,6 +145,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
      computational metadata, the nodal coordinates and the
      topology */
   if(*kode==1){
+    iaxial=0.;
     num_dim = 3;  
     num_elem_blk = 19;
     
@@ -168,7 +173,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     if(*nmethod!=0){
       nelout=0;
       for(i=0;i<*ne0;i++){
-	if(ipkon[i]<-1){
+	if(ipkon[i]<=-1){
 	  continue;
 	}else if(strcmp1(&lakon[8*i],"ESPRNGC")==0){
 	  continue;
@@ -262,6 +267,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       // strcpy1(curblk,&lakon[8*i],10);
       // printf ("%s\n", curblk);
       strcpy1(material,&matname[80*(ielmat[i*mi[2]]-1)],5);
+      printf ("TODO store material identifier and name.\n");
       if(strcmp1(&lakon[8*i+3],"2")==0){
 	/* 20-node brick element */
 	if(((strcmp1(&lakon[8*i+6]," ")==0)||
@@ -302,6 +308,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  }
 	}else{
 	  /* 4-node 2d element */
+	  /* not sure exactly what this does */
+	  if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
+
 	  if(strcmp1(&lakon[8*i+4],"R")==0){
 	    blkassign[l++]=8;
 	  }else if(strcmp1(&lakon[8*i+4],"I")==0){
@@ -322,6 +331,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  blkassign[l++]=12;
 	}else{
 	  /* 6-node 2d element */
+	  /* not sure exactly what this does */
+	  if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
+
 	  blkassign[l++]=13;
 	}
       }else if(strcmp1(&lakon[8*i+3],"6")==0){
@@ -331,6 +343,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  blkassign[l++]=14;
 	}else{
 	  /* 3-node 2d element */ /* Shells and triangles */
+	  /* not sure exactly what this does */
+	  if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
+
 	  blkassign[l++]=15;
 	}
 	//      }else if((strcmp1(&lakon[8*i],"D")==0)&&
@@ -348,6 +363,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}
       }else if((strcmp1(&lakon[8*i],"E")==0)&&
 	       (strcmp1(&lakon[8*i+6],"A")==0)){
+	/* Not sure exactly what iaxial does yet */
+	if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
 	/* 2-node 1d element (spring element) */
 	blkassign[l++]=19;
       }
@@ -861,11 +878,13 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       }else{
 	iselect=1;
 	frdset(&filab[348],set,&iset,istartset,iendset,ialset,
-	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	       ngraph);
+	  inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	  ngraph);
+	if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]*=180.;fn[2+i*mt]*=180.;fn[3+i*mt]*=180.;}}
 	exovector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,inotr,
-		  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
-		  num_time_steps,countvars,nout);
+	  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
+	  num_time_steps,countvars,nout);
+	if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]/=180.;fn[2+i*mt]/=180.;fn[3+i*mt]/=180.;}}
 	countvars+=3;
       }
     }
@@ -1282,9 +1301,11 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	       ngraph);
 	
 	icomp[0]=1;
+	if((iaxial==1)&&(strcmp1(&filab[1222],"I")==0)){for(i=0;i<*nk;i++)v[1+i*mt]*=180.;}
 	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
 		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+	if((iaxial==1)&&(strcmp1(&filab[1222],"I")==0)){for(i=0;i<*nk;i++)v[1+i*mt]/=180.;}
 	countvars+=1;
       }
     }
