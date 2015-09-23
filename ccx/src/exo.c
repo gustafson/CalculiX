@@ -54,10 +54,15 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
      iselect=0  means both of the above */
   
   /* Note for frd strcmp1(output,"asc")==0 defines ascii file, otherwise binary */
-  
+ 
   char fneig[132]="",
     material[59]="                                                          ",
     text[2]=" ";
+
+  /* For call compatibility with frd */
+  char m1[4]="";
+  char m3[4]="";
+  FILE *f1=NULL;
   
   static ITG nkcoords,nout,noutmin,noutplus,iaxial;
   ITG nterms;
@@ -267,7 +272,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       // strcpy1(curblk,&lakon[8*i],10);
       // printf ("%s\n", curblk);
       strcpy1(material,&matname[80*(ielmat[i*mi[2]]-1)],5);
-      printf ("TODO store material identifier and name.\n");
+      // printf ("TODO store material identifier and name.\n");
       if(strcmp1(&lakon[8*i+3],"2")==0){
 	/* 20-node brick element */
 	if(((strcmp1(&lakon[8*i+6]," ")==0)||
@@ -636,9 +641,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 	       ngraph);
 	
-	exovector(v,&iset,ntrans,filab,&nkcoords,inum,inotr,
-		  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
-		  num_time_steps,countvars,nout);
+	exovector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
+		  trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
+		  exoid, num_time_steps,countvars,nout);
 	countvars+=3;
       }
     }
@@ -654,9 +659,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  var_names[countvars++]="U-imag-y";
 	  var_names[countvars++]="U-imag-z";
 	}else{
-	  exovector(&v[*nk*(mi[1]+1)],&iset,ntrans,filab,&nkcoords,inum,inotr,
-		    trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
-		    num_time_steps,countvars,nout);
+	  exovector(&v[*nk*mt],&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
+		    trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
+		    exoid,num_time_steps,countvars,nout);
 
 	  countvars+=3;
 	}
@@ -678,9 +683,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 	       ngraph);
     
-	exovector(veold,&iset,ntrans,&filab[1740],&nkcoords,inum,inotr,
-		  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
-		  num_time_steps,countvars,nout);
+	exovector(veold,&iset,ntrans,&filab[1740],&nkcoords,inum,m1,inotr,
+		  trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
+		  exoid,num_time_steps,countvars,nout);
 
 	countvars+=3;
       }
@@ -881,9 +886,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 	  ngraph);
 	if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]*=180.;fn[2+i*mt]*=180.;fn[3+i*mt]*=180.;}}
-	exovector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,inotr,
-	  trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
-	  num_time_steps,countvars,nout);
+	exovector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,m1,inotr,
+		  trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
+		  exoid,num_time_steps,countvars,nout);
 	if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]/=180.;fn[2+i*mt]/=180.;fn[3+i*mt]/=180.;}}
 	countvars+=3;
       }
@@ -900,9 +905,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  var_names[countvars++]="RF-imagy";
 	  var_names[countvars++]="RF-imagz";
 	}else{
-	  exovector(&fn[*nk*(mi[1]+1)],&iset,ntrans,filab,&nkcoords,inum,inotr,
-		    trab,co,istartset,iendset,ialset,mi,ngraph,exoid,
-		    num_time_steps,countvars,nout);
+	  exovector(&fn[*nk*mt],&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
+		    trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
+		    exoid,num_time_steps,countvars,nout);
 	  countvars+=3;
 	}
       }
