@@ -87,10 +87,10 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
       }
     }else{
       nksegment=(*nkcoords)/(*ngraph);
+      m=0;
       for(k=istartset[*iset-1]-1;k<iendset[*iset-1];k++){
 	if(ialset[k]>0){
 	  
-	  m=0;
 	  for(l=0;l<*ngraph;l++){
 	    i=ialset[k]+l*nksegment-1;
 	    
