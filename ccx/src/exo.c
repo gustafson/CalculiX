@@ -1120,7 +1120,6 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
 		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
-	printf ("Warning: export of ZZSTR to exo not tested.\n");
 	countvars+=6;
       }
     }
@@ -1436,13 +1435,13 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	countvars+=6;
       }else if(countbool==2){
 	// Note reordered (done in exoselect) relative to frd file
-	// Order must be xx  yy  zz  xy  xz  yz
-	var_names[countvars++]="PDISP MAG1";
-	var_names[countvars++]="PDISP MAG2";
-	var_names[countvars++]="PDISP MAG3";
-	var_names[countvars++]="PDISP PHA1";
-	var_names[countvars++]="PDISP PHA3";
-	var_names[countvars++]="PDISP PHA2";
+	// Order must be x  y  z  x  z  y
+	var_names[countvars++]="PDISP-MAGx";
+	var_names[countvars++]="PDISP-MAGy";
+	var_names[countvars++]="PDISP-MAGz";
+	var_names[countvars++]="PDISP-PHAx";
+	var_names[countvars++]="PDISP-PHAz";
+	var_names[countvars++]="PDISP-PHAy";
       }else{
 	iselect=1;
 	
@@ -1679,7 +1678,17 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}
     }else if(countbool==2){
       errr = ex_put_var_names (exoid, "n", countvars, var_names);
-      if (errr) printf ("Unable to update variable names.  Was output data requested?\n");
+      if (errr) {
+	printf ("Unable to update variable names.  Was output data requested?\n\n");
+	printf ("  NOTE CalculiX Extras doesn't currently support\n");
+	printf ("  changing output variables between steps.\n");
+	printf ("  Requested output variables in this step are:\n");
+	int ii=0; // 4 bit integer
+	for (ii=0; ii<countvars; ii++){
+	  printf("    %i %s\n", ii+1, var_names[ii]);
+	}
+      }
+	      
       //  for (i=0; i<countvars; i++)
       // 	{
       // 	  free(var_names[i]);
