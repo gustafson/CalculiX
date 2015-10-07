@@ -58,14 +58,13 @@ void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
   
   for (j=1; j<=num_nod_vars; j++){ // For each direction
     if(*iset==0){
+      m=0;
       if((*ntrans==0)||(strcmp1(&filabl[5],"G")==0)){
-	m=0;
 	for(i=0;i<*nkcoords;i++){
 	  if(inum[i]<=0) continue;
 	  nodal_var_vals[m++]=v[(mi[1]+1)*i+j];
 	}
       }else{
-	m=0;
 	for(i=0;i<*nkcoords;i++){
 	  if(inum[i]<=0) continue;
 	  if(inotr[2*i]==0){
@@ -120,7 +119,6 @@ void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
 	}
       }
     }
-    
 
     errr = ex_put_nodal_var (exoid, time_step, j+countvar, nout, nodal_var_vals);
     if (errr) printf ("ERROR storing vector data into exo file.\n");
