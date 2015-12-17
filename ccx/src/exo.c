@@ -722,7 +722,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       if (countbool==3){
 	countvars+=6;
       }else if(countbool==2){
-	// Note reordered (done in exoselect) relative to frd file
+	// Note reordered relative to frd file
 	// Order must be xx  yy  zz  xy  xz  yz
 	var_names[countvars++]="Sxx";
 	var_names[countvars++]="Syy";
@@ -750,7 +750,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       if (countbool==3){
 	countvars+=6;
       }else if(countbool==2){
-	// Note reordered (done in exoselect) relative to frd file
+	// Note reordered relative to frd file
 	// Order must be xx  yy  zz  xy  xz  yz
 	var_names[countvars++]="S-imagxx";
 	var_names[countvars++]="S-imagyy";
@@ -773,7 +773,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       if (countbool==3){
 	countvars+=6;
       }else if(countbool==2){
-	// Note reordered (done in exoselect) relative to frd file
+	// Note reordered relative to frd file
 	// Order must be xx  yy  zz  xy  xz  yz
 	var_names[countvars++]="Exx";
 	var_names[countvars++]="Eyy";
@@ -804,7 +804,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	if (countbool==3){
 	  countvars+=6;
 	}else if(countbool==2){
-	  // Note reordered (done in exoselect) relative to frd file
+	  // Note reordered relative to frd file
 	  // Order must be xx  yy  zz  xy  xz  yz
 	  var_names[countvars++]="E-imagxx";
 	  var_names[countvars++]="E-imagyy";
@@ -827,7 +827,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       if (countbool==3){
 	countvars+=6;
       }else if(countbool==2){
-	// Note reordered (done in exoselect) relative to frd file
+	// Note reordered relative to frd file
 	// Order must be xx  yy  zz  xy  xz  yz
 	var_names[countvars++]="MExx";
 	var_names[countvars++]="MEyy";
@@ -854,7 +854,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	if (countbool==3){
 	  countvars+=6;
 	}else if(countbool==2){
-	  // Note reordered (done in exoselect) relative to frd file
+	  // Note reordered relative to frd file
 	  // Order must be xx  yy  zz  xy  xz  yz
 	  var_names[countvars++]="ME-imagxx";
 	  var_names[countvars++]="ME-imagyy";
@@ -1099,7 +1099,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       if (countbool==3){
 	countvars+=6;
       }else if(countbool==2){
-	// Note reordered (done in exoselect) relative to frd file
+	// Note reordered relative to frd file
 	// Order must be xx  yy  zz  xy  xz  yz
 	var_names[countvars++]="ZZSxx";
 	var_names[countvars++]="ZZSyy";
@@ -1133,7 +1133,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	if (countbool==3){
 	  countvars+=6;
 	}else if(countbool==2){
-	  // Note reordered (done in exoselect) relative to frd file
+	  // Note reordered relative to frd file
 	  // Order must be xx  yy  zz  xy  xz  yz
 	  var_names[countvars++]="ZZS-imagxx";
 	  var_names[countvars++]="ZZS-imagyy";
@@ -1433,8 +1433,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       if (countbool==3){
 	countvars+=6;
       }else if(countbool==2){
-	// Note reordered (done in exoselect) relative to frd file
-	// Order must be x  y  z  x  z  y
+	// Note reordered relative to frd file
+	// Order must be xx  yy  zz  xy  xz  yz
 	var_names[countvars++]="PDISP-MAGx";
 	var_names[countvars++]="PDISP-MAGy";
 	var_names[countvars++]="PDISP-MAGz";
@@ -1483,7 +1483,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       if (countbool==3){
 	countvars+=12;
       }else if(countbool==2){
-	// Note reordered (done in exoselect) relative to frd file
+	// Note reordered relative to frd file
 	// Order must be xx  yy  zz  xy  xz  yz
 	var_names[countvars++]="PSTRESS MAGXX";
 	var_names[countvars++]="PSTRESS MAGYY";
@@ -1516,7 +1516,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       if (countbool==3){
 	countvars+=6;
       }else if(countbool==2){
-	// Note reordered (done in exoselect) relative to frd file
+	// Note reordered relative to frd file
 	// Order must be xx  yy  zz  xy  xz  yz
 	var_names[countvars++]="PFORC MAG1";
 	var_names[countvars++]="PFORC MAG2";
@@ -1586,7 +1586,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       if (countbool==3){
 	countvars+=7;
       }else if(countbool==2){
-	// Note reordered (done in exoselect) relative to frd file
+	// Note reordered relative to frd file
 	// Order must be xx  yy  zz  xy  xz  yz
 	var_names[countvars++]="MSTRESS SXX";
 	var_names[countvars++]="MSTRESS SYY";
@@ -1630,7 +1630,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       if (countbool==3){
 	countvars+=7;
       }else if(countbool==2){
-	// Note reordered (done in exoselect) relative to frd file
+	// Note reordered relative to frd file
 	// Order must be xx  yy  zz  xy  xz  yz
 	var_names[countvars++]="MAXE EXX";
 	var_names[countvars++]="MAXE EYY";
