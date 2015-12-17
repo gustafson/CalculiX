@@ -1166,9 +1166,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       }else{  
 	
 	nterms=6;
-    
-	FORTRAN(errorestimator,(stx,stn,ipkon,inum,kon,lakon,nk,ne,
-				mi,ielmat,thicke,&nterms));
+	FORTRAN(errorestimator,(stx,stn,ipkon,kon,lakon,nk,ne,
+				mi,ielmat,&nterms));
 	
 	iselect=1;
 	
@@ -1200,8 +1199,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  var_names[countvars++]="VMSTD-imag-ERROR";
 	}else{
 	  nterms=6;
-	  FORTRAN(errorestimator,(&stx[6*mi[0]**ne],stn,ipkon,inum,kon,lakon,nk,ne,
-				  mi,ielmat,thicke,&nterms));
+	  FORTRAN(errorestimator,(&stx[6*mi[0]**ne],stn,ipkon,kon,lakon,nk,ne,
+				  mi,ielmat,&nterms));
 	  
 	  ncomp=2;
 	  ifield[0]=1;ifield[1]=1;
@@ -1224,8 +1223,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	var_names[countvars++]="HFLSTD";
       }else{
 	nterms=3;
-	FORTRAN(errorestimator,(qfx,qfn,ipkon,inum,kon,lakon,nk,ne,
-				mi,ielmat,thicke,&nterms));
+	FORTRAN(errorestimator,(qfx,qfn,ipkon,kon,lakon,nk,ne,
+				mi,ielmat,&nterms));
 	
 	iselect=1;
 	frdset(&filab[2784],set,&iset,istartset,iendset,ialset,
@@ -1254,8 +1253,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  var_names[countvars++]="HFLSTD-IMG";
 	}else{
 	  nterms=3;
-	  FORTRAN(errorestimator,(&qfx[3*mi[0]**ne],qfn,ipkon,inum,kon,lakon,nk,ne,
-				  mi,ielmat,thicke,&nterms));
+	  FORTRAN(errorestimator,(&qfx[3*mi[0]**ne],qfn,ipkon,kon,lakon,nk,ne,
+				  mi,ielmat,&nterms));
 	  
 	  ncomp=1;
 	  ifield[0]=1;
