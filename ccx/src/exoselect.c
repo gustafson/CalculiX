@@ -147,13 +147,10 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
       }
     }
     
-    // Note: reorder the results for exo tensor format
+    // Note: the results for exo tensor format are strangely ordered,
+    // but provide the
     if (*ncomp==12){
       k=j;
-    }else if (j==4){
-      k=5;
-    }else if(j==5){
-      k=4;
     }else{k=j;}
 
     int errr = ex_put_nodal_var (exoid, time_step, k+1+countvar, nout, nodal_var_vals);
