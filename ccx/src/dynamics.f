@@ -18,7 +18,7 @@
 !
       subroutine dynamics(inpc,textpart,nmethod,iperturb,tinc,tper,
      &  tmin,tmax,idrct,alpha,iexpl,isolver,istep,istat,n,iline,
-     &  ipol,inl,ipoinp,inp,ithermal,ipoinpc,cfd,ctrl,tincf)
+     &  ipol,inl,ipoinp,inp,ithermal,ipoinpc,cfd,ctrl,tincf,nener)
 !
 !     reading the input deck: *DYNAMIC
 !
@@ -29,10 +29,8 @@
 !             5: TAUCS
 !             7: pardiso
 !
-!      iexpl==0:  structure:implicit, fluid:semi-implicit
-!      iexpl==1:  structure:implicit, fluid:explicit
-!      iexpl==2:  structure:explicit, fluid:semi-implicit
-!      iexpl==3:  structure:explicit, fluid:explicit 
+!      iexpl==0:  structure:implicit, fluid:incompressible
+!      iexpl==2:  structure:explicit, fluid:incompressible
 !
       implicit none
 !
@@ -42,7 +40,7 @@
 !
       integer nmethod,istep,istat,n,key,i,iperturb,idrct,iexpl,
      &  isolver,iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,
-     &  ipoinpc(0:*),cfd
+     &  ipoinpc(0:*),cfd,nener
 !
       real*8 tinc,tper,tmin,tmax,alpha,ctrl(*),tincf
 !
@@ -51,6 +49,10 @@
          write(*,*) '  be used within a STEP'
          call exit(201)
       endif
+!
+!     default is implicit
+!
+      iexpl=0
 !
 !     no heat transfer analysis
 !
@@ -102,18 +104,7 @@
                alpha=0.d0
             endif
          elseif(textpart(i)(1:8).eq.'EXPLICIT') then
-            if(textpart(i)(9:10).eq.'=1') then
-               iexpl=1
-            elseif(textpart(i)(9:10).eq.'=2') then
-               iexpl=2
-            elseif(textpart(i)(9:10).eq.'=3') then
-               iexpl=3
-            elseif(textpart(i)(9:10).eq.'  ') then
-               iexpl=3
-            else
-               call inputerror(inpc,ipoinpc,iline,
-     &"*DYNAMIC%")
-            endif
+            iexpl=2
          elseif((textpart(i)(1:6).eq.'DIRECT').and.
      &          (textpart(i)(1:9).ne.'DIRECT=NO')) then
             idrct=1
@@ -192,7 +183,7 @@
          write(*,*)'*ERROR reading *DYNAMIC: initial increment size exce
      &eds step size'
       endif
-      if(tincf.le.0.d0) then
+      if((cfd.eq.1).and.(tincf.le.0.d0)) then
          write(*,*) '*WARNING reading *DYNAMIC: initial CFD increment si
      &ze is zero or negative; the default of 0.01 is taken'
          tincf=1.d-2
@@ -202,13 +193,6 @@
          if(dabs(tmin).lt.1.d-10*tper) then
             tmin=min(tinc,1.e-10*tper)
          endif
-c         if(dabs(tmin).lt.1.d-10) then
-c            if(iexpl.le.1) then
-c               tmin=min(tinc,1.d-5*tper)
-c            else
-c               tmin=min(tinc,1.d-10*tper)
-c            endif
-c         endif
          if(dabs(tmax).lt.1.d-10) then
             tmax=1.d+30
          endif
@@ -219,6 +203,7 @@ c         endif
       ctrl(8)=10.5d0
 !
       nmethod=4
+      nener=1
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

@@ -207,6 +207,7 @@
 !
          elseif((prlab(ii)(1:4).eq.'S   ').or.
      &          (prlab(ii)(1:4).eq.'E   ').or.
+     &          (prlab(ii)(1:4).eq.'ME  ').or.
      &          (prlab(ii)(1:4).eq.'PEEQ').or.
      &          (prlab(ii)(1:4).eq.'ENER').or.
      &          (prlab(ii)(1:4).eq.'SDV ').or.
@@ -258,6 +259,12 @@
                   write(5,112) elset(1:ipos-2),ttime+time
  112              format(' heat flux (elem, integ.pnt.,qx,qy,qz) for set 
      & ',A,' and time ',e14.7)
+                  write(5,*)
+               elseif(prlab(ii)(1:4).eq.'ME  ') then
+                  write(5,*)
+                  write(5,130) elset(1:ipos-2),ttime+time
+ 130              format(' mechanical strains (elem, integ.pnt.,exx,eyy,
+     &ezz,exy,exz,eyz) forset ',A,' and time ',e14.7)
                   write(5,*)
                endif
 !

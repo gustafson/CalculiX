@@ -43,9 +43,16 @@
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  um,eps,pi,dftdt(3,3),tp(3),te(3),ftrial(3),clear,
      &  dftrial,dfnl,dfshear,dg,dte,alnew(3),dfn(3,10),reltime,
-     &  overlap,pres,dpresdoverlap
+     &  overlap,pres,dpresdoverlap,overclosure
 !
-      data iflag /4/
+      intent(in) xl,konl,voldl,imat,elcon,nelcon,
+     &  ncmat_,ntmat_,nope,lakonl,t1l,kode,plicon,
+     &  nplicon,npmat_,iperturb,nmethod,mi,ne0,
+     &  nstate_,xstateini,reltime,nasym
+!
+      intent(inout) s,xstate,elas,springarea,elconloc
+!
+      iflag=4
 !
 !     actual positions of the nodes belonging to the contact spring
 !     (otherwise no contact force)
@@ -57,54 +64,86 @@
       enddo
 !
       if(lakonl(7:7).eq.'A') then
-         dd0=dsqrt((xl(1,2)-xl(1,1))**2
+         if(lakonl(4:6).eq.'RNG') then
+!
+!           SPRINGA-element
+!
+            dd0=dsqrt((xl(1,2)-xl(1,1))**2
      &           +(xl(2,2)-xl(2,1))**2
      &           +(xl(3,2)-xl(3,1))**2)
-         dd=dsqrt((pl(1,2)-pl(1,1))**2
+            dd=dsqrt((pl(1,2)-pl(1,1))**2
      &           +(pl(2,2)-pl(2,1))**2
      &           +(pl(3,2)-pl(3,1))**2)
-         do i=1,3
-            xn(i)=(pl(i,2)-pl(i,1))/dd
-         enddo
-         val=dd-dd0
-!
-!        interpolating the material data
-!
-         call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
-     &     elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
-!
-!        calculating the spring force and the spring constant
-!
-         if(kode.eq.2)then
-            xk=elconloc(1)
-            fk=xk*val
-         else
-            niso=int(plconloc(801))
-            do i=1,niso
-               xiso(i)=plconloc(2*i-1)
-               yiso(i)=plconloc(2*i)
+            do i=1,3
+               xn(i)=(pl(i,2)-pl(i,1))/dd
             enddo
-            call ident(xiso,val,niso,id)
-            if(id.eq.0) then
-               xk=0.d0
-               fk=yiso(1)
-            elseif(id.eq.niso) then
-               xk=0.d0
-               fk=yiso(niso)
+            val=dd-dd0
+!     
+!     interpolating the material data
+!     
+            call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
+     &           elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
+!     
+!     calculating the spring force and the spring constant
+!     
+            if(kode.eq.2)then
+               xk=elconloc(1)
+               fk=xk*val
             else
-               xk=(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))
-               fk=yiso(id)+xk*(val-xiso(id))
+               niso=int(plconloc(801))
+               do i=1,niso
+                  xiso(i)=plconloc(2*i-1)
+                  yiso(i)=plconloc(2*i)
+               enddo
+               call ident(xiso,val,niso,id)
+               if(id.eq.0) then
+                  xk=0.d0
+                  fk=yiso(1)
+               elseif(id.eq.niso) then
+                  xk=0.d0
+                  fk=yiso(niso)
+               else
+                  xk=(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))
+                  fk=yiso(id)+xk*(val-xiso(id))
+               endif
             endif
+!     
+            c1=fk/dd
+            c2=xk-c1
+            do i=1,3
+               do j=1,3
+                  s(i,j)=c2*xn(i)*xn(j)
+               enddo
+               s(i,i)=s(i,i)+c1
+            enddo
+         else
+!
+!           GAP-element
+!           interpolating the material data
+!     
+            call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
+     &           elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
+!
+            dd=elconloc(1)
+            xn(1)=elconloc(2)
+            xn(2)=elconloc(3)
+            xn(3)=elconloc(4)
+            xk=elconloc(5)
+            pi=4.d0*datan(1.d0)
+            eps=pi*elconloc(6)/xk
+            overclosure=-dd-xn(1)*(voldl(1,2)-voldl(1,1))
+     &                     -xn(2)*(voldl(2,2)-voldl(2,1))
+     &                     -xn(3)*(voldl(3,2)-voldl(3,1))
+            fk=-xk*overclosure*(0.5d0+datan(overclosure/eps)/pi)
+            c2=xk*((0.5d0+datan(overclosure/eps)/pi)
+     &        +overclosure/(pi*eps*(1.d0+(overclosure/eps)**2)))
+            do i=1,3
+               do j=1,3
+                  s(i,j)=c2*xn(i)*xn(j)
+               enddo
+            enddo
          endif
 !
-         c1=fk/dd
-         c2=xk-c1
-         do i=1,3
-            do j=1,3
-               s(i,j)=c2*xn(i)*xn(j)
-            enddo
-            s(i,i)=s(i,i)+c1
-         enddo
          do i=1,3
             do j=1,3
                s(i+3,j)=-s(i,j)

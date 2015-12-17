@@ -32,8 +32,7 @@
 !             5: TAUCS
 !             7: pardiso
 !
-!      iexpl==0:  structure:implicit, fluid:semi-implicit
-!      iexpl==1:  structure:implicit, fluid:explicit
+!      iexpl==0:  structure:implicit, fluid:incompressible
 !
       implicit none
 !
@@ -103,8 +102,6 @@ c      enddo
       do i=2,n
          if(textpart(i)(1:7).eq.'SOLVER=') then
             read(textpart(i)(8:27),'(a20)') solver
-         elseif(textpart(i)(1:8).eq.'EXPLICIT') then
-            iexpl=1
          elseif((textpart(i)(1:6).eq.'DIRECT').and.
      &          (textpart(i)(1:9).ne.'DIRECT=NO')) then
             idrct=1

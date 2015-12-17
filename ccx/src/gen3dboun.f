@@ -41,13 +41,13 @@
      &  index,ielem,j,indexe,indexk,idir,iamplitude,irotnode,nk,nk_,
      &  newnode,idof,id,mpcfreenew,k,nam,nmethod,iperturb,ndepnodes,
      &  idepnodes(80),l,iexpnode,indexx,irefnode,imax,isol,mpcfreeold,
-     &  nod,impc,istep,nrhs,ipiv(3),info,m,mi(*),itr,idirref,id1
+     &  nod,impc,istep,nrhs,ipiv(3),info,m,mi(*),itr,idirref,id1,nnode
 !
       real*8 xboun(*),xnor(*),coefmpc(*),trab(7,*),val,co(3,*),
      &  xnoref(3),dmax,d(3,3),e(3,3,3),alpha,q(3),w(3),xn(3),
      &  a1(3),a2(3),dd,c1,c2,c3,ww,c(3,3),vold(0:mi(2),*),a(3,3),
      &  e1(3),e2(3),t1(3),b(3,3),x(3),y(3),fv1(3),dot,
-     &  fv2(3),z(3,3),xi1,xi2,xi3,u(3,3),r(3,3)
+     &  fv2(3),z(3,3),xi1,xi2,xi3,u(3,3),r(3,3),xnode
 !
       data d /1.,0.,0.,0.,1.,0.,0.,0.,1./
       data e /0.,0.,0.,0.,0.,-1.,0.,1.,0.,
@@ -126,6 +126,11 @@
      &              irotnode,mi,label)
             endif
          else
+!
+!           1. no existing knot
+!              rotational dof
+!              dynamics
+!              => knot is created
 !
 !           check for rotational DOFs defined in any but the first step
 !           nonlinear dynamic case: creation of knots
@@ -296,18 +301,10 @@ c                     enddo
                      xn(1)=xn(1)+(a1(2)*a2(3)-a1(3)*a2(2))
                      xn(2)=xn(2)+(a1(3)*a2(1)-a1(1)*a2(3))
                      xn(3)=xn(3)+(a1(1)*a2(2)-a1(2)*a2(1))
-c                     do l=1,3
-c                        do m=1,3
-c                           a(l,m)=a(l,m)+a1(l)*a1(m)
-c                        enddo
-c                     enddo
                   enddo
 !     
                   if(ndepnodes-ncgnodes.gt.0) then
                      do l=1,3
-c                        do m=1,3
-c                           a(l,m)=a(l,m)/(ndepnodes-ncgnodes)
-c                        enddo
                         xn(l)=xn(l)/(ndepnodes-ncgnodes)
                      enddo
                   endif
@@ -585,8 +582,13 @@ c                        enddo
                cycle
             endif
 !
+!           2. no existing knot
+!              rotational dof
+!              no dynamics
+!              => mean rotation MPC is created
+!
 !           all cases except nonlinear dynamic case: creation
-!           of rigid body MPC's
+!           of meanrotation MPC's
 !
             if((idir.gt.4).and.((nmethod.ne.4).or.(iperturb.le.1)))then
 !
@@ -655,40 +657,85 @@ c                        enddo
                if(lakon(ielem)(7:7).eq.'L') then
                   dot=a(1,idirref)*xn(1)+a(2,idirref)*xn(2)+
      &                a(3,idirref)*xn(3)
+!
+!                 rotation vectors with a substantial component
+!                 along the drilling direction are not allowed if
+!                 the rotation value (SPC) is nonzero; else the
+!                 rotation vector is projected on the tangential
+!                 plane
+!
                   if(dot.gt.0.05) then
-                     do k=5,7
-                        if(k.eq.idir) then
-                           if(dabs(xboun(i)).lt.1.d-10) cycle
-                           write(*,*) '*ERROR in gen3dboun: rotation'
-                           write(*,*) '       vector in node ',node
-                           write(*,*) '       and direction ',idir-1
-                           write(*,*) '       has a significant'
-                           write(*,*) 
-     &                       '       component along the drilling'
-                           write(*,*) '       direction; this is not'
-                           write(*,*) '       allowed'
-                           call exit(201)
-                        endif
-                        idof=8*(node-1)+k
-                        call nident(ikboun,idof,nboun,id1)
-                        if(id1.gt.0) then
-                           if(ikboun(id1).eq.idof) then
-                              if(dabs(xboun(ilboun(id1))).lt.1.d-10) 
-     &                             cycle
-                           endif
-                        endif
+                     if(xboun(i).gt.1.d-10) then
                         write(*,*) '*ERROR in gen3dboun: rotation'
                         write(*,*) '       vector in node ',node
                         write(*,*) '       and direction ',idir-1
                         write(*,*) '       has a significant'
                         write(*,*) 
      &                       '       component along the drilling'
-                        write(*,*) '       direction; this is not'
+                        write(*,*) '       direction and a nonzero'
+                        write(*,*) '       boundary value; this is not'
                         write(*,*) '       allowed'
                         call exit(201)
-                     enddo
+                     endif
                   endif
+!
+!                 rotation vectors closer than 45 degrees with the normal
+!                 (= drilling direction) are not taken into account
+!
+                  if(dot.gt.0.70710678d0) cycle
+!
+!                 projecting the rotation vector on the tangent plane
+!
+                  do k=1,3
+                     a(k,idirref)=a(k,idirref)-dot*xn(k)
+                  enddo
+                  dd=0.d0
+                  do k=1,3
+                     dd=dd+a(k,idirref)**2
+                  enddo
+                  dd=dsqrt(dd)
+                  do k=1,3
+                     a(k,idirref)=a(k,idirref)/dd
+                  enddo
                endif
+c                        
+c               if(lakon(ielem)(7:7).eq.'L') then
+c                  dot=a(1,idirref)*xn(1)+a(2,idirref)*xn(2)+
+c     &                a(3,idirref)*xn(3)
+c                  if(dot.gt.0.05) then
+c                     do k=5,7
+c                        if(k.eq.idir) then
+c                           if(dabs(xboun(i)).lt.1.d-10) cycle
+c                           write(*,*) '*ERROR in gen3dboun: rotation'
+c                           write(*,*) '       vector in node ',node
+c                           write(*,*) '       and direction ',idir-1
+c                           write(*,*) '       has a significant'
+c                           write(*,*) 
+c     &                       '       component along the drilling'
+c                           write(*,*) '       direction; this is not'
+c                           write(*,*) '       allowed'
+c                           call exit(201)
+c                        endif
+c                        idof=8*(node-1)+k
+c                        call nident(ikboun,idof,nboun,id1)
+c                        if(id1.gt.0) then
+c                           if(ikboun(id1).eq.idof) then
+c                              if(dabs(xboun(ilboun(id1))).lt.1.d-10) 
+c     &                             cycle
+c                           endif
+c                        endif
+c                        write(*,*) '*ERROR in gen3dboun: rotation'
+c                        write(*,*) '       vector in node ',node
+c                        write(*,*) '       and direction ',idir-1
+c                        write(*,*) '       has a significant'
+c                        write(*,*) 
+c     &                       '       component along the drilling'
+c                        write(*,*) '       direction; this is not'
+c                        write(*,*) '       allowed'
+c                        call exit(201)
+c                     enddo
+c                  endif
+c               endif
 !
 !              specific label for mean rotations for beams and
 !              shells
@@ -753,7 +800,10 @@ c                        enddo
                cycle
             endif
 !     
-!           2d element shell element: generate MPC's
+!           3. no existing knot
+!              translational dof
+!
+!           a) 2d shell element: generate MPC's
 !
 !           u(n_1)+u(n_3)=2*u(n)
 !
@@ -797,6 +847,48 @@ c                        enddo
                   nodempc(1,mpcfree)=node
                   nodempc(2,mpcfree)=idir
                   coefmpc(mpcfree)=-2.d0
+                  mpcfreenew=nodempc(3,mpcfree)
+                  if(mpcfreenew.eq.0) then
+                     write(*,*) 
+     &                    '*ERROR in gen3dboun: increase nmpc_'
+                     call exit(201)
+                  endif
+                  nodempc(3,mpcfree)=0
+                  mpcfree=mpcfreenew
+               endif
+!
+!              u(n_2)=u(n)
+!
+               newnode=knor(indexk+2)
+               idof=8*(newnode-1)+idir
+               call nident(ikmpc,idof,nmpc,id)
+               if((id.le.0).or.(ikmpc(id).ne.idof)) then
+                  nmpc=nmpc+1
+                  if(nmpc.gt.nmpc_) then
+                     write(*,*) 
+     &                    '*ERROR in gen3dboun: increase nmpc_'
+                     call exit(201)
+                  endif
+                  labmpc(nmpc)='                    '
+                  ipompc(nmpc)=mpcfree
+                  do j=nmpc,id+2,-1
+                     ikmpc(j)=ikmpc(j-1)
+                     ilmpc(j)=ilmpc(j-1)
+                  enddo
+                  ikmpc(id+1)=idof
+                  ilmpc(id+1)=nmpc
+                  nodempc(1,mpcfree)=newnode
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=1.d0
+                  mpcfree=nodempc(3,mpcfree)
+                  if(mpcfree.eq.0) then
+                     write(*,*) 
+     &                    '*ERROR in gen3dboun: increase nmpc_'
+                     call exit(201)
+                  endif
+                  nodempc(1,mpcfree)=node
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=-1.d0
                   mpcfreenew=nodempc(3,mpcfree)
                   if(mpcfreenew.eq.0) then
                      write(*,*) 
@@ -855,10 +947,17 @@ c                        enddo
                endif
             elseif(lakon(ielem)(7:7).eq.'B') then
 !
-!                       1d beam element: generate MPC's
+!              b) 1d beam element: generate MPC's
 !
 !              u(n_1)+u(n_2)+u(n_3)+u(n_4)=4*u(n)
 !
+c               if(lakon(ielem)(4:5).eq.'20') then
+c                  nnode=8
+c                  xnode=8.d0
+c               else
+                  nnode=4
+                  xnode=4.d0
+c               endif
                newnode=knor(indexk+1)
                idof=8*(newnode-1)+idir
                call nident(ikmpc,idof,nmpc,id)
@@ -886,7 +985,8 @@ c                        enddo
      &                    '*ERROR in gen3dboun: increase nmpc_'
                      call exit(201)
                   endif
-                  do k=2,4
+c                  do k=2,4
+                  do k=2,nnode
                      nodempc(1,mpcfree)=knor(indexk+k)
                      nodempc(2,mpcfree)=idir
                      coefmpc(mpcfree)=1.d0
@@ -899,7 +999,8 @@ c                        enddo
                   enddo
                   nodempc(1,mpcfree)=node
                   nodempc(2,mpcfree)=idir
-                  coefmpc(mpcfree)=-4.d0
+c                  coefmpc(mpcfree)=-4.d0
+                  coefmpc(mpcfree)=-xnode
                   mpcfreenew=nodempc(3,mpcfree)
                   if(mpcfreenew.eq.0) then
                      write(*,*) 
@@ -960,7 +1061,7 @@ c                        enddo
                endif
             else
 !     
-!                       2d plane stress, plane strain or axisymmetric
+!              c)       2d plane stress, plane strain or axisymmetric
 !                       element: MPC in all but z-direction
 !
                newnode=knor(indexk+2)

@@ -132,7 +132,9 @@
      &         (label.eq.'CPE8    ').or.
      &         (label.eq.'CPS8    ').or.
      &         (label.eq.'CAX8    ').or.
+     &         (label.eq.'M3D8    ').or.
      &         (label.eq.'S8      ').or.
+     &         (label.eq.'T3D3    ').or.
      &         (label.eq.'B32     ').or.
 !
 !           reduced integration quadratic hexahedral element
@@ -143,6 +145,7 @@ c     &         (label.eq.'C3D20RI ').or.
      &         (label.eq.'CPE8R   ').or.
      &         (label.eq.'CPS8R   ').or.
      &         (label.eq.'CAX8R   ').or.
+     &         (label.eq.'M3D8R   ').or.
      &         (label.eq.'S8R     ').or.
      &         (label.eq.'B32R    ').or.
 !
@@ -153,7 +156,9 @@ c     &         (label.eq.'C3D20RI ').or.
      &         (label.eq.'CPE4    ').or.
      &         (label.eq.'CPS4    ').or.
      &         (label.eq.'CAX4    ').or.
+     &         (label.eq.'M3D4    ').or.
      &         (label.eq.'S4      ').or.
+     &         (label.eq.'T3D2    ').or.
      &         (label.eq.'B31     ').or.
 !
 !           reduced integration linear hexahedral element
@@ -163,6 +168,7 @@ c     &         (label.eq.'C3D20RI ').or.
      &         (label.eq.'CPE4R   ').or.
      &         (label.eq.'CPS4R   ').or.
      &         (label.eq.'CAX4R   ').or.
+     &         (label.eq.'M3D4R   ').or.
      &         (label.eq.'S4R     ').or.
      &         (label.eq.'B31R    ').or.
 c    Bernhardi start
@@ -187,6 +193,7 @@ c    Bernhardi end
      &         (label.eq.'CPE6    ').or.
      &         (label.eq.'CPS6    ').or.
      &         (label.eq.'CAX6    ').or.
+     &         (label.eq.'M3D6    ').or.
      &         (label.eq.'S6      ').or.
 !
 !           linear wedge
@@ -196,6 +203,7 @@ c    Bernhardi end
      &         (label.eq.'CPE3    ').or.
      &         (label.eq.'CPS3    ').or.
      &         (label.eq.'CAX3    ').or.
+     &         (label.eq.'M3D3    ').or.
      &         (label.eq.'S3      ').or.
 !
 !           gap element
@@ -275,17 +283,21 @@ c     Bernhardi end
          nope=20
          nopeexp=20
       elseif((label(1:4).eq.'CPE8').or.(label(1:4).eq.'CPS8').or.
-     &        (label(1:4).eq.'CAX8').or.(label(1:2).eq.'S8')) then
+     &        (label(1:4).eq.'CAX8').or.(label(1:2).eq.'S8').or.
+     &        (label(1:4).eq.'M3D8')) then
          nope=8
          nopeexp=28
       elseif((label(1:4).eq.'CPE6').or.(label(1:4).eq.'CPS6').or.
-     &        (label(1:4).eq.'CAX6').or.(label(1:2).eq.'S6')) then
+     &        (label(1:4).eq.'CAX6').or.(label(1:2).eq.'S6').or.
+     &        (label(1:4).eq.'M3D6')) then
          nope=6
          nopeexp=21
-      elseif(label(1:3).eq.'B32') then
+      elseif((label(1:3).eq.'B32').or.
+     &       (label(1:4).eq.'T3D3')) then
          nope=3
          nopeexp=23
-      elseif(label(1:4).eq.'B31 ') then
+      elseif((label(1:4).eq.'B31 ').or.
+     &       (label(1:4).eq.'T3D2')) then
          nope=2
 !        expanded into C3D8I: 11 nodes per element
          nopeexp=13
@@ -295,13 +307,15 @@ c     Bernhardi end
       elseif(label(4:4).eq.'8') then
          nope=8
          nopeexp=8
-      elseif((label(1:5).eq.'CPE4 ').or.(label(1:5).eq.'CPS4 ').or.
-     &        (label(1:5).eq.'CAX4 ').or.(label(1:3).eq.'S4 ')) then
+c      elseif((label(1:5).eq.'CPE4 ').or.(label(1:5).eq.'CPS4 ').or.
+c     &        (label(1:5).eq.'CAX4 ').or.(label(1:3).eq.'S4 ')) then
+      elseif(label(1:3).eq.'S4 ') then
          nope=4
 !        expanded into C3D8I: 11 nodes per element
          nopeexp=15
       elseif((label(1:4).eq.'CPE4').or.(label(1:4).eq.'CPS4').or.
-     &        (label(1:4).eq.'CAX4').or.(label(1:2).eq.'S4')) then
+     &        (label(1:4).eq.'CAX4').or.(label(1:2).eq.'S4').or.
+     &        (label(1:4).eq.'M3D4')) then
          nope=4
          nopeexp=12
       elseif(label(4:5).eq.'10') then
@@ -317,7 +331,8 @@ c     Bernhardi end
          nope=6
          nopeexp=6
       elseif((label(1:4).eq.'CPE3').or.(label(1:4).eq.'CPS3').or.
-     &        (label(1:4).eq.'CAX3').or.(label(1:2).eq.'S3')) then
+     &        (label(1:4).eq.'CAX3').or.(label(1:2).eq.'S3').or.
+     &        (label(1:4).eq.'M3D3')) then
          nope=3
          nopeexp=9
       elseif(label(1:8).eq.'DASHPOTA') then
@@ -331,6 +346,7 @@ c     Bernhardi end
          nope=3
          nopeexp=3
       elseif(label(1:1).eq.'G') then
+         label='ESPGAPA1'
          nope=2
          nopeexp=2
       elseif(label(1:7).eq.'SPRINGA') then

@@ -82,7 +82,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     *ilmpc=NULL,nsectors,nmd,nevd,*nm=NULL,*iamt1=NULL,*islavnode=NULL,
     ngraph=1,nkg,neg,ne0,ij,lprev,nope,indexe,ilength,*nslavnode=NULL,
     *ipneigh=NULL,*neigh=NULL,index,im,cyclicsymmetry,inode,
-    *ialset=*ialsetp,mt=mi[1]+1,kmin,kmax,i1,
+    *ialset=*ialsetp,mt=mi[1]+1,kmin,kmax,i1,iit=-1,
     *iter=NULL,lint,lfin,kk,kkv,kk6,kkx,icomplex,igeneralizedforce,
     idir,*inumt=NULL,icntrl,imag,jj,is,l1,*inocs=NULL,ml1,l2,nkt,net,
     *ipkont=NULL,*ielmatt=NULL,*inotrt=NULL,*kont=NULL,node,iel,*ielcs=NULL,
@@ -109,7 +109,8 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     stnimag,freq,*emnt=NULL,*shcon=NULL,*eig=NULL,*clearini=NULL,
     *eigxr=NULL,*eigxi=NULL,*xmac=NULL,*bett=NULL,*betm=NULL,*xmaccpx=NULL,
     fmin=0.,fmax=1.e30,*xmr=NULL,*xmi=NULL,*zi=NULL,*eigx=NULL,
-    *pslavsurf=NULL,*pmastsurf=NULL,*cdnr=NULL,*cdni=NULL,*tinc,*tper,*tmin,*tmax;
+    *pslavsurf=NULL,*pmastsurf=NULL,*cdnr=NULL,*cdni=NULL,*tinc,*tper,
+    *tmin,*tmax,*energyini=NULL,*energy=NULL;
 
   FILE *f1;
 
@@ -1280,6 +1281,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     NNEW(eei,double,6*mi[0]**ne);
     if(*nener==1){
 	NNEW(stiini,double,6*mi[0]**ne);
+	NNEW(emeini,double,6*mi[0]**ne);
 	NNEW(enerini,double,mi[0]**ne);}
 
     DMEMSET(v,0,2*mt**nk,0.);
@@ -1356,7 +1358,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             &ne0,xforc,nforc,thicke,shcon,nshcon,
             sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	    islavsurf,ielprop,prop);}
+	    islavsurf,ielprop,prop,energyini,energy,&iit);}
       else{
 	results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
             &stx[kkx],elcon,
@@ -1375,12 +1377,12 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             &ne0,xforc,nforc,thicke,shcon,nshcon,
             sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	    islavsurf,ielprop,prop);
+	    islavsurf,ielprop,prop,energyini,energy,&iit);
       }
 
     }
     SFREE(eei);
-    if(*nener==1){SFREE(stiini);SFREE(enerini);}
+    if(*nener==1){SFREE(stiini);SFREE(emeini);SFREE(enerini);}
    
     /* changing the basic results into cylindrical coordinates
        (only for cyclic symmetry structures */

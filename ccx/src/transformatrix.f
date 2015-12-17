@@ -27,6 +27,10 @@
 !
       real*8 xab(7),p(3),a(3,3),e1(3),e2(3),e3(3),dd
 !
+      intent(in) xab,p
+!
+      intent(out) a
+!
       if(xab(7).gt.0) then
 !
 !        carthesian transformation

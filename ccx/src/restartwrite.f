@@ -51,7 +51,7 @@
       character*6 prlab(*)
       character*8 lakon(*)
       character*20 labmpc(*),sideload(*)
-      character*80 orname(*),amname(*),matname(*)
+      character*80 orname(*),amname(*),matname(*),version
       character*81 set(*),prset(*),tieset(*),cbody(*)
       character*87 filab(*)
       character*132 fnrstrt,jobnamec(*)
@@ -98,6 +98,12 @@
          open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED',
      &      err=151)
       endif
+!
+      do i=1,80
+         version(i:i)=' '
+      enddo
+      version='Version 2.9'
+      write(15) version
 !
       write(15)istepnew
 !

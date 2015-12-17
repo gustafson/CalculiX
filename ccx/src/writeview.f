@@ -51,12 +51,8 @@
       open(10,file=fnvw,status='unknown',form='unformatted',
      &     access='sequential',err=10)
 !     
-c      do k=1,ntr
-         write(10) (adview(k),k=1,ntr)
-c      enddo
-c      do k=1,2*nzsrad
-         write(10) (auview(k),k=1,2*nzsrad)
-c      enddo
+      write(10) (adview(k),k=1,ntr)
+      write(10) (auview(k),k=1,2*nzsrad)
       write(10)(fenv(k),k=1,ntr)
       close(10)
 !     

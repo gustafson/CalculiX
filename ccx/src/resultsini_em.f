@@ -44,10 +44,8 @@
      &  irefnode,irotnode,iexpnode,irefnodeprev
 !
       real*8 v(0:mi(2),*),vini(0:mi(2),*),f(*),fn(0:mi(2),*),
-     &  cam(5),b(*),xboun(*),coefmpc(*),
-     &  veold(0:mi(2),*),xforc(*),
-     &  qa(3),dtime,bnac,
-     &  fixed_disp
+     &  cam(5),b(*),xboun(*),coefmpc(*),veold(0:mi(2),*),xforc(*),
+     &  qa(3),dtime,bnac,fixed_disp
 !
       mt=mi(2)+1
 !
@@ -62,7 +60,8 @@
                      else
                         cycle
                      endif
-                     v(j,i)=v(j,i)+bnac
+c                     v(j,i)=v(j,i)+bnac
+                     v(j,i)=bnac
                      if((iperturb(1).ne.0).and.(abs(nmethod).eq.1)) then
                         if(dabs(bnac).gt.cam(1)) then
                            cam(1)=dabs(bnac)
@@ -80,6 +79,7 @@
                      cycle
                   endif
                   v(0,i)=v(0,i)+bnac
+c                  v(0,i)=bnac
                   if((iperturb(1).ne.0).and.(abs(nmethod).eq.1)) then
                      if(dabs(bnac).gt.cam(2)) then
                         cam(2)=dabs(bnac)
@@ -103,7 +103,8 @@
                      else
                         cycle
                      endif
-                     v(j,i)=v(j,i)+bnac
+c                     v(j,i)=v(j,i)+bnac                     
+                     v(j,i)=bnac
                      if(dabs(bnac).gt.cam(1)) then
                         cam(1)=dabs(bnac)
                         cam(4)=nactdof(j,i)-0.5d0

@@ -73,7 +73,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
         lprev,ilength,ij,i1,i2,iel,ielset,node,indexe,nope,ml1,nelem,
         *inocs=NULL,*ielcs=NULL,jj,l1,l2,is,nlabel,*nshcon=NULL,
         nodeleft,*noderight=NULL,numnodes,ileft,kflag=2,itr,locdir,
-        neqh,j1,nodenew,mt=mi[1]+1,istep=1,iinc=1,
+        neqh,j1,nodenew,mt=mi[1]+1,istep=1,iinc=1,iit=-1,
 	tint=-1,tnstart=-1,tnend=-1,tint2=-1,
 	noderight_,*izdof=*izdofp,iload,iforc,*iznode=NULL,nznode,ll,ne0,
 	icfd=0,*inomat=NULL,mortar=0,*islavact=NULL,
@@ -90,7 +90,8 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
         *coefright=NULL,coef,a[9],ratio,reltime,
         *shcon=NULL,*springarea=NULL,*z=*zp, *zdof=NULL, *thicke=NULL,
         atrab[9],acs[9],diff,fin[3],fout[3],*sumi=NULL,
-        *vti=NULL,*pslavsurf=NULL,*pmastsurf=NULL,*cdn=NULL;
+        *vti=NULL,*pslavsurf=NULL,*pmastsurf=NULL,*cdn=NULL,
+        *energyini=NULL,*energy=NULL;
     
     /* dummy arguments for the results call */
     
@@ -532,7 +533,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
               &ne0,xforc,nforc,thicke,shcon,nshcon,
               sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-              islavsurf,ielprop,prop);
+	      islavsurf,ielprop,prop,energyini,energy,&iit);
 	    
 	}
 	SFREE(eei);

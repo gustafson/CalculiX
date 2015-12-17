@@ -18,7 +18,7 @@
 !
       subroutine frdfluid(co,nk,kon,ipkonf,lakonf,nef,vold,
      &  kode,time,ielmat,matname,filab,inum,ntrans,inotr,trab,mi,
-     &  istep,stn,qfn,nactdohinv)
+     &  istep,stn,qfn,nactdohinv,xmach,xkappa)
 !
 !     stores the results in frd format
 !
@@ -39,7 +39,7 @@
      &  nactdohinv(*)
 !
       real*8 co(3,*),vold(0:mi(2),*),time,pi,oner,trab(7,*),
-     &  a(3,3),stn(6,*),qfn(3,*)
+     &  a(3,3),stn(6,*),qfn(3,*),xmach(*),xkappa(*)
 !
       save nout
 !
@@ -66,15 +66,7 @@
       p11='   11'
       p12='   12'
 !
-c      if(time.le.0.d0) then
-         fmat(1:8)='(e12.5) '
-c      elseif((dlog10(time).ge.0.d0).and.(dlog10(time).lt.11.d0)) then
-c         fmat(1:5)='(f12.'
-c         write(fmat(6:7),'(i2)') 11-int(dlog10(time)+1.d0)
-c         fmat(8:8)=')'
-c      else
-c         fmat(1:8)='(e12.5) '
-c      endif
+      fmat(1:8)='(e12.5) '
 !
       null=0
       one=1
@@ -323,88 +315,89 @@ c      endif
          write(13,'(a3)') m3
       endif
 !
-!     vold(0,*) contains kappa (cp/cv)
-!     vold(1,*) contains the Mach number
+!     xkappa(i) contains kappa (cp/cv)
+!     xmach(i) contains the Mach number
 !
-c      if(filab(23)(1:4).eq.'MACH') then
-c         text='    1PSTEP'
-c         write(text(25:36),'(i12)') kode
-c         write(13,'(a132)') text
-c!
-c         text=
-c     & '  100CL       .00000E+00                                 3    1'
-c         text(75:75)='1'
-c         write(text(25:36),'(i12)') nout
-c         write(text(8:12),'(i5)') 100+kode
-c         write(text(13:24),fmat) time
-c         write(text(59:63),'(i5)') kode
-c         write(13,'(a132)') text
-c         text=' -4  M3DF        1    1'
-c         write(13,'(a132)') text
-c         text=' -5  MACH        1    1    0    0'
-c         write(13,'(a132)') text
-c!
-c         do i=1,nk
-c            if(inum(i).le.0) cycle
-c            write(13,100) m1,i,vold(1,i)
-c         enddo
-c!
-c         write(13,'(a3)') m3
-c      endif
-c!
-c      if(filab(38)(1:4).eq.'TTF ') then
-c         text='    1PSTEP'
-c         write(text(25:36),'(i12)') kode
-c         write(13,'(a132)') text
-c!
-c         text=
-c     & '  100CL       .00000E+00                                 3    1'
-c         text(75:75)='1'
-c         write(text(25:36),'(i12)') nout
-c         write(text(8:12),'(i5)') 100+kode
-c         write(text(13:24),fmat) time
-c         write(text(59:63),'(i5)') kode
-c         write(13,'(a132)') text
-c         text=' -4  TT3DF       1    1'
-c         write(13,'(a132)') text
-c         text=' -5  TT          1    1    0    0'
-c         write(13,'(a132)') text
-c!
-c         do i=1,nk
-c            if(inum(i).le.0) cycle
-c            write(13,100) m1,i,
-c     &           vold(0,i)*(1.d0+(vold(0,i)-1.d0)/2*vold(1,i)**2)
-c         enddo
-c!
-c         write(13,'(a3)') m3
-c      endif
-c!
-c      if(filab(37)(1:4).eq.'PTF ') then
-c         text='    1PSTEP'
-c         write(text(25:36),'(i12)') kode
-c         write(13,'(a132)') text
-c!
-c         text=
-c     & '  100CL       .00000E+00                                 3    1'
-c         text(75:75)='1'
-c         write(text(25:36),'(i12)') nout
-c         write(text(8:12),'(i5)') 100+kode
-c         write(text(13:24),fmat) time
-c         write(text(59:63),'(i5)') kode
-c         write(13,'(a132)') text
-c         text=' -4  PT3DF       1    1'
-c         write(13,'(a132)') text
-c         text=' -5  PT          1    1    0    0'
-c         write(13,'(a132)') text
-c!
-c         do i=1,nk
-c            if(inum(i).le.0) cycle
-c            write(13,100) m1,i,vold(4,i)*
-c     &        (1.d0+(vold(0,i)-1.d0)/2*vold(1,i)**2)**(vold(0,i)/(vold(0,i)-1.d0))
-c         enddo
-c!
-c         write(13,'(a3)') m3
-c      endif
+      if(filab(23)(1:4).eq.'MACH') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(13,'(a132)') text
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(25:36),'(i12)') nout
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(13,'(a132)') text
+         text=' -4  M3DF        1    1'
+         write(13,'(a132)') text
+         text=' -5  MACH        1    1    0    0'
+         write(13,'(a132)') text
+!
+         do i=1,nk
+            if(inum(i).le.0) cycle
+            write(13,100) m1,i,xmach(i)
+         enddo
+!
+         write(13,'(a3)') m3
+      endif
+!
+      if(filab(38)(1:4).eq.'TTF ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(13,'(a132)') text
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(25:36),'(i12)') nout
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(13,'(a132)') text
+         text=' -4  TT3DF       1    1'
+         write(13,'(a132)') text
+         text=' -5  TT          1    1    0    0'
+         write(13,'(a132)') text
+!
+         do i=1,nk
+            if(inum(i).le.0) cycle
+            write(13,100) m1,i,
+     &           vold(0,i)*(1.d0+(xkappa(i)-1.d0)/2*xmach(i)**2)
+         enddo
+!
+         write(13,'(a3)') m3
+      endif
+!
+      if(filab(37)(1:4).eq.'PTF ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(13,'(a132)') text
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(25:36),'(i12)') nout
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(13,'(a132)') text
+         text=' -4  PT3DF       1    1'
+         write(13,'(a132)') text
+         text=' -5  PT          1    1    0    0'
+         write(13,'(a132)') text
+!
+         do i=1,nk
+            if(inum(i).le.0) cycle
+            write(13,100) m1,i,vold(4,i)*
+     &        (1.d0+(xkappa(i)-1.d0)/2*xmach(i)**2)
+     &             **(xkappa(i)/(xkappa(i)-1.d0))
+         enddo
+!
+         write(13,'(a3)') m3
+      endif
 !
 !     storing the total stresses in the nodes
 !

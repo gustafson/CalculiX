@@ -795,7 +795,17 @@ c            jn=in(i)
                   write(*,*) '*ERROR in equations: increase nmpc_'
                   call exit(201)
                endif
-               labmpc(nmpc)='                    '
+!
+!              the label for purely mechanical calculations is
+!              necessary in order to copy t1 at the newly created
+!              nodes in file calinput.f
+!
+               if(ithermal(2).gt.1) then
+                  labmpc(nmpc)='                    '
+               else
+                  labmpc(nmpc)='THERMALPRET         '
+               endif
+!
                ipompc(nmpc)=mpcfree
 !     
 !     updating ikmpc and ilmpc

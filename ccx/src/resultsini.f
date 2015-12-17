@@ -345,10 +345,23 @@ c                  veold(ndir,node)=(fixed_disp-v(ndir,node))/dtime
 !     
       iener=0
       ikin=0
+!
+!     *DYNAMIC
+!
+      if((nmethod.eq.4).and.(iperturb(1).gt.1).and.
+     &   (ithermal(1).le.1)) then
+         iener=1
+         ikin=1
+      endif
+!
+!     frd-output
+!
       if((filab(7)(1:4).eq.'ENER').or.(filab(27)(1:4).eq.'CELS')) then
          iener=1
       endif
-      
+!   
+!     dat-output
+!   
       do i=1,nprint
          if((prlab(i)(1:4).eq.'ENER').or.(prlab(i)(1:4).eq.'ELSE').or.
      &        (prlab(i)(1:4).eq.'CELS')) then

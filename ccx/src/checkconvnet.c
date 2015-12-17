@@ -36,7 +36,8 @@ void checkconvnet(ITG *icutb, ITG *iin,
 		  double *camt, double *camf, double *camp,
 		  ITG *icntrl, double *dtheta, double *ctrl,
                   double *uama,double *cam1a,double *cam2a,double *cama,
-                  double *vamt, double *vamf, double *vamp, double *vama){
+                  double *vamt, double *vamf, double *vamp, double *vama,
+                  double *qa){
   
   ITG i0,ir,ip,ic,il,ig,ia,idivergence;
   
@@ -150,8 +151,10 @@ void checkconvnet(ITG *icutb, ITG *iin,
 	  *iin=0;
 	  (*icutb)++;
 	  if(*icutb>ia){
-	    printf("\n *ERROR: too many cutbacks\n");
-	    FORTRAN(stop,());
+	      qa[2]=0.25;
+	      *icntrl=1;
+//	    printf("\n *ERROR: too many cutbacks\n");
+//	    FORTRAN(stop,());
 	  }
       }else{
 	 	  printf("      no convergence\n\n"); 

@@ -35,6 +35,11 @@
       real*8 eplmin,eplmax,depl,epla,plcon(0:2*npmat_,ntmat_,*),
      &  plconloc(802),dummy
 !
+      intent(in) plcon,nplcon,npmat_,ntmat_,
+     &  imat,itemp,nelem,kin
+!
+      intent(inout) plconloc
+!
       ndata=nplcon(itemp,imat)
 !
       if(ndata.le.200) then

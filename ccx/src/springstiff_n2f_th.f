@@ -39,7 +39,14 @@
      &  springarea,dist,eps,pi,constant,conductance,dtemp,temp(2),
      &  predef(2),coords(3),tmean,d(2),timeend(2),flowm(2)
 !
-      data iflag /4/
+      intent(in) xl,voldl,imat,elcon,nelcon,
+     &  ncmat_,ntmat_,nope,kode,plkcon,
+     &  nplkcon,npmat_,iperturb,mi,timeend,matname,
+     &  node,noel,istep,iinc
+!
+      intent(inout) s,springarea
+!
+      iflag=4
 !
 !     actual positions of the nodes belonging to the contact spring
 !

@@ -11,10 +11,10 @@
 
 #include "readfrd.h"
 
-/* liefert ITG aus string von position a bis b */
-ITG stoi(char *string, ITG a, ITG b)
+/* liefert int aus string von position a bis b */
+int stoi(char *string, int a, int b)
 {
-  register ITG      n, i;
+  register int      n, i;
   static char    puffer[MAX_LINE_LENGTH];
 
   n=-1;

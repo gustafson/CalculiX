@@ -225,36 +225,38 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
 	  
 	  k=0;
 	  pointers[0]=1;
-	  for(i=0;i<*neq;i++){
-	      j=i+1;
-	      kstart=k;
-	      do{
+	  if(ndim>0){
+	      for(i=0;i<*neq;i++){
+		  j=i+1;
+		  kstart=k;
+		  do{
 
-		  /* end of row reached */
+	  	      /* end of row reached */
 
-		  if(irowpardiso[k]!=j){
-		      n=k-kstart;
-		      FORTRAN(isortid,(&icolpardiso[kstart],&aupardiso[kstart],
-				       &n,&kflag));
-		      pointers[i+1]=k+1;
-		      break;
-		  }else{
-
-		      /* end of last row reached */
-
-		      if(k+1==ndim){
-			  n=k-kstart+1;
+		      if(irowpardiso[k]!=j){
+			  n=k-kstart;
 			  FORTRAN(isortid,(&icolpardiso[kstart],&aupardiso[kstart],
 					   &n,&kflag));
+			  pointers[i+1]=k+1;
 			  break;
 		      }else{
 
-			  /* end of row not yet reached */
+		          /* end of last row reached */
 
-			  k++;
+			  if(k+1==ndim){
+			      n=k-kstart+1;
+			      FORTRAN(isortid,(&icolpardiso[kstart],&aupardiso[kstart],
+					       &n,&kflag));
+			      break;
+			  }else{
+
+			      /* end of row not yet reached */
+
+			      k++;
+			  }
 		      }
-		  }
-	      }while(1);
+		  }while(1);
+	      }
 	  }
 	  pointers[*neq]=ndim+1;
 	  SFREE(irowpardiso);

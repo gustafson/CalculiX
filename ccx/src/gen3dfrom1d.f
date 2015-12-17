@@ -36,14 +36,14 @@
 !
 !     check whether linear or quadratic
 !
-      if(lakon(i)(3:3).eq.'1') then
+      if((lakon(i)(3:3).eq.'1').or.(lakon(i)(4:4).eq.'2')) then
          nope=2
          if(lakon(i)(4:4).eq.'R') then
             ishift=8
          else
             ishift=11
          endif
-      elseif(lakon(i)(3:3).eq.'2') then
+      elseif((lakon(i)(3:3).eq.'2').or.(lakon(i)(4:5).eq.'3')) then
          nope=3
          ishift=20
       endif

@@ -10,10 +10,10 @@
 
 /* split rec_str at each breakchar into dat[] */
 /* dat should be unused before */
-ITG strsplt( char *rec_str, char breakchar, char ***ptr)
+int strsplt( char *rec_str, char breakchar, char ***ptr)
 {
-  ITG i,j;
-  ITG nextarg=0, letter=0, skip_breakchar=0;
+  int i,j;
+  int nextarg=0, letter=0, skip_breakchar=0;
   char **dat;
 
   if( (dat= (char **)malloc( 1*sizeof(char *))) == NULL )

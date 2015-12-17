@@ -69,9 +69,18 @@
       implicit none
 !
       character*20 loadtype
+!
       integer kstep,kinc,noel,npt,jltyp,nfield,node,mi(*),iemchange
+!
       real*8 e(2),sink,time(2),coords(3),temp,field(nfield),area,
      &  vold(0:mi(2),*)
+!
+      intent(in) temp,kstep,kinc,time,noel,npt,
+     &  coords,jltyp,field,nfield,loadtype,node,area,vold,mi
+!
+      intent(out) e,iemchange
+!
+      intent(inout) sink
 !
       e(1)=0.72d0
 !

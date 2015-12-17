@@ -32,14 +32,15 @@
      &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),imat
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in materials: *MATERIAL should be placed'
+         write(*,*) 
+     &       '*ERROR reading *MATERIAL: *MATERIAL should be placed'
          write(*,*) '  before all step definitions'
          call exit(201)
       endif
 !
       nmat=nmat+1
       if(nmat.gt.nmat_) then
-         write(*,*) '*ERROR in materials: increase nmat_'
+         write(*,*) '*ERROR reading *MATERIAL: increase nmat_'
          call exit(201)
       endif
 !
@@ -49,7 +50,8 @@
          if(textpart(i)(1:5).eq.'NAME=') then
             matname(nmat)=textpart(i)(6:85)
             if(textpart(i)(86:86).ne.' ') then
-               write(*,*) '*ERROR in materials: material name too long'
+               write(*,*) 
+     &             '*ERROR reading *MATERIAL: material name too long'
                write(*,*) '       (more than 80 characters)'
                write(*,*) '       material name:',textpart(i)(1:132)
                call exit(201)
@@ -57,7 +59,7 @@
             exit
          else
             write(*,*) 
-     &        '*WARNING in materials: parameter not recognized:'
+     &        '*WARNING reading *MATERIAL: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,

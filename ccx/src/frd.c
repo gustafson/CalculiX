@@ -679,24 +679,26 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
   /* storing the displacements in the nodes */
   
-  if((strcmp1(filab,"U ")==0)&&(*ithermal!=2)){
-    iselect=1;
-    
-    frdset(filab,set,&iset,istartset,iendset,ialset,
-	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	   ngraph);
-    
-    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-
-    fprintf(f1," -4  DISP        4    1\n");
-    fprintf(f1," -5  D1          1    2    1    0\n");
-    fprintf(f1," -5  D2          1    2    2    0\n");
-    fprintf(f1," -5  D3          1    2    3    0\n");
-    fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
-
-    frdvector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
-	      trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+  if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(filab,"U ")==0)&&(*ithermal!=2)){
+	  iselect=1;
+	  
+	  frdset(filab,set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+	  
+	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
+	  
+	  fprintf(f1," -4  DISP        4    1\n");
+	  fprintf(f1," -5  D1          1    2    1    0\n");
+	  fprintf(f1," -5  D2          1    2    2    0\n");
+	  fprintf(f1," -5  D3          1    2    3    0\n");
+	  fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
+	  
+	  frdvector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
+		    trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+      }
   }
 
   /*     storing the imaginary part of displacements in the nodes
@@ -715,6 +717,31 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
       
       frdvector(&v[*nk*mt],&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
+		trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+    }
+  }
+
+  /*     storing the imaginary part of displacements in the nodes
+         for steady state calculations */
+
+  if((*nmethod==5)&&(*mode==0)){
+    if((strcmp1(filab,"U ")==0)&&(*ithermal!=2)){
+	iselect=1;
+	
+	frdset(filab,set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+    
+      frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
+
+      fprintf(f1," -4  DISPI       4    1\n");
+      fprintf(f1," -5  D1          1    2    1    0\n");
+      fprintf(f1," -5  D2          1    2    2    0\n");
+      fprintf(f1," -5  D3          1    2    3    0\n");
+      fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
+      
+      frdvector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
 		trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
     }
   }
@@ -789,28 +816,30 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
   /* storing the stresses in the nodes */
   
-  if((strcmp1(&filab[174],"S   ")==0)&&(*ithermal!=2)){
-    iselect=1;
-    
-    frdset(&filab[174],set,&iset,istartset,iendset,ialset,
-	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	   ngraph);
-    
-    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-
-    fprintf(f1," -4  STRESS      6    1\n");
-    fprintf(f1," -5  SXX         1    4    1    1\n");
-    fprintf(f1," -5  SYY         1    4    2    2\n");
-    fprintf(f1," -5  SZZ         1    4    3    3\n");
-    fprintf(f1," -5  SXY         1    4    1    2\n");
-    fprintf(f1," -5  SYZ         1    4    2    3\n");
-    fprintf(f1," -5  SZX         1    4    3    1\n");
-
-    frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
-                ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-                nfieldtensor,&iselect,m2,f1,output,m3);
-
+  if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[174],"S   ")==0)&&(*ithermal!=2)){
+	  iselect=1;
+	  
+	  frdset(&filab[174],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+	  
+	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
+	  
+	  fprintf(f1," -4  STRESS      6    1\n");
+	  fprintf(f1," -5  SXX         1    4    1    1\n");
+	  fprintf(f1," -5  SYY         1    4    2    2\n");
+	  fprintf(f1," -5  SZZ         1    4    3    3\n");
+	  fprintf(f1," -5  SXY         1    4    1    2\n");
+	  fprintf(f1," -5  SYZ         1    4    2    3\n");
+	  fprintf(f1," -5  SZX         1    4    3    1\n");
+	  
+	  frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,m2,f1,output,m3);
+	  
+      }
   }
 
   /* storing the imaginary part of the stresses in the nodes
@@ -831,6 +860,35 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       fprintf(f1," -5  SZX         1    4    3    1\n");
       
       frdselect(&stn[6**nk],stn,&iset,&nkcoords,inum,m1,istartset,iendset,
+                ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+                nfieldtensor,&iselect,m2,f1,output,m3);
+      
+    }
+  }
+
+  /* storing the imaginary part of the stresses in the nodes
+     for steady state calculations */
+  
+  if((*nmethod==5)&&(*mode==0)){
+    if((strcmp1(&filab[174],"S   ")==0)&&(*ithermal!=2)){
+      iselect=1;
+	
+      frdset(&filab[174],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+      
+      frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
+      
+      fprintf(f1," -4  STRESSI     6    1\n");
+      fprintf(f1," -5  SXX         1    4    1    1\n");
+      fprintf(f1," -5  SYY         1    4    2    2\n");
+      fprintf(f1," -5  SZZ         1    4    3    3\n");
+      fprintf(f1," -5  SXY         1    4    1    2\n");
+      fprintf(f1," -5  SYZ         1    4    2    3\n");
+      fprintf(f1," -5  SZX         1    4    3    1\n");
+      
+      frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
                 ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
                 nfieldtensor,&iselect,m2,f1,output,m3);
       
@@ -887,34 +945,36 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
   /* storing the total strains in the nodes */
   
-  if((strcmp1(&filab[261],"E   ")==0)&&(*ithermal!=2)){
-    iselect=1;
-    
-    frdset(&filab[261],set,&iset,istartset,iendset,ialset,
-	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	   ngraph);
-    
-    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-
-    fprintf(f1," -4  TOSTRAIN    6    1\n");
-    fprintf(f1," -5  EXX         1    4    1    1\n");
-    fprintf(f1," -5  EYY         1    4    2    2\n");
-    fprintf(f1," -5  EZZ         1    4    3    3\n");
-    fprintf(f1," -5  EXY         1    4    1    2\n");
-    fprintf(f1," -5  EYZ         1    4    2    3\n");
-    fprintf(f1," -5  EZX         1    4    3    1\n");
-
-    frdselect(een,een,&iset,&nkcoords,inum,m1,istartset,iendset,
-                ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-                nfieldtensor,&iselect,m2,f1,output,m3);
-
+  if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[261],"E   ")==0)&&(*ithermal!=2)){
+	  iselect=1;
+	  
+	  frdset(&filab[261],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+	  
+	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
+	  
+	  fprintf(f1," -4  TOSTRAIN    6    1\n");
+	  fprintf(f1," -5  EXX         1    4    1    1\n");
+	  fprintf(f1," -5  EYY         1    4    2    2\n");
+	  fprintf(f1," -5  EZZ         1    4    3    3\n");
+	  fprintf(f1," -5  EXY         1    4    1    2\n");
+	  fprintf(f1," -5  EYZ         1    4    2    3\n");
+	  fprintf(f1," -5  EZX         1    4    3    1\n");
+	  
+	  frdselect(een,een,&iset,&nkcoords,inum,m1,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,m2,f1,output,m3);
+	  
+      }
   }
 
   /* storing the imaginary part of the total strains in the nodes
      for the odd modes of cyclic symmetry calculations */
   
-  if(*noddiam>=0){
+  if((*noddiam>=0)||((*nmethod==5)&&(*mode==0))){
     if((strcmp1(&filab[261],"E   ")==0)&&(*ithermal!=2)){
       
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
@@ -937,35 +997,37 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
   /* storing the mechanical strains in the nodes */
   
-  if((strcmp1(&filab[2697],"ME  ")==0)&&(*ithermal!=2)){
-    iselect=1;
-    
-    frdset(&filab[2697],set,&iset,istartset,iendset,ialset,
-	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	   ngraph);
-    
-    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-
-    fprintf(f1," -4  MESTRAIN    6    1\n");
-    fprintf(f1," -5  MEXX        1    4    1    1\n");
-    fprintf(f1," -5  MEYY        1    4    2    2\n");
-    fprintf(f1," -5  MEZZ        1    4    3    3\n");
-    fprintf(f1," -5  MEXY        1    4    1    2\n");
-    fprintf(f1," -5  MEYZ        1    4    2    3\n");
-    fprintf(f1," -5  MEZX        1    4    3    1\n");
-
-
-    frdselect(emn,emn,&iset,&nkcoords,inum,m1,istartset,iendset,
-                ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-                nfieldtensor,&iselect,m2,f1,output,m3);
-
+  if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[2697],"ME  ")==0)&&(*ithermal!=2)){
+	  iselect=1;
+	  
+	  frdset(&filab[2697],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+	  
+	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
+	  
+	  fprintf(f1," -4  MESTRAIN    6    1\n");
+	  fprintf(f1," -5  MEXX        1    4    1    1\n");
+	  fprintf(f1," -5  MEYY        1    4    2    2\n");
+	  fprintf(f1," -5  MEZZ        1    4    3    3\n");
+	  fprintf(f1," -5  MEXY        1    4    1    2\n");
+	  fprintf(f1," -5  MEYZ        1    4    2    3\n");
+	  fprintf(f1," -5  MEZX        1    4    3    1\n");
+	  
+	  
+	  frdselect(emn,emn,&iset,&nkcoords,inum,m1,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,m2,f1,output,m3);
+	  
+      }
   }
 
   /* storing the imaginary part of the mechanical strains in the nodes
      for the odd modes of cyclic symmetry calculations */
   
-  if(*noddiam>=0){
+  if((*noddiam>=0)||((*nmethod==5)&&(*mode==0))){
     if((strcmp1(&filab[2697],"ME  ")==0)&&(*ithermal!=2)){
       
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
@@ -988,32 +1050,34 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
   /* storing the forces in the nodes */
   
-  if((strcmp1(&filab[348],"RF  ")==0)&&(*ithermal!=2)){
-    iselect=1;
-    
-    frdset(&filab[348],set,&iset,istartset,iendset,ialset,
-	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	   ngraph);
-    
-    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-
-    fprintf(f1," -4  FORC        4    1\n");
-    fprintf(f1," -5  F1          1    2    1    0\n");
-    fprintf(f1," -5  F2          1    2    2    0\n");
-    fprintf(f1," -5  F3          1    2    3    0\n");
-    fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
-
-    if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]*=180.;fn[2+i*mt]*=180.;fn[3+i*mt]*=180.;}}
-    frdvector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,m1,inotr,
-	      trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
-    if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]/=180.;fn[2+i*mt]/=180.;fn[3+i*mt]/=180.;}}
+  if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[348],"RF  ")==0)&&(*ithermal!=2)){
+	  iselect=1;
+	  
+	  frdset(&filab[348],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+	  
+	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
+	  
+	  fprintf(f1," -4  FORC        4    1\n");
+	  fprintf(f1," -5  F1          1    2    1    0\n");
+	  fprintf(f1," -5  F2          1    2    2    0\n");
+	  fprintf(f1," -5  F3          1    2    3    0\n");
+	  fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
+	  
+	  if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]*=180.;fn[2+i*mt]*=180.;fn[3+i*mt]*=180.;}}
+	  frdvector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,m1,inotr,
+		    trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+	  if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]/=180.;fn[2+i*mt]/=180.;fn[3+i*mt]/=180.;}}
+      }
   }
 
   /*     storing the imaginary part of the forces in the nodes
          for the odd modes of cyclic symmetry calculations */
 
-  if(*noddiam>=0){
+  if((*noddiam>=0)||((*nmethod==5)&&(*mode==0))){
     if((strcmp1(&filab[348],"RF  ")==0)&&(*ithermal!=2)){
     
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
@@ -1119,34 +1183,36 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
   /* face-to-face penalty */
 
-  if((strcmp1(&filab[2175],"CONT")==0)&&(*mortar==1)&&(*ithermal!=2)){
-      iselect=1;
-    
-      frdset(&filab[2175],set,&iset,istartset,iendset,ialset,
-	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	   ngraph);
-    
-      frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-      fprintf(f1," -4  CONTACT     6    1\n");
-      fprintf(f1," -5  COPEN       1    4    1    1\n");
-      fprintf(f1," -5  CSLIP1      1    4    2    2\n");
-      fprintf(f1," -5  CSLIP2      1    4    3    3\n");
-      fprintf(f1," -5  CPRESS      1    4    1    2\n");
-      fprintf(f1," -5  CSHEAR1     1    4    2    3\n");
-      fprintf(f1," -5  CSHEAR2     1    4    3    1\n");
-
-      frdselect(cdn,cdn,&iset,&nkcoords,inum,m1,istartset,iendset,
-                ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-                nfieldtensor,&iselect,m2,f1,output,m3);
-
+  if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[2175],"CONT")==0)&&(*mortar==1)&&(*ithermal!=2)){
+	  iselect=1;
+	  
+	  frdset(&filab[2175],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+	  
+	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
+	  fprintf(f1," -4  CONTACT     6    1\n");
+	  fprintf(f1," -5  COPEN       1    4    1    1\n");
+	  fprintf(f1," -5  CSLIP1      1    4    2    2\n");
+	  fprintf(f1," -5  CSLIP2      1    4    3    3\n");
+	  fprintf(f1," -5  CPRESS      1    4    1    2\n");
+	  fprintf(f1," -5  CSHEAR1     1    4    2    3\n");
+	  fprintf(f1," -5  CSHEAR2     1    4    3    1\n");
+	  
+	  frdselect(cdn,cdn,&iset,&nkcoords,inum,m1,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,m2,f1,output,m3);
+	  
+      }
   }
 
   /* storing imaginary part of the differential contact displacements 
      and the contact stresses for the odd modes of cyclic symmetry
      calculations */
 
-  if(*noddiam>=0){
+  if((*noddiam>=0)||((*nmethod==5)&&(*mode==0))){
       if((strcmp1(&filab[2175],"CONT")==0)&&(*mortar==1)&&(*ithermal!=2)){
 	  iselect=1;
 	  
@@ -1304,39 +1370,41 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   
   /* storing the Zienkiewicz-Zhu improved stresses in the nodes */
   
-  if((strcmp1(&filab[1044],"ZZS")==0)&&(*ithermal!=2)){
-
-    FORTRAN(zienzhu,(co,nk,kon,ipkon,lakon,ne0,stn,ipneigh,neigh,
-		    stx,&mi[0]));
-
-    iselect=1;
-    
-    frdset(&filab[1044],set,&iset,istartset,iendset,ialset,
-	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	   ngraph);
-    
-    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-
-    fprintf(f1," -4  ZZSTR       6    1\n");
-    fprintf(f1," -5  SXX         1    4    1    1\n");
-    fprintf(f1," -5  SYY         1    4    2    2\n");
-    fprintf(f1," -5  SZZ         1    4    3    3\n");
-    fprintf(f1," -5  SXY         1    4    1    2\n");
-    fprintf(f1," -5  SYZ         1    4    2    3\n");
-    fprintf(f1," -5  SZX         1    4    3    1\n");
-
-    frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
-                ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-                nfieldtensor,&iselect,m2,f1,output,m3);
-
+  if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[1044],"ZZS")==0)&&(*ithermal!=2)){
+	  
+	  FORTRAN(zienzhu,(co,nk,kon,ipkon,lakon,ne0,stn,ipneigh,neigh,
+			   stx,&mi[0]));
+	  
+	  iselect=1;
+	  
+	  frdset(&filab[1044],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+	  
+	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
+	  
+	  fprintf(f1," -4  ZZSTR       6    1\n");
+	  fprintf(f1," -5  SXX         1    4    1    1\n");
+	  fprintf(f1," -5  SYY         1    4    2    2\n");
+	  fprintf(f1," -5  SZZ         1    4    3    3\n");
+	  fprintf(f1," -5  SXY         1    4    1    2\n");
+	  fprintf(f1," -5  SYZ         1    4    2    3\n");
+	  fprintf(f1," -5  SZX         1    4    3    1\n");
+	  
+	  frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,m2,f1,output,m3);
+	  
+      }
   }
 
   /* storing the imaginary part of the Zienkiewicz-Zhu 
      improved stresses in the nodes
      for the odd modes of cyclic symmetry calculations */
   
-  if(*noddiam>=0){
+  if((*noddiam>=0)||((*nmethod==5)&&(*mode==0))){
     if((strcmp1(&filab[1044],"ZZS")==0)&&(*ithermal!=2)){
 
       FORTRAN(zienzhu,(co,nk,kon,ipkon,lakon,ne0,stn,ipneigh,neigh,
@@ -1362,51 +1430,53 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   
   /* storing the error estimator in the nodes */
   
-  if((strcmp1(&filab[1044],"ERR")==0)&&(*ithermal!=2)){
-
-    nterms=6;
-    FORTRAN(errorestimator,(stx,stn,ipkon,inum,kon,lakon,nk,ne,
-			    mi,ielmat,thicke,&nterms));
-
-    iselect=1;
-    
-    frdset(&filab[1044],set,&iset,istartset,iendset,ialset,
-	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	   ngraph);
-    
-    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-
-    fprintf(f1," -4  ERROR       2    1\n");
-    fprintf(f1," -5  PSTD        1    1    1    0\n");
-    fprintf(f1," -5  VMSTD       1    2    2    0\n");
-
-    ncomp=2;
-    ifield[0]=1;ifield[1]=1;
-    icomp[0]=2;icomp[1]=4;
-
-    frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
-                ialset,ngraph,&ncomp,ifield,icomp,
-                nfieldtensor,&iselect,m2,f1,output,m3);
-
+  if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[1044],"ERR")==0)&&(*ithermal!=2)){
+	  
+	  nterms=6;
+	  FORTRAN(errorestimator,(stx,stn,ipkon,kon,lakon,nk,ne,
+				  mi,ielmat,&nterms));
+	  
+	  iselect=1;
+	  
+	  frdset(&filab[1044],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+	  
+	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
+	  
+	  fprintf(f1," -4  ERROR       2    1\n");
+	  fprintf(f1," -5  ABS         1    1    1    0\n");
+	  fprintf(f1," -5  REL         1    2    2    0\n");
+	  
+	  ncomp=2;
+	  ifield[0]=1;ifield[1]=1;
+	  icomp[0]=2;icomp[1]=4;
+	  
+	  frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
+		    ialset,ngraph,&ncomp,ifield,icomp,
+		    nfieldtensor,&iselect,m2,f1,output,m3);
+	  
+      }
   }
 
   /* storing the imaginary part of the error estimator in the nodes
      for the odd modes of cyclic symmetry calculations */
   
-  if(*noddiam>=0){
+  if((*noddiam>=0)||((*nmethod==5)&&(*mode==0))){
     if((strcmp1(&filab[1044],"ERR")==0)&&(*ithermal!=2)){
 
       nterms=6;
-      FORTRAN(errorestimator,(&stx[6*mi[0]**ne],stn,ipkon,inum,kon,lakon,nk,ne,
-			      mi,ielmat,thicke,&nterms));
+      FORTRAN(errorestimator,(&stx[6*mi[0]**ne],stn,ipkon,kon,lakon,nk,ne,
+			      mi,ielmat,&nterms));
       
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
       fprintf(f1," -4  ERRORI      2    1\n");
-      fprintf(f1," -5  PSTD        1    1    1    0\n");
-      fprintf(f1," -5  VMSTD       1    2    2    0\n");
+      fprintf(f1," -5  ABS         1    1    1    0\n");
+      fprintf(f1," -5  REL         1    2    2    0\n");
       
       ncomp=2;
       ifield[0]=1;ifield[1]=1;
@@ -1421,43 +1491,45 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   
   /* storing the thermal error estimator in the nodes */
   
-  if((strcmp1(&filab[2784],"HER")==0)&&(*ithermal>1)){
-
-    nterms=3;
-    FORTRAN(errorestimator,(qfx,qfn,ipkon,inum,kon,lakon,nk,ne,
-			    mi,ielmat,thicke,&nterms));
-
-    iselect=1;
-    
-    frdset(&filab[2784],set,&iset,istartset,iendset,ialset,
-	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	   ngraph);
-    
-    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-
-    fprintf(f1," -4  HERROR      1    1\n");
-    fprintf(f1," -5  HFLSTD      1    1    1    0\n");
-
-    ncomp=1;
-    ifield[0]=1;
-    icomp[0]=2;
-
-    frdselect(qfn,qfn,&iset,&nkcoords,inum,m1,istartset,iendset,
-                ialset,ngraph,&ncomp,ifield,icomp,
-                nfieldvector1,&iselect,m2,f1,output,m3);
-
+  if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[2784],"HER")==0)&&(*ithermal>1)){
+	  
+	  nterms=3;
+	  FORTRAN(errorestimator,(qfx,qfn,ipkon,kon,lakon,nk,ne,
+				  mi,ielmat,&nterms));
+	  
+	  iselect=1;
+	  
+	  frdset(&filab[2784],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+	  
+	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
+	  
+	  fprintf(f1," -4  HERROR      1    1\n");
+	  fprintf(f1," -5  HFLSTD      1    1    1    0\n");
+	  
+	  ncomp=1;
+	  ifield[0]=1;
+	  icomp[0]=2;
+	  
+	  frdselect(qfn,qfn,&iset,&nkcoords,inum,m1,istartset,iendset,
+		    ialset,ngraph,&ncomp,ifield,icomp,
+		    nfieldvector1,&iselect,m2,f1,output,m3);
+	  
+      }
   }
 
   /* storing the imaginary part of the thermal error estimator in the nodes
      for the odd modes of cyclic symmetry calculations */
   
-  if(*noddiam>=0){
+  if((*noddiam>=0)||((*nmethod==5)&&(*mode==0))){
     if((strcmp1(&filab[2784],"HER")==0)&&(*ithermal>1)){
 
       nterms=3;
-      FORTRAN(errorestimator,(&qfx[3*mi[0]**ne],qfn,ipkon,inum,kon,lakon,nk,ne,
-			      mi,ielmat,thicke,&nterms));
+      FORTRAN(errorestimator,(&qfx[3*mi[0]**ne],qfn,ipkon,kon,lakon,nk,ne,
+			      mi,ielmat,&nterms));
       
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		&noutloc,description,kode,nmethod,f1,output,istep,iinc);

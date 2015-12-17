@@ -116,6 +116,9 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
   if(*ntrans>0)NNEW(inotrt,ITG,2**nk*ngraph);
 
   if((strcmp1(&filab[0],"U ")==0)||
+     (strcmp1(&filab[1131],"TT  ")==0)||
+     (strcmp1(&filab[1218],"MF  ")==0)||
+     (strcmp1(&filab[1305],"PT  ")==0)||
      ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2)))
     NNEW(vt,double,mt**nk*ngraph);
   if((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal<2))
@@ -223,7 +226,7 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
   icntrl=-1;
     
   FORTRAN(rectcyl,(cot,vt,fnt,stnt,qfnt,eent,cs,&nkt,&icntrl,t,filab,
-		   &imag,mi,emn));
+		   &imag,mi,emnt));
   
   /* mapping the results to the other sectors */
   
@@ -234,6 +237,9 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
   FORTRAN(rectcyl,(co,v,fn,stn,qfn,een,cs,nk,&icntrl,t,filab,&imag,mi,emn));
   
   if((strcmp1(&filab[0],"U ")==0)||
+     (strcmp1(&filab[1131],"TT  ")==0)||
+     (strcmp1(&filab[1218],"MF  ")==0)||
+     (strcmp1(&filab[1305],"PT  ")==0)||
      ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2)))
     for(l=0;l<mt**nk;l++){vt[l]=v[l];};
   if((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal<2))
@@ -265,6 +271,9 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
       for(l=0;l<*nk;l++){inumt[l+i**nk]=inum[l];}
     
       if((strcmp1(&filab[0],"U ")==0)||
+         (strcmp1(&filab[1131],"TT  ")==0)||
+         (strcmp1(&filab[1218],"MF  ")==0)||
+         (strcmp1(&filab[1305],"PT  ")==0)||
          ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2))){
         for(l1=0;l1<*nk;l1++){
           if(inocs[l1]==jj){
@@ -365,7 +374,7 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
   icntrl=-2;
   
   FORTRAN(rectcyl,(cot,vt,fnt,stnt,qfnt,eent,cs,&nkt,&icntrl,t,filab,
-		   &imag,mi,emn));
+		   &imag,mi,emnt));
   
   if(strcmp1(&filab[1044],"ZZS")==0){
       NNEW(neigh,ITG,40*net);
@@ -383,6 +392,9 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
   if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
   
   if((strcmp1(&filab[0],"U ")==0)||
+     (strcmp1(&filab[1131],"TT  ")==0)||
+     (strcmp1(&filab[1218],"MF  ")==0)||
+     (strcmp1(&filab[1305],"PT  ")==0)||
      ((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal>=2))) SFREE(vt);
   if((strcmp1(&filab[87],"NT  ")==0)&&(*ithermal<2)) SFREE(t1t);
   if((strcmp1(&filab[174],"S   ")==0)||(strcmp1(&filab[1044],"ZZS ")==0)||

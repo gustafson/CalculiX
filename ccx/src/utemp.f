@@ -52,7 +52,17 @@
       integer msecpt,kstep,kinc,node,mi(*) 
       real*8 temp(msecpt),time(2),coords(3),vold(0:mi(2),*)
 !
-      temp(1)=293.d0
+!     In order to use this user subroutine:
+!       1. delete the next call to utemp_ccxlib
+!       2. write your own code replacing the line "temp(1)=293.d0"
+!
+      call utemp_ccxlib(temp,msecpt,kstep,kinc,time,node,coords,vold,
+     &  mi)
+!
+!     Start here your own code. The next line is an example of how your
+!     code could look like.
+!
+c      temp(1)=293.d0
 !
       return
       end

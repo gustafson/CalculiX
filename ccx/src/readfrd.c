@@ -43,11 +43,11 @@
 */
 
 
-void freeDatasets(Datasets *lcase, ITG nr)
+void freeDatasets(Datasets *lcase, int nr)
 {
-  register ITG i;
+  register int i;
 
-  printf(" free lc[%" ITGFORMAT "] ncomps:%" ITGFORMAT "\n",nr,lcase[nr].ncomps);
+  printf(" free lc[%d] ncomps:%d\n",nr,lcase[nr].ncomps);
   if(lcase[nr].loaded)
   {
     for(i=0; i<lcase[nr].ncomps; i++) SFREE(lcase[nr].dat[i]);
@@ -84,28 +84,28 @@ void freeDatasets(Datasets *lcase, ITG nr)
 /* read_mode=0: jump '100C' data-blocks and read them later on demand */
 /* in any case for each results of a new step the first data-block is readed to see how much nodes are included */
 
-ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets **lptr, ITG read_mode )
+int readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets **lptr, int read_mode )
 {
   FILE *handle;
-  register ITG i=0, j=0;
-  ITG  nodeflag=0, elemflag=0, errFlag=0, firsttime=1;
-  ITG n;  /* used in format_flag */
+  register int i=0, j=0;
+  int  nodeflag=0, elemflag=0, errFlag=0, firsttime=1;
+  int n;  /* used in format_flag */
   long offset=0;
   fpos_t *filepntr=NULL;
-  ITG elem_data=0,nod_data=0, nod_1st_block=0; /* nodes in resultblock, nodes in 1st block (if no "nr of nodes" are given in frd file, 100C-line) */
+  int elem_data=0,nod_data=0, nod_1st_block=0; /* nodes in resultblock, nodes in 1st block (if no "nr of nodes" are given in frd file, 100C-line) */
 
-  ITG  ncomps, maxcomps=0, nvals, nentities;
+  int  ncomps, maxcomps=0, nvals, nentities;
   char rec_str[MAX_LINE_LENGTH];
-  ITG  node_field_size, elem_field_size;
-  ITG  e_nmax=1, e_nmin=1;
-  ITG  length, flag, format_flag;
-  ITG  ipuf, nodenr=0;
+  int  node_field_size, elem_field_size;
+  int  e_nmax=1, e_nmin=1;
+  int  length, flag, format_flag;
+  int  ipuf, nodenr=0;
   static float *value=NULL;
 
   char **dat, **compName;
-  ITG          *menu, *ictype, *icind1, *icind2, *iexist; 
+  int          *menu, *ictype, *icind1, *icind2, *iexist; 
 
-  ITG anz_p=-1;
+  int anz_p=-1;
   char **pheader=NULL;
 
   Nodes     *node=NULL;
@@ -159,7 +159,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
 
     flag = stoi(rec_str,1,5);
     format_flag = stoi(rec_str,74,75);
-    //printf ("OPCODE:%" ITGFORMAT " IFORMT:%" ITGFORMAT "\n", flag, format_flag );
+    //printf ("OPCODE:%d IFORMT:%d\n", flag, format_flag );
 
     if(flag == 9999) goto read_again;
     if(( (nodeflag==1)&&(flag == 2) ) || ( (elemflag==1)&&(flag == 3) ))
@@ -218,7 +218,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
       {
         if ( (node = (Nodes *)realloc( (Nodes *)node, (node_field_size+1) * sizeof(Nodes))) == NULL )
         {
-          printf("WARNING: in readfrd() is INI_FIELD_SIZE:%" ITGFORMAT " to large and is reduced\n", node_field_size );
+          printf("WARNING: in readfrd() is INI_FIELD_SIZE:%d to large and is reduced\n", node_field_size );
           node_field_size/=2;
         }
         if(node_field_size<0)
@@ -248,12 +248,12 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
           {
             if ( (node = (Nodes *)realloc( (Nodes *)node, (node_field_size+1) * sizeof(Nodes))) == NULL )
             {
-              printf("WARNING: in readfrd() is INI_FIELD_SIZE:%" ITGFORMAT " to large and is reduced\n", node_field_size );
+              printf("WARNING: in readfrd() is INI_FIELD_SIZE:%d to large and is reduced\n", node_field_size );
               node_field_size=nodenr+(node_field_size-nodenr)/2;
             }
             if(node_field_size<=nodenr)
             {
-              printf("\n\n ERROR: not enough memory in readfrd() for node-nr:%" ITGFORMAT " available\n\n", nodenr);
+              printf("\n\n ERROR: not enough memory in readfrd() for node-nr:%d available\n\n", nodenr);
               exit(-1);
             }
           }while(!node);
@@ -278,7 +278,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
           if (node[anz->n].nr >  anz->nmax)  anz->nmax=node[anz->n].nr;
           if (node[anz->n].nr <  anz->nmin)  anz->nmin=node[anz->n].nr;
 #if TEST
-        printf (" n=%" ITGFORMAT " x=%lf y=%lf z=%lf \n",  node[anz->n].nr,
+        printf (" n=%d x=%lf y=%lf z=%lf \n",  node[anz->n].nr,
           node[node[anz->n].nr].nx, node[node[anz->n].nr].ny,
           node[node[anz->n].nr].nz); 
 #endif
@@ -294,8 +294,8 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
        for(i=0; i<nod_data; i++)
        {
         anz->n++;
-        length=fread((ITG *)&node[anz->n].nr,sizeof(ITG),1,handle);
-	//printf("n:%" ITGFORMAT "\n", node[anz->n].nr);
+        length=fread((int *)&node[anz->n].nr,sizeof(int),1,handle);
+	//printf("n:%d\n", node[anz->n].nr);
         if (node[anz->n].nr>=node_field_size)
 	{
           if(node[anz->n].nr<MAX_INTEGER/2) node_field_size=node[anz->n].nr*2+1; else node_field_size=MAX_INTEGER-2;
@@ -304,12 +304,12 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
           {
             if ( (node = (Nodes *)realloc( (Nodes *)node, (node_field_size+1) * sizeof(Nodes))) == NULL )
             {
-              printf("WARNING: in readfrd() is INI_FIELD_SIZE:%" ITGFORMAT " to large and is reduced\n", node_field_size );
+              printf("WARNING: in readfrd() is INI_FIELD_SIZE:%d to large and is reduced\n", node_field_size );
               node_field_size=nodenr+(node_field_size-nodenr)/2;
             }
             if(node_field_size<=nodenr)
             {
-              printf("\n\n ERROR: not enough memory in readfrd() for the node-nr:%" ITGFORMAT " available\n\n", nodenr);
+              printf("\n\n ERROR: not enough memory in readfrd() for the node-nr:%d available\n\n", nodenr);
               exit(-1);
             }
           }while(!node);
@@ -340,7 +340,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
         if (node[anz->n].nr >  anz->nmax)  anz->nmax=node[anz->n].nr;
         if (node[anz->n].nr <  anz->nmin)  anz->nmin=node[anz->n].nr;
 #if TEST
-        printf (" n=%" ITGFORMAT " x=%lf y=%lf z=%lf \n",  node[anz->n].nr,
+        printf (" n=%d x=%lf y=%lf z=%lf \n",  node[anz->n].nr,
           node[node[anz->n].nr].nx, node[node[anz->n].nr].ny,
           node[node[anz->n].nr].nz); 
 #endif
@@ -351,7 +351,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
       if((node = (Nodes *)realloc( (Nodes *)node, node_field_size * sizeof(Nodes))) == NULL )
         printf("\n\n ERROR: realloc failed\n\n") ;
       else
-        printf ("\n %" ITGFORMAT " nodes reallocated \n",anz->nmax);
+        printf ("\n %d nodes reallocated \n",anz->nmax);
     }
 
     else if(flag == 3)
@@ -369,7 +369,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
       {
         if((elem = (Elements *)realloc( (Elements *)elem, (elem_field_size+1) * sizeof(Elements))) == NULL )
         {
-          printf("WARNING: in readfrd() is INI_FIELD_SIZE:%" ITGFORMAT " to large and is reduced\n", elem_field_size );
+          printf("WARNING: in readfrd() is INI_FIELD_SIZE:%d to large and is reduced\n", elem_field_size );
           elem_field_size/=2;
         }
         if(elem_field_size<0)
@@ -385,14 +385,14 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
         if ( (elem = (Elements *)realloc((Elements *)elem, elem_data * sizeof(Elements))) == NULL )
           printf("\n\n ERROR: in readfrd realloc failed\n\n") ;
         else
-          printf ("\n %" ITGFORMAT " elements allocated \n", elem_data);
+          printf ("\n %d elements allocated \n", elem_data);
         for (i=0; i<elem_data; i++)
         {
           anz->e++;
-          length=fread((ITG *)&elem[anz->e].nr,sizeof(ITG),1,handle);
-          length=fread((ITG *)&elem[anz->e].type,sizeof(ITG),1,handle);
-          length=fread((ITG *)&elem[anz->e].group,sizeof(ITG),1,handle);
-          length=fread((ITG *)&elem[anz->e].mat,sizeof(ITG),1,handle);
+          length=fread((int *)&elem[anz->e].nr,sizeof(int),1,handle);
+          length=fread((int *)&elem[anz->e].type,sizeof(int),1,handle);
+          length=fread((int *)&elem[anz->e].group,sizeof(int),1,handle);
+          length=fread((int *)&elem[anz->e].mat,sizeof(int),1,handle);
 	  elem[anz->e].attr = 0;
           anz->etype[elem[anz->e].type]++;
           if (elem[anz->e].nr >  anz->emax)  anz->emax=elem[anz->e].nr;
@@ -409,9 +409,9 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
           else if (elem[anz->e].type == 10) ipuf = 8; /* QUAD8  */
           else if (elem[anz->e].type == 11) ipuf = 2;  /* BEAM2   */
           else if (elem[anz->e].type == 12) ipuf = 3;  /* BEAM3   */
-	  //printf("el:%" ITGFORMAT " t:%" ITGFORMAT " g:%" ITGFORMAT " m:%" ITGFORMAT " n:%" ITGFORMAT "\n", elem[anz->e].nr, elem[anz->e].type,elem[anz->e].group,elem[anz->e].mat, ipuf);
-          length=fread((ITG *)elem[anz->e].nod,sizeof(ITG),ipuf,handle);
-	  //for(j=0;j<ipuf; j++) printf(" %" ITGFORMAT "",elem[anz->e].nod[j]); printf("\n"); 
+	  //printf("el:%d t:%d g:%d m:%d n:%d\n", elem[anz->e].nr, elem[anz->e].type,elem[anz->e].group,elem[anz->e].mat, ipuf);
+          length=fread((int *)elem[anz->e].nod,sizeof(int),ipuf,handle);
+	  //for(j=0;j<ipuf; j++) printf(" %d",elem[anz->e].nod[j]); printf("\n"); 
         }
         anz->e++;
       }
@@ -434,7 +434,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
             {
               if((elem = (Elements *)realloc( (Elements *)elem, (elem_field_size+1) * sizeof(Elements))) == NULL )
               {
-                printf("WARNING: in readfrd() is INI_FIELD_SIZE:%" ITGFORMAT " to large and is reduced\n", elem_field_size );
+                printf("WARNING: in readfrd() is INI_FIELD_SIZE:%d to large and is reduced\n", elem_field_size );
                 elem_field_size=anz->e+(elem_field_size-anz->e)/2;
               }
               if(elem_field_size<=anz->e)
@@ -475,13 +475,13 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
           else if (elem[anz->e].type == 11) ipuf = 2;  /* BEAM2   */
           else if (elem[anz->e].type == 12) ipuf = 3;  /* BEAM3   */
 #if TEST
-          printf ("\n%" ITGFORMAT " e=%" ITGFORMAT " typ=%" ITGFORMAT " grp=%" ITGFORMAT " mat=%" ITGFORMAT " \n", flag, elem[anz->e].nr,
+          printf ("\n%d e=%d typ=%d grp=%d mat=%d \n", flag, elem[anz->e].nr,
                     elem[anz->e].type, elem[anz->e].group, elem[anz->e].mat );
 #endif
           length = frecord( handle, rec_str );
           if (ipuf==0)
           {
-            printf (" element:%" ITGFORMAT " is from unknown type:%" ITGFORMAT "\n", elem[anz->e].nr, elem[anz->e].type);
+            printf (" element:%d is from unknown type:%d\n", elem[anz->e].nr, elem[anz->e].type);
           }
           else
           {
@@ -517,7 +517,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
         }
         else
         {
-          printf ("ERROR: flag:%" ITGFORMAT " is not expected, must be -1 or -2!\n%s", flag, rec_str );
+          printf ("ERROR: flag:%d is not expected, must be -1 or -2!\n%s", flag, rec_str );
           exit(-1);
         }
        } while(flag != -3);
@@ -525,7 +525,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
        if ( (elem = (Elements *)realloc((Elements *)elem, elem_field_size * sizeof(Elements))) == NULL )
          printf("\n\n ERROR: in readfrd realloc failed\n\n") ;
        else
-         printf ("\n %" ITGFORMAT " elements reallocated \n", anz->e);
+         printf ("\n %d elements reallocated \n", anz->e);
       }
     }
 
@@ -533,7 +533,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
     {
       anz->l++;
 
-      printf ("reading Dataset No:%" ITGFORMAT "\n",anz->l+1);
+      printf ("reading Dataset No:%d\n",anz->l+1);
       if ( (lcase = (Datasets *)realloc((Datasets *)lcase, (anz->l+2) * sizeof(Datasets))) == NULL )
       { printf("\n\n ERROR: malloc failure\n\n" ); exit(1); }
 
@@ -557,7 +557,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
       /* because of a bug in ccx2.0 this nr can be wrong. In this case it is higher than the actual nr of nodes. */
       if(nod_data>anz->n)
       {
-        printf(" WARNING: in this result-block are more nodes announced:%" ITGFORMAT " than in the model defined:%" ITGFORMAT "\n Please inform the program-admin of the originator of the frd-file\n\n", nod_data, anz->n);
+        printf(" WARNING: in this result-block are more nodes announced:%d than in the model defined:%d\n Please inform the program-admin of the originator of the frd-file\n\n", nod_data, anz->n);
         //exit(0);
         nod_data=anz->n;
       }
@@ -565,7 +565,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
       if(!nod_data)
       { 
         nod_data=nod_1st_block;
-        printf("nods in block assumed:%" ITGFORMAT "\n",nod_data );
+        printf("nods in block assumed:%d\n",nod_data );
       }
 #endif
       stos( rec_str, 37, 56, lcase[anz->l].dataset_text);
@@ -593,16 +593,16 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
         {
           if(compare(&lcase[anz->l].pheader[i][5],"PHID", 4)==4)
           {
-            sscanf(lcase[anz->l].pheader[i],"%*s %" ITGFORMAT "", &ipuf);
-            if(ipuf>-1) sprintf(lcase[anz->l].dataset_text,"ND:%" ITGFORMAT "",ipuf);
+            sscanf(lcase[anz->l].pheader[i],"%*s %d", &ipuf);
+            if(ipuf>-1) sprintf(lcase[anz->l].dataset_text,"ND:%d",ipuf);
           }
 	}
         if(ipuf!=-1) for(i=0;i<lcase[anz->l].npheader; i++)
         {
           if(compare(&lcase[anz->l].pheader[i][5],"PMODE", 5)==5)
           {
-            sscanf(lcase[anz->l].pheader[i],"%*s %" ITGFORMAT "", &ipuf);
-            if(ipuf>-1) sprintf(&lcase[anz->l].dataset_text[strlen(lcase[anz->l].dataset_text)]," MODE:%" ITGFORMAT "",ipuf);
+            sscanf(lcase[anz->l].pheader[i],"%*s %d", &ipuf);
+            if(ipuf>-1) sprintf(&lcase[anz->l].dataset_text[strlen(lcase[anz->l].dataset_text)]," MODE:%d",ipuf);
           }
         }
       }
@@ -612,7 +612,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
         /* bin mode, active after last column definition was read (-5 lines). Attention flag:-6 not permitted so far! */
         if (( format_flag==2)&&(lcase[anz->l].ncomps>0)&&(ncomps==lcase[anz->l].ncomps))
         {
-          //printf("format_flag=%" ITGFORMAT " ncomps:%" ITGFORMAT " lcncomps:%" ITGFORMAT "\n",format_flag,ncomps,lcase[anz->l].ncomps);
+          //printf("format_flag=%d ncomps:%d lcncomps:%d\n",format_flag,ncomps,lcase[anz->l].ncomps);
 
 	  /* if offset is known jump the filepointer before the next block or else continue reading assuming values for all nodes are provided */
 	  if(offset)
@@ -637,9 +637,9 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
               printf("\n\n ERROR: realloc failed, value\n\n") ;
             for(n=0; n<nod_data; n++)
             {
-              length=fread((ITG *)&nodenr,sizeof(ITG),1,handle);
+              length=fread((int *)&nodenr,sizeof(int),1,handle);
               length=fread((float *)value,sizeof(float),lcase[anz->l].ncomps,handle);
-	      // printf("n:%" ITGFORMAT " N:%" ITGFORMAT " ",n+1, nodenr); 
+	      // printf("n:%d N:%d ",n+1, nodenr); 
               for(i=0; i<lcase[anz->l].ncomps; i++)
               {
 	        // printf(" %f",value[i]); 
@@ -654,7 +654,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
         length = frecord( handle, rec_str);
         if (rec_str[length] == (char)EOF) break;
         flag = stoi(rec_str,1,3);
-	//printf("flag:%" ITGFORMAT "\n", flag);
+	//printf("flag:%d\n", flag);
 	//printf("rec in block:%s\n", rec_str);
 
         if(flag == -1)
@@ -683,7 +683,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
             if (format_flag) nodenr = stoi(rec_str,4,13); else nodenr = stoi(rec_str,4,8); 
             if (nodenr>anz->nmax)
             {
-              if (!errFlag) { errFlag=1; printf("WARNING: found node:%" ITGFORMAT " in Dataset higher than in geometry allocated:%" ITGFORMAT "\n", nodenr, anz->nmax); }
+              if (!errFlag) { errFlag=1; printf("WARNING: found node:%d in Dataset higher than in geometry allocated:%d\n", nodenr, anz->nmax); }
             }
             else if ( lcase[anz->l].irtype == 1 )
     	    {
@@ -713,7 +713,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
               {
 	        for(i=0; i<maxcomps; i++) lcase[anz->l].dat[i][nodenr]= stof(&rec_str[n+i*12], 1, 12);
 	      }
-    	      /* printf("%" ITGFORMAT "", nodenr); for (i=0; i<maxcomps; i++) printf(" %f",lcase[anz->l].dat[i][nodenr] ); printf("\n"); */
+    	      /* printf("%d", nodenr); for (i=0; i<maxcomps; i++) printf(" %f",lcase[anz->l].dat[i][nodenr] ); printf("\n"); */
             }
             else i=0;
 	  }
@@ -747,9 +747,9 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
             goto next;
           }
 
-          if ( (lcase[anz->l].nmax = (ITG *)malloc( (lcase[anz->l].ncomps) * sizeof(ITG))) == NULL )
+          if ( (lcase[anz->l].nmax = (int *)malloc( (lcase[anz->l].ncomps) * sizeof(int))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
-          if ( (lcase[anz->l].nmin = (ITG *)malloc( (lcase[anz->l].ncomps) * sizeof(ITG))) == NULL )
+          if ( (lcase[anz->l].nmin = (int *)malloc( (lcase[anz->l].ncomps) * sizeof(int))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
           if ( (lcase[anz->l].max = (float *)malloc( (lcase[anz->l].ncomps) * sizeof(float))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
@@ -759,19 +759,19 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
             printf("\n\n ERROR: malloc failure\n\n" );
           if ( (lcase[anz->l].icname = (char **)malloc( (lcase[anz->l].ncomps) * sizeof(char *))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
-          if ( (lcase[anz->l].menu = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+          if ( (lcase[anz->l].menu = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
-          if ( (lcase[anz->l].ictype = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+          if ( (lcase[anz->l].ictype = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
-          if ( (lcase[anz->l].icind1 = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+          if ( (lcase[anz->l].icind1 = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
-          if ( (lcase[anz->l].icind2 = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+          if ( (lcase[anz->l].icind2 = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
-          if ( (lcase[anz->l].iexist = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+          if ( (lcase[anz->l].iexist = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
           if ( (lcase[anz->l].dat = (float **)malloc( (lcase[anz->l].ncomps) * sizeof(float *))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
-  printf(" gen lc[%" ITGFORMAT "] ncomps:%" ITGFORMAT "\n",anz->l,lcase[anz->l].ncomps);
+  printf(" gen lc[%d] ncomps:%d\n",anz->l,lcase[anz->l].ncomps);
           for(i=0; i<(lcase[anz->l].ncomps); i++)
 	  {
             if ( (lcase[anz->l].compName[i] = (char *)malloc( MAX_LINE_LENGTH * sizeof(char))) == NULL )
@@ -804,7 +804,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
           else
 	  {
 	    rec_str[14]='\0';
-	    printf(" WARNING: unallocated component:%" ITGFORMAT " \"%s\" %" ITGFORMAT "\n", ncomps, &rec_str[5],lcase[anz->l].ncomps);
+	    printf(" WARNING: unallocated component:%d \"%s\" %d\n", ncomps, &rec_str[5],lcase[anz->l].ncomps);
 	    exit(0);
 	  }
           nentities++;
@@ -819,7 +819,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
 
             nvals=0;
             for (i=0; i<ncomps; i++) if(lcase[anz->l].iexist[i]!=1) nvals++;
-	    printf("ncomps:%" ITGFORMAT " nvals:%" ITGFORMAT "\n", ncomps, nvals);
+	    printf("ncomps:%d nvals:%d\n", ncomps, nvals);
 
             if(!read_mode)
             {
@@ -843,7 +843,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
                     if(nvals%6)
                       offset+= nod_data * (n+(nvals%6)*12+1);
       	          }
-		  //printf("offset:%" ITGFORMAT " nod_data:%" ITGFORMAT " n:%" ITGFORMAT " nvals:%" ITGFORMAT "\n", offset,nod_data,n,nvals);
+		  //printf("offset:%d nod_data:%d n:%d nvals:%d\n", offset,nod_data,n,nvals);
 		}
               }
             }
@@ -874,15 +874,15 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
 	  }
           for (i=0; i<ipuf; i++) strcpy(compName[i], lcase[anz->l].compName[ atoi(dat[i+3])-1 ]);
           for (i=0; i<ipuf; i++) strcpy(lcase[anz->l].compName[i],compName[i]);
-          if ( (menu = (ITG *)malloc( ipuf * sizeof(ITG))) == NULL )
+          if ( (menu = (int *)malloc( ipuf * sizeof(int))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
-          if ( (ictype = (ITG *)malloc( ipuf * sizeof(ITG))) == NULL )
+          if ( (ictype = (int *)malloc( ipuf * sizeof(int))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
-          if ( (icind1 = (ITG *)malloc( ipuf * sizeof(ITG))) == NULL )
+          if ( (icind1 = (int *)malloc( ipuf * sizeof(int))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
-          if ( (icind2 = (ITG *)malloc( ipuf * sizeof(ITG))) == NULL )
+          if ( (icind2 = (int *)malloc( ipuf * sizeof(int))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
-          if ( (iexist = (ITG *)malloc( ipuf * sizeof(ITG))) == NULL )
+          if ( (iexist = (int *)malloc( ipuf * sizeof(int))) == NULL )
             printf("\n\n ERROR: malloc failure\n\n" );
           for (i=0; i<ipuf; i++) menu[i] = lcase[anz->l].menu[atoi(dat[i+3])-1];
           for (i=0; i<ipuf; i++) lcase[anz->l].menu[i] =menu[i];
@@ -933,7 +933,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
     else if(flag == 4)
     {
       anz->l++;
-      printf ("reading Dataset No:%" ITGFORMAT "\n",anz->l+1);
+      printf ("reading Dataset No:%d\n",anz->l+1);
       if ( (lcase = (Datasets *)realloc((Datasets *)lcase, (anz->l+2) * sizeof(Datasets))) == NULL )
       { printf("\n\n ERROR: malloc failure\n\n" ); exit(1); }
 
@@ -944,9 +944,9 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
       lcase[anz->l].loaded = 1;
       lcase[anz->l].format_flag=format_flag;
 
-      if ( (lcase[anz->l].nmax = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].nmax = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
-      if ( (lcase[anz->l].nmin = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].nmin = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
       if ( (lcase[anz->l].max = (float *)malloc( lcase[anz->l].ncomps * sizeof(float))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
@@ -970,15 +970,15 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
           printf("\n\n ERROR: malloc failure\n\n" );	               
         for(j=0; j<=anz->nmax; j++) lcase[anz->l].dat[i][j]=0.;
       }
-      if ( (lcase[anz->l].menu = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].menu = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
-      if ( (lcase[anz->l].ictype = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].ictype = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
-      if ( (lcase[anz->l].icind1 = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].icind1 = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
-      if ( (lcase[anz->l].icind2 = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].icind2 = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
-      if ( (lcase[anz->l].iexist = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].iexist = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
 
       for(i=0; i<lcase[anz->l].ncomps; i++)
@@ -1005,7 +1005,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
           else              nodenr = stoi(rec_str,4,13);
           if (nodenr>anz->nmax)
           {
-            if (!errFlag) { errFlag=1; printf("WARNING: found node:%" ITGFORMAT " in Dataset higher than in geometry allocated:%" ITGFORMAT "\n", nodenr, anz->nmax); }
+            if (!errFlag) { errFlag=1; printf("WARNING: found node:%d in Dataset higher than in geometry allocated:%d\n", nodenr, anz->nmax); }
           }
           else if (!format_flag) 
           {
@@ -1041,7 +1041,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
     else if(flag == 5)
     {
       anz->l++;
-      printf ("reading Dataset No:%" ITGFORMAT "\n",anz->l+1);
+      printf ("reading Dataset No:%d\n",anz->l+1);
       if ( (lcase = (Datasets *)realloc((Datasets *)lcase, (anz->l+2) * sizeof(Datasets))) == NULL )
       { printf("\n\n ERROR: malloc failure\n\n" ); exit(1); }
 
@@ -1052,9 +1052,9 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
       lcase[anz->l].loaded = 1;
       lcase[anz->l].format_flag=format_flag;
 
-      if ( (lcase[anz->l].nmax = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].nmax = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
-      if ( (lcase[anz->l].nmin = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].nmin = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
       if ( (lcase[anz->l].max = (float *)malloc( lcase[anz->l].ncomps * sizeof(float))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
@@ -1078,15 +1078,15 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
         lcase[anz->l].min[i]=MAX_FLOAT;
         for(j=0; j<=anz->nmax; j++) lcase[anz->l].dat[i][j]=0.;
       }
-      if ( (lcase[anz->l].menu = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].menu = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
-      if ( (lcase[anz->l].ictype = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].ictype = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
-      if ( (lcase[anz->l].icind1 = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].icind1 = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
-      if ( (lcase[anz->l].icind2 = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].icind2 = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
-      if ( (lcase[anz->l].iexist = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].iexist = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
 
       for(i=0; i<lcase[anz->l].ncomps; i++)
@@ -1126,7 +1126,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
           else              nodenr = stoi(rec_str,4,13);
           if (nodenr>anz->nmax)
           {
-            if (!errFlag) { errFlag=1; printf("WARNING: found node:%" ITGFORMAT " in Dataset higher than in geometry allocated:%" ITGFORMAT "\n", nodenr, anz->nmax); }
+            if (!errFlag) { errFlag=1; printf("WARNING: found node:%d in Dataset higher than in geometry allocated:%d\n", nodenr, anz->nmax); }
           }
           else
           {
@@ -1168,7 +1168,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
     else if((flag == 7)||(flag == 9))
     {
       anz->l++;
-      printf ("reading Dataset No:%" ITGFORMAT "\n",anz->l+1);
+      printf ("reading Dataset No:%d\n",anz->l+1);
       if ( (lcase = (Datasets *)realloc((Datasets *)lcase, (anz->l+2) * sizeof(Datasets))) == NULL )
       { printf("\n\n ERROR: malloc failure\n\n" ); exit(1); }
 
@@ -1179,9 +1179,9 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
       lcase[anz->l].loaded = 1;
       lcase[anz->l].format_flag=format_flag;
 
-      if ( (lcase[anz->l].nmax = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].nmax = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
-      if ( (lcase[anz->l].nmin = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].nmin = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
       if ( (lcase[anz->l].max = (float *)malloc( lcase[anz->l].ncomps * sizeof(float))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
@@ -1205,15 +1205,15 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
         lcase[anz->l].min[i]=MAX_FLOAT;
         for(j=0; j<=anz->nmax; j++) lcase[anz->l].dat[i][j]=0.;
       }
-      if ( (lcase[anz->l].menu = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].menu = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
-      if ( (lcase[anz->l].ictype = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].ictype = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
-      if ( (lcase[anz->l].icind1 = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].icind1 = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
-      if ( (lcase[anz->l].icind2 = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].icind2 = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
-      if ( (lcase[anz->l].iexist = (ITG *)malloc( lcase[anz->l].ncomps * sizeof(ITG))) == NULL )
+      if ( (lcase[anz->l].iexist = (int *)malloc( lcase[anz->l].ncomps * sizeof(int))) == NULL )
         printf("\n\n ERROR: malloc failure\n\n" );
 
       for(i=0; i<lcase[anz->l].ncomps; i++)
@@ -1238,7 +1238,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
           else              nodenr = stoi(rec_str,4,13);
           if (nodenr>anz->nmax)
           {
-            if (!errFlag) { errFlag=1; printf("WARNING: found node:%" ITGFORMAT " in Dataset higher than in geometry allocated:%" ITGFORMAT "\n", nodenr, anz->nmax); }
+            if (!errFlag) { errFlag=1; printf("WARNING: found node:%d in Dataset higher than in geometry allocated:%d\n", nodenr, anz->nmax); }
           }
           else if (!format_flag) 
           {
@@ -1279,7 +1279,7 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
       {
         length = frecord( handle, rec_str);
         if (rec_str[length] == (char)EOF) break;
-        /* printf ("\n record:%" ITGFORMAT " %s\n", length, rec_str);   */
+        /* printf ("\n record:%d %s\n", length, rec_str);   */
         if (length != 0)
         {
           flag = stoi(rec_str,1,5);
@@ -1299,12 +1299,12 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
   if ( e_nmax > (anz->nmax) )
   {
     printf ("\nWARNING: element requestes a nodename higher than allocated\n\n");
-    printf (" e_nmax=%" ITGFORMAT " e_nmin=%" ITGFORMAT "\n", e_nmax, e_nmin );
+    printf (" e_nmax=%d e_nmin=%d\n", e_nmax, e_nmin );
   }
   if ( e_nmin < 1 )
   {
     printf ("\nWARNING: element requestes a nodename lower than allocated\n\n");
-    printf (" e_nmax=%" ITGFORMAT " e_nmin=%" ITGFORMAT "\n", e_nmax, e_nmin );
+    printf (" e_nmax=%d e_nmin=%d\n", e_nmax, e_nmin );
   }
   elemChecker( anz->e, node, elem);
 
@@ -1320,12 +1320,12 @@ ITG readfrd( char *datin, Summen *anz, Nodes **nptr, Elements **eptr, Datasets *
 
 /* if a block was skipped during first read of frd-file read it now */
 /* return -1 if failure */
-ITG readfrdblock(ITG lc, Summen *anz,   Nodes     *node, Datasets *lcase )
+int readfrdblock(int lc, Summen *anz,   Nodes     *node, Datasets *lcase )
 {
-  register ITG i,j, n;
-  ITG  length, flag, format_flag, nodenr=0, ncomps;
-  ITG  nod_data=0, maxcomps=0;
-  ITG  errFlag=0;
+  register int i,j, n;
+  int  length, flag, format_flag, nodenr=0, ncomps;
+  int  nod_data=0, maxcomps=0;
+  int  errFlag=0;
   char rec_str[MAX_LINE_LENGTH];
   static float *value=NULL;
   FILE *handle;
@@ -1384,7 +1384,7 @@ ITG readfrdblock(ITG lc, Summen *anz,   Nodes     *node, Datasets *lcase )
         }
         else continue;
 
-        //printf("format_flag=%" ITGFORMAT " ncomps:%" ITGFORMAT "\n",format_flag,ncomps);
+        //printf("format_flag=%d ncomps:%d\n",format_flag,ncomps);
 
         /* skip the meta-data */
         for(i=0; i<ncomps; i++) length = frecord( handle, rec_str);
@@ -1393,9 +1393,9 @@ ITG readfrdblock(ITG lc, Summen *anz,   Nodes     *node, Datasets *lcase )
           printf("\n\n ERROR: realloc failed, value\n\n") ;
         for(n=0; n<nod_data; n++)
         {
-          length=fread((ITG *)&nodenr,sizeof(ITG),1,handle);
+          length=fread((int *)&nodenr,sizeof(int),1,handle);
           length=fread((float *)value,sizeof(float),lcase[lc].ncomps,handle);
-	  // printf("N:%" ITGFORMAT " ",nodenr);
+	  // printf("N:%d ",nodenr);
           for(i=0; i<lcase[lc].ncomps; i++)
           {
 	    // printf(" %f",value[i]); 
@@ -1411,7 +1411,7 @@ ITG readfrdblock(ITG lc, Summen *anz,   Nodes     *node, Datasets *lcase )
         if (format_flag) nodenr = stoi(rec_str,4,13); else nodenr = stoi(rec_str,4,8); 
         if (nodenr>anz->nmax)
         {
-          if (!errFlag) { errFlag=1; printf("WARNING: found node:%" ITGFORMAT " in Dataset higher than in geometry allocated:%" ITGFORMAT "\n", nodenr, anz->nmax); }
+          if (!errFlag) { errFlag=1; printf("WARNING: found node:%d in Dataset higher than in geometry allocated:%d\n", nodenr, anz->nmax); }
         }
         else if ( lcase[lc].irtype == 1 )
 	{
@@ -1478,9 +1478,9 @@ ITG readfrdblock(ITG lc, Summen *anz,   Nodes     *node, Datasets *lcase )
 
 /* regula falsi to find the matching record fast */
 /* not finished */
-char *getRecord(FILE *handle, ITG n, ITG x0 )
+char *getRecord(FILE *handle, int n, int x0 )
 {
-    ITG ii, m, n1,n2, x=0, offset=0;
+    int ii, m, n1,n2, x=0, offset=0;
 
     /* search the intersection */
     n1=0;                              
@@ -1497,7 +1497,7 @@ char *getRecord(FILE *handle, ITG n, ITG x0 )
       if((n2-n1) == 1) break;           
     }                                 
 #if TEST
-    printf("x:%" ITGFORMAT " x0:%" ITGFORMAT "\n", x,x0); 
+    printf("x:%d x0:%d\n", x,x0); 
 #endif
   return(NULL);
 }
@@ -1505,20 +1505,20 @@ char *getRecord(FILE *handle, ITG n, ITG x0 )
 
 /* return -1 if failure */
 /* return 0 if successfull */
-ITG readOneNode( ITG lc, Summen *anz, Datasets *lcase, ITG nodenr, double **vptr, long *byte_offset )
+int readOneNode( int lc, Summen *anz, Datasets *lcase, int nodenr, double **vptr, long *byte_offset )
 {
-  register ITG i=0,j, n;
-  ITG length, flag, inodenr=0;
-  ITG   maxcomps=0, ncomps;
+  register int i=0,j, n;
+  int length, flag, inodenr=0;
+  int   maxcomps=0, ncomps;
   long offset=0;
-  ITG  errFlag=0, readFlag=0, bailout=0;
+  int  errFlag=0, readFlag=0, bailout=0;
   char rec_str[MAX_LINE_LENGTH];
   FILE *handle;
   float *value=NULL;
   double *dat;
-  ITG  nod_data=0, nvals=0;
+  int  nod_data=0, nvals=0;
 
-  // printf("readOneNode for file:%s *byte_offset:%" ITGFORMAT "\n", lcase[lc].filename, *byte_offset);
+  // printf("readOneNode for file:%s *byte_offset:%d\n", lcase[lc].filename, *byte_offset);
 
   /* Open the files and check to see that it was opened correctly */
   handle = lcase[lc].handle;
@@ -1562,9 +1562,9 @@ ITG readOneNode( ITG lc, Summen *anz, Datasets *lcase, ITG nodenr, double **vptr
       printf("\n\n ERROR: realloc failed, value\n\n") ;
     do
     {
-      length=fread((ITG *)&inodenr,sizeof(ITG),1,handle)*sizeof(ITG);
+      length=fread((int *)&inodenr,sizeof(int),1,handle)*sizeof(int);
       length+=fread((float *)value,sizeof(float),lcase[lc].ncomps,handle)*sizeof(float);
-      //printf("N:%" ITGFORMAT " ",inodenr);
+      //printf("N:%d ",inodenr);
       //for(i=0; i<lcase[lc].ncomps; i++) printf(" %f",value[i]);
       //printf("\n");
       if(inodenr==nodenr) break;
@@ -1577,7 +1577,7 @@ ITG readOneNode( ITG lc, Summen *anz, Datasets *lcase, ITG nodenr, double **vptr
     }
 
     *byte_offset=offset;
-    //printf("offset:%" ITGFORMAT "\n", offset);
+    //printf("offset:%d\n", offset);
     return(0);
   }
 
@@ -1606,7 +1606,7 @@ ITG readOneNode( ITG lc, Summen *anz, Datasets *lcase, ITG nodenr, double **vptr
 
     if((readFlag)&&(flag == -2))
     {
-      //printf("-2 node found:%" ITGFORMAT " %" ITGFORMAT " at pos:%" ITGFORMAT "\n", inodenr,nodenr, nod_data);
+      //printf("-2 node found:%d %d at pos:%d\n", inodenr,nodenr, nod_data);
       if (!lcase[lc].format_flag) n=8;
       else n=13;
       j=0;
@@ -1636,21 +1636,21 @@ ITG readOneNode( ITG lc, Summen *anz, Datasets *lcase, ITG nodenr, double **vptr
           offset+= nod_data * (n+(nvals%6)*12+1);
       }
       *byte_offset=offset;
-      //printf("offset:%" ITGFORMAT " nod_data:%" ITGFORMAT " n:%" ITGFORMAT " nvals:%" ITGFORMAT " dat:%f\n", offset,nod_data,n,nvals, dat[0]);
+      //printf("offset:%d nod_data:%d n:%d nvals:%d dat:%f\n", offset,nod_data,n,nvals, dat[0]);
       return(0);
     }
     else if(flag == -1)
     {
       if (lcase[lc].format_flag) inodenr = stoi(rec_str,4,13); else inodenr = stoi(rec_str,4,8);
       nod_data++; 
-      //printf("node:%" ITGFORMAT " %" ITGFORMAT " at pos:%" ITGFORMAT " ir:%" ITGFORMAT "\n", inodenr,nodenr, nod_data, lcase[lc].irtype);
+      //printf("node:%d %d at pos:%d ir:%d\n", inodenr,nodenr, nod_data, lcase[lc].irtype);
       if (inodenr>anz->nmax)
       {
-        if (!errFlag) { errFlag=1; printf("WARNING: found node:%" ITGFORMAT " in Dataset higher than in geometry allocated:%" ITGFORMAT "\n", inodenr, anz->nmax); }
+        if (!errFlag) { errFlag=1; printf("WARNING: found node:%d in Dataset higher than in geometry allocated:%d\n", inodenr, anz->nmax); }
       }
       else if (( inodenr==nodenr)&&(lcase[lc].irtype == 1 ))
       {
-        //printf("node found:%" ITGFORMAT " %" ITGFORMAT " at pos:%" ITGFORMAT "\n", inodenr,nodenr, nod_data);
+        //printf("node found:%d %d at pos:%d\n", inodenr,nodenr, nod_data);
         readFlag=1;
         if(maxcomps==6)
         {

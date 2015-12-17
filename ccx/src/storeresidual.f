@@ -96,6 +96,7 @@
       iorienglob=0
       cflag=filab(1)(5:5)
       icfdout=0
+      force=.false.
       call extrapolate(sti,stn,ipkon,inum,kon,lakon,nfield,nk,
      &     ne,mi(1),ndim,orab,ielorien,co,iorienglob,cflag,
      &     vold,force,ielmat,thicke,ielprop,prop)

@@ -70,7 +70,7 @@ c      enddo
                vfa(0,i)=vel(iel1,0)
             endif
          endif
-c         write(*,*) 'extrapolate_tel ',i,vfa(0,i)
+c         write(*,*) 'extrapolate_tel ',i,ielfa(1,i),ielfa(4,i),vfa(0,i)
       enddo
 !            
       return

@@ -19,7 +19,7 @@
       subroutine initialconditionss(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,t0,t1,prestr,iprestr,ithermal,veold,inoelfree,nk_,
      &  mi,istep,istat,n,iline,ipol,inl,ipoinp,inp,lakon,kon,co,ne,
-     &  ipkon,vold,ipoinpc,xstate,nstate_,nk,t0g,t1g)
+     &  ipkon,vold,ipoinpc,xstate,nstate_,nk,t0g,t1g,iaxial)
 !
 !     reading the input deck: *INITIAL CONDITIONS
 !
@@ -37,13 +37,14 @@
      &  istep,istat,n,i,j,k,l,ii,key,idir,ipos,inoelfree,nk_,mi(*),
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ij,jj,ntens,ncrds,layer,
      &  kspt,lrebar,iflag,i1,mint3d,nope,kon(*),konl(20),indexe,
-     &  ipkon(*),ne,ipoinpc(0:*),nstate_,nk,jmax,ntot,numberoflines
+     &  ipkon(*),ne,ipoinpc(0:*),nstate_,nk,jmax,ntot,numberoflines,
+     &  iaxial
 !
       real*8 t0(*),t1(*),beta(8),prestr(6,mi(1),*),veold(0:mi(2),*),
      &  temperature,velocity,tempgrad1,tempgrad2,pgauss(3),
      &  shp(4,20),xsj,xl(3,20),xi,et,ze,weight,co(3,*),pressure,
      &  vold(0:mi(2),*),xstate(nstate_,mi(1),*),dispvelo,totpres,
-     &  massflow,t0g(2,*),t1g(2,*)
+     &  xmassflow,t0g(2,*),t1g(2,*)
 !
       include "gauss.f"
 !
@@ -568,7 +569,8 @@
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &              ipoinp,inp,ipoinpc)
                if((istat.lt.0).or.(key.eq.1)) return
-               read(textpart(2)(1:20),'(f20.0)',iostat=istat) massflow
+               read(textpart(2)(1:20),'(f20.0)',iostat=istat) xmassflow
+               if(iaxial.eq.180) xmassflow=xmassflow/iaxial
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*INITIAL CONDITIONS%")
                read(textpart(1)(1:10),'(i10)',iostat=istat) l
@@ -580,7 +582,7 @@
      &                    'node number'
                      cycle
                   endif
-                  vold(1,l)=massflow
+                  vold(1,l)=xmassflow
                else
                   read(textpart(1)(1:80),'(a80)',iostat=istat) noset
                   noset(81:81)=' '
@@ -601,13 +603,13 @@
                   endif
                   do j=istartset(ii),iendset(ii)
                      if(ialset(j).gt.0) then
-                        vold(1,ialset(j))=massflow
+                        vold(1,ialset(j))=xmassflow
                      else
                         k=ialset(j-2)
                         do
                            k=k-ialset(j)
                            if(k.ge.ialset(j-1)) exit
-                           vold(1,k)=massflow
+                           vold(1,k)=xmassflow
                         enddo
                      endif
                   enddo

@@ -44,6 +44,14 @@
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  plconloc(802),dtime
 !
+      intent(in) elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
+     &  imat,amat,iorien,pgauss,orab,ntmat_,i,ithermal,
+     &  alzero,t0l,t1l,ihyper,istiff,kode,plicon,
+     &  nplicon,plkcon,nplkcon,npmat_,mi,dtime,iel,iint,
+     &  xstiff,ncmat_
+!
+      intent(inout) plconloc,eth,elconloc,elas,mattyp,rho
+!
       kal=reshape((/1,1,2,2,3,3,1,2,1,3,2,3/),(/2,6/))
 !
       two=2

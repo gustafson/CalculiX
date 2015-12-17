@@ -20,7 +20,8 @@
      &  lakon,cg,straight,ifree,koncont,co,vold,xo,yo,zo,x,y,z,nx,ny,nz,
      &  ielmat,elcon,istep,iinc,iit,ncmat_,ntmat_,mi,imastop,islavsurf,
      &  itiefac,springarea,tietol,reltime,filab,nasym,pslavsurf,
-     &  pmastsurf,clearini,theta,xstateini,xstate,nstate_,ne0,icutb)
+     &  pmastsurf,clearini,theta,xstateini,xstate,nstate_,ne0,icutb,
+     &  ialeatoric)
 !
 !     generate contact elements for the slave contact nodes
 !
@@ -41,11 +42,11 @@
      &  iteller,ifaces,jfaces,ifacem,indexel,iloop,iprev,iact,
      &  imastop(3,*), itriangle(100),ntriangle,ntriangle_,itriold,
      &  itrinew,id,islavsurf(2,*),itiefac(2,*),nelems,m,mint2d,nopes,
-     &  iloc,nopem,nodefs(9),indexf
+     &  iloc,nopem,nodefs(9),indexf,ialeatoric
 !
       real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),p(3),
      &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),clearini(3,9,*),
-     &  elcon(0:ncmat_,ntmat_,*),weight,theta,
+     &  elcon(0:ncmat_,ntmat_,*),weight,theta,harvest,
      &  springarea(2,*),xl2(3,9),area,xi,et,shp2(7,9),
      &  xs2(3,2),xsj2(3),tietol(3,*),reltime,xstate(nstate_,mi(1),*),
      &  clear,ratio(9),pl(3,9),xstateini(nstate_,mi(1),*),
@@ -91,6 +92,8 @@
       save indexel
 !
       include "gauss.f"
+!
+      if((iinc.eq.1).and.(iit.le.0)) call random_seed()
 !
 !     opening a file to store the contact spring elements
 !    
@@ -569,6 +572,8 @@ c     write(*,*) '**regular solution'
                      if((istep.eq.1).and.(iit.le.0.d0)) then
                         if(clear.lt.0.d0) then
                            springarea(2,iloc)=clear/(1.d0-theta)
+                        elseif(clear.lt.1.d0/elcon(2,1,imat)) then
+                           clear=0.d0
                         endif
                      endif
                      clear=clear-springarea(2,iloc)*(1.d0-reltime)
@@ -612,18 +617,49 @@ c
                         if((isol.ne.0).and.(int(elcon(3,1,imat)).ne.4))
      &                     then
                            if(((istep.gt.1).or.(iinc.gt.1)).and.
-     &                         (iit.le.0).and.(ncmat_.ge.7).and.
+     &                          (iit.le.0).and.(ncmat_.ge.7).and.
      &                          (elcon(6,1,imat).gt.0.d0)) then
                               if(dsqrt(xstateini(4,1,ne0+iloc)**2+
      &                             xstateini(5,1,ne0+iloc)**2+
      &                             xstateini(6,1,ne0+iloc)**2)
      &                             .ge.1.d-30) iprev=iprev+1
                            endif
-!     
-                           if(clear.gt.0.d0) then
-                              isol=0
-                           else
-                              iact=iact+1
+!
+!                          if a local minimum was detected in checkconvergence:
+!                          remove in an aleatoric way 10 % of the contact elements
+!
+                           if(ialeatoric.eq.1) then
+                              call random_number(harvest)
+                              if(harvest.gt.0.9) isol=0
+                           endif
+! 
+                           if(isol.ne.0) then
+                              if(icutb.eq.0) then
+!
+!                             this is no cut-back: only use a negative
+!                             clearance as contact criterion
+!
+                                 if(clear.gt.0.d0) then
+                                    isol=0
+                                 else
+                                    iact=iact+1
+                                 endif
+                              else
+!
+!                             this is the first iteration in a cut-back:
+!                             all contact elements from the end of the
+!                             previous increment are included as well
+!
+                                 if((dsqrt(xstateini(4,1,ne0+iloc)**2+
+     &                                xstateini(5,1,ne0+iloc)**2+
+     &                                xstateini(6,1,ne0+iloc)**2)
+     &                                .lt.1.d-30).and.(clear.gt.0.d0)) 
+     &                                then
+                                    isol=0
+                                 else
+                                    iact=iact+1
+                                 endif
+                              endif
                            endif
                         endif
                      else
@@ -661,7 +697,8 @@ c
 !                 triggers the asymmetric equation solver
 !
                      if(ncmat_.ge.7) then
-                        if(elcon(6,1,imat).gt.0) then
+                        if((elcon(6,1,imat).gt.0).and.
+     &                     (int(elcon(3,1,imat)).ne.4)) then
                            nasym=1
                         endif
                      endif

@@ -31,7 +31,7 @@
      &  coriolis,ibody,xloadold,reltime,veold,springarea,nstate_,
      &  xstateini,xstate,thicke,integerglob,doubleglob,
      &  tieset,istartset,iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,
-     &  mortar,clearini,ielprop,prop)
+     &  mortar,clearini,ielprop,prop,ne0,fnext,kscale)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !
@@ -46,7 +46,7 @@
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
-     &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,nasym,
+     &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,nasym,kscale,
      &  nactdof(0:mi(2),*),irow(*),icolumn,ialset(*),ielprop(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),ntie,
      &  ielorien(mi(3),*),integerglob(*),istartset(*),iendset(*),
@@ -61,7 +61,7 @@
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
      &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(100,100),
-     &  ff(100),
+     &  ff(100),fnext(0:mi(2),*),
      &  sti(6,mi(1),*),sm(100,100),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),springarea(2,*),
      &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),prop(*),
@@ -149,7 +149,7 @@ c      elseif(mass.or.buckling) then
 !
 !     mechanical analysis: loop over all elements
 !
-      ne0=0
+c      ne0=0
       do i=1,ne
 !
         if(ipkon(i).lt.0) cycle
@@ -248,7 +248,7 @@ c     Bernhardi end
      &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
      &          integerglob,doubleglob,tieset,istartset,
      &          iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,
-     &          clearini,ielprop,prop)
+     &          clearini,ielprop,prop,kscale)
 !
         do jj=1,3*nope
 !
@@ -458,6 +458,12 @@ c                  endif
 !            distributed forces
 !
              if(idist.ne.0) then
+!
+!               updating the external force vector for dynamic
+!               calculations
+!
+                if(nmethod.eq.4) fnext(k,node1)=fnext(k,node1)+ff(jj)
+!
                 if(jdof1.eq.0) then
                    if(nmpc.ne.0) then
                       idof1=(node1-1)*8+k
@@ -798,6 +804,13 @@ c                  endif
 !      
          do i=1,nforc
             if(ndirforc(i).gt.3) cycle
+!
+!           updating the external force vector for dynamic
+!           calculations
+!
+            if(nmethod.eq.4) fnext(ndirforc(i),nodeforc(1,i))=
+     &                       fnext(ndirforc(i),nodeforc(1,i))+xforc(i)
+!
             jdof=nactdof(ndirforc(i),nodeforc(1,i))
             if(jdof.ne.0) then
                fext(jdof)=fext(jdof)+xforc(i)

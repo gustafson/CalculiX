@@ -21,13 +21,14 @@
      &  ielmat,iamload,amname,nam,lakon,ne,dload_flag,istep,
      &  istat,n,iline,ipol,inl,ipoinp,inp,cbody,ibody,xbody,nbody,
      &  nbody_,xbodyold,iperturb,physcon,nam_,namtot_,namta,amta,
-     &  nmethod,ipoinpc,maxsectors,mi,idefload,idefbody)
+     &  nmethod,ipoinpc,maxsectors,mi,idefload,idefbody,ipkon,
+     &  thicke)
 !
 !     reading the input deck: *DLOAD
 !
       implicit none
 !
-      logical dload_flag,submodel
+      logical dload_flag,submodel,edgeload
 !
       character*1 inpc(*)
       character*8 lakon(*)
@@ -41,10 +42,12 @@
      &  iamload(2,*),nam,iamplitude,ipos,ne,iline,ipol,iperturb,
      &  inl,ipoinp(2,*),inp(3,*),ibody(3,*),nbody,nbody_,nam_,namtot,
      &  namtot_,namta(3,*),idelay,nmethod,lc,isector,node,ipoinpc(0:*),
-     &  maxsectors,jsector,iglobstep,idefload(*),idefbody(*)
+     &  maxsectors,jsector,iglobstep,idefload(*),idefbody(*),ipkon(*),
+     &  k,indexe
 !
       real*8 xload(2,*),xbody(7,*),xmagnitude,dd,p1(3),p2(3),bodyf(3),
-     &  xbodyold(7,*),physcon(*),amta(2,*)
+     &  xbodyold(7,*),physcon(*),amta(2,*),xxmagnitude,thicke(mi(3),*),
+     &  thickness
 !
       iamplitude=0
       idelay=0
@@ -52,6 +55,7 @@
       isector=0
       submodel=.false.
       iglobstep=0
+      edgeload=.false.
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *DLOAD: *DLOAD should only be used'
@@ -266,6 +270,7 @@ cBernhardiEnd
                call bodyadd(cbody,ibody,xbody,nbody,nbody_,elset,label,
      &           iamplitude,xmagnitude,p1,p2,bodyf,xbodyold,lc,idefbody)
             else
+               xxmagnitude=xmagnitude
                if((lakon(l)(1:2).eq.'CP').or.
      &              (lakon(l)(2:2).eq.'A').or.
      &              (lakon(l)(7:7).eq.'E').or.
@@ -284,20 +289,39 @@ cBernhardiEnd
      &                (lakon(l)(7:7).eq.'B')) then
                   if(label(1:2).eq.'P2') label(1:2)='P5'
                elseif((lakon(l)(1:1).eq.'S').or.
-     &                (lakon(l)(7:7).eq.'L')) then
-cBernhardiStart
-                     if(label(1:6).eq.'EDNOR1') then
-                        label(1:2)='P3'
-                     elseif(label(1:6).eq.'EDNOR2') then
-                        label(1:2)='P4'
-                     elseif(label(1:6).eq.'EDNOR3') then
-                        label(1:2)='P5'
-                     elseif(label(1:6).eq.'EDNOR4') then
-                        label(1:2)='P6'
-                     else
+     &                 (lakon(l)(7:7).eq.'L')) then
+c     BernhardiStart
+                  if(label(1:6).eq.'EDNOR1') then
+                     label(1:2)='P3'
+                     edgeload=.true.
+                  elseif(label(1:6).eq.'EDNOR2') then
+                     label(1:2)='P4'
+                     edgeload=.true.
+                  elseif(label(1:6).eq.'EDNOR3') then
+                     label(1:2)='P5'
+                     edgeload=.true.
+                  elseif(label(1:6).eq.'EDNOR4') then
+                     label(1:2)='P6'
+                     edgeload=.true.
+                  else
                      label(1:2)='P1'
                   endif
-cBernhardiEnd
+!
+!                 EDNOR is an edge load
+!
+                  if(edgeload) then
+                     indexe=ipkon(l)
+                     thickness=0.d0
+                     do k=1,mi(3)
+                        if(ielmat(k,l).ne.0) then
+                           thickness=thickness+thicke(k,indexe+1)
+                        else
+                           exit
+                        endif
+                     enddo
+                     xxmagnitude=xmagnitude/thickness
+                  endif
+c     BernhardiEnd
                endif
                if(lc.ne.1) then
                   jsector=isector+maxsectors
@@ -305,7 +329,7 @@ cBernhardiEnd
                   jsector=isector
                endif
                if(label(3:4).ne.'NP') then
-                  call loadadd(l,label,xmagnitude,nelemload,sideload,
+                  call loadadd(l,label,xxmagnitude,nelemload,sideload,
      &                 xload,nload,nload_,iamload,iamplitude,
      &                 nam,jsector,idefload)
                else
@@ -357,15 +381,19 @@ cBernhardiEnd
                elseif((lakon(l)(1:1).eq.'S').or.
      &                 (lakon(l)(7:7).eq.'L')) then
 cBernhardiStart
-                     if(label(1:6).eq.'EDNOR1') then
-                        label(1:2)='P3'
-                     elseif(label(1:6).eq.'EDNOR2') then
-                        label(1:2)='P4'
-                     elseif(label(1:6).eq.'EDNOR3') then
-                        label(1:2)='P5'
-                     elseif(label(1:6).eq.'EDNOR4') then
-                        label(1:2)='P6'
-                     else
+                  if(label(1:6).eq.'EDNOR1') then
+                     label(1:2)='P3'
+                     edgeload=.true.
+                  elseif(label(1:6).eq.'EDNOR2') then
+                     label(1:2)='P4'
+                     edgeload=.true.
+                  elseif(label(1:6).eq.'EDNOR3') then
+                     label(1:2)='P5'
+                     edgeload=.true.
+                  elseif(label(1:6).eq.'EDNOR4') then
+                     label(1:2)='P6'
+                     edgeload=.true.
+                  else
                      label(1:2)='P1'
                   endif
 cBernhardiEnd
@@ -374,13 +402,30 @@ cBernhardiEnd
                do j=istartset(i),iendset(i)
                   if(ialset(j).gt.0) then
                      l=ialset(j)
+                     xxmagnitude=xmagnitude
+!     
+!     EDNOR is an edge load
+!     
+                     if(edgeload) then
+                        indexe=ipkon(l)
+                        thickness=0.d0
+                        do k=1,mi(3)
+                           if(ielmat(k,l).ne.0) then
+                              thickness=thickness+thicke(k,indexe+1)
+                           else
+                              exit
+                           endif
+                        enddo
+                        xxmagnitude=xmagnitude/thickness
+                     endif
+!
                      if(lc.ne.1) then
                         jsector=isector+maxsectors
                      else
                         jsector=isector
                      endif
                      if(label(3:4).ne.'NP') then
-                        call loadadd(l,label,xmagnitude,nelemload,
+                        call loadadd(l,label,xxmagnitude,nelemload,
      &                       sideload,xload,nload,nload_,iamload,
      &                       iamplitude,nam,jsector,idefload)
                      else
@@ -393,13 +438,30 @@ cBernhardiEnd
                      do
                         l=l-ialset(j)
                         if(l.ge.ialset(j-1)) exit
+                        xxmagnitude=xmagnitude
+!     
+!     EDNOR is an edge load
+!     
+                        if(edgeload) then
+                           indexe=ipkon(l)
+                           thickness=0.d0
+                           do k=1,mi(3)
+                              if(ielmat(k,l).ne.0) then
+                                 thickness=thickness+thicke(k,indexe+1)
+                              else
+                                 exit
+                              endif
+                           enddo
+                           xxmagnitude=xmagnitude/thickness
+                        endif
+!
                         if(lc.ne.1) then
                            jsector=isector+maxsectors
                         else
                            jsector=isector
                         endif
                         if(label(3:4).ne.'NP') then
-                           call loadadd(l,label,xmagnitude,nelemload,
+                           call loadadd(l,label,xxmagnitude,nelemload,
      &                          sideload,xload,nload,nload_,
      &                          iamload,iamplitude,nam,jsector,idefload)
                         else

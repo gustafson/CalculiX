@@ -20,7 +20,7 @@
      &  ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,plicon,
      &  nplicon,npmat_,iperturb,springarea,nmethod,mi,ne0,
      &  nstate_,xstateini,xstate,reltime,nasym,
-     &  iloc,jfaces,igauss,pslavsurf,pmastsurf,clearini)
+     &  iloc,jfaces,igauss,pslavsurf,pmastsurf,clearini,kscale)
 !
 !     calculates the stiffness of a spring (face-to-face penalty)
 !
@@ -31,7 +31,7 @@
       integer i,j,imat,ncmat_,ntmat_,k,l,nope,iflag,
      &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),
      &  iperturb(*),nmethod,mi(*),ne0,nstate_,nasym,
-     &  iloc,jfaces,igauss,nopem,nopes,nopep
+     &  iloc,jfaces,igauss,nopem,nopes,nopep,kscale
 !
       real*8 xl(3,19),elas(21),pproj(3),val,shp2m(7,9),
      &  al(3),s(100,100),voldl(0:mi(2),19),pl(3,19),xn(3),
@@ -46,11 +46,20 @@
      &  xsj2s(3),xs2s(3,7),shp2s(7,9),weight,pslavsurf(3,*),
      &  pmastsurf(6,*),clearini(3,9,*)
 !
-      data iflag /1/
+      intent(in) xl,imat,elcon,nelcon,
+     &  ncmat_,ntmat_,nope,lakonl,t1l,kode,plicon,
+     &  nplicon,npmat_,iperturb,springarea,nmethod,mi,ne0,
+     &  nstate_,xstateini,reltime,nasym,
+     &  iloc,jfaces,igauss,pslavsurf,pmastsurf,clearini
+!
+      intent(inout) s,xstate,elas,voldl,elconloc
+!
+      iflag=1
 !     
 !     # of master nodes
 !
-      read(lakonl(8:8),'(i1)') nopem
+c      read(lakonl(8:8),'(i1)') nopem
+      nopem=ichar(lakonl(8:8))-48
 !
 !     # of slave nodes
 !
@@ -78,8 +87,8 @@
 !
 !     contact springs
 !
-      read(lakonl(8:8),'(i1)') nopem
-      nopes = nope - nopem
+c      read(lakonl(8:8),'(i1)') nopem
+c      nopes = nope - nopem
 !
       xi=pslavsurf(1,igauss)
       et=pslavsurf(2,igauss)
@@ -186,7 +195,7 @@
 !     
 !        linear overclosure/tied overclosure
 !
-         elas(2)=-springarea(1)*elcon(2,1,imat)
+         elas(2)=-springarea(1)*elcon(2,1,imat)/kscale
          elas(1)=elas(2)*clear
       elseif(int(elcon(3,1,imat)).eq.3) then
 !     
@@ -241,12 +250,10 @@
 !
          if(int(elcon(3,1,imat)).eq.4) then
             um=1.d30
-c            stickslope=elcon(2,1,imat)
          else
             um=elcon(6,1,imat)
-c            stickslope=elcon(7,1,imat)
          endif
-         stickslope=elcon(7,1,imat)
+         stickslope=elcon(7,1,imat)/kscale
 !
          if(um.gt.0.d0) then
 !     

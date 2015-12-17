@@ -44,7 +44,7 @@
       character*6 prlab(*)
       character*8 lakon(*)
       character*20 labmpc(*),sideload(*)
-      character*80 orname(*),amname(*),matname(*)
+      character*80 orname(*),amname(*),matname(*),version
       character*81 set(*),prset(*),tieset(*),cbody(*)
       character*87 filab(*)
       character*132 fnrstrt,jobnamec(*)
@@ -84,6 +84,8 @@
       open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED',
      &  err=15)
 !
+      read(15) version
+!
       do
 !
          read(15,iostat=istat)istep
@@ -96,6 +98,7 @@
                close(15)
                open(15,file=fnrstrt,ACCESS='SEQUENTIAL',
      &              FORM='UNFORMATTED',err=15)
+               read(15) version
                read(15,iostat=istat)istep
             else
                write(*,*) '*ERROR reading *RESTART,READ: requested step'

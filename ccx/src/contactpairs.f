@@ -49,7 +49,7 @@
          call exit(201)
       endif
 !
-      mortar=1
+      mortar=-1
       linear=.false.
 !
       ntie=ntie+1
@@ -123,6 +123,13 @@
      &"*CONTACT PAIR%")
          endif
       enddo
+!
+      if(mortar.lt.0) then
+         write(*,*) '*ERROR reading *CONTACT PAIR'
+         write(*,*) '       no TYPE specified'
+         call inputerror(inpc,ipoinpc,iline,
+     &"*CONTACT PAIR%")
+      endif
 !
 !     SMALL SLIDING significates that the number of contact elements
 !     within one increment is frozen. This is not allowed for
@@ -226,8 +233,61 @@
          iperturb(1)=2
       endif
 !
-      call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &     ipoinp,inp,ipoinpc)
+!     check for further contact pairs
+!
+      do
+         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &        ipoinp,inp,ipoinpc)
+         if((istat.lt.0).or.(key.eq.1)) exit
+!
+         ntie=ntie+1
+!
+!        copying the information from the previous tie
+!
+         do i=1,3
+            tietol(i,ntie)=tietol(i,ntie-1)
+         enddo
+         tieset(1,ntie)=tieset(1,ntie-1)
+!
+!        storing slave and master surface
+!
+         if(mortar.eq.1) then
+            tieset(2,ntie)(1:80)=textpart(1)(1:80)
+            tieset(2,ntie)(81:81)=' '
+            ipos=index(tieset(2,ntie),' ')
+            tieset(2,ntie)(ipos:ipos)='T'
+         elseif(mortar.eq.2) then
+            tieset(2,ntie)(1:80)=textpart(1)(1:80)
+            tieset(2,ntie)(81:81)=' '
+            ipos=index(tieset(2,ntie),' ')
+            tieset(2,ntie)(ipos:ipos)='M'
+         elseif(mortar.eq.3) then
+            tieset(2,ntie)(1:80)=textpart(1)(1:80)
+            tieset(2,ntie)(81:81)=' '
+            ipos=index(tieset(2,ntie),' ')
+            tieset(2,ntie)(ipos:ipos)='O'
+         elseif(mortar.eq.4) then
+            tieset(2,ntie)(1:80)=textpart(1)(1:80)
+            tieset(2,ntie)(81:81)=' '
+            ipos=index(tieset(2,ntie),' ')
+            tieset(2,ntie)(ipos:ipos)='P'      
+         elseif(mortar.eq.5) then
+            tieset(2,ntie)(1:80)=textpart(1)(1:80)
+            tieset(2,ntie)(81:81)=' '
+            ipos=index(tieset(2,ntie),' ')
+            tieset(2,ntie)(ipos:ipos)='G'
+         else
+            tieset(2,ntie)(1:80)=textpart(1)(1:80)
+            tieset(2,ntie)(81:81)=' '
+            ipos=index(tieset(2,ntie),' ')
+            tieset(2,ntie)(ipos:ipos)='S'
+         endif
+!
+         tieset(3,ntie)(1:80)=textpart(2)(1:80)
+         tieset(3,ntie)(81:81)=' '
+         ipos=index(tieset(3,ntie),' ')
+         tieset(3,ntie)(ipos:ipos)='T'
+      enddo
 !
       return
       end

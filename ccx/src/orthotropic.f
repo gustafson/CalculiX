@@ -25,6 +25,10 @@
 !
       real*8 orthol(9),anisox(3,3,3,3)
 !
+      intent(in) orthol
+!
+      intent(out) anisox
+!
       anisox(1,1,1,1)=orthol(1)
       anisox(1,1,1,2)=0.d0
       anisox(1,1,1,3)=0.d0

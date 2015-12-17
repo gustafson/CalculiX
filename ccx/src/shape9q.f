@@ -43,6 +43,10 @@
      &  fxi1,fxi2,fxi3,fet1,fet2,fet3,dfxi1,dfxi2,dfxi3,dfet1,dfet2,
      &  dfet3,ddfxi1,ddfxi2,ddfxi3,ddfet1,ddfet2,ddfet3
 !
+      intent(in) xi,et,xl,iflag
+!
+      intent(out) shp,xs,xsj
+!
 !     shape functions and their glocal derivatives for an element
 !     described with two local parameters and three global ones.
 !

@@ -67,7 +67,7 @@ void remastructem(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     if(nzs[1]<10) nzs[1]=10;   
     NNEW(mast1,ITG,nzs[1]);
     NNEW(ipointer,ITG,mt**nk);
-    RENEW(irow,ITG,nzs[1]);for(i=0;i<nzs[1];i++) irow[i]=0;
+    RENEW(irow,ITG,nzs[1]);
     
     mastructem(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,ipompc,
 	     nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,neq,

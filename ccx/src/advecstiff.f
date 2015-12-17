@@ -38,9 +38,15 @@
      &  temp,xload(2,*),timeend(2),time,ttime,dtime,field,reltime,
      &  vold(0:mi(2),*),xloadold(2,*),s(100,100),sref,sref2
 !
+      intent(in) nope,voldl,ithermal,xl,nelemload,nelemadvec,
+     &  nload,lakon,istep,time,ttime,dtime,sideload,vold,mi,
+     &  xloadold,reltime,nmethod,iinc
+!
+      intent(inout) s,xload
+!
       include "gauss.f"
 !
-      data iflag /2/
+      iflag=2
 !
       timeend(1)=time
       timeend(2)=ttime+time

@@ -68,7 +68,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
                  ITG *ineighe, ITG *nmpc, ITG *nodempc,ITG *ipompc,
                  double *coefmpc,char *labmpc, ITG *iemchange,ITG *nam, 
                  ITG *iamload,ITG *jqrad,ITG *irowrad,ITG *nzsrad,
-                 ITG *icolrad,ITG *ne,ITG *iaxial){
+                 ITG *icolrad,ITG *ne,ITG *iaxial,double *qa){
   
   /* network=0: purely thermal
      network=1: general case (temperatures, fluxes and pressures unknown)
@@ -115,7 +115,8 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 			   nodeboun,xbounact,ielmat,ntmat_,shcon,nshcon,
 			   physcon,ipiv,nteq,rhcon,nrhcon,ipobody,ibody,
 			   xbodyact,co,nbody,network,&iin_abs,vold,set,
-			   istep,iit,mi,ineighe,ilboun,&channel,iaxial));
+			   istep,iit,mi,ineighe,ilboun,&channel,iaxial,
+			   nmpc,labmpc,ipompc,nodempc,coefmpc));
       
               /* initialization for channels with free surface */
 
@@ -274,7 +275,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 	      checkconvnet(&icutb,&iin,&uamt,&uamf,&uamp,
 		 &cam1t,&cam1f,&cam1p,&cam2t,&cam2f,&cam2p,&cam0t,&cam0f,
 		 &cam0p,&icntrl,&dtheta,ctrl,&uama,&cam1a,&cam2a,&cam0a,
-		 &vamt,&vamf,&vamp,&vama);
+		 &vamt,&vamf,&vamp,&vama,qa);
 	  }
       }
 
@@ -293,7 +294,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 			    ielmat,prop,ielprop,nactdog,nacteq,&iin,physcon,
 			    camt,camf,camp,&uamt,&uamf,&uamp,rhcon,nrhcon,
 			    vold,jobnamef,set,istartset,iendset,ialset,nset,
-                            mi));
+                            mi,iaxial));
       }
 #endif
   }

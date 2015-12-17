@@ -39,6 +39,10 @@
      &  tpgphpr,tmgphpr,tmgmhpr,tpgmhpr,tpgphmr,tmgphmr,tmgmhmr,tpgmhmr,
      &  omgopg,omhoph,omropr,omgmopg,omhmoph,omrmopr
 !
+      intent(in) xi,et,ze,xl,iflag
+!
+      intent(out) shp,xsj
+!
 !     shape functions and their glocal derivatives
 !
       omg=1.d0-xi

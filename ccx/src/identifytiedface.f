@@ -47,7 +47,7 @@
             if(j.gt.nset) then
                write(*,*) 
      &           '*ERROR in identifytiedface: ',
-     &           'tied contact nodal slave surface',
+     &           'tied contact nodal slave surface ',
      &              slavset
                write(*,*) '       does not exist'
                call exit(201)

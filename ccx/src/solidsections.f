@@ -19,7 +19,7 @@
       subroutine solidsections(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
      &  lakon,thicke,kon,ipkon,irstrt,istep,istat,n,iline,ipol,inl,
-     &  ipoinp,inp,cs,mcs,iaxial,ipoinpc,mi)
+     &  ipoinp,inp,cs,mcs,iaxial,ipoinpc,mi,co,ixfree,xnor,iponor)
 !
 !     reading the input deck: *SOLID SECTION
 !
@@ -33,11 +33,12 @@
 !
       integer mi(*),istartset(*),iendset(*),ialset(*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),kon(*),ipkon(*),indexe,irstrt,nset,nmat,
-     &  norien,
+     &  norien,ielem,node1,node2,m,indexx,ixfree,iponor(2,*),
      &  istep,istat,n,key,i,j,k,l,imaterial,iorientation,ipos,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),mcs,iaxial,ipoinpc(0:*)
 !
-      real*8 thicke(mi(3),*),thickness,pi,cs(17,*)
+      real*8 thicke(mi(3),*),thickness,pi,cs(17,*),xn(3),co(3,*),p(3),
+     &  dd,xnor(*)
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR in solidsections: *SOLID SECTION should'
@@ -196,13 +197,73 @@
             thickness=datan(1.d0)*8.d0/iaxial
          endif
 !
+!        assigning the thickness to each node of the corresponding
+!        elements
+!
          do j=istartset(i),iendset(i)
             if(ialset(j).gt.0) then
                if((lakon(ialset(j))(1:2).eq.'CP').or.
      &            (lakon(ialset(j))(1:2).eq.'CA')) then
+!
+!                 plane stress/strain  or axisymmetric elements
+!
                   indexe=ipkon(ialset(j))
                   do l=1,8
                      thicke(1,indexe+l)=thickness
+                  enddo
+               elseif(lakon(ialset(j))(1:1).eq.'T') then
+                  ielem=ialset(j)
+!
+!                 default cross section for trusses is the
+!                 rectangular cross section
+!
+                  lakon(ielem)(8:8)='R'
+                  indexe=ipkon(ielem)
+                  node1=kon(indexe+1)
+                  if(lakon(ielem)(4:4).eq.'2') then
+                     node2=kon(indexe+2)
+                  else
+                     node2=kon(indexe+3)
+                  endif
+!
+!                 determining a vector orthogonal to the truss
+!                 element
+!
+                  do l=1,3
+                     xn(l)=co(l,node2)-co(l,node1)
+                  enddo
+                  if(dabs(xn(1)).gt.0.d0) then
+                     p(1)=-xn(3)
+                     p(2)=0.d0
+                     p(3)=xn(1)
+                  elseif(dabs(xn(2)).gt.0.d0) then
+                     p(1)=xn(2)
+                     p(2)=-xn(1)
+                     p(3)=0.d0
+                  else
+                     p(1)=0.d0
+                     p(2)=xn(3)
+                     p(3)=-xn(2)
+                  endif
+                  dd=dsqrt(p(1)*p(1)+p(2)*p(2)+p(3)*p(3))
+                  if(dd.lt.1.d-10) then
+                     write(*,*) 
+     &                    '*ERROR reading *SOLID SECTION: normal'
+                     write(*,*) '       in direction 1 has zero size'
+                     call exit(201)
+                  endif
+                  do l=1,3
+                     p(l)=p(l)/dd
+                  enddo
+                  do l=1,3
+                     thicke(1,indexe+l)=dsqrt(thickness)
+                     thicke(2,indexe+l)=dsqrt(thickness)
+                     indexx=ixfree
+                     do m=1,3
+                        xnor(indexx+m)=p(m)
+                     enddo
+                     ixfree=ixfree+6
+                     iponor(1,indexe+l)=indexx
                   enddo
                endif
             else
@@ -215,6 +276,59 @@
                      indexe=ipkon(k)
                      do l=1,8
                         thicke(1,indexe+l)=thickness
+                     enddo
+                  elseif(lakon(k)(1:1).eq.'T') then
+!     
+!                    default cross section for trusses is the
+!                    rectangular cross section
+!     
+                     lakon(k)(8:8)='R'
+                     indexe=ipkon(k)
+                     node1=kon(indexe+1)
+                     if(lakon(k)(4:4).eq.'2') then
+                        node2=kon(indexe+2)
+                     else
+                        node2=kon(indexe+3)
+                     endif
+!
+!                    determining a vector orthogonal to the truss
+!                    element
+!
+                     do l=1,3
+                        xn(l)=co(l,node2)-co(l,node1)
+                     enddo
+                     if(dabs(xn(1)).gt.0.d0) then
+                        p(1)=-xn(3)
+                        p(2)=0.d0
+                        p(3)=xn(1)
+                     elseif(dabs(xn(2)).gt.0.d0) then
+                        p(1)=xn(2)
+                        p(2)=-xn(1)
+                        p(3)=0.d0
+                     else
+                        p(1)=0.d0
+                        p(2)=xn(3)
+                        p(3)=-xn(2)
+                     endif
+                     dd=dsqrt(p(1)*p(1)+p(2)*p(2)+p(3)*p(3))
+                     if(dd.lt.1.d-10) then
+                        write(*,*) 
+     &                       '*ERROR reading *SOLID SECTION: normal'
+                        write(*,*) '       in direction 1 has zero size'
+                        call exit(201)
+                     endif
+                     do l=1,3
+                        p(l)=p(l)/dd
+                     enddo
+                     do l=1,3
+                        thicke(1,indexe+l)=dsqrt(thickness)
+                        thicke(2,indexe+l)=dsqrt(thickness)
+                        indexx=ixfree
+                        do m=1,3
+                           xnor(indexx+m)=p(m)
+                        enddo
+                        ixfree=ixfree+6
+                        iponor(1,indexe+l)=indexx
                      enddo
                   endif
                enddo

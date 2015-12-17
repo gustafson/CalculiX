@@ -102,7 +102,8 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       id,newstep=0,idiscon,*ipiv=NULL,info,nrhs=1,kode,iener=0,
       *ikactcont=NULL,*ilactcont=NULL,*ikactcont1=NULL,nactcont1=0,
       i1,icutb=0,iconvergence=0,idivergence=0,mt=mi[1]+1,
-      nactcont1_=100,*ikactmech=NULL,iabsload=0,im,nasym=0,mortar=0;
+      nactcont1_=100,*ikactmech=NULL,iabsload=0,im,nasym=0,mortar=0,
+      ialeatoric=0;
 
   long long i2;
 
@@ -115,7 +116,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       *bjincp=NULL,sump,h14,*dbjp=NULL,senergy=0.0,*xforcdiff=NULL,
       df,i0,ic,ia,dbjmaxOLD1,dbjmaxOLD2,*xloaddiff=NULL,*dbcont=NULL,
       zl=0.0,*xbodydiff=NULL,*t1diff=NULL,*xboundiff=NULL,*bdiff=NULL,
-      *pslavsurf=NULL,*pmastsurf=NULL,*clearini=NULL;
+      *pslavsurf=NULL,*pmastsurf=NULL,*clearini=NULL,venergy=0.0;
 
   ikactcont=*ikactcontp;ikactmech=*ikactmechp;
 
@@ -164,7 +165,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
           itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
 	  imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
           xnoels,&mortar,pslavsurf,pmastsurf,clearini,theta,
-	  xstateini,xstate,nstate_,&icutb);
+	  xstateini,xstate,nstate_,&icutb,&ialeatoric);
 
   NNEW(ikactcont1,ITG,nactcont1_);
 
@@ -189,7 +190,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 			  &t1l,&kodem,elconloc,plicon,nplicon,npmat_,
 			  &senergy,&iener,cstr,mi,
                           &springarea[2*(konl[nope]-1)],nmethod,ne0,
-			  nstate_,xstateini,xstate,reltime,ielas));
+			  nstate_,xstateini,xstate,reltime,ielas,&venergy));
 
       storecontactdof(&nope,nactdof,&mt,konl,&ikactcont1,&nactcont1,
 		      &nactcont1_,bcont,fnl,ikmpc,nmpc,ilmpc,ipompc,nodempc, 
@@ -718,7 +719,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
               itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
 	      imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
               xnoels,&mortar,pslavsurf,pmastsurf,clearini,theta,
-	      xstateini,xstate,nstate_,&icutb);
+	      xstateini,xstate,nstate_,&icutb,&ialeatoric);
 
       for(i=*ne0;i<*ne;i++){
 	indexe=ipkon[i];
@@ -741,7 +742,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 			    &t1l,&kodem,elconloc,plicon,nplicon,npmat_,
 			    &senergy,&iener,cstr,mi,
                             &springarea[2*(konl[nope]-1)],nmethod,ne0,
-                            nstate_,xstateini,xstate,reltime,ielas));
+			    nstate_,xstateini,xstate,reltime,ielas,&venergy));
 	
 	FORTRAN(springstiff_n2f,(xl,elas,konl,voldl,s,&imat,elcon,nelcon,
 	        ncmat_,ntmat_,&nope,lakonl,&t1l,&kode,elconloc,

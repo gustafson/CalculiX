@@ -173,6 +173,7 @@
             write(*,*) '         3-D Euclidean distance: ',dist
             write(*,*) 
             ier=-1
+            write(40,*) noded
          endif
       endif
 !     

@@ -41,6 +41,10 @@
 !
       real*8 xi,et,ze,xsj,a
 !
+      intent(in) xi,et,ze,xl,iflag
+!
+      intent(out) shp,xsj
+!
 !     shape functions and their glocal derivatives
 !
       a=1.d0-xi-et

@@ -37,7 +37,7 @@
 !
       implicit none
 !
-      logical fixed,composite
+      logical fixed,composite,beam
 !
       character*1 type,typeboun(*)
       character*8 lakon(*)
@@ -96,7 +96,8 @@
          do
             if(index.eq.0) exit
             ielem=inoel(1,index)
-            if(lakon(ielem)(1:1).ne.'B') then
+            if((lakon(ielem)(1:1).ne.'B').and.
+     &         (lakon(ielem)(1:1).ne.'T')) then
                if(lakon(ielem)(1:1).eq.'S') nnor=1
                indexe=ipkon(ielem)
                nel=nel+1
@@ -261,6 +262,8 @@
      &                          .and.
      &                          (dabs(off1(j)-off1(jact)).lt.1.d-10)
      &                          .and.
+     &                          (lakon(iel(j))(1:1).ne.'M').and.
+     &                          (lakon(iel(jact))(1:1).ne.'M').and.
      &                  ((lakon(iel(j))(1:3).eq.lakon(iel(jact))(1:3))
      &                          .or.
      &                          ((lakon(iel(j))(1:1).eq.'S').and.
@@ -291,6 +294,8 @@ c
      &                          .and.
      &                          (dabs(off1(j)-off1(jact)).lt.1.d-10)
      &                          .and.
+     &                          (lakon(iel(j))(1:1).ne.'M').and.
+     &                          (lakon(iel(jact))(1:1).ne.'M').and.
      &                   ((lakon(iel(j))(1:3).eq.lakon(iel(jact))(1:3))
      &                          .or.
      &                          ((lakon(iel(j))(1:1).eq.'S').and.
@@ -398,14 +403,27 @@ c
 !                    rigid body definition
 ! 
                   if((lakon(iel(jact))(2:2).ne.'P').and.
-     &                 (lakon(iel(jact))(2:2).ne.'A')) then
+     &                 (lakon(iel(jact))(2:2).ne.'A').and.
+     &                 (lakon(iel(jact))(1:1).ne.'M')) then
                      idepnodes(ndepnodes+1)=nk
                      ndepnodes=ndepnodes+1
                      idim=max(idim,1)
                   elseif(k.eq.2) then
-                     idepnodes(ndepnodes+1)=nk
-                     ndepnodes=ndepnodes+1
-                     idim=max(idim,1)
+                     if (lakon(iel(jact))(1:1).ne.'M') then
+!
+!                       plane stress/strain axisymmetric
+!
+                        idepnodes(ndepnodes+1)=nk
+                        ndepnodes=ndepnodes+1
+                        idim=max(idim,1)
+                     else
+!
+!                       membrane: insert hinge
+!
+                        call gen3membrane(ipompc,nodempc,coefmpc,nmpc,
+     &                       nmpc_,mpcfree,ikmpc,ilmpc,labmpc,nk,
+     &                       ithermal,i)
+                     endif
                   endif
                enddo
                ikfree=ikfree+3
@@ -437,7 +455,13 @@ c
          do
             if(index.eq.0) exit
             ielem=inoel(1,index)
-            if(lakon(ielem)(1:1).eq.'B') then
+            if((lakon(ielem)(1:1).eq.'B').or.
+     &         (lakon(ielem)(1:1).eq.'T')) then
+               if(lakon(ielem)(1:1).eq.'B') then
+                  beam=.true.
+               else
+                  beam=.false.
+               endif
                indexe=ipkon(ielem)
                nel=nel+1
                if(nel.gt.100) then
@@ -458,7 +482,7 @@ c
          enddo
 !
          if(nel.ge.nelshell) then
-            nnor=2
+            if(beam) nnor=2
             do j=nelshell,nel
                ial(j)=0
             enddo
@@ -466,9 +490,10 @@ c
 !           estimate the normal
 !
             do j=nelshell,nel
-               if(lakon(iel(j))(3:3).eq.'1') then
+               if((lakon(iel(j))(3:3).eq.'1').or.
+     &            (lakon(iel(j))(4:4).eq.'2')) then
 !
-!                 linear beam element
+!                 linear beam or truss element
 !
                   xi=coloc2(jl(j))
                   indexe=ipkon(iel(j))
@@ -620,6 +645,8 @@ c
      &                          .and.
      &                          (dabs(off2(j)-off2(jact)).lt.1.d-10)
      &                          .and.
+     &                          (lakon(iel(j))(1:1).ne.'T').and.
+     &                          (lakon(iel(jact))(1:1).ne.'T').and.
      &                (lakon(iel(j))(8:8).eq.lakon(iel(jact))(8:8)))
      &                          ial(j)=1
                         endif
@@ -634,6 +661,8 @@ c
      &                          .and.
      &                          (dabs(off2(j)-off2(jact)).lt.1.d-10)
      &                          .and.
+     &                          (lakon(iel(j))(1:1).ne.'T').and.
+     &                          (lakon(iel(jact))(1:1).ne.'T').and.
      &                (lakon(iel(j))(8:8).eq.lakon(iel(jact))(8:8)))
      &                          ial(j)=1
                         endif
@@ -724,18 +753,72 @@ c
                   xnor(ixfree+3+j)=xnoref(j)
                enddo
                ixfree=ixfree+6
-               do k=1,8
-                  nk=nk+1
-                  if(nk.gt.nk_) then
-                     write(*,*) '*ERROR in gen3dnor: increase nk_'
-                     call exit(201)
-                  endif
-                  knor(ikfree+k)=nk
-                  idepnodes(ndepnodes+k)=nk
-               enddo
+               if(lakon(iel(jact))(1:1).ne.'T') then
+!
+!                 beam
+!
+                  do k=1,8
+                     nk=nk+1
+                     if(nk.gt.nk_) then
+                        write(*,*) '*ERROR in gen3dnor: increase nk_'
+                        call exit(201)
+                     endif
+                     knor(ikfree+k)=nk
+                     idepnodes(ndepnodes+k)=nk
+                  enddo
+                  ndepnodes=ndepnodes+8
+                  idim=max(idim,3)
+               else
+!
+!                 truss
+!
+                  do k=1,8
+                     nk=nk+1
+                     if(nk.gt.nk_) then
+                        write(*,*) '*ERROR in gen3dnor: increase nk_'
+                        call exit(201)
+                     endif
+                     knor(ikfree+k)=nk
+!
+!                    assigning coordinates (necessary for the 
+!                    no-rotation-about-the-truss-axis-MPC created
+!                    in gen3dtruss
+!
+                     if(k.eq.1) then
+                        do j=1,3
+                           co(j,nk)=co(j,i)
+     &                         -thl1(jact)*xn1(j,jact)*(.5d0+off1(jact))
+     &                         +thl2(jact)*xnoref(j)*(.5d0-off2(jact))
+                        enddo
+                     elseif(k.eq.2) then
+                        do j=1,3
+                           co(j,nk)=co(j,i)
+     &                         -thl1(jact)*xn1(j,jact)*(.5d0+off1(jact))
+     &                         -thl2(jact)*xnoref(j)*(.5d0+off2(jact))
+                        enddo
+                     elseif(k.eq.3) then
+                        do j=1,3
+                           co(j,nk)=co(j,i)
+     &                         +thl1(jact)*xn1(j,jact)*(.5d0-off1(jact))
+     &                         -thl2(jact)*xnoref(j)*(.5d0+off2(jact))
+                        enddo
+                     elseif(k.eq.4) then
+                        do j=1,3
+                           co(j,nk)=co(j,i)
+     &                         +thl1(jact)*xn1(j,jact)*(.5d0-off1(jact))
+     &                         +thl2(jact)*xnoref(j)*(.5d0-off2(jact))
+                        enddo
+                     endif
+                  enddo
+!
+                  call gen3dtruss(ipompc,nodempc,coefmpc,nmpc,
+     &                 nmpc_,mpcfree,ikmpc,ilmpc,labmpc,nk,
+     &                 ithermal,i,nodeboun,ndirboun,ikboun,ilboun,
+     &                 nboun,nboun_,typeboun,xboun,xta,jact,co,
+     &                 knor,ntrans,inotr,trab,vold,mi,nmethod,nk_,
+     &                 nam,iperturb,ikfree,iamboun)
+               endif
                ikfree=ikfree+8
-               ndepnodes=ndepnodes+8
-               idim=max(idim,3)
             enddo
          endif
 !
@@ -999,13 +1082,6 @@ c     &                   (dabs(xnoref(imax)).lt.1.d-10)) then
             endif
          endif
       enddo
-!
-c      do i=1,nmpc
-c         call writempc(ipompc,nodempc,coefmpc,labmpc,i)
-c      enddo
-c      do i=1,nboun
-c         write(*,*) nodeboun(i),ndirboun(i),xboun(i)
-c      enddo
 !
       return
       end

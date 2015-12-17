@@ -33,6 +33,11 @@
      &  tpgphpr,tmgphpr,tmgmhpr,tpgmhpr,tpgphmr,tmgphmr,tmgmhmr,tpgmhmr,
      &  omgopg,omhoph,omropr,omgmopg,omhmoph,omrmopr
 !
+      intent(in) xig,etg,zeg,pneigh,pnode,
+     &          nterms
+!
+      intent(inout) ratio,a,p
+!
       kflag=1
       n=3
 !

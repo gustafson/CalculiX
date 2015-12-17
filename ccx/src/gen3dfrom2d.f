@@ -83,7 +83,7 @@
 !
 !           S4 elements are expanded into C3D8I
 !
-         elseif(lakon(i)(1:1).eq.'S') then
+         elseif((lakon(i)(1:1).eq.'S').or.(lakon(i)(1:1).eq.'M')) then
             ishift=11
 !
 !           CPE4, CPS4 and CAX4 elements are expanded into C3D8
@@ -333,7 +333,7 @@ c         do j=1,2*nedge
 !           conditions
 !
       do j=1,nope
-         if(lakon(i)(1:1).ne.'S') then
+         if((lakon(i)(1:1).ne.'S').and.(lakon(i)(1:1).ne.'M')) then
 !
 !                    fixing the middle plane
 !

@@ -10,9 +10,9 @@
 /* Strings vergleichen (bis zu welchem character sind sie gleich?)     */
 /*---------------------------------------------------------------------*/
 
-ITG compare (char *str1, char *str2, ITG length)
+int compare (char *str1, char *str2, int length)
 {
-    ITG     i;
+    int     i;
 
     i = 0;
     while ((str1[i]==str2[i]) && (i<length))

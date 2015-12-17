@@ -30,9 +30,11 @@
 !
       integer i,k,iflag
 !
-      real*8 shp(7,3),xs(3,7),xsi(2,3),xl(3,3),sh(3),xsj(3)
+      real*8 shp(7,3),xs(3,7),xsi(2,3),xl(3,3),sh(3),xsj(3),xi
 !
-      real*8 xi
+      intent(in) xi,xl,iflag
+!
+      intent(out) xsj,xs,shp
 !
 !     shape functions and their glocal derivatives for an element
 !     described with two local parameters and three global ones.

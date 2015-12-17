@@ -24,9 +24,16 @@
 !     id is such that x(id).le.px and x(id+1).gt.px
 !                                                                             
       subroutine ident2(x,px,n,ninc,id)
-      implicit none    
+      implicit none   
+! 
       integer n,id,n2,m,ninc
+!
       real*8 x(n*ninc),px
+!
+      intent(in) x,px,n,ninc
+!
+      intent(out) id
+!
       id=0
       if(n.eq.0) return
       n2=n+1

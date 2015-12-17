@@ -55,14 +55,10 @@
 !     by the normal of the mean rotation MPC, not by expanding the
 !     MPC in Carthesian coordinates
 !
-c      if((itr.eq.0).or.(is.eq.0).or.(is.eq.11).or.(is.eq.8)) then
-c
-c         if((itr.eq.0).or.(is.eq.0).or.(is.gt.3)) then
          if((itr.eq.0).or.(ii.eq.0).or.(ii.gt.3)) then
 !
 !        no transformation applies: simple SPC
 !
-c         loop: do ii=is,ie
             if(ii.le.3) then
                i=ii
             elseif(ii.eq.4) then

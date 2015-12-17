@@ -69,14 +69,14 @@ c            if(ndir.ne.0) cycle
       if(calcul_f.eq.1) then
          do i=1,nk
             if(inomat(i).eq.0) cycle
-c            if(nactdof(0,i).ne.0) then
-c               f(nactdof(0,i))=fn(0,i)
-c            endif
-            do j=0,mi(2)
-               if(nactdof(j,i).ne.0) then
-                  f(nactdof(j,i))=fn(j,i)
-               endif
-            enddo
+            if(nactdof(0,i).ne.0) then
+               f(nactdof(0,i))=fn(0,i)
+            endif
+c            do j=0,mi(2)
+c               if(nactdof(j,i).ne.0) then
+c                  f(nactdof(j,i))=fn(j,i)
+c               endif
+c            enddo
          enddo
       endif
 !

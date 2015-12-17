@@ -19,7 +19,7 @@
       subroutine applyboun(ifaext,nfaext,ielfa,ikboun,ilboun,
      &  nboun,typeboun,nelemload,nload,sideload,isolidsurf,nsolidsurf,
      &  ifabou,nfabou,nface,nodeboun,ndirboun,ikmpc,ilmpc,labmpc,nmpc,
-     &  nactdohinv)
+     &  nactdohinv,compressible)
 !
 !     stores pointers to ifabou in ielfa(2,*) at those locations
 !     which are zero (external faces)
@@ -34,7 +34,7 @@
      &  j,idof,ikboun(*),nboun,id,ilboun(*),iboun,nelemload(2,*),
      &  nload,isolidsurf(*),nsolidsurf,ifabou(*),i,nface,indexb,
      &  nodeboun(*),ndirboun(*),jsum,ig,ikmpc(*),ilmpc(*),nmpc,mpc,
-     &  nactdohinv(*)
+     &  nactdohinv(*),compressible
 !
       nfabou=1
 !
@@ -68,18 +68,21 @@
                   endif
 !
 !                 if all velocity components are known no pressure
-!                 should be defined
+!                 should be defined (only for incompressible fluids)
 !
-                  if(j.eq.4) then
-                     if(jsum.eq.6) then
-                        write(*,*) '*WARNING in applyboun: a pressure SP
-     &C is being applied to'
-                        write(*,*) '         face ',ielfa(4,ifa),
+                  if(compressible.eq.0) then
+                     if(j.eq.4) then
+                        if(jsum.eq.6) then
+                           write(*,*) '*WARNING in applyboun: a pressure
+     & SPC is being applied to'
+                           write(*,*) '         face ',ielfa(4,ifa),
      &                      'of element ',ielfa(1,ifa),'for which all'
-                        write(*,*) '         velocities are known (by SP
-     &Cs or MPCs). The pressure'
-                        write(*,*) '         SPC is discarded'
-                        exit
+                           write(*,*) '         velocities are known (by
+     & SPCs or MPCs). The pressure'
+                           write(*,*) '         SPC is discarded'
+                           write(*,*)
+                           exit
+                        endif
                      endif
                   endif
                   jsum=jsum+j
@@ -110,18 +113,20 @@
                   endif
 !
 !                 if all velocity components are known no pressure
-!                 should be defined
+!                 should be defined (only for incompressible fluids)
 !
-                  if(j.eq.4) then
-                     if(jsum.eq.6) then
-                        write(*,*) '*WARNING in applyboun: a pressure MP
-     &C is being applied to'
-                        write(*,*) '         face ',ielfa(4,ifa),
-     &                      'of element ',ielfa(1,ifa),'for which all'
-                        write(*,*) '         velocities are known (by SP
-     &Cs or MPCs). The pressure'
-                        write(*,*) '         MPC is discarded'
-                        exit
+                  if(compressible.eq.0) then
+                     if(j.eq.4) then
+                        if(jsum.eq.6) then
+                           write(*,*) '*WARNING in applyboun: a pressure
+     & MPC is being applied to'
+                           write(*,*) '         face ',ielfa(4,ifa),
+     &                       'of element ',ielfa(1,ifa),'for which all'
+                           write(*,*) '         velocities are known (by
+     & SPCs or MPCs). The pressure'
+                           write(*,*) '         MPC is discarded'
+                           exit
+                        endif
                      endif
                   endif
                   jsum=jsum+j
@@ -146,6 +151,35 @@
                            nfabou=nfabou+7
                         endif
                         ifabou(-ielfa(2,ifa)+6)=id
+                     endif
+                  endif
+                  id=id-1
+                  cycle
+               else
+                  exit
+               endif
+            else
+               exit
+            endif
+         enddo
+!
+!        sliding conditions
+!
+         call nident2(nelemload,ielem,nload,id)
+!
+         do
+            if(id.gt.0) then
+c               write(*,*) 'applyboun ',nelemload(1,id),sideload(id)
+               if(nelemload(1,id).eq.ielem) then
+                  if(sideload(id)(1:1).eq.'M') then
+                     read(sideload(id)(2:2),'(i1)') ig
+                     if(ig.eq.ielfa(4,ifa)) then
+c                        write(*,*) 'store '
+                        if(ielfa(2,ifa).eq.0) then
+                           ielfa(2,ifa)=-nfabou
+                           nfabou=nfabou+7
+                        endif
+                        ifabou(-ielfa(2,ifa)+5)=2
                      endif
                   endif
                   id=id-1

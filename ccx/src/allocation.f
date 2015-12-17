@@ -37,7 +37,7 @@
       implicit none
 !
       logical igen,lin,frequency,cyclicsymmetry,composite,
-     &  tabular
+     &  tabular,massflow
 !
       character*1 selabel,sulabel,inpc(*)
       character*5 llab
@@ -304,9 +304,12 @@
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:12).eq.'*CONTACTPAIR') then
-            ntie=ntie+1
-            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &           ipoinp,inp,ipoinpc)
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+               ntie=ntie+1
+            enddo
          elseif(textpart(1)(1:13).eq.'*CONTACTPRINT') then
             do
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -452,13 +455,18 @@
          elseif((textpart(1)(1:6).eq.'*DLOAD').or.
      &          (textpart(1)(1:7).eq.'*DSLOAD').or.
      &          (textpart(1)(1:6).eq.'*DFLUX').or.
+     &          (textpart(1)(1:9).eq.'*MASSFLOW').or.
      &          (textpart(1)(1:5).eq.'*FILM')) then
-            if(textpart(1)(1:5).ne.'*FILM') then
+            massflow=.false.
+            if((textpart(1)(1:5).ne.'*FILM').and.
+     &         (textpart(1)(1:9).ne.'*MASSFLOW')) then
                nam=nam+1
                namtot=namtot+1
-            else
+            elseif(textpart(1)(1:9).ne.'*MASSFLOW') then
                nam=nam+2
                namtot=namtot+2
+            else
+               massflow=.true.
             endif
             do
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -473,6 +481,10 @@
                read(textpart(1)(1:10),'(i10)',iostat=istat) l
                if(istat.eq.0) then
                   nload=nload+1
+                  if(massflow) then
+                     nmpc=nmpc+1
+                     memmpc=memmpc+3
+                  endif
                else
                   read(textpart(1)(1:80),'(a80)',iostat=istat) elset
                   elset(81:81)=' '
@@ -481,6 +493,10 @@
                   do i=1,nset
                      if(set(i).eq.elset) then
                         nload=nload+meminset(i)
+                        if(massflow) then
+                           nmpc=nmpc+meminset(i)
+                           memmpc=memmpc+3*meminset(i)
+                        endif
                         exit
                      endif
                   enddo
@@ -565,7 +581,6 @@
          elseif((textpart(1)(1:8).eq.'*ELEMENT').and.
      &          (textpart(1)(1:14).ne.'*ELEMENTOUTPUT')) then
             ielset=0
-c            isochoric=.false.
 !
             loop1: do i=2,n
                if(textpart(i)(1:6).eq.'ELSET=') then
@@ -596,6 +611,9 @@ c            isochoric=.false.
                      label(1:7)=label(2:8)
                      label(8:8)=' '
                   endif
+!
+                  nopeexp=0
+!
                   if(label.eq.'C3D20   ') then
                      mi(1)=max(mi(1),27)
                      nope=20
@@ -604,11 +622,6 @@ c            isochoric=.false.
                      mi(1)=max(mi(1),8)
                      nope=20
                      nopeexp=20
-c                  elseif(label(1:8).eq.'C3D20RI ') then
-c                     mi(1)=max(mi(1),8)
-c                     nope=20
-c                     nopeexp=20
-c                     isochoric=.true.
                   elseif((label.eq.'C3D8R   ').or.(label.eq.'F3D8    '))
      &               then
                      mi(1)=max(mi(1),1)
@@ -652,6 +665,7 @@ c    Bernhardi end
                   elseif((label.eq.'CPE3    ').or.
      &                    (label.eq.'CPS3    ').or.
      &                    (label.eq.'CAX3    ').or.
+     &                    (label.eq.'M3D3    ').or.
      &                    (label.eq.'S3      ')) then
                      mi(1)=max(mi(1),2)
                      nope=3
@@ -659,6 +673,7 @@ c    Bernhardi end
                   elseif((label.eq.'CPE4R   ').or.
      &                    (label.eq.'CPS4R   ').or.
      &                    (label.eq.'CAX4R   ').or.
+     &                    (label.eq.'M3D4R   ').or.
      &                    (label.eq.'S4R     ')) then
                      mi(1)=max(mi(1),1)
                      nope=4
@@ -666,6 +681,7 @@ c    Bernhardi end
                   elseif((label.eq.'CPE4    ').or.
      &                    (label.eq.'CPS4    ').or.
      &                    (label.eq.'CAX4    ').or.
+     &                    (label.eq.'M3D4    ').or.
      &                    (label.eq.'S4      ')) then
                      mi(1)=max(mi(1),8)
                      nope=4
@@ -674,6 +690,7 @@ c    Bernhardi end
                   elseif((label.eq.'CPE6    ').or.
      &                    (label.eq.'CPS6    ').or.
      &                    (label.eq.'CAX6    ').or.
+     &                    (label.eq.'M3D6    ').or.
      &                    (label.eq.'S6      ')) then
                      mi(1)=max(mi(1),9)
                      nope=6
@@ -681,6 +698,7 @@ c    Bernhardi end
                   elseif((label.eq.'CPE8R   ').or.
      &                    (label.eq.'CPS8R   ').or.
      &                    (label.eq.'CAX8R   ').or.
+     &                    (label.eq.'M3D8R   ').or.
      &                    (label.eq.'S8R     ')) then
                      mi(1)=max(mi(1),8)
                      nope=8
@@ -688,12 +706,15 @@ c    Bernhardi end
                   elseif((label.eq.'CPE8    ').or.
      &                    (label.eq.'CPS8    ').or.
      &                    (label.eq.'CAX8    ').or.
+     &                    (label.eq.'M3D8    ').or.
      &                    (label.eq.'S8      ')) then
                      mi(1)=max(mi(1),27)
                      nope=8
                      nopeexp=28
-                  elseif(label.eq.'B31     ') then
+                  elseif((label.eq.'B31     ').or.
+     &                   (label.eq.'T3D2    ')) then
                      mi(1)=max(mi(1),8)
+                     mi(3)=max(mi(3),2)
                      nope=2
 !                    modified into C3D8I (11 nodes)
                      nopeexp=13
@@ -701,8 +722,10 @@ c    Bernhardi end
                      mi(1)=max(mi(1),1)
                      nope=2
                      nopeexp=10
-                  elseif(label.eq.'B32     ') then
+                  elseif((label.eq.'B32     ').or.
+     &                   (label.eq.'T3D3    ')) then
                      mi(1)=max(mi(1),27)
+                     mi(3)=max(mi(3),2)
                      nope=3
                      nopeexp=23
                   elseif(label.eq.'B32R    ') then
@@ -727,6 +750,8 @@ c                     mi(1)=max(mi(1),8)
                      nope=2
                      nopeexp=2
                   elseif(label.eq.'GAPUNI  ') then
+                     mi(1)=max(mi(1),1)
+                     label='ESPGAPA1'
                      nope=2
                      nopeexp=2
                   endif
@@ -767,9 +792,11 @@ c    Bernhardi end
                      necpsr=necpsr+1
                   elseif(label(1:1).eq.'C') then
                      necaxr=necaxr+1
-                  elseif(label(1:1).eq.'S') then
+                  elseif((label(1:1).eq.'S').or.
+     &                   (label(1:1).eq.'M')) then
                      nesr=nesr+1
-                  elseif(label(1:1).eq.'B') then
+                  elseif((label(1:1).eq.'B').or.
+     &                   (label(1:1).eq.'T')) then
                      neb32=neb32+1
                   elseif(label(1:1).eq.'D') then
                      nflow=nflow+1
@@ -796,12 +823,6 @@ c!
 c!              up to 8 new mpc's with 22 terms in each mpc
 c!              (21 = 7 nodes x 3 dofs + inhomogeneous term)
 c!
-c               if(isochoric) then
-c                  nmpc=nmpc+8
-c                  nk=nk+8
-c                  nboun=nboun+8
-c                  memmpc=memmpc+176
-c               endif
             enddo loop2
          elseif((textpart(1)(1:5).eq.'*NSET').or.
      &           (textpart(1)(1:6).eq.'*ELSET')) then
@@ -920,29 +941,6 @@ c               endif
                if((istat.lt.0).or.(key.eq.1)) exit
                nprint=nprint+n
             enddo
-         elseif(textpart(1)(1:5).eq.'*GAP ') then
-            elset='                    '
-            do i=2,n
-               if(textpart(i)(1:6).eq.'ELSET=') then
-                  elset=textpart(i)(7:86)
-                  elset(81:81)=' '
-                  ipos=index(elset,' ')
-                  elset(ipos:ipos)='E'
-                  exit
-               endif
-            enddo
-            if(elset.ne.'                     ') then
-               do i=1,nset
-                  if(set(i).eq.elset) then
-                     nk=nk+2+2*meminset(i)
-                     nmpc=nmpc+meminset(i)
-                     nboun=nboun+2*meminset(i)
-                     memmpc=memmpc+8*meminset(i)
-                  endif
-               enddo
-            endif
-            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:13).eq.'*FLUIDSECTION') then
             do
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -960,6 +958,15 @@ c            ncmat=max(7,ncmat)
             nstate=max(9,nstate)
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
+         elseif(textpart(1)(1:5).eq.'*GAP ') then
+            nmat=nmat+1
+            ncmat=max(6,ncmat)
+            ntmat=max(1,ntmat)
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,
+     &              inl,ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+            enddo
          elseif(textpart(1)(1:15).eq.'*GAPCONDUCTANCE') then
             ntmatl=0
             do
@@ -984,6 +991,8 @@ c            ncmat=max(7,ncmat)
                npmatl=npmatl+1
                npmat=max(npmatl,npmat)
             enddo
+         elseif(textpart(1)(1:18).eq.'*GAPHEATGENERATION') then
+            ncmat=max(11,ncmat)
          elseif(textpart(1)(1:8).eq.'*HEADING') then
             if(nheading.ne.0) then
                write(*,*) '*ERROR in allocation: more than 1'

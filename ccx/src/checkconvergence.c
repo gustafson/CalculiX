@@ -50,7 +50,8 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
           ITG *nelemload, ITG *nload, ITG *nodeboun, ITG *nboun, ITG *itg,
           ITG *ndirboun, double *deltmx, ITG *iflagact,char *set,ITG *nset,
 	  ITG *istartset,ITG *iendset,ITG *ialset, double *emn, double *thicke,
-	  char *jobnamec,ITG *mortar,ITG *nmat,ITG *ielprop,double *prop){
+	  char *jobnamec,ITG *mortar,ITG *nmat,ITG *ielprop,double *prop,
+	  ITG *ialeatoric,ITG *kscale){
 
     ITG i0,ir,ip,ic,il,ig,ia,iest,iest1=0,iest2=0,iconvergence,idivergence,
 	ngraph=1,k,*ipneigh=NULL,*neigh=NULL,*inum=NULL,id,istart,iend,inew,
@@ -61,10 +62,14 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
         *fn=NULL,*eenmax=NULL,*fnr=NULL,*fni=NULL,*qfx=NULL,*cdn=NULL,
         *cdnr=NULL,*cdni=NULL;
 
+    /* reset ialeatoric to zero */
+
+    *ialeatoric=0;
+
     /* next lines are active if the number of contact elements was
        changed in the present increment */
 
-    if ((*iflagact==1)&&(*mortar==0)){
+    if ((*iflagact==1)&&(*mortar!=1)){
 	if(ctrl[0]<*iit+4)ctrl[0]=*iit+4;
 	if(ctrl[1]<*iit+8)ctrl[1]=*iit+8;
 	ctrl[3]+=1;
@@ -78,7 +83,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     /* for face-to-face penalty contact: increase the number of iterations
        in two subsequent increments in order to increase the increment size */
 
-    if(*mortar==1){ig+=4;}
+    if(*mortar==1){ig+=12;il+=12;}
 
     /* check for forced divergence (due to divergence of a user material
        routine */
@@ -116,7 +121,6 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
     if(*ithermal<2){
 	if((*iit>1)&&(ram[0]<=c1[0]*qam[0])&&(*iflagact==0)&&
-//	if((*iit>1)&&(ram[0]<=c1[0]*qam[0])&&
 	   ((cam[0]<=c2[0]*uam[0])||
 	    (((ram[0]*cam[0]<c2[0]*uam[0]*ram2[0])||(ram[0]<=ral*qam[0])||
 	      (qa[0]<=ea*qam[0]))&&(*ntg==0))||
@@ -137,7 +141,6 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     /* thermomechanical */
 
     if(*ithermal==3){
-//	if(((ram[0]<=c1[0]*qam[0])&&
 	if(((*iit>1)&&(ram[0]<=c1[0]*qam[0])&&
 	    ((cam[0]<=c2[0]*uam[0])||
 	     (((ram[0]*cam[0]<c2[0]*uam[0]*ram2[0])||(ram[0]<=ral*qam[0])||
@@ -151,29 +154,30 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	     (cam[1]<1.e-8))))iconvergence=1;
     }
 
-    /* reset iflagact */
+    /* reset kscale */
 
-    *iflagact=0;
+    if(iconvergence==1){
+	if(*kscale>1){
+	    *kscale=1;
+	    iconvergence=0;
+	    printf("\n restoring the elastic contact stifnesses to their original values \n\n");
+	}
+    }
 	
     /* increment convergence reached */
 	
     if((iconvergence==1)&&(idivergence==0)){
-//	*ttime=*ttime+*dtime;
 
-        /* cutting the insignificant digits from ttime */
-
-//	*ttime=*ttime+1.;
-//	*ttime=*ttime-1.;
 	FORTRAN(writesummary,(istep,iinc,icutb,iit,ttime,time,dtime));
 	if(*uncoupled){
 	    if(*ithermal==2){
 	        *iitterm=*iit;
 		*ithermal=1;
 		for(k=0;k<*nk;++k){t1[k]=vold[mt*k];}
-//		*ttime=*ttime-*dtime;
 		*iit=1;
 		(ctrl[0])*=4;
 		printf(" thermal convergence\n\n");
+		*iflagact=0;
 		return;
 	    }else{
 		*ithermal=3;
@@ -301,20 +305,10 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
 	if(*dtheta>=1.-*theta){
 	    if(*dtheta>1.-*theta){iexceed=1;}else{iexceed=0;}
-//	    if((*mortar==1)&&(1.-*theta>0.01)){
-//		*dtheta=0.999-*theta;
-//	    if((*mortar==1)&&(1.-*theta>0.5)){
-//		*dtheta=0.900-*theta;
-//	    }else{
-		*dtheta=1.-*theta;
-//	    }
+	    *dtheta=1.-*theta;
 	    *dthetaref=*dtheta;
 	    if(iexceed==1)
-	    printf(" the increment size exceeds the remainder of the step and is decreased to %e\n\n",*dtheta**tper);
-//	    if(*dtheta<=1.e-6){
-//		(*ttime)+=(*dtheta**tper);
-//		*dtime=0.;
-//	    }
+		printf(" the increment size exceeds the remainder of the step and is decreased to %e\n\n",*dtheta**tper);
 	}
     }
     else{
@@ -323,7 +317,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	
 	/* check for the amount of iterations */
 	
-	if((*iit>ic)&&(*mortar==0)){
+      if(((*iit>ic)&&(*mortar==0))||((*mortar>1)&&(*iit>200))){
 	    printf("\n *ERROR: too many iterations needed\n");
 	    printf(" best solution and residuals are in the frd file\n\n");
 
@@ -354,42 +348,10 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	if((*iit>=i0)||(fabs(ram[0])>1.e20)||(fabs(cam[0])>1.e20)||
 	               (fabs(ram[1])>1.e20)||(fabs(cam[1])>1.e20)||
 	               (cam[2]>*deltmx)||(qa[2]>0.)){
-	    if((*ithermal!=2)&&(*mortar==0)){
+	    if((*ithermal!=2)&&(*mortar!=1)){
 		if((ram1[0]>ram2[0])&&(ram[0]>ram2[0])&&(ram[0]>c1[0]*qam[0]))
 		    idivergence=1;
 	    }
-
-/*	    if((*ithermal!=2)&&(*mortar==1)){
-	        if((ram[0]>ram[6])&&(ram1[0]>ram[6])){
-		    printf("divergence allowed: residual force not converging\n");
-		    if((ram1[0]>ram2[0])&&(ram[0]>ram2[0])&&(ram[0]>c1[0]*qam[0]))
-			idivergence=1;
-		}
-	        if(ram[5]<0.5){
-		    printf("divergence allowed: number of contact elements stabilized\n");
-		    if((ram1[0]>ram2[0])&&(ram[0]>ram2[0])&&(ram[0]>c1[0]*qam[0]))
-			idivergence=1;
-		}
-                if(ram[5]>=ram1[3]){
-		    if(((ram[4]>0.97*ram1[2])&&(ram[4]<1.03*ram1[2]))&&
-		       ((ram[4]>0.97*ram2[2])&&(ram[4]<1.03*ram2[2]))){
-			printf("divergence allowed: repetitive pattern detected\n");
-			if((ram1[0]>ram2[0])&&(ram[0]>ram2[0])&&(ram[0]>c1[0]*qam[0]))
-			    idivergence=1;
-			if(((ram[4]>0.99*ram1[2])&&(ram[4]<1.01*ram1[2]))&&
-			   ((ram[4]>0.99*ram2[2])&&(ram[4]<1.01*ram2[2])&&(ram[0]>c1[0]*qam[0]))){
-			    printf("repetitive pattern within 1 per cent -> divergence\n");
-			    idivergence=1;
-			}
-			if((ram[4]>(1-1.e-3)*ram1[2])&&(ram[4]<(1+1.e-3)*ram1[2])&&
-			   (ram[4]>(1-1.e-3)*ram2[2])&&(ram[4]<(1+1.e-3)*ram2[2])&&
-			   (ram[5]==ram1[3])&&(ram[5]==ram2[3])){
-			    printf("infinite loop -> divergence\n");
-			    idivergence=1;
-			}
-		    }
-		}   
-		}*/
 
 	    if((*ithermal!=2)&&(*mortar==1)){
 
@@ -401,15 +363,18 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
                 /* number of contact elements does not change */
 
-		if(((ITG)ram[6]==0)&&((ITG)ram1[6]==0)){
+		if(*iflagact==0){
 		    printf("divergence allowed: number of contact elements stabilized\n");
-		    if((ram1[0]>ram2[0])&&(ram[0]>ram2[0])&&(ram[0]>c1[0]*qam[0]))
-			idivergence=1;
+		    if((ram1[0]>ram2[0])&&(ram[0]>ram2[0])&&(ram[0]>c1[0]*qam[0])){
+			if(cam[0]<=c2[0]*uam[0]){
+			    *ialeatoric=1;
+			}
+		    }
 		}
 	    
                 /* rate of number of contact elements is increasing */
 
-		if(((ITG)ram[6]>=(ITG)ram1[6])&&((ITG)ram[6]>=(ITG)ram2[6])){
+		if(((ITG)ram[6]*(ITG)ram1[6]<0)&&((ITG)ram1[6]*(ITG)ram2[6]<0)){
 		    
 		    if(((ram[4]>0.98*ram1[4])&&(ram[4]<1.02*ram1[4]))&&
 		       ((ram[4]>0.98*ram2[4])&&(ram[4]<1.02*ram2[4]))){
@@ -417,27 +382,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 			if((ram1[0]>ram2[0])&&(ram[0]>ram2[0])&&(ram[0]>c1[0]*qam[0]))
 			    idivergence=1;
 		    }
-		    
-		    /*	    if(((ram[4]>0.99*ram1[4])&&(ram[4]<1.01*ram1[4]))&&
-		       ((ram[4]>0.99*ram2[4])&&(ram[4]<1.01*ram2[4]))&&
-		       (ram[0]>c1[0]*qam[0])){
-			printf("repetitive pattern within 1 %: divergence\n");
-			idivergence=1;
-		    }
-
-		    if(((ram[4]>(1.-1.e-3)*ram1[4])&&(ram[4]<(1.+1.e-3)*ram1[4]))&&
-		       ((ram[4]>(1.-1.e-3)*ram2[4])&&(ram[4]<(1.+1.e-3)*ram2[4]))&&
-		       ((ITG)ram[6]==(ITG)ram1[6])&&((ITG)ram[6]==(ITG)ram2[6])){
-			printf("infinite loop -> divergence\n");
-			idivergence=1;
-			}*/
 		}
-		
-		/*	if(((ITG)ram1[7]==1)&&((ITG)ram2[7]!=-1)){
-		    printf("divergence if ram>ram1>ram2: contact elements not stabilizing\n");
-		    if((ram1[0]>ram2[0])&&(ram[0]>ram2[0])&&(ram[0]>c1[0]*qam[0]))
-			idivergence=1;
-			}*/
 	    }
 
 
@@ -450,35 +395,37 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		if(cam[2]>*deltmx) idivergence=2;
 	    }
 	    if(idivergence>0){
-		if(*idrct==1) {
-
-                    /* fixed time increments */
-
-		    printf("\n *ERROR: solution seems to diverge; please try \n");
-		    printf(" automatic incrementation; program stops\n");
-		    printf(" best solution and residuals are in the frd file\n\n");
-
-		    FORTRAN(writesummarydiv,(istep,iinc,icutb,iit,ttime,time,
-					     dtime));
-
-		    NNEW(fn,double,mt**nk);
-		    NNEW(inum,ITG,*nk);for(k=0;k<*nk;k++) inum[k]=1;
-		    FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,nk,
-                       sti,stn,ipkon,inum,kon,lakon,ne,mi,orab,
-	               ielorien,co,itg,ntg,vold,ielmat,thicke,ielprop,prop));
-		    ++*kode;
-
-		    (*ttime)+=(*time);
-		    frd(co,nk,kon,ipkon,lakon,ne,vold,stn,inum,nmethod,
-			kode,filab,een,t1act,fn,ttime,epn,ielmat,matname,enern,
-                        xstaten,nstate_,istep,iinc,ithermal,qfn,mode,noddiam,
-                        trab,inotr,ntrans,orab,ielorien,norien,description,
-                        ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
-                        &ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
-                        ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx,cdn,
-                        mortar,cdnr,cdni,nmat);
-
-		    FORTRAN(stop,());
+		if(*idrct==1){
+		    if((*mortar<=1)||((*mortar>1)&&(*iit>200))) {
+			
+			/* fixed time increments */
+			
+			printf("\n *ERROR: solution seems to diverge; please try \n");
+			printf(" automatic incrementation; program stops\n");
+			printf(" best solution and residuals are in the frd file\n\n");
+			
+			FORTRAN(writesummarydiv,(istep,iinc,icutb,iit,ttime,time,
+						 dtime));
+			
+			NNEW(fn,double,mt**nk);
+			NNEW(inum,ITG,*nk);for(k=0;k<*nk;k++) inum[k]=1;
+			FORTRAN(storeresidual,(nactdof,b,fn,filab,ithermal,nk,
+					       sti,stn,ipkon,inum,kon,lakon,ne,mi,orab,
+					       ielorien,co,itg,ntg,vold,ielmat,thicke,ielprop,prop));
+			++*kode;
+			
+			(*ttime)+=(*time);
+			frd(co,nk,kon,ipkon,lakon,ne,vold,stn,inum,nmethod,
+			    kode,filab,een,t1act,fn,ttime,epn,ielmat,matname,enern,
+			    xstaten,nstate_,istep,iinc,ithermal,qfn,mode,noddiam,
+			    trab,inotr,ntrans,orab,ielorien,norien,description,
+			    ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
+			    &ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
+			    ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx,cdn,
+			    mortar,cdnr,cdni,nmat);
+			
+			FORTRAN(stop,());
+		    }
 		}
 		else {
 
@@ -489,7 +436,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 			printf("increment size decrease requested by a material user routine (through pnewdt)\n\n");
 		    }else{
 			if(idivergence==1){
-			    *dtheta=*dtheta*df;
+			    if((*mortar!=1)||(*icutb!=0)) *dtheta=*dtheta*df;
 			}else{
 			    *dtheta=*dtheta**deltmx/cam[2]*da;
 			}
@@ -533,6 +480,10 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		    }
 		    *icntrl=1;
 		    (*icutb)++;
+		    if(*mortar==1){
+			*kscale=100;
+			printf("\n reducing the constant stiffnesses by a factor of 100 \n\n");
+		    }
 
                     /* check whether too many cutbacks */
 
@@ -569,6 +520,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
 		    qa[2]=-1.;
 
+		    *iflagact=0;
 		    return;
 		}
 	    }
@@ -586,14 +538,14 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 				log(ram[1]/(ram1[1])));
 	    }
 	    if(iest1>iest2){iest=iest1;}else{iest=iest2;}
-	    if((iest>0)&&(*mortar==0)){
+	    if((iest>0)&&(*mortar!=1)){
 	    printf(" estimated number of iterations till convergence = %" ITGFORMAT "\n",
 		   iest);
 	    }
-	    if((((iest>ic)||(*iit==ic))&&(*mortar==0))||((*mortar==1)&&(*iit==60))){
+	    if((((iest>ic)||(*iit==ic))&&(*mortar!=1))||((*mortar==1)&&(*iit==60))){
 		
 		if(*idrct!=1){
-		    *dtheta=*dtheta*dc;
+		    if((*mortar!=1)||(*icutb!=0)) *dtheta=*dtheta*dc;
 		    *dthetaref=*dtheta;
 		    printf(" too slow convergence; the increment size is decreased to %e\n",*dtheta**tper);
 		    printf(" the increment is reattempted\n\n");
@@ -629,6 +581,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		    }
 		    *icntrl=1;
 		    (*icutb)++;
+		    if(*mortar==1) *kscale=100;
 		    if(*icutb>ia){
 			printf("\n *ERROR: too many cutbacks\n");
 			printf(" best solution and residuals are in the frd file\n\n");
@@ -657,6 +610,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		      }
 		      *ithermal=3;
 		    }
+		    *iflagact=0;
 		    return;
 		}
 	    }
@@ -667,10 +621,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	(*iit)++;
 	
     }
-    
-    /* default value for qa[2] */
 
-    /*  qa[2]=-1;*/
-
+    *iflagact=0;
     return;
 }

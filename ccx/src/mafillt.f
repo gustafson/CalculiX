@@ -20,7 +20,7 @@
      &  au,ad,jq,irow,nzs,b,vel,umel,xlet,xle,gradtfa,xxi,
      &  body,volume,compressible,ielfa,lakon,ifabou,nbody,neq,
      &  dtimef,velo,veloo,cpfa,hcfa,cpel,gradvel,xload,gammat,xrlfa,
-     &  xxj,nactdohinv,a1,a2,a3)
+     &  xxj,nactdohinv,a1,a2,a3,flux)
 !
 !     filling the matrix for the conservation of energy
 !
@@ -34,12 +34,12 @@
      &  neiel(*),jdof2,jq(*),irow(*),nzs,compressible,ielfa(4,*),
      &  ipointer,ifabou(*),nbody,neq,indexb,numfaces,nactdohinv(*)
 !
-      real*8 flux,vfa(0:5,*),xxn(3,*),area(*),au(*),ad(*),b(neq),
+      real*8 xflux,vfa(0:5,*),xxn(3,*),area(*),au(*),ad(*),b(neq),
      &  vel(nef,0:5),umel(*),xlet(*),xle(*),coef,gradtfa(3,*),
      &  xxi(3,*),body(0:3,*),volume(*),dtimef,velo(nef,0:5),
-     &  veloo(nef,0:5),rhovel,constant,cpel(*),gradvel(3,3,*),
+     &  veloo(nef,0:5),rhovol,constant,cpel(*),gradvel(3,3,*),
      &  cpfa(*),hcfa(*),div,xload(2,*),gammat(*),xrlfa(3,*),
-     &  xxj(3,*),a1,a2,a3
+     &  xxj(3,*),a1,a2,a3,flux(*)
 !
       do i=1,nef
          jdof1=i
@@ -59,29 +59,26 @@
             ifa=neifa(indexf)
             iel=neiel(indexf)
             if(iel.ne.0) jdof2=iel
-            flux=(vfa(1,ifa)*xxn(1,indexf)+
-     &           vfa(2,ifa)*xxn(2,indexf)+
-     &           vfa(3,ifa)*xxn(3,indexf))
-     &           *vfa(5,ifa)*cpfa(ifa)*area(ifa)
-!     
-            if(flux.ge.0.d0) then
+            xflux=flux(indexf)*cpfa(ifa)
+!
+            if(xflux.ge.0.d0) then
 !     
 !     outflowing flux
 !     
                call add_sm_fl_as(au,ad,jq,irow,jdof1,jdof1,
-     &              flux,nzs)
+     &              xflux,nzs)
 !     centdiff
-ccccccc                   b(jdof1)=b(jdof1)-(vfa(0,ifa)-vel(i,0))*flux
+ccccccc                   b(jdof1)=b(jdof1)-(vfa(0,ifa)-vel(i,0))*xflux
 !end centdiff
             else
                if(iel.gt.0) then
 !
 !                    incoming flux from neighboring element
 !
-                  call add_sm_fl_as(au,ad,jq,irow,jdof1,jdof2,flux,
+                  call add_sm_fl_as(au,ad,jq,irow,jdof1,jdof2,xflux,
      &                 nzs)
 !centdiff
-cccccc                    b(jdof1)=b(jdof1)-(vfa(0,ifa)-vel(iel,0))*flux
+cccccc                    b(jdof1)=b(jdof1)-(vfa(0,ifa)-vel(iel,0))*xflux
 !end centdiff
                else
 !
@@ -90,8 +87,9 @@ cccccc                    b(jdof1)=b(jdof1)-(vfa(0,ifa)-vel(iel,0))*flux
                   if(ielfa(2,ifa).lt.0) then
                      indexb=-ielfa(2,ifa)
                      if((ifabou(indexb).ne.0).or.
-     &                    (dabs(flux).lt.1.d-10)) then
-                        b(jdof1)=b(jdof1)-vfa(0,ifa)*flux
+c     &                    (dabs(xflux).lt.1.d-3)) then
+     &                    (dabs(xflux).lt.1.d-10)) then
+                        b(jdof1)=b(jdof1)-vfa(0,ifa)*xflux
                      else
                         write(*,*) '*ERROR in mafillt: the tempera-'
                         write(*,*) '       ture of an incoming flux'
@@ -173,13 +171,6 @@ c                     call exit(201)
                endif
             endif
          enddo
-!     
-!        -p*div(v) term
-!     
-         if(compressible.eq.1) then
-            div=gradvel(1,1,i)+gradvel(2,2,i)+gradvel(3,3,i)
-            b(jdof1)=b(jdof1)-vel(i,4)*div*volume(i)
-         endif
 !
 !           viscous dissipation
 !
@@ -189,25 +180,22 @@ c                     call exit(201)
      &        (gradvel(1,2,i)+gradvel(2,1,i))**2+
      &        (gradvel(1,3,i)+gradvel(3,1,i))**2+
      &        (gradvel(2,3,i)+gradvel(3,2,i))**2)
-         if(compressible.eq.1) then
-            b(jdof1)=b(jdof1)-2.d0*umel(i)*volume(i)/3.d0*div**2
-         endif
 !     
 !           body heat source and body sources
 !     
-         rhovel=vel(i,5)*volume(i)
+         rhovol=vel(i,5)*volume(i)
 !
          if(nbody.gt.0) then
-c               b(jdof1)=b(jdof1)+rhovel*(body(0,i)+body(1,i)*vel(i,1)+
+c               b(jdof1)=b(jdof1)+rhovol*(body(0,i)+body(1,i)*vel(i,1)+
 c     &                body(2,i)*vel(i,2)+body(3,i)*vel(i,3))
-            b(jdof1)=b(jdof1)+rhovel*body(0,i)
+            b(jdof1)=b(jdof1)+rhovol*body(0,i)
 c                  write(*,*) 'body source ',body(0,i),body(1,i),
 c     &             body(2,i),body(3,i)
          endif
 !
 !           transient term
 !
-         constant=rhovel*cpel(i)/dtimef
+         constant=rhovol*cpel(i)
          b(jdof1)=b(jdof1)-(a2*velo(i,0)+a3*veloo(i,0))*constant
          constant=a1*constant
          call add_sm_fl(au,ad,jq,irow,jdof1,jdof1,constant,nzs)

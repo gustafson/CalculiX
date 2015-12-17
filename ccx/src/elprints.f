@@ -52,6 +52,7 @@
          do i=1,nprint
             if((prlab(i)(1:4).eq.'S   ').or.
      &         (prlab(i)(1:4).eq.'E   ').or.
+     &         (prlab(i)(1:4).eq.'ME  ').or.
      &         (prlab(i)(1:4).eq.'PEEQ').or.
      &         (prlab(i)(1:4).eq.'ENER').or.
      &         (prlab(i)(1:4).eq.'SDV ').or.
@@ -230,6 +231,7 @@
                endif
             elseif((textpart(ii)(1:4).ne.'S   ').and.
      &             (textpart(ii)(1:4).ne.'E   ').and.
+     &             (textpart(ii)(1:4).ne.'ME  ').and.
      &             (textpart(ii)(1:4).ne.'EVOL')) then
                write(*,*) 
      &             '*WARNING reading *EL PRINT: label not applicable'

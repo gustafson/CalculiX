@@ -652,6 +652,13 @@ c            enddo
      &                       calculated_angle*57.29577951d0
                         call exit(201)
                      endif
+                  else
+                     write(*,*) '*INFO in cyclicsymmetrymodels: angle'
+                     write(*,*)'      check is deactivated by the user;'
+                     write(*,*) '      the real geometry is used for'
+                     write(*,*) '      the calculation of the segment'
+                     write(*,*) '      angle'
+                     write(*,*)
                   endif
                   calcangle=.true.
                endif
@@ -734,6 +741,19 @@ c            enddo
 !
       ncounter=0
       triangulation=.false.
+!
+!     opening a file to store the nodes which are not connected
+!
+      open(40,file='WarnNodeMissCyclicSymmetry.nam',status='unknown')
+      write(40,*) '*NSET,NSET=WarnNodeCyclicSymmetry'
+      write(*,*) '*INFO in cyclicsymmetrymodels:'
+      write(*,*) '      failed nodes (if any) are stored in file'
+      write(*,*) '      WarnNodeMissCyclicSymmetry.nam'
+      write(*,*) '      This file can be loaded into'
+      write(*,*) '      an active cgx-session by typing'
+      write(*,*) 
+     &     '      read WarnNodeMissCyclicSymmetry.nam inp'
+      write(*,*)
 !
       loop2: do i=istartset(jdep),iendset(jdep)
          if(ialset(i).gt.0) then
@@ -853,6 +873,8 @@ c            enddo
          endif
 !
       enddo loop2
+!
+      close(40)
 !
       if(ncounter.ne.0) then
          write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'

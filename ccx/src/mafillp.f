@@ -21,8 +21,7 @@
      &  b,xxn,compressible,neq,nzs,hfa,gradpel,bp,xxi,neij,
      &  xlen,cosb)
 !
-!     filling the lhs and rhs to calculate the first correction to the
-!     pressure p'
+!     filling the lhs and rhs to calculate p
 !
       implicit none
 !
@@ -31,7 +30,7 @@
       integer i,nef,jdof1,indexf,ipnei(*),j,neifa(*),
      &  neiel(*),iel,ifa,jdof2,irow(*),ielfa(4,*),compressible,
      &  ifabou(*),neq,jq(*),iel2,indexb,knownflux,indexf2,
-     &  iatleastonepressurebc,j2,neij(*),nzs,numfaces
+     &  iatleastonepressurebc,j2,neij(*),nzs,numfaces,k
 !
       real*8 coef,vfa(0:5,*),volume(*),area(*),advfa(*),xlet(*),
      &  cosa(*),ad(*),au(*),xle(*),xxn(3,*),ap(*),b(*),cosb(*),
@@ -76,7 +75,7 @@
      &              -cosa(indexf2)*xxn(2,indexf2))+
      &              gradpel(3,iel)*(xxi(3,indexf2)
      &              -cosa(indexf2)*xxn(3,indexf2)))
-     &              *xlen(indexf2)
+     &              *xle(indexf2)
      &              -(gradpel(1,i)*(xxi(1,indexf)
      &              -cosa(indexf)*xxn(1,indexf))+
      &              gradpel(2,i)*(xxi(2,indexf)
@@ -85,6 +84,7 @@
      &              -cosa(indexf)*xxn(3,indexf)))
      &              *xle(indexf))
                b(jdof1)=b(jdof1)-coef*bp(ifa)
+               if(i.gt.iel) bp(ifa)=-bp(ifa)
             else
                iel2=ielfa(2,ifa)
                if(iel2.lt.0) then
@@ -95,6 +95,12 @@
 !     all velocity components given
 !     
                      knownflux=1
+                  elseif(ifabou(-iel2+5).eq.2) then
+!
+!                    sliding conditions
+!
+                     knownflux=2
+c                     knownflux=1
                   elseif(ifabou(-iel2+4).ne.0) then
                      iatleastonepressurebc=1
 !     
@@ -130,35 +136,15 @@
      &              (vfa(1,ifa)*xxn(1,indexf)+
      &              vfa(2,ifa)*xxn(2,indexf)+
      &              vfa(3,ifa)*xxn(3,indexf))
-            else
+            elseif(knownflux.ne.2) then
                b(jdof1)=b(jdof1)+vfa(5,ifa)*area(ifa)*
      &              (hfa(1,ifa)*xxn(1,indexf)+
      &              hfa(2,ifa)*xxn(2,indexf)+
      &              hfa(3,ifa)*xxn(3,indexf))
-            endif
-!     
-!     convection
-!     
-            if(compressible.eq.1) then
-c               flux=(vfa(1,ifa)*xxn(1,indexf)+
-c     &              vfa(2,ifa)*xxn(2,indexf)+
-c     &              vfa(3,ifa)*xxn(3,indexf))*
-c     &              area(ifa)/(rr*vfa(0,ifa))
-c               if(flux.gt.0.d0) then
-c                  call add_sm_fl(au,ad,jq,irow,jdof1,jdof1,
-c     &                 flux)
-c                  b(jdof1)=b(jdof1)+(ppfa(ifa)-pp(i))*flux
-c               else
-c                  if(iel.ne.0) then
-c                     call add_sm_fl(au,ad,jq,irow,jdof1,jdof2,
-c     &                    flux)
-c                     b(jdof1)=b(jdof1)+(ppfa(ifa)-pp(iel))*flux
-c                  else
-c     !                    
-c     !              inlet: no correction needed
-c     !              
-c                  endif
-c               endif
+c               write(*,*) 'mafillp ',i,j,+vfa(5,ifa)*area(ifa)*
+c     &              (hfa(1,ifa)*xxn(1,indexf)+
+c     &              hfa(2,ifa)*xxn(2,indexf)+
+c     &              hfa(3,ifa)*xxn(3,indexf))
             endif
          enddo
       enddo

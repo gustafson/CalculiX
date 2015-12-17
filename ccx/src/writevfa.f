@@ -30,7 +30,8 @@
          if(ielfa(2,i).ge.0) cycle
          iel=ielfa(1,i)
          iel=nactdohinv(iel)
-         write(*,*) 'writevfa ',iel,ielfa(4,i),vfa(3,i)
+         write(*,*) 'writevfa ',iel,ielfa(4,i),
+     &      vfa(1,i),vfa(2,i),vfa(3,i)
       enddo
 !     
       return

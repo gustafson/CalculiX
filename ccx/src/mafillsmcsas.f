@@ -30,7 +30,8 @@
      &  rhsi,intscheme,mcs,coriolis,ibody,xloadold,reltime,ielcs,
      &  veold,springarea,thicke,integerglob,doubleglob,
      &  tieset,istartset,iendset,ialset,ntie,nasym,nstate_,xstateini,
-     &  xstate,pslavsurf,pmastsurf,mortar,clearini,ielprop,prop)
+     &  xstate,pslavsurf,pmastsurf,mortar,clearini,ielprop,prop,ne0,
+     &  kscale)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !     for cyclic symmetry calculations
@@ -47,7 +48,7 @@
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
      &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,ielprop(*),
-     &  nactdof(0:mi(2),*),irow(*),istartset(*),iendset(*),
+     &  nactdof(0:mi(2),*),irow(*),istartset(*),iendset(*),kscale,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),integerglob(*),ialset(*),ntie,
      &  ipkon(*),ics(*),ij,ilength,lprev,ipobody(2,*),nbody,
@@ -96,7 +97,7 @@ c      nstate_=0
 !     
 !     loop over all elements
 !
-      ne0=0
+c      ne0=0
       do i=1,ne
 !
         if(ipkon(i).lt.0) cycle
@@ -125,7 +126,7 @@ c      nstate_=0
      &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
      &          integerglob,doubleglob,tieset,istartset,
      &          iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,
-     &          clearini,ielprop,prop)
+     &          clearini,ielprop,prop,kscale)
 !
         do jj=1,3*nope
 !

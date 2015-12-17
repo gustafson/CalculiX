@@ -41,7 +41,7 @@ void mastructcs(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
   ITG i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
     ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,
     index1,index2,m,node,nzs_,ist,kflag,indexe,nope,isize,*mast1=NULL,
-    *irow=NULL,inode,icomplex,inode1,icomplex1,inode2,
+    *irow=NULL,inode,icomplex,inode1,icomplex1,inode2,*next=NULL,
     icomplex2,kdof1,kdof2,ilength,lprev,ij,mt=mi[1]+1;
 
   /* the indices in the comments follow FORTRAN convention, i.e. the
@@ -50,8 +50,9 @@ void mastructcs(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
   mast1=*mast1p;
   irow=*irowp;
 
-  kflag=2;
+  kflag=1;
   nzs_=nzs[1];
+  NNEW(next,ITG,nzs_);
 
   /* initialisation of nactmpc */
 
@@ -139,7 +140,7 @@ void mastructcs(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
     /* determining the position of each nonzero matrix element
 
        mast1(ipointer(i)) = first nonzero row in column i
-       irow(ipointer(i))  points to further nonzero elements in 
+       next(ipointer(i))  points to further nonzero elements in 
                              column i */
       
   for(i=0;i<6**nk;++i){ipointer[i]=0;}
@@ -191,9 +192,9 @@ void mastructcs(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	/* check whether one of the DOF belongs to a SPC or MPC */
 	  
 	if((jdof1!=0)&&(jdof2!=0)){
-	  insert(ipointer,&mast1,&irow,&jdof1,&jdof2,&ifree,&nzs_);
+	  insert(ipointer,&mast1,&next,&jdof1,&jdof2,&ifree,&nzs_);
 	  kdof1=jdof1+neq[0];kdof2=jdof2+neq[0];
-	  insert(ipointer,&mast1,&irow,&kdof1,&kdof2,&ifree,&nzs_);
+	  insert(ipointer,&mast1,&next,&kdof1,&kdof2,&ifree,&nzs_);
 	}
 	else if((jdof1!=0)||(jdof2!=0)){
 	  
@@ -240,12 +241,12 @@ void mastructcs(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 //		idof2=nactdof[mt*inode+nodempc[3*index-2]-4];
 		idof2=nactdof[mt*(inode-1)+nodempc[3*index-2]];
 		if(idof2!=0){
-		  insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);
+		  insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);
 		  kdof1=idof1+neq[0];kdof2=idof2+neq[0];
-		  insert(ipointer,&mast1,&irow,&kdof1,&kdof2,&ifree,&nzs_);
+		  insert(ipointer,&mast1,&next,&kdof1,&kdof2,&ifree,&nzs_);
 		  if((icomplex!=0)&&(idof1!=idof2)){
-		    insert(ipointer,&mast1,&irow,&kdof1,&idof2,&ifree,&nzs_);
-		    insert(ipointer,&mast1,&irow,&idof1,&kdof2,&ifree,&nzs_);
+		    insert(ipointer,&mast1,&next,&kdof1,&idof2,&ifree,&nzs_);
+		    insert(ipointer,&mast1,&next,&idof1,&kdof2,&ifree,&nzs_);
 		  }
 		}
 		index=nodempc[3*index-1];
@@ -321,15 +322,15 @@ void mastructcs(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 //		  idof2=nactdof[mt*inode2+nodempc[3*index2-2]-4];
 		  idof2=nactdof[mt*(inode2-1)+nodempc[3*index2-2]];
 		  if((idof1!=0)&&(idof2!=0)){
-		    insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);
+		    insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);
 		    kdof1=idof1+neq[0];kdof2=idof2+neq[0];
-		    insert(ipointer,&mast1,&irow,&kdof1,&kdof2,&ifree,&nzs_);
+		    insert(ipointer,&mast1,&next,&kdof1,&kdof2,&ifree,&nzs_);
                     if(((icomplex1!=0)||(icomplex2!=0))&&
                        (icomplex1!=icomplex2)){
                     /*   if(((icomplex1!=0)||(icomplex2!=0))&&
                          ((icomplex1==0)||(icomplex2==0))){*/
-		      insert(ipointer,&mast1,&irow,&kdof1,&idof2,&ifree,&nzs_);
-		      insert(ipointer,&mast1,&irow,&idof1,&kdof2,&ifree,&nzs_);
+		      insert(ipointer,&mast1,&next,&kdof1,&idof2,&ifree,&nzs_);
+		      insert(ipointer,&mast1,&next,&idof1,&kdof2,&ifree,&nzs_);
 		    }
 		  }
 		  index2=nodempc[3*index2-1];
@@ -397,15 +398,15 @@ void mastructcs(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 //		  idof2=nactdof[mt*inode2+nodempc[3*index2-2]-4];
 		  idof2=nactdof[mt*(inode2-1)+nodempc[3*index2-2]];
 		  if((idof1!=0)&&(idof2!=0)){
-		    insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);
+		    insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);
 		    kdof1=idof1+neq[0];kdof2=idof2+neq[0];
-		    insert(ipointer,&mast1,&irow,&kdof1,&kdof2,&ifree,&nzs_);
+		    insert(ipointer,&mast1,&next,&kdof1,&kdof2,&ifree,&nzs_);
                     if(((icomplex1!=0)||(icomplex2!=0))&&
                        (icomplex1!=icomplex2)){
                     /*   if(((icomplex1!=0)||(icomplex2!=0))&&
                          ((icomplex1==0)||(icomplex2==0))){*/
-		      insert(ipointer,&mast1,&irow,&kdof1,&idof2,&ifree,&nzs_);
-		      insert(ipointer,&mast1,&irow,&idof1,&kdof2,&ifree,&nzs_);
+		      insert(ipointer,&mast1,&next,&kdof1,&idof2,&ifree,&nzs_);
+		      insert(ipointer,&mast1,&next,&idof1,&kdof2,&ifree,&nzs_);
 		    }
 		  }
 		  index2=nodempc[3*index2-1];
@@ -424,97 +425,40 @@ void mastructcs(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
   neq[0]=2*neq[0];
   neq[1]=neq[0];
   
-  /* ordering the nonzero nodes in the SUPERdiagonal columns
-     mast1 contains the row numbers column per column,
-     irow the column numbers */
-  
-/*  for(i=0;i<neq[0];++i){
-    itot=0;
-    if(ipointer[i]==0){
-      printf("*ERROR in mastructcs: zero column");
-      FORTRAN(stop,());
-    }
-    istart=ipointer[i];
-    while(1){
-      ++itot;
-      ikcol[itot-1]=mast1[istart-1];
-      istart=irow[istart-1];
-      if(istart==0) break;
-    }
-    FORTRAN(isortii,(ikcol,icol,&itot,&kflag));
-    istart=ipointer[i];
-    for(j=0;j<itot-1;++j){
-      mast1[istart-1]=ikcol[j];
-      istartold=istart;
-      istart=irow[istart-1];
-      irow[istartold-1]=i+1;
-    }
-    mast1[istart-1]=ikcol[itot-1];
-    irow[istart-1]=i+1;
-    }*/
-
-    
-  for(i=0;i<neq[0];++i){
-      if(ipointer[i]==0){
-	  if(i>=neq[1]) continue;
-	  printf("*ERROR in mastructcs: zero column\n");
-	  FORTRAN(stop,());
-      }
-      istart=ipointer[i];
-      while(1){
-	  istartold=istart;
-	  istart=irow[istart-1];
-	  irow[istartold-1]=i+1;
-	  if(istart==0) break;
-      }
-  }
-  
   if(neq[0]==0){
-    printf("\n*WARNING: no degrees of freedom in the model\n");
+    printf("\n *WARNING: no degrees of freedom in the model\n");
     FORTRAN(stop,());
   }
-  
+
+    /*   determination of the following fields:       
+
+       - irow: row numbers, column per column
+       - icol(i)=# SUBdiagonal nonzero's in column i
+       - jq(i)= location in field irow of the first SUBdiagonal
+         nonzero in column i  */
+
+    RENEW(irow,ITG,ifree);
+    nmast=0;
+    jq[0]=1;
+    for(i=0;i<neq[1];i++){
+	index=ipointer[i];
+	do{
+	    if(index==0) break;
+	    irow[nmast++]=mast1[index-1];
+	    index=next[index-1];
+	}while(1);
+	jq[i+1]=nmast+1;
+	icol[i]=jq[i+1]-jq[i];
+    }
+
+    /* summary */
+
   printf(" number of equations\n");
   printf(" %" ITGFORMAT "\n",neq[0]);
   printf(" number of nonzero lower triangular matrix elements\n");
-  printf(" %" ITGFORMAT "\n",ifree-neq[0]);
-  
-  /* new meaning of icol,j1,mast1,irow:
-     
-     - irow is going to contain the row numbers of the SUBdiagonal
-     nonzero's, column per column
-     - mast1 contains the column numbers
-     - icol(i)=# SUBdiagonal nonzero's in column i
-     - jq(i)= location in field irow of the first SUBdiagonal
-     nonzero in column i
-     
-     */
-  
-  nmast=ifree;
-  
-  /* switching from a SUPERdiagonal inventory to a SUBdiagonal one */
-  
-  FORTRAN(isortii,(mast1,irow,&nmast,&kflag));
-  
-  /* filtering out the diagonal elements and generating icol and jq */
-  
-  isubtract=0;
-  for(i=0;i<neq[0];++i){icol[i]=0;}
-  k=0;
-  for(i=0;i<nmast;++i){
-    if(mast1[i]==irow[i]){++isubtract;}
-    else{
-      mast1[i-isubtract]=mast1[i];
-      irow[i-isubtract]=irow[i];
-      if(k!=mast1[i]){
-	for(l=k;l<mast1[i];++l){jq[l]=i+1-isubtract;}
-	k=mast1[i];
-      }
-      ++icol[k-1];
-    }
-  }
-  nmast=nmast-isubtract;
-  for(l=k;l<neq[0]+1;++l){jq[l]=nmast+1;}
+  printf(" %" ITGFORMAT "\n",ifree);
+
+    /* sorting the row numbers within each column */
   
   for(i=0;i<neq[0];++i){
     if(jq[i+1]-jq[i]>0){
@@ -526,6 +470,8 @@ void mastructcs(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
   nzs[0]=jq[neq[0]-1]-1;
   nzs[1]=nzs[0];
   nzs[2]=nzs[0];
+
+  SFREE(next);
   
   *mast1p=mast1;
   *irowp=irow;

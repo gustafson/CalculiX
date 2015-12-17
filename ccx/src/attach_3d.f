@@ -32,6 +32,10 @@
      &  xiold(-1:1,-1:1,-1:1),etold(-1:1,-1:1,-1:1),distmin,xiopt,etopt,
      &  d1,d2,d3,d4,dist,xil,etl,zel,zeopt,dx(3),al
 !
+      intent(in) pneigh,nterms
+!
+      intent(inout) xil,etl,zel,dist,pnode,ratio
+!
       kflag=1
       n=3
 !

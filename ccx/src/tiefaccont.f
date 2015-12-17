@@ -94,6 +94,7 @@
       nslavs=0
       nmasts=0
       ifreenoels=0
+      nodeslavsurf=.false.
 !
 !     counters for new fields islavsurf and itiefac
 !

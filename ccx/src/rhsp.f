@@ -70,7 +70,7 @@
      &              -cosa(indexf2)*xxn(2,indexf2))+
      &              gradpel(3,iel)*(xxi(3,indexf2)
      &              -cosa(indexf2)*xxn(3,indexf2)))
-     &              *xlen(indexf2)
+     &              *xle(indexf2)
      &              -(gradpel(1,i)*(xxi(1,indexf)
      &              -cosa(indexf)*xxn(1,indexf))+
      &              gradpel(2,i)*(xxi(2,indexf)
@@ -78,8 +78,8 @@
      &              gradpel(3,i)*(xxi(3,indexf)
      &              -cosa(indexf)*xxn(3,indexf)))
      &              *xle(indexf))
-               b(jdof1)=b(jdof1)-coef*bp(ifa)
-c               b(jdof1)=b(jdof1)-ap(ifa)*bp(ifa)
+               b(jdof1)=b(jdof1)-ap(ifa)*bp(ifa)
+               if(i.gt.iel) bp(ifa)=-bp(ifa)
             else
 !
 !                 external face
@@ -90,9 +90,14 @@ c               b(jdof1)=b(jdof1)-ap(ifa)*bp(ifa)
      &                 (ifabou(-iel2+2).ne.0).and.
      &                 (ifabou(-iel2+3).ne.0)) then
 !
-!                       all velocity components given
+!                    all velocity components given
 !
                      knownflux=1
+                  elseif(ifabou(-iel2+5).eq.2) then
+!
+!                    sliding conditions
+!
+                     knownflux=2
                   elseif(ifabou(-iel2+4).gt.0) then
                      iatleastonepressurebc=1
 !     
@@ -120,34 +125,16 @@ c               b(jdof1)=b(jdof1)-ap(ifa)*bp(ifa)
      &              (vfa(1,ifa)*xxn(1,indexf)+
      &              vfa(2,ifa)*xxn(2,indexf)+
      &              vfa(3,ifa)*xxn(3,indexf))
-            else
+            elseif(knownflux.ne.2) then
                b(jdof1)=b(jdof1)+vfa(5,ifa)*area(ifa)*
      &              (hfa(1,ifa)*xxn(1,indexf)+
      &              hfa(2,ifa)*xxn(2,indexf)+
      &              hfa(3,ifa)*xxn(3,indexf))
-            endif
-!     
-!              convection
-!
-            if(compressible.eq.1) then
-c                  flux=(vfa(1,ifa)*xxn(1,indexf)+
-c     &                  vfa(2,ifa)*xxn(2,indexf)+
-c     &                  vfa(3,ifa)*xxn(3,indexf))*
-c     &                 area(ifa)/(rr*vfa(0,ifa))
-c                  if(flux.gt.0.d0) then
-c                     call add_sm_fl(au,ad,jq,irow,jdof1,jdof1,
-c     &                   flux)
-c                     b(jdof1)=b(jdof1)+(ppfa(ifa)-pp(i))*flux
-c                  else
-c                     if(iel.ne.0) then
-c                     call add_sm_fl(au,ad,jq,irow,jdof1,jdof2,
-c     &                   flux)
-c                     b(jdof1)=b(jdof1)+(ppfa(ifa)-pp(iel))*flux
-c                  else
-c!
-c!                    inlet: no correction needed
-c!
-c                  endif
+c               write(*,*) 'rhsp ',i,j,+vfa(5,ifa)*area(ifa)*
+c     &              (hfa(1,ifa)*xxn(1,indexf)+
+c     &              hfa(2,ifa)*xxn(2,indexf)+
+c     &              hfa(3,ifa)*xxn(3,indexf)),
+c     &              hfa(1,ifa),hfa(2,ifa),hfa(3,ifa)
             endif
          enddo
       enddo

@@ -5,7 +5,7 @@
       subroutine dsort (dx, iy, n, kflag)
 c
 c    slight change: XERMSG was removed; error messages are
-c                   led to the screen
+c                   led to the screen; 
 c
 C***BEGIN PROLOGUE  DSORT
 C***PURPOSE  Sort an array and optionally make the same interchanges in
@@ -55,6 +55,7 @@ C   920519  Clarified error messages.  (DWL)
 C   920801  Declarations section rebuilt and code restructured to use
 C           IF-THEN-ELSE-ENDIF.  (RWC, WRB)
 !   100411  changed the dimension of IL and IU from 21 to 31.
+!   150514  inserted intent statements
 !
 !     field IL and IU have the dimension 31. This is log2 of the largest
 !     array size to be sorted. If arrays larger than 2**31 in length have
@@ -75,6 +76,10 @@ C     .. External Subroutines ..
 c      EXTERNAL XERMSG
 C     .. Intrinsic Functions ..
       intrinsic abs, int
+!
+      intent(in) n,kflag 
+!
+      intent(inout) dx,iy
 C***FIRST EXECUTABLE STATEMENT  DSORT
       nn = n
       if (nn .lt. 1) then

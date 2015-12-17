@@ -27,8 +27,14 @@
 !     author: Otto-Ernst Bernhardi
 !
       implicit none
+!
       integer ii1,jj1,ii,jj,m1
+!
       real*8 s(100,100),gs(8,4),a,elas(1),hgls,ahr
+!
+      intent(in) elas,a,gs
+!
+      intent(inout) s
 !
       ahr=elas(1)*a
 c     write(6,*) "stiffness:", ahr

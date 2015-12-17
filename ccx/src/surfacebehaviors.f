@@ -85,7 +85,7 @@
          call exit(201)
       endif
 !
-      nelcon(1,imat)=max(nelcon(1,imat),2)
+      if(nelcon(1,imat).ne.-51) nelcon(1,imat)=max(nelcon(1,imat),2)
       nelcon(2,imat)=1
 !
       if(pressureoverclosure.eq.'E') then

@@ -337,8 +337,8 @@
                endif
             else
                if(l.gt.ne) then
-                  write(*,*) '*WARNING reading *SURFACE: value ',
-     &                 ialset(nalset+1)
+                  write(*,*) '*WARNING reading *SURFACE: element ',
+     &                 l
                   write(*,*) '         in set ',set(iset),' > ne'
                else
                   newlabel=label

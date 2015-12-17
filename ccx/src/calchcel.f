@@ -19,7 +19,7 @@
       subroutine calchcel(vel,cocon,ncocon,ielmat,ntmat_,
      &  mi,hcel,nef)
 !
-!     calculation of the dynamic viscosity in the element centers
+!     calculation of the heat conduction in the element centers
 !
       implicit none
 !

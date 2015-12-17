@@ -17,7 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine extrapolatefluid(nk,iponofa,inofa,inum,vfa,v,ielfa,
-     &  ithermal)
+     &  ithermal,imach,ikappa,xmach,xkappa,shcon,nshcon,ntmat_,ielmat,
+     &  physcon,mi)
 !
 !     extrapolates the field values at the center of the faces to
 !     the nodes
@@ -25,9 +26,11 @@
       implicit none
 !
       integer nk,iponofa(*),inofa(2,*),inum(*),ielfa(4,*),i,l,indexf,
-     &  iface,ithermal
+     &  iface,ithermal,imach,ikappa,imat,nshcon(*),ntmat_,mi(*),
+     &  ielmat(mi(3),*)
 !
-      real*8 vfa(0:5,*),v(0:4,*)
+      real*8 vfa(0:5,*),v(0:4,*),cp,r,xk,xmach(*),xkappa(*),t1l,
+     &  shcon(0:3,ntmat_,*),physcon(*)
 !
       do i=1,nk
          if(ithermal.eq.0) then
@@ -41,11 +44,6 @@
                iface=inofa(1,indexf)
                do l=1,4
                   v(l,i)=v(l,i)+vfa(l,iface)
-c                  if(i.eq.23324) then
-c                     if(l.eq.3) then
-c                     write(*,*) 'extrapolatefluid ',i,iface,vfa(l,iface)
-c                     endif
-c                  endif
                enddo
                inum(i)=inum(i)+1
                indexf=inofa(2,indexf)
@@ -64,9 +62,26 @@ c                  endif
             do
                if(indexf.eq.0) exit
                iface=inofa(1,indexf)
+c                  write(*,*) 'extrapolatefluid ',i,iface,
+c     &            ielfa(1,iface),ielfa(4,iface),vfa(0,iface)
                do l=0,4
                   v(l,i)=v(l,i)+vfa(l,iface)
                enddo
+               if(imach.eq.1) then
+                  t1l=vfa(0,iface)
+                  imat=ielmat(1,ielfa(1,iface))
+                  r=shcon(3,1,imat)
+                  call materialdata_cp_sec(imat,ntmat_,t1l,
+     &                 shcon,nshcon,cp,physcon)
+                  xk=cp/(cp-r)
+                  xmach(i)=xmach(i)+dsqrt((vfa(1,iface)**2+
+     &               vfa(2,iface)**2+vfa(3,iface)**2)/(xk*r*t1l))
+c                  write(*,*) 'extrapolatefluid ',i,xk,r,t1l,xmach(i)
+               endif
+               if(ikappa.eq.1) then
+                  xkappa(i)=xkappa(i)+xk
+               endif
+!
                inum(i)=inum(i)+1
                indexf=inofa(2,indexf)
             enddo
@@ -74,6 +89,8 @@ c                  endif
                do l=0,4
                   v(l,i)=v(l,i)/inum(i)
                enddo
+               if(imach.eq.1) xmach(i)=xmach(i)/inum(i)
+               if(ikappa.eq.1) xkappa(i)=xkappa(i)/inum(i)
             endif
          endif
       enddo

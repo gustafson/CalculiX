@@ -96,7 +96,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
     *imdnode=NULL,nmdnode,*imdboun=NULL,nmdboun,*imdmpc=NULL,
     nmdmpc,intpointvar,kmin,kmax,i1,ifacecount,*izdof=NULL,
     nzdof,iload,iforc,*iponoel=NULL,*inoel=NULL,*imdelem=NULL,nmdelem,
-    irenewxstate,nasym=0,*nshcon=NULL,nherm,icfd=0,*inomat=NULL;
+    irenewxstate,nasym=0,*nshcon=NULL,nherm,icfd=0,*inomat=NULL,ialeatoric=0;
 
   long long i2;
 
@@ -122,11 +122,12 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
     resultmax,func,funcp,fexp,fexm,fcos,fsin,sump,*bp=NULL,h14,senergy=0.0,
     *bv=NULL,*cstr=NULL,*aube=NULL,*adbe=NULL,*sti=*stip,time0=0.0,
     time=0.0,*xforcdiff=NULL,*xloaddiff=NULL,*xbodydiff=NULL,*t1diff=NULL,
-    *xboundiff=NULL,*bprev=NULL,*bdiff=NULL,*areaslav=NULL,
+    *xboundiff=NULL,*bprev=NULL,*bdiff=NULL,*areaslav=NULL,venergy=0.0,
     *springarea=NULL, *bold=NULL,*eenmax=NULL,*fnr=NULL,*fni=NULL,
     *xmastnor=NULL,*emeini=NULL,*xstate=NULL,*clearini=NULL,
     *shcon=NULL,*xmr=NULL,*xmi=NULL,*xnoels=NULL,*pslavsurf=NULL,
-      *pmastsurf=NULL,*cdnr=NULL,*cdni=NULL,*tinc,*tper,*tmin,*tmax;
+    *pmastsurf=NULL,*cdnr=NULL,*cdni=NULL,*tinc,*tper,*tmin,*tmax,
+    *energyini=NULL,*energy=NULL;
 
   FILE *f1;
 
@@ -196,27 +197,34 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
   strcat(fneig,".eig");
 
   if((f1=fopen(fneig,"rb"))==NULL){
-    printf("*ERROR in dyna: cannot open eigenvalue file for reading");
+    printf(" *ERROR in dyna: cannot open eigenvalue file for reading");
+    printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+    printf("        1) the nonexistence of the .eig file\n");
+    printf("        2) other boundary conditions than in the input deck\n");
+    printf("           which created the .eig file\n\n");
     exit(0);
   }
 
-  printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
-  printf("        1) the nonexistence of the .eig file\n");
-  printf("        2) other boundary conditions than in the input deck\n");
-  printf("           which created the .eig file\n\n");
-
   if(fread(&cyclicsymmetry,sizeof(ITG),1,f1)!=1){
-      printf("*ERROR in dyna reading the cyclic symmetry flag in the eigenvalue file");
+      printf(" *ERROR in dyna reading the cyclic symmetry flag in the eigenvalue file");
+      printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+      printf("        1) the nonexistence of the .eig file\n");
+      printf("        2) other boundary conditions than in the input deck\n");
+      printf("           which created the .eig file\n\n");
       exit(0);
   }
 
   if(fread(&nherm,sizeof(ITG),1,f1)!=1){
-      printf("*ERROR in dyna reading the Hermitian flag in the eigenvalue file");
+      printf(" *ERROR in dyna reading the Hermitian flag in the eigenvalue file");
+      printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+      printf("        1) the nonexistence of the .eig file\n");
+      printf("        2) other boundary conditions than in the input deck\n");
+      printf("           which created the .eig file\n\n");
       exit(0);
   }
 
   if(nherm!=1){
-      printf("*ERROR in dyna: the eigenvectors in the .eig-file result\n");
+      printf(" *ERROR in dyna: the eigenvectors in the .eig-file result\n");
       printf("       from a non-Hermitian eigenvalue problem. The modal\n");
       printf("       dynamic procedure cannot handle that yet\n\n");
       FORTRAN(stop,());
@@ -311,14 +319,22 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
       neg=*ne;
 
       if(fread(&nev,sizeof(ITG),1,f1)!=1){
-	  printf("*ERROR in dyna reading the number of eigenvalues in the eigenvalue file");
+	  printf(" *ERROR in dyna reading the number of eigenvalues in the eigenvalue file");
+	  printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+	  printf("        1) the nonexistence of the .eig file\n");
+	  printf("        2) other boundary conditions than in the input deck\n");
+	  printf("           which created the .eig file\n\n");
 	  exit(0);
       }
       
       NNEW(d,double,nev);
       
       if(fread(d,sizeof(double),nev,f1)!=nev){
-	  printf("*ERROR in dyna reading the eigenvalues in the eigenvalue file");
+	  printf(" *ERROR in dyna reading the eigenvalues in the eigenvalue file");
+	  printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+	  printf("        1) the nonexistence of the .eig file\n");
+	  printf("        2) other boundary conditions than in the input deck\n");
+	  printf("           which created the .eig file\n\n");
 	  exit(0);
       }
 
@@ -332,29 +348,49 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
       NNEW(aub,double,nzs[1]);
       
       if(fread(ad,sizeof(double),neq[1],f1)!=neq[1]){
-	  printf("*ERROR in dyna reading the diagonal of the stiffness matrix in the eigenvalue file");
+	  printf(" *ERROR in dyna reading the diagonal of the stiffness matrix in the eigenvalue file");
+	  printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+	  printf("        1) the nonexistence of the .eig file\n");
+	  printf("        2) other boundary conditions than in the input deck\n");
+	  printf("           which created the .eig file\n\n");
 	  exit(0);
       }
       
       if(fread(au,sizeof(double),nzs[2],f1)!=nzs[2]){
-	  printf("*ERROR in dyna reading the off-diagonals of the stiffness matrix in the eigenvalue file");
+	  printf(" *ERROR in dyna reading the off-diagonals of the stiffness matrix in the eigenvalue file");
+	  printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+	  printf("        1) the nonexistence of the .eig file\n");
+	  printf("        2) other boundary conditions than in the input deck\n");
+	  printf("           which created the .eig file\n\n");
 	  exit(0);
       }
       
       if(fread(adb,sizeof(double),neq[1],f1)!=neq[1]){
-	  printf("*ERROR in dyna reading the diagonal of the mass matrix in the eigenvalue file");
+	  printf(" *ERROR in dyna reading the diagonal of the mass matrix in the eigenvalue file");
+	  printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+	  printf("        1) the nonexistence of the .eig file\n");
+	  printf("        2) other boundary conditions than in the input deck\n");
+	  printf("           which created the .eig file\n\n");
 	  exit(0);
       }
       
       if(fread(aub,sizeof(double),nzs[1],f1)!=nzs[1]){
-	  printf("*ERROR in dyna reading the off-diagonals of the mass matrix in the  eigenvalue file");
+	  printf(" *ERROR in dyna reading the off-diagonals of the mass matrix in the  eigenvalue file");
+	  printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+	  printf("        1) the nonexistence of the .eig file\n");
+	  printf("        2) other boundary conditions than in the input deck\n");
+	  printf("           which created the .eig file\n\n");
 	  exit(0);
       }
       
       NNEW(z,double,neq[1]*nev);
       
       if(fread(z,sizeof(double),neq[1]*nev,f1)!=neq[1]*nev){
-	  printf("*ERROR in dyna reading the eigenvectors in the eigenvalue file");
+	  printf(" *ERROR in dyna reading the eigenvectors in the eigenvalue file");
+	  printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+	  printf("        1) the nonexistence of the .eig file\n");
+	  printf("        2) other boundary conditions than in the input deck\n");
+	  printf("           which created the .eig file\n\n");
 	  exit(0);
       }
   }
@@ -365,7 +401,11 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 	      break;
 	  }
 	  if(fread(&nevd,sizeof(ITG),1,f1)!=1){
-	      printf("*ERROR in dyna reading the number of eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+	      printf(" *ERROR in dyna reading the number of eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+	      printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+	      printf("        1) the nonexistence of the .eig file\n");
+	      printf("        2) other boundary conditions than in the input deck\n");
+	      printf("           which created the .eig file\n\n");
 	      exit(0);
 	  }
 	  if(nev==0){
@@ -377,7 +417,11 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 	  }
 	  
 	  if(fread(&d[nev],sizeof(double),nevd,f1)!=nevd){
-	      printf("*ERROR in dyna reading the eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+	      printf(" *ERROR in dyna reading the eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+	      printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+	      printf("        1) the nonexistence of the .eig file\n");
+	      printf("        2) other boundary conditions than in the input deck\n");
+	      printf("           which created the .eig file\n\n");
 	      exit(0);
 	  }
 
@@ -392,12 +436,20 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 	      NNEW(aub,double,nzs[1]);
 
 	      if(fread(adb,sizeof(double),neq[1],f1)!=neq[1]){
-		  printf("*ERROR in dyna reading the diagonal of the mass matrix in the eigenvalue file");
+		  printf(" *ERROR in dyna reading the diagonal of the mass matrix in the eigenvalue file");
+		  printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+		  printf("        1) the nonexistence of the .eig file\n");
+		  printf("        2) other boundary conditions than in the input deck\n");
+		  printf("           which created the .eig file\n\n");
 		  exit(0);
 	      }
 	      
 	      if(fread(aub,sizeof(double),nzs[1],f1)!=nzs[1]){
-		  printf("*ERROR in dyna reading the off-diagonals of the mass matrix in the eigenvalue file");
+		  printf(" *ERROR in dyna reading the off-diagonals of the mass matrix in the eigenvalue file");
+		  printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+		  printf("        1) the nonexistence of the .eig file\n");
+		  printf("        2) other boundary conditions than in the input deck\n");
+		  printf("           which created the .eig file\n\n");
 		  exit(0);
 	      }
 	  }
@@ -409,7 +461,11 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 	  }
 	  
 	  if(fread(&z[(long long)neq[1]*nev],sizeof(double),neq[1]*nevd,f1)!=neq[1]*nevd){
-	      printf("*ERROR in dyna reading the eigenvectors for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+	      printf(" *ERROR in dyna reading the eigenvectors for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+	      printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
+	      printf("        1) the nonexistence of the .eig file\n");
+	      printf("        2) other boundary conditions than in the input deck\n");
+	      printf("           which created the .eig file\n\n");
 	      exit(0);
 	  }
 	  nev+=nevd;
@@ -638,7 +694,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
   if(dashpot){
 
       if(cyclicsymmetry){
-	  printf("*ERROR in dyna: dashpots are not allowed in combination with cyclic symmetry\n");
+	  printf(" *ERROR in dyna: dashpots are not allowed in combination with cyclic symmetry\n");
 	  FORTRAN(stop,());
       }
 
@@ -706,13 +762,13 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
   if(ncont!=0){
 
       if(mortar>0){
-	  printf("*ERROR in dyna: modal dynamics cannot be combined with\n");
-	  printf("       face-to-face penalty contact\n\n");
+	  printf(" *ERROR in dyna: modal dynamics cannot be combined with\n");
+	  printf("        face-to-face penalty contact\n\n");
 	  FORTRAN(stop,());
       }
 	  
       if(dashpot){
-	  printf("*ERROR in dyna: contact is not allowed in combination with dashpots\n");
+	  printf(" *ERROR in dyna: contact is not allowed in combination with dashpots\n");
 	  FORTRAN(stop,());
       }
       RENEW(ipkon,ITG,*ne+*nslavs);
@@ -930,6 +986,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
   NNEW(eei,double,6*mi[0]**ne);
   if(*nener==1){
     NNEW(stiini,double,6*mi[0]**ne);
+    NNEW(emeini,double,6*mi[0]**ne);
     NNEW(enerini,double,mi[0]**ne);}
 
   /*  check for nonzero SPC's */
@@ -989,12 +1046,12 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
   if(iprescribedboundary){
 
       if(cyclicsymmetry){
-	  printf("*ERROR in dyna: prescribed boundaries are not allowed in combination with cyclic symmetry\n");
+	  printf(" *ERROR in dyna: prescribed boundaries are not allowed in combination with cyclic symmetry\n");
 	  FORTRAN(stop,());
       }
 
       if(*idrct!=1){
-	  printf("*ERROR in dyna: variable increment length is not allwed in combination with prescribed boundaries\n");
+	  printf(" *ERROR in dyna: variable increment length is not allwed in combination with prescribed boundaries\n");
 	  FORTRAN(stop,());
       }
       
@@ -1005,7 +1062,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 	  spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
                          &symmetryflag,&inputformat,&nzs[2]);
 #else
-	  printf("*ERROR in dyna: the SPOOLES library is not linked\n\n");
+	  printf(" *ERROR in dyna: the SPOOLES library is not linked\n\n");
 	  FORTRAN(stop,());
 #endif
       }
@@ -1014,7 +1071,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 	  token=1;
 	  sgi_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],token);
 #else
-	  printf("*ERROR in dyna: the SGI library is not linked\n\n");
+	  printf(" *ERROR in dyna: the SGI library is not linked\n\n");
 	  FORTRAN(stop,());
 #endif
       }
@@ -1022,7 +1079,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 #ifdef TAUCS
 	  tau_factor(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1]);
 #else
-	  printf("*ERROR in dyna: the TAUCS library is not linked\n\n");
+	  printf(" *ERROR in dyna: the TAUCS library is not linked\n\n");
 	  FORTRAN(stop,());
 #endif
       }
@@ -1031,7 +1088,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 	  pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
                          &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-	  printf("*ERROR in dyna: the PARDISO library is not linked\n\n");
+	  printf(" *ERROR in dyna: the PARDISO library is not linked\n\n");
 	  FORTRAN(stop,());
 #endif
       }
@@ -1065,7 +1122,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
               itiefac,areaslav,iponoels,inoels,springarea,tietol,&reltime,
 	      imastnode,nmastnode,xmastnor,filab,mcs,ics,
               &nasym,xnoels,&mortar,pslavsurf,pmastsurf,clearini,&theta,
-	      xstateini,xstate,nstate_,&icutb);
+	      xstateini,xstate,nstate_,&icutb,&ialeatoric);
 
       RENEW(ikactcont,ITG,nactcont_);
       DMEMSET(ikactcont,0,nactcont_,0.);
@@ -1091,7 +1148,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 	      fnl,ncmat_,ntmat_,&nope,lakonl,&t1l,&kodem,elconloc,
 	      plicon,nplicon,npmat_,&senergy,&iener,cstr,mi,
 	      &springarea[2*(konl[nope]-1)],nmethod,&ne0,nstate_,
-	      xstateini,xstate,&reltime,&ielas));
+	      xstateini,xstate,&reltime,&ielas,&venergy));
 
 	  storecontactdof(&nope,nactdof,&mt,konl,&ikactcont,&nactcont,
 			  &nactcont_,bcont,fnl,ikmpc,nmpc,ilmpc,ipompc,nodempc, 
@@ -1137,8 +1194,8 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 		  for(i=0;i<nev;i++){
 		      aamech[i]+=z[(long long)i*nzdof+id-1]*b[ikactmech[j]];
 		  }
-	      }else{printf("*ERROR in dyna\n");FORTRAN(stop,());}
-	  }else{printf("*ERROR in dyna\n");FORTRAN(stop,());}
+	      }else{printf(" *ERROR in dyna\n");FORTRAN(stop,());}
+	  }else{printf(" *ERROR in dyna\n");FORTRAN(stop,());}
       }
       memcpy(&aanew[0],&aamech[0],sizeof(double)*nev);
       if(ncont!=0){
@@ -1149,8 +1206,8 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 		      for(i=0;i<nev;i++){
 			  aanew[i]+=z[(long long)i*nzdof+id-1]*bcont[ikactcont[j]];
 		      }
-		  }else{printf("*ERROR in dyna\n");FORTRAN(stop,());}
-	      }else{printf("*ERROR in dyna\n");FORTRAN(stop,());}
+		  }else{printf(" *ERROR in dyna\n");FORTRAN(stop,());}
+	      }else{printf(" *ERROR in dyna\n");FORTRAN(stop,());}
 	  }
       }
   }
@@ -1215,6 +1272,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
       memcpy(&enerini[0],&ener[0],sizeof(double)*mi[0]*ne0);
       if(*ithermal!=2){
 	  memcpy(&stiini[0],&sti[0],sizeof(double)*6*mi[0]*ne0);
+	  memcpy(&emeini[0],&eme[0],sizeof(double)*6*mi[0]*ne0);
       }
     }
 
@@ -1499,8 +1557,8 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 		      for(i=0;i<nev;i++){
 			  aamech[i]+=z[(long long)i*nzdof+id-1]*b[ikactmech[j]];
 		      }
-		  }else{printf("*ERROR in dyna\n");FORTRAN(stop,());}
-	      }else{printf("*ERROR in dyna\n");FORTRAN(stop,());}
+		  }else{printf(" *ERROR in dyna\n");FORTRAN(stop,());}
+	      }else{printf(" *ERROR in dyna\n");FORTRAN(stop,());}
 	  }
 	  memcpy(&aanew[0],&aamech[0],sizeof(double)*nev);
 	  if(ncont!=0){
@@ -1511,8 +1569,8 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 			  for(i=0;i<nev;i++){
 			      aanew[i]+=z[(long long)i*nzdof+id-1]*bcont[ikactcont[j]];
 			  }
-		      }else{printf("*ERROR in dyna\n");FORTRAN(stop,());}
-		  }else{printf("*ERROR in dyna\n");FORTRAN(stop,());}
+		      }else{printf(" *ERROR in dyna\n");FORTRAN(stop,());}
+		  }else{printf(" *ERROR in dyna\n");FORTRAN(stop,());}
 	      }
 	  }
 	  for(i=0;i<nev;i++){
@@ -1688,8 +1746,8 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 			  b[imddof[i]]+=bj[j]*z[(long long)j*nzdof+id-1];
 			  bp[imddof[i]]+=bjp[j]*z[(long long)j*nzdof+id-1];
 		      }
-		  }else{printf("*ERROR in dyna\n");FORTRAN(stop,());}
-	      }else{printf("*ERROR in dyna\n");FORTRAN(stop,());}
+		  }else{printf(" *ERROR in dyna\n");FORTRAN(stop,());}
+	      }else{printf(" *ERROR in dyna\n");FORTRAN(stop,());}
 	  }
       }
       
@@ -1777,7 +1835,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 	    if((intpointvar==1)){
 		for(k=0;k<ne0;k++){
 		    if(ipkon[k]<-1){
-			printf("*ERROR in dyna: contact remeshing of quadratic elements is not allowed\n\n");
+			printf(" *ERROR in dyna: contact remeshing of quadratic elements is not allowed\n\n");
 			FORTRAN(stop,());
 		    }else if(ipkon[k]!=-1){
 			ipkon[k]=-ipkon[k]-2;
@@ -1808,7 +1866,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 		thicke,shcon,nshcon,
 		sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		&mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-                islavsurf,ielprop,prop);
+                islavsurf,ielprop,prop,energyini,energy,&iit);
 
 	/* restoring */
 
@@ -1861,7 +1919,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 	      for(i=0;i<mt**nk;i=i+mt){
 		  if(fabs(v[i])>resultmax) resultmax=fabs(v[i]);}
 	  }else{
-	      printf("*ERROR in dyna: coupled temperature-displacement calculations are not allowed\n");
+	      printf(" *ERROR in dyna: coupled temperature-displacement calculations are not allowed\n");
 	  }
 	  if(fabs((resultmax-resultmaxprev)/resultmax)<precision){
 	      break;
@@ -1915,7 +1973,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
   SFREE(vbounact);
   SFREE(abounact);
 
-  if(*nener==1){SFREE(stiini);SFREE(enerini);}
+  if(*nener==1){SFREE(stiini);SFREE(emeini);SFREE(enerini);}
 
   if(strcmp1(&filab[261],"E   ")==0) SFREE(een);
   if(strcmp1(&filab[522],"ENER")==0) SFREE(enern);

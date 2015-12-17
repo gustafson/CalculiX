@@ -62,6 +62,11 @@
       real*8 ak(5),d(2),flowm(2),temp(2),predef(2,*),time(*),coords(3),
      &  area
 !
+      intent(in) d,flowm,temp,predef,time,ciname,slname,
+     &   msname,coords,noel,node,npred,kstep,kinc,area
+!
+      intent(inout) ak
+!
 !     insert code here
 !
       return

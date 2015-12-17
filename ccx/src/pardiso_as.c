@@ -42,7 +42,7 @@ void pardiso_factor_as(double *ad, double *au, double *adb, double *aub,
   ITG nthread,nthread_v;
   double *b=NULL,*x=NULL;
 
-  printf(" Factoring the system of equations using the asymmetric pardiso solver\n");
+  printf(" Factoring the system of radiation equations using the unsymmetric pardiso solver\n");
 
   iparmas[0]=0;
 /* set MKL_NUM_THREADS to min(CCX_NPROC_EQUATION_SOLVER,OMP_NUM_THREADS)
@@ -172,7 +172,7 @@ void pardiso_solve_as(double *b, ITG *neq){
       msglvl=0,i,error=0;
   double *x=NULL;
 
-  printf(" Solving the system of equations using the asymmetric pardiso solver\n");
+  printf(" Solving the system of radiatio equations using the unsymmetric pardiso solver\n");
 
   iparmas[0]=0;
 /* pardiso_factor has been called befor, MKL_NUM_THREADS=nthread_mkl_as is set*/

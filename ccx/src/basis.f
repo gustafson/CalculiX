@@ -41,6 +41,14 @@
      &  ze,dist_opt,ratio_opt(20),xp,yp,zp,x(*),y(*),z(*),xo(*),yo(*),
      &  zo(*),value(nfield)
 !
+      intent(in) x,y,z,xo,yo,zo,nx,ny,nz,
+     &         planfa,ifatet,nktet,netet,field,nfield,
+     &         cotet,kontyp,ipkon,kon,iparent,
+     &         xp,yp,zp,iselect,nselect,
+     &         istartset,iendset,ialset,imastset,ielemnr
+!
+      intent(inout) konl,value,nterms,ratio
+!
       tolerance=1.d-6
 !     
       do ii=1,2

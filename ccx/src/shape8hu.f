@@ -38,6 +38,10 @@
 !
       real*8 xi,et,ze,xsj,omg,omh,omr,opg,oph,opr
 !
+      intent(in) xi,et,ze,xl,iflag
+!
+      intent(out) shp,xsj
+!
       if(iflag.gt.2) then
 !
 !        local derivatives at center point: xi-derivative

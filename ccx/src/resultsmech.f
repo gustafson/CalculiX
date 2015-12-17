@@ -25,7 +25,7 @@
      &  ncmat_,nstate_,stiini,vini,ener,eei,enerini,istep,iinc,
      &  springarea,reltime,calcul_fn,calcul_qa,calcul_cauchy,iener,
      &  ikin,nal,ne0,thicke,emeini,pslavsurf,
-     &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop)
+     &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop,kscale)
 !
 !     calculates stresses and the material tangent at the integration
 !     points and the internal forces at the nodes
@@ -39,7 +39,7 @@
 !
       integer kon(*),konl(26),nea,neb,mi(*),mint2d,nopes,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
-     &  ielorien(mi(3),*),ntmat_,ipkon(*),ne0,iflag,null,
+     &  ielorien(mi(3),*),ntmat_,ipkon(*),ne0,iflag,null,kscale,
      &  istep,iinc,mt,ne,mattyp,ithermal(2),iprestr,i,j,k,m1,m2,jj,
      &  i1,m3,m4,kk,iener,indexe,nope,norien,iperturb(*),iout,
      &  nal,icmd,ihyper,nmethod,kode,imat,mint3d,iorien,ielas,
@@ -268,14 +268,18 @@ c     Bernhardi end
 !           spring elements (including contact springs)
 !     
             if(lakonl(2:2).eq.'S') then
-               if((lakonl(7:7).eq.'A').or.(mortar.eq.0)) then
+               if((lakonl(7:7).eq.'A').or.((mortar.eq.0).and.
+     &          ((nmethod.ne.1).or.(iperturb(1).ge.2).or.(iout.ne.-1))))
+     &               then
                   call springforc_n2f(xl,konl,vl,imat,elcon,nelcon,elas,
      &              fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
      &              plicon,nplicon,npmat_,ener(1,i),iener,
      &              stx(1,1,i),mi,springarea(1,konl(nope+1)),nmethod,
      &              ne0,nstate_,xstateini,xstate,reltime,
-     &              ielas)
-               elseif(mortar.eq.1) then
+     &              ielas,ener(1,i+ne))
+               elseif((mortar.eq.1).and.
+     &           ((nmethod.ne.1).or.(iperturb(1).ge.2).or.(iout.ne.-1)))
+     &               then
                   iloc=kon(indexe+nope+1)
                   jfaces=kon(indexe+nope+2)
                   igauss=kon(indexe+nope+1)
@@ -285,13 +289,16 @@ c     Bernhardi end
      &              stx(1,1,i),mi,springarea(1,iloc),nmethod,
      &              ne0,nstate_,xstateini,xstate,reltime,
      &              ielas,iloc,jfaces,igauss,pslavsurf,pmastsurf,
-     &              clearini)
+     &              clearini,ener(1,i+ne),kscale)
                endif
 !             
-!              next lines are not executed if the parameter "LINEAR"
-!              is used on the *CONTACT PAIR card
+!              next lines are not executed in linstatic.c before the
+!              setup of the stiffness matrix (i.e. nmethod=1 and
+!              iperturb(1)<1 and iout=-1).
 !
-               if((iperturb(1).ge.2).or.(lakonl(7:7).eq.'A')) then
+               if((lakonl(7:7).eq.'A').or.
+     &           ((nmethod.ne.1).or.(iperturb(1).ge.2).or.(iout.ne.-1)))
+     &              then
                   do j=1,nope
                      do k=1,3
                         fn(k,konl(j))=fn(k,konl(j))+fnl(k,j)
@@ -883,7 +890,9 @@ c                 emec0(m1)=emeini(m1,jj,i)
 !           be updated at the end of each increment (also if no output
 !           is requested), since it is input to the umat routine
 !
-            if((iout.gt.0).or.(iout.eq.-2).or.(kode.le.-100)) then
+            if((iout.gt.0).or.(iout.eq.-2).or.(kode.le.-100).or.
+     &         ((nmethod.eq.4).and.(iperturb(1).gt.1).and.
+     &          (ithermal(1).le.1))) then
                if(ithermal(1).eq.0) then
                   do m1=1,6
                      eth(m1)=0.d0
@@ -891,24 +900,41 @@ c                 emec0(m1)=emeini(m1,jj,i)
                endif
                if(iener.eq.1) then
                   ener(jj,i)=enerini(jj,i)+
-     &                 ((eloc(1)-eth(1)-eme(1,jj,i))*
+     &                 ((eloc(1)-eth(1)-emeini(1,jj,i))*
      &                  (stre(1)+stiini(1,jj,i))+
-     &                  (eloc(2)-eth(2)-eme(2,jj,i))*
+     &                  (eloc(2)-eth(2)-emeini(2,jj,i))*
      &                  (stre(2)+stiini(2,jj,i))+
-     &                  (eloc(3)-eth(3)-eme(3,jj,i))*
+     &                  (eloc(3)-eth(3)-emeini(3,jj,i))*
      &                  (stre(3)+stiini(3,jj,i)))/2.d0+
-     &            (eloc(4)-eth(4)-eme(4,jj,i))*(stre(4)+stiini(4,jj,i))+
-     &            (eloc(5)-eth(5)-eme(5,jj,i))*(stre(5)+stiini(5,jj,i))+
-     &            (eloc(6)-eth(6)-eme(6,jj,i))*(stre(6)+stiini(6,jj,i))
-
+     &         (eloc(4)-eth(4)-emeini(4,jj,i))*(stre(4)+stiini(4,jj,i))+
+     &         (eloc(5)-eth(5)-emeini(5,jj,i))*(stre(5)+stiini(5,jj,i))+
+     &         (eloc(6)-eth(6)-emeini(6,jj,i))*(stre(6)+stiini(6,jj,i))
+c                  ener(jj,i)=enerini(jj,i)+
+c     &                 ((eloc(1)-eth(1)-eme(1,jj,i))*
+c     &                  (stre(1)+stiini(1,jj,i))+
+c     &                  (eloc(2)-eth(2)-eme(2,jj,i))*
+c     &                  (stre(2)+stiini(2,jj,i))+
+c     &                  (eloc(3)-eth(3)-eme(3,jj,i))*
+c     &                  (stre(3)+stiini(3,jj,i)))/2.d0+
+c     &            (eloc(4)-eth(4)-eme(4,jj,i))*(stre(4)+stiini(4,jj,i))+
+c     &            (eloc(5)-eth(5)-eme(5,jj,i))*(stre(5)+stiini(5,jj,i))+
+c     &            (eloc(6)-eth(6)-eme(6,jj,i))*(stre(6)+stiini(6,jj,i))
                endif
-!
                eme(1,jj,i)=eloc(1)-eth(1)
                eme(2,jj,i)=eloc(2)-eth(2)
                eme(3,jj,i)=eloc(3)-eth(3)
                eme(4,jj,i)=eloc(4)-eth(4)
                eme(5,jj,i)=eloc(5)-eth(5)
                eme(6,jj,i)=eloc(6)-eth(6)
+            endif
+!
+            if((iout.gt.0).or.(iout.eq.-2).or.(kode.le.-100)) then
+c               eme(1,jj,i)=eloc(1)-eth(1)
+c               eme(2,jj,i)=eloc(2)-eth(2)
+c               eme(3,jj,i)=eloc(3)-eth(3)
+c               eme(4,jj,i)=eloc(4)-eth(4)
+c               eme(5,jj,i)=eloc(5)-eth(5)
+c               eme(6,jj,i)=eloc(6)-eth(6)
 !
                eei(1,jj,i)=eloc(1)
                eei(2,jj,i)=eloc(2)

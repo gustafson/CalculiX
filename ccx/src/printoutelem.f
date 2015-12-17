@@ -44,26 +44,6 @@
 !
       if(ipkon(nelem).lt.0) return
       indexe=ipkon(nelem)
-c      if(ipkon(nelem).eq.-1) then
-c!
-c!        linear element corresponding to a remeshing of a quadratic
-c!        element adjacent to a contact surface
-c!
-c         return
-c      elseif(ipkon(nelem).lt.-1) then
-c!
-c!        element is quadratic and adjacent to a contact surface
-c!        -> it has been remeshed; the first node of the topology has
-c!           been replaced by a pointer to the first linear element
-c!           of the remeshing, the first node of which is identical to
-c!           the first node of the original quadratic element
-c!
-c         indexe=-ipkon(nelem)-2
-c         ielemremesh=kon(indexe+1)
-c         kon(indexe+1)=kon(ipkon(ielemremesh)+1)
-c      else
-c         indexe=ipkon(nelem)
-c      endif
 !
       if((prlab(ii)(1:4).eq.'ELSE').or.(prlab(ii)(1:4).eq.'CELS')) then
          nener=1
@@ -300,13 +280,6 @@ c      endif
      &        (prlab(ii)(1:5).eq.'ELKET')) then
          write(5,'(i10,1p,1x,e13.6)') nelem,enerkin
       endif
-c!
-c!     restoring the topology of a quadratic element which has been
-c!     remeshed because of its adjacency to a contact surface
-c!    
-c      if(ipkon(nelem).lt.-1) then
-c         kon(indexe+1)=ielemremesh
-c      endif
 !
       return
       end

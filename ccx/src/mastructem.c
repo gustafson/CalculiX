@@ -40,7 +40,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
   ITG i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
     ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,
     index1,index2,m,node,nzs_,ist,kflag,indexe,nope,isize,*mast1=NULL,
-    *irow=NULL,mt=mi[1]+1,imat,idomain,jmin,jmax;
+    *irow=NULL,mt=mi[1]+1,imat,idomain,jmin,jmax,*next=NULL;
 
   /* the indices in the comments follow FORTRAN convention, i.e. the
      fields start with 1 */
@@ -48,8 +48,9 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
   mast1=*mast1p;
   irow=*irowp;
 
-  kflag=2;
+  kflag=1;
   nzs_=nzs[1];
+  NNEW(next,ITG,nzs_);
 
   /* initialisation of nactmpc */
 
@@ -207,7 +208,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
        the SUPERdiagonal matrix */
 
     /*   mast1(ipointer(i)) = first nonzero row in column i
-	 irow(ipointer(i))  points to further nonzero elements in 
+	 next(ipointer(i))  points to further nonzero elements in 
                              column i */
       
     for(i=0;i<4**nk;++i){ipointer[i]=0;}
@@ -247,7 +248,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	  /* check whether one of the DOF belongs to a SPC or MPC */
 	  
 	  if((jdof1!=0)&&(jdof2!=0)){
-	    insert(ipointer,&mast1,&irow,&jdof1,&jdof2,&ifree,&nzs_);
+	    insert(ipointer,&mast1,&next,&jdof1,&jdof2,&ifree,&nzs_);
 	  }
 	  else if((jdof1!=0)||(jdof2!=0)){
 	    
@@ -275,7 +276,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		while(1){
 		    idof2=nactdof[mt*(nodempc[3*index-3]-1)+nodempc[3*index-2]];
 		  if(idof2!=0){
-		    insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);
+		    insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);
 		  }
 		  index=nodempc[3*index-1];
 		  if(index==0) break;
@@ -312,7 +313,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		  while(1){
 		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
 		    if((idof1!=0)&&(idof2!=0)){
-		      insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);}
+		      insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);}
 		    index2=nodempc[3*index2-1];
 		    if(index2==0) break;
 		  }
@@ -340,7 +341,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		  while(1){
 		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
 		    if((idof1!=0)&&(idof2!=0)){
-		      insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);}
+		      insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);}
 		    index2=nodempc[3*index2-1];
 		    if(index2==0) break;
 		  }
@@ -405,7 +406,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	  /* check whether one of the DOF belongs to a SPC or MPC */
 	  
 	  if((jdof1!=0)&&(jdof2!=0)){
-	    insert(ipointer,&mast1,&irow,&jdof1,&jdof2,&ifree,&nzs_);
+	    insert(ipointer,&mast1,&next,&jdof1,&jdof2,&ifree,&nzs_);
 	  }
 	  else if((jdof1!=0)||(jdof2!=0)){
 	    
@@ -433,7 +434,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		while(1){
 		    idof2=nactdof[mt*(nodempc[3*index-3]-1)+nodempc[3*index-2]];
 		  if(idof2!=0){
-		    insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);
+		    insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);
 		  }
 		  index=nodempc[3*index-1];
 		  if(index==0) break;
@@ -470,7 +471,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		  while(1){
 		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
 		    if((idof1!=0)&&(idof2!=0)){
-		      insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);}
+		      insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);}
 		    index2=nodempc[3*index2-1];
 		    if(index2==0) break;
 		  }
@@ -498,7 +499,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		  while(1){
 		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
 		    if((idof1!=0)&&(idof2!=0)){
-		      insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);}
+		      insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);}
 		    index2=nodempc[3*index2-1];
 		    if(index2==0) break;
 		  }
@@ -514,89 +515,59 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 
     }
 
-    /*   storing the nonzero nodes in the SUPERdiagonal columns:
-	 mast1 contains the row numbers,
-	 irow the column numbers  */
-    
-    for(i=0;i<neq[2];++i){
-	if(ipointer[i]==0){
-	    if(i>=neq[1]) continue;
-	    node1=0;
-	    for(j=0;j<*nk;j++){
-		for(k=0;k<4;++k){
-		    if(nactdof[mt*j+k]==i+1){
-			node1=j+1;
-			idof1=k;
-			break;
-		    }
-		}
-		if(node1!=0) break;
-	    }
-	    printf("*ERROR in mastruct: zero column\n");
-	    printf("       node=%" ITGFORMAT ",DOF=%" ITGFORMAT "\n",node1,idof1);
-	    FORTRAN(stop,());
-	}
-	istart=ipointer[i];
-	while(1){
-	    istartold=istart;
-	    istart=irow[istart-1];
-	    irow[istartold-1]=i+1;
-	    if(istart==0) break;
-	}
-    }
-
     if(neq[1]==0){
-      printf("\n*WARNING: no degrees of freedom in the model\n\n");
+      printf("\n *WARNING: no degrees of freedom in the model\n\n");
     }
 
-    nmast=ifree;
+    /*   determination of the following fields:       
+
+       - irow: row numbers, column per column
+       - icol(i)=# SUBdiagonal nonzero's in column i
+       - jq(i)= location in field irow of the first SUBdiagonal
+         nonzero in column i  */
+
+    RENEW(irow,ITG,ifree);
+    nmast=0;
+    jq[0]=1;
+    for(i=0;i<neq[1];i++){
+	index=ipointer[i];
+	do{
+	    if(index==0) break;
+	    irow[nmast++]=mast1[index-1];
+	    index=next[index-1];
+	}while(1);
+	jq[i+1]=nmast+1;
+	icol[i]=jq[i+1]-jq[i];
+    }
+
+    /*   determination of the following fields:       
+
+       - irow: row numbers, column per column
+       - icol(i)=# SUBdiagonal nonzero's in column i
+       - jq(i)= location in field irow of the first SUBdiagonal
+         nonzero in column i  */
+
+    RENEW(irow,ITG,ifree);
+    nmast=0;
+    jq[0]=1;
+    for(i=0;i<neq[1];i++){
+	index=ipointer[i];
+	do{
+	    if(index==0) break;
+	    irow[nmast++]=mast1[index-1];
+	    index=next[index-1];
+	}while(1);
+	jq[i+1]=nmast+1;
+	icol[i]=jq[i+1]-jq[i];
+    }
 
     /* summary */
 
     printf(" number of equations\n");
     printf(" %" ITGFORMAT "\n",neq[1]);
     printf(" number of nonzero lower triangular matrix elements\n");
-    printf(" %" ITGFORMAT "\n",nmast-neq[1]);
+    printf(" %" ITGFORMAT "\n",nmast);
     printf("\n");
-
-    /* switching from a SUPERdiagonal inventory to a SUBdiagonal one:
-       since the nonzeros are located in symmetric positions mast1
-       can be considered to contain the column numbers and irow the
-       row numbers; after sorting mast1 the following results:
-
-       - irow contains the row numbers of the SUBdiagonal
-         nonzero's, column per column
-       - mast1 contains the column numbers
-
-       Furthermore, the following fields are determined:       
-
-       - icol(i)=# SUBdiagonal nonzero's in column i
-       - jq(i)= location in field irow of the first SUBdiagonal
-         nonzero in column i  */
-
-    /* ordering the column numbers in mast1 */
-
-    FORTRAN(isortii,(mast1,irow,&nmast,&kflag));
-    
-    /* filtering out the diagonal elements and generating icol and jq */
-
-    isubtract=0;
-    for(i=0;i<neq[1];++i){icol[i]=0;}
-    k=0;
-    for(i=0;i<nmast;++i){
-      if(mast1[i]==irow[i]){++isubtract;}
-      else{
-	mast1[i-isubtract]=mast1[i];
-	irow[i-isubtract]=irow[i];
-	if(k!=mast1[i]){
-	  for(l=k;l<mast1[i];++l){jq[l]=i+1-isubtract;}
-	  k=mast1[i];
-	}
-	++icol[k-1];
-      }
-    }
-    nmast=nmast-isubtract;
-    for(l=k;l<neq[1]+1;++l){jq[l]=nmast+1;}
 
     /* sorting the row numbers within each column */
 
@@ -612,10 +583,12 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
     nzs[1]=jq[neq[1]]-1;
 
     nzs[2]=nzs[1];
+  
+    SFREE(next);
 
-  *mast1p=mast1;
-  *irowp=irow;
+    *mast1p=mast1;
+    *irowp=irow;
 
-  return;
+    return;
 
 }

@@ -31,6 +31,10 @@
      &  dummy,fxi1,fxi2,fxi3,fet1,fet2,fet3,b,xip,xim,etp,etm,
      &  xim2,etm2
 !
+      intent(in) xig,etg,pneigh,pnode,nterms
+!
+      intent(inout) ratio,a,p
+!
       if(nterms.eq.3) then
          xi=(xig+1.d0)/2.d0
          et=(etg+1.d0)/2.d0
@@ -152,6 +156,7 @@ c         ratio(8)=(1.d0-xi)*(1.d0-et*et)/2.d0
 !
       a=(pnode(1)-p(1))**2+(pnode(2)-p(2))**2+(pnode(3)-p(3))**2
 !
+c      write(*,*) 'distattach.f xi,et,dist**2',xig,etg,a
       return
       end
       

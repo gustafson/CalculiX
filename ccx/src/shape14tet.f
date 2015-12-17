@@ -32,16 +32,18 @@
 !
       integer i,j,k,iflag,ifacet(7,4),konl(14)
 !
-      real*8 shp(4,14),xs(3,3),xsi(3,3),xl(3,14),sh(3)
+      real*8 shp(4,14),xs(3,3),xsi(3,3),xl(3,14),sh(3),xi,et,ze,xsj,a
 !
-      real*8 xi,et,ze,xsj,a
+      intent(in) xi,et,ze,xl,iflag,konl
+!
+      intent(out) shp,xsj
 !
 !     nodes per face for tet elements
 !
-      data ifacet /1,3,2,7,6,5,11,
+      ifacet=reshape((/1,3,2,7,6,5,11,
      &             1,2,4,5,9,8,12,
      &             2,3,4,6,10,9,13,
-     &             1,4,3,8,10,7,14/
+     &             1,4,3,8,10,7,14/),(/7,4/))
 !
 !     shape functions and their glocal derivatives
 !

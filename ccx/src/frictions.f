@@ -53,7 +53,7 @@ c      if(nelcon(1,imat).gt.0) nelcon(1,imat)=max(nelcon(1,imat),7)
 !
 !     "8" is for Mortar contact
 !
-      nelcon(1,imat)=max(nelcon(1,imat),8)
+      if(nelcon(1,imat).ne.-51) nelcon(1,imat)=max(nelcon(1,imat),8)
       nelcon(2,imat)=1
 !
 !     no temperature dependence allowed; last line is decisive
@@ -75,7 +75,7 @@ c      if(nelcon(1,imat).gt.0) nelcon(1,imat)=max(nelcon(1,imat),7)
      &"*FRICTION%")
             call exit(201)
          endif
-         if((elcon(7,1,imat).le.0.d0).and.(mortar.eq.0)) then
+         if(elcon(7,1,imat).le.0.d0) then
             write(*,*) '*ERROR reading *FRICTION: stick slope'
             write(*,*) '       must be strictly positive'
             call inputerror(inpc,ipoinpc,iline,

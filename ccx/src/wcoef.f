@@ -27,6 +27,10 @@
 !
       real*8 a2u,al,um,au,p1,p2,p3
 !
+      intent(in) vo,al,um
+!
+      intent(inout) v
+!
       a2u=al+2.d0*um
       au=al+um
 !

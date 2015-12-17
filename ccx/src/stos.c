@@ -13,9 +13,9 @@
 
 
 /* liefert puffer aus string von position a bis b */
-void stos(char *string, ITG a, ITG b, char *puffer)
+void stos(char *string, int a, int b, char *puffer)
 {
-  register ITG n, i;
+  register int n, i;
 
   n=-1;
   for (i=a-1; i<b; i++)
@@ -28,9 +28,9 @@ void stos(char *string, ITG a, ITG b, char *puffer)
 }
 
 /* schreibt string in puffer von position a bis b */
-void stos_inv(char *string, ITG a, ITG b, char *puffer)
+void stos_inv(char *string, int a, int b, char *puffer)
 {
-  register ITG n, i;
+  register int n, i;
 
   n=-1;
   for (i=a-1; i<b; i++)

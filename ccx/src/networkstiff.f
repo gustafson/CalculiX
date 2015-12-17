@@ -29,6 +29,11 @@
       real*8 voldl(0:mi(2),9),s(100,100),gastemp,shcon(0:3,ntmat_,*),
      &  cp,r,dvi,rhcon(0:1,ntmat_,*),rho
 !
+      intent(in) voldl,imat,konl,mi,ntmat_,shcon,
+     &  nshcon,rhcon,nrhcon
+!
+      intent(inout) s
+!
       gastemp=(voldl(0,1)+voldl(0,3))/2.d0
 !
       call materialdata_tg(imat,ntmat_,gastemp,shcon,nshcon,cp,r,

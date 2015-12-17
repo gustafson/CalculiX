@@ -29,17 +29,18 @@
      &     ielmat,ntmat_,shcon,nshcon,physcon,ipiv,nteq,
      &     rhcon,nrhcon,ipobody,ibody,xbodyact,co,nbody,network,
      &     iin_abs,vold,set,istep,iit,mi,ineighe,ilboun,channel,
-     &     iaxial)
+     &     iaxial,nmpc,labmpc,ipompc,nodempc,coefmpc)
 !     
       implicit none
 !     
       logical identity,gravity,gaspipe
 !
       character*8 lakon(*)
+      character*20 labmpc(*)
       character*81 set(*)
 !           
       integer mi(*),ieg(*),nflow,i,j,ntg,ielmat(mi(3),*),ntmat_,id,
-     &     node1,node2,ider,iaxial,
+     &     node1,node2,ider,iaxial,nmpc,nodempc(3,*),ipompc(*),
      &     nelem,index,nshcon(*),ipkon(*),kon(*),ikboun(*),nboun,idof,
      &     nodem,idirf(8),nactdog(0:3,*),imat,ielprop(*),id1,id2,
      &     nodef(8),ndirboun(*),nodeboun(*),itg(*),node,kflag,ipiv(*),
@@ -52,7 +53,8 @@
      &     f,df(8),xflow,xbounact(*),v(0:mi(2),*),cp,r,tg1,
      &     tg2,gastemp,physcon(*),pressmin,dvi,rho,g(3),z1,z2,
      &     rhcon(0:1,ntmat_,*),co(3,*),xbodyact(7,*),kappa,
-     &     a,Tt,Pt,Ts,pressmax,constant,vold(0:mi(2),*),href
+     &     a,Tt,Pt,Ts,pressmax,constant,vold(0:mi(2),*),href,
+     &     coefmpc(*)
 !
       kflag=1
       ider=0
@@ -117,7 +119,7 @@
 !     
          if(pressmin.lt.0.d0) then
             write(*,*) 
-     &           '*ERROR in initialgas: minimum initial pressure'
+     &           '*ERROR in initialnet: minimum initial pressure'
             write(*,*) '       is smaller than zero'
             call exit(201)
          endif
@@ -352,6 +354,41 @@
             endif
          enddo
       endif
+!
+!     additional multiple point constraints
+!
+      do j=1,nteq
+         if(dabs(ac(j,j)).lt.1.d-20) ac(j,j)=1.d0
+      enddo
+cc      j=nteq+1
+c      j=0
+c      do i=nmpc,1,-1
+c         if(labmpc(i)(1:7).ne.'NETWORK') cycle
+c!
+c!        looking of a row in the matrix which has not been used yet
+c!
+c         do
+c            j=j+1
+c            if(dabs(ac(j,j)).lt.1.d-20) exit
+c            if(j.eq.nteq) then
+c               write(*,*) '*ERROR in initialnet: MPC cannot'
+c               write(*,*) '       be inserted'
+c               call stop()
+c            endif
+c         enddo
+c         j=j-1
+c         index=ipompc(i)
+c!
+c         do
+c            node=nodempc(1,index)
+c            idir=nodempc(2,index)
+c            if(nactdog(idir,node).ne.0) then
+c               ac(j,nactdog(idir,node))=coefmpc(index)
+c            endif
+c            index=nodempc(3,index)
+c            if(index.eq.0) exit
+c         enddo
+c      enddo
 !     
 !     solving the system
 !     
@@ -359,7 +396,7 @@
          nrhs=1
          call dgesv(nteq,nrhs,ac,nteq,ipiv,bc,nteq,info)
          if(info.ne.0) then
-            write(*,*) '*ERROR in initialgas: singular matrix'
+            write(*,*) '*ERROR in initialnet: singular matrix'
             call exit(201)
          endif
       endif
@@ -505,7 +542,7 @@
                endif
                if(.not.gravity) then
                   write(*,*) 
-     &                 '*ERROR in initialgas: no gravity vector'
+     &                 '*ERROR in initialnet: no gravity vector'
                   write(*,*) 
      &                 '       was defined for liquid element',nelem
                   call exit(201)
@@ -552,7 +589,7 @@
                if((nactdog(2,node1).eq.0)
      &           .and.(nactdog(2,node2).eq.0)) then
                   WRITE(*,*) '**************************************'
-                  write(*,*) '*ERROR:in subroutine initialgas.f'
+                  write(*,*) '*ERROR:in subroutine initialnet.f'
                   write(*,*) '       in element', nelem
                   write(*,*) '       Inlet and outlet pressures are '
                   write(*,*) '       boundary conditions '
@@ -567,7 +604,7 @@
                else if((nactdog(2,node1).ne.0)
      &                 .and.(nactdog(2,node2).eq.0))then
                   WRITE(*,*) '**************************************'
-                  write(*,*) '*WARNING:in subroutine initialgas.f'
+                  write(*,*) '*WARNING:in subroutine initialnet.f'
                   write(*,*) '       in element', nelem
                   write(*,*) 
      &                 '       Inlet pressure initial condition '
@@ -585,7 +622,7 @@
                else if((nactdog(2,node1).eq.0)
      &                 .and.(nactdog(2,node2).ne.0))then
                   WRITE(*,*) '**************************************'
-                  write(*,*) '*WARNING:in subroutine initialgas.f'
+                  write(*,*) '*WARNING:in subroutine initialnet.f'
                   write(*,*) '       in element', nelem
                   write(*,*) 
      &                 '       Outlet pressure initial condition '
@@ -604,7 +641,7 @@
                else if((nactdog(2,node1).ne.0)
      &                 .and.(nactdog(2,node2).ne.0))then
                   WRITE(*,*) '**************************************'
-                  write(*,*) '*WARNING:in subroutine initialgas.f'
+                  write(*,*) '*WARNING:in subroutine initialnet.f'
                   write(*,*) '       in element', nelem
                   write(*,*) '       Inlet and outlet pressure '
                   write(*,*) '       initial condition are changed '
@@ -638,7 +675,7 @@ c            if(nactdog(1,nodem).ne.0) v(1,nodem)=xflow
             if(lakon(nelem)(2:4).ne.'LIP') then
                if(v(1,nodem).eq.0d0) then
                   WRITE(*,*) '**************************************'
-                  write(*,*) '*ERROR:in subroutine initialgas.f'
+                  write(*,*) '*ERROR:in subroutine initialnet.f'
                   write(*,*) '       in element', nelem,
      &                 lakon(nelem)(1:6)
                   write(*,*) '       mass flow rate value = 0 !'
@@ -650,7 +687,7 @@ c            if(nactdog(1,nodem).ne.0) v(1,nodem)=xflow
                endif
                if (v(1,nodem).lt.0) then
                   WRITE(*,*) '**************************************'
-                  write(*,*) '*WARNING: in subroutine initialgas.f'
+                  write(*,*) '*WARNING: in subroutine initialnet.f'
                   write(*,*) '        in element', nelem
                   write(*,*) '        mass flow rate value .le. 0 !'
                   write(*,*) '        node1',node1,'pressure',
@@ -674,7 +711,7 @@ c            if(nactdog(1,nodem).ne.0) v(1,nodem)=xflow
          do i=1,ntg
             if(ineighe(i).gt.2) then
                ineighe(i)=-1
-               write(*,*) '*WARNING :in subroutine initialgas.f'
+               write(*,*) '*WARNING :in subroutine initialnet.f'
                write(*,*) '          more than 2 elements GASPIPE'
                write(*,*) '          or RESTRICTOR are connected '
                write(*,*) '          to node',itg(i),'. The common'

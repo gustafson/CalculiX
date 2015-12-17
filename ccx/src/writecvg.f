@@ -77,7 +77,7 @@
          endif
       endif
 !     
-      write(11,'(2x,i4,2x,i4,2x,i4,2x,i4,2x,i6,4(1x,e11.4))') istep,
+      write(11,'(2x,i4,2x,i4,2x,i4,2x,i4,2x,i7,4(1x,e11.4))') istep,
      &  iinc,icutb+1,iit,ne-ne0,residforce,corrdisp,residflux,corrtemp
 !
       flush(11)

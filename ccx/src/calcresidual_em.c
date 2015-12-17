@@ -60,9 +60,21 @@ void calcresidual_em(ITG *nmethod, ITG *neq, double *b, double *fext, double *f,
 
         /* calculating a pseudo-velocity */
 
-	for(k=0;k<*nk;++k){
+/*	for(k=0;k<*nk;++k){
 	    for(j=jstart;j<mt;++j){
 		if(nactdof[mt*k+j]!=0){aux2[nactdof[mt*k+j]-1]=(vold[mt*k+j]-vini[mt*k+j])/(*dtime);}
+	    }
+	    }*/
+
+	for(k=0;k<*nk;++k){
+	    for(j=jstart;j<1;++j){
+		if(nactdof[mt*k+j]!=0){aux2[nactdof[mt*k+j]-1]=(vold[mt*k+j]-vini[mt*k+j])/(*dtime);}
+	    }
+	}
+
+	for(k=0;k<*nk;++k){
+	    for(j=1;j<mt;++j){
+		if(nactdof[mt*k+j]!=0){aux2[nactdof[mt*k+j]-1]=(-vini[mt*k+j])/(*dtime);}
 	    }
 	}
 

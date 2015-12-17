@@ -24,7 +24,12 @@
       implicit none
 !
       integer jq(*),irow(*),i,j,ipointer,id
+!
       real*8 au(*),value
+!
+      intent(in) jq,irow,i,j,value
+!
+      intent(inout) au
 !
       call nident(irow(jq(j)),i,jq(j+1)-jq(j),id)
 !

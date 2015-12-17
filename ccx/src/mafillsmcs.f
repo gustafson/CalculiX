@@ -30,7 +30,7 @@
      &  rhsi,intscheme,mcs,coriolis,ibody,xloadold,reltime,ielcs,
      &  veold,springarea,thicke,integerglob,doubleglob,
      &  tieset,istartset,iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,
-     &  mortar,clearini,ielprop,prop)
+     &  mortar,clearini,ielprop,prop,ne0,kscale)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !     for cyclic symmetry calculations
@@ -47,7 +47,7 @@
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
      &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,ielprop(*),
-     &  nactdof(0:mi(2),*),irow(*),istartset(*),iendset(*),
+     &  nactdof(0:mi(2),*),irow(*),istartset(*),iendset(*),kscale,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),integerglob(*),ialset(*),ntie,
      &  ipkon(*),ics(*),ij,ilength,lprev,ipobody(2,*),nbody,
@@ -75,22 +75,13 @@
 !
 !     calculating the scaling factors for the cyclic symmetry calculation
 !
-c      do i=1,nmpc
-c         write(*,*) i,labmpc(i)
-c         index=ipompc(i)
-c         do
-c            write(*,'(i5,1x,i5,1x,e11.4)') nodempc(1,index),
-c     &        nodempc(2,index),coefmpc(index)
-c            index=nodempc(3,index)
-c            if(index.eq.0) exit
-c         enddo
-c         write(*,*)
-c      enddo
-!
       pi=4.d0*datan(1.d0)
-c      nstate_=0
 !
       do i=1,mcs
+         write(*,*) '*INFO in mafillsmcs: calculating nodal diameter',nm
+         write(*,*) '      for',cs(1,i),'sectors'
+         write(*,*) '      (cyclic symmetry definition number',i,')'
+         write(*,*)
          theta=nm*2.d0*pi/cs(1,i)
          cs(15,i)=dcos(theta)
          cs(16,i)=dsin(theta)
@@ -131,7 +122,7 @@ c      nstate_=0
 !
 !     initialisation of the error parameter
 !
-      ne0=0
+c      ne0=0
       do i=1,ne
 !
         if(ipkon(i).lt.0) cycle
@@ -203,7 +194,7 @@ c    Bernhardi end
      &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
      &          integerglob,doubleglob,tieset,istartset,
      &          iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,
-     &          clearini,ielprop,prop)
+     &          clearini,ielprop,prop,kscale)
 !
         do jj=1,3*nope
 !

@@ -365,6 +365,7 @@ c      write(*,*)
       if(i.gt.nset) then
          write(*,*) '*WARNING in precfd: facial surface SOLID SURFACE '
          write(*,*) '         has not been defined.'
+         write(*,*)
       else
 c         nsolidsurf=0
          do j=istartset(i),iendset(i)

@@ -50,31 +50,30 @@
      &     xl2m(3,8),xl2s(3,8),xl2m2(3,8),
      &     pmiddle(3),xl2sr(3,8),xl2sp(3,8),xl2s2(3,8),
      &     dd,xns(3,8),areaslav,al,xn(3),slavstraight(36),
-     &     err2,dist,distmin,pslavsurf(3,*),err,xquad(2,8), 
+     &     err2,dist,distmin,pslavsurf(3,*),err,xquad(2,8),
      &     xtri(2,6),xi,et,xsj2(3),xs2(3,2),shp2(7,8),anglesm
 !
       data iflag /2/
 !
-      data xquad /-1, -1,
-     &     1, -1,
-     &     1, 1,
-     &     -1, 1,
-     &     0, -1,
-     &     1, 0,
-     &     0, 1,
-     &     -1, 0/
+      data xquad /-1,-1,
+     &     1,-1,
+     &     1,1,
+     &     -1,1,
+     &     0,-1,
+     &     1,0,
+     &     0,1,
+     &     -1,0/
 !     
-      data xtri /0, 0,
-     &     1, 0,
-     &     0, 1,
-     &     0.5, 0,
-     &     0.5, 0.5,
-     &     0, 0.5/
+      data xtri /0,0,
+     &     1,0,
+     &     0,1,
+     &     0.5,0,
+     &     0.5,0.5,
+     &     0,0.5/
 !     
       kneigh=1
       err=0.1
       areaslav=0.0
-      err2=1.d-4
       nintpfirst=nintpoint
       islavsurf(2,l)=nintpoint
 !     
@@ -82,7 +81,7 @@
 !     
       ifaces=islavsurf(1,l)
       nelems=int(ifaces/10)
-      jfaces=ifaces - nelems*10
+      jfaces=ifaces-nelems*10
 !     
 !     get nope,nopes
 !     
@@ -121,17 +120,17 @@
 !
 !     Resort vertices for quadratic elements
 !     
-      if(nopes.eq.3 .or. nopes.eq.4)then
-         do j=1, nopes
+      if((nopes.eq.3).or.(nopes.eq.4))then
+         do j=1,nopes
             do k=1,3
-               xl2s2(k,j)= xl2s(k,j)
+               xl2s2(k,j)=xl2s(k,j)
             enddo
          enddo
       else
          do j=1,int(nopes/2.0)
             do k=1,3
-               xl2s2(k,2*j-1)= xl2s(k,j)
-               xl2s2(k,2*j)= xl2s(k,(int(nopes/2.0))+j)           
+               xl2s2(k,2*j-1)=xl2s(k,j)
+               xl2s2(k,2*j)=xl2s(k,(int(nopes/2.0))+j)           
             enddo
          enddo
       endif
@@ -145,15 +144,15 @@
       if(nopes.eq.3) then
          call straighteq3d(xl2s2,slavstraight)
          do k=1,3
-            xn(k)= slavstraight(4*nopes+k)
+            xn(k)=slavstraight(4*nopes+k)
          enddo               
       else
          do k=1,3
             xn(k)=0.d0
          enddo
 !     
-         do m=1, nopes
-            if(nopes.eq.4 .or. nopes.eq.8)then
+         do m=1,nopes
+            if((nopes.eq.4).or.(nopes.eq.8))then
                xi=xquad(1,m)
                et=xquad(2,m)
             else
@@ -169,8 +168,8 @@
             else
                call shape3tri(xi,et,xl2s,xsj2,xs2,shp2,iflag)
             endif   
-            dd=dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2)
-     &           + xsj2(3)*xsj2(3))
+            dd=dsqrt(xsj2(1)*xsj2(1)+xsj2(2)*xsj2(2)
+     &          +xsj2(3)*xsj2(3))
             xsj2(1)=xsj2(1)/dd
             xsj2(2)=xsj2(2)/dd
             xsj2(3)=xsj2(3)/dd
@@ -192,17 +191,17 @@
 !     
 !     Project slave nodes to meanplane, needed for Sutherland-Hodgman
 !     
-      do j=1, nopes
+      do j=1,nopes
          al=-xn(1)*xl2s2(1,j)-xn(2)*
      &        xl2s2(2,j)-xn(3)*xl2s2(3,j)-
      &        slavstraight(nopes*4+4)
-         if(nopes.eq.4 .or. nopes.eq.8 .or. nopes.eq.9)then
+         if(nopes.ne.3)then
             do k=1,3
-               xl2sp(k,j)= xl2s2(k,j)+al*xn(k)
+               xl2sp(k,j)=xl2s2(k,j)+al*xn(k)
             enddo
          else
             do k=1,3
-               xl2sp(k,j)= xl2s2(k,j)
+               xl2sp(k,j)=xl2s2(k,j)
             enddo
          endif
       enddo
@@ -217,21 +216,6 @@
             imfacecorner(j,k)=0
          enddo
       enddo
-!     check for nogap-nodes
-c      do j=1,nopes
-c         call neartriangle(xl2sr(1,j),xn,xo,yo,zo,x,y,z,nx,ny,nz,
-c     &        ntri,neigh,kneigh,itietri,ntie,straight,imastop,itri,i)
-c         nodel=getnodel(j,jfaces,nope)
-c         node=konl(nodel)
-c         call nident(islavnode(nslavnode(i)+1), node, 
-c     &        nslavnode(i+1)-nslavnode(i), id) 
-c         if(itri.ne.0) then  
-c!     triangle found
-c            anglesm=xn(1)*straight(13,itri)
-c     &           +xn(2)*straight(14,itri)
-c     &           +xn(3)*straight(15,itri)
-c         endif
-c      enddo
 !     
       do j=1,3
          do m=1,nopes
@@ -242,8 +226,8 @@ c      enddo
       do j=1,nopes
          call neartriangle(xl2sr(1,j),xn,xo,yo,zo,x,y,z,nx,ny,nz,
      &        ntri,neigh,kneigh,itietri,ntie,straight,imastop,itri,i)
-         nodel= getnodel(j,jfaces,nope)
-         node= konl(nodel) 
+         nodel=getnodel(j,jfaces,nope)
+         node=konl(nodel) 
          if(itri.eq.0) then  
             cycle
          endif
@@ -304,7 +288,7 @@ c      enddo
 !
 !        add master element to covered stack
 !
-         call nident(icoveredmelem,nelemm, ncoveredmelem,id)
+         call nident(icoveredmelem,nelemm,ncoveredmelem,id)
          if(id.ne.0 .and. icoveredmelem(id).eq.nelemm)then
 !     master element was already threated
             cycle
@@ -336,7 +320,7 @@ c      enddo
 !     
 !     divide master element into konvex subelements
 !     
-         if(nnodelem.eq.3 .or.nnodelem.eq.4)then
+         if((nnodelem.eq.3).or.(nnodelem.eq.4))then
 !     
 !     no loop needed
 !     
@@ -595,7 +579,7 @@ c      enddo
 !
 !     check whether still in contact tie
 !
-         if(itri.gt.itietri(2,i) .or. itri.lt.itietri(1,i))then
+         if((itri.gt.itietri(2,i)).or.(itri.lt.itietri(1,i)))then
             if(itri.ne.0)then
             endif
             itri=0
@@ -618,7 +602,7 @@ c      enddo
 !     
 !     add master element to covered stack
 !     
-         call nident(icoveredmelem,nelemm, ncoveredmelem,id)
+         call nident(icoveredmelem,nelemm,ncoveredmelem,id)
          if(id .gt. 0 .and. icoveredmelem(id).eq.nelemm)then
 !
 !     master elment was already threated
@@ -660,7 +644,7 @@ c      enddo
 !     
 !     divide master element into konvex subelements
 !     
-         if(nnodelem.eq.3 .or.nnodelem.eq.4)then
+         if((nnodelem.eq.3).or.(nnodelem.eq.4))then
 !     
 !     no loop needed
 !     
@@ -900,21 +884,6 @@ c      enddo
         endif
       enddo
       islavsurf(2,l+1)=nintpoint
-!
-!     check for N-nodes
-!
-c      do j=1,nope
-c         konl(j)=kon(ipkon(nelems)+j)
-c      enddo
-c!
-c      if(nintpoint-nintpfirst.gt.0)then
-c         do j=1,nopes
-c            nodel= getnodel(j,jfaces,nope)
-c            node= konl(nodel)
-c            call nident(islavnode(nslavnode(i)+1), node, 
-c     &           nslavnode(i+1)-nslavnode(i),id)
-c         enddo
-c      endif
 !     
       return
       end

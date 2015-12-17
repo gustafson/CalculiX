@@ -49,6 +49,12 @@
 !
       real*8 doubleglob(*),value(*),coords(3),ratio(20)
 !
+      intent(in) integerglob,doubleglob,
+     &     coords,iselect,nselect,nodeface,tieset,istartset,iendset,
+     &     ialset,ntie,entity
+!
+      intent(inout) value
+!
 !     if no global file was read, set results to zero
 !
       if(integerglob(1).eq.0) then

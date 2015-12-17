@@ -28,6 +28,7 @@
 !
       implicit none
 !
+      character*80 version
       character*81 set(*)
       character*132 fnrstrt,jobnamec(*)
 !
@@ -40,6 +41,9 @@
      &  mcs,ntie,nbody,nslavs,ifacecount
 !
       if(icntrl.eq.0) then
+!
+!        this branch is called from readinput.c
+!        its purpose is to read the value of nset
 !
 !        determining the name of the restart file
 !
@@ -55,6 +59,12 @@
          open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED',
      &      err=15)
 !
+         read(15) version
+         write(*,*)
+         write(*,*) '*INFO: restart file ',fnrstrt
+         write(*,*) '       has been opened for reading.'
+         write(*,*) '       it was created with CalculiX ',version
+!
          do
 !
             read(15,iostat=istat)istep
@@ -67,6 +77,7 @@
                   close(15)
                   open(15,file=fnrstrt,ACCESS='SEQUENTIAL',
      &                 FORM='UNFORMATTED',err=15)
+                  read(15) version
                   read(15,iostat=istat)istep
                else
                   write(*,*) '*ERROR in restartshort: requested step'
@@ -191,6 +202,8 @@
       open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED',
      &   err=15)
 !
+      read(15) version
+!
       do
 !
          read(15,iostat=istat)istep
@@ -203,6 +216,7 @@
                close(15)
                open(15,file=fnrstrt,ACCESS='SEQUENTIAL',
      &              FORM='UNFORMATTED',err=15)
+               read(15) version
                read(15,iostat=istat)istep
             else
                write(*,*) '*ERROR in restartshort: requested step'

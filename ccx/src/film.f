@@ -70,6 +70,13 @@
       real*8 h(2),sink,time(2),coords(3),temp,field(nfield),area,
      &  vold(0:mi(2),*)
 !
+      intent(in) temp,kstep,kinc,time,noel,npt,
+     &  coords,jltyp,field,nfield,loadtype,node,area,vold,mi
+!
+      intent(out) h
+!
+      intent(inout) sink
+!
 c      h(1)=10.d0*coords(2)
       h(1)=200.d0
 c      sink=-12.d0

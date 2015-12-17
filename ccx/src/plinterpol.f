@@ -32,6 +32,11 @@
 !
       real*8 plcon(0:2*npmat_,ntmat_,*),f,df,epl
 !
+      intent(in) plcon,nplcon,itemp,npmat_,ntmat_,
+     &  imat,nelem,epl
+!
+      intent(inout) f,df
+!
       ndata=nplcon(itemp,imat)
 !
       do j=1,ndata

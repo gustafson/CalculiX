@@ -28,6 +28,11 @@
       real*8 elcon(0:ncmat_,ntmat_,*),t1l,elconloc(21),
      &   plicon(0:2*npmat_,ntmat_,*),plconloc(802)
 !
+      intent(in) elcon,nelcon,imat,ntmat_,i,t1l,
+     &  kode,plicon,nplicon,npmat_,ncmat_
+!
+      intent(inout) elconloc,plconloc
+!
 !     nelconst: # constants read from file
 !     
 !     calculating the hardening coefficients

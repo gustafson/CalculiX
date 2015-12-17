@@ -33,7 +33,6 @@
 !
 !    Written January 2003 on the basis of the Guido's shape function files
 !
-
       implicit none
 !
       integer i,j,k,iflag
@@ -41,6 +40,10 @@
       real*8 shp(4,6),xs(3,3),xsi(3,3),xl(3,6),sh(3)
 !
       real*8 xi,et,ze,xsj,a
+!
+      intent(in) xi,et,ze,xl,iflag
+!
+      intent(out) shp,xsj
 !
 !     shape functions and their glocal derivatives
 !

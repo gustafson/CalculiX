@@ -24,7 +24,8 @@
      &  nelemload,nload,ikin,ielmat,thicke,eme,emn,rhcon,nrhcon,shcon,
      &  nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,
      &  islavact,cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time,
-     &  ielprop,prop,veold)
+     &  ielprop,prop,veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,
+     &  energy)
 !
 !     - stores the results in the .dat file, if requested
 !       - nodal quantities at the nodes
@@ -41,7 +42,7 @@
       character*1 cflag
       character*6 prlab(*)
       character*8 lakon(*)
-      character*20 sideload(*)
+      character*20 sideload(*),labmpc(*)
       character*81 set(*),prset(*)
       character*87 filab(*)
 !
@@ -53,7 +54,7 @@
      &  nfield,ndim,nstate_,nset,istartset(*),iendset(*),ialset(*),
      &  nprint,ntrans,ikin,ncocon(2,*),ntmat_,icfd,inomat(*),mortar,
      &  islavact(*),islavnode(*),nslavnode(*),ntie,islavsurf(2,*),
-     &  ielprop(*)
+     &  ielprop(*),ne0,index,nmpc,ipompc(*),nodempc(3,*)
 !
       real*8 co(3,*),v(0:mi(2),*),stx(6,mi(1),*),stn(6,*),cdn(6,*),
      &  qfx(3,mi(1),*),qfn(3,*),orab(7,*),fn(0:mi(2),*),pslavsurf(3,*),
@@ -61,14 +62,12 @@
      &  ener(mi(1),*),enern(*),eei(6,mi(1),*),rhcon(0:1,ntmat_,*),
      &  ttime,xstate(nstate_,mi(1),*),trab(7,*),xstaten(nstate_,*),
      &  eme(6,mi(1),*),emn(6,*),shcon(0:3,ntmat_,*),cocon(0:6,ntmat_,*),
-     &  prop(*),veold(0:mi(2),*)
+     &  prop(*),veold(0:mi(2),*),energy(*),energyini(*)
 !
       data iflag /3/
       data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
 !
       mt=mi(2)+1
-!
-      force=.false.
 !
 !     no print requests
 !
@@ -83,6 +82,19 @@
             call map3dto1d2d_v(v,ipkon,inum,kon,lakon,nfield,nk,
      &           ne,nactdof)
          endif
+!
+!        the total energy should not be calculated:
+!        - for non-dynamical calculations (nmethod!=4)
+!        - for modal dynamics (iperturb(1)<=1)
+!        - for thermal and thermomechanical calculations (ithermal(1)>1)
+!        - for electromagnetic calculations (mi(2)=5)
+!
+         if((nmethod.eq.4).and.(iperturb(1).gt.1).and.
+     &      (ithermal(1).le.1).and.(mi(2).ne.5)) then
+            call calcenergy(ipkon,lakon,kon,co,ener,mi,ne,thicke,
+     &           ielmat,energyini,energy)
+         endif
+!
          return
       endif
 !
@@ -109,6 +121,7 @@
       if(filab(1)(5:5).ne.' ') then
          nfield=mt
          cflag=filab(1)(5:5)
+         force=.false.
          call map3dto1d2d(v,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,cflag,co,vold,force,mi)
       endif
@@ -117,6 +130,7 @@
          if(filab(2)(5:5).eq.'I') then
             nfield=1
             cflag=filab(2)(5:5)
+            force=.false.
             call map3dto1d2d(t1,ipkon,inum,kon,lakon,nfield,nk,
      &           ne,cflag,co,vold,force,mi)
          endif
@@ -180,15 +194,12 @@
          if(mortar.eq.1) then
             nfield=6
             ndim=6
-            if((norien.gt.0).and.(filab(4)(6:6).eq.'L')) then
-               iorienloc=1
-            else
-               iorienloc=0
-            endif
             cflag=filab(3)(5:5)
+            force=.false.
             call extrapolatecontact(stx,cdn,ipkon,inum,kon,lakon,nfield,
      &        nk,ne,mi(1),ndim,co,cflag,vold,force,pslavsurf,
-     &        islavact,islavnode,nslavnode,ntie,islavsurf)
+     &        islavact,islavnode,nslavnode,ntie,islavsurf,ielprop,prop,
+     &        ielmat,ne0)
          endif
       endif
 !
@@ -206,6 +217,7 @@
             iorienloc=0
          endif
          cflag=filab(3)(5:5)
+         force=.false.
 !
          call extrapolate(stx,stn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
@@ -224,6 +236,7 @@
             iorienloc=0
          endif
          cflag=filab(4)(5:5)
+         force=.false.
          call extrapolate(eei,een,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        vold,force,ielmat,thicke,ielprop,prop)
@@ -241,6 +254,7 @@
             iorienloc=0
          endif
          cflag=filab(4)(5:5)
+         force=.false.
          call extrapolate(eme,emn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        vold,force,ielmat,thicke,ielprop,prop)
@@ -254,6 +268,7 @@
          ndim=nstate_
          iorienloc=0
          cflag=filab(6)(5:5)
+         force=.false.
          call extrapolate(xstate,epn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        vold,force,ielmat,thicke,ielprop,prop)
@@ -267,6 +282,7 @@
          ndim=1
          iorienloc=0
          cflag=filab(7)(5:5)
+         force=.false.
          call extrapolate(ener,enern,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        vold,force,ielmat,thicke,ielprop,prop)
@@ -285,6 +301,7 @@
          endif
          iorienloc=0
          cflag=filab(8)(5:5)
+         force=.false.
          call extrapolate(xstate,xstaten,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        vold,force,ielmat,thicke,ielprop,prop)
@@ -302,6 +319,7 @@
             iorienloc=0
          endif
          cflag=filab(9)(5:5)
+         force=.false.
          call extrapolate(qfx,qfn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        vold,force,ielmat,thicke,ielprop,prop)
@@ -314,7 +332,7 @@
       if((filab(3)(1:4).ne.'S   ').and.(filab(4)(1:4).ne.'E   ').and.
      &   (filab(6)(1:4).ne.'PEEQ').and.(filab(7)(1:4).ne.'ENER').and.
      &   (filab(8)(1:4).ne.'SDV ').and.(filab(9)(1:4).ne.'HFL ').and.
-     &   (filab(42)(1:3).ne.'ECD').and.
+     &   (filab(42)(1:3).ne.'ECD').and.(filab(32)(1:4).ne.'ME  ').and.
      &   ((nmethod.ne.4).or.(iperturb(1).ge.2))) then
 !
          nfield=0
@@ -328,6 +346,9 @@
 c      if(ithermal(1).gt.1) then
       if(ithermal(2).gt.1) then
 !
+!        next section is executed if at least one step is thermal
+!        or thermomechanical
+!
 !        extrapolation for the network
 !         -interpolation for the total pressure and temperature
 !          in the middle nodes
@@ -335,13 +356,12 @@ c      if(ithermal(1).gt.1) then
 !
          call networkextrapolate(v,ipkon,inum,kon,lakon,ne,mi)
 !
-!     printing values for environmental film, radiation and
+!     printing values for environmental film and
 !     pressure nodes (these nodes are considered to be network
 !     nodes)
 !
          do i=1,nload
             if((sideload(i)(3:4).ne.'FC').and.
-     &         (sideload(i)(3:4).ne.'CR').and.
      &         (sideload(i)(3:4).ne.'NP')) cycle
             node=nelemload(2,i)
             if(icfd.eq.1) then
@@ -350,17 +370,47 @@ c      if(ithermal(1).gt.1) then
                endif
             endif
             if((node.gt.0).and.(sideload(i)(1:1).ne.' ')) then
-c               if(inum(node).gt.0) cycle
                if(inum(node).lt.0) cycle
                inum(node)=-1
             endif
          enddo
-c      endif
+!
+!     printing values radiation 
+!     (these nodes are considered to be network nodes, unless
+!      they were already assigned to the structure)
+!
+         do i=1,nload
+            if((sideload(i)(3:4).ne.'CR')) cycle
+            node=nelemload(2,i)
+            if(icfd.eq.1) then
+               if(node.gt.0) then
+                  if(inomat(node).ne.0) cycle
+               endif
+            endif
+            if((node.gt.0).and.(sideload(i)(1:1).ne.' ')) then
+               if(inum(node).ne.0) cycle
+               inum(node)=-1
+            endif
+         enddo
+!
+!        printing values for nodes belonging to network MPC's
+!        (these nodes are considered to be network nodes)
+!
+         do i=1,nmpc
+            if(labmpc(i)(1:7).eq.'NETWORK') then
+               index=ipompc(i)
+               do
+                  node=nodempc(1,index)
+                  if(inum(node).ge.0) inum(node)=-1
+                  index=nodempc(3,index)
+                  if(index.eq.0) exit
+               enddo
+            endif
+         enddo
 !
 !     printing values of prescribed boundary conditions (these
-!     nodes are considered to be structural nodes)
+!     nodes are considered to be network nodes)
 !
-c      if(ithermal(2).ne.2) then
          do i=1,nboun
             node=nodeboun(i)
             if(inum(node).ne.0) cycle
@@ -368,7 +418,7 @@ c      if(ithermal(2).ne.2) then
                if(inomat(node).ne.0) cycle
             endif
             if((cflag.ne.' ').and.(ndirboun(i).eq.3)) cycle
-            inum(node)=1
+            inum(node)=-1
          enddo
       endif
 !

@@ -27,7 +27,7 @@
      &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,springarea,
      &  nstate_,xstateini,xstate,ne0,ipkon,thicke,
      &  integerglob,doubleglob,tieset,istartset,iendset,ialset,ntie,
-     &  nasym,pslavsurf,pmastsurf,mortar,clearini,ielprop,prop)
+     &  nasym,pslavsurf,pmastsurf,mortar,clearini,ielprop,prop,kscale)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -42,7 +42,7 @@
 !
       implicit none
 !
-      logical mass,stiffness,buckling,rhsi,coriolis
+      integer mass,stiffness,buckling,rhsi,coriolis
 !
       character*1 entity
       character*8 lakonl
@@ -60,7 +60,7 @@
      &  mint3d,ifacet(7,4),nopev,iorien,istiff,ncmat_,iface,
      &  ifacew(8,5),intscheme,n,ipointeri,ipointerj,istep,iinc,
      &  layer,kspt,jltyp,iflag,iperm(60),m,ipompc(*),nodempc(3,*),
-     &  nmpc,ikmpc(*),ilmpc(*),iscale,nstate_,ne0,iselect(6),
+     &  nmpc,ikmpc(*),ilmpc(*),iscale,nstate_,ne0,iselect(6),kscale,
      &  istartset(*),iendset(*),ialset(*),ntie,integerglob(*),nasym,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,nopered
 !
@@ -84,30 +84,45 @@
      &  sax(100,100),ffax(100),gs(8,4),a,stress(6),stre(3,3),
      &  pslavsurf(3,*),pmastsurf(6,*)
 !
-      data ifaceq /4,3,2,1,11,10,9,12,21,
+      intent(in) co,kon,lakonl,p1,p2,omx,bodyfx,nbody,
+     &  nelem,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
+     &  ielmat,ielorien,norien,orab,ntmat_,
+     &  t0,t1,ithermal,vold,iperturb,nelemload,
+     &  sideload,nload,idist,sti,stx,iexpl,plicon,
+     &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
+     &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
+     &  ttime,time,istep,iinc,coriolis,xloadold,reltime,
+     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
+     &  nstate_,xstateini,ne0,ipkon,thicke,
+     &  integerglob,doubleglob,tieset,istartset,iendset,ialset,ntie,
+     &  nasym,pslavsurf,pmastsurf,mortar,clearini,ielprop,prop
+!
+      intent(inout) s,sm,ff,xload,nmethod,springarea,xstate
+!
+      include "gauss.f"
+!
+      ifaceq=reshape((/4,3,2,1,11,10,9,12,21,
      &            5,6,7,8,13,14,15,16,22,
      &            1,2,6,5,9,18,13,17,23,
      &            2,3,7,6,10,19,14,18,24,
      &            3,4,8,7,11,20,15,19,25,
-     &            4,1,5,8,12,17,16,20,26/
-      data ifacet /1,3,2,7,6,5,11,
+     &            4,1,5,8,12,17,16,20,26/),(/9,6/))
+      ifacet=reshape((/1,3,2,7,6,5,11,
      &             1,2,4,5,9,8,12,
      &             2,3,4,6,10,9,13,
-     &             1,4,3,8,10,7,14/
-      data ifacew /1,3,2,9,8,7,0,0,
+     &             1,4,3,8,10,7,14/),(/7,4/))
+      ifacew=reshape((/1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
-     &             4,6,3,1,12,15,9,13/
-      data iflag /3/
-      data null /0/
-      data iperm /13,14,-15,16,17,-18,19,20,-21,22,23,-24,
+     &             4,6,3,1,12,15,9,13/),(/8,5/))
+      iflag=3
+      null=0
+      iperm=(/13,14,-15,16,17,-18,19,20,-21,22,23,-24,
      &            1,2,-3,4,5,-6,7,8,-9,10,11,-12,
      &            37,38,-39,40,41,-42,43,44,-45,46,47,-48,
      &            25,26,-27,28,29,-30,31,32,-33,34,35,-36,
-     &            49,50,-51,52,53,-54,55,56,-57,58,59,-60/
-!
-      include "gauss.f"
+     &            49,50,-51,52,53,-54,55,56,-57,58,59,-60/)
 !
       tvar(1)=time
       tvar(2)=ttime+time
@@ -162,15 +177,13 @@ c     Bernhardi end
       elseif(lakonl(1:2).eq.'ES') then
          if(lakonl(7:7).eq.'C') then
             if(mortar.eq.0) then
-               read(lakonl(8:8),'(i1)') nope
-               nope=nope+1
+               nope=ichar(lakonl(8:8))-47
                konl(nope+1)=kon(indexe+nope+1)
             elseif(mortar.eq.1) then
                nope=kon(indexe)
             endif
          else
-            read(lakonl(8:8),'(i1)') nope
-            nope=nope+1
+            nope=ichar(lakonl(8:8))-47
          endif
       endif
 !
@@ -317,7 +330,7 @@ c     Bernhardi end
 !
 !       initialisation for distributed forces
 !
-      if(rhsi) then
+      if(rhsi.eq.1) then
         if(idist.ne.0) then
           do i=1,3*nope
             ff(i)=0.d0
@@ -328,7 +341,7 @@ c     Bernhardi end
 !     displacements for 2nd order static and modal theory
 !
       if(((iperturb(1).eq.1).or.(iperturb(2).eq.1)).and.
-     &          stiffness.and.(.not.buckling)) then
+     &          (stiffness.eq.1).and.(buckling.eq.0)) then
          do i1=1,nope
             do i2=1,3
                voldl(i2,i1)=vold(i2,konl(i1))
@@ -338,7 +351,7 @@ c     Bernhardi end
 !
 !     initialisation of sm
 !
-      if(mass.or.buckling.or.coriolis) then
+      if((mass.eq.1).or.(buckling.eq.1).or.(coriolis.eq.1)) then
         do i=1,3*nope
           do j=1,3*nope
             sm(i,j)=0.d0
@@ -387,7 +400,6 @@ c     Bernhardi end
 !        as soon as the first contact element is discovered ne0 is
 !        determined and saved
 !
-            if(ne0.eq.0) ne0=nelem-1
          endif
          if((lakonl(7:7).eq.'A').or.(mortar.eq.0)) then
             call springstiff_n2f(xl,elas,konl,voldl,s,imat,elcon,nelcon,
@@ -403,7 +415,7 @@ c     Bernhardi end
      &        nplicon,npmat_,iperturb,springarea(1,iloc),nmethod,
      &        mi,ne0,nstate_,xstateini,xstate,reltime,
      &        nasym,iloc,jfaces,igauss,pslavsurf,
-     &        pmastsurf,clearini)
+     &        pmastsurf,clearini,kscale)
          endif
          return
       endif
@@ -571,7 +583,7 @@ c     Bernhardi end
 !
 c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
          if(((iperturb(1).eq.1).or.(iperturb(2).eq.1)).and.
-     &           stiffness.and.(.not.buckling))then
+     &           (stiffness.eq.1).and.(buckling.eq.0))then
 !
 !              stresses for 2nd order static and modal theory
 !
@@ -668,7 +680,7 @@ c            call orthotropic(elas,anisox)
 !           initialisation for the body forces
 !
          om=omx*rho
-         if(rhsi) then
+         if(rhsi.eq.1) then
             if(nbody.ne.0) then
                do ii=1,3
                   bodyf(ii)=bodyfx(ii)*rho
@@ -676,7 +688,7 @@ c            call orthotropic(elas,anisox)
             endif
          endif
 !
-         if(buckling) then
+         if(buckling.eq.1) then
 !
 !              buckling stresses
 !
@@ -703,10 +715,11 @@ c            call orthotropic(elas,anisox)
 !           determination of the stiffness, and/or mass and/or
 !           buckling matrix
 !
-         if(stiffness.or.mass.or.buckling.or.coriolis) then
+         if((stiffness.eq.1).or.(mass.eq.1).or.(buckling.eq.1).or.
+     &      (coriolis.eq.1)) then
 !
-            if(((iperturb(1).ne.1).and.(iperturb(2).ne.1)).or.buckling)
-     &           then
+            if(((iperturb(1).ne.1).and.(iperturb(2).ne.1)).or.
+     &          (buckling.eq.1)) then
                jj1=1
                do jj=1,nope
 !
@@ -727,7 +740,7 @@ c            call orthotropic(elas,anisox)
 !                   calculations, is done in a preliminary static
 !                   call
 !
-                     if(.not.buckling) then
+                     if(buckling.eq.0) then
 !
                         if(mattyp.eq.1) then
 !
@@ -796,7 +809,7 @@ c            call orthotropic(elas,anisox)
 !
 !                     mass matrix
 !
-                        if(mass) then
+                        if(mass.eq.1) then
                            sm(ii1,jj1)=sm(ii1,jj1)
      &                          +rho*shpj(4,ii)*shp(4,jj)*weight
                            sm(ii1+1,jj1+1)=sm(ii1,jj1)
@@ -805,7 +818,7 @@ c            call orthotropic(elas,anisox)
 !
 !                     Coriolis matrix
 !
-                        if(coriolis) then
+                        if(coriolis.eq.1) then
                            dmass=2.d0*
      &                        rho*shpj(4,ii)*shp(4,jj)*weight*dsqrt(omx)
                            sm(ii1,jj1+1)=sm(ii1,jj1+1)-p2(3)*dmass
@@ -858,7 +871,7 @@ c            call orthotropic(elas,anisox)
 !               lumping purposes: only for explicit nonlinear
 !               dynamic calculations
 !
-               if(mass.and.(iexpl.gt.1)) then
+               if((mass.eq.1).and.(iexpl.gt.1)) then
                   summass=summass+rho*xsj
                endif
 !
@@ -913,7 +926,7 @@ c            call orthotropic(elas,anisox)
 !
 !                    stiffness contribution of centrifugal forces
 !
-                     if(mass.and.(om.gt.0.d0)) then
+                     if((mass.eq.1).and.(om.gt.0.d0)) then
                         dmass=shpj(4,ii)*shp(4,jj)*weight*om
                         do m1=1,3
                            s(ii1+m1-1,jj1+m1-1)=s(ii1+m1-1,jj1+m1-1)-
@@ -927,7 +940,7 @@ c            call orthotropic(elas,anisox)
 !
 !                   mass matrix
 !
-                     if(mass) then
+                     if(mass.eq.1) then
                         sm(ii1,jj1)=sm(ii1,jj1)
      &                       +rho*shpj(4,ii)*shp(4,jj)*weight
                         sm(ii1+1,jj1+1)=sm(ii1,jj1)
@@ -936,7 +949,7 @@ c            call orthotropic(elas,anisox)
 !
 !                     Coriolis matrix
 !
-                     if(coriolis) then
+                     if(coriolis.eq.1) then
                         dmass=2.d0*
      &                    rho*shpj(4,ii)*shp(4,jj)*weight*dsqrt(omx)
                         sm(ii1,jj1+1)=sm(ii1,jj1+1)-p2(3)*dmass
@@ -962,7 +975,7 @@ c            call orthotropic(elas,anisox)
 !
 !        computation of the right hand side
 !
-         if(rhsi) then
+         if(rhsi.eq.1) then
 !
 !           distributed body flux
 !
@@ -1067,7 +1080,7 @@ c      write(*,*) nelem
 c      write(*,'(6(1x,e11.4))') ((s(i1,j1),i1=1,j1),j1=1,60)
 c      write(*,*)
 c
-      if((.not.buckling).and.(nload.ne.0)) then
+      if((buckling.eq.0).and.(nload.ne.0)) then
 !
 !       distributed loads
 !
@@ -1078,7 +1091,8 @@ c
                id=id-1
                cycle
             endif
-            read(sideload(id)(2:2),'(i1)') ig
+c            read(sideload(id)(2:2),'(i1)') ig
+            ig=ichar(sideload(id)(2:2))-48
 !
 !           check whether 8 or 9-nodes face
 !
@@ -1128,7 +1142,7 @@ c             if(iperturb(1).eq.0) then
                    enddo
                 enddo
              else
-                if(mass) then
+                if(mass.eq.1) then
                    do i=1,nopes
                       do j=1,3
                          xl1(j,i)=co(j,konl(ifaceq(i,ig)))
@@ -1151,7 +1165,7 @@ c             if(iperturb(1).eq.0) then
                    enddo
                 enddo
              else
-                if(mass) then
+                if(mass.eq.1) then
                    do i=1,nopes
                       do j=1,3
                          xl1(j,i)=co(j,konl(ifacet(i,ig)))
@@ -1174,7 +1188,7 @@ c             if(iperturb(1).eq.0) then
                    enddo
                 enddo
              else
-                if(mass) then
+                if(mass.eq.1) then
                    do i=1,nopes
                       do j=1,3
                          xl1(j,i)=co(j,konl(ifacew(i,ig)))
@@ -1218,7 +1232,7 @@ c             if(iperturb(1).eq.0) then
                 weight=weight2d4(i)
              endif
 !
-             if(rhsi) then
+             if(rhsi.eq.1) then
                 if(nopes.eq.9) then
                    call shape9q(xi,et,xl2,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.8) then
@@ -1243,7 +1257,8 @@ c             if(iperturb(1).eq.0) then
                          coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
                       enddo
                    enddo
-                   read(sideload(id)(2:2),'(i1)') jltyp
+c                   read(sideload(id)(2:2),'(i1)') jltyp
+                   jltyp=ichar(sideload(id)(2:2))-48
                    jltyp=jltyp+20
                    iscale=1
                    call dload(xload(1,id),istep,iinc,tvar,nelem,i,layer,
@@ -1264,7 +1279,8 @@ c             if(iperturb(1).eq.0) then
                          coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
                       enddo
                    enddo
-                   read(sideload(id)(2:2),'(i1)') jltyp
+c                   read(sideload(id)(2:2),'(i1)') jltyp
+                   jltyp=ichar(sideload(id)(2:2))-48
 !
                    entity='T'
                    six=6
@@ -1311,13 +1327,13 @@ c    Bernhardi end
      &                  *xsj2(3)*weight
                 enddo
 !
-!            stiffness contribution of the distributed load 
+!            stiffness< contribution of the distributed load 
 !            reference: Dhondt G., The Finite Element Method for
 !            three-dimensional thermomechanical Applications,
 !            Wiley, 2004, p 153, eqn. (3.54).
 !
-c             elseif((mass).and.(iperturb(1).ne.0)) then
-             elseif((mass).and.
+c             elseif((mass.eq.1).and.(iperturb(1).ne.0)) then
+             elseif((mass.eq.1).and.
      &            ((iperturb(1).eq.1).or.(iperturb(2).eq.1))) then
                 if(nopes.eq.9) then
                    call shape9q(xi,et,xl1,xsj2,xs2,shp2,iflag)
@@ -1343,7 +1359,8 @@ c             elseif((mass).and.(iperturb(1).ne.0)) then
                          coords(k)=coords(k)+xl1(k,j)*shp2(4,j)
                       enddo
                    enddo
-                   read(sideload(id)(2:2),'(i1)') jltyp
+c                   read(sideload(id)(2:2),'(i1)') jltyp
+                   jltyp=ichar(sideload(id)(2:2))-48
                    jltyp=jltyp+20
                    iscale=1
                    call dload(xload(1,id),istep,iinc,tvar,nelem,i,layer,
@@ -1364,7 +1381,8 @@ c             elseif((mass).and.(iperturb(1).ne.0)) then
                          coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
                       enddo
                    enddo
-                   read(sideload(id)(2:2),'(i1)') jltyp
+c                   read(sideload(id)(2:2),'(i1)') jltyp
+                   jltyp=ichar(sideload(id)(2:2))-48
 !
                    entity='T'
                    six=6
@@ -1533,7 +1551,7 @@ c     Bernhardi end
             enddo
          endif
 !
-         if(mass) then
+         if(mass.eq.1) then
             summass=2.d0*summass
             do i=1,60
                do j=i,60
@@ -1555,7 +1573,7 @@ c     Bernhardi end
          endif
       endif
 !
-      if(mass.and.(iexpl.gt.1)) then
+      if((mass.eq.1).and.(iexpl.gt.1)) then
 !
 !        scaling the diagonal terms of the mass matrix such that the total mass
 !        is right (LUMPING; for explicit dynamic calculations)
@@ -1601,7 +1619,21 @@ c            alp=.2215d0
       endif
 !
 c      if(nelem.eq.1) then
-c         write(*,'(8(1x,e11.4))') ((s(i,j),i=1,60),j=1,60)
+c         open(30,file='nelem1.dat',status='unknown')
+c         write(30,'(8(1x,e11.4))') ((s(i,j),i=1,60),j=1,60)
+c         close(30)
+c      elseif(nelem.eq.2) then
+c         open(31,file='nelem2.dat',status='unknown')
+c         write(31,'(8(1x,e11.4))') ((s(i,j),i=1,60),j=1,60)
+c         close(31)
+c      elseif(nelem.eq.3) then
+c         open(32,file='nelem3.dat',status='unknown')
+c         write(32,'(8(1x,e11.4))') ((s(i,j),i=1,60),j=1,60)
+c         close(32)
+c      else
+c         open(33,file='nelem4.dat',status='unknown')
+c         write(33,'(8(1x,e11.4))') ((s(i,j),i=1,60),j=1,60)
+c         close(33)
 c      endif
       return
       end

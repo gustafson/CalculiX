@@ -65,6 +65,12 @@
       open(13,file=fnfrd(1:i+5),status='unknown',err=71)
       close(13,status='delete',err=73)
 !
+!     delete the f.cvg file (it is reopened in compfluid.c)
+!
+      fnfrd=jobname(1:i)//'f.cvg'
+      open(12,file=fnfrd(1:i+5),status='unknown',err=71)
+      close(12,status='delete',err=73)
+!
 !     .sta-file
 !
       fnsta=jobname(1:i)//'.sta'
@@ -88,14 +94,14 @@
       write(11,104)
       write(11,105)
  102  format('SUMMARY OF C0NVERGENCE INFORMATION')
- 103  format('  STEP   INC  ATT   ITER    CONT.   RESID.        CORR.   
-     &   RESID.      CORR.'     )
- 104  format('                             EL.    FORCE         DISP    
-     &   FLUX        TEMP.'   )
- 105  format('                             (#)     (%)           (%)    
-     &    (%)         (%)')
+ 103  format('  STEP   INC  ATT   ITER     CONT.   RESID.        CORR.   
+     &    RESID.      CORR.'     )
+ 104  format('                              EL.    FORCE         DISP    
+     &    FLUX        TEMP.'   )
+ 105  format('                              (#)     (%)           (%)    
+     &     (%)         (%)')
 !
-!     contact elemengts
+!     contact elements
 !
       fncel='contactelements.inp'
       open(27,file=fncel(1:19),status='unknown',err=93)
@@ -126,7 +132,8 @@
       call exit(201)
  92   write(*,*) '*ERROR in openfile: could not delete file ',
      &  fncvg(1:i+4)
- 93   write(*,*) '*ERROR in openfile: could not open file ',fncel(1:19)
+ 93   write(*,*) '*ERROR in openfile: could not open file ',fncel(1:19),
+     &    ' which is a reserved file name for ccx contact output'
       call exit(201)
  94   write(*,*) '*ERROR in openfile: could not delete file ',
      &  fncel(1:19)

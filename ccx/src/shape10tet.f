@@ -32,9 +32,11 @@
 !
       integer i,j,k,iflag
 !
-      real*8 shp(4,10),xs(3,3),xsi(3,3),xl(3,10),sh(3)
+      real*8 shp(4,10),xs(3,3),xsi(3,3),xl(3,10),sh(3),xi,et,ze,xsj,a
 !
-      real*8 xi,et,ze,xsj,a
+      intent(in) xi,et,ze,xl,iflag
+!
+      intent(out) shp,xsj
 !
 !     shape functions and their glocal derivatives
 !

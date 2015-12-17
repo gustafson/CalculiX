@@ -67,12 +67,8 @@
          call exit(201)
       endif
 !     
-c      do k=1,ntr
-         read(10) (adview(k),k=1,ntr)
-c      enddo
-c      do k=1,2*nzsrad
-         read(10) (auview(k),k=1,2*nzsrad)
-c      enddo
+      read(10) (adview(k),k=1,ntr)
+      read(10) (auview(k),k=1,2*nzsrad)
       read(10)(fenv(k),k=1,ntr)
 !     
       close(10)

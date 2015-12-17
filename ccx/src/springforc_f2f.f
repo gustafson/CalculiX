@@ -21,7 +21,7 @@
      &  plicon,nplicon,npmat_,senergy,iener,cstr,mi,
      &  springarea,nmethod,ne0,nstate_,xstateini,
      &  xstate,reltime,ielas,iloc,jfaces,igauss,
-     &  pslavsurf,pmastsurf,clearini)
+     &  pslavsurf,pmastsurf,clearini,venergy,kscale)
 !
 !     calculates the force of the spring (face-to-face penalty)
 !
@@ -31,14 +31,14 @@
 !
       integer i,j,k,imat,ncmat_,ntmat_,nope,iflag,mi(*),
      &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),iener,
-     &  nmethod,ne0,nstate_,ielas,jfaces,
+     &  nmethod,ne0,nstate_,ielas,jfaces,kscale,
      &  iloc,igauss,nopes,nopem,nopep
 !
       real*8 xl(3,10),elas(21),t1l,al(3),vl(0:mi(2),19),stickslope,
      &  pl(3,19),xn(3),alpha,beta,fnl(3,19),tp(3),te(3),ftrial(3),
      &  t(3),dftrial,elcon(0:ncmat_,ntmat_,*),pproj(3),clear,
      &  xi,et,elconloc(21),plconloc(82),xk,val,xiso(20),yiso(20),
-     &  plicon(0:2*npmat_,ntmat_,*),um,senergy,cstr(6),dg,
+     &  plicon(0:2*npmat_,ntmat_,*),um,senergy,cstr(6),dg,venergy,
      &  dfshear,dfnl,springarea(2),overlap,pres,clearini(3,9,*),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),t1(3),t2(3),
      &  dt1,dte,alnew(3),reltime,weight,xsj2m(3),xs2m(3,7),shp2m(7,9),
@@ -206,7 +206,7 @@ c      endif
 !     
 !        linear overclosure/tied overclosure
 !     
-         elas(1)=-springarea(1)*elcon(2,1,imat)*clear
+         elas(1)=-springarea(1)*elcon(2,1,imat)*clear/kscale
          if(iener.eq.1) then
             senergy=-elas(1)*clear/2.d0;
          endif
@@ -265,18 +265,24 @@ c      endif
 !
 !     Coulomb friction for static calculations
 !
-      if((ncmat_.ge.7).or.(int(elcon(3,1,imat)).eq.4)) then
+      if((int(elcon(3,1,imat)).eq.4).and.(ncmat_.lt.7)) then
+         write(*,*) '*ERROR in springforc_f2f: for contact'
+         write(*,*) '       with pressure-overclosure=tied'
+         write(*,*) '       a stick slope using the *FRICTION'
+         write(*,*) '       card is mandatory'
+         call exit(201)
+      endif
+!
+      if(ncmat_.ge.7) then
 !
 !        tied contact
 !
          if(int(elcon(3,1,imat)).eq.4) then
             um=1.d30
-c            stickslope=elcon(2,1,imat)
          else
             um=elcon(6,1,imat)
-c            stickslope=elcon(7,1,imat)
          endif
-         stickslope=elcon(7,1,imat)
+         stickslope=elcon(7,1,imat)/kscale
 !
          if(um.gt.0.d0) then
             if(1.d0 - dabs(xn(1)).lt.1.5231d-6) then       
@@ -361,7 +367,8 @@ c            stickslope=elcon(7,1,imat)
             do i=1,3
                ftrial(i)=xk*te(i)
             enddo
-            dftrial=dsqrt(ftrial(1)**2+ftrial(2)**2+ftrial(3)**2)
+            dftrial=xk*dte
+c            dftrial=dsqrt(ftrial(1)**2+ftrial(2)**2+ftrial(3)**2)
 !     
 !     check whether stick or slip
 !     
@@ -378,6 +385,10 @@ c            stickslope=elcon(7,1,imat)
      &              ftrial(3)*t1(3))/springarea(1)
                cstr(6)=(ftrial(1)*t2(1)+ftrial(2)*t2(2)+
      &              ftrial(3)*t2(3))/springarea(1)
+!
+!              shear elastic energy
+!
+               if(iener.eq.1) senergy=senergy+dftrial*dte
             else
 !     
 !     slip
@@ -394,7 +405,14 @@ c            stickslope=elcon(7,1,imat)
                cstr(6)=(dfshear*ftrial(1)*t2(1)+
      &              dfshear*ftrial(2)*t2(2)+
      &              dfshear*ftrial(3)*t2(3))/springarea(1)
-               
+!
+!              shear elastic and viscous energy
+!
+               if(iener.eq.1) then
+                  senergy=senergy+dfshear*dfshear/xk
+                  venergy=venergy+dg*dfshear
+               endif
+!
             endif
          endif
 !     

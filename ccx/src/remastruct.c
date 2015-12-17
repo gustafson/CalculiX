@@ -51,14 +51,16 @@ void remastruct(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 
     /* decascading the MPC's */
 
-    printf(" Decascading the MPC's\n\n");
-   
-    callfrommain=0;
-    cascade(ipompc,&coefmpc,&nodempc,nmpc,
-	    mpcfree,nodeboun,ndirboun,nboun,ikmpc,
-	    ilmpc,ikboun,ilboun,&mpcend,&mpcmult,
-	    labmpc,nk,memmpc_,icascade,maxlenmpc,
-            &callfrommain,iperturb,ithermal);
+    if(*icascade>0){
+	printf(" Decascading the MPC's\n\n");
+	
+	callfrommain=0;
+	cascade(ipompc,&coefmpc,&nodempc,nmpc,
+		mpcfree,nodeboun,ndirboun,nboun,ikmpc,
+		ilmpc,ikboun,ilboun,&mpcend,&mpcmult,
+		labmpc,nk,memmpc_,icascade,maxlenmpc,
+		&callfrommain,iperturb,ithermal);
+    }
 
     /* determining the matrix structure */
     
@@ -67,12 +69,13 @@ void remastruct(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     if(nzs[1]<10) nzs[1]=10;   
     NNEW(mast1,ITG,nzs[1]);
     NNEW(ipointer,ITG,mt**nk);
-    RENEW(irow,ITG,nzs[1]);for(i=0;i<nzs[1];i++) irow[i]=0;
+    RENEW(irow,ITG,nzs[1]);
     
     mastruct(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,ipompc,
 	     nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,neq,
 	     ikmpc,ilmpc,ipointer,nzs,nmethod,ithermal,
-             ikboun,ilboun,iperturb,mi,mortar,typeboun,labmpc);
+             ikboun,ilboun,iperturb,mi,mortar,typeboun,labmpc,
+             iit,icascade);
 
     SFREE(ipointer);SFREE(mast1);
     RENEW(irow,ITG,nzs[2]);

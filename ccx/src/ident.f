@@ -24,8 +24,15 @@
 !                                                                             
       subroutine ident(x,px,n,id)
       implicit none
+!
       integer n,id,n2,m
+!
       real*8 x(n),px
+!
+      intent(in) x,px,n
+!
+      intent(out) id
+!
       id=0
       if(n.eq.0) return
       n2=n+1

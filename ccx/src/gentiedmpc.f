@@ -43,7 +43,7 @@
      &  ilmpc(*),ithermal(2),cfd,ncont,mpcfreeold,m,id1,ikboun(*),
      &  itriold,itrinew,ntriangle,ntriangle_,itriangle(100)
 !
-      real*8 cg(3,*),straight(16,*),co(3,*),p(3),
+      real*8 cg(3,*),straight(16,*),co(3,*),p(3),istartwrite,
      &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),pl(3,9),
      &  ratio(9),xi,et,coefmpc(*),tietol(3,*),tolloc
 !
@@ -81,8 +81,16 @@
 !
 !     opening a file to store the nodes which are not connected
 !
-c      open(40,file='WarnNodeMissMasterIntersect.nam',status='unknown')
-c      write(40,*) '*NSET,NSET=WarnNodeMissMasterIntersect'
+      open(40,file='WarnNodeMissTiedContact.nam',status='unknown')
+      write(40,*) '*NSET,NSET=WarnNodeMissTiedContact'
+      write(*,*) '*INFO in gentiedmpc:'
+      write(*,*) '      failed nodes (if any) are stored in file'
+      write(*,*) '      WarnNodeMissTiedContact.nam'
+      write(*,*) '      This file can be loaded into'
+      write(*,*) '      an active cgx-session by typing'
+      write(*,*) 
+     &     '      read WarnNodeMissTiedContact.nam inp'
+      write(*,*)
 !
       nmpctied=nmpc
 !
@@ -291,7 +299,7 @@ c                              write(*,*) '**regular solution'
                      write(*,*) '         found; tolerance: ',
      &                       tietol(1,i)
                   endif
-c                  write(40,*) node
+                  write(40,*) node
                 else
 !     
                   nelem=int(koncont(4,itri)/10.d0)
@@ -377,7 +385,7 @@ c                  write(40,*) node
      &                          node,' is not active;'
                            write(*,*) '         no tied constraint ',
      &                                'is generated'
-c                           write(40,*) node
+                           write(40,*) node
                            cycle
                         endif
                      endif
@@ -390,7 +398,7 @@ c                           write(40,*) node
      &                          node,' is not active;'
                            write(*,*) '         no tied constraint ',
      &                                'is generated'
-c                           write(40,*) node
+                           write(40,*) node
                            cycle
                         endif
                      endif
@@ -537,7 +545,7 @@ c                              write(*,*) '**regular solution'
                       write(*,*) '         found; tolerance: ',
      &                                tietol(1,i)
                      endif
-c                     write(40,*) node
+                     write(40,*) node
                   else
 !     
                      nelem=int(koncont(4,itri)/10.d0)
@@ -623,7 +631,7 @@ c                     write(40,*) node
      &                             node,' is not active;'
                               write(*,*) '         no tied constraint ',
      &                             'is generated'
-c                              write(40,*) node
+                              write(40,*) node
                               cycle
                            endif
                         endif
@@ -636,7 +644,7 @@ c                              write(40,*) node
      &                             node,' is not active;'
                               write(*,*) '         no tied constraint ',
      &                             'is generated'
-c                              write(40,*) node
+                              write(40,*) node
                               cycle
                            endif
                         endif
@@ -688,7 +696,7 @@ c                              write(40,*) node
 !
       nmpctied=nmpc-nmpctied
 !
-c      close(40)
+      close(40)
 !     
       return
 !

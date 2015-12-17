@@ -34,6 +34,11 @@
 !
       real*8 prop(*),xi,et,ze,weight,ratio,ratio2,dtheta,theta,r
 !
+      intent(in) lakonl,npropstart,prop,
+     &  kk
+!
+      intent(inout) weight,xi,et,ze,mint3d
+!
       if(lakonl(8:8).eq.'P') then
 !
 !        pipe cross section

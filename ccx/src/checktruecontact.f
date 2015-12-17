@@ -31,12 +31,16 @@
 !
       real*8 tietol(3,*),elcon(0:ncmat_,ntmat_,*)
 !
-      itruecontact=0
+!     if at least one tied contact is present, itruecontact
+!     is set to zero and no check is performed whether tension
+!     occurs in the contact areas
+!
+      itruecontact=1
       do i=1,ntie
          if(tieset(1,i)(81:81).eq.'C') then
             imat=int(tietol(2,i))
-            if(int(elcon(3,1,imat)).ne.4) then
-               itruecontact=1
+            if(int(elcon(3,1,imat)).eq.4) then
+               itruecontact=0
                exit
             endif
          endif

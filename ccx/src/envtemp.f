@@ -572,19 +572,19 @@ c      enddo
             endif
          enddo
       endif
-!      
-!     numbering the active degrees of freedom
-!     
-      ntq=0
-      do i=1,ntg
-         node=itg(i)
-         do  j=0,3
-            if (nactdog(j,node).ne.0) then
-               ntq=ntq+1
-               nactdog(j,node)=ntq
-            endif 
-         enddo
-      enddo
+c!      
+c!     numbering the active degrees of freedom
+c!     
+c      ntq=0
+c      do i=1,ntg
+c         node=itg(i)
+c         do  j=0,3
+c            if (nactdog(j,node).ne.0) then
+c               ntq=ntq+1
+c               nactdog(j,node)=ntq
+c            endif 
+c         enddo
+c      enddo
 !     
 !     numbering the active equations      
 !     
@@ -607,56 +607,150 @@ c      enddo
 !     taking additional MPC's into account
 !
       do i=1,nmpc
+!
+!        check whether network MPC
+!
          index=ipompc(i)
-         node=nodempc(1,index)
-         call nident(itg,node,ntg,id)
-         if(id.gt.0) then
-            if(itg(id).eq.node) then
-               index=nodempc(3,index)
-               if(index.ne.0) then
-                  do
-                     node=nodempc(1,index)
-                     call nident(itg,node,ntg,id)
-                     if(id.gt.0) then
-                        if(itg(id).eq.node) then
-                           index=nodempc(3,index)
-                           if(index.eq.0) then
-                              exit
-                           else
-                              cycle
-                           endif
-                        endif
-                     endif
-!
-!                    check for dummy nodes in the MPC
-!                    (needed to apply SPCs)
-!
-                     idof=8*(node-1)+nodempc(2,index)
-                     call nident(ikboun,idof,nboun,id)
-                     if(id.gt.0) then
-                        if(ikboun(id).eq.idof) then
-                           index=nodempc(3,index)
-                           if(index.eq.0) then
-                              exit
-                           else
-                              cycle
-                           endif
-                        endif
-                     endif
-!
-                     write(*,*) '*ERROR in envtemp: MPC contains'
-                     write(*,*) '       network nodes, e.g. node ',
-     &                  nodempc(1,ipompc(i)),' as well as'
-                     write(*,*) '       other nodes, e.g. node ',
-     &                  node
-                     call exit(201)
-                  enddo
+         do
+            node=nodempc(1,index)
+            call nident(itg,node,ntg,id)
+            if(id.gt.0) then
+               if(itg(id).eq.node) then
+                  labmpc(i)(1:7)='NETWORK'
+                  nteq=nteq+1
+                  exit
                endif
-               labmpc(i)(1:7)='NETWORK'
-               nteq=nteq+1
             endif
-         endif
+            index=nodempc(3,index)
+            if(index.eq.0) exit
+         enddo
+!
+!        if network MPC: store all involved nodes in itg
+!
+         if(labmpc(i)(1:7).ne.'NETWORK') cycle
+!
+         index=ipompc(i)
+         do
+            node=nodempc(1,index)
+            call nident(itg,node,ntg,id)
+            if(id.gt.0) then
+               if(itg(id).eq.node) then
+                  nactdog(nodempc(2,index),node)=1
+                  index=nodempc(3,index)
+                  if(index.eq.0) then
+                     exit
+                  else
+                     cycle
+                  endif
+               endif
+            endif
+!
+!           adding a node to itg
+!
+            ntg=ntg+1
+            do j=ntg,id+2,-1
+               itg(j)=itg(j-1)
+            enddo
+            itg(id+1)=node
+            nactdog(nodempc(2,index),node)=1
+            index=nodempc(3,index)
+            if(index.eq.0) exit
+         enddo
       enddo
+!
+!     removing all dofs for which a SPC exists
+!
+      do i=1,ntg
+         node=itg(i)
+         do j=0,2
+            if(nactdog(j,node).eq.0) cycle
+            idof=8*(node-1)+j
+            call nident(ikboun,idof,nboun,id)
+            if(id.gt.0) then
+               if(ikboun(id).eq.idof) then
+                  nactdog(j,node)=0
+               endif
+            endif
+         enddo
+      enddo
+!
+c      do i=1,nmpc
+c         index=ipompc(i)
+c         node=nodempc(1,index)
+c         call nident(itg,node,ntg,id)
+c         if(id.gt.0) then
+c            if(itg(id).eq.node) then
+c               index=nodempc(3,index)
+c               if(index.ne.0) then
+c                  do
+c                     node=nodempc(1,index)
+c                     call nident(itg,node,ntg,id)
+c                     if(id.gt.0) then
+c                        if(itg(id).eq.node) then
+c                           index=nodempc(3,index)
+c                           if(index.eq.0) then
+c                              exit
+c                           else
+c                              cycle
+c                           endif
+c                        endif
+c                     endif
+c!
+c!                    check for dummy nodes in the MPC
+c!                    (needed to apply SPCs)
+c!
+c                     idof=8*(node-1)+nodempc(2,index)
+c                     call nident(ikboun,idof,nboun,id)
+c                     if(id.gt.0) then
+c                        if(ikboun(id).eq.idof) then
+c                           index=nodempc(3,index)
+c                           if(index.eq.0) then
+c                              exit
+c                           else
+c                              cycle
+c                           endif
+c                        endif
+c                     endif
+c!
+c                     write(*,*) '*ERROR in envtemp: MPC contains'
+c                    write(*,*) '       network nodes, e.g. node ',
+c     &                  nodempc(1,ipompc(i)),' as well as'
+c                     write(*,*) '       other nodes, e.g. node ',
+c     &                  node
+c                     call exit(201)
+c                  enddo
+c               endif
+c               labmpc(i)(1:7)='NETWORK'
+c               nteq=nteq+1
+c            endif
+c         endif
+c      enddo
+!      
+!     numbering the active degrees of freedom
+!     
+      ntq=0
+      do i=1,ntg
+         node=itg(i)
+         do  j=0,3
+            if (nactdog(j,node).ne.0) then
+               ntq=ntq+1
+               nactdog(j,node)=ntq
+            endif 
+         enddo
+      enddo
+c
+c      open(30,file='dummy',status='unknown')
+c      write(30,*) 'nactdog'
+c      do i=1,ntg
+c         write(30,*) itg(i),(nactdog(j,itg(i)),j=0,3)
+c      enddo
+c
+c      write(30,*) ''
+c      write(30,*) 'nacteq'
+c      do i=1,ntg
+c         write(30,*) itg(i),(nacteq(j,itg(i)),j=0,3)
+c      enddo
+c      close(30)
 !
       if(ntq.ne.nteq) then
          write(*,*) '*ERROR in envtemp:'
@@ -666,7 +760,7 @@ c      enddo
          write(*,*) ' # of active degrees of freedom= ',ntq
          call exit(201)
       endif   
-      write(*,*) ''
+c      write(*,*) ''
 !  
       isothermflag=0
       ifreegn=1
@@ -684,17 +778,6 @@ c      enddo
             nacteq(3,node2)=node1
          endif
       enddo
-c
-c      write(30,*) 'nactdog'
-c      do i=1,ntg
-c         write(30,*) itg(i),(nactdog(j,itg(i)),j=0,3)
-c      enddo
-c
-c      write(30,*) ''
-c      write(30,*) 'nacteq'
-c      do i=1,ntg
-c         write(30,*) itg(i),(nacteq(j,itg(i)),j=0,3)
-c      enddo
 !
       return
       end

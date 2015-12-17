@@ -28,6 +28,11 @@
       real*8 t1l,shcon(0:3,ntmat_,*),sph,r,dvi,rhcon(0:1,ntmat_,*),
      &  rho
 !
+      intent(in) imat,ntmat_,t1l,shcon,nshcon,
+     &  rhcon,nrhcon
+!
+      intent(inout) r,dvi,sph,rho
+!
       two=2
       four=4
 !

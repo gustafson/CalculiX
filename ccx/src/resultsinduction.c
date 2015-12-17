@@ -68,7 +68,8 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
        double *xforc, ITG *nforc, double *thicke,
        double *shcon,ITG *nshcon,char *sideload,double *xload,
        double *xloadold,ITG *icfd,ITG *inomat,double *h0,ITG *islavnode,
-       ITG *nslavnode,ITG *ntie,ITG *ielprop,double *prop,ITG *iactive){
+       ITG *nslavnode,ITG *ntie,ITG *ielprop,double *prop,ITG *iactive,
+       double *energyini,double *energy){
       
     /* variables for multithreading procedure */
     
@@ -296,7 +297,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
        nelemload,nload,&ikin,ielmat,thicke,eme,emn,rhcon,nrhcon,shcon,
        nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,islavact,
        cdn,&mortar,islavnode,nslavnode,ntie,islavsurf,time,ielprop,prop,
-       veold));
+       veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,energy));
   
   return;
 

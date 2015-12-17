@@ -114,24 +114,30 @@
      &  ratio(9),dist,xl22(3,9),dpnode1(3,3),dpnode2(3,3),v1(3),
      &  v2(3),dh(3),xsj2(3),xs2(3,7),shp2(7,8)
 !
-      data ifaceq /4,3,2,1,11,10,9,12,21,
+      intent(in) sol,kstep,kinc,time,noel,npt,coords,
+     &     jltyp,temp,press,loadtype,area,vold,co,lakonl,konl,
+     &     ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,mi
+!
+      intent(out) flux,iscale
+!
+      include "gauss.f"
+!
+      ifaceq=reshape((/4,3,2,1,11,10,9,12,21,
      &            5,6,7,8,13,14,15,16,22,
      &            1,2,6,5,9,18,13,17,23,
      &            2,3,7,6,10,19,14,18,24,
      &            3,4,8,7,11,20,15,19,25,
-     &            4,1,5,8,12,17,16,20,26/
-      data ifacet /1,3,2,7,6,5,11,
+     &            4,1,5,8,12,17,16,20,26/),(/9,6/))
+      ifacet=reshape((/1,3,2,7,6,5,11,
      &             1,2,4,5,9,8,12,
      &             2,3,4,6,10,9,13,
-     &             1,4,3,8,10,7,14/
-      data ifacew /1,3,2,9,8,7,0,0,
+     &             1,4,3,8,10,7,14/),(/7,4/))
+      ifacew=reshape((/1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
-     &             4,6,3,1,12,15,9,13/
-      data iflag /3/
-!
-      include "gauss.f"
+     &             4,6,3,1,12,15,9,13/),(/8,5/))
+      iflag=3
 !
       nelem=noel
 !

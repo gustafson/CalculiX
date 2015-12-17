@@ -30,15 +30,17 @@ void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
                ITG *ipnei,ITG *neiel,ITG *mi){
 
   ITG i,j,k,l,index,idof1,idof2,node1,isubtract,nmast,ifree=0,istart,istartold,
-      nzs_,kflag,isize,*mast1=NULL,*irow=NULL,neighbor,mt=mi[1]+1,numfaces;
+      nzs_,kflag,isize,*mast1=NULL,*irow=NULL,neighbor,mt=mi[1]+1,numfaces,
+      *next=NULL;
 
   /* the indices in the comments follow FORTRAN convention, i.e. the
      fields start with 1 */
 
   mast1=*mast1p;irow=*irowp;
 
-  kflag=2;
+  kflag=1;
   nzs_=*nzs;
+  NNEW(next,ITG,nzs_);
 
   *neq=*ne;
 
@@ -55,87 +57,48 @@ void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
       }
 
       index=ipnei[i];
-      insert(ipointer,&mast1,&irow,&idof1,&idof1,&ifree,&nzs_);
+      insert(ipointer,&mast1,&next,&idof1,&idof1,&ifree,&nzs_);
       for(j=0;j<numfaces;j++){
 	  neighbor=neiel[index+j];
 	  if(neighbor==0) continue;
 	  idof2=neighbor;
-	  insert(ipointer,&mast1,&irow,&idof1,&idof2,&ifree,&nzs_);
+	  insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);
       }
 
   }
   
-  /*   storing the nonzero nodes in the SUPERdiagonal columns:
-       mast1 contains the row numbers,
-       irow the column numbers  */
-  
-  for(i=0;i<*neq;++i){
-      if(ipointer[i]==0){
-	  printf("*ERROR in mastructf: zero column\n");
-	  printf("       element=%" ITGFORMAT "\n",i+1);
-	  FORTRAN(stop,());
-      }
-      istart=ipointer[i];
-      while(1){
-	  istartold=istart;
-	  istart=irow[istart-1];
-	  irow[istartold-1]=i+1;
-	  if(istart==0) break;
-      }
-  }
-  
   if(*neq==0){
-      printf("\n*WARNING: no degrees of freedom in the model\n\n");
+      printf("\n *WARNING: no degrees of freedom in the model\n\n");
   }
-  
-  nmast=ifree;
+
+    /*   determination of the following fields:       
+
+       - irow: row numbers, column per column
+       - icol(i)=# SUBdiagonal nonzero's in column i
+       - jq(i)= location in field irow of the first SUBdiagonal
+         nonzero in column i  */
+
+    RENEW(irow,ITG,ifree);
+    nmast=0;
+    jq[0]=1;
+    for(i=0;i<*neq;i++){
+	index=ipointer[i];
+	do{
+	    if(index==0) break;
+	    irow[nmast++]=mast1[index-1];
+	    index=next[index-1];
+	}while(1);
+	jq[i+1]=nmast+1;
+	icol[i]=jq[i+1]-jq[i];
+    }
   
   /* summary */
   
   printf(" number of equations\n");
   printf(" %" ITGFORMAT "\n",*neq);
   printf(" number of nonzero lower triangular matrix elements\n");
-  printf(" %" ITGFORMAT "\n",nmast-(*neq));
+  printf(" %" ITGFORMAT "\n",nmast);
   printf("\n");
-  
-/* switching from a SUPERdiagonal inventory to a SUBdiagonal one:
-   since the nonzeros are located in symmetric positions mast1
-   can be considered to contain the column numbers and irow the
-   row numbers; after sorting mast1 the following results:
-   
-   - irow contains the row numbers of the SUBdiagonal
-   nonzero's, column per column
-   - mast1 contains the column numbers
-   
-   Furthermore, the following fields are determined:       
-   
-   - icol(i)=# SUBdiagonal nonzero's in column i
-   - jq(i)= location in field irow of the first SUBdiagonal
-   nonzero in column i  */
-  
-/* ordering the column numbers in mast1 */
-  
-  FORTRAN(isortii,(mast1,irow,&nmast,&kflag));
-  
-/* filtering out the diagonal elements and generating icol and jq */
-  
-  isubtract=0;
-  for(i=0;i<*neq;++i){icol[i]=0;}
-  k=0;
-  for(i=0;i<nmast;++i){
-      if(mast1[i]==irow[i]){++isubtract;}
-      else{
-	  mast1[i-isubtract]=mast1[i];
-	  irow[i-isubtract]=irow[i];
-	  if(k!=mast1[i]){
-	      for(l=k;l<mast1[i];++l){jq[l]=i+1-isubtract;}
-	      k=mast1[i];
-	  }
-	  ++icol[k-1];
-      }
-  }
-  nmast=nmast-isubtract;
-  for(l=k;l<*neq+1;++l){jq[l]=nmast+1;}
   
 /* sorting the row numbers within each column */
   
@@ -147,6 +110,8 @@ void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
   }
   
   *nzs=jq[*neq]-1;
+
+  SFREE(next);
   
   *mast1p=mast1;*irowp=irow;
   

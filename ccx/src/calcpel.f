@@ -27,7 +27,7 @@
       real*8 vel(nef,0:5),b(*)
 !
       do i=1,ne
-         vel(i,4)=b(i)
+         vel(i,4)=vel(i,4)+b(i)
 c         write(*,*) i
 c         write(*,*) nactdoh(i)
 c         write(*,*) b(nactdoh(i))

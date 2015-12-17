@@ -12,9 +12,9 @@
 
 
 /* liefert double aus string von position a bis b */
-double stof(char *string, ITG a, ITG b)
+double stof(char *string, int a, int b)
 {
-  register ITG    n, i;
+  register int    n, i;
   static char  puffer[MAX_LINE_LENGTH];
 
   n=-1;

@@ -76,10 +76,10 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     inputformat=0,ngraph=1,mt=mi[1]+1,mass[2]={0,0}, stiffness=1, buckling=0, 
     rhsi=1, intscheme=0, noddiam=-1,*ipneigh=NULL,*neigh=NULL,ne0,
     *integerglob=NULL,ntie,icfd=0,*inomat=NULL,mortar=0,*islavnode=NULL,
-    *islavact=NULL,*nslavnode=NULL,*islavsurf=NULL;
+    *islavact=NULL,*nslavnode=NULL,*islavsurf=NULL,kscale=1;
 
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,
-    *workl=NULL,*d=NULL,sigma,*temp_array=NULL,
+    *workl=NULL,*d=NULL,sigma,*temp_array=NULL,*fnext=NULL,
     *een=NULL,cam[5],*f=NULL,*fn=NULL,qa[3],*fext=NULL,
     time=0.,*epn=NULL,*fnr=NULL,*fni=NULL,*emn=NULL,*cdn=NULL,
     *xstateini=NULL,*xstiff=NULL,*stiini=NULL,*vini=NULL,*stx=NULL,
@@ -89,7 +89,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     *vmax=NULL,*stnmax=NULL,*cs=NULL,*springarea=NULL,*eenmax=NULL,
     *emeini=NULL,*doubleglob=NULL,*au=NULL,*clearini=NULL,
     *ad=NULL,*b=NULL,*aub=NULL,*adb=NULL,*pslavsurf=NULL,*pmastsurf=NULL,
-    *cdnr=NULL,*cdni=NULL;
+    *cdnr=NULL,*cdni=NULL,*energyini=NULL,*energy=NULL;
 
   /* buckling routine; only for mechanical applications */
 
@@ -101,6 +101,8 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
   ITG token;
 #endif
  
+  ne0=*ne;
+
   /* copying the frequency parameters */
 
   nev=mei[0];
@@ -158,7 +160,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	     &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 	     sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	     &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
-	     islavsurf,ielprop,prop);
+	     islavsurf,ielprop,prop,energyini,energy,&kscale);
   }else{
      results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	     elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -176,7 +178,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	     &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 	     sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	     &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
-	     islavsurf,ielprop,prop);
+	     islavsurf,ielprop,prop,energyini,energy,&kscale);
   }
 
   SFREE(v);SFREE(fn);SFREE(stx);SFREE(inum);
@@ -204,7 +206,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
 	      xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,pmastsurf,
-	      &mortar,clearini,ielprop,prop));
+	      &mortar,clearini,ielprop,prop,&ne0,fnext,&kscale));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -222,7 +224,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
               xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,
-	      pmastsurf,&mortar,clearini,ielprop,prop));
+	      pmastsurf,&mortar,clearini,ielprop,prop,&ne0,fnext,&kscale));
   }
 
   /* determining the right hand side */
@@ -313,6 +315,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
   NNEW(eei,double,6*mi[0]**ne);
   if(*nener==1){
       NNEW(stiini,double,6*mi[0]**ne);
+      NNEW(emeini,double,6*mi[0]**ne);
       NNEW(enerini,double,mi[0]**ne);}
 
   if(*iperturb==0){
@@ -333,7 +336,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    &ne0,xforc,nforc,thicke,shcon,nshcon,
 	    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
-	    islavsurf,ielprop,prop);}
+	    islavsurf,ielprop,prop,energyini,energy,&kscale);}
   else{
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	    stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -351,7 +354,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    &ne0,xforc,nforc,thicke,shcon,nshcon,
 	    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
-	    islavsurf,ielprop,prop);
+	    islavsurf,ielprop,prop,energyini,energy,&kscale);
   }
 
   for(k=0;k<mt**nk;++k){
@@ -407,7 +410,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
               xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,
-	      pmastsurf,&mortar,clearini,ielprop,prop));
+	      pmastsurf,&mortar,clearini,ielprop,prop,&ne0,fnext,&kscale));
   }
   else{
     FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -425,7 +428,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      ibody,xloadold,&reltime,veold,springarea,nstate_,
               xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,
-	      pmastsurf,&mortar,clearini,ielprop,prop));
+	      pmastsurf,&mortar,clearini,ielprop,prop,&ne0,fnext,&kscale));
   }
 
   SFREE(stx);SFREE(fext);if(*nbody>0) SFREE(ipobody);
@@ -668,7 +671,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      &ne0,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
-	      islavsurf,ielprop,prop);}
+	      islavsurf,ielprop,prop,energyini,energy,&kscale);}
     else{
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	      stx,elcon,
@@ -687,7 +690,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      &ne0,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
-	      islavsurf,ielprop,prop);
+	      islavsurf,ielprop,prop,energyini,energy,&kscale);
     }
 
     ++*kode;
@@ -710,7 +713,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
   SFREE(v);SFREE(fn);SFREE(stn);SFREE(inum);SFREE(stx);SFREE(z);SFREE(d);SFREE(eei);
   SFREE(xstiff);
   if(*nener==1){
-      SFREE(stiini);SFREE(enerini);}
+      SFREE(stiini);SFREE(emeini);SFREE(enerini);}
 
   if(strcmp1(&filab[261],"E   ")==0) SFREE(een);
   if(strcmp1(&filab[2697],"ME  ")==0) SFREE(emn);

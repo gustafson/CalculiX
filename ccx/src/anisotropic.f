@@ -25,6 +25,10 @@
 !
       real*8 anisol(21),anisox(3,3,3,3)
 !
+      intent(in) anisol
+!
+      intent(out) anisox
+!
       anisox(1,1,1,1)=anisol(1)
       anisox(1,1,1,2)=anisol(7)
       anisox(1,1,1,3)=anisol(11)

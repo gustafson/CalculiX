@@ -788,7 +788,7 @@ void spooles_factor_rad(double *ad, double *au,  double *adb, double *aub,
 	int size = *neq;
 	InpMtx *mtxA;
 
-	printf(" Factoring the system of equations using the unsymmetric spooles solver\n\n");
+	printf(" Factoring the system of radiation equations using the unsymmetric spooles solver\n\n");
 
 /*	if(*neq==0) return;*/
  
@@ -1029,7 +1029,7 @@ void spooles_solve_rad(double *b, ITG *neq)
 	int size = *neq;
 	DenseMtx *mtxB,*mtxX;
 
-	printf(" solving the system of equations using the unsymmetric spooles solver\n");
+	printf(" solving the system of radiation equations using the unsymmetric spooles solver\n");
 
 	{
 		int i;

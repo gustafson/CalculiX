@@ -16,7 +16,8 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine calcguesstincf(nface,dmin,vfa,umfa,tincfguess)
+      subroutine calcguesstincf(nface,dmin,vfa,umfa,cvfa,hcfa,ithermal,
+     &        tincfguess,compressible)
 !
 !     calculates a guess for tincf based on the minimum of:
 !       dmin/(local velocity)
@@ -26,18 +27,36 @@
 !
       implicit none
 !
-      integer nface,i
+      integer nface,i,ithermal,compressible
 !
-      real*8 vfa(0:5,*),umax,dmin,umfa(*),tincfguess
+      real*8 vfa(0:5,*),umax,dmin,umfa(*),tincfguess,cvfa(*),hcfa(*)
 !
       tincfguess=1.d30
       do i=1,nface
+!
+!        convection
+!
          umax=dsqrt(vfa(1,i)*vfa(1,i)+
      &              vfa(2,i)*vfa(2,i)+
      &              vfa(3,i)*vfa(3,i))
          if(umax.gt.1.d-30) tincfguess=min(tincfguess,dmin/umax)
-         tincfguess=min(tincfguess,vfa(5,i)*dmin*dmin/
-     &                  (2.d0*umfa(i)))
+!
+!        viscous diffusion
+!
+         if((umfa(i).gt.0.d0).and.(vfa(5,i).gt.0.d0)) then
+            tincfguess=min(tincfguess,vfa(5,i)*dmin*dmin/
+     &           (2.d0*umfa(i)))
+         endif
+!
+!        thermal diffusion
+!
+         if(ithermal.gt.0) then
+            if((hcfa(i).gt.0.d0).and.(cvfa(i).gt.0.d0).and.
+     &         (vfa(5,i).gt.0.d0)) then
+               tincfguess=min(tincfguess,vfa(5,i)*cvfa(i)*dmin*dmin/
+     &              (2.d0*hcfa(i)))
+            endif
+         endif
       enddo
 !     
       return

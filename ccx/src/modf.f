@@ -16,15 +16,15 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      integer function modf(m,x)
+      integer function modf(m,ix)
 !     
       implicit none
 !     
-      integer x,m,a
+      integer ix,m,ia
 !     
-      a=0.0
-      if(x.le.0)a=m
-      modf=x+a-(int((x+a-1)/m))*m
+      ia=0
+      if(ix.le.0)ia=m
+      modf=ix+ia-(int((ix+ia-1)/m))*m
       if(modf.lt.1)modf=modf+m
 !     
       return

@@ -48,14 +48,14 @@
       npmat=0
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in dashpots: *DASHPOT should be placed'
+         write(*,*) '*ERROR reading *DASHPOT: *DASHPOT should be placed'
          write(*,*) '  before all step definitions'
          call exit(201)
       endif
 !
       nmat=nmat+1
       if(nmat.gt.nmat_) then
-         write(*,*) '*ERROR in materials: increase nmat_'
+         write(*,*) '*ERROR reading *DASHPOT: increase nmat_'
          call exit(201)
       endif
       matname(nmat)(1:7)='DASHPOT'
@@ -71,7 +71,7 @@
             elset(ipos:ipos)='E'
          else
             write(*,*) 
-     &        '*WARNING in dashpots: parameter not recognized:'
+     &        '*WARNING reading *DASHPOT: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -104,7 +104,7 @@
             ntmat=ntmat+1
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
-               write(*,*) '*ERROR in dashpots: increase ntmat_'
+               write(*,*) '*ERROR reading *DASHPOT: increase ntmat_'
                call exit(201)
             endif
             do i=1,2
@@ -141,7 +141,7 @@
                npmat=0
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
-                  write(*,*) '*ERROR in dashpots: increase ntmat_'
+                  write(*,*) '*ERROR reading *DASHPOT: increase ntmat_'
                   call exit(201)
                endif
                nplicon(0,nmat)=ntmat
@@ -153,7 +153,7 @@
                npmat=0
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
-                  write(*,*) '*ERROR in dashpots: increase ntmat_'
+                  write(*,*) '*ERROR reading *DASHPOT: increase ntmat_'
                   call exit(201)
                endif
                nplicon(0,nmat)=ntmat
@@ -167,7 +167,7 @@
             enddo
             npmat=npmat+1
             if(npmat.gt.npmat_) then
-               write(*,*) '*ERROR in dashpots: increase npmat_'
+               write(*,*) '*ERROR reading *DASHPOT: increase npmat_'
                call exit(201)
             endif
             nplicon(ntmat,nmat)=npmat
@@ -175,7 +175,7 @@
       endif
 !
       if(ntmat.eq.0) then
-         write(*,*) '*ERROR in dashpots: *DASHPOT card without data'
+         write(*,*)'*ERROR reading *DASHPOT: *DASHPOT card without data'
          call exit(201)
       endif
       do i=1,nset
@@ -183,7 +183,7 @@
       enddo
       if(i.gt.nset) then
          elset(ipos:ipos)=' '
-         write(*,*) '*ERROR in dashpots: element set ',elset
+         write(*,*) '*ERROR reading *DASHPOT: element set ',elset
          write(*,*) '       has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
      &"*DASHPOT%")

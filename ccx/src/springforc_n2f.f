@@ -20,7 +20,7 @@
      &  elas,fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
      &  plicon,nplicon,npmat_,senergy,iener,cstr,mi,
      &  springarea,nmethod,ne0,nstate_,xstateini,
-     &  xstate,reltime,ielas)
+     &  xstate,reltime,ielas,venergy)
 !
 !     calculates the force of the spring (node-to-face penalty)
 !
@@ -34,7 +34,7 @@
 !
       real*8 xl(3,10),elas(21),ratio(9),t1l,al(3),vl(0:mi(2),10),
      &  pl(3,10),xn(3),dm,alpha,beta,fnl(3,10),tp(3),te(3),ftrial(3),
-     &  dist,t(3),dftrial,
+     &  dist,t(3),dftrial,overclosure,venergy,
      &  elcon(0:ncmat_,ntmat_,*),pproj(3),xsj2(3),xs2(3,7),clear,
      &  shp2(7,9),xi,et,elconloc(21),plconloc(802),xk,fk,dd,val,
      &  xiso(200),yiso(200),dd0,plicon(0:2*npmat_,ntmat_,*),
@@ -67,68 +67,92 @@
       endif
 !     
       if(lakonl(7:7).eq.'A') then
-         dd0=dsqrt((xl(1,2)-xl(1,1))**2
+         if(lakonl(4:6).eq.'RNG') then
+!
+!           SPRINGA-element
+!
+            dd0=dsqrt((xl(1,2)-xl(1,1))**2
      &           +(xl(2,2)-xl(2,1))**2
      &           +(xl(3,2)-xl(3,1))**2)
-         dd=dsqrt((pl(1,2)-pl(1,1))**2
+            dd=dsqrt((pl(1,2)-pl(1,1))**2
      &           +(pl(2,2)-pl(2,1))**2
      &           +(pl(3,2)-pl(3,1))**2)
-         do i=1,3
-            xn(i)=(pl(i,2)-pl(i,1))/dd
-         enddo
-         val=dd-dd0
-!
-!        interpolating the material data
-!
-         call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
-     &     elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
-!
-!        calculating the spring force and the spring constant
-!
-         if(kode.eq.2)then
-            xk=elconloc(1)
-            fk=xk*val
-            if(iener.eq.1) then
-               senergy=fk*val/2.d0
-            endif
-         else
-            niso=int(plconloc(801))
-            do i=1,niso
-               xiso(i)=plconloc(2*i-1)
-               yiso(i)=plconloc(2*i)
+            do i=1,3
+               xn(i)=(pl(i,2)-pl(i,1))/dd
             enddo
-            call ident(xiso,val,niso,id)
-            if(id.eq.0) then
-               xk=0.d0
-               fk=yiso(1)
+            val=dd-dd0
+!     
+!     interpolating the material data
+!     
+            call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
+     &           elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
+!     
+!     calculating the spring force and the spring constant
+!     
+            if(kode.eq.2)then
+               xk=elconloc(1)
+               fk=xk*val
                if(iener.eq.1) then
-                  senergy=fk*val;
-               endif
-            elseif(id.eq.niso) then
-               xk=0.d0
-               fk=yiso(niso)
-               if(iener.eq.1) then
-                  senergy=yiso(1)*xiso(1)
-                  do i=2,niso
-                     senergy=senergy+(xiso(i)-xiso(i-1))*
-     &                               (yiso(i)+yiso(i-1))/2.d0
-                  enddo
-                  senergy=senergy+(val-xiso(niso))*yiso(niso)
+                  senergy=fk*val/2.d0
                endif
             else
-               xk=(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))
-               fk=yiso(id)+xk*(val-xiso(id))
-               if(iener.eq.1) then
-                  senergy=yiso(1)*xiso(1)
-                  do i=2, id
-                     senergy=senergy+(xiso(i)-xiso(i-1))*
-     &                    (yiso(i)+yiso(i-1))/2.d0
-                  enddo
-                  senergy=senergy+(val-xiso(id))*(fk+yiso(id))/2.d0
+               niso=int(plconloc(801))
+               do i=1,niso
+                  xiso(i)=plconloc(2*i-1)
+                  yiso(i)=plconloc(2*i)
+               enddo
+               call ident(xiso,val,niso,id)
+               if(id.eq.0) then
+                  xk=0.d0
+                  fk=yiso(1)
+                  if(iener.eq.1) then
+                     senergy=fk*val;
+                  endif
+               elseif(id.eq.niso) then
+                  xk=0.d0
+                  fk=yiso(niso)
+                  if(iener.eq.1) then
+                     senergy=yiso(1)*xiso(1)
+                     do i=2,niso
+                        senergy=senergy+(xiso(i)-xiso(i-1))*
+     &                       (yiso(i)+yiso(i-1))/2.d0
+                     enddo
+                     senergy=senergy+(val-xiso(niso))*yiso(niso)
+                  endif
+               else
+                  xk=(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))
+                  fk=yiso(id)+xk*(val-xiso(id))
+                  if(iener.eq.1) then
+                     senergy=yiso(1)*xiso(1)
+                     do i=2, id
+                        senergy=senergy+(xiso(i)-xiso(i-1))*
+     &                       (yiso(i)+yiso(i-1))/2.d0
+                     enddo
+                     senergy=senergy+(val-xiso(id))*(fk+yiso(id))/2.d0
+                  endif
                endif
             endif
-         endif
+         else
+!     
+!           GAP-element
+!           interpolating the material data
+!     
+            call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
+     &           elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
 !
+            dd=elconloc(1)
+            xn(1)=elconloc(2)
+            xn(2)=elconloc(3)
+            xn(3)=elconloc(4)
+            xk=elconloc(5)
+            pi=4.d0*datan(1.d0)
+            eps=pi*elconloc(6)/xk
+            overclosure=-dd-xn(1)*(vl(1,2)-vl(1,1))
+     &                     -xn(2)*(vl(2,2)-vl(2,1))
+     &                     -xn(3)*(vl(3,2)-vl(3,1))
+            fk=-xk*overclosure*(0.5d0+datan(overclosure/eps)/pi)
+         endif
+!     
          do i=1,3
             fnl(i,1)=-fk*xn(i)
             fnl(i,2)=fk*xn(i)
@@ -371,7 +395,8 @@
             do i=1,3
                ftrial(i)=xk*te(i)
             enddo
-            dftrial=dsqrt(ftrial(1)**2+ftrial(2)**2+ftrial(3)**2)
+            dftrial=xk*dte
+c            dftrial=dsqrt(ftrial(1)**2+ftrial(2)**2+ftrial(3)**2)
 !     
 !     check whether stick or slip
 !     
@@ -389,6 +414,10 @@ c     write(*,*)'STICK'
      &              ftrial(3)*t1(3))/springarea(1)
                cstr(6)=(ftrial(1)*t2(1)+ftrial(2)*t2(2)+
      &              ftrial(3)*t2(3))/springarea(1)
+!
+!              shear elastic energy
+!
+               if(iener.eq.1) senergy=senergy+dftrial*dte
             else
 !     
 !     slip
@@ -406,7 +435,14 @@ c     write(*,*)'SLIP'
                cstr(6)=(dfshear*ftrial(1)*t2(1)+
      &              dfshear*ftrial(2)*t2(2)+
      &              dfshear*ftrial(3)*t2(3))/springarea(1)
-               
+!
+!              shear elastic and viscous energy
+!
+               if(iener.eq.1) then
+                  senergy=senergy+dfshear*dfshear/xk
+                  venergy=venergy+dg*dfshear
+               endif
+!
             endif
          endif
 !     

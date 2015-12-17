@@ -89,6 +89,12 @@
                write(*,*) '*ERROR reading *ELASTIC: increase ntmat_'
                call exit(201)
             endif
+            if(n.lt.2) then
+               write(*,*) '*ERROR reading *ELASTIC: not enough'
+               write(*,*) '       constants on the input line'
+               call inputerror(inpc,ipoinpc,iline,
+     &"*ELASTIC%")
+            endif
             do i=1,2
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                 elcon(i,ntmat,nmat)
@@ -114,6 +120,12 @@
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *ELASTIC: increase ntmat_'
                call exit(201)
+            endif
+            if(n.lt.8) then
+               write(*,*) '*ERROR reading *ELASTIC: not enough'
+               write(*,*) '       constants on the input line'
+               call inputerror(inpc,ipoinpc,iline,
+     &"*ELASTIC%")
             endif
             do i=1,8
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
@@ -177,6 +189,12 @@
                write(*,*) '*ERROR reading *ELASTIC: increase ntmat_'
                call exit(201)
             endif
+            if(n.lt.8) then
+               write(*,*) '*ERROR reading *ELASTIC: not enough'
+               write(*,*) '       constants on the input line'
+               call inputerror(inpc,ipoinpc,iline,
+     &"*ELASTIC%")
+            endif
             do i=1,8
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                   elcon(i,ntmat,nmat)
@@ -194,6 +212,12 @@
      &"*ELASTIC%")
                call exit(201)
             endif
+            if(n.lt.2) then
+               write(*,*) '*ERROR reading *ELASTIC: not enough'
+               write(*,*) '       constants on the input line'
+               call inputerror(inpc,ipoinpc,iline,
+     &"*ELASTIC%")
+            endif
             do i=1,8
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &            elcon(8+i,ntmat,nmat)
@@ -210,6 +234,12 @@
                call inputerror(inpc,ipoinpc,iline,
      &"*ELASTIC%")
                call exit(201)
+            endif
+            if(n.lt.5) then
+               write(*,*) '*ERROR reading *ELASTIC: not enough'
+               write(*,*) '       constants on the input line'
+               call inputerror(inpc,ipoinpc,iline,
+     &"*ELASTIC%")
             endif
             do i=1,5
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 

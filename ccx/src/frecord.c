@@ -14,9 +14,9 @@
 
 
 /* liest einen Record bis '\n'; uebergibt Anzahl gelesene Zeichen */
-ITG frecord( FILE *handle1,  char *string)
+int frecord( FILE *handle1,  char *string)
 {
-  register ITG i, n, c;
+  register int i, n, c;
 
   for (i=0; i<MAX_LINE_LENGTH-1; i++)
   {

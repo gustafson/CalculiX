@@ -34,10 +34,16 @@
      &  t0l,t0(*),rhcon(0:1,ntmat_,*),physcon(*),co(3,*),dd,bodyf(3),
      &  vold(0:mi(2),*)
 !
-      data two /2/
+      intent(in) ne,ipkon,lakon,kon,t0,co,rhcon,
+     &       nrhcon,ntmat_,physcon,nelem,ielmat,ithermal,
+     &       vold,mi
+!
+      intent(inout) bodyf,cgr,icalccg
+!
+c      data two /2/
+      two=2
 !
       if(icalccg.eq.0) then
-c         write(*,*) 'cg calculated anew'
 !
 !        first call: calculate the center of gravity of all elements
 !

@@ -89,7 +89,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     *ikactmechr=NULL,*ikactmechi=NULL,nactmechr,nactmechi,intpointvar,
     iforc,iload,ne0,*iponoel=NULL,*inoel=NULL,*imdelem=NULL,
     nmdelem,*integerglob=NULL,*nshcon=NULL,nherm,icfd=0,*inomat=NULL,
-    *islavnode=NULL,*nslavnode=NULL,*islavsurf=NULL;
+    *islavnode=NULL,*nslavnode=NULL,*islavsurf=NULL,iit=-1;
 
   long long i2;
 
@@ -115,7 +115,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     *stna=NULL,*stnp=NULL,*bp=NULL,*eenmax=NULL,*clearini=NULL,
     *doubleglob=NULL,*shcon=NULL,*veold=NULL,*xmr=NULL,*xmi=NULL,*eig=NULL,
     *ax=NULL,*bx=NULL,*pslavsurf=NULL,*pmastsurf=NULL,xnull=0.,
-    *cdnr=NULL,*cdni=NULL,*tinc,*tper;
+    *cdnr=NULL,*cdni=NULL,*tinc,*tper,*energyini=NULL,*energy=NULL;
 
   /* dummy arguments for the call of expand*/
 
@@ -174,22 +174,25 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   strcat(fneig,".eig");
 
   if((f1=fopen(fneig,"rb"))==NULL){
-    printf("*ERROR in steadystate: cannot open eigenvalue file for reading");
+    printf(" *ERROR in steadystate: cannot open eigenvalue file for reading");
     exit(0);
   }
 
-  printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
-  printf("        1) the nonexistence of the .eig file\n");
-  printf("        2) other boundary conditions than in the input deck\n");
-  printf("           which created the .eig file\n\n");
-
   if(fread(&cyclicsymmetry,sizeof(ITG),1,f1)!=1){
-      printf("*ERROR in steadystate reading the cyclic symmetry flag in the eigenvalue file");
+       printf(" *ERROR in steadystate reading the cyclic symmetry flag in the eigenvalue file");
+       printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+       printf("        1) the nonexistence of the .eig file\n");
+       printf("        2) other boundary conditions than in the input deck\n");
+       printf("           which created the .eig file\n\n");
       exit(0);
   }
 
   if(fread(&nherm,sizeof(ITG),1,f1)!=1){
-      printf("*ERROR in steadystate reading the Hermitian flag in the eigenvalue file");
+      printf(" *ERROR in steadystate reading the Hermitian flag in the eigenvalue file");
+      printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+      printf("        1) the nonexistence of the .eig file\n");
+      printf("        2) other boundary conditions than in the input deck\n");
+      printf("           which created the .eig file\n\n");
       exit(0);
   }
 
@@ -282,14 +285,22 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       neg=*ne;
 
       if(fread(&nev,sizeof(ITG),1,f1)!=1){
-	  printf("*ERROR in steadystate reading the number of eigenvalues in the eigenvalue file");
+	  printf(" *ERROR in steadystate reading the number of eigenvalues in the eigenvalue file");
+	  printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+	  printf("        1) the nonexistence of the .eig file\n");
+	  printf("        2) other boundary conditions than in the input deck\n");
+	  printf("           which created the .eig file\n\n");
 	  exit(0);
       }
 
       if(nherm==1){
 	  NNEW(d,double,nev);
 	  if(fread(d,sizeof(double),nev,f1)!=nev){
-	      printf("*ERROR in steadystate reading the eigenvalues in the eigenvalue file...");
+	      printf(" *ERROR in steadystate reading the eigenvalues in the eigenvalue file...");
+	      printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+	      printf("        1) the nonexistence of the .eig file\n");
+	      printf("        2) other boundary conditions than in the input deck\n");
+	      printf("           which created the .eig file\n\n");
 	      exit(0);
 	  }
 
@@ -299,7 +310,11 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       }else{
 	  NNEW(d,double,2*nev);
 	  if(fread(d,sizeof(double),2*nev,f1)!=2*nev){
-	      printf("*ERROR in steadystate reading the eigenvalues in the eigenvalue file...");
+	      printf(" *ERROR in steadystate reading the eigenvalues in the eigenvalue file...");
+	      printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+	      printf("        1) the nonexistence of the .eig file\n");
+	      printf("        2) other boundary conditions than in the input deck\n");
+	      printf("           which created the .eig file\n\n");
 	      exit(0);
 	  }
       }
@@ -312,24 +327,40 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       /* reading the stiffness matrix */
       
       if(fread(ad,sizeof(double),neq[1],f1)!=neq[1]){
-	  printf("*ERROR in steadystate reading the diagonal of the stiffness matrix in the eigenvalue file");
+	  printf(" *ERROR in steadystate reading the diagonal of the stiffness matrix in the eigenvalue file");
+	  printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+	  printf("        1) the nonexistence of the .eig file\n");
+	  printf("        2) other boundary conditions than in the input deck\n");
+	  printf("           which created the .eig file\n\n");
 	  exit(0);
       }
       
       if(fread(au,sizeof(double),nzs[2],f1)!=nzs[2]){
-	  printf("*ERROR in steadystate reading the off-diagonals of the stiffness matrix in the eigenvalue file");
+	  printf(" *ERROR in steadystate reading the off-diagonals of the stiffness matrix in the eigenvalue file");
+	  printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+	  printf("        1) the nonexistence of the .eig file\n");
+	  printf("        2) other boundary conditions than in the input deck\n");
+	  printf("           which created the .eig file\n\n");
 	  exit(0);
       }
       
       /* reading the mass matrix */
       
       if(fread(adb,sizeof(double),neq[1],f1)!=neq[1]){
-	  printf("*ERROR in steadystate reading the diagonal of the mass matrix in the eigenvalue file");
+	  printf(" *ERROR in steadystate reading the diagonal of the mass matrix in the eigenvalue file");
+	  printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+	  printf("        1) the nonexistence of the .eig file\n");
+	  printf("        2) other boundary conditions than in the input deck\n");
+	  printf("           which created the .eig file\n\n");
 	  exit(0);
       }
       
       if(fread(aub,sizeof(double),nzs[1],f1)!=nzs[1]){
-	  printf("*ERROR in steadystate reading the off-diagonals of the mass matrix in the eigenvalue file");
+	  printf(" *ERROR in steadystate reading the off-diagonals of the mass matrix in the eigenvalue file");
+	  printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+	  printf("        1) the nonexistence of the .eig file\n");
+	  printf("        2) other boundary conditions than in the input deck\n");
+	  printf("           which created the .eig file\n\n");
 	  exit(0);
       }
       
@@ -338,13 +369,21 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       if(nherm==1){
 	  NNEW(z,double,neq[1]*nev);
 	  if(fread(z,sizeof(double),neq[1]*nev,f1)!=neq[1]*nev){
-	      printf("*ERROR in complexfreq reading the eigenvectors in the eigenvalue file...");
+	      printf(" *ERROR in complexfreq reading the eigenvectors in the eigenvalue file...");
+	      printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+	      printf("        1) the nonexistence of the .eig file\n");
+	      printf("        2) other boundary conditions than in the input deck\n");
+	      printf("           which created the .eig file\n\n");
 	      exit(0);
 	  }
       }else{
 	  NNEW(z,double,2*neq[1]*nev);
 	  if(fread(z,sizeof(double),2*neq[1]*nev,f1)!=2*neq[1]*nev){
-	      printf("*ERROR in complexfreq reading the eigenvectors in the eigenvalue file...");
+	      printf(" *ERROR in complexfreq reading the eigenvectors in the eigenvalue file...");
+	      printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+	      printf("        1) the nonexistence of the .eig file\n");
+	      printf("        2) other boundary conditions than in the input deck\n");
+	      printf("           which created the .eig file\n\n");
 	      exit(0);
 	  }
       }
@@ -355,12 +394,20 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  NNEW(xmr,double,nev*nev);
 	  NNEW(xmi,double,nev*nev);
 	  if(fread(xmr,sizeof(double),nev*nev,f1)!=nev*nev){
-	      printf("*ERROR in steadystate reading the real orthogonality matrix to the eigenvalue file...");
+	      printf(" *ERROR in steadystate reading the real orthogonality matrix to the eigenvalue file...");
+	      printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+	      printf("        1) the nonexistence of the .eig file\n");
+	      printf("        2) other boundary conditions than in the input deck\n");
+	      printf("           which created the .eig file\n\n");
 	      exit(0);
 	  }
 	  
 	  if(fread(xmi,sizeof(double),nev*nev,f1)!=nev*nev){
-	      printf("*ERROR in steadystate reading the imaginary orthogonality matrix to the eigenvalue file...");
+	      printf(" *ERROR in steadystate reading the imaginary orthogonality matrix to the eigenvalue file...");
+	      printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+	      printf("        1) the nonexistence of the .eig file\n");
+	      printf("        2) other boundary conditions than in the input deck\n");
+	      printf("           which created the .eig file\n\n");
 	      exit(0);
 	  }
       }
@@ -373,7 +420,11 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  }
 
 	  if(fread(&nevd,sizeof(ITG),1,f1)!=1){
-	      printf("*ERROR in steadystate reading the number of eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+	      printf(" *ERROR in steadystate reading the number of eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+	      printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+	      printf("        1) the nonexistence of the .eig file\n");
+	      printf("        2) other boundary conditions than in the input deck\n");
+	      printf("           which created the .eig file\n\n");
 	      exit(0);
 	  }
 
@@ -385,7 +436,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      NNEW(nm,ITG,nevd);
 	  }else{
 	      if(nherm!=1){
-		  printf("*ERROR in steadystate: non-Hermitian systems cannot\n");
+		  printf(" *ERROR in steadystate: non-Hermitian systems cannot\n");
 		  printf("       be combined with multiple modal diameters\n");
 		  printf("       in cyclic symmetry calculations\n\n");
 		  FORTRAN(stop,());
@@ -396,7 +447,11 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  
 	  if(nherm==1){
 	      if(fread(&d[nev],sizeof(double),nevd,f1)!=nevd){
-		  printf("*ERROR in steadystate reading the eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+		  printf(" *ERROR in steadystate reading the eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+		  printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+		  printf("        1) the nonexistence of the .eig file\n");
+		  printf("        2) other boundary conditions than in the input deck\n");
+		  printf("           which created the .eig file\n\n");
 		  exit(0);
 	      }
 	      for(i=nev;i<nev+nevd;i++){
@@ -404,7 +459,11 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      }
 	  }else{
 	      if(fread(&d[nev],sizeof(double),2*nevd,f1)!=2*nevd){
-		  printf("*ERROR in steadystate reading the eigenvalues in the eigenvalue file...");
+		  printf(" *ERROR in steadystate reading the eigenvalues in the eigenvalue file...");
+		  printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+		  printf("        1) the nonexistence of the .eig file\n");
+		  printf("        2) other boundary conditions than in the input deck\n");
+		  printf("           which created the .eig file\n\n");
 		  exit(0);
 	      }
 	  }
@@ -416,12 +475,20 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      NNEW(aub,double,nzs[1]);
 
 	      if(fread(adb,sizeof(double),neq[1],f1)!=neq[1]){
-		  printf("*ERROR in steadystate reading the diagonal of the mass matrix in the eigenvalue file");
+		  printf(" *ERROR in steadystate reading the diagonal of the mass matrix in the eigenvalue file");
+		  printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+		  printf("        1) the nonexistence of the .eig file\n");
+		  printf("        2) other boundary conditions than in the input deck\n");
+		  printf("           which created the .eig file\n\n");
 		  exit(0);
 	      }
 	      
 	      if(fread(aub,sizeof(double),nzs[1],f1)!=nzs[1]){
-		  printf("*ERROR in steadystate reading the off-diagonals of the mass matrix in the eigenvalue file");
+		  printf(" *ERROR in steadystate reading the off-diagonals of the mass matrix in the eigenvalue file");
+		  printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+		  printf("        1) the nonexistence of the .eig file\n");
+		  printf("        2) other boundary conditions than in the input deck\n");
+		  printf("           which created the .eig file\n\n");
 		  exit(0);
 	      }
 	  }
@@ -435,7 +502,11 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  }
 	  
 	  if(fread(&z[(long long)neq[1]*nev],sizeof(double),neq[1]*nevd,f1)!=neq[1]*nevd){
-	      printf("*ERROR in steadystate reading the eigenvectors for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+	      printf(" *ERROR in steadystate reading the eigenvectors for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+	      printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+	      printf("        1) the nonexistence of the .eig file\n");
+	      printf("        2) other boundary conditions than in the input deck\n");
+	      printf("           which created the .eig file\n\n");
 	      exit(0);
 	  }
 
@@ -445,12 +516,20 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      NNEW(xmr,double,nev*nev);
 	      NNEW(xmi,double,nev*nev);
 	      if(fread(xmr,sizeof(double),nev*nev,f1)!=nev*nev){
-		  printf("*ERROR in steadystate reading the real orthogonality matrix to the eigenvalue file...");
+		  printf(" *ERROR in steadystate reading the real orthogonality matrix to the eigenvalue file...");
+		  printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+		  printf("        1) the nonexistence of the .eig file\n");
+		  printf("        2) other boundary conditions than in the input deck\n");
+		  printf("           which created the .eig file\n\n");
 		  exit(0);
 	      }
 	      
 	      if(fread(xmi,sizeof(double),nev*nev,f1)!=nev*nev){
-		  printf("*ERROR in steadystate reading the imaginary orthogonality matrix to the eigenvalue file...");
+		  printf(" *ERROR in steadystate reading the imaginary orthogonality matrix to the eigenvalue file...");
+		  printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
+		  printf("        1) the nonexistence of the .eig file\n");
+		  printf("        2) other boundary conditions than in the input deck\n");
+		  printf("           which created the .eig file\n\n");
 		  exit(0);
 	      }
 	  }
@@ -591,7 +670,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   if(dashpot){
 
       if(cyclicsymmetry){
-	  printf("*ERROR in steadystate: dashpots are not allowed in combination with cyclic symmetry\n");
+	  printf(" *ERROR in steadystate: dashpots are not allowed in combination with cyclic symmetry\n");
 	  FORTRAN(stop,());
       }
 
@@ -681,6 +760,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  
 	  if(*nener==1){
 	      NNEW(stiini,double,6*mi[0]**ne);
+	      NNEW(emeini,double,6*mi[0]**ne);
 	      NNEW(enerini,double,mi[0]**ne);}
       }
       
@@ -759,7 +839,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       }
 
       if((iprescribedboundary)&&(cyclicsymmetry)){
-	  printf("*ERROR in steadystate: prescribed boundaries are not allowed in combination with cyclic symmetry\n");
+	  printf(" *ERROR in steadystate: prescribed boundaries are not allowed in combination with cyclic symmetry\n");
 	  FORTRAN(stop,());
       }
 
@@ -789,7 +869,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       }
       else{
 	  if(iprescribedboundary){
-	      printf("*ERROR in steadystate: prescribed boundaries are not allowed in combination with direct modal damping\n");
+	      printf(" *ERROR in steadystate: prescribed boundaries are not allowed in combination with direct modal damping\n");
 	      FORTRAN(stop,());
 	  }
 	      
@@ -921,7 +1001,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
                       &symmetryflag,&inputformat,&nzs[2]);
 #else
-	      printf("*ERROR in steadystate: the SPOOLES library is not linked\n\n");
+	      printf(" *ERROR in steadystate: the SPOOLES library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
@@ -930,7 +1010,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      token=1;
 	      sgi_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],token);
 #else
-	      printf("*ERROR in steadystate: the SGI library is not linked\n\n");
+	      printf(" *ERROR in steadystate: the SGI library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
@@ -938,7 +1018,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 #ifdef TAUCS
 	      tau_factor(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1]);
 #else
-	      printf("*ERROR in steadystate: the TAUCS library is not linked\n\n");
+	      printf(" *ERROR in steadystate: the TAUCS library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
@@ -947,7 +1027,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
 			     &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-	      printf("*ERROR in steadystate: the PARDISO library is not linked\n\n");
+	      printf(" *ERROR in steadystate: the PARDISO library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
@@ -1083,8 +1163,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 			      if(id!=0){
 				  if(izdof[id-1]==ikactmechr[j]){
 				      aa[i]+=z[(long long)i*nzdof+id-1]*br[ikactmechr[j]];
-				  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
-			      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+				  }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
+			      }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
 			  }
 		      }
 		  }
@@ -1113,8 +1193,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 				  if(izdof[id-1]==ikactmechr[j]){
 				      aa[i]+=z[(long long)2*i*nzdof+id-1]*br[ikactmechr[j]];
 				      aa[i]+=z[(long long)(2*i+1)*nzdof+id-1]*br[ikactmechr[j]];
-				  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
-			      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+				  }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
+			      }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
 			  }
 		      }
 		  }
@@ -1228,8 +1308,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 			      if(id!=0){
 				  if(izdof[id-1]==ikactmechi[j]){
 				      bb[i]+=z[(long long)i*nzdof+id-1]*bi[ikactmechi[j]];
-				  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
-			      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+				  }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
+			      }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
 			  }
 		      }
 		  }
@@ -1258,8 +1338,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 				  if(izdof[id-1]==ikactmechi[j]){
 				      bb[2*i]+=z[(long long)2*i*nzdof+id-1]*bi[ikactmechi[j]];
 				      bb[2*i+1]+=z[(long long)(2*i+1)*nzdof+id-1]*bi[ikactmechi[j]];
-				  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
-			      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+				  }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
+			      }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
 			  }
 		      }
 		  }
@@ -1380,7 +1460,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  
 		  FORTRAN(dgesv,(&nev2,&nrhs,am,&nev2,ipiv,bm,&nev2,&info));
 		  if(info!=0){
-		      printf("*ERROR in steadystate: fatal termination of dgesv\n");
+		      printf(" *ERROR in steadystate: fatal termination of dgesv\n");
 		      printf("       info=%" ITGFORMAT "\n",info);
 		      FORTRAN(stop,());
 		  }
@@ -1422,7 +1502,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      
 	      FORTRAN(dgesv,(&nev2,&nrhs,am,&nev2,ipiv,bm,&nev2,&info));
 	      if(info!=0){
-		  printf("*ERROR in steadystate: fatal termination of dgesv\n");
+		  printf(" *ERROR in steadystate: fatal termination of dgesv\n");
 		  printf("       info=%" ITGFORMAT "\n",info);
 		  FORTRAN(stop,());
 	      }
@@ -1503,8 +1583,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 			  for(j=0;j<nev;j++){
 			      br[imddof[i]]+=bjr[j]*z[(long long)j*nzdof+id-1];
 			  }
-		      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
-		  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+		      }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
+		  }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
 	      }
 	  }
 	  
@@ -1562,8 +1642,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 			  for(j=0;j<nev;j++){
 			      bi[imddof[i]]+=bji[j]*z[(long long)j*nzdof+id-1];
 			  }
-		      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
-		  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+		      }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
+		  }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
 	      }
 	  }
 	  
@@ -1608,7 +1688,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      xforc,nforc,thicke,shcon,nshcon,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
-                      islavsurf,ielprop,prop);}
+                      islavsurf,ielprop,prop,energyini,energy,&iit);}
 	  else{
       
               /* calculating displacements/temperatures */
@@ -1636,7 +1716,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      xforc,nforc,thicke,shcon,nshcon,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,
-		      clearini,islavsurf,ielprop,prop);
+		      clearini,islavsurf,ielprop,prop,energyini,energy,&iit);
 	      
 	      if(nmdnode==0){
 		  DMEMSET(br,0,neq[1],0.);
@@ -1694,7 +1774,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      xforc,nforc,thicke,shcon,nshcon,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
-                      islavsurf,ielprop,prop);}
+                      islavsurf,ielprop,prop,energyini,energy,&iit);}
 	  else{ 
       
               /* calculating displacements/temperatures */
@@ -1722,7 +1802,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      xforc,nforc,thicke,shcon,nshcon,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,
-		      clearini,islavsurf,ielprop,prop);
+		      clearini,islavsurf,ielprop,prop,energyini,energy,&iit);
 
 	      if(nmdnode==0){
 		  DMEMSET(bi,0,neq[1],0.);
@@ -1849,7 +1929,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      }
 	  }
  
-	  (*kode)++;
+//	  (*kode)++;
 	  mode=0;
 	  
 	  if(strcmp1(&filab[1044],"ZZS")==0){
@@ -1943,7 +2023,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  if(strcmp1(&filab[522],"ENER")==0) SFREE(enern);
 	  if(strcmp1(&filab[2697],"ME  ")==0) SFREE(emn);
 	  
-	  if(*nener==1){SFREE(stiini);SFREE(enerini);}
+	  if(*nener==1){SFREE(stiini);SFREE(emeini);SFREE(enerini);}
       }
 
   }else{
@@ -1975,7 +2055,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       }
 
       if((iprescribedboundary)&&(cyclicsymmetry)){
-	  printf("*ERROR in steadystate: prescribed boundaries are not allowed in combination with cyclic symmetry\n");
+	  printf(" *ERROR in steadystate: prescribed boundaries are not allowed in combination with cyclic symmetry\n");
 	  FORTRAN(stop,());
       }
 
@@ -1995,7 +2075,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       }
       else{
 	  if(iprescribedboundary){
-	      printf("*ERROR in steadystate: prescribed boundaries are not allowed in combination with direct modal damping\n");
+	      printf(" *ERROR in steadystate: prescribed boundaries are not allowed in combination with direct modal damping\n");
 	      FORTRAN(stop,());
 	  }
 	      
@@ -2097,7 +2177,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
                         &symmetryflag,&inputformat,&nzs[2]);
 #else
-	      printf("*ERROR in steadystate: the SPOOLES library is not linked\n\n");
+	      printf(" *ERROR in steadystate: the SPOOLES library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
@@ -2106,7 +2186,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      token=1;
 	      sgi_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],token);
 #else
-	      printf("*ERROR in steadystate: the SGI library is not linked\n\n");
+	      printf(" *ERROR in steadystate: the SGI library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
@@ -2114,7 +2194,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 #ifdef TAUCS
 	      tau_factor(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1]);
 #else
-	      printf("*ERROR in steadystate: the TAUCS library is not linked\n\n");
+	      printf(" *ERROR in steadystate: the TAUCS library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
@@ -2123,7 +2203,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
 			     &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-	      printf("*ERROR in steadystate: the PARDISO library is not linked\n\n");
+	      printf(" *ERROR in steadystate: the PARDISO library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
@@ -2337,8 +2417,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 			      if(id!=0){
 				  if(izdof[id-1]==ikactmech[j]){
 				      aa[i]+=z[(long long)i*nzdof+id-1]*br[ikactmech[j]];
-				  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
-			      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+				  }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
+			      }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
 			  }
 		      }
 		  }
@@ -2459,7 +2539,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  
 		  FORTRAN(dgesv,(&nev2,&nrhs,am,&nev2,ipiv,bm,&nev2,&info));
 		  if(info!=0){
-		      printf("*ERROR in steadystate: fatal termination of dgesv\n");
+		      printf(" *ERROR in steadystate: fatal termination of dgesv\n");
 		      printf("       info=%" ITGFORMAT "\n",info);
 /*		  FORTRAN(stop,());*/
 		  }
@@ -2517,8 +2597,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 			      for(j=0;j<nev;j++){
 				  br[imddof[i]]+=bjr[j]*z[(long long)j*nzdof+id-1];
 			      }
-			  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
-		      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+			  }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
+		      }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
 		  }
 	      }
 	  
@@ -2554,8 +2634,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 			      for(j=0;j<nev;j++){
 				  bi[imddof[i]]+=bji[j]*z[(long long)j*nzdof+id-1];
 			      }
-			  }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
-		      }else{printf("*ERROR in steadystate\n");FORTRAN(stop,());}
+			  }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
+		      }else{printf(" *ERROR in steadystate\n");FORTRAN(stop,());}
 		  }
 	      }
 	      
@@ -2674,6 +2754,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      NNEW(eei,double,6*mi[0]**ne);
 	      if(*nener==1){
 		  NNEW(stiini,double,6*mi[0]**ne);
+		  NNEW(emeini,double,6*mi[0]**ne);
 		  NNEW(enerini,double,mi[0]**ne);}
 	  }
 	  
@@ -2722,7 +2803,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      thicke,shcon,nshcon,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
-                      islavsurf,ielprop,prop);
+                      islavsurf,ielprop,prop,energyini,energy,&iit);
 	  
 	      (*kode)++;
 	      mode=-1;
@@ -2754,7 +2835,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      if(strcmp1(&filab[522],"ENER")==0) SFREE(enern);
 	      if(strcmp1(&filab[2697],"ME  ")==0) SFREE(emn);
 	      
-	      if(*nener==1){SFREE(stiini);SFREE(enerini);}
+	      if(*nener==1){SFREE(stiini);SFREE(emeini);SFREE(enerini);}
 	  }
 	  
       }

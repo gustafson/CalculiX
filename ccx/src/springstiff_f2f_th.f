@@ -46,7 +46,15 @@
      &  plkcon(0:2*npmat_,ntmat_,*),pressure,dtemp,flowm(2),
      &  constant,coords(3),conductance
 !
-      data iflag /1/
+      intent(in) xl,voldl,imat,elcon,nelcon,
+     &  ncmat_,ntmat_,nope,lakonl,kode,plicon,
+     &  nplicon,npmat_,springarea,nmethod,mi,
+     &  reltime,jfaces,igauss,pslavsurf,pmastsurf,clearini,matname,
+     &  plkcon,nplkcon,node,noel,istep,iinc
+!
+      intent(inout) s,elconloc
+!
+      iflag=1
 !     
 !     # of master nodes
 !

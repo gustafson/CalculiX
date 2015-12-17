@@ -24,7 +24,7 @@
      &     v,shcon,nshcon,ipkon,kon,co,nflow, dtime,ttime,time,
      &     ielmat,prop,ielprop,nactdog,nacteq,iin,physcon,
      &     camt,camf,camp,uamt,uamf,uamp,rhcon,nrhcon,
-     &     vold,jobnamef,set,istartset,iendset,ialset,nset,mi)
+     &     vold,jobnamef,set,istartset,iendset,ialset,nset,mi,iaxial)
 !     
       implicit none
 !     
@@ -33,7 +33,7 @@
       character*81 set(*)
 !     
       integer mi(*),itg(*),ieg(*),ntg,nflow,ielmat(mi(3),*),i,
-     &     nrhcon(*),node,
+     &     nrhcon(*),node,iaxial,
      &     ntmat_,nteq,nshcon(*),nelem,index,ipkon(*),kon(*),iin,
      &     nactdog(0:3,*),nacteq(0:3,*),ielprop(*),
      &     istartset(*),iendset(*),ialset(*),nset

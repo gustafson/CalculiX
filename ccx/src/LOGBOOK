@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 2.8p2
+LOG-BOOK Version 2.9
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -2511,3 +2511,84 @@ Dec 2002        - started to work on single crystal plasticity
 
  3 Mar 2015    - checked for loss of contact at the start of a new
                  increment in gencontelem_f2f
+
+ 12 Mar 2015   - deactivated nasym for tied pressure-overclosure
+
+ 22 Mar 2015   - coded membranes and trusses (gen3dnor.f)
+
+ 3 April 2015  - modified attach.f (limitation of the solutions in
+                 the subdomains to the borders of the subdomain)
+
+ 15 April 2015 - introduced an aleatoric removal of contact elements
+                 in case of a local minimum of face-to-face contact
+
+ 22 April 2015 - replaced attach.f: smaller change in increment size
+                 between the iterations
+
+ 23 April 2015 - used qa[2] to force a cut back in nonlingeo if the
+                 linear network does not converge (cf. checkconvnet.c)
+
+ 26 April 2015 - started compressible laminar CFD with the method
+                 of openCFD
+
+ 20 May 2015   - derived the contact traction for face-to-face
+                 penalty contact from the stresses
+               - improved the use of equations in networks
+ 
+ 9 June 2015   - worked on zero mass flow conditions in CFD-applications
+               - implemented the calculations of energies in dynamic
+                 applications
+
+ 25 June 2015  - continued compressible laminar flow
+
+ 2 July 2015   - corrected an error in jouleheating.f
+
+ 14 July 2015  - changed gen3dboun: applied BC to middle nodes as
+                 well (additional MPC)
+               - corrected use of edge loading EDNORx for shells
+
+ 26 July 2015  - changed +bp into -bp in correctvfa.f
+
+ 1 Sept 2015   - the energy is now calculated for all (nonlinear)
+                 dynamic calculations
+
+ 3 Sept 2015   - made a change in gen3dboun: fixing u(n_2)=u(n) for
+                 translational SPC's
+
+ 7 Sept 2015   - introduced a field "flux" in CFD
+
+ 13 Sept 2015  - continued to work on friction heating
+  
+ 21 Sept 2015  - introducted variable iit in spring*_f2f.f
+
+ 26 Sept 2015  - made a correction for the temperatures in a 
+                 pre-tension mechanical calculation 
+
+ 29 Sept 2015  - allowed for several contact pairs underneath one and the
+                 same *CONTACT PAIR card
+
+ 10 Oct 2015   - introduced an extra loop in order to obtain accurate
+                 results for transient cfd-calculations
+
+ 18 Oct 2015   - changed mafillpcomp (a term in the change of density
+                 was dropped => improved stability)
+
+ 24 Oct 2015   - for cut-backs with surface-to-surface penalty the 
+                 stiffnesses are reduced by 100 and increased to the
+                 original values at convergence; the increment size
+                 is not reduced for the first cut-back.
+
+ 25 Oct 2015   - changed error estimator ERR into largest difference of
+                 worst principal stress in the elements adjacent to the
+                 node
+
+ 28 Oct 2015   - stable compressible fluid version; (subsonic,
+                 transonic and supersonic bumps work)
+ 
+ 4 Nov 2015    - made a change in mafillsmmain and mafillsm1
+
+ 5 Nov 2015    - accelerated the execution of mastruct.c, mastructcs.c,
+                 mastructem.c, mastructf.c
+
+ 14 Nov 2015   - introduced several code-accelerations in mastruct.c
+                 (especially for contact)

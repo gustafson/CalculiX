@@ -27,7 +27,13 @@
       implicit none
 !
       integer jq(*),irow(*),i,j,ii,jj,ipointer,id,i0,i1
+!
       real*8 ad(*),au(*),adb(*),aub(*),value,valuem
+!
+      intent(in) jq,irow,i,j,value,valuem,
+     &  i0,i1
+!
+      intent(inout) ad,au,adb,aub
 !
       if(i.eq.j) then
          if(i0.eq.i1) then

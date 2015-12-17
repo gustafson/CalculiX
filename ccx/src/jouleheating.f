@@ -34,7 +34,7 @@
      &  one,nelcon(2,*),nalcon(2,*),kk,ithermal,i1,ncmat_,ntmat_,imat
 !
       real*8 co(3,*),xl(3,20),xi,et,ze,xsj,shp(4,20),weight,xload(2,*),
-     &  sti(6,mi(1),*),alpha(6),heat,elcon(0:ncmat_,ntmat_,*),
+     &  sti(6,mi(1),*),alpha(6),heat,elcon(0:ncmat_,ntmat_,*),volume,
      &  elconloc(21),t1l,alcon(0:6,ntmat_,*),vold(0:mi(2),*),t1(*)
 !
       include "gauss.f"
@@ -78,6 +78,7 @@
          enddo
 !     
          heat=0.d0
+         volume=0.d0
 !
          if(lakon(nelem)(4:5).eq.'8R') then
             mint3d=1
@@ -191,7 +192,10 @@
      &           (sti(1,jj,nelem)*sti(1,jj,nelem)+
      &           sti(2,jj,nelem)*sti(2,jj,nelem)+
      &           sti(3,jj,nelem)*sti(3,jj,nelem))
+            volume=volume+weight*xsj
          enddo
+!
+         heat=heat/volume
 !
 !        adding the Joule heating to the distributed loading
 !

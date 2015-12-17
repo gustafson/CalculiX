@@ -29,9 +29,13 @@
       real*8 x(n),y(n),z(n),xo(n),yo(n),zo(n),xp,yp,zp,r(k+6),xr,yr,
      &  zr,c(8),dd,xw,xe,ys,yn,zb,zt,sqrt_rmaxini
 !
-      data iflag /1/
-      data kflag /2/
-      data eight /8/
+      intent(in) xo,yo,zo,x,y,z,nx,ny,nz,xp,yp,zp,n
+!
+      intent(inout) k,neighbor
+!
+      iflag=1
+      kflag=2
+      eight=8
 !
       if(k.gt.n) then
          k=n

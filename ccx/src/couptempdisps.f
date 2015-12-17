@@ -30,8 +30,8 @@
 !             5: TAUCS
 !             7: pardiso
 !
-!      iexpl==0:  structure:implicit, fluid:semi-implicit
-!      iexpl==1:  structure:implicit, fluid:explicit
+!      iexpl==0:  structure:implicit, fluid:incompressible
+!      iexpl==1:  structure:implicit, fluid:compressible
 !
       implicit none
 !
@@ -59,13 +59,15 @@ c      tincf=1.d-2
       if(iperturb.eq.0) then
          iperturb=2
       elseif((iperturb.eq.1).and.(istep.gt.1)) then
-         write(*,*) '*ERROR in couptempdisps: perturbation analysis is'
-         write(*,*) '       not provided in a *HEAT TRANSFER step.'
+         write(*,*) '*ERROR reading *COUPLED TEMPERATURE-DISPLACEMENT:'
+         write(*,*) '       perturbation analysis is not provided in a'
+         write(*,*) '       *COUPLED TEMPERATURE-DISPLACEMENT step.'
          call exit(201)
       endif
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in couptempdisps: *HEAT TRANSFER can only '
+         write(*,*) '*ERROR reading *COUPLED TEMPERATURE-DISPLACEMENT:'
+         write(*,*) '       *COUPLED TEMPERATURE-DISPLACEMENT can only '
          write(*,*) '       be used within a STEP'
          call exit(201)
       endif
@@ -103,7 +105,7 @@ c      tincf=1.d-2
             endif
          elseif(textpart(i)(1:7).eq.'SOLVER=') then
             read(textpart(i)(8:27),'(a20)') solver
-         elseif(textpart(i)(1:8).eq.'EXPLICIT') then
+         elseif(textpart(i)(1:12).eq.'COMPRESSIBLE') then
             iexpl=1
          elseif((textpart(i)(1:6).eq.'DIRECT').and.
      &          (textpart(i)(1:9).ne.'DIRECT=NO')) then
@@ -118,7 +120,8 @@ c      tincf=1.d-2
             read(textpart(i)(18:37),'(f20.0)',iostat=istat) ttime
          else
             write(*,*) 
-     &        '*WARNING in couptempdisps: parameter not recognized:'
+     &        '*WARNING reading *COUPLED TEMPERATURE-DISPLACEMENT:'
+            write(*,*) '         parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -129,7 +132,8 @@ c      tincf=1.d-2
 !
       if((ithermal.eq.0).and.(nmethod.ne.1).and.
      &   (nmethod.ne.2).and.(iperturb.ne.0)) then
-         write(*,*) '*ERROR in couptempdisps: please define initial '
+         write(*,*) '*ERROR reading *COUPLED TEMPERATURE-DISPLACEMENT:'
+         write(*,*) '       please define initial '
          write(*,*) '       conditions for the temperature'
          call exit(201)
       else
@@ -149,7 +153,8 @@ c      tincf=1.d-2
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
       else
-         write(*,*) '*WARNING in couptempdisps: unknown solver;'
+        write(*,*) '*WARNING reading *COUPLED TEMPERATURE-DISPLACEMENT:'
+         write(*,*) '         unknown solver;'
          write(*,*) '         the default solver is used'
       endif
 !
@@ -157,8 +162,10 @@ c      tincf=1.d-2
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
          if(iperturb.ge.2) then
-            write(*,*) '*WARNING in couptempdisps: a nonlinear geometric
-     & analysis is requested'
+            write(*,*) 
+     &          '*WARNING reading *COUPLED TEMPERATURE-DISPLACEMENT:'
+            write(*,*) 
+     &          '         a nonlinear geometricanalysis is requested'
             write(*,*) '         but no time increment nor step is speci
      &fied'
             write(*,*) '         the defaults (1,1) are used'
@@ -190,25 +197,19 @@ c            tincf=1.d-2
      &"*COUPLED TEMPERATURE-DISPLACEMENT%")
 !
       if(tinc.le.0.d0) then
-         write(*,*) '*ERROR in couptempdisps: initial increment size is 
-     &negative'
+         write(*,*) '*ERROR reading *COUPLED TEMPERATURE-DISPLACEMENT:'
+         write(*,*) '       initial increment size is negative'
       endif
       if(tper.le.0.d0) then
-         write(*,*) '*ERROR in couptempdisps: step size is negative'
+         write(*,*) '*ERROR reading *COUPLED TEMPERATURE-DISPLACEMENT:'
+         write(*,*) '       step size is negative'
       endif
       if(tinc.gt.tper) then
-         write(*,*) '*ERROR in couptempdisps: initial increment size exc
-     &eeds step size'
+         write(*,*) '*ERROR reading *COUPLED TEMPERATURE-DISPLACEMENT:'
+         write(*,*) '       initial increment size exceeds step size'
       endif
-c      if(tincf.le.0.d0) then
-c         write(*,*) '*WARNING in couptempdisps: initial CFD increment si
-c     &ze is zero or negative; the default of 0.01 is taken'
-c         tincf=1.d-2
-c      endif
 !      
       if(idrct.ne.1) then
-c         if(dabs(tmin).lt.1.d-10) then
-c            tmin=min(tinc,1.d-5*tper)
          if(dabs(tmin).lt.1.d-6*tper) then
             tmin=min(tinc,1.d-6*tper)
          endif

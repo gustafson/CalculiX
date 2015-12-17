@@ -467,6 +467,8 @@
 !     
          ec(1)=epqini 
          decra(1)=c0*dg
+         timeabq(1)=time
+         timeabq(2)=ttime+time
          call creep(decra,deswa,xstateini(1,iint,iel),serd,ec,
      &        esw,p,svm,t1l,dtemp,predef,dpred,timeabq,dtime,
      &        amat,leximp,lend,pgauss,nstate_,iel,iint,layer,kspt,
@@ -751,6 +753,8 @@ c                  write(*,*)
 !     
                ec(1)=epqini 
                decra(1)=c0*dg
+               timeabq(1)=time
+               timeabq(2)=ttime+time
                call creep(decra,deswa,xstateini(1,iint,iel),serd,ec,
      &              esw,p,svm,t1l,dtemp,predef,dpred,timeabq,dtime,
      &              amat,leximp,lend,pgauss,nstate_,iel,iint,layer,kspt,

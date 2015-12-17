@@ -41,7 +41,7 @@
 !
       implicit none
 !
-      logical mass,stiffness,buckling,rhsi
+      integer mass,stiffness,buckling,rhsi
 !
       character*8 lakonl,lakon(*)
       character*20 sideload(*)
@@ -73,25 +73,57 @@
 !
       real*8 dtime,physcon(*)
 !
+      intent(in) co,nk,kon,lakonl,
+     &  nelem,rhcon,nrhcon,ielmat,ielorien,norien,orab,
+     &  ntmat_,t0,t1,ithermal,vold,iperturb,nelemload,
+     &  sideload,nload,idist,iexpl,dtime,
+     &  matname,mi,mass,stiffness,buckling,rhsi,intscheme,
+     &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
+     &  xstiff,xloadold,reltime,
+     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,
+     &  plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,lakon,
+     &  pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon,
+     &  ielprop,prop
+!
+      intent(inout) s,sm,ff,xload,nmethod,springarea
+!
       include "gauss.f"
 !
-      data ifaceq /4,3,2,1,11,10,9,12,21,
+c      data ifaceq /4,3,2,1,11,10,9,12,21,
+c     &            5,6,7,8,13,14,15,16,22,
+c     &            1,2,6,5,9,18,13,17,23,
+c     &            2,3,7,6,10,19,14,18,24,
+c     &            3,4,8,7,11,20,15,19,25,
+c     &            4,1,5,8,12,17,16,20,26/
+c      data ifacet /1,3,2,7,6,5,11,
+c     &             1,2,4,5,9,8,12,
+c     &             2,3,4,6,10,9,13,
+c     &             1,4,3,8,10,7,14/
+c      data ifacew /1,3,2,9,8,7,0,0,
+c     &             4,5,6,10,11,12,0,0,
+c     &             1,2,5,4,7,14,10,13,
+c     &             2,3,6,5,8,15,11,14,
+c     &             4,6,3,1,12,15,9,13/
+c      data null /0/
+c      data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
+!
+      ifaceq=reshape((/4,3,2,1,11,10,9,12,21,
      &            5,6,7,8,13,14,15,16,22,
      &            1,2,6,5,9,18,13,17,23,
      &            2,3,7,6,10,19,14,18,24,
      &            3,4,8,7,11,20,15,19,25,
-     &            4,1,5,8,12,17,16,20,26/
-      data ifacet /1,3,2,7,6,5,11,
+     &            4,1,5,8,12,17,16,20,26/),(/9,6/))
+      ifacet=reshape((/1,3,2,7,6,5,11,
      &             1,2,4,5,9,8,12,
      &             2,3,4,6,10,9,13,
-     &             1,4,3,8,10,7,14/
-      data ifacew /1,3,2,9,8,7,0,0,
+     &             1,4,3,8,10,7,14/),(/7,4/))
+      ifacew=reshape((/1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
-     &             4,6,3,1,12,15,9,13/
-      data null /0/
-      data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
+     &             4,6,3,1,12,15,9,13/),(/8,5/))
+      null=0
+      iperm=(/5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/)
 !
       iflag=3
 !
@@ -142,18 +174,18 @@
       elseif(lakonl(1:2).eq.'ES') then
          if(lakonl(7:7).eq.'C') then
             if(mortar.eq.0) then
-               read(lakonl(8:8),'(i1)') nope
-               nope=nope+1
+c               read(lakonl(8:8),'(i1)') nope
+               nope=ichar(lakonl(8:8))-47
+c               nope=nope+1
                konl(nope+1)=kon(indexe+nope+1)
             elseif(mortar.eq.1) then
                nope=kon(indexe)
             endif
          else
-            read(lakonl(8:8),'(i1)') nope
-            nope=nope+1
+c            read(lakonl(8:8),'(i1)') nope
+            nope=ichar(lakonl(8:8))-47
+c            nope=nope+1
          endif
-c         read(lakonl(8:8),'(i1)') nope
-c         nope=nope+1
       elseif(lakonl(1:2).eq.'D ') then
          nope=3
       endif
@@ -246,7 +278,7 @@ c         nope=nope+1
 !
 !       initialisation for distributed forces
 !
-      if(rhsi) then
+      if(rhsi.eq.1) then
         if(idist.ne.0) then
           do i=1,nope
             ff(i)=0.d0
@@ -256,7 +288,7 @@ c         nope=nope+1
 !
 !     initialisation of sm
 !
-      if(mass.or.buckling) then
+      if((mass.eq.1).or.(buckling.eq.1)) then
         do i=1,nope
           do j=i,nope
             sm(i,j)=0.d0
@@ -535,7 +567,7 @@ c         nope=nope+1
 !
 !                     mass matrix
 !
-               if(mass) then
+               if(mass.eq.1) then
                   sm(ii,jj)=sm(ii,jj)
      &                 +c2*shpj(4,ii)*shp(4,jj)
                endif
@@ -545,7 +577,7 @@ c         nope=nope+1
 !
 !           computation of the right hand side
 !
-         if(rhsi) then
+         if(rhsi.eq.1) then
 !
 !           distributed heat flux
 !
@@ -596,7 +628,7 @@ c         nope=nope+1
 !
       enddo
 !
-      if((.not.buckling).and.(nload.ne.0)) then
+      if((buckling.eq.0).and.(nload.ne.0)) then
          iflag=2
 !
 !       distributed loads
@@ -610,7 +642,8 @@ c         nope=nope+1
                id=id-1
                cycle
             endif
-            read(sideload(id)(2:2),'(i1)') ig
+c            read(sideload(id)(2:2),'(i1)') ig
+            ig=ichar(sideload(id)(2:2))-48
 !
 !           check whether 8 or 9-nodes face
 !
@@ -771,7 +804,8 @@ c         nope=nope+1
                       coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
                    enddo
                 enddo
-                read(sideload(id)(2:2),'(i1)') jltyp
+c                read(sideload(id)(2:2),'(i1)') jltyp
+                jltyp=ichar(sideload(id)(2:2))-48
                 jltyp=jltyp+10
                 if(sideload(id)(1:1).eq.'S') then
                    iscale=1
@@ -897,7 +931,7 @@ c         nope=nope+1
             enddo
          endif
 !
-         if(mass) then
+         if(mass.eq.1) then
             do i=1,20
                do j=i,20
                   k=iperm(i)
@@ -918,7 +952,7 @@ c         nope=nope+1
          endif
       endif
 !
-      if(mass.and.(iexpl.gt.1)) then
+      if((mass.eq.1).and.(iexpl.gt.1)) then
 !
 !        scaling the diagonal terms of the mass matrix such that the total
 !        mass is right (LUMPING; for explicit dynamic calculations)

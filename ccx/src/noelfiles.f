@@ -115,6 +115,10 @@
 !        reset the element output requests
 !
          if(.not.elfile_flag) then
+!
+!           reset "last iterations" and "contact elements"
+!
+            filab(1)(3:4)='  '
             filab(3)(1:4)='    '
             filab(4)(1:4)='    '
             do j=6,9
@@ -152,6 +156,10 @@
 !     reset the contact print requests
 !         
          if(.not.contactfile_flag) then
+!
+!           reset "last iterations" and "contact elements"
+!
+            filab(1)(3:4)='  '
             filab(26)(1:4)='    '
             filab(26)(6:87)='    '
             filab(27)(1:4)='    '

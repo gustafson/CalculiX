@@ -38,6 +38,10 @@
      &  omgopg,omhoph,omropr,omgmopg,omhmoph,omrmopr,fxi(3),fet(3),
      &  fze(3),dfxi(3),dfet(3),dfze(3)
 !
+      intent(in) xi,et,ze,xl,iflag,konl
+!
+      intent(out) shp,xsj
+!
       jf=reshape((/2,2,1,2,2,3,2,1,2,3,2,2,2,3,2,1,2,2/),(/3,6/))
 !
       ifaceq=reshape(( /4,3,2,1,11,10,9,12,

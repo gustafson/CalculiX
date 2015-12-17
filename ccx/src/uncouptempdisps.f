@@ -48,6 +48,7 @@
       tmin=0.d0
       tmax=0.d0
       nmethod=4
+      timereset=.false.
 !
       if(iperturb.eq.0) then
          iperturb=2

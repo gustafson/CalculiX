@@ -75,7 +75,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
              ITG *ielprop, double *prop, ITG *ntie, char **tiesetp,
 	     ITG *itpamp, ITG *iviewfile, char *jobnamec, double **tietolp,
 	     ITG *nslavs, double *thicke, ITG *ics, ITG *nalset, ITG *nmpc_,
-	     ITG *nmat, char *typeboun,ITG *iaxial,ITG **idefloadp,ITG *nload_){
+	     ITG *nmat, char *typeboun,ITG *iaxial,ITG *nload_){
 
   char description[13]="            ",*lakon=NULL,jobnamef[396]="",
       *labmpc=NULL,kind1[2]="E",kind2[2]="E",*set=NULL,*tieset=NULL,
@@ -97,13 +97,13 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
       *islavnode=NULL,*imastnode=NULL,*nslavnode=NULL,mortar=0,
       mt=mi[1]+1,*nactdofinv=NULL, inode,idir,*islavsurf=NULL,
       iemchange=0,nzsrad,*mast1rad=NULL,*irowrad=NULL,*icolrad=NULL,
-      *jqrad=NULL,*ipointerrad=NULL,*integerglob=NULL,im,
+      *jqrad=NULL,*ipointerrad=NULL,*integerglob=NULL,im,ne0,
       mass[2]={0,0}, stiffness=1, buckling=0, rhsi=1, intscheme=0,idiscon=0,
       coriolis=0,*ipneigh=NULL,*neigh=NULL,i,icfd=0,id,node,networknode,
       iflagact=0,*nodorig=NULL,*ipivr=NULL,*inomat=NULL,*nodface=NULL,
       *ipoface=NULL,*istartset=NULL,*iendset=NULL,*ialset=NULL,
-      *nelemloadref=NULL,*iamloadref=NULL,*idefloadref=NULL,nloadref,
-      *nelemload=NULL,*iamload=NULL,*idefload=NULL;
+      *nelemloadref=NULL,*iamloadref=NULL,nloadref,kscale=1,
+      *nelemload=NULL,*iamload=NULL,*idefload=NULL,ialeatoric=0;
 
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*epn=NULL,*cdn=NULL,
          *f=NULL,*fn=NULL,qa[3]={0.,0.,-1.},qam[2]={0.,0.},dtheta,theta,
@@ -117,7 +117,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	 *ampli=NULL,*eei=NULL,*t1ini=NULL,*tinc,*tper,*tmin,*tmax,
 	 *xbounini=NULL,*xstiff=NULL,*stx=NULL,*cv=NULL,*cvini=NULL,
          *enern=NULL,*coefmpc=NULL,*aux=NULL,*xstaten=NULL,
-	 *enerini=NULL,*emn=NULL,*xmastnor=NULL,
+	 *enerini=NULL,*emn=NULL,*xmastnor=NULL,*fnext=NULL,
 	 *tarea=NULL,*tenv=NULL,*erad=NULL,*fnr=NULL,*fni=NULL,
 	 *adview=NULL,*auview=NULL,*qfx=NULL,
          *qfn=NULL,*co=NULL,*vold=NULL,*fenv=NULL,sigma=0.,
@@ -127,12 +127,14 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	 *xstate=NULL,*eenmax=NULL,*adrad=NULL,*aurad=NULL,*bcr=NULL,
          *emeini=NULL,*doubleglob=NULL,*au=NULL,
 	 *ad=NULL,*b=NULL,*aub=NULL,*adb=NULL,*pslavsurf=NULL,*pmastsurf=NULL,
-         *cdnr=NULL,*cdni=NULL;
+         *cdnr=NULL,*cdni=NULL,*energyini=NULL,*energy=NULL;
 
 #ifdef SGI
   ITG token;
 #endif
  
+  ne0=*ne;
+
   /* next line is needed to avoid that elements with negative ipkon
      are taken into account in extrapolate.f */
 
@@ -166,7 +168,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
   set=*setp;istartset=*istartsetp;iendset=*iendsetp;ialset=*ialsetp;
   tieset=*tiesetp;tietol=*tietolp;
 
-  nelemload=*nelemloadp;iamload=*iamloadp;idefload=*idefloadp;
+  nelemload=*nelemloadp;iamload=*iamloadp;
   sideload=*sideloadp;
 
   tinc=&timepar[0];
@@ -431,7 +433,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	  ne,xforc,&null,thicke,shcon,nshcon,
 	  sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
           &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	  islavsurf,ielprop,prop);
+	  islavsurf,ielprop,prop,energyini,energy,&kscale);
   
   SFREE(fn);SFREE(inum);SFREE(v);
   
@@ -455,7 +457,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 		    &coriolis,ibody,xloadold,&reltime,veold,springarea,nstate_,
 		    xstateini,xstate,thicke,integerglob,doubleglob,
 		    tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
-		    pmastsurf,&mortar,clearini,ielprop,prop));
+		    pmastsurf,&mortar,clearini,ielprop,prop,&ne0,fnext,&kscale));
   
   if(nmethodact==0){
       
@@ -522,7 +524,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
   SFREE(au);SFREE(ad);
 
   NNEW(v,double,mt**nk);
-  memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
+//  memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
   
   NNEW(fn,double,mt**nk);
   
@@ -543,9 +545,9 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	  &reltime,ne,xforc,&null,thicke,shcon,nshcon,
 	  sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
           &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	  islavsurf,ielprop,prop);
+	  islavsurf,ielprop,prop,energyini,energy,&kscale);
   
-  memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
+//  memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
   
   /* reactivating the non-shell elements (for mesh output purposes) 
      deactivating the initial temperature for the non-shell nodes */
@@ -553,6 +555,10 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
   for(i=0;i<*ne;i++){
       if(strcmp1(&lakon[8*i+6],"L")!=0){
 	  ipkon[i]=-ipkon[i]-2;
+      }else{
+
+          /* copy shell results */
+
 	  indexe=ipkon[i];
 	  if(strcmp1(&lakon[8*i+3],"6")==0){nope=6;}
 	  else if(strcmp1(&lakon[8*i+3],"8")==0){nope=8;}
@@ -560,7 +566,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	  else{nope=20;}
 	  for(j=0;j<nope;j++){
 	      node=kon[indexe+j];
-	      v[mt*(node-1)]=0.;
+	      vold[mt*(node-1)]=v[mt*(node-1)];
 	  }
       }
   }
@@ -750,12 +756,10 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
       nloadref=*nload;
       NNEW(nelemloadref,ITG,2**nload);
       if(*nam>0) NNEW(iamloadref,ITG,2**nload);
-      NNEW(idefloadref,ITG,*nload);
       NNEW(sideloadref,char,20**nload);
       
       memcpy(&nelemloadref[0],&nelemload[0],sizeof(ITG)*2**nload);
       if(*nam>0) memcpy(&iamloadref[0],&iamload[0],sizeof(ITG)*2**nload);
-      memcpy(&idefloadref[0],&idefload[0],sizeof(ITG)**nload);
       memcpy(&sideloadref[0],&sideload[0],sizeof(char)*20**nload);
       
       /* generating new fields; ne2 is the number of elements
@@ -764,7 +768,6 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
       (*nload_)+=ne2;
       RENEW(nelemload,ITG,2**nload_);
       if(*nam>0) RENEW(iamload,ITG,2**nload_);
-      RENEW(idefload,ITG,*nload_);
       RENEW(xloadact,double,2**nload_);
       RENEW(sideload,char,20**nload_);
   }
@@ -841,7 +844,6 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	      DMEMSET(iamload,0,2**nload_,0);
 	      memcpy(&iamload[0],&iamloadref[0],sizeof(ITG)*2**nload);
 	  }
-	  DMEMSET(idefload,0,*nload_,0);memcpy(&idefload[0],&idefloadref[0],sizeof(ITG)**nload);
 	  DMEMSET(xloadact,0,2**nload_,0.);
 	  DMEMSET(sideload,0,'\0',0.);memcpy(&sideload[0],&sideloadref[0],sizeof(char)*20**nload);
       }
@@ -873,7 +875,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
        rhcon,nrhcon,ipobody,ibody,xbodyact,nbody,iviewfile,jobnamef,
        ctrl,xloadold,&reltime,nmethod,set,mi,istartset,iendset,ialset,nset,
        ineighe,nmpc,nodempc,ipompc,coefmpc,labmpc,&iemchange,nam,iamload,
-       jqrad,irowrad,&nzsrad,icolrad,ne,iaxial);
+       jqrad,irowrad,&nzsrad,icolrad,ne,iaxial,qa);
       }
       
       /* prediction of the next solution (only for temperature) */
@@ -909,7 +911,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	      fmpc,nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,
 	      &reltime,ne,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xloadact,xloadold,&icfd,inomat,h0,islavnode,
-	      nslavnode,ntie,ielprop,prop,iactive);
+	      nslavnode,ntie,ielprop,prop,iactive,energyini,energy);
       SFREE(inum);
      
       /* the calculation of the electromagnetic fields is (quasi)linear,
@@ -948,7 +950,6 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 		      DMEMSET(iamload,0,2**nload_,0);
 		      memcpy(&iamload[0],&iamloadref[0],sizeof(ITG)*2**nload);
 		  }
-		  DMEMSET(idefload,0,*nload_,0);memcpy(&idefload[0],&idefloadref[0],sizeof(ITG)**nload);
 		  DMEMSET(xloadact,0,2**nload_,0.);
 		  DMEMSET(sideload,0,20**nload_,'\0');memcpy(&sideload[0],&sideloadref[0],sizeof(char)*20**nload);
 	      }
@@ -981,7 +982,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
                 rhcon,nrhcon,ipobody,ibody,xbodyact,nbody,iviewfile,jobnamef,
 	        ctrl,xloadold,&reltime,nmethod,set,mi,istartset,iendset,ialset,
 	        nset,ineighe,nmpc,nodempc,ipompc,coefmpc,labmpc,&iemchange,nam,
-		iamload,jqrad,irowrad,&nzsrad,icolrad,ne,iaxial);
+		iamload,jqrad,irowrad,&nzsrad,icolrad,ne,iaxial,qa);
 	      }
 	      
 	  }
@@ -989,10 +990,13 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
           /* add Joule heating  */
 
 	  if(*ithermal==3){
+	      NNEW(idefload,ITG,*nload_);
+	      DMEMSET(idefload,0,*nload_,1);
 	      FORTRAN(jouleheating,(ipkon,lakon,kon,co,elcon,nelcon,
 		  mi,ne,sti,ielmat,nelemload,sideload,xloadact,nload,nload_,
 		  iamload,nam,idefload,ncmat_,ntmat_,
 		  alcon,nalcon,ithermal,vold,t1));
+	      SFREE(idefload);
 	  }
 
 	  if(*ithermal==3){
@@ -1186,7 +1190,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 		  fmpc,nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,
 		  &reltime,ne,xforc,nforc,thicke,shcon,nshcon,
 		  sideload,xloadact,xloadold,&icfd,inomat,h0,islavnode,
-		  nslavnode,ntie,ielprop,prop,iactive);
+		  nslavnode,ntie,ielprop,prop,iactive,energyini,energy);
 	  SFREE(inum);
 	  
 	  SFREE(ad);SFREE(au);
@@ -1275,7 +1279,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
             &itp,&jprint,jout,&uncoupled,t1,&iitterm,nelemload,
             nload,nodeboun,nboun,itg,ndirboun,&deltmx,&iflagact,
 	    set,nset,istartset,iendset,ialset,emn,thicke,jobnamec,
-	    &mortar,nmat,ielprop,prop);
+	    &mortar,nmat,ielprop,prop,&ialeatoric,&kscale);
       }
       
       /*********************************************************/
@@ -1346,7 +1350,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 		  nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,
 		  &reltime,ne,xforc,nforc,thicke,shcon,nshcon,
 		  sideload,xloadact,xloadold,&icfd,inomat,h0,islavnode,
-		  nslavnode,ntie,ielprop,prop,iactive);
+		  nslavnode,ntie,ielprop,prop,iactive,energyini,energy);
 	  
 	  memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
 	  
@@ -1419,7 +1423,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	      nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,
 	      &reltime,ne,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xloadact,xloadold,&icfd,inomat,h0,islavnode,
-	      nslavnode,ntie,ielprop,prop,iactive);
+	      nslavnode,ntie,ielprop,prop,iactive,energyini,energy);
       
       memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
       
@@ -1465,12 +1469,11 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	  RENEW(iamload,ITG,2**nload);
 	  memcpy(&iamload[0],&iamloadref[0],sizeof(ITG)*2**nload);
       }
-      RENEW(idefload,ITG,*nload);memcpy(&idefload[0],&idefloadref[0],sizeof(ITG)**nload);
       RENEW(sideload,char,20**nload);memcpy(&sideload[0],&sideloadref[0],sizeof(char)*20**nload);
       
       /* freeing the temporary fields */
       
-      SFREE(nelemloadref);if(*nam>0){SFREE(iamloadref);};SFREE(idefloadref);
+      SFREE(nelemloadref);if(*nam>0){SFREE(iamloadref);};
       SFREE(sideloadref);
   }
   
@@ -1568,7 +1571,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
   *setp=set;*istartsetp=istartset;*iendsetp=iendset;*ialsetp=ialset;
   *tiesetp=tieset;*tietolp=tietol;
   
-  *nelemloadp=nelemload;*iamloadp=iamload;*idefloadp=idefload;
+  *nelemloadp=nelemload;*iamloadp=iamload;
   *sideloadp=sideload;
   
   (*tmin)*=(*tper);

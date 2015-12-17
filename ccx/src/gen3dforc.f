@@ -343,12 +343,6 @@ c               val=xforc(i)
                   enddo
                enddo
 !
-c               do l=1,3
-c                  w(l)=w(l)+(alpha*r(l,1)-d(l,1))*(co(1,irefnode)-q(1))
-c     &                     +(alpha*r(l,2)-d(l,2))*(co(2,irefnode)-q(2))
-c     &                     +(alpha*r(l,3)-d(l,3))*(co(3,irefnode)-q(3))
-c               enddo
-!
 !              copying the displacements
 !
                do l=1,3
@@ -448,36 +442,6 @@ c               vold(1,iexpnode)=alpha
                   vold(1,iexpnode)=xi1
                   vold(2,iexpnode)=xi2
                   vold(3,iexpnode)=xi3
-c!
-c!              determining the inverse of the right stretch tensor
-c!               
-c               do l=1,3
-c                  do m=1,3
-c                     um1(l,m)=z(l,1)*z(m,1)/dsqrt(w(1))+
-c     &                        z(l,2)*z(m,2)/dsqrt(w(2))+
-c     &                        z(l,3)*z(m,3)/dsqrt(w(3))
-c                  enddo
-c               enddo
-c!
-c!              rotation matrix R = deformation gradient F .
-c!                   inverse of right stretch tensor U
-c! 
-c               do l=1,3
-c                  do m=1,3
-c                     r(l,m)=b(1,l)*um1(1,m)+b(2,l)*um1(2,m)+
-c     &                      b(3,l)*um1(3,m)
-c                  enddo
-c               enddo
-c!
-c!              determining the rotation vector
-c!
-c               dd=(1.d0-r(1,1)-r(2,2)-r(3,3))/2.d0
-c               if(dabs(dd).gt.1.d-10) dd=dd/dabs(dd)
-c               theta=dacos(dd)
-c               dd=theta/(2.d0*dsin(theta))
-c               xn(1)=dd*(r(3,2)-r(2,3))
-c               xn(2)=dd*(r(1,3)-r(3,1))
-c               xn(3)=dd*(r(2,1)-r(1,2))
                endif
 !
 !              apply the moment
@@ -586,7 +550,7 @@ c               xn(3)=dd*(r(2,1)-r(1,2))
             endif
 !
 !           all cases except nonlinear dynamic case: creation
-!           of rigid body MPC's
+!           of mean rotation MPC's
 !
             if((idir.gt.4).and.((nmethod.ne.4).or.(iperturb.le.1)))then
 !
@@ -857,13 +821,57 @@ c               xn(3)=dd*(r(2,1)-r(1,2))
 !              2d plane strain, plane stress or axisymmetric 
 !              element
 !
-               node=knor(indexk+2)
-c               val=xforc(i)
+c               node=knor(indexk+2)
+cc               val=xforc(i)
+c!
+c               call forcadd(node,idir,val,nodeforc,
+c     &              ndirforc,xforc,nforc,nforc_,iamforc,
+c     &              iamplitude,nam,ntrans,trab,inotr,co,
+c     &              ikforc,ilforc,isector,add,user,idefforc)
+!     
+!                       2d plane stress, plane strain or axisymmetric
+!                       element: MPC in all but z-direction
 !
-               call forcadd(node,idir,val,nodeforc,
-     &              ndirforc,xforc,nforc,nforc_,iamforc,
-     &              iamplitude,nam,ntrans,trab,inotr,co,
-     &              ikforc,ilforc,isector,add,user,idefforc)
+               newnode=knor(indexk+2)
+               idof=8*(newnode-1)+idir
+               call nident(ikmpc,idof,nmpc,id)
+               if(((id.le.0).or.(ikmpc(id).ne.idof)).and.
+     &              (idir.ne.3)) then
+                  nmpc=nmpc+1
+                  if(nmpc.gt.nmpc_) then
+                     write(*,*) 
+     &                    '*ERROR in gen3dmpc: increase nmpc_'
+                     call exit(201)
+                  endif
+                  labmpc(nmpc)='                    '
+                  ipompc(nmpc)=mpcfree
+                  do j=nmpc,id+2,-1
+                     ikmpc(j)=ikmpc(j-1)
+                     ilmpc(j)=ilmpc(j-1)
+                  enddo
+                  ikmpc(id+1)=idof
+                  ilmpc(id+1)=nmpc
+                  nodempc(1,mpcfree)=newnode
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=1.d0
+                  mpcfree=nodempc(3,mpcfree)
+                  if(mpcfree.eq.0) then
+                     write(*,*) 
+     &                    '*ERROR in gen3dmpc: increase nmpc_'
+                     call exit(201)
+                  endif
+                  nodempc(1,mpcfree)=node
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=-1.d0
+                  mpcfreenew=nodempc(3,mpcfree)
+                  if(mpcfreenew.eq.0) then
+                     write(*,*) 
+     &                    '*ERROR in gen3dmpc: increase nmpc_'
+                     call exit(201)
+                  endif
+                  nodempc(3,mpcfree)=0
+                  mpcfree=mpcfreenew
+               endif
             endif
          endif
       enddo

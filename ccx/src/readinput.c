@@ -414,6 +414,8 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
 	    ithermal[1]=3;
 	}else if(strcmp1(&buff[0],"*UNCOUPLEDTEMPERATURE-DISPLACEMENT")==0){
 	    ithermal[1]=3;
+	}else if(strcmp1(&buff[0],"*ELECTROMAGNETICS")==0){
+	    ithermal[1]=3;
 	}
       }
   }while(1);

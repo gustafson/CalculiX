@@ -24,9 +24,17 @@
 !     id is such that x(1,id).le.px and x(1,id+1).gt.px
 !
       subroutine nident2(x,px,n,id)
+!
       implicit none
+!
       integer x,px,n,id,n2,m
+!
       dimension x(2,n)
+!
+      intent(in) x,px,n
+!
+      intent(out) id
+!
       id=0
       if(n.eq.0) return
       n2=n+1

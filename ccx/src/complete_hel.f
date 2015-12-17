@@ -28,6 +28,7 @@
 !
       integer irow(*),neq,nzs,j,l,jdof1,jq(*)
       real*8 hel(3,*),bv(neq,3),auv(*),adv(*)
+c      write(*,*) 'complete_hel1 ',hel(1,1),hel(2,1),hel(3,1)
 c      do j=1,neq
 c      write(*,*) 'complete_hel_1 ',j,hel(1,j),hel(2,j),hel(3,j)
 c      enddo
@@ -51,6 +52,7 @@ c      enddo
             hel(3,j)=hel(3,j)-auv(l+nzs)*bv(jdof1,3)
          enddo
       enddo
+c      write(*,*) 'complete_hel2 ',hel(1,1),hel(2,1),hel(3,1)
 c      do j=1,neq
 c         write(*,*) 'complete_hel ',j,bv(j,1),bv(j,2),bv(j,3)
 c      enddo

@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine approxplane(col,straight,xn,np)
+      subroutine approxplane(col,straight,xn,nopes)
 !
 !     calculate the equation of the planes through the
 !     edges of a quadrilateral and parallel to the vector xn together
@@ -41,35 +41,37 @@
 !
       implicit none
 !     
-      integer i,j,modf,np
+      integer i,j,k,nopes
 !
-      real*8 col(3,np),colmean(3),straight(36),ps(8,3),dd,xn(3)
+      real*8 col(3,nopes),colmean(3),straight(36),ps(8,3),dd,xn(3)
 !     
 !     sides of the quadrilateral
 !
       do i=1,3
-         do j=1, np
-            ps(j,i)=col(i,modf(np,j+1))-col(i,modf(np,j))
+         do j=1,nopes-1
+            ps(j,i)=col(i,j+1)-col(i,j)
          enddo
+         ps(nopes,i)=col(i,1)-col(i,nopes)
       enddo
 !     
 !     mean normal to the quadrilateral (given)
 !     
       do i=1,3
-         straight(4*np+i)=xn(i)
+         straight(4*nopes+i)=xn(i)
       enddo
 !     
 !     ps(j,:) x xn
 !     
-      do j=1,np
-         straight((j-1)*4+1)=ps(j,2)*xn(3)-ps(j,3)*xn(2)
-         straight((j-1)*4+2)=ps(j,3)*xn(1)-ps(j,1)*xn(3)
-         straight((j-1)*4+3)=ps(j,1)*xn(2)-ps(j,2)*xn(1)
-         dd=dsqrt(straight((j-1)*4+1)*straight((j-1)*4+1)
-     &        +straight((j-1)*4+2)*straight((j-1)*4+2)
-     &        +straight((j-1)*4+3)*straight((j-1)*4+3))
+      do j=1,nopes
+         k=(j-1)*4
+         straight(k+1)=ps(j,2)*xn(3)-ps(j,3)*xn(2)
+         straight(k+2)=ps(j,3)*xn(1)-ps(j,1)*xn(3)
+         straight(k+3)=ps(j,1)*xn(2)-ps(j,2)*xn(1)
+         dd=dsqrt(straight(k+1)*straight(k+1)
+     &        +straight(k+2)*straight(k+2)
+     &        +straight(k+3)*straight(k+3))
          do i=1,3
-            straight((j-1)*4+i)=straight((j-1)*4+i)/dd
+            straight(k+i)=straight(k+i)/dd
          enddo
       enddo
 !     
@@ -78,17 +80,18 @@
       do i=1,3
          colmean(i)=0.0
       enddo
-      do j=1,np
-         straight((j-1)*4+4)=-straight((j-1)*4+1)*col(1,j)
-     &        -straight((j-1)*4+2)*col(2,j)
-     &        -straight((j-1)*4+3)*col(3,j)
+      do j=1,nopes
+         k=(j-1)*4
+         straight(k+4)=-straight(k+1)*col(1,j)
+     &        -straight(k+2)*col(2,j)
+     &        -straight(k+3)*col(3,j)
          do i=1,3
             colmean(i)=colmean(i)+col(i,j)
          enddo
       enddo
-      straight(4*np+4)=-xn(1)*colmean(1)/(real(np)) 
-     &     -xn(2)*colmean(2)/(real(np))
-     &     -xn(3)*colmean(3)/(real(np))
+      straight(4*nopes+4)=(-xn(1)*colmean(1)
+     &     -xn(2)*colmean(2)
+     &     -xn(3)*colmean(3))/nopes
 !     
       return
       end

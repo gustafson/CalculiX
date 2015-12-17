@@ -30,7 +30,7 @@ static ITG *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *istep1,*iinc1,calcul_fn1,calcul_qa1,calcul_cauchy1,iener1,ikin1,
     *nal=NULL,*ipompc1,*nodempc1,*nmpc1,*ncocon1,*ikmpc1,*ilmpc1,
     num_cpus,mt1,*nk1,*ne01,*nshcon1,*nelemload1,*nload1,*mortar1,
-    *ielprop1;
+    *ielprop1,*kscale1;
 
 static double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
     *prestr1,*eme1,*fn1=NULL,*qa1=NULL,*vold1,*veold1,*dtime1,*time1,
@@ -69,10 +69,11 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        double *xloadold,ITG *icfd,ITG *inomat,double *pslavsurf,
        double *pmastsurf,ITG *mortar,ITG *islavact,double *cdn,
        ITG *islavnode,ITG *nslavnode,ITG *ntie,double *clearini,
-       ITG *islavsurf,ITG *ielprop,double *prop){
+       ITG *islavsurf,ITG *ielprop,double *prop,double *energyini,
+       double *energy,ITG *kscale){
 
     ITG intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,iener,ikin,
-        intpointvart,mt=mi[1]+1,i,j,*ithread=NULL;
+        intpointvart,mt=mi[1]+1,i,j;
 
     /*
 
@@ -99,7 +100,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
       
     /* variables for multithreading procedure */
     
-    ITG sys_cpus;
+    ITG sys_cpus,*ithread=NULL;
     char *env,*envloc,*envsys;
     
     num_cpus = 0;
@@ -182,7 +183,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;ne1=ne;v1=v;
         stx1=stx;elcon1=elcon;nelcon1=nelcon;rhcon1=rhcon;
         nrhcon1=nrhcon;alcon1=alcon;nalcon1=nalcon;alzero1=alzero;
-        ielmat1=ielmat;ielorien1=ielorien,norien1=norien,orab1=orab;
+        ielmat1=ielmat;ielorien1=ielorien;norien1=norien;orab1=orab;
         ntmat1_=ntmat_;t01=t0;t11=t1;ithermal1=ithermal;prestr1=prestr;
         iprestr1=iprestr;eme1=eme;iperturb1=iperturb;iout1=iout;
         vold1=vold;nmethod1=nmethod;veold1=veold;dtime1=dtime;
@@ -196,6 +197,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
         iener1=iener;ikin1=ikin;mt1=mt;nk1=nk;ne01=ne0;thicke1=thicke;
         emeini1=emeini;pslavsurf1=pslavsurf;clearini1=clearini;
         pmastsurf1=pmastsurf;mortar1=mortar;ielprop1=ielprop;prop1=prop;
+        kscale1=kscale;
 
 	/* calculating the stresses */
 	
@@ -345,7 +347,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        nelemload,nload,&ikin,ielmat,thicke,eme,emn,rhcon,nrhcon,shcon,
        nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,islavact,
        cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time,ielprop,prop,
-       veold));
+       veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,energy));
   
   return;
 
@@ -379,7 +381,7 @@ void *resultsmechmt(ITG *i){
           ncmat1_,nstate1_,stiini1,vini1,ener1,eei1,enerini1,istep1,iinc1,
           springarea1,reltime1,&calcul_fn1,&calcul_qa1,&calcul_cauchy1,&iener1,
 	  &ikin1,&nal[indexnal],ne01,thicke1,emeini1,
-	  pslavsurf1,pmastsurf1,mortar1,clearini1,&nea,&neb,ielprop1,prop1));
+	  pslavsurf1,pmastsurf1,mortar1,clearini1,&nea,&neb,ielprop1,prop1,kscale1));
 
     return NULL;
 }

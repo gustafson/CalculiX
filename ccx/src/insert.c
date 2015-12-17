@@ -21,70 +21,71 @@
 #include <string.h>
 #include "CalculiX.h"
 
-void insert(ITG *ipointer, ITG **irowp, ITG **nextp, ITG *i1,
+void insert(ITG *ipointer, ITG **mast1p, ITG **nextp, ITG *i1,
 	    ITG *i2, ITG *ifree, ITG *nzs_){
+
+  /* routine for the lower triangular matrix, excluding the diagonal */
 
   /*   inserts a new nonzero matrix position into the data structure 
        in FORTRAN notation: 
-       - ipointer(i) points to a position in field irow containing
+       - ipointer(i) points to a position in field mast1 containing
          the row number of a nonzero position in column i; 
-         next(ipointer(i)) points a position in field irow containing
+         next(ipointer(i)) points a position in field mast1 containing
          the row number of another nonzero position in column i, and
          so on until no nonzero positions in column i are left; for 
-         the position j in field irow containing the momentarily last
+         the position j in field mast1 containing the momentarily last
          nonzero number in column i we have next(j)=0 
 
        notice that in C the positions start at 0 and not at 1 as in 
        FORTRAN; the present routine is written in FORTRAN convention */
 
-  ITG idof1,idof2,istart,*irow=NULL,*next=NULL;
+  ITG idof1,idof2,istart,*mast1=NULL,*next=NULL;
 
-  irow=*irowp;
+  mast1=*mast1p;
   next=*nextp;
 
+  if(*i1==*i2) return;
   if(*i1<*i2){
-    idof1=*i1;
-    idof2=*i2;
+    idof1=*i2;
+    idof2=*i1-1;
   }
   else{
-    idof1=*i2;
-    idof2=*i1;
+    idof1=*i1;
+    idof2=*i2-1;
   }
 
-  if(ipointer[idof2-1]==0){
-    ++*ifree;
-    if(*ifree>*nzs_){
+  if(ipointer[idof2]==0){
+    if(*ifree>=*nzs_){
       *nzs_=(ITG)(1.1**nzs_);
-      RENEW(irow,ITG,*nzs_);
+      RENEW(mast1,ITG,*nzs_);
       RENEW(next,ITG,*nzs_);
     }
-    ipointer[idof2-1]=*ifree;
-    irow[*ifree-1]=idof1;
-    next[*ifree-1]=0;
+    mast1[*ifree]=idof1;
+    next[*ifree]=0;
+    ipointer[idof2]=++*ifree;
   }
   else{
-    istart=ipointer[idof2-1];
+    istart=ipointer[idof2]-1;
     while(1){
-      if(irow[istart-1]==idof1) break;
-      if(next[istart-1]==0){
-	++*ifree;
-	if(*ifree>*nzs_){
+      if(mast1[istart]==idof1) break;
+      if(next[istart]==0){
+	if(*ifree>=*nzs_){
 	  *nzs_=(ITG)(1.1**nzs_);
-	  RENEW(irow,ITG,*nzs_);
+	  RENEW(mast1,ITG,*nzs_);
 	  RENEW(next,ITG,*nzs_);
 	}
-	next[istart-1]=*ifree;
-	irow[*ifree-1]=idof1;
-	next[*ifree-1]=0;
+	mast1[*ifree]=idof1;
+	next[*ifree]=0;
+	next[istart]=++*ifree;
 	break;
       }
       else{
-	istart=next[istart-1];
+	istart=next[istart]-1;
       }
     }
   }
 
-  *irowp=irow;
+  *mast1p=mast1;
   *nextp=next;
   
   return;
