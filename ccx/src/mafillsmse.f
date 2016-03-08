@@ -16,25 +16,18 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine mafillsm_se(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
-     &  xboun,nboun,
-     &  ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
-     &  nforc,nelemload,sideload,xload,nload,xbody,ipobody,nbody,cgr,
-     &  ad,au,nactdof,icol,jq,irow,neq,nzl,nmethod,
-     &  ikmpc,ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,
+      subroutine mafillsmse(co,kon,ipkon,lakon,ne,ipompc,nodempc,
+     &  coefmpc,nmpc,nelemload,sideload,xload,nload,xbody,ipobody,
+     &  nbody,cgr,nactdof,neq,nmethod,ikmpc,ilmpc,elcon,nelcon,rhcon,
      &  nrhcon,alcon,nalcon,alzero,ielmat,ielorien,norien,orab,ntmat_,
-     &  t0,t1,ithermal,prestr,
-     &  iprestr,vold,iperturb,sti,nzs,stx,adb,aub,iexpl,plicon,
-     &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
-     &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
-     &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
-     &  coriolis,ibody,xloadold,reltime,veold,springarea,nstate_,
-     &  xstateini,xstate,thicke,integerglob,doubleglob,
-     &  tieset,istartset,iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,
-     &  mortar,clearini,ielprop,prop,ne0,fnext,nea,neb,distmin,ndesi,
-     &  nodedesi,ndirdesi,dfextminds)
-!
-!     filling the stiffness matrix in spare matrix format (sm)
+     &  t0,t1,ithermal,iprestr,vold,iperturb,sti,stx,iexpl,plicon,
+     &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,matname,mi,
+     &  ncmat_,mass,stiffness,buckling,rhsi,intscheme,physcon,ttime,
+     &  time,istep,iinc,coriolis,ibody,xloadold,reltime,veold,
+     &  springarea,nstate_,xstateini,xstate,thicke,integerglob,
+     &  doubleglob,tieset,istartset,iendset,ialset,ntie,nasym,
+     &  pslavsurf,pmastsurf,mortar,clearini,ielprop,prop,ne0,nea,
+     &  neb,distmin,ndesi,nodedesi,ndirdesi,dfextminds)
 !
       implicit none
 !
@@ -45,65 +38,48 @@
       character*80 matname(*)
       character*81 tieset(3,*)
 !
-      integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
-     &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
-     &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,nasym,
-     &  nactdof(0:mi(2),*),irow(*),icolumn,ialset(*),ielprop(*),
-     &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),ntie,
-     &  ielorien(mi(3),*),integerglob(*),istartset(*),iendset(*),
-     &  ipkon(*),intscheme,ncocon(2,*),nshcon(*),ipobody(2,*),nbody,
-     &  ibody(3,*),nk,ne,nboun,nmpc,nforc,nload,neq(2),nzl,nmethod,
-     &  ithermal(2),iprestr,iperturb(*),nzs(3),i,j,k,l,m,idist,jj,
-     &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
-     &  mpc1,mpc2,index1,index2,jdof,node1,node2,kflag,icalccg,
-     &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
-     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,
-     &  nea,neb,ndesi,nodedesi(*),ndirdesi(*),desvar
+      integer kon(*),ipompc(*),nodempc(3,*),nelemload(2,*),ikmpc(*),
+     &  ilmpc(*),mi(*),nstate_,ne0,nasym,nactdof(0:mi(2),*),ialset(*),
+     &  ielprop(*),nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
+     &  ntie,ielorien(mi(3),*),integerglob(*),istartset(*),iendset(*),
+     &  ipkon(*),intscheme,ipobody(2,*),nbody,ibody(3,*),ne,nmpc,
+     &  nload,neq(2),nmethod,ithermal(2),iprestr,iperturb(*),i,j,k,
+     &  idist,jj,id,ist,index,jdof1,idof1,node1,kflag,icalccg,ntmat_,
+     &  indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
+     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,nea,
+     &  neb,ndesi,nodedesi(*),ndirdesi(*),desvar
 !
-      real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
-     &  p2(3),ad(*),au(*),bodyf(3),xloadold(2,*),reltime,
-     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(100,100),
-     &  ff(100),fnext(0:mi(2),*),
-     &  sti(6,mi(1),*),sm(100,100),stx(6,mi(1),*),adb(*),aub(*),
-     &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),springarea(2,*),
-     &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),prop(*),
-     &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
-     &  shcon(0:3,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
-     &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
-     &  xstiff(27,mi(1),*),veold(0:mi(2),*),om,valu2,value,dtime,ttime,
-     &  time,thicke(mi(3),*),doubleglob(*),clearini(3,9,*),
-     &  pslavsurf(3,*),pmastsurf(6,*),distmin,
-     &  dfminds(ndesi,100),dfextminds(ndesi,*)
+      real*8 co(3,*),coefmpc(*),xload(2,*),p1(3),p2(3),bodyf(3),
+     &  xloadold(2,*),reltime,t0(*),t1(*),vold(0:mi(2),*),
+     &  s(100,100),ff(100),sti(6,mi(1),*),sm(100,100),
+     &  stx(6,mi(1),*),elcon(0:ncmat_,ntmat_,*),
+     &  rhcon(0:1,ntmat_,*),springarea(2,*),alcon(0:6,ntmat_,*),
+     &  physcon(*),prop(*),xstate(nstate_,mi(1),*),
+     &  xstateini(nstate_,mi(1),*),alzero(*),orab(7,*),
+     &  xbody(7,*),cgr(4,*),plicon(0:2*npmat_,ntmat_,*),
+     &  plkcon(0:2*npmat_,ntmat_,*),xstiff(27,mi(1),*),
+     &  veold(0:mi(2),*),om,dtime,ttime,time,thicke(mi(3),*),
+     &  doubleglob(*),clearini(3,9,*),pslavsurf(3,*),
+     &  pmastsurf(6,*),distmin,dfminds(ndesi,100),
+     &  dfextminds(ndesi,*)
 !
-      intent(in) co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
-     &  xboun,nboun,
-     &  ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
-     &  nforc,nelemload,sideload,nload,xbody,ipobody,nbody,
-     &  nactdof,icol,jq,irow,neq,nzl,
-     &  ikmpc,ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,
-     &  nrhcon,alcon,nalcon,alzero,ielmat,ielorien,norien,orab,ntmat_,
-     &  t0,t1,ithermal,prestr,
-     &  iprestr,vold,iperturb,sti,nzs,stx,iexpl,plicon,
-     &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
-     &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
-     &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
-     &  coriolis,ibody,xloadold,reltime,veold,nstate_,
-     &  xstateini,thicke,integerglob,doubleglob,
-     &  tieset,istartset,iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,
-     &  mortar,clearini,ielprop,prop,ne0,nea,neb,ndesi,nodedesi,
-     &  ndirdesi,distmin
+      intent(in) co,kon,ipkon,lakon,ne,ipompc,nodempc,coefmpc,nmpc,
+     &  nelemload,sideload,nload,xbody,ipobody,nbody,nactdof,neq,
+     &  ikmpc,ilmpc,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
+     &  ielmat,ielorien,norien,orab,ntmat_,t0,t1,ithermal,iprestr,
+     &  vold,iperturb,sti,stx,iexpl,plicon,nplicon,plkcon,nplkcon,
+     &  xstiff,npmat_,dtime,matname,mi,ncmat_,mass,stiffness,
+     &  buckling,rhsi,intscheme,physcon,ttime,time,istep,iinc,
+     &  coriolis,ibody,xloadold,reltime,veold,nstate_,xstateini,
+     &  thicke,integerglob,doubleglob,tieset,istartset,iendset,
+     &  ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,clearini,
+     &  ielprop,prop,ne0,nea,neb,ndesi,nodedesi,ndirdesi,distmin
 !
-      intent(inout) ad,au,adb,aub,xload,nmethod,cgr,springarea,
-     &  xstate
+      intent(inout) xload,nmethod,cgr,springarea,xstate 
 !
       kflag=2
       i0=0
       icalccg=0
-c      write(*,*) loc(kflag)
-      write(*,*) loc(s)
-c      write(*,*) loc(sm)
-c      write(*,*) loc(ff)
-c      write(*,*) loc(index1)
 !
       if((stiffness.eq.1).and.(mass(1).eq.0).and.(buckling.eq.0)) then
          stiffonly(1)=1
@@ -116,6 +92,22 @@ c      write(*,*) loc(index1)
          stiffonly(2)=0
       endif
 !
+!     initializing the matrices dfextminds
+!
+      do i=1,ndesi
+         do j=1,neq(2)
+            dfextminds(i,j)=0.d0
+         enddo
+      enddo
+!     
+!     initializing the matrices dfminds
+!
+      do i=1,ndesi
+         do j=1,neq(2)
+            dfminds(i,j)=0.d0
+         enddo
+      enddo
+!     
       if(rhsi.eq.1) then
 !
 !        distributed forces (body forces or thermal loads or
@@ -144,14 +136,10 @@ c     Bernhardi start
         elseif(lakon(i)(4:5).eq.'20') then
 c     Bernhardi end
            nope=20
-        elseif(lakon(i)(4:4).eq.'2') then
-           nope=26
         elseif(lakon(i)(4:4).eq.'8') then
            nope=8
         elseif(lakon(i)(4:5).eq.'10') then
            nope=10
-        elseif(lakon(i)(4:5).eq.'14') then
-           nope=14
         elseif(lakon(i)(4:4).eq.'4') then
            nope=4
         elseif(lakon(i)(4:5).eq.'15') then
@@ -236,6 +224,7 @@ c           nope=nope+1
      &          clearini,ielprop,prop,distmin,ndesi,nodedesi,ndirdesi,
      &          dfminds)
 !
+       do desvar=1,ndesi
         do jj=1,3*nope
 !     
            j=(jj-1)/3+1
@@ -257,12 +246,10 @@ c           nope=nope+1
                        jdof1=nactdof(nodempc(2,index),
      &                      nodempc(1,index))
                        if(jdof1.ne.0) then
-                          do desvar=1,ndesi
                              dfextminds(desvar,jdof1)=
      &                            dfextminds(desvar,jdof1)
      &                            -coefmpc(index)*dfminds(desvar,jj)
      &                            /coefmpc(ist)
-                          enddo
                        endif
                        index=nodempc(3,index)
                        if(index.eq.0) exit
@@ -273,8 +260,8 @@ c           nope=nope+1
            endif  
            dfextminds(desvar,jdof1)=dfextminds(desvar,jdof1)+
      &          dfminds(desvar,jj)
-!     
         enddo
+       enddo
       enddo
       endif
 !     

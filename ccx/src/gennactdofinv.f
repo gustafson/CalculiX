@@ -87,9 +87,6 @@
             elseif(lakonl(4:5).eq.'20') then
                indexe2d=indexe+20
                jmax=3
-            elseif(lakonl(4:5).eq.'26') then
-               indexe2d=indexe+26
-               jmax=3
             endif
 !
 !           2-noded beam element
@@ -131,9 +128,6 @@ c            elseif(lakonl(4:5).eq.'8R') then
                jmax=4
             elseif(lakonl(4:5).eq.'20') then
                indexe2d=indexe+20
-               jmax=8
-            elseif(lakonl(4:5).eq.'26') then
-               indexe2d=indexe+26
                jmax=8
             endif
             do j=1,jmax

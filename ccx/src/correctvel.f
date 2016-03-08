@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine correctvel(hel,adv,vfa,ipnei,area,bv,xxn,neifa,
-     &  lakon,ne,neq)
+     &  lakonf,nef,neq)
 !
 !     correction of the velocity at the element centers due to the
 !     pressure change (balance of mass)
@@ -26,14 +26,18 @@
 !
       implicit none
 !
-      character*8 lakon(*)
+      character*8 lakonf(*)
 !
-      integer i,j,k,ne,jdof1,indexf,ipnei(*),neifa(*),ifa,
+      integer i,j,k,nef,jdof1,indexf,ipnei(*),neifa(*),ifa,
      &  neq,numfaces
 !
       real*8 bv(neq,3),hel(3,*),adv(*),xxn(3,*),area(*),vfa(0:5,*)
 !
-      do i=1,ne
+c$omp parallel default(none)
+c$omp& shared(nef,bv,ipnei,lakonf,neifa,vfa,area,xxn,hel,adv)
+c$omp& private(i,jdof1,k,indexf,numfaces,j,ifa)
+c$omp do
+      do i=1,nef
 !
          jdof1=i
          do k=1,3
@@ -41,9 +45,9 @@
          enddo
          indexf=ipnei(i)
 !
-         if(lakon(i)(4:4).eq.'8') then
+         if(lakonf(i)(4:4).eq.'8') then
             numfaces=6
-         elseif(lakon(i)(4:4).eq.'6') then
+         elseif(lakonf(i)(4:4).eq.'6') then
             numfaces=5
          else
             numfaces=4
@@ -56,13 +60,13 @@
      &              +vfa(4,ifa)*area(ifa)*xxn(k,indexf)
             enddo
          enddo
-c         write(*,*) 'correctvel1 ',i,bv(jdof1,1),bv(jdof1,2),bv(jdof1,3)
 !
          do k=1,3
             bv(jdof1,k)=(hel(k,jdof1)-bv(jdof1,k))/adv(jdof1)
          enddo
-c         write(*,*) 'correctvel2 ',i,bv(jdof1,1),bv(jdof1,2),bv(jdof1,3)
       enddo
+c$omp end do
+c$omp end parallel
 !  
       return
       end

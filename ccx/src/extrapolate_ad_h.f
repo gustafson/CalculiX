@@ -32,6 +32,10 @@
 !
       real*8 xrlfa(3,*),xl1,advfa(*),adv(*),hel(3,*),hfa(3,*)
 !     
+c$omp parallel default(none)
+c$omp& shared(nface,ielfa,xrlfa,advfa,adv,hfa,hel)
+c$omp& private(i,ipo1,xl1,iel2,j,ipo3)
+c$omp do
       do i=1,nface
          ipo1=ielfa(1,i)
          xl1=xrlfa(1,i)
@@ -65,8 +69,9 @@
                hfa(j,i)=hel(j,ipo1)/advfa(i)
             enddo
          endif
-c         write(*,*) 'extrapolate_ad ',ielfa(1,i),ielfa(4,i),advfa(i)
       enddo
+c$omp end do
+c$omp end parallel
 !            
       return
       end

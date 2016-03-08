@@ -414,7 +414,7 @@
                         call printoutelem(prlab,ipkon,lakon,kon,co,
      &                       ener,mi(1),ii,nelem,energytot,volumetot,
      &                       enerkintot,ikin,ne,stx,nodes,thicke,ielmat,
-     &                       ielem,iface,mortar)
+     &                       ielem,iface,mortar,ielprop,prop)
                      enddo
                   elseif(mortar.eq.1) then
                      do nelem=ne0,ne
@@ -425,7 +425,7 @@
                         call printoutelem(prlab,ipkon,lakon,kon,co,
      &                       ener,mi(1),ii,nelem,energytot,volumetot,
      &                       enerkintot,ikin,ne,stx,nodes,thicke,ielmat,
-     &                       ielem,iface,mortar)
+     &                       ielem,iface,mortar,ielprop,prop)
                      enddo
                   endif
                endif
@@ -440,20 +440,20 @@
                      call printoutelem(prlab,ipkon,lakon,kon,co,
      &                    ener,mi(1),ii,nelem,energytot,volumetot,
      &                    enerkintot,ikin,ne,stx,nodes,thicke,ielmat,
-     &                    ielem,iface,mortar)
+     &                    ielem,iface,mortar,ielprop,prop)
                   elseif(ialset(jj+1).gt.0) then
                      nelem=ialset(jj)
                      call printoutelem(prlab,ipkon,lakon,kon,co,
      &                    ener,mi(1),ii,nelem,energytot,volumetot,
      &                    enerkintot,ikin,ne,stx,nodes,thicke,ielmat,
-     &                    ielem,iface,mortar)
+     &                    ielem,iface,mortar,ielprop,prop)
                   else
                      do nelem=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                    -ialset(jj+1)
                         call printoutelem(prlab,ipkon,lakon,kon,co,
      &                       ener,mi(1),ii,nelem,energytot,volumetot,
      &                    enerkintot,ikin,ne,stx,nodes,thicke,ielmat,
-     &                    ielem,iface,mortar)
+     &                    ielem,iface,mortar,ielprop,prop)
                      enddo
                   endif
                enddo

@@ -35,8 +35,8 @@
      &  koncont(3,2*numpts+1),itri,kflag,neigh(1),kneigh,
      &  imastop(3,2*numpts+1),indexcj,nopespringj,list(numpts),
      &  igauss,mi(*),nstate_,itriangle(100),itriold,
-     &  ifaceq(9,6),ip(numpts),ne0,iloc,itrinew,ntriangle,
-     &  ifacet(7,4),ifacew1(4,5),ifacew2(8,5),n,islavsurf(2,*),
+     &  ifaceq(8,6),ip(numpts),ne0,iloc,itrinew,ntriangle,
+     &  ifacet(6,4),ifacew1(4,5),ifacew2(8,5),n,islavsurf(2,*),
      &  ibin(numpts),ivert1,ntriangle_,nterms,m,islavsurfold(2,*),
      &  nx(2*numpts+1),ny(2*numpts+1),isol,id
 !
@@ -48,19 +48,19 @@
 !
 !     nodes per face for hex elements
 !
-      data ifaceq /4,3,2,1,11,10,9,12,21,
-     &            5,6,7,8,13,14,15,16,22,
-     &            1,2,6,5,9,18,13,17,23,
-     &            2,3,7,6,10,19,14,18,24,
-     &            3,4,8,7,11,20,15,19,25,
-     &            4,1,5,8,12,17,16,20,26/
+      data ifaceq /4,3,2,1,11,10,9,12,
+     &            5,6,7,8,13,14,15,16,
+     &            1,2,6,5,9,18,13,17,
+     &            2,3,7,6,10,19,14,18,
+     &            3,4,8,7,11,20,15,19,
+     &            4,1,5,8,12,17,16,20/
 !
 !     nodes per face for tet elements
 !
-      data ifacet /1,3,2,7,6,5,11,
-     &             1,2,4,5,9,8,12,
-     &             2,3,4,6,10,9,13,
-     &             1,4,3,8,10,7,14/
+      data ifacet /1,3,2,7,6,5,
+     &             1,2,4,5,9,8,
+     &             2,3,4,6,10,9,
+     &             1,4,3,8,10,7/
 !
 !     nodes per face for linear wedge elements
 !

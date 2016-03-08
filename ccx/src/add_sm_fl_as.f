@@ -28,6 +28,10 @@
 !
       real*8 ad(*),au(*),value
 !
+      intent(in) jq,irow,i,j,value,nzs
+!
+      intent(inout) au,ad
+!
       if(i.eq.j) then
          ad(i)=ad(i)+value
          return

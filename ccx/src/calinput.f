@@ -41,8 +41,7 @@
      &  nbody,nbody_,xbodyold,nam_,ielprop,nprop,nprop_,prop,itpamp,
      &  iviewfile,ipoinpc,cfd,nslavs,t0g,t1g,network,cyclicsymmetry,
      &  idefforc,idefload,idefbody,mortar,ifacecount,islavsurf,
-     &  pslavsurf,clearini,heading,iaxial,objective,equcon,inequcon,
-     &  desvarbou,inequbou,equbou)
+     &  pslavsurf,clearini,heading,iaxial,nobject,objectset)
 !
       implicit none
 !
@@ -60,7 +59,6 @@
 !               10:electromegnetic eigenvalue problems
 !               11:superelement creation
 !               12:sensitivity
-!     ithermal(1): 0:no thermal stresses; 1:thermal stresses;
 !     iprestr: 0: no residual stresses; 1: residual stresses;
 !     iperturb: 0:no perturbation; 1:perturbation; 2: nonlinear
 !               geometric analysis; 3: material and geometrical
@@ -80,8 +78,7 @@
       character*20 labmpc(*),sideload(*)
       character*66 heading(*)
       character*80 matname(*),orname(*),amname(*)
-      character*81 set(*),prset(*),tieset(3,*),cbody(*),objective(3),
-     &     inequcon(3),equcon(2)
+      character*81 set(*),prset(*),tieset(3,*),cbody(*),objectset(3,*)
       character*87 filab(*)
       character*132 jobnamec(*),textpart(16)
 !
@@ -108,7 +105,7 @@
      &  ne1d,ne2d,nener,irstrt,ii,maxlenmpc,inl,ipol,network,
      &  iline,mcs,ntie,ntie_,lprev,newstep,nbody,nbody_,ibody(3,*),
      &  cyclicsymmetry,idefforc(*),idefload(*),idefbody(*),
-     &  ichangesurfacebehavior
+     &  ichangesurfacebehavior,nobject
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),fmpc(*),
      &  xload(2,*),alzero(*),offset(2,*),prop(*),pslavsurf(3,*),
@@ -123,7 +120,7 @@
      &  xstate(nstate_,mi(1),*),ttime,qaold(2),cs(17,*),tietol(2,*),
      &  xbody(7,*),xbodyold(7,*),t0g(2,*),t1g(2,*),
      &  fei(3),tinc,tper,xmodal(*),tmin,tmax,tincf,
-     &  alpha,physcon(*),desvarbou(2),inequbou,equbou
+     &  alpha,physcon(*)
 !
       save solid,ianisoplas,out3d,pretension
 !
@@ -410,7 +407,7 @@ c         iaxial=0
             call creeps(inpc,textpart,nelcon,imat,ntmat_,npmat_,
      &        plicon,nplicon,elcon,iplas,iperturb,nstate_,ncmat_,
      &        matname,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &        ipoinpc,ianisoplas)
+     &        ipoinpc)
 !
          elseif(textpart(1)(1:16).eq.'*CYCLICHARDENING') then
             call cyclichardenings(inpc,textpart,nelcon,imat,ntmat_,
@@ -551,10 +548,6 @@ c
          elseif(textpart(1)(1:8).eq.'*ENDSTEP') then
             exit
 !
-         elseif(textpart(1)(1:20).eq.'*EQUALITYCONSTRAINTS') then
-            call equcons(inpc,textpart,istep,istat,n,iline,ipol,inl,
-     &        ipoinp,inp,ipoinpc,equcon,equbou)
-!
          elseif(textpart(1)(1:10).eq.'*EQUATIONF') then
             M_or_SPC=1
             call equationfs(inpc,textpart,ipompc,nodempc,coefmpc,
@@ -649,16 +642,12 @@ c
      &        imat,ntmat_,ncmat_,irstrt,istep,istat,n,iperturb,iline,
      &        ipol,inl,ipoinp,inp,ipoinpc)
 !
-         elseif(textpart(1)(1:22).eq.'*INEQUALITYCONSTRAINTS') then
-            call inequcons(inpc,textpart,istep,istat,n,iline,ipol,inl,
-     &        ipoinp,inp,ipoinpc,inequcon,inequbou)
-!
          elseif(textpart(1)(1:18).eq.'*INITIALCONDITIONS') then
             call initialconditionss(inpc,textpart,set,istartset,iendset,
      &        ialset,nset,t0,t1,prestr,iprestr,ithermal,veold,inoelfree,
      &        nk_,mi(1),istep,istat,n,iline,ipol,inl,ipoinp,inp,lakon,
      &        kon,co,ne,ipkon,vold,ipoinpc,xstate,nstate_,nk,t0g,
-     &        t1g,iaxial)
+     &        t1g,iaxial,ielprop,prop)
 !
          elseif(textpart(1)(1:21).eq.'*MAGNETICPERMEABILITY') then
             call magneticpermeabilitys(inpc,textpart,elcon,nelcon,
@@ -751,7 +740,7 @@ c
 !
          elseif(textpart(1)(1:10).eq.'*OBJECTIVE') then
             call objectives(inpc,textpart,istep,istat,n,iline,ipol,inl,
-     &        ipoinp,inp,ipoinpc,objective)
+     &        ipoinp,inp,ipoinpc,nener,nobject,objectset)
 !
          elseif(textpart(1)(1:12).eq.'*ORIENTATION') then
             call orientations(inpc,textpart,orname,orab,norien,
@@ -769,7 +758,7 @@ c
             call plastics(inpc,textpart,nelcon,imat,ntmat_,npmat_,
      &        plicon,nplicon,plkcon,nplkcon,iplas,iperturb,nstate_,
      &        ncmat_,elcon,matname,irstrt,istep,istat,n,iline,ipol,
-     &        inl,ipoinp,inp,ipoinpc,ianisoplas)
+     &        inl,ipoinp,inp,ipoinpc)
 !
          elseif(textpart(1)(1:19).eq.'*PRE-TENSIONSECTION') then
             call pretensionsections(inpc,textpart,ipompc,nodempc,
@@ -980,10 +969,6 @@ c
             call valuesatinfinitys(inpc,textpart,physcon,
      &        istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)
 !
-         elseif(textpart(1)(1:15).eq.'*VARIABLEBOUNDS') then
-            call varbous(inpc,textpart,istep,istat,n,iline,ipol,inl,
-     &        ipoinp,inp,ipoinpc,desvarbou)
-!
          elseif(textpart(1)(1:11).eq.'*VIEWFACTOR') then
             call viewfactors(textpart,iviewfile,istep,inpc,
      &           istat,n,key,iline,ipol,inl,ipoinp,inp,jobnamec,ipoinpc)
@@ -1092,11 +1077,11 @@ c
 !
 !     generating the MPC's for zero mass flow in CFD-calculations
 !
-      if(cfd.eq.1) then
-         call genmassfloweqs(ipompc,nodempc,coefmpc,
-     &        nmpc,nmpc_,mpcfree,co,ikmpc,ilmpc,labmpc,
-     &        lakon,nload,sideload,ipkon,kon,nelemload)
-      endif
+c      if(cfd.eq.1) then
+c         call genmassfloweqs(ipompc,nodempc,coefmpc,
+c     &        nmpc,nmpc_,mpcfree,co,ikmpc,ilmpc,labmpc,
+c     &        lakon,nload,sideload,ipkon,kon,nelemload)
+c      endif
 !
       infree(1)=ixfree
       infree(2)=ikfree

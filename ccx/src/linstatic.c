@@ -68,7 +68,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	     ITG *istep,ITG *nmat,ITG *ielprop,double *prop,char *typeboun,
 	     ITG *mortar,ITG *mpcinfo,double *tietol,ITG *ics,ITG *icontact){
   
-  char description[13]="            ",*lakon=NULL;
+  char description[13]="            ",*lakon=NULL,stiffmatrix[132]="";
 
   ITG *inum=NULL,k,*icol=NULL,*irow=NULL,ielas=0,icmd=0,iinc=1,nasym=0,i,j,ic,ir,
       mass[2]={0,0}, stiffness=1, buckling=0, rhsi=1, intscheme=0,*ncocon=NULL,
@@ -97,6 +97,8 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
          *areaslav=NULL,*xmastnor=NULL,theta=0.,*ener=NULL,*xstate=NULL,
          *fnext=NULL,*energyini=NULL,*energy=NULL;
 
+  FILE *f1;
+  
 #ifdef SGI
   ITG token;
 #endif
@@ -348,24 +350,6 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       NNEW(au,double,*nzs);
       nmethodl=*nmethod;
   }
-      
-
-/*  FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xbounact,nboun,
-	    ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
-	    nforc,nelemload,sideload,xloadact,nload,xbodyact,ipobody,
-	    nbody,cgr,ad,au,fext,nactdof,icol,jq,irow,neq,nzl,&nmethodl,
-	    ikmpc,ilmpc,ikboun,ilboun,
-	    elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
-	    ielorien,norien,orab,ntmat_,
-	    t0,t1act,ithermal,prestr,iprestr,vold,iperturb,sti,
-	    nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
-	    xstiff,npmat_,&dtime,matname,mi,
-            ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
-            shcon,nshcon,cocon,ncocon,ttime,&time,istep,&iinc,&coriolis,
-	    ibody,xloadold,&reltime,veold,springarea,nstate_,
-            xstateini,xstate,thicke,integerglob,doubleglob,
-	    tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
-	    pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,&kscale));*/
 
   mafillsmmain(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xbounact,nboun,
 	    ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
@@ -621,6 +605,35 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 #endif
     }
 
+    /* saving of ad and au for sensitivity analysis */
+
+    for(i=0;i<*ntie;i++){
+	if(strcmp1(&tieset[i*243+80],"D")==0){
+	    
+	    strcpy(stiffmatrix,jobnamec);
+	    strcat(stiffmatrix,".stm");
+	    
+	    if((f1=fopen(stiffmatrix,"wb"))==NULL){
+		printf("*ERROR in linstatic: cannot open stiffness matrix file for writing...");
+		
+		exit(0);
+	    }
+	    
+	    /* storing the stiffness matrix */
+	    
+	    if(fwrite(ad,sizeof(double),neq[1],f1)!=neq[1]){
+		printf("*ERROR saving the diagonal of the stiffness matrix to the stiffness matrix file...");
+		exit(0);
+	    }
+	    if(fwrite(au,sizeof(double),nzs[2],f1)!=nzs[2]){
+		printf("*ERROR saving the off-diagonal terms of the stiffness matrix to the tiffness matrix file...");
+		exit(0);
+	    }
+	    fclose(f1);
+	    break;
+        }
+    }
+    
     SFREE(ad);SFREE(au);
 
     /* calculating the displacements and the stresses and storing */
@@ -640,8 +653,8 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     NNEW(eei,double,6*mi[0]**ne);
     if(*nener==1){
 	NNEW(stiini,double,6*mi[0]**ne);
-        NNEW(emeini,double,6*mi[0]**ne);}
-	NNEW(enerini,double,mi[0]**ne);
+        NNEW(emeini,double,6*mi[0]**ne);
+	NNEW(enerini,double,mi[0]**ne);}
 
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	    elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,

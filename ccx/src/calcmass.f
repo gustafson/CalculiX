@@ -18,7 +18,7 @@
 !
       subroutine calcmass(ipkon,lakon,kon,co,
      &     mi,nelem,ne,thicke,ielmat,nope,t0,t1,rhcon,nrhcon,ntmat_,
-     &     ithermal,csmasstot)
+     &     ithermal,csmasstot,ielprop,prop)
 !
 !     calculates the mass of element "nelem"
 !
@@ -28,9 +28,9 @@
 !
       integer ipkon(*),nelem,kon(*),mi(*),nope,indexe,i,j,k,konl(20),
      &  mint3d,jj,iflag,ne,ki,kl,ilayer,nlayer,kk,ntmat_,i1,imat,
-     &  nopes,ielmat(mi(3),*),mint2d,nrhcon(*),ithermal
+     &  nopes,ielmat(mi(3),*),mint2d,nrhcon(*),ithermal,null,ielprop(*)
 !
-      real*8 csmasstot,csmass,co(3,*),
+      real*8 csmasstot,csmass,co(3,*),prop(*),
      &  xl(3,20),xi,et,ze,xsj,shp(4,20),weight,
      &  a,gs(8,4),dlayer(4),tlayer(4),thickness,t0l,t1l,rho,
      &  thicke(mi(3),*),xlayer(mi(3),4),shp2(7,8),xs2(3,7),xsj2(3),
@@ -39,6 +39,7 @@
       include "gauss.f"
 !
       data iflag /2/
+      null=0
 !
       if(ipkon(nelem).lt.0) return
 !
@@ -118,6 +119,14 @@
 !
       if(lakon(nelem)(4:5).eq.'8R') then
          mint3d=1
+      elseif(lakon(nelem)(4:7).eq.'20RB') then
+         if((lakon(nelem)(8:8).eq.'R').or.
+     &      (lakon(nelem)(8:8).eq.'C')) then
+            mint3d=50
+         else
+            call beamintscheme(lakon(nelem),mint3d,ielprop(nelem),prop,
+     &           null,xi,et,ze,weight)
+         endif
       elseif((lakon(nelem)(4:4).eq.'8').or.
      &        (lakon(nelem)(4:6).eq.'20R')) then
          if(lakon(nelem)(7:8).eq.'LC') then
@@ -145,6 +154,17 @@
             et=gauss3d1(2,jj)
             ze=gauss3d1(3,jj)
             weight=weight3d1(jj)
+         elseif(lakon(nelem)(4:7).eq.'20RB') then
+            if((lakon(nelem)(8:8).eq.'R').or.
+     &         (lakon(nelem)(8:8).eq.'C')) then
+               xi=gauss3d13(1,kk)
+               et=gauss3d13(2,kk)
+               ze=gauss3d13(3,kk)
+               weight=weight3d13(kk)
+            else
+               call beamintscheme(lakon(nelem),mint3d,ielprop(nelem),
+     &              prop,kk,xi,et,ze,weight)
+            endif
          elseif((lakon(nelem)(4:4).eq.'8').or.
      &           (lakon(nelem)(4:6).eq.'20R'))
      &           then

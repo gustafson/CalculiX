@@ -29,6 +29,10 @@
 !
       real*8 xrlfa(3,*),vel(nef,0:5),vfa(0:5,*),xboun(*),xl1,xl2
 !
+c$omp parallel default(none)
+c$omp& shared(nface,ielfa,xrlfa,vfa,vel,ipnei,ifabou,xboun)
+c$omp& private(i,iel1,xl1,iel2,xl2,j,iel3,ipointer,indexf)
+c$omp do
       do i=1,nface
          iel1=ielfa(1,i)
          xl1=xrlfa(1,i)
@@ -111,6 +115,8 @@
             endif
          endif
       enddo
+c$omp end do
+c$omp end parallel
 !
       return
       end

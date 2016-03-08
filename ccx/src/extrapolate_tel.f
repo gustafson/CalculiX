@@ -29,10 +29,10 @@
 !
       real*8 xrlfa(3,*),vel(nef,0:5),vfa(0:5,*),xboun(*),xl1,xl2
 !
-c      do i=1,nef
-c         write(*,*) 'extrapolate_tel ',i,vel(i,0)
-c      enddo
-!
+c$omp parallel default(none)
+c$omp& shared(nface,ielfa,xrlfa,vel,vfa,ipnei,ifabou,xboun)
+c$omp& private(i,iel1,xl1,iel2,xl2,indexf,iel3,ipointer)
+c$omp do
       do i=1,nface
          iel1=ielfa(1,i)
          xl1=xrlfa(1,i)
@@ -70,8 +70,9 @@ c      enddo
                vfa(0,i)=vel(iel1,0)
             endif
          endif
-c         write(*,*) 'extrapolate_tel ',i,ielfa(1,i),ielfa(4,i),vfa(0,i)
       enddo
+c$omp end do
+c$omp end parallel
 !            
       return
       end

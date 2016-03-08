@@ -18,8 +18,8 @@
 !
       subroutine mafillp(nef,lakon,ipnei,neifa,neiel,vfa,area,
      &  advfa,xlet,cosa,volume,au,ad,jq,irow,ap,ielfa,ifabou,xle,
-     &  b,xxn,compressible,neq,nzs,hfa,gradpel,bp,xxi,neij,
-     &  xlen,cosb)
+     &  b,xxn,neq,nzs,hfa,gradpel,bp,xxi,neij,
+     &  xlen,cosb,nefa,nefb)
 !
 !     filling the lhs and rhs to calculate p
 !
@@ -27,18 +27,16 @@
 !
       character*8 lakon(*)
 !
-      integer i,nef,jdof1,indexf,ipnei(*),j,neifa(*),
+      integer i,nef,jdof1,indexf,ipnei(*),j,neifa(*),nefa,nefb,
      &  neiel(*),iel,ifa,jdof2,irow(*),ielfa(4,*),compressible,
      &  ifabou(*),neq,jq(*),iel2,indexb,knownflux,indexf2,
-     &  iatleastonepressurebc,j2,neij(*),nzs,numfaces,k
+     &  j2,neij(*),nzs,numfaces,k
 !
       real*8 coef,vfa(0:5,*),volume(*),area(*),advfa(*),xlet(*),
      &  cosa(*),ad(*),au(*),xle(*),xxn(3,*),ap(*),b(*),cosb(*),
-     &  hfa(3,*),gradpel(3,*),bp(*),xxi(3,*),xlen(*)
+     &  hfa(3,*),gradpel(3,*),bp(*),xxi(3,*),xlen(*),bp_ifa
 !
-      iatleastonepressurebc=0
-!
-      do i=1,nef
+      do i=nefa,nefb
          jdof1=i
          indexf=ipnei(i)
          if(lakon(i)(4:4).eq.'8') then
@@ -69,7 +67,7 @@
 !     
                j2=neij(indexf)
                indexf2=ipnei(iel)+j2
-               bp(ifa)=((gradpel(1,iel)*(xxi(1,indexf2)
+               bp_ifa=((gradpel(1,iel)*(xxi(1,indexf2)
      &              -cosa(indexf2)*xxn(1,indexf2))+
      &              gradpel(2,iel)*(xxi(2,indexf2)
      &              -cosa(indexf2)*xxn(2,indexf2))+
@@ -83,8 +81,8 @@
      &              gradpel(3,i)*(xxi(3,indexf)
      &              -cosa(indexf)*xxn(3,indexf)))
      &              *xle(indexf))
-               b(jdof1)=b(jdof1)-coef*bp(ifa)
-               if(i.gt.iel) bp(ifa)=-bp(ifa)
+               b(jdof1)=b(jdof1)-coef*bp_ifa
+c               if(i.gt.iel) bp_ifa=-bp_ifa
             else
                iel2=ielfa(2,ifa)
                if(iel2.lt.0) then
@@ -100,9 +98,7 @@
 !                    sliding conditions
 !
                      knownflux=2
-c                     knownflux=1
                   elseif(ifabou(-iel2+4).ne.0) then
-                     iatleastonepressurebc=1
 !     
 !     pressure given (only if not all velocity
 !     components are given)
@@ -115,21 +111,28 @@ c                     knownflux=1
 !     
 !     correction for non-orthogonal meshes
 !     
-                     bp(ifa)=(-(gradpel(1,i)*(xxi(1,indexf)
+                     bp_ifa=(-(gradpel(1,i)*(xxi(1,indexf)
      &                    -cosa(indexf)*xxn(1,indexf))+
      &                    gradpel(2,i)*(xxi(2,indexf)
      &                    -cosa(indexf)*xxn(2,indexf))+
      &                    gradpel(3,i)*(xxi(3,indexf)
      &                    -cosa(indexf)*xxn(3,indexf)))
      &                    *xle(indexf))
-                     b(jdof1)=b(jdof1)-coef*bp(ifa)
+                     b(jdof1)=b(jdof1)-coef*bp_ifa
                   endif
                endif
             endif
 !     
+!     save coefficients for correctvfa.f
+!     
+            if((iel.eq.0).or.(i.lt.iel)) then
+               ap(ifa)=coef
+               bp(ifa)=bp_ifa
+            endif
+!     
 !     save the coefficient for correctvfa.f
 !     
-            ap(ifa)=coef
+c            ap(ifa)=coef
 !     
             if(knownflux.eq.1) then
                b(jdof1)=b(jdof1)+vfa(5,ifa)*area(ifa)*
@@ -141,10 +144,6 @@ c                     knownflux=1
      &              (hfa(1,ifa)*xxn(1,indexf)+
      &              hfa(2,ifa)*xxn(2,indexf)+
      &              hfa(3,ifa)*xxn(3,indexf))
-c               write(*,*) 'mafillp ',i,j,+vfa(5,ifa)*area(ifa)*
-c     &              (hfa(1,ifa)*xxn(1,indexf)+
-c     &              hfa(2,ifa)*xxn(2,indexf)+
-c     &              hfa(3,ifa)*xxn(3,indexf))
             endif
          enddo
       enddo
@@ -155,17 +154,17 @@ c     &              hfa(3,ifa)*xxn(3,indexf))
 !     a pressure bc is only recognized if not all velocity degrees of
 !     freedom are prescribed on the same face
 !     
-      if(iatleastonepressurebc.eq.0) then
-         ad(nef)=1.d0
-         b(nef)=0.d0
-         do i=2,nef
-            if(jq(i)-1>0) then
-               if(irow(jq(i)-1).eq.nef) then
-                  au(jq(i)-1)=0.d0
-               endif
-            endif
-         enddo
-      endif
+c      if(iatleastonepressurebc.eq.0) then
+c         ad(nef)=1.d0
+c         b(nef)=0.d0
+c         do i=2,nef
+c            if(jq(i)-1>0) then
+c               if(irow(jq(i)-1).eq.nef) then
+c                  au(jq(i)-1)=0.d0
+c               endif
+c            endif
+c         enddo
+c      endif
 !     
 c      do i=1,nzs
 c         write(*,*) 'mafillp irow,au',i,au(i)

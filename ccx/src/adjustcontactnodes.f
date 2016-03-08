@@ -36,7 +36,7 @@
      &  ntriangle_,itriold,itrinew,id,nslavnode(*),islavnode(*),
      &  ipos,nset,istartset(*),iendset(*),ialset(*),iclear,
      &  istart,ilength,nope,nopes,nelems,jj,ifaces,itiefac(2,*),
-     &  jfaces,islavsurf(2,*),ifaceq(9,6),ifacet(7,4),ifacew1(4,5),
+     &  jfaces,islavsurf(2,*),ifaceq(8,6),ifacet(6,4),ifacew1(4,5),
      &  ifacew2(8,5),ipkon(*),kon(*)
 !
       real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),p(3),
@@ -45,19 +45,19 @@
 !
 !     nodes per face for hex elements
 !
-      data ifaceq /4,3,2,1,11,10,9,12,21,
-     &            5,6,7,8,13,14,15,16,22,
-     &            1,2,6,5,9,18,13,17,23,
-     &            2,3,7,6,10,19,14,18,24,
-     &            3,4,8,7,11,20,15,19,25,
-     &            4,1,5,8,12,17,16,20,26/
+      data ifaceq /4,3,2,1,11,10,9,12,
+     &            5,6,7,8,13,14,15,16,
+     &            1,2,6,5,9,18,13,17,
+     &            2,3,7,6,10,19,14,18,
+     &            3,4,8,7,11,20,15,19,
+     &            4,1,5,8,12,17,16,20/
 !
 !     nodes per face for tet elements
 !
-      data ifacet /1,3,2,7,6,5,11,
-     &             1,2,4,5,9,8,12,
-     &             2,3,4,6,10,9,13,
-     &             1,4,3,8,10,7,14/
+      data ifacet /1,3,2,7,6,5,
+     &             1,2,4,5,9,8,
+     &             2,3,4,6,10,9,
+     &             1,4,3,8,10,7/
 !
 !     nodes per face for linear wedge elements
 !
@@ -273,18 +273,9 @@ c     write(*,*) '**regular solution'
                elseif(lakon(nelems)(4:5).eq.'20') then
                   nopes=8
                   nope=20
-               elseif(lakon(nelems)(4:6).eq.'26R') then
-                  nopes=9
-                  nope=26
-               elseif(lakon(nelems)(4:4).eq.'2') then
-                  nopes=9
-                  nope=26
                elseif(lakon(nelems)(4:5).eq.'10') then
                   nopes=6
                   nope=10
-               elseif(lakon(nelems)(4:5).eq.'14') then
-                  nopes=7
-                  nope=14
                elseif(lakon(nelems)(4:4).eq.'4') then
                   nopes=3
                   nope=4
@@ -314,7 +305,7 @@ c     write(*,*) '**regular solution'
                ilength=nslavnode(i+1)-nslavnode(i)
 !     
                do m=1,nopes
-                  if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8))then
+                  if((nope.eq.20).or.(nope.eq.8))then
                      node=kon(ipkon(nelems)+ifaceq(m,jfaces))
                   elseif((nope.eq.10).or.(nope.eq.4).or.(nope.eq.14)) 
      &                    then

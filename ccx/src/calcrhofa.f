@@ -38,9 +38,7 @@
          call materialdata_rho(rhcon,nrhcon,imat,rho,t1l,ntmat_,
      &            ithermal)
          vfa(5,i)=rho
-c         write(*,*) 'calcrhofa rho',i,rho
       enddo
-c      write(*,*)
 !            
       return
       end

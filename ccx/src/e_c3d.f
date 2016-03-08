@@ -50,14 +50,14 @@
       character*80 matname(*),amat
       character*81 tieset(3,*)
 !
-      integer konl(26),ifaceq(9,6),nelemload(2,*),nbody,nelem,
+      integer konl(26),ifaceq(8,6),nelemload(2,*),nbody,nelem,
      &  mi(*),iloc,jfaces,igauss,mortar,kon(*),ielprop(*),null,
      &  mattyp,ithermal,iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
      &  nmethod,k1,l1,ii,jj,ii1,jj1,id,ipointer,ig,m1,m2,m3,m4,kk,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),six,
      &  ielorien(mi(3),*),ilayer,nlayer,ki,kl,ipkon(*),indexe,
      &  ntmat_,nope,nopes,norien,ihyper,iexpl,kode,imat,mint2d,
-     &  mint3d,ifacet(7,4),nopev,iorien,istiff,ncmat_,iface,
+     &  mint3d,ifacet(6,4),nopev,iorien,istiff,ncmat_,iface,
      &  ifacew(8,5),intscheme,n,ipointeri,ipointerj,istep,iinc,
      &  layer,kspt,jltyp,iflag,iperm(60),m,ipompc(*),nodempc(3,*),
      &  nmpc,ikmpc(*),ilmpc(*),iscale,nstate_,ne0,iselect(6),kscale,
@@ -101,16 +101,16 @@
 !
       include "gauss.f"
 !
-      ifaceq=reshape((/4,3,2,1,11,10,9,12,21,
-     &            5,6,7,8,13,14,15,16,22,
-     &            1,2,6,5,9,18,13,17,23,
-     &            2,3,7,6,10,19,14,18,24,
-     &            3,4,8,7,11,20,15,19,25,
-     &            4,1,5,8,12,17,16,20,26/),(/9,6/))
-      ifacet=reshape((/1,3,2,7,6,5,11,
-     &             1,2,4,5,9,8,12,
-     &             2,3,4,6,10,9,13,
-     &             1,4,3,8,10,7,14/),(/7,4/))
+      ifaceq=reshape((/4,3,2,1,11,10,9,12,
+     &            5,6,7,8,13,14,15,16,
+     &            1,2,6,5,9,18,13,17,
+     &            2,3,7,6,10,19,14,18,
+     &            3,4,8,7,11,20,15,19,
+     &            4,1,5,8,12,17,16,20/),(/8,6/))
+      ifacet=reshape((/1,3,2,7,6,5,
+     &             1,2,4,5,9,8,
+     &             2,3,4,6,10,9,
+     &             1,4,3,8,10,7/),(/6,4/))
       ifacew=reshape((/1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
@@ -140,28 +140,12 @@ c     Bernhardi end
          nope=20
          nopev=8
          nopes=8
-      elseif(lakonl(4:4).eq.'2') then
-!
-!        nopes for C3D26 is a default value which can be overwritten
-!        while integrating over the element faces
-!
-         nope=26
-         nopev=8
-         nopes=8
       elseif(lakonl(4:4).eq.'8') then
          nope=8
          nopev=8
          nopes=4
       elseif(lakonl(4:5).eq.'10') then
          nope=10
-         nopev=4
-         nopes=6
-      elseif(lakonl(4:5).eq.'14') then
-!
-!        nopes for C3D14 is a default value which can be overwritten
-!        while integrating over the element faces
-!
-         nope=14
          nopev=4
          nopes=6
       elseif(lakonl(4:4).eq.'4') then
@@ -258,10 +242,9 @@ c     Bernhardi end
                call beamintscheme(lakonl,mint3d,ielprop(nelem),prop,
      &              null,xi,et,ze,weight)
             endif
-         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R').or.
-     &          (lakonl(4:6).eq.'26R')) then
-            if(((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'S').or.
-     &         (lakonl(7:7).eq.'E')).and.(lakonl(4:6).ne.'26R')) then
+         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) then
+            if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'S').or.
+     &         (lakonl(7:7).eq.'E')) then
                mint2d=2
                mint3d=4
             else
@@ -275,7 +258,7 @@ c     Bernhardi end
          elseif(lakonl(4:4).eq.'2') then
             mint2d=9
             mint3d=27
-         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
+         elseif(lakonl(4:5).eq.'10') then
             mint2d=3
             mint3d=4
          elseif(lakonl(4:4).eq.'4') then
@@ -304,10 +287,9 @@ c     Bernhardi end
                   mint2d=9
                endif
             endif
-         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:4).eq.'4').or.
-     &          (lakonl(4:5).eq.'14')) then
+         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:4).eq.'4')) then
             mint3d=15
-            if((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
+            if(lakonl(4:5).eq.'10') then
                mint2d=3
             else
                mint2d=1
@@ -439,8 +421,7 @@ c     Bernhardi end
                   call beamintscheme(lakonl,mint3d,ielprop(nelem),prop,
      &                 kk,xi,et,ze,weight)
                endif
-            elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R').or.
-     &             (lakonl(4:6).eq.'26R')) 
+            elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) 
      &              then
                if(lakonl(7:8).ne.'LC') then
                   xi=gauss3d2(1,kk)
@@ -492,7 +473,7 @@ c     Bernhardi end
                et=gauss3d3(2,kk)
                ze=gauss3d3(3,kk)
                weight=weight3d3(kk)
-            elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
+            elseif(lakonl(4:5).eq.'10') then
                xi=gauss3d5(1,kk)
                et=gauss3d5(2,kk)
                ze=gauss3d5(3,kk)
@@ -555,14 +536,10 @@ c     Bernhardi end
             else
                call shape20h(xi,et,ze,xl,xsj,shp,iflag)
             endif
-         elseif(nope.eq.26) then
-            call shape26h(xi,et,ze,xl,xsj,shp,iflag,konl)
          elseif(nope.eq.8) then
             call shape8h(xi,et,ze,xl,xsj,shp,iflag)
          elseif(nope.eq.10) then
             call shape10tet(xi,et,ze,xl,xsj,shp,iflag)
-         elseif(nope.eq.14) then
-            call shape14tet(xi,et,ze,xl,xsj,shp,iflag,konl)
          elseif(nope.eq.4) then
             call shape4tet(xi,et,ze,xl,xsj,shp,iflag)
          elseif(nope.eq.15) then
@@ -606,7 +583,7 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
                   t0l=t0l+t0(konl(i1))/8.d0
                   t1l=t1l+t1(konl(i1))/8.d0
                enddo
-            elseif((lakonl(4:6).eq.'20 ').or.(lakonl(4:6).eq.'26 '))then
+            elseif(lakonl(4:6).eq.'20 ')then
                nopered=20
                call lintemp(t0,t1,konl,nopered,kk,t0l,t1l)
             else
@@ -621,7 +598,7 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
                   t0l=t0l+t0(konl(i1))/8.d0
                   t1l=t1l+vold(0,konl(i1))/8.d0
                enddo
-            elseif((lakonl(4:6).eq.'20 ').or.(lakonl(4:6).eq.'26 '))then
+            elseif(lakonl(4:6).eq.'20 ')then
                nopered=20
                call lintemp_th(t0,vold,konl,nopered,kk,t0l,t1l,mi)
             else
@@ -720,6 +697,15 @@ c            call orthotropic(elas,anisox)
 !
             if(((iperturb(1).ne.1).and.(iperturb(2).ne.1)).or.
      &          (buckling.eq.1)) then
+!
+!               calculating the total mass of the element for
+!               lumping purposes: only for explicit
+!               dynamic calculations
+!
+               if((mass.eq.1).and.(iexpl.gt.1)) then
+                  summass=summass+rho*xsj
+               endif
+!
                jj1=1
                do jj=1,nope
 !
@@ -868,7 +854,7 @@ c            call orthotropic(elas,anisox)
                endif
 !
 !               calculating the total mass of the element for
-!               lumping purposes: only for explicit nonlinear
+!               lumping purposes: only for explicit
 !               dynamic calculations
 !
                if((mass.eq.1).and.(iexpl.gt.1)) then
@@ -1094,21 +1080,6 @@ c
 c            read(sideload(id)(2:2),'(i1)') ig
             ig=ichar(sideload(id)(2:2))-48
 !
-!           check whether 8 or 9-nodes face
-!
-            if(nope.eq.26) then
-               if(konl(20+ig).eq.konl(20)) then
-                  nopes=8
-               else
-                  nopes=9
-               endif
-            elseif(nope.eq.14) then
-               if(konl(10+ig).eq.konl(10)) then
-                  nopes=6
-               else
-                  nopes=7
-               endif
-            endif
 !
 !         treatment of wedge faces
 !
@@ -1131,7 +1102,7 @@ c            read(sideload(id)(2:2),'(i1)') ig
           endif
 !
 c     Bernhardi start
-          if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8).or.
+          if((nope.eq.20).or.(nope.eq.8).or.
      &       (nope.eq.11)) then
 c     Bernhardi end
 c             if(iperturb(1).eq.0) then
@@ -1211,7 +1182,7 @@ c             if(iperturb(1).eq.0) then
                 et=gauss2d1(2,i)
                 weight=weight2d1(i)
              elseif((lakonl(4:4).eq.'8').or.
-     &              (lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R').or.
+     &              (lakonl(4:6).eq.'20R').or.
      &              ((lakonl(4:5).eq.'15').and.(nopes.eq.8))) then
                 xi=gauss2d2(1,i)
                 et=gauss2d2(2,i)
@@ -1220,7 +1191,7 @@ c             if(iperturb(1).eq.0) then
                 xi=gauss2d3(1,i)
                 et=gauss2d3(2,i)
                 weight=weight2d3(i)
-             elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14').or.
+             elseif((lakonl(4:5).eq.'10').or.
      &               ((lakonl(4:5).eq.'15').and.(nopes.eq.6))) then
                 xi=gauss2d5(1,i)
                 et=gauss2d5(2,i)
@@ -1310,7 +1281,7 @@ c                   write(*,*) 'e_c3d ',(stress(k),k=1,6)
 !
                 do k=1,nopes
 c    Bernhardi start
-                   if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8).or.
+                   if((nope.eq.20).or.(nope.eq.8).or.
      &                (nope.eq.11)) then
 c    Bernhardi end
                       ipointer=(ifaceq(k,ig)-1)*3
@@ -1419,24 +1390,22 @@ c                   write(*,*) 'e_c3d ',(stress(k),k=1,6)
 !
                 do ii=1,nopes
 c     Bernhardi start
-                   if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8).or.
+                   if((nope.eq.20).or.(nope.eq.8).or.
      &                (nope.eq.11)) then
 c     Bernhardi end
                       ipointeri=(ifaceq(ii,ig)-1)*3
-                   elseif((nope.eq.10).or.(nope.eq.4).or.
-     &                    (nope.eq.14))then
+                   elseif((nope.eq.10).or.(nope.eq.4))then
                      ipointeri=(ifacet(ii,ig)-1)*3
                    else
                       ipointeri=(ifacew(ii,ig)-1)*3
                    endif
                    do jj=1,nopes
 c     Bernhardi start
-                      if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8)
+                      if((nope.eq.20).or.(nope.eq.8)
      &                 .or.(nope.eq.11)) then
 c     Bernhardi end
                          ipointerj=(ifaceq(jj,ig)-1)*3
-                      elseif((nope.eq.10).or.(nope.eq.4).or.
-     &                       (nope.eq.14)) then
+                      elseif((nope.eq.10).or.(nope.eq.4)) then
                          ipointerj=(ifacet(jj,ig)-1)*3
                       else
                          ipointerj=(ifacew(jj,ig)-1)*3
@@ -1587,18 +1556,18 @@ c     Bernhardi end
             summ=summ+sm(i,i)
          enddo
 !
-         if((nope.eq.26).or.(nope.eq.20)) then
+         if(nope.eq.20) then
 c            alp=.2215d0
             alp=.2917d0
 !              maybe alp=.2917d0 is better??
-         elseif((nope.eq.10).or.(nope.eq.14)) then
+         elseif(nope.eq.10) then
             alp=0.1203d0
          elseif(nope.eq.15) then
             alp=0.2141d0
          endif
 !
-         if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.10).or.
-     &      (nope.eq.15).or.(nope.eq.14)) then
+         if((nope.eq.20).or.(nope.eq.10).or.
+     &      (nope.eq.15)) then
             factore=summass*alp/(1.d0+alp)/sume
             factorm=summass/(1.d0+alp)/summ
          else

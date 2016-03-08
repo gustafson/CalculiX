@@ -29,6 +29,10 @@
 !
       real*8 t1l,vfa(0:5,*),cp,shcon(0:3,ntmat_,*),cvfa(*),physcon(*)
 !     
+c$omp parallel default(none)
+c$omp& shared(nface,vfa,ielmat,ielfa,ntmat_,shcon,nshcon,physcon,cvfa)
+c$omp& private(i,t1l,imat,cp)
+c$omp do
       do i=1,nface
          t1l=vfa(0,i)
 !
@@ -41,8 +45,9 @@
 !        cv=cp-r
 !
          cvfa(i)=cp-shcon(3,1,imat)
-c         cvfa(i)=cp
       enddo
+c$omp end do
+c$omp end parallel
 !            
       return
       end

@@ -17,23 +17,23 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine objectives(inpc,textpart,istep,istat,n,iline,ipol,inl,
-     &        ipoinp,inp,ipoinpc,objective)        
+     &        ipoinp,inp,ipoinpc,nener,nobject,objectset)        
 !
 !     reading the input deck: *OBJECTIVE
 !
 !     criteria: MASS
 !               STRESS
 !               EIGENFREQUENCY
-!               DISPLACEMENT
+!               SHAPE ENERGY
 !            
       implicit none
 !
       character*1 inpc(*)
       character*132 textpart(16)
-      character*81 objective(3)
+      character*81 objectset(3,*)
 !
       integer istep,istat,n,key,i,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),ipoinpc(0:*)
+     &  inp(3,*),ipoinpc(0:*),j,nener,nobject
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *OBJECTIVE: *OBJECTIVE can
@@ -41,22 +41,51 @@
          call exit(201)
       endif
 !
-      do i=2,n
-         if(textpart(i)(1:9).eq.'CRITERIA=') then
-            read(textpart(i)(10:85),'(a80)',iostat=istat) 
-     &           objective(1)(1:80)
-         elseif(textpart(i)(1:7).eq.'ENTITY=') then
-            read(textpart(i)(8:85),'(a80)',iostat=istat) 
-     &           objective(2)(1:80) 
-         elseif(textpart(i)(1:3).eq.'MIN') then
-            read(textpart(i)(1:85),'(a80)',iostat=istat) 
-     &           objective(3)(1:80) 
-         endif
+         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+!
+      
+      do j=1,nobject
+         i=1
+            if(textpart(i)(1:11).eq.'SHAPEENERGY') then
+               read(textpart(i)(1:85),'(a80)',iostat=istat) 
+     &              objectset(1,j)(1:80)
+                 if(textpart(2)(1:6).eq.'ELSET=') then
+                     read(textpart(2)(7:85),'(a80)',iostat=istat) 
+     &                    objectset(3,j)(1:80) 
+                 endif
+	       nener=1
+            elseif(textpart(i)(1:4).eq.'MASS') then
+               read(textpart(i)(1:4),'(a80)',iostat=istat) 
+     &              objectset(1,j)(1:80)
+                 if(textpart(2)(1:6).eq.'ELSET=') then
+                     read(textpart(2)(7:85),'(a80)',iostat=istat) 
+     &                    objectset(3,j)(1:80) 
+                 endif     
+            elseif(textpart(i)(1:6).eq.'STRESS') then
+               read(textpart(i)(1:6),'(a80)',iostat=istat) 
+     &              objectset(1,j)(1:80)
+               do i=2,n
+                 if(textpart(i)(1:7).eq.'ENTITY=') then
+                     read(textpart(i)(8:85),'(a80)',iostat=istat) 
+     &                    objectset(2,j)(1:80) 
+                 elseif(textpart(i)(1:6).eq.'ELSET=') then
+                     read(textpart(i)(7:85),'(a80)',iostat=istat) 
+     &                    objectset(3,j)(1:80) 
+                 endif
+               enddo
+            elseif(textpart(i)(1:14).eq.'EIGENFREQUENCY') then
+               read(textpart(i)(1:14),'(a80)',iostat=istat) 
+     &              objectset(1,j)(1:80)
+            endif
+!
+         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+!
       enddo
 !
-      call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &        ipoinp,inp,ipoinpc)
-!
+         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
 !
       return
       end

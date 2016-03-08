@@ -45,6 +45,8 @@
 !
       iflag=2
 !
+      if(iener.eq.1) venergy=0.d0
+!
 !     actual positions of the nodes belonging to the contact spring
 !     (otherwise no contact force)
 !     
@@ -106,7 +108,7 @@
                   xk=0.d0
                   fk=yiso(1)
                   if(iener.eq.1) then
-                     senergy=fk*val;
+                     senergy=fk*val
                   endif
                elseif(id.eq.niso) then
                   xk=0.d0
@@ -206,6 +208,15 @@
          clear=clear-springarea(2)*(1.d0-reltime)
       endif
       if(clear.le.0.d0) cstr(1)=clear
+!     
+!     MPADD start 
+!     (keep also positive clearance in the frd file)
+c      if(nmethod.eq.4) then
+c         cstr(1)=clear
+c      else
+c         if(clear.le.0.d0) cstr(1)=clear
+c      endif
+!     MPADD end
 !
 !     representative area: usually the slave surface stored in
 !     springarea; however, if no area was assigned because the
@@ -237,19 +248,42 @@
             elas(1)=dexp(-beta*clear+dlog(alpha))
          endif
          if(iener.eq.1) then
-            senergy=elas(1)/beta;
+            senergy=elas(1)/beta
          endif
       elseif(int(elcon(3,1,imat)).eq.2) then
 !     
 !        linear overclosure
+!    
+!     MPADD start   
+         if(nmethod.eq.4) then
 !     
-         pi=4.d0*datan(1.d0)
-         eps=elcon(1,1,imat)*pi/elcon(2,1,imat)
-         elas(1)=(-springarea(1)*elcon(2,1,imat)*clear*
-     &            (0.5d0+datan(-clear/eps)/pi)) 
-         if(iener.eq.1) then
-            senergy=-elas(1)*clear/2.d0;
+!     Conputation of the force (only if negative clearance)
+!       the energy is computed with the exact potential
+! 
+            if(clear.le.0.d0)then
+               pi=4.d0*datan(1.d0)
+               eps=elcon(1,1,imat)*pi/elcon(2,1,imat)
+               elas(1)=(-springarea(1)*elcon(2,1,imat)*clear*
+     &              (0.5d0+datan(-clear/eps)/pi))
+               if(iener.eq.1)
+     &             senergy=springarea(1)*elcon(2,1,imat)*(clear**2/4.d0+ 
+     &             (0.5d0*datan(-clear/eps)*clear**2+
+     &             0.5d0*(eps*clear+datan(-clear/eps)*eps**2))/pi)
+            else
+               elas(1)=0.d0
+               if(iener.eq.1) senergy=0.d0
+            endif
+!     
+         else
+            pi=4.d0*datan(1.d0)
+            eps=elcon(1,1,imat)*pi/elcon(2,1,imat)
+            elas(1)=(-springarea(1)*elcon(2,1,imat)*clear*
+     &           (0.5d0+datan(-clear/eps)/pi)) 
+            if(iener.eq.1) then
+               senergy=-elas(1)*clear/2.d0
+            endif
          endif
+!     MPADD end
       elseif(int(elcon(3,1,imat)).eq.3) then
 !     
 !        tabular overclosure
@@ -268,7 +302,7 @@
          if(id.eq.0) then
             pres=yiso(1)
             if(iener.eq.1) then
-               senergy=yiso(1)*overlap;
+               senergy=yiso(1)*overlap
             endif
          elseif(id.eq.niso) then
             pres=yiso(niso)
@@ -440,7 +474,7 @@ c     write(*,*)'SLIP'
 !
                if(iener.eq.1) then
                   senergy=senergy+dfshear*dfshear/xk
-                  venergy=venergy+dg*dfshear
+                  venergy=dg*dfshear
                endif
 !
             endif

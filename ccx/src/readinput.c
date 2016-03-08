@@ -271,6 +271,10 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
                           nline,&ikey));
       }
+      else if(strcmp1(&buff[0],"*GAPHEATGENERATION")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
+                          nline,&ikey));
+      }
       else if(strcmp1(&buff[0],"*HYPERELASTIC")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));

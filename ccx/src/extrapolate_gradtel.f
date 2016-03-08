@@ -26,6 +26,10 @@
 !
       real*8 xrlfa(3,*),gradtel(3,*),gradtfa(3,*),xl1
 !     
+c$omp parallel default(none)
+c$omp& shared(nface,ielfa,xrlfa,gradtfa,gradtel)
+c$omp& private(i,iel1,xl1,iel2,l)
+c$omp do
       do i=1,nface
          iel1=ielfa(1,i)
          xl1=xrlfa(1,i)
@@ -54,8 +58,9 @@
                gradtfa(l,i)=gradtel(l,iel1)
             enddo
          endif
-c         write(*,*) 'extrapolate_gradtel ',(gradtfa(l,i),l=1,3)
       enddo
+c$omp end do
+c$omp end parallel
 !            
       return
       end

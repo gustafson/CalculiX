@@ -512,7 +512,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      t0,t0,ithermal,prestr,iprestr,vold,iperturb,sti,
 	      nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
 	      xstiff,npmat_,&dtime,matname,mi,ncmat_,
-	      ttime,&time0,istep,&iinc,ibody));
+	      ttime,&time0,istep,&iinc,ibody,ielprop,prop));
 
       /*  zc = damping matrix * eigenmodes */
 

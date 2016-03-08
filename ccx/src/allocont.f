@@ -107,8 +107,6 @@
                   ncont=ncont+2
                elseif(lakon(nelem)(4:5).eq.'10') then
                   ncont=ncont+4
-               elseif(lakon(nelem)(4:5).eq.'14') then
-                  ncont=ncont+6
                elseif(lakon(nelem)(4:4).eq.'4') then
                   ncont=ncont+1
                elseif(lakon(nelem)(4:5).eq.'15') then

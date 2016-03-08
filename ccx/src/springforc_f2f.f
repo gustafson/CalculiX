@@ -47,6 +47,8 @@
       include "gauss.f"
 !
       iflag=2
+!
+      if(iener.eq.1) venergy=0.d0
 !     
 !     # of master nodes
 !
@@ -410,7 +412,7 @@ c            dftrial=dsqrt(ftrial(1)**2+ftrial(2)**2+ftrial(3)**2)
 !
                if(iener.eq.1) then
                   senergy=senergy+dfshear*dfshear/xk
-                  venergy=venergy+dg*dfshear
+                  venergy=dg*dfshear
                endif
 !
             endif

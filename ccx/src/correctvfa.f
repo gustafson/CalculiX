@@ -32,6 +32,10 @@
       real*8 ap(*),bp(*),area(*),vfa(0:5,*),xxn(3,*),flux(*),
      &  hfa(3,*),vel(nef,0:5),dh,xboun(*),totflux
 !
+c$omp parallel default(none)
+c$omp& shared(nface,ielfa,ipnei,area,ap,vfa,hfa,xxn,vel,bp,ifabou,xboun)
+c$omp& private(i,iel1,j,indexf,iel2,dh,k,indexb)
+c$omp do
       do i=1,nface
 !
 !        first neighboring element
@@ -56,7 +60,7 @@
      &         hfa(3,i)*xxn(3,indexf)
             do k=1,3
 !
-!              bp applies if the neighbor element has a lower
+!              bp applies if the neighbor element has a higher
 !              number than the observer element, else a negative
 !              sign has to be appended
 !
@@ -80,11 +84,6 @@
      &          (ifabou(-iel2+3).eq.0)).and.
      &          (ifabou(-iel2+5).eq.0)) then
                indexb=ifabou(-iel2+4)
-ccccc
-c                  dh=hfa(1,i)*xxn(1,indexf)+
-c     &                 hfa(2,i)*xxn(2,indexf)+
-c     &                 hfa(3,i)*xxn(3,indexf)
-ccccc
                if(indexb.ne.0) then
 !
 !        external face with pressure boundary condition
@@ -97,23 +96,21 @@ ccccc
      &                    (xboun(indexb)-vel(iel1,4)+bp(i)))
      &                    *xxn(k,indexf)
                   enddo
-ccccc
-c               else
-c                  do k=1,3
-c                     vfa(k,i)=(dh)
-c     &                    *xxn(k,indexf)
-c                  enddo
-ccccc
                endif
             endif
          endif
-c         write(*,*) 'correctvfa ',iel1,j,hfa(1,i),hfa(2,i),hfa(3,i),dh
       enddo
+c$omp end do
+c$omp end parallel
 !
 !     check conservation of mass
 !
+c$omp parallel default(none)
+c$omp& shared(nef,ipnei,lakonf,neifa,ielfa,ifabou,flux,area,vfa,xxn)
+c$omp& private(i,totflux,indexf,numfaces,j,ifa)
+c$omp do
       do i=1,nef
-         totflux=0.d0
+c         totflux=0.d0
          indexf=ipnei(i)
          if(lakonf(i)(4:4).eq.'8') then
             numfaces=6
@@ -129,7 +126,6 @@ c         write(*,*) 'correctvfa ',iel1,j,hfa(1,i),hfa(2,i),hfa(3,i),dh
             if(ielfa(2,ifa).lt.0) then
                if(ifabou(-ielfa(2,ifa)+5).eq.2) then
                   flux(indexf)=0.d0
-c                  write(*,*) 'correctvfa ',i,j,flux(indexf)
                   cycle
                endif
             endif
@@ -138,11 +134,19 @@ c                  write(*,*) 'correctvfa ',i,j,flux(indexf)
      &               (vfa(1,ifa)*xxn(1,indexf)+
      &                vfa(2,ifa)*xxn(2,indexf)+
      &                vfa(3,ifa)*xxn(3,indexf))
-c                  write(*,*) 'correctvfa ',i,j,flux(indexf)
-            totflux=totflux+flux(indexf)
+c               write(*,*) 'correctvfa ',i,j,ifa
+c               write(*,*) vfa(5,ifa)
+c               write(*,*) vfa(1,ifa)
+c               write(*,*) vfa(2,ifa)
+c               write(*,*) vfa(3,ifa)
+c               write(*,*) flux(ifa)
+c            totflux=totflux+flux(indexf)
          enddo
 c         write(*,*) 'correctvfa mass check ',i,totflux
       enddo
+c$omp end do
+c$omp end parallel
+c      write(*,*)
 !  
       return
       end

@@ -16,34 +16,34 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine rhsp(nef,lakon,nactdoh,ipnei,neifa,neiel,vfa,area,
+      subroutine rhsp(nef,lakonf,ipnei,neifa,neiel,vfa,area,
      &  advfa,xlet,cosa,volume,au,ad,jq,irow,ap,ielfa,ifabou,xle,
-     &  b,xxn,compressible,neq,nzs,hfa,bp,neij,xxi,gradpel,xlen)
+     &  b,xxn,neq,nzs,hfa,gradpel,bp,xxi,neij,xlen,nefa,nefb)
 !
 !     filling the lhs and rhs to calculate the first correction to the
 !     pressure p'
 !
       implicit none
 !
-      character*8 lakon(*)
+      character*8 lakonf(*)
 !
-      integer i,nef,jdof1,nactdoh(*),indexf,ipnei(*),j,neifa(*),
-     &  neiel(*),iel,ifa,jdof2,irow(*),ielfa(4,*),compressible,
+      integer i,nef,jdof1,indexf,ipnei(*),j,neifa(*),
+     &  neiel(*),iel,ifa,jdof2,irow(*),ielfa(4,*),nefa,nefb,
      &  ifabou(*),neq,nzs,jq(*),iel2,indexb,knownflux,numfaces,
      &  iatleastonepressurebc,j2,indexf2,neij(*)
 !
       real*8 coef,vfa(0:5,*),volume(*),area(*),advfa(*),xlet(*),
      &  cosa(*),ad(*),au(*),xle(*),xxn(3,*),ap(*),b(*),bp(*),
-     &  hfa(3,*),xxi(3,*),gradpel(3,*),xlen(*)
+     &  hfa(3,*),xxi(3,*),gradpel(3,*),xlen(*),bp_ifa
 !
-      iatleastonepressurebc=0
+c      iatleastonepressurebc=0
 !
-      do i=1,nef
+      do i=nefa,nefb
          jdof1=i
          indexf=ipnei(i)
-         if(lakon(i)(4:4).eq.'8') then
+         if(lakonf(i)(4:4).eq.'8') then
             numfaces=6
-         elseif(lakon(i)(4:4).eq.'6') then
+         elseif(lakonf(i)(4:4).eq.'6') then
             numfaces=5
          else
             numfaces=4
@@ -64,7 +64,7 @@
 !     
                j2=neij(indexf)
                indexf2=ipnei(iel)+j2
-               bp(ifa)=((gradpel(1,iel)*(xxi(1,indexf2)
+               bp_ifa=((gradpel(1,iel)*(xxi(1,indexf2)
      &              -cosa(indexf2)*xxn(1,indexf2))+
      &              gradpel(2,iel)*(xxi(2,indexf2)
      &              -cosa(indexf2)*xxn(2,indexf2))+
@@ -78,8 +78,8 @@
      &              gradpel(3,i)*(xxi(3,indexf)
      &              -cosa(indexf)*xxn(3,indexf)))
      &              *xle(indexf))
-               b(jdof1)=b(jdof1)-ap(ifa)*bp(ifa)
-               if(i.gt.iel) bp(ifa)=-bp(ifa)
+               b(jdof1)=b(jdof1)-ap(ifa)*bp_ifa
+c               if(i.gt.iel) bp_ifa=-bp_ifa
             else
 !
 !                 external face
@@ -99,14 +99,14 @@
 !
                      knownflux=2
                   elseif(ifabou(-iel2+4).gt.0) then
-                     iatleastonepressurebc=1
+c                     iatleastonepressurebc=1
 !     
 !                    pressure given
 !                        
 !     
 !                    correction for non-orthogonal meshes
 !     
-                     bp(ifa)=(-(gradpel(1,i)*(xxi(1,indexf)
+                     bp_ifa=(-(gradpel(1,i)*(xxi(1,indexf)
      &                    -cosa(indexf)*xxn(1,indexf))+
      &                    gradpel(2,i)*(xxi(2,indexf)
      &                    -cosa(indexf)*xxn(2,indexf))+
@@ -115,9 +115,15 @@
      &                    *xle(indexf))
 !
                      b(jdof1)=b(jdof1)-ap(ifa)*
-     &                    (vfa(4,ifa)+bp(ifa))
+     &                    (vfa(4,ifa)+bp_ifa)
                   endif
                endif
+            endif
+!     
+!     save coefficients for correctvfa.f
+!     
+            if((iel.eq.0).or.(i.lt.iel)) then
+               bp(ifa)=bp_ifa
             endif
 !
             if(knownflux.eq.1) then
@@ -130,11 +136,6 @@
      &              (hfa(1,ifa)*xxn(1,indexf)+
      &              hfa(2,ifa)*xxn(2,indexf)+
      &              hfa(3,ifa)*xxn(3,indexf))
-c               write(*,*) 'rhsp ',i,j,+vfa(5,ifa)*area(ifa)*
-c     &              (hfa(1,ifa)*xxn(1,indexf)+
-c     &              hfa(2,ifa)*xxn(2,indexf)+
-c     &              hfa(3,ifa)*xxn(3,indexf)),
-c     &              hfa(1,ifa),hfa(2,ifa),hfa(3,ifa)
             endif
          enddo
       enddo
@@ -145,7 +146,7 @@ c     &              hfa(1,ifa),hfa(2,ifa),hfa(3,ifa)
 !     a pressure bc is only recognized if not all velocity degrees of
 !     freedom are prescribed on the same face
 !
-      if(iatleastonepressurebc.eq.0) b(nef)=0.d0
+c      if(iatleastonepressurebc.eq.0) b(nef)=0.d0
 !
       return
       end

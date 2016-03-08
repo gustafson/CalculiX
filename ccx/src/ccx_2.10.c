@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2016 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -63,7 +63,7 @@ double *co=NULL, *xboun=NULL, *coefmpc=NULL, *xforc=NULL,*clearini=NULL,
         *t1old=NULL, *eme=NULL, *plicon=NULL, *pslavsurf=NULL, *plkcon=NULL,
 	*xstate=NULL, *trab=NULL, *ener=NULL, *shcon=NULL, *cocon=NULL,
         *cs=NULL,*tietol=NULL,*fmpc=NULL,*prop=NULL,*t0g=NULL,*t1g=NULL,
-	*xbody=NULL,*xbodyold=NULL,desvarbou[2],*inequbou=NULL,*equbou=NULL;
+	*xbody=NULL,*xbodyold=NULL;
     
 double ctrl[32]={4.5,8.5,9.5,16.5,10.5,4.5,0.,5.5,0.,0.,0.25,0.5,0.75,0.85,0.,0.,1.5,0.,0.005,0.01,0.,0.,0.02,1.e-5,1.e-3,1.e-8,1.e30,1.5,0.25,1.01,1.,1.};
     
@@ -71,8 +71,7 @@ char *sideload=NULL, *set=NULL, *matname=NULL, *orname=NULL, *amname=NULL,
      *filab=NULL, *lakon=NULL, *labmpc=NULL, *prlab=NULL, *prset=NULL, 
      jobnamec[660]="",jobnamef[132]="",output[4]="asc", *typeboun=NULL,
      *inpc=NULL,*tieset=NULL,*cbody=NULL,fneig[132]="",*sideloadtemp=NULL,
-     kind1[2]="T",kind2[2]="T",*heading=NULL,objective[243]="",equcon[162]="",
-     inequcon[162]="";
+     kind1[2]="T",kind2[2]="T",*heading=NULL,*objectset=NULL;
      
 ITG nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,nentries=15,
   nmethod,neq[3]={0,0,0},i,mpcfree=1,mei[4],j,nzl,nam,nbounold=0,
@@ -86,7 +85,7 @@ ITG nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,nentries=15,
   callfrommain,nflow=0,jin=0,irstrt=0,nener=0,jrstrt=0,nenerold,
   nline,ipoinp[2*nentries],*inp=NULL,ntie,ntie_=0,mcs=0,nprop_=0,
   nprop=0,itpamp=0,iviewfile,nkold,nevdamp_=0,npt_=0,cyclicsymmetry,
-  nmethodl,iaxial=1,inext=0,icontact=0,iit=-1;
+  nmethodl,iaxial=1,inext=0,icontact=0,nobject,nobject_=0,iit=-1;
 
 ITG *meminset=NULL,*rmeminset=NULL;
 
@@ -108,7 +107,7 @@ else{
     if(strcmp1(argv[i],"-i")==0) {
     strcpy(jobnamec,argv[i+1]);strcpy1(jobnamef,argv[i+1],132);jin++;break;}
     if(strcmp1(argv[i],"-v")==0) {
-	printf("\nThis is Version 2.9\n\n");
+	printf("\nThis is Version 2.10\n\n");
 	FORTRAN(stop,());
     }
   }
@@ -129,12 +128,12 @@ FORTRAN(uexternaldb,(&lop,&lrestart,time,&dtime,&kstep,&kinc));
 FORTRAN(openfile,(jobnamef,output));
 
 printf("\n************************************************************\n\n");
-printf("CalculiX Version 2.9, Copyright(C) 1998-2015 Guido Dhondt\n");
+printf("CalculiX Version 2.10, Copyright(C) 1998-2015 Guido Dhondt\n");
 printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
 printf("************************************************************\n\n");
-printf("You are using an executable made on Sa 21. Nov 10:01:09 CET 2015\n");
+printf("You are using an executable made on Sa 5. Mär 12:23:33 CET 2016\n");
 fflush(stdout);
 
 istep=0;
@@ -169,7 +168,7 @@ FORTRAN(allocation,(&nload_,&nforc_,&nboun_,&nk_,&ne_,&nmpc_,&nset_,&nalset_,
    set,meminset,rmeminset,&ncs_,&namtot_,&ncmat_,&memmpc_,&ne1d,
    &ne2d,&nflow,jobnamec,&irstrt,ithermal,&nener,&nstate_,&istep,
    inpc,ipoinp,inp,&ntie_,&nbody_,&nprop_,ipoinpc,&nevdamp_,&npt_,&nslavs,
-   &nkon_,&mcs,&mortar,&ifacecount,&nintpoint,infree,&nheading_));
+   &nkon_,&mcs,&mortar,&ifacecount,&nintpoint,infree,&nheading_,&nobject_));
 
 SFREE(set);SFREE(meminset);SFREE(rmeminset);mt=mi[1]+1;
 NNEW(heading,char,66*nheading_);
@@ -182,9 +181,10 @@ nload=0;nbody=0;nforc=0;nboun=0;nk=0;nmpc=0;nam=0;
    - change noelfiles appropriately
    - change nlabel in geomview.f, expand.c, storeresidual.f
      and createmddof.f
-   - change the dimension of label in geomview.f */
+   - change the dimension of label in geomview.f
+   - change the documentation (tex-file)  */
 
-nlabel=46;
+nlabel=47;
 
 while(istat>=0) {
 
@@ -205,6 +205,7 @@ while(istat>=0) {
     norien=norien_;
     ntrans=ntrans_;
     ntie=ntie_;
+    nobject=nobject_;
 
     /* allocating space before the first step */
 
@@ -412,6 +413,12 @@ while(istat>=0) {
       NNEW(cs,double,17*ntie_);
     }
 
+    /* objectives for sensitivity analysis */
+
+    if(nobject_>0){
+      NNEW(objectset,char,243*nobject_);
+    }
+    
     /* temporary fields for cyclic symmetry calculations */
 
     if((ncs_>0)||(npt_>0)){
@@ -573,8 +580,8 @@ while(istat>=0) {
 	    ielprop,&nprop,&nprop_,prop,&itpamp,&iviewfile,ipoinpc,&icfd,
 	    &nslavs,t0g,t1g,&network,&cyclicsymmetry,idefforc,idefload,
 	    idefbody,&mortar,&ifacecount,islavsurf,pslavsurf,clearini,
-	    heading,&iaxial,objective,equcon,inequcon,desvarbou,
-	    inequbou,equbou));
+	    heading,&iaxial,&nobject,objectset));
+	    
   if((istep==1)&&(mortar==-1)){mortar=0;}else{icontact=1;}
 
   nload0=nload;SFREE(idefforc);SFREE(idefload);SFREE(idefbody);
@@ -1001,7 +1008,7 @@ while(istat>=0) {
 		   nodempc,&nmpc,nactdof,icol,jq,&mast1,&irow,&isolver,neq,
 		   ikmpc,ilmpc,ipointer,nzs,&nmethodl,ithermal,
                    ikboun,ilboun,iperturb,mi,&mortar,typeboun,labmpc,
-                   &iit,&icascade);
+		   &iit,&icascade);
       }
       else{neq[0]=1;neq[1]=1;neq[2]=1;}
   }
@@ -1070,7 +1077,7 @@ while(istat>=0) {
 
 	nonlingeo(&co,&nk,&kon,&ipkon,&lakon,&ne,nodeboun,ndirboun,xboun,&nboun, 
 	     &ipompc,&nodempc,&coefmpc,&labmpc,&nmpc,nodeforc,ndirforc,xforc,
-             &nforc, nelemload,sideload,xload,&nload, 
+             &nforc,&nelemload,&sideload,xload,&nload, 
 	     nactdof,&icol,jq,&irow,neq,&nzl,&nmethod,&ikmpc, 
 	     &ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,nrhcon,
 	     alcon,nalcon,alzero,&ielmat,&ielorien,&norien,orab,&ntmat_,
@@ -1078,7 +1085,7 @@ while(istat>=0) {
 	     &vold,iperturb,sti,nzs,&kode,filab,&idrct,jmax,
 	     jout,timepar,eme,xbounold,xforcold,xloadold,
 	     veold,accold,amname,amta,namta,
-	     &nam,iamforc,iamload,iamt1,&alpha,
+	     &nam,iamforc,&iamload,iamt1,&alpha,
              &iexpl,iamboun,plicon,nplicon,plkcon,nplkcon,
 	     &xstate,&npmat_,&istep,&ttime,matname,qaold,mi,
 	     &isolver,&ncmat_,&nstate_,&iumat,cs,&mcs,&nkon,&ener,
@@ -1319,7 +1326,8 @@ while(istat>=0) {
              output,set,&nset,istartset,iendset,ialset,&nprint,prlab,
              prset,&nener,trab,inotr,&ntrans,fmpc,cbody,ibody,xbody,&nbody,
 	     xbodyold,timepar,thicke,jobnamec,tieset,&ntie,&istep,&nmat,
-	     ielprop,prop,typeboun,&mortar,mpcinfo,tietol,ics,&icontact);
+	     ielprop,prop,typeboun,&mortar,mpcinfo,tietol,ics,&icontact,
+	     &nobject,objectset,&istat);
   }
 
   SFREE(nactdof);

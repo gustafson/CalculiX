@@ -25,8 +25,8 @@
 !
 !     the C3D20RB element has 50 integration points, however, the
 !     first 8 integration points coincide with those of a C3D20R
-!     element. In this routine and in errorestimator.f the C3D20RB
-!     element is treated as an ordinary C3D20R element
+!     element. In this routine the C3D20RBR and C3D20RBC
+!     elements are treated as an ordinary C3D20R element
 !
 !     the number of internal state variables is limited to 999
 !     (cfr. array field)
@@ -285,7 +285,7 @@
             nope=20
          elseif(lakonl(4:4).eq.'8') then
             nope=8
-         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
+         elseif(lakonl(4:5).eq.'10') then
             nope=10
          elseif(lakonl(4:4).eq.'4') then
             nope=4
@@ -365,8 +365,7 @@
                call beamintscheme(lakon(i),mint3d,ielprop(i),prop,
      &              null,xi,et,ze,weight)
             elseif((lakon(i)(4:4).eq.'8').or.
-     &             (lakon(i)(4:6).eq.'20R').or.
-     &             (lakon(i)(4:6).eq.'26R')) then
+     &             (lakon(i)(4:6).eq.'20R')) then
                if(lakonl(7:8).eq.'LC') then
                   mint3d=8*nlayer
                else
@@ -374,8 +373,7 @@
                endif
             elseif(lakon(i)(4:4).eq.'2') then
                mint3d=27
-            elseif((lakon(i)(4:5).eq.'10').or.
-     &             (lakon(i)(4:5).eq.'14')) then
+            elseif((lakon(i)(4:5).eq.'10')) then
                mint3d=4
             elseif(lakon(i)(4:4).eq.'4') then
                mint3d=1
@@ -405,8 +403,7 @@
                   call beamintscheme(lakon(i),mint3d,ielprop(i),prop,
      &                 j,xi,et,ze,weight)
                elseif((lakon(i)(4:4).eq.'8').or.
-     &                (lakon(i)(4:6).eq.'20R').or.
-     &                (lakon(i)(4:6).eq.'26R'))
+     &                (lakon(i)(4:6).eq.'20R'))
      &                 then
                   if(lakonl(7:8).ne.'LC') then
                      xi=gauss3d2(1,j)
@@ -446,8 +443,7 @@
                   et=gauss3d3(2,j)
                   ze=gauss3d3(3,j)
                   weight=weight3d3(j)
-               elseif((lakon(i)(4:5).eq.'10').or.
-     &                (lakon(i)(4:5).eq.'14')) then
+               elseif(lakon(i)(4:5).eq.'10') then
                   xi=gauss3d5(1,j)
                   et=gauss3d5(2,j)
                   ze=gauss3d5(3,j)
@@ -566,7 +562,7 @@
                call beamextscheme(yi(1,1,i),ndim,nfield,lakonl,
      &              ielprop(i),prop,field,mi)
 c     Bernhardi start
-            elseif((lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R').or.
+            elseif((lakonl(4:6).eq.'20R').or.
      &         (lakonl(4:5).eq.'8 ').or.(lakonl(4:5).eq.'8I')) then
 c     Bernhardi end
                if(lakonl(7:8).ne.'LC') then
@@ -599,7 +595,7 @@ c     Bernhardi end
                      field(k,j)=yiloc(k,1)
                   enddo
                enddo
-            elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
+            elseif(lakonl(4:5).eq.'10') then
                do j=1,4
                   do k=1,nfield
                      field(k,j)=0.d0
@@ -668,7 +664,7 @@ c     Bernhardi end
      &              ielprop(i),prop,field,mi)
 !               
 c     Bernhardi start
-            elseif((lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R').or.
+            elseif((lakonl(4:6).eq.'20R').or.
      &         (lakonl(4:5).eq.'8 ').or.(lakonl(4:5).eq.'8I')) then
 c     Bernhardi end
                if(lakonl(7:8).ne.'LC') then
@@ -701,7 +697,7 @@ c     Bernhardi end
                      field(k,j)=yi(k,1,i)
                   enddo
                enddo
-            elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
+            elseif(lakonl(4:5).eq.'10') then
                do j=1,4
                   do k=1,nfield
                      field(k,j)=0.d0
@@ -748,7 +744,7 @@ c     Bernhardi end
 !
 !        determining the field values in the midside nodes
 !
-         if((lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R')) then
+         if(lakonl(4:6).eq.'20R') then
             if(lakonl(7:8).ne.'LC') then
                do j=9,20
                   do k=1,nfield
@@ -767,7 +763,7 @@ c     Bernhardi end
                   enddo
                enddo
             endif
-         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
+         elseif(lakonl(4:5).eq.'10') then
             do j=5,10
                do k=1,nfield
                   field(k,j)=(field(k,nonei10(2,j-4))+

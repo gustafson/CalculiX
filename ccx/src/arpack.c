@@ -419,7 +419,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   NNEW(fext,double,neq[1]);
 
   if(*iperturb==0){
-    FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
+    mafillsmmain(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
 	      ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
 	      nforc,nelemload,sideload,xload,nload,xbody,ipobody,nbody,cgr,
 	      ad,au,fext,nactdof,icol,jq,irow,neq,nzl,nmethod,
@@ -434,10 +434,10 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      &coriolis,ibody,xloadold,&reltime,veold,springarea,nstate_,
               xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
-	      pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,&kscale));
+	      pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,&kscale);
   }
   else{
-      FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
+      mafillsmmain(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
 	      ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
 	      nforc,nelemload,sideload,xload,nload,xbody,ipobody,nbody,cgr,
 	      ad,au,fext,nactdof,icol,jq,irow,neq,nzl,nmethod,
@@ -452,7 +452,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      &coriolis,ibody,xloadold,&reltime,veold,springarea,nstate_,
               xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
-	      pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,&kscale));
+	      pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,&kscale);
 
       if(nasym==1){
 	  RENEW(au,double,nzs[2]+nzs[1]);

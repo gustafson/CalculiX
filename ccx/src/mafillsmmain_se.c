@@ -36,7 +36,7 @@ static ITG *nk1,*kon1,*ipkon1,*ne1,*nodeboun1,*ndirboun1,*nboun1,
     *mortar1,*ielprop1,*ne01,num_cpus,*ndesi1,*nodedesi1,*ndirdesi1;
 
 static double *co1,*xboun1,*coefmpc1,*xforc1,*xload1,*xbody1,*cgr1,
-    *ad1=NULL,*au1=NULL,*fext1=NULL,*elcon1,*rhcon1,*alcon1,*alzero1,
+    *ad1=NULL,*au1=NULL,*elcon1,*rhcon1,*alcon1,*alzero1,
     *orab1,*t01,*t11,*prestr1,*vold1,*sti1,*stx1,*adb1=NULL,*aub1=NULL,
     *plicon1,*plkcon1,*xstiff1,*dtime1,*physcon1,*shcon1,*cocon1,
     *ttime1,*time1,*xloadold1,*reltime1,*veold1,*springarea1,
@@ -78,8 +78,8 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
                double *fnext,double *distmin,ITG *ndesi,ITG *nodedesi,
 	       ITG *ndirdesi,double *dfextminds){
 	       
-    ITG i,j,k,mt=mi[1]+1;
-      
+    ITG i,j,mt=mi[1]+1;
+     
     /* variables for multithreading procedure */
     
     ITG sys_cpus,*ithread=NULL;
@@ -149,6 +149,8 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 
     /* allocating fields for mass and stiffness matrix and sensitivity matrix */
     
+    NNEW(dfextminds1,double,num_cpus**ndesi**neq);
+    
     if(*buckling!=1){
 	NNEW(ad1,double,num_cpus*neq[1]);
 	NNEW(au1,double,num_cpus*nzs[2]);
@@ -202,7 +204,6 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     pslavsurf1=pslavsurf;pmastsurf1=pmastsurf;mortar1=mortar;
     clearini1=clearini;ielprop1=ielprop;prop1=prop;ne01=ne0;
     distmin1=distmin;ndesi1=ndesi;nodedesi1=nodedesi;ndirdesi1=ndirdesi;
-    dfextminds1=dfextminds;  
 
     /* calculating the stiffness/mass */
     
@@ -213,19 +214,11 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     NNEW(ithread,ITG,num_cpus);
     for(i=0; i<num_cpus; i++)  {
 	ithread[i]=i;
-	pthread_create(&tid[i], NULL, (void *)mafillsm_semt, (void *)&ithread[i]);
+	pthread_create(&tid[i], NULL, (void *)mafillsmsemt, (void *)&ithread[i]);
     }
     for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
     
     SFREE(ithread);
-
-    /*     for(i=0;i<num_cpus;i++){
-      for(k=i*neq[1];k<i*neq[1]+neq[1];++k){printf("fext=%" ITGFORMAT ",%f\n",k-i*neq[1],fext1[k]);}
-      for(k=i*neq[1];k<i*neq[1]+neq[1];++k){printf("ad=%" ITGFORMAT ",%f\n",k-i*neq[1],ad1[k]);}
-      for(k=i*nzs[2];k<i*nzs[2]+nzs[2];++k){printf("au=%" ITGFORMAT ",%f\n",k-i*nzs[2],au1[k]);}
-      for(k=i*neq[1];k<i*neq[1]+neq[1];++k){printf("adb=%" ITGFORMAT ",%f\n",k-i*neq[1],adb1[k]);}
-      for(k=i*nzs[2];k<i*nzs[2]+nzs[2];++k){printf("aub=%" ITGFORMAT ",%f\n",k-i*nzs[2],aub1[k]);}
-      }*/
 
     /* copying and accumulating the stiffnes and/or mass matrix */
 
@@ -327,24 +320,13 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     }
     SFREE(dfextminds1);
         
-      
-    /*     for(k=0;k<neq[1];++k){printf("fext=%" ITGFORMAT ",%f\n",k,fext[k]);}
-      for(k=0;k<neq[1];++k){printf("ad=%" ITGFORMAT ",%f\n",k,ad[k]);}
-      for(k=0;k<nzs[1];++k){printf("au=%" ITGFORMAT ",%f\n",k,au[k]);}*/
-
-    /* taking point forces into account in fext */
-
-/*    FORTRAN(mafillsmforc,(nforc,ndirforc,nodeforc,xforc,nactdof,
-			  fext,nmpc,ipompc,nodempc,ikmpc,ilmpc,
-		          coefmpc,mi,rhsi,fnext,nmethod));   */
-    
-  return;
+        return;
 
 }
 
 /* subroutine for multithreading of mafillsm */
 
-void *mafillsm_semt(ITG *i){
+void *mafillsmsemt(ITG *i){
 
     ITG indexad,indexau,indexfext,indexadb,indexaub,nea,neb,nedelta,indexfnext;
 
@@ -383,27 +365,20 @@ void *mafillsm_semt(ITG *i){
 
     printf("i=%d,nea=%d,neb=%d\n",*i,nea,neb);
 
-    FORTRAN(mafillsm_se,(co1,nk1,kon1,ipkon1,lakon1,ne1,nodeboun1,ndirboun1,
-	    xboun1,nboun1,
-	    ipompc1,nodempc1,coefmpc1,nmpc1,nodeforc1,ndirforc1,xforc1,
-	    nforc1,nelemload1,sideload1,xload1,nload1,xbody1,ipobody1,
-	    nbody1,cgr1,&ad1[indexad],&au1[indexau],
-	    nactdof1,icol1,jq1,irow1,neq1,nzl1,&nmethod1[*i],
-	    ikmpc1,ilmpc1,ikboun1,ilboun1,
-	    elcon1,nelcon1,rhcon1,nrhcon1,alcon1,nalcon1,alzero1,ielmat1,
-	    ielorien1,norien1,orab1,ntmat1_,
-	    t01,t11,ithermal1,prestr1,iprestr1,vold1,iperturb1,sti1,
-	    nzs1,stx1,&adb1[indexadb],&aub1[indexaub],iexpl1,plicon1,
-            nplicon1,plkcon1,nplkcon1,
-	    xstiff1,npmat1_,dtime1,matname1,mi1,
+    FORTRAN(mafillsmse,(co1,kon1,ipkon1,lakon1,ne1,ipompc1,nodempc1,
+	    coefmpc1,nmpc1,nelemload1,sideload1,xload1,nload1,xbody1,
+	    ipobody1,nbody1,cgr1,nactdof1,neq1,&nmethod1[*i],ikmpc1,
+	    ilmpc1,elcon1,nelcon1,rhcon1,nrhcon1,alcon1,nalcon1,alzero1,
+	    ielmat1,ielorien1,norien1,orab1,ntmat1_,t01,t11,ithermal1,
+	    iprestr1,vold1,iperturb1,sti1,stx1,iexpl1,plicon1,nplicon1,
+            plkcon1,nplkcon1,xstiff1,npmat1_,dtime1,matname1,mi1,
             ncmat1_,mass1,stiffness1,buckling1,rhsi1,intscheme1,physcon1,
-            shcon1,nshcon1,cocon1,ncocon1,ttime1,time1,istep1,iinc1,coriolis1,
-	    ibody1,xloadold1,reltime1,veold1,springarea1,nstate1_,
-            xstateini1,xstate1,thicke1,integerglob1,doubleglob1,
-	    tieset1,istartset1,iendset1,ialset1,ntie1,nasym1,pslavsurf1,
-	    pmastsurf1,mortar1,clearini1,ielprop1,prop1,ne01,
-	    &fnext1[indexfnext],&nea,&neb,distmin1,ndesi1,nodedesi1,ndirdesi1,
-	    dfextminds1));
-
+            ttime1,time1,istep1,iinc1,coriolis1,ibody1,xloadold1,
+	    reltime1,veold1,springarea1,nstate1_,xstateini1,xstate1,
+            thicke1,integerglob1,doubleglob1,tieset1,istartset1,iendset1,
+	    ialset1,ntie1,nasym1,pslavsurf1,pmastsurf1,mortar1,clearini1,
+	    ielprop1,prop1,ne01,&nea,&neb,distmin1,ndesi1,nodedesi1,
+	    ndirdesi1,dfextminds1));
+	    
     return NULL;
 }

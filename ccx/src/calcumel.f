@@ -28,6 +28,10 @@
 !
       real*8 t1l,vel(nef,0:5),dvi,shcon(0:3,ntmat_,*),umel(*)
 !     
+c$omp parallel default(none)
+c$omp& shared(nef,vel,ielmat,shcon,nshcon,ntmat_,ithermal,umel)
+c$omp& private(i,t1l,imat,dvi)
+c$omp do
       do i=1,nef
          t1l=vel(i,0)
          imat=ielmat(1,i)
@@ -35,6 +39,8 @@
      &            ithermal)
          umel(i)=dvi
       enddo
+c$omp end do
+c$omp end parallel
 !            
       return
       end

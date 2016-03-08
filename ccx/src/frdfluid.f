@@ -18,7 +18,7 @@
 !
       subroutine frdfluid(co,nk,kon,ipkonf,lakonf,nef,vold,
      &  kode,time,ielmat,matname,filab,inum,ntrans,inotr,trab,mi,
-     &  istep,stn,qfn,nactdohinv,xmach,xkappa)
+     &  istep,stn,qfn,nactdohinv,xmach,xkappa,physcon)
 !
 !     stores the results in frd format
 !
@@ -39,7 +39,7 @@
      &  nactdohinv(*)
 !
       real*8 co(3,*),vold(0:mi(2),*),time,pi,oner,trab(7,*),
-     &  a(3,3),stn(6,*),qfn(3,*),xmach(*),xkappa(*)
+     &  a(3,3),stn(6,*),qfn(3,*),xmach(*),xkappa(*),physcon(10)
 !
       save nout
 !
@@ -505,34 +505,34 @@
          enddo
          write(13,'(a3)') m3
       endif
-c!
-c      if(filab(24)(1:4).eq.'CP  ') then
-c         text='    1PSTEP'
-c         write(text(25:36),'(i12)') kode
-c         write(13,'(a132)') text
-c!
-c         text=
-c     & '  100CL       .00000E+00                                 3    1'
-c         text(75:75)='1'
-c         write(text(25:36),'(i12)') nout
-c         write(text(8:12),'(i5)') 100+kode
-c         write(text(13:24),fmat) time
-c         write(text(59:63),'(i5)') kode
-c         write(13,'(a132)') text
-c         text=' -4  CP3DF       1    1'
-c         write(13,'(a132)') text
-c         text=' -5  CP          1    1    0    0'
-c         write(13,'(a132)') text
-c!
-c         do i=1,nk
-c            if(inum(i).le.0) cycle
-c            write(13,100) m1,i,(vold(4,i)-physcon(6))*2.d0/
-c     &            (physcon(7)*physcon(5)**2)
-c         enddo
-c!
-c         write(13,'(a3)') m3
-c      endif
-c!
+!
+      if(filab(24)(1:4).eq.'CP  ') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(13,'(a132)') text
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(25:36),'(i12)') nout
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(13,'(a132)') text
+         text=' -4  CP3DF       1    1'
+         write(13,'(a132)') text
+         text=' -5  CP          1    1    0    0'
+         write(13,'(a132)') text
+!
+         do i=1,nk
+            if(inum(i).le.0) cycle
+            write(13,100) m1,i,(vold(4,i)-physcon(6))*2.d0/
+     &            (physcon(7)*physcon(5)**2)
+         enddo
+!
+         write(13,'(a3)') m3
+      endif
+!
 c      if(filab(25)(1:4).eq.'TURB') then
 c         text='    1PSTEP'
 c         write(text(25:36),'(i12)') kode

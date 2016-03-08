@@ -26,7 +26,7 @@
 !
       integer istartset(*),iendset(*),ialset(*),imast,j,ifacem,
      &  nelemm,jfacem,indexe,ipkon(*),kon(*),nopem,node,
-     &  ifaceq(9,6),ifacet(7,4),ifacew1(4,5),ifacew2(8,5),
+     &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),
      &  nmastnode,id,indexnode(9),konl(26),imastnode(*)
 !
       real*8 xmastnor(3,*),xsj2(3),shp2(7,9),xs2(3,2),xi,et,dd,
@@ -34,19 +34,19 @@
 !
 !     nodes per face for hex elements
 !
-      data ifaceq /4,3,2,1,11,10,9,12,21,
-     &            5,6,7,8,13,14,15,16,22,
-     &            1,2,6,5,9,18,13,17,23,
-     &            2,3,7,6,10,19,14,18,24,
-     &            3,4,8,7,11,20,15,19,25,
-     &            4,1,5,8,12,17,16,20,26/
+      data ifaceq /4,3,2,1,11,10,9,12,
+     &            5,6,7,8,13,14,15,16,
+     &            1,2,6,5,9,18,13,17,
+     &            2,3,7,6,10,19,14,18,
+     &            3,4,8,7,11,20,15,19,
+     &            4,1,5,8,12,17,16,20/
 !
 !     nodes per face for tet elements
 !
-      data ifacet /1,3,2,7,6,5,11,
-     &             1,2,4,5,9,8,12,
-     &             2,3,4,6,10,9,13,
-     &             1,4,3,8,10,7,14/
+      data ifacet /1,3,2,7,6,5,
+     &             1,2,4,5,9,8,
+     &             2,3,4,6,10,9,
+     &             1,4,3,8,10,7/
 !
 !     nodes per face for linear wedge elements
 !
@@ -103,14 +103,10 @@
 !     
          if(lakon(nelemm)(4:5).eq.'20') then
             nopem=8
-         elseif(lakon(nelemm)(4:4).eq.'2') then
-            nopem=9
          elseif(lakon(nelemm)(4:4).eq.'8') then
             nopem=4
          elseif(lakon(nelemm)(4:5).eq.'10') then
             nopem=6
-         elseif(lakon(nelemm)(4:5).eq.'14') then
-            nopem=7
          elseif(lakon(nelemm)(4:4).eq.'4') then
             nopem=3
          endif
@@ -181,15 +177,9 @@
          elseif(lakon(nelemm)(4:5).eq.'20') then
             nopem=8
             nope=20
-         elseif(lakon(nelemm)(4:4).eq.'2') then
-            nopem=9
-            nope=26
          elseif(lakon(nelemm)(4:5).eq.'10') then
             nopem=6
             nope=10
-         elseif(lakon(nelemm)(4:5).eq.'14') then
-            nopem=7
-            nope=14
          elseif(lakon(nelemm)(4:4).eq.'4') then
             nopem=3
             nope=4
@@ -219,13 +209,13 @@
             konl(k)=kon(ipkon(nelemm)+k)
          enddo
 !     
-         if((nope.eq.20).or.(nope.eq.8).or.(nope.eq.26)) then
+         if((nope.eq.20).or.(nope.eq.8)) then
             do m=1,nopem
                do k=1,3
                   xl2m(k,m)=co(k,konl(ifaceq(m,jfacem)))
                enddo
             enddo
-         elseif((nope.eq.10).or.(nope.eq.4).or.(nope.eq.14)) 
+         elseif((nope.eq.10).or.(nope.eq.4)) 
      &           then
             do m=1,nopem
                do k=1,3
@@ -248,35 +238,7 @@
          
 !     calculate the normal vector in the nodes belonging to the master surface
 !     
-         if(nopem.eq.9) then
-            do m=1,nopem
-               xi=xquad(1,m)
-               et=xquad(2,m)
-               call shape9q(xi,et,xl2m,xsj2,xs2,shp2,iflag)
-               dd=dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2)
-     &              + xsj2(3)*xsj2(3))
-               xsj2(1)=xsj2(1)/dd
-               xsj2(2)=xsj2(2)/dd
-               xsj2(3)=xsj2(3)/dd
-!     
-               if(nope.eq.26) then
-                  node=konl(ifaceq(m,jfacem))
-               elseif(nope.eq.20) then
-                  node=konl(ifacew2(m,jfacem))
-               endif
-!     
-               call nident(imastnode,node,
-     &              nmastnode,id)
-               index1=id
-               indexnode(m)=index1
-               xmastnor(1,index1)=xmastnor(1,index1)
-     &              +xsj2(1)
-               xmastnor(2,index1)=xmastnor(2,index1)
-     &              +xsj2(2)
-               xmastnor(3,index1)=xmastnor(3,index1)
-     &              +xsj2(3)
-            enddo
-         elseif(nopem.eq.8) then
+         if(nopem.eq.8) then
             do m=1,nopem
                xi=xquad(1,m)
                et=xquad(2,m)
@@ -347,34 +309,6 @@
                if(nope.eq.10) then
                   node=konl(ifacet(m,jfacem))
                elseif(nope.eq.15) then
-                  node=konl(ifacew2(m,jfacem))
-               endif
-!     
-               call nident(imastnode,node,
-     &              nmastnode,id)
-               index1=id
-               indexnode(m)=index1
-               xmastnor(1,index1)=xmastnor(1,index1)
-     &              +xsj2(1)
-               xmastnor(2,index1)=xmastnor(2,index1)
-     &              +xsj2(2)
-               xmastnor(3,index1)=xmastnor(3,index1)
-     &              +xsj2(3)
-            enddo
-         elseif(nopem.eq.7) then
-            do m=1,nopem
-               xi=xtri(1,m)
-               et=xtri(2,m)
-               call shape7tri(xi,et,xl2m,xsj2,xs2,shp2,iflag)
-               dd=dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2) 
-     &              + xsj2(3)*xsj2(3))
-               xsj2(1)=xsj2(1)/dd
-               xsj2(2)=xsj2(2)/dd
-               xsj2(3)=xsj2(3)/dd
-!     
-               if(nope.eq.14) then
-                  node=konl(ifacet(m,jfacem))
-               elseif(nope.eq.20) then
                   node=konl(ifacew2(m,jfacem))
                endif
 !     

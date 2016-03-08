@@ -92,9 +92,6 @@
             elseif(lakonl(4:5).eq.'20') then
                indexe2d=indexe+20
                jmax=3
-            elseif(lakonl(4:5).eq.'26') then
-               indexe2d=indexe+26
-               jmax=3
             endif
             do j=1,jmax
                node2d=kon(indexe2d+j)
@@ -112,9 +109,6 @@
                jmax=4
             elseif(lakonl(4:5).eq.'20') then
                indexe2d=indexe+20
-               jmax=8
-            elseif(lakonl(4:5).eq.'26') then
-               indexe2d=indexe+26
                jmax=8
             endif
             do j=1,jmax
@@ -246,11 +240,6 @@
                nope=4
             elseif(lakonl(4:5).eq.'20') then
                indexe2d=indexe+20
-               jmax=3
-               jinc=2
-               nope=8
-            elseif(lakonl(4:5).eq.'26') then
-               indexe2d=indexe+26
                jmax=3
                jinc=2
                nope=8
@@ -469,9 +458,6 @@
             elseif(lakonl(4:5).eq.'20') then
                indexe2d=indexe+20
                jmax=8
-            elseif(lakonl(4:5).eq.'26') then
-               indexe2d=indexe+26
-               jmax=8
             endif
             do j=1,jmax
                node2d=kon(indexe2d+j)
@@ -582,9 +568,6 @@
             elseif(lakonl(4:5).eq.'20') then
                indexe2d=indexe+20
                jmax=3
-            elseif(lakonl(4:5).eq.'26') then
-               indexe2d=indexe+26
-               jmax=3
             endif
             do j=1,jmax
                node2d=kon(indexe2d+j)
@@ -604,9 +587,6 @@
                jmax=4
             elseif(lakonl(4:5).eq.'20') then
                indexe2d=indexe+20
-               jmax=8
-            elseif(lakonl(4:5).eq.'26') then
-               indexe2d=indexe+26
                jmax=8
             endif
             do j=1,jmax
@@ -646,11 +626,7 @@
          if((lakonl(4:4).eq.'6').or.(lakonl(4:4).eq.'8')) cycle
 !
          if(lakonl(7:7).eq.'B') then
-            if(lakonl(4:5).eq.'20') then
-               indexe2d=indexe+20
-            else
-               indexe2d=indexe+26
-            endif
+            indexe2d=indexe+20
             if(cflag.eq.'M') then
 !
 !              section forces in the middle node are the mean

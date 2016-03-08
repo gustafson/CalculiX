@@ -18,9 +18,9 @@
 !
       subroutine mafilltcomp(nef,ipnei,neifa,neiel,vfa,xxn,area,
      &  au,ad,jq,irow,nzs,b,vel,umel,xlet,xle,gradtfa,xxi,
-     &  body,volume,compressible,ielfa,lakon,ifabou,nbody,neq,
-     &  dtimef,velo,veloo,cpfa,hcfa,cpel,gradvel,xload,gammat,xrlfa,
-     &  xxj,nactdohinv,a1,a2,a3,flux)
+     &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
+     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,xrlfa,
+     &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb)
 !
 !     filling the matrix for the conservation of energy
 !
@@ -28,25 +28,34 @@
 !
       logical knownflux
 !
-      character*8 lakon(*)
+      character*8 lakonf(*)
 !
       integer i,nef,jdof1,indexf,ipnei(*),j,ifa,iel,neifa(*),
-     &  neiel(*),jdof2,jq(*),irow(*),nzs,compressible,ielfa(4,*),
-     &  ipointer,ifabou(*),nbody,neq,indexb,numfaces,nactdohinv(*)
+     &  neiel(*),jdof2,jq(*),irow(*),nzs,ielfa(4,*),
+     &  ipointer,ifabou(*),nbody,neq,indexb,numfaces,nactdohinv(*),
+     &  nefa,nefb
 !
       real*8 xflux,vfa(0:5,*),xxn(3,*),area(*),au(*),ad(*),b(neq),
      &  vel(nef,0:5),umel(*),xlet(*),xle(*),coef,gradtfa(3,*),
      &  xxi(3,*),body(0:3,*),volume(*),dtimef,velo(nef,0:5),
-     &  veloo(nef,0:5),rhovel,constant,cpel(*),gradvel(3,3,*),
-     &  cpfa(*),hcfa(*),div,xload(2,*),gammat(*),xrlfa(3,*),
+     &  veloo(nef,0:5),rhovel,constant,cvel(*),gradvel(3,3,*),
+     &  cvfa(*),hcfa(*),div,xload(2,*),gammat(*),xrlfa(3,*),
      &  xxj(3,*),a1,a2,a3,flux(*)
 !
-      do i=1,nef
+      intent(in) nef,ipnei,neifa,neiel,vfa,xxn,area,
+     &  jq,irow,nzs,vel,umel,xlet,xle,gradtfa,xxi,
+     &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
+     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,xrlfa,
+     &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb
+!
+      intent(inout) au,ad,b
+!
+      do i=nefa,nefb
          jdof1=i
          indexf=ipnei(i)
-         if(lakon(i)(4:4).eq.'8') then
+         if(lakonf(i)(4:4).eq.'8') then
             numfaces=6
-         elseif(lakon(i)(4:4).eq.'6') then
+         elseif(lakonf(i)(4:4).eq.'6') then
             numfaces=5
          else
             numfaces=4
@@ -59,11 +68,12 @@
             ifa=neifa(indexf)
             iel=neiel(indexf)
             if(iel.ne.0) jdof2=iel
-            xflux=flux(indexf)*cpfa(ifa)
+            xflux=flux(indexf)*cvfa(ifa)
 c            xflux=(vfa(1,ifa)*xxn(1,indexf)+
 c     &           vfa(2,ifa)*xxn(2,indexf)+
 c     &           vfa(3,ifa)*xxn(3,indexf))
-c     &           *vfa(5,ifa)*cpfa(ifa)*area(ifa)
+c     &           *vfa(5,ifa)*cvfa(ifa)*area(ifa)
+c            write(*,*) 'mafilltcomp ',i,j,flux(indexf),xflux
 !     
             if(xflux.ge.0.d0) then
 !     
@@ -72,7 +82,7 @@ c     &           *vfa(5,ifa)*cpfa(ifa)*area(ifa)
                call add_sm_fl_as(au,ad,jq,irow,jdof1,jdof1,
      &              xflux,nzs)
 !     centdiff
-c                   b(jdof1)=b(jdof1)-(vfa(0,ifa)-vel(i,0))*xflux
+c                   b(jdof1)=b(jdof1)-0.4*(vfa(0,ifa)-vel(i,0))*xflux
 !end centdiff
             else
                if(iel.gt.0) then
@@ -82,7 +92,7 @@ c                   b(jdof1)=b(jdof1)-(vfa(0,ifa)-vel(i,0))*xflux
                   call add_sm_fl_as(au,ad,jq,irow,jdof1,jdof2,xflux,
      &                 nzs)
 !centdiff
-c                  b(jdof1)=b(jdof1)-(vfa(0,ifa)-vel(iel,0))*xflux
+c                  b(jdof1)=b(jdof1)-0.4*(vfa(0,ifa)-vel(iel,0))*xflux
 !end centdiff
                else
 !
@@ -178,10 +188,8 @@ c                     call exit(201)
 !     
 !        -p*div(v) term
 !     
-         if(compressible.eq.1) then
-            div=gradvel(1,1,i)+gradvel(2,2,i)+gradvel(3,3,i)
-            b(jdof1)=b(jdof1)-vel(i,4)*div*volume(i)
-         endif
+         div=gradvel(1,1,i)+gradvel(2,2,i)+gradvel(3,3,i)
+         b(jdof1)=b(jdof1)-vel(i,4)*div*volume(i)
 !
 !           viscous dissipation
 !
@@ -191,9 +199,7 @@ c                     call exit(201)
      &        (gradvel(1,2,i)+gradvel(2,1,i))**2+
      &        (gradvel(1,3,i)+gradvel(3,1,i))**2+
      &        (gradvel(2,3,i)+gradvel(3,2,i))**2)
-         if(compressible.eq.1) then
-            b(jdof1)=b(jdof1)-2.d0*umel(i)*volume(i)/3.d0*div**2
-         endif
+         b(jdof1)=b(jdof1)-2.d0*umel(i)*volume(i)/3.d0*div**2
 !     
 !           body heat source and body sources
 !     
@@ -209,9 +215,14 @@ c     &             body(2,i),body(3,i)
 !
 !           transient term
 !
-         constant=rhovel*cpel(i)
-         b(jdof1)=b(jdof1)-(a2*velo(i,0)+a3*veloo(i,0))*constant
-         constant=a1*constant
+c         a1=1.d0/dtimef
+c         a2=-1.d0/dtimef
+c         a3=0.d0/dtimef
+c         constant=rhovel*cvel(i)
+c         b(jdof1)=b(jdof1)-(a2*velo(i,0)+a3*veloo(i,0))*constant
+c
+         constant=rhovel*cvel(i)/dtimef
+         b(jdof1)=b(jdof1)+velo(i,0)*constant
          call add_sm_fl(au,ad,jq,irow,jdof1,jdof1,constant,nzs)
 !     
       enddo

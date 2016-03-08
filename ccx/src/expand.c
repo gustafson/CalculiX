@@ -112,7 +112,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     NNEW(inum,ITG,*nk);
     NNEW(stx,double,6*mi[0]**ne);
     
-    nlabel=46;
+    nlabel=47;
     NNEW(filabt,char,87*nlabel);
     for(i=1;i<87*nlabel;i++) filabt[i]=' ';
     filabt[0]='U';
@@ -160,7 +160,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		  nelem=iel+1;
 		  FORTRAN(calcmass,(ipkon,lakon,kon,co,mi,&nelem,ne,thicke,
                         ielmat,&nope,t0,t1,rhcon,nrhcon,ntmat_,
-			ithermal,&csmass[i]));
+			ithermal,&csmass[i],ielprop,prop));
 		}
 		for(i2=0;i2<nope;++i2){
 		    node=kon[indexe+i2]-1;
@@ -186,7 +186,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		      nelem=iel+1;
 		      FORTRAN(calcmass,(ipkon,lakon,kon,co,mi,&nelem,ne,thicke,
                         ielmat,&nope,t0,t1,rhcon,nrhcon,ntmat_,
-			ithermal,&csmass[i]));
+			ithermal,&csmass[i],ielprop,prop));
 		    }
 		    for(i2=0;i2<nope;++i2){
 			node=kon[indexe+i2]-1;

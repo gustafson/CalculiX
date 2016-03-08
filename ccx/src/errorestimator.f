@@ -28,11 +28,10 @@
 !
       character*8 lakon(*),lakonl
 !
-      integer ipkon(*),kon(*),mi(*),ne,indexe,
+      integer ipkon(*),kon(*),mi(*),ne,indexe,null,
      &  nonei20(3,12),nonei10(3,6),nk,i,j,k,
      &  nonei15(3,9),nopev,nterms,ishift,mint3d,
-     &  m,jj,ielmat(mi(3),*),
-     &  nlayer,nopeexp
+     &  m,jj,ielmat(mi(3),*),nlayer,nopeexp
 !
       real*8 yi(nterms,mi(1),*),yn(nterms,*),size,wpsmin,wpsmax,
      &  absdiff,reldiff,sizemax,al(3),sizemin,firstprin,c(3,3)
@@ -45,6 +44,8 @@
       data nonei20 /9,1,2,10,2,3,11,3,4,12,4,1,
      &  13,5,6,14,6,7,15,7,8,16,8,5,
      &  17,1,5,18,2,6,19,3,7,20,4,8/
+!
+      null=0
 !
       do i=1,nk
          do j=1,nterms
@@ -76,27 +77,34 @@
             cycle
          endif
 !
-c     Bernhardi start
-         if((lakonl(4:6).eq.'20R').or.
-     &          (lakonl(4:5).eq.'8 ').or.(lakonl(4:5).eq.'8I')) then
-c     Bernhardi end
-            if(lakonl(7:8).ne.'LC') then
-               mint3d=8
-            else
-               mint3d=0
-            endif
-         elseif(lakonl(4:4).eq.'8') then
+         if(lakonl(4:5).eq.'8R') then
             mint3d=1
-         elseif(lakonl(4:5).eq.'10') then
-            mint3d=4
+c         elseif(lakonl(4:7).eq.'20RB') then
+c            if((lakonl(8:8).eq.'R').or.(lakonl(8:8).eq.'C')) then
+c               mint3d=50
+c            else
+c               call beamintscheme(lakonl,mint3d,ielprop(i),prop,
+c     &              null,xi,et,ze,weight)
+c            endif
+         elseif((lakonl(4:4).eq.'8').or.
+     &           (lakonl(4:6).eq.'20R')) then
+            if(lakonl(7:8).eq.'LC') then
+               cycle
+            else
+               mint3d=8
+            endif
          elseif(lakonl(4:4).eq.'2') then
             mint3d=27
+         elseif(lakonl(4:5).eq.'10') then
+            mint3d=4
          elseif(lakonl(4:4).eq.'4') then
             mint3d=1
-         elseif(lakonl(4:4).eq.'1') then
+         elseif(lakonl(4:5).eq.'15') then
             mint3d=9
-         else
+         elseif(lakonl(4:5).eq.'6') then
             mint3d=2
+         elseif(lakonl(1:2).eq.'ES') then
+            cycle
          endif
 !
 !        calculating the maximal differences of first principal
@@ -123,12 +131,12 @@ c     Bernhardi end
 !     
                call calceigenvalues(c,al)
 !     
-               if(dabs(al(3)).gt.dabs(al(1))) then
-                  firstprin=al(3)
-               else
-                  firstprin=al(1)
-               endif
-c               firstprin=al(3)
+c               if(dabs(al(3)).gt.dabs(al(1))) then
+c                  firstprin=al(3)
+c               else
+c                  firstprin=al(1)
+c               endif
+               firstprin=al(3)
 !     
                wpsmin=min(wpsmin,firstprin)
                wpsmax=max(wpsmax,firstprin)

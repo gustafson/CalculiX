@@ -29,12 +29,17 @@
 !
       real*8 t1l,vel(nef,0:5),shcon(0:3,ntmat_,*)
 !     
+c$omp parallel default(none)
+c$omp& shared(nef,vel,ielmat,shcon)
+c$omp& private(i,t1l,imat)
+c$omp do
       do i=1,nef
          t1l=vel(i,0)
          imat=ielmat(1,i)
          vel(i,5)=vel(i,4)/(shcon(3,1,imat)*t1l)
-c         vel(i,5)=1.d0
       enddo
+c$omp end do
+c$omp end parallel
 !            
       return
       end

@@ -37,7 +37,7 @@
      &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),ne,node,
      &  neigh(1),iflag,kneigh,i,j,k,l,isol,iset,idummy,
      &  itri,ll,kflag,n,nx(*),ny(*),istep,iinc,mi(*),
-     &  nz(*),nstart,ielmat(mi(3),*),imat,ifaceq(9,6),ifacet(7,4),
+     &  nz(*),nstart,ielmat(mi(3),*),imat,ifaceq(8,6),ifacet(6,4),
      &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,iit,
      &  nface,nope,nodef(9),ncmat_,ntmat_,index1,indexel,
      &  nmethod,iteller,ifaces,jfaces,irelslavface,number(4),lenset,
@@ -57,19 +57,19 @@
 !
 !     nodes per face for hex elements
 !
-      data ifaceq /4,3,2,1,11,10,9,12,21,
-     &            5,6,7,8,13,14,15,16,22,
-     &            1,2,6,5,9,18,13,17,23,
-     &            2,3,7,6,10,19,14,18,24,
-     &            3,4,8,7,11,20,15,19,25,
-     &            4,1,5,8,12,17,16,20,26/
+      data ifaceq /4,3,2,1,11,10,9,12,
+     &            5,6,7,8,13,14,15,16,
+     &            1,2,6,5,9,18,13,17,
+     &            2,3,7,6,10,19,14,18,
+     &            3,4,8,7,11,20,15,19,
+     &            4,1,5,8,12,17,16,20/
 !
 !     nodes per face for tet elements
 !
-      data ifacet /1,3,2,7,6,5,11,
-     &             1,2,4,5,9,8,12,
-     &             2,3,4,6,10,9,13,
-     &             1,4,3,8,10,7,14/
+      data ifacet /1,3,2,7,6,5,
+     &             1,2,4,5,9,8,
+     &             2,3,4,6,10,9,
+     &             1,4,3,8,10,7/
 !
 !     nodes per face for linear wedge elements
 !
@@ -193,22 +193,10 @@ c         if((istep.eq.1).and.(iinc.eq.1).and.(iit.le.0)) then
                mint2d=9
                nopes=8
                nope=20
-            elseif(lakon(nelems)(4:6).eq.'26R') then
-               mint2d=4
-               nopes=9
-               nope=26
-            elseif(lakon(nelems)(4:4).eq.'2') then
-               mint2d=9
-               nopes=9
-               nope=26
             elseif(lakon(nelems)(4:5).eq.'10') then
                mint2d=3
                nopes=6
                nope=10
-            elseif(lakon(nelems)(4:5).eq.'14') then
-               mint2d=3
-               nopes=7
-               nope=14
             elseif(lakon(nelems)(4:4).eq.'4') then
                mint2d=1
                nopes=3
@@ -242,14 +230,14 @@ c         if((istep.eq.1).and.(iinc.eq.1).and.(iit.le.0)) then
                konl(j)=kon(ipkon(nelems)+j)
             enddo
 !     
-            if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8)) then
+            if((nope.eq.20).or.(nope.eq.8)) then
                do m=1,nopes
                   do j=1,3
                      xl2(j,m)=co(j,konl(ifaceq(m,jfaces)))+
      &                    vold(j,konl(ifaceq(m,jfaces)))
                   enddo
                enddo
-            elseif((nope.eq.10).or.(nope.eq.4).or.(nope.eq.14)) then
+            elseif((nope.eq.10).or.(nope.eq.4)) then
                do m=1,nopes
                   do j=1,3
                      xl2(j,m)=co(j,konl(ifacet(m,jfaces)))+
@@ -283,7 +271,6 @@ c         if((istep.eq.1).and.(iinc.eq.1).and.(iit.le.0)) then
                   weight=weight2d1(m)
                elseif((lakon(nelems)(4:4).eq.'8').or.
      &                 (lakon(nelems)(4:6).eq.'20R').or.
-     &                 (lakon(nelems)(4:6).eq.'26R').or.
      &                 ((lakon(nelems)(4:5).eq.'15').and.
      &                 (nopes.eq.8))) then
                   xi=gauss2d2(1,m)
@@ -294,7 +281,6 @@ c         if((istep.eq.1).and.(iinc.eq.1).and.(iit.le.0)) then
                   et=gauss2d3(2,m)
                   weight=weight2d3(m)
                elseif((lakon(nelems)(4:5).eq.'10').or.
-     &                (lakon(nelems)(4:5).eq.'14').or.
      &                 ((lakon(nelems)(4:5).eq.'15').and.
      &                 (nopes.eq.6))) then
                   xi=gauss2d5(1,m)
@@ -446,10 +432,6 @@ c     write(*,*) '**regular solution'
 !              no element is generated
 !     
                if(isol.ne.0) then
-c                  clear=straight(13,itri)*p(1)+
-c     &                 straight(14,itri)*p(2)+
-c     &                 straight(15,itri)*p(3)+
-c     &                 straight(16,itri)
 !
 !                 determining the clearance
 !
@@ -463,17 +445,11 @@ c     &                 straight(16,itri)
                   if(lakon(nelem)(4:5).eq.'20') then
                      nopes=8
                      nface=6
-                  elseif(lakon(nelem)(4:4).eq.'2') then
-                     nopes=9
-                     nface=6
                   elseif(lakon(nelem)(4:4).eq.'8') then
                      nopes=4
                      nface=6
                   elseif(lakon(nelem)(4:5).eq.'10') then
                      nopes=6
-                     nface=4
-                  elseif(lakon(nelem)(4:5).eq.'14') then
-                     nopes=7
                      nface=4
                   elseif(lakon(nelem)(4:4).eq.'4') then
                      nopes=3

@@ -101,7 +101,8 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
 	  lakon,cg,straight,ifree,koncont,co,vold,xo,yo,zo,x,y,z,nx,ny,nz,
           ielmat,elcon,istep,iinc,iit,ncmat_,ntmat_,mi,imastop,islavsurf,
 	  itiefac,springarea,tietol,reltime,filab,nasym,pslavsurf,pmastsurf,
-	  clearini,theta,xstateini,xstate,nstate_,ne0,icutb,ialeatoric));
+	  clearini,theta,xstateini,xstate,nstate_,ne0,icutb,ialeatoric,
+          nmethod));
 
     }
 

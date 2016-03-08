@@ -27,6 +27,11 @@
 !
       real*8 xrlfa(3,*),vel(nef,0:5),vfa(0:5,*),xboun(*),xl1
 !     
+c      write(*,*) 'extrapolate_pel ',vel(1,4),vel(2,4)
+c$omp parallel default(none)
+c$omp& shared(nface,ielfa,xrlfa,vfa,vel,ifabou,xboun)
+c$omp& private(i,iel1,xl1,iel2)
+c$omp do
       do i=1,nface
          iel1=ielfa(1,i)
          xl1=xrlfa(1,i)
@@ -61,10 +66,9 @@
 !
             vfa(4,i)=vel(iel1,4)
          endif
-c         write(*,*) 'extrapolate_pel pressure ',iel1,ielfa(4,i),
-c     &               vfa(4,i)
       enddo
+c$omp end do
+c$omp end parallel
 !            
-c      write(*,*)
       return
       end

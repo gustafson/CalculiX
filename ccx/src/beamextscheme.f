@@ -29,7 +29,7 @@
       integer npropstart,mi(*),ndim,nfield,j,k,l
 !
       real*8 prop(*),ratio,ratio2,yil(ndim,mi(1)),yig(nfield,mi(1)),
-     &  field(999,20*mi(3)),r,scal,a8(8,8)
+     &  field(999,20*mi(3)),r,scal,a8(8,8),pmean1(nfield),pmean2(nfield)
 !
 !     extrapolation from a 2x2x2=8 integration point scheme in a hex to
 !     the vertex nodes
@@ -50,6 +50,13 @@
 !
 !        pipe cross section
 !
+!        the axis of the pipe is along the local xi-direction
+!        the integration points are at positions +-0.57 along
+!        the xi-axis. At each of these positions there are 8
+!        integration points in the eta-zeta plane at one radial
+!        position and
+!        equally spaced along the circumferential direction
+!
 !        ratio of inner radius to outer radius
 !
          ratio=(prop(npropstart+1)-prop(npropstart+2))/
@@ -65,18 +72,25 @@
 !
          scal=dsqrt(2.d0/3.d0)/r
 !
+!        calculating the mean values at each of the two xi-positions
+!
+         do k=1,nfield
+            pmean1(k)=(yil(k,2)+yil(k,4)+yil(k,6)+yil(k,8))/4.d0
+            pmean2(k)=(yil(k,10)+yil(k,12)+yil(k,14)+yil(k,16))/4.d0
+         enddo
+!
 !        translating the results from the integration points of the
 !        pipe section to the integration points of the C3D20R element
 !
          do k=1,nfield
-            yig(k,1)=yil(k,6)*scal
-            yig(k,2)=yil(k,14)*scal
-            yig(k,3)=yil(k,8)*scal
-            yig(k,4)=yil(k,16)*scal
-            yig(k,5)=yil(k,4)*scal
-            yig(k,6)=yil(k,12)*scal
-            yig(k,7)=yil(k,2)*scal
-            yig(k,8)=yil(k,10)*scal
+            yig(k,1)=pmean1(k)+(yil(k,6)-pmean1(k))*scal
+            yig(k,2)=pmean2(k)+(yil(k,14)-pmean2(k))*scal
+            yig(k,3)=pmean1(k)+(yil(k,8)-pmean1(k))*scal
+            yig(k,4)=pmean2(k)+(yil(k,16)-pmean2(k))*scal
+            yig(k,5)=pmean1(k)+(yil(k,4)-pmean1(k))*scal
+            yig(k,6)=pmean2(k)+(yil(k,12)-pmean2(k))*scal
+            yig(k,7)=pmean1(k)+(yil(k,2)-pmean1(k))*scal
+            yig(k,8)=pmean2(k)+(yil(k,10)-pmean2(k))*scal
          enddo
 !
 !        standard extrapolation for the C3D20R element

@@ -151,14 +151,10 @@ c     Bernhardi start
          elseif(lakonl(4:5).eq.'20') then
 c     Bernhardi end
             nope=20
-         elseif(lakonl(4:4).eq.'2') then
-            nope=26
          elseif(lakonl(4:4).eq.'8') then
             nope=8
          elseif(lakonl(4:5).eq.'10') then
             nope=10
-         elseif(lakonl(4:5).eq.'14') then
-            nope=14
          elseif(lakonl(4:4).eq.'4') then
             nope=4
          elseif(lakonl(4:5).eq.'15') then
@@ -205,7 +201,7 @@ c     Bernhardi end
                call beamintscheme(lakonl,mint3d,ielprop(i),prop,
      &              null,xi,et,ze,weight)
             endif
-         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'26R').or.
+         elseif((lakonl(4:4).eq.'8').or.
      &          (lakonl(4:6).eq.'20R')) then
             if(lakonl(7:8).eq.'LC') then
                mint3d=8*nlayer
@@ -214,7 +210,7 @@ c     Bernhardi end
             endif
          elseif(lakonl(4:4).eq.'2') then
             mint3d=27
-         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
+         elseif(lakonl(4:5).eq.'10') then
             mint3d=4
          elseif(lakonl(4:4).eq.'4') then
             mint3d=1
@@ -350,7 +346,7 @@ c               enddo
      &                 jj,xi,et,ze,weight)
                endif
             elseif((lakonl(4:4).eq.'8').or.
-     &             (lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R'))
+     &             (lakonl(4:6).eq.'20R'))
      &        then
                if(lakonl(7:8).ne.'LC') then
                   xi=gauss3d2(1,jj)
@@ -402,7 +398,7 @@ c               enddo
                et=gauss3d3(2,jj)
                ze=gauss3d3(3,jj)
                weight=weight3d3(jj)
-            elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
+            elseif(lakonl(4:5).eq.'10') then
                xi=gauss3d5(1,jj)
                et=gauss3d5(2,jj)
                ze=gauss3d5(3,jj)
@@ -439,14 +435,10 @@ c     Bernhardi end
                else
                   call shape20h(xi,et,ze,xl,xsj,shp,iflag)
                endif
-            elseif(nope.eq.26) then
-               call shape26h(xi,et,ze,xl,xsj,shp,iflag,konl)
             elseif(nope.eq.8) then
                call shape8h(xi,et,ze,xl,xsj,shp,iflag)
             elseif(nope.eq.10) then
                call shape10tet(xi,et,ze,xl,xsj,shp,iflag)
-            elseif(nope.eq.14) then
-               call shape14tet(xi,et,ze,xl,xsj,shp,iflag,konl)
             elseif(nope.eq.4) then
                call shape4tet(xi,et,ze,xl,xsj,shp,iflag)
             elseif(nope.eq.15) then
@@ -722,8 +714,7 @@ c     Bernhardi end
                         t0l=t0l+t0(konl(i1))/8.d0
                         t1l=t1l+t1(konl(i1))/8.d0
                      enddo
-                  elseif((lakonl(4:6).eq.'20 ').or.
-     &                   (lakonl(4:6).eq.'26 ')) then
+                  elseif(lakonl(4:6).eq.'20 ') then
                      nopered=20
                      call lintemp(t0,t1,konl,nopered,jj,t0l,t1l)
                   else
@@ -739,8 +730,7 @@ c     Bernhardi end
                         t0l=t0l+t0(konl(i1))/8.d0
                         t1l=t1l+vold(0,konl(i1))/8.d0
                      enddo
-                  elseif((lakonl(4:6).eq.'20 ').or.
-     &                   (lakonl(4:6).eq.'26 ')) then
+                  elseif(lakonl(4:6).eq.'20 ') then
                      nopered=20
                      call lintemp_th(t0,vold,konl,nopered,jj,t0l,t1l,mi)
                   else
@@ -909,6 +899,13 @@ c                 emec0(m1)=emeini(m1,jj,i)
      &         (eloc(4)-eth(4)-emeini(4,jj,i))*(stre(4)+stiini(4,jj,i))+
      &         (eloc(5)-eth(5)-emeini(5,jj,i))*(stre(5)+stiini(5,jj,i))+
      &         (eloc(6)-eth(6)-emeini(6,jj,i))*(stre(6)+stiini(6,jj,i))
+c                  write(*,*) 'resultsmech ',jj,i,enerini(jj,i)
+c                  write(*,*) (eloc(k),k=1,6)
+c                  write(*,*) (eth(k),k=1,6)
+c                  write(*,*) (emeini(k,jj,i),k=1,6)
+c                  write(*,*) (stre(k),k=1,6)
+c                  write(*,*) (stiini(k,jj,i),k=1,6)
+c                  write(*,*) 'resultsmech2 ',jj,i,ener(jj,i)
 c                  ener(jj,i)=enerini(jj,i)+
 c     &                 ((eloc(1)-eth(1)-eme(1,jj,i))*
 c     &                  (stre(1)+stiini(1,jj,i))+

@@ -63,7 +63,7 @@
      &  inp(3,*),itie,iset,ipos,mcs,lprev,ntie,ithermal,ncounter,
      &  nrcg(*),nzcg(*),jcs(*),kontri(3,*),ne,ipkon(*),kon(*),nodei,
      &  ifacetet(*),inodface(*),ipoinpc(0:*),maxsectors,id,jfaces,
-     &  noden(2),ntrans,ntrans_,cfd,mi(*),ifaceq(9,6),ifacet(7,4),
+     &  noden(2),ntrans,ntrans_,cfd,mi(*),ifaceq(8,6),ifacet(6,4),
      &  ifacew1(4,5),ifacew2(8,5),idof
 !
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
@@ -74,19 +74,19 @@
 !
 !     nodes per face for hex elements
 !
-      data ifaceq /4,3,2,1,11,10,9,12,21,
-     &            5,6,7,8,13,14,15,16,22,
-     &            1,2,6,5,9,18,13,17,23,
-     &            2,3,7,6,10,19,14,18,24,
-     &            3,4,8,7,11,20,15,19,25,
-     &            4,1,5,8,12,17,16,20,26/
+      data ifaceq /4,3,2,1,11,10,9,12,
+     &            5,6,7,8,13,14,15,16,
+     &            1,2,6,5,9,18,13,17,
+     &            2,3,7,6,10,19,14,18,
+     &            3,4,8,7,11,20,15,19,
+     &            4,1,5,8,12,17,16,20/
 !
 !     nodes per face for tet elements
 !
-      data ifacet /1,3,2,7,6,5,11,
-     &             1,2,4,5,9,8,12,
-     &             2,3,4,6,10,9,13,
-     &             1,4,3,8,10,7,14/
+      data ifacet /1,3,2,7,6,5,
+     &             1,2,4,5,9,8,
+     &             2,3,4,6,10,9,
+     &             1,4,3,8,10,7/
 !
 !     nodes per face for linear wedge elements
 !
@@ -352,8 +352,6 @@ c      iaxial=max(iaxial,maxsectors)
                   nopes=4
                elseif(lakon(nelems)(4:5).eq.'10') then
                   nopes=6
-               elseif(lakon(nelems)(4:5).eq.'14') then
-                  nopes=7
                elseif(lakon(nelems)(4:4).eq.'4') then
                   nopes=3
                endif
@@ -550,8 +548,6 @@ c      iaxial=max(iaxial,maxsectors)
                   nopes=4
                elseif(lakon(nelems)(4:5).eq.'10') then
                   nopes=6
-               elseif(lakon(nelems)(4:5).eq.'14') then
-                  nopes=7
                elseif(lakon(nelems)(4:4).eq.'4') then
                   nopes=3
                endif
@@ -775,8 +771,6 @@ c            enddo
                   nopes=4
                elseif(lakon(nelems)(4:5).eq.'10') then
                   nopes=6
-               elseif(lakon(nelems)(4:5).eq.'14') then
-                  nopes=7
                elseif(lakon(nelems)(4:4).eq.'4') then
                   nopes=3
                endif

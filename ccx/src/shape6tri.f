@@ -31,6 +31,8 @@
 !              value of their 1st and 2nd order derivatives 
 !              w.r.t. the local coordinates, the Jacobian vector 
 !              (local normal to the surface)
+!     iflag=5: calculate the value of the shape functions and
+!              their derivatives w.r.t. the local coordinates
 !
 !     shape functions and derivatives for a 6-node quadratic
 !     isoparametric triangular element. 0<=xi,et<=1,xi+et<=1 
@@ -39,7 +41,7 @@
 !
       integer i,j,k,iflag
 !
-      real*8 shp(7,6),xs(3,7),xsi(2,3),xl(3,6),sh(3),xsj(3),xi,et
+      real*8 shp(7,6),xs(3,7),xsi(2,3),xl(3,6),sh(3),xsj(3),xi,et,c1
 !
       intent(in) xi,et,xl,iflag
 !
@@ -48,14 +50,16 @@
 !     shape functions and their glocal derivatives for an element
 !     described with two local parameters and three global ones.
 !
+      c1=1.d0-xi-et
+!
 !     shape functions
 !
-      shp(4,1)=2.d0*(0.5d0-xi-et)*(1.d0-xi-et)
+      shp(4,1)=2.d0*(0.5d0-xi-et)*c1
       shp(4,2)=xi*(2.d0*xi-1.d0)
       shp(4,3)=et*(2.d0*et-1.d0)
-      shp(4,4)=4.d0*xi*(1.d0-xi-et)
+      shp(4,4)=4.d0*xi*c1
       shp(4,5)=4.d0*xi*et
-      shp(4,6)=4.d0*et*(1.d0-xi-et)            
+      shp(4,6)=4.d0*et*c1            
 !
       if(iflag.eq.1) return
 !
@@ -64,7 +68,7 @@
       shp(1,1)=4.d0*(xi+et)-3.d0
       shp(1,2)=4.d0*xi-1.d0
       shp(1,3)=0.d0
-      shp(1,4)=4.d0*(1.d0-2.d0*xi-et)
+      shp(1,4)=4.d0*(c1-xi)
       shp(1,5)=4.d0*et
       shp(1,6)=-4.d0*et
 !
@@ -75,7 +79,9 @@
       shp(2,3)=4.d0*et-1.d0
       shp(2,4)=-4.d0*xi
       shp(2,5)=4.d0*xi
-      shp(2,6)=4.d0*(1.d0-xi-2.d0*et)
+      shp(2,6)=4.d0*(c1-et)
+!
+      if(iflag.eq.5) return
 !
 !     computation of the local derivative of the global coordinates
 !     (xs)
@@ -100,12 +106,6 @@
 !     computation of the global derivative of the local coordinates
 !     (xsi) (inversion of xs)
 !     
-c         xsi(1,1)=xs(2,2)/xsj(3)
-c         xsi(2,1)=-xs(2,1)/xsj(3)
-c         xsi(1,2)=-xs(1,2)/xsj(3)
-c         xsi(2,2)=xs(1,1)/xsj(3)
-c         xsi(1,3)=-xs(2,2)/xsj(1)
-c         xsi(2,3)=xs(2,1)/xsj(1)
          if(dabs(xsj(3)).gt.1.d-10) then
             xsi(1,1)=xs(2,2)/xsj(3)
             xsi(2,2)=xs(1,1)/xsj(3)

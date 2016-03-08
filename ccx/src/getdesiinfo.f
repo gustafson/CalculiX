@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine getdesiinfo(set,istartset,iendset,ialset,nset,istep,
+      subroutine getdesiinfo(set,istartset,iendset,ialset,nset,
      &  mi,nactdof,ndesi,ndirdesi,nodedesi,ntie,tieset)    
 !
 !     reading the input deck: *DESIGNVARIABLES
@@ -27,12 +27,12 @@
       character*81 set(*)
       character*81 tieset(3,*)
 !
-      integer mi(*),istartset(*),iendset(*),ialset(*),indexe,ndesi,
-     &  node,nodedesi(*),ndirdesi(*),nset,ntie,istep,key,i,j,k,l,
+      integer mi(*),istartset(*),iendset(*),ialset(*),ndesi,
+     &  node,nodedesi(*),ndirdesi(*),nset,ntie,i,j,k,l,
      &  ipos,nactdof(0:mi(2),*) 
 !
       nodeset='
-     &  		    '
+     &                      '
       ipos=0
       ndesi=0
 !
@@ -40,18 +40,18 @@
 !      
       do i=1,ntie
          if(tieset(1,i)(81:81).eq.'D') then
-	    setname=tieset(2,i)
-	    ipos=index(setname,' ')
-	    setname(ipos:ipos)='N'
-	 endif
+            setname=tieset(2,i)
+            ipos=index(setname,' ')
+            setname(ipos:ipos)='N'
+         endif
       enddo 
 !
 !     Check for the existence of the name
 !
       if(setname.eq.' ') then
-	write(*,*) '*ERROR in getdesiinfo: name of node set '
-	write(*,*) '  has not yet been defined. '
-	call exit(201)
+        write(*,*) '*ERROR in getdesiinfo: name of node set '
+        write(*,*) '  has not yet been defined. '
+        call exit(201)
       endif
 !
 !     Search the name of the node set in "set(i)" and
@@ -59,17 +59,17 @@
 !
       do j=1,nset
          if(setname.eq.set(j)) then  
-	    do k=istartset(j),iendset(j)
-	       node=ialset(k)
-	       do l=1,3
-	           if(nactdof(l,node).ne.0) then
-	             ndesi=ndesi+1
-	             nodedesi(ndesi)=node
-	             ndirdesi(ndesi)=l
-	           endif   
+            do k=istartset(j),iendset(j)
+               node=ialset(k)
+               do l=1,3
+                   if(nactdof(l,node).ne.0) then
+                     ndesi=ndesi+1
+                     nodedesi(ndesi)=node
+                     ndirdesi(ndesi)=l
+                   endif   
                enddo
-            enddo	       
-	 endif
+            enddo              
+         endif
       enddo 
 !
       return

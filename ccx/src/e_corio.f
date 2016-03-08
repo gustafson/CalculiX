@@ -22,7 +22,7 @@
      &  t0,t1,ithermal,vold,iperturb,nelemload,
      &  sideload,xload,nload,idist,sti,stx,iexpl,plicon,
      &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
-     &  matname,mi,ncmat_,ttime,time,istep,iinc,nmethod)
+     &  matname,mi,ncmat_,ttime,time,istep,iinc,nmethod,ielprop,prop)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -44,18 +44,17 @@
       character*80 matname(*),amat
 !
       integer konl(20),ifaceq(8,6),nelemload(2,*),nk,nbody,nelem,
-     &  mi(*),
-     &  mattyp,ithermal,iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
+     &  mi(*),mattyp,ithermal,iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
      &  nmethod,k1,l1,ii,jj,ii1,jj1,id,ipointer,ig,m1,m2,m3,m4,kk,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
-     &  ielorien(mi(3),*),
+     &  ielorien(mi(3),*),null,ielprop(*),
      &  ntmat_,nope,nopes,norien,ihyper,iexpl,kode,imat,mint2d,
      &  mint3d,ifacet(7,4),nopev,iorien,istiff,ncmat_,
      &  ifacew(8,5),intscheme,n,ipointeri,ipointerj,istep,iinc,
      &  layer,kspt,jltyp,iflag,iperm(60),m,iscale,ne0,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),
+      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),prop(*),
      &  s(100,100),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),ff(100),
      &  bf(3),q(3),shpj(4,20),elcon(0:ncmat_,ntmat_,*),
      &  rhcon(0:1,ntmat_,*),xkl(3,3),eknlsign,reltime,
@@ -83,6 +82,8 @@
 !
       include "gauss.f"
 !
+      null=0
+!
       imat=ielmat(1,nelem)
       amat=matname(imat)
 !
@@ -109,6 +110,13 @@ c     Bernhardi end
 !
       if(lakonl(4:5).eq.'8R') then
          mint3d=1
+      elseif(lakonl(4:7).eq.'20RB') then
+         if((lakonl(8:8).eq.'R').or.(lakonl(8:8).eq.'C')) then
+            mint3d=50
+         else
+            call beamintscheme(lakonl,mint3d,ielprop(nelem),prop,
+     &           null,xi,et,ze,weight)
+         endif
       elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) then
          if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'S').or.
      &        (lakonl(7:7).eq.'E')) then
@@ -154,6 +162,16 @@ c     Bernhardi end
             et=gauss3d1(2,kk)
             ze=gauss3d1(3,kk)
             weight=weight3d1(kk)
+         elseif(lakonl(4:7).eq.'20RB') then
+            if((lakonl(8:8).eq.'R').or.(lakonl(8:8).eq.'C')) then
+               xi=gauss3d13(1,kk)
+               et=gauss3d13(2,kk)
+               ze=gauss3d13(3,kk)
+               weight=weight3d13(kk)
+            else
+               call beamintscheme(lakonl,mint3d,ielprop(nelem),prop,
+     &              kk,xi,et,ze,weight)
+            endif
          elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) 
      &           then
             xi=gauss3d2(1,kk)

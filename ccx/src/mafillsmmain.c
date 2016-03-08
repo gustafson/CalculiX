@@ -77,7 +77,7 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	       double *clearini,ITG *ielprop,double *prop,ITG *ne0,
 	       double *fnext,ITG *kscale){
 
-    ITG i,j,k,mt=mi[1]+1;
+    ITG i,j,mt=mi[1]+1;
       
     /* variables for multithreading procedure */
     
@@ -148,10 +148,10 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 
     /* allocating fields for mass and stiffness matrix */
 
-    if(*buckling!=1){
+//    if(*buckling!=1){
 	NNEW(ad1,double,num_cpus*neq[1]);
 	NNEW(au1,double,(long long)num_cpus*nzs[2]);
-    }
+//    }
 
     if(*rhsi==1){
 	NNEW(fext1,double,num_cpus*neq[1]);
@@ -207,7 +207,7 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 
     /* calculating the stiffness/mass */
     
-    printf(" Using up to %" ITGFORMAT " cpu(s) for the stiffness/mass calculation.\n\n", num_cpus);
+    printf(" Using up to %" ITGFORMAT " cpu(s) for the symmetric stiffness/mass contributions.\n\n", num_cpus);
     
     /* create threads and wait */
     
@@ -226,29 +226,54 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
       for(k=i*nzs[2];k<i*nzs[2]+nzs[2];++k){printf("au=%" ITGFORMAT ",%f\n",k-i*nzs[2],au1[k]);}
       }*/
 
-    /* copying and accumulating the stiffnes and/or mass matrix */
+    /* copying and accumulating the stiffnes and/or mass matrix 
+       for buckling the matrices have to be added*/
 
     if(*buckling!=1){
+
+        /* no buckling */
+
 	for(i=0;i<neq[1];i++){
 	    ad[i]=ad1[i];
 	}
+    }else{
+
+        /* buckling */
+
 	for(i=0;i<neq[1];i++){
-	    for(j=1;j<num_cpus;j++){
-		ad[i]+=ad1[i+j*neq[1]];
-	    }
+	    ad[i]+=ad1[i];
 	}
-	SFREE(ad1);
+    }
+
+    for(i=0;i<neq[1];i++){
+	for(j=1;j<num_cpus;j++){
+	    ad[i]+=ad1[i+j*neq[1]];
+	}
+    }
+    SFREE(ad1);
+    
+    if(*buckling!=1){
+
+        /* no buckling */
 
 	for(i=0;i<nzs[2];i++){
 	    au[i]=au1[i];
 	}
+    }else{
+
+        /* buckling */
+
 	for(i=0;i<nzs[2];i++){
-	    for(j=1;j<num_cpus;j++){
-		au[i]+=au1[i+(long long)j*nzs[2]];
-	    }
+	    au[i]+=au1[i];
 	}
-	SFREE(au1);
-    }	
+    }
+
+    for(i=0;i<nzs[2];i++){
+	for(j=1;j<num_cpus;j++){
+	    au[i]+=au1[i+(long long)j*nzs[2]];
+	}
+    }
+    SFREE(au1);
 
     if(*rhsi==1){
 	for(i=0;i<neq[1];i++){
@@ -331,6 +356,7 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	    break;
 	}
     }
+    SFREE(nmethod1);
       
     /*     for(k=0;k<neq[1];++k){printf("fext=%" ITGFORMAT ",%f\n",k,fext[k]);}
       for(k=0;k<neq[1];++k){printf("ad=%" ITGFORMAT ",%f\n",k,ad[k]);}
@@ -360,10 +386,10 @@ void *mafillsmmt(ITG *i){
     indexaub=0;
     indexfnext=0;
 
-    if(*buckling1!=1){
+//    if(*buckling1!=1){
 	indexad=*i*neq1[1];
 	indexau=(long long)*i*nzs1[2];
-    }
+//    }
     if(*rhsi1==1){
 	indexfext=*i*neq1[1];
     }
@@ -396,7 +422,7 @@ void *mafillsmmt(ITG *i){
 
 //    printf("i=%d,nea=%d,neb=%d\n",*i,nea,neb);
 
-    FORTRAN(mafillsm1,(co1,nk1,kon1,ipkon1,lakon1,ne1,nodeboun1,ndirboun1,
+    FORTRAN(mafillsm,(co1,nk1,kon1,ipkon1,lakon1,ne1,nodeboun1,ndirboun1,
 	    xboun1,nboun1,
 	    ipompc1,nodempc1,coefmpc1,nmpc1,nodeforc1,ndirforc1,xforc1,
 	    nforc1,nelemload1,sideload1,xload1,nload1,xbody1,ipobody1,

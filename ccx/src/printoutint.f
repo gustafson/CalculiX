@@ -135,8 +135,7 @@
      &           null,xi,et,ze,weight)
          endif
       elseif((lakon(nelel)(4:4).eq.'8').or.
-     &       (lakon(nelel)(4:6).eq.'20R').or.
-     &       (lakon(nelel)(4:6).eq.'26R')) then
+     &       (lakon(nelel)(4:6).eq.'20R')) then
          if(lakon(nelel)(7:8).eq.'LC') then
             mint3d=8*nlayer
          else
@@ -144,8 +143,7 @@
          endif
       elseif(lakon(nelel)(4:4).eq.'2') then
          mint3d=27
-      elseif((lakon(nelel)(4:5).eq.'10').or.
-     &       (lakon(nelel)(4:5).eq.'14')) then
+      elseif(lakon(nelel)(4:5).eq.'10') then
          mint3d=4
       elseif(lakon(nelel)(4:4).eq.'4') then
          mint3d=1
@@ -165,8 +163,7 @@
             nope=20
          elseif(lakon(nelel)(4:4).eq.'8') then
             nope=8
-         elseif((lakon(nelel)(4:5).eq.'10').or.
-     &          (lakon(nelel)(4:5).eq.'14')) then
+         elseif(lakon(nelel)(4:5).eq.'10') then
             nope=10
          elseif(lakon(nelel)(4:4).eq.'4') then
             nope=4
@@ -203,8 +200,7 @@ c         indexe=ipkon(nelel)
      &                  prop,j,xi,et,ze,weight)
                endif
             elseif((lakon(nelel)(4:4).eq.'8').or.
-     &             (lakon(nelel)(4:6).eq.'20R').or.
-     &             (lakon(nelel)(4:6).eq.'26R'))
+     &             (lakon(nelel)(4:6).eq.'20R'))
      &              then
                if(lakon(nelel)(7:8).ne.'LC') then
                   xi=gauss3d2(1,j)

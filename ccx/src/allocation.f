@@ -22,7 +22,7 @@
      &  namtot,ncmat,memmpc,ne1d,ne2d,nflow,jobnamec,irstrt,
      &  ithermal,nener,nstate,irestartstep,inpc,ipoinp,inp,
      &  ntie,nbody,nprop,ipoinpc,nevdamp,npt,nslavs,nkon,mcs,
-     &  mortar,ifacecount,nintpoint,infree,nheading)
+     &  mortar,ifacecount,nintpoint,infree,nheading,nobject)
 !
 !     calculates a conservative estimate of the size of the 
 !     fields to be allocated
@@ -59,7 +59,7 @@
      &  ntie,nbody,nprop,ipoinpc(0:*),nevdamp,npt,nentries,
      &  iposs,iposm,nslavs,nlayer,nkon,nopeexp,k,iremove,mcs,
      &  ifacecount,nintpoint,mortar,infree(4),nheading,icfd,
-     &  multslav,multmast
+     &  multslav,multmast,nobject
 !
       real*8 temperature,tempact,xfreq,tpinc,tpmin,tpmax
 !
@@ -428,6 +428,10 @@
                if(istat.lt.0) exit
                nstate=max(l,nstate)
             enddo
+         elseif(textpart(1)(1:16).eq.'*DESIGNVARIABLES') then
+            ntie=ntie+1   
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)        
          elseif(textpart(1)(1:21).eq.'*DISTRIBUTINGCOUPLING') then
             nmpc=nmpc+3
             memmpc=memmpc+3
@@ -993,6 +997,8 @@ c            ncmat=max(7,ncmat)
             enddo
          elseif(textpart(1)(1:18).eq.'*GAPHEATGENERATION') then
             ncmat=max(11,ncmat)
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:8).eq.'*HEADING') then
             if(nheading.ne.0) then
                write(*,*) '*ERROR in allocation: more than 1'
@@ -1247,6 +1253,13 @@ c            ncmat=max(7,ncmat)
                if((istat.lt.0).or.(key.eq.1)) exit
                nprint=nprint+n
             enddo
+         elseif(textpart(1)(1:10).eq.'*OBJECTIVE') then
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+               nobject=nobject+1
+            enddo    
          elseif(textpart(1)(1:12).eq.'*ORIENTATION') then
             norien=norien+1
             do
@@ -1690,9 +1703,11 @@ c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
             nmat=nmat+1
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
-         elseif(textpart(1)(1:11).eq.'*TEMPERATURE') then
+         elseif(textpart(1)(1:12).eq.'*TEMPERATURE') then
             nam=nam+1
             namtot=namtot+1
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:4).eq.'*TIE') then
             ntie=ntie+1
             cyclicsymmetry=.false.

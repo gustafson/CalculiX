@@ -42,7 +42,7 @@ void mastructcs(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
     ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,
     index1,index2,m,node,nzs_,ist,kflag,indexe,nope,isize,*mast1=NULL,
     *irow=NULL,inode,icomplex,inode1,icomplex1,inode2,*next=NULL,
-    icomplex2,kdof1,kdof2,ilength,lprev,ij,mt=mi[1]+1;
+      icomplex2,kdof1,kdof2,ilength,lprev,ij,mt=mi[1]+1,jstart;
 
   /* the indices in the comments follow FORTRAN convention, i.e. the
      fields start with 1 */
@@ -448,15 +448,8 @@ void mastructcs(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	    index=next[index-1];
 	}while(1);
 	jq[i+1]=nmast+1;
-	icol[i]=jq[i+1]-jq[i];
+//	icol[i]=jq[i+1]-jq[i];
     }
-
-    /* summary */
-
-  printf(" number of equations\n");
-  printf(" %" ITGFORMAT "\n",neq[0]);
-  printf(" number of nonzero lower triangular matrix elements\n");
-  printf(" %" ITGFORMAT "\n",ifree);
 
     /* sorting the row numbers within each column */
   
@@ -466,10 +459,37 @@ void mastructcs(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       FORTRAN(isortii,(&irow[jq[i]-1],&mast1[jq[i]-1],&isize,&kflag));
     }
   }
+
+  /* removing duplicate entries */
+  
+  nmast=0;
+  for(i=0;i<neq[0];i++){
+      jstart=nmast+1;
+      if(jq[i+1]-jq[i]>0){
+	  irow[nmast++]=irow[jq[i]-1];
+	  for(j=jq[i];j<jq[i+1]-1;j++){
+	      if(irow[j]==irow[nmast-1])continue;
+	      irow[nmast++]=irow[j];
+	  }
+      }
+      jq[i]=jstart;
+  }
+  jq[neq[0]]=nmast+1;
+  
+  for(i=0;i<neq[0];i++){
+      icol[i]=jq[i+1]-jq[i];
+  }
   
   nzs[0]=jq[neq[0]-1]-1;
   nzs[1]=nzs[0];
   nzs[2]=nzs[0];
+
+    /* summary */
+
+  printf(" number of equations\n");
+  printf(" %" ITGFORMAT "\n",neq[0]);
+  printf(" number of nonzero lower triangular matrix elements\n");
+  printf(" %" ITGFORMAT "\n",nmast);
 
   SFREE(next);
   

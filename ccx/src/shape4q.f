@@ -31,12 +31,15 @@
 !              value of their 1st and 2nd order derivatives 
 !              w.r.t. the local coordinates, the Jacobian vector 
 !              (local normal to the surface)
+!     iflag=5: calculate the value of the shape functions and
+!              their derivatives w.r.t. the local coordinates
 !
       implicit none
 !
       integer i,j,k,iflag
 !
-      real*8 shp(7,4),xs(3,7),xsi(2,3),xl(3,8),sh(3),xsj(3),xi,et
+      real*8 shp(7,4),xs(3,7),xsi(2,3),xl(3,8),sh(3),xsj(3),xi,et,
+     &  xip,xim,etp,etm
 !
       intent(in) xi,et,xl,iflag
 !
@@ -45,28 +48,35 @@
 !     shape functions and their glocal derivatives for an element
 !     described with two local parameters and three global ones.
 !
+      xip=1.d0+xi
+      xim=1.d0-xi
+      etp=1.d0+et
+      etm=1.d0-et
+!
 !     shape functions
 !
-      shp(4,1)=(1.d0-xi)*(1.d0-et)/4.d0
-      shp(4,2)=(1.d0+xi)*(1.d0-et)/4.d0
-      shp(4,3)=(1.d0+xi)*(1.d0+et)/4.d0
-      shp(4,4)=(1.d0-xi)*(1.d0+et)/4.d0
+      shp(4,1)=xim*etm/4.d0
+      shp(4,2)=xip*etm/4.d0
+      shp(4,3)=xip*(etp)/4.d0
+      shp(4,4)=xim*(etp)/4.d0
 !
       if(iflag.eq.1) return
 !
 !     local derivatives of the shape functions: xi-derivative
 !      
-      shp(1,1)=-(1.d0-et)/4.d0
-      shp(1,2)=(1.d0-et)/4.d0
-      shp(1,3)=(1.d0+et)/4.d0
-      shp(1,4)=-(1.d0+et)/4.d0
+      shp(1,1)=-etm/4.d0
+      shp(1,2)=etm/4.d0
+      shp(1,3)=(etp)/4.d0
+      shp(1,4)=-(etp)/4.d0
 !
 !     local derivatives of the shape functions: eta-derivative
 !
-      shp(2,1)=-(1.d0-xi)/4.d0
-      shp(2,2)=-(1.d0+xi)/4.d0
-      shp(2,3)=(1.d0+xi)/4.d0
-      shp(2,4)=(1.d0-xi)/4.d0
+      shp(2,1)=-xim/4.d0
+      shp(2,2)=-xip/4.d0
+      shp(2,3)=xip/4.d0
+      shp(2,4)=xim/4.d0
+!
+      if(iflag.eq.5) return
 !
 !     computation of the local derivative of the global coordinates
 !     (xs)

@@ -29,6 +29,10 @@
 !
       real*8 t1l,vfa(0:5,*),shcon(0:3,ntmat_,*) 
 !     
+c$omp parallel default(none)
+c$omp& shared(nface,vfa,ielmat,ielfa,shcon)
+c$omp& private(i,t1l,imat)
+c$omp do
       do i=1,nface
          t1l=vfa(0,i)
 !
@@ -36,9 +40,9 @@
 !
          imat=ielmat(1,ielfa(1,i))
          vfa(5,i)=vfa(4,i)/(shcon(3,1,imat)*t1l)
-c         write(*,*) 'calcrhofacomp ',i,vfa(5,i)
-c         vfa(5,i)=1.d0
       enddo
+c$omp end do
+c$omp end parallel
 !            
       return
       end

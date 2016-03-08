@@ -40,7 +40,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
   ITG i,j,k,l,jj,ll,id,index,jdof1,jdof2,idof1,idof2,mpc1,mpc2,id1,id2,
     ist1,ist2,node1,node2,isubtract,nmast,ifree,istart,istartold,
     index1,index2,m,node,nzs_,ist,kflag,indexe,nope,isize,*mast1=NULL,
-    *irow=NULL,mt=mi[1]+1,imat,idomain,jmin,jmax,*next=NULL;
+    *irow=NULL,mt=mi[1]+1,imat,idomain,jmin,jmax,*next=NULL,jstart;
 
   /* the indices in the comments follow FORTRAN convention, i.e. the
      fields start with 1 */
@@ -537,37 +537,8 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	    index=next[index-1];
 	}while(1);
 	jq[i+1]=nmast+1;
-	icol[i]=jq[i+1]-jq[i];
+//	icol[i]=jq[i+1]-jq[i];
     }
-
-    /*   determination of the following fields:       
-
-       - irow: row numbers, column per column
-       - icol(i)=# SUBdiagonal nonzero's in column i
-       - jq(i)= location in field irow of the first SUBdiagonal
-         nonzero in column i  */
-
-    RENEW(irow,ITG,ifree);
-    nmast=0;
-    jq[0]=1;
-    for(i=0;i<neq[1];i++){
-	index=ipointer[i];
-	do{
-	    if(index==0) break;
-	    irow[nmast++]=mast1[index-1];
-	    index=next[index-1];
-	}while(1);
-	jq[i+1]=nmast+1;
-	icol[i]=jq[i+1]-jq[i];
-    }
-
-    /* summary */
-
-    printf(" number of equations\n");
-    printf(" %" ITGFORMAT "\n",neq[1]);
-    printf(" number of nonzero lower triangular matrix elements\n");
-    printf(" %" ITGFORMAT "\n",nmast);
-    printf("\n");
 
     /* sorting the row numbers within each column */
 
@@ -578,11 +549,39 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       }
     }
 
+    /* removing duplicate entries */
+
+    nmast=0;
+    for(i=0;i<neq[1];i++){
+	jstart=nmast+1;
+	if(jq[i+1]-jq[i]>0){
+	    irow[nmast++]=irow[jq[i]-1];
+	    for(j=jq[i];j<jq[i+1]-1;j++){
+		if(irow[j]==irow[nmast-1])continue;
+		irow[nmast++]=irow[j];
+	    }
+	}
+	jq[i]=jstart;
+    }
+    jq[neq[1]]=nmast+1;
+
+    for(i=0;i<neq[1];i++){
+	icol[i]=jq[i+1]-jq[i];
+    }
+
     if(neq[0]==0){nzs[0]=0;}
     else{nzs[0]=jq[neq[0]]-1;}
     nzs[1]=jq[neq[1]]-1;
 
     nzs[2]=nzs[1];
+
+    /* summary */
+
+    printf(" number of equations\n");
+    printf(" %" ITGFORMAT "\n",neq[1]);
+    printf(" number of nonzero lower triangular matrix elements\n");
+    printf(" %" ITGFORMAT "\n",nmast);
+    printf("\n");
   
     SFREE(next);
 

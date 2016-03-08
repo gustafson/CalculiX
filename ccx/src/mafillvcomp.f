@@ -18,16 +18,16 @@
 !
       subroutine mafillvcomp(nef,ipnei,neifa,neiel,vfa,xxn,area,
      &  auv,adv,jq,irow,nzs,bv,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
-     &  body,volume,ielfa,lakon,ifabou,nbody,neq,
+     &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
      &  dtimef,velo,veloo,sel,xrlfa,gamma,xxj,nactdohinv,a1,
-     &  a2,a3,flux)
+     &  a2,a3,flux,nefa,nefb)
 !
       implicit none
 !
       character*2 one,two,three
-      character*8 lakon(*)
+      character*8 lakonf(*)
 !
-      integer i,nef,jdof1,indexf,ipnei(*),j,ifa,iel,neifa(*),
+      integer i,nef,jdof1,indexf,ipnei(*),j,ifa,iel,neifa(*),nefa,nefb,
      &  neiel(*),jdof2,jq(*),irow(*),nzs,iwall,compressible,ielfa(4,*),
      &  ipointer,ifabou(*),nbody,neq,k,indexb,numfaces,nactdohinv(*)
 !
@@ -37,16 +37,24 @@
      &  veloo(nef,0:5),rhovel,constant,sel(3,*),xrlfa(3,*),gamma(*),
      &  xxj(3,*),a1,a2,a3,flux(*)
 !
+      intent(in) nef,ipnei,neifa,neiel,vfa,xxn,area,
+     &  jq,irow,nzs,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
+     &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
+     &  dtimef,velo,veloo,xrlfa,gamma,xxj,nactdohinv,a1,
+     &  a2,a3,flux
+!
+      intent(inout) adv,auv,bv,sel
+!
       one='b1'
       two='b2'
       three='b3'
 !
-      do i=1,nef
+      do i=nefa,nefb
          jdof1=i
          indexf=ipnei(i)
-         if(lakon(i)(4:4).eq.'8') then
+         if(lakonf(i)(4:4).eq.'8') then
             numfaces=6
-         elseif(lakon(i)(4:4).eq.'6') then
+         elseif(lakonf(i)(4:4).eq.'6') then
             numfaces=5
          else
             numfaces=4
@@ -59,14 +67,7 @@
             ifa=neifa(indexf)
             iel=neiel(indexf)
             if(iel.ne.0) jdof2=iel
-c            xflux=flux(indexf)
-c            write(*,*) 'mafillvcomp ',i,j,xflux
-            xflux=(vfa(1,ifa)*xxn(1,indexf)+
-     &           vfa(2,ifa)*xxn(2,indexf)+
-     &           vfa(3,ifa)*xxn(3,indexf))
-     &           *vfa(5,ifa)*area(ifa)
-c!              vfa sometimes undefined?
-c            write(*,*) 'mafillvcomp ',i,j,xflux
+            xflux=flux(indexf)
 !
             if(xflux.ge.0.d0) then
 !
@@ -75,9 +76,9 @@ c            write(*,*) 'mafillvcomp ',i,j,xflux
                call add_sm_fl_as(auv,adv,jq,irow,jdof1,jdof1,
      &              xflux,nzs)
 cccc
-c               bv(jdof1,1)=bv(jdof1,1)-(vfa(1,ifa)-vel(i,1))*xflux
-c               bv(jdof1,2)=bv(jdof1,2)-(vfa(2,ifa)-vel(i,2))*xflux
-c               bv(jdof1,3)=bv(jdof1,3)-(vfa(3,ifa)-vel(i,3))*xflux
+c               bv(jdof1,1)=bv(jdof1,1)-0.4*(vfa(1,ifa)-vel(i,1))*xflux
+c               bv(jdof1,2)=bv(jdof1,2)-0.4*(vfa(2,ifa)-vel(i,2))*xflux
+c               bv(jdof1,3)=bv(jdof1,3)-0.4*(vfa(3,ifa)-vel(i,3))*xflux
 cccc
 c               write(*,*) 'mafillv1 ',bv(1,1),bv(1,2),bv(1,3)
             else
@@ -88,9 +89,9 @@ c               write(*,*) 'mafillv1 ',bv(1,1),bv(1,2),bv(1,3)
                   call add_sm_fl_as(auv,adv,jq,irow,jdof1,jdof2,xflux,
      &                 nzs)
 cccc
-c                bv(jdof1,1)=bv(jdof1,1)-(vfa(1,ifa)-vel(iel,1))*xflux
-c                bv(jdof1,2)=bv(jdof1,2)-(vfa(2,ifa)-vel(iel,2))*xflux
-c                bv(jdof1,3)=bv(jdof1,3)-(vfa(3,ifa)-vel(iel,3))*xflux
+c               bv(jdof1,1)=bv(jdof1,1)-0.4*(vfa(1,ifa)-vel(iel,1))*xflux
+c               bv(jdof1,2)=bv(jdof1,2)-0.4*(vfa(2,ifa)-vel(iel,2))*xflux
+c               bv(jdof1,3)=bv(jdof1,3)-0.4*(vfa(3,ifa)-vel(iel,3))*xflux
 cccc
 c               write(*,*) 'mafillv2 ',bv(1,1),bv(1,2),bv(1,3)
                else
@@ -163,7 +164,8 @@ c               write(*,*) 'mafillv4 ',bv(1,1),bv(1,2),bv(1,3)
                if(ipointer.gt.0) then
                   iwall=ifabou(ipointer+5)
                endif
-               if(iwall.eq.0) then
+c               if(iwall.eq.0) then
+               if(iwall.ne.1) then
 !
 !                    external face, but no wall
 !
@@ -258,19 +260,22 @@ c               write(*,*) 'mafillv7 ',bv(1,1),bv(1,2),bv(1,3)
             bv(jdof1,1)=bv(jdof1,1)+rhovel*body(1,i)
             bv(jdof1,2)=bv(jdof1,2)+rhovel*body(2,i)
             bv(jdof1,3)=bv(jdof1,3)+rhovel*body(3,i)
-c               write(*,*) 'mafillv9 ',bv(1,1),bv(1,2),bv(1,3)
          endif
 !
 !           transient term
 !
-         constant=rhovel
-         bv(jdof1,1)=bv(jdof1,1)-(a2*velo(i,1)+a3*veloo(i,1))*constant
-         bv(jdof1,2)=bv(jdof1,2)-(a2*velo(i,2)+a3*veloo(i,2))*constant
-         bv(jdof1,3)=bv(jdof1,3)-(a2*velo(i,3)+a3*veloo(i,3))*constant
-c               write(*,*) 'mafillv10 ',bv(1,1),bv(1,2),bv(1,3)
-c               write(*,*) 'mafillv10 ',velo(1,1),veloo(1,1),constant
-c               write(*,*) 'mafillv10 ',rhovel,dtimef,vel(i,5)
-         constant=a1*constant
+c         a1=1.d0/dtimef
+c         a2=-1.d0/dtimef
+c         a3=0.d0/dtimef
+c         constant=rhovel
+         constant=rhovel/dtimef
+c         bv(jdof1,1)=bv(jdof1,1)-(a2*velo(i,1)+a3*veloo(i,1))*constant
+c         bv(jdof1,2)=bv(jdof1,2)-(a2*velo(i,2)+a3*veloo(i,2))*constant
+c         bv(jdof1,3)=bv(jdof1,3)-(a2*velo(i,3)+a3*veloo(i,3))*constant
+         bv(jdof1,1)=bv(jdof1,1)+velo(i,1)*constant
+         bv(jdof1,2)=bv(jdof1,2)+velo(i,2)*constant
+         bv(jdof1,3)=bv(jdof1,3)+velo(i,3)*constant
+c         constant=a1*constant
          call add_sm_fl(auv,adv,jq,irow,jdof1,jdof1,constant,nzs)
 !
 !           copying b into sel (rhs without pressure)
@@ -278,7 +283,6 @@ c               write(*,*) 'mafillv10 ',rhovel,dtimef,vel(i,5)
          do j=1,3
             sel(j,jdof1)=bv(jdof1,j)
          enddo
-c         write(*,*) 'mafillv sel ',sel(1,1),sel(2,1),sel(3,1)
 !
 !           pressure contribution to b
 !
@@ -295,13 +299,6 @@ c         write(*,*) 'mafillv sel ',sel(1,1),sel(2,1),sel(3,1)
          enddo
 !            
       enddo
-!
-c      do i=1,nzs
-c         write(*,*) 'mafillv auv,irow',i,auv(i),auv(i+nzs)
-c      enddo
-c      do i=1,nef
-c         write(*,*) 'mafillv b adv',i,bv(i,1),adv(i)
-c      enddo
 !     
       return
       end

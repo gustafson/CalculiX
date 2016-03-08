@@ -31,7 +31,7 @@ void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 
   ITG i,j,k,l,index,idof1,idof2,node1,isubtract,nmast,ifree=0,istart,istartold,
       nzs_,kflag,isize,*mast1=NULL,*irow=NULL,neighbor,mt=mi[1]+1,numfaces,
-      *next=NULL;
+      *next=NULL,jstart;
 
   /* the indices in the comments follow FORTRAN convention, i.e. the
      fields start with 1 */
@@ -89,16 +89,8 @@ void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	    index=next[index-1];
 	}while(1);
 	jq[i+1]=nmast+1;
-	icol[i]=jq[i+1]-jq[i];
+//	icol[i]=jq[i+1]-jq[i];
     }
-  
-  /* summary */
-  
-  printf(" number of equations\n");
-  printf(" %" ITGFORMAT "\n",*neq);
-  printf(" number of nonzero lower triangular matrix elements\n");
-  printf(" %" ITGFORMAT "\n",nmast);
-  printf("\n");
   
 /* sorting the row numbers within each column */
   
@@ -108,6 +100,34 @@ void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	  FORTRAN(isortii,(&irow[jq[i]-1],&mast1[jq[i]-1],&isize,&kflag));
       }
   }
+
+  /* removing duplicate entries */
+  
+  nmast=0;
+  for(i=0;i<*neq;i++){
+      jstart=nmast+1;
+      if(jq[i+1]-jq[i]>0){
+	  irow[nmast++]=irow[jq[i]-1];
+	  for(j=jq[i];j<jq[i+1]-1;j++){
+	      if(irow[j]==irow[nmast-1])continue;
+	      irow[nmast++]=irow[j];
+	  }
+      }
+      jq[i]=jstart;
+  }
+  jq[*neq]=nmast+1;
+  
+  for(i=0;i<*neq;i++){
+      icol[i]=jq[i+1]-jq[i];
+  }
+  
+  /* summary */
+  
+  printf(" number of equations\n");
+  printf(" %" ITGFORMAT "\n",*neq);
+  printf(" number of nonzero lower triangular matrix elements\n");
+  printf(" %" ITGFORMAT "\n",nmast);
+  printf("\n");
   
   *nzs=jq[*neq]-1;
 

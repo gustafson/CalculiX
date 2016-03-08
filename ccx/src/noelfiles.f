@@ -699,6 +699,17 @@
                   filab(46)(6:6)=elemsys
                   filab(46)(7:87)=noset
                endif
+            elseif(textpart(ii)(1:4).eq.'SEN ') then
+               if(nmethod.ne.12) then
+                  write(*,*) 
+     &'*WARNING reading *NODE FILE or *EL FILE: SEN only makes'
+                  write(*,*) '         sense for sensitivity'
+                  write(*,*) '         calculations'
+               else
+                  filab(47)(1:4)='SEN '
+                  filab(47)(6:6)=elemsys
+                  filab(47)(7:87)=noset
+               endif
             else
                write(*,*) 
      &'*WARNING reading *NODE FILE or *EL FILE: label not applicable'

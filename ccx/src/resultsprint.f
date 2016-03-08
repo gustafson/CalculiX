@@ -92,7 +92,7 @@
          if((nmethod.eq.4).and.(iperturb(1).gt.1).and.
      &      (ithermal(1).le.1).and.(mi(2).ne.5)) then
             call calcenergy(ipkon,lakon,kon,co,ener,mi,ne,thicke,
-     &           ielmat,energyini,energy)
+     &           ielmat,energyini,energy,ielprop,prop)
          endif
 !
          return

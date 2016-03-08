@@ -31,13 +31,13 @@
      &  coriolis,ibody,xloadold,reltime,veold,springarea,nstate_,
      &  xstateini,xstate,thicke,integerglob,doubleglob,
      &  tieset,istartset,iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,
-     &  mortar,clearini,ielprop,prop,ne0,fnext,nea,neb,kscale)
+     &  mortar,clearini,ielprop,prop,ne0,fnext,kscale)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !
       implicit none
 !
-      integer mass(2),stiffness,buckling,rhsi,stiffonly(2),coriolis
+      logical mass(2),stiffness,buckling,rhsi,stiffonly(2),coriolis
 !
       character*8 lakon(*)
       character*20 sideload(*)
@@ -46,7 +46,7 @@
 !
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),icol(*),jq(*),ikmpc(*),
-     &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,nasym,
+     &  ilmpc(*),ikboun(*),ilboun(*),mi(*),nstate_,ne0,nasym,kscale,
      &  nactdof(0:mi(2),*),irow(*),icolumn,ialset(*),ielprop(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),ntie,
      &  ielorien(mi(3),*),integerglob(*),istartset(*),iendset(*),
@@ -56,8 +56,7 @@
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,jdof,node1,node2,kflag,icalccg,
      &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
-     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,
-     &  nea,neb,kscale
+     &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
@@ -73,47 +72,66 @@
      &  time,thicke(mi(3),*),doubleglob(*),clearini(3,9,*),
      &  pslavsurf(3,*),pmastsurf(6,*)
 !
-      intent(in) co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
-     &  xboun,nboun,
-     &  ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
-     &  nforc,nelemload,sideload,nload,xbody,ipobody,nbody,
-     &  nactdof,icol,jq,irow,neq,nzl,
-     &  ikmpc,ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,
-     &  nrhcon,alcon,nalcon,alzero,ielmat,ielorien,norien,orab,ntmat_,
-     &  t0,t1,ithermal,prestr,
-     &  iprestr,vold,iperturb,sti,nzs,stx,iexpl,plicon,
-     &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
-     &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
-     &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
-     &  coriolis,ibody,xloadold,reltime,veold,nstate_,
-     &  xstateini,thicke,integerglob,doubleglob,
-     &  tieset,istartset,iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,
-     &  mortar,clearini,ielprop,prop,ne0,nea,neb
-!
-      intent(inout) fext,ad,au,adb,aub,xload,nmethod,cgr,springarea,
-     &  xstate
-!
       kflag=2
       i0=0
       icalccg=0
-c      write(*,*) loc(kflag)
-c      write(*,*) loc(s)
-c      write(*,*) loc(sm)
-c      write(*,*) loc(ff)
-c      write(*,*) loc(index1)
 !
-      if((stiffness.eq.1).and.(mass(1).eq.0).and.(buckling.eq.0)) then
-         stiffonly(1)=1
+      if(stiffness.and.(.not.mass(1)).and.(.not.buckling)) then
+         stiffonly(1)=.true.
       else
-         stiffonly(1)=0
+         stiffonly(1)=.false.
       endif
-      if((stiffness.eq.1).and.(mass(2).eq.0).and.(buckling.eq.0)) then
-         stiffonly(2)=1
+      if(stiffness.and.(.not.mass(2)).and.(.not.buckling)) then
+         stiffonly(2)=.true.
       else
-         stiffonly(2)=0
+         stiffonly(2)=.false.
       endif
 !
-      if(rhsi.eq.1) then
+!     determining nzl
+!
+      nzl=0
+      do i=neq(2),1,-1
+         if(icol(i).gt.0) then
+            nzl=i
+            exit
+         endif
+      enddo
+!
+!     initializing the matrices
+!
+      if(.not.buckling) then
+         do i=1,neq(2)
+            ad(i)=0.d0
+         enddo
+         do i=1,nzs(3)
+            au(i)=0.d0
+         enddo
+      endif
+!
+      if(rhsi) then
+         do i=1,neq(2)
+            fext(i)=0.d0
+         enddo
+      endif
+c      elseif(mass.or.buckling) then
+      if(mass(1).or.buckling) then
+         do i=1,neq(1)
+            adb(i)=0.d0
+         enddo
+         do i=1,nzs(1)
+            aub(i)=0.d0
+         enddo
+      endif
+      if(mass(2)) then
+         do i=neq(1)+1,neq(2)
+            adb(i)=0.d0
+         enddo
+         do i=nzs(1)+1,nzs(2)
+            aub(i)=0.d0
+         enddo
+      endif
+!
+      if(rhsi) then
 !
 !        distributed forces (body forces or thermal loads or
 !        residual stresses or distributed face loads)
@@ -131,7 +149,8 @@ c      write(*,*) loc(index1)
 !
 !     mechanical analysis: loop over all elements
 !
-      do i=nea,neb
+c      ne0=0
+      do i=1,ne
 !
         if(ipkon(i).lt.0) cycle
         indexe=ipkon(i)
@@ -160,9 +179,8 @@ c     Bernhardi end
 !          spring and contact spring elements (NO dashpot elements
 !          = ED... elements)
 !
-c           read(lakon(i)(8:8),'(i1)') nope
-           nope=ichar(lakon(i)(8:8))-47
-c           nope=nope+1
+           read(lakon(i)(8:8),'(i1)') nope
+           nope=nope+1
 !     
 !          local contact spring number
 !          if friction is involved, the contact spring element
@@ -251,7 +269,7 @@ c           nope=nope+1
 !           check whether one of the DOF belongs to a SPC or MPC
 !
             if((jdof1.ne.0).and.(jdof2.ne.0)) then
-               if(stiffonly(1).eq.1) then
+               if(stiffonly(1)) then
                   call add_sm_st(au,ad,jq,irow,jdof1,jdof2,
      &                 s(jj,ll),jj,ll)
                else
@@ -285,7 +303,7 @@ c           nope=nope+1
                         value=-coefmpc(index)*s(jj,ll)/coefmpc(ist)
                         if(idof1.eq.idof2) value=2.d0*value
                         if(idof2.ne.0) then
-                           if(stiffonly(1).eq.1) then
+                           if(stiffonly(1)) then
                               call add_sm_st(au,ad,jq,irow,idof1,
      &                             idof2,value,i0,i0)
                            else
@@ -307,7 +325,7 @@ c
 !
 !              regular DOF / SPC
 !
-               if(rhsi.eq.1) then
+               if(rhsi) then
                elseif(nmethod.eq.2) then
                   value=s(jj,ll)
                   call nident(ikboun,idof2,nboun,id)
@@ -345,7 +363,7 @@ c
                            value=coefmpc(index1)*coefmpc(index2)*
      &                          s(jj,ll)/coefmpc(ist)/coefmpc(ist)
                            if((idof1.ne.0).and.(idof2.ne.0)) then
-                              if(stiffonly(1).eq.1) then
+                              if(stiffonly(1)) then
                                  call add_sm_st(au,ad,jq,irow,
      &                             idof1,idof2,value,i0,i0)
                               else
@@ -389,7 +407,7 @@ c
      &                          s(jj,ll)/coefmpc(ist1)/coefmpc(ist2)
                            if(idof1.eq.idof2) value=2.d0*value
                            if((idof1.ne.0).and.(idof2.ne.0)) then
-                              if(stiffonly(1).eq.1) then
+                              if(stiffonly(1)) then
                                  call add_sm_st(au,ad,jq,irow,
      &                             idof1,idof2,value,i0,i0)
                               else
@@ -435,7 +453,7 @@ c                  endif
             endif
           enddo
 !
-          if(rhsi.eq.1) then
+          if(rhsi) then
 !
 !            distributed forces
 !
@@ -482,7 +500,7 @@ c                  endif
 !
 !     thermal analysis: loop over all elements
 !
-      do i=nea,neb
+      do i=1,ne
 !
         if(ipkon(i).lt.0) cycle
         indexe=ipkon(i)
@@ -506,9 +524,8 @@ c                  endif
 !
 !          contact spring and advection elements
 !
-c           read(lakon(i)(8:8),'(i1)') nope
-            nope=ichar(lakon(i)(8:8))-47
-c           nope=nope+1
+           read(lakon(i)(8:8),'(i1)') nope
+           nope=nope+1
 !     
 !          local contact spring number
 !     
@@ -553,7 +570,7 @@ c            m=0
 !           check whether one of the DOF belongs to a SPC or MPC
 !
             if((jdof1.ne.0).and.(jdof2.ne.0)) then
-               if(stiffonly(2).eq.1) then
+               if(stiffonly(2)) then
                   call add_sm_st(au,ad,jq,irow,jdof1,jdof2,
      &                 s(jj,ll),jj,ll)
                else
@@ -587,7 +604,7 @@ c            m=0
                         value=-coefmpc(index)*s(jj,ll)/coefmpc(ist)
                         if(idof1.eq.idof2) value=2.d0*value
                         if(idof2.ne.0) then
-                           if(stiffonly(2).eq.1) then
+                           if(stiffonly(2)) then
                               call add_sm_st(au,ad,jq,irow,idof1,
      &                             idof2,value,i0,i0)
                            else
@@ -609,7 +626,7 @@ c
 !
 !              regular DOF / SPC
 !
-               if(rhsi.eq.1) then
+               if(rhsi) then
                elseif(nmethod.eq.2) then
                   value=s(jj,ll)
                   call nident(ikboun,idof2,nboun,id)
@@ -647,7 +664,7 @@ c
                            value=coefmpc(index1)*coefmpc(index2)*
      &                          s(jj,ll)/coefmpc(ist)/coefmpc(ist)
                            if((idof1.ne.0).and.(idof2.ne.0)) then
-                              if(stiffonly(2).eq.1) then
+                              if(stiffonly(2)) then
                                  call add_sm_st(au,ad,jq,irow,
      &                             idof1,idof2,value,i0,i0)
                               else
@@ -691,7 +708,7 @@ c
      &                          s(jj,ll)/coefmpc(ist1)/coefmpc(ist2)
                            if(idof1.eq.idof2) value=2.d0*value
                            if((idof1.ne.0).and.(idof2.ne.0)) then
-                              if(stiffonly(2).eq.1) then
+                              if(stiffonly(2)) then
                                  call add_sm_st(au,ad,jq,irow,
      &                             idof1,idof2,value,i0,i0)
                               else
@@ -743,7 +760,7 @@ c                  endif
             endif
           enddo
 !
-          if(rhsi.eq.1) then
+          if(rhsi) then
 !
 !            distributed forces
 !
@@ -780,6 +797,60 @@ c                  endif
       enddo
 !
       endif
+!
+      if(rhsi) then
+!
+!        point forces
+!      
+         do i=1,nforc
+            if(ndirforc(i).gt.3) cycle
+!
+!           updating the external force vector for dynamic
+!           calculations
+!
+            if(nmethod.eq.4) fnext(ndirforc(i),nodeforc(1,i))=
+     &                       fnext(ndirforc(i),nodeforc(1,i))+xforc(i)
+!
+            jdof=nactdof(ndirforc(i),nodeforc(1,i))
+            if(jdof.ne.0) then
+               fext(jdof)=fext(jdof)+xforc(i)
+            else
+!
+!              node is a dependent node of a MPC: distribute
+!              the forces among the independent nodes
+!              (proportional to their coefficients)
+!
+               jdof=8*(nodeforc(1,i)-1)+ndirforc(i)
+               call nident(ikmpc,jdof,nmpc,id)
+               if(id.gt.0) then
+                  if(ikmpc(id).eq.jdof) then
+                     id=ilmpc(id)
+                     ist=ipompc(id)
+                     index=nodempc(3,ist)
+                     if(index.eq.0) cycle
+                     do
+                        jdof=nactdof(nodempc(2,index),nodempc(1,index))
+                        if(jdof.ne.0) then
+                           fext(jdof)=fext(jdof)-
+     &                          coefmpc(index)*xforc(i)/coefmpc(ist)
+                        endif
+                        index=nodempc(3,index)
+                        if(index.eq.0) exit
+                     enddo
+                  endif
+               endif
+            endif
+         enddo
+!
+      endif
+!
+c      write(*,'(6(1x,e11.4))') (au(i),i=1,nzs(2))
+c      write(*,'(6(1x,e11.4))') (ad(i),i=1,neq(2))
+c      write(*,'(6(1x,e11.4))') (aub(i),i=1,nzs(2))
+c      write(*,'(6(1x,e11.4))') (adb(i),i=1,neq(2))
+c      write(*,'(6(1x,e11.4))') (b(i),i=1,neq(2))
+c      write(*,*) 'mafillsm '
+c      write(*,'(6(1x,e11.4))') (fext(i),i=1,neq(2))
 !
       return
       end

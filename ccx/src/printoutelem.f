@@ -18,7 +18,7 @@
 !
       subroutine printoutelem(prlab,ipkon,lakon,kon,co,
      &     ener,mi,ii,nelem,energytot,volumetot,enerkintot,nkin,ne,
-     &     stx,nodes,thicke,ielmat,ielem,iface,mortar)
+     &     stx,nodes,thicke,ielmat,ielem,iface,mortar,ielprop,prop)
 !
 !     stores whole element results for element "nelem" in the .dat file
 !
@@ -28,15 +28,15 @@
       character*8 lakon(*)
 !
       integer ipkon(*),nelem,ii,kon(*),mi(*),nope,indexe,i,j,k,
-     &  konl(20),iface,mortar,ielem,
+     &  konl(20),iface,mortar,ielem,ielprop(*),
      &  mint3d,jj,nener,iflag,nkin,ne,nodes,ki,kl,ilayer,nlayer,kk,
-     &  nopes,ielmat(mi(3),*),mint2d
+     &  nopes,ielmat(mi(3),*),mint2d,null
 !
       real*8 ener(mi(1),*),energytot,volumetot,energy,volume,co(3,*),
      &  xl(3,20),xi,et,ze,xsj,shp(4,20),weight,enerkintot,enerkin,
      &  stx(6,mi(1),*),a,gs(8,4),dlayer(4),tlayer(4),thickness,
      &  thicke(mi(3),*),xlayer(mi(3),4),shp2(7,8),xs2(3,7),xsj2(3),
-     &  xl2(3,8)
+     &  xl2(3,8),prop(*)
 !
       include "gauss.f"
 !
@@ -44,6 +44,7 @@
 !
       if(ipkon(nelem).lt.0) return
       indexe=ipkon(nelem)
+      null=0
 !
       if((prlab(ii)(1:4).eq.'ELSE').or.(prlab(ii)(1:4).eq.'CELS')) then
          nener=1
@@ -125,6 +126,14 @@
 !
       if(lakon(nelem)(4:5).eq.'8R') then
          mint3d=1
+      elseif(lakon(nelem)(4:7).eq.'20RB') then
+         if((lakon(nelem)(8:8).eq.'R').or.
+     &      (lakon(nelem)(8:8).eq.'C')) then
+            mint3d=50
+         else
+            call beamintscheme(lakon(nelem),mint3d,ielprop(nelem),prop,
+     &           null,xi,et,ze,weight)
+         endif
       elseif((lakon(nelem)(4:4).eq.'8').or.
      &        (lakon(nelem)(4:6).eq.'20R')) then
          if(lakon(nelem)(7:8).eq.'LC') then
@@ -155,6 +164,17 @@
             et=gauss3d1(2,jj)
             ze=gauss3d1(3,jj)
             weight=weight3d1(jj)
+         elseif(lakon(nelem)(4:7).eq.'20RB') then
+            if((lakon(nelem)(8:8).eq.'R').or.
+     &         (lakon(nelem)(8:8).eq.'C')) then
+               xi=gauss3d13(1,kk)
+               et=gauss3d13(2,kk)
+               ze=gauss3d13(3,kk)
+               weight=weight3d13(kk)
+            else
+               call beamintscheme(lakon(nelem),mint3d,ielprop(nelem),
+     &              prop,kk,xi,et,ze,weight)
+            endif
          elseif((lakon(nelem)(4:4).eq.'8').or.
      &           (lakon(nelem)(4:6).eq.'20R'))
      &           then

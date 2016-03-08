@@ -19,7 +19,8 @@
       subroutine initialconditionss(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,t0,t1,prestr,iprestr,ithermal,veold,inoelfree,nk_,
      &  mi,istep,istat,n,iline,ipol,inl,ipoinp,inp,lakon,kon,co,ne,
-     &  ipkon,vold,ipoinpc,xstate,nstate_,nk,t0g,t1g,iaxial)
+     &  ipkon,vold,ipoinpc,xstate,nstate_,nk,t0g,t1g,iaxial,ielprop,
+     &  prop)
 !
 !     reading the input deck: *INITIAL CONDITIONS
 !
@@ -38,15 +39,17 @@
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ij,jj,ntens,ncrds,layer,
      &  kspt,lrebar,iflag,i1,mint3d,nope,kon(*),konl(20),indexe,
      &  ipkon(*),ne,ipoinpc(0:*),nstate_,nk,jmax,ntot,numberoflines,
-     &  iaxial
+     &  iaxial,null,ielprop(*)
 !
       real*8 t0(*),t1(*),beta(8),prestr(6,mi(1),*),veold(0:mi(2),*),
      &  temperature,velocity,tempgrad1,tempgrad2,pgauss(3),
      &  shp(4,20),xsj,xl(3,20),xi,et,ze,weight,co(3,*),pressure,
      &  vold(0:mi(2),*),xstate(nstate_,mi(1),*),dispvelo,totpres,
-     &  xmassflow,t0g(2,*),t1g(2,*)
+     &  xmassflow,t0g(2,*),t1g(2,*),prop(*)
 !
       include "gauss.f"
+!
+      null=0
 !
       if(istep.gt.0) then
          write(*,*) 
@@ -186,6 +189,15 @@
 !
                      if(lakon(i)(4:5).eq.'8R') then
                         mint3d=1
+                     elseif(lakon(i)(4:7).eq.'20RB') then
+                        if((lakon(i)(8:8).eq.'R').or.
+     &                     (lakon(i)(8:8).eq.'C')) then
+                           mint3d=50
+                        else
+                           call beamintscheme(lakon(i),mint3d,
+     &                          ielprop(i),prop,
+     &                          null,xi,et,ze,weight)
+                        endif
                      elseif((lakon(i)(4:4).eq.'8').or.
      &                       (lakon(i)(4:6).eq.'20R')) then
                         mint3d=8
@@ -214,6 +226,18 @@
                            et=gauss3d1(2,j)
                            ze=gauss3d1(3,j)
                            weight=weight3d1(j)
+                        elseif(lakon(i)(4:7).eq.'20RB') then
+                           if((lakon(i)(8:8).eq.'R').or.
+     &                        (lakon(i)(8:8).eq.'C')) then
+                              xi=gauss3d13(1,j)
+                              et=gauss3d13(2,j)
+                              ze=gauss3d13(3,j)
+                              weight=weight3d13(j)
+                           else
+                              call beamintscheme(lakon(i),mint3d,
+     &                             ielprop(i),prop,
+     &                             j,xi,et,ze,weight)
+                           endif
                         elseif((lakon(i)(4:4).eq.'8').or.
      &                          (lakon(i)(4:6).eq.'20R'))
      &                          then

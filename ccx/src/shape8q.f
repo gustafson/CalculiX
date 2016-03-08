@@ -34,50 +34,66 @@
 !              value of their 1st and 2nd order derivatives 
 !              w.r.t. the local coordinates, the Jacobian vector 
 !              (local normal to the surface)
+!     iflag=5: calculate the value of the shape functions and
+!              their derivatives w.r.t. the local coordinates
 !
       implicit none
 !
       integer i,j,k,iflag
 !
-      real*8 shp(7,8),xs(3,7),xsi(2,3),xl(3,8),sh(3),xsj(3),xi,et
+      real*8 shp(7,8),xs(3,7),xsi(2,3),xl(3,8),sh(3),xsj(3),xi,et,
+     &  xip,xim,xim2,etp,etm,etm2,xipet,ximet
 !
 !     shape functions and their glocal derivatives for an element
 !     described with two local parameters and three global ones.
 !
+      xip=1.d0+xi
+      xim=1.d0-xi
+      xim2=xip*xim
+!
+      etp=1.d0+et
+      etm=1.d0-et
+      etm2=etp*etm
+!
+      xipet=xi+et
+      ximet=xi-et
+!
 !     shape functions
 !
-      shp(4,1)=(1.d0-xi)*(1.d0-et)*(-xi-et-1.d0)/4.d0
-      shp(4,2)=(1.d0+xi)*(1.d0-et)*(xi-et-1.d0)/4.d0
-      shp(4,3)=(1.d0+xi)*(1.d0+et)*(xi+et-1.d0)/4.d0
-      shp(4,4)=(1.d0-xi)*(1.d0+et)*(-xi+et-1.d0)/4.d0
-      shp(4,5)=(1.d0-xi*xi)*(1.d0-et)/2.d0
-      shp(4,6)=(1.d0+xi)*(1.d0-et*et)/2.d0
-      shp(4,7)=(1.d0-xi*xi)*(1.d0+et)/2.d0
-      shp(4,8)=(1.d0-xi)*(1.d0-et*et)/2.d0
+      shp(4,1)=xim*etm*(-xipet-1.d0)/4.d0
+      shp(4,2)=xip*etm*(ximet-1.d0)/4.d0
+      shp(4,3)=xip*etp*(xipet-1.d0)/4.d0
+      shp(4,4)=xim*etp*(-ximet-1.d0)/4.d0
+      shp(4,5)=xim2*etm/2.d0
+      shp(4,6)=xip*etm2/2.d0
+      shp(4,7)=xim2*etp/2.d0
+      shp(4,8)=xim*etm2/2.d0
 !
       if(iflag.eq.1) return
 !
 !     local derivatives of the shape functions: xi-derivative
 !
-      shp(1,1)=(1.d0-et)*(2.d0*xi+et)/4.d0
-      shp(1,2)=(1.d0-et)*(2.d0*xi-et)/4.d0
-      shp(1,3)=(1.d0+et)*(2.d0*xi+et)/4.d0
-      shp(1,4)=(1.d0+et)*(2.d0*xi-et)/4.d0
-      shp(1,5)=-xi*(1.d0-et)
-      shp(1,6)=(1.d0-et*et)/2.d0
-      shp(1,7)=-xi*(1.d0+et)
-      shp(1,8)=-(1.d0-et*et)/2.d0
+      shp(1,1)=etm*(xi+xipet)/4.d0
+      shp(1,2)=etm*(xi+ximet)/4.d0
+      shp(1,3)=etp*(xi+xipet)/4.d0
+      shp(1,4)=etp*(xi+ximet)/4.d0
+      shp(1,5)=-xi*etm
+      shp(1,6)=etm2/2.d0
+      shp(1,7)=-xi*etp
+      shp(1,8)=-etm2/2.d0
 !
 !     local derivatives of the shape functions: eta-derivative
 !
-      shp(2,1)=(1.d0-xi)*(2.d0*et+xi)/4.d0
-      shp(2,2)=(1.d0+xi)*(2.d0*et-xi)/4.d0
-      shp(2,3)=(1.d0+xi)*(2.d0*et+xi)/4.d0
-      shp(2,4)=(1.d0-xi)*(2.d0*et-xi)/4.d0
-      shp(2,5)=-(1.d0-xi*xi)/2.d0
-      shp(2,6)=-et*(1.d0+xi)
-      shp(2,7)=(1.d0-xi*xi)/2.d0
-      shp(2,8)=-et*(1.d0-xi)
+      shp(2,1)=xim*(et+xipet)/4.d0
+      shp(2,2)=xip*(et-ximet)/4.d0
+      shp(2,3)=xip*(et+xipet)/4.d0
+      shp(2,4)=xim*(et-ximet)/4.d0
+      shp(2,5)=-xim2/2.d0
+      shp(2,6)=-et*xip
+      shp(2,7)=xim2/2.d0
+      shp(2,8)=-et*xim
+!
+      if(iflag.eq.5) return
 !
 !     computation of the local derivative of the global coordinates
 !     (xs)
@@ -153,21 +169,21 @@
 !
 !     local 2nd order derivatives of the shape functions: xi,xi-derivative
 !     
-         shp(5,1)=(1.d0-et)/2.d0
-         shp(5,2)=(1.d0-et)/2.d0
-         shp(5,3)=(1.d0+et)/2.d0
-         shp(5,4)=(1.d0+et)/2.d0
-         shp(5,5)=-(1.d0-et)
+         shp(5,1)=etm/2.d0
+         shp(5,2)=etm/2.d0
+         shp(5,3)=etp/2.d0
+         shp(5,4)=etp/2.d0
+         shp(5,5)=-etm
          shp(5,6)=0.d0
-         shp(5,7)=-(1.d0+et)
+         shp(5,7)=-etp
          shp(5,8)=0.d0
 !
 !     local 2nd order derivatives of the shape functions: xi,eta-derivative
 !     
-         shp(6,1)=(1.d0-2.d0*(xi+et))/4.d0
-         shp(6,2)=(-1.d0-2.d0*(xi-et))/4.d0
-         shp(6,3)=(1.d0+2.d0*(xi+et))/4.d0
-         shp(6,4)=(-1.d0-2.d0*(xi+et))/4.d0
+         shp(6,1)=(1.d0-2.d0*xipet)/4.d0
+         shp(6,2)=(-1.d0-2.d0*ximet)/4.d0
+         shp(6,3)=(1.d0+2.d0*xipet)/4.d0
+         shp(6,4)=(-1.d0+2.d0*ximet)/4.d0
          shp(6,5)=xi
          shp(6,6)=-et
          shp(6,7)=-xi
@@ -175,14 +191,14 @@
 !     
 !     local 2nd order derivatives of the shape functions: eta,eta-derivative
 !     
-         shp(7,1)=(1.d0-xi)/2.d0
-         shp(7,2)=(1.d0+xi)/2.d0
-         shp(7,3)=(1.d0+xi)/2.d0
-         shp(7,4)=(1.d0-xi)/2.d0
+         shp(7,1)=xim/2.d0
+         shp(7,2)=xip/2.d0
+         shp(7,3)=xip/2.d0
+         shp(7,4)=xim/2.d0
          shp(7,5)=0.d0
-         shp(7,6)=-(1.d0+xi)
+         shp(7,6)=-xip
          shp(7,7)=0.d0
-         shp(7,8)=-(1.d0-xi)
+         shp(7,8)=-xim
 !
 !     computation of the local 2nd derivatives of the global coordinates
 !     (xs)

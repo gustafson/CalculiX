@@ -47,12 +47,12 @@
       character*20 sideload(*)
       character*80 matname(*),amat
 !
-      integer konl(26),ifaceq(9,6),nelemload(2,*),nk,nelem,nmethod,
+      integer konl(26),ifaceq(8,6),nelemload(2,*),nk,nelem,nmethod,
      &  mattyp,ithermal(2),iperturb,nload,idist,i,j,k,i1,j1,l,m,
      &  ii,jj,id,ipointer,ig,kk,istiff,iperm(20),ipompc(*),mi(*),
      &  nrhcon(*),ielmat(mi(3),*),ielorien(mi(3),*),nodempc(3,*),nmpc,
      &  ntmat_,nope,nopes,norien,iexpl,imat,mint2d,ikmpc(*),iloc,
-     &  mint3d,ifacet(7,4),nopev,iorien,ilmpc(*),kode,jfaces,null,
+     &  mint3d,ifacet(6,4),nopev,iorien,ilmpc(*),kode,jfaces,null,
      &  ifacew(8,5),intscheme,ipointeri,ipointerj,ncocon(2,*),
      &  nshcon(*),iinc,istep,jltyp,nfield,node,iflag,iscale,ielprop(*),
      &  nplkcon(0:ntmat_,*),nelcon(2,*),npmat_,ncmat_,i2,ipkon(*),
@@ -89,34 +89,16 @@
 !
       include "gauss.f"
 !
-c      data ifaceq /4,3,2,1,11,10,9,12,21,
-c     &            5,6,7,8,13,14,15,16,22,
-c     &            1,2,6,5,9,18,13,17,23,
-c     &            2,3,7,6,10,19,14,18,24,
-c     &            3,4,8,7,11,20,15,19,25,
-c     &            4,1,5,8,12,17,16,20,26/
-c      data ifacet /1,3,2,7,6,5,11,
-c     &             1,2,4,5,9,8,12,
-c     &             2,3,4,6,10,9,13,
-c     &             1,4,3,8,10,7,14/
-c      data ifacew /1,3,2,9,8,7,0,0,
-c     &             4,5,6,10,11,12,0,0,
-c     &             1,2,5,4,7,14,10,13,
-c     &             2,3,6,5,8,15,11,14,
-c     &             4,6,3,1,12,15,9,13/
-c      data null /0/
-c      data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
-!
-      ifaceq=reshape((/4,3,2,1,11,10,9,12,21,
-     &            5,6,7,8,13,14,15,16,22,
-     &            1,2,6,5,9,18,13,17,23,
-     &            2,3,7,6,10,19,14,18,24,
-     &            3,4,8,7,11,20,15,19,25,
-     &            4,1,5,8,12,17,16,20,26/),(/9,6/))
-      ifacet=reshape((/1,3,2,7,6,5,11,
-     &             1,2,4,5,9,8,12,
-     &             2,3,4,6,10,9,13,
-     &             1,4,3,8,10,7,14/),(/7,4/))
+      ifaceq=reshape((/4,3,2,1,11,10,9,12,
+     &            5,6,7,8,13,14,15,16,
+     &            1,2,6,5,9,18,13,17,
+     &            2,3,7,6,10,19,14,18,
+     &            3,4,8,7,11,20,15,19,
+     &            4,1,5,8,12,17,16,20/),(/8,6/))
+      ifacet=reshape((/1,3,2,7,6,5,
+     &             1,2,4,5,9,8,
+     &             2,3,4,6,10,9,
+     &             1,4,3,8,10,7/),(/6,4/))
       ifacew=reshape((/1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
@@ -145,20 +127,12 @@ c      data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
          nope=20
          nopev=8
          nopes=8
-      elseif(lakonl(4:4).eq.'2') then
-         nope=26
-         nopev=8
-         nopes=8
       elseif(lakonl(4:4).eq.'8') then
          nope=8
          nopev=8
          nopes=4
       elseif(lakonl(4:5).eq.'10') then
          nope=10
-         nopev=4
-         nopes=6
-      elseif(lakonl(4:5).eq.'14') then
-         nope=14
          nopev=4
          nopes=6
       elseif(lakonl(4:4).eq.'4') then
@@ -206,10 +180,8 @@ c            nope=nope+1
                call beamintscheme(lakonl,mint3d,ielprop(nelem),prop,
      &              null,xi,et,ze,weight)
             endif
-         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R').or.
-     &          (lakonl(4:6).eq.'26R')) then
-            if(((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'E')).and.
-     &          (lakonl(4:6).ne.'26R')) then
+         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) then
+            if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'E')) then
                mint2d=2
                mint3d=4
             else
@@ -219,7 +191,7 @@ c            nope=nope+1
          elseif(lakonl(4:4).eq.'2') then
             mint2d=9
             mint3d=27
-         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
+         elseif(lakonl(4:5).eq.'10') then
             mint2d=3
             mint3d=4
          elseif(lakonl(4:4).eq.'4') then
@@ -238,8 +210,7 @@ c            nope=nope+1
 !
          if((lakonl(4:4).eq.'8').or.(lakonl(4:4).eq.'2')) then
             mint3d=27
-         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:4).eq.'4').or.
-     &          (lakonl(4:5).eq.'14')) then
+         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:4).eq.'4')) then
             mint3d=15
          elseif((lakonl(4:5).eq.'15').or.(lakonl(4:4).eq.'6')) then
             mint3d=18
@@ -251,8 +222,7 @@ c            nope=nope+1
 !
          if(lakonl(4:5).eq.'8R') then
             mint2d=1
-         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R').or.
-     &          (lakonl(4:6).eq.'26R')) then
+         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) then
             if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'E')) then
                mint2d=2
             else
@@ -260,7 +230,7 @@ c            nope=nope+1
             endif
          elseif(lakonl(4:4).eq.'2') then
             mint2d=9
-         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
+         elseif(lakonl(4:5).eq.'10') then
             mint2d=3
          elseif(lakonl(4:4).eq.'4') then
             mint2d=1
@@ -378,8 +348,7 @@ c            nope=nope+1
                   call beamintscheme(lakonl,mint3d,ielprop(nelem),prop,
      &                 kk,xi,et,ze,weight)
                endif
-            elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R').or.
-     &             (lakonl(4:6).eq.'26R')) 
+            elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) 
      &              then
                xi=gauss3d2(1,kk)
                et=gauss3d2(2,kk)
@@ -390,7 +359,7 @@ c            nope=nope+1
                et=gauss3d3(2,kk)
                ze=gauss3d3(3,kk)
                weight=weight3d3(kk)
-            elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
+            elseif(lakonl(4:5).eq.'10') then
                xi=gauss3d5(1,kk)
                et=gauss3d5(2,kk)
                ze=gauss3d5(3,kk)
@@ -441,14 +410,10 @@ c            nope=nope+1
             else
                call shape20h(xi,et,ze,xl,xsj,shp,iflag)
             endif
-         elseif(nope.eq.26) then
-            call shape26h(xi,et,ze,xl,xsj,shp,iflag,konl)
          elseif(nope.eq.8) then
             call shape8h(xi,et,ze,xl,xsj,shp,iflag)
          elseif(nope.eq.10) then
             call shape10tet(xi,et,ze,xl,xsj,shp,iflag)
-         elseif(nope.eq.14) then
-            call shape14tet(xi,et,ze,xl,xsj,shp,iflag,konl)
          elseif(nope.eq.4) then
             call shape4tet(xi,et,ze,xl,xsj,shp,iflag)
          elseif(nope.eq.15) then
@@ -473,8 +438,7 @@ c            nope=nope+1
          t1l=0.d0
 !
          if((lakonl(4:7).eq.'20RA').or.(lakonl(4:7).eq.'20RS').or.
-     &      (lakonl(4:7).eq.'20RE').or.(lakonl(4:7).eq.'26RA').or.
-     &      (lakonl(4:7).eq.'26RS').or.(lakonl(4:7).eq.'26RE')) then
+     &      (lakonl(4:7).eq.'20RE')) then
             t1l=vold(0,konl(1))*(shp(4,1)+shp(4,5)+shp(4,17))
      &         +vold(0,konl(2))*(shp(4,2)+shp(4,6)+shp(4,18))
      &         +vold(0,konl(3))*(shp(4,3)+shp(4,7)+shp(4,19))
@@ -645,21 +609,6 @@ c            nope=nope+1
 c            read(sideload(id)(2:2),'(i1)') ig
             ig=ichar(sideload(id)(2:2))-48
 !
-!           check whether 8 or 9-nodes face
-!
-            if(nope.eq.26) then
-               if(konl(20+ig).eq.konl(20)) then
-                  nopes=8
-               else
-                  nopes=9
-               endif
-            elseif(nope.eq.14) then
-               if(konl(10+ig).eq.konl(10)) then
-                  nopes=6
-               else
-                  nopes=7
-               endif
-            endif
 !
 !         treatment of wedge faces
 !
@@ -681,7 +630,7 @@ c            read(sideload(id)(2:2),'(i1)') ig
              endif
           endif
 !
-          if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8)) then
+          if((nope.eq.20).or.(nope.eq.8)) then
              do i=1,nopes
                 tl2(i)=vold(0,konl(ifaceq(i,ig)))
                 if(ithermal(2).eq.2) then
@@ -749,7 +698,7 @@ c            read(sideload(id)(2:2),'(i1)') ig
                 et=gauss2d1(2,i)
                 weight=weight2d1(i)
              elseif((lakonl(4:4).eq.'8').or.
-     &              (lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R').or.
+     &              (lakonl(4:6).eq.'20R').or.
      &              ((lakonl(4:5).eq.'15').and.(nopes.eq.8))) then
                 xi=gauss2d2(1,i)
                 et=gauss2d2(2,i)
@@ -758,7 +707,7 @@ c            read(sideload(id)(2:2),'(i1)') ig
                 xi=gauss2d3(1,i)
                 et=gauss2d3(2,i)
                 weight=weight2d3(i)
-             elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14').or.
+             elseif((lakonl(4:5).eq.'10').or.
      &               ((lakonl(4:5).eq.'15').and.(nopes.eq.6))) then
                 xi=gauss2d5(1,i)
                 et=gauss2d5(2,i)
@@ -834,9 +783,9 @@ c                read(sideload(id)(2:2),'(i1)') jltyp
                 
 !
              do k=1,nopes
-                if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8)) then
+                if((nope.eq.20).or.(nope.eq.8)) then
                    ipointer=ifaceq(k,ig)
-                elseif((nope.eq.10).or.(nope.eq.4).or.(nope.eq.14)) then
+                elseif((nope.eq.10).or.(nope.eq.4)) then
                    ipointer=ifacet(k,ig)
                 else
                    ipointer=ifacew(k,ig)
@@ -860,18 +809,17 @@ c                read(sideload(id)(2:2),'(i1)') jltyp
              enddo
 !
              do ii=1,nopes
-                if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8)) then
+                if((nope.eq.20).or.(nope.eq.8)) then
                    ipointeri=ifaceq(ii,ig)
-                elseif((nope.eq.10).or.(nope.eq.4).or.(nope.eq.14)) then
+                elseif((nope.eq.10).or.(nope.eq.4)) then
                    ipointeri=ifacet(ii,ig)
                 else
                    ipointeri=ifacew(ii,ig)
                 endif
                 do jj=1,nopes
-                   if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8)) then
+                   if((nope.eq.20).or.(nope.eq.8)) then
                       ipointerj=ifaceq(jj,ig)
-                   elseif((nope.eq.10).or.(nope.eq.4).or.
-     &                    (nope.eq.14)) then
+                   elseif((nope.eq.10).or.(nope.eq.4)) then
                       ipointerj=ifacet(jj,ig)
                    else
                       ipointerj=ifacew(jj,ig)
@@ -966,16 +914,16 @@ c                read(sideload(id)(2:2),'(i1)') jltyp
             summ=summ+sm(i,i)
          enddo
 !
-         if((nope.eq.26).or.(nope.eq.20)) then
+         if(nope.eq.20) then
             alp=.2917d0
-         elseif((nope.eq.10).or.(nope.eq.14)) then
+         elseif(nope.eq.10) then
             alp=0.1203d0
          elseif(nope.eq.15) then
             alp=0.2141d0
          endif
 !
-         if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.10).or.
-     &      (nope.eq.15).or.(nope.eq.14)) then
+         if((nope.eq.20).or.(nope.eq.10).or.
+     &      (nope.eq.15)) then
             factore=summass*alp/(1.d0+alp)/sume
             factorm=summass/(1.d0+alp)/summ
          else

@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine applympc(nface,ielfa,is,ie,ifabou,ipompc,vfa,coefmpc,
-     &  nodempc,ipnei,neifa,labmpc,xbounact,nactdoh)
+     &  nodempc,ipnei,neifa,labmpc,xbounact,nactdoh,ifaext,nfaext)
 !
 !     applies MPC's to the faces
 !
@@ -27,12 +27,19 @@
 !
       integer i,j,nface,ielfa(4,*),ipointer,is,ie,ifabou(*),mpc,
      &  ipompc(*),index,iel,iface,nodempc(3,*),ipnei(*),neifa(*),
-     &  nactdoh(*),ielorig
+     &  nactdoh(*),ielorig,ifaext(*),nfaext,k
 !
       real*8 coefmpc(*),denominator,vfa(0:5,*),sum,xbounact(*),
      &  coefnorm
 !
-      do i=1,nface
+c      do i=1,nface
+c$omp parallel default(none)
+c$omp& shared(nfaext,ifaext,ielfa,ifabou,ipompc,nodempc,coefmpc,
+c$omp&        xbounact,nactdoh,neifa,ipnei,vfa,is,ie)
+c$omp& private(k,i,ipointer,mpc,index,sum,coefnorm,ielorig,iel,iface)
+c$omp do
+      do k=1,nfaext
+         i=ifaext(k)
          if(ielfa(2,i).ge.0) cycle
          ipointer=-ielfa(2,i)
          do j=is,ie
@@ -83,6 +90,8 @@
             enddo
          enddo
       enddo
+c$omp end do
+c$omp end parallel
 !     
       return
       end

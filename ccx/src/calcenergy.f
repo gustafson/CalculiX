@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine calcenergy(ipkon,lakon,kon,co,ener,mi,ne,
-     &     thicke,ielmat,energyini,energy)
+     &     thicke,ielmat,energyini,energy,ielprop,prop)
 !
 !     calculates the energy in a *DYNAMIC calculation
 !
@@ -27,9 +27,9 @@
 !
       integer ipkon(*),nelem,kon(*),mi(*),nope,indexe,i,j,k,
      &  konl(20),mint3d,jj,iflag,ne,ki,kl,ilayer,nlayer,kk,
-     &  nopes,ielmat(mi(3),*),mint2d
+     &  nopes,ielmat(mi(3),*),mint2d,null,ielprop(*)
 !
-      real*8 ener(mi(1),*),enerinttot,enerint,co(3,*),
+      real*8 ener(mi(1),*),enerinttot,enerint,co(3,*),prop(*),
      &  xl(3,20),xi,et,ze,xsj,shp(4,20),weight,enerkintot,enerkin,
      &  a,gs(8,4),dlayer(4),tlayer(4),thickness,energyini(*),
      &  thicke(mi(3),*),xlayer(mi(3),4),shp2(7,8),xs2(3,7),xsj2(3),
@@ -38,6 +38,7 @@
       include "gauss.f"
 !
       data iflag /2/
+      null=0
 !     
       enerinttot=0.d0
       enerkintot=0.d0
@@ -125,6 +126,13 @@
 !
          if(lakonl(4:5).eq.'8R') then
             mint3d=1
+         elseif(lakonl(4:7).eq.'20RB') then
+            if((lakonl(8:8).eq.'R').or.(lakonl(8:8).eq.'C')) then
+               mint3d=50
+            else
+               call beamintscheme(lakonl,mint3d,ielprop(nelem),prop,
+     &              null,xi,et,ze,weight)
+            endif
          elseif((lakonl(4:4).eq.'8').or.
      &           (lakonl(4:6).eq.'20R')) then
             if(lakonl(7:8).eq.'LC') then
@@ -150,6 +158,8 @@
                enerint=ener(1,nelem)
             endif
             mint3d=0
+         else
+            cycle
          endif
 !     
          do jj=1,mint3d
@@ -158,6 +168,16 @@
                et=gauss3d1(2,jj)
                ze=gauss3d1(3,jj)
                weight=weight3d1(jj)
+            elseif(lakonl(4:7).eq.'20RB') then
+               if((lakonl(8:8).eq.'R').or.(lakonl(8:8).eq.'C')) then
+                  xi=gauss3d13(1,kk)
+                  et=gauss3d13(2,kk)
+                  ze=gauss3d13(3,kk)
+                  weight=weight3d13(kk)
+               else
+                  call beamintscheme(lakonl,mint3d,ielprop(nelem),prop,
+     &                 kk,xi,et,ze,weight)
+               endif
             elseif((lakonl(4:4).eq.'8').or.
      &              (lakonl(4:6).eq.'20R'))
      &              then

@@ -18,17 +18,17 @@
 !
       subroutine mafillv(nef,ipnei,neifa,neiel,vfa,xxn,area,
      &  auv,adv,jq,irow,nzs,bv,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
-     &  body,volume,ielfa,lakon,ifabou,nbody,neq,
+     &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
      &  dtimef,velo,veloo,sel,xrlfa,gamma,xxj,nactdohinv,a1,
-     &  a2,a3,flux)
+     &  a2,a3,flux,nefa,nefb)
 !
       implicit none
 !
       character*2 one,two,three
-      character*8 lakon(*)
+      character*8 lakonf(*)
 !
       integer i,nef,jdof1,indexf,ipnei(*),j,ifa,iel,neifa(*),
-     &  neiel(*),jdof2,jq(*),irow(*),nzs,iwall,ielfa(4,*),
+     &  neiel(*),jdof2,jq(*),irow(*),nzs,iwall,ielfa(4,*),nefa,nefb,
      &  ipointer,ifabou(*),nbody,neq,k,indexb,numfaces,nactdohinv(*)
 !
       real*8 xflux,vfa(0:5,*),xxn(3,*),area(*),auv(*),adv(*),bv(neq,3),
@@ -37,16 +37,24 @@
      &  veloo(nef,0:5),rhovel,constant,sel(3,*),xrlfa(3,*),gamma(*),
      &  xxj(3,*),a1,a2,a3,flux(*)
 !
+      intent(in) nef,ipnei,neifa,neiel,vfa,xxn,area,
+     &  jq,irow,nzs,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
+     &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
+     &  dtimef,velo,veloo,xrlfa,gamma,xxj,nactdohinv,a1,
+     &  a2,a3,flux
+!
+      intent(inout) adv,auv,bv,sel
+!
       one='b1'
       two='b2'
       three='b3'
 !
-      do i=1,nef
+      do i=nefa,nefb
          jdof1=i
          indexf=ipnei(i)
-         if(lakon(i)(4:4).eq.'8') then
+         if(lakonf(i)(4:4).eq.'8') then
             numfaces=6
-         elseif(lakon(i)(4:4).eq.'6') then
+         elseif(lakonf(i)(4:4).eq.'6') then
             numfaces=5
          else
             numfaces=4
@@ -60,10 +68,6 @@
             iel=neiel(indexf)
             if(iel.ne.0) jdof2=iel
             xflux=flux(indexf)
-c            xflux=(vfa(1,ifa)*xxn(1,indexf)+
-c     &           vfa(2,ifa)*xxn(2,indexf)+
-c     &           vfa(3,ifa)*xxn(3,indexf))
-c     &           *vfa(5,ifa)*area(ifa)
 !
 !              vfa sometimes undefined?
 !
@@ -97,25 +101,25 @@ c               write(*,*) 'mafillv2 ',bv(1,1),bv(1,2),bv(1,3)
                      if(((ifabou(indexb+1).ne.0).and.
      &                    (ifabou(indexb+2).ne.0).and.
      &                    (ifabou(indexb+3).ne.0)).or.
-c     &                    (dabs(xflux).lt.1.d-3)) then
      &                    (dabs(xflux).lt.1.d-10)) then
                         bv(jdof1,1)=bv(jdof1,1)-vfa(1,ifa)*xflux
                         bv(jdof1,2)=bv(jdof1,2)-vfa(2,ifa)*xflux
                         bv(jdof1,3)=bv(jdof1,3)-vfa(3,ifa)*xflux
-c               write(*,*) 'mafillv3 ',bv(1,1),bv(1,2),bv(1,3)
                      else
                         write(*,*) '*ERROR in mafillv: not all'
                         write(*,*) '       components of an incoming'
                         write(*,*) '       flux through face ',j
                         write(*,*)'       of element ',nactdohinv(i),
-     &                        ' are given'
+     &                        ' are given',
+     &vfa(1,ifa),vfa(2,ifa),vfa(3,ifa)
                      endif
                   else
                      write(*,*) '*ERROR in mafillv: not all'
                      write(*,*) '       components of an incoming'
                      write(*,*) '       flux through face ',j
                      write(*,*)'       of element ',nactdohinv(i),
-     &                     ' are given'
+     &                     ' are given',
+     &vfa(1,ifa),vfa(2,ifa),vfa(3,ifa)
                   endif
                endif
             endif
@@ -158,7 +162,7 @@ c               write(*,*) 'mafillv4 ',bv(1,1),bv(1,2),bv(1,3)
                if(ipointer.gt.0) then
                   iwall=ifabou(ipointer+5)
                endif
-               if(iwall.eq.0) then
+               if(iwall.ne.1) then
 !
 !                    external face, but no wall
 !

@@ -91,14 +91,10 @@
          indexe=ipkon(i)
          if(lakon(i)(4:5).eq.'20') then
             nope=20
-         elseif(lakon(i)(4:4).eq.'2') then
-            nope=26
          elseif(lakon(i)(4:4).eq.'8') then
             nope=8
          elseif(lakon(i)(4:5).eq.'10') then
             nope=10
-         elseif(lakon(i)(4:5).eq.'14') then
-            nope=14
          elseif(lakon(i)(4:4).eq.'4') then
             nope=4
          elseif(lakon(i)(4:5).eq.'15') then
@@ -157,8 +153,7 @@ c            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
      &              null,xi,et,ze,weight)
             endif
          elseif((lakon(i)(4:4).eq.'8').or.
-     &          (lakon(i)(4:6).eq.'20R').or.
-     &          (lakon(i)(4:6).eq.'26R')) then
+     &          (lakon(i)(4:6).eq.'20R')) then
             if(lakon(i)(6:7).eq.'RA') then
                mint3d=4
             else
@@ -166,7 +161,7 @@ c            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
             endif
          elseif(lakon(i)(4:4).eq.'2') then
             mint3d=27
-         elseif((lakon(i)(4:5).eq.'10').or.(lakon(i)(5:5).eq.'14')) then
+         elseif(lakon(i)(4:5).eq.'10') then
             mint3d=4
          elseif(lakon(i)(4:4).eq.'4') then
             mint3d=1
@@ -279,7 +274,7 @@ c            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
      &                 prop,kk,xi,et,ze,weight)
                endif
             elseif((lakon(i)(4:4).eq.'8').or.
-     &             (lakon(i)(4:6).eq.'20R').or.(lakon(i)(4:6).eq.'26R'))
+     &             (lakon(i)(4:6).eq.'20R'))
      &        then
                xi=gauss3d2(1,kk)
                et=gauss3d2(2,kk)
@@ -290,8 +285,7 @@ c            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
                et=gauss3d3(2,kk)
                ze=gauss3d3(3,kk)
                weight=weight3d3(kk)
-            elseif((lakon(i)(4:5).eq.'10').or.
-     &             (lakon(i)(4:5).eq.'14')) then
+            elseif(lakon(i)(4:5).eq.'10') then
                xi=gauss3d5(1,kk)
                et=gauss3d5(2,kk)
                ze=gauss3d5(3,kk)
@@ -322,14 +316,10 @@ c            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
                else
                   call shape20h(xi,et,ze,xl,xsj,shp,iflag)
                endif
-            elseif(nope.eq.26) then
-               call shape26h(xi,et,ze,xl,xsj,shp,iflag,konl)
             elseif(nope.eq.8) then
                call shape8h(xi,et,ze,xl,xsj,shp,iflag)
             elseif(nope.eq.10) then
                call shape10tet(xi,et,ze,xl,xsj,shp,iflag)
-            elseif(nope.eq.14) then
-               call shape14tet(xi,et,ze,xl,xsj,shp,iflag,konl)
             elseif(nope.eq.4) then
                call shape4tet(xi,et,ze,xl,xsj,shp,iflag)
             elseif(nope.eq.15) then
@@ -366,8 +356,7 @@ c            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
                   t1lold=t1lold+vold(0,konl(i1))/8.d0
                   t1l=t1l+v(0,konl(i1))/8.d0
                enddo
-            elseif((lakon(i)(4:6).eq.'20 ').or.
-     &             (lakon(i)(4:6).eq.'26 ')) then
+            elseif(lakon(i)(4:6).eq.'20 ') then
                nopered=20
                call lintemp_th(t0,vold,konl,nopered,kk,t0l,t1lold,mi)
                call lintemp_th(t0,v,konl,nopered,kk,t0l,t1l,mi)

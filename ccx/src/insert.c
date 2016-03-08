@@ -39,7 +39,7 @@ void insert(ITG *ipointer, ITG **mast1p, ITG **nextp, ITG *i1,
        notice that in C the positions start at 0 and not at 1 as in 
        FORTRAN; the present routine is written in FORTRAN convention */
 
-  ITG idof1,idof2,istart,*mast1=NULL,*next=NULL;
+    ITG idof1,idof2,istart,*mast1=NULL,*next=NULL;
 
   mast1=*mast1p;
   next=*nextp;
@@ -54,7 +54,17 @@ void insert(ITG *ipointer, ITG **mast1p, ITG **nextp, ITG *i1,
     idof2=*i2-1;
   }
 
-  if(ipointer[idof2]==0){
+//  index=ipointer[idof2];
+  if(*ifree>=*nzs_){
+      *nzs_=(ITG)(1.1**nzs_);
+      RENEW(mast1,ITG,*nzs_);
+      RENEW(next,ITG,*nzs_);
+  }
+  mast1[*ifree]=idof1;
+  next[*ifree]=ipointer[idof2];
+  ipointer[idof2]=++*ifree;
+
+/*  if(ipointer[idof2]==0){
     if(*ifree>=*nzs_){
       *nzs_=(ITG)(1.1**nzs_);
       RENEW(mast1,ITG,*nzs_);
@@ -83,7 +93,7 @@ void insert(ITG *ipointer, ITG **mast1p, ITG **nextp, ITG *i1,
 	istart=next[istart]-1;
       }
     }
-  }
+    }*/
 
   *mast1p=mast1;
   *nextp=next;

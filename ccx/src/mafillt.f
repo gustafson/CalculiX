@@ -18,9 +18,9 @@
 !
       subroutine mafillt(nef,ipnei,neifa,neiel,vfa,xxn,area,
      &  au,ad,jq,irow,nzs,b,vel,umel,xlet,xle,gradtfa,xxi,
-     &  body,volume,compressible,ielfa,lakon,ifabou,nbody,neq,
-     &  dtimef,velo,veloo,cpfa,hcfa,cpel,gradvel,xload,gammat,xrlfa,
-     &  xxj,nactdohinv,a1,a2,a3,flux)
+     &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
+     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,xrlfa,
+     &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb)
 !
 !     filling the matrix for the conservation of energy
 !
@@ -28,25 +28,33 @@
 !
       logical knownflux
 !
-      character*8 lakon(*)
+      character*8 lakonf(*)
 !
       integer i,nef,jdof1,indexf,ipnei(*),j,ifa,iel,neifa(*),
-     &  neiel(*),jdof2,jq(*),irow(*),nzs,compressible,ielfa(4,*),
+     &  neiel(*),jdof2,jq(*),irow(*),nzs,ielfa(4,*),nefa,nefb,
      &  ipointer,ifabou(*),nbody,neq,indexb,numfaces,nactdohinv(*)
 !
       real*8 xflux,vfa(0:5,*),xxn(3,*),area(*),au(*),ad(*),b(neq),
      &  vel(nef,0:5),umel(*),xlet(*),xle(*),coef,gradtfa(3,*),
      &  xxi(3,*),body(0:3,*),volume(*),dtimef,velo(nef,0:5),
-     &  veloo(nef,0:5),rhovol,constant,cpel(*),gradvel(3,3,*),
-     &  cpfa(*),hcfa(*),div,xload(2,*),gammat(*),xrlfa(3,*),
+     &  veloo(nef,0:5),rhovol,constant,cvel(*),gradvel(3,3,*),
+     &  cvfa(*),hcfa(*),div,xload(2,*),gammat(*),xrlfa(3,*),
      &  xxj(3,*),a1,a2,a3,flux(*)
 !
-      do i=1,nef
+      intent(in) nef,ipnei,neifa,neiel,vfa,xxn,area,
+     &  jq,irow,nzs,vel,umel,xlet,xle,gradtfa,xxi,
+     &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
+     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,xrlfa,
+     &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb
+!
+      intent(inout) au,ad,b
+!
+      do i=nefa,nefb
          jdof1=i
          indexf=ipnei(i)
-         if(lakon(i)(4:4).eq.'8') then
+         if(lakonf(i)(4:4).eq.'8') then
             numfaces=6
-         elseif(lakon(i)(4:4).eq.'6') then
+         elseif(lakonf(i)(4:4).eq.'6') then
             numfaces=5
          else
             numfaces=4
@@ -59,7 +67,7 @@
             ifa=neifa(indexf)
             iel=neiel(indexf)
             if(iel.ne.0) jdof2=iel
-            xflux=flux(indexf)*cpfa(ifa)
+            xflux=flux(indexf)*cvfa(ifa)
 !
             if(xflux.ge.0.d0) then
 !     
@@ -195,7 +203,7 @@ c     &             body(2,i),body(3,i)
 !
 !           transient term
 !
-         constant=rhovol*cpel(i)
+         constant=rhovol*cvel(i)
          b(jdof1)=b(jdof1)-(a2*velo(i,0)+a3*veloo(i,0))*constant
          constant=a1*constant
          call add_sm_fl(au,ad,jq,irow,jdof1,jdof1,constant,nzs)

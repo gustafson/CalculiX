@@ -18,7 +18,7 @@
 !
       subroutine frictionheating(ne0,ne,ipkon,lakon,ielmat,mi,elcon,
      &  ncmat_,ntmat_,kon,islavsurf,pmastsurf,springarea,co,vold,
-     &  veold,pslavsurf,xload,nload,nload_,nelemload,iamload,
+     &  veold,pslavsurf,xloadact,nload,nload_,nelemload,iamload,
      &  idefload,sideload,stx,nam)
 !
 !     determines the effect of friction heating
@@ -38,7 +38,7 @@
      &  pmastsurf(6,*),area,springarea(2,*),pl(3,20),co(3,*),
      &  vold(0:mi(2),*),areaslav,xi,et,vels(3),veold(0:mi(2),*),
      &  xsj2m(3),xs2m(3,7),shp2m(7,9),xsj2s(3),xs2s(3,7),shp2s(7,9),
-     &  areamast,pslavsurf(3,*),value,velm(3),um,xload(2,*),weight,
+     &  areamast,pslavsurf(3,*),value,velm(3),um,xloadact(2,*),weight,
      &  shear,vnorm,f,eta
 !
       include "gauss.f"
@@ -49,7 +49,7 @@
       iamplitude=0
       isector=0
 !
-      do i=ne0,ne
+      do i=ne0+1,ne
          imat=ielmat(1,i)
 !
 !        heat conversion factor
@@ -171,7 +171,7 @@
 !
          if(vnorm.gt.0.d0) then
             value=um*pressure*vnorm*eta*f*area/areaslav
-            call loadadd(nelems,label,value,nelemload,sideload,xload,
+            call loadadd(nelems,label,value,nelemload,sideload,xloadact,
      &                nload,nload_,iamload,iamplitude,nam,isector,
      &                idefload)
          else
@@ -230,7 +230,7 @@
      &                  (vels(2)-velm(2))**2+
      &                  (vels(3)-velm(3))**2)
             value=um*pressure*vnorm*eta*f*area/areaslav
-            call loadadd(nelems,label,value,nelemload,sideload,xload,
+            call loadadd(nelems,label,value,nelemload,sideload,xloadact,
      &                nload,nload_,iamload,iamplitude,nam,isector,
      &                idefload)
          endif
@@ -293,7 +293,7 @@
 !        calculated for the slave surface (differential velocity)
 !
          value=um*pressure*vnorm*eta*(1.d0-f)*area/areamast
-         call loadadd(nelemm,label,value,nelemload,sideload,xload,
+         call loadadd(nelemm,label,value,nelemload,sideload,xloadact,
      &                nload,nload_,iamload,iamplitude,nam,isector,
      &                idefload)
       enddo

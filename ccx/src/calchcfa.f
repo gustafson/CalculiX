@@ -28,6 +28,10 @@
 !
       real*8 t1l,vfa(0:5,*),cond,cocon(0:6,ntmat_,*),hcfa(*)
 !     
+c$omp parallel default(none)
+c$omp& shared(nface,vfa,ielmat,ielfa,ntmat_,cocon,ncocon,hcfa)
+c$omp& private(i,t1l,imat,cond)
+c$omp do
       do i=1,nface
          t1l=vfa(0,i)
 !
@@ -35,9 +39,10 @@
 !
          imat=ielmat(1,ielfa(1,i))
          call materialdata_cond(imat,ntmat_,t1l,cocon,ncocon,cond)
-c         write(*,*) 'calchcfa ',i,cond
          hcfa(i)=cond
       enddo
+c$omp end do
+c$omp end parallel
 !            
       return
       end

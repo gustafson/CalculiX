@@ -38,8 +38,8 @@
 !     
       integer itg(*),ntg,ntr,nelemload(2,*),ipkon(*),network,mi(*),
      &     kon(*),ielmat(mi(3),*),ne,i,j,k,l,index,id,node,nload,
-     &     ifaceq(9,6),ider,nasym,indexe,iaxial,
-     &     ifacet(7,4),ifacew(8,5),kontri3(3,1),kontri4(3,2),
+     &     ifaceq(8,6),ider,nasym,indexe,iaxial,
+     &     ifacet(6,4),ifacew(8,5),kontri3(3,1),kontri4(3,2),
      &     kontri6(3,4),kontri8(3,6),kontri(4,*),ntri,
      &     konf(8),nloadtr(*),nelem,nope,nopes,ig,nflow,ieg(*),
      &     ndirboun(*),nactdog(0:3,*),nboun,nodeboun(*),ntmat_,
@@ -52,16 +52,16 @@
      &     cp,r,physcon(*),shcon(0:3,ntmat_,*),rho,
      &     co(3,*),dvi,vold(0:mi(2),*),rhcon(*)
 !     
-      data ifaceq /4,3,2,1,11,10,9,12,21,
-     &            5,6,7,8,13,14,15,16,22,
-     &            1,2,6,5,9,18,13,17,23,
-     &            2,3,7,6,10,19,14,18,24,
-     &            3,4,8,7,11,20,15,19,25,
-     &            4,1,5,8,12,17,16,20,26/
-      data ifacet /1,3,2,7,6,5,11,
-     &     1,2,4,5,9,8,12,
-     &     2,3,4,6,10,9,13,
-     &     1,4,3,8,10,7,14/
+      data ifaceq /4,3,2,1,11,10,9,12,
+     &            5,6,7,8,13,14,15,16,
+     &            1,2,6,5,9,18,13,17,
+     &            2,3,7,6,10,19,14,18,
+     &            3,4,8,7,11,20,15,19,
+     &            4,1,5,8,12,17,16,20/
+      data ifacet /1,3,2,7,6,5,
+     &     1,2,4,5,9,8,
+     &     2,3,4,6,10,9,
+     &     1,4,3,8,10,7/
       data ifacew /1,3,2,9,8,7,0,0,
      &     4,5,6,10,11,12,0,0,
      &     1,2,5,4,7,14,10,13,
@@ -520,7 +520,7 @@ c      enddo
 !        purely thermal
 !
          network=0
-         do i=1, nflow
+         do i=1,nflow
             nelem=ieg(i)
             index=ipkon(nelem)
             node1=kon(index+1)

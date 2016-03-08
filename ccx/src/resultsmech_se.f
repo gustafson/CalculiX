@@ -26,7 +26,7 @@
      &  springarea,reltime,calcul_fn,calcul_qa,calcul_cauchy,iener,
      &  ikin,nal,ne0,thicke,emeini,pslavsurf,
      &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop,dfn,distmin,
-     &  ndesi,nodedesi,ndirdesi,fn0)
+     &  ndesi,nodedesi,ndirdesi,fn0,sti)
 !
 !     calculates stresses and the material tangent at the integration
 !     points and the internal forces at the nodes
@@ -67,7 +67,7 @@
      &  vokl(3,3),xstateini(nstate_,mi(1),*),vikl(3,3),
      &  gs(8,4),a,reltime,tlayer(4),dlayer(4),xlayer(mi(3),4),
      &  thicke(mi(3),*),emeini(6,mi(1),*),clearini(3,9,*),
-     &  pslavsurf(3,*),pmastsurf(6,*),distmin,
+     &  pslavsurf(3,*),pmastsurf(6,*),distmin,sti(6,mi(1),*),
      &  fn0(0:mi(2),*),dfn(ndesi,0:mi(2),*)
 !
       include "gauss.f"
@@ -163,14 +163,10 @@ c     Bernhardi start
          elseif(lakonl(4:5).eq.'20') then
 c     Bernhardi end
             nope=20
-         elseif(lakonl(4:4).eq.'2') then
-            nope=26
          elseif(lakonl(4:4).eq.'8') then
             nope=8
          elseif(lakonl(4:5).eq.'10') then
             nope=10
-         elseif(lakonl(4:5).eq.'14') then
-            nope=14
          elseif(lakonl(4:4).eq.'4') then
             nope=4
          elseif(lakonl(4:5).eq.'15') then
@@ -217,7 +213,7 @@ c     Bernhardi end
                call beamintscheme(lakonl,mint3d,ielprop(i),prop,
      &              null,xi,et,ze,weight)
             endif
-         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'26R').or.
+         elseif((lakonl(4:4).eq.'8').or.
      &          (lakonl(4:6).eq.'20R')) then
             if(lakonl(7:8).eq.'LC') then
                mint3d=8*nlayer
@@ -226,7 +222,7 @@ c     Bernhardi end
             endif
          elseif(lakonl(4:4).eq.'2') then
             mint3d=27
-         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
+         elseif(lakonl(4:5).eq.'10') then
             mint3d=4
          elseif(lakonl(4:4).eq.'4') then
             mint3d=1
@@ -375,7 +371,7 @@ c               enddo
      &                 jj,xi,et,ze,weight)
                endif
             elseif((lakonl(4:4).eq.'8').or.
-     &             (lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R'))
+     &             (lakonl(4:6).eq.'20R'))
      &        then
                if(lakonl(7:8).ne.'LC') then
                   xi=gauss3d2(1,jj)
@@ -427,7 +423,7 @@ c               enddo
                et=gauss3d3(2,jj)
                ze=gauss3d3(3,jj)
                weight=weight3d3(jj)
-            elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
+            elseif(lakonl(4:5).eq.'10') then
                xi=gauss3d5(1,jj)
                et=gauss3d5(2,jj)
                ze=gauss3d5(3,jj)
@@ -464,14 +460,10 @@ c     Bernhardi end
                else
                   call shape20h(xi,et,ze,xl,xsj,shp,iflag)
                endif
-            elseif(nope.eq.26) then
-               call shape26h(xi,et,ze,xl,xsj,shp,iflag,konl)
             elseif(nope.eq.8) then
                call shape8h(xi,et,ze,xl,xsj,shp,iflag)
             elseif(nope.eq.10) then
                call shape10tet(xi,et,ze,xl,xsj,shp,iflag)
-            elseif(nope.eq.14) then
-               call shape14tet(xi,et,ze,xl,xsj,shp,iflag,konl)
             elseif(nope.eq.4) then
                call shape4tet(xi,et,ze,xl,xsj,shp,iflag)
             elseif(nope.eq.15) then
@@ -716,7 +708,7 @@ c     Bernhardi end
 !              stresses at the start of the increment
 !
                do m1=1,6
-                  stre(m1)=stiini(m1,jj,i)
+                  stre(m1)=sti(m1,jj,i)
                enddo
 !
             endif
@@ -747,8 +739,7 @@ c     Bernhardi end
                         t0l=t0l+t0(konl(i1))/8.d0
                         t1l=t1l+t1(konl(i1))/8.d0
                      enddo
-                  elseif((lakonl(4:6).eq.'20 ').or.
-     &                   (lakonl(4:6).eq.'26 ')) then
+                  elseif(lakonl(4:6).eq.'20 ') then
                      nopered=20
                      call lintemp(t0,t1,konl,nopered,jj,t0l,t1l)
                   else
@@ -764,8 +755,7 @@ c     Bernhardi end
                         t0l=t0l+t0(konl(i1))/8.d0
                         t1l=t1l+vold(0,konl(i1))/8.d0
                      enddo
-                  elseif((lakonl(4:6).eq.'20 ').or.
-     &                   (lakonl(4:6).eq.'26 ')) then
+                  elseif(lakonl(4:6).eq.'20 ') then
                      nopered=20
                      call lintemp_th(t0,vold,konl,nopered,jj,t0l,t1l,mi)
                   else

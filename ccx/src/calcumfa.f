@@ -28,6 +28,10 @@
 !
       real*8 t1l,vfa(0:5,*),dvi,shcon(0:3,ntmat_,*) ,umfa(*)
 !     
+c$omp parallel default(none)
+c$omp& shared(nface,vfa,ielmat,ielfa,shcon,nshcon,ntmat_,ithermal,umfa)
+c$omp& private(i,t1l,imat,dvi)
+c$omp do
       do i=1,nface
          t1l=vfa(0,i)
 !
@@ -38,6 +42,8 @@
      &            ithermal)
          umfa(i)=dvi
       enddo
+c$omp end do
+c$omp end parallel
 !            
       return
       end

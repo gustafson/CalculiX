@@ -29,114 +29,65 @@
 !
       real*8 ratio(9),pneigh(3,*),pnode(3),a,xi,et,xig,etg,p(3),
      &  dummy,fxi1,fxi2,fxi3,fet1,fet2,fet3,b,xip,xim,etp,etm,
-     &  xim2,etm2
+     &  xim2,etm2,a2,xi2,et2
 !
       intent(in) xig,etg,pneigh,pnode,nterms
 !
       intent(inout) ratio,a,p
 !
       if(nterms.eq.3) then
-         xi=(xig+1.d0)/2.d0
-         et=(etg+1.d0)/2.d0
-         if(xi+et.gt.1.d0) then
-            dummy=xi
-            xi=1.d0-et
-            et=1.d0-dummy
+         if(xig+etg.le.0.d0) then
+            ratio(2)=(xig+1.d0)/2.d0
+            ratio(3)=(etg+1.d0)/2.d0
+         else
+            ratio(2)=(1.d0-etg)/2.d0
+            ratio(3)=(1.d0-xig)/2.d0
          endif
-         ratio(1)=1.d0-xi-et
-         ratio(2)=xi
-         ratio(3)=et
+         ratio(1)=1.d0-ratio(2)-ratio(3)
       elseif(nterms.eq.4) then
-c         xi=xig
-c         et=etg
-c         ratio(1)=(1.d0-xi)*(1.d0-et)/4.d0
-c         ratio(2)=(1.d0+xi)*(1.d0-et)/4.d0
-c         ratio(3)=(1.d0+xi)*(1.d0+et)/4.d0
-c         ratio(4)=(1.d0-xi)*(1.d0+et)/4.d0
-         xip=1.d0+xig
-         xim=1.d0-xig
+         xip=(1.d0+xig)/4.d0
+         xim=(1.d0-xig)/4.d0
          etp=1.d0+etg
          etm=1.d0-etg
-         ratio(1)=xim*etm/4.d0
-         ratio(2)=xip*etm/4.d0
-         ratio(3)=xip*etp/4.d0
-         ratio(4)=xim*etp/4.d0
+         ratio(1)=xim*etm
+         ratio(2)=xip*etm
+         ratio(3)=xip*etp
+         ratio(4)=xim*etp
       elseif(nterms.eq.6) then
-         xi=(xig+1.d0)/2.d0
-         et=(etg+1.d0)/2.d0
-         if(xi+et.gt.1.d0) then
-            dummy=xi
-            xi=1.d0-et
-            et=1.d0-dummy
+         if(xig+etg.le.0.d0) then
+            xi=(xig+1.d0)/2.d0
+            et=(etg+1.d0)/2.d0
+         else
+            xi=(1.d0-etg)/2.d0
+            et=(1.d0-xig)/2.d0
          endif
          a=1.d0-xi-et
-         ratio(1)=a*(2.d0*a-1.d0)
-         ratio(2)=xi*(2.d0*xi-1.d0)
-         ratio(3)=et*(2.d0*et-1.d0)
-         ratio(4)=4.d0*xi*a
-         ratio(5)=4.d0*xi*et
-         ratio(6)=4.d0*et*a 
-      elseif(nterms.eq.7) then
-         xi=(xig+1.d0)/2.d0
-         et=(etg+1.d0)/2.d0
-         if(xi+et.gt.1.d0) then
-            dummy=xi
-            xi=1.d0-et
-            et=1.d0-dummy
-         endif
-         a=1.d0-xi-et
-         b=a*xi*et
-         ratio(1)=a*(2.d0*a-1.d0)+3.d0*b
-         ratio(2)=xi*(2.d0*xi-1.d0)+3.d0*b
-         ratio(3)=et*(2.d0*et-1.d0)+3.d0*b
-         ratio(4)=4.d0*xi*a-12.d0*b
-         ratio(5)=4.d0*xi*et-12.d0*b
-         ratio(6)=4.d0*et*a-12.d0*b
-         ratio(7)=27.d0*b
+         a2=2.d0*a
+         xi2=2.d0*xi
+         et2=2.d0*et
+         ratio(1)=a*(a2-1.d0)
+         ratio(2)=xi*(xi2-1.d0)
+         ratio(3)=et*(et2-1.d0)
+         ratio(4)=xi2*a2
+         ratio(5)=xi2*et2
+         ratio(6)=et2*a2
       elseif(nterms.eq.8) then
-c         xi=xig
-c         et=etg
-c         ratio(1)=(1.d0-xi)*(1.d0-et)*(-xi-et-1.d0)/4.d0
-c         ratio(2)=(1.d0+xi)*(1.d0-et)*(xi-et-1.d0)/4.d0
-c         ratio(3)=(1.d0+xi)*(1.d0+et)*(xi+et-1.d0)/4.d0
-c         ratio(4)=(1.d0-xi)*(1.d0+et)*(-xi+et-1.d0)/4.d0
-c         ratio(5)=(1.d0-xi*xi)*(1.d0-et)/2.d0
-c         ratio(6)=(1.d0+xi)*(1.d0-et*et)/2.d0
-c         ratio(7)=(1.d0-xi*xi)*(1.d0+et)/2.d0
-c         ratio(8)=(1.d0-xi)*(1.d0-et*et)/2.d0
          xip=1.d0+xig
          xim=1.d0-xig
-         xim2=xip*xim
+         xim2=xip*xim/2.d0
          etp=1.d0+etg
          etm=1.d0-etg
-         etm2=etp*etm
-         ratio(1)=xim*etm*(-xig-etp)/4.d0
-         ratio(2)=xip*etm*(xig-etp)/4.d0
-         ratio(3)=xip*etp*(xig-etm)/4.d0
-         ratio(4)=xim*etp*(-xig-etm)/4.d0
-         ratio(5)=xim2*etm/2.d0
-         ratio(6)=xip*etm2/2.d0
-         ratio(7)=xim2*etp/2.d0
-         ratio(8)=xim*etm2/2.d0
-      elseif(nterms.eq.9) then
-         xi=xig
-         et=etg
-!
-         fxi1=xi*(xi-1.d0)/2.d0
-         fxi2=(1.d0-xi)*(1.d0+xi)
-         fxi3=xi*(xi+1.d0)/2.d0
-         fet1=et*(et-1.d0)/2.d0
-         fet2=(1.d0-et)*(1.d0+et)
-         fet3=et*(et+1.d0)/2.d0
-         ratio(1)=fxi1*fet1
-         ratio(2)=fxi3*fet1
-         ratio(3)=fxi3*fet3
-         ratio(4)=fxi1*fet3
-         ratio(5)=fxi2*fet1
-         ratio(6)=fxi3*fet2
-         ratio(7)=fxi2*fet3
-         ratio(8)=fxi1*fet2
-         ratio(9)=fxi2*fet2
+         etm2=etp*etm/2.d0
+         ratio(5)=xim2*etm
+         ratio(6)=xip*etm2
+         ratio(7)=xim2*etp
+         ratio(8)=xim*etm2
+         xim=xim/4.d0
+         xip=xip/4.d0
+         ratio(1)=xim*etm*(-xig-etp)
+         ratio(2)=xip*etm*(xig-etp)
+         ratio(3)=xip*etp*(xig-etm)
+         ratio(4)=xim*etp*(-xig-etm)
       else
          write(*,*) '*ERROR in distattach: case with ',nterms
          write(*,*) '       terms is not covered'

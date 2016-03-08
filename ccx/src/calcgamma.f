@@ -16,8 +16,8 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine calcgamma(nface,ielfa,vel,gradvfa,gamma,xlet,
-     &  xxn,xxj,ipnei,betam,nef)
+      subroutine calcgamma(nface,ielfa,vel,gradvel,gamma,xlet,
+     &  xxn,xxj,ipnei,betam,nef,flux)
 !
 !     determine gamma:
 !        upwind difference: gamma=0
@@ -27,8 +27,8 @@
 !
       integer nface,ielfa(4,*),i,j,indexf,ipnei(*),iel1,iel2,nef
 !
-      real*8 vel(nef,0:5),gradvfa(3,3,*),xxn(3,*),xxj(3,*),vud,vcd,
-     &  gamma(*),phic,xlet(*),betam
+      real*8 vel(nef,0:5),gradvel(3,3,*),xxn(3,*),xxj(3,*),vud,vcd,
+     &  gamma(*),phic,xlet(*),betam,flux(*),xflux
 !
       do i=1,nface
          iel2=ielfa(2,i)
@@ -39,21 +39,36 @@
          iel1=ielfa(1,i)
          j=ielfa(4,i)
          indexf=ipnei(iel1)+j
+         xflux=flux(indexf)
 !
          vcd=(vel(iel2,1)-vel(iel1,1))*xxn(1,indexf)+
      &       (vel(iel2,2)-vel(iel1,2))*xxn(2,indexf)+
      &       (vel(iel2,3)-vel(iel1,3))*xxn(3,indexf)
 !
-         vud=2.d0*xlet(indexf)*
-     &       (xxn(1,indexf)*(gradvfa(1,1,i)*xxj(1,indexf)+
-     &                       gradvfa(1,2,i)*xxj(2,indexf)+
-     &                       gradvfa(1,3,i)*xxj(3,indexf))+
-     &        xxn(2,indexf)*(gradvfa(2,1,i)*xxj(1,indexf)+
-     &                       gradvfa(2,2,i)*xxj(2,indexf)+
-     &                       gradvfa(2,3,i)*xxj(3,indexf))+
-     &        xxn(3,indexf)*(gradvfa(3,1,i)*xxj(1,indexf)+
-     &                       gradvfa(3,2,i)*xxj(2,indexf)+
-     &                       gradvfa(3,3,i)*xxj(3,indexf)))
+         if(xflux.ge.0.d0) then
+!
+            vud=2.d0*xlet(indexf)*
+     &       (xxn(1,indexf)*(gradvel(1,1,iel1)*xxj(1,indexf)+
+     &                       gradvel(1,2,iel1)*xxj(2,indexf)+
+     &                       gradvel(1,3,iel1)*xxj(3,indexf))+
+     &        xxn(2,indexf)*(gradvel(2,1,iel1)*xxj(1,indexf)+
+     &                       gradvel(2,2,iel1)*xxj(2,indexf)+
+     &                       gradvel(2,3,iel1)*xxj(3,indexf))+
+     &        xxn(3,indexf)*(gradvel(3,1,iel1)*xxj(1,indexf)+
+     &                       gradvel(3,2,iel1)*xxj(2,indexf)+
+     &                       gradvel(3,3,iel1)*xxj(3,indexf)))
+         else
+            vud=2.d0*xlet(indexf)*
+     &       (xxn(1,indexf)*(gradvel(1,1,iel2)*xxj(1,indexf)+
+     &                       gradvel(1,2,iel2)*xxj(2,indexf)+
+     &                       gradvel(1,3,iel2)*xxj(3,indexf))+
+     &        xxn(2,indexf)*(gradvel(2,1,iel2)*xxj(1,indexf)+
+     &                       gradvel(2,2,iel2)*xxj(2,indexf)+
+     &                       gradvel(2,3,iel2)*xxj(3,indexf))+
+     &        xxn(3,indexf)*(gradvel(3,1,iel2)*xxj(1,indexf)+
+     &                       gradvel(3,2,iel2)*xxj(2,indexf)+
+     &                       gradvel(3,3,iel2)*xxj(3,indexf)))
+         endif
 c         write(*,*) xlet(indexf)
 c         write(*,*) xxn(1,indexf),xxn(2,indexf),xxn(3,indexf)
 c         write(*,*) xxj(1,indexf),xxj(2,indexf),xxj(3,indexf)

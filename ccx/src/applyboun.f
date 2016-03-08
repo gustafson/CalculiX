@@ -19,7 +19,7 @@
       subroutine applyboun(ifaext,nfaext,ielfa,ikboun,ilboun,
      &  nboun,typeboun,nelemload,nload,sideload,isolidsurf,nsolidsurf,
      &  ifabou,nfabou,nface,nodeboun,ndirboun,ikmpc,ilmpc,labmpc,nmpc,
-     &  nactdohinv,compressible)
+     &  nactdohinv,compressible,iatleastonepressurebc)
 !
 !     stores pointers to ifabou in ielfa(2,*) at those locations
 !     which are zero (external faces)
@@ -34,9 +34,10 @@
      &  j,idof,ikboun(*),nboun,id,ilboun(*),iboun,nelemload(2,*),
      &  nload,isolidsurf(*),nsolidsurf,ifabou(*),i,nface,indexb,
      &  nodeboun(*),ndirboun(*),jsum,ig,ikmpc(*),ilmpc(*),nmpc,mpc,
-     &  nactdohinv(*),compressible
+     &  nactdohinv(*),compressible,iatleastonepressurebc
 !
       nfabou=1
+      iatleastonepressurebc=0
 !
       do i=1,nfaext
 !
@@ -83,6 +84,7 @@
                            write(*,*)
                            exit
                         endif
+                        iatleastonepressurebc=1
                      endif
                   endif
                   jsum=jsum+j

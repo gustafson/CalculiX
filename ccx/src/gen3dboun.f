@@ -664,7 +664,7 @@ c                     enddo
 !                 rotation vector is projected on the tangential
 !                 plane
 !
-                  if(dot.gt.0.05) then
+                  if(dabs(dot).gt.0.05) then
                      if(xboun(i).gt.1.d-10) then
                         write(*,*) '*ERROR in gen3dboun: rotation'
                         write(*,*) '       vector in node ',node
@@ -682,7 +682,7 @@ c                     enddo
 !                 rotation vectors closer than 45 degrees with the normal
 !                 (= drilling direction) are not taken into account
 !
-                  if(dot.gt.0.70710678d0) cycle
+                  if(dabs(dot).gt.0.70710678d0) cycle
 !
 !                 projecting the rotation vector on the tangent plane
 !

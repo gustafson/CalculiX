@@ -92,7 +92,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
       *nactdog=NULL,nteq,network,nmastnode,imast,massact[2],
       *ipkon=NULL,*kon=NULL,*ielorien=NULL,nmethodact,ne2=0,
       *ielmat=NULL,inext,itp=0,symmetryflag=0,inputformat=0,
-      iitterm=0,ngraph=1,ithermalact=2,*islavact=NULL,
+      iitterm=0,ngraph=1,ithermalact=2,*islavact=NULL,neini,
       *ipompc=NULL,*ikmpc=NULL,*ilmpc=NULL,i0ref,irref,icref,
       *islavnode=NULL,*imastnode=NULL,*nslavnode=NULL,mortar=0,
       mt=mi[1]+1,*nactdofinv=NULL, inode,idir,*islavsurf=NULL,
@@ -442,7 +442,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
   NNEW(ad,double,neq[1]);
   NNEW(au,double,nzs[1]);
   
-  FORTRAN(mafillsm,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xbounold,nboun,
+  mafillsmmain(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xbounold,nboun,
 		    ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
 		    &null,nelemload,sideload,xloadact,&null,xbodyact,ipobody,
 		    &null,cgr,ad,au,fext,nactdof,icol,jq,irow,neq,nzl,
@@ -457,7 +457,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 		    &coriolis,ibody,xloadold,&reltime,veold,springarea,nstate_,
 		    xstateini,xstate,thicke,integerglob,doubleglob,
 		    tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
-		    pmastsurf,&mortar,clearini,ielprop,prop,&ne0,fnext,&kscale));
+		    pmastsurf,&mortar,clearini,ielprop,prop,&ne0,fnext,&kscale);
   
   if(nmethodact==0){
       
@@ -1267,7 +1267,14 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
              set iit=2 to force convergence */
 
 	  if(*ithermal<=1) iit=2;
+	  
+	  // MPADD: need for fake energy values!
+	  double energy[4] = {0, 0, 0, 0};
+	  double allwk     = 0.0;
+	  double energyref = 0.0;
+	  double emax, enres,enetoll, reswk, dampwk, allwkini;
 
+	  neini=*ne;
 	  checkconvergence(co,nk,kon,ipkon,lakon,ne,stn,nmethod, 
 	    kode,filab,een,t1act,&time,epn,ielmat,matname,enern, 
 	    xstaten,nstate_,istep,&iinc,iperturb,ener,mi,output,
@@ -1279,7 +1286,10 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
             &itp,&jprint,jout,&uncoupled,t1,&iitterm,nelemload,
             nload,nodeboun,nboun,itg,ndirboun,&deltmx,&iflagact,
 	    set,nset,istartset,iendset,ialset,emn,thicke,jobnamec,
-	    &mortar,nmat,ielprop,prop,&ialeatoric,&kscale);
+	    &mortar,nmat,ielprop,prop,&ialeatoric,&kscale,
+	    energy, &allwk, &energyref,&emax, &enres, &enetoll,        //MPADD
+	    energyini, &allwkini ,&allwk, &reswk, &ne0, &ne0, &dampwk, //MPADD
+	    &dampwk, energy);                                          //MPADD
       }
       
       /*********************************************************/

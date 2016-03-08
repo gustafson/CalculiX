@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 2.9
+LOG-BOOK Version 2.10
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -2592,3 +2592,71 @@ Dec 2002        - started to work on single crystal plasticity
 
  14 Nov 2015   - introduced several code-accelerations in mastruct.c
                  (especially for contact)
+
+ 19 Nov 2015   - posted version 2.9
+
+ 20 Nov 2015   - changed insert.c and mastruct.c 
+
+ 26 Nov 2015   - accelerated attach.f and distattach.f
+
+ 29 Nov 2015   - supersonic flow works
+
+ 30 Nov 2015   - supersonic flow works (II), slightly different version
+
+ 1 Dec 2015    - parallellized the asymmetric stiffness contributions
+
+ 5 Dec 2015    - continued to work on compressible laminar flow
+                 major improvement of stability
+
+ 7 Dec 2015    - no line search for dynamic contact
+
+ 10 Dec 2015   - modified explicit dynamics
+
+ 19 Dec 2015   - viscous compressible stationary flow seems to work
+                 (finite volume method)
+
+ 7 Jan 2016    - changed ifaceq(9.. into ifaceq(8.. and
+                 ifacet(7.. into ifacet(6.. (i.e. no 26-node
+                 hex or 14-node tet anymore).
+  
+ 9 Jan 2016    - removed an error in beamextscheme.f
+
+ 13 Jan 2016   - creep and viscoplasticity in combination with an
+                 anisotropic material is addressed by material user
+                 subroutines only.
+               - removed an error in compfluid for compressible
+                 materials: correctvfa should never be called twice
+                 without calling mafillpcomp in between (recalculation
+                 of ap(i))
+
+ 21 Jan 2016   - removed the requirement for 1.d-6 relative time
+                 increments for implicit dynamics in combination with
+                 contact (checkconvergence.c)
+
+ 24 Jan 2016   - introduced the gamma-method in mafillvcomp with 
+                 Central Difference replaced by 0.4*Upwind Difference +
+                 0.6*Central Difference
+
+ 27 Jan 2016   - reset compressible CFD to UD (Upwind Difference)
+               - started to parallellize nearly every CFD-routine (openMP)
+
+ 30 Jan 2016   - worked on parallellization of mafillpcomp.f
+ 
+ 31 Jan 2016   - finished parallellization of compressible cfd
+
+ 1 Feb 2016    - worked on parallellization of incompressible cfd
+
+ 2 Feb 2016    - unified the calculation of material properties in
+                 compfluid.c
+ 
+ 3 Feb 2016    - made some corrections to frictionheating
+               - parallellized mafillp.f
+
+ 6 Feb 2016    - changed in mafilltcomp from CD to UD (forgotten on
+                 the 27th of Jan) => bumpsuperfineshallow results
+                 are smooth again now
+
+ 13 Feb 2016   - worked on explicit dynamics (Carlo Monjaraz)
+
+ 3 March 2016  - updated implicit dynamics (Matteo Pacher)
+               - switched everything to mafillsmmain

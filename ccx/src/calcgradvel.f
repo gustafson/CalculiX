@@ -16,8 +16,8 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine calcgradvel(ne,lakon,ipnei,vfa,area,xxn,gradvel,neifa,
-     &  volume)
+      subroutine calcgradvel(nef,lakonf,ipnei,vfa,area,xxn,gradvel,
+     &  neifa,volume)
 !
 !     calculation of the gradient of the velocity at the center
 !     of the elements from the velocity values at the neighboring
@@ -25,17 +25,21 @@
 !
       implicit none
 !
-      character*8 lakon(*)
+      character*8 lakonf(*)
 !
-      integer ne,ipnei(*),neifa(*),i,j,k,l,indexf,ifa,numfaces
+      integer nef,ipnei(*),neifa(*),i,j,k,l,indexf,ifa,numfaces
 !
       real*8 vfa(0:5,*),area(*),xxn(3,*),gradvel(3,3,*),volume(*)
 !
-      do i=1,ne
+c$omp parallel default(none)
+c$omp& shared(nef,ipnei,lakonf,neifa,gradvel,vfa,area,xxn,volume)
+c$omp& private(i,indexf,numfaces,j,ifa,k,l)
+c$omp do
+      do i=1,nef
          indexf=ipnei(i)
-         if(lakon(i)(4:4).eq.'8') then
+         if(lakonf(i)(4:4).eq.'8') then
             numfaces=6
-         elseif(lakon(i)(4:4).eq.'6') then
+         elseif(lakonf(i)(4:4).eq.'6') then
             numfaces=5
          else
             numfaces=4
@@ -56,10 +60,11 @@
          do k=1,3
             do l=1,3
                gradvel(k,l,i)=gradvel(k,l,i)/volume(i)
-c     write(*,*) 'calcgradvel ',i,k,l,gradvel(k,l,i)
             enddo
          enddo
       enddo
+c$omp end do
+c$omp end parallel
 !            
       return
       end

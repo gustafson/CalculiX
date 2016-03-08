@@ -34,6 +34,8 @@
 !              value of their 1st and 2nd order derivatives 
 !              w.r.t. the local coordinates, the Jacobian vector 
 !              (local normal to the surface)
+!     iflag=5: calculate the value of the shape functions and
+!              their derivatives w.r.t. the local coordinates
 !
       implicit none
 !
@@ -67,6 +69,8 @@
       shp(2,1)=-1.d0
       shp(2,2)=0.d0
       shp(2,3)=1.d0
+!
+      if(iflag.eq.5) return
 !
 !     computation of the local derivative of the global coordinates
 !     (xs)

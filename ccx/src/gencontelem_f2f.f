@@ -21,7 +21,7 @@
      &  ielmat,elcon,istep,iinc,iit,ncmat_,ntmat_,mi,imastop,islavsurf,
      &  itiefac,springarea,tietol,reltime,filab,nasym,pslavsurf,
      &  pmastsurf,clearini,theta,xstateini,xstate,nstate_,ne0,icutb,
-     &  ialeatoric)
+     &  ialeatoric,nmethod)
 !
 !     generate contact elements for the slave contact nodes
 !
@@ -36,13 +36,13 @@
      &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),ne,
      &  neigh(1),iflag,kneigh,i,j,k,l,jj,nn,isol,icutb,
      &  itri,ll,kflag,n,nx(*),ny(*),istep,iinc,mi(*),
-     &  nz(*),nstart,ielmat(mi(3),*),imat,ifaceq(9,6),ifacet(7,4),
+     &  nz(*),nstart,ielmat(mi(3),*),imat,ifaceq(8,6),ifacet(6,4),
      &  ifacew1(4,5),ifacew2(8,5),nelemm,jfacem,indexe,iit,
      &  nface,nope,nodefm(9),ncmat_,ntmat_,number(4),lenset,
      &  iteller,ifaces,jfaces,ifacem,indexel,iloop,iprev,iact,
      &  imastop(3,*), itriangle(100),ntriangle,ntriangle_,itriold,
      &  itrinew,id,islavsurf(2,*),itiefac(2,*),nelems,m,mint2d,nopes,
-     &  iloc,nopem,nodefs(9),indexf,ialeatoric
+     &  iloc,nopem,nodefs(9),indexf,ialeatoric,nmethod
 !
       real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),p(3),
      &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),clearini(3,9,*),
@@ -54,19 +54,19 @@
 !
 !     nodes per face for hex elements
 !
-      data ifaceq /4,3,2,1,11,10,9,12,21,
-     &            5,6,7,8,13,14,15,16,22,
-     &            1,2,6,5,9,18,13,17,23,
-     &            2,3,7,6,10,19,14,18,24,
-     &            3,4,8,7,11,20,15,19,25,
-     &            4,1,5,8,12,17,16,20,26/
+      data ifaceq /4,3,2,1,11,10,9,12,
+     &            5,6,7,8,13,14,15,16,
+     &            1,2,6,5,9,18,13,17,
+     &            2,3,7,6,10,19,14,18,
+     &            3,4,8,7,11,20,15,19,
+     &            4,1,5,8,12,17,16,20/
 !
 !     nodes per face for tet elements
 !
-      data ifacet /1,3,2,7,6,5,11,
-     &             1,2,4,5,9,8,12,
-     &             2,3,4,6,10,9,13,
-     &             1,4,3,8,10,7,14/
+      data ifacet /1,3,2,7,6,5,
+     &             1,2,4,5,9,8,
+     &             2,3,4,6,10,9,
+     &             1,4,3,8,10,7/
 !
 !     nodes per face for linear wedge elements
 !
@@ -205,22 +205,10 @@
                   mint2d=9
                   nopes=8
                   nope=20
-               elseif(lakon(nelems)(4:6).eq.'26R') then
-                  mint2d=4
-                  nopes=9
-                  nope=26
-               elseif(lakon(nelems)(4:4).eq.'2') then
-                  mint2d=9
-                  nopes=9
-                  nope=26
                elseif(lakon(nelems)(4:5).eq.'10') then
                   mint2d=3
                   nopes=6
                   nope=10
-               elseif(lakon(nelems)(4:5).eq.'14') then
-                  mint2d=3
-                  nopes=7
-                  nope=14
                elseif(lakon(nelems)(4:4).eq.'4') then
                   mint2d=1
                   nopes=3
@@ -250,7 +238,7 @@
 !     actual position of the nodes belonging to the
 !     slave surface
 !     
-               if((nope.eq.26).or.(nope.eq.20).or.(nope.eq.8)) then
+               if((nope.eq.20).or.(nope.eq.8)) then
                   do m=1,nopes
                      nodefs(m)=kon(ipkon(nelems)+ifaceq(m,jfaces))
                      do j=1,3
@@ -258,7 +246,7 @@
      &                       *reltime+vold(j,nodefs(m))
                      enddo
                   enddo
-               elseif((nope.eq.10).or.(nope.eq.4).or.(nope.eq.14)) then
+               elseif((nope.eq.10).or.(nope.eq.4)) then
                   do m=1,nopes
                      nodefs(m)=kon(ipkon(nelems)+ifacet(m,jfaces))
                      do j=1,3
@@ -441,17 +429,11 @@ c     write(*,*) '**regular solution'
                      if(lakon(nelemm)(4:5).eq.'20') then
                         nopem=8
                         nface=6
-                     elseif(lakon(nelemm)(4:4).eq.'2') then
-                        nopem=9
-                        nface=6
                      elseif(lakon(nelemm)(4:4).eq.'8') then
                         nopem=4
                         nface=6
                      elseif(lakon(nelemm)(4:5).eq.'10') then
                         nopem=6
-                        nface=4
-                     elseif(lakon(nelemm)(4:5).eq.'14') then
-                        nopem=7
                         nface=4
                      elseif(lakon(nelemm)(4:4).eq.'4') then
                         nopem=3
@@ -569,6 +551,20 @@ c     write(*,*) '**regular solution'
 !                 distance from surface along normal (= clearance)
 !
                      clear=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
+!
+                     if(nmethod.eq.4) then
+!
+!                       dynamic calculation
+!
+                        if((clear.gt.0.d0).and.
+     &                     (int(elcon(3,1,imat)).ne.4)) then
+                           isol=0
+                        endif
+                     else
+!
+!                       static calculation: more sophisticated
+!                       algorithm to detect contact
+!
                      if((istep.eq.1).and.(iit.le.0.d0)) then
                         if(clear.lt.0.d0) then
                            springarea(2,iloc)=clear/(1.d0-theta)
@@ -577,34 +573,6 @@ c     write(*,*) '**regular solution'
                         endif
                      endif
                      clear=clear-springarea(2,iloc)*(1.d0-reltime)
-c!
-c!                 at the start of a new increment: look at the internal
-c!                 variables to determine the contact springs
-c!
-c                  if((isol.ne.0).and.(int(elcon(3,1,imat)).ne.4)) then
-c                     if(((istep.gt.1).and.(iinc.eq.1)).and.(iit.le.0)
-c     &                .and.(ncmat_.ge.7).and.(elcon(6,1,imat).gt.0.d0))
-c     &                 then
-c!     
-c!                       internal variables only exist for friction
-c!     
-c!                       if no initial values -> no contact element
-c!     
-c                        if(dsqrt(xstateini(4,1,ne0+iloc)**2+
-c     &                       xstateini(5,1,ne0+iloc)**2+
-c     &                       xstateini(6,1,ne0+iloc)**2)
-c     &                       .lt.1.d-30) isol=0
-cc                            .and.(clear.gt.0.d0)
-c                     else
-c!     
-c!                 no contact element for positive gap unless tied contact 
-c!     
-c                        if(clear.gt.0.d0) then
-c                           isol=0
-c                        endif
-c                     endif
-c                  endif
-c
 !
 !                    if iloop=1 AND a new increment was started the
 !                    number of contact elements at the end of the
@@ -634,10 +602,13 @@ c
                            endif
 ! 
                            if(isol.ne.0) then
-                              if(icutb.eq.0) then
+                              if((icutb.eq.0).or.(ncmat_.lt.7).or.
+     &                           (elcon(6,1,imat).le.0.)) then
 !
 !                             this is no cut-back: only use a negative
 !                             clearance as contact criterion
+!                             (this also applies if no friction is
+!                              defined)
 !
                                  if(clear.gt.0.d0) then
                                     isol=0
@@ -678,6 +649,8 @@ c
      &                          xstateini(6,1,ne0+iloc)**2)
      &                          .lt.1.d-30) isol=0
                         endif
+                     endif
+!
                      endif
 !     
                   endif
@@ -790,7 +763,7 @@ c
 !     
                enddo
             enddo
-            if((iact.ne.0).or.(iprev.eq.0)) exit
+            if((iact.ne.0).or.(iprev.eq.0).or.(nmethod.eq.4)) exit
             write(*,*)'*INFO in gencontelem_f2f: contact lost at the'
             write(*,*)'      start of a new increment; contact'
             write(*,*)'      elements from end of previous increment'
