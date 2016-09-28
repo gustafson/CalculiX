@@ -18,7 +18,7 @@
 !     
       subroutine vortex(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,numf,set,mi,iaxial)
+     &     nodef,idirf,df,cp,R,numf,set,mi,ttime,time,iaxial)
 !     
 !     vortex element
 !
@@ -35,10 +35,16 @@
      &     inv,ipkon(*),kon(*),t_chang,nelemswirl,mi(*)
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,r,cp,
-     &     p1,p2,T1,T2,km1,pi,
-     &     r2d,r1d,eta,U1,
-     &     c1u,c2u, cinput, r1, r2, omega, K1, rpm,ciu,expon,
+     &     p1,p2,T1,T2,km1,pi,ttime,time,r2d,r1d,eta,U1,
+     &     c1u,c2u,cinput,r1,r2,omega,K1,ciu,expon,
      &     Ui,Kr,cte1,cte2,qred_crit,A,xflow_oil
+!
+      intent(in) nodem,nelem,lakon,kon,ipkon,
+     &     nactdog,ielprop,iflag,v,
+     &     cp,R,set,mi,ttime,time,iaxial
+!
+      intent(out) identity,node1,node2,xflow,numf,nodef,idirf,prop,
+     &  f,df
 !     
       if (iflag.eq.0) then
          identity=.true.
@@ -53,33 +59,34 @@
 !     
       elseif (iflag.eq.1)then
 !
-         kappa=(cp/(cp-R))
-         pi=4.d0*datan(1.d0)
-         index=ielprop(nelem)
-         qred_crit=dsqrt(kappa/R)*
-     &        (1+0.5d0*(kappa-1))**(-0.5*(kappa+1)/(kappa-1))
-!
-!     Because there is no explicit expression relating massflow
-!     with to pressure loss for vortices
-!     For  FREE as well as for FORCED VORTICES
-!     initial mass flow is set to Qred_crit/2 = 0.02021518917
-!     with consideration to flow direction
-!
-         node1=kon(ipkon(nelem)+1)
-         node2=kon(ipkon(nelem)+3)
-         p1=v(2,node1)
-         p2=v(2,node2)
-         T1=v(0,node1)
-         T2=v(0,node2)
-!
-!     abstract cross section
-         A=10E-6
-!
-         if(p1.gt.p2) then
-            xflow=0.5/dsqrt(T1)*A*P1*qred_crit
-         else
-            xflow=-0.5/dsqrt(T1)*A*P1*qred_crit
-         endif
+c         kappa=(cp/(cp-R))
+c         pi=4.d0*datan(1.d0)
+c         index=ielprop(nelem)
+c         qred_crit=dsqrt(kappa/R)*
+c     &        (1+0.5d0*(kappa-1))**(-0.5*(kappa+1)/(kappa-1))
+c!
+c!     Because there is no explicit expression relating massflow
+c!     with to pressure loss for vortices
+c!     For  FREE as well as for FORCED VORTICES
+c!     initial mass flow is set to Qred_crit/2 = 0.02021518917
+c!     with consideration to flow direction
+c!
+c         node1=kon(ipkon(nelem)+1)
+c         node2=kon(ipkon(nelem)+3)
+c         p1=v(2,node1)
+c         p2=v(2,node2)
+c         T1=v(0,node1)
+c         T2=v(0,node2)
+c!
+c!     abstract cross section
+c         A=10E-6
+c!
+c         if(p1.gt.p2) then
+c            xflow=0.5/dsqrt(T1)*A*P1*qred_crit
+c         else
+c            xflow=-0.5/dsqrt(T1)*A*P1*qred_crit
+c         endif
+         xflow=0.d0
 !        
       elseif (iflag.eq.2)then
 !     
@@ -152,20 +159,19 @@
              U1=prop(index+5)
 !
 !     number of the element generating the upstream swirl
-             nelemswirl=int(prop(index+6))
+             nelemswirl=nint(prop(index+6))
 !     
 !     rotation speed (revolution per minutes)
-             rpm=prop(index+7)
+             omega=prop(index+7)
 !
 !     Temperature change
             t_chang=prop(index+8)
 !
-            if(rpm.gt.0) then
+            if(omega.gt.0.d0) then
 !
-!     rotation speed is given (rpm) if the swirl comes from a rotating part
+!     rotation speed is given if the swirl comes from a rotating part
 !     typically the blade of a coverplate
 !
-               omega=pi/30d0*rpm
                
 !     C_u is given by radius r1d (see definition of the flow direction)
 !     C_u related to radius r2d is a function of r1d
@@ -287,14 +293,11 @@
 !     
 !     rotation speed (revolution per minutes) of the rotating part
 !     responsible for the swirl
-            rpm=prop(index+5)
+            omega=prop(index+5)
 !
 !     Temperature change
             t_chang=prop(index+6)
 !          
-!     rotation speed
-            omega=pi/30*rpm
-!
             if(R2.ge.R1) then
                Ui=omega*R1
                c1u=Ui*kr
@@ -428,21 +431,19 @@
              U1=prop(index+5)
 !
 !     number of the element generating the upstream swirl
-             nelemswirl=int(prop(index+6))
+             nelemswirl=nint(prop(index+6))
 !     
 !     rotation speed (revolution per minutes)
-             rpm=prop(index+7)
+             omega=prop(index+7)
 !
 !     Temperature change
             t_chang=prop(index+8)
 !
-            if(rpm.gt.0) then
+            if(omega.gt.0.d0) then
 !
-!     rotation speed is given (rpm) if the swirl comes from a rotating part
+!     rotation speed is given if the swirl comes from a rotating part
 !     typically the blade of a coverplate
 !
-               omega=pi/30d0*rpm
-               
 !     C_u is given by radius r1d (see definition of the flow direction)
 !     C_u related to radius r2d is a function of r1d
 !     
@@ -565,7 +566,7 @@
 !     
 !     rotation speed (revolution per minutes) of the rotating part
 !     responsible for the swirl
-            rpm=prop(index+5)
+            omega=prop(index+5)
 !
 !     Temperature change
             t_chang=prop(index+6)
@@ -573,9 +574,6 @@
 !    no element generating the upstream swirl
              nelemswirl=0
 !          
-!     rotation speed
-            omega=pi/30*rpm
-!     
             if(R2.ge.R1) then
                Ui=omega*R1
                c1u=Ui*kr
@@ -599,37 +597,33 @@
          xflow_oil=0.d0
 !
          write(1,*) ''
-         write(1,55) 'In line ',int(nodem/1000),' from node ',node1,
-     &' to node ', node2,' :   air massflow rate = ',xflow,' kg/s',
-     &' , oil massflow rate = ',xflow_oil,' kg/s'
+         write(1,55) ' from node ',node1,
+     &' to node ', node2,' :   air massflow rate = ',xflow,' ',
+     &' , oil massflow rate = ',xflow_oil,' '
 !
          if(inv.eq.1) then
             write(1,56)'       Inlet node ',node1,' :     Tt1 = ',T1,
-     &           ' K , Ts1 = ',T1,' K , Pt1 = ',P1/1E5,
-     &           ' Bar'
-            write(1,*)'             Element V    ',set(numf)(1:20)
+     &           '  , Ts1 = ',T1,'  , Pt1 = ',P1
+            write(1,*)'             Element ',nelem,lakon(nelem)
             write(1,57)'             C1u = ',C1u,
-     &' m/s , C2u = ',C2u,' m/s'
+     &'  , C2u = ',C2u
             write(1,56)'       Outlet node ',node2,' :    Tt2 = ',T2,
-     &           ' K , Ts2 = ',T2,' K , Pt2 = ',P2/1e5,
-     &           ' Bar'
+     &           '  , Ts2 = ',T2,'  , Pt2 = ',P2
 !     
          else if(inv.eq.-1) then
             write(1,56)'       Inlet node ',node2,':     Tt1 = ',T1,
-     &           ' K , Ts1 = ',T1,' K , Pt1 = ',P1/1E5,
-     &           ' Bar'
-            write(1,*)'             element V    ',set(numf)(1:20)
+     &           '  , Ts1 = ',T1,'  , Pt1 = ',P1
+            write(1,*)'             Element ',nelem,lakon(nelem)
             write(1,57)'             C1u = ',C1u,
-     &' m/s , C2u = ',C2u,'m/s'
+     &'  , C2u = ',C2u
             write(1,56)'       Outlet node ',node1,'     Tt2 = ',
-     &           T2,' K , Ts2 = ',T2,' K , Pt2 = ',P2/1e5,
-     &           ' Bar'
+     &           T2,'  , Ts2 = ',T2,'  , Pt2 = ',P2
          endif
       endif
 !
- 55   format(1x,a,i6.3,a,i6.3,a,i6.3,a,f9.5,a,a,f9.5,a)
- 56   format(1x,a,i6.3,a,f6.1,a,f6.1,a,f9.5,a,f9.5)  
- 57   format(1x,a,f6.2,a,f6.2,a)
+ 55   format(1x,a,i6,a,i6,a,e11.4,a,a,e11.4,a)
+ 56   format(1x,a,i6,a,e11.4,a,e11.4,a,e11.4,a,e11.4)  
+ 57   format(1x,a,e11.4,a,e11.4,a)
 !     
       xflow=xflow/iaxial
       df(3)=df(3)*iaxial

@@ -32,8 +32,10 @@
       cd0=cdu
       cd_diff=1.d0
 !
-      do 10 while (cd_diff.ge.1E-3)
+      do
 !        
+         if(cd_diff.lt.1.d-3) exit
+!
          cd=cd0
          A1=20/(reynolds*dsqrt(1.d0-Amod**2))*(1.d0+2.25d0*bdh)
          eps=(0.005d0*bdh)/(1.d0+7.5d0*(log10(0.00015d0*reynolds*
@@ -45,8 +47,7 @@
 !
          cd0=cd
 !
- 10       continue
-!         write(*,*) 'lichtarowitz correction cd=',cd
+       enddo
 !     
          return
          end

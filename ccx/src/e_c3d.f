@@ -65,7 +65,7 @@
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,nopered
 !
       real*8 co(3,*),xl(3,26),shp(4,26),xs2(3,7),veold(0:mi(2),*),
-     &  s(100,100),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),ff(100),
+     &  s(60,60),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),ff(60),
      &  bf(3),q(3),shpj(4,26),elcon(0:ncmat_,ntmat_,*),t(3),
      &  rhcon(0:1,ntmat_,*),xkl(3,3),eknlsign,reltime,prop(*),
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
@@ -73,7 +73,7 @@
      &  xl2(3,9),xsj2(3),shp2(7,9),vold(0:mi(2),*),xload(2,*),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  v(3,3,3,3),springarea(2,*),thickness,tlayer(4),dlayer(4),
-     &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(100,100),
+     &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(60,60),
      &  sti(6,mi(1),*),stx(6,mi(1),*),s11,s22,s33,s12,s13,s23,s11b,
      &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,coefmpc(*),xlayer(mi(3),4),
      &  senergy,senergyb,rho,elas(21),summass,summ,thicke(mi(3),*),
@@ -81,7 +81,7 @@
      &  weight,coords(3),dmass,xl1(3,9),term,clearini(3,9,*),
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),plconloc(802),dtime,ttime,time,tvar(2),
-     &  sax(100,100),ffax(100),gs(8,4),a,stress(6),stre(3,3),
+     &  sax(60,60),ffax(60),gs(8,4),a,stress(6),stre(3,3),
      &  pslavsurf(3,*),pmastsurf(6,*)
 !
       intent(in) co,kon,lakonl,p1,p2,omx,bodyfx,nbody,
@@ -295,7 +295,7 @@ c     Bernhardi end
                mint2d=1
             endif
          elseif((lakonl(4:5).eq.'15').or.(lakonl(4:4).eq.'6')) then
-            mint3d=18
+            mint3d=9
          else
             mint3d=0
          endif
@@ -506,10 +506,10 @@ c     Bernhardi end
                ze=gauss3d6(3,kk)
                weight=weight3d6(kk)
             else
-               xi=gauss3d9(1,kk)
-               et=gauss3d9(2,kk)
-               ze=gauss3d9(3,kk)
-               weight=weight3d9(kk)
+               xi=gauss3d8(1,kk)
+               et=gauss3d8(2,kk)
+               ze=gauss3d8(3,kk)
+               weight=weight3d8(kk)
             endif
          endif
 c         if(nelem.eq.1) then

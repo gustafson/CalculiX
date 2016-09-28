@@ -17,34 +17,30 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine printoutfluid(set,nset,istartset,iendset,ialset,nprint,
-     &  prlab,prset,v,t1,fn,ipkonf,lakonf,sti,eei,xstate,ener,
-     &  mi,nstate_,ithermal,co,kon,qfx,ttime,trab,inotr,ntrans,
-     &  orab,ielorienf,norien,nk,ne,inum,filab,vold,ielmatf,thicke,
-     &  eme,vcontu,physcon,nactdoh,ielpropf,prop)
+     &  prlab,prset,ipkonf,lakonf,sti,eei,xstate,ener,
+     &  mi,nstate_,co,kon,qfx,ttime,trab,inotr,ntrans,
+     &  orab,ielorienf,norien,vold,ielmatf,thicke,
+     &  eme,vcontu,physcon,nactdoh,ielpropf,prop,xkappa,xmach,ithermal)
 !
 !     stores results in the .dat file
 !
       implicit none
 !
-      logical force
-!
-      character*1 cflag
       character*6 prlab(*)
       character*8 lakonf(*)
       character*80 noset,elset
       character*81 set(*),prset(*)
-      character*87 filab(*)
 !
       integer nset,istartset(*),iendset(*),ialset(*),nprint,ipkonf(*),
-     &  mi(*),nstate_,ii,jj,iset,l,limit,node,ipos,ithermal,nelel,
-     &  nelem,kon(*),inotr(2,*),ntrans,ielorienf(mi(3),*),norien,nk,ne,
-     &  inum(*),nfield,nodes,ne0,nope,mt,ielmatf(mi(3),*),nactdoh(*),
+     &  mi(*),nstate_,ii,jj,iset,l,limit,node,ipos,nelel,ithermal(2),
+     &  nelem,kon(*),inotr(2,*),ntrans,ielorienf(mi(3),*),norien,
+     &  mt,ielmatf(mi(3),*),nactdoh(*),
      &  ielpropf(*)
 !
-      real*8 v(0:mi(2),*),t1(*),fn(0:mi(2),*),sti(6,mi(1),*),
-     &  eei(6,mi(1),*),xstate(nstate_,mi(1),*),ener(mi(1),*),energytot,
-     &  volumetot,co(3,*),qfx(3,mi(1),*),rftot(0:3),ttime,
-     &  trab(7,*),orab(7,*),vold(0:mi(2),*),enerkintot,thicke(mi(3),*),
+      real*8 sti(6,mi(1),*),xkappa(*),xmach(*),
+     &  eei(6,mi(1),*),xstate(nstate_,mi(1),*),ener(mi(1),*),
+     &  co(3,*),qfx(3,mi(1),*),ttime,
+     &  trab(7,*),orab(7,*),vold(0:mi(2),*),thicke(mi(3),*),
      &  eme(6,mi(1),*),vcontu(2,*),physcon(*),prop(*)
 !
       mt=mi(2)+1
@@ -116,17 +112,17 @@
                if(ialset(jj).lt.0) cycle
                if(jj.eq.iendset(iset)) then
                   node=ialset(jj)
-                  call printoutnodefluid(prlab,v,vold,vcontu,physcon,
-     &              ii,node,trab,inotr,ntrans,co,mi)
+                  call printoutnodefluid(prlab,vold,vcontu,physcon,
+     &              ii,node,trab,inotr,ntrans,co,mi,xkappa,xmach)
                elseif(ialset(jj+1).gt.0) then
                   node=ialset(jj)
-                  call printoutnodefluid(prlab,v,vold,vcontu,physcon,
-     &              ii,node,trab,inotr,ntrans,co,mi)
+                  call printoutnodefluid(prlab,vold,vcontu,physcon,
+     &              ii,node,trab,inotr,ntrans,co,mi,xkappa,xmach)
                else
                   do node=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                 -ialset(jj+1)
-                  call printoutnodefluid(prlab,v,vold,vcontu,physcon,
-     &              ii,node,trab,inotr,ntrans,co,mi)
+                  call printoutnodefluid(prlab,vold,vcontu,physcon,
+     &              ii,node,trab,inotr,ntrans,co,mi,xkappa,xmach)
                   enddo
                endif
             enddo
@@ -173,14 +169,14 @@
                      call printoutint(prlab,ipkonf,lakonf,sti,eei,
      &                    xstate,ener,mi(1),nstate_,ii,nelem,qfx,
      &                    orab,ielorienf,norien,co,kon,ielmatf,thicke,
-     &                    eme,ielpropf,prop,nelel)
+     &                    eme,ielpropf,prop,nelel,ithermal)
                   elseif(ialset(jj+1).gt.0) then
                      nelem=ialset(jj)
                      nelel=nactdoh(nelem)
                      call printoutint(prlab,ipkonf,lakonf,sti,eei,
      &                    xstate,ener,mi(1),nstate_,ii,nelem,qfx,orab,
      &                    ielorienf,norien,co,kon,ielmatf,thicke,eme,
-     &                    ielpropf,prop,nelel)
+     &                    ielpropf,prop,nelel,ithermal)
                   else
                      do nelem=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                    -ialset(jj+1)
@@ -188,7 +184,7 @@
                         call printoutint(prlab,ipkonf,lakonf,sti,eei,
      &                       xstate,ener,mi(1),nstate_,ii,nelem,
      &                       qfx,orab,ielorienf,norien,co,kon,ielmatf,
-     &                       thicke,eme,ielpropf,prop,nelel)
+     &                       thicke,eme,ielpropf,prop,nelel,ithermal)
                      enddo
                   endif
                enddo

@@ -26,7 +26,7 @@
 !
       implicit none
 !
-      logical radiate_flag,environmentnode
+      logical radiate_flag,environmentnode,surface
 !
       character*1 inpc(*)
       character*3 cavlabel
@@ -52,6 +52,7 @@
       cavlabel='   '
 !
       environmentnode=.false.
+      surface=.false.
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR in radiates: *RADIATE should only be used'
@@ -243,6 +244,7 @@
      &"*RADIATE%")
          endif
          if(((label(1:2).ne.'R1').and.(label(1:2).ne.'R2').and.
+     &       (label(1:2).ne.'R0').and.
      &       (label(1:2).ne.'R3').and.(label(1:2).ne.'R4').and.
      &       (label(1:2).ne.'R5').and.(label(1:2).ne.'R6')).or.
      &      ((label(3:5).ne.'   ').and.(label(3:5).ne.'NU ').and.
@@ -290,15 +292,30 @@
                if(set(i).eq.elset) exit
             enddo
             if(i.gt.nset) then
-               elset(ipos:ipos)=' '
-               write(*,*) '*ERROR in radiates: element set ',elset
-               write(*,*) '       has not yet been defined. '
-               call inputerror(inpc,ipoinpc,iline,
-     &"*RADIATE%")
-               call exit(201)
+!
+!              check for facial surface
+!
+               surface=.true.
+               elset(ipos:ipos)='T'
+               do i=1,nset
+                  if(set(i).eq.elset) exit
+               enddo
+               if(i.gt.nset) then
+                  elset(ipos:ipos)=' '
+                  write(*,*) '*ERROR in radiates: element set '
+                  write(*,*) '       or facial surface ',elset
+                  write(*,*) '       has not yet been defined. '
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*RADIATE%")
+                  call exit(201)
+               endif
             endif
 !
             l=ialset(istartset(i))
+            if(surface) then
+               write(label(2:2),'(i1)') l-10*(l/10)
+               l=l/10
+            endif
             if((lakon(l)(1:2).eq.'CP').or.
      &           (lakon(l)(2:2).eq.'A').or.
      &           (lakon(l)(7:7).eq.'E').or.
@@ -322,6 +339,10 @@
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then
                   l=ialset(j)
+                  if(surface) then
+                     write(label(2:2),'(i1)') l-10*(l/10)
+                     l=l/10
+                  endif
                   call loadaddt(l,label,xmagradi,xmagtemp,nelemload,
      &                 sideload,xload,nload,nload_,iamload,
      &                 iamptemp,iampradi,nam,node,iload)

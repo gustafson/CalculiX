@@ -16,43 +16,26 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine sensitivity_glob(dgdxtot,dgdxtotglob,nobject,ndesi,
-     &  nodedesi,ndirdesi,nk)
-               
+      subroutine sensitivity_glob(dgdx,dgdxglob,nobject,ndesi,
+     &  nodedesi,nk)
 !
 !    prepares the sensitivities for the output in the frd-file      
 !
       implicit none
 !
-      integer nobject,ndesi,nodedesi(*),ndirdesi(*),nk,numobject,
-     &  numnode,numdesvar,i
+      integer nobject,ndesi,nodedesi(*),nk,
+     &  iobject,node,idesvar
 !
-      real*8 dgdxtot(ndesi,nobject),dgdxtotglob(4,nk,nobject)
-!     
-!     Loop over all nodes
-      do numnode=1,nk
-!     Loop over designvariables
-         do numdesvar=1,ndesi
-            if(nodedesi(numdesvar).eq.numnode) then
-!     Loop over all objective functions
-               do numobject=1,nobject    
-!     loop over all coordinates     
-                  do i=1,3
-                     if(nodedesi(numdesvar).eq.nodedesi(numdesvar+
-     &                    i-1)) then
-                        dgdxtotglob(i,numnode,numobject)=
-     &                       dgdxtot(numdesvar+i-1,numobject)
-                     endif
-                  enddo
-               enddo
-               exit
-            endif
+      real*8 dgdx(ndesi,nobject),dgdxglob(2,nk,nobject)
+!
+!     copy the sensitivities in a global node vector
+!
+      do idesvar=1,ndesi
+         node=nodedesi(idesvar)
+         do iobject=1,nobject
+            dgdxglob(1,node,iobject)=dgdx(idesvar,iobject)
          enddo
       enddo
-!      
+!
       return        
       end
-
-
-
-

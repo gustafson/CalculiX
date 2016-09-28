@@ -29,7 +29,7 @@
       integer konl(20),i,j,imat,ncmat_,ntmat_,nope,iperturb,niso,
      &  kode,npmat_,nelcon(2,*),nplicon(0:ntmat_,*),nmethod,id
 !
-      real*8 xl(3,9),elas(21),s(100,100),voldl(3,9),xn(3),dd,
+      real*8 xl(3,9),elas(21),s(60,60),voldl(3,9),xn(3),dd,
      &  elcon(0:ncmat_,ntmat_,*),t0l,t1l,elconloc(21),damp,
      &  plicon(0:2*npmat_,ntmat_,*),plconloc(802),pl(3,9),time,
      &  xiso(200),yiso(200)

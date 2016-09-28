@@ -23,7 +23,7 @@
       implicit none
 !
       character*1 inpc(*)
-      character*132 text
+      character*(*) text
 !
       integer ipoinpc(0:*),iline,i
 !

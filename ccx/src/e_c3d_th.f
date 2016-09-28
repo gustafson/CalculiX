@@ -26,7 +26,7 @@
      &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,springarea,
      &  plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,lakon,
      &  pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon,
-     &  ielprop,prop)
+     &  ielprop,prop,iponoel,inoel)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -56,17 +56,18 @@
      &  ifacew(8,5),intscheme,ipointeri,ipointerj,ncocon(2,*),
      &  nshcon(*),iinc,istep,jltyp,nfield,node,iflag,iscale,ielprop(*),
      &  nplkcon(0:ntmat_,*),nelcon(2,*),npmat_,ncmat_,i2,ipkon(*),
-     &  iemchange,kon(*),mortar,nplicon(0:ntmat_,*),indexe,igauss
+     &  iemchange,kon(*),mortar,nplicon(0:ntmat_,*),indexe,igauss,
+     &  iponoel(*),inoel(2,*)
 !
       real*8 co(3,*),xl(3,26),shp(4,26),xstiff(27,mi(1),*),
-     &  s(100,100),w(3,3),ff(100),shpj(4,26),sinktemp,xs2(3,7),
+     &  s(60,60),w(3,3),ff(60),shpj(4,26),sinktemp,xs2(3,7),
      &  rhcon(0:1,ntmat_,*),dxsj2,temp,press,xloadold(2,*),
      &  orab(7,*),t0(*),t1(*),coords(3),c1,c2,reltime,prop(*),
      &  xl2(3,9),xsj2(3),shp2(7,9),vold(0:mi(2),*),xload(2,*),
-     &  xi,et,ze,xsj,xsjj,sm(100,100),t1l,rho,summass,summ,ttime,time,
+     &  xi,et,ze,xsj,xsjj,sm(60,60),t1l,rho,summass,summ,ttime,time,
      &  sume,factorm,factore,alp,weight,pgauss(3),timeend(2),
      &  cocon(0:6,ntmat_,*),shcon(0:3,ntmat_,*),sph,coconloc(6),
-     &  field,areaj,sax(100,100),ffax(100),coefmpc(*),tl2(8),
+     &  field,areaj,sax(60,60),ffax(60),coefmpc(*),tl2(8),
      &  voldl(0:mi(2),26),springarea(2,*),plkcon(0:2*npmat_,ntmat_,*),
      &  elcon(0:ncmat_,ntmat_,*),elconloc(21),pslavsurf(3,*),
      &  pmastsurf(2,*),clearini(3,9,*),plicon(0:2*npmat_,ntmat_,*)
@@ -213,7 +214,7 @@ c            nope=nope+1
          elseif((lakonl(4:5).eq.'10').or.(lakonl(4:4).eq.'4')) then
             mint3d=15
          elseif((lakonl(4:5).eq.'15').or.(lakonl(4:4).eq.'6')) then
-            mint3d=18
+            mint3d=9
          else
             mint3d=0
          endif
@@ -315,7 +316,9 @@ c            nope=nope+1
 !
                call advecstiff(nope,voldl,ithermal,xl,nelemload,
      &              nelem,nload,lakon,xload,istep,time,ttime,dtime,
-     &              sideload,vold,mi,xloadold,reltime,nmethod,s,iinc)
+     &              sideload,vold,mi,xloadold,reltime,nmethod,s,
+     &              iinc,iponoel,inoel,ielprop,prop,ielmat,shcon,
+     &              nshcon,rhcon,nrhcon,ntmat_,ipkon,kon,cocon,ncocon)
             endif
          elseif(lakonl(1:2).eq.'D ') then
             do i=1,3
@@ -392,10 +395,10 @@ c            nope=nope+1
                ze=gauss3d6(3,kk)
                weight=weight3d6(kk)
             else
-               xi=gauss3d9(1,kk)
-               et=gauss3d9(2,kk)
-               ze=gauss3d9(3,kk)
-               weight=weight3d9(kk)
+               xi=gauss3d8(1,kk)
+               et=gauss3d8(2,kk)
+               ze=gauss3d8(3,kk)
+               weight=weight3d8(kk)
             endif
          endif
 !
@@ -769,7 +772,9 @@ c                read(sideload(id)(2:2),'(i1)') jltyp
                    node=nelemload(2,id)
                    call film(xload(1,id),sinktemp,temp,istep,
      &               iinc,timeend,nelem,i,coords,jltyp,field,nfield,
-     &               sideload(id),node,areaj,vold,mi)
+     &               sideload(id),node,areaj,vold,mi,
+     &               ipkon,kon,lakon,iponoel,inoel,ielprop,prop,ielmat,
+     &               shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon)
                    if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime
                 elseif(sideload(id)(1:1).eq.'R') then

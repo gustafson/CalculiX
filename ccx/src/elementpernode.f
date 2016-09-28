@@ -16,14 +16,15 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine elementpernode(iponoel,inoel,lakon,ipkon,kon,ne)
+      subroutine elementpernode(iponoel,inoel,lakon,ipkon,kon,ne,
+     &       inoelsize)
 !
       implicit none
 !
       character*8 lakon(*)
 !
       integer iponoel(*),inoel(2,*),ipkon(*),kon(*),i,j,ne,
-     &  inoelfree,nope,indexe,node
+     &  inoelfree,nope,indexe,node,inoelsize
 !
 !     determining the elements belonging to the nodes of
 !     the elements
@@ -60,6 +61,10 @@
             inoelfree=inoelfree+1
          enddo
       enddo
+!
+!     size of field inoel
+!
+      inoelsize=inoelfree-1
 !
       return
       end

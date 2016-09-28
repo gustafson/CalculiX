@@ -19,7 +19,7 @@
       subroutine couptempdisps(inpc,textpart,nmethod,
      &  iperturb,isolver,
      &  istep,istat,n,tinc,tper,tmin,tmax,idrct,ithermal,iline,ipol,
-     &  inl,ipoinp,inp,ipoinpc,alpha,ctrl,iexpl,tincf,ttime)
+     &  inl,ipoinp,inp,ipoinpc,alpha,ctrl,iexpl,tincf,ttime,nener)
 !
 !     reading the input deck: *COUPLED TEMPERATURE-DISPLACEMENT
 !
@@ -43,7 +43,7 @@
 !
       integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,
      &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
-     &  iexpl
+     &  iexpl,nener
 !
       real*8 tinc,tper,tmin,tmax,alpha,ctrl(*),tincf,ttime
 !
@@ -219,6 +219,8 @@ c            tincf=1.d-2
       endif
 !
       if(timereset)ttime=ttime-tper
+!
+      if(nmethod.eq.4) nener=1
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

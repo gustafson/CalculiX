@@ -18,7 +18,8 @@
 !     
       subroutine absolute_relative(node1,node2,nodem,nelem,lakon,
      &     kon,ipkon, nactdog,identity,ielprop,prop,iflag,v,
-     &     xflow,f,nodef,idirf,df,cp,R,physcon,numf,set,mi,iaxial)
+     &     xflow,f,nodef,idirf,df,cp,R,physcon,numf,set,mi,ttime,time,
+     &     iaxial)
 !     
 !     orifice element
 !
@@ -37,7 +38,7 @@
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,
      &     p1,p2,T1,T2,cp,physcon(*),km1,kp1,kdkm1,
      &     kdkp1,u,pi,Qred_crit,pt1,pt2,Tt1,Tt2,ct,fact,
-     &     Cp_cor
+     &     Cp_cor,ttime,time
 !     
       if (iflag.eq.0) then
          identity=.true.
@@ -412,23 +413,19 @@
          endif
 
                   write(1,*) ''
-         write(1,55) 'In line',int(nodem/100),' from node',node1,
-     &' to node', node2,':   air massflow rate=',xflow,'kg/s'
-!     &,', oil massflow rate=',xflow_oil,'kg/s'
- 55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
+         write(1,55) ' from node',node1,
+     &' to node', node2,':   air massflow rate=',xflow,''
+ 55      FORMAT(1X,A,I6,A,I6,A,e11.4,A,A,e11.4,A)
 
-!         if(inv.eq.1) then
             write(1,56)'       Inlet node ',node1,':     Tt1= ',Tt1,
-     &           'K, Ts1= ',Tt1,'K, Pt1= ',Pt1/1E5,
-     &           'Bar'
-            write(1,*)'             element T    ',set(numf)(1:20)
-            write(1,57)'             u= ',u,'m/s ,Ct= ',Ct,'m/s'
+     &           ', Ts1= ',Tt1,', Pt1= ',Pt1
+            write(1,*)'             Element ',nelem,lakon(nelem)
+            write(1,57)'             u= ',u,' ,Ct= ',Ct,''
             write(1,56)'       Outlet node ',node2,':    Tt2= ',T2,
-     &           'K, Ts2= ',Tt2,'K, Ptt2= ',Pt2/1e5,
-     &           'Bar'
+     &           ', Ts2= ',Tt2,', Pt2= ',Pt2
 !     
- 56      FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A,f9.5)  
- 57      FORMAT(1X,A,f6.2,A,f6.2,A)
+ 56      FORMAT(1X,A,I6,A,e11.4,A,e11.4,A,e11.4,A,e11.4)  
+ 57      FORMAT(1X,A,e11.4,A,e11.4,A)
 
       endif
 !     

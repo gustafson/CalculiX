@@ -332,7 +332,7 @@
                v(3,node2)=hk
                if(h2.gt.hk) h2=hk
 !
-               nelemdown=int(prop(index+5))
+               nelemdown=nint(prop(index+5))
                h3=v(2,kon(ipkon(nelemdown)+3))
                call hns(b,theta,rho,dg,sqrts0,xflow,h2,h2ns)
                if(h3.lt.h2ns) then
@@ -367,7 +367,7 @@ c                  write(30,*)'h1= ',h1,'h2= ',h2,'h3= ',h3,'h2ns= ',h2ns
 !              sluice opening (element streamdown of sluice gate)
 !              0-SG-1-SO-2
 !
-               nelemup=int(prop(index+6))
+               nelemup=nint(prop(index+6))
                node0=kon(ipkon(nelemup)+1)
                h0=v(2,node0)
                h1=prop(ielprop(nelemup)+3)
@@ -436,7 +436,7 @@ c                  write(30,*)'h0= ',h0,'h1= ',h1,'h2= ',h2,'h1ns= ',h1ns
 !              weir
 !              1-WE-2-WO-3
 !
-               nelemdown=int(prop(index+5))
+               nelemdown=nint(prop(index+5))
                h3=v(2,kon(ipkon(nelemdown)+3))
 !
 !              default depth for weir is hk
@@ -476,7 +476,7 @@ c                  write(30,*)'h1= ',h1,'h2= ',h2,'h3= ',h3,'hk= ',hk
 !              weir opening (element streamdown of weir)
 !              0-WE-1-WO-2
 !
-               nelemup=int(prop(index+6))
+               nelemup=nint(prop(index+6))
                node0=kon(ipkon(nelemup)+1)
                h0=v(2,node0)
 !
@@ -522,7 +522,7 @@ c                  write(30,*)'h0= ',h0,'h1= ',h1,'h2= ',h2,'hk= ',hk
                v(3,node2)=hk
 !     
                if(h1.gt.hk) then
-                  nelemdown=int(prop(index+8))
+                  nelemdown=nint(prop(index+8))
                   h3=v(2,kon(ipkon(nelemdown)+3))
                   if(h3.le.hk) then
 !     
@@ -557,7 +557,7 @@ c                  write(30,*)'h1= ',h1,'h2= ',h2,'h3= ',h3
 !     
 c                  write(30,*) 'DS:  front/front fake equation '
 c                  write(30,*)'h1= ',h1,'h2= ',h2
-                  nelemup=int(prop(index+6))
+                  nelemup=nint(prop(index+6))
                   numf=1
                   nodef(1)=kon(ipkon(nelemup)+2)
                   idirf(1)=3
@@ -573,7 +573,7 @@ c                  write(30,*)'h1= ',h1,'h2= ',h2
                call hcrit(xflow,rho,b,theta,dg,sqrts0,hk)
                v(3,node2)=hk
 !
-               nelemup=int(prop(index+6))
+               nelemup=nint(prop(index+6))
                node0=kon(ipkon(nelemup)+1)
                h0=v(2,node0)
 !
@@ -644,7 +644,7 @@ c                  write(30,*) 'h1= ',h1,'h2= ',h2,'h1ns= ',h1ns
 !
 !                    fake equation
 !                     
-                     nelemup=int(prop(index+6))
+                     nelemup=nint(prop(index+6))
                      nodesg=kon(ipkon(nelemup)+2)
                      numf=1
                      nodef(1)=nodesg
@@ -887,13 +887,13 @@ c     &              'liquidchannel: jump in element,hk ',nelem,hk
                   indexup=ielprop(nelemup)
                   if(lakon(nelemup)(6:7).eq.'SG') then
                      eta=prop(indexup+4)
-                     prop(indexup+7)=nelem+0.5d0
+                     prop(indexup+7)=nelem
                   elseif(lakon(nelemup)(6:7).eq.'WE') then
                      eta=prop(indexup+4)
-                     prop(indexup+7)=nelem+0.5d0
+                     prop(indexup+7)=nelem
                   elseif(lakon(nelemup)(6:7).eq.'DS') then
                      eta=prop(indexup+7)
-                     prop(indexup+9)=nelem+0.5d0
+                     prop(indexup+9)=nelem
                   endif
 !
 !                 determining h3, h4 and derivatives
@@ -1128,15 +1128,15 @@ c         write(30,*) 'iflag=3, nelem',nelem,lakon(nelem)
          if(lakon(nelemup)(6:7).eq.'SG') then
             eta=prop(indexup+4)
             prop(indexup+4)=0.5d0
-            prop(indexup+7)=0.5d0
+            prop(indexup+7)=0.d0
          elseif(lakon(nelemup)(6:7).eq.'WE') then
             eta=prop(indexup+4)
             prop(indexup+4)=0.5d0
-            prop(indexup+7)=0.5d0
+            prop(indexup+7)=0.d0
          elseif(lakon(nelemup)(6:7).eq.'DS') then
             eta=prop(indexup+7)
             prop(indexup+7)=0.5d0
-            prop(indexup+9)=0.5d0
+            prop(indexup+9)=0.d0
          endif
 !     
 !     element properties

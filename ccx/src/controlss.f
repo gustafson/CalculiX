@@ -59,6 +59,19 @@
             ctrl(24)=1.d-5
             ctrl(25)=1.d-3
             ctrl(26)=1.d-8
+            ctrl(27)=1.d30
+            ctrl(28)=1.5d0
+            ctrl(29)=0.25d0
+            ctrl(30)=1.01d0
+            ctrl(31)=1.d0
+            ctrl(32)=1.d0
+            ctrl(33)=5.d-7
+            ctrl(34)=5.d-7
+            ctrl(35)=5.d-7
+            ctrl(36)=5.d-7
+            ctrl(37)=5.d-7
+            ctrl(38)=5.d-7
+            ctrl(39)=5.d-7
             write(*,*)
             write(*,*) 
      &         '*INFO: control parameters reset to default'
@@ -129,12 +142,30 @@
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*CONTROLS%")
             enddo
-            write(*,*) '*INFO: field control parameters set to:'
+            write(*,*) '*INFO: line search control parameters set to:'
             write(*,*) '       nls = ',ctrl(28)
             write(*,*) '       smaxls = ',ctrl(29)
             write(*,*) '       sminls = ',ctrl(30)
             write(*,*) '       fls = ',ctrl(31)
             write(*,*) '       etls = ',ctrl(32)
+            exit
+!
+         elseif(textpart(i)(1:18).eq.'PARAMETERS=NETWORK') then
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+            do j=1,n
+               read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+32)
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*CONTROLS%")
+            enddo
+            write(*,*) '*INFO: network control parameters set to:'
+            write(*,*) '       c1t = ',ctrl(33)
+            write(*,*) '       c1f = ',ctrl(34)
+            write(*,*) '       c1p = ',ctrl(35)
+            write(*,*) '       c2t = ',ctrl(36)
+            write(*,*) '       c2f = ',ctrl(37)
+            write(*,*) '       c2p = ',ctrl(38)
+            write(*,*) '       c2a = ',ctrl(39)
             exit
          else
             write(*,*) 

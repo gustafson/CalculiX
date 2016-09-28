@@ -29,9 +29,9 @@ void frd_se(double *co,ITG *nk,double *stn,ITG *inum,ITG *nmethod,
 	 ITG *istep,ITG *iinc,ITG *mode,ITG *noddiam,char *description,
 	 ITG *mi,ITG *ngraph,ITG *ne,double *cs,char *set,ITG *nset,
 	 ITG *istartset,ITG *iendset,ITG *ialset,double *thicke,
-	 char *jobnamec,char *output,double *dgdxtotglob,
-	 ITG *numobject){
-
+	 char *jobnamec,char *output,double *dgdxglob,ITG *iobject,
+	 char *objectset){
+	 
      /* stores the results in frd format
 
      iselect selects which nodes are to be stored:
@@ -59,8 +59,8 @@ void frd_se(double *co,ITG *nk,double *stn,ITG *inum,ITG *nmethod,
       ip8=8,ip9=9,ip10=10,ip11=11,ip12=12,imat,nelout,
       nterms,nout,noutplus,noutmin,mt=mi[1]+1;
 
-  ITG ncomptensor=4,ifieldtensor[4]={1,1,1,1},icomptensor[4]={0,1,2,4},
-      nfieldtensor[2]={4,0};
+  ITG ncomptensor=2,ifieldtensor[4]={1,1},icomptensor[2]={0,1},
+      nfieldtensor[2]={2,0};
       
   int iw;
 
@@ -94,37 +94,41 @@ void frd_se(double *co,ITG *nk,double *stn,ITG *inum,ITG *nmethod,
 	  if(inum[i]==0) continue;
 	  nout++;
 	  if(inum[i]>0) noutplus++;
-	  if(inum[i]<0) noutmin++;
+	  if(inum[i]<0) noutmin++;   
       }
   }else{
       nout=*nk;
-  }
+  }  
   
   nkcoords=*nk;
   
   /* storing the sensitivities in the nodes */
   
-  //if(strcmp1(filab,"SEN ")==0){  
-      iselect=1;
-	  
-	  frdset(filab,set,&iset,istartset,iendset,ialset,
-		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-		 ngraph);
-	  
-	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
-	  
-	  fprintf(f1," -4  SEN         4    1\n");
-	  fprintf(f1," -5  SENDX       1    2    1    0\n");
-	  fprintf(f1," -5  SENDY       1    2    2    0\n");
-	  fprintf(f1," -5  SENDZ       1    2    3    0\n");
-	  fprintf(f1," -5  SENNORM     1    2    4    0\n");
-	  
-	  frdselect(dgdxtotglob,dgdxtotglob,&iset,&nkcoords,inum,m1,istartset,
-		    iendset,ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,m2,f1,output,m3);
- // }
+  iselect=1;
+  
+  frdset(&filab[4002],set,&iset,istartset,iendset,ialset,
+	 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	 ngraph);
+  
+  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+	    &noutloc,description,kode,nmethod,f1,output,istep,iinc); 
+  
+  if(strcmp1(&objectset[*iobject*243],"SHAPEENERGY")==0){
+      fprintf(f1," -4  SENENER     2    1\n");
+  }else if(strcmp1(&objectset[*iobject*243],"MASS")==0){
+      fprintf(f1," -4  SENMASS     2    1\n");
+  }else if(strcmp1(&objectset[*iobject*243],"DISPLACEMENT")==0){
+      fprintf(f1," -4  SENDISP     2    1\n");
+  }else if(strcmp1(&objectset[*iobject*243],"EIGENFREQUENCY")==0){
+      fprintf(f1," -4  SENFREQ     2    1\n");
+  }
 
+  fprintf(f1," -5  DFDN        1    1    1    0\n");
+  fprintf(f1," -5  DFDNFIL     1    1    2    0\n");
+  
+  frdselect(&dgdxglob[2**nk**iobject],dgdxglob,&iset,&nkcoords,inum,m1,istartset,
+	    iendset,ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+	    nfieldtensor,&iselect,m2,f1,output,m3);
   
   fclose(f1);
   return;

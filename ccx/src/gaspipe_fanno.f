@@ -19,7 +19,8 @@
       subroutine gaspipe_fanno(node1,node2,nodem,nelem,lakon,kon,
      &        ipkon,nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,
-     &        shcon,nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,iaxial)
+     &        shcon,nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,
+     &        iaxial)
 !     
 !     pipe with friction losses (Fanno Formulas) GAPF 
 !
@@ -41,7 +42,7 @@
      &     p1,p2,T1,T2,Tt1,Tt2,pt1,pt2,cp,physcon(3),p2p1,km1,dvi,
      &     kp1,kdkm1,reynolds,pi,e,lambda,lld,kdkp1,T2dTt2,
      &     T1dTt1,X_t1dTt1,X_t2dTt2,X2_den,X1_den,
-     &     X1,X2,B1,B2,C1,C2,tdkp1,
+     &     X1,X2,B1,B2,C1,C2,tdkp1,ttime,time,
      &     pt2zpt1,ks,form_fact,xflow_oil,Tt1dT1,Tt2dT2,
      &     Pt2zPt1_c,qred_crit,l_neg,Qred,
      &     expon1,expon2,cte,term1,term2,term3,term4,term5,term6,
@@ -85,15 +86,15 @@
          endif
          form_fact=prop(index+5)
          xflow_oil=prop(index+6)
-         k_oil=int(prop(index+7))
+         k_oil=nint(prop(index+7))
 !
          if((lakon(nelem)(2:6).eq.'GAPFF').and.
      &        (lakon(nelem)(2:7).ne.'GAPFF2')) then
 !            
             icase=0
-            nodea=int(prop(index+1))
-            nodeb=int(prop(index+2))
-c            iaxial=int(prop(index+3))
+            nodea=nint(prop(index+1))
+            nodeb=nint(prop(index+2))
+c            iaxial=nint(prop(index+3))
             radius=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &           co(1,nodea)-vold(1,nodea))**2)
 !
@@ -115,15 +116,15 @@ c            endif
             ks=prop(index+5)
             form_fact=prop(index+6)
             xflow_oil=prop(index+7)
-            k_oil=int(prop(index+8))
+            k_oil=nint(prop(index+8))
 !
          elseif (lakon(nelem)(2:7).eq.'GAPFF2') then
             write(*,*) nelem,lakon(nelem)(1:6)
             icase=0
-            nodea=int(prop(index+1))
-            nodeb=int(prop(index+2))
-            nodec=int(prop(index+3))
-c            iaxial=int(prop(index+4))
+            nodea=nint(prop(index+1))
+            nodeb=nint(prop(index+2))
+            nodec=nint(prop(index+3))
+c            iaxial=nint(prop(index+4))
             radius=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &           co(1,nodea)-vold(1,nodea))**2)
             initial_radius=dsqrt((co(1,nodeb)-co(1,nodea))**2)
@@ -145,7 +146,7 @@ c            endif
             ks=prop(index+5)
             form_fact=prop(index+6)           
             xflow_oil=prop(index+7)
-            k_oil=int(prop(index+8))
+            k_oil=nint(prop(index+8))
          endif
 !
          pt1=v(2,node1)
@@ -255,14 +256,14 @@ c            endif
          endif
          form_fact=prop(index+5)
          xflow_oil=prop(index+6)
-         k_oil=int(prop(index+7))
+         k_oil=nint(prop(index+7))
 !
                   if((lakon(nelem)(2:6).eq.'GAPFF').and.
      &        (lakon(nelem)(2:7).ne.'GAPFF2')) then
             icase=0
-            nodea=int(prop(index+1))
-            nodeb=int(prop(index+2))
-c            iaxial=int(prop(index+3))
+            nodea=nint(prop(index+1))
+            nodeb=nint(prop(index+2))
+c            iaxial=nint(prop(index+3))
             radius=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &           co(1,nodea)-vold(1,nodea))**2)
             initial_radius=dsqrt((co(1,nodeb)-co(1,nodea))**2)
@@ -282,14 +283,14 @@ c            endif
             ks=prop(index+5)
             form_fact=prop(index+6)          
             xflow_oil=prop(index+7)
-            k_oil=int(prop(index+8))
+            k_oil=nint(prop(index+8))
 !
          elseif (lakon(nelem)(2:7).eq.'GAPFF2') then
             icase=0
-            nodea=int(prop(index+1))
-            nodeb=int(prop(index+2))
-            nodec=int(prop(index+3))
-c            iaxial=int(prop(index+4))
+            nodea=nint(prop(index+1))
+            nodeb=nint(prop(index+2))
+            nodec=nint(prop(index+3))
+c            iaxial=nint(prop(index+4))
             radius=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &           co(1,nodea)-vold(1,nodea))**2)
             initial_radius=dsqrt((co(1,nodeb)-co(1,nodea))**2)
@@ -311,7 +312,7 @@ c            endif
             ks=prop(index+5)
             form_fact=prop(index+6)         
             xflow_oil=prop(index+7)
-            k_oil=int(prop(index+8))
+            k_oil=nint(prop(index+8))
          endif
 !
          pt1=v(2,node1)
@@ -738,7 +739,7 @@ c            endif
 !
 !     output
 !
-      elseif((iflag.eq.3).or.(iflag.eq.4)) then
+      elseif(iflag.eq.3) then
 !
          pi=4.d0*datan(1.d0)
          e=2.7182818d0
@@ -770,7 +771,7 @@ c            endif
          endif
          form_fact=prop(index+5)
          xflow_oil=prop(index+6)
-         k_oil=int(prop(index+7))
+         k_oil=nint(prop(index+7))
 !
          pt1=v(2,node1)
          pt2=v(2,node2)
@@ -899,19 +900,17 @@ c            endif
 !     
          M1=dsqrt(2/km1*((Tt1/T1)-1))
          M2=dsqrt(2/km1*((Tt2/T2)-1))
-!
-         if(iflag.eq.3) then
 !     
             write(1,*) ''
-            write(1,55) 'In line ',int(nodem/1000),' from node ',node1,
+            write(1,55) ' from node ',node1,
      &           ' to node ', node2,':   air massflow rate = ',xflow,
-     &           ' kg/s',' , oil massflow rate = ',xflow_oil,' kg/s'
+     &           ' , oil massflow rate = ',xflow_oil
 !     
             if(inv.eq.1) then
                write(1,53)'       Inlet node ',node1,' :    Tt1 = ',Tt1,
-     &              ' K, Ts1 = ',T1,' K , Pt1 = ',Pt1/1E5,
-     &              ' Bar , M1 = ',M1
-               write(1,*)'             Element W    ',set(numf)(1:30)
+     &              ' , Ts1 = ',T1,'  , Pt1 = ',Pt1,
+     &              ' ,M1 = ',M1
+               write(1,*)'             Element ',nelem,lakon(nelem)
                write(1,57)'             eta = ',dvi,' kg/(m*s) , Re = '
      &              ,reynolds
                write(1,58)'             PHI = ',phi,' , LAMBDA = ',
@@ -920,14 +919,14 @@ c            endif
      &              phi*lambda*l/d
                write(1,53)'       Outlet node ',node2,' :    Tt2 = ',
      &              Tt2,
-     &              ' K , Ts2 = ',T2,' K , Pt2 = ',Pt2/1e5,
-     &              ' Bar , M2 = ',M2
+     &              '  , Ts2 = ',T2,'  , Pt2 = ',Pt2,
+     &              ' , M2 = ',M2
 !    
             else if(inv.eq.-1) then
                write(1,53)'       Inlet node ',node2,':    Tt1= ',Tt1,
-     &              ' K, Ts1= ',T1,' K, Pt1= ',Pt1/1E5,
-     &              ' Bar, M1= ',M1
-               write(1,*)'             element W    ',set(numf)(1:30)
+     &              ' , Ts1= ',T1,' , Pt1= ',Pt1,
+     &              ' , M1= ',M1
+               write(1,*)'             Element ',nelem,lakon(nelem)
                write(1,57)'             eta = ',dvi,' kg/(m*s) , Re = '
      &              ,reynolds
                write(1,58)'             PHI = ',phi,' , LAMBDA = ',
@@ -936,42 +935,20 @@ c            endif
      &              phi*lambda*l/d
                write(1,53)'       Outlet node ',node1,' :    Tt2 = ',
      &              Tt2,
-     &              ' K , Ts2 = ',T2,' K , Pt2 =',Pt2/1e5,
-     &              ' Bar , M2 = ',M2
+     &              '  , Ts2 = ',T2,'  , Pt2 =',Pt2,
+     &              ' , M2 = ',M2
             endif
-!     
-         else if(iflag.eq.4) then
-!     
-!     Write the main information about the element
-!     
-            write(1,*) ''
-            write(1,78)'Element nr.= ',nelem,', type=Gas Pipe Fanno',
-     &           ', name= ',set(numf)(1:30)
-            write(1,79)'Nodes: ',node1,',',nodem,',',node2
-!     
-            write(1,80)'Inlet: Tt1= ',Tt1,
-     &           ', pt1= ',pt1,', M1= ',M1
-            write(1,77)'mass flow = ',xflow,', kappa = ',kappa,
-     &           ', lambda= ',lambda,
-     &           ', phi= ',phi,
-     &           ', zeta= ',phi*lambda*l/d,
-     &           ', eta= ',dvi,
-     &           ', Re= ',reynolds
-            write(1,80)'Outlet: Tt2= ',Tt2,
-     &           ', pt2= ',pt2,', M2= ',M2
-!     
-         endif
       endif
 !     
- 55   format(1X,a,i6.3,a,i6.3,a,i6.3,a,f9.6,a,a,f9.6,a)
- 53   format(1X,a,i6.3,a,f6.1,a,f6.1,a,f9.5,a,f8.5)
- 57   format(1X,a,g9.4,a,g11.4)
- 58   format(1X,a,f10.5,a,f10.5,a,f10.5,a,f10.5)
- 77   format(3x,a,f10.6,a,f10.2,a,f10.6,a,f10.6,a,f10.6,a,e10.4
-     &     ,a,f10.2)	 
+ 55   format(1X,a,i6,a,i6,a,e11.4,a,a,e11.4,a)
+ 53   format(1X,a,i6,a,e11.4,a,e11.4,a,e11.4,a,e11.4)
+ 57   format(1X,a,e11.4,a,e11.4)
+ 58   format(1X,a,e11.4,a,e11.4,a,e11.4,a,e11.4)
+ 77   format(3x,a,e11.1,a,e11.4,a,e11.4,a,e11.4,a,e11.4,a,e11.4
+     &     ,a,e11.4)	 
  78   format(a,i4,a,a,a)
  79   format(3X,a,i4,a,i4,a,i4)
- 80   format(3x,a,f10.6,a,f10.2,a,f10.6)
+ 80   format(3x,a,e11.4,a,e11.4,a,e11.4)
 !     
       xflow=xflow/iaxial
       df(3)=df(3)*iaxial

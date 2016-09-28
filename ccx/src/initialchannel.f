@@ -28,7 +28,8 @@
      &     nactdog,ndirboun,nodeboun,xbounact,
      &     ielmat,ntmat_,shcon,nshcon,physcon,ipiv,nteq,
      &     rhcon,nrhcon,ipobody,ibody,xbodyact,co,nbody,network,
-     &     iin_abs,vold,set,istep,iit,mi,ineighe,ilboun)
+     &     iin_abs,vold,set,istep,iit,mi,ineighe,ilboun,ttime,
+     &     time,iaxial)
 !     
       implicit none
 !     
@@ -45,13 +46,14 @@
      &     nrhs,info,idof1,idof2,nteq,nrhcon(*),ipobody(2,*),ibody(3,*),
      &     nbody,numf,network,iin_abs,icase,index2,index1,nelem1,nelem2,
      &     node11,node21,node12,node22,istep,iit,ineighe(*),
-     &     ilboun(*),nelemup,k,node2up,idir
+     &     ilboun(*),nelemup,k,node2up,ider,iaxial
 !     
       real*8 ac(nteq,nteq), bc(nteq),prop(*),shcon(0:3,ntmat_,*),
      &     f,df(5),xflow,xbounact(*),v(0:mi(2),*),cp,r,tg1,
      &     tg2,gastemp,physcon(*),pressmin,dvi,rho,g(3),z1,z2,
      &     rhcon(0:1,ntmat_,*),co(3,*),xbodyact(7,*),kappa,
-     &     a,Tt,Pt,Ts,pressmax,constant,vold(0:mi(2),*),href
+     &     a,Tt,Pt,Ts,pressmax,constant,vold(0:mi(2),*),href,
+     &     ttime,time
 !
       kflag=1
 !
@@ -308,7 +310,8 @@
                call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &              nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &              nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,
-     &              vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi)
+     &              vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,
+     &              ttime,time,iaxial)
 !     
                if(dabs(xflow).gt.1.d-30) exit
             enddo
@@ -386,7 +389,8 @@
                call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &              nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &              nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,
-     &              vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi)
+     &              vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,
+     &              ttime,time,iaxial)
 !     
             enddo
 !     
@@ -406,7 +410,7 @@
                if((node1.eq.0).or.(node2.eq.0)) cycle
 !     
                index=ielprop(nelem)
-               nelemup=int(prop(index+6))
+               nelemup=nint(prop(index+6))
                node2up=kon(ipkon(nelemup)+3)
                href=0.9d0*v(2,node2up)
                if(nactdog(2,node1).ne.0) 

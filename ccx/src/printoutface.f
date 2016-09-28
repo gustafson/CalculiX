@@ -18,7 +18,8 @@
 !
       subroutine printoutface(co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
      &  cocon,ncocon,icompressible,istartset,iendset,ipkon,lakon,kon,
-     &  ialset,prset,ttime,nset,set,nprint,prlab,ielmat,mi,time)
+     &  ialset,prset,ttime,nset,set,nprint,prlab,ielmat,mi,
+     &  ithermal,nactdoh,icfd)
 !
 !     calculation and printout of the lift and drag forces
 !
@@ -34,10 +35,10 @@
       integer konl(20),ifaceq(8,6),nelem,ii,nprint,i,j,i1,i2,j1,
      &  ncocon(2,*),k1,jj,ig,nrhcon(*),nshcon(*),ntmat_,nope,nopes,imat,
      &  mint2d,ifacet(6,4),ifacew(8,5),iflag,indexe,jface,istartset(*),
-     &  iendset(*),ipkon(*),kon(*),iset,ialset(*),nset,ipos,
-     &  mi(*),ielmat(mi(3),*)
+     &  iendset(*),ipkon(*),kon(*),iset,ialset(*),nset,ipos,ithermal,
+     &  mi(*),ielmat(mi(3),*),nactdoh(*),icfd,nelemcfd
 !
-      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,f(0:3),time,
+      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,f(0:3),
      &  vkl(0:3,3),rhcon(0:1,ntmat_,*),t(3,3),div,shcon(0:3,ntmat_,*),
      &  voldl(0:mi(2),20),cocon(0:6,ntmat_,*),xl2(3,8),xsj2(3),
      &  shp2(7,8),vold(0:mi(2),*),xi,et,xsj,temp,xi3d,et3d,ze3d,weight,
@@ -87,7 +88,7 @@
                   f(i)=0.d0
                enddo
 !
-               write(5,120) faset(1:ipos-2),ttime+time
+               write(5,120) faset(1:ipos-2),ttime
  120           format(
      &            ' surface stress at the integration points for set ',
      &            A,' and time ',e14.7)
@@ -101,7 +102,7 @@
 !              initialisierung of the flux
 !     
                f(0)=0.d0
-               write(5,121) faset(1:ipos-2),ttime+time
+               write(5,121) faset(1:ipos-2),ttime
  121           format(' heat flux at the integration points for set ',
      &                A,' and time ',e14.7)
                write(5,*)
@@ -123,9 +124,20 @@
 !     
                nelem=int(jface/10.d0)
                ig=jface-10*nelem
-               lakonl=lakon(nelem)
-               indexe=ipkon(nelem)
-               imat=ielmat(1,nelem)
+c               write(*,*) 'printoutface elem ig ',nelem,ig
+!
+!              for CFD calculations the elements were renumbered
+!
+               if(icfd.eq.1) then
+                  nelemcfd=nactdoh(nelem)
+                  indexe=ipkon(nelemcfd)
+                  lakonl=lakon(nelemcfd)
+                  imat=ielmat(1,nelemcfd)
+               else
+                  indexe=ipkon(nelem)
+                  lakonl=lakon(nelem)
+                  imat=ielmat(1,nelem)
+               endif
 !     
                if(lakonl(4:4).eq.'2') then
                   nope=20
@@ -167,6 +179,7 @@
 !     
                do i=1,nope
                   konl(i)=kon(indexe+i)
+c                  write(*,*) 'printoutface konl ',i,konl(i)
                enddo
 !     
 !     computation of the coordinates of the local nodes
@@ -175,6 +188,7 @@
                   do j=1,3
                      xl(j,i)=co(j,konl(i))
                   enddo
+c               write(*,*) 'printoutface xl ',i,konl(i),xl(1,i)
                enddo
 !     
 !     temperature, velocity and auxiliary variables
@@ -276,6 +290,10 @@
                      coords(j1)=0.d0
                      do i1=1,nopes
                         coords(j1)=coords(j1)+shp2(4,i1)*xl2(j1,i1)
+c                        if(j1.eq.1) then
+c                           write(*,*) 'printoutface ',coords(j1),
+c     &                       shp2(4,i1),xl2(j1,i1)
+c                        endif
                      enddo
                   enddo
 !     
@@ -354,8 +372,8 @@
 !     material data (density, dynamic viscosity, heat capacity and
 !     conductivity)
 !     
-                     call materialdata_dvi(imat,ntmat_,temp,shcon,
-     &                    nshcon,dvi)
+                     call materialdata_dvi(shcon,nshcon,imat,dvi,temp,
+     &                     ntmat_,ithermal)
 !     
 !     determining the stress 
 !     
@@ -418,14 +436,14 @@
 !
             if(prlab(ii)(1:4).eq.'DRAG') then
                write(5,*)
-               write(5,122) faset(1:ipos-2),ttime+time
+               write(5,122) faset(1:ipos-2),ttime
  122           format(' total surface force (fx,fy,fz) for set ',A,
      &              ' and time ',e14.7)
                write(5,*)
                write(5,'(1p,3(1x,e13.6))') (f(j),j=1,3)
             else
                write(5,*)
-               write(5,123) faset(1:ipos-2),ttime+time
+               write(5,123) faset(1:ipos-2),ttime
  123           format(' total surface flux (q) for set ',A,
      &              ' and time ',e14.7)
                write(5,*)

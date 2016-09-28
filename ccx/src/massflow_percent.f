@@ -19,7 +19,7 @@
       subroutine massflow_percent(node1,node2,nodem,nelem,lakon,kon,
      &        ipkon,nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,iaxial)
+     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,iaxial)
 !     
 !     partial massflow  element
 !
@@ -36,15 +36,11 @@
      &     inv,ipkon(*),kon(*),number,kgas,iaxial,
      &     nodea,nodeb,mi(*),i,itype,nodemup,
      &     nrhcon(*),ntmat_,nshcon(*)
-!
-      real*4 ofvidg
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,a,d,xl,
      &     p1,p2,T1,physcon(3),pi,xflow_oil,T2,co(3,*),vold(0:mi(2),*),
-     &     xflow_sum,percent_xflow,cp,dvi,pt1,pt2,Tt1,Tt2,
+     &     xflow_sum,percent_xflow,cp,dvi,pt1,pt2,Tt1,Tt2,ttime,time,
      &     shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*)
-!
-      external ofvidg
 !
       pi=4.d0*datan(1.d0) 
   
@@ -66,8 +62,8 @@
          xflow_sum=0
 !         
          do i=2,10 
-            if(int(prop(index+i)).ne.0) then
-               nodemup=kon(ipkon(int(prop(index+i)))+2)
+            if(nint(prop(index+i)).ne.0) then
+               nodemup=kon(ipkon(nint(prop(index+i)))+2)
                if(v(1,nodemup).gt.0)then         
                   xflow_sum=xflow_sum+v(1,nodemup)*iaxial
                endif
@@ -87,9 +83,9 @@
          percent_xflow=prop(index+1)
          xflow_sum=0
          do i=2,10
-            nodemup=kon(ipkon(int(prop(index+i)))+2)
-            if(int(prop(index+i)).ne.0) then
-               nodemup=kon(ipkon(int(prop(index+i)))+2)
+            nodemup=kon(ipkon(nint(prop(index+i)))+2)
+            if(nint(prop(index+i)).ne.0) then
+               nodemup=kon(ipkon(nint(prop(index+i)))+2)
                if(v(1,nodemup).gt.0)then        
                   xflow_sum=xflow_sum+v(1,nodemup)*iaxial
                endif
@@ -135,28 +131,28 @@
             xflow_oil=0
 !
             write(1,*) ''
-            write(1,55) 'In line ',int(nodem/1000),' from node ',node1,
+            write(1,55) ' from node ',node1,
      &           ' to node ', node2,' :   air massflow rate = '
-     &           ,inv*xflow,' kg/s',
-     &           ', oil massflow rate = ',xflow_oil,' kg/s'
- 55         format(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
+     &           ,inv*xflow,
+     &           ', oil massflow rate = ',xflow_oil
+ 55         format(1X,A,I6,A,I6,A,e11.4,A,A,e11.4,A)
 !            
             write(1,56)'       Inlet node ',node1,' :   Tt1 = ',Tt1,
-     &           ' K , Ts1 = ',Tt1,' K , Pt1 = ',Pt1/1E5, ' Bar'
+     &           '  , Ts1 = ',Tt1,'  , Pt1 = ',Pt1
 !            
-            write(1,*)'             Element PMASS ',set(numf)(1:30)
+            write(1,*)'             Element ',nelem,lakon(nelem)
             write(1,57)'        Massflow upstream = ',xflow_sum,
      &        ' [kg/s]'
             write(1,58)'        Massflow fraction = ', percent_xflow
             write(1,56)'       Outlet node ',node2,':    Tt2=',Tt2,
-     &           'K, Ts2=',Tt2,'K, Pt2=',Pt2/1e5, 'Bar'
+     &           ', Ts2=',Tt2,', Pt2=',Pt2
 !            
          endif
       endif
 !     
- 56   format(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A)
- 57   format(1X,A,G9.4,A)
- 58   format(1X,A,G9.4)
+ 56   format(1X,A,I6,A,e11.4,A,e11.4,A,e11.4,A)
+ 57   format(1X,A,e11.4,A)
+ 58   format(1X,A,e11.4)
 !     
       xflow=xflow/iaxial
       df(3)=df(3)*iaxial

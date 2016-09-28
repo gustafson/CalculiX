@@ -32,7 +32,8 @@
 !
       integer mint3d,npropstart,jj,kk
 !
-      real*8 prop(*),xi,et,ze,weight,ratio,ratio2,dtheta,theta,r
+      real*8 prop(*),xi,et,ze,weight,ratio,ratio2,dtheta,theta,r,
+     &  t1,t2,t3,t4,a,b
 !
       intent(in) lakonl,npropstart,prop,
      &  kk
@@ -72,6 +73,98 @@
          et=r*dcos(theta)
          ze=r*dsin(theta)
          weight=dtheta*(1.d0-ratio2)/2.d0
+c
+c     Box cross section
+      elseif(lakonl(8:8).eq.'B') then
+         if(kk.eq.0) then
+           mint3d=32
+           return
+         endif
+!
+!        2 pts in long direction xi
+!
+         if(kk.gt.16) then
+            jj=kk-16
+            xi=1.d0/dsqrt(3.d0)
+         else
+            jj=kk
+            xi=-1.d0/dsqrt(3.d0)
+         endif
+!
+!        pts in cross sections
+!
+         a=prop(npropstart+1)
+         b=prop(npropstart+2)
+         t1=prop(npropstart+3)
+         t2=prop(npropstart+4)
+         t3=prop(npropstart+5)
+         t4=prop(npropstart+6)
+!
+         if(jj.eq.1)then 
+            et = -(t4-b)/b
+            ze = -(t1-a)/a
+            weight = -((((-2*a)+2*t1+t3)*t4+t1*t2-2*b*t1)/(a*b))/6.0E+0
+         elseif(jj.eq.2)then 
+            et = -((3*t4-t2-2*b)/b)/4.0E+0
+            ze = -(t1-a)/a
+            weight = -((2*t1*t4+2*t1*t2-4*b*t1)/(a*b))/3.0E+0
+         elseif(jj.eq.3)then 
+            et = -((t4-t2)/b)/2.0E+0
+            ze = -(t1-a)/a
+            weight = -((t1*t4+t1*t2-2*b*t1)/(a*b))/3.0E+0
+         elseif(jj.eq.4)then 
+            et = -((t4-3*t2+2*b)/b)/4.0E+0
+            ze = -(t1-a)/a
+            weight = -((2*t1*t4+2*t1*t2-4*b*t1)/(a*b))/3.0E+0
+         elseif(jj.eq.5)then 
+            et = (t2-b)/b
+            ze = -(t1-a)/a
+            weight = -((t1*t4+t2*t3+(2*t1-2*a)*t2-2*b*t1)/(a*b))/6.0E+0
+         elseif(jj.eq.6)then 
+            et = (t2-b)/b
+            ze = ((t3-3*t1+2*a)/a)/4.0E+0
+            weight = -((2*t2*t3+(2*t1-4*a)*t2)/(a*b))/3.0E+0
+         elseif(jj.eq.7)then 
+            et = (t2-b)/b
+            ze = ((t3-t1)/a)/2.0E+0
+            weight = -((t2*t3+(t1-2*a)*t2)/(a*b))/3.0E+0
+         elseif(jj.eq.8)then 
+            et = (t2-b)/b
+            ze = ((3*t3-t1-2*a)/a)/4.0E+0
+            weight = -((2*t2*t3+(2*t1-4*a)*t2)/(a*b))/3.0E+0
+         elseif(jj.eq.9)then 
+            et = (t2-b)/b
+            ze = (t3-a)/a
+            weight = -((t3*t4+(2*t2-2*b)*t3+(t1-2*a)*t2)/(a*b))/6.0E+0
+         elseif(jj.eq.10)then 
+            et = -((t4-3*t2+2*b)/b)/4.0E+0
+            ze = (t3-a)/a
+            weight = -((2*t3*t4+(2*t2-4*b)*t3)/(a*b))/3.0E+0
+         elseif(jj.eq.11)then 
+            et = -((t4-t2)/b)/2.0E+0
+            ze = (t3-a)/a
+            weight = -((t3*t4+(t2-2*b)*t3)/(a*b))/3.0E+0
+         elseif(jj.eq.12)then 
+            et = -((3*t4-t2-2*b)/b)/4.0E+0
+            ze = (t3-a)/a
+            weight = -((2*t3*t4+(2*t2-4*b)*t3)/(a*b))/3.0E+0
+         elseif(jj.eq.13)then 
+            et = -(t4-b)/b
+            ze = (t3-a)/a
+            weight = -((((-2*a)+t1+2*t3)*t4+(t2-2*b)*t3)/(a*b))/6.0E+0
+         elseif(jj.eq.14)then 
+            et = -(t4-b)/b
+            ze = ((3*t3-t1-2*a)/a)/4.0E+0
+            weight = -(((2*t3+2*t1-4*a)*t4)/(a*b))/3.0E+0
+         elseif(jj.eq.15)then 
+            et = -(t4-b)/b
+            ze = ((t3-t1)/a)/2.0E+0
+            weight = -(((t3+t1-2*a)*t4)/(a*b))/3.0E+0
+         elseif(jj.eq.16)then 
+            et = -(t4-b)/b
+            ze = ((t3-3*t1+2*a)/a)/4.0E+0
+            weight = -(((2*t3+2*t1-4*a)*t4)/(a*b))/3.0E+0
+         endif 
       endif
 !     
       return

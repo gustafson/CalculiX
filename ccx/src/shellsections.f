@@ -19,7 +19,7 @@
       subroutine shellsections(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
      &  thicke,kon,ipkon,offset,irstrt,istep,istat,n,iline,ipol,
-     &  inl,ipoinp,inp,lakon,iaxial,ipoinpc,mi,icomposite)
+     &  inl,ipoinp,inp,lakon,iaxial,ipoinpc,mi,icomposite,nelcon)
 !
 !     reading the input deck: *SHELL SECTION
 !
@@ -35,7 +35,7 @@
 !
       integer mi(*),istartset(*),iendset(*),ialset(*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),kon(*),ipkon(*),indexe,irstrt,nset,nmat,
-     &  norien,nlayer,iset,icomposite,
+     &  norien,nlayer,iset,icomposite,nelcon(2,*),
      &  istep,istat,n,key,i,j,k,l,imaterial,iorientation,ipos,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),iaxial,ipoinpc(0:*)
 !
@@ -105,6 +105,12 @@
 !     check for the existence of the orientation, if any
 !
       if(orientation(1:1).eq.' ') then
+         iorientation=0
+      elseif(nelcon(1,i).eq.2) then
+         write(*,*) '*INFO reading *SOLID SECTION: an orientation'
+         write(*,*) '      is for isotropic materials irrelevant'
+         call inputinfo(inpc,ipoinpc,iline,
+     &"*SOLID SECTION%")
          iorientation=0
       else
          do i=1,norien

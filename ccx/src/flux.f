@@ -19,7 +19,8 @@
       subroutine flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &     nodef,idirf,df,cp,R,rho,physcon,g,co,dvi,numf,
-     &     vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,iaxial)
+     &     vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,
+     &     ttime,time,iaxial)
 !
 !     determine whether the flux in the element is an unknown 
 !     
@@ -35,96 +36,114 @@
 !      
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(8),R,cp,physcon(*),rho,
      &     g(3),co(3,*),dvi,vold(0:mi(2),*),shcon(0:3,ntmat_,*),
-     &     rhcon(0:1,ntmat_,*)
+     &     rhcon(0:1,ntmat_,*),ttime,time
 !
-      if(lakon(nelem)(2:8).eq.'ACCTUBO') then 
+      if((lakon(nelem)(2:4).eq.'ATR')
+     &        .or.(lakon(nelem)(2:4).eq.'RTA')) then
+!
+!        absolute to relative system or vice versa
+!     
+         call absolute_relative(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &        nodef,idirf,df,cp,r,physcon,numf,set,mi,ttime,time,iaxial)
+!     
+      elseif(lakon(nelem)(2:8).eq.'ACCTUBO') then
+!
+!        proprietary
 !         
          call acctube_one(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,ider,
-     &        iaxial)
+     &        ttime,time,iaxial)
 !
-      elseif(lakon(nelem)(2:8).eq.'ACCTUBE') then 
+      elseif(lakon(nelem)(2:8).eq.'ACCTUBE') then
+!
+!        proprietary
 !
          call acctube(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,ider,
-     &        iaxial)
+     &        ttime,time,iaxial)
 !
       elseif(lakon(nelem)(2:6).eq.'CARBS') then  
 !
+!        carbon seal
+!
          call carbon_seal(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &     nodef,idirf,df,R,physcon,dvi,numf,set,mi,iaxial)
+     &     nodef,idirf,df,R,physcon,dvi,numf,set,mi,ttime,time,iaxial)
 !     
       elseif(lakon(nelem)(2:5).eq.'CHAR') then 
+!
+!        characteristic
 !     
-         call characteristic(node1,node2,nodem,nelem,
+         call characteristic(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,physcon,numf,set,mi,iaxial)
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,
+     &        mi,ttime,time,iaxial)
 !
       elseif(lakon(nelem)(2:5).eq.'CROS') then 
 !         
+!        cross split
+!
          call cross_split(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,iaxial)
-!     
-      elseif(lakon(nelem)(2:8).eq.'REBRSI1') then 
-!         
-         call wye(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,iaxial)
-!     
-      elseif(lakon(nelem)(2:8).eq.'REBRSI2') then 
-!         
-         call tee(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,iaxial)
+     &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,ttime,time,
+     &     iaxial)
+!
+!     proprietary
+!
+      elseif(lakon(nelem)(2:5).eq.'FDPF') then 
+         call free_disc_pumping(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
+     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,iaxial)
+!  
+!     proprietary
+! 
+      elseif(lakon(nelem)(2:5).eq.'FCVF') then 
+         call free_convection(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
+     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,iaxial)
+! 
+!     gas pipe
+!
+      elseif(lakon(nelem)(2:5).eq.'GAPI') then 
+!
+         call gaspipe(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
+     &        nshcon,rhcon,nrhcon,ntmat_,mi,ttime,time,iaxial)
+!
+!     gas pipe fanno
+!
+      elseif(lakon(nelem)(2:5).eq.'GAPF') then 
+!
+         call gaspipe_fanno(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
+     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,iaxial)
+!
+!     straight and stepped labyrinth
 !
       elseif(lakon(nelem)(2:4).eq.'LAB') then 
 !         
          call labyrinth(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &     nodef,idirf,df,cp,R,physcon,co,dvi,numf,vold,set,
-     &     kon,ipkon,mi,iaxial)
-! 
-      elseif(lakon(nelem)(2:5).eq.'GAPI') then 
+     &     kon,ipkon,mi,ttime,time,iaxial)
+!
+!     liquid pipes including loss elements (hydraulic elements)
 !         
-         call gaspipe(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,mi,iaxial)
-!
-      elseif(lakon(nelem)(2:5).eq.'GAPF') then 
-
-         call gaspipe_fanno(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,iaxial)
-!
-      elseif(lakon(nelem)(2:5).eq.'FDPF') then 
-         call free_disc_pumping(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,iaxial)
-!   
-      elseif(lakon(nelem)(2:5).eq.'FCVF') then 
-         call free_convection(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,iaxial)
-!
-      elseif(lakon(nelem)(2:5).eq.'MFPC') then 
-         call massflow_percent(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,iaxial)
-         
       elseif(lakon(nelem)(2:5).eq.'LIPI') then
 !         
          call liquidpipe(node1,node2,nodem,nelem,lakon,nactdog,identity,
      &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
-     &           rho,g,co,dvi,numf,vold,mi,ipkon,kon,set,iaxial)
+     &           rho,g,co,dvi,numf,vold,mi,ipkon,kon,set,ttime,time,
+     &           iaxial)
+!
+!     liquid channel (flow with free surface) including all loss elements
 !
       elseif(lakon(nelem)(2:5).eq.'LICH') then
 !         
@@ -132,75 +151,119 @@
      &           identity,ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
      &           rho,g,co,dvi,numf,mi,ipkon,kon)
 !
-      elseif(lakon(nelem)(2:5).eq.'LIPU') then
-!         
-         call liquidpump(node1,node2,nodem,nelem,nactdog,identity,
-     &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
-     &           rho,g,co,numf,mi,iaxial)
+!     liquid pipes including loss elements (types derived from their
+!     compressible equivalent)
 !
       elseif(lakon(nelem)(2:3).eq.'LP') then
 !         
          call liquidpipe(node1,node2,nodem,nelem,lakon,nactdog,identity,
      &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
-     &           rho,g,co,dvi,numf,vold,mi,ipkon,kon,set,iaxial)
-!      
+     &           rho,g,co,dvi,numf,vold,mi,ipkon,kon,set,ttime,time,
+     &           iaxial)
+!
+!     liquid pump
+!
+      elseif(lakon(nelem)(2:5).eq.'LIPU') then
+!        
+         call liquidpump(node1,node2,nodem,nelem,nactdog,identity,
+     &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
+     &           rho,g,co,numf,mi,ttime,time,iaxial)
+!
+!     ?????
+!
+      elseif(lakon(nelem)(2:5).eq.'MFPC') then 
+         call massflow_percent(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
+     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,iaxial)
+!     
+!     Moehring
+! 
       elseif(lakon(nelem)(2:4).eq.'MRG') then 
 !     
          call moehring(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,dvi,numf,set,mi,iaxial)
+     &        nodef,idirf,df,cp,r,dvi,numf,set,mi,ttime,time,iaxial)
+!
+!     Bleed tapping, orifice and pre-swirl nozzle
 !
       elseif(lakon(nelem)(2:3).eq.'OR') then 
 !         
          call orifice(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,co,vold,mi,
-     &        iaxial)
-!
-      elseif(lakon(nelem)(2:3).eq.'RE') then 
-!         
-         call restrictor(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,mi,iaxial)
+     &        ttime,time,iaxial)
 ! 
+!     proprietary
+!
       elseif(lakon(nelem)(2:4).eq.'RCV') then   
 !
          call rcavi(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,dvi,numf,set,mi,iaxial)
+     &     nodef,idirf,df,cp,R,dvi,numf,set,mi,ttime,time,iaxial)
+!
+!     proprietary
 !
       elseif(lakon(nelem)(2:3).eq.'RO') then   
 !
          call rcavi2(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,dvi,numf,set,mi,iaxial)
+     &     nodef,idirf,df,cp,R,dvi,numf,set,mi,ttime,time,iaxial)
+!
+!     restrictors
+!
+      elseif((lakon(nelem)(2:3).eq.'RE').and.
+     &       (lakon(nelem)(2:8).ne.'REBRSI1').and.
+     &       (lakon(nelem)(2:8).ne.'REBRSI2')) then 
+!         
+         call restrictor(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
+     &        nshcon,rhcon,nrhcon,ntmat_,mi,ttime,time,iaxial)
+!
+!     proprietary
 !
       elseif(lakon(nelem)(2:5).eq.'RIMS') then   
 !
          call rimseal(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,iaxial)
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,ttime,time,
+     &        iaxial)
 !     
+!     proprietary
+!
       elseif(lakon(nelem)(2:6).eq.'SPUMP') then 
-! 
+!
         call scavenge_pump(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,ntmat_,mi,
-     &        iaxial)   
+     &        ttime,time,iaxial)   
+!   
+!     branch split Idelchik2
+!  
+      elseif(lakon(nelem)(2:8).eq.'REBRSI2') then 
+!         
+         call tee(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,ttime,time,
+     &     iaxial)
+!
+!     vortex
 !
       elseif(lakon(nelem)(2:3).eq.'VO') then 
 !     
          call vortex(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,numf,set,mi,iaxial) 
-!     
-      elseif((lakon(nelem)(2:4).eq.'ATR')
-     &        .or.(lakon(nelem)(2:4).eq.'RTA')) then
-!     
-         call absolute_relative(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,numf,set,mi,iaxial) 
+     &        nodef,idirf,df,cp,r,numf,set,mi,ttime,time,iaxial) 
+!
+!     branch split Idelchik1
+!  
+      elseif(lakon(nelem)(2:8).eq.'REBRSI1') then 
+!         
+         call wye(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,ttime,time,
+     &     iaxial)
 !
       else
          identity=.true.

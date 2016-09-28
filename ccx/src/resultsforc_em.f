@@ -69,7 +69,7 @@ c            if(ndir.ne.0) cycle
       if(calcul_f.eq.1) then
          do i=1,nk
             if(inomat(i).eq.0) cycle
-            if(nactdof(0,i).ne.0) then
+            if(nactdof(0,i).gt.0) then
                f(nactdof(0,i))=fn(0,i)
             endif
 c            do j=0,mi(2)

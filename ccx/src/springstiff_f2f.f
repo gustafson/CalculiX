@@ -34,7 +34,7 @@
      &  iloc,jfaces,igauss,nopem,nopes,nopep,kscale
 !
       real*8 xl(3,19),elas(21),pproj(3),val,shp2m(7,9),
-     &  al(3),s(100,100),voldl(0:mi(2),19),pl(3,19),xn(3),
+     &  al(3),s(60,60),voldl(0:mi(2),19),pl(3,19),xn(3),
      &  c1,c3,alpha,beta,elcon(0:ncmat_,ntmat_,*),xm(3),
      &  fpu(3,3),xi,et,fnl(3),
      &  xs2(3,7),t1l,elconloc(21),plconloc(82),xk,stickslope,

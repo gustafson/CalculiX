@@ -89,7 +89,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     *ikactmechr=NULL,*ikactmechi=NULL,nactmechr,nactmechi,intpointvar,
     iforc,iload,ne0,*iponoel=NULL,*inoel=NULL,*imdelem=NULL,
     nmdelem,*integerglob=NULL,*nshcon=NULL,nherm,icfd=0,*inomat=NULL,
-    *islavnode=NULL,*nslavnode=NULL,*islavsurf=NULL,iit=-1;
+    *islavnode=NULL,*nslavnode=NULL,*islavsurf=NULL,iit=-1,inoelsize;
 
   long long i2;
 
@@ -242,7 +242,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       
       NNEW(iponoel,ITG,*nk);
       NNEW(inoel,ITG,2**nkon);
-      FORTRAN(elementpernode,(iponoel,inoel,lakon,ipkon,kon,ne));
+      FORTRAN(elementpernode,(iponoel,inoel,lakon,ipkon,kon,ne,&inoelsize));
       NNEW(imdelem,ITG,*ne);
 
       /* storing the elements in which integration point results
@@ -1688,7 +1688,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      xforc,nforc,thicke,shcon,nshcon,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
-                      islavsurf,ielprop,prop,energyini,energy,&iit);}
+                      islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,inoel);}
 	  else{
       
               /* calculating displacements/temperatures */
@@ -1716,7 +1716,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      xforc,nforc,thicke,shcon,nshcon,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,
-		      clearini,islavsurf,ielprop,prop,energyini,energy,&iit);
+		      clearini,islavsurf,ielprop,prop,energyini,energy,&iit,
+                      iponoel,inoel);
 	      
 	      if(nmdnode==0){
 		  DMEMSET(br,0,neq[1],0.);
@@ -1774,7 +1775,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      xforc,nforc,thicke,shcon,nshcon,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
-                      islavsurf,ielprop,prop,energyini,energy,&iit);}
+                      islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
+                      inoel);}
 	  else{ 
       
               /* calculating displacements/temperatures */
@@ -1802,7 +1804,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      xforc,nforc,thicke,shcon,nshcon,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,
-		      clearini,islavsurf,ielprop,prop,energyini,energy,&iit);
+		      clearini,islavsurf,ielprop,prop,energyini,energy,&iit,
+                      iponoel,inoel);
 
 	      if(nmdnode==0){
 		  DMEMSET(bi,0,neq[1],0.);
@@ -2803,7 +2806,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      thicke,shcon,nshcon,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
-                      islavsurf,ielprop,prop,energyini,energy,&iit);
+                      islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
+                      inoel);
 	  
 	      (*kode)++;
 	      mode=-1;

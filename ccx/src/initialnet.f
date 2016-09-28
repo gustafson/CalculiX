@@ -29,10 +29,11 @@
      &     ielmat,ntmat_,shcon,nshcon,physcon,ipiv,nteq,
      &     rhcon,nrhcon,ipobody,ibody,xbodyact,co,nbody,network,
      &     iin_abs,vold,set,istep,iit,mi,ineighe,ilboun,channel,
-     &     iaxial,nmpc,labmpc,ipompc,nodempc,coefmpc)
+     &     iaxial,nmpc,labmpc,ipompc,nodempc,coefmpc,ttime,time,
+     &     iponoel,inoel)
 !     
       implicit none
-!     
+     
       logical identity,gravity,gaspipe
 !
       character*8 lakon(*)
@@ -46,15 +47,15 @@
      &     nodef(8),ndirboun(*),nodeboun(*),itg(*),node,kflag,ipiv(*),
      &     nrhs,info,idof1,idof2,nteq,nrhcon(*),ipobody(2,*),ibody(3,*),
      &     nbody,numf,network,iin_abs,icase,index2,index1,nelem1,nelem2,
-     &     node11,node21,node12,node22,istep,iit,ineighe(*),
-     &     ilboun(*),nelemup,k,node2up,idir,channel
+     &     node11,node21,node12,node22,istep,iit,ineighe(*),iponoel(*),
+     &     ilboun(*),nelemup,k,node2up,idir,channel,inoel(2,*)
 !     
       real*8 ac(nteq,nteq), bc(nteq),prop(*),shcon(0:3,ntmat_,*),
      &     f,df(8),xflow,xbounact(*),v(0:mi(2),*),cp,r,tg1,
      &     tg2,gastemp,physcon(*),pressmin,dvi,rho,g(3),z1,z2,
      &     rhcon(0:1,ntmat_,*),co(3,*),xbodyact(7,*),kappa,
      &     a,Tt,Pt,Ts,pressmax,constant,vold(0:mi(2),*),href,
-     &     coefmpc(*)
+     &     coefmpc(*),ttime,time,xflow360
 !
       kflag=1
       ider=0
@@ -91,6 +92,10 @@
 !     and identifying the chamber and gas pipe nodes
 !     
       if(network.ne.0) then
+!
+         call preinitialnet(ieg,lakon,v,ipkon,kon,nflow,prop,ielprop,
+     &     ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,mi,iponoel,inoel,
+     &     itg,ntg)
 !     
 !     determining whether pressure initial conditions 
 !     are provided for all nodes
@@ -282,6 +287,19 @@
                endif
             endif
          enddo
+!     
+!     checking for nodes not belonging to network elements
+!     
+         do i=1,ntg
+            node=itg(i)
+            if(nactdog(2,node).ne.0) then
+               idof=nactdog(2,node)
+               if(ac(idof,idof).eq.0.d0) then
+                  ac(idof,idof)=1.d0
+                  bc(idof)=v(2,node)
+               endif
+            endif
+         enddo
       endif
 !     
 !     temperature conditions for all but purely hydrodynamic
@@ -408,10 +426,12 @@ c      enddo
          do i=1,ntg
             node=itg(i)
             if(nactdog(2,node).eq.0) then
+c               write(*,*) 'initialnet ',node,v(2,node)
                v(2,node)=pressmax
      &              *datan(v(2,node))/constant
                cycle
             endif
+c               write(*,*) 'initialnet ',node,bc(nactdog(2,node))
             v(2,node)=pressmax
      &           *datan(bc(nactdog(2,node)))/constant
          enddo
@@ -460,10 +480,24 @@ c      enddo
             node2=node12
          endif
 !     
-         if(v(2,node1).ge.v(2,node2)) then
-            v(2,node2)=v(2,node1)
-         else
-            v(2,node1)=v(2,node2)
+         if(lakon(i)(6:6).eq.'S') then
+!
+!           maximum
+!
+            if(v(2,node1).ge.v(2,node2)) then
+               v(2,node2)=v(2,node1)
+            else
+               v(2,node1)=v(2,node2)
+            endif
+         elseif(lakon(i)(6:6).eq.'J') then
+!
+!           minimum
+!
+            if(v(2,node1).ge.v(2,node2)) then
+               v(2,node1)=v(2,node2)
+            else
+               v(2,node2)=v(2,node1)
+            endif
          endif
       enddo
 !     
@@ -666,13 +700,15 @@ c      enddo
      &           nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &           nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,
      &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,
-     &           iaxial)
+     &           ttime,time,iaxial)
                v(1,nodem)=xflow
             endif
 !     
 c            if(nactdog(1,nodem).ne.0) v(1,nodem)=xflow
 !     
-            if(lakon(nelem)(2:4).ne.'LIP') then
+c            if(lakon(nelem)(2:4).ne.'LIP') then
+            if((lakon(nelem)(2:4).ne.'LIP').and.
+     &         (lakon(nelem)(2:3).ne.'VO')) then
                if(v(1,nodem).eq.0d0) then
                   WRITE(*,*) '**************************************'
                   write(*,*) '*ERROR:in subroutine initialnet.f'
@@ -699,6 +735,10 @@ c            if(nactdog(1,nodem).ne.0) v(1,nodem)=xflow
             endif
          enddo
       endif
+!
+      call postinitialnet(ieg,lakon,v,ipkon,kon,nflow,prop,ielprop,
+     &     ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,mi,iponoel,inoel,
+     &     itg,ntg)
 !     
 !     calculating the static temperature for nodes belonging to gas pipes
 !     and restrictors (except RESTRICTOR WALL ORIFICE)
@@ -792,13 +832,13 @@ c            if(nactdog(1,nodem).ne.0) v(1,nodem)=xflow
                   node1=kon(index2+1)
                   node2=kon(index2+3)
                   if(lakon(nelem)(4:5).eq.'EX') then
-                     if((lakon(int(prop(index+4)))(2:6).eq.'GAPFA')
-     &                 .or.(lakon(int(prop(index+4)))(2:6).eq.'GAPIA'))
+                     if((lakon(nint(prop(index+4)))(2:6).eq.'GAPFA')
+     &                 .or.(lakon(nint(prop(index+4)))(2:6).eq.'GAPIA'))
      &                    then
                         icase=0
                      elseif
-     &                   ((lakon(int(prop(index+4)))(2:6).eq.'GAPFI')
-     &                  .or.(lakon(int(prop(index+4)))(2:6).eq.'GAPII')) 
+     &                   ((lakon(nint(prop(index+4)))(2:6).eq.'GAPFI')
+     &                 .or.(lakon(nint(prop(index+4)))(2:6).eq.'GAPII')) 
      &                       then
                         icase=1
                      endif
@@ -834,7 +874,8 @@ c            if(nactdog(1,nodem).ne.0) v(1,nodem)=xflow
                endif
 !     
                if(v(3,node).eq.0) then
-                  call ts_calc(xflow,Tt,Pt,kappa,r,a,Ts,icase)
+                  xflow360=xflow*iaxial
+                  call ts_calc(xflow360,Tt,Pt,kappa,r,a,Ts,icase)
                   v(3,node)=Ts
                endif
 !     
@@ -853,6 +894,11 @@ c            if(nactdog(1,nodem).ne.0) v(1,nodem)=xflow
 c         write(*,*) 'initialnet ',i,v(0,itg(i)),
 c     &      v(1,itg(i)),v(2,itg(i)),ineighe(i)
       enddo
+!
+c      write(*,*) 'initialnet '
+c      do i=1,ntg
+c         write(*,'(i10,3(1x,e11.4))') itg(i),(v(j,itg(i)),j=0,2)
+c      enddo
 !     
       return
       end

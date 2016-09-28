@@ -18,7 +18,7 @@
 !     
       subroutine moehring (node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,dvi,numf,set,mi,iaxial)
+     &     nodef,idirf,df,cp,R,dvi,numf,set,mi,ttime,time,iaxial)
 !     
 !     moehring element
 !     This subroutines computes the evolution of the core swirl ratio 
@@ -46,8 +46,8 @@
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),r,dvi,pi,
      &     R_min, R_max,cr, R_shroud,rsrmax,gap,swirl_up,
-     &     pup,pdown,tup,tdown,kappa,cp,
-     &     Rup,Rdown,rpm,K0,Kup,Cq,Re_phi,phi,lambda1, lambda2,
+     &     pup,pdown,tup,tdown,kappa,cp,ttime,time,
+     &     Rup,Rdown,K0,Kup,Cq,Re_phi,phi,lambda1, lambda2,
      &     a,b,epsabs,
      &     epsrel,result,abserr,work(1200),zk0,T1,T2,P1,P2,Pr,
      &     qred_crit,omega,rurd,C_p,Cm,Mr,f_k,f_t,f_p,f_m,f_cm,
@@ -129,10 +129,10 @@
          xflow=v(1,nodem)*iaxial
 !     
 !     upstream node
-         node_up=int(prop(index+5))
+         node_up=nint(prop(index+5))
 !     
 !     downstream node
-         node_down=int(prop(index+6))
+         node_down=nint(prop(index+6))
 !   
 !     centripetal
          if(lakon(nelem)(2:5).eq.'MRGP') then
@@ -183,11 +183,9 @@
 !     
 !     rotation related parameters
 !     
-!     rotation number per minute
-         rpm=prop(index+7)
-!     
-!     rotation speed (rad/s)
-         omega=Pi/30*rpm
+!     rotation
+!
+         omega=prop(index+7)
 !     
 !     swirl at R_upstream
          swirl_up=prop(index+8)

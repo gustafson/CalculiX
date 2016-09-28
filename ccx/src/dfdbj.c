@@ -42,7 +42,7 @@ void dfdbj(double *bcont,double **dbcontp,ITG *neq,ITG *nope,ITG *konl,
       i1=mt*(konl[j]-1)+1;
       for(j1=0; j1<3; j1++){
 	  jdof=nactdof[i1+j1];
-	  if(jdof!=0){
+	  if(jdof>0){
 	      jdof--;
 	      FORTRAN(nident,(ikactcont,&jdof,nactcont,&id));
 	      do{
@@ -77,9 +77,9 @@ void dfdbj(double *bcont,double **dbcontp,ITG *neq,ITG *nope,ITG *konl,
 	      i3=(3*j+j1);
 	      for(k=0; k<*nope; k++){
 		  for(k1=0; k1<3; k1++){
-		      sl=s[(3*k+k1)*100+i3];
+		      sl=s[(3*k+k1)*60+i3];
 		      kdof=nactdof[mt*(konl[k]-1)+k1+1];
-		      if(kdof!=0){
+		      if(kdof>0){
 			  if(!(*cyclicsymmetry)){
 			  for(l=0; l<*nev; l++){
 			      dbcont[i4+l]-=sl*z[(long long)l**neq+kdof-1];
@@ -111,7 +111,7 @@ void dfdbj(double *bcont,double **dbcontp,ITG *neq,ITG *nope,ITG *konl,
 				  do{
 				      kdof=nactdof[mt*(nodempc[index*3]-1)+nodempc[index*3+1]];
 				      d1=sl*coefmpc[index]/coefmpc[ist];
-				      if(kdof!=0){
+				      if(kdof>0){
 					  if(!(*cyclicsymmetry)){
 					  for(l=0; l<*nev; l++){
 					    dbcont[i4+l]+=d1*z[(long long)l**neq+kdof-1];
@@ -152,7 +152,7 @@ void dfdbj(double *bcont,double **dbcontp,ITG *neq,ITG *nope,ITG *konl,
 		      index1--;
 		      do{
 			  jdof=nactdof[mt*(nodempc[index1*3]-1)+nodempc[index1*3+1]];
-			  if(jdof!=0){
+			  if(jdof>0){
 			      jdof--;
 			      FORTRAN(nident,(ikactcont,&jdof,nactcont,&id));
 			      do{
@@ -186,9 +186,9 @@ void dfdbj(double *bcont,double **dbcontp,ITG *neq,ITG *nope,ITG *konl,
 			      i3=(3*j+j1);
 			      for(k=0; k<*nope; k++){
 				  for(k1=0; k1<3; k1++){
-				      sl=s[(3*k+k1)*100+i3];
+				      sl=s[(3*k+k1)*60+i3];
 				      kdof=nactdof[mt*(konl[k]-1)+k1+1];
-				      if(kdof!=0){
+				      if(kdof>0){
 					  d1=sl*coefmpc[index1]/coefmpc[ist1];
 					  if(!(*cyclicsymmetry)){
 					    for(l=0; l<*nev; l++){
@@ -220,7 +220,7 @@ void dfdbj(double *bcont,double **dbcontp,ITG *neq,ITG *nope,ITG *konl,
 						  index2--;
 						  do{
 						      kdof=nactdof[mt*(nodempc[index2*3]-1)+nodempc[index2*3+1]];
-						      if(kdof!=0){
+						      if(kdof>0){
 							  d1=sl*coefmpc[index1]*coefmpc[index2]/(coefmpc[ist1]*coefmpc[ist2]);
 							  if(!(*cyclicsymmetry)){
 							    for(l=0; l<*nev; l++){

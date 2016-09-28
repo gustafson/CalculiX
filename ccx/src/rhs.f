@@ -52,7 +52,7 @@
      &  p2(3,2),fext(*),bodyf(3),elcon(0:21,ntmat_,*),
      &  rhcon(0:1,ntmat_,*),xloadold(2,*),reltime,prop(*),
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
-     &  t0(*),t1(*),vold(0:mi(2),*),ff(100),time,ttime,dtime,
+     &  t0(*),t1(*),vold(0:mi(2),*),ff(60),time,ttime,dtime,
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  om(2),physcon(*),veold(0:mi(2),*)
 !
@@ -184,7 +184,7 @@ c      if((ithermal.le.1).or.(ithermal.eq.3)) then
 !
             if(idist.ne.0) then
                if(dabs(ff(jj)).lt.1.d-30) cycle
-               if(jdof1.eq.0) then
+               if(jdof1.le.0) then
                   if(nmpc.ne.0) then
                      idof1=(node1-1)*8+k
                      call nident(ikmpc,idof1,nmpc,id)
@@ -195,7 +195,7 @@ c      if((ithermal.le.1).or.(ithermal.eq.3)) then
                         do
                            jdof1=nactdof(nodempc(2,index),
      &                          nodempc(1,index))
-                           if(jdof1.ne.0) then
+                           if(jdof1.gt.0) then
                               fext(jdof1)=fext(jdof1)
      &                             -coefmpc(index)*ff(jj)/coefmpc(ist)
                               call nident(ikactmech,jdof1-1,nactmech,
@@ -251,7 +251,7 @@ c      if((ithermal.le.1).or.(ithermal.eq.3)) then
 !            distributed forces
 !
             if(idist.ne.0) then
-               if(jdof1.eq.0) then
+               if(jdof1.le.0) then
                   if(nmpc.ne.0) then
                      idof1=(node1-1)*8+k
                      call nident(ikmpc,idof1,nmpc,id)
@@ -262,7 +262,7 @@ c      if((ithermal.le.1).or.(ithermal.eq.3)) then
                         do
                            jdof1=nactdof(nodempc(2,index),
      &                          nodempc(1,index))
-                           if(jdof1.ne.0) then
+                           if(jdof1.gt.0) then
                               fext(jdof1)=fext(jdof1)
      &                             -coefmpc(index)*ff(jj)/coefmpc(ist)
                            endif
@@ -332,7 +332,7 @@ c      else
 !
             if(idist.ne.0) then
                if(dabs(ff(jj)).lt.1.d-30) cycle
-               if(jdof1.eq.0) then
+               if(jdof1.le.0) then
                   if(nmpc.ne.0) then
                      idof1=(node1-1)*8
                      call nident(ikmpc,idof1,nmpc,id)
@@ -343,7 +343,7 @@ c      else
                         do
                            jdof1=nactdof(nodempc(2,index),
      &                          nodempc(1,index))
-                           if(jdof1.ne.0) then
+                           if(jdof1.gt.0) then
                               fext(jdof1)=fext(jdof1)
      &                             -coefmpc(index)*ff(jj)/coefmpc(ist)
                               call nident(ikactmech,jdof1-1,nactmech,
@@ -399,7 +399,7 @@ c      else
 !            distributed forces
 !
             if(idist.ne.0) then
-               if(jdof1.eq.0) then
+               if(jdof1.le.0) then
                   if(nmpc.ne.0) then
                      idof1=(node1-1)*8
                      call nident(ikmpc,idof1,nmpc,id)
@@ -410,7 +410,7 @@ c      else
                         do
                            jdof1=nactdof(nodempc(2,index),
      &                          nodempc(1,index))
-                           if(jdof1.ne.0) then
+                           if(jdof1.gt.0) then
                               fext(jdof1)=fext(jdof1)
      &                             -coefmpc(index)*ff(jj)/coefmpc(ist)
                            endif
@@ -440,7 +440,7 @@ c      else
          if(ndirforc(i).gt.3) cycle
          if(dabs(xforc(i)).lt.1.d-30) cycle
          jdof=nactdof(ndirforc(i),nodeforc(1,i))
-         if(jdof.ne.0) then
+         if(jdof.gt.0) then
             fext(jdof)=fext(jdof)+xforc(i)
             call nident(ikactmech,jdof-1,nactmech,
      &           idm)
@@ -470,7 +470,7 @@ c      else
                   if(index.eq.0) cycle
                   do
                      jdof=nactdof(nodempc(2,index),nodempc(1,index))
-                     if(jdof.ne.0) then
+                     if(jdof.gt.0) then
                         fext(jdof)=fext(jdof)-
      &                       coefmpc(index)*xforc(i)/coefmpc(ist)
                         call nident(ikactmech,jdof-1,nactmech,
@@ -501,7 +501,7 @@ c      else
        do i=1,nforc
          if(ndirforc(i).gt.3) cycle
          jdof=nactdof(ndirforc(i),nodeforc(1,i))
-         if(jdof.ne.0) then
+         if(jdof.gt.0) then
             fext(jdof)=fext(jdof)+xforc(i)
          else
 !     
@@ -518,7 +518,7 @@ c      else
                   if(index.eq.0) cycle
                   do
                      jdof=nactdof(nodempc(2,index),nodempc(1,index))
-                     if(jdof.ne.0) then
+                     if(jdof.gt.0) then
                         fext(jdof)=fext(jdof)-
      &                       coefmpc(index)*xforc(i)/coefmpc(ist)
                      endif

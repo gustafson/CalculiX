@@ -21,7 +21,7 @@
      &     nflow,ndirboun,nactdog,nodeboun,nacteq,nboun,
      &     ielprop,prop,nteq,v,network,physcon,shcon,ntmat_,
      &     co,vold,set,nshcon,rhcon,nrhcon,mi,
-     &     nmpc,nodempc,ipompc,labmpc,ikboun,nasym,iaxial)
+     &     nmpc,nodempc,ipompc,labmpc,ikboun,nasym,ttime,time,iaxial)
 !     
 !     determines the number of gas temperatures and radiation
 !     temperatures
@@ -49,7 +49,7 @@
      &     nmpc,nodempc(3,*),ipompc(*),ikboun(*),idof
 !     
       real*8 prop(*),f,xflow,nodef(8),df(8),v(0:mi(2),*),g(3),
-     &     cp,r,physcon(*),shcon(0:3,ntmat_,*),rho,
+     &     cp,r,physcon(*),shcon(0:3,ntmat_,*),rho,ttime,time,
      &     co(3,*),dvi,vold(0:mi(2),*),rhcon(*)
 !     
       data ifaceq /4,3,2,1,11,10,9,12,
@@ -464,7 +464,7 @@ c      enddo
      &           nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &           nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,
      &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,
-     &           iaxial)
+     &           ttime,time,iaxial)
 !      
             if (.not.identity) then
                nacteq(2,nodem)=1                       ! momentum equation

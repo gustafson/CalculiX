@@ -38,7 +38,14 @@
 !
       real*8 xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
 !
-      if(amat(1:8).eq.'ABAQUSNL') then
+      if(amat(1:1).eq.'@') then
+
+         call umat_abaqusnl(amat,iel,iint,kode,elconloc,emec,
+     &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
+     &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
+     &        iorien,pgauss,orab,istep,iinc,pnewdt)
+         
+      elseif(amat(1:8).eq.'ABAQUSNL') then
 !
          amatloc(1:72)=amat(9:80)
          amatloc(73:80)='        '

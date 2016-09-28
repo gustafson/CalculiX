@@ -25,6 +25,8 @@
 !
       implicit none
 !
+      logical surface
+!
       character*1 inpc(*)
       character*8 lakon(*)
       character*20 sideload(*),label
@@ -42,6 +44,7 @@
       iamplitude=0
       idelay=0
       isector=0
+      surface=.false.
 !
       if(istep.ne.1) then
          write(*,*) 
@@ -79,6 +82,7 @@
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*MASS FLOW%")
          if((label(1:2).ne.'M1').and.(label(1:2).ne.'M2').and.
+     &           (label(1:2).ne.'M ').and.
      &           (label(1:2).ne.'M3').and.(label(1:2).ne.'M4').and.
      &           (label(1:2).ne.'M5').and.(label(1:2).ne.'M6')) then
             call inputerror(inpc,ipoinpc,iline,
@@ -110,13 +114,23 @@
                if(set(i).eq.elset) exit
             enddo
             if(i.gt.nset) then
-               elset(ipos:ipos)=' '
-               write(*,*) '*ERROR reading *MASS FLOW: element set ',
-     &           elset
-               write(*,*) '       has not yet been defined. '
-               call inputerror(inpc,ipoinpc,iline,
-     &"*MASS FLOW%")
-               call exit(201)
+!
+!              check for facial surface
+!
+               surface=.true.
+               elset(ipos:ipos)='T'
+               do i=1,nset
+                  if(set(i).eq.elset) exit
+               enddo
+               if(i.gt.nset) then
+                  elset(ipos:ipos)=' '
+                  write(*,*) '*ERROR reading *MASS FLOW: element set '
+                  write(*,*) '       or facial surface ',elset
+                  write(*,*) '       has not yet been defined. '
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*MASS FLOW%")
+                  call exit(201)
+               endif
             endif
 !
             l=ialset(istartset(i))
@@ -129,6 +143,10 @@
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then
                   l=ialset(j)
+                  if(surface) then
+                     write(label(2:2),'(i1)') l-10*(l/10)
+                     l=l/10
+                  endif
                   call loadadd(l,label,xmagnitude,nelemload,sideload,
      &                 xload,nload,nload_,iamload,iamplitude,
      &                 nam,isector,idefload)

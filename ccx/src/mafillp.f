@@ -58,10 +58,15 @@
                jdof2=iel
                coef=vfa(5,ifa)*(volume(i)+volume(iel))*area(ifa)/
      &              (advfa(ifa)*2.d0*xlet(indexf)*cosb(indexf))
+c               write(*,*) 'mafillp ',vfa(5,ifa),volume(i),
+c     &            volume(iel),area(ifa),advfa(ifa),xlet(indexf),
+c     &            cosb(indexf)
                call add_sm_fl(au,ad,jq,irow,jdof1,jdof1,
      &              -coef)
+c               write(*,*) 'mafillp1',jdof1,jdof1,-coef
                call add_sm_fl(au,ad,jq,irow,jdof1,jdof2,
      &              coef)
+c               write(*,*) 'mafillp2',jdof1,jdof2,coef
 !     
 !     correction for non-orthogonal meshes
 !     
@@ -82,7 +87,7 @@
      &              -cosa(indexf)*xxn(3,indexf)))
      &              *xle(indexf))
                b(jdof1)=b(jdof1)-coef*bp_ifa
-c               if(i.gt.iel) bp_ifa=-bp_ifa
+c               write(*,*) 'mafillp3',jdof1,-coef*bp_ifa
             else
                iel2=ielfa(2,ifa)
                if(iel2.lt.0) then
@@ -107,7 +112,9 @@ c               if(i.gt.iel) bp_ifa=-bp_ifa
      &                    (advfa(ifa)*xle(indexf)*cosa(indexf))
                      call add_sm_fl(au,ad,jq,irow,jdof1,jdof1,
      &                    -coef)
+c                     write(*,*) 'mafillp4',jdof1,jdof1,-coef
                      b(jdof1)=b(jdof1)-coef*vfa(4,ifa)
+c               write(*,*) 'mafillp5',jdof1,-coef*vfa(4,ifa)
 !     
 !     correction for non-orthogonal meshes
 !     
@@ -119,6 +126,7 @@ c               if(i.gt.iel) bp_ifa=-bp_ifa
      &                    -cosa(indexf)*xxn(3,indexf)))
      &                    *xle(indexf))
                      b(jdof1)=b(jdof1)-coef*bp_ifa
+c               write(*,*) 'mafillp6',jdof1,-coef*bp_ifa
                   endif
                endif
             endif
@@ -132,46 +140,27 @@ c               if(i.gt.iel) bp_ifa=-bp_ifa
 !     
 !     save the coefficient for correctvfa.f
 !     
-c            ap(ifa)=coef
-!     
             if(knownflux.eq.1) then
                b(jdof1)=b(jdof1)+vfa(5,ifa)*area(ifa)*
      &              (vfa(1,ifa)*xxn(1,indexf)+
      &              vfa(2,ifa)*xxn(2,indexf)+
      &              vfa(3,ifa)*xxn(3,indexf))
+c               write(*,*) 'mafillp7',jdof1,vfa(5,ifa)*area(ifa)*
+c     &              (vfa(1,ifa)*xxn(1,indexf)+
+c     &              vfa(2,ifa)*xxn(2,indexf)+
+c     &              vfa(3,ifa)*xxn(3,indexf))
             elseif(knownflux.ne.2) then
                b(jdof1)=b(jdof1)+vfa(5,ifa)*area(ifa)*
      &              (hfa(1,ifa)*xxn(1,indexf)+
      &              hfa(2,ifa)*xxn(2,indexf)+
      &              hfa(3,ifa)*xxn(3,indexf))
+c               write(*,*) 'mafillp8',jdof1,vfa(5,ifa)*area(ifa)*
+c     &              (hfa(1,ifa)*xxn(1,indexf)+
+c     &              hfa(2,ifa)*xxn(2,indexf)+
+c     &              hfa(3,ifa)*xxn(3,indexf))
             endif
          enddo
       enddo
-!     
-!     at least one pressure bc is needed. If none is applied,
-!     the last dof is set to 0
-!     
-!     a pressure bc is only recognized if not all velocity degrees of
-!     freedom are prescribed on the same face
-!     
-c      if(iatleastonepressurebc.eq.0) then
-c         ad(nef)=1.d0
-c         b(nef)=0.d0
-c         do i=2,nef
-c            if(jq(i)-1>0) then
-c               if(irow(jq(i)-1).eq.nef) then
-c                  au(jq(i)-1)=0.d0
-c               endif
-c            endif
-c         enddo
-c      endif
-!     
-c      do i=1,nzs
-c         write(*,*) 'mafillp irow,au',i,au(i)
-c      enddo
-c      do i=1,ne
-c         write(*,*) 'mafillp ad b',i,ad(i),b(i)
-c      enddo
 !     
       return
       end

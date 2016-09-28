@@ -136,6 +136,8 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	if((strcmp1(&labmpc[20*i],"                    ")==0) ||
 	   (strcmp1(&labmpc[20*i],"CYCLIC")==0) ||
 	   (strcmp1(&labmpc[20*i],"SUBCYCLIC")==0)||
+	   (strcmp1(&labmpc[20*i],"PRETENSION")==0)||
+	   (strcmp1(&labmpc[20*i],"THERMALPRET")==0)||
 	   (strcmp1(&labmpc[20*i],"CONTACT")==0)||
 	   (strcmp1(&labmpc[20*i],"FLUID")==0)||
            (*iperturb<2)) jmpc[i]=0;

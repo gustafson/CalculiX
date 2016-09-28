@@ -51,7 +51,7 @@
      &  bodyf(3),om(2),rho,bf(3),q(3),shpj(4,20),xl(3,20),
      &  shp(4,20),voldl(3,20),xl2(3,8),xsj2(3),shp2(7,8),
      &  vold(0:mi(2),*),prop(*),
-     &  xload(2,*),xi,et,ze,const,xsj,ff(100),weight,ttime,time,tvar(2),
+     &  xload(2,*),xi,et,ze,const,xsj,ff(60),weight,ttime,time,tvar(2),
      &  coords(3),dtime,coefmpc(*)
 !
       include "gauss.f"

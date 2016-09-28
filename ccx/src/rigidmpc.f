@@ -86,19 +86,19 @@
          nodempc(1,mpcfree)=irotnode
          nodempc(2,mpcfree)=1
          coefmpc(mpcfree)=e(j,1,1)*(co(1,irefnode)-co(1,node))+
-     &        e(j,2,1)*(co(2,irefnode)-co(2,node))+
-     &        e(j,3,1)*(co(3,irefnode)-co(3,node))
+     &        e(j,1,2)*(co(2,irefnode)-co(2,node))+
+     &        e(j,1,3)*(co(3,irefnode)-co(3,node))
          mpcfree=nodempc(3,mpcfree)
          nodempc(1,mpcfree)=irotnode
          nodempc(2,mpcfree)=2
-         coefmpc(mpcfree)=e(j,1,2)*(co(1,irefnode)-co(1,node))+
+         coefmpc(mpcfree)=e(j,2,1)*(co(1,irefnode)-co(1,node))+
      &        e(j,2,2)*(co(2,irefnode)-co(2,node))+
-     &        e(j,3,2)*(co(3,irefnode)-co(3,node))
+     &        e(j,2,3)*(co(3,irefnode)-co(3,node))
          mpcfree=nodempc(3,mpcfree)
          nodempc(1,mpcfree)=irotnode
          nodempc(2,mpcfree)=3
-         coefmpc(mpcfree)=e(j,1,3)*(co(1,irefnode)-co(1,node))+
-     &        e(j,2,3)*(co(2,irefnode)-co(2,node))+
+         coefmpc(mpcfree)=e(j,3,1)*(co(1,irefnode)-co(1,node))+
+     &        e(j,3,2)*(co(2,irefnode)-co(2,node))+
      &        e(j,3,3)*(co(3,irefnode)-co(3,node))
          mpcfree=nodempc(3,mpcfree)
          nodempc(1,mpcfree)=nk

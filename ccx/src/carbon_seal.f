@@ -18,7 +18,7 @@
 !     
       subroutine carbon_seal(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,R,physcon,dvi,numf,set,mi,iaxial)
+     &     nodef,idirf,df,R,physcon,dvi,numf,set,mi,ttime,time,iaxial)
 !     
 !     carbon seal element calculated with Richter method
 !      Richter "Rohrhydraulik", Springer ,1971,p. 175
@@ -36,7 +36,7 @@
      &     inv,mi(*),iaxial
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),R,d,l,
-     &     p1,p2,T1,physcon(*),dvi,pi,s,T2
+     &     p1,p2,T1,physcon(*),dvi,pi,s,T2,ttime,time
 !     
       if (iflag.eq.0) then
          identity=.true.
@@ -156,32 +156,31 @@
          endif
 
          write(1,*) ''
-         write(1,55) 'In line',int(nodem/100),' from node',node1,
-     &' to node', node2,':   air massflow rate=',xflow,' kg/s'
-!     &,', oil massflow rate=',xflow_oil,'kg/s'
- 55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
+         write(1,55) ' from node',node1,
+     &' to node', node2,':   air massflow rate=',xflow
+ 55      FORMAT(1X,A,I6,A,I6,A,e11.4,A,A,e11.4,A)
 
          if(inv.eq.1) then
             write(1,56)'       Inlet node  ',node1,':   Tt1=',T1,
-     &           ' K, Ts1=',T1,' K, Pt1=',P1/1E5, ' Bar'
+     &           ' , Ts1=',T1,' , Pt1=',P1
          
-            write(1,*)'             element G   ',set(numf)(1:30)
+            write(1,*)'             Element',nelem,lakon(nelem)
 
             write(1,56)'       Outlet node ',node2,':   Tt2=',T2,
-     &           ' K, Ts2=',T2,' K, Pt2=',P2/1e5,' Bar'
+     &           ' , Ts2=',T2,' , Pt2=',P2
 !     
          else if(inv.eq.-1) then
             write(1,56)'       Inlet node  ',node2,':    Tt1=',T1,
-     &           ' K, Ts1=',T1,' K, Pt1=',P1/1E5, ' Bar'
+     &           ' , Ts1=',T1,' , Pt1=',P1
      &          
-            write(1,*)'             element G    ',set(numf)(1:30)
+            write(1,*)'             Element',nelem,lakon(nelem)
 
             write(1,56)'       Outlet node ',node1,':    Tt2=',T2,
-     &           ' K, Ts2=',T2,' K, Pt2=',P2/1e5, ' Bar'
+     &           ' , Ts2=',T2,' , Pt2=',P2
 
          endif
       
- 56      FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A)
+ 56      FORMAT(1X,A,I6,A,e11.4,A,e11.4,A,e11.4,A)
       endif
 !     
       xflow=xflow/iaxial

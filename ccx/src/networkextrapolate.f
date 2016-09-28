@@ -69,7 +69,8 @@
          if(kon(indexe+3).ne.0) then
             node3=kon(indexe+3)
             inum(node3)=-1
-            if(v(1,node2).lt.0.d0) v(1,node3)=v(1,node3)-v(1,node2)
+c            if(v(1,node2).lt.0.d0) v(1,node3)=v(1,node3)-v(1,node2)
+            if(v(1,node2).lt.0.d0) v(1,node3)=v(1,node3)+v(1,node2)
          endif
       enddo
 !

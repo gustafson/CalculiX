@@ -18,7 +18,8 @@
 !     
       subroutine orifice(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,physcon,dvi,numf,set,co,vold,mi,iaxial)
+     &     nodef,idirf,df,cp,R,physcon,dvi,numf,set,co,vold,mi,ttime,
+     &     time,iaxial)
 !     
 !     orifice element
 !
@@ -35,17 +36,17 @@
      &     inv,ipkon(*),kon(*),number,kgas,nelemswirl,
      &     nodea,nodeb,iaxial,mi(*),i,itype
 !
-      real*4 ofvidg
+c      real*4 ofvidg
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,a,d,xl,
      &     p1,p2,T1,Aeff,C1,C2,C3,cd,cp,physcon(3),p2p1,km1,dvi,
      &     kp1,kdkm1,tdkp1,km1dk,x,y,ca1,cb1,ca2,cb2,dT1,alambda,
      &     rad,beta,reynolds,theta,k_phi,c2u_new,u,pi,xflow_oil,
      &     ps1pt1,uref,cd_chamf,angle,vid,cdcrit,T2,radius,
-     &     initial_radius,co(3,*),vold(0:mi(2),*),offset,
-     &     x_tab(15), y_tab(15),x_tab2(15),y_tab2(15),curve
+     &     initial_radius,co(3,*),vold(0:mi(2),*),offset,ttime,time,
+     &     x_tab(15), y_tab(15),x_tab2(15),y_tab2(15),curve,xmach
 !
-      external ofvidg
+c      external ofvidg
 !
       pi=4.d0*datan(1.d0)   
       if (iflag.eq.0) then
@@ -68,18 +69,13 @@
          xl=prop(index+3)
 !     
          if(lakon(nelem)(2:5).eq.'ORFL') then
-            nodea=int(prop(index+1))
-            nodeb=int(prop(index+2))
-c            iaxial=int(prop(index+3))
+            nodea=nint(prop(index+1))
+            nodeb=nint(prop(index+2))
             offset=prop(index+4)
             radius=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &           co(1,nodea)-vold(1,nodea))**2)-offset
             initial_radius=dsqrt((co(1,nodeb)-co(1,nodea))**2)-offset
-c            if(iaxial.ne.0) then
-c               A=pi*radius**2/iaxial
-c            else
                A=pi*radius**2
-c            endif
             d=2*radius
          endif
 !     
@@ -163,7 +159,7 @@ c            endif
             xl=prop(index+3)
 !     circumferential velocity of the rotating hole (same as disc @ given radius)
             u=prop(index+7)
-            nelemswirl=int(prop(index+8))
+            nelemswirl=nint(prop(index+8))
             if (nelemswirl.eq.0) then
                uref=0.d0
             else
@@ -333,8 +329,8 @@ c            endif
 !     calculate the discharge coefficient of bleed tappings (OWN tables)
 !     
             ps1pt1=prop(index+2)
-            curve=int(prop(index+3))
-            number=int(prop(index+4))
+            curve=nint(prop(index+3))
+            number=nint(prop(index+4))
 !     
             if(number.ne.0.d0)then
                do i=1,number
@@ -352,8 +348,8 @@ c            endif
 !     
             d=dsqrt(4*A/pi)
             reynolds=dabs(xflow)*d/(dvi*a)
-            curve=int(prop(index+4))
-            number=int(prop(index+6))
+            curve=nint(prop(index+4))
+            number=nint(prop(index+6))
             if(number.ne.0.d0)then
                do i=1,number
                   x_tab2(i)=prop(index+2*i+5)
@@ -379,9 +375,9 @@ c            endif
             prop(index+5)=c2u_new
 !     
          elseif(lakon(nelem)(2:5).eq.'ORFL') then
-            nodea=int(prop(index+1))
-            nodeb=int(prop(index+2))
-c            iaxial=int(prop(index+3))
+            nodea=nint(prop(index+1))
+            nodeb=nint(prop(index+2))
+c            iaxial=nint(prop(index+3))
             offset=prop(index+4)
             radius=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &           co(1,nodea)-vold(1,nodea))**2)-offset
@@ -453,7 +449,7 @@ c            endif
 !     
 !     output
 !     
-      elseif ((iflag.eq.3).or.(iflag.eq.4)) then
+      elseif (iflag.eq.3) then
 !     
          pi=4.d0*datan(1.d0)
          p1=v(2,node1)
@@ -489,7 +485,7 @@ c            endif
             d=prop(index+2)
             xl=prop(index+3)
             u=prop(index+7)
-            nelemswirl=int(prop(index+8))
+            nelemswirl=nint(prop(index+8))
             if (nelemswirl.eq.0) then
                uref=0.d0
             else
@@ -649,8 +645,8 @@ c            endif
             d=dsqrt(A*Pi/4)
             reynolds=dabs(xflow)*d/(dvi*a)
             ps1pt1=prop(index+2)
-            curve=int(prop(index+3))
-            number=int(prop(index+4))
+            curve=nint(prop(index+3))
+            number=nint(prop(index+4))
             reynolds=dabs(xflow)*d/(dvi*a)
             if(number.ne.0.d0)then
                do i=1,number
@@ -668,8 +664,8 @@ c            endif
 !     
             d=dsqrt(4*A/pi)
             reynolds=dabs(xflow)*d/(dvi*a)
-            curve=int(prop(index+4))
-            number=int(prop(index+6))
+            curve=nint(prop(index+4))
+            number=nint(prop(index+6))
 !     
             if(number.ne.0.d0)then             
                do i=1,number
@@ -707,19 +703,21 @@ c            endif
 !     
          if(iflag.eq.3)then
 !     
+          xmach=dsqrt(((p1/p2)**((kappa-1.d0)/kappa)-1.d0)*2.d0/
+     &          (kappa-1.d0))
           write(1,*) ''
-          write(1,55) 'In line ',int(nodem/1000),' from node ',node1,
+          write(1,55) ' from node ',node1,
      &   ' to node ', node2,' :   air massflow rate = '
-     &,inv*xflow,' kg/s',
-     &   ', oil massflow rate = ',xflow_oil,' kg/s'
+     &,inv*xflow,' ',
+     &   ', oil massflow rate = ',xflow_oil,' '
 !          
           if(inv.eq.1) then
              write(1,56)'       Inlet node ',node1,' :   Tt1 = ',T1,
-     &           ' K , Ts1 = ',T1,' K , Pt1 = ',P1/1E5, ' Bar'
+     &           '  , Ts1 = ',T1,'  , Pt1 = ',P1, ' '
 !             
-             write(1,*)'             Element R   ',set(numf)(1:30)
-             write(1,57)'             eta = ',dvi,' kg/(m*s) , Re= '
-     &           ,reynolds
+             write(1,*)'             Element ',nelem,lakon(nelem)
+             write(1,57)'             dyn.visc = ',dvi,'  , Re = '
+     &           ,reynolds,', M = ',xmach
              if(lakon(nelem)(2:5).eq.'ORC1') then
                 write(1,58)'             CD = ',cd
              else if((lakon(nelem)(2:5).eq.'ORMA').or.
@@ -727,7 +725,7 @@ c            endif
      &          (lakon(nelem)(2:5).eq.'ORPM').or.
      &          (lakon(nelem)(2:5).eq.'ORPA'))then
                 write(1,59)'             CD = ',cd,' , C1u = ',u,
-     &  ' m/s , C2u = ', prop(index+7), ' m/s'
+     &  '  , C2u = ', prop(index+7), ' '
              endif
 !     special for bleed tappings
              if(lakon(nelem)(2:5).eq.'ORBT') then
@@ -737,21 +735,20 @@ c            endif
 !     special for preswirlnozzles
              elseif(lakon(nelem)(2:5).eq.'ORPN') then
                 write(1,62) '             cd = ', cd,
-     &' u = ',u,' m/s , C2u = ',c2u_new,' m/s'
-!               write(1,61)'             C2u= ',c2u_new,' m/s'
+     &' u = ',u,'  , C2u = ',c2u_new,' '
 !     special for recievers
              endif 
 !
              write(1,56)'       Outlet node ',node2,' :   Tt2 = ',T2,
-     &           ' K , Ts2 = ',T2,' K , Pt2 = ',P2/1e5,' Bar'
+     &           '  , Ts2 = ',T2,'  , Pt2 = ',P2,' '
 !     
           else if(inv.eq.-1) then
              write(1,56)'       Inlet node  ',node2,':    Tt1 = ',T1,
-     &           ' K , Ts1 = ',T1,' K, Pt1 = ',P1/1E5, ' Bar'
+     &           '  , Ts1 = ',T1,' , Pt1 = ',P1, ' '
      &          
              write(1,*)'             element R    ',set(numf)(1:30)
-             write(1,57)'             eta = ',dvi,' kg/(m*s), Re ='
-     &           ,reynolds
+             write(1,57)'             dyn.visc. = ',dvi,' , Re ='
+     &           ,reynolds,', M = ',xmach
              if(lakon(nelem)(2:5).eq.'ORC1') then
                 write(1,58)'             CD = ',cd
              else if((lakon(nelem)(2:5).eq.'ORMA').or.
@@ -759,7 +756,7 @@ c            endif
      &          (lakon(nelem)(2:5).eq.'ORPM').or.
      &          (lakon(nelem)(2:5).eq.'ORPA'))then
                 write(1,59)'             CD = ',cd,' , C1u = ',u,
-     &  ' m/s , C2u = ', prop(index+7), ' m/s'
+     &  '  , C2u = ', prop(index+7), ' '
              endif
 !     special for bleed tappings
              if(lakon(nelem)(2:5).eq.'ORBT') then
@@ -768,96 +765,25 @@ c            endif
      &' , curve N° = ', curve,' , cd = ',cd
 !     special for preswirlnozzles
              elseif(lakon(nelem)(2:5).eq.'ORPN') then
-                write(1,*) ' cd = ', cd,' u = ',u,' m/s, C2u = '
-     &,c2u_new,' m/s'
+                write(1,*) ' cd = ', cd,' u = ',u,' , C2u = '
+     &,c2u_new,' '
              endif
 ! 
              write(1,56)'       Outlet node ',node1,':    Tt2 = ',T2,
-     &           ' K , Ts2 = ',T2,' K , Pt2 = ',P2/1e5, ' Bar'
+     &           '  , Ts2 = ',T2,'  , Pt2 = ',P2, ' '
          endif
+       endif
 !
-        elseif (iflag.eq.4) then
-!        Write the main information about the element
-         write(1,*) ''
-!         
-         write(1,78)'Element nr.= ',nelem,', type=',lakon(nelem),
-     &                 ', name= ',set(numf)(1:30)
-!         
-         write(1,79)'Nodes: ',node1,',',nodem,',',node2
-!
-         write(1,80)'Inlet: Tt1= ',T1,
-     &              ', pt1= ',p1, ', M1= ',0
-!         
-         if(lakon(nelem)(2:5).eq.'ORMA') then
-!         
-            write(1,81)'mass flow = ',inv*xflow,
-     &              ', oil mass flow = ',xflow_oil,
-     &              ', kappa = ',kappa,
-     &              ', eta= ',dvi,
-     &              ', Re= ',reynolds,
-     &              ', cd= ',cd,
-     &              ', C1u = ',uref
-!     
-!        Bleed tappings
-         elseif(lakon(nelem)(2:5).eq.'ORBT') then
-!         
-            write(1,82)'mass flow = ',inv*xflow,
-     &              ', oil mass flow = ',xflow_oil,
-     &              ', kappa = ',kappa,
-     &              ', eta= ',dvi,
-     &              ', Re= ',reynolds,
-     &              ', cd= ',cd,
-     &              ', DAB = ',(1-P2/P1)/(1-ps1pt1),
-     &              ', curve N°',curve 
-     
-!        Preswirl nozzles
-         elseif(lakon(nelem)(2:5).eq.'ORPN') then
-!         
-            write(1,83)'mass flow = ',inv*xflow,
-     &              ', oil mass flow = ',xflow_oil,
-     &              ', kappa = ',kappa,
-     &              ', eta= ',dvi,
-     &              ', Re= ',reynolds,
-     &              ', cd= ',cd,
-     &              ', C2u = ',c2u_new
-!     
-         else
-!         
-            write(1,84)'mass flow = ',inv*xflow,
-     &              ', oil mass flow = ',xflow_oil,
-     &              ', kappa = ',kappa,
-     &              ', eta= ',dvi,
-     &              ', Re= ',reynolds,
-     &              ', cd= ',cd
-         endif
-!
-         write(1,80)'Outlet: Tt2= ',T2,
-     &              ', pt2= ',p2,', M2= ',0
-!
-        endif
 !
       endif
 !     
- 55   format(1x,a,i6.3,a,i6.3,a,i6.3,a,f9.6,a,a,f9.6,a)
- 56   format(1x,a,i6.3,a,f6.1,a,f6.1,a,f9.5,a)
- 57   format(1x,a,g9.4,a,g11.4)
- 58   format(1x,a,f12.5)
- 59   format(1x,a,f12.5,a,f12.5,a,f12.5,a)
- 60   format(1x,a,f12.5,a,i2,a)
- 61   format(1x,a,f12.3,a)
- 62   format(1x,a,f12.5,a,f12.5,a,f12.5,a)
- 63   format(1x,a,f12.5,a,f12.5,a,f12.5,a,i2,a,f12.5)
- 78   format(a,i4,a,a,a,a)
- 79   format(3x,a,i4,a,i4,a,i4)
- 80   format(3x,a,f10.6,a,f10.2,a,f10.6)
- 81   format(3x,a,f10.6,a,f10.6,a,f10.6,a,
-     &     e10.4,a,f10.2,a,f10.6,a,f12.5)
- 82   format(3x,a,f10.6,a,f10.6,a,f10.6,a,
-     &     e10.4,a,f10.2,a,f10.6,a,f12.5,a,i2)
- 83   format(3x,a,f10.6,a,f10.6,a,f10.6,a,
-     &     e10.4,a,f10.2,a,f10.6,a,f12.3)
- 84   format(3x,a,f10.6,a,f10.6,a,f10.6,a,
-     &     e10.4,a,f10.2,a,f10.6)
+ 55   format(1x,a,i6,a,i6,a,e11.4,a,a,e11.4,a)
+ 56   format(1x,a,i6,a,e11.4,a,e11.4,a,e11.4,a)
+ 57   format(1x,a,e11.4,a,e11.4,a,e11.4)
+ 58   format(1x,a,e11.4)
+ 59   format(1x,a,e11.4,a,e11.4,a,e11.4,a)
+ 62   format(1x,a,e11.4,a,e11.4,a,e11.4,a)
+ 63   format(1x,a,e11.4,a,e11.4,a,e11.4,a,i2,a,e11.4)
 !     
       xflow=xflow/iaxial
       df(3)=df(3)*iaxial

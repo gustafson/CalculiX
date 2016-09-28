@@ -884,10 +884,10 @@
       do i=1,18
          if(htri(i).gt.0.d0) then
             iplas=1
-            go to 8
+            exit
          endif
       enddo
- 8    continue
+c 8    continue
 !
       if((iplas.eq.0).or.(ielas.eq.1)) then
 !
@@ -957,15 +957,13 @@
       do i=1,18
          al1(i)=al10(i)
          al2(i)=al20(i)
-c         dg0(i)=xstateini(42+i,iint,iel)
-c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
          dg(i)=0.d0
       enddo
 !
 !     major loop
 !
       icounter=0
-      do
+      majorloop: do
          icounter=icounter+1
          if(icounter.gt.100) then
             write(*,*) '*ERROR in umat_single_crystal: no convergence'
@@ -1050,7 +1048,7 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
 !
 !        minor loop
 !
-         do
+         minorloop: do
 !
 !           determining the residual matrix
 !
@@ -1078,10 +1076,10 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
                if(active(i).eq.0) cycle
                if(htri(i).gt.1.d-5) then
                   convergence=0
-                  go to 9
+                  exit
                endif
             enddo
- 9          continue
+c 9          continue
             if(convergence.eq.1) then
                dd=0.d0
                do i=1,6
@@ -1095,7 +1093,8 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
                if(dd.gt.1.d-10) then
                   convergence=0
                else
-                  go to 12
+                  exit majorloop
+c                  go to 12
                endif
             endif
 !     
@@ -1150,15 +1149,15 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
 !     
 !           filling the LHS
 !     
-            do 1 i=1,18
-               if(active(i).eq.0) go to 1
+            do i=1,18
+               if(active(i).eq.0) cycle
                aux(i)=(q(i)+q1(i))/(1.d0/b(i)+dg(i))
- 1          continue
+            enddo
 !     
-            do 2 i=1,18
-               if(active(i).eq.0) go to 2
-               do 3 j=1,18
-                  if(active(j).eq.0) go to 3
+            do i=1,18
+               if(active(i).eq.0) cycle
+               do j=1,18
+                  if(active(j).eq.0) cycle
                   if(i.ne.j) then
                      gl(index(i),index(j))=(xm(1,i)*xmc(1,j)+
      &                    xm(2,i)*xmc(2,j)+xm(3,i)*xmc(3,j)+2.d0*
@@ -1173,7 +1172,8 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
      &                    +h(i,j)*aux(j)+(cphi(j)*c(j)+d(j)*q2(j)*sg(j))
      &                    /(1.d0+dg(j)*d(j))
                   endif
- 3             continue
+               enddo
+c 3             continue
                if(creep.eq.1)then
                   if(dg(i).gt.0.d0) then
                      gl(index(i),index(i))=gl(index(i),index(i))+
@@ -1189,12 +1189,13 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
      &                    (cn(i)*dtime)
                   endif
                endif
- 2          continue
+            enddo
+c 2          continue
 !     
 !           filling the RHS
 !     
-            do 4 i=1,18
-               if(active(i).eq.0) go to 4
+            do i=1,18
+               if(active(i).eq.0) cycle
                do j=1,6
                   t(j)=xmc(j,i)*sg(i)
                enddo
@@ -1203,15 +1204,6 @@ c         dg(i)=xstate(42+i,iint,iel)-dg0(i)
                   t(6+2*j)=0.d0
                enddo
                t(6+2*i)=c(i)*sg(i)/(1.d0+dg(i)*d(i))
-c
-c              next lines should be correct.
-c
-c               if(creep.eq.1) then
-c                  gr(index(i),1)=htri(i)
-c     &                 -ck(i)*(dg(i)/dtime)**(1.d0/cn(i))
-c               else
-c                  gr(index(i),1)=htri(i)
-c               endif
 !
                if(creep.eq.1) then
                   gr(index(i),1)=htri(i)
@@ -1225,7 +1217,8 @@ c               endif
                enddo
                gr(index(i),1)=gr(index(i),1)
      &              -t(4)*r(4)-t(5)*r(5)-t(6)*r(6)
- 4          continue
+            enddo
+c 4          continue
 !     
 !           solve gl*ddg=gr
 !
@@ -1247,8 +1240,8 @@ c               endif
 !           check whether active slip planes have changed
 !     
             ichange=0
-            do 5 i=1,18
-               if(active(i).eq.0) go to 5
+            do i=1,18
+               if(active(i).eq.0) cycle
                if(dg(i)+ddg(i).lt.0.d0) then
                  active(i)=0
                  dg(i)=0.d0
@@ -1256,15 +1249,17 @@ c               endif
                  al2(i)=al20(i)
                  ichange=1
                endif
- 5          continue
+            enddo
+c 5          continue
             if(ichange.eq.0) then
-               go to 13
+               exit minorloop
+c               go to 13
             endif
 !
 !           end of minor loop
 !
-         enddo
- 13      continue
+         enddo minorloop
+c 13      continue
 !
 !        updating the residual matrix
 !
@@ -1297,8 +1292,8 @@ c               endif
 !
 !        end of major loop
 !
-      enddo
- 12   continue
+      enddo majorloop
+c 12   continue
 !
 !     inversion of G
 !
@@ -1381,18 +1376,20 @@ c               endif
                ddsdde(i+3,i+3)=c1212
             enddo
          endif
-         do 6 i=1,18
-            if(active(i).eq.0) go to 6
-            do 7 j=1,18
-               if(active(j).eq.0) go to 7
+         do i=1,18
+            if(active(i).eq.0) cycle
+            do j=1,18
+               if(active(j).eq.0) cycle
                do k=1,6
                   do l=1,6
                      ddsdde(k,l)=ddsdde(k,l)-
      &               gr(index(i),index(j))*xmc(k,i)*sg(i)*xmc(l,j)*sg(j)
                   enddo
                enddo
- 7          continue
- 6       continue
+            enddo
+         enddo
+c 7          continue
+c 6       continue
 !
 !        symmatrizing the stiffness matrix
 !

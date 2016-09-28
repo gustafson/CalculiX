@@ -25,11 +25,12 @@
 static char *lakonf1;
 
 static ITG num_cpus,*nef1,*ipnei1,*neifa1,*neiel1,*jq1,*irow1,*nzs1,*ielfa1,*
-    ifabou1,*nbody1,*neq1,*nactdohinv1;
+    ifabou1,*nbody1,*neq1,*nactdohinv1,*icyclic1,*ifatie1;
 
 static double *auv1=NULL,*adv1=NULL,*bv1=NULL,*vfa1,*xxn1,*area1,*vel1,
        *cosa1,*umfa1,*xlet1,*xle1,*gradvfa1,*xxi1,*body1,*volume1,*dtimef1,
-       *velo1,*veloo1,*sel1,*xrlfa1,*gamma1,*xxj1,*a11,*a21,*a31,*flux1;
+       *velo1,*veloo1,*sel1,*xrlfa1,*gamma1,*xxj1,*a11,*a21,*a31,*flux1,
+       *c1;
 
 void mafillvmain(ITG *nef,ITG *ipnei,ITG *neifa,ITG *neiel,
              double *vfa,double *xxn,double *area,double *auv,double *adv,
@@ -39,7 +40,8 @@ void mafillvmain(ITG *nef,ITG *ipnei,ITG *neifa,ITG *neiel,
 	     ITG *ielfa,char *lakonf,ITG *ifabou,ITG *nbody,ITG *neq,
 	     double *dtimef,double *velo,double *veloo,
 	     double *sel,double *xrlfa,double *gamma,double *xxj,
-	     ITG *nactdohinv,double *a1,double *a2,double *a3,double *flux){
+	     ITG *nactdohinv,double *a1,double *a2,double *a3,
+             double *flux,ITG *icyclic,double *c,ITG *ifatie){
 
     ITG i,j;
       
@@ -113,7 +115,7 @@ void mafillvmain(ITG *nef,ITG *ipnei,ITG *neifa,ITG *neiel,
     ielfa1=ielfa;lakonf1=lakonf;ifabou1=ifabou;nbody1=nbody;neq1=neq;
     dtimef1=dtimef;velo1=velo;veloo1=veloo;sel1=sel;xrlfa1=xrlfa;
     gamma1=gamma;xxj1=xxj;nactdohinv1=nactdohinv;a11=a1;a21=a2;a31=a3;
-    flux1=flux;
+    flux1=flux;icyclic1=icyclic;c1=c;ifatie1=ifatie;
     
     /* create threads and wait */
     
@@ -191,7 +193,7 @@ void *mafillvmt(ITG *i){
             vel1,cosa1,umfa1,xlet1,xle1,gradvfa1,xxi1,
 	    body1,volume1,ielfa1,lakonf1,ifabou1,nbody1,neq1,
 	    dtimef1,velo1,veloo1,sel1,xrlfa1,gamma1,xxj1,nactdohinv1,a11,
-	    a21,a31,flux1,&nefa,&nefb));
+	    a21,a31,flux1,&nefa,&nefb,icyclic1,c1,ifatie1));
 
     return NULL;
 }

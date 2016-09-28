@@ -16,40 +16,33 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine objective_shapeener_tot(dgdxtot,dgdx,dfextminds,
-     &  df,vold,neq,ndesi,nobject,numobject,mi,nactdof,nk)
+      subroutine objective_shapeener_tot(dgdx,
+     &  df,vold,ndesi,iobject,mi,nactdofinv,
+     &  jqs,irows)
 !
-      integer neq,ndesi,nobject,numobject,mi(*),i,j,jj,
-     &  nactdof(0:mi(2),*)
+      implicit none
+!
+      integer ndesi,iobject,mi(*),idesvar,j,idir,
+     &  jqs(*),irows(*),nactdofinv(*),node,idof,inode,mt
 !      
-      real*8 dgdxtot(ndesi,nobject),dgdx(ndesi,nobject),
-     &  dfextminds(ndesi,neq),df(ndesi,neq),vold(0:mi(2),*),
-     &  dummy1(ndesi,neq),dummy2(ndesi)
+      real*8 dgdx(ndesi,*),df(*),vold(0:mi(2),*)
 !
 !     ----------------------------------------------------------------
 !     Calculation of the total differential:
-!     dgdxtot = dgdx + vold^(T) * ( dfextminds - df )
+!     dgdx = dgdx + vold^(T) * ( df )
 !     ----------------------------------------------------------------
 !     
-      do i=1,ndesi
-         do j=1,neq
-            dummy1(i,j)=dfextminds(i,j)-df(i,j)
+      mt=mi(2)+1
+!
+      do idesvar=1,ndesi
+         do j=jqs(idesvar),jqs(idesvar+1)-1
+            idof=irows(j)
+            inode=nactdofinv(idof)
+            node=inode/mt+1
+            idir=inode-mt*(inode/mt)
+            dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
+     &                           +vold(idir,node)*df(j)
          enddo
-      enddo
-!     
-      do jj=1,ndesi
-         dummy2(jj)=0.d0
-         do i=1,nk            
-            do j=1,3
-               if(nactdof(j,i).eq.0) cycle
-          dummy2(jj)=dummy2(jj)+
-     &             vold(j,i)*dummy1(jj,nactdof(j,i))
-            enddo         
-         enddo
-      enddo
-!          
-      do i=1,ndesi
-         dgdxtot(i,numobject)=dgdx(i,numobject)+dummy2(i)
       enddo
 !      
       return

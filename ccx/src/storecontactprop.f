@@ -86,9 +86,9 @@
                xmacont=0.0d0
                
                do j=1,3           
-                  if(nactdof(j,kon(indexe+indexn)).ne.0)then
-                     xmacont=adb(nactdof(j,kon(indexe+indexn)))
-                     exit
+                  if(nactdof(j,kon(indexe+indexn)).gt.0)then
+                     xmacont=max(xmacont,
+     &                    adb(nactdof(j,kon(indexe+indexn))))
                   endif
                enddo
 !     mass accumulation
@@ -129,9 +129,9 @@
 !                 
                xmacont=0.0d0
                do j=1,3           
-                  if(nactdof(j,kon(indexe+indexn)).ne.0)then
-                     xmacont=adb(nactdof(j,kon(indexe+indexn)))
-                     exit
+                  if(nactdof(j,kon(indexe+indexn)).gt.0)then
+                     xmacont=max(xmacont,
+     &                    adb(nactdof(j,kon(indexe+indexn))))
                   endif
                enddo
 !     

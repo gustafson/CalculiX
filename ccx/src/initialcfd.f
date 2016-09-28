@@ -18,23 +18,26 @@
 !
       subroutine initialcfd(nef,ipkonf,kon,lakonf,co,coel,cofa,nface,
      &  ielfa,area,ipnei,neiel,xxn,xxi,xle,xlen,xlet,xrlfa,cosa,
-     &  volume,neifa,xxj,cosb,vel,dmin)
+     &  volume,neifa,xxj,cosb,dmin,ifatie,cs,tieset,icyclic,c,neij)
 !
 !     calculating geometric variables of the cells and their faces
 !
       implicit none
 !
       character*8 lakonf(*)
+      character*81 tieset(3,*)
 !
       integer nef,ipkonf(*),kon(*),nface,ielfa(4,*),ipnei(*),neiel(*),
      &  ifaceq(8,6),i,j,k,indexe,kflag,index1,index2,j1,j2,nope,
      &  nodes(4),iel1,iel2,iel3,iface,indexf,neifa(*),nf(5),ifacet(7,4),
-     &  ifacew(8,5),numfaces,ied4(2,6),ied6(2,9),ied8(2,12)
+     &  ifacew(8,5),numfaces,ied4(2,6),ied6(2,9),ied8(2,12),ifatie(*),
+     &  ics,itie,neighface,ifirst_occurrence,icyclic,neij(*)
 !
       real*8 co(3,*),coel(3,*),cofa(3,*),area(*),xxn(3,*),xxi(3,*),
      &  xle(*),xlen(*),xlet(*),xrlfa(3,*),cosa(*),xsj2(3),xi,et,
      &  shp2(7,4),xs2(3,7),xl2(3,8),xl13,volume(*),dxsj2,xl(3,8),
-     &  xxj(3,*),cosb(*),dmin,vel(nef,0:5)
+     &  xxj(3,*),cosb(*),dmin,cs(17,*),xn(3),theta,pi,dc,ds,dd,
+     &  c(3,3),diff(3),p(3),q(3),a(3)
 !
 !     nodes belonging to the cell faces
 !
@@ -57,6 +60,9 @@
       data ied4 /1,2,2,3,3,1,1,4,2,4,3,4/
       data ied6 /1,2,2,3,3,1,4,5,5,6,6,4,1,4,2,5,3,6/
       data ied8 /1,2,2,3,3,4,4,1,5,6,6,7,7,8,8,1,1,5,2,6,3,7,4,8/
+!
+      ifirst_occurrence=1
+      icyclic=0
 !
 !     coordinates of the center of the cells
 !
@@ -84,6 +90,71 @@
 !     loop over all faces
 !
       do i=1,nface
+!
+!        check for cyclic symmetry
+!
+         if(ifatie(i).ne.0) then
+            ics=abs(ifatie(i))
+            itie=int(cs(17,ics))
+            if(tieset(1,itie)(81:81).eq.'P') then
+               if(ifirst_occurrence.eq.1) then
+                  do k=1,3
+                     diff(k)=-cs(5+k,ics)
+                  enddo
+                  ifirst_occurrence=0
+               endif
+            elseif(tieset(1,itie)(81:81).eq.'Z') then
+               if(ifirst_occurrence.eq.1) then
+                  icyclic=1
+                  pi=4.d0*datan(1.d0)
+!
+!                 normal along the cyclic symmetry axis such that
+!                 the slave surface is rotated clockwise through the
+!                 body into the master surface while looking in 
+!                 the direction of xn
+!
+                  do k=1,3
+                     a(k)=cs(5+k,ics)
+                     xn(k)=cs(8+k,ics)-a(k)
+                  enddo
+                  dd=dsqrt(xn(1)*xn(1)+xn(2)*xn(2)+xn(3)*xn(3))
+                  do k=1,3
+                     xn(k)=xn(k)/dd
+                  enddo
+!
+!                 angle from the master to the slave surface
+!
+                  theta=-2.d0*pi/cs(1,ics)
+!
+!                 rotation matrix rotating a vector in the master
+!                 surface into a vector in the slave surface
+!
+                  dc=dcos(theta)
+                  ds=dsin(theta)
+!
+!                 C-matrix from Guido Dhondt, The Finite Element
+!                 Method for Three-Dimensional Thermomechanical
+!                 Applications p 158
+!     
+                  c(1,1)=dc+(1.d0-dc)*xn(1)*xn(1)
+                  c(1,2)=   (1.d0-dc)*xn(1)*xn(2)-ds*xn(3)
+                  c(1,3)=   (1.d0-dc)*xn(1)*xn(3)+ds*xn(2)
+                  c(2,1)=   (1.d0-dc)*xn(2)*xn(1)+ds*xn(3)
+                  c(2,2)=dc+(1.d0-dc)*xn(2)*xn(2)
+                  c(2,3)=   (1.d0-dc)*xn(2)*xn(3)-ds*xn(1)
+                  c(3,1)=   (1.d0-dc)*xn(3)*xn(1)-ds*xn(2)
+                  c(3,2)=   (1.d0-dc)*xn(3)*xn(2)+ds*xn(1)
+                  c(3,3)=dc+(1.d0-dc)*xn(3)*xn(3)
+                  ifirst_occurrence=0
+               endif
+            else
+               write(*,*) '*ERROR in initialcfd'
+               write(*,*) '       kind of cyclic symmetry'
+               write(*,*) '       not known'
+               stop
+            endif
+         endif
+!
          iel1=ielfa(1,i)
          indexe=ipkonf(iel1)
          j1=ielfa(4,i)
@@ -114,110 +185,8 @@
      &                    xsj2(3)*xsj2(3))
             area(i)=4.d0*dxsj2
 !
-!           normal and xi-vector on face viewed from cell 1
+            neighface=6
 !
-            index1=ipnei(iel1)+j1
-            do k=1,3
-               xxn(k,index1)=xsj2(k)/dxsj2
-               xxi(k,index1)=cofa(k,i)-coel(k,iel1)
-            enddo
-!
-!           distance from face center to the center of cell 1
-!
-            xle(index1)=dsqrt(xxi(1,index1)**2+xxi(2,index1)**2+
-     &                         xxi(3,index1)**2)
-            do k=1,3
-               xxi(k,index1)=xxi(k,index1)/xle(index1)
-            enddo
-!
-!           angle between the normal and the xi-vector
-!
-            cosa(index1)=xxn(1,index1)*xxi(1,index1)+
-     &                   xxn(2,index1)*xxi(2,index1)+
-     &                   xxn(3,index1)*xxi(3,index1)
-!
-            iel2=ielfa(2,i)
-!
-!           check whether there is an adjacent cell
-!
-            if(iel2.ne.0) then
-               index2=ipnei(iel2)
-               do j2=1,6
-                  index2=index2+1
-                  if(neiel(index2).eq.iel1) exit
-               enddo
-!
-!              normal and xi-vector on face viewed from cell 2
-!
-               do k=1,3
-                  xxi(k,index2)=cofa(k,i)-coel(k,iel2)
-                  xxn(k,index2)=-xxn(k,index1)
-               enddo
-               xle(index2)=dsqrt(xxi(1,index2)**2+xxi(2,index2)**2+
-     &              xxi(3,index2)**2)
-               do k=1,3
-                  xxi(k,index2)=xxi(k,index2)/xle(index2)
-               enddo
-!
-!              angle between the normal and the xi-vector: xxn.xxi
-!
-               cosa(index2)=xxn(1,index2)*xxi(1,index2)+
-     &                      xxn(2,index2)*xxi(2,index2)+
-     &                      xxn(3,index2)*xxi(3,index2)
-!
-!              distance from the face center to the center of the
-!              adjacent cell
-!
-               xlen(index1)=xle(index2)
-               xlen(index2)=xle(index1)
-!
-               do k=1,3
-                  xxj(k,index2)=coel(k,iel1)-coel(k,iel2)
-               enddo
-!
-!              distance between the cell center and the center of the
-!              adjacent cell
-!
-               xlet(index1)=dsqrt(xxj(1,index2)**2+xxj(2,index2)**2
-     &                                            +xxj(3,index2)**2)
-               xlet(index2)=xlet(index1)
-!
-!              xxj is the unit vector connecting neighboring cell centers
-!
-               do k=1,3
-                  xxj(k,index2)=xxj(k,index2)/xlet(index2)
-                  xxj(k,index1)=-xxj(k,index2)
-               enddo
-!
-!              xxn.xxj
-!
-               cosb(index2)=xxn(1,index1)*xxj(1,index1)+
-     &                      xxn(2,index1)*xxj(2,index1)+
-     &                      xxn(3,index1)*xxj(3,index1)
-               cosb(index1)=cosb(index2)
-!
-               xrlfa(1,i)=xle(index2)/(xle(index1)+xle(index2))
-               xrlfa(2,i)=xle(index1)/(xle(index1)+xle(index2))
-            else
-!
-!              xxi and xxj coincide
-!
-               do k=1,3
-                  xxj(k,index1)=xxi(k,index1)
-               enddo
-               cosb(index1)=cosa(index1)
-!
-!              external face: determining the cell next to the
-!              adjacent cell
-!
-               iel3=ielfa(3,i)
-               if(iel3.eq.0) cycle
-               xl13=dsqrt((coel(1,iel1)-coel(1,iel3))**2+
-     &                    (coel(2,iel1)-coel(2,iel3))**2+
-     &                    (coel(3,iel1)-coel(3,iel3))**2)
-               xrlfa(1,i)=(xl13+xle(index1))/xl13
-               xrlfa(3,i)=1.d0-xrlfa(1,i)
-            endif
          else if(lakonf(iel1)(4:4).eq.'6') then
 !
 !           wedge element
@@ -253,110 +222,8 @@
                area(i)=4.d0*dxsj2
             endif
 !
-!           normal and xi-vector on face viewed from cell 1
+            neighface=5
 !
-            index1=ipnei(iel1)+j1
-            do k=1,3
-               xxn(k,index1)=xsj2(k)/dxsj2
-               xxi(k,index1)=cofa(k,i)-coel(k,iel1)
-            enddo
-!
-!           distance from face center to the center of cell 1
-!
-            xle(index1)=dsqrt(xxi(1,index1)**2+xxi(2,index1)**2+
-     &                         xxi(3,index1)**2)
-            do k=1,3
-               xxi(k,index1)=xxi(k,index1)/xle(index1)
-            enddo
-!
-!           angle between the normal and the xi-vector
-!
-            cosa(index1)=xxn(1,index1)*xxi(1,index1)+
-     &                   xxn(2,index1)*xxi(2,index1)+
-     &                   xxn(3,index1)*xxi(3,index1)
-!
-            iel2=ielfa(2,i)
-!
-!           check whether there is an adjacent cell
-!
-            if(iel2.ne.0) then
-               index2=ipnei(iel2)
-               do j2=1,5
-                  index2=index2+1
-                  if(neiel(index2).eq.iel1) exit
-               enddo
-!
-!              normal and xi-vector on face viewed from cell 2
-!
-               do k=1,3
-                  xxi(k,index2)=cofa(k,i)-coel(k,iel2)
-                  xxn(k,index2)=-xxn(k,index1)
-               enddo
-               xle(index2)=dsqrt(xxi(1,index2)**2+xxi(2,index2)**2+
-     &              xxi(3,index2)**2)
-               do k=1,3
-                  xxi(k,index2)=xxi(k,index2)/xle(index2)
-               enddo
-!
-!              angle between the normal and the xi-vector: xxn.xxi
-!
-               cosa(index2)=xxn(1,index2)*xxi(1,index2)+
-     &                      xxn(2,index2)*xxi(2,index2)+
-     &                      xxn(3,index2)*xxi(3,index2)
-!
-!              distance from the face center to the center of the
-!              adjacent cell
-!
-               xlen(index1)=xle(index2)
-               xlen(index2)=xle(index1)
-!
-               do k=1,3
-                  xxj(k,index2)=coel(k,iel1)-coel(k,iel2)
-               enddo
-!
-!              distance between the cell center and the center of the
-!              adjacent cell
-!
-               xlet(index1)=dsqrt(xxj(1,index2)**2+xxj(2,index2)**2
-     &                                            +xxj(3,index2)**2)
-               xlet(index2)=xlet(index1)
-!
-!              xxj is the unit vector connecting neighboring cell centers
-!
-               do k=1,3
-                  xxj(k,index2)=xxj(k,index2)/xlet(index2)
-                  xxj(k,index1)=-xxj(k,index2)
-               enddo
-!
-!              xxn.xxj
-!
-               cosb(index2)=xxn(1,index1)*xxj(1,index1)+
-     &                      xxn(2,index1)*xxj(2,index1)+
-     &                      xxn(3,index1)*xxj(3,index1)
-               cosb(index1)=cosb(index2)
-!
-               xrlfa(1,i)=xle(index2)/(xle(index1)+xle(index2))
-               xrlfa(2,i)=xle(index1)/(xle(index1)+xle(index2))
-            else
-!
-!              xxi and xxj coincide
-!
-               do k=1,3
-                  xxj(k,index1)=xxi(k,index1)
-               enddo
-               cosb(index1)=cosa(index1)
-!
-!              external face: determining the cell next to the
-!              adjacent cell
-!
-               iel3=ielfa(3,i)
-               if(iel3.eq.0) cycle
-               xl13=dsqrt((coel(1,iel1)-coel(1,iel3))**2+
-     &                    (coel(2,iel1)-coel(2,iel3))**2+
-     &                    (coel(3,iel1)-coel(3,iel3))**2)
-               xrlfa(1,i)=(xl13+xle(index1))/xl13
-               xrlfa(3,i)=1.d0-xrlfa(1,i)
-            endif
          else
 !
 !           tetrahedral element
@@ -384,113 +251,225 @@
      &                    xsj2(3)*xsj2(3))
             area(i)=dxsj2/2.d0
 !
-!           normal and xi-vector on face viewed from cell 1
+            neighface=4
 !
-            index1=ipnei(iel1)+j1
-            do k=1,3
-               xxn(k,index1)=xsj2(k)/dxsj2
-               xxi(k,index1)=cofa(k,i)-coel(k,iel1)
-            enddo
+         endif
 !
-!           distance from face center to the center of cell 1
+!        normal and xi-vector on face viewed from cell 1
 !
-            xle(index1)=dsqrt(xxi(1,index1)**2+xxi(2,index1)**2+
-     &                         xxi(3,index1)**2)
-            do k=1,3
-               xxi(k,index1)=xxi(k,index1)/xle(index1)
-            enddo
+         index1=ipnei(iel1)+j1
+         do k=1,3
+            xxn(k,index1)=xsj2(k)/dxsj2
+            xxi(k,index1)=cofa(k,i)-coel(k,iel1)
+         enddo
+!     
+!     distance from face center to the center of cell 1
 !
-!           angle between the normal and the xi-vector
+         xle(index1)=dsqrt(xxi(1,index1)**2+xxi(2,index1)**2+
+     &        xxi(3,index1)**2)
+         do k=1,3
+            xxi(k,index1)=xxi(k,index1)/xle(index1)
+         enddo
+!     
+!     angle between the normal and the xi-vector
+!     
+         cosa(index1)=xxn(1,index1)*xxi(1,index1)+
+     &        xxn(2,index1)*xxi(2,index1)+
+     &        xxn(3,index1)*xxi(3,index1)
+!     
+         iel2=ielfa(2,i)
+!     
+!     check whether there is an adjacent cell
+!     
+         if(iel2.ne.0) then
+            index2=ipnei(iel2)+neij(index1)
+c            index2=ipnei(iel2)
+c            do j2=1,neighface
+c               index2=index2+1
+c               if(neiel(index2).eq.iel1) exit
+c            enddo
+!     
+!     normal and xi-vector on face viewed from cell 2
+!     
+            if(ifatie(i).eq.0) then
 !
-            cosa(index1)=xxn(1,index1)*xxi(1,index1)+
-     &                   xxn(2,index1)*xxi(2,index1)+
-     &                   xxn(3,index1)*xxi(3,index1)
+!              genuine neighbor
 !
-            iel2=ielfa(2,i)
-!
-!           check whether there is an adjacent cell
-!
-            if(iel2.ne.0) then
-               index2=ipnei(iel2)
-               do j2=1,4
-                  index2=index2+1
-                  if(neiel(index2).eq.iel1) exit
-               enddo
-!
-!              normal and xi-vector on face viewed from cell 2
+c               index2=ipnei(iel2)
+c               do j2=1,neighface
+c                  index2=index2+1
+c                  if(neiel(index2).eq.iel1) exit
+c               enddo
 !
                do k=1,3
                   xxi(k,index2)=cofa(k,i)-coel(k,iel2)
                   xxn(k,index2)=-xxn(k,index1)
                enddo
+!     
                xle(index2)=dsqrt(xxi(1,index2)**2+xxi(2,index2)**2+
      &              xxi(3,index2)**2)
                do k=1,3
                   xxi(k,index2)=xxi(k,index2)/xle(index2)
                enddo
-!
-!              angle between the normal and the xi-vector: xxn.xxi
-!
+!     
+!     angle between the normal and the xi-vector: xxn.xxi
+!     
                cosa(index2)=xxn(1,index2)*xxi(1,index2)+
-     &                      xxn(2,index2)*xxi(2,index2)+
-     &                      xxn(3,index2)*xxi(3,index2)
-!
-!              distance from the face center to the center of the
-!              adjacent cell
-!
+     &              xxn(2,index2)*xxi(2,index2)+
+     &              xxn(3,index2)*xxi(3,index2)
+!     
+!     distance from the face center to the center of the
+!     adjacent cell
+!     
                xlen(index1)=xle(index2)
                xlen(index2)=xle(index1)
-!
+!     
                do k=1,3
                   xxj(k,index2)=coel(k,iel1)-coel(k,iel2)
                enddo
-!
-!              distance between the cell center and the center of the
-!              adjacent cell
-!
+!     
+!     distance between the cell center and the center of the
+!     adjacent cell
+!     
                xlet(index1)=dsqrt(xxj(1,index2)**2+xxj(2,index2)**2
-     &                                            +xxj(3,index2)**2)
+     &              +xxj(3,index2)**2)
                xlet(index2)=xlet(index1)
-!
-!              xxj is the unit vector connecting neighboring cell centers
-!
+!     
+!     xxj is the unit vector connecting neighboring cell centers
+!     
                do k=1,3
                   xxj(k,index2)=xxj(k,index2)/xlet(index2)
                   xxj(k,index1)=-xxj(k,index2)
                enddo
-!
-!              xxn.xxj
-!
+!     
+!     xxn.xxj
+!     
                cosb(index2)=xxn(1,index1)*xxj(1,index1)+
-     &                      xxn(2,index1)*xxj(2,index1)+
-     &                      xxn(3,index1)*xxj(3,index1)
+     &              xxn(2,index1)*xxj(2,index1)+
+     &              xxn(3,index1)*xxj(3,index1)
                cosb(index1)=cosb(index2)
-!
+!     
                xrlfa(1,i)=xle(index2)/(xle(index1)+xle(index2))
                xrlfa(2,i)=xle(index1)/(xle(index1)+xle(index2))
             else
+c               index2=ipnei(iel2)
+c               if(iel2.ne.iel1) then
+c                  do j2=1,neighface
+c                     index2=index2+1
+c                     if(neiel(index2).eq.iel1) exit
+c                  enddo
+c               else
+c                  do j2=1,neighface
+c                     index2=index2+1
+c                     if((neiel(index2).eq.iel1).and.
+c     &                  (index1.ne.index2)) exit
+c                  enddo
+c               endif
 !
-!              xxi and xxj coincide
+!              cyclic symmetry face: some quantities are
+!              calculated on the cyclic symmetric face
+!
+               xlen(index2)=xle(index1)
+!
+!              rotational cyclic symmetry
+!   
+!              vector from the axis to the center of the
+!              cyclic symmetric cell and orthogonal to the
+!              axis
+!            
+               if(tieset(1,itie)(81:81).eq.'Z') then
+                  do k=1,3
+                     p(k)=coel(k,iel2)-a(k)
+                  enddo
+                  dd=p(1)*xn(1)+p(2)*xn(2)+p(3)*xn(3)
+                  do k=1,3
+                     p(k)=p(k)-dd*xn(k)
+                  enddo
+!
+                  if(ifatie(i).gt.0) then
+!
+!                    vector rotated in the direction of the slave surface
+!                    (iel2 is adjacent to the master surface)
+!     
+                     do k=1,3
+                        q(k)=c(k,1)*p(1)+c(k,2)*p(2)+c(k,3)*p(3)
+                     enddo
+                  else
+!
+!                    vector rotated in the direction of the master surface
+!                    (iel2 is adjacent to the slave surface)
+!     
+                     do k=1,3
+                        q(k)=c(1,k)*p(1)+c(2,k)*p(2)+c(3,k)*p(3)
+                     enddo
+                  endif
+!
+!                 vector connecting the center of the cyclic
+!                 symmetry cell with the center of its rotated
+!                 ghost cell
+!
+                  do k=1,3
+                     diff(k)=q(k)-p(k)
+                  enddo
+               endif
 !
                do k=1,3
-                  xxj(k,index1)=xxi(k,index1)
+                  xxj(k,index1)=coel(k,iel2)-coel(k,iel1)
+     &                         +diff(k)
+c     &                         +diff(k)*ics/ifatie(i)
                enddo
-               cosb(index1)=cosa(index1)
-!
-!              external face: determining the cell next to the
-!              adjacent cell
-!
-               iel3=ielfa(3,i)
-               if(iel3.eq.0) cycle
-               xl13=dsqrt((coel(1,iel1)-coel(1,iel3))**2+
-     &                    (coel(2,iel1)-coel(2,iel3))**2+
-     &                    (coel(3,iel1)-coel(3,iel3))**2)
-               xrlfa(1,i)=(xl13+xle(index1))/xl13
-               xrlfa(3,i)=1.d0-xrlfa(1,i)
+!     
+!     distance between the cell center and the center of the
+!     adjacent cell
+!     
+               xlet(index1)=dsqrt(xxj(1,index1)**2+xxj(2,index1)**2
+     &              +xxj(3,index1)**2)
+!     
+!     xxj is the unit vector connecting neighboring cell centers
+!     
+               do k=1,3
+                  xxj(k,index1)=xxj(k,index1)/xlet(index1)
+               enddo
+!     
+!     xxn.xxj
+!     
+               cosb(index1)=xxn(1,index1)*xxj(1,index1)+
+     &              xxn(2,index1)*xxj(2,index1)+
+     &              xxn(3,index1)*xxj(3,index1)
             endif
+         else
+!     
+!     xxi and xxj coincide
+!     
+            do k=1,3
+               xxj(k,index1)=xxi(k,index1)
+            enddo
+            cosb(index1)=cosa(index1)
+!     
+!     external face: determining the cell next to the
+!     adjacent cell
+!     
+            iel3=ielfa(3,i)
+            if(iel3.eq.0) cycle
+            xl13=dsqrt((coel(1,iel1)-coel(1,iel3))**2+
+     &           (coel(2,iel1)-coel(2,iel3))**2+
+     &           (coel(3,iel1)-coel(3,iel3))**2)
+            xrlfa(1,i)=(xl13+xle(index1))/xl13
+            xrlfa(3,i)=1.d0-xrlfa(1,i)
          endif
-c         write(*,*)
       enddo
+!
+!     for cyclic symmetric faces xrlfa has not been filled yet
+!
+      if(ifirst_occurrence.eq.0) then
+         do i=1,nface
+            if(ifatie(i).ne.0) then
+               index1=ipnei(ielfa(1,i))+ielfa(4,i)
+               xrlfa(1,i)=xlen(index1)/(xle(index1)+xlen(index1))
+               xrlfa(2,i)=1.d0-xrlfa(1,i)
+            endif
+         enddo
+      endif
 !
 !     calculation of the volume of the elements
 !
@@ -546,6 +525,31 @@ c         write(*,*) 'initialcfd volume ',i,volume(i)
          endif
       enddo
       dmin=dsqrt(dmin)
+!
+c      write(*,*) 'initialcfd neifa,neiel'
+c      do i=1,6*nef
+c         write(*,*) (i-1)/6+1,i-6*((i-1)/6),neifa(i),neiel(i)
+c      enddo
+c      write(*,*) 'initialcfd xle,xlen,xlet'
+c      do i=1,6*nef
+c         write(*,*) (i-1)/6+1,i-6*((i-1)/6),xle(i),xlen(i),xlet(i)
+c      enddo
+c      write(*,*) 'initialcfd xxn'
+c      do i=1,6*nef
+c         write(*,*) (i-1)/6+1,i-6*((i-1)/6),(xxn(j,i),j=1,3)
+c      enddo
+c      write(*,*) 'initialcfd xxi'
+c      do i=1,6*nef
+c         write(*,*) (i-1)/6+1,i-6*((i-1)/6),(xxi(j,i),j=1,3)
+c      enddo
+c      write(*,*) 'initialcfd xxj'
+c      do i=1,6*nef
+c         write(*,*) (i-1)/6+1,i-6*((i-1)/6),(xxj(j,i),j=1,3)
+c      enddo
+c      write(*,*) 'initialcfd cosa,cosb'
+c      do i=1,6*nef
+c         write(*,*) (i-1)/6+1,i-6*((i-1)/6),cosa(i),cosb(i)
+c      enddo
 !
       return
       end

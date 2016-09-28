@@ -280,20 +280,20 @@
                      call printoutint(prlab,ipkon,lakon,stx,eei,xstate,
      &                    ener,mi(1),nstate_,ii,nelem,qfx,
      &                    orab,ielorien,norien,co,kon,ielmat,thicke,eme,
-     &                    ielprop,prop,nelem)
+     &                    ielprop,prop,nelem,ithermal)
                   elseif(ialset(jj+1).gt.0) then
                      nelem=ialset(jj)
                      call printoutint(prlab,ipkon,lakon,stx,eei,xstate,
      &                    ener,mi(1),nstate_,ii,nelem,qfx,orab,
      &                    ielorien,norien,co,kon,ielmat,thicke,eme,
-     &                    ielprop,prop,nelem)
+     &                    ielprop,prop,nelem,ithermal)
                   else
                      do nelem=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                    -ialset(jj+1)
                         call printoutint(prlab,ipkon,lakon,stx,eei,
      &                       xstate,ener,mi(1),nstate_,ii,nelem,
      &                       qfx,orab,ielorien,norien,co,kon,ielmat,
-     &                       thicke,eme,ielprop,prop,nelem)
+     &                       thicke,eme,ielprop,prop,nelem,ithermal)
                      enddo
                   endif
                enddo

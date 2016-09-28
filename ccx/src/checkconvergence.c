@@ -196,7 +196,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
          
          Proposed by Matteo Pacher */
 
-    if((*nmethod==4)&&(*ithermal<2)&&(iconvergence==1)&&(*ne==*ne0)&&(*neini==*ne0)&&(*idrct==0)) {
+    if((*nmethod==4)&&(*ithermal<2)&&(*uncoupled==0)&&(iconvergence==1)&&(*ne==*ne0)&&(*neini==*ne0)&&(*idrct==0)) {
     
 	/* Update the value of the maximum energy of the system emax
 	   (contact energy is not taken into account because small) */
@@ -239,7 +239,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
        on the natural frequency of oscillation of contact elements 
        Implicit dynamic calculations only */
 
-    if((*nmethod==4)&&(*ithermal<2)&&(iconvergence==1)&&((*ne!=*ne0)||(*neini!=*ne0))){
+    if((*nmethod==4)&&(*ithermal<2)&&(*uncoupled==0)&&(iconvergence==1)&&((*ne!=*ne0)||(*neini!=*ne0))){
 
 	/* store temporarly the value of emax: in case of forced divergence 
 	   emax has to be resetted. */

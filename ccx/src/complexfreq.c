@@ -87,7 +87,8 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     idir,*inumt=NULL,icntrl,imag,jj,is,l1,*inocs=NULL,ml1,l2,nkt,net,
     *ipkont=NULL,*ielmatt=NULL,*inotrt=NULL,*kont=NULL,node,iel,*ielcs=NULL,
     ielset,*istartnmd=NULL,*iendnmd=NULL,inmd,neqact,*nshcon=NULL,
-    *ipev=NULL,icfd=0,*inomat=NULL,mortar=0,*islavsurf=NULL;
+    *ipev=NULL,icfd=0,*inomat=NULL,mortar=0,*islavsurf=NULL,
+    *iponoel=NULL,*inoel=NULL;
 
   long long i2;
 
@@ -1325,7 +1326,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
           if(icomplex!=0){
 	    idir=nodempc[3*index+1];
 	    idof=nactdof[mt*(inode-1)+idir]-1;
-            if(idof==-1){xreal=1.;ximag=1.;}
+            if(idof<=-1){xreal=1.;ximag=1.;}
             else{xreal=zz[lint+idof];ximag=zz[lint+idof+neq[1]/2];}
             if(k==0) {
               if(fabs(xreal)<1.e-30)xreal=1.e-30;
@@ -1358,7 +1359,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             &ne0,xforc,nforc,thicke,shcon,nshcon,
             sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	    islavsurf,ielprop,prop,energyini,energy,&iit);}
+	    islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,inoel);}
       else{
 	results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
             &stx[kkx],elcon,
@@ -1377,7 +1378,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             &ne0,xforc,nforc,thicke,shcon,nshcon,
             sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	    islavsurf,ielprop,prop,energyini,energy,&iit);
+	    islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,inoel);
       }
 
     }

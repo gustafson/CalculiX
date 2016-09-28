@@ -63,7 +63,7 @@
       if(calcul_f.eq.1) then
          do i=1,nk
             do j=0,mi(2)
-               if(nactdof(j,i).ne.0) then
+               if(nactdof(j,i).gt.0) then
                   f(nactdof(j,i))=fn(j,i)
                endif
             enddo

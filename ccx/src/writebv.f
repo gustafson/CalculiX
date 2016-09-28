@@ -18,7 +18,7 @@
 !
       subroutine writebv(x,nx)
 !
-!     writes the buckling force factor to unit 3
+!     writes the buckling force factor to unit 5
 !
       implicit none
 !

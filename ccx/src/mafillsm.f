@@ -31,7 +31,8 @@
      &  coriolis,ibody,xloadold,reltime,veold,springarea,nstate_,
      &  xstateini,xstate,thicke,integerglob,doubleglob,
      &  tieset,istartset,iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,
-     &  mortar,clearini,ielprop,prop,ne0,fnext,nea,neb,kscale)
+     &  mortar,clearini,ielprop,prop,ne0,fnext,nea,neb,kscale,
+     &  iponoel,inoel)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !
@@ -57,13 +58,13 @@
      &  mpc1,mpc2,index1,index2,jdof,node1,node2,kflag,icalccg,
      &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,
-     &  nea,neb,kscale
+     &  nea,neb,kscale,iponoel(*),inoel(2,*)
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
-     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(100,100),
-     &  ff(100),fnext(0:mi(2),*),
-     &  sti(6,mi(1),*),sm(100,100),stx(6,mi(1),*),adb(*),aub(*),
+     &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(60,60),
+     &  ff(60),fnext(0:mi(2),*),
+     &  sti(6,mi(1),*),sm(60,60),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),springarea(2,*),
      &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),prop(*),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
@@ -246,7 +247,7 @@ c           nope=nope+1
 !
 !           check whether one of the DOF belongs to a SPC or MPC
 !
-            if((jdof1.ne.0).and.(jdof2.ne.0)) then
+            if((jdof1.gt.0).and.(jdof2.gt.0)) then
                if(stiffonly(1).eq.1) then
                   call add_sm_st(au,ad,jq,irow,jdof1,jdof2,
      &                 s(jj,ll),jj,ll)
@@ -254,25 +255,29 @@ c           nope=nope+1
                   call add_sm_ei(au,ad,aub,adb,jq,irow,jdof1,jdof2,
      &                 s(jj,ll),sm(jj,ll),jj,ll)
                endif
-            elseif((jdof1.ne.0).or.(jdof2.ne.0)) then
+            elseif((jdof1.gt.0).or.(jdof2.gt.0)) then
 !
 !              idof1: genuine DOF
 !              idof2: nominal DOF of the SPC/MPC
 !
-               if(jdof1.eq.0) then
+               if(jdof1.le.0) then
                   idof1=jdof2
-                  idof2=(node1-1)*8+k
+c                  idof2=(node1-1)*8+k
+                  idof2=jdof1
                else
                   idof1=jdof1
-                  idof2=(node2-1)*8+m
+c                  idof2=(node2-1)*8+m
+                  idof2=jdof2
                endif
                if(nmpc.gt.0) then
-                  call nident(ikmpc,idof2,nmpc,id)
-                  if((id.gt.0).and.(ikmpc(id).eq.idof2)) then
+c                  call nident(ikmpc,idof2,nmpc,id)
+c                  if((id.gt.0).and.(ikmpc(id).eq.idof2)) then
+                  if(idof2.ne.2*(idof2/2)) then
 !
 !                    regular DOF / MPC
 !
-                     id=ilmpc(id)
+c                     id=ilmpc(id)
+                     id=(-idof2+1)/2
                      ist=ipompc(id)
                      index=nodempc(3,ist)
                      if(index.eq.0) cycle
@@ -280,7 +285,7 @@ c           nope=nope+1
                         idof2=nactdof(nodempc(2,index),nodempc(1,index))
                         value=-coefmpc(index)*s(jj,ll)/coefmpc(ist)
                         if(idof1.eq.idof2) value=2.d0*value
-                        if(idof2.ne.0) then
+                        if(idof2.gt.0) then
                            if(stiffonly(1).eq.1) then
                               call add_sm_st(au,ad,jq,irow,idof1,
      &                             idof2,value,i0,i0)
@@ -306,24 +311,31 @@ c
                if(rhsi.eq.1) then
                elseif(nmethod.eq.2) then
                   value=s(jj,ll)
-                  call nident(ikboun,idof2,nboun,id)
-                  icolumn=neq(2)+ilboun(id)
+c                  call nident(ikboun,idof2,nboun,id)
+c                  icolumn=neq(2)+ilboun(id)
+                  icolumn=neq(2)-idof2/2
                   call add_bo_st(au,jq,irow,idof1,icolumn,value)
                endif
             else
-               idof1=(node1-1)*8+k
-               idof2=(node2-1)*8+m
+c               idof1=(node1-1)*8+k
+c               idof2=(node2-1)*8+m
+               idof1=jdof1
+               idof2=jdof2
                mpc1=0
                mpc2=0
                if(nmpc.gt.0) then
-                  call nident(ikmpc,idof1,nmpc,id1)
-                  if((id1.gt.0).and.(ikmpc(id1).eq.idof1)) mpc1=1
-                  call nident(ikmpc,idof2,nmpc,id2)
-                  if((id2.gt.0).and.(ikmpc(id2).eq.idof2)) mpc2=1
+c                  call nident(ikmpc,idof1,nmpc,id1)
+c                  if((id1.gt.0).and.(ikmpc(id1).eq.idof1)) mpc1=1
+c                  call nident(ikmpc,idof2,nmpc,id2)
+c                  if((id2.gt.0).and.(ikmpc(id2).eq.idof2)) mpc2=1
+                  if(idof1.ne.2*(idof1/2)) mpc1=1
+                  if(idof2.ne.2*(idof2/2)) mpc2=1
                endif
                if((mpc1.eq.1).and.(mpc2.eq.1)) then
-                  id1=ilmpc(id1)
-                  id2=ilmpc(id2)
+c                  id1=ilmpc(id1)
+c                  id2=ilmpc(id2)
+                  id1=(-idof1+1)/2
+                  id2=(-idof2+1)/2
                   if(id1.eq.id2) then
 !
 !                    MPC id1 / MPC id1
@@ -340,7 +352,7 @@ c
      &                                   nodempc(1,index2))
                            value=coefmpc(index1)*coefmpc(index2)*
      &                          s(jj,ll)/coefmpc(ist)/coefmpc(ist)
-                           if((idof1.ne.0).and.(idof2.ne.0)) then
+                           if((idof1.gt.0).and.(idof2.gt.0)) then
                               if(stiffonly(1).eq.1) then
                                  call add_sm_st(au,ad,jq,irow,
      &                             idof1,idof2,value,i0,i0)
@@ -384,7 +396,7 @@ c
                            value=coefmpc(index1)*coefmpc(index2)*
      &                          s(jj,ll)/coefmpc(ist1)/coefmpc(ist2)
                            if(idof1.eq.idof2) value=2.d0*value
-                           if((idof1.ne.0).and.(idof2.ne.0)) then
+                           if((idof1.gt.0).and.(idof2.gt.0)) then
                               if(stiffonly(1).eq.1) then
                                  call add_sm_st(au,ad,jq,irow,
      &                             idof1,idof2,value,i0,i0)
@@ -442,19 +454,22 @@ c                  endif
 !
                 if(nmethod.eq.4) fnext(k,node1)=fnext(k,node1)+ff(jj)
 !
-                if(jdof1.eq.0) then
+                if(jdof1.le.0) then
                    if(nmpc.ne.0) then
-                      idof1=(node1-1)*8+k
-                      call nident(ikmpc,idof1,nmpc,id)
-                      if((id.gt.0).and.(ikmpc(id).eq.idof1)) then
-                         id=ilmpc(id)
+c                      idof1=(node1-1)*8+k
+                      idof1=jdof1
+c                      call nident(ikmpc,idof1,nmpc,id)
+c                      if((id.gt.0).and.(ikmpc(id).eq.idof1)) then
+                      if(idof1.ne.2*(idof1/2)) then
+c                         id=ilmpc(id)
+                         id=(-idof1+1)/2
                          ist=ipompc(id)
                          index=nodempc(3,ist)
                          if(index.eq.0) cycle
                          do
                             jdof1=nactdof(nodempc(2,index),
      &                           nodempc(1,index))
-                            if(jdof1.ne.0) then
+                            if(jdof1.gt.0) then
                                fext(jdof1)=fext(jdof1)
      &                              -coefmpc(index)*ff(jj)
      &                              /coefmpc(ist)
@@ -525,7 +540,7 @@ c           nope=nope+1
      &  xstiff,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,
      &  ilmpc,springarea,plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,
      &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,
-     &  ipkon,ielprop,prop)
+     &  ipkon,ielprop,prop,iponoel,inoel)
 !
         do jj=1,nope
 !
@@ -544,7 +559,7 @@ c            m=0
 !
 !           check whether one of the DOF belongs to a SPC or MPC
 !
-            if((jdof1.ne.0).and.(jdof2.ne.0)) then
+            if((jdof1.gt.0).and.(jdof2.gt.0)) then
                if(stiffonly(2).eq.1) then
                   call add_sm_st(au,ad,jq,irow,jdof1,jdof2,
      &                 s(jj,ll),jj,ll)
@@ -552,25 +567,29 @@ c            m=0
                   call add_sm_ei(au,ad,aub,adb,jq,irow,jdof1,jdof2,
      &                 s(jj,ll),sm(jj,ll),jj,ll)
                endif
-            elseif((jdof1.ne.0).or.(jdof2.ne.0)) then
+            elseif((jdof1.gt.0).or.(jdof2.gt.0)) then
 !
 !              idof1: genuine DOF
 !              idof2: nominal DOF of the SPC/MPC
 !
-               if(jdof1.eq.0) then
+               if(jdof1.le.0) then
                   idof1=jdof2
-                  idof2=(node1-1)*8
+c                  idof2=(node1-1)*8
+                  idof2=jdof1
                else
                   idof1=jdof1
-                  idof2=(node2-1)*8
+c                  idof2=(node2-1)*8
+                  idof2=jdof2
                endif
                if(nmpc.gt.0) then
-                  call nident(ikmpc,idof2,nmpc,id)
-                  if((id.gt.0).and.(ikmpc(id).eq.idof2)) then
+c                  call nident(ikmpc,idof2,nmpc,id)
+c                  if((id.gt.0).and.(ikmpc(id).eq.idof2)) then
+                  if(idof2.ne.2*(idof2/2)) then
 !
 !                    regular DOF / MPC
 !
-                     id=ilmpc(id)
+c                     id=ilmpc(id)
+                     id=(-idof2+1)/2
                      ist=ipompc(id)
                      index=nodempc(3,ist)
                      if(index.eq.0) cycle
@@ -578,7 +597,7 @@ c            m=0
                         idof2=nactdof(nodempc(2,index),nodempc(1,index))
                         value=-coefmpc(index)*s(jj,ll)/coefmpc(ist)
                         if(idof1.eq.idof2) value=2.d0*value
-                        if(idof2.ne.0) then
+                        if(idof2.gt.0) then
                            if(stiffonly(2).eq.1) then
                               call add_sm_st(au,ad,jq,irow,idof1,
      &                             idof2,value,i0,i0)
@@ -604,24 +623,31 @@ c
                if(rhsi.eq.1) then
                elseif(nmethod.eq.2) then
                   value=s(jj,ll)
-                  call nident(ikboun,idof2,nboun,id)
-                  icolumn=neq(2)+ilboun(id)
+c                  call nident(ikboun,idof2,nboun,id)
+c                  icolumn=neq(2)+ilboun(id)
+                  icolumn=neq(2)-idof2/2
                   call add_bo_st(au,jq,irow,idof1,icolumn,value)
                endif
             else
-               idof1=(node1-1)*8
-               idof2=(node2-1)*8
+c               idof1=(node1-1)*8
+c               idof2=(node2-1)*8
+               idof1=jdof1
+               idof2=jdof2
                mpc1=0
                mpc2=0
                if(nmpc.gt.0) then
-                  call nident(ikmpc,idof1,nmpc,id1)
-                  if((id1.gt.0).and.(ikmpc(id1).eq.idof1)) mpc1=1
-                  call nident(ikmpc,idof2,nmpc,id2)
-                  if((id2.gt.0).and.(ikmpc(id2).eq.idof2)) mpc2=1
+c                  call nident(ikmpc,idof1,nmpc,id1)
+c                  if((id1.gt.0).and.(ikmpc(id1).eq.idof1)) mpc1=1
+c                  call nident(ikmpc,idof2,nmpc,id2)
+c                  if((id2.gt.0).and.(ikmpc(id2).eq.idof2)) mpc2=1
+                  if(idof1.ne.2*(idof1/2)) mpc1=1
+                  if(idof2.ne.2*(idof2/2)) mpc2=1
                endif
                if((mpc1.eq.1).and.(mpc2.eq.1)) then
-                  id1=ilmpc(id1)
-                  id2=ilmpc(id2)
+c                  id1=ilmpc(id1)
+c                  id2=ilmpc(id2)
+                  id1=(-idof1+1)/2
+                  id2=(-idof2+1)/2
                   if(id1.eq.id2) then
 !
 !                    MPC id1 / MPC id1
@@ -638,7 +664,7 @@ c
      &                                   nodempc(1,index2))
                            value=coefmpc(index1)*coefmpc(index2)*
      &                          s(jj,ll)/coefmpc(ist)/coefmpc(ist)
-                           if((idof1.ne.0).and.(idof2.ne.0)) then
+                           if((idof1.gt.0).and.(idof2.gt.0)) then
                               if(stiffonly(2).eq.1) then
                                  call add_sm_st(au,ad,jq,irow,
      &                             idof1,idof2,value,i0,i0)
@@ -682,7 +708,7 @@ c
                            value=coefmpc(index1)*coefmpc(index2)*
      &                          s(jj,ll)/coefmpc(ist1)/coefmpc(ist2)
                            if(idof1.eq.idof2) value=2.d0*value
-                           if((idof1.ne.0).and.(idof2.ne.0)) then
+                           if((idof1.gt.0).and.(idof2.gt.0)) then
                               if(stiffonly(2).eq.1) then
                                  call add_sm_st(au,ad,jq,irow,
      &                             idof1,idof2,value,i0,i0)
@@ -740,19 +766,22 @@ c                  endif
 !            distributed forces
 !
              if(idist.ne.0) then
-                if(jdof1.eq.0) then
+                if(jdof1.le.0) then
                    if(nmpc.ne.0) then
-                      idof1=(node1-1)*8
-                      call nident(ikmpc,idof1,nmpc,id)
-                      if((id.gt.0).and.(ikmpc(id).eq.idof1)) then
-                         id=ilmpc(id)
+c                      idof1=(node1-1)*8
+                      idof1=jdof1
+c                      call nident(ikmpc,idof1,nmpc,id)
+c                      if((id.gt.0).and.(ikmpc(id).eq.idof1)) then
+                      if(idof1.ne.2*(idof1/2)) then
+c                         id=ilmpc(id)
+                         id=(-idof1+1)/2
                          ist=ipompc(id)
                          index=nodempc(3,ist)
                          if(index.eq.0) cycle
                          do
                             jdof1=nactdof(nodempc(2,index),
      &                           nodempc(1,index))
-                            if(jdof1.ne.0) then
+                            if(jdof1.gt.0) then
                                fext(jdof1)=fext(jdof1)
      &                              -coefmpc(index)*ff(jj)
      &                              /coefmpc(ist)

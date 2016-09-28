@@ -28,7 +28,7 @@
      &  iperturb(*),nmethod,mi(*),nasym
 !
       real*8 xl(3,10),elas(21),ratio(9),pproj(3),val,shp2(7,9),
-     &  al(3),s(100,100),voldl(0:mi(2),10),pl(3,10),xn(3),dm,
+     &  al(3),s(60,60),voldl(0:mi(2),10),pl(3,10),xn(3),dm,
      &  c1,c2,c3,c4,elcon(0:ncmat_,ntmat_,*),xm(3),xmu(3,3,10),
      &  dxmu(3,10),dval(3,10),fpu(3,3,10),xi,et,xs2(3,7),xk,
      &  a11,a12,a22,b1(3,10),b2(3,10),dal(3,3,10),qxxy(3),fnl(3),

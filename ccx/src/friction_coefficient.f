@@ -30,6 +30,10 @@
      &     rey_turb_min,rey_lam_max,lzd,dd,ds,friction,dfriction,
      &     lambda_kr,lambda_turb,ksd
 !     
+      intent(in) l,d,ks,reynolds,form_fact
+!
+      intent(inout) lambda
+!
       rey_turb_min=4000
       rey_lam_max=2000
       lzd=l/d

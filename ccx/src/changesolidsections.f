@@ -19,7 +19,7 @@
       subroutine changesolidsections(inpc,textpart,set,istartset,
      &  iendset,ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
      &  lakon,thicke,kon,ipkon,irstrt,istep,istat,n,iline,ipol,inl,
-     &  ipoinp,inp,cs,mcs,iaxial,ipoinpc,mi)
+     &  ipoinp,inp,cs,mcs,iaxial,ipoinpc,mi,nelcon)
 !
 !     reading the input deck: *CHANGE SOLID SECTION
 !
@@ -33,7 +33,7 @@
 !
       integer mi(*),istartset(*),iendset(*),ialset(*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),kon(*),ipkon(*),indexe,irstrt,nset,nmat,
-     &  norien,
+     &  norien,nelcon(2,*),
      &  istep,istat,n,key,i,j,k,l,imaterial,iorientation,ipos,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),mcs,iaxial,ipoinpc(0:*)
 !
@@ -99,6 +99,12 @@
       imaterial=i
 !
       if(orientation.eq.'                    ') then
+         iorientation=0
+      elseif(nelcon(1,i).eq.2) then
+         write(*,*) '*INFO reading *SOLID SECTION: an orientation'
+         write(*,*) '      is for isotropic materials irrelevant'
+         call inputinfo(inpc,ipoinpc,iline,
+     &"*SOLID SECTION%")
          iorientation=0
       else
          do i=1,norien

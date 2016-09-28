@@ -18,7 +18,7 @@
       subroutine scavenge_pump(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,ntmat_,mi,
-     &        iaxial)
+     &        ttime,time,iaxial)
 !     
 !     scavenge pump element
 !
@@ -35,7 +35,7 @@
      &     ipkon(*),kon(*),mi(*),ntmat_,iaxial
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(5),kappa,cp,physcon(*)
-     &     ,dvi,R
+     &     ,dvi,R,ttime,time
 !  
       if (iflag.eq.0) then
          identity=.true.

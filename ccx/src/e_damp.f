@@ -43,11 +43,11 @@
      &  npmat_
 !
       real*8 co(3,*),xl(3,20),
-     &  s(100,100),p1(3),p2(3),bodyfx(3),ff(100),
+     &  s(60,60),p1(3),p2(3),bodyfx(3),ff(60),
      &  elcon(0:ncmat_,ntmat_,*),
      &  rhcon(0:1,ntmat_,*),alcon(0:6,ntmat_,*),alzero(*),orab(7,*),
      &  t0(*),t1(*),voldl(3,20),vold(0:mi(2),*),xload(2,*),omx,
-     &  sm(100,100),
+     &  sm(60,60),
      &  sti(6,mi(1),*),stx(6,mi(1),*),t0l,t1l,elas(21),elconloc(21)
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),

@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine extrapolate_ad_h(nface,ielfa,xrlfa,adv,advfa,
-     &                  hel,hfa)
+     &                  hel,hfa,icyclic,c,ifatie)
 !
 !     inter/extrapolation of adv at the center of the elements
 !     to the center of the faces
@@ -28,13 +28,13 @@
 !
       implicit none
 !
-      integer nface,ielfa(4,*),ipo1,iel2,ipo3,i,j
+      integer nface,ielfa(4,*),ipo1,iel2,ipo3,i,j,icyclic,ifatie(*)
 !
-      real*8 xrlfa(3,*),xl1,advfa(*),adv(*),hel(3,*),hfa(3,*)
+      real*8 xrlfa(3,*),xl1,xl2,advfa(*),adv(*),hel(3,*),hfa(3,*),c(3,3)
 !     
 c$omp parallel default(none)
-c$omp& shared(nface,ielfa,xrlfa,advfa,adv,hfa,hel)
-c$omp& private(i,ipo1,xl1,iel2,j,ipo3)
+c$omp& shared(nface,ielfa,xrlfa,advfa,adv,hfa,hel,icyclic,c,ifatie)
+c$omp& private(i,ipo1,xl1,iel2,j,ipo3,xl2)
 c$omp do
       do i=1,nface
          ipo1=ielfa(1,i)
@@ -44,11 +44,30 @@ c$omp do
 !
 !           internal face
 !
-            advfa(i)=xl1*adv(ipo1)+xrlfa(2,i)*adv(iel2)
-            do j=1,3
-               hfa(j,i)=(xl1*hel(j,ipo1)
-     &                   +xrlfa(2,i)*hel(j,iel2))/advfa(i)
-            enddo
+            xl2=xrlfa(2,i)
+            advfa(i)=xl1*adv(ipo1)+xl2*adv(iel2)
+c            write(*,*) 'extrapolate_ad_h ',i,ipo1,adv(ipo1),iel2,
+c     &        adv(iel2),xl1,xl2
+            if((icyclic.eq.0).or.(ifatie(i).eq.0)) then
+               do j=1,3
+                  hfa(j,i)=(xl1*hel(j,ipo1)
+     &                 +xl2*hel(j,iel2))/advfa(i)
+               enddo
+            elseif(ifatie(i).gt.0) then
+               do j=1,3
+                  hfa(j,i)=(xl1*hel(j,ipo1)
+     &                 +xl2*(c(j,1)*hel(1,iel2)+
+     &                       c(j,2)*hel(2,iel2)+
+     &                       c(j,3)*hel(3,iel2)))/advfa(i)
+               enddo
+            else
+               do j=1,3
+                  hfa(j,i)=(xl1*hel(j,ipo1)
+     &                 +xl2*(c(1,j)*hel(1,iel2)+
+     &                       c(2,j)*hel(2,iel2)+
+     &                       c(3,j)*hel(3,iel2)))/advfa(i)
+               enddo
+            endif
          elseif(ielfa(3,i).gt.0) then
 !
 !           external face; linear extrapolation

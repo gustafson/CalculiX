@@ -167,9 +167,12 @@
                   elas(8)=elas(15)
                   elas(9)=elas(21)
 !
-                  elas(10)=0.d0
-                  elas(15)=0.d0
-                  elas(21)=0.d0
+                  do j=10,21
+                     elas(j)=0.d0
+                  enddo
+c                  elas(10)=0.d0
+c                  elas(15)=0.d0
+c                  elas(21)=0.d0
 !
                   mattyp=2
                endif

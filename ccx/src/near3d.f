@@ -24,7 +24,7 @@
       implicit none
 !
       integer n,nx(n),ny(n),nz(n),ir(k+6),nr,neighbor(k),kflag,iflag,
-     &  i,j,k,m,id,idx,idy,idz,eight,idummy,node,l,kfix
+     &  i,j,k,m,id,idx,idy,idz,eight,idummy,node,l
 !
       real*8 x(n),y(n),z(n),xo(n),yo(n),zo(n),xp,yp,zp,r(k+6),xr,yr,
      &  zr,c(8),dd,xw,xe,ys,yn,zb,zt,sqrt_rmaxini
@@ -57,7 +57,7 @@
          ir(i)=i
       enddo
       call dsort(r,ir,k,kflag)
-      sqrt_rmaxini=dsqrt(r(k))
+      sqrt_rmaxini=1.d30
 !
 !     initialization of the maximal distance in each direction
 !
@@ -67,8 +67,6 @@
       yn=0.d0
       zb=0.d0
       zt=0.d0
-!
-      kfix=1
 !
       i=1
 !
@@ -203,16 +201,15 @@
 !
 !           reject equal entries
 !            
-            m=kfix
+            m=1
             if(m.lt.k) then
-               loop: do j=kfix+1,nr
+               loop: do j=2,nr
                   do l=m,1,-1
                      if(ir(j).eq.ir(l)) cycle loop
                   enddo
                   m=m+1
                   r(m)=r(j)
                   ir(m)=ir(j)
-                  if(r(m).le.c(1)) kfix=m
                   if(m.eq.k) exit
                enddo loop
             endif

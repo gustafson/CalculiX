@@ -28,7 +28,7 @@
 !
       implicit none
 !
-      logical dload_flag,submodel,edgeload
+      logical dload_flag,submodel,edgeload,surface
 !
       character*1 inpc(*)
       character*8 lakon(*)
@@ -56,6 +56,7 @@
       submodel=.false.
       iglobstep=0
       edgeload=.false.
+      surface=.false.
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *DLOAD: *DLOAD should only be used'
@@ -342,17 +343,31 @@ c     BernhardiEnd
             read(textpart(1)(1:80),'(a80)',iostat=istat) elset
             elset(81:81)=' '
             ipos=index(elset,' ')
+!
+!           check for element set
+!
             elset(ipos:ipos)='E'
             do i=1,nset
                if(set(i).eq.elset) exit
             enddo
             if(i.gt.nset) then
-               elset(ipos:ipos)=' '
-               write(*,*) '*ERROR reading *DLOAD: element set ',elset
-               write(*,*) '       has not yet been defined. '
-               call inputerror(inpc,ipoinpc,iline,
-     &"*DLOAD%")
-               call exit(201)
+!
+!              check for facial surface
+!
+               surface=.true.
+               elset(ipos:ipos)='T'
+               do i=1,nset
+                  if(set(i).eq.elset) exit
+               enddo
+               if(i.gt.nset) then
+                  elset(ipos:ipos)=' '
+                  write(*,*) '*ERROR reading *DLOAD: element set '
+                  write(*,*) '       or facial surface ',elset
+                  write(*,*) '       has not yet been defined. '
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*DLOAD%")
+                  call exit(201)
+               endif
             endif
 !
             if((label(1:7).eq.'CENTRIF').or.(label(1:4).eq.'GRAV').or.
@@ -361,6 +376,10 @@ c     BernhardiEnd
      &           iamplitude,xmagnitude,p1,p2,bodyf,xbodyold,lc,idefbody)
             else
                l=ialset(istartset(i))
+               if(surface) then
+                  write(label(2:2),'(i1)') l-10*(l/10)
+                  l=l/10
+               endif
                if((lakon(l)(1:2).eq.'CP').or.
      &              (lakon(l)(2:2).eq.'A').or.
      &              (lakon(l)(7:7).eq.'E').or.
@@ -402,6 +421,10 @@ cBernhardiEnd
                do j=istartset(i),iendset(i)
                   if(ialset(j).gt.0) then
                      l=ialset(j)
+                     if(surface) then
+                        write(label(2:2),'(i1)') l-10*(l/10)
+                        l=l/10
+                     endif
                      xxmagnitude=xmagnitude
 !     
 !     EDNOR is an edge load

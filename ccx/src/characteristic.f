@@ -16,9 +16,11 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-      subroutine  characteristic(node1,node2,nodem,nelem,
+      subroutine  characteristic(node1,node2,nodem,nelem,lakon,
+     &     kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,physcon,numf,set,mi,iaxial)
+     &     nodef,idirf,df,cp,r,physcon,dvi,numf,set,
+     &     mi,ttime,time,iaxial)
 !     
 !     This subroutine is used to enables the processing of empiric 
 !     given under the form
@@ -32,14 +34,16 @@
       implicit none
 !     
       logical identity
+!
+      character*8 lakon(*)
       character*81 set(*)
 !     
-      integer nelem,nactdog(0:3,*),node1,node2,nodem,
+      integer nelem,nactdog(0:3,*),node1,node2,nodem,kon(*),ipkon(*),
      &     ielprop(*),nodef(4),idirf(4),index,iflag,
      &     inv,id,numf,npu,i,mi(*),iaxial
 !     
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),
-     &     p1,p2,physcon(*),
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),cp,r,dvi,
+     &     p1,p2,physcon(*),ttime,time,xmach,kappa,
      &     xpu(100),ypu(100),Qred,p1mp2zp1,T1,scal,T2
 !     
       if (iflag.eq.0) then
@@ -88,15 +92,15 @@
          if(iflag.eq.1) then
             
             call ident(xpu,p1mp2zp1,npu,id)
-            if(id.le.2) then
-               Qred=scal*ypu(2)/xpu(2)*p1mp2zp1
+            if(id.eq.0) then
+               Qred=scal*ypu(1)
                xflow=inv*Qred*P1/dsqrt(T1)
             elseif(id.ge.npu) then
-               Qred=scal*ypu(npu-2)
+               Qred=scal*ypu(npu)
                xflow=inv*Qred*P1/dsqrt(T1)
             else
-               Qred=scal*ypu(id)+(ypu(id+1)-ypu(id))
-     &             *(p1mp2zp1-xpu(id))/(xpu(id+1)-xpu(id))
+               Qred=scal*(ypu(id)+(ypu(id+1)-ypu(id))
+     &             *(p1mp2zp1-xpu(id))/(xpu(id+1)-xpu(id)))
                xflow=inv*Qred*P1/dsqrt(T1)
             endif
 !
@@ -140,11 +144,10 @@
 !     
             call ident(xpu,p1mp2zp1,npu,id)
 !     
-            if(id.lt.2) then
-               f=dabs(xflow)*dsqrt(T1)/p1-scal*ypu(2)/xpu(2)*p1mp2zp1
-               df(4)=scal*ypu(2)/(xpu(2)*P1)
-               df(1)=-xflow*dsqrt(T1)/(P1**2.d0)-(P2/P1**2.d0)
-     &              *scal*ypu(2)/xpu(2)
+            if(id.eq.0) then
+               f=dabs(xflow)/P1*dsqrt(T1)-scal*ypu(1)
+               df(4)=0.01d0
+               df(1)=-xflow*dsqrt(T1)/P1**2
 !     
             elseif(id.ge.npu) then
                f=dabs(xflow)/P1*dsqrt(T1)-scal*ypu(npu)
@@ -167,6 +170,9 @@
          p1=v(2,node1)
          p2=v(2,node2) 
          xflow=v(1,nodem)*iaxial
+         kappa=(cp/(cp-r))
+         xmach=dsqrt(((p1/p2)**((kappa-1.d0)/kappa)-1.d0)*2.d0/
+     &          (kappa-1.d0))
 !     
          if (p1.ge.p2) then
 !     
@@ -194,32 +200,35 @@
          endif
 !
          write(1,*) ''
-         write(1,55) 'In line',int(nodem/100),' from node',node1,
-     &        ' to node', node2,':   air massflow rate=',xflow,'kg/s'
+         write(1,55) ' from node',node1,
+     &        ' to node', node2,':   air massflow rate=',xflow
 !
- 55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
+ 55      FORMAT(1X,A,I6,A,I6,A,e11.4,A,A,e11.4,A)
 !
          if(inv.eq.1) then
             write(1,56)'       Inlet node  ',node1,':   Tt1=',T1,
-     &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
+     &           ', Ts1=',T1,', Pt1=',P1
          
-            write(1,*)'             element G   ',set(numf)(1:20)
+            write(1,*)'             Element ',nelem,lakon(nelem)
+            write(1,57) 'M = ',xmach
 !
             write(1,56)'       Outlet node ',node2,':   Tt2=',T2,
-     &           'K, Ts2=',T2,'K, Pt2=',P2/1e5,'Bar'
+     &           ', Ts2=',T2,', Pt2=',P2
 !     
          else if(inv.eq.-1) then
             write(1,56)'       Inlet node  ',node2,':    Tt1=',T1,
-     &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
+     &           ', Ts1=',T1,', Pt1=',P1
      &          
-            write(1,*)'             element G    ',set(numf)(1:20)
+            write(1,*)'             Element ',nelem,lakon(nelem)
+            write(1,57) 'M = ',xmach
 !
             write(1,56)'       Outlet node ',node1,':    Tt2=',T2,
-     &           'K, Ts2=',T2,'K, Pt2=',P2/1e5, 'Bar'
+     &           ', Ts2=',T2,', Pt2=',P2
 !               
          endif
 !      
- 56      FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A)
+ 56      FORMAT(1X,A,I6,A,e11.4,A,e11.4,A,e11.4,A)
+ 57      format(40x,a,e11.4)
 !     
       endif
 !     

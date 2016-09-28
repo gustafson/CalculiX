@@ -146,7 +146,7 @@ c            elseif(lakonl(4:5).eq.'8R') then
       mt=mi(2)+1
       do i=1,nk
          do j=0,mi(2)
-            if(nactdof(j,i).eq.0) cycle
+            if(nactdof(j,i).le.0) cycle
             nactdofinv(nactdof(j,i))=(nodorig(i)-1)*mt+j
          enddo
       enddo

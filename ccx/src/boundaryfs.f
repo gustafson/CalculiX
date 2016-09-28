@@ -31,7 +31,7 @@
 !
       implicit none
 !
-      logical user,fixed
+      logical user,fixed,surface
 !
       character*1 typeboun(*),type,inpc(*)
       character*8 lakon(*)
@@ -58,6 +58,7 @@
       idelay=0
       user=.false.
       fixed=.false.
+      surface=.false.
 !
       do i=2,n
          if(textpart(i)(1:10).eq.'AMPLITUDE=') then
@@ -193,12 +194,22 @@
                if(set(i).eq.elset) exit
             enddo
             if(i.gt.nset) then
-               elset(ipos:ipos)=' '
-               write(*,*) '*ERROR reading *BOUNDARYF: surface ',elset
-               write(*,*) '       has not yet been defined. '
-               call inputerror(inpc,ipoinpc,iline,
+!
+!              check for facial surface
+!
+               surface=.true.
+               elset(ipos:ipos)='T'
+               do i=1,nset
+                  if(set(i).eq.elset) exit
+               enddo
+               if(i.gt.nset) then
+                  elset(ipos:ipos)=' '
+                  write(*,*) '*ERROR reading *BOUNDARYF: surface ',elset
+                  write(*,*) '       has not yet been defined. '
+                  call inputerror(inpc,ipoinpc,iline,
      &"*BOUNDARYF%")
-               call exit(201)
+                  call exit(201)
+               endif
             endif
             read(textpart(2)(2:2),'(i1)',iostat=istat) iface
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
@@ -206,7 +217,7 @@
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then
                   k=ialset(j)
-                  k=10*k+iface
+                  if(.not.surface) k=10*k+iface
                   call bounaddf(k,ibounstart,ibounend,bounval,
      &               nodeboun,ndirboun,xboun,nboun,nboun_,
      &               iamboun,iamplitude,nam,ipompc,nodempc,

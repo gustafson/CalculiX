@@ -19,7 +19,7 @@
       subroutine plastics(inpc,textpart,nelcon,nmat,ntmat_,npmat_,
      &        plicon,nplicon,plkcon,nplkcon,iplas,iperturb,nstate_,
      &        ncmat_,elcon,matname,irstrt,istep,istat,n,iline,ipol,
-     &        inl,ipoinp,inp,ipoinpc)
+     &        inl,ipoinp,inp,ipoinpc,ianisoplas)
 !
 !     reading the input deck: *PLASTIC
 !
@@ -34,7 +34,8 @@
       integer nelcon(2,*),nmat,ntmat_,ntmat,npmat_,npmat,istep,
      &  n,key,i,nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),ncmat_,
      &  iplas,iperturb(*),istat,nstate_,kin,itemp,ndata,ndatamax,id,
-     &  irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*)
+     &  irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
+     &  ianisoplas
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      & temperature,plconloc(802),t1l,elcon(0:ncmat_,ntmat_,*)
@@ -66,16 +67,19 @@
       endif
 !
       iperturb(1)=3
+c      iperturb(2)=1
+c      write(*,*) '*INFO reading *PLASTIC: nonlinear geometric'
+c      write(*,*) '      effects are turned on'
+c      write(*,*)
 !
       if(nelcon(1,nmat).eq.2) then
          iplas=1
          nelcon(1,nmat)=-51
          nstate_=max(nstate_,13)
       else
-         write(*,*) '*ERROR reading *PLASTIC: *PLASTIC cannot '
-         write(*,*) '       be used with an anisotropic material'
-         write(*,*) '       use a material user subroutine instead'
-         call exit(201)
+         ianisoplas=1
+         nelcon(1,nmat)=-114
+         nstate_=max(nstate_,14)
       endif
 !
       do i=2,n
@@ -85,6 +89,12 @@
             elseif(textpart(i)(11:18).eq.'COMBINED') then
                iso=.false.
             elseif(textpart(i)(11:14).eq.'USER') then
+               if(nelcon(1,nmat).eq.-114) then
+                  write(*,*) '*ERROR reading *PLASTIC: user defined '
+                  write(*,*) '       hardening is not allowed for '
+                  write(*,*) '       elastically anisotropic materials'
+                  call exit(201)
+               endif
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &              ipoinp,inp,ipoinpc)
                return
@@ -205,6 +215,167 @@
      &       '*ERROR reading *PLASTIC: *PLASTIC card without data'
          call exit(201)
       endif
+!
+!     elastically anisotropic materials: recasting the input data
+!     in a format conform to the user routine umat_aniso_plas.f
+!
+      if(nelcon(1,nmat).eq.-114) then
+         if(matname(nmat)(71:80).ne.'          ') then
+            write(*,*) 
+     &          '*ERROR reading *PLASTIC: the material name for an'
+            write(*,*) '       elastically anisotropic material with'
+            write(*,*) '       isotropic plasticity must not exceed 70'
+            write(*,*) '       characters'
+            call exit(201)
+         else
+            do i=80,11,-1
+               matname(nmat)(i:i)=matname(nmat)(i-10:i-10)
+            enddo
+c            matname(nmat)(11:80)=matname(nmat)(1:70)
+            matname(nmat)(1:10)='ANISO_PLAS'
+         endif
+!
+         if(iso) then
+!
+!           isotropic hardening
+!
+!           interpolating the plastic data at the elastic temperature
+!           data points
+!
+            ndatamax=0
+            do i=1,nelcon(2,nmat)
+               t1l=elcon(0,i,nmat)
+c               plconloc(1)=0.d0
+c               plconloc(2)=0.d0
+c               plconloc(3)=0.d0
+c               plconloc(81)=nplicon(1,nmat)+0.5d0
+!
+               if(nplicon(0,nmat).eq.1) then
+                  id=-1
+               else
+                  call ident2(plicon(0,1,nmat),t1l,nplicon(0,nmat),
+     &                        2*npmat_+1,id)
+               endif
+!
+               if(nplicon(0,nmat).eq.0) then
+                  continue
+               elseif((nplicon(0,nmat).eq.1).or.(id.eq.0).or.
+     &                 (id.eq.nplicon(0,nmat))) then
+                  if(id.le.0) then
+                     itemp=1
+                  else
+                     itemp=id
+                  endif
+                  kin=0
+                  call plcopy(plicon,nplicon,plconloc,npmat_,ntmat_,
+     &                 nmat,itemp,i,kin)
+                  if((id.eq.0).or.(id.eq.nplicon(0,nmat))) then
+                  endif
+               else
+                  kin=0
+                  call plmix(plicon,nplicon,plconloc,npmat_,ntmat_,
+     &                 nmat,id+1,t1l,i,kin)
+               endif
+!
+               ndata=int(plconloc(801))
+               if(ndata.eq.1) then
+                  elcon(10,i,nmat)=plconloc(2)
+                  elcon(11,i,nmat)=0.d0
+                  elcon(12,i,nmat)=0.d0
+                  elcon(13,i,nmat)=-1.d0
+                  elcon(14,i,nmat)=1.d0
+               else
+                  elcon(10,i,nmat)=plconloc(2)
+                  elcon(11,i,nmat)=(plconloc(4)-plconloc(2))/
+     &                             (plconloc(3)-plconloc(1))
+                  elcon(12,i,nmat)=0.d0
+                  elcon(13,i,nmat)=-1.d0
+                  elcon(14,i,nmat)=1.d0
+               endif
+               ndatamax=max(ndata,ndatamax)
+            enddo
+            if(ndatamax.gt.2) then
+               write(*,*) 
+     &            '*WARNING reading *PLASTIC: isotropic hardening'
+               write(*,*) '         curve is possibly nonlinear for'
+               write(*,*) '         the elastically anisotropic'
+               write(*,*) '         material ',matname(nmat)(11:80)
+            endif
+         else
+!
+!           kinematic hardening
+!
+!           interpolating the plastic data at the elastic temperature
+!           data points
+!
+            ndatamax=0
+            do i=1,nelcon(2,nmat)
+               t1l=elcon(0,i,nmat)
+c               plconloc(1)=0.d0
+c               plconloc(2)=0.d0
+c               plconloc(3)=0.d0
+c               plconloc(82)=nplkcon(1,nmat)+0.5d0
+!
+               if(nplkcon(0,nmat).eq.1) then
+                  id=-1
+               else
+                  call ident2(plkcon(0,1,nmat),t1l,nplkcon(0,nmat),
+     &                        2*npmat_+1,id)
+               endif
+!
+               if(nplkcon(0,nmat).eq.0) then
+                  continue
+               elseif((nplkcon(0,nmat).eq.1).or.(id.eq.0).or.
+     &                 (id.eq.nplkcon(0,nmat))) then
+                  if(id.le.0) then
+                     itemp=1
+                  else
+                     itemp=id
+                  endif
+                  kin=1
+                  call plcopy(plkcon,nplkcon,plconloc,npmat_,ntmat_,
+     &                 nmat,itemp,i,kin)
+                  if((id.eq.0).or.(id.eq.nplkcon(0,nmat))) then
+                  endif
+               else
+                  kin=1
+                  call plmix(plkcon,nplkcon,plconloc,npmat_,ntmat_,
+     &                 nmat,id+1,t1l,i,kin)
+               endif
+!
+               ndata=int(plconloc(802))
+               if(ndata.eq.1) then
+                  elcon(10,i,nmat)=plconloc(402)
+                  elcon(11,i,nmat)=0.d0
+                  elcon(12,i,nmat)=0.d0
+                  elcon(13,i,nmat)=-1.d0
+                  elcon(14,i,nmat)=1.d0
+               else
+                  elcon(10,i,nmat)=plconloc(402)
+                  elcon(11,i,nmat)=0.d0
+                  elcon(12,i,nmat)=(plconloc(404)-plconloc(402))/
+     &                             (plconloc(403)-plconloc(401))
+                  elcon(13,i,nmat)=-1.d0
+                  elcon(14,i,nmat)=1.d0
+               endif
+               ndatamax=max(ndata,ndatamax)
+            enddo
+            if(ndatamax.gt.2) then
+               write(*,*) 
+     &             '*WARNING reading *PLASTIC: kinematic hardening'
+               write(*,*) '         curve is possibly nonlinear for'
+               write(*,*) '         the elastically anisotropic'
+               write(*,*) '         material ',matname(nmat)(11:80)
+            endif
+         endif
+      endif
+!
+c      if(nelcon(1,nmat).eq.-114) then
+c         write(*,*) 'anisotropic elasticity+viscoplasticity'
+c         do i=1,nelcon(2,nmat)
+c            write(*,*) (elcon(j,i,nmat),j=0,14)
+c         enddo
+c      endif
 !
       return
       end

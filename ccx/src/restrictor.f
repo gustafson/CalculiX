@@ -19,7 +19,7 @@
       subroutine restrictor(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &     nodef,idirf,df,cp,r,physcon,dvi,numf,set
-     &     ,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,iaxial)
+     &     ,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ttime,time,iaxial)
 !     
 !     pressure loss element with partial total head loss 
 !
@@ -38,7 +38,7 @@
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(5),kappa,R,d,
      &     Tt1,Tt2,pt1,pt2,cp,physcon(3),km1,dvi,
-     &     kp1,kdkm1,reynolds,kdkp1,
+     &     kp1,kdkm1,reynolds,kdkp1,ttime,time,
      &     pt2pt1,pt1pt2,pt1pt2_crit,qred_crit,qred1,qred2,zeta,
      &     A1,A2,root, expon1,expon2,expon3,fact1,fact2,sqrt,pi,
      &     pt2_lim,M2,M1,xflow_oil,T1,T2,phi,
@@ -68,19 +68,19 @@
 !     defining surfaces for branch elements
 !     
          if(lakon(nelem)(2:6).eq.'REBRJ') then
-            if(nelem.eq.int(prop(index+2))) then
+            if(nelem.eq.nint(prop(index+2))) then
                A1=prop(index+5)
                A2=A1
-            elseif(nelem.eq.int(prop(index+3)))then
+            elseif(nelem.eq.nint(prop(index+3)))then
                A1=prop(index+6)
                A2=A1
             endif
             zeta=1.d0
          elseif(lakon(nelem)(2:6).eq.'REBRS') then
-            if(nelem.eq.int(prop(index+2))) then
+            if(nelem.eq.nint(prop(index+2))) then
                A1=prop(index+5)
                A2=A1
-            elseif(nelem.eq.int(prop(index+3)))then
+            elseif(nelem.eq.nint(prop(index+3)))then
                A1=prop(index+6)
                A2=A1
             endif
@@ -218,37 +218,37 @@
 !     defining surfaces and oil properties for branches elements
 !     
          if(lakon(nelem)(2:6).eq.'REBRJ') then
-            if(nelem.eq.int(prop(index+2))) then
+            if(nelem.eq.nint(prop(index+2))) then
                A1=prop(index+5)
                A2=A1
                xflow_oil=prop(index+9)
-               k_oil=int(prop(index+11))
-            elseif(nelem.eq.int(prop(index+3)))then
+               k_oil=nint(prop(index+11))
+            elseif(nelem.eq.nint(prop(index+3)))then
                A1=prop(index+6)
                A2=A1
                xflow_oil=prop(index+10)
-               k_oil=int(prop(index+11))
+               k_oil=nint(prop(index+11))
             endif
          elseif(lakon(nelem)(2:6).eq.'REBRS') then
-            if(nelem.eq.int(prop(index+2))) then
+            if(nelem.eq.nint(prop(index+2))) then
                A1=prop(index+5)
                A2=A1
                if(lakon(nelem)(2:8).eq.'REBRSI1') then
                   xflow_oil=prop(index+11)
-                  k_oil=int(prop(index+13))
+                  k_oil=nint(prop(index+13))
                else
                   xflow_oil=prop(index+9)
-                  k_oil=int(prop(index+11))
+                  k_oil=nint(prop(index+11))
                endif
-            elseif(nelem.eq.int(prop(index+3)))then
+            elseif(nelem.eq.nint(prop(index+3)))then
                A1=prop(index+6)
                A2=A1
                if(lakon(nelem)(2:8).eq.'REBRSI1') then
                   xflow_oil=prop(index+12)
-                  k_oil=int(prop(index+13))
+                  k_oil=nint(prop(index+13))
                else 
                   xflow_oil=prop(index+10)
-                  k_oil=int(prop(index+11))
+                  k_oil=nint(prop(index+11))
                endif
             endif
 !     
@@ -266,7 +266,7 @@
 !           
             if(lakon(nelem)(2:5).eq.'REEL') then
                xflow_oil=prop(index+4)
-               k_oil=int(prop(index+5))
+               k_oil=nint(prop(index+5))
             elseif((lakon(nelem)(2:7).eq.'RELOID').or.
      &              (lakon(nelem)(2:5).eq.'REUS').or. 
      &              (lakon(nelem)(2:5).eq.'REEN').or.
@@ -274,16 +274,16 @@
      &              (lakon(nelem)(2:7).eq.'REWAOR').or.
      &              (lakon(nelem)(2:7).eq.'RELOLI')) then
                xflow_oil=prop(index+5)
-               k_oil=int(prop(index+6))
+               k_oil=nint(prop(index+6))
             elseif((lakon(nelem)(2:5).eq.'RECO').or.
      &              (lakon(nelem)(2:7).eq.'REBEMA').or.
      &              (lakon(nelem)(2:7).eq.'REBEMI').or.
      &              (lakon(nelem)(2:8).eq.'REBEIDC')) then
                xflow_oil=prop(index+6)
-               k_oil=int(prop(index+7))
+               k_oil=nint(prop(index+7))
             elseif(lakon(nelem)(2:8).eq.'REBEIDR') then
                xflow_oil=prop(index+8)
-               k_oil=int(prop(index+9))
+               k_oil=nint(prop(index+9))
             endif
          endif
 !
@@ -807,37 +807,37 @@
 !     defining surfaces for branches elements
 !     
          if(lakon(nelem)(2:6).eq.'REBRJ') then
-            if(nelem.eq.int(prop(index+2))) then
+            if(nelem.eq.nint(prop(index+2))) then
                A1=prop(index+5)
                A2=A1
                xflow_oil=prop(index+9)
-               k_oil=int(prop(index+11))
-            elseif(nelem.eq.int(prop(index+3)))then
+               k_oil=nint(prop(index+11))
+            elseif(nelem.eq.nint(prop(index+3)))then
                A1=prop(index+6)
                A2=A1
                xflow_oil=prop(index+10)
-               k_oil=int(prop(index+11))
+               k_oil=nint(prop(index+11))
             endif
          elseif(lakon(nelem)(2:6).eq.'REBRS') then
-            if(nelem.eq.int(prop(index+2))) then
+            if(nelem.eq.nint(prop(index+2))) then
                A1=prop(index+5)
                A2=A1
                if(lakon(nelem)(2:8).eq.'REBRSI1') then
                   xflow_oil=prop(index+11)
-                  k_oil=int(prop(index+13))
+                  k_oil=nint(prop(index+13))
                else
                   xflow_oil=prop(index+9)
-                  k_oil=int(prop(index+11))
+                  k_oil=nint(prop(index+11))
                endif
-            elseif(nelem.eq.int(prop(index+3)))then
+            elseif(nelem.eq.nint(prop(index+3)))then
                A1=prop(index+6)
                A2=A1
                if(lakon(nelem)(2:8).eq.'REBRSI1') then
                   xflow_oil=prop(index+12)
-                  k_oil=int(prop(index+13))
+                  k_oil=nint(prop(index+13))
                else 
                   xflow_oil=prop(index+10)
-                  k_oil=int(prop(index+11))
+                  k_oil=nint(prop(index+11))
                endif
             endif
 !     
@@ -848,7 +848,7 @@
             A2=prop(index+2)
             if(lakon(nelem)(2:5).eq.'REEL') then
                xflow_oil=prop(index+4)
-               k_oil=int(prop(index+5))
+               k_oil=nint(prop(index+5))
             elseif((lakon(nelem)(2:7).eq.'RELOID').or.
      &              (lakon(nelem)(2:5).eq.'REUS').or.  
      &              (lakon(nelem)(2:5).eq.'REEN').or.  
@@ -856,16 +856,16 @@
      &              (lakon(nelem)(2:7).eq.'REWAOR').or.
      &              (lakon(nelem)(2:7).eq.'RELOLI')) then
                xflow_oil=prop(index+5)
-               k_oil=int(prop(index+6))
+               k_oil=nint(prop(index+6))
             elseif((lakon(nelem)(2:5).eq.'RECO').or.
      &              (lakon(nelem)(2:7).eq.'REBEMA').or.
      &              (lakon(nelem)(2:7).eq.'REBEMI').or.
      &              (lakon(nelem)(2:8).eq.'REBEIDC')) then
                xflow_oil=prop(index+6)
-               k_oil=int(prop(index+7))
+               k_oil=nint(prop(index+7))
             elseif(lakon(nelem)(2:7).eq.'REBEIDR') then
                xflow_oil=prop(index+8)
-               k_oil=int(prop(index+9))
+               k_oil=nint(prop(index+9))
             endif
          endif
 !     
@@ -896,9 +896,9 @@
          if( lakon(nelem)(2:3).eq.'RE') then
             icase=0
          elseif(lakon(nelem)(2:5).eq.'REEX') then
-            if(lakon(int(prop(index+4)))(2:6).eq.'GAPFA') then
+            if(lakon(nint(prop(index+4)))(2:6).eq.'GAPFA') then
                icase=0
-            elseif(lakon(int(prop(index+4)))(2:6).eq.'GAPFI') then
+            elseif(lakon(nint(prop(index+4)))(2:6).eq.'GAPFI') then
                icase=1
             endif
          endif
@@ -1031,10 +1031,10 @@
 !     
          if(iflag.eq.3) then
             write(1,*) ''
-            write(1,55) 'In line ',int(nodem/1000),' from node ',node1,
+            write(1,55) ' from node ',node1,
      &           ' to node ', node2,' :   air massflow rate = '
-     &           ,xflow,' kg/s'
-     &           , ' , oil massflow rate = ',xflow_oil,' kg/s'
+     &           ,xflow,' '
+     &           , ' , oil massflow rate = ',xflow_oil,' '
 !            
             if(lakon(nelem)(4:5).ne.'BR') then
 !     
@@ -1042,33 +1042,31 @@
 !     
                if(inv.eq.1) then
                 write(1,56)'      Inlet node ',node1,' :    Tt1=  ',Tt1,
-     &              ' K , Ts1 = ',T1,' K , Pt1 = ',Pt1/1E5,
-     &              ' Bar , M1 = ',M1
-                write(1,*)'             Element F    ',set(numf)
-     &              (1:30)
-                write(1,57)'             eta = ',dvi,' kg/(m*s) , Re = '
+     &              '  , Ts1 = ',T1,'  , Pt1 = ',Pt1,
+     &              '  , M1 = ',M1
+                write(1,*)'             Element ',nelem,lakon(nelem)
+                write(1,57)'             dyn.visc. = ',dvi,' , Re = '
      &           ,reynolds
                 write(1,58)'             PHI = ',phi,' , ZETA = ',zeta,
      &        ' , ZETA_PHI = ',phi*zeta
                 write(1,56)'       Outlet node ',node2,' :   Tt2 = ',
      &              Tt2,
-     &              ' K, Ts2 = ',T2,' K , Pt2 = ',Pt2/1e5,
-     &              ' Bar , M2= ',M2
+     &              ' , Ts2 = ',T2,'  , Pt2 = ',Pt2,
+     &              '  , M2= ',M2
 !     
              else if(inv.eq.-1) then
                 write(1,56)'       Inlet node ',node2,' :    Tt1= ',Tt1,
-     &              ' K, Ts1= ',T1,' K, Pt1= ',Pt1/1E5,
-     &              ' Bar, M1= ',M1
-                write(1,*)'            Element F    ',set(numf)
-     &              (1:30)
-                write(1,57)'             eta =',dvi,' kg/(m*s) , Re = '
+     &              ' , Ts1= ',T1,' , Pt1= ',Pt1,
+     &              ' , M1= ',M1
+                write(1,*)'            Element ',nelem,lakon(nelem)
+                write(1,57)'             dyn.visc. =',dvi,'  , Re = '
      &           ,reynolds
                 write(1,58)'             PHI = ',phi,' , ZETA = ',zeta,
      &         ' , ZETA_PHI = ',phi*zeta
                 write(1,56)'       Outlet node ',node1,' :   Tt2 = ',
      &              Tt2,
-     &              ' K , Ts2 = ',T2,' K , Pt2 = ',Pt2/1e5,
-     &              ' Bar , M2 = ',M2
+     &              '  , Ts2 = ',T2,'  , Pt2 = ',Pt2,
+     &              '  , M2 = ',M2
              endif
           else
 !     
@@ -1077,108 +1075,47 @@
              if(inv.eq.1) then
                 write(1,56)'       Inlet node ',node1,' :    Tt1 = ',
      &              Tt1,
-     &              ' K , Ts1 = ',T1,' K , Pt1 = ',Pt1/1E5,
-     &              ' Bar , M1 = ',M1
-                write(1,*)'             Element B    ',set(numf)
-     &              (1:20)
-                write(1,57)'             eta = ',dvi,' kg/(m*s) , Re = '
+     &              '  , Ts1 = ',T1,'  , Pt1 = ',Pt1,
+     &              '  , M1 = ',M1
+                write(1,*)'             Element ',nelem,lakon(nelem)
+                write(1,57)'             dyn.visc. = ',dvi,' , Re = '
      &           ,reynolds
                 write(1,58)'             PHI = ',phi,' , ZETA = ',zeta,
      &        ' , ZETA_PHI = ',phi*zeta              
                 write(1,56)'       Outlet node ',node2,' :   Tt2 = ',
      &              Tt2,
-     &              ' K , Ts2 = ',T2,' K , Pt2 = ',Pt2/1E5,
-     &              ' Bar , M2 = ',M2
+     &              '  , Ts2 = ',T2,'  , Pt2 = ',Pt2,
+     &              '  , M2 = ',M2
 !     
              else if(inv.eq.-1) then
                 write(1,56)'       Inlet node ',node2,' :    Tt1 = ',
      &              Tt1,
-     &              'K, Ts1 = ',T1,' K, Pt1 = ',Pt1/1E5,
-     &              ' Bar , M1 = ',M1
-                write(1,*)'             Element B    ',set(numf)
-     &              (1:20)
-                write(1,57)'             eta =',dvi,' kg/(m*s) , Re = '
+     &              ', Ts1 = ',T1,' , Pt1 = ',Pt1,
+     &              '  , M1 = ',M1
+                write(1,*)'             Element ',nelem,lakon(nelem)
+                write(1,57)'             dyn.visc. =',dvi,'  , Re = '
      &           ,reynolds
                 write(1,58)'             PHI = ',phi,' , ZETA = ',zeta,
      &' , ZETA_PHI = ',phi*zeta
                 write(1,56)'       Outlet node ',node1,' :   Tt2 = ',
      &              Tt2,
-     &              ' K , Ts2 = ',T2,' K , Pt2 = ',Pt2/1E5,
-     &              ' Bar , M2 = ',M2
+     &              '  , Ts2 = ',T2,'  , Pt2 = ',Pt2,
+     &              '  , M2 = ',M2
              endif
           endif
 !     
-       elseif (iflag.eq.4) then
-!
-!        Write the main information about the element
-          write(1,*) ''
-!         
-          write(1,78)'Element nr.= ',nelem,', type=',lakon(nelem),
-     &                 ', name= ',set(numf)(1:30)
-!         
-          write(1,79)'Nodes: ',node1,',',nodem,',',node2
-!
-          if(lakon(nelem)(4:5).ne.'BR') then
-!     
-!           for restrictors
-!
-             write(1,80)'Inlet: Tt1= ',Tt1,
-     &              ', pt1= ',pt1,', M1= ',M1
-!
-             write(1,77)'mass flow = ',xflow,
-     &              ', oil mass flow =',xflow_oil,
-     &              ', kappa = ',kappa,
-     &              ', phi= ',phi,
-     &              ', zeta= ',zeta,
-     &              ', eta= ',dvi,
-     &              ', Re= ',reynolds,
-     &              ', phi = ',phi,
-     &              ', zeta_phi = ',zeta_phi
-
-             write(1,80)'Outlet: Tt2= ',Tt2,
-     &              ', pt2= ',pt2,', M2= ',M2
-!
-          else
-!     
-!     for branches
-!     
-             if(inv.eq.1) then
-                write(1,56)'       Inlet node ',node1,':    Tt1= ',Tt1,
-     &              ' K, Ts1= ',T1,' K, Pt1= ',Pt1/1E5,
-     &              ' Bar, M1= ',M1
-                write(1,*)'             Element B    ',set(numf)
-     &              (1:20)
-                write(1,57)'             eta= ',dvi,' kg/(m*s), Re= '
-     &,reynolds,', PHI= ',phi,', ZETA= ',zeta
-                write(1,56)'       Outlet node ',node2,':   Tt2= ',Tt2,
-     &              ' K, Ts2= ',T2,' K, Pt2= ',Pt2/1E5,
-     &              ' Bar, M2= ',M2
-!     
-             else if(inv.eq.-1) then
-                write(1,56)'       Inlet node ',node2,':    Tt1= ',Tt1,
-     &              'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
-     &              'Bar, M1= ',M1
-                write(1,*)'             Element B    ',set(numf)
-     &              (1:20)
-                write(1,57)'                 eta=',dvi,' kg/(m*s), Re= '
-     &              ,reynolds,', PHI= ',phi,', ZETA= ',zeta
-                write(1,56)'       Outlet node ',node1,':   Tt2= ',Tt2,
-     &              ' K, Ts2= ',T2,' K, Pt2= ',Pt2/1E5,
-     &              ' Bar, M2= ',M2
-             endif
-          endif
        endif
       endif
 !     
- 55   format(1x,a,i6.3,a,i6.3,a,i6.3,a,f9.6,a,a,f9.6,a) 
- 56   format(1x,a,i6.3,a,f6.1,a,f6.1,a,f8.5,a,f8.6)
- 57   format(1x,a,g9.4,a,g11.4)
- 58   format(1x,a,f10.5,a,f10.5,a,f10.5)
- 77   format(3x,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,
-     &     e10.4,a,f10.2,a,f10.6,a,f10.6)
+ 55   format(1x,a,i6,a,i6,a,e11.4,a,a,e11.4,a) 
+ 56   format(1x,a,i6,a,e11.4,a,e11.4,a,e11.4,a,e11.4)
+ 57   format(1x,a,e11.4,a,e11.4)
+ 58   format(1x,a,e11.4,a,e11.4,a,e11.4)
+ 77   format(3x,a,e11.4,a,e11.4,a,e11.4,a,e11.4,a,e11.4,a,
+     &     e11.4,a,e11.4,a,e11.4,a,e11.4)
  78   format(a,i4,a,a,a,a)
  79   format(3x,a,i4,a,i4,a,i4)
- 80   format(3x,a,f10.6,a,f10.2,a,f10.6)
+ 80   format(3x,a,e11.4,a,e11.4,a,e11.4)
 !     
       xflow=xflow/iaxial
       df(3)=df(3)*iaxial

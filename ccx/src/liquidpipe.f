@@ -19,10 +19,16 @@
       subroutine liquidpipe(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &     nodef,idirf,df,rho,g,co,dvi,numf,vold,mi,ipkon,kon,set,
-     &     iaxial)
+     &     ttime,time,iaxial)
 !
 !     pipe element for incompressible media
 !     
+!     iflag=0: check whether element equation is needed
+!     iflag=1: calculate mass flow
+!     iflag=2: calculate residual and derivative w.r.t.independent
+!              variables
+!     iflag=3: output
+!
       implicit none
 !     
       logical identity,flowunknown
@@ -39,10 +45,10 @@
      &     g(3),a1,a2,xn,xk,xk1,xk2,zeta,dl,dg,rh,a0,alpha,
      &     coarseness,rd,xks,z1,z2,co(3,*),xcoel(11),yel(11),
      &     yco(11),xdi(10),ydi(10),xbe(7),ybe(7),zbe(7),ratio,
-     &     xen(10),yen(10),xgv(8),ygv(8),xkn,xkp,
+     &     xen(10),yen(10),xgv(8),ygv(8),xkn,xkp,ttime,time,
      &     dh,kappa,r,dkda,form_fact,dzetadalpha,t_chang,
      &     xflow_vol,r1d,r2d,r1,r2,eta, K1, Kr, U1,Ui, ciu, c1u, 
-     &     c2u, omega,rpm,cinput,un,T
+     &     c2u, omega,cinput,un,T
 !
       data ncoel /11/
       data xcoel /0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0/
@@ -127,10 +133,10 @@
 !     pipe, Manning (LIPIMA)
 !     
             if(lakon(nelem)(8:8).eq.'F') then
-               nodea=int(prop(index+1))
-               nodeb=int(prop(index+2))
+               nodea=nint(prop(index+1))
+               nodeb=nint(prop(index+2))
                xn=prop(index+3)
-c               iaxial=int(prop(index+4))
+c               iaxial=nint(prop(index+4))
                radius=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &                       co(1,nodea)-vold(1,nodea))**2+
      &                      (co(2,nodeb)+vold(2,nodeb)-
@@ -165,10 +171,10 @@ c               endif
 !     pipe, White-Colebrook
 !     
             if(lakon(nelem)(8:8).eq.'F') then
-               nodea=int(prop(index+1))
-               nodeb=int(prop(index+2))
+               nodea=nint(prop(index+1))
+               nodeb=nint(prop(index+2))
                xn=prop(index+3)
-c               iaxial=int(prop(index+4))
+c               iaxial=nint(prop(index+4))
                radius=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &                       co(1,nodea)-vold(1,nodea))**2+
      &                       (co(2,nodeb)+vold(2,nodeb)-
@@ -676,7 +682,7 @@ c               endif
 !     
 !     branches (joints and splits); values from Idelchik and GE
 !   
-            if(nelem.eq.int(prop(index+2))) then
+            if(nelem.eq.nint(prop(index+2))) then
                a=prop(index+5)
             else
                a=prop(index+6)
@@ -780,21 +786,19 @@ c               endif
                U1=prop(index+5)
 !     
 !     number of the element generating the upstream swirl
-               nelemswirl=int(prop(index+6))
+               nelemswirl=nint(prop(index+6))
 !     
 !     rotation speed (revolution per minutes)
-               rpm=prop(index+7)
+               omega=prop(index+7)
 !
 !     Temperature change
                t_chang=prop(index+8)
 !
-               if(rpm.gt.0) then
+               if(omega.gt.0) then
 !
-!     rotation speed is given (rpm) if the swirl comes from a rotating part
+!     rotation speed is given if the swirl comes from a rotating part
 !     typically the blade of a coverplate
 !
-                  omega=pi/30d0*rpm
-               
 !     C_u is given by radius r1d (see definition of the flow direction)
 !     C_u related to radius r2d is a function of r1d
 !     
@@ -865,17 +869,14 @@ c               endif
 !     
 !     rotation speed (revolution per minutes) of the rotating part
 !     responsible for the swirl
-               rpm=prop(index+5)
+               omega=prop(index+5)
 !     
 !     Temperature change
                t_chang=prop(index+6)
-! 
-!     rotation speed
-               omega=pi/30*rpm
 !     
-                  Ui=omega*R1
-                  c1u=Ui*kr
-                  c2u=c1u*R2/R1
+               Ui=omega*R1
+               c1u=Ui*kr
+               c2u=c1u*R2/R1
 !     
 !     storing the tengential velocity for later use (wirbel cascade)
                if(inv.gt.0) then
@@ -989,17 +990,16 @@ c               endif
             endif
 !     
             write(1,*) ''
-            write(1,55) 'In line',int(nodem/1000),' from node',node1,
+            write(1,55) ' from node',node1,
      &           ' to node', node2,':  oil massflow rate = ',xflow,
-     &       ' kg/s i.e. ',xflow_vol, ' m**3/s'
- 55         FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,F9.6,A)
+     &       ' i.e. in volume per time ',xflow_vol
+ 55         FORMAT(1X,A,I6,A,I6,A,e11.4,A,e11.4,A)
             write(1,57)'                                              
-     &Rho=   ',rho,' kg/m**3, Nu=   ',un,' m**2/s, Eta=   ',dvi,
-     &' kg/(m*s)'
+     &Rho=   ',rho,', Nu=   ',un,', dyn.visc.=   ',dvi
          
             if(inv.eq.1) then
                write(1,56)'       Inlet node  ',node1,':   Tt1=',T,
-     &              'K, Pt1=',P1/1E5, 'Bar'
+     &              ', Pt1=',P1
                if(lakon(nelem)(4:5).eq.'EL'.or.
      &            lakon(nelem)(4:5).eq.'CO'.or.
      &            lakon(nelem)(4:5).eq.'EN'.or.
@@ -1010,37 +1010,37 @@ c               endif
      &            lakon(nelem)(4:5).eq.'WA'.or.
      &            lakon(nelem)(4:5).eq.'BR')then
                   
-                  write(1,*)'             element F   ',set(numf)(1:20)
+                  write(1,*)'             Element ',nelem,lakon(nelem)
                   write(1,58)'             Re=   ',reynolds,' zeta=   ',
      &                 zeta
 !
                elseif((lakon(nelem)(4:5).eq.'C1')) then
-                  write(1,*)'             element R   ',set(numf)(1:20)
+                  write(1,*)'             Element ',nelem,lakon(nelem)
                   write(1,58)'             Re=   ',reynolds,' cd=   ',
      &                 zeta
 !
                else if(lakon(nelem)(4:5).eq.'FR')then                  
-                  write(1,*)'             element W   ',set(numf)(1:20)
+                  write(1,*)'             Element ',nelem,lakon(nelem)
                   write(1,59)'             Re=   ',reynolds,' lambda=  
      &',friction,'  lambda*L/D=   ',friction*dl/d
 !
                else if (lakon(nelem)(4:4).eq.'V')then  
-                  write(1,*)'             element V    ',set(numf)(1:20)
+                  write(1,*)'             Element ',nelem,lakon(nelem)
                   write(1,*)'             C1u= ',C1u,'m/s ,C2u= '
-     &,C2u,'m/s',' ,DeltaP= ',xkn/1E5,' Bar'
+     &,C2u,'m/s',' ,DeltaP= ',xkn
                endif
 !
                write(1,56)'       Outlet node ',node2,':   Tt2=',T,
-     &              'K, Pt2=',P2/1e5,'Bar'
+     &              ', Pt2=',P2
 !     
             else if(inv.eq.-1) then
                
             endif
 !
- 56         FORMAT(1X,A,I6.3,A,f6.1,A,f9.5,A)
- 57         FORMAT(1X,A,f8.3,A,G9.4,A,G9.4,A)
- 58         FORMAT(1X,A,G9.4,A,F6.4)
- 59         FORMAT(1X,A,G9.4,A,F6.4,A,F6.4) 
+ 56         FORMAT(1X,A,I6,A,e11.4,A,e11.4,A)
+ 57         FORMAT(1X,A,e11.4,A,e11.4,A,e11.4,A)
+ 58         FORMAT(1X,A,e11.4,A,e11.4)
+ 59         FORMAT(1X,A,e11.4,A,e11.4,A,e11.4) 
          endif
 !     
       endif

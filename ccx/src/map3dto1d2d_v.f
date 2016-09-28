@@ -79,7 +79,7 @@ c         enddo
                node2d=kon(indexe2d+j)
                inum(node2d)=0
                do k=1,nfield
-                  if(nactdof(k,node2d).eq.0) yn(k,node2d)=0.d0
+                  if(nactdof(k,node2d).le.0) yn(k,node2d)=0.d0
                enddo
             enddo
          elseif(lakonl(7:7).eq.'B') then
@@ -97,7 +97,7 @@ c         enddo
                node2d=kon(indexe2d+j)
                inum(node2d)=0
                do k=1,nfield
-                  if(nactdof(k,node2d).eq.0) yn(k,node2d)=0.d0
+                  if(nactdof(k,node2d).le.0) yn(k,node2d)=0.d0
                enddo
             enddo
          else
@@ -115,7 +115,7 @@ c         enddo
                node2d=kon(indexe2d+j)
                inum(node2d)=0
                do k=1,nfield
-                  if(nactdof(k,node2d).eq.0) yn(k,node2d)=0.d0
+                  if(nactdof(k,node2d).le.0) yn(k,node2d)=0.d0
                enddo
             enddo
          endif
@@ -171,7 +171,7 @@ c         enddo
                   do l=1,3
                      node3d=kon(indexe+node6(l,j))
                      do k=1,nfield
-                        if(nactdof(k,node2d).eq.0) yn(k,node2d)=
+                        if(nactdof(k,node2d).le.0) yn(k,node2d)=
      &                       yn(k,node2d)+yn(k,node3d)*ratioe(l)
                      enddo
                   enddo
@@ -182,7 +182,7 @@ c         enddo
                   do l=1,3,2
                      node3d=kon(indexe+node6(l,j))
                      do k=1,nfield
-                        if(nactdof(k,node2d).eq.0) yn(k,node2d)=
+                        if(nactdof(k,node2d).le.0) yn(k,node2d)=
      &                       yn(k,node2d)+yn(k,node3d)/2.d0
                      enddo
                   enddo
@@ -215,7 +215,7 @@ c         enddo
                      node3d=kon(indexe+node3(l,2*j-1))
                   endif
                   do k=1,nfield
-                     if(nactdof(k,node2d).eq.0) yn(k,node2d)=
+                     if(nactdof(k,node2d).le.0) yn(k,node2d)=
      &                    yn(k,node2d)+yn(k,node3d)
                   enddo
                enddo
@@ -224,7 +224,7 @@ c         enddo
             if(lakonl(4:5).eq.'8I') then
                indexe2d=indexe+11
                jmax=4
-            elseif(lakonl(4:5).eq.'8R') then
+            elseif((lakonl(4:5).eq.'8R').or.(lakonl(4:5).eq.'8 ')) then
                indexe2d=indexe+8
                jmax=4
             elseif(lakonl(4:5).eq.'20') then
@@ -244,7 +244,7 @@ c         enddo
                   do l=1,3
                      node3d=kon(indexe+node8(l,j))
                      do k=1,nfield
-                        if(nactdof(k,node2d).eq.0) yn(k,node2d)=
+                        if(nactdof(k,node2d).le.0) yn(k,node2d)=
      &                       yn(k,node2d)+yn(k,node3d)*ratioe(l)
                      enddo
                   enddo
@@ -255,7 +255,7 @@ c         enddo
                   do l=1,3,2
                      node3d=kon(indexe+node8(l,j))
                      do k=1,nfield
-                        if(nactdof(k,node2d).eq.0) yn(k,node2d)=
+                        if(nactdof(k,node2d).le.0) yn(k,node2d)=
      &                       yn(k,node2d)+yn(k,node3d)/2.d0
                      enddo
                   enddo
@@ -272,7 +272,7 @@ c         enddo
          if(inum(i).lt.0) then
             inum(i)=-inum(i)
             do j=1,nfield
-               if(nactdof(j,i).eq.0) yn(j,i)=yn(j,i)/inum(i)
+               if(nactdof(j,i).le.0) yn(j,i)=yn(j,i)/inum(i)
             enddo
          endif
       enddo

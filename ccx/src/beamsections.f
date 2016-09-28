@@ -20,7 +20,7 @@
      &  ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
      &  thicke,ipkon,iponor,xnor,ixfree,
      &  offset,lakon,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &  ipoinpc,mi)
+     &  ipoinpc,mi,nelcon)
 !
 !     reading the input deck: *BEAM SECTION
 !
@@ -38,7 +38,7 @@
      &  ielorien(mi(3),*),ipkon(*),iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),nset,nmat,norien,istep,istat,n,key,i,j,k,l,imaterial,
      &  iorientation,ipos,m,iponor(2,*),ixfree,
-     &  indexx,indexe,irstrt
+     &  indexx,indexe,irstrt,nelcon(2,*)
 !
       real*8 thicke(mi(3),*),thickness1,thickness2,p(3),xnor(*),
      &  offset(2,*),
@@ -119,6 +119,12 @@
 !
       if(orientation.eq.'                    
      &                                 ') then
+         iorientation=0
+      elseif(nelcon(1,i).eq.2) then
+         write(*,*) '*INFO reading *SOLID SECTION: an orientation'
+         write(*,*) '      is for isotropic materials irrelevant'
+         call inputinfo(inpc,ipoinpc,iline,
+     &"*SOLID SECTION%")
          iorientation=0
       else
          do i=1,norien

@@ -16,8 +16,8 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine printoutnodefluid(prlab,v,vold,vcontu,physcon,ii,node,
-     &  trab,inotr,ntrans,co,mi)
+      subroutine printoutnodefluid(prlab,vold,vcontu,physcon,ii,node,
+     &  trab,inotr,ntrans,co,mi,xkappa,xmach)
 !
 !     stores results in the .dat file
 !
@@ -27,7 +27,7 @@
 !
       integer node,ii,j,inotr(2,*),ntrans,mi(*)
 !
-      real*8 v(0:mi(2),*),trab(7,*),
+      real*8 trab(7,*),xkappa(*),xmach(*),
      &  co(3,*),a(3,3),vcontu(2,*),physcon(*),vold(0:mi(2),*)
 !
       if(prlab(ii)(1:4).eq.'VF  ') then
@@ -52,11 +52,11 @@
      &           vold(0,node)
       elseif(prlab(ii)(1:4).eq.'PTF ') then
          write(5,'(i10,1x,1p,e13.6)') node,vold(4,node)*
-     &        (1.d0+(v(0,node)-1.d0)/2*v(1,node)**2)**(v(0,node)/
-     &        (v(0,node)-1.d0))
+     &       (1.d0+(xkappa(node)-1.d0)/2*xmach(node)**2)**(xkappa(node)/
+     &       (xkappa(node)-1.d0))
       elseif(prlab(ii)(1:4).eq.'TTF ') then
          write(5,'(i10,1x,1p,e13.6)') node,
-     &     vold(0,node)*(1.d0+(v(0,node)-1.d0)/2*v(1,node)**2)
+     &     vold(0,node)*(1.d0+(xkappa(node)-1.d0)/2*xmach(node)**2)
       elseif(prlab(ii)(1:4).eq.'CP  ') then
          write(5,'(i10,1x,1p,e13.6)') node,
      &            (vold(4,node)-physcon(6))*2.d0/

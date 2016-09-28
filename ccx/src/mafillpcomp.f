@@ -40,7 +40,7 @@
      &  xflux,constant,velo(nef,0:5),veloo(nef,0:5),dtimef,
      &  shcon(0:3,ntmat_,*),vel(nef,0:5),dd,convec,fluxisobar,
      &  coef1,coef3,xrlfa(3,*),coef2,gamma,coefp,coefn,xmach,
-     &  flux(*),bp_ifa
+     &  flux(*),bp_ifa,aa(8,8)
 !
       intent(in) nef,lakonf,ipnei,neifa,neiel,vfa,area,
      &  advfa,xlet,cosa,volume,jq,irow,ielfa,ifabou,xle,
@@ -65,6 +65,7 @@
          do j=1,numfaces
             knownflux=0
             knownpressure=0
+            convec=0
 !     
 !     diffusion
 !     
@@ -79,6 +80,7 @@
      &              coef,nzs)
                call add_sm_fl_as(au,ad,jq,irow,jdof1,jdof2,
      &              -coef,nzs)
+c               write(*,*) 'mafillpcomp1',i,j,jdof1,jdof2,-coef
                b(jdof1)=b(jdof1)+coef*(vel(jdof2,4)-vel(jdof1,4))
                convec=coef*(vel(jdof2,4)-vel(jdof1,4))
 !     
@@ -155,11 +157,11 @@ c               if(i.gt.iel) bp_ifa=-bp_ifa
 !              the next 
 !
                      convec=-convec/(vfa(5,ifa)*r*vfa(0,ifa))
-                  else
+c                  else
 c
 c                    check!
 c
-                     convec=0.d0
+c                     convec=0.d0
                   endif
                endif
             endif
@@ -195,6 +197,7 @@ c               write(*,*) 'mafillpcomp ',xflux,flux(indexf)
             elseif(knownflux.eq.2) then
                xflux=0.d0
             endif
+c            write(*,*) 'mafillpcomp8 ',knownflux,xflux
 !
 !           flux based on constant pressure
 !
@@ -203,7 +206,13 @@ c               write(*,*) 'mafillpcomp ',xflux,flux(indexf)
      &             (hfa(1,ifa)*xxn(1,indexf)+
      &              hfa(2,ifa)*xxn(2,indexf)+
      &              hfa(3,ifa)*xxn(3,indexf))
+c               write(*,*) 'mafillpcomp5 ',
+c     &             i,j,jdof1,jdof2,hfa(1,ifa),hfa(2,ifa),hfa(3,ifa)
+c               write(*,*) 'mafillpcomp6 ',
+c     &             i,j,jdof1,jdof2,xxn(1,indexf),xxn(2,indexf),
+c     &                 xxn(3,indexf)
             endif
+c            write(*,*) 'mafillpcomp9 ',knownflux,fluxisobar
 !     
 !           rhs
 !
@@ -213,17 +222,22 @@ c               write(*,*) 'mafillpcomp ',xflux,flux(indexf)
                b(jdof1)=b(jdof1)-xflux
             endif
 !
-               if(knownflux.eq.0) then
+            if(knownflux.eq.0) then
 !     
 !              following line leads to oscillations in the solution
 !              (only for subsonic and transonic solutions)
 !
-                  coef=fluxisobar/(r*vfa(0,ifa))+convec
-               elseif(knownflux.eq.1) then
-                  coef=xflux/(r*vfa(0,ifa)*vfa(5,ifa))
-               else
-                  coef=0.d0
-               endif
+               coef=fluxisobar/(r*vfa(0,ifa))+convec
+c               write(*,*) 'mafillpcomp3 ',
+c     &             i,j,jdof1,jdof2,fluxisobar,r,vfa(0,ifa)
+c               write(*,*) 'mafillpcomp4 ',
+c     &             i,j,jdof1,jdof2,convec
+            elseif(knownflux.eq.1) then
+               coef=xflux/(r*vfa(0,ifa)*vfa(5,ifa))
+            else
+               coef=0.d0
+            endif
+c            write(*,*) 'mafillpcomp10 ',knownflux,coef
 !
             if(coef.ge.0.d0) then
 !     
@@ -242,6 +256,7 @@ c
 !
                   call add_sm_fl_as(au,ad,jq,irow,jdof1,jdof2,coef,
      &                 nzs)
+c               write(*,*) 'mafillpcomp2',i,j,jdof1,jdof2,coef
 !
 c
 c               retarded central difference     
@@ -270,6 +285,23 @@ c         constant=a1*constant
          call add_sm_fl_as(au,ad,jq,irow,jdof1,jdof1,constant,nzs)
 !
       enddo
-!     
+!   
+c      write(*,*) 'mafillpcomp '
+c      do i=1,8
+c         do j=1,8
+c            aa(i,j)=0.d0
+c         enddo
+c      enddo
+c      do i=1,8
+c         do j=jq(i),jq(i+1)-1
+c            write(*,*) i,irow(j)
+c            aa(irow(j),i)=au(j)
+c            aa(i,irow(j))=au(j+nzs)
+c         enddo
+c         aa(i,i)=ad(i)
+c      enddo
+c      do i=1,8
+c         write(*,'(9(1x,e11.4))') (aa(i,j),j=1,8),b(i)
+c      enddo
       return
       end

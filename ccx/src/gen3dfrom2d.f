@@ -36,7 +36,7 @@
       character*20 labmpc(*),label
 !
       integer kon(*),ipkon(*),ne,iponor(2,*),knor(*),ntrans,
-     &  inotr(2,*),
+     &  inotr(2,*),nodefixz,
      &  ikboun(*),ilboun(*),nboun,nboun_,nodeboun(*),ndirboun(*),
      &  iamboun(*),nam,ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,
      &  ikmpc(*),ilmpc(*),nk,nk_,i,rig(*),nmethod,iperturb,ishift,
@@ -189,6 +189,18 @@ c         do j=1,2*nedge
      &                 -thicks(k)*xnors(j,k)*offset(1,i)
                enddo
             enddo
+         else
+!
+!           for linear elements the coordinates of the nodes
+!           in the middle may be needed in case of knots (to
+!           determine the coefficients of the equations)
+!
+            do k=1,nedge
+               do j=1,3
+                  co(j,nodes(2,k))=co(j,nodel(k))
+     &                 -thicks(k)*xnors(j,k)*offset(1,i)
+               enddo
+            enddo
          endif
 !
 !        generating the layer geometry for composite shells
@@ -299,6 +311,16 @@ c         do j=1,2*nedge
                co(2,node)=y
                co(3,node)=0.d0
                kon(indexe+4*nedge+j)=node
+            else
+!
+!              for linear elements the coordinates of the nodes
+!              in the middle may be needed in case of knots (to
+!              determine the coefficients of the equations)
+!
+               node=knor(indexk+2)
+               co(1,node)=x
+               co(2,node)=y
+               co(3,node)=0.d0
             endif
 !
             node=knor(indexk+3)
@@ -337,14 +359,20 @@ c         do j=1,2*nedge
 !
 !                    fixing the middle plane
 !
-            if(rig(nodel(j)).gt.0) cycle
+c            if(rig(nodel(j)).gt.0) cycle
+            if(rig(nodel(j)).gt.0) then
+               nodefixz=nodel(j)
+            else
+               nodefixz=nodes(2,j)
+            endif
 !
             if(ithermal(2).ne.2) then
                val=0.d0
                k=3
                if(nam.gt.0) iamplitude=0
                type='M'
-               call bounadd(nodes(2,j),k,k,val,nodeboun,
+c               call bounadd(nodes(2,j),k,k,val,nodeboun,
+               call bounadd(nodefixz,k,k,val,nodeboun,
      &              ndirboun,xboun,nboun,nboun_,iamboun,
      &              iamplitude,nam,ipompc,nodempc,coefmpc,
      &              nmpc,nmpc_,mpcfree,inotr,trab,ntrans,

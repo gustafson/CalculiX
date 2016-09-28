@@ -47,14 +47,14 @@
       character*87 filab(*)
 !
       integer kon(*),inum(*),iperm(20),mi(*),ielorien(mi(3),*),
-     &  ipkon(*),icfdout,nactdof(0:mi(2),*),nodeboun(*),icompressible,
+     &  ipkon(*),nactdof(0:mi(2),*),nodeboun(*),icompressible,
      &  nelemload(2,*),ndirboun(*),ielmat(mi(3),*),nrhcon(*),
      &  inotr(2,*),iorienloc,iflag,nload,mt,nk,ne,ithermal(2),i,
      &  norien,iperturb(*),iout,nboun,nmethod,node,nshcon(*),
      &  nfield,ndim,nstate_,nset,istartset(*),iendset(*),ialset(*),
      &  nprint,ntrans,ikin,ncocon(2,*),ntmat_,icfd,inomat(*),mortar,
      &  islavact(*),islavnode(*),nslavnode(*),ntie,islavsurf(2,*),
-     &  ielprop(*),ne0,index,nmpc,ipompc(*),nodempc(3,*)
+     &  ielprop(*),ne0,index,nmpc,ipompc(*),nodempc(3,*),nactdoh
 !
       real*8 co(3,*),v(0:mi(2),*),stx(6,mi(1),*),stn(6,*),cdn(6,*),
      &  qfx(3,mi(1),*),qfn(3,*),orab(7,*),fn(0:mi(2),*),pslavsurf(3,*),
@@ -109,7 +109,8 @@
       icompressible=0
       call printoutface(co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
      &  cocon,ncocon,icompressible,istartset,iendset,ipkon,lakon,kon,
-     &  ialset,prset,ttime,nset,set,nprint,prlab,ielmat,mi,time)
+     &  ialset,prset,ttime,nset,set,nprint,prlab,ielmat,mi,
+     &  ithermal,nactdoh,icfd)
 !
 !     interpolation in the original nodes of 1d and 2d elements
 !     this operation has to be performed in any case since
@@ -158,10 +159,6 @@
             endif
          endif
       endif
-!
-!     in this routine no 3d-fluid results are stored
-!
-      icfdout=0
 !
 !     for composites:
 !     interpolation of the displacements and temperatures

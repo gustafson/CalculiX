@@ -284,10 +284,16 @@
                                     if(nodef(l).eq.node) then
                                        if(nopes.eq.3) then
                                           xnoels(ifreenoels)=1.d0/3.d0
+!
+!        for 6-node faces the weights 0 and 1/3 are changed into
+!        1/999 and 332/999 in order to avoid problems with the
+!        zero-area-check in springforc_n2f*f and springstiff_n2f*f
+!
                                        elseif(l.le.3) then
-                                          xnoels(ifreenoels)=0.d0
+                                          xnoels(ifreenoels)=1.d0/999.d0
                                        else
-                                          xnoels(ifreenoels)=1.d0/3.d0
+                                          xnoels(ifreenoels)
+     &                                         =332.d0/999.d0
                                        endif
                                     endif
                                  enddo
@@ -311,10 +317,11 @@
                                        if(nodef(l).eq.node) then
                                           if(nopes.eq.6) then
                                              if(l.le.3) then
-                                                xnoels(ifreenoels)=0.d0
+                                                xnoels(ifreenoels)=
+     &                                               1.d0/999.d0
                                              else
                                                 xnoels(ifreenoels)=
-     &                                               1.d0/3.d0
+     &                                               332.d0/999.d0
                                              endif
                                           else
 !
@@ -469,9 +476,9 @@
                         xnoels(ifreenoels)=1.d0/4.d0
                      elseif(nopes.eq.6) then
                         if(l.le.3) then
-                           xnoels(ifreenoels)=0.d0
+                           xnoels(ifreenoels)=1.d0/999.d0
                         else
-                           xnoels(ifreenoels)=1.d0/3.d0
+                           xnoels(ifreenoels)=332.d0/999.d0
                         endif
                      elseif(nopes.eq.7) then
                         if(l.le.3) then
@@ -505,7 +512,7 @@
 !     
                endif
             enddo
-            nslavnode(ntie+1)=nslavs
+            nslavnode(i+1)=nslavs
             itiefac(2,i)=ifacecount
             endif
 !
@@ -586,7 +593,7 @@
                enddo
 !     
             enddo
-            nmastnode(ntie+1)=nmasts
+            nmastnode(i+1)=nmasts
 !
          else
 !

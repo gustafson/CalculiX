@@ -42,7 +42,7 @@
      &  iscale,mi(*),ielprop(*),null
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),xloadold(2,*),
-     &  ff(100),shpj(4,20),dxsj2,temp,press,t0(*),t1(*),coords(3),
+     &  ff(60),shpj(4,20),dxsj2,temp,press,t0(*),t1(*),coords(3),
      &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),xload(2,*),
      &  xi,et,ze,xsj,xsjj,t1l,ttime,time,weight,pgauss(3),tvar(2),
      &  reltime,areaj,coefmpc(*),tl2(8),prop(*)

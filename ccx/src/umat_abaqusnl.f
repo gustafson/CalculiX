@@ -526,10 +526,23 @@ c      write(*,*) 'r',((r(i,j),j=1,3),i=1,3)
          dstran(i)=2.d0*dstran(i)
       enddo
 !
-      call umat(stre,xstate(1,iint,iel),ddsdde,sse,spd,scd,rpl,ddsddt,
-     &  drplde,drpldt,stran,dstran,abqtime,dtime,temp,dtemp,predef,
-     &  dpred,amat,ndi,nshr,ntens,nstate_,elconloc,nprops,pgauss,drot,
-     &  pnewdt,celent,xokl,xkl,iel,iint,layer,kspt,kstep,kinc)
+      if(amat(1:1).eq.'@') then
+
+c         call umat_dl(stre,xstate(1,iint,iel),ddsdde,sse,spd,scd,rpl
+c     $        ,ddsddt,drplde,drpldt,stran,dstran,abqtime,dtime,temp
+c     $        ,dtemp ,predef,dpred,amat,ndi,nshr,ntens,nstate_,elconloc
+c     $        ,nprops ,pgauss,drot,pnewdt,celent,xokl,xkl,iel,iint,layer
+c     $        ,kspt ,kstep,kinc)
+         
+      else
+         
+         call umat(stre,xstate(1,iint,iel),ddsdde,sse,spd,scd,rpl,ddsddt
+     $        ,drplde,drpldt,stran,dstran,abqtime,dtime,temp,dtemp
+     $        ,predef,dpred,amat,ndi,nshr,ntens,nstate_,elconloc,nprops
+     $        ,pgauss,drot,pnewdt,celent,xokl,xkl,iel,iint,layer,kspt
+     $        ,kstep,kinc)
+
+      endif
 !
 !     rotating the stress into the global system
 !     S=J.U^(-1).s'.U^(-T)  (no orientation card) or

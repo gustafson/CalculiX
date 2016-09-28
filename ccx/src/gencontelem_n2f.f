@@ -22,7 +22,7 @@
      &  elcon,istep,iinc,iit,ncmat_,ntmat_,
      &  nmethod,mi,imastop,nslavnode,islavnode,islavsurf,
      &  itiefac,areaslav,iponoels,inoels,springarea,set,nset,istartset,
-     &  iendset,ialset,tietol,reltime,filab,nasym,xnoels,icutb)
+     &  iendset,ialset,tietol,reltime,filab,nasym,xnoels,icutb,ne0)
 !
 !     generate contact elements for the slave contact nodes
 !
@@ -33,7 +33,7 @@
       character*81 tieset(3,*),slavset,set(*),noset,setname
       character*87 filab(*)
 !
-      integer ntie,ifree,nasym,icutb,
+      integer ntie,ifree,nasym,icutb,ne0,
      &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),ne,node,
      &  neigh(1),iflag,kneigh,i,j,k,l,isol,iset,idummy,
      &  itri,ll,kflag,n,nx(*),ny(*),istep,iinc,mi(*),
@@ -662,14 +662,15 @@ c                  endif
                      if(filab(1)(3:3).eq.'C') then
                         write(27,100) setname(1:lenset)
  100                    format('*ELEMENT,TYPE=C3D4,ELSET=',A)
-                        write(27,*) ne+indexel,',',nodef(1),',',
+                        write(27,*) ne0+indexel,',',nodef(1),',',
      &                       nodef(2),',',nodef(3),',',node
                      endif
                   else
                      if(filab(1)(3:3).eq.'C') then
                         write(27,101) setname(1:lenset)
  101                    format('*ELEMENT,TYPE=C3D6,ELSET=',A)
-                        write(27,*)ne+indexel,',',nodef(2),',',node,',',
+                        write(27,*) ne0+indexel,',',nodef(2),',',node,
+     &                     ',',
      &                     nodef(3),',',nodef(1),',',node,',',nodef(4)
                      endif
                   endif

@@ -146,8 +146,12 @@
      &"*PRE-TENSION SECTION%")
             endif
             read(textpart(i)(9:18),'(i10)',iostat=istat) ielem
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+            if(istat.gt.0) then
+               write(*,*) '*ERROR reading PRE-TENSION SECTION:'
+               write(*,*) '       cannot read element number'
+               call inputerror(inpc,ipoinpc,iline,
      &"*PRE-TENSION SECTION%")
+            endif
             if((ielem.gt.ne).or.(ielem.le.0)) then
                write(*,*) '*ERROR reading PRE-TENSION SECTION:'
                write(*,*) '       element',ielem,'is not defined'
@@ -337,6 +341,9 @@ c            jn=in(i)
             mpcfreeold=mpcfree
             mpcfree=nodempc(3,mpcfree)
             nodempc(3,mpcfreeold)=0
+!
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
 !
             return
          enddo

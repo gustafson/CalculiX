@@ -68,25 +68,29 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
                  ITG *ineighe, ITG *nmpc, ITG *nodempc,ITG *ipompc,
                  double *coefmpc,char *labmpc, ITG *iemchange,ITG *nam, 
                  ITG *iamload,ITG *jqrad,ITG *irowrad,ITG *nzsrad,
-                 ITG *icolrad,ITG *ne,ITG *iaxial,double *qa){
+                 ITG *icolrad,ITG *ne,ITG *iaxial,double *qa,
+                 double *cocon,ITG *ncocon,ITG *iponoel,ITG *inoel,ITG *nprop){
   
   /* network=0: purely thermal
      network=1: general case (temperatures, fluxes and pressures unknown)
      network=2: purely aerodynamic, i.e. only fluxes and pressures unknown */
 
   ITG nhrs=1,info=0,i,j,iin=0,icntrl,icutb=0,iin_abs=0,mt=mi[1]+1,im,
-      symmetryflag=2,inputformat=1,node,channel,*ithread=NULL;
+      symmetryflag=2,inputformat=1,node,channel,*ithread=NULL,iplausi;
 
   static ITG ifactorization=0;
 
-  double uamt=0,uamf=0,uamp=0,camt[2],camf[2],camp[2],
-    cam1t=0.,cam1f=0.,cam1p=0.,sidemean,
+  double camt[2],camf[2],camp[2],qat,qaf,ramt,ramf,ramp,
+    cam1t=0.,cam1f=0.,cam1p=0.,sidemean,qa0,qau,ea,*prop_store=NULL,
     cam2t=0.,cam2f=0.,cam2p=0.,dtheta=1.,*v=NULL,cama[2],cam1a=0.,
-    cam2a=0.,uama=0.,vamt=0.,vamf=0.,vamp=0.,vama=0.,cam0t=0.,cam0f=0.,
+    cam2a=0.,vamt=0.,vamf=0.,vamp=0.,vama=0.,cam0t=0.,cam0f=0.,
     cam0p=0.,cam0a=0.,sigma=0.,*adbrad=NULL,*aubrad=NULL,*q=NULL,
-    *area=NULL,*pmid=NULL,*e1=NULL,*e2=NULL,*e3=NULL;
+    *area=NULL,*pmid=NULL,*e1=NULL,*e2=NULL,*e3=NULL,
+    qamt,qamf,qamtold,qamfold;
   
   adview=*adviewp;auview=*auviewp;
+
+  qa0=ctrl[20];qau=ctrl[21];ea=ctrl[23];
 
   /* check whether there are any gas temperature nodes; this check should
      NOT be done on nteq, since also for zero equations the temperature
@@ -98,6 +102,15 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
   /* gas networks */
 
   if(*ntg!=0) {
+#ifdef COMPANY
+      NNEW(prop_store,double,*nprop);
+      memcpy(&prop_store[0],&prop[0],sizeof(double)**nprop);
+      FORTRAN(propertynet,(ieg,nflow,prop,ielprop,lakon,&iin,
+			   prop_store,ttime,time));
+      FORTRAN(checkinputvaluesnet,(ieg,nflow,prop,ielprop,lakon));
+#else
+      if(*iit==-1) FORTRAN(checkinputvaluesnet,(ieg,nflow,prop,ielprop,lakon));
+#endif	  
       icntrl=0;
       while(icntrl==0) {
 	  
@@ -116,7 +129,8 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 			   physcon,ipiv,nteq,rhcon,nrhcon,ipobody,ibody,
 			   xbodyact,co,nbody,network,&iin_abs,vold,set,
 			   istep,iit,mi,ineighe,ilboun,&channel,iaxial,
-			   nmpc,labmpc,ipompc,nodempc,coefmpc));
+			   nmpc,labmpc,ipompc,nodempc,coefmpc,ttime,time,
+			   iponoel,inoel));
       
               /* initialization for channels with free surface */
 
@@ -127,7 +141,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 			   nodeboun,xbounact,ielmat,ntmat_,shcon,nshcon,
 			   physcon,ipiv,nteq,rhcon,nrhcon,ipobody,ibody,
 			   xbodyact,co,nbody,network,&iin_abs,vold,set,
-			   istep,iit,mi,ineighe,ilboun));
+			   istep,iit,mi,ineighe,ilboun,ttime,time,iaxial));
 	      }
 
               /* storing the residual in the rhs vector */
@@ -142,13 +156,33 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 			  ibody,xbodyact,nbody,&dtheta,vold,xloadold,
 			  reltime,nmethod,set,mi,ineighe,cama,&vamt,
 			  &vamf,&vamp,&vama,nmpc,nodempc,ipompc,coefmpc,
-			  labmpc,iaxial));
+			  labmpc,iaxial,&qat,&qaf,&ramt,&ramf,&ramp,
+			  cocon,ncocon,iponoel,inoel,&iplausi));
+
+              /* iniializing qamt and qamf (mean typical energy flow
+                 and mass flow */
+
+	      if(qau>1.e-10){qamt=qau;}
+	      else if(qa0>1.e-10){qamt=qa0;}
+	      else if(qat>1.e-10){qamt=qat;}
+	      else {qamt=1.e-2;}
+
+	      if(qau>1.e-10){qamf=qau;}
+	      else if(qa0>1.e-10){qamf=qa0;}
+	      else if(qaf>1.e-10){qamf=qaf;}
+	      else {qamf=1.e-2;}
 	  }
 	  
 	  iin++;
 	  iin_abs++;
 	  printf("      gas iteration %" ITGFORMAT " \n \n",iin);
 	  
+          /* store actual values of typical energy flow and 
+             mass flow */
+
+	  qamtold=qamt;
+	  qamfold=qamf;
+
           /* filling the lhs matrix */
          
 	  FORTRAN(mafillnet,(itg,ieg,ntg,ac,nload,sideload,
@@ -158,7 +192,8 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 			     ielmat,nteq,prop,ielprop,nactdog,nacteq,
 			     physcon,rhcon,nrhcon,ipobody,ibody,xbodyact,
 			     nbody,vold,xloadold,reltime,nmethod,set,mi,
-                             nmpc,nodempc,ipompc,coefmpc,labmpc,iaxial));
+                             nmpc,nodempc,ipompc,coefmpc,labmpc,iaxial,
+                             cocon,ncocon,iponoel,inoel));
 	  
           /* solving the system of equations */
 
@@ -179,7 +214,8 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 				 ielmat,nteq,prop,ielprop,nactdog,nacteq,
 				 physcon,rhcon,nrhcon,ipobody,ibody,xbodyact,
 				 nbody,vold,xloadold,reltime,nmethod,set,mi,
-                                 nmpc,nodempc,ipompc,coefmpc,labmpc,iaxial));
+                                 nmpc,nodempc,ipompc,coefmpc,labmpc,iaxial,
+                                 cocon,ncocon,iponoel,inoel));
 	    
 	      FORTRAN(equationcheck,(ac,nteq,nactdog,itg,ntg,nacteq,network));
 	    
@@ -198,7 +234,17 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 	       ibody,xbodyact,nbody,&dtheta,vold,xloadold,
 	       reltime,nmethod,set,mi,ineighe,cama,&vamt,
 	       &vamf,&vamp,&vama,nmpc,nodempc,ipompc,coefmpc,labmpc,
-               iaxial));
+               iaxial,&qat,&qaf,&ramt,&ramf,&ramp,cocon,ncocon,iponoel,
+	       inoel,&iplausi));
+
+	      /* updating the mean typical energy flow and mass flow */
+
+	      if(qau<1.e-10){
+		  if(qat>ea*qamt){qamt=(qamtold*iin+qat)/(iin+1);}
+		  else {qamt=qamtold;}
+		  if(qaf>ea*qamf){qamf=(qamfold*iin+qaf)/(iin+1);}
+		  else {qamf=qamfold;}
+	      }
 
               /* printing the largest corrections */
 	    
@@ -206,16 +252,19 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		  cam2t=cam1t;
 		  cam1t=cam0t;
 		  cam0t=camt[0];
-		  if (camt[0]>uamt) {uamt=camt[0];}
 		  printf
-                    ("      largest increment of gas temperature= %e\n",uamt);
+                    ("      mean typical energy flow since start of network iterations= %e\n",qamt);
+		  printf
+                    ("      largest energy flow residual in present network iteration= %e\n",ramt);
+		  printf
+                    ("      largest change of gas temperature since start of network iteratons= %e\n",vamt);
 		  if((ITG)camt[1]==0){
 		      printf
-		      ("      largest correction to gas temperature= %e\n",
+		      ("      largest correction to gas temperature in present network iteration= %e\n\n",
                        camt[0]);
 		  }else{
 		      printf
-		      ("      largest correction to gas temperature= %e in node %" ITGFORMAT "\n",
+		      ("      largest correction to gas temperature= %e in node %" ITGFORMAT "\n\n",
                        camt[0],(ITG)camt[1]);
 		  }
 	      }
@@ -224,36 +273,39 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		  cam2f=cam1f;
 		  cam1f=cam0f;
 		  cam0f=camf[0];
-		  if (camf[0]>uamf) {uamf=camf[0];}
-		  printf("      largest increment of gas massflow= %e\n",uamf);
+		  printf
+                    ("      mean typical mass flow since start of network iterations= %e\n",qamf);
+		  printf
+                    ("      largest mass flow residual in present network iteration= %e\n",ramf);
+		  printf("      largest change of gas massflow since start of network iterations= %e\n",vamf);
 		  if((ITG)camf[1]==0){
-		      printf("      largest correction to gas massflow= %e\n",
+		      printf("      largest correction to gas massflow in present network iteration= %e\n\n",
 			 camf[0]);
 		  }else{
-		      printf("      largest correction to gas massflow= %e in node %" ITGFORMAT "\n",
+		      printf("      largest correction to gas massflow= %e in node %" ITGFORMAT "\n\n",
 			 camf[0],(ITG)camf[1]);
 		  }
 		  
 		  cam2p=cam1p;
 		  cam1p=cam0p;
 		  cam0p=camp[0];
-		  if (camp[0]>uamp) {uamp=camp[0];}
-		  printf("      largest increment of gas pressure= %e\n",uamp);
+		  printf
+                    ("      largest element equation residual in present network iteration= %e\n",ramp);
+		  printf("      largest change of gas pressure since start of network iterations= %e\n",vamp);
 		  if((ITG)camp[1]==0){
-		      printf("      largest correction to gas pressure= %e\n",
+		      printf("      largest correction to gas pressure in present network iteration= %e\n\n",
                          camp[0]);
 		  }else{
-		      printf("      largest correction to gas pressure= %e in node %" ITGFORMAT "\n",
+		      printf("      largest correction to gas pressure= %e in node %" ITGFORMAT "\n\n",
                          camp[0],(ITG)camp[1]);
 		  }
 		  
 		  cam2a=cam1a;
 		  cam1a=cam0a;
 		  cam0a=cama[0];
-		  if (cama[0]>uama) {uama=cama[0];}
-		  printf("      largest increment of geometry= %e\n",uama);
+		  printf("      largest change of geometry since start of network iterations= %e\n",vama);
 		  if((ITG)cama[1]==0){
-		      printf("      largest correction to geometry= %e\n",
+		      printf("      largest correction to geometry in present network iteration= %e\n",
                          cama[0]);
 		  }else{
 		      printf("      largest correction to geometry= %e in node %" ITGFORMAT "\n",
@@ -272,10 +324,11 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 
               /* check the convergence */
 
-	      checkconvnet(&icutb,&iin,&uamt,&uamf,&uamp,
+	      checkconvnet(&icutb,&iin,
 		 &cam1t,&cam1f,&cam1p,&cam2t,&cam2f,&cam2p,&cam0t,&cam0f,
-		 &cam0p,&icntrl,&dtheta,ctrl,&uama,&cam1a,&cam2a,&cam0a,
-		 &vamt,&vamf,&vamp,&vama,qa);
+		 &cam0p,&icntrl,&dtheta,ctrl,&cam1a,&cam2a,&cam0a,
+		 &vamt,&vamf,&vamp,&vama,qa,&qamt,&qamf,&ramt,&ramf,&ramp,
+                 &iplausi);
 	  }
       }
 
@@ -292,11 +345,15 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 	FORTRAN(flowoutput,(itg,ieg,ntg,nteq,bc,lakon,ntmat_,
 			    v,shcon,nshcon,ipkon,kon,co,nflow, dtime,ttime,time,
 			    ielmat,prop,ielprop,nactdog,nacteq,&iin,physcon,
-			    camt,camf,camp,&uamt,&uamf,&uamp,rhcon,nrhcon,
+			    camt,camf,camp,rhcon,nrhcon,
 			    vold,jobnamef,set,istartset,iendset,ialset,nset,
                             mi,iaxial));
       }
 #endif
+#ifdef COMPANY
+      memcpy(&prop[0],&prop_store[0],sizeof(double)**nprop);
+      SFREE(prop_store);
+#endif	  
   }
       
   /* radiation */

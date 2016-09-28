@@ -79,6 +79,12 @@
             dd=dsqrt((pl(1,2)-pl(1,1))**2
      &           +(pl(2,2)-pl(2,1))**2
      &           +(pl(3,2)-pl(3,1))**2)
+            if(dd.le.0.d0) then
+               write(*,*) '*ERROR in springforc_n2f: spring connects'
+               write(*,*) '       two nodes at the same location:'
+               write(*,*) '       spring length is zero'
+               call exit(201)
+            endif
             do i=1,3
                xn(i)=(pl(i,2)-pl(i,1))/dd
             enddo

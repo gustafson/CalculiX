@@ -28,7 +28,8 @@
      &  nstate_,xstateini,xstate,ne0,ipkon,thicke,
      &  integerglob,doubleglob,tieset,istartset,iendset,ialset,ntie,
      &  nasym,pslavsurf,pmastsurf,mortar,clearini,ielprop,prop,distmin,
-     &  ndesi,nodedesi,ndirdesi,dfminds)
+     &  ndesi,nodedesi,dfminds,icoordinate,dxstiff,ne,xdesi,
+     &  istartelem,ialelem,v)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -42,8 +43,6 @@
 !     nmethod=4: stiffness matrix + mass matrix
 !
       implicit none
-!
-      integer mass,stiffness,buckling,rhsi,coriolis
 !
       character*1 entity
       character*8 lakonl
@@ -64,18 +63,20 @@
      &  nmpc,ikmpc(*),ilmpc(*),iscale,nstate_,ne0,iselect(6),
      &  istartset(*),iendset(*),ialset(*),ntie,integerglob(*),nasym,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,nopered,
-     &  ndesi,nodedesi(*),ndirdesi(*),idesva,iactnod,kscale
+     &  ndesi,nodedesi(*),idesvar,node,kscale,iactive,ij,
+     &  mass,stiffness,buckling,rhsi,coriolis,icoordinate,idir,ne,
+     &  istartelem(*),ialelem(*)
 !
       real*8 co(3,*),xl(3,26),shp(4,26),xs2(3,7),veold(0:mi(2),*),
-     &  s(100,100),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),
-     &  ff(100),bf(3),q(3),shpj(4,26),elcon(0:ncmat_,ntmat_,*),t(3),
+     &  s(60,60),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),
+     &  ff(60),bf(3),q(3),shpj(4,26),elcon(0:ncmat_,ntmat_,*),t(3),
      &  rhcon(0:1,ntmat_,*),xkl(3,3),eknlsign,reltime,prop(*),
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
      &  anisox(3,3,3,3),voldl(0:mi(2),26),vo(3,3),xloadold(2,*),
      &  xl2(3,9),xsj2(3),shp2(7,9),vold(0:mi(2),*),xload(2,*),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
-     &  v(3,3,3,3),springarea(2,*),thickness,tlayer(4),dlayer(4),
-     &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(100,100),
+     &  vv(3,3,3,3),springarea(2,*),thickness,tlayer(4),dlayer(4),
+     &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(60,60),
      &  sti(6,mi(1),*),stx(6,mi(1),*),s11,s22,s33,s12,s13,s23,s11b,
      &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,coefmpc(*),xlayer(mi(3),4),
      &  senergy,senergyb,rho,elas(21),summass,summ,thicke(mi(3),*),
@@ -83,10 +84,10 @@
      &  weight,coords(3),dmass,xl1(3,9),term,clearini(3,9,*),
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),plconloc(802),dtime,ttime,time,tvar(2),
-     &  sax(100,100),ffax(100),gs(8,4),a,stress(6),stre(3,3),
-     &  pslavsurf(3,*),pmastsurf(6,*),distmin,s0(100,100),
-     &  ds(ndesi,100),ds1(100,100),ff0(100),dff(ndesi,100),
-     &  dfminds(ndesi,100)  
+     &  sax(60,60),ffax(60),gs(8,4),a,stress(6),stre(3,3),
+     &  pslavsurf(3,*),pmastsurf(6,*),distmin,s0(60,60),xdesi(3,*),
+     &  ds1(60,60),ff0(60),dfminds(ndesi,60),dxstiff(27,mi(1),ne,*),
+     &  vl(0:mi(2),26),v(0:mi(2),*)
 !
       intent(in) co,kon,lakonl,p1,p2,omx,bodyfx,nbody,
      &  nelem,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
@@ -100,9 +101,10 @@
      &  nstate_,xstateini,ne0,ipkon,thicke,
      &  integerglob,doubleglob,tieset,istartset,iendset,ialset,ntie,
      &  nasym,pslavsurf,pmastsurf,mortar,clearini,ielprop,prop,
-     &  distmin,ndesi,nodedesi,ndirdesi
+     &  distmin,ndesi,nodedesi,icoordinate,xdesi,istartelem,ialelem,
+     &  v
 !
-      intent(inout) sm,xload,nmethod,springarea,xstate
+      intent(inout) sm,xload,nmethod,springarea,xstate,dfminds
 !
       include "gauss.f"
 !
@@ -300,13 +302,99 @@ c     Bernhardi end
                mint2d=1
             endif
          elseif((lakonl(4:5).eq.'15').or.(lakonl(4:4).eq.'6')) then
-            mint3d=18
+            mint3d=9
          else
             mint3d=0
          endif
       endif
 !
-!     initialisation for distributed forces
+!     displacements for 2nd order static and modal theory
+!
+      if(((iperturb(1).eq.1).or.(iperturb(2).eq.1)).and.
+     &          (stiffness.eq.1).and.(buckling.eq.0)) then
+         do i1=1,nope
+            konl(i1)=kon(indexe+i1)
+            do i2=1,3
+               voldl(i2,i1)=vold(i2,konl(i1))
+            enddo
+         enddo
+      endif
+!
+!     -------------------------------------------------------------
+!     Initialisation of the loop for the variation of 
+!     the stiffness matrix
+!     -------------------------------------------------------------
+!
+      do ij=istartelem(nelem),istartelem(nelem+1)-1
+         idesvar=ialelem(ij)
+!
+!     check whether a design variable belongs to the element
+!
+      if(idesvar.gt.0) then 
+!
+         if(icoordinate.eq.1) then
+!
+!           the coordinates are the design variables
+!
+            do i=1,nope
+               node=kon(indexe+i)
+               if(node.eq.nodedesi(idesvar)) then
+                  iactive=i
+                  do j=1,60
+                     dfminds(idesvar,j)=0.d0
+                  enddo
+                  exit
+               endif
+            enddo
+         else
+!
+!           the orientations are the design variables
+!
+            do j=1,60
+               dfminds(idesvar,j)=0.d0
+            enddo
+         endif
+      endif
+!
+!     initialisation of the local coordinates
+!
+      do i=1,nope
+         konl(i)=kon(indexe+i)
+         do j=1,3
+            xl(j,i)=co(j,konl(i))
+            vl(j,i)=v(j,konl(i))
+         enddo
+      enddo
+!
+!     computation of the coordinates of the local nodes w/ variation
+!     if the designnode belongs to the considered element
+!
+      if((idesvar.gt.0).and.(icoordinate.eq.1)) then 
+         do i=1,3
+            xl(i,iactive)=xl(i,iactive)+xdesi(i,idesvar)
+         enddo
+      endif
+!     Ertl end
+!
+!     initialisation of sm
+!
+      if((mass.eq.1).or.(buckling.eq.1).or.(coriolis.eq.1)) then
+         do i=1,3*nope
+            do j=1,3*nope
+               sm(i,j)=0.d0
+            enddo
+         enddo
+      endif
+!
+!     initialisation of s
+!
+      do i=1,3*nope
+         do j=1,3*nope
+            s(i,j)=0.d0
+         enddo
+      enddo
+!
+!       initialisation for distributed forces
 !
       if(rhsi.eq.1) then
         if(idist.ne.0) then
@@ -315,91 +403,6 @@ c     Bernhardi end
           enddo
         endif
       endif
-!
-!     displacements for 2nd order static and modal theory
-!
-      if(((iperturb(1).eq.1).or.(iperturb(2).eq.1)).and.
-     &          (stiffness.eq.1).and.(buckling.eq.0)) then
-         do i1=1,nope
-            do i2=1,3
-               voldl(i2,i1)=vold(i2,konl(i1))
-            enddo
-         enddo
-      endif
-!   
-!     Ertl start 
-!     initialisation of s0
-!
-      do i=1,3*nope
-        do j=1,3*nope
-          s0(i,j)=0.d0
-        enddo
-      enddo
-!
-!     initialisation of ds1
-!
-      do i=1,3*nope
-        do j=1,3*nope
-          ds1(i,j)=0.d0
-        enddo
-      enddo
-!
-!     -------------------------------------------------------------
-!     Initialisation of the loop for the variation of 
-!     the stiffness matrix
-!     -------------------------------------------------------------
-!
-      do idesva=0,ndesi
-!     Ertl end
-!
-!     initialisation of the local coordinates
-!
-      do i=1,nope
-        konl(i)=kon(indexe+i)
-        do j=1,3
-           voldl(j,i)=vold(j,konl(i))
-          xl(j,i)=co(j,konl(i))
-        enddo
-      enddo
-!
-!     computation of the coordinates of the local nodes w/ variation
-!     if the designnode belongs to the considered element
-!
-!     Ertl end
-      if(idesva.gt.0) then 
-         do i=1,nope
-            iactnod=kon(indexe+i)
-            if(iactnod.eq.nodedesi(idesva)) then
-               xl(ndirdesi(idesva),i)=xl(ndirdesi(idesva),i)+distmin
-               exit
-            endif
-         enddo
-      endif
-!     Ertl end
-!
-!     initialisation of sm
-!
-      if((mass.eq.1).or.(buckling.eq.1).or.(coriolis.eq.1)) then
-        do i=1,3*nope
-          do j=1,3*nope
-            sm(i,j)=0.d0
-          enddo
-        enddo
-      endif
-!
-!     initialisation of s
-!
-      do i=1,3*nope
-        do j=1,3*nope
-          s(i,j)=0.d0
-        enddo
-      enddo
-!
-!     initialisation of ff
-!
-      do i=1,3*nope
-         ff(i)=0.d0
-      enddo
 !
 !     calculating the stiffness matrix for the contact spring elements
 !
@@ -558,10 +561,10 @@ c     Bernhardi end
                ze=gauss3d6(3,kk)
                weight=weight3d6(kk)
             else
-               xi=gauss3d9(1,kk)
-               et=gauss3d9(2,kk)
-               ze=gauss3d9(3,kk)
-               weight=weight3d9(kk)
+               xi=gauss3d8(1,kk)
+               et=gauss3d8(2,kk)
+               ze=gauss3d8(3,kk)
+               weight=weight3d8(kk)
             endif
          endif
 c         if(nelem.eq.1) then
@@ -685,13 +688,24 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
 !           material data and local stiffness matrix
 !
          istiff=1
-         call materialdata_me(elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
+         if((icoordinate.eq.1).or.(idesvar.eq.0)) then
+            call materialdata_me(elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
      &        imat,amat,iorien,coords,orab,ntmat_,elas,rho,
      &        nelem,ithermal,alzero,mattyp,t0l,t1l,
      &        ihyper,istiff,elconloc,eth,kode,plicon,
      &        nplicon,plkcon,nplkcon,npmat_,
      &        plconloc,mi(1),dtime,nelem,kk,
      &        xstiff,ncmat_)
+         else
+            idir=idesvar-3*((idesvar-1)/3)
+            call materialdata_me(elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
+     &        imat,amat,iorien,coords,orab,ntmat_,elas,rho,
+     &        nelem,ithermal,alzero,mattyp,t0l,t1l,
+     &        ihyper,istiff,elconloc,eth,kode,plicon,
+     &        nplicon,plkcon,nplkcon,npmat_,
+     &        plconloc,mi(1),dtime,nelem,kk,
+     &        dxstiff(1,1,1,idir),ncmat_)
+         endif
 !
          if(mattyp.eq.1) then
 c            write(*,*) 'elastic co', elas(1),elas(2)
@@ -893,7 +907,7 @@ c            call orthotropic(elas,anisox)
                enddo
 !
                if(mattyp.eq.1) then
-                  call wcoef(v,vo,al,um)
+                  call wcoef(vv,vo,al,um)
                endif
 !
 !               calculating the total mass of the element for
@@ -927,7 +941,7 @@ c            call orthotropic(elas,anisox)
                                  do m4=1,3
                                     s(ii1+m2-1,jj1+m1-1)=
      &                                   s(ii1+m2-1,jj1+m1-1)
-     &                                   +v(m4,m3,m2,m1)*w(m4,m3)*weight
+     &                                  +vv(m4,m3,m2,m1)*w(m4,m3)*weight
                                  enddo
                               enddo
                            enddo
@@ -1175,19 +1189,20 @@ c             if(iperturb(1).eq.0) then
 !         variation of xl2 and xl1 (quads) for sensitivity analysis
 !         ---------------------------------------------------------
 !
-          if(idesva.gt.0) then
-             do i=1,nopes
-                iactnod=konl(ifaceq(i,ig))
-                if(iactnod.eq.nodedesi(idesva)) then
-                   xl2(ndirdesi(idesva),i)=
-     &                  xl2(ndirdesi(idesva),i)+distmin
-                   exit
-                endif
-             enddo
-          endif     
+             if(idesvar.gt.0) then
+                do i=1,nopes
+                   node=konl(ifaceq(i,ig))
+                   if(node.eq.nodedesi(idesvar)) then
+                      do j=1,3
+                         xl2(j,i)=
+     &                        xl2(j,i)+xdesi(j,idesvar)
+                      enddo
+                      exit
+                   endif
+                enddo
+             endif     
 !     
           elseif((nope.eq.10).or.(nope.eq.4)) then
-c             if(iperturb(1).eq.0) then
              if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
                 do i=1,nopes
                    do j=1,3
@@ -1209,24 +1224,25 @@ c             if(iperturb(1).eq.0) then
                    enddo
                 enddo
              endif
+!
+!         ---------------------------------------------------------
+!         variation of xl2 and xl1 (tets) for sensitivity analysis
+!         ---------------------------------------------------------
+!
+             if(idesvar.gt.0) then
+                do i=1,nopes
+                   node=konl(ifacet(i,ig))
+                   if(node.eq.nodedesi(idesvar)) then
+                      do j=1,3
+                         xl2(j,i)=
+     &                        xl2(j,i)+xdesi(j,idesvar)
+                      enddo
+                      exit
+                   endif
+                enddo
+             endif
           else
 !
-!         ---------------------------------------------------------
-!         variation of xl2 and xl1 (thets) for sensitivity analysis
-!         ---------------------------------------------------------
-!
-          if(idesva.gt.0) then
-             do i=1,nopes
-                iactnod=konl(ifacet(i,ig))
-                if(iactnod.eq.nodedesi(idesva)) then
-                   xl2(ndirdesi(idesva),i)=
-     &                  xl2(ndirdesi(idesva),i)+distmin
-                   exit
-                endif
-             enddo
-          endif
-
-c             if(iperturb(1).eq.0) then
              if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
                 do i=1,nopes
                    do j=1,3
@@ -1248,21 +1264,23 @@ c             if(iperturb(1).eq.0) then
                    enddo
                 enddo
              endif
-          endif
 !
 !         ---------------------------------------------------------
 !         variation of xl2 and xl1 (wedge) for sensitivity analysis
 !         ---------------------------------------------------------
 !
-          if(idesva.gt.0) then
-             do i=1,nopes
-                iactnod=konl(ifacew(i,ig))
-                if(iactnod.eq.nodedesi(idesva)) then
-                   xl2(ndirdesi(idesva),i)=
-     &                  xl2(ndirdesi(idesva),i)+distmin
-                   exit
-                endif
-             enddo
+             if(idesvar.gt.0) then
+                do i=1,nopes
+                   node=konl(ifacew(i,ig))
+                   if(node.eq.nodedesi(idesvar)) then
+                      do j=1,3
+                         xl2(j,i)=
+     &                        xl2(j,i)+xdesi(j,idesvar)
+                      enddo
+                      exit
+                   endif
+                enddo
+             endif
           endif
 !     
           do i=1,mint2d
@@ -1680,7 +1698,7 @@ c            alp=.2215d0
 !     Assigning the element stiffness matrix and the external load 
 !     vector to the corresponding matrices/vectors
 !     
-      if(idesva.eq.0) then
+      if(idesvar.eq.0) then
 !     Stiffness matrix
          do i=1,3*nope
             do j=1,3*nope
@@ -1688,40 +1706,46 @@ c            alp=.2215d0
             enddo
          enddo
 !     load vector
-         do i=1,3*nope
-            ff0(i)=ff(i)
-         enddo
+         if((rhsi.eq.1).and.(idist.eq.1)) then
+            do i=1,3*nope
+               ff0(i)=ff(i)
+            enddo
+         endif
       else
 !     Stiffness matrix
          do i=1,3*nope
             do j=1,3*nope
-               ds1(i,j)=(s(i,j)-s0(i,j))/distmin
+               ds1(i,j)=s(i,j)-s0(i,j)
             enddo
          enddo
          do i=1,3*nope
             l=0
-            ds(idesva,i)=0.d0
             do j=1,nope
                do k=1,3
                   l=l+1
-                  if ((l.eq.i).or.(l.gt.i)) then
-                     ds(idesva,i)=ds(idesva,i)+ds1(i,l)*voldl(k,j)
+                  if(l.ge.i) then
+                     dfminds(idesvar,i)=dfminds(idesvar,i)
+     &                                 +ds1(i,l)*vl(k,j)
                   else
-                     ds(idesva,i)=ds(idesva,i)+ds1(l,i)*voldl(k,j)
+                     dfminds(idesvar,i)=dfminds(idesvar,i)
+     &                                 +ds1(l,i)*vl(k,j)
                   endif
                enddo
             enddo
          enddo
 !     load vector
-         do i=1,3*nope
-            dff(idesva,i)=(ff(i)-ff0(i))/distmin
-         enddo
+         if((rhsi.eq.1).and.(idist.eq.1)) then
+            do i=1,3*nope
+               dfminds(idesvar,i)=(ff(i)-ff0(i)-dfminds(idesvar,i))
+     &                           /distmin
+            enddo
+         else
+            do i=1,3*nope
+               dfminds(idesvar,i)=-dfminds(idesvar,i)/distmin
+            enddo
+         endif
       endif
 !     
-      do i=1,3*nope
-         dfminds(idesva,i)=dff(idesva,i)-ds(idesva,i)
-      enddo
-      
       enddo
 !     
 !     -------------------------------------------------------------

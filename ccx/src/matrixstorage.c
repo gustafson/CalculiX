@@ -219,7 +219,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
     NNEW(trans,double,9*neq3);
     for (i=0;i<*nk;i++){
       idof=nactdof[mt*i+1];
-      if(idof==0) continue;
+      if(idof<=0) continue;
       itrans=inotr[2*i];
       if(itrans==0){
         for(j=0;j<9;j++){
@@ -443,7 +443,7 @@ void matrixstorage(double *ad, double **aup, double *adb, double *aub,
     NNEW(trans,double,9*neq3);
     for (i=0;i<*nk;i++){
       idof=nactdof[mt*i+1];
-      if(idof==0) continue;
+      if(idof<=0) continue;
       itrans=inotr[2*i];
       if(itrans==0){
         for(j=0;j<9;j++){

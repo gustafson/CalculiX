@@ -26,7 +26,7 @@
 !
       integer konl(20),mi(*),imat,nshcon(*),nrhcon(*),ntmat_
 !
-      real*8 voldl(0:mi(2),9),s(100,100),gastemp,shcon(0:3,ntmat_,*),
+      real*8 voldl(0:mi(2),9),s(60,60),gastemp,shcon(0:3,ntmat_,*),
      &  cp,r,dvi,rhcon(0:1,ntmat_,*),rho
 !
       intent(in) voldl,imat,konl,mi,ntmat_,shcon,

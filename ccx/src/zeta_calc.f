@@ -1110,6 +1110,12 @@ c         endif
                zeta=lam20/64*(V2V0*a0a2)**2-zetlin+1d0
                zeta=zeta*(W0W2)**2
             endif
+            if(zeta.lt.0) then
+               write(*,*) '*WARNING in zeta_calc: in Element',nelem,
+     &               'TYPE= ',lakon(nelem)(2:5)
+               write(*,*) '         Zeta value negative is set to 0.01'
+               zeta=0.01d0
+            endif
             return
 !     
          elseif((lakon(nelem)(2:8).eq.'REBRJI1').or.
@@ -1175,6 +1181,12 @@ c         endif
                   zeta=afakt*(1.d0+(a0a2*V2V0)**2-2.d0*V1V0**2)
                   zeta=zeta*(W0W2)**2
                endif
+            endif
+            if(zeta.lt.0) then
+               write(*,*) '*WARNING in zeta_calc: in Element',nelem,
+     &               'TYPE= ',lakon(nelem)(2:5)
+               write(*,*) '         Zeta value negative is set to 0.01'
+               zeta=0.01d0
             endif
             return
 !     
@@ -1273,6 +1285,12 @@ c         endif
                      endif
                   endif
                endif
+            endif
+            if(zeta.lt.0) then
+               write(*,*) '*WARNING in zeta_calc: in Element',nelem,
+     &               'TYPE= ',lakon(nelem)(2:5)
+               write(*,*) '         Zeta value negative is set to 0.01'
+               zeta=0.01d0
             endif
             return
 !
@@ -1390,8 +1408,15 @@ c         endif
             endif
             return
          endif
+         if(zeta.lt.0) then
+            write(*,*) '*WARNING in zeta_calc: in Element',nelem,
+     &           'TYPE= ',lakon(nelem)(2:5)
+            write(*,*) '         Zeta value negative is set to 0.01'
+            zeta=0.01d0
+         endif
       endif
-!     
+!   
+      return
       end
       
       

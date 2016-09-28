@@ -27,7 +27,8 @@
      &  springarea,nstate_,xstateini,xstate,thicke,integerglob,
      &  doubleglob,tieset,istartset,iendset,ialset,ntie,nasym,
      &  pslavsurf,pmastsurf,mortar,clearini,ielprop,prop,ne0,nea,
-     &  neb,distmin,ndesi,nodedesi,ndirdesi,dfextminds)
+     &  neb,distmin,ndesi,nodedesi,df,jqs,irows,dfminds,
+     &  icoordinate,dxstiff,xdesi,istartelem,ialelem,v)
 !
       implicit none
 !
@@ -45,14 +46,15 @@
      &  ipkon(*),intscheme,ipobody(2,*),nbody,ibody(3,*),ne,nmpc,
      &  nload,neq(2),nmethod,ithermal(2),iprestr,iperturb(*),i,j,k,
      &  idist,jj,id,ist,index,jdof1,idof1,node1,kflag,icalccg,ntmat_,
-     &  indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
+     &  indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,jqs(*),irows(*),
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,nea,
-     &  neb,ndesi,nodedesi(*),ndirdesi(*),desvar
+     &  neb,ndesi,nodedesi(*),idesvar,istartelem(*),ialelem(*),
+     &  icoordinate,ii
 !
       real*8 co(3,*),coefmpc(*),xload(2,*),p1(3),p2(3),bodyf(3),
      &  xloadold(2,*),reltime,t0(*),t1(*),vold(0:mi(2),*),
-     &  s(100,100),ff(100),sti(6,mi(1),*),sm(100,100),
-     &  stx(6,mi(1),*),elcon(0:ncmat_,ntmat_,*),
+     &  s(60,60),ff(60),sti(6,mi(1),*),sm(60,60),xdesi(3,*),
+     &  stx(6,mi(1),*),elcon(0:ncmat_,ntmat_,*),val,
      &  rhcon(0:1,ntmat_,*),springarea(2,*),alcon(0:6,ntmat_,*),
      &  physcon(*),prop(*),xstate(nstate_,mi(1),*),
      &  xstateini(nstate_,mi(1),*),alzero(*),orab(7,*),
@@ -60,8 +62,8 @@
      &  plkcon(0:2*npmat_,ntmat_,*),xstiff(27,mi(1),*),
      &  veold(0:mi(2),*),om,dtime,ttime,time,thicke(mi(3),*),
      &  doubleglob(*),clearini(3,9,*),pslavsurf(3,*),
-     &  pmastsurf(6,*),distmin,dfminds(ndesi,100),
-     &  dfextminds(ndesi,*)
+     &  pmastsurf(6,*),distmin,dfminds(ndesi,60),
+     &  df(*),dxstiff(27,mi(1),ne,*),v(0:mi(2),*)
 !
       intent(in) co,kon,ipkon,lakon,ne,ipompc,nodempc,coefmpc,nmpc,
      &  nelemload,sideload,nload,xbody,ipobody,nbody,nactdof,neq,
@@ -73,9 +75,10 @@
      &  coriolis,ibody,xloadold,reltime,veold,nstate_,xstateini,
      &  thicke,integerglob,doubleglob,tieset,istartset,iendset,
      &  ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,clearini,
-     &  ielprop,prop,ne0,nea,neb,ndesi,nodedesi,ndirdesi,distmin
+     &  ielprop,prop,ne0,nea,neb,ndesi,nodedesi,distmin,
+     &  icoordinate,jqs,irows,dxstiff,xdesi,istartelem,ialelem,v
 !
-      intent(inout) xload,nmethod,cgr,springarea,xstate 
+      intent(inout) xload,nmethod,cgr,springarea,xstate,df,dfminds
 !
       kflag=2
       i0=0
@@ -91,22 +94,6 @@
       else
          stiffonly(2)=0
       endif
-!
-!     initializing the matrices dfextminds
-!
-      do i=1,ndesi
-         do j=1,neq(2)
-            dfextminds(i,j)=0.d0
-         enddo
-      enddo
-!     
-!     initializing the matrices dfminds
-!
-      do i=1,ndesi
-         do j=1,neq(2)
-            dfminds(i,j)=0.d0
-         enddo
-      enddo
 !     
       if(rhsi.eq.1) then
 !
@@ -125,145 +112,158 @@
       if((ithermal(1).le.1).or.(ithermal(1).eq.3)) then
 !
 !     mechanical analysis: loop over all elements
-!
-      do i=nea,neb
-!
-        if(ipkon(i).lt.0) cycle
-        indexe=ipkon(i)
+!     
+         do i=nea,neb
+!     
+            if(ipkon(i).lt.0) cycle
+            indexe=ipkon(i)
 c     Bernhardi start
-        if(lakon(i)(1:5).eq.'C3D8I') then
-           nope=11
-        elseif(lakon(i)(4:5).eq.'20') then
+            if(lakon(i)(1:5).eq.'C3D8I') then
+               nope=11
+            elseif(lakon(i)(4:5).eq.'20') then
 c     Bernhardi end
-           nope=20
-        elseif(lakon(i)(4:4).eq.'8') then
-           nope=8
-        elseif(lakon(i)(4:5).eq.'10') then
-           nope=10
-        elseif(lakon(i)(4:4).eq.'4') then
-           nope=4
-        elseif(lakon(i)(4:5).eq.'15') then
-           nope=15
-        elseif(lakon(i)(4:4).eq.'6') then
-           nope=6
-        elseif((lakon(i)(1:2).eq.'ES').and.(lakon(i)(7:7).ne.'F')) then
-!
-!          spring and contact spring elements (NO dashpot elements
-!          = ED... elements)
-!
-c           read(lakon(i)(8:8),'(i1)') nope
-           nope=ichar(lakon(i)(8:8))-47
-c           nope=nope+1
+               nope=20
+            elseif(lakon(i)(4:4).eq.'8') then
+               nope=8
+            elseif(lakon(i)(4:5).eq.'10') then
+               nope=10
+            elseif(lakon(i)(4:4).eq.'4') then
+               nope=4
+            elseif(lakon(i)(4:5).eq.'15') then
+               nope=15
+            elseif(lakon(i)(4:4).eq.'6') then
+               nope=6
+            elseif((lakon(i)(1:2).eq.'ES').and.(lakon(i)(7:7).ne.'F'))
+     &              then
 !     
-!          local contact spring number
-!          if friction is involved, the contact spring element
-!          matrices are determined in mafillsmas.f
+!     spring and contact spring elements (NO dashpot elements
+!     = ED... elements)
 !     
-           if(lakon(i)(7:7).eq.'C') then
-              if(nasym.eq.1) cycle
-              if(mortar.eq.1) nope=kon(indexe)
-           endif
-        else
-           cycle
-        endif
-!
-        om=0.d0
-!
-        if((nbody.gt.0).and.(lakon(i)(1:1).ne.'E')) then
-!
-!          assigning centrifugal forces
-!
-           bodyf(1)=0.
-           bodyf(2)=0.
-           bodyf(3)=0.
-!
-           index=i
-           do
-              j=ipobody(1,index)
-              if(j.eq.0) exit
-              if(ibody(1,j).eq.1) then
-                 om=xbody(1,j)
-                 p1(1)=xbody(2,j)
-                 p1(2)=xbody(3,j)
-                 p1(3)=xbody(4,j)
-                 p2(1)=xbody(5,j)
-                 p2(2)=xbody(6,j)
-                 p2(3)=xbody(7,j)
+               nope=ichar(lakon(i)(8:8))-47
 !     
-!          assigning gravity forces
+!     local contact spring number
+!     if friction is involved, the contact spring element
+!     matrices are determined in mafillsmas.f
 !     
-              elseif(ibody(1,j).eq.2) then
-                 bodyf(1)=bodyf(1)+xbody(1,j)*xbody(2,j)
-                 bodyf(2)=bodyf(2)+xbody(1,j)*xbody(3,j)
-                 bodyf(3)=bodyf(3)+xbody(1,j)*xbody(4,j)
+               if(lakon(i)(7:7).eq.'C') then
+                  if(nasym.eq.1) cycle
+                  if(mortar.eq.1) nope=kon(indexe)
+               endif
+            else
+               cycle
+            endif
 !     
-!          assigning newton gravity forces
-!   
-              elseif(ibody(1,j).eq.3) then
-                 call newton(icalccg,ne,ipkon,lakon,kon,t0,co,rhcon,
-     &                nrhcon,ntmat_,physcon,i,cgr,bodyf,ielmat,ithermal,
-     &                vold,mi)
-              endif
-              index=ipobody(2,index)
-              if(index.eq.0) exit
-           enddo
-        endif
+            om=0.d0
+!     
+            if((nbody.gt.0).and.(lakon(i)(1:1).ne.'E')) then
+!     
+!     assigning centrifugal forces
+!     
+               bodyf(1)=0.
+               bodyf(2)=0.
+               bodyf(3)=0.
+!     
+               index=i
+               do
+                  j=ipobody(1,index)
+                  if(j.eq.0) exit
+                  if(ibody(1,j).eq.1) then
+                     om=xbody(1,j)
+                     p1(1)=xbody(2,j)
+                     p1(2)=xbody(3,j)
+                     p1(3)=xbody(4,j)
+                     p2(1)=xbody(5,j)
+                     p2(2)=xbody(6,j)
+                     p2(3)=xbody(7,j)
+!     
+!     assigning gravity forces
+!     
+                  elseif(ibody(1,j).eq.2) then
+                     bodyf(1)=bodyf(1)+xbody(1,j)*xbody(2,j)
+                     bodyf(2)=bodyf(2)+xbody(1,j)*xbody(3,j)
+                     bodyf(3)=bodyf(3)+xbody(1,j)*xbody(4,j)
+!     
+!     assigning newton gravity forces
+!     
+                  elseif(ibody(1,j).eq.3) then
+                     call newton(icalccg,ne,ipkon,lakon,kon,t0,co,rhcon,
+     &                    nrhcon,ntmat_,physcon,i,cgr,bodyf,ielmat,
+     &                    ithermal,vold,mi)
+                  endif
+                  index=ipobody(2,index)
+                  if(index.eq.0) exit
+               enddo
+            endif
+!     
+            call e_c3d_se(co,kon,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,
+     &           i,nmethod,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
+     &           alzero,ielmat,ielorien,norien,orab,ntmat_,
+     &           t0,t1,ithermal,vold,iperturb,nelemload,sideload,xload,
+     &           nload,idist,sti,stx,iexpl,plicon,
+     &           nplicon,plkcon,nplkcon,xstiff,npmat_,
+     &           dtime,matname,mi(1),ncmat_,mass(1),stiffness,buckling,
+     &           rhsi,intscheme,ttime,time,istep,iinc,coriolis,xloadold,
+     &           reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
+     &           springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
+     &           integerglob,doubleglob,tieset,istartset,
+     &           iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,
+     &           clearini,ielprop,prop,distmin,ndesi,nodedesi,
+     &           dfminds,icoordinate,dxstiff,ne,xdesi,istartelem,
+     &           ialelem,v)
+!     
+            do ii=istartelem(i),istartelem(i+1)-1
+               idesvar=ialelem(ii)
+               if(idesvar.eq.0) cycle
 !
-        call e_c3d_se(co,kon,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,i,
-     &          nmethod,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
-     &          alzero,ielmat,ielorien,norien,orab,ntmat_,
-     &          t0,t1,ithermal,vold,iperturb,nelemload,sideload,xload,
-     &          nload,idist,sti,stx,iexpl,plicon,
-     &          nplicon,plkcon,nplkcon,xstiff,npmat_,
-     &          dtime,matname,mi(1),ncmat_,mass(1),stiffness,buckling,
-     &          rhsi,intscheme,ttime,time,istep,iinc,coriolis,xloadold,
-     &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
-     &          springarea,nstate_,xstateini,xstate,ne0,ipkon,thicke,
-     &          integerglob,doubleglob,tieset,istartset,
-     &          iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,
-     &          clearini,ielprop,prop,distmin,ndesi,nodedesi,ndirdesi,
-     &          dfminds)
-!
-       do desvar=1,ndesi
-        do jj=1,3*nope
+               do jj=1,3*nope
 !     
-           j=(jj-1)/3+1
-           k=jj-3*(j-1)
+                  j=(jj-1)/3+1
+                  k=jj-3*(j-1)
 !     
-           node1=kon(indexe+j)
-           jdof1=nactdof(k,node1)
+                  node1=kon(indexe+j)
+                  jdof1=nactdof(k,node1)
 !     
-           if(jdof1.eq.0) then
-              if(nmpc.ne.0) then
-                 idof1=(node1-1)*8+k
-                 call nident(ikmpc,idof1,nmpc,id)
-                 if((id.gt.0).and.(ikmpc(id).eq.idof1)) then
-                    id=ilmpc(id)
-                    ist=ipompc(id)
-                    index=nodempc(3,ist)
-                    if(index.eq.0) cycle
-                    do
-                       jdof1=nactdof(nodempc(2,index),
-     &                      nodempc(1,index))
-                       if(jdof1.ne.0) then
-                             dfextminds(desvar,jdof1)=
-     &                            dfextminds(desvar,jdof1)
-     &                            -coefmpc(index)*dfminds(desvar,jj)
-     &                            /coefmpc(ist)
-                       endif
-                       index=nodempc(3,index)
-                       if(index.eq.0) exit
-                    enddo
-                 endif
-              endif
-              cycle
-           endif  
-           dfextminds(desvar,jdof1)=dfextminds(desvar,jdof1)+
-     &          dfminds(desvar,jj)
-        enddo
-       enddo
-      enddo
+                  if(jdof1.le.0) then
+                     if(nmpc.ne.0) then
+c     idof1=(node1-1)*8+k
+                        idof1=jdof1
+c     call nident(ikmpc,idof1,nmpc,id)
+c     if((id.gt.0).and.(ikmpc(id).eq.idof1)) then
+                        if(idof1.ne.2*(idof1/2)) then
+c     id=ilmpc(id)
+                           id=(-idof1+1)/2
+                           ist=ipompc(id)
+                           index=nodempc(3,ist)
+                           if(index.eq.0) cycle
+                           do
+                              jdof1=nactdof(nodempc(2,index),
+     &                             nodempc(1,index))
+                              if(jdof1.gt.0) then
+                                 val=-coefmpc(index)*dfminds(idesvar,jj)
+     &                                /coefmpc(ist)
+                                 call add_bo_st(df,jqs,irows,jdof1,
+     &                                          idesvar,val)
+c     dfextminds(idesvar,jdof1)=
+c     &                            dfextminds(idesvar,jdof1)
+c     &                            -coefmpc(index)*dfminds(idesvar,jj)
+c     &                            /coefmpc(ist)
+                              endif
+                              index=nodempc(3,index)
+                              if(index.eq.0) exit
+                           enddo
+                        endif
+                     endif
+                     cycle
+                  endif  
+c     dfextminds(idesvar,jdof1)=dfextminds(idesvar,jdof1)+
+c     &          dfminds(idesvar,jj)
+                  call add_bo_st(df,jqs,irows,jdof1,idesvar,
+     &                 dfminds(idesvar,jj))
+               enddo
+            enddo
+         enddo
       endif
 !     
       return
       end
+      

@@ -21,7 +21,7 @@
      &  nboun_,nodeboun,ndirboun,xboun,iamboun,nam,
      &  inotr,trab,nk,nk_,iponoel,inoel,iponor,xnor,thicke,thickn,
      &  knor,istep,offset,t0,t1,ikforc,ilforc,rig,nforc,
-     &  nforc_,nodeforc,ndirforc,xforc,iamforc,nelemload,sideload,
+     &  nforc_,nodeforc,ndirforc,xforc,iamforc,sideload,
      &  nload,ithermal,ntrans,co,ixfree,ikfree,inoelfree,iponoelmax,
      &  iperturb,tinc,tper,tmin,tmax,ctrl,typeboun,nmethod,nset,set,
      &  istartset,iendset,ialset,prop,ielprop,vold,mi,nkon,ielmat,
@@ -46,7 +46,7 @@
      &  iterm(500),nterm,neigh(7,8),l,m,nodeboun(*),ndirboun(*),nk,
      &  nk_,index,iponoel(*),inoel(3,*),inoelfree,istep,nmpcold,
      &  ikforc(*),ilforc(*),nodeforc(2,*),ndirforc(*),iamforc(*),
-     &  nelemload(*),nforc,nforc_,ithermal(2),nload,iamboun(*),
+     &  nforc,nforc_,ithermal(2),nload,iamboun(*),
      &  ntrans,inotr(2,*),nam,iponoelmax,iperturb,numnod,itransaxial,
      &  rig(*),nmethod,nset,istartset(*),iendset(*),ialset(*),nkon,
      &  ielprop(*),idir,indexref,indexold,idofold,idold,indexnew,
@@ -125,11 +125,16 @@
                   if(lakon(i)(1:2).ne.'CA') then
                      if(thickn(1,node).gt.0.d0)
      &                    thicke(1,indexe+j)=thickn(1,node)
-                     if(thickn(2,node).gt.0.d0)
-     &                    thicke(2,indexe+j)=thickn(2,node)
+                     if(mi(3).gt.1) then
+                        if(thickn(2,node).gt.0.d0)
+     &                       thicke(2,indexe+j)=thickn(2,node)
+                     endif
                   endif
                   if(thicke(1,indexe+j).le.0.d0) then
                      if(lakon(i)(1:1).eq.'C') then
+!
+!                       default for plane stress and plane strain elements
+!
                         thicke(1,indexe+j)=1.d0
                      else
                         write(*,*)'*ERROR in gen3delem: first thickness'

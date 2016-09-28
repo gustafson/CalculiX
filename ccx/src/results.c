@@ -30,7 +30,7 @@ static ITG *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *istep1,*iinc1,calcul_fn1,calcul_qa1,calcul_cauchy1,iener1,ikin1,
     *nal=NULL,*ipompc1,*nodempc1,*nmpc1,*ncocon1,*ikmpc1,*ilmpc1,
     num_cpus,mt1,*nk1,*ne01,*nshcon1,*nelemload1,*nload1,*mortar1,
-    *ielprop1,*kscale1;
+    *ielprop1,*kscale1,*iponoel1,*inoel1;
 
 static double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
     *prestr1,*eme1,*fn1=NULL,*qa1=NULL,*vold1,*veold1,*dtime1,*time1,
@@ -70,7 +70,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        double *pmastsurf,ITG *mortar,ITG *islavact,double *cdn,
        ITG *islavnode,ITG *nslavnode,ITG *ntie,double *clearini,
        ITG *islavsurf,ITG *ielprop,double *prop,double *energyini,
-       double *energy,ITG *kscale){
+       double *energy,ITG *kscale,ITG *iponoel,ITG *inoel){
 
     ITG intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,iener,ikin,
         intpointvart,mt=mi[1]+1,i,j;
@@ -283,7 +283,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
         sideload1=sideload;xload1=xload;xloadold1=xloadold;
         pslavsurf1=pslavsurf;pmastsurf1=pmastsurf;mortar1=mortar;
         clearini1=clearini;plicon1=plicon;nplicon1=nplicon;ne1=ne;
-        ielprop1=ielprop,prop1=prop;
+        ielprop1=ielprop,prop1=prop;iponoel1=iponoel;inoel1=inoel;
 
 	/* calculating the heat flux */
 	
@@ -411,7 +411,7 @@ void *resultsthermmt(ITG *i){
 	   &calcul_fn1,&calcul_qa1,&nal[indexnal],&nea,&neb,ithermal1,
 	   nelemload1,nload1,nmethod1,reltime1,sideload1,xload1,xloadold1,
 	   pslavsurf1,pmastsurf1,mortar1,clearini1,plicon1,nplicon1,ielprop1,
-           prop1));
+	   prop1,iponoel1,inoel1));
 
     return NULL;
 }

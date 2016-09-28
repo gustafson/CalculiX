@@ -19,7 +19,7 @@
       subroutine free_convection(node1,node2,nodem,nelem,lakon,kon,
      &        ipkon,nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,iaxial)
+     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,iaxial)
 !          
 !     Free-convection-Flow
 !     
@@ -34,10 +34,8 @@
      &     ipkon(*),kon(*),mi(*),nrhcon(*),ntmat_,nshcon(*)
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),cp,r,dvi,
-     &     physcon(3),co(3,*),vold(0:mi(2),*),
+     &     physcon(3),co(3,*),vold(0:mi(2),*),ttime,time,
      &     shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*)
-!
-      external ofvidg
 !  
       if (iflag.eq.0) then
          identity=.true.

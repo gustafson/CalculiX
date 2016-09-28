@@ -24,7 +24,7 @@
      &     ielmat,nteq,prop,ielprop,nactdog,nacteq,physcon,
      &     rhcon,nrhcon,ipobody,ibody,xbodyact,nbody,vold,xloadold,
      &     reltime,nmethod,set,mi,nmpc,nodempc,ipompc,coefmpc,labmpc,
-     &     iaxial)
+     &     iaxial,cocon,ncocon,iponoel,inoel)
 !     
       implicit none
 !     
@@ -34,7 +34,7 @@
       character*81 set(*)
 !     
       integer mi(*),itg(*),ieg(*),ntg,nteq,nflow,nload,
-     &     ielmat(mi(3),*),iaxial,
+     &     ielmat(mi(3),*),iaxial,ncocon(2,*),iponoel(*),inoel(2,*),
      &     nelemload(2,*),nope,nopes,mint2d,i,j,k,l,iflag,
      &     node,imat,ntmat_,id,ifaceq(8,6),ifacet(6,4),
      &     ifacew(8,5),node1,node2,nshcon(*),nelem,ig,index,konl(20),
@@ -51,7 +51,8 @@
      &     dtime,ttime,time,areaj,xflow,tvar(2),g(3),coefmpc(*),
      &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,ts1,ts2,xs2(3,7),
      &     xdenom1,xdenom2,xcst,xk1,xk2,expon,a,dt1,dt2,kappa,
-     &     pt1,pt2,inv,vold(0:mi(2),*),xloadold(2,*),reltime,pi
+     &     pt1,pt2,inv,vold(0:mi(2),*),xloadold(2,*),reltime,pi,
+     &     cocon(0:6,ntmat_,*),xflow360
 !     
       include "gauss.f"
 !     
@@ -173,21 +174,24 @@
                A=prop(ielprop(nelem)+1)
                pt1=v(2,node1)
                pt2=v(2,node2)
+!
+               xflow360=xflow*iaxial
+!
                if(pt1.ge.pt2)then
                   inv=1.d0
                   pt1=v(2,node1)
                   pt2=v(2,node2)
                   if(dabs(tg2/ts2-(1+0.5*(kappa-1)/kappa)).lt.1E-5) then
                     
-                     pt2=dabs(xflow)*dsqrt(Tg2*R)/A
+                     pt2=dabs(xflow360)*dsqrt(Tg2*R)/A
      &                    *(1+0.5*(kappa-1)/kappa)
      &                    **(0.5*(kappa+1)/(kappa-1)) 
                   endif
                   tg1=v(0,node1)
-                  call ts_calc(xflow,Tg1,Pt1,kappa,r,a,Ts1,icase)
+                  call ts_calc(xflow360,Tg1,Pt1,kappa,r,a,Ts1,icase)
 !
                   tg2=v(0,node2)
-                  call ts_calc(xflow,Tg2,Pt2,kappa,r,a,Ts2,icase)
+                  call ts_calc(xflow360,Tg2,Pt2,kappa,r,a,Ts2,icase)
                else
 !                 
                   inv=-1.d0
@@ -195,14 +199,14 @@
                   pt2=v(2,node1)
                   if(dabs(tg2/ts2-(1+0.5*(kappa-1)/kappa)).lt.1E-5) then
                     
-                     pt2=dabs(xflow)*dsqrt(Tg2*R)/A
+                     pt2=dabs(xflow360)*dsqrt(Tg2*R)/A
      &                    *(1+0.5*(kappa-1)/kappa)
      &                    **(0.5*(kappa+1)/(kappa-1)) 
                   endif
                   tg1=v(0,node2)
-                  call ts_calc(xflow,Tg1,Pt1,kappa,r,a,Ts1,icase)
+                  call ts_calc(xflow360,Tg1,Pt1,kappa,r,a,Ts1,icase)
                   tg2=v(0,node1)
-                  call ts_calc(xflow,Tg2,Pt2,kappa,r,a,Ts2,icase)
+                  call ts_calc(xflow360,Tg2,Pt2,kappa,r,a,Ts2,icase)
                endif
                dt1=tg1/ts1-1d0
                dt2=tg2/ts2-1d0
@@ -210,10 +214,10 @@
                xcst=2.d0*Cp*A**2/r**2
                xk1=pt1**2*(ts1/tg1)**expon
                xdenom1=xcst*xk1*(1.d0-expon*(tg1/ts1-1.d0))
-     &              /ts1+2.d0*xflow**2
+     &              /ts1+2.d0*xflow360**2
                xk2=pt2**2*(ts2/tg2)**expon
                xdenom2=xcst*xk2*(1.d0-expon*(tg2/ts2-1.d0))
-     &              /ts2+2.d0*xflow**2
+     &              /ts2+2.d0*xflow360**2
             endif
          endif
 !     
@@ -249,6 +253,11 @@
 !     
                   if(idoft2.ne.0)then
                      ac(ieq,idoft2)=ac(ieq,idoft2)+cp*xflow
+                  elseif(node2.eq.0) then
+                     write(*,*) '*WARNING in mafillnet'
+                     write(*,*) '         temperature at inlet'
+                     write(*,*) '         node',node1,' unknown'
+c                     call exit(201)
                   endif
 !     
                   if(idofm.ne.0) then
@@ -342,6 +351,11 @@
 !     
                   if(idoft1.ne.0)then
                      ac(ieq,idoft1)=ac(ieq,idoft1)-cp*xflow
+                  elseif(node1.eq.0) then
+                     write(*,*) '*WARNING in mafillnet'
+                     write(*,*) '         temperature at inlet'
+                     write(*,*) '         node',node2,' unknown'
+c                     call exit(201)
                   endif
 !     
                   if(idoft2.ne.0) then
@@ -454,7 +468,7 @@
      &           nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &           nodef,idirf,df,cp,R,rho,physcon,g,co,dvi,numf,
      &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,
-     &           iaxial)
+     &           ttime,time,iaxial)
 !
             do k=1,numf
                idof=nactdog(idirf(k),nodef(k))
@@ -646,7 +660,9 @@
                   sinktemp=v(0,node)
                   call film(h,sinktemp,temp,istep,
      &                 iinc,tvar,nelem,l,coords,jltyp,field,nfield,
-     &                 sideload(i),node,areaj,v,mi)
+     &                 sideload(i),node,areaj,v,mi,ipkon,kon,lakon,
+     &                 iponoel,inoel,ielprop,prop,ielmat,shcon,nshcon,
+     &                 rhcon,nrhcon,ntmat_,cocon,ncocon)
                   if(nmethod.eq.1) h(1)=xloadold(1,i)+
      &                 (h(1)-xloadold(1,i))*reltime
                endif

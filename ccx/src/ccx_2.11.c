@@ -65,7 +65,7 @@ double *co=NULL, *xboun=NULL, *coefmpc=NULL, *xforc=NULL,*clearini=NULL,
         *cs=NULL,*tietol=NULL,*fmpc=NULL,*prop=NULL,*t0g=NULL,*t1g=NULL,
 	*xbody=NULL,*xbodyold=NULL;
     
-double ctrl[32]={4.5,8.5,9.5,16.5,10.5,4.5,0.,5.5,0.,0.,0.25,0.5,0.75,0.85,0.,0.,1.5,0.,0.005,0.01,0.,0.,0.02,1.e-5,1.e-3,1.e-8,1.e30,1.5,0.25,1.01,1.,1.};
+double ctrl[39]={4.5,8.5,9.5,16.5,10.5,4.5,0.,5.5,0.,0.,0.25,0.5,0.75,0.85,0.,0.,1.5,0.,0.005,0.01,0.,0.,0.02,1.e-5,1.e-3,1.e-8,1.e30,1.5,0.25,1.01,1.,1.,5.e-7,5.e-7,5.e-7,5.e-7,5.e-7,5.e-7,5.e-7};
     
 char *sideload=NULL, *set=NULL, *matname=NULL, *orname=NULL, *amname=NULL,
      *filab=NULL, *lakon=NULL, *labmpc=NULL, *prlab=NULL, *prset=NULL, 
@@ -73,7 +73,7 @@ char *sideload=NULL, *set=NULL, *matname=NULL, *orname=NULL, *amname=NULL,
      *inpc=NULL,*tieset=NULL,*cbody=NULL,fneig[132]="",*sideloadtemp=NULL,
      kind1[2]="T",kind2[2]="T",*heading=NULL,*objectset=NULL;
      
-ITG nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,nentries=15,
+ITG nk,ne,nboun,nmpc,nforc,nload,nprint=0,nset,nalset,nentries=15,
   nmethod,neq[3]={0,0,0},i,mpcfree=1,mei[4],j,nzl,nam,nbounold=0,
   nforcold=0,nloadold=0,nbody,nbody_=0,nbodyold=0,network=0,nheading_=0,
   k,nzs[3],nmpc_=0,nload_=0,nforc_=0,istep,istat,nboun_=0,nintpoint=0,
@@ -85,7 +85,8 @@ ITG nk,ne,nboun,nmpc,nforc,nload,nprint,nset,nalset,nentries=15,
   callfrommain,nflow=0,jin=0,irstrt=0,nener=0,jrstrt=0,nenerold,
   nline,ipoinp[2*nentries],*inp=NULL,ntie,ntie_=0,mcs=0,nprop_=0,
   nprop=0,itpamp=0,iviewfile,nkold,nevdamp_=0,npt_=0,cyclicsymmetry,
-  nmethodl,iaxial=1,inext=0,icontact=0,nobject,nobject_=0,iit=-1;
+  nmethodl,iaxial=1,inext=0,icontact=0,nobject=0,nobject_=0,iit=-1,
+  nzsfreq[3];
 
 ITG *meminset=NULL,*rmeminset=NULL;
 
@@ -107,7 +108,7 @@ else{
     if(strcmp1(argv[i],"-i")==0) {
     strcpy(jobnamec,argv[i+1]);strcpy1(jobnamef,argv[i+1],132);jin++;break;}
     if(strcmp1(argv[i],"-v")==0) {
-	printf("\nThis is Version 2.10\n\n");
+	printf("\nThis is Version 2.11\n\n");
 	FORTRAN(stop,());
     }
   }
@@ -128,12 +129,12 @@ FORTRAN(uexternaldb,(&lop,&lrestart,time,&dtime,&kstep,&kinc));
 FORTRAN(openfile,(jobnamef,output));
 
 printf("\n************************************************************\n\n");
-printf("CalculiX Version 2.10, Copyright(C) 1998-2015 Guido Dhondt\n");
+printf("CalculiX Version 2.11, Copyright(C) 1998-2015 Guido Dhondt\n");
 printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
 printf("************************************************************\n\n");
-printf("You are using an executable made on Sa 5. Mär 12:23:33 CET 2016\n");
+printf("You are using an executable made on So 31. Jul 13:26:31 CEST 2016\n");
 fflush(stdout);
 
 istep=0;
@@ -195,7 +196,7 @@ while(istat>=0) {
      into the real sizes */
 
   nzs[1]=nzs_;
-  nprint=nprint_;
+//  nprint=nprint_;
 
   if((istep==0)||(irstrt<0)) {
     ne=ne_;
@@ -205,7 +206,7 @@ while(istat>=0) {
     norien=norien_;
     ntrans=ntrans_;
     ntie=ntie_;
-    nobject=nobject_;
+//    nobject=nobject_;
 
     /* allocating space before the first step */
 
@@ -580,8 +581,8 @@ while(istat>=0) {
 	    ielprop,&nprop,&nprop_,prop,&itpamp,&iviewfile,ipoinpc,&icfd,
 	    &nslavs,t0g,t1g,&network,&cyclicsymmetry,idefforc,idefload,
 	    idefbody,&mortar,&ifacecount,islavsurf,pslavsurf,clearini,
-	    heading,&iaxial,&nobject,objectset));
-	    
+	    heading,&iaxial,&nobject,objectset,&nprint_));
+  
   if((istep==1)&&(mortar==-1)){mortar=0;}else{icontact=1;}
 
   nload0=nload;SFREE(idefforc);SFREE(idefload);SFREE(idefbody);
@@ -891,8 +892,8 @@ while(istat>=0) {
   if((nener==1)&&(nenerold==0)){
     NNEW(ener,double,mi[0]*ne*2);
     if((istep>1)&&(iperturb[0]>1)){
-      printf("*ERROR in CalculiX: in nonlinear calculations");
-      printf("       energy output must be selected in the first step");
+      printf(" *ERROR in CalculiX: in nonlinear calculations\n");
+      printf("        energy output must be selected in the first step\n\n");
       FORTRAN(stop,());
     }
   }
@@ -1048,6 +1049,14 @@ while(istat>=0) {
 	mpcinfo[0]=memmpc_;mpcinfo[1]=mpcfree;mpcinfo[2]=icascade;
 	mpcinfo[3]=maxlenmpc;
 
+	if(icascade!=0){
+	    printf(" *ERROR in CalculiX: the matrix structure may");
+	    printf("        change due to nonlinear equations;");
+	    printf("        a purely linear calculation is not");
+	    printf("        feasible; use NLGEOM on the *STEP card.");
+	    FORTRAN(stop,());
+	}
+
 	linstatic(co,&nk,&kon,&ipkon,&lakon,&ne,nodeboun,ndirboun,xboun,&nboun, 
 	     ipompc,nodempc,coefmpc,labmpc,&nmpc,nodeforc,ndirforc,xforc,
              &nforc, nelemload,sideload,xload,&nload, 
@@ -1097,7 +1106,7 @@ while(istat>=0) {
 	     &ntie,tieset,&itpamp,&iviewfile,jobnamec,tietol,&nslavs,thicke,
 	     ics,&nintpoint,&mortar,
 	     &ifacecount,typeboun,&islavsurf,&pslavsurf,&clearini,&nmat,
-	     xmodal,&iaxial,&inext);
+	     xmodal,&iaxial,&inext,&nprop);
 
 	memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
         maxlenmpc=mpcinfo[3];
@@ -1132,6 +1141,8 @@ while(istat>=0) {
 
 	  memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
 	  maxlenmpc=mpcinfo[3];
+
+	  for(i=0;i<3;i++){nzsfreq[i]=nzs[i];}
 
 #else
 	  printf("*ERROR in CalculiX: the ARPACK library is not linked\n\n");
@@ -1303,7 +1314,7 @@ while(istat>=0) {
              prset,&nener,ikforc,ilforc,trab,inotr,&ntrans,&fmpc,
              cbody,ibody,xbody,&nbody,xbodyold,ielprop,prop,
 	     &ntie,&tieset,&itpamp,&iviewfile,jobnamec,&tietol,&nslavs,thicke,
-	     ics,&nalset,&nmpc_,&nmat,typeboun,&iaxial,&nload_);
+	     ics,&nalset,&nmpc_,&nmat,typeboun,&iaxial,&nload_,&nprop);
 
 	memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
         maxlenmpc=mpcinfo[3];
@@ -1327,7 +1338,7 @@ while(istat>=0) {
              prset,&nener,trab,inotr,&ntrans,fmpc,cbody,ibody,xbody,&nbody,
 	     xbodyold,timepar,thicke,jobnamec,tieset,&ntie,&istep,&nmat,
 	     ielprop,prop,typeboun,&mortar,mpcinfo,tietol,ics,&icontact,
-	     &nobject,objectset,&istat);
+	     &nobject,objectset,&istat,orname,nzsfreq);
   }
 
   SFREE(nactdof);

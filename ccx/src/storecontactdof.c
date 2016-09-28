@@ -43,7 +43,7 @@ void storecontactdof(ITG *nope,ITG *nactdof, ITG *mt, ITG *konl, ITG **ikactcont
   for(j=0;j<*nope;j++){
       for(j1=0;j1<3;j1++){
 	  jdof=nactdof[*mt*(konl[j]-1)+j1+1];
-	  if(jdof!=0){
+	  if(jdof>0){
 	      
 	      jdof--;
 	      FORTRAN(nident,(ikactcont,&jdof,nactcont,&id));
@@ -81,7 +81,7 @@ void storecontactdof(ITG *nope,ITG *nactdof, ITG *mt, ITG *konl, ITG **ikactcont
 			  node=nodempc[3*index-3];
 			  ndir=nodempc[3*index-2];
 			  jdof=nactdof[*mt*(node-1)+ndir];
-			  if(jdof!=0){
+			  if(jdof>0){
 			      
 			      jdof--;
 			      FORTRAN(nident,(ikactcont,&jdof,nactcont,&id));

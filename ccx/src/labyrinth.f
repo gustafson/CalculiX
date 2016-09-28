@@ -18,7 +18,7 @@
       subroutine labyrinth(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &     nodef,idirf,df,cp,R,physcon,co,dvi,numf,vold,set,
-     &     kon,ipkon,mi,iaxial)
+     &     kon,ipkon,mi,ttime,time,iaxial)
 !     
 !     labyrinth element
 !
@@ -37,7 +37,7 @@
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,a,d,
      &     p1,p2,T1,Aeff,C1,C2,C3,cd,cp,physcon(3),p2p1,km1,dvi,
      &     kp1,kdkm1,tdkp1,km1dk,x,y,ca1,cb1,ca2,cb2,dT1,alambda,
-     &     rad,reynolds,pi,ppkrit,co(3,*),
+     &     rad,reynolds,pi,ppkrit,co(3,*),ttime,time,
      &     carry_over,lc,hst,e,szt,num,denom,t,s,b,h,cdu,
      &     cd_radius,cst,dh,cd_honeycomb,cd_lab,bdh,
      &     pt0zps1,cd_1spike,cdbragg,rzdh,
@@ -68,9 +68,9 @@
           if(lakon(nelem)(2:5).ne.'LABF') then
              t=prop(index+1)
              s=prop(index+2)
-c             iaxial=int(prop(index+3))
+c             iaxial=nint(prop(index+3))
              d=prop(index+4)
-             n=int(prop(index+5))
+             n=nint(prop(index+5))
              b=prop(index+6)
              h=prop(index+7)
              lc=prop(index+8)
@@ -83,12 +83,12 @@ c             iaxial=int(prop(index+3))
 !    "flexible" labyrinth for thermomechanical coupling
 !
           elseif(lakon(nelem)(2:5).eq.'LABF') then
-             nodea=int(prop(index+1))
-             nodeb=int(prop(index+2))
-c             iaxial=int(prop(index+3))
+             nodea=nint(prop(index+1))
+             nodeb=nint(prop(index+2))
+c             iaxial=nint(prop(index+3))
              t=prop(index+4)
              d=prop(index+5)
-             n=int(prop(index+6))
+             n=nint(prop(index+6))
              b=prop(index+7)
              h=prop(index+8)
 !     hc=prop(index+7)
@@ -213,9 +213,9 @@ c             endif
             kappa=(cp/(cp-R))
             t=prop(index+1)
             s=prop(index+2)
-c            iaxial=int(prop(index+3))
+c            iaxial=nint(prop(index+3))
             d=prop(index+4)
-            n=int(prop(index+5))
+            n=nint(prop(index+5))
             b=prop(index+6)
             h=prop(index+7)
             lc=prop(index+8)
@@ -228,12 +228,12 @@ c            iaxial=int(prop(index+3))
 !
          elseif(lakon(nelem)(2:5).eq.'LABF') then
             index=ielprop(nelem)
-            nodea=int(prop(index+1))
-            nodeb=int(prop(index+2))
-c            iaxial=int(prop(index+3))
+            nodea=nint(prop(index+1))
+            nodeb=nint(prop(index+2))
+c            iaxial=nint(prop(index+3))
             t=prop(index+4)
             d=prop(index+5)
-            n=int(prop(index+6))
+            n=nint(prop(index+6))
             b=prop(index+7)
             h=prop(index+8)
             lc=prop(index+9)
@@ -464,7 +464,7 @@ c             endif
          t=prop(index+1)
          s=prop(index+2)
          d=prop(index+3)
-         n=int(prop(index+4))
+         n=nint(prop(index+4))
          b=prop(index+5)
          h=prop(index+6)
          lc=prop(index+7)
@@ -593,17 +593,17 @@ c             endif
          xflow_oil=0
 !
          write(1,*) ''
-         write(1,55) 'In line',int(nodem/100),' from node',node1,
-     &' to node', node2,':   air massflow rate= ',xflow,'kg/s',
-     &', oil massflow rate= ',xflow_oil,'kg/s'
- 55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
+         write(1,55) ' from node',node1,
+     &' to node', node2,':   air massflow rate= ',xflow,
+     &', oil massflow rate= ',xflow_oil
+ 55      FORMAT(1X,A,I6,A,I6,A,e11.4,A,A,e11.4,A)
          
          if(inv.eq.1) then
           write(1,56)'       Inlet node  ',node1,':   Tt1=',T1,
-     &           'K, Ts1=',T1,'K, Pt1=',P1/1E5, 'Bar'
+     &           ', Ts1=',T1,', Pt1=',P1
 
-            write(1,*)'             element S    ',set(numf)(1:20)
-            write(1,57)'             eta= ',dvi,'kg/(m*s), Re= ' ,
+            write(1,*)'             Element ',nelem,lakon(nelem)
+            write(1,57)'             dyn.visc.= ',dvi,', Re= ' ,
      &           reynolds,
      &', Cd_radius= ',cd_radius,', Cd_honeycomb= ', 1+cd_honeycomb/100
 !
@@ -625,15 +625,15 @@ c             endif
            endif
                  
             write(1,56)'       Outlet node ',node2,':   Tt2= ',T2,
-     &           'K, Ts2= ',T2,'K, Pt2= ',P2/1e5,'Bar'
+     &           ', Ts2= ',T2,', Pt2= ',P2
 
 !     
          else if(inv.eq.-1) then
             write(1,56)'       Inlet node  ',node2,':    Tt1= ',T1,
-     &           'K, Ts1= ',T1,'K, Pt1= ',P1/1E5, 'Bar' 
+     &           ', Ts1= ',T1,', Pt1= ',P1 
          
-            write(1,*)'             element S    ',set(numf)(1:20)
-            write(1,57)'             eta=',dvi,'kg/(m*s), Re= '
+            write(1,*)'             element ',nelem,lakon(nelem)
+            write(1,57)'             dyn.visc.=',dvi,', Re= '
      &           ,reynolds,
      & ', Cd_radius= ',cd_radius,', Cd_honeycomb= ',1+cd_honeycomb/100
 !
@@ -654,15 +654,15 @@ c             endif
      & cdu,' Cd= ',cdbragg
            endif
            write(1,56)'       Outlet node ',node1,':    Tt2= ',T2,
-     &          'K, Ts2= ',T2,'K, Pt2= ',P2/1e5, 'Bar'
+     &          ', Ts2= ',T2,', Pt2= ',P2
 
         endif
 !         
- 56      FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A)
- 57      FORMAT(1X,A,E11.5,A,G9.4,A,f6.4,A,f6.4)
- 58      FORMAT(1X,A,f7.5,A,f7.5,A,f7.5)
- 59      FORMAT(1X,A,f7.5,A,f7.5,A,f7.5,A,f5.3)
- 60      FORMAT(1X,A,f7.5,A,f7.5)
+ 56      FORMAT(1X,A,I6,A,e11.4,A,e11.4,A,e11.4,A)
+ 57      FORMAT(1X,A,E11.5,A,e11.4,A,e11.4,A,e11.4)
+ 58      FORMAT(1X,A,e11.4,A,e11.4,A,e11.4)
+ 59      FORMAT(1X,A,e11.4,A,e11.4,A,e11.4,A,e11.4)
+ 60      FORMAT(1X,A,e11.4,A,e11.4)
       endif
 !     
       xflow=xflow/iaxial

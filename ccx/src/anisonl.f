@@ -50,7 +50,7 @@
 !
       integer ii1,jj1
 !
-      real*8 w(3,3),vo(3,3),elas(21),s(100,100),weight
+      real*8 w(3,3),vo(3,3),elas(21),s(60,60),weight
 !
       intent(in) w,vo,elas,ii1,jj1,weight
 !

@@ -60,7 +60,7 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
   strcpy(fninp,jobnamec);
   strcat(fninp,".inp");
   if((f1[in]=fopen(fninp,"r"))==NULL){
-      printf("*ERROR in read: cannot open file %s\n",fninp);
+      printf("*ERROR in readinput: cannot open file %s\n",fninp);
       exit(0);
   }
 
@@ -156,10 +156,10 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
           includefn[lincludefn]='\0';
 	  in++;
 	  if(in>9){
-	      printf("*ERROR in read: include statements can \n not be cascaded over more than 9 levels\n");
+	      printf("*ERROR in readinput: include statements can \n not be cascaded over more than 9 levels\n");
 	  }
 	  if((f1[in]=fopen(includefn,"r"))==NULL){
-	      printf("*ERROR in read: cannot open file %s\n",includefn);
+	      printf("*ERROR in readinput: cannot open file %s\n",includefn);
 	      exit(0);
 	  }
           continue;

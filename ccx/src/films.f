@@ -26,7 +26,7 @@
 !
       implicit none
 !
-      logical flow_flag
+      logical flow_flag,surface
 !
       character*1 inpc(*)
       character*8 lakon(*)
@@ -48,6 +48,7 @@
       iampfilm=0
       idelay1=0
       idelay2=0
+      surface=.false.
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR in films: *FILM should only be used'
@@ -225,6 +226,7 @@
             if(istat.gt.0) xmagfilm=-1.d0
          endif
          if(((label(1:2).ne.'F1').and.(label(1:2).ne.'F2').and.
+     &       (label(1:2).ne.'F0').and.
      &       (label(1:2).ne.'F3').and.(label(1:2).ne.'F4').and.
      &       (label(1:2).ne.'F5').and.(label(1:2).ne.'F6')).or.
      &      ((label(3:4).ne.'  ').and.(label(3:4).ne.'NU').and.
@@ -272,15 +274,30 @@
                if(set(i).eq.elset) exit
             enddo
             if(i.gt.nset) then
-               elset(ipos:ipos)=' '
-               write(*,*) '*ERROR in films: element set ',elset
-               write(*,*) '       has not yet been defined. '
-               call inputerror(inpc,ipoinpc,iline,
-     &"*FILM%")
-               call exit(201)
+!
+!              check for facial surface
+!
+               surface=.true.
+               elset(ipos:ipos)='T'
+               do i=1,nset
+                  if(set(i).eq.elset) exit
+               enddo
+               if(i.gt.nset) then
+                  elset(ipos:ipos)=' '
+                  write(*,*) '*ERROR in films: element set '
+                  write(*,*) '       or facial surface ',elset
+                  write(*,*) '       has not yet been defined. '
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*FILM%")
+                  call exit(201)
+               endif
             endif
 !
             l=ialset(istartset(i))
+            if(surface) then
+               write(label(2:2),'(i1)') l-10*(l/10)
+               l=l/10
+            endif
             if((lakon(l)(1:2).eq.'CP').or.
      &           (lakon(l)(2:2).eq.'A').or.
      &           (lakon(l)(7:7).eq.'E').or.
@@ -304,6 +321,10 @@
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then
                   l=ialset(j)
+                  if(surface) then
+                     write(label(2:2),'(i1)') l-10*(l/10)
+                     l=l/10
+                  endif
                   call loadaddt(l,label,xmagfilm,xmagtemp,nelemload,
      &                 sideload,xload,nload,nload_,iamload,
      &                 iamptemp,iampfilm,nam,node,iload)

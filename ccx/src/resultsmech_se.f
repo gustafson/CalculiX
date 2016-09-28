@@ -19,14 +19,15 @@
       subroutine resultsmech_se(co,kon,ipkon,lakon,ne,v,
      &  stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
      &  ielmat,ielorien,norien,orab,ntmat_,t0,t1,ithermal,prestr,
-     &  iprestr,eme,iperturb,fn,iout,qa,vold,nmethod,
+     &  iprestr,eme,iperturb,fn,iout,vold,nmethod,
      &  veold,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
      &  xstateini,xstiff,xstate,npmat_,matname,mi,ielas,icmd,
      &  ncmat_,nstate_,stiini,vini,ener,eei,enerini,istep,iinc,
-     &  springarea,reltime,calcul_fn,calcul_qa,calcul_cauchy,iener,
-     &  ikin,nal,ne0,thicke,emeini,pslavsurf,
-     &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop,dfn,distmin,
-     &  ndesi,nodedesi,ndirdesi,fn0,sti)
+     &  springarea,reltime,calcul_fn,calcul_cauchy,iener,
+     &  ikin,ne0,thicke,emeini,pslavsurf,
+     &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop,dfn,
+     &  idesvar,nodedesi,fn0,sti,icoordinate,dxstiff,
+     &  ialdesi,xdesi)
 !
 !     calculates stresses and the material tangent at the integration
 !     points and the internal forces at the nodes
@@ -43,32 +44,34 @@
      &  ielorien(mi(3),*),ntmat_,ipkon(*),ne0,iflag,null,
      &  istep,iinc,mt,ne,mattyp,ithermal(2),iprestr,i,j,k,m1,m2,jj,
      &  i1,m3,m4,kk,iener,indexe,nope,norien,iperturb(*),iout,
-     &  nal,icmd,ihyper,nmethod,kode,imat,mint3d,iorien,ielas,
+     &  icmd,ihyper,nmethod,kode,imat,mint3d,iorien,ielas,
      &  istiff,ncmat_,nstate_,ikin,ilayer,nlayer,ki,kl,ielprop(*),
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,calcul_fn,
-     &  calcul_cauchy,calcul_qa,nopered,mortar,jfaces,iloc,igauss,
-     &  desvar,actnode,ndesi,nodedesi(*),ndirdesi(*),kscale
+     &  calcul_cauchy,nopered,mortar,jfaces,iloc,igauss,
+     &  idesvar,node,nodedesi(*),kscale,idir,
+     &  iactive,icoordinate,ialdesi(*),ii
 !
       real*8 co(3,*),v(0:mi(2),*),shp(4,26),stiini(6,mi(1),*),
      &  stx(6,mi(1),*),xl(3,26),vl(0:mi(2),26),stre(6),prop(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),xs2(3,7),
      &  alcon(0:6,ntmat_,*),vini(0:mi(2),*),thickness,
      &  alzero(*),orab(7,*),elas(21),rho,fn(0:mi(2),*),
-     &  fnl(3,10),skl(3,3),beta(6),q(0:mi(2),26),xl2(3,8),
+     &  fnl(3,10),skl(3,3),beta(6),xl2(3,8),pnewdt,
      &  vkl(0:3,3),t0(*),t1(*),prestr(6,mi(1),*),eme(6,mi(1),*),
      &  ckl(3,3),vold(0:mi(2),*),eloc(9),veold(0:mi(2),*),
      &  springarea(2,*),elconloc(21),eth(6),xkl(3,3),voldl(0:mi(2),26),
      &  xikl(3,3),ener(mi(1),*),emec(6),eei(6,mi(1),*),enerini(mi(1),*),
-     &  emec0(6),vel(1:3,26),veoldl(0:mi(2),26),xsj2(3),shp2(7,8),
+     &  emec0(6),veoldl(0:mi(2),26),xsj2(3),shp2(7,8),
      &  e,un,al,um,am1,xi,et,ze,tt,exx,eyy,ezz,exy,exz,eyz,
-     &  xsj,qa(3),vj,t0l,t1l,dtime,weight,pgauss(3),vij,time,ttime,
+     &  xsj,vj,t0l,t1l,dtime,weight,pgauss(3),vij,time,ttime,
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),xstate(nstate_,mi(1),*),plconloc(802),
      &  vokl(3,3),xstateini(nstate_,mi(1),*),vikl(3,3),
      &  gs(8,4),a,reltime,tlayer(4),dlayer(4),xlayer(mi(3),4),
      &  thicke(mi(3),*),emeini(6,mi(1),*),clearini(3,9,*),
-     &  pslavsurf(3,*),pmastsurf(6,*),distmin,sti(6,mi(1),*),
-     &  fn0(0:mi(2),*),dfn(ndesi,0:mi(2),*)
+     &  pslavsurf(3,*),pmastsurf(6,*),sti(6,mi(1),*),
+     &  fn0(0:mi(2),*),dfn(0:mi(2),*),hglf(3,4),ahr,
+     &  dxstiff(27,mi(1),ne,*),xdesi(3,*)
 !
       include "gauss.f"
 !
@@ -76,18 +79,20 @@
       null=0
 !
       mt=mi(2)+1
-      nal=0
 !
 !     -------------------------------------------------------------
 !     Initialisation of the loop for the variation of 
 !     the internal forces
 !     -------------------------------------------------------------
 !
-!     Loop over all designvariables
-      do desvar=0,ndesi
 !
 !     Loop over all elements in thread
-      do i=nea,neb
+      do ii=nea,neb
+         if(idesvar.gt.0) then
+            i=ialdesi(ii)
+         else
+            i=ii
+         endif
 !
          lakonl=lakon(i)
 !
@@ -204,6 +209,26 @@ c     Bernhardi end
             cycle
          endif
 !
+!        computation of the coordinates of the local nodes w/ variation
+!        if the designnode belongs to the considered element
+!
+         if(idesvar.gt.0) then 
+!
+            if(icoordinate.eq.1) then
+!
+!              the coordinates of the nodes are the design variables
+!
+               do j=1,nope
+                  node=kon(indexe+j)
+                  if(node.eq.nodedesi(idesvar)) then
+                     iactive=j
+                     exit
+                  endif
+               enddo
+            endif
+!
+         endif
+!
          if(lakonl(4:5).eq.'8R') then
             mint3d=1
          elseif(lakonl(4:7).eq.'20RB') then
@@ -246,24 +271,9 @@ c     Bernhardi end
 !        computation of the coordinates of the local nodes w/ variation
 !        if the designnode belongs to the considered element
 !
-         if(desvar.gt.0) then 
-            do j=1,nope
-               actnode=kon(indexe+j)
-               if(actnode.eq.nodedesi(desvar)) then
-                  xl(ndirdesi(desvar),j)=xl(ndirdesi(desvar),j)+distmin
-                  exit
-               endif
-            enddo
-         endif
-!
-!        q contains the nodal forces per element; initialisation of q
-!
-         if((iperturb(1).ge.2).or.((iperturb(1).le.0).and.(iout.lt.1))) 
-     &      then
-            do m1=1,nope
-               do m2=0,mi(2)
-                  q(m2,m1)=fn(m2,konl(m1))
-               enddo
+         if((idesvar.gt.0).and.(icoordinate.eq.1)) then 
+            do j=1,3
+               xl(j,iactive)=xl(j,iactive)+xdesi(j,idesvar)
             enddo
          endif
 !
@@ -320,31 +330,25 @@ c     Bernhardi end
                if((lakonl(7:7).eq.'A').or.
      &           ((nmethod.ne.1).or.(iperturb(1).ge.2).or.(iout.ne.-1)))
      &              then
-                  do j=1,nope
-                     do k=1,3
-                        fn(k,konl(j))=fn(k,konl(j))+fnl(k,j)
+                  if(idesvar.eq.0) then
+                     do j=1,nope
+                        do k=1,3
+                           fn0(k,indexe+j)=fn0(k,indexe+j)+fnl(k,j)
+                        enddo
                      enddo
-                  enddo
+                  else
+                     do j=1,nope
+                        do k=1,3
+                           dfn(k,konl(j))=dfn(k,konl(j))+fnl(k,j)
+                        enddo
+                     enddo
+                  endif
                endif
 !
 !              dashpot elements (including contact dashpots)
 !
             elseif((nmethod.eq.4).or.(nmethod.eq.5).or.
      &             ((abs(nmethod).eq.1).and.(iperturb(1).ge.2))) then
-c               do j=1,nope
-c                  konl(j)=kon(indexe+j)
-c                  do k=1,3
-c                     vel(k,j)=veold(k,konl(j))
-c                  enddo
-c               enddo
-c               call dashforc(xl,konl,vl,imat,elcon,nelcon,
-c     &              elas,fnl,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,
-c     &              elconloc,plicon,nplicon,npmat_,vel,time,nmethod,mi)
-c               do j=1,nope
-c                  do k=1,3
-c                     fn(k,konl(j))=fn(k,konl(j))+fnl(k,j)
-c                  enddo
-c               enddo
             endif
          elseif(ikin.eq.1) then
             do j=1,nope
@@ -827,14 +831,25 @@ c                 emec0(m1)=emeini(m1,jj,i)
      &           icmd,beta,stre,xkl,ckl,vj,xikl,vij,
      &           plconloc,xstate,xstateini,ielas,
      &           amat,t1l,dtime,time,ttime,i,jj,nstate_,mi(1),
-     &           iorien,pgauss,orab,eloc,mattyp,qa(3),istep,iinc,
+     &           iorien,pgauss,orab,eloc,mattyp,pnewdt,istep,iinc,
      &           ipkon,nmethod,iperturb)
 !
             if(((nmethod.ne.4).or.(iperturb(1).ne.0)).and.
      &         (nmethod.ne.5)) then
-               do m1=1,21
-                  xstiff(m1,jj,i)=elas(m1)
-               enddo
+               if(idesvar.eq.0) then
+                  do m1=1,21
+                     xstiff(m1,jj,i)=elas(m1)
+                  enddo
+               elseif(icoordinate.ne.1) then
+!
+!                 for orientation design variables: store the modified 
+!                 stiffness matrix for use in mafillsmse
+!
+                  idir=idesvar-3*((idesvar-1)/3)
+                  do m1=1,21
+                     dxstiff(m1,jj,i,idir)=elas(m1)
+                  enddo
+               endif
             endif
 !
             if(iperturb(1).eq.-1) then
@@ -899,66 +914,6 @@ c                 emec0(m1)=emeini(m1,jj,i)
      &                 eloc(5)*elas(20)+eloc(6)*elas(21)
                endif
             endif
-! 
-!           updating the internal energy and mechanical strain
-!           for user materials (kode<=-100) the mechanical strain has to
-!           be updated at the end of each increment (also if no output
-!           is requested), since it is input to the umat routine
-!
-            if((iout.gt.0).or.(iout.eq.-2).or.(kode.le.-100).or.
-     &         ((nmethod.eq.4).and.(iperturb(1).gt.1).and.
-     &          (ithermal(1).le.1))) then
-               if(ithermal(1).eq.0) then
-                  do m1=1,6
-                     eth(m1)=0.d0
-                  enddo
-               endif
-               if(iener.eq.1) then
-                  ener(jj,i)=enerini(jj,i)+
-     &                 ((eloc(1)-eth(1)-eme(1,jj,i))*
-     &                  (stre(1)+stiini(1,jj,i))+
-     &                  (eloc(2)-eth(2)-eme(2,jj,i))*
-     &                  (stre(2)+stiini(2,jj,i))+
-     &                  (eloc(3)-eth(3)-eme(3,jj,i))*
-     &                  (stre(3)+stiini(3,jj,i)))/2.d0+
-     &            (eloc(4)-eth(4)-eme(4,jj,i))*(stre(4)+stiini(4,jj,i))+
-     &            (eloc(5)-eth(5)-eme(5,jj,i))*(stre(5)+stiini(5,jj,i))+
-     &            (eloc(6)-eth(6)-eme(6,jj,i))*(stre(6)+stiini(6,jj,i))
-
-               endif
-            endif
-!
-            if((iout.gt.0).or.(iout.eq.-2).or.(kode.le.-100)) then
-               eme(1,jj,i)=eloc(1)-eth(1)
-               eme(2,jj,i)=eloc(2)-eth(2)
-               eme(3,jj,i)=eloc(3)-eth(3)
-               eme(4,jj,i)=eloc(4)-eth(4)
-               eme(5,jj,i)=eloc(5)-eth(5)
-               eme(6,jj,i)=eloc(6)-eth(6)
-!
-               eei(1,jj,i)=eloc(1)
-               eei(2,jj,i)=eloc(2)
-               eei(3,jj,i)=eloc(3)
-               eei(4,jj,i)=eloc(4)
-               eei(5,jj,i)=eloc(5)
-               eei(6,jj,i)=eloc(6)
-            endif
-!
-!     updating the kinetic energy
-!
-            if(ikin.eq.1) then
-               
-               call materialdata_rho(rhcon,nrhcon,imat,rho,t1l,
-     &              ntmat_,ithermal)
-               do m1=1,3
-                  vel(m1,1)=0.d0
-                  do i1= 1,nope
-                     vel(m1,1)=vel(m1,1)+shp(4,i1)*veoldl(m1,i1)
-                  enddo
-               enddo
-               ener(jj,i+ne)=rho*(vel(1,1)*vel(1,1)+
-     &              vel(2,1)*vel(2,1)+ vel(3,1)*vel(3,1))/2.d0
-            endif
 !
             skl(1,1)=stre(1)
             skl(2,2)=stre(2)
@@ -967,13 +922,6 @@ c                 emec0(m1)=emeini(m1,jj,i)
             skl(3,1)=stre(5)
             skl(3,2)=stre(6)
 !
-            stx(1,jj,i)=skl(1,1)
-            stx(2,jj,i)=skl(2,2)
-            stx(3,jj,i)=skl(3,3)
-            stx(4,jj,i)=skl(2,1)
-            stx(5,jj,i)=skl(3,1)
-            stx(6,jj,i)=skl(3,2)
-!
             skl(1,2)=skl(2,1)
             skl(1,3)=skl(3,1)
             skl(2,3)=skl(3,2)
@@ -981,126 +929,128 @@ c                 emec0(m1)=emeini(m1,jj,i)
 !                 calculation of the nodal forces
 !
             if(calcul_fn.eq.1)then
+               if(idesvar.eq.0) then
 !
-!                    calculating fn using skl
-!
-               do m1=1,nope
-                  do m2=1,3
-!
-!                          linear elastic part
-!                           
-                     do m3=1,3
-                        fn(m2,konl(m1))=fn(m2,konl(m1))+
-     &                       xsj*skl(m2,m3)*shp(m3,m1)*weight
-                     enddo
-!
-!                          nonlinear geometric part
-!
-                     if(iperturb(2).eq.1) then
+!                 unperturbed state
+!     
+                  do m1=1,nope
+                     do m2=1,3
+!     
+!                       linear elastic part
+!     
                         do m3=1,3
-                           do m4=1,3
-                              fn(m2,konl(m1))=fn(m2,konl(m1))+
-     &                             xsj*skl(m4,m3)*weight*
-     &                             (vkl(m2,m4)*shp(m3,m1)+
-     &                             vkl(m2,m3)*shp(m4,m1))/2.d0
+                           fn0(m2,indexe+m1)=fn0(m2,indexe+m1)+
+     &                          xsj*skl(m2,m3)*shp(m3,m1)*weight
+                        enddo
+!     
+!                       nonlinear geometric part
+!     
+                        if(iperturb(2).eq.1) then
+                           do m3=1,3
+                              do m4=1,3
+                                 fn0(m2,indexe+m1)=fn0(m2,indexe+m1)+
+     &                                xsj*skl(m4,m3)*weight*
+     &                                (vkl(m2,m4)*shp(m3,m1)+
+     &                                vkl(m2,m3)*shp(m4,m1))/2.d0
+                              enddo
+                           enddo
+                        endif
+!     
+                     enddo
+                  enddo
+c     Bernhardi start
+                  if(lakonl(1:5).eq.'C3D8R') then
+                     ahr=elas(1)*a
+!     
+                     do i1=1,3
+                        do k=1,4    
+                           hglf(i1,k)=0.0d0
+                           do j=1,8
+                              hglf(i1,k)=hglf(i1,k)+gs(j,k)*vl(i1,j)
+                           enddo
+                           hglf(i1,k)=hglf(i1,k)*ahr
+                        enddo
+                     enddo
+                     do i1=1,3
+                        do j=1,8
+                           do k=1,4
+                              fn0(i1,indexe+j)=fn0(i1,indexe+j)+
+     &                                      hglf(i1,k)*gs(j,k)
                            enddo
                         enddo
-                     endif
-!
-                  enddo
-               enddo
-c     Bernhardi start
-               if(lakonl(1:5).eq.'C3D8R') then
-                  call hgforce (fn,elas,a,gs,vl,mi,konl)
-               endif
+                     enddo
+                  endif
 c     Bernhardi end
-            endif
+               else
 !
-!           calculation of the Cauchy stresses
-!
-            if(calcul_cauchy.eq.1) then
-!
-!              changing the displacement gradients into
-!              deformation gradients
-!
-c               if(kode.ne.-50) then
-               if((kode.ne.-50).and.(kode.gt.-100)) then
+!                 perturbed state     
+!     
+                  do m1=1,nope
+                     do m2=1,3
+!     
+!                       linear elastic part
+!     
+                        do m3=1,3
+                           dfn(m2,konl(m1))=dfn(m2,konl(m1))+
+     &                          xsj*skl(m2,m3)*shp(m3,m1)*weight
+                        enddo
+!     
+!                       nonlinear geometric part
+!     
+                        if(iperturb(2).eq.1) then
+                           do m3=1,3
+                              do m4=1,3
+                                 dfn(m2,konl(m1))=dfn(m2,konl(m1))+
+     &                                xsj*skl(m4,m3)*weight*
+     &                                (vkl(m2,m4)*shp(m3,m1)+
+     &                                vkl(m2,m3)*shp(m4,m1))/2.d0
+                              enddo
+                           enddo
+                        endif
+!     
+                     enddo
+                  enddo
 c     Bernhardi start
-                  xkl(1,1)=vkl(1,1)+1.0d0
-                  xkl(2,2)=vkl(2,2)+1.0d0
-                  xkl(3,3)=vkl(3,3)+1.0d0
-c     Bernhardi end   
-                  xkl(1,2)=vkl(1,2)
-                  xkl(1,3)=vkl(1,3)
-                  xkl(2,3)=vkl(2,3)
-                  xkl(2,1)=vkl(2,1)
-                  xkl(3,1)=vkl(3,1)
-                  xkl(3,2)=vkl(3,2)
-!
-                  vj=xkl(1,1)*(xkl(2,2)*xkl(3,3)-xkl(2,3)*xkl(3,2))
-     &                 -xkl(1,2)*(xkl(2,1)*xkl(3,3)-xkl(2,3)*xkl(3,1))
-     &                 +xkl(1,3)*(xkl(2,1)*xkl(3,2)-xkl(2,2)*xkl(3,1))
-               endif
-!
-               do m1=1,3
-                  do m2=1,m1
-                     ckl(m1,m2)=0.d0
-                     do m3=1,3
-                        do m4=1,3
-                           ckl(m1,m2)=ckl(m1,m2)+
-     &                          skl(m3,m4)*xkl(m1,m3)*xkl(m2,m4)
+                  if(lakonl(1:5).eq.'C3D8R') then
+!     
+                     ahr=elas(1)*a
+!     
+                     do i1=1,3
+                        do k=1,4    
+                           hglf(i1,k)=0.0d0
+                           do j=1,8
+                              hglf(i1,k)=hglf(i1,k)+gs(j,k)*vl(i1,j)
+                           enddo
+                           hglf(i1,k)=hglf(i1,k)*ahr
                         enddo
                      enddo
-                     ckl(m1,m2)=ckl(m1,m2)/vj
-                  enddo
-               enddo
-!
-               stx(1,jj,i)=ckl(1,1)
-               stx(2,jj,i)=ckl(2,2)
-               stx(3,jj,i)=ckl(3,3)
-               stx(4,jj,i)=ckl(2,1)
-               stx(5,jj,i)=ckl(3,1)
-               stx(6,jj,i)=ckl(3,2)
+                     do i1=1,3
+                        do j=1,8
+                           do k=1,4
+                              dfn(i1,konl(j))=dfn(i1,konl(j))
+     &                             +hglf(i1,k)*gs(j,k)
+                           enddo
+                        enddo
+                     enddo
+                  endif
+c     Bernhardi end
+               endif
             endif
 !
-         enddo
+         enddo   ! enddo loop over the integration points
 !
-!        q contains the contributions to the nodal force in the nodes
-!        belonging to the element at stake from other elements (elements
-!        already treated). These contributions have to be
-!        subtracted to get the contributions attributable to the element
-!        at stake only
+!     subtracting the unperturbed state of the element at stake
 !
-         if(calcul_qa.eq.1) then
+         if(idesvar.gt.0) then
             do m1=1,nope
                do m2=1,3
-                  qa(1)=qa(1)+dabs(fn(m2,konl(m1))-q(m2,m1))
+                  dfn(m2,konl(m1))=dfn(m2,konl(m1))
+     &                 -fn0(m2,indexe+m1)
                enddo
             enddo
-            nal=nal+3*nope
          endif
 !
 !     end of loop over all elements in thread
-      enddo
-!
-!     Filling of fn0 and dfn 
-!      
-      if(desvar.eq.0) then
-         do m1=1,nope
-            do m2=1,3
-               fn0(m2,konl(m1))=fn(m2,konl(m1))
-            enddo
-         enddo
-      else
-         do m1=1,nope
-            do m2=1,3
-               dfn(desvar,m2,konl(m1))=(fn(m2,konl(m1))
-     &              -fn0(m2,konl(m1)))/distmin
-            enddo
-         enddo
-      endif
-!     
-!     end of loop over all designvariables
       enddo
 !     
       return

@@ -57,7 +57,7 @@
             if(ithermal(1).ne.2) then
                do i=1,nk
                   do j=1,mi(2)
-                     if(nactdof(j,i).ne.0) then
+                     if(nactdof(j,i).gt.0) then
                         bnac=b(nactdof(j,i))
                      else
                         cycle
@@ -74,7 +74,7 @@
             endif
             if(ithermal(1).gt.1) then
                do i=1,nk
-                  if(nactdof(0,i).ne.0) then
+                  if(nactdof(0,i).gt.0) then
                      bnac=b(nactdof(0,i))
                   else
                      cycle
@@ -99,7 +99,7 @@
                scal2=gam*dtime
                do i=1,nk
                   do j=1,mi(2)
-                     if(nactdof(j,i).ne.0) then
+                     if(nactdof(j,i).gt.0) then
                         bnac=b(nactdof(j,i))
                      else
                         cycle
@@ -122,7 +122,7 @@
 !                 equation)
 !
                   veold(0,i)=0.d0
-                  if(nactdof(0,i).ne.0) then
+                  if(nactdof(0,i).gt.0) then
                      bnac=b(nactdof(0,i))
                   else
                      cycle
@@ -380,7 +380,7 @@ c                  veold(ndir,node)=(fixed_disp-v(ndir,node))/dtime
       intpointvarm=1
       intpointvart=1
 !
-      if((nmethod.ge.4).and.(iperturb(1).lt.2)) then
+      if((nmethod.ge.4).and.(nmethod.le.5).and.(iperturb(1).lt.2)) then
          intpointvarm=0
          if((filab(3)(1:4).eq.'S   ').or.
      &      (filab(4)(1:4).eq.'E   ').or.

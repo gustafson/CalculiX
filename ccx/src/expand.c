@@ -77,7 +77,8 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	tint=-1,tnstart=-1,tnend=-1,tint2=-1,
 	noderight_,*izdof=*izdofp,iload,iforc,*iznode=NULL,nznode,ll,ne0,
 	icfd=0,*inomat=NULL,mortar=0,*islavact=NULL,
-	*islavnode=NULL,*nslavnode=NULL,*islavsurf=NULL;
+	*islavnode=NULL,*nslavnode=NULL,*islavsurf=NULL,
+        *iponoel=NULL,*inoel=NULL;
 
     long long lint;
 
@@ -285,7 +286,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     for(i=1;i<*nsectors;i++){
 	lint=i*mt**nk;
 	for(j=0;j<mt**nk;j++){
-	    if(nactdof[j]!=0){
+	    if(nactdof[j]>0){
 		nactdof[lint+j]=nactdof[j]+i*neqh;
 	    }else{
 		nactdof[lint+j]=0;
@@ -499,7 +500,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		    if(icomplex!=0){
 			idir=nodempc[3*index+1];
 			idof=nactdof[mt*(inode-1)+idir]-1;
-			if(idof==-1){xreal=1.;ximag=1.;}
+			if(idof<=-1){xreal=1.;ximag=1.;}
 			else{xreal=z[lint+idof];ximag=z[lint+idof+neqh];}
 			if(k==0) {
 			    if(fabs(xreal)<1.e-30)xreal=1.e-30;
@@ -533,7 +534,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
               &ne0,xforc,nforc,thicke,shcon,nshcon,
               sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	      islavsurf,ielprop,prop,energyini,energy,&iit);
+	      islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,inoel);
 	    
 	}
 	SFREE(eei);
@@ -612,7 +613,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		for(k=0;k<*nsectors;k++){
 		    /* C-convention */
 		    idof=nactdof[mt*(k**nk+i)+j1]-1;
-		    if(idof!=-1){
+		    if(idof>-1){
 			FORTRAN(nident,(izdof,&idof,nzdof,&id));
 			if(id!=0){
 			    if(izdof[id-1]==idof){

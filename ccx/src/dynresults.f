@@ -60,7 +60,7 @@
 !
          do i=1,nk
             do j=jmin,jmax
-               if(nactdof(j,i).ne.0) then
+               if(nactdof(j,i).gt.0) then
                   v(j,i)=b(nactdof(j,i))
 c                  vold(j,i)=b(nactdof(j,i))
                else
@@ -129,7 +129,7 @@ c            vold(ndir,node)=fixed_disp
          if(nmethod.eq.4) then
             do i=1,nk
                do j=jmin,jmax
-                  if(nactdof(j,i).ne.0) then
+                  if(nactdof(j,i).gt.0) then
                      veold(j,i)=bp(nactdof(j,i))
                   else
                      veold(j,i)=0.d0
@@ -185,7 +185,7 @@ c            vold(ndir,node)=fixed_disp
          elseif(nmethod.eq.5) then
             do i=1,nk
                do j=jmin,jmax
-                  if(nactdof(j,i).ne.0) then
+                  if(nactdof(j,i).gt.0) then
                      veold(j,i)=bp(nactdof(j,i))*omega
                   else
                      veold(j,i)=0.d0
@@ -250,7 +250,7 @@ c            vold(ndir,node)=fixed_disp
 !     
          do i=1,nmdnode
             do j=jmin,jmax
-               if(nactdof(j,imdnode(i)).ne.0) then
+               if(nactdof(j,imdnode(i)).gt.0) then
                   v(j,imdnode(i))=b(nactdof(j,imdnode(i)))
 c                  vold(j,imdnode(i))=b(nactdof(j,imdnode(i)))
                else
@@ -321,7 +321,7 @@ c            vold(ndir,node)=fixed_disp
          if(nmethod.eq.4) then
             do i=1,nmdnode
                do j=jmin,jmax
-                  if(nactdof(j,imdnode(i)).ne.0) then
+                  if(nactdof(j,imdnode(i)).gt.0) then
                      veold(j,imdnode(i))=bp(nactdof(j,imdnode(i)))
                   else
                      veold(j,imdnode(i))=0.d0
@@ -376,7 +376,7 @@ c            vold(ndir,node)=fixed_disp
          elseif(nmethod.eq.5) then
             do i=1,nmdnode
                do j=jmin,jmax
-                  if(nactdof(j,imdnode(i)).ne.0) then
+                  if(nactdof(j,imdnode(i)).gt.0) then
                      veold(j,imdnode(i))=bp(nactdof(j,imdnode(i)))*omega
                   else
                      veold(j,imdnode(i))=0.d0

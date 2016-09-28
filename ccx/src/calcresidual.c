@@ -54,10 +54,10 @@ void calcresidual(ITG *nmethod, ITG *neq, double *b, double *fext, double *f,
       
     else if(*iexpl<=1){
 	for(k=0;k<*nk;++k){
-	    if(nactdof[mt*k]!=0){
+	    if(nactdof[mt*k]>0){
 		aux2[nactdof[mt*k]-1]=(vold[mt*k]-vini[mt*k])/(*dtime);}
 	    for(j=1;j<mt;++j){
-		if(nactdof[mt*k+j]!=0){aux2[nactdof[mt*k+j]-1]=accold[mt*k+j];}
+		if(nactdof[mt*k+j]>0){aux2[nactdof[mt*k+j]-1]=accold[mt*k+j];}
 	    }
 	}
 	if(*nasym==0){
@@ -77,9 +77,9 @@ void calcresidual(ITG *nmethod, ITG *neq, double *b, double *fext, double *f,
 
 	if(*idamping==1){
 	    for(k=0;k<*nk;++k){
-		if(nactdof[mt*k]!=0){aux2[nactdof[mt*k]-1]=0.;}
+		if(nactdof[mt*k]>0){aux2[nactdof[mt*k]-1]=0.;}
 		for(j=1;j<mt;++j){
-		    if(nactdof[mt*k+j]!=0){
+		    if(nactdof[mt*k+j]>0){
 			aux2[nactdof[mt*k+j]-1]=veold[mt*k+j];}
 		}
 	    }
@@ -98,10 +98,10 @@ void calcresidual(ITG *nmethod, ITG *neq, double *b, double *fext, double *f,
     
     else{
 	for(k=0;k<*nk;++k){
-	    if(nactdof[mt*k]!=0){
+	    if(nactdof[mt*k]>0){
 		aux2[nactdof[mt*k]-1]=(vold[mt*k]-vini[mt*k])/(*dtime);}
 	    for(j=1;j<mt;++j){
-		if(nactdof[mt*k+j]!=0){aux2[nactdof[mt*k+j]-1]=accold[mt*k+j];}
+		if(nactdof[mt*k+j]>0){aux2[nactdof[mt*k+j]-1]=accold[mt*k+j];}
 	    }
 	}
 	scal1=1.+*alpha;

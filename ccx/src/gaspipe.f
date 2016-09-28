@@ -19,7 +19,7 @@
       subroutine gaspipe(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,mi,iaxial)
+     &        nshcon,rhcon,nrhcon,ntmat_,mi,ttime,time,iaxial)
 !     
 !     pipe with friction losses 
 !
@@ -43,7 +43,7 @@
      &     X1,X2,B1,B2,C1,C2,t_moy,tdkp1,ln,m2r2d2a2,
      &     pt2zpt1,ks,form_fact,Tt1dT1,Tt2dT2,M1,M2,
      &     Pt2zPt1_c,qred_crit,l_neg,Qred,Ts1,qred_max1,phi,xflow_oil,
-     &     shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*)
+     &     shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),ttime,time
 !
       if (iflag.eq.0) then
          identity=.true.
@@ -80,7 +80,7 @@
          endif
          form_fact=prop(index+5)
          xflow_oil=prop(index+6)
-         k_oil=int(prop(index+7))
+         k_oil=nint(prop(index+7))
 !
          p1=v(2,node1)
          p2=v(2,node2)
@@ -189,7 +189,7 @@
          endif
          form_fact=prop(index+5)
          xflow_oil=prop(index+6)
-         k_oil=int(prop(index+7)) 
+         k_oil=nint(prop(index+7)) 
 !
          pt1=v(2,node1)
          pt2=v(2,node2)
@@ -408,7 +408,7 @@
          endif
          form_fact=prop(index+5)
          xflow_oil=prop(index+6)
-         k_oil=int(prop(index+7))
+         k_oil=nint(prop(index+7))
 !
          pt1=v(2,node1)
          pt2=v(2,node2)
@@ -501,39 +501,39 @@
          M2=dsqrt(2/km1*((Tt2/T2)-1))
             
          write(1,*) ''
-         write(1,55) 'In line',int(nodem/100),' from node',node1,
-     &' to node', node2,':   air massflow rate= ',xflow,'kg/s',
-     &', oil massflow rate= ',xflow_oil,'kg/s'
- 55      FORMAT(1X,A,I6.3,A,I6.3,A,I6.3,A,F9.6,A,A,F9.6,A)
+         write(1,55) ' from node',node1,
+     &' to node', node2,':   air massflow rate= ',xflow,
+     &', oil massflow rate= ',xflow_oil
+ 55      FORMAT(1X,A,I6,A,I6,A,e11.4,A,A,e11.4,A)
 ! 
          if(inv.eq.1) then
             write(1,53)'       Inlet node ',node1,':    Tt1= ',Tt1,
-     &           'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
-     &           'Bar, M1= ',M1
-            write(1,*)'             element W    ',set(nelem+numf)(1:20)
-            write(1,57)'             eta=',dvi,'kg/(m*s), Re= '
+     &           ', Ts1= ',T1,', Pt1= ',Pt1,
+     &           ', M1= ',M1
+            write(1,*)'             Element ',nelem,lakon(nelem)
+            write(1,57)'             dyn.visc.=',dvi,', Re= '
      &           ,reynolds,', Phi= ',phi,', lambda= ',lambda,
      &           ', lambda*l/d= ',lambda*l/d,', zeta= ',phi*lambda*l/d
             write(1,53)'       Outlet node ',node2,'    Tt2= ',Tt2,
-     &           'K, Ts2= ',T2,'K, Pt2= ',Pt2/1e5,
-     &           'Bar, M2= ',M2
+     &           ', Ts2= ',T2,', Pt2= ',Pt2,
+     &           ', M2= ',M2
 !     
          else if(inv.eq.-1) then
             write(1,53)'       Inlet node ',node2,':    Tt1= ',Tt1,
-     &           'K, Ts1= ',T1,'K, Pt1= ',Pt1/1E5,
-     &           'Bar, M1= ',M1
-            write(1,*)'             element W    ',set(nelem+numf)(1:20)
-            write(1,57)'             eta= ',dvi,'kg/(m*s), Re= '
+     &           ', Ts1= ',T1,', Pt1= ',Pt1,
+     &           ', M1= ',M1
+            write(1,*)'             Element ',nelem,lakon(nelem)
+            write(1,57)'             dyn.visc.= ',dvi,', Re= '
      &           ,reynolds,' ,Phi= ',phi,', lambda= ',lambda,
      &           ', lambda*l/d= ',lambda*l/d,', zeta= ',phi*lambda*l/d
             write(1,53)'       Outlet node ',node1,'    Tt2= ',Tt2,
-     &           'K, Ts2= ',T2,'K, Pt2=',Pt2/1e5,
-     &           'Bar, M2= ',M2
+     &           ', Ts2= ',T2,', Pt2=',Pt2,
+     &           ', M2= ',M2
          endif
       endif
       
- 53   FORMAT(1X,A,I6.3,A,f6.1,A,f6.1,A,f9.5,A,f8.5)  
- 57   FORMAT(1X,A,G11.4,A,G11.4,A,f8.5,A,f8.5,A,f8.5,A,f8.5)
+ 53   FORMAT(1X,A,I6,A,e11.4,A,e11.4,A,e11.4,A,e11.4)  
+ 57   FORMAT(1X,A,e11.4,A,e11.4,A,e11.4,A,e11.4,A,e11.4,A,e11.4)
 !     
       xflow=xflow/iaxial
       df(3)=df(3)*iaxial

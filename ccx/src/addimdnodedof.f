@@ -33,7 +33,7 @@
 !
       idof=nactdof(k,node)
 c      write(*,*) 'addimdnodedof ',node,k,idof
-      if(idof.eq.0) then
+      if(idof.le.0) then
          idof=(node-1)*8+k
 !
 !        checking for mpc's
@@ -49,7 +49,7 @@ c      write(*,*) 'addimdnodedof ',node,k,idof
                   do
                      call addimd(imdnode,nmdnode,nodempc(1,index))
                      jdof=nactdof(nodempc(2,index),nodempc(1,index))
-                     if(jdof.ne.0) call addimd(imddof,nmddof,jdof)
+                     if(jdof.gt.0) call addimd(imddof,nmddof,jdof)
                      index=nodempc(3,index)
                      if(index.eq.0) exit
                   enddo

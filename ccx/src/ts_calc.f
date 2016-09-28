@@ -18,8 +18,14 @@
 !     
       subroutine ts_calc(xflow,Tt,Pt,kappa,r,a,Ts,icase)
 !     
+!     Calculation of the static temperature Ts from the total 
+!     temperature Tt, the total pressure Pt and the mass flow xflow
+!
 !     this subroutine solves the implicit equation
-!     f=xflow*dsqrt(Tt)/(a*Pt)-C*(TtdT)**expon*(Ttdt-1)**0.5d0
+!     xflow*dsqrt(Tt)/(a*Pt)-C*(Tt/Ts)**expon*(Tt/Ts-1)**0.5d0=0.d0
+!
+!          expon=-0.5d0*(kappa+1.d0)/(kappa-1.d0)
+!          C=dsqrt(2.d0/r*kappa/(kappa-1.d0))
 !
 !     author: Yannick Muller
 !     
@@ -29,18 +35,22 @@
 !     
       real*8 xflow,Tt,Pt,Ts,kappa,r,f,df,a,expon,Ts_old,C,TtzTs,
      &     deltaTs,TtzTs_crit, Qred_crit,Qred,h1,h2,h3
+!
+      intent(in) xflow,Tt,Pt,kappa,r,a,icase
+!
+      intent(inout) Ts
+!
       expon=-0.5d0*(kappa+1.d0)/(kappa-1.d0)
 !     
       C=dsqrt(2.d0/r*kappa/(kappa-1.d0))
 !     
-!     f=xflow*dsqrt(Tt)/(a*Pt)-C*(TtdT)**expon*(Ttdt-1)**0.5d0
+!     f=xflow*dsqrt(Tt)/(a*Pt)-C*(Tt/Ts)**expon*(Tt/Ts-1)**0.5d0
 !
-!     df=-C*Ttdt**expon*(expon/Ts*(TtdT-1)**0.5d0
-!     &     -0.5d0*TtdT/Ts*(TtdT-1.d0)**(-0.5d0))
+!     df=-C*Tt/Ts**expon*(expon/Ts*(Tt/Ts-1)**0.5d0
+!     &     -0.5d0*Tt/Ts/Ts*(Tt/Ts-1.d0)**(-0.5d0))
 !     
       Ts_old=Tt
 !    
-!
       if(xflow.lt.0d0) then 
          inv=-1
       else
@@ -74,7 +84,7 @@
 !
       Qred_crit=C*(TtzTs_crit)**expon*(Ttzts_crit-1.d0)**0.5d0
 !     
-!      xflow_crit=inv*Qred_crit/dsqrt(Tt)*A*Pt
+!     xflow_crit=inv*Qred_crit/dsqrt(Tt)*A*Pt
 !     
       if(Qred.ge.Qred_crit) then
 !     
@@ -85,6 +95,9 @@
       endif
       i=0
 !     
+!     start of the Newton-Raphson-Procedure to solve the nonlinear
+!     equation
+!
       do 
          i=i+1
          Ttzts=Tt/Ts
@@ -101,7 +114,7 @@
 !     
          Ts=Ts+deltaTs
 !     
-         if( (((dabs(Ts-Ts_old)/ts_old).le.1.E-8))
+         if((((dabs(Ts-Ts_old)/ts_old).le.1.E-8))
      &        .or.((dabs(Ts-Ts_old)).le.1.E-10)) then
             exit
          else if(i.gt.20) then

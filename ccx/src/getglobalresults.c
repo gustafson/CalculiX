@@ -172,6 +172,13 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
        is not needed) */
     
     ne=anz[0].e;
+
+    /* check for the existence of nodes and/or elements */
+
+    if((anz[0].n==0)||(anz[0].e==0)){
+	printf(" *ERROR in getglobalresults: there are either no nodes or\n no elements or neither nodes nor elements in the master frd-file\n");
+	FORTRAN(stop,());
+    }
     
     /* storing the topology */
     
@@ -215,7 +222,7 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     
     NNEW(iparent,ITG,netet_);
     NNEW(kontet,ITG,4*netet_);
-    NNEW(ipofa,ITG,4*netet_);
+    NNEW(ipofa,ITG,nktet);
     NNEW(inodfa,ITG,16*netet_);
     NNEW(ifatet,ITG,4*netet_);
     NNEW(planfa,double,16*netet_);

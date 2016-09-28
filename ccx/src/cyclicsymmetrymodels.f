@@ -35,9 +35,14 @@
 !     cs(1,mcs): # segments in 360 degrees
 !     cs(2,mcs): minimum node diameter
 !     cs(3,mcs): maximum node diameter
-!     cs(4,mcs): # nodes on the independent side
+!     cs(4,mcs): # nodes on the independent side (for fluids: upper bound)
 !     cs(5,mcs): # sectors to be plotted
-!     cs(6,mcs) up to cs(12,mcs): cyclic symmetry axis
+!     cs(6..8,mcs): first point on cyclic symmetry axis
+!     cs(9..11,mcs): second point on cylic symmetry axis; turning
+!       the slave surface clockwise about the cyclic symmetry axis
+!       while looking from the first point to the second point one
+!       arrives at the master surface without leaving the body
+!     cs(12,mcs): -1 (denotes a cylindrical coordinate system)
 !     cs(13,mcs): number of the element set
 !     cs(14,mcs): sum of previous independent nodes
 !     cs(15,mcs): cos(angle); angle = 2*pi/cs(1,mcs)
@@ -186,6 +191,67 @@ c      iaxial=max(iaxial,maxsectors)
       ntiecyc=0
       do i=1,ntie
          if((tieset(1,i)(1:80).eq.tie).and.
+     &      (tieset(1,i)(81:81).eq.'P')) then
+            itie=i
+!
+!           fluid periodicity (translational)
+!
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+!
+!           translation vector from the slave surface to the
+!           master surface
+!
+            do j=1,3
+               read(textpart(j)(1:20),'(f20.0)',iostat=istat) 
+     &              cs(5+j,mcs)
+            enddo
+            cs(17,mcs)=itie+0.5
+!
+!           counting the number of faces on the master side (should be the
+!           same as on the slave side)
+!
+            indepset=tieset(3,itie)
+            do j=1,nset
+               if(set(j).eq.indepset) exit
+            enddo
+!
+!           max 8 nodes per face
+!
+            cs(4,mcs)=(iendset(j)-istartset(j)+1)*8+0.5d0
+            return
+         elseif((tieset(1,i)(1:80).eq.tie).and.
+     &      (tieset(1,i)(81:81).eq.'Z')) then
+            itie=i
+!
+!           fluid periodicity (rotational)
+!
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+!
+!           translation vector from the slave surface to the
+!           master surface
+!
+            do j=1,6
+               read(textpart(j)(1:20),'(f20.0)',iostat=istat) 
+     &              cs(5+j,mcs)
+            enddo
+            cs(1,mcs)=xsectors
+            cs(17,mcs)=itie+0.5
+!
+!           counting the number of faces on the master side (should be the
+!           same as on the slave side)
+!
+            indepset=tieset(3,itie)
+            do j=1,nset
+               if(set(j).eq.indepset) exit
+            enddo
+!
+!           max 8 nodes per face
+!
+            cs(4,mcs)=(iendset(j)-istartset(j)+1)*8+0.5d0
+            return
+         elseif((tieset(1,i)(1:80).eq.tie).and.
      &      (tieset(1,i)(81:81).ne.'C').and.
      &      (tieset(1,i)(81:81).ne.'T')) then
             itie=i

@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 2.10
+LOG-BOOK Version 2.11
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -2345,7 +2345,7 @@ Dec 2002        - started to work on single crystal plasticity
  
  8 April 2014  - worked on beams with a pipe section
 
- 14 Mai 2014   - finite volume CFD seems to work for incompressible 
+ 14 May 2014   - finite volume CFD seems to work for incompressible 
                  laminar flow without thermal effects; the pressure
                  boundary condition is given at one element center,
                  the convection scheme is purely upwind.
@@ -2353,18 +2353,18 @@ Dec 2002        - started to work on single crystal plasticity
                - removed some errors in multiple step shell calculations
                  and shell calculations with restart
 
- 15 Mai 2014   - tried upwind difference with central difference as 
+ 15 May 2014   - tried upwind difference with central difference as 
                  deferred correction; is better than pure upwind
                  difference.
 
- 21 Mai 2014   - text underneath *HEADING is stored at the top of the
+ 21 May 2014   - text underneath *HEADING is stored at the top of the
                  frd-file
                - for axisymmetric structures with output=2d the
                  mass flow is the integral over 360 deg.
                - gamma differencing is ok, but not as good as upwind with
                  deferred central differencing
 
- 22 Mai 2014   - for axisymmetric structures with output=2d the
+ 22 May 2014   - for axisymmetric structures with output=2d the
                  force is the integral over 360 deg.
                - removed an error in mafillsmcs.f and mafillsmcsas.f
 
@@ -2660,3 +2660,76 @@ Dec 2002        - started to work on single crystal plasticity
 
  3 March 2016  - updated implicit dynamics (Matteo Pacher)
                - switched everything to mafillsmmain
+
+ 6 March 2016  - put version 2.10 in the internet
+               - started to use the negative range of nactdof to
+                 point to SPC's and MPC's -> avoids the extensive
+                 use of nident
+
+ 7 March 2016  - corrected an error in getglobalresults.c and in
+                 storecontactprop.f
+
+ 17 March 2016 - updated sensitivity.c and subroutines
+               - improved mafillem.f, mafilldm.f and mafillcorio.f
+
+ 28 March 2016 - started looking into periodicity for CFD calculations
+
+ 30 March 2016 - made a correction in initialnet.f
+               - started to clean up fluidconstants.f
+               - made a correction in mafillpcomp.f
+
+ 5 April 2016  - made some changes to calculate sensitivities
+                 w.r.t. the nodes in the mesh
+
+ 9 April 2016  - continued to work on sensitivities
+               - changed the dimension from 100 to 60 for the element
+                 matrices and vectors except for electromagnetics
+
+ 13 April 2016 - translational periodic fluid conditions seem to work
+
+ 24 April 2016 - worked on rotational periodic fluid conditions
+
+ 28 April 2016 - continued to work on sensitivities
+ 
+ 10 May 2016   - changed the convergence criteria for gas networks
+
+ 11 May 2016   - continued to work on the convergence criteria for
+                 gas networks
+
+ 17 May 2016   - removed the forced units of rpm from the rotational
+                 speed entries in the vortex and Moehring fluid type
+                 elements
+
+ 22 May 2016   - continued to work on cyclic symmetry conditions for
+                 CFD
+
+ 16 June 2016  - updated the User's Manual for gas network elements (theory)
+               - created .net - files with detailed gas network
+                 information
+
+ 21 June 2016  - introduced box section general beam elements
+               - continued to improve gas networks
+
+ 23 June 2016  - removed the addition of 0.5 to fluid section properties
+                 and changed int into nint
+               - worked on improving the initial conditions for compressible
+                 networks
+
+ 7 July 2016   - corrected an error regarding *node print and *el print:
+                 commands stay active across step boundaries
+               - dsload can be used to apply a pressure to a surface
+ 
+ 24 July 2016  - cyclic symmetry and compressible flow works
+
+ 26 July 2016  - made a correction in map3dto1d2d_v.f
+               - cyclic symmetry and incompressible flow works
+ 
+ 28 July 2016  - made some changes in gen3dfrom2d.f
+               - changed the wedge integration for the mass in dynamic
+                 calculations from 18 to 9 integration points (some of the
+                 18 integration poins lie on the border, which causes 
+                 problems in case of an expansion of a triangular axi-
+                 element lying on the rotation axis)
+
+ 30 July 2016  - copied v into vold and stx into sti after the 5th call 
+                 of results in nonlingeo.c

@@ -41,7 +41,7 @@
 !     Kappa stuff
      &kappa,
      &R,
-!     State varibles
+!     State variables
      &pt1,
      &pt2,
      &Tt1,

@@ -17,7 +17,8 @@
 !     
       subroutine rcavi(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,physcon,dvi,numf,set,mi,iaxial)
+     &     nodef,idirf,df,cp,R,physcon,dvi,numf,set,mi,ttime,time,
+     &     iaxial)
 !     
 !     rotating cavity element
 !
@@ -35,14 +36,14 @@
      &     element0,node10,node20,node11,node21,node12,node22,node_cav,
      &     node_main,node_main2,node_in1,node_out1,node_in2,node_out2
 !
-    
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,a,d,
+          real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,a,d,
      &     p1,p2,T1,T2,Aeff,C1,C2,C3,cd,cp,physcon(3),p2p1,km1,dvi,
      &     kp1,kdkm1,tdkp1,km1dk,x,y,ca1,cb1,ca2,cb2,dT1,alambda,
      &     reynolds,pi,xflow_oil,s,Tcav,pcav,pmin,pmax,
      &     Tref,Alpha1, Alpha2, Alpha3, GF,kf,MRTAP_ref_ein,
      &     MRTAP_ref_aus, m_ref_ein, m_ref_aus,maus_zu_mref,
-     &     mein_zu_mref, A_aus, A_ein, A_ges,m_aus, m_ein, m_sperr
+     &     mein_zu_mref, A_aus, A_ein, A_ges,m_aus, m_ein, m_sperr,
+     &     ttime,time
 !
       pi=4.d0*datan(1.d0)   
 

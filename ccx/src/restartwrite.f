@@ -102,7 +102,7 @@
       do i=1,80
          version(i:i)=' '
       enddo
-      version(1:20)='Version 2.10'
+      version(1:20)='Version 2.11'
       write(15) version
 !
       write(15)istepnew

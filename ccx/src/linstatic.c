@@ -81,7 +81,8 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       ncont=0,*itietri=NULL,*koncont=NULL,nslavs=0,ismallsliding=0,
       *itiefac=NULL,*imastnode=NULL,*nmastnode=NULL,*imastop=NULL,
       *iponoels=NULL,*inoels=NULL,*ipe=NULL,*ime=NULL,iit=-1,iflagact=0,
-      icutb=0,*kon=NULL,*ipkon=NULL,*ielmat=NULL,ialeatoric=0,kscale=1;
+      icutb=0,*kon=NULL,*ipkon=NULL,*ielmat=NULL,ialeatoric=0,kscale=1,
+      *iponoel=NULL,*inoel=NULL;
 
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*xstiff=NULL,*stiini=NULL,*tper,
          *f=NULL,*fn=NULL,qa[3],*fext=NULL,*epn=NULL,*xstateini=NULL,
@@ -333,7 +334,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 	  sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	  mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	  islavsurf,ielprop,prop,energyini,energy,&kscale);
+	  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
   SFREE(v);SFREE(fn);SFREE(stx);SFREE(inum);
   iout=1;
   
@@ -366,7 +367,8 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    ibody,xloadold,&reltime,veold,springarea,nstate_,
             xstateini,xstate,thicke,integerglob,doubleglob,
 	    tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
-	    pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,&kscale);
+	    pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
+            iponoel,inoel);
 
   if(nasym==1){
       RENEW(au,double,2*nzs[1]);
@@ -390,7 +392,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
                   xstateini,xstate,thicke,
                   integerglob,doubleglob,tieset,istartset,iendset,
 		  ialset,ntie,&nasym,pslavsurf,pmastsurf,mortar,clearini,
-		  ielprop,prop,&ne0,&kscale));
+		  ielprop,prop,&ne0,&kscale,iponoel,inoel));
   }
 
   /* determining the right hand side */
@@ -514,7 +516,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             &ne0,xforc,nforc,thicke,shcon,nshcon,
             sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
             mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	    islavsurf,ielprop,prop,energyini,energy,&kscale);
+	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
 
 	  xbounact[iretain[i]-1]=0.;
 	  
@@ -630,6 +632,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		exit(0);
 	    }
 	    fclose(f1);
+
 	    break;
         }
     }
@@ -671,7 +674,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             &ne0,xforc,nforc,thicke,shcon,nshcon,
             sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
             mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	    islavsurf,ielprop,prop,energyini,energy,&kscale);
+	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
 
     SFREE(eei);
     if(*nener==1){

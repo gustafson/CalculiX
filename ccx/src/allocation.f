@@ -493,6 +493,9 @@
                   read(textpart(1)(1:80),'(a80)',iostat=istat) elset
                   elset(81:81)=' '
                   ipos=index(elset,' ')
+!
+!                 check for element set
+!
                   elset(ipos:ipos)='E'
                   do i=1,nset
                      if(set(i).eq.elset) then
@@ -504,10 +507,28 @@
                         exit
                      endif
                   enddo
+                  if(i.gt.nset) then
+!
+!                    check for facial surface
+!
+                     elset(ipos:ipos)='T'
+                     do i=1,nset
+                        if(set(i).eq.elset) then
+                           nload=nload+meminset(i)
+                           if(massflow) then
+                              nmpc=nmpc+meminset(i)
+                              memmpc=memmpc+3*meminset(i)
+                           endif
+                           exit
+                        endif
+                     enddo
+                  endif
                endif
             enddo
          elseif((textpart(1)(1:8).eq.'*DYNAMIC').or.
-     &      (textpart(1)(1:32).eq.'*COUPLEDTEMPERATURE-DISPLACEMENT'))
+     &      (textpart(1)(1:32).eq.'*COUPLEDTEMPERATURE-DISPLACEMENT')
+     &            .or.
+     &      (textpart(1)(1:34).eq.'*UNCOUPLEDTEMPERATURE-DISPLACEMENT'))
      &          then
 !
 !           change of number of integration points except for a pure
@@ -519,7 +540,8 @@
                elseif(mi(1).eq.4) then
                   mi(1)=15
                else
-                  mi(1)=18
+c                  mi(1)=18
+                  mi(1)=9
                endif
             endif
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -946,11 +968,12 @@ c!
                nprint=nprint+n
             enddo
          elseif(textpart(1)(1:13).eq.'*FLUIDSECTION') then
+            nprop=nprop+41
             do
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
                if((istat.lt.0).or.(key.eq.1)) exit
-               nprop=nprop+8
+c               nprop=nprop+8
             enddo
          elseif(textpart(1)(1:9).eq.'*FRICTION') then
 c            ncmat=max(7,ncmat)
@@ -1258,6 +1281,7 @@ c            ncmat=max(7,ncmat)
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &              ipoinp,inp,ipoinpc)
                if((istat.lt.0).or.(key.eq.1)) exit
+c               if(textpart(1)(1:11).eq.'SHAPEENERGY') nener=1
                nobject=nobject+1
             enddo    
          elseif(textpart(1)(1:12).eq.'*ORIENTATION') then

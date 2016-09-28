@@ -19,7 +19,7 @@
       subroutine uncouptempdisps(inpc,textpart,
      &  nmethod,iperturb,isolver,
      &  istep,istat,n,tinc,tper,tmin,tmax,idrct,ithermal,iline,ipol,
-     &  inl,ipoinp,inp,ipoinpc,alpha,ctrl,ttime)
+     &  inl,ipoinp,inp,ipoinpc,alpha,ctrl,ttime,nener)
 !
 !     reading the input deck: *UNCOUPLED TEMPERATURE-DISPLACEMENT
 !
@@ -39,7 +39,8 @@
       character*132 textpart(16)
 !
       integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,
-     &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*)
+     &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
+     &  nener
 !
       real*8 tinc,tper,tmin,tmax,alpha,ctrl(*),ttime
 !
@@ -160,6 +161,7 @@
             tmax=1.d+30
          endif
          if(timereset)ttime=ttime-tper
+         if(nmethod.eq.4) nener=1
          return
       endif
 !
@@ -200,6 +202,8 @@ c            tmin=min(tinc,1.d-5*tper)
       endif
 !
       if(timereset)ttime=ttime-tper
+!
+      if(nmethod.eq.4) nener=1
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

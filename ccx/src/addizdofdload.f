@@ -105,7 +105,8 @@
 !              C-convention!
 !     
                jdof=nactdof(j,node)-1
-               if(jdof.ne.0) call addimd(izdof,nzdof,jdof)
+               if(jdof.gt.0) call addimd(izdof,nzdof,jdof)
+c               if(jdof.gt.-1) call addimd(izdof,nzdof,jdof)
             enddo
          enddo
       elseif(sideload(iload)(1:1).eq.'B') then
@@ -145,7 +146,8 @@
 !     C-convention!
 !     
                jdof=nactdof(j,node)-1
-               if(jdof.ne.0) call addimd(izdof,nzdof,jdof)
+               if(jdof.gt.0) call addimd(izdof,nzdof,jdof)
+c               if(jdof.gt.-1) call addimd(izdof,nzdof,jdof)
             enddo
          enddo
       endif

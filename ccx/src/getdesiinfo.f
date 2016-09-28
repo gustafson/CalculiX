@@ -17,23 +17,21 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine getdesiinfo(set,istartset,iendset,ialset,nset,
-     &  mi,nactdof,ndesi,ndirdesi,nodedesi,ntie,tieset)    
+     &  mi,nactdof,ndesi,nodedesi,ntie,tieset)    
 !
 !     reading the input deck: *DESIGNVARIABLES
 !
       implicit none
 !
-      character*81 setname,nodeset
+      character*81 setname
       character*81 set(*)
       character*81 tieset(3,*)
 !
       integer mi(*),istartset(*),iendset(*),ialset(*),ndesi,
-     &  node,nodedesi(*),ndirdesi(*),nset,ntie,i,j,k,l,
-     &  ipos,nactdof(0:mi(2),*) 
+     &  node,nodedesi(*),nset,ntie,i,j,k,l,
+     &  nactdof(0:mi(2),*) 
 !
-      nodeset='
-     &                      '
-      ipos=0
+      setname(1:1)=' '
       ndesi=0
 !
 !     Search for the set name
@@ -41,14 +39,12 @@
       do i=1,ntie
          if(tieset(1,i)(81:81).eq.'D') then
             setname=tieset(2,i)
-            ipos=index(setname,' ')
-            setname(ipos:ipos)='N'
          endif
       enddo 
 !
 !     Check for the existence of the name
 !
-      if(setname.eq.' ') then
+      if(setname(1:1).eq.' ') then
         write(*,*) '*ERROR in getdesiinfo: name of node set '
         write(*,*) '  has not yet been defined. '
         call exit(201)
@@ -57,18 +53,29 @@
 !     Search the name of the node set in "set(i)" and
 !     assign the nodes of the set to the appropriate variables
 !
-      do j=1,nset
-         if(setname.eq.set(j)) then  
-            do k=istartset(j),iendset(j)
-               node=ialset(k)
-               do l=1,3
-                   if(nactdof(l,node).ne.0) then
+      do i=1,nset
+         if(setname.eq.set(i)) then  
+            loop1: do j=istartset(i),iendset(i)
+               if(ialset(j).gt.0) then
+                  node=ialset(j)
+                  do l=1,3
+                     if(nactdof(l,node).le.0) cycle loop1
+                  enddo
+                  ndesi=ndesi+1
+                  nodedesi(ndesi)=node
+               else
+                  k=ialset(j-2)
+                  loop2: do
+                     k=k-ialset(j)
+                     if(k.ge.ialset(j-1)) exit
+                     do l=1,3
+                        if(nactdof(l,k).le.0) cycle loop2
+                     enddo
                      ndesi=ndesi+1
-                     nodedesi(ndesi)=node
-                     ndirdesi(ndesi)=l
-                   endif   
-               enddo
-            enddo              
+                     nodedesi(ndesi)=k
+                  enddo loop2
+               endif
+            enddo loop1
          endif
       enddo 
 !

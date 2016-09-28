@@ -39,7 +39,7 @@ static ITG num_cpus;
 void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
     char **sidefacep, ITG *ifreestream, 
     ITG *nfreestream, ITG *isolidsurf, ITG *neighsolidsurf,
-    ITG *nsolidsurf, ITG **iponoelp, ITG **inoelp, ITG *nshcon, double *shcon,
+    ITG *nsolidsurf, ITG *nshcon, double *shcon,
     ITG *nrhcon, double *rhcon, double **voldp, ITG *ntmat_,ITG *nodeboun, 
     ITG *ndirboun, ITG *nboun, ITG **ipompcp,ITG **nodempcp, ITG *nmpc,
     ITG **ikmpcp, ITG **ilmpcp, ITG *ithermal, ITG *ikboun, ITG *ilboun,
@@ -64,7 +64,8 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
     ITG *memmpc_,double **fmpcp,ITG *nef,ITG **inomatp,double *qfx,
     ITG *neifa,ITG *neiel,ITG *ielfa,ITG *ifaext,double *vfa,double *vel,
     ITG *ipnei,ITG *nflnei,ITG *nfaext,char *typeboun,ITG *neij,
-    double *tincf,ITG *nactdoh,ITG *nactdohinv,ITG *ielorienf,char*jobnamec){
+    double *tincf,ITG *nactdoh,ITG *nactdohinv,ITG *ielorienf,char*jobnamec,
+    ITG *ifatie,ITG *nstate_,double *xstate){
 
     /* main computational fluid dynamics routine */
   
@@ -75,11 +76,11 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
   ITG *ipointer=NULL,*mast1=NULL,*irow=NULL,*icol=NULL,*jq=NULL,
       nzs=20000000,neq,kode,compressible,*ifabou=NULL,*ja=NULL,
       *nodempc=NULL,*ipompc=NULL,*ikmpc=NULL,*ilmpc=NULL,nfabou,im,
-      *ipkonf=NULL,*kon=NULL,*nelemface=NULL,*inoel=NULL,last=0,
-      *iponoel=NULL,*inomat=NULL,ithermalref,*integerglob=NULL,iincf,
+      *ipkonf=NULL,*kon=NULL,*nelemface=NULL,last=0,icyclic,
+      *inomat=NULL,ithermalref,*integerglob=NULL,iincf,
       iconvergence=0,symmetryflag,inputformat,i,*inum=NULL,iitf,ifreefa,
-      *iponofa=NULL,*inofa=NULL,is,ie,*ia=NULL,nstate_,*ielpropf=NULL,
-      icent=0,isti=0,iqfx=0,nfield,ndim,iorienglob,force=0,icfdout=1,
+      *iponofa=NULL,*inofa=NULL,is,ie,*ia=NULL,*ielpropf=NULL,
+      icent=0,isti=0,iqfx=0,nfield,ndim,iorienglob,force=0,icfd=1,
       imach=0,ikappa=0,iit,jit,iatleastonepressurebc;
 
   ITG nelt,isym,itol,itmax,iunit,lrgw,*igwk=NULL,ligw,ierr,*iwork=NULL,iter,
@@ -94,7 +95,7 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
       *v=NULL,*velo=NULL,*veloo=NULL,*gammat=NULL,*cosb=NULL,dmin,tincfguess,
       *hel=NULL,*hfa=NULL,*auv=NULL,*adv=NULL,*bv=NULL,*sel=NULL,*gamma=NULL,
       *gradtfa=NULL,*gradtel=NULL,*umel=NULL,*cvfa=NULL,*gradpel=NULL,
-      *fn=NULL,*eei=NULL,*xstate=NULL,*ener=NULL,*thicke=NULL,*eme=NULL,
+      *fn=NULL,*eei=NULL,*ener=NULL,*thicke=NULL,*eme=NULL,c[9],
       ptimef,*stn=NULL,*qfn=NULL,*hcel=NULL,*aua=NULL,a1,a2,a3,beta,
       *prop=NULL,*dp=NULL,alphatime,betatime,gammatime,dtimefold,
       *xmach=NULL,*xkappa=NULL,urelax,*flux=NULL,velnormo[5],velnorm[5],
@@ -107,8 +108,8 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
   nodempc=*nodempcp;ipompc=*ipompcp;ikmpc=*ikmpcp;ilmpc=*ilmpcp;
   coefmpc=*coefmpcp;labmpc=*labmpcp;fmpc=*fmpcp;co=*cop;
   ipkonf=*ipkonfp;lakonf=*lakonfp;kon=*konp;
-  nelemface=*nelemfacep;sideface=*sidefacep;inoel=*inoelp;
-  iponoel=*iponoelp;vold=*voldp;inomat=*inomatp;
+  nelemface=*nelemfacep;sideface=*sidefacep;
+  vold=*voldp;inomat=*inomatp;
 
 #ifdef SGI
   ITG token;
@@ -245,7 +246,8 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
 
   FORTRAN(initialcfd,(nef,ipkonf,kon,lakonf,co,coel,cofa,nface,
 	  ielfa,area,ipnei,neiel,xxn,xxi,xle,xlen,xlet,xrlfa,cosa,
-	  volume,neifa,xxj,cosb,vel,&dmin));
+	  volume,neifa,xxj,cosb,&dmin,ifatie,cs,tieset,&icyclic,c,
+          neij));
 
   /* storing pointers to the boundary conditions in ielfa */
 
@@ -333,7 +335,7 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
      centers, thereby taking the boundary conditions into account */
 
   FORTRAN(extrapolate_vel,(nface,ielfa,xrlfa,vel,vfa,
-			   ifabou,xbounact,ipnei,nef));
+	  ifabou,xbounact,ipnei,nef,&icyclic,c,ifatie));
 
   /* applying MPC's to the faces */
 
@@ -663,8 +665,9 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
       
       /* extrapolating the gradient of the velocity from the element
 	 centers to the face centers */
-      
-      FORTRAN(extrapolate_gradvel,(nface,ielfa,xrlfa,gradvel,gradvfa));
+
+      FORTRAN(extrapolate_gradvel,(nface,ielfa,xrlfa,gradvel,gradvfa,
+              &icyclic,c,ifatie));
 
       /* filling the lhs and rhs's for the balance of momentum
 	 equations */
@@ -678,7 +681,7 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
 		       auv,adv,jq,irow,&nzs,bv,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
 		       body,volume,ielfa,lakonf,ifabou,nbody,&neq,
 		       &dtimef,velo,veloo,sel,xrlfa,gamma,xxj,nactdohinv,&a1,
-		       &a2,&a3,flux);
+		       &a2,&a3,flux,&icyclic,c,ifatie);
       }else{
       
       /* calculate gamma (Ph.D. Thesis Jasak) */
@@ -691,7 +694,7 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
 		       auv,adv,jq,irow,&nzs,bv,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
 		       body,volume,ielfa,lakonf,ifabou,nbody,&neq,
 		       &dtimef,velo,veloo,sel,xrlfa,gamma,xxj,nactdohinv,&a1,
-		       &a2,&a3,flux);
+		       &a2,&a3,flux,&icyclic,c,ifatie);
 //           SFREE(gamma);
       }
 
@@ -735,6 +738,16 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
       }
       SFREE(rgwk);SFREE(igwk);
 
+/*	      for(i=0;i<neq;i++){
+		  printf("velocity=%d,%e\n",i,vel[i]);
+		  }
+	      for(i=neq;i<2*neq;i++){
+		  printf("velocity=%d,%e\n",i-neq,vel[i]);
+		  }
+	      for(i=2*neq;i<3*neq;i++){
+		  printf("velocity=%d,%e\n",i-2*neq,vel[i]);
+		  }*/
+
       /* calculating the pressure gradient at the element
          centers */
       
@@ -751,14 +764,21 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
 	  
           /* completing hel with the neighboring velocity contributions */
 	  
-          FORTRAN(complete_hel,(&neq,&vel[neq],hel,adv,auv,jq,irow,&nzs));
+	  if(icyclic==0){
+	      FORTRAN(complete_hel,(&neq,&vel[neq],hel,adv,auv,jq,irow,&nzs));
+	  }else{
+	      FORTRAN(complete_hel_cyclic,(&neq,&vel[neq],hel,adv,auv,jq,
+		      irow,ipnei,neiel,ifatie,c,lakonf,neifa,&nzs));
+	  }
 	  
 	  /* generating ad and h at the face centers (advfa and hfa) */
 	  
 	  if(compressible!=1){
-	      FORTRAN(extrapolate_ad_h,(nface,ielfa,xrlfa,adv,advfa,hel,hfa));
+	      FORTRAN(extrapolate_ad_h,(nface,ielfa,xrlfa,adv,advfa,hel,hfa,
+                                        &icyclic,c,ifatie));
 	  }else{
-	      FORTRAN(extrapolate_ad_h_comp,(nface,ielfa,xrlfa,adv,advfa,hel,hfa));
+	      FORTRAN(extrapolate_ad_h_comp,(nface,ielfa,xrlfa,adv,advfa,hel,
+					     hfa,&icyclic,c,ifatie));
 	  }
 	  
 	  /* calculating the lhs and rhs of the equation system to determine
@@ -823,6 +843,10 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
 			      &isym,&nsave,&itol,&tol,&itmax,&iter,
 			      &err,&ierr,&iunit,rgwk,&lenw,igwk,&leniw));
 	      SFREE(rgwk);SFREE(igwk);
+
+/*	      for(i=4*neq;i<5*neq;i++){
+		  printf("pressure=%d,%e\n",i+1-4*neq,vel[i]);
+		  }*/
 	      
 	      if(ierr!=0){
 		  printf("       error message from dslugm: ierr = %d\n",ierr);
@@ -925,7 +949,8 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
 		  /* extrapolating the temperature gradient from the element
 		     centers to the face centers */
 		  
-		  FORTRAN(extrapolate_gradtel,(nface,ielfa,xrlfa,gradtel,gradtfa));
+		  FORTRAN(extrapolate_gradtel,(nface,ielfa,xrlfa,gradtel,gradtfa,
+                             &icyclic,c,ifatie));
 		  
 		  /* calculating the lhs and rhs of the energy equation */
 		  
@@ -1048,7 +1073,8 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
 	  /* extrapolating the temperature gradient from the element
              centers to the face centers */
 
-	  FORTRAN(extrapolate_gradtel,(nface,ielfa,xrlfa,gradtel,gradtfa));
+	  FORTRAN(extrapolate_gradtel,(nface,ielfa,xrlfa,gradtel,gradtfa,
+                  &icyclic,c,ifatie));
       
       /* calculate gammat (Ph.D. Thesis Jasak) */
 
@@ -1126,7 +1152,7 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
 	 centers, thereby taking the boundary conditions into account */
       
       FORTRAN(extrapolate_vel,(nface,ielfa,xrlfa,vel,vfa,
-			       ifabou,xbounact,ipnei,nef));
+	      ifabou,xbounact,ipnei,nef,&icyclic,c,ifatie));
 
       /* applying MPC's to the faces */
       
@@ -1229,8 +1255,7 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
 	      NNEW(stn,double,6**nk);
 	      FORTRAN(extrapolate,(sti,stn,ipkonf,inum,kon,lakonf,
 		      &nfield,nk,nef,mi,&ndim,orab,ielorienf,co,&iorienglob,
-		      cflag,nelemload,nload,nodeboun,nboun,ndirboun,
-		      vold,ithermal,&force,&icfdout,ielmatf,thicke,filab));
+		      cflag,vold,&force,ielmatf,thicke,ielpropf,prop));
 	  }
 
 	  /* extrapolating the heat flow */
@@ -1248,8 +1273,7 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
 	      NNEW(qfn,double,3**nk);
 	      FORTRAN(extrapolate,(qfx,qfn,ipkonf,inum,kon,lakonf,
 		      &nfield,nk,nef,mi,&ndim,orab,ielorienf,co,&iorienglob,
-		      cflag,nelemload,nload,nodeboun,nboun,ndirboun,
-		      vold,ithermal,&force,&icfdout,ielmatf,thicke,filab));
+		      cflag,vold,&force,ielmatf,thicke,ielpropf,prop));
 	  }
 	  
 	  /* extrapolating the facial values of the static temperature 
@@ -1276,12 +1300,20 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG **konp, char **lakonfp,
 
 	  ptimef=ttimef+timef;
 	  FORTRAN(printoutfluid,(set,nset,istartset,iendset,ialset,nprint,
-				 prlab,prset,v,t1,fn,ipkonf,lakonf,sti,eei,
-                                 xstate,ener,mi,&nstate_,ithermal,co,kon,qfx,
+				 prlab,prset,ipkonf,lakonf,sti,eei,
+                                 xstate,ener,mi,nstate_,co,kon,qfx,
                                  &ptimef,trab,inotr,ntrans,orab,ielorienf,
-                                 norien,nk,nef,inum,filab,vold,ielmatf,
+                                 norien,vold,ielmatf,
                                  thicke,eme,vcontu,physcon,nactdoh,
-                                 ielpropf,prop));
+                                 ielpropf,prop,xkappa,xmach,ithermal));
+
+          /* thermal flux and drag: storage in dat-format */
+
+	  FORTRAN(printoutface,(co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
+		  cocon,ncocon,&compressible,istartset,iendset,ipkonf,
+		  lakonf,kon,
+		  ialset,prset,&ptimef,nset,set,nprint,prlab,ielmatf,mi,
+		  ithermal,nactdoh,&icfd));
 	  
 	  /* storing the results in frd-format */
 	  

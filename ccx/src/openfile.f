@@ -38,15 +38,15 @@
          call exit(201)
       endif
 !
-      fnin=jobname(1:i)//'.inp'
-      inquire(file=fnin(1:i+4),exist=exi)
-      if(exi) then
-         open(1,file=fnin(1:i+4),status='old',err=1)
-      else
-         write(*,*) '*ERROR in openfile: input file ',fnin
-         write(*,*) 'does not exist'
-         call exit(201)
-      endif
+c      fnin=jobname(1:i)//'.inp'
+c      inquire(file=fnin(1:i+4),exist=exi)
+c      if(exi) then
+c         open(1,file=fnin(1:i+4),status='old',err=1)
+c      else
+c         write(*,*) '*ERROR in openfile: input file ',fnin
+c         write(*,*) 'does not exist'
+c         call exit(201)
+c      endif
 !
       fndat=jobname(1:i)//'.dat'
       open(5,file=fndat(1:i+4),status='unknown',err=51)

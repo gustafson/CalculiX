@@ -55,7 +55,7 @@
             if(ithermal(1).ne.2) then
                do i=1,nk
                   do j=1,mi(2)
-                     if(nactdof(j,i).ne.0) then
+                     if(nactdof(j,i).gt.0) then
                         bnac=b(nactdof(j,i))
                      else
                         cycle
@@ -73,7 +73,7 @@ c                     v(j,i)=v(j,i)+bnac
             endif
             if(ithermal(1).gt.1) then
                do i=1,nk
-                  if(nactdof(0,i).ne.0) then
+                  if(nactdof(0,i).gt.0) then
                      bnac=b(nactdof(0,i))
                   else
                      cycle
@@ -98,7 +98,7 @@ c                  v(0,i)=bnac
                do i=1,nk
                   do j=1,mi(2)
                      veold(j,i)=0.d0
-                     if(nactdof(j,i).ne.0) then
+                     if(nactdof(j,i).gt.0) then
                         bnac=b(nactdof(j,i))
                      else
                         cycle
@@ -115,7 +115,7 @@ c                     v(j,i)=v(j,i)+bnac
             if(ithermal(1).gt.1) then
                do i=1,nk
                   veold(0,i)=0.d0
-                  if(nactdof(0,i).ne.0) then
+                  if(nactdof(0,i).gt.0) then
                      bnac=b(nactdof(0,i))
                   else
                      cycle

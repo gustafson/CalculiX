@@ -163,13 +163,13 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 
   for(i=0;i<*nboun;++i){
       if(ndirboun[i]>mi[1]){continue;}
-      nactdof[mt*(nodeboun[i]-1)+ndirboun[i]]=0;
+      nactdof[mt*(nodeboun[i]-1)+ndirboun[i]]=-2*(i+1);
   }
 
   for(i=0;i<*nmpc;++i){
     index=ipompc[i]-1;
     if(nodempc[3*index+1]>mi[1]) continue;
-    nactdof[mt*(nodempc[3*index]-1)+nodempc[3*index+1]]=0;
+    nactdof[mt*(nodempc[3*index]-1)+nodempc[3*index+1]]=-2*i-1;
   }
  
   /* numbering the active degrees of freedom */
@@ -177,7 +177,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
   neq[0]=0;
   for(i=0;i<*nk;++i){
     for(j=1;j<mt;++j){
-	if(nactdof[mt*i+j]!=0){
+	if(nactdof[mt*i+j]>0){
         if((*ithermal<2)||(*ithermal>=3)){
           ++neq[0];
           nactdof[mt*i+j]=neq[0];
@@ -190,7 +190,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
   }
   neq[1]=neq[0];
   for(i=0;i<*nk;++i){
-      if(nactdof[mt*i]!=0){
+      if(nactdof[mt*i]>0){
       if(*ithermal>1){
         ++neq[1];
         nactdof[mt*i]=neq[1];
@@ -247,35 +247,39 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	  
 	  /* check whether one of the DOF belongs to a SPC or MPC */
 	  
-	  if((jdof1!=0)&&(jdof2!=0)){
+	  if((jdof1>0)&&(jdof2>0)){
 	    insert(ipointer,&mast1,&next,&jdof1,&jdof2,&ifree,&nzs_);
 	  }
-	  else if((jdof1!=0)||(jdof2!=0)){
+	  else if((jdof1>0)||(jdof2>0)){
 	    
 	    /* idof1: genuine DOF
 	       idof2: nominal DOF of the SPC/MPC */
 	    
-	    if(jdof1==0){
+	    if(jdof1<=0){
 	      idof1=jdof2;
-	      idof2=8*node1+k-7;}
+	      idof2=jdof1;}
+//	      idof2=8*node1+k-7;}
 	    else{
 	      idof1=jdof1;
-	      idof2=8*node2+m-7;}
+	      idof2=jdof2;}
+//	      idof2=8*node2+m-7;}
 	    
 	    if(*nmpc>0){
 	      
-	      FORTRAN(nident,(ikmpc,&idof2,nmpc,&id));
-	      if((id>0)&&(ikmpc[id-1]==idof2)){
+//	      FORTRAN(nident,(ikmpc,&idof2,nmpc,&id));
+//	      if((id>0)&&(ikmpc[id-1]==idof2)){
+	      if(idof2!=2*(idof2/2)){
 		
 		/* regular DOF / MPC */
 		
-		id=ilmpc[id-1];
+//		id=ilmpc[id-1];
+		id=(-idof2+1)/2;
 		ist=ipompc[id-1];
 		index=nodempc[3*ist-1];
 		if(index==0) continue;
 		while(1){
 		    idof2=nactdof[mt*(nodempc[3*index-3]-1)+nodempc[3*index-2]];
-		  if(idof2!=0){
+		  if(idof2>0){
 		    insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);
 		  }
 		  index=nodempc[3*index-1];
@@ -287,19 +291,25 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	  }
 	  
 	  else{
-	    idof1=8*node1+k-7;
-	    idof2=8*node2+m-7;
+//	    idof1=8*node1+k-7;
+//	    idof2=8*node2+m-7;
+	    idof1=jdof1;
+	    idof2=jdof2;
 	    mpc1=0;
 	    mpc2=0;
 	    if(*nmpc>0){
-	      FORTRAN(nident,(ikmpc,&idof1,nmpc,&id1));
+/*	      FORTRAN(nident,(ikmpc,&idof1,nmpc,&id1));
 	      if((id1>0)&&(ikmpc[id1-1]==idof1)) mpc1=1;
 	      FORTRAN(nident,(ikmpc,&idof2,nmpc,&id2));
-	      if((id2>0)&&(ikmpc[id2-1]==idof2)) mpc2=1;
+	      if((id2>0)&&(ikmpc[id2-1]==idof2)) mpc2=1;*/
+	      if(idof1!=2*(idof1/2)) mpc1=1;
+	      if(idof2!=2*(idof2/2)) mpc2=1;
 	    }
 	    if((mpc1==1)&&(mpc2==1)){
-	      id1=ilmpc[id1-1];
-	      id2=ilmpc[id2-1];
+//	      id1=ilmpc[id1-1];
+//	      id2=ilmpc[id2-1];
+	      id1=(-idof1+1)/2;
+	      id2=(-idof2+1)/2;
 	      if(id1==id2){
 		
 		/* MPC id1 / MPC id1 */
@@ -312,7 +322,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		  index2=index1;
 		  while(1){
 		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
-		    if((idof1!=0)&&(idof2!=0)){
+		    if((idof1>0)&&(idof2>0)){
 		      insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);}
 		    index2=nodempc[3*index2-1];
 		    if(index2==0) break;
@@ -340,7 +350,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		  }
 		  while(1){
 		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
-		    if((idof1!=0)&&(idof2!=0)){
+		    if((idof1>0)&&(idof2>0)){
 		      insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);}
 		    index2=nodempc[3*index2-1];
 		    if(index2==0) break;
@@ -405,35 +415,39 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	  
 	  /* check whether one of the DOF belongs to a SPC or MPC */
 	  
-	  if((jdof1!=0)&&(jdof2!=0)){
+	  if((jdof1>0)&&(jdof2>0)){
 	    insert(ipointer,&mast1,&next,&jdof1,&jdof2,&ifree,&nzs_);
 	  }
-	  else if((jdof1!=0)||(jdof2!=0)){
+	  else if((jdof1>0)||(jdof2>0)){
 	    
 	    /* idof1: genuine DOF
 	       idof2: nominal DOF of the SPC/MPC */
 	    
-	    if(jdof1==0){
+	    if(jdof1<=0){
 	      idof1=jdof2;
-	      idof2=8*node1-8;}
+//	      idof2=8*node1-8;}
+	      idof2=jdof1;}
 	    else{
 	      idof1=jdof1;
-	      idof2=8*node2-8;}
+//	      idof2=8*node2-8;}
+	      idof2=jdof2;}
 	    
 	    if(*nmpc>0){
 	      
-	      FORTRAN(nident,(ikmpc,&idof2,nmpc,&id));
-	      if((id>0)&&(ikmpc[id-1]==idof2)){
+//	      FORTRAN(nident,(ikmpc,&idof2,nmpc,&id));
+//	      if((id>0)&&(ikmpc[id-1]==idof2)){
+	      if(idof2!=2*(idof2/2)){
 		
 		/* regular DOF / MPC */
 		
-		id=ilmpc[id-1];
+//		id=ilmpc[id-1];
+		id=(-idof2+1)/2;
 		ist=ipompc[id-1];
 		index=nodempc[3*ist-1];
 		if(index==0) continue;
 		while(1){
 		    idof2=nactdof[mt*(nodempc[3*index-3]-1)+nodempc[3*index-2]];
-		  if(idof2!=0){
+		  if(idof2>0){
 		    insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);
 		  }
 		  index=nodempc[3*index-1];
@@ -445,19 +459,25 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	  }
 	  
 	  else{
-	    idof1=8*node1-8;
-	    idof2=8*node2-8;
+//	    idof1=8*node1-8;
+//	    idof2=8*node2-8;
+	    idof1=jdof1;
+	    idof2=jdof2;
 	    mpc1=0;
 	    mpc2=0;
 	    if(*nmpc>0){
-	      FORTRAN(nident,(ikmpc,&idof1,nmpc,&id1));
+/*	      FORTRAN(nident,(ikmpc,&idof1,nmpc,&id1));
 	      if((id1>0)&&(ikmpc[id1-1]==idof1)) mpc1=1;
 	      FORTRAN(nident,(ikmpc,&idof2,nmpc,&id2));
-	      if((id2>0)&&(ikmpc[id2-1]==idof2)) mpc2=1;
+	      if((id2>0)&&(ikmpc[id2-1]==idof2)) mpc2=1;*/
+		if(idof1!=2*(idof1/2)) mpc1=1;
+		if(idof2!=2*(idof2/2)) mpc2=1;
 	    }
 	    if((mpc1==1)&&(mpc2==1)){
-	      id1=ilmpc[id1-1];
-	      id2=ilmpc[id2-1];
+//	      id1=ilmpc[id1-1];
+//	      id2=ilmpc[id2-1];
+	      id1=(-idof1+1)/2;
+	      id2=(-idof2+1)/2;
 	      if(id1==id2){
 		
 		/* MPC id1 / MPC id1 */
@@ -470,7 +490,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		  index2=index1;
 		  while(1){
 		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
-		    if((idof1!=0)&&(idof2!=0)){
+		    if((idof1>0)&&(idof2>0)){
 		      insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);}
 		    index2=nodempc[3*index2-1];
 		    if(index2==0) break;
@@ -498,7 +518,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		  }
 		  while(1){
 		      idof2=nactdof[mt*(nodempc[3*index2-3]-1)+nodempc[3*index2-2]];
-		    if((idof1!=0)&&(idof2!=0)){
+		    if((idof1>0)&&(idof2>0)){
 		      insert(ipointer,&mast1,&next,&idof1,&idof2,&ifree,&nzs_);}
 		    index2=nodempc[3*index2-1];
 		    if(index2==0) break;

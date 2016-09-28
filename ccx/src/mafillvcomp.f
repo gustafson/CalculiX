@@ -20,7 +20,7 @@
      &  auv,adv,jq,irow,nzs,bv,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
      &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
      &  dtimef,velo,veloo,sel,xrlfa,gamma,xxj,nactdohinv,a1,
-     &  a2,a3,flux,nefa,nefb)
+     &  a2,a3,flux,nefa,nefb,icyclic,c,ifatie)
 !
       implicit none
 !
@@ -29,13 +29,14 @@
 !
       integer i,nef,jdof1,indexf,ipnei(*),j,ifa,iel,neifa(*),nefa,nefb,
      &  neiel(*),jdof2,jq(*),irow(*),nzs,iwall,compressible,ielfa(4,*),
-     &  ipointer,ifabou(*),nbody,neq,k,indexb,numfaces,nactdohinv(*)
+     &  ipointer,ifabou(*),nbody,neq,k,indexb,numfaces,nactdohinv(*),
+     &  icyclic,ifatie(*)
 !
       real*8 xflux,vfa(0:5,*),xxn(3,*),area(*),auv(*),adv(*),bv(neq,3),
      &  vel(nef,0:5),cosa(*),umfa(*),xlet(*),xle(*),coef,gradvfa(3,3,*),
      &  xxi(3,*),body(0:3,*),volume(*),coef2,dtimef,velo(nef,0:5),
      &  veloo(nef,0:5),rhovel,constant,sel(3,*),xrlfa(3,*),gamma(*),
-     &  xxj(3,*),a1,a2,a3,flux(*)
+     &  xxj(3,*),a1,a2,a3,flux(*),c(3,3)
 !
       intent(in) nef,ipnei,neifa,neiel,vfa,xxn,area,
      &  jq,irow,nzs,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
@@ -75,25 +76,33 @@
 !
                call add_sm_fl_as(auv,adv,jq,irow,jdof1,jdof1,
      &              xflux,nzs)
-cccc
-c               bv(jdof1,1)=bv(jdof1,1)-0.4*(vfa(1,ifa)-vel(i,1))*xflux
-c               bv(jdof1,2)=bv(jdof1,2)-0.4*(vfa(2,ifa)-vel(i,2))*xflux
-c               bv(jdof1,3)=bv(jdof1,3)-0.4*(vfa(3,ifa)-vel(i,3))*xflux
-cccc
-c               write(*,*) 'mafillv1 ',bv(1,1),bv(1,2),bv(1,3)
             else
                if(iel.gt.0) then
-!
+!     
 !                    incoming flux from neighboring element
 !
-                  call add_sm_fl_as(auv,adv,jq,irow,jdof1,jdof2,xflux,
-     &                 nzs)
-cccc
-c               bv(jdof1,1)=bv(jdof1,1)-0.4*(vfa(1,ifa)-vel(iel,1))*xflux
-c               bv(jdof1,2)=bv(jdof1,2)-0.4*(vfa(2,ifa)-vel(iel,2))*xflux
-c               bv(jdof1,3)=bv(jdof1,3)-0.4*(vfa(3,ifa)-vel(iel,3))*xflux
-cccc
-c               write(*,*) 'mafillv2 ',bv(1,1),bv(1,2),bv(1,3)
+                  if((icyclic.eq.0).or.(ifatie(ifa).eq.0)) then
+                    call add_sm_fl_as(auv,adv,jq,irow,jdof1,jdof2,xflux,
+     &                    nzs)
+                  elseif(ifatie(ifa).gt.0) then
+!
+!                 for cyclic symmetry the term is retarded, since
+!                 otherwise the x-, y- and z- components are linked
+!                 (i.e. the x-, y- and z- momentum equations cannot
+!                  be solved separately any more)
+!
+                     do k=1,3
+                        bv(jdof1,k)=bv(jdof1,k)-
+     &                       (c(k,1)*vel(iel,1)+c(k,2)*vel(iel,2)+
+     &                       c(k,3)*vel(iel,3))*xflux
+                     enddo
+                  else
+                     do k=1,3
+                        bv(jdof1,k)=bv(jdof1,k)-
+     &                       (c(1,k)*vel(iel,1)+c(2,k)*vel(iel,2)+
+     &                       c(3,k)*vel(iel,3))*xflux
+                     enddo
+                  endif
                else
 !
 !                    incoming flux through boundary
@@ -103,12 +112,10 @@ c               write(*,*) 'mafillv2 ',bv(1,1),bv(1,2),bv(1,3)
                      if(((ifabou(indexb+1).ne.0).and.
      &                    (ifabou(indexb+2).ne.0).and.
      &                    (ifabou(indexb+3).ne.0)).or.
-c     &                    (dabs(xflux).lt.1.d-3)) then
      &                    (dabs(xflux).lt.1.d-10)) then
                         bv(jdof1,1)=bv(jdof1,1)-vfa(1,ifa)*xflux
                         bv(jdof1,2)=bv(jdof1,2)-vfa(2,ifa)*xflux
                         bv(jdof1,3)=bv(jdof1,3)-vfa(3,ifa)*xflux
-c               write(*,*) 'mafillv3 ',bv(1,1),bv(1,2),bv(1,3)
                      else
                         write(*,*) '*ERROR in mafillv: not all'
                         write(*,*) '       components of an incoming'
@@ -135,8 +142,28 @@ c               write(*,*) 'mafillv3 ',bv(1,1),bv(1,2),bv(1,3)
                coef=umfa(ifa)*area(ifa)/xlet(indexf)
                call add_sm_fl_as(auv,adv,jq,irow,jdof1,jdof1,
      &              coef,nzs)
-               call add_sm_fl_as(auv,adv,jq,irow,jdof1,jdof2,
+               if((icyclic.eq.0).or.(ifatie(ifa).eq.0)) then
+                  call add_sm_fl_as(auv,adv,jq,irow,jdof1,jdof2,
      &              -coef,nzs)
+               elseif(ifatie(ifa).gt.0) then
+!
+!                 for cyclic symmetry the term is retarded, since
+!                 otherwise the x-, y- and z- components are linked
+!                 (i.e. the x-, y- and z- momentum equations cannot
+!                  be solved separately any more)
+!
+                  do k=1,3
+                     bv(jdof1,k)=bv(jdof1,k)+
+     &                (c(k,1)*vel(iel,1)+c(k,2)*vel(iel,2)+
+     &                 c(k,3)*vel(iel,3))*coef
+                  enddo
+               else
+                  do k=1,3
+                     bv(jdof1,k)=bv(jdof1,k)+
+     &                (c(1,k)*vel(iel,1)+c(2,k)*vel(iel,2)+
+     &                 c(3,k)*vel(iel,3))*coef
+                  enddo
+               endif
 !
 !                 correction for non-orthogonal grid
 !
@@ -152,7 +179,6 @@ c               write(*,*) 'mafillv3 ',bv(1,1),bv(1,2),bv(1,3)
      &              (gradvfa(3,1,ifa)*(xxn(1,indexf)-xxj(1,indexf))+
      &              gradvfa(3,2,ifa)*(xxn(2,indexf)-xxj(2,indexf))+
      &              gradvfa(3,3,ifa)*(xxn(3,indexf)-xxj(3,indexf)))
-c               write(*,*) 'mafillv4 ',bv(1,1),bv(1,2),bv(1,3)
             else
 !
 !                 boundary; check whether wall (specified by user),
@@ -164,7 +190,6 @@ c               write(*,*) 'mafillv4 ',bv(1,1),bv(1,2),bv(1,3)
                if(ipointer.gt.0) then
                   iwall=ifabou(ipointer+5)
                endif
-c               if(iwall.eq.0) then
                if(iwall.ne.1) then
 !
 !                    external face, but no wall
@@ -181,7 +206,6 @@ c               if(iwall.eq.0) then
                      bv(jdof1,1)=bv(jdof1,1)+coef*vfa(1,ifa)
                      bv(jdof1,2)=bv(jdof1,2)+coef*vfa(2,ifa)
                      bv(jdof1,3)=bv(jdof1,3)+coef*vfa(3,ifa)
-c               write(*,*) 'mafillv5 ',bv(1,1),bv(1,2),bv(1,3)
                   else
 !
 !                       outlet: no diffusion
@@ -202,7 +226,6 @@ c               write(*,*) 'mafillv5 ',bv(1,1),bv(1,2),bv(1,3)
      &                 (gradvfa(3,1,ifa)*(xxn(1,indexf)-xxi(1,indexf))+
      &                 gradvfa(3,2,ifa)*(xxn(2,indexf)-xxi(2,indexf))+
      &                 gradvfa(3,3,ifa)*(xxn(3,indexf)-xxi(3,indexf)))
-c               write(*,*) 'mafillv6 ',bv(1,1),bv(1,2),bv(1,3)
                else
 !     
 !                    wall
@@ -223,7 +246,6 @@ c               write(*,*) 'mafillv6 ',bv(1,1),bv(1,2),bv(1,3)
      &                 coef2*xxn(2,indexf)
                   bv(jdof1,3)=bv(jdof1,3)+coef*vfa(3,ifa)+
      &                 coef2*xxn(3,indexf)
-c               write(*,*) 'mafillv7 ',bv(1,1),bv(1,2),bv(1,3)
                endif
             endif
 !     

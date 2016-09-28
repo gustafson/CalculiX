@@ -41,7 +41,7 @@
      &  nbody,nbody_,xbodyold,nam_,ielprop,nprop,nprop_,prop,itpamp,
      &  iviewfile,ipoinpc,cfd,nslavs,t0g,t1g,network,cyclicsymmetry,
      &  idefforc,idefload,idefbody,mortar,ifacecount,islavsurf,
-     &  pslavsurf,clearini,heading,iaxial,nobject,objectset)
+     &  pslavsurf,clearini,heading,iaxial,nobject,objectset,nprint_)
 !
       implicit none
 !
@@ -181,9 +181,9 @@
       radiate_flag=.false.
       cflux_flag=.false.
 !
-      nprint_=nprint
+c      nprint_=nprint
 !
-      nprint=0
+c      nprint=0
 !
       if(istep.eq.0) then
 !
@@ -255,14 +255,15 @@ c         iaxial=0
      &           iendset,ialset,nset,ielmat,matname,nmat,ielorien,
      &           orname,norien,thicke,ipkon,iponor,xnor,ixfree,
      &           offset,lakon,irstrt,istep,istat,n,iline,ipol,inl,
-     &           ipoinp,inp,ipoinpc,mi,ielprop,nprop,nprop_,prop)
+     &           ipoinp,inp,ipoinpc,mi,ielprop,nprop,nprop_,prop,
+     &           nelcon)
 !
          elseif(textpart(1)(1:12).eq.'*BEAMSECTION') then
             call beamsections(inpc,textpart,set,istartset,iendset,
      &           ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
      &           thicke,ipkon,iponor,xnor,ixfree,
      &           offset,lakon,irstrt,istep,istat,n,iline,ipol,inl,
-     &           ipoinp,inp,ipoinpc,mi)
+     &           ipoinp,inp,ipoinpc,mi,nelcon)
 !
          elseif(textpart(1)(1:10).eq.'*BOUNDARYF') then
             M_or_SPC=1
@@ -327,7 +328,7 @@ c         iaxial=0
             call changesolidsections(inpc,textpart,set,istartset,
      &        iendset,ialset,nset,ielmat,matname,nmat,ielorien,orname,
      &        norien,lakon,thicke,kon,ipkon,irstrt,istep,istat,n,iline,
-     &        ipol,inl,ipoinp,inp,cs,mcs,iaxial,ipoinpc,mi)
+     &        ipol,inl,ipoinp,inp,cs,mcs,iaxial,ipoinpc,mi,nelcon)
 !
          elseif(textpart(1)(1:22).eq.'*CHANGESURFACEBEHAVIOR') then
             ichangesurfacebehavior=1
@@ -401,13 +402,13 @@ c         iaxial=0
      &           iperturb,isolver,
      &           istep,istat,n,tinc,tper,tmin,tmax,idrct,ithermal,iline,
      &           ipol,inl,ipoinp,inp,ipoinpc,alpha,ctrl,iexpl,tincf,
-     &           ttime)
+     &           ttime,nener)
 !
          elseif(textpart(1)(1:6).eq.'*CREEP') then
             call creeps(inpc,textpart,nelcon,imat,ntmat_,npmat_,
      &        plicon,nplicon,elcon,iplas,iperturb,nstate_,ncmat_,
      &        matname,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &        ipoinpc)
+     &        ipoinpc,ianisoplas)
 !
          elseif(textpart(1)(1:16).eq.'*CYCLICHARDENING') then
             call cyclichardenings(inpc,textpart,nelcon,imat,ntmat_,
@@ -460,7 +461,9 @@ c
 !
          elseif(textpart(1)(1:16).eq.'*DESIGNVARIABLES') then
             call designvariabless(inpc,textpart,tieset,tietol,istep,
-     &           istat,n,iline,ipol,inl,ipoinp,inp,ntie,ntie_,ipoinpc)
+     &           istat,n,iline,ipol,inl,ipoinp,inp,ntie,ntie_,ipoinpc,
+     &           set,nset)
+            nener=1
 !
          elseif(textpart(1)(1:6).eq.'*DFLUX') then
             call dfluxs(inpc,textpart,set,istartset,iendset,
@@ -589,10 +592,9 @@ c
 !
          elseif(textpart(1)(1:13).eq.'*FLUIDSECTION') then
             call fluidsections(inpc,textpart,set,istartset,iendset,
-     &        ialset,nset,ielmat,matname,nmat,
-     &        irstrt,istep,istat,n,
+     &        ialset,nset,ielmat,matname,nmat,irstrt,istep,istat,n,
      &        iline,ipol,inl,ipoinp,inp,lakon,ielprop,nprop,
-     &        nprop_,prop,iaxial,ipoinpc,mi)
+     &        nprop_,prop,ipoinpc,mi)
 !
          elseif(textpart(1)(1:10).eq.'*FREQUENCY') then
             call frequencys(inpc,textpart,nmethod,
@@ -758,7 +760,7 @@ c
             call plastics(inpc,textpart,nelcon,imat,ntmat_,npmat_,
      &        plicon,nplicon,plkcon,nplkcon,iplas,iperturb,nstate_,
      &        ncmat_,elcon,matname,irstrt,istep,istat,n,iline,ipol,
-     &        inl,ipoinp,inp,ipoinpc)
+     &        inl,ipoinp,inp,ipoinpc,ianisoplas)
 !
          elseif(textpart(1)(1:19).eq.'*PRE-TENSIONSECTION') then
             call pretensionsections(inpc,textpart,ipompc,nodempc,
@@ -827,26 +829,23 @@ c
      &        ipol,inl,ipoinp,inp,nmethod,key,ipoinpc)
 !
          elseif(textpart(1)(1:12).eq.'*SENSITIVITY') then
-            call sensitivitys(inpc,textpart,nmethod,iperturb,isolver,
-     &        istep,istat,n,tinc,tper,tmin,tmax,idrct,iline,ipol,inl,
-     &        ipoinp,inp,ithermal,cs,ics,tieset,istartset,
-     &        iendset,ialset,ipompc,nodempc,coefmpc,nmpc,nmpc_,ikmpc,
-     &        ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl,cfd,ttime,
-     &        iaxial,nelcon,nmat,tincf)
+            call sensitivitys(inpc,textpart,nmethod,
+     &        istep,istat,n,iline,ipol,inl,
+     &        ipoinp,inp,tieset,ipoinpc,ntie)
 !
          elseif(textpart(1)(1:13).eq.'*SHELLSECTION') then
             call shellsections(inpc,textpart,set,istartset,iendset,
      &        ialset,nset,ielmat,matname,nmat,ielorien,orname,
      &        norien,thicke,kon,ipkon,offset,irstrt,istep,istat,n,
      &        iline,ipol,inl,ipoinp,inp,lakon,iaxial,ipoinpc,mi,
-     &        icomposite)
+     &        icomposite,nelcon)
 !
          elseif(textpart(1)(1:13).eq.'*SOLIDSECTION') then
             call solidsections(inpc,textpart,set,istartset,iendset,
      &        ialset,nset,ielmat,matname,nmat,ielorien,orname,
      &        norien,lakon,thicke,kon,ipkon,irstrt,istep,istat,n,iline,
      &        ipol,inl,ipoinp,inp,cs,mcs,iaxial,ipoinpc,mi,co,
-     &        ixfree,xnor,iponor)
+     &        ixfree,xnor,iponor,nelcon)
 !
          elseif(textpart(1)(1:20).eq.'*SPECIFICGASCONSTANT') then
             call specificgasconstants(inpc,textpart,shcon,nshcon,
@@ -958,7 +957,7 @@ c
             call uncouptempdisps(inpc,textpart,
      &           nmethod,iperturb,isolver,
      &           istep,istat,n,tinc,tper,tmin,tmax,idrct,ithermal,iline,
-     &           ipol,inl,ipoinp,inp,ipoinpc,alpha,ctrl,ttime)
+     &           ipol,inl,ipoinp,inp,ipoinpc,alpha,ctrl,ttime,nener)
 !
          elseif(textpart(1)(1:13).eq.'*USERMATERIAL') then
             call usermaterials(inpc,textpart,elcon,nelcon,
@@ -1056,7 +1055,7 @@ c
      &  nboun_,nodeboun,ndirboun,xboun,iamboun,nam,
      &  inotr,trab,nk,nk_,iponoel,inoel,iponor,xnor,thicke,thickn,
      &  knor,istep,offset,t0,t1,ikforc,ilforc,rig,nforc,
-     &  nforc_,nodeforc,ndirforc,xforc,iamforc,nelemload,sideload,
+     &  nforc_,nodeforc,ndirforc,xforc,iamforc,sideload,
      &  nload,ithermal,ntrans,co,ixfree,ikfree,inoelfree,iponoelmax,
      &  iperturb,tinc,tper,tmin,tmax,ctrl,typeboun,nmethod,nset,set,
      &  istartset,iendset,ialset,prop,ielprop,vold,mi,nkon,ielmat,
@@ -1183,6 +1182,40 @@ c      if((ithermal(1).le.1).and.(nmethod.le.7)) then
             write(*,*) '         calculation'
             filab(16)='      '
          endif
+         ii=0
+         do i=1,nprint
+            if(prlab(i)(1:4).eq.'HFL ') then
+               write(*,*) '*WARNING in calinput: heat flux output'
+               write(*,*) '         requested, yet no heat transfer'
+               write(*,*) '         calculation'
+               cycle
+            elseif(prlab(i)(1:4).eq.'RFL ') then
+               write(*,*) '*WARNING in calinput: heat source output'
+               write(*,*) '         requested, yet no heat transfer'
+               write(*,*) '         calculation'
+               cycle
+            elseif(prlab(i)(1:4).eq.'MF  ') then
+               write(*,*) '*WARNING in calinput: mass flow output'
+               write(*,*) '         requested, yet no heat transfer'
+               write(*,*) '         calculation'
+               cycle
+            elseif(prlab(i)(1:4).eq.'PN  ') then
+               write(*,*) '*WARNING in calinput: pressure output'
+               write(*,*) '         requested, yet no heat transfer'
+               write(*,*) '         calculation'
+               cycle
+            elseif(prlab(i)(1:4).eq.'TS  ') then
+               write(*,*) 
+     &           '*WARNING in calinput: total temperature output'
+               write(*,*) '         requested, yet no heat transfer'
+               write(*,*) '         calculation'
+               cycle
+            endif
+            ii=ii+1
+            prlab(ii)=prlab(i)
+            prset(ii)=prset(i)
+         enddo
+         nprint=ii
       endif
 !
 !     check whether a material was assigned to each active element

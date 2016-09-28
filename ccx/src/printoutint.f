@@ -18,7 +18,7 @@
 !
       subroutine printoutint(prlab,ipkon,lakon,stx,eei,xstate,ener,
      &  mi,nstate_,ii,nelem,qfx,orab,ielorien,norien,co,kon,
-     &  ielmat,thicke,eme,ielprop,prop,nelel)
+     &  ielmat,thicke,eme,ielprop,prop,nelel,ithermal)
 !
 !     stores integration point results for element "nelem" in the .dat file
 !
@@ -34,7 +34,7 @@
       integer ipkon(*),mi(*),nstate_,nelem,l,ii,mint3d,j,k,nope,
      &  ielorien(mi(3),*),norien,kon(*),konl,indexe,m,iorien,iflag,
      &  ielmat(mi(3),*),nopes,mint2d,kk,ki,kl,nlayer,ilayer,
-     &  null,ielprop(*),nelel
+     &  null,ielprop(*),nelel,ithermal(2)
 !
       real*8 stx(6,mi(1),*),eei(6,mi(1),*),xstate(nstate_,mi(1),*),
      &  ener(mi(1),*),qfx(3,mi(1),*),xi,et,ze,xl(3,20),xsj,shp(4,20),
@@ -368,6 +368,7 @@ c         indexe=ipkon(nelel)
                b(3,2)=b(2,3)
                do k=1,3
                   do l=1,3
+                     c(k,l)=0.d0
                      do m=1,3
                         c(k,l)=b(k,m)*a(m,l)
                      enddo
@@ -375,6 +376,7 @@ c         indexe=ipkon(nelel)
                enddo
                do k=1,3
                   do l=k,3
+                     b(k,l)=0.d0
                      do m=1,3
                         b(k,l)=a(m,k)*c(m,l)
                      enddo
@@ -466,8 +468,8 @@ c         indexe=ipkon(nelel)
             write(5,'(i10,1x,i3,1p,99(1x,e13.6))') nelem,j,
      &           (xstate(k,j,nelel),k=1,nstate_)
          enddo
-      elseif((prlab(ii)(1:4).eq.'HFL ').or.(prlab(ii)(1:4).eq.'HFLF'))
-     &         then
+      elseif(((prlab(ii)(1:4).eq.'HFL ').or.(prlab(ii)(1:4).eq.'HFLF'))
+     &        .and.(ithermal(1).gt.1)) then
          do j=1,mint3d
 !
 !           composite materials

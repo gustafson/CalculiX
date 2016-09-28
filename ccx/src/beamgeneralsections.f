@@ -20,7 +20,7 @@
      &  iendset,ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
      &  thicke,ipkon,iponor,xnor,ixfree,offset,lakon,irstrt,istep,
      &  istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,mi,ielprop,nprop,
-     &  nprop_,prop)
+     &  nprop_,prop,nelcon)
 !
 !     reading the input deck: *BEAM GENERAL SECTION
 !
@@ -37,7 +37,8 @@
      &  ipoinpc(0:*),ielorien(mi(3),*),ipkon(*),iline,ipol,inl,lprop,
      &  ipoinp(2,*),inp(3,*),nset,nmat,norien,istep,istat,n,key,i,j,k,l,
      &  imaterial,iorientation,ipos,m,iponor(2,*),ixfree,indexx,indexe,
-     &  irstrt,ielprop(*),nprop_,nprop,npropstart,ndprop,ndpropread
+     &  irstrt,ielprop(*),nprop_,nprop,npropstart,ndprop,ndpropread,
+     &  nelcon(2,*)
 !
       real*8 thicke(mi(3),*),thickness1,thickness2,p(3),xnor(*),
      &  offset(2,*),offset1,offset2,dd,prop(*)
@@ -71,6 +72,9 @@
             if(textpart(i)(9:12).eq.'PIPE') then
                section='PIPE'
                ndprop=2
+            elseif(textpart(i)(9:11).eq.'BOX') then
+               section='BOX'
+               ndprop=6
             else
                write(*,*) 
      &           '*ERROR reading *BEAM GENERAL SECTION: unknown section'
@@ -120,6 +124,12 @@
       if(orientation.eq.'                    
      &                                 ') then
          iorientation=0
+      elseif(nelcon(1,i).eq.2) then
+         write(*,*) '*INFO reading *SOLID SECTION: an orientation'
+         write(*,*) '      is for isotropic materials irrelevant'
+         call inputinfo(inpc,ipoinpc,iline,
+     &"*SOLID SECTION%")
+         iorientation=0
       else
          do i=1,norien
             if(orname(i).eq.orientation) exit
@@ -167,6 +177,8 @@
             offset(2,ialset(j))=offset2
             if(section.eq.'PIPE') then
                lakon(ialset(j))(8:8)='P'
+            elseif(section.eq.'BOX') then
+               lakon(ialset(j))(8:8)='B'
             endif
          else
             k=ialset(j-2)
@@ -187,6 +199,8 @@
                offset(2,k)=offset2
                if(section.eq.'PIPE') then
                   lakon(k)(8:8)='P'
+               elseif(section.eq.'BOX') then
+                  lakon(k)(8:8)='B'
                endif
             enddo
          endif
@@ -221,6 +235,9 @@
       if(section.eq.'PIPE') then
          thickness1=2.d0*prop(npropstart+1)
          thickness2=thickness1
+      elseif(section.eq.'BOX') then
+         thickness1=prop(npropstart+1)
+         thickness2=prop(npropstart+2)
       endif
 !
 !     assigning the thickness and the properties to the elements

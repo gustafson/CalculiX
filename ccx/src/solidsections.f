@@ -19,7 +19,8 @@
       subroutine solidsections(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
      &  lakon,thicke,kon,ipkon,irstrt,istep,istat,n,iline,ipol,inl,
-     &  ipoinp,inp,cs,mcs,iaxial,ipoinpc,mi,co,ixfree,xnor,iponor)
+     &  ipoinp,inp,cs,mcs,iaxial,ipoinpc,mi,co,ixfree,xnor,iponor,
+     &  nelcon)
 !
 !     reading the input deck: *SOLID SECTION
 !
@@ -35,14 +36,15 @@
      &  ielorien(mi(3),*),kon(*),ipkon(*),indexe,irstrt,nset,nmat,
      &  norien,ielem,node1,node2,m,indexx,ixfree,iponor(2,*),
      &  istep,istat,n,key,i,j,k,l,imaterial,iorientation,ipos,
-     &  iline,ipol,inl,ipoinp(2,*),inp(3,*),mcs,iaxial,ipoinpc(0:*)
+     &  iline,ipol,inl,ipoinp(2,*),inp(3,*),mcs,iaxial,ipoinpc(0:*),
+     &  nelcon(2,*)
 !
       real*8 thicke(mi(3),*),thickness,pi,cs(17,*),xn(3),co(3,*),p(3),
      &  dd,xnor(*)
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in solidsections: *SOLID SECTION should'
-         write(*,*) '  be placed before all step definitions'
+         write(*,*) '*ERROR reading *SOLID SECTION: *SOLID SECTION'
+         write(*,*)'       should be placed before all step definitions'
          call exit(201)
       endif
 !
@@ -66,7 +68,7 @@
             elset(ipos:ipos)='E'
          else
             write(*,*) 
-     &        '*WARNING in solidsections: parameter not recognized:'
+     &      '*WARNING reading *SOLID SECTION: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -89,7 +91,8 @@
          enddo
       endif
       if(i.gt.nmat) then
-         write(*,*) '*ERROR in solidsections: nonexistent material'
+         write(*,*) 
+     &      '*ERROR reading *SOLID SECTION: nonexistent material'
          write(*,*) '  '
          call inputerror(inpc,ipoinpc,iline,
      &"*SOLID SECTION%")
@@ -99,12 +102,19 @@
 !
       if(orientation.eq.'                    ') then
          iorientation=0
+      elseif(nelcon(1,i).eq.2) then
+         write(*,*) '*INFO reading *SOLID SECTION: an orientation'
+         write(*,*) '      is for isotropic materials irrelevant'
+         call inputinfo(inpc,ipoinpc,iline,
+     &"*SOLID SECTION%")
+         iorientation=0
       else
          do i=1,norien
             if(orname(i).eq.orientation) exit
          enddo
          if(i.gt.norien) then
-            write(*,*)'*ERROR in solidsections: nonexistent orientation'
+            write(*,*)
+     &       '*ERROR reading *SOLID SECTION: nonexistent orientation'
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
      &"*SOLID SECTION%")
@@ -114,7 +124,8 @@
       endif
 !
       if(ipos.eq.0) then
-         write(*,*) '*ERROR in solidsections: no element set ',elset
+         write(*,*) '*ERROR reading *SOLID SECTION: no element set ',
+     &        elset
          write(*,*) '       was been defined. '
          call inputerror(inpc,ipoinpc,iline,
      &"*SOLID SECTION%")
@@ -125,7 +136,7 @@
       enddo
       if(i.gt.nset) then
          elset(ipos:ipos)=' '
-         write(*,*) '*ERROR in solidsections: element set ',elset
+         write(*,*) '*ERROR reading *SOLID SECTION: element set ',elset
          write(*,*) '  has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
      &"*SOLID SECTION%")
@@ -139,7 +150,8 @@
          if(ialset(j).gt.0) then
             if((lakon(ialset(j))(1:1).eq.'B').or.
      &         (lakon(ialset(j))(1:1).eq.'S')) then
-               write(*,*) '*ERROR in solidsections: *SOLID SECTION can'
+               write(*,*) 
+     &          '*ERROR reading *SOLID SECTION: *SOLID SECTION can'
                write(*,*) '       not be used for beam or shell elements
      &'
                write(*,*) '       Faulty element: ',ialset(j)
@@ -154,8 +166,8 @@
                if(k.ge.ialset(j-1)) exit
                if((lakon(k)(1:1).eq.'B').or.
      &              (lakon(k)(1:1).eq.'S')) then
-                  write(*,*) '*ERROR in solidsections: *SOLID SECTION ca
-     &n'
+                  write(*,*) '*ERROR reading *SOLID SECTION: *SOLID SECT
+     &ION can'
                   write(*,*) '       not be used for beam or shell eleme
      &nts'
                   write(*,*) '       Faulty element: ',k
@@ -173,7 +185,7 @@
 !     assigning a thickness to plane stress elements and an angle to
 !     axisymmetric elements
 !
-      if((key.eq.0).or.(lakon(ialset(istartset(i)))(1:2).eq.'CA')) then
+cccc      if((key.eq.0).or.(lakon(ialset(istartset(i)))(1:2).eq.'CA')) then
          if(key.eq.0) then
             read(textpart(1)(1:20),'(f20.0)',iostat=istat) thickness
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
@@ -193,12 +205,12 @@
                   thickness=thickness/iaxial
                endif
             endif
-         else
-            thickness=datan(1.d0)*8.d0/iaxial
-         endif
+cccc         else
+cccc            thickness=datan(1.d0)*8.d0/iaxial
+cccc         endif
 !
 !        assigning the thickness to each node of the corresponding
-!        elements
+!        elements (thickness specified)
 !
          do j=istartset(i),iendset(i)
             if(ialset(j).gt.0) then
@@ -334,6 +346,43 @@
                enddo
             endif
          enddo
+         else
+!
+!        assigning the thickness to each node of the corresponding
+!        elements (thickness not specified: only axisymmetric elements)
+!
+            thickness=datan(1.d0)*8.d0/iaxial
+         do j=istartset(i),iendset(i)
+            if(ialset(j).gt.0) then
+               if(lakon(ialset(j))(1:2).eq.'CA') then
+c                  write(*,*) 'solidsections ',
+c     &               ialset(j),lakon(ialset(j)),thickness
+!
+!                 axisymmetric elements
+!
+                  indexe=ipkon(ialset(j))
+                  do l=1,8
+                     thicke(1,indexe+l)=thickness
+                  enddo
+               endif
+            else
+               k=ialset(j-2)
+               do
+                  k=k-ialset(j)
+                  if(k.ge.ialset(j-1)) exit
+                  if(lakon(k)(1:2).eq.'CA') then
+!
+!                 axisymmetric elements
+!
+                     indexe=ipkon(k)
+                     do l=1,8
+                        thicke(1,indexe+l)=thickness
+                     enddo
+                  endif
+               enddo
+            endif
+         enddo
+         endif
 !
 !        defining cyclic symmetric conditions for axisymmetric
 !        elements (needed for cavity radiation)
@@ -342,14 +391,14 @@
             if(ialset(j).gt.0) then
                if(lakon(ialset(j))(1:2).eq.'CA') then
                   if(mcs.gt.1) then
-                     write(*,*) '*ERROR in solidsections: '
+                     write(*,*) '*ERROR reading *SOLID SECTION: '
                      write(*,*) '       axisymmetric elements cannot be
      &combined with cyclic symmetry'
                      call exit(201)
                   elseif(mcs.eq.1) then
                      if(int(cs(1,1)).ne.int(2.d0*pi/thickness+0.5d0)) 
      &                 then
-                        write(*,*) '*ERROR in solidsections: '
+                        write(*,*) '*ERROR reading *SOLID SECTION: '
                         write(*,*) '       it is not allowed to define t
      &wo different'
                         write(*,*) '       angles for an axisymmetric st
@@ -383,14 +432,14 @@
 c                  if(lakon(ialset(j))(1:2).eq.'CA') then
                   if(lakon(k)(1:2).eq.'CA') then
                      if(mcs.gt.1) then
-                        write(*,*) '*ERROR in solidsections: '
+                        write(*,*) '*ERROR reading *SOLID SECTION: '
                         write(*,*) '       axisymmetric elements cannot 
      &be combined with cyclic symmetry'
                         call exit(201)
                      elseif(mcs.eq.1) then
                         if(int(cs(1,1)).ne.int(2.d0*pi/thickness+0.5d0)) 
      &                       then
-                           write(*,*) '*ERROR in solidsections: '
+                           write(*,*) '*ERROR reading *SOLID SECTION: '
                            write(*,*) '       it is not allowed to defin
      &e two different'
                            write(*,*) '       angles for an axisymmetric
@@ -424,7 +473,7 @@ c                  if(lakon(ialset(j))(1:2).eq.'CA') then
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
          endif
-      endif
+cccc      endif
 !
       return
       end

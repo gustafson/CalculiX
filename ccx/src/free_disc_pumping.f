@@ -19,7 +19,7 @@
       subroutine free_disc_pumping(node1,node2,nodem,nelem,lakon,kon,
      &        ipkon,nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,iaxial)
+     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,iaxial)
 !     
 !     Free-Disc-Pump-Flow
 !     
@@ -33,7 +33,7 @@
      &     ielprop(*),nodef(4),idirf(4),index,iflag,iaxial,
      &     ipkon(*),kon(*),mi(*),nrhcon(*),ntmat_,nshcon(*)
 !     
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),ttime,time,
      &     physcon(3),co(3,*),vold(0:mi(2),*),r,cp,dvi,
      &     shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*)
 !

@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine extrapolate_vel(nface,ielfa,xrlfa,vel,vfa,
-     &  ifabou,xboun,ipnei,nef)
+     &  ifabou,xboun,ipnei,nef,icyclic,c,ifatie)
 !
 !     inter/extrapolation of v at the center of the elements
 !     to the center of the faces
@@ -25,12 +25,14 @@
       implicit none
 !
       integer nface,ielfa(4,*),ifabou(*),iel1,iel2,iel3,i,j,ipointer,
-     &  indexf,ipnei(*),nef
+     &  indexf,ipnei(*),nef,icyclic,ifatie(*)
 !
-      real*8 xrlfa(3,*),vel(nef,0:5),vfa(0:5,*),xboun(*),xl1,xl2
+      real*8 xrlfa(3,*),vel(nef,0:5),vfa(0:5,*),xboun(*),xl1,xl2,
+     &  c(3,3)
 !
 c$omp parallel default(none)
-c$omp& shared(nface,ielfa,xrlfa,vfa,vel,ipnei,ifabou,xboun)
+c$omp& shared(nface,ielfa,xrlfa,vfa,vel,ipnei,ifabou,xboun,
+c$omp&        icyclic,c,ifatie)
 c$omp& private(i,iel1,xl1,iel2,xl2,j,iel3,ipointer,indexf)
 c$omp do
       do i=1,nface
@@ -39,9 +41,25 @@ c$omp do
          iel2=ielfa(2,i)
          if(iel2.gt.0) then
             xl2=xrlfa(2,i)
-            do j=1,3
-               vfa(j,i)=xl1*vel(iel1,j)+xl2*vel(iel2,j)
-            enddo
+            if((icyclic.eq.0).or.(ifatie(i).eq.0)) then
+               do j=1,3
+                  vfa(j,i)=xl1*vel(iel1,j)+xl2*vel(iel2,j)
+               enddo
+            elseif(ifatie(i).gt.0) then
+               do j=1,3
+                  vfa(j,i)=xl1*vel(iel1,j)+xl2*
+     &              (c(j,1)*vel(iel2,1)
+     &              +c(j,2)*vel(iel2,2)
+     &              +c(j,3)*vel(iel2,3))
+               enddo
+            else
+               do j=1,3
+                  vfa(j,i)=xl1*vel(iel1,j)+xl2*
+     &              (c(1,j)*vel(iel2,1)
+     &              +c(2,j)*vel(iel2,2)
+     &              +c(3,j)*vel(iel2,3))
+               enddo
+            endif
          else
             indexf=ipnei(iel1)+ielfa(4,i)
             iel3=ielfa(3,i)
@@ -118,5 +136,12 @@ c$omp do
 c$omp end do
 c$omp end parallel
 !
+c      write(*,*) 'extrapolate_vel '
+c      do i=1,nef
+c         write(*,*) i,(vel(i,j),j=0,5)
+c      enddo
+c      do i=1,nface
+c         write(*,*) i,(vfa(j,i),j=0,5)
+c      enddo
       return
       end

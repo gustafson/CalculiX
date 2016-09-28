@@ -83,7 +83,7 @@
 !     
                do k=1,3
                   jdof=nactdof(k,node)
-                  if(jdof.ne.0) then
+                  if(jdof.gt.0) then
                      zc(jdof,i)=zc(jdof,i)-force(k)
                   else
 !     
@@ -101,7 +101,7 @@
                            do
                               jdof=nactdof(nodempc(2,index),
      &                             nodempc(1,index))
-                              if(jdof.ne.0) then
+                              if(jdof.gt.0) then
                                  zc(jdof,i)=zc(jdof,i)-
      &                              coefmpc(index)*force(k)/coefmpc(ist)
                               endif

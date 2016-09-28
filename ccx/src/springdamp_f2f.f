@@ -29,7 +29,7 @@
       integer i,j,imat,ncmat_,ntmat_,k,l,nope,iflag,iperturb(*),
      &  nmethod,mi(*),nasym,jfaces,igauss,nopem,nopes,nopep
 !
-      real*8 xl(3,19),elas(21),pproj(3),shp2m(7,9),al(3),s(100,100),
+      real*8 xl(3,19),elas(21),pproj(3),shp2m(7,9),al(3),s(60,60),
      &  voldl(0:mi(2),19),pl(3,19),xn(3),c3,elcon(0:ncmat_,ntmat_,*),
      &  xm(3),dval(3,19),fpu(3,3,19),xi,et,dal(3,3,19),xs2(3,7),xk,
      &  stickslope,springarea(2),tu(3,3,19),clear,reltime,

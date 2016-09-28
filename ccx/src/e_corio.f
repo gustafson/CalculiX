@@ -55,14 +55,14 @@
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),prop(*),
-     &  s(100,100),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),ff(100),
+     &  s(60,60),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),ff(60),
      &  bf(3),q(3),shpj(4,20),elcon(0:ncmat_,ntmat_,*),
      &  rhcon(0:1,ntmat_,*),xkl(3,3),eknlsign,reltime,
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
      &  anisox(3,3,3,3),voldl(0:mi(2),20),vo(3,3),
      &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),xload(2,*),
      &  v(3,3,3,3),
-     &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(100,100),
+     &  om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(60,60),
      &  sti(6,mi(1),*),stx(6,mi(1),*),s11,s22,s33,s12,s13,s23,s11b,
      &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,
      &  senergy,senergyb,rho,elas(21),
@@ -71,7 +71,7 @@
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),plconloc(802),dtime,ttime,time,
-     &  sax(100,100),ffax(100),gs(8,4),a
+     &  sax(60,60),ffax(60),gs(8,4),a
 !
       data iflag /3/
       data iperm /13,14,-15,16,17,-18,19,20,-21,22,23,-24,

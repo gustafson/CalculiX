@@ -90,7 +90,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
     nalset_=*nalset,*ialset=*ialsetp,*istartset_=NULL,*iendset_=NULL,
     *itiefac=NULL,*islavsurf=NULL,*islavnode=NULL,mt=mi[1]+1,
     *imastnode=NULL,*nslavnode=NULL,*nmastnode=NULL,mortar=0,*imastop=NULL,
-    *iponoels=NULL,*inoels=NULL,*imddof=NULL,nmddof,
+    *iponoels=NULL,*inoels=NULL,*imddof=NULL,nmddof,inoelsize,
     *ikactcont=NULL,nactcont,nactcont_=100,*ikactmech=NULL,nactmech,
     iabsload=0,*ipe=NULL,*ime=NULL,iprev=1,inonlinmpc=0,ielem,
     *imdnode=NULL,nmdnode,*imdboun=NULL,nmdboun,*imdmpc=NULL,
@@ -275,7 +275,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
       
       NNEW(iponoel,ITG,*nk);
       NNEW(inoel,ITG,2**nkon);
-      FORTRAN(elementpernode,(iponoel,inoel,lakon,ipkon,kon,ne));
+      FORTRAN(elementpernode,(iponoel,inoel,lakon,ipkon,kon,ne,&inoelsize));
       NNEW(imdelem,ITG,*ne);
 
       /* storing the elements in which integration point results
@@ -884,7 +884,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
     
     for(i=0;i<*nk;i++){
       for(j=0;j<mt;j++){
-	if(nactdof[mt*i+j]!=0){
+	if(nactdof[mt*i+j]>0){
 	  idof=nactdof[mt*i+j]-1;
 	  temp_array1[idof]=vold[mt*i+j];
 	}
@@ -904,7 +904,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
     for(i=0;i<neq[1];i++){temp_array1[i]=0;temp_array2[i]=0;}
     for(i=0;i<*nk;i++){
       for(j=0;j<mt;j++){
-	if(nactdof[mt*i+j]!=0){
+	if(nactdof[mt*i+j]>0){
 	  idof=nactdof[mt*i+j]-1;
 	  temp_array1[idof]=veold[mt*i+j];
 	}
@@ -1866,7 +1866,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 		thicke,shcon,nshcon,
 		sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		&mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-                islavsurf,ielprop,prop,energyini,energy,&iit);
+                islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,inoel);
 
 	/* restoring */
 

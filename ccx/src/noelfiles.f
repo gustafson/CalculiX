@@ -68,7 +68,10 @@
 !        reset the nodal output requests
 !
          if(.not.nodefile_flag) then
-            filab(1)(1:4)='    '
+            filab(1)(1:2)='  '
+            if((.not.elfile_flag).and.(.not.contactfile_flag)) then
+               filab(1)(3:4)='  '
+            endif
             filab(2)(1:4)='    '
             filab(5)(1:4)='    '
             do j=10,12
@@ -118,7 +121,9 @@
 !
 !           reset "last iterations" and "contact elements"
 !
-            filab(1)(3:4)='  '
+            if((.not.nodefile_flag).and.(.not.contactfile_flag)) then
+               filab(1)(3:4)='  '
+            endif
             filab(3)(1:4)='    '
             filab(4)(1:4)='    '
             do j=6,9
@@ -159,7 +164,9 @@
 !
 !           reset "last iterations" and "contact elements"
 !
-            filab(1)(3:4)='  '
+            if((.not.nodefile_flag).and.(.not.elfile_flag)) then
+               filab(1)(3:4)='  '
+            endif
             filab(26)(1:4)='    '
             filab(26)(6:87)='    '
             filab(27)(1:4)='    '

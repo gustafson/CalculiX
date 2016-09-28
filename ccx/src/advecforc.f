@@ -18,7 +18,8 @@
 !
       subroutine advecforc(nope,voldl,ithermal,xl,nelemload,nelemadvec,
      &  nload,lakon,xload,istep,time,ttime,dtime,sideload,vold,mi,
-     &  xloadold,reltime,nmethod,tnl,iinc)
+     &  xloadold,reltime,nmethod,tnl,iinc,iponoel,inoel,ielprop,prop,
+     &  ielmat,shcon,nshcon,rhcon,nrhcon,ntmat_,ipkon,kon,cocon,ncocon)
 !
 !     calculates the stiffness of an advective element.
 !     An advective element consists of a face with a forced convection
@@ -31,12 +32,21 @@
 !
       integer nope,i,ithermal(2),j,nelemload(2,*),nelemadvec,nload,id,
      &  nelem,ig,mint2d,iflag,istep,jltyp,nfield,mi(*),nmethod,k,iinc,
-     &  node,nopes
+     &  node,nopes,iponoel(*),inoel(2,*),ielprop(*),ielmat(*),ipkon(*),
+     &  nshcon(*),nrhcon(*),ntmat_,kon(*),ncocon(2,*)
 !
       real*8 tl2(9),voldl(0:mi(2),20),xl(3,9),sinktemp,xi,et,weight,
      &  xl2(3,8),xsj2(3),shp2(7,9),coords(3),xs2(3,7),dxsj2,areaj,
      &  temp,xload(2,*),timeend(2),time,ttime,dtime,field,reltime,
-     &  vold(0:mi(2),*),xloadold(2,*),tnl(9),tnlref
+     &  vold(0:mi(2),*),xloadold(2,*),tnl(9),tnlref,prop(*),
+     &  shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),cocon(0:6,ntmat_,*)
+!
+      intent(in) nope,voldl,ithermal,xl,nelemload,nelemadvec,
+     &  nload,lakon,istep,time,ttime,dtime,sideload,vold,mi,
+     &  xloadold,reltime,nmethod,iinc,iponoel,inoel,ielprop,prop,
+     &  ielmat,shcon,nshcon,rhcon,nrhcon,ntmat_,ipkon,kon,cocon,ncocon
+!
+      intent(inout) xload,tnl
 !
       include "gauss.f"
 !
@@ -185,7 +195,9 @@ c            jltyp=jltyp+10
             sideloadl(1:1)='F'
             call film(xload(1,id),sinktemp,temp,istep,
      &           iinc,timeend,nelem,i,coords,jltyp,field,nfield,
-     &           sideloadl,node,areaj,vold,mi)
+     &           sideloadl,node,areaj,vold,mi,
+     &           ipkon,kon,lakon,iponoel,inoel,ielprop,prop,ielmat,
+     &           shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon)
             if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
      &           (xload(1,id)-xloadold(1,id))*reltime
          endif

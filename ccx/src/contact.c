@@ -93,7 +93,7 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
           imastop,nslavnode,islavnode,islavsurf,itiefac,areaslav,iponoels,
           inoels,springarea,
           set,nset,istartset,iendset,ialset,tietol,reltime,
-	  filab,nasym,xnoels,icutb));
+	  filab,nasym,xnoels,icutb,ne0));
 
     }else if(*mortar==1){
 

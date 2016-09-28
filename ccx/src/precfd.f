@@ -20,7 +20,8 @@
      &  nodface,ielfa,nkonnei,nface,ifaext,nfaext,
      &  isolidsurf,nsolidsurf,set,nset,istartset,iendset,ialset,
      &  vel,vold,mi,neij,nef,nactdoh,ipkonf,lakonf,ielmatf,ielmat,
-     &  ielorienf,ielorien,norien)
+     &  ielorienf,ielorien,norien,cs,mcs,tieset,x,y,z,xo,yo,zo,nx,
+     &  ny,nz,co,ifatie)
 !
 !     gathering topological information for computational fluid 
 !     dynamics calculations
@@ -28,19 +29,23 @@
       implicit none
 !
       character*8 lakon(*),lakonf(*)
-      character*81 set(*),noset
+      character*81 set(*),noset,tieset(3,*),slavset,mastset
 !
       integer ne,ipkon(*),ipnei(*),ipoface(*),nodface(5,*),neifa(*),
      &  ielfa(4,*),nkonnei,nface,i,j,k,index,indexe,neiel(*),ithree,
-     &  nfaext,ifaext(*),isolidsurf(*),nsolidsurf,indexf,
+     &  nfaext,ifaext(*),isolidsurf(*),nsolidsurf,indexf,nneigh,
      &  nset,istartset(*),iendset(*),ialset(*),iaux,kflag,ifour,iel2,
      &  ifaceq(8,6),ifacet(7,4),ifacew(8,5),kon(*),nodes(4),iel1,j2,
      &  indexold,ifree,ifreenew,ifreenei,mi(*),neij(*),ifreenei2,nef,
      &  nactdoh(*),ipkonf(*),ielmatf(mi(3),*),ielmat(mi(3),*),nf(5),
      &  nope,ielorien(mi(3),*),ielorienf(mi(3),*),norien,jopposite8(6),
-     &  jopposite6(5)
+     &  jopposite6(5),itie,nx(*),ny(*),nz(*),noden(1),nelemm,nelems,
+     &  n,mcs,l,jfacem,jfaces,islav,imast,ifaces,ifacem,ifatie(*),
+     &  nodeinface,nodeoutface,nopes
 !
-      real*8 vel(nef,0:5),vold(0:mi(2),*)
+      real*8 vel(nef,0:5),vold(0:mi(2),*),coords(3),cs(17,*),x(*),
+     &  y(*),z(*),xo(*),yo(*),zo(*),co(3,*),a(3),b(3),xn(3),p(3),
+     &  q(3),c(3,3),dot,dc,ds,dd,theta,pi
 !
 !     nodes belonging to the element faces
 !
@@ -313,6 +318,327 @@ c         write(*,*) 'precfd ',i,nactdoh(i)
       nkonnei=ifreenei
       nface=ifree-1
 !
+!     check for cyclic symmetry (translational or rotational)
+!
+      do i=1,mcs
+         itie=int(cs(17,i))
+         if((tieset(1,itie)(81:81).ne.'P').and.
+     &      (tieset(1,itie)(81:81).ne.'Z')) cycle
+!
+         slavset=tieset(2,itie)
+         mastset=tieset(3,itie)
+!
+         do j=1,nset
+            if(set(j).eq.slavset) exit
+         enddo
+         islav=j
+!
+         do j=1,nset
+            if(set(j).eq.mastset) exit
+         enddo
+         imast=j
+!
+!        catalogueing the center of gravity of the master faces
+!         
+         n=0
+         do j=istartset(imast),iendset(imast)
+            ifacem=ialset(j)
+!
+            nelemm=int(ifacem/10)
+            jfacem=ifacem-nelemm*10
+!
+!           taking the renumbering of the elements into account
+!
+            nelemm=nactdoh(nelemm)
+!
+            indexe=ipkonf(nelemm)
+!
+!           determination of the face center of the master face
+!     
+            if(lakonf(nelemm)(4:4).eq.'8') then
+               do l=1,3
+                  coords(l)=0.d0
+               enddo
+               do k=1,4
+                  nodes(k)=kon(indexe+ifaceq(k,jfacem))
+                  do l=1,3
+                     coords(l)=coords(l)+co(l,nodes(k))
+                  enddo
+               enddo
+               do l=1,3
+                  coords(l)=coords(l)/4.d0
+               enddo
+            elseif(lakonf(nelemm)(4:4).eq.'6') then
+               do l=1,3
+                  coords(l)=0.d0
+               enddo
+               do k=1,nf(jfacem)
+                  nodes(k)=kon(indexe+ifacew(k,jfacem))
+                  do l=1,3
+                     coords(l)=coords(l)+co(l,nodes(k))
+                  enddo
+               enddo
+               do l=1,3
+                  coords(l)=coords(l)/nf(jfacem)
+               enddo
+            else
+               do l=1,3
+                  coords(l)=0.d0
+               enddo
+               do k=1,3
+                  nodes(k)=kon(indexe+ifaceq(k,jfacem))
+                  do l=1,3
+                     coords(l)=coords(l)+co(l,nodes(k))
+                  enddo
+               enddo
+               do l=1,3
+                  coords(l)=coords(l)/3.d0
+               enddo
+            endif
+!
+            if(j.eq.istartset(imast)) then
+               if(tieset(1,itie)(81:81).eq.'Z') then
+!
+!                 check the correct oprientation of the axis vector
+!
+                  if(lakonf(nelemm)(4:4).eq.'8') then
+                     nope=8
+                     nopes=4
+                  elseif(lakonf(nelemm)(4:4).eq.'6') then
+                     nope=6
+                     nopes=nf(jfacem)
+                  else
+                     nope=4
+                     nopes=3
+                  endif
+!
+!                 two nodes on the axis
+!
+                  do k=1,3
+                     a(k)=cs(5+k,i)
+                     b(k)=cs(8+k,i)
+                  enddo
+!
+!                 looking for a master node not on the axis
+!
+                  do k=1,nopes
+                     if((co(1,nodes(k))-a(1))**2+
+     &                  (co(2,nodes(k))-a(2))**2+
+     &                  (co(3,nodes(k))-a(3))**2.gt.1.d-20) exit
+                  enddo
+                  nodeinface=nodes(k)
+!
+!                 looking for a node belonging to the same element
+!                 but not in the master face
+!
+                  loop:do k=1,nope
+                     nodeoutface=kon(indexe+k)
+                     do l=1,nopes
+                        if(nodes(l).eq.nodeoutface) cycle loop
+                     enddo
+                     exit
+                  enddo loop
+!
+!                 normalized vector along the axis
+!
+                  dd=dsqrt((b(1)-a(1))**2+
+     &                     (b(2)-a(2))**2+
+     &                     (b(3)-a(3))**2)
+                  do k=1,3
+                     xn(k)=(b(k)-a(k))/dd
+                  enddo
+!
+!                 vector connecting a on the axis with 
+!                 nodeinface and nodeoutface
+!
+                  do k=1,3
+                     p(k)=co(k,nodeinface)-a(k)
+                     q(k)=co(k,nodeoutface)-a(k)
+                  enddo
+!
+!                 n.(pxq) must be negative for the axis vector
+!                 to have the right orientation (= you turn from the
+!                 slave surface to the master surface through the
+!                 body in clockwise direction while looking in 
+!                 the direction of xn)
+!
+                  dot=xn(1)*(p(2)*q(3)-q(2)*p(3))
+     &               +xn(2)*(p(3)*q(1)-q(3)*p(1))
+     &               +xn(3)*(p(1)*q(2)-q(1)*p(2))
+!
+!                 revert the direction of the axis if not correct
+!
+                  if(dot.gt.0.d0) then
+                     do k=1,3
+                        b(k)=2.d0*a(k)-b(k)
+                        cs(8+k,i)=b(k)
+                        xn(k)=-xn(k)
+                     enddo
+                  endif
+!
+!                 angle from the master to the slave surface
+!
+                  pi=4.d0*datan(1.d0)
+                  theta=-2.d0*pi/cs(1,i)
+!
+!                 rotation matrix rotating a vector in the master
+!                 surface into a vector in the slave surface
+!
+                  dc=dcos(theta)
+                  ds=dsin(theta)
+!
+!                 C-matrix from Guido Dhondt, The Finite Element
+!                 Method for Three-Dimensional Thermomechanical
+!                 Applications p 158
+!     
+                  c(1,1)=dc+(1.d0-dc)*xn(1)*xn(1)
+                  c(1,2)=   (1.d0-dc)*xn(1)*xn(2)-ds*xn(3)
+                  c(1,3)=   (1.d0-dc)*xn(1)*xn(3)+ds*xn(2)
+                  c(2,1)=   (1.d0-dc)*xn(2)*xn(1)+ds*xn(3)
+                  c(2,2)=dc+(1.d0-dc)*xn(2)*xn(2)
+                  c(2,3)=   (1.d0-dc)*xn(2)*xn(3)-ds*xn(1)
+                  c(3,1)=   (1.d0-dc)*xn(3)*xn(1)-ds*xn(2)
+                  c(3,2)=   (1.d0-dc)*xn(3)*xn(2)+ds*xn(1)
+                  c(3,3)=dc+(1.d0-dc)*xn(3)*xn(3)
+               endif
+            endif
+!
+!           storing the face centers (translated from the master
+!           face into the slave face) in the vectors x,y and z
+!            
+            n=n+1
+            if(tieset(1,itie)(81:81).eq.'P') then
+               x(n)=coords(1)-cs(6,i)
+               y(n)=coords(2)-cs(7,i)
+               z(n)=coords(3)-cs(8,i)
+            else
+!
+!              vector orthogonal to axis (in the master surface)
+!
+               do k=1,3
+                  p(k)=coords(k)-a(k)
+               enddo
+               dd=p(1)*xn(1)+p(2)*xn(2)+p(3)*xn(3)
+               do k=1,3
+                  p(k)=p(k)-dd*xn(k)
+               enddo
+!
+!              vector rotated into the slave surface
+!
+               do k=1,3
+                  q(k)=c(k,1)*p(1)+c(k,2)*p(2)+c(k,3)*p(3)
+               enddo
+!
+!              rotated node in the slave surface
+!
+               x(n)=coords(1)+q(1)-p(1)
+               y(n)=coords(2)+q(2)-p(2)
+               z(n)=coords(3)+q(3)-p(3)
+            endif
+         enddo
+!
+!        preparing the fields for near3d
+!
+         do j=1,n
+            nx(j)=j
+            ny(j)=j
+            nz(j)=j
+            xo(j)=x(j)
+            yo(j)=y(j)
+            zo(j)=z(j)
+         enddo
+         kflag=2
+         call dsort(x,nx,n,kflag)
+         call dsort(y,ny,n,kflag)
+         call dsort(z,nz,n,kflag)
+!
+!        loop over all slave faces
+!
+         do j=istartset(islav),iendset(islav)
+            ifaces=ialset(j)
+!
+            nelems=int(ifaces/10)
+            jfaces=ifaces-nelems*10
+!
+!           taking the renumbering of the elements into account
+!
+            nelems=nactdoh(nelems)
+!
+            indexe=ipkonf(nelems)
+!
+!           determination of the face center of the slave face
+!     
+            if(lakonf(nelems)(4:4).eq.'8') then
+               do l=1,3
+                  coords(l)=0.d0
+               enddo
+               do k=1,4
+                  nodes(k)=kon(indexe+ifaceq(k,jfaces))
+                  do l=1,3
+                     coords(l)=coords(l)+co(l,nodes(k))
+                  enddo
+               enddo
+               do l=1,3
+                  coords(l)=coords(l)/4.d0
+               enddo
+            elseif(lakonf(nelems)(4:4).eq.'6') then
+               do l=1,3
+                  coords(l)=0.d0
+               enddo
+               do k=1,nf(jfaces)
+                  nodes(k)=kon(indexe+ifacew(k,jfaces))
+                  do l=1,3
+                     coords(l)=coords(l)+co(l,nodes(k))
+                  enddo
+               enddo
+               do l=1,3
+                  coords(l)=coords(l)/nf(jfaces)
+               enddo
+            else
+               do l=1,3
+                  coords(l)=0.d0
+               enddo
+               do k=1,3
+                  nodes(k)=kon(indexe+ifaceq(k,jfaces))
+                  do l=1,3
+                     coords(l)=coords(l)+co(l,nodes(k))
+                  enddo
+               enddo
+               do l=1,3
+                  coords(l)=coords(l)/3.d0
+               enddo
+            endif
+!
+            nneigh=1
+            call near3d(xo,yo,zo,x,y,z,nx,ny,nz,coords(1),
+     &           coords(2),coords(3),n,noden,nneigh)
+!
+            ifacem=ialset(istartset(imast)+noden(1)-1)
+!
+            nelemm=int(ifacem/10)
+            jfacem=ifacem-nelemm*10
+!
+!           taking the renumbering of the elements into account
+!
+            nelemm=nactdoh(nelemm)
+!
+            ielfa(2,neifa(ipnei(nelems)+jfaces))=nelemm
+            ielfa(2,neifa(ipnei(nelemm)+jfacem))=nelems
+!
+            neiel(ipnei(nelems)+jfaces)=nelemm
+            neiel(ipnei(nelemm)+jfacem)=nelems
+!
+            neij(ipnei(nelems)+jfaces)=jfacem
+            neij(ipnei(nelemm)+jfacem)=jfaces
+!
+!           field indicating whether a face (slave: +, master: -)
+!           is part of a cyclic symmetry condition i
+!
+            ifatie(neifa(ipnei(nelems)+jfaces))=i
+            ifatie(neifa(ipnei(nelemm)+jfacem))=-i
+         enddo
+      enddo
+!
 !     catalogueing external faces
 !
       nfaext=0
@@ -321,10 +647,6 @@ c         write(*,*) 'precfd ',i,nactdoh(i)
          if(ielfa(2,i).ne.0) cycle
          nfaext=nfaext+1
          ifaext(nfaext)=i
-c         j=ielfa(4,i)
-c         iel1=ielfa(1,i)
-c         indexf=ipnei(iel1)
-c         j=jopposite(j)
          iel1=ielfa(1,i)
          if(lakonf(iel1)(4:4).eq.'8') then
             j=ielfa(4,i)
@@ -340,15 +662,13 @@ c         j=jopposite(j)
          ielfa(3,i)=neiel(indexf+j)
       enddo
 !
-c      do i=1,ne
-c         k=nactdoh(i)
-c         if(k.eq.0) cycle
-c         write(*,*)'precfd neiel',i,k,ipnei(k),(neiel(ipnei(k)+j),j=1,6)
-c         write(*,*)'precfd neij',i,k,ipnei(k),(neij(ipnei(k)+j),j=1,6)
-c         write(*,*)'precfd neifa',i,k,ipnei(k),(neifa(ipnei(k)+j),j=1,6)
+c      do i=1,nef
+c         write(*,*)'precfd neiel',i,ipnei(i),(neiel(ipnei(i)+j),j=1,6)
+c         write(*,*)'precfd neij',i,ipnei(i),(neij(ipnei(i)+j),j=1,6)
+c         write(*,*)'precfd neifa',i,ipnei(i),(neifa(ipnei(i)+j),j=1,6)
 c      enddo
 c      do k=1,nface
-c         write(*,*) 'precfd ielfa',k,(ielfa(j,k),j=1,4)
+c         write(*,*) 'precfd ielfa',k,(ielfa(j,k),j=1,4),ifatie(k)
 c      enddo
 c      do k=1,nfaext
 c         write(*,*) 'precfd ifaext',k,ifaext(k)

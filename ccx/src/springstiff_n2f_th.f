@@ -32,7 +32,7 @@
      &  iperturb(*),mi(*),node,noel,istep,iinc,npred
 !
       real*8 xl(3,10),ratio(9),q(3),val,shp2(7,9),ak(5),
-     &  al(3),s(100,100),voldl(0:mi(2),10),pl(3,10),xn(3),dm,
+     &  al(3),s(60,60),voldl(0:mi(2),10),pl(3,10),xn(3),dm,
      &  alpha,beta,elcon(0:ncmat_,ntmat_,*),xm(3),pressure,
      &  xi,et,xs2(3,7),t1l,elconloc(21),plconloc(802),xk,
      &  xiso(200),yiso(200),plkcon(0:2*npmat_,ntmat_,*),

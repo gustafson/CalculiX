@@ -159,6 +159,20 @@
 !     check whether sigma_at_infinity is given for node-to-face penalty 
 !     contact with a linear pressure-overclosure relationship
 !
+      if(ncmat_<2) then
+         write(*,*) 
+     &     '*ERROR reading *CONTACT PAIR: no PRESSURE-OVERCLOSURE'
+         write(*,*) 
+     &   '       has been defined for at least one *CONTACT INTERACTION'
+         call exit(201)
+      elseif(int(elcon(3,1,i)).le.0) then
+         write(*,*) 
+     &     '*ERROR reading *CONTACT PAIR: no PRESSURE-OVERCLOSURE'
+         write(*,*) 
+     &   '       has been defined for at least one *CONTACT INTERACTION'
+         call exit(201)
+      endif
+!
       if(int(elcon(3,1,i)).eq.2) then
          if(mortar.eq.0) then
             if(elcon(1,1,i).lt.1.d-30) then

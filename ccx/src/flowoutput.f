@@ -23,27 +23,112 @@
       subroutine flowoutput(itg,ieg,ntg,nteq,bc,lakon,ntmat_,
      &     v,shcon,nshcon,ipkon,kon,co,nflow, dtime,ttime,time,
      &     ielmat,prop,ielprop,nactdog,nacteq,iin,physcon,
-     &     camt,camf,camp,uamt,uamf,uamp,rhcon,nrhcon,
+     &     camt,camf,camp,rhcon,nrhcon,
      &     vold,jobnamef,set,istartset,iendset,ialset,nset,mi,iaxial)
 !     
       implicit none
 !     
+      logical identity
+!
       character*8 lakon(*)
-      character*132 jobnamef(*)
       character*81 set(*)
+      character*132 jobnamef(*),fnnet
 !     
       integer mi(*),itg(*),ieg(*),ntg,nflow,ielmat(mi(3),*),i,
-     &     nrhcon(*),node,iaxial,
+     &     nrhcon(*),node,iaxial,ider,idirf(5),ieq,imat,kflag,
      &     ntmat_,nteq,nshcon(*),nelem,index,ipkon(*),kon(*),iin,
-     &     nactdog(0:3,*),nacteq(0:3,*),ielprop(*),
-     &     istartset(*),iendset(*),ialset(*),nset
+     &     nactdog(0:3,*),nacteq(0:3,*),ielprop(*),node1,nodem,node2,
+     &     istartset(*),iendset(*),ialset(*),nset,nodef(5),numf
 !     
       real*8 physcon(3),v(0:mi(2),*),shcon(0:3,ntmat_,*),co(3,*),
      &     prop(*),dtime,ttime,time,xflow,camt(*),camf(*),camp(*),
      &     rhcon(0:1,ntmat_,*),vold(0:mi(2),*),uamt,uamf,uamp,eta,
-     &     bc(*)
+     &     bc(*),cp,dvi,df,gastemp,f,g,r,rho,ts1,ts2,tg1,tg2
+!     
+      do i=1,132
+         if(jobnamef(1)(i:i).eq.' ') exit
+      enddo
+      i=i-1
+      fnnet=jobnamef(1)(1:i)//'.net'
+      open(1,file=fnnet,status='unknown')
+!
+      kflag=3
 !
       do i=1,nflow
+         nelem=ieg(i)
+!     
+!        output for gas networks
+!
+         if((lakon(nelem)(2:5).ne.'LIPI').and.
+     &      (lakon(nelem)(2:5).ne.'LICH')) then
+!     
+            index=ipkon(nelem)
+            node1=kon(index+1)
+            nodem=kon(index+2)
+            node2=kon(index+3)
+!
+            if(lakon(nelem)(2:3).ne.'LP') then
+!
+!              incompressible
+!
+               if(node1.eq.0) then
+                  tg1=v(0,node2)
+                  tg2=tg1
+                  ts1=v(3,node2)
+                  ts2=ts1
+               elseif(node2.eq.0) then
+                  tg1=v(0,node1)
+                  tg2=tg1
+                  ts1=v(3,node1)
+                  ts2=ts1
+               else
+                  tg1=v(0,node1)
+                  tg2=v(0,node2)
+                  ts1=v(3,node1)
+                  ts2=v(3,node2)
+               endif
+               gastemp=(ts1+ts2)/2.d0
+            else
+!
+!              compressible
+!
+               if(xflow.gt.0) then
+                  tg1=v(0,node1)
+                  ts1=v(3,node1)
+                  tg2=v(0,node2)
+                  ts2=v(3,node2)
+                  gastemp=ts1
+               else
+                  tg2=v(0,node1)
+                  ts2=v(3,node1)
+                  tg1=v(0,node2)
+                  ts1=v(3,node2)
+                  gastemp=ts2
+               endif
+            endif
+!
+            imat=ielmat(1,nelem)
+!
+            call materialdata_tg(imat,ntmat_,gastemp,shcon,nshcon,cp,r,
+     &         dvi,rhcon,nrhcon,rho)
+!
+            if(nacteq(2,nodem).ne.0) then
+               ieq=nacteq(2,nodem)
+               xflow=v(1,nodem)
+!
+!              dummy set number
+!
+               numf=1
+!
+               call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &              nactdog,identity,
+     &              ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
+     &              cp,r,rho,physcon,g,co,dvi,numf,vold,set,shcon,
+     &              nshcon,rhcon,nrhcon,ntmat_,mi,ider,ttime,time,
+     &              iaxial)
+            endif
+         endif
+!            
          if(lakon(ieg(i))(2:5).eq.'LICH') then
             if((lakon(ieg(i))(6:7).eq.'SG').or.
      &           (lakon(ieg(i))(6:7).eq.'WE').or.
@@ -71,6 +156,8 @@
             endif
          endif
       enddo
+!
+      close(1)
 !
       return
       end

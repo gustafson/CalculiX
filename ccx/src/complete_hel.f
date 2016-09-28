@@ -26,7 +26,7 @@
 !
       implicit none
 !
-      integer irow(*),neq,nzs,j,l,jdof1,jq(*)
+      integer irow(*),neq,nzs,j,k,l,jdof1,jq(*)
       real*8 hel(3,*),bv(neq,3),auv(*),adv(*)
 !
 !     off-diagonal terms
@@ -37,15 +37,15 @@
 !
 !           subdiagonal terms
 !
-            hel(1,jdof1)=hel(1,jdof1)-auv(l)*bv(j,1)
-            hel(2,jdof1)=hel(2,jdof1)-auv(l)*bv(j,2)
-            hel(3,jdof1)=hel(3,jdof1)-auv(l)*bv(j,3)
+            do k=1,3
+               hel(k,jdof1)=hel(k,jdof1)-auv(l)*bv(j,k)
+            enddo
 !
 !           superdiagonal terms
 !
-            hel(1,j)=hel(1,j)-auv(l+nzs)*bv(jdof1,1)
-            hel(2,j)=hel(2,j)-auv(l+nzs)*bv(jdof1,2)
-            hel(3,j)=hel(3,j)-auv(l+nzs)*bv(jdof1,3)
+            do k=1,3
+               hel(k,j)=hel(k,j)-auv(l+nzs)*bv(jdof1,k)
+            enddo
          enddo
       enddo
 !

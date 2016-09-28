@@ -51,7 +51,7 @@
 !
       jdof=nactdof(j,node)-1
 !
-      if(jdof.ne.0) call addimd(izdof,nzdof,jdof)
+      if(jdof.gt.0) call addimd(izdof,nzdof,jdof)
 !
       return
       end
