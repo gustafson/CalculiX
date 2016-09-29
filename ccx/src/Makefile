@@ -131,7 +131,6 @@ LDFLAGS += `pkg-config --libs pardiso`
 ## LDFLAGS += `pkg-config --libs ccolamd$(INTEXT)`
 ## LDFLAGS += `pkg-config --libs amd$(INTEXT)`
 ## LDFLAGS += `pkg-config --libs camd$(INTEXT)`
-## LDFLAGS += `pkg-config --libs rbio$(INTEXT)`
 ## LDFLAGS += `pkg-config --libs ldl$(INTEXT)`
 ## LDFLAGS += `pkg-config --libs cxsparse$(INTEXT)`
 ## LDFLAGS += `pkg-config --libs btf$(INTEXT)`
