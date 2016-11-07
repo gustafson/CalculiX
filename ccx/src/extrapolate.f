@@ -47,8 +47,8 @@
 !
       real*8 yi(ndim,mi(1),*),yn(nfield,*),field(999,20*mi(3)),a8(8,8),
      &  a4(4,4),a27(20,27),a9(6,9),a2(6,2),orab(7,*),co(3,*),prop(*),
-     &  coords(3,27),xi,et,ze,xl(3,20),xsj,shp(4,20),weight,
-     &  yiloc(6,27),a(3,3),b(3,3),c(3,3),vold(0:mi(2),*),tlayer(4),
+     &  coords(3,mi(1)),xi,et,ze,xl(3,20),xsj,shp(4,20),weight,
+     &  yiloc(6,mi(1)),a(3,3),b(3,3),c(3,3),vold(0:mi(2),*),tlayer(4),
      &  dlayer(4),xlayer(mi(3),4),thickness,xs2(3,7),xl2(3,8),
      &  xsj2(3),shp2(7,8),thicke(mi(3),*),coloc(3,8),
      &  xwedge(2,2,9),a14(8,14)
