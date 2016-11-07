@@ -411,7 +411,7 @@
                      ze=gauss3d2(3,j)
                      weight=weight3d2(j)
                   else
-                     kl=mod(jj,8)
+                     kl=mod(j,8)
                      if(kl.eq.0) kl=8
 !     
                      xi=gauss3d2(1,kl)
@@ -419,7 +419,7 @@
                      ze=gauss3d2(3,kl)
                      weight=weight3d2(kl)
 !     
-                     ki=mod(jj,4)
+                     ki=mod(j,4)
                      if(ki.eq.0) ki=4
 !     
                      if(kl.eq.1) then
