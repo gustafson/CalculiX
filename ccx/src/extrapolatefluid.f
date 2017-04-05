@@ -18,7 +18,7 @@
 !
       subroutine extrapolatefluid(nk,iponofa,inofa,inum,vfa,v,ielfa,
      &  ithermal,imach,ikappa,xmach,xkappa,shcon,nshcon,ntmat_,ielmat,
-     &  physcon,mi)
+     &  physcon,mi,iturb,xturb)
 !
 !     extrapolates the field values at the center of the faces to
 !     the nodes
@@ -27,10 +27,10 @@
 !
       integer nk,iponofa(*),inofa(2,*),inum(*),ielfa(4,*),i,l,indexf,
      &  iface,ithermal,imach,ikappa,imat,nshcon(*),ntmat_,mi(*),
-     &  ielmat(mi(3),*)
+     &  ielmat(mi(3),*),iturb
 !
-      real*8 vfa(0:5,*),v(0:4,*),cp,r,xk,xmach(*),xkappa(*),t1l,
-     &  shcon(0:3,ntmat_,*),physcon(*)
+      real*8 vfa(0:7,*),v(0:4,*),cp,r,xk,xmach(*),xkappa(*),t1l,
+     &  shcon(0:3,ntmat_,*),physcon(*),xturb(2,*)
 !
       do i=1,nk
          if(ithermal.eq.0) then
@@ -62,8 +62,6 @@
             do
                if(indexf.eq.0) exit
                iface=inofa(1,indexf)
-c                  write(*,*) 'extrapolatefluid ',i,iface,
-c     &            ielfa(1,iface),ielfa(4,iface),vfa(0,iface)
                do l=0,4
                   v(l,i)=v(l,i)+vfa(l,iface)
                enddo
@@ -76,7 +74,6 @@ c     &            ielfa(1,iface),ielfa(4,iface),vfa(0,iface)
                   xk=cp/(cp-r)
                   xmach(i)=xmach(i)+dsqrt((vfa(1,iface)**2+
      &               vfa(2,iface)**2+vfa(3,iface)**2)/(xk*r*t1l))
-c                  write(*,*) 'extrapolatefluid ',i,xk,r,t1l,xmach(i)
                endif
                if(ikappa.eq.1) then
                   xkappa(i)=xkappa(i)+xk
@@ -91,6 +88,28 @@ c                  write(*,*) 'extrapolatefluid ',i,xk,r,t1l,xmach(i)
                enddo
                if(imach.eq.1) xmach(i)=xmach(i)/inum(i)
                if(ikappa.eq.1) xkappa(i)=xkappa(i)/inum(i)
+            endif
+         endif
+!
+!        turbulence output
+!
+         if(iturb.ne.0) then
+            do l=1,2
+               xturb(l,i)=0.d0
+            enddo
+            indexf=iponofa(i)
+            do
+               if(indexf.eq.0) exit
+               iface=inofa(1,indexf)
+               do l=1,2
+                  xturb(l,i)=xturb(l,i)+vfa(l+5,iface)
+               enddo
+               indexf=inofa(2,indexf)
+            enddo
+            if(inum(i).gt.0) then
+               do l=1,2
+                  xturb(l,i)=xturb(l,i)/inum(i)
+               enddo
             endif
          endif
       enddo

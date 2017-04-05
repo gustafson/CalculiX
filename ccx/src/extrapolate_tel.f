@@ -27,7 +27,7 @@
       integer nface,ielfa(4,*),ifabou(*),iel1,iel2,iel3,i,ipointer,
      &  indexf,ipnei(*),nef
 !
-      real*8 xrlfa(3,*),vel(nef,0:5),vfa(0:5,*),xboun(*),xl1,xl2
+      real*8 xrlfa(3,*),vel(nef,0:7),vfa(0:7,*),xboun(*),xl1,xl2
 !
 c$omp parallel default(none)
 c$omp& shared(nface,ielfa,xrlfa,vel,vfa,ipnei,ifabou,xboun)

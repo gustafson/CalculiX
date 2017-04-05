@@ -151,9 +151,9 @@
       else
 !
 !     complicated example: forced convection with a film coefficient
-!     determined by the following Gnielinski equation (pipe application)
-!
-!     This equation runs like:
+!     determined by the Gnielinski equation (pipe application for
+!     turbulent flow),
+!     which runs like:
 !
 !     NuD=f/8*(ReD-1000)*pr/(1+12.7*sqrt(f/8)*(Pr**(2/3)-1))
 !
@@ -191,7 +191,7 @@
 !     and kon(ipkon(iel1)+1)=node iel1 is the upstream element
 !
 !     Let us assume this element is a gas pipe element, i.e.
-!     lakon(iel1)='DGAPIA  '. The properties of such an element
+!     lakon(iel1)='DGAPFA  '. The properties of such an element
 !     are the cross sectional area, the hydraulic diameter.... (in 
 !     that order), i.e. prop(ielprop(iel1)+1)=A,
 !     prop(ielprop(iel1)+2)=D,...
@@ -205,11 +205,24 @@
 !     This yields all data needed to determine the film coefficient
 !     with the Gnielinski equation
 !
+!     For laminar flow (Re < 3000) the following laminar flow
+!     equation is used:
+!
+!     h=4.36*xlambda/D
+!
 !        elements belonging to the network node
 !
          iel1=inoel(1,iponoel(node))
          if(inoel(2,iponoel(node)).ne.0) then
             iel2=inoel(1,inoel(2,iponoel(node)))
+!
+!           check whether the node belongs to maximum two elements
+!
+            if(inoel(2,inoel(2,iponoel(node))).ne.0) then
+               write(*,*) 'ERROR in film: the network node'
+               write(*,*) '      belongs to more than 2 elements'
+               call exit(201)
+            endif
          else
 !
 !           node (must be an end node) belongs only to one
@@ -217,30 +230,6 @@
 !           exit element)
 !
             iel2=iel1
-         endif
-!
-!        check whether the node belongs to only two elements
-!
-         if(inoel(2,inoel(2,iponoel(node))).ne.0) then
-            write(*,*) 'ERROR in film: the network node'
-            write(*,*) '      belongs to more than 2 elements'
-            call exit(201)
-         endif
-!
-!        check whether the elements are adiabatic
-!        gas pipe elements
-!
-         if(((lakon(iel1)(1:6).ne.'DGAPIA').and.
-     &       (lakon(iel1)(1:6).ne.'DGAPFA').and.
-     &       (lakon(iel1)(1:7).ne.'DLIPIWC')).or.
-     &      ((lakon(iel2)(1:6).ne.'DGAPIA').and.
-     &       (lakon(iel2)(1:6).ne.'DGAPFA').and.
-     &       (lakon(iel2)(1:7).ne.'DLIPIWC'))) then
-            write(*,*) 'ERROR in film: network node'
-            write(*,*) '      does not belong to adiabatic'
-            write(*,*) '      gas pipes or White-Colebrook'
-            write(*,*) '      water pipes'
-            call exit(201)
          endif
 !
 !        only adiabatic gas pipes considered (heat exchange only
@@ -257,6 +246,18 @@
             ielup=iel1
          else
             ielup=iel2
+         endif
+!
+!        check whether the upstream element is an adiabatic gas
+!        pipe element or a White-Colebrook liquid pipe
+!
+         if((lakon(ielup)(1:6).ne.'DGAPFA').and.
+     &      (lakon(ielup)(1:7).ne.'DLIPIWC')) then
+            write(*,*) 'ERROR in film: upstream element',ielup
+            write(*,*) '      is no adiabatic'
+            write(*,*) '      gas pipe nor White-Colebrook'
+            write(*,*) '      liquid pipe'
+            call exit(201)
          endif
 !
          indexprop=ielprop(ielup)
@@ -295,6 +296,7 @@
 !
 !           incompressible flow
 !
+            Ts=Tt
             call materialdata_cp(imat,ntmat_,Ts,shcon,nshcon,cp)
 !
             ithermal=2
@@ -307,25 +309,35 @@
 !
          Re=xflow*D/(um*A)
 !
-         if((Re.lt.3000.d0).or.(Re.gt.5.e6)) then
-            write(*,*) '*ERROR in film: Reynolds number ',Re
-            write(*,*) '       is outside valid range'
-            call exit(201)
+         if(Re.lt.3000.d0) then
+!
+!           laminar flow
+!
+            h(1)=4.36d0*xlambda/D
+         else
+!
+!           turbulent flow
+!
+            if(Re.gt.5.e6) then
+               write(*,*) '*ERROR in film: Reynolds number ',Re
+               write(*,*) '       is outside valid range'
+               call exit(201)
+            endif
+!
+            Pr=um*cp/xlambda
+!
+            if((Pr.lt.0.5d0).or.(Pr.gt.2000.d0)) then
+               write(*,*) '*ERROR in film: Prandl number ',Pr
+               write(*,*) '       is outside valid range'
+               call exit(201)
+            endif
+!
+            call friction_coefficient(xl,D,xks,Re,form_fact,f)
+!     
+            h(1)=f/8.d0*(Re-1000.d0)*Pr/
+     &           (1.d0+12.7d0*dsqrt(f/8.d0)*(Pr**(2.d0/3.d0)-1.d0))
+     &           *xlambda/D
          endif
-!
-         Pr=um*cp/xlambda
-!
-         if((Pr.lt.0.5d0).or.(Pr.gt.2000.d0)) then
-            write(*,*) '*ERROR in film: Prandl number ',Pr
-            write(*,*) '       is outside valid range'
-            call exit(201)
-         endif
-!
-         call friction_coefficient(xl,D,xks,Re,form_fact,f)
-!
-         h(1)=f/8.d0*(Re-1000.d0)*Pr/
-     &        (1.d0+12.7d0*dsqrt(f/8.d0)*(Pr**(2.d0/3.d0)-1.d0))
-     &        *xlambda/D
       endif
 !
       return

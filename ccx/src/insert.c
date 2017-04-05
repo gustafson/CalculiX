@@ -54,7 +54,6 @@ void insert(ITG *ipointer, ITG **mast1p, ITG **nextp, ITG *i1,
     idof2=*i2-1;
   }
 
-//  index=ipointer[idof2];
   if(*ifree>=*nzs_){
       *nzs_=(ITG)(1.1**nzs_);
       RENEW(mast1,ITG,*nzs_);
@@ -63,37 +62,6 @@ void insert(ITG *ipointer, ITG **mast1p, ITG **nextp, ITG *i1,
   mast1[*ifree]=idof1;
   next[*ifree]=ipointer[idof2];
   ipointer[idof2]=++*ifree;
-
-/*  if(ipointer[idof2]==0){
-    if(*ifree>=*nzs_){
-      *nzs_=(ITG)(1.1**nzs_);
-      RENEW(mast1,ITG,*nzs_);
-      RENEW(next,ITG,*nzs_);
-    }
-    mast1[*ifree]=idof1;
-    next[*ifree]=0;
-    ipointer[idof2]=++*ifree;
-  }
-  else{
-    istart=ipointer[idof2]-1;
-    while(1){
-      if(mast1[istart]==idof1) break;
-      if(next[istart]==0){
-	if(*ifree>=*nzs_){
-	  *nzs_=(ITG)(1.1**nzs_);
-	  RENEW(mast1,ITG,*nzs_);
-	  RENEW(next,ITG,*nzs_);
-	}
-	mast1[*ifree]=idof1;
-	next[*ifree]=0;
-	next[istart]=++*ifree;
-	break;
-      }
-      else{
-	istart=next[istart]-1;
-      }
-    }
-    }*/
 
   *mast1p=mast1;
   *nextp=next;

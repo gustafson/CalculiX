@@ -175,6 +175,16 @@
          endif
       enddo
 !
+!     check for the presence of an amplitude in submodel cases
+!
+      if(submodel) then
+         if(iamplitude.ne.0) then
+            write(*,*) '*WARNING reading *DSLOAD:'
+            write(*,*) '         no amplitude definition is allowed'
+            write(*,*) '         in combination with a submodel'
+         endif
+      endif
+!
 !     check whether global step was specified for submodel
 !
       if((submodel).and.(iglobstep.eq.0)) then

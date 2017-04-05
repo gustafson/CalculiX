@@ -59,11 +59,12 @@
      &  ntie,nbody,nprop,ipoinpc(0:*),nevdamp,npt,nentries,
      &  iposs,iposm,nslavs,nlayer,nkon,nopeexp,k,iremove,mcs,
      &  ifacecount,nintpoint,mortar,infree(4),nheading,icfd,
-     &  multslav,multmast,nobject
+     &  multslav,multmast,nobject,numnodes,iorientation,
+     &  irotation,itranslation
 !
       real*8 temperature,tempact,xfreq,tpinc,tpmin,tpmax
 !
-      parameter(nentries=15)
+      parameter(nentries=16)
 !
 !     icfd=-1: initial value
 !         =0: pure mechanical analysis
@@ -165,6 +166,9 @@
                   read(textpart(1)(1:80),'(a80)',iostat=istat) elset
                   elset(81:81)=' '
                   ipos=index(elset,' ')
+!
+!                 check for element set
+!
                   elset(ipos:ipos)='E'
                   do i=1,nset
                      if(set(i).eq.elset) then
@@ -177,6 +181,23 @@
                         exit
                      endif
                   enddo
+                  if(i.gt.nset) then
+!
+!                    check for facial surface
+!
+                     elset(ipos:ipos)='T'
+                     do i=1,nset
+                        if(set(i).eq.elset) then
+                           nboun=nboun+ibound*meminset(i)
+                           if(ntrans.gt.0)then
+                              nmpc=nmpc+ibound*meminset(i)
+                              memmpc=memmpc+4*ibound*meminset(i)
+                              nk=nk+meminset(i)
+                           endif
+                           exit
+                        endif
+                     enddo
+                  endif
                endif
             enddo
          elseif(textpart(1)(1:9).eq.'*BOUNDARY') then
@@ -317,6 +338,34 @@
                if((istat.lt.0).or.(key.eq.1)) exit
                nprint=nprint+n
             enddo
+         elseif(textpart(1)(1:9).eq.'*COUPLING') then
+            surface(1:1)=' '
+            iorientation=0
+            do i=2,n
+               if(textpart(i)(1:8).eq.'SURFACE=') then
+                  surface=textpart(i)(9:88)
+                  ipos=index(surface,' ')
+                  surface(ipos:ipos)='T'
+               elseif(textpart(i)(1:12).eq.'ORIENTATION=') then
+                  iorientation=1
+               endif
+            enddo
+            if(surface(1:1).ne.' ') then
+               do i=1,nset
+                  surface(ipos:ipos)='T'
+                  if(set(i).eq.surface) then
+                     numnodes=8*meminset(i)
+                     exit
+                  endif
+                  surface(ipos:ipos)='S'
+                  if(set(i).eq.surface) then
+                     numnodes=meminset(i)
+                     exit
+                  endif
+               enddo
+            endif
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:6).eq.'*CREEP') then
             ncmat=max(9,ncmat)
             npmat=max(2,npmat)
@@ -454,6 +503,61 @@
                         exit
                      endif
                   enddo
+               endif
+            enddo
+         elseif(textpart(1)(2:13).eq.'DISTRIBUTING') then
+            irotation=0
+            itranslation=0
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+!
+               read(textpart(1)(1:10),'(i10)',iostat=istat) ibounstart
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BOUNDARY%")
+!
+               if(textpart(2)(1:1).eq.' ') then
+                  ibounend=ibounstart
+               else
+                  read(textpart(2)(1:10),'(i10)',iostat=istat) ibounend
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BOUNDARY%")
+               endif
+               ibounstart=max(4,ibounstart)
+               ibounend=min(6,ibounend)
+               ibound=max(0,ibounend-ibounstart+1)
+!
+               if(itranslation.eq.0) then
+!
+!                 translational dofs 3 MPC's + a two-term MPC for each
+!                 participating node
+!
+                  npt=max(npt,numnodes)
+!     
+                  nmpc=nmpc+3*npt+3
+                  memmpc=memmpc+6*npt+3*(npt+1)
+                  nk=nk+npt
+                  itranslation=1
+               endif
+!
+!              rotational dofs
+!
+               if(ibound.gt.0) then
+                  if(irotation.eq.0) then
+!
+!                    a MPC connecting the dofs 4-6 to dofs 1-3 of
+!                    a rotational node; generation of a inhomogeneous
+!                    node
+!
+                     nmpc=nmpc+3
+                     memmpc=memmpc+6
+                     nk=nk+4
+                     irotation=1
+                  endif
+                  nmpc=nmpc+ibound
+                  memmpc=memmpc+ibound*(3*npt+2)
+                  nboun=nboun+ibound
                endif
             enddo
          elseif((textpart(1)(1:6).eq.'*DLOAD').or.
@@ -775,11 +879,26 @@ c                     mi(1)=max(mi(1),8)
                      label='ESPRNGA1'
                      nope=2
                      nopeexp=2
+                  elseif(label(1:7).eq.'SPRING1') then
+                     mi(1)=max(mi(1),1)
+                     label='ESPRNG10'
+                     nope=1
+                     nopeexp=1
+                     ncmat=max(3,ncmat)
+                  elseif(label(1:7).eq.'SPRING2') then
+                     mi(1)=max(mi(1),1)
+                     label='ESPRNG21'
+                     nope=2
+                     nopeexp=2
+                     ncmat=max(4,ncmat)
                   elseif(label.eq.'GAPUNI  ') then
                      mi(1)=max(mi(1),1)
                      label='ESPGAPA1'
                      nope=2
                      nopeexp=2
+                  elseif(label(1:4).eq.'MASS') then
+                     nope=1
+                     nopeexp=1
                   endif
                   if(label(1:1).eq.'F') then
                      mi(2)=max(mi(2),4)
@@ -819,7 +938,8 @@ c    Bernhardi end
                   elseif(label(1:1).eq.'C') then
                      necaxr=necaxr+1
                   elseif((label(1:1).eq.'S').or.
-     &                   (label(1:1).eq.'M')) then
+     &               ((label(1:1).eq.'M').and.(label(1:4).ne.'MASS')))
+     &               then
                      nesr=nesr+1
                   elseif((label(1:1).eq.'B').or.
      &                   (label(1:1).eq.'T')) then
@@ -959,13 +1079,6 @@ c!
                   ii=ii+n/3
                   if(ii.eq.nterm) exit
                enddo
-            enddo
-         elseif(textpart(1)(1:13).eq.'*FACEPRINT') then
-            do
-               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &              ipoinp,inp,ipoinpc)
-               if((istat.lt.0).or.(key.eq.1)) exit
-               nprint=nprint+n
             enddo
          elseif(textpart(1)(1:13).eq.'*FLUIDSECTION') then
             nprop=nprop+41
@@ -1142,6 +1255,55 @@ c            ncmat=max(7,ncmat)
                   iline=iline+1
                enddo
             endif
+         elseif(textpart(1)(2:10).eq.'KINEMATIC') then
+            npt=max(npt,numnodes)
+!
+!           connection of rotational dofs in refnode to
+!           translational dofs in rotational node
+!
+            nk=nk+1
+            nmpc=nmpc+3
+            memmpc=memmpc+6
+!
+!           local system
+!
+            if(iorientation.ne.0) then
+               nk=nk+2*numnodes
+               nmpc=nmpc+3*numnodes
+               memmpc=memmpc+3*6*numnodes
+               nboun=nboun+3*numnodes
+            endif
+!
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+!
+               read(textpart(1)(1:10),'(i10)',iostat=istat) ibounstart
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BOUNDARY%")
+!
+               if(textpart(2)(1:1).eq.' ') then
+                  ibounend=ibounstart
+               else
+                  read(textpart(2)(1:10),'(i10)',iostat=istat) ibounend
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*BOUNDARY%")
+               endif
+               ibound=ibounend-ibounstart+1
+               ibound=max(1,ibound)
+               ibound=min(3,ibound)
+!
+               if(iorientation.eq.0) then
+                  nk=nk+numnodes
+                  nmpc=nmpc+ibound*numnodes
+                  memmpc=memmpc+6*ibound*numnodes
+                  nboun=nboun+ibound*numnodes
+               else
+                  nmpc=nmpc+ibound*numnodes
+                  memmpc=memmpc+ibound*6*numnodes
+               endif
+            enddo
          elseif(textpart(1)(1:21).eq.'*MAGNETICPERMEABILITY') then
             ntmatl=0
             ityp=2
@@ -1153,6 +1315,11 @@ c            ncmat=max(7,ncmat)
                ntmatl=ntmatl+1
                ntmat=max(ntmatl,ntmat)
             enddo
+         elseif(textpart(1)(1:5).eq.'*MASS') then
+            nmat=nmat+1
+            ntmat=max(1,ntmat)
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,
+     &           inl,ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:9).eq.'*MATERIAL') then
             nmat=nmat+1
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -1179,22 +1346,29 @@ c            ncmat=max(7,ncmat)
             endif
          elseif(textpart(1)(1:4).eq.'*MPC') then
             mpclabel='                    '
-            if((mpclabel(1:8).ne.'STRAIGHT').and.
-     &           (mpclabel(1:4).ne.'PLANE')) then
-               nk=nk+1
-               nmpc=nmpc+1
-               nboun=nboun+1
-               memmpc=memmpc+1
-            endif
+c            if((mpclabel(1:8).ne.'STRAIGHT').and.
+c     &           (mpclabel(1:4).ne.'PLANE')) then
+c               nk=nk+1
+c               nmpc=nmpc+1
+c               nboun=nboun+1
+c               memmpc=memmpc+1
+c            endif
             do
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &              ipoinp,inp,ipoinpc)
                if((istat.lt.0).or.(key.eq.1)) exit
                do i=1,n
                   read(textpart(i)(1:10),'(i10)',iostat=istat) ialset(i)
-                  if(mpclabel.eq.'                    ')
-     &                 mpclabel=textpart(i)(1:20)
-                  if(istat.gt.0) then
+                  if(mpclabel.eq.'                    ') then
+                     mpclabel=textpart(i)(1:20)
+                     if((mpclabel(1:8).ne.'STRAIGHT').and.
+     &                    (mpclabel(1:4).ne.'PLANE')) then
+                        nk=nk+1
+                        nmpc=nmpc+1
+                        nboun=nboun+1
+                        memmpc=memmpc+1
+                     endif
+                  elseif(istat.gt.0) then
                      noelset=textpart(i)(1:80)
                      noelset(81:81)=' '
                      ipos=index(noelset,' ')
@@ -1211,6 +1385,8 @@ c            ncmat=max(7,ncmat)
                               nmpc=nmpc+meminset(j)
                               nboun=nboun+meminset(j)
                               memmpc=memmpc+13*meminset(j)
+                           elseif(mpclabel(1:4).eq.'BEAM') then
+                              memmpc=memmpc+3*meminset(j)
                            else
                               memmpc=memmpc+meminset(j)
                            endif
@@ -1228,6 +1404,8 @@ c            ncmat=max(7,ncmat)
                         nmpc=nmpc+1
                         nboun=nboun+1
                         memmpc=memmpc+13
+                     elseif(mpclabel(1:4).eq.'BEAM') then
+                        memmpc=memmpc+3
                      else
                         memmpc=memmpc+1
                      endif
@@ -1495,6 +1673,13 @@ c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
             endif
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
+         elseif(textpart(1)(1:16).eq.'*SECTIONPRINT') then
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+               nprint=nprint+n
+            enddo
          elseif(textpart(1)(1:13).eq.'*SHELLSECTION') then
             composite=.false.
             do i=2,n
@@ -1516,13 +1701,23 @@ c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
                   call getnewline(inpc,textpart,istat,n,key,iline,ipol,
      &                 inl,ipoinp,inp,ipoinpc)
                   if((istat.lt.0).or.(key.eq.1)) then
-                     mi(1)=max(mi(1),8*nlayer)
-                     mi(3)=max(mi(3),nlayer)
-                     if(js.le.nset) then
-                        nk=nk+20*nlayer*meminset(js)
-                        nkon=nkon+20*nlayer*meminset(js)
+                     if(label(2:2).eq.'8') then
+                        mi(1)=max(mi(1),8*nlayer)
+                        mi(3)=max(mi(3),nlayer)
+                        if(js.le.nset) then
+                           nk=nk+20*nlayer*meminset(js)
+                           nkon=nkon+20*nlayer*meminset(js)
+                        endif
+                        exit
+                     else
+                        mi(1)=max(mi(1),6*nlayer)
+                        mi(3)=max(mi(3),nlayer)
+                        if(js.le.nset) then
+                           nk=nk+15*nlayer*meminset(js)
+                           nkon=nkon+15*nlayer*meminset(js)
+                        endif
+                        exit
                      endif
-                     exit
                   endif
                   nlayer=nlayer+1
                enddo
@@ -1982,6 +2177,10 @@ c      memmpc=memmpc+15*ne1d+24*ne2d
 !        extra nodes for the radiation boundary conditions
 !
       nk=nk+nradiate
+!
+!     each layer in each shell has a local orientation
+!
+      norien=norien+nesr*mi(3)
 !
       write(*,*)
       write(*,*) ' The numbers below are estimated upper bounds'

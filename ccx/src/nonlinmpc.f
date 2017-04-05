@@ -35,7 +35,8 @@
      &  mpc,kon(*),ipkon(*),indexe,ne,idofrem,idofins,nmpc0,nmpc01,
      &  newstep,iit,idiscon,ncont,iexpnode,indexexp,nmpcdif,ntrans,
      &  nodei,noded,lathyp(3,6),inum,ndir,number,ithermal,mi(*),
-     &  newknot,indexexp1,indexexp2,indexexp3,idim
+     &  newknot,indexexp1,indexexp2,indexexp3,idim,nodea,nodeb,
+     &  jmax,idira
 !
       real*8 co(3,*),coefmpc(*),vold(0:mi(2),*),c(3,3),dc(3,3,3),ww,
      &  e(3,3,3),d(3,3),w(3),f(3,3),c1,c2,c3,c4,c5,c6,xbounact(*),
@@ -45,7 +46,7 @@
      &  coloc(3,8),reltime,csab(7),trab(7,*),pd(3),pi(3),e11(3,3),
      &  ad(3,3),ai(3,3),e22(3,3),e12(3,3),ru(3,3),ru1(3,3),
      &  ru2(3,3),ru3(3,3),u1(3,3),u2(3,3),u3(3,3),dcu(3,3,3),u(3,3),
-     &  xi1,xi2,xi3,dco,dsi,dco2,dsi2
+     &  xi1,xi2,xi3,dco,dsi,dco2,dsi2,cj,ck,cl,dmax
 !
       data d /1.,0.,0.,0.,1.,0.,0.,0.,1./
       data e /0.,0.,0.,0.,0.,-1.,0.,1.,0.,
@@ -719,13 +720,105 @@ c                  endif
             xbounact(ilboun(id))=a11*b11+a12*b12+a13*b13
             if(newstep.eq.1) xboun(ilboun(id))=xbounact(ilboun(id))
             vold(nodempc(2,index),nodempc(1,index))=0.d0
+         elseif(labmpc(ii)(1:4).eq.'BEAM') then
+            index=ipompc(ii)
+            nodea=nodempc(1,index)
+            idira=nodempc(2,index)
+            nodeb=nodempc(1,nodempc(3,nodempc(3,nodempc(3,index))))
+!
+!           check for degree of freedom with largest coefficient in the MPC
+!
+            dmax=dabs(co(1,nodea)+vold(1,nodea)
+     &             -co(1,nodeb)-vold(1,nodeb))
+            jmax=1
+            do j=2,3
+               dd=dabs(co(j,nodea)+vold(j,nodea)
+     &                -co(j,nodeb)-vold(j,nodeb))
+               if(dd.gt.dmax) then
+                  dmax=dd
+                  jmax=j
+               endif
+            enddo
+!
+!           change degree of freedom if necessary         
+!
+            if(jmax.ne.idira) then
+               write(*,*) '*WARNING in nonlinmpc: dependent dof',idira
+               write(*,*) '         in a BEAM MPC is not maximum; it'
+               write(*,*) '         will be changed to dof ',jmax
+               write(*,*) '         which corresponds to the maximum'
+               write(*,*) '         coefficient'
+               idofrem=8*(nodea-1)+idira
+               idofins=8*(nodea-1)+jmax
+               call changedepterm(ikmpc,ilmpc,nmpc,ii,idofrem,idofins)
+!
+               j=jmax
+               k=j+1
+               if(k.gt.3) k=1
+               l=k+1
+               if(l.gt.3) l=1
+!     
+               nodempc(2,index)=j
+               index=nodempc(3,index)
+               nodempc(2,index)=k
+               index=nodempc(3,index)
+               nodempc(2,index)=l
+               index=nodempc(3,index)
+               nodempc(2,index)=j
+               index=nodempc(3,index)
+               nodempc(2,index)=k
+               index=nodempc(3,index)
+               nodempc(2,index)=l
+               index=nodempc(3,index)
+               index=ipompc(ii)
+            endif
+!
+            j=nodempc(2,index)
+            cj=2.d0*(co(j,nodea)+vold(j,nodea)
+     &              -co(j,nodeb)-vold(j,nodeb))
+            coefmpc(index)=cj
+            index=nodempc(3,index)
+!
+            k=nodempc(2,index)
+            ck=2.d0*(co(k,nodea)+vold(k,nodea)
+     &              -co(k,nodeb)-vold(k,nodeb))
+            coefmpc(index)=ck
+            index=nodempc(3,index)
+!
+            l=nodempc(2,index)
+            cl=2.d0*(co(l,nodea)+vold(l,nodea)
+     &              -co(l,nodeb)-vold(l,nodeb))
+            coefmpc(index)=cl
+            index=nodempc(3,index)
+!
+            coefmpc(index)=-cj
+            index=nodempc(3,index)
+!
+            coefmpc(index)=-ck
+            index=nodempc(3,index)
+!
+            coefmpc(index)=-cl
+            index=nodempc(3,index)
+!
+            coefmpc(index)=1.d0
+!
+            idof=8*(nodempc(1,index)-1)+nodempc(2,index)
+            call nident(ikboun,idof,nboun,id)
+            xbounact(ilboun(id))=(cj**2+ck**2+cl**2)/4.d0
+     &           -(co(1,nodea)-co(1,nodeb))**2
+     &           -(co(2,nodea)-co(2,nodeb))**2
+     &           -(co(3,nodea)-co(3,nodeb))**2
+!
+            if(newstep.eq.1) xboun(ilboun(id))=xbounact(ilboun(id))
+            vold(nodempc(2,index),nodempc(1,index))=0.d0
          elseif((labmpc(ii)(1:20).ne.'                    ').and.
      &          (labmpc(ii)(1:10).ne.'PRETENSION').and.
      &          (labmpc(ii)(1:11).ne.'THERMALPRET').and.
-     &          (labmpc(ii)(1:7).ne.'CONTACT').and.
+c     &          (labmpc(ii)(1:7).ne.'CONTACT').and.
      &          (labmpc(ii)(1:7).ne.'NETWORK').and.
      &          (labmpc(ii)(1:5).ne.'FLUID').and.
      &          (labmpc(ii)(1:6).ne.'CYCLIC').and.
+     &          (labmpc(ii)(1:14).ne.'ROTTRACOUPLING').and.
      &          (labmpc(ii)(1:9).ne.'SUBCYCLIC')) then
             index=ipompc(ii)
             i=0
@@ -752,9 +845,9 @@ c                  endif
             elseif(labmpc(ii)(1:4).eq.'DIST') then
                call umpc_dist(aux,aux(3*maxlenmpc+1),const,
      &            aux(6*maxlenmpc+1),iaux,n,fmpc(ii),iit,idiscon)
-            elseif(labmpc(ii)(1:3).eq.'GAP') then
-               call umpc_gap(aux,aux(3*maxlenmpc+1),const,
-     &            aux(6*maxlenmpc+1),iaux,n,fmpc(ii),iit,idiscon)
+c            elseif(labmpc(ii)(1:3).eq.'GAP') then
+c               call umpc_gap(aux,aux(3*maxlenmpc+1),const,
+c     &            aux(6*maxlenmpc+1),iaux,n,fmpc(ii),iit,idiscon)
             elseif(labmpc(ii)(1:4).eq.'USER') then
                call umpc_user(aux,aux(3*maxlenmpc+1),const,
      &            aux(6*maxlenmpc+1),iaux,n,fmpc(ii),iit,idiscon)

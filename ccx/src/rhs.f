@@ -25,7 +25,7 @@
      &  iprestr,vold,iperturb,iexpl,plicon,
      &  nplicon,plkcon,nplkcon,npmat_,ttime,time,istep,iinc,dtime,
      &  physcon,ibody,xloadold,reltime,veold,matname,mi,ikactmech,
-     &  nactmech,ielprop,prop)
+     &  nactmech,ielprop,prop,sti,xstateini,xstate,nstate_)
 !
 !     filling the right hand side load vector b
 !
@@ -41,7 +41,7 @@
      &  nodeforc(2,*),ndirforc(*),nelemload(2,*),ikmpc(*),mi(*),
      &  ilmpc(*),nactdof(0:mi(2),*),konl(20),nelcon(2,*),ibody(3,*),
      &  nrhcon(*),nalcon(2,*),ielmat(mi(3),*),ielorien(mi(3),*),
-     &  ipkon(*),ielprop(*),
+     &  ipkon(*),ielprop(*),nstate_,
      &  nk,ne,nmpc,nforc,nload,neq,nmethod,nom,m,idm,
      &  ithermal,iprestr,iperturb,i,j,k,idist,jj,
      &  id,ist,index,jdof1,jdof,node1,ntmat_,indexe,nope,norien,
@@ -54,7 +54,8 @@
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
      &  t0(*),t1(*),vold(0:mi(2),*),ff(60),time,ttime,dtime,
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
-     &  om(2),physcon(*),veold(0:mi(2),*)
+     &  om(2),physcon(*),veold(0:mi(2),*),sti(6,mi(1),*),
+     &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
 !
       icalccg=0
 !
@@ -315,7 +316,7 @@ c      else
      &        sideload,xload,nload,idist,dtime,
      &        ttime,time,istep,iinc,xloadold,reltime,
      &        ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,mi,
-     &        ielprop,prop)
+     &        ielprop,prop,sti,xstateini,xstate,nstate_)
 !
 !        modal dynamics and steady state dynamics: 
 !        location of nonzeros is stored

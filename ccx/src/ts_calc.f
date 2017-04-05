@@ -16,27 +16,30 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-      subroutine ts_calc(xflow,Tt,Pt,kappa,r,a,Ts,icase)
+      subroutine ts_calc(xflow,Tt,Pt,kappa,r,A,Ts,icase)
 !     
 !     Calculation of the static temperature Ts from the total 
 !     temperature Tt, the total pressure Pt and the mass flow xflow
 !
 !     this subroutine solves the implicit equation
-!     xflow*dsqrt(Tt)/(a*Pt)-C*(Tt/Ts)**expon*(Tt/Ts-1)**0.5d0=0.d0
+!     xflow*dsqrt(Tt)/(A*Pt)-C*(Tt/Ts)**expon*(Tt/Ts-1)**0.5d0=0.d0
 !
 !          expon=-0.5d0*(kappa+1.d0)/(kappa-1.d0)
 !          C=dsqrt(2.d0/r*kappa/(kappa-1.d0))
+!
+!     xflow is the mass flow for 360 degrees, sign is irrelevant
+!     for this routine
 !
 !     author: Yannick Muller
 !     
       implicit none
 !
-      integer inv,icase,i
+      integer icase,i
 !     
-      real*8 xflow,Tt,Pt,Ts,kappa,r,f,df,a,expon,Ts_old,C,TtzTs,
+      real*8 xflow,Tt,Pt,Ts,kappa,r,f,df,A,expon,Ts_old,C,TtzTs,
      &     deltaTs,TtzTs_crit, Qred_crit,Qred,h1,h2,h3
 !
-      intent(in) xflow,Tt,Pt,kappa,r,a,icase
+      intent(in) xflow,Tt,Pt,kappa,r,A,icase
 !
       intent(inout) Ts
 !
@@ -44,25 +47,19 @@
 !     
       C=dsqrt(2.d0/r*kappa/(kappa-1.d0))
 !     
-!     f=xflow*dsqrt(Tt)/(a*Pt)-C*(Tt/Ts)**expon*(Tt/Ts-1)**0.5d0
+!     f=xflow*dsqrt(Tt)/(A*Pt)-C*(Tt/Ts)**expon*(Tt/Ts-1)**0.5d0
 !
 !     df=-C*Tt/Ts**expon*(expon/Ts*(Tt/Ts-1)**0.5d0
 !     &     -0.5d0*Tt/Ts/Ts*(Tt/Ts-1.d0)**(-0.5d0))
 !     
       Ts_old=Tt
 !    
-      if(xflow.lt.0d0) then 
-         inv=-1
-      else
-         inv=1
-      endif
-!    
       if(dabs(xflow).le.1e-9) then
          Ts=Tt
          return
       endif
 !
-      Qred=abs(xflow)*dsqrt(Tt)/(a*Pt)
+      Qred=abs(xflow)*dsqrt(Tt)/(A*Pt)
 !
 !     optimised estimate of T static
 !
@@ -71,28 +68,21 @@
 !     adiabatic
 !     
       if(icase.eq.0) then
-!
          TtzTs_crit=(kappa+1.d0)/2.d0
 !         
 !     isothermal
 !
       else
-!
          TtzTs_crit=(1d0+(kappa-1.d0)/(2.d0*kappa))
-!
       endif
 !
       Qred_crit=C*(TtzTs_crit)**expon*(Ttzts_crit-1.d0)**0.5d0
 !     
-!     xflow_crit=inv*Qred_crit/dsqrt(Tt)*A*Pt
-!     
       if(Qred.ge.Qred_crit) then
-!     
          Ts=Tt/TtzTs_crit
-!     
          return
-!     
       endif
+!
       i=0
 !     
 !     start of the Newton-Raphson-Procedure to solve the nonlinear

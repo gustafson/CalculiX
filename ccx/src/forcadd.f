@@ -18,7 +18,8 @@
 !
       subroutine forcadd(node,i,val,nodeforc,ndirforc,xforc,
      &  nforc,nforc_,iamforc,iamplitude,nam,ntrans,trab,inotr,co,
-     &  ikforc,ilforc,isector,add,user,idefforc)
+     &  ikforc,ilforc,isector,add,user,idefforc,ipompc,nodempc,
+     &  nmpc,ikmpc,ilmpc,labmpc)
 !
 !     adds a cload condition to the data base
 !
@@ -26,9 +27,12 @@
 !
       logical add,user
 !
+      character*20 labmpc(*)
+!
       integer nodeforc(2,*),ndirforc(*),node,i,nforc,nforc_,j,
      &  iamforc(*),iamplitude,nam,ntrans,inotr(2,*),itr,idf(3),
-     &  ikforc(*),ilforc(*),idof,id,k,isector,idefforc(*)
+     &  ikforc(*),ilforc(*),idof,id,k,isector,idefforc(*),ipompc(*),
+     &  nodempc(3,*),nmpc,ikmpc(*),ilmpc(*)
 !
       real*8 xforc(*),val,trab(7,*),a(3,3),co(3,*)
 !
@@ -36,6 +40,26 @@
          itr=0
       else
          itr=inotr(1,node)
+      endif
+!
+!     checking for boundary conditions on rotational dofs of
+!     distributing couplings 
+!
+      if((i.ge.5).and.(i.le.7)) then
+!
+!        rotational dof
+!
+         idof=8*(node-1)+i
+         call nident(ikmpc,idof,nmpc,id)
+         if(id.gt.0) then
+            if(ikmpc(id).eq.idof) then
+               if(labmpc(ilmpc(id))(1:14).eq.'ROTTRACOUPLING') then
+                  node=nodempc(1,nodempc(3,ipompc(ilmpc(id))))
+                  i=nodempc(2,nodempc(3,ipompc(ilmpc(id))))
+                  itr=0
+               endif
+            endif
+         endif
       endif
 !
 !     change: transformations on rotations are taken into account

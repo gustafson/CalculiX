@@ -31,10 +31,10 @@
       character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,iaxial,
+     &     ielprop(*),nodef(*),idirf(*),index,iflag,iaxial,
      &     inv,ipkon(*),kon(*),t_chang,nelemswirl,mi(*)
 !
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,r,cp,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,r,cp,
      &     p1,p2,T1,T2,km1,pi,ttime,time,r2d,r1d,eta,U1,
      &     c1u,c2u,cinput,r1,r2,omega,K1,ciu,expon,
      &     Ui,Kr,cte1,cte2,qred_crit,A,xflow_oil
@@ -46,7 +46,7 @@
       intent(out) identity,node1,node2,xflow,numf,nodef,idirf,prop,
      &  f,df
 !     
-      if (iflag.eq.0) then
+      if(iflag.eq.0) then
          identity=.true.
 !     
          if(nactdog(2,node1).ne.0)then
@@ -57,38 +57,11 @@
             identity=.false.
          endif
 !     
-      elseif (iflag.eq.1)then
+      elseif(iflag.eq.1)then
 !
-c         kappa=(cp/(cp-R))
-c         pi=4.d0*datan(1.d0)
-c         index=ielprop(nelem)
-c         qred_crit=dsqrt(kappa/R)*
-c     &        (1+0.5d0*(kappa-1))**(-0.5*(kappa+1)/(kappa-1))
-c!
-c!     Because there is no explicit expression relating massflow
-c!     with to pressure loss for vortices
-c!     For  FREE as well as for FORCED VORTICES
-c!     initial mass flow is set to Qred_crit/2 = 0.02021518917
-c!     with consideration to flow direction
-c!
-c         node1=kon(ipkon(nelem)+1)
-c         node2=kon(ipkon(nelem)+3)
-c         p1=v(2,node1)
-c         p2=v(2,node2)
-c         T1=v(0,node1)
-c         T2=v(0,node2)
-c!
-c!     abstract cross section
-c         A=10E-6
-c!
-c         if(p1.gt.p2) then
-c            xflow=0.5/dsqrt(T1)*A*P1*qred_crit
-c         else
-c            xflow=-0.5/dsqrt(T1)*A*P1*qred_crit
-c         endif
          xflow=0.d0
 !        
-      elseif (iflag.eq.2)then
+      elseif(iflag.eq.2)then
 !     
          numf=4
          index=ielprop(nelem) 
@@ -607,7 +580,7 @@ c         endif
             write(1,*)'             Element ',nelem,lakon(nelem)
             write(1,57)'             C1u = ',C1u,
      &'  , C2u = ',C2u
-            write(1,56)'       Outlet node ',node2,' :    Tt2 = ',T2,
+            write(1,56)'      Outlet node ',node2,' :    Tt2 = ',T2,
      &           '  , Ts2 = ',T2,'  , Pt2 = ',P2
 !     
          else if(inv.eq.-1) then
@@ -616,7 +589,7 @@ c         endif
             write(1,*)'             Element ',nelem,lakon(nelem)
             write(1,57)'             C1u = ',C1u,
      &'  , C2u = ',C2u
-            write(1,56)'       Outlet node ',node1,'     Tt2 = ',
+            write(1,56)'      Outlet node ',node1,'     Tt2 = ',
      &           T2,'  , Ts2 = ',T2,'  , Pt2 = ',P2
          endif
       endif

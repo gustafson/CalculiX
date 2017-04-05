@@ -30,7 +30,12 @@
 !     calculating the conductivity coefficients
 !
       ncoconst=ncocon(1,imat)
-      if(ncoconst.ne.1) then
+      if(ncoconst.eq.0) then
+         write(*,*) '*ERROR in materialdata_cond'
+         write(*,*) 
+     &        '       fluid conductivity is lacking'
+         call exit(201)
+      elseif(ncoconst.gt.1) then
          write(*,*) '*ERROR in materialdata_cond'
          write(*,*) 
      &        '       conductivity for fluids must be isotropic'

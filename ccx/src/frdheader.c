@@ -43,7 +43,8 @@ void frdheader(ITG *icounter,double *oner,double *time,double *pi,
 
   /* additional headers for frequency calculations */
 
-  if((*nmethod==2)||(*nmethod==6)||(*nmethod==7)){
+  if((*nmethod==2)||(*nmethod==6)||(*nmethod==7)||
+     ((*nmethod==12)&&(*noddiam>-1))){
     strcpy1(&text[0],"    1PGM",8);
     for(i=8;i<70;i++)text[i]=' ';text[70]='\0';
     sprintf(&text[24],"%12.6E",*oner);text[36]=' ';

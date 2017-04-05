@@ -18,7 +18,7 @@
 !
       subroutine sensitivitys(inpc,textpart,nmethod,
      &  istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,tieset,ipoinpc,ntie)
+     &  inp,tieset,ipoinpc,ntie,tinc,tper,tmin,tmax,tincf)
 !
 !     reading the input deck: *SENSITIVITY
 !
@@ -28,7 +28,7 @@
       character*81 tieset(3,*)
       character*132 textpart(16)
 !
-      integer nmethod,istep,istat,n,key,i,
+      integer nmethod,istep,istat,n,key,i,tinc,tper,tmin,tmax,tincf,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),
      &  ipoinpc(0:*),ntie
 !
@@ -37,6 +37,19 @@
      &only be used within a STEP'     
          call exit(201)
       endif
+!
+      if(istep.lt.2) then
+         write(*,*) '*ERROR reading *SENSITIVITY: *SENSITIVITY'
+         write(*,*) '       requires a previous *STATIC, *GREEN or'
+         write(*,*) '       *FREQUENCY step'
+         call exit(201)
+      endif
+!
+      tinc=0.d0
+      tper=0.d0
+      tmin=0.d0
+      tmax=0.d0
+      tincf=0.d0
 !
       do i=2,n
             write(*,*) 

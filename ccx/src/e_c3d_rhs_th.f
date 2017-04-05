@@ -21,7 +21,7 @@
      &     sideload,xload,nload,idist,dtime,
      &     ttime,time,istep,iinc,xloadold,reltime,
      &     ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,mi,
-     &     ielprop,prop)
+     &     ielprop,prop,sti,xstateini,xstate,nstate_)
 !     
 !     computation of the rhs for the element with
 !     the topology in konl
@@ -39,13 +39,14 @@
      &  nload,idist,i,j,k,i1,iflag,ipompc(*),nodempc(3,*),nmpc,
      &  jj,id,ipointer,ig,kk,nope,nopes,mint2d,ikmpc(*),ilmpc(*),
      &  mint3d,ifacet(6,4),nopev,ifacew(8,5),iinc,istep,jltyp,
-     &  iscale,mi(*),ielprop(*),null
+     &  iscale,mi(*),ielprop(*),null,nstate_
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),xloadold(2,*),
      &  ff(60),shpj(4,20),dxsj2,temp,press,t0(*),t1(*),coords(3),
      &  xl2(3,8),xsj2(3),shp2(7,8),vold(0:mi(2),*),xload(2,*),
      &  xi,et,ze,xsj,xsjj,t1l,ttime,time,weight,pgauss(3),tvar(2),
-     &  reltime,areaj,coefmpc(*),tl2(8),prop(*)
+     &  reltime,areaj,coefmpc(*),tl2(8),prop(*),sti(6,mi(1),*),
+     &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
 !
       real*8 dtime
 !

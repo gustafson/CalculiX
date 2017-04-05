@@ -219,6 +219,10 @@ c      iaxial=max(iaxial,maxsectors)
 !           max 8 nodes per face
 !
             cs(4,mcs)=(iendset(j)-istartset(j)+1)*8+0.5d0
+!     
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+!
             return
          elseif((tieset(1,i)(1:80).eq.tie).and.
      &      (tieset(1,i)(81:81).eq.'Z')) then
@@ -250,6 +254,10 @@ c      iaxial=max(iaxial,maxsectors)
 !           max 8 nodes per face
 !
             cs(4,mcs)=(iendset(j)-istartset(j)+1)*8+0.5d0
+!     
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+!
             return
          elseif((tieset(1,i)(1:80).eq.tie).and.
      &      (tieset(1,i)(81:81).ne.'C').and.
@@ -940,7 +948,9 @@ c            enddo
          write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
          write(*,*) '        for at least one dependent'
          write(*,*) '        node in a cyclic symmetry definition no '
-         write(*,*) '        independent counterpart was found'
+         write(*,*) '        independent counterpart was found.'
+         write(*,*) '        Failed nodes are stored in file '
+         write(*,*) '        WarnNodeMissCyclicSymmetry.nam'
 c     next line was commented on 19/04/2012
 c         call exit(201)
       endif

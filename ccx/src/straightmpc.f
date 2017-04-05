@@ -122,7 +122,7 @@
          endif
          nodeboun(nboun)=nk
          ndirboun(nboun)=j
-         typeboun(nboun)='S'
+         typeboun(nboun)='U'
          do l=nboun,id+2,-1
             ikboun(l)=ikboun(l-1)
             ilboun(l)=ilboun(l-1)

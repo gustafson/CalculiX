@@ -25,11 +25,13 @@
 static char *lakonf1;
 
 static ITG num_cpus,*nef1,*ipnei1,*neifa1,*neiel1,*jq1,*irow1,*ielfa1,
-    *ifabou1,*neq1,*nzs1,*neij1,*ielmatf1,*mi1,*ntmat1_,*nactdohinv1;
+    *ifabou1,*neq1,*nzs1,*neij1,*ielmatf1,*mi1,*ntmat1_,*nactdohinv1,
+    *iau61;
 
-static double *vfa1,*area1,*advfa1,*xlet1,*cosa1,*volume1,*au1=NULL,*ad1=NULL,
-    *ap1,*xle1,*b1=NULL,*xxn1,*hfa1,*gradpel1,*bp1,*xxi1,*xlen1,*cosb1,
-    *a11,*a21,*a31,*velo1,*veloo1,*dtimef1,*shcon1,*vel1,*xrlfa1,*flux1;
+static double *vfa1,*area1,*advfa1,*xlet1,*cosa1,*volume1,*au1,*ad1,
+    *ap1,*xle1,*b1,*xxn1,*hfa1,*gradpel1,*bp1,*xxi1,*xlen1,*cosb1,
+    *a11,*a21,*a31,*velo1,*veloo1,*dtimef1,*shcon1,*vel1,*xrlfa1,*flux1,
+    *xxicn1;
 
 void mafillpcompmain(ITG *nef,char *lakonf,ITG *ipnei,
              ITG *neifa,ITG *neiel,double *vfa,double *area,double *advfa,
@@ -40,7 +42,7 @@ void mafillpcompmain(ITG *nef,char *lakonf,ITG *ipnei,
 	     double *bp,double *xxi,ITG *neij,double *xlen,double *cosb,
              ITG *ielmatf,ITG *mi,double *a1,double *a2,double *a3,double *velo,
              double *veloo,double *dtimef,double *shcon,ITG *ntmat_,double *vel,
-	     ITG *nactdohinv,double *xrlfa,double *flux){
+	     ITG *nactdohinv,double *xrlfa,double *flux,ITG *iau6,double *xxicn){
 
     ITG i,j;
       
@@ -99,12 +101,6 @@ void mafillpcompmain(ITG *nef,char *lakonf,ITG *ipnei,
     
     pthread_t tid[num_cpus];
 
-    /* allocating fields for lhs and rhs matrix */
-
-    NNEW(ad1,double,num_cpus**neq);
-    NNEW(au1,double,(long long)num_cpus*2**nzs);
-    NNEW(b1,double,num_cpus**neq);
-
     /* calculating the stiffness and/or mass matrix 
        (symmetric part) */
 
@@ -115,7 +111,7 @@ void mafillpcompmain(ITG *nef,char *lakonf,ITG *ipnei,
     neij1=neij;xlen1=xlen;cosb1=cosb;ielmatf1=ielmatf;mi1=mi,a11=a1;
     a21=a2;a31=a3;velo1=velo;veloo1=veloo;dtimef1=dtimef;shcon1=shcon;
     ntmat1_=ntmat_;vel1=vel;nactdohinv1=nactdohinv;xrlfa1=xrlfa;
-    flux1=flux;
+    flux1=flux;iau61=iau6;ad1=ad;au1=au;b1=b;xxicn1=xxicn;
     
     /* create threads and wait */
     
@@ -127,42 +123,6 @@ void mafillpcompmain(ITG *nef,char *lakonf,ITG *ipnei,
     for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
     
     SFREE(ithread);
-
-    /* copying and accumulating the stiffnes and/or mass matrix */
-
-#pragma omp parallel \
-    default(none) \
-    shared(neq,ad,ad1,num_cpus,nzs,au,au1,b,b1) \
-    private(i,j)
-    {
-	#pragma omp for
-	for(i=0;i<*neq;i++){
-	    ad[i]=ad1[i];
-	    for(j=1;j<num_cpus;j++){
-		ad[i]+=ad1[i+j**neq];
-	    }
-	}
-	
-	#pragma omp for
-	for(i=0;i<2**nzs;i++){
-	    au[i]=au1[i];
-	    for(j=1;j<num_cpus;j++){
-		au[i]+=au1[i+(long long)j*2**nzs];
-	    }
-	}
-	
-	#pragma omp for
-	for(i=0;i<*neq;i++){
-	    b[i]=b1[i];
-	    for(j=1;j<num_cpus;j++){
-		b[i]+=b1[i+j**neq];
-	    }
-	}
-    }
-
-    SFREE(ad1);
-    SFREE(au1);
-    SFREE(b1);
   
   return;
 
@@ -172,12 +132,7 @@ void mafillpcompmain(ITG *nef,char *lakonf,ITG *ipnei,
 
 void *mafillpcompmt(ITG *i){
 
-    ITG indexad,indexb,nefa,nefb,nefdelta;
-    long long indexau;
-
-    indexad=*i**neq1;
-    indexau=(long long)*i*2**nzs1;
-    indexb=*i**neq1;
+    ITG nefa,nefb,nefdelta;
     
 // ceil -> floor
 
@@ -188,11 +143,11 @@ void *mafillpcompmt(ITG *i){
     if((*i==num_cpus-1)&&(nefb<*nef1)) nefb=*nef1;
 
     FORTRAN(mafillpcomp,(nef1,lakonf1,ipnei1,neifa1,neiel1,vfa1,area1,
-			 advfa1,xlet1,cosa1,volume1,&au1[indexau],&ad1[indexad],
-                         jq1,irow1,ap1,ielfa1,ifabou1,xle1,&b1[indexb],xxn1,neq1,nzs1,
+			 advfa1,xlet1,cosa1,volume1,au1,ad1,
+                         jq1,irow1,ap1,ielfa1,ifabou1,xle1,b1,xxn1,neq1,nzs1,
                          hfa1,gradpel1,bp1,xxi1,neij1,xlen1,cosb1,ielmatf1,mi1,
                          a11,a21,a31,velo1,veloo1,dtimef1,shcon1,ntmat1_,vel1,
-                         nactdohinv1,xrlfa1,flux1,&nefa,&nefb));
+                         nactdohinv1,xrlfa1,flux1,&nefa,&nefb,iau61,xxicn1));
 
     return NULL;
 }

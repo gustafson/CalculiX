@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine networkinum(ipkon,inum,kon,lakon,
-     &  ne,itg,ntg)
+     &  ne,itg,ntg,network)
 !
 !     assigns a negative sign to the inum values corresponding to
 !     network nodes
@@ -27,7 +27,7 @@
       character*8 lakon(*),lakonl
 !
       integer ipkon(*),inum(*),kon(*),ne,indexe,i,node1,node2,node3,
-     &  itg(*),ntg
+     &  itg(*),ntg,network
 !
 !     changing the sign of inum for all network nodes
 !
@@ -43,7 +43,8 @@
 !
          if(ipkon(i).lt.0) cycle
          lakonl=lakon(i)
-         if(lakonl(1:1).ne.'D ') cycle
+         if((lakonl(1:1).ne.'D ').and.
+     &      ((lakonl(1:1).ne.'D').or.(network.ne.1))) cycle
 !
          indexe=ipkon(i)
          if(kon(indexe+1).ne.0)  then

@@ -102,7 +102,7 @@
       do i=1,80
          version(i:i)=' '
       enddo
-      version(1:20)='Version 2.11'
+      version(1:20)='Version 2.12'
       write(15) version
 !
       write(15)istepnew
@@ -303,7 +303,7 @@
 !
 !     physical constants
 !
-      write(15)(physcon(i),i=1,3)
+      write(15)(physcon(i),i=1,10)
 !
 !     plastic data
 !
@@ -424,7 +424,7 @@
 !
 !     control parameters
 !
-      write(15) (ctrl(i),i=1,32)
+      write(15) (ctrl(i),i=1,39)
       write(15) (qaold(i),i=1,2)
       write(15) output
       write(15) ttime

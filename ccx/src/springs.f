@@ -20,7 +20,7 @@
      &        plicon,nplicon,
      &        ncmat_,elcon,matname,irstrt,istep,istat,n,iline,ipol,
      &        inl,ipoinp,inp,nmat_,set,istartset,iendset,ialset,
-     &        nset,ielmat,ielorien,ipoinpc,mi)
+     &        nset,ielmat,ielorien,ipoinpc,mi,norien,orname)
 !
 !     reading the input deck: *SPRING
 !
@@ -29,7 +29,7 @@
       logical linear
 !
       character*1 inpc(*)
-      character*80 matname(*)
+      character*80 matname(*),orientation,orname(*)
       character*81 set(*),elset
       character*132 textpart(16)
 !
@@ -37,7 +37,7 @@
      &  n,key,i,nplicon(0:ntmat_,*),ncmat_,istat,istartset(*),
      &  iendset(*),irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),nmat_,
      &  ialset(*),ipos,nset,j,k,ielmat(mi(3),*),ielorien(mi(3),*),
-     &  ipoinpc(0:*)  
+     &  ipoinpc(0:*),idof,iorientation,norien,idof2  
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),temperature,
      &  elcon(0:ncmat_,ntmat_,*)
@@ -46,6 +46,9 @@
 !
       ntmat=0
       npmat=0
+!
+      orientation='
+     &                           '
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR reading *SPRING: *SPRING should be placed'
@@ -66,6 +69,8 @@
       do i=2,n
          if(textpart(i)(1:9).eq.'NONLINEAR') then
             linear=.false.
+         elseif(textpart(i)(1:12).eq.'ORIENTATION=') then
+            orientation=textpart(i)(13:92)
          elseif(textpart(i)(1:6).eq.'ELSET=') then
             elset=textpart(i)(7:86)
             elset(81:81)=' '
@@ -81,6 +86,23 @@
          endif
       enddo
 !
+      if(orientation.eq.'                    ') then
+         iorientation=0
+      else
+         do i=1,norien
+            if(orname(i).eq.orientation) exit
+         enddo
+         if(i.gt.norien) then
+            write(*,*)
+     &       '*ERROR reading *SPRING: nonexistent orientation'
+            write(*,*) '  '
+            call inputerror(inpc,ipoinpc,iline,
+     &"*SPRING%")
+            call exit(201)
+         endif
+         iorientation=i
+      endif
+!
       if(linear) then
          nelcon(1,nmat)=2
 !
@@ -90,6 +112,58 @@
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
             if((istat.lt.0).or.(key.eq.1)) exit
+!
+!           check whether the first field in the first line 
+!           underneath *SPRING contains a decimal point. If so,
+!           this line is considered to be the start of material
+!           data for SPRINGA elements. If not, it is considered
+!           to contain degrees of freedom for SPRING1 or SPRING2 elements. 
+!
+            if(ntmat.eq.0) then
+               idof=1
+               do i=1,132
+                  if(textpart(1)(i:i).eq.'.') then
+                     idof=0
+                     exit
+                  endif
+               enddo
+               if(idof.eq.1) then
+                  read(textpart(2)(1:10),'(i10)',iostat=istat) idof2
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*SPRING%")
+                  if(idof2.eq.0) then
+                     if(ncmat_.lt.3) then
+                        write(*,*) '*ERROR reading *SPRING: one degree'
+                        write(*,*) '       of freedom was specified'
+                        write(*,*) '       (no decimal point in entry),'
+                        write(*,*) '       however, there are no'
+                        write(*,*) '       SPRING1 elements'
+                        write(*,*) '       in the input deck'
+                        call inputerror(inpc,ipoinpc,iline,
+     &                       "*SPRING%")
+                     endif
+                     read(textpart(1)(1:20),'(f20.0)',iostat=istat) 
+     &                    elcon(3,1,nmat)
+                  else
+                     if(ncmat_.lt.4) then
+                        write(*,*) '*ERROR reading *SPRING: two degrees'
+                        write(*,*) '       of freedom were specified'
+                        write(*,*) '       (no decimal point in entry),'
+                        write(*,*) '       however, there are no'
+                        write(*,*) '       SPRING2 elements'
+                        write(*,*) '       in the input deck'
+                        call inputerror(inpc,ipoinpc,iline,
+     &                       "*SPRING%")
+                     endif
+                     read(textpart(1)(1:20),'(f20.0)',iostat=istat) 
+     &                    elcon(3,1,nmat)
+                     read(textpart(2)(1:20),'(f20.0)',iostat=istat) 
+     &                    elcon(4,1,nmat)
+                  endif
+                  cycle
+               endif
+            endif
+!
             ntmat=ntmat+1
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
@@ -114,12 +188,46 @@
       else
          nelcon(1,nmat)=-51
 !
-!        kinematic hardening coefficients
+!        nonlinear spring behavior
 !
          do
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
             if((istat.lt.0).or.(key.eq.1)) exit
+!
+!           check whether the first field in the first line 
+!           underneath *SPRING contains a decimal point. If so,
+!           this line is considered to be the start of material
+!           data for SPRINGA elements. If not, it is considered
+!           to contain degrees of freedom for SPRING1 or SPRING2 elements. 
+!
+            if(ntmat.eq.0) then
+               idof=1
+               do i=1,132
+                  if(textpart(1)(i:i).eq.'.') then
+                     idof=0
+                     exit
+                  endif
+               enddo
+               if(idof.eq.1) then
+                  if(ncmat_.lt.4) then
+                     write(*,*) '*ERROR reading *SPRING: a degree'
+                     write(*,*) '       of freedom was specified'
+                     write(*,*) '       (no decimal point in entry),'
+                     write(*,*) '       however, there are neither'
+                     write(*,*) '       SPRING1 nor SPRING2 elements'
+                     write(*,*) '       in the input deck'
+                     call inputerror(inpc,ipoinpc,iline,
+     &"*SPRING%")
+                  endif
+                  read(textpart(1)(1:20),'(f20.0)',iostat=istat) 
+     &                 elcon(3,1,nmat)
+                  read(textpart(2)(1:20),'(f20.0)',iostat=istat) 
+     &                 elcon(4,1,nmat)
+                  cycle
+               endif
+            endif
+!
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) temperature
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*SPRING%")
@@ -184,14 +292,14 @@
       do j=istartset(i),iendset(i)
          if(ialset(j).gt.0) then
             ielmat(1,ialset(j))=nmat
-            ielorien(1,ialset(j))=0
+            ielorien(1,ialset(j))=iorientation
          else
             k=ialset(j-2)
             do
                k=k-ialset(j)
                if(k.ge.ialset(j-1)) exit
                ielmat(1,k)=nmat
-               ielorien(1,k)=0
+               ielorien(1,k)=iorientation
             enddo
          endif
       enddo

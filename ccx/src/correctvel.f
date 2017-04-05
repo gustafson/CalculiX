@@ -28,14 +28,14 @@
 !
       character*8 lakonf(*)
 !
-      integer i,j,k,nef,jdof1,indexf,ipnei(*),neifa(*),ifa,
-     &  neq,numfaces
+      integer i,k,nef,jdof1,indexf,ipnei(*),neifa(*),ifa,
+     &  neq
 !
-      real*8 bv(neq,3),hel(3,*),adv(*),xxn(3,*),area(*),vfa(0:5,*)
+      real*8 bv(neq,3),hel(3,*),adv(*),xxn(3,*),area(*),vfa(0:7,*)
 !
 c$omp parallel default(none)
 c$omp& shared(nef,bv,ipnei,lakonf,neifa,vfa,area,xxn,hel,adv)
-c$omp& private(i,jdof1,k,indexf,numfaces,j,ifa)
+c$omp& private(i,jdof1,k,indexf,ifa)
 c$omp do
       do i=1,nef
 !
@@ -43,17 +43,11 @@ c$omp do
          do k=1,3
             bv(jdof1,k)=0.d0
          enddo
-         indexf=ipnei(i)
+c         indexf=ipnei(i)
 !
-         if(lakonf(i)(4:4).eq.'8') then
-            numfaces=6
-         elseif(lakonf(i)(4:4).eq.'6') then
-            numfaces=5
-         else
-            numfaces=4
-         endif
-         do j=1,numfaces
-            indexf=indexf+1
+c         do j=1,ipnei(i+1)-ipnei(i)
+c            indexf=indexf+1
+         do indexf=ipnei(i)+1,ipnei(i+1)
             ifa=neifa(indexf)
             do k=1,3
                bv(jdof1,k)=bv(jdof1,k)

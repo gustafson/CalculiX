@@ -16,9 +16,11 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine initialcfd(nef,ipkonf,kon,lakonf,co,coel,cofa,nface,
+      subroutine initialcfd(nef,ipkonf,konf,lakonf,co,coel,cofa,nface,
      &  ielfa,area,ipnei,neiel,xxn,xxi,xle,xlen,xlet,xrlfa,cosa,
-     &  volume,neifa,xxj,cosb,dmin,ifatie,cs,tieset,icyclic,c,neij)
+     &  volume,neifa,xxj,cosb,dmin,ifatie,cs,tieset,icyclic,c,neij,
+     &  physcon,isolidsurf,nsolidsurf,dy,xxni,xxnj,xxicn,nflnei,
+     &  iturbulent)
 !
 !     calculating geometric variables of the cells and their faces
 !
@@ -27,17 +29,20 @@
       character*8 lakonf(*)
       character*81 tieset(3,*)
 !
-      integer nef,ipkonf(*),kon(*),nface,ielfa(4,*),ipnei(*),neiel(*),
+      integer nef,ipkonf(*),konf(*),nface,ielfa(4,*),ipnei(*),neiel(*),
      &  ifaceq(8,6),i,j,k,indexe,kflag,index1,index2,j1,j2,nope,
      &  nodes(4),iel1,iel2,iel3,iface,indexf,neifa(*),nf(5),ifacet(7,4),
      &  ifacew(8,5),numfaces,ied4(2,6),ied6(2,9),ied8(2,12),ifatie(*),
-     &  ics,itie,neighface,ifirst_occurrence,icyclic,neij(*)
+     &  ics,itie,neighface,ifirst_occurrence,icyclic,neij(*),jface,
+     &  isolidsurf(*),nsolidsurf,iopp8(4,6),iopp6(3,5),iopp4(1,4),
+     &  node,nelem,nflnei,iturbulent
 !
       real*8 co(3,*),coel(3,*),cofa(3,*),area(*),xxn(3,*),xxi(3,*),
      &  xle(*),xlen(*),xlet(*),xrlfa(3,*),cosa(*),xsj2(3),xi,et,
      &  shp2(7,4),xs2(3,7),xl2(3,8),xl13,volume(*),dxsj2,xl(3,8),
      &  xxj(3,*),cosb(*),dmin,cs(17,*),xn(3),theta,pi,dc,ds,dd,
-     &  c(3,3),diff(3),p(3),q(3),a(3)
+     &  c(3,3),diff(3),p(3),q(3),a(3),physcon(*),dy(*),xs(3,3),
+     &  aa,bb,cc,dist,xxni(3,*),xxnj(3,*),xxicn(3,*)
 !
 !     nodes belonging to the cell faces
 !
@@ -60,6 +65,9 @@
       data ied4 /1,2,2,3,3,1,1,4,2,4,3,4/
       data ied6 /1,2,2,3,3,1,4,5,5,6,6,4,1,4,2,5,3,6/
       data ied8 /1,2,2,3,3,4,4,1,5,6,6,7,7,8,8,1,1,5,2,6,3,7,4,8/
+      data iopp4 /4,3,1,2/
+      data iopp6 /4,5,6,1,3,2,3,6,0,1,4,0,2,5,0/
+      data iopp8 /5,6,7,8,4,3,2,1,3,4,8,7,4,1,5,8,1,2,6,5,2,3,7,6/
 !
       ifirst_occurrence=1
       icyclic=0
@@ -79,7 +87,7 @@
          endif
          do j=1,3
             do k=1,nope
-               coel(j,i)=coel(j,i)+co(j,kon(indexe+k))
+               coel(j,i)=coel(j,i)+co(j,konf(indexe+k))
             enddo
             coel(j,i)=coel(j,i)/nope
          enddo
@@ -165,7 +173,7 @@
 !           coordinates of the face centers
 !
             do j=1,4
-               nodes(j)=kon(indexe+ifaceq(j,j1))
+               nodes(j)=konf(indexe+ifaceq(j,j1))
                do k=1,3
                   xl2(k,j)=co(k,nodes(j))
                   cofa(k,i)=cofa(k,i)+xl2(k,j)
@@ -194,7 +202,7 @@
 !           coordinates of the face centers
 !
             do j=1,nf(j1)
-               nodes(j)=kon(indexe+ifacew(j,j1))
+               nodes(j)=konf(indexe+ifacew(j,j1))
                do k=1,3
                   xl2(k,j)=co(k,nodes(j))
                   cofa(k,i)=cofa(k,i)+xl2(k,j)
@@ -231,7 +239,7 @@
 !           coordinates of the face centers
 !
             do j=1,3
-               nodes(j)=kon(indexe+ifacet(j,j1))
+               nodes(j)=konf(indexe+ifacet(j,j1))
                do k=1,3
                   xl2(k,j)=co(k,nodes(j))
                   cofa(k,i)=cofa(k,i)+xl2(k,j)
@@ -283,23 +291,12 @@
 !     
          if(iel2.ne.0) then
             index2=ipnei(iel2)+neij(index1)
-c            index2=ipnei(iel2)
-c            do j2=1,neighface
-c               index2=index2+1
-c               if(neiel(index2).eq.iel1) exit
-c            enddo
 !     
 !     normal and xi-vector on face viewed from cell 2
 !     
             if(ifatie(i).eq.0) then
 !
 !              genuine neighbor
-!
-c               index2=ipnei(iel2)
-c               do j2=1,neighface
-c                  index2=index2+1
-c                  if(neiel(index2).eq.iel1) exit
-c               enddo
 !
                do k=1,3
                   xxi(k,index2)=cofa(k,i)-coel(k,iel2)
@@ -352,19 +349,6 @@ c               enddo
                xrlfa(1,i)=xle(index2)/(xle(index1)+xle(index2))
                xrlfa(2,i)=xle(index1)/(xle(index1)+xle(index2))
             else
-c               index2=ipnei(iel2)
-c               if(iel2.ne.iel1) then
-c                  do j2=1,neighface
-c                     index2=index2+1
-c                     if(neiel(index2).eq.iel1) exit
-c                  enddo
-c               else
-c                  do j2=1,neighface
-c                     index2=index2+1
-c                     if((neiel(index2).eq.iel1).and.
-c     &                  (index1.ne.index2)) exit
-c                  enddo
-c               endif
 !
 !              cyclic symmetry face: some quantities are
 !              calculated on the cyclic symmetric face
@@ -416,7 +400,6 @@ c               endif
                do k=1,3
                   xxj(k,index1)=coel(k,iel2)-coel(k,iel1)
      &                         +diff(k)
-c     &                         +diff(k)*ics/ifatie(i)
                enddo
 !     
 !     distance between the cell center and the center of the
@@ -478,19 +461,11 @@ c     &                         +diff(k)*ics/ifatie(i)
          if(lakonf(i)(1:1).ne.'F') cycle
          indexf=ipnei(i)
          volume(i)=0.d0
-         if(lakonf(i)(4:4).eq.'8') then
-            numfaces=6
-         elseif(lakonf(i)(4:4).eq.'6') then
-            numfaces=5
-         else
-            numfaces=4
-         endif
-         do j=1,numfaces
+         do j=1,ipnei(i+1)-ipnei(i)
             iface=neifa(indexf+j)
             volume(i)=volume(i)+
      &            area(iface)*cofa(1,iface)*xxn(1,indexf+j)
          enddo
-c         write(*,*) 'initialcfd volume ',i,volume(i)
       enddo
 !     
 !     calculation of the minimum length within the cells
@@ -501,7 +476,7 @@ c         write(*,*) 'initialcfd volume ',i,volume(i)
          read(lakonf(i)(4:4),'(i1)') nope
          do j=1,nope
             do k=1,3
-               xl(k,j)=co(k,kon(indexe+j))
+               xl(k,j)=co(k,konf(indexe+j))
             enddo
          enddo
          if(nope.eq.4) then
@@ -526,6 +501,164 @@ c         write(*,*) 'initialcfd volume ',i,volume(i)
       enddo
       dmin=dsqrt(dmin)
 !
+!     calculate the distance to the nearest node for solid surface
+!     faces
+!
+      if(iturbulent.gt.0) then
+!
+         if(dabs(physcon(5)).le.0.d0) then
+            write(*,*) '*ERROR in initialcfd: velocity at infinity'
+            write(*,*) '       is nonpositive;'
+            write(*,*) '       wrong *VALUES AT INFINITY'  
+            call exit(201)
+         endif
+!
+         if(dabs(physcon(7)).le.0.d0) then
+            write(*,*) '*ERROR in initialcfd: density at infinity'
+            write(*,*) '       is nonpositive;'
+            write(*,*) '       wrong *VALUES AT INFINITY'  
+            call exit(201)
+         endif
+!
+         if(dabs(physcon(8)).le.0.d0) then
+            write(*,*) '*ERROR in initialcfd: length of the '
+            write(*,*) '       computational domain is nonpositive;'
+            write(*,*) '       wrong *VALUES AT INFINITY'  
+            call exit(201)
+         endif
+!
+         do i=1,nsolidsurf
+            iface=isolidsurf(i)
+            nelem=int(iface/10)
+            indexe=ipkonf(nelem)
+            jface=iface-nelem*10
+!
+!           xl contains the coordinates of the nodes belonging
+!           to the face
+!
+            if(lakonf(nelem)(4:4).eq.'8') then
+               do j=1,4
+                  node=konf(indexe+ifaceq(j,jface))
+                  do k=1,3
+                     xl(k,j)=co(k,node)
+                  enddo
+               enddo
+            elseif(lakonf(nelem)(4:4).eq.'6') then
+               if(jface.le.2) then
+                  do j=1,3
+                     node=konf(indexe+ifacew(j,jface))
+                     do k=1,3
+                        xl(k,j)=co(k,node)
+                     enddo
+                  enddo
+               else
+                  do j=1,4
+                     node=konf(indexe+ifacew(j,jface))
+                     do k=1,3
+                        xl(k,j)=co(k,node)
+                     enddo
+                  enddo
+               endif
+            else
+               do j=1,3
+                  node=konf(indexe+ifacet(j,jface))
+                  do k=1,3
+                     xl(k,j)=co(k,node)
+                  enddo
+               enddo
+            endif
+!
+!           determine the plane through the face (exact for
+!           3-node face, approximate for a 4-node face)
+!
+            if((lakonf(nelem)(4:4).eq.'8').or.
+     &         ((lakonf(nelem)(4:4).eq.'6').and.(jface.gt.2))) then
+!
+!              computation of the local derivative of the global coordinates
+!             (xs)
+!
+               do j=1,3
+                  xs(j,1)=-xl(j,1)+xl(j,2)+xl(j,3)-xl(j,4)
+                  xs(j,2)=-xl(j,1)-xl(j,2)+xl(j,3)+xl(j,4)
+               enddo
+!
+!              computation of the jacobian vector for xi,et=0
+!
+               aa=xs(2,1)*xs(3,2)-xs(3,1)*xs(2,2)
+               bb=xs(1,2)*xs(3,1)-xs(3,2)*xs(1,1)
+               cc=xs(1,1)*xs(2,2)-xs(2,1)*xs(1,2)
+               dd=dsqrt(aa*aa+bb*bb+cc*cc)
+               aa=aa/dd
+               bb=bb/dd
+               cc=cc/dd
+               dd=-(aa*(xl(1,1)+xl(1,2)+xl(1,3)+xl(1,4))
+     &             +bb*(xl(2,1)+xl(2,2)+xl(2,3)+xl(2,4))
+     &             +cc*(xl(3,1)+xl(3,2)+xl(3,3)+xl(3,4)))/4.d0
+            else
+!
+!              computation of the local derivative of the global coordinates
+!             (xs)
+!
+               do j=1,3
+                  xs(j,1)=-xl(j,1)+xl(j,2)
+                  xs(j,2)=-xl(j,1)+xl(j,3)
+               enddo
+!     
+!              computation of the jacobian vector (unique for triangle)
+!     
+               aa=xs(2,1)*xs(3,2)-xs(3,1)*xs(2,2)
+               bb=xs(1,2)*xs(3,1)-xs(3,2)*xs(1,1)
+               cc=xs(1,1)*xs(2,2)-xs(2,1)*xs(1,2)
+               dd=dsqrt(aa*aa+bb*bb+cc*cc)
+               aa=aa/dd
+               bb=bb/dd
+               cc=cc/dd
+               dd=-(aa*xl(1,1)+bb*xl(2,1)+cc*xl(3,1))
+            endif
+!
+!           determine the shortest distance within the element
+!           from the solid surface face
+!
+            dist=1.d30
+            if(lakonf(nelem)(4:4).eq.'8') then
+               do j=1,4
+                  node=konf(indexe+iopp8(j,jface))
+                  dist=min(dist,-(aa*co(1,node)+bb*co(2,node)
+     &                           +cc*co(3,node)+dd))
+               enddo
+            elseif(lakonf(nelem)(4:4).eq.'6') then
+               if(jface.le.2) then
+                  do j=1,3
+                     node=konf(indexe+iopp6(j,jface))
+                     dist=min(dist,-(aa*co(1,node)+bb*co(2,node)
+     &                    +cc*co(3,node)+dd))
+                  enddo
+               else
+                  do j=1,2
+                     node=konf(indexe+iopp6(j,jface))
+                     dist=min(dist,-(aa*co(1,node)+bb*co(2,node)
+     &                    +cc*co(3,node)+dd))
+                  enddo
+               endif
+            else
+               node=konf(indexe+iopp8(1,jface))
+               dist=min(dist,-(aa*co(1,node)+bb*co(2,node)
+     &                        +cc*co(3,node)+dd))
+            endif
+!
+!           60.d0/(0.075*delta(y)**2)
+!
+            dy(i)=800.d0/(dist*dist)
+         enddo
+      endif
+!
+      do i=1,nflnei
+         do k=1,3
+            xxni(k,i)=xxn(k,i)-xxi(k,i)
+            xxnj(k,i)=xxn(k,i)-xxj(k,i)
+            xxicn(k,i)=xxi(k,i)-cosa(i)*xxn(k,i)
+         enddo
+      enddo
 c      write(*,*) 'initialcfd neifa,neiel'
 c      do i=1,6*nef
 c         write(*,*) (i-1)/6+1,i-6*((i-1)/6),neifa(i),neiel(i)

@@ -26,7 +26,7 @@
      &  calcul_fn,calcul_qa,nal,nea,neb,ithermal,nelemload,nload,
      &  nmethod,reltime,sideload,xload,xloadold,pslavsurf,
      &  pmastsurf,mortar,clearini,plicon,nplicon,ielprop,prop,
-     &  iponoel,inoel)
+     &  iponoel,inoel,network)
 !
 !     calculates the heat flux and the material tangent at the integration
 !     points and the internal concentrated flux at the nodes
@@ -46,7 +46,7 @@
      &  nplkcon(0:ntmat_,*),npmat_,calcul_fn,calcul_qa,nea,neb,
      &  nelemload(2,*),nload,ithermal(2),nmethod,nopered,iloc,
      &  jfaces,node,nplicon(0:ntmat_,*),null,ielprop(*),
-     &  iponoel(*),inoel(2,*)
+     &  iponoel(*),inoel(2,*),network
 !
       real*8 co(3,*),v(0:mi(2),*),shp(4,26),reltime,
      &  xl(3,26),vl(0:mi(2),26),elcon(0:ncmat_,ntmat_,*),
@@ -135,7 +135,8 @@ c!
 c!           local contact spring number
 c!
 c            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
-         elseif(lakon(i)(1:2).eq.'D ') then
+         elseif((lakon(i)(1:2).eq.'D ').or.
+     &          ((lakon(i)(1:1).eq.'D').and.(network.eq.1))) then
 !
 !           no entry or exit elements
 !
@@ -241,13 +242,20 @@ c            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
 !
                   call advecforc(nope,vl,ithermal,xl,nelemload,
      &                 i,nload,lakon,xload,istep,time,ttime,
-     &                 dtime,sideload,vold,mi,xloadold,reltime,nmethod,
+     &                 dtime,sideload,v,mi,xloadold,reltime,nmethod,
      &                 tnl,iinc,iponoel,inoel,ielprop,prop,ielmat,shcon,
      &                 nshcon,rhcon,nrhcon,ntmat_,ipkon,kon,cocon,
      &                 ncocon)
+c                  call advecforc(nope,vl,ithermal,xl,nelemload,
+c     &                 i,nload,lakon,xload,istep,time,ttime,
+c     &                 dtime,sideload,vold,mi,xloadold,reltime,nmethod,
+c     &                 tnl,iinc,iponoel,inoel,ielprop,prop,ielmat,shcon,
+c     &                 nshcon,rhcon,nrhcon,ntmat_,ipkon,kon,cocon,
+c     &                 ncocon)
                endif
 !
-            elseif(lakonl(1:2).eq.'D ') then
+            elseif((lakonl(1:2).eq.'D ').or.
+     &             ((lakonl(1:1).eq.'D').and.(network.eq.1))) then
 !
 !              generic networkelement
 !

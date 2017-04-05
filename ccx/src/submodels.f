@@ -122,11 +122,22 @@ c      globset(1:1)=' '
                if(set(iglobset).eq.globset) exit
             enddo
             if(iglobset.gt.nset) then
-               write(*,*) '*ERROR reading *SUBMODEL: global elset',
-     &            globset
+               write(*,*) 
+     &            '*ERROR reading *SUBMODEL: global element set ',
+     &            globset(1:ipos-1)
                write(*,*) '       does not exist'
                call exit(201)
             endif
+            do j=istartset(iglobset),iendset(iglobset)
+               if(ialset(j).lt.0) then
+                  write(*,*) 
+     &               '*ERROR reading *SUBMODEL: global element set ',
+     &               globset(1:ipos-1)
+                  write(*,*) '       was defined using GENERATE;'
+                  write(*,*) '       this is not allowed'
+                  call exit(201)
+               endif
+            enddo
          elseif(textpart(i)(1:6).eq.'INPUT=') then
             jobnamec(4)(1:126)=textpart(i)(7:132)
             jobnamec(4)(127:132)='      '

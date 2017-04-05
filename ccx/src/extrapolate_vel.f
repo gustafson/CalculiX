@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine extrapolate_vel(nface,ielfa,xrlfa,vel,vfa,
-     &  ifabou,xboun,ipnei,nef,icyclic,c,ifatie)
+     &  ifabou,xboun,ipnei,nef,icyclic,c,ifatie,xxn)
 !
 !     inter/extrapolation of v at the center of the elements
 !     to the center of the faces
@@ -27,13 +27,13 @@
       integer nface,ielfa(4,*),ifabou(*),iel1,iel2,iel3,i,j,ipointer,
      &  indexf,ipnei(*),nef,icyclic,ifatie(*)
 !
-      real*8 xrlfa(3,*),vel(nef,0:5),vfa(0:5,*),xboun(*),xl1,xl2,
-     &  c(3,3)
+      real*8 xrlfa(3,*),vel(nef,0:7),vfa(0:7,*),xboun(*),xl1,xl2,
+     &  c(3,3),xxn(3,*),dd
 !
 c$omp parallel default(none)
 c$omp& shared(nface,ielfa,xrlfa,vfa,vel,ipnei,ifabou,xboun,
-c$omp&        icyclic,c,ifatie)
-c$omp& private(i,iel1,xl1,iel2,xl2,j,iel3,ipointer,indexf)
+c$omp&        icyclic,c,ifatie,xxn)
+c$omp& private(i,iel1,xl1,iel2,xl2,j,iel3,ipointer,indexf,dd)
 c$omp do
       do i=1,nface
          iel1=ielfa(1,i)
@@ -63,6 +63,7 @@ c$omp do
          else
             indexf=ipnei(iel1)+ielfa(4,i)
             iel3=ielfa(3,i)
+c            write(*,*) 'extrapolate_vel ',iel1,iel2,iel3
             if(iel2.lt.0) then
                ipointer=-iel2
 !
@@ -121,6 +122,18 @@ c$omp do
 !     constant extrapolation
 !     
                   vfa(3,i)=vel(iel1,3)
+               endif
+!
+!     correction for sliding boundary conditions        
+!
+c               if(ifabou(ipointer+5).eq.2) then
+               if(ifabou(ipointer+5).lt.0) then
+                  dd=vfa(1,i)*xxn(1,indexf)+
+     &               vfa(2,i)*xxn(2,indexf)+
+     &               vfa(3,i)*xxn(3,indexf)
+                  do j=1,3
+                     vfa(j,i)=vfa(j,i)-dd*xxn(j,indexf)
+                  enddo
                endif
 !     
             else

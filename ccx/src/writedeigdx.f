@@ -33,18 +33,18 @@
       write(5,*)
       write(5,*) '    E I G E N V A L U E   S E N S I T I V I T Y'
       write(5,*)
-      write(5,'(a10,2x,i5,2x,e11.4)') 'EIGENVALUE',iev,d(iev)
+      write(5,'(a10,2x,i5,2x,e11.4)') 'EIGENVALUE',iev+1,d(iev+1)
       write(5,*)
 !
       do idesvar=1,ndesi
          iorien=(idesvar-1)/3+1
          iangle=idesvar-((idesvar-1)/3)*3
          if(iangle.eq.1) then
-            angle='  PSI'
+            angle='   Rx'
          elseif(iangle.eq.2) then
-            angle='THETA'
+            angle='   Ry'
          else
-            angle='  PHI'
+            angle='   Rz'
          endif
          write(5,'(a80,1x,a5,1x,e11.4)') orname(iorien),angle,
      &       dgdx(idesvar,1)

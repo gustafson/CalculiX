@@ -19,7 +19,7 @@
       subroutine umat_abaqus(amat,iel,iint,kode,elconloc,emec,emec0,
      &        beta,xokl,voj,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi,nstate_,xstateini,xstate,stre,stiff,
-     &        iorien,pgauss,orab,kstep,kinc,pnewdt)
+     &        iorien,pgauss,orab,istep,kinc,pnewdt,nmethod,iperturb)
 !
 !     calculates stiffness and stresses for a nonlinear material
 !     defined by an ABAQUS umat routine
@@ -137,9 +137,9 @@
       character*80 amat
 !
       integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),i,
-     &  iorien,
-     &  ndi,nshr,ntens,nprops,layer,kspt,kstep,kinc,kal(2,6),kel(4,21),
-     &  j1,j2,j3,j4,j5,j6,j7,j8,jj
+     &  iorien,nmethod,iperturb(*),istep,
+     &  ndi,nshr,ntens,nprops,layer,kspt,jstep(4),kinc,kal(2,6),
+     &  kel(4,21),j1,j2,j3,j4,j5,j6,j7,j8,jj
 !
       real*8 elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xokl(3,3),voj,pgauss(3),orab(7,*),
@@ -159,6 +159,17 @@
 !
       drot=reshape((/1.d0,0.d0,0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,1.d0/),
      &            (/3,3/))
+!
+!     filling field jstep
+!
+      jstep(1)=istep
+      jstep(2)=nmethod
+      jstep(3)=iperturb(2)
+      if(iperturb(1).eq.1) then
+         jstep(4)=1
+      else
+         jstep(4)=0
+      endif
 !
 !     calculating the mechanical strain
 !
@@ -271,10 +282,23 @@ c      nprops=21
          dstran(i)=2.d0*dstran(i)
       enddo
 !
-      call umat(stre,xstate(1,iint,iel),ddsdde,sse,spd,scd,rpl,ddsddt,
-     &  drplde,drpldt,stran,dstran,abqtime,dtime,temp,dtemp,predef,
-     &  dpred,amat,ndi,nshr,ntens,nstate_,elconloc,nprops,pgauss,drot,
-     &  pnewdt,celent,xokl,xkl,iel,iint,layer,kspt,kstep,kinc)
+      if(amat(1:1).eq.'@') then
+!
+         call call_external_umat(stre,xstate(1,iint,iel),ddsdde,
+     &        sse,spd,scd,rpl,ddsddt,drplde,drpldt,stran,dstran,
+     &        abqtime,dtime,temp,dtemp ,predef,dpred,amat,ndi,nshr,
+     &        ntens,nstate_,elconloc,nprops,pgauss,drot,pnewdt,
+     &        celent,xokl,xkl,iel,iint,layer,kspt,jstep,kinc)
+!
+      else
+!
+         call umat(stre,xstate(1,iint,iel),ddsdde,sse,spd,scd,rpl,
+     &        ddsddt,drplde,drpldt,stran,dstran,abqtime,dtime,temp,
+     &        dtemp,predef,dpred,amat,ndi,nshr,ntens,nstate_,elconloc,
+     &        nprops,pgauss,drot,pnewdt,celent,xokl,xkl,iel,iint,layer,
+     &        kspt,jstep,kinc)
+!
+      endif
 !
 !     taking local material orientations into account
 !

@@ -134,10 +134,18 @@
             endif
 !
             l=ialset(istartset(i))
-            if(lakon(l)(1:1).ne.'F') then
-               write(*,*) '*ERROR reading *MASS FLOW: element ',l
-               write(*,*) '       is not a fluid element*'
-               call exit(201)
+            if(.not.surface) then
+               if(lakon(l)(1:1).ne.'F') then
+                  write(*,*) '*ERROR reading *MASS FLOW: element ',l
+                  write(*,*) '       is not a fluid element*'
+                  call exit(201)
+               endif
+            else
+               if(lakon(l/10)(1:1).ne.'F') then
+                  write(*,*) '*ERROR reading *MASS FLOW: element ',l/10
+                  write(*,*) '       is not a fluid element*'
+                  call exit(201)
+               endif
             endif
 !
             do j=istartset(i),iendset(i)

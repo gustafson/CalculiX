@@ -30,11 +30,11 @@
       character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
-     &     ielprop(*),nodef(4),idirf(4),iflag,iaxial,
+     &     ielprop(*),nodef(*),idirf(*),iflag,iaxial,
      &     ipkon(*),kon(*),mi(*),nrhcon(*),ntmat_,nshcon(*)
 !     
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),cp,r,dvi,
-     &     physcon(3),co(3,*),vold(0:mi(2),*),ttime,time,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),cp,r,dvi,
+     &     physcon(*),co(3,*),vold(0:mi(2),*),ttime,time,
      &     shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*)
 !  
       if (iflag.eq.0) then

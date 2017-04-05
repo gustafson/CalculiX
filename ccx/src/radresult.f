@@ -54,6 +54,7 @@
          q(i)=q(i)-fenv(i)*physcon(2)*tenv(i)**4
          xloadact(2,j)=
      &        max(tarea(i)**4-q(i)/(erad(i)*physcon(2)),0.d0)
+c         xloadact(2,j)=(xloadact(2,j))**0.25-physcon(1)
          xloadact(2,j)=(xloadact(2,j))**0.25+physcon(1)
       enddo
 !     

@@ -91,7 +91,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   strcat(fneig,".frd");
 
   if((f1=fopen(fneig,"ab"))==NULL){
-    printf("*ERROR in frd: cannot open frd file for writing...");
+    printf("*EOR in frd: cannot open frd file for writing...");
     exit(0);
   }
 
@@ -123,7 +123,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
      computational metadata, the nodal coordinates and the
      topology */
 
-  if(*kode==1){
+//  if(*kode==1){
+  if((*kode==1)&&((*nmethod!=5)||(*mode!=0))){
     iaxial=0.;
 //    fprintf(f1,"%5s%1s\n",p1,c);
 
@@ -186,8 +187,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     fprintf(f1,"%5sUTIME              %8s                                        \n",p1,newclock);
     fprintf(f1,"%5sUHOST                                                              \n",p1);
     fprintf(f1,"%5sUPGM               CalculiX                                        \n",p1);
-    fprintf(f1,"%5sUVERSION           Version 2.11                             \n",p1);
-    fprintf(f1,"%5sUCOMPILETIME       So 31. Jul 13:26:31 CEST 2016                    \n",p1);
+    fprintf(f1,"%5sUVERSION           Version 2.12                             \n",p1);
+    fprintf(f1,"%5sUCOMPILETIME       So 2. Apr 15:03:04 CEST 2017                    \n",p1);
     fprintf(f1,"%5sUDIR                                                               \n",p1);
     fprintf(f1,"%5sUDBN                                                               \n",p1);
     
@@ -515,8 +516,9 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	                      fwrite(&iw,sizeof(int),1,f1);}
 	}
       }else if(strcmp1(&lakon[8*i+3],"15")==0){
-	if((strcmp1(&lakon[8*i+6]," ")==0)||
-           (strcmp1(&filab[4],"E")==0)){
+	if(((strcmp1(&lakon[8*i+6]," ")==0)||
+           (strcmp1(&filab[4],"E")==0))&&
+           (strcmp2(&lakon[8*i+6],"LC",2)!=0)){
 
           /* 15-node wedge element */
 
@@ -543,6 +545,44 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    for(j=9;j<12;j++){iw=(int)kon[indexe+j];
 	                      fwrite(&iw,sizeof(int),1,f1);}
 	  }
+
+   }else if(strcmp2(&lakon[8*i+6],"LC",2)==0){
+
+          /* composite material */
+
+          /* 15-node wedge elements */
+
+     nlayer=0;
+     for(k=0;k<mi[2];k++){
+       if(ielmat[i*mi[2]+k]==0) break;
+       nlayer++;
+     }
+     for(k=0;k<nlayer;k++){
+       nemax++;
+       if(strcmp1(output,"asc")==0){
+         fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n%3s",
+	         m1,nemax,p5,p0,imat,m2);
+         for(j=0;j<9;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+21+15*k+j]);
+         for(j=12;j<13;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+21+15*k+j]);
+         fprintf(f1,"\n%3s",m2);
+         for(j=13;j<15;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+21+15*k+j]);
+         for(j=9;j<12;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+21+15*k+j]);
+         fprintf(f1,"\n");
+       }else{
+         iw=(int)nemax;fwrite(&iw,sizeof(int),1,f1);
+         iw=(int)ip5;fwrite(&iw,sizeof(int),1,f1);
+         iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
+         iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
+         for(j=0;j<9;j++){iw=(int)kon[indexe+21+15*k+j];
+                           fwrite(&iw,sizeof(int),1,f1);}
+         for(j=12;j<13;j++){iw=(int)kon[indexe+21+15*k+j];
+                           fwrite(&iw,sizeof(int),1,f1);}
+         for(j=13;j<15;j++){iw=(int)kon[indexe+21+15*k+j];
+                           fwrite(&iw,sizeof(int),1,f1);}
+         for(j=9;j<12;j++){iw=(int)kon[indexe+21+15*k+j];
+                           fwrite(&iw,sizeof(int),1,f1);}
+       }
+     }
 	}else{
 
 	  /* 6-node 2d element */
@@ -976,7 +1016,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   /* storing the imaginary part of the total strains in the nodes
      for the odd modes of cyclic symmetry calculations */
   
-  if((*noddiam>=0)||((*nmethod==5)&&(*mode==0))){
+  if(*noddiam>=0){
     if((strcmp1(&filab[261],"E   ")==0)&&(*ithermal!=2)){
       
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
@@ -995,6 +1035,35 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
                 nfieldtensor,&iselect,m2,f1,output,m3);
       
     }
+  }
+
+  /* storing the imaginary part of the total strains in the nodes
+     for steady state calculations */
+  
+  if((*nmethod==5)&&(*mode==0)){
+      if((strcmp1(&filab[261],"E   ")==0)&&(*ithermal!=2)){
+	  iselect=1;
+	  
+	  frdset(&filab[261],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+	  
+	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
+	  
+	  fprintf(f1," -4  TOSTRAII    6    1\n");
+	  fprintf(f1," -5  EXX         1    4    1    1\n");
+	  fprintf(f1," -5  EYY         1    4    2    2\n");
+	  fprintf(f1," -5  EZZ         1    4    3    3\n");
+	  fprintf(f1," -5  EXY         1    4    1    2\n");
+	  fprintf(f1," -5  EYZ         1    4    2    3\n");
+	  fprintf(f1," -5  EZX         1    4    3    1\n");
+	  
+	  frdselect(een,een,&iset,&nkcoords,inum,m1,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,m2,f1,output,m3);
+	  
+      }
   }
 
   /* storing the mechanical strains in the nodes */
@@ -1297,7 +1366,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   
   /* storing the heat flux in the nodes
      the heat flux has been extrapolated from the integration points
-     in subroutine extropolate.f, taking into account whether the 
+     in subroutine extrapolate.f, taking into account whether the 
      results are requested in the global system or in a local system.
      Therefore, subroutine frdvector cannot be used, since it assumes
      the values are stored in the global system */
@@ -1449,7 +1518,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 	  
 	  fprintf(f1," -4  ERROR       2    1\n");
-	  fprintf(f1," -5  ABS         1    1    1    0\n");
+	  fprintf(f1," -5  STR(%%)      1    1    1    0\n");
 	  fprintf(f1," -5  REL         1    2    2    0\n");
 	  
 	  ncomp=2;
@@ -1477,7 +1546,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
       fprintf(f1," -4  ERRORI      2    1\n");
-      fprintf(f1," -5  ABS         1    1    1    0\n");
+      fprintf(f1," -5  STR(%%)      1    1    1    0\n");
       fprintf(f1," -5  REL         1    2    2    0\n");
       
       ncomp=2;

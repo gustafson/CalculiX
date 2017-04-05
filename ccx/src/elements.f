@@ -213,6 +213,8 @@ c    Bernhardi end
 !           spring element
 !
      &         (label.eq.'SPRINGA ').or.
+     &         (label.eq.'SPRING1 ').or.
+     &         (label.eq.'SPRING2 ').or.
 !
 !           dashpot element
 !
@@ -234,7 +236,14 @@ c    Bernhardi end
 !           network element
 !
             elseif(label(1:1).eq.'D') then
-               network=1
+               network=3
+!
+!           mass element
+!
+            elseif(label(1:4).eq.'MASS') then
+!
+!           unknown element type
+!
             else
                write(*,*) '*ERROR in elements:'
                write(*,*) label,' is an unknown element type'
@@ -243,12 +252,11 @@ c    Bernhardi end
 !
             if(label(1:3).eq.'CAX') then
                iaxial=180
-            elseif((label(1:3).eq.'B32').or.
+            elseif((label(1:2).eq.'S3').or.
+     &             (label(1:2).eq.'S4').or.
      &             (label(1:2).eq.'S6').or.
      &             (label(1:2).eq.'S8').or.
-     &             (label(1:3).eq.'B31').or.
-     &             (label(1:2).eq.'S3').or.
-     &             (label(1:2).eq.'S4')) then
+     &             (label(1:1).eq.'B')) then
                beamshell=.true.
             endif
 !
@@ -353,6 +361,17 @@ c     &        (label(1:5).eq.'CAX4 ').or.(label(1:3).eq.'S4 ')) then
          label='ESPRNGA1'
          nope=2
          nopeexp=2
+      elseif(label(1:7).eq.'SPRING1') then
+         label='ESPRNG10'
+         nope=1
+         nopeexp=1
+      elseif(label(1:7).eq.'SPRING2') then
+         label='ESPRNG21'
+         nope=2
+         nopeexp=2
+      elseif(label(1:4).eq.'MASS') then
+         nope=1
+         nopeexp=1
       endif
 !
       do

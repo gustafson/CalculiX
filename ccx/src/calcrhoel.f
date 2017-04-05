@@ -27,7 +27,7 @@
       integer nef,i,nrhcon(*),imat,ithermal,ntmat_,mi(*),
      &  ielmat(mi(3),*)
 !
-      real*8 t1l,vel(nef,0:5),rho,rhcon(0:1,ntmat_,*)
+      real*8 t1l,vel(nef,0:7),rho,rhcon(0:1,ntmat_,*)
 !     
       do i=1,nef
          t1l=vel(i,0)

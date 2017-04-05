@@ -33,70 +33,18 @@
       character*81 set(*)
       character*8 lakon(*)
 !
-      integer
-     &nelem,
-     &nactdog(0:3,*),
-     &node1,
-     &node2,
-     &nodem,
-     &nodem1,
-     &numf,
-     &kon(*),
-     &ipkon(*),
-     &ielprop(*),
-     &nodef(6),
-     &idirf(6),
-     &index,
-     &iflag,
-     &inv,
-     &mi(2),
-     &nelem1,
-     &ichan_num,
-     &ider,
-     &icase,
-     &i,iaxial
+      integer nelem,nactdog(0:3,*),node1,node2,nodem,nodem1,numf,kon(*),
+     &ipkon(*),ielprop(*),nodef(*),idirf(*),index,iflag,inv,mi(2),
+     &nelem1,ichan_num,ider,icase,i,iaxial
 !
-      real*8 
-     &prop(*),
-     &v(0:mi(2),*),
-     &xflow,
-     &f,
-     &df(6),
-     &kappa,
-     &R,
-     &Tt1,
-     &Tt2,
-     &pt1,
-     &pt2,
-     &cp,
-     &physcon(3),
-     &km1,
-     &kp1,
-     &kdkm1,
-     &pt2pt1,
-     &pt1pt2,
-     &pt2pt1_crit,
-     &tdkp1,
-     &A,
-     &A1,
-     &A2,
-     &A_s,
-     &calc_residual_wye,
-     &dh1,
-     &dh2,
-     &alpha,
-     &xflow1,
-     &xflow2,
-     &pi,
-     &zeta_fac,
-     &Ts0,
-     &pspt0,
-     &pspt2,
-     &M1,
-     &M2,
-     &Ts2,ttime,time
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,R,Tt1,Tt2,pt1,pt2,
+     &cp,physcon(*),km1,kp1,kdkm1,pt2pt1,pt1pt2,pt2pt1_crit,tdkp1,
+     &A,A1,A2,A_s,calc_residual_wye,dh1,dh2,alpha,xflow1,xflow2,
+     &pi,zeta_fac,Ts0,pspt0,pspt2,M1,M2,Ts2,ttime,time
 !
-      if (iflag.eq.0) then
+      index=ielprop(nelem)
+!
+      if (iflag.eq.0.d0) then
          identity=.true.
          if(nactdog(2,node1).ne.0)then
             identity=.false.
@@ -107,8 +55,6 @@
          endif
 !
       elseif (iflag.eq.1)then
-!
-         index=ielprop(nelem)
 !
          kappa=(cp/(cp-R))
          kp1=kappa+1d0
@@ -127,14 +73,14 @@
 !
          if(pt1.ge.pt2) then
             inv=1
-            Tt1=v(0,node1)+physcon(1)
-            Tt2=v(0,node2)+physcon(1)
+            Tt1=v(0,node1)-physcon(1)
+            Tt2=v(0,node2)-physcon(1)
          else
             inv=-1
             pt1=v(2,node2)
             pt2=v(2,node1)
-            Tt1=v(0,node2)+physcon(1)
-            Tt2=v(0,node1)+physcon(1)
+            Tt1=v(0,node2)-physcon(1)
+            Tt2=v(0,node1)-physcon(1)
          endif
 !     
          pt1pt2=pt1/pt2
@@ -155,8 +101,6 @@
 !     
          numf=6
 !
-         index=ielprop(nelem)
-!
          kappa=(cp/(cp-R))
          pi=4.d0*datan(1.d0)
 !
@@ -164,16 +108,19 @@
 !
 !        Determining the previous element as
 !        the incoming mass flow is defined there
-         nelem1=prop(ielprop(nelem)+1)
+!
+         nelem1=nint(prop(index+1))
          nodem1=kon(ipkon(nelem1)+2)
 !
 !        Inlet conditions
+!
          pt1=v(2,node1)
-         Tt1=v(0,node1)+physcon(1)
+         Tt1=v(0,node1)-physcon(1)
          xflow1=v(1,nodem1)*iaxial
-         A1 = prop(ielprop(nelem)+4)
+         A1 = prop(index+4)
 !
 !        Outlet conditions
+!
          Tt2=v(0,node2)
          xflow2=v(1,nodem)*iaxial
          pt2=v(2,node2)
@@ -181,10 +128,10 @@
          if(nelem.eq.nint(prop(index+2))) then
 !
             A2 = A1
-            A_s = prop(ielprop(nelem)+6)
+            A_s = prop(index+6)
 !
-            dh1 = prop(ielprop(nelem)+9)
-            if(dh1.eq.0) then
+            dh1 = prop(index+9)
+            if(dh1.eq.0.d0) then
                dh1 = dsqrt(4*A1/pi)
             endif
 !
@@ -196,19 +143,19 @@
          elseif(nelem.eq.nint(prop(index+3))) then
 !
             ichan_num = 2
-            A2 = prop(ielprop(nelem)+6)
+            A2 = prop(index+6)
 !
-            dh1 = prop(ielprop(nelem)+9)
-            if(dh1.eq.0) then
+            dh1 = prop(index+9)
+            if(dh1.eq.0.d0) then
                dh1 = dsqrt(4*A1/pi)
             endif
 !
-            dh2 = prop(ielprop(nelem)+10)
-            if(dh2.eq.0) then
+            dh2 = prop(index+10)
+            if(dh2.eq.0.d0) then
                dh2 = dsqrt(4*A2/pi)
             endif
 !
-            alpha = prop(ielprop(nelem)+8)
+            alpha = prop(index+8)
             zeta_fac = prop(index+14)
 !
          endif
@@ -229,7 +176,7 @@
          idirf(5)=2
          idirf(6)=0
 !
-         if(ider.eq.0) then
+         if(ider.eq.0.d0) then
 !           Residual
             f=calc_residual_wye(pt1,Tt1,xflow1,xflow2,pt2,
      &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,R,ider,iflag)
@@ -241,8 +188,6 @@
 !
       elseif(iflag.eq.3) then
 !
-         index=ielprop(nelem)
-!
          kappa=(cp/(cp-R))
 !     setting icase (always adiabatic)
          icase=0;
@@ -253,14 +198,14 @@
 !
 !        Determining the previous element as
 !        the incoming mass flow is defined there
-         nelem1=prop(ielprop(nelem)+1)
+         nelem1=nint(prop(index+1))
          nodem1=kon(ipkon(nelem1)+2)
 !
 !        Inlet conditions
          pt1=v(2,node1)
-         Tt1=v(0,node1)+physcon(1)
+         Tt1=v(0,node1)-physcon(1)
          xflow1=v(1,nodem1)*iaxial
-         A1 = prop(ielprop(nelem)+4)
+         A1 = prop(index+4)
 !
 !        Outlet conditions
          Tt2=v(0,node2)
@@ -270,10 +215,10 @@
          if(nelem.eq.nint(prop(index+2))) then
 !
             A2 = A1
-            A_s = prop(ielprop(nelem)+6)
+            A_s = prop(index+6)
 !
-            dh1 = prop(ielprop(nelem)+9)
-            if(dh1.eq.0) then
+            dh1 = prop(index+9)
+            if(dh1.eq.0.d0) then
                dh1 = dsqrt(4*A1/pi)
             endif
 !
@@ -285,23 +230,22 @@
          elseif(nelem.eq.nint(prop(index+3))) then
 !
             ichan_num = 2
-            A2 = prop(ielprop(nelem)+6)
+            A2 = prop(index+6)
 !
-            dh1 = prop(ielprop(nelem)+9)
-            if(dh1.eq.0) then
+            dh1 = prop(index+9)
+            if(dh1.eq.0.d0) then
                dh1 = dsqrt(4*A1/pi)
             endif
 !
-            dh2 = prop(ielprop(nelem)+10)
-            if(dh2.eq.0) then
+            dh2 = prop(index+10)
+            if(dh2.eq.0.d0) then
                dh2 = dsqrt(4*A2/pi)
             endif
 !
-            alpha = prop(ielprop(nelem)+8)
+            alpha = prop(index+8)
             zeta_fac = prop(index+14)
 !
          endif
-!
 !
 !        Write the main information about the element
 !
@@ -336,7 +280,7 @@
      &           Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,
      &           kappa,R,ider,iflag)
 !     
-         write(1,56)'       Outlet node ',node2,':   Tt2= ',Tt2,
+         write(1,56)'      Outlet node ',node2,':   Tt2= ',Tt2,
      &        ' , Ts2= ',Ts2,' , Pt2= ',Pt2,
      &        ', M2= ',M2
 !     

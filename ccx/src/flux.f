@@ -22,8 +22,13 @@
      &     vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,
      &     ttime,time,iaxial)
 !
-!     determine whether the flux in the element is an unknown 
+!     gas element routines 
 !     
+!     mass flow input for all gas element routines is the gas
+!     flow for a 2 degrees segment with the correct sign
+!     (positive if from node 1 to node2 of the element,
+!      negative if from node 2 to node1 of the element)
+!
       implicit none
 !     
       logical identity
@@ -106,15 +111,6 @@
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
      &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,iaxial)
-! 
-!     gas pipe
-!
-      elseif(lakon(nelem)(2:5).eq.'GAPI') then 
-!
-         call gaspipe(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,mi,ttime,time,iaxial)
 !
 !     gas pipe fanno
 !
@@ -169,7 +165,8 @@
      &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
      &           rho,g,co,numf,mi,ttime,time,iaxial)
 !
-!     ?????
+!     element that fixes the mass flow as a specific percentage of the
+!     sum of the massflow of up to 10 other elements
 !
       elseif(lakon(nelem)(2:5).eq.'MFPC') then 
          call massflow_percent(node1,node2,nodem,nelem,lakon,kon,ipkon,
@@ -212,14 +209,16 @@
 !
 !     restrictors
 !
-      elseif((lakon(nelem)(2:3).eq.'RE').and.
+      elseif(((lakon(nelem)(2:3).eq.'RE').or.
+     &        (lakon(nelem)(2:3).eq.'RB')).and.
      &       (lakon(nelem)(2:8).ne.'REBRSI1').and.
      &       (lakon(nelem)(2:8).ne.'REBRSI2')) then 
-!         
+!          
          call restrictor(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,mi,ttime,time,iaxial)
+     &        nshcon,rhcon,nrhcon,ntmat_,mi,ttime,time,iaxial,
+     &        co,vold)
 !
 !     proprietary
 !
@@ -227,8 +226,8 @@
 !
          call rimseal(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,ttime,time,
-     &        iaxial)
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,
+     &        ttime,time,iaxial,co,vold)
 !     
 !     proprietary
 !

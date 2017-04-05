@@ -25,7 +25,7 @@
      &  nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,
      &  islavact,cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time,
      &  ielprop,prop,veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,
-     &  energy)
+     &  energy,orname)
 !
 !     - stores the results in the .dat file, if requested
 !       - nodal quantities at the nodes
@@ -43,6 +43,7 @@
       character*6 prlab(*)
       character*8 lakon(*)
       character*20 sideload(*),labmpc(*)
+      character*80 orname(*)
       character*81 set(*),prset(*)
       character*87 filab(*)
 !
@@ -54,7 +55,8 @@
      &  nfield,ndim,nstate_,nset,istartset(*),iendset(*),ialset(*),
      &  nprint,ntrans,ikin,ncocon(2,*),ntmat_,icfd,inomat(*),mortar,
      &  islavact(*),islavnode(*),nslavnode(*),ntie,islavsurf(2,*),
-     &  ielprop(*),ne0,index,nmpc,ipompc(*),nodempc(3,*),nactdoh
+     &  ielprop(*),ne0,index,nmpc,ipompc(*),nodempc(3,*),nactdoh,
+     &  iextrapolate
 !
       real*8 co(3,*),v(0:mi(2),*),stx(6,mi(1),*),stn(6,*),cdn(6,*),
      &  qfx(3,mi(1),*),qfn(3,*),orab(7,*),fn(0:mi(2),*),pslavsurf(3,*),
@@ -68,6 +70,7 @@
       data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
 !
       mt=mi(2)+1
+      iextrapolate=0
 !
 !     no print requests
 !
@@ -104,13 +107,37 @@
      &  prlab,prset,v,t1,fn,ipkon,lakon,stx,eei,xstate,ener,
      &  mi(1),nstate_,ithermal,co,kon,qfx,ttime,trab,inotr,ntrans,
      &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin,ielmat,thicke,
-     &  eme,islavsurf,mortar,time,ielprop,prop,veold)
+     &  eme,islavsurf,mortar,time,ielprop,prop,veold,orname)
+!
+!     for facial information (*section print): if forces and/or
+!     moments in sections are requested, the stresses have to be
+!     extrapolated from the integration points to the nodes first
+!
+      do i=1,nprint
+         if(prlab(i)(1:3).eq.'SOF') then
+            nfield=6
+            ndim=6
+            if((norien.gt.0).and.(filab(3)(6:6).eq.'L')) then
+               iorienloc=1
+            else
+               iorienloc=0
+            endif
+            cflag=filab(3)(5:5)
+            force=.false.
+!     
+            call extrapolate(stx,stn,ipkon,inum,kon,lakon,nfield,nk,
+     &           ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
+     &           vold,force,ielmat,thicke,ielprop,prop)
+            iextrapolate=1
+            exit
+         endif
+      enddo
 !
       icompressible=0
       call printoutface(co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
      &  cocon,ncocon,icompressible,istartset,iendset,ipkon,lakon,kon,
      &  ialset,prset,ttime,nset,set,nprint,prlab,ielmat,mi,
-     &  ithermal,nactdoh,icfd)
+     &  ithermal,nactdoh,icfd,time,stn)
 !
 !     interpolation in the original nodes of 1d and 2d elements
 !     this operation has to be performed in any case since
@@ -219,6 +246,7 @@
          call extrapolate(stx,stn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        vold,force,ielmat,thicke,ielprop,prop)
+         iextrapolate=1
 !
       endif
 !
@@ -237,6 +265,7 @@
          call extrapolate(eei,een,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        vold,force,ielmat,thicke,ielprop,prop)
+         iextrapolate=1
       endif
 !
 !     determining the mechanical strains in the nodes for output in 
@@ -255,6 +284,7 @@
          call extrapolate(eme,emn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        vold,force,ielmat,thicke,ielprop,prop)
+         iextrapolate=1
       endif
 !
 !     determining the plastic equivalent strain in the nodes 
@@ -269,6 +299,7 @@
          call extrapolate(xstate,epn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        vold,force,ielmat,thicke,ielprop,prop)
+         iextrapolate=1
       endif
 !
 !     determining the total energy in the nodes 
@@ -283,6 +314,7 @@
          call extrapolate(ener,enern,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        vold,force,ielmat,thicke,ielprop,prop)
+         iextrapolate=1
       endif
 !
 !     determining the internal state variables in the nodes 
@@ -302,6 +334,7 @@
          call extrapolate(xstate,xstaten,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        vold,force,ielmat,thicke,ielprop,prop)
+         iextrapolate=1
       endif
 !
 !     determining the heat flux in the nodes for output in frd format
@@ -320,16 +353,20 @@
          call extrapolate(qfx,qfn,ipkon,inum,kon,lakon,nfield,nk,
      &        ne,mi(1),ndim,orab,ielorien,co,iorienloc,cflag,
      &        vold,force,ielmat,thicke,ielprop,prop)
+         iextrapolate=1
       endif
 !
 !     if no element quantities requested in the nodes: calculate
 !     inum if nodal quantities are requested: used in subroutine frd
 !     to determine which nodes are active in the model 
 !
-      if((filab(3)(1:4).ne.'S   ').and.(filab(4)(1:4).ne.'E   ').and.
-     &   (filab(6)(1:4).ne.'PEEQ').and.(filab(7)(1:4).ne.'ENER').and.
-     &   (filab(8)(1:4).ne.'SDV ').and.(filab(9)(1:4).ne.'HFL ').and.
-     &   (filab(42)(1:3).ne.'ECD').and.(filab(32)(1:4).ne.'ME  ').and.
+c      if((filab(3)(1:4).ne.'S   ').and.(filab(4)(1:4).ne.'E   ').and.
+c     &   (filab(6)(1:4).ne.'PEEQ').and.(filab(7)(1:4).ne.'ENER').and.
+c     &   (filab(8)(1:4).ne.'SDV ').and.(filab(9)(1:4).ne.'HFL ').and.
+c     &   (filab(42)(1:3).ne.'ECD').and.(filab(32)(1:4).ne.'ME  ').and.
+c     &   ((nmethod.ne.4).or.(iperturb(1).ge.2))) then
+c
+      if((iextrapolate.eq.0).and.
      &   ((nmethod.ne.4).or.(iperturb(1).ge.2))) then
 !
          nfield=0

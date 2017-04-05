@@ -33,7 +33,7 @@
 !
       character*1 c1
       character*3 c3
-      character*5 c5
+      character*6 c6
       character*8 c8
       character*20 c20
       character*80 c80
@@ -88,7 +88,7 @@
 !
 !     point forces
 !
-      read(15)(i4,i=1,nforc)
+      read(15)(i4,i=1,2*nforc)
       read(15)(i4,i=1,nforc)
       read(15)(r8,i=1,nforc)
       read(15)(i4,i=1,nforc)
@@ -99,12 +99,12 @@
 !     distributed loads
 !
       read(15)(i4,i=1,2*nload)
-      read(15)(c5,i=1,nload)
+      read(15)(c20,i=1,nload)
       read(15)(r8,i=1,2*nload)
       if(nam.gt.0) read(15)(i4,i=1,2*nload)
       read(15)(r8,i=1,2*nload)
       read(15)(c81,i=1,nbody)
-      read(15)(i4,i=1,2*nbody)
+      read(15)(i4,i=1,3*nbody)
       read(15)(r8,i=1,7*nbody)
       read(15)(r8,i=1,7*nbody)
 !
@@ -114,7 +114,7 @@
 !
 !     labels
 !
-      read(15)(c5,i=1,nprint)
+      read(15)(c6,i=1,nprint)
       read(15)(c81,i=1,nprint)
       read(15)(c87,i=1,nlabel)
 !
@@ -146,7 +146,7 @@
 !
 !     physical constants
 !
-      read(15)(r8,i=1,3)
+      read(15)(r8,i=1,10)
 !
 !     plastic data
 !
@@ -219,8 +219,8 @@
 !
       if((ne1d.gt.0).or.(ne2d.gt.0))then
          read(15)(i4,i=1,2*nkon)
-         read(15)(r8,i=1,infree(1)-1)
-         read(15)(i4,i=1,infree(2)-1)
+         read(15)(r8,i=1,infree(1))
+         read(15)(i4,i=1,infree(2))
          read(15)(r8,i=1,mi(3)*nkon)
          read(15)(r8,i=1,2*ne)
          read(15)(i4,i=1,infree(4))
@@ -267,7 +267,7 @@
 !
 !     control parameters
 !
-      read(15) (r8,i=1,27)
+      read(15) (r8,i=1,39)
       read(15) (r8,i=1,2)
       read(15) c3
       read(15) r8

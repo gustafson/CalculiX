@@ -27,12 +27,11 @@
      &  springarea,nstate_,xstateini,xstate,thicke,integerglob,
      &  doubleglob,tieset,istartset,iendset,ialset,ntie,nasym,
      &  pslavsurf,pmastsurf,mortar,clearini,ielprop,prop,ne0,nea,
-     &  neb,distmin,ndesi,nodedesi,df,jqs,irows,dfminds,
-     &  icoordinate,dxstiff,xdesi,istartelem,ialelem,v)
+     &  neb,distmin,ndesi,nodedesi,df,jqs,irows,dfl,
+     &  icoordinate,dxstiff,xdesi,istartelem,ialelem,v,sigma,
+     &  ieigenfrequency)
 !
       implicit none
-!
-      integer mass(2),stiffness,buckling,rhsi,stiffonly(2),coriolis
 !
       character*8 lakon(*)
       character*20 sideload(*)
@@ -49,12 +48,13 @@
      &  indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,jqs(*),irows(*),
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,nea,
      &  neb,ndesi,nodedesi(*),idesvar,istartelem(*),ialelem(*),
-     &  icoordinate,ii
+     &  icoordinate,ii,ieigenfrequency,mass(2),stiffness,buckling,rhsi,
+     &  stiffonly(2),coriolis
 !
       real*8 co(3,*),coefmpc(*),xload(2,*),p1(3),p2(3),bodyf(3),
      &  xloadold(2,*),reltime,t0(*),t1(*),vold(0:mi(2),*),
      &  s(60,60),ff(60),sti(6,mi(1),*),sm(60,60),xdesi(3,*),
-     &  stx(6,mi(1),*),elcon(0:ncmat_,ntmat_,*),val,
+     &  stx(6,mi(1),*),elcon(0:ncmat_,ntmat_,*),val,sigma,
      &  rhcon(0:1,ntmat_,*),springarea(2,*),alcon(0:6,ntmat_,*),
      &  physcon(*),prop(*),xstate(nstate_,mi(1),*),
      &  xstateini(nstate_,mi(1),*),alzero(*),orab(7,*),
@@ -62,7 +62,7 @@
      &  plkcon(0:2*npmat_,ntmat_,*),xstiff(27,mi(1),*),
      &  veold(0:mi(2),*),om,dtime,ttime,time,thicke(mi(3),*),
      &  doubleglob(*),clearini(3,9,*),pslavsurf(3,*),
-     &  pmastsurf(6,*),distmin,dfminds(ndesi,60),
+     &  pmastsurf(6,*),distmin,dfl(ndesi,60),
      &  df(*),dxstiff(27,mi(1),ne,*),v(0:mi(2),*)
 !
       intent(in) co,kon,ipkon,lakon,ne,ipompc,nodempc,coefmpc,nmpc,
@@ -78,7 +78,7 @@
      &  ielprop,prop,ne0,nea,neb,ndesi,nodedesi,distmin,
      &  icoordinate,jqs,irows,dxstiff,xdesi,istartelem,ialelem,v
 !
-      intent(inout) xload,nmethod,cgr,springarea,xstate,df,dfminds
+      intent(inout) xload,nmethod,cgr,springarea,xstate,df,dfl
 !
       kflag=2
       i0=0
@@ -208,8 +208,8 @@ c     Bernhardi end
      &           integerglob,doubleglob,tieset,istartset,
      &           iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,
      &           clearini,ielprop,prop,distmin,ndesi,nodedesi,
-     &           dfminds,icoordinate,dxstiff,ne,xdesi,istartelem,
-     &           ialelem,v)
+     &           dfl,icoordinate,dxstiff,ne,xdesi,istartelem,
+     &           ialelem,v,sigma,ieigenfrequency)
 !     
             do ii=istartelem(i),istartelem(i+1)-1
                idesvar=ialelem(ii)
@@ -239,13 +239,13 @@ c     id=ilmpc(id)
                               jdof1=nactdof(nodempc(2,index),
      &                             nodempc(1,index))
                               if(jdof1.gt.0) then
-                                 val=-coefmpc(index)*dfminds(idesvar,jj)
+                                 val=-coefmpc(index)*dfl(idesvar,jj)
      &                                /coefmpc(ist)
                                  call add_bo_st(df,jqs,irows,jdof1,
      &                                          idesvar,val)
 c     dfextminds(idesvar,jdof1)=
 c     &                            dfextminds(idesvar,jdof1)
-c     &                            -coefmpc(index)*dfminds(idesvar,jj)
+c     &                            -coefmpc(index)*dfl(idesvar,jj)
 c     &                            /coefmpc(ist)
                               endif
                               index=nodempc(3,index)
@@ -256,9 +256,9 @@ c     &                            /coefmpc(ist)
                      cycle
                   endif  
 c     dfextminds(idesvar,jdof1)=dfextminds(idesvar,jdof1)+
-c     &          dfminds(idesvar,jj)
+c     &          dfl(idesvar,jj)
                   call add_bo_st(df,jqs,irows,jdof1,idesvar,
-     &                 dfminds(idesvar,jj))
+     &                 dfl(idesvar,jj))
                enddo
             enddo
          enddo

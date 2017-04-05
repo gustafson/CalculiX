@@ -36,11 +36,11 @@
       character*81 set(*)
 !      
       integer nelem,nactdog(0:3,*),node1,node2,nodem,iaxial,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,mi(*),
+     &     ielprop(*),nodef(*),idirf(*),index,iflag,mi(*),
      &     inv,ncoel,ndi,nbe,id,nen,ngv,numf,nodea,nodeb,
      &     ipkon(*),isothermal,kon(*),nelemswirl
 !      
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),a,d,pi,radius,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),a,d,pi,radius,
      &     p1,p2,rho,dvi,friction,reynolds,vold(0:mi(2),*),
      &     g(3),a1,a2,xn,xk,xk1,xk2,zeta,dl,dg,rh,a0,alpha,
      &     coarseness,rd,xks,z1,z2,co(3,*),xcoel(11),yel(11),
@@ -136,18 +136,13 @@
                nodea=nint(prop(index+1))
                nodeb=nint(prop(index+2))
                xn=prop(index+3)
-c               iaxial=nint(prop(index+4))
                radius=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &                       co(1,nodea)-vold(1,nodea))**2+
      &                      (co(2,nodeb)+vold(2,nodeb)-
      &                       co(2,nodea)-vold(2,nodea))**2+
      &                      (co(3,nodeb)+vold(3,nodeb)-
      &                       co(3,nodea)-vold(3,nodea))**2)
-c               if(iaxial.ne.0) then
-c                  a=pi*radius*radius/iaxial
-c               else
-                  a=pi*radius*radius
-c               endif
+               a=pi*radius*radius
                rh=radius/2.d0
             else
                a=prop(index+1)
@@ -174,18 +169,13 @@ c               endif
                nodea=nint(prop(index+1))
                nodeb=nint(prop(index+2))
                xn=prop(index+3)
-c               iaxial=nint(prop(index+4))
                radius=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &                       co(1,nodea)-vold(1,nodea))**2+
      &                       (co(2,nodeb)+vold(2,nodeb)-
      &                       co(2,nodea)-vold(2,nodea))**2+
      &                       (co(3,nodeb)+vold(3,nodeb)-
      &                       co(3,nodea)-vold(3,nodea))**2)
-c               if(iaxial.ne.0) then
-c                  a=pi*radius*radius/iaxial
-c               else
-                  a=pi*radius*radius
-c               endif
+               a=pi*radius*radius
                d=2.d0*radius
             else
                a=prop(index+1)
@@ -278,7 +268,7 @@ c               endif
             endif
             if(inv.ge.0) then
                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &              isothermal,kon,ipkon,R,Kappa,v,mi)
+     &              isothermal,kon,ipkon,R,Kappa,v,mi,iaxial)
                if(inv.ne.0) then
                   xk=zeta/(a1*a1)
                else
@@ -294,7 +284,7 @@ c               endif
                prop(index+5)=0.d0
                lakon(nelem)(4:5)='CO'
                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &              isothermal,kon,ipkon,R,Kappa,v,mi)
+     &              isothermal,kon,ipkon,R,Kappa,v,mi,iaxial)
                lakon(nelem)(4:5)='EL'
                if(inv.ne.0) then
                   xk=zeta/(a1*a1)
@@ -359,7 +349,7 @@ c               endif
             endif
             if(inv.ge.0) then
                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &              isothermal,kon,ipkon,R,Kappa,v,mi)
+     &              isothermal,kon,ipkon,R,Kappa,v,mi,iaxial)
                if(inv.ne.0) then
                   xk=zeta/(a2*a2)
                else
@@ -370,7 +360,7 @@ c               endif
                reynolds=-reynolds
                lakon(nelem)(4:5)='EL'
                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &              isothermal,kon,ipkon,R,Kappa,v,mi)
+     &              isothermal,kon,ipkon,R,Kappa,v,mi,iaxial)
                lakon(nelem)(4:5)='CO'
                if(inv.ne.0) then
                   xk=zeta/(a2*a2)
@@ -439,7 +429,7 @@ c               endif
             a1=prop(index+1)
             a2=prop(index+2)
             call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &           isothermal,kon,ipkon,R,Kappa,v,mi)
+     &           isothermal,kon,ipkon,R,Kappa,v,mi,iaxial)
 !
 !           check for negative flow: in that case the loss
 !           coefficient is wrong
@@ -474,7 +464,7 @@ c               endif
             a1=prop(index+1)
             a2=prop(index+2)
             call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &           isothermal,kon,ipkon,R,Kappa,v,mi)
+     &           isothermal,kon,ipkon,R,Kappa,v,mi,iaxial)
             if(inv.lt.0) then
                write(*,*) '*ERROR in liquidpipe: loss coefficients'
                write(*,*) '       for exit (Idelchik) do not apply to'
@@ -505,7 +495,7 @@ c               endif
             a1=prop(index+1)
             a2=prop(index+2)
             call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &           isothermal,kon,ipkon,R,Kappa,v,mi)
+     &           isothermal,kon,ipkon,R,Kappa,v,mi,iaxial)
             if(inv.lt.0) then
                write(*,*) '*ERROR in liquidpipe: loss coefficients'
                write(*,*) '       for a user element do not apply to'
@@ -614,7 +604,7 @@ c               endif
                reynolds=dabs(xflow)*dh/(dvi*a)
             endif
             call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &           isothermal,kon,ipkon,R,Kappa,v,mi)
+     &           isothermal,kon,ipkon,R,Kappa,v,mi,iaxial)
             if(inv.ne.0) then
                xk=zeta/(a*a)
             else
@@ -635,7 +625,7 @@ c               endif
                reynolds=dabs(xflow)*dh/(dvi*a1)
             endif
             call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &           isothermal,kon,ipkon,R,Kappa,v,mi)
+     &           isothermal,kon,ipkon,R,Kappa,v,mi,iaxial)
             if(inv.ne.0) then
                xk=zeta/(a1*a1)
             else
@@ -661,7 +651,7 @@ c               endif
                reynolds=dabs(xflow)*dh/(dvi*a2)
             endif
             call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &           isothermal,kon,ipkon,R,Kappa,v,mi)
+     &           isothermal,kon,ipkon,R,Kappa,v,mi,iaxial)
 !
 !           check for negative flow: in that case the loss
 !           coefficient is wrong
@@ -701,7 +691,7 @@ c               endif
             endif
             if(inv.ne.0) then
                call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &              isothermal,kon,ipkon,R,Kappa,v,mi)
+     &              isothermal,kon,ipkon,R,Kappa,v,mi,iaxial)
                xk=zeta/(a*a)
             else
 !

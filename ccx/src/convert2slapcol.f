@@ -22,31 +22,24 @@
 !        au: first lower triangle
 !        ad: diagonal terms
 !
-      subroutine convert2slapcol(au,ad,irow,ia,jq,ja,nzs,neq,aua)
+      subroutine convert2slapcol(au,ad,jq,nzs,nef,aua)
 !
       implicit none
 !
-      integer irow(*),ia(*),jq(*),ja(*),nzs,neq,i,j,k
+      integer jq(*),nzs,nef,i,j,k
       real*8 au(*),ad(*),aua(*)
 !
 !     converting the CalculiX format into the SLAP column format
 !
-      k=nzs+neq
+      k=nzs+nef
 !
-      do i=neq,1,-1
+      do i=nef,1,-1
          do j=jq(i+1)-1,jq(i),-1
             aua(k)=au(j)
-            ia(k)=irow(j)
             k=k-1
          enddo
          aua(k)=ad(i)
-         ia(k)=i
          k=k-1
-      enddo
-!
-      ja(1)=1
-      do i=2,neq+1
-         ja(i)=jq(i)+i-1
       enddo
 !
       return

@@ -36,7 +36,7 @@ void mastructse(ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 
   char lakonl[2]=" \0";
 
-  ITG i,j,k,id,index,jdof1,idof1,idof2,nmast,ifree,
+  ITG i,j,k,id,index,jdof1,idof1,idof2,nmast,ifree,kdof1,
     node,ist,kflag,indexe,nope,isize,*mast1=NULL,ii,
     *irows=NULL,mt=mi[1]+1,*next=NULL,jstart,idesvar;
 

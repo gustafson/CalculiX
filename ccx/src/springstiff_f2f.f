@@ -311,7 +311,12 @@ c      nopes = nope - nopem
 !     
 !     maximum size of shear force
 !     
-            dfshear=um*dfnl       
+            if(int(elcon(3,1,imat)).eq.4) then
+               dfshear=1.d30
+            else
+               dfshear=um*dfnl 
+            endif
+c            dfshear=um*dfnl       
 !     
 !     plastic and elastic slip
 !     

@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 2.11
+LOG-BOOK Version 2.12
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -2733,3 +2733,230 @@ Dec 2002        - started to work on single crystal plasticity
 
  30 July 2016  - copied v into vold and stx into sti after the 5th call 
                  of results in nonlingeo.c
+
+ 31 July 2016  - posted version 2.11
+
+ 4 Aug 2016    - got rid of iener, replaced it systematically by
+                 nener
+
+ 9 Sept 2016   - coded stress as objective function for sensitivity analysis
+               - cleaned the code for implicit analysis and updated the
+                 documentation (convergence criteria)
+               - updated the documentation for labyrinths
+               - worked on purely thermal networks with Dx-elements
+
+ 16 Sept 2016  - made some changes to the calculation of viewfactors:
+                 - visibility mesh of 160 x 160 was replaced by 1280 x 1280
+                 - faces too close to the horizon of the hemisphere are not
+                 taken into account
+               - changed the meaning of network: no network=0; thermal
+                 network=1; generic network=2; athermal liquid network=3;
+                 provided the keyword "THERMAL NETWORK" on the *STEP card
+               - enhanced the documentation of gas pipes
+               - removed some errors in objectivemain_se.c
+
+ 18 Sept 2016  - worked on thermal networks (user subroutine film.f)
+
+ 22 Sept 2016  - introduced 0.8 (v), 0.3 (p) under-relaxation coefficients
+                 for incompressible flow => elements with a 1/3 skewness
+                 work
+
+ 23 Sept 2016  - corrected an error in frd.c (mesh was stored more than
+                 onced when called from steadystate.c)
+               - added the orientation in the dat-file for the quantities
+                 stored in local coordinates
+               - took the design variables belonging to MPC-constraints
+                 (dep and indep) out of the design variable set
+
+ 30 Sept 2016  - modified K into K-lambda*M for the eigenfrequency as
+                 objective function in e_c3d_se.f
+               - implemented the eigenfrequency sensitivity for cyclic
+                 symmetric structures
+ 
+ 3 Oct 2016    - modified compressible cfd-calculations: introduced
+                 0.8 (v), 0.3 (p) under-relaxation coefficients,
+                 and jit=2 (2 pressure iterations)
+
+ 7 Oct 2016    - made some corrections for the calculation of frequency
+                 sensitivities for cyclic symmetric calculations
+               - implemented the paralellization of the filtering
+                 of the sensitivities.
+
+ 13 Oct 2016   - looked into duns-2.7.1
+
+ 14 Oct 2016   - created extra output in springforc_f2f.f for Malte Krack
+               - changed *face print into *section print and coded the
+                 calculation of SOF and SOM (section force and moment)
+               - stored the latest stiffness matrix in nonlingeo.c for
+                 a subsequent sensitivity analysis
+               - changed the calculation of the sensitivity of the
+                 eigenvectors (script Petrov)
+               - simplified absolute_relative.f
+
+ 15 Oct 2016   - started testing duns
+
+ 21 Oct 2016   - calculation of SOAREA, center of gravity, mean normal,
+                 normal and shear force in printoutface.f
+               - implemented the SPRING1, the SPRING2 and the MASS
+                 element
+
+ 28 Oct 2016   - update of the documentation (several issues)
+               - implementation of heating due to plasticity in dflux.f
+               - inserted a call to checkdivergence after the first
+                 call of radflowload in nonlingeo.c
+               - implemented the BEAM nonlinear MPC
+               - coded *KINEMATIC coupling
+
+ 4 Nov 2016    - small change in output for Malte Krack (springforc_f2f.f)
+               - correction of the dimensions of fields yiloc and coords
+                 in extrapolate.f for composite materials
+               - finished linear version of *KINEMATIC coupling
+               - implemented *DISTRIBUTING coupling for translations
+                 (couplings.f routine)
+
+ 11 Nov 2016   - implemented *DISTRIBUTING coupling for rotations
+
+ 18 Nov 2016   - updated the sensitivity routines:
+                 - sensitivity for geometric nonlinear calculations
+                 - modification for the sensitivity of the shape energy
+                   in nonlinear geometrical calculations
+                 - correction for an error of the stress sensitivity w.r.t.
+                   the material orientation
+               - continued to work on *DISTRIBUTING coupling for rotations
+              
+ 25 Nov 2016   - corrected an error for the STRESS sensitivity w.r.t.
+                 material orientation
+               - *DISTRIBUTING coupling works for small rotations
+               - implemented *GREEN functions
+
+ 30 Nov 2016   - continued to work on block CFD (velocity for incompressible
+                 fluids)
+
+ 2 Dec 2016    - corrected an error while reading the RESTART files
+               - worked on *DISTRIBUTING coupling for large rotations
+               - coded 6-noded composite shells
+
+ 8 Dec 2016    - continued to work on block CFD
+
+ 9 Dec 2016    - viscoplastic behavior is correctly reduced to plastic
+                 behavior in a *static step (checked)
+               - allowed for local orientations in combination with 
+                 isotropic materials for stress output in local systems
+               - submodel displacement, force and temperature boundary
+                 conditions are scaled across the step for a static step
+                 or in the presence of an amplitude
+               - corrected an error in mafillsmmain_se.c
+               - allowed for sensitivity analyses with contact for
+                 the orientations as design variables
+
+ 15 Dec 2016   - adapted the facial boundary conditions in CFD according
+                 to the modified element orientation in blocks
+
+ 16 Dec 2016   - removed an error in submodel scaling
+               - *KINEMATIC coupling works in the global system (same
+                 procedure as in ABAQUS)
+               - implemented the sensitivity of Green functions
+               - distance check (typdist/10) in linkdissimilar is 
+                 activated for all dependent nodes
+               - coded *KINEMATIC coupling for local systems
+               - updated the ABAQUS umat interface (field jstep).
+
+ 20 Dec 2016   - introduced field iau6 for CFD-applications
+
+ 21 Dec 2016   - replace the call to add_sm_fl_as or add_sm_fl in mafillv*f
+                 mafillp*f and mafillt*f by use of iau6
+               - changed the accuracy for the iterative CFD-solver to
+                 1.e-6
+
+ 22 Dec 2016   - changed the maximum number of iterations to 10 for the
+                 incompressible pressure equation and the number of direction
+                 vectors (nsave) to 3 => considerable speed-up
+
+ 13 Jan 2017   - set read_mode=0 in getglobalresults.c -> speedup for reading
+                 the global data sets
+               - corrected some errors in basis.f in connection with the
+                 use of a global elset on a *submodel card
+               - updated the *submodel documentation
+               - worked on the combination of a submodel calculation
+                 followed by a sensitivity calculation
+               - corrected an error in frdselect.c
+
+ 20 Jan 2017   - implemented the relationship between the error estimator and
+                 the stress error in errorestimator.f
+               - update the documentation for *coupling in combination with
+                 *kinematic
+               - updated the network capabilities in agreement with the
+                 requirements by Thomas Petzke
+
+ 21 Jan 2017   - calculated the distance to the nearest node for
+                 solid surface faces (CFD)
+
+ 22 Jan 2017   - changed 0:5 into 0:7 for CFD-calculations (space for
+                 the turbulent variables)
+               - changed applyboun.f and coded extrapolate_kel and
+                 extrapolate_oel
+
+ 27 Jan 2017   - removed a bug related to the sensitivity of
+                 asymmetric matrices
+               - calculated the area-averaged center of gravity for
+                 *COUPLING + *DISTRIBUTING applications.
+               - coded local coordinate systems for shells (projection of the
+                 global or local system onto the shell).
+
+ 29 Jan 2017   - simplified mafill*main.c
+               - integrated ad* into au*[2*nzs+...]
+               - corrected an error in relation to iau6 in mafill*f
+
+ 30 Jan 2017   - changed the storage of au from (irow,jq) to (neiel,ipnei)
+
+ 31 Jan 2017   - created neielcp (zero's replaced) in order to avoid an
+                 if-zero-statement in matvec.f
+
+ 3 Feb 2017    - introduced a warning if more than 8 entries are listed
+                 underneath *TIME POINTS
+               - cleaned up the gas network routines; removed "nint"
+                 bugs; removed the GASPIPE element; unified the dimension
+                 of df(8)
+
+ 4 Feb 2017    - continued speed optimization of CFD-code
+ 
+ 17 Feb 2017   - THERMAL NETWORK parameter on *STEP card works now
+               - corrected an error in objectivemain_se.c
+               - included the derivative of Fint for linear sensitivity
+                 calculations in order to take temperature into account
+               - implemented the calculation of autocorrelation vectors
+
+ 18 Feb 2017   - worked on turbulence for incompressible flows
+
+ 19 Feb 2017   - finished the implementation of turbulence for
+                 incompressible flows
+
+ 3 Mar 2017    - included nzs, irow, jq and irow in the .stm file for
+                 sensitivity analyses
+               - unified frd_sen_se.c, frd_orien_se.c, frd_norm_se.c and
+                 frd_rand_se.c into frd_se.c
+               - finished the implementation of *RANDOM FIELD
+               - worked on gaspipe_fanno.f: improvement of convergence
+                 when choking.
+
+ 10 Mar 2017   - the error estimator is now calculated based on the 
+                 largest eigenvalue in absolute value (per element)
+               - simplified and accelerated pt2zpt1_crit.f
+               - simplified gaspipe_fanno for isotherma gas pipe
+                 calculations; improved convergence in choking case.
+               - removed Tt2 from pt2zpt1_crit.f and Tt2 and T2
+                 from two_phase_flow.f
+               - changes +physcon(1) into -physcon(1) in all files
+
+ 17 Mar 2017   - modified the source code for isothermal gas pipes
+                 (continued)
+               - updated the gaspipe documentation
+
+ 18 Mar 2017   - increased stability of gas pipe elements w.r.t.
+                 extreme initial conditions
+ 
+ 24 Mär 2017   - corrected tt_calc.f
+               - slight modification to gaspipe_fanno.f
+               - modification to springforc_f2f and springstiff_f2f for
+                 tied contact
+               - removed errors reported by valgrind

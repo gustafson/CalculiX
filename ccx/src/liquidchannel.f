@@ -37,10 +37,10 @@
       character*8 lakon(*)
 !      
       integer nelem,nactdog(0:3,*),node1,node2,nodem,indexup,i,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,mi(*),nsol,
+     &     ielprop(*),nodef(*),idirf(*),index,iflag,mi(*),nsol,
      &     inv,numf,nodesg,nelemdown,nelemup,node0,kon(*),ipkon(*)
 !      
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),b,d,c,p,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),b,d,c,p,
      &     h1,h2,rho,dvi,friction,reynolds,dg,b1,b2,
      &     g(3),dl,xks,z1,z2,co(3,*),xflow2,dyg3dbj,dyg4dbj,
      &     s0,sqrts0,hk,form_fact,h1ns,h2ns,h0,dyg3deta,dyg4deta,

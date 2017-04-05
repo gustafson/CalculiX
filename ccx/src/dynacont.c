@@ -99,7 +99,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 
   ITG i,j,k,l,init,*itg=NULL,ntg=0,maxlenmpc,icascade=0,loop,
       konl[20],imat,nope,kodem,indexe,j1,jdof,kmin,kmax,
-      id,newstep=0,idiscon,*ipiv=NULL,info,nrhs=1,kode,iener=0,
+      id,newstep=0,idiscon,*ipiv=NULL,info,nrhs=1,kode,
       *ikactcont=NULL,*ilactcont=NULL,*ikactcont1=NULL,nactcont1=0,
       i1,icutb=0,iconvergence=0,idivergence=0,mt=mi[1]+1,
       nactcont1_=100,*ikactmech=NULL,iabsload=0,im,nasym=0,mortar=0,
@@ -188,9 +188,10 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       FORTRAN(springforc_n2f,(xl,konl,voldl,&imat,elcon,nelcon,elas,
 			  fnl,ncmat_,ntmat_,&nope,lakonl,
 			  &t1l,&kodem,elconloc,plicon,nplicon,npmat_,
-			  &senergy,&iener,cstr,mi,
+			  &senergy,nener,cstr,mi,
                           &springarea[2*(konl[nope]-1)],nmethod,ne0,
-			  nstate_,xstateini,xstate,reltime,ielas,&venergy));
+			  nstate_,xstateini,xstate,reltime,ielas,
+			  &venergy,ielorien,orab,norien,&i));
 
       storecontactdof(&nope,nactdof,&mt,konl,&ikactcont1,&nactcont1,
 		      &nactcont1_,bcont,fnl,ikmpc,nmpc,ilmpc,ipompc,nodempc, 
@@ -337,7 +338,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		   nplicon,plkcon,nplkcon,
 		   npmat_,ttime,time,istep,iinc,dtime,physcon,ibody,
 		   xbodyold,reltime,veold,matname,mi,ikactmech,nactmech,
-                   ielprop,prop));
+                   ielprop,prop,sti,xstateini,xstate,nstate_));
       }else{
 	  FORTRAN(rhs,(co,nk,kon,ipkon,lakon,ne,
 		   ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
@@ -349,7 +350,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		   nplicon,plkcon,nplkcon,
 		   npmat_,ttime,time,istep,iinc,dtime,physcon,ibody,
 		   xbodyold,reltime,veold,matname,mi,ikactmech,nactmech,
-                   ielprop,prop));
+                   ielprop,prop,sti,xstateini,xstate,nstate_));
       }
       
       /* correction for nonzero SPC's */
@@ -740,14 +741,16 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	FORTRAN(springforc_n2f,(xl,konl,voldl,&imat,elcon,nelcon,elas,
 			    fnl,ncmat_,ntmat_,&nope,lakonl,
 			    &t1l,&kodem,elconloc,plicon,nplicon,npmat_,
-			    &senergy,&iener,cstr,mi,
+			    &senergy,nener,cstr,mi,
                             &springarea[2*(konl[nope]-1)],nmethod,ne0,
-			    nstate_,xstateini,xstate,reltime,ielas,&venergy));
+			    nstate_,xstateini,xstate,reltime,ielas,
+			    &venergy,ielorien,orab,norien,&i));
 	
 	FORTRAN(springstiff_n2f,(xl,elas,konl,voldl,s,&imat,elcon,nelcon,
 	        ncmat_,ntmat_,&nope,lakonl,&t1l,&kode,elconloc,
 		plicon,nplicon,npmat_,iperturb,&springarea[2*(konl[nope]-1)],
-		nmethod,mi,ne0,nstate_,xstateini,xstate,reltime,&nasym));
+		nmethod,mi,ne0,nstate_,xstateini,xstate,reltime,&nasym,
+		ielorien,orab,norien,&i));
 
 	dfdbj(bcont,&dbcont,&neq[1],&nope,konl,nactdof,
 	      s,z,ikmpc,ilmpc,ipompc,nodempc,nmpc,coefmpc,

@@ -69,7 +69,8 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
                ITG *idrct, ITG *jmax,
 	       double *ctrl, ITG *itpamp, double *tietol,ITG *nalset,
 	       ITG *ikforc, ITG *ilforc, double *thicke,
-	       char *jobnamef,ITG *mei,ITG *nmat,ITG *ielprop,double *prop){
+	       char *jobnamef,ITG *mei,ITG *nmat,ITG *ielprop,double *prop,
+               char *orname){
 
   char fneig[132]="",description[13]="            ",*lakon=NULL,*labmpc=NULL,
     *lakont=NULL;
@@ -82,7 +83,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     *ilmpc=NULL,nsectors,nmd,nevd,*nm=NULL,*iamt1=NULL,*islavnode=NULL,
     ngraph=1,nkg,neg,ne0,ij,lprev,nope,indexe,ilength,*nslavnode=NULL,
     *ipneigh=NULL,*neigh=NULL,index,im,cyclicsymmetry,inode,
-    *ialset=*ialsetp,mt=mi[1]+1,kmin,kmax,i1,iit=-1,
+    *ialset=*ialsetp,mt=mi[1]+1,kmin,kmax,i1,iit=-1,network=0,
     *iter=NULL,lint,lfin,kk,kkv,kk6,kkx,icomplex,igeneralizedforce,
     idir,*inumt=NULL,icntrl,imag,jj,is,l1,*inocs=NULL,ml1,l2,nkt,net,
     *ipkont=NULL,*ielmatt=NULL,*inotrt=NULL,*kont=NULL,node,iel,*ielcs=NULL,
@@ -1359,7 +1360,8 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             &ne0,xforc,nforc,thicke,shcon,nshcon,
             sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	    islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,inoel);}
+	    islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
+	    inoel,nener,orname,&network);}
       else{
 	results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
             &stx[kkx],elcon,
@@ -1378,7 +1380,8 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             &ne0,xforc,nforc,thicke,shcon,nshcon,
             sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	    islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,inoel);
+	    islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
+	    inoel,nener,orname,&network);
       }
 
     }

@@ -54,7 +54,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	  char *jobnamec,ITG *mortar,ITG *nmat,ITG *ielprop,double *prop,
 	  ITG *ialeatoric,ITG *kscale,
 	  double *energy, double *allwk, double *energyref, double *emax,
-	  double *enres, double *enetoll, double *energyini, double *allwkini,
+	  double *r_abs, double *enetoll, double *energyini, double *allwkini,
 	  double *temax, double *sizemaxinc, ITG* ne0, ITG* neini,
 	  double *dampwk, double *dampwkini, double *energystartstep) {
 
@@ -67,7 +67,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	*stni=NULL,*vmax=NULL,*stnmax=NULL,*cs=NULL,c1[2],c2[2],reftime,
         *fn=NULL,*eenmax=NULL,*fnr=NULL,*fni=NULL,*qfx=NULL,*cdn=NULL,
         *cdnr=NULL,*cdni=NULL,
-        tmp, maxdecay=0.0, r_hat;
+        tmp, maxdecay=0.0, r_rel;
 
     /* reset ialeatoric to zero */
 
@@ -186,9 +186,9 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
          Main variables and meaning
          
-         r_hat     : modified energy conservation criterion
+         r_rel     : modified energy conservation criterion
          emax      : maximum value of the energy over the time history
-         enres     : energy residual (Eint + K + Econt - Wext - Wdamp -Eref)
+         r     : energy residual (Eint + K + Econt - Wext - Wdamp -Eref)
          enetoll   : energy conservation tolerance
          tmp       : auxiliary temporary variable
          maxdecay  : \hat(r)^{max}(\theta) -> value of the decay boundary 
@@ -205,13 +205,14 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	*emax=max(*emax,fabs(energy[1]));
 	*emax=max(*emax,fabs(*allwk));
 	
-	// energy residual (only calculated in the absence of contact 
+	// energy residual (only calculated in the absence of contact); 
+        // if <=0: loss of energy 
 
-	*enres=energy[0]+energy[1]+energy[2]+energy[3]-*energyref-*allwk-*dampwk;
+	*r_abs=energy[0]+energy[1]+energy[2]+energy[3]-*energyref-*allwk-*dampwk;
 	
 	// Absolute tolerance check (when the error is really small --> beginning of simulation)
 
-	if(fabs(*enres)>=*enetoll/4) {
+	if(fabs(*r_abs)>=*enetoll/4) {
 
 	    // Normal strategy: Relative error
 	    
@@ -221,14 +222,14 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    
 	    /* modified r_hat criterion */
 
-	    r_hat=*enres/(*emax);
-	    if(r_hat<=-maxdecay) {
+	    r_rel=*r_abs/(*emax);
+	    if(r_rel<=-maxdecay) {
 		idivergence=1;
 	    }else{
 		
 		/* Check if the residual is too close to the boundary */
 
-		if(r_hat*0.9<=-0.90*maxdecay) {
+		if(r_rel<=-0.9*maxdecay) {
 		    *istab=0; // keep the increment size
 		}
 	    }
@@ -242,7 +243,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     if((*nmethod==4)&&(*ithermal<2)&&(*uncoupled==0)&&(iconvergence==1)&&((*ne!=*ne0)||(*neini!=*ne0))){
 
 	/* store temporarly the value of emax: in case of forced divergence 
-	   emax has to be resetted. */
+	   emax has to be reset. */
 
 	tmp=*emax;
 	
@@ -259,7 +260,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	
 	FORTRAN(checkimpacts,(ne,neini,temax,sizemaxinc,energyref,
 			      tmin,tper,&idivergence,
-			      &iforceincsize,istab,dtheta,enres,energy,energyini,
+			      &iforceincsize,istab,dtheta,r_abs,energy,energyini,
 			      allwk,allwkini,dampwk,dampwkini,emax,mortar,
 			      &maxdecay,enetoll));
 
@@ -274,8 +275,8 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	   The user is aware of it via the output string. */
 
 	if((*ne==*ne0)&&(*neini>*ne0)&&(idivergence==0)){
-	    *enres=fabs(energy[0]+energy[1]+energy[2]+energy[3]-*energyref-*allwk-*dampwk);
-	    tmp=1.3*(2.0* *enres/(*emax))/(1.0+sqrt(*theta));
+	    *r_abs=fabs(energy[0]+energy[1]+energy[2]+energy[3]-*energyref-*allwk-*dampwk);
+	    tmp=1.3*(2.0*(*r_abs)/(*emax))/(1.0+sqrt(*theta));
 	    *enetoll=max(*enetoll,tmp);
 	    printf("\n Adaption of the max-decay boundary, enetoll = %f \n",*enetoll);
 	}
@@ -287,8 +288,8 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
 	if((iconvergence==1)&&(*ne<=*neini)){
 	    tmp=energy[0]+energy[1]+energy[2]+energy[3]-*energyref-*allwk-*dampwk;
-	    if(tmp>*enres){
-		*enres=tmp;
+	    if(tmp>*r_abs){
+		*r_abs=tmp;
 		printf("\n Adaption of the energy residual in persistent contact, \n");
 		printf("   an increasing trend has been detected.\n");
 	    }
@@ -401,15 +402,24 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	/* check whether new increment size exceeds maximum increment
            size allowed (by the user) */
 
-//	if((*dtheta>*tmax)&&(*idrct==0)){
-//	    *dtheta=*tmax;
 	if((*dtheta>*sizemaxinc)&&(*idrct==0)){
 	    *dtheta=*sizemaxinc;
 	    *dthetaref=*dtheta;
 	    printf(" the increment size exceeds thetamax and is decreased to %e\n\n",*dtheta**tper);
 	}
 
-        /* if itp=1 the increment just finished ends at a time point */
+        /* check whether new time point exceeds end of step */
+
+	if(*dtheta>=1.-*theta){
+	    if(*dtheta>1.-*theta){iexceed=1;}else{iexceed=0;}
+	    *dtheta=1.-*theta;
+	    *dthetaref=*dtheta;
+	    if(iexceed==1)
+		printf(" the increment size exceeds the remainder of the step and is decreased to %e\n\n",*dtheta**tper);
+	}
+
+        /* check whether the end of the new increment exceeds a time point;
+           if itp=1 the increment just finished ends at a time point */
 
 	if((*itpamp>0)&&(*idrct==0)){
 	    if(*itp==1){
@@ -431,6 +441,14 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		inew=id+1;
 	    }
 
+            /* if the end of the new increment is less than a time
+               point by less than 1.e-6 (theta-value) dtheta is
+               enlarged up to this time point */
+
+	    if((*inext==inew)&&(inew<=iend)){
+		if(amta[2*inew-2]-reftime<1.e-6**tper){inew++;}
+	    }
+
             /* inew: smallest time point exceeding time+dtheta*tper
                inext: smallest time point exceeding time */
 
@@ -444,16 +462,6 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		*itp=1;
 		printf(" the increment size exceeds a time point and is decreased to %e\n\n",*dtheta**tper);
 	    }else{*itp=0;}
-	}
-
-        /* check whether new time point exceeds end of step */
-
-	if(*dtheta>=1.-*theta){
-	    if(*dtheta>1.-*theta){iexceed=1;}else{iexceed=0;}
-	    *dtheta=1.-*theta;
-	    *dthetaref=*dtheta;
-	    if(iexceed==1)
-		printf(" the increment size exceeds the remainder of the step and is decreased to %e\n\n",*dtheta**tper);
 	}
     }
     else{
@@ -490,12 +498,6 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	
 	/* check for diverging residuals */
 	
-//	if((*iit>=i0)||(fabs(ram[0])>1.e20)||(fabs(cam[0])>1.e20)||
-//	               (fabs(ram[1])>1.e20)||(fabs(cam[1])>1.e20)||
-//	               (cam[2]>*deltmx)||(qa[2]>0.)){
-//	if((*iit>=i0)||(fabs(ram[0])>1.e20)||(fabs(cam[0])>1.e20)||
-//	               (fabs(ram[1])>1.e20)||(fabs(cam[1])>1.e20)||
-//	               (cam[2]>*deltmx)||(idivergence==1)){
 	if((*iit>=i0)||(fabs(ram[0])>1.e20)||(fabs(cam[0])>1.e20)||
 	               (fabs(ram[1])>1.e20)||(fabs(cam[1])>1.e20)||
 	               (cam[2]>*deltmx)||(idivergence==1)||
@@ -595,7 +597,6 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
                                 *dtheta=*sizemaxinc;                    // MPADD
                               }                                         // MPADD
                             }                                           // MPADD
-//			    if((*mortar!=1)||(*icutb!=0)) *dtheta=*dtheta*df;
 			}else{
 			    *dtheta=*dtheta**deltmx/cam[2]*da;
 			}
@@ -711,8 +712,11 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
 		    FORTRAN(writesummarydiv,(istep,iinc,icutb,iit,ttime,
 					     time,dtime));
-
 		    *istab=0;
+		    if(*itp==1){
+		      *itp=0;
+		      (*inext)--;
+		    }
 
                     /* check whether new increment size is smaller than minimum */
 
@@ -740,7 +744,12 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		    }
 		    *icntrl=1;
 		    (*icutb)++;
-		    if(*mortar==1) *kscale=100;
+		    if(*mortar==1){
+			*kscale=100;
+			printf("\n reducing the constant stiffnesses by a factor of 100 \n\n");
+		    }
+//		    if(*mortar==1) *kscale=100;
+
 		    if(*icutb>ia){
 			printf("\n *ERROR: too many cutbacks\n");
 			printf(" best solution and residuals are in the frd file\n\n");
@@ -769,7 +778,13 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		      }
 		      *ithermal=3;
 		    }
+
+                    /* default value for qa[2] */
+
+		    qa[2]=-1.;
+
 		    *iflagact=0;
+//		    *iflagact=0;
 		    return;
 		}
 	    }

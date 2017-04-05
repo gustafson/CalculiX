@@ -17,14 +17,15 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine normalsonsurface_se(ipkon,kon,lakon,extnor,co,nk,
-     &      ipoface,nodface)
+     &      ipoface,nodface,nactdof,mi)
 !
       character*8 lakon(*)
 !
       integer j,
      &  nelemm,jfacem,indexe,ipkon(*),kon(*),nopem,node,
      &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),
-     &  konl(26),ipoface(*),nodface(5,*)
+     &  konl(26),ipoface(*),nodface(5,*),mi(*),
+     &  nactdof(0:mi(2),*)
 !
       real*8 extnor(3,*),xsj2(3),shp2(7,9),xs2(3,2),xi,et,dd,
      &  xquad(2,9),xtri(2,7),xl2m(3,9),co(3,*)
@@ -265,6 +266,16 @@
 !            
          enddo
       enddo
+!
+!     not considering the directions with fixed displacements
+!
+      do l=1,nk
+         do m=1,3
+	    if(nactdof(m,l).le.0) then
+	       extnor(m,l)=0.d0
+	    endif
+	 enddo
+      enddo 
 !     
 !     normalizing the normals
 !     
@@ -277,6 +288,6 @@
             enddo
          endif
       enddo    
-!     
+!
       return
       end

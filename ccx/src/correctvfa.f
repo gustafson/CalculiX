@@ -27,10 +27,10 @@
       character*8 lakonf(*)
 !
       integer i,nface,ielfa(4,*),iel1,iel2,ifabou(*),j,indexf,k,
-     &  ipnei(*),ifa,nef,neifa(*),indexb,numfaces
+     &  ipnei(*),ifa,nef,neifa(*),indexb
 !
-      real*8 ap(*),bp(*),area(*),vfa(0:5,*),xxn(3,*),flux(*),
-     &  hfa(3,*),vel(nef,0:5),dh,xboun(*),totflux
+      real*8 ap(*),bp(*),area(*),vfa(0:7,*),xxn(3,*),flux(*),
+     &  hfa(3,*),vel(nef,0:7),dh,xboun(*),totflux
 !
 c$omp parallel default(none)
 c$omp& shared(nface,ielfa,ipnei,area,ap,vfa,hfa,xxn,vel,bp,ifabou,xboun)
@@ -107,24 +107,18 @@ c$omp end parallel
 !
 c$omp parallel default(none)
 c$omp& shared(nef,ipnei,lakonf,neifa,ielfa,ifabou,flux,area,vfa,xxn)
-c$omp& private(i,totflux,indexf,numfaces,j,ifa)
+c$omp& private(i,totflux,indexf,j,ifa)
 c$omp do
       do i=1,nef
 c         totflux=0.d0
-         indexf=ipnei(i)
-         if(lakonf(i)(4:4).eq.'8') then
-            numfaces=6
-         elseif(lakonf(i)(4:4).eq.'6') then
-            numfaces=5
-         else
-            numfaces=4
-         endif
-         do j=1,numfaces
-            indexf=indexf+1
+c         indexf=ipnei(i)
+c         do j=1,ipnei(i+1)-ipnei(i)
+c            indexf=indexf+1
+         do indexf=ipnei(i)+1,ipnei(i+1)
             ifa=neifa(indexf)
 !
             if(ielfa(2,ifa).lt.0) then
-               if(ifabou(-ielfa(2,ifa)+5).eq.2) then
+               if(ifabou(-ielfa(2,ifa)+5).lt.0) then
                   flux(indexf)=0.d0
                   cycle
                endif
@@ -134,7 +128,7 @@ c         totflux=0.d0
      &               (vfa(1,ifa)*xxn(1,indexf)+
      &                vfa(2,ifa)*xxn(2,indexf)+
      &                vfa(3,ifa)*xxn(3,indexf))
-c               write(*,*) 'correctvfa ',i,j,ifa
+c               write(*,*) 'correctvfa ',i,ifa
 c               write(*,*) vfa(5,ifa)
 c               write(*,*) vfa(1,ifa)
 c               write(*,*) vfa(2,ifa)

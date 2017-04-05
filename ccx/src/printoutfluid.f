@@ -18,9 +18,10 @@
 !
       subroutine printoutfluid(set,nset,istartset,iendset,ialset,nprint,
      &  prlab,prset,ipkonf,lakonf,sti,eei,xstate,ener,
-     &  mi,nstate_,co,kon,qfx,ttime,trab,inotr,ntrans,
+     &  mi,nstate_,co,konf,qfx,ttime,trab,inotr,ntrans,
      &  orab,ielorienf,norien,vold,ielmatf,thicke,
-     &  eme,vcontu,physcon,nactdoh,ielpropf,prop,xkappa,xmach,ithermal)
+     &  eme,xturb,physcon,nactdoh,ielpropf,prop,xkappa,xmach,ithermal,
+     &  orname)
 !
 !     stores results in the .dat file
 !
@@ -28,12 +29,12 @@
 !
       character*6 prlab(*)
       character*8 lakonf(*)
-      character*80 noset,elset
+      character*80 noset,elset,orname(*)
       character*81 set(*),prset(*)
 !
       integer nset,istartset(*),iendset(*),ialset(*),nprint,ipkonf(*),
      &  mi(*),nstate_,ii,jj,iset,l,limit,node,ipos,nelel,ithermal(2),
-     &  nelem,kon(*),inotr(2,*),ntrans,ielorienf(mi(3),*),norien,
+     &  nelem,konf(*),inotr(2,*),ntrans,ielorienf(mi(3),*),norien,
      &  mt,ielmatf(mi(3),*),nactdoh(*),
      &  ielpropf(*)
 !
@@ -41,7 +42,7 @@
      &  eei(6,mi(1),*),xstate(nstate_,mi(1),*),ener(mi(1),*),
      &  co(3,*),qfx(3,mi(1),*),ttime,
      &  trab(7,*),orab(7,*),vold(0:mi(2),*),thicke(mi(3),*),
-     &  eme(6,mi(1),*),vcontu(2,*),physcon(*),prop(*)
+     &  eme(6,mi(1),*),xturb(2,*),physcon(*),prop(*)
 !
       mt=mi(2)+1
 !
@@ -52,7 +53,7 @@
          if((prlab(ii)(1:4).eq.'VF  ').or.(prlab(ii)(1:4).eq.'PSF ').or.
      &      (prlab(ii)(1:4).eq.'TSF ').or.(prlab(ii)(1:4).eq.'PTF ').or. 
      &      (prlab(ii)(1:4).eq.'TTF ').or.(prlab(ii)(1:4).eq.'CP  ').or.
-     &      (prlab(ii)(1:4).eq.'TURB')) 
+     &      (prlab(ii)(1:4).eq.'TURB').or.(prlab(ii)(1:4).eq.'MACH')) 
      &      then
 !
             ipos=index(prset(ii),' ')
@@ -98,7 +99,13 @@
             elseif(prlab(ii)(1:4).eq.'TURB') then
                write(5,*)
                write(5,118) noset(1:ipos-2),ttime
- 118           format(' turbulence conservative variables for set ',A,
+ 118           format(' turbulence variables for set ',A,
+     &             ' and time ',e14.7)
+               write(5,*)
+            elseif(prlab(ii)(1:4).eq.'MACH') then
+               write(5,*)
+               write(5,119) noset(1:ipos-2),ttime
+ 119           format(' Mach numbers for set ',A,
      &             ' and time ',e14.7)
                write(5,*)
             endif
@@ -112,16 +119,16 @@
                if(ialset(jj).lt.0) cycle
                if(jj.eq.iendset(iset)) then
                   node=ialset(jj)
-                  call printoutnodefluid(prlab,vold,vcontu,physcon,
+                  call printoutnodefluid(prlab,vold,xturb,physcon,
      &              ii,node,trab,inotr,ntrans,co,mi,xkappa,xmach)
                elseif(ialset(jj+1).gt.0) then
                   node=ialset(jj)
-                  call printoutnodefluid(prlab,vold,vcontu,physcon,
+                  call printoutnodefluid(prlab,vold,xturb,physcon,
      &              ii,node,trab,inotr,ntrans,co,mi,xkappa,xmach)
                else
                   do node=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                 -ialset(jj+1)
-                  call printoutnodefluid(prlab,vold,vcontu,physcon,
+                  call printoutnodefluid(prlab,vold,xturb,physcon,
      &              ii,node,trab,inotr,ntrans,co,mi,xkappa,xmach)
                   enddo
                endif
@@ -168,23 +175,26 @@
                      nelel=nactdoh(nelem)
                      call printoutint(prlab,ipkonf,lakonf,sti,eei,
      &                    xstate,ener,mi(1),nstate_,ii,nelem,qfx,
-     &                    orab,ielorienf,norien,co,kon,ielmatf,thicke,
-     &                    eme,ielpropf,prop,nelel,ithermal)
+     &                    orab,ielorienf,norien,co,konf,ielmatf,thicke,
+     &                    eme,ielpropf,prop,nelel,ithermal,
+     &                    orname)
                   elseif(ialset(jj+1).gt.0) then
                      nelem=ialset(jj)
                      nelel=nactdoh(nelem)
                      call printoutint(prlab,ipkonf,lakonf,sti,eei,
      &                    xstate,ener,mi(1),nstate_,ii,nelem,qfx,orab,
-     &                    ielorienf,norien,co,kon,ielmatf,thicke,eme,
-     &                    ielpropf,prop,nelel,ithermal)
+     &                    ielorienf,norien,co,konf,ielmatf,thicke,eme,
+     &                    ielpropf,prop,nelel,ithermal,
+     &                    orname)
                   else
                      do nelem=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                    -ialset(jj+1)
                         nelel=nactdoh(nelem)
                         call printoutint(prlab,ipkonf,lakonf,sti,eei,
      &                       xstate,ener,mi(1),nstate_,ii,nelem,
-     &                       qfx,orab,ielorienf,norien,co,kon,ielmatf,
-     &                       thicke,eme,ielpropf,prop,nelel,ithermal)
+     &                       qfx,orab,ielorienf,norien,co,konf,ielmatf,
+     &                       thicke,eme,ielpropf,prop,nelel,ithermal,
+     &                       orname)
                      enddo
                   endif
                enddo

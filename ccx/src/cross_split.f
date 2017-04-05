@@ -33,66 +33,18 @@
       character*81 set(*)
 !
       integer
-     &nelem,
-     &nactdog(0:3,*),
-     &node1,
-     &node2,
-     &nodem,
-     &numf,
-     &kon(*),
-     &ipkon(*),
-     &ielprop(*),
-     &nodef(6),
-     &idirf(6),
-     &iflag,
-     &inv,
-     &mi(2),
-     &nodem1,
-     &nelem1,
-     &ichan_num,
-     &ider,
-     &icase,iaxial
+     &nelem,nactdog(0:3,*),node1,node2,nodem,numf,kon(*),ipkon(*),
+     &ielprop(*),nodef(*),idirf(*),iflag,inv,mi(2),nodem1,nelem1,
+     &ichan_num,ider,icase,iaxial,index
 !
-      real*8 
-     &prop(*),
-     &v(0:mi(2),*),
-     &xflow,
-     &f,
-     &df(6),
-     &kappa,
-     &R,
-     &Tt1,
-     &Tt2,
-     &pt1,
-     &pt2,
-     &cp,
-     &physcon(3),
-     &km1,
-     &kp1,
-     &kdkm1,
-     &pt2pt1,
-     &pt1pt2,
-     &pt2pt1_crit,
-     &tdkp1,
-     &A,
-     &A1,
-     &A2,
-     &calc_residual_cross_split,
-     &dh1,
-     &dh2,
-     &alpha,
-     &xflow1,
-     &xflow2,
-     &zeta_fac,
-     &A_s,
-     &Ts0,
-     &pspt0,
-     &pspt2,
-     &M1,
-     &M2,
-     &Ts2,ttime,time
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,R,Tt1,Tt2,pt1,
+     &pt2,cp,physcon(*),km1,kp1,kdkm1,pt2pt1,pt1pt2,pt2pt1_crit,
+     &tdkp1,A,A1,A2,calc_residual_cross_split,dh1,dh2,alpha,xflow1,
+     &xflow2,zeta_fac,A_s,Ts0,pspt0,pspt2,M1,M2,Ts2,ttime,time
 !
-      if (iflag.eq.0) then
+      index=ielprop(nelem)
+!
+      if(iflag.eq.0) then
          identity=.true.
          if(nactdog(2,node1).ne.0)then
             identity=.false.
@@ -102,7 +54,7 @@
             identity=.false.
          endif
 !
-      elseif (iflag.eq.1)then
+      elseif(iflag.eq.1)then
 !
          kappa=(cp/(cp-R))
          kp1=kappa+1d0
@@ -110,12 +62,12 @@
          kdkm1=kappa/km1
          tdkp1=2.d0/kp1
 !
-         if(nelem.eq.nint(prop(ielprop(nelem)+2))) then
-            A=prop(ielprop(nelem)+5)
-         elseif(nelem.eq.nint(prop(ielprop(nelem)+3)))then
-            A=prop(ielprop(nelem)+6)
-         elseif(nelem.eq.nint(prop(ielprop(nelem)+4)))then
-            A=prop(ielprop(nelem)+6)
+         if(nelem.eq.nint(prop(index+2))) then
+            A=prop(index+5)
+         elseif(nelem.eq.nint(prop(index+3)))then
+            A=prop(index+6)
+         elseif(nelem.eq.nint(prop(index+4)))then
+            A=prop(index+6)
          endif
 !
          pt1=v(2,node1)
@@ -123,14 +75,14 @@
 !
          if(pt1.ge.pt2) then
             inv=1
-            Tt1=v(0,node1)+physcon(1)
-            Tt2=v(0,node2)+physcon(1)
+            Tt1=v(0,node1)-physcon(1)
+            Tt2=v(0,node2)-physcon(1)
          else
             inv=-1
             pt1=v(2,node2)
             pt2=v(2,node1)
-            Tt1=v(0,node2)+physcon(1)
-            Tt2=v(0,node1)+physcon(1)
+            Tt1=v(0,node2)-physcon(1)
+            Tt2=v(0,node1)-physcon(1)
          endif
 !     
          pt1pt2=pt1/pt2
@@ -146,7 +98,7 @@
      &           dsqrt(Tt1)
          endif
 !     
-      elseif (iflag.eq.2)then
+      elseif(iflag.eq.2)then
 !     
          numf=6
 !
@@ -160,15 +112,15 @@
 !
 !        Determining the previous element as
 !        the incoming mass flow is defined there
-         nelem1=prop(ielprop(nelem)+1)
+         nelem1=nint(prop(index+1))
          nodem1=kon(ipkon(nelem1)+2)
 !
 !        Inlet conditions
          pt1=v(2,node1)
-         Tt1=v(0,node1)+physcon(1)
+         Tt1=v(0,node1)-physcon(1)
          xflow1=v(1,nodem1)*iaxial
-         A1 = prop(ielprop(nelem)+5)
-         dh1 = prop(ielprop(nelem)+9)
+         A1=prop(index+5)
+         dh1=prop(index+9)
 !
 !        Set the node numbers for the degrees of freedom
          nodef(1)=node1
@@ -185,40 +137,40 @@
          idirf(5)=2
          idirf(6)=0
 !
-         if(nelem.eq.nint(prop(ielprop(nelem)+2))) then
-            ichan_num = 1
+         if(nelem.eq.nint(prop(index+2))) then
+            ichan_num=1
 !
             Tt2=v(0,node2)
             xflow2=v(1,nodem)*iaxial
             pt2=v(2,node2)
-            A2 = A1
-            A_s = prop(ielprop(nelem)+6)
-            dh2 = dh1
-            alpha = 0
-            zeta_fac = prop(ielprop(nelem)+11)
+            A2=A1
+            A_s=prop(index+6)
+            dh2=dh1
+            alpha=0
+            zeta_fac=prop(index+11)
 !
-         elseif(nelem.eq.nint(prop(ielprop(nelem)+3))) then
-            ichan_num = 2
-!
-            Tt2=v(0,node2)
-            xflow2=v(1,nodem)*iaxial
-            pt2=v(2,node2)
-            A2 = prop(ielprop(nelem)+6)
-            dh2 = prop(ielprop(nelem)+10)
-            alpha = prop(ielprop(nelem)+7)
-            zeta_fac = prop(ielprop(nelem)+12)
-!
-         elseif(nelem.eq.nint(prop(ielprop(nelem)+4))) then
-            ichan_num = 3
+         elseif(nelem.eq.nint(prop(index+3))) then
+            ichan_num=2
 !
             Tt2=v(0,node2)
             xflow2=v(1,nodem)*iaxial
             pt2=v(2,node2)
-            A1 = prop(ielprop(nelem)+5)
-            A2 = prop(ielprop(nelem)+6)
-            dh2 = prop(ielprop(nelem)+10)
-            alpha = prop(ielprop(nelem)+8)
-            zeta_fac = prop(ielprop(nelem)+12)
+            A2=prop(index+6)
+            dh2=prop(index+10)
+            alpha=prop(index+7)
+            zeta_fac=prop(index+12)
+!
+         elseif(nelem.eq.nint(prop(index+4))) then
+            ichan_num=3
+!
+            Tt2=v(0,node2)
+            xflow2=v(1,nodem)*iaxial
+            pt2=v(2,node2)
+            A1=prop(index+5)
+            A2=prop(index+6)
+            dh2=prop(index+10)
+            alpha=prop(index+8)
+            zeta_fac=prop(index+12)
 !
          endif
 !
@@ -246,50 +198,52 @@
 !
 !        Determining the previous element as
 !        the incoming mass flow is defined there
-         nelem1=prop(ielprop(nelem)+1)
+!
+         nelem1=nint(prop(index+1))
          nodem1=kon(ipkon(nelem1)+2)
 !
 !        Inlet conditions
+!
          pt1=v(2,node1)
-         Tt1=v(0,node1)+physcon(1)
+         Tt1=v(0,node1)-physcon(1)
          xflow1=v(1,nodem1)*iaxial
-         A1 = prop(ielprop(nelem)+5)
-         dh1 = prop(ielprop(nelem)+9)      
+         A1=prop(index+5)
+         dh1=prop(index+9)      
 !
-         if(nelem.eq.nint(prop(ielprop(nelem)+2))) then
-            ichan_num = 1
-!
-            Tt2=v(0,node2)
-            xflow2=v(1,nodem)*iaxial
-            pt2=v(2,node2)
-            A2 = A1
-            A_s = prop(ielprop(nelem)+6)
-            dh2 = dh1
-            alpha = 0
-            zeta_fac = prop(ielprop(nelem)+11)
-!
-         elseif(nelem.eq.nint(prop(ielprop(nelem)+3))) then
-            ichan_num = 2
+         if(nelem.eq.nint(prop(index+2))) then
+            ichan_num=1
 !
             Tt2=v(0,node2)
             xflow2=v(1,nodem)*iaxial
             pt2=v(2,node2)
-            A2 = prop(ielprop(nelem)+6)
-            dh2 = prop(ielprop(nelem)+10)
-            alpha = prop(ielprop(nelem)+7)
-            zeta_fac = prop(ielprop(nelem)+12)
+            A2=A1
+            A_s=prop(index+6)
+            dh2=dh1
+            alpha=0
+            zeta_fac=prop(index+11)
 !
-         elseif(nelem.eq.nint(prop(ielprop(nelem)+4))) then
-            ichan_num = 3
+         elseif(nelem.eq.nint(prop(index+3))) then
+            ichan_num=2
 !
             Tt2=v(0,node2)
             xflow2=v(1,nodem)*iaxial
             pt2=v(2,node2)
-            A1 = prop(ielprop(nelem)+5)
-            A2 = prop(ielprop(nelem)+6)
-            dh2 = prop(ielprop(nelem)+10)
-            alpha = prop(ielprop(nelem)+8)
-            zeta_fac = prop(ielprop(nelem)+12)
+            A2=prop(index+6)
+            dh2=prop(index+10)
+            alpha=prop(index+7)
+            zeta_fac=prop(index+12)
+!
+         elseif(nelem.eq.nint(prop(index+4))) then
+            ichan_num=3
+!
+            Tt2=v(0,node2)
+            xflow2=v(1,nodem)*iaxial
+            pt2=v(2,node2)
+            A1=prop(index+5)
+            A2=prop(index+6)
+            dh2=prop(index+10)
+            alpha=prop(index+8)
+            zeta_fac=prop(index+12)
 !
          endif
 !
@@ -297,12 +251,12 @@
 !
 !        Flow velocity at inlet
          call ts_calc(xflow1,Tt1,pt1,kappa,r,A1,Ts0,icase)
-         pspt0 = (Ts0/Tt1)**(kappa/(kappa-1))
+         pspt0=(Ts0/Tt1)**(kappa/(kappa-1))
 !        Calculate Mach numbers
          call machpi(M1,pspt0,kappa,R)
          call ts_calc(xflow2,Tt2,pt2,kappa,r,A2,Ts2,icase)
 !        Pressure ratio
-         pspt2 = (Ts2/Tt2)**(kappa/(kappa-1))
+         pspt2=(Ts2/Tt2)**(kappa/(kappa-1))
          call machpi(M2,pspt2,kappa,R)
 !     
          write(1,*) ''
@@ -319,14 +273,14 @@
  56      format(1x,a,i6,a,e11.4,a,e11.4,a,e11.4,a,e11.4)
 !     
 !     Set ider to calculate the residual
-         ider = 0
+         ider=0
 !     
 !     Calculate the element one last time with enabled output
          f=calc_residual_cross_split(pt1,Tt1,xflow1,xflow2,pt2,
      &        Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,
      &        kappa,R,ider,iflag)
 !     
-         write(1,56)'       Outlet node ',node2,':   Tt2= ',Tt2,
+         write(1,56)'      Outlet node ',node2,':   Tt2= ',Tt2,
      &        ' , Ts2= ',Ts2,' , Pt2= ',Pt2,
      &        ', M2= ',M2
 !     

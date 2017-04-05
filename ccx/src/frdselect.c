@@ -161,14 +161,14 @@ void frdselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	      for(j=(n-1)*6;j<min(n*6,*ncomp);j++){
 		if(ifield[j]==1){
 		  if(strcmp1(output,"asc")==0){
-		    fprintf(f1,"%12.5E",(float)field1[i*nfield[0]+j]);
+		    fprintf(f1,"%12.5E",(float)field1[i*nfield[0]+icomp[j]]);
 		  }else{
 		    ifl=(float)field1[i*nfield[0]+icomp[j]];
 		    fwrite(&ifl,sizeof(float),1,f1);
 		  }
 		}else{
 		  if(strcmp1(output,"asc")==0){
-		    fprintf(f1,"%12.5E",(float)field2[i*nfield[1]+j]);
+		    fprintf(f1,"%12.5E",(float)field2[i*nfield[1]+icomp[j]]);
 		  }else{
 		    ifl=(float)field2[i*nfield[1]+icomp[j]];
 		    fwrite(&ifl,sizeof(float),1,f1);
@@ -231,14 +231,14 @@ void frdselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 		for(j=(n-1)*6;j<min(n*6,*ncomp);j++){
 		  if(ifield[j]==1){
 		    if(strcmp1(output,"asc")==0){
-		      fprintf(f1,"%12.5E",(float)field1[i*nfield[0]+j]);
+		      fprintf(f1,"%12.5E",(float)field1[i*nfield[0]+icomp[j]]);
 		    }else{
 		      ifl=(float)field1[i*nfield[0]+icomp[j]];
 		      fwrite(&ifl,sizeof(float),1,f1);
 		    }
 		  }else{
 		    if(strcmp1(output,"asc")==0){
-		      fprintf(f1,"%12.5E",(float)field2[i*nfield[1]+j]);
+		      fprintf(f1,"%12.5E",(float)field2[i*nfield[1]+icomp[j]]);
 		    }else{
 		      ifl=(float)field2[i*nfield[1]+icomp[j]];
 		      fwrite(&ifl,sizeof(float),1,f1);

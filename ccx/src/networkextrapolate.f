@@ -31,7 +31,11 @@
       real*8 v(0:mi(2),*)
 !
 !     determining all outflowing mass flow in the end nodes and
-!     assigning it to the end nodes
+!     assigning it to the end nodes with the correct sign =>
+!     is stored in the .frd-file and should look continuous
+!
+!     the corresponding action for the .dat file is done in 
+!     flowoutput.f; this latter result is always positive.
 !
       do i=1,ne
 !

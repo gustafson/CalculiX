@@ -44,8 +44,7 @@
      &     konf(8),nloadtr(*),nelem,nope,nopes,ig,nflow,ieg(*),
      &     ndirboun(*),nactdog(0:3,*),nboun,nodeboun(*),ntmat_,
      &     idir,ntq,nteq,nacteq(0:3,*),node1,node2,nodem,
-     &     ielprop(*),idirf(8),iflag,imat,numf,
-     &     ifreegn,isothermflag,nrhcon(*),nshcon(*),
+     &     ielprop(*),idirf(8),iflag,imat,numf,nrhcon(*),nshcon(*),
      &     nmpc,nodempc(3,*),ipompc(*),ikboun(*),idof
 !     
       real*8 prop(*),f,xflow,nodef(8),df(8),v(0:mi(2),*),g(3),
@@ -170,7 +169,6 @@
 !     
 !     triangulation of the face
 !     
-c            iptri(ntr)=ntri+1
             nloadtr(ntr)=i
             if((lakon(nelem)(4:4).eq.'2').or.
      &           ((lakon(nelem)(4:5).eq.'15').and.(ig.gt.2))) then
@@ -218,7 +216,7 @@ c            iptri(ntr)=ntri+1
 !     
       do i=1,ne
          if(lakon(i)(1:1).eq.'D') then
-            if(lakon(i)(2:2).ne.' ') then
+            if((lakon(i)(2:2).ne.' ').and.(network.ne.1)) then
                nflow=nflow+1
                ieg(nflow)=i
             else
@@ -513,13 +511,13 @@ c      enddo
 !
 !     check for special cases
 !
-      network=1
+c      network=1
 !
       if(massflowbcall.and.((.not.pressurebc).or.(pressurebcall))) then
 !
-!        purely thermal
+!        purely thermal (only set to 1 if D-type elements are present)
 !
-         network=0
+         if(network.gt.1) network=2
          do i=1,nflow
             nelem=ieg(i)
             index=ipkon(nelem)
@@ -538,7 +536,7 @@ c      enddo
          write(*,*) '      detected; the network is considered to be'
          write(*,*) '      athermal and no gas temperatures will be'
          write(*,*) '      calculated'
-         network=2
+         network=4
          do i=1,ntg
             node=itg(i)
             nactdog(0,node)=0
@@ -557,7 +555,7 @@ c      enddo
 !     check whether a specific gas constant was defined for all fluid
 !     elements (except for purely thermal calculations)
 !
-      if(network.ne.0) then
+      if(network.gt.2) then
          do i=1,nflow
             nelem=ieg(i)
             if((lakon(nelem)(2:3).eq.'LI').or.
@@ -572,19 +570,6 @@ c      enddo
             endif
          enddo
       endif
-c!      
-c!     numbering the active degrees of freedom
-c!     
-c      ntq=0
-c      do i=1,ntg
-c         node=itg(i)
-c         do  j=0,3
-c            if (nactdog(j,node).ne.0) then
-c               ntq=ntq+1
-c               nactdog(j,node)=ntq
-c            endif 
-c         enddo
-c      enddo
 !     
 !     numbering the active equations      
 !     
@@ -674,58 +659,6 @@ c      enddo
          enddo
       enddo
 !
-c      do i=1,nmpc
-c         index=ipompc(i)
-c         node=nodempc(1,index)
-c         call nident(itg,node,ntg,id)
-c         if(id.gt.0) then
-c            if(itg(id).eq.node) then
-c               index=nodempc(3,index)
-c               if(index.ne.0) then
-c                  do
-c                     node=nodempc(1,index)
-c                     call nident(itg,node,ntg,id)
-c                     if(id.gt.0) then
-c                        if(itg(id).eq.node) then
-c                           index=nodempc(3,index)
-c                           if(index.eq.0) then
-c                              exit
-c                           else
-c                              cycle
-c                           endif
-c                        endif
-c                     endif
-c!
-c!                    check for dummy nodes in the MPC
-c!                    (needed to apply SPCs)
-c!
-c                     idof=8*(node-1)+nodempc(2,index)
-c                     call nident(ikboun,idof,nboun,id)
-c                     if(id.gt.0) then
-c                        if(ikboun(id).eq.idof) then
-c                           index=nodempc(3,index)
-c                           if(index.eq.0) then
-c                              exit
-c                           else
-c                              cycle
-c                           endif
-c                        endif
-c                     endif
-c!
-c                     write(*,*) '*ERROR in envtemp: MPC contains'
-c                    write(*,*) '       network nodes, e.g. node ',
-c     &                  nodempc(1,ipompc(i)),' as well as'
-c                     write(*,*) '       other nodes, e.g. node ',
-c     &                  node
-c                     call exit(201)
-c                  enddo
-c               endif
-c               labmpc(i)(1:7)='NETWORK'
-c               nteq=nteq+1
-c            endif
-c         endif
-c      enddo
-!      
 !     numbering the active degrees of freedom
 !     
       ntq=0
@@ -739,18 +672,18 @@ c      enddo
          enddo
       enddo
 c
-c      open(30,file='dummy',status='unknown')
-c      write(30,*) 'nactdog'
-c      do i=1,ntg
-c         write(30,*) itg(i),(nactdog(j,itg(i)),j=0,3)
-c      enddo
+      open(30,file='dummy',status='unknown')
+      write(30,*) 'nactdog'
+      do i=1,ntg
+         write(30,*) itg(i),(nactdog(j,itg(i)),j=0,3)
+      enddo
 c
-c      write(30,*) ''
-c      write(30,*) 'nacteq'
-c      do i=1,ntg
-c         write(30,*) itg(i),(nacteq(j,itg(i)),j=0,3)
-c      enddo
-c      close(30)
+      write(30,*) ''
+      write(30,*) 'nacteq'
+      do i=1,ntg
+         write(30,*) itg(i),(nacteq(j,itg(i)),j=0,3)
+      enddo
+      close(30)
 !
       if(ntq.ne.nteq) then
          write(*,*) '*ERROR in envtemp:'
@@ -760,10 +693,19 @@ c      close(30)
          write(*,*) ' # of active degrees of freedom= ',ntq
          call exit(201)
       endif   
-c      write(*,*) ''
-!  
-      isothermflag=0
-      ifreegn=1
+!
+!     for isothermal gas pipes the energy equation in the
+!     topologically downstream node is replaced by an equation
+!     expressing the equality of the static temperature at both
+!     ends of the pipe. To this end these downstream nodes are
+!     referring in nacteq(3,*) to the topologically upstream node
+!
+!     if the temperature in the downstream node is a boundary
+!     condition (i.e. the energy equation is not built), the
+!     energy equation in the upstream node is replaced. In that 
+!     case nacteq(3,upstreamnode) refers to the downstream node.
+!
+!     if both nodes are boundary conditions, nothing is done
 !
       do i=1,nflow
          nelem=ieg(i)
@@ -775,7 +717,11 @@ c      write(*,*) ''
             node2=kon(index+3)
             if((node1.eq.0).or.(node2.eq.0)) cycle
 !            
-            nacteq(3,node2)=node1
+            if(nacteq(0,node2).ne.0) then
+               nacteq(3,node2)=node1
+            elseif(nacteq(0,node1).ne.0) then
+               nacteq(3,node1)=node2
+            endif
          endif
       enddo
 !

@@ -82,7 +82,7 @@
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),plconloc(802),dtime,ttime,time,tvar(2),
      &  sax(60,60),ffax(60),gs(8,4),a,stress(6),stre(3,3),
-     &  pslavsurf(3,*),pmastsurf(6,*)
+     &  pslavsurf(3,*),pmastsurf(6,*),xmass
 !
       intent(in) co,kon,lakonl,p1,p2,omx,bodyfx,nbody,
      &  nelem,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
@@ -169,6 +169,8 @@ c     Bernhardi end
          else
             nope=ichar(lakonl(8:8))-47
          endif
+      elseif(lakonl(1:4).eq.'MASS') then
+         nope=1
       endif
 !
 !     material and orientation
@@ -188,7 +190,7 @@ c     Bernhardi end
          else
             ihyper=0
          endif
-      else
+      elseif(lakonl(4:5).eq.'20') then
 !
 !        composite materials
 !
@@ -224,6 +226,45 @@ c     Bernhardi end
 !
          ilayer=0
          do i=1,4
+            dlayer(i)=0.d0
+         enddo
+!
+      elseif(lakonl(4:5).eq.'15') then
+!
+!        composite materials
+!
+!        determining the number of layers
+!
+         nlayer=0
+         do k=1,mi(3)
+            if(ielmat(k,nelem).ne.0) then
+               nlayer=nlayer+1
+            endif
+         enddo
+         mint2d=3
+!
+!        determining the layer thickness and global thickness
+!        at the shell integration points
+!
+         iflag=1
+         do kk=1,mint2d
+            xi=gauss3d10(1,kk)
+            et=gauss3d10(2,kk)
+            call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+            tlayer(kk)=0.d0
+            do i=1,nlayer
+               thickness=0.d0
+               do j=1,6
+                  thickness=thickness+thicke(i,indexe+j)*shp2(4,j)
+               enddo
+               tlayer(kk)=tlayer(kk)+thickness
+               xlayer(i,kk)=thickness
+            enddo
+         enddo
+         iflag=3
+!
+         ilayer=0
+         do i=1,3
             dlayer(i)=0.d0
          enddo
 !     
@@ -265,7 +306,11 @@ c     Bernhardi end
             mint2d=1
             mint3d=1
          elseif(lakonl(4:5).eq.'15') then
-            mint3d=9
+            if(lakonl(7:8).eq.'LC') then
+               mint3d=6*nlayer
+            else
+               mint3d=9
+            endif
          elseif(lakonl(4:4).eq.'6') then
             mint3d=2
          else
@@ -349,7 +394,8 @@ c     Bernhardi end
         enddo
       enddo
 !
-!     calculating the stiffness matrix for the contact spring elements
+!     calculating the stiffness matrix for the (contact) spring elements
+!     and the mass matrix for the mass elements
 !
       if(mint3d.eq.0) then
 !
@@ -367,37 +413,89 @@ c     Bernhardi end
          endif
 !
          kode=nelcon(1,imat)
-         if(lakonl(7:7).eq.'A') then
-            t0l=0.d0
-            t1l=0.d0
-            if(ithermal.eq.1) then
-               t0l=(t0(konl(1))+t0(konl(2)))/2.d0
-               t1l=(t1(konl(1))+t1(konl(2)))/2.d0
-            elseif(ithermal.ge.2) then
-               t0l=(t0(konl(1))+t0(konl(2)))/2.d0
-               t1l=(vold(0,konl(1))+vold(0,konl(2)))/2.d0
+         if(lakonl(1:2).eq.'ES') then
+            if(lakonl(7:7).ne.'C') then
+               t0l=0.d0
+               t1l=0.d0
+               if(ithermal.eq.1) then
+                  t0l=(t0(konl(1))+t0(konl(2)))/2.d0
+                  t1l=(t1(konl(1))+t1(konl(2)))/2.d0
+               elseif(ithermal.ge.2) then
+                  t0l=(t0(konl(1))+t0(konl(2)))/2.d0
+                  t1l=(vold(0,konl(1))+vold(0,konl(2)))/2.d0
+               endif
             endif
-         else
+!     
+            if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'1').or.
+     &         (lakonl(7:7).eq.'2').or.(mortar.eq.0)) then
+               call springstiff_n2f(xl,elas,konl,voldl,s,imat,elcon,
+     &              nelcon,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
+     &              plicon,nplicon,npmat_,iperturb,
+     &              springarea(1,konl(nope+1)),nmethod,mi,ne0,nstate_,
+     &              xstateini,xstate,reltime,nasym,ielorien,orab,norien,
+     &              nelem)
+            elseif(mortar.eq.1) then
+               iloc=kon(indexe+nope+1)
+               jfaces=kon(indexe+nope+2)
+               igauss=kon(indexe+nope+1) 
+               call springstiff_f2f(xl,elas,voldl,s,imat,elcon,nelcon,
+     &              ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,plicon,
+     &              nplicon,npmat_,iperturb,springarea(1,iloc),nmethod,
+     &              mi,ne0,nstate_,xstateini,xstate,reltime,
+     &              nasym,iloc,jfaces,igauss,pslavsurf,
+     &              pmastsurf,clearini,kscale)
+            endif
+         elseif(lakonl(1:4).eq.'MASS') then
 !
-!        as soon as the first contact element is discovered ne0 is
-!        determined and saved
+!           mass matrix contribution
 !
-         endif
-         if((lakonl(7:7).eq.'A').or.(mortar.eq.0)) then
-            call springstiff_n2f(xl,elas,konl,voldl,s,imat,elcon,nelcon,
-     &      ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,plicon,
-     &      nplicon,npmat_,iperturb,springarea(1,konl(nope+1)),nmethod,
-     &      mi,ne0,nstate_,xstateini,xstate,reltime,nasym)
-         elseif(mortar.eq.1) then
-            iloc=kon(indexe+nope+1)
-            jfaces=kon(indexe+nope+2)
-            igauss=kon(indexe+nope+1) 
-            call springstiff_f2f(xl,elas,voldl,s,imat,elcon,nelcon,
-     &        ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,plicon,
-     &        nplicon,npmat_,iperturb,springarea(1,iloc),nmethod,
-     &        mi,ne0,nstate_,xstateini,xstate,reltime,
-     &        nasym,iloc,jfaces,igauss,pslavsurf,
-     &        pmastsurf,clearini,kscale)
+            if(mass.eq.1) then
+               do i1=1,3
+                  sm(i1,i1)=rhcon(1,1,imat)
+               enddo
+            endif
+!
+!           contribution to the rhs
+!
+            if(rhsi.eq.1) then
+               if(nbody.ne.0) then
+!
+                  xmass=rhcon(1,1,imat)
+!
+                  do i1=1,3
+                     ff(i1)=bodyfx(i1)*xmass
+                  enddo
+!
+                  if(omx.gt.0.d0) then
+!     
+!                    omega**2 * mass
+!     
+                     om=omx*xmass
+                     do i1=1,3
+!     
+!                   computation of the global coordinates of the
+!                   mass node
+!
+                        if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) 
+     &                     then
+                           q(i1)=xl(i1,1)
+                        else
+                           q(i1)=xl(i1,1)+voldl(i1,1)
+                        endif
+!     
+                        q(i1)=q(i1)-p1(i1)
+                     enddo
+                     const=q(1)*p2(1)+q(2)*p2(2)+q(3)*p2(3)
+!     
+!                 inclusion of the centrifugal force into the body force
+!
+                     do i1=1,3
+                        ff(i1)=ff(i1)+(q(i1)-const*p2(i1))*om
+                     enddo
+                  endif
+               endif
+            endif
+!            
          endif
          return
       endif
@@ -484,10 +582,51 @@ c     Bernhardi end
                ze=gauss3d4(3,kk)
                weight=weight3d4(kk)
             elseif(lakonl(4:5).eq.'15') then
-               xi=gauss3d8(1,kk)
-               et=gauss3d8(2,kk)
-               ze=gauss3d8(3,kk)
-               weight=weight3d8(kk)
+               if(lakonl(7:8).ne.'LC') then
+                  xi=gauss3d8(1,kk)
+                  et=gauss3d8(2,kk)
+                  ze=gauss3d8(3,kk)
+                  weight=weight3d8(kk)
+               else
+                  kl=mod(kk,6)
+                  if(kl.eq.0) kl=6
+!
+                  xi=gauss3d10(1,kl)
+                  et=gauss3d10(2,kl)
+                  ze=gauss3d10(3,kl)
+                  weight=weight3d10(kl)
+!
+                  ki=mod(kk,3)
+                  if(ki.eq.0) ki=3
+!
+                  if(kl.eq.1) then
+                     ilayer=ilayer+1
+                     if(ilayer.gt.1) then
+                        do i=1,3
+                           dlayer(i)=dlayer(i)+xlayer(ilayer-1,i)
+                        enddo
+                     endif
+                  endif
+                  ze=2.d0*(dlayer(ki)+(ze+1.d0)/2.d0*xlayer(ilayer,ki))/
+     &                 tlayer(ki)-1.d0
+                  weight=weight*xlayer(ilayer,ki)/tlayer(ki)
+!
+!                 material and orientation
+!
+                  imat=ielmat(ilayer,nelem)
+                  amat=matname(imat)
+                  if(norien.gt.0) then
+                     iorien=ielorien(ilayer,nelem)
+                  else
+                     iorien=0
+                  endif
+!     
+                  if(nelcon(1,imat).lt.0) then
+                     ihyper=1
+                  else
+                     ihyper=0
+                  endif
+               endif
             elseif(lakonl(4:4).eq.'6') then
                xi=gauss3d7(1,kk)
                et=gauss3d7(2,kk)

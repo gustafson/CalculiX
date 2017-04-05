@@ -29,23 +29,17 @@
 !
       integer nef,ipnei(*),neifa(*),i,j,l,indexf,ifa,numfaces
 !
-      real*8 vfa(0:5,*),area(*),xxn(3,*),gradpel(3,*),volume(*)
+      real*8 vfa(0:7,*),area(*),xxn(3,*),gradpel(3,*),volume(*)
 !
 c$omp parallel default(none)
 c$omp& shared(nef,ipnei,lakonf,neifa,gradpel,vfa,area,xxn,volume)
-c$omp& private(i,indexf,numfaces,j,ifa)
+c$omp& private(i,indexf,numfaces,ifa)
 c$omp do
       do i=1,nef
-         indexf=ipnei(i)
-         if(lakonf(i)(4:4).eq.'8') then
-            numfaces=6
-         elseif(lakonf(i)(4:4).eq.'6') then
-            numfaces=5
-         else
-            numfaces=4
-         endif
-         do j=1,numfaces
-            indexf=indexf+1
+c         indexf=ipnei(i)
+c         do j=1,ipnei(i+1)-ipnei(i)
+         do indexf=ipnei(i)+1,ipnei(i+1)
+c            indexf=indexf+1
             ifa=neifa(indexf)
             do l=1,3
                gradpel(l,i)=gradpel(l,i)+

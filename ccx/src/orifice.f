@@ -32,14 +32,14 @@
       character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,
+     &     ielprop(*),nodef(*),idirf(*),index,iflag,
      &     inv,ipkon(*),kon(*),number,kgas,nelemswirl,
      &     nodea,nodeb,iaxial,mi(*),i,itype
 !
 c      real*4 ofvidg
 !     
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,a,d,xl,
-     &     p1,p2,T1,Aeff,C1,C2,C3,cd,cp,physcon(3),p2p1,km1,dvi,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,R,a,d,dl,
+     &     p1,p2,T1,Aeff,C1,C2,C3,cd,cp,physcon(*),p2p1,km1,dvi,
      &     kp1,kdkm1,tdkp1,km1dk,x,y,ca1,cb1,ca2,cb2,dT1,alambda,
      &     rad,beta,reynolds,theta,k_phi,c2u_new,u,pi,xflow_oil,
      &     ps1pt1,uref,cd_chamf,angle,vid,cdcrit,T2,radius,
@@ -49,7 +49,7 @@ c      real*4 ofvidg
 c      external ofvidg
 !
       pi=4.d0*datan(1.d0)   
-      if (iflag.eq.0) then
+      if(iflag.eq.0) then
          identity=.true.
 !     
          if(nactdog(2,node1).ne.0)then
@@ -60,13 +60,13 @@ c      external ofvidg
             identity=.false.
          endif
 !     
-      elseif (iflag.eq.1)then
+      elseif(iflag.eq.1)then
 !     
          index=ielprop(nelem)
          kappa=(cp/(cp-R))
          a=prop(index+1)
          d=prop(index+2)
-         xl=prop(index+3)
+         dl=prop(index+3)
 !     
          if(lakon(nelem)(2:5).eq.'ORFL') then
             nodea=nint(prop(index+1))
@@ -83,12 +83,12 @@ c      external ofvidg
          p2=v(2,node2)
          if(p1.ge.p2) then
             inv=1
-            T1=v(0,node1)+physcon(1)
+            T1=v(0,node1)-physcon(1)
          else
             inv=-1
             p1=v(2,node2)
             p2=v(2,node1)
-            T1=v(0,node2)+physcon(1)
+            T1=v(0,node2)-physcon(1)
          endif
 !     
          cd=1.d0
@@ -108,7 +108,7 @@ c      external ofvidg
      &           dsqrt(T1)
          endif
 !     
-      elseif (iflag.eq.2)then
+      elseif(iflag.eq.2)then
 !     
          numf=4
          alambda=10000.d0
@@ -121,7 +121,7 @@ c      external ofvidg
          if(p1.ge.p2) then
             inv=1
             xflow=v(1,nodem)*iaxial
-            T1=v(0,node1)+physcon(1)
+            T1=v(0,node1)-physcon(1)
             nodef(1)=node1
             nodef(2)=node1
             nodef(3)=nodem
@@ -131,7 +131,7 @@ c      external ofvidg
             p1=v(2,node2)
             p2=v(2,node1)
             xflow=-v(1,nodem)*iaxial
-            T1=v(0,node2)+physcon(1)
+            T1=v(0,node2)-physcon(1)
             nodef(1)=node2
             nodef(2)=node2
             nodef(3)=nodem
@@ -147,20 +147,24 @@ c      external ofvidg
 !     
 !     
          if(dabs(dvi).lt.1E-30) then
-            kgas=0
-            call dynamic_viscosity(kgas,T1,dvi)
+            write(*,*) '*ERROR in orifice: '
+            write(*,*) '       no dynamic viscosity defined'
+            write(*,*) '       dvi= ',dvi
+            call exit(201)
+c            kgas=0
+c            call dynamic_viscosity(kgas,T1,dvi)
          endif 
 !     
-         if ((lakon(nelem)(4:5).ne.'BT').and.
+         if((lakon(nelem)(4:5).ne.'BT').and.
      &        (lakon(nelem)(4:5).ne.'PN').and.
      &        (lakon(nelem)(4:5).ne.'C1').and.
      &        (lakon(nelem)(4:5).ne.'FL') ) then
             d=prop(index+2)
-            xl=prop(index+3)
+            dl=prop(index+3)
 !     circumferential velocity of the rotating hole (same as disc @ given radius)
             u=prop(index+7)
             nelemswirl=nint(prop(index+8))
-            if (nelemswirl.eq.0) then
+            if(nelemswirl.eq.0) then
                uref=0.d0
             else
 !     swirl generating element
@@ -218,12 +222,12 @@ c      external ofvidg
             itype=2
             call cd_bragg(cdcrit,p2p1,cd,itype)
 !     
-         elseif (lakon(nelem)(2:5).eq.'ORMA') then
+         elseif(lakon(nelem)(2:5).eq.'ORMA') then
 !     
 !     calculate the discharge coefficient using own table data and 
 !     using Dr.Albers method for rotating cavities
 !     
-            call cd_own_albers(p1,p2,xl,d,cd,u,T1,R,kappa)
+            call cd_own_albers(p1,p2,dl,d,cd,u,T1,R,kappa)
 !     
 !     outlet circumferential velocity of the fluid is equal to the circumferential velocity of the hole
 !     as the holes are perpendicular to the rotating surface and rotating with it
@@ -232,11 +236,11 @@ c      external ofvidg
 !     chamfer correction
 !     
             if(angle.gt.0.d0)then
-               call cd_chamfer(xl,d,p1,p2,angle,cd_chamf)
+               call cd_chamfer(dl,d,p1,p2,angle,cd_chamf)
                cd=cd*cd_chamf
             endif
 !     
-         elseif (lakon(nelem)(2:5).eq.'ORMM') then
+         elseif(lakon(nelem)(2:5).eq.'ORMM') then
 !     
 !     calculate the discharge coefficient using McGreehan and Schotsch method
 !     
@@ -248,9 +252,9 @@ c      external ofvidg
 !     as the holes are perpendicular to the rotating surface and rotating with it
 !     prop(index+7)
 !     
-            call cd_ms_ms(p1,p2,T1,rad,d,xl,kappa,r,reynolds,u,vid,cd)
+            call cd_ms_ms(p1,p2,T1,rad,d,dl,kappa,r,reynolds,u,vid,cd)
 !     
-            if (cd.ge.1) then
+            if(cd.ge.1) then
                write(*,*) ''
                write(*,*) '**WARNING**'
                write(*,*) 'in RESTRICTOR ',nelem
@@ -258,14 +262,14 @@ c      external ofvidg
                write(*,*) ' McGreehan and Schotsch method:'
                write(*,*) ' Cd=',Cd,'>1 !'
                write(*,*) 'Calcultion will proceed will Cd=1'
-               write(*,*) 'l/d=',xl/d,'r/d=',rad/d,'u/vid=',u/vid
+               write(*,*) 'l/d=',dl/d,'r/d=',rad/d,'u/vid=',u/vid
                cd=1.d0
             endif
 !     
 !     chamfer correction
 !     
             if(angle.gt.0.d0) then
-               call cd_chamfer(xl,d,p1,p2,angle,cd_chamf)
+               call cd_chamfer(dl,d,p1,p2,angle,cd_chamf)
                cd=cd*cd_chamf
             endif
 !     
@@ -280,7 +284,7 @@ c      external ofvidg
 !     
             reynolds=dabs(xflow)*d/(dvi*a)
 !     
-            call cd_pk_albers(rad,d,xl,reynolds,p2,p1,beta,kappa,
+            call cd_pk_albers(rad,d,dl,reynolds,p2,p1,beta,kappa,
      &           cd,u,T1,R)
 !     
 !     outlet circumferential velocity of the fluid is equal to the circumferential velocity of the hole
@@ -290,11 +294,11 @@ c      external ofvidg
 !     chamfer correction
 !     
             if(angle.gt.0.d0) then
-               call cd_chamfer(xl,d,p1,p2,angle,cd_chamf)
+               call cd_chamfer(dl,d,p1,p2,angle,cd_chamf)
                cd=cd*cd_chamf
             endif
 !     
-         elseif (lakon(nelem)(2:5).eq.'ORPM') then
+         elseif(lakon(nelem)(2:5).eq.'ORPM') then
 !     
 !     calculate the discharge coefficient using Parker and Kercher method
 !     and using Mac Grehan and Schotsch method for rotating cavities
@@ -304,7 +308,7 @@ c      external ofvidg
             beta=prop(index+6)
             reynolds=dabs(xflow)*d/(dvi*a)
 !     
-            call cd_pk_ms(rad,d,xl,reynolds,p2,p1,beta,kappa,cd,
+            call cd_pk_ms(rad,d,dl,reynolds,p2,p1,beta,kappa,cd,
      &           u,T1,R)
 !     
 !     outlet circumferential velocity of the fluid is equal to the circumferential velocity of the hole
@@ -314,17 +318,17 @@ c      external ofvidg
 !     chamfer correction
 !     
             if(angle.gt.0.d0) then
-               call cd_chamfer(xl,d,p1,p2,angle,cd_chamf)
+               call cd_chamfer(dl,d,p1,p2,angle,cd_chamf)
                cd=cd*cd_chamf
             endif
 !     
-         elseif (lakon(nelem)(2:5).eq.'ORC1') then
+         elseif(lakon(nelem)(2:5).eq.'ORC1') then
 !     
             d=dsqrt(a*4/Pi)
             reynolds=dabs(xflow)*d/(dvi*a)
             cd=1.d0
 !     
-         elseif (lakon(nelem)(2:5).eq.'ORBT') then
+         elseif(lakon(nelem)(2:5).eq.'ORBT') then
 !     
 !     calculate the discharge coefficient of bleed tappings (OWN tables)
 !     
@@ -342,7 +346,7 @@ c      external ofvidg
             call cd_bleedtapping(p2,p1,ps1pt1,number,curve,x_tab,y_tab,
      &           cd)
 !     
-         elseif (lakon(nelem)(2:5).eq.'ORPN') then
+         elseif(lakon(nelem)(2:5).eq.'ORPN') then
 !     
 !     calculate the discharge coefficient of preswirl nozzle (OWN tables)
 !     
@@ -395,7 +399,7 @@ c            endif
 !     
          endif
 !     
-         if (cd.gt.1.d0) then
+         if(cd.gt.1.d0) then
             Write(*,*) '*WARNING:'
             Write(*,*) 'In RESTRICTOR',nelem
             write(*,*) 'Cd greater than 1'
@@ -449,7 +453,7 @@ c            endif
 !     
 !     output
 !     
-      elseif (iflag.eq.3) then
+      elseif(iflag.eq.3) then
 !     
          pi=4.d0*datan(1.d0)
          p1=v(2,node1)
@@ -457,36 +461,40 @@ c            endif
          if(p1.ge.p2) then
             inv=1
             xflow=v(1,nodem)*iaxial
-            T1=v(0,node1)+physcon(1)
-            T2=v(0,node2)+physcon(1)
+            T1=v(0,node1)-physcon(1)
+            T2=v(0,node2)-physcon(1)
          else
             inv=-1
             p1=v(2,node2)
             p2=v(2,node1)
             xflow=-v(1,nodem)*iaxial 
-            T1=v(0,node2)+physcon(1)
-            T2=v(0,node1)+physcon(1)
+            T1=v(0,node2)-physcon(1)
+            T2=v(0,node1)-physcon(1)
          endif
 !     
 !     calculation of the dynamic viscosity 
 !     
          if(dabs(dvi).lt.1E-30) then
-            kgas=0
-            call dynamic_viscosity(kgas,T1,dvi)
+            write(*,*) '*ERROR in orifice: '
+            write(*,*) '       no dynamic viscosity defined'
+            write(*,*) '       dvi= ',dvi
+            call exit(201)
+c            kgas=0
+c            call dynamic_viscosity(kgas,T1,dvi)
          endif 
 !     
          index=ielprop(nelem)
          kappa=(cp/(cp-R))
          a=prop(index+1)
 !     
-         if ((lakon(nelem)(4:5).ne.'BT').and.
+         if((lakon(nelem)(4:5).ne.'BT').and.
      &        (lakon(nelem)(4:5).ne.'PN').and.
      &        (lakon(nelem)(4:5).ne.'C1')) then
             d=prop(index+2)
-            xl=prop(index+3)
+            dl=prop(index+3)
             u=prop(index+7)
             nelemswirl=nint(prop(index+8))
-            if (nelemswirl.eq.0) then
+            if(nelemswirl.eq.0) then
                uref=0.d0
             else
 !     swirl generating element
@@ -546,23 +554,23 @@ c            endif
             itype=2
             call cd_bragg(cdcrit,p2p1,cd,itype)
 !     
-         elseif (lakon(nelem)(2:5).eq.'ORMA') then
+         elseif(lakon(nelem)(2:5).eq.'ORMA') then
 !     
 !     calculate the discharge coefficient using own table data and 
 !     using Dr.Albers method for rotating cavities
 !     
             reynolds=dabs(xflow)*d/(dvi*a)
 !     
-            call cd_own_albers(p1,p2,xl,d,cd,u,T1,R,kappa)
+            call cd_own_albers(p1,p2,dl,d,cd,u,T1,R,kappa)
 !     
 !     chamfer correction
 !     
             if(angle.gt.0.d0)then
-               call cd_chamfer(xl,d,p1,p2,angle,cd_chamf)
+               call cd_chamfer(dl,d,p1,p2,angle,cd_chamf)
                cd=cd*cd_chamf
             endif
 !     
-         elseif (lakon(nelem)(2:5).eq.'ORMM') then
+         elseif(lakon(nelem)(2:5).eq.'ORMM') then
 !     
 !     calculate the discharge coefficient using McGreehan and Schotsch method
 !     
@@ -570,9 +578,9 @@ c            endif
 !     
             reynolds=dabs(xflow)*d/(dvi*a)
 !     
-            call cd_ms_ms(p1,p2,T1,rad,d,xl,kappa,r,reynolds,u,vid,cd)
+            call cd_ms_ms(p1,p2,T1,rad,d,dl,kappa,r,reynolds,u,vid,cd)
 !     
-            if (cd.ge.1) then
+            if(cd.ge.1) then
                write(*,*) ''
                write(*,*) '**WARNING**'
                write(*,*) 'in RESTRICTOR ',nelem
@@ -580,14 +588,14 @@ c            endif
                write(*,*) ' McGreehan and Schotsch method:'
                write(*,*) ' Cd=',Cd,'>1 !'
                write(*,*) 'Calcultion will proceed will Cd=1'
-               write(*,*) 'l/d=',xl/d,'r/d=',rad/d,'u/vid=',u/vid
+               write(*,*) 'l/d=',dl/d,'r/d=',rad/d,'u/vid=',u/vid
                cd=1.d0
             endif
 !     
 !     chamfer correction
 !     
             if(angle.gt.0.d0) then
-               call cd_chamfer(xl,d,p1,p2,angle,cd_chamf)
+               call cd_chamfer(dl,d,p1,p2,angle,cd_chamf)
                cd=cd*cd_chamf
             endif
 !     
@@ -602,17 +610,17 @@ c            endif
 !     
             reynolds=dabs(xflow)*d/(dvi*a)
 !     
-            call cd_pk_albers(rad,d,xl,reynolds,p2,p1,beta,kappa,
+            call cd_pk_albers(rad,d,dl,reynolds,p2,p1,beta,kappa,
      &           cd,u,T1,R)
 !     
 !     chamfer correction
 !     
             if(angle.gt.0.d0) then
-               call cd_chamfer(xl,d,p1,p2,angle,cd_chamf)
+               call cd_chamfer(dl,d,p1,p2,angle,cd_chamf)
                cd=cd*cd_chamf
             endif
 !     
-         elseif (lakon(nelem)(2:5).eq.'ORPM') then
+         elseif(lakon(nelem)(2:5).eq.'ORPM') then
 !     
 !     calculate the discharge coefficient using Parker and Kercher method
 !     and using Mac Grehan and Schotsch method for rotating cavities
@@ -622,23 +630,23 @@ c            endif
             beta=prop(index+6)
             reynolds=dabs(xflow)*d/(dvi*a)
 !     
-            call cd_pk_ms(rad,d,xl,reynolds,p2,p1,beta,kappa,cd,
+            call cd_pk_ms(rad,d,dl,reynolds,p2,p1,beta,kappa,cd,
      &           u,T1,R)
 !     
 !     chamfer correction
 !     
             if(angle.gt.0.d0) then
-               call cd_chamfer(xl,d,p1,p2,angle,cd_chamf)
+               call cd_chamfer(dl,d,p1,p2,angle,cd_chamf)
                cd=cd*cd_chamf
             endif
 !     
-         elseif (lakon(nelem)(2:5).eq.'ORC1') then
+         elseif(lakon(nelem)(2:5).eq.'ORC1') then
 !     
             d=dsqrt(a*4/Pi)
             reynolds=dabs(xflow)*d/(dvi*a)
             cd=1.d0
 !     
-         elseif (lakon(nelem)(2:5).eq.'ORBT') then
+         elseif(lakon(nelem)(2:5).eq.'ORBT') then
 !     
 !     calculate the discharge coefficient of bleed tappings (OWN tables)
 !     
@@ -658,7 +666,7 @@ c            endif
             call cd_bleedtapping(p2,p1,ps1pt1,number,curve,x_tab,y_tab,
      &           cd)
 !     
-         elseif (lakon(nelem)(2:5).eq.'ORPN') then
+         elseif(lakon(nelem)(2:5).eq.'ORPN') then
 !     
 !     calculate the discharge coefficient of preswirl nozzle (OWN tables)
 !     
@@ -692,7 +700,7 @@ c            endif
             prop(index+5)=c2u_new
          endif
 !     
-         if (cd.gt.1.d0) then
+         if(cd.gt.1.d0) then
             Write(*,*) '*WARNING:'
             Write(*,*) 'In RESTRICTOR',nelem
             write(*,*) 'Cd greater than 1'
@@ -735,15 +743,15 @@ c            endif
 !     special for preswirlnozzles
              elseif(lakon(nelem)(2:5).eq.'ORPN') then
                 write(1,62) '             cd = ', cd,
-     &' u = ',u,'  , C2u = ',c2u_new,' '
+     &'  , C2u = ',c2u_new,' '
 !     special for recievers
              endif 
 !
-             write(1,56)'       Outlet node ',node2,' :   Tt2 = ',T2,
+             write(1,56)'      Outlet node ',node2,' :   Tt2 = ',T2,
      &           '  , Ts2 = ',T2,'  , Pt2 = ',P2,' '
 !     
           else if(inv.eq.-1) then
-             write(1,56)'       Inlet node  ',node2,':    Tt1 = ',T1,
+             write(1,56)'       Inlet node ',node2,':    Tt1 = ',T1,
      &           '  , Ts1 = ',T1,' , Pt1 = ',P1, ' '
      &          
              write(1,*)'             element R    ',set(numf)(1:30)
@@ -765,11 +773,11 @@ c            endif
      &' , curve N° = ', curve,' , cd = ',cd
 !     special for preswirlnozzles
              elseif(lakon(nelem)(2:5).eq.'ORPN') then
-                write(1,*) ' cd = ', cd,' u = ',u,' , C2u = '
+                write(1,*) ' cd = ', cd,' , C2u = '
      &,c2u_new,' '
              endif
 ! 
-             write(1,56)'       Outlet node ',node1,':    Tt2 = ',T2,
+             write(1,56)'      Outlet node ',node1,':    Tt2 = ',T2,
      &           '  , Ts2 = ',T2,'  , Pt2 = ',P2, ' '
          endif
        endif

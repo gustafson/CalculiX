@@ -63,7 +63,7 @@
                      idof=nactdof(idir,k)
                      if(idof.gt.0) then
                         dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
-     &                       +2.d0*vold(idir,ialset(j))*b(idof)
+     &                       +2.d0*vold(idir,k)*b(idof)
                      endif
                   enddo
                enddo

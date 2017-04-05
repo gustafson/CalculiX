@@ -225,7 +225,7 @@
 !
       elseif(typename(1:12).eq.'GASPIPEFANNO') then
 !     
-!     version Fanno(friction and oil)
+!     gaspipe version Fanno(friction and oil)
 !
          if(typename(13:21).eq.'ADIABATIC') then
             if(typename(22:27).eq.'ALBERS') then
@@ -234,9 +234,12 @@
             elseif(typename(22:28).eq.'FRIEDEL') then
                elname='GAPFAF '
                ndprop=9
-            elseif(typename(22:29).eq.'FLEXIBLE') then
-               elname='GAPFB '
-               ndprop=11 
+            elseif(typename(22:35).eq.'FLEXIBLERADIUS') then
+               elname='GAPFAFR'
+               ndprop=9 
+            elseif(typename(22:44).eq.'FLEXIBLERADIUSANDLENGTH') then
+               elname='GAPFARL'
+               ndprop=9 
             else
                elname='GAPFA  '
                ndprop=9
@@ -249,37 +252,15 @@
             elseif(typename(23:29).eq.'FRIEDEL') then
                elname='GAPFIF '
                ndprop=9
+            elseif(typename(22:35).eq.'FLEXIBLERADIUS') then
+               elname='GAPFIFR'
+               ndprop=9 
+            elseif(typename(22:44).eq.'FLEXIBLERADIUSANDLENGTH') then
+               elname='GAPFIRL'
+               ndprop=9 
             else
                elname='GAPFI  '
                ndprop=9
-            endif
-         endif
-!
-!     generalised version(friction,rotation,oil and section variation)
-!
-      elseif(typename(1:7).eq.'GASPIPE') then
-!     
-         if(typename(8:16).eq.'ADIABATIC') then
-            if(typename(17:22).eq.'ALBERS') then
-               elname='GAPIAA '
-               ndprop=10
-            elseif(typename(17:23).eq.'FRIEDEL') then
-               elname='GAPIAF '
-               ndprop=10
-            else
-               elname='GAPIA  '
-               ndprop=10
-            endif
-         elseif(typename(8:17).eq.'ISOTHERMAL') then
-            if(typename(18:23).eq.'ALBERS') then
-               elname='GAPIIA '
-               ndprop=10
-            elseif(typename(18:24).eq.'FRIEDEL') then
-               elname='GAPIIF '
-               ndprop=10
-            else
-               elname='GAPII  '
-               ndprop=10
             endif
          endif
 !
@@ -296,7 +277,7 @@
 !     
       elseif(typename(1:9).eq.'LABYRINTH') then
          if(typename(10:17).eq.'FLEXIBLE') then
-            ndprop=22 
+            ndprop=23 
             if(typename(18:23).eq.'SINGLE') then
                elname='LABFSN '
             elseif(typename(18:25).eq.'STRAIGHT') then
@@ -637,6 +618,10 @@
          nprop=nprop+ndprop+1
 ! 
       elseif(elname.eq.'ACCTUBE') then
+!
+!        reading the element properties
+!
+!        acc-tube (proprietary)
 !         
 !        Read the first 20 elements
 ! 
@@ -693,6 +678,10 @@
 !         
       elseif(ndprop.gt.0) then
 !
+!        reading the element properties
+!
+!        general case
+!
          lprop=0
 !
          do
@@ -734,12 +723,12 @@
       elseif(elname(1:4).eq.'REEX') then
 !       
             prop(npropstart+6)=noil_mat
-            prop(npropstart+2)=100000*prop(npropstart+1)
+c            prop(npropstart+2)=100000*prop(npropstart+1)
 !     
       elseif(elname(1:6).eq.'REWAOR') then
 !        
             prop(npropstart+6)=noil_mat
-            prop(npropstart+1)=100000*prop(npropstart+2)
+c            prop(npropstart+1)=100000*prop(npropstart+2)
 !
       elseif(elname(1:4).eq.'REEN') then
 !        
@@ -747,43 +736,43 @@
 !
 !           zeta (loss coefficient for an entry)
 !
-            prop(npropstart+4)=0.5d0
-            prop(npropstart+1)=100000*prop(npropstart+2)
+c            prop(npropstart+4)=0.5d0
+c            prop(npropstart+1)=100000*prop(npropstart+2)
 !
       elseif(elname(1:7).eq.'REBRJI1') then
          prop(npropstart+11)=noil_mat
 !
       elseif(elname(1:7).eq.'REBRJI2') then
          prop(npropstart+11)=noil_mat
-         if(1.d0-(prop(npropstart+5)+prop(npropstart+6))/
-     &        prop(npropstart+4).gt.0.01d0)then
-            write(*,*) '*ERROR: reading *FLUID SECTION:'
-            write(*,*) '        in element type RESTRICTOR 
-     &                           BRANCH JOINT IDELCHIK2'
-            write(*,*) '        A0 ist not equal to A1+A2'
-            call exit(201)
-         endif
+c         if(1.d0-(prop(npropstart+5)+prop(npropstart+6))/
+c     &        prop(npropstart+4).gt.0.01d0)then
+c            write(*,*) '*ERROR: reading *FLUID SECTION:'
+c            write(*,*) '        in element type RESTRICTOR 
+c     &                           BRANCH JOINT IDELCHIK2'
+c            write(*,*) '        A0 ist not equal to A1+A2'
+c            call exit(201)
+c         endif
       elseif(elname(1:6).eq.'REBRJG') then
          prop(npropstart+11)=noil_mat
       elseif(elname(1:6).eq.'REBRSG') then
          prop(npropstart+11)=noil_mat
       elseif(elname(1:7).eq.'REBRSI1') then
          prop(npropstart+15)=noil_mat
-         if(dabs(prop(npropstart+13)).le.1E-5) then
-            prop(npropstart+13)=1.d0
-         endif
-         if(dabs(prop(npropstart+14)).le.1E-5) then
-            prop(npropstart+14)=1.d0
-         endif
+c         if(dabs(prop(npropstart+13)).le.1E-5) then
+c            prop(npropstart+13)=1.d0
+c         endif
+c         if(dabs(prop(npropstart+14)).le.1E-5) then
+c            prop(npropstart+14)=1.d0
+c         endif
 !     
       elseif(elname(1:7).eq.'REBRSI2') then
          prop(npropstart+13)=noil_mat
-         if(dabs(prop(npropstart+11)).le.1E-5) then
-            prop(npropstart+11)=1.d0
-         endif
-         if(dabs(prop(npropstart+12)).le.1E-5) then
-            prop(npropstart+12)=1.d0
-         endif
+c         if(dabs(prop(npropstart+11)).le.1E-5) then
+c            prop(npropstart+11)=1.d0
+c         endif
+c         if(dabs(prop(npropstart+12)).le.1E-5) then
+c            prop(npropstart+12)=1.d0
+c         endif
 !     
       endif
 !

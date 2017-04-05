@@ -18,10 +18,11 @@
 !
       subroutine springforc_f2f(xl,vl,imat,elcon,nelcon,
      &  elas,fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
-     &  plicon,nplicon,npmat_,senergy,iener,cstr,mi,
+     &  plicon,nplicon,npmat_,senergy,nener,cstr,mi,
      &  springarea,nmethod,ne0,nstate_,xstateini,
      &  xstate,reltime,ielas,iloc,jfaces,igauss,
-     &  pslavsurf,pmastsurf,clearini,venergy,kscale)
+     &  pslavsurf,pmastsurf,clearini,venergy,kscale,
+     &  konl,iout,nelem)
 !
 !     calculates the force of the spring (face-to-face penalty)
 !
@@ -30,9 +31,9 @@
       character*8 lakonl
 !
       integer i,j,k,imat,ncmat_,ntmat_,nope,iflag,mi(*),
-     &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),iener,
-     &  nmethod,ne0,nstate_,ielas,jfaces,kscale,
-     &  iloc,igauss,nopes,nopem,nopep
+     &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),nener,
+     &  nmethod,ne0,nstate_,ielas,jfaces,kscale,konl(26),
+     &  iloc,igauss,nopes,nopem,nopep,iout,nelem
 !
       real*8 xl(3,10),elas(21),t1l,al(3),vl(0:mi(2),19),stickslope,
      &  pl(3,19),xn(3),alpha,beta,fnl(3,19),tp(3),te(3),ftrial(3),
@@ -48,7 +49,7 @@
 !
       iflag=2
 !
-      if(iener.eq.1) venergy=0.d0
+      if(nener.eq.1) venergy=0.d0
 !     
 !     # of master nodes
 !
@@ -200,7 +201,7 @@ c      endif
             endif
             elas(1)=dexp(-beta*clear+dlog(alpha))
          endif
-         if(iener.eq.1) then
+         if(nener.eq.1) then
             senergy=elas(1)/beta;
          endif
       elseif((int(elcon(3,1,imat)).eq.2).or.
@@ -209,7 +210,7 @@ c      endif
 !        linear overclosure/tied overclosure
 !     
          elas(1)=-springarea(1)*elcon(2,1,imat)*clear/kscale
-         if(iener.eq.1) then
+         if(nener.eq.1) then
             senergy=-elas(1)*clear/2.d0;
          endif
       elseif(int(elcon(3,1,imat)).eq.3) then
@@ -229,12 +230,12 @@ c      endif
          call ident(xiso,overlap,niso,id)
          if(id.eq.0) then
             pres=yiso(1)
-            if(iener.eq.1) then
+            if(nener.eq.1) then
                senergy=yiso(1)*overlap;
             endif
          elseif(id.eq.niso) then
             pres=yiso(niso)
-            if(iener.eq.1) then
+            if(nener.eq.1) then
                senergy=yiso(1)*xiso(1)
                do i=2,niso
                   senergy=senergy+(xiso(i)-xiso(i-1))*
@@ -245,7 +246,7 @@ c      endif
          else
             xk=(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))
             pres=yiso(id)+xk*(overlap-xiso(id))
-            if(iener.eq.1) then
+            if(nener.eq.1) then
                senergy=yiso(1)*xiso(1)
                do i=2, id
                   senergy=senergy+(xiso(i)-xiso(i-1))*
@@ -255,7 +256,7 @@ c      endif
             endif
          endif
          elas(1)=springarea(1)*pres
-         if(iener.eq.1) senergy=springarea(1)*senergy
+         if(nener.eq.1) senergy=springarea(1)*senergy
       endif
 !
 !     forces in the nodes of the contact element
@@ -353,8 +354,12 @@ c      endif
      &           fnl(3,nopep)**2)
 !     
 !     maximum size of shear force
-!     
-            dfshear=um*dfnl       
+! 
+            if(int(elcon(3,1,imat)).eq.4) then
+               dfshear=1.d30
+            else
+               dfshear=um*dfnl 
+            endif
 !     
 !     plastic and elastic slip
 !     
@@ -390,7 +395,7 @@ c            dftrial=dsqrt(ftrial(1)**2+ftrial(2)**2+ftrial(3)**2)
 !
 !              shear elastic energy
 !
-               if(iener.eq.1) senergy=senergy+dftrial*dte
+               if(nener.eq.1) senergy=senergy+dftrial*dte
             else
 !     
 !     slip
@@ -410,7 +415,7 @@ c            dftrial=dsqrt(ftrial(1)**2+ftrial(2)**2+ftrial(3)**2)
 !
 !              shear elastic and viscous energy
 !
-               if(iener.eq.1) then
+               if(nener.eq.1) then
                   senergy=senergy+dfshear*dfshear/xk
                   venergy=dg*dfshear
                endif
@@ -439,6 +444,27 @@ c            dftrial=dsqrt(ftrial(1)**2+ftrial(2)**2+ftrial(3)**2)
               fnl(i,nopem+j)=shp2s(4,j)*fnl(i,nopep)
           enddo
       enddo
+!
+!     write statements for Malte Krack
+!
+c      if(iout.gt.0) then
+c         write(*,*) 'contact element: ',nelem
+c         write(*,*) 'undeformed location of the integration point'
+c         write(*,*) ((pl(j,nopep)-vl(j,nopep)),j=1,3)
+c         write(*,*) 'deformed location of the integration point'
+c         write(*,*) (pl(j,nopep),j=1,3)
+c         write(*,*) 'nodes and shape values'
+c         do j=1,nopem
+c            write(*,*) konl(j),-shp2m(4,j)
+c         enddo
+c         do j=1,nopes
+c            write(*,*) konl(nopem+j),shp2s(4,j)
+c         enddo
+c         write(*,*) 'contact force'
+c         write(*,*) fnl(1,nopep),fnl(2,nopep),fnl(3,nopep)
+c         write(*,*) 'slave area'
+c         write(*,*) springarea(1)
+c      endif
 !
       return
       end

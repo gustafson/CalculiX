@@ -144,11 +144,13 @@
 !     check whether this distance is inferior to the tolerance
 !     only for projections on the exterior border of a face
 !
-      if((((nterms.eq.4).or.(nterms.eq.8)).and.
-     &    ((xi.le.-1.d0).or.(xi.ge.1.d0).or.
-     &     (et.le.-1.d0).or.(et.ge.1.d0))).or.
-     &   (((nterms.eq.3).or.(nterms.eq.6)).and.
-     &    ((xi.le.0.d0).or.(et.le.0.d0).or.(xi+et.ge.1.d0)))) then
+!     next lines removed on 16 dec 2016
+!
+c      if((((nterms.eq.4).or.(nterms.eq.8)).and.
+c     &    ((xi.le.-1.d0).or.(xi.ge.1.d0).or.
+c     &     (et.le.-1.d0).or.(et.ge.1.d0))).or.
+c     &   (((nterms.eq.3).or.(nterms.eq.6)).and.
+c     &    ((xi.le.0.d0).or.(et.le.0.d0).or.(xi+et.ge.1.d0)))) then
 !
 !        calculating a typical distance of the face
 !
@@ -170,12 +172,13 @@
             write(*,*) 
      &      '         Nodes belonging to the best partner face:'
             write(*,*) (nodef(i),i=1,nterms)
-            write(*,*) '         3-D Euclidean distance: ',dist
+            write(*,*) '         Euclidean distance within '
+            write(*,*) '         a radial plane: ',dist
             write(*,*) 
             ier=-1
             write(40,*) noded
          endif
-      endif
+c      endif
 !     
       return
       end

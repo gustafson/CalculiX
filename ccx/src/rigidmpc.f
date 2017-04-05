@@ -18,7 +18,7 @@
 !
       subroutine rigidmpc(ipompc,nodempc,coefmpc,irefnode,irotnode,
      &  labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,nk,nk_,nodeboun,ndirboun,
-     &  ikboun,ilboun,nboun,nboun_,node,typeboun,co)
+     &  ikboun,ilboun,nboun,nboun_,node,typeboun,co,jmin,jmax)
 !
 !     generates three rigid body MPC's for node "node" about reference
 !     (translational) node irefnode and rotational node irotnode 
@@ -29,7 +29,7 @@
       character*20 labmpc(*)
 !
       integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,nk,nk_,
-     &  ikmpc(*),
+     &  ikmpc(*),jmin,jmax,
      &  ilmpc(*),node,id,mpcfreeold,j,idof,l,nodeboun(*),
      &  ndirboun(*),ikboun(*),ilboun(*),nboun,nboun_,irefnode,
      &  irotnode
@@ -45,7 +45,8 @@
          write(*,*) '*ERROR in rigidmpc: increase nk_'
          call exit(201)
       endif
-      do j=1,3
+c      do j=1,3
+      do j=jmin,jmax
          idof=8*(node-1)+j
          call nident(ikmpc,idof,nmpc,id)
          if(id.gt.0) then

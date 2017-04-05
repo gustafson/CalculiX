@@ -38,7 +38,7 @@
      &  nmethod,iperturb(2),meminset(*),rmeminset(*),nintpoint,
      &  i,j,k,ipos,icntrl,nener,irestartstep,im0,im1,im2,mem,iact,
      &  istat,nkon,nlabel,iplas,ithermal,nstate_,iprestr,maxlenmpc,
-     &  mcs,ntie,nbody,nslavs,ifacecount
+     &  mcs,ntie,nbody,nslavs,ifacecount,iversion
 !
       if(icntrl.eq.0) then
 !
@@ -59,15 +59,11 @@
          open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED',
      &      err=15)
 !
-         read(15) version
-         write(*,*)
-         write(*,*) '*INFO: restart file ',fnrstrt
-         write(*,*) '       has been opened for reading.'
-         write(*,*) '       it was created with CalculiX ',version
+         iversion=0
 !
          do
 !
-            read(15,iostat=istat)istep
+            read(15,iostat=istat) version
             if(istat.lt.0) then
                if(irestartstep.eq.0) then
 !
@@ -78,13 +74,22 @@
                   open(15,file=fnrstrt,ACCESS='SEQUENTIAL',
      &                 FORM='UNFORMATTED',err=15)
                   read(15) version
-                  read(15,iostat=istat)istep
                else
                   write(*,*) '*ERROR in restartshort: requested step'
                   write(*,*) '       is not in the restart file'
                   call exit(201)
                endif
             endif
+!
+            if(iversion.eq.0) then
+               write(*,*)
+               write(*,*) '*INFO: restart file ',fnrstrt
+               write(*,*) '       has been opened for reading.'
+               write(*,*) '       it was created with CalculiX ',version
+               iversion=1
+            endif
+!
+            read(15)istep
 !
 !           reading the number of sets
 !
@@ -201,12 +206,10 @@
 !
       open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED',
      &   err=15)
-!
-      read(15) version
-!
+!     
       do
 !
-         read(15,iostat=istat)istep
+         read(15,iostat=istat) version
          if(istat.lt.0) then
             if(irestartstep.eq.0) then
 !
@@ -217,13 +220,13 @@
                open(15,file=fnrstrt,ACCESS='SEQUENTIAL',
      &              FORM='UNFORMATTED',err=15)
                read(15) version
-               read(15,iostat=istat)istep
             else
                write(*,*) '*ERROR in restartshort: requested step'
                write(*,*) '       is not in the restart file'
                call exit(201)
             endif
          endif
+         read(15)istep
 !
 !        set size
 !

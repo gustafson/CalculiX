@@ -22,106 +22,68 @@
 !                                     without pressure contribution
 !     at the end of the subroutine: neighboring velocity terms subtracted
 !
-      subroutine complete_hel_cyclic(neq,bv,hel,adv,auv,jq,irow,
+      subroutine complete_hel_cyclic(nef,bv,hel,adv,auv,jq,irow,
      &  ipnei,neiel,ifatie,c,lakonf,neifa,nzs)
 !
       implicit none
 !
       character*8 lakonf(*)
 !
-      integer irow(*),neq,nzs,j,k,l,jdof1,jq(*),ifa,neifa(*),numfaces,
-     &  indexf,ipnei(*),neiel(1),ifatie(*)
+      integer irow(*),nef,nzs,j,k,l,jdof1,jq(*),ifa,neifa(*),
+     &  indexf,ipnei(*),neiel(1),ifatie(*),iel,i
 !
-      real*8 hel(3,*),bv(neq,3),auv(*),adv(*),c(3,3)
+      real*8 hel(3,*),bv(nef,3),auv(*),adv(*),c(3,3)
 !
 !     off-diagonal terms
 !
-c      write(*,*) 'complete_hel_cyclic',nzs
-c      do j=1,8
-c         write(*,*) j,lakonf(j)
-c      enddo
-c      do j=1,48
-c         write(*,*) j,neifa(j)
-c      enddo
-c      do j=1,8
-c         write(*,*) j,ipnei(j)
-c      enddo
-c      do j=1,48
-c         write(*,*) j,neiel(j)
-c      enddo
-c      do j=1,38
-c         write(*,*) j,ifatie(j)
-c      enddo
-      do j=1,neq
-         do l=jq(j),jq(j+1)-1
-            jdof1=irow(l)
+c$omp parallel default(none)
+c$omp& shared(nef,ipnei,neiel,neifa,ifatie,hel,auv,bv,c)
+c$omp& private(i,indexf,iel,ifa,k)
+c$omp do
+      do i=1,nef
+         do indexf=ipnei(i)+1,ipnei(i+1)
 !
-!           determining the face between elements jdof1 and j
-!
-            indexf=ipnei(jdof1)
-            if(lakonf(jdof1)(4:4).eq.'8') then
-               numfaces=6
-            elseif(lakonf(jdof1)(4:4).eq.'6') then
-               numfaces=5
-            else
-               numfaces=4
-            endif
-            do k=1,numfaces
-               indexf=indexf+1
-               if(neiel(indexf).eq.j) exit
-            enddo
+            iel=neiel(indexf)
+            if(iel.eq.0) cycle
             ifa=neifa(indexf)
+!
             if(ifatie(ifa).eq.0) then
-!
-!              no cyclic symmetry face
-!
-!              subdiagonal terms
-!
                do k=1,3
-                  hel(k,jdof1)=hel(k,jdof1)-auv(l)*bv(j,k)
+                  hel(k,i)=hel(k,i)-auv(indexf)*bv(iel,k)
                enddo
-!     
-!              superdiagonal terms
-!
-               do k=1,3
-                  hel(k,j)=hel(k,j)-auv(l+nzs)*bv(jdof1,k)
-               enddo
-!
             elseif(ifatie(ifa).gt.0) then
-!
-!              subdiagonal terms
-!
-               do k=1,3
-                  hel(k,jdof1)=hel(k,jdof1)-auv(l)*
-     &                 (c(k,1)*bv(j,1)+c(k,2)*bv(j,2)+c(k,3)*bv(j,3))
-               enddo
-!     
-!              superdiagonal terms
-!
-               do k=1,3
-                  hel(k,j)=hel(k,j)-auv(l+nzs)*
-     &                 (c(1,k)*bv(jdof1,1)+c(2,k)*bv(jdof1,2)
-     &                 +c(3,k)*bv(jdof1,3))
-               enddo
+c               if(i.gt.iel) then
+                  do k=1,3
+                     hel(k,i)=hel(k,i)-auv(indexf)*
+     &                    (c(k,1)*bv(iel,1)+c(k,2)*bv(iel,2)
+     &                    +c(k,3)*bv(iel,3))
+                  enddo
+c               else
+c                  do k=1,3
+c                     hel(k,i)=hel(k,i)-auv(indexf)*
+c     &                    (c(1,k)*bv(iel,1)+c(2,k)*bv(iel,2)
+c     &                    +c(3,k)*bv(iel,3))
+c                  enddo
+c               endif
             else
-!
-!              subdiagonal terms
-!
-               do k=1,3
-                  hel(k,jdof1)=hel(k,jdof1)-auv(l)*
-     &                 (c(1,k)*bv(j,1)+c(2,k)*bv(j,2)+c(3,k)*bv(j,3))
-               enddo
-!     
-!              superdiagonal terms
-!
-               do k=1,3
-                  hel(k,j)=hel(k,j)-auv(l+nzs)*
-     &                 (c(k,1)*bv(jdof1,1)+c(k,2)*bv(jdof1,2)
-     &                 +c(k,3)*bv(jdof1,3))
-               enddo
+c               if(i.gt.iel) then
+                  do k=1,3
+                     hel(k,i)=hel(k,i)-auv(indexf)*
+     &                    (c(1,k)*bv(iel,1)+c(2,k)*bv(iel,2)
+     &                    +c(3,k)*bv(iel,3))
+                  enddo
+c               else
+c                  do k=1,3
+c                     hel(k,i)=hel(k,i)-auv(indexf)*
+c     &                    (c(k,1)*bv(iel,1)+c(k,2)*bv(iel,2)
+c     &                    +c(k,3)*bv(iel,3))
+c                  enddo
+c               endif
             endif
          enddo
       enddo
+c$omp end do
+c$omp end parallel
 !
       return
       end

@@ -24,10 +24,10 @@
 !
       implicit none
 !
-      integer nface,i,imat,ntmat_,mi(*),nef,velo(nef,0:5),
+      integer nface,i,imat,ntmat_,mi(*),nef,velo(nef,0:7),
      &  ielmat(mi(3),*),ielfa(4,*),j
 !
-      real*8 t1l,vfa(0:5,*),shcon(0:3,ntmat_,*),cvfa(*) 
+      real*8 t1l,vfa(0:7,*),shcon(0:3,ntmat_,*),cvfa(*) 
 !     
       do i=1,nface
          t1l=vfa(0,i)

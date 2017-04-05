@@ -26,7 +26,7 @@
 !
       implicit none
 !
-      logical fixed
+      logical fixed,rottracoupling
 !
       character*1 type,typeboun(*)
       character*20 labmpc(*),label
@@ -36,7 +36,7 @@
      &  mpcfree,inotr(2,*),ntrans,ikboun(*),ilboun(*),ikmpc(*),
      &  ilmpc(*),itr,idof,newnode,number,id,idofnew,idnew,nk,nk_,
      &  mpcfreenew,nmethod,iperturb,ii,nodetrue,mi(*),three,kflag,
-     &  iy(3),inumber
+     &  iy(3),inumber,irotnode(11),irotdof(11)
 !
       real*8 xboun(*),val,coefmpc(*),trab(7,*),a(3,3),co(3,*),
      &  vold(0:mi(2),*),dx(3)
@@ -49,6 +49,35 @@
          itr=inotr(1,node)
       endif
 !
+!     checking for boundary conditions on rotational dofs of
+!     distributing couplings 
+!
+      rottracoupling=.false.
+      if((ie.ge.4).and.(ie.le.6)) then
+!
+!        rotational dof
+!
+         do ii=is,ie
+            irotnode(ii)=node
+            if(ii.gt.3) then
+               idof=8*(node-1)+ii+1
+               call nident(ikmpc,idof,nmpc,id)
+               if(id.gt.0) then
+                  if(ikmpc(id).eq.idof) then
+                     if(labmpc(ilmpc(id))(1:14).eq.'ROTTRACOUPLING')then
+                        rottracoupling=.true.
+                        irotnode(ii)=
+     &                     nodempc(1,nodempc(3,ipompc(ilmpc(id))))
+                        irotdof(ii)=
+     &                     nodempc(2,nodempc(3,ipompc(ilmpc(id))))
+                        itr=0
+                     endif
+                  endif
+               endif
+            endif
+         enddo
+      endif
+!
       loop: do ii=is,ie
 !
 !     change: transformations on rotations are taken into account
@@ -59,23 +88,33 @@
 !
 !        no transformation applies: simple SPC
 !
-            if(ii.le.3) then
-               i=ii
-            elseif(ii.eq.4) then
-               i=5
-            elseif(ii.eq.5) then
-               i=6
-            elseif(ii.eq.6) then
-               i=7
-            elseif(ii.eq.8) then
-               i=4
-            elseif(ii.eq.11) then
-               i=0
+            if(rottracoupling) then
+               node=irotnode(ii)
+               if(ii.gt.3) then
+                  i=irotdof(ii)
+               else
+                  i=ii
+               endif
             else
-               write(*,*) '*ERROR in bounadd: unknown DOF: ',
-     &              ii
-               call exit(201)
+               if(ii.le.3) then
+                  i=ii
+               elseif(ii.eq.4) then
+                  i=5
+               elseif(ii.eq.5) then
+                  i=6
+               elseif(ii.eq.6) then
+                  i=7
+               elseif(ii.eq.8) then
+                  i=4
+               elseif(ii.eq.11) then
+                  i=0
+               else
+                  write(*,*) '*ERROR in bounadd: unknown DOF: ',
+     &                 ii
+                  call exit(201)
+               endif
             endif
+!
             if((fixed).and.(i.lt.5)) then
                val=vold(i,nodetrue)
             elseif(fixed) then
@@ -88,11 +127,8 @@
             if(id.gt.0) then
                if(ikboun(id).eq.idof) then
                   j=ilboun(id)
-c
                   if(typeboun(j).ne.type) cycle loop
-c
                   xboun(j)=val
-c                  typeboun(j)=type
                   if(nam.gt.0) iamboun(j)=iamplitude
                   cycle loop
                endif
@@ -121,14 +157,12 @@ c                  typeboun(j)=type
             enddo
             ikboun(id+1)=idof
             ilboun(id+1)=nboun
-c         enddo loop
-      else
+         else
 !
 !        transformation applies: SPC is MPC in global carthesian
 !        coordinates
 !
-         call transformatrix(trab(1,itr),co(1,node),a)
-c         do ii=is,ie
+            call transformatrix(trab(1,itr),co(1,node),a)
             if(ii.le.3) then
                i=ii
             elseif(ii.eq.4) then

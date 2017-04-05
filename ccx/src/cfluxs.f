@@ -20,7 +20,8 @@
      &  ialset,nset,nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &  amname,nam,ntrans,trab,inotr,co,ikforc,ilforc,nk,
      &  cflux_flag,istep,istat,n,iline,ipol,inl,ipoinp,inp,nam_,
-     &  namtot_,namta,amta,iaxial,ipoinpc,idefforc)
+     &  namtot_,namta,amta,iaxial,ipoinpc,idefforc,ipompc,nodempc,
+     &  nmpc,ikmpc,ilmpc,labmpc)
 !
 !     reading the input deck: *CFLUX
 !
@@ -29,6 +30,7 @@
       logical cflux_flag,user,add
 !
       character*1 inpc(*)
+      character*20 labmpc(*)
       character*80 amplitude,amname(*)
       character*81 set(*),noset
       character*132 textpart(16)
@@ -38,7 +40,8 @@
      &  iamforc(*),nam,iamplitude,ntrans,inotr(2,*),ipos,ikforc(*),
      &  ilforc(*),nk,iline,ipol,inl,ipoinp(2,*),inp(3,*),nam_,namtot,
      &  namtot_,namta(3,*),idelay,ndirforc(*),isector,iaxial,
-     &  ipoinpc(0:*),idefforc(*)
+     &  ipoinpc(0:*),idefforc(*),ipompc(*),
+     &  nodempc(3,*),nmpc,ikmpc(*),ilmpc(*)
 !
       real*8 xforc(*),forcval,co(3,*),trab(7,*),amta(2,*)
 !
@@ -177,7 +180,8 @@
             call forcadd(l,iforcdir,forcval,
      &        nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &        iamplitude,nam,ntrans,trab,inotr,co,ikforc,ilforc,
-     &        isector,add,user,idefforc)
+     &        isector,add,user,idefforc,ipompc,nodempc,
+     &        nmpc,ikmpc,ilmpc,labmpc)
          else
             read(textpart(1)(1:80),'(a80)',iostat=istat) noset
             noset(81:81)=' '
@@ -199,7 +203,8 @@
                call forcadd(ialset(j),iforcdir,forcval,
      &           nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &           iamplitude,nam,ntrans,trab,inotr,co,ikforc,ilforc,
-     &           isector,add,user,idefforc)
+     &           isector,add,user,idefforc,ipompc,nodempc,
+     &           nmpc,ikmpc,ilmpc,labmpc)
                else
                   k=ialset(j-2)
                   do
@@ -208,7 +213,8 @@
                      call forcadd(k,iforcdir,forcval,
      &                 nodeforc,ndirforc,xforc,nforc,nforc_,
      &                 iamforc,iamplitude,nam,ntrans,trab,inotr,co,
-     &                 ikforc,ilforc,isector,add,user,idefforc)
+     &                 ikforc,ilforc,isector,add,user,idefforc,
+     &                 ipompc,nodempc,nmpc,ikmpc,ilmpc,labmpc)
                   enddo
                endif
             enddo

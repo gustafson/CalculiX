@@ -157,7 +157,7 @@
       endif
       nodeboun(nboun)=nk
       ndirboun(nboun)=j
-      typeboun(nboun)='P'
+      typeboun(nboun)='U'
       do m=nboun,id+2,-1
          ikboun(m)=ikboun(m-1)
          ilboun(m)=ilboun(m-1)

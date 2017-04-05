@@ -31,14 +31,14 @@
       character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,mi(*),
+     &     ielprop(*),nodef(*),idirf(*),index,iflag,mi(*),
      &     inv,kgas,n,iaxial,nodea,nodeb,ipkon(*),kon(*),i,itype
 !
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,a,d,
-     &     p1,p2,T1,Aeff,C1,C2,C3,cd,cp,physcon(3),p2p1,km1,dvi,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,R,a,d,
+     &     p1,p2,T1,Aeff,C1,C2,C3,cd,cp,physcon(*),p2p1,km1,dvi,
      &     kp1,kdkm1,tdkp1,km1dk,x,y,ca1,cb1,ca2,cb2,dT1,alambda,
      &     rad,reynolds,pi,ppkrit,co(3,*),ttime,time,
-     &     carry_over,lc,hst,e,szt,num,denom,t,s,b,h,cdu,
+     &     carry_over,dlc,hst,e,szt,num,denom,t,s,b,h,cdu,
      &     cd_radius,cst,dh,cd_honeycomb,cd_lab,bdh,
      &     pt0zps1,cd_1spike,cdbragg,rzdh,
      &     cd_correction,p1p2,xflow_oil,T2,vold(0:mi(2),*)
@@ -46,8 +46,10 @@
       itype=1
       pi=4.d0*datan(1.d0)
       e=2.718281828459045d0
+!
+      index=ielprop(nelem)
 !    
-      if (iflag.eq.0) then
+      if(iflag.eq.0) then
          identity=.true.
 !     
          if(nactdog(2,node1).ne.0)then
@@ -58,9 +60,8 @@
             identity=.false.
          endif
 !     
-      elseif (iflag.eq.1)then
+      elseif(iflag.eq.1)then
 !     
-          index=ielprop(nelem)
           kappa=(cp/(cp-R))
 !
 !     Usual Labyrinth
@@ -68,12 +69,11 @@
           if(lakon(nelem)(2:5).ne.'LABF') then
              t=prop(index+1)
              s=prop(index+2)
-c             iaxial=nint(prop(index+3))
              d=prop(index+4)
              n=nint(prop(index+5))
              b=prop(index+6)
              h=prop(index+7)
-             lc=prop(index+8)
+             dlc=prop(index+8)
              rad=prop(index+9)
              X=prop(index+10)
              Hst=prop(index+11)
@@ -85,14 +85,12 @@ c             iaxial=nint(prop(index+3))
           elseif(lakon(nelem)(2:5).eq.'LABF') then
              nodea=nint(prop(index+1))
              nodeb=nint(prop(index+2))
-c             iaxial=nint(prop(index+3))
              t=prop(index+4)
              d=prop(index+5)
              n=nint(prop(index+6))
              b=prop(index+7)
              h=prop(index+8)
-!     hc=prop(index+7)
-             lc=prop(index+9)
+             dlc=prop(index+9)
              rad=prop(index+10)
              X=prop(index+11)
              Hst=prop(index+12)
@@ -101,23 +99,19 @@ c             iaxial=nint(prop(index+3))
 !     gap definition
              s=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &            co(1,nodea)-vold(1,nodea))**2)
-c             if(iaxial.ne.0) then
-c                a=pi*d*s/iaxial
-c             else
-                a=pi*d*s
-c             endif
+             a=pi*d*s
           endif
 !     
          p1=v(2,node1)
          p2=v(2,node2)
          if(p1.ge.p2) then
             inv=1
-            T1=v(0,node1)+physcon(1)
+            T1=v(0,node1)-physcon(1)
          else
             inv=-1
             p1=v(2,node2)
             p2=v(2,node1)
-            T1=v(0,node2)+physcon(1)
+            T1=v(0,node2)-physcon(1)
          endif
 !     
          cd=1.d0
@@ -127,7 +121,7 @@ c             endif
 !************************
 !     one fin 
 !*************************
-         if(n.eq.1.d0) then
+         if(n.eq.1) then
 !     
             km1=kappa-1.d0
             kp1=kappa+1.d0
@@ -156,13 +150,13 @@ c             endif
 !     ASME 98-GT-206
 !**********************
 !     
-         if (n.ge.2) then
+         if(n.ge.2) then
 !     
             call lab_straight_ppkrit(n,ppkrit)
 !     
 !     subcritical case
 !     
-            if (p2p1.gt.ppkrit) then
+            if(p2p1.gt.ppkrit) then
                xflow=inv*p1*Aeff/dsqrt(T1)*dsqrt((1.d0-p2p1**2.d0)
      &              /(R*(n-log(p2p1)/log(e))))
 !     
@@ -173,7 +167,7 @@ c             endif
             endif
          endif
 !
-      elseif (iflag.eq.2)then
+      elseif(iflag.eq.2)then
          numf=4
          alambda=10000.d0
 !     
@@ -182,8 +176,8 @@ c             endif
          if(p1.ge.p2) then
             inv=1
             xflow=v(1,nodem)*iaxial
-            T1=v(0,node1)+physcon(1)
-            T2=v(0,node2)+physcon(1)
+            T1=v(0,node1)-physcon(1)
+            T2=v(0,node2)-physcon(1)
             nodef(1)=node1
             nodef(2)=node1
             nodef(3)=nodem
@@ -193,8 +187,8 @@ c             endif
             p1=v(2,node2)
             p2=v(2,node1)
             xflow=-v(1,nodem)*iaxial
-            T1=v(0,node2)+physcon(1)
-            T2=v(0,node1)+physcon(1)
+            T1=v(0,node2)-physcon(1)
+            T2=v(0,node1)-physcon(1)
             nodef(1)=node2
             nodef(2)=node2
             nodef(3)=nodem
@@ -209,16 +203,14 @@ c             endif
 !     Usual labyrinth
 !
          if(lakon(nelem)(2:5).ne. 'LABF') then
-            index=ielprop(nelem)
             kappa=(cp/(cp-R))
             t=prop(index+1)
             s=prop(index+2)
-c            iaxial=nint(prop(index+3))
             d=prop(index+4)
             n=nint(prop(index+5))
             b=prop(index+6)
             h=prop(index+7)
-            lc=prop(index+8)
+            dlc=prop(index+8)
             rad=prop(index+9)
             X=prop(index+10)
             Hst=prop(index+11)
@@ -227,7 +219,6 @@ c            iaxial=nint(prop(index+3))
 !     Flexible labyrinth for coupled calculations
 !
          elseif(lakon(nelem)(2:5).eq.'LABF') then
-            index=ielprop(nelem)
             nodea=nint(prop(index+1))
             nodeb=nint(prop(index+2))
 c            iaxial=nint(prop(index+3))
@@ -236,7 +227,7 @@ c            iaxial=nint(prop(index+3))
             n=nint(prop(index+6))
             b=prop(index+7)
             h=prop(index+8)
-            lc=prop(index+9)
+            dlc=prop(index+9)
             rad=prop(index+10)
             X=prop(index+11)
             Hst=prop(index+12)
@@ -244,11 +235,7 @@ c            iaxial=nint(prop(index+3))
 !     gap definition
              s=dsqrt((co(1,nodeb)+vold(1,nodeb)-
      &            co(1,nodea)-vold(1,nodea))**2)
-c             if(iaxial.ne.0) then
-c                a=pi*d*s/iaxial
-c             else
-                a=pi*d*s
-c             endif
+             a=pi*d*s
           endif
 !     
          p2p1=p2/p1
@@ -259,8 +246,8 @@ c             endif
 !     honeycomb stator correction
 !     
          cd_honeycomb=1.d0
-         if (lc.ne.0.d0)then
-            call cd_lab_honeycomb(s,lc,cd_honeycomb)
+         if(dlc.ne.0.d0)then
+            call cd_lab_honeycomb(s,dlc,cd_honeycomb)
             cd_honeycomb=1+cd_honeycomb/100
          endif
 !     
@@ -273,7 +260,7 @@ c             endif
 !     
 !     carry over factor (only for straight throught labyrinth)
 !     
-         if ((n.ge.2).and.(hst.eq.0d0)) then
+         if((n.ge.2).and.(hst.eq.0.d0)) then
             cst=n/(n-1.d0)
             szt=s/t
             carry_over=cst/dsqrt(cst-szt/(szt+0.02))
@@ -283,8 +270,10 @@ c             endif
 !     calculation of the dynamic viscosity 
 !     
          if(dabs(dvi).lt.1E-30) then
-            kgas=0
-            call dynamic_viscosity(kgas,T1,dvi)
+            write(*,*) '*ERROR in labyrinth: '
+            write(*,*) '       no dynamic viscosity defined'
+            write(*,*) '       dvi= ',dvi
+            call exit(201)
          endif     
 !     
 !     calculation of the number of reynolds for a gap
@@ -405,7 +394,7 @@ c             endif
 !     
 !     subcritical case
 !     
-            if (p2p1.gt.ppkrit) then
+            if(p2p1.gt.ppkrit) then
 !     
                f=xflow*dT1/p1-dsqrt(num/denom)*Aeff
 !     
@@ -440,8 +429,8 @@ c             endif
          if(p1.ge.p2) then
             inv=1
             xflow=v(1,nodem)*iaxial
-            T1=v(0,node1)+physcon(1)
-            T2=v(0,node2)+physcon(1)
+            T1=v(0,node1)-physcon(1)
+            T2=v(0,node2)-physcon(1)
             nodef(1)=node1
             nodef(2)=node1
             nodef(3)=nodem
@@ -451,15 +440,14 @@ c             endif
             p1=v(2,node2)
             p2=v(2,node1)
             xflow=-v(1,nodem)*iaxial
-            T1=v(0,node2)+physcon(1)
-            T2=v(0,node2)+physcon(1)
+            T1=v(0,node2)-physcon(1)
+            T2=v(0,node2)-physcon(1)
             nodef(1)=node2
             nodef(2)=node2
             nodef(3)=nodem
             nodef(4)=node1
          endif
 !     
-         index=ielprop(nelem)
          kappa=(cp/(cp-R))
          t=prop(index+1)
          s=prop(index+2)
@@ -467,7 +455,7 @@ c             endif
          n=nint(prop(index+4))
          b=prop(index+5)
          h=prop(index+6)
-         lc=prop(index+7)
+         dlc=prop(index+7)
          rad=prop(index+8)
          X=prop(index+9)
          Hst=prop(index+10)
@@ -482,8 +470,8 @@ c             endif
 !     
 !     honeycomb stator correction
 !     
-         if (lc.ne.0.d0)then
-            call cd_lab_honeycomb(s,lc,cd_honeycomb)
+         if(dlc.ne.0.d0)then
+            call cd_lab_honeycomb(s,dlc,cd_honeycomb)
             Aeff=Aeff*(1.d0+cd_honeycomb/100.d0)
          else
             cd_honeycomb=0
@@ -500,7 +488,7 @@ c             endif
 !     
 !     carry over factor (only for straight throught labyrinth)
 !     
-         if((n.gt.1).and.(hst.eq.0d0)) then
+         if((n.gt.1).and.(hst.eq.0.d0)) then
             cst=n/(n-1.d0)
             szt=s/t
             carry_over=cst/dsqrt(cst-szt/(szt+0.02))
@@ -510,8 +498,10 @@ c             endif
 !     calculation of the dynamic viscosity 
 !     
          if(dabs(dvi).lt.1E-30) then
-            kgas=0
-            call dynamic_viscosity(kgas,T1,dvi)
+            write(*,*) '*ERROR in labyrinth: '
+            write(*,*) '       no dynamic viscosity defined'
+            write(*,*) '       dvi= ',dvi
+            call exit(201)
          endif     
 !     
 !     calculation of the number of reynolds for a gap
@@ -599,7 +589,7 @@ c             endif
  55      FORMAT(1X,A,I6,A,I6,A,e11.4,A,A,e11.4,A)
          
          if(inv.eq.1) then
-          write(1,56)'       Inlet node  ',node1,':   Tt1=',T1,
+          write(1,56)'       Inlet node ',node1,':   Tt1=',T1,
      &           ', Ts1=',T1,', Pt1=',P1
 
             write(1,*)'             Element ',nelem,lakon(nelem)
@@ -624,12 +614,12 @@ c             endif
      &             ', Cd= ',cdbragg
            endif
                  
-            write(1,56)'       Outlet node ',node2,':   Tt2= ',T2,
+            write(1,56)'      Outlet node ',node2,':   Tt2= ',T2,
      &           ', Ts2= ',T2,', Pt2= ',P2
 
 !     
          else if(inv.eq.-1) then
-            write(1,56)'       Inlet node  ',node2,':    Tt1= ',T1,
+            write(1,56)'       Inlet node ',node2,':    Tt1= ',T1,
      &           ', Ts1= ',T1,', Pt1= ',P1 
          
             write(1,*)'             element ',nelem,lakon(nelem)
@@ -653,7 +643,7 @@ c             endif
                write(1,60) '              Cd_Mcgreehan= ',
      & cdu,' Cd= ',cdbragg
            endif
-           write(1,56)'       Outlet node ',node1,':    Tt2= ',T2,
+           write(1,56)'      Outlet node ',node1,':    Tt2= ',T2,
      &          ', Ts2= ',T2,', Pt2= ',P2
 
         endif

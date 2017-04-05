@@ -20,7 +20,7 @@
      &  prlab,prset,v,t1,fn,ipkon,lakon,stx,eei,xstate,ener,
      &  mi,nstate_,ithermal,co,kon,qfx,ttime,trab,inotr,ntrans,
      &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin,ielmat,thicke,
-     &  eme,islavsurf,mortar,time,ielprop,prop,veold)
+     &  eme,islavsurf,mortar,time,ielprop,prop,veold,orname)
 !
 !     stores results in the .dat file
 !
@@ -31,7 +31,7 @@
       character*1 cflag
       character*6 prlab(*)
       character*8 lakon(*)
-      character*80 noset,elset
+      character*80 noset,elset,orname(*)
       character*81 set(*),prset(*)
       character*87 filab(*)
 !
@@ -280,20 +280,21 @@
                      call printoutint(prlab,ipkon,lakon,stx,eei,xstate,
      &                    ener,mi(1),nstate_,ii,nelem,qfx,
      &                    orab,ielorien,norien,co,kon,ielmat,thicke,eme,
-     &                    ielprop,prop,nelem,ithermal)
+     &                    ielprop,prop,nelem,ithermal,orname)
                   elseif(ialset(jj+1).gt.0) then
                      nelem=ialset(jj)
                      call printoutint(prlab,ipkon,lakon,stx,eei,xstate,
      &                    ener,mi(1),nstate_,ii,nelem,qfx,orab,
      &                    ielorien,norien,co,kon,ielmat,thicke,eme,
-     &                    ielprop,prop,nelem,ithermal)
+     &                    ielprop,prop,nelem,ithermal,orname)
                   else
                      do nelem=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                    -ialset(jj+1)
                         call printoutint(prlab,ipkon,lakon,stx,eei,
      &                       xstate,ener,mi(1),nstate_,ii,nelem,
      &                       qfx,orab,ielorien,norien,co,kon,ielmat,
-     &                       thicke,eme,ielprop,prop,nelem,ithermal)
+     &                       thicke,eme,ielprop,prop,nelem,ithermal,
+     &                       orname)
                      enddo
                   endif
                enddo

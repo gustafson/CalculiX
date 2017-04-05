@@ -43,7 +43,7 @@
       integer mi(*),ieg(*),nflow,i,ielmat(mi(3),*),ntmat_,node1,node2,
      &     nelem,index,nshcon(*),ipkon(*),kon(*),nodem,imat,ielprop(*),
      &     nrhcon(*),neighbor,ichange,iponoel(*),inoel(2,*),indexe,
-     &     itg(*),ntg,j,node,imin,imax
+     &     itg(*),ntg,node,imin,imax
 !     
       real*8 prop(*),shcon(0:3,ntmat_,*),xflow,v(0:mi(2),*),cp,r,
      &     dvi,rho,rhcon(0:1,ntmat_,*),kappa,cti,Ti,ri,ro,p1zp2,omega,
@@ -315,6 +315,19 @@ c      enddo
 !
             if(((v(0,node1).ne.0.d0).and.(v(0,node2).ne.0.d0)).or.
      &         ((v(0,node1).eq.0.d0).and.(v(0,node2).eq.0.d0))) cycle
+!
+!           If the element is a adiabatic gas pipe the
+!           total temperature at both ends is equal
+!
+            if(lakon(nelem)(2:6).eq.'GAPFA') then
+               if(v(0,node1).eq.0.d0) then
+                  v(0,node1)=v(0,node2)
+               else
+                  v(0,node2)=v(0,node1)
+               endif
+               ichange=1
+               cycle
+            endif
 !
             nodem=kon(indexe+2)
 !

@@ -106,6 +106,12 @@
      &                          nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &                          nboun,nboun_,xboun,inode,node,co,
      &                          typeboun)
+                        elseif(label(1:4).eq.'BEAM') then
+                           call beammpc(ipompc,nodempc,
+     &                          labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
+     &                          nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
+     &                          nboun,nboun_,inode,node,co,
+     &                          typeboun)
                         else
                            call usermpc(ipompc,nodempc,coefmpc,
      &                          labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
@@ -141,6 +147,11 @@
      &                 labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &                 nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &                 nboun,nboun_,xboun,inode,node,co,typeboun)
+               elseif(label(1:4).eq.'BEAM') then
+                  call beammpc(ipompc,nodempc,
+     &                 labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
+     &                 nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
+     &                 nboun,nboun_,inode,node,co,typeboun)
                else
                   call usermpc(ipompc,nodempc,coefmpc,
      &                 labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
@@ -155,7 +166,8 @@
 !
 !     nonhomogeneous term for user MPC
 !
-      if((label(1:8).ne.'STRAIGHT').and.(label(1:5).ne.'PLANE'))
+      if((label(1:8).ne.'STRAIGHT').and.(label(1:5).ne.'PLANE').and.
+     &   (label(1:4).ne.'BEAM'))
      &     then
          node=0
          call usermpc(ipompc,nodempc,coefmpc,

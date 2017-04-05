@@ -78,11 +78,12 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	     ITG *nslavs, double *thicke, ITG *ics, 
 	     ITG *nintpoint,ITG *mortar,ITG *ifacecount,char *typeboun,
 	     ITG **islavsurfp,double **pslavsurfp,double **clearinip,
-	     ITG *nmat,double *xmodal,ITG *iaxial,ITG *inext,ITG *nprop){
+	     ITG *nmat,double *xmodal,ITG *iaxial,ITG *inext,ITG *nprop,
+	     ITG *network,char *orname){
 
   char description[13]="            ",*lakon=NULL,jobnamef[396]="",
       *sideface=NULL,*labmpc=NULL,fnffrd[132]="",*lakonf=NULL,
-      *sideloadref=NULL,*sideload=NULL; 
+      *sideloadref=NULL,*sideload=NULL,stiffmatrix[132]=""; 
  
   ITG *inum=NULL,k,iout=0,icntrl,iinc=0,jprint=0,iit=-1,jnz=0,
       icutb=0,istab=0,ifreebody,uncoupled,n1,n2,itruecontact,
@@ -92,7 +93,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       *ieg=NULL,ntg=0,ntr,*kontri=NULL,*nloadtr=NULL,idamping=0,
       *ipiv=NULL,ntri,newstep,mode=-1,noddiam=-1,nasym=0,im,
       ntrit,*inocs=NULL,inewton=0,*ipobody=NULL,*nacteq=NULL,
-      *nactdog=NULL,nteq,network,*itietri=NULL,*koncont=NULL,
+      *nactdog=NULL,nteq,*itietri=NULL,*koncont=NULL,
       ncont,ne0,nkon0,*ipkon=NULL,*kon=NULL,*ielorien=NULL,
       *ielmat=NULL,itp=0,symmetryflag=0,inputformat=0,kscale=1,
       *iruc=NULL,iitterm=0,iturbulent,ngraph=1,ismallsliding=0,
@@ -116,7 +117,8 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       *ielmatf=NULL,*ielorienf=NULL,ialeatoric=0,nloadref,
       *nelemloadref=NULL,*iamloadref=NULL,*idefload=NULL,nload_,
       *nelemload=NULL,*iamload=NULL,ncontacts=0,inccontact=0,
-      j=0,*ifatie=NULL,n,inoelsize;
+      j=0,*ifatie=NULL,n,inoelsize=0,isensitivity=0,*istartblk=NULL,
+      *iendblk=NULL,*nblket=NULL,*nblkze=NULL,nblk,*konf=NULL,*ielblk=NULL;
 
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*epn=NULL,*cg=NULL,
          *cdn=NULL,*vel=NULL,*vfa=NULL,*pslavsurfold=NULL,
@@ -136,7 +138,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	 *tarea=NULL,*tenv=NULL,*erad=NULL,*fnr=NULL,*fni=NULL,
 	 *adview=NULL,*auview=NULL,*qfx=NULL,*cvini=NULL,*cv=NULL,
          *qfn=NULL,*co=NULL,*vold=NULL,*fenv=NULL,sigma=0.,
-         *xbodyact=NULL,*cgr=NULL,dthetaref, *vcontu=NULL,*vr=NULL,*vi=NULL,
+         *xbodyact=NULL,*cgr=NULL,dthetaref, *vr=NULL,*vi=NULL,
 	 *stnr=NULL,*stni=NULL,*vmax=NULL,*stnmax=NULL,*fmpc=NULL,*ener=NULL,
 	 *f_cm=NULL, *f_cs=NULL,*adc=NULL,*auc=NULL,*res=NULL,
 	 *xstate=NULL,*eenmax=NULL,*adrad=NULL,*aurad=NULL,*bcr=NULL,
@@ -146,14 +148,15 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	 *x=NULL,*y=NULL,*z=NULL,*xo=NULL,sum1,sum2,flinesearch,
 	 *yo=NULL,*zo=NULL,*cdnr=NULL,*cdni=NULL,*fnext=NULL,*fnextini=NULL,
 	 allwk=0.,allwkini,energy[4]={0.,0.,0.,0.},energyini[4],
-	 energyref,denergymax,dtcont,dtvol,wavespeed[*nmat],
-	 emax,enres,enetoll,dampwk=0.,dampwkini=0.,temax,        //MPADD
-	 *tmp=NULL,energystartstep[4],        //MPADD
-	 sizemaxinc,*adblump=NULL;
+	 energyref,denergymax,dtcont,dtvol,wavespeed[*nmat],emax,r_abs,
+         enetoll,dampwk=0.,dampwkini=0.,temax,*tmp=NULL,energystartstep[4],
+	 sizemaxinc,*adblump=NULL,*adcpy=NULL,*aucpy=NULL;
+
+  FILE *f1;
 	 
-  // MPADD: initialize enresmin to the tolerance
+  // MPADD: initialize rmin to the tolerance
   enetoll=0.02;
-  enres=0.0;
+  r_abs=0.0;
   emax=0.0;
   // MPADD end
 
@@ -240,6 +243,19 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  }
 	      }
 	  }
+      }
+  }
+
+  /* check whether a sensitivity step may follow (whether design variables
+     were defined */
+
+  for(i=0;i<*ntie;i++){
+      if(strcmp1(&tieset[i*243+80],"D")==0){
+	  isensitivity=1;
+	  NNEW(adcpy,double,neq[1]);
+          /* no asymmetric matrices allowed for sensitivity */
+	  NNEW(aucpy,double,nzs[1]);
+	  break;
       }
   }
 
@@ -341,7 +357,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		       ipkon,kon,lakon,ielmat,ne,nload,
                        kontri,&ntri,nloadtr,nflow,ndirboun,nactdog,
                        nodeboun,nacteq,nboun,ielprop,prop,&nteq,
-                       v,&network,physcon,shcon,ntmat_,co,
+                       v,network,physcon,shcon,ntmat_,co,
                        vold,set,nshcon,rhcon,nrhcon,mi,nmpc,nodempc,
                        ipompc,labmpc,ikboun,&nasym,ttime,&time,iaxial));
       SFREE(v);
@@ -369,11 +385,14 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       /* determine the network elements belonging to a given node (for usage
          in user subroutine film */
 
-      if(ntg>0){
+//      if(ntg>0){
+      if((*network>0)||(ntg>0)){
 	  NNEW(iponoel,ITG,*nk);
 	  NNEW(inoel,ITG,2**nkon);
-	  FORTRAN(networkelementpernode,(iponoel,inoel,lakon,ipkon,kon,
-					 &inoelsize,nflow,ieg));
+	  if(*network>0){
+	      FORTRAN(networkelementpernode,(iponoel,inoel,lakon,ipkon,kon,
+		  &inoelsize,nflow,ieg,ne,network));
+	  }
 	  RENEW(inoel,ITG,2*inoelsize);
       }
 
@@ -412,46 +431,59 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  icfd=1;nactdohinv[nef]=i+1;nef++;nactdoh[i]=nef;}
   }
   if(icfd==1){
+
+      /* checking block structures (CFD calculations) */
+
+      NNEW(ielfa,ITG,24*nef);
+      NNEW(nodface,ITG,5*6*nef);
+      NNEW(neiel,ITG,6*nef);
+      NNEW(neij,ITG,6*nef);
+      NNEW(neifa,ITG,6*nef);
+      NNEW(ipoface,ITG,*nk);
+      NNEW(ipnei,ITG,*ne+1);
+      NNEW(konf,ITG,*nkon);
+      NNEW(istartblk,ITG,*nset);
+      NNEW(iendblk,ITG,*nset);
+      NNEW(nblket,ITG,*nset);
+      NNEW(nblkze,ITG,*nset);
+      NNEW(ielblk,ITG,nef);
+      FORTRAN(blockanalysis,(set,nset,istartset,iendset,ialset,&nblk,
+              ipkon,kon,ielfa,nodface,neiel,neij,neifa,ipoface,ipnei,
+	      konf,istartblk,iendblk,nactdoh,nblket,nblkze,&nef,ielblk,
+	      nk,nactdohinv));
+      if(nblk==0){
+	  memcpy(&konf[0],&kon[0],sizeof(ITG)**nkon);
+	  SFREE(istartblk);SFREE(iendblk);SFREE(nblket);
+          SFREE(nblkze);SFREE(ielblk);
+	  }else{
+	  RENEW(istartblk,ITG,nblk);
+	  RENEW(iendblk,ITG,nblk);
+	  RENEW(nblket,ITG,nblk);
+	  RENEW(nblkze,ITG,nblk);
+      }
+      DMEMSET(ipoface,0,*nk,0);
+      DMEMSET(neiel,0,6*nef,0);
+      DMEMSET(ielfa,0,24*nef,0);
+
+      /* gathering topological information (CFD calculations) */
+
       RENEW(nactdohinv,ITG,nef);
       NNEW(ipkonf,ITG,nef);
       NNEW(lakonf,char,8*nef);
       NNEW(ielmatf,ITG,mi[2]*nef);
       if(*norien>0) NNEW(ielorienf,ITG,mi[2]*nef);
-      NNEW(ipoface,ITG,*nk);
-      NNEW(nodface,ITG,5*6*nef);
-      NNEW(ipnei,ITG,nef);
-      NNEW(neifa,ITG,6*nef);
-      NNEW(neiel,ITG,6*nef);
-      NNEW(neij,ITG,6*nef);
-      NNEW(ielfa,ITG,24*nef);
       NNEW(ifatie,ITG,6*nef);
       NNEW(ifaext,ITG,6*nef);
       NNEW(isolidsurf,ITG,6*nef);
-      NNEW(vel,double,6*nef);
-      NNEW(vfa,double,6*6*nef);
-/*      NNEW(ipnei,ITG,*ne);
-      NNEW(neifa,ITG,6**ne);
-      NNEW(neiel,ITG,6**ne);
-      NNEW(neij,ITG,6**ne);
-      NNEW(ielfa,ITG,24**ne);
-      NNEW(ifatie,ITG,6**ne);
-      NNEW(ifaext,ITG,6**ne);
-      NNEW(isolidsurf,ITG,6**ne);
-      NNEW(vel,double,6**ne);
-      NNEW(vfa,double,6*6**ne);*/
+      NNEW(vel,double,8*nef);
+      NNEW(vfa,double,8*6*nef);
 
       n=0;for(i=0;i<*mcs;i++){if(floor(cs[17*i+3])>n)n=floor(cs[17*i+3]);}
-      NNEW(xo,double,n);	    
-      NNEW(yo,double,n);	    
-      NNEW(zo,double,n);	    
-      NNEW(x,double,n);	    
-      NNEW(y,double,n);	    
-      NNEW(z,double,n);	   
-      NNEW(nx,ITG,n);	   
-      NNEW(ny,ITG,n);	    
-      NNEW(nz,ITG,n);
+      NNEW(xo,double,n);NNEW(yo,double,n);NNEW(zo,double,n);	    
+      NNEW(x,double,n);NNEW(y,double,n);NNEW(z,double,n);	   
+      NNEW(nx,ITG,n);NNEW(ny,ITG,n);NNEW(nz,ITG,n);
 
-      FORTRAN(precfd,(ne,ipkon,kon,lakon,ipnei,neifa,neiel,ipoface,
+      FORTRAN(precfd,(ne,ipkon,konf,lakon,ipnei,neifa,neiel,ipoface,
        nodface,ielfa,&nflnei,&nface,ifaext,&nfaext,
        isolidsurf,&nsolidsurf,set,nset,istartset,iendset,ialset,
        vel,vold,mi,neij,&nef,nactdoh,ipkonf,lakonf,ielmatf,ielmat,
@@ -469,7 +501,8 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       RENEW(ifatie,ITG,nface);
       RENEW(ifaext,ITG,nfaext);
       RENEW(isolidsurf,ITG,nsolidsurf);
-      RENEW(vfa,double,6*nface);
+      RENEW(vfa,double,8*nface);
+      RENEW(ipnei,ITG,nef+1);
   }else{
       SFREE(nactdoh);SFREE(nactdohinv);
   }
@@ -596,7 +629,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   
   /* normalizing the time */
   
-  FORTRAN(checktime,(itpamp,namta,tinc,ttime,amta,tmin,inext,&itp,istep));
+  FORTRAN(checktime,(itpamp,namta,tinc,ttime,amta,tmin,inext,&itp,istep,tper));
   dtheta=(*tinc)/(*tper);
 
   /* taking care of a small increment at the end of the step
@@ -703,7 +736,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      kon,ipkon,lakon,ne,nactdof,icol,jq,&irow,isolver,
 	      neq,nzs,nmethod,&f,&fext,&b,&aux2,&fini,&fextini,
 	      &adb,&aub,ithermal,iperturb,mass,mi,iexpl,mortar,
-	      typeboun,&cv,&cvini,&iit);
+	      typeboun,&cv,&cvini,&iit,network);
       
       /* invert nactdof */
 
@@ -733,7 +766,8 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      &ne0,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
+	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+              inoel,nener,orname,network);
       
       SFREE(fn);SFREE(stx);SFREE(inum);
       
@@ -780,7 +814,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
                   xstateini,xstate,thicke,integerglob,doubleglob,
 		  tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
 		  pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
-                  iponoel,inoel);
+		  iponoel,inoel,network);
 #ifdef COMPANY
       }else{
 	  FORTRAN(mafillsm_company,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
@@ -800,7 +834,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
                   xstateini,xstate,thicke,integerglob,doubleglob,
 		  tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
 		  pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
-		  iponoel,inoel));
+		  iponoel,inoel,network));
       }
 #endif	  
       
@@ -930,7 +964,8 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-              islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
+              islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+              inoel,nener,orname,network);
       SFREE(inum);
       dtime=0.;
 
@@ -1111,6 +1146,8 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       qamold[0]=qam[0];
       qamold[1]=qam[1];
 
+      icntrl=0;
+
       /* restoring the distributed loading before adding the
          friction heating */
 
@@ -1140,27 +1177,54 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
               iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc));
       
       for(i=0;i<3;i++){cam[i]=0.;}for(i=3;i<5;i++){cam[i]=0.5;}
-      if(*ithermal>1){radflowload(itg,ieg,&ntg,&ntr,adrad,aurad,bcr,ipivr,
-       ac,bc,nload,sideload,nelemload,xloadact,lakon,ipiv,ntmat_,vold,
-       shcon,nshcon,ipkon,kon,co,
-       kontri,&ntri,nloadtr,tarea,tenv,physcon,erad,&adview,&auview,
-       nflow,ikboun,xbounact,nboun,ithermal,&iinc,&iit,
-       cs,mcs,inocs,&ntrit,nk,fenv,istep,&dtime,ttime,&time,ilboun,
-       ikforc,ilforc,xforcact,nforc,cam,ielmat,&nteq,prop,ielprop,
-       nactdog,nacteq,nodeboun,ndirboun,&network,
-       rhcon,nrhcon,ipobody,ibody,xbodyact,nbody,iviewfile,jobnamef,
-       ctrl,xloadold,&reltime,nmethod,set,mi,istartset,iendset,ialset,nset,
-       ineighe,nmpc,nodempc,ipompc,coefmpc,labmpc,&iemchange,nam,iamload,
-       jqrad,irowrad,&nzsrad,icolrad,ne,iaxial,qa,cocon,ncocon,iponoel,
-       inoel,nprop);
+      if(*ithermal>1){
+	  radflowload(itg,ieg,&ntg,&ntr,adrad,aurad,bcr,ipivr,
+             ac,bc,nload,sideload,nelemload,xloadact,lakon,ipiv,ntmat_,vold,
+             shcon,nshcon,ipkon,kon,co,
+             kontri,&ntri,nloadtr,tarea,tenv,physcon,erad,&adview,&auview,
+             nflow,ikboun,xbounact,nboun,ithermal,&iinc,&iit,
+             cs,mcs,inocs,&ntrit,nk,fenv,istep,&dtime,ttime,&time,ilboun,
+             ikforc,ilforc,xforcact,nforc,cam,ielmat,&nteq,prop,ielprop,
+             nactdog,nacteq,nodeboun,ndirboun,network,
+             rhcon,nrhcon,ipobody,ibody,xbodyact,nbody,iviewfile,jobnamef,
+             ctrl,xloadold,&reltime,nmethod,set,mi,istartset,iendset,ialset,nset,
+             ineighe,nmpc,nodempc,ipompc,coefmpc,labmpc,&iemchange,nam,iamload,
+             jqrad,irowrad,&nzsrad,icolrad,ne,iaxial,qa,cocon,ncocon,iponoel,
+             inoel,nprop);
+             
+              /* check whether network iterations converged */
+
+	  if(qa[2]>0){
+	      checkdivergence(co,nk,kon,ipkon,lakon,ne,stn,nmethod, 
+   	           kode,filab,een,t1act,&time,epn,ielmat,matname,enern, 
+	           xstaten,nstate_,istep,&iinc,iperturb,ener,mi,output,
+                   ithermal,qfn,&mode,&noddiam,trab,inotr,ntrans,orab,
+	           ielorien,norien,description,sti,&icutb,&iit,&dtime,qa,
+	           vold,qam,ram1,ram2,ram,cam,uam,&ntg,ttime,&icntrl,
+	           &theta,&dtheta,veold,vini,idrct,tper,&istab,tmax, 
+	           nactdof,b,tmin,ctrl,amta,namta,itpamp,inext,&dthetaref,
+                   &itp,&jprint,jout,&uncoupled,t1,&iitterm,nelemload,
+                   nload,nodeboun,nboun,itg,ndirboun,&deltmx,&iflagact,
+	           set,nset,istartset,iendset,ialset,emn,thicke,jobnamec,
+	           mortar,nmat,ielprop,prop,&ialeatoric,&kscale,
+                   energy, &allwk,&energyref,&emax,&r_abs,&enetoll,energyini,
+	           &allwkini,&temax,&sizemaxinc,&ne0,&neini,&dampwk,
+	           &dampwkini,energystartstep);
+
+              /* the divergence is flagged by icntrl!=0
+                 icutb is reset to zero in order to generate
+                 regular contact elements etc.. */
+
+	      icutb--;
+	  }
       }
       
       if(icfd==1){
-	  compfluid(&co,nk,&ipkonf,&kon,&lakonf,&sideface,
+	  compfluid(&co,nk,&ipkonf,konf,&lakonf,&sideface,
             ifreestream,&nfreestream,isolidsurf,neighsolidsurf,&nsolidsurf,
             nshcon,shcon,nrhcon,rhcon,&vold,ntmat_,nodeboun,
             ndirboun,nboun,&ipompc,&nodempc,nmpc,&ikmpc,&ilmpc,ithermal,
-            ikboun,ilboun,&iturbulent,isolver,iexpl,vcontu,ttime,
+            ikboun,ilboun,&iturbulent,isolver,iexpl,ttime,
             &time,&dtime,nodeforc,ndirforc,xforc,nforc,nelemload,sideload,
             xload,nload,xbody,ipobody,nbody,ielmatf,matname,mi,ncmat_,
             physcon,istep,&iinc,ibody,xloadold,xboun,&coefmpc,
@@ -1172,7 +1236,8 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    tieset,ntie,mcs,ics,cs,nkon,&mpcfree,&memmpc_,&fmpc,&nef,&inomat,
 	    qfx,neifa,neiel,ielfa,ifaext,vfa,vel,ipnei,&nflnei,&nfaext,
 	    typeboun,neij,tincf,nactdoh,nactdohinv,ielorienf,jobnamec,
-	    ifatie,nstate_,xstate);
+	    ifatie,nstate_,xstate,orname,&nblk,ielblk,istartblk,iendblk,
+	    nblket,nblkze,kon);
 
 	  /* determining the global values to be used as boundary conditions
 	     for a submodel */
@@ -1388,7 +1453,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  kon,ipkon,lakon,ne,nactdof,icol,jq,&irow,isolver,
 	  neq,nzs,nmethod,&f,&fext,&b,&aux2,&fini,&fextini,
 	  &adb,&aub,ithermal,iperturb,mass,mi,iexpl,mortar,
-          typeboun,&cv,&cvini,&iit);
+	  typeboun,&cv,&cvini,&iit,network);
       
       /* invert nactdof */
       
@@ -1488,7 +1553,8 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 		  sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		  mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-                  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
+                  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+                  inoel,nener,orname,network);
 	  iperturb[0]=0;SFREE(inum);
 	  
 	  /* check whether any displacements or temperatures are changed
@@ -1516,7 +1582,8 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 		  sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		  mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-                  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
+                  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+                  inoel,nener,orname,network);
 	  SFREE(inum);
 	  
 	  memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
@@ -1540,7 +1607,12 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       /***************************************************************/
 
     iit=1;
-    icntrl=0;
+//    icntrl=0;
+
+    /* change due to previous checkdivergence routine */
+
+    if(icntrl!=0) icutb++;
+
     ctrl[0]=i0ref;ctrl[1]=irref;ctrl[3]=icref;
     if(*nmethod!=4)NNEW(resold,double,neq[1]);
     if(uncoupled){
@@ -1594,7 +1666,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	        nflow,ikboun,xbounact,nboun,ithermal,&iinc,&iit,
                 cs,mcs,inocs,&ntrit,nk,fenv,istep,&dtime,ttime,&time,ilboun,
 	        ikforc,ilforc,xforcact,nforc,cam,ielmat,&nteq,prop,ielprop,
-	        nactdog,nacteq,nodeboun,ndirboun,&network,
+	        nactdog,nacteq,nodeboun,ndirboun,network,
                 rhcon,nrhcon,ipobody,ibody,xbodyact,nbody,iviewfile,jobnamef,
 	        ctrl,xloadold,&reltime,nmethod,set,mi,istartset,iendset,ialset,
 	        nset,ineighe,nmpc,nodempc,ipompc,coefmpc,labmpc,&iemchange,nam,
@@ -1616,7 +1688,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
                    nload,nodeboun,nboun,itg,ndirboun,&deltmx,&iflagact,
 	           set,nset,istartset,iendset,ialset,emn,thicke,jobnamec,
 	           mortar,nmat,ielprop,prop,&ialeatoric,&kscale,
-                   energy, &allwk,&energyref,&emax,&enres,&enetoll,energyini,
+                   energy, &allwk,&energyref,&emax,&r_abs,&enetoll,energyini,
 	           &allwkini,&temax,&sizemaxinc,&ne0,&neini,&dampwk,
 	           &dampwkini,energystartstep);
 		  continue;
@@ -1701,7 +1773,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		kon,ipkon,lakon,ne,nactdof,icol,jq,&irow,isolver,
 		neq,nzs,nmethod,&f,&fext,&b,&aux2,&fini,&fextini,
 		&adb,&aub,ithermal,iperturb,mass,mi,iexpl,mortar,
-                typeboun,&cv,&cvini,&iit);
+		typeboun,&cv,&cvini,&iit,network);
 
 	      /* invert nactdof */
 	      
@@ -1736,7 +1808,8 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		&reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
                 sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-		islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
+		islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+		inoel,nener,orname,network);
 	  
 	      memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
 	      
@@ -1811,7 +1884,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
                   xstateini,xstate,thicke,integerglob,doubleglob,
 		  tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
 		  pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
-                  iponoel,inoel);
+		  iponoel,inoel,network);
 #ifdef COMPANY
       }else{
 	  FORTRAN(mafillsm_company,(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
@@ -1831,7 +1904,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
                   xstateini,xstate,thicke,integerglob,doubleglob,
 		  tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
 		  pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
-		  iponoel,inoel));
+		  iponoel,inoel,network));
       }
 #endif	  
 
@@ -1858,7 +1931,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
                   xstateini,xstate,thicke,
                   integerglob,doubleglob,tieset,istartset,iendset,
 		  ialset,ntie,&nasym,pslavsurf,pmastsurf,mortar,clearini,
-		  ielprop,prop,&ne0,&kscale,iponoel,inoel));
+		  ielprop,prop,&ne0,&kscale,iponoel,inoel,network));
 	}
 	    
 
@@ -1886,7 +1959,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  iexpl,plicon,nplicon,plkcon,nplkcon,
 		  npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
 		  xbodyold,&reltime,veold,matname,mi,ikactmech,
-		  &nactmech,ielprop,prop));
+		  &nactmech,ielprop,prop,sti,xstateini,xstate,nstate_));
       }
       
 /*      for(k=0;k<neq[1];++k){printf("f=%" ITGFORMAT ",%f\n",k,f[k]);}
@@ -2120,8 +2193,19 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 #endif
 	  }
 	  
-//	  if((*mortar<=1)&&((*nmethod!=4)||(*iexpl>1)){SFREE(ad);SFREE(au);}    //MPADD 
-	  if(*mortar<=1){SFREE(ad);SFREE(au);} 
+	  if(*mortar<=1){
+	      if(isensitivity){
+/*		  if(nasym!=0){
+		      printf("*ERROR in nonlingeo: a sensitivity analysis \n is not allowed in combination with frictional contact \n\n");
+		      FORTRAN(stop,());
+		      }*/
+		  SFREE(adcpy);NNEW(adcpy,double,neq[1]);
+		  SFREE(aucpy);NNEW(aucpy,double,(nasym+1)*nzs[1]);
+		  memcpy(&adcpy[0],&ad[0],sizeof(double)*neq[1]);
+		  memcpy(&aucpy[0],&au[0],sizeof(double)*(nasym+1)*nzs[1]);
+	      }
+	      SFREE(ad);SFREE(au);
+	  } 
       }
       
       /* explicit dynamic step */
@@ -2164,7 +2248,8 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-              islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
+              islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+              inoel,nener,orname,network);
       SFREE(inum);
 
       /* implicit dynamics (Matteo Pacher) */
@@ -2267,7 +2352,8 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-		  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
+	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+	      inoel,nener,orname,network);
 	  SFREE(inum);
       }
       
@@ -2421,7 +2507,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
              nload,nodeboun,nboun,itg,ndirboun,&deltmx,&iflagact,
 	     set,nset,istartset,iendset,ialset,emn,thicke,jobnamec,
 	     mortar,nmat,ielprop,prop,&ialeatoric,&kscale,
-             energy, &allwk,&energyref,&emax,&enres,&enetoll,energyini,
+             energy,&allwk,&energyref,&emax,&r_abs,&enetoll,energyini,
 	     &allwkini,&temax,&sizemaxinc,&ne0,&neini,&dampwk,
 	     &dampwkini,energystartstep);
 	  
@@ -2492,10 +2578,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	/* Belytschko criterion */
 
 	denergymax=energy[0];
-//	if(denergymax<energy[1]+energy[2]) denergymax=energy[1]+energy[2];
-//	if(denergymax<energy[3]) denergymax=energy[3];
 	if(denergymax<energy[1]) denergymax=energy[1];
-//	if(denergymax<energy[3]) denergymax=energy[3];
 	if(denergymax<fabs(allwk)) denergymax=fabs(allwk);
 
 	if(denergymax>1.e-30){
@@ -2503,7 +2586,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             fabs((energy[0]+energy[1]+energy[2]+energy[3]-energyref-allwk-dampwk)/
             denergymax*100.));
 	}else{
-	    printf(" energy balance (relative) =0f %% \n\n");
+	    printf(" energy balance (relative) =0 %% \n\n");
 	}
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 //    MPADD start
@@ -2647,7 +2730,8 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
               &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
               sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
               mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
+	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+              inoel,nener,orname,network);
       
       memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
 
@@ -2749,7 +2833,8 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
             sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
             mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
+	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+            inoel,nener,orname,network);
     
     memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
 
@@ -2792,7 +2877,7 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	FORTRAN(uout,(v,mi,ithermal,filab));
 #endif
     }
-    
+
     SFREE(v);SFREE(fn);SFREE(stn);SFREE(inum);SFREE(stx);
     if(*ithermal>1){SFREE(qfn);}
     
@@ -2804,7 +2889,60 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     if(strcmp1(&filab[2697],"ME  ")==0) SFREE(emn);
 
   }
+    
+  /* writing out the latest stiffness matrix for a subsequent
+     sensitivity analysis */
 
+  if(isensitivity){
+      
+      strcpy(stiffmatrix,jobnamec);
+      strcat(stiffmatrix,".stm");
+      
+      if((f1=fopen(stiffmatrix,"wb"))==NULL){
+	  printf("*ERROR in linstatic: cannot open stiffness matrix file for writing...");
+	  exit(0);
+      }
+      
+      /* storing the stiffness matrix */
+
+      /* nzs,irow,jq and icol have to be stored too, since the static analysis
+	 can involve contact, whereas in the sensitivity analysis contact is not
+	 taken into account while determining the structure of the stiffness
+	 matrix (in mastruct.c)
+      */
+      
+      if(fwrite(&nasym,sizeof(ITG),1,f1)!=1){
+	  printf("*ERROR saving the symmetry flag to the stiffness matrix file...");
+	  exit(0);
+      }
+      if(fwrite(nzs,sizeof(ITG),3,f1)!=3){
+	  printf("*ERROR saving the number of subdiagonal nonzeros to the stiffness matrix file...");
+	  exit(0);
+      }
+      if(fwrite(irow,sizeof(ITG),nzs[2],f1)!=nzs[2]){
+	  printf("*ERROR saving irow to the stiffness matrix file...");
+	  exit(0);
+      }
+      if(fwrite(jq,sizeof(ITG),neq[1]+1,f1)!=neq[1]+1){
+	  printf("*ERROR saving jq to the stiffness matrix file...");
+	  exit(0);
+      }
+      if(fwrite(icol,sizeof(ITG),neq[1],f1)!=neq[1]){
+	  printf("*ERROR saving icol to the stiffness matrix file...");
+	  exit(0);
+      }
+      if(fwrite(adcpy,sizeof(double),neq[1],f1)!=neq[1]){
+	  printf("*ERROR saving the diagonal of the stiffness matrix to the stiffness matrix file...");
+	  exit(0);
+      }
+      if(fwrite(aucpy,sizeof(double),(nasym+1)*nzs[2],f1)!=(nasym+1)*nzs[2]){
+	  printf("*ERROR saving the off-diagonal terms of the stiffness matrix to the stiffness matrix file...");
+	  exit(0);
+      }
+      fclose(f1);
+      SFREE(adcpy);SFREE(aucpy);
+  }
+  
   /* restoring the distributed loading  */
 
   if((*ithermal==3)&&(ncont!=0)&&(*mortar==1)&&(*ncmat_>=11)){
@@ -2887,14 +3025,16 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       SFREE(bcr);SFREE(ipivr);SFREE(adview);SFREE(auview);SFREE(adrad);
       SFREE(aurad);SFREE(irowrad);SFREE(jqrad);SFREE(icolrad);
       if((*mcs>0)&&(ntr>0)){SFREE(inocs);}
-      if(ntg>0){SFREE(iponoel);SFREE(inoel);}
+      if((*network>0)||(ntg>0)){SFREE(iponoel);SFREE(inoel);}
   }
 
   if(icfd==1){
       SFREE(neifa);SFREE(neiel);SFREE(neij);SFREE(ielfa);SFREE(ifaext);
-      SFREE(vel);SFREE(vfa);SFREE(nactdoh);SFREE(nactdohinv);
+      SFREE(vel);SFREE(vfa);SFREE(nactdoh);SFREE(nactdohinv);SFREE(konf);
       SFREE(ipkonf);SFREE(lakonf);SFREE(ielmatf);free(ifatie);
       if(*norien>0) SFREE(ielorienf);
+      if(nblk!=0){SFREE(istartblk);SFREE(iendblk);
+	  SFREE(nblket);SFREE(nblkze);SFREE(ielblk);}
   }
 
   SFREE(fini);

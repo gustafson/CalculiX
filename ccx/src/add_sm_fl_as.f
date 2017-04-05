@@ -54,7 +54,7 @@
          call exit(201)
       else
          ipointer=ipointer+ioffset
-c         write(*,*) 'add_sm_fl_as ',ii,jj,ioffset,ipointer,value
+c         write(*,*) 'add_sm_fl_as ',i,j,ipointer
          au(ipointer)=au(ipointer)+value
       endif
 !

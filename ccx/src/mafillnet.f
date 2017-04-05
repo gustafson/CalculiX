@@ -28,18 +28,19 @@
 !     
       implicit none
 !     
-      logical identity
+      logical identity,crit
+!
       character*8 lakonl,lakon(*)
       character*20 sideload(*),labmpc(*)
       character*81 set(*)
 !     
-      integer mi(*),itg(*),ieg(*),ntg,nteq,nflow,nload,
+      integer mi(*),itg(*),ieg(*),ntg,nteq,nflow,nload,inv,
      &     ielmat(mi(3),*),iaxial,ncocon(2,*),iponoel(*),inoel(2,*),
      &     nelemload(2,*),nope,nopes,mint2d,i,j,k,l,iflag,
      &     node,imat,ntmat_,id,ifaceq(8,6),ifacet(6,4),
      &     ifacew(8,5),node1,node2,nshcon(*),nelem,ig,index,konl(20),
      &     ipkon(*),kon(*),idof,iinc,ibody(3,*),istep,jltyp,nfield,
-     &     ipobody(2,*),nodem,ieq,kflag,nrhcon(*),numf,
+     &     ipobody(2,*),nodem,ieq,kflag,nrhcon(*),numf,k_oil,
      &     idofp1,idofp2,idofm,idoft1,idoft2,idoft,nactdog(0:3,*),
      &     nacteq(0:3,*),ielprop(*),nodef(8),idirf(8),nbody,
      &     nmethod,icase,nmpc,nodempc(3,*),ipompc(*),idir,ider
@@ -47,12 +48,13 @@
       real*8 ac(nteq,*),xloadact(2,*),cp,h(2),physcon(*),dvi,
      &     xl2(3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
      &     gastemp,v(0:mi(2),*),shcon(0:3,ntmat_,*),co(3,*),shp2(7,8),
-     &     ftot,field,prop(*),f,df(8),tg1,tg2,r,rho,tl2(8),
+     &     ftot,field,prop(*),f,df(8),tg1,tg2,r,rho,tl2(8),dl,
      &     dtime,ttime,time,areaj,xflow,tvar(2),g(3),coefmpc(*),
      &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,ts1,ts2,xs2(3,7),
-     &     xdenom1,xdenom2,xcst,xk1,xk2,expon,a,dt1,dt2,kappa,
-     &     pt1,pt2,inv,vold(0:mi(2),*),xloadold(2,*),reltime,pi,
-     &     cocon(0:6,ntmat_,*),xflow360
+     &     pt1,pt2,vold(0:mi(2),*),xloadold(2,*),reltime,pi,d,
+     &     cocon(0:6,ntmat_,*),xflow360,xflow_oil,ks,form_fact,
+     &     Qred_crit,reynolds,pt2zpt1_c,Qred1,pt2zpt1,phi,lambda,
+     &     M1,M2,bb,cc,km1,kp1,a,kappa,ff1,ff2,Tt1,Tt2,T1,T2,M1_c
 !     
       include "gauss.f"
 !     
@@ -163,63 +165,6 @@
      &        rhcon,nrhcon,rho)
 !     
          kappa=(cp/(cp-R))
-!
-!     Definitions of the constant for isothermal flow elements
-!
-         if((lakon(nelem)(2:6).eq.'GAPFI')
-     &        .or.(lakon(nelem)(2:6).eq.'GAPII'))then
-            if((node1.ne.0).and.(node2.ne.0)) then
-!
-               icase=1
-               A=prop(ielprop(nelem)+1)
-               pt1=v(2,node1)
-               pt2=v(2,node2)
-!
-               xflow360=xflow*iaxial
-!
-               if(pt1.ge.pt2)then
-                  inv=1.d0
-                  pt1=v(2,node1)
-                  pt2=v(2,node2)
-                  if(dabs(tg2/ts2-(1+0.5*(kappa-1)/kappa)).lt.1E-5) then
-                    
-                     pt2=dabs(xflow360)*dsqrt(Tg2*R)/A
-     &                    *(1+0.5*(kappa-1)/kappa)
-     &                    **(0.5*(kappa+1)/(kappa-1)) 
-                  endif
-                  tg1=v(0,node1)
-                  call ts_calc(xflow360,Tg1,Pt1,kappa,r,a,Ts1,icase)
-!
-                  tg2=v(0,node2)
-                  call ts_calc(xflow360,Tg2,Pt2,kappa,r,a,Ts2,icase)
-               else
-!                 
-                  inv=-1.d0
-                  pt1=v(2,node2)
-                  pt2=v(2,node1)
-                  if(dabs(tg2/ts2-(1+0.5*(kappa-1)/kappa)).lt.1E-5) then
-                    
-                     pt2=dabs(xflow360)*dsqrt(Tg2*R)/A
-     &                    *(1+0.5*(kappa-1)/kappa)
-     &                    **(0.5*(kappa+1)/(kappa-1)) 
-                  endif
-                  tg1=v(0,node2)
-                  call ts_calc(xflow360,Tg1,Pt1,kappa,r,a,Ts1,icase)
-                  tg2=v(0,node1)
-                  call ts_calc(xflow360,Tg2,Pt2,kappa,r,a,Ts2,icase)
-               endif
-               dt1=tg1/ts1-1d0
-               dt2=tg2/ts2-1d0
-               expon=2.d0*kappa/(kappa-1.d0)
-               xcst=2.d0*Cp*A**2/r**2
-               xk1=pt1**2*(ts1/tg1)**expon
-               xdenom1=xcst*xk1*(1.d0-expon*(tg1/ts1-1.d0))
-     &              /ts1+2.d0*xflow360**2
-               xk2=pt2**2*(ts2/tg2)**expon
-               xdenom2=xcst*xk2*(1.d0-expon*(tg2/ts2-1.d0))
-     &              /ts2+2.d0*xflow360**2
-            endif
-         endif
 !     
          if(node1.ne.0) then
             idoft1=nactdog(0,node1)
@@ -236,16 +181,75 @@
             idofp2=0
          endif
          idofm=nactdog(1,nodem)
+!
+!     Definitions of the constant for isothermal flow elements
+!
+         if(lakon(nelem)(2:6).eq.'GAPFI') then
+            if((node1.ne.0).and.(node2.ne.0)) then
+               icase=1
+!
+!              properties
+!
+               index=ielprop(nelem)
+               A=prop(index+1)
+               d=prop(index+2)
+               dl=prop(index+3)
+               ks=prop(index+4)
+               form_fact=prop(index+5)
+               xflow_oil=prop(index+6)
+               k_oil=nint(prop(index+7))
+!
+               km1=kappa-1.d0
+               kp1=kappa+1.d0
+!
+c               xflow360=xflow*iaxial
+!
+!              orientation of the element based on the direction of the
+!              mass flow; determination of the total pressures and total
+!              temperatures (K)
+!
+!              xflow360 is the absolute value of the mass flow for
+!              360 degrees
+!
+c               if(xflow.gt.0.d0) then
+               if(v(2,node1).gt.v(2,node2)) then
+                  inv=1
+                  xflow360=xflow*iaxial
+                  pt1=v(2,node1)
+                  pt2=v(2,node2)
+                  Tt1=v(0,node1)-physcon(1)
+                  Tt2=v(0,node2)-physcon(1)
+               else
+                  inv=-1
+                  xflow360=-xflow*iaxial
+                  pt1=v(2,node2)
+                  pt2=v(2,node1)
+                  Tt1=v(0,node2)-physcon(1)
+                  Tt2=v(0,node1)-physcon(1)
+!     
+                  idoft1=nactdog(0,node2)
+                  idofp1=nactdog(2,node2)
+                  idoft2=nactdog(0,node1)
+                  idofp2=nactdog(2,node1)
+               endif
+!
+!              calculation of the static temperatures T1 and T2
+!              (K)
+!
+               call ts_calc(xflow360,Tt1,Pt1,kappa,r,a,T1,icase)
+c               call ts_calc(xflow360,Tt2,Pt2,kappa,r,a,T2,icase)
+            endif
+         endif
 !     
          if(node1.ne.0) then
 !     
 !     energy equation contribution node1
 !     
-            if (nacteq(0,node1).ne.0) then
+            if(nacteq(0,node1).ne.0) then
                ieq=nacteq(0,node1)
-               if ((xflow.le.0d0).and.(nacteq(3,node1).eq.0))then
+               if((xflow.le.0.d0).and.(nacteq(3,node1).eq.0))then
 !     
-!     adiabatic element
+!                 incoming flow in node1 and genuine energy conservation equation
 !     
                   if(idoft1.ne.0) then
                      ac(ieq,idoft1)=ac(ieq,idoft1)-cp*xflow
@@ -264,68 +268,172 @@ c                     call exit(201)
                      ac(ieq,idofm)=ac(ieq,idofm)-cp*(tg1-tg2)
                   endif
 !
-               elseif(nacteq(3,node1).ne.0)then
+               elseif((node2.ne.0).and.(nacteq(3,node1).eq.node2)) then
 !     
-!     isothermal element
+!                 isothermal element
 !     
-                  if(nacteq(3,node1).eq.node2) then
+                  pt2zpt1=pt2/pt1
 !     
-                     if(inv.eq.-1d0) then
-                        if(idoft1.ne.0) then
-                           ac(ieq,idoft1)=-xcst*xk1*(1.d0-expon
-     &                          *(1.d0-ts1/tg1))/(xdenom1*ts1) 
-                        endif
+!     calculation of the dynamic viscosity
 !     
-                        if(idoft2.ne.0)then
-                           ac(ieq,idoft2)=xcst*xk2*(1.d0-expon
-     &                          *(1.d0-ts2/tg2))/(xdenom2*ts2) 
-                        endif
+                  if(dabs(dvi).lt.1E-30) then
+                     write(*,*) '*ERROR in gaspipe_fanno: '
+                     write(*,*) '       no dynamic viscosity defined'
+                     write(*,*) '       dvi= ',dvi
+                     call exit(201)
+                  endif        
 !     
-                        if(idofm.ne.0) then
-                           ac(ieq,idofm)=(-2.d0*xflow*ts2
-     &                          /xdenom2+2.d0*xflow*ts1/xdenom1)
-                        endif
+                  reynolds=xflow360*d/(dvi*A)
+                  if(reynolds.lt.1) then
+                     reynolds=1.d0
+                  endif
 !     
-                        if(idofp1.ne.0) then
-                           ieq=nacteq(2,idofp1)
-                           ac(ieq,idofp1)=2.d0*xcst*dt1*xk1
-     &                          /(pt1*xdenom1)
-                        endif
+!                 calculation of the friction coefficient
 !     
-                        if(idofp2.ne.0) then
-                           ac(ieq,idofp2)=-2.d0*xcst*dt2*xk2
-     &                          /(pt2*xdenom2)
-                        endif
+                  if(xflow_oil.ne.0d0) then
 !     
-                     elseif(inv.eq.1d0)then
-                        if(idoft1.ne.0) then
-                           ac(ieq,idoft1)=xcst*xk1*(1.d0-expon
-     &                          *(1.d0-ts1/tg1))/(xdenom1*ts1) 
-                        endif
+!                    two-phase-flow
 !     
-                        if(idoft2.ne.0)then
-                           ac(ieq,idoft2)=-xcst*xk2*(1.d0-expon
-     &                          *(1.d0-ts2/tg2))/(xdenom2*ts2) 
-                        endif
+                     call two_phase_flow(Tt1,pt1,T1,pt2,xflow360,
+     &                    xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
+     &                    v,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
+     &                    shcon,rhcon,ntmat_,mi)
+                     lambda=lambda*phi
+                  else
 !     
-                        if(idofm.ne.0) then
-                           ac(ieq,idofm)=-(-2.d0*xflow*ts2
-     &                          /xdenom2+2.d0*xflow*ts1/xdenom1)
-                        endif
+!                    for pure air
 !     
-                        if(idofp1.ne.0) then
-                           ieq=nacteq(2,idofp1)
-                           ac(ieq,idofp1)=-2.d0*xcst*dt1*xk1
-     &                          /(pt1*xdenom1)
-                        endif
+                     phi=1.d0
+                     call friction_coefficient(dl,d,ks,reynolds,
+     &                    form_fact,lambda)
+                  endif
+!
+!                 calculating the critical conditions
 !     
-                        if(idofp2.ne.0) then
-                           ac(ieq,idofp2)=2.d0*xcst*dt2*xk2
-     &                          /(pt2*xdenom2)
-                        endif
+                  call pt2zpt1_crit(pt2,pt1,Tt1,lambda,kappa,r,dl,d,
+     &                 inv,pt2zpt1_c,Qred_crit,crit,icase,M1_c)
+!
+                  Qred1=xflow360*dsqrt(Tt1)/(A*Pt1)
+!
+!                 check whether flow is critical
+!                 assigning the physical correct sign to xflow360
+!
+                  if(crit) then
+!
+!                    critical flow
+!
+                     xflow360=inv*Qred_crit*A*Pt1/dsqrt(Tt1)
+                     M1=dsqrt(2/km1*((Tt1/T1)-1.d0))
+c                     M1=min(M1,0.999d0/dsqrt(kappa))
+                  else
+!
+!                    subcritical flow
+!
+                     if(Qred1.gt.Qred_crit) then
+                        xflow360=inv*Qred_crit*A*Pt1/dsqrt(Tt1)
+                        M1=M1_c
+                     else
+                        xflow360=inv*xflow360
+                        M1=dsqrt(2/km1*((Tt1/T1)-1.d0))
+                     endif
+                     call ts_calc(xflow360,Tt2,Pt2,kappa,r,a,T2,icase)
+                     M2=dsqrt(2/km1*((Tt2/T2)-1.d0))
+                  endif
 !     
+                  bb=km1/2.d0
+                  cc=-kp1/(2.d0*km1)
+                  ff1=(2.d0*bb*M1**2)/(1.d0+bb*M1**2*(1.d0+2.d0*cc))
+!
+                  if(.not.crit) then
+                     ff2=(2.d0*bb*M2**2)/(1.d0+bb*M2**2*(1.d0+2.d0*cc))
+                     if(idofp1.ne.0) then
+                        ac(ieq,idofp1)=ff1*T1/pt1
+                     endif
+                     if(idoft1.ne.0) then
+                        ac(ieq,idoft1)=(1.d0-ff1/2.d0)/(1.d0+bb*M1**2)
+                     endif
+                     if(idofm.ne.0) then
+                        ac(ieq,idofm)=(ff2*T2-ff1*T1)/xflow360
+                     endif
+                     if(idofp2.ne.0) then
+                        ac(ieq,idofp2)=-ff2*T2/pt2
+                     endif
+                     if(idoft2.ne.0) then
+                        ac(ieq,idoft2)=(ff2/2.d0-1.d0)/(1.d0+bb*M2**2)
+                     endif
+                   else
+                     if(idofp1.ne.0) then
+                        ac(ieq,idofp1)=ff1*T1/pt1
+                     endif
+                     if(idoft1.ne.0) then
+                        ac(ieq,idoft1)=(1.d0-ff1/2.d0)/(1.d0+bb*M1**2)
+                     endif
+                     if(idofm.ne.0) then
+                        ac(ieq,idofm)=-ff1*T1/xflow360
+                     endif
+                     if(idoft2.ne.0) then
+                        ac(ieq,idoft2)=-1.d0/(1.d0+bb/kappa)
                      endif
                   endif
+
+c                  if(nacteq(3,node1).eq.node2) then
+c!     
+c                     if(inv.eq.-1) then
+c                        if(idoft1.ne.0) then
+c                           ac(ieq,idoft1)=-xcst*xk1*(1.d0-expon
+c     &                          *(1.d0-ts1/tg1))/(xdenom1*ts1) 
+c                        endif
+c!     
+c                        if(idoft2.ne.0)then
+c                           ac(ieq,idoft2)=xcst*xk2*(1.d0-expon
+c     &                          *(1.d0-ts2/tg2))/(xdenom2*ts2) 
+c                        endif
+c!     
+c                        if(idofm.ne.0) then
+c                           ac(ieq,idofm)=(-2.d0*xflow*ts2
+c     &                          /xdenom2+2.d0*xflow*ts1/xdenom1)
+c                        endif
+c!     
+c                        if(idofp1.ne.0) then
+c                           ieq=nacteq(2,idofp1)
+c                           ac(ieq,idofp1)=2.d0*xcst*dt1*xk1
+c     &                          /(pt1*xdenom1)
+c                        endif
+c!     
+c                        if(idofp2.ne.0) then
+c                           ac(ieq,idofp2)=-2.d0*xcst*dt2*xk2
+c     &                          /(pt2*xdenom2)
+c                        endif
+c!     
+c                     elseif(inv.eq.1)then
+c                        if(idoft1.ne.0) then
+c                           ac(ieq,idoft1)=xcst*xk1*(1.d0-expon
+c     &                          *(1.d0-ts1/tg1))/(xdenom1*ts1) 
+c                        endif
+c!     
+c                        if(idoft2.ne.0)then
+c                           ac(ieq,idoft2)=-xcst*xk2*(1.d0-expon
+c     &                          *(1.d0-ts2/tg2))/(xdenom2*ts2) 
+c                        endif
+c!     
+c                        if(idofm.ne.0) then
+c                           ac(ieq,idofm)=-(-2.d0*xflow*ts2
+c     &                          /xdenom2+2.d0*xflow*ts1/xdenom1)
+c                        endif
+c!     
+c                        if(idofp1.ne.0) then
+c                           ieq=nacteq(2,idofp1)
+c                           ac(ieq,idofp1)=-2.d0*xcst*dt1*xk1
+c     &                          /(pt1*xdenom1)
+c                        endif
+c!     
+c                        if(idofp2.ne.0) then
+c                           ac(ieq,idofp2)=2.d0*xcst*dt2*xk2
+c     &                          /(pt2*xdenom2)
+c                        endif
+c!     
+c                     endif
+c                  endif
                endif
             endif
 !     
@@ -341,13 +449,13 @@ c                     call exit(201)
 !     
          if(node2.ne.0) then
 !     
-!     energy equation contribution node2
+!           energy equation contribution node2
 !     
-            if (nacteq(0,node2).ne.0) then
+            if(nacteq(0,node2).ne.0) then
                ieq=nacteq(0,node2)
-               if ((xflow.ge.0d0).and.(nacteq(3,node2).eq.0))then
+               if((xflow.ge.0d0).and.(nacteq(3,node2).eq.0))then
 !
-!     adiabatic element
+!                 adiabatic element
 !     
                   if(idoft1.ne.0)then
                      ac(ieq,idoft1)=ac(ieq,idoft1)-cp*xflow
@@ -366,63 +474,168 @@ c                     call exit(201)
                      ac(ieq,idofm)=ac(ieq,idofm)+cp*(tg2-tg1)
                   endif
 !     
-               elseif((nacteq(3,node2).eq.node1))then
+               elseif((node1.ne.0).and.(nacteq(3,node2).eq.node1))then
 !     
-!     isothermal element
+!                 isothermal element
 !     
-                  if(inv.eq.-1d0) then
-                     if(idoft1.ne.0)then
-                        ac(ieq,idoft1)=-xcst*xk1*(1.d0-expon
-     &                       *(1.d0-ts1/tg1))/(xdenom1*ts1) 
-                     endif
+                  pt2zpt1=pt2/pt1
 !     
-                     if(idoft2.ne.0) then
-                        ac(ieq,idoft2)=(xcst*xk2*(1.d0-expon
-     &                       *(1.d0-ts2/tg2))/(xdenom2*ts2)) 
-                     endif
+!     calculation of the dynamic viscosity
 !     
-                     if(idofm.ne.0) then
-                        ac(ieq,idofm)=(-2.d0*xflow*ts2
-     &                       /xdenom2+2.d0*xflow*ts1/xdenom1)
-                     endif
+                  if(dabs(dvi).lt.1E-30) then
+                     write(*,*) '*ERROR in gaspipe_fanno: '
+                     write(*,*) '       no dynamic viscosity defined'
+                     write(*,*) '       dvi= ',dvi
+                     call exit(201)
+                  endif        
 !     
-                     if(idofp1.ne.0) then
-                        ac(ieq,idofp1)=+2.d0*xcst*dt1*xk1
-     &                       /(pt1*xdenom1)
-                     endif
+                  reynolds=xflow360*d/(dvi*A)
+                  if(reynolds.lt.1) then
+                     reynolds=1.d0
+                  endif
 !     
-                     if(idofp2.ne.0) then
-                        ac(ieq,idofp2)=-2.d0*xcst*dt2*xk2
-     &                       /(pt2*xdenom2)
-                     endif
+!                 calculation of the friction coefficient
+!     
+                  if(xflow_oil.ne.0d0) then
+!     
+!                    two-phase-flow
+!     
+                     call two_phase_flow(Tt1,pt1,T1,pt2,xflow360,
+     &                    xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
+     &                    v,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
+     &                    shcon,rhcon,ntmat_,mi)
+                     lambda=lambda*phi
+                  else
+!     
+!                    for pure air
+!     
+                     phi=1.d0
+                     call friction_coefficient(dl,d,ks,reynolds,
+     &                    form_fact,lambda)
+                  endif
 !
-                  elseif(inv.eq.1d0) then
-     
-                     if(idoft1.ne.0)then
-                        ac(ieq,idoft1)=xcst*xk1*(1.d0-expon
-     &                       *(1.d0-ts1/tg1))/(xdenom1*ts1) 
-                     endif
+!                 calculating the critical conditions
 !     
-                     if(idoft2.ne.0) then
-                        ac(ieq,idoft2)=-(xcst*xk2*(1.d0-expon
-     &                       *(1.d0-ts2/tg2))/(xdenom2*ts2)) 
+                  call pt2zpt1_crit(pt2,pt1,Tt1,lambda,kappa,r,dl,d,
+     &                 inv,pt2zpt1_c,Qred_crit,crit,icase,M1_c)
+!
+                  Qred1=xflow360*dsqrt(Tt1)/(A*Pt1)
+!
+!                 check whether flow is critical
+!                 assigning the physical correct sign to xflow360
+!
+                  if(crit) then
+!
+!                    critical flow
+!
+                     xflow360=inv*Qred_crit*A*Pt1/dsqrt(Tt1)
+                     M1=dsqrt(2/km1*((Tt1/T1)-1.d0))
+c                     M1=min(M1,0.999d0/dsqrt(kappa))
+                  else
+!
+!                    subcritical flow
+!
+                     if(Qred1.gt.Qred_crit) then
+                        xflow360=inv*Qred_crit*A*Pt1/dsqrt(Tt1)
+                        M1=M1_c
+                     else
+                        xflow360=inv*xflow360
+                        M1=dsqrt(2/km1*((Tt1/T1)-1.d0))
                      endif
+                     call ts_calc(xflow360,Tt2,Pt2,kappa,r,a,T2,icase)
+                     M2=dsqrt(2/km1*((Tt2/T2)-1.d0))
+                  endif
 !     
-                     if(idofm.ne.0) then
-                        ac(ieq,idofm)=-(-2.d0*xflow*ts2
-     &                       /xdenom2+2.d0*xflow*ts1/xdenom1)
-                     endif
-!     
+                  bb=km1/2.d0
+                  cc=-kp1/(2.d0*km1)
+                  ff1=(2.d0*bb*M1**2)/(1.d0+bb*M1**2*(1.d0+2.d0*cc))
+!
+                  if(.not.crit) then
+                     ff2=(2.d0*bb*M2**2)/(1.d0+bb*M2**2*(1.d0+2.d0*cc))
                      if(idofp1.ne.0) then
-                        ac(ieq,idofp1)=+2.d0*xcst*dt1*xk1
-     &                       /(pt1*xdenom1)
+                        ac(ieq,idofp1)=ff1*T1/pt1
                      endif
-!     
+                     if(idoft1.ne.0) then
+                        ac(ieq,idoft1)=(1.d0-ff1/2.d0)/(1.d0+bb*M1**2)
+                     endif
+                     if(idofm.ne.0) then
+                        ac(ieq,idofm)=(ff2*T2-ff1*T1)/xflow360
+                     endif
                      if(idofp2.ne.0) then
-                        ac(ieq,idofp2)=-2.d0*xcst*dt2*xk2
-     &                       /(pt2*xdenom2)
-                    endif
-                 endif
+                        ac(ieq,idofp2)=-ff2*T2/pt2
+                     endif
+                     if(idoft2.ne.0) then
+                        ac(ieq,idoft2)=(ff2/2.d0-1.d0)/(1.d0+bb*M2**2)
+                     endif
+                   else
+                     if(idofp1.ne.0) then
+                        ac(ieq,idofp1)=ff1*T1/pt1
+                     endif
+                     if(idoft1.ne.0) then
+                        ac(ieq,idoft1)=(1.d0-ff1/2.d0)/(1.d0+bb*M1**2)
+                     endif
+                     if(idofm.ne.0) then
+                        ac(ieq,idofm)=-ff1*T1/xflow360
+                     endif
+                     if(idoft2.ne.0) then
+                        ac(ieq,idoft2)=-1.d0/(1.d0+bb/kappa)
+                     endif
+                  endif
+!
+c
+c                  if(inv.eq.-1) then
+c                     if(idoft1.ne.0)then
+c                        ac(ieq,idoft1)=-xcst*xk1*(1.d0-expon
+c     &                       *(1.d0-ts1/tg1))/(xdenom1*ts1) 
+c                     endif
+c!     
+c                     if(idoft2.ne.0) then
+c                        ac(ieq,idoft2)=(xcst*xk2*(1.d0-expon
+c     &                       *(1.d0-ts2/tg2))/(xdenom2*ts2)) 
+c                     endif
+c!     
+c                     if(idofm.ne.0) then
+c                        ac(ieq,idofm)=(-2.d0*xflow*ts2
+c     &                       /xdenom2+2.d0*xflow*ts1/xdenom1)
+c                     endif
+c!     
+c                     if(idofp1.ne.0) then
+c                        ac(ieq,idofp1)=+2.d0*xcst*dt1*xk1
+c     &                       /(pt1*xdenom1)
+c                     endif
+c!     
+c                     if(idofp2.ne.0) then
+c                        ac(ieq,idofp2)=-2.d0*xcst*dt2*xk2
+c     &                       /(pt2*xdenom2)
+c                     endif
+c!
+c                  elseif(inv.eq.1) then
+c     
+c                     if(idoft1.ne.0)then
+c                        ac(ieq,idoft1)=xcst*xk1*(1.d0-expon
+c     &                       *(1.d0-ts1/tg1))/(xdenom1*ts1) 
+c                     endif
+c!     
+c                     if(idoft2.ne.0) then
+c                        ac(ieq,idoft2)=-(xcst*xk2*(1.d0-expon
+c     &                       *(1.d0-ts2/tg2))/(xdenom2*ts2)) 
+c                     endif
+c!     
+c                     if(idofm.ne.0) then
+c                        ac(ieq,idofm)=-(-2.d0*xflow*ts2
+c     &                       /xdenom2+2.d0*xflow*ts1/xdenom1)
+c                     endif
+c!     
+c                     if(idofp1.ne.0) then
+c                        ac(ieq,idofp1)=+2.d0*xcst*dt1*xk1
+c     &                       /(pt1*xdenom1)
+c                     endif
+c!     
+c                     if(idofp2.ne.0) then
+c                        ac(ieq,idofp2)=-2.d0*xcst*dt2*xk2
+c     &                       /(pt2*xdenom2)
+c                    endif
+c                 endif
 !     
               endif 
            endif
@@ -698,10 +911,10 @@ c                     call exit(201)
          enddo
       enddo
 !
-!      write(30,*) nteq
-!      do i=1,nteq
-!         write(30,'(17(1x,e11.4))') (ac(i,j),j=1,nteq)
-!      enddo
+c      write(*,*) nteq,' mafillnet '
+c      do i=1,nteq
+c         write(*,'(17(1x,e11.4))') (ac(i,j),j=1,nteq)
+c      enddo
 !
       return
       end

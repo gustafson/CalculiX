@@ -18,7 +18,8 @@
 !
       subroutine rhsp(nef,lakonf,ipnei,neifa,neiel,vfa,area,
      &  advfa,xlet,cosa,volume,au,ad,jq,irow,ap,ielfa,ifabou,xle,
-     &  b,xxn,neq,nzs,hfa,gradpel,bp,xxi,neij,xlen,nefa,nefb)
+     &  b,xxn,neq,nzs,hfa,gradpel,bp,xxi,neij,xlen,nefa,nefb,
+     &  xxicn)
 !
 !     filling the lhs and rhs to calculate the first correction to the
 !     pressure p'
@@ -27,33 +28,21 @@
 !
       character*8 lakonf(*)
 !
-      integer i,nef,jdof1,indexf,ipnei(*),j,neifa(*),
-     &  neiel(*),iel,ifa,jdof2,irow(*),ielfa(4,*),nefa,nefb,
-     &  ifabou(*),neq,nzs,jq(*),iel2,indexb,knownflux,numfaces,
+      integer i,nef,indexf,ipnei(*),j,neifa(*),
+     &  neiel(*),iel,ifa,irow(*),ielfa(4,*),nefa,nefb,
+     &  ifabou(*),neq,nzs,jq(*),iel2,indexb,knownflux,
      &  iatleastonepressurebc,j2,indexf2,neij(*)
 !
-      real*8 coef,vfa(0:5,*),volume(*),area(*),advfa(*),xlet(*),
+      real*8 coef,vfa(0:7,*),volume(*),area(*),advfa(*),xlet(*),
      &  cosa(*),ad(*),au(*),xle(*),xxn(3,*),ap(*),b(*),bp(*),
-     &  hfa(3,*),xxi(3,*),gradpel(3,*),xlen(*),bp_ifa
-!
-c      iatleastonepressurebc=0
+     &  hfa(3,*),xxi(3,*),gradpel(3,*),xlen(*),bp_ifa,xxicn(3,*)
 !
       do i=nefa,nefb
-         jdof1=i
-         indexf=ipnei(i)
-         if(lakonf(i)(4:4).eq.'8') then
-            numfaces=6
-         elseif(lakonf(i)(4:4).eq.'6') then
-            numfaces=5
-         else
-            numfaces=4
-         endif
-         do j=1,numfaces
+         do indexf=ipnei(i)+1,ipnei(i+1)
             knownflux=0
 !
 !              diffusion
 !
-            indexf=indexf+1
             ifa=neifa(indexf)
             iel=neiel(indexf)
             if(iel.ne.0) then
@@ -64,22 +53,15 @@ c      iatleastonepressurebc=0
 !     
                j2=neij(indexf)
                indexf2=ipnei(iel)+j2
-               bp_ifa=((gradpel(1,iel)*(xxi(1,indexf2)
-     &              -cosa(indexf2)*xxn(1,indexf2))+
-     &              gradpel(2,iel)*(xxi(2,indexf2)
-     &              -cosa(indexf2)*xxn(2,indexf2))+
-     &              gradpel(3,iel)*(xxi(3,indexf2)
-     &              -cosa(indexf2)*xxn(3,indexf2)))
-     &              *xle(indexf2)
-     &              -(gradpel(1,i)*(xxi(1,indexf)
-     &              -cosa(indexf)*xxn(1,indexf))+
-     &              gradpel(2,i)*(xxi(2,indexf)
-     &              -cosa(indexf)*xxn(2,indexf))+
-     &              gradpel(3,i)*(xxi(3,indexf)
-     &              -cosa(indexf)*xxn(3,indexf)))
-     &              *xle(indexf))
-               b(jdof1)=b(jdof1)-ap(ifa)*bp_ifa
-c               if(i.gt.iel) bp_ifa=-bp_ifa
+               bp_ifa=((gradpel(1,iel)*xxicn(1,indexf2)+
+     &                  gradpel(2,iel)*xxicn(2,indexf2)+
+     &                  gradpel(3,iel)*xxicn(3,indexf2))
+     &               *xle(indexf2)
+     &                -(gradpel(1,i)*xxicn(1,indexf)+
+     &                  gradpel(2,i)*xxicn(2,indexf)+
+     &                  gradpel(3,i)*xxicn(3,indexf))
+     &               *xle(indexf))
+               b(i)=b(i)-ap(ifa)*bp_ifa
             else
 !
 !                 external face
@@ -93,30 +75,38 @@ c               if(i.gt.iel) bp_ifa=-bp_ifa
 !                    all velocity components given
 !
                      knownflux=1
-                  elseif(ifabou(-iel2+5).eq.2) then
+                  elseif(ifabou(-iel2+5).lt.0) then
 !
 !                    sliding conditions
 !
                      knownflux=2
                   elseif(ifabou(-iel2+4).gt.0) then
-c                     iatleastonepressurebc=1
 !     
 !                    pressure given
 !                        
 !     
 !                    correction for non-orthogonal meshes
 !     
-                     bp_ifa=(-(gradpel(1,i)*(xxi(1,indexf)
-     &                    -cosa(indexf)*xxn(1,indexf))+
-     &                    gradpel(2,i)*(xxi(2,indexf)
-     &                    -cosa(indexf)*xxn(2,indexf))+
-     &                    gradpel(3,i)*(xxi(3,indexf)
-     &                    -cosa(indexf)*xxn(3,indexf)))
-     &                    *xle(indexf))
+                     bp_ifa=(-(gradpel(1,i)*xxicn(1,indexf)+
+     &                         gradpel(2,i)*xxicn(2,indexf)+
+     &                         gradpel(3,i)*xxicn(3,indexf))
+     &                     *xle(indexf))
 !
-                     b(jdof1)=b(jdof1)-ap(ifa)*
+                     b(i)=b(i)-ap(ifa)*
      &                    (vfa(4,ifa)+bp_ifa)
+c                  elseif((ifabou(-iel2+1).eq.0).and.
+c     &                   (ifabou(-iel2+2).eq.0).and.
+c     &                   (ifabou(-iel2+3).eq.0)) then
+c!
+c!                        outlet
+c!
+c                     knownflux=2
                   endif
+c               else
+c!
+c!                 outlet
+c!
+c                  knownflux=2
                endif
             endif
 !     
@@ -127,26 +117,18 @@ c                     iatleastonepressurebc=1
             endif
 !
             if(knownflux.eq.1) then
-               b(jdof1)=b(jdof1)+vfa(5,ifa)*area(ifa)*
+               b(i)=b(i)+vfa(5,ifa)*area(ifa)*
      &              (vfa(1,ifa)*xxn(1,indexf)+
      &              vfa(2,ifa)*xxn(2,indexf)+
      &              vfa(3,ifa)*xxn(3,indexf))
             elseif(knownflux.ne.2) then
-               b(jdof1)=b(jdof1)+vfa(5,ifa)*area(ifa)*
+               b(i)=b(i)+vfa(5,ifa)*area(ifa)*
      &              (hfa(1,ifa)*xxn(1,indexf)+
      &              hfa(2,ifa)*xxn(2,indexf)+
      &              hfa(3,ifa)*xxn(3,indexf))
             endif
          enddo
       enddo
-!
-!     at least one pressure bc is needed. If none is applied,
-!     the last dof is set to 0
-!
-!     a pressure bc is only recognized if not all velocity degrees of
-!     freedom are prescribed on the same face
-!
-c      if(iatleastonepressurebc.eq.0) b(nef)=0.d0
 !
       return
       end

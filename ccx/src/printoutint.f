@@ -17,8 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine printoutint(prlab,ipkon,lakon,stx,eei,xstate,ener,
-     &  mi,nstate_,ii,nelem,qfx,orab,ielorien,norien,co,kon,
-     &  ielmat,thicke,eme,ielprop,prop,nelel,ithermal)
+     &  mi,nstate_,ii,nelem,qfx,orab,ielorien,norien,co,konf,
+     &  ielmat,thicke,eme,ielprop,prop,nelel,ithermal,orname)
 !
 !     stores integration point results for element "nelem" in the .dat file
 !
@@ -30,9 +30,10 @@
 !
       character*6 prlab(*)
       character*8 lakon(*)
+      character*80 orname(*)
 !
       integer ipkon(*),mi(*),nstate_,nelem,l,ii,mint3d,j,k,nope,
-     &  ielorien(mi(3),*),norien,kon(*),konl,indexe,m,iorien,iflag,
+     &  ielorien(mi(3),*),norien,konf(*),konl,indexe,m,iorien,iflag,
      &  ielmat(mi(3),*),nopes,mint2d,kk,ki,kl,nlayer,ilayer,
      &  null,ielprop(*),nelel,ithermal(2)
 !
@@ -63,7 +64,7 @@
          else
             iorien=ielorien(1,nelel)
          endif
-      else
+      elseif(lakon(nelel)(4:5).eq.'20') then
 !     
 !     composite materials
 !     
@@ -118,7 +119,64 @@
          do k=1,4
             dlayer(k)=0.d0
          enddo
+!
+!
+      elseif(lakon(nelel)(4:5).eq.'15') then
 !     
+!     composite materials
+!     
+         if((norien.eq.0).or.(prlab(ii)(6:6).eq.'G')) then
+            iorien=0
+         else
+!
+!           check whether at least one layer has a transformation
+!
+            iorien=0
+            do k=1,mi(3)
+               if(ielorien(k,nelel).ne.0) then
+                  iorien=ielorien(k,nelel)
+                  exit
+               endif
+            enddo
+         endif
+!
+!     determining the number of layers
+!     
+         mint2d=3
+         nopes=6
+!
+         nlayer=0
+         do k=1,mi(3)
+            if(ielmat(k,nelel).ne.0) then
+               nlayer=nlayer+1
+            endif
+         enddo
+!     
+!     determining the layer thickness and global thickness
+!     at the shell integration points
+!     
+         iflag=1
+         do kk=1,mint2d
+            xi=gauss3d10(1,kk)
+            et=gauss3d10(2,kk)
+            call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+            tlayer(kk)=0.d0
+            do k=1,nlayer
+               thickness=0.d0
+               do j=1,nopes
+                  thickness=thickness+thicke(k,indexe+j)*shp2(4,j)
+               enddo
+               tlayer(kk)=tlayer(kk)+thickness
+               xlayer(k,kk)=thickness
+            enddo
+         enddo
+         iflag=3
+!     
+         ilayer=0
+         do k=1,3
+            dlayer(k)=0.d0
+         enddo
+!
       endif
 !
 !     number of integration points
@@ -148,7 +206,11 @@
       elseif(lakon(nelel)(4:4).eq.'4') then
          mint3d=1
       elseif(lakon(nelel)(4:5).eq.'15') then
-         mint3d=9
+         if(lakon(nelel)(7:8).eq.'LC') then
+            mint3d=6*nlayer
+         else
+            mint3d=9
+         endif
       elseif(lakon(nelel)(4:4).eq.'6') then
          mint3d=2
       else
@@ -175,7 +237,7 @@
 !
 c         indexe=ipkon(nelel)
          do j=1,nope
-            konl=kon(indexe+j)
+            konl=konf(indexe+j)
             do k=1,3
                xl(k,j)=co(k,konl)
             enddo
@@ -247,10 +309,35 @@ c         indexe=ipkon(nelel)
                ze=gauss3d4(3,j)
                weight=weight3d4(j)
             elseif(lakon(nelel)(4:5).eq.'15') then
-               xi=gauss3d8(1,j)
-               et=gauss3d8(2,j)
-               ze=gauss3d8(3,j)
-               weight=weight3d8(j)
+               if(lakon(nelel)(7:8).ne.'LC') then
+                  xi=gauss3d8(1,j)
+                  et=gauss3d8(2,j)
+                  ze=gauss3d8(3,j)
+                  weight=weight3d8(j)
+               else
+                  kl=mod(j,6)
+                  if(kl.eq.0) kl=6
+!
+                  xi=gauss3d10(1,kl)
+                  et=gauss3d10(2,kl)
+                  ze=gauss3d10(3,kl)
+                  weight=weight3d10(kl)
+!
+                  ki=mod(j,3)
+                  if(ki.eq.0) ki=3
+!
+                  if(kl.eq.1) then
+                     ilayer=ilayer+1
+                     if(ilayer.gt.1) then
+                        do k=1,3
+                           dlayer(k)=dlayer(k)+xlayer(ilayer-1,k)
+                        enddo
+                     endif
+                  endif
+                  ze=2.d0*(dlayer(ki)+(ze+1.d0)/2.d0*xlayer(ilayer,ki))/
+     &                 tlayer(ki)-1.d0
+                  weight=weight*xlayer(ilayer,ki)/tlayer(ki)
+               endif
             elseif(lakon(nelel)(1:4).eq.'C3D6') then
                xi=gauss3d7(1,j)
                et=gauss3d7(2,j)
@@ -294,10 +381,15 @@ c         indexe=ipkon(nelel)
             if(lakon(nelel)(7:8).eq.'LC') then
                if((norien.eq.0).or.(prlab(ii)(6:6).eq.'G')) then
                   iorien=0
-               else
+               elseif(lakon(nelel)(4:5).eq.'20') then
                   kl=mod(j,8)
                   if(kl.eq.0) kl=8
                   ilayer=(j-kl)/8+1
+                  iorien=ielorien(ilayer,nelel)
+               elseif(lakon(nelel)(4:5).eq.'15') then
+                  kl=mod(j,6)
+                  if(kl.eq.0) kl=6
+                  ilayer=(j-kl)/6+1
                   iorien=ielorien(ilayer,nelel)
                endif
             endif
@@ -332,8 +424,9 @@ c         indexe=ipkon(nelel)
                      enddo
                   enddo
                enddo
-               write(5,'(i10,1x,i3,1p,6(1x,e13.6))') nelem,j,
-     &              b(1,1),b(2,2),b(3,3),b(1,2),b(1,3),b(2,3)
+               write(5,'(i10,1x,i3,1p,6(1x,e13.6),1x,a20)') nelem,j,
+     &              b(1,1),b(2,2),b(3,3),b(1,2),b(1,3),b(2,3),
+     &              orname(iorien)(1:20)
             endif
          enddo
       elseif(prlab(ii)(1:4).eq.'E   ') then
@@ -344,10 +437,15 @@ c         indexe=ipkon(nelel)
             if(lakon(nelel)(7:8).eq.'LC') then
                if((norien.eq.0).or.(prlab(ii)(6:6).eq.'G')) then
                   iorien=0
-               else
+               elseif(lakon(nelel)(4:5).eq.'20') then
                   kl=mod(j,8)
                   if(kl.eq.0) kl=8
                   ilayer=(j-kl)/8+1
+                  iorien=ielorien(ilayer,nelel)
+               elseif(lakon(nelel)(4:5).eq.'15') then
+                  kl=mod(j,6)
+                  if(kl.eq.0) kl=6
+                  ilayer=(j-kl)/6+1
                   iorien=ielorien(ilayer,nelel)
                endif
             endif
@@ -382,8 +480,9 @@ c         indexe=ipkon(nelel)
                      enddo
                   enddo
                enddo
-               write(5,'(i10,1x,i3,1p,6(1x,e13.6))') nelem,j,
-     &              b(1,1),b(2,2),b(3,3),b(1,2),b(1,3),b(2,3)
+               write(5,'(i10,1x,i3,1p,6(1x,e13.6),1x,a20)') nelem,j,
+     &              b(1,1),b(2,2),b(3,3),b(1,2),b(1,3),b(2,3),
+     &              orname(iorien)(1:20)
             endif
          enddo
       elseif(prlab(ii)(1:4).eq.'ME  ') then
@@ -394,10 +493,15 @@ c         indexe=ipkon(nelel)
             if(lakon(nelel)(7:8).eq.'LC') then
                if((norien.eq.0).or.(prlab(ii)(6:6).eq.'G')) then
                   iorien=0
-               else
+               elseif(lakon(nelel)(4:5).eq.'20') then
                   kl=mod(j,8)
                   if(kl.eq.0) kl=8
                   ilayer=(j-kl)/8+1
+                  iorien=ielorien(ilayer,nelel)
+               elseif(lakon(nelel)(4:5).eq.'15') then
+                  kl=mod(j,6)
+                  if(kl.eq.0) kl=6
+                  ilayer=(j-kl)/6+1
                   iorien=ielorien(ilayer,nelel)
                endif
             endif
@@ -430,8 +534,9 @@ c         indexe=ipkon(nelel)
                      enddo
                   enddo
                enddo
-               write(5,'(i10,1x,i3,1p,6(1x,e13.6))') nelem,j,
-     &              b(1,1),b(2,2),b(3,3),b(1,2),b(1,3),b(2,3)
+               write(5,'(i10,1x,i3,1p,6(1x,e13.6),1x,a20)') nelem,j,
+     &              b(1,1),b(2,2),b(3,3),b(1,2),b(1,3),b(2,3),
+     &              orname(iorien)(1:20)
             endif
          enddo
       elseif(prlab(ii)(1:4).eq.'PEEQ') then
@@ -452,10 +557,15 @@ c         indexe=ipkon(nelel)
             if(lakon(nelel)(7:8).eq.'LC') then
                if((norien.eq.0).or.(prlab(ii)(6:6).eq.'G')) then
                   iorien=0
-               else
+               elseif(lakon(nelel)(4:5).eq.'20') then
                   kl=mod(j,8)
                   if(kl.eq.0) kl=8
                   ilayer=(j-kl)/8+1
+                  iorien=ielorien(ilayer,nelel)
+               elseif(lakon(nelel)(4:5).eq.'15') then
+                  kl=mod(j,6)
+                  if(kl.eq.0) kl=6
+                  ilayer=(j-kl)/6+1
                   iorien=ielorien(ilayer,nelel)
                endif
             endif
@@ -477,10 +587,15 @@ c         indexe=ipkon(nelel)
             if(lakon(nelel)(7:8).eq.'LC') then
                if((norien.eq.0).or.(prlab(ii)(6:6).eq.'G')) then
                   iorien=0
-               else
+               elseif(lakon(nelel)(4:5).eq.'20') then
                   kl=mod(j,8)
                   if(kl.eq.0) kl=8
                   ilayer=(j-kl)/8+1
+                  iorien=ielorien(ilayer,nelel)
+               elseif(lakon(nelel)(4:5).eq.'15') then
+                  kl=mod(j,6)
+                  if(kl.eq.0) kl=6
+                  ilayer=(j-kl)/6+1
                   iorien=ielorien(ilayer,nelel)
                endif
             endif
@@ -493,10 +608,11 @@ c         indexe=ipkon(nelel)
                   qfxl(k)=qfx(k,j,nelel)
                enddo
                call transformatrix(orab(1,iorien),coords(1,j),a)
-               write(5,'(i10,1x,i3,1p,3(1x,e13.6))') nelem,j,
+               write(5,'(i10,1x,i3,1p,3(1x,e13.6),1x,a20)') nelem,j,
      &              qfxl(1)*a(1,1)+qfxl(2)*a(2,1)+qfxl(3)*a(3,1),
      &              qfxl(1)*a(1,2)+qfxl(2)*a(2,2)+qfxl(3)*a(3,2),
-     &              qfxl(1)*a(1,3)+qfxl(2)*a(2,3)+qfxl(3)*a(3,3)
+     &              qfxl(1)*a(1,3)+qfxl(2)*a(2,3)+qfxl(3)*a(3,3),
+     &              orname(iorien)(1:20)
             endif
          enddo
       endif

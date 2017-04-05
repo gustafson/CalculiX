@@ -28,11 +28,11 @@
      &  nstate_,xstateini,xstate,ne0,ipkon,thicke,
      &  integerglob,doubleglob,tieset,istartset,iendset,ialset,ntie,
      &  nasym,pslavsurf,pmastsurf,mortar,clearini,ielprop,prop,distmin,
-     &  ndesi,nodedesi,dfminds,icoordinate,dxstiff,ne,xdesi,
-     &  istartelem,ialelem,v)
+     &  ndesi,nodedesi,dfl,icoordinate,dxstiff,ne,xdesi,
+     &  istartelem,ialelem,v,sigma,ieigenfrequency)
 !
-!     computation of the element matrix and rhs for the element with
-!     the topology in konl
+!     computation of the sensitivity of the element matrix multiplied by the
+!     displacements for the element with the topology in konl
 !
 !     ff: rhs without temperature and eigenstress contribution
 !
@@ -65,10 +65,10 @@
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,nopered,
      &  ndesi,nodedesi(*),idesvar,node,kscale,iactive,ij,
      &  mass,stiffness,buckling,rhsi,coriolis,icoordinate,idir,ne,
-     &  istartelem(*),ialelem(*)
+     &  istartelem(*),ialelem(*),ieigenfrequency
 !
       real*8 co(3,*),xl(3,26),shp(4,26),xs2(3,7),veold(0:mi(2),*),
-     &  s(60,60),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),
+     &  s(60,60),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),sigma,
      &  ff(60),bf(3),q(3),shpj(4,26),elcon(0:ncmat_,ntmat_,*),t(3),
      &  rhcon(0:1,ntmat_,*),xkl(3,3),eknlsign,reltime,prop(*),
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
@@ -86,7 +86,7 @@
      &  xstiff(27,mi(1),*),plconloc(802),dtime,ttime,time,tvar(2),
      &  sax(60,60),ffax(60),gs(8,4),a,stress(6),stre(3,3),
      &  pslavsurf(3,*),pmastsurf(6,*),distmin,s0(60,60),xdesi(3,*),
-     &  ds1(60,60),ff0(60),dfminds(ndesi,60),dxstiff(27,mi(1),ne,*),
+     &  ds1(60,60),ff0(60),dfl(ndesi,60),dxstiff(27,mi(1),ne,*),
      &  vl(0:mi(2),26),v(0:mi(2),*)
 !
       intent(in) co,kon,lakonl,p1,p2,omx,bodyfx,nbody,
@@ -104,7 +104,7 @@
      &  distmin,ndesi,nodedesi,icoordinate,xdesi,istartelem,ialelem,
      &  v
 !
-      intent(inout) sm,xload,nmethod,springarea,xstate,dfminds
+      intent(inout) sm,xload,nmethod,springarea,xstate,dfl
 !
       include "gauss.f"
 !
@@ -176,6 +176,8 @@ c     Bernhardi end
          else
             nope=ichar(lakonl(8:8))-47
          endif
+      elseif(lakonl(1:4).eq.'MASS') then
+         nope=1
       endif
 !
 !     material and orientation
@@ -195,7 +197,7 @@ c     Bernhardi end
          else
             ihyper=0
          endif
-      else
+      elseif(lakonl(4:5).eq.'20') then
 !
 !        composite materials
 !
@@ -233,7 +235,45 @@ c     Bernhardi end
          do i=1,4
             dlayer(i)=0.d0
          enddo
-!     
+      elseif(lakonl(4:5).eq.'15') then
+!
+!        composite materials
+!
+!        determining the number of layers
+!
+         nlayer=0
+         do k=1,mi(3)
+            if(ielmat(k,nelem).ne.0) then
+               nlayer=nlayer+1
+            endif
+         enddo
+         mint2d=3
+!
+!        determining the layer thickness and global thickness
+!        at the shell integration points
+!
+         iflag=1
+         do kk=1,mint2d
+            xi=gauss3d10(1,kk)
+            et=gauss3d10(2,kk)
+            call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+            tlayer(kk)=0.d0
+            do i=1,nlayer
+               thickness=0.d0
+               do j=1,6
+                  thickness=thickness+thicke(i,indexe+j)*shp2(4,j)
+               enddo
+               tlayer(kk)=tlayer(kk)+thickness
+               xlayer(i,kk)=thickness
+            enddo
+         enddo
+         iflag=3
+!
+         ilayer=0
+         do i=1,3
+            dlayer(i)=0.d0
+         enddo
+!
       endif
 !
       if(intscheme.eq.0) then
@@ -272,7 +312,11 @@ c     Bernhardi end
             mint2d=1
             mint3d=1
          elseif(lakonl(4:5).eq.'15') then
-            mint3d=9
+            if(lakonl(7:8).eq.'LC') then
+               mint3d=6*nlayer
+            else
+               mint3d=9
+            endif
          elseif(lakonl(4:4).eq.'6') then
             mint3d=2
          else
@@ -341,7 +385,7 @@ c     Bernhardi end
                if(node.eq.nodedesi(idesvar)) then
                   iactive=i
                   do j=1,60
-                     dfminds(idesvar,j)=0.d0
+                     dfl(idesvar,j)=0.d0
                   enddo
                   exit
                endif
@@ -351,7 +395,7 @@ c     Bernhardi end
 !           the orientations are the design variables
 !
             do j=1,60
-               dfminds(idesvar,j)=0.d0
+               dfl(idesvar,j)=0.d0
             enddo
          endif
       endif
@@ -404,7 +448,8 @@ c     Bernhardi end
         endif
       endif
 !
-!     calculating the stiffness matrix for the contact spring elements
+!     calculating the stiffness matrix for the (contact) spring elements
+!     and the mass matrix for the mass elements
 !
       if(mint3d.eq.0) then
 !
@@ -422,37 +467,78 @@ c     Bernhardi end
          endif
 !
          kode=nelcon(1,imat)
-         if(lakonl(7:7).eq.'A') then
-            t0l=0.d0
-            t1l=0.d0
-            if(ithermal.eq.1) then
-               t0l=(t0(konl(1))+t0(konl(2)))/2.d0
-               t1l=(t1(konl(1))+t1(konl(2)))/2.d0
-            elseif(ithermal.ge.2) then
-               t0l=(t0(konl(1))+t0(konl(2)))/2.d0
-               t1l=(vold(0,konl(1))+vold(0,konl(2)))/2.d0
+         if(lakonl(1:2).eq.'ES') then
+            if(lakonl(7:7).ne.'C') then
+               t0l=0.d0
+               t1l=0.d0
+               if(ithermal.eq.1) then
+                  t0l=(t0(konl(1))+t0(konl(2)))/2.d0
+                  t1l=(t1(konl(1))+t1(konl(2)))/2.d0
+               elseif(ithermal.ge.2) then
+                  t0l=(t0(konl(1))+t0(konl(2)))/2.d0
+                  t1l=(vold(0,konl(1))+vold(0,konl(2)))/2.d0
+               endif
             endif
-         else
+            if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'1').or.
+     &           (lakonl(7:7).eq.'2').or.(mortar.eq.0)) then
+               call springstiff_n2f(xl,elas,konl,voldl,s,imat,elcon,
+     &              nelcon,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
+     &              plicon,nplicon,npmat_,iperturb,
+     &              springarea(1,konl(nope+1)),nmethod,mi,ne0,nstate_,
+     &              xstateini,xstate,reltime,nasym,ielorien,orab,norien,
+     &              nelem)
+            elseif(mortar.eq.1) then
+               iloc=kon(indexe+nope+1)
+               jfaces=kon(indexe+nope+2)
+               igauss=kon(indexe+nope+1) 
+               call springstiff_f2f(xl,elas,voldl,s,imat,elcon,nelcon,
+     &              ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,plicon,
+     &              nplicon,npmat_,iperturb,springarea(1,iloc),nmethod,
+     &              mi,ne0,nstate_,xstateini,xstate,reltime,
+     &              nasym,iloc,jfaces,igauss,pslavsurf,
+     &              pmastsurf,clearini,kscale)
+            endif
+         elseif(lakonl(1:4).eq.'MASS') then
 !
-!        as soon as the first contact element is discovered ne0 is
-!        determined and saved
+!           mass matrix contribution
 !
-         endif
-         if((lakonl(7:7).eq.'A').or.(mortar.eq.0)) then
-            call springstiff_n2f(xl,elas,konl,voldl,s,imat,elcon,nelcon,
-     &      ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,plicon,
-     &      nplicon,npmat_,iperturb,springarea(1,konl(nope+1)),nmethod,
-     &      mi,ne0,nstate_,xstateini,xstate,reltime,nasym)
-         elseif(mortar.eq.1) then
-            iloc=kon(indexe+nope+1)
-            jfaces=kon(indexe+nope+2)
-            igauss=kon(indexe+nope+1) 
-            call springstiff_f2f(xl,elas,voldl,s,imat,elcon,nelcon,
-     &        ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,plicon,
-     &        nplicon,npmat_,iperturb,springarea(1,iloc),nmethod,
-     &        mi,ne0,nstate_,xstateini,xstate,reltime,
-     &        nasym,iloc,jfaces,igauss,pslavsurf,
-     &        pmastsurf,clearini,kscale)
+            if(mass.eq.1) then
+               do i1=1,3
+                  sm(i1,i1)=elcon(1,1,imat)
+               enddo
+            endif
+!
+!           contribution to the rhs
+!
+            if(rhsi.eq.1) then
+               if(om.gt.0.d0) then
+                  do i1=1,3
+!
+!                   computation of the global coordinates of the
+!                   mass node
+!
+                     if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
+                        q(i1)=xl(i1,1)
+                     else
+                        q(i1)=xl(i1,1)+voldl(i1,1)
+                     endif
+!                       
+                     q(i1)=q(i1)-p1(i1)
+                  enddo
+                  const=q(1)*p2(1)+q(2)*p2(2)+q(3)*p2(3)
+!
+!                 inclusion of the centrifugal force into the body force
+!
+                  do i1=1,3
+                     ff(i1)=bodyf(i1)+(q(i1)-const*p2(i1))*om
+                  enddo
+               else
+                  do i1=1,3
+                     ff(i1)=bodyf(i1)
+                  enddo
+               endif
+            endif
+!            
          endif
          return
       endif
@@ -539,10 +625,51 @@ c     Bernhardi end
                ze=gauss3d4(3,kk)
                weight=weight3d4(kk)
             elseif(lakonl(4:5).eq.'15') then
-               xi=gauss3d8(1,kk)
-               et=gauss3d8(2,kk)
-               ze=gauss3d8(3,kk)
-               weight=weight3d8(kk)
+               if(lakonl(7:8).ne.'LC') then
+                  xi=gauss3d8(1,kk)
+                  et=gauss3d8(2,kk)
+                  ze=gauss3d8(3,kk)
+                  weight=weight3d8(kk)
+               else
+                  kl=mod(kk,6)
+                  if(kl.eq.0) kl=6
+!
+                  xi=gauss3d10(1,kl)
+                  et=gauss3d10(2,kl)
+                  ze=gauss3d10(3,kl)
+                  weight=weight3d10(kl)
+!
+                  ki=mod(kk,3)
+                  if(ki.eq.0) ki=3
+!
+                  if(kl.eq.1) then
+                     ilayer=ilayer+1
+                     if(ilayer.gt.1) then
+                        do i=1,3
+                           dlayer(i)=dlayer(i)+xlayer(ilayer-1,i)
+                        enddo
+                     endif
+                  endif
+                  ze=2.d0*(dlayer(ki)+(ze+1.d0)/2.d0*xlayer(ilayer,ki))/
+     &                 tlayer(ki)-1.d0
+                  weight=weight*xlayer(ilayer,ki)/tlayer(ki)
+!
+!                 material and orientation
+!
+                  imat=ielmat(ilayer,nelem)
+                  amat=matname(imat)
+                  if(norien.gt.0) then
+                     iorien=ielorien(ilayer,nelem)
+                  else
+                     iorien=0
+                  endif
+!     
+                  if(nelcon(1,imat).lt.0) then
+                     ihyper=1
+                  else
+                     ihyper=0
+                  endif
+               endif
             elseif(lakonl(4:4).eq.'6') then
                xi=gauss3d7(1,kk)
                et=gauss3d7(2,kk)
@@ -1189,7 +1316,7 @@ c             if(iperturb(1).eq.0) then
 !         variation of xl2 and xl1 (quads) for sensitivity analysis
 !         ---------------------------------------------------------
 !
-             if(idesvar.gt.0) then
+             if((idesvar.gt.0).and.(icoordinate.eq.1)) then
                 do i=1,nopes
                    node=konl(ifaceq(i,ig))
                    if(node.eq.nodedesi(idesvar)) then
@@ -1229,7 +1356,7 @@ c             if(iperturb(1).eq.0) then
 !         variation of xl2 and xl1 (tets) for sensitivity analysis
 !         ---------------------------------------------------------
 !
-             if(idesvar.gt.0) then
+             if((idesvar.gt.0).and.(icoordinate.eq.1)) then
                 do i=1,nopes
                    node=konl(ifacet(i,ig))
                    if(node.eq.nodedesi(idesvar)) then
@@ -1269,7 +1396,7 @@ c             if(iperturb(1).eq.0) then
 !         variation of xl2 and xl1 (wedge) for sensitivity analysis
 !         ---------------------------------------------------------
 !
-             if(idesvar.gt.0) then
+             if((idesvar.gt.0).and.(icoordinate.eq.1)) then
                 do i=1,nopes
                    node=konl(ifacew(i,ig))
                    if(node.eq.nodedesi(idesvar)) then
@@ -1698,51 +1825,135 @@ c            alp=.2215d0
 !     Assigning the element stiffness matrix and the external load 
 !     vector to the corresponding matrices/vectors
 !     
-      if(idesvar.eq.0) then
-!     Stiffness matrix
-         do i=1,3*nope
-            do j=1,3*nope
-               s0(i,j)=s(i,j)
-            enddo
-         enddo
+      if(sigma.le.0.d0) then
+!
+         if((ieigenfrequency.ne.1).and.(iperturb(2).eq.1)) then
+!
+!           nonlinear geometric calculation: dK/ds does not have
+!           to be calculated (except for eigenfrequency calculations)
+!
+            if(idesvar.eq.0) then
 !     load vector
-         if((rhsi.eq.1).and.(idist.eq.1)) then
-            do i=1,3*nope
-               ff0(i)=ff(i)
-            enddo
-         endif
-      else
+               if((rhsi.eq.1).and.(idist.eq.1)) then
+                  do i=1,3*nope
+                     ff0(i)=ff(i)
+                  enddo
+               endif
+            else
+!     load vector
+               if((rhsi.eq.1).and.(idist.eq.1)) then
+                  do i=1,3*nope
+                     dfl(idesvar,i)=(ff(i)-ff0(i))/distmin
+                  enddo
+               else
+                  do i=1,3*nope
+                     dfl(idesvar,i)=0.d0
+                  enddo
+               endif
+            endif
+         else
+!
+!           linear geometrical calculation: calculate dK/ds
+!
+            if(idesvar.eq.0) then
 !     Stiffness matrix
-         do i=1,3*nope
-            do j=1,3*nope
-               ds1(i,j)=s(i,j)-s0(i,j)
-            enddo
-         enddo
-         do i=1,3*nope
-            l=0
-            do j=1,nope
-               do k=1,3
-                  l=l+1
-                  if(l.ge.i) then
-                     dfminds(idesvar,i)=dfminds(idesvar,i)
-     &                                 +ds1(i,l)*vl(k,j)
-                  else
-                     dfminds(idesvar,i)=dfminds(idesvar,i)
-     &                                 +ds1(l,i)*vl(k,j)
-                  endif
+               do i=1,3*nope
+                  do j=1,3*nope
+                     s0(i,j)=s(i,j)
+                  enddo
+               enddo
+!     load vector
+               if((rhsi.eq.1).and.(idist.eq.1)) then
+                  do i=1,3*nope
+                     ff0(i)=ff(i)
+                  enddo
+               endif
+            else
+!     Stiffness matrix
+               do i=1,3*nope
+                  do j=1,3*nope
+                     ds1(i,j)=s(i,j)-s0(i,j)
+                  enddo
+               enddo
+               do i=1,3*nope
+                  l=0
+                  do j=1,nope
+                     do k=1,3
+                        l=l+1
+                        if(l.ge.i) then
+                           dfl(idesvar,i)=dfl(idesvar,i)
+     &                          +ds1(i,l)*vl(k,j)
+                        else
+                           dfl(idesvar,i)=dfl(idesvar,i)
+     &                          +ds1(l,i)*vl(k,j)
+                        endif
+                     enddo
+                  enddo
+               enddo
+!     load vector
+               if((rhsi.eq.1).and.(idist.eq.1)) then
+                  do i=1,3*nope
+                     dfl(idesvar,i)=(ff(i)-ff0(i)-dfl(idesvar,i))
+     &                    /distmin
+                  enddo
+               else
+                  do i=1,3*nope
+                     dfl(idesvar,i)=-dfl(idesvar,i)/distmin
+                  enddo
+               endif
+            endif
+         endif
+!     
+      else
+!
+!        eigenfrequency sensitivity: take K-sigma*M instead of K
+!
+         if(idesvar.eq.0) then
+!     Stiffness matrix
+            do i=1,3*nope
+               do j=1,3*nope
+                  s0(i,j)=s(i,j)-sigma*sm(i,j)
                enddo
             enddo
-         enddo
 !     load vector
-         if((rhsi.eq.1).and.(idist.eq.1)) then
-            do i=1,3*nope
-               dfminds(idesvar,i)=(ff(i)-ff0(i)-dfminds(idesvar,i))
-     &                           /distmin
-            enddo
+            if((rhsi.eq.1).and.(idist.eq.1)) then
+               do i=1,3*nope
+                  ff0(i)=ff(i)
+               enddo
+            endif
          else
+!     Stiffness matrix
             do i=1,3*nope
-               dfminds(idesvar,i)=-dfminds(idesvar,i)/distmin
+               do j=1,3*nope
+                  ds1(i,j)=s(i,j)-sigma*sm(i,j)-s0(i,j)
+               enddo
             enddo
+            do i=1,3*nope
+               l=0
+               do j=1,nope
+                  do k=1,3
+                     l=l+1
+                     if(l.ge.i) then
+                        dfl(idesvar,i)=dfl(idesvar,i)
+     &                       +ds1(i,l)*vl(k,j)
+                     else
+                        dfl(idesvar,i)=dfl(idesvar,i)
+     &                       +ds1(l,i)*vl(k,j)
+                     endif
+                  enddo
+               enddo
+            enddo
+!     load vector
+            if((rhsi.eq.1).and.(idist.eq.1)) then
+               do i=1,3*nope
+                  dfl(idesvar,i)=(ff(i)-ff0(i)-dfl(idesvar,i))
+     &                 /distmin
+               enddo
+            else
+               do i=1,3*nope
+                  dfl(idesvar,i)=-dfl(idesvar,i)/distmin
+               enddo
+            endif
          endif
       endif
 !     

@@ -512,7 +512,7 @@
 !      
       do i=1,nmpc
          if((labmpc(i)(1:20).ne.'                    ').and.
-     &          (labmpc(i)(1:7).ne.'CONTACT').and.
+c     &          (labmpc(i)(1:7).ne.'CONTACT').and.
      &          (labmpc(i)(1:6).ne.'CYCLIC').and.
      &          (labmpc(i)(1:9).ne.'SUBCYCLIC')) then
             indexe1=ipompc(i)

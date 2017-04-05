@@ -219,15 +219,8 @@ c            tincf=1.d-2
      &eds step size'
          call exit(201)
       endif
-c      if((cfd.eq.1).and.(tincf.le.0.d0)) then
-c         write(*,*) '*WARNING reading *STATIC: initial CFD increment siz
-c     &e is zero or negative; the default of 0.01 is taken'
-c         tincf=1.d-2
-c      endif
 !      
       if(idrct.ne.1) then
-c         if(dabs(tmin).lt.1.d-10) then
-c            tmin=min(tinc,1.d-5*tper)
          if(dabs(tmin).lt.1.d-6*tper) then
             tmin=min(tinc,1.d-6*tper)
          endif

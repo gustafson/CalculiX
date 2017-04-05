@@ -28,7 +28,7 @@ static char *lakon1,*matname1;
 static ITG *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *norien1,*ntmat1_,*ithermal1,*iprestr1,*iperturb1,*iout1,*nmethod1,
     *nplicon1,*nplkcon1,*npmat1_,*mi1,*ielas1,*icmd1,*ncmat1_,*nstate1_,
-    *istep1,*iinc1,calcul_qa1,iener1,ikin1,*istartdesi1,*ialdesi1,
+    *istep1,*iinc1,calcul_qa1,nener1,ikin1,*istartdesi1,*ialdesi1,
     num_cpus,*ne01,*mortar1,*ielprop1,*ndesi1,*nodedesi1,idesvar1,
     *nobject1,iobject1;
     
@@ -78,17 +78,21 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
        ITG *icol,ITG *irow,ITG *jq,ITG *kode,double *cs,char *output,
        ITG *istartdesi,ITG *ialdesi,double *xdesi,char *orname,
        ITG *icoordinate,ITG *iev,double *d,double *z,double *au,double *ad,
-       double *aub,double*adb){
+       double *aub,double*adb,ITG *cyclicsymmetry,ITG *nzss,ITG *nev,
+       ITG *ishapeenergy,double *fint,ITG *nlabel,ITG *igreen,ITG *nasym){
 
-    char description[13]="            ",cflag[1]=" ";
+    char description[13]="            ",cflag[1]=" ",*filabl=NULL;
 
-    ITG calcul_qa,iener,ikin,i,j,m,iobject,im,symmetryflag=0,inputformat=0,
-	mt=mi[1]+1,mode=-1,noddiam=-1,ngraph=1,idesvar,nea,neb,nodeset;
+    ITG calcul_qa,nener,ikin,i,j,k,m,iobject,im,symmetryflag=0,inputformat=0,
+	mt=mi[1]+1,mode=-1,noddiam=-1,ngraph=1,idesvar,nea,neb,nodeset,
+        kscale=1,*iponoel=NULL,*inoel=NULL,idir,iorien,network=0,
+        inorm=0,irand=0;
 
-    double sigma=0.,ptime=0.,*temp=NULL,*bfix=NULL;
-
-    FILE *f1;
+    double sigma=0.,ptime=0.,*temp=NULL,*bfix=NULL,*vnew=NULL,*dstn=NULL,
+        freq,*c=NULL,orabsav[7],rotvec[3],a[9],pgauss[3];
     
+    if(*nasym!=0){symmetryflag=2;inputformat=1;}
+
     /* variables for multithreading procedure */
     
     ITG sys_cpus,*ithread=NULL;
@@ -144,7 +148,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
     
     pthread_t tid[num_cpus];
 
-    if(*idisplacement==1){
+    if((*idisplacement==1)||((*ishapeenergy==1)&&(iperturb[1]==1))){
 
 	/* factor the system */
 
@@ -153,7 +157,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 	    spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
 			   &symmetryflag,&inputformat,&nzs[2]);
 #else
-	    printf("*ERROR in arpack: the SPOOLES library is not linked\n\n");
+	    printf("*ERROR in objectivemain_se: the SPOOLES library is not linked\n\n");
 	    FORTRAN(stop,());
 #endif
 	}
@@ -162,7 +166,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 	    token=1;
 	    sgi_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],token);
 #else
-	    printf("*ERROR in arpack: the SGI library is not linked\n\n");
+	    printf("*ERROR in objectivemain_se: the SGI library is not linked\n\n");
 	    FORTRAN(stop,());
 #endif
 	}
@@ -170,7 +174,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 #ifdef TAUCS
 	    tau_factor(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1]);
 #else
-	    printf("*ERROR in arpack: the TAUCS library is not linked\n\n");
+	    printf("*ERROR in objectivemain_se: the TAUCS library is not linked\n\n");
 	    FORTRAN(stop,());
 #endif
 	}
@@ -179,7 +183,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 	    pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
 			   &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-	    printf("*ERROR in arpack: the PARDISO library is not linked\n\n");
+	    printf("*ERROR in objectivemain_se: the PARDISO library is not linked\n\n");
 	    FORTRAN(stop,());
 #endif
 	}
@@ -299,7 +303,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 	    mi1=mi;ielas1=ielas;icmd1=icmd;ncmat1_=ncmat_;nstate1_=nstate_;
 	    stiini1=stiini;vini1=vini;ener1=ener;eei1=eei;enerini1=enerini;
 	    istep1=istep;iinc1=iinc;springarea1=springarea;reltime1=reltime;
-	    calcul_qa1=calcul_qa;iener1=iener;ikin1=ikin;ne01=ne0;thicke1=thicke;
+	    calcul_qa1=calcul_qa;nener1=nener;ikin1=ikin;ne01=ne0;thicke1=thicke;
 	    emeini1=emeini;pslavsurf1=pslavsurf;pmastsurf1=pmastsurf;mortar1=mortar;
             clearini1=clearini;ielprop1=ielprop;prop1=prop;
 	    distmin1=distmin;ndesi1=ndesi;nodedesi1=nodedesi;
@@ -344,7 +348,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 	               nmethod,veold,dtime,time,ttime,plicon,nplicon,plkcon,
 	               nplkcon,xstateini,xstiff,xstate,npmat1_,matname,mi,ielas,
 	               icmd,ncmat1_,nstate1_,stiini,vini,ener,enerini,istep,iinc,
-                       springarea,reltime,&calcul_qa,&iener,&ikin,          
+                       springarea,reltime,&calcul_qa,&nener,&ikin,          
                        ne0,thicke,emeini,pslavsurf,pmastsurf,mortar,clearini,
                        &nea,&neb,ielprop,prop,distmin,ndesi,nodedesi,
 	               nobject,g0,dgdx,&iobject,sti,xener1,
@@ -352,6 +356,35 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 
 	    }
 
+            if(iperturb[1]==1){
+	    	       
+	       /* solve the system */
+		    
+		    if(*isolver==0){
+#ifdef SPOOLES
+			spooles_solve(fint,&neq[1]);
+#endif
+		    }
+		    else if(*isolver==4){
+#ifdef SGI
+			sgi_solve(fint,token);
+#endif
+		    }
+		    else if(*isolver==5){
+#ifdef TAUCS
+			tau_solve(fint,&neq[1]);
+#endif
+		    }
+		    else if(*isolver==7){
+#ifdef PARDISO
+			pardiso_solve(fint,&neq[1],&symmetryflag);
+#endif
+}	      
+	      
+	       /* solve the system */	      
+	       	    
+	    }
+	    
 	    SFREE(xener1);
 
             /* reactivating all elements */
@@ -363,16 +396,57 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
             /* composing the total derivative */
 
 	    FORTRAN(objective_shapeener_tot,(dgdx,df,vold,ndesi,&iobject,
-					     mi,nactdofinv,jqs,irows));
-
-	}else if(strcmp1(&objectset[m*243],"EIGENFREQUENCY")==0){
+					     mi,nactdofinv,jqs,irows,iperturb,fint));
+	    
+	}else if((strcmp1(&objectset[m*243],"EIGENFREQUENCY")==0)||
+                 (strcmp1(&objectset[m*243],"GREEN")==0)){
 	    iobject=m+1;
+	    
+	    /* OBJECTIVE: EIGENFREQUENCY */
 
-	    FORTRAN(objective_shapeener_tot,(dgdx,df,v,ndesi,&iobject,
-					     mi,nactdofinv,jqs,irows));
+	    if(*igreen!=1){
+
+                /* determination of the sensitivity of the eigenvalues */
+
+		if(!*cyclicsymmetry){
+		    
+		    FORTRAN(objective_freq,(dgdx,df,v,ndesi,&iobject,
+					    mi,nactdofinv,jqs,irows));
+		    
+		    /* change sign since df contains -(dK/dX-lambda*dM/DX).U */
+		    
+		    for(idesvar=0;idesvar<*ndesi;idesvar++){dgdx[idesvar]=-dgdx[idesvar];}
+		}else{
+		    
+		    FORTRAN(objective_freq_cs,(dgdx,df,v,ndesi,&iobject,
+					       mi,nactdofinv,jqs,irows,nk,nzss));
+		}
+	    }
+
+	    g0[m]=d[*iev];
+
+            /* in case the design variables are the orientations
+               the sensitivity of the eigenvectors is also
+               determined */
 
 	    if(*icoordinate!=1){
-		FORTRAN(writedeigdx,(iev,d,ndesi,orname,dgdx));
+		if(*igreen!=1) FORTRAN(writedeigdx,(iev,d,ndesi,orname,dgdx));
+
+  	        /* createinum is called in order to determine the nodes belonging
+	           to elements; this information is needed in frd_se */
+	    
+		NNEW(inum,ITG,*nk);
+		FORTRAN(createinum,(ipkon,inum,kon,lakon,nk,ne,&cflag[0],
+                    nelemload,nload,nodeboun,nboun,ndirboun,ithermal,co,
+                    vold,mi,ielmat));
+		
+                /* the frequency is also needed for frd_se */
+
+		if(d[*iev]>=0.){
+		    freq=sqrt(d[*iev])/6.283185308;
+		}else{
+		    freq=0.;
+		}
 
                 /* determine the derivative of the eigenvectors */
 
@@ -380,87 +454,117 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 		NNEW(b,double,*neq);
 		NNEW(temp,double,mt**nk);
 
-                /* bfix = M * eigenvector */
+		if(*igreen!=1){
+		    
+		    /* bfix = M * eigenvector */
+		    
+		    FORTRAN(op,(neq,&z[*iev**neq],bfix,adb,aub,jq,irow));
 
-		FORTRAN(op,(neq,z,bfix,adb,aub,jq,irow));
-		
-		sigma=d[*iev];
+		}else{		
 
-		/* factor the system */
-		
-		if(*isolver==0){
+		    sigma=d[*iev];
+		    
+		    /* factor the system */
+		    
+		    if(*isolver==0){
 #ifdef SPOOLES
-		    spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
+			spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
 				   &symmetryflag,&inputformat,&nzs[2]);
 #else
-		    printf("*ERROR in arpack: the SPOOLES library is not linked\n\n");
-		    FORTRAN(stop,());
+			printf("*ERROR in objectivemain_se: the SPOOLES library is not linked\n\n");
+			FORTRAN(stop,());
 #endif
-		}
-		else if(*isolver==4){
+		    }
+		    else if(*isolver==4){
 #ifdef SGI
-		    token=1;
-		    sgi_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],token);
+			token=1;
+			sgi_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],token);
 #else
-		    printf("*ERROR in arpack: the SGI library is not linked\n\n");
-		    FORTRAN(stop,());
+			printf("*ERROR in objectivemain_se: the SGI library is not linked\n\n");
+			FORTRAN(stop,());
 #endif
-		}
-		else if(*isolver==5){
+		    }
+		    else if(*isolver==5){
 #ifdef TAUCS
-		    tau_factor(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1]);
+			tau_factor(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1]);
 #else
-		    printf("*ERROR in arpack: the TAUCS library is not linked\n\n");
-		    FORTRAN(stop,());
+			printf("*ERROR in objectivemain_se: the TAUCS library is not linked\n\n");
+			FORTRAN(stop,());
 #endif
-		}
-		else if(*isolver==7){
+		    }
+		    else if(*isolver==7){
 #ifdef PARDISO
-		    pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
-				   &symmetryflag,&inputformat,jq,&nzs[2]);
+			pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
+				       &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-		    printf("*ERROR in arpack: the PARDISO library is not linked\n\n");
-		    FORTRAN(stop,());
+			printf("*ERROR in objectivemain_se: the PARDISO library is not linked\n\n");
+			FORTRAN(stop,());
 #endif
-		}
-	
+		    }
+		}	
+		
                 /* loop over all design variables */
 	
 		for(idesvar=0;idesvar<*ndesi;idesvar++){
 
                     /* setting up the RHS of the system */
 
-		    for(j=0;j<*neq;j++){
-			b[j]=dgdx[idesvar]*bfix[j];
+		    if(*igreen!=1){
+			for(j=0;j<*neq;j++){
+			    b[j]=dgdx[idesvar]*bfix[j];
+			}
+		    }else{
+			DMEMSET(b,0,*neq,0.);
 		    }
 
 		    for(j=jqs[idesvar]-1;j<jqs[idesvar+1]-1;j++){
-			b[irows[j]-1]-=df[j];
+			b[irows[j]-1]+=df[j];
 		    }
 
-		    /* solve the system */
-		    
-		    if(*isolver==0){
+		    if(*igreen==1){
+
+			/* solve the system */
+			
+			if(*isolver==0){
 #ifdef SPOOLES
-			spooles_solve(b,&neq[1]);
+			    spooles_solve(b,&neq[1]);
 #endif
-		    }
-		    else if(*isolver==4){
+			}
+			else if(*isolver==4){
 #ifdef SGI
-			sgi_solve(b,token);
+			    sgi_solve(b,token);
 #endif
-		    }
-		    else if(*isolver==5){
+			}
+			else if(*isolver==5){
 #ifdef TAUCS
-			tau_solve(b,&neq[1]);
+			    tau_solve(b,&neq[1]);
 #endif
-		    }
-		    else if(*isolver==7){
+			}
+			else if(*isolver==7){
 #ifdef PARDISO
-			pardiso_solve(b,&neq[1],&symmetryflag);
+			    pardiso_solve(b,&neq[1],&symmetryflag);
 #endif
-		    }
+			}
+		    }else{
 		    
+			NNEW(c,double,*nev);
+			for(j=0;j<*nev;j++){
+			    if(j==*iev) continue;
+			    for(k=0;k<*neq;k++){
+				c[j]+=z[j**neq+k]*b[k];
+			    }
+			    c[j]/=(d[j]-d[*iev]);
+			}
+			DMEMSET(b,0,*neq,0.);
+			for(j=0;j<*nev;j++){
+			    if(j==*iev) continue;
+			    for(k=0;k<*neq;k++){
+				b[k]+=c[j]*z[j**neq+k];
+			    }
+			}
+			SFREE(c);
+		    }
+
 		    /* store the answer in temp w.r.t. node and direction
 		       instead of w.r.t. dof */
 		    
@@ -468,48 +572,54 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 		    FORTRAN(resultsnoddir,(nk,temp,nactdof,b,ipompc,nodempc,
 				      coefmpc,nmpc,mi));
 		    
-		    /* storing the results to file */
+		    /* storing the sensitivity of the eigenmodes to file */
 		    
 		    ++*kode;
-		    frd_orien_se(co,nk,stn,inum,nmethod,kode,filab,fn,
-                       &ptime,nstate_,
+		    frd_sen(co,nk,stn,inum,nmethod,kode,filab,
+                       &freq,nstate_,
 		       istep,iinc,&mode,&noddiam,description,mi,&ngraph,
-                       ne,cs,set,nset,istartset,iendset,ialset,thicke,
-		       jobnamec,output,temp,&iobject,objectset,ntrans,inotr,trab,
-		       &idesvar,orname); 
+                       ne,cs,set,nset,istartset,iendset,ialset,
+		       jobnamec,output,temp,&iobject,objectset,ntrans,
+		       inotr,trab,&idesvar,orname,icoordinate,&inorm,
+                       &irand); 
 
 		}  // enddo loop idesvar
 
-		/* clean the system */
-		
-		if(*isolver==0){
+		if(*igreen==1){
+		    
+		    /* clean the system */
+		    
+		    if(*isolver==0){
 #ifdef SPOOLES
-		    spooles_cleanup();
+			spooles_cleanup();
 #endif
-		}
-		else if(*isolver==4){
+		    }
+		    else if(*isolver==4){
 #ifdef SGI
-		    sgi_cleanup(token);
+			sgi_cleanup(token);
 #endif
-		}
-		else if(*isolver==5){
+		    }
+		    else if(*isolver==5){
 #ifdef TAUCS
-		    tau_cleanup();
+			tau_cleanup();
 #endif
-		}
-		else if(*isolver==7){
+		    }
+		    else if(*isolver==7){
 #ifdef PARDISO
-		    pardiso_cleanup(&neq[1],&symmetryflag);
+			pardiso_cleanup(&neq[1],&symmetryflag);
 #endif
+		    }
 		}
 
-		SFREE(temp);SFREE(bfix);SFREE(b);
+		SFREE(temp);SFREE(bfix);SFREE(b);SFREE(inum);
 
 	    }
 
 	}else if(strcmp1(&objectset[m*243],"DISPLACEMENT")==0){
 	    iobject=m+1;
 
+            /* OBJECTIVE: DISPLACEMENT */
+	    
 	    /* createinum is called in order to determine the nodes belonging
 	       to elements; this information is needed in frd_se */
 	    
@@ -523,7 +633,9 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
             /* if the design variables are the coordinates:
                check for the existence of a target node set */
 
-	    if((*icoordinate==1)&&(*idisplacement==1)){
+            /* calculating the objective function */
+
+	    if(*icoordinate==1){
 		nodeset=0;
 		for(i=0;i<*nset;i++){
 		    if(strcmp1(&objectset[m*243+162]," ")==0) continue;
@@ -532,6 +644,9 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 			break;
 		    }
 		}
+		FORTRAN(objective_disp,(&nodeset,istartset,iendset,
+			ialset,nk,&idesvar,&iobject,mi,g0,
+			nobject,vold));
 	    }
 	    
 	    for(idesvar=0;idesvar<*ndesi;idesvar++){
@@ -578,12 +693,13 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 		    /* storing the results to file */
 		    
 		    ++*kode;
-		    frd_orien_se(co,nk,stn,inum,nmethod,kode,filab,fn,
+		    frd_sen(co,nk,stn,inum,nmethod,kode,filab,
                        &ptime,nstate_,
 		       istep,iinc,&mode,&noddiam,description,mi,&ngraph,
-                       ne,cs,set,nset,istartset,iendset,ialset,thicke,
-		       jobnamec,output,temp,&iobject,objectset,ntrans,inotr,trab,
-		       &idesvar,orname); 
+                       ne,cs,set,nset,istartset,iendset,ialset,
+		       jobnamec,output,temp,&iobject,objectset,ntrans,
+		       inotr,trab,&idesvar,orname,icoordinate,&inorm,
+                       &irand); 
 
 		}else{
 		    FORTRAN(objective_disp_dx,(&nodeset,istartset,iendset,
@@ -594,7 +710,219 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 
 	    SFREE(b);SFREE(temp);SFREE(inum);
 	    
+	}else if(strcmp1(&objectset[m*243],"STRESS")==0){
+	    iobject=m+1;
+
+	    NNEW(filabl,char,87**nlabel);
+	    for(i=0;i<87**nlabel;i++){strcpy1(&filabl[i]," ",1);}
+	    strcpy1(&filabl[174],"S   ",4);
+	    
+	    /* OBJECTIVE: STRESS */
+
+            /* calculating the stress in the unperturbed state */
+  
+	    NNEW(v,double,mt**nk);
+	    NNEW(fn,double,mt**nk);
+	    NNEW(stn,double,6**nk);
+	    NNEW(inum,ITG,*nk);
+	    NNEW(stx,double,6*mi[0]**ne);
+	    NNEW(eei,double,6*mi[0]**ne);
+	    
+	    memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
+	    *iout=2;
+	    *icmd=3;
+	    
+	    results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
+		    elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
+		    ielorien,norien,orab,ntmat_,t0,t1,ithermal,
+		    prestr,iprestr,filabl,eme,emn,een,iperturb,
+		    f,fn,nactdof,iout,qa,vold,b,nodeboun,
+		    ndirboun,xboun,nboun,ipompc,
+		    nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
+		    bet,gam,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
+		    xstateini,xstiff,xstate,npmat_,epn,matname,mi,ielas,icmd,
+		    ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,emeini,
+		    xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
+		    ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
+		    nelemload,nload,ikmpc,ilmpc,istep,iinc,springarea,
+		    reltime,ne0,xforc,nforc,thicke,shcon,nshcon,
+		    sideload,xload,xloadold,icfd,inomat,pslavsurf,pmastsurf,
+		    mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
+		    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+                    inoel,&nener,orname,&network);
+	    
+	    *icmd=0;
+	    
+	    SFREE(v);SFREE(fn);SFREE(stx);SFREE(eei);
+	    
+	    NNEW(b,double,*neq);
+	    NNEW(temp,double,mt**nk);
+
+            /* if the design variables are the coordinates:
+               check for the existence of a target node set */
+
+            /* calculating the objective function */
+
+	    if(*icoordinate==1){
+		nodeset=0;
+		for(i=0;i<*nset;i++){
+		    if(strcmp1(&objectset[m*243+162]," ")==0) continue;
+		    if(strcmp2(&objectset[m*243+162],&set[i*81],81)==0){
+			nodeset=i+1;
+			break;
+		    }
+		}
+		FORTRAN(objective_stress,(&nodeset,istartset,iendset,
+			ialset,nk,&idesvar,&iobject,mi,g0,
+			nobject,stn,objectset));
+	    }
+	    
+	    for(idesvar=0;idesvar<*ndesi;idesvar++){
+		
+                /* copying the RHS from field df */
+
+		DMEMSET(b,0,*neq,0.);
+		for(j=jqs[idesvar]-1;j<jqs[idesvar+1]-1;j++){
+		    b[irows[j]-1]=df[j];
+		}
+
+                /* solve the system */
+
+		if(*isolver==0){
+#ifdef SPOOLES
+		    spooles_solve(b,&neq[1]);
+#endif
+		}
+		else if(*isolver==4){
+#ifdef SGI
+		    sgi_solve(b,token);
+#endif
+		}
+		else if(*isolver==5){
+#ifdef TAUCS
+		    tau_solve(b,&neq[1]);
+#endif
+		}
+		else if(*isolver==7){
+#ifdef PARDISO
+		    pardiso_solve(b,&neq[1],&symmetryflag);
+#endif
+		}
+
+                /* calculating the perturbed displacements */
+
+		NNEW(vnew,double,mt**nk);
+		    
+		FORTRAN(resultsnoddir,(nk,vnew,nactdof,b,ipompc,nodempc,
+				       coefmpc,nmpc,mi));
+
+		for(i=0;i<mt**nk;i++){vnew[i]=vold[i]+(*distmin)*vnew[i];}
+
+                /* calculating the stress in the perturbed state */
+  
+		NNEW(v,double,mt**nk);
+		NNEW(fn,double,mt**nk);
+		NNEW(stx,double,6*mi[0]**ne);
+		NNEW(eei,double,6*mi[0]**ne);
+		NNEW(dstn,double,6**nk);
+		
+		memcpy(&v[0],&vnew[0],sizeof(double)*mt**nk);
+		*iout=2;
+		*icmd=3;
+	   
+		/* calculate a delta in the orientation
+		   in case the material orientation is the design variable */
+	
+		if(*icoordinate!=1){
+		    iorien=idesvar/3;
+		    
+		    /* save nominal orientation */
+		    
+		    memcpy(&orabsav[0],&orab[7*iorien],sizeof(double)*7);
+		    
+		    /* calculate the transformation matrix */
+		    
+		    FORTRAN(transformatrix,(&orab[7*iorien],pgauss,a));
+		    
+		    /* calculate the rotation vector from the transformation matrix */
+		    
+		    FORTRAN(rotationvector,(a,rotvec));
+		    idir=idesvar-iorien*3;
+		    
+		    /* add a small variation to the rotation vector component */
+		    
+		    rotvec[idir]+=*distmin;
+		    
+		    /* determine the new transformation matrix */
+		    
+		    FORTRAN(rotationvectorinv,(a,rotvec));
+		    
+		    /* determine two new points in the x-y plane */
+		    
+		    for(i=0;i<6;i++){orab[7*iorien+i]=a[i];}
+		}
+		
+		results(co,nk,kon,ipkon,lakon,ne,v,dstn,inum,stx,
+		    elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
+		    ielorien,norien,orab,ntmat_,t0,t1,ithermal,
+		    prestr,iprestr,filabl,eme,emn,een,iperturb,
+		    f,fn,nactdof,iout,qa,vold,b,nodeboun,
+		    ndirboun,xboun,nboun,ipompc,
+		    nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
+		    bet,gam,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
+		    xstateini,xstiff,xstate,npmat_,epn,matname,mi,ielas,icmd,
+		    ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,emeini,
+		    xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
+		    ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
+		    nelemload,nload,ikmpc,ilmpc,istep,iinc,springarea,
+		    reltime,ne0,xforc,nforc,thicke,shcon,nshcon,
+		    sideload,xload,xloadold,icfd,inomat,pslavsurf,pmastsurf,
+		    mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
+		    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+		    inoel,&nener,orname,&network);
+	    
+		*icmd=0;
+		
+		SFREE(v);SFREE(fn);SFREE(stx);SFREE(eei);
+
+                /* calculate the stress sensitivity */
+
+		for(i=0;i<6**nk;i++){dstn[i]=(dstn[i]-stn[i])/(*distmin);}
+		SFREE(vnew);
+
+		if(*icoordinate!=1){
+	   
+		    /* restoring the nominal orientation  */
+	
+		    if(idesvar>0){
+			memcpy(&orab[7*iorien],&orabsav[0],sizeof(double)*7);
+		    }
+		    
+		    /* storing the results to file */
+		    
+		    ++*kode;
+		    frd_sen(co,nk,dstn,inum,nmethod,kode,filab,
+                       &ptime,nstate_,
+		       istep,iinc,&mode,&noddiam,description,mi,&ngraph,
+                       ne,cs,set,nset,istartset,iendset,ialset,
+		       jobnamec,output,temp,&iobject,objectset,ntrans,
+		       inotr,trab,&idesvar,orname,icoordinate,&inorm,
+                       &irand); 
+
+		}else{
+		    FORTRAN(objective_stress_dx,(&nodeset,istartset,iendset,
+			    ialset,nk,&idesvar,&iobject,dgdx,
+			    ndesi,nobject,stn,dstn,objectset,g0));
+		}
+
+		SFREE(dstn);
+
+	    }
+
+	    SFREE(b);SFREE(temp);SFREE(inum);SFREE(stn);SFREE(filabl);
+	    
 	}
+
     }
     
     if(*idisplacement==1){
@@ -650,7 +978,7 @@ void *objectivemt_shapeener_dx(ITG *i){
 	  nmethod1,veold1,dtime1,time1,ttime1,plicon1,nplicon1,plkcon1,
 	  nplkcon1,xstateini1,xstiff1,xstate1,npmat1_,matname1,mi1,ielas1,
 	  icmd1,ncmat1_,nstate1_,stiini1,vini1,ener1,enerini1,istep1,iinc1,
-          springarea1,reltime1,&calcul_qa1,&iener1,&ikin1,          
+          springarea1,reltime1,&calcul_qa1,&nener1,&ikin1,          
           ne01,thicke1,emeini1,pslavsurf1,pmastsurf1,mortar1,clearini1,
           &nea,&neb,ielprop1,prop1,distmin1,ndesi1,nodedesi1,
 	  nobject1,&g01[indexg0],&dgdx1[indexdgdx],&iobject1,sti1,xener1,

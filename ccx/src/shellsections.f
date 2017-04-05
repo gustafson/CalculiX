@@ -274,15 +274,16 @@ c            else
 !     
             do j=istartset(iset),iendset(iset)
                if(ialset(j).gt.0) then
-                  if(lakon(ialset(j))(1:3).ne.'S8R') then
+                  if((lakon(ialset(j))(1:3).ne.'S8R').and.
+     &               (lakon(ialset(j))(1:2).ne.'S6')) then
                      write(*,*) 
      &           '*ERROR reading *SHELL SECTION: *SHELL SECTION'
                      write(*,*) 
      &                 '       with the option COMPOSITE can'
                      write(*,*) 
-     &                 '       only be used for S8R shell elements.'
+     &               '       only be used for S8R or S6 shell elements.'
                      write(*,*) '       Element ',ialset(j),
-     &                 ' is not a S8R shell element.'
+     &                 ' is not a S8R nor a S6 shell element.'
                      call exit(201)
                   endif
                   indexe=ipkon(ialset(j))
@@ -298,15 +299,16 @@ c            else
                   do
                      k=k-ialset(j)
                      if(k.ge.ialset(j-1)) exit
-                     if(lakon(k)(1:3).ne.'S8R') then
+                     if((lakon(k)(1:3).ne.'S8R').and.
+     &                  (lakon(k)(1:2).ne.'S6')) then
                         write(*,*) 
      &              '*ERROR reading *SHELL SECTION: *SHELL SECTION'
                         write(*,*) 
      &                       '    with the option COMPOSITE can'
                         write(*,*) 
-     &                    '       only be used for shell elements.'
+     &               '       only be used for S8R or S6 shell elements.'
                         write(*,*) '       Element ',k,
-     &                    ' is not a S8R shell element.'
+     &                    ' is not a S8R nor a S6 shell element.'
                         call exit(201)
                      endif
                      indexe=ipkon(k)

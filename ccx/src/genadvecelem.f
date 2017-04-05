@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine genadvecelem(inodesd,ipkon,ne,lakon,kon,nload,
-     &     sideload,nelemload,nkon)
+     &     sideload,nelemload,nkon,network)
 !
 !     generates elements simulating advection between network
 !     elements and structural faces
@@ -30,7 +30,7 @@
       integer inodesd(*),nnodesd,ipkon(*),ne,i,j,indexe,node,id,kon(*),
      &  nload,ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),
      &  nodef(8),nelemload(2,*),nope,jface,k,nopes,nkon,nelem,
-     &  nface
+     &  nface,network
 !
 !     nodes per face for hex elements
 !
@@ -74,7 +74,7 @@
 cccc
 c         if(lakon(i)(1:2).ne.'D ') cycle
          if(lakon(i)(1:1).ne.'D') cycle
-         if(lakon(i)(2:2).eq.' ') cycle
+         if((lakon(i)(2:2).eq.' ').or.(network.eq.1)) cycle
 cccc
          indexe=ipkon(i)
          do j=1,3,2
@@ -100,102 +100,96 @@ cccc
      &      (sideload(i)(3:4).eq.'FC')) then
             node=nelemload(2,i)
             call nident(inodesd,node,nnodesd,id)
-ccccc
-c            if(id.gt.0) then
-c               if(inodesd(id).eq.node) then
             if(id.gt.0) then
                if(inodesd(id).eq.node) cycle
             endif
-ccccc
-                  nelem=nelemload(1,i)
-                  indexe=ipkon(nelem)
-                  if(indexe.lt.0) cycle
+            nelem=nelemload(1,i)
+            indexe=ipkon(nelem)
+            if(indexe.lt.0) cycle
 !
-!                 new advection element is generated
+!           new advection element is generated
 !
-                  ne=ne+1
-                  ipkon(ne)=nkon
-                  lakon(ne)(1:7)='ESPRNGF'
-                  read(sideload(i)(2:2),'(i1)') jface
-!
-                  if(lakon(nelem)(4:4).eq.'2') then
-                     nopes=8
-                     nface=6
-                  elseif(lakon(nelem)(4:4).eq.'8') then
-                     nopes=4
-                     nface=6
-                  elseif(lakon(nelem)(4:5).eq.'10') then
-                     nopes=6
-                     nface=4
-                  elseif(lakon(nelem)(4:4).eq.'4') then
-                     nopes=3
-                     nface=4
-                  elseif(lakon(nelem)(4:5).eq.'15') then
-                     if(jface.le.2) then
-                        nopes=6
-                     else
-                        nopes=8
-                     endif
-                     nface=5
-                     nope=15
-                  elseif(lakon(nelem)(4:4).eq.'6') then
-                     if(jface.le.2) then
-                        nopes=3
-                     else
-                        nopes=4
-                     endif
-                     nface=5
-                     nope=6
-                  else
-                     cycle
-                  endif
-!
-!                 determining the nodes of the face
-!
-                  if(nface.eq.4) then
-                     do k=1,nopes
-                        nodef(k)=kon(indexe+ifacet(k,jface))
-                     enddo
-                  elseif(nface.eq.5) then
-                     if(nope.eq.6) then
-                        do k=1,nopes
-                           nodef(k)=kon(indexe+ifacew1(k,jface))
-                        enddo
-                     elseif(nope.eq.15) then
-                        do k=1,nopes
-                           nodef(k)=kon(indexe+ifacew2(k,jface))
-                        enddo
-                     endif
-                  elseif(nface.eq.6) then
-                     do k=1,nopes
-                        nodef(k)=kon(indexe+ifaceq(k,jface))
-                     enddo
-                  endif
-!
+            ne=ne+1
+            ipkon(ne)=nkon
+            lakon(ne)(1:7)='ESPRNGF'
+            read(sideload(i)(2:2),'(i1)') jface
+!     
+            if(lakon(nelem)(4:4).eq.'2') then
+               nopes=8
+               nface=6
+            elseif(lakon(nelem)(4:4).eq.'8') then
+               nopes=4
+               nface=6
+            elseif(lakon(nelem)(4:5).eq.'10') then
+               nopes=6
+               nface=4
+            elseif(lakon(nelem)(4:4).eq.'4') then
+               nopes=3
+               nface=4
+            elseif(lakon(nelem)(4:5).eq.'15') then
+               if(jface.le.2) then
+                  nopes=6
+               else
+                  nopes=8
+               endif
+               nface=5
+               nope=15
+            elseif(lakon(nelem)(4:4).eq.'6') then
+               if(jface.le.2) then
+                  nopes=3
+               else
+                  nopes=4
+               endif
+               nface=5
+               nope=6
+            else
+               cycle
+            endif
+!     
+!           determining the nodes of the face
+!     
+            if(nface.eq.4) then
+               do k=1,nopes
+                  nodef(k)=kon(indexe+ifacet(k,jface))
+               enddo
+            elseif(nface.eq.5) then
+               if(nope.eq.6) then
                   do k=1,nopes
-                     kon(nkon+k)=nodef(k)
+                     nodef(k)=kon(indexe+ifacew1(k,jface))
                   enddo
-                  nkon=nkon+nopes+1
-                  kon(nkon)=node
-!
-                  write(lakon(ne)(8:8),'(i1)') nopes
-!
-!                 copying the loading
-!
-                  nload=nload+1
-                  nelemload(1,nload)=ne
-!
-!                 pointer to the original load
-!
-                  nelemload(2,nload)=i
-                  sideload(nload)='                    '
-!
-!                 deactivating the original load
-!
-                  sideload(i)(1:1)=' '
-!
-c               endif
-c            endif
+               elseif(nope.eq.15) then
+                  do k=1,nopes
+                     nodef(k)=kon(indexe+ifacew2(k,jface))
+                  enddo
+               endif
+            elseif(nface.eq.6) then
+               do k=1,nopes
+                  nodef(k)=kon(indexe+ifaceq(k,jface))
+               enddo
+            endif
+!     
+            do k=1,nopes
+               kon(nkon+k)=nodef(k)
+            enddo
+            nkon=nkon+nopes+1
+            kon(nkon)=node
+!     
+            write(lakon(ne)(8:8),'(i1)') nopes
+!     
+!           copying the loading
+!     
+            nload=nload+1
+            nelemload(1,nload)=ne
+!     
+!           pointer to the original load
+!     
+            nelemload(2,nload)=i
+            sideload(nload)='                    '
+!     
+!           deactivating the original load
+!     
+            sideload(i)(1:1)=' '
+!     
          endif
       enddo
 !

@@ -37,7 +37,7 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
       icntrl,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,ntmat,npmat,
       norien,nam,nprint,mi[3],ntrans,ncs,namtot,ncmat,memmpc,ne1d,
       ne2d,nflow,*meminset=NULL,*rmeminset=NULL, *inp=NULL,ntie,
-      nener,nstate,nentries=15,ifreeinp,ikey,lincludefn,nslavs,
+      nener,nstate,nentries=16,ifreeinp,ikey,lincludefn,nslavs,
       nbody,ncharmax=1000000,*ipoinpc=NULL,ichangefriction=0,nkon,
       ifile,mcs,initialtemperature=0,nprop,mortar,ifacecount,
       nintpoint,infree[4],iheading=0,ichangesurfacebehavior=0; 
@@ -147,6 +147,17 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
       if(strcmp1(&buff[0],"*HEADING")==0){
 	  iheading=1;
       }
+
+      /* check for a *KINEMATIC or *DISTRIBUTING card and change
+         the asterisk into a C (is a "dependent" card of the 
+         *COUPLING card */
+
+      if((strcmp1(&buff[0],"*KINEMATIC")==0)||
+         ((strcmp1(&buff[0],"*DISTRIBUTING")==0)&&
+          (strcmp1(&buff[0],"*DISTRIBUTINGCOUPLING")!=0)))
+         {
+	  buff[0]='C';
+      }
 	  
       /* check for include statements */
 	  
@@ -214,6 +225,10 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
       }
       else if(strcmp1(&buff[0],"*CONTACTPAIR")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"CONTACTPAIR",
+                          nline,&ikey));
+			  }
+      else if(strcmp1(&buff[0],"*COUPLING")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"COUPLING",
                           nline,&ikey));
 			  }
       else if(strcmp1(&buff[0],"*CREEP")==0){

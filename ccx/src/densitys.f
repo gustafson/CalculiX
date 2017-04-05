@@ -35,20 +35,22 @@
       ntmat=0
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in densities: *DENSITY should be placed'
+         write(*,*) 
+     &      '*ERROR reading *DENSITY: *DENSITY should be placed'
          write(*,*) '  before all step definitions'
          call exit(201)
       endif
 !
       if(nmat.eq.0) then
-         write(*,*) '*ERROR in densities: *DENSITY should be preceded'
+         write(*,*) 
+     &    '*ERROR reading *DENSITY: *DENSITY should be preceded'
          write(*,*) '  by a *MATERIAL card'
          call exit(201)
       endif
 !
       do i=2,n
          write(*,*) 
-     &        '*WARNING in densities: parameter not recognized:'
+     &        '*WARNING reading *DENSITY: parameter not recognized:'
          write(*,*) '         ',
      &        textpart(i)(1:index(textpart(i),' ')-1)
          call inputwarning(inpc,ipoinpc,iline,
@@ -62,7 +64,7 @@
          ntmat=ntmat+1
          nrhcon(nmat)=ntmat
          if(ntmat.gt.ntmat_) then
-            write(*,*) '*ERROR in densities: increase ntmat_'
+            write(*,*) '*ERROR reading *DENSITY: increase ntmat_'
             call exit(201)
          endif
          read(textpart(1)(1:20),'(f20.0)',iostat=istat) 

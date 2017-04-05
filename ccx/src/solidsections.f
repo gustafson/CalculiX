@@ -102,12 +102,17 @@
 !
       if(orientation.eq.'                    ') then
          iorientation=0
-      elseif(nelcon(1,i).eq.2) then
-         write(*,*) '*INFO reading *SOLID SECTION: an orientation'
-         write(*,*) '      is for isotropic materials irrelevant'
-         call inputinfo(inpc,ipoinpc,iline,
-     &"*SOLID SECTION%")
-         iorientation=0
+c
+c      next lines were removed since some people use local systems
+c      to the the stresses stored in that system (e.g. cylindrical
+c      system)
+c
+c      elseif(nelcon(1,i).eq.2) then
+c         write(*,*) '*INFO reading *SOLID SECTION: an orientation'
+c         write(*,*) '      is for isotropic materials irrelevant'
+c         call inputinfo(inpc,ipoinpc,iline,
+c     &"*SOLID SECTION%")
+c         iorientation=0
       else
          do i=1,norien
             if(orname(i).eq.orientation) exit

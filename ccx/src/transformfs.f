@@ -76,7 +76,8 @@
                if(set(iset).eq.surfaceset) exit
             enddo
             if(iset.gt.nset) then
-               write(*,*) '*WARNING in faceprints: element surface ',
+               write(*,*) 
+     &             '*WARNING reading *TRANSFORMF: element surface ',
      &              surfaceset(1:ipos-1),' does not exist'
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &              ipoinp,inp,ipoinpc)
@@ -118,6 +119,9 @@
      &        sideload,xload,nload,nload_,iamload,
      &        iamplitude,nam,ntrans,idefload)
       enddo
+!     
+      call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &     ipoinp,inp,ipoinpc)
 !
       return
       end

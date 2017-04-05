@@ -26,7 +26,8 @@
      &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,springarea,
      &  plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,lakon,
      &  pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon,
-     &  ielprop,prop,iponoel,inoel)
+     &  ielprop,prop,iponoel,inoel,sti,xstateini,xstate,nstate_,
+     &  network)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -57,7 +58,7 @@
      &  nshcon(*),iinc,istep,jltyp,nfield,node,iflag,iscale,ielprop(*),
      &  nplkcon(0:ntmat_,*),nelcon(2,*),npmat_,ncmat_,i2,ipkon(*),
      &  iemchange,kon(*),mortar,nplicon(0:ntmat_,*),indexe,igauss,
-     &  iponoel(*),inoel(2,*)
+     &  iponoel(*),inoel(2,*),nstate_,network
 !
       real*8 co(3,*),xl(3,26),shp(4,26),xstiff(27,mi(1),*),
      &  s(60,60),w(3,3),ff(60),shpj(4,26),sinktemp,xs2(3,7),
@@ -70,7 +71,9 @@
      &  field,areaj,sax(60,60),ffax(60),coefmpc(*),tl2(8),
      &  voldl(0:mi(2),26),springarea(2,*),plkcon(0:2*npmat_,ntmat_,*),
      &  elcon(0:ncmat_,ntmat_,*),elconloc(21),pslavsurf(3,*),
-     &  pmastsurf(2,*),clearini(3,9,*),plicon(0:2*npmat_,ntmat_,*)
+     &  pmastsurf(2,*),clearini(3,9,*),plicon(0:2*npmat_,ntmat_,*),
+     &  sti(6,mi(1),*),xstate(nstate_,mi(1),*),
+     &  xstateini(nstate_,mi(1),*)
 !
       real*8 dtime,physcon(*)
 !
@@ -161,7 +164,8 @@ c            read(lakonl(8:8),'(i1)') nope
             nope=ichar(lakonl(8:8))-47
 c            nope=nope+1
          endif
-      elseif(lakonl(1:2).eq.'D ') then
+      elseif((lakonl(1:2).eq.'D ').or.
+     &       ((lakonl(1:1).eq.'D').and.(network.eq.1))) then
          nope=3
       endif
 !
@@ -320,7 +324,8 @@ c            nope=nope+1
      &              iinc,iponoel,inoel,ielprop,prop,ielmat,shcon,
      &              nshcon,rhcon,nrhcon,ntmat_,ipkon,kon,cocon,ncocon)
             endif
-         elseif(lakonl(1:2).eq.'D ') then
+         elseif((lakonl(1:2).eq.'D ').or.
+     &          ((lakonl(1:1).eq.'D').and.(network.eq.1))) then
             do i=1,3
                do j=1,i
                   s(i,j)=0.d0
@@ -580,7 +585,8 @@ c            nope=nope+1
                      call dflux(xload(1,id),t1l,istep,iinc,timeend,
      &                 nelem,kk,pgauss,jltyp,temp,press,sideload(id),
      &                 areaj,vold,co,lakonl,konl,ipompc,nodempc,coefmpc,
-     &                 nmpc,ikmpc,ilmpc,iscale,mi)
+     &                 nmpc,ikmpc,ilmpc,iscale,mi,sti,xstateini,xstate,
+     &                 nstate_,dtime)
                      if((nmethod.eq.1).and.(iscale.ne.0))
      &                    xload(1,id)=xloadold(1,id)+
      &                   (xload(1,id)-xloadold(1,id))*reltime
@@ -764,7 +770,8 @@ c                read(sideload(id)(2:2),'(i1)') jltyp
                    call dflux(xload(1,id),temp,istep,iinc,timeend,
      &               nelem,i,coords,jltyp,temp,press,sideload(id),
      &               areaj,vold,co,lakonl,konl,
-     &               ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,iscale,mi)
+     &               ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,iscale,mi,
+     &               sti,xstateini,xstate,nstate_,dtime)
                    if((nmethod.eq.1).and.(iscale.ne.0))
      &                   xload(1,id)=xloadold(1,id)+
      &                  (xload(1,id)-xloadold(1,id))*reltime

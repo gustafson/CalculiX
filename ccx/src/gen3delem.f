@@ -25,7 +25,8 @@
      &  nload,ithermal,ntrans,co,ixfree,ikfree,inoelfree,iponoelmax,
      &  iperturb,tinc,tper,tmin,tmax,ctrl,typeboun,nmethod,nset,set,
      &  istartset,iendset,ialset,prop,ielprop,vold,mi,nkon,ielmat,
-     &  icomposite,t0g,t1g,idefforc,iamt1)
+     &  icomposite,t0g,t1g,idefforc,iamt1,orname,orab,norien,norien_,
+     &  ielorien)
 !
 !     generates three-dimensional elements:
 !         for plane stress
@@ -37,28 +38,28 @@
 !
       character*1 typeboun(*)
       character*8 lakon(*)
-      character*20 labmpc(*),sideload(*),label
+      character*20 labmpc(*),sideload(*)
+      character*80 orname(*)
       character*81 set(*)
 !
       integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,ikmpc(*),
-     &  ilmpc(*),kon(*),ipkon(*),ne,mpc,indexe,i,j,k,node,idof,
-     &  id,mpcfreeold,ikboun(*),ilboun(*),nboun,nboun_,kflag,idummy,
-     &  iterm(500),nterm,neigh(7,8),l,m,nodeboun(*),ndirboun(*),nk,
-     &  nk_,index,iponoel(*),inoel(3,*),inoelfree,istep,nmpcold,
+     &  ilmpc(*),kon(*),ipkon(*),ne,indexe,i,j,node,
+     &  ikboun(*),ilboun(*),nboun,nboun_,
+     &  neigh(7,8),nodeboun(*),ndirboun(*),nk,
+     &  nk_,iponoel(*),inoel(3,*),inoelfree,istep,nmpcold,
      &  ikforc(*),ilforc(*),nodeforc(2,*),ndirforc(*),iamforc(*),
      &  nforc,nforc_,ithermal(2),nload,iamboun(*),
      &  ntrans,inotr(2,*),nam,iponoelmax,iperturb,numnod,itransaxial,
      &  rig(*),nmethod,nset,istartset(*),iendset(*),ialset(*),nkon,
-     &  ielprop(*),idir,indexref,indexold,idofold,idold,indexnew,
-     &  idofnew,idnew,ksol,lsol,nmpc0,nmpc01,nmpcdif,mi(*),nope,
+     &  ielprop(*),mi(*),nope,
      &  ielmat(mi(3),*),iponor(2,*),knor(*),ixfree,ikfree,icomposite,
-     &  idefforc(*),idim,iamt1(*)
+     &  idefforc(*),idim,iamt1(*),norien,norien_,ielorien(mi(3),*)
 !
       real*8 coefmpc(*),thicke(mi(3),*),xnor(*),thickn(2,*),tinc,
-     &  tper,tmin,t0g(2,*),t1g(2,*),e1(3),e2(3),xt1(3),
-     &  tmax,offset(2,*),t0(*),t1(*),xforc(*),trab(7,*),co(3,*),b(3,3),
-     &  xboun(*),pi,ctrl(*),prop(*),vold(0:mi(2),*),xlag(3,20),
-     &  xeul(3,20),a(3,3),xi,et,ze,coloc(3,8),xj
+     &  tper,tmin,t0g(2,*),t1g(2,*),e1(3),e2(3),xt1(3),orab(7,*),
+     &  tmax,offset(2,*),t0(*),t1(*),xforc(*),trab(7,*),co(3,*),
+     &  xboun(*),pi,ctrl(*),prop(*),vold(0:mi(2),*),
+     &  coloc(3,8)
 !
       data neigh /1,9,2,12,4,17,5,2,9,1,10,3,18,6,
      &            3,11,4,10,2,19,7,4,11,3,12,1,20,8,
@@ -153,33 +154,6 @@
                enddo
             endif
          enddo
-c!
-c!        checking whether any rotational degrees of freedom are fixed
-c!        by SPC's, MPC's or loaded by bending moments or torques
-c!        in the end, rig(i)=0 if no rigid knot is defined in node i,
-c!        else rig(i)=the rotational node of the knot. The value -1 is
-c!        a dummy. 
-c!
-c!        only for nonlinear dynamic calculations
-c!
-c         if((nmethod.eq.4).and.(iperturb.gt.1)) then
-c            do i=1,nboun
-c               if(ndirboun(i).gt.4) rig(nodeboun(i))=-1
-c            enddo
-c            do i=1,nforc
-c               if(ndirforc(i).gt.4) rig(nodeforc(1,i))=-1
-c            enddo
-c            do i=1,nmpc
-c               index=ipompc(i)
-c               do
-c                  if(index.eq.0) exit
-c                  if(nodempc(2,index).gt.4) then
-c                     rig(nodempc(1,index))=-1
-c                  endif
-c                 index=nodempc(3,index)
-c              enddo
-c            enddo
-c         endif
 !
 !     calculating the normals in nodes belonging to shells/beams
 !
@@ -244,7 +218,8 @@ c                  endif
      &           nboun_,nodeboun,ndirboun,xboun,iamboun,typeboun,ipompc,
      &           nodempc,coefmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,
      &           nk,nk_,co,rig,nmethod,iperturb,ithermal,mi,nam,
-     &           icomposite,ielmat,vold)
+     &           icomposite,ielmat,vold,orname,orab,norien,norien_,
+     &           ielorien)
 !            
               elseif((lakon(i)(1:1).eq.'B').or.
      &               (lakon(i)(1:1).eq.'T')) then
@@ -333,10 +308,10 @@ c     Bernhardi end
          if(inoelfree.ne.0) then
             call fillknotmpc(co,ipompc,nodempc,coefmpc,labmpc,
      &           nmpc,nmpcold,mpcfree,idim,e1,e2,xt1)
-            call gen3dprop(prop,ielprop,iponoel,inoel,iponoelmax,kon,
-     &           ipkon,lakon,ne,iponor,xnor,knor,ipompc,nodempc,coefmpc,
-     &           nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,rig,ntrans,inotr,
-     &           trab,nam,nk,nk_,co,nmethod,iperturb)
+c            call gen3dprop(prop,ielprop,iponoel,inoel,iponoelmax,kon,
+c     &           ipkon,lakon,ne,iponor,xnor,knor,ipompc,nodempc,coefmpc,
+c     &           nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,rig,ntrans,inotr,
+c     &           trab,nam,nk,nk_,co,nmethod,iperturb)
          endif
 !     
       endif

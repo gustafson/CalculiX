@@ -39,10 +39,10 @@
       character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,kon(*),ipkon(*),
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,
+     &     ielprop(*),nodef(*),idirf(*),index,iflag,
      &     inv,id,numf,npu,i,mi(*),iaxial
 !     
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),cp,r,dvi,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),cp,r,dvi,
      &     p1,p2,physcon(*),ttime,time,xmach,kappa,
      &     xpu(100),ypu(100),Qred,p1mp2zp1,T1,scal,T2
 !     
@@ -79,12 +79,12 @@
 !     
          if(p1.ge.p2) then
             inv=1
-            T1=v(0,node1)+physcon(1)
+            T1=v(0,node1)-physcon(1)
          else
             inv=-1
             p1=v(2,node2)
             p2=v(2,node1)
-            T1=v(0,node2)+physcon(1)
+            T1=v(0,node2)-physcon(1)
          endif
 !     
          p1mp2zp1=(P1-P2)/P1
@@ -115,7 +115,7 @@
 !     
                inv=1
                xflow=v(1,nodem)*iaxial
-               T1=v(0,node1)+physcon(1)
+               T1=v(0,node1)-physcon(1)
                nodef(1)=node1
                nodef(2)=node1
                nodef(3)=nodem
@@ -126,7 +126,7 @@
                inv=-1
                p1=v(2,node2)
                p2=v(2,node1) 
-               T1=v(0,node2)+physcon(1)
+               T1=v(0,node2)-physcon(1)
                xflow=-v(1,nodem)*iaxial
                nodef(1)=node2
                nodef(2)=node2
@@ -178,8 +178,8 @@
 !     
             inv=1
             xflow=v(1,nodem)*iaxial
-            T1=v(0,node1)+physcon(1)
-            T2=v(0,node2)+physcon(1)
+            T1=v(0,node1)-physcon(1)
+            T2=v(0,node2)-physcon(1)
             nodef(1)=node1
             nodef(2)=node1
             nodef(3)=nodem
@@ -190,8 +190,8 @@
             inv=-1
             p1=v(2,node2)
             p2=v(2,node1) 
-            T1=v(0,node2)+physcon(1)
-            T2=v(0,node1)+physcon(1)
+            T1=v(0,node2)-physcon(1)
+            T2=v(0,node1)-physcon(1)
             xflow=-v(1,nodem)*iaxial
             nodef(1)=node2
             nodef(2)=node2
@@ -206,23 +206,23 @@
  55      FORMAT(1X,A,I6,A,I6,A,e11.4,A,A,e11.4,A)
 !
          if(inv.eq.1) then
-            write(1,56)'       Inlet node  ',node1,':   Tt1=',T1,
+            write(1,56)'       Inlet node ',node1,':   Tt1=',T1,
      &           ', Ts1=',T1,', Pt1=',P1
          
             write(1,*)'             Element ',nelem,lakon(nelem)
             write(1,57) 'M = ',xmach
 !
-            write(1,56)'       Outlet node ',node2,':   Tt2=',T2,
+            write(1,56)'      Outlet node ',node2,':   Tt2=',T2,
      &           ', Ts2=',T2,', Pt2=',P2
 !     
          else if(inv.eq.-1) then
-            write(1,56)'       Inlet node  ',node2,':    Tt1=',T1,
+            write(1,56)'       Inlet node ',node2,':    Tt1=',T1,
      &           ', Ts1=',T1,', Pt1=',P1
      &          
             write(1,*)'             Element ',nelem,lakon(nelem)
             write(1,57) 'M = ',xmach
 !
-            write(1,56)'       Outlet node ',node1,':    Tt2=',T2,
+            write(1,56)'      Outlet node ',node1,':    Tt2=',T2,
      &           ', Ts2=',T2,', Pt2=',P2
 !               
          endif

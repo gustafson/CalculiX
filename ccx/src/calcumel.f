@@ -26,7 +26,7 @@
       integer nef,i,nshcon(*),imat,ithermal,ntmat_,mi(*),
      &  ielmat(mi(3),*)
 !
-      real*8 t1l,vel(nef,0:5),dvi,shcon(0:3,ntmat_,*),umel(*)
+      real*8 t1l,vel(nef,0:7),dvi,shcon(0:3,ntmat_,*),umel(*)
 !     
 c$omp parallel default(none)
 c$omp& shared(nef,vel,ielmat,shcon,nshcon,ntmat_,ithermal,umel)

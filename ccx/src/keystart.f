@@ -37,10 +37,12 @@
 !     11) *SURFACE INTERACTION
 !     12) *INITIAL CONDITIONS
 !     13) *AMPLITUDE
-!     14) everything else
+!     14) *CONTACT PAIR
+!     15) *COUPLING
+!     16) everything else
 !
       integer nentries
-      parameter(nentries=15)
+      parameter(nentries=16)
 !
       character*20 name,nameref(nentries)
 !
@@ -53,11 +55,11 @@
      &              'ELSET','SURFACE','TRANSFORM','MATERIAL',
      &              'ORIENTATION','TIE','SURFACEINTERACTION',
      &              'INITIALCONDITIONS','AMPLITUDE',
-     &              'CONTACTPAIR','REST'/
+     &              'CONTACTPAIR','COUPLING','REST'/
 !
 !     length of the names in field nameref
 !
-      data namelen /12,4,7,4,5,7,9,8,11,3,18,17,9,11,4/
+      data namelen /12,4,7,4,5,7,9,8,11,3,18,17,9,11,8,4/
 !
       do i=1,nentries
          if(name(1:namelen(i)).eq.nameref(i)(1:namelen(i))) then

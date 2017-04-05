@@ -27,8 +27,9 @@ static char *lakonf1;
 static ITG num_cpus,*nef1,*ipnei1,*neifa1,*neiel1,*jq1,*irow1,*ielfa1,
     *ifabou1,*neq1,*nzs1,*neij1;
 
-static double *vfa1,*area1,*advfa1,*xlet1,*cosa1,*volume1,*au1=NULL,*ad1=NULL,
-    *ap1,*xle1,*b1=NULL,*xxn1,*hfa1,*gradpel1,*bp1,*xxi1,*xlen1,*cosb1;
+static double *vfa1,*area1,*advfa1,*xlet1,*cosa1,*volume1,*au1,*ad1,
+    *ap1,*xle1,*b1,*xxn1,*hfa1,*gradpel1,*bp1,*xxi1,*xlen1,*cosb1,
+    *xxicn1;
 
 void rhspmain(ITG *nef,char *lakonf,ITG *ipnei,
              ITG *neifa,ITG *neiel,double *vfa,double *area,double *advfa,
@@ -37,7 +38,7 @@ void rhspmain(ITG *nef,char *lakonf,ITG *ipnei,
 	     double *xle,double *b,double *xxn,ITG *neq,
 	     ITG *nzs,double *hfa,double *gradpel,
 	     double *bp,double *xxi,ITG *neij,double *xlen,
-             ITG *iatleastonepressurebc){
+	     ITG *iatleastonepressurebc,double *xxicn){
 
     ITG i,j;
       
@@ -96,12 +97,6 @@ void rhspmain(ITG *nef,char *lakonf,ITG *ipnei,
     
     pthread_t tid[num_cpus];
 
-    /* allocating fields for lhs and rhs matrix */
-
-    NNEW(ad1,double,num_cpus**neq);
-    NNEW(au1,double,(long long)num_cpus**nzs);
-    NNEW(b1,double,num_cpus**neq);
-
     /* calculating the stiffness and/or mass matrix 
        (symmetric part) */
 
@@ -109,7 +104,7 @@ void rhspmain(ITG *nef,char *lakonf,ITG *ipnei,
     vfa1=vfa;area1=area;advfa1=advfa;xlet1=xlet,cosa1=cosa;volume1=volume;
     jq1=jq;irow1=irow;ap1=ap;ielfa1=ielfa;ifabou1=ifabou;xle1=xle;
     xxn1=xxn;neq1=neq;nzs1=nzs;hfa1=hfa;gradpel1=gradpel;bp1=bp;xxi1=xxi;
-    neij1=neij;xlen1=xlen;
+    neij1=neij;xlen1=xlen;ad1=ad;au1=au;b1=b;xxicn1=xxicn;
     
     /* create threads and wait */
     
@@ -121,42 +116,6 @@ void rhspmain(ITG *nef,char *lakonf,ITG *ipnei,
     for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
     
     SFREE(ithread);
-
-    /* copying and accumulating the stiffnes and/or mass matrix */
-
-#pragma omp parallel \
-    default(none) \
-    shared(neq,ad,ad1,num_cpus,nzs,au,au1,b,b1) \
-    private(i,j)
-    {
-	#pragma omp for
-	for(i=0;i<*neq;i++){
-	    ad[i]=ad1[i];
-	    for(j=1;j<num_cpus;j++){
-		ad[i]+=ad1[i+j**neq];
-	    }
-	}
-	
-	#pragma omp for
-	for(i=0;i<*nzs;i++){
-	    au[i]=au1[i];
-	    for(j=1;j<num_cpus;j++){
-		au[i]+=au1[i+(long long)j**nzs];
-	    }
-	}
-	
-	#pragma omp for
-	for(i=0;i<*neq;i++){
-	    b[i]=b1[i];
-	    for(j=1;j<num_cpus;j++){
-		b[i]+=b1[i+j**neq];
-	    }
-	}
-    }
-
-    SFREE(ad1);
-    SFREE(au1);
-    SFREE(b1);
 
 /*  at least one pressure bc is needed. If none is applied,
     the last dof is set to 0 
@@ -190,9 +149,11 @@ void *rhspmt(ITG *i){
     if((*i==num_cpus-1)&&(nefb<*nef1)) nefb=*nef1;
 
     FORTRAN(rhsp,(nef1,lakonf1,ipnei1,neifa1,neiel1,vfa1,area1,
-			 advfa1,xlet1,cosa1,volume1,&au1[indexau],&ad1[indexad],
-                         jq1,irow1,ap1,ielfa1,ifabou1,xle1,&b1[indexb],xxn1,neq1,nzs1,
-                         hfa1,gradpel1,bp1,xxi1,neij1,xlen1,&nefa,&nefb));
+		  advfa1,xlet1,cosa1,volume1,au1,ad1,
+		  jq1,irow1,ap1,ielfa1,ifabou1,xle1,b1,xxn1,
+		  neq1,nzs1,
+		  hfa1,gradpel1,bp1,xxi1,neij1,xlen1,&nefa,&nefb,
+		  xxicn1));
 
     return NULL;
 }

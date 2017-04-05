@@ -62,7 +62,8 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	     char* tieset,ITG* ntie,ITG *imddof,ITG *nmddof,
 	     ITG *imdnode,ITG *nmdnode,ITG *imdboun,ITG *nmdboun,
   	     ITG *imdmpc,ITG *nmdmpc, ITG **izdofp, ITG *nzdof,ITG *nherm,
-	     double *xmr,double *xmi,char *typeboun,ITG *ielprop,double *prop){
+	     double *xmr,double *xmi,char *typeboun,ITG *ielprop,double *prop,
+             char *orname){
 
   /* calls the Arnoldi Package (ARPACK) for cyclic symmetry calculations */
   
@@ -74,7 +75,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
         *inocs=NULL,*ielcs=NULL,jj,l1,l2,is,nlabel,*nshcon=NULL,
         nodeleft,*noderight=NULL,numnodes,ileft,kflag=2,itr,locdir,
         neqh,j1,nodenew,mt=mi[1]+1,istep=1,iinc=1,iit=-1,
-	tint=-1,tnstart=-1,tnend=-1,tint2=-1,
+	tint=-1,tnstart=-1,tnend=-1,tint2=-1,network=0,
 	noderight_,*izdof=*izdofp,iload,iforc,*iznode=NULL,nznode,ll,ne0,
 	icfd=0,*inomat=NULL,mortar=0,*islavact=NULL,
 	*islavnode=NULL,*nslavnode=NULL,*islavsurf=NULL,
@@ -534,7 +535,8 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
               &ne0,xforc,nforc,thicke,shcon,nshcon,
               sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	      islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,inoel);
+	      islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
+	      inoel,nener,orname,&network);
 	    
 	}
 	SFREE(eei);

@@ -27,7 +27,7 @@
       integer nface,i,nshcon(2,*),imat,ntmat_,mi(*),
      &  ielmat(mi(3),*),ielfa(4,*)
 !
-      real*8 t1l,vfa(0:5,*),cp,shcon(0:3,ntmat_,*),cvfa(*),physcon(*)
+      real*8 t1l,vfa(0:7,*),cp,shcon(0:3,ntmat_,*),cvfa(*),physcon(*)
 !     
       do i=1,nface
          t1l=vfa(0,i)

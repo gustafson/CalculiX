@@ -25,7 +25,7 @@
 !
       integer nface,ielfa(4,*),ifabou(*),i,iel1,iel2,nef
 !
-      real*8 xrlfa(3,*),vel(nef,0:5),vfa(0:5,*),xboun(*),xl1
+      real*8 xrlfa(3,*),vel(nef,0:7),vfa(0:7,*),xboun(*),xl1
 !     
 c      write(*,*) 'extrapolate_pel ',vel(1,4),vel(2,4)
 c$omp parallel default(none)

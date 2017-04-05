@@ -72,7 +72,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	     char *tieset,double *cs,ITG *nintpoint,ITG *mortar,
              ITG *ifacecount,ITG **islavsurfp,double **pslavsurfp,
 	     double **clearinip,ITG *nmat,char *typeboun,
-             ITG *ielprop,double *prop){
+	    ITG *ielprop,double *prop,char *orname){
 
   /* calls the Arnoldi Package (ARPACK) */
   
@@ -91,7 +91,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     mpcfree,memmpc_,icascade,maxlenmpc,iit=-1,*irow=NULL,nherm=1,
     icfd=0,*inomat=NULL,*ipkon=NULL,*kon=NULL,*ielmat=NULL,*ielorien=NULL,
     *islavact=NULL,maxprevcontel,iex,nslavs_prev_step,icutb=0,
-    iflagact=0,*islavsurfold=NULL,ialeatoric=0,kscale=1,
+    iflagact=0,*islavsurfold=NULL,ialeatoric=0,kscale=1,network=0,
     *iponoel=NULL,*inoel=NULL;
 
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,
@@ -333,7 +333,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		 labmpc,nk,&memmpc_,&icascade,&maxlenmpc,
 		 kon,ipkon,lakon,ne,nactdof,icol,jq,&irow,isolver,
 		 neq,nzs,nmethod,ithermal,iperturb,mass,mi,ics,cs,
-		 mcs,mortar,typeboun,&iit);
+		 mcs,mortar,typeboun,&iit,&network);
       }
   }
 
@@ -381,7 +381,8 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	     &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 	     sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	     mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	     islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
+	     islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+             inoel,nener,orname,&network);
   }else{
      results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	     elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -399,7 +400,8 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	     &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 	     sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	     mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	     islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
+	     islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+             inoel,nener,orname,&network);
   }
   SFREE(f);SFREE(v);SFREE(fn);SFREE(stx);if(*ithermal>1)SFREE(qfx);SFREE(inum);
   iout=1;
@@ -436,7 +438,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
               xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
 	      pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
-              iponoel,inoel);
+	      iponoel,inoel,&network);
   }
   else{
       mafillsmmain(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -455,7 +457,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
               xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
 	      pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
-              iponoel,inoel);
+	      iponoel,inoel,&network);
 
       if(nasym==1){
 	  RENEW(au,double,nzs[2]+nzs[1]);
@@ -480,7 +482,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
                   xstateini,xstate,thicke,
                   integerglob,doubleglob,tieset,istartset,iendset,
 		  ialset,ntie,&nasym,pslavsurf,pmastsurf,mortar,clearini,
-		  ielprop,prop,&ne0,&kscale,iponoel,inoel));
+		  ielprop,prop,&ne0,&kscale,iponoel,inoel,&network));
       }
   }
 
@@ -897,7 +899,8 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);}
+	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+              inoel,nener,orname,&network);}
     else{
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	      stx,elcon,
@@ -916,7 +919,8 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      &ne0,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
+	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+              inoel,nener,orname,&network);
     }
     SFREE(eei);
     if(*nener==1){

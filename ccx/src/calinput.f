@@ -69,7 +69,7 @@
       logical boun_flag,cload_flag,dload_flag,temp_flag,elprint_flag,
      &  nodeprint_flag,elfile_flag,nodefile_flag,contactfile_flag,
      &  dflux_flag,cflux_flag,film_flag,radiate_flag,out3d,
-     &  solid,faceprint_flag,contactprint_flag,pretension
+     &  solid,sectionprint_flag,contactprint_flag,pretension
 !
       character*1 typeboun(*),inpc(*)
       character*3 output
@@ -125,7 +125,7 @@
       save solid,ianisoplas,out3d,pretension
 !
       integer nentries
-      parameter(nentries=15)
+      parameter(nentries=16)
 !
       newstep=0
       iviewfile=0
@@ -171,7 +171,7 @@
       temp_flag=.false.
       elprint_flag=.false.
       nodeprint_flag=.false.
-      faceprint_flag=.false.
+      sectionprint_flag=.false.
       contactprint_flag=.false.
       contactfile_flag=.false.
       elfile_flag=.false.
@@ -298,14 +298,15 @@ c         iaxial=0
      &           iperturb,isolver,
      &           istep,istat,n,tinc,tper,tmin,tmax,idrct,ithermal,iline,
      &           ipol,inl,ipoinp,inp,ipoinpc,alpha,ctrl,iexpl,tincf,
-     &           ttime)
+     &           ttime,physcon)
 !
          elseif(textpart(1)(1:6).eq.'*CFLUX') then
             call cfluxs(inpc,textpart,set,istartset,iendset,
      &        ialset,nset,nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &        amname,nam,ntrans,trab,inotr,co,ikforc,ilforc,nk,
      &        cflux_flag,istep,istat,n,iline,ipol,inl,ipoinp,inp,nam_,
-     &        namtot_,namta,amta,iaxial,ipoinpc,idefforc)
+     &        namtot_,namta,amta,iaxial,ipoinpc,idefforc,ipompc,nodempc,
+     &        nmpc,ikmpc,ilmpc,labmpc)
             cflux_flag=.true.
 !
          elseif(textpart(1)(1:15).eq.'*CHANGEFRICTION') then
@@ -346,7 +347,8 @@ c         iaxial=0
      &        iamforc,amname,nam,ntrans,trab,inotr,co,ikforc,ilforc,
      &        nk,cload_flag,istep,istat,n,iline,ipol,inl,ipoinp,inp,
      &        nam_,namtot_,namta,amta,nmethod,iaxial,iperturb,ipoinpc,
-     &        maxsectors,idefforc)
+     &        maxsectors,idefforc,ipompc,nodempc,
+     &        nmpc,ikmpc,ilmpc,labmpc)
             cload_flag=.true.
 !
          elseif(textpart(1)(1:17).eq.'*COMPLEXFREQUENCY') then
@@ -403,6 +405,15 @@ c         iaxial=0
      &           istep,istat,n,tinc,tper,tmin,tmax,idrct,ithermal,iline,
      &           ipol,inl,ipoinp,inp,ipoinpc,alpha,ctrl,iexpl,tincf,
      &           ttime,nener)
+!
+         elseif(textpart(1)(1:9).eq.'*COUPLING')
+     &           then
+            call couplings(inpc,textpart,set,istartset,iendset,
+     &        ialset,nset,nboun,nk,ipompc,nodempc,coefmpc,nmpc,nmpc_,
+     &        mpcfree,ikboun,ikmpc,ilmpc,co,labmpc,istat,n,iline,ipol,
+     &        inl,ipoinp,inp,ipoinpc,norien,orname,orab,irstrt,ipkon,
+     &        kon,lakon,istep,ics,dcs,nk_,nboun_,nodeboun,ndirboun,
+     &        typeboun,ilboun,xboun)
 !
          elseif(textpart(1)(1:6).eq.'*CREEP') then
             call creeps(inpc,textpart,nelcon,imat,ntmat_,npmat_,
@@ -570,12 +581,12 @@ c
      &        alzero,imat,ntmat_,irstrt,istep,istat,n,iline,
      &        ipol,inl,ipoinp,inp,ipoinpc)
 !
-         elseif(textpart(1)(1:10).eq.'*FACEPRINT') then
-            call faceprints(inpc,textpart,set,istartset,iendset,ialset,
-     &        nset,nset_,nalset,nprint,nprint_,jout,
-     &        prlab,prset,faceprint_flag,ithermal,istep,istat,n,iline,
+         elseif(textpart(1)(1:13).eq.'*SECTIONPRINT') then
+            call sectionprints(inpc,textpart,set,istartset,iendset,
+     &        ialset,nset,nset_,nalset,nprint,nprint_,jout,prlab,
+     &        prset,sectionprint_flag,ithermal,istep,istat,n,iline,
      &        ipol,inl,ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc,cfd)
-            faceprint_flag=.true.
+            sectionprint_flag=.true.
 !
          elseif(textpart(1)(1:5).eq.'*FILM') then
             call films(inpc,textpart,set,istartset,iendset,
@@ -625,6 +636,11 @@ c
      &           imat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc,nstate_)
 !
+         elseif(textpart(1)(1:6).eq.'*GREEN') then
+            call greens(inpc,textpart,nmethod,iperturb,
+     &           isolver,istep,istat,n,iline,ipol,inl,ipoinp,inp,
+     &           ithermal,ipoinpc)
+!
          elseif(textpart(1)(1:8).eq.'*HEADING') then
             call headings(inpc,textpart,istat,n,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc,heading,istep,irstrt)
@@ -661,6 +677,12 @@ c
      &           ialset,nset,nelemload,sideload,xload,nload,nload_,
      &           iamload,lakon,ne,istep,istat,n,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc,idefload,nam)
+!
+         elseif(textpart(1)(1:5).eq.'*MASS') then
+            call masss(inpc,textpart,nrhcon,nmat,ntmat_,
+     &        rhcon,matname,irstrt,istep,istat,n,iline,ipol,
+     &        inl,ipoinp,inp,nmat_,set,istartset,iendset,ialset,
+     &        nset,ielmat,ielorien,ipoinpc,mi)
 !
          elseif(textpart(1)(1:9).eq.'*MATERIAL') then
             call materials(inpc,textpart,matname,nmat,nmat_,
@@ -778,6 +800,10 @@ c
      &        namtot_,namta,amta,ipoinpc,mi)
             radiate_flag=.true.
 !
+         elseif(textpart(1)(1:12).eq.'*RANDOMFIELD') then
+            call randomfields(inpc,textpart,istep,istat,n,iline,
+     &        ipol,inl,ipoinp,inp,ipoinpc,nener,physcon)        
+!
          elseif(textpart(1)(1:8).eq.'*RESTART') then
             call restarts(istep,nset,nload,nforc, nboun,nk,ne,
      &           nmpc,nalset,nmat,ntmat_,npmat_,norien,nam,nprint,
@@ -831,7 +857,7 @@ c
          elseif(textpart(1)(1:12).eq.'*SENSITIVITY') then
             call sensitivitys(inpc,textpart,nmethod,
      &        istep,istat,n,iline,ipol,inl,
-     &        ipoinp,inp,tieset,ipoinpc,ntie)
+     &        ipoinp,inp,tieset,ipoinpc,ntie,tinc,tper,tmin,tmax,tincf)
 !
          elseif(textpart(1)(1:13).eq.'*SHELLSECTION') then
             call shellsections(inpc,textpart,set,istartset,iendset,
@@ -862,7 +888,7 @@ c
      &        plicon,nplicon,
      &        ncmat_,elcon,matname,irstrt,istep,istat,n,iline,ipol,
      &        inl,ipoinp,inp,nmat_,set,istartset,iendset,ialset,
-     &        nset,ielmat,ielorien,ipoinpc,mi)
+     &        nset,ielmat,ielorien,ipoinpc,mi,norien,orname)
 !
          elseif(textpart(1)(1:7).eq.'*STATIC') then
             call statics(inpc,textpart,nmethod,iperturb,isolver,istep,
@@ -882,7 +908,7 @@ c
             call steps(inpc,textpart,iperturb,iprestr,nbody,nforc,
      &                 nload,ithermal,t0,t1,nk,irstrt,istep,istat,n,
      &                 jmax,ctrl,iline,ipol,inl,ipoinp,inp,newstep,
-     &                 ipoinpc,physcon)
+     &                 ipoinpc,network)
 !
          elseif(textpart(1)(1:9).eq.'*SUBMODEL') then
             call submodels(inpc,textpart,set,istartset,iendset,ialset,
@@ -1059,7 +1085,8 @@ c
      &  nload,ithermal,ntrans,co,ixfree,ikfree,inoelfree,iponoelmax,
      &  iperturb,tinc,tper,tmin,tmax,ctrl,typeboun,nmethod,nset,set,
      &  istartset,iendset,ialset,prop,ielprop,vold,mi,nkon,ielmat,
-     &  icomposite,t0g,t1g,idefforc,iamt1)
+     &  icomposite,t0g,t1g,idefforc,iamt1,orname,orab,norien,norien_,
+     &  ielorien)
 !
 !     New multistage Routine Call
 !
@@ -1304,7 +1331,8 @@ c      if((ithermal(1).le.1).and.(nmethod.le.7)) then
 !     check whether a *FLUID CONSTANTS card was used for 
 !     3D compressible fluid calculations
 !
-      if((cfd.eq.1).or.(network.eq.1)) then
+c      if((cfd.eq.1).or.(network.eq.1)) then
+      if((cfd.eq.1).or.(network.gt.0)) then
          ierror=0
          do i=1,nmat
             if(nshcon(i).ne.0) then

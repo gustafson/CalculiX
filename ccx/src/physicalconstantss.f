@@ -21,6 +21,16 @@
 !
 !     reading the input deck: *PHYSICAL CONSTANTS
 !
+!     physcon(1): absolute zero temperature
+!            (2): Stefan-Boltzmann constant
+!            (3): Newton gravity constant
+!            (4): Static temperature at infinity (CFD)
+!            (5): Norm of the velocity vector at infinity (CFD)
+!            (6): Static pressure at infinity (CFD)
+!            (7): Density at infinity (CFD)
+!            (8): Length of the computational domain (CFD)
+!            (9): perturbation flag (CFD)
+!
       implicit none
 !
       character*1 inpc(*)

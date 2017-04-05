@@ -31,7 +31,7 @@ void mastruct(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	      ITG *ikmpc, ITG *ilmpc,ITG *ipointer, ITG *nzs, 
               ITG *nmethod,ITG *ithermal, ITG *ikboun, ITG *ilboun, 
               ITG *iperturb, ITG *mi, ITG *mortar, char *typeboun,
-              char *labmpc, ITG *iit, ITG *icascade){
+              char *labmpc, ITG *iit, ITG *icascade,ITG *network){
 
   /* determines the structure of the thermo-mechanical matrices;
      (i.e. the location of the nonzeros */
@@ -131,7 +131,8 @@ void mastruct(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		      lakonl[0]=lakon[8*i+7];
 		      nope=atoi(lakonl)+1;
 		  }
-	      }else if (strcmp1(&lakon[8*i],"D ")==0){
+	      }else if ((strcmp1(&lakon[8*i],"D ")==0)||
+                        ((strcmp1(&lakon[8*i],"D")==0)&&(*network==1))){
 		  
 		  /* check for entry or exit element */
 		  
@@ -498,7 +499,8 @@ void mastruct(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	      lakonl[0]=lakon[8*i+7];
 	      nope=atoi(lakonl)+1;
 	  }
-      }else if (strcmp1(&lakon[8*i],"D ")==0){
+      }else if ((strcmp1(&lakon[8*i],"D ")==0)||
+                ((strcmp1(&lakon[8*i],"D")==0)&&(*network==1))){
 
 	  /* check for entry or exit element */
 

@@ -40,11 +40,11 @@
       character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,iaxial,
+     &     ielprop(*),nodef(*),idirf(*),index,iflag,iaxial,
      &     ipkon(*),kon(*),kgas,key,neval,ier,limit,lenw,last,
      &     iwork2(400),node_up,node_down,mi(*)
 !     
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),r,dvi,pi,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),r,dvi,pi,
      &     R_min, R_max,cr, R_shroud,rsrmax,gap,swirl_up,
      &     pup,pdown,tup,tdown,kappa,cp,ttime,time,
      &     Rup,Rdown,K0,Kup,Cq,Re_phi,phi,lambda1, lambda2,
@@ -57,7 +57,7 @@
 !     
 !      numf=4
 !     
-      if (iflag.eq.0) then
+      if(iflag.eq.0) then
          identity=.true.
 !     
          if(nactdog(2,node1).ne.0)then
@@ -68,7 +68,7 @@
             identity=.false.
          endif
 !     
-      elseif (iflag.eq.1)then
+      elseif(iflag.eq.1)then
 !     
          pi=4.d0*datan(1.d0)
          kappa=(cp/(cp-R))
@@ -96,7 +96,7 @@
             xflow=-1/dsqrt(T1)*P1*qred_crit*0.5d0
          endif
 !     
-      elseif (iflag.eq.2)then
+      elseif(iflag.eq.2)then
 !     
          numf=4
          index=ielprop(nelem) 
@@ -201,8 +201,12 @@
 !         kgas=0
 !         call dynamic_viscosity(kgas,Tup,dvi)
          if(dabs(dvi).lt.1E-30) then
-            kgas=0
-            call dynamic_viscosity(kgas,Tup,dvi)
+            write(*,*) '*ERROR in moehring: '
+            write(*,*) '       no dynamic viscosity defined'
+            write(*,*) '       dvi= ',dvi
+            call exit(201)
+c            kgas=0
+c            call dynamic_viscosity(kgas,Tup,dvi)
          endif 
 !     
 !     defining common coefficients

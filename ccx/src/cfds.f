@@ -16,10 +16,9 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine cfds(inpc,textpart,nmethod,
-     &  iperturb,isolver,
+      subroutine cfds(inpc,textpart,nmethod,iperturb,isolver,
      &  istep,istat,n,tinc,tper,tmin,tmax,idrct,ithermal,iline,ipol,
-     &  inl,ipoinp,inp,ipoinpc,alpha,ctrl,iexpl,tincf,ttime)
+     &  inl,ipoinp,inp,ipoinpc,alpha,ctrl,iexpl,tincf,ttime,physcon)
 !
 !     reading the input deck: *CFD
 !
@@ -45,7 +44,7 @@
      &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
      &  iexpl
 !
-      real*8 tinc,tper,tmin,tmax,alpha,ctrl(*),tincf,ttime
+      real*8 tinc,tper,tmin,tmax,alpha,ctrl(*),tincf,ttime,physcon(*)
 !
       idrct=0
       alpha=-0.05d0
@@ -54,6 +53,7 @@
       tincf=-1.d0
       nmethod=4
       timereset=.false.
+      physcon(9)=0.5d0
 !
       if(iperturb.eq.0) then
          iperturb=2
@@ -97,6 +97,19 @@
             timereset=.true.
          elseif(textpart(i)(1:17).eq.'TOTALTIMEATSTART=') then
             read(textpart(i)(18:37),'(f20.0)',iostat=istat) ttime
+         elseif(textpart(i)(1:16).eq.'TURBULENCEMODEL=') then
+!
+!           turbulence model
+!
+            if(textpart(i)(17:25).eq.'NONE') then
+               physcon(9)=0.5d0
+            elseif(textpart(i)(17:25).eq.'K-EPSILON') then
+               physcon(9)=1.5d0
+            elseif(textpart(i)(17:23).eq.'K-OMEGA') then
+               physcon(9)=2.5d0
+            elseif(textpart(i)(17:19).eq.'SST') then
+               physcon(9)=3.5d0
+            endif
          else
             write(*,*) 
      &        '*WARNING reading *CFD: parameter not recognized:'

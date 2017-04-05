@@ -28,19 +28,17 @@
 !
       integer i,j,indexf,ipnei(*),ifa,nef,neifa(*),numfaces
 !
-      real*8 area(*),vfa(0:5,*),xxn(3,*),flux(*)
+      real*8 area(*),vfa(0:7,*),xxn(3,*),flux(*)
 !
+c$omp parallel default(none)
+c$omp& shared(nef,ipnei,neifa,flux,area,vfa,xxn)
+c$omp& private(i,indexf,ifa)
+c$omp do
       do i=1,nef
-         indexf=ipnei(i)
-         if(lakonf(i)(4:4).eq.'8') then
-            numfaces=6
-         elseif(lakonf(i)(4:4).eq.'6') then
-            numfaces=5
-         else
-            numfaces=4
-         endif
-         do j=1,numfaces
-            indexf=indexf+1
+c         indexf=ipnei(i)
+c         do j=1,ipnei(i+1)-ipnei(i)
+c            indexf=indexf+1
+         do indexf=ipnei(i)+1,ipnei(i+1)
             ifa=neifa(indexf)
             flux(indexf)=area(ifa)*vfa(5,ifa)*
      &               (vfa(1,ifa)*xxn(1,indexf)+
@@ -49,6 +47,8 @@
          enddo
 c         write(*,*) 'correctvfa mass check ',i,totflux
       enddo
+c$omp end do
+c$omp end parallel
 !  
       return
       end

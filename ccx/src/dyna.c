@@ -68,7 +68,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
                ITG *idrct, ITG *jmax,
 	       double *ctrl, ITG *itpamp, double *tietol,ITG *nalset,
 	       ITG *ikforc,ITG *ilforc,double *thicke,ITG *nslavs,ITG *nmat,
-               char *typeboun,ITG *ielprop,double *prop){
+	       char *typeboun,ITG *ielprop,double *prop,char *orname){
 
   char fneig[132]="",description[13]="            ",*lakon=NULL,*labmpc=NULL,
     *labmpcold=NULL,lakonl[9]="        \0",*tchar1=NULL,*tchar2=NULL,
@@ -86,7 +86,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
     *koncont=NULL,konl[20],imat,nope,kodem,indexe,j1,jdof,icutb=0,
     *ipneigh=NULL,*neigh=NULL,inext,itp=0,*islavact=NULL,
     ismallsliding=0,isteadystate,mpcfree,im,cyclicsymmetry,
-    memmpc_,imax,iener=0,*icole=NULL,*irowe=NULL,*jqe=NULL,nzse[3],
+    memmpc_,imax,*icole=NULL,*irowe=NULL,*jqe=NULL,nzse[3],
     nalset_=*nalset,*ialset=*ialsetp,*istartset_=NULL,*iendset_=NULL,
     *itiefac=NULL,*islavsurf=NULL,*islavnode=NULL,mt=mi[1]+1,
     *imastnode=NULL,*nslavnode=NULL,*nmastnode=NULL,mortar=0,*imastop=NULL,
@@ -96,7 +96,8 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
     *imdnode=NULL,nmdnode,*imdboun=NULL,nmdboun,*imdmpc=NULL,
     nmdmpc,intpointvar,kmin,kmax,i1,ifacecount,*izdof=NULL,
     nzdof,iload,iforc,*iponoel=NULL,*inoel=NULL,*imdelem=NULL,nmdelem,
-    irenewxstate,nasym=0,*nshcon=NULL,nherm,icfd=0,*inomat=NULL,ialeatoric=0;
+    irenewxstate,nasym=0,*nshcon=NULL,nherm,icfd=0,*inomat=NULL,
+    ialeatoric=0,network=0;
 
   long long i2;
 
@@ -616,7 +617,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
         &icole,&jqe,&irowe,isolver,nzse,&adbe,&aube,iexpl,
 	ibody,xbody,nbody,cocon,ncocon,tieset,ntie,imddof,&nmddof,
 	imdnode,&nmdnode,imdboun,&nmdboun,imdmpc,&nmdmpc,&izdof,&nzdof,
-	&nherm,xmr,xmi,typeboun,ielprop,prop);
+	&nherm,xmr,xmi,typeboun,ielprop,prop,orname);
 
       RENEW(imddof,ITG,nmddof);
       RENEW(imdnode,ITG,nmdnode);
@@ -650,7 +651,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 
   for(i=0;i<*nmpc;i++){
       if((strcmp1(&labmpc[20*i]," ")!=0)&&
-         (strcmp1(&labmpc[20*i],"CONTACT")!=0)&&
+//         (strcmp1(&labmpc[20*i],"CONTACT")!=0)&&
          (strcmp1(&labmpc[20*i],"CYCLIC")!=0)&&
          (strcmp1(&labmpc[20*i],"SUBCYCLIC")!=0)){
 	  inonlinmpc=1;
@@ -662,7 +663,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 
   /* normalizing the time */
 
-  FORTRAN(checktime,(itpamp,namta,tinc,ttime,amta,tmin,&inext,&itp,istep));
+  FORTRAN(checktime,(itpamp,namta,tinc,ttime,amta,tmin,&inext,&itp,istep,tper));
   dtheta=(*tinc)/(*tper);
   dthetaref=dtheta;
   dthetaold=dtheta;
@@ -1039,7 +1040,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
        ithermal,iprestr,vold,iperturb,iexpl,plicon,
        nplicon,plkcon,nplkcon,npmat_,ttime,&time0,istep,&iinc,&dtime,
        physcon,ibody,xbodyold,&reltime,veold,matname,mi,ikactmech,
-       &nactmech,ielprop,prop));
+       &nactmech,ielprop,prop,sti,xstateini,xstate,nstate_));
   
   /*  correction for nonzero SPC's */
   
@@ -1146,9 +1147,10 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 
 	  FORTRAN(springforc_n2f,(xl,konl,voldl,&imat,elcon,nelcon,elas,
 	      fnl,ncmat_,ntmat_,&nope,lakonl,&t1l,&kodem,elconloc,
-	      plicon,nplicon,npmat_,&senergy,&iener,cstr,mi,
+	      plicon,nplicon,npmat_,&senergy,nener,cstr,mi,
 	      &springarea[2*(konl[nope]-1)],nmethod,&ne0,nstate_,
-	      xstateini,xstate,&reltime,&ielas,&venergy));
+	      xstateini,xstate,&reltime,&ielas,&venergy,ielorien,orab,
+              norien,&i));
 
 	  storecontactdof(&nope,nactdof,&mt,konl,&ikactcont,&nactcont,
 			  &nactcont_,bcont,fnl,ikmpc,nmpc,ilmpc,ipompc,nodempc, 
@@ -1361,7 +1363,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 		    nplicon,plkcon,nplkcon,
 		    npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
 		    xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech,
-                    ielprop,prop));
+                    ielprop,prop,sti,xstateini,xstate,nstate_));
       }else{
 	  FORTRAN(rhs,(co,nk,kon,ipkon,lakon,ne,
 		    ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
@@ -1373,7 +1375,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 		    nplicon,plkcon,nplkcon,
 		    npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
 		    xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech,
-                    ielprop,prop));
+                    ielprop,prop,sti,xstateini,xstate,nstate_));
       }
 	      
       /* correction for nonzero SPC's */
@@ -1477,7 +1479,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 		    nplicon,plkcon,nplkcon,
 		    npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
 		    xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech,
-                    ielprop,prop));
+                    ielprop,prop,sti,xstateini,xstate,nstate_));
 	      }else{
 		  FORTRAN(rhs,(co,nk,kon,ipkon,lakon,ne,
 		    ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
@@ -1489,7 +1491,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 		    nplicon,plkcon,nplkcon,
 		    npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
 		    xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech,
-                    ielprop,prop));
+                    ielprop,prop,sti,xstateini,xstate,nstate_));
 	      }
 	      
 	      /* correction for nonzero SPC's */
@@ -1866,7 +1868,8 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 		thicke,shcon,nshcon,
 		sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		&mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-                islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,inoel);
+                islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
+                inoel,nener,orname,&network);
 
 	/* restoring */
 

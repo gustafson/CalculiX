@@ -51,7 +51,7 @@
      &  yiloc(6,mi(1)),a(3,3),b(3,3),c(3,3),vold(0:mi(2),*),tlayer(4),
      &  dlayer(4),xlayer(mi(3),4),thickness,xs2(3,7),xl2(3,8),
      &  xsj2(3),shp2(7,8),thicke(mi(3),*),coloc(3,8),
-     &  xwedge(2,2,9),a14(8,14)
+     &  xwedge(2,2,9),a14(8,14),a6(6,6)
 !
       include "gauss.f"
 !
@@ -104,6 +104,17 @@
      &          -0.30902,  1.92705, -0.30902, -0.30902,
      &          -0.30902, -0.30902,  1.92705, -0.30902,
      &          -0.30902, -0.30902, -0.30902,  1.92705/
+!
+!     extrapolation from a 6 integration point scheme in a wedge to
+!     the vertex nodes
+!
+      data a6 / 2.04904, 0.00000, 0.00000,-0.54904, 0.00000, 0.00000,
+     &         -0.34151, 1.70753,-0.34151, 0.09151,-0.45753, 0.09151,
+     &         -0.34151,-0.34151, 1.70753, 0.09151, 0.09151,-0.45753,
+     &         -0.54904, 0.00000, 0.00000, 2.04904, 0.00000, 0.00000,
+     &          0.09151,-0.45753, 0.09151,-0.34151, 1.70753,-0.34151,
+     &          0.09151, 0.09151,-0.45753,-0.34151,-0.34151, 1.70753/
+!
       data a9 / 1.63138,-0.32628,-0.32628,-0.52027, 0.10405, 0.10405,
      &         -0.32628, 1.63138,-0.32628, 0.10405,-0.52027, 0.10405,
      &         -0.32628,-0.32628, 1.63138, 0.10405, 0.10405,-0.52027,
@@ -317,24 +328,21 @@
 !
             if(lakonl(7:8).ne.'LC') then
                iorien=ielorien(1,i)
-            else
+!david -start
+            elseif(lakonl(4:5).eq.'20') then
 !     
 !     composite materials
 !     
                mint2d=4
                nopes=8
-!     determining the number of layers
-!     
-               nlayer=0
-               do k=1,mi(3)
-                  if(ielmat(k,i).ne.0) then
-                     nlayer=nlayer+1
-                  endif
-               enddo
 !     
 !     determining the layer thickness and global thickness
 !     at the shell integration points
 !     
+!     xlayer: actual layer thickness
+!     tlayer: total thickness of all layers
+!     dlayer: total thickness of all layers up to the actual one
+!
                indexe=ipkon(i)
                do kk=1,mint2d
                   xi=gauss3d2(1,kk)
@@ -352,7 +360,44 @@
                enddo
 !     
                ilayer=0
-               do k=1,4
+               do k=1,mint2d
+                  dlayer(k)=0.d0
+               enddo
+!
+!     S6-composite shell
+!
+            elseif(lakonl(4:5).eq.'15') then
+!     
+!     composite materials
+!     
+               mint2d=3
+               nopes=6
+!     
+!     determining the layer thickness and global thickness
+!     at the shell integration points
+!     
+!     xlayer: actual layer thickness
+!     tlayer: total thickness of all layers
+!     dlayer: total thickness of all layers up to the actual one
+!    
+               indexe=ipkon(i)
+               do kk=1,mint2d
+                  xi=gauss3d10(1,kk)
+                  et=gauss3d10(2,kk)
+                  call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+                  tlayer(kk)=0.d0
+                  do k=1,nlayer
+                     thickness=0.d0
+                     do j=1,nopes
+                        thickness=thickness+thicke(k,indexe+j)*shp2(4,j)
+                     enddo
+                     tlayer(kk)=tlayer(kk)+thickness
+                     xlayer(k,kk)=thickness
+                  enddo
+               enddo
+!     
+               ilayer=0
+               do k=1,mint2d
                   dlayer(k)=0.d0
                enddo
             endif
@@ -378,7 +423,11 @@
             elseif(lakon(i)(4:4).eq.'4') then
                mint3d=1
             elseif(lakon(i)(4:5).eq.'15') then
-               mint3d=9
+               if(lakonl(7:8).eq.'LC') then
+                  mint3d=6*nlayer
+               else
+                  mint3d=9
+               endif
             elseif(lakon(i)(4:4).eq.'6') then
                mint3d=2
             endif
@@ -411,6 +460,9 @@
                      ze=gauss3d2(3,j)
                      weight=weight3d2(j)
                   else
+!
+!                    kl: number of the integration point within the layer
+!
                      kl=mod(j,8)
                      if(kl.eq.0) kl=8
 !     
@@ -418,7 +470,9 @@
                      et=gauss3d2(2,kl)
                      ze=gauss3d2(3,kl)
                      weight=weight3d2(kl)
-!     
+!    
+!                    ki: position of the integration point (1...4)
+! 
                      ki=mod(j,4)
                      if(ki.eq.0) ki=4
 !     
@@ -454,10 +508,44 @@
                   ze=gauss3d4(3,j)
                   weight=weight3d4(j)
                elseif(lakon(i)(4:5).eq.'15') then
-                  xi=gauss3d8(1,j)
-                  et=gauss3d8(2,j)
-                  ze=gauss3d8(3,j)
-                  weight=weight3d8(j)
+                  if(lakonl(7:8).ne.'LC') then
+                    xi=gauss3d8(1,j)
+                    et=gauss3d8(2,j)
+                    ze=gauss3d8(3,j)
+                    weight=weight3d8(j)
+                  else
+!
+!                    kl: number of the integration point within the layer
+!
+                     kl=mod(j,6)
+                     if(kl.eq.0) kl=6
+!     
+                     xi=gauss3d10(1,kl)
+                     et=gauss3d10(2,kl)
+                     ze=gauss3d10(3,kl)
+                     weight=weight3d10(kl)
+!    
+!                    ki: position of the integration point (1...3)
+! 
+                     ki=mod(j,3)
+                     if(ki.eq.0) ki=3
+!     
+                     if(kl.eq.1) then
+                        ilayer=ilayer+1
+                        if(ilayer.gt.1) then
+                           do k=1,3
+                              dlayer(k)=dlayer(k)+xlayer(ilayer-1,k)
+                           enddo
+                        endif
+                     endif
+                     ze=2.d0*(dlayer(ki)+(ze+1.d0)/2.d0*
+     &                    xlayer(ilayer,ki))/tlayer(ki)-1.d0
+                     weight=weight*xlayer(ilayer,ki)/tlayer(ki)
+!     
+!                    material and orientation
+!     
+                     iorien=ielorien(ilayer,i)
+                  endif
                elseif(lakon(i)(1:4).eq.'C3D6') then
                   xi=gauss3d7(1,j)
                   et=gauss3d7(2,j)
@@ -499,12 +587,16 @@
                   cycle
                endif
 !
+!              coordinates of the integration point
+!
                do k=1,3
                   coords(k,j)=0.d0
                   do l=1,nope
                      coords(k,j)=coords(k,j)+xl(k,l)*shp(4,l)
                   enddo
                enddo
+!
+!              transforming the vector or tensor field
 !
                if(nfield.eq.3) then
                   call transformatrix(orab(1,iorien),coords(1,j),a)
@@ -620,14 +712,30 @@ c     Bernhardi end
                   enddo
                enddo
             elseif(lakonl(4:4).eq.'1') then
-               do j=1,6
-                  do k=1,nfield
-                     field(k,j)=0.d0
-                     do l=1,9
-                        field(k,j)=field(k,j)+a9(j,l)*yiloc(k,l)
+               if(lakonl(7:8).ne.'LC') then
+                  do j=1,6
+                     do k=1,nfield
+                        field(k,j)=0.d0
+                        do l=1,9
+                           field(k,j)=field(k,j)+a9(j,l)*yiloc(k,l)
+                        enddo
                      enddo
                   enddo
-               enddo
+               else
+                  do m=1,nlayer
+                     jj=15*(m-1)
+                     ll=6*(m-1)
+                     do j=1,6
+                        do k=1,nfield
+                           field(k,jj+j)=0.d0
+                           do l=1,6
+                              field(k,jj+j)=
+     &                           field(k,jj+j)+a6(j,l)*yiloc(k,ll+l)
+                           enddo
+                        enddo
+                     enddo
+                  enddo
+               endif
             else
                do j=1,6
                   do k=1,nfield
@@ -722,14 +830,30 @@ c     Bernhardi end
                   enddo
                enddo
             elseif(lakonl(4:4).eq.'1') then
-               do j=1,6
-                  do k=1,nfield
-                     field(k,j)=0.d0
-                     do l=1,9
-                        field(k,j)=field(k,j)+a9(j,l)*yi(k,l,i)
+               if(lakonl(7:8).ne.'LC') then
+                  do j=1,6
+                     do k=1,nfield
+                        field(k,j)=0.d0
+                        do l=1,9
+                           field(k,j)=field(k,j)+a9(j,l)*yi(k,l,i)
+                        enddo
                      enddo
                   enddo
-               enddo
+               else
+                  do m=1,nlayer
+                     jj=15*(m-1)
+                     ll=6*(m-1)
+                     do j=1,6
+                        do k=1,nfield
+                           field(k,jj+j)=0.d0
+                           do l=1,6
+                              field(k,jj+j)=
+     &                           field(k,jj+j)+a6(j,l)*yi(k,ll+l,i)
+                           enddo
+                        enddo
+                     enddo
+                  enddo
+               endif
             else
                do j=1,6
                   do k=1,nfield
@@ -771,12 +895,24 @@ c     Bernhardi end
                enddo
             enddo
          elseif(lakonl(4:5).eq.'15') then
-            do j=7,15
-               do k=1,nfield
-                  field(k,j)=(field(k,nonei15(2,j-6))+
-     &                 field(k,nonei15(3,j-6)))/2.d0
+            if(lakonl(7:8).ne.'LC') then
+               do j=7,15
+                  do k=1,nfield
+                     field(k,j)=(field(k,nonei15(2,j-6))+
+     &                    field(k,nonei15(3,j-6)))/2.d0
+                  enddo
                enddo
-            enddo
+            else
+               do m=1,nlayer
+                  jj=15*(m-1)
+                  do j=7,15
+                     do k=1,nfield
+                        field(k,jj+j)=(field(k,jj+nonei15(2,j-6))
+     &                     +field(k,jj+nonei15(3,j-6)))/2.d0
+                     enddo
+                  enddo
+               enddo
+            endif
          endif
 !
 !        transferring the field values into yn
@@ -795,7 +931,8 @@ c     Bernhardi end
                   yn(k,kon(indexe+nopeexp+j))=
      &            yn(k,kon(indexe+nopeexp+j))+field(k,j)
                enddo
-               inum(kon(indexe+nopeexp+j))=inum(kon(indexe+nopeexp+j))+1
+               inum(kon(indexe+nopeexp+j))=
+     &              inum(kon(indexe+nopeexp+j))+1
             enddo
          endif
 !
@@ -827,8 +964,8 @@ c     Bernhardi end
 !     finding the solution in the original nodes
 !
       if((cflag.ne.' ').and.(cflag.ne.'E')) then
-         call map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,ne,cflag,co,
-     &         vold,force,mi)
+         call map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,ne,cflag,
+     &         co,vold,force,mi)
       endif
 !
       return

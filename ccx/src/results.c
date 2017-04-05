@@ -27,10 +27,10 @@ static char *lakon1,*matname1,*sideload1;
 static ITG *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *norien1,*ntmat1_,*ithermal1,*iprestr1,*iperturb1,*iout1,*nmethod1,
     *nplicon1,*nplkcon1,*npmat1_,*mi1,*ielas1,*icmd1,*ncmat1_,*nstate1_,
-    *istep1,*iinc1,calcul_fn1,calcul_qa1,calcul_cauchy1,iener1,ikin1,
+    *istep1,*iinc1,calcul_fn1,calcul_qa1,calcul_cauchy1,*nener1,ikin1,
     *nal=NULL,*ipompc1,*nodempc1,*nmpc1,*ncocon1,*ikmpc1,*ilmpc1,
     num_cpus,mt1,*nk1,*ne01,*nshcon1,*nelemload1,*nload1,*mortar1,
-    *ielprop1,*kscale1,*iponoel1,*inoel1;
+    *ielprop1,*kscale1,*iponoel1,*inoel1,*network1;
 
 static double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
     *prestr1,*eme1,*fn1=NULL,*qa1=NULL,*vold1,*veold1,*dtime1,*time1,
@@ -70,9 +70,10 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        double *pmastsurf,ITG *mortar,ITG *islavact,double *cdn,
        ITG *islavnode,ITG *nslavnode,ITG *ntie,double *clearini,
        ITG *islavsurf,ITG *ielprop,double *prop,double *energyini,
-       double *energy,ITG *kscale,ITG *iponoel,ITG *inoel){
+       double *energy,ITG *kscale,ITG *iponoel,ITG *inoel,ITG *nener,
+       char *orname,ITG *network){
 
-    ITG intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,iener,ikin,
+    ITG intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,ikin,
         intpointvart,mt=mi[1]+1,i,j;
 
     /*
@@ -160,7 +161,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        nactdof,iout,qa,vold,b,nodeboun,ndirboun,
        xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
        veold,accold,bet,gam,dtime,mi,vini,nprint,prlab,
-       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,&iener,
+       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,nener,
        &ikin,&intpointvart,xforc,nforc));
 
    /* next statement allows for storing the displacements in each
@@ -194,7 +195,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
         stiini1=stiini;vini1=vini;ener1=ener;eei1=eei;enerini1=enerini;
         istep1=istep;iinc1=iinc;springarea1=springarea;reltime1=reltime;
         calcul_fn1=calcul_fn;calcul_qa1=calcul_qa;calcul_cauchy1=calcul_cauchy;
-        iener1=iener;ikin1=ikin;mt1=mt;nk1=nk;ne01=ne0;thicke1=thicke;
+        nener1=nener;ikin1=ikin;mt1=mt;nk1=nk;ne01=ne0;thicke1=thicke;
         emeini1=emeini;pslavsurf1=pslavsurf;clearini1=clearini;
         pmastsurf1=pmastsurf;mortar1=mortar;ielprop1=ielprop;prop1=prop;
         kscale1=kscale;
@@ -284,6 +285,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
         pslavsurf1=pslavsurf;pmastsurf1=pmastsurf;mortar1=mortar;
         clearini1=clearini;plicon1=plicon;nplicon1=nplicon;ne1=ne;
         ielprop1=ielprop,prop1=prop;iponoel1=iponoel;inoel1=inoel;
+	network1=network;
 
 	/* calculating the heat flux */
 	
@@ -347,7 +349,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        nelemload,nload,&ikin,ielmat,thicke,eme,emn,rhcon,nrhcon,shcon,
        nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,islavact,
        cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time,ielprop,prop,
-       veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,energy));
+       veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,energy,orname));
   
   return;
 
@@ -379,7 +381,7 @@ void *resultsmechmt(ITG *i){
           veold1,dtime1,time1,ttime1,plicon1,nplicon1,plkcon1,nplkcon1,
           xstateini1,xstiff1,xstate1,npmat1_,matname1,mi1,ielas1,icmd1,
           ncmat1_,nstate1_,stiini1,vini1,ener1,eei1,enerini1,istep1,iinc1,
-          springarea1,reltime1,&calcul_fn1,&calcul_qa1,&calcul_cauchy1,&iener1,
+          springarea1,reltime1,&calcul_fn1,&calcul_qa1,&calcul_cauchy1,nener1,
 	  &ikin1,&nal[indexnal],ne01,thicke1,emeini1,
 	  pslavsurf1,pmastsurf1,mortar1,clearini1,&nea,&neb,ielprop1,prop1,kscale1));
 
@@ -411,7 +413,7 @@ void *resultsthermmt(ITG *i){
 	   &calcul_fn1,&calcul_qa1,&nal[indexnal],&nea,&neb,ithermal1,
 	   nelemload1,nload1,nmethod1,reltime1,sideload1,xload1,xloadold1,
 	   pslavsurf1,pmastsurf1,mortar1,clearini1,plicon1,nplicon1,ielprop1,
-	   prop1,iponoel1,inoel1));
+	   prop1,iponoel1,inoel1,network1));
 
     return NULL;
 }

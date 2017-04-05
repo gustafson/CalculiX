@@ -19,7 +19,8 @@
       subroutine applyboun(ifaext,nfaext,ielfa,ikboun,ilboun,
      &  nboun,typeboun,nelemload,nload,sideload,isolidsurf,nsolidsurf,
      &  ifabou,nfabou,nface,nodeboun,ndirboun,ikmpc,ilmpc,labmpc,nmpc,
-     &  nactdohinv,compressible,iatleastonepressurebc)
+     &  nactdohinv,compressible,iatleastonepressurebc,ipkonf,kon,konf,
+     &  nblk)
 !
 !     stores pointers to ifabou in ielfa(2,*) at those locations
 !     which are zero (external faces)
@@ -34,7 +35,8 @@
      &  j,idof,ikboun(*),nboun,id,ilboun(*),iboun,nelemload(2,*),
      &  nload,isolidsurf(*),nsolidsurf,ifabou(*),i,nface,indexb,
      &  nodeboun(*),ndirboun(*),jsum,ig,ikmpc(*),ilmpc(*),nmpc,mpc,
-     &  nactdohinv(*),compressible,iatleastonepressurebc
+     &  nactdohinv(*),compressible,iatleastonepressurebc,iface,
+     &  ifaceblk,ipkonf(*),kon(*),konf(*),nblk,indexe
 !
       nfabou=1
       iatleastonepressurebc=0
@@ -51,7 +53,20 @@
 !
 !        face label used to apply the SPC
 !
-         jface=10*ielem+ielfa(4,ifa)
+         if(nblk.gt.0) then
+!
+!           retrieving the original face number in case the
+!           element was reordered 
+!
+            ifaceblk=ielfa(4,ifa)
+            indexe=ipkonf(ielfa(1,ifa))
+            call identifyface(konf(indexe+1),kon(indexe+1),
+     &            ifaceblk,iface)
+         else
+            iface=ielfa(4,ifa)
+         endif
+!
+         jface=10*ielem+iface
 !
 !        SPC's: loop over the degrees of freedom
 !
@@ -65,6 +80,7 @@
                   if(typeboun(iboun).ne.'F') cycle
                   if(ielfa(2,ifa).eq.0) then
                      ielfa(2,ifa)=-nfabou
+c                     write(*,*) 'applyboun bc',ielfa(2,ifa)
                      nfabou=nfabou+7
                   endif
 !
@@ -76,8 +92,8 @@
                         if(jsum.eq.6) then
                            write(*,*) '*WARNING in applyboun: a pressure
      & SPC is being applied to'
-                           write(*,*) '         face ',ielfa(4,ifa),
-     &                      'of element ',ielfa(1,ifa),'for which all'
+                           write(*,*) '         face ',iface,
+     &                      'of element ',ielem,'for which all'
                            write(*,*) '         velocities are known (by
      & SPCs or MPCs). The pressure'
                            write(*,*) '         SPC is discarded'
@@ -106,7 +122,7 @@
                   else if(ifabou(-ielfa(2,ifa)+j).ne.0) then
                      write(*,*) '*ERROR in applyboun: MPC is applied'
                      write(*,*) '       to degree of freedom ',j
-                     write(*,*) '       in face ',ielfa(4,ifa)
+                     write(*,*) '       in face ',iface
                      write(*,*) '       of element ',ielem,'.'
                      write(*,*) '       To this degree of freedom '
                      write(*,*) '       another SPC or MPC has already'
@@ -122,8 +138,8 @@
                         if(jsum.eq.6) then
                            write(*,*) '*WARNING in applyboun: a pressure
      & MPC is being applied to'
-                           write(*,*) '         face ',ielfa(4,ifa),
-     &                       'of element ',ielfa(1,ifa),'for which all'
+                           write(*,*) '         face ',iface,
+     &                       'of element ',ielem,'for which all'
                            write(*,*) '         velocities are known (by
      & SPCs or MPCs). The pressure'
                            write(*,*) '         MPC is discarded'
@@ -147,7 +163,7 @@
                if(nelemload(1,id).eq.ielem) then
                   if(sideload(id)(1:1).eq.'S') then
                      read(sideload(id)(2:2),'(i1)') ig
-                     if(ig.eq.ielfa(4,ifa)) then
+                     if(ig.eq.iface) then
                         if(ielfa(2,ifa).eq.0) then
                            ielfa(2,ifa)=-nfabou
                            nfabou=nfabou+7
@@ -175,13 +191,14 @@ c               write(*,*) 'applyboun ',nelemload(1,id),sideload(id)
                if(nelemload(1,id).eq.ielem) then
                   if(sideload(id)(1:1).eq.'M') then
                      read(sideload(id)(2:2),'(i1)') ig
-                     if(ig.eq.ielfa(4,ifa)) then
+                     if(ig.eq.iface) then
 c                        write(*,*) 'store '
                         if(ielfa(2,ifa).eq.0) then
                            ielfa(2,ifa)=-nfabou
                            nfabou=nfabou+7
                         endif
-                        ifabou(-ielfa(2,ifa)+5)=2
+c                        ifabou(-ielfa(2,ifa)+5)=2
+                        ifabou(-ielfa(2,ifa)+5)=-1
                      endif
                   endif
                   id=id-1
@@ -207,14 +224,15 @@ c                        write(*,*) 'store '
                if((ifabou(indexb+1).eq.0).or.
      &            (ifabou(indexb+2).eq.0).or.
      &            (ifabou(indexb+3).eq.0)) then
-                  write(*,*) '*ERROR in applyboun: face',ielfa(4,ifa)
+                  write(*,*) '*ERROR in applyboun: face',iface
                   write(*,*) '       of element ',ielem,'is defined'
                   write(*,*) '       as solid surface but not all'
                   write(*,*) '       velocity components are defined'
                   write(*,*) '       as boundary conditions'
                   call exit(201)
                endif
-               ifabou(indexb+5)=1
+c               ifabou(indexb+5)=1
+               ifabou(indexb+5)=id
             endif
          endif
       enddo

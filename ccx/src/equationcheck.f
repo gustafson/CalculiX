@@ -78,7 +78,7 @@
          enddo
       enddo loop2
 !     
-      if(network.eq.0) then
+      if(network.le.2) then
          write(*,*) '*ERROR in equationcheck: singular system in'
          write(*,*) '       thermal network'
          call exit(201)

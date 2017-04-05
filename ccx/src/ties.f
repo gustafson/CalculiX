@@ -108,6 +108,8 @@
          tieset(1,ntie)(81:81)='P'
       elseif(fluidcyclic) then
          tieset(1,ntie)(81:81)='Z'
+      else
+         tieset(1,ntie)(81:81)=' '
       endif
 !
       if(tied) then

@@ -30,7 +30,7 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	      ITG *jq, ITG **mast1p, ITG **irowp, ITG *isolver, ITG *neq,
 	      ITG *ikmpc, ITG *ilmpc,ITG *ipointer, ITG *nzs, 
 	      ITG *ithermal,ITG *mi,ITG *ielmat, double *elcon, ITG *ncmat_, 
-	      ITG *ntmat_,ITG *inomat){
+	      ITG *ntmat_,ITG *inomat,ITG *network){
 
   /* determines the structure of the thermo-electromagnetic matrices;
      (i.e. the location of the nonzeros */
@@ -122,7 +122,8 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	  else if (strcmp1(&lakon[8*i],"E")==0){
 	      lakonl[0]=lakon[8*i+7];
 	      nope=atoi(lakonl)+1;}
-	  else if (strcmp1(&lakon[8*i],"D ")==0){
+	  else if ((strcmp1(&lakon[8*i],"D ")==0)||
+                   ((strcmp1(&lakon[8*i],"D")==0)&&(*network==1))){
 
 	      /* check for entry or exit element */
 	      
@@ -391,7 +392,8 @@ void mastructem(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       else if (strcmp1(&lakon[8*i],"E")==0){
 	  lakonl[0]=lakon[8*i+7];
 	  nope=atoi(lakonl)+1;}
-      else if (strcmp1(&lakon[8*i],"D ")==0){
+      else if ((strcmp1(&lakon[8*i],"D ")==0)||
+               ((strcmp1(&lakon[8*i],"D")==0)&&(*network==1))){
 
 	  /* check for entry or exit element */
 

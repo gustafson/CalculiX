@@ -40,12 +40,12 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
              ITG *nodeforc, ITG *ndirforc,double *xforc, ITG *nforc, 
              ITG *nelemload, char *sideload, double *xload,
              ITG *nload, ITG *nactdof, 
-             ITG **icolp, ITG *jq, ITG **irowp, ITG *neq, ITG *nzl, 
+             ITG *icol, ITG *jq, ITG **irowp, ITG *neq, ITG *nzl, 
              ITG *nmethod, ITG *ikmpc, ITG *ilmpc, ITG *ikboun, 
              ITG *ilboun,
              double *elcon, ITG *nelcon, double *rhcon, ITG *nrhcon,
              double *alcon, ITG *nalcon, double *alzero, ITG **ielmatp,
-             ITG *ielorien, ITG *norien, double *orab, ITG *ntmat_,
+             ITG **ielorienp, ITG *norien, double *orab, ITG *ntmat_,
              double *t0, double *t1, double *t1old,
              ITG *ithermal,double *prestr, ITG *iprestr, 
              double *vold,ITG *iperturb, double *sti, ITG *nzs,  
@@ -68,12 +68,12 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
              ITG *istep,ITG *nmat,ITG *ielprop,double *prop,char *typeboun,
              ITG *mortar,ITG *mpcinfo,double *tietol,ITG *ics,ITG *icontact,
 	     ITG *nobject,char *objectset,ITG *istat,char *orname,
-             ITG *nzsfreq){
+	     ITG *nzsprevstep,ITG *nlabel,double *physcon){
   
     char description[13]="            ",*lakon=NULL,cflag[1]=" ",fneig[132]="",
 	stiffmatrix[132]="";
        
-  ITG *inum=NULL,k,*icol=NULL,*irow=NULL,ielas=0,icmd=0,iinc=1,nasym=0,
+    ITG *inum=NULL,k,*irow=NULL,ielas=0,icmd=0,iinc=1,nasym=0,
       mass[2]={0,0},stiffness=1,buckling=0,rhsi=1,intscheme=0,*ncocon=NULL,
       *nshcon=NULL,mode=-1,noddiam=-1,*ipobody=NULL,inewton=0,coriolis=0,iout,
       ifreebody,*itg=NULL,ntg=0,ngraph=1,mt=mi[1]+1,ne0,*integerglob=NULL,      
@@ -84,22 +84,23 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       *nodedesi=NULL,*ipoface=NULL,*nodface=NULL,*inoel=NULL,*ipoorel=NULL,
       icoordinate=0,iorientation=0,ishapeenergy=0,imass=0,idisplacement=0,
       *istartdesi=NULL,*ialdesi=NULL,*iorel=NULL,*ipoeldi=NULL,*ieldi=NULL,
-      *istartelem=NULL,*ialelem=NULL,ieigenfrequency=0,cyclicsymmetry,
-      nherm,nev,iev,inoelsize;
+      *istartelem=NULL,*ialelem=NULL,ieigenfrequency=0,cyclicsymmetry=0,
+      nherm,nev,iev,inoelsize,*itmp=NULL,nmd,nevd,*nm=NULL,*ielorien=NULL,
+      igreen=0,iglob=0,idesvar=0,inorm=0,irand=0;
       
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*xstiff=NULL,*stiini=NULL,*tper,
          *f=NULL,*fn=NULL,qa[3],*epn=NULL,*xstateini=NULL,*xdesi=NULL,
          *vini=NULL,*stx=NULL,*enern=NULL,*xbounact=NULL,*xforcact=NULL,
          *xloadact=NULL,*t1act=NULL,*ampli=NULL,*xstaten=NULL,*eei=NULL,
-         *enerini=NULL,*cocon=NULL,*shcon=NULL,*physcon=NULL,*qfx=NULL,
+         *enerini=NULL,*cocon=NULL,*shcon=NULL,*qfx=NULL,
          *qfn=NULL,*cgr=NULL,*xbodyact=NULL,*springarea=NULL,*emn=NULL,         
          *clearini=NULL,ptime=0.,*emeini=NULL,*doubleglob=NULL,*au=NULL,
          *ad=NULL,*b=NULL,*aub=NULL,*adb=NULL,*pslavsurf=NULL,
          *pmastsurf=NULL,*cdn=NULL,*xstate=NULL,*fnext=NULL,*energyini=NULL,
          *energy=NULL,*ener=NULL,*dxstiff=NULL,*d=NULL,*z=NULL,
-         distmin,*df=NULL,*g0=NULL,*dgdx=NULL,
+         distmin,*df=NULL,*g0=NULL,*dgdx=NULL,sigma=0,
          *dgdxglob=NULL,*extnor=NULL,*veold=NULL,*accold=NULL,bet,gam,
-         dtime,time,reltime=1.;
+         dtime,time,reltime=1.,*weightformgrad=NULL,*fint=NULL;
 
   FILE *f1;
   
@@ -107,8 +108,8 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   ITG token;
 #endif
 
-  icol=*icolp;irow=*irowp;ener=*enerp;
-  kon=*konp;ipkon=*ipkonp;lakon=*lakonp;ielmat=*ielmatp;xstate=*xstatep;
+  irow=*irowp;ener=*enerp;xstate=*xstatep;ipkon=*ipkonp;lakon=*lakonp;
+  kon=*konp;ielmat=*ielmatp;ielorien=*ielorienp;
 
   tper=&timepar[1];
 
@@ -116,6 +117,13 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   dtime=*tper;
 
   ne0=*ne;
+
+  /* determining the global values to be used as boundary conditions
+     for a submodel */
+
+  getglobalresults(jobnamec,&integerglob,&doubleglob,nboun,iamboun,xboun,
+		   nload,sideload,iamload,&iglob,nforc,iamforc,xforc,
+                   ithermal,nk,t1,iamt1);
   
   /* check which design variables are active */
   
@@ -125,6 +133,11 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      icoordinate=1;
 	      break;
 	  }else if(strcmp1(&tieset[i*243],"ORIENTATION")==0){
+	      if(*norien==0){
+		  printf(" *ERROR in sensitivity: the ORIENTATION sensitivity was requested,\n");
+		  printf("        yet no orientations were defined.\n");
+		  FORTRAN(stop,());
+	      }
 	      iorientation=1;
 	      break;
 	  }
@@ -136,13 +149,29 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   for(i=0;i<*nobject;i++){
       if(strcmp1(&objectset[i*243],"DISPLACEMENT")==0){
 	  idisplacement=1;
+      }else if(strcmp1(&objectset[i*243],"EIGENFREQUENCY")==0){
+	  ieigenfrequency=1;
+      }else if(strcmp1(&objectset[i*243],"GREEN")==0){
+	  ieigenfrequency=1;
+	  igreen=1;
       }else if(strcmp1(&objectset[i*243],"MASS")==0){
 	  imass=1;
       }else if(strcmp1(&objectset[i*243],"SHAPEENERGY")==0){
 	  ishapeenergy=1;
-      }else if(strcmp1(&objectset[i*243],"EIGENFREQUENCY")==0){
-	  ieigenfrequency=1;
+      }else if(strcmp1(&objectset[i*243],"STRESS")==0){
+	  idisplacement=1;
       }
+  }
+
+  /* EIGENFREQUENCY as objective should not be used with any
+     other objective in the same step */
+
+  if(((idisplacement==1)||(imass==1)||(ishapeenergy==1))&&
+     (ieigenfrequency==1)){
+	  printf(" *ERROR in sensitivity: the objective EIGENFREQUENCY\n");
+	  printf("        cannot be used with any other objective within\n");
+	  printf("        the same step\n");
+	  exit(0);
   }
 
   if(ishapeenergy==1){
@@ -153,6 +182,48 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       memcpy(&enerini[0],&ener[0],sizeof(double)*mi[0]**ne);
       memcpy(&emeini[0],&eme[0],sizeof(double)*6*mi[0]**ne);
       memcpy(&stiini[0],&sti[0],sizeof(double)*6*mi[0]**ne);
+  }
+
+  if(ieigenfrequency==1){
+
+      /* opening the eigenvalue file and checking for cyclic symmetry */
+      
+      strcpy(fneig,jobnamec);
+      strcat(fneig,".eig");
+      
+      if((f1=fopen(fneig,"rb"))==NULL){
+	  printf(" *ERROR in sensitivity: cannot open eigenvalue file for reading");
+	  printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	  printf("        1) the nonexistence of the .eig file\n");
+	  printf("        2) other boundary conditions than in the input deck\n");
+	  printf("           which created the .eig file\n\n");
+	  exit(0);
+      }
+      
+      if(fread(&cyclicsymmetry,sizeof(ITG),1,f1)!=1){
+	  printf(" *ERROR in sensitivity reading the cyclic symmetry flag in the eigenvalue file");
+	  printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	  printf("        1) the nonexistence of the .eig file\n");
+	  printf("        2) other boundary conditions than in the input deck\n");
+	  printf("           which created the .eig file\n\n");
+	  exit(0);
+      }
+      
+      if(fread(&nherm,sizeof(ITG),1,f1)!=1){
+	  printf(" *ERROR in sensitivity reading the Hermitian flag in the eigenvalue file");
+	  printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	  printf("        1) the nonexistence of the .eig file\n");
+	  printf("        2) other boundary conditions than in the input deck\n");
+	  printf("           which created the .eig file\n\n");
+	  exit(0);
+      }
+      
+      if(nherm!=1){
+	  printf(" *ERROR in sensitivity: the eigenvectors in the .eig-file result\n");
+	  printf("       from a non-Hermitian eigenvalue problem. The \n");
+	  printf("       sensitivity procedure cannot handle that yet\n\n");
+	  FORTRAN(stop,());
+      }
   }
 
   if(icoordinate==1){
@@ -166,11 +237,15 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       /* determining the information of the designvariable set */
       
       NNEW(nodedesi,ITG,*nk);
+      NNEW(itmp,ITG,*nk);
       
       FORTRAN(getdesiinfo,(set,istartset,iendset,ialset,nset,
-			   mi,nactdof,&ndesi,nodedesi,ntie,tieset));  
+			   mi,nactdof,&ndesi,nodedesi,ntie,tieset,
+                           itmp,nmpc,nodempc,ipompc));  
       
-      RENEW(nodedesi,ITG,3*ndesi);
+//      RENEW(nodedesi,ITG,3*ndesi);
+      SFREE(itmp);
+      RENEW(nodedesi,ITG,ndesi);
 
       /* storing the elements to which each design variable belongs
          in field ialdesi */
@@ -179,9 +254,9 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       NNEW(ialdesi,ITG,*nkon);
       FORTRAN(createialdesi,(&ndesi,nodedesi,iponoel,inoel,
 			      istartdesi,ialdesi));
-      SFREE(iponoel);SFREE(inoel);
       RENEW(ialdesi,ITG,istartdesi[ndesi]-1);
-      
+      SFREE(iponoel);SFREE(inoel);
+            
       /* calculating the normal direction for every designvariable */
       
       NNEW(ipoface,ITG,*nk);
@@ -191,9 +266,27 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       FORTRAN(findsurface_se,(nodface,ipoface,ne,ipkon,lakon,kon));
       
       FORTRAN(normalsonsurface_se,(ipkon,kon,lakon,extnor,co,nk,ipoface,
-				   nodface)); 
+				   nodface,nactdof,mi)); 
+	  
+      /* createinum is called in order to determine the nodes belonging
+	 to elements; this information is needed in frd_se */
       
-      SFREE(ipoface);SFREE(nodface);
+      NNEW(inum,ITG,*nk);
+      FORTRAN(createinum,(ipkon,inum,kon,lakon,nk,ne,&cflag[0],nelemload,
+	      nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat));
+	  				   
+      /* storing the normal information in the frd-file for the optimizer */
+          
+      ++*kode;
+
+      inorm=1;
+      frd_sen(co,nk,stn,inum,nmethod,kode,filab,&ptime,nstate_,
+	      istep,
+	      &iinc,&mode,&noddiam,description,mi,&ngraph,ne,cs,set,nset,
+	      istartset,iendset,ialset,jobnamec,output,
+	      extnor,&iobject,objectset,ntrans,inotr,trab,&idesvar,orname,
+	      &icoordinate,&inorm,&irand); 
+      inorm=0;
 
       /* storing the normal direction for every design variable */
 
@@ -202,7 +295,6 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  node=nodedesi[k]-1;
 	  memcpy(&xdesi[3*k],&extnor[3*node],sizeof(double)*3);
       }
-      SFREE(extnor);
       
       /* calculation of the smallest distance between nodes */
       
@@ -213,6 +305,19 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       for(k=0;k<3*ndesi;k++){
 	  xdesi[k]*=distmin;
       }
+
+      /* calculation of gaussian r fields for robust optimization */
+      
+      if(physcon[10]>0){      
+	 
+         randomfieldmain(kon,ipkon,lakon,ne,nmpc,nactdof,mi,nodedesi,&ndesi,
+            istartdesi,ialdesi,co,physcon,isolver,ntrans,nk,inotr,trab,jobnamec,
+	    nboun,cs,mcs,inum,nmethod,kode,filab,nstate_,istep,description,set,
+	    nset,iendset,output,istartset,ialset,extnor); 
+	    	           
+      }
+
+      SFREE(inum);SFREE(extnor);      
 
   }else if(iorientation==1){
       ndesi=3**norien;
@@ -320,45 +425,6 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
   if(ieigenfrequency==1){
 
-      /* opening the eigenvalue file and checking for cyclic symmetry */
-      
-      strcpy(fneig,jobnamec);
-      strcat(fneig,".eig");
-      
-      if((f1=fopen(fneig,"rb"))==NULL){
-	  printf(" *ERROR in sensitivity: cannot open eigenvalue file for reading");
-	  printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
-	  printf("        1) the nonexistence of the .eig file\n");
-	  printf("        2) other boundary conditions than in the input deck\n");
-	  printf("           which created the .eig file\n\n");
-	  exit(0);
-      }
-      
-      if(fread(&cyclicsymmetry,sizeof(ITG),1,f1)!=1){
-	  printf(" *ERROR in sensitivity reading the cyclic symmetry flag in the eigenvalue file");
-	  printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
-	  printf("        1) the nonexistence of the .eig file\n");
-	  printf("        2) other boundary conditions than in the input deck\n");
-	  printf("           which created the .eig file\n\n");
-	  exit(0);
-      }
-      
-      if(fread(&nherm,sizeof(ITG),1,f1)!=1){
-	  printf(" *ERROR in sensitivity reading the Hermitian flag in the eigenvalue file");
-	  printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
-	  printf("        1) the nonexistence of the .eig file\n");
-	  printf("        2) other boundary conditions than in the input deck\n");
-	  printf("           which created the .eig file\n\n");
-	  exit(0);
-      }
-      
-      if(nherm!=1){
-	  printf(" *ERROR in sensitivity: the eigenvectors in the .eig-file result\n");
-	  printf("       from a non-Hermitian eigenvalue problem. The \n");
-	  printf("       sensitivity procedure cannot handle that yet\n\n");
-	  FORTRAN(stop,());
-      }
-
       /* reading the eigenvalues / eigenmodes */
       
       if(!cyclicsymmetry){
@@ -383,13 +449,13 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      exit(0);
 	  }
 	  
-	  for(i=0;i<nev;i++){
+/*	  for(i=0;i<nev;i++){
 	      if(d[i]>0){d[i]=sqrt(d[i]);}else{d[i]=0.;}
-	  }
+	      }*/
 	  
 	  NNEW(ad,double,neq[1]);
 	  NNEW(adb,double,neq[1]);
-	  NNEW(au,double,nzsfreq[2]);
+	  NNEW(au,double,nzsprevstep[2]);
 	  NNEW(aub,double,nzs[1]);
 	  
 	  if(fread(ad,sizeof(double),neq[1],f1)!=neq[1]){
@@ -401,7 +467,7 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      exit(0);
 	  }
 	  
-	  if(fread(au,sizeof(double),nzsfreq[2],f1)!=nzsfreq[2]){
+	  if(fread(au,sizeof(double),nzsprevstep[2],f1)!=nzsprevstep[2]){
 	      printf(" *ERROR in sensitivity reading the off-diagonals of the stiffness matrix in the eigenvalue file");
 	      printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
 	      printf("        1) the nonexistence of the .eig file\n");
@@ -440,18 +506,101 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  }
       }
       else{
-	  printf(" *ERROR in sensitivity: cyclic symmetry is not allowed");
-	  exit(0);
+	  nev=0;
+	  do{
+	      if(fread(&nmd,sizeof(ITG),1,f1)!=1){
+		  break;
+	      }
+	      if(fread(&nevd,sizeof(ITG),1,f1)!=1){
+		  printf(" *ERROR in sensitivity reading the number of eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+		  printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+		  printf("        1) the nonexistence of the .eig file\n");
+		  printf("        2) other boundary conditions than in the input deck\n");
+		  printf("           which created the .eig file\n\n");
+		  exit(0);
+	      }
+	      if(nev==0){
+		  NNEW(d,double,nevd);
+		  NNEW(nm,ITG,nevd);
+	      }else{
+		  RENEW(d,double,nev+nevd);
+		  RENEW(nm,ITG,nev+nevd);
+	      }
+	      
+	      if(fread(&d[nev],sizeof(double),nevd,f1)!=nevd){
+		  printf(" *ERROR in sensitivity reading the eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+		  printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+		  printf("        1) the nonexistence of the .eig file\n");
+		  printf("        2) other boundary conditions than in the input deck\n");
+		  printf("           which created the .eig file\n\n");
+		  exit(0);
+	      }
+	      
+/*	      for(i=nev;i<nev+nevd;i++){
+		  if(d[i]>0){d[i]=sqrt(d[i]);}else{d[i]=0.;}
+		  }*/
+	      
+	      for(i=nev;i<nev+nevd;i++){nm[i]=nmd;}
+	      
+	      if(nev==0){
+
+                  /* reading stiffness and mass matrix; these are not kept */
+
+		  NNEW(adb,double,neq[1]);
+		  NNEW(aub,double,nzs[1]);
+		  
+		  if(fread(adb,sizeof(double),neq[1],f1)!=neq[1]){
+		      printf(" *ERROR in sensitivity reading the diagonal of the mass matrix in the eigenvalue file");
+		      printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+		      printf("        1) the nonexistence of the .eig file\n");
+		      printf("        2) other boundary conditions than in the input deck\n");
+		      printf("           which created the .eig file\n\n");
+		      exit(0);
+		  }
+		  
+		  if(fread(aub,sizeof(double),nzs[1],f1)!=nzs[1]){
+		      printf(" *ERROR in sensitivity reading the off-diagonals of the mass matrix in the eigenvalue file");
+		      printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+		      printf("        1) the nonexistence of the .eig file\n");
+		      printf("        2) other boundary conditions than in the input deck\n");
+		      printf("           which created the .eig file\n\n");
+		      exit(0);
+		  }
+
+		  SFREE(adb);SFREE(aub);
+	      }
+	      
+	      if(nev==0){
+		  NNEW(z,double,neq[1]*nevd);
+	      }else{
+		  RENEW(z,double,(long long)neq[1]*(nev+nevd));
+	      }
+	      
+	      if(fread(&z[(long long)neq[1]*nev],sizeof(double),neq[1]*nevd,f1)!=neq[1]*nevd){
+		  printf(" *ERROR in sensitivity reading the eigenvectors for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+		  printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+		  printf("        1) the nonexistence of the .eig file\n");
+		  printf("        2) other boundary conditions than in the input deck\n");
+		  printf("           which created the .eig file\n\n");
+		  exit(0);
+	      }
+	      nev+=nevd;
+	  }while(1);
       }
   }else{
       nev=1;
-      if(idisplacement==1){
+      if((idisplacement==1)||((ishapeenergy==1)&&(iperturb[1]==1))){
 	
 	/* reading the stiffness matrix from previous step for sensitivity analysis */
 	/* matrix stored in <jobname>.stm file */
-	
-	NNEW(ad,double,neq[1]);
-	NNEW(au,double,nzs[2]);
+
+	/* nzs,irow,jq and icol are stored too, since the static analysis
+           can involve contact, whereas in the sensitivity analysis contact is not
+	   taken into account while determining the structure of the stiffness
+	   matrix (in mastruct.c)
+        */
+
+        /* for mass and shape energy the stiffness matrix is not needed */
 	
 	strcpy(stiffmatrix,jobnamec);
 	strcat(stiffmatrix,".stm");
@@ -461,12 +610,41 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    exit(0);
 	}
 	
+	if(fread(&nasym,sizeof(ITG),1,f1)!=1){
+	    printf("*ERROR in sensitivity reading the symmetry flag of the stiffness matrix file...");
+	    exit(0);
+	}
+	
+	if(fread(nzs,sizeof(ITG),3,f1)!=3){
+	    printf("*ERROR in sensitivity reading the number of subdiagonal nonzeros in the stiffness matrix file...");
+	    exit(0);
+	}
+	RENEW(irow,ITG,nzs[2]);
+
+	if(fread(irow,sizeof(ITG),nzs[2],f1)!=nzs[2]){
+	    printf("*ERROR in sensitivity reading irow in the stiffness matrix file...");
+	    exit(0);
+	}
+
+	if(fread(jq,sizeof(ITG),neq[1]+1,f1)!=neq[1]+1){
+	    printf("*ERROR in sensitivity reading jq in the stiffness matrix file...");
+	    exit(0);
+	}
+
+	if(fread(icol,sizeof(ITG),neq[1],f1)!=neq[1]){
+	    printf("*ERROR in sensitivity reading icol in the stiffness matrix file...");
+	    exit(0);
+	}
+	
+	NNEW(ad,double,neq[1]);
+	NNEW(au,double,(nasym+1)*nzs[2]);
+
 	if(fread(ad,sizeof(double),neq[1],f1)!=neq[1]){
 	    printf("*ERROR in sensitivity reading the diagonal of the stiffness matrix in the .stm-file");
 	    exit(0);
 	}
 	
-	if(fread(au,sizeof(double),nzs[2],f1)!=nzs[2]){
+	if(fread(au,sizeof(double),(nasym+1)*nzs[2],f1)!=(nasym+1)*nzs[2]){
 	    printf("*ERROR in sensitivity reading the off-diagonals of the stiffness matrix in the .stm-file");
 	    exit(0);
 	}  
@@ -480,9 +658,26 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
   for(iev=0;iev<nev;iev++){
 
+      /* for cyclic symmetry calculations only the odd modes are calculated
+         (modes occur in phase-shifted pairs) */
+
+      if(cyclicsymmetry){
+	  if((iev/2)*2!=iev){
+	      continue;
+	  }
+	  mode=iev;
+	  noddiam=nm[iev];
+      }
+
       /* determining the internal forces and the stiffness coefficients */
       
       NNEW(f,double,*neq); /* FAKE */
+      
+      /* needed for nonlinear shape energy */
+
+      if((iperturb[1]==1)&&(ishapeenergy==1)){
+         NNEW(fint,double,*neq);
+      }
       
       /* allocating a field for the stiffness matrix 
 	 (calculated in results_se and needed in mafillsmse */
@@ -492,12 +687,15 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       
       iout=-1;
       NNEW(v,double,mt**nk);
-//      if(iperturb[1]!=0){
-      if(iperturb[0]!=0){
-	  memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
-      }
+//      memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
+      if(iperturb[1]==1) memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
+
       NNEW(fn,double,mt**nk);  /* FAKE */
-      NNEW(df,double,nzss);
+      if(!cyclicsymmetry){
+	  NNEW(df,double,nzss);
+      }else{
+	  NNEW(df,double,2*nzss);
+      }
       NNEW(stx,double,6*mi[0]**ne);
       
       results_se(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
@@ -518,7 +716,8 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
           mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
           islavsurf,ielprop,prop,energyini,energy,df,&distmin,
 	  &ndesi,nodedesi,sti,nkon,jqs,irows,nactdofinv,
-	  &icoordinate,dxstiff,istartdesi,ialdesi,xdesi);
+	  &icoordinate,dxstiff,istartdesi,ialdesi,xdesi,
+	  &ieigenfrequency,fint,&ishapeenergy);
 	  
       iout=1;SFREE(v);
       
@@ -542,35 +741,57 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       
       /* v contains the values dK/dx has to be multiplied with */
       
-      NNEW(v,double,mt**nk);
       if(ieigenfrequency==0){
+	  NNEW(v,double,mt**nk);
 	  memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
       }else{
-	  FORTRAN(resultsnoddir,(nk,v,nactdof,&z[iev*neq[1]],ipompc,
+	  if(!cyclicsymmetry){
+	      NNEW(v,double,mt**nk);
+	      FORTRAN(resultsnoddir,(nk,v,nactdof,&z[iev*neq[1]],ipompc,
 				 nodempc,coefmpc,nmpc,mi));
-	  ptime=d[iev]/6.283185308;
+	  }else{
+	      NNEW(v,double,2*mt**nk);
+	      FORTRAN(resultsnoddir,(nk,v,nactdof,&z[iev*neq[1]],ipompc,
+				 nodempc,coefmpc,nmpc,mi));
+	      FORTRAN(resultsnoddir,(nk,&v[mt**nk],nactdof,&z[iev*neq[1]+neq[1]/2],ipompc,
+				 nodempc,coefmpc,nmpc,mi));
+	  }
+	  
+	  ptime=d[iev];
+	  if(ptime>0){ptime=sqrt(ptime)/6.283185308;}else{ptime=0.;}
+
+          /* for an eigenfrequency objective (K-eigenvalue*M) is
+             taken instead of K (not for ORIENTATION as design 
+             variable since the mass does not change with orientation)*/
+
+	  if(icoordinate==1){
+	      sigma=d[iev];
+	      mass[0]=1;
+	  }
       }
-      
+
       /* determining the system matrix and the external forces */
       
-      mafillsmmain_se(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xbounact,nboun,
-          ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
-          nforc,nelemload,sideload,xloadact,nload,xbodyact,ipobody,
-          nbody,cgr,ad,au,nactdof,icol,jq,irow,neq,nzl,&nmethodl,
-          ikmpc,ilmpc,ikboun,ilboun,
-          elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
-          ielorien,norien,orab,ntmat_,
-          t0,t1act,ithermal,prestr,iprestr,vold,iperturb,sti,
-          nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
-          xstiff,npmat_,&dtime,matname,mi,
-          ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
-          shcon,nshcon,cocon,ncocon,ttime,&time,istep,&iinc,&coriolis,
-          ibody,xloadold,&reltime,veold,springarea,nstate_,
-          xstateini,xstate,thicke,integerglob,doubleglob,
-          tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
-          pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,
-	  &distmin,&ndesi,nodedesi,df,&nzss,jqs,irows,
-	  &icoordinate,dxstiff,xdesi,istartelem,ialelem,v);
+      mafillsmmain_se(co,nk,kon,ipkon,lakon,ne,nodeboun,
+            ndirboun,xbounact,nboun,
+            ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
+            nforc,nelemload,sideload,xloadact,nload,xbodyact,ipobody,
+            nbody,cgr,nactdof,neq,&nmethodl,
+            ikmpc,ilmpc,ikboun,ilboun,
+            elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
+            ielorien,norien,orab,ntmat_,
+            t0,t1act,ithermal,prestr,iprestr,vold,iperturb,sti,
+            stx,iexpl,plicon,nplicon,plkcon,nplkcon,
+            xstiff,npmat_,&dtime,matname,mi,
+            ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
+            shcon,nshcon,cocon,ncocon,ttime,&time,istep,&iinc,&coriolis,
+            ibody,xloadold,&reltime,veold,springarea,nstate_,
+            xstateini,xstate,thicke,integerglob,doubleglob,
+            tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
+            pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,
+	    &distmin,&ndesi,nodedesi,df,&nzss,jqs,irows,
+	    &icoordinate,dxstiff,xdesi,istartelem,ialelem,v,&sigma,
+	    &cyclicsymmetry,labmpc,ics,cs,mcs,&ieigenfrequency);
       
       SFREE(istartelem);SFREE(ialelem);
       
@@ -580,7 +801,7 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       
       NNEW(g0,double,*nobject);
       NNEW(dgdx,double,ndesi**nobject);
-      
+            
       iout=-1; 
       objectivemain_se(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
           elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -602,12 +823,23 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
           &ndesi,nodedesi,nobject,objectset,g0,dgdx,sti,
 	  df,nactdofinv,jqs,irows,&idisplacement,nzs,jobnamec,
 	  isolver,icol,irow,jq,kode,cs,output,istartdesi,ialdesi,
-	  xdesi,orname,&icoordinate,&iev,d,z,au,ad,aub,adb); 
+	  xdesi,orname,&icoordinate,&iev,d,z,au,ad,aub,adb,&cyclicsymmetry,
+	  &nzss,&nev,&ishapeenergy,fint,nlabel,&igreen,&nasym); 
       iout=1;
 
       SFREE(v);
       
       if(icoordinate==1){
+
+          /* Elimination of mesh-dependency  */
+  
+	  NNEW(weightformgrad,double,ndesi);
+
+/*          FORTRAN(formgradient,(istartdesi,ialdesi,ipkon,lakon,ipoface,
+		  &ndesi,nodedesi,nodface,kon,co,dgdx,nobject,
+		  weightformgrad));*/
+		  
+	  SFREE(weightformgrad);
           
 	  /* preparing the sensitivities for the output in the frd-file */
 	  
@@ -615,6 +847,10 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  
 	  FORTRAN(sensitivity_glob,(dgdx,dgdxglob,nobject,&ndesi,nodedesi,
 				    nk));
+
+          /* Filtering of sensitivities */
+  
+	  filtermain(co,dgdxglob,nobject,nk,nodedesi,&ndesi,objectset);
 	  
 	  /* createinum is called in order to determine the nodes belonging
 	     to elements; this information is needed in frd_se */
@@ -622,35 +858,41 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  NNEW(inum,ITG,*nk);
 	  FORTRAN(createinum,(ipkon,inum,kon,lakon,nk,ne,&cflag[0],nelemload,
 		  nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat));
-	  
-	  /* writing the sensitivities in the frd-file for visualization */
-	  
+	  	 
 	  for(iobject=0;iobject<*nobject;iobject++){
-	      ++*kode;
-	      frd_se(co,nk,stn,inum,nmethod,kode,filab,fn,&ptime,nstate_,istep,
+
+	      ++*kode; 
+
+	      /* storing the sensitivities in the frd-file for visualization 
+	         and for optimizer */
+	  	      
+	      frd_sen(co,nk,stn,inum,nmethod,kode,filab,&ptime,nstate_,
+                 istep,
 		 &iinc,&mode,&noddiam,description,mi,&ngraph,ne,cs,set,nset,
-		 istartset,iendset,ialset,thicke,jobnamec,output,
-		 dgdxglob,&iobject,objectset); 
+		 istartset,iendset,ialset,jobnamec,output,
+		 dgdxglob,&iobject,objectset,ntrans,inotr,trab,&idesvar,orname,
+		 &icoordinate,&inorm,&irand); 
+
+	      /* writing the objectives in the dat-file for optimizer */
+	  	      
+	      FORTRAN(writeobj,(objectset,&iobject,g0));
 	  }  
 	  SFREE(inum);
 	  
-	  /* writing the sensitivities in the sen-file for optimizer */
-	  
-//  sensitivity_out(jobnamec,dgdxglob,neq,nobject,g0);
-	  
-	  SFREE(dgdxglob);
-	  
       }
-      
-      /* Free variables */
       
       SFREE(fn);SFREE(stx);SFREE(f);SFREE(xstiff);SFREE(g0);SFREE(dgdx);
       SFREE(df);
       
   } // end loop over nev
 
-  if(ieigenfrequency==1){SFREE(d);SFREE(ad);SFREE(adb);SFREE(au);
-      SFREE(aub);SFREE(z);
+  if((iperturb[1]==1)&&(ishapeenergy==1)){SFREE(fint);}
+
+  if(ieigenfrequency==1){
+      if(!cyclicsymmetry){SFREE(d);SFREE(ad);SFREE(adb);SFREE(au);
+	  SFREE(aub);SFREE(z);
+      }else{
+	  SFREE(d);SFREE(z);SFREE(nm);}
   }else if(idisplacement==1){
       SFREE(ad);SFREE(au);
   }
@@ -665,15 +907,13 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
   SFREE(istartdesi);SFREE(ialdesi);
   if(icoordinate==1){
-      SFREE(nodedesi);SFREE(xdesi);
+      SFREE(nodedesi);SFREE(xdesi);SFREE(ipoface);SFREE(nodface);
   }
 
   SFREE(irows);SFREE(icols);SFREE(jqs);
-  
-  *icolp=icol;*irowp=irow;
 
-  *konp=kon;*ipkonp=ipkon;*lakonp=lakon;*ielmatp=ielmat;*enerp=ener;
-  *xstatep=xstate;
+  *irowp=irow;*enerp=ener;*xstatep=xstate;*ipkonp=ipkon;*lakonp=lakon;
+  *konp=kon;*ielmatp=ielmat;*ielorienp=ielorien;
 
   (*ttime)+=(*tper);
  

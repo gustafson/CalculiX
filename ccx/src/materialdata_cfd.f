@@ -28,7 +28,7 @@
       integer nef,i,imat,ntmat_,mi(*),ielmatf(mi(3),*),ithermal,
      &  nshcon(2,*),nface,ncocon(2,*),ielfa(4,*),nrhcon(*)
 !
-      real*8 t1l,vel(nef,0:5),shcon(0:3,ntmat_,*),cvel(*),vfa(0:5,*),
+      real*8 t1l,vel(nef,0:7),shcon(0:3,ntmat_,*),cvel(*),vfa(0:7,*),
      &  cocon(0:6,ntmat_,*),physcon(*),cvfa(*),umel(*),umfa(*),
      &  hcfa(*),rhcon(0:1,ntmat_,*)
 !

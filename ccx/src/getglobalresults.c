@@ -43,7 +43,7 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
 	*nnx=NULL,*nny=NULL,*nnz=NULL,*kon=NULL,*ipkon=NULL,*kontyp=NULL,
 	*iparent=NULL,ifreefa=1,kflag=2,ne,netet,numnodes,nkon,
 	indexe,istep,loadcase,nfaces,netet_,nktet=0,nfield,j,nodes[4],i,
-	read_mode=1,nodenr,*integerglob=NULL,*ielemnr=NULL,istep_global;
+	read_mode=0,nodenr,*integerglob=NULL,*ielemnr=NULL,istep_global;
     
     ITG i1[24]={3,7,8,6,4,3,8,1,3,8,5,6,3,5,8,1,2,3,5,6,2,5,3,1};
     ITG i2[12]={1,2,3,5,1,5,3,4,4,5,3,6};
@@ -433,7 +433,7 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
 	    }
 	}
 	if((istep_global==istep)&&
-//	   (strcmp1(lcase[i].name,"DISPR")==0)){
+	   (strcmp1(lcase[i].name,"DISPR")!=0)&&
 	   (strcmp1(lcase[i].name,"DISP")==0)){
 	    loadcase=i;
 	}else if(istep_global>istep){

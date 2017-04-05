@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine precfd(ne,ipkon,kon,lakon,ipnei,neifa,neiel,ipoface,
-     &  nodface,ielfa,nkonnei,nface,ifaext,nfaext,
+     &  nodface,ielfa,nflnei,nface,ifaext,nfaext,
      &  isolidsurf,nsolidsurf,set,nset,istartset,iendset,ialset,
      &  vel,vold,mi,neij,nef,nactdoh,ipkonf,lakonf,ielmatf,ielmat,
      &  ielorienf,ielorien,norien,cs,mcs,tieset,x,y,z,xo,yo,zo,nx,
@@ -32,7 +32,7 @@
       character*81 set(*),noset,tieset(3,*),slavset,mastset
 !
       integer ne,ipkon(*),ipnei(*),ipoface(*),nodface(5,*),neifa(*),
-     &  ielfa(4,*),nkonnei,nface,i,j,k,index,indexe,neiel(*),ithree,
+     &  ielfa(4,*),nflnei,nface,i,j,k,index,indexe,neiel(*),ithree,
      &  nfaext,ifaext(*),isolidsurf(*),nsolidsurf,indexf,nneigh,
      &  nset,istartset(*),iendset(*),ialset(*),iaux,kflag,ifour,iel2,
      &  ifaceq(8,6),ifacet(7,4),ifacew(8,5),kon(*),nodes(4),iel1,j2,
@@ -43,7 +43,7 @@
      &  n,mcs,l,jfacem,jfaces,islav,imast,ifaces,ifacem,ifatie(*),
      &  nodeinface,nodeoutface,nopes
 !
-      real*8 vel(nef,0:5),vold(0:mi(2),*),coords(3),cs(17,*),x(*),
+      real*8 vel(nef,0:7),vold(0:mi(2),*),coords(3),cs(17,*),x(*),
      &  y(*),z(*),xo(*),yo(*),zo(*),co(3,*),a(3),b(3),xn(3),p(3),
      &  q(3),c(3,3),dot,dc,ds,dd,theta,pi
 !
@@ -315,7 +315,8 @@ c         write(*,*) 'precfd ',i,nactdoh(i)
          endif
       enddo
 !
-      nkonnei=ifreenei
+      nflnei=ifreenei
+      ipnei(nef+1)=ifreenei
       nface=ifree-1
 !
 !     check for cyclic symmetry (translational or rotational)

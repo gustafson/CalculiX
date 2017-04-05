@@ -24,7 +24,7 @@
 !
       integer nface,nactdohinv(*),ielfa(4,*),i,iel
 !
-      real*8 vfa(0:5,*)
+      real*8 vfa(0:7,*)
 !
       do i=1,nface
          if(ielfa(2,i).ge.0) cycle

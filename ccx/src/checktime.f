@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine checktime(itpamp,namta,tinc,ttime,amta,tmin,inext,itp,
-     &  istep)
+     &  istep,tper)
 !
 !     checks whether tmin does not exceed the first time point,
 !     in case a time points amplitude is active
@@ -26,7 +26,7 @@
 !
       integer namta(3,*),itpamp,id,inew,inext,istart,iend,itp,istep
 !
-      real*8 amta(2,*),tinc,ttime,tmin,reftime
+      real*8 amta(2,*),tinc,ttime,tmin,reftime,tper
 !
       if(itpamp.gt.0) then
 !
@@ -70,6 +70,14 @@
             inew=id+1
          endif
 !
+!        if the end of the new increment is less than a time
+!        point by less than 1.e-6 (theta-value) dtheta is
+!        enlarged up to this time point
+!
+         if((inext.eq.inew).and.(inew.le.iend)) then
+            if(amta(1,inew)-reftime.lt.1.d-6*tper) inew=inew+1
+         endif
+!
 !        if the next time point precedes tinc or tmin
 !        appropriate action must be taken
 !
@@ -91,23 +99,6 @@
                write(*,*) '         increment tinc; tinc is'
                write(*,*) '         decreased to ',tinc
             endif
-c!
-c!           possible replacement of the above if the time points
-c!           are not used for all steps consecutively
-c!
-c            do i=inext,inew-1
-c               if(namta(3,itpamp).lt.0) then
-c                  tinc=amta(1,i)-ttime
-c               else
-c                  tinc=amta(1,i)
-c               endif
-c               if(tinc.lt.tmin) cycle
-c               if(tinc.ge.tmin) then
-c                  itp=1
-c                  inext=i
-c                  exit
-c               endif
-c            enddo
          endif
       endif
 !

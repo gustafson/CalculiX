@@ -23,8 +23,8 @@
       subroutine flowoutput(itg,ieg,ntg,nteq,bc,lakon,ntmat_,
      &     v,shcon,nshcon,ipkon,kon,co,nflow, dtime,ttime,time,
      &     ielmat,prop,ielprop,nactdog,nacteq,iin,physcon,
-     &     camt,camf,camp,rhcon,nrhcon,
-     &     vold,jobnamef,set,istartset,iendset,ialset,nset,mi,iaxial)
+     &     camt,camf,camp,rhcon,nrhcon,vold,jobnamef,set,istartset,
+     &     iendset,ialset,nset,mi,iaxial,istep,iit)
 !     
       implicit none
 !     
@@ -35,15 +35,16 @@
       character*132 jobnamef(*),fnnet
 !     
       integer mi(*),itg(*),ieg(*),ntg,nflow,ielmat(mi(3),*),i,
-     &     nrhcon(*),node,iaxial,ider,idirf(5),ieq,imat,kflag,
+     &     nrhcon(*),node,iaxial,ider,idirf(8),ieq,imat,kflag,
      &     ntmat_,nteq,nshcon(*),nelem,index,ipkon(*),kon(*),iin,
      &     nactdog(0:3,*),nacteq(0:3,*),ielprop(*),node1,nodem,node2,
-     &     istartset(*),iendset(*),ialset(*),nset,nodef(5),numf
+     &     istartset(*),iendset(*),ialset(*),nset,nodef(8),numf,
+     &     istep,iit
 !     
-      real*8 physcon(3),v(0:mi(2),*),shcon(0:3,ntmat_,*),co(3,*),
+      real*8 physcon(*),v(0:mi(2),*),shcon(0:3,ntmat_,*),co(3,*),
      &     prop(*),dtime,ttime,time,xflow,camt(*),camf(*),camp(*),
      &     rhcon(0:1,ntmat_,*),vold(0:mi(2),*),uamt,uamf,uamp,eta,
-     &     bc(*),cp,dvi,df,gastemp,f,g,r,rho,ts1,ts2,tg1,tg2
+     &     bc(*),cp,dvi,df(8),gastemp,f,g(3),r,rho,ts1,ts2,tg1,tg2
 !     
       do i=1,132
          if(jobnamef(1)(i:i).eq.' ') exit
@@ -67,23 +68,25 @@
             nodem=kon(index+2)
             node2=kon(index+3)
 !
+            xflow=v(1,nodem)
+!
             if(lakon(nelem)(2:3).ne.'LP') then
 !
 !              incompressible
 !
                if(node1.eq.0) then
-                  tg1=v(0,node2)
-                  tg2=tg1
+c                  tg1=v(0,node2)
+c                  tg2=tg1
                   ts1=v(3,node2)
                   ts2=ts1
                elseif(node2.eq.0) then
-                  tg1=v(0,node1)
-                  tg2=tg1
+c                  tg1=v(0,node1)
+c                  tg2=tg1
                   ts1=v(3,node1)
                   ts2=ts1
                else
-                  tg1=v(0,node1)
-                  tg2=v(0,node2)
+c                  tg1=v(0,node1)
+c                  tg2=v(0,node2)
                   ts1=v(3,node1)
                   ts2=v(3,node2)
                endif
@@ -93,17 +96,19 @@
 !              compressible
 !
                if(xflow.gt.0) then
-                  tg1=v(0,node1)
-                  ts1=v(3,node1)
-                  tg2=v(0,node2)
-                  ts2=v(3,node2)
-                  gastemp=ts1
+c                  tg1=v(0,node1)
+c                  ts1=v(3,node1)
+c                  tg2=v(0,node2)
+c                  ts2=v(3,node2)
+c                  gastemp=ts1
+                  gastemp=v(3,node1)
                else
-                  tg2=v(0,node1)
-                  ts2=v(3,node1)
-                  tg1=v(0,node2)
-                  ts1=v(3,node2)
-                  gastemp=ts2
+c                  tg2=v(0,node1)
+c                  ts2=v(3,node1)
+c                  tg1=v(0,node2)
+c                  ts1=v(3,node2)
+c                  gastemp=ts2
+                  gastemp=v(3,node2)
                endif
             endif
 !
@@ -114,7 +119,7 @@
 !
             if(nacteq(2,nodem).ne.0) then
                ieq=nacteq(2,nodem)
-               xflow=v(1,nodem)
+c               xflow=v(1,nodem)
 !
 !              dummy set number
 !

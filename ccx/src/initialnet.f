@@ -91,7 +91,7 @@
 !     determining the initial pressure
 !     and identifying the chamber and gas pipe nodes
 !     
-      if(network.ne.0) then
+      if(network.gt.2) then
 !
          call preinitialnet(ieg,lakon,v,ipkon,kon,nflow,prop,ielprop,
      &     ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,mi,iponoel,inoel,
@@ -142,8 +142,7 @@
             call nident(itg,node1,ntg,id1)
             call nident(itg,node2,ntg,id2)
 !     
-            if ((((lakon(nelem)(1:5).eq.'DGAPF')
-     &           .or.(lakon(nelem)(1:5).eq.'DGAPI')).and.
+            if (((lakon(nelem)(1:5).eq.'DGAPF').and.
      &           (iin_abs.eq.0))
      &           .or.((lakon(nelem)(1:3).eq.'DRE')
      &           .and.(lakon(nelem)(1:7).ne.'DREWAOR')
@@ -305,7 +304,7 @@
 !     temperature conditions for all but purely hydrodynamic
 !     networks
 !     
-      if(network.ne.2) then
+      if(network.ne.4) then
 !     
 !     temperature dofs
 !     
@@ -378,35 +377,6 @@
       do j=1,nteq
          if(dabs(ac(j,j)).lt.1.d-20) ac(j,j)=1.d0
       enddo
-cc      j=nteq+1
-c      j=0
-c      do i=nmpc,1,-1
-c         if(labmpc(i)(1:7).ne.'NETWORK') cycle
-c!
-c!        looking of a row in the matrix which has not been used yet
-c!
-c         do
-c            j=j+1
-c            if(dabs(ac(j,j)).lt.1.d-20) exit
-c            if(j.eq.nteq) then
-c               write(*,*) '*ERROR in initialnet: MPC cannot'
-c               write(*,*) '       be inserted'
-c               call stop()
-c            endif
-c         enddo
-c         j=j-1
-c         index=ipompc(i)
-c!
-c         do
-c            node=nodempc(1,index)
-c            idir=nodempc(2,index)
-c            if(nactdog(idir,node).ne.0) then
-c               ac(j,nactdog(idir,node))=coefmpc(index)
-c            endif
-c            index=nodempc(3,index)
-c            if(index.eq.0) exit
-c         enddo
-c      enddo
 !     
 !     solving the system
 !     
@@ -422,16 +392,14 @@ c      enddo
 !     storing the initial pressure in v
 !     (not for purely thermal networks)
 !     
-      if(network.ne.0) then
+      if(network.gt.2) then
          do i=1,ntg
             node=itg(i)
             if(nactdog(2,node).eq.0) then
-c               write(*,*) 'initialnet ',node,v(2,node)
                v(2,node)=pressmax
      &              *datan(v(2,node))/constant
                cycle
             endif
-c               write(*,*) 'initialnet ',node,bc(nactdog(2,node))
             v(2,node)=pressmax
      &           *datan(bc(nactdog(2,node)))/constant
          enddo
@@ -440,7 +408,7 @@ c               write(*,*) 'initialnet ',node,bc(nactdog(2,node))
 !     storing the initial temperature in v
 !     (not for purely hydrodynamic networks)
 !     
-      if(network.ne.2) then
+      if(network.ne.4) then
          do i=1,ntg
             node=itg(i)
             if(nactdog(0,node).ne.0) v(0,node)=bc(nactdog(0,node))
@@ -456,12 +424,12 @@ c               write(*,*) 'initialnet ',node,bc(nactdog(2,node))
          if(lakon(i)(2:5).ne.'REBR') cycle
          index=ielprop(nelem)
 !     
-         nelem1=prop(index+2)
+         nelem1=nint(prop(index+2))
          index1=ipkon(nelem1)
          node11=kon(index1+1)
          node21=kon(index1+3)
 !     
-         nelem2=prop(index+3)
+         nelem2=nint(prop(index+3))
          index2=ipkon(nelem2)
          node12=kon(index2+1)
          node22=kon(index2+3)
@@ -505,7 +473,7 @@ c               write(*,*) 'initialnet ',node,bc(nactdog(2,node))
 !     gas networks (needed to determine the static
 !     temperature which is used for the material properties)
 !     
-      if(network.eq.0) then
+      if(network.le.2) then
          do i=1,nflow
             nelem=ieg(i)
             if((lakon(nelem)(2:3).eq.'LP').or.
@@ -533,7 +501,7 @@ c               write(*,*) 'initialnet ',node,bc(nactdog(2,node))
 !     determining the initial mass flow in those nodes for which no
 !     flux boundary conditions are defined
 !     
-      if(network.ne.0)then
+      if(network.gt.2)then
          do i=1,nflow
             nelem=ieg(i)
 !     
@@ -704,11 +672,10 @@ c               write(*,*) 'initialnet ',node,bc(nactdog(2,node))
                v(1,nodem)=xflow
             endif
 !     
-c            if(nactdog(1,nodem).ne.0) v(1,nodem)=xflow
-!     
-c            if(lakon(nelem)(2:4).ne.'LIP') then
             if((lakon(nelem)(2:4).ne.'LIP').and.
-     &         (lakon(nelem)(2:3).ne.'VO')) then
+     &         (lakon(nelem)(2:3).ne.'VO').and.
+     &         (lakon(nelem)(2:4).ne.'ATR').and.
+     &         (lakon(nelem)(2:4).ne.'RTA')) then
                if(v(1,nodem).eq.0d0) then
                   WRITE(*,*) '**************************************'
                   write(*,*) '*ERROR:in subroutine initialnet.f'
@@ -721,17 +688,34 @@ c            if(lakon(nelem)(2:4).ne.'LIP') then
      &                 v(2,node2)
                   call exit(201)
                endif
-               if (v(1,nodem).lt.0) then
+               if (v(1,nodem)*(v(2,node1)-v(2,node2)).lt.0) then
                   WRITE(*,*) '**************************************'
                   write(*,*) '*WARNING: in subroutine initialnet.f'
                   write(*,*) '        in element', nelem
-                  write(*,*) '        mass flow rate value .le. 0 !'
+                  write(*,*) 
+     &             '        initial mass flow rate value does not'
+                  write(*,*) '        correspond to pressure gradient'
                   write(*,*) '        node1',node1,'pressure',
      &                 v(2,node1)
                   write(*,*) '        node2',node2,'pressure',
      &                 v(2,node2)
-                  write(*,*) '        check element definition'
+                  write(*,*) '        nodem',nodem,'mass flow',
+     &                 v(1,nodem)
+                  write(*,*) '        the sign of the initial mass flow'
+                  write(*,*) '        rate will be changed'
+c                  v(1,nodem)=-v(1,nodem)
                endif
+c               if (v(1,nodem).lt.0) then
+c                  WRITE(*,*) '**************************************'
+c                  write(*,*) '*WARNING: in subroutine initialnet.f'
+c                  write(*,*) '        in element', nelem
+c                  write(*,*) '        mass flow rate value .le. 0 !'
+c                  write(*,*) '        node1',node1,'pressure',
+c     &                 v(2,node1)
+c                  write(*,*) '        node2',node2,'pressure',
+c     &                 v(2,node2)
+c                  write(*,*) '        check element definition'
+c               endif
             endif
          enddo
       endif
@@ -816,14 +800,11 @@ c            if(lakon(nelem)(2:4).ne.'LIP') then
                Tt=v(0,node)
                Pt=v(2,node)
 !     
-               if((lakon(nelem)(2:5).eq.'GAPF')
-     &              .or.(lakon(nelem)(2:5).eq.'GAPI')) then
+               if(lakon(nelem)(2:5).eq.'GAPF') then
                   A=prop(index+1)
-                  if((lakon(nelem)(2:6).eq.'GAPFA') 
-     &                 .or.(lakon(nelem)(2:6).eq.'GAPIA')) then
+                  if(lakon(nelem)(2:6).eq.'GAPFA') then
                      icase=0
-                  elseif((lakon(nelem)(2:6).eq.'GAPFI')
-     &                    .or.(lakon(nelem)(2:6).eq.'GAPII')) then
+                  elseif(lakon(nelem)(2:6).eq.'GAPFI') then
                      icase=1
                   endif     
 !     
@@ -832,13 +813,11 @@ c            if(lakon(nelem)(2:4).ne.'LIP') then
                   node1=kon(index2+1)
                   node2=kon(index2+3)
                   if(lakon(nelem)(4:5).eq.'EX') then
-                     if((lakon(nint(prop(index+4)))(2:6).eq.'GAPFA')
-     &                 .or.(lakon(nint(prop(index+4)))(2:6).eq.'GAPIA'))
+                     if(lakon(nint(prop(index+4)))(2:6).eq.'GAPFA')
      &                    then
                         icase=0
                      elseif
-     &                   ((lakon(nint(prop(index+4)))(2:6).eq.'GAPFI')
-     &                 .or.(lakon(nint(prop(index+4)))(2:6).eq.'GAPII')) 
+     &                   (lakon(nint(prop(index+4)))(2:6).eq.'GAPFI') 
      &                       then
                         icase=1
                      endif
@@ -873,7 +852,7 @@ c            if(lakon(nelem)(2:4).ne.'LIP') then
                   endif
                endif
 !     
-               if(v(3,node).eq.0) then
+               if(v(3,node).eq.0.d0) then
                   xflow360=xflow*iaxial
                   call ts_calc(xflow360,Tt,Pt,kappa,r,a,Ts,icase)
                   v(3,node)=Ts

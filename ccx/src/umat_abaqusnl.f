@@ -19,7 +19,7 @@
       subroutine umat_abaqusnl(amat,iel,iint,kode,elconloc,emec,emec0,
      &        beta,xokl,voj,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi,nstate_,xstateini,xstate,stre,stiff,
-     &        iorien,pgauss,orab,kstep,kinc,pnewdt)
+     &        iorien,pgauss,orab,istep,kinc,pnewdt,nmethod,iperturb)
 !
 !     calculates stiffness and stresses for a nonlinear material
 !     defined by an ABAQUS umat routine
@@ -129,9 +129,9 @@
       character*80 amat
 !
       integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),i,
-     &  iorien,
-     &  ndi,nshr,ntens,nprops,layer,kspt,kstep,kinc,kal(2,6),kel(4,21),
-     &  j1,j2,j3,j4,j5,j6,j7,j8,jj,n,ier,j,matz
+     &  iorien,nmethod,iperturb(*),istep,
+     &  ndi,nshr,ntens,nprops,layer,kspt,jstep(4),kinc,kal(2,6),
+     &  kel(4,21),j1,j2,j3,j4,j5,j6,j7,j8,jj,n,ier,j,matz
 !
       real*8 elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xokl(3,3),voj,pgauss(3),orab(7,*),
@@ -152,6 +152,17 @@
      &          1,2,2,3,1,3,2,3,2,3,2,3/),(/4,21/))
 !
       d=(/1.d0,1.d0,1.d0,0.d0,0.d0,0.d0/)
+!
+!     filling field jstep
+!
+      jstep(1)=istep
+      jstep(2)=nmethod
+      jstep(3)=iperturb(2)
+      if(iperturb(1).eq.1) then
+         jstep(4)=1
+      else
+         jstep(4)=0
+      endif
 !
 !     calculating the logarithmic mechanical strain at the
 !     start of the increment
@@ -527,21 +538,21 @@ c      write(*,*) 'r',((r(i,j),j=1,3),i=1,3)
       enddo
 !
       if(amat(1:1).eq.'@') then
-
-c         call umat_dl(stre,xstate(1,iint,iel),ddsdde,sse,spd,scd,rpl
-c     $        ,ddsddt,drplde,drpldt,stran,dstran,abqtime,dtime,temp
-c     $        ,dtemp ,predef,dpred,amat,ndi,nshr,ntens,nstate_,elconloc
-c     $        ,nprops ,pgauss,drot,pnewdt,celent,xokl,xkl,iel,iint,layer
-c     $        ,kspt ,kstep,kinc)
-         
+!
+         call call_external_umat(stre,xstate(1,iint,iel),ddsdde,
+     &        sse,spd,scd,rpl,ddsddt,drplde,drpldt,stran,dstran,
+     &        abqtime,dtime,temp,dtemp ,predef,dpred,amat,ndi,nshr,
+     &        ntens,nstate_,elconloc,nprops,pgauss,drot,pnewdt,
+     &        celent,xokl,xkl,iel,iint,layer,kspt,jstep,kinc)
+!         
       else
-         
+!         
          call umat(stre,xstate(1,iint,iel),ddsdde,sse,spd,scd,rpl,ddsddt
-     $        ,drplde,drpldt,stran,dstran,abqtime,dtime,temp,dtemp
-     $        ,predef,dpred,amat,ndi,nshr,ntens,nstate_,elconloc,nprops
-     $        ,pgauss,drot,pnewdt,celent,xokl,xkl,iel,iint,layer,kspt
-     $        ,kstep,kinc)
-
+     &        ,drplde,drpldt,stran,dstran,abqtime,dtime,temp,dtemp
+     &        ,predef,dpred,amat,ndi,nshr,ntens,nstate_,elconloc,nprops
+     &        ,pgauss,drot,pnewdt,celent,xokl,xkl,iel,iint,layer,kspt
+     &        ,jstep,kinc)
+!
       endif
 !
 !     rotating the stress into the global system

@@ -27,7 +27,7 @@
 !
       integer nface,ielfa(4,*),i,j,indexf,ipnei(*),iel1,iel2,nef
 !
-      real*8 vel(nef,0:5),gradtfa(3,*),xxn(3,*),xxj(3,*),vud,vcd,
+      real*8 vel(nef,0:7),gradtfa(3,*),xxn(3,*),xxj(3,*),vud,vcd,
      &  gammat(*),phic,xlet(*),betam
 !
       do i=1,nface

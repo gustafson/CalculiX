@@ -416,6 +416,14 @@
                   enddo
                enddo
             else
+               nlayer=0
+               do j=1,mi(3)
+                  if(ielmat(j,i).gt.0) then
+                     nlayer=nlayer+1
+                  else
+                     exit
+                  endif
+               enddo
                do m=1,nlayer
                   jj=20*(m-1)
                   do j=9,20
@@ -435,20 +443,42 @@
                enddo
             enddo
          elseif(lakonl(4:5).eq.'15') then
-            if(jfaces.le.2) then
-               do j=4,6
-                  do k=1,nfield
-                     field(k,ifacew2(j,jfaces))=
-     &                   (field(k,nonei15(2,ifacew2(j,jfaces)-6))+
-     &                    field(k,nonei15(3,ifacew2(j,jfaces)-6)))/2.d0
+            if(lakonl(7:8).ne.'LC') then
+               if(jfaces.le.2) then
+                  do j=4,6
+                     do k=1,nfield
+                        field(k,ifacew2(j,jfaces))=
+     &                      (field(k,nonei15(2,ifacew2(j,jfaces)-6))+
+     &                      field(k,nonei15(3,ifacew2(j,jfaces)-6)))
+     &                      /2.d0
+                     enddo
                   enddo
-               enddo
+               else
+                  do j=5,8
+                     do k=1,nfield
+                        field(k,ifacew2(j,jfaces))=
+     &                      (field(k,nonei15(2,ifacew2(j,jfaces)-6))+
+     &                      field(k,nonei15(3,ifacew2(j,jfaces)-6)))
+     &                      /2.d0
+                     enddo
+                  enddo
+               endif
             else
-               do j=5,8
-                  do k=1,nfield
-                     field(k,ifacew2(j,jfaces))=
-     &                   (field(k,nonei15(2,ifacew2(j,jfaces)-6))+
-     &                    field(k,nonei15(3,ifacew2(j,jfaces)-6)))/2.d0
+               nlayer=0
+               do j=1,mi(3)
+                  if(ielmat(j,i).gt.0) then
+                     nlayer=nlayer+1
+                  else
+                     exit
+                  endif
+               enddo
+               do m=1,nlayer
+                  jj=15*(m-1)
+                  do j=7,15
+                     do k=1,nfield
+                        field(k,jj+j)=(field(k,jj+nonei15(2,j-6))
+     &                     +field(k,jj+nonei15(3,j-6)))/2.d0
+                     enddo
                   enddo
                enddo
             endif
@@ -517,14 +547,6 @@ c     Bernhardi end
             enddo
          endif
       enddo
-!
-c      do i=1,nk
-c         if(islavact(i).ne.1) then
-c            do j=1,nfield
-c               yn(j,i)=0.d0
-c            enddo
-c         endif
-c      enddo
 !     
 !     for 1d and 2d elements only:
 !     finding the solution in the original nodes
@@ -536,467 +558,3 @@ c      enddo
 !     
       return
       end
-c
-c     in the next section the contact stresses are derived from the
-c     volumetric stresses
-c
-c
-c!
-c      if(nfield.eq.0) return
-c!
-c      do i=1,nk
-c         do j=1,3
-c            xslavnor(j,i)=0.d0
-c         enddo
-c      enddo
-c!
-c      do i=1,nk
-c         do j=1,6
-c            stn(j,i)=0.d0
-c         enddo
-c      enddo
-c!
-c      i=ne0
-c      do
-c         i=i+1
-c         if(i.gt.ne) exit
-c!     
-c         if(ipkon(i).lt.0) cycle
-c         indexc=ipkon(i)
-c!     
-c         if((lakon(i)(1:1).ne.'E').or.(lakon(i)(7:7).ne.'C')) cycle
-c         nopespring=kon(indexc)
-c         ifaces=islavsurf(1,kon(indexc+nopespring+2))
-c!     
-c         nelems=int(ifaces/10.d0)
-c         lakonl=lakon(nelems)
-c!     
-c!        determining all contact elements belonging to slave face
-c!        "ifaces"
-c!
-c         n=i
-c!     
-c         do
-c            n=n+1
-c            if(n.gt.ne) exit
-c            indexcj=ipkon(n)
-c            nopespringj=kon(indexcj)
-c            ifacej=islavsurf(1,kon(indexcj+nopespringj+2))
-c            if(ifaces.ne.ifacej) exit
-c         enddo
-c         n=n-1
-c         jfaces=ifaces-10*int(ifaces/10.d0)
-c         indexe=ipkon(nelems)
-c!
-c         if(lakonl(7:8).eq.'LC') then
-c            nlayer=0
-c            do j=1,mi(3)
-c               if(ielmat(j,i).gt.0) then
-c                  nlayer=nlayer+1
-c               else
-c                  exit
-c               endif
-c            enddo
-c!
-c            if(lakonl(4:4).eq.'2') then
-c               nopeexp=28
-c            elseif(lakonl(4:5).eq.'15') then
-c               nopeexp=21
-c            endif
-c         endif
-c!     
-c!     nopes: # of nodes in the slave face
-c!     nope: # of nodes in the element
-c!     
-c         if(lakonl(4:5).eq.'8R') then
-c            nopes=4
-c            nope=8
-c         elseif(lakonl(4:4).eq.'8') then
-c            nopes=4
-c            nope=8
-c         elseif(lakonl(4:5).eq.'20') then
-c            nopes=8
-c            nope=20
-c         elseif(lakonl(4:5).eq.'10') then
-c            nopes=6
-c            nope=10
-c         elseif(lakonl(4:4).eq.'4') then
-c            nopes=3
-c            nope=4
-c!     
-c!     treatment of wedge faces
-c!     
-c         elseif(lakonl(4:4).eq.'6') then
-c            nope=6
-c            if(jfaces.le.2) then
-c               nopes=3
-c            else
-c               nopes=4
-c            endif
-c         elseif(lakonl(4:5).eq.'15') then
-c            nope=15
-c            if(jfaces.le.2) then
-c               nopes=6
-c            else
-c               nopes=8
-c            endif
-c         endif
-c!  
-c!        identifying the local node numbers belonging to the
-c!        face
-c!   
-c         if((nope.eq.20).or.(nope.eq.8)) then
-c            do m=1,nopes
-c               nodes(m)=ifaceq(m,jfaces)
-c            enddo
-c         elseif((nope.eq.10).or.(nope.eq.4)) 
-c     &           then
-c            do m=1,nopes
-c               nodes(m)=ifacet(m,jfaces)
-c            enddo
-c         elseif(nope.eq.15) then
-c            do m=1,nopes
-c               nodes(m)=ifacew2(m,jfaces)
-c            enddo
-c         else
-c            do m=1,nopes
-c               nodes(m)=ifacew1(m,jfaces)
-c            enddo
-c         endif
-c!
-c!        extrapolation of the stress tensor from the integration
-c!        points to the nodes of the slave face
-c!
-c         if((lakonl(4:7).eq.'20RB').and.
-c     &        (lakonl(8:8).ne.'R').and.
-c     &        (lakonl(8:8).ne.'C')) then
-c            call beamextscheme(yi(1,1,nelems),ndim,nfield,lakonl,
-c     &              ielprop(nelems),prop,field,mi)
-c!               
-cc     Bernhardi start
-c         elseif((lakonl(4:6).eq.'20R').or.
-c     &           (lakonl(4:5).eq.'8 ').or.(lakonl(4:5).eq.'8I')) then
-cc     Bernhardi end
-c            if(lakonl(7:8).ne.'LC') then
-c               do j=1,8
-c                  do k=1,nfield
-c                     field(k,j)=0.d0
-c                     do l=1,8
-c                        field(k,j)=field(k,j)+a8(j,l)*yi(k,l,nelems)
-c                     enddo
-c                  enddo
-c               enddo
-c            else
-c               do m=1,nlayer
-c                  jj=20*(m-1)
-c                  ll=8*(m-1)
-c                  do j=1,8
-c                     do k=1,nfield
-c                        field(k,jj+j)=0.d0
-c                        do l=1,8
-c                           field(k,jj+j)=
-c     &                          field(k,jj+j)+a8(j,l)*yi(k,ll+l,nelems)
-c                        enddo
-c                     enddo
-c                  enddo
-c               enddo
-c            endif
-c         elseif(lakonl(4:4).eq.'8') then
-c            do j=1,8
-c               do k=1,nfield
-c                  field(k,j)=yi(k,1,nelems)
-c               enddo
-c            enddo
-c         elseif(lakonl(4:5).eq.'10') then
-c            do j=1,4
-c               do k=1,nfield
-c                  field(k,j)=0.d0
-c                  do l=1,4
-c                     field(k,j)=field(k,j)+a4(j,l)*yi(k,l,nelems)
-c                  enddo
-c               enddo
-c            enddo
-c         elseif(lakonl(4:4).eq.'2') then
-c            do j=1,20
-c               do k=1,nfield
-c                  field(k,j)=0.d0
-c                  do l=1,27
-c                     field(k,j)=field(k,j)+a27(j,l)*yi(k,l,nelems)
-c                  enddo
-c               enddo
-c            enddo
-c         elseif(lakonl(4:4).eq.'4') then
-c            do j=1,4
-c               do k=1,nfield
-c                  field(k,j)=yi(k,1,nelems)
-c               enddo
-c            enddo
-c         elseif(lakonl(4:4).eq.'1') then
-c            do j=1,6
-c               do k=1,nfield
-c                  field(k,j)=0.d0
-c                  do l=1,9
-c                     field(k,j)=field(k,j)+a9(j,l)*yi(k,l,nelems)
-c                  enddo
-c               enddo
-c            enddo
-c         else
-c            do j=1,6
-c               do k=1,nfield
-c                  field(k,j)=0.d0
-c                  do l=1,2
-c                     field(k,j)=field(k,j)+a2(j,l)*yi(k,l,nelems)
-c                  enddo
-c               enddo
-c            enddo
-c         endif
-c!     
-c!     determining the field values in the midside nodes
-c!     
-c         if(lakonl(4:6).eq.'20R') then
-c            if(lakonl(7:8).ne.'LC') then
-c               do j=9,20
-c                  do k=1,nfield
-c                     field(k,j)=(field(k,nonei20(2,j-8))+
-c     &                    field(k,nonei20(3,j-8)))/2.d0
-c                  enddo
-c               enddo
-c            else
-c               do m=1,nlayer
-c                  jj=20*(m-1)
-c                  do j=9,20
-c                     do k=1,nfield
-c                        field(k,jj+j)=(field(k,jj+nonei20(2,j-8))
-c     &                       +field(k,jj+nonei20(3,j-8)))/2.d0
-c                     enddo
-c                  enddo
-c               enddo
-c            endif
-c         elseif(lakonl(4:5).eq.'10') then
-c            do j=5,10
-c               do k=1,nfield
-c                  field(k,j)=(field(k,nonei10(2,j-4))+
-c     &                 field(k,nonei10(3,j-4)))/2.d0
-c               enddo
-c            enddo
-c         elseif(lakonl(4:5).eq.'15') then
-c            do j=7,15
-c               do k=1,nfield
-c                  field(k,j)=(field(k,nonei15(2,j-6))+
-c     &                 field(k,nonei15(3,j-6)))/2.d0
-c               enddo
-c            enddo
-c         endif
-c!     
-c!     transferring the field values into stn
-c!     
-c         if(lakonl(7:8).ne.'LC') then
-c            do j=1,nopes
-c               m=nodes(j)
-c               do k=1,nfield
-c                  stn(k,kon(indexe+m))=stn(k,kon(indexe+m))+
-c     &                 field(k,m)
-c               enddo
-c               inum(kon(indexe+m))=inum(kon(indexe+m))+1
-c            enddo
-c         else
-c            do j=1,nope*nlayer
-c               do k=1,nfield
-c                  stn(k,kon(indexe+nopeexp+j))=
-c     &                 stn(k,kon(indexe+nopeexp+j))+field(k,j)
-c               enddo
-c               inum(kon(indexe+nopeexp+j))=inum(kon(indexe+nopeexp+j))+1
-c            enddo
-c         endif
-c!     
-cc     Bernhardi start
-cc     incompatible modes elements
-c         if(lakonl(1:5).eq.'C3D8I') then
-c            do j=1,3
-c               do k=1,nfield
-c                  stn(k,kon(indexe+nope+j))=0.0d0
-c               enddo
-c            enddo
-c         endif
-cc     Bernhardi end
-c!     
-c!     calculation of the normals at the nodes of the slave face
-c!     
-c!     actual position of the nodes belonging to the
-c!     slave surface
-c!     
-c         do k=1,nope
-c            konl(k)=kon(indexe+k)
-c         enddo
-c!     
-c         do m=1,nopes
-c            do k=1,3
-c               xl2s(k,m)=co(k,konl(nodes(m)))+
-c     &              vold(k,konl(nodes(m)))
-c            enddo
-c         enddo
-c!         
-c!     calculate the normal vector in the nodes belonging to the slave surface
-c!     
-c         if(nopes.eq.8) then
-c            do m=1,nopes
-c               xi=xquad(1,m)
-c               et=xquad(2,m)
-c               call shape8q(xi,et,xl2s,xsj2,xs2,shp2,iflag)
-c               dl=dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2)
-c     &              + xsj2(3)*xsj2(3))
-c               xsj2(1)=xsj2(1)/dl
-c               xsj2(2)=xsj2(2)/dl
-c               xsj2(3)=xsj2(3)/dl
-c!     
-c               node=konl(nodes(m))
-c!     
-c               do k=1,3
-c                  xslavnor(k,node)=xslavnor(k,node)+xsj2(k)
-c               enddo
-c!     
-c            enddo
-c         elseif(nopes.eq.4) then
-c            do m=1,nopes
-c               xi=xquad(1,m)
-c               et=xquad(2,m)
-c               call shape4q(xi,et,xl2s,xsj2,xs2,shp2,iflag)
-c               dl=dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2) 
-c     &              + xsj2(3)*xsj2(3))
-c               xsj2(1)=xsj2(1)/dl
-c               xsj2(2)=xsj2(2)/dl
-c               xsj2(3)=xsj2(3)/dl
-c!     
-c               node=konl(nodes(m))
-c!     
-c               do k=1,3
-c                  xslavnor(k,node)=xslavnor(k,node)+xsj2(k)
-c               enddo
-c!     
-c            enddo
-c         elseif(nopes.eq.6) then
-c            do m=1,nopes
-c               xi=xtri(1,m)
-c               et=xtri(2,m)
-c               call shape6tri(xi,et,xl2s,xsj2,xs2,shp2,iflag)
-c               dl=dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2) 
-c     &              + xsj2(3)*xsj2(3))
-c               xsj2(1)=xsj2(1)/dl
-c               xsj2(2)=xsj2(2)/dl
-c               xsj2(3)=xsj2(3)/dl
-c!     
-c               node=konl(nodes(m))
-c!     
-c               do k=1,3
-c                  xslavnor(k,node)=xslavnor(k,node)+xsj2(k)
-c               enddo
-c!     
-c            enddo
-c         else
-c            do m=1,nopes
-c               xi=xtri(1,m)
-c               et=xtri(2,m)
-c               call shape3tri(xi,et,xl2s,xsj2,xs2,shp2,iflag)
-c               dl=dsqrt(xsj2(1)*xsj2(1) + xsj2(2)*xsj2(2) 
-c     &              + xsj2(3)*xsj2(3))
-c               xsj2(1)=xsj2(1)/dl
-c               xsj2(2)=xsj2(2)/dl
-c               xsj2(3)=xsj2(3)/dl
-c!     
-c               node=konl(nodes(m))
-c!     
-c               do k=1,3
-c                  xslavnor(k,node)=xslavnor(k,node)+xsj2(k)
-c               enddo
-c!     
-c            enddo
-c         endif
-c!     
-c         i=n
-c!     
-c      enddo
-c!
-c!     taking the mean of nodal contributions coming from different
-c!     elements having the node in common
-c!
-c      do i=1,nk
-c         if(inum(i).gt.0) then
-c            do j=1,6
-c               stn(j,i)=stn(j,i)/inum(i)
-c            enddo
-c         endif
-c      enddo
-c!
-c!     calculating the traction in the slave nodes
-c!
-c      do i=1,nk
-c         if(inum(i).ne.0) then
-c!
-c!           determining the mean normal
-c!
-c
-c            do j=1,3
-c               xn(j)=xslavnor(j,i)
-c            enddo
-c            dl=dsqrt(xn(1)*xn(1)+xn(2)*xn(2)+xn(3)*xn(3))
-c            do j=1,3
-c               xn(j)=xn(j)/dl
-c            enddo
-c!
-c!           determining the tangent unit vectors
-c!
-c            if(1.d0-dabs(xn(1)).lt.1.5231d-6) then       
-c               t1(1)=-xn(3)*xn(1)
-c               t1(2)=-xn(3)*xn(2)
-c               t1(3)=1.d0-xn(3)*xn(3)
-c            else
-c               t1(1)=1.d0-xn(1)*xn(1)
-c               t1(2)=-xn(1)*xn(2)
-c               t1(3)=-xn(1)*xn(3)
-c            endif
-c            dt1=dsqrt(t1(1)*t1(1)+t1(2)*t1(2)+t1(3)*t1(3))
-c            do j=1,3
-c               t1(j)=t1(j)/dt1
-c            enddo
-c            t2(1)=xn(2)*t1(3)-xn(3)*t1(2)
-c            t2(2)=xn(3)*t1(1)-xn(1)*t1(3)
-c            t2(3)=xn(1)*t1(2)-xn(2)*t1(1)           
-c!
-c!           calculating the traction
-c!
-c            trac(1)=stn(1,i)*xn(1)+stn(4,i)*xn(2)+stn(5,i)*xn(3)
-c            trac(2)=stn(4,i)*xn(1)+stn(2,i)*xn(2)+stn(6,i)*xn(3)
-c            trac(3)=stn(5,i)*xn(1)+stn(6,i)*xn(2)+stn(3,i)*xn(3)
-c!
-c!           determining the contact pressure
-c!
-c            yn(4,i)=-(trac(1)*xn(1)+trac(2)*xn(2)+trac(3)*xn(3))
-c!
-c!           determining the contact shear stress components
-c!
-c            yn(6,i)=-(trac(1)*t1(1)+trac(2)*t1(2)+trac(3)*t1(3))
-c            yn(5,i)=trac(1)*t2(1)+trac(2)*t2(2)+trac(3)*t2(3)
-c!
-c         endif
-c      enddo
-c!     
-c!     zeroing nonactive nodes
-c!  
-c      do i=1,nslavnode(ntie+1)
-c         if(islavact(i).ne.1) then
-c            do j=1,nfield
-c               yn(j,islavnode(i))=0.d0
-c            enddo
-c         endif
-c      enddo
-c!     
-c!     for 1d and 2d elements only:
-c!     finding the solution in the original nodes
-c!     
-c      if((cflag.ne.' ').and.(cflag.ne.'E')) then
-c         call map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,ne,cflag,co,
-c     &        vold,force,mi)
-c      endif
-c!     
-c      return
-c      end

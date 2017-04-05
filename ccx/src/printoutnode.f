@@ -23,12 +23,15 @@
 !
       implicit none
 !
+      character*1 local
       character*6 prlab(*)
 !
       integer ithermal,node,ii,j,inotr(2,*),ntrans,mi(*)
 !
       real*8 v(0:mi(2),*),t1(*),fn(0:mi(2),*),rftot(0:3),trab(7,*),
      &  co(3,*),a(3,3),veold(0:mi(2),*)
+!
+      local='L'
 !
       if(prlab(ii)(1:4).eq.'U   ') then
          if((ntrans.eq.0).or.(prlab(ii)(6:6).eq.'G')) then
@@ -39,10 +42,11 @@
      &           (v(j,node),j=1,3)
          else
             call transformatrix(trab(1,inotr(1,node)),co(1,node),a)
-            write(5,'(i10,1p,3(1x,e13.6))') node,
+            write(5,'(i10,1p,3(1x,e13.6),1x,a1)') node,
      &          v(1,node)*a(1,1)+v(2,node)*a(2,1)+v(3,node)*a(3,1),
      &          v(1,node)*a(1,2)+v(2,node)*a(2,2)+v(3,node)*a(3,2),
-     &          v(1,node)*a(1,3)+v(2,node)*a(2,3)+v(3,node)*a(3,3)
+     &          v(1,node)*a(1,3)+v(2,node)*a(2,3)+v(3,node)*a(3,3),
+     &          local
          endif
       elseif(prlab(ii)(1:4).eq.'V   ') then
          if((ntrans.eq.0).or.(prlab(ii)(6:6).eq.'G')) then
@@ -53,13 +57,14 @@
      &           (veold(j,node),j=1,3)
          else
             call transformatrix(trab(1,inotr(1,node)),co(1,node),a)
-            write(5,'(i10,1p,3(1x,e13.6))') node,
+            write(5,'(i10,1p,3(1x,e13.6),1x,a1)') node,
      &          veold(1,node)*a(1,1)+veold(2,node)*a(2,1)+
      &          veold(3,node)*a(3,1),
      &          veold(1,node)*a(1,2)+veold(2,node)*a(2,2)+
      &          veold(3,node)*a(3,2),
      &          veold(1,node)*a(1,3)+veold(2,node)*a(2,3)+
-     &          veold(3,node)*a(3,3)
+     &          veold(3,node)*a(3,3),
+     &          local
          endif
       elseif((prlab(ii)(1:4).eq.'NT  ').or.
      &       (prlab(ii)(1:4).eq.'TS  ')) then
@@ -92,10 +97,11 @@
      &              (fn(j,node),j=1,3) 
             else
                call transformatrix(trab(1,inotr(1,node)),co(1,node),a)
-               write(5,'(i10,1p,3(1x,e13.6))') node,
+               write(5,'(i10,1p,3(1x,e13.6),1x,a1)') node,
      &            fn(1,node)*a(1,1)+fn(2,node)*a(2,1)+fn(3,node)*a(3,1),
      &            fn(1,node)*a(1,2)+fn(2,node)*a(2,2)+fn(3,node)*a(3,2),
-     &            fn(1,node)*a(1,3)+fn(2,node)*a(2,3)+fn(3,node)*a(3,3)
+     &            fn(1,node)*a(1,3)+fn(2,node)*a(2,3)+fn(3,node)*a(3,3),
+     &            local
             endif
          endif
       elseif(prlab(ii)(1:4).eq.'RFL ') then

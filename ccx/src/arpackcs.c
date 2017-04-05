@@ -72,7 +72,8 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	     ITG *mpcinfo,ITG *ntie,ITG *istep,
 	     char *tieset,ITG *nintpoint,ITG *mortar,ITG *ifacecount,
 	     ITG **islavsurfp,double **pslavsurfp,double **clearinip,
-	     ITG *nmat,char *typeboun,ITG *ielprop,double *prop){
+	     ITG *nmat,char *typeboun,ITG *ielprop,double *prop,
+             char *orname){
 
   /* calls the Arnoldi Package (ARPACK) for cyclic symmetry calculations */
   
@@ -97,7 +98,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     kmax1,kmax2,icfd=0,*inomat=NULL,*ipkon=NULL,*kon=NULL,*ielmat=NULL,
     *ielorien=NULL,*islavact=NULL,*islavsurfold=NULL,nslavs_prev_step,
     maxprevcontel,iex,iflagact=0,*nmc=NULL,icutb=0,ialeatoric=0,
-    *iponoel=NULL,*inoel=NULL;
+    *iponoel=NULL,*inoel=NULL,network=0;
 
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,*vr=NULL,
       *workl=NULL,*d=NULL,sigma,*temp_array=NULL,*vini=NULL,
@@ -355,7 +356,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		       labmpc,nk,&memmpc_,&icascade,&maxlenmpc,
 		       kon,ipkon,lakon,ne,nactdof,icol,jq,&irow,isolver,
 		       neq,nzs,nmethod,ithermal,iperturb,&mass,mi,ics,cs,
-		       mcs,mortar,typeboun,&iit);
+		       mcs,mortar,typeboun,&iit,&network);
       }
   }
   
@@ -400,7 +401,8 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
               mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
+	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+              inoel,nener,orname,&network);
   }else{
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	      elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -418,7 +420,8 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
               mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
+	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+              inoel,nener,orname,&network);
   }
   SFREE(f);SFREE(v);SFREE(fn);SFREE(stx);SFREE(inum);
   iout=1;
@@ -1334,7 +1337,8 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		    &ne0,xforc,nforc,thicke,shcon,nshcon,
 		    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		    mortar,islavact,&cdn[kk6],islavnode,nslavnode,ntie,clearini,
-		    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);}
+		    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+		    inoel,nener,orname,&network);}
 	      else{
 		  results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
 		    &stx[kkx],elcon,
@@ -1353,7 +1357,8 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		    &ne0,xforc,nforc,thicke,shcon,nshcon,
 		    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		    mortar,islavact,&cdn[kk6],islavnode,nslavnode,ntie,clearini,
-		    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,inoel);
+		    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
+		    inoel,nener,orname,&network);
 	      }
 	      
 	  }

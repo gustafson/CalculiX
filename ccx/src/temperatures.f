@@ -161,7 +161,14 @@
 !
 !     storing the step for submodels in iamboun
 !
-      if(submodel) iamplitude=iglobstep
+      if(submodel) then
+         if(iamplitude.ne.0) then
+            write(*,*) '*WARNING reading *TEMPERATURE:'
+            write(*,*) '         no amplitude definition is allowed'
+            write(*,*) '         in combination with a submodel'
+         endif
+         iamplitude=iglobstep
+      endif
 !
       if(user.and.(iamplitude.ne.0)) then
          write(*,*) 

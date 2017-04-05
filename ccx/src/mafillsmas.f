@@ -32,7 +32,7 @@
      &  xstateini,xstate,thicke,
      &  integerglob,doubleglob,tieset,istartset,iendset,
      &  ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,clearini,ielprop,
-     &  prop,ne0,kscale,iponoel,inoel)
+     &  prop,ne0,kscale,iponoel,inoel,network)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !     asymmetric contributions
@@ -58,7 +58,7 @@
      &  ll,jdof1,jdof2,node1,node2,id,i0,id1,id2,idof1,idof2,nasym,
      &  ntmat_,indexe,nope,norien,iexpl,ncmat_,istep,iinc,mpc2,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,ist1,ist2,
-     &  mortar,ielprop(*),kscale,iponoel(*),inoel(2,*)
+     &  mortar,ielprop(*),kscale,iponoel(*),inoel(2,*),network
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),bb(*),xloadold(2,*),value,
@@ -337,7 +337,8 @@ c     &                            s(jj,ll)/coefmpc(ist)/coefmpc(ist)
       do i=1,ne
 !
         if(ipkon(i).lt.0) cycle
-        if(lakon(i)(1:2).ne.'D ') cycle
+        if((lakon(i)(1:2).ne.'D ').and.
+     &     ((lakon(i)(1:1).ne.'D').or.(network.ne.1))) cycle
         indexe=ipkon(i)
 !
 !       no entry or exit elements
@@ -354,7 +355,8 @@ c     &                            s(jj,ll)/coefmpc(ist)/coefmpc(ist)
      &  xstiff,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,
      &  ilmpc,springarea,plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,
      &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon,
-     &  ielprop,prop,iponoel,inoel)
+     &  ielprop,prop,iponoel,inoel,sti,xstateini,xstate,nstate_,
+     &  network)
 !
         do jj=1,nope
 !

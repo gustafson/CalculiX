@@ -52,9 +52,9 @@
      &ielprop(*),
 !     Contains the nodes where the dependant varibles for this 
 !     element are
-     &nodef(6),
+     &nodef(*),
 !     Contains the type of the dependant variables
-     &idirf(6),
+     &idirf(*),
 !     The starting index of the given element#s properties in prop
      &index,
 !     Shows where we are in the program
@@ -69,9 +69,7 @@
 !     The middle node of the previous element
      &nodem1,
 !     0 if a residual is to be calculated, 1 for derivatives
-     &ider,
-     &chan_num,
-     &icase,iaxial
+     &ider,chan_num,icase,iaxial
 !
       real*8 
 !     Array with the properties of all elements
@@ -83,7 +81,7 @@
 !     Residual value
      &f,
 !     Array with the derivatives
-     &df(6),
+     &df(*),
 !     Isentropic exponent
      &kappa,
 !     Gas constant
@@ -91,24 +89,15 @@
 !     Specific heat
      &cp,
 !     Total temperatures and total pressures
-     &Tt1,
-     &Tt2,
-     &pt1,
-     &pt2,
+     &Tt1,Tt2,pt1,pt2,
 !     Array with physical constants
-     &physcon(3),
+     &physcon(*),
 !     Kappa terms
-     &km1,
-     &kp1,
-     &kdkm1,
-     &tdkp1,
+     &km1,kp1,kdkm1,tdkp1,
 !     Pressure ratios
-     &pt2pt1,
-     &pt2pt1_crit,
+     &pt2pt1,pt2pt1_crit,
 !     Areas
-     &A,
-     &A1,
-     &A2,
+     &A,A1,A2,
 !     Factor zeta_fac for influencing zeta
 !     zeta_eff = zeta_fac*zeta
      &zeta_fac,
@@ -117,15 +106,11 @@
 !     Mass flow in the previuos element
      &xflow1,
 !     Mass flow in the current element(same as xflow)
-     &xflow2,
-     &Ts0,
-     &pspt0,
-     &pspt2,
-     &M1,
-     &M2,
-     &Ts2,ttime,time
+     &xflow2,Ts0,pspt0,pspt2,M1,M2,Ts2,ttime,time
 !
-      if (iflag.eq.0) then
+      index=ielprop(nelem)
+!
+      if(iflag.eq.0) then
 !
 !        Checking for degrees of freedom in the element
 !
@@ -139,12 +124,9 @@
 !
          endif
 !
-      elseif (iflag.eq.1)then
+      elseif(iflag.eq.1)then
 !
 !        Calculating the initial mass flow in the element
-!
-!        Where are the element properties?
-         index=ielprop(nelem)
 !
 !        Some kappa terms
          kappa=(cp/(cp-R))
@@ -160,7 +142,7 @@
          elseif(nelem.eq.nint(prop(index+3)))then
             A=prop(index+6)
          endif
-         zeta_fac = prop(index+11)
+         zeta_fac=prop(index+11)
 !
 !        Pressures
          pt1=v(2,node1)
@@ -169,14 +151,14 @@
 !        Check for inverted flow
          if(pt1.ge.pt2) then
             inv=1
-            Tt1=v(0,node1)+physcon(1)
-            Tt2=v(0,node2)+physcon(1)
+            Tt1=v(0,node1)-physcon(1)
+            Tt2=v(0,node2)-physcon(1)
          else
             inv=-1
             pt1=v(2,node2)
             pt2=v(2,node1)
-            Tt1=v(0,node2)+physcon(1)
-            Tt2=v(0,node1)+physcon(1)
+            Tt1=v(0,node2)-physcon(1)
+            Tt2=v(0,node1)-physcon(1)
          endif
 !
 !        Pressure ratios
@@ -193,15 +175,12 @@
      &           dsqrt(Tt1)
          endif
 !     
-      elseif (iflag.eq.2)then
+      elseif(iflag.eq.2)then
 !
 !        Calculation of residual/derivatives
 !
 !        Number of dependant variables(corresponding derivatives)
          numf=6
-!
-!        Where are the properties of the element?
-         index=ielprop(nelem)
 !
 !        Calculate kappa
          kappa=(cp/(cp-R))
@@ -213,25 +192,25 @@
 !
 !        Determining the previous element as
 !        the incoming mass flow is defined there
-         nelem1=prop(index+1)
+         nelem1=nint(prop(index+1))
          nodem1=kon(ipkon(nelem1)+2)
 !
 !        Inlet conditions
          pt1=v(2,node1)
-         Tt1=v(0,node1)+physcon(1)
+         Tt1=v(0,node1)-physcon(1)
          xflow1=v(1,nodem1)*iaxial
-         A1 = prop(index+4)
+         A1=prop(index+4)
 !
 !        Outlet conditions
          Tt2=v(0,node2)
          xflow2=v(1,nodem)*iaxial
          pt2=v(2,node2)
          if(nelem.eq.nint(prop(index+2))) then
-            A2 = prop(index+5)
-            zeta_fac = prop(index+11)
+            A2=prop(index+5)
+            zeta_fac=prop(index+11)
          elseif(nelem.eq.nint(prop(index+3))) then
-            A2 = prop(index+6)
-            zeta_fac = prop(index+12)
+            A2=prop(index+6)
+            zeta_fac=prop(index+12)
          endif
 !         zeta_fac = prop(index+11)
 !
@@ -265,9 +244,6 @@
 !
 !        Element output
 !
-!        Where are the properties of the element?
-         index=ielprop(nelem)
-!
 !        Calculate kappa
          kappa=(cp/(cp-R))
 !
@@ -278,27 +254,27 @@
 !
 !        Determining the previous element as
 !        the incoming mass flow is defined there
-         nelem1=prop(index+1)
+         nelem1=nint(prop(index+1))
          nodem1=kon(ipkon(nelem1)+2)
 !
 !        Inlet conditions
          pt1=v(2,node1)
-         Tt1=v(0,node1)+physcon(1)
+         Tt1=v(0,node1)-physcon(1)
          xflow1=v(1,nodem1)*iaxial
-         A1 = prop(index+4)
+         A1=prop(index+4)
 !
 !        Outlet conditions
          Tt2=v(0,node2)
          xflow2=v(1,nodem)*iaxial
          pt2=v(2,node2)
          if(nelem.eq.nint(prop(index+2))) then
-            A2 = prop(index+5)
-            chan_num = 1
-            zeta_fac = prop(index+11)
+            A2=prop(index+5)
+            chan_num=1
+            zeta_fac=prop(index+11)
          elseif(nelem.eq.nint(prop(index+3))) then
-            A2 = prop(index+6)
-            chan_num = 2
-            zeta_fac = prop(index+12)
+            A2=prop(index+6)
+            chan_num=2
+            zeta_fac=prop(index+12)
          endif
 !         zeta_fac = prop(index+11)
 !
@@ -307,12 +283,12 @@
 
 !        Flow velocity at inlet
          call ts_calc(xflow1,Tt1,pt1,kappa,r,A1,Ts0,icase)
-         pspt0 = (Ts0/Tt1)**(kappa/(kappa-1))
+         pspt0=(Ts0/Tt1)**(kappa/(kappa-1))
 !        Calculate Mach numbers
          call machpi(M1,pspt0,kappa,R)
          call ts_calc(xflow2,Tt2,pt2,kappa,r,A2,Ts2,icase)
 !        Pressure ratio
-         pspt2 = (Ts2/Tt2)**(kappa/(kappa-1))
+         pspt2=(Ts2/Tt2)**(kappa/(kappa-1))
          call machpi(M2,pspt2,kappa,R)
 !
          write(1,*) ''
@@ -329,13 +305,13 @@
  56      format(1x,a,i6,a,e11.4,a,e11.4,a,e11.4,a,e11.4)
 !     
 !     Set ider to calculate the residual
-         ider = 0
+         ider=0
 !     
 !     Calculate the element one last time with enabled output
          f=calc_residual_tee(pt1,Tt1,xflow1,xflow2,pt2,
      &        Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag)
 !     
-         write(1,56)'       Outlet node ',node2,':   Tt2= ',Tt2,
+         write(1,56)'      Outlet node ',node2,':   Tt2= ',Tt2,
      &        ' , Ts2= ',Ts2,' , Pt2= ',Pt2,
      &        ', M2= ',M2
       endif

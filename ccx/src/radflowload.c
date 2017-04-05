@@ -34,10 +34,10 @@
 #include "pardiso.h"
 #endif
 
-static char *sideload1;
+static char *sideload1,*covered1=NULL;
 
 static ITG *kontri1,*nloadtr1,*idist=NULL,*ntrit1,*mi1,*jqrad1,
-    *irowrad1,*nzsrad1,num_cpus,*ntri1,*ntr1;
+    *irowrad1,*nzsrad1,num_cpus,*ntri1,*ntr1,ng1;
 
 static double *vold1,*co1,*pmid1,*e11,*e21,*e31,*adview=NULL,*auview=NULL,*dist=NULL,
     *area1,sidemean1;
@@ -71,9 +71,16 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
                  ITG *icolrad,ITG *ne,ITG *iaxial,double *qa,
                  double *cocon,ITG *ncocon,ITG *iponoel,ITG *inoel,ITG *nprop){
   
-  /* network=0: purely thermal
-     network=1: general case (temperatures, fluxes and pressures unknown)
-     network=2: purely aerodynamic, i.e. only fluxes and pressures unknown */
+  /* network=0: no network
+     network=1: purely thermal (presence of "Dx"- and/or of "D " network elements; declared
+                by the user to be purely thermal (on the *STEP card); simultaneous solution)
+     network=2: purely thermal (alternating solution; this becomes a simultaneous solution in
+                the absence of "Dx"-elements)
+     network=3: general case (temperatures, fluxes and pressures unknown)
+     network=4: purely aerodynamic, i.e. only fluxes and pressures unknown
+
+     "D "-elements (D followed by a blank) alone do not trigger the alternating solution 
+     (are not counted in envtemp.f as true network elements) */
 
   ITG nhrs=1,info=0,i,j,iin=0,icntrl,icutb=0,iin_abs=0,mt=mi[1]+1,im,
       symmetryflag=2,inputformat=1,node,channel,*ithread=NULL,iplausi;
@@ -248,7 +255,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 
               /* printing the largest corrections */
 	    
-	      if(*network!=2){ 
+	      if(*network!=4){ 
 		  cam2t=cam1t;
 		  cam1t=cam0t;
 		  cam0t=camt[0];
@@ -269,7 +276,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		  }
 	      }
 	      
-	      if(*network!=0){
+	      if(*network>2){
 		  cam2f=cam1f;
 		  cam1f=cam0f;
 		  cam0f=camf[0];
@@ -319,7 +326,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 	  /* for purely thermal calculations no iterations are
 	     deemed necessary */
 	  
-	  if(*network==0) {icntrl=1;}
+	  if(*network<=2) {icntrl=1;}
 	  else {
 
               /* check the convergence */
@@ -341,13 +348,13 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
       /* extra output for hydraulic jump (fluid channels) */
 
 #ifdef NETWORKOUT
-      if(*network!=0){
+      if(*network>2){
 	FORTRAN(flowoutput,(itg,ieg,ntg,nteq,bc,lakon,ntmat_,
 			    v,shcon,nshcon,ipkon,kon,co,nflow, dtime,ttime,time,
 			    ielmat,prop,ielprop,nactdog,nacteq,&iin,physcon,
 			    camt,camf,camp,rhcon,nrhcon,
 			    vold,jobnamef,set,istartset,iendset,ialset,nset,
-                            mi,iaxial));
+                            mi,iaxial,istep,iit));
       }
 #endif
 #ifdef COMPANY
@@ -468,6 +475,14 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
               ntrit1=ntrit;mi1=mi;jqrad1=jqrad;irowrad1=irowrad;
               nzsrad1=nzsrad;sidemean1=sidemean;
 
+              /* size of the square mesh used to detect
+                 the visibility of a triangle; the denser
+                 the mesh,the more accurate the results */
+
+	      ng1=1280;
+//	      ng1=2560;
+	      NNEW(covered1,char,num_cpus*ng1*ng1);
+
 	      /* calculating the viewfactors */
 	      
 	      printf(" Using up to %" ITGFORMAT " cpu(s) for the viewfactor calculation.\n\n", num_cpus);
@@ -503,7 +518,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		  }*/
 
 	      SFREE(dist);SFREE(idist);SFREE(e1);SFREE(e2);SFREE(e3);
-              SFREE(pmid);SFREE(ithread);
+              SFREE(pmid);SFREE(ithread);SFREE(covered1);
 
 	      /* postprocessing the viewfactors */
 
@@ -606,11 +621,12 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 
 void *calcviewmt(ITG *i){
 
-    ITG indexad,indexau,indexdi,ntria,ntrib,nedelta;
+    ITG indexad,indexau,indexdi,ntria,ntrib,nedelta,indexcovered;
 
     indexad=*i**ntr1;
     indexau=*i*2**nzsrad1;
     indexdi=*i**ntrit1;
+    indexcovered=*i*ng1*ng1;
     
     nedelta=(ITG)ceil(*ntri1/(double)num_cpus);
     ntria=*i*nedelta+1;
@@ -624,7 +640,7 @@ void *calcviewmt(ITG *i){
                       kontri1,nloadtr1,&adview[indexad],
                       &auview[indexau],&dist[indexdi],&idist[indexdi],area1,
 		      ntrit1,mi1,jqrad1,irowrad1,nzsrad1,&sidemean1,
-                      &ntria,&ntrib));
+                      &ntria,&ntrib,&covered1[indexcovered],&ng1));
 
     return NULL;
 }

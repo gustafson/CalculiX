@@ -21,15 +21,17 @@
      &  amname,nam,ntrans,trab,inotr,co,ikforc,ilforc,nk,
      &  cload_flag,istep,istat,n,iline,ipol,inl,ipoinp,inp,nam_,
      &  namtot_,namta,amta,nmethod,iaxial,iperturb,ipoinpc,
-     &  maxsectors,idefforc)
+     &  maxsectors,idefforc,ipompc,nodempc,
+     &  nmpc,ikmpc,ilmpc,labmpc)
 !
 !     reading the input deck: *CLOADS
 !
       implicit none
 !
-      logical cload_flag,add,user,submodel
+      logical cload_flag,add,user,submodel,green
 !
       character*1 inpc(*)
+      character*20 labmpc(*)
       character*80 amplitude,amname(*)
       character*81 set(*),noset
       character*132 textpart(16)
@@ -40,9 +42,9 @@
      &  ilforc(*),nk,iline,ipol,inl,ipoinp(2,*),inp(3,*),nam_,namtot,
      &  namtot_,namta(3,*),idelay,lc,nmethod,ndirforc(*),isector,
      &  iperturb,iaxial,ipoinpc(0:*),maxsectors,jsector,idefforc(*),
-     &  iglobstep
+     &  iglobstep,ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*)
 !
-      real*8 xforc(*),forcval,co(3,*),trab(7,*),amta(2,*)
+      real*8 xforc(*),forcval,co(3,*),trab(7,*),amta(2,*),omega0
 !
       iamplitude=0
       idelay=0
@@ -52,6 +54,7 @@
       add=.false.
       iglobstep=0
       submodel=.false.
+      green=.false.
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR in cloads: *CLOAD should only be used'
@@ -155,6 +158,12 @@
             read(textpart(i)(6:15),'(i10)',iostat=istat) iglobstep
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*CLOAD%")
+         elseif(textpart(i)(1:7).eq.'OMEGA0=') then
+            green=.true.
+            read(textpart(i)(8:27),'(f20.0)',iostat=istat) omega0
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*CLOAD%")
+            omega0=omega0**2
          else
             write(*,*) 
      &        '*WARNING in cloads: parameter not recognized:'
@@ -176,7 +185,14 @@
 !
 !     storing the step for submodels in iamboun
 !
-      if(submodel) iamplitude=iglobstep
+      if(submodel) then
+         if(iamplitude.ne.0) then
+            write(*,*) '*WARNING reading *CLOAD:'
+            write(*,*) '         no amplitude definition is allowed'
+            write(*,*) '         in combination with a submodel'
+         endif
+         iamplitude=iglobstep
+      endif
 !
       if(user.and.(iamplitude.ne.0)) then
          write(*,*) '*WARNING: no amplitude definition is allowed'
@@ -202,7 +218,12 @@
          endif
          if(iforcdir.gt.3) iforcdir=iforcdir+1
 !
-         if(textpart(3)(1:1).eq.' ') then
+!        for Green function applications the value of omega_0^2 is stored as
+!        force value
+!
+         if(green) then
+            forcval=omega0
+         elseif(textpart(3)(1:1).eq.' ') then
             forcval=0.d0
          else
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) forcval
@@ -241,7 +262,8 @@
             endif
             call forcadd(l,iforcdir,forcval,nodeforc,ndirforc,xforc,
      &        nforc,nforc_,iamforc,iamplitude,nam,ntrans,trab,inotr,co,
-     &        ikforc,ilforc,jsector,add,user,idefforc)
+     &        ikforc,ilforc,jsector,add,user,idefforc,ipompc,nodempc,
+     &        nmpc,ikmpc,ilmpc,labmpc)
          else
             read(textpart(1)(1:80),'(a80)',iostat=istat) noset
             noset(81:81)=' '
@@ -283,7 +305,8 @@
                   call forcadd(k,iforcdir,forcval,
      &               nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &               iamplitude,nam,ntrans,trab,inotr,co,ikforc,ilforc,
-     &               jsector,add,user,idefforc)
+     &               jsector,add,user,idefforc,ipompc,nodempc,
+     &               nmpc,ikmpc,ilmpc,labmpc)
                else
                   k=ialset(j-2)
                   do
@@ -311,7 +334,8 @@
                      call forcadd(k,iforcdir,forcval,
      &                 nodeforc,ndirforc,xforc,nforc,nforc_,
      &                 iamforc,iamplitude,nam,ntrans,trab,inotr,co,
-     &                 ikforc,ilforc,jsector,add,user,idefforc)
+     &                 ikforc,ilforc,jsector,add,user,idefforc,
+     &                 ipompc,nodempc,nmpc,ikmpc,ilmpc,labmpc)
                   enddo
                endif
             enddo

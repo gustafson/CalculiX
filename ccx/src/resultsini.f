@@ -20,7 +20,7 @@
      &  nactdof,iout,qa,vold,b,nodeboun,ndirboun,
      &  xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
      &  veold,accold,bet,gam,dtime,mi,vini,nprint,prlab,
-     &  intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,iener,
+     &  intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,nener,
      &  ikin,intpointvart,xforc,nforc)
 !
 !     initialization 
@@ -38,7 +38,7 @@
 !
       integer mi(*),nactdof(0:mi(2),*),nodeboun(*),ndirboun(*),
      &  ipompc(*),nodempc(3,*),mt,nk,ithermal(2),i,j,
-     &  iener,iperturb(*),iout,nboun,nmpc,nmethod,ist,ndir,node,index,
+     &  nener,iperturb(*),iout,nboun,nmpc,nmethod,ist,ndir,node,index,
      &  neq,incrementalmpc,nprint,ikin,calcul_fn,nforc,
      &  calcul_f,calcul_cauchy,calcul_qa,intpointvarm,intpointvart,
      &  irefnode,irotnode,iexpnode,irefnodeprev
@@ -243,7 +243,7 @@ c     incrementalmpc=iperturb(2)
 !
          do i=1,nmpc
             if((labmpc(i)(1:20).eq.'                    ').or.
-     &           (labmpc(i)(1:7).eq.'CONTACT').or.
+c     &           (labmpc(i)(1:7).eq.'CONTACT').or.
      &           (labmpc(i)(1:6).eq.'CYCLIC').or.
      &           (labmpc(i)(1:9).eq.'SUBCYCLIC')) then
                incrementalmpc=0
@@ -343,29 +343,29 @@ c                  veold(ndir,node)=(fixed_disp-v(ndir,node))/dtime
 !     
 !     check whether there are any strain output requests
 !     
-      iener=0
+c      nener=0
       ikin=0
 !
 !     *DYNAMIC
 !
       if((nmethod.eq.4).and.(iperturb(1).gt.1).and.
      &   (ithermal(1).le.1)) then
-         iener=1
+c         nener=1
          ikin=1
       endif
 !
 !     frd-output
 !
-      if((filab(7)(1:4).eq.'ENER').or.(filab(27)(1:4).eq.'CELS')) then
-         iener=1
-      endif
+c      if((filab(7)(1:4).eq.'ENER').or.(filab(27)(1:4).eq.'CELS')) then
+c         nener=1
+c      endif
 !   
 !     dat-output
 !   
       do i=1,nprint
          if((prlab(i)(1:4).eq.'ENER').or.(prlab(i)(1:4).eq.'ELSE').or.
      &        (prlab(i)(1:4).eq.'CELS')) then
-            iener=1
+c            nenerx=1
          elseif(prlab(i)(1:4).eq.'ELKE') then
             ikin=1
          endif

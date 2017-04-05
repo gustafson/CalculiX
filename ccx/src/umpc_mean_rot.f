@@ -23,11 +23,11 @@
 !
 !     INPUT:
 !
-!     x(3,n)             Carthesian coordinates of the nodes in the
+!     x(3,1..n)          Carthesian coordinates of the nodes in the
 !                        user mpc.
-!     u(3,n)             Actual displacements of the nodes in the
+!     u(3,1..n)          Actual displacements of the nodes in the
 !                        user mpc.     
-!     jdof               Actual degrees of freedom of the mpc terms
+!     jdof(1..n)         Actual degrees of freedom of the mpc terms
 !     n                  number of terms in the user mpc
 !     force              Actual value of the mpc force
 !     iit                iteration number
@@ -37,7 +37,7 @@
 !     f                  Actual value of the mpc. If the mpc is
 !                        exactly satisfied, this value is zero
 !     a(n)               coefficients of the linearized mpc
-!     jdof               Corrected degrees of freedom of the mpc terms
+!     jdof(1..n)         Corrected degrees of freedom of the mpc terms
 !     idiscon            0: no discontinuity
 !                        1: discontinuity
 !                        If a discontinuity arises the previous
@@ -89,9 +89,6 @@
       enddo
 !
       do i=1,nkn
-c         write(*,*) 'x,u'
-c         write(*,101) (x(j,3*i-2),j=1,3),(u(j,3*i-2),j=1,3)
-c 101     format(6(1x,e11.4))
          do j=1,3
             cgx(j)=cgx(j)+x(j,3*i-2)
             cgu(j)=cgu(j)+u(j,3*i-2)
@@ -102,8 +99,6 @@ c 101     format(6(1x,e11.4))
          cgx(i)=cgx(i)/nkn
          cgu(i)=cgu(i)/nkn
       enddo
-c      write(*,*) 'cgx ',(cgx(i),i=1,3)
-c      write(*,*) 'cgu ',(cgu(i),i=1,3)
 !
 !     initializing a
 !
@@ -157,7 +152,6 @@ c      write(*,*) 'cgu ',(cgu(i),i=1,3)
      &     /c2
 !
          f=f+dasin(al)
-c         write(*,*) 'f ',dasin(al)
 !
          do j=1,3
             if(j.eq.1) then
@@ -197,6 +191,7 @@ c         write(*,*) 'f ',dasin(al)
          jdof(i*3-1)=2
          jdof(i*3)=3
       enddo
+!
       jdof(n)=1
 !
 !     looking for the maximum tangent to decide which DOF should be
@@ -316,29 +311,6 @@ c         write(*,*) 'f ',dasin(al)
             enddo
          endif
       endif
-!
-c      if(dabs(a(1)).lt.1.d-5) then
-c         amax=0.d0
-c         do i=1,3
-c            if(dabs(a(i)).gt.amax) then
-c               amax=abs(a(i))
-c               imax=i
-c            endif
-c         enddo
-c!
-c         jdof(1)=imax
-c         a1=a(1)
-c         a(1)=a(imax)
-c         do i=2,3
-c            if(i.eq.imax) then
-c               jdof(i)=1
-c               a(i)=a1
-c               write(*,*) '*INFO: DOF in umpc_mean_rot changed'
-c            else
-c               jdof(i)=i
-c            endif
-c         enddo
-c      endif
 !
       return
       end

@@ -29,7 +29,7 @@
       integer i,j,nef,index,ipobody(2,*),ibody(3,*),nactdohinv(*),icent
 !
       real*8 om,body(0:3,*),p1(3),p2(3),xbody(7,*),omcor,q(3),coel(3,*),
-     &  vel(nef,0:5),const,corio(3)
+     &  vel(nef,0:7),const,corio(3)
 !
       do i=1,nef
          om=0.d0

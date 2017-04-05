@@ -32,19 +32,20 @@
       character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,
+     &     ielprop(*),nodef(*),idirf(*),index,iflag,
      &     inv,ipkon(*),kon(*),number,kgas,iaxial,
      &     nodea,nodeb,mi(*),i,itype,nodemup,
      &     nrhcon(*),ntmat_,nshcon(*)
 !     
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,a,d,xl,
-     &     p1,p2,T1,physcon(3),pi,xflow_oil,T2,co(3,*),vold(0:mi(2),*),
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,R,a,d,xl,
+     &     p1,p2,T1,physcon(*),pi,xflow_oil,T2,co(3,*),vold(0:mi(2),*),
      &     xflow_sum,percent_xflow,cp,dvi,pt1,pt2,Tt1,Tt2,ttime,time,
      &     shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*)
 !
       pi=4.d0*datan(1.d0) 
-  
-      if (iflag.eq.0) then
+      index=ielprop(nelem)
+!  
+      if(iflag.eq.0) then
          identity=.true.
 !     
          if(nactdog(2,node1).ne.0)then
@@ -55,9 +56,8 @@
             identity=.false.
          endif
 !     
-      elseif (iflag.eq.1)then
+      elseif(iflag.eq.1)then
 !     
-         index=ielprop(nelem)
          percent_xflow=prop(index+1)
          xflow_sum=0
 !         
@@ -76,14 +76,11 @@
 !
          xflow=xflow_sum*percent_xflow
 !     
-      elseif ((iflag.eq.2).or.(iflag.eq.3))then
+      elseif((iflag.eq.2).or.(iflag.eq.3))then
 !     
-        
-         index=ielprop(nelem)
          percent_xflow=prop(index+1)
          xflow_sum=0
          do i=2,10
-            nodemup=kon(ipkon(nint(prop(index+i)))+2)
             if(nint(prop(index+i)).ne.0) then
                nodemup=kon(ipkon(nint(prop(index+i)))+2)
                if(v(1,nodemup).gt.0)then        
@@ -101,8 +98,8 @@
          pt1=v(2,node1)
          pt2=v(2,node2)
          xflow=v(1,nodem)*iaxial
-         Tt1=v(0,node1)+physcon(1)
-         Tt2=v(0,node2)+physcon(1)
+         Tt1=v(0,node1)-physcon(1)
+         Tt2=v(0,node2)-physcon(1)
 !
          nodef(1)=node1
          nodef(2)=node1
@@ -144,7 +141,7 @@
             write(1,57)'        Massflow upstream = ',xflow_sum,
      &        ' [kg/s]'
             write(1,58)'        Massflow fraction = ', percent_xflow
-            write(1,56)'       Outlet node ',node2,':    Tt2=',Tt2,
+            write(1,56)'      Outlet node ',node2,':    Tt2=',Tt2,
      &           ', Ts2=',Tt2,', Pt2=',Pt2
 !            
          endif

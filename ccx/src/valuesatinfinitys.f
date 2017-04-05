@@ -21,6 +21,12 @@
 !
 !     reading the input deck: *VALUES AT INFINITY
 !
+!     physcon(4): static temperature at infinity
+!     physcon(5): norm of the velocity at infinity
+!     physcon(6): static pressure at infinity
+!     physcon(7): density at infinity
+!     physcon(8): length of the computational domain
+!
       implicit none
 !
       character*1 inpc(*)

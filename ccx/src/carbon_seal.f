@@ -32,13 +32,13 @@
       character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,
+     &     ielprop(*),nodef(*),idirf(*),index,iflag,
      &     inv,mi(*),iaxial
 !
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),R,d,l,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),R,d,dl,
      &     p1,p2,T1,physcon(*),dvi,pi,s,T2,ttime,time
 !     
-      if (iflag.eq.0) then
+      if(iflag.eq.0) then
          identity=.true.
 !     
          if(nactdog(2,node1).ne.0)then
@@ -49,24 +49,24 @@
             identity=.false.
          endif
 !     
-      elseif (iflag.eq.1)then
+      elseif(iflag.eq.1)then
 !     
          index=ielprop(nelem)
          d=prop(index+1)
          s=prop(index+2)
-         l=prop(index+3)
+         dl=prop(index+3)
          pi=4.d0*datan(1.d0)
 !     
          p1=v(2,node1)
          p2=v(2,node2)
          if(p1.ge.p2) then
             inv=1
-            T1=v(0,node1)+physcon(1)
+            T1=v(0,node1)-physcon(1)
          else
             inv=-1
             p1=v(2,node2)
             p2=v(2,node1)
-            T1=v(0,node2)+physcon(1)
+            T1=v(0,node2)-physcon(1)
          endif
 !     
          if(lakon(nelem)(2:6).eq.'CARBS') then
@@ -74,7 +74,7 @@
 !     gapflow
 !     Richter "Rohrhydraulik", Springer ,1971,p. 175
 !     
-            xflow=inv*Pi*d*s**3*(P1**2-P2**2)/(24.d0*R*T1*dvi*l)
+            xflow=inv*Pi*d*s**3*(P1**2-P2**2)/(24.d0*R*T1*dvi*dl)
             
          elseif(lakon(nelem)(2:6).ne.'CARBS') then
             write(*,*) '*WARNING in Carbon_seal.f'
@@ -82,7 +82,7 @@
             write(*,*) 'check input file'
          endif
 !     
-      elseif (iflag.eq.2)then
+      elseif(iflag.eq.2)then
 !     
          numf=4
          p1=v(2,node1)
@@ -90,7 +90,7 @@
          if(p1.ge.p2) then
             inv=1
             xflow=v(1,nodem)*iaxial
-            T1=v(0,node1)+physcon(1)
+            T1=v(0,node1)-physcon(1)
             nodef(1)=node1
             nodef(2)=node1
             nodef(3)=nodem
@@ -100,7 +100,7 @@
             p1=v(2,node2)
             p2=v(2,node1)
             xflow=-v(1,nodem)*iaxial
-            T1=v(0,node2)+physcon(1)
+            T1=v(0,node2)-physcon(1)
             nodef(1)=node2
             nodef(2)=node2
             nodef(3)=nodem
@@ -115,18 +115,18 @@
          index=ielprop(nelem)
          d=prop(index+1)
          s=prop(index+2)
-         l=prop(index+3)
+         dl=prop(index+3)
          pi=4.d0*datan(1.d0)
          
 !     
-         if (lakon(nelem)(2:6).eq.'CARBS') then
+         if(lakon(nelem)(2:6).eq.'CARBS') then
 !     
-            f=xflow*T1-pi*d*s**3*(P1**2-P2**2)/(24.d0*R*dvi*l)
+            f=xflow*T1-pi*d*s**3*(P1**2-P2**2)/(24.d0*R*dvi*dl)
 !     
-            df(1)=-(pi*d*s**3*P1)/(12.d0*R*dvi*l)
+            df(1)=-(pi*d*s**3*P1)/(12.d0*R*dvi*dl)
             df(2)=xflow
             df(3)=T1
-            df(4)=(pi*d*s**3*P2)/(12.d0*R*dvi*l)
+            df(4)=(pi*d*s**3*P2)/(12.d0*R*dvi*dl)
 !       
          endif
 
@@ -136,8 +136,8 @@
          if(p1.ge.p2) then
             inv=1
             xflow=v(1,nodem)*iaxial
-            T1=v(0,node1)+physcon(1)
-            T2=v(0,node2)+physcon(1)
+            T1=v(0,node1)-physcon(1)
+            T2=v(0,node2)-physcon(1)
             nodef(1)=node1
             nodef(2)=node1
             nodef(3)=nodem
@@ -147,8 +147,8 @@
             p1=v(2,node2)
             p2=v(2,node1)
             xflow=-v(1,nodem)*iaxial
-            T1=v(0,node2)+physcon(1)
-            T2=v(0,node1)+physcon(1)
+            T1=v(0,node2)-physcon(1)
+            T2=v(0,node1)-physcon(1)
             nodef(1)=node2
             nodef(2)=node2
             nodef(3)=nodem
@@ -161,21 +161,21 @@
  55      FORMAT(1X,A,I6,A,I6,A,e11.4,A,A,e11.4,A)
 
          if(inv.eq.1) then
-            write(1,56)'       Inlet node  ',node1,':   Tt1=',T1,
+            write(1,56)'       Inlet node ',node1,':   Tt1=',T1,
      &           ' , Ts1=',T1,' , Pt1=',P1
          
             write(1,*)'             Element',nelem,lakon(nelem)
 
-            write(1,56)'       Outlet node ',node2,':   Tt2=',T2,
+            write(1,56)'      Outlet node ',node2,':   Tt2=',T2,
      &           ' , Ts2=',T2,' , Pt2=',P2
 !     
          else if(inv.eq.-1) then
-            write(1,56)'       Inlet node  ',node2,':    Tt1=',T1,
+            write(1,56)'       Inlet node ',node2,':    Tt1=',T1,
      &           ' , Ts1=',T1,' , Pt1=',P1
      &          
             write(1,*)'             Element',nelem,lakon(nelem)
 
-            write(1,56)'       Outlet node ',node1,':    Tt2=',T2,
+            write(1,56)'      Outlet node ',node1,':    Tt2=',T2,
      &           ' , Ts2=',T2,' , Pt2=',P2
 
          endif

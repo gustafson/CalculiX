@@ -40,13 +40,16 @@
      &  indexe,nope,istep,istat,n,irefnode,irotnode,ne_,
      &  j,idof,k,nodeboun(*),ndirboun(*),ikboun(*),ilboun(*),
      &  nboun,nboun_,key,iperturb,ipos,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),ipoinpc(0:*)
+     &  inp(3,*),ipoinpc(0:*),jmin,jmax
 !
       real*8 coefmpc(3,*),ctrl(*),co(3,*)
 !
+      jmin=1
+      jmax=3
+!
       if(istep.gt.0) then
          write(*,*) 
-     &     '*ERROR in rigidbodies: *RIGID BODY should be placed'
+     &     '*ERROR reading *RIGID BODY: *RIGID BODY should be placed'
          write(*,*) '  before all step definitions'
          call exit(201)
       endif
@@ -55,7 +58,7 @@
 !     calculation
 !
       if(iperturb.eq.1) then
-         write(*,*) '*ERROR in rigidbodies: the *RIGID BODY option'
+         write(*,*) '*ERROR reading *RIGID BODY: the *RIGID BODY option'
          write(*,*) '       cannot be used in a perturbation step'
          call exit(201)
       endif
@@ -74,7 +77,7 @@
                ipos=index(elset,' ')
                elset(ipos:ipos)='E'
             else
-               write(*,*) '*ERROR in rigidbodies: either NSET or'
+               write(*,*) '*ERROR reading *RIGID BODY: either NSET or'
                write(*,*) '       ELSET can be specified, not both'
                call exit(201)
             endif
@@ -84,7 +87,7 @@
                ipos=index(noset,' ')
                noset(ipos:ipos)='N'
             else
-               write(*,*) '*ERROR in rigidbodies: either NSET or'
+               write(*,*) '*ERROR reading *RIGID BODY: either NSET or'
                write(*,*) '       ELSET can be specified, not both'
                call exit(201)
             endif
@@ -94,7 +97,7 @@
                ipos=index(noset,' ')
                noset(ipos:ipos)='N'
             else
-               write(*,*) '*ERROR in rigidbodies: either NSET or'
+               write(*,*) '*ERROR reading *RIGID BODY: either NSET or'
                write(*,*) '       ELSET can be specified, not both'
                call exit(201)
             endif
@@ -103,7 +106,8 @@
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*RIGID BODY%")
             if(irefnode.gt.nk) then
-               write(*,*) '*ERROR in rigidbodies: ref node',irefnode
+               write(*,*) '*ERROR reading *RIGID BODY: ref node',
+     &           irefnode
                write(*,*) '       has not been defined'
                call exit(201)
             endif
@@ -112,13 +116,14 @@
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*RIGID BODY%")
             if(irotnode.gt.nk) then
-               write(*,*) '*ERROR in rigidbodies: rot node',irotnode
+               write(*,*) '*ERROR reading *RIGID BODY: rot node',
+     &             irotnode
                write(*,*) '       has not been defined'
                call exit(201)
             endif
          else
             write(*,*) 
-     &        '*WARNING in rigidbodies: parameter not recognized:'
+     &        '*WARNING reading *RIGID BODY: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -130,7 +135,7 @@
 !
       if((elset(1:1).eq.' ').and.
      &   (noset(1:1).eq.' ')) then
-         write(*,*) '*WARNING in rigidbodies: no set defined'
+         write(*,*) '*WARNING reading *RIGID BODY: no set defined'
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
          return
@@ -149,7 +154,7 @@
             endif
          enddo
          if(inoset.eq.0) then
-            write(*,*) '*WARNING in rigidbodies: node set ',noset
+            write(*,*) '*WARNING reading *RIGID BODY: node set ',noset
             write(*,*) '         does not exist'
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &          ipoinp,inp,ipoinpc)
@@ -165,7 +170,8 @@
             endif
          enddo
          if(ielset.eq.0) then
-            write(*,*) '*WARNING in rigidbodies: element set ',elset
+            write(*,*) '*WARNING reading *RIGID BODY: element set ',
+     &        elset
             write(*,*) '         does not exist'
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &          ipoinp,inp,ipoinpc)
@@ -179,7 +185,7 @@
       if(irefnode.eq.0) then
          nk=nk+1
          if(nk.gt.nk_) then
-            write(*,*) '*ERROR in rigidbodies: increase nk_'
+            write(*,*) '*ERROR reading *RIGID BODY: increase nk_'
             call exit(201)
          endif
          irefnode=nk
@@ -194,7 +200,7 @@
       if(irotnode.eq.0) then
          nk=nk+1
          if(nk.gt.nk_) then
-            write(*,*) '*ERROR in rigidbodies: increase nk_'
+            write(*,*) '*ERROR reading *RIGID BODY: increase nk_'
             call exit(201)
          endif
          irotnode=nk
@@ -206,7 +212,7 @@
          do i=istartset(inoset),iendset(inoset)
             node=ialset(i)
             if(node.gt.nk_) then
-               write(*,*) '*ERROR in rigidbodies: node ',node
+               write(*,*) '*ERROR reading *RIGID BODY: node ',node
                write(*,*) '       belonging to set ',noset
                write(*,*) '       has not been defined'
                call exit(201)
@@ -217,7 +223,7 @@
                call nident(ikmpc,idof,nmpc,id)
                if(id.gt.0) then
                   if(ikmpc(id).eq.idof) then
-                     write(*,*) '*WARNING in rigidbodies: dof ',j
+                     write(*,*) '*WARNING reading *RIGID BODY: dof ',j
                      write(*,*) '         of node ',node,' belonging'
                      write(*,*) '         to a rigid body is detected'
                      write(*,*) '         on the dependent side of '
@@ -233,7 +239,8 @@
          do i=istartset(ielset),iendset(ielset)
             ielement=ialset(i)
             if(ielement.gt.ne_) then
-               write(*,*) '*ERROR in rigidbodies: element ',ielement
+               write(*,*) '*ERROR reading *RIGID BODY: element ',
+     &           ielement
                write(*,*) '       belonging to set ',elset
                write(*,*) '       has not been defined'
                call exit(201)
@@ -261,8 +268,8 @@
                   call nident(ikmpc,idof,nmpc,id)
                   if(id.gt.0) then
                      if(ikmpc(id).eq.idof) then
-                        write(*,*)'*WARNING in rigidbodies: dof ',j,'of 
-     &node ',node,' belonging to a'
+                        write(*,*)'*WARNING reading *RIGID BODY: dof ',
+     &j,'of node ',node,' belonging to a'
                         write(*,*)'         rigid body is detected on th
      &e dependent side of another'
                         write(*,*)'         equation; no rigid body cons
@@ -286,7 +293,7 @@
                call rigidmpc(ipompc,nodempc,coefmpc,irefnode,irotnode,
      &              labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,nk,nk_,
      &              nodeboun,ndirboun,ikboun,ilboun,nboun,nboun_,node,
-     &              typeboun,co)
+     &              typeboun,co,jmin,jmax)
             else
                node=ialset(i-2)
                do
@@ -296,7 +303,7 @@
                   call rigidmpc(ipompc,nodempc,coefmpc,irefnode,
      &                 irotnode,labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &                 nk,nk_,nodeboun,ndirboun,ikboun,ilboun,nboun,
-     &                 nboun_,node,typeboun,co)
+     &                 nboun_,node,typeboun,co,jmin,jmax)
                enddo
             endif
          enddo
@@ -329,7 +336,7 @@
                    call rigidmpc(ipompc,nodempc,coefmpc,irefnode,
      &                 irotnode,labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,
      &                 nk,nk_,nodeboun,ndirboun,ikboun,ilboun,nboun,
-     &                 nboun_,node,typeboun,co)
+     &                 nboun_,node,typeboun,co,jmin,jmax)
                enddo
             else
                ielement=ialset(i-2)
@@ -357,7 +364,7 @@
                      call rigidmpc(ipompc,nodempc,coefmpc,irefnode,
      &                    irotnode,labmpc,nmpc,nmpc_,mpcfree,ikmpc,
      &                    ilmpc,nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
-     &                    nboun,nboun_,node,typeboun,co)
+     &                    nboun,nboun_,node,typeboun,co,jmin,jmax)
                   enddo
                enddo
             endif

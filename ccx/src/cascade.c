@@ -92,7 +92,7 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     nodempc=*nodempcp;
     coefmpc=*coefmpcp;
     
-    /*    for(i=0;i<*nmpc;i++){
+    /*       for(i=0;i<*nmpc;i++){
 	j=i+1;
 	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
 	}*/
@@ -138,7 +138,7 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	   (strcmp1(&labmpc[20*i],"SUBCYCLIC")==0)||
 	   (strcmp1(&labmpc[20*i],"PRETENSION")==0)||
 	   (strcmp1(&labmpc[20*i],"THERMALPRET")==0)||
-	   (strcmp1(&labmpc[20*i],"CONTACT")==0)||
+//	   (strcmp1(&labmpc[20*i],"CONTACT")==0)||
 	   (strcmp1(&labmpc[20*i],"FLUID")==0)||
            (*iperturb<2)) jmpc[i]=0;
 
@@ -147,6 +147,7 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	else if((strcmp1(&labmpc[20*i],"RIGID")==0) ||
 	   (strcmp1(&labmpc[20*i],"KNOT")==0) ||
 	   (strcmp1(&labmpc[20*i],"PLANE")==0) ||
+	   (strcmp1(&labmpc[20*i],"BEAM")==0) ||
 	   (strcmp1(&labmpc[20*i],"STRAIGHT")==0)) jmpc[i]=1;
 
         /* user mpc */

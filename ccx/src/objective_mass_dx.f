@@ -95,9 +95,7 @@
             else
 !     
 !     composite materials
-!     
-               mint2d=4
-               nopes=8
+!
 !     determining the number of layers
 !     
                nlayer=0
@@ -110,28 +108,63 @@
 !     determining the layer thickness and global thickness
 !     at the shell integration points
 !     
-               iflag=1
-               indexe=ipkon(i)
-               do kk=1,mint2d
-                  xi=gauss3d2(1,kk)
-                  et=gauss3d2(2,kk)
-                  call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
-                  tlayer(kk)=0.d0
-                  do k=1,nlayer
-                     thickness=0.d0
-                     do j=1,nopes
-                        thickness=thickness+thicke(k,indexe+j)*shp2(4,j)
+               if(lakonl(4:5).eq.'20') then
+!
+                  mint2d=4
+                  nopes=8
+!
+                  iflag=1
+                  indexe=ipkon(i)
+                  do kk=1,mint2d
+                     xi=gauss3d2(1,kk)
+                     et=gauss3d2(2,kk)
+                     call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
+                     tlayer(kk)=0.d0
+                     do k=1,nlayer
+                        thickness=0.d0
+                        do j=1,nopes
+                           thickness=thickness+thicke(k,indexe+j)*
+     &                        shp2(4,j)
+                        enddo
+                        tlayer(kk)=tlayer(kk)+thickness
+                        xlayer(k,kk)=thickness
                      enddo
-                     tlayer(kk)=tlayer(kk)+thickness
-                     xlayer(k,kk)=thickness
                   enddo
-               enddo
-               iflag=3
+                  iflag=3
 !     
-               ilayer=0
-               do k=1,4
-                  dlayer(k)=0.d0
-               enddo
+                  ilayer=0
+                  do k=1,4
+                     dlayer(k)=0.d0
+                  enddo
+               elseif(lakonl(4:5).eq.'15') then
+!
+                  mint2d=3
+                  nopes=6
+!
+                  iflag=1
+                  indexe=ipkon(i)
+                  do kk=1,mint2d
+                     xi=gauss3d10(1,kk)
+                     et=gauss3d10(2,kk)
+                     call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+                     tlayer(kk)=0.d0
+                     do k=1,nlayer
+                        thickness=0.d0
+                        do j=1,nopes
+                           thickness=thickness+thicke(k,indexe+j)*
+     &                        shp2(4,j)
+                        enddo
+                        tlayer(kk)=tlayer(kk)+thickness
+                        xlayer(k,kk)=thickness
+                     enddo
+                  enddo
+                  iflag=3
+!     
+                  ilayer=0
+                  do k=1,3
+                     dlayer(k)=0.d0
+                  enddo
+               endif
 !     
             endif
 !     
@@ -222,7 +255,11 @@ c     Bernhardi end
             elseif(lakonl(4:4).eq.'4') then
                mint3d=1
             elseif(lakonl(4:5).eq.'15') then
-               mint3d=9
+               if(lakonl(7:8).eq.'LC') then
+                  mint3d=6*nlayer
+               else
+                  mint3d=9
+               endif
             elseif(lakonl(4:4).eq.'6') then
                mint3d=2
             elseif(lakonl(1:1).eq.'E') then
@@ -327,10 +364,51 @@ c     Bernhardi end
                   ze=gauss3d4(3,jj)
                   weight=weight3d4(jj)
                elseif(lakonl(4:5).eq.'15') then
-                  xi=gauss3d8(1,jj)
-                  et=gauss3d8(2,jj)
-                  ze=gauss3d8(3,jj)
-                  weight=weight3d8(jj)
+                  if(lakonl(7:8).ne.'LC') then
+                     xi=gauss3d8(1,jj)
+                     et=gauss3d8(2,jj)
+                     ze=gauss3d8(3,jj)
+                     weight=weight3d8(jj)
+                  else
+                     kl=mod(jj,6)
+                     if(kl.eq.0) kl=6
+!     
+                     xi=gauss3d10(1,kl)
+                     et=gauss3d10(2,kl)
+                     ze=gauss3d10(3,kl)
+                     weight=weight3d10(kl)
+!     
+                     ki=mod(jj,3)
+                     if(ki.eq.0) ki=3
+!     
+                     if(kl.eq.1) then
+                        ilayer=ilayer+1
+                        if(ilayer.gt.1) then
+                           do k=1,3
+                              dlayer(k)=dlayer(k)+xlayer(ilayer-1,k)
+                           enddo
+                        endif
+                     endif
+                     ze=2.d0*(dlayer(ki)+(ze+1.d0)/
+     &                    2.d0*xlayer(ilayer,ki))/tlayer(ki)-1.d0
+                     weight=weight*xlayer(ilayer,ki)/tlayer(ki)
+!     
+!     material and orientation
+!     
+                     imat=ielmat(ilayer,i)
+                     amat=matname(imat)
+                     if(norien.gt.0) then
+                        iorien=ielorien(ilayer,i)
+                     else
+                        iorien=0
+                     endif
+!     
+                     if(nelcon(1,imat).lt.0) then
+                        ihyper=1
+                     else
+                        ihyper=0
+                     endif
+                  endif
                elseif(lakonl(4:4).eq.'6') then
                   xi=gauss3d7(1,jj)
                   et=gauss3d7(2,jj)

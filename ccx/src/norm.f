@@ -25,7 +25,7 @@
 !
       integer i,j,nef
 !
-      real*8 velnorm(0:4),vel(nef,0:5)
+      real*8 velnorm(0:4),vel(nef,0:7)
 !     
       do i=1,nef
          do j=0,4

@@ -31,7 +31,8 @@
      &  coriolis,ibody,xloadold,reltime,veold,springarea,nstate_,
      &  xstateini,xstate,thicke,integerglob,doubleglob,
      &  tieset,istartset,iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,
-     &  mortar,clearini,ielprop,prop,ne0,fnext,kscale,iponoel,inoel)
+     &  mortar,clearini,ielprop,prop,ne0,fnext,kscale,iponoel,inoel,
+     &  network)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !
@@ -57,7 +58,7 @@
      &  mpc1,mpc2,index1,index2,jdof,node1,node2,kflag,icalccg,
      &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,
-     &  kscale,iponoel(*),inoel(2,*)
+     &  kscale,iponoel(*),inoel(2,*),network
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
@@ -564,7 +565,8 @@ c           nope=nope+1
            if(lakon(i)(7:7).eq.'C') then
               if(mortar.eq.1) nope=kon(indexe)
            endif
-        elseif(lakon(i)(1:2).eq.'D ') then
+        elseif((lakon(i)(1:2).eq.'D ').or.
+     &         ((lakon(i)(1:1).eq.'D').and.(network.eq.1))) then
 !
 !          asymmetrical contribution -> mafillsmas.f
 !
@@ -582,7 +584,8 @@ c           nope=nope+1
      &  xstiff,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,
      &  ilmpc,springarea,plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,
      &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,
-     &  ipkon,ielprop,prop,iponoel,inoel)
+     &  ipkon,ielprop,prop,iponoel,inoel,sti,xstateini,xstate,
+     &  nstate_,network)
 !
         do jj=1,nope
 !

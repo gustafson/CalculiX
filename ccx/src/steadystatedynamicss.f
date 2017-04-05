@@ -46,8 +46,6 @@
       harmonic='YES'
       if((mcs.ne.0).and.(cs(2,1).ge.0.d0)) then
          cyclicsymmetry=1
-c      else
-c         cyclicsymmetry=.false.
       endif
       nodalset=.false.
 !
@@ -80,14 +78,6 @@ c         cyclicsymmetry=.false.
             read(textpart(i)(8:27),'(a20)') solver
          elseif(textpart(i)(1:9).eq.'HARMONIC=') then
             read(textpart(i)(10:12),'(a3)') harmonic
-c         elseif(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
-c            cyclicsymmetry=.true.
-c         elseif(textpart(i)(1:5).eq.'NSET=') then
-c            nodalset=.true.
-c            noset=textpart(i)(6:85)
-c            noset(81:81)=' '
-c            ipos=index(noset,' ')
-c            noset(ipos:ipos)='N'
          else
             write(*,*) 
      &      '*WARNING in steadystatedynamics: parameter not recognized:'
@@ -116,8 +106,6 @@ c            noset(ipos:ipos)='N'
          isolver=4
       elseif(solver(1:5).eq.'TAUCS') then
          isolver=5
-c      elseif(solver(1:13).eq.'MATRIXSTORAGE') then
-c         isolver=6
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
       else
@@ -132,25 +120,6 @@ c         isolver=6
          write(*,*) '       calculations '
          call exit(201)
       endif
-!
-c      if(nodalset) then
-c         do i=1,nset
-c            if(set(i).eq.noset) exit
-c         enddo
-c         if(i.gt.nset) then
-c            noset(ipos:ipos)=' '
-c            write(*,*) '*ERROR in steadystatedynamics: node set ',noset
-c            write(*,*) '  has not yet been defined.'
-c            call exit(201)
-c         endif
-c         xmodal(10)=i+0.5d0
-c      else
-c         if(cyclicsymmetry) then
-c            write(*,*) '*ERROR in steadystatedynamics: cyclic symmetric'
-c            write(*,*) '       structure, yet no node set defined'
-c            call exit(201)
-c         endif
-c      endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

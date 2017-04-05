@@ -125,17 +125,9 @@
             cycle
          endif
       enddo
+!
+c      distmin=dsqrt(distmin)*1.0e-03
+      distmin=dsqrt(distmin)*1.0e-04
 !     
-!     0.1% of the smallest distance used for the variation
-!     
-      distmin=(distmin**0.5)*0.001
-!     
-!     Write results in file
-!     
-!     open(16,file='results_distance.out',status='unknown')
-!     write(16,'(1x,i6,1x,i6,1x,f5.4)') mindistnod(1,1),
-!     & mindistnod(2,1),distmin
-!     close(16)  
-      
       return
       end

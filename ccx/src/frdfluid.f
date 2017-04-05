@@ -16,9 +16,9 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine frdfluid(co,nk,kon,ipkonf,lakonf,nef,vold,
+      subroutine frdfluid(co,nk,konf,ipkonf,lakonf,nef,vold,
      &  kode,time,ielmat,matname,filab,inum,ntrans,inotr,trab,mi,
-     &  istep,stn,qfn,nactdohinv,xmach,xkappa,physcon)
+     &  istep,stn,qfn,nactdohinv,xmach,xkappa,physcon,xturb)
 !
 !     stores the results in frd format
 !
@@ -34,12 +34,12 @@
       character*87 filab(*)
       character*132 text
 !
-      integer kon(*),nk,nef,kode,i,j,ipkonf(*),indexe,inum(*),mi(*),
+      integer konf(*),nk,nef,kode,i,j,ipkonf(*),indexe,inum(*),mi(*),
      &  one,ielmat(mi(3),*),null,inotr(2,*),ntrans,nout,istep,
      &  nactdohinv(*)
 !
-      real*8 co(3,*),vold(0:mi(2),*),time,pi,oner,trab(7,*),
-     &  a(3,3),stn(6,*),qfn(3,*),xmach(*),xkappa(*),physcon(10)
+      real*8 co(3,*),vold(0:mi(2),*),time,pi,oner,trab(7,*),xturb(2,*),
+     &  a(3,3),stn(6,*),qfn(3,*),xmach(*),xkappa(*),physcon(*)
 !
       save nout
 !
@@ -155,59 +155,59 @@
      &           (lakonf(i)(7:7).eq.'H')) then
               write(13,'(a3,i10,3a5)') m1,nactdohinv(i),p4,p0,
      &                          matname(ielmat(1,i))(1:5)
-              write(13,'(a3,10i10)') m2,(kon(indexe+j),j=1,10)
-              write(13,'(a3,10i10)') m2,(kon(indexe+j),j=11,12),
-     &             (kon(indexe+j),j=17,19),kon(indexe+20),
-     &             (kon(indexe+j),j=13,16)
+              write(13,'(a3,10i10)') m2,(konf(indexe+j),j=1,10)
+              write(13,'(a3,10i10)') m2,(konf(indexe+j),j=11,12),
+     &             (konf(indexe+j),j=17,19),konf(indexe+20),
+     &             (konf(indexe+j),j=13,16)
               elseif(lakonf(i)(7:7).eq.'B') then
               write(13,'(a3,i10,3a5)')m1,nactdohinv(i),p12,p0,
      &                          matname(ielmat(1,i))(1:5)
-              write(13,'(a3,3i10)') m2,kon(indexe+21),kon(indexe+23),
-     &               kon(indexe+22)
+              write(13,'(a3,3i10)') m2,konf(indexe+21),konf(indexe+23),
+     &               konf(indexe+22)
               else
               write(13,'(a3,i10,3a5)')m1,nactdohinv(i),p10,p0,
      &                          matname(ielmat(1,i))(1:5)
-              write(13,'(a3,8i10)') m2,(kon(indexe+20+j),j=1,8)
+              write(13,'(a3,8i10)') m2,(konf(indexe+20+j),j=1,8)
               endif
            elseif(lakonf(i)(4:4).eq.'8') then
               write(13,'(a3,i10,3a5)') m1,nactdohinv(i),p1,p0,
      &                          matname(ielmat(1,i))(1:5)
-              write(13,'(a3,8i10)') m2,(kon(indexe+j),j=1,8)
+              write(13,'(a3,8i10)') m2,(konf(indexe+j),j=1,8)
            elseif(lakonf(i)(4:5).eq.'10') then
               write(13,'(a3,i10,3a5)') m1,nactdohinv(i),p6,p0,
      &                          matname(ielmat(1,i))(1:5)
-              write(13,'(a3,10i10)') m2,(kon(indexe+j),j=1,10)
+              write(13,'(a3,10i10)') m2,(konf(indexe+j),j=1,10)
            elseif(lakonf(i)(4:4).eq.'4') then
               write(13,'(a3,i10,3a5)') m1,nactdohinv(i),p3,p0,
      &                          matname(ielmat(1,i))(1:5)
-              write(13,'(a3,4i10)') m2,(kon(indexe+j),j=1,4)
+              write(13,'(a3,4i10)') m2,(konf(indexe+j),j=1,4)
            elseif(lakonf(i)(4:5).eq.'15') then
               if((lakonf(i)(7:7).eq.' ')) then
               write(13,'(a3,i10,3a5)') m1,nactdohinv(i),p5,p0,
      &                          matname(ielmat(1,i))(1:5)
-              write(13,'(a3,10i10)') m2,(kon(indexe+j),j=1,9),
-     &          kon(indexe+13)
-              write(13,'(a3,5i10)') m2,(kon(indexe+j),j=14,15),
-     &          (kon(indexe+j),j=10,12)
+              write(13,'(a3,10i10)') m2,(konf(indexe+j),j=1,9),
+     &          konf(indexe+13)
+              write(13,'(a3,5i10)') m2,(konf(indexe+j),j=14,15),
+     &          (konf(indexe+j),j=10,12)
               else
               write(13,'(a3,i10,3a5)') m1,nactdohinv(i),p8,p0,
      &                          matname(ielmat(1,i))(1:5)
-              write(13,'(a3,6i10)') m2,(kon(indexe+15+j),j=1,6)
+              write(13,'(a3,6i10)') m2,(konf(indexe+15+j),j=1,6)
               endif
            elseif(lakonf(i)(4:4).eq.'6') then
               write(13,'(a3,i10,3a5)') m1,nactdohinv(i),p2,p0,
      &                          matname(ielmat(1,i))(1:5)
-              write(13,'(a3,6i10)') m2,(kon(indexe+j),j=1,6)
+              write(13,'(a3,6i10)') m2,(konf(indexe+j),j=1,6)
            elseif(lakonf(i)(1:1).eq.'D') then
-              if((kon(indexe+1).eq.0).or.(kon(indexe+3).eq.0)) cycle
+              if((konf(indexe+1).eq.0).or.(konf(indexe+3).eq.0)) cycle
               write(13,'(a3,i10,3a5)')m1,nactdohinv(i),p12,p0,
      &                          matname(ielmat(1,i))(1:5)
-              write(13,'(a3,3i10)') m2,kon(indexe+1),kon(indexe+3),
-     &                 kon(indexe+2)
+              write(13,'(a3,3i10)') m2,konf(indexe+1),konf(indexe+3),
+     &                 konf(indexe+2)
            elseif(lakonf(i)(1:1).eq.'E') then
               write(13,'(a3,i10,3a5)')m1,nactdohinv(i),p11,p0,
      &                          matname(ielmat(1,i))(1:5)
-              write(13,'(a3,2i10)') m2,(kon(indexe+j),j=1,2)
+              write(13,'(a3,2i10)') m2,(konf(indexe+j),j=1,2)
            endif
 !
         enddo
@@ -533,33 +533,38 @@
          write(13,'(a3)') m3
       endif
 !
-c      if(filab(25)(1:4).eq.'TURB') then
-c         text='    1PSTEP'
-c         write(text(25:36),'(i12)') kode
-c         write(13,'(a132)') text
-c!
-c         text=
-c     & '  100CL       .00000E+00                                 3    1'
-c         text(75:75)='1'
-c         write(text(25:36),'(i12)') nout
-c         write(text(8:12),'(i5)') 100+kode
-c         write(text(13:24),fmat) time
-c         write(text(59:63),'(i5)') kode
-c         write(13,'(a132)') text
-c         text=' -4  TURB3DF     2    1'
-c         write(13,'(a132)') text
-c         text=' -5  K           1    1    1    0'
-c         write(13,'(a132)') text
-c         text=' -5  OM          1    2    2    0'
-c         write(13,'(a132)') text
-c!
-c         do i=1,nk
-c            if(inum(i).le.0) cycle
-c            write(13,100) m1,i,vcontu(1,i),vcontu(2,i)
-c         enddo
-c!
-c         write(13,'(a3)') m3
-c      endif
+      if(filab(25)(1:4).eq.'TURB') then
+         text='    1PSTEP'
+         write(text(25:36),'(i12)') kode
+         write(13,'(a132)') text
+!
+         text=
+     & '  100CL       .00000E+00                                 3    1'
+         text(75:75)='1'
+         write(text(25:36),'(i12)') nout
+         write(text(8:12),'(i5)') 100+kode
+         write(text(13:24),fmat) time
+         write(text(59:63),'(i5)') kode
+         write(13,'(a132)') text
+         text=' -4  TURB3DF     4    1'
+         write(13,'(a132)') text
+         text=' -5  K           1    1    0    0'
+         write(13,'(a132)') text
+         text=' -5  OM          1    1    0    0'
+         write(13,'(a132)') text
+         text=' -5  NU_T        1    1    0    0'
+         write(13,'(a132)') text
+         text=' -5  EPS         1    1    0    0'
+         write(13,'(a132)') text
+!
+         do i=1,nk
+            if(inum(i).le.0) cycle
+            write(13,100) m1,i,xturb(1,i),xturb(2,i),
+     &             xturb(1,i)/xturb(2,i),xturb(1,i)*xturb(2,i)
+         enddo
+!
+         write(13,'(a3)') m3
+      endif
 !
  100  format(a3,i10,1p,6e12.5)
 !

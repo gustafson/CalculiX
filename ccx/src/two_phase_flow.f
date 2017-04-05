@@ -16,10 +16,10 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-      subroutine two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow_air,
+      subroutine two_phase_flow(Tt1,pt1,T1,pt2,xflow_air,
      &     xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,v,
-     &     dvi_air,cp,r,k_oil,phi,lambda,nshcon,nrhcon,shcon
-     &     ,rhcon,ntmat_,mi)
+     &     dvi_air,cp,r,k_oil,phi,lambda,nshcon,nrhcon,shcon,
+     &     rhcon,ntmat_,mi,iaxial)
 !     
 !    two phase flow correlations 
 !
@@ -29,12 +29,12 @@
 !     
       character*8 lakon(*)
 !     
-      integer nelem,ielprop(*),index,mi(*),
+      integer nelem,ielprop(*),index,mi(*),iaxial,
      &     ipkon(*),kon(*),icase,kgas,k_oil,mtlog,ier,nshcon(*),
      &     nrhcon(*),ntmat_,n1,n2,n11
 !
-      real*8 prop(*),v(0:mi(2),*),kappa,R,a,d,l,
-     &     T1,T2,Tt1,Tt2,pt1,pt2,cp,dvi_air,dvi_oil,
+      real*8 prop(*),v(0:mi(2),*),kappa,R,a,d,dl,
+     &     T1,Tt1,pt1,pt2,cp,dvi_air,dvi_oil,
      &     reynolds,lambda,ks,form_fact,f,
      &     l_neg,xflow_air,xflow_oil,A1,A2,
      &     rho_air,rho_oil,nue_air,nue_oil,zeta,reynolds_h,mpg,
@@ -47,6 +47,10 @@
 !
 !     this subroutine enables to take in account the existence of
 !     2 phase flows (air /oil) in some flow elements.
+!
+!     lambda: friction coefficient solely due to air
+!     phi: correction due to the presence of oil
+!     (lambda_corrected=lambda*phi)
 !    
 !     the 2 following tables are used in Lockhart Martinelli Method.
 !     See table p.44
@@ -70,21 +74,24 @@
       data n2 /2/
       data n11 /11/
 !
-      index=ielprop(nelem)
-      Tt2=Tt2
-      pt2=pt2
-      T2=t2
+      intent(in) Tt1,pt1,T1,pt2,
+     &     xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,v,
+     &     dvi_air,cp,r,k_oil,nshcon,nrhcon,shcon,
+     &     rhcon,ntmat_,mi,iaxial
 !
-      if((lakon(nelem)(2:5).eq.'GAPF')
-     &     .or.(lakon(nelem)(2:5).eq.'GAPI')) then
+      intent(inout) lambda,phi,xflow_air
+!
+      index=ielprop(nelem)
+!
+      if(lakon(nelem)(2:5).eq.'GAPF') then
             A=prop(index+1)
             d=prop(index+2)
-            l=prop(index+3)
+            dl=prop(index+3)
             ks=prop(index+4)
             form_fact=prop(index+5)
       endif
-      
-      if(xflow_oil.eq.0) then
+!      
+      if(xflow_oil.eq.0.d0) then
          write(*,*) '*WARNING:in two_phase_flow'
          write(*,*) 'massflow oil for element',nelem,'in null'
          write(*,*) 'Calculation proceeds without oil correction'
@@ -114,11 +121,11 @@
      &     (lakon(nelem)(2:7).eq.'REBEMI')) then
 !
          icase=0
-
+!
          A1=prop(index+1)
          A2=prop(index+2)
          call ts_calc(xflow_air,Tt1,Pt1,kappa,r,A1,T1,icase)
-
+!
          d=dsqrt(A1*4/(4.d0*datan(1.d0)))
 !
 !     calculating the dynamic viscosity, the kinematic viscosity and
@@ -136,11 +143,11 @@
          call materialdata_tg(k_oil,ntmat_,T1,shcon,nshcon,cp_oil,r_oil,
      &        dvi_oil,rhcon,nrhcon,rho_oil)
 !
-         if(xflow_oil.eq.0) then
+         if(xflow_oil.eq.0.d0) then
 !     
 !     pure air
             call zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &           isothermal,kon,ipkon,R,Kappa,v,mi)
+     &           isothermal,kon,ipkon,R,Kappa,v,mi,iaxial)
             lambda=zeta
             return
          else
@@ -148,8 +155,8 @@
 !     air/oil mixture for orifice or bend
 !     For Bend see section 4.2.1
 !     For orifices see 4.2.3
-
-            mpg = xflow_air +xflow_oil
+!
+            mpg=xflow_air+xflow_oil
             xp=xflow_air/mpg
             if(mpg.gt.xflow_air*xpmini) then
                xpm2=xpmini**2
@@ -160,26 +167,33 @@
             rho_q=rho_oil/rho_air
 !     
 !     homogene dynamic viscosity (mass flow rate averaged)
+!
             dvi_h=dvi_oil*dvi_air/((dvi_oil-dvi_air)*xp+dvi_air)
 !     
 !     homogene reynolds number
+!
             reynolds_h=mpg*d/(A1*dvi_h)
 !
             call zeta_calc(nelem,prop,ielprop,lakon,reynolds_h,zeta_h,
-     &           isothermal,kon,ipkon,R,Kappa,v,mi)
+     &           isothermal,kon,ipkon,R,Kappa,v,mi,iaxial)
 !     
 !     orifice in a wall
+!
             if(lakon(nelem)(2:7).eq.'RELOID') then
                
                auxphi=(1.d0+xp*(rho_q**(1.d0/6.d0)-1.d0))
      &               *(1.d0+xp*(rho_q**(5.d0/6.d0)-1.d0))
 !     
 !     bend
+!
             elseif(lakon(nelem)(2:7).eq.'REBEMI') then
 !     
 !     radius of the bend
+!
                rad=prop(index+4)
+!
 !     angle of the bend
+!
                theta=prop(index+5)
 !     
                f=(1.d0+2.2d0*theta/90.d0/(zeta_h*(2.d0+rad/d)))
@@ -193,7 +207,7 @@
             lambda=zeta_h
 !            
          endif   
-         
+!         
 !     Third case:
 !     the element is a pipe
 !     the zeta coefficient is corrected according to 
@@ -205,16 +219,13 @@
 !                 flow in pipes"
 !                 Chemical Engineering Progress vol.45, N°1
 !
-      elseif(((lakon(nelem)(2:5).eq.'GAPF')
-     &        .or. (lakon(nelem)(2:5).eq.'GAPI'))
+      elseif((lakon(nelem)(2:5).eq.'GAPF')
      &        .or.((lakon(nelem)(2:7).ne.'REBEMI')
      &        .and.(lakon(nelem)(2:7)).ne.'RELOID'))then
 !
-         if((lakon(nelem)(2:6).eq.'GAPFA')
-     &        .or.(lakon(nelem)(2:6).eq.'GAPIA'))then
+         if(lakon(nelem)(2:6).eq.'GAPFA') then
             icase=0
-         elseif((lakon(nelem)(2:6).eq.'GAPFI')
-     &           .or.(lakon(nelem)(2:6).eq.'GAPII'))then
+         elseif(lakon(nelem)(2:6).eq.'GAPFI') then
             icase=1
          else
             icase=0

@@ -84,11 +84,10 @@
       open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED',
      &  err=15)
 !
-      read(15) version
-!
       do
 !
-         read(15,iostat=istat)istep
+         read(15,iostat=istat) version
+!
          if(istat.lt.0) then
             if(irestartstep.eq.0) then
 !
@@ -99,13 +98,13 @@
                open(15,file=fnrstrt,ACCESS='SEQUENTIAL',
      &              FORM='UNFORMATTED',err=15)
                read(15) version
-               read(15,iostat=istat)istep
             else
                write(*,*) '*ERROR reading *RESTART,READ: requested step'
                write(*,*) '       is not in the restart file'
                call exit(201)
             endif
          endif
+         read(15)istep
 !
 !        set size
 !
@@ -303,7 +302,7 @@
 !
 !     physical constants
 !
-      read(15)(physcon(i),i=1,3)
+      read(15)(physcon(i),i=1,10)
 !
 !     plastic data
 !
@@ -424,7 +423,7 @@
 !
 !     control parameters
 !
-      read(15) (ctrl(i),i=1,32)
+      read(15) (ctrl(i),i=1,39)
       read(15) (qaold(i),i=1,2)
       read(15) output
       read(15) ttime

@@ -41,15 +41,15 @@
       integer mi(*),ieg(*),nflow,i,j,ntg,ielmat(mi(3),*),ntmat_,id,
      &     node1,node2,
      &     nelem,index,nshcon(*),ipkon(*),kon(*),ikboun(*),nboun,idof,
-     &     nodem,idirf(5),nactdog(0:3,*),imat,ielprop(*),id1,id2,
-     &     nodef(5),ndirboun(*),nodeboun(*),itg(*),node,kflag,ipiv(*),
+     &     nodem,idirf(8),nactdog(0:3,*),imat,ielprop(*),id1,id2,
+     &     nodef(8),ndirboun(*),nodeboun(*),itg(*),node,kflag,ipiv(*),
      &     nrhs,info,idof1,idof2,nteq,nrhcon(*),ipobody(2,*),ibody(3,*),
      &     nbody,numf,network,iin_abs,icase,index2,index1,nelem1,nelem2,
      &     node11,node21,node12,node22,istep,iit,ineighe(*),
      &     ilboun(*),nelemup,k,node2up,ider,iaxial
 !     
       real*8 ac(nteq,nteq), bc(nteq),prop(*),shcon(0:3,ntmat_,*),
-     &     f,df(5),xflow,xbounact(*),v(0:mi(2),*),cp,r,tg1,
+     &     f,df(8),xflow,xbounact(*),v(0:mi(2),*),cp,r,tg1,
      &     tg2,gastemp,physcon(*),pressmin,dvi,rho,g(3),z1,z2,
      &     rhcon(0:1,ntmat_,*),co(3,*),xbodyact(7,*),kappa,
      &     a,Tt,Pt,Ts,pressmax,constant,vold(0:mi(2),*),href,
@@ -67,7 +67,7 @@
 !     and identifying the chamber and gas pipe nodes (only for gas
 !     networks)
 !
-      if(network.ne.0) then
+      if(network.gt.2) then
 !   
 !        determining whether pressure initial conditions 
 !        are provided for all nodes
@@ -116,8 +116,7 @@
             call nident(itg,node1,ntg,id1)
             call nident(itg,node2,ntg,id2)
 !     
-            if ((((lakon(nelem)(1:5).eq.'DGAPF')
-     &           .or.(lakon(nelem)(1:5).eq.'DGAPI')).and.(iin_abs.eq.0))
+            if (((lakon(nelem)(1:5).eq.'DGAPF').and.(iin_abs.eq.0))
      &           .or.((lakon(nelem)(1:3).eq.'DRE')
      &           .and.(lakon(nelem)(1:7).ne.'DREWAOR')
      &           .and.(iin_abs.eq.0))) then 
@@ -205,14 +204,14 @@
       do i=1,ntg
          node=itg(i)
          if (nactdog(0,node).eq.0) cycle
-         if (v(0,node)+physcon(1).lt.1.d-10) then
+         if (v(0,node)-physcon(1).lt.1.d-10) then
             write(*,*)
      &           '*WARNING in initialgas : the initial temperature for n
      &ode',node
             write(*,*) 
      &           'is O Kelvin or less; the default is taken (293 K)'
             write(*,*)
-            v(0,node)=293.d0+physcon(1)
+            v(0,node)=293.d0-physcon(1)
          endif
       enddo
 !    
@@ -226,7 +225,7 @@
 !     flux boundary conditions are defined
 !     liquid channels are treated separately
 !   
-      if(network.ne.0)then
+      if(network.gt.2) then
 !     
 !     calculate the initial mass flow
 !     

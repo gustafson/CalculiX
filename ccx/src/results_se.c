@@ -23,23 +23,22 @@
 #include <pthread.h>
 #include "CalculiX.h"
 
-static char *lakon1,*matname1,*sideload1;
+static char *lakon1,*matname1;
 
 static ITG *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *norien1,*ntmat1_,*ithermal1,*iprestr1,*iperturb1,*iout1,*nmethod1,
     *nplicon1,*nplkcon1,*npmat1_,*mi1,*ielas1,*icmd1,*ncmat1_,*nstate1_,
-    *istep1,*iinc1,calcul_fn1,calcul_qa1,calcul_cauchy1,iener1,ikin1,
-    *nal=NULL,*ipompc1,*nodempc1,*nmpc1,*ncocon1,*ikmpc1,*ilmpc1,
-    num_cpus,mt1,*nk1,*ne01,*nshcon1,*nelemload1,*nload1,*mortar1,
+    *istep1,*iinc1,calcul_fn1,calcul_cauchy1,nener1,ikin1,
+    num_cpus,mt1,*nk1,*ne01,*mortar1,
     *ielprop1,idesvar1,*nodedesi1,*nkon1,*icoordinate1,
     *ialdesi1;
 
 static double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
-    *prestr1,*eme1,*fn1=NULL,*qa1=NULL,*vold1,*veold1,*dtime1,*time1,
+    *prestr1,*eme1,*fn1=NULL,*vold1,*veold1,*dtime1,*time1,
     *ttime1,*plicon1,*plkcon1,*xstateini1,*xstiff1,*xstate1,*stiini1,
-    *vini1,*ener1,*eei1,*enerini1,*springarea1,*reltime1,*coefmpc1,
-    *cocon1,*qfx1,*thicke1,*emeini1,*shcon1,*xload1,*prop1,*dxstiff1,
-    *xloadold1,*pslavsurf1,*pmastsurf1,*clearini1,*dfn1,*fn01,
+    *vini1,*ener1,*eei1,*enerini1,*springarea1,*reltime1,
+    *thicke1,*emeini1,*prop1,*dxstiff1,
+    *pslavsurf1,*pmastsurf1,*clearini1,*dfn1,*fn01,
     *sti1,*xdesi1;
 
 void results_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
@@ -76,10 +75,11 @@ void results_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        double *energy,double *df,double *distmin,ITG *ndesi,ITG *nodedesi,
        double *sti,ITG *nkon,ITG *jqs,ITG *irows,
        ITG *nactdofinv,ITG *icoordinate,double *dxstiff,ITG *istartdesi,
-       ITG *ialdesi,double *xdesi){
+       ITG *ialdesi,double *xdesi,ITG *ieigenfrequency,double *fint,
+       ITG *ishapeenergy){
 
-    ITG intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,iener,ikin,
-        intpointvart,mt=mi[1]+1,i,j,idesvar,iorien,idir,
+    ITG intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,nener,ikin,
+        intpointvart,mt=mi[1]+1,i,j,idesvar,iorien,idir,im,
         nea,neb;
     
     double *dfn=NULL,*fn0=NULL,a[9],pgauss[3],rotvec[3],orabsav[7];
@@ -148,7 +148,7 @@ void results_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        nactdof,iout,qa,vold,b,nodeboun,ndirboun,
        xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
        veold,accold,bet,gam,dtime,mi,vini,nprint,prlab,
-       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,&iener,
+       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,&nener,
        &ikin,&intpointvart,xforc,nforc));
 
     NNEW(fn0,double,mt**nkon);
@@ -183,7 +183,7 @@ void results_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	stiini1=stiini;vini1=vini;ener1=ener;eei1=eei;enerini1=enerini;
 	istep1=istep;iinc1=iinc;springarea1=springarea;reltime1=reltime;
 	calcul_fn1=calcul_fn;calcul_cauchy1=calcul_cauchy;
-	iener1=iener;ikin1=ikin;mt1=mt;nk1=nk;ne01=ne0;thicke1=thicke;
+	nener1=nener;ikin1=ikin;mt1=mt;nk1=nk;ne01=ne0;thicke1=thicke;
 	emeini1=emeini;pslavsurf1=pslavsurf;clearini1=clearini;
 	pmastsurf1=pmastsurf;mortar1=mortar;ielprop1=ielprop;prop1=prop;
 	idesvar1=idesvar;nodedesi1=nodedesi;
@@ -214,10 +214,18 @@ void results_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	SFREE(ithread); 
     }
     
+    /* in case of nonlinear geometry calculate vector fint */
+    
+    if((iperturb[1]==1)&&(*ishapeenergy==1)){
+       FORTRAN(createfint,(ne,ipkon,lakon,kon,nactdof,mi,fn0,fint));
+    }
+    
     /* loop over the design variables (perturbation) */
     
     for(idesvar=1;idesvar<=*ndesi;idesvar++){
 	
+	DMEMSET(dfn,0,mt**nk,0.);
+	   
         /* calculate a delta in the orientation
            in case the material orientation is the design variable */
 	
@@ -264,19 +272,23 @@ void results_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	        veold,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
                 xstateini,xstiff,xstate,npmat1_,matname,mi,ielas,icmd,
                 ncmat1_,nstate1_,stiini,vini,ener,eei,enerini,istep,iinc,
-                springarea,reltime,&calcul_fn,&calcul_cauchy,&iener,
+                springarea,reltime,&calcul_fn,&calcul_cauchy,&nener,
                 &ikin,ne0,thicke,emeini,
                 pslavsurf,pmastsurf,mortar,clearini,&nea,&neb,ielprop,prop,
                 dfn,&idesvar,nodedesi,
 	        fn0,sti,icoordinate,dxstiff,ialdesi,xdesi));
 	}
 	
-	/* calculating the matrix system internal force vector */
+	/* calculating the matrix system internal force vector
+           for nonlinear geometrical calculations */
 	
-/*	FORTRAN(resultsforc_se,(nk,dfn,nactdofinv,ipompc,nodempc,
+//	if((iperturb[1]==1)&&(*ieigenfrequency!=1)){
+	if(*ieigenfrequency!=1){
+	   FORTRAN(resultsforc_se,(nk,dfn,nactdofinv,ipompc,nodempc,
 				coefmpc,nmpc,mi,fmpc,&calcul_fn,&calcul_f,
-				&idesvar,df,jqs,irows,distmin));*/
-	
+				&idesvar,df,jqs,irows,distmin));
+	   }
+	   
         /* restoring the nominal orientation (in case the design variables
            are the orientations */
 	
@@ -325,7 +337,7 @@ void *resultsmechmt_se(ITG *i){
           veold1,dtime1,time1,ttime1,plicon1,nplicon1,plkcon1,nplkcon1,
           xstateini1,xstiff1,xstate1,npmat1_,matname1,mi1,ielas1,icmd1,
           ncmat1_,nstate1_,stiini1,vini1,ener1,eei1,enerini1,istep1,iinc1,
-          springarea1,reltime1,&calcul_fn1,&calcul_cauchy1,&iener1,
+          springarea1,reltime1,&calcul_fn1,&calcul_cauchy1,&nener1,
           &ikin1,ne01,thicke1,emeini1,
           pslavsurf1,pmastsurf1,mortar1,clearini1,&nea,&neb,ielprop1,prop1,
           &dfn1[indexdfn],&idesvar1,nodedesi1,

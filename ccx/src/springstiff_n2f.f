@@ -19,7 +19,8 @@
       subroutine springstiff_n2f(xl,elas,konl,voldl,s,imat,elcon,nelcon,
      &  ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,plicon,
      &  nplicon,npmat_,iperturb,springarea,nmethod,mi,ne0,
-     &  nstate_,xstateini,xstate,reltime,nasym)
+     &  nstate_,xstateini,xstate,reltime,nasym,ielorien,orab,
+     &  norien,nelem)
 !
 !     calculates the stiffness of a spring (node-to-face penalty)
 !
@@ -29,7 +30,8 @@
 !
       integer konl(20),i,j,imat,ncmat_,ntmat_,k,l,nope,nterms,iflag,
      &  i1,kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),
-     &  iperturb(*),nmethod,mi(*),ne0,nstate_,nasym
+     &  iperturb(*),nmethod,mi(*),ne0,nstate_,nasym,ielorien(mi(3),*),
+     &  norien,nelem,idof,idof1,idof2,iorien
 !
       real*8 xl(3,10),elas(21),ratio(9),pproj(3),val,shp2(7,9),
      &  al(3),s(60,60),voldl(0:mi(2),10),pl(3,10),xn(3),dm,
@@ -43,10 +45,11 @@
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  um,eps,pi,dftdt(3,3),tp(3),te(3),ftrial(3),clear,
      &  dftrial,dfnl,dfshear,dg,dte,alnew(3),dfn(3,10),reltime,
-     &  overlap,pres,dpresdoverlap,overclosure
+     &  overlap,pres,dpresdoverlap,overclosure,orab(7,*),
+     &  xn1(3),xn2(3),a(3,3)
 !
-      intent(in) xl,konl,voldl,imat,elcon,nelcon,
-     &  ncmat_,ntmat_,nope,lakonl,t1l,kode,plicon,
+      intent(in) xl,konl,voldl,imat,elcon,nelcon,ielorien,orab,
+     &  ncmat_,ntmat_,nope,lakonl,t1l,kode,plicon,norien,nelem,
      &  nplicon,npmat_,iperturb,nmethod,mi,ne0,
      &  nstate_,xstateini,reltime,nasym
 !
@@ -158,6 +161,133 @@
             enddo
          enddo
          return
+      elseif(lakonl(7:7).eq.'1') then
+!
+!        spring1-element
+!        determine the direction of action of the spring
+!
+         idof=nint(elcon(3,1,imat))
+!
+         if(norien.gt.0) then
+            iorien=ielorien(1,nelem)
+         else
+            iorien=0
+         endif
+!
+         if(iorien.eq.0) then
+            do i=1,3
+               xn(i)=0.d0
+            enddo
+            xn(idof)=1.d0
+         else
+            call transformatrix(orab(1,iorien),xl(1,1),a)
+            do i=1,3
+               xn(i)=a(i,idof)
+            enddo
+         endif
+!     
+!     interpolating the material data
+!     
+         call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
+     &           elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
+!     
+!     calculating the spring constant
+!     
+         if(kode.eq.2)then
+            xk=elconloc(1)
+         else
+            niso=int(plconloc(801))
+            do i=1,niso
+               xiso(i)=plconloc(2*i-1)
+               yiso(i)=plconloc(2*i)
+            enddo
+            call ident(xiso,val,niso,id)
+            if(id.eq.0) then
+               xk=0.d0
+            elseif(id.eq.niso) then
+               xk=0.d0
+            else
+               xk=(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))
+            endif
+         endif
+!
+!        assembling the stiffness matrix
+!
+         do i=1,3
+            do j=1,3
+               s(i,j)=xk*xn(i)*xn(j)
+            enddo
+         enddo
+         return
+      elseif(lakonl(7:7).eq.'2') then
+!
+!        spring2-element
+!        determine the direction of action of the spring
+!
+         idof1=nint(elcon(3,1,imat))
+         idof2=nint(elcon(4,1,imat))
+!
+         if(norien.gt.0) then
+            iorien=ielorien(1,nelem)
+         else
+            iorien=0
+         endif
+!
+         if(iorien.eq.0) then
+            do i=1,3
+               xn1(i)=0.d0
+               xn2(i)=0.d0
+            enddo
+            xn1(idof1)=1.d0
+            xn2(idof2)=1.d0
+         else
+            call transformatrix(orab(1,iorien),xl(1,1),a)
+            do i=1,3
+               xn1(i)=a(i,idof1)
+            enddo
+            call transformatrix(orab(1,iorien),xl(1,2),a)
+            do i=1,3
+               xn2(i)=a(i,idof2)
+            enddo
+         endif
+!     
+!     interpolating the material data
+!     
+         call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
+     &           elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
+!     
+!        calculating the spring constant
+!     
+         if(kode.eq.2)then
+            xk=elconloc(1)
+         else
+            niso=int(plconloc(801))
+            do i=1,niso
+               xiso(i)=plconloc(2*i-1)
+               yiso(i)=plconloc(2*i)
+            enddo
+            call ident(xiso,val,niso,id)
+            if(id.eq.0) then
+               xk=0.d0
+            elseif(id.eq.niso) then
+               xk=0.d0
+            else
+               xk=(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))
+            endif
+         endif
+!
+!        assembling the stiffness matrix
+!
+         do i=1,3
+            do j=1,3
+               s(i,j)=xk*xn1(i)*xn1(j)
+               s(i,j+3)=-xk*xn1(i)*xn2(j)
+               s(i+3,j)=-xk*xn2(i)*xn1(j)
+               s(i+3,j+3)=xk*xn2(i)*xn2(j)
+            enddo
+         enddo
+         return
+!
       endif
 !
 !     contact springs

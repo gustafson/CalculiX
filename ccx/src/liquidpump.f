@@ -27,10 +27,10 @@
       logical identity
 !      
       integer nelem,nactdog(0:3,*),node1,node2,nodem,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,
+     &     ielprop(*),nodef(*),idirf(*),index,iflag,
      &     inv,id,numf,npu,i,mi(*),iaxial
 !      
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),ttime,time,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),ttime,time,
      &     p1,p2,rho,g(3),dg,z1,z2,co(3,*),
      &     xpu(10),ypu(10),xxpu(10),yypu(10),dh
 !

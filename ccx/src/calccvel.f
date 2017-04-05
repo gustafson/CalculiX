@@ -27,7 +27,7 @@
 !
       integer nef,i,nshcon(*),imat,ntmat_,mi(*),ielmat(mi(3),*)
 !
-      real*8 t1l,vel(nef,0:5),cp,shcon(0:3,ntmat_,*),cvel(*),
+      real*8 t1l,vel(nef,0:7),cp,shcon(0:3,ntmat_,*),cvel(*),
      &  physcon(*)
 !     
       do i=1,nef

@@ -22,27 +22,28 @@
 #include <pthread.h>
 #include "CalculiX.h"
 
-static char *lakon1,*sideload1,*matname1,*tieset1;
+static char *lakon1,*sideload1,*matname1,*tieset1,*labmpc1;
 
 static ITG *nk1,*kon1,*ipkon1,*ne1,*nodeboun1,*ndirboun1,*nboun1,
     *ipompc1,*nodempc1,*nmpc1,*nodeforc1,*ndirforc1,*nforc1,*nelemload1,
-    *nload1,*ipobody1,*nbody1,*nactdof1,*icol1,*jq1,*irow1,*neq1,
-    *nzl1,*nmethod1=NULL,*ikmpc1,*ilmpc1,*ikboun1,*ilboun1,*nelcon1,
+    *nload1,*ipobody1,*nbody1,*nactdof1,*neq1,
+    *nmethod1=NULL,*ikmpc1,*ilmpc1,*ikboun1,*ilboun1,*nelcon1,
     *nrhcon1,*nalcon1,*ielmat1,*ielorien1,*norien1,*ntmat1_,*ithermal1,
-    *iprestr1,*iperturb1,*nzs1,*iexpl1,*nplicon1,*nplkcon1,*npmat1_,
+    *iprestr1,*iperturb1,*iexpl1,*nplicon1,*nplkcon1,*npmat1_,
     *mi1,*ncmat1_,*mass1,*stiffness1,*buckling1,*rhsi1,*intscheme1,
     *nshcon1,*ncocon1,*istep1,*iinc1,*coriolis1,*ibody1,*nstate1_,
     *integerglob1,*istartset1,*iendset1,*ialset1,*ntie1,*nasym1,
     *mortar1,*ielprop1,*ne01,num_cpus,*ndesi1,*nodedesi1,
-    *nzss1,*jqs1,*irows1,*icoordinate1,*istartelem1,*ialelem1;
+    *nzss1,*jqs1,*irows1,*icoordinate1,*istartelem1,*ialelem1,
+    *cyclicsymmetry1,*ics1,*mcs1,*ieigenfrequency1;
 
 static double *co1,*xboun1,*coefmpc1,*xforc1,*xload1,*xbody1,*cgr1,
-    *elcon1,*rhcon1,*alcon1,*alzero1,*xdesi1,*v1,
-    *orab1,*t01,*t11,*prestr1,*vold1,*sti1,*stx1,
+    *elcon1,*rhcon1,*alcon1,*alzero1,*xdesi1,*v1,*sigma1,
+    *orab1,*t01,*t11,*prestr1,*vold1,*sti1,*stx1,*cs1,
     *plicon1,*plkcon1,*xstiff1,*dtime1,*physcon1,*shcon1,*cocon1,
     *ttime1,*time1,*xloadold1,*reltime1,*veold1,*springarea1,
     *xstateini1,*xstate1,*thicke1,*doubleglob1,*pslavsurf1,*pmastsurf1,
-    *clearini1,*prop1,*distmin1,*df1,*dfminds1,*dxstiff1;
+    *clearini1,*prop1,*distmin1,*df1,*dfl1,*dxstiff1;
 
 void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	       ITG *ne,ITG *nodeboun,ITG *ndirboun,double *xboun, 
@@ -50,18 +51,16 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	       ITG *nmpc,ITG *nodeforc,ITG *ndirforc,
 	       double *xforc,ITG *nforc,ITG *nelemload,char *sideload,
 	       double *xload,ITG *nload,double *xbody,ITG *ipobody,
-	       ITG *nbody,double *cgr,
-	       double *ad,double *au,ITG *nactdof, 
-	       ITG *icol,ITG *jq,ITG *irow,ITG *neq,ITG *nzl, 
-	       ITG *nmethod,ITG *ikmpc,ITG *ilmpc,ITG *ikboun, 
-	       ITG *ilboun,
+	       ITG *nbody,double *cgr,ITG *nactdof, 
+	       ITG *neq,ITG *nmethod,ITG *ikmpc,ITG *ilmpc,
+               ITG *ikboun, ITG *ilboun,
 	       double *elcon,ITG *nelcon,double *rhcon,ITG *nrhcon,
 	       double *alcon,ITG *nalcon,double *alzero,ITG *ielmat,
 	       ITG *ielorien,ITG *norien,double *orab,ITG *ntmat_,
 	       double *t0,double *t1,ITG *ithermal,
 	       double *prestr,ITG *iprestr,double *vold,
-	       ITG *iperturb,double *sti,ITG *nzs,double *stx,
-	       double *adb,double *aub,ITG *iexpl,
+	       ITG *iperturb,double *sti,double *stx,
+	       ITG *iexpl,
                double *plicon,ITG *nplicon,double *plkcon,ITG *nplkcon,
                double *xstiff, 
 	       ITG *npmat_,double *dtime,char *matname,ITG *mi,
@@ -79,7 +78,9 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
                double *fnext,double *distmin,ITG *ndesi,ITG *nodedesi,
 	       double *df,ITG *nzss,ITG *jqs,ITG *irows,
 	       ITG *icoordinate,double *dxstiff,double *xdesi,
-	       ITG *istartelem,ITG *ialelem,double *v){
+	       ITG *istartelem,ITG *ialelem,double *v,double *sigma,
+	       ITG *cyclicsymmetry,char *labmpc,ITG *ics,double *cs,
+	       ITG *mcs,ITG *ieigenfrequency){
 	       
     ITG i,j;
      
@@ -142,8 +143,13 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 
     /* allocating fields for mass and stiffness matrix and sensitivity matrix */
     
-    NNEW(df1,double,num_cpus**nzss);
-    NNEW(dfminds1,double,num_cpus*60**ndesi);
+    if(!*cyclicsymmetry){
+	NNEW(dfl1,double,num_cpus*60**ndesi);
+	NNEW(df1,double,num_cpus**nzss);
+    }else{
+	NNEW(dfl1,double,num_cpus*120**ndesi);
+	NNEW(df1,double,num_cpus*2**nzss);
+    }
 
     /* allocating memory for nmethod; if the Jacobian determinant
        in any of the elements is nonpositive, nmethod is set to
@@ -163,13 +169,13 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     nmpc1=nmpc;nodeforc1=nodeforc;ndirforc1=ndirforc;xforc1=xforc;
     nforc1=nforc;nelemload1=nelemload;sideload1=sideload;xload1=xload;
     nload1=nload;xbody1=xbody;ipobody1=ipobody;nbody1=nbody;
-    cgr1=cgr;nactdof1=nactdof;icol1=icol;jq1=jq;irow1=irow;neq1=neq;
-    nzl1=nzl;ikmpc1=ikmpc;ilmpc1=ilmpc;ikboun1=ikboun;
+    cgr1=cgr;nactdof1=nactdof;neq1=neq;
+    ikmpc1=ikmpc;ilmpc1=ilmpc;ikboun1=ikboun;
     ilboun1=ilboun;elcon1=elcon;nelcon1=nelcon;rhcon1=rhcon;
     nrhcon1=nrhcon;alcon1=alcon;nalcon1=nalcon;alzero1=alzero;
     ielmat1=ielmat;ielorien1=ielorien;norien1=norien;orab1=orab;
     ntmat1_=ntmat_;t01=t0;t11=t1;ithermal1=ithermal;prestr1=prestr;
-    iprestr1=iprestr;vold1=vold;iperturb1=iperturb;sti1=sti;nzs1=nzs;
+    iprestr1=iprestr;vold1=vold;iperturb1=iperturb;sti1=sti;
     stx1=stx;iexpl1=iexpl;plicon1=plicon;nplicon1=nplicon;
     plkcon1=plkcon;nplkcon1=nplkcon;xstiff1=xstiff;npmat1_=npmat_;
     dtime1=dtime;matname1=matname;mi1=mi;ncmat1_=ncmat_;mass1=mass;
@@ -186,10 +192,12 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     distmin1=distmin;ndesi1=ndesi;nodedesi1=nodedesi;v1=v;
     nzss1=nzss;jqs1=jqs;irows1=irows;icoordinate1=icoordinate;
     dxstiff1=dxstiff;xdesi1=xdesi;istartelem1=istartelem;ialelem1=ialelem;
+    sigma1=sigma;cyclicsymmetry1=cyclicsymmetry;labmpc1=labmpc;
+    ics1=ics;cs1=cs;mcs1=mcs;ieigenfrequency1=ieigenfrequency;
 
     /* calculating the stiffness/mass sensitivity */
     
-    printf(" Using up to %" ITGFORMAT " cpu(s) for the stiffness/mass sensitivity calculation.\n\n", num_cpus);
+    printf(" Using up to %" ITGFORMAT " cpu(s) for the calculation of the sensitivity of the external forces \n and/or the element stiffness matrices.\n\n", num_cpus);
     
     /* create threads and wait */
     
@@ -208,18 +216,41 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	    break;
 	}
     }
+    SFREE(nmethod1);
     
     /* passing of df */
 
-    for(i=0;i<*nzss;i++){
-	df[i]=df1[i];
+    if(!*cyclicsymmetry){
+//	if((iperturb[1]==1)&&(*ieigenfrequency!=1)){
+	if(*ieigenfrequency!=1){
+
+            /* nonlinear geometric: add df to df from results_se */
+
+	    for(i=0;i<*nzss;i++){
+		df[i]+=df1[i];
+	    }
+	}else{
+
+	    for(i=0;i<*nzss;i++){
+		df[i]=df1[i];
+	    }
 	}
-    for(i=0;i<*nzss;i++){
-	for(j=1;j<num_cpus;j++){
-	    df[i]+=df1[i+j**nzss];
+	for(i=0;i<*nzss;i++){
+	    for(j=1;j<num_cpus;j++){
+		df[i]+=df1[i+j**nzss];
+	    }
+	}
+    }else{
+	for(i=0;i<2**nzss;i++){
+	    df[i]=df1[i];
+	}
+	for(i=0;i<2**nzss;i++){
+	    for(j=1;j<num_cpus;j++){
+		df[i]+=df1[i+j*2**nzss];
+	    }
 	}
     }
-    SFREE(df1);SFREE(dfminds1);
+    SFREE(df1);SFREE(dfl1);
         
         return;
 
@@ -229,17 +260,23 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 
 void *mafillsmsemt(ITG *i){
 
-    ITG indexdf,indexdfminds,nea,neb,nedelta;
+    ITG indexdf,indexdfl,nea,neb,nedelta;
 
-    indexdf=*i**nzss1;
-    indexdfminds=*i*60**ndesi1;
+    if(!*cyclicsymmetry1){
+	indexdf=*i**nzss1;
+	indexdfl=*i*60**ndesi1;
+    }else{
+	indexdf=*i*2**nzss1;
+	indexdfl=*i*120**ndesi1;
+    }
 
     nedelta=(ITG)floor(*ne1/(double)num_cpus);
     nea=*i*nedelta+1;
     neb=(*i+1)*nedelta;
     if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
 
-    FORTRAN(mafillsmse,(co1,kon1,ipkon1,lakon1,ne1,ipompc1,nodempc1,
+    if(!*cyclicsymmetry1){
+	FORTRAN(mafillsmse,(co1,kon1,ipkon1,lakon1,ne1,ipompc1,nodempc1,
 	    coefmpc1,nmpc1,nelemload1,sideload1,xload1,nload1,xbody1,
 	    ipobody1,nbody1,cgr1,nactdof1,neq1,&nmethod1[*i],ikmpc1,
 	    ilmpc1,elcon1,nelcon1,rhcon1,nrhcon1,alcon1,nalcon1,alzero1,
@@ -252,8 +289,28 @@ void *mafillsmsemt(ITG *i){
             thicke1,integerglob1,doubleglob1,tieset1,istartset1,iendset1,
 	    ialset1,ntie1,nasym1,pslavsurf1,pmastsurf1,mortar1,clearini1,
 	    ielprop1,prop1,ne01,&nea,&neb,distmin1,ndesi1,nodedesi1,
-	    df1,jqs1,irows1,&dfminds1[indexdfminds],
-	    icoordinate1,dxstiff1,xdesi1,istartelem1,ialelem1,v1));
+	    &df1[indexdf],jqs1,irows1,&dfl1[indexdfl],
+	    icoordinate1,dxstiff1,xdesi1,istartelem1,ialelem1,v1,sigma1,
+            ieigenfrequency1));
+    }else{
+	FORTRAN(mafillsmcsse,(co1,kon1,ipkon1,lakon1,ne1,ipompc1,nodempc1,
+	    coefmpc1,nmpc1,nelemload1,sideload1,xload1,nload1,xbody1,
+	    ipobody1,nbody1,cgr1,nactdof1,neq1,&nmethod1[*i],ikmpc1,
+	    ilmpc1,elcon1,nelcon1,rhcon1,nrhcon1,alcon1,nalcon1,alzero1,
+	    ielmat1,ielorien1,norien1,orab1,ntmat1_,t01,t11,ithermal1,
+	    iprestr1,vold1,iperturb1,sti1,stx1,iexpl1,plicon1,nplicon1,
+            plkcon1,nplkcon1,xstiff1,npmat1_,dtime1,matname1,mi1,
+            ncmat1_,mass1,stiffness1,buckling1,rhsi1,intscheme1,physcon1,
+            ttime1,time1,istep1,iinc1,coriolis1,ibody1,xloadold1,
+	    reltime1,veold1,springarea1,nstate1_,xstateini1,xstate1,
+            thicke1,integerglob1,doubleglob1,tieset1,istartset1,iendset1,
+	    ialset1,ntie1,nasym1,pslavsurf1,pmastsurf1,mortar1,clearini1,
+	    ielprop1,prop1,ne01,&nea,&neb,distmin1,ndesi1,nodedesi1,
+	    &df1[indexdf],jqs1,irows1,&dfl1[indexdfl],
+	    icoordinate1,dxstiff1,xdesi1,istartelem1,ialelem1,v1,sigma1,
+	    labmpc1,ics1,cs1,mcs1,nk1,nzss1));
+    }
+	
 	    
     return NULL;
 }

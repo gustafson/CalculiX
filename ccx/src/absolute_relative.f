@@ -32,15 +32,15 @@
       character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,
+     &     ielprop(*),nodef(*),idirf(*),index,iflag,
      &     ipkon(*),kon(*),nelemswirl,mi(*),iaxial
 !     
-      real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,
+      real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,R,
      &     p1,p2,T1,T2,cp,physcon(*),km1,kp1,kdkm1,
      &     kdkp1,u,pi,Qred_crit,pt1,pt2,Tt1,Tt2,ct,fact,
      &     Cp_cor,ttime,time
 !     
-      if (iflag.eq.0) then
+      if(iflag.eq.0) then
          identity=.true.
 !     
          if(nactdog(2,node1).ne.0)then
@@ -51,31 +51,8 @@
             identity=.false.
          endif
 !     
-      elseif (iflag.eq.1)then
-!     
-         kappa=(cp/(cp-R))
-         pi=4.d0*datan(1.d0)
-         index=ielprop(nelem)
-         qred_crit=dsqrt(kappa/R)*
-     &        (1+0.5d0*(kappa-1))**(-0.5*(kappa+1)/(kappa-1))
-!     
-!     Because the flow value is independant of the chosen 
-!     coordinate system  initial mass flow value is set to
-!     dsqrt(T1)*P1*Qred_crit with Qred_crit/2 = 0.02021518917
-!     with consideration to flow direction
-!     
-         node1=kon(ipkon(nelem)+1)
-         node2=kon(ipkon(nelem)+3)
-         p1=v(2,node1)
-         p2=v(2,node2)
-         T1=v(0,node1)
-         T2=v(0,node2)
-!
-        if(p1.gt.p2) then
-            xflow=0.75/dsqrt(T1)*P1*qred_crit
-         else
-            xflow=-0.75/dsqrt(T1)*P1*qred_crit
-         endif 
+      elseif(iflag.eq.1)then
+         xflow=0.d0
 !     
       elseif(iflag.eq.2) then
 !     
@@ -90,9 +67,9 @@
 !         
          u=prop(index+1)
          ct=prop(index+2)
+         nelemswirl=nint(prop(index+3))
 !
-        if(ct.eq.0) then
-            nelemswirl=prop(index+3)
+        if(nelemswirl.ne.0) then
 !
 !     previous element is a preswirl nozzle
 !
@@ -116,94 +93,44 @@
 !
          if(lakon(nelem)(2:4).eq.'ATR') then
 !     
-            if(u/CT.ge.2) then
+            xflow=v(1,nodem)*iaxial
+            Tt1=v(0,node1)-physcon(1)
+            Tt2=v(0,node2)-physcon(1)
 !     
-               xflow=v(1,nodem)*iaxial
-               Tt1=v(0,node1)+physcon(1)
-               Tt2=v(0,node2)+physcon(1)
-!     
-               nodef(1)=node1
-               nodef(2)=node1
-               nodef(3)=nodem
-               nodef(4)=node2
+            nodef(1)=node1
+            nodef(2)=node1
+            nodef(3)=nodem
+            nodef(4)=node2
 !     
 !     in the case of a negative flow direction
 !     
-               if(xflow.le.0d0) then
-                  write(*,*)''
-                  write(*,*)'*WARNING:'
-                  write(*,*)'in element',nelem
-                  write(*,*)'TYPE=ABSOLUTE TO RELATIVE'
-                  write(*,*)'mass flow negative!'
-                  write(*,*)'check results and element definition'
-               endif
-!     
-            else
-               pt1=v(2,node2)
-               pt2=v(2,node1)
-               xflow=v(1,nodem)*iaxial
-               Tt1=v(0,node1)+physcon(1)
-               Tt2=v(0,node2)+physcon(1)
-!
-               if(xflow.le.0) then
-                  write(*,*)''
-                  write(*,*)'*WARNING:'
-                  write(*,*)'in element',nelem
-                  write(*,*)'TYPE=ABSOLUTE TO RELATIVE'
-                  write(*,*)'mass flow negative!'
-                  write(*,*)'check results and element definition'
-               endif
-!
-               nodef(1)=node2
-               nodef(2)=node2
-               nodef(3)=nodem
-               nodef(4)=node1
+            if(xflow.le.0d0) then
+               write(*,*)''
+               write(*,*)'*WARNING:'
+               write(*,*)'in element',nelem
+               write(*,*)'TYPE=ABSOLUTE TO RELATIVE'
+               write(*,*)'mass flow negative!'
+               write(*,*)'check results and element definition'
             endif
 !       
          elseif(lakon(nelem)(2:4).eq.'RTA') then
-!
-            if(u/CT.lt.2) then
 !     
-               xflow=v(1,nodem)*iaxial
-               Tt1=v(0,node1)+physcon(1)
-               Tt2=v(0,node2)+physcon(1)
-!               
-               nodef(1)=node1
-               nodef(2)=node1
-               nodef(3)=nodem
-               nodef(4)=node2
-!
-               if(xflow.le.0d0) then
-                  write(*,*)''
-                  write(*,*)'*WARNING:'
-                  write(*,*)'in element',nelem
-                  write(*,*)'TYPE=RELATIVE TO ABSOLUTE'
-                  write(*,*)'mass flow negative!'
-                  write(*,*)'check results and element definition'
-               endif
-!
-            else
-!
-               pt1=v(2,node2)
-               pt2=v(2,node1)
-               xflow=v(1,nodem)*iaxial
-               Tt1=v(0,node1)+physcon(1)
-               Tt2=v(0,node2)+physcon(1)
-!
-               if(xflow.le.0) then
-                  write(*,*)''
-                  write(*,*)'*WARNING:'
-                  write(*,*)'in element',nelem
-                  write(*,*)'TYPE=RELATIVE TO ABSOLUTE'
-                  write(*,*)'mass flow negative!'
-                  write(*,*)'check results and element definition'
-               endif
-!
-               nodef(1)=node2
-               nodef(2)=node2
-               nodef(3)=nodem
-               nodef(4)=node1
-!              
+            xflow=v(1,nodem)*iaxial
+            Tt1=v(0,node1)-physcon(1)
+            Tt2=v(0,node2)-physcon(1)
+!     
+            nodef(1)=node1
+            nodef(2)=node1
+            nodef(3)=nodem
+            nodef(4)=node2
+!     
+            if(xflow.le.0d0) then
+               write(*,*)''
+               write(*,*)'*WARNING:'
+               write(*,*)'in element',nelem
+               write(*,*)'TYPE=RELATIVE TO ABSOLUTE'
+               write(*,*)'mass flow negative!'
+               write(*,*)'check results and element definition'
             endif
          endif
 !     
@@ -219,7 +146,7 @@
                Tt1= Tt2
             endif
 !
-            if(cp_cor.eq.0) then
+            if(cp_cor.eq.0.d0) then
                cp_cor=cp
             endif
 !     
@@ -279,9 +206,9 @@
 !         
          u=prop(index+1)
          ct=prop(index+2)
+         nelemswirl=nint(prop(index+3))
 !
-        if(ct.eq.0) then
-            nelemswirl=prop(index+3)
+        if(nelemswirl.ne.0) then
 !
 !     previous element is a preswirl nozzle
 !
@@ -305,94 +232,44 @@
 !
          if(lakon(nelem)(2:4).eq.'ATR') then
 !     
-            if(u/CT.ge.2) then
+            xflow=v(1,nodem)*iaxial
+            Tt1=v(0,node1)-physcon(1)
+            Tt2=v(0,node2)-physcon(1)
 !     
-               xflow=v(1,nodem)*iaxial
-               Tt1=v(0,node1)+physcon(1)
-               Tt2=v(0,node2)+physcon(1)
-!     
-               nodef(1)=node1
-               nodef(2)=node1
-               nodef(3)=nodem
-               nodef(4)=node2
+            nodef(1)=node1
+            nodef(2)=node1
+            nodef(3)=nodem
+            nodef(4)=node2
 !     
 !     in the case of a negative flow direction
 !     
-               if(xflow.le.0d0) then
-                  write(*,*)''
-                  write(*,*)'*WARNING:'
-                  write(*,*)'in element',nelem
-                  write(*,*)'TYPE=ABSOLUTE TO RELATIVE'
-                  write(*,*)'mass flow negative!'
-                  write(*,*)'check results and element definition'
-               endif
-!     
-            else
-               pt1=v(2,node2)
-               pt2=v(2,node1)
-               xflow=v(1,nodem)*iaxial
-               Tt1=v(0,node1)+physcon(1)
-               Tt2=v(0,node2)+physcon(1)
-!
-               if(xflow.le.0) then
-                  write(*,*)''
-                  write(*,*)'*WARNING:'
-                  write(*,*)'in element',nelem
-                  write(*,*)'TYPE=ABSOLUTE TO RELATIVE'
-                  write(*,*)'mass flow negative!'
-                  write(*,*)'check results and element definition'
-               endif
-!
-               nodef(1)=node2
-               nodef(2)=node2
-               nodef(3)=nodem
-               nodef(4)=node1
+            if(xflow.le.0d0) then
+               write(*,*)''
+               write(*,*)'*WARNING:'
+               write(*,*)'in element',nelem
+               write(*,*)'TYPE=ABSOLUTE TO RELATIVE'
+               write(*,*)'mass flow negative!'
+               write(*,*)'check results and element definition'
             endif
 !       
          elseif(lakon(nelem)(2:4).eq.'RTA') then
-!
-            if(u/CT.lt.2) then
 !     
-               xflow=v(1,nodem)*iaxial
-               Tt1=v(0,node1)+physcon(1)
-               Tt2=v(0,node2)+physcon(1)
-!               
-               nodef(1)=node1
-               nodef(2)=node1
-               nodef(3)=nodem
-               nodef(4)=node2
-!
-               if(xflow.le.0d0) then
-                  write(*,*)''
-                  write(*,*)'*WARNING:'
-                  write(*,*)'in element',nelem
-                  write(*,*)'TYPE=RELATIVE TO ABSOLUTE'
-                  write(*,*)'mass flow negative!'
-                  write(*,*)'check results and element definition'
-               endif
-!
-            else
-!
-               pt1=v(2,node2)
-               pt2=v(2,node1)
-               xflow=v(1,nodem)*iaxial
-               Tt1=v(0,node1)+physcon(1)
-               Tt2=v(0,node2)+physcon(1)
-!
-               if(xflow.le.0) then
-                  write(*,*)''
-                  write(*,*)'*WARNING:'
-                  write(*,*)'in element',nelem
-                  write(*,*)'TYPE=RELATIVE TO ABSOLUTE'
-                  write(*,*)'mass flow negative!'
-                  write(*,*)'check results and element definition'
-               endif
-!
-               nodef(1)=node2
-               nodef(2)=node2
-               nodef(3)=nodem
-               nodef(4)=node1
-!              
+            xflow=v(1,nodem)*iaxial
+            Tt1=v(0,node1)-physcon(1)
+            Tt2=v(0,node2)-physcon(1)
+!     
+            nodef(1)=node1
+            nodef(2)=node1
+            nodef(3)=nodem
+            nodef(4)=node2
+!     
+            if(xflow.le.0d0) then
+               write(*,*)''
+               write(*,*)'*WARNING:'
+               write(*,*)'in element',nelem
+               write(*,*)'TYPE=RELATIVE TO ABSOLUTE'
+               write(*,*)'mass flow negative!'
+               write(*,*)'check results and element definition'
             endif
          endif
 !     
@@ -408,7 +285,7 @@
             Tt1= Tt2
          endif
 !     
-         if(cp_cor.eq.0) then
+         if(cp_cor.eq.0.d0) then
             cp_cor=cp
          endif
 
@@ -421,7 +298,7 @@
      &           ', Ts1= ',Tt1,', Pt1= ',Pt1
             write(1,*)'             Element ',nelem,lakon(nelem)
             write(1,57)'             u= ',u,' ,Ct= ',Ct,''
-            write(1,56)'       Outlet node ',node2,':    Tt2= ',T2,
+            write(1,56)'      Outlet node ',node2,':     Tt2= ',Tt2,
      &           ', Ts2= ',Tt2,', Pt2= ',Pt2
 !     
  56      FORMAT(1X,A,I6,A,e11.4,A,e11.4,A,e11.4,A,e11.4)  

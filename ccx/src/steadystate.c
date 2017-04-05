@@ -67,7 +67,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
                ITG *isolver, ITG *jq, char *output, ITG *mcs,ITG *nkon, 
 	       ITG *ics, double *cs, ITG *mpcend,double *ctrl,
 	       ITG *ikforc, ITG *ilforc, double *thicke,ITG *nmat,
-	       char *typeboun,ITG *ielprop,double *prop){
+		 char *typeboun,ITG *ielprop,double *prop,char *orname){
 
   char fneig[132]="",description[13]="            ",*lakon=NULL,*labmpc=NULL,
     *labmpcold=NULL,cflag[1]=" ";
@@ -89,7 +89,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     *ikactmechr=NULL,*ikactmechi=NULL,nactmechr,nactmechi,intpointvar,
     iforc,iload,ne0,*iponoel=NULL,*inoel=NULL,*imdelem=NULL,
     nmdelem,*integerglob=NULL,*nshcon=NULL,nherm,icfd=0,*inomat=NULL,
-    *islavnode=NULL,*nslavnode=NULL,*islavsurf=NULL,iit=-1,inoelsize;
+    *islavnode=NULL,*nslavnode=NULL,*islavsurf=NULL,iit=-1,inoelsize,
+    network=0;
 
   long long i2;
 
@@ -633,7 +634,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
         &irowe,isolver,nzse,&adbe,&aube,iexpl,
 	ibody,xbody,nbody,cocon,ncocon,tieset,&ntie,imddof,&nmddof,
 	imdnode,&nmdnode,imdboun,&nmdboun,imdmpc,&nmdmpc,&izdof,&nzdof,
-	&nherm,xmr,xmi,typeboun,ielprop,prop);
+	&nherm,xmr,xmi,typeboun,ielprop,prop,orname);
 
       RENEW(imddof,ITG,nmddof);
       RENEW(imdnode,ITG,nmdnode);
@@ -1134,7 +1135,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		       nplicon,plkcon,nplkcon,
 		       npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
                        xbodyold,&reltime,veold,matname,mi,ikactmechr,
-                       &nactmechr,ielprop,prop));
+                       &nactmechr,ielprop,prop,sti,xstateini,xstate,nstate_));
 	  
 	  /* real modal coefficients */
 	  
@@ -1279,7 +1280,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		       nplicon,plkcon,nplkcon,
 		       npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
                        xbodyold,&reltime,veold,matname,mi,ikactmechi,
-                       &nactmechi,ielprop,prop));
+                       &nactmechi,ielprop,prop,sti,xstateini,xstate,nstate_));
 	  
 	  /* imaginary modal coefficients */
 	  
@@ -1688,7 +1689,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      xforc,nforc,thicke,shcon,nshcon,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
-                      islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,inoel);}
+                      islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
+                      inoel,nener,orname,&network);}
 	  else{
       
               /* calculating displacements/temperatures */
@@ -1717,7 +1719,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,
 		      clearini,islavsurf,ielprop,prop,energyini,energy,&iit,
-                      iponoel,inoel);
+                      iponoel,inoel,nener,orname,&network);
 	      
 	      if(nmdnode==0){
 		  DMEMSET(br,0,neq[1],0.);
@@ -1776,7 +1778,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
                       islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-                      inoel);}
+                      inoel,nener,orname,network);}
 	  else{ 
       
               /* calculating displacements/temperatures */
@@ -1805,7 +1807,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,
 		      clearini,islavsurf,ielprop,prop,energyini,energy,&iit,
-                      iponoel,inoel);
+                      iponoel,inoel,nener,orname,&network);
 
 	      if(nmdnode==0){
 		  DMEMSET(bi,0,neq[1],0.);
@@ -2393,7 +2395,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		nplicon,plkcon,nplkcon,
 		npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
 		xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech,
-                ielprop,prop));
+                ielprop,prop,sti,xstateini,xstate,nstate_));
 	  
 	      /* real modal coefficients */
 	  
@@ -2807,7 +2809,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
                       islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-                      inoel);
+                      inoel,nener,orname,network);
 	  
 	      (*kode)++;
 	      mode=-1;

@@ -31,7 +31,7 @@
 !     author: Yannick Muller
 !
       subroutine zeta_calc(nelem,prop,ielprop,lakon,reynolds,zeta,
-     &     isothermal,kon,ipkon,R,kappa,v,mi)
+     &     isothermal,kon,ipkon,R,kappa,v,mi,iaxial)
 !
       implicit none
 !
@@ -39,14 +39,14 @@
 !
       character*8 lakon(*)
 ! 
-      integer ielprop(*),nelem,iexp(2),i,j,ier,write1,iexp3(2),
-     &     write2,nelem_ref,ipkon(*),kon(*),nelem0,nelem1,nelem2,node10,
+      integer ielprop(*),nelem,iexp(2),i,j,ier,iwrit1,iexp3(2),
+     &     iwrit2,nelem_ref,ipkon(*),kon(*),nelem0,nelem1,nelem2,node10,
      &     node20,nodem0,node11,node21,nodem1,node12,node22,nodem2,
      &     iexpbr1(2) /11,11/,icase,node0,node1,node2,mi(*),n0,n1,n2,
-     &     n5,n6,n8,n10,n11,n12,n14,n15,n22
+     &     n5,n6,n8,n10,n11,n12,n14,n15,n22,iaxial,index
 !
       real*8 zeta,prop(*),lzd,reynolds,ereo,fa2za1,zetap,zeta0,
-     &     lambda,thau,a1,a2,dh,l,a2za1,ldumm,dhdumm,ks,
+     &     lambda,thau,a1,a2,dh,dl,a2za1,ldumm,dhdumm,ks,
      &     form_fact,zeta01,zeta02,alpha,rad,delta,a0,b0,azb,rzdh,
      &     A,C,rei,lam,ai,b1,c1,b2,c2,zeta1,re_val,k,ldre,
      &     zetah,cd,cdu,km,Tt0,Ts0,Tt1,Ts1,Tt2,Ts2,
@@ -70,9 +70,9 @@
 !        DIAGRAMS 4-19 p 175 - Reynolds R:epsilon^-_oRe
 !
       real*8 XRE (14), YERE (14)
-      data XRE / 25.,40.,60.0,100.,200.,400.,1000.,2000.,4000.,
+      data XRE /25.,40.,60.0,100.,200.,400.,1000.,2000.,4000.,
      &     10000.,20000.,100000.,200000.,1000000./
-      data YERE/ 0.34,0.36,0.37,0.40,0.42,0.46,0.53,0.59,
+      data YERE /0.34,0.36,0.37,0.40,0.42,0.46,0.53,0.59,
      &     0.64,0.74,0.81,0.94,0.95,0.98/
 !     
 !     Diagram 4-19 p 175 - Reynolds | A1/A2 R: zeta_phi
@@ -105,9 +105,9 @@
 !     Diagram 4-12 p 169 - l/Dh R: tau
 !     
       real*8 XLZD (10), YTOR (10)
-      data XLZD / 0.0,0.2,0.4,0.6,0.8,1.0,1.2,1.6,2.0,2.4/
-      data YTOR / 1.35,1.22,1.10,0.84,0.42,0.24,0.16,0.07,0.02,0.0/
-      data IEXP / 10, 1/
+      data XLZD /0.0,0.2,0.4,0.6,0.8,1.0,1.2,1.6,2.0,2.4/
+      data YTOR /1.35,1.22,1.10,0.84,0.42,0.24,0.16,0.07,0.02,0.0/
+      data IEXP /10, 1/
 !     
 !     ***** wall orifice *****
 !     
@@ -206,7 +206,7 @@
 !
 !     ***** bends *****
 !     
-!     SHARP ELBOW (R/DH = 0) AT 0 < DELTA < 180
+!     SHARP ELBOW (R/DH=0) AT 0 < DELTA < 180
 !     I.E. IDL'CHIK page 294
 !     DIAGRAM 6-5  - a0/b0 R: C1
 !     
@@ -258,7 +258,7 @@
 !     DIAGRAM 6-1  - R0/D0 R: B1 (continuation of XRQDH)
 !
       real*8 XRZDH(14)
-      DATA XRZDH/
+      DATA XRZDH /
      &     1.00,2.00,4.00,6.00,8.00,10.0,15.0,20.0,25.0,30.0,35.0,40.0,
      &     45.0,50.0/
 !     
@@ -432,7 +432,7 @@
      &        /0.06d0,0.1d0,0.2d0,0.33,0.5d0 /
 !
       data Z90LIMY
-     &    / 0.1d0,0.1d0,0.3d0,0.5d0,0.7d0/
+     &   /0.1d0,0.1d0,0.3d0,0.5d0,0.7d0/
 !
       data n0 /0/
       data n1 /1/
@@ -448,13 +448,14 @@
       data n22 /22/
 !     
       pi=4.d0*datan(1.d0)
+      index=ielprop(nelem)
 !     
-      if ((lakon(nelem)(2:5).eq.'REUS').or.
+      if((lakon(nelem)(2:5).eq.'REUS').or.
      &    (lakon(nelem)(2:5).eq.'LPUS')) then
 !     
 !     user defined zeta
 !     
-         zeta=prop(ielprop(nelem)+4)
+         zeta=prop(index+4)
 !     
          return
 !
@@ -463,7 +464,7 @@
 !     
 !     entrance 
 !     
-         zeta=prop(ielprop(nelem)+4)
+         zeta=prop(index+4)
 !     
          return
 !     
@@ -476,25 +477,25 @@
 !     Input parameters
 !     
 !     Inlet/outlet sections
-         a1=prop(ielprop(nelem)+1)
-         a2=prop(ielprop(nelem)+2)
+         a1=prop(index+1)
+         a2=prop(index+2)
 !     Hydraulic diameter
-         dh=prop(ielprop(nelem)+3)
-         if((dh.eq.0).and.(A1.le.A2)) then
+         dh=prop(index+3)
+         if((dh.eq.0.d0).and.(A1.le.A2)) then
             dh=dsqrt(4d0*A1/Pi)
-         elseif((dh.eq.0).and.(A1.gt.A2)) then
+         elseif((dh.eq.0.d0).and.(A1.gt.A2)) then
             dh=dsqrt(4d0*A2/Pi)
          endif
 !     Length        
-         l=prop(ielprop(nelem)+4)
+         dl=prop(index+4)
 !         
-         lzd=l/dh
+         lzd=dl/dh
          a2za1=min (a1/a2, 1.)
 !         
          fa2za1=1.d0-a2za1
 !
-         write1= 0
-         if ( lzd .gt. 2.4 ) write1= 1
+         iwrit1= 0
+         if( lzd.gt.2.4 ) iwrit1= 1
 !     
          ldumm=1.D0
          dhdumm=-1.D0
@@ -505,17 +506,17 @@
      &        form_fact,lambda)
 !
          call onedint(XLZD,YTOR,n10,lzd,thau,n1,n1,n0,ier)
-         zeta0 = ((0.5+thau*dsqrt(fa2za1))+fa2za1) * fa2za1
+         zeta0=((0.5+thau*dsqrt(fa2za1))+fa2za1) * fa2za1
 !
-         if(reynolds .gt. 1.E+05 ) then
+         if(reynolds.gt.1.E+05 ) then
             zeta=zeta0 + lambda * dabs(lzd)
          else
             call onedint(XRE,YERE,n14,reynolds,ereo,n1,n1,n0,ier)
 !
             call twodint(zzeta,n15,n11,reynolds,
      &           a2za1,zetap,n1,IEXP,IER)
-            zeta = zetap + ereo * zeta0 + lambda * dabs(lzd)
-            IF ( a2za1 .gt. 0.95 ) WRITE1=1
+            zeta=zetap + ereo * zeta0 + lambda * dabs(lzd)
+            IF( a2za1.gt.0.95 ) IWRIT1=1
          endif
 !     
          if(dabs(lzd) .le. 0.015 )then 
@@ -523,7 +524,7 @@
             write(*,*) '         range ie less than 0.015 !'
          endif
 !
-         if( write1 .eq. 1 ) then
+         if( iwrit1.eq.1 ) then
             write(*,*) 
      &    'WARNING in zeta_calc: geometry data outside valid range' 
             write(*,*) 
@@ -539,19 +540,19 @@
 !     Input parameters
 !     
 !     Inlet/outlet sections
-         a1=prop(ielprop(nelem)+1)
-         a2=prop(ielprop(nelem)+2)
+         a1=prop(index+1)
+         a2=prop(index+2)
 !     Hydraulic diameter
-         dh=prop(ielprop(nelem)+3)
-         if((dh.eq.0).and.(A1.le.A2)) then
+         dh=prop(index+3)
+         if((dh.eq.0.d0).and.(A1.le.A2)) then
             dh=dsqrt(4d0*A1/Pi)
-         elseif((dh.eq.0).and.(A1.gt.A2)) then
+         elseif((dh.eq.0.d0).and.(A1.gt.A2)) then
             dh=dsqrt(4d0*A2/Pi)
          endif
 !     Length        
-         l=prop(ielprop(nelem)+4)
+         dl=prop(index+4)
 !     
-         lzd=l/dh
+         lzd=dl/dh
          ldumm=1.D0
          dhdumm=-1.D0
          ks=0.d0
@@ -561,8 +562,8 @@
      &        form_fact,lambda)
          call onedint (XLQD,YZETA1,n12,lzd,zeta01,n1,n1,n0,IER)
 !     
-         write1=0
-         if (lzd.gt.10.) write1=1
+         iwrit1=0
+         if(lzd.gt.10.) iwrit1=1
 !     
          if(reynolds.le.1.E+05) then
 !     
@@ -579,7 +580,7 @@
             write(*,*) 
      &       '         l/dh outside valid range i.e. less than 0.015 !'
          endif
-         if(write1.eq.1) then
+         if(iwrit1.eq.1) then
             write(*,*) '*WARNING in zeta_calc :extrapolated value(s)!'
          endif
 !     
@@ -594,30 +595,23 @@
 !     Input parameters
 !    
 !     Inlet/outlet sections
-         a1=prop(ielprop(nelem)+1)
-         a2=prop(ielprop(nelem)+2)
-c!     Hydraulic diameter
-c         dh=prop(ielprop(nelem)+3)
-c         if((dh.eq.0).and.(A1.le.A2)) then
-c            dh=dsqrt(4d0*A1/Pi)
-c         elseif((dh.eq.0).and.(A1.gt.A2)) then
-c            dh=dsqrt(4d0*A2/Pi)
-c         endif
+         a1=prop(index+1)
+         a2=prop(index+2)
 !     
          a2za1=a1/a2
-         write1=0
+         iwrit1=0
 !     
-         if (reynolds.LE.10.) then
+         if(reynolds.LE.10.) then
             zeta=26.0/reynolds
-         elseif (reynolds.gt.10.and.reynolds.le.3.5E+03) then
+         elseif(reynolds.gt.10.and.reynolds.le.3.5E+03) then
             call twodint(zzeta3,n14,n11,reynolds,a2za1,zeta,n1,IEXP3,
      &               IER)
-            if (a2za1.lt.0.01.or.a2za1.gt.0.6) write1=1
+            if(a2za1.lt.0.01.or.a2za1.gt.0.6) iwrit1=1
          else
             zeta=(1.-a2za1)**2
          endif
 !     
-         if(write1 .eq. 1) then
+         if(iwrit1.eq.1) then
             write(*,*) '*WARNING in zeta_calc: extrapolated value(s)!'
          endif
          return
@@ -631,46 +625,46 @@ c         endif
 !     Input parameters
 !    
 !     Inlet/outlet sections
-         a1=prop(ielprop(nelem)+1)
-         a2=prop(ielprop(nelem)+2)
+         a1=prop(index+1)
+         a2=prop(index+2)
 !     Hydraulic diameter
-         dh=prop(ielprop(nelem)+3)
-         if((dh.eq.0).and.(A1.le.A2)) then
+         dh=prop(index+3)
+         if((dh.eq.0.d0).and.(A1.le.A2)) then
             dh=dsqrt(4d0*A1/Pi)
-         elseif((dh.eq.0).and.(A1.gt.A2)) then
+         elseif((dh.eq.0.d0).and.(A1.gt.A2)) then
             dh=dsqrt(4d0*A2/Pi)
          endif
 !     Length
-         l=prop(ielprop(nelem)+4)
+         dl=prop(index+4)
 !     Angle
-         alpha=prop(ielprop(nelem)+5)
+         alpha=prop(index+5)
 !     
          a2za1=a2/a1
-         write1=0
-         l=abs(l)
-         lzd=l/dh
+         iwrit1=0
+         dl=abs(dl)
+         lzd=dl/dh
 !     
-         if (l.eq.0.) then
-            if (reynolds.le.10.) then
+         if(dl.eq.0.d0) then
+            if(reynolds.le.10.) then
                zeta=27.0/reynolds
             elseif(reynolds.gt.10.and.reynolds.le.1.E+04) then
               call twodint(ZZETA41,n14,n11,reynolds,a2za1,zeta,n1,IEXP,
      &              IER)
-               if (a2za1.le.0.1.or.a2za1.gt.0.6) write1=1
-            elseif (reynolds.gt.1.E+04) then
+               if(a2za1.le.0.1.or.a2za1.gt.0.6) iwrit1=1
+            elseif(reynolds.gt.1.E+04) then
                zeta=0.5*(1.-a2za1)
             endif
-         elseif(l.gt.0.) then
+         elseif(dl.gt.0.d0) then
             call twodint(ZZETA42,n10,n0,alpha,lzd,zeta0,n1,IEXP,IER)
             zeta=zeta0*(1.-a2za1)
-            if (lzd .lt. 0.025  .or.  lzd .gt. 0.6) write1=1
-            if (reynolds  .le. 1.E+04) then
+            if(lzd.lt.0.025 .or. lzd.gt.0.6) iwrit1=1
+            if(reynolds  .le. 1.E+04) then
                write(*,*) '*WARNING in zeta_calc: reynolds outside valid
      & range i.e. < 10 000 !'
             endif   
          endif
 !     
-         if ( write1 .eq. 1 ) then
+         if( iwrit1.eq.1 ) then
             WRITE(*,*) '*WARNING in zeta_calc: extrapolierte Werte!'
          endif
 !     
@@ -680,7 +674,7 @@ c         endif
      &       (lakon(nelem)(2:7).eq.'LPBEID')) then
 !
 !
-!        SHARP ELBOW (R/DH = 0) AT 0 < DELTA < 180
+!        SHARP ELBOW (R/DH=0) AT 0 < DELTA < 180
 !        I.E. IDL'CHIK page 294
 !     
 !        SHARP BENDS 0.5 < R/DH < 1.5 AND 0 < DELTA < 180
@@ -692,37 +686,37 @@ c         endif
 !     Input parameters
 !     
 !     Inlet/outlet sections
-         a1=prop(ielprop(nelem)+1)
-         a2=prop(ielprop(nelem)+2)
+         a1=prop(index+1)
+         a2=prop(index+2)
 !     Hydraulic diameter
-         dh=prop(ielprop(nelem)+3)
-         if((dh.eq.0).and.(A1.le.A2)) then
+         dh=prop(index+3)
+         if((dh.eq.0.d0).and.(A1.le.A2)) then
             dh=dsqrt(4d0*A1/Pi)
-         elseif((dh.eq.0).and.(A1.gt.A2)) then
+         elseif((dh.eq.0.d0).and.(A1.gt.A2)) then
             dh=dsqrt(4d0*A2/Pi)
          endif
 !     radius
-         rad=prop(ielprop(nelem)+4)
+         rad=prop(index+4)
 !     angle
-         delta=prop(ielprop(nelem)+5)
+         delta=prop(index+5)
 !     heigth/width (square section)
-         a0=prop(ielprop(nelem)+6)
-         b0=prop(ielprop(nelem)+7)
+         a0=prop(index+6)
+         b0=prop(index+7)
 !
-      write1=0
-      write2=0
+      iwrit1=0
+      iwrit2=0
       rzdh=rad/dh
       if(a0.eq.0.)  azb=1.0
       if(a0.gt.0.) azb=a0/b0
 !
-      if (rzdh.le.0.5) then
+      if(rzdh.le.0.5) then
          call onedint(XAQB,YC,n12,azb,C,n1,n1,n0,IER)
          zeta1=0.95*(SIN(delta*0.0087))**2+2.05*(SIN(delta*0.0087))**4
          call onedint(XDELTA,YA,n10,delta,A,n1,n1,n10,IER)
          zeta=c*a*zeta1
-         if (azb.le.0.25.or.azb.gt.8.0) write2=1
-         if (reynolds.lt.4.E+04) then
-            if (reynolds.le.3.E+03) write1=1
+         if(azb.le.0.25.or.azb.gt.8.0) iwrit2=1
+         if(reynolds.lt.4.E+04) then
+            if(reynolds.le.3.E+03) iwrit1=1
             REI=MAX(2999.,reynolds)
             ldumm=1.D0
             dhdumm=-1.D0
@@ -736,7 +730,7 @@ c         endif
             zeta=zeta*lambda/lam
          endif
 !
-      elseif (rzdh.gt.0.5.and.rzdh.lt.1.5) then
+      elseif(rzdh.gt.0.5.and.rzdh.lt.1.5) then
          call onedint(XDELTA,YA1,n10,delta,AI,n1,n1,n10,IER)
          call onedint(XRQDH,YB1,n8,rzdh,B1,n1,n1,n10,IER)
          call onedint(XAQB,YC1,n12,azb,C1,n1,n1,n10,IER)
@@ -748,9 +742,9 @@ c         endif
          call friction_coefficient(ldumm,dhdumm,ks,REI,form_fact
      &        , lambda)
          zeta=AI*B1*C1+0.0175*delta*rzdh*lambda
-         if (azb.lt.0.25.or.azb.gt.8.0) write2=1
-         if (reynolds.lt.2.E+05) then
-            IF (reynolds.lt.3.E+03) write1=1
+         if(azb.lt.0.25.or.azb.gt.8.0) iwrit2=1
+         if(reynolds.lt.2.E+05) then
+            IF(reynolds.lt.3.E+03) iwrit1=1
             REI=MAX(2999.,reynolds)
             call friction_coefficient(ldumm,dhdumm,ks,REI,form_fact
      &           ,lambda)
@@ -760,7 +754,7 @@ c         endif
             zeta=zeta*lambda/lam
          endif
 !
-      elseif (rzdh.ge.1.5.and.rzdh.lt.50.) then
+      elseif(rzdh.ge.1.5.and.rzdh.lt.50.) then
          call onedint(XDELTA,YA1,n10,delta,AI,n1,n1,n10,IER)
          call onedint(XAQB,YC2,n12,azb,C2,n1,n1,n10,IER)
          call onedint(XRZDH,YB2,n8,rzdh,B2,n1,n1,n0,IER)
@@ -772,9 +766,9 @@ c         endif
          call friction_coefficient(ldumm,dhdumm,ks,REI,form_fact
      &        ,lambda)
          zeta=AI*B2*C2+0.0175*delta*rzdh*lambda
-         if (azb.lt.0.25.or.azb.gt.8.0) write2=1
-         if (reynolds.lt.2.E+05) then
-            if (reynolds.lt.3.E+03) write1=1
+         if(azb.lt.0.25.or.azb.gt.8.0) iwrit2=1
+         if(reynolds.lt.2.E+05) then
+            if(reynolds.lt.3.E+03) iwrit1=1
             REI=MAX(2999.,reynolds)
              call friction_coefficient(ldumm,dhdumm,ks,REI,form_fact
      &           ,lambda)
@@ -786,17 +780,17 @@ c         endif
 !
       elseif(rzdh.ge.50.) then
          zeta=0.0175*rzdh*delta*lambda
-         if (reynolds .lt. 2.E+04) then
+         if(reynolds.lt.2.E+04) then
              write (*,*)'Reynolds outside valid range i.e. < 20 000!'
          endif
       endif
 !
-      if (write1 .eq. 1) then
+      if(iwrit1.eq.1) then
 !     
          write (*,*) 'Reynolds outside valid range i.e. < 3 000!'
       endif
 !
-      if(write2 .eq. 1) then
+      if(iwrit2.eq.1) then
          write(*,*) '*WARNING in zeta_calc: extrapolated value(s)!'
       endif
       return
@@ -809,30 +803,30 @@ c         endif
 !     Input parameters
 !
 !     Inlet/outlet sections
-         a1=prop(ielprop(nelem)+1)
-         a2=prop(ielprop(nelem)+2)
+         a1=prop(index+1)
+         a2=prop(index+2)
 !     Hydraulic diameter
-         dh=prop(ielprop(nelem)+3)
+         dh=prop(index+3)
 !     Radius:
-         rad=prop(ielprop(nelem)+4)
+         rad=prop(index+4)
 !     angle delta:
-         delta=prop(ielprop(nelem)+5)
+         delta=prop(index+5)
 !     
-         rzdh = Rad / DH
+         rzdh=Rad/DH
 !     
-         write1 = 0
-         if ( delta .lt. 10.  .or.  delta .gt. 180.  .or.
-     &        rzdh  .lt. 0.5  .or.  rzdh.  gt. 10.        ) write1 = 1
+         iwrit1=0
+         if( delta.lt.10. .or. delta.gt.180.  .or.
+     &        rzdh .lt.0.5 .or. rzdh.  gt. 10.        ) iwrit1=1
 !     
          call twodint(ZZETAO,n14,n11,rzdh,delta,zeta0,n1,IEXP6,IER)
          call twodint(KRE, n22,n11,reynolds,rzdh, k,n1,IEXP6,IER)
-         zeta = zeta0 * k
+         zeta=zeta0 * k
 !     
-         if ( reynolds .lt. 1.E+3  .or.  reynolds .gt. 1.E+6 ) then 
+         if( reynolds.lt.1.E+3 .or. reynolds.gt.1.E+6 ) then 
             write (*,*)'Reynolds outside valid range <1.E+3 or >1.0E+6'
          endif
 !     
-         if ( write1 .eq. 1 ) then
+         if( iwrit1.eq.1 ) then
             write (*,*)': geometry data outside valid range '
             write (*,*)' - extrapolated value(s)!'
          endif
@@ -857,19 +851,19 @@ c         endif
 !     Input parameters
 !     
 !     Inlet/outlet sections
-         a1=prop(ielprop(nelem)+1)
-         a2=prop(ielprop(nelem)+2)
+         a1=prop(index+1)
+         a2=prop(index+2)
 !     Hydraulic diameter
-         dh=prop(ielprop(nelem)+3)
-         if((dh.eq.0).and.(A1.le.A2)) then
+         dh=prop(index+3)
+         if((dh.eq.0.d0).and.(A1.le.A2)) then
             dh=dsqrt(4d0*A1/Pi)
-         elseif((dh.eq.0).and.(A1.gt.A2)) then
+         elseif((dh.eq.0.d0).and.(A1.gt.A2)) then
             dh=dsqrt(4d0*A2/Pi)
          endif
 !     Reference element
-         nelem_ref=int(prop(ielprop(nelem)+4))
+         nelem_ref=nint(prop(index+4))
 !
-         if (lakon(nelem_ref)(2:5).ne.'GAPF') then
+         if(lakon(nelem_ref)(2:5).ne.'GAPF') then
             write(*,*) '*ERROR in zeta_calc :the reference element is no
      &t of type GASPIPE'
            call exit(201)
@@ -879,19 +873,19 @@ c         endif
             isothermal=.true.
          endif
 !     Length of the previous pipe element
-         l=abs(prop(ielprop(nelem_ref)+3))
+         dl=abs(prop(ielprop(nelem_ref)+3))
 !    
-         if (reynolds .le. 2300.) then
+         if(reynolds .le. 2300.) then
 !     (LAMINAR FLOW)
-            ldre=l/dh/reynolds
+            ldre=dl/dh/reynolds
             call onedint (XDRE,ZETAEX,n12,ldre,zeta,n1,n1,n0,IER)
-         elseif ((reynolds .gt. 2300) .and. (reynolds .lt. 3000)) then
+         elseif((reynolds.gt.2300).and.(reynolds.lt.3000)) then
 !     (TRANSITION LAMINAR-TURBULENT)
-            ldre=l/DH/2300.
+            ldre=dl/dh/2300.
             call onedint (XDRE,ZETAEX,n12,ldre,zetah,n1,n1,n0,IER)
             zeta=zetah-(zetah-1.)*((reynolds-2300.)/700.)
          else
-!     (TURBULENT FLOW, RE .GT. 3000)
+!     (TURBULENT FLOW, RE.GT.3000)
             zeta=1.
        endif
 !     
@@ -912,25 +906,25 @@ c         endif
 !     Input parameters
 !     
 !     Inlet/outlet sections
-         a1=prop(ielprop(nelem)+1)
-         a2=prop(ielprop(nelem)+2)
+         a1=prop(index+1)
+         a2=prop(index+2)
 !     Hydraulic diameter
-         dh=prop(ielprop(nelem)+3)
-         if((dh.eq.0).and.(A1.le.A2)) then
+         dh=prop(index+3)
+         if((dh.eq.0.d0).and.(A1.le.A2)) then
             dh=dsqrt(4d0*A1/Pi)
-         elseif((dh.eq.0).and.(A1.gt.A2)) then
+         elseif((dh.eq.0.d0).and.(A1.gt.A2)) then
             dh=dsqrt(4d0*A2/Pi)
          endif
 !     Length
-         l=prop(ielprop(nelem)+4)
+         dl=prop(index+4)
 !     Isotermal
 !
-         lzd=dabs(l)/dh
+         lzd=dabs(dl)/dh
 !     
          cdu=0.827-0.0085*lzd
          km=a1/a2
          call cd_lichtarowicz(cd,cdu,reynolds,km,lzd)
-         if (reynolds .gt. 2.E04) then
+         if(reynolds.gt.2.E04) then
             write(*,*) 
      &        '*WARNING in zeta_calc: range of application exceeded !'
          endif
@@ -943,14 +937,14 @@ c         endif
 !     
       elseif((lakon(nelem)(2:5).eq.'REBR').or.
      &       (lakon(nelem)(2:5).eq.'LPBR')) then 
-         nelem0=prop(ielprop(nelem)+1)
-         nelem1=prop(ielprop(nelem)+2)
-         nelem2=prop(ielprop(nelem)+3)
-         A0=prop(ielprop(nelem)+4)
-         A1=prop(ielprop(nelem)+5)
-         A2=prop(ielprop(nelem)+6)
-         alpha1=prop(ielprop(nelem)+7)
-         alpha2=prop(ielprop(nelem)+8)
+         nelem0=nint(prop(index+1))
+         nelem1=nint(prop(index+2))
+         nelem2=nint(prop(index+3))
+         A0=prop(index+4)
+         A1=prop(index+5)
+         A2=prop(index+6)
+         alpha1=prop(index+7)
+         alpha2=prop(index+8)
 !     
 !     node definition
 !     
@@ -1014,7 +1008,8 @@ c         endif
             icase=0
 !     
             Tt0=v(0,node0)
-            xflow0=v(1,nodem0)
+            xflow0=iaxial*v(1,nodem0)
+c            xflow0=v(1,nodem0)
             pt0=v(2,node0)
 !     
             Qred_0=dabs(xflow0)*dsqrt(Tt0)/(A0*pt0)
@@ -1029,7 +1024,8 @@ c         endif
             rho0=pt0/(R*Tt0)*(Tt0/Ts0)**(-1/(kappa-1))
 !     
             Tt1=v(0,node1)
-            xflow1=v(1,nodem1)
+            xflow1=iaxial*v(1,nodem1)
+c            xflow1=v(1,nodem1)
             pt1=v(2,node0)
 !     
             Qred_1=dabs(xflow1)*dsqrt(Tt1)/(A1*pt1)
@@ -1044,7 +1040,8 @@ c         endif
             rho1=pt1/(R*Tt1)*(Tt1/Ts1)**(-1/(kappa-1))
 !     
             Tt2=v(0,node2)
-            xflow2=v(1,nodem2)
+            xflow2=iaxial*v(1,nodem2)
+c            xflow2=v(1,nodem2)
             pt2=v(2,node0)
 !     
             Qred_2=dabs(xflow2)*dsqrt(Tt2)/(A2*pt2)
@@ -1067,9 +1064,9 @@ c         endif
 !     
 !     volumic flows (positive)
 !     
-         V0=dabs(v(1,nodem0)/rho0)
-         V1=dabs(v(1,nodem1)/rho1)
-         V2=dabs(v(1,nodem2)/rho2)
+         V0=dabs(xflow0/rho0)
+         V1=dabs(xflow1/rho1)
+         V2=dabs(xflow2/rho2)
 !
          V1V0=V1/V0
          V2V0=V2/V0
@@ -1128,7 +1125,7 @@ c         endif
 !     ISBN 0-899116-284-4
 !     
             a0a2=a0/a2
-            if(alpha2.lt.60.) then
+            if(alpha2.lt.60.d0) then
                if(nelem.eq.nelem1) then
                   zeta=1.d0-V1V0**2
      &                 -2.d0*a0a2*V2V0**2*dcos(alpha2*pi/180)
@@ -1140,7 +1137,7 @@ c         endif
                   zeta=zeta*(W0W2)**2
                endif
 !     
-            elseif(alpha2.eq.60) then
+            elseif(alpha2.eq.60.d0) then
 !     
 !     proceeding as for alpha2<60 with cos(alpha2)=0.5
 !     
@@ -1153,7 +1150,7 @@ c         endif
                   zeta=zeta*(W0W2)**2
                endif
 !     
-            elseif(alpha2.lt.90) then
+            elseif(alpha2.lt.90.d0) then
 !     
 !     linear interpolation between alpha2=60 and alpha2=90
 !     
@@ -1171,7 +1168,7 @@ c         endif
                   zeta=zeta*(W0W2)**2
                endif
 !     
-            elseif (alpha2.eq.90) then
+            elseif(alpha2.eq.90.d0) then
                if(nelem.eq.nelem1) then
                   zeta=(1.55d0-V2V0)*V2V0
                   zeta=zeta*(W0W1)**2
@@ -1199,7 +1196,7 @@ c         endif
 !     2nd edition 1986,HEMISPHERE PUBLISHING CORP.
 !     ISBN 0-899116-284-4 page 348-352 
 !     
-            if(alpha2.lt.60) then
+            if(alpha2.lt.60.d0) then
                if(nelem.eq.nelem1) then
                   zeta=1+a0a1*V1V0**2*(a0a1-2.)
      &                 -2d0*a0a2*V2V0**2*dcos(alpha2*pi/180)
@@ -1218,7 +1215,7 @@ c         endif
                   zeta=zeta*(W0W2)**2
                endif
 !     
-            elseif(alpha2.eq.60) then
+            elseif(alpha2.eq.60.d0) then
 !     as for alpha2 < 60 , with dcos(alpha2)=0.5
                if(nelem.eq.nelem1) then
                   zeta=1+a0a1*V1V0**2*(a0a1-2.)-a0a2*V2V0**2
@@ -1235,7 +1232,7 @@ c         endif
                   zeta=zeta*(W0W2)**2
                endif
 !     
-            elseif(alpha2.lt.90) then
+            elseif(alpha2.lt.90.d0) then
 !     linear interpolation between alpha2=60 and alpha2=90
                z1_60=1+a0a1*V1V0**2*(a0a1-2.)-a0a2*V2V0**2
 !     correction term
@@ -1256,7 +1253,7 @@ c         endif
                   zeta=z2_60+(z2_90-z2_60)*(alpha2-60)/30
                   zeta=zeta*(W0W2)**2
                endif
-            elseif(alpha2.eq.90) then
+            elseif(alpha2.eq.90.d0) then
                if(nelem.eq.nelem2) then
                   call twodint(KBTAB,n6,n11,a2a0,alpha2,kb,n1,
      &                 iexpbr1,ier)
@@ -1360,11 +1357,11 @@ c         endif
             elseif(nelem.eq.nelem2) then
 !
                dh0=dsqrt(A0*4d0/Pi)
-               if(dh0.eq.0) then
+               if(dh0.eq.0.d0) then
                   dh0=dsqrt(4d0*A0/Pi)
                endif
                dh2=dsqrt(A2*4d0/Pi)
-               if(dh2.eq.0) then
+               if(dh2.eq.0.d0) then
                   dh2=dsqrt(4d0*A2/Pi)
                endif
 !

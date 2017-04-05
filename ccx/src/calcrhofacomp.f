@@ -27,7 +27,7 @@
       integer nface,i,imat,ntmat_,mi(*),
      &  ielmat(mi(3),*),ielfa(4,*)
 !
-      real*8 t1l,vfa(0:5,*),shcon(0:3,ntmat_,*) 
+      real*8 t1l,vfa(0:7,*),shcon(0:3,ntmat_,*) 
 !     
 c$omp parallel default(none)
 c$omp& shared(nface,vfa,ielmat,ielfa,shcon)

@@ -16,34 +16,46 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine objective_shapeener_tot(dgdx,
-     &  df,vold,ndesi,iobject,mi,nactdofinv,
-     &  jqs,irows)
+      subroutine objective_shapeener_tot(dgdx,df,vold,ndesi,
+     &  iobject,mi,nactdofinv,jqs,irows,iperturb,fint)
+
 !
       implicit none
 !
       integer ndesi,iobject,mi(*),idesvar,j,idir,
-     &  jqs(*),irows(*),nactdofinv(*),node,idof,inode,mt
+     &  jqs(*),irows(*),nactdofinv(*),node,idof,inode,mt,
+     &  iperturb(*)
 !      
-      real*8 dgdx(ndesi,*),df(*),vold(0:mi(2),*)
+      real*8 dgdx(ndesi,*),df(*),vold(0:mi(2),*),fint(*)
 !
 !     ----------------------------------------------------------------
 !     Calculation of the total differential:
-!     dgdx = dgdx + vold^(T) * ( df )
+!     non-linear:  dgdx = dgdx + fint^(T) * ( df )
+!     linear:      dgdx = dgdx + vold^(T) * ( df )
 !     ----------------------------------------------------------------
 !     
       mt=mi(2)+1
 !
-      do idesvar=1,ndesi
-         do j=jqs(idesvar),jqs(idesvar+1)-1
-            idof=irows(j)
-            inode=nactdofinv(idof)
-            node=inode/mt+1
-            idir=inode-mt*(inode/mt)
-            dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
+      if(iperturb(2).eq.1) then
+         do idesvar=1,ndesi
+            do j=jqs(idesvar),jqs(idesvar+1)-1
+               idof=irows(j)
+               dgdx(idesvar,iobject)=dgdx(idesvar,iobject) 
+     &                           +fint(idof)*df(j) 
+            enddo
+	 enddo        
+      else
+         do idesvar=1,ndesi
+            do j=jqs(idesvar),jqs(idesvar+1)-1
+               idof=irows(j)
+               inode=nactdofinv(idof)
+               node=inode/mt+1
+               idir=inode-mt*(inode/mt)
+               dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
      &                           +vold(idir,node)*df(j)
+            enddo
          enddo
-      enddo
+      endif
 !      
       return
       end

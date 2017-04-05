@@ -32,7 +32,7 @@
      &  xstateini,xstate,thicke,integerglob,doubleglob,
      &  tieset,istartset,iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,
      &  mortar,clearini,ielprop,prop,ne0,fnext,nea,neb,kscale,
-     &  iponoel,inoel)
+     &  iponoel,inoel,network)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !
@@ -58,7 +58,7 @@
      &  mpc1,mpc2,index1,index2,jdof,node1,node2,kflag,icalccg,
      &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,
-     &  nea,neb,kscale,iponoel(*),inoel(2,*)
+     &  nea,neb,kscale,iponoel(*),inoel(2,*),network
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
@@ -157,9 +157,7 @@ c     Bernhardi end
 !          spring and contact spring elements (NO dashpot elements
 !          = ED... elements)
 !
-c           read(lakon(i)(8:8),'(i1)') nope
            nope=ichar(lakon(i)(8:8))-47
-c           nope=nope+1
 !     
 !          local contact spring number
 !          if friction is involved, the contact spring element
@@ -169,6 +167,8 @@ c           nope=nope+1
               if(nasym.eq.1) cycle
               if(mortar.eq.1) nope=kon(indexe)
            endif
+        elseif(lakon(i)(1:4).eq.'MASS') then
+           nope=1
         else
            cycle
         endif
@@ -522,7 +522,8 @@ c           nope=nope+1
            if(lakon(i)(7:7).eq.'C') then
               if(mortar.eq.1) nope=kon(indexe)
            endif
-        elseif(lakon(i)(1:2).eq.'D ') then
+        elseif((lakon(i)(1:2).eq.'D ').or.
+     &         ((lakon(i)(1:1).eq.'D').and.(network.eq.1))) then
 !
 !          asymmetrical contribution -> mafillsmas.f
 !
@@ -540,7 +541,8 @@ c           nope=nope+1
      &  xstiff,xloadold,reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,
      &  ilmpc,springarea,plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,
      &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,
-     &  ipkon,ielprop,prop,iponoel,inoel)
+     &  ipkon,ielprop,prop,iponoel,inoel,sti,xstateini,xstate,
+     &  nstate_,network)
 !
         do jj=1,nope
 !

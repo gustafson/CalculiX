@@ -25,16 +25,15 @@
 !
       implicit none
 !
-!     10 nearest nodes: node(10), ni(10+6), r(10+6), idummy1(10),
-!     idummy2(10),iparentel(10)
+!     100 nearest nodes: node(100),idummy1(100),idummy2(100),iparentel(100)
 !
-      integer ifatet(4,*),id,node(10),near,nx(*),ny(*),nz(*),
+      integer ifatet(4,*),id,node(100),near,nx(*),ny(*),nz(*),
      &  ifs,iface,i,konl(20),nfield,nktet,ielement,ielmax,netet,k,
      &  j,iselect(nselect),nselect,kontyp(*),ipkon(*),kon(*),iparent(*),
-     &  nterms,indexe,nelem,konl_opt(20),idummy1(10),idummy2(10),
-     &  iparentel(10),nparentel,kflag,ii,inside,nterms_opt,istartset(*),
-     &  iendset(*),ialset(*),imastset,ielemnr(*),ielementnr,nlength,
-     &  nearset
+     &  nterms,indexe,nelem,konl_opt(20),idummy1(100),idummy2(100),
+     &  iparentel(100),nparentel,kflag,ii,inside,nterms_opt,
+     &  istartset(*),iendset(*),ialset(*),imastset,ielemnr(*),
+     &  ielementnr,nlength,nearset
 !
       real*8 cotet(3,*),planfa(4,*),dface,dfacemax,tolerance,
      &  dist,field(nfield,nktet),ratio(20),pneigh(3,20),pnode(3),xi,et,
@@ -50,19 +49,31 @@
       intent(inout) konl,value,nterms,ratio
 !
       tolerance=1.d-6
+!
+!     look for the global element encompassing point (xp,yp,zp) 
 !     
-      do ii=1,2
+      do ii=1,3
 !     
+!        three-level algorithm
+!        - start with the search for the nearest neighboring element
+!        - if this element is not the right one search for the 10
+!          nearest neighbors
+!        - if no fitting element was found, search for the 100 nearest
+!          neighbors
+!
          if(ii.eq.1) then
             near=1
-         else
+         elseif(ii.eq.2) then
             near=10
+         else
+            near=100
          endif
          call near3d(xo,yo,zo,x,y,z,nx,ny,nz,xp,yp,zp,netet,
      &        node,near)
 !     
          inside=0
          nearset=0
+         ielmax=0
 !     
          do i=1,near
             ielement=node(i)
@@ -85,10 +96,18 @@ c            write(*,*) 'basis tetrahedron ',ielement,iparent(ielement)
                if(id.le.0) cycle
                if(ialset(istartset(imastset)+id-1).ne.ielementnr) cycle
                nearset=nearset+1
+               node(nearset)=node(i)
+            else
+               nearset=near
             endif
 
             dface=0.d0
             do j=1,4
+!
+!              the face number in ifatet is negative, if the equation
+!              of the face plane is such, that its value in the 
+!              remaining node of the tetrahedron is negative
+!
                ifs=ifatet(j,ielement)
                iface=abs(ifs)
                dist=planfa(1,iface)*xp+planfa(2,iface)*yp
@@ -102,7 +121,8 @@ c            write(*,*) 'basis dface ',dface
                inside=1
                exit
             endif
-            if(i.eq.1) then
+c            if(i.eq.1) then
+            if(ielmax.eq.0) then
                dfacemax=dface
                ielmax=ielement
             else
@@ -113,12 +133,12 @@ c            write(*,*) 'basis dface ',dface
             endif
          enddo
 !
-!        if a global element set was defined, check whether a
+!        if a global element set was defined, check whether an
 !        appropriate element was found
 !
          if(imastset.ne.0) then
             if(nearset.eq.0) then
-               if(ii.eq.1) then
+               if(ii.lt.3) then
                   cycle
                else
                   write(*,*) '*ERROR: no suitable global element found'
@@ -129,7 +149,7 @@ c            write(*,*) 'basis dface ',dface
          endif
 !     
 !     if no element was found, the element with the smallest
-!     dfacemax (summed distance) is taken 
+!     dfacemax (in absolute value; summed distance) is taken 
 !     
          if(inside.eq.0) then
             ielement=ielmax
@@ -216,13 +236,13 @@ c         write(*,*) 'basis element ',nelem
 !     
 !     sorting the parent elements
 !     
-            do i=1,near
+            do i=1,nearset
                idummy1(i)=iparent(node(i))
             enddo
             kflag=1
-            call isortii(idummy1,idummy2,near,kflag)
+            call isortii(idummy1,idummy2,nearset,kflag)
             nparentel=0
-            do i=1,near
+            do i=1,nearset
                if(idummy1(i).eq.nelem) cycle
                if(i.eq.1) then
                   iparentel(1)=idummy1(1)
@@ -325,7 +345,7 @@ c         write(*,*) 'basis element ',nelem
             enddo
          endif
 !     
-         if((ii.eq.2).or.(dist.lt.tolerance)) exit
+         if((ii.eq.3).or.(dist.lt.tolerance)) exit
 !     
       enddo
 !     

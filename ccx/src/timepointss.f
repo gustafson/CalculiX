@@ -115,36 +115,36 @@
                endif
             enddo
          else
-c            if((textpart(1)(1:1).ne.' ').and.
-c     &         (textpart(2)(1:1).ne.' ').and.
-c     &         (textpart(3)(1:1).ne.' ')) then
-c
-               read(textpart(1)(1:20),'(f20.0)',iostat=istat) tpmin
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+            read(textpart(1)(1:20),'(f20.0)',iostat=istat) tpmin
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*TIME POINTS%")
-               read(textpart(2)(1:20),'(f20.0)',iostat=istat) tpmax
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+            read(textpart(2)(1:20),'(f20.0)',iostat=istat) tpmax
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*TIME POINTS%")
-               read(textpart(3)(1:20),'(f20.0)',iostat=istat) tpinc
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+            read(textpart(3)(1:20),'(f20.0)',iostat=istat) tpinc
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*TIME POINTS%")
-
-               nttp=INT((tpmax-tpmin)/tpinc)
-
-               if(namtot+2+nttp.gt.namtot_) then
-                  write(*,*) '*ERROR in timepoints: increase namtot_'
-                  call exit(201)
-               endif
-               amta(1,namtot+1)=tpmin
-               do i=1,nttp
-                  amta(1,namtot+1+i)=tpmin+(i*tpinc)
-               enddo
-               namtot=namtot+2+nttp
-               amta(1,namtot)=tpmax
-               namta(2,nam)=namtot
-c            else
-c               exit
-c            endif
+!            
+            nttp=INT((tpmax-tpmin)/tpinc)
+!            
+            if(namtot+2+nttp.gt.namtot_) then
+               write(*,*) '*ERROR in timepoints: increase namtot_'
+               call exit(201)
+            endif
+            amta(1,namtot+1)=tpmin
+            do i=1,nttp
+               amta(1,namtot+1+i)=tpmin+(i*tpinc)
+            enddo
+            namtot=namtot+2+nttp
+            amta(1,namtot)=tpmax
+            namta(2,nam)=namtot
+         endif
+         if(textpart(9)(1:1).ne.' ') then 
+            write(*,*) '*WARNING reading *TIME POINTS:'
+            write(*,*) '         only 8 entries per line allowed'
+            write(*,*) '         9th entry and above will be discarded'
+            call inputwarning(inpc,ipoinpc,iline,
+     &"*TIME POINTS%")
          endif
       enddo
 !

@@ -32,7 +32,7 @@ void remastructem(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
               double **fextp, double **bp, double **aux2p, double **finip,
               double **fextinip,double **adbp, double **aubp, ITG *ithermal,
 	      ITG *iperturb, ITG *mass, ITG *mi, ITG *ielmat, double *elcon,
-	      ITG *ncmat_, ITG *ntmat_,ITG *inomat){
+	      ITG *ncmat_, ITG *ntmat_,ITG *inomat,ITG *network){
 
     /* reconstructs the nonzero locations in the stiffness and mass
        matrix after a change in MPC's */
@@ -72,7 +72,7 @@ void remastructem(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     mastructem(nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,nboun,ipompc,
 	     nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,neq,
 	     ikmpc,ilmpc,ipointer,nzs,ithermal,mi,ielmat,elcon,
-	     ncmat_,ntmat_,inomat);
+	     ncmat_,ntmat_,inomat,network);
 
     SFREE(ipointer);SFREE(mast1);
     RENEW(irow,ITG,nzs[2]);

@@ -29,7 +29,7 @@
      &  ipompc(*),index,iel,iface,nodempc(3,*),ipnei(*),neifa(*),
      &  nactdoh(*),ielorig,ifaext(*),nfaext,k
 !
-      real*8 coefmpc(*),denominator,vfa(0:5,*),sum,xbounact(*),
+      real*8 coefmpc(*),denominator,vfa(0:7,*),sum,xbounact(*),
      &  coefnorm
 !
 c      do i=1,nface

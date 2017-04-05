@@ -30,7 +30,7 @@ static ITG *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *istep1,*iinc1,calcul_fn1,calcul_qa1,*nplicon1,*iponoel1,
     *nal=NULL,*ipompc1,*nodempc1,*nmpc1,*ncocon1,*ikmpc1,*ilmpc1,
     num_cpus,mt1,*nk1,*nshcon1,*nelemload1,*nload1,mortar1,
-    *istartset1,*iendset1,*ialset1,*iactive1;
+    *istartset1,*iendset1,*ialset1,*iactive1,*network1;
 
 static double *co1,*v1,*elcon1,*rhcon1,*alcon1,*orab1,*t01,
     *fn1=NULL,*qa1=NULL,*vold1,*dtime1,*time1,*prop1,
@@ -69,13 +69,14 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
        double *shcon,ITG *nshcon,char *sideload,double *xload,
        double *xloadold,ITG *icfd,ITG *inomat,double *h0,ITG *islavnode,
        ITG *nslavnode,ITG *ntie,ITG *ielprop,double *prop,ITG *iactive,
-       double *energyini,double *energy,ITG *iponoel,ITG *inoel){
+       double *energyini,double *energy,ITG *iponoel,ITG *inoel,char *orname,
+       ITG *network){
       
     /* variables for multithreading procedure */
     
     char *env,*envloc,*envsys;
 
-    ITG intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,iener,ikin,
+    ITG intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,nener,ikin,
         intpointvart,mt=mi[1]+1,i,j,*ithread=NULL,*islavsurf=NULL,
         sys_cpus,mortar=0,*islavact=NULL;
 
@@ -161,7 +162,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
        nactdof,iout,qa,b,nodeboun,ndirboun,
        xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
        veold,dtime,mi,vini,nprint,prlab,
-       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,&iener,
+       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,&nener,
        &ikin,&intpointvart,xforc,nforc));
 
     /* electromagnetic calculation is linear: should not be taken
@@ -233,7 +234,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
         sideload1=sideload;xload1=xload;xloadold1=xloadold;
         pslavsurf1=pslavsurf;pmastsurf1=pmastsurf;mortar1=mortar;
         clearini1=clearini;plicon1=plicon;nplicon1=nplicon;ielprop1=ielprop;
-        prop1=prop;iponoel1=iponoel;inoel1=inoel;
+        prop1=prop;iponoel1=iponoel;inoel1=inoel;network1=network;
 
 	/* calculating the heat flux */
 	
@@ -297,7 +298,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
        nelemload,nload,&ikin,ielmat,thicke,eme,emn,rhcon,nrhcon,shcon,
        nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,islavact,
        cdn,&mortar,islavnode,nslavnode,ntie,islavsurf,time,ielprop,prop,
-       veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,energy));
+       veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,energy,orname));
   
   return;
 
@@ -348,7 +349,7 @@ void *resultsthermemmt(ITG *i){
 	   &calcul_fn1,&calcul_qa1,&nal[indexnal],&nea,&neb,ithermal1,
            nelemload1,nload1,nmethod1,reltime1,sideload1,xload1,xloadold1,
 	   pslavsurf1,pmastsurf1,&mortar1,clearini1,plicon1,nplicon1,
-	   ielprop1,prop1,iponoel1,inoel1));
+	   ielprop1,prop1,iponoel1,inoel1,network1));
 
     return NULL;
 }

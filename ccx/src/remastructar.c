@@ -30,7 +30,8 @@ void remastructar(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
               ITG *nactdof, ITG *icol, ITG *jq, ITG **irowp, ITG *isolver,
               ITG *neq, ITG *nzs,ITG *nmethod, ITG *ithermal,
 	      ITG *iperturb, ITG *mass, ITG *mi, ITG *ics, double *cs,
-	      ITG *mcs,ITG *mortar,char *typeboun,ITG *iit){
+	      ITG *mcs,ITG *mortar,char *typeboun,ITG *iit,
+              ITG *network){
 
     /* reconstructs the nonzero locations in the stiffness and mass
        matrix after a change in MPC's or the generation of contact
@@ -73,7 +74,7 @@ void remastructar(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	     nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,neq,
 	     ikmpc,ilmpc,ipointer,nzs,nmethod,ithermal,
 	     ikboun,ilboun,iperturb,mi,mortar,typeboun,labmpc,
-	     iit,icascade);
+	     iit,icascade,network);
 
     }else{
       

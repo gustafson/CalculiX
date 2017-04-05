@@ -115,9 +115,9 @@
 !           ------normalizing eigenvectors to P vectors----------
 !     
       dd=dsqrt(alz(1,3)**2+alz(2,3)**2+alz(3,3)**2)
-      p3(1)=alz(1,3) / dd
-      p3(2)=alz(2,3) / dd
-      p3(3)=alz(3,3) / dd
+      p3(1)=alz(1,3)/dd
+      p3(2)=alz(2,3)/dd
+      p3(3)=alz(3,3)/dd
 !     
       do l=1,3
          do k=1,3
@@ -153,7 +153,8 @@
       enddo
 !     
       dd=dsqrt(v(1)**2+v(2)**2+v(3)**2) 
-      speed=dsqrt(dd/rho) 
+      speed=dd/dsqrt(rho*al(3))
+c      speed=dsqrt(dd/rho) 
 !     
 !     inverse wave speed
 !     

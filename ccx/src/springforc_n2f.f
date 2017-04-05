@@ -18,9 +18,9 @@
 !
       subroutine springforc_n2f(xl,konl,vl,imat,elcon,nelcon,
      &  elas,fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
-     &  plicon,nplicon,npmat_,senergy,iener,cstr,mi,
+     &  plicon,nplicon,npmat_,senergy,nener,cstr,mi,
      &  springarea,nmethod,ne0,nstate_,xstateini,
-     &  xstate,reltime,ielas,venergy)
+     &  xstate,reltime,ielas,venergy,ielorien,orab,norien,nelem)
 !
 !     calculates the force of the spring (node-to-face penalty)
 !
@@ -29,23 +29,32 @@
       character*8 lakonl
 !
       integer konl(9),i,j,imat,ncmat_,ntmat_,nope,nterms,iflag,mi(*),
-     &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),iener,
-     &  nmethod,ne0,nstate_,ielas
+     &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),nener,
+     &  nmethod,ne0,nstate_,ielas,norien,nelem,ielorien(mi(3),*),
+     &  iorien,idof,idof1,idof2
 !
       real*8 xl(3,10),elas(21),ratio(9),t1l,al(3),vl(0:mi(2),10),
      &  pl(3,10),xn(3),dm,alpha,beta,fnl(3,10),tp(3),te(3),ftrial(3),
-     &  dist,t(3),dftrial,overclosure,venergy,
+     &  dist,t(3),dftrial,overclosure,venergy,orab(7,*),a(3,3),
      &  elcon(0:ncmat_,ntmat_,*),pproj(3),xsj2(3),xs2(3,7),clear,
      &  shp2(7,9),xi,et,elconloc(21),plconloc(802),xk,fk,dd,val,
      &  xiso(200),yiso(200),dd0,plicon(0:2*npmat_,ntmat_,*),
      &  um,eps,pi,senergy,cstr(6),dg,dfshear,dfnl,
-     &  springarea(2),overlap,pres,
+     &  springarea(2),overlap,pres,xn1(3),xn2(3),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),t1(3),t2(3),
      &  dt1,dte,alnew(3),reltime
 !
+      intent(in) xl,konl,vl,imat,elcon,nelcon,
+     &  ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
+     &  plicon,nplicon,npmat_,nener,mi,
+     &  nmethod,ne0,nstate_,xstateini,
+     &  reltime,ielas,ielorien,orab,norien,nelem
+!
+      intent(inout) venergy,senergy,fnl,cstr,springarea,elas,xstate
+!
       iflag=2
 !
-      if(iener.eq.1) venergy=0.d0
+      if(nener.eq.1) venergy=0.d0
 !
 !     actual positions of the nodes belonging to the contact spring
 !     (otherwise no contact force)
@@ -89,57 +98,63 @@
                xn(i)=(pl(i,2)-pl(i,1))/dd
             enddo
             val=dd-dd0
+c!     
+c!     interpolating the material data
+c!     
+c            call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
+c     &           elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
+c!     
+c!     calculating the spring force and the spring constant
+c!     
+c            if(kode.eq.2)then
+c               xk=elconloc(1)
+c               fk=xk*val
+c               if(nener.eq.1) then
+c                  senergy=fk*val/2.d0
+c               endif
+c            else
+c               niso=int(plconloc(801))
+c               do i=1,niso
+c                  xiso(i)=plconloc(2*i-1)
+c                  yiso(i)=plconloc(2*i)
+c               enddo
+c               call ident(xiso,val,niso,id)
+c               if(id.eq.0) then
+c                  xk=0.d0
+c                  fk=yiso(1)
+c                  if(nener.eq.1) then
+c                     senergy=fk*val
+c                  endif
+c               elseif(id.eq.niso) then
+c                  xk=0.d0
+c                  fk=yiso(niso)
+c                  if(nener.eq.1) then
+c                     senergy=yiso(1)*xiso(1)
+c                     do i=2,niso
+c                        senergy=senergy+(xiso(i)-xiso(i-1))*
+c     &                       (yiso(i)+yiso(i-1))/2.d0
+c                     enddo
+c                     senergy=senergy+(val-xiso(niso))*yiso(niso)
+c                  endif
+c               else
+c                  xk=(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))
+c                  fk=yiso(id)+xk*(val-xiso(id))
+c                  if(nener.eq.1) then
+c                     senergy=yiso(1)*xiso(1)
+c                     do i=2, id
+c                        senergy=senergy+(xiso(i)-xiso(i-1))*
+c     &                       (yiso(i)+yiso(i-1))/2.d0
+c                     enddo
+c                     senergy=senergy+(val-xiso(id))*(fk+yiso(id))/2.d0
+c                  endif
+c               endif
+c            endif
 !     
-!     interpolating the material data
+!           calculating the spring force and the spring energy
 !     
-            call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
-     &           elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
-!     
-!     calculating the spring force and the spring constant
-!     
-            if(kode.eq.2)then
-               xk=elconloc(1)
-               fk=xk*val
-               if(iener.eq.1) then
-                  senergy=fk*val/2.d0
-               endif
-            else
-               niso=int(plconloc(801))
-               do i=1,niso
-                  xiso(i)=plconloc(2*i-1)
-                  yiso(i)=plconloc(2*i)
-               enddo
-               call ident(xiso,val,niso,id)
-               if(id.eq.0) then
-                  xk=0.d0
-                  fk=yiso(1)
-                  if(iener.eq.1) then
-                     senergy=fk*val
-                  endif
-               elseif(id.eq.niso) then
-                  xk=0.d0
-                  fk=yiso(niso)
-                  if(iener.eq.1) then
-                     senergy=yiso(1)*xiso(1)
-                     do i=2,niso
-                        senergy=senergy+(xiso(i)-xiso(i-1))*
-     &                       (yiso(i)+yiso(i-1))/2.d0
-                     enddo
-                     senergy=senergy+(val-xiso(niso))*yiso(niso)
-                  endif
-               else
-                  xk=(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))
-                  fk=yiso(id)+xk*(val-xiso(id))
-                  if(iener.eq.1) then
-                     senergy=yiso(1)*xiso(1)
-                     do i=2, id
-                        senergy=senergy+(xiso(i)-xiso(i-1))*
-     &                       (yiso(i)+yiso(i-1))/2.d0
-                     enddo
-                     senergy=senergy+(val-xiso(id))*(fk+yiso(id))/2.d0
-                  endif
-               endif
-            endif
+            call calcspringforc(imat,elcon,nelcon,ncmat_,ntmat_,t1l,
+     &           kode,plicon,nplicon,npmat_,senergy,nener,fk,val)
+!            
          else
 !     
 !           GAP-element
@@ -164,6 +179,91 @@
          do i=1,3
             fnl(i,1)=-fk*xn(i)
             fnl(i,2)=fk*xn(i)
+         enddo
+         return
+      elseif(lakonl(7:7).eq.'1') then
+!
+!        spring1-element
+!        determine the direction of action of the spring
+!
+         idof=nint(elcon(3,1,imat))
+!
+         if(norien.gt.0) then
+            iorien=ielorien(1,nelem)
+         else
+            iorien=0
+         endif
+!
+         if(iorien.eq.0) then
+            do i=1,3
+               xn(i)=0.d0
+            enddo
+            xn(idof)=1.d0
+         else
+            call transformatrix(orab(1,iorien),xl(1,1),a)
+            do i=1,3
+               xn(i)=a(i,idof)
+            enddo
+         endif
+!
+!        change in spring length
+!
+         val=vl(1,1)*xn(1)+vl(2,1)*xn(2)+vl(3,1)*xn(3)
+!     
+!        calculating the spring force and the spring energy
+!     
+         call calcspringforc(imat,elcon,nelcon,ncmat_,ntmat_,t1l,
+     &        kode,plicon,nplicon,npmat_,senergy,nener,fk,val)
+!
+         do i=1,3
+            fnl(i,1)=fk*xn(i)
+         enddo
+         return
+      elseif(lakonl(7:7).eq.'2') then
+!
+!        spring2-element
+!        determine the direction of action of the spring
+!
+         idof1=nint(elcon(3,1,imat))
+         idof2=nint(elcon(4,1,imat))
+!
+         if(norien.gt.0) then
+            iorien=ielorien(1,nelem)
+         else
+            iorien=0
+         endif
+!
+         if(iorien.eq.0) then
+            do i=1,3
+               xn1(i)=0.d0
+               xn2(i)=0.d0
+            enddo
+            xn1(idof1)=1.d0
+            xn2(idof2)=1.d0
+         else
+            call transformatrix(orab(1,iorien),xl(1,1),a)
+            do i=1,3
+               xn1(i)=a(i,idof1)
+            enddo
+            call transformatrix(orab(1,iorien),xl(1,2),a)
+            do i=1,3
+               xn2(i)=a(i,idof2)
+            enddo
+         endif
+!
+!        change in spring length
+!
+         val=(vl(1,1)*xn1(1)+vl(2,1)*xn1(2)+vl(3,1)*xn1(3))
+     &      -(vl(1,2)*xn2(1)+vl(2,2)*xn2(2)+vl(3,2)*xn2(3))
+!     
+!        calculating the spring force and the spring energy
+!     
+         call calcspringforc(imat,elcon,nelcon,ncmat_,ntmat_,t1l,
+     &        kode,plicon,nplicon,npmat_,senergy,nener,fk,val)
+!
+         do i=1,3
+            fnl(i,1)=fk*xn1(i)
+            fnl(i,2)=-fk*xn2(i)
          enddo
          return
       endif
@@ -253,7 +353,7 @@ c      endif
             endif
             elas(1)=dexp(-beta*clear+dlog(alpha))
          endif
-         if(iener.eq.1) then
+         if(nener.eq.1) then
             senergy=elas(1)/beta
          endif
       elseif(int(elcon(3,1,imat)).eq.2) then
@@ -271,13 +371,13 @@ c      endif
                eps=elcon(1,1,imat)*pi/elcon(2,1,imat)
                elas(1)=(-springarea(1)*elcon(2,1,imat)*clear*
      &              (0.5d0+datan(-clear/eps)/pi))
-               if(iener.eq.1)
+               if(nener.eq.1)
      &             senergy=springarea(1)*elcon(2,1,imat)*(clear**2/4.d0+ 
      &             (0.5d0*datan(-clear/eps)*clear**2+
      &             0.5d0*(eps*clear+datan(-clear/eps)*eps**2))/pi)
             else
                elas(1)=0.d0
-               if(iener.eq.1) senergy=0.d0
+               if(nener.eq.1) senergy=0.d0
             endif
 !     
          else
@@ -285,7 +385,7 @@ c      endif
             eps=elcon(1,1,imat)*pi/elcon(2,1,imat)
             elas(1)=(-springarea(1)*elcon(2,1,imat)*clear*
      &           (0.5d0+datan(-clear/eps)/pi)) 
-            if(iener.eq.1) then
+            if(nener.eq.1) then
                senergy=-elas(1)*clear/2.d0
             endif
          endif
@@ -307,12 +407,12 @@ c      endif
          call ident(xiso,overlap,niso,id)
          if(id.eq.0) then
             pres=yiso(1)
-            if(iener.eq.1) then
+            if(nener.eq.1) then
                senergy=yiso(1)*overlap
             endif
          elseif(id.eq.niso) then
             pres=yiso(niso)
-            if(iener.eq.1) then
+            if(nener.eq.1) then
                senergy=yiso(1)*xiso(1)
                do i=2,niso
                   senergy=senergy+(xiso(i)-xiso(i-1))*
@@ -323,7 +423,7 @@ c      endif
          else
             xk=(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))
             pres=yiso(id)+xk*(overlap-xiso(id))
-            if(iener.eq.1) then
+            if(nener.eq.1) then
                senergy=yiso(1)*xiso(1)
                do i=2, id
                   senergy=senergy+(xiso(i)-xiso(i-1))*
@@ -333,7 +433,7 @@ c      endif
             endif
          endif
          elas(1)=springarea(1)*pres
-         if(iener.eq.1) senergy=springarea(1)*senergy
+         if(nener.eq.1) senergy=springarea(1)*senergy
       else
          write(*,*) '*ERROR in springforc: no overclosure model'
          write(*,*) '       selected. This is mandatory in a penalty'
@@ -457,7 +557,7 @@ c     write(*,*)'STICK'
 !
 !              shear elastic energy
 !
-               if(iener.eq.1) senergy=senergy+dftrial*dte
+               if(nener.eq.1) senergy=senergy+dftrial*dte
             else
 !     
 !     slip
@@ -478,7 +578,7 @@ c     write(*,*)'SLIP'
 !
 !              shear elastic and viscous energy
 !
-               if(iener.eq.1) then
+               if(nener.eq.1) then
                   senergy=senergy+dfshear*dfshear/xk
                   venergy=dg*dfshear
                endif

@@ -18,7 +18,7 @@
 !
       subroutine steps(inpc,textpart,iperturb,iprestr,nbody,
      &  nforc,nload,ithermal,t0,t1,nk,irstrt,istep,istat,n,jmax,ctrl,
-     &  iline,ipol,inl,ipoinp,inp,newstep,ipoinpc,physcon)
+     &  iline,ipol,inl,ipoinp,inp,newstep,ipoinpc,network)
 !
 !     reading the input deck: *STEP
 !
@@ -29,9 +29,9 @@
 !
       integer iperturb(*),nforc,nload,ithermal,nk,istep,istat,n,key,
      &  i,j,iprestr,jmax(2),irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  newstep,nbody,ipoinpc(0:*)
+     &  newstep,nbody,ipoinpc(0:*),network
 !
-      real*8 t0(*),t1(*),ctrl(*),physcon(*)
+      real*8 t0(*),t1(*),ctrl(*)
 !
       if(newstep.eq.1) then
          write(*,*) '*ERROR reading *STEP: *STEP statement detected'
@@ -46,7 +46,6 @@
       istep=istep+1
       jmax(1)=100
       jmax(2)=10000
-      physcon(9)=0.5d0
 !
       do i=2,n
          if(textpart(i)(1:12).eq.'PERTURBATION') then
@@ -101,27 +100,26 @@ c            iperturb(2)=1
             read(textpart(i)(6:15),'(i10)',iostat=istat) jmax(2)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*STEP%")
-         elseif(textpart(i)(1:16).eq.'TURBULENCEMODEL=') then
-!
-!           turbulence model
-!
-            if(textpart(i)(17:25).eq.'NONE') then
-               physcon(9)=0.5d0
-            elseif(textpart(i)(17:25).eq.'K-EPSILON') then
-               physcon(9)=1.5d0
-            elseif(textpart(i)(17:23).eq.'K-OMEGA') then
-               physcon(9)=2.5d0
-            elseif(textpart(i)(17:19).eq.'SST') then
-               physcon(9)=3.5d0
+         elseif(textpart(i)(1:14).eq.'THERMALNETWORK') then
+            if(istep.ne.1) then
+               write(*,*) '*ERROR reading *STEP'
+               write(*,*) '       THERMAL NETWORK can only be used'
+               write(*,*) '       on the first step'
+               call exit(201)
             endif
-         elseif(textpart(i)(1:15).eq.'SHOCKSMOOTHING=') then
 !
-!           reading the shock smoothing parameter for compressible
-!           cfd-calculations
+!           purely thermal network, i.e. Dx-elements are defined
+!           for thermal purposes only (calculation of heat transfer
+!           coefficient based on Reynolds number et...)
 !
-            read(textpart(i)(16:35),'(f20.0)',iostat=istat) physcon(10)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*STEP%")
+            network=1
+         elseif(textpart(i)(1:9).eq.'AMPLITUDE') then
+            write(*,*) '*ERROR reading *STEP'
+            write(*,*) '       AMPLITUDE cannot be used'
+            write(*,*) '       on a *STEP card.'
+            write(*,*) '       Please apply the amplitude'
+            write(*,*) '       on each loading seperately.'
+            call exit(201)
          else
             write(*,*) 
      &          '*WARNING reading *STEP: parameter not recognized:'

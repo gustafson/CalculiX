@@ -36,7 +36,7 @@
 !     the network solution is not iterated to speed up
 !     the calculation)
 !
-      if(network.eq.0) then
+      if(network.le.1) then
          do i=1,ntg
             node=itg(i)
             if(nactdog(0,node).eq.0) cycle
@@ -95,8 +95,8 @@
          if(kon(indexe+3).ne.0) then
             node3=kon(indexe+3)
             if(vold(1,node2).lt.0.d0) 
-     &         vold(1,node3)=vold(1,node3)+vold(1,node2)
-c     &         vold(1,node3)=vold(1,node3)-vold(1,node2)
+c     &         vold(1,node3)=vold(1,node3)+vold(1,node2)
+     &         vold(1,node3)=vold(1,node3)-vold(1,node2)
          endif
       enddo
 !     

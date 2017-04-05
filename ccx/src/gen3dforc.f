@@ -133,7 +133,8 @@ c               val=xforc(i)
                call forcadd(irotnode,k,val,nodeforc,
      &              ndirforc,xforc,nforc,nforc_,iamforc,
      &              iamplitude,nam,ntrans,trab,inotr,co,
-     &              ikforc,ilforc,isector,add,user,idefforc)
+     &              ikforc,ilforc,isector,add,user,idefforc,
+     &              ipompc,nodempc,nmpc,ikmpc,ilmpc,labmpc)
             endif
          else
 !
@@ -451,7 +452,8 @@ c               vold(1,iexpnode)=alpha
                call forcadd(irotnode,idir,val,nodeforc,
      &              ndirforc,xforc,nforc,nforc_,iamforc,
      &              iamplitude,nam,ntrans,trab,inotr,co,
-     &              ikforc,ilforc,isector,add,user,idefforc)
+     &              ikforc,ilforc,isector,add,user,idefforc,
+     &              ipompc,nodempc,nmpc,ikmpc,ilmpc,labmpc)
 !
 !              check for shells whether the rotation about the normal
 !              on the shell has been eliminated
@@ -680,7 +682,8 @@ c               vold(1,iexpnode)=alpha
                   call forcadd(nk,idir,val,nodeforc,
      &              ndirforc,xforc,nforc,nforc_,iamforc,
      &              iamplitude,nam,ntrans,trab,inotr,co,
-     &              ikforc,ilforc,isector,add,user,idefforc)
+     &              ikforc,ilforc,isector,add,user,idefforc,
+     &              ipompc,nodempc,nmpc,ikmpc,ilmpc,labmpc)
 !
 !                 storing the index of the SPC with the angle
 !                 value in ilboun(id)
@@ -818,19 +821,8 @@ c               vold(1,iexpnode)=alpha
                endif
             else
 !
-!              2d plane strain, plane stress or axisymmetric 
-!              element
-!
-c               node=knor(indexk+2)
-cc               val=xforc(i)
-c!
-c               call forcadd(node,idir,val,nodeforc,
-c     &              ndirforc,xforc,nforc,nforc_,iamforc,
-c     &              iamplitude,nam,ntrans,trab,inotr,co,
-c     &              ikforc,ilforc,isector,add,user,idefforc)
-!     
-!                       2d plane stress, plane strain or axisymmetric
-!                       element: MPC in all but z-direction
+!              2d plane stress, plane strain or axisymmetric
+!              element: MPC in all but z-direction
 !
                newnode=knor(indexk+2)
                idof=8*(newnode-1)+idir

@@ -25,23 +25,24 @@
 static char *lakonf1;
 
 static ITG num_cpus,*nef1,*ipnei1,*neifa1,*neiel1,*jq1,*irow1,*nzs1,*ielfa1,*
-    ifabou1,*nbody1,*neq1,*nactdohinv1,*icyclic1,*ifatie1;
+    ifabou1,*nbody1,*nactdohinv1,*icyclic1,*ifatie1,*iau61;
 
-static double *auv1=NULL,*adv1=NULL,*bv1=NULL,*vfa1,*xxn1,*area1,*vel1,
+static double *auv1,*adv1,*bv1,*vfa1,*xxn1,*area1,*vel1,
        *cosa1,*umfa1,*xlet1,*xle1,*gradvfa1,*xxi1,*body1,*volume1,*dtimef1,
     *velo1,*veloo1,*sel1,*xrlfa1,*gamma1,*xxj1,*a11,*a21,*a31,*flux1,
-    *c1;
+    *c1,*xxni1,*xxnj1;
 
 void mafillvcompmain(ITG *nef,ITG *ipnei,ITG *neifa,ITG *neiel,
              double *vfa,double *xxn,double *area,double *auv,double *adv,
              ITG *jq,ITG *irow,ITG *nzs,double *bv,double *vel,double *cosa,
              double *umfa,double *xlet,double *xle,double *gradvfa,
 	     double *xxi,double *body,double *volume,
-	     ITG *ielfa,char *lakonf,ITG *ifabou,ITG *nbody,ITG *neq,
+	     ITG *ielfa,char *lakonf,ITG *ifabou,ITG *nbody,
 	     double *dtimef,double *velo,double *veloo,
 	     double *sel,double *xrlfa,double *gamma,double *xxj,
 	     ITG *nactdohinv,double *a1,double *a2,double *a3,double *flux,
-             ITG *icyclic,double *c,ITG *ifatie){
+	     ITG *icyclic,double *c,ITG *ifatie,ITG *iau6,double *xxni,
+             double *xxnj){
 
     ITG i,j;
       
@@ -102,22 +103,17 @@ void mafillvcompmain(ITG *nef,ITG *ipnei,ITG *neifa,ITG *neiel,
     
     pthread_t tid[num_cpus];
 
-    /* allocating fields for lhs and rhs matrix */
-
-    NNEW(adv1,double,num_cpus**neq);
-    NNEW(auv1,double,(long long)num_cpus*2**nzs);
-    NNEW(bv1,double,num_cpus*3**neq);
-
     /* calculating the stiffness and/or mass matrix 
        (symmetric part) */
 
     nef1=nef;ipnei1=ipnei;neifa1=neifa;neiel1=neiel;vfa1=vfa;xxn1=xxn;
     area1=area;jq1=jq;irow1=irow;nzs1=nzs;vel1=vel;cosa1=cosa;umfa1=umfa;
     xlet1=xlet;xle1=xle;gradvfa1=gradvfa;xxi1=xxi;body1=body;volume1=volume;
-    ielfa1=ielfa;lakonf1=lakonf;ifabou1=ifabou;nbody1=nbody;neq1=neq;
+    ielfa1=ielfa;lakonf1=lakonf;ifabou1=ifabou;nbody1=nbody;
     dtimef1=dtimef;velo1=velo;veloo1=veloo;sel1=sel;xrlfa1=xrlfa;
     gamma1=gamma;xxj1=xxj;nactdohinv1=nactdohinv;a11=a1;a21=a2;a31=a3;
-    flux1=flux;icyclic1=icyclic;c1=c;ifatie1=ifatie;
+    flux1=flux;icyclic1=icyclic;c1=c;ifatie1=ifatie;iau61=iau6;
+    adv1=adv;auv1=auv;bv1=bv;xxni1=xxni;xxnj1=xxnj;
 
     /* create threads and wait */
     
@@ -129,43 +125,6 @@ void mafillvcompmain(ITG *nef,ITG *ipnei,ITG *neifa,ITG *neiel,
     for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
     
     SFREE(ithread);
-
-    /* copying and accumulating the stiffnes and/or mass matrix */
-
-#pragma omp parallel \
-    default(none) \
-    shared(neq,adv,adv1,num_cpus,nzs,auv,auv1,bv,bv1)	\
-    private(i,j)
-    {
-
-	#pragma omp for
-	for(i=0;i<*neq;i++){
-	    adv[i]=adv1[i];
-	    for(j=1;j<num_cpus;j++){
-		adv[i]+=adv1[i+j**neq];
-	    }
-	}
-	
-	#pragma omp for
-	for(i=0;i<2**nzs;i++){
-	    auv[i]=auv1[i];
-	    for(j=1;j<num_cpus;j++){
-		auv[i]+=auv1[i+(long long)j*2**nzs];
-	    }
-	}
-	
-	#pragma omp for
-	for(i=0;i<3**neq;i++){
-	    bv[i]=bv1[i];
-	    for(j=1;j<num_cpus;j++){
-		bv[i]+=bv1[i+j*3**neq];
-	    }
-	}
-    }
-
-    SFREE(adv1);
-    SFREE(auv1);
-    SFREE(bv1);
   
   return;
 
@@ -175,12 +134,7 @@ void mafillvcompmain(ITG *nef,ITG *ipnei,ITG *neifa,ITG *neiel,
 
 void *mafillvcompmt(ITG *i){
 
-    ITG indexadv,indexbv,nefa,nefb,nefdelta;
-    long long indexauv;
-
-    indexadv=*i**neq1;
-    indexauv=(long long)*i*2**nzs1;
-    indexbv=*i*3**neq1;
+    ITG nefa,nefb,nefdelta;
     
 // ceil -> floor
 
@@ -191,11 +145,12 @@ void *mafillvcompmt(ITG *i){
     if((*i==num_cpus-1)&&(nefb<*nef1)) nefb=*nef1;
 
     FORTRAN(mafillvcomp,(nef1,ipnei1,neifa1,neiel1,vfa1,xxn1,area1,
-	    &auv1[indexauv],&adv1[indexadv],jq1,irow1,nzs1,&bv1[indexbv],
+	    auv1,adv1,jq1,irow1,nzs1,bv1,
             vel1,cosa1,umfa1,xlet1,xle1,gradvfa1,xxi1,
-	    body1,volume1,ielfa1,lakonf1,ifabou1,nbody1,neq1,
+	    body1,volume1,ielfa1,lakonf1,ifabou1,nbody1,
 	    dtimef1,velo1,veloo1,sel1,xrlfa1,gamma1,xxj1,nactdohinv1,a11,
-	    a21,a31,flux1,&nefa,&nefb,icyclic1,c1,ifatie1));
+	    a21,a31,flux1,&nefa,&nefb,icyclic1,c1,ifatie1,iau61,
+            xxni1,xxnj1));
 
     return NULL;
 }

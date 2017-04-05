@@ -174,6 +174,11 @@ c                  coords(j)=co(j,node)+vold(j,node)
             call interpolsubmodel(integerglob,doubleglob,xbounact(i),
      &           coords,iselect,one,node,tieset,istartset,iendset,
      &           ialset,ntie,entity)
+!
+            if(nmethod.eq.1) then
+               xbounact(i)=xbounold(i)+
+     &              (xbounact(i)-xbounold(i))*reltime
+            endif
 c            write(*,*) 'tempload ',node,ndirboun(i),xbounact(i)
             cycle
          endif
@@ -274,6 +279,11 @@ c                  coords(j)=co(j,node)+vold(j,node)
                call interpolsubmodel(integerglob,doubleglob,xforcact(i),
      &              coords,iselect,one,node,tieset,istartset,iendset,
      &              ialset,ntie,entity)
+!
+               if(nmethod.eq.1) then
+                  xforcact(i)=xforcold(i)+
+     &                 (xforcact(i)-xforcold(i))*reltime
+               endif
                cycle
             endif
          endif
@@ -387,6 +397,10 @@ c                  coords(j)=co(j,i)+vold(j,i)
                call interpolsubmodel(integerglob,doubleglob,t1act(i),
      &              coords,iselect,one,i,tieset,istartset,iendset,
      &              ialset,ntie,entity)
+!
+               if(nmethod.eq.1) then
+                  t1act(i)=t1old(i)+(t1act(i)-t1old(i))*reltime
+               endif
                cycle
             endif
 !

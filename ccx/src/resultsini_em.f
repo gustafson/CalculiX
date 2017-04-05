@@ -20,7 +20,7 @@
      &  nactdof,iout,qa,b,nodeboun,ndirboun,
      &  xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
      &  veold,dtime,mi,vini,nprint,prlab,
-     &  intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,iener,
+     &  intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,nener,
      &  ikin,intpointvart,xforc,nforc)
 !
 !     initialization 
@@ -38,7 +38,7 @@
 !
       integer mi(*),nactdof(0:mi(2),*),nodeboun(*),ndirboun(*),
      &  ipompc(*),nodempc(3,*),mt,nk,ithermal(2),i,j,
-     &  iener,iperturb(*),iout,nboun,nmpc,nmethod,ist,ndir,node,index,
+     &  nener,iperturb(*),iout,nboun,nmpc,nmethod,ist,ndir,node,index,
      &  neq,nprint,ikin,calcul_fn,nforc,
      &  calcul_f,calcul_cauchy,calcul_qa,intpointvarm,intpointvart,
      &  irefnode,irotnode,iexpnode,irefnodeprev
@@ -278,16 +278,16 @@ c            endif
 !     
 !     check whether there are any strain output requests
 !     
-      iener=0
+      nener=0
       ikin=0
       if((filab(7)(1:4).eq.'ENER').or.(filab(27)(1:4).eq.'CELS')) then
-         iener=1
+         nener=1
       endif
       
       do i=1,nprint
          if((prlab(i)(1:4).eq.'ENER').or.(prlab(i)(1:4).eq.'ELSE').or.
      &        (prlab(i)(1:4).eq.'CELS')) then
-            iener=1
+            nener=1
          elseif(prlab(i)(1:4).eq.'ELKE') then
             ikin=1
          endif

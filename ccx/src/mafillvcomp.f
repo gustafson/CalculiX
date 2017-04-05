@@ -18,94 +18,86 @@
 !
       subroutine mafillvcomp(nef,ipnei,neifa,neiel,vfa,xxn,area,
      &  auv,adv,jq,irow,nzs,bv,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
-     &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
+     &  body,volume,ielfa,lakonf,ifabou,nbody,
      &  dtimef,velo,veloo,sel,xrlfa,gamma,xxj,nactdohinv,a1,
-     &  a2,a3,flux,nefa,nefb,icyclic,c,ifatie)
+     &  a2,a3,flux,nefa,nefb,icyclic,c,ifatie,iau6,xxni,xxnj)
 !
       implicit none
 !
-      character*2 one,two,three
       character*8 lakonf(*)
 !
-      integer i,nef,jdof1,indexf,ipnei(*),j,ifa,iel,neifa(*),nefa,nefb,
-     &  neiel(*),jdof2,jq(*),irow(*),nzs,iwall,compressible,ielfa(4,*),
-     &  ipointer,ifabou(*),nbody,neq,k,indexb,numfaces,nactdohinv(*),
-     &  icyclic,ifatie(*)
+      integer i,nef,indexf,ipnei(*),j,ifa,iel,neifa(*),nefa,nefb,
+     &  neiel(*),jq(*),irow(*),nzs,iwall,compressible,ielfa(4,*),
+     &  ipointer,ifabou(*),nbody,k,indexb,nactdohinv(*),
+     &  icyclic,ifatie(*),iau6(6,*)
 !
-      real*8 xflux,vfa(0:5,*),xxn(3,*),area(*),auv(*),adv(*),bv(neq,3),
-     &  vel(nef,0:5),cosa(*),umfa(*),xlet(*),xle(*),coef,gradvfa(3,3,*),
-     &  xxi(3,*),body(0:3,*),volume(*),coef2,dtimef,velo(nef,0:5),
-     &  veloo(nef,0:5),rhovel,constant,sel(3,*),xrlfa(3,*),gamma(*),
-     &  xxj(3,*),a1,a2,a3,flux(*),c(3,3)
+      real*8 xflux,vfa(0:7,*),xxn(3,*),area(*),auv(*),adv(*),bv(nef,3),
+     &  vel(nef,0:7),cosa(*),umfa(*),xlet(*),xle(*),coef,gradvfa(3,3,*),
+     &  xxi(3,*),body(0:3,*),volume(*),coef2,dtimef,velo(nef,0:7),
+     &  veloo(nef,0:7),rhovel,constant,sel(3,*),xrlfa(3,*),gamma(*),
+     &  xxj(3,*),a1,a2,a3,flux(*),c(3,3),div,xxni(3,*),xxnj(3,*)
 !
       intent(in) nef,ipnei,neifa,neiel,vfa,xxn,area,
      &  jq,irow,nzs,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
-     &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
+     &  body,volume,ielfa,lakonf,ifabou,nbody,
      &  dtimef,velo,veloo,xrlfa,gamma,xxj,nactdohinv,a1,
      &  a2,a3,flux
 !
       intent(inout) adv,auv,bv,sel
 !
-      one='b1'
-      two='b2'
-      three='b3'
-!
       do i=nefa,nefb
-         jdof1=i
-         indexf=ipnei(i)
-         if(lakonf(i)(4:4).eq.'8') then
-            numfaces=6
-         elseif(lakonf(i)(4:4).eq.'6') then
-            numfaces=5
-         else
-            numfaces=4
-         endif
-         do j=1,numfaces
+         do indexf=ipnei(i)+1,ipnei(i+1)
 !
-!              convection
+!           convection
 !
-            indexf=indexf+1
             ifa=neifa(indexf)
             iel=neiel(indexf)
-            if(iel.ne.0) jdof2=iel
             xflux=flux(indexf)
 !
             if(xflux.ge.0.d0) then
 !
-!                 outflowing flux
+!              outflowing flux
 !
-               call add_sm_fl_as(auv,adv,jq,irow,jdof1,jdof1,
-     &              xflux,nzs)
+               adv(i)=adv(i)+xflux
+ccccc retarded central differences
+c                  do k=1,3
+c                     bv(i,k)=bv(i,k)-(vfa(k,ifa)-vel(i,k))*xflux
+c                  enddo
+ccccc
             else
                if(iel.gt.0) then
 !     
-!                    incoming flux from neighboring element
+!                 incoming flux from neighboring element
 !
                   if((icyclic.eq.0).or.(ifatie(ifa).eq.0)) then
-                    call add_sm_fl_as(auv,adv,jq,irow,jdof1,jdof2,xflux,
-     &                    nzs)
+                     auv(indexf)=auv(indexf)+xflux
+ccccc retarded central differences
+c                   do k=1,3
+c                      bv(i,k)=bv(i,k)-(vfa(k,ifa)-vel(iel,k))*xflux
+c                   enddo
+ccccc
                   elseif(ifatie(ifa).gt.0) then
 !
-!                 for cyclic symmetry the term is retarded, since
-!                 otherwise the x-, y- and z- components are linked
-!                 (i.e. the x-, y- and z- momentum equations cannot
-!                  be solved separately any more)
+!                    for cyclic symmetry the term is retarded, since
+!                    otherwise the x-, y- and z- components are linked
+!                    (i.e. the x-, y- and z- momentum equations cannot
+!                    be solved separately any more)
 !
                      do k=1,3
-                        bv(jdof1,k)=bv(jdof1,k)-
+                        bv(i,k)=bv(i,k)-
      &                       (c(k,1)*vel(iel,1)+c(k,2)*vel(iel,2)+
-     &                       c(k,3)*vel(iel,3))*xflux
+     &                        c(k,3)*vel(iel,3))*xflux
                      enddo
                   else
                      do k=1,3
-                        bv(jdof1,k)=bv(jdof1,k)-
+                        bv(i,k)=bv(i,k)-
      &                       (c(1,k)*vel(iel,1)+c(2,k)*vel(iel,2)+
-     &                       c(3,k)*vel(iel,3))*xflux
+     &                        c(3,k)*vel(iel,3))*xflux
                      enddo
                   endif
                else
 !
-!                    incoming flux through boundary
+!                 incoming flux through boundary
 !
                   if(ielfa(2,ifa).lt.0) then
                      indexb=-ielfa(2,ifa)
@@ -113,9 +105,9 @@
      &                    (ifabou(indexb+2).ne.0).and.
      &                    (ifabou(indexb+3).ne.0)).or.
      &                    (dabs(xflux).lt.1.d-10)) then
-                        bv(jdof1,1)=bv(jdof1,1)-vfa(1,ifa)*xflux
-                        bv(jdof1,2)=bv(jdof1,2)-vfa(2,ifa)*xflux
-                        bv(jdof1,3)=bv(jdof1,3)-vfa(3,ifa)*xflux
+                        do k=1,3
+                           bv(i,k)=bv(i,k)-vfa(k,ifa)*xflux
+                        enddo
                      else
                         write(*,*) '*ERROR in mafillv: not all'
                         write(*,*) '       components of an incoming'
@@ -133,18 +125,16 @@
                endif
             endif
 !
-!              diffusion
+!           diffusion
 !
             if(iel.ne.0) then
 !
-!                 neighboring element
+!              neighboring element
 !
                coef=umfa(ifa)*area(ifa)/xlet(indexf)
-               call add_sm_fl_as(auv,adv,jq,irow,jdof1,jdof1,
-     &              coef,nzs)
+               adv(i)=adv(i)+coef
                if((icyclic.eq.0).or.(ifatie(ifa).eq.0)) then
-                  call add_sm_fl_as(auv,adv,jq,irow,jdof1,jdof2,
-     &              -coef,nzs)
+                  auv(indexf)=auv(indexf)-coef
                elseif(ifatie(ifa).gt.0) then
 !
 !                 for cyclic symmetry the term is retarded, since
@@ -153,32 +143,26 @@
 !                  be solved separately any more)
 !
                   do k=1,3
-                     bv(jdof1,k)=bv(jdof1,k)+
+                     bv(i,k)=bv(i,k)+
      &                (c(k,1)*vel(iel,1)+c(k,2)*vel(iel,2)+
      &                 c(k,3)*vel(iel,3))*coef
                   enddo
                else
                   do k=1,3
-                     bv(jdof1,k)=bv(jdof1,k)+
+                     bv(i,k)=bv(i,k)+
      &                (c(1,k)*vel(iel,1)+c(2,k)*vel(iel,2)+
      &                 c(3,k)*vel(iel,3))*coef
                   enddo
                endif
 !
-!                 correction for non-orthogonal grid
+!              correction for non-orthogonal grid
 !
-               bv(jdof1,1)=bv(jdof1,1)+umfa(ifa)*area(ifa)*
-     &              (gradvfa(1,1,ifa)*(xxn(1,indexf)-xxj(1,indexf))+
-     &              gradvfa(1,2,ifa)*(xxn(2,indexf)-xxj(2,indexf))+
-     &              gradvfa(1,3,ifa)*(xxn(3,indexf)-xxj(3,indexf)))
-               bv(jdof1,2)=bv(jdof1,2)+umfa(ifa)*area(ifa)*
-     &              (gradvfa(2,1,ifa)*(xxn(1,indexf)-xxj(1,indexf))+
-     &              gradvfa(2,2,ifa)*(xxn(2,indexf)-xxj(2,indexf))+
-     &              gradvfa(2,3,ifa)*(xxn(3,indexf)-xxj(3,indexf)))
-               bv(jdof1,3)=bv(jdof1,3)+umfa(ifa)*area(ifa)*
-     &              (gradvfa(3,1,ifa)*(xxn(1,indexf)-xxj(1,indexf))+
-     &              gradvfa(3,2,ifa)*(xxn(2,indexf)-xxj(2,indexf))+
-     &              gradvfa(3,3,ifa)*(xxn(3,indexf)-xxj(3,indexf)))
+               do k=1,3
+                  bv(i,k)=bv(i,k)+umfa(ifa)*area(ifa)*
+     &              (gradvfa(k,1,ifa)*xxnj(1,indexf)+
+     &               gradvfa(k,2,ifa)*xxnj(2,indexf)+
+     &               gradvfa(k,3,ifa)*xxnj(3,indexf))
+               enddo
             else
 !
 !                 boundary; check whether wall (specified by user),
@@ -190,98 +174,77 @@
                if(ipointer.gt.0) then
                   iwall=ifabou(ipointer+5)
                endif
-               if(iwall.ne.1) then
+               if(iwall.lt.1) then
 !
-!                    external face, but no wall
+!                 external face, but no wall
 !
                   if((ifabou(ipointer+1).ne.0).or.
      &                 (ifabou(ipointer+2).ne.0).or.
      &                 (ifabou(ipointer+3).ne.0)) then
 !
-!                       no outlet: face velocity fixed
+!                    no outlet: face velocity fixed
 !
                      coef=umfa(ifa)*area(ifa)/xle(indexf)
-                     call add_sm_fl_as(auv,adv,jq,irow,jdof1,jdof1,
-     &                    coef,nzs)
-                     bv(jdof1,1)=bv(jdof1,1)+coef*vfa(1,ifa)
-                     bv(jdof1,2)=bv(jdof1,2)+coef*vfa(2,ifa)
-                     bv(jdof1,3)=bv(jdof1,3)+coef*vfa(3,ifa)
+                     adv(i)=adv(i)+coef
+                     do k=1,3
+                        bv(i,k)=bv(i,k)+coef*vfa(k,ifa)
+                     enddo
                   else
 !
-!                       outlet: no diffusion
+!                    outlet: no diffusion
 !
                   endif
 !
-!                    correction for non-orthogonal grid
+!                 correction for non-orthogonal grid
 !
-                  bv(jdof1,1)=bv(jdof1,1)+umfa(ifa)*area(ifa)*
-     &                 (gradvfa(1,1,ifa)*(xxn(1,indexf)-xxi(1,indexf))+
-     &                 gradvfa(1,2,ifa)*(xxn(2,indexf)-xxi(2,indexf))+
-     &                 gradvfa(1,3,ifa)*(xxn(3,indexf)-xxi(3,indexf)))
-                  bv(jdof1,2)=bv(jdof1,2)+umfa(ifa)*area(ifa)*
-     &                 (gradvfa(2,1,ifa)*(xxn(1,indexf)-xxi(1,indexf))+
-     &                 gradvfa(2,2,ifa)*(xxn(2,indexf)-xxi(2,indexf))+
-     &                 gradvfa(2,3,ifa)*(xxn(3,indexf)-xxi(3,indexf)))
-                  bv(jdof1,3)=bv(jdof1,3)+umfa(ifa)*area(ifa)*
-     &                 (gradvfa(3,1,ifa)*(xxn(1,indexf)-xxi(1,indexf))+
-     &                 gradvfa(3,2,ifa)*(xxn(2,indexf)-xxi(2,indexf))+
-     &                 gradvfa(3,3,ifa)*(xxn(3,indexf)-xxi(3,indexf)))
+                  do k=1,3
+                     bv(i,k)=bv(i,k)+umfa(ifa)*area(ifa)*
+     &                 (gradvfa(k,1,ifa)*xxni(1,indexf)+
+     &                  gradvfa(k,2,ifa)*xxni(2,indexf)+
+     &                  gradvfa(k,3,ifa)*xxni(3,indexf))
+                  enddo
                else
 !     
-!                    wall
+!                 wall
 !     
                   coef=umfa(ifa)*area(ifa)/(xle(indexf)*cosa(indexf))
-                  call add_sm_fl_as(auv,adv,jq,irow,jdof1,jdof1,coef,
-     &                 nzs)
+                  adv(i)=adv(i)+coef
 !
-!                    correction for non-orthogonal grid and nonzero
-!                    wall velocity
+!                 correction for non-orthogonal grid and nonzero
+!                 wall velocity
 !
                   coef2=((vel(i,1)-vfa(1,ifa))*xxn(1,indexf)+
-     &                 (vel(i,2)-vfa(2,ifa))*xxn(2,indexf)+
-     &                 (vel(i,3)-vfa(3,ifa))*xxn(3,indexf))*coef
-                  bv(jdof1,1)=bv(jdof1,1)+coef*vfa(1,ifa)+
-     &                 coef2*xxn(1,indexf)
-                  bv(jdof1,2)=bv(jdof1,2)+coef*vfa(2,ifa)+
-     &                 coef2*xxn(2,indexf)
-                  bv(jdof1,3)=bv(jdof1,3)+coef*vfa(3,ifa)+
-     &                 coef2*xxn(3,indexf)
+     &                   (vel(i,2)-vfa(2,ifa))*xxn(2,indexf)+
+     &                   (vel(i,3)-vfa(3,ifa))*xxn(3,indexf))*coef
+                  do k=1,3
+                     bv(i,k)=bv(i,k)+coef*vfa(k,ifa)+
+     &                 coef2*xxn(k,indexf)
+                  enddo
                endif
             endif
 !     
-!     compressible
+!           compressible
 !     
-            bv(jdof1,1)=bv(jdof1,1)+umfa(ifa)*area(ifa)*
-     &           (gradvfa(1,1,ifa)*xxn(1,indexf)+
-     &           gradvfa(2,1,ifa)*xxn(2,indexf)+
-     &           gradvfa(3,1,ifa)*xxn(3,indexf)-
-     &           2.d0*(gradvfa(1,1,ifa)+gradvfa(2,2,ifa)+
-     &           gradvfa(3,3,ifa))*xxn(1,indexf)/3.d0)
-            bv(jdof1,2)=bv(jdof1,2)+umfa(ifa)*area(ifa)*
-     &           (gradvfa(1,2,ifa)*xxn(1,indexf)+
-     &           gradvfa(2,2,ifa)*xxn(2,indexf)+
-     &           gradvfa(3,2,ifa)*xxn(3,indexf)-
-     &           2.d0*(gradvfa(1,1,ifa)+gradvfa(2,2,ifa)+
-     &           gradvfa(3,3,ifa))*xxn(2,indexf)/3.d0)
-            bv(jdof1,3)=bv(jdof1,3)+umfa(ifa)*area(ifa)*
-     &           (gradvfa(1,3,ifa)*xxn(1,indexf)+
-     &           gradvfa(2,3,ifa)*xxn(2,indexf)+
-     &           gradvfa(3,3,ifa)*xxn(3,indexf)-
-     &           2.d0*(gradvfa(1,1,ifa)+gradvfa(2,2,ifa)+
-     &           gradvfa(3,3,ifa))*xxn(3,indexf)/3.d0)
-!     
-!     pressure
+            div=2.d0*(gradvfa(1,1,ifa)+gradvfa(2,2,ifa)+
+     &                 gradvfa(3,3,ifa))/3.d0
+            do k=1,3
+               bv(i,k)=bv(i,k)+umfa(ifa)*area(ifa)*
+     &           (gradvfa(1,k,ifa)*xxn(1,indexf)+
+     &            gradvfa(2,k,ifa)*xxn(2,indexf)+
+     &            gradvfa(3,k,ifa)*xxn(3,indexf)-
+     &            div*xxn(k,indexf))
+            enddo
 !     
          enddo
 !     
-!           body force
+!        body force
 !     
          rhovel=vel(i,5)*volume(i)
 !
          if(nbody.gt.0) then
-            bv(jdof1,1)=bv(jdof1,1)+rhovel*body(1,i)
-            bv(jdof1,2)=bv(jdof1,2)+rhovel*body(2,i)
-            bv(jdof1,3)=bv(jdof1,3)+rhovel*body(3,i)
+            do k=1,3
+               bv(i,k)=bv(i,k)+rhovel*body(k,i)
+            enddo
          endif
 !
 !           transient term
@@ -291,33 +254,30 @@ c         a2=-1.d0/dtimef
 c         a3=0.d0/dtimef
 c         constant=rhovel
          constant=rhovel/dtimef
-c         bv(jdof1,1)=bv(jdof1,1)-(a2*velo(i,1)+a3*veloo(i,1))*constant
-c         bv(jdof1,2)=bv(jdof1,2)-(a2*velo(i,2)+a3*veloo(i,2))*constant
-c         bv(jdof1,3)=bv(jdof1,3)-(a2*velo(i,3)+a3*veloo(i,3))*constant
-         bv(jdof1,1)=bv(jdof1,1)+velo(i,1)*constant
-         bv(jdof1,2)=bv(jdof1,2)+velo(i,2)*constant
-         bv(jdof1,3)=bv(jdof1,3)+velo(i,3)*constant
+c         bv(i,1)=bv(i,1)-(a2*velo(i,1)+a3*veloo(i,1))*constant
+c         bv(i,2)=bv(i,2)-(a2*velo(i,2)+a3*veloo(i,2))*constant
+c         bv(i,3)=bv(i,3)-(a2*velo(i,3)+a3*veloo(i,3))*constant
+         do k=1,3
+            bv(i,k)=bv(i,k)+velo(i,k)*constant
+         enddo
 c         constant=a1*constant
-         call add_sm_fl(auv,adv,jq,irow,jdof1,jdof1,constant,nzs)
+c         call add_sm_fl(auv,adv,jq,irow,i,i,constant,nzs)
+         adv(i)=adv(i)+constant
 !
-!           copying b into sel (rhs without pressure)
+!        copying b into sel (rhs without pressure)
 !
          do j=1,3
-            sel(j,jdof1)=bv(jdof1,j)
+            sel(j,i)=bv(i,j)
          enddo
 !
 !           pressure contribution to b
 !
-         indexf=ipnei(i)
-         do j=1,numfaces
-            indexf=indexf+1
+         do indexf=ipnei(i)+1,ipnei(i+1)
             ifa=neifa(indexf)
-            bv(jdof1,1)=bv(jdof1,1)
-     &           -vfa(4,ifa)*xxn(1,indexf)*area(ifa)
-            bv(jdof1,2)=bv(jdof1,2)
-     &           -vfa(4,ifa)*xxn(2,indexf)*area(ifa)
-            bv(jdof1,3)=bv(jdof1,3)
-     &           -vfa(4,ifa)*xxn(3,indexf)*area(ifa)
+            do k=1,3
+               bv(i,k)=bv(i,k)
+     &           -vfa(4,ifa)*xxn(k,indexf)*area(ifa)
+            enddo
          enddo
 !            
       enddo

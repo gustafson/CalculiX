@@ -273,12 +273,20 @@ c     &                       nboun,iamboun,nam,ikboun,ilboun,typeboun)
 !
 !     storing the step for submodels in iamboun
 !
-      if(submodel) iamplitude=iglobstep
+      if(submodel) then
+         if(iamplitude.ne.0) then
+            write(*,*) '*WARNING reading *BOUNDARY:'
+            write(*,*) '         no amplitude definition is allowed'
+            write(*,*) '         in combination with a submodel'
+         endif
+         iamplitude=iglobstep
+      endif
 !
       if(user.and.(iamplitude.ne.0)) then
-         write(*,*) '*WARNING: no amplitude definition is allowed'
-         write(*,*) '          for temperatures defined by a'
-         write(*,*) '          user routine'
+         write(*,*) '*WARNING reading *BOUNDARY: '
+         write(*,*) '         no amplitude definition is allowed'
+         write(*,*) '         for boundary conditions defined by a'
+         write(*,*) '         user routine'
          iamplitude=0
       endif
 !
@@ -290,7 +298,6 @@ c     &                       nboun,iamboun,nam,ikboun,ilboun,typeboun)
          read(textpart(2)(1:10),'(i10)',iostat=istat) ibounstart
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*BOUNDARY%")
-c         if(ibounstart.eq.11) ibounstart=0
 !     
          if(textpart(3)(1:1).eq.' ') then
             ibounend=ibounstart

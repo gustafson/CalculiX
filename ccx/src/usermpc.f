@@ -280,48 +280,6 @@
                index=nodempc(3,index)
                if(nodempc(3,index).eq.0) exit
             enddo
-c!
-c!     looking for the maximum tangent to decide which DOF should be
-c!     taken to be the dependent one
-c!
-c            index=ipompc(nmpc)
-c            if(dabs(coefmpc(index)).lt.1.d-5) then
-c!
-c!              changing the DOF of the dependent degree of freedom
-c!
-c               amax=dabs(coefmpc(index))
-c               imax=1
-c               a(1)=coefmpc(index)
-c               do i=2,3
-c                  index=nodempc(3,index)
-c                  a(i)=coefmpc(index)
-c                  if(dabs(a(i)).gt.amax) then
-c                     amax=dabs(a(i))
-c                     imax=i
-c                  endif
-c               enddo
-c!
-c               index=ipompc(nmpc)
-c               nodempc(2,index)=imax
-c               a1=a(1)
-c               coefmpc(index)=a(imax)
-c               do i=2,3
-c                  index=nodempc(3,index)
-c                  if(i.eq.imax) then
-c                     nodempc(2,index)=1
-c                     coefmpc(index)=a1
-c                  else
-c                     nodempc(2,index)=i
-c                  endif
-c               enddo
-c!
-c!              updating ikmpc and ilmpc
-c!               
-c               index=ipompc(nmpc)
-c               idofrem=8*(nodempc(1,index)-1)+1
-c               idofins=8*(nodempc(1,index)-1)+imax
-c               call changedepterm(ikmpc,ilmpc,nmpc,nmpc,idofrem,idofins)
-c            endif
 !
 !           look for biggest coefficient of all but the last
 !           regular node. The general form of the MPC is:
@@ -538,12 +496,12 @@ c            endif
             write(*,*) '      effects are turned on'
             write(*,*)
             if(iperturb(1).eq.0) iperturb(1)=2
-         elseif(labmpc(nmpc)(1:3).eq.'GAP') then
-            iperturb(2)=1
-            write(*,*) '*INFO in usermpc: nonlinear geometric'
-            write(*,*) '      effects are turned on'
-            write(*,*)
-            if(iperturb(1).eq.0) iperturb(1)=2
+c         elseif(labmpc(nmpc)(1:3).eq.'GAP') then
+c            iperturb(2)=1
+c            write(*,*) '*INFO in usermpc: nonlinear geometric'
+c            write(*,*) '      effects are turned on'
+c            write(*,*)
+c            if(iperturb(1).eq.0) iperturb(1)=2
          elseif(labmpc(nmpc)(1:4).eq.'USER') then
             iperturb(2)=1
             write(*,*) '*INFO in usermpc: nonlinear geometric'

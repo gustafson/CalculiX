@@ -31,13 +31,13 @@
       character*81 set(*)
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
-     &     ielprop(*),nodef(4),idirf(4),index,iflag,mi(*),
+     &     ielprop(*),nodef(*),idirf(*),index,iflag,mi(*),
      &     inv,ipkon(*),kon(*),kgas,nelem_in,nelem_out,iaxial,
      &     element0,node10,node20,node11,node21,node12,node22,node_cav,
      &     node_main,node_main2,node_in1,node_out1,node_in2,node_out2
 !
-          real*8 prop(*),v(0:mi(2),*),xflow,f,df(4),kappa,R,a,d,
-     &     p1,p2,T1,T2,Aeff,C1,C2,C3,cd,cp,physcon(3),p2p1,km1,dvi,
+          real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,R,a,d,
+     &     p1,p2,T1,T2,Aeff,C1,C2,C3,cd,cp,physcon(*),p2p1,km1,dvi,
      &     kp1,kdkm1,tdkp1,km1dk,x,y,ca1,cb1,ca2,cb2,dT1,alambda,
      &     reynolds,pi,xflow_oil,s,Tcav,pcav,pmin,pmax,
      &     Tref,Alpha1, Alpha2, Alpha3, GF,kf,MRTAP_ref_ein,

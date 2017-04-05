@@ -26,7 +26,7 @@
       integer nef,i,ncocon(2,*),imat,ntmat_,mi(*),
      &   ielmat(mi(3),*)
 !
-      real*8 t1l,vel(nef,0:5),cond,cocon(0:6,ntmat_,*),hcel(*)
+      real*8 t1l,vel(nef,0:7),cond,cocon(0:6,ntmat_,*),hcel(*)
 !     
       do i=1,nef
          t1l=vel(i,0)

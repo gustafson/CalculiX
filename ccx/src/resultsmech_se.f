@@ -23,7 +23,7 @@
      &  veold,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
      &  xstateini,xstiff,xstate,npmat_,matname,mi,ielas,icmd,
      &  ncmat_,nstate_,stiini,vini,ener,eei,enerini,istep,iinc,
-     &  springarea,reltime,calcul_fn,calcul_cauchy,iener,
+     &  springarea,reltime,calcul_fn,calcul_cauchy,nener,
      &  ikin,ne0,thicke,emeini,pslavsurf,
      &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop,dfn,
      &  idesvar,nodedesi,fn0,sti,icoordinate,dxstiff,
@@ -43,7 +43,7 @@
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),ntmat_,ipkon(*),ne0,iflag,null,
      &  istep,iinc,mt,ne,mattyp,ithermal(2),iprestr,i,j,k,m1,m2,jj,
-     &  i1,m3,m4,kk,iener,indexe,nope,norien,iperturb(*),iout,
+     &  i1,m3,m4,kk,nener,indexe,nope,norien,iperturb(*),iout,
      &  icmd,ihyper,nmethod,kode,imat,mint3d,iorien,ielas,
      &  istiff,ncmat_,nstate_,ikin,ilayer,nlayer,ki,kl,ielprop(*),
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,calcul_fn,
@@ -118,7 +118,7 @@
             else
                ihyper=0
             endif
-         else
+         elseif(lakonl(4:5).eq.'20') then
 !     
 !     composite materials
 !     
@@ -156,6 +156,46 @@
 !     
             ilayer=0
             do k=1,4
+               dlayer(k)=0.d0
+            enddo
+         elseif(lakonl(4:5).eq.'15') then
+!     
+!     composite materials
+!     
+            mint2d=3
+            nopes=6
+!     determining the number of layers
+!     
+            nlayer=0
+            do k=1,mi(3)
+               if(ielmat(k,i).ne.0) then
+                  nlayer=nlayer+1
+               endif
+            enddo
+!     
+!     determining the layer thickness and global thickness
+!     at the shell integration points
+!     
+            iflag=1
+            indexe=ipkon(i)
+            do kk=1,mint2d
+               xi=gauss3d10(1,kk)
+               et=gauss3d10(2,kk)
+               call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+               tlayer(kk)=0.d0
+               do k=1,nlayer
+                  thickness=0.d0
+                  do j=1,nopes
+                     thickness=thickness+thicke(k,indexe+j)*shp2(4,j)
+                  enddo
+                  tlayer(kk)=tlayer(kk)+thickness
+                  xlayer(k,kk)=thickness
+               enddo
+            enddo
+            iflag=3
+!     
+            ilayer=0
+            do k=1,3
                dlayer(k)=0.d0
             enddo
 !     
@@ -252,7 +292,11 @@ c     Bernhardi end
          elseif(lakonl(4:4).eq.'4') then
             mint3d=1
          elseif(lakonl(4:5).eq.'15') then
-            mint3d=9
+            if(lakonl(7:8).eq.'LC') then
+               mint3d=6*nlayer
+            else
+               mint3d=9
+            endif
          elseif(lakonl(4:4).eq.'6') then
             mint3d=2
          elseif(lakonl(1:1).eq.'E') then
@@ -299,15 +343,16 @@ c     Bernhardi end
 !           spring elements (including contact springs)
 !     
             if(lakonl(2:2).eq.'S') then
-               if((lakonl(7:7).eq.'A').or.((mortar.eq.0).and.
+               if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'1').or.
+     &            (lakonl(7:7).eq.'2').or.((mortar.eq.0).and.
      &          ((nmethod.ne.1).or.(iperturb(1).ge.2).or.(iout.ne.-1))))
      &               then
                   call springforc_n2f(xl,konl,vl,imat,elcon,nelcon,elas,
      &              fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
-     &              plicon,nplicon,npmat_,ener(1,i),iener,
+     &              plicon,nplicon,npmat_,ener(1,i),nener,
      &              stx(1,1,i),mi,springarea(1,konl(nope+1)),nmethod,
      &              ne0,nstate_,xstateini,xstate,reltime,
-     &              ielas,ener(1,i+ne))
+     &              ielas,ener(1,i+ne),ielorien,orab,norien,i)
                elseif((mortar.eq.1).and.
      &           ((nmethod.ne.1).or.(iperturb(1).ge.2).or.(iout.ne.-1)))
      &               then
@@ -316,11 +361,11 @@ c     Bernhardi end
                   igauss=kon(indexe+nope+1)
                   call springforc_f2f(xl,vl,imat,elcon,nelcon,elas,
      &              fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
-     &              plicon,nplicon,npmat_,ener(1,i),iener,
+     &              plicon,nplicon,npmat_,ener(1,i),nener,
      &              stx(1,1,i),mi,springarea(1,iloc),nmethod,
      &              ne0,nstate_,xstateini,xstate,reltime,
      &              ielas,iloc,jfaces,igauss,pslavsurf,pmastsurf,
-     &              clearini,ener(1,i+ne),kscale)
+     &              clearini,ener(1,i+ne),kscale,konl,iout,i)
                endif
 !             
 !              next lines are not executed in linstatic.c before the
@@ -438,10 +483,51 @@ c     Bernhardi end
                ze=gauss3d4(3,jj)
                weight=weight3d4(jj)
             elseif(lakonl(4:5).eq.'15') then
-               xi=gauss3d8(1,jj)
-               et=gauss3d8(2,jj)
-               ze=gauss3d8(3,jj)
-               weight=weight3d8(jj)
+               if(lakonl(7:8).ne.'LC') then
+                  xi=gauss3d8(1,jj)
+                  et=gauss3d8(2,jj)
+                  ze=gauss3d8(3,jj)
+                  weight=weight3d8(jj)
+               else
+                  kl=mod(jj,6)
+                  if(kl.eq.0) kl=6
+!
+                  xi=gauss3d10(1,kl)
+                  et=gauss3d10(2,kl)
+                  ze=gauss3d10(3,kl)
+                  weight=weight3d10(kl)
+!
+                  ki=mod(jj,3)
+                  if(ki.eq.0) ki=3
+!
+                  if(kl.eq.1) then
+                     ilayer=ilayer+1
+                     if(ilayer.gt.1) then
+                        do k=1,3
+                           dlayer(k)=dlayer(k)+xlayer(ilayer-1,k)
+                        enddo
+                     endif
+                  endif
+                  ze=2.d0*(dlayer(ki)+(ze+1.d0)/2.d0*xlayer(ilayer,ki))/
+     &                 tlayer(ki)-1.d0
+                  weight=weight*xlayer(ilayer,ki)/tlayer(ki)
+!
+!                 material and orientation
+!
+                  imat=ielmat(ilayer,i)
+                  amat=matname(imat)
+                  if(norien.gt.0) then
+                     iorien=ielorien(ilayer,i)
+                  else
+                     iorien=0
+                  endif
+!     
+                  if(nelcon(1,imat).lt.0) then
+                     ihyper=1
+                  else
+                     ihyper=0
+                  endif
+               endif
             elseif(lakonl(4:4).eq.'6') then
                xi=gauss3d7(1,jj)
                et=gauss3d7(2,jj)

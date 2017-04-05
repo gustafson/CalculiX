@@ -178,6 +178,11 @@
      &           coords,iselect,one,node,tieset,istartset,iendset,
      &           ialset,ntie,entity)
 c            write(*,*) 'tempload ',node,ndirboun(i),xbounact(i)
+!
+            if(nmethod.eq.1) then
+               xbounact(i)=xbounold(i)+
+     &              (xbounact(i)-xbounold(i))*reltime
+            endif
             cycle
          endif
 !
@@ -282,6 +287,11 @@ c            write(*,*) 'tempload ',node,ndirboun(i),xbounact(i)
                call interpolsubmodel(integerglob,doubleglob,xforcact(i),
      &              coords,iselect,one,node,tieset,istartset,iendset,
      &              ialset,ntie,entity)
+!
+               if(nmethod.eq.1) then
+                  xforcact(i)=xforcold(i)+
+     &                 (xforcact(i)-xforcold(i))*reltime
+               endif
                cycle
             endif
          endif
@@ -394,6 +404,10 @@ c               xloadact(2,i)=xload(2,i)
                call interpolsubmodel(integerglob,doubleglob,t1act(i),
      &              coords,iselect,one,i,tieset,istartset,iendset,
      &              ialset,ntie,entity)
+!
+               if(nmethod.eq.1) then
+                  t1act(i)=t1old(i)+(t1act(i)-t1old(i))*reltime
+               endif
                cycle
             endif
 !

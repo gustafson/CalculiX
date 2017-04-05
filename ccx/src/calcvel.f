@@ -24,7 +24,7 @@
 !
       integer ne,neq,nactdoh(*),i,j,nef
 !
-      real*8 vel(nef,0:5),bv(neq,3)
+      real*8 vel(nef,0:7),bv(neq,3)
 !
       do i=1,ne
          do j=1,3

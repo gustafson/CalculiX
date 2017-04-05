@@ -29,7 +29,7 @@
 !
       integer nface,i,ithermal,compressible
 !
-      real*8 vfa(0:5,*),umax,dmin,umfa(*),tincfguess,cvfa(*),hcfa(*)
+      real*8 vfa(0:7,*),umax,dmin,umfa(*),tincfguess,cvfa(*),hcfa(*)
 !
       tincfguess=1.d30
       do i=1,nface

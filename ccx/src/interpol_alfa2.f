@@ -24,7 +24,6 @@
       real*8 alfa2,lzd,reynolds
 !
       alfa2=1.d0
-
 !     
       return
 !      

@@ -159,6 +159,8 @@ c         endif
                write(*,*)
             endif
          endif
+c         write(*,*) 'postview ',i,nelemload(1,nloadtr(i)),
+c     &        sideload(nloadtr(i)),fenv(i)
          fenv(i)=1.d0-fenv(i)
       enddo
 !

@@ -28,73 +28,27 @@
 !
       implicit none
 !
-      integer ia(*),ja(*),i,j,l,n,nelt,isym,nd,na
+      integer ia(*),ja(*),i,j,n,nelt,isym,nflnei
       real*8 y(*),x(*),a(*)
 !
 !     number of off-diagonal terms
 !
-      nd=nelt-n
-!
-      if(isym.eq.0) then
-         na=nd/2
-!
-!        non-symmetric
-!
-!        diagonal terms
+      nflnei=nelt-n
 !
 c$omp parallel default(none)
-c$omp& shared(n,x,a,y,nd,ja,ia,na)
-c$omp& private(i,l,j)
+c$omp& shared(n,x,a,y,ja,ia,nflnei)
+c$omp& private(i,j)
 c$omp do
-         do i=1,n
-            y(i)=a(nd+i)*x(i)
+      do i=1,n
+         y(i)=a(nflnei+i)*x(i)
+         do j=ja(i)+1,ja(i+1)
+c            if(ia(j).ne.0) then
+               y(i)=y(i)+a(j)*x(ia(j))
+c            endif
          enddo
-c$omp end do
-!     
-!        off-diagonal terms
-!     
-!        number of upper triangular terms
-!
-c$omp do
-         do j=1,n
-            do l=ja(j),ja(j+1)-1
-               i=ia(l)
-c$omp atomic
-               y(i)=y(i)+a(l)*x(j)
-            enddo
-         enddo
-c$omp end do
-!
-c$omp do
-         do j=1,n
-            do l=ja(j),ja(j+1)-1
-               i=ia(l)
-               y(j)=y(j)+a(l+na)*x(i)
-            enddo
-         enddo
+      enddo
 c$omp end do
 c$omp end parallel
-!
-      else
-!
-!        symmetric
-!     
-!        diagonal terms
-!
-         do i=1,n
-            y(i)=a(nd+i)*x(i)
-         enddo
-!
-!        off-diagonal terms
-!     
-         do j=1,n
-            do l=ja(j),ja(j+1)-1
-               i=ia(l)
-               y(i)=y(i)+a(l)*x(j)
-               y(j)=y(j)+a(l)*x(i)
-            enddo
-         enddo
-      endif
 !
       return
       end

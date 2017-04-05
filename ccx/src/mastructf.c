@@ -24,9 +24,9 @@
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
-void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
+void mastructf(ITG *nk,ITG *konf,ITG *ipkon,char *lakonf,ITG *nef,
 	       ITG *icol,ITG *jq, ITG **mast1p, ITG **irowp,
-	       ITG *isolver, ITG *neq,ITG *ipointer, ITG *nzs,
+	       ITG *isolver, ITG *ipointer, ITG *nzs,
                ITG *ipnei,ITG *neiel,ITG *mi){
 
   ITG i,j,k,l,index,idof1,idof2,node1,isubtract,nmast,ifree=0,istart,istartold,
@@ -42,15 +42,13 @@ void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
   nzs_=*nzs;
   NNEW(next,ITG,nzs_);
 
-  *neq=*ne;
-
   /* determining the nonzero locations */
 
-  for(i=0;i<*ne;i++){
+  for(i=0;i<*nef;i++){
       idof1=i+1;
-      if(strcmp1(&lakon[8*i+3],"8")==0){
+      if(strcmp1(&lakonf[8*i+3],"8")==0){
 	  numfaces=6;
-      }else if(strcmp1(&lakon[8*i+3],"6")==0){
+      }else if(strcmp1(&lakonf[8*i+3],"6")==0){
 	  numfaces=5;
       }else{
 	  numfaces=4;
@@ -67,7 +65,7 @@ void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 
   }
   
-  if(*neq==0){
+  if(*nef==0){
       printf("\n *WARNING: no degrees of freedom in the model\n\n");
   }
 
@@ -81,7 +79,7 @@ void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
     RENEW(irow,ITG,ifree);
     nmast=0;
     jq[0]=1;
-    for(i=0;i<*neq;i++){
+    for(i=0;i<*nef;i++){
 	index=ipointer[i];
 	do{
 	    if(index==0) break;
@@ -94,7 +92,7 @@ void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
   
 /* sorting the row numbers within each column */
   
-  for(i=0;i<*neq;++i){
+  for(i=0;i<*nef;++i){
       if(jq[i+1]-jq[i]>0){
 	  isize=jq[i+1]-jq[i];
 	  FORTRAN(isortii,(&irow[jq[i]-1],&mast1[jq[i]-1],&isize,&kflag));
@@ -104,7 +102,7 @@ void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
   /* removing duplicate entries */
   
   nmast=0;
-  for(i=0;i<*neq;i++){
+  for(i=0;i<*nef;i++){
       jstart=nmast+1;
       if(jq[i+1]-jq[i]>0){
 	  irow[nmast++]=irow[jq[i]-1];
@@ -115,21 +113,21 @@ void mastructf(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
       }
       jq[i]=jstart;
   }
-  jq[*neq]=nmast+1;
+  jq[*nef]=nmast+1;
   
-  for(i=0;i<*neq;i++){
+  for(i=0;i<*nef;i++){
       icol[i]=jq[i+1]-jq[i];
   }
   
   /* summary */
   
   printf(" number of equations\n");
-  printf(" %" ITGFORMAT "\n",*neq);
+  printf(" %" ITGFORMAT "\n",*nef);
   printf(" number of nonzero lower triangular matrix elements\n");
   printf(" %" ITGFORMAT "\n",nmast);
   printf("\n");
   
-  *nzs=jq[*neq]-1;
+  *nzs=jq[*nef]-1;
 
   SFREE(next);
   

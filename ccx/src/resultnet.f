@@ -55,13 +55,13 @@
      &     field,prop(*),tg1,tg2,dtime,ttime,time,g(3),eta,
      &     xforcact(*),areaj,xflow,tvar(2),f,df(8),camt(*),camf(*),
      &     camp(*),tl2(8),cama(*),vamt,vamf,vamp,vama,term,
-     &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,kappa,a,T,Tt,Pt,
+     &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,kappa,a,T,Tt,pt,
      &     dtheta,ts1,ts2,xs2(3,7),xk1,xk2,xdenom1,xdenom2,expon,pt1,
      &     pt2,dt1,dt2,xcst,xnum1,xnum2,Qred_crit,xflow_crit,
      &     xflow0,xflow1,reltime,coefmpc(*),qat,qaf,ramt,ramf,ramp,
      &     xflow2,R1,R2,Rout,Rin,Uout,Uin,heat,cocon(0:6,ntmat_,*),
      &     Cp_cor,U,Ct,vold(0:mi(2),*),xloadold(2,*),omega,bnac,
-     &     xflow360
+     &     xflow360,Tt1,Tt2,T1,T2
 !     
       include "gauss.f"
 !     
@@ -114,7 +114,13 @@
          do j=0,3
             if(nactdog(j,node).eq.0) cycle
             idof=nactdog(j,node)
-            bnac=(v(j,node)+bc(idof))-v(j,node)
+c            bnac=(v(j,node)+bc(idof))-v(j,node)
+!
+            if(dabs(v(j,node)).gt.1.d-30) then
+               if(dabs(bc(idof)/v(j,node)).lt.1.d-13) bc(idof)=0.d0
+            endif
+            bnac=bc(idof)
+!
             if(j.eq.0) then
                if(dabs(bnac).gt.camt(1)) then
                   camt(1)=dabs(bc(idof))
@@ -187,7 +193,7 @@
             if(nactdog(3,node).eq.0) cycle
             index=ielprop(ieg(i))
 !           Interval factor unknown
-            if(prop(index+1).eq.2) then
+            if(nint(prop(index+1)).eq.2) then
 !              Using a smaller step gets better convergence(factor 0.5)
                v(3,node)=v(3,node)+bc(nactdog(3,node))*
      &            dtheta
@@ -195,7 +201,7 @@
                   v(3,node) = 0.1
                endif
 !           Hole diameter factor unknown               
-            elseif(prop(index+1).eq.3) then
+            elseif(nint(prop(index+1)).eq.3) then
                v(3,node)=v(3,node)+bc(nactdog(3,node))*dtheta
                if(v(3,node).lt.0.1)then
                   v(3,node) = 0.1
@@ -378,8 +384,10 @@ c      enddo
          endif
       enddo
 !     
-!     determining the static temperature
-!     case 1: chamber; static=total temperature
+!     determining the static temperature and checking for
+!     critical conditions (only for non-chambers, i.e. for
+!     nodes purely belonging to gas pipes or restrictors except
+!     restrictor wall orifice)
 !     
       do i=1,ntg
          node=itg(i)
@@ -391,7 +399,7 @@ c      enddo
             nodem=kon(ipkon(nelem)+2)
             T=v(3,node)
             Tt=v(0,node)
-            Pt=v(2,node)
+            pt=v(2,node)
             xflow=v(1,nodem)
 !     
             icase=0
@@ -401,26 +409,28 @@ c      enddo
      &           shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho)
 !     
             index=ielprop(nelem)
+            indexe=ipkon(nelem)
+!
             kappa=(cp/(cp-R))
 !     
-            if((lakon(nelem)(2:5).eq.'GAPF')
-     &           .or.(lakon(nelem)(2:5).eq.'GAPI'))then
+            if(lakon(nelem)(2:5).eq.'GAPF') then
                A=prop(index+1)
-               if((lakon(nelem)(2:6).eq.'GAPFA')
-     &              .or.(lakon(nelem)(2:5).eq.'GAPIA'))then
+               if(lakon(nelem)(2:6).eq.'GAPFA') then
                   icase=0
-               elseif((lakon(nelem)(2:6).eq.'GAPFI')
-     &                 .or.(lakon(nelem)(2:5).eq.'GAPII'))then
+               elseif(lakon(nelem)(2:6).eq.'GAPFI') then
                   icase=1
                endif  
-            elseif(lakon(nelem)(2:3).eq.'OR') then
-               A=prop(index+1)
-               icase=0
+c
+c            the orifice element is not taken into account in
+c            the creation of ineighe (cf. initialnet.f)
+c
+c            elseif(lakon(nelem)(2:3).eq.'OR') then
+c               A=prop(index+1)
+c               icase=0
 !     
             elseif(lakon(nelem)(2:3).eq.'RE') then
-               index2=ipkon(nelem)
-               node1=kon(index2+1)
-               node2=kon(index2+3)
+               node1=kon(indexe+1)
+               node2=kon(indexe+3)
 !     
                if(lakon(nelem)(4:5).eq.'EX') then
                   if(lakon(nint(prop(index+4)))(2:6).eq.'GAPFA') then
@@ -435,7 +445,7 @@ c      enddo
 !     defining the sections
 !     
                if(lakon(nelem)(4:5).eq.'BE') then
-                  a=prop(index+1)
+                  A=prop(index+1)
 !     
                elseif(lakon(nelem)(4:5).eq.'BR') then
                   if(lakon(nelem)(4:6).eq.'BRJ') then
@@ -455,45 +465,50 @@ c      enddo
                else
 !     
                   if(node.eq.node1) then
-                     a=prop(index+1)
+                     A=prop(index+1)
                   elseif(node.eq.node2) then
-                     a=prop(index+2)
+                     A=prop(index+2)
                   endif
                endif
             endif
 !     
-            if(xflow.lt.0d0) then
-               inv=-1
-            else
-               inv=1
-            endif
-!     
-            if(icase.eq.0) then
-               Qred_crit=dsqrt(kappa/R)*(1.+0.5*(kappa-1.))
-     &              **(-0.5d0*(kappa+1.)/(kappa-1.))
-            else
-               Qred_crit=dsqrt(1/R)*(1.+0.5*(kappa-1.)/kappa)
-     &              **(-0.5d0*(kappa+1.)/(kappa-1.))
-            endif
-            xflow_crit=inv*Qred_crit*Pt*A/dsqrt(Tt)             
-!     
-            xflow360=xflow*iaxial
-            call ts_calc(xflow360,Tt,Pt,kappa,r,a,T,icase)
+            xflow360=dabs(xflow*iaxial)
+            call ts_calc(xflow360,Tt,pt,kappa,r,A,T,icase)
 !     
             v(3,node)=T
+!
+            if(lakon(nelem)(2:3).eq.'RE') then
 !     
-            if(dabs(v(1,nodem)).ge.dabs(xflow_crit)) then
-               v(1,nodem)=xflow_crit
-               if(icase.eq.1) then
+!           check whether the mass flow does not exceed
+!           critical conditions (only for restrictor elements)
+!
+               if(xflow.lt.0d0) then
+                  inv=-1
+               else
+                  inv=1
+               endif
 !     
-                  if(nactdog(0,node2).ne.0) then
-                     index2=ipkon(nelem)
-                     node1=kon(index2+1)
-                     node2=kon(index2+3)
-                     v(3,node2)=v(3,node1)
-                     v(0,node2)=v(3,node2)
-     &                    *(1+0.5d0*(kappa-1)/kappa)
-                     
+               if(icase.eq.0) then
+                  Qred_crit=dsqrt(kappa/R)*(1.+0.5*(kappa-1.))
+     &                 **(-0.5d0*(kappa+1.)/(kappa-1.))
+               else
+                  Qred_crit=dsqrt(1/R)*(1.+0.5*(kappa-1.)/kappa)
+     &                 **(-0.5d0*(kappa+1.)/(kappa-1.))
+               endif
+               xflow_crit=Qred_crit*pt*A/dsqrt(Tt)   
+!     
+               if(xflow360.ge.xflow_crit) then
+                  v(1,nodem)=inv*xflow_crit/iaxial
+                  if(icase.eq.1) then
+!     
+                     if(nactdog(0,node2).ne.0) then
+                        node1=kon(indexe+1)
+                        node2=kon(indexe+3)
+                        v(3,node2)=v(3,node1)
+                        v(0,node2)=v(3,node2)
+     &                       *(1+0.5d0*(kappa-1)/kappa)
+                        
+                     endif
                   endif
                endif
             endif
@@ -516,8 +531,9 @@ c      enddo
          if((node1.ne.0).and.(node2.ne.0)) then
 !
 !           the mass flow rates must always be oriented in the direction
-!           of the decreasing pressure gradient except for VORTEX, MOEHRING,
-!           RCAVO and RCAVI
+!           of the decreasing pressure gradient except for ACCTUBE, 
+!           CROSS SPLIT, MOEHRING, ROTATING CAVITY, RADIAL OUTFLOW and 
+!           INLET, RIMSEAL, S-PUMP and VORTEX
 !
             if((lakon(nelem)(2:8).ne.'ACCTUBE').and.
      &         (lakon(nelem)(2:5).ne.'CROS').and.
@@ -639,30 +655,66 @@ c      enddo
      &                    **(0.5*(kappa+1)/(kappa-1))
 !                  
                   endif
-                  tg1=v(0,node1)
-                  ts1=v(3,node1)
-                  call ts_calc(xflow360,Tg1,Pt1,kappa,r,a,Ts1,icase)
-                  call ts_calc(xflow360,Tg2,Pt2,kappa,r,a,Ts2,icase)
-                  v(3,node1)=ts1
-                  v(3,node2)=ts2
+                  Tt1=v(0,node1)-physcon(1)
+                  Tt2=v(0,node2)-physcon(1)
+                  T1=v(3,node1)
+                  call ts_calc(xflow360,Tt1,pt1,kappa,r,a,T1,icase)
+                  call ts_calc(xflow360,Tt2,pt2,kappa,r,a,T2,icase)
+                  v(3,node1)=T1
+                  v(3,node2)=T2
                else
                   pt1=v(2,node2)
                   pt2=v(2,node1)
-c                 next line has consequences in gaspipe.f
-c                  if(v(3,nodem).ge.(pt2/pt1))then
-c                     pt2=v(3,nodem)*pt1
                   if(v(2,nodem).ge.(pt2/pt1))then
                      pt2=v(2,nodem)*pt1
                   endif
 !
-                  tg1=v(0,node2)
-                  call ts_calc(xflow360,Tg1,Pt1,kappa,r,a,Ts1,icase)
-                  tg2=v(0,node1)
-                  call ts_calc(xflow360,Tg2,Pt2,kappa,r,a,Ts2,icase)
+                  Tt1=v(0,node2)-physcon(1)
+                  call ts_calc(xflow360,Tt1,pt1,kappa,r,a,T1,icase)
+                  Tt2=v(0,node1)-physcon(1)
+                  call ts_calc(xflow360,Tt2,pt2,kappa,r,a,T2,icase)
                endif
 !     
             endif
          endif
+c         if(lakon(nelem)(2:6).eq.'GAPFI') then
+c            if((node1.ne.0).and.(node2.ne.0)) then
+c               A=prop(ielprop(nelem)+1)
+c!     
+c               xflow360=xflow*iaxial
+c!
+c               if(pt1.ge.pt2)then
+c                  pt1=v(2,node1)
+c                  pt2=v(2,node2)
+c                  if(dabs(tg2/ts2-(1+0.5*(kappa-1)/kappa)).lt.1E-5) then
+c                     pt2=dabs(xflow360)*dsqrt(Tg2*R)/A
+c     &                    *(1+0.5*(kappa-1)/kappa)
+c     &                    **(0.5*(kappa+1)/(kappa-1))
+c!                  
+c                  endif
+c                  Tt1=v(0,node1)-physcon(1)
+c                  Tt2=v(0,node2)-physcon(1)
+c                  call ts_calc(xflow360,Tt1,pt1,kappa,r,A,T1,icase)
+c                  call ts_calc(xflow360,Tt2,pt2,kappa,r,A,T2,icase)
+c                  v(3,node1)=T1
+c                  v(3,node2)=T2
+c               else
+c                  pt1=v(2,node2)
+c                  pt2=v(2,node1)
+c                  if(v(2,nodem).ge.(pt2/pt1))then
+c                     pt2=v(2,nodem)*pt1
+c                  endif
+c!
+c                  Tt1=v(0,node2)
+c                  call ts_calc(xflow360,Tt1,pt1,kappa,r,A,T1,icase)
+c                  Tt2=v(0,node1)
+c                  call ts_calc(xflow360,Tt2,pt2,kappa,r,A,T2,icase)
+c                  v(3,node1)=T1
+c                  v(3,node2)=T2
+c               endif
+c!     
+c            endif
+c         endif
 !     
          if(node1.ne.0) then
 !     
@@ -679,11 +731,10 @@ c                     pt2=v(3,nodem)*pt1
                      nalt=nalt+1
                   endif
 !     
-               elseif((lakon(nelem)(2:6).eq.'GAPFI')
-     &                 .or.(lakon(nelem)(2:6).eq.'GAPII')) then
+               elseif(lakon(nelem)(2:6).eq.'GAPFI') then
                   if((nacteq(3,node1).eq.node2)) then
 !     
-                     bc(ieq)=(ts2-ts1)
+                     bc(ieq)=(T2-T1)
 !     
                   endif
                endif
@@ -714,11 +765,10 @@ c                     pt2=v(3,nodem)*pt1
                      nalt=nalt+1
                   endif
 !     
-               elseif((lakon(nelem)(2:6).eq.'GAPFI')
-     &                .or. (lakon(nelem)(2:6).eq.'GAPII')) then
+               elseif(lakon(nelem)(2:6).eq.'GAPFI') then
                   if(nacteq(3,node2).eq.node1) then
 !     
-                     bc(ieq)=(ts2-ts1)
+                     bc(ieq)=(T2-T1)
 !
                   endif
                endif
@@ -736,7 +786,7 @@ c                     pt2=v(3,nodem)*pt1
                endif
             else
                if (nacteq(1,node2).ne.0) then
-                  if(nelem.ne.prop(ielprop(nelem)+14)) then
+                  if(nelem.ne.nint(prop(ielprop(nelem)+14))) then
                      ieq=nacteq(1,node2)
                      bc(ieq)=bc(ieq)+xflow-v(0,nodem)
                      qaf=qaf+dabs(xflow)
@@ -1012,17 +1062,17 @@ c                     pt2=v(3,nodem)*pt1
 !     free vortex and no temperature change
 !     
          if((lakon(nelem)(2:5).eq.'VOFR').and.
-     &        (prop(ielprop(nelem)+8).eq.0)) cycle
+     &        (nint(prop(ielprop(nelem)+8)).eq.0)) cycle
 !     
 !     free vortex and temperature change in the absolute system
 !     
          if((lakon(nelem)(2:5).eq.'VOFR').and.
-     &        (prop(ielprop(nelem)+8).eq.1)) cycle
+     &        (nint(prop(ielprop(nelem)+8)).eq.1)) cycle
 !     
 !     forced vortex and no temperature change
 !     
          if((lakon(nelem)(2:5).eq.'VOFO').and.
-     &        (prop(ielprop(nelem)+6).eq.0)) cycle
+     &        (nint(prop(ielprop(nelem)+6)).eq.0)) cycle
 !     
          nodem=kon(ipkon(nelem)+2)
          xflow=v(1,nodem)
@@ -1084,7 +1134,7 @@ c                     pt2=v(3,nodem)*pt1
 !     change in the relative system of coordinates 
 !     
          if((lakon(nelem)(2:5).eq.'VOFR') .and.
-     &        (prop(ielprop(nelem)+8).eq.(-1))) then
+     &        (nint(prop(ielprop(nelem)+8)).eq.(-1))) then
 !     
             Uout=prop(ielprop(nelem)+7)*Rout
             Uin=prop(ielprop(nelem)+7)*Rin
@@ -1092,7 +1142,7 @@ c                     pt2=v(3,nodem)*pt1
             heat=0.5d0*Cp/Cp_cor*(Uout**2-Uin**2)*xflow
 !     
          elseif (((lakon(nelem)(2:5).eq.'VOFO')
-     &           .and.(prop(ielprop(nelem)+6).eq.(-1)))) then
+     &           .and.(nint(prop(ielprop(nelem)+6)).eq.(-1)))) then
 !     
             Uout=prop(ielprop(nelem)+5)*Rout
             Uin=prop(ielprop(nelem)+5)*Rin
@@ -1102,7 +1152,7 @@ c                     pt2=v(3,nodem)*pt1
 !     forced vortices with temperature change in the absolute system
 !     
          elseif((lakon(nelem)(2:5).eq.'VOFO')
-     &           .and.((prop(ielprop(nelem)+6).eq.1))) then
+     &           .and.((nint(prop(ielprop(nelem)+6)).eq.1))) then
 !     
             heat=Cp/Cp_cor*(Uout**2-Uin**2)*xflow
 !     
@@ -1170,8 +1220,12 @@ c                     pt2=v(3,nodem)*pt1
             U=prop(index+1)
             ct=prop(index+2)
 !     
-            if(ct.eq.0) then
-               nelemswirl=prop(index+3)
+!           if a swirl element was given by the user, this takes
+!           precendence to a value of ct
+!
+c            if(ct.eq.0) then
+            if(nint(prop(index+3)).ne.0) then
+               nelemswirl=nint(prop(index+3))
                index2=ielprop(nelemswirl)
 !     
 !     previous element is a preswirl nozzle
@@ -1213,54 +1267,6 @@ c                     pt2=v(3,nodem)*pt1
                   bc(ieq)=bc(ieq)+heat
                   qat=qat+dabs(heat)
                   nalt=nalt+1
-               endif
-            endif
-         endif
-      enddo 
-!
-!     in the case of generalized pipes if rotation occurs
-!     the outlet node temperature will change
-!
-      do i=1,nflow
-         nelem=ieg(i)
-!      
-         if(lakon(nelem)(2:5).eq.'GAPI') then
-            index=ielprop(nelem)
-            if((prop(index+8).ne.0).and.
-     &           (prop(index+9).ne.0).and.
-     &           (prop(index+8).ne.0)) then
-!     
-               nodem=kon(ipkon(nelem)+2)
-               xflow=v(1,nodem)
-               if(xflow.gt.0d0) then
-                  node1=kon(ipkon(nelem)+1)
-                  node2=kon(ipkon(nelem)+3)
-               else
-                  node1=kon(ipkon(nelem)+1)
-                  node2=kon(ipkon(nelem)+3)
-               endif
-               omega=prop(index+10)
-c               write(*,*) 'icase',icase
-               rin=prop(index+8)
-               rout=prop(index+9)
-               heat=0.5*omega**2*(rout**2-rin**2)*xflow
-!     
-!     influence on the temperature of node 2
-!     
-               if(xflow.gt.0d0)then
-                  ieq=nacteq(0,node2)
-                  if(ieq.ne.0) then
-                     bc(ieq)=bc(ieq)+heat
-                     qat=qat+dabs(heat)
-                     nalt=nalt+1
-                  endif
-               else
-                  ieq=nacteq(0,node1)
-                  if(ieq.ne.0) then
-                     bc(ieq)=bc(ieq)+heat
-                     qat=qat+dabs(heat)
-                     nalt=nalt+1
-                  endif
                endif
             endif
          endif
