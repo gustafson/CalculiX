@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,46 +16,85 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine objective_shapeener_tot(dgdx,df,vold,ndesi,
-     &  iobject,mi,nactdofinv,jqs,irows,iperturb,fint)
-
+      subroutine objective_shapeener_tot(ne,kon,ipkon,lakon,
+     &   fint,vold,iperturb,mi,nactdof,dgdx,df,ndesi,iobject,
+     &   jqs,irows,vec)
 !
       implicit none
 !
-      integer ndesi,iobject,mi(*),idesvar,j,idir,
-     &  jqs(*),irows(*),nactdofinv(*),node,idof,inode,mt,
-     &  iperturb(*)
+      character*8 lakon(*)
+!
+      integer ndesi,iobject,idesvar,i,j,l,jqs(*),irows(*),idof,
+     &   ne,ipkon(*),ielem,iperturb(*),indexe,konl(26),kon(*),mi(*),
+     &   nope,nactdof(0:mi(2),*)
 !      
-      real*8 dgdx(ndesi,*),df(*),vold(0:mi(2),*),fint(*)
+      real*8 dgdx(ndesi,*),df(*),vec(*),vold(0:mi(2),*),fint(*)
 !
 !     ----------------------------------------------------------------
 !     Calculation of the total differential:
 !     non-linear:  dgdx = dgdx + fint^(T) * ( df )
 !     linear:      dgdx = dgdx + vold^(T) * ( df )
 !     ----------------------------------------------------------------
-!     
-      mt=mi(2)+1
 !
-      if(iperturb(2).eq.1) then
-         do idesvar=1,ndesi
-            do j=jqs(idesvar),jqs(idesvar+1)-1
-               idof=irows(j)
-               dgdx(idesvar,iobject)=dgdx(idesvar,iobject) 
-     &                           +fint(idof)*df(j) 
-            enddo
-	 enddo        
-      else
-         do idesvar=1,ndesi
-            do j=jqs(idesvar),jqs(idesvar+1)-1
-               idof=irows(j)
-               inode=nactdofinv(idof)
-               node=inode/mt+1
-               idir=inode-mt*(inode/mt)
-               dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
-     &                           +vold(idir,node)*df(j)
-            enddo
+!     copying the entries of vold (linear) or fint (nonlinear) of the nodes
+!     belonging to the active element set in the field vec
+!
+      do ielem=1,ne
+         
+         if(ipkon(ielem).lt.0) cycle
+   
+         indexe=ipkon(ielem)
+   
+         if(lakon(ielem)(4:4).eq.'8') then
+            nope=8
+         elseif(lakon(ielem)(4:5).eq.'20') then
+            nope=20
+         elseif(lakon(ielem)(4:5).eq.'10') then
+            nope=10
+         elseif(lakon(ielem)(4:4).eq.'4') then
+            nope=4
+         elseif(lakon(ielem)(4:4).eq.'6') then          
+            nope=6
+         elseif(lakon(ielem)(4:5).eq.'15') then
+            nope=15
+         else
+            exit
+         endif
+   
+         do l=1,nope
+            konl(l)=kon(indexe+l)
          enddo
-      endif
+   
+         if(iperturb(2).eq.1) then
+            do i=1,nope
+               do j=1,3
+                  idof=nactdof(j,konl(i))
+                  if(idof.gt.0) then
+                     vec(idof)=fint(idof)
+                  endif               
+               enddo
+            enddo
+         else
+            do i=1,nope
+               do j=1,3
+                  idof=nactdof(j,konl(i))
+                  if(idof.gt.0) then      
+                     vec(idof)=vold(j,konl(i))
+                  endif               
+               enddo
+            enddo
+         endif
+      enddo
+!
+!     Calculation of the total differential:    
+!
+      do idesvar=1,ndesi
+         do j=jqs(idesvar),jqs(idesvar+1)-1
+            idof=irows(j)
+            dgdx(idesvar,iobject)=dgdx(idesvar,iobject) 
+     &            +vec(idof)*df(j) 
+         enddo
+      enddo     
 !      
       return
       end

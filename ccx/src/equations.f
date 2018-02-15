@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,9 @@
       subroutine equations(inpc,textpart,ipompc,nodempc,coefmpc,
      &  nmpc,nmpc_,mpcfree,nk,co,trab,inotr,ntrans,ikmpc,ilmpc,
      &  labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,
-     &  set,istartset,iendset,ialset,nset)
+     &  set,istartset,iendset,ialset,nset,nodempcref,coefmpcref,
+     &  ikmpcref,memmpcref_,mpcfreeref,maxlenmpcref,memmpc_,
+     &  maxlenmpc)
 !
 !     reading the input deck: *EQUATION
 !
@@ -35,12 +37,21 @@
      &  mpcfreeold,ikmpc(*),ilmpc(*),id,idof,itr,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),impcstart,impcend,i1,
      &  istartset(*),iendset(*),ialset(*),nset,k,l,m,index1,ipos,
-     &  impc
+     &  impc,nodempcref(3,*),ikmpcref(*),memmpcref_,mpcfreeref,
+     &  maxlenmpcref,memmpc_,maxlenmpc
 !
-      real*8 coefmpc(*),co(3,*),trab(7,*),a(3,3),x
+      real*8 coefmpc(*),co(3,*),trab(7,*),a(3,3),x,coefmpcref(*)
 !
       do m=2,n
          if(textpart(m)(1:9).eq.'REMOVEALL') then
+!
+            if(istep.eq.1) then
+               write(*,*) '*ERROR reading *EQUATION'
+               write(*,*) '       removing equations is not allowed'
+               write(*,*) '       in the first step'
+               call exit(201)
+            endif
+!
             do j=1,nmpc
                index1=ipompc(j)
                if(index1.eq.0) cycle
@@ -61,6 +72,41 @@
      &           ipoinp,inp,ipoinpc)
             return
          elseif(textpart(m)(1:6).eq.'REMOVE') then
+!
+            if(istep.eq.1) then
+               write(*,*) '*ERROR reading *EQUATION'
+               write(*,*) '       removing equations is not allowed'
+               write(*,*) '       in the first step'
+               call exit(201)
+            endif
+!
+            do i=1,nmpc
+               if(ikmpcref(i).ne.ikmpc(i)) then
+                  write(*,*) '*ERROR reading *EQUATION'
+                  write(*,*) '       The dependent terms in some'
+                  write(*,*) '       of the nonlinear equations have'
+                  write(*,*) '       changed since the start of the'
+                  write(*,*) '       calculation. Removing equations'
+                  write(*,*) '       does not work'
+                  call exit(201)
+               endif
+            enddo
+!
+!           restoring the original equations (before the first call to
+!           cascade)
+!
+            memmpc_=memmpcref_
+            mpcfree=mpcfreeref
+            maxlenmpc=maxlenmpcref
+            mpcfreeref=-1
+!
+            do i=1,memmpc_
+               do j=1,3
+                  nodempc(j,i)=nodempcref(j,i)
+               enddo
+               coefmpc(i)=coefmpcref(i)
+            enddo
+!
             do
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &              ipoinp,inp,ipoinpc)
@@ -226,13 +272,13 @@
                read(textpart((i-1)*3+2)(1:10),'(i10)',iostat=istat) ndir
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*EQUATION%")
-               if(ndir.le.3) then
-               elseif(ndir.eq.4) then
-                  ndir=5
-               elseif(ndir.eq.5) then
-                  ndir=6
-               elseif(ndir.eq.6) then
-                  ndir=7
+               if(ndir.le.6) then
+c               elseif(ndir.eq.4) then
+c                  ndir=5
+c               elseif(ndir.eq.5) then
+c                  ndir=6
+c               elseif(ndir.eq.6) then
+c                  ndir=7
                elseif(ndir.eq.8) then
                   ndir=4
                elseif(ndir.eq.11) then
@@ -286,7 +332,7 @@
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
                      write(*,*) 
-     &                  '*ERROR reading *EQUATION: increase nmpc_'
+     &                  '*ERROR reading *EQUATION: increase memmpc_'
                      call exit(201)
                   endif
                else
@@ -346,7 +392,7 @@
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
                         write(*,*) 
-     &                    '*ERROR reading *EQUATION: increase nmpc_'
+     &                    '*ERROR reading *EQUATION: increase memmpc_'
                         call exit(201)
                      endif
                   enddo

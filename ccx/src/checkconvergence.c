@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -66,12 +66,13 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     double df,dc,db,dd,ran,can,rap,ea,cae,ral,da,*vr=NULL,*vi=NULL,*stnr=NULL,
 	*stni=NULL,*vmax=NULL,*stnmax=NULL,*cs=NULL,c1[2],c2[2],reftime,
         *fn=NULL,*eenmax=NULL,*fnr=NULL,*fni=NULL,*qfx=NULL,*cdn=NULL,
-        *cdnr=NULL,*cdni=NULL,
-        tmp, maxdecay=0.0, r_rel;
+        *cdnr=NULL,*cdni=NULL,tmp, maxdecay=0.0, r_rel,cetol;
 
     /* reset ialeatoric to zero */
 
     *ialeatoric=0;
+
+    cetol=ctrl[39];
 
     /* next lines are active if the number of contact elements was
        changed in the present increment */
@@ -135,6 +136,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
     if(*ithermal<2){
 	if((*iit>1)&&(ram[0]<=c1[0]*qam[0])&&(*iflagact==0)&&
+           ((*nmethod!=-1)||(qa[3]<=cetol))&&
 	   ((cam[0]<=c2[0]*uam[0])||
 	    (((ram[0]*cam[0]<c2[0]*uam[0]*ram2[0])||(ram[0]<=ral*qam[0])||
 	      (qa[0]<=ea*qam[0]))&&(*ntg==0))||
@@ -156,6 +158,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
     if(*ithermal==3){
 	if(((*iit>1)&&(ram[0]<=c1[0]*qam[0])&&
+            ((*nmethod!=-1)||(qa[3]<=cetol))&&
 	    ((cam[0]<=c2[0]*uam[0])||
 	     (((ram[0]*cam[0]<c2[0]*uam[0]*ram2[0])||(ram[0]<=ral*qam[0])||
 	       (qa[0]<=ea*qam[0]))&&(*ntg==0))||
@@ -295,7 +298,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    }
 	}
     } else {
-	sizemaxinc=tmax;
+	*sizemaxinc=*tmax;
     }
 //    MPADD end
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -470,7 +473,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	
 	/* check for the amount of iterations */
 	
-      if(((*iit>ic)&&(*mortar==0))||((*mortar>1)&&(*iit>200))){
+	if(((*iit>ic)&&(*mortar==0))||((*mortar>1)&&(*iit>200))){
 	    printf("\n *ERROR: too many iterations needed\n");
 	    printf(" best solution and residuals are in the frd file\n\n");
 
@@ -497,10 +500,15 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	}	
 	
 	/* check for diverging residuals */
-	
+
+        /* if the user has not defined deltmx on the *HEAT
+	 TRANSFER card it is set to a large value (1.e30,
+	 cf. CalculiX.c); therefore, a comparison of cam[2]
+	 with deltmx only makes sense for cam[2]<1.e30 */
+      
 	if((*iit>=i0)||(fabs(ram[0])>1.e20)||(fabs(cam[0])>1.e20)||
 	               (fabs(ram[1])>1.e20)||(fabs(cam[1])>1.e20)||
-	               (cam[2]>*deltmx)||(idivergence==1)||
+	   ((cam[2]<1.e30)&&(cam[2]>*deltmx))||(idivergence==1)||
 	               (iforceincsize==1)){
 	    if((*ithermal!=2)&&(*mortar!=1)){
 		if((ram1[0]>ram2[0])&&(ram[0]>ram2[0])&&(ram[0]>c1[0]*qam[0]))
@@ -539,6 +547,11 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		}
 	    }
 
+            /* check whether in a viscous step the allowable increase in viscous
+               strain has been exceeded */
+
+	    if((idivergence==0)&&((*nmethod==-1)&&(qa[3]>cetol))) idivergence=2;
+
 
             /* for thermal calculations the maximum temperature change
                is checked as well */
@@ -546,8 +559,15 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
             if(*ithermal>1){
 	        if((ram1[1]>ram2[1])&&(ram[1]>ram2[1])&&(ram[1]>c1[1]*qam[1]))
 		    idivergence=1;
-		if(cam[2]>*deltmx) idivergence=2;
+
+		/* if the user has not defined deltmx on the *HEAT
+                   TRANSFER card it is set to a large value (1.e30,
+                   cf. CalculiX.c); therefore, a comparison of cam[2]
+                   with deltmx only makes sense for cam[2]<1.e30 */
+
+		if((cam[2]<1.e30)&&(cam[2]>*deltmx)) idivergence=2;
 	    }
+
 	    if(idivergence>0){
 		if(*idrct==1){
 		    if((*mortar<=1)||((*mortar>1)&&(*iit>200))) {
@@ -598,7 +618,11 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
                               }                                         // MPADD
                             }                                           // MPADD
 			}else{
-			    *dtheta=*dtheta**deltmx/cam[2]*da;
+			    if(*nmethod==-1){
+				*dtheta=*dtheta*cetol/qa[3]*da;
+			    }else{
+				*dtheta=*dtheta**deltmx/cam[2]*da;
+			    }
 			}
 		    }
 		    *dthetaref=*dtheta;
@@ -784,7 +808,6 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		    qa[2]=-1.;
 
 		    *iflagact=0;
-//		    *iflagact=0;
 		    return;
 		}
 	    }

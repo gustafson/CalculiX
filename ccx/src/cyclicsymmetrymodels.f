@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -48,6 +48,10 @@
 !     cs(15,mcs): cos(angle); angle = 2*pi/cs(1,mcs)
 !     cs(16,mcs): sin(angle)
 !     cs(17,mcs): number of tie constraint
+!
+!     notice that in this routine ics, zcs and rcs start for 1 for
+!     each *cyclic symmetry model card (look at the pointer in
+!     the cyclicsymmetrymodels call in calinput.f)
 !
       implicit none
 !
@@ -178,7 +182,6 @@
       endif
 !
       maxsectors=max(maxsectors,int(xsectors+0.5d0))
-c      iaxial=max(iaxial,maxsectors)
 !
       mcs=mcs+1
       cs(2,mcs)=-0.5
@@ -461,10 +464,10 @@ c      iaxial=max(iaxial,maxsectors)
                   elseif(lakon(nelems)(4:5).eq.'15') then
                      node=kon(indexe+ifacew2(m,jfaces))
                   endif
-                  call nident(ics(lprev+1),node,l,id)
+                  call nident(ics,node,l,id)
                   exist=.FALSE.
                   if(id.gt.0) then
-                     if(ics(lprev+id).eq.node) then
+                     if(ics(id).eq.node) then
                         exist=.TRUE.
                      endif
                   endif
@@ -475,7 +478,7 @@ c      iaxial=max(iaxial,maxsectors)
                      write(*,*) '       increase ncs_'
                      call exit(201)
                   endif
-                  do k=lprev+l,lprev+id+2,-1
+                  do k=l,id+2,-1
                      ics(k)=ics(k-1)
                      zcs(k)=zcs(k-1)
                      rcs(k)=rcs(k-1)
@@ -485,11 +488,11 @@ c      iaxial=max(iaxial,maxsectors)
                   yap=co(2,node)-csab(2)
                   zap=co(3,node)-csab(3)
 !     
-                  ics(lprev+id+1)=node
-                  zcs(lprev+id+1)=xap*xn+yap*yn+zap*zn
-                  rcs(lprev+id+1)=dsqrt((xap-zcs(lprev+id+1)*xn)**2+
-     &                                  (yap-zcs(lprev+id+1)*yn)**2+
-     &                                  (zap-zcs(lprev+id+1)*zn)**2)
+                  ics(id+1)=node
+                  zcs(id+1)=xap*xn+yap*yn+zap*zn
+                  rcs(id+1)=dsqrt((xap-zcs(id+1)*xn)**2+
+     &                            (yap-zcs(id+1)*yn)**2+
+     &                            (zap-zcs(id+1)*zn)**2)
                else
                   l=l+1
                   if(lprev+l.gt.ncs_) then

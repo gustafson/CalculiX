@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -115,7 +115,8 @@ void biosav(ITG *ipkon,ITG *kon,char *lakon,ITG *ne,double *co,
     
     /* translating the bounds of the ranges to real node numbers */
 
-    i=0;
+//    i=0;
+    i=-1;
     j=0;
     nkphi=-1;
 

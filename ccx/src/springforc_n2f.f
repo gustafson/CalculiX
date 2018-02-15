@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -98,57 +98,6 @@
                xn(i)=(pl(i,2)-pl(i,1))/dd
             enddo
             val=dd-dd0
-c!     
-c!     interpolating the material data
-c!     
-c            call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
-c     &           elconloc,kode,plicon,nplicon,npmat_,plconloc,ncmat_)
-c!     
-c!     calculating the spring force and the spring constant
-c!     
-c            if(kode.eq.2)then
-c               xk=elconloc(1)
-c               fk=xk*val
-c               if(nener.eq.1) then
-c                  senergy=fk*val/2.d0
-c               endif
-c            else
-c               niso=int(plconloc(801))
-c               do i=1,niso
-c                  xiso(i)=plconloc(2*i-1)
-c                  yiso(i)=plconloc(2*i)
-c               enddo
-c               call ident(xiso,val,niso,id)
-c               if(id.eq.0) then
-c                  xk=0.d0
-c                  fk=yiso(1)
-c                  if(nener.eq.1) then
-c                     senergy=fk*val
-c                  endif
-c               elseif(id.eq.niso) then
-c                  xk=0.d0
-c                  fk=yiso(niso)
-c                  if(nener.eq.1) then
-c                     senergy=yiso(1)*xiso(1)
-c                     do i=2,niso
-c                        senergy=senergy+(xiso(i)-xiso(i-1))*
-c     &                       (yiso(i)+yiso(i-1))/2.d0
-c                     enddo
-c                     senergy=senergy+(val-xiso(niso))*yiso(niso)
-c                  endif
-c               else
-c                  xk=(yiso(id+1)-yiso(id))/(xiso(id+1)-xiso(id))
-c                  fk=yiso(id)+xk*(val-xiso(id))
-c                  if(nener.eq.1) then
-c                     senergy=yiso(1)*xiso(1)
-c                     do i=2, id
-c                        senergy=senergy+(xiso(i)-xiso(i-1))*
-c     &                       (yiso(i)+yiso(i-1))/2.d0
-c                     enddo
-c                     senergy=senergy+(val-xiso(id))*(fk+yiso(id))/2.d0
-c                  endif
-c               endif
-c            endif
 !     
 !           calculating the spring force and the spring energy
 !     

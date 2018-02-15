@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,7 +26,7 @@
       integer nface,i,nshcon(*),imat,ithermal,ntmat_,mi(*),
      &  ielmat(mi(3),*),ielfa(4,*)
 !
-      real*8 t1l,vfa(0:7,*),dvi,shcon(0:3,ntmat_,*) ,umfa(*)
+      real*8 t1l,vfa(0:7,*),dvi,shcon(0:3,ntmat_,*),umfa(*)
 !     
 c$omp parallel default(none)
 c$omp& shared(nface,vfa,ielmat,ielfa,shcon,nshcon,ntmat_,ithermal,umfa)
@@ -41,6 +41,7 @@ c$omp do
          call materialdata_dvi(shcon,nshcon,imat,dvi,t1l,ntmat_,
      &            ithermal)
          umfa(i)=dvi
+c         write(*,*) 'calcumfa ',umfa(i)
       enddo
 c$omp end do
 c$omp end parallel

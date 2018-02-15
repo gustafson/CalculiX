@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,9 +30,8 @@
 !
       real*8 v(0:mi(2),*)
 !
-!     determining all outflowing mass flow in the end nodes and
-!     assigning it to the end nodes with the correct sign =>
-!     is stored in the .frd-file and should look continuous
+!     determining all inflowing mass flow in the end nodes and
+!     assigning it to the end nodes 
 !
 !     the corresponding action for the .dat file is done in 
 !     flowoutput.f; this latter result is always positive.
@@ -67,14 +66,15 @@
          if(kon(indexe+1).ne.0)  then
             node1=kon(indexe+1)
             inum(node1)=-1
-            if(v(1,node2).gt.0.d0) v(1,node1)=v(1,node1)+v(1,node2)
+c            if(v(1,node2).gt.0.d0) v(1,node1)=v(1,node1)+v(1,node2)
+            if(v(1,node2).lt.0.d0) v(1,node1)=v(1,node1)-v(1,node2)
          endif
          inum(node2)=inum(node2)-1
          if(kon(indexe+3).ne.0) then
             node3=kon(indexe+3)
             inum(node3)=-1
-c            if(v(1,node2).lt.0.d0) v(1,node3)=v(1,node3)-v(1,node2)
-            if(v(1,node2).lt.0.d0) v(1,node3)=v(1,node3)+v(1,node2)
+c            if(v(1,node2).lt.0.d0) v(1,node3)=v(1,node3)+v(1,node2)
+            if(v(1,node2).gt.0.d0) v(1,node3)=v(1,node3)+v(1,node2)
          endif
       enddo
 !

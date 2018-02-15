@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
 /*     published by the Free Software Foundation(version 2);    */
@@ -76,7 +76,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     *lakont=NULL;
 
   ITG nev,i,j,k,idof,*inum=NULL,*ipobody=NULL,inewton=0,id,
-    iinc=0,l,iout=1,ielas,icmd,ifreebody,mode,m,nherm,
+    iinc=0,l,iout=1,ielas,icmd=3,ifreebody,mode,m,nherm,
     *kon=NULL,*ipkon=NULL,*ielmat=NULL,*ielorien=NULL,*islavact=NULL,
     *inotr=NULL,*nodeboun=NULL,*ndirboun=NULL,*iamboun=NULL,*ikboun=NULL,
     *ilboun=NULL,*nactdof=NULL,*ipompc=NULL,*nodempc=NULL,*ikmpc=NULL,
@@ -98,7 +98,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     *aub=NULL,*f=NULL, *fn=NULL,*epn=NULL,*xstateini=NULL,
     *enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,*qfn=NULL,
     *qfx=NULL, *cgr=NULL, *au=NULL,dtime,reltime,*t0=NULL,*t1=NULL,*t1old=NULL,
-    sum,qa[3],cam[5],accold[1],bet,gam,*ad=NULL,alpham,betam,
+    sum,qa[4],cam[5],accold[1],bet,gam,*ad=NULL,alpham,betam,
     *co=NULL,*xboun=NULL,*xbounold=NULL,*vold=NULL,*emeini=NULL,
     *eme=NULL,*ener=NULL,*coefmpc=NULL,*fmpc=NULL,*veold=NULL,
     *adc=NULL,*auc=NULL,*zc=NULL,*fnr=NULL,*fni=NULL,setnull,deltmx,dd,
@@ -1361,7 +1361,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	    islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-	    inoel,nener,orname,&network);}
+	    inoel,nener,orname,&network,ipobody,xbody,ibody);}
       else{
 	results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
             &stx[kkx],elcon,
@@ -1381,7 +1381,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	    islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-	    inoel,nener,orname,&network);
+	    inoel,nener,orname,&network,ipobody,xbody,ibody);
       }
 
     }

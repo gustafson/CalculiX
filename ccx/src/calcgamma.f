@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine calcgamma(nface,ielfa,vel,gradvel,gamma,xlet,
      &  xxn,xxj,ipnei,betam,nef,flux)
 !
-!     determine gamma:
+!     determine gamma for the velocity:
 !        upwind difference: gamma=0
 !        central difference: gamma=1
 !
@@ -28,7 +28,7 @@
       integer nface,ielfa(4,*),i,j,indexf,ipnei(*),iel1,iel2,nef
 !
       real*8 vel(nef,0:7),gradvel(3,3,*),xxn(3,*),xxj(3,*),vud,vcd,
-     &  gamma(*),phic,xlet(*),betam,flux(*),xflux
+     &  gamma(*),phic,xlet(*),betam,flux(*),dvel1,dvel2
 !
       do i=1,nface
          iel2=ielfa(2,i)
@@ -39,45 +39,50 @@
          iel1=ielfa(1,i)
          j=ielfa(4,i)
          indexf=ipnei(iel1)+j
-         xflux=flux(indexf)
 !
-         vcd=(vel(iel2,1)-vel(iel1,1))*xxn(1,indexf)+
-     &       (vel(iel2,2)-vel(iel1,2))*xxn(2,indexf)+
-     &       (vel(iel2,3)-vel(iel1,3))*xxn(3,indexf)
+         dvel1=dsqrt(vel(iel1,1)**2+vel(iel1,2)**2+vel(iel1,3)**2)
+         dvel2=dsqrt(vel(iel2,1)**2+vel(iel2,2)**2+vel(iel2,3)**2)
 !
-         if(xflux.ge.0.d0) then
+         vcd=dvel2-dvel1
+!to check!
+         if(dabs(vcd).lt.1.d-3*dvel1) vcd=0.d0
 !
+         if(flux(indexf).ge.0.d0) then
+!
+c            write(*,*) 'calcgamma, positiv',flux(indexf)
+c            write(*,*) (vel(iel1,1)**2+vel(iel1,2)**2+
+c     &                  vel(iel1,3)**2)
             vud=2.d0*xlet(indexf)*
-     &       (xxn(1,indexf)*(gradvel(1,1,iel1)*xxj(1,indexf)+
-     &                       gradvel(1,2,iel1)*xxj(2,indexf)+
-     &                       gradvel(1,3,iel1)*xxj(3,indexf))+
-     &        xxn(2,indexf)*(gradvel(2,1,iel1)*xxj(1,indexf)+
-     &                       gradvel(2,2,iel1)*xxj(2,indexf)+
-     &                       gradvel(2,3,iel1)*xxj(3,indexf))+
-     &        xxn(3,indexf)*(gradvel(3,1,iel1)*xxj(1,indexf)+
-     &                       gradvel(3,2,iel1)*xxj(2,indexf)+
-     &                       gradvel(3,3,iel1)*xxj(3,indexf)))
+     &       (vel(iel1,1)*gradvel(1,1,iel1)+
+     &        vel(iel1,2)*gradvel(2,1,iel1)+
+     &        vel(iel1,3)*gradvel(3,1,iel1))*xxj(1,indexf)+
+     &       (vel(iel1,1)*gradvel(1,2,iel1)+
+     &        vel(iel1,2)*gradvel(2,2,iel1)+
+     &        vel(iel1,3)*gradvel(3,2,iel1))*xxj(2,indexf)+
+     &       (vel(iel1,1)*gradvel(1,3,iel1)+
+     &        vel(iel1,2)*gradvel(2,3,iel1)+
+     &        vel(iel1,3)*gradvel(3,3,iel1))*xxj(3,indexf)
+            vcd=vcd*dvel1
          else
+c            write(*,*) 'calcgamma, negativ',flux(indexf)
             vud=2.d0*xlet(indexf)*
-     &       (xxn(1,indexf)*(gradvel(1,1,iel2)*xxj(1,indexf)+
-     &                       gradvel(1,2,iel2)*xxj(2,indexf)+
-     &                       gradvel(1,3,iel2)*xxj(3,indexf))+
-     &        xxn(2,indexf)*(gradvel(2,1,iel2)*xxj(1,indexf)+
-     &                       gradvel(2,2,iel2)*xxj(2,indexf)+
-     &                       gradvel(2,3,iel2)*xxj(3,indexf))+
-     &        xxn(3,indexf)*(gradvel(3,1,iel2)*xxj(1,indexf)+
-     &                       gradvel(3,2,iel2)*xxj(2,indexf)+
-     &                       gradvel(3,3,iel2)*xxj(3,indexf)))
+     &       (vel(iel2,1)*gradvel(1,1,iel2)+
+     &        vel(iel2,2)*gradvel(2,1,iel2)+
+     &        vel(iel2,3)*gradvel(3,1,iel2))*xxj(1,indexf)+
+     &       (vel(iel2,1)*gradvel(1,2,iel2)+
+     &        vel(iel2,2)*gradvel(2,2,iel2)+
+     &        vel(iel2,3)*gradvel(3,2,iel2))*xxj(2,indexf)+
+     &       (vel(iel2,1)*gradvel(1,3,iel2)+
+     &        vel(iel2,2)*gradvel(2,3,iel2)+
+     &        vel(iel2,3)*gradvel(3,3,iel2))*xxj(3,indexf)
+            vcd=vcd*dvel2
          endif
-c         write(*,*) xlet(indexf)
-c         write(*,*) xxn(1,indexf),xxn(2,indexf),xxn(3,indexf)
-c         write(*,*) xxj(1,indexf),xxj(2,indexf),xxj(3,indexf)
-c         write(*,*) 'calcgamma ',vcd,vud
 !
          if(dabs(vud).lt.1.d-20) then
-            gamma(i)=1.d0
+            gamma(i)=0.d0
             cycle
          endif
+c         write(*,*) vcd,vud
 !            
          phic=1.d0-vcd/vud
 !
@@ -90,7 +95,21 @@ c         write(*,*) 'calcgamma ',vcd,vud
          else
             gamma(i)=phic/betam
          endif
-c         write(*,*) 'calcgamma ',i,gamma(i)
+c
+c         enhanced smart
+c
+c         if(phic.lt.0.d0) then
+c            gamma(i)=1.d0
+c         elseif(phic.lt.1.d0/6.d0) then
+c            gamma(i)=3.d0
+c         elseif(phic.lt.0.7d0) then
+c            gamma(i)=0.75d0
+c         elseif(phic.lt.1.d0) then
+c            gamma(i)=1.d0/3.d0
+c         else
+c            gamma(i)=1.d0
+c         endif
+c         write(*,*) 'calcgamma ',i,iel1,iel2,phic,gamma(i)
       enddo
 !            
       return

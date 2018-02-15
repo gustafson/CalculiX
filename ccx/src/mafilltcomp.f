@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine mafilltcomp(nef,ipnei,neifa,neiel,vfa,xxn,area,
      &  au,ad,jq,irow,nzs,b,vel,umel,xlet,xle,gradtfa,xxi,
      &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
-     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,xrlfa,
+     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,xrlfa,
      &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb,iau6,xxni,xxnj)
 !
 !     filling the matrix for the conservation of energy
@@ -39,13 +39,13 @@
      &  vel(nef,0:7),umel(*),xlet(*),xle(*),coef,gradtfa(3,*),
      &  xxi(3,*),body(0:3,*),volume(*),dtimef,velo(nef,0:7),
      &  veloo(nef,0:7),rhovel,constant,cvel(*),gradvel(3,3,*),
-     &  cvfa(*),hcfa(*),div,xload(2,*),gammat(*),xrlfa(3,*),
+     &  cvfa(*),hcfa(*),div,xload(2,*),gamma(*),xrlfa(3,*),
      &  xxj(3,*),a1,a2,a3,flux(*),xxni(3,*),xxnj(3,*)
 !
       intent(in) nef,ipnei,neifa,neiel,vfa,xxn,area,
      &  jq,irow,nzs,vel,umel,xlet,xle,gradtfa,xxi,
      &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
-     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,xrlfa,
+     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,xrlfa,
      &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb
 !
       intent(inout) au,ad,b
@@ -65,7 +65,7 @@
 !     
                ad(i)=ad(i)+xflux
 !     centdiff
-c                   b(i)=b(i)-0.4*(vfa(0,ifa)-vel(i,0))*xflux
+c               b(i)=b(i)-gamma(ifa)*(vfa(0,ifa)-vel(i,0))*xflux
 !end centdiff
             else
                if(iel.gt.0) then
@@ -74,7 +74,7 @@ c                   b(i)=b(i)-0.4*(vfa(0,ifa)-vel(i,0))*xflux
 !
                   au(indexf)=au(indexf)+xflux
 !centdiff
-c                  b(i)=b(i)-0.4*(vfa(0,ifa)-vel(iel,0))*xflux
+c                  b(i)=b(i)-gamma(ifa)*(vfa(0,ifa)-vel(iel,0))*xflux
 !end centdiff
                else
 !
@@ -86,18 +86,18 @@ c                  b(i)=b(i)-0.4*(vfa(0,ifa)-vel(iel,0))*xflux
      &                    (dabs(xflux).lt.1.d-10)) then
                         b(i)=b(i)-vfa(0,ifa)*xflux
                      else
-                        write(*,*) '*ERROR in mafillt: the tempera-'
-                        write(*,*) '       ture of an incoming flux'
-                        write(*,*) '       through face ',j,'of'
-                        write(*,*)'       element ',nactdohinv(i),
-     &                          ' is not given'
+c                        write(*,*) '*ERROR in mafillt: the tempera-'
+c                        write(*,*) '       ture of an incoming flux'
+c                        write(*,*) '       through face ',j,'of'
+c                        write(*,*)'       element ',nactdohinv(i),
+c     &                          ' is not given'
                      endif
                   else
-                     write(*,*) '*ERROR in mafillt: the tempera-'
-                     write(*,*) '       ture of an incoming flux'
-                     write(*,*) '       through face ',j,'of'
-                     write(*,*)'       element ',nactdohinv(i),
-     &                   ' is not given'
+c                     write(*,*) '*ERROR in mafillt: the tempera-'
+c                     write(*,*) '       ture of an incoming flux'
+c                     write(*,*) '       through face ',j,'of'
+c                     write(*,*)'       element ',nactdohinv(i),
+c     &                   ' is not given'
                   endif
                endif
             endif

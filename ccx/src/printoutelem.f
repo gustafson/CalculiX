@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,8 +17,9 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine printoutelem(prlab,ipkon,lakon,kon,co,
-     &     ener,mi,ii,nelem,energytot,volumetot,enerkintot,nkin,ne,
-     &     stx,nodes,thicke,ielmat,ielem,iface,mortar,ielprop,prop)
+     &     ener,mi,ii,nelem,energytot,volumetot,enerkintot,ne,
+     &     stx,nodes,thicke,ielmat,ielem,iface,mortar,ielprop,prop,
+     &     sideload,nload,nelemload,xload,bhetot)
 !
 !     stores whole element results for element "nelem" in the .dat file
 !
@@ -26,17 +27,18 @@
 !
       character*6 prlab(*)
       character*8 lakon(*)
+      character*20 sideload(*)
 !
       integer ipkon(*),nelem,ii,kon(*),mi(*),nope,indexe,i,j,k,
-     &  konl(20),iface,mortar,ielem,ielprop(*),
+     &  konl(20),iface,mortar,ielem,ielprop(*),nvol,nbhe,
      &  mint3d,jj,nener,iflag,nkin,ne,nodes,ki,kl,ilayer,nlayer,kk,
-     &  nopes,ielmat(mi(3),*),mint2d,null
+     &  nopes,ielmat(mi(3),*),mint2d,null,id,nload,nelemload(2,*)
 !
       real*8 ener(mi(1),*),energytot,volumetot,energy,volume,co(3,*),
      &  xl(3,20),xi,et,ze,xsj,shp(4,20),weight,enerkintot,enerkin,
      &  stx(6,mi(1),*),a,gs(8,4),dlayer(4),tlayer(4),thickness,
      &  thicke(mi(3),*),xlayer(mi(3),4),shp2(7,8),xs2(3,7),xsj2(3),
-     &  xl2(3,8),prop(*)
+     &  xl2(3,8),prop(*),dflux,xload(2,*),bhe,bhetot
 !
       include "gauss.f"
 !
@@ -46,10 +48,80 @@
       indexe=ipkon(nelem)
       null=0
 !
+      nener=0
+      nkin=0
+      nvol=0
+      nbhe=0
+!
       if((prlab(ii)(1:4).eq.'ELSE').or.(prlab(ii)(1:4).eq.'CELS')) then
          nener=1
-      else
-         nener=0
+      elseif(prlab(ii)(1:4).eq.'ELKE') then
+         nkin=1
+      elseif(prlab(ii)(1:4).eq.'EVOL') then
+         nvol=1
+      elseif(prlab(ii)(1:4).eq.'EBHE') then
+         nbhe=1
+      endif
+!
+!     for contact displacements and stresses no integration has
+!     to be performed
+!
+      if((prlab(ii)(1:5).eq.'CDIS ').or.
+     &        (prlab(ii)(1:5).eq.'CDIST')) then
+!
+!        contact displacements
+!
+         if(mortar.eq.0) then
+            write(5,'(i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') nodes,
+     &           stx(1,1,nelem),stx(2,1,nelem),stx(3,1,nelem)
+         elseif(mortar.eq.1) then
+            write(5,'(i10,1x,i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') 
+     &           ielem,iface,
+     &           stx(1,1,nelem),stx(2,1,nelem),stx(3,1,nelem)
+         endif
+         return
+      elseif((prlab(ii)(1:5).eq.'CSTR ').or.
+     &        (prlab(ii)(1:5).eq.'CSTRT')) then
+!
+!        contact stresses
+!
+         if(mortar.eq.0) then
+            write(5,'(i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') nodes,
+     &           stx(4,1,nelem),stx(5,1,nelem),stx(6,1,nelem)
+         elseif(mortar.eq.1) then
+            write(5,'(i10,1x,i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') 
+     &           ielem,iface,
+     &           stx(4,1,nelem),stx(5,1,nelem),stx(6,1,nelem)
+         endif
+         return
+      elseif(prlab(ii)(1:4).eq.'EBHE ') then
+!
+!        body heating: check whether there is any body heating in
+!        this elements
+!
+         dflux=0.d0
+         if(nload.gt.0) then
+            call nident2(nelemload,nelem,nload,id)
+            do
+               if((id.eq.0).or.(nelemload(1,id).ne.nelem)) exit
+               if(sideload(id)(1:2).ne.'BF') then
+                  id=id-1
+                  cycle
+               endif
+               dflux=xload(1,id)
+               exit
+            enddo
+         endif
+!
+!        if no body heat flux: print and leave
+!
+         if(dflux.eq.0.d0) then
+            if((prlab(ii)(1:5).eq.'EBHE ').or.
+     &         (prlab(ii)(1:5).eq.'EBHET')) then
+               write(5,'(i10,1p,1x,e13.6)') nelem,dflux
+            endif
+            return
+         endif
       endif
 !
       if(lakon(nelem)(1:5).eq.'C3D8I') then
@@ -157,6 +229,7 @@
 !
       energy=0.d0
       volume=0.d0
+      bhe=0.d0
       enerkin=0.d0
 !
       if(lakon(nelem)(4:5).eq.'8R') then
@@ -316,14 +389,26 @@
             call shape6w(xi,et,ze,xl,xsj,shp,iflag)
          endif
 !
-         if(nener.eq.1) energy=energy+weight*xsj*ener(jj,nelem)
-         if(nkin.eq.1) enerkin=enerkin+weight*xsj*ener(jj,nelem+ne)
-         volume=volume+weight*xsj
+         if(nener.eq.1) then
+            energy=energy+weight*xsj*ener(jj,nelem)
+         elseif(nkin.eq.1) then
+            enerkin=enerkin+weight*xsj*ener(jj,nelem+ne)
+         elseif(nvol.eq.1) then
+            volume=volume+weight*xsj
+         elseif(nbhe.eq.1) then
+            bhe=bhe+dflux*weight*xsj
+         endif
       enddo
 !
-      volumetot=volumetot+volume
-      if(nener.eq.1) energytot=energytot+energy
-      if(nkin.eq.1) enerkintot=enerkintot+enerkin
+      if(nener.eq.1) then
+         energytot=energytot+energy
+      elseif(nkin.eq.1) then
+         enerkintot=enerkintot+enerkin
+      elseif(nvol.eq.1) then
+         volumetot=volumetot+volume
+      elseif(nbhe.eq.1) then
+         bhetot=bhetot+bhe
+      endif
 !     
 !     writing to file
 !     
@@ -337,32 +422,15 @@
          elseif(mortar.eq.1) then
             write(5,'(i10,1x,i10,1p,1x,e13.6)') ielem,iface,energy
          endif
-      elseif((prlab(ii)(1:5).eq.'CDIS ').or.
-     &        (prlab(ii)(1:5).eq.'CDIST')) then
-         if(mortar.eq.0) then
-            write(5,'(i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') nodes,
-     &           stx(1,1,nelem),stx(2,1,nelem),stx(3,1,nelem)
-         elseif(mortar.eq.1) then
-            write(5,'(i10,1x,i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') 
-     &           ielem,iface,
-     &           stx(1,1,nelem),stx(2,1,nelem),stx(3,1,nelem)
-         endif
-      elseif((prlab(ii)(1:5).eq.'CSTR ').or.
-     &        (prlab(ii)(1:5).eq.'CSTRT')) then
-         if(mortar.eq.0) then
-            write(5,'(i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') nodes,
-     &           stx(4,1,nelem),stx(5,1,nelem),stx(6,1,nelem)
-         elseif(mortar.eq.1) then
-            write(5,'(i10,1x,i10,1p,1x,e13.6,1p,1x,e13.6,1p,1x,e13.6)') 
-     &           ielem,iface,
-     &           stx(4,1,nelem),stx(5,1,nelem),stx(6,1,nelem)
-         endif
       elseif((prlab(ii)(1:5).eq.'EVOL ').or.
      &        (prlab(ii)(1:5).eq.'EVOLT')) then
          write(5,'(i10,1p,1x,e13.6)') nelem,volume
       elseif((prlab(ii)(1:5).eq.'ELKE ').or.
      &        (prlab(ii)(1:5).eq.'ELKET')) then
          write(5,'(i10,1p,1x,e13.6)') nelem,enerkin
+      elseif((prlab(ii)(1:5).eq.'EBHE ').or.
+     &        (prlab(ii)(1:5).eq.'EBHET')) then
+         write(5,'(i10,1p,1x,e13.6)') nelem,bhe
       endif
 !
       return

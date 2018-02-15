@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -41,7 +41,7 @@
       integer i,i1,nelem,ne0,nelcon(2,*),nrhcon(*),nalcon(2,*),imat,
      &     ntmat_,ithermal,mattyp,ihyper,istiff,kode,mi(*),kk,
      &     nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),ncmat_,iorth,
-     &     ielmat(mi(3),*),nope,iorien,ipkon(*),
+     &     ielmat(mi(3),*),nope,iorien,ipkon(*),null,
      &     konl(26),nopered,npmat_,nmat
 !     
       real*8 elas(21),wavespeed(*),rhcon(0:1,ntmat_,*)  ,
@@ -53,7 +53,9 @@
      &     e,un,um,al,wavspd
 !     
       write(*,*)'++CMT: Calculating Material Wave Speeds...'
-      write(*,*)     
+      write(*,*)
+!
+      null=0
 !
 !     initialization of wavespeed
 !
@@ -98,6 +100,9 @@
                elseif(lakonl(4:6).eq.'20 ')then
                   nopered=20
                   call lintemp(t0,t1,konl,nopered,kk,t0l,t1l)
+               elseif(lakonl(4:6).eq.'10T') then
+                  call linscal10(t0,konl,t0l,null,shp)
+                  call linscal10(t1,konl,t1l,null,shp)
                else
                   do i1=1,nope
                      t0l=t0l+shp(4,i1)*t0(konl(i1))
@@ -113,6 +118,9 @@
                elseif(lakonl(4:6).eq.'20 ')then
                   nopered=20
                   call lintemp_th(t0,vold,konl,nopered,kk,t0l,t1l,mi)
+               elseif(lakonl(4:6).eq.'10T') then
+                  call linscal10(t0,konl,t0l,null,shp)
+                  call linscal10(vold,konl,t1l,mi(2),shp)
                else
                   do i1=1,nope
                      t0l=t0l+shp(4,i1)*t0(konl(i1))
@@ -132,7 +140,7 @@
      &           nelem,ithermal,alzero,mattyp,t0l,t1l,
      &           ihyper,istiff,elconloc,eth,kode,plicon,
      &           nplicon,plkcon,nplkcon,npmat_,
-     &           plconloc,mi(1),dtime,nelem,kk,
+     &           plconloc,mi(1),dtime,kk,
      &           xstiff,ncmat_)
 !     
             if(mattyp.eq.1) then

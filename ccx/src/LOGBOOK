@@ -1,5 +1,5 @@
 ========
-LOG-BOOK Version 2.12
+LOG-BOOK Version 2.13
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -2955,8 +2955,206 @@ Dec 2002        - started to work on single crystal plasticity
  18 Mar 2017   - increased stability of gas pipe elements w.r.t.
                  extreme initial conditions
  
- 24 Mär 2017   - corrected tt_calc.f
+ 24 Mar 2017   - corrected tt_calc.f
                - slight modification to gaspipe_fanno.f
                - modification to springforc_f2f and springstiff_f2f for
                  tied contact
                - removed errors reported by valgrind
+
+ 31 Mar 2017   - discontinuities in the displacements (due to SPC's,
+                 MPC's) in an initial acceleration step are not allowed
+                 and should not lead to a change of the acceleration or
+                 velocity
+               - checked whether the initial increment size exceeds
+                 the maximum increment size in *STATIC, *DYNAMIC...
+               - updated the sensitivity routines (filtering,
+                 treatment of quadratic elements, acceleration of 
+                 stress sensitivities....)
+
+ 7 April 2017  - corrections in fluidsections.f, checkconvergence.c and
+                 frd_sen.c
+               - set qa(3)=-1 at start of resultsmech.f, not in the
+                 material routines
+               - introduced CETOL on the *VISCO card in order to
+                 control the viscous strain increase within a time
+                 increment
+               - introduced preconditioning in electromagnetics.c
+
+ 21 April 2017 - improved initialnet.f and preinitialnet.f
+               - introduced additional check in the reading routines
+                 for *TRANSFORM and *OBJECTIVE
+               - introduced h0ref in electromagnetics.c
+               - change in resultsmech.f: xstiff is not addressed if
+                 icmd=3
+               - reduced the sensititivy of the shape energy to
+                 selected element sets (if requested)
+
+ 28 April 2017 - corrected printoutface for large deformations (SOF)
+               - optimized attachline.f and distattachline.f
+               - for purely thermal calculations: generate contact
+                 elements only at the start of new step
+               - in networkextrapolate and flowresult the INcoming flow
+                 is assigned to the endnodes (instead of the OUTcoming
+                 flow)
+               - taking the absolute value of the residuum in
+                 resultnet.f
+               - improved the parallellization of stress sensitivity
+               - included an equation file for the smoothing of a 
+                 volumetric mesh during optimization
+
+ 5 May 2017    - corrected an error in cyclicsymmetrymodels.f
+               - looked into a routine for tertiary creep
+               - stored the jobname in the environment variable
+                 CCX_JOBNAME_GETJOBNAME in CalculiX.c (setenv)
+               - implemented .dat output of body heating for element
+                 sets (key = EBHE)
+
+ 9 May 2017    - made some changes for the thermal error estimator
+
+ 2 June 2017   - started to work on the integration of isaac into
+                 CalculiX
+               - activated formgradient and formgradinterpol in
+                 sensitivity.c
+               - KNOT information is not stored in the .dat file 
+                 anymore
+               - changed M1_min=0.1 into M1_min=0.001 in pt2zpt1_crit.f
+               - provided a user subroutine propertynet.f
+               - transferred rotational speed information into user
+                 subroutines uboun, utemp and film.
+               - changed the treatment of MPC's in envtemp.f
+
+ 9 June 2017   - made a correction in resultnet.f
+               - removed an error in beamextscheme.f -> stresses for BOX
+                 profiles are now stored in the frd-file
+               - included constraints in the calculation of the
+                 sensitivity gradient
+               - installed dgmres for the iterative solution of
+                 nonsymmetric structural matrix systems
+
+ 23 June 2017  - corrected an error in mafillsm_company.f and in
+                 springstiff_f2f_th.f (crucial for thermal applications)
+               - improved preinitialnet: pressure is only modified in
+                 preinitialnet if it cannot be determined by a Laplace
+                 equation approach in initialnet
+               - extended the list of directional elements in
+                 preinitialnet.f
+               - considered a new scheme to determine the initial
+                 pressures
+
+ 29 June 2017  - worked on CFD (correct calculation of gradients in
+                 irregular meshes)
+
+ 30 June 2017  - removed change 2 from 23 June 2017
+               - introduced a check whether to every inlet, outlet,
+                 branch node or joint node an initial pressure was
+                 assigned
+               - checked splitting of a network through MPC's for
+                 total pressure, total temperature and mass flow;
+                 modified envtemp to get this to work
+               - implemented a method in preinitialnet to correct the
+                 initial pressure values in a single branch
+
+ 6 July 2017   - worked on extrapol_vel, extrapol_pel and extrapol_vel
+
+ 7 July 2017   - changed the name of the contact element file from
+                 contactelements.inp into jobname.cel
+               - corrected an error in mafillsmmain.c
+               - changed the *CREEP handling in allocation.f
+               - corrected an error in sdvini.f
+               - modified the documentation for beam general sections and
+                 contactelement.inp
+               - replaced sswap by dswap (already available in dgesv.f) in
+                 hybsvd.f
+               - introduced an element type C3D10T with linear temperature
+                 interpolation (for thermal strain)
+ 
+ 11 July 2017  - included MPC-treatment in extrapol_vel/pel/tel
+
+ 14 July 2017  - assignment of nstate in allocation.f only for *depvar
+                 and *restart
+               - updated the documentation of C3D10T elements and for the
+                 rules which apply if more than one *CLOAD, *DLOAD... card
+                 occur in an input deck
+               - reintroduced *BEAM GENERAL SECTION with warning
+               - coded *BASE MOTION for TYPE=DISPLACEMENT
+               - introduced an ERROR message if a loading is added in the
+                 same step with a different amplitude
+               - updated a large amount of sensitivity routines
+ 
+ 15 July 2017  - corrected some minor errors (valgrind output)
+ 
+ 19 July 2017  - corrected an error in extrapol_vel
+
+ 20 July 2017  - continued to work on CFD (extrapol_vel and extrapol_pel)
+
+ 27 July 2017  - continued to work on extrapol_vel, pel and tel
+
+ 28 July 2017  - corrected several errors
+               - added USERMATERIAL in the keystart file
+               - coded a user element interface
+
+ 2 August 2017 - made some changes in gentiedmpc.f
+
+ 3 August 2017 - extended the field vfap in extrapol_*el.f
+
+ 4 August 2017 - initialized ineighe to 0 at the start of radflowload
+               - modified beamgeneralsections for section GENERAL
+               - changed the rotational degrees of freedom internally from
+                 5..7 to 4..6
+               - removed the tra, rot and exp output in the .dat file for
+                 electromagnetic calculations
+               - continued to work on user element routines
+
+ 1 Sept 2017   - made a correction in mastruct.c, dyna.c
+               - enhanced output in creeps.f
+               - updated the documentation for *GAP HEAT GENERATION
+               - coded a network user MPC interface
+               - coded a user network element interface
+
+ 2 Sept 2017   - analyzed the problem of removing MPC's after 
+                 application of cascade
+               - worked on CFD (extrapol_*.f)
+
+ 6 Sept 2017   - made a correction in precfd.f (for wedges)
+
+ 7 Sept 2017   - changed the treatment of diffusion for sliding 
+                 conditions in mafillv and mafillvcomp
+
+ 8 Sept 2017   - worked on user elements
+               - reduced the argument list of materialdata_me.f
+               - reformulated the Green procedure as a perturbation
+                 procedure
+               - REMOVE does not work properly due to decascading of 
+                 MPC's. Worked on repairing this
+               - cleaned up MPC-related fields in several routines
+               - finished network element interface
+
+ 9 Sept 2017   - updated the network element interface documentation
+               - added heatnod and heatfac to user subroutine film.f
+               - finalized repair for using REMOVE
+
+ 12 Sept 2017  - reintroduced gamma and gammat in incompressible
+                 CFD-calculations
+
+ 14 Sept 2017  - modified gamma for constant velocity flow
+
+ 15 Sept 2017  - introduced NLGEOM=NO on the *STEP card
+               - introduced SHIFTX and SHIFTY on the *AMPLITUDE card
+               - implemented MASS in combination with 1d/2d elements
+                 (including axisymmetric elements)
+               - mapped B21 elements onto B31 elements and T2D2 elements
+                 into T3D2 elements
+               - reformulated the pre-tension equations such that the
+                 cut surfaces stay parallel
+               - worked on user elements
+
+ 16 Sept 2017  - allowed 4 characters for user elements; intpoints,
+                 ndofs and nope are stored as ASCII character
+
+ 19 Sept 2017  - coded a gamma scheme to calculate the density at the
+                 faces for compressible fluids
+
+ 22 Sept 2017  - finished and documented the user element routines
+               - looked into crack propagation light
+
+  3 Oct 2017   - removed an error in writeinput.f and allocation.f

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-Dimensional finite element program                   */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -77,14 +77,14 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
         neqh,j1,nodenew,mt=mi[1]+1,istep=1,iinc=1,iit=-1,
 	tint=-1,tnstart=-1,tnend=-1,tint2=-1,network=0,
 	noderight_,*izdof=*izdofp,iload,iforc,*iznode=NULL,nznode,ll,ne0,
-	icfd=0,*inomat=NULL,mortar=0,*islavact=NULL,
+	icfd=0,*inomat=NULL,mortar=0,*islavact=NULL,*ipobody=NULL,
 	*islavnode=NULL,*nslavnode=NULL,*islavsurf=NULL,
         *iponoel=NULL,*inoel=NULL;
 
     long long lint;
 
     double *stn=NULL,*v=NULL,*temp_array=NULL,*vini=NULL,*csmass=NULL,
-        *een=NULL,cam[5],*f=NULL,*fn=NULL,qa[3],*epn=NULL,summass,
+        *een=NULL,cam[5],*f=NULL,*fn=NULL,qa[4],*epn=NULL,summass,
         *stiini=NULL,*emn=NULL,*emeini=NULL,*clearini=NULL,
 	*xstateini=NULL,theta,pi,*coefmpcnew=NULL,t[3],ctl,stl,
 	*stx=NULL,*enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,
@@ -536,7 +536,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
               sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	      islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-	      inoel,nener,orname,&network);
+	      inoel,nener,orname,&network,ipobody,xbody,ibody);
 	    
 	}
 	SFREE(eei);

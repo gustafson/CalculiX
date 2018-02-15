@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -56,7 +56,14 @@
 !
 !     check for anisotropic creep: assumes a ucreep routine
 !
+!     following if corresponds to "elastic isotropic with or
+!     without plasticity"
+!
       if((nelcon(1,nmat).ne.2).and.(nelcon(1,nmat).ne.-51)) then
+!
+!        following if corresponds to "elastic anisotropic with or
+!        without plasticity"
+!
          if((nelcon(1,nmat).ne.9).and.(nelcon(1,nmat).ne.-114)) then
             write(*,*) '*ERROR reading *CREEP: *CREEP should be'
             write(*,*) '       preceded by an *ELASTIC,TYPE=ISO card,'
@@ -72,10 +79,6 @@
 !           without hardening: no plasticity
 !
             iperturb(1)=3
-c            iperturb(2)=1
-c            write(*,*) '*INFO reading *CREEP: nonlinear geometric'
-c            write(*,*) '      effects are turned on'
-c            write(*,*)
             nelcon(1,nmat)=-114
             do i=2,n
                if(textpart(i)(1:8).eq.'LAW=USER') then
@@ -100,7 +103,6 @@ c            write(*,*)
                   do i=80,12,-1
                      matname(nmat)(i:i)=matname(nmat)(i-11:i-11)
                   enddo
-c                  matname(nmat)(12:80)=matname(nmat)(1:69)
                   matname(nmat)(1:11)='ANISO_CREEP'
                endif
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -128,7 +130,6 @@ c                  matname(nmat)(12:80)=matname(nmat)(1:69)
                   do i=80,11,-1
                      matname(nmat)(i:i)=matname(nmat)(i-10:i-10)
                   enddo
-c                  matname(nmat)(11:80)=matname(nmat)(1:70)
                   matname(nmat)(1:10)='ANISO_PLAS'
                endif
             endif
@@ -175,10 +176,6 @@ c                  matname(nmat)(11:80)=matname(nmat)(1:70)
          endif
 !     
          iperturb(1)=3
-c         iperturb(2)=1
-c         write(*,*) '*INFO reading *CREEP: nonlinear geometric'
-c         write(*,*) '      effects are turned on'
-c         write(*,*)
          iplas=1
          nelcon(1,nmat)=-52
          nstate_=max(nstate_,13)
@@ -191,6 +188,10 @@ c         write(*,*)
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &              ipoinp,inp,ipoinpc)
                return
+            elseif(textpart(i)(1:10).eq.'LAW=NORTON') then
+!
+!              default; nothing to do
+!
             else
                write(*,*) 
      &              '*WARNING reading *CREEP: parameter not recognized:'
@@ -251,6 +252,16 @@ c         write(*,*)
 !        interpolating the creep data at the elastic temperature
 !        data points
 !
+         write(*,*) '*INFO: interpolating the creep data at the'
+         write(*,*) '       elastic temperature data points;'
+         write(*,*) '       please note that it is preferable'
+         write(*,*) '       to use exactly the same temperature'
+         write(*,*) '       data points for the elastic and creep'
+         write(*,*) '       data (if not already done so)'
+         write(*,*)
+         write(*,*) 'interpolated creep data'
+         write(*,*) 'temperature    A     n     m'
+!
          do i=1,nelcon(2,nmat)
             t1l=elcon(0,i,nmat)
             call ident2(elcon(9,1,nmat),t1l,ntmat,ncmat_+1,id)
@@ -272,7 +283,9 @@ c         write(*,*)
      &               (elcon(9,id+1,nmat)-elcon(9,id,nmat))
                enddo
             endif
+            write(*,*) t1l,(elcon(k,i,nmat),k=3,5)
          enddo
+         write(*,*)
 !
       else
 !
@@ -313,6 +326,16 @@ c         write(*,*)
 !        after interpolation: data are stored in positions 13-15:
 !        A,n,m
 !
+         write(*,*) '*INFO: interpolating the creep data at the'
+         write(*,*) '       elastic temperature data points;'
+         write(*,*) '       please note that it is preferable'
+         write(*,*) '       to use exactly the same temperature'
+         write(*,*) '       data points for the elastic and creep'
+         write(*,*) '       data (if not already done so)'
+         write(*,*)
+         write(*,*) 'interpolated creep data'
+         write(*,*) 'temperature    A     n     m'
+!
          if(ntmat.eq.0) then
             write(*,*) '*ERROR reading *CREEP: Norton law assumed,'
             write(*,*) '       yet no constants given'
@@ -340,17 +363,11 @@ c         write(*,*)
      &               (elcon(19,id+1,nmat)-elcon(19,id,nmat))
                enddo
             endif
+            write(*,*) t1l,(elcon(k,i,nmat),k=13,15)
          enddo
+         write(*,*)
 !
       endif
-!
-c      if(nelcon(1,nmat).eq.-114) then
-c         write(*,*) 'anisotropic elasticity+viscoplasticity'
-c         do i=1,nelcon(2,nmat)
-c            write(*,*) (elcon(j,i,nmat),j=0,14)
-c         enddo
-cc         call exit(201)
-c      endif
 !
       return
       end

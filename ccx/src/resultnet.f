@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2015 Guido Dhondt
+!     Copyright (C) 1998-2017 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-!     construction of the B matrix      
+!     construction of the b matrix      
 !     
       subroutine resultnet(itg,ieg,ntg,
      &     bc,nload,sideload,nelemload,xloadact,lakon,ntmat_,
@@ -61,7 +61,7 @@
      &     xflow0,xflow1,reltime,coefmpc(*),qat,qaf,ramt,ramf,ramp,
      &     xflow2,R1,R2,Rout,Rin,Uout,Uin,heat,cocon(0:6,ntmat_,*),
      &     Cp_cor,U,Ct,vold(0:mi(2),*),xloadold(2,*),omega,bnac,
-     &     xflow360,Tt1,Tt2,T1,T2
+     &     xflow360,Tt1,Tt2,T1,T2,heatnod,heatfac
 !     
       include "gauss.f"
 !     
@@ -87,6 +87,8 @@
 !     
       tvar(1)=time
       tvar(2)=ttime+time
+!
+      heatnod=0.d0
 !     
 !     calculating the maximum correction to the solution in the
 !     present network iteration
@@ -114,7 +116,6 @@
          do j=0,3
             if(nactdog(j,node).eq.0) cycle
             idof=nactdog(j,node)
-c            bnac=(v(j,node)+bc(idof))-v(j,node)
 !
             if(dabs(v(j,node)).gt.1.d-30) then
                if(dabs(bc(idof)/v(j,node)).lt.1.d-13) bc(idof)=0.d0
@@ -339,7 +340,7 @@ c      enddo
      &        (lakon(nelem)(4:5).eq.'RTA')) then
             xflow=v(1,kon(ipkon(nelem)+2))
             if(xflow.lt.0d0)then
-               Write(*,*)'*WARNING in resultgas.f'
+               Write(*,*)'*WARNING in resultnet.f'
                write(*,*)'Element',nelem,'of TYPE ABSOLUTE TO RELATIVE'
                write(*,*)'The flow direction is no more conform '
                write(*,*)'to element definition'
@@ -351,7 +352,7 @@ c      enddo
                nodem=kon(ipkon(nelem)+2)
                xflow=v(1,nodem)
                if (xflow.lt.0) then
-                  Write(*,*)'*WARNING in resultgas.f'
+                  Write(*,*)'*WARNING in resultnet.f'
                   write(*,*)'Element',nelem,'of TYPE RESTRICTOR'
                   write(*,*)'The flow direction is no more conform '
                   write(*,*)'to element definition'
@@ -374,7 +375,7 @@ c      enddo
                xflow2=v(1,nodem2)
 !     
                if((xflow0.lt.0).or.(xflow1.lt.0).or.(xflow2.lt.0)) then
-                  Write(*,*)'*WARNING in resultgas.f'
+                  Write(*,*)'*WARNING in resultnet.f'
                   write(*,*)'Element',nelem,'of TYPE BRANCH'
                   write(*,*)'The flow direction is no more conform '
                   write(*,*)'to element definition'
@@ -420,13 +421,6 @@ c      enddo
                elseif(lakon(nelem)(2:6).eq.'GAPFI') then
                   icase=1
                endif  
-c
-c            the orifice element is not taken into account in
-c            the creation of ineighe (cf. initialnet.f)
-c
-c            elseif(lakon(nelem)(2:3).eq.'OR') then
-c               A=prop(index+1)
-c               icase=0
 !     
             elseif(lakon(nelem)(2:3).eq.'RE') then
                node1=kon(indexe+1)
@@ -470,6 +464,14 @@ c               icase=0
                      A=prop(index+2)
                   endif
                endif
+            elseif(lakon(nelem)(2:3).eq.'UP') then
+!
+!              user elements whose names start with UP are assumed
+!              to be Pipe-like (static and total temperatures differ)
+!              The cross area is assumed to be the first property
+!
+               a=prop(index+1)
+               icase=0
             endif
 !     
             xflow360=dabs(xflow*iaxial)
@@ -639,14 +641,14 @@ c               icase=0
 !     
 !     Definitions of the constant for isothermal flow elements
 !     
-         if((lakon(nelem)(2:6).eq.'GAPFI')
-     &        .or.(lakon(nelem)(2:6).eq.'GAPII')) then
+         if(lakon(nelem)(2:6).eq.'GAPFI') then
             if((node1.ne.0).and.(node2.ne.0)) then
                A=prop(ielprop(nelem)+1)
                pt1=v(2,node1)
                pt2=v(2,node2)
 !     
                xflow360=xflow*iaxial
+               icase=1
 !
                if(pt1.ge.pt2)then
                   if(dabs(tg2/ts2-(1+0.5*(kappa-1)/kappa)).lt.1E-5) then
@@ -677,44 +679,6 @@ c               icase=0
 !     
             endif
          endif
-c         if(lakon(nelem)(2:6).eq.'GAPFI') then
-c            if((node1.ne.0).and.(node2.ne.0)) then
-c               A=prop(ielprop(nelem)+1)
-c!     
-c               xflow360=xflow*iaxial
-c!
-c               if(pt1.ge.pt2)then
-c                  pt1=v(2,node1)
-c                  pt2=v(2,node2)
-c                  if(dabs(tg2/ts2-(1+0.5*(kappa-1)/kappa)).lt.1E-5) then
-c                     pt2=dabs(xflow360)*dsqrt(Tg2*R)/A
-c     &                    *(1+0.5*(kappa-1)/kappa)
-c     &                    **(0.5*(kappa+1)/(kappa-1))
-c!                  
-c                  endif
-c                  Tt1=v(0,node1)-physcon(1)
-c                  Tt2=v(0,node2)-physcon(1)
-c                  call ts_calc(xflow360,Tt1,pt1,kappa,r,A,T1,icase)
-c                  call ts_calc(xflow360,Tt2,pt2,kappa,r,A,T2,icase)
-c                  v(3,node1)=T1
-c                  v(3,node2)=T2
-c               else
-c                  pt1=v(2,node2)
-c                  pt2=v(2,node1)
-c                  if(v(2,nodem).ge.(pt2/pt1))then
-c                     pt2=v(2,nodem)*pt1
-c                  endif
-c!
-c                  Tt1=v(0,node2)
-c                  call ts_calc(xflow360,Tt1,pt1,kappa,r,A,T1,icase)
-c                  Tt2=v(0,node1)
-c                  call ts_calc(xflow360,Tt2,pt2,kappa,r,A,T2,icase)
-c                  v(3,node1)=T1
-c                  v(3,node2)=T2
-c               endif
-c!     
-c            endif
-c         endif
 !     
          if(node1.ne.0) then
 !     
@@ -1012,17 +976,18 @@ c         endif
      &                 iinc,tvar,nelem,l,coords,jltyp,field,nfield,
      &                 sideload(i),node,areaj,v,mi,ipkon,kon,lakon,
      &                 iponoel,inoel,ielprop,prop,ielmat,shcon,nshcon,
-     &                 rhcon,nrhcon,ntmat_,cocon,ncocon)
-                  if(nmethod.eq.1) h(1)=xloadold(1,i)+
-     &                 (h(1)-xloadold(1,i))*reltime
+     &                 rhcon,nrhcon,ntmat_,cocon,ncocon,
+     &                 ipobody,xbodyact,ibody,heatnod,heatfac)
+c                  if(nmethod.eq.1) h(1)=xloadold(1,i)+
+c     &                 (h(1)-xloadold(1,i))*reltime
                endif
                if(lakonl(5:7).eq.'0RA') then
-                  term=2.d0*(temp-sinktemp)*h(1)*dxsj2*weight
+                  term=2.d0*((temp-sinktemp)*h(1)+heatnod)*dxsj2*weight
                   bc(ieq)=bc(ieq)+term
                   qat=qat+dabs(term)
                   nalt=nalt+1
                else
-                  term=(temp-sinktemp)*h(1)*dxsj2*weight
+                  term=((temp-sinktemp)*h(1)+heatnod)*dxsj2*weight
                   bc(ieq)=bc(ieq)+term
                   qat=qat+dabs(term)
                   nalt=nalt+1
@@ -1278,15 +1243,26 @@ c            if(ct.eq.0) then
       do i=nmpc,1,-1
          if(labmpc(i)(1:7).ne.'NETWORK') cycle
          j=j-1
-         index=ipompc(i)
+         if(labmpc(i)(8:8).eq.' ') then
 !
-         do
-            node=nodempc(1,index)
-            idir=nodempc(2,index)
-            bc(j)=bc(j)-v(idir,node)*coefmpc(index)
-            index=nodempc(3,index)
-            if(index.eq.0) exit
-         enddo
+!           linear equation
+!
+            index=ipompc(i)
+!     
+            do
+               node=nodempc(1,index)
+               idir=nodempc(2,index)
+               bc(j)=bc(j)-v(idir,node)*coefmpc(index)
+               index=nodempc(3,index)
+               if(index.eq.0) exit
+            enddo
+         else
+!
+!           user-defined network equation
+!
+            call networkmpc_rhs(i,ipompc,nodempc,coefmpc,labmpc,
+     &          v,bc,j,mi)
+         endif
       enddo
 !
 !     determining the typical energy flow
@@ -1306,17 +1282,17 @@ c            if(ct.eq.0) then
       do i=1,ntg
          node=itg(i)
          if(nacteq(0,node).ne.0) then
-            ramt=max(ramt,bc(nacteq(0,node)))
+            ramt=max(ramt,dabs(bc(nacteq(0,node))))
          endif
          if(nacteq(1,node).ne.0) then
-            ramf=max(ramf,bc(nacteq(1,node)))
+            ramf=max(ramf,dabs(bc(nacteq(1,node))))
          endif
          if(nacteq(2,node).ne.0) then
-            ramp=max(ramp,bc(nacteq(2,node)))
+            ramp=max(ramp,dabs(bc(nacteq(2,node))))
          endif
       enddo
 !
-c      write(30,*) 'bc in resultgas'
+c      write(30,*) 'bc in resultnet'
 c      do i=1,9
 c         write(30,'(1x,e11.4)') bc(i)
 c      enddo

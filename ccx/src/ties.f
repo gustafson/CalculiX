@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -52,6 +52,7 @@
       endif
 !
       tietol(1,ntie)=-1.d0
+      tietol(2,ntie)=1.d0
       tieset(1,ntie)(1:1)=' '
 !
       do i=2,n
@@ -76,6 +77,8 @@
          elseif(textpart(i)(1:11).eq.'FLUIDCYCLIC') then
             fluidcyclic=.true.
             tied=.false.
+         elseif(textpart(i)(1:9).eq.'ADJUST=NO') then
+            tietol(2,ntie)=-1.d0
          else
             write(*,*) 
      &        '*WARNING in ties: parameter not recognized:'

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -30,7 +30,7 @@ static ITG num_cpus,*nef1,*ipnei1,*neifa1,*neiel1,*jq1,*irow1,*nzs1,*ielfa1,*
 static double *auv1,*adv1,*bv1,*vfa1,*xxn1,*area1,*vel1,
        *cosa1,*umfa1,*xlet1,*xle1,*gradvfa1,*xxi1,*body1,*volume1,*dtimef1,
        *velo1,*veloo1,*sel1,*xrlfa1,*gamma1,*xxj1,*a11,*a21,*a31,*flux1,
-       *c1,*xxni1,*xxnj1;
+    *c1,*xxni1,*xxnj1,*gradvel1;
 
 void mafillvmain(ITG *nef,ITG *ipnei,ITG *neifa,ITG *neiel,
              double *vfa,double *xxn,double *area,double *auv,double *adv,
@@ -42,7 +42,7 @@ void mafillvmain(ITG *nef,ITG *ipnei,ITG *neifa,ITG *neiel,
 	     double *sel,double *xrlfa,double *gamma,double *xxj,
 	     ITG *nactdohinv,double *a1,double *a2,double *a3,
 	     double *flux,ITG *icyclic,double *c,ITG *ifatie,ITG *iau6,
-	     double *xxni,double *xxnj,ITG *iturbulent){
+	     double *xxni,double *xxnj,ITG *iturbulent,double *gradvel){
 
     ITG i,j;
       
@@ -112,6 +112,7 @@ void mafillvmain(ITG *nef,ITG *ipnei,ITG *neifa,ITG *neiel,
     gamma1=gamma;xxj1=xxj;nactdohinv1=nactdohinv;a11=a1;a21=a2;a31=a3;
     flux1=flux;icyclic1=icyclic;c1=c;ifatie1=ifatie;iau61=iau6;
     adv1=adv;auv1=auv;bv1=bv;xxni1=xxni;xxnj1=xxnj;iturbulent1=iturbulent;
+    gradvel1=gradvel;
     
     /* create threads and wait */
     
@@ -148,7 +149,7 @@ void *mafillvmt(ITG *i){
 	    body1,volume1,ielfa1,lakonf1,ifabou1,nbody1,
 	    dtimef1,velo1,veloo1,sel1,xrlfa1,gamma1,xxj1,nactdohinv1,
             a11,a21,a31,flux1,&nefa,&nefb,icyclic1,c1,ifatie1,iau61,
-	    xxni1,xxnj1,iturbulent1));
+		     xxni1,xxnj1,iturbulent1,gradvel1));
 
     return NULL;
 }

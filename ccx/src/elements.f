@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,8 @@
       subroutine elements(inpc,textpart,kon,ipkon,lakon,nkon,ne,ne_,
      &  set,istartset,iendset,ialset,nset,nset_,nalset,nalset_,mi,
      &  ixfree,iponor,xnor,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &  iaxial,ipoinpc,solid,cfd,network,filab,nlabel,out3d)
+     &  iaxial,ipoinpc,solid,cfd,network,filab,nlabel,out3d,iuel,
+     &  nuel_)
 !
 !     reading the input deck: *ELEMENT
 !
@@ -37,12 +38,13 @@
      &  nset_,nalset,nalset_,istep,istat,n,key,i,ielset,js,k,nn,
      &  nteller,j,ipkon(*),nkon,nope,indexe,mi(*),ipos,indexy,ixfree,
      &  iponor(2,*),nopeexp,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  iaxial,ipoinpc(0:*),cfd,nlabel,network
+     &  iaxial,ipoinpc(0:*),cfd,nlabel,network,iuel(4,*),nuel_,
+     &  id,four,number,ndof,intpoints
 !
       real*8 xnor(*)
 !
       if(istep.gt.0) then
-         write(*,*) '*ERROR in elements: *ELEMENT should be placed'
+         write(*,*) '*ERROR reading *ELEMENT: *ELEMENT should be placed'
          write(*,*) '  before all step definitions'
          call exit(201)
       endif
@@ -50,6 +52,7 @@
       indexy=-1
       ielset=0
       beamshell=.false.
+      four=4
 !
       label='        '
 !
@@ -59,7 +62,7 @@
          if(textpart(i)(1:6).eq.'ELSET=') then
             elset=textpart(i)(7:86)
             if(textpart(i)(87:87).ne.' ') then
-               write(*,*) '*ERROR in elements: set name too long'
+               write(*,*) '*ERROR reading *ELEMENT: set name too long'
                write(*,*) '       (more than 80 characters)'
                write(*,*) '       set name:',textpart(i)(1:132)
                call exit(201)
@@ -81,7 +84,8 @@
 !
                      nn=iendset(js)-istartset(js)+1
                      if(nalset+nn.gt.nalset_) then
-                        write(*,*)'*ERROR in elements: increase nalset_'
+                        write(*,*)
+     &                   '*ERROR reading *ELEMENT: increase nalset_'
                         call exit(201)
                      endif
                      do k=1,nn
@@ -107,7 +111,7 @@
 !
             nset=nset+1
             if(nset.gt.nset_) then
-               write(*,*) '*ERROR in elements: increase nset_'
+               write(*,*) '*ERROR reading *ELEMENT: increase nset_'
                call exit(201)
             endif
             js=nset
@@ -123,6 +127,13 @@
             if((label(1:2).eq.'DC').and.(label(1:7).ne.'DCOUP3D')) then
                label(1:7)=label(2:8)
                label(8:8)=' '
+!
+!              mapping 2D beam and truss elements onto 3D elements
+!
+            elseif(label(1:3).eq.'B21') then
+               label='B31     '
+            elseif(label(1:4).eq.'T2D2') then
+               label='T3D2    '
             endif
 !
 !           full integration quadratic hexahedral element
@@ -141,7 +152,6 @@
 !           (including such which are expanded into one)
 !
      &         (label.eq.'C3D20R  ').or.
-c     &         (label.eq.'C3D20RI ').or.
      &         (label.eq.'CPE8R   ').or.
      &         (label.eq.'CPS8R   ').or.
      &         (label.eq.'CAX8R   ').or.
@@ -181,6 +191,7 @@ c    Bernhardi end
 !           quadratic tetrahedral element
 !
      &         (label.eq.'C3D10   ').or.
+     &         (label.eq.'C3D10T  ').or.
 !
 !           linear tetrahedral element
 !
@@ -242,10 +253,14 @@ c    Bernhardi end
 !
             elseif(label(1:4).eq.'MASS') then
 !
+!           user element
+!
+            elseif(label(1:1).eq.'U') then
+!
 !           unknown element type
 !
             else
-               write(*,*) '*ERROR in elements:'
+               write(*,*) '*ERROR reading *ELEMENT:'
                write(*,*) label,' is an unknown element type'
                call exit(201)
             endif
@@ -262,7 +277,7 @@ c    Bernhardi end
 !
          else
             write(*,*) 
-     &        '*WARNING in elements: parameter not recognized:'
+     &        '*WARNING reading *ELEMENT: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -271,7 +286,7 @@ c    Bernhardi end
       enddo loop
 !
       if(label.eq.'        ') then
-         write(*,*) '*ERROR in elements: element type is lacking'
+         write(*,*) '*ERROR reading *ELEMENT: element type is lacking'
          write(*,*) '       '
          call inputerror(inpc,ipoinpc,iline,
      &"*ELEMENT%")
@@ -372,6 +387,20 @@ c     &        (label(1:5).eq.'CAX4 ').or.(label(1:3).eq.'S4 ')) then
       elseif(label(1:4).eq.'MASS') then
          nope=1
          nopeexp=1
+      elseif(label(1:1).eq.'U') then
+         number=ichar(label(2:2))*256**3+
+     &          ichar(label(3:3))*256**2+
+     &          ichar(label(4:4))*256+
+     &          ichar(label(5:5))
+c         read(label(2:3),'(i2)',iostat=istat) number
+         call nidentk(iuel,number,nuel_,id,four)
+         intpoints=iuel(2,id)
+         ndof=iuel(3,id)
+         nope=iuel(4,id)
+         nopeexp=nope
+         write(label(6:6),'(a1)') char(intpoints)
+         write(label(7:7),'(a1)') char(ndof)
+         write(label(8:8),'(a1)') char(nope)
       endif
 !
       do
@@ -393,14 +422,14 @@ c     &        (label(1:5).eq.'CAX4 ').or.(label(1:3).eq.'S4 ')) then
          if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*ELEMENT%")
          if(i.gt.ne_) then
-            write(*,*) '*ERROR in elements: increase ne_'
+            write(*,*) '*ERROR reading *ELEMENT: increase ne_'
             call exit(201)
          endif
 !
 !        check whether element was already defined
 !
          if(ipkon(i).ne.-1) then
-            write(*,*) '*ERROR in elements: element',i
+            write(*,*) '*ERROR reading *ELEMENT: element',i
             write(*,*) '       is already defined'
             write(*,*) '       '
             call inputerror(inpc,ipoinpc,iline,
@@ -426,7 +455,8 @@ c     &        (label(1:5).eq.'CAX4 ').or.(label(1:3).eq.'S4 ')) then
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &              ipoinp,inp,ipoinpc)
                if((istat.lt.0).or.(key.eq.1)) then
-                  write(*,*) '*ERROR in elements: element definition'
+                  write(*,*) 
+     &              '*ERROR reading *ELEMENT: element definition'
                   write(*,*) '       incomplete for element ',i
                   call exit(201)
                endif
@@ -447,7 +477,7 @@ c     &        (label(1:5).eq.'CAX4 ').or.(label(1:3).eq.'S4 ')) then
 !
          if(ielset.eq.1) then
             if(nalset+1.gt.nalset_) then
-               write(*,*) '*ERROR in elements: increase nalset_'
+               write(*,*) '*ERROR reading *ELEMENT: increase nalset_'
                call exit(201)
             endif
             nalset=nalset+1

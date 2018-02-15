@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -770,6 +770,9 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
             elseif(lakonl(4:6).eq.'20 ')then
                nopered=20
                call lintemp(t0,t1,konl,nopered,kk,t0l,t1l)
+            elseif(lakonl(4:6).eq.'10T') then
+               call linscal10(t0,konl,t0l,null,shp)
+               call linscal10(t1,konl,t1l,null,shp)
             else
                do i1=1,nope
                   t0l=t0l+shp(4,i1)*t0(konl(i1))
@@ -785,6 +788,9 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
             elseif(lakonl(4:6).eq.'20 ')then
                nopered=20
                call lintemp_th(t0,vold,konl,nopered,kk,t0l,t1l,mi)
+            elseif(lakonl(4:6).eq.'10T') then
+               call linscal10(t0,konl,t0l,null,shp)
+               call linscal10(vold,konl,t1l,mi(2),shp)
             else
                do i1=1,nope
                   t0l=t0l+shp(4,i1)*t0(konl(i1))
@@ -823,7 +829,7 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
      &        nelem,ithermal,alzero,mattyp,t0l,t1l,
      &        ihyper,istiff,elconloc,eth,kode,plicon,
      &        nplicon,plkcon,nplkcon,npmat_,
-     &        plconloc,mi(1),dtime,nelem,kk,
+     &        plconloc,mi(1),dtime,kk,
      &        xstiff,ncmat_)
          else
             idir=idesvar-3*((idesvar-1)/3)
@@ -832,7 +838,7 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
      &        nelem,ithermal,alzero,mattyp,t0l,t1l,
      &        ihyper,istiff,elconloc,eth,kode,plicon,
      &        nplicon,plkcon,nplkcon,npmat_,
-     &        plconloc,mi(1),dtime,nelem,kk,
+     &        plconloc,mi(1),dtime,kk,
      &        dxstiff(1,1,1,idir),ncmat_)
          endif
 !

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2015 Guido Dhondt
+!     Copyright (C) 1998-2017 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -38,14 +38,14 @@
 !     
       integer itg(*),ntg,ntr,nelemload(2,*),ipkon(*),network,mi(*),
      &     kon(*),ielmat(mi(3),*),ne,i,j,k,l,index,id,node,nload,
-     &     ifaceq(8,6),ider,nasym,indexe,iaxial,
+     &     ifaceq(8,6),ider,nasym,indexe,iaxial,networkmpcs,
      &     ifacet(6,4),ifacew(8,5),kontri3(3,1),kontri4(3,2),
      &     kontri6(3,4),kontri8(3,6),kontri(4,*),ntri,
      &     konf(8),nloadtr(*),nelem,nope,nopes,ig,nflow,ieg(*),
      &     ndirboun(*),nactdog(0:3,*),nboun,nodeboun(*),ntmat_,
      &     idir,ntq,nteq,nacteq(0:3,*),node1,node2,nodem,
      &     ielprop(*),idirf(8),iflag,imat,numf,nrhcon(*),nshcon(*),
-     &     nmpc,nodempc(3,*),ipompc(*),ikboun(*),idof
+     &     nmpc,nodempc(3,*),ipompc(*),ikboun(*)
 !     
       real*8 prop(*),f,xflow,nodef(8),df(8),v(0:mi(2),*),g(3),
      &     cp,r,physcon(*),shcon(0:3,ntmat_,*),rho,ttime,time,
@@ -80,6 +80,8 @@
       pressurebc=.false.
       massflowbcall=.true.
       pressurebcall=.true.
+!
+      networkmpcs=0
 !     
 !     ordering the gas temperature nodes and counting them
 !     counting the radiation temperatures
@@ -380,6 +382,64 @@
          nactdog(0,node)=1
          nactdog(2,node)=1
       enddo
+!
+!     tagging the network MPC's
+!
+      do i=1,nmpc
+!     
+!        check whether network MPC
+!
+         index=ipompc(i)
+         do
+            node=nodempc(1,index)
+            call nident(itg,node,ntg,id)
+            if(id.gt.0) then
+               if(itg(id).eq.node) then
+                  labmpc(i)(1:7)='NETWORK'
+                  networkmpcs=1
+                  exit
+               endif
+            endif
+            index=nodempc(3,index)
+            if(index.eq.0) exit
+         enddo
+      enddo
+!
+!     taking the MPC network nodes into account
+!
+      if(networkmpcs.eq.1) then
+         do i=1,nmpc
+            if(labmpc(i)(1:7).ne.'NETWORK') cycle
+!     
+            index=ipompc(i)
+            do
+               node=nodempc(1,index)
+               call nident(itg,node,ntg,id)
+               if(id.gt.0) then
+                  if(itg(id).eq.node) then
+                     nactdog(nodempc(2,index),node)=1
+                     index=nodempc(3,index)
+                     if(index.eq.0) then
+                        exit
+                     else
+                        cycle
+                     endif
+                  endif
+               endif
+!     
+!              adding a node to itg
+!
+               ntg=ntg+1
+               do j=ntg,id+2,-1
+                  itg(j)=itg(j-1)
+               enddo
+               itg(id+1)=node
+               nactdog(nodempc(2,index),node)=1
+               index=nodempc(3,index)
+               if(index.eq.0) exit
+            enddo
+         enddo
+      endif
 !     
 !     subtracting the SPC conditions
 !     
@@ -398,22 +458,6 @@
             endif
          endif
       enddo
-c!
-c!     check whether, for the middle node, either the
-c!     mass flow is unknown, or the geometrie, or none
-c!     but not both (only for gate valves)
-c!
-c      do i=1,nflow
-c         nelem=ieg(i)
-c         if(lakon(nelem)(6:7).ne.'GV') cycle
-c         index=ipkon(nelem)
-c         nodem=kon(index+2)
-c         if((nactdog(1,nodem).eq.1).and.(nactdog(3,nodem).eq.1)) then
-c            write(*,*) '*ERROR in envtemp: both the geometry and the'
-c            write(*,*) '       mass flow is unknown in element ',ieg(i)
-c            call exit(201)
-c         endif
-c      enddo
 !
 !     determining the active equations
 !     
@@ -488,6 +532,26 @@ c      enddo
             endif
          endif
       enddo
+!
+!     removing the energy equation from those end nodes for which
+!     the temperature constitutes the first term in a network MPC
+!
+      if(networkmpcs.eq.1) then
+         do i=1,nmpc
+            if(labmpc(i)(1:7).ne.'NETWORK') cycle
+            index=ipompc(i)
+            idir=nodempc(2,index)
+            if(idir.eq.0) then
+               node=nodempc(1,index)
+               call nident(itg,node,ntg,id)
+               if(id.gt.0) then
+                  if(itg(id).eq.node) then
+                     nacteq(0,node)=0
+                  endif
+               endif
+            endif
+         enddo
+      endif
 !     
 !     check whether all mass flow is known
 !
@@ -589,75 +653,13 @@ c      network=1
 !         write(30,*) 'equations',node,(nacteq(j,node),j=0,2)
 !      enddo
 !
-!     taking additional MPC's into account
+!     taking network MPC's into account
 !
-      do i=1,nmpc
-!
-!        check whether network MPC
-!
-         index=ipompc(i)
-         do
-            node=nodempc(1,index)
-            call nident(itg,node,ntg,id)
-            if(id.gt.0) then
-               if(itg(id).eq.node) then
-                  labmpc(i)(1:7)='NETWORK'
-                  nteq=nteq+1
-                  exit
-               endif
-            endif
-            index=nodempc(3,index)
-            if(index.eq.0) exit
+      if(networkmpcs.eq.1) then
+         do i=1,nmpc
+            if(labmpc(i)(1:7).eq.'NETWORK') nteq=nteq+1
          enddo
-!
-!        if network MPC: store all involved nodes in itg
-!
-         if(labmpc(i)(1:7).ne.'NETWORK') cycle
-!
-         index=ipompc(i)
-         do
-            node=nodempc(1,index)
-            call nident(itg,node,ntg,id)
-            if(id.gt.0) then
-               if(itg(id).eq.node) then
-                  nactdog(nodempc(2,index),node)=1
-                  index=nodempc(3,index)
-                  if(index.eq.0) then
-                     exit
-                  else
-                     cycle
-                  endif
-               endif
-            endif
-!
-!           adding a node to itg
-!
-            ntg=ntg+1
-            do j=ntg,id+2,-1
-               itg(j)=itg(j-1)
-            enddo
-            itg(id+1)=node
-            nactdog(nodempc(2,index),node)=1
-            index=nodempc(3,index)
-            if(index.eq.0) exit
-         enddo
-      enddo
-!
-!     removing all dofs for which a SPC exists
-!
-      do i=1,ntg
-         node=itg(i)
-         do j=0,2
-            if(nactdog(j,node).eq.0) cycle
-            idof=8*(node-1)+j
-            call nident(ikboun,idof,nboun,id)
-            if(id.gt.0) then
-               if(ikboun(id).eq.idof) then
-                  nactdog(j,node)=0
-               endif
-            endif
-         enddo
-      enddo
+      endif
 !
 !     numbering the active degrees of freedom
 !     
@@ -672,18 +674,18 @@ c      network=1
          enddo
       enddo
 c
-      open(30,file='dummy',status='unknown')
-      write(30,*) 'nactdog'
-      do i=1,ntg
-         write(30,*) itg(i),(nactdog(j,itg(i)),j=0,3)
-      enddo
+c      open(30,file='dummy',status='unknown')
+c      write(30,*) 'nactdog'
+c      do i=1,ntg
+c         write(30,*) itg(i),(nactdog(j,itg(i)),j=0,3)
+c      enddo
 c
-      write(30,*) ''
-      write(30,*) 'nacteq'
-      do i=1,ntg
-         write(30,*) itg(i),(nacteq(j,itg(i)),j=0,3)
-      enddo
-      close(30)
+c      write(30,*) ''
+c      write(30,*) 'nacteq'
+c      do i=1,ntg
+c         write(30,*) itg(i),(nacteq(j,itg(i)),j=0,3)
+c      enddo
+c      close(30)
 !
       if(ntq.ne.nteq) then
          write(*,*) '*ERROR in envtemp:'

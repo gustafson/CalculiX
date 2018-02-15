@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -103,7 +103,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     *enern=NULL,*xstaten=NULL,*eei=NULL,*enerini=NULL,*qfn=NULL,
     *qfx=NULL, *xbodyact=NULL, *cgr=NULL, *au=NULL,*xbodyi=NULL,
     time,dtime,reltime,*co=NULL,*xboun=NULL,*xbounold=NULL,
-    physcon[1],qa[3],cam[5],accold[1],bet,gam,*emn=NULL,timem,
+    physcon[1],qa[4],cam[5],accold[1],bet,gam,*emn=NULL,timem,
     *ad=NULL,sigma=0.,alpham,betam,*fnr=NULL,*fni=NULL,*emeini=NULL,
     fmin,fmax,bias,*freq=NULL,*xforcr=NULL,dd,pi,vreal,constant,
     *xforci=NULL,*xloadr=NULL,*xloadi=NULL,*xbounr=NULL,*xbouni=NULL,
@@ -1100,7 +1100,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
                nodeforc,ndirforc,istep,&iinc,co,vold,itg,&ntg,amname,
 	       ikboun,ilboun,nelemload,sideload,mi,
                ntrans,trab,inotr,veold,integerglob,doubleglob,tieset,istartset,
-               iendset,ialset,&ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc));
+               iendset,ialset,&ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
+               ipobody,iponoel,inoel));
 	  
 	  /* real part of forces */
 	  
@@ -1690,7 +1691,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
                       islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-                      inoel,nener,orname,&network);}
+                      inoel,nener,orname,&network,ipobody,xbodyact,ibody);}
 	  else{
       
               /* calculating displacements/temperatures */
@@ -1719,7 +1720,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,
 		      clearini,islavsurf,ielprop,prop,energyini,energy,&iit,
-                      iponoel,inoel,nener,orname,&network);
+                      iponoel,inoel,nener,orname,&network,ipobody,xbodyact,
+                      ibody);
 	      
 	      if(nmdnode==0){
 		  DMEMSET(br,0,neq[1],0.);
@@ -1778,7 +1780,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
                       islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-                      inoel,nener,orname,network);}
+                      inoel,nener,orname,&network,ipobody,xbodyact,ibody);}
 	  else{ 
       
               /* calculating displacements/temperatures */
@@ -1807,7 +1809,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,
 		      clearini,islavsurf,ielprop,prop,energyini,energy,&iit,
-                      iponoel,inoel,nener,orname,&network);
+                      iponoel,inoel,nener,orname,&network,ipobody,xbodyact,
+                      ibody);
 
 	      if(nmdnode==0){
 		  DMEMSET(bi,0,neq[1],0.);
@@ -2115,7 +2118,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    nodeboun,ndirboun,nodeforc,ndirforc,istep,&iinc,co,vold,itg,&ntg,
 	    amname,ikboun,ilboun,nelemload,sideload,mi,
             ntrans,trab,inotr,veold,integerglob,doubleglob,tieset,istartset,
-            iendset,ialset,&ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc));
+            iendset,ialset,&ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
+            ipobody,iponoel,inoel));
 	  
       }
 
@@ -2809,7 +2813,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
                       islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-                      inoel,nener,orname,network);
+                      inoel,nener,orname,&network,ipobody,xbodyact,ibody);
 	  
 	      (*kode)++;
 	      mode=-1;

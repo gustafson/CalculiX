@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &  ielmat,elcon,istep,iinc,iit,ncmat_,ntmat_,mi,imastop,islavsurf,
      &  itiefac,springarea,tietol,reltime,filab,nasym,pslavsurf,
      &  pmastsurf,clearini,theta,xstateini,xstate,nstate_,ne0,icutb,
-     &  ialeatoric,nmethod)
+     &  ialeatoric,nmethod,jobnamef)
 !
 !     generate contact elements for the slave contact nodes
 !
@@ -31,6 +31,7 @@
       character*33 cfile
       character*81 tieset(3,*),setname
       character*87 filab(*)
+      character*132 jobnamef(*)
 !
       integer ntie,ifree,nasym,nstate_,ne0,
      &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),ne,
@@ -98,8 +99,13 @@
 !     opening a file to store the contact spring elements
 !    
       if(filab(1)(3:3).eq.'C') then
-            iteller=iteller+1
-         cfile='contactelements.inp'
+         iteller=iteller+1
+!
+         do i=1,132
+            if(jobnamef(1)(i:i).eq.' ') exit
+         enddo
+         i=i-1
+         cfile=jobnamef(1)(1:i)//'.cel'
          open(27,file=cfile,status='unknown',position='append')
 !
          setname(1:15)='contactelements'
@@ -552,7 +558,8 @@ c     write(*,*) '**regular solution'
 !
                      clear=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
 !
-                     if(nmethod.eq.4) then
+                     if((nmethod.eq.4).or.(nmethod.eq.2)) then
+c                     if(nmethod.eq.4) then
 !
 !                       dynamic calculation
 !

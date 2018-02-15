@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -41,7 +41,7 @@
      &  nope,ielorien(mi(3),*),ielorienf(mi(3),*),norien,jopposite8(6),
      &  jopposite6(5),itie,nx(*),ny(*),nz(*),noden(1),nelemm,nelems,
      &  n,mcs,l,jfacem,jfaces,islav,imast,ifaces,ifacem,ifatie(*),
-     &  nodeinface,nodeoutface,nopes
+     &  nodeinface,nodeoutface,nopes,jop
 !
       real*8 vel(nef,0:7),vold(0:mi(2),*),coords(3),cs(17,*),x(*),
      &  y(*),z(*),xo(*),yo(*),zo(*),co(3,*),a(3),b(3),xn(3),p(3),
@@ -649,17 +649,35 @@ c         write(*,*) 'precfd ',i,nactdoh(i)
          nfaext=nfaext+1
          ifaext(nfaext)=i
          iel1=ielfa(1,i)
+         indexf=ipnei(iel1)
          if(lakonf(iel1)(4:4).eq.'8') then
+!
+!           hexes
+!
             j=ielfa(4,i)
             j=jopposite8(j)
          elseif(lakonf(iel1)(4:4).eq.'6') then
+!
+!           wedges
+!
             j=ielfa(4,i)
-            j=jopposite6(j)
-            if(j.eq.0) cycle
+c            j=jopposite6(j)
+c            if(j.eq.0) cycle
+            jop=jopposite6(j)
+            if(jop.eq.0) then
+               jop=j+1
+               if(jop.gt.5) jop=3
+               if(neiel(indexf+jop).eq.0) then
+                  jop=j-1
+                  if(jop.lt.3) jop=5
+                  if(neiel(indexf+jop).eq.0) cycle
+               endif
+               j=jop
+            endif
          else
             cycle
          endif
-         indexf=ipnei(iel1)
+c         indexf=ipnei(iel1)
          ielfa(3,i)=neiel(indexf+j)
       enddo
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -317,6 +317,8 @@
                enddo
             elseif(lakon(nelem)(4:6).eq.'20 ') then
                call lintemp(t0,t1,konl,nope,jj,t0l,t1l)
+            elseif(lakon(nelem)(4:6).eq.'10T') then
+               call linscal10(t0,konl,t0l,null,shp)
             else
                do i1=1,nope
                   t0l=t0l+shp(4,i1)*t0(konl(i1))

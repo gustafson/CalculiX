@@ -1,6 +1,6 @@
 
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,8 @@
      &  prlab,prset,v,t1,fn,ipkon,lakon,stx,eei,xstate,ener,
      &  mi,nstate_,ithermal,co,kon,qfx,ttime,trab,inotr,ntrans,
      &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin,ielmat,thicke,
-     &  eme,islavsurf,mortar,time,ielprop,prop,veold,orname)
+     &  eme,islavsurf,mortar,time,ielprop,prop,veold,orname,
+     &  nelemload,nload,sideload,xload)
 !
 !     stores results in the .dat file
 !
@@ -31,6 +32,7 @@
       character*1 cflag
       character*6 prlab(*)
       character*8 lakon(*)
+      character*20 sideload(*)
       character*80 noset,elset,orname(*)
       character*81 set(*),prset(*)
       character*87 filab(*)
@@ -39,13 +41,14 @@
      &  mi(*),nstate_,ii,jj,iset,l,limit,node,ipos,ithermal,ielem,
      &  nelem,kon(*),inotr(2,*),ntrans,ielorien(mi(3),*),norien,nk,ne,
      &  inum(*),nfield,ikin,nodes,ne0,nope,mt,ielmat(mi(3),*),iface,
-     &  jfaces,mortar,islavsurf(2,*),ielprop(*)
+     &  jfaces,mortar,islavsurf(2,*),ielprop(*),nload,
+     &  nelemload(2,*)
 !
-      real*8 v(0:mi(2),*),t1(*),fn(0:mi(2),*),stx(6,mi(1),*),
+      real*8 v(0:mi(2),*),t1(*),fn(0:mi(2),*),stx(6,mi(1),*),bhetot,
      &  eei(6,mi(1),*),xstate(nstate_,mi(1),*),ener(mi(1),*),energytot,
      &  volumetot,co(3,*),qfx(3,mi(1),*),rftot(0:3),ttime,time,
      &  trab(7,*),orab(7,*),vold(0:mi(2),*),enerkintot,thicke(mi(3),*),
-     &  eme(6,mi(1),*),prop(*),veold(0:mi(2),*)
+     &  eme(6,mi(1),*),prop(*),veold(0:mi(2),*),xload(2,*)
 !
       mt=mi(2)+1
 !
@@ -108,8 +111,14 @@
 !
             if(prlab(ii)(1:4).eq.'U   ') then
                write(5,*)
-               write(5,100) noset(1:ipos-2),ttime+time
+               if(mi(2).eq.3) then
+                  write(5,100) noset(1:ipos-2),ttime+time
+               else
+                  write(5,133) noset(1:ipos-2),ttime+time
+               endif
  100           format(' displacements (vx,vy,vz) for set ',A,
+     &             ' and time ',e14.7)
+ 133           format(' displacements (v(i),i=1..ndof) for set ',A,
      &             ' and time ',e14.7)
                write(5,*)
             elseif((prlab(ii)(1:4).eq.'NT  ').or.
@@ -306,6 +315,7 @@
          elseif((prlab(ii)(1:4).eq.'ELSE').or.
      &           (prlab(ii)(1:4).eq.'ELKE').or.
      &           (prlab(ii)(1:4).eq.'EVOL').or.
+     &           (prlab(ii)(1:4).eq.'EBHE').or.
      &           (prlab(ii)(1:4).eq.'CSTR').or.
      &           (prlab(ii)(1:4).eq.'CDIS').or.
      &           (prlab(ii)(1:4).eq.'CNUM').or.
@@ -336,6 +346,13 @@
                write(5,*)
                write(5,114) elset(1:ipos-2),ttime+time
  114           format(' volume (element, volume) for set ',A,
+     &                ' and time ',e14.7)
+               write(5,*)
+            elseif((prlab(ii)(1:5).eq.'EBHE ').or.
+     &             (prlab(ii)(1:5).eq.'EBHET')) then
+               write(5,*)
+               write(5,131) elset(1:ipos-2),ttime+time
+ 131           format(' body heating (element, volume) for set ',A,
      &                ' and time ',e14.7)
                write(5,*)
             elseif((prlab(ii)(1:5).eq.'CSTR ').or.
@@ -388,6 +405,7 @@
 !     
             
             volumetot=0.d0
+            bhetot=0.d0
             energytot=0.d0
             enerkintot=0.d0
             
@@ -414,8 +432,9 @@
                         nodes=kon(ipkon(nelem)+nope)
                         call printoutelem(prlab,ipkon,lakon,kon,co,
      &                       ener,mi(1),ii,nelem,energytot,volumetot,
-     &                       enerkintot,ikin,ne,stx,nodes,thicke,ielmat,
-     &                       ielem,iface,mortar,ielprop,prop)
+     &                       enerkintot,ne,stx,nodes,thicke,ielmat,
+     &                       ielem,iface,mortar,ielprop,prop,
+     &                       sideload,nload,nelemload,xload,bhetot)
                      enddo
                   elseif(mortar.eq.1) then
                      do nelem=ne0,ne
@@ -425,8 +444,9 @@
                         iface=jfaces-10*ielem
                         call printoutelem(prlab,ipkon,lakon,kon,co,
      &                       ener,mi(1),ii,nelem,energytot,volumetot,
-     &                       enerkintot,ikin,ne,stx,nodes,thicke,ielmat,
-     &                       ielem,iface,mortar,ielprop,prop)
+     &                       enerkintot,ne,stx,nodes,thicke,ielmat,
+     &                       ielem,iface,mortar,ielprop,prop,
+     &                       sideload,nload,nelemload,xload,bhetot)
                      enddo
                   endif
                endif
@@ -440,21 +460,24 @@
                      nelem=ialset(jj)
                      call printoutelem(prlab,ipkon,lakon,kon,co,
      &                    ener,mi(1),ii,nelem,energytot,volumetot,
-     &                    enerkintot,ikin,ne,stx,nodes,thicke,ielmat,
-     &                    ielem,iface,mortar,ielprop,prop)
+     &                    enerkintot,ne,stx,nodes,thicke,ielmat,
+     &                    ielem,iface,mortar,ielprop,prop,
+     &                    sideload,nload,nelemload,xload,bhetot)
                   elseif(ialset(jj+1).gt.0) then
                      nelem=ialset(jj)
                      call printoutelem(prlab,ipkon,lakon,kon,co,
      &                    ener,mi(1),ii,nelem,energytot,volumetot,
-     &                    enerkintot,ikin,ne,stx,nodes,thicke,ielmat,
-     &                    ielem,iface,mortar,ielprop,prop)
+     &                    enerkintot,ne,stx,nodes,thicke,ielmat,
+     &                    ielem,iface,mortar,ielprop,prop,
+     &                    sideload,nload,nelemload,xload,bhetot)
                   else
                      do nelem=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                    -ialset(jj+1)
                         call printoutelem(prlab,ipkon,lakon,kon,co,
      &                       ener,mi(1),ii,nelem,energytot,volumetot,
-     &                    enerkintot,ikin,ne,stx,nodes,thicke,ielmat,
-     &                    ielem,iface,mortar,ielprop,prop)
+     &                       enerkintot,ne,stx,nodes,thicke,ielmat,
+     &                       ielem,iface,mortar,ielprop,prop,
+     &                       sideload,nload,nelemload,xload,bhetot)
                      enddo
                   endif
                enddo
@@ -485,6 +508,14 @@
  121           format(' total volume for set ',A,' and time ',e14.7)
                write(5,*)
                write(5,'(6x,1p,1x,e13.6)') volumetot
+            elseif((prlab(ii)(1:5).eq.'EBHEO').or.
+     &              (prlab(ii)(1:5).eq.'EBHET')) then
+               write(5,*)
+               write(5,132) elset(1:ipos-2),ttime+time
+ 132           format(' total body heating for set ',A,' and time ',
+     &                e14.7)
+               write(5,*)
+               write(5,'(6x,1p,1x,e13.6)') bhetot
             elseif((prlab(ii)(1:5).eq.'CELSO').or.
      &              (prlab(ii)(1:5).eq.'CELST')) then
                write(5,*)

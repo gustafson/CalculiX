@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -33,7 +33,7 @@
 
 void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
    ITG *mpcfree, ITG *nodeboun, ITG *ndirboun, ITG*nboun, ITG*ikmpc,
-   ITG *ilmpc, ITG *ikboun, ITG *ilboun, ITG *mpcend, ITG *mpcmult,
+   ITG *ilmpc, ITG *ikboun, ITG *ilboun, ITG *mpcend,
    char *labmpc, ITG *nk, ITG *memmpc_, ITG *icascade, ITG *maxlenmpc,
    ITG *callfrommain, ITG *iperturb, ITG *ithermal){
 
@@ -711,7 +711,6 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
        the reallocation*/
 
     *mpcend=0;
-    *mpcmult=0;
     *maxlenmpc=0;
     for(i=0;i<*nmpc;i++){
 	index=ipompc[i];
@@ -720,7 +719,6 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	while(1){
 	    index=nodempc[3*index-1];
 	    if(index==0){
-		*mpcmult+=nterm*(nterm-1);
 		*maxlenmpc=max(*maxlenmpc,nterm);
 		break;
 	    }
@@ -734,7 +732,7 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     *nodempcp=nodempc;
     *coefmpcp=coefmpc;
     
-/*           for(i=0;i<*nmpc;i++){
+    /*          for(i=0;i<*nmpc;i++){
 	j=i+1;
 	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
 	}*/

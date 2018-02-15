@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -23,7 +23,8 @@
 #include "CalculiX.h"
 
 void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
-   ITG *ipoinp, ITG **inpp, ITG **ipoinpcp, ITG *ithermal){
+	       ITG *ipoinp, ITG **inpp, ITG **ipoinpcp, ITG *ithermal,
+               ITG *nuel){
 
   /*   reads and stores the input deck in inpcp; determines the
        number of sets  */
@@ -37,7 +38,7 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
       icntrl,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,ntmat,npmat,
       norien,nam,nprint,mi[3],ntrans,ncs,namtot,ncmat,memmpc,ne1d,
       ne2d,nflow,*meminset=NULL,*rmeminset=NULL, *inp=NULL,ntie,
-      nener,nstate,nentries=16,ifreeinp,ikey,lincludefn,nslavs,
+      nener,nstate,nentries=17,ifreeinp,ikey,lincludefn,nslavs,
       nbody,ncharmax=1000000,*ipoinpc=NULL,ichangefriction=0,nkon,
       ifile,mcs,initialtemperature=0,nprop,mortar,ifacecount,
       nintpoint,infree[4],iheading=0,ichangesurfacebehavior=0; 
@@ -204,17 +205,17 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
       if(strcmp1(&buff[0],"*AMPLITUDE")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"AMPLITUDE",
                           nline,&ikey));
-			  }
+      }
       else if(strcmp1(&buff[0],"*CHANGEFRICTION")==0){
 	ichangefriction=1;
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
                           nline,&ikey));
-			  }
+      }
       else if(strcmp1(&buff[0],"*CHANGESURFACEBEHAVIOR")==0){
 	ichangesurfacebehavior=1;
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",
                           nline,&ikey));
-			  }
+      }
       else if(strcmp1(&buff[0],"*CONDUCTIVITY")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
@@ -226,11 +227,11 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
       else if(strcmp1(&buff[0],"*CONTACTPAIR")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"CONTACTPAIR",
                           nline,&ikey));
-			  }
+      }
       else if(strcmp1(&buff[0],"*COUPLING")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"COUPLING",
                           nline,&ikey));
-			  }
+      }
       else if(strcmp1(&buff[0],"*CREEP")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
@@ -407,6 +408,11 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"TRANSFORM",
                           nline,&ikey));
       }
+      else if(strcmp1(&buff[0],"*USERELEMENT")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"USERELEMENT",
+                          nline,&ikey));
+	(*nuel)++;
+      }
       else if(strcmp1(&buff[0],"*USERMATERIAL")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
@@ -446,7 +452,7 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
   *ipoinpcp=ipoinpc;
   *inpp=inp;
   
-  //  FORTRAN(writeinput,(inpc,ipoinp,inp,nline,&ipoinp[2*ikey-1],ipoinpc));
+//  FORTRAN(writeinput,(inpc,ipoinp,inp,nline,&ipoinp[2*ikey-1],ipoinpc));
 
   return;
 

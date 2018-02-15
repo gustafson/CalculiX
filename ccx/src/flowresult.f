@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2015 Guido Dhondt
+!     Copyright (C) 1998-2017 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -57,7 +57,7 @@
          enddo
       enddo
 !
-!     determining all outflowing mass flow in the end nodes and
+!     determining all inflowing mass flow in the end nodes and
 !     assigning it to the end nodes
 !
       do i=1,ne
@@ -89,14 +89,17 @@
          node2=kon(indexe+2)
          if(kon(indexe+1).ne.0)  then
             node1=kon(indexe+1)
-            if(vold(1,node2).gt.0.d0) 
-     &         vold(1,node1)=vold(1,node1)+vold(1,node2)
+c            if(vold(1,node2).gt.0.d0) 
+c     &         vold(1,node1)=vold(1,node1)+vold(1,node2)
+            if(vold(1,node2).lt.0.d0) 
+     &         vold(1,node1)=vold(1,node1)-vold(1,node2)
          endif
          if(kon(indexe+3).ne.0) then
             node3=kon(indexe+3)
-            if(vold(1,node2).lt.0.d0) 
-c     &         vold(1,node3)=vold(1,node3)+vold(1,node2)
-     &         vold(1,node3)=vold(1,node3)-vold(1,node2)
+c            if(vold(1,node2).lt.0.d0) 
+c     &         vold(1,node3)=vold(1,node3)-vold(1,node2)
+            if(vold(1,node2).gt.0.d0) 
+     &         vold(1,node3)=vold(1,node3)+vold(1,node2)
          endif
       enddo
 !     

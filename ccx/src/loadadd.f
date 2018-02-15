@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -49,6 +49,19 @@
                         xload(1,id)=value
                         idefload(id)=1
                      else
+                        if(nam.gt.0) then
+                           if(iamload(1,id).ne.iamplitude) then
+                              write(*,*) '*ERROR in loadadd:'
+                              write(*,*) '       it is not allowed to '
+                              write(*,*) '       define two distributed'
+                              write(*,*) '       loads/fluxes with'
+                              write(*,*) '       different amplitudes '
+                              write(*,*) '       in one step'
+                              write(*,*) 'element: ',nelement,' face:',
+     &                           label
+                              call exit(201)
+                           endif
+                        endif
                         xload(1,id)=xload(1,id)+value
                      endif
                      xload(2,id)=0.d0
@@ -58,16 +71,13 @@
                      endif
                      return
                   elseif(nelemload(2,id).lt.isector) then
-c                     id=id-1
                      exit
                   endif
                elseif(sideload(id).lt.label) then
-c                  id=id-1
                   exit
                endif
                id=id-1
                if((id.eq.0).or.(nelemload(1,id).ne.nelement)) then
-c                  id=id-1
                   exit
                endif
             enddo

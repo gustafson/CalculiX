@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -407,23 +407,30 @@ void *mafillsmmt(ITG *i){
 	indexfnext=*i*(mi1[1]+1)**nk1;
     }
     
-// ceil -> floor
 
-    if(*nasym1==0){
+    if((*nasym1==0)||(*ithermal1>1)){
+
+        /* symmetric mechanical calculations or
+           thermal/thermomechanical calculations:
+           include contact elements (symmetric
+           thermal contributions are not covered by
+           mafillsmas.f) */
+
 	nedelta=(ITG)floor(*ne1/(double)num_cpus);
 	nea=*i*nedelta+1;
 	neb=(*i+1)*nedelta;
-// next line! -> all parallel sections
 	if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
     }else{
+
+        /* asymmetric mechanical calculations:
+           do not include contact elements */
+
 	nedelta=(ITG)floor(*ne01/(double)num_cpus);
 	nea=*i*nedelta+1;
 	neb=(*i+1)*nedelta;
-// next line! -> all parallel sections
 	if((*i==num_cpus-1)&&(neb<*ne01)) neb=*ne01;
     }
 
-//    printf("i=%d,nea=%d,neb=%d\n",*i,nea,neb);
 
     FORTRAN(mafillsm,(co1,nk1,kon1,ipkon1,lakon1,ne1,nodeboun1,ndirboun1,
 	    xboun1,nboun1,

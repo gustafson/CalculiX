@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -54,14 +54,18 @@
       if(iperturb.eq.0) then
          iperturb=2
       elseif((iperturb.eq.1).and.(istep.gt.1)) then
-         write(*,*) '*ERROR in couptempdisps: perturbation analysis is'
-         write(*,*) '       not provided in a *HEAT TRANSFER step.'
+         write(*,*) 
+     &       '*ERROR reading *UNCOUPLED TEMPERATURE-DISPLACEMENT:'
+         write(*,*) '       perturbation analysis is not provided in a '
+         write(*,*) '       *UNCOUPLED TEMPERATURE-DISPLACEMENT step.'
          call exit(201)
       endif
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in couptempdisps: *HEAT TRANSFER can only '
-         write(*,*) '       be used within a STEP'
+         write(*,*) 
+     &       '*ERROR reading *UNCOUPLED TEMPERATURE-DISPLACEMENT:'
+         write(*,*) '       *UNCOUPLED TEMPERATURE-DISPLACMENT '
+         write(*,*) '       can only be used within a STEP'
          call exit(201)
       endif
 !
@@ -122,7 +126,9 @@
 !
       if((ithermal.eq.0).and.(nmethod.ne.1).and.
      &   (nmethod.ne.2).and.(iperturb.ne.0)) then
-         write(*,*) '*ERROR in couptempdisps: please define initial '
+         write(*,*) 
+     &        '*ERROR reading *UNCOUPLED TEMPERATURE-DISPLACEMENT:'
+         write(*,*) '       please define initial '
          write(*,*) '       conditions for the temperature'
          call exit(201)
       else
@@ -142,7 +148,9 @@
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
       else
-         write(*,*) '*WARNING in couptempdisps: unknown solver;'
+         write(*,*) 
+     &       '*WARNING reading *UNCOUPLED TEMPERATURE-DISPLACEMENT:'
+         write(*,*) '         unknown solver;'
          write(*,*) '         the default solver is used'
       endif
 !
@@ -150,8 +158,9 @@
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
          if(iperturb.ge.2) then
-            write(*,*) '*WARNING in couptempdisps: a nonlinear analysis
-     &is requested'
+            write(*,*) 
+     &       '*WARNING reading *UNCOUPLED TEMPERATURE-DISPLACEMENT:'
+            write(*,*) '         a nonlinear analysis is requested'
             write(*,*) '         but no time increment nor step is speci
      &fied'
             write(*,*) '         the defaults (1,1) are used'
@@ -179,25 +188,39 @@
      &"*UNCOUPLED TEMPERATURE-DISPLACEMENT%")
 !
       if(tinc.le.0.d0) then
-         write(*,*) '*ERROR in couptempdisps: initial increment size is 
+         write(*,*) 
+     &       '*ERROR reading *UNCOUPLED TEMPERATURE-DISPLACEMENT:'
+         write(*,*) '       initial increment size is 
      &negative'
       endif
       if(tper.le.0.d0) then
-         write(*,*) '*ERROR in couptempdisps: step size is negative'
+         write(*,*) 
+     &      '*ERROR reading *UNCOUPLED TEMPERATURE-DISPLACEMENT:'
+         write(*,*) '       step size is negative'
       endif
       if(tinc.gt.tper) then
-         write(*,*) '*ERROR in couptempdisps: initial increment size exc
+         write(*,*) 
+     &     '*ERROR reading *UNCOUPLED TEMPERATURE-DISPLACEMENT:'
+         write(*,*) '       initial increment size exc
      &eeds step size'
       endif
 !      
       if(idrct.ne.1) then
-c         if(dabs(tmin).lt.1.d-10) then
-c            tmin=min(tinc,1.d-5*tper)
          if(dabs(tmin).lt.1.d-6*tper) then
             tmin=min(tinc,1.d-6*tper)
          endif
          if(dabs(tmax).lt.1.d-10) then
             tmax=1.d+30
+         endif
+         if(tinc.gt.dabs(tmax)) then
+            write(*,*) 
+     &       '*WARNING reading *UNCOUPLED TEMPERATURE-DISPLACEMENT'
+            write(*,*) '         the initial increment ',tinc
+            write(*,*) '         exceeds the maximum increment ',
+     &          tmax
+            write(*,*) '         the initial increment is reduced'
+            write(*,*) '         to the maximum value'
+            tinc=dabs(tmax)
          endif
       endif
 !

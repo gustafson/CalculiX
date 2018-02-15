@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -213,6 +213,14 @@
          endif
       elseif(lakon(nelel)(4:4).eq.'6') then
          mint3d=2
+      elseif(lakon(nelel)(1:1).eq.'U') then
+c         if(lakon(nelel)(4:4).eq.' ') then
+c            mint3d=ichar(lakon(nelel)(5:5))-48
+c         else
+c            mint3d=10*(ichar(lakon(nelel)(4:4))-48)
+c     &             +ichar(lakon(nelel)(5:5))-48
+c         endif
+         mint3d=ichar(lakon(nelel)(6:6))
       else
          return
       endif

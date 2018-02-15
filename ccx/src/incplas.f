@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine incplas(elconloc,plconloc,xstate,xstateini,
      &  elas,emec,ithermal,icmd,beta,stre,vj,kode,
      &  ielas,amat,t1l,dtime,time,ttime,iel,iint,nstate_,mi,
-     &  eloc,pgauss,nmethod,pnewdt)
+     &  eloc,pgauss,nmethod,pnewdt,depvisc)
 !
 !     calculates stiffness and stresses for the incremental plasticity
 !     material law (Ref: J.C. Simo, A framework for finite strain
@@ -50,7 +50,7 @@
      &  c1,c2,c3,c4,c5,c6,c7,c8,c9,cplb(6),stblb(6),
      &  ftrial,xiso(200),yiso(200),xkin(200),ykin(200),
      &  fiso,dfiso,fkin,dfkin,fiso0,fkin0,ep,t1l,dtime,
-     &  epini,a1,dsvm,xxa,xxn,vj2,vj23,sc(3,3),
+     &  epini,a1,dsvm,xxa,xxn,vj2,vj23,sc(3,3),depvisc,
      &  cop1,cop2,fu1,fu2,fu,dcop,time,ttime,eloc(6),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  g1,g2,g3,g4,g5,g6,g7,g8,g9,g10,g11,g12,g13,g14,g15,g16,
@@ -63,7 +63,7 @@ c     &  1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,3,3,1,3,
 c     &  1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,1,2,2,3,1,3,2,3,
 c     &  2,3,2,3/
 !
-      pnewdt=-1.d0
+c      pnewdt=-1.d0
       leximp=1
       lend=2
       user_creep=0
@@ -498,21 +498,6 @@ c         write(*,*) 'no plastic deformation'
      &           +xk*vj2*xg(2,3)*xg(2,3)
      &           -xk*(vj2-1.d0)*(xg(2,2)*xg(3,3)
      &           +xg(2,3)*xg(3,2))/2.d0
-c
-c            nt=0
-c            do i=1,21
-c               k=kk(nt+1)
-c               l=kk(nt+2)
-c               m=kk(nt+3)
-c               n=kk(nt+4)
-c               nt=nt+4
-c               elas(i)=umb*(xg(k,m)*xg(l,n)+xg(k,n)*xg(l,m)-
-c     &              2.d0*xg(k,l)*xg(m,n)/3.d0)
-c     &              -2.d0*(xs(k,l)*xg(m,n)+xg(k,l)*xs(m,n))/3.d0
-c     &              +xk*vj2*xg(k,l)*xg(m,n)
-c     &              -xk*(vj2-1.d0)*(xg(k,m)*xg(l,n)
-c     &              +xg(k,n)*xg(l,m))/2.d0
-c            enddo
 !
          endif
 !
@@ -1053,6 +1038,10 @@ c                     write(*,*) cop,fu
          xstate(7+i,iint,iel)=stbl(i)
       enddo
       xstate(1,iint,iel)=ep
+!
+!     maximum equivalent viscoplastic strain in this increment
+!
+      depvisc=max(depvisc,ep-epini)
 !
       return
       end

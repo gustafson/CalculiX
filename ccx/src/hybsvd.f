@@ -167,7 +167,7 @@ C
 C     HYBSVD USES THE FOLLOWING FUNCTIONS AND SUBROUTINES.
 C       INTERNAL  GRSVD, MGNSVD, SRELPR
 C       FORTRAN   MIN0,DABS,DSQRT,DFLOAT,DSIGN,DMAX1
-C       BLAS      SSWAP
+C       BLAS      DSWAP
 C
 C     -----------------------------------------------------------------
 C     ERROR CHECK.
@@ -440,8 +440,8 @@ C...    SWAP SINGULAR VALUES AND VECTORS
         T = W(I)
         W(I) = W(ID)
         W(ID) = T
-        IF (MATV) CALL SSWAP(N, V(1,I), 1, V(1,ID), 1)
-        IF (MATU) CALL SSWAP(M, U(1,I), 1, U(1,ID), 1)
+        IF (MATV) CALL DSWAP(N, V(1,I), 1, V(1,ID), 1)
+        IF (MATU) CALL DSWAP(M, U(1,I), 1, U(1,ID), 1)
         IF (IRHS.LT.1) GO TO 360
         DO 350 KRHS=1,IRHS
           T = B(I,KRHS)
@@ -927,61 +927,61 @@ C                SINGULAR VALUE AFTER 30 ITERATIONS **********
   670 RETURN
 C     ********** LAST CARD OF GRSVD **********
       END
-      SUBROUTINE SSWAP(N, SX, INCX, SY, INCY)                           SSW   10
-C
-C     INTERCHANGES TWO VECTORS.
-C     USES UNROLLED LOOPS FOR INCREMENTS EQUAL TO 1.
-C     JACK DONGARRA, LINPACK, 3/11/78.
-C
-      REAL*8 SX(1), SY(1), STEMP
-      INTEGER I, INCX, INCY, IX, IY, M, MP1, N
-C
-      IF (N.LE.0) RETURN
-      IF (INCX.EQ.1 .AND. INCY.EQ.1) GO TO 20
-C
-C       CODE FOR UNEQUAL INCREMENTS OR EQUAL INCREMENTS NOT EQUAL
-C         TO 1
-C
-      IX = 1
-      IY = 1
-      IF (INCX.LT.0) IX = (-N+1)*INCX + 1
-      IF (INCY.LT.0) IY = (-N+1)*INCY + 1
-      DO 10 I=1,N
-        STEMP = SX(IX)
-        SX(IX) = SY(IY)
-        SY(IY) = STEMP
-        IX = IX + INCX
-        IY = IY + INCY
-   10 CONTINUE
-      RETURN
-C
-C       CODE FOR BOTH INCREMENTS EQUAL TO 1
-C
-C
-C       CLEAN-UP LOOP
-C
-   20 M = MOD(N,3)
-      IF (M.EQ.0) GO TO 40
-      DO 30 I=1,M
-        STEMP = SX(I)
-        SX(I) = SY(I)
-        SY(I) = STEMP
-   30 CONTINUE
-      IF (N.LT.3) RETURN
-   40 MP1 = M + 1
-      DO 50 I=MP1,N,3
-        STEMP = SX(I)
-        SX(I) = SY(I)
-        SY(I) = STEMP
-        STEMP = SX(I+1)
-        SX(I+1) = SY(I+1)
-        SY(I+1) = STEMP
-        STEMP = SX(I+2)
-        SX(I+2) = SY(I+2)
-        SY(I+2) = STEMP
-   50 CONTINUE
-      RETURN
-      END
+c      SUBROUTINE DSWAP(N, SX, INCX, SY, INCY)                           SSW   10
+cC
+cC     INTERCHANGES TWO VECTORS.
+cC     USES UNROLLED LOOPS FOR INCREMENTS EQUAL TO 1.
+cC     JACK DONGARRA, LINPACK, 3/11/78.
+cC
+c      REAL*8 SX(1), SY(1), STEMP
+c      INTEGER I, INCX, INCY, IX, IY, M, MP1, N
+cC
+c      IF (N.LE.0) RETURN
+c      IF (INCX.EQ.1 .AND. INCY.EQ.1) GO TO 20
+cC
+cC       CODE FOR UNEQUAL INCREMENTS OR EQUAL INCREMENTS NOT EQUAL
+cC         TO 1
+cC
+c      IX = 1
+c      IY = 1
+c      IF (INCX.LT.0) IX = (-N+1)*INCX + 1
+c      IF (INCY.LT.0) IY = (-N+1)*INCY + 1
+c      DO 10 I=1,N
+c        STEMP = SX(IX)
+c        SX(IX) = SY(IY)
+c        SY(IY) = STEMP
+c        IX = IX + INCX
+c        IY = IY + INCY
+c   10 CONTINUE
+c      RETURN
+cC
+cC       CODE FOR BOTH INCREMENTS EQUAL TO 1
+cC
+cC
+cC       CLEAN-UP LOOP
+cC
+c   20 M = MOD(N,3)
+c      IF (M.EQ.0) GO TO 40
+c      DO 30 I=1,M
+c        STEMP = SX(I)
+c        SX(I) = SY(I)
+c        SY(I) = STEMP
+c   30 CONTINUE
+c      IF (N.LT.3) RETURN
+c   40 MP1 = M + 1
+c      DO 50 I=MP1,N,3
+c        STEMP = SX(I)
+c        SX(I) = SY(I)
+c        SY(I) = STEMP
+c        STEMP = SX(I+1)
+c        SX(I+1) = SY(I+1)
+c        SY(I+1) = STEMP
+c        STEMP = SX(I+2)
+c        SX(I+2) = SY(I+2)
+c        SY(I+2) = STEMP
+c   50 CONTINUE
+c      RETURN
+c      END
       REAL*8 FUNCTION SRELPR(DUMMY)                                       SRE   10
       REAL*8 DUMMY
 C

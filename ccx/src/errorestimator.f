@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine errorestimator(yi,yn,ipkon,kon,lakon,nk,
-     &  ne,mi,ielmat,nterms)
+     &  ne,mi,ielmat,nterms,inum,co,vold,cflag)
 !
 !     the error in the node is calculated based on the maximum difference
 !     between the max principal stress (mechanical calculations)
@@ -29,16 +29,18 @@
 !
       implicit none
 !
+      logical force
+!
+      character*1 cflag
       character*8 lakon(*),lakonl
 !
-      integer ipkon(*),kon(*),mi(*),ne,indexe,null,
-     &  nonei20(3,12),nonei10(3,6),nk,i,j,k,node,
-     &  nonei15(3,9),nopev,nterms,ishift,mint3d,
-     &  ielmat(mi(3),*)
+      integer ipkon(*),kon(*),mi(*),ne,indexe,null,nonei20(3,12),
+     &  nonei10(3,6),nk,i,j,k,node,nonei15(3,9),nopev,nterms,
+     &  mint3d,ielmat(mi(3),*),inum(*)
 !
       real*8 yi(nterms,mi(1),*),yn(nterms,*),size,wpsmin,wpsmax,
-     &  absdiff,reldiff,sizemax,al(3),sizemin,firstprin,c(3,3),
-     &  wpsmin1,wpsmax1,wpsmin3,wpsmax3
+     &  absdiff,reldiff,sizemax,al(3),sizemin,c(3,3),
+     &  wpsmin1,wpsmax1,wpsmin3,wpsmax3,co(3,*),vold(0:mi(2),*)
 !
       data nonei10 /5,1,2,6,2,3,7,3,1,8,1,4,9,2,4,10,3,4/
 !
@@ -143,8 +145,6 @@
 !           check which eigenvalue is the largest in
 !           absolute value       
 !
-c            write(*,*) 'errorestimator ',i,wpsmin1,wpsmax1 
-c            write(*,*) 'errorestimator ',i,wpsmin3,wpsmax3 
             if(wpsmax3.ge.-wpsmin1) then
                wpsmin=wpsmin3
                wpsmax=wpsmax3
@@ -152,7 +152,6 @@ c            write(*,*) 'errorestimator ',i,wpsmin3,wpsmax3
                wpsmin=wpsmin1
                wpsmax=wpsmax1
             endif
-c            write(*,*) 'errorestimator ',i,wpsmin,wpsmax
 !
             absdiff=wpsmax-wpsmin
             if(max(dabs(wpsmax),dabs(wpsmin)).lt.1.d-30) then
@@ -160,8 +159,6 @@ c            write(*,*) 'errorestimator ',i,wpsmin,wpsmax
             else
                reldiff=absdiff/(max(dabs(wpsmax),dabs(wpsmin)))
             endif
-c            write(*,*) 'errorestimator ',i,reldiff
-c            write(*,*)
          else
 !
 !           thermal calculation: size of heat flux
@@ -183,7 +180,7 @@ c            write(*,*)
             if(max(sizemax,sizemin).lt.1.d-30) then
                reldiff=0.d0
             else
-               reldiff=absdiff/(max(sizemax,sizemin))
+               reldiff=absdiff/(max(dabs(sizemax),dabs(sizemin)))
             endif
          endif
 !
@@ -191,9 +188,7 @@ c            write(*,*)
 !        element
 !
          do j=1,nopev
-c            yn(3,kon(indexe+j))=max(yn(3,kon(indexe+j)),absdiff)
-            yn(5,kon(indexe+j))=max(yn(5,kon(indexe+j)),reldiff)
-c            write(*,*) reldiff,absdiff
+            yn(2,kon(indexe+j))=max(yn(2,kon(indexe+j)),reldiff)
          enddo
 !
       enddo
@@ -203,150 +198,143 @@ c            write(*,*) reldiff,absdiff
 !
 !     not covered: C3D8R* and C3D6* elements
 !
-!     default
-!
-c      do i=1,nk
-c         yn(3,i)=1000.d0
-c      enddo
-!
-      do i=1,ne
-!
-         if(ipkon(i).lt.0) cycle
-         indexe=ipkon(i)
-         lakonl=lakon(i)
-!
-         if(lakonl(7:8).eq.'LC') cycle
-!
-         if(lakonl(1:1).eq.'F') then
-            cycle
-         elseif(lakonl(4:4).eq.'2') then
-            nopev=8
-         elseif(lakonl(4:4).eq.'8') then
-            nopev=8
-         elseif(lakonl(4:5).eq.'10') then
-            nopev=4
-         elseif(lakonl(4:4).eq.'4') then
-            nopev=4
-         elseif(lakonl(4:5).eq.'15') then
-            nopev=6
-         elseif(lakonl(4:4).eq.'6') then
-            nopev=6
-         else
-            cycle
-         endif
-!
-         if(lakonl(4:5).eq.'10') then
-!
-!           10-node tetrahedral element
-!
-            do j=1,nopev
-               node=kon(indexe+j)
-               yn(3,node)=max(yn(3,node),30.000d0*yn(5,node))
-            enddo
-         elseif((lakonl(4:7).eq.'20  ').or.
-     &          (lakonl(4:7).eq.'20 L').or.
-     &          (lakonl(4:7).eq.'20 B')) then
-!
-!           true 20-node brick element or S8 or B32 (shell/beam)
-!
-            do j=1,nopev
-               node=kon(indexe+j)
-               if(yn(5,node).le.0.26d0) then
-                  yn(3,node)=max(yn(3,node),5.115d0*yn(5,node))
-               else
-                  yn(3,node)=max(yn(3,node),27.792d0*yn(5,node)-5.895d0)
-               endif
-            enddo
-         elseif(lakonl(4:6).eq.'20 ') then
-!
-!           expanded 20-node brick element (plane stress,
-!           plane strain or axisymmetric)
-!
-            do j=1,nopev
-               node=kon(indexe+j)
-               if(yn(5,node).le.0.325d0) then
-                  yn(3,node)=max(yn(3,node),9.538d0*yn(5,node))
-               else
-                  yn(3,node)=
-     &                 max(yn(3,node),53.695d0*yn(5,node)-14.351d0)
-               endif
-            enddo
-         elseif((lakonl(4:7).eq.'20R ').or.
-     &          (lakonl(4:7).eq.'20RL').or.
-     &          (lakonl(4:7).eq.'20RB')) then
-!
-!           true 20-node brick element with reduced integration
-!           or S8R or B32R (shell/beam)
-!
-            do j=1,nopev
-               node=kon(indexe+j)
-               if(yn(5,node).le.0.18d0) then
-                  yn(3,node)=max(yn(3,node),20.278d0*yn(5,node))
-               else
-                  yn(3,node)=max(yn(3,node),74.318d0*yn(5,node)-9.727d0)
-               endif
-            enddo
-         elseif(lakonl(4:6).eq.'20R') then
-!
-!           expanded 20-node brick element with reduced integration
-!           (plane stress, plane strain or axisymmetric)
-!
-            do j=1,nopev
-               node=kon(indexe+j)
-               yn(3,node)=max(yn(3,node),54.054d0*yn(5,node))
-            enddo
-         elseif(lakonl(4:5).eq.'8I') then
-!
-!           true C3D8I-element or S4 or BE31 (shell/beam)
-!
-            do j=1,nopev
-               node=kon(indexe+j)
-               if(yn(5,node).le.0.165d0) then
-                  yn(3,node)=max(yn(3,node),30.303d0*yn(5,node))
-               else
-                  yn(3,node)=
-     &                max(yn(3,node),139.535d0*yn(5,node)-18.023d0)
-               endif
-            enddo
-         elseif(lakonl(4:7).eq.'8   ') then
-!
-!           true 8-node brick element
-!
-            do j=1,nopev
-               node=kon(indexe+j)
-               if(yn(5,node).le.0.157d0) then
-                  yn(3,node)=max(yn(3,node),31.847d0*yn(5,node))
-               else
-                  yn(3,node)=max(yn(3,node),85.324d0*yn(5,node)-8.396d0)
-               endif
-            enddo
-         elseif(lakonl(4:5).eq.'8 ') then
-!
-!           expanded 8-node brick element (plane stress, plane strain
-!           or axisymmetric)
-!
-            do j=1,nopev
-               node=kon(indexe+j)
-               yn(3,node)=max(yn(3,node),74.074d0*yn(5,node))
-            enddo
-         elseif(lakonl(4:5).eq.'15') then
-!
-!           true or expanded 15-node wedge element
-!
-            do j=1,nopev
-               node=kon(indexe+j)
-               yn(3,node)=max(yn(3,node),46.189d0*yn(5,node))
-            enddo
-         endif
-      enddo
-!
-!     determining the field values in the midside nodes
-!
       if(nterms.eq.6) then
-         ishift=2
-      else
-         ishift=4
+         do i=1,ne
+!     
+            if(ipkon(i).lt.0) cycle
+            indexe=ipkon(i)
+            lakonl=lakon(i)
+!     
+            if(lakonl(7:8).eq.'LC') cycle
+!     
+            if(lakonl(1:1).eq.'F') then
+               cycle
+            elseif(lakonl(4:4).eq.'2') then
+               nopev=8
+            elseif(lakonl(4:4).eq.'8') then
+               nopev=8
+            elseif(lakonl(4:5).eq.'10') then
+               nopev=4
+            elseif(lakonl(4:4).eq.'4') then
+               nopev=4
+            elseif(lakonl(4:5).eq.'15') then
+               nopev=6
+            elseif(lakonl(4:4).eq.'6') then
+               nopev=6
+            else
+               cycle
+            endif
+!     
+            if(lakonl(4:5).eq.'10') then
+!
+!              10-node tetrahedral element
+!
+               do j=1,nopev
+                  node=kon(indexe+j)
+                  yn(1,node)=max(yn(1,node),30.000d0*yn(2,node))
+               enddo
+            elseif((lakonl(4:7).eq.'20  ').or.
+     &              (lakonl(4:7).eq.'20 L').or.
+     &              (lakonl(4:7).eq.'20 B')) then
+!     
+!              true 20-node brick element or S8 or B32 (shell/beam)
+!     
+               do j=1,nopev
+                  node=kon(indexe+j)
+                  if(yn(2,node).le.0.26d0) then
+                     yn(1,node)=max(yn(1,node),5.115d0*yn(2,node))
+                  else
+                     yn(1,node)=max(yn(1,node),
+     &                              27.792d0*yn(2,node)-5.895d0)
+                  endif
+               enddo
+            elseif(lakonl(4:6).eq.'20 ') then
+!     
+!              expanded 20-node brick element (plane stress,
+!              plane strain or axisymmetric)
+!     
+               do j=1,nopev
+                  node=kon(indexe+j)
+                  if(yn(2,node).le.0.325d0) then
+                     yn(1,node)=max(yn(1,node),9.538d0*yn(2,node))
+                  else
+                     yn(1,node)=
+     &                    max(yn(1,node),53.695d0*yn(2,node)-14.351d0)
+                  endif
+               enddo
+            elseif((lakonl(4:7).eq.'20R ').or.
+     &              (lakonl(4:7).eq.'20RL').or.
+     &              (lakonl(4:7).eq.'20RB')) then
+!     
+!              true 20-node brick element with reduced integration
+!              or S8R or B32R (shell/beam)
+!     
+               do j=1,nopev
+                  node=kon(indexe+j)
+                  if(yn(2,node).le.0.18d0) then
+                     yn(1,node)=max(yn(1,node),20.278d0*yn(2,node))
+                  else
+                     yn(1,node)=max(yn(1,node),
+     &                              74.318d0*yn(2,node)-9.727d0)
+                  endif
+               enddo
+            elseif(lakonl(4:6).eq.'20R') then
+!     
+!              expanded 20-node brick element with reduced integration
+!              (plane stress, plane strain or axisymmetric)
+!     
+               do j=1,nopev
+                  node=kon(indexe+j)
+                  yn(1,node)=max(yn(1,node),54.054d0*yn(2,node))
+               enddo
+            elseif(lakonl(4:5).eq.'8I') then
+!     
+!              true C3D8I-element or S4 or BE31 (shell/beam)
+!     
+               do j=1,nopev
+                  node=kon(indexe+j)
+                  if(yn(2,node).le.0.165d0) then
+                     yn(1,node)=max(yn(1,node),30.303d0*yn(2,node))
+                  else
+                     yn(1,node)=
+     &                    max(yn(1,node),139.535d0*yn(2,node)-18.023d0)
+                  endif
+               enddo
+            elseif(lakonl(4:7).eq.'8   ') then
+!     
+!              true 8-node brick element
+!     
+               do j=1,nopev
+                  node=kon(indexe+j)
+                  if(yn(2,node).le.0.157d0) then
+                     yn(1,node)=max(yn(1,node),31.847d0*yn(2,node))
+                  else
+                     yn(1,node)=max(yn(1,node),
+     &                              85.324d0*yn(2,node)-8.396d0)
+                  endif
+               enddo
+            elseif(lakonl(4:5).eq.'8 ') then
+!     
+!              expanded 8-node brick element (plane stress, plane strain
+!              or axisymmetric)
+!     
+               do j=1,nopev
+                  node=kon(indexe+j)
+                  yn(1,node)=max(yn(1,node),74.074d0*yn(2,node))
+               enddo
+            elseif(lakonl(4:5).eq.'15') then
+!     
+!              true or expanded 15-node wedge element
+!     
+               do j=1,nopev
+                  node=kon(indexe+j)
+                  yn(1,node)=max(yn(1,node),46.189d0*yn(2,node))
+               enddo
+            endif
+         enddo
       endif
+!     
+!     determining the field values in the midside nodes
 !
       do i=1,ne
 !
@@ -358,7 +346,7 @@ c      enddo
 !
          if(lakonl(4:5).eq.'20') then
             do j=9,20
-               do k=3,5,ishift
+               do k=1,2
                   yn(k,kon(indexe+j))=(
      &                 yn(k,kon(indexe+nonei20(2,j-8)))+
      &                 yn(k,kon(indexe+nonei20(3,j-8))))/2.d0
@@ -366,14 +354,14 @@ c      enddo
             enddo
          elseif(lakonl(4:5).eq.'10') then
             do j=5,10
-               do k=3,5,ishift
+               do k=1,2
                   yn(k,kon(indexe+j))=(yn(k,kon(indexe+nonei10(2,j-4)))+
      &                 yn(k,kon(indexe+nonei10(3,j-4))))/2.d0
                enddo
             enddo
          elseif(lakonl(4:5).eq.'15') then
             do j=7,15
-               do k=3,5,ishift
+               do k=1,2
                   yn(k,kon(indexe+j))=(
      &                 yn(k,kon(indexe+nonei15(2,j-6)))+
      &                 yn(k,kon(indexe+nonei15(3,j-6))))/2.d0
@@ -381,6 +369,14 @@ c      enddo
             enddo
          endif
       enddo
+!
+!     mapping 3D on 1D/2D
+!
+      if(cflag.eq.'I') then
+         force=.false.
+         call map3dto1d2d(yn,ipkon,inum,kon,lakon,nterms,nk,
+     &  ne,cflag,co,vold,force,mi)
+      endif
 !     
       return
       end

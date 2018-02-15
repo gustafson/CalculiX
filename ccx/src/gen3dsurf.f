@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -94,7 +94,7 @@
                         mpcfree=nodempc(3,mpcfree)
                         if(mpcfree.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dboun: increase nmpc_'
+     &                          '*ERROR in gen3dboun: increase memmpc_'
                            call exit(201)
                         endif
                         nodempc(1,mpcfree)=knor(indexk+3)
@@ -103,7 +103,7 @@
                         mpcfree=nodempc(3,mpcfree)
                         if(mpcfree.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dboun: increase nmpc_'
+     &                          '*ERROR in gen3dboun: increase memmpc_'
                            call exit(201)
                         endif
                         nodempc(1,mpcfree)=node
@@ -112,7 +112,7 @@
                         mpcfreenew=nodempc(3,mpcfree)
                         if(mpcfreenew.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dboun: increase nmpc_'
+     &                          '*ERROR in gen3dboun: increase memmpc_'
                            call exit(201)
                         endif
                         nodempc(3,mpcfree)=0
@@ -148,7 +148,7 @@
                         mpcfree=nodempc(3,mpcfree)
                         if(mpcfree.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dboun: increase nmpc_'
+     &                          '*ERROR in gen3dboun: increase memmpc_'
                            call exit(201)
                         endif
                         do k=2,4
@@ -158,7 +158,7 @@
                            mpcfree=nodempc(3,mpcfree)
                            if(mpcfree.eq.0) then
                               write(*,*) 
-     &                           '*ERROR in gen3dboun: increase nmpc_'
+     &                           '*ERROR in gen3dboun: increase memmpc_'
                               call exit(201)
                            endif
                         enddo
@@ -168,7 +168,7 @@
                         mpcfreenew=nodempc(3,mpcfree)
                         if(mpcfreenew.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dboun: increase nmpc_'
+     &                          '*ERROR in gen3dboun: increase memmpc_'
                            call exit(201)
                         endif
                         nodempc(3,mpcfree)=0
@@ -223,7 +223,7 @@ c                  ialset(l)=knor(indexk+2)
                         mpcfree=nodempc(3,mpcfree)
                         if(mpcfree.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dmpc: increase nmpc_'
+     &                          '*ERROR in gen3dmpc: increase memmpc_'
                            call exit(201)
                         endif
                         nodempc(1,mpcfree)=node
@@ -232,7 +232,7 @@ c                  ialset(l)=knor(indexk+2)
                         mpcfreenew=nodempc(3,mpcfree)
                         if(mpcfreenew.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dmpc: increase nmpc_'
+     &                          '*ERROR in gen3dmpc: increase memmpc_'
                            call exit(201)
                         endif
                         nodempc(3,mpcfree)=0

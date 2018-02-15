@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -22,47 +22,47 @@
 !
       implicit none
 !
-      character*81 objectset(3,*)
+      character*81 objectset(4,*)
       integer iobject,i
       real*8 g0(*)
-!     
-!     
+!          
       i=iobject+1
 !
       if(objectset(1,i)(1:12).eq.'DISPLACEMENT') then
-!
-      write(5,*)
-      write(5,*)'OBJECTIVE: DISPLACEMENT'  
-      write(5,*)
-      write(5,'(7x,e14.7)') g0(i)
+         write(5,*)
+         write(5,*)'OBJECTIVE: DISPLACEMENT'  
+         write(5,*)
+         write(5,'(7x,e14.7)') g0(i)
 !
       elseif(objectset(1,i)(1:14).eq.'EIGENFREQUENCY') then
-!
-      write(5,*)
-      write(5,*)'OBJECTIVE: EIGENFREQUENCY'  
-      write(5,*)
-      write(5,'(7x,e14.7)') g0(i)
+         write(5,*)
+         write(5,*)'OBJECTIVE: EIGENFREQUENCY'  
+         write(5,*)
+         write(5,'(7x,e14.7)') g0(i)
 !
       elseif(objectset(1,i)(1:4).eq.'MASS') then
-!
-      write(5,*)
-      write(5,*)'OBJECTIVE: MASS'  
-      write(5,*)
-      write(5,'(7x,e14.7)') g0(i)
+         write(5,*)
+         write(5,*)'OBJECTIVE: MASS'  
+         write(5,*)
+         write(5,'(7x,e14.7)') g0(i)
 !
       elseif(objectset(1,i)(1:11).eq.'SHAPEENERGY') then
-!
-      write(5,*)
-      write(5,*)'OBJECTIVE: SHAPE ENERGY' 
-      write(5,*) 
-      write(5,'(7x,e14.7)') g0(i)
+         write(5,*)
+         write(5,*)'OBJECTIVE: SHAPE ENERGY' 
+         write(5,*) 
+         write(5,'(7x,e14.7)') g0(i)
 !
       elseif(objectset(1,i)(1:6).eq.'STRESS') then
+         write(5,*)
+         write(5,*)'OBJECTIVE: STRESS'  
+         write(5,*)
+         write(5,'(7x,e14.7)') g0(i)
 !
-      write(5,*)
-      write(5,*)'OBJECTIVE: STRESS'  
-      write(5,*)
-      write(5,'(7x,e14.7)') g0(i)
+      elseif(objectset(1,i)(1:9).eq.'THICKNESS') then
+         write(5,*)
+         write(5,*)'OBJECTIVE: THICKNESS'  
+         write(5,*)
+         write(5,'(7x,e14.7)') g0(i)
 !
       endif
 !      

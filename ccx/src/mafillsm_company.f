@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -585,7 +585,7 @@ c           nope=nope+1
      &  ilmpc,springarea,plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,
      &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,
      &  ipkon,ielprop,prop,iponoel,inoel,sti,xstateini,xstate,
-     &  nstate_,network)
+     &  nstate_,network,ipobody,xbody,ibody)
 !
         do jj=1,nope
 !
@@ -861,7 +861,7 @@ c                         id=ilmpc(id)
      &                       fnext(ndirforc(i),nodeforc(1,i))+xforc(i)
 !
             jdof=nactdof(ndirforc(i),nodeforc(1,i))
-            if(jdof.ne.0) then
+            if(jdof.gt.0) then
                fext(jdof)=fext(jdof)+xforc(i)
             else
 !
@@ -869,24 +869,26 @@ c                         id=ilmpc(id)
 !              the forces among the independent nodes
 !              (proportional to their coefficients)
 !
-               jdof=8*(nodeforc(1,i)-1)+ndirforc(i)
-               call nident(ikmpc,jdof,nmpc,id)
-               if(id.gt.0) then
-                  if(ikmpc(id).eq.jdof) then
-                     id=ilmpc(id)
+c               jdof=8*(nodeforc(1,i)-1)+ndirforc(i)
+c               call nident(ikmpc,jdof,nmpc,id)
+c               if(id.gt.0) then
+c                  if(ikmpc(id).eq.jdof) then
+               if(jdof.ne.2*(jdof/2)) then
+c                     id=ilmpc(id)
+                     id=(-jdof+1)/2
                      ist=ipompc(id)
                      index=nodempc(3,ist)
                      if(index.eq.0) cycle
                      do
                         jdof=nactdof(nodempc(2,index),nodempc(1,index))
-                        if(jdof.ne.0) then
+                        if(jdof.gt.0) then
                            fext(jdof)=fext(jdof)-
      &                          coefmpc(index)*xforc(i)/coefmpc(ist)
                         endif
                         index=nodempc(3,index)
                         if(index.eq.0) exit
                      enddo
-                  endif
+c                  endif
                endif
             endif
          enddo

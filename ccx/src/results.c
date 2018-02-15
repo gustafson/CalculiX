@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -30,14 +30,14 @@ static ITG *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *istep1,*iinc1,calcul_fn1,calcul_qa1,calcul_cauchy1,*nener1,ikin1,
     *nal=NULL,*ipompc1,*nodempc1,*nmpc1,*ncocon1,*ikmpc1,*ilmpc1,
     num_cpus,mt1,*nk1,*ne01,*nshcon1,*nelemload1,*nload1,*mortar1,
-    *ielprop1,*kscale1,*iponoel1,*inoel1,*network1;
+    *ielprop1,*kscale1,*iponoel1,*inoel1,*network1,*ipobody1,*ibody1;
 
 static double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
     *prestr1,*eme1,*fn1=NULL,*qa1=NULL,*vold1,*veold1,*dtime1,*time1,
     *ttime1,*plicon1,*plkcon1,*xstateini1,*xstiff1,*xstate1,*stiini1,
     *vini1,*ener1,*eei1,*enerini1,*springarea1,*reltime1,*coefmpc1,
     *cocon1,*qfx1,*thicke1,*emeini1,*shcon1,*xload1,*prop1,
-    *xloadold1,*pslavsurf1,*pmastsurf1,*clearini1;
+    *xloadold1,*pslavsurf1,*pmastsurf1,*clearini1,*xbody1;
 
 void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        double *v,double *stn,ITG *inum,double *stx,double *elcon,ITG *nelcon,
@@ -71,7 +71,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        ITG *islavnode,ITG *nslavnode,ITG *ntie,double *clearini,
        ITG *islavsurf,ITG *ielprop,double *prop,double *energyini,
        double *energy,ITG *kscale,ITG *iponoel,ITG *inoel,ITG *nener,
-       char *orname,ITG *network){
+       char *orname,ITG *network,ITG *ipobody,double *xbody,ITG *ibody){
 
     ITG intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,ikin,
         intpointvart,mt=mi[1]+1,i,j;
@@ -178,7 +178,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
     if(((ithermal[0]<=1)||(ithermal[0]>=3))&&(intpointvarm==1)){
 
 	NNEW(fn1,double,num_cpus*mt**nk);
-	NNEW(qa1,double,num_cpus*3);
+	NNEW(qa1,double,num_cpus*4);
 	NNEW(nal,ITG,num_cpus);
 
 	co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;ne1=ne;v1=v;
@@ -229,18 +229,33 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 
 	qa[0]=qa1[0];
 	for(j=1;j<num_cpus;j++){
-	    qa[0]+=qa1[j*3];
+	    qa[0]+=qa1[j*4];
 	}
 
         /* determine the decrease of the time increment in case
            the material routine diverged */
 
-        for(j=0;j<num_cpus;j++){
-	    if(qa1[2+j*3]>0.){
+	qa[2]=qa1[2];
+        for(j=1;j<num_cpus;j++){
+	    if(qa1[2+j*4]>0.){
 		if(qa[2]<0.){
-		    qa[2]=qa1[2+j*3];
+		    qa[2]=qa1[2+j*4];
 		}else{
-		    if(qa1[2+j*3]<qa[2]){qa[2]=qa1[2+j*3];}
+		    if(qa1[2+j*4]<qa[2]){qa[2]=qa1[2+j*4];}
+		}
+	    }
+	}
+
+        /* maximum change in creep strain increment in the
+           present time increment */
+
+	qa[3]=qa1[3];
+        for(j=1;j<num_cpus;j++){
+	    if(qa1[3+j*4]>0.){
+		if(qa[3]<0.){
+		    qa[3]=qa1[3+j*4];
+		}else{
+		    if(qa1[3+j*4]>qa[3]){qa[3]=qa1[3+j*4];}
 		}
 	    }
 	}
@@ -265,7 +280,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
     if((ithermal[0]>=2)&&(intpointvart==1)){
 
 	NNEW(fn1,double,num_cpus*mt**nk);
-	NNEW(qa1,double,num_cpus*3);
+	NNEW(qa1,double,num_cpus*4);
 	NNEW(nal,ITG,num_cpus);
 
 	co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;v1=v;
@@ -285,7 +300,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
         pslavsurf1=pslavsurf;pmastsurf1=pmastsurf;mortar1=mortar;
         clearini1=clearini;plicon1=plicon;nplicon1=nplicon;ne1=ne;
         ielprop1=ielprop,prop1=prop;iponoel1=iponoel;inoel1=inoel;
-	network1=network;
+	network1=network;ipobody1=ipobody;ibody1=ibody;xbody1=xbody;
 
 	/* calculating the heat flux */
 	
@@ -314,7 +329,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 
 	qa[1]=qa1[1];
 	for(j=1;j<num_cpus;j++){
-	    qa[1]+=qa1[1+j*3];
+	    qa[1]+=qa1[1+j*4];
 	}
 	
 	SFREE(qa1);
@@ -349,7 +364,8 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        nelemload,nload,&ikin,ielmat,thicke,eme,emn,rhcon,nrhcon,shcon,
        nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,islavact,
        cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time,ielprop,prop,
-       veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,energy,orname));
+       veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,energy,orname,
+       xload));
   
   return;
 
@@ -362,7 +378,7 @@ void *resultsmechmt(ITG *i){
     ITG indexfn,indexqa,indexnal,nea,neb,nedelta;
 
     indexfn=*i*mt1**nk1;
-    indexqa=*i*3;
+    indexqa=*i*4;
     indexnal=*i;
     
 // ceil -> floor
@@ -395,7 +411,7 @@ void *resultsthermmt(ITG *i){
     ITG indexfn,indexqa,indexnal,nea,neb,nedelta;
 
     indexfn=*i*mt1**nk1;
-    indexqa=*i*3;
+    indexqa=*i*4;
     indexnal=*i;
     
     nedelta=(ITG)floor(*ne1/(double)num_cpus);
@@ -413,7 +429,7 @@ void *resultsthermmt(ITG *i){
 	   &calcul_fn1,&calcul_qa1,&nal[indexnal],&nea,&neb,ithermal1,
 	   nelemload1,nload1,nmethod1,reltime1,sideload1,xload1,xloadold1,
 	   pslavsurf1,pmastsurf1,mortar1,clearini1,plicon1,nplicon1,ielprop1,
-	   prop1,iponoel1,inoel1,network1));
+	   prop1,iponoel1,inoel1,network1,ipobody1,xbody1,ibody1));
 
     return NULL;
 }

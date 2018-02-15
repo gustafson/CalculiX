@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,9 +34,15 @@
      &  nnodelem,nodem(*),modf,nelemm,k_max,nipold
 !
       real*8 pvertex(3,13),slavstraight(36),xn(3),xilm,etlm,xnl(3),
-     &  xl2s(3,*),p1(2),p2(2),pslavsurf(3,*),ratio(8),dist,xil,etl,
+     &  xl2s(3,*),p1(2),p2(2),pslavsurf(3,*),xil,etl,
      &  area,xl2m(3,8),xl2m2(3,8),al,err,xns(3,8),
      &  xl2sp(3,*),xl2mp(3,8),cgp(3),pm(3),ps(3),xit(3),etat(3),areaslav
+!
+      intent(in) nopes,slavstraight,xn,xns,xl2s,xl2sp,
+     &  ipe,ime,iactiveline,ifreeintersec,nelemm,
+     &  xl2m,nnodelem,xl2m2,nmp,nodem
+!
+      intent(inout) pslavsurf,nintpoint,areaslav,nactiveline
 !     
       include "gauss.f"
 !     
@@ -85,7 +91,7 @@
 !     
 !     Project center point back on slave face
 !     
-      call attachline(xl2s,cgp,nopes,ratio,dist,xit(3),etat(3),xn)
+      call attachline(xl2s,cgp,nopes,xit(3),etat(3),xn)
 !     
 !     generating integration points on the slave surface S
 !     
@@ -94,12 +100,12 @@
 !     Project back on slave surface
 !     
          call attachline(xl2s,pvertex(1:3,modf(nvertex,k)),
-     &        nopes,ratio,dist,xit(1),etat(1),xn)
+     &        nopes,xit(1),etat(1),xn)
          call attachline(xl2s,pvertex(1:3,modf(nvertex,k+1)),
-     &        nopes,ratio,dist,xit(2),etat(2),xn)
+     &        nopes,xit(2),etat(2),xn)
 !
          p1(1)=xit(1)-xit(3)
-         p1(2)= etat(1)-etat(3)
+         p1(2)=etat(1)-etat(3)
 !
          p2(1)=xit(2)-xit(3)
          p2(2)=etat(2)-etat(3)
@@ -129,17 +135,6 @@
             etl= etat(3)*gauss2d6(1,i)+
      &           etat(1)*gauss2d6(2,i)+
      &           etat(2)*(1-gauss2d6(1,i)-gauss2d6(2,i))
-c!     
-c!     3 points scheme
-c!     
-c         do i=1,3
-c            xil= xit(3)*gauss2d5(1,i)+
-c     &           xit(1)*gauss2d5(2,i)+
-c     &           xit(2)*(1-gauss2d5(1,i)-gauss2d5(2,i))
-c            
-c            etl= etat(3)*gauss2d5(1,i)+
-c     &           etat(1)*gauss2d5(2,i)+
-c     &           etat(2)*(1-gauss2d5(1,i)-gauss2d5(2,i))
 !     
             call evalshapefunc(xil,etl,xns,nopes,xnl)
             call evalshapefunc(xil,etl,xl2s,nopes,ps)
@@ -153,12 +148,11 @@ c     &           etat(2)*(1-gauss2d5(1,i)-gauss2d5(2,i))
 !     master surface in order to get the local coordinates
 !     own xn for every integration point?
 !     
-            call attachline(xl2m,ps,nnodelem,ratio,dist,xilm,etlm,xn)
+            call attachline(xl2m,ps,nnodelem,xilm,etlm,xn)
             call evalshapefunc(xilm,etlm,xl2m,nnodelem,pm)   
 !
             pslavsurf(1,nintpoint)=xil
             pslavsurf(2,nintpoint)=etl
-c            pslavsurf(3,nintpoint)=area*weight2d5(i)
 !
 !           weights sum up to 0.5 for triangles in local coordinates
 !

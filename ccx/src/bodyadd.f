@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -113,6 +113,13 @@
                         xbody(1,id)=xmagnitude
                         idefbody(id)=1
                      else
+                        if(ibody(2,id).ne.iamplitude) then
+                           write(*,*) '*ERROR in bodyadd:'
+                           write(*,*) '       it is not allowed to add'
+                           write(*,*)'       two centrifugal loads with'
+                           write(*,*) '       different amplitudes'
+                           call exit(201)
+                        endif
                         xbody(1,id)=xbody(1,id)+xmagnitude
                      endif
                      xbody(2,id)=p1(1)
@@ -126,6 +133,13 @@
                         xbody(1,id)=xmagnitude
                         idefbody(id)=1
                      else
+                        if(ibody(2,id).ne.iamplitude) then
+                           write(*,*) '*ERROR in bodyadd:'
+                           write(*,*) '       it is not allowed to add'
+                           write(*,*) '       two gravity loads with'
+                           write(*,*) '       different amplitudes'
+                           call exit(201)
+                        endif
                         xbody(1,id)=xbody(1,id)+xmagnitude
                      endif
                      xbody(2,id)=bodyf(1)

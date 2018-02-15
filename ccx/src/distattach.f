@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,8 +28,7 @@
       integer nterms,i,j
 !
       real*8 ratio(9),pneigh(3,*),pnode(3),a,xi,et,xig,etg,p(3),
-     &  dummy,fxi1,fxi2,fxi3,fet1,fet2,fet3,b,xip,xim,etp,etm,
-     &  xim2,etm2,a2,xi2,et2
+     &  xip,xim,etp,etm,xim2,etm2,a2,xi2,et2
 !
       intent(in) xig,etg,pneigh,pnode,nterms
 !
@@ -107,7 +106,6 @@
 !
       a=(pnode(1)-p(1))**2+(pnode(2)-p(2))**2+(pnode(3)-p(3))**2
 !
-c      write(*,*) 'distattach.f xi,et,dist**2',xig,etg,a
       return
       end
       

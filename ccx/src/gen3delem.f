@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -90,7 +90,8 @@
          do i=1,ne
             if(ipkon(i).lt.0) cycle
             if((lakon(i)(1:2).ne.'C3').and.(lakon(i)(1:1).ne.'D').and.
-     &         (lakon(i)(1:1).ne.'G').and.(lakon(i)(1:1).ne.'E')) then
+     &         (lakon(i)(1:1).ne.'G').and.(lakon(i)(1:1).ne.'E').and.
+     &         (lakon(i)(1:4).ne.'MASS')) then
 !
 !              number of nodes belonging to the element
 !
@@ -181,11 +182,6 @@
      &              (lakon(i)(1:2).eq.'CA')) then
                   indexe=ipkon(i)
                   read(lakon(i)(4:4),'(i1)') nope
-c                  if(lakon(i)(4:4).eq.'6') then
-c                     nope=6
-c                  else
-c                     nope=8
-c                  endif
                   do j=1,nope
                      node=kon(indexe+j)
                      if(dabs(co(3,node)).gt.0.d0) then
@@ -210,7 +206,7 @@ c                  endif
                if(ipkon(i).lt.0) cycle
                if((lakon(i)(1:2).eq.'CP').or.
      &              (lakon(i)(1:1).eq.'S').or.
-     &              (lakon(i)(1:1).eq.'M').or.
+     &              (lakon(i)(1:2).eq.'M3').or.
      &              (lakon(i)(1:2).eq.'CA')) then
 !
                  call gen3dfrom2d(i,kon,ipkon,lakon,ne,iponor,xnor,knor,
@@ -308,16 +304,12 @@ c     Bernhardi end
          if(inoelfree.ne.0) then
             call fillknotmpc(co,ipompc,nodempc,coefmpc,labmpc,
      &           nmpc,nmpcold,mpcfree,idim,e1,e2,xt1)
-c            call gen3dprop(prop,ielprop,iponoel,inoel,iponoelmax,kon,
-c     &           ipkon,lakon,ne,iponor,xnor,knor,ipompc,nodempc,coefmpc,
-c     &           nmpc,nmpc_,mpcfree,ikmpc,ilmpc,labmpc,rig,ntrans,inotr,
-c     &           trab,nam,nk,nk_,co,nmethod,iperturb)
          endif
 !     
       endif
 !
 !        generating MPC's to connect shells and beams with solid
-!        elements
+!        elements or spring elements or mass elements
 !
       if((inoelfree.ne.0).and.(istep.eq.1)) then
          call gen3dconnect(kon,ipkon,lakon,ne,iponoel,inoel,

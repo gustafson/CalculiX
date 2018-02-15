@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -356,7 +356,7 @@ c     &                            s(jj,ll)/coefmpc(ist)/coefmpc(ist)
      &  ilmpc,springarea,plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,
      &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon,
      &  ielprop,prop,iponoel,inoel,sti,xstateini,xstate,nstate_,
-     &  network)
+     &  network,ipobody,xbody,ibody)
 !
         do jj=1,nope
 !

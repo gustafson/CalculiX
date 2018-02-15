@@ -1,9 +1,6 @@
 !
 !    SLATEC: public domain
 !
-!    Changes by Guido Dhondt:
-!    170402: added $omp statements
-!
 *DECK DGMRES
       SUBROUTINE DGMRES (N, B, X, NELT, IA, JA, A, ISYM, MATVEC, MSOLVE,
      +   ITOL, TOL, ITMAX, ITER, ERR, IERR, IUNIT, SB, SX, RGWK, LRGW,

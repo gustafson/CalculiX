@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -441,7 +441,7 @@ c               call bounadd(nodes(2,j),k,k,val,nodeboun,
                            mpcfree=nodempc(3,mpcfree)
                            if(mpcfree.eq.0) then
                               write(*,*) 
-     &                          '*ERROR in gen3dfrom2d: increase nmpc_'
+     &                        '*ERROR in gen3dfrom2d: increase memmpc_'
                               call exit(201)
                            endif
                            nodempc(1,mpcfree)=nodes(3,j)
@@ -450,7 +450,7 @@ c               call bounadd(nodes(2,j),k,k,val,nodeboun,
                            mpcfreenew=nodempc(3,mpcfree)
                            if(mpcfreenew.eq.0) then
                               write(*,*) 
-     &                          '*ERROR in gen3dfrom2d: increase nmpc_'
+     &                        '*ERROR in gen3dfrom2d: increase memmpc_'
                               call exit(201)
                            endif
                            nodempc(3,mpcfree)=0
@@ -483,7 +483,7 @@ c               call bounadd(nodes(2,j),k,k,val,nodeboun,
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
                         write(*,*) 
-     &                       '*ERROR in gen3dfrom2d: increase nmpc_'
+     &                       '*ERROR in gen3dfrom2d: increase memmpc_'
                         call exit(201)
                      endif
                      nodempc(1,mpcfree)=nodes(2,j)
@@ -511,7 +511,7 @@ c               call bounadd(nodes(2,j),k,k,val,nodeboun,
                      mpcfreenew=nodempc(3,mpcfree)
                      if(mpcfreenew.eq.0) then
                         write(*,*) 
-     &                       '*ERROR in gen3dfrom2d: increase nmpc_'
+     &                       '*ERROR in gen3dfrom2d: increase memmpc_'
                         call exit(201)
                      endif
                      nodempc(3,mpcfree)=0

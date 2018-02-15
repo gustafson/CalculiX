@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -45,7 +45,7 @@
             node=nodempc(1,index1)
             if(node.le.iponoelmax) then
                if(rig(node).ne.0) then
-                  if(nodempc(2,index1).gt.4) then
+                  if(nodempc(2,index1).gt.3) then
                      if(rig(node).lt.0) then
                         write(*,*) '*ERROR in gen3dmpc: in node ',node
                         write(*,*) '  a rotational DOF is constrained'
@@ -55,13 +55,13 @@
                         call exit(201)
                      endif
                      nodempc(1,index1)=rig(node)
-                     nodempc(2,index1)=nodempc(2,index1)-4
+                     nodempc(2,index1)=nodempc(2,index1)-3
 !
 !                    adapting ikmpc and ilmpc (only for the dependent
 !                    term)
 !
                      if(dependent) then
-                        idofold=8*(node-1)+nodempc(2,index1)+4
+                        idofold=8*(node-1)+nodempc(2,index1)+3
                         call nident(ikmpc,idofold,nmpc,idold)
                         idofnew=8*(rig(node)-1)+nodempc(2,index1)
                         call nident(ikmpc,idofnew,nmpc,idnew)
@@ -126,7 +126,7 @@ c
                         mpcfree=nodempc(3,mpcfree)
                         if(mpcfree.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dmpc: increase nmpc_'
+     &                          '*ERROR in gen3dmpc: increase memmpc_'
                            call exit(201)
                         endif
                         nodempc(1,mpcfree)=knor(indexk+3)
@@ -135,7 +135,7 @@ c
                         mpcfree=nodempc(3,mpcfree)
                         if(mpcfree.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dmpc: increase nmpc_'
+     &                          '*ERROR in gen3dmpc: increase memmpc_'
                            call exit(201)
                         endif
                         nodempc(1,mpcfree)=node
@@ -144,7 +144,7 @@ c
                         mpcfreenew=nodempc(3,mpcfree)
                         if(mpcfreenew.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dmpc: increase nmpc_'
+     &                          '*ERROR in gen3dmpc: increase memmpc_'
                            call exit(201)
                         endif
                         nodempc(3,mpcfree)=0
@@ -181,7 +181,7 @@ c
                            mpcfree=nodempc(3,mpcfree)
                            if(mpcfree.eq.0) then
                               write(*,*) 
-     &                             '*ERROR in gen3dboun: increase nmpc_'
+     &                           '*ERROR in gen3dboun: increase memmpc_'
                               call exit(201)
                            endif
                            nodempc(1,mpcfree)=node
@@ -190,7 +190,7 @@ c
                            mpcfreenew=nodempc(3,mpcfree)
                            if(mpcfreenew.eq.0) then
                               write(*,*) 
-     &                             '*ERROR in gen3dboun: increase nmpc_'
+     &                           '*ERROR in gen3dboun: increase memmpc_'
                               call exit(201)
                            endif
                            nodempc(3,mpcfree)=0
@@ -226,7 +226,7 @@ c
                         mpcfree=nodempc(3,mpcfree)
                         if(mpcfree.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dmpc: increase nmpc_'
+     &                          '*ERROR in gen3dmpc: increase memmpc_'
                            call exit(201)
                         endif
                         do k=2,4
@@ -236,7 +236,7 @@ c
                            mpcfree=nodempc(3,mpcfree)
                            if(mpcfree.eq.0) then
                               write(*,*) 
-     &                             '*ERROR in gen3dmpc: increase nmpc_'
+     &                           '*ERROR in gen3dmpc: increase memmpc_'
                               call exit(201)
                            endif
                         enddo
@@ -246,7 +246,7 @@ c
                         mpcfreenew=nodempc(3,mpcfree)
                         if(mpcfreenew.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dmpc: increase nmpc_'
+     &                          '*ERROR in gen3dmpc: increase memmpc_'
                            call exit(201)
                         endif
                         nodempc(3,mpcfree)=0
@@ -284,7 +284,7 @@ c
                               mpcfree=nodempc(3,mpcfree)
                               if(mpcfree.eq.0) then
                                  write(*,*) 
-     &                             '*ERROR in gen3dboun: increase nmpc_'
+     &                           '*ERROR in gen3dboun: increase memmpc_'
                                  call exit(201)
                               endif
                               nodempc(1,mpcfree)=node
@@ -293,7 +293,7 @@ c
                               mpcfreenew=nodempc(3,mpcfree)
                               if(mpcfreenew.eq.0) then
                                  write(*,*) 
-     &                             '*ERROR in gen3dboun: increase nmpc_'
+     &                           '*ERROR in gen3dboun: increase memmpc_'
                                  call exit(201)
                               endif
                               nodempc(3,mpcfree)=0
@@ -332,7 +332,7 @@ c
                         mpcfree=nodempc(3,mpcfree)
                         if(mpcfree.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dmpc: increase nmpc_'
+     &                          '*ERROR in gen3dmpc: increase memmpc_'
                            call exit(201)
                         endif
                         nodempc(1,mpcfree)=node
@@ -341,7 +341,7 @@ c
                         mpcfreenew=nodempc(3,mpcfree)
                         if(mpcfreenew.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dmpc: increase nmpc_'
+     &                          '*ERROR in gen3dmpc: increase memmpc_'
                            call exit(201)
                         endif
                         nodempc(3,mpcfree)=0

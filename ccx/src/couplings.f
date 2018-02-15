@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -294,13 +294,6 @@
 !        rotational dofs of the reference node with the
 !        translational dofs of the rotational node
 !
-c         if(iorientation.ne.0) then
-c            write(*,*) '*ERROR reading *KINEMATIC'
-c            write(*,*) '       a local coordinate'
-c            write(*,*) '       system is not allowed'
-c            call exit(201)
-c         endif
-!
 !        generating a rotational reference node
 !
          nk=nk+1
@@ -327,11 +320,11 @@ c         endif
                call exit(201)
             endif
 !     
-!           the internal dofs for rotation are 5, 6 and 7
+!           the internal dofs for rotation are 4, 5 and 6
 !     
             ipompc(nmpc)=mpcfree
             labmpc(nmpc)='ROTTRACOUPLING      '
-            idof=8*(irefnode-1)+k+4
+            idof=8*(irefnode-1)+k+3
             call nident(ikmpc,idof,nmpc-1,id)
             do l=nmpc,id+2,-1
                ikmpc(l)=ikmpc(l-1)
@@ -868,11 +861,11 @@ c         endif
                      call exit(201)
                   endif
 !     
-!                 the internal dofs for rotation are 5, 6 and 7
+!                 the internal dofs for rotation are 4, 5 and 7
 !     
                   ipompc(nmpc)=mpcfree
                   labmpc(nmpc)='ROTTRACOUPLING      '
-                  idof=8*(irefnode-1)+k+4
+                  idof=8*(irefnode-1)+k+3
                   call nident(ikmpc,idof,nmpc-1,id)
                   do l=nmpc,id+2,-1
                      ikmpc(l)=ikmpc(l-1)

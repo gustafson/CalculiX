@@ -1,6 +1,6 @@
-!
+!     
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,18 +17,19 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine findsurface_se(nodface,ipoface,ne,ipkon,lakon,
-     &  kon)
+     &  kon,konfa,ipkonfa,nk,lakonfa,nsurfs)
 !
       implicit none
 !
 !     finds the external surface of the structure
 !
-      character*8 lakon(*)
+      character*8 lakon(*),lakonfa(*)
 !
-      integer ipkon(*),kon(*),ne,nodface(5,*),ipoface(*),
-     &  ithree,ifour,ifaceq(8,6),
-     &  ifacet(6,4),ifacew(8,5),ifree,ifreenew,index,indexold,kflag,
-     &  i,j,k,nodes(4),iaux,indexe
+      integer ipkon(*),kon(*),ne,nodface(5,*),ipoface(*),nk,nopem,m,
+     &  ithree,ifour,ifaceq(8,6),konfa(*),ipkonfa(*),nelemm,jfacem,
+     &  ifacet(6,4),ifacew2(8,5),ifree,ifreenew,index,indexold,kflag,
+     &  i,j,k,nodes(4),iaux,indexe,konl(26),nope,nsurfs,
+     &  ifacew1(4,5)
 !
 !     nodes belonging to the element faces
 !
@@ -42,11 +43,16 @@
      &             1,2,4,5,9,8,
      &             2,3,4,6,10,9,
      &             1,4,3,8,10,7/
-      data ifacew /1,3,2,9,8,7,0,0,
+      data ifacew1 /1,3,2,0,
+     &             4,5,6,0,
+     &             1,2,5,4,
+     &             2,3,6,5,
+     &             3,1,4,6/
+      data ifacew2 /1,3,2,9,8,7,0,0,
      &             4,5,6,10,11,12,0,0,
      &             1,2,5,4,7,14,10,13,
      &             2,3,6,5,8,15,11,14,
-     &             4,6,3,1,12,15,9,13/
+     &             3,1,4,6,9,13,12,15/
 !
       kflag=1
       ithree=3
@@ -82,10 +88,10 @@
                indexold=0
                index=ipoface(nodes(1))
                do
-!
-!                 adding a surface which has not been 
-!                 catalogued so far
-!
+!     
+!     adding a surface which has not been 
+!     catalogued so far
+!     
                   if(index.eq.0) then
                      ifreenew=nodface(5,ifree)
                      nodface(1,ifree)=nodes(2)
@@ -97,12 +103,12 @@
                      ifree=ifreenew
                      exit
                   endif
-!
-!                 removing a surface which has already
-!                 been catalogued
-!
+!     
+!     removing a surface which has already
+!     been catalogued
+!     
                   if((nodface(1,index).eq.nodes(2)).and.
-     &               (nodface(2,index).eq.nodes(3))) then
+     &                 (nodface(2,index).eq.nodes(3))) then
                      if(indexold.eq.0) then
                         ipoface(nodes(1))=nodface(5,index)
                      else
@@ -125,10 +131,10 @@
                indexold=0
                index=ipoface(nodes(1))
                do
-!
-!                 adding a surface which has not been 
-!                 catalogued so far
-!
+!     
+!     adding a surface which has not been 
+!     catalogued so far
+!     
                   if(index.eq.0) then
                      ifreenew=nodface(5,ifree)
                      nodface(1,ifree)=nodes(2)
@@ -140,12 +146,12 @@
                      ifree=ifreenew
                      exit
                   endif
-!
-!                 removing a surface which has already
-!                 been catalogued
-!
+!     
+!     removing a surface which has already
+!     been catalogued
+!     
                   if((nodface(1,index).eq.nodes(2)).and.
-     &               (nodface(2,index).eq.nodes(3))) then
+     &                 (nodface(2,index).eq.nodes(3))) then
                      if(indexold.eq.0) then
                         ipoface(nodes(1))=nodface(5,index)
                      else
@@ -163,22 +169,22 @@
             do j=1,5
                if(j.le.2) then
                   do k=1,3
-                     nodes(k)=kon(indexe+ifacew(k,j))
+                     nodes(k)=kon(indexe+ifacew2(k,j))
                   enddo
                   call isortii(nodes,iaux,ithree,kflag)
                else
                   do k=1,4
-                     nodes(k)=kon(indexe+ifacew(k,j))
+                     nodes(k)=kon(indexe+ifacew2(k,j))
                   enddo
                   call isortii(nodes,iaux,ifour,kflag)
                endif
                indexold=0
                index=ipoface(nodes(1))
                do
-!
-!                 adding a surface which has not been 
-!                 catalogued so far
-!
+!     
+!     adding a surface which has not been 
+!     catalogued so far
+!     
                   if(index.eq.0) then
                      ifreenew=nodface(5,ifree)
                      nodface(1,ifree)=nodes(2)
@@ -190,12 +196,12 @@
                      ifree=ifreenew
                      exit
                   endif
-!
-!                 removing a surface which has already
-!                 been catalogued
-!
+!     
+!     removing a surface which has already
+!     been catalogued
+!     
                   if((nodface(1,index).eq.nodes(2)).and.
-     &               (nodface(2,index).eq.nodes(3))) then
+     &                 (nodface(2,index).eq.nodes(3))) then
                      if(indexold.eq.0) then
                         ipoface(nodes(1))=nodface(5,index)
                      else
@@ -210,6 +216,128 @@
                enddo
             enddo
          endif
+      enddo
+!     
+!     Create fields konfa and ipkonfa for calculation of normals of shell
+!     elements
+!     
+      nsurfs=0
+      ifree=0
+      do j=1,nk
+!     
+         if(ipoface(j).eq.0) cycle
+         indexe=ipoface(j)
+!     
+         do
+            nsurfs=nsurfs+1
+            nelemm=nodface(3,indexe)
+            jfacem=nodface(4,indexe)
+!     
+!     treatment of hexahedral elements
+!     
+            if(lakon(nelemm)(4:4).eq.'8') then
+               nopem=4
+               nope=8
+            elseif(lakon(nelemm)(4:5).eq.'20') then
+               nopem=8
+               nope=20
+!     
+!     treatment of tethrahedral elements
+!     
+            elseif(lakon(nelemm)(4:5).eq.'10') then
+               nopem=6
+               nope=10
+            elseif(lakon(nelemm)(4:4).eq.'4') then
+               nopem=3
+               nope=4
+!     
+!     treatment of wedge faces
+!     
+            elseif(lakon(nelemm)(4:4).eq.'6') then
+               nope=6
+               if(jfacem.le.2) then
+                  nopem=3
+               else
+                  nopem=4
+               endif
+            elseif(lakon(nelemm)(4:5).eq.'15') then
+               nope=15
+               if(jfacem.le.2) then
+                  nopem=6
+               else
+                  nopem=8
+               endif
+            endif 
+!     
+!     actual position of the nodes 
+!     
+            do k=1,nope
+               konl(k)=kon(ipkon(nelemm)+k)
+            enddo
+!     
+!     quadratic quad shell element
+!     
+            if((nope.eq.20).or.
+     &           ((nope.eq.15).and.(jfacem.gt.2))) then    
+               lakonfa(nsurfs)='S8'
+               ipkonfa(nsurfs)=ifree
+               do m=1,nopem
+                  if(nope.eq.20) then
+                     konfa(ifree+m)=konl(ifaceq(m,jfacem))
+                  else
+                     konfa(ifree+m)=konl(ifacew2(m,jfacem))
+                  endif
+               enddo
+               ifree=ifree+nopem
+!     
+!     linear quad shell element
+!     
+            elseif((nope.eq.8).or.
+     &              ((nope.eq.6).and.(jfacem.gt.2))) then
+               lakonfa(nsurfs)='S4'
+               ipkonfa(nsurfs)=ifree
+               do m=1,nopem
+                  if(nope.eq.8) then
+                     konfa(ifree+m)=konl(ifaceq(m,jfacem))
+                  else
+                     konfa(ifree+m)=konl(ifacew1(m,jfacem))
+                  endif
+               enddo
+               ifree=ifree+nopem
+!     
+!     quadratic tri shell element
+!     
+            elseif((nope.eq.10).or.
+     &              ((nope.eq.15).and.(jfacem.le.2))) then    
+               lakonfa(nsurfs)='S6'
+               ipkonfa(nsurfs)=ifree
+               do m=1,nopem
+                  if(nope.eq.10) then
+                     konfa(ifree+m)=konl(ifacet(m,jfacem))
+                  else
+                     konfa(ifree+m)=konl(ifacew2(m,jfacem))
+                  endif
+               enddo
+               ifree=ifree+nopem
+!     
+!     linear tri shell element
+!     
+            elseif((nope.eq.4).or.
+     &              ((nope.eq.6).and.(jfacem.le.2))) then
+               lakonfa(nsurfs)='S3'
+               ipkonfa(nsurfs)=ifree
+               do m=1,nopem
+                  if(nope.eq.4) then
+                     konfa(ifree+m)=konl(ifacet(m,jfacem))
+                  else
+                     konfa(ifree+m)=konl(ifacew1(m,jfacem))
+                  endif
+               enddo
+               ifree=ifree+nopem    
+            endif
+            indexe=nodface(5,indexe)
+            if(indexe.eq.0) exit
+         enddo      
       enddo
 !     
       return

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1103,7 +1103,7 @@ c     &              'liquidchannel: h3,h4,eta ',h3,h4,eta
          endif
       elseif(iflag.eq.3) then
 !
-!        only if called from resultgas in case the element contains
+!        only if called from resultnet in case the element contains
 !        a hydraulic jump and eta<0 or eta>1. This means that the 
 !        jump does not take place in the element itself. By adjusting
 !        h1 or h2 the jump is forced into a neighboring element

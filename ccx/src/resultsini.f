@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -46,7 +46,7 @@
       real*8 v(0:mi(2),*),vini(0:mi(2),*),f(*),fn(0:mi(2),*),
      &  cam(5),vold(0:mi(2),*),b(*),xboun(*),coefmpc(*),
      &  veold(0:mi(2),*),accold(0:mi(2),*),xforc(*),
-     &  qa(3),bet,gam,dtime,scal1,scal2,bnac,
+     &  qa(*),bet,gam,dtime,scal1,scal2,bnac,
      &  fixed_disp
 !
       mt=mi(2)+1
@@ -173,16 +173,6 @@
             enddo
          endif
       endif
-c!     
-c!     check whether user-defined concentrated forces were defined
-c!     
-c      do i=1,nforc
-c         if((xforc(i).lt.1.2357111318d0).and.
-c     &        (xforc(i).gt.1.2357111316d0)) then
-c            calcul_fn=1
-c            exit
-c         endif
-c      enddo
 !     
 !     initializing fn
 !     
@@ -212,6 +202,16 @@ c      enddo
          do i=1,nboun
             if(ndirboun(i).gt.mi(2)) cycle
             fixed_disp=xboun(i)
+!
+!           a discontinuity in the displacements in an initial
+!           acceleration step (recognized by the "special" time
+!           increment) should not lead to a change in 
+!           the acceleration or velocity; actually, such a 
+!           discontinuity is not allowed since it leads to
+!           infinite accelerations
+!
+c            if((nmethod.eq.4).and.(iperturb(1).gt.1).and.
+c     &         (nint(dtime*1.d28).ne.123571113)) then
             if((nmethod.eq.4).and.(iperturb(1).gt.1)) then
                ndir=ndirboun(i)
                node=nodeboun(i)
@@ -221,11 +221,11 @@ c      enddo
 !
                   bnac=(xboun(i)-v(ndir,node))/
      &                 (bet*dtime*dtime)
-                  veold(ndir,node)=veold(ndir,node)+
-     &                 gam*dtime*bnac
+                  if(nint(dtime*1.d28).ne.123571113) then
+                     veold(ndir,node)=veold(ndir,node)+
+     &                    gam*dtime*bnac
+                  endif
                   accold(ndir,node)=accold(ndir,node)+bnac
-c               else
-c                  veold(ndir,node)=(xboun(i)-v(ndir,node))/dtime
                endif
             endif
             v(ndirboun(i),nodeboun(i))=fixed_disp
@@ -243,7 +243,6 @@ c     incrementalmpc=iperturb(2)
 !
          do i=1,nmpc
             if((labmpc(i)(1:20).eq.'                    ').or.
-c     &           (labmpc(i)(1:7).eq.'CONTACT').or.
      &           (labmpc(i)(1:6).eq.'CYCLIC').or.
      &           (labmpc(i)(1:9).eq.'SUBCYCLIC')) then
                incrementalmpc=0
@@ -286,6 +285,16 @@ c     &           (labmpc(i)(1:7).eq.'CONTACT').or.
             if(incrementalmpc.eq.1) then
                fixed_disp=fixed_disp+vold(ndir,node)
             endif
+!
+!           a discontinuity in the displacements in an initial
+!           acceleration step (recognized by the "special" time
+!           increment) should not lead to a change in 
+!           the acceleration or velocity; actually, such a 
+!           discontinuity is not allowed since it leads to
+!           infinite accelerations
+!
+c            if((nmethod.eq.4).and.(iperturb(1).gt.1).and.
+c     &         (nint(dtime*1.d28).ne.123571113)) then
             if((nmethod.eq.4).and.(iperturb(1).gt.1)) then
                if(ndir.gt.0) then
 !
@@ -293,11 +302,11 @@ c     &           (labmpc(i)(1:7).eq.'CONTACT').or.
 !
                   bnac=(fixed_disp-v(ndir,node))/
      &                 (bet*dtime*dtime)
-                  veold(ndir,node)=veold(ndir,node)+
-     &                 gam*dtime*bnac
+                  if(nint(dtime*1.d28).ne.123571113) then
+                     veold(ndir,node)=veold(ndir,node)+
+     &                    gam*dtime*bnac
+                  endif
                   accold(ndir,node)=accold(ndir,node)+bnac
-c               else
-c                  veold(ndir,node)=(fixed_disp-v(ndir,node))/dtime
                endif
             endif
             v(ndir,node)=fixed_disp
@@ -322,19 +331,19 @@ c                  veold(ndir,node)=(fixed_disp-v(ndir,node))/dtime
                         irotnode=nodempc(1,nodempc(3,nodempc(3,
      &                     nodempc(3,nodempc(3,nodempc(3,ipompc(i)))))))
                      endif
-                     write(5,*)
-                     write(5,'(a5)') labmpc(i)(1:5)
-                     write(5,'("tra",i10,3(1x,e11.4))')
-     &                    irefnode,(v(j,irefnode),j=1,3)
-                     write(5,'("rot",i10,3(1x,e11.4))')
-     &                    irotnode,(v(j,irotnode),j=1,3)
-                     if(labmpc(i)(5:5).eq.'2') then
-                        write(5,'("exp",i10,3(1x,e11.4))')
-     &                       iexpnode,(v(j,iexpnode),j=1,3)
-                     else
-                        write(5,'("exp",i10,3(1x,e11.4))')
-     &                       iexpnode,v(1,iexpnode)
-                     endif
+c                     write(5,*)
+c                     write(5,'(a5)') labmpc(i)(1:5)
+c                     write(5,'("tra",i10,3(1x,e11.4))')
+c     &                    irefnode,(v(j,irefnode),j=1,3)
+c                     write(5,'("rot",i10,3(1x,e11.4))')
+c     &                    irotnode,(v(j,irotnode),j=1,3)
+c                     if(labmpc(i)(5:5).eq.'2') then
+c                        write(5,'("exp",i10,3(1x,e11.4))')
+c     &                       iexpnode,(v(j,iexpnode),j=1,3)
+c                     else
+c                        write(5,'("exp",i10,3(1x,e11.4))')
+c     &                       iexpnode,v(1,iexpnode)
+c                     endif
                   endif
                endif
             endif
@@ -343,29 +352,20 @@ c                  veold(ndir,node)=(fixed_disp-v(ndir,node))/dtime
 !     
 !     check whether there are any strain output requests
 !     
-c      nener=0
       ikin=0
 !
 !     *DYNAMIC
 !
       if((nmethod.eq.4).and.(iperturb(1).gt.1).and.
      &   (ithermal(1).le.1)) then
-c         nener=1
          ikin=1
       endif
-!
-!     frd-output
-!
-c      if((filab(7)(1:4).eq.'ENER').or.(filab(27)(1:4).eq.'CELS')) then
-c         nener=1
-c      endif
 !   
 !     dat-output
 !   
       do i=1,nprint
          if((prlab(i)(1:4).eq.'ENER').or.(prlab(i)(1:4).eq.'ELSE').or.
      &        (prlab(i)(1:4).eq.'CELS')) then
-c            nenerx=1
          elseif(prlab(i)(1:4).eq.'ELKE') then
             ikin=1
          endif

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
 /*     published by the Free Software Foundation(version 2);    */
@@ -72,7 +72,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 
   char fneig[132]="",description[13]="            ",*lakon=NULL,*labmpc=NULL,
     *labmpcold=NULL,lakonl[9]="        \0",*tchar1=NULL,*tchar2=NULL,
-    *tchar3=NULL,cflag[1]=" ";
+    *tchar3=NULL,cflag[1]=" ",jobnamef[396]="";
 
   ITG nev,i,j,k,idof,*inum=NULL,*ipobody=NULL,inewton=0,id,
     iinc=0,jprint=0,l,iout,ielas=0,icmd=3,iprescribedboundary,init,ifreebody,
@@ -112,7 +112,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
     *qfx=NULL, *xbodyact=NULL, *cgr=NULL, *au=NULL, *vbounact=NULL,
     *abounact=NULL,dtime,reltime,*t0=NULL,*t1=NULL,*t1old=NULL,
     physcon[1],zetaj,dj,ddj,h1,h2,h3,h4,h5,h6,sum,aai,bbi,tstart,tend,
-    qa[3],cam[5],accold[1],bet,gam,*ad=NULL,sigma=0.,alpham,betam,
+    qa[4],cam[5],accold[1],bet,gam,*ad=NULL,sigma=0.,alpham,betam,
     *bact=NULL,*bmin=NULL,*co=NULL,*xboun=NULL,*xbounold=NULL,*vold=NULL,
     *eme=NULL,*ener=NULL,*coefmpc=NULL,*fmpc=NULL,*coefmpcold,*veold=NULL,
     *xini=NULL,*rwork=NULL,*adc=NULL,*auc=NULL,*zc=NULL, *rpar=NULL,
@@ -159,6 +159,10 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
   vold=*voldp;eme=*emep;ener=*enerp;ipompc=*ipompcp;nodempc=*nodempcp;
   coefmpc=*coefmpcp;labmpc=*labmpcp;ikmpc=*ikmpcp;ilmpc=*ilmpcp;
   fmpc=*fmpcp;veold=*veoldp;iamt1=*iamt1p;t0=*t0p;t1=*t1p;t1old=*t1oldp;
+  
+  for(k=0;k<3;k++){
+      strcpy1(&jobnamef[k*132],&jobnamec[k*132],132);
+  }
 
   tinc=&timepar[0];
   tper=&timepar[1];
@@ -756,8 +760,6 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 	  lakon,ipkon,kon,&koncont,nslavs,tietol,&ismallsliding,&itiefac,
           &islavsurf,&islavnode,&imastnode,&nslavnode,&nmastnode,
           &mortar,&imastop,nkon,&iponoels,&inoels,&ipe,&ime,ne,&ifacecount,
-          nmpc,&mpcfree,&memmpc_,
-	  &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
 	  iperturb,ikboun,nboun,co,istep,&xnoels);
 
   if(ncont!=0){
@@ -1023,7 +1025,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 	      nelemload,sideload,mi,
 	      xforcdiff,xloaddiff,xbodydiff,t1diff,xboundiff,&iabsload,
 	      &iprescribedboundary,ntrans,trab,inotr,veold,nactdof,bcont,
-              fn));
+              fn,ipobody,iponoel,inoel));
 
       if(iabsload==2) NNEW(bold,double,neq[1]);
 
@@ -1117,13 +1119,12 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
       contact(&ncont,ntie,tieset,nset,set,istartset,iendset,
 	      ialset,itietri,lakon,ipkon,kon,koncont,ne,cg,straight,nkon,
 	      co,vold,ielmat,cs,elcon,istep,&iinc,&iit,ncmat_,ntmat_,
-              &ne0,vini,nmethod,nmpc,&mpcfree,&memmpc_,
-              &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,iperturb,
+              &ne0,vini,nmethod,iperturb,
               ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
               itiefac,areaslav,iponoels,inoels,springarea,tietol,&reltime,
 	      imastnode,nmastnode,xmastnor,filab,mcs,ics,
               &nasym,xnoels,&mortar,pslavsurf,pmastsurf,clearini,&theta,
-	      xstateini,xstate,nstate_,&icutb,&ialeatoric);
+	      xstateini,xstate,nstate_,&icutb,&ialeatoric,jobnamef);
 
       RENEW(ikactcont,ITG,nactcont_);
       DMEMSET(ikactcont,0,nactcont_,0.);
@@ -1348,7 +1349,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 	      nelemload,sideload,mi,
 	      xforcdiff,xloaddiff,xbodydiff,t1diff,xboundiff,&iabsload,
 	      &iprescribedboundary,ntrans,trab,inotr,veold,nactdof,bcont,
-              fn));
+              fn,ipobody,iponoel,inoel));
 	      
       /* calculating the instantaneous loading vector */
 	      
@@ -1464,7 +1465,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 		nelemload,sideload,mi,
 		xforcdiff,xloaddiff,xbodydiff,t1diff,xboundiff,&iabsload,
 		&iprescribedboundary,ntrans,trab,inotr,veold,nactdof,bcont,
-                fn));
+                fn,ipobody,iponoel,inoel));
 	      
 	      /* calculating the instantaneous loading vector */
 	      
@@ -1869,7 +1870,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 		sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		&mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
                 islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-                inoel,nener,orname,&network);
+                inoel,nener,orname,&network,ipobody,xbodyact,ibody);
 
 	/* restoring */
 
@@ -2128,7 +2129,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 /* distributed loads */
 
       for(i=0;i<*nload;i++){
-	  if(nelemload[2*i]<nsectors){
+	  if(nelemload[2*i+1]<nsectors){
 	      nelemload[2*i]-=*ne*nelemload[2*i+1];
 	  }else{
 	      nelemload[2*i]-=*ne*(nelemload[2*i+1]-nsectors);

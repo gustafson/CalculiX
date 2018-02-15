@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -235,7 +235,7 @@ c                           write(*,*) 'removing MPC',node,k
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
                         write(*,*) '*ERROR in selcycsymmods:'
-                        write(*,*) '       increase nmpc_'
+                        write(*,*) '       increase memmpc_'
                         call exit(201)
                      endif
                      nodempc(1,mpcfree)=node
@@ -245,7 +245,7 @@ c                           write(*,*) 'removing MPC',node,k
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
                         write(*,*) '*ERROR in selcycsymmods:'
-                        write(*,*) '       increase nmpc_'
+                        write(*,*) '       increase memmpc_'
                         call exit(201)
                      endif
                      nodempc(3,mpcfreeold)=0
@@ -310,7 +310,7 @@ c                           write(*,*) 'removing MPC',node,k
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
                      write(*,*) '*ERROR in selcycsymmods:'
-                     write(*,*) '       increase nmpc_'
+                     write(*,*) '       increase memmpc_'
                      call exit(201)
                   endif
                   nodempc(1,mpcfree)=node
@@ -319,7 +319,7 @@ c                           write(*,*) 'removing MPC',node,k
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
                      write(*,*) '*ERROR in selcycsymmods:'
-                     write(*,*) '       increase nmpc_'
+                     write(*,*) '       increase memmpc_'
                      call exit(201)
                   endif
                   nodempc(1,mpcfree)=node
@@ -329,7 +329,7 @@ c                           write(*,*) 'removing MPC',node,k
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
                      write(*,*) '*ERROR in selcycsymmods:'
-                     write(*,*) '       increase nmpc_'
+                     write(*,*) '       increase memmpc_'
                      call exit(201)
                   endif
                   nodempc(3,mpcfreeold)=0
@@ -366,7 +366,7 @@ c                           write(*,*) 'removing MPC',node,k
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
                         write(*,*) '*ERROR in selcycsymmods:'
-                        write(*,*) '       increase nmpc_'
+                        write(*,*) '       increase memmpc_'
                         call exit(201)
                      endif
                      nodempc(3,mpcfreeold)=0

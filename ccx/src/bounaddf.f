@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -86,11 +86,17 @@
             if(ii.le.3) then
                i=ii
             elseif(ii.eq.4) then
-               i=5
+               write(*,*) '*ERROR in bounaddf: a boundary condition'
+               write(*,*) '       on DOF 4 is not allowed'
+               call exit(201)
             elseif(ii.eq.5) then
-               i=6
+               write(*,*) '*ERROR in bounaddf: a boundary condition'
+               write(*,*) '       on DOF 5 is not allowed'
+               call exit(201)
             elseif(ii.eq.6) then
-               i=7
+               write(*,*) '*ERROR in bounaddf: a boundary condition'
+               write(*,*) '       on DOF 6 is not allowed'
+               call exit(201)
             elseif(ii.eq.8) then
                i=4
             elseif(ii.eq.11) then
@@ -195,11 +201,17 @@ c            write(*,*) 'bounaddf boun',iface,i,val,idof
             if(ii.le.3) then
                i=ii
             elseif(ii.eq.4) then
-               i=5
+               write(*,*) '*ERROR in bounaddf: a boundary condition'
+               write(*,*) '       on DOF 4 is not allowed'
+               call exit(201)
             elseif(ii.eq.5) then
-               i=6
+               write(*,*) '*ERROR in bounaddf: a boundary condition'
+               write(*,*) '       on DOF 5 is not allowed'
+               call exit(201)
             elseif(ii.eq.6) then
-               i=7
+               write(*,*) '*ERROR in bounaddf: a boundary condition'
+               write(*,*) '       on DOF 6 is not allowed'
+               call exit(201)
             elseif(ii.eq.8) then
                i=4
             elseif(ii.eq.11) then
@@ -240,12 +252,6 @@ c            write(*,*) 'bounaddf boun',iface,i,val,idof
                xload(1,loadid)=newnode+0.5d0
                idofnew=8*(newnode-1)+i
                idnew=nboun
-c!
-c!              copying the initial conditions from node into newnode
-c!
-c               do j=0,mi(2)
-c                  vold(j,newnode)=vold(j,node)
-c               enddo
             endif
 !
 !           new mpc
@@ -295,7 +301,7 @@ c               write(*,*) nmpc,labmpc(nmpc),'bounaddf'
                coefmpc(mpcfree)=a(number,i)
                mpcfree=nodempc(3,mpcfree)
                if(mpcfree.eq.0) then
-                  write(*,*) '*ERROR in bounadd: increase nmpc_'
+                  write(*,*) '*ERROR in bounadd: increase memmpc_'
                   call exit(201)
                endif
             enddo

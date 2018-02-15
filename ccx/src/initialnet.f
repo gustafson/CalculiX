@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2015 Guido Dhondt
+!     Copyright (C) 1998-2017 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,21 +40,21 @@
       character*20 labmpc(*)
       character*81 set(*)
 !           
-      integer mi(*),ieg(*),nflow,i,j,ntg,ielmat(mi(3),*),ntmat_,id,
-     &     node1,node2,ider,iaxial,nmpc,nodempc(3,*),ipompc(*),
+      integer mi(*),ieg(*),nflow,i,j,ntg,ielmat(mi(3),*),ntmat_,
+     &     node1,node2,ider,iaxial,nmpc,ipompc(*),nodempc(3,*),
      &     nelem,index,nshcon(*),ipkon(*),kon(*),ikboun(*),nboun,idof,
      &     nodem,idirf(8),nactdog(0:3,*),imat,ielprop(*),id1,id2,
      &     nodef(8),ndirboun(*),nodeboun(*),itg(*),node,kflag,ipiv(*),
      &     nrhs,info,idof1,idof2,nteq,nrhcon(*),ipobody(2,*),ibody(3,*),
      &     nbody,numf,network,iin_abs,icase,index2,index1,nelem1,nelem2,
      &     node11,node21,node12,node22,istep,iit,ineighe(*),iponoel(*),
-     &     ilboun(*),nelemup,k,node2up,idir,channel,inoel(2,*)
+     &     ilboun(*),idir,channel,inoel(2,*),indexe,iel
 !     
       real*8 ac(nteq,nteq), bc(nteq),prop(*),shcon(0:3,ntmat_,*),
      &     f,df(8),xflow,xbounact(*),v(0:mi(2),*),cp,r,tg1,
      &     tg2,gastemp,physcon(*),pressmin,dvi,rho,g(3),z1,z2,
      &     rhcon(0:1,ntmat_,*),co(3,*),xbodyact(7,*),kappa,
-     &     a,Tt,Pt,Ts,pressmax,constant,vold(0:mi(2),*),href,
+     &     a,Tt,Pt,Ts,pressmax,constant,vold(0:mi(2),*),
      &     coefmpc(*),ttime,time,xflow360
 !
       kflag=1
@@ -142,11 +142,11 @@
             call nident(itg,node1,ntg,id1)
             call nident(itg,node2,ntg,id2)
 !     
-            if (((lakon(nelem)(1:5).eq.'DGAPF').and.
-     &           (iin_abs.eq.0))
-     &           .or.((lakon(nelem)(1:3).eq.'DRE')
-     &           .and.(lakon(nelem)(1:7).ne.'DREWAOR')
-     &           .and.(iin_abs.eq.0))) then 
+            if(iin_abs.eq.0) then
+               if ((lakon(nelem)(2:5).eq.'GAPF').or.
+     &             ((lakon(nelem)(2:3).eq.'RE')
+     &              .and.(lakon(nelem)(2:7).ne.'REWAOR')).or.
+     &             (lakon(nelem)(2:3).eq.'UP')) then 
 !     
 !     In the case of a element of type GASPIPE or RESTRICTOR 
 !     (except TYPE= RESTRICTOR WALL ORIFICE)
@@ -154,24 +154,23 @@
 !     are computed and stored in ineighe(id1)
 !     respectively ineighe(id2)
 !     
-               gaspipe=.true.
-               if(node1.ne.0) then
-                  if (ineighe(id1).ge.0) then
+                  gaspipe=.true.
+                  if(node1.ne.0) then
+                     if (ineighe(id1).ge.0) then
 !     
-                     if(node2.ne.0)then
-                        ineighe(id1)=ineighe(id1)+1
+                        if(node2.ne.0)then
+                           ineighe(id1)=ineighe(id1)+1
+                        endif
                      endif
                   endif
-               endif
-               if(node2.ne.0) then
-                  if (ineighe(id2).ge.0) then
-                     if(node1.ne.0) then
-                        ineighe(id2)=ineighe(id2)+1
+                  if(node2.ne.0) then
+                     if (ineighe(id2).ge.0) then
+                        if(node1.ne.0) then
+                           ineighe(id2)=ineighe(id2)+1
+                        endif
                      endif
                   endif
-               endif
-            else
-               if(iin_abs.eq.0) then
+               else
 !     
 !     for all other elements (different from GASPIPE or 
 !     RESTRICTOR), including RESTRICTOR WALL ORIFICE 
@@ -207,24 +206,59 @@
             node=itg(i)
 !     boundary condition nodes
             if(nactdog(2,node).eq.0) then 
-               v(2,node)=dtan(v(2,node)
-     &              *constant/pressmax) 
                cycle 
             endif
 !     initial condition nodes
             if((nactdog(2,node).ne.0)
      &           .and.(v(2,node).gt.0d0)) then
-               v(2,node) = dtan(v(2,node)
-     &              *constant/pressmax) 
                cycle
             endif
 !     nodes neither defined as *BOUNDARY nor as *INITIAL CONDITIONS
             if(abs(v(2,node)+1.d0).lt.1.d-10) then
-               v(2,node)=0.95d0*pressmin
-               pressmin=0.95d0*pressmin
-               v(2,node)=dtan(v(2,node)
-     &              *constant/pressmax)
+!
+!              if a nonzero flux is leaving the node increase
+!              the maximum pressure, else decrease the minimum
+!              pressure
+!
+!              determining the exit element (= element with one
+!              zero node)
+!
+               index=iponoel(node)
+               do
+                  iel=inoel(1,index)
+                  indexe=ipkon(iel)
+                  node1=kon(indexe+1)
+                  nodem=kon(indexe+2)
+                  node2=kon(indexe+3)
+                  if((node1.eq.0).or.(node2.eq.0)) exit
+                  index=inoel(2,index)
+               enddo
+!
+               if(((node1.eq.node).and.(v(1,nodem).ge.0.d0)).or.
+     &            ((node2.eq.node).and.(v(1,nodem).le.0.d0))) then
+                  v(2,node)=0.95d0*pressmin
+                  pressmin=0.95d0*pressmin
+               else
+                  v(2,node)=1.05d0*pressmax
+                  pressmax=1.05d0*pressmax
+               endif
             endif              
+         enddo
+!
+!        transforming the pressures using the tangent
+!        function
+!
+         do i=1,ntg
+            node=itg(i)
+!     boundary condition nodes
+            if(nactdog(2,node).eq.0) then 
+               v(2,node)=dtan(v(2,node)
+     &              *constant/pressmax) 
+!     initial condition nodes
+            elseif(v(2,node).gt.0d0) then
+               v(2,node)=dtan(v(2,node)
+     &              *constant/pressmax) 
+            endif
          enddo
 !     
 !     mass flow and geometry dofs: 1 on the diagonal
@@ -473,7 +507,8 @@
 !     gas networks (needed to determine the static
 !     temperature which is used for the material properties)
 !     
-      if(network.le.2) then
+c      if(network.le.2) then
+      if((network.le.2).and.(iin_abs.eq.0)) then
          do i=1,nflow
             nelem=ieg(i)
             if((lakon(nelem)(2:3).eq.'LP').or.
@@ -591,13 +626,14 @@
                if((nactdog(2,node1).eq.0)
      &           .and.(nactdog(2,node2).eq.0)) then
                   WRITE(*,*) '**************************************'
-                  write(*,*) '*ERROR:in subroutine initialnet.f'
-                  write(*,*) '       in element', nelem
-                  write(*,*) '       Inlet and outlet pressures are '
-                  write(*,*) '       boundary conditions '
-                  write(*,*) '       node1',node1,' pressure',
+                  write(*,*) '*ERROR: in subroutine initialnet.f'
+                  write(*,*) '        no pressure gradient'
+                  write(*,*) '        in element', nelem
+                  write(*,*) '        Inlet and outlet pressures are '
+                  write(*,*) '        boundary conditions '
+                  write(*,*) '        node1',node1,' pressure',
      &                 v(2,node1)
-                  write(*,*) '       node2',node2,' pressure',
+                  write(*,*) '        node2',node2,' pressure',
      &                 v(2,node2)
                   call exit(201)
 !     
@@ -606,17 +642,18 @@
                else if((nactdog(2,node1).ne.0)
      &                 .and.(nactdog(2,node2).eq.0))then
                   WRITE(*,*) '**************************************'
-                  write(*,*) '*WARNING:in subroutine initialnet.f'
-                  write(*,*) '       in element', nelem
+                  write(*,*) '*WARNING: in subroutine initialnet.f'
+                  write(*,*) '          no pressure gradient'
+                  write(*,*) '          in element', nelem
                   write(*,*) 
-     &                 '       Inlet pressure initial condition '
-                  write(*,*) '       is changed '
-                  write(*,*) '       node1',node1,
+     &               '          Inlet pressure initial condition '
+                  write(*,*) '          is changed '
+                  write(*,*) '          node1',node1,
      &                 ' given initial pressure',v(2,node1)
                   v(2,node1)=1.1*v(2,node1)
-                  write(*,*) '       node1',node1,
+                  write(*,*) '          node1',node1,
      &                 ' new initial pressure',v(2,node1)
-                  write(*,*) '       node2',node2,' pressure',
+                  write(*,*) '          node2',node2,' pressure',
      &                 v(2,node2)
 !     
 !     if outlet pressure is an active D.O.F.
@@ -624,18 +661,19 @@
                else if((nactdog(2,node1).eq.0)
      &                 .and.(nactdog(2,node2).ne.0))then
                   WRITE(*,*) '**************************************'
-                  write(*,*) '*WARNING:in subroutine initialnet.f'
-                  write(*,*) '       in element', nelem
+                  write(*,*) '*WARNING: in subroutine initialnet.f'
+                  write(*,*) '          no pressure gradient'
+                  write(*,*) '          in element', nelem
                   write(*,*) 
-     &                 '       Outlet pressure initial condition '
-                  write(*,*) '       is changed '
-                  write(*,*) '       node1',node1,' pressure'
+     &                 '          Outlet pressure initial condition '
+                  write(*,*) '          is changed '
+                  write(*,*) '          node1',node1,' pressure'
      &                 ,v(2,node1)    
-                  write(*,*) '       node2',node2,
+                  write(*,*) '          node2',node2,
      &                 'given intial pressure',
      &                 v(2,node2)
                   v(2,node2)=0.9*v(2,node2)
-                  write(*,*) '       node2',node2,
+                  write(*,*) '          node2',node2,
      &                 ' new initial pressure',v(2,node2)
 !     
 !     if both inlet and outlet pressures are active D.O.F.
@@ -643,19 +681,20 @@
                else if((nactdog(2,node1).ne.0)
      &                 .and.(nactdog(2,node2).ne.0))then
                   WRITE(*,*) '**************************************'
-                  write(*,*) '*WARNING:in subroutine initialnet.f'
-                  write(*,*) '       in element', nelem
-                  write(*,*) '       Inlet and outlet pressure '
-                  write(*,*) '       initial condition are changed '
-                  write(*,*) '       node1',node1,
+                  write(*,*) '*WARNING: in subroutine initialnet.f'
+                  write(*,*) '          no pressure gradient'
+                  write(*,*) '          in element', nelem
+                  write(*,*) '          Inlet and outlet pressure '
+                  write(*,*) '          initial condition are changed '
+                  write(*,*) '          node1',node1,
      &                 ' given initial pressure',v(2,node1)  
                   v(2,node1)=1.05*v(2,node2)
-                  write(*,*) '       node1',node1,
+                  write(*,*) '          node1',node1,
      &                 ' new intial pressure',v(2,node1)
-                  write(*,*) '       node2',node2,
+                  write(*,*) '          node2',node2,
      &                 ' given initial pressure',v(2,node2)
                   v(2,node2)=0.95*v(2,node2)
-                  write(*,*) '       node2',node2,
+                  write(*,*) '          node2',node2,
      &                 ' new intial pressure',v(2,node2)
                endif
             endif
@@ -678,44 +717,33 @@
      &         (lakon(nelem)(2:4).ne.'RTA')) then
                if(v(1,nodem).eq.0d0) then
                   WRITE(*,*) '**************************************'
-                  write(*,*) '*ERROR:in subroutine initialnet.f'
-                  write(*,*) '       in element', nelem,
+                  write(*,*) '*ERROR: in subroutine initialnet.f'
+                  write(*,*) '        in element', nelem,
      &                 lakon(nelem)(1:6)
-                  write(*,*) '       mass flow rate value = 0 !'
-                  write(*,*) '       node1',node1,' pressure',
+                  write(*,*) '        mass flow rate value = 0 !'
+                  write(*,*) '        node1',node1,' pressure',
      &                 v(2,node1)
-                  write(*,*) '       node2',node2,' pressure',
+                  write(*,*) '        node2',node2,' pressure',
      &                 v(2,node2)
                   call exit(201)
                endif
                if (v(1,nodem)*(v(2,node1)-v(2,node2)).lt.0) then
                   WRITE(*,*) '**************************************'
                   write(*,*) '*WARNING: in subroutine initialnet.f'
-                  write(*,*) '        in element', nelem
+                  write(*,*) '          in element', nelem
                   write(*,*) 
-     &             '        initial mass flow rate value does not'
-                  write(*,*) '        correspond to pressure gradient'
-                  write(*,*) '        node1',node1,'pressure',
+     &                 '          initial mass flow rate value does not'
+                  write(*,*) '          correspond to pressure gradient'
+                  write(*,*) '          node1',node1,'pressure',
      &                 v(2,node1)
-                  write(*,*) '        node2',node2,'pressure',
+                  write(*,*) '          node2',node2,'pressure',
      &                 v(2,node2)
-                  write(*,*) '        nodem',nodem,'mass flow',
+                  write(*,*) '          nodem',nodem,'mass flow',
      &                 v(1,nodem)
-                  write(*,*) '        the sign of the initial mass flow'
-                  write(*,*) '        rate will be changed'
-c                  v(1,nodem)=-v(1,nodem)
+                  write(*,*) 
+     &               '          the sign of the initial mass flow'
+                  write(*,*) '          rate will be changed'
                endif
-c               if (v(1,nodem).lt.0) then
-c                  WRITE(*,*) '**************************************'
-c                  write(*,*) '*WARNING: in subroutine initialnet.f'
-c                  write(*,*) '        in element', nelem
-c                  write(*,*) '        mass flow rate value .le. 0 !'
-c                  write(*,*) '        node1',node1,'pressure',
-c     &                 v(2,node1)
-c                  write(*,*) '        node2',node2,'pressure',
-c     &                 v(2,node2)
-c                  write(*,*) '        check element definition'
-c               endif
             endif
          enddo
       endif
@@ -850,6 +878,14 @@ c               endif
                         a=prop(index+2)
                      endif
                   endif
+               elseif(lakon(nelem)(2:3).eq.'UP') then
+!
+!                 user elements whose names start with UP are assumed
+!                 to be Pipe-like (static and total temperatures differ)
+!                 The cross area is assumed to be the first property
+!
+                  a=prop(index+1)
+                  icase=0
                endif
 !     
                if(v(3,node).eq.0.d0) then

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -314,6 +314,11 @@
             nope=nope+1
             inum(kon(indexe+nope))=-1
             cycle
+         elseif(lakonl(1:1).eq.'U') then
+            call extrapolate_u(yi,yn,ipkon,inum,kon,lakon,nfield,nk,
+     &           ne,mi,ndim,orab,ielorien,co,iorienloc,cflag,
+     &           vold,force,ielmat,thicke,ielprop,prop,i)
+            return
          else
             cycle
          endif

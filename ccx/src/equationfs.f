@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -121,11 +121,17 @@
      &"*EQUATIONF%")
                if(ndir.le.3) then
                elseif(ndir.eq.4) then
-                  ndir=5
+                  write(*,*) '*ERROR in equationfs: an equation'
+                  write(*,*) '       on DOF 4 is not allowed'
+                  call exit(201)
                elseif(ndir.eq.5) then
-                  ndir=6
+                  write(*,*) '*ERROR in equationfs: an equation'
+                  write(*,*) '       on DOF 5 is not allowed'
+                  call exit(201)
                elseif(ndir.eq.6) then
-                  ndir=7
+                  write(*,*) '*ERROR in equationfs: an equation'
+                  write(*,*) '       on DOF 6 is not allowed'
+                  call exit(201)
                elseif(ndir.eq.8) then
                   ndir=4
                elseif(ndir.eq.11) then
@@ -185,7 +191,7 @@
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
                      write(*,*) 
-     &                 '*ERROR reading *EQUATIONF: increase nmpc_'
+     &                 '*ERROR reading *EQUATIONF: increase memmpc_'
                      call exit(201)
                   endif
                else
@@ -302,7 +308,7 @@
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
                         write(*,*) 
-     &                    '*ERROR reading *EQUATIONF: increase nmpc_'
+     &                    '*ERROR reading *EQUATIONF: increase memmpc_'
                         call exit(201)
                      endif
                   enddo

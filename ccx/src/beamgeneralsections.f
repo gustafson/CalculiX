@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -22,7 +22,11 @@
      &  istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,mi,ielprop,nprop,
      &  nprop_,prop,nelcon)
 !
-!     reading the input deck: *BEAM GENERAL SECTION
+!     reading the input deck: *BEAM SECTION
+!     for sections of type PIPE, BOX and GENERAL
+!
+!     this routine is used for sections which cannot be described
+!     by two thicknesses alone -> prop array must be used
 !
       implicit none
 !
@@ -44,8 +48,8 @@
      &  offset(2,*),offset1,offset2,dd,prop(*)
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR reading *BEAM GENERAL SECTION:'
-         write(*,*) '       *BEAM GENERAL SECTION should'
+         write(*,*) '*ERROR reading *BEAM SECTION:'
+         write(*,*) '       *BEAM SECTION should'
          write(*,*) '       be placed before all step definitions'
          call exit(201)
       endif
@@ -75,33 +79,36 @@
             elseif(textpart(i)(9:11).eq.'BOX') then
                section='BOX'
                ndprop=6
+            elseif(textpart(i)(9:15).eq.'GENERAL') then
+               section='GENE'
+               ndprop=5
             else
                write(*,*) 
-     &           '*ERROR reading *BEAM GENERAL SECTION: unknown section'
+     &           '*ERROR reading *BEAM SECTION: unknown section'
                call exit(201)
             endif
          elseif(textpart(i)(1:8).eq.'OFFSET1=') then
             read(textpart(i)(9:28),'(f20.0)',iostat=istat) offset1
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM GENERAL SECTION%")
+     &"*BEAM SECTION%")
          elseif(textpart(i)(1:8).eq.'OFFSET2=') then
             read(textpart(i)(9:28),'(f20.0)',iostat=istat) offset2
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM GENERAL SECTION%")
+     &"*BEAM SECTION%")
          else
-            write(*,*) '*WARNING reading *BEAM GENERAL SECTION:'
+            write(*,*) '*WARNING reading *BEAM SECTION:'
             write(*,*) '         parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
-     &"*BEAM GENERAL SECTION%")
+     &"*BEAM SECTION%")
          endif
       enddo
 !
 !     check whether a sections was defined
 !
       if(section.eq.'    ') then
-         write(*,*) '*ERROR reading *BEAM GENERAL SECTION:'
+         write(*,*) '*ERROR reading *BEAM SECTION:'
          write(*,*) '       no section defined'
          call exit(201)
       endif
@@ -112,11 +119,11 @@
          if(matname(i).eq.material) exit
       enddo
       if(i.gt.nmat) then
-         write(*,*) '*ERROR reading *BEAM GENERAL SECTION:'
+         write(*,*) '*ERROR reading *BEAM SECTION:'
          write(*,*) '       nonexistent material'
          write(*,*) '  '
          call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM GENERAL SECTION%")
+     &"*BEAM SECTION%")
          call exit(201)
       endif
       imaterial=i
@@ -136,10 +143,10 @@
          enddo
          if(i.gt.norien) then
             write(*,*)
-     &   '*ERROR reading *BEAM GENERAL SECTION: nonexistent orientation'
+     &   '*ERROR reading *BEAM SECTION: nonexistent orientation'
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM GENERAL SECTION%")
+     &"*BEAM SECTION%")
             call exit(201)
          endif
          iorientation=i
@@ -150,61 +157,98 @@
       enddo
       if(i.gt.nset) then
          elset(ipos:ipos)=' '
-         write(*,*)'*ERROR reading *BEAM GENERAL SECTION: element set ',
+         write(*,*)'*ERROR reading *BEAM SECTION: element set ',
      &      elset(1:ipos)
          write(*,*) '  has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM GENERAL SECTION%")
+     &"*BEAM SECTION%")
          call exit(201)
       endif
 !
 !     assigning the elements of the set the appropriate material,
 !     orientation number, section and offset(s)
 !
-      do j=istartset(i),iendset(i)
-         if(ialset(j).gt.0) then
-            if(lakon(ialset(j))(1:4).ne.'B32R') then
-               write(*,*) '*ERROR reading *BEAM GENERAL SECTION:'
-               write(*,*) '       *BEAM GENERAL SECTION can'
-               write(*,*) '       only be used for B32R elements.'
-               write(*,*) '       Element ',ialset(j),' is not a B32R el
-     &ement.'
-               call exit(201)
-            endif
-            ielmat(1,ialset(j))=imaterial
-            ielorien(1,ialset(j))=iorientation
-            offset(1,ialset(j))=offset1
-            offset(2,ialset(j))=offset2
-            if(section.eq.'PIPE') then
-               lakon(ialset(j))(8:8)='P'
-            elseif(section.eq.'BOX') then
-               lakon(ialset(j))(8:8)='B'
-            endif
-         else
-            k=ialset(j-2)
-            do
-               k=k-ialset(j)
-               if(k.ge.ialset(j-1)) exit
-               if(lakon(k)(1:1).ne.'B') then
-                  write(*,*) '*ERROR reading *BEAM GENERAL SECTION:'
-                  write(*,*) '       *BEAM GENERAL SECTION can'
-                  write(*,*) '       only be used for beam elements.'
-                  write(*,*) '       Element ',k,' is not a beam element
-     &.'
+      if(section.ne.'GENE') then
+         do j=istartset(i),iendset(i)
+            if(ialset(j).gt.0) then
+               if(lakon(ialset(j))(1:4).ne.'B32R') then
+                  write(*,*) '*ERROR reading *BEAM SECTION:'
+                  write(*,*) '       *BEAM SECTION can'
+                  write(*,*) '       only be used for B32R elements.'
+                  write(*,*) '       Element ',ialset(j),' is not a B32R
+     & element.'
                   call exit(201)
                endif
-               ielmat(1,k)=imaterial
-               ielorien(1,k)=iorientation
-               offset(1,k)=offset1
-               offset(2,k)=offset2
+               ielmat(1,ialset(j))=imaterial
+               ielorien(1,ialset(j))=iorientation
+               offset(1,ialset(j))=offset1
+               offset(2,ialset(j))=offset2
                if(section.eq.'PIPE') then
-                  lakon(k)(8:8)='P'
+                  lakon(ialset(j))(8:8)='P'
                elseif(section.eq.'BOX') then
-                  lakon(k)(8:8)='B'
+                  lakon(ialset(j))(8:8)='B'
                endif
-            enddo
-         endif
-      enddo
+            else
+               k=ialset(j-2)
+               do
+                  k=k-ialset(j)
+                  if(k.ge.ialset(j-1)) exit
+                  if(lakon(k)(1:1).ne.'B') then
+                     write(*,*) '*ERROR reading *BEAM SECTION:'
+                     write(*,*) '       *BEAM SECTION can'
+                     write(*,*) '       only be used for beam elements.'
+                     write(*,*) '       Element ',k,' is not a beam elem
+     &ent.'
+                     call exit(201)
+                  endif
+                  ielmat(1,k)=imaterial
+                  ielorien(1,k)=iorientation
+                  offset(1,k)=offset1
+                  offset(2,k)=offset2
+                  if(section.eq.'PIPE') then
+                     lakon(k)(8:8)='P'
+                  elseif(section.eq.'BOX') then
+                     lakon(k)(8:8)='B'
+                  endif
+               enddo
+            endif
+         enddo
+      else
+!
+!        general section
+!
+         do j=istartset(i),iendset(i)
+            if(ialset(j).gt.0) then
+               if(lakon(ialset(j))(1:2).ne.'U1') then
+                  write(*,*) '*ERROR reading *BEAM SECTION:'
+                  write(*,*) '       *BEAM SECTION of type GENERAL can'
+                  write(*,*) '       only be used for U1 elements.'
+                  write(*,*) '       Element ',ialset(j),' is not a U1
+     & element.'
+                  call exit(201)
+               endif
+               ielmat(1,ialset(j))=imaterial
+               ielorien(1,ialset(j))=iorientation
+            else
+               k=ialset(j-2)
+               do
+                  k=k-ialset(j)
+                  if(k.ge.ialset(j-1)) exit
+                  if(lakon(k)(1:2).ne.'U1') then
+                     write(*,*) '*ERROR reading *BEAM SECTION:'
+                     write(*,*) '       *BEAM SECTION of type GENERAL'
+                     write(*,*) '       can only be used for beam'
+                     write(*,*) '       elements.'
+                     write(*,*) '       Element ',k,' is not a beam elem
+     &ent.'
+                     call exit(201)
+                  endif
+                  ielmat(1,k)=imaterial
+                  ielorien(1,k)=iorientation
+               enddo
+            endif
+         enddo
+      endif
 !
 !     reading the properties
 !
@@ -219,14 +263,56 @@
             read(textpart(k),'(f40.0)',iostat=istat)
      &           prop(nprop+lprop)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM GENERAL SECTION%")
+     &"*BEAM SECTION%")
          enddo
       enddo
       nprop=nprop+ndprop
 !
+      if(section.eq.'GENE') then
+!
+         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &        ipoinp,inp,ipoinpc)
+         if((istat.lt.0).or.(key.eq.1)) then
+!
+!           default 1-direction
+!
+            prop(nprop+1)=0.d0
+            prop(nprop+2)=0.d0
+            prop(nprop+3)=-1.d0
+         else
+!
+!           1-direction specified by the user
+!
+            read(textpart(1)(1:20),'(f20.0)',iostat=istat) p(1)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &           "*BEAM SECTION%")
+            read(textpart(2)(1:20),'(f20.0)',iostat=istat) p(2)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &           "*BEAM SECTION%")
+            read(textpart(3)(1:20),'(f20.0)',iostat=istat) p(3)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &           "*BEAM SECTION%")
+            dd=dsqrt(p(1)*p(1)+p(2)*p(2)+p(3)*p(3))
+            if(dd.lt.1.d-10) then
+               write(*,*) 
+     &           '*ERROR reading *BEAM SECTION: normal in direction 1'
+               write(*,*) '       has zero size'
+               call exit(201)
+            endif
+            do j=1,3
+               prop(nprop+j)=p(j)/dd
+            enddo
+         endif
+         nprop=nprop+3
+!     
+         prop(nprop+1)=offset1
+         prop(nprop+2)=offset2
+         nprop=nprop+2
+      endif
+!
       if(nprop.gt.nprop_) then
          write(*,*) 
-     &       '*ERROR reading *BEAM GENERAL SECTION: increase nprop_'
+     &       '*ERROR reading *BEAM SECTION: increase nprop_'
          call exit(201)
       endif
 !
@@ -242,28 +328,43 @@
 !
 !     assigning the thickness and the properties to the elements
 !
-      do j=istartset(i),iendset(i)
-         if(ialset(j).gt.0) then
-            indexe=ipkon(ialset(j))
-            do l=1,8
-               thicke(1,indexe+l)=thickness1
-               thicke(2,indexe+l)=thickness2
-            enddo
-            ielprop(ialset(j))=npropstart
-         else
-            k=ialset(j-2)
-            do
-               k=k-ialset(j)
-               if(k.ge.ialset(j-1)) exit
-               indexe=ipkon(k)
+      if(section.ne.'GENE') then
+         do j=istartset(i),iendset(i)
+            if(ialset(j).gt.0) then
+               indexe=ipkon(ialset(j))
                do l=1,8
                   thicke(1,indexe+l)=thickness1
                   thicke(2,indexe+l)=thickness2
                enddo
-               ielprop(k)=npropstart
-            enddo
-         endif
-      enddo
+               ielprop(ialset(j))=npropstart
+            else
+               k=ialset(j-2)
+               do
+                  k=k-ialset(j)
+                  if(k.ge.ialset(j-1)) exit
+                  indexe=ipkon(k)
+                  do l=1,8
+                     thicke(1,indexe+l)=thickness1
+                     thicke(2,indexe+l)=thickness2
+                  enddo
+                  ielprop(k)=npropstart
+               enddo
+            endif
+         enddo
+      else
+         do j=istartset(i),iendset(i)
+            if(ialset(j).gt.0) then
+               ielprop(ialset(j))=npropstart
+            else
+               k=ialset(j-2)
+               do
+                  k=k-ialset(j)
+                  if(k.ge.ialset(j-1)) exit
+                  ielprop(k)=npropstart
+               enddo
+            endif
+         enddo
+      endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
@@ -274,17 +375,17 @@
       indexx=-1
       read(textpart(1)(1:20),'(f20.0)',iostat=istat) p(1)
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM GENERAL SECTION%")
+     &"*BEAM SECTION%")
       read(textpart(2)(1:20),'(f20.0)',iostat=istat) p(2)
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM GENERAL SECTION%")
+     &"*BEAM SECTION%")
       read(textpart(3)(1:20),'(f20.0)',iostat=istat) p(3)
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM GENERAL SECTION%")
+     &"*BEAM SECTION%")
       dd=dsqrt(p(1)*p(1)+p(2)*p(2)+p(3)*p(3))
       if(dd.lt.1.d-10) then
          write(*,*) 
-     &    '*ERROR reading *BEAM GENERAL SECTION: normal in direction 1'
+     &    '*ERROR reading *BEAM SECTION: normal in direction 1'
          write(*,*) '       has zero size'
          call exit(201)
       endif

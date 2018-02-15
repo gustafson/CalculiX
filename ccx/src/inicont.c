@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2007 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -29,31 +29,23 @@ void inicont(ITG * nk,ITG *ncont, ITG *ntie, char *tieset, ITG *nset, char *set,
                ITG **nslavnodep, ITG **nmastnodep, ITG *mortar,
                ITG **imastopp,ITG *nkon,ITG **iponoelsp,ITG **inoelsp,
 	       ITG **ipep, ITG **imep, ITG *ne, ITG *ifacecount,
-               ITG *nmpc, ITG *mpcfree, ITG *memmpc_,
-               ITG **ipompcp, char **labmpcp, ITG **ikmpcp, ITG **ilmpcp,
-               double **fmpcp, ITG **nodempcp, double **coefmpcp,
 	       ITG *iperturb, ITG *ikboun, ITG *nboun, double *co,
 	       ITG *istep,double **xnoelsp){
     
-  char kind1[2]="C",kind2[2]="-",*tchar1=NULL,*tchar3=NULL,*labmpc=NULL;
+  char kind1[2]="C",kind2[2]="-",*tchar1=NULL,*tchar3=NULL;
     
   ITG *itietri=NULL,*koncont=NULL,*itiefac=NULL, *islavsurf=NULL,im,
       *islavnode=NULL,*imastnode=NULL,*nslavnode=NULL,*nmastnode=NULL,
       nmasts,*ipe=NULL,*ime=NULL,*imastop=NULL,
       *iponoels=NULL,*inoels=NULL,ifreenoels,ifreeme,*ipoface=NULL,
-      *nodface=NULL,iface,*ipompc=NULL,*ikmpc=NULL,
-      *ilmpc=NULL,*nodempc=NULL,nmpc_,i,j,k,ncone;
+      *nodface=NULL,iface,i,j,k,ncone;
     
-  double *fmpc=NULL,*coefmpc=NULL,*xnoels=NULL;
+  double *xnoels=NULL;
     
   itietri=*itietrip;koncont=*koncontp;itiefac=*itiefacp;islavsurf=*islavsurfp;
   islavnode=*islavnodep;imastnode=*imastnodep;nslavnode=*nslavnodep;
   nmastnode=*nmastnodep;imastop=*imastopp,iponoels=*iponoelsp;
   inoels=*inoelsp;ipe=*ipep;ime=*imep;xnoels=*xnoelsp;
-
-  ipompc=*ipompcp;labmpc=*labmpcp;ikmpc=*ikmpcp;ilmpc=*ilmpcp;
-  fmpc=*fmpcp;nodempc=*nodempcp;coefmpc=*coefmpcp;
-  nmpc_=*nmpc;
 
   /* determining the number of slave entities (nodes or faces, ncone),
      and the number of master triangles (ncont) */
@@ -125,9 +117,6 @@ void inicont(ITG * nk,ITG *ncont, ITG *ntie, char *tieset, ITG *nset, char *set,
   *nslavnodep=nslavnode;*nmastnodep=nmastnode;
   *imastopp=imastop;*iponoelsp=iponoels;*inoelsp=inoels;
   *ipep=ipe;*imep=ime;*xnoelsp=xnoels;
-
-  *ipompcp=ipompc;*labmpcp=labmpc;*ikmpcp=ikmpc;*ilmpcp=ilmpc;
-  *fmpcp=fmpc;*nodempcp=nodempc;*coefmpcp=coefmpc;
   
   return;
 }

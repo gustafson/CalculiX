@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -246,6 +246,15 @@
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,ttime,time,
      &     iaxial)
+!
+!     user element
+!
+      elseif(lakon(nelem)(2:2).eq.'U') then
+!         
+         call user_network_element(node1,node2,nodem,nelem,lakon,kon,
+     &        ipkon,nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,co,vold,mi,
+     &        ttime,time,iaxial)
 !
 !     vortex
 !

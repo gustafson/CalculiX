@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -58,7 +58,7 @@
      &  mpc1,mpc2,index1,index2,jdof,node1,node2,kflag,icalccg,
      &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,
-     &  nea,neb,kscale,iponoel(*),inoel(2,*),network
+     &  nea,neb,kscale,iponoel(*),inoel(2,*),network,ndof
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
@@ -139,25 +139,33 @@ c      write(*,*) loc(index1)
 c     Bernhardi start
         if(lakon(i)(1:5).eq.'C3D8I') then
            nope=11
+           ndof=3
         elseif(lakon(i)(4:5).eq.'20') then
 c     Bernhardi end
            nope=20
+           ndof=3
         elseif(lakon(i)(4:4).eq.'8') then
            nope=8
+           ndof=3
         elseif(lakon(i)(4:5).eq.'10') then
            nope=10
+           ndof=3
         elseif(lakon(i)(4:4).eq.'4') then
            nope=4
+           ndof=3
         elseif(lakon(i)(4:5).eq.'15') then
            nope=15
+           ndof=3
         elseif(lakon(i)(4:4).eq.'6') then
            nope=6
+           ndof=3
         elseif((lakon(i)(1:2).eq.'ES').and.(lakon(i)(7:7).ne.'F')) then
 !
 !          spring and contact spring elements (NO dashpot elements
 !          = ED... elements)
 !
            nope=ichar(lakon(i)(8:8))-47
+           ndof=3
 !     
 !          local contact spring number
 !          if friction is involved, the contact spring element
@@ -169,6 +177,17 @@ c     Bernhardi end
            endif
         elseif(lakon(i)(1:4).eq.'MASS') then
            nope=1
+           ndof=3
+        elseif(lakon(i)(1:1).eq.'U') then
+c           if(lakon(i)(7:7).eq.' ') then
+c              nope=ichar(lakon(i)(8:8))-48
+c           else
+c              nope=10*(ichar(lakon(i)(7:7))-48)
+c     &             +ichar(lakon(i)(8:8))-48
+c           endif
+c           ndof=ichar(lakon(i)(6:6))-48
+           ndof=ichar(lakon(i)(7:7))
+           nope=ichar(lakon(i)(8:8))
         else
            cycle
         endif
@@ -215,7 +234,8 @@ c     Bernhardi end
            enddo
         endif
 !
-        call e_c3d(co,kon,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,i,
+        if(lakon(i)(1:1).ne.'U') then
+           call e_c3d(co,kon,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,i,
      &          nmethod,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
      &          alzero,ielmat,ielorien,norien,orab,ntmat_,
      &          t0,t1,ithermal,vold,iperturb,nelemload,sideload,xload,
@@ -228,19 +248,34 @@ c     Bernhardi end
      &          integerglob,doubleglob,tieset,istartset,
      &          iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,
      &          clearini,ielprop,prop,kscale)
+        else
+           call e_c3d_u(co,kon,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,i,
+     &          nmethod,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
+     &          alzero,ielmat,ielorien,norien,orab,ntmat_,
+     &          t0,t1,ithermal,vold,iperturb,nelemload,sideload,xload,
+     &          nload,idist,sti,stx,iexpl,plicon,
+     &          nplicon,plkcon,nplkcon,xstiff,npmat_,
+     &          dtime,matname,mi(1),ncmat_,mass(1),stiffness,buckling,
+     &          rhsi,intscheme,ttime,time,istep,iinc,coriolis,xloadold,
+     &          reltime,ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
+     &          ne0,ipkon,thicke,
+     &          integerglob,doubleglob,tieset,istartset,
+     &          iendset,ialset,ntie,nasym,
+     &          ielprop,prop)
+        endif
 !
-        do jj=1,3*nope
+        do jj=1,ndof*nope
 !
-          j=(jj-1)/3+1
-          k=jj-3*(j-1)
+          j=(jj-1)/ndof+1
+          k=jj-ndof*(j-1)
 !
           node1=kon(indexe+j)
           jdof1=nactdof(k,node1)
 !
-          do ll=jj,3*nope
+          do ll=jj,ndof*nope
 !
-            l=(ll-1)/3+1
-            m=ll-3*(l-1)
+            l=(ll-1)/ndof+1
+            m=ll-ndof*(l-1)
 !
             node2=kon(indexe+l)
             jdof2=nactdof(m,node2)
@@ -262,21 +297,16 @@ c     Bernhardi end
 !
                if(jdof1.le.0) then
                   idof1=jdof2
-c                  idof2=(node1-1)*8+k
                   idof2=jdof1
                else
                   idof1=jdof1
-c                  idof2=(node2-1)*8+m
                   idof2=jdof2
                endif
                if(nmpc.gt.0) then
-c                  call nident(ikmpc,idof2,nmpc,id)
-c                  if((id.gt.0).and.(ikmpc(id).eq.idof2)) then
                   if(idof2.ne.2*(idof2/2)) then
 !
 !                    regular DOF / MPC
 !
-c                     id=ilmpc(id)
                      id=(-idof2+1)/2
                      ist=ipompc(id)
                      index=nodempc(3,ist)
@@ -292,9 +322,9 @@ c                     id=ilmpc(id)
                            else
                               valu2=-coefmpc(index)*sm(jj,ll)/
      &                               coefmpc(ist)
-c
+!
                               if(idof1.eq.idof2) valu2=2.d0*valu2
-c
+!
                               call add_sm_ei(au,ad,aub,adb,jq,irow,
      &                             idof1,idof2,value,valu2,i0,i0)
                            endif
@@ -311,29 +341,19 @@ c
                if(rhsi.eq.1) then
                elseif(nmethod.eq.2) then
                   value=s(jj,ll)
-c                  call nident(ikboun,idof2,nboun,id)
-c                  icolumn=neq(2)+ilboun(id)
                   icolumn=neq(2)-idof2/2
                   call add_bo_st(au,jq,irow,idof1,icolumn,value)
                endif
             else
-c               idof1=(node1-1)*8+k
-c               idof2=(node2-1)*8+m
                idof1=jdof1
                idof2=jdof2
                mpc1=0
                mpc2=0
                if(nmpc.gt.0) then
-c                  call nident(ikmpc,idof1,nmpc,id1)
-c                  if((id1.gt.0).and.(ikmpc(id1).eq.idof1)) mpc1=1
-c                  call nident(ikmpc,idof2,nmpc,id2)
-c                  if((id2.gt.0).and.(ikmpc(id2).eq.idof2)) mpc2=1
                   if(idof1.ne.2*(idof1/2)) mpc1=1
                   if(idof2.ne.2*(idof2/2)) mpc2=1
                endif
                if((mpc1.eq.1).and.(mpc2.eq.1)) then
-c                  id1=ilmpc(id1)
-c                  id2=ilmpc(id2)
                   id1=(-idof1+1)/2
                   id2=(-idof2+1)/2
                   if(id1.eq.id2) then
@@ -403,9 +423,9 @@ c                  id2=ilmpc(id2)
                               else
                                  valu2=coefmpc(index1)*coefmpc(index2)*
      &                             sm(jj,ll)/coefmpc(ist1)/coefmpc(ist2)
-c
+!
                                  if(idof1.eq.idof2) valu2=2.d0*valu2
-c
+!
                                  call add_sm_ei(au,ad,aub,adb,jq,
      &                             irow,idof1,idof2,value,valu2,i0,i0)
                               endif
@@ -418,27 +438,6 @@ c
                         if(index1.eq.0) exit
                      enddo
                   endif
-c               elseif(((mpc1.eq.1).or.(mpc2.eq.1)).and.rhsi)
-c     &           then
-c                  if(mpc1.eq.1) then
-c!
-c!                    MPC id1 / SPC
-c!
-c                     call nident(ikboun,idof2,nboun,id2)
-c                     idof2=ilboun(id2)
-c                     ist1=ipompc(id1)
-c                     index1=nodempc(3,ist1)
-c                     if(index1.eq.0) cycle
-c                  elseif(mpc2.eq.1) then
-c!
-c!                    MPC id2 / SPC
-c!
-c                     call nident(ikboun,idof1,nboun,id1)
-c                     idof1=ilboun(id1)
-c                     ist2=ipompc(id2)
-c                     index2=nodempc(3,ist2)
-c                     if(index2.eq.0) cycle
-c                  endif
                endif
             endif
           enddo
@@ -456,12 +455,8 @@ c                  endif
 !
                 if(jdof1.le.0) then
                    if(nmpc.ne.0) then
-c                      idof1=(node1-1)*8+k
                       idof1=jdof1
-c                      call nident(ikmpc,idof1,nmpc,id)
-c                      if((id.gt.0).and.(ikmpc(id).eq.idof1)) then
                       if(idof1.ne.2*(idof1/2)) then
-c                         id=ilmpc(id)
                          id=(-idof1+1)/2
                          ist=ipompc(id)
                          index=nodempc(3,ist)
@@ -513,9 +508,7 @@ c                         id=ilmpc(id)
 !
 !          contact spring and advection elements
 !
-c           read(lakon(i)(8:8),'(i1)') nope
             nope=ichar(lakon(i)(8:8))-47
-c           nope=nope+1
 !     
 !          local contact spring number
 !     
@@ -542,7 +535,7 @@ c           nope=nope+1
      &  ilmpc,springarea,plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,
      &  lakon,pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,
      &  ipkon,ielprop,prop,iponoel,inoel,sti,xstateini,xstate,
-     &  nstate_,network)
+     &  nstate_,network,ipobody,xbody,ibody)
 !
         do jj=1,nope
 !
@@ -554,7 +547,6 @@ c           nope=nope+1
           do ll=jj,nope
 !
             l=ll
-c            m=0
 !
             node2=kon(indexe+l)
             jdof2=nactdof(0,node2)
@@ -576,21 +568,16 @@ c            m=0
 !
                if(jdof1.le.0) then
                   idof1=jdof2
-c                  idof2=(node1-1)*8
                   idof2=jdof1
                else
                   idof1=jdof1
-c                  idof2=(node2-1)*8
                   idof2=jdof2
                endif
                if(nmpc.gt.0) then
-c                  call nident(ikmpc,idof2,nmpc,id)
-c                  if((id.gt.0).and.(ikmpc(id).eq.idof2)) then
                   if(idof2.ne.2*(idof2/2)) then
 !
 !                    regular DOF / MPC
 !
-c                     id=ilmpc(id)
                      id=(-idof2+1)/2
                      ist=ipompc(id)
                      index=nodempc(3,ist)
@@ -606,9 +593,9 @@ c                     id=ilmpc(id)
                            else
                               valu2=-coefmpc(index)*sm(jj,ll)/
      &                               coefmpc(ist)
-c
+!
                               if(idof1.eq.idof2) valu2=2.d0*valu2
-c
+!
                               call add_sm_ei(au,ad,aub,adb,jq,irow,
      &                             idof1,idof2,value,valu2,i0,i0)
                            endif
@@ -625,29 +612,19 @@ c
                if(rhsi.eq.1) then
                elseif(nmethod.eq.2) then
                   value=s(jj,ll)
-c                  call nident(ikboun,idof2,nboun,id)
-c                  icolumn=neq(2)+ilboun(id)
                   icolumn=neq(2)-idof2/2
                   call add_bo_st(au,jq,irow,idof1,icolumn,value)
                endif
             else
-c               idof1=(node1-1)*8
-c               idof2=(node2-1)*8
                idof1=jdof1
                idof2=jdof2
                mpc1=0
                mpc2=0
                if(nmpc.gt.0) then
-c                  call nident(ikmpc,idof1,nmpc,id1)
-c                  if((id1.gt.0).and.(ikmpc(id1).eq.idof1)) mpc1=1
-c                  call nident(ikmpc,idof2,nmpc,id2)
-c                  if((id2.gt.0).and.(ikmpc(id2).eq.idof2)) mpc2=1
                   if(idof1.ne.2*(idof1/2)) mpc1=1
                   if(idof2.ne.2*(idof2/2)) mpc2=1
                endif
                if((mpc1.eq.1).and.(mpc2.eq.1)) then
-c                  id1=ilmpc(id1)
-c                  id2=ilmpc(id2)
                   id1=(-idof1+1)/2
                   id2=(-idof2+1)/2
                   if(id1.eq.id2) then
@@ -717,9 +694,9 @@ c                  id2=ilmpc(id2)
                               else
                                  valu2=coefmpc(index1)*coefmpc(index2)*
      &                             sm(jj,ll)/coefmpc(ist1)/coefmpc(ist2)
-c
+!
                                  if(idof1.eq.idof2) valu2=2.d0*valu2
-c
+!
                                  call add_sm_ei(au,ad,aub,adb,jq,
      &                             irow,idof1,idof2,value,valu2,i0,i0)
                               endif
@@ -732,33 +709,6 @@ c
                         if(index1.eq.0) exit
                      enddo
                   endif
-c               elseif(((mpc1.eq.1).or.(mpc2.eq.1)).and.rhsi)
-c     &           then
-c                  if(mpc1.eq.1) then
-c!
-c!                    MPC id1 / SPC
-c!
-c                     call nident(ikboun,idof2,nboun,id2)
-c                     idof2=ilboun(id2)
-c                     ist1=ipompc(id1)
-c                     index1=nodempc(3,ist1)
-c                     if(index1.eq.0) cycle
-c                     do
-c                        idof1=nactdof(nodempc(2,index1),
-c     &                                nodempc(1,index1))
-c                        index1=nodempc(3,index1)
-c                        if(index1.eq.0) exit
-c                     enddo
-c                  elseif(mpc2.eq.1) then
-c!
-c!                    MPC id2 / SPC
-c!
-c                     call nident(ikboun,idof1,nboun,id1)
-c                     idof1=ilboun(id1)
-c                     ist2=ipompc(id2)
-c                     index2=nodempc(3,ist2)
-c                     if(index2.eq.0) cycle
-c                  endif
                endif
             endif
           enddo
@@ -770,12 +720,8 @@ c                  endif
              if(idist.ne.0) then
                 if(jdof1.le.0) then
                    if(nmpc.ne.0) then
-c                      idof1=(node1-1)*8
                       idof1=jdof1
-c                      call nident(ikmpc,idof1,nmpc,id)
-c                      if((id.gt.0).and.(ikmpc(id).eq.idof1)) then
                       if(idof1.ne.2*(idof1/2)) then
-c                         id=ilmpc(id)
                          id=(-idof1+1)/2
                          ist=ipompc(id)
                          index=nodempc(3,ist)

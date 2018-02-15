@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2015 Guido Dhondt
+!     Copyright (C) 1998-2017 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -42,9 +42,9 @@
      &     T1,T2,Tt1,Tt2,pt1,pt2,cp,physcon(*),p2p1,km1,dvi,
      &     kp1,kdkm1,reynolds,pi,lambda,lld,kdkp1,
      &     C2,tdkp1,ttime,time,pt2zpt1,ks,form_fact,xflow_oil,
-     &     Pt2zPt1_c,Qred_crit,Qred,phi,M1,M2,Qred1,co(3,*),
+     &     pt2zpt1_c,Qred1_crit,Qred,phi,M1,M2,Qred1,co(3,*),
      &     shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),vold(0:mi(2),*),
-     &     radius,bb,cc,ee1,ee2,dfdM1,dfdM2,M1_c
+     &     radius,bb,cc,ee1,ee2,dfdM1,dfdM2,M1_c,Qred2
 !
       intent(in) node1,node2,nodem,nelem,lakon,kon,
      &        ipkon,nactdog,ielprop,prop,iflag,
@@ -166,7 +166,7 @@ c         write(*,*) 'gaspipe_fanno a',nelem,pt1,pt2
          xflow=inv*A*dsqrt(d/(lambda*l)*2*pt1/(r*Tt1)*(pt1-pt2))
 !
          call pt2zpt1_crit(pt2,pt1,Tt1,lambda,kappa,r,l,d,
-     &     inv,pt2zpt1_c,Qred_crit,crit,icase,M1_c)
+     &         pt2zpt1_c,Qred1_crit,crit,icase,M1_c)
 !
          Qred=dabs(xflow)*dsqrt(Tt1)/(A*pt1)
 !
@@ -174,12 +174,12 @@ c         write(*,*) 'gaspipe_fanno a',nelem,pt1,pt2
 !
 !           the flow is set to half the critical value
 !
-            xflow=0.5*inv*Qred_crit*Pt1*A/dsqrt(Tt1)
-         elseif(Qred.gt.Qred_crit) then
+            xflow=0.5*inv*Qred1_crit*pt1*A/dsqrt(Tt1)
+         elseif(Qred.gt.Qred1_crit) then
 !
 !           the flow is set to half the critical value
 !
-            xflow=0.5*inv*Qred_crit*pt1*A/dsqrt(Tt1)
+            xflow=0.5*inv*Qred1_crit*pt1*A/dsqrt(Tt1)
          endif
 c         write(*,*) 'gaspipe_fanno a',nelem,xflow
 !
@@ -283,7 +283,7 @@ c         write(*,*) 'gaspipe_fanno b',nelem,pt1,pt2,xflow
 c            inv=1
 !
             Tt1=v(0,node1)-physcon(1)
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,A,T1,icase)
+            call ts_calc(xflow,Tt1,pt1,kappa,r,A,T1,icase)
 !     
             nodef(1)=node1
             nodef(2)=node1
@@ -297,7 +297,7 @@ c            inv=-1
 c            xflow=-v(1,nodem)*iaxial
 !
             Tt1=v(0,node2)-physcon(1)
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,A,T1,icase)
+            call ts_calc(xflow,Tt1,pt1,kappa,r,A,T1,icase)
 !
             nodef(1)=node2
             nodef(2)=node2
@@ -362,17 +362,18 @@ c         endif
 !        calculating the critical conditions
 !     
          call pt2zpt1_crit(pt2,pt1,Tt1,lambda,kappa,r,l,d,
-     &     inv,pt2zpt1_c,Qred_crit,crit,icase,M1_c)
+     &         pt2zpt1_c,Qred1_crit,crit,icase,M1_c)
 !
          if(wrongdir) lambda=-lambda
 !
-         Qred1=xflow*dsqrt(Tt1)/(A*Pt1)
+         Qred1=xflow*dsqrt(Tt1)/(A*pt1)
 !
 !        check whether flow is critical
 !        assigning the physcical correct sign to xflow
 !
          if(crit) then
-            xflow=inv*Qred_crit*A*Pt1/dsqrt(Tt1)
+            xflow=Qred1_crit*A*pt1/dsqrt(Tt1)
+c            xflow=inv*Qred1_crit*A*pt1/dsqrt(Tt1)
             M1=dsqrt(2/km1*((Tt1/T1)-1.d0))
             if(icase.eq.0) then
                M1=min(M1,0.999d0)
@@ -380,11 +381,12 @@ c         endif
                M1=min(M1,0.999d0/dsqrt(kappa))
             endif
          else
-            if(Qred1.gt.Qred_crit) then
-               xflow=inv*Qred_crit*A*Pt1/dsqrt(Tt1)
+            if(Qred1.gt.Qred1_crit) then
+c               xflow=inv*Qred1_crit*A*pt1/dsqrt(Tt1)
+               xflow=Qred1_crit*A*pt1/dsqrt(Tt1)
                M1=M1_c
             else
-               xflow=inv*xflow
+c               xflow=inv*xflow
                M1=dsqrt(2/km1*((Tt1/T1)-1.d0))
             endif
 !
@@ -398,8 +400,13 @@ c         endif
             else
                Tt2=v(0,node1)-physcon(1)
             endif
-            call ts_calc(xflow,Tt2,Pt2,kappa,r,A,T2,icase)
+            call ts_calc(xflow,Tt2,pt2,kappa,r,A,T2,icase)
             M2=dsqrt(2/km1*((Tt2/T2)-1.d0))
+c            Qred2=xflow*dsqrt(Tt1)/(A*pt2)
+c            write(*,*) 'gaspipe_fanno 1',M1,Qred1
+c            write(*,*) 'gaspipe_fanno 2',M1_c,Qred1_crit
+c            write(*,*) 'gaspipe_fanno 3',M2,Qred2
+c            write(*,*)
          endif
 c         write(*,*) 'gaspipe_fanno2 ',xflow,inv,M1
 c         write(*,*) 'gaspipe_fanno3 ',M2,lambda,reynolds
@@ -439,7 +446,8 @@ c         write(*,*) 'gaspipe_fanno3 ',M2,lambda,reynolds
 !     
 !              mass flow
 !     
-               df(3)=(dfdM1*ee1+dfdM2*ee2)/xflow
+               df(3)=(dfdM1*ee1+dfdM2*ee2)/(inv*xflow)
+c               df(3)=(dfdM1*ee1+dfdM2*ee2)/(xflow)
 !     
 !              pressure node2
 !     
@@ -471,7 +479,8 @@ c               write(*,*) 'gaspipe_fanno df(5)',df(5)
 !     
 !              mass flow
 !     
-               df(3)=dfdM1*ee1/xflow
+               df(3)=dfdM1*ee1/(inv*xflow)
+c               df(3)=dfdM1*ee1/(xflow)
 !     
 !              pressure node2
 !     
@@ -508,7 +517,8 @@ c         write(*,*) 'gaspipe dfdM1 ',dfdM1
 !     
 !              mass flow
 !     
-               df(3)=(dfdM1*ee1+dfdM2*ee2)/xflow
+               df(3)=(dfdM1*ee1+dfdM2*ee2)/(inv*xflow)
+c               df(3)=(dfdM1*ee1+dfdM2*ee2)/(xflow)
 !     
 !              pressure node2
 !     
@@ -534,7 +544,8 @@ c         write(*,*) 'gaspipe dfdM1 ',dfdM1
 !     
 !              mass flow
 !     
-               df(3)=dfdM1*ee1/xflow
+               df(3)=dfdM1*ee1/(inv*xflow)
+c               df(3)=dfdM1*ee1/(xflow)
 c         write(*,*) 'gaspipe f,df ',f,df(1),df(2),df(3)
 !     
 !              pressure node2
@@ -585,14 +596,14 @@ c         if(xflow.ge.0d0) then
             inv=1
             xflow=v(1,nodem)*iaxial
             Tt1=v(0,node1)-physcon(1)
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,A,T1,icase)
+            call ts_calc(xflow,Tt1,pt1,kappa,r,A,T1,icase)
             if(icase.eq.0) then
                Tt2=Tt1
-               call ts_calc(xflow,Tt2,Pt2,kappa,r,A,T2,icase)
+               call ts_calc(xflow,Tt2,pt2,kappa,r,A,T2,icase)
             else
                T2=T1
                Tt2=v(0,node2)-physcon(1)
-               call tt_calc(xflow,Tt2,Pt2,kappa,r,A,T2,icase)
+               call tt_calc(xflow,Tt2,pt2,kappa,r,A,T2,icase)
             endif
 !     
          else
@@ -601,18 +612,18 @@ c         if(xflow.ge.0d0) then
             pt2=v(2,node1)
             xflow=v(1,nodem)*iaxial
             Tt1=v(0,node2)-physcon(1)
-            call ts_calc(xflow,Tt1,Pt1,kappa,r,A,T1,icase)
+            call ts_calc(xflow,Tt1,pt1,kappa,r,A,T1,icase)
             if(icase.eq.0) then
                Tt2=Tt1
-               call ts_calc(xflow,Tt2,Pt2,kappa,r,A,T2,icase)
+               call ts_calc(xflow,Tt2,pt2,kappa,r,A,T2,icase)
             else
                T2=T1
                Tt2=v(0,node1)-physcon(1)
-               call tt_calc(xflow,Tt2,Pt2,kappa,r,A,T2,icase)
+               call tt_calc(xflow,Tt2,pt2,kappa,r,A,T2,icase)
             endif
 !               
-c            call ts_calc(xflow,Tt1,Pt1,kappa,r,A,T1,icase)
-c            call ts_calc(xflow,Tt2,Pt2,kappa,r,A,T2,icase)
+c            call ts_calc(xflow,Tt1,pt1,kappa,r,A,T1,icase)
+c            call ts_calc(xflow,Tt2,pt2,kappa,r,A,T2,icase)
 !     
          endif
 !     
@@ -651,7 +662,7 @@ c            call ts_calc(xflow,Tt2,Pt2,kappa,r,A,T2,icase)
          endif
 !     
          call pt2zpt1_crit(pt2,pt1,Tt1,lambda,kappa,r,l,d,
-     &     inv,pt2zpt1_c,Qred_crit,crit,icase,M1_c)
+     &         pt2zpt1_c,Qred1_crit,crit,icase,M1_c)
 !     
 !     definition of the coefficients 
 !     
@@ -665,7 +676,7 @@ c            call ts_calc(xflow,Tt2,Pt2,kappa,r,A,T2,icase)
 !     
             if(inv.eq.1) then
                write(1,53)'       Inlet node ',node1,' :    Tt1 = ',Tt1,
-     &              ' , Ts1 = ',T1,'  , Pt1 = ',Pt1,
+     &              ' , Ts1 = ',T1,'  , Pt1 = ',pt1,
      &              ' , M1 = ',M1
                write(1,*)'             Element ',nelem,lakon(nelem)
                write(1,57)'             dvi = ',dvi,' , Re = '
@@ -676,12 +687,12 @@ c            call ts_calc(xflow,Tt2,Pt2,kappa,r,A,T2,icase)
      &              phi*lambda*l/d
                write(1,53)'      Outlet node ',node2,' :    Tt2 = ',
      &              Tt2,
-     &              ' , Ts2 = ',T2,'  , Pt2 = ',Pt2,
+     &              ' , Ts2 = ',T2,'  , Pt2 = ',pt2,
      &              ' , M2 = ',M2
 !    
             else if(inv.eq.-1) then
                write(1,53)'       Inlet node ',node2,':    Tt1= ',Tt1,
-     &              ' , Ts1= ',T1,' , Pt1= ',Pt1,
+     &              ' , Ts1= ',T1,' , Pt1= ',pt1,
      &              ' , M1= ',M1
                write(1,*)'             Element ',nelem,lakon(nelem)
                write(1,57)'             dvi = ',dvi,' , Re = '
@@ -692,7 +703,7 @@ c            call ts_calc(xflow,Tt2,Pt2,kappa,r,A,T2,icase)
      &              phi*lambda*l/d
                write(1,53)'      Outlet node ',node1,' :    Tt2 = ',
      &              Tt2,
-     &              ' , Ts2 = ',T2,'  , Pt2 =',Pt2,
+     &              ' , Ts2 = ',T2,'  , Pt2 =',pt2,
      &              ' , M2 = ',M2
             endif
       endif

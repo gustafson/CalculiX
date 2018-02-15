@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,15 +17,17 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine normalsonsurface_se(ipkon,kon,lakon,extnor,co,nk,
-     &      ipoface,nodface,nactdof,mi)
+     &      ipoface,nodface,nactdof,mi,nodedesiinv,noregion)
+!
+      implicit none
 !
       character*8 lakon(*)
 !
-      integer j,
-     &  nelemm,jfacem,indexe,ipkon(*),kon(*),nopem,node,
+      integer j,nelemm,jfacem,indexe,ipkon(*),kon(*),nopem,node,
      &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),
-     &  konl(26),ipoface(*),nodface(5,*),mi(*),
-     &  nactdof(0:mi(2),*)
+     &  konl(26),ipoface(*),nodface(5,*),mi(*),nodedesiinv(*),
+     &  nactdof(0:mi(2),*),nopesurf(9),nnodes,noregion,nope,
+     &  nopedesi,l,m,iflag,k,nk
 !
       real*8 extnor(3,*),xsj2(3),shp2(7,9),xs2(3,2),xi,et,dd,
      &  xquad(2,9),xtri(2,7),xl2m(3,9),co(3,*)
@@ -83,6 +85,14 @@
      &           0.333333333333333d0,0.333333333333333d0/
 !
       data iflag /2/
+!
+!     calculation of the normal to the external surface; 
+!     each external face contributes its normal 
+!     to each node belonging to the face providing that
+!     1) the node is not a design variable OR
+!     2) the node is a design variable and belongs to a design face
+!     A design face is an external face for which more than nopedesi
+!     nodes are design variables
 !     
       do j=1,nk
 !        
@@ -97,21 +107,22 @@
 !           nopem: # of nodes in the surface
 !           nope: # of nodes in the element
 !     
-            if(lakon(nelemm)(4:5).eq.'8R') then
+            if(lakon(nelemm)(4:4).eq.'8') then
                nopem=4
                nope=8
-            elseif(lakon(nelemm)(4:4).eq.'8') then
-               nopem=4
-               nope=8
+               nopedesi=3
             elseif(lakon(nelemm)(4:5).eq.'20') then
                nopem=8
                nope=20
+               nopedesi=5
             elseif(lakon(nelemm)(4:5).eq.'10') then
                nopem=6
                nope=10
+               nopedesi=3
             elseif(lakon(nelemm)(4:4).eq.'4') then
                nopem=3
                nope=4
+               nopedesi=3
 !     
 !     treatment of wedge faces
 !     
@@ -122,6 +133,7 @@
                else
                   nopem=4
                endif
+               nopedesi=3
             elseif(lakon(nelemm)(4:5).eq.'15') then
                nope=15
                if(jfacem.le.2) then
@@ -129,7 +141,9 @@
                else
                   nopem=8
                endif
+               nopedesi=3
             endif
+            if(noregion.eq.1) nopedesi=0
 !     
 !     actual position of the nodes belonging to the
 !     master surface
@@ -140,31 +154,44 @@
 !     
             if((nope.eq.20).or.(nope.eq.8)) then
                do m=1,nopem
+                  nopesurf(m)=konl(ifaceq(m,jfacem))
                   do k=1,3
-                     xl2m(k,m)=co(k,konl(ifaceq(m,jfacem)))
+                     xl2m(k,m)=co(k,nopesurf(m))
                   enddo
                enddo
             elseif((nope.eq.10).or.(nope.eq.4)) 
      &              then
                do m=1,nopem
+                  nopesurf(m)=konl(ifacet(m,jfacem))
                   do k=1,3
-                     xl2m(k,m)=co(k,konl(ifacet(m,jfacem)))
+                     xl2m(k,m)=co(k,nopesurf(m))
                   enddo
                enddo
             elseif(nope.eq.15) then
                do m=1,nopem
+                  nopesurf(m)=konl(ifacew2(m,jfacem))
                   do k=1,3
-                     xl2m(k,m)=co(k,konl(ifacew2(m,jfacem)))
+                     xl2m(k,m)=co(k,nopesurf(m))
                   enddo
                enddo
             else
                do m=1,nopem
+                  nopesurf(m)=konl(ifacew1(m,jfacem))
                   do k=1,3
-                     xl2m(k,m)=co(k,konl(ifacew1(m,jfacem)))
+                     xl2m(k,m)=co(k,nopesurf(m))
                   enddo
                enddo
             endif
-            
+!    
+!     sum up how many designvariables are on that surface
+!
+            nnodes=0
+            do m=1,nopem
+               if(nodedesiinv(nopesurf(m)).eq.1) then
+                  nnodes=nnodes+1
+               endif
+            enddo         
+!            
 !     calculate the normal vector in the nodes belonging to the master surface
 !     
             if(nopem.eq.8) then
@@ -183,12 +210,16 @@
                   elseif(nope.eq.15) then
                      node=konl(ifacew2(m,jfacem))
                   endif
-                  extnor(1,node)=extnor(1,node)
-     &                 +xsj2(1)
-                  extnor(2,node)=extnor(2,node)
-     &                 +xsj2(2)
-                  extnor(3,node)=extnor(3,node)
-     &                 +xsj2(3)
+                  if((nodedesiinv(node).eq.0).or.
+     &               ((nodedesiinv(node).eq.1).and.
+     &                (nnodes.ge.nopedesi))) then
+                     extnor(1,node)=extnor(1,node)
+     &                    +xsj2(1)
+                     extnor(2,node)=extnor(2,node)
+     &                    +xsj2(2)
+                     extnor(3,node)=extnor(3,node)
+     &                    +xsj2(3)
+                  endif
                enddo
             elseif(nopem.eq.4) then
                do m=1,nopem
@@ -206,12 +237,16 @@
                   elseif(nope.eq.6) then
                      node=konl(ifacew1(m,jfacem))
                   endif
-                  extnor(1,node)=extnor(1,node)
-     &                 +xsj2(1)
-                  extnor(2,node)=extnor(2,node)
-     &                 +xsj2(2)
-                  extnor(3,node)=extnor(3,node)
-     &                 +xsj2(3)
+                  if((nodedesiinv(node).eq.0).or.
+     &               ((nodedesiinv(node).eq.1).and.
+     &                (nnodes.ge.nopedesi))) then
+                     extnor(1,node)=extnor(1,node)
+     &                    +xsj2(1)
+                     extnor(2,node)=extnor(2,node)
+     &                    +xsj2(2)
+                     extnor(3,node)=extnor(3,node)
+     &                    +xsj2(3)
+                  endif
                enddo
             elseif(nopem.eq.6) then
                do m=1,nopem
@@ -229,12 +264,16 @@
                   elseif(nope.eq.15) then
                      node=konl(ifacew2(m,jfacem))
                   endif
-                  extnor(1,node)=extnor(1,node)
-     &                 +xsj2(1)
-                  extnor(2,node)=extnor(2,node)
-     &                 +xsj2(2)
-                  extnor(3,node)=extnor(3,node)
-     &                 +xsj2(3)
+                  if((nodedesiinv(node).eq.0).or.
+     &               ((nodedesiinv(node).eq.1).and.
+     &                (nnodes.ge.nopedesi))) then
+                     extnor(1,node)=extnor(1,node)
+     &                    +xsj2(1)
+                     extnor(2,node)=extnor(2,node)
+     &                    +xsj2(2)
+                     extnor(3,node)=extnor(3,node)
+     &                    +xsj2(3)
+                  endif
                enddo
             else
                do m=1,nopem
@@ -252,12 +291,16 @@
                   elseif(nope.eq.4) then
                      node=konl(ifacet(m,jfacem))
                   endif
-                  extnor(1,node)=extnor(1,node)
-     &                 +xsj2(1)
-                  extnor(2,node)=extnor(2,node)
-     &                 +xsj2(2)
-                  extnor(3,node)=extnor(3,node)
-     &                 +xsj2(3)
+                  if((nodedesiinv(node).eq.0).or.
+     &               ((nodedesiinv(node).eq.1).and.
+     &                (nnodes.ge.nopedesi))) then
+                     extnor(1,node)=extnor(1,node)
+     &                    +xsj2(1)
+                     extnor(2,node)=extnor(2,node)
+     &                    +xsj2(2)
+                     extnor(3,node)=extnor(3,node)
+     &                    +xsj2(3)
+                  endif
                enddo
             endif
 !            
@@ -271,10 +314,10 @@
 !
       do l=1,nk
          do m=1,3
-	    if(nactdof(m,l).le.0) then
-	       extnor(m,l)=0.d0
-	    endif
-	 enddo
+            if(nactdof(m,l).le.0) then
+               extnor(m,l)=0.d0
+            endif
+         enddo
       enddo 
 !     
 !     normalizing the normals

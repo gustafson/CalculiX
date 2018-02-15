@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  ncmat_,ntmat_,nope,lakonl,kode,elconloc,plicon,
      &  nplicon,npmat_,springarea,nmethod,mi,
      &  reltime,jfaces,igauss,pslavsurf,pmastsurf,clearini,matname,
-     &  plkcon,nplkcon,node,noel,istep,iinc)
+     &  plkcon,nplkcon,node,noel,istep,iinc,timeend)
 !
 !     calculates the stiffness of a spring (face-to-face penalty)
 !

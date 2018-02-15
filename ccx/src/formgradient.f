@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,14 +17,19 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine formgradient(istartdesi,ialdesi,ipkon,lakon,
-     &   ipoface,ndesi,nodedesi,nodface,kon,co,
-     &   dgdx,nobject,weightformgrad)
+     &   ipoface,ndesi,nodedesi,nodface,kon,co,dgdx,nobject,
+     &   weightformgrad,nodedesiinv,noregion,objectset,
+     &   dgdxglob,nk)
 !
-!     computation of the element matrix and rhs for the element with
-!     the topology in konl
+!     calculation of the relationship between facial distributions
+!     and corresponding nodal values
+!
+!     transforming the nodal sensitivities into facially 
+!     distributed sensitivities
 !
       implicit none
 !
+      character*81 objectset(4,*)
       character*8 lakon(*)
 !
       integer idesvar,j,k,kk,l,m,m1,n,istartdesi(*),
@@ -32,13 +37,13 @@
      &   ialdesi(*),nopes,indexe,iaux,ifour,kflag,indexel,
      &   mint3d,mint2d,ipkon(*),konl(26),iflag,ifaceq(8,6),
      &   ifacet(6,4),ifacew1(4,5),ifacew2(8,5),kon(*),
-     &   nodes1(8),ifacel,iobject,nobject,
-     &   lda,nodes2(8),indexs,ithree,i,node,
-     &   ifacq(2,3,20),ifact(2,3,10),ifacw(2,3,15)
+     &   nodes1(8),ifacel,iobject,nodes2(8),indexs,nk,
+     &   ithree,i,node,ifacq(2,3,20),ifact(2,3,10),ifacw(2,3,15),
+     &   nopedesi,nnodes,nodedesiinv(*),nobject,noregion,iactnode
 !
       real*8 xi,et,weight,xl(3,9),xs(3,2),xsj(3),shp(7,9),
-     &   co(3,*),xsjj,
-     &   dgdx(ndesi,nobject),weightformgrad(ndesi)
+     &   co(3,*),xsjj,weightformgrad(ndesi),dgdx(ndesi,nobject),
+     &   dgdxglob(2,nk,nobject)   
 !
 !     flag for shape functions
 !
@@ -141,7 +146,6 @@
       kflag=1
       ifour=4
       ithree=3
-      lda=ndesi
 !
 !
 !     Loop over all designvariables
@@ -150,7 +154,7 @@
 !     
          node=nodedesi(idesvar)
 !     
-!     Loop over all elememts belonging to the designvariable
+!     Loop over all elements belonging to the designvariable
 !     
          do j=istartdesi(idesvar),istartdesi(idesvar+1)-1
             ielem=ialdesi(j)
@@ -165,30 +169,41 @@
                mint2d=1
                nopes=4
                nope=8
+               nopedesi=3
             elseif(lakon(ielem)(4:4).eq.'8') then
                mint2d=4
                nopes=4
                nope=8
+               nopedesi=3
             elseif(lakon(ielem)(4:5).eq.'20') then
                mint2d=9
                nopes=8
                nope=20
+               nopedesi=5
             elseif(lakon(ielem)(4:5).eq.'10') then
                mint2d=3
                nopes=6
                nope=10
+               nopedesi=3
             elseif(lakon(ielem)(4:4).eq.'4') then
                mint2d=1
                nopes=3
                nope=4
+               nopedesi=3
             elseif(lakon(ielem)(4:4).eq.'6') then                
+               mint2d=1
+               nopes=3
                nope=6
+               nopedesi=3
             elseif(lakon(ielem)(4:5).eq.'15') then
+               mint2d=3
+               nopes=6
                nope=15
+               nopedesi=3
             else
                exit
             endif
-            
+            if(noregion.eq.1) nopedesi=0
 !     
 !     actual position of the nodes belonging to the
 !     master surface
@@ -275,7 +290,7 @@
                endif
                if(k.eq.0) exit
 !     
-!     Find external element face
+!              Find external element face
 !     
                indexs=ipoface(nodes1(1))
                do
@@ -283,83 +298,116 @@
                   if((nodface(1,indexs).eq.nodes1(2)).and.
      &                 (nodface(2,indexs).eq.nodes1(3))) then
 !     
-!     Assign coordinates to nodes of surface
+!                    Check if sufficient designnodes on that surface
 !     
-                     if((nope.eq.20).or.(nope.eq.8)) then
-                        do l=1,nopes
-                           do n=1,3
-                              ifacel=ifaceq(l,nodface(4,indexs))       
-                              xl(n,l)=co(n,konl(ifacel))
-                           enddo
-                        enddo
-                     elseif((nope.eq.10).or.(nope.eq.4)) then
-                        do l=1,nopes
-                           do n=1,3
-                              ifacel=ifacet(l,nodface(4,indexs))       
-                              xl(n,l)=co(n,konl(ifacel))
-                           enddo
-                        enddo
-                     elseif(nope.eq.15) then 
-                        do l=1,nopes
-                           do n=1,3
-                              ifacel=ifacew2(l,nodface(4,indexs))       
-                              xl(n,l)=co(n,konl(ifacel))
-                           enddo
-                        enddo
-                     elseif(nope.eq.6) then
-                        do l=1,nopes
-                           do n=1,3
-                              ifacel=ifacew1(l,nodface(4,indexs))       
-                              xl(n,l)=co(n,konl(ifacel))
-                           enddo
-                        enddo
-                     endif           
-!     
-!     Determine weighting factors
-!     
-                     do kk=1,mint2d   
-                        if(lakon(ielem)(4:5).eq.'20') then
-                           xi=gauss2d3(1,kk)
-                           et=gauss2d3(2,kk)
-                           weight=weight2d3(kk)
-                           call shape8q(xi,et,xl,xsj,
-     &                          xs,shp,iflag)
-                        elseif(lakon(ielem)(4:5).eq.'10') then
-                           xi=gauss2d5(1,kk)
-                           et=gauss2d5(2,kk)
-                           weight=weight2d5(kk)
-                           call shape6tri(xi,et,xl,xsj,
-     &                          xs,shp,iflag)
-                        elseif(lakon(ielem)(4:4).eq.'4') then
-                           xi=gauss2d4(1,kk)
-                           et=gauss2d4(2,kk)
-                           weight=weight2d4(kk)
-                           call shape3tri(xi,et,xl,xsj,
-     &                          xs,shp,iflag)
-                        elseif(lakon(ielem)(4:5).eq.'15') then
-                           xi=gauss2d5(1,kk)
-                           et=gauss2d5(2,kk)
-                           weight=weight2d5(kk)
-                           call shape6tri(xi,et,xl,xsj,
-     &                          xs,shp,iflag)
-                        elseif(lakon(ielem)(4:4).eq.'8') then
-                           xi=gauss2d2(1,kk)
-                           et=gauss2d2(2,kk)
-                           weight=weight2d2(kk)
-                           call shape4q(xi,et,xl,xsj,
-     &                          xs,shp,iflag)
+                     nnodes=0
+                     do n=1,nopes
+                        if(nodedesiinv(nodes1(n)).eq.1) then
+                           nnodes=nnodes+1
                         endif
-!     
-!     Calculate Jacobian determinant
-!     
-                        xsjj=dsqrt(xsj(1)**2+xsj(2)**2+
-     &                       xsj(3)**2)
-!     
-!     Evaluate Shape functions for weightmatrix
-!     
-                        weightformgrad(idesvar)=weightformgrad
-     &                       (idesvar)+weight*shp(4,m1)*xsjj 
                      enddo
+!     
+!                    Assign coordinates to nodes of surface
+!     
+                     if(nnodes.ge.nopedesi) then
+                        if((nope.eq.20).or.(nope.eq.8)) then
+                           do l=1,nopes
+                              do n=1,3
+                                 ifacel=ifaceq(l,nodface(4,indexs))
+                                 xl(n,l)=co(n,konl(ifacel))
+                              enddo
+                           enddo
+                        elseif((nope.eq.10).or.(nope.eq.4)) then
+                           do l=1,nopes
+                              do n=1,3
+                                 ifacel=ifacet(l,nodface(4,indexs))
+                                 xl(n,l)=co(n,konl(ifacel))
+                              enddo
+                           enddo
+                        elseif(nope.eq.15) then 
+                           do l=1,nopes
+                              do n=1,3
+                                 ifacel=ifacew2(l,nodface(4,indexs))
+                                 xl(n,l)=co(n,konl(ifacel))
+                              enddo
+                           enddo
+                        elseif(nope.eq.6) then
+                           do l=1,nopes
+                              do n=1,3
+                                 ifacel=ifacew1(l,nodface(4,indexs))
+                                 xl(n,l)=co(n,konl(ifacel))
+                              enddo
+                           enddo
+                        endif           
+!     
+!                       Determine weighting factors
+!     
+                        do kk=1,mint2d   
+                           if(lakon(ielem)(4:5).eq.'20') then
+                              xi=gauss2d3(1,kk)
+                              et=gauss2d3(2,kk)
+                              weight=weight2d3(kk)
+                              call shape8q(xi,et,xl,xsj,
+     &                             xs,shp,iflag)
+                           elseif(lakon(ielem)(4:5).eq.'10') then
+                              xi=gauss2d5(1,kk)
+                              et=gauss2d5(2,kk)
+                              weight=weight2d5(kk)
+                              call shape6tri(xi,et,xl,xsj,
+     &                             xs,shp,iflag)
+                           elseif(lakon(ielem)(4:4).eq.'4') then
+                              xi=gauss2d4(1,kk)
+                              et=gauss2d4(2,kk)
+                              weight=weight2d4(kk)
+                              call shape3tri(xi,et,xl,xsj,
+     &                             xs,shp,iflag)
+                           elseif(lakon(ielem)(4:5).eq.'15') then
+                              if(k.le.2) then
+                                 xi=gauss2d5(1,kk)
+                                 et=gauss2d5(2,kk)
+                                 weight=weight2d5(kk)
+                                 call shape6tri(xi,et,xl,xsj,
+     &                                xs,shp,iflag)
+                              else
+                                 xi=gauss2d3(1,kk)
+                                 et=gauss2d3(2,kk)
+                                 weight=weight2d3(kk)
+                                 call shape8q(xi,et,xl,xsj,
+     &                                xs,shp,iflag)
+                              endif
+                           elseif(lakon(ielem)(4:4).eq.'8') then
+                              xi=gauss2d2(1,kk)
+                              et=gauss2d2(2,kk)
+                              weight=weight2d2(kk)
+                              call shape4q(xi,et,xl,xsj,
+     &                             xs,shp,iflag)
+                           elseif(lakon(ielem)(4:4).eq.'6') then
+                              if(k.le.2) then
+                                 xi=gauss2d4(1,kk)
+                                 et=gauss2d4(2,kk)
+                                 weight=weight2d4(kk)
+                                 call shape3tri(xi,et,xl,xsj,
+     &                                xs,shp,iflag)
+                               else
+                                 xi=gauss2d2(1,kk)
+                                 et=gauss2d2(2,kk)
+                                 weight=weight2d2(kk)
+                                 call shape4q(xi,et,xl,xsj,
+     &                                xs,shp,iflag)
+                              endif               
+                           endif
+!     
+!                          Calculate Jacobian determinant
+!     
+                           xsjj=dsqrt(xsj(1)**2+xsj(2)**2+
+     &                          xsj(3)**2)
+!     
+!                          Evaluate Shape functions for weightmatrix
+!     
+                           weightformgrad(idesvar)=weightformgrad
+     &                          (idesvar)+weight*shp(4,m1)*xsjj 
+                        enddo
+                     endif
                      exit
                   endif
                   indexs=nodface(5,indexs)
@@ -375,11 +423,15 @@
 !     
       do idesvar=1,ndesi
          do iobject=1,nobject
+            if(objectset(1,iobject)(1:9).eq.'THICKNESS') cycle  
             if(weightformgrad(idesvar).gt.0.d0) then
                dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
-     &              /weightformgrad(idesvar)
+     &           /weightformgrad(idesvar)
+               iactnode=nodedesi(idesvar)
+               dgdxglob(1,iactnode,iobject)=dgdx(idesvar,iobject)
             else
-               dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
+               iactnode=nodedesi(idesvar)
+               dgdxglob(1,iactnode,iobject)=dgdx(idesvar,iobject)
             endif
          enddo
       enddo

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -22,7 +22,8 @@
      &  elcon,istep,iinc,iit,ncmat_,ntmat_,
      &  nmethod,mi,imastop,nslavnode,islavnode,islavsurf,
      &  itiefac,areaslav,iponoels,inoels,springarea,set,nset,istartset,
-     &  iendset,ialset,tietol,reltime,filab,nasym,xnoels,icutb,ne0)
+     &  iendset,ialset,tietol,reltime,filab,nasym,xnoels,icutb,ne0,
+     &  jobnamef)
 !
 !     generate contact elements for the slave contact nodes
 !
@@ -32,6 +33,7 @@
       character*33 cfile
       character*81 tieset(3,*),slavset,set(*),noset,setname
       character*87 filab(*)
+      character*132 jobnamef(*)
 !
       integer ntie,ifree,nasym,icutb,ne0,
      &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),ne,node,
@@ -101,7 +103,11 @@
       if(filab(1)(3:3).eq.'C') then
          iteller=iteller+1
 !
-         cfile='contactelements.inp'
+         do i=1,132
+            if(jobnamef(1)(i:i).eq.' ') exit
+         enddo
+         i=i-1
+         cfile=jobnamef(1)(1:i)//'.cel'
          open(27,file=cfile,status='unknown',position='append')
 !
          setname(1:15)='contactelements'

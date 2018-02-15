@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine umat_aniso_creep(amat,iel,iint,kode,elconloc,emec,
      &        emec0,beta,xokl,voj,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi,nstate_,xstateini,xstate,stre,stiff,iorien,
-     &        pgauss,orab,nmethod,pnewdt)
+     &        pgauss,orab,nmethod,pnewdt,depvisc)
 !
 !     calculates stiffness and stresses for a user defined material
 !     law
@@ -126,7 +126,7 @@
 !
       real*8 ep0(6),epqini,ep(6),b,Pn(6),dg,ddg,c(21),x(21),cm1(21),
      &  stri(6),htri,sg(6),r(13),ee(6),dd,gl(6,6),gr(6,6),c0,c1,c2,
-     &  skl(3,3),gcreep,gm1,ya(3,3,3,3),dsg,detc,strinv,
+     &  skl(3,3),gcreep,gm1,ya(3,3,3,3),dsg,detc,strinv,depvisc,
      &  depq,svm,dsvm,dg1,dg2,fu,fu1,fu2,expon,ec(2),pnewdt,
      &  timeabq(2),r1(13),ep1(6),gl1(6,6),sg1(6),ckl(3,3),
      &  elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
@@ -1091,12 +1091,6 @@ c                  write(*,*) 'iloop,dg,fu ',iloop,dg,fu
       do i=1,6
          stre(i)=stri(i)
       enddo
-!
-!     converting the stress into the material frame of
-!     reference
-!     
-c      cauchy=1
-c      call str2mat(stre,ckl,vj,cauchy)
 !     
 !     calculating the tangent stiffness matrix
 !     
@@ -1160,12 +1154,6 @@ c      call str2mat(stre,ckl,vj,cauchy)
          stiff(19)=(gr(4,6)-gm1*Pn(4)*Pn(6))/4.d0
          stiff(20)=(gr(5,6)-gm1*Pn(5)*Pn(6))/4.d0
          stiff(21)=(gr(6,6)-gm1*Pn(6)*Pn(6))/4.d0
-c!start
-c!     conversion of the stiffness matrix from spatial coordinates
-c!     coordinates into material coordinates
-c!     
-c         call stiff2mat(stiff,ckl,vj,cauchy)
-c!end
       endif
 !
 !     updating the state variables
@@ -1174,6 +1162,10 @@ c!end
       do i=1,6
          xstate(1+i,iint,iel)=ep(i)
       enddo
+!
+!     maximum equivalent viscoplastic strain in this increment
+!
+      depvisc=max(depvisc,c0*dg)
 !
       return
       end

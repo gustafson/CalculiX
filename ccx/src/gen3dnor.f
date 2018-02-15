@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,10 +30,9 @@
 !     1: tra_in_x
 !     2: tra_in_y
 !     3: tra_in_z
-!     4: pressure
-!     5: rot_abou_x
-!     6: rot_abou_y
-!     7: rot_about_z
+!     4: pressure (only CFD) or rot_about_x (else)
+!     5: rot_about_y
+!     6: rot_about_z
 !
       implicit none
 !
@@ -839,23 +838,6 @@ c
 !        generate rigid MPC's if necessary
 !
          if(nexp.gt.1) then
-cc            write(*,*) i,'= KNOT !'
-cc            if(iperturb.eq.0) then
-c            if((iperturb.eq.0).and.(nmethod.eq.1)) then
-c               iperturb=2
-c               tinc=1.d0
-c               tper=1.d0
-c               tmin=1.d-5
-c               tmax=1.d+30
-c            elseif(iperturb.eq.1) then
-c               write(*,*) '*ERROR in gen3dnor: the expansion of'
-c               write(*,*) '       1D/2D elements has led to the'
-c               write(*,*) '       creation of rigid body MPCs.'
-c               write(*,*) '       This is not allowed in a'
-c               write(*,*) '       perturbation analysis. Please'
-c               write(*,*) '       generate a truely 3D structure'
-c               call exit(201)
-c            endif
             irefnode=i
 !
             rig(i)=-1
@@ -870,9 +852,6 @@ c            endif
 !                 rig(i)=-1 to indicate that a knot has
 !                 been generated without rotational node
 !
-c                  rig(i)=-1
-c                  changed for purely thermal calculations
-!     
                   do k=1,ndepnodes
                      node=idepnodes(k)
                      do j=1,2
@@ -896,7 +875,6 @@ c                  changed for purely thermal calculations
                         ilmpc(id+1)=nmpc
 !     
                         nodempc(1,mpcfree)=node
-c     write(*,*) 'dependent node: ',node
                         nodempc(2,mpcfree)=j
                         coefmpc(mpcfree)=1.d0
                         mpcfree=nodempc(3,mpcfree)
@@ -999,7 +977,7 @@ c     write(*,*) 'dependent node: ',node
 !                 check whether the dof has been used as dependent
 !                 term of a MPC
 !
-                  idof=8*(i-1)+4+imax
+                  idof=8*(i-1)+3+imax
                   call nident(ikmpc,idof,nmpc,idmpc)
 !
                   if((idmpc.le.0).or.(ikmpc(idmpc).ne.idof)) then
@@ -1018,7 +996,7 @@ c     write(*,*) 'dependent node: ',node
 !
                   isol=0
                   do l=1,3
-                     idof=8*(i-1)+4+imax
+                     idof=8*(i-1)+3+imax
                      call nident(ikboun,idof,nboun,id)
                      call nident(ikmpc,idof,nmpc,idmpc)
                      if(((idmpc.gt.0).and.(ikmpc(idmpc).eq.idof)).or.

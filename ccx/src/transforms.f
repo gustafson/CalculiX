@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -47,6 +47,7 @@
       endif
 !
       ipos=1
+      noset(1:1)=' '
 !
 !     rectangular coordinate system: trab(7,norien)=1
 !     cylindrical coordinate system: trab(7,norien)=-1
@@ -90,13 +91,18 @@
      &"*TRANSFORM%")
       enddo
 !
+      if(noset(1:1).eq.' ') then
+         write(*,*) '*ERROR reading *TRANSFORM: no node set defined'
+         call exit(201)
+      endif
+!         
       do i=1,nset
          if(set(i).eq.noset) exit
       enddo
       if(i.gt.nset) then
          noset(ipos:ipos)=' '
          write(*,*) '*ERROR reading *TRANSFORM: node set ',noset
-         write(*,*) '  has not yet been defined.'
+         write(*,*) '       has not yet been defined.'
          call exit(201)
       endif
       do j=istartset(i),iendset(i)

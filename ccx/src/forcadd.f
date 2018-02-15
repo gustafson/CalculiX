@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -79,6 +79,18 @@ c      if(itr.eq.0) then
                   k=ilforc(id)
                   if(nodeforc(2,k).eq.isector) then
                      if(add.or.(idefforc(k).eq.1)) then
+                        if(nam.gt.0) then
+                           if(iamforc(k).ne.iamplitude) then
+                              write(*,*) '*ERROR in forcadd:'
+                              write(*,*) '       it is not allowed to '
+                              write(*,*)'       define two concentrated'
+                              write(*,*) '       loads/fluxes'
+                              write(*,*) '       different amplitudes '
+                              write(*,*) '       in one step'
+                              write(*,*) 'node: ',node,' dof:',i
+                              call exit(201)
+                           endif
+                        endif
                         xforc(k)=xforc(k)+val
                      else
                         xforc(k)=val
@@ -164,6 +176,18 @@ c
             idefforc(idf(i))=1
 !
             if(nam.gt.0) then
+               if((iamforc(idf(1)).ne.iamplitude).or.
+     &            (iamforc(idf(2)).ne.iamplitude).or.
+     &            (iamforc(idf(3)).ne.iamplitude)) then
+                  write(*,*) '*ERROR in forcadd:'
+                  write(*,*) '       it is not allowed to '
+                  write(*,*) '       define two concentrated'
+                  write(*,*) '       loads/fluxes with'
+                  write(*,*) '       different amplitudes '
+                  write(*,*) '       in one step'
+                  write(*,*) 'node: ',node,' dof:',i
+                  call exit(201)
+               endif
                do j=1,3
                   iamforc(idf(j))=iamplitude
                enddo

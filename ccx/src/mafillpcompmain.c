@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -31,7 +31,7 @@ static ITG num_cpus,*nef1,*ipnei1,*neifa1,*neiel1,*jq1,*irow1,*ielfa1,
 static double *vfa1,*area1,*advfa1,*xlet1,*cosa1,*volume1,*au1,*ad1,
     *ap1,*xle1,*b1,*xxn1,*hfa1,*gradpel1,*bp1,*xxi1,*xlen1,*cosb1,
     *a11,*a21,*a31,*velo1,*veloo1,*dtimef1,*shcon1,*vel1,*xrlfa1,*flux1,
-    *xxicn1;
+    *xxicn1,*gamma1;
 
 void mafillpcompmain(ITG *nef,char *lakonf,ITG *ipnei,
              ITG *neifa,ITG *neiel,double *vfa,double *area,double *advfa,
@@ -42,7 +42,8 @@ void mafillpcompmain(ITG *nef,char *lakonf,ITG *ipnei,
 	     double *bp,double *xxi,ITG *neij,double *xlen,double *cosb,
              ITG *ielmatf,ITG *mi,double *a1,double *a2,double *a3,double *velo,
              double *veloo,double *dtimef,double *shcon,ITG *ntmat_,double *vel,
-	     ITG *nactdohinv,double *xrlfa,double *flux,ITG *iau6,double *xxicn){
+	     ITG *nactdohinv,double *xrlfa,double *flux,ITG *iau6,double *xxicn,
+             double *gamma){
 
     ITG i,j;
       
@@ -111,7 +112,7 @@ void mafillpcompmain(ITG *nef,char *lakonf,ITG *ipnei,
     neij1=neij;xlen1=xlen;cosb1=cosb;ielmatf1=ielmatf;mi1=mi,a11=a1;
     a21=a2;a31=a3;velo1=velo;veloo1=veloo;dtimef1=dtimef;shcon1=shcon;
     ntmat1_=ntmat_;vel1=vel;nactdohinv1=nactdohinv;xrlfa1=xrlfa;
-    flux1=flux;iau61=iau6;ad1=ad;au1=au;b1=b;xxicn1=xxicn;
+    flux1=flux;iau61=iau6;ad1=ad;au1=au;b1=b;xxicn1=xxicn;gamma1=gamma;
     
     /* create threads and wait */
     
@@ -147,7 +148,8 @@ void *mafillpcompmt(ITG *i){
                          jq1,irow1,ap1,ielfa1,ifabou1,xle1,b1,xxn1,neq1,nzs1,
                          hfa1,gradpel1,bp1,xxi1,neij1,xlen1,cosb1,ielmatf1,mi1,
                          a11,a21,a31,velo1,veloo1,dtimef1,shcon1,ntmat1_,vel1,
-                         nactdohinv1,xrlfa1,flux1,&nefa,&nefb,iau61,xxicn1));
+                         nactdohinv1,xrlfa1,flux1,&nefa,&nefb,iau61,xxicn1,
+                         gamma1));
 
     return NULL;
 }

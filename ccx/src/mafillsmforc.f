@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,7 +37,8 @@
 !        point forces
 !      
          do i=1,nforc
-            if(ndirforc(i).gt.3) cycle
+            if(ndirforc(i).gt.mi(2)) cycle
+c            if(ndirforc(i).gt.3) cycle
 !
 !           updating the external force vector for dynamic
 !           calculations

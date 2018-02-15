@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -85,7 +85,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
   float ifl;
 
-  double pi,oner;
+  double pi,oner,*vold=NULL;
 
   strcpy(fneig,jobnamec);
   strcat(fneig,".frd");
@@ -187,8 +187,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     fprintf(f1,"%5sUTIME              %8s                                        \n",p1,newclock);
     fprintf(f1,"%5sUHOST                                                              \n",p1);
     fprintf(f1,"%5sUPGM               CalculiX                                        \n",p1);
-    fprintf(f1,"%5sUVERSION           Version 2.12                             \n",p1);
-    fprintf(f1,"%5sUCOMPILETIME       So 2. Apr 15:03:04 CEST 2017                    \n",p1);
+    fprintf(f1,"%5sUVERSION           Version 2.13                             \n",p1);
+    fprintf(f1,"%5sUCOMPILETIME       So 8. Okt 22:10:07 CEST 2017                    \n",p1);
     fprintf(f1,"%5sUDIR                                                               \n",p1);
     fprintf(f1,"%5sUDBN                                                               \n",p1);
     
@@ -732,14 +732,34 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 	  
-	  fprintf(f1," -4  DISP        4    1\n");
-	  fprintf(f1," -5  D1          1    2    1    0\n");
-	  fprintf(f1," -5  D2          1    2    2    0\n");
-	  fprintf(f1," -5  D3          1    2    3    0\n");
-	  fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
-	  
-	  frdvector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
+	  if(mi[1]==3){
+
+	      fprintf(f1," -4  DISP        4    1\n");
+	      fprintf(f1," -5  D1          1    2    1    0\n");
+	      fprintf(f1," -5  D2          1    2    2    0\n");
+	      fprintf(f1," -5  D3          1    2    3    0\n");
+	      fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
+	      
+	      frdvector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
 		    trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+
+	  }else if((mi[1]>3)&&(mi[1]<7)){
+
+	      fprintf(f1," -4  DISP        %1" ITGFORMAT "    1\n",mi[1]);
+	      for(j=1;j<=mi[1];j++){
+		  fprintf(f1," -5  D%1" ITGFORMAT "          1    1    0    0\n",j);
+	      }
+
+	      frdgeneralvector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
+		    trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+	  }else{
+	      printf("*WARNING in frd:\n");
+	      printf("         for output purposes only 4, 5 or 6\n");
+	      printf("         degrees of freedom are allowed\n");
+	      printf("         for generalized vectors;\n");
+	      printf("         actual degrees of freedom = %d\n",mi[1]);
+	      printf("         output request ist not performed;\n");
+	  }
       }
   }
 
@@ -1350,7 +1370,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
     fprintf(f1," -4  SDV        %2" ITGFORMAT "    1\n",*nstate_);
     for(j=1;j<=*nstate_;j++){
-      fprintf(f1," -5  SDV%2" ITGFORMAT "       1    1    0    0\n",j);
+      fprintf(f1," -5  SDV%-2" ITGFORMAT "       1    1    0    0\n",j);
     }
 
     for(i=0;i<*nstate_;i++){
@@ -1506,7 +1526,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  
 	  nterms=6;
 	  FORTRAN(errorestimator,(stx,stn,ipkon,kon,lakon,nk,ne,
-				  mi,ielmat,&nterms));
+		  mi,ielmat,&nterms,inum,co,vold,&filab[1048]));
 	  
 	  iselect=1;
 	  
@@ -1523,7 +1543,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  
 	  ncomp=2;
 	  ifield[0]=1;ifield[1]=1;
-	  icomp[0]=2;icomp[1]=4;
+	  icomp[0]=0;icomp[1]=1;
 	  
 	  frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
@@ -1540,7 +1560,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
       nterms=6;
       FORTRAN(errorestimator,(&stx[6*mi[0]**ne],stn,ipkon,kon,lakon,nk,ne,
-			      mi,ielmat,&nterms));
+	      mi,ielmat,&nterms,inum,co,vold,&filab[1048]));
       
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
@@ -1551,7 +1571,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       
       ncomp=2;
       ifield[0]=1;ifield[1]=1;
-      icomp[0]=2;icomp[1]=4;
+      icomp[0]=0;icomp[1]=1;
 
       frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
                 ialset,ngraph,&ncomp,ifield,icomp,
@@ -1567,7 +1587,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  
 	  nterms=3;
 	  FORTRAN(errorestimator,(qfx,qfn,ipkon,kon,lakon,nk,ne,
-				  mi,ielmat,&nterms));
+		  mi,ielmat,&nterms,inum,co,vold,&filab[2788]));
 	  
 	  iselect=1;
 	  
@@ -1583,7 +1603,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  
 	  ncomp=1;
 	  ifield[0]=1;
-	  icomp[0]=2;
+	  icomp[0]=1;
 	  
 	  frdselect(qfn,qfn,&iset,&nkcoords,inum,m1,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
@@ -1600,7 +1620,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
       nterms=3;
       FORTRAN(errorestimator,(&qfx[3*mi[0]**ne],qfn,ipkon,kon,lakon,nk,ne,
-			      mi,ielmat,&nterms));
+	      mi,ielmat,&nterms,inum,co,vold,&filab[2788]));
       
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
@@ -1610,7 +1630,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       
       ncomp=1;
       ifield[0]=1;
-      icomp[0]=2;
+      icomp[0]=1;
 
       frdselect(qfn,qfn,&iset,&nkcoords,inum,m1,istartset,iendset,
                 ialset,ngraph,&ncomp,ifield,icomp,

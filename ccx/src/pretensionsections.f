@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,7 +43,7 @@
      &  k,ipos,nkold,nope,m,kon(*),ipkon(*),indexe,iset,nset,idir,
      &  istartset(*),iendset(*),ialset(*),index1,ics(2,*),mpcpret,
      &  mint,iflag,ithermal(2),ielem,three,in(3),node1,node2,isign,
-     &  ndep,nind,kflag,ne
+     &  ndep,nind,kflag,ne,nkref,noderef
 !
       real*8 coefmpc(*),xn(3),xt(3),xd(3),dd,co(3,*),dcs(*),area,
      &  areanodal(8),xl2(3,8),xi,et,weight,shp2(7,8),t0(*),
@@ -731,6 +731,14 @@ c            jn=in(i)
                labmpc(nmpc)='PRETENSION          '
                ipompc(nmpc)=mpcfree
                mpcpret=nmpc
+!
+!              taking the first node as reference node for the condition:
+!              "the displacement in pre-tension direction in all nodes
+!               should be the same as for the reference node" (pre-tension
+!               surfaces stay parallel to each other)
+!
+               nkref=nk
+               noderef=node
 !     
 !     updating ikmpc and ilmpc
 !     
@@ -740,9 +748,158 @@ c            jn=in(i)
                enddo
                ikmpc(id+1)=idof
                ilmpc(id+1)=nmpc
-            else
-               nodempc(3,indexpret)=mpcfree
+c            else
+c               nodempc(3,indexpret)=mpcfree
             endif
+!
+!           MPC's specifying that the pre-tension surfaces should stay
+!           parallel
+!
+            if(indexpret.ne.0) then
+               idof=8*(nk-1)+jn
+               call nident(ikmpc,idof,nmpc,id)
+!     
+               nmpc=nmpc+1
+               if(nmpc.gt.nmpc_) then
+                  write(*,*) '*ERROR in equations: increase nmpc_'
+                  call exit(201)
+               endif
+               ipompc(nmpc)=mpcfree
+               labmpc(nmpc)='                    '
+!
+!           updating ikmpc and ilmpc
+!
+               do j=nmpc,id+2,-1
+                  ikmpc(j)=ikmpc(j-1)
+                  ilmpc(j)=ilmpc(j-1)
+               enddo
+               ikmpc(id+1)=idof
+               ilmpc(id+1)=nmpc
+!
+               idir=jn
+               if(dabs(xn(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=nk
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=-xn(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!     
+               idir=idir+1
+               if(idir.eq.4) idir=1
+               if(dabs(xn(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=nk
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=-xn(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!     
+               idir=idir+1
+               if(idir.eq.4) idir=1
+               if(dabs(xn(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=nk
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=-xn(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!     
+               idir=jn
+               if(dabs(xn(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=node
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=xn(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!     
+               idir=idir+1
+               if(idir.eq.4) idir=1
+               if(dabs(xn(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=node
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=xn(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!     
+               idir=idir+1
+               if(idir.eq.4) idir=1
+               if(dabs(xn(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=node
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=xn(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!
+!              corresponding terms in the reference node
+!
+               idir=jn
+               if(dabs(xn(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=nkref
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=xn(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!     
+               idir=idir+1
+               if(idir.eq.4) idir=1
+               if(dabs(xn(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=nkref
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=xn(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!     
+               idir=idir+1
+               if(idir.eq.4) idir=1
+               if(dabs(xn(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=nkref
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=xn(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!     
+               idir=jn
+               if(dabs(xn(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=noderef
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=-xn(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!     
+               idir=idir+1
+               if(idir.eq.4) idir=1
+               if(dabs(xn(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=noderef
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=-xn(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+!     
+               idir=idir+1
+               if(idir.eq.4) idir=1
+               if(dabs(xn(idir)).gt.1.d-10) then
+                  nodempc(1,mpcfree)=noderef
+                  nodempc(2,mpcfree)=idir
+                  coefmpc(mpcfree)=-xn(idir)
+                  mpcfreeold=mpcfree
+                  mpcfree=nodempc(3,mpcfree)
+               endif
+               nodempc(3,mpcfreeold)=0
+!
+               nodempc(3,indexpret)=mpcfree
+c            endif
+            else
+!
+!           governing pre-tension equation
 !
             idir=jn
             if(dabs(xn(idir)).gt.1.d-10) then
@@ -789,6 +946,7 @@ c            jn=in(i)
                coefmpc(mpcfree)=xn(idir)
                indexpret=mpcfree
                mpcfree=nodempc(3,mpcfree)
+            endif
             endif
 !
 !           thermal MPC
@@ -992,7 +1150,8 @@ c            jn=in(i)
          node=nodempc(1,nodempc(3,index1))
          call nident2(ics,node,npt,id)
          do j=1,2
-            coefmpc(index1)=coefmpc(index1)*dcs(id)
+c            coefmpc(index1)=coefmpc(index1)*dcs(id)
+            coefmpc(index1)=coefmpc(index1)*area
             index1=nodempc(3,index1)
          enddo
          if(nodempc(1,index1).eq.irefnode) exit

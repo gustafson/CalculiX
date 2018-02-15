@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2007 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,8 @@
       subroutine advecstiff(nope,voldl,ithermal,xl,nelemload,nelemadvec,
      &  nload,lakon,xload,istep,time,ttime,dtime,sideload,vold,mi,
      &  xloadold,reltime,nmethod,s,iinc,iponoel,inoel,ielprop,prop,
-     &  ielmat,shcon,nshcon,rhcon,nrhcon,ntmat_,ipkon,kon,cocon,ncocon)
+     &  ielmat,shcon,nshcon,rhcon,nrhcon,ntmat_,ipkon,kon,cocon,ncocon,
+     &  ipobody,xbody,ibody)
 !
 !     calculates the stiffness of an advective element.
 !     An advective element consists of a face with a forced convection
@@ -33,18 +34,21 @@
       integer nope,i,ithermal(2),j,nelemload(2,*),nelemadvec,nload,id,
      &  nelem,ig,mint2d,iflag,istep,jltyp,nfield,mi(*),nmethod,k,iinc,
      &  node,nopes,iponoel(*),inoel(2,*),ielprop(*),ielmat(*),ipkon(*),
-     &  nshcon(*),nrhcon(*),ntmat_,kon(*),ncocon(2,*)
+     &  nshcon(*),nrhcon(*),ntmat_,kon(*),ncocon(2,*),ipobody(2,*),
+     &  ibody(3,*)
 !
       real*8 tl2(9),voldl(0:mi(2),9),xl(3,9),sinktemp,xi,et,weight,
      &  xl2(3,8),xsj2(3),shp2(7,9),coords(3),xs2(3,7),dxsj2,areaj,
      &  temp,xload(2,*),timeend(2),time,ttime,dtime,field,reltime,
      &  vold(0:mi(2),*),xloadold(2,*),s(60,60),sref,sref2,prop(*),
-     &  shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),cocon(0:6,ntmat_,*)
+     &  shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),cocon(0:6,ntmat_,*),
+     &  xbody(7,*),heatnod,heatfac
 !
       intent(in) nope,voldl,ithermal,xl,nelemload,nelemadvec,
      &  nload,lakon,istep,time,ttime,dtime,sideload,vold,mi,
      &  xloadold,reltime,nmethod,iinc,iponoel,inoel,ielprop,prop,
-     &  ielmat,shcon,nshcon,rhcon,nrhcon,ntmat_,ipkon,kon,cocon,ncocon
+     &  ielmat,shcon,nshcon,rhcon,nrhcon,ntmat_,ipkon,kon,cocon,
+     &  ncocon,ipobody,ibody,xbody
 !
       intent(inout) s,xload
 !
@@ -190,9 +194,10 @@
      &           iinc,timeend,nelem,i,coords,jltyp,field,nfield,
      &           sideloadl,node,areaj,vold,mi,
      &           ipkon,kon,lakon,iponoel,inoel,ielprop,prop,ielmat,
-     &           shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon)
-            if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
-     &           (xload(1,id)-xloadold(1,id))*reltime
+     &           shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon,
+     &           ipobody,xbody,ibody,heatnod,heatfac)
+c            if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+c     &           (xload(1,id)-xloadold(1,id))*reltime
          endif
 !
          sref=xload(1,id)*areaj

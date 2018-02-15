@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -46,7 +46,8 @@
 !
 !     code for retrieving the internal state variables
 !
-      do i=1,13
+c      do i=1,13
+      do i=1,nstatv
          statev(i)=1.d0
       enddo
       return

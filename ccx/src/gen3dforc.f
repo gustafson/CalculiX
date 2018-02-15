@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -70,7 +70,7 @@
       do i=1,nforcold
          node=nodeforc(1,i)
          if(node.gt.iponoelmax) then
-            if(ndirforc(i).gt.4) then
+            if(ndirforc(i).gt.3) then
                write(*,*) '*WARNING: in gen3dforc: node ',i,
      &              ' does not'
                write(*,*) '       belong to a beam nor shell'
@@ -81,7 +81,7 @@
          endif
          index=iponoel(node)
          if(index.eq.0) then
-            if(ndirforc(i).gt.4) then
+            if(ndirforc(i).gt.3) then
                write(*,*) '*WARNING: in gen3dforc: node ',i,
      &              ' does not'
                write(*,*) '       belong to a beam nor shell'
@@ -118,7 +118,7 @@
          val=xforc(i)
 !
          if(rig(node).ne.0) then
-            if(idir.gt.4) then
+            if(idir.gt.3) then
                if(rig(node).lt.0) then
                   write(*,*) '*ERROR in gen3dforc: in node ',node
                   write(*,*) '       a rotational DOF is loaded;'
@@ -128,7 +128,7 @@
                   call exit(201)
                endif
 c               val=xforc(i)
-               k=idir-4
+               k=idir-3
                irotnode=rig(node)
                call forcadd(irotnode,k,val,nodeforc,
      &              ndirforc,xforc,nforc,nforc_,iamforc,
@@ -143,7 +143,7 @@ c               val=xforc(i)
 !           knots (expandable rigid bodies) can take rotational
 !           values arbitrarily exceeding 90 degrees
 !
-            if((idir.gt.4).and.((nmethod.eq.4).and.(iperturb.gt.1)))then
+            if((idir.gt.3).and.((nmethod.eq.4).and.(iperturb.gt.1)))then
 !
 !              create a knot: determine the knot
 !
@@ -447,7 +447,7 @@ c               vold(1,iexpnode)=alpha
 !
 !              apply the moment
 !               
-               idir=idir-4
+               idir=idir-3
                val=xforc(i)
                call forcadd(irotnode,idir,val,nodeforc,
      &              ndirforc,xforc,nforc,nforc_,iamforc,
@@ -491,7 +491,7 @@ c               vold(1,iexpnode)=alpha
 !     
                      isol=0
                      do l=1,3
-                        idof=8*(node-1)+4+imax
+                        idof=8*(node-1)+3+imax
                         call nident(ikboun,idof,nboun,id)
                         if((id.gt.0).and.(ikboun(id).eq.idof)) then
                            imax=imax+1
@@ -554,7 +554,7 @@ c               vold(1,iexpnode)=alpha
 !           all cases except nonlinear dynamic case: creation
 !           of mean rotation MPC's
 !
-            if((idir.gt.4).and.((nmethod.ne.4).or.(iperturb.le.1)))then
+            if((idir.gt.3).and.((nmethod.ne.4).or.(iperturb.le.1)))then
 !
 !              create a mean rotation MPC
 !              advantage: more accurate since less constraining
@@ -568,7 +568,7 @@ c               vold(1,iexpnode)=alpha
                call nident(ikforc,idof,nforc,id)
                if(ilforc(id).ne.i) cycle
 
-               idirref=idir-4
+               idirref=idir-3
 !
                if(lakon(ielem)(7:7).eq.'L') then
                   lstart=3
@@ -731,7 +731,7 @@ c               vold(1,iexpnode)=alpha
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
                      write(*,*) 
-     &                    '*ERROR in gen3dforc: increase nmpc_'
+     &                    '*ERROR in gen3dforc: increase memmpc_'
                      call exit(201)
                   endif
 !
@@ -742,7 +742,7 @@ c               vold(1,iexpnode)=alpha
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
                         write(*,*) 
-     &                       '*ERROR in gen3dforc: increase nmpc_'
+     &                       '*ERROR in gen3dforc: increase memmpc_'
                         call exit(201)
                      endif
                   endif
@@ -757,7 +757,7 @@ c               vold(1,iexpnode)=alpha
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
                      write(*,*) 
-     &                    '*ERROR in gen3dforc: increase nmpc_'
+     &                    '*ERROR in gen3dforc: increase memmpc_'
                      call exit(201)
                   endif
 !
@@ -767,7 +767,7 @@ c               vold(1,iexpnode)=alpha
                   mpcfreenew=nodempc(3,mpcfree)
                   if(mpcfreenew.eq.0) then
                      write(*,*) 
-     &                    '*ERROR in gen3dforc: increase nmpc_'
+     &                    '*ERROR in gen3dforc: increase memmpc_'
                      call exit(201)
                   endif
 !
@@ -803,7 +803,7 @@ c               vold(1,iexpnode)=alpha
                         mpcfree=nodempc(3,mpcfree)
                         if(mpcfree.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dforc: increase nmpc_'
+     &                          '*ERROR in gen3dforc: increase memmpc_'
                            call exit(201)
                         endif
                      enddo
@@ -813,7 +813,7 @@ c               vold(1,iexpnode)=alpha
                   mpcfreenew=nodempc(3,mpcfree)
                   if(mpcfreenew.eq.0) then
                      write(*,*) 
-     &                    '*ERROR in gen3dforc: increase nmpc_'
+     &                    '*ERROR in gen3dforc: increase memmpc_'
                      call exit(201)
                   endif
                   nodempc(3,mpcfree)=0
@@ -849,7 +849,7 @@ c               vold(1,iexpnode)=alpha
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
                      write(*,*) 
-     &                    '*ERROR in gen3dmpc: increase nmpc_'
+     &                    '*ERROR in gen3dmpc: increase memmpc_'
                      call exit(201)
                   endif
                   nodempc(1,mpcfree)=node
@@ -858,7 +858,7 @@ c               vold(1,iexpnode)=alpha
                   mpcfreenew=nodempc(3,mpcfree)
                   if(mpcfreenew.eq.0) then
                      write(*,*) 
-     &                    '*ERROR in gen3dmpc: increase nmpc_'
+     &                    '*ERROR in gen3dmpc: increase memmpc_'
                      call exit(201)
                   endif
                   nodempc(3,mpcfree)=0

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2015 Guido Dhondt
+!     Copyright (C) 1998-2017 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -95,7 +95,8 @@
          enddo
 !         
          if(pressmin.lt.0.d0) then
-            write(*,*) '*ERROR in initialgas: minimum initial pressure'
+            write(*,*) 
+     &        '*ERROR in initialchannel: minimum initial pressure'
             write(*,*) '       is smaller than zero'
             call exit(201)
          endif
@@ -206,8 +207,8 @@
          if (nactdog(0,node).eq.0) cycle
          if (v(0,node)-physcon(1).lt.1.d-10) then
             write(*,*)
-     &           '*WARNING in initialgas : the initial temperature for n
-     &ode',node
+     &           '*WARNING in initialchannel : the initial temperature f
+     &or node',node
             write(*,*) 
      &           'is O Kelvin or less; the default is taken (293 K)'
             write(*,*)
@@ -293,7 +294,8 @@
                   enddo
                endif
                if(.not.gravity) then
-                  write(*,*)'*ERROR in initialgas: no gravity vector'
+                  write(*,*)
+     &              '*ERROR in initialchannel: no gravity vector'
                   write(*,*) '       was defined for liquid element',
      &                 nelem
                   call exit(201)
@@ -326,7 +328,7 @@
                   if(nactdog(1,nodem).ne.0) v(1,nodem)=xflow
                enddo
             else
-               write(*,*) '*ERROR in initialgas: initial mass flow'
+               write(*,*) '*ERROR in initialchannel: initial mass flow'
                write(*,*) '       cannot be determined'
                call exit(201)
             endif
@@ -372,7 +374,8 @@
                   enddo
                endif
                if(.not.gravity) then
-                  write(*,*)'*ERROR in initialgas: no gravity vector'
+                  write(*,*)
+     &              '*ERROR in initialchannel: no gravity vector'
                   write(*,*) '       was defined for liquid element',
      &                 nelem
                   call exit(201)

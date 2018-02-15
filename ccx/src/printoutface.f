@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -250,24 +250,55 @@ c               write(*,*) 'printoutface elem ig ',nelem,ig
                   endif
                endif
 !     
-               if((nope.eq.20).or.(nope.eq.8)) then
-                  do i=1,nopes
-                     do j=1,3
-                        xl2(j,i)=co(j,konl(ifaceq(i,ig)))
+               if(icfd.ne.0) then
+!
+!                 CFD: undeformed structure
+!
+                  if((nope.eq.20).or.(nope.eq.8)) then
+                     do i=1,nopes
+                        do j=1,3
+                           xl2(j,i)=co(j,konl(ifaceq(i,ig)))
+                        enddo
                      enddo
-                  enddo
-               elseif((nope.eq.10).or.(nope.eq.4)) then
-                  do i=1,nopes
-                     do j=1,3
-                        xl2(j,i)=co(j,konl(ifacet(i,ig)))
+                  elseif((nope.eq.10).or.(nope.eq.4)) then
+                     do i=1,nopes
+                        do j=1,3
+                           xl2(j,i)=co(j,konl(ifacet(i,ig)))
+                        enddo
                      enddo
-                  enddo
+                  else
+                     do i=1,nopes
+                        do j=1,3
+                           xl2(j,i)=co(j,konl(ifacew(i,ig)))
+                        enddo
+                     enddo
+                  endif
                else
-                  do i=1,nopes
-                     do j=1,3
-                        xl2(j,i)=co(j,konl(ifacew(i,ig)))
+!
+!                 no CFD: deformed structure
+!
+                  if((nope.eq.20).or.(nope.eq.8)) then
+                     do i=1,nopes
+                        do j=1,3
+                           xl2(j,i)=co(j,konl(ifaceq(i,ig)))
+     &                             +vold(j,konl(ifaceq(i,ig)))
+                        enddo
                      enddo
-                  enddo
+                  elseif((nope.eq.10).or.(nope.eq.4)) then
+                     do i=1,nopes
+                        do j=1,3
+                           xl2(j,i)=co(j,konl(ifacet(i,ig)))
+     &                             +vold(j,konl(ifacet(i,ig)))
+                        enddo
+                     enddo
+                  else
+                     do i=1,nopes
+                        do j=1,3
+                           xl2(j,i)=co(j,konl(ifacew(i,ig)))+
+     &                              vold(j,konl(ifacew(i,ig)))
+                        enddo
+                     enddo
+                  endif
                endif
 !     
                do i=1,mint2d
@@ -320,56 +351,59 @@ c               write(*,*) 'printoutface elem ig ',nelem,ig
                      coords(j1)=0.d0
                      do i1=1,nopes
                         coords(j1)=coords(j1)+shp2(4,i1)*xl2(j1,i1)
-c                        if(j1.eq.1) then
-c                           write(*,*) 'printoutface ',coords(j1),
-c     &                       shp2(4,i1),xl2(j1,i1)
-c                        endif
                      enddo
                   enddo
 !     
 !     local coordinates of the surface integration
 !     point within the element local coordinate system
 !     
-                  if(lakonl(4:5).eq.'8R') then
-                     xi3d=xlocal8r(1,i,ig)
-                     et3d=xlocal8r(2,i,ig)
-                     ze3d=xlocal8r(3,i,ig)
-                     call shape8h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
-                  elseif(lakonl(4:4).eq.'8') then
-                     xi3d=xlocal8(1,i,ig)
-                     et3d=xlocal8(2,i,ig)
-                     ze3d=xlocal8(3,i,ig)
-                     call shape8h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
-                  elseif(lakonl(4:6).eq.'20R') then
-                     xi3d=xlocal8(1,i,ig)
-                     et3d=xlocal8(2,i,ig)
-                     ze3d=xlocal8(3,i,ig)
-                     call shape20h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
-                  elseif(lakonl(4:4).eq.'2') then
-                     xi3d=xlocal20(1,i,ig)
-                     et3d=xlocal20(2,i,ig)
-                     ze3d=xlocal20(3,i,ig)
-                     call shape20h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
-                  elseif(lakonl(4:5).eq.'10') then
-                     xi3d=xlocal10(1,i,ig)
-                     et3d=xlocal10(2,i,ig)
-                     ze3d=xlocal10(3,i,ig)
-                     call shape10tet(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
-                  elseif(lakonl(4:4).eq.'4') then
-                     xi3d=xlocal4(1,i,ig)
-                     et3d=xlocal4(2,i,ig)
-                     ze3d=xlocal4(3,i,ig)
-                     call shape4tet(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
-                  elseif(lakonl(4:5).eq.'15') then
-                     xi3d=xlocal15(1,i,ig)
-                     et3d=xlocal15(2,i,ig)
-                     ze3d=xlocal15(3,i,ig)
-                     call shape15w(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
-                  elseif(lakonl(4:4).eq.'6') then
-                     xi3d=xlocal6(1,i,ig)
-                     et3d=xlocal6(2,i,ig)
-                     ze3d=xlocal6(3,i,ig)
-                     call shape6w(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+                  if((prlab(ii)(1:4).eq.'DRAG').or.
+     &               (prlab(ii)(1:4).eq.'FLUX')) then
+!
+!                    deformation gradient is only needed for
+!                    DRAG and FLUX applications
+!
+                     if(lakonl(4:5).eq.'8R') then
+                        xi3d=xlocal8r(1,i,ig)
+                        et3d=xlocal8r(2,i,ig)
+                        ze3d=xlocal8r(3,i,ig)
+                        call shape8h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+                     elseif(lakonl(4:4).eq.'8') then
+                        xi3d=xlocal8(1,i,ig)
+                        et3d=xlocal8(2,i,ig)
+                        ze3d=xlocal8(3,i,ig)
+                        call shape8h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+                     elseif(lakonl(4:6).eq.'20R') then
+                        xi3d=xlocal8(1,i,ig)
+                        et3d=xlocal8(2,i,ig)
+                        ze3d=xlocal8(3,i,ig)
+                        call shape20h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+                     elseif(lakonl(4:4).eq.'2') then
+                        xi3d=xlocal20(1,i,ig)
+                        et3d=xlocal20(2,i,ig)
+                        ze3d=xlocal20(3,i,ig)
+                        call shape20h(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+                     elseif(lakonl(4:5).eq.'10') then
+                        xi3d=xlocal10(1,i,ig)
+                        et3d=xlocal10(2,i,ig)
+                        ze3d=xlocal10(3,i,ig)
+                        call shape10tet(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+                     elseif(lakonl(4:4).eq.'4') then
+                        xi3d=xlocal4(1,i,ig)
+                        et3d=xlocal4(2,i,ig)
+                        ze3d=xlocal4(3,i,ig)
+                        call shape4tet(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+                     elseif(lakonl(4:5).eq.'15') then
+                        xi3d=xlocal15(1,i,ig)
+                        et3d=xlocal15(2,i,ig)
+                        ze3d=xlocal15(3,i,ig)
+                        call shape15w(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+                     elseif(lakonl(4:4).eq.'6') then
+                        xi3d=xlocal6(1,i,ig)
+                        et3d=xlocal6(2,i,ig)
+                        ze3d=xlocal6(3,i,ig)
+                        call shape6w(xi3d,et3d,ze3d,xl,xsj,shp,iflag)
+                     endif
                   endif
 !     
 !     calculating of

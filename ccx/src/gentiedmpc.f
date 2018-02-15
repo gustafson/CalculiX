@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,7 +43,7 @@
      &  ilmpc(*),ithermal(2),cfd,ncont,mpcfreeold,m,id1,ikboun(*),
      &  itriold,itrinew,ntriangle,ntriangle_,itriangle(100)
 !
-      real*8 cg(3,*),straight(16,*),co(3,*),p(3),istartwrite,
+      real*8 cg(3,*),straight(16,*),co(3,*),p(3),
      &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),pl(3,9),
      &  ratio(9),xi,et,coefmpc(*),tietol(3,*),tolloc
 !
@@ -232,7 +232,8 @@
      &                    straight(ll+2,itri)*p(3)+
      &                    straight(ll+3,itri)
 c                     if(dist.gt.1.d-6) then
-                     if(dist.gt.tietol(1,i)) then
+c                     if(dist.gt.tietol(1,i)) then
+                     if(dist.gt.tolloc) then
                         itrinew=imastop(l,itri)
                         if(itrinew.eq.0) then
 c                           write(*,*) '**border reached'
@@ -297,7 +298,8 @@ c                              write(*,*) '**regular solution'
                   else
                      write(*,*) '         no corresponding master face'
                      write(*,*) '         found; tolerance: ',
-     &                       tietol(1,i)
+     &                       tolloc
+c     &                       tietol(1,i)
                   endif
                   write(40,*) node
                 else
@@ -369,9 +371,16 @@ c                              write(*,*) '**regular solution'
                      enddo
                   enddo
                   call attach(pl,p,nnodelem,ratio,dist,xi,et)
-                  do k=1,3
-                     co(k,node)=p(k)
-                  enddo
+!
+!                 adjusting the coordinates of the node (only
+!                 if the user did not specify ADJUST=NO on the
+!                 *TIE card)
+!
+                  if(tietol(2,i).gt.0.d0) then
+                     do k=1,3
+                        co(k,node)=p(k)
+                     enddo
+                  endif
 !
 !                 generating MPC's
 !
@@ -475,7 +484,8 @@ c                              write(*,*) '**regular solution'
      &                    straight(ll+2,itri)*p(3)+
      &                    straight(ll+3,itri)
 c                     if(dist.gt.1.d-6) then
-                     if(dist.gt.tietol(1,i)) then
+c                     if(dist.gt.tietol(1,i)) then
+                     if(dist.gt.tolloc) then
                         itrinew=imastop(l,itri)
                         if(itrinew.eq.0) then
 c                           write(*,*) '**border reached'
@@ -543,7 +553,8 @@ c                              write(*,*) '**regular solution'
                      else
                       write(*,*) '         no corresponding master face'
                       write(*,*) '         found; tolerance: ',
-     &                                tietol(1,i)
+     &                                tolloc
+c     &                                tietol(1,i)
                      endif
                      write(40,*) node
                   else
@@ -615,9 +626,16 @@ c                              write(*,*) '**regular solution'
                         enddo
                      enddo
                      call attach(pl,p,nnodelem,ratio,dist,xi,et)
-                     do k=1,3
-                        co(k,node)=p(k)
-                     enddo
+!
+!                    adjusting the coordinates of the node (only
+!                    if the user did not specify ADJUST=NO on the
+!                    *TIE card)
+!
+                     if(tietol(2,i).gt.0.d0) then
+                        do k=1,3
+                           co(k,node)=p(k)
+                        enddo
+                     endif
 !     
 !                    generating MPC's
 !     

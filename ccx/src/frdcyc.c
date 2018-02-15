@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -31,7 +31,8 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
             ITG *iendset, double *trab, ITG *inotr, ITG *ntrans,
 	    double *orab, ITG *ielorien, ITG *norien, double *sti,
             double *veold, ITG *noddiam,char *set,ITG *nset, double *emn,
-            double *thicke,char* jobnamec,ITG *ne0,double *cdn,ITG *mortar,ITG *nmat){
+            double *thicke,char* jobnamec,ITG *ne0,double *cdn,ITG *mortar,
+            ITG *nmat,double *qfx){
 
   /* duplicates fields for static cyclic symmetric calculations */
 
@@ -45,7 +46,7 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
   double *vt=NULL,*fnt=NULL,*stnt=NULL,*eent=NULL,*cot=NULL,*t1t=NULL,
          *epnt=NULL,*enernt=NULL,*xstatent=NULL,theta,pi,t[3],*qfnt=NULL,
          *vr=NULL,*vi=NULL,*stnr=NULL,*stni=NULL,*vmax=NULL,*stnmax=NULL,
-         *stit=NULL,*eenmax=NULL,*fnr=NULL,*fni=NULL,*emnt=NULL,*qfx=NULL,
+         *stit=NULL,*eenmax=NULL,*fnr=NULL,*fni=NULL,*emnt=NULL,
          *cdnr=NULL,*cdni=NULL;
 
   pi=4.*atan(1.);
@@ -136,7 +137,7 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
     NNEW(enernt,double,*nk*ngraph);
   if(strcmp1(&filab[609],"SDV ")==0)
     NNEW(xstatent,double,*nstate_**nk*ngraph);
-  if(strcmp1(&filab[696],"HFL ")==0)
+  if((strcmp1(&filab[696],"HFL ")==0)||(strcmp1(&filab[2784],"HER ")==0))
     NNEW(qfnt,double,3**nk*ngraph);
   if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)||
      (strcmp1(&filab[2175],"CONT")==0))
@@ -149,12 +150,10 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
      the above two lines are not true: lakon is needed for
      contact information in frd.f */
 
-//  if(*kode==1){
-    NNEW(kont,ITG,*nkon*ngraph);
-    NNEW(ipkont,ITG,*ne*ngraph);
-    NNEW(lakont,char,8**ne*ngraph);
-    NNEW(ielmatt,ITG,mi[2]**ne*ngraph);
-//  }
+  NNEW(kont,ITG,*nkon*ngraph);
+  NNEW(ipkont,ITG,*ne*ngraph);
+  NNEW(lakont,char,8**ne*ngraph);
+  NNEW(ielmatt,ITG,mi[2]**ne*ngraph);
   NNEW(inumt,ITG,*nk*ngraph);
   
   nkt=ngraph**nk;
@@ -168,12 +167,10 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
 
   /* copying the topology of the first sector */
   
-//  if(*kode==1){
-      for(l=0;l<*nkon;l++){kont[l]=kon[l];}
-      for(l=0;l<*ne;l++){ipkont[l]=ipkon[l];}
-      for(l=0;l<8**ne;l++){lakont[l]=lakon[l];}
-      for(l=0;l<mi[2]**ne;l++){ielmatt[l]=ielmat[l];}
-//  }  
+  for(l=0;l<*nkon;l++){kont[l]=kon[l];}
+  for(l=0;l<*ne;l++){ipkont[l]=ipkon[l];}
+  for(l=0;l<8**ne;l++){lakont[l]=lakon[l];}
+  for(l=0;l<mi[2]**ne;l++){ielmatt[l]=ielmat[l];}
 
   /* generating the coordinates for the other sectors */
   
@@ -203,8 +200,6 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
 	  }
       }
       
-      //   if(*kode==1){
-        
         for(l=0;l<*nkon;l++){kont[l+i**nkon]=kon[l]+i**nk;}
         for(l=0;l<*ne;l++){
           if(ielcs[l]==jj){
@@ -219,7 +214,6 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
             else ipkont[l+i**ne]=-1;
 	  }
         }
-	//   }
     }
   }
 
@@ -256,7 +250,7 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
     for(l=0;l<*nk;l++){enernt[l]=enern[l];};
   if(strcmp1(&filab[609],"SDV ")==0)
     for(l=0;l<*nstate_**nk;l++){xstatent[l]=xstaten[l];};
-  if(strcmp1(&filab[696],"HFL ")==0)
+  if((strcmp1(&filab[696],"HFL ")==0)||(strcmp1(&filab[2784],"HER ")==0))
     for(l=0;l<3**nk;l++){qfnt[l]=qfn[l];};
   if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)||
      (strcmp1(&filab[2175],"CONT")==0))
@@ -347,7 +341,7 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
         }
       }
     
-      if(strcmp1(&filab[696],"HFL ")==0){
+      if((strcmp1(&filab[696],"HFL ")==0)||(strcmp1(&filab[2784],"HER ")==0)){
         for(l1=0;l1<*nk;l1++){
           if(inocs[l1]==jj){
             for(l2=0;l2<3;l2++){
@@ -406,7 +400,7 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
   if(strcmp1(&filab[435],"PEEQ")==0) SFREE(epnt);
   if(strcmp1(&filab[522],"ENER")==0) SFREE(enernt);
   if(strcmp1(&filab[609],"SDV ")==0) SFREE(xstatent);
-  if(strcmp1(&filab[696],"HFL ")==0) SFREE(qfnt);
+  if((strcmp1(&filab[696],"HFL ")==0)||(strcmp1(&filab[2784],"HER ")==0)) SFREE(qfnt);
   if((strcmp1(&filab[1044],"ZZS ")==0)||(strcmp1(&filab[1044],"ERR ")==0)||
      (strcmp1(&filab[2175],"CONT")==0)) SFREE(stit);
   if(strcmp1(&filab[2697],"ME  ")==0) SFREE(emnt);

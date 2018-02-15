@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -61,36 +61,36 @@
       do i=1,nbounold
          node=nodeboun(i)
          if(node.gt.iponoelmax) then
-            if(ndirboun(i).gt.4) then
-               write(*,*) '*ERROR: in gen3dboun: node ',node,
-     &              ' does not'
-               write(*,*) '        belong to a beam nor shell'
-               write(*,*) '        element and consequently has no'
-               write(*,*) '        rotational degrees of freedom.'
-               write(*,*) '        This may be caused by applying'
-               write(*,*) '        a local coordinate system to a'
-               write(*,*) '        node in which a rotational boundary'
-               write(*,*) '        conditions is defined. In CalculiX'
-               write(*,*) '        this is not allowed.'
-               call exit(201)
-            endif
+c            if((ndirboun(i).gt.3).and.(ndirboun(i).lt.7)) then
+c               write(*,*) '*ERROR: in gen3dboun: node ',node,
+c     &              ' does not'
+c               write(*,*) '        belong to a beam nor shell'
+c               write(*,*) '        element and consequently has no'
+c               write(*,*) '        rotational degrees of freedom.'
+c               write(*,*) '        This may be caused by applying'
+c               write(*,*) '        a local coordinate system to a'
+c               write(*,*) '        node in which a rotational boundary'
+c               write(*,*) '        conditions is defined. In CalculiX'
+c               write(*,*) '        this is not allowed.'
+c               call exit(201)
+c            endif
             cycle
          endif
          index=iponoel(node)
          if(index.eq.0) then
-            if(ndirboun(i).gt.4) then
-               write(*,*) '*ERROR: in gen3dboun: node ',node,
-     &              ' does not'
-               write(*,*) '        belong to a beam nor shell'
-               write(*,*) '        element and consequently has no'
-               write(*,*) '        rotational degrees of freedom.'
-               write(*,*) '        This may be caused by applying'
-               write(*,*) '        a local coordinate system to a'
-               write(*,*) '        node in which a rotational boundary'
-               write(*,*) '        conditions is defined. In CalculiX'
-               write(*,*) '        this is not allowed.'
-               call exit(201)
-            endif
+c            if((ndirboun(i).gt.3).and.(ndirboun(i).lt.7)) then
+c               write(*,*) '*ERROR: in gen3dboun: node ',node,
+c     &              ' does not'
+c               write(*,*) '        belong to a beam nor shell'
+c               write(*,*) '        element and consequently has no'
+c               write(*,*) '        rotational degrees of freedom.'
+c               write(*,*) '        This may be caused by applying'
+c               write(*,*) '        a local coordinate system to a'
+c               write(*,*) '        node in which a rotational boundary'
+c               write(*,*) '        conditions is defined. In CalculiX'
+c               write(*,*) '        this is not allowed.'
+c               call exit(201)
+c            endif
             cycle
          endif
          ielem=inoel(1,index)
@@ -105,7 +105,7 @@
 !
 !           existing knot
 !
-            if(idir.gt.4) then
+            if(idir.gt.3) then
                if(rig(node).lt.0) then
                   write(*,*) '*ERROR in gen3dboun: in node ',node
                   write(*,*) '       a rotational DOF is constrained'
@@ -114,7 +114,7 @@
                   write(*,*) '       have rotational DOFs'
                   call exit(201)
                endif
-               j=idir-4
+               j=idir-3
                irotnode=rig(node)
                type='B'
                call bounadd(irotnode,j,j,val,nodeboun,
@@ -137,7 +137,7 @@
 !           knots (expandable rigid bodies) can take rotational
 !           values arbitrarily exceeding 90 degrees
 !
-            if((idir.gt.4).and.((nmethod.eq.4).and.(iperturb.gt.1)))then
+            if((idir.gt.3).and.((nmethod.eq.4).and.(iperturb.gt.1)))then
 !
 !              create a knot: determine the knot
 !
@@ -370,7 +370,7 @@ c                     enddo
 !              start meanrotationmpc
 !              change: mean rotation MPC instead of KNOT
 !
-               idirref=idir-4
+               idirref=idir-3
 !
                if(lakon(ielem)(7:7).eq.'L') then
                   lstart=3
@@ -476,7 +476,7 @@ c                     enddo
 !     
 !     apply the boundary condition
 !     
-               idir=idir-4
+               idir=idir-3
                type='B'
                call bounadd(irotnode,idir,idir,val,nodeboun,
      &              ndirboun,xboun,nboun,nboun_,iamboun,
@@ -522,7 +522,7 @@ c                     enddo
 !     
                      isol=0
                      do l=1,3
-                        idof=8*(node-1)+4+imax
+                        idof=8*(node-1)+3+imax
                         call nident(ikboun,idof,nboun,id)
                         if((id.gt.0).and.(ikboun(id).eq.idof)) then
                            imax=imax+1
@@ -590,7 +590,7 @@ c                     enddo
 !           all cases except nonlinear dynamic case: creation
 !           of meanrotation MPC's
 !
-            if((idir.gt.4).and.((nmethod.ne.4).or.(iperturb.le.1)))then
+            if((idir.gt.3).and.((nmethod.ne.4).or.(iperturb.le.1)))then
 !
 !              create a mean rotation MPC
 !              advantage: more accurate since less constraining
@@ -604,7 +604,7 @@ c                     enddo
                call nident(ikboun,idof,nboun,id)
                if(ilboun(id).ne.i) cycle
 
-               idirref=idir-4
+               idirref=idir-3
 !
                if(lakon(ielem)(7:7).eq.'L') then
                   lstart=3
@@ -698,44 +698,6 @@ c                     enddo
                      a(k,idirref)=a(k,idirref)/dd
                   enddo
                endif
-c                        
-c               if(lakon(ielem)(7:7).eq.'L') then
-c                  dot=a(1,idirref)*xn(1)+a(2,idirref)*xn(2)+
-c     &                a(3,idirref)*xn(3)
-c                  if(dot.gt.0.05) then
-c                     do k=5,7
-c                        if(k.eq.idir) then
-c                           if(dabs(xboun(i)).lt.1.d-10) cycle
-c                           write(*,*) '*ERROR in gen3dboun: rotation'
-c                           write(*,*) '       vector in node ',node
-c                           write(*,*) '       and direction ',idir-1
-c                           write(*,*) '       has a significant'
-c                           write(*,*) 
-c     &                       '       component along the drilling'
-c                           write(*,*) '       direction; this is not'
-c                           write(*,*) '       allowed'
-c                           call exit(201)
-c                        endif
-c                        idof=8*(node-1)+k
-c                        call nident(ikboun,idof,nboun,id1)
-c                        if(id1.gt.0) then
-c                           if(ikboun(id1).eq.idof) then
-c                              if(dabs(xboun(ilboun(id1))).lt.1.d-10) 
-c     &                             cycle
-c                           endif
-c                        endif
-c                        write(*,*) '*ERROR in gen3dboun: rotation'
-c                        write(*,*) '       vector in node ',node
-c                        write(*,*) '       and direction ',idir-1
-c                        write(*,*) '       has a significant'
-c                        write(*,*) 
-c     &                       '       component along the drilling'
-c                        write(*,*) '       direction; this is not'
-c                        write(*,*) '       allowed'
-c                        call exit(201)
-c                     enddo
-c                  endif
-c               endif
 !
 !              specific label for mean rotations for beams and
 !              shells
@@ -832,7 +794,7 @@ c               endif
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
                      write(*,*) 
-     &                    '*ERROR in gen3dboun: increase nmpc_'
+     &                    '*ERROR in gen3dboun: increase memmpc_'
                      call exit(201)
                   endif
                   nodempc(1,mpcfree)=knor(indexk+3)
@@ -841,7 +803,7 @@ c               endif
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
                      write(*,*) 
-     &                    '*ERROR in gen3dboun: increase nmpc_'
+     &                    '*ERROR in gen3dboun: increase memmpc_'
                      call exit(201)
                   endif
                   nodempc(1,mpcfree)=node
@@ -850,7 +812,7 @@ c               endif
                   mpcfreenew=nodempc(3,mpcfree)
                   if(mpcfreenew.eq.0) then
                      write(*,*) 
-     &                    '*ERROR in gen3dboun: increase nmpc_'
+     &                    '*ERROR in gen3dboun: increase memmpc_'
                      call exit(201)
                   endif
                   nodempc(3,mpcfree)=0
@@ -883,7 +845,7 @@ c               endif
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
                      write(*,*) 
-     &                    '*ERROR in gen3dboun: increase nmpc_'
+     &                    '*ERROR in gen3dboun: increase memmpc_'
                      call exit(201)
                   endif
                   nodempc(1,mpcfree)=node
@@ -892,7 +854,7 @@ c               endif
                   mpcfreenew=nodempc(3,mpcfree)
                   if(mpcfreenew.eq.0) then
                      write(*,*) 
-     &                    '*ERROR in gen3dboun: increase nmpc_'
+     &                    '*ERROR in gen3dboun: increase memmpc_'
                      call exit(201)
                   endif
                   nodempc(3,mpcfree)=0
@@ -929,7 +891,7 @@ c               endif
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
                         write(*,*) 
-     &                       '*ERROR in gen3dboun: increase nmpc_'
+     &                       '*ERROR in gen3dboun: increase memmpc_'
                         call exit(201)
                      endif
                      nodempc(1,mpcfree)=node
@@ -938,7 +900,7 @@ c               endif
                      mpcfreenew=nodempc(3,mpcfree)
                      if(mpcfreenew.eq.0) then
                         write(*,*) 
-     &                       '*ERROR in gen3dboun: increase nmpc_'
+     &                       '*ERROR in gen3dboun: increase memmpc_'
                         call exit(201)
                      endif
                      nodempc(3,mpcfree)=0
@@ -951,13 +913,8 @@ c               endif
 !
 !              u(n_1)+u(n_2)+u(n_3)+u(n_4)=4*u(n)
 !
-c               if(lakon(ielem)(4:5).eq.'20') then
-c                  nnode=8
-c                  xnode=8.d0
-c               else
-                  nnode=4
-                  xnode=4.d0
-c               endif
+               nnode=4
+               xnode=4.d0
                newnode=knor(indexk+1)
                idof=8*(newnode-1)+idir
                call nident(ikmpc,idof,nmpc,id)
@@ -982,10 +939,9 @@ c               endif
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
                      write(*,*) 
-     &                    '*ERROR in gen3dboun: increase nmpc_'
+     &                    '*ERROR in gen3dboun: increase memmpc_'
                      call exit(201)
                   endif
-c                  do k=2,4
                   do k=2,nnode
                      nodempc(1,mpcfree)=knor(indexk+k)
                      nodempc(2,mpcfree)=idir
@@ -993,18 +949,17 @@ c                  do k=2,4
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
                         write(*,*) 
-     &                       '*ERROR in gen3dboun: increase nmpc_'
+     &                       '*ERROR in gen3dboun: increase memmpc_'
                         call exit(201)
                      endif
                   enddo
                   nodempc(1,mpcfree)=node
                   nodempc(2,mpcfree)=idir
-c                  coefmpc(mpcfree)=-4.d0
                   coefmpc(mpcfree)=-xnode
                   mpcfreenew=nodempc(3,mpcfree)
                   if(mpcfreenew.eq.0) then
                      write(*,*) 
-     &                    '*ERROR in gen3dboun: increase nmpc_'
+     &                    '*ERROR in gen3dboun: increase memmpc_'
                      call exit(201)
                   endif
                   nodempc(3,mpcfree)=0
@@ -1042,7 +997,7 @@ c                  coefmpc(mpcfree)=-4.d0
                         mpcfree=nodempc(3,mpcfree)
                         if(mpcfree.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dboun: increase nmpc_'
+     &                          '*ERROR in gen3dboun: increase memmpc_'
                            call exit(201)
                         endif
                         nodempc(1,mpcfree)=node
@@ -1051,7 +1006,7 @@ c                  coefmpc(mpcfree)=-4.d0
                         mpcfreenew=nodempc(3,mpcfree)
                         if(mpcfreenew.eq.0) then
                            write(*,*) 
-     &                          '*ERROR in gen3dboun: increase nmpc_'
+     &                          '*ERROR in gen3dboun: increase memmpc_'
                            call exit(201)
                         endif
                         nodempc(3,mpcfree)=0
@@ -1089,7 +1044,7 @@ c                  coefmpc(mpcfree)=-4.d0
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
                      write(*,*) 
-     &                    '*ERROR in gen3dmpc: increase nmpc_'
+     &                    '*ERROR in gen3dmpc: increase memmpc_'
                      call exit(201)
                   endif
                   nodempc(1,mpcfree)=node
@@ -1098,7 +1053,7 @@ c                  coefmpc(mpcfree)=-4.d0
                   mpcfreenew=nodempc(3,mpcfree)
                   if(mpcfreenew.eq.0) then
                      write(*,*) 
-     &                    '*ERROR in gen3dmpc: increase nmpc_'
+     &                    '*ERROR in gen3dmpc: increase memmpc_'
                      call exit(201)
                   endif
                   nodempc(3,mpcfree)=0

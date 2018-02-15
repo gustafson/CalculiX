@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -74,7 +74,7 @@
             coefmpc(mpcfree)=1.d0
             mpcfree=nodempc(3,mpcfree)
             if(mpcfree.eq.0) then
-               write(*,*) '*ERROR in mpcadd: increase nmpc_'
+               write(*,*) '*ERROR in mpcadd: increase memmpc_'
                call exit(201)
             endif
 !
@@ -84,7 +84,7 @@
             mpcfreeold=mpcfree
             mpcfree=nodempc(3,mpcfree)
             if(mpcfree.eq.0) then
-               write(*,*) '*ERROR in mpcadd: increase nmpc_'
+               write(*,*) '*ERROR in mpcadd: increase memmpc_'
                call exit(201)
             endif
             nodempc(3,mpcfreeold)=0
@@ -153,7 +153,7 @@
                coefmpc(mpcfree)=a(number,i)
                mpcfree=nodempc(3,mpcfree)
                if(mpcfree.eq.0) then
-                  write(*,*) '*ERROR in mpcadd: increase nmpc_'
+                  write(*,*) '*ERROR in mpcadd: increase memmpc_'
                   call exit(201)
                endif
 !
@@ -163,7 +163,7 @@
                mpcfreeold=mpcfree
                mpcfree=nodempc(3,mpcfree)
                if(mpcfree.eq.0) then
-                  write(*,*) '*ERROR in mpcadd: increase nmpc_'
+                  write(*,*) '*ERROR in mpcadd: increase memmpc_'
                   call exit(201)
                endif
             enddo

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2016 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -22,7 +22,7 @@
 #include<stdlib.h>
 #include<string.h>
 
-#ifdef WIN32
+#if (defined _WIN32) && (! defined __CYGWIN__)
 #include<windows.h>
 #define dlopen(name, mode) LoadLibrary (TEXT (name))
 #define dlsym(handle, func) GetProcAddress (handle, func)
@@ -35,13 +35,14 @@ typedef void* lib_handler;
 #include"CalculiX.h"
 
 static const char* search(const char *b,
-			  const char *e){
-  const char* c=b;
-  while(c!=e){
-    if(*c=='_'){
-      return c;
+			  const char *e,
+			  const char  c){
+  const char* p=b;
+  while(p!=e){
+    if(*p==c){
+      return p;
     }
-    ++c;
+    ++p;
   }
   return e;
 }
@@ -96,6 +97,16 @@ static void treatExternalBehaviour(const char *n,
 				   const CalculixInterface i,
 				   const char *l,
 				   const char *f){
+#ifdef __CYGWIN__
+  char b[80] = {'c','y','g','\0','\0','\0','\0','\0','\0','\0',
+		'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+		'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+		'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+		'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+		'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+		'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+		'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0'};
+#else
   char b[80] = {'l','i','b','\0','\0','\0','\0','\0','\0','\0',
 		'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
 		'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
@@ -104,6 +115,7 @@ static void treatExternalBehaviour(const char *n,
 		'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
 		'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
 		'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0'};
+#endif
 #ifdef CALCULIX_EXTERNAL_BEHAVIOUR_DEBUG
   fprintf(stdout,"treatExternalBehaviour: loading function '%s' from library '%s'\n",f,l);
 #endif
@@ -112,7 +124,7 @@ static void treatExternalBehaviour(const char *n,
   // full library name
   const size_t s = strlen(l);
   memcpy(b+3,l,s);
-#ifndef _WIN32
+#if (! defined _WIN32) && (! defined __CYGWIN__)
   b[3+s] = '.';
   b[4+s] = 's';
   b[5+s] = 'o';
@@ -230,28 +242,25 @@ void calculix_registerExternalBehaviour(const char * n){
   // past-the-end position
   const char * e = search_space(n,n+80);
   const size_t s = e-n;
-  const char *p1,*p2;
+  const char *p1,*p2,*p3;
   check(n!=e,n,"empty string");
   if(*n!='@'){
     return;
   }
-  if((s>=10)&&(strncmp(c,"CALCULIX_",9)==0)){
-    c += 9;
-  } else if((s>=10)&&(strncmp(c,"ABAQUSNL_",9)==0)){
+  if((s>=10)&&(strncmp(c,"ABAQUSNL_",9)==0)){
     i = CALCULIX_ABAQUSNL_INTERFACE;
     c += 9;
   } else if((s>=8)&&(strncmp(c,"ABAQUS_",7)==0)){
     i = CALCULIX_ABAQUS_INTERFACE;
     c += 7;
   }
-  check(i!=CALCULIX_STANDARD_INTERFACE,n,
-	"calculix standard interface is not supported yet");
   p1 = c;
-  p2 = c = search(c,e);
-  ++c;
+  p2 = c = search(c,e,'_');
+  p2 = c = search(c,e,'_');
+  p3 = search(c,e,'@');
   // library and function
   l = memcpy(b1,p1,p2-p1);
-  f = memcpy(b2,p2+1,e-p2-1);
+  f = memcpy(b2,p2+1,p3-p2-1);
   check(strlen(l)!=0,n,"empty library name");
   check(strlen(f)!=0,n,"empty function name");
   treatExternalBehaviour(n,i,l,f);

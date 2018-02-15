@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,7 +24,8 @@
      &  nodeboun,ndirboun,nodeforc,ndirforc,istep,iinc,
      &  co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
      &  ntrans,trab,inotr,veold,integerglob,doubleglob,tieset,istartset,
-     &  iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc)
+     &  iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
+     &  ipobody,iponoel,inoel)
 !
 !     calculates the loading at a given time
 !
@@ -45,7 +46,8 @@
      &  ndirforc(*),istep,iinc,msecpt,node,j,ikboun(*),ilboun(*),
      &  ipresboun,mi(*),ntrans,inotr(2,*),idummy,integerglob(*),
      &  istartset(*),iendset(*),ialset(*),ntie,iselect(1),
-     &  nmpc,ikmpc(*),ilmpc(*),nodempc(3,*),k,ist,index,ipompc(*)
+     &  nmpc,ikmpc(*),ilmpc(*),nodempc(3,*),k,ist,index,ipompc(*),
+     &  ipobody(2,*),iponoel(*),inoel(2,*)
 !
       real*8 xforc(*),xforcact(*),xload(2,*),xloadact(2,*),
      &  t1(*),t1act(*),amta(2,*),ampli(*),time,fixed_temp,
@@ -137,10 +139,12 @@ c                  coords(j)=co(j,node)+vold(j,node)
 !
             if(ndirboun(i).eq.0) then
                call utemp(xbounact(i),msecpt,istep,iinc,abqtime,node,
-     &              coords,vold,mi)
+     &              coords,vold,mi,iponoel,inoel,
+     &              ipobody,xbodyact,ibody)
             else
                call uboun(xbounact(i),istep,iinc,abqtime,node,
-     &              ndirboun(i),coords,vold,mi)
+     &              ndirboun(i),coords,vold,mi,iponoel,inoel,
+     &              ipobody,xbodyact,ibody)
             endif
             cycle
          endif
@@ -377,7 +381,8 @@ c                  coords(j)=co(j,i)+vold(j,i)
                   coords(j)=co(j,i)
                enddo
                call utemp(t1act(i),msecpt,istep,iinc,abqtime,i,
-     &              coords,vold,mi)
+     &              coords,vold,mi,iponoel,inoel,
+     &              ipobody,xbodyact,ibody)
                cycle
             endif
 !

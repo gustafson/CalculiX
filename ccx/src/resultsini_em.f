@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -45,7 +45,7 @@
 !
       real*8 v(0:mi(2),*),vini(0:mi(2),*),f(*),fn(0:mi(2),*),
      &  cam(5),b(*),xboun(*),coefmpc(*),veold(0:mi(2),*),xforc(*),
-     &  qa(3),dtime,bnac,fixed_disp
+     &  qa(*),dtime,bnac,fixed_disp
 !
       mt=mi(2)+1
 !
@@ -258,19 +258,19 @@ c            endif
                      irotnode=nodempc(1,nodempc(3,nodempc(3,
      &                    nodempc(3,nodempc(3,nodempc(3,ipompc(i)))))))
                   endif
-                  write(5,*)
-                  write(5,'(a5)') labmpc(i)(1:5)
-                  write(5,'("tra",i5,3(1x,e11.4))')
-     &                 irefnode,(v(j,irefnode),j=1,3)
-                  write(5,'("rot",i5,3(1x,e11.4))')
-     &                 irotnode,(v(j,irotnode),j=1,3)
-                  if(labmpc(i)(5:5).eq.'2') then
-                     write(5,'("exp",i5,3(1x,e11.4))')
-     &                    iexpnode,(v(j,iexpnode),j=1,3)
-                  else
-                     write(5,'("exp",i5,3(1x,e11.4))')
-     &                    iexpnode,v(1,iexpnode)
-                  endif
+c                  write(5,*)
+c                  write(5,'(a5)') labmpc(i)(1:5)
+c                  write(5,'("tra",i5,3(1x,e11.4))')
+c     &                 irefnode,(v(j,irefnode),j=1,3)
+c                  write(5,'("rot",i5,3(1x,e11.4))')
+c     &                 irotnode,(v(j,irotnode),j=1,3)
+c                  if(labmpc(i)(5:5).eq.'2') then
+c                     write(5,'("exp",i5,3(1x,e11.4))')
+c     &                    iexpnode,(v(j,iexpnode),j=1,3)
+c                  else
+c                     write(5,'("exp",i5,3(1x,e11.4))')
+c     &                    iexpnode,v(1,iexpnode)
+c                  endif
                endif
             endif
          endif

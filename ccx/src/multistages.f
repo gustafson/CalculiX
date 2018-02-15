@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -504,7 +504,7 @@ c
                         mpcfree=nodempc(3,mpcfree)
                         if(mpcfree.eq.0) then
                            write(*,*)
-     &                       '*ERROR in multistages: increase nmpc_'
+     &                       '*ERROR in multistages: increase memmpc_'
                            call exit(201)
                         endif
                      enddo
@@ -523,7 +523,7 @@ c
                            endif
                            if(mpcfree.eq.0) then
                               write(*,*) 
-     &                         '*ERROR in multistages: increase nmpc_'
+     &                         '*ERROR in multistages: increase memmpc_'
                               call exit(201)
                            endif
                         enddo
@@ -570,7 +570,7 @@ c
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
                         write(*,*)
-     &                     '*ERROR in multistages: increase nmpc_'
+     &                     '*ERROR in multistages: increase memmpc_'
                         call exit(201)
                      endif
                      
@@ -584,7 +584,7 @@ c
                         endif
                         if(mpcfree.eq.0) then
                            write(*,*) 
-     &                      '*ERROR in multistages: increase nmpc_'
+     &                      '*ERROR in multistages: increase memmpc_'
                            call exit(201)
                         endif
                      enddo  

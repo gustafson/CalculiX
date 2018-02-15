@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2015 Guido Dhondt
+!     Copyright (C) 1998-2017 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -48,7 +48,6 @@
 !     
       phi=0.d0
       index=ielprop(nelem)
-      write(*,*) 'restrictor ',lakon(nelem)
 !
       if(iflag.eq.0) then
          identity=.true.
@@ -79,7 +78,7 @@
          kp1=kappa+1d0
          km1=kappa-1d0
 !     
-!     defining surfaces for branch elements
+!        defining surfaces for branch elements
 !     
          if(lakon(nelem)(2:6).eq.'REBRJ') then
             if(nelem.eq.nint(prop(index+2))) then
@@ -99,10 +98,10 @@
                A2=A1
             endif
             zeta=1.d0
-!     
-!     for other Restrictor elements         
-!     
          elseif(lakon(nelem)(2:5).eq.'REUS' ) then
+!     
+!           for other Restrictor elements         
+!     
             A1=prop(index+1)
             A2=prop(index+2)
             zeta=prop(index+4)
@@ -161,7 +160,6 @@
 !     
          if(A1.le.A2) then
 !     
-
             Qred1=dsqrt(kappa/R)*pt1pt2**(-0.5d0*kp1/(kappa*zeta))
      &           *dsqrt(2.d0/km1*(pt1pt2**(km1/(kappa*zeta))-1d0))
 !     
@@ -195,7 +193,7 @@
 !     
             xflow=inv*A2*pt2_lim*Qred_crit/dsqrt(Tt2)
          endif
-
+!
          pt2pt1=pt2/pt1
          km1=kappa-1.d0
          kp1=kappa+1.d0
@@ -251,7 +249,7 @@
             inv=-1
          endif     
 !     
-!     defining surfaces and oil properties for branches elements
+!        defining surfaces and oil properties for branches elements
 !     
          if(lakon(nelem)(2:6).eq.'REBRJ') then
             if(nelem.eq.nint(prop(index+2))) then
@@ -287,11 +285,10 @@
                   k_oil=nint(prop(index+11))
                endif
             endif
-!     
-!     for other Restrictor elements         
-!     
-       
          else                 
+!     
+!           for other Restrictor elements         
+!     
             if(inv.gt.0.d0) then
                A1=prop(index+1)
                A2=prop(index+2)
@@ -337,7 +334,7 @@
             nodef(2)=node1
             nodef(3)=nodem
             nodef(4)=node2
-            
+!            
          elseif(pt1.eq.pt2) then
             inv=1
             xflow=v(1,nodem)*iaxial
@@ -369,14 +366,13 @@
             nodef(3)=nodem
             nodef(4)=node1 
          endif
-
 !     
          idirf(1)=2
          idirf(2)=0
          idirf(3)=1
          idirf(4)=2
 !     
-!     calculation of the dynamic viscosity 
+!        calculation of the dynamic viscosity 
 !     
          if(lakon(nelem)(2:3).eq.'RE') then
             icase=0
@@ -387,11 +383,9 @@
             write(*,*) '       no dynamic viscosity defined'
             write(*,*) '       dvi= ',dvi
             call exit(201)
-c               kgas=0
-c               call dynamic_viscosity(kgas,T1,dvi)
          endif
 !     
-!     Reynolds number calculation
+!        Reynolds number calculation
 !     
          if(lakon(nelem)(2:5).eq.'REBR') then
             d=dsqrt(4d0*A1/Pi)
@@ -408,10 +402,10 @@ c               call dynamic_viscosity(kgas,T1,dvi)
          if(xflow_oil.lt.1.d-10) then
             xflow_oil=0.d0
          endif 
-!
-!     BEND MILLER with oil
-!     
          if(lakon(nelem)(2:7).eq.'REBEMI') then
+!
+!           BEND MILLER with oil
+!     
             if(xflow_oil.ne.0.d0) then
 !
                call two_phase_flow(Tt1,pt1,T1,pt2,xflow,
@@ -426,10 +420,10 @@ c               call dynamic_viscosity(kgas,T1,dvi)
      &              isothermal,kon,ipkon,R,Kappa,v,mi,iaxial)
                phi=1.d0
             endif
-!
-!     long orifice idelchick with oil
-!
          elseif(lakon(nelem)(2:7).eq.'RELOID') then
+!
+!           long orifice idelchick with oil
+!
             if(xflow_oil.ne.0.d0) then
 !               
                call two_phase_flow(Tt1,pt1,T1,pt2,xflow,
@@ -445,10 +439,10 @@ c               call dynamic_viscosity(kgas,T1,dvi)
                phi=1.d0
             endif
 !
-!     every other zeta elements with/without oil
-!
          else               
 !    
+!           every other zeta elements with/without oil
+!
             if(xflow_oil.ne.0.d0) then
                call two_phase_flow(Tt1,pt1,T1,pt2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
@@ -490,7 +484,7 @@ c               call dynamic_viscosity(kgas,T1,dvi)
          endif
          pt1pt2=pt1/pt2
 !     
-!     Mach number caclulation
+!        Mach number caclulation
 !    
          M1=dsqrt(2d0/km1*(Tt1/T1-1d0))
          if((1.d0-M1).le.1.d-6) then
@@ -503,12 +497,12 @@ c               call dynamic_viscosity(kgas,T1,dvi)
             M2=dsqrt(2d0/km1*(Tt2/T2-1d0))
          endif
 !     
-!     Section A1 smaller than or equal to section A2
-!     or for all BRANCHES ELEMENTS
+!        Section A1 smaller than or equal to section A2
+!        or for all BRANCHES ELEMENTS
 !     
          if(A1.le.A2) then
 !     
-!     definition of the reduced mass flows
+!           definition of the reduced mass flows
 !     
             if(zeta.gt.0.d0) then
 !     
@@ -531,11 +525,11 @@ c               call dynamic_viscosity(kgas,T1,dvi)
      &              **(-0.5d0*kp1/km1)
             endif
 !     
-!     icase zeta greater than zero
+!           icase zeta greater than zero
 !     
             if(zeta.gt.0.d0) then
 !     
-!     definition of the coefficients 
+!              definition of the coefficients 
 !     
                if((pt1pt2.ge.0.9999999999d0).and.
      &              (pt1pt2.le.1.000000000111111d0))then
@@ -556,51 +550,51 @@ c               call dynamic_viscosity(kgas,T1,dvi)
                   if((Qred1.lt.Qred_crit)
      &                 .and.(pt1pt2.lt.pt1pt2_crit))then
 !     
-!     section 1 is not critical
+!                    section 1 is not critical
 !     
-!     residual
+!                    residual
 !     
                      f=xflow*sqrt/(A1*Pt1)-fact1*dsqrt(root)
 !     
-!     pressure node1
+!                    pressure node1
 !     
                      df(1)=-xflow*sqrt/(A1*Pt1**2)+
      &                    fact1/pt1*dsqrt(root)
      &                    *(-expon1-expon3*fact2/root)
 !     
-!     temperature node1
+!                    temperature node1
 !     
                      df(2)=0.5d0*xflow*dsqrt(R/(kappa*Tt1))/(A1*Pt1)
 !     
-!     mass flow
+!                    mass flow
 !     
                      df(3)=inv*sqrt/(A1*Pt1)
 !     
-!     pressure node2
+!                    pressure node2
 !     
                      df(4)=fact1/pt2*dsqrt(root)*
      &                    (expon1+expon3*fact2/root)
 !     
                   else
 !     
-!     section1 is critical
+!                    section1 is critical
 !     
                      f=xflow*sqrt/(pt1*A1)-dsqrt(R/kappa)*qred_crit
 !     
-!     pressure node1
+!                    pressure node1
 !     
                      df(1)=-xflow*sqrt/(A1*pt1**2)
 !     
-!     temperature node1
+!                    temperature node1
 !     
                      df(2)=0.5d0*xflow*dsqrt(R/kappa)
      &                    /(pt1*A1*dsqrt(Tt1))
 !     
-!     mass flow
+!                    mass flow
 !     
                      df(3)=inv*sqrt/(A1*pt1)
 !     
-!     pressure node2
+!                    pressure node2
 !     
                      df(4)=0.d0
 !     
@@ -608,7 +602,7 @@ c               call dynamic_viscosity(kgas,T1,dvi)
 !     
                else
 !     
-!     section A2 critical
+!                 section A2 critical
 !
                   call pt2_lim_calc(pt1,a2,a1,kappa,zeta,pt2_lim)
                   pt1pt2=pt1/pt2_lim
@@ -621,27 +615,27 @@ c               call dynamic_viscosity(kgas,T1,dvi)
 !     
                   f=xflow*sqrt/(A1*Pt1)-fact1*dsqrt(root)
 !     
-!     pressure node1
+!                 pressure node1
 !     
                   df(1)=-xflow*sqrt/(A1*Pt1**2)+
      &                 fact1/pt1*dsqrt(root)
      &                 *(-expon1-expon3*fact2/root)
 !     
-!     temperature node1
+!                 temperature node1
 !     
                   df(2)=0.5d0*xflow*dsqrt(R/(kappa*Tt1))/(A1*Pt1)
 !     
-!     mass flow
+!                 mass flow
 !     
                   df(3)=inv*sqrt/(A1*Pt1)
 !     
-!     pressure node2
+!                 pressure node2
 !     
                   df(4)=0
 !     
                endif
 !     
-!     icase zeta less than zero
+!              icase zeta less than zero
 !     
             elseif(zeta.lt.0.d0) then
 !     
@@ -654,61 +648,61 @@ c               call dynamic_viscosity(kgas,T1,dvi)
 !     
                if(Qred1.lt.Qred_crit) then
 !     
-!     section 1 is not critical
+!                 section 1 is not critical
 !     
-!     residual
+!                 residual
 !     
                   f=xflow**2*R*Tt1/(A1**2*Pt1**2*Kappa)
      &                 -fact1*root
 !     
-!     pressure node1
+!                 pressure node1
 !     
                   df(1)=-2*xflow**2*R*Tt1/(A1**2*Pt1**3*Kappa)
      &                 -1/pt1*fact1*(expon1*root
      &                 +2/(zeta*kappa)*fact2)
 !     
-!     temperature node1
+!                 temperature node1
 !     
                   df(2)=xflow**2*R/(A1**2*Pt1**2*Kappa)
 !     
-!     mass flow
+!                 mass flow
 !     
                   df(3)=2*xflow*R*Tt1/(A1**2*Pt1**2*Kappa)
 !     
-!     pressure node2
+!                 pressure node2
 !     
                   df(4)=-(1/Pt2*fact1)
      &                 *(-expon1*root-2/(zeta*kappa)*fact2)
 !     
-!     section1 is critical
-!     
                else
+!     
+!                 section1 is critical
 !     
                   f=xflow**2*R*Tt1/(A1**2*Pt1**2*Kappa)
      &                 -R/kappa*qred_crit**2
 !     
-!     pressure node1
+!                 pressure node1
 !     
                   df(1)=-2*xflow**2*R*Tt1/(A1**2*pt1**3*kappa)
 !     
-!     temperature node1
+!                 temperature node1
 !     
                   df(2)=xflow**2*R/(A1**2*Pt1**2*Kappa)
 !     
-!     mass flow
+!                 mass flow
 !     
                   df(3)=2*xflow*R*Tt1/(A1**2*Pt1**2*Kappa)
 !     
-!     pressure node2
+!                 pressure node2
 !     
                   df(4)=0.d0
 !     
                endif
 !
-!     zeta = 0
-!
             elseif(zeta.eq.0.d0) then
 !     
+!              zeta = 0
+!
                f=pt1/pt2-1.d0
 !
                df(1)=1/pt2
@@ -720,7 +714,7 @@ c               call dynamic_viscosity(kgas,T1,dvi)
 !     
          else
 !     
-!     A1 greater than A2 
+!           A1 greater than A2 
 !     
             Qred2=dabs(xflow)*dsqrt(Tt2)/(A2*Pt2)
 !     
@@ -728,8 +722,8 @@ c               call dynamic_viscosity(kgas,T1,dvi)
 !
             Qred_crit=dsqrt(kappa/R)*(1.d0+0.5d0*km1)
      &           **(-0.5d0*kp1/km1)
-
-!     definition of the coefficients 
+!
+!           definition of the coefficients 
 !     
             if(zeta.gt.0.d0) then
 !     
@@ -756,26 +750,26 @@ c               call dynamic_viscosity(kgas,T1,dvi)
                if((Qred2.lt.Qred_crit)
      &              .and.(pt1/pt2.lt.pt1pt2_crit)) then
 !     
-!     section 2 is not critical
+!                 section 2 is not critical
 !     
-!     residual
+!                 residual
 !     
                   f=xflow*sqrt/(A2*Pt2)-fact1*dsqrt(root)
 !     
-!     pressure node1
+!                 pressure node1
 !     
                   df(1)=-fact1/pt1*dsqrt(root)
      &                 *(expon1+0.5*dsqrt(2/km1)*expon2*fact2/root)
 !     
-!     temperature node1
+!                 temperature node1
 !     
                   df(2)=0.5d0*xflow*sqrt/(A2*Pt2*Tt1)
 !     
-!     mass flow
+!                 mass flow
 !     
                   df(3)=inv*sqrt/(A2*Pt2)
 !     
-!     pressure node2
+!                 pressure node2
 !     
                   df(4)=-xflow*sqrt/(A2*Pt2**2)
      &                 -fact1/pt2*dsqrt(root)*
@@ -783,27 +777,28 @@ c               call dynamic_viscosity(kgas,T1,dvi)
 !     
                else
                   write(*,*) 
-     &               '*WARNING in restrictor: A1 greater A2 critical'
+     &              '*WARNING in restrictor: A1 greater than A2'
+                  write(*,*) '         critical flow in element',nelem
 !     
-!     section2 is critical
+!                 section2 is critical
 !     
                   pt2=pt1/pt1pt2_crit
 !     
                   f=xflow*dsqrt(Tt1)/(pt2*A2)-qred_crit
 !     
-!     pressure node1
+!                 pressure node1
 !     
                   df(1)=0
 !     
-!     temperature node1
+!                 temperature node1
 !     
                   df(2)=0.5d0*xflow/(A2*pt2*dsqrt(Tt2))
 !     
-!     mass flow
+!                 mass flow
 !     
                   df(3)=inv*dsqrt(Tt1)/(A2*pt2)
 !     
-!     pressure node2
+!                 pressure node2
 !     
                   df(4)=-xflow*dsqrt(Tt1)/(A2*pt2**2)
 !     
@@ -858,7 +853,7 @@ c               call dynamic_viscosity(kgas,T1,dvi)
             inv=-1
          endif
 !     
-!     defining surfaces for branches elements
+!        defining surfaces for branches elements
 !     
          if(lakon(nelem)(2:6).eq.'REBRJ') then
             if(nelem.eq.nint(prop(index+2))) then
@@ -894,10 +889,10 @@ c               call dynamic_viscosity(kgas,T1,dvi)
                   k_oil=nint(prop(index+11))
                endif
             endif
-!     
-!     for other Restrictor elements         
-!     
          else
+!     
+!           for other Restrictor elements         
+!     
             A1=prop(index+1)
             A2=prop(index+2)
             if(lakon(nelem)(2:5).eq.'REEL') then
@@ -945,7 +940,7 @@ c               call dynamic_viscosity(kgas,T1,dvi)
 !            
          endif
 !     
-!     calculation of the dynamic viscosity 
+!        calculation of the dynamic viscosity 
 !     
          if(lakon(nelem)(2:3).eq.'RE') then
             icase=0
@@ -962,11 +957,9 @@ c               call dynamic_viscosity(kgas,T1,dvi)
             write(*,*) '       no dynamic viscosity defined'
             write(*,*) '       dvi= ',dvi
             call exit(201)
-c               kgas=0
-c               call dynamic_viscosity(kgas,T1,dvi)
          endif
 !     
-!     Reynolds number calculation
+!        Reynolds number calculation
 !     
          if(lakon(nelem)(2:5).eq.'REBR') then
             d=dsqrt(4d0*A1/Pi)
@@ -984,7 +977,7 @@ c               call dynamic_viscosity(kgas,T1,dvi)
             xflow_oil=0.d0
          endif
 !
-!     BEND MILLER with oil
+!        BEND MILLER with oil
 !  
          if(lakon(nelem)(2:7).eq.'REBEMI') then
             if(xflow_oil.ne.0.d0) then
@@ -1005,10 +998,10 @@ c               call dynamic_viscosity(kgas,T1,dvi)
                zeta_phi=phi*zeta
 !               
             endif
-!
-!   long  orifice in a wall with oil after Idelchik
-!
          elseif(lakon(nelem)(2:7).eq.'RELOID') then
+!
+!           long  orifice in a wall with oil after Idelchik
+!
             if(xflow_oil.ne.0.d0) then
                call two_phase_flow(Tt1,pt1,T1,pt2,xflow,
      &              xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
@@ -1024,9 +1017,9 @@ c               call dynamic_viscosity(kgas,T1,dvi)
                zeta_phi=phi*zeta
             endif
 !
-!     every other zeta elements with/without oil
-!
          else
+!
+!           every other zeta elements with/without oil
 !
             if(xflow_oil.ne.0.d0) then
                call two_phase_flow(Tt1,pt1,T1,pt2,xflow,
@@ -1062,7 +1055,7 @@ c               call dynamic_viscosity(kgas,T1,dvi)
          endif
          pt1pt2=pt1/pt2
 !     
-!     Mach number calculation
+!        Mach number calculation
 !     
          M1=dsqrt(2d0/km1*(Tt1/T1-1d0))
          if((1.d0-M1).le.1E-3) then
@@ -1089,7 +1082,7 @@ c               call dynamic_viscosity(kgas,T1,dvi)
 !            
             if(lakon(nelem)(4:5).ne.'BR') then
 !     
-!     for restrictors
+!              for restrictors
 !     
                if(inv.eq.1) then
                write(1,56)'       Inlet node ',node1,' :    Tt1=  ',Tt1,
@@ -1121,7 +1114,7 @@ c               call dynamic_viscosity(kgas,T1,dvi)
              endif
           else
 !     
-!     for branches
+!            for branches
 !     
              if(inv.eq.1) then
                 write(1,56)'       Inlet node ',node1,' :    Tt1 = ',
@@ -1162,11 +1155,6 @@ c               call dynamic_viscosity(kgas,T1,dvi)
  56   format(1x,a,i6,a,e11.4,a,e11.4,a,e11.4,a,e11.4)
  57   format(1x,a,e11.4,a,e11.4)
  58   format(1x,a,e11.4,a,e11.4,a,e11.4)
- 77   format(3x,a,e11.4,a,e11.4,a,e11.4,a,e11.4,a,e11.4,a,
-     &     e11.4,a,e11.4,a,e11.4,a,e11.4)
- 78   format(a,i4,a,a,a,a)
- 79   format(3x,a,i4,a,i4,a,i4)
- 80   format(3x,a,e11.4,a,e11.4,a,e11.4)
 !     
       xflow=xflow/iaxial
       df(3)=df(3)*iaxial

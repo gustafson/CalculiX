@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -84,6 +84,18 @@ c            iperturb(2)=1
      &"*STEP%")
                call exit(201)
             endif
+!
+         elseif(textpart(i)(1:9).eq.'NLGEOM=NO') then
+!
+!           geometrically linear calculations
+!           iperturb(1) is not changed, i.e. iterations will
+!           occur (e.g. they may be needed due to contact,
+!           nonlinear material laws....)
+!
+            iperturb(2)=0
+            write(*,*) '*INFO reading *STEP: nonlinear geometric'
+            write(*,*) '      effects are turned off'
+            write(*,*)
 !
          elseif(textpart(i)(1:4).eq.'INC=') then
 !

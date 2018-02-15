@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,11 +34,11 @@
       enddo
 !
       write(5,*)
-      write(5,*) 'ABSOLUTE ERROR W.R.T. THE VARIANCE OF THE RANDOMFIELD'          '  
+      write(5,*) 'ABSOLUTE ERROR W.R.T. THE VARIANCE OF THE RANDOMFIELD'
       write(5,*)
       write(5,'(7x,e14.7)') abserr
       write(5,*)
-      write(5,*) 'RELATIVE ERROR W.R.T. THE VARIANCE OF THE RANDOMFIELD'          '  
+      write(5,*) 'RELATIVE ERROR W.R.T. THE VARIANCE OF THE RANDOMFIELD'
       write(5,*)
       write(5,'(7x,e14.7)') relerr
 

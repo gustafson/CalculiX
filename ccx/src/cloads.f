@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -216,7 +216,7 @@
      &"*CLOAD%")
             call exit(201)
          endif
-         if(iforcdir.gt.3) iforcdir=iforcdir+1
+c         if(iforcdir.gt.3) iforcdir=iforcdir+1
 !
 !        for Green function applications the value of omega_0^2 is stored as
 !        force value

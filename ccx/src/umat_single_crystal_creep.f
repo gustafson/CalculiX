@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -235,7 +235,7 @@
      &    0.0000000000000E+00, 0.3535533905933E+00,-0.3535533905933E+00/
      &    ),(/6,18/))
 !
-      pnewdt=-1.d0
+c      pnewdt=-1.d0
 !
 !     elastic constants
 !

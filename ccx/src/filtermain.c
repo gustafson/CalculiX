@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                     */
+/*              Copyright (C) 1998-2017 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -60,7 +60,12 @@ void filtermain(double *co, double *dgdxglob, ITG *nobject, ITG *nk,
        the radius applies to all objective functions */
     
     if(*nobject==0){return;}
-    if(strcmp1(&objectset[81],"                    ")==0){return;}
+    if(strcmp1(&objectset[81],"                    ")==0){
+	for(i=1;i<2**nk**nobject;i=i+2){
+	    dgdxglob[i]=dgdxglob[i-1];
+	}
+	return;
+    }
     
     /* prepare for near3d_se */
     
@@ -154,10 +159,11 @@ void filtermain(double *co, double *dgdxglob, ITG *nobject, ITG *nk,
     
     SFREE(neighbor1);SFREE(r1);SFREE(xo);SFREE(yo);SFREE(zo);
     SFREE(x);SFREE(y);SFREE(z);SFREE(nx);SFREE(ny);SFREE(nz);
+    SFREE(ithread);
     
     /* postprocessing the filtered results */
     
-    FORTRAN(postfilter,(dgdxglob,nobject,nk,nodedesi,ndesi));
+//    FORTRAN(postfilter,(dgdxglob,nobject,nk,nodedesi,ndesi));
     
     return;
     

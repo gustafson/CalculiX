@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  ielfa,area,ipnei,neiel,xxn,xxi,xle,xlen,xlet,xrlfa,cosa,
      &  volume,neifa,xxj,cosb,dmin,ifatie,cs,tieset,icyclic,c,neij,
      &  physcon,isolidsurf,nsolidsurf,dy,xxni,xxnj,xxicn,nflnei,
-     &  iturbulent)
+     &  iturbulent,rf)
 !
 !     calculating geometric variables of the cells and their faces
 !
@@ -42,7 +42,7 @@
      &  shp2(7,4),xs2(3,7),xl2(3,8),xl13,volume(*),dxsj2,xl(3,8),
      &  xxj(3,*),cosb(*),dmin,cs(17,*),xn(3),theta,pi,dc,ds,dd,
      &  c(3,3),diff(3),p(3),q(3),a(3),physcon(*),dy(*),xs(3,3),
-     &  aa,bb,cc,dist,xxni(3,*),xxnj(3,*),xxicn(3,*)
+     &  aa,bb,cc,dist,xxni(3,*),xxnj(3,*),xxicn(3,*),rf(3,*),x13(3)
 !
 !     nodes belonging to the cell faces
 !
@@ -269,6 +269,7 @@
          do k=1,3
             xxn(k,index1)=xsj2(k)/dxsj2
             xxi(k,index1)=cofa(k,i)-coel(k,iel1)
+            rf(k,i)=xxi(k,index1)
          enddo
 !     
 !     distance from face center to the center of cell 1
@@ -346,8 +347,8 @@
      &              xxn(3,index1)*xxj(3,index1)
                cosb(index1)=cosb(index2)
 !     
-               xrlfa(1,i)=xle(index2)/(xle(index1)+xle(index2))
-               xrlfa(2,i)=xle(index1)/(xle(index1)+xle(index2))
+c               xrlfa(1,i)=xle(index2)/(xle(index1)+xle(index2))
+c               xrlfa(2,i)=xle(index1)/(xle(index1)+xle(index2))
             else
 !
 !              cyclic symmetry face: some quantities are
@@ -420,6 +421,26 @@
      &              xxn(2,index1)*xxj(2,index1)+
      &              xxn(3,index1)*xxj(3,index1)
             endif
+!
+!           calculating rf = the shortest vector between the
+!                            center of the face and the line connecting
+!                            the centers of the adjacent elements. The
+!                            corresponding point on this line is called p
+!           calculating xrlfa = the ratio of the segments created by
+!                               the point p to the total distance between
+!                               the centers of the adjacent elements of
+!                               the face
+!
+            dd=rf(1,i)*xxj(1,index1)+
+     &         rf(2,i)*xxj(2,index1)+
+     &         rf(3,i)*xxj(3,index1)
+!
+            do k=1,3
+               rf(k,i)=rf(k,i)-dd*xxj(k,index1)
+            enddo
+!
+            xrlfa(2,i)=dd/xlet(index1)
+            xrlfa(1,i)=1.d0-xrlfa(2,i)
          else
 !     
 !     xxi and xxj coincide
@@ -434,25 +455,48 @@
 !     
             iel3=ielfa(3,i)
             if(iel3.eq.0) cycle
-            xl13=dsqrt((coel(1,iel1)-coel(1,iel3))**2+
-     &           (coel(2,iel1)-coel(2,iel3))**2+
-     &           (coel(3,iel1)-coel(3,iel3))**2)
-            xrlfa(1,i)=(xl13+xle(index1))/xl13
-            xrlfa(3,i)=1.d0-xrlfa(1,i)
+c            xl13=dsqrt((coel(1,iel1)-coel(1,iel3))**2+
+c     &           (coel(2,iel1)-coel(2,iel3))**2+
+c     &           (coel(3,iel1)-coel(3,iel3))**2)
+c            xrlfa(1,i)=(xl13+xle(index1))/xl13
+c            xrlfa(3,i)=1.d0-xrlfa(1,i)
+!
+!           unit vector pointing from the center in element iel3
+!           to the center in element iel1
+!
+            do k=1,3
+               x13(k)=coel(k,iel1)-coel(k,iel3)
+            enddo
+!
+            xl13=dsqrt(x13(1)*x13(1)+x13(2)*x13(2)+x13(3)*x13(3))
+!
+            do k=1,3
+               x13(k)=x13(k)/xl13
+            enddo
+!
+            dd=rf(1,i)*x13(1)+rf(2,i)*x13(2)+rf(3,i)*x13(3)
+!
+            do k=1,3
+               rf(k,i)=rf(k,i)-dd*x13(k)
+            enddo
+!
+            xrlfa(3,i)=-dd/xl13
+            xrlfa(1,i)=1.d0-xrlfa(3,i)
+!
          endif
       enddo
 !
 !     for cyclic symmetric faces xrlfa has not been filled yet
 !
-      if(ifirst_occurrence.eq.0) then
-         do i=1,nface
-            if(ifatie(i).ne.0) then
-               index1=ipnei(ielfa(1,i))+ielfa(4,i)
-               xrlfa(1,i)=xlen(index1)/(xle(index1)+xlen(index1))
-               xrlfa(2,i)=1.d0-xrlfa(1,i)
-            endif
-         enddo
-      endif
+c      if(ifirst_occurrence.eq.0) then
+c         do i=1,nface
+c            if(ifatie(i).ne.0) then
+c               index1=ipnei(ielfa(1,i))+ielfa(4,i)
+c               xrlfa(1,i)=xlen(index1)/(xle(index1)+xlen(index1))
+c               xrlfa(2,i)=1.d0-xrlfa(1,i)
+c            endif
+c         enddo
+c      endif
 !
 !     calculation of the volume of the elements
 !

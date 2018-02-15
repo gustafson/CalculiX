@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -103,8 +103,8 @@ c      endif
 !
 !     contact elements
 !
-      fncel='contactelements.inp'
-      open(27,file=fncel(1:19),status='unknown',err=93)
+      fncel=jobname(1:i)//'.cel'
+      open(27,file=fncel(1:i+4),status='unknown',err=93)
       close(27,status='delete',err=94)
 !
       return
@@ -132,8 +132,7 @@ c      endif
       call exit(201)
  92   write(*,*) '*ERROR in openfile: could not delete file ',
      &  fncvg(1:i+4)
- 93   write(*,*) '*ERROR in openfile: could not open file ',fncel(1:19),
-     &    ' which is a reserved file name for ccx contact output'
+ 93   write(*,*) '*ERROR in openfile: could not open file ',fncel(1:19)
       call exit(201)
  94   write(*,*) '*ERROR in openfile: could not delete file ',
      &  fncel(1:19)

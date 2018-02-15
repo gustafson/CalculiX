@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine mafillo(nef,ipnei,neifa,neiel,vfa,xxn,area,
      &  au,ad,jq,irow,nzs,b,vel,umfa,xlet,xle,gradofa,xxi,
      &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
-     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,xrlfa,
+     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,xrlfa,
      &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb,iau6,xxni,xxnj,
      &  iturbulent,gradkel,gradoel)
 !
@@ -40,14 +40,14 @@
      &  vel(nef,0:7),umfa(*),xlet(*),xle(*),coef,gradofa(3,*),
      &  xxi(3,*),body(0:3,*),volume(*),dtimef,velo(nef,0:7),
      &  veloo(nef,0:7),rhovol,cvel(*),gradvel(3,3,*),sw,be,ga,
-     &  cvfa(*),hcfa(*),div,xload(2,*),gammat(*),xrlfa(3,*),
+     &  cvfa(*),hcfa(*),div,xload(2,*),gamma(*),xrlfa(3,*),
      &  xxj(3,*),a1,a2,a3,flux(*),xxnj(3,*),xxni(3,*),difcoef,
      &  gradkel(3,*),gradoel(3,*)
 !
       intent(in) nef,ipnei,neifa,neiel,vfa,xxn,area,gradkel,
      &  jq,irow,nzs,vel,umfa,xlet,xle,gradofa,xxi,gradoel,
      &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
-     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,xrlfa,
+     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,xrlfa,
      &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb,iturbulent
 !
       intent(inout) au,ad,b
@@ -82,18 +82,18 @@
 !     outflowing flux
 !     
                ad(i)=ad(i)+xflux
-!     centdiff
-ccccccc                   b(i)=b(i)-(vfa(0,ifa)-vel(i,0))*xflux
-!end centdiff
+!
+               b(i)=b(i)-gamma(ifa)*(vfa(7,ifa)-vel(i,7))*xflux
+!
             else
                if(iel.gt.0) then
 !
 !                    incoming flux from neighboring element
 !
                   au(indexf)=au(indexf)+xflux
-!centdiff
-cccccc                    b(i)=b(i)-(vfa(0,ifa)-vel(iel,0))*xflux
-!end centdiff
+!
+                  b(i)=b(i)-gamma(ifa)*(vfa(7,ifa)-vel(iel,7))*xflux
+!
                else
 !
 !                    incoming flux through boundary
@@ -106,16 +106,20 @@ cccccc                    b(i)=b(i)-(vfa(0,ifa)-vel(iel,0))*xflux
      &                    (dabs(xflux).lt.1.d-10)) then
                         b(i)=b(i)-vfa(7,ifa)*xflux
                      else
-                        write(*,*) '*ERROR in mafillo: the tempera-'
-                        write(*,*) '       ture of an incoming flux'
-                        write(*,*) '       through face ',j,'of'
+                        write(*,*) '*ERROR in mafillo: the turbulence'
+                        write(*,*) '       frequency'
+                        write(*,*) '       of an incoming flux'
+                        write(*,*) '       through face ',
+     &                        indexf-ipnei(i),'of'
                         write(*,*)'       element ',nactdohinv(i),
      &                          ' is not given'
                      endif
                   else
-                     write(*,*) '*ERROR in mafillo: the tempera-'
-                     write(*,*) '       ture of an incoming flux'
-                     write(*,*) '       through face ',j,'of'
+                     write(*,*) '*ERROR in mafillk: the turbulence'
+                     write(*,*) '       frequency'
+                     write(*,*) '       of an incoming flux'
+                     write(*,*) '       through face ',
+     &                         indexf-ipnei(i),'of'
                      write(*,*)'       element ',nactdohinv(i),
      &                   ' is not given'
                   endif
@@ -182,13 +186,20 @@ cccccc                    b(i)=b(i)-(vfa(0,ifa)-vel(iel,0))*xflux
 !     
          rhovol=vel(i,5)*volume(i)
 !
+!        sink terms are treated implicitly (lhs)
+!
+         ad(i)=ad(i)+rhovol*2.d0*be*vel(i,7)
+!
+!        source terms are treated explicitly (rhs)
+!
          b(i)=b(i)+rhovol*((ga*
      &        (2.d0*(gradvel(1,1,i)**2+gradvel(2,2,i)**2+
      &        gradvel(3,3,i)**2)+
      &        (gradvel(1,2,i)+gradvel(2,1,i))**2+
      &        (gradvel(1,3,i)+gradvel(3,1,i))**2+
      &        (gradvel(2,3,i)+gradvel(3,2,i))**2))
-     &        -be*vel(i,7)*vel(i,7)
+c     &        -be*vel(i,7)*vel(i,7)
+     &        +be*vel(i,7)*vel(i,7)
      &        )
 !
          if(iturbulent.eq.1) then

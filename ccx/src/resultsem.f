@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -237,6 +237,11 @@
                call linvec(h0,konl,nope,kk,h0l,one,three)
                call linvec(v,konl,nope,kk,al,null,mi(2))
                call linvec(vini,konl,nope,kk,ainil,null,mi(2))
+            elseif(lakonl(4:6).eq.'10T') then
+               call linscal10(v,konl,t1l,mi(2),shp)
+               call linvec10(h0,konl,h0l,one,three,shp)
+               call linvec10(v,konl,al,null,mi(2),shp)
+               call linvec10(vini,konl,ainil,null,mi(2),shp)
             else
                do i1=1,nope
                   t1l=t1l+shp(4,i1)*v(0,konl(i1))

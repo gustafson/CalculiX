@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &  body,volume,ielfa,lakonf,ifabou,nbody,
      &  dtimef,velo,veloo,sel,xrlfa,gamma,xxj,nactdohinv,a1,
      &  a2,a3,flux,nefa,nefb,icyclic,c,ifatie,iau6,xxni,xxnj,
-     &  iturbulent)
+     &  iturbulent,gradvel)
 !
       implicit none
 !
@@ -36,13 +36,14 @@
      &  vel(nef,0:7),cosa(*),umfa(*),xlet(*),xle(*),coef,gradvfa(3,3,*),
      &  xxi(3,*),body(0:3,*),volume(*),coef2,dtimef,velo(nef,0:7),
      &  veloo(nef,0:7),rhovel,constant,sel(3,*),xrlfa(3,*),gamma(*),
-     &  xxj(3,*),a1,a2,a3,flux(*),c(3,3),xxni(3,*),xxnj(3,*),difcoef
+     &  xxj(3,*),a1,a2,a3,flux(*),c(3,3),xxni(3,*),xxnj(3,*),difcoef,
+     &  xl1,xl2,aa,bb,gradvel(3,3,*)
 !
       intent(in) nef,ipnei,neifa,neiel,vfa,xxn,area,
      &  jq,irow,nzs,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
      &  body,volume,ielfa,lakonf,ifabou,nbody,
      &  dtimef,velo,veloo,xrlfa,gamma,xxj,nactdohinv,a1,
-     &  a2,a3,flux
+     &  a2,a3,flux,gradvel
 !
       intent(inout) adv,auv,bv,sel
 !
@@ -61,10 +62,33 @@
 !
 !                 outflowing xflux
 !
-               adv(i)=adv(i)+xflux
-               do k=1,3
-                  bv(i,k)=bv(i,k)-(vfa(k,ifa)-vel(i,k))*xflux
-               enddo
+               if(iel.eq.0) then
+                  adv(i)=adv(i)+xflux
+               else
+                  adv(i)=adv(i)+xflux
+                  do k=1,3
+c  cd
+c                     bv(i,k)=bv(i,k)-(vfa(k,ifa)-vel(i,k))*xflux
+c  retarded gamma
+                    bv(i,k)=bv(i,k)-gamma(ifa)*(vfa(k,ifa)
+     &                       -vel(i,k))*xflux
+c  improved smart
+c                     aa=gamma(ifa)
+c                     bb=0.d0
+c                     if(aa.lt.0.5d0) then
+c                        bb=2.d0/3.d0
+c                     elseif(aa.lt.0.8d0) then
+c                        bb=3.d0/8.d0
+c                     endif
+c                     bv(i,k)=bv(i,k)-(aa*vel(i,k)
+c     &                               +(1.d0-aa)*vel(iel,k)
+c     &                               -2.d0*(1.d0-aa-bb)*
+c     &                    (gradvel(k,1,i)*xxj(1,indexf)+
+c     &                     gradvel(k,2,i)*xxj(2,indexf)+
+c     &                     gradvel(k,3,i)*xxj(3,indexf))*xlet(indexf)
+c     &                     -vel(i,k))
+                  enddo
+               endif
             else
                if(iel.gt.0) then
 !
@@ -73,8 +97,27 @@
                   if((icyclic.eq.0).or.(ifatie(ifa).eq.0)) then
                      auv(indexf)=auv(indexf)+xflux
                      do k=1,3
-                        bv(i,k)=bv(i,k)
-     &                          -(vfa(k,ifa)-vel(iel,k))*xflux
+c   cd
+c                        bv(i,k)=bv(i,k)
+c     &                          -(vfa(k,ifa)-vel(iel,k))*xflux
+c   retarded gamma
+                        bv(i,k)=bv(i,k)-gamma(ifa)*
+     &                          (vfa(k,ifa)-vel(iel,k))*xflux
+c   improved smart
+c                        aa=gamma(ifa)
+c                        bb=0.d0
+c                        if(aa.lt.0.5d0) then
+c                           bb=2.d0/3.d0
+c                        elseif(aa.lt.0.8d0) then
+c                           bb=3.d0/8.d0
+c                        endif
+c                        bv(i,k)=bv(i,k)-(aa*vel(iel,k)
+c     &                               +(1.d0-aa)*vel(i,k)
+c     &                               +2.d0*(1.d0-aa-bb)*
+c     &                    (gradvel(k,1,iel)*xxj(1,indexf)+
+c     &                     gradvel(k,2,iel)*xxj(2,indexf)+
+c     &                     gradvel(k,3,iel)*xxj(3,indexf))*xlet(indexf)
+c     &                     -vel(iel,k))
                      enddo
                   else
                      do k=1,3
@@ -95,22 +138,22 @@
                            bv(i,k)=bv(i,k)-vfa(k,ifa)*xflux
                         enddo
                      else
-                        write(*,*) '*ERROR in mafillv: not all'
-                        write(*,*) '       components of an incoming'
-                        write(*,*) '       flux through face ',
-     &                       indexf-ipnei(i)
-                        write(*,*)'       of element ',nactdohinv(i),
-     &                        ' are given',
-     &vfa(1,ifa),vfa(2,ifa),vfa(3,ifa)
+c                        write(*,*) '*ERROR in mafillv: not all'
+c                        write(*,*) '       components of an incoming'
+c                        write(*,*) '       flux through face ',
+c     &                       indexf-ipnei(i)
+c                        write(*,*)'       of element ',nactdohinv(i),
+c     &                        ' are given',
+c     &vfa(1,ifa),vfa(2,ifa),vfa(3,ifa)
                      endif
                   else
-                     write(*,*) '*ERROR in mafillv: not all'
-                     write(*,*) '       components of an incoming'
-                     write(*,*) '       flux through face ',
-     &                   indexf-ipnei(i)
-                     write(*,*)'       of element ',nactdohinv(i),
-     &                     ' are given',
-     &vfa(1,ifa),vfa(2,ifa),vfa(3,ifa)
+c                     write(*,*) '*ERROR in mafillv: not all'
+c                     write(*,*) '       components of an incoming'
+c                     write(*,*) '       flux through face ',
+c     &                   indexf-ipnei(i)
+c                     write(*,*)'       of element ',nactdohinv(i),
+c     &                     ' are given',
+c     &vfa(1,ifa),vfa(2,ifa),vfa(3,ifa)
                   endif
                endif
             endif
@@ -170,13 +213,16 @@
                if(ipointer.gt.0) then
                   iwall=ifabou(ipointer+5)
                endif
-               if(iwall.lt.1) then
+c               if(iwall.lt.1) then
+               if(iwall.eq.0) then
 !
 !                    external face, but no wall
 !
-                  if((ifabou(ipointer+1).ne.0).or.
-     &                 (ifabou(ipointer+2).ne.0).or.
-     &                 (ifabou(ipointer+3).ne.0)) then
+c                  if((ifabou(ipointer+1).ne.0).or.
+c     &                 (ifabou(ipointer+2).ne.0).or.
+c     &                 (ifabou(ipointer+3).ne.0)) then
+c
+                  if(ielfa(3,ifa).gt.0) then
 !
 !                       no outlet: face velocity fixed
 !
@@ -199,7 +245,8 @@
      &                  gradvfa(k,2,ifa)*xxni(2,indexf)+
      &                  gradvfa(k,3,ifa)*xxni(3,indexf))
                   enddo
-               else
+c               else
+               elseif(iwall.gt.0) then
 !     
 !                    wall
 !     
@@ -215,6 +262,20 @@
                   do k=1,3
                      bv(i,k)=bv(i,k)+coef*vfa(k,ifa)+
      &                 coef2*xxn(k,indexf)
+                  enddo
+               else
+!     
+!                    sliding conditions (no shear stress)
+!     
+                  coef=difcoef*area(ifa)/(xle(indexf)*cosa(indexf))
+!
+!                    correction for non-orthogonal grid
+!
+                  coef2=((vel(i,1)-vfa(1,ifa))*xxn(1,indexf)+
+     &                 (vel(i,2)-vfa(2,ifa))*xxn(2,indexf)+
+     &                 (vel(i,3)-vfa(3,ifa))*xxn(3,indexf))*coef
+                  do k=1,3
+                     bv(i,k)=bv(i,k)-coef2*xxn(k,indexf)
                   enddo
                endif
             endif

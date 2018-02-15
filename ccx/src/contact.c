@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2007 Guido Dhondt                     */
+/*              Copyright (C) 1998-2017 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -27,9 +27,7 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
 	     double *vold, ITG *ielmat, double *cs, double *elcon,
              ITG *istep,ITG *iinc,ITG *iit,ITG *ncmat_,ITG *ntmat_,
              ITG *ne0, double *vini,
-             ITG *nmethod, ITG *nmpc, ITG *mpcfree, ITG *memmpc_,
-             ITG **ipompcp, char **labmpcp, ITG **ikmpcp, ITG **ilmpcp,
-             double **fmpcp, ITG **nodempcp, double **coefmpcp,
+             ITG *nmethod,
              ITG *iperturb, ITG *ikboun, ITG *nboun, ITG *mi,
              ITG *imastop,ITG *nslavnode,ITG *islavnode,ITG *islavsurf,
              ITG *itiefac,double *areaslav,ITG *iponoels,ITG *inoels,
@@ -39,19 +37,11 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
              ITG *nasym,double *xnoels,ITG *mortar,double *pslavsurf,
              double *pmastsurf,double *clearini,double *theta,
              double *xstateini,double *xstate,ITG *nstate_,ITG *icutb,
-             ITG *ialeatoric){
-    
-    char *labmpc=NULL;
+             ITG *ialeatoric,char *jobnamef){
 
-    ITG i,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL,*ipompc=NULL,*ikmpc=NULL,
-	*ilmpc=NULL,*nodempc=NULL,nmpc_,im;
+    ITG i,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL,im;
     
-    double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL,
-        *fmpc=NULL, *coefmpc=NULL;
-
-    ipompc=*ipompcp;labmpc=*labmpcp;ikmpc=*ikmpcp;ilmpc=*ilmpcp;
-    fmpc=*fmpcp;nodempc=*nodempcp;coefmpc=*coefmpcp;
-    nmpc_=*nmpc;
+    double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL;
 
     /* next call is only for node-to-face penalty contact
        setting up bordering planes for the master triangles;
@@ -93,7 +83,7 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
           imastop,nslavnode,islavnode,islavsurf,itiefac,areaslav,iponoels,
           inoels,springarea,
           set,nset,istartset,iendset,ialset,tietol,reltime,
-	  filab,nasym,xnoels,icutb,ne0));
+	  filab,nasym,xnoels,icutb,ne0,jobnamef));
 
     }else if(*mortar==1){
 
@@ -102,15 +92,12 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
           ielmat,elcon,istep,iinc,iit,ncmat_,ntmat_,mi,imastop,islavsurf,
 	  itiefac,springarea,tietol,reltime,filab,nasym,pslavsurf,pmastsurf,
 	  clearini,theta,xstateini,xstate,nstate_,ne0,icutb,ialeatoric,
-          nmethod));
+	  nmethod,jobnamef));
 
     }
 
     SFREE(xo);SFREE(yo);SFREE(zo);SFREE(x);SFREE(y);SFREE(z);SFREE(nx);
     SFREE(ny);SFREE(nz);
-
-    *ipompcp=ipompc;*labmpcp=labmpc;*ikmpcp=ikmpc;*ilmpcp=ilmpc;
-    *fmpcp=fmpc;*nodempcp=nodempc;*coefmpcp=coefmpc;
   
     return;
 }

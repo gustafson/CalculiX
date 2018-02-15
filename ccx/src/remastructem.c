@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -37,7 +37,7 @@ void remastructem(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     /* reconstructs the nonzero locations in the stiffness and mass
        matrix after a change in MPC's */
 
-    ITG *nodempc=NULL,*mast1=NULL,*ipointer=NULL,mpcend,mpcmult,
+    ITG *nodempc=NULL,*mast1=NULL,*ipointer=NULL,mpcend,
         callfrommain,i,*irow=NULL,mt;
 
     double *coefmpc=NULL,*f=NULL,*fext=NULL,*b=NULL,*aux2=NULL,
@@ -56,7 +56,7 @@ void remastructem(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     callfrommain=0;
     cascade(ipompc,&coefmpc,&nodempc,nmpc,
 	    mpcfree,nodeboun,ndirboun,nboun,ikmpc,
-	    ilmpc,ikboun,ilboun,&mpcend,&mpcmult,
+	    ilmpc,ikboun,ilboun,&mpcend,
 	    labmpc,nk,memmpc_,icascade,maxlenmpc,
             &callfrommain,iperturb,ithermal);
 

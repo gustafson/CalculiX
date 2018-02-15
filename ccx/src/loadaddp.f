@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -51,9 +51,9 @@
                      iamload(2,id)=0.d0
                   endif
                   return
-               elseif(sideload(id).lt.label) then
+cc               elseif(sideload(id).lt.label) then
 c                  id=id-1
-                  exit
+cc                  exit
                endif
                id=id-1
                if((id.eq.0).or.(nelemload(1,id).ne.nelement)) then

@@ -1,7 +1,7 @@
 
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,11 +36,11 @@
       character*81 set(*),elset
       character*132 textpart(16)
 !
-      integer mi(*),istartset(*),iendset(*),ialset(*),
+      integer mi(*),istartset(*),iendset(*),ialset(*),nconstants,
      &  ielmat(mi(3),*),irstrt,nset,nmat,ndprop,npropstart,ndpropread,
      &  istep,istat,n,key,i,j,k,imaterial,ipos,lprop,ipoinpc(0:*),
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ielprop(*),nprop,nprop_,
-     &  nodea,nodeb,noil _mat,npu,nfix,nstart
+     &  nodea,nodeb,noil _mat,npu,nfix,nstart,iset
 !
       real*8 prop(*)
 
@@ -91,6 +91,10 @@
             liquid=.true.
          elseif(textpart(i)(1:7).eq.'MANNING') then
             manning=.true.
+         elseif(textpart(i)(1:10).eq.'CONSTANTS=') then
+            read(textpart(i)(11:20),'(i10)',iostat=istat) nconstants
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
          else
             write(*,*) 
      &      '*WARNING reading *FLUID SECTION: parameter not recognized:'
@@ -208,7 +212,7 @@
          endif
 !
       elseif(typename(1:14).eq.'CHARACTERISTIC') then
-         ndprop=22
+         ndprop=23
          elname='CHAR   '
 !      
       elseif(typename(1:10).eq.'CROSSSPLIT')then
@@ -300,7 +304,8 @@
          endif
 !     
       elseif(typename(1:10).eq.'LIQUIDPUMP') then
-         ndprop=20
+C         ndprop=20
+         ndprop=19
          elname='LIPU   '
 !     
       elseif (typename(1:15).eq.'MASSFLOWPERCENT') then
@@ -400,7 +405,7 @@
 !
       elseif(typename(1:14).eq.'PRESWIRLNOZZLE') then
          elname='ORPN   '
-         ndprop=40
+         ndprop=41
 !
       elseif(typename(1:13).eq.'RADIALOUTFLOW') then
          if(typename(14:24).eq.'RADIALINLET')then
@@ -492,6 +497,9 @@
       elseif(typename(1:1).eq.' ') then
          elname='       '
          ndprop=0
+      elseif(typename(1:1).eq.'U') then
+         elname(1:7)=typename(1:7)
+         ndprop=nconstants
       else
          write(*,*) '*ERROR reading *FLUID SECTION: ',typename
          write(*,*) '       is an unknown fluid section type'
@@ -524,6 +532,7 @@
      &"*FLUID SECTION%")
          call exit(201)
       endif
+      iset=i
 !
       npropstart=nprop
 !
@@ -531,12 +540,14 @@
 !
 !     liquid pump / gas characteristic /
 !     preswirl nozzle / bleed tapping
+!     these network elements contain curves with a variable
+!     amount of data points
 !
       if((elname(1:4).eq.'LIPU').or.(elname(1:4).eq.'CHAR').or.
      &   (elname(1:4).eq.'ORPN').or.(elname(1:4).eq.'ORBT')) then
 !
 !        determine the number of fixed inputs (before entering
-!        a curve with arbitary many data points)
+!        a curve with arbitrary many data points)
 !
          if(elname(1:4).eq.'LIPU') then
             nfix=1
@@ -549,34 +560,90 @@
          endif
          ndprop=0
          npu=0
+c         do
+c            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+c     &        ipoinp,inp,ipoinpc)
+c            if((istat.lt.0).or.(key.eq.1)) exit
+c            if(ndprop.eq.0) then
+c               do j=1,nfix
+c                  ndprop=ndprop+1
+c                  read(textpart(j),'(f40.0)',iostat=istat) 
+c     &                 prop(nprop+ndprop)
+c                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+c     &"*FLUID SECTION%")
+c               enddo
+c               nstart=nfix+1
+c!
+c!              adding the point (0.,0.) for characteristics
+c!
+c               if(elname(1:4).eq.'CHAR') then
+c                  prop(nprop+3)=0.d0
+c                  prop(nprop+4)=0.d0
+c                  npu=2
+c                  nfix=2
+c               endif
+c            else
+c               nstart=1
+c            endif
+c            do j=nstart,n
+c               npu=npu+1
+c               ndprop=ndprop+1
+!
+!        npu is the number of data points, i.e. the number of
+!        abscissa-values + the number of ordinate values
+!
          do
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
             if((istat.lt.0).or.(key.eq.1)) exit
-            if(ndprop.eq.0) then
-               do j=1,nfix
-                  ndprop=ndprop+1
-                  read(textpart(j),'(f40.0)',iostat=istat) 
-     &                 prop(nprop+ndprop)
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*FLUID SECTION%")
-               enddo
-               nstart=nfix+1
-!
-!              adding the point (0.,0.) for characteristics
-!
-               if(elname(1:4).eq.'CHAR') then
-                  prop(nprop+3)=0.d0
-                  prop(nprop+4)=0.d0
-                  npu=2
-                  nfix=2
-               endif
-            else
-               nstart=1
-            endif
-            do j=nstart,n
-               npu=npu+1
+            do j=1,n
                ndprop=ndprop+1
+               if(ndprop.eq.nfix) then
+                  if(elname(1:4).eq.'CHAR') then
+                     prop(nprop+3)=0.d0
+                     prop(nprop+4)=0.d0
+                     npu=2
+                     nfix=2
+                     cycle
+                  endif
+               elseif(ndprop.gt.nfix) then
+                  npu=npu+1
+               endif
+!
+!              check whether number of data points is smaller than allowed
+!
+               if(elname(1:4).eq.'LIPU') then
+                  if(ndprop.gt.19) then
+                     write(*,*) 'ERROR reading *FLUID SECTION: more'
+                     write(*,*) '      than 9 pairs were defined for'
+                     write(*,*) '      fluid section type LIQUID PUMP'
+                     call exit(201)
+                  endif
+               elseif(elname(1:4).eq.'CHAR') then
+                  if(ndprop.gt.23) then
+                     write(*,*) 'ERROR reading *FLUID SECTION: more'
+                     write(*,*) '      than 9 pairs were defined for'
+                     write(*,*) 
+     &              '      fluid section type CHARACTERISTIC'
+                     call exit(201)
+                  endif
+               elseif(elname(1:4).eq.'ORPN') then
+                  if(ndprop.gt.41) then
+                     write(*,*) 'ERROR reading *FLUID SECTION: more'
+                     write(*,*) '      than 17 pairs were defined for'
+                     write(*,*) 
+     &              '      fluid section type PRESWIRL NOZZLE'
+                     call exit(201)
+                  endif
+               elseif(elname(1:4).eq.'ORBT') then
+                  if(ndprop.gt.41) then
+                     write(*,*) 'ERROR reading *FLUID SECTION: more'
+                     write(*,*) '      than 18 pairs were defined for'
+                     write(*,*) '      fluid section type BLEED TAPPING'
+                     call exit(201)
+                  endif
+               endif
+!
                read(textpart(j),'(f40.0)',iostat=istat) 
      &              prop(nprop+ndprop)
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
@@ -584,13 +651,23 @@
             enddo
          enddo
 !
+!        filling up to nfix if less values were specified
+!
+         if(ndprop.lt.nfix) then
+            do j=ndprop+1,nfix
+               prop(nprop+j)=0.d0
+            enddo
+            ndprop=nfix
+         endif
+!
 !        check whether data points are paired
 !
          if(2*(npu/2).ne.npu) then
-            write(*,*) '*ERROR reading *FLUID SECTION: less y data'
-            write(*,*) '       points x data points for fluid'
-            write(*,*) '       section type',elname(1:4)
-            call exit(201)
+            write(*,*) '*WARNING reading *FLUID SECTION: less y data'
+            write(*,*) '         points x data points for fluid'
+            write(*,*) '         section type',elname(1:4)
+            npu=npu-1
+c            call exit(201)
          endif
 !
          prop(nprop+nfix)=npu/2
@@ -723,12 +800,10 @@
       elseif(elname(1:4).eq.'REEX') then
 !       
             prop(npropstart+6)=noil_mat
-c            prop(npropstart+2)=100000*prop(npropstart+1)
 !     
       elseif(elname(1:6).eq.'REWAOR') then
 !        
             prop(npropstart+6)=noil_mat
-c            prop(npropstart+1)=100000*prop(npropstart+2)
 !
       elseif(elname(1:4).eq.'REEN') then
 !        
@@ -736,44 +811,19 @@ c            prop(npropstart+1)=100000*prop(npropstart+2)
 !
 !           zeta (loss coefficient for an entry)
 !
-c            prop(npropstart+4)=0.5d0
-c            prop(npropstart+1)=100000*prop(npropstart+2)
-!
       elseif(elname(1:7).eq.'REBRJI1') then
          prop(npropstart+11)=noil_mat
 !
       elseif(elname(1:7).eq.'REBRJI2') then
          prop(npropstart+11)=noil_mat
-c         if(1.d0-(prop(npropstart+5)+prop(npropstart+6))/
-c     &        prop(npropstart+4).gt.0.01d0)then
-c            write(*,*) '*ERROR: reading *FLUID SECTION:'
-c            write(*,*) '        in element type RESTRICTOR 
-c     &                           BRANCH JOINT IDELCHIK2'
-c            write(*,*) '        A0 ist not equal to A1+A2'
-c            call exit(201)
-c         endif
       elseif(elname(1:6).eq.'REBRJG') then
          prop(npropstart+11)=noil_mat
       elseif(elname(1:6).eq.'REBRSG') then
          prop(npropstart+11)=noil_mat
       elseif(elname(1:7).eq.'REBRSI1') then
          prop(npropstart+15)=noil_mat
-c         if(dabs(prop(npropstart+13)).le.1E-5) then
-c            prop(npropstart+13)=1.d0
-c         endif
-c         if(dabs(prop(npropstart+14)).le.1E-5) then
-c            prop(npropstart+14)=1.d0
-c         endif
-!     
       elseif(elname(1:7).eq.'REBRSI2') then
          prop(npropstart+13)=noil_mat
-c         if(dabs(prop(npropstart+11)).le.1E-5) then
-c            prop(npropstart+11)=1.d0
-c         endif
-c         if(dabs(prop(npropstart+12)).le.1E-5) then
-c            prop(npropstart+12)=1.d0
-c         endif
-!     
       endif
 !
 !     k_oil for restrictors type USER, ENTRENCE, LONG ORIFICE IDELCHIK,
@@ -819,7 +869,7 @@ c         endif
 !     assigning the elements of the set the appropriate material
 !     and property pointer
 !
-      do j=istartset(i),iendset(i)
+      do j=istartset(iset),iendset(iset)
          if(ialset(j).gt.0) then
             if(lakon(ialset(j))(1:1).ne.'D') then
                write(*,*) '*ERROR reading *FLUID SECTION: element ',

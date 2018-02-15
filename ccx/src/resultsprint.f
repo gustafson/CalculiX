@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,7 +25,7 @@
      &  nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,
      &  islavact,cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time,
      &  ielprop,prop,veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,
-     &  energy,orname)
+     &  energy,orname,xload)
 !
 !     - stores the results in the .dat file, if requested
 !       - nodal quantities at the nodes
@@ -64,7 +64,7 @@
      &  ener(mi(1),*),enern(*),eei(6,mi(1),*),rhcon(0:1,ntmat_,*),
      &  ttime,xstate(nstate_,mi(1),*),trab(7,*),xstaten(nstate_,*),
      &  eme(6,mi(1),*),emn(6,*),shcon(0:3,ntmat_,*),cocon(0:6,ntmat_,*),
-     &  prop(*),veold(0:mi(2),*),energy(*),energyini(*)
+     &  prop(*),veold(0:mi(2),*),energy(*),energyini(*),xload(2,*)
 !
       data iflag /3/
       data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
@@ -107,7 +107,8 @@
      &  prlab,prset,v,t1,fn,ipkon,lakon,stx,eei,xstate,ener,
      &  mi(1),nstate_,ithermal,co,kon,qfx,ttime,trab,inotr,ntrans,
      &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin,ielmat,thicke,
-     &  eme,islavsurf,mortar,time,ielprop,prop,veold,orname)
+     &  eme,islavsurf,mortar,time,ielprop,prop,veold,orname,
+     &  nelemload,nload,sideload,xload)
 !
 !     for facial information (*section print): if forces and/or
 !     moments in sections are requested, the stresses have to be

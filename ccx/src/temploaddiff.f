@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,7 +24,8 @@
      &  nodeboun,ndirboun,nodeforc,ndirforc,istep,iinc,
      &  co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
      &  xforcdiff,xloaddiff,xbodydiff,t1diff,xboundiff,iabsload,
-     &  iprescribedboundary,ntrans,trab,inotr,veold,nactdof,bcont,fn)
+     &  iprescribedboundary,ntrans,trab,inotr,veold,nactdof,bcont,fn,
+     &  ipobody,iponoel,inoel)
 !
 !     calculates the loading at a given time and the difference with
 !     the last call of temploaddiff: is needed in the modal dynamic
@@ -44,7 +45,7 @@
      &  nbody,iambodyi,nodeboun(*),ndirboun(*),nodeforc(2,*),
      &  ndirforc(*),istep,iinc,msecpt,node,j,ikboun(*),ilboun(*),
      &  ipresboun,mi(*),iabsload,iprescribedboundary,ntrans,inotr(2,*),
-     &  nactdof(0:mi(2),*)
+     &  nactdof(0:mi(2),*),ipobody(2,*),iponoel(*),inoel(2,*)
 !
       real*8 xforc(*),xforcact(*),xload(2,*),xloadact(2,*),
      &  t1(*),t1act(*),amta(2,*),ampli(*),time,xforcdiff(*),
@@ -140,10 +141,12 @@
                endif
                if(ndirboun(i).eq.0) then
                   call utemp(xbounact(i),msecpt,istep,iinc,abqtime,node,
-     &                 coords,vold,mi)
+     &                 coords,vold,mi,iponoel,inoel,
+     &                 ipobody,xbodyact,ibody)
                else
                   call uboun(xbounact(i),istep,iinc,abqtime,node,
-     &                 ndirboun(i),coords,vold,mi)
+     &                 ndirboun(i),coords,vold,mi,iponoel,inoel,
+     &                 ipobody,xbodyact,ibody)
                endif
                xboundiff(i)=xbounact(i)-xboundiff(i)
                cycle

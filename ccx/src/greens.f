@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,16 +31,16 @@
       character*20 solver
       character*132 textpart(16)
 !
-      integer nmethod,iperturb,isolver,istep,istat,n,key,i,
+      integer nmethod,iperturb(2),isolver,istep,istat,n,key,i,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,ipoinpc(0:*)
 !
-      if((iperturb.eq.1).and.(istep.ge.1)) then
-         write(*,*) '*ERROR reading *GREEN:'
-         write(*,*) '       perturbation analysis is'
-         write(*,*) '       not provided in a *GREEN'
-         write(*,*) '       step.'
-         call exit(201)
-      endif
+c      if((iperturb.eq.1).and.(istep.ge.1)) then
+c         write(*,*) '*ERROR reading *GREEN:'
+c         write(*,*) '       perturbation analysis is'
+c         write(*,*) '       not provided in a *GREEN'
+c         write(*,*) '       step.'
+c         call exit(201)
+c      endif
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *GREEN:'
@@ -97,6 +97,7 @@
       endif
 !
       nmethod=11
+      if(iperturb(1).gt.1) iperturb(1)=0
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

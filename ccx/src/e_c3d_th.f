@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
      &  plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,lakon,
      &  pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon,
      &  ielprop,prop,iponoel,inoel,sti,xstateini,xstate,nstate_,
-     &  network)
+     &  network,ipobody,xbody,ibody)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -58,7 +58,7 @@
      &  nshcon(*),iinc,istep,jltyp,nfield,node,iflag,iscale,ielprop(*),
      &  nplkcon(0:ntmat_,*),nelcon(2,*),npmat_,ncmat_,i2,ipkon(*),
      &  iemchange,kon(*),mortar,nplicon(0:ntmat_,*),indexe,igauss,
-     &  iponoel(*),inoel(2,*),nstate_,network
+     &  iponoel(*),inoel(2,*),nstate_,network,ipobody(2,*),ibody(3,*)
 !
       real*8 co(3,*),xl(3,26),shp(4,26),xstiff(27,mi(1),*),
      &  s(60,60),w(3,3),ff(60),shpj(4,26),sinktemp,xs2(3,7),
@@ -72,8 +72,8 @@
      &  voldl(0:mi(2),26),springarea(2,*),plkcon(0:2*npmat_,ntmat_,*),
      &  elcon(0:ncmat_,ntmat_,*),elconloc(21),pslavsurf(3,*),
      &  pmastsurf(2,*),clearini(3,9,*),plicon(0:2*npmat_,ntmat_,*),
-     &  sti(6,mi(1),*),xstate(nstate_,mi(1),*),
-     &  xstateini(nstate_,mi(1),*)
+     &  sti(6,mi(1),*),xstate(nstate_,mi(1),*),xbody(7,*),
+     &  xstateini(nstate_,mi(1),*),heatnod,heatfac
 !
       real*8 dtime,physcon(*)
 !
@@ -117,6 +117,7 @@
       timeend(2)=ttime+time
 !
       summass=0.d0
+      heatfac=0.d0
 !
       indexe=ipkon(nelem)
       imat=ielmat(1,nelem)
@@ -311,7 +312,7 @@ c            nope=nope+1
      &                    springarea(1,iloc),
      &                    nmethod,mi,reltime,jfaces,igauss,pslavsurf,
      &                    pmastsurf,clearini,matname,plkcon,nplkcon,
-     &                    node,nelem,istep,iinc)
+     &                    node,nelem,istep,iinc,timeend)
                   endif
                endif
             elseif(lakonl(7:7).eq.'F') then
@@ -322,7 +323,8 @@ c            nope=nope+1
      &              nelem,nload,lakon,xload,istep,time,ttime,dtime,
      &              sideload,vold,mi,xloadold,reltime,nmethod,s,
      &              iinc,iponoel,inoel,ielprop,prop,ielmat,shcon,
-     &              nshcon,rhcon,nrhcon,ntmat_,ipkon,kon,cocon,ncocon)
+     &              nshcon,rhcon,nrhcon,ntmat_,ipkon,kon,cocon,ncocon,
+     &              ipobody,xbody,ibody)
             endif
          elseif((lakonl(1:2).eq.'D ').or.
      &          ((lakonl(1:1).eq.'D').and.(network.eq.1))) then
@@ -772,24 +774,25 @@ c                read(sideload(id)(2:2),'(i1)') jltyp
      &               areaj,vold,co,lakonl,konl,
      &               ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,iscale,mi,
      &               sti,xstateini,xstate,nstate_,dtime)
-                   if((nmethod.eq.1).and.(iscale.ne.0))
-     &                   xload(1,id)=xloadold(1,id)+
-     &                  (xload(1,id)-xloadold(1,id))*reltime
+c                   if((nmethod.eq.1).and.(iscale.ne.0))
+c     &                   xload(1,id)=xloadold(1,id)+
+c     &                  (xload(1,id)-xloadold(1,id))*reltime
                 elseif(sideload(id)(1:1).eq.'F') then
                    node=nelemload(2,id)
                    call film(xload(1,id),sinktemp,temp,istep,
      &               iinc,timeend,nelem,i,coords,jltyp,field,nfield,
      &               sideload(id),node,areaj,vold,mi,
      &               ipkon,kon,lakon,iponoel,inoel,ielprop,prop,ielmat,
-     &               shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon)
-                   if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
-     &                  (xload(1,id)-xloadold(1,id))*reltime
+     &               shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon,
+     &               ipobody,xbody,ibody,heatnod,heatfac)
+c                   if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+c     &                  (xload(1,id)-xloadold(1,id))*reltime
                 elseif(sideload(id)(1:1).eq.'R') then
                    call radiate(xload(1,id),xload(2,id),temp,istep,
      &               iinc,timeend,nelem,i,coords,jltyp,field,nfield,
      &               sideload(id),node,areaj,vold,mi,iemchange)
-                   if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
-     &                  (xload(1,id)-xloadold(1,id))*reltime
+c                   if(nmethod.eq.1) xload(1,id)=xloadold(1,id)+
+c     &                  (xload(1,id)-xloadold(1,id))*reltime
                 endif
              endif
                 
@@ -810,8 +813,8 @@ c                read(sideload(id)(2:2),'(i1)') jltyp
                    ff(ipointer)=ff(ipointer)+shp2(4,k)*xload(1,id)
      &                  *areaj
                 elseif(sideload(id)(1:1).eq.'F') then
-                   ff(ipointer)=ff(ipointer)-shp2(4,k)*xload(1,id)
-     &                  *(temp-sinktemp)*areaj
+                   ff(ipointer)=ff(ipointer)+shp2(4,k)*areaj*
+     &                  (heatfac-xload(1,id)*(temp-sinktemp))
                 elseif(sideload(id)(1:1).eq.'R') then
                    ff(ipointer)=ff(ipointer)-shp2(4,k)*physcon(2)*
      &                  xload(1,id)*((temp-physcon(1))**4-

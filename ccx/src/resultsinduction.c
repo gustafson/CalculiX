@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -30,14 +30,14 @@ static ITG *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *istep1,*iinc1,calcul_fn1,calcul_qa1,*nplicon1,*iponoel1,
     *nal=NULL,*ipompc1,*nodempc1,*nmpc1,*ncocon1,*ikmpc1,*ilmpc1,
     num_cpus,mt1,*nk1,*nshcon1,*nelemload1,*nload1,mortar1,
-    *istartset1,*iendset1,*ialset1,*iactive1,*network1;
+    *istartset1,*iendset1,*ialset1,*iactive1,*network1,*ipobody1,*ibody1;
 
 static double *co1,*v1,*elcon1,*rhcon1,*alcon1,*orab1,*t01,
     *fn1=NULL,*qa1=NULL,*vold1,*dtime1,*time1,*prop1,
     *ttime1,*plkcon1,*xstateini1,*xstiff1,*xstate1,*sti1,
     *springarea1,*reltime1,*coefmpc1,*vini1,
     *cocon1,*qfx1,*shcon1,*xload1,*plicon1,
-    *xloadold1,*h01,*pslavsurf1,*pmastsurf1,*clearini1;
+    *xloadold1,*h01,*pslavsurf1,*pmastsurf1,*clearini1,*xbody1;
 
 void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
        ITG *ne,
@@ -70,7 +70,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
        double *xloadold,ITG *icfd,ITG *inomat,double *h0,ITG *islavnode,
        ITG *nslavnode,ITG *ntie,ITG *ielprop,double *prop,ITG *iactive,
        double *energyini,double *energy,ITG *iponoel,ITG *inoel,char *orname,
-       ITG *network){
+       ITG *network,ITG *ipobody,double *xbody,ITG *ibody){
       
     /* variables for multithreading procedure */
     
@@ -215,7 +215,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     if((ithermal[0]>=2)&&(intpointvart==1)){
 
 	NNEW(fn1,double,num_cpus*mt**nk);
-	NNEW(qa1,double,num_cpus*3);
+	NNEW(qa1,double,num_cpus*4);
 	NNEW(nal,ITG,num_cpus);
 
 	co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;v1=v;
@@ -235,6 +235,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
         pslavsurf1=pslavsurf;pmastsurf1=pmastsurf;mortar1=mortar;
         clearini1=clearini;plicon1=plicon;nplicon1=nplicon;ielprop1=ielprop;
         prop1=prop;iponoel1=iponoel;inoel1=inoel;network1=network;
+        ipobody1=ipobody;ibody1=ibody;xbody1=xbody;
 
 	/* calculating the heat flux */
 	
@@ -263,7 +264,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 
 	qa[1]=qa1[1];
 	for(j=1;j<num_cpus;j++){
-	    qa[1]+=qa1[1+j*3];
+	    qa[1]+=qa1[1+j*4];
 	}
 	
 	SFREE(qa1);
@@ -298,7 +299,8 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
        nelemload,nload,&ikin,ielmat,thicke,eme,emn,rhcon,nrhcon,shcon,
        nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,islavact,
        cdn,&mortar,islavnode,nslavnode,ntie,islavsurf,time,ielprop,prop,
-       veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,energy,orname));
+       veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,energy,orname,
+       xload));
   
   return;
 
@@ -330,7 +332,7 @@ void *resultsthermemmt(ITG *i){
     ITG indexfn,indexqa,indexnal,nea,neb,nedelta;
 
     indexfn=*i*mt1**nk1;
-    indexqa=*i*3;
+    indexqa=*i*4;
     indexnal=*i;
     
     nedelta=(ITG)floor(*ne1/(double)num_cpus);
@@ -349,7 +351,7 @@ void *resultsthermemmt(ITG *i){
 	   &calcul_fn1,&calcul_qa1,&nal[indexnal],&nea,&neb,ithermal1,
            nelemload1,nload1,nmethod1,reltime1,sideload1,xload1,xloadold1,
 	   pslavsurf1,pmastsurf1,&mortar1,clearini1,plicon1,nplicon1,
-	   ielprop1,prop1,iponoel1,inoel1,network1));
+	   ielprop1,prop1,iponoel1,inoel1,network1,ipobody1,xbody1,ibody1));
 
     return NULL;
 }

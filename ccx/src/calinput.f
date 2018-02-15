@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -41,7 +41,9 @@
      &  nbody,nbody_,xbodyold,nam_,ielprop,nprop,nprop_,prop,itpamp,
      &  iviewfile,ipoinpc,cfd,nslavs,t0g,t1g,network,cyclicsymmetry,
      &  idefforc,idefload,idefbody,mortar,ifacecount,islavsurf,
-     &  pslavsurf,clearini,heading,iaxial,nobject,objectset,nprint_)
+     &  pslavsurf,clearini,heading,iaxial,nobject,objectset,nprint_,
+     &  iuel,nuel_,nodempcref,coefmpcref,ikmpcref,memmpcref_,
+     &  mpcfreeref,maxlenmpcref,memmpc_)
 !
       implicit none
 !
@@ -69,7 +71,8 @@
       logical boun_flag,cload_flag,dload_flag,temp_flag,elprint_flag,
      &  nodeprint_flag,elfile_flag,nodefile_flag,contactfile_flag,
      &  dflux_flag,cflux_flag,film_flag,radiate_flag,out3d,
-     &  solid,sectionprint_flag,contactprint_flag,pretension
+     &  solid,sectionprint_flag,contactprint_flag,pretension,
+     &  beamgeneralsection
 !
       character*1 typeboun(*),inpc(*)
       character*3 output
@@ -78,7 +81,7 @@
       character*20 labmpc(*),sideload(*)
       character*66 heading(*)
       character*80 matname(*),orname(*),amname(*)
-      character*81 set(*),prset(*),tieset(3,*),cbody(*),objectset(3,*)
+      character*81 set(*),prset(*),tieset(3,*),cbody(*),objectset(4,*)
       character*87 filab(*)
       character*132 jobnamec(*),textpart(16)
 !
@@ -105,7 +108,9 @@
      &  ne1d,ne2d,nener,irstrt,ii,maxlenmpc,inl,ipol,network,
      &  iline,mcs,ntie,ntie_,lprev,newstep,nbody,nbody_,ibody(3,*),
      &  cyclicsymmetry,idefforc(*),idefload(*),idefbody(*),
-     &  ichangesurfacebehavior,nobject
+     &  ichangesurfacebehavior,nobject,ibasemotion,iuel(4,*),nuel_,
+     &  nodempcref(3,*),ikmpcref(*),memmpcref_,mpcfreeref,
+     &  maxlenmpcref,memmpc_
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),fmpc(*),
      &  xload(2,*),alzero(*),offset(2,*),prop(*),pslavsurf(3,*),
@@ -120,18 +125,19 @@
      &  xstate(nstate_,mi(1),*),ttime,qaold(2),cs(17,*),tietol(2,*),
      &  xbody(7,*),xbodyold(7,*),t0g(2,*),t1g(2,*),
      &  fei(3),tinc,tper,xmodal(*),tmin,tmax,tincf,
-     &  alpha,physcon(*)
+     &  alpha,physcon(*),coefmpcref(*)
 !
       save solid,ianisoplas,out3d,pretension
 !
       integer nentries
-      parameter(nentries=16)
+      parameter(nentries=17)
 !
       newstep=0
       iviewfile=0
       ichangefriction=0
       ichangesurfacebehavior=0
       icomposite=0
+      ibasemotion=0
 !
       maxsectors=1
       if(mcs.ne.0) then
@@ -250,7 +256,15 @@ c         iaxial=0
      &        nam_,namtot_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,
      &        inp,ipoinpc)
 !
+         elseif(textpart(1)(1:11).eq.'*BASEMOTION') then
+            call basemotions(inpc,textpart,amname,nam,ibasemotion,
+     &           xboun,ndirboun,iamboun,typeboun,nboun,istep,istat,n,
+     &           iline,ipol,inl,ipoinp,inp,ipoinpc)
+!
          elseif(textpart(1)(1:19).eq.'*BEAMGENERALSECTION') then
+            write(*,*) '*WARNING in calinput'
+            write(*,*) '         *BEAM GENERAL SECTION is obsolete'
+            write(*,*) '         please use *BEAM SECTION'
             call beamgeneralsections(inpc,textpart,set,istartset,
      &           iendset,ialset,nset,ielmat,matname,nmat,ielorien,
      &           orname,norien,thicke,ipkon,iponor,xnor,ixfree,
@@ -259,11 +273,29 @@ c         iaxial=0
      &           nelcon)
 !
          elseif(textpart(1)(1:12).eq.'*BEAMSECTION') then
-            call beamsections(inpc,textpart,set,istartset,iendset,
+            beamgeneralsection=.false.
+            do i=2,n
+               if((textpart(i)(1:11).eq.'SECTION=BOX').or.
+     &            (textpart(i)(1:11).eq.'SECTION=PIP').or.
+     &            (textpart(i)(1:11).eq.'SECTION=GEN')) then
+                  beamgeneralsection=.true.
+                  exit
+               endif
+            enddo
+            if(beamgeneralsection) then
+               call beamgeneralsections(inpc,textpart,set,istartset,
+     &           iendset,ialset,nset,ielmat,matname,nmat,ielorien,
+     &           orname,norien,thicke,ipkon,iponor,xnor,ixfree,
+     &           offset,lakon,irstrt,istep,istat,n,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc,mi,ielprop,nprop,nprop_,prop,
+     &           nelcon)
+            else
+               call beamsections(inpc,textpart,set,istartset,iendset,
      &           ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
      &           thicke,ipkon,iponor,xnor,ixfree,
      &           offset,lakon,irstrt,istep,istat,n,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc,mi,nelcon)
+            endif
 !
          elseif(textpart(1)(1:10).eq.'*BOUNDARYF') then
             M_or_SPC=1
@@ -361,6 +393,10 @@ c         iaxial=0
             call conductivitys(inpc,textpart,cocon,ncocon,
      &           imat,ntmat_,irstrt,istep,istat,n,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
+!
+         elseif(textpart(1)(1:11).eq.'*CONSTRAINT') then
+            call constraints(inpc,textpart,istep,istat,n,iline,ipol,inl,
+     &        ipoinp,inp,ipoinpc,nener,nobject,objectset)
 !
          elseif(textpart(1)(1:15).eq.'*CONTACTDAMPING') then
             call contactdampings(inpc,textpart,elcon,nelcon,
@@ -529,7 +565,7 @@ c
      &        ne,ne_,set,istartset,iendset,ialset,nset,nset_,nalset,
      &        nalset_,mi(1),ixfree,iponor,xnor,istep,istat,n,iline,
      &        ipol,inl,ipoinp,inp,iaxial,ipoinpc,solid,cfd,
-     &        network,filab,nlabel,out3d)
+     &        network,filab,nlabel,out3d,iuel,nuel_)
 !
          elseif((textpart(1)(1:7).eq.'*ELFILE').or.
      &          (textpart(1)(1:14).eq.'*ELEMENTOUTPUT')) then
@@ -574,7 +610,9 @@ c
             call equations(inpc,textpart,ipompc,nodempc,coefmpc,
      &        nmpc,nmpc_,mpcfree,nk,co,trab,inotr,ntrans,ikmpc,ilmpc,
      &        labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,
-     &        set,istartset,iendset,ialset,nset)
+     &        set,istartset,iendset,ialset,nset,nodempcref,coefmpcref,
+     &        ikmpcref,memmpcref_,mpcfreeref,maxlenmpcref,memmpc_,
+     &        maxlenmpc)
 !
          elseif(textpart(1)(1:10).eq.'*EXPANSION') then
             call expansions(inpc,textpart,alcon,nalcon,
@@ -682,7 +720,7 @@ c
             call masss(inpc,textpart,nrhcon,nmat,ntmat_,
      &        rhcon,matname,irstrt,istep,istat,n,iline,ipol,
      &        inl,ipoinp,inp,nmat_,set,istartset,iendset,ialset,
-     &        nset,ielmat,ielorien,ipoinpc,mi)
+     &        nset,ielmat,ielorien,ipoinpc,mi,iaxial)
 !
          elseif(textpart(1)(1:9).eq.'*MATERIAL') then
             call materials(inpc,textpart,matname,nmat,nmat_,
@@ -712,6 +750,12 @@ c
      &           ipkon,kon,nk,nk_,nodeboun,ndirboun,ikboun,ilboun,
      &           nboun,nboun_,iperturb,ne_,co,xboun,ctrl,typeboun,
      &           istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)
+!
+         elseif(textpart(1)(1:11).eq.'*NETWORKMPC') then
+            M_or_SPC=1
+            call networkmpcs(inpc,textpart,ipompc,nodempc,coefmpc,
+     &           nmpc,nmpc_,mpcfree,nk,ikmpc,ilmpc,
+     &           labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)
 !
          elseif(textpart(1)(1:11).eq.'*NOANALYSIS') then
             call noanalysiss(inpc,textpart,nmethod,iperturb,istep,
@@ -985,6 +1029,16 @@ c
      &           istep,istat,n,tinc,tper,tmin,tmax,idrct,ithermal,iline,
      &           ipol,inl,ipoinp,inp,ipoinpc,alpha,ctrl,ttime,nener)
 !
+         elseif(textpart(1)(1:12).eq.'*USERELEMENT') then
+            if(istep.gt.0) then
+               write(*,*) '*ERROR reading *USER ELEMENT:'
+               write(*,*) '       *USER ELEMENT should be placed'
+               write(*,*) '  before all step definitions'
+               call exit(201)
+            endif
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &         ipoinp,inp,ipoinpc)
+!
          elseif(textpart(1)(1:13).eq.'*USERMATERIAL') then
             call usermaterials(inpc,textpart,elcon,nelcon,
      &        imat,ntmat_,ncmat_,iperturb,iumat,irstrt,istep,istat,n,
@@ -1001,7 +1055,7 @@ c
          elseif(textpart(1)(1:7).eq.'*VISCO') then
             call viscos(inpc,textpart,nmethod,iperturb,isolver,istep,
      &        istat,n,tinc,tper,tmin,tmax,idrct,iline,ipol,inl,ipoinp,
-     &        inp,ipoinpc,nelcon,nmat,ncmat_)
+     &        inp,ipoinpc,nelcon,nmat,ncmat_,ctrl)
 !
 !           check for zero-character-lines?
 !
@@ -1101,14 +1155,6 @@ c
      &        dcs(12*ncs_+1),ne,ipkon,kon,lakon,ics(14*ncs_+1),
      &        ics(16*ncs_+1),ics(18*ncs_+1))
 !
-!     generating the MPC's for zero mass flow in CFD-calculations
-!
-c      if(cfd.eq.1) then
-c         call genmassfloweqs(ipompc,nodempc,coefmpc,
-c     &        nmpc,nmpc_,mpcfree,co,ikmpc,ilmpc,labmpc,
-c     &        lakon,nload,sideload,ipkon,kon,nelemload)
-c      endif
-!
       infree(1)=ixfree
       infree(2)=ikfree
       infree(3)=inoelfree
@@ -1154,7 +1200,6 @@ c      endif
          nprint=ii
       endif
 !
-c      if((ithermal(1).eq.0).and.(nmethod.le.7)) then
       if((ithermal(2).eq.0).and.(nmethod.le.7)) then
          if(filab(2)(1:2).eq.'NT') then
             write(*,*) '*WARNING in calinput: temperature output'
@@ -1177,7 +1222,6 @@ c      if((ithermal(1).eq.0).and.(nmethod.le.7)) then
          nprint=ii
       endif
 !
-c      if((ithermal(1).le.1).and.(nmethod.le.7)) then
       if((ithermal(2).le.1).and.(nmethod.le.7)) then
          if(filab(9)(1:3).eq.'HFL') then
             write(*,*) '*WARNING in calinput: heat flux output'

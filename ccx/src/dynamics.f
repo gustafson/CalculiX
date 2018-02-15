@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -195,6 +195,15 @@
          endif
          if(dabs(tmax).lt.1.d-10) then
             tmax=1.d+30
+         endif
+         if(tinc.gt.dabs(tmax)) then
+            write(*,*) '*WARNING reading *DYNAMIC:'
+            write(*,*) '         the initial increment ',tinc
+            write(*,*) '         exceeds the maximum increment ',
+     &          tmax
+            write(*,*) '         the initial increment is reduced'
+            write(*,*) '         to the maximum value'
+            tinc=dabs(tmax)
          endif
       endif
 !

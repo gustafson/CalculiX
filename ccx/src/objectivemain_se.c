@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -23,21 +23,31 @@
 #include <pthread.h>
 #include "CalculiX.h"
 
-static char *lakon1,*matname1;
+static char *lakon1,*matname1,*filabl1,*labmpc1,*set1,*prlab1,*prset1,
+  *sideload1,*orname1,*objectset1;
 
 static ITG *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *norien1,*ntmat1_,*ithermal1,*iprestr1,*iperturb1,*iout1,*nmethod1,
     *nplicon1,*nplkcon1,*npmat1_,*mi1,*ielas1,*icmd1,*ncmat1_,*nstate1_,
     *istep1,*iinc1,calcul_qa1,nener1,ikin1,*istartdesi1,*ialdesi1,
-    num_cpus,*ne01,*mortar1,*ielprop1,*ndesi1,*nodedesi1,idesvar1,
-    *nobject1,iobject1;
+    num_cpusd,*ne01,*mortar1,*ielprop1,*ndesi1,*nodedesi1,idesvar1,
+    *nobject1,iobject1,*nk1,*nactdof1,*nodeboun1,*ndirboun1,
+    *nboun1,*ipompc1,*nodempc1,*nmpc1,*neq1,
+    *ikboun1,*ilboun1,*ncocon1,*nset1,*istartset1,*iendset1,*ialset1,
+    *nprint1,*inotr1,*ntrans1,*nelemload1,*nload1,*ikmpc1,*ilmpc1,*nforc1,
+    *nshcon1,*icfd1,*inomat1,*islavact1,*islavnode1,*nslavnode1,*ntie1,*islavsurf1,
+    kscale1,network1,nestart1,neend1,*jqs1,*irows1,*nasym1,*isolver1,nodeset1,
+    num_cpuse;
     
 static double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
     *prestr1,*vold1,*veold1,*dtime1,*time1,*xdesi1,
     *ttime1,*plicon1,*plkcon1,*xstateini1,*xstiff1,*xstate1,*stiini1,
     *vini1,*ener1,*eei1,*enerini1,*springarea1,*reltime1,*thicke1,*emeini1,
     *prop1,*pslavsurf1,*pmastsurf1,*clearini1,*distmin1,*g01,*dgdx1,
-    *sti1,*xmass1=NULL,*xener1=NULL;
+    *sti1,*xmass1=NULL,*xener1=NULL,*een1,*f1,*fn1,*xboun1,
+    *coefmpc1,*cam1,*accold1,*bet1,*gam1,*epn1,*enern1,*xstaten1,*cocon1,*qfx1,
+    *qfn1,*trab1,*fmpc1,*xforc1,*shcon1,*xload1,*xloadold1,*cdn1,*energyini1,
+    *energy1,*emn1,*stn1,*b1;
     
 
 void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
@@ -48,7 +58,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
        double *t1,ITG *ithermal,double *prestr,ITG *iprestr,char *filab,
        double *eme,double *emn,
        double *een,ITG *iperturb,double *f,double *fn,ITG *nactdof,ITG *iout,
-       double *qa,double *vold,double *b,ITG *nodeboun,ITG *ndirboun,
+       double *qa,double *vold,ITG *nodeboun,ITG *ndirboun,
        double *xboun,ITG *nboun,ITG *ipompc,ITG *nodempc,double *coefmpc,
        char *labmpc,ITG *nmpc,ITG *nmethod,double *cam,ITG *neq,double *veold,
        double *accold,double *bet,double *gam,double *dtime,double *time,
@@ -79,17 +89,20 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
        ITG *istartdesi,ITG *ialdesi,double *xdesi,char *orname,
        ITG *icoordinate,ITG *iev,double *d,double *z,double *au,double *ad,
        double *aub,double*adb,ITG *cyclicsymmetry,ITG *nzss,ITG *nev,
-       ITG *ishapeenergy,double *fint,ITG *nlabel,ITG *igreen,ITG *nasym){
+       ITG *ishapeenergy,double *fint,ITG *nlabel,ITG *igreen,ITG *nasym,
+       ITG *iponoel,ITG *inoel,ITG *nodedesiinv,double *dgdxglob){
 
     char description[13]="            ",cflag[1]=" ",*filabl=NULL;
 
-    ITG calcul_qa,nener,ikin,i,j,k,m,iobject,im,symmetryflag=0,inputformat=0,
-	mt=mi[1]+1,mode=-1,noddiam=-1,ngraph=1,idesvar,nea,neb,nodeset,
-        kscale=1,*iponoel=NULL,*inoel=NULL,idir,iorien,network=0,
-        inorm=0,irand=0;
+    ITG calcul_qa,nener=0,ikin,i,j,k,m,iobject,im,symmetryflag=0,inputformat=0,
+        mt=mi[1]+1,mode=-1,noddiam=-1,ngraph=1,idesvar,nea,neb,nodeset,lmax,
+        kscale=1,idir,iorien,network=0,inorm=0,irand=0,*neinset=NULL,
+        nepar,isum,idelta,*neapar=NULL,*nebpar=NULL,nestart,neend,num_cpus,
+        l;
 
     double sigma=0.,ptime=0.,*temp=NULL,*bfix=NULL,*vnew=NULL,*dstn=NULL,
-        freq,*c=NULL,orabsav[7],rotvec[3],a[9],pgauss[3];
+      freq,*c=NULL,orabsav[7],rotvec[3],a[9],pgauss[3],*b=NULL,
+        *vec=NULL;
     
     if(*nasym!=0){symmetryflag=2;inputformat=1;}
 
@@ -98,7 +111,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
     ITG sys_cpus,*ithread=NULL;
     char *env,*envloc,*envsys;
     
-    num_cpus = 0;
+    num_cpus=0;
     sys_cpus=0;
     
     /* explicit user declaration prevails */
@@ -141,10 +154,6 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
             num_cpus=sys_cpus;
         }
     }
-    
-// next line is to be inserted in a similar way for all other paralell parts
-    
-    if(*ne<num_cpus) num_cpus=*ne;
     
     pthread_t tid[num_cpus];
 
@@ -193,7 +202,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
     /* loop over all objective functions */
 
     for(m=0;m<*nobject;m++){
-	if(strcmp1(&objectset[m*243],"MASS")==0){
+	if(strcmp1(&objectset[m*324],"MASS")==0){
 	    iobject=m+1;
 	    iobject1=iobject;
 	    
@@ -212,8 +221,10 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 	    idesvar=0;
 
 	    /* calculating the objective function and the derivatives */
+
+	    if(*ne<num_cpus){num_cpuse=*ne;}else{num_cpuse=num_cpus;}
 	    
-	    NNEW(g01,double,num_cpus**nobject);
+	    NNEW(g01,double,num_cpuse**nobject);
 	    
 	    co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;v1=v;nelcon1=nelcon;rhcon1=rhcon;
 	    ielmat1=ielmat;ielorien1=ielorien;norien1=norien;ntmat1_=ntmat_;vold1=vold;
@@ -223,25 +234,25 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
             ialdesi1=ialdesi;xdesi1=xdesi;idesvar1=idesvar;
 	    
 	    if(((*nmethod!=4)&&(*nmethod!=5))||(iperturb[0]>1)){
-		printf(" Using up to %" ITGFORMAT " cpu(s) for the mass sensitivity.\n\n", num_cpus);
+		printf(" Using up to %" ITGFORMAT " cpu(s) for the mass sensitivity.\n\n", num_cpuse);
 	    }
 	    
-	    NNEW(ithread,ITG,num_cpus);
+	    NNEW(ithread,ITG,num_cpuse);
 	    
 	    /* Total difference of the mass */
 	    /* create threads and wait */
 	    
-	    for(i=0; i<num_cpus; i++)  {
+	    for(i=0;i<num_cpuse;i++)  {
 		ithread[i]=i;
 		pthread_create(&tid[i], NULL, (void *)objectivemt_mass_dx, (void *)&ithread[i]);
 	    }
 	    
-	    for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
+	    for(i=0;i<num_cpuse;i++)  pthread_join(tid[i], NULL);
     
 	    /* Assembling g0 */
 	    
 	    g0[m]=g01[m];
-	    for(j=1;j<num_cpus;j++){
+	    for(j=1;j<num_cpuse;j++){
 		g0[m]+=g01[m+j**nobject];
 	    }
 	    SFREE(g01);SFREE(ithread);
@@ -268,7 +279,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 		if(ipkon[i]<-1) ipkon[i]=-2-ipkon[i];
 	    }
 	    
-	}else if(strcmp1(&objectset[m*243],"SHAPEENERGY")==0){
+	}else if(strcmp1(&objectset[m*324],"SHAPEENERGY")==0){
 	    iobject=m+1;
 	    iobject1=iobject;
 	    
@@ -287,8 +298,10 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 	    idesvar=0;
 	    
 	    /* calculating the objective function and the derivatives */
+
+	    if(*ne<num_cpus){num_cpuse=*ne;}else{num_cpuse=num_cpus;}
 	    
-	    NNEW(g01,double,num_cpus**nobject);
+	    NNEW(g01,double,num_cpuse**nobject);
 	    
 	    co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;ne1=ne;
 	    stx1=stx;elcon1=elcon;nelcon1=nelcon;rhcon1=rhcon;
@@ -311,25 +324,25 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
             ialdesi1=ialdesi;xdesi1=xdesi;idesvar1=idesvar;
 	    
 	    if(((*nmethod!=4)&&(*nmethod!=5))||(iperturb[0]>1)){
-		printf(" Using up to %" ITGFORMAT " cpu(s) for the shape energy sensitivity.\n\n", num_cpus);
+		printf(" Using up to %" ITGFORMAT " cpu(s) for the shape energy sensitivity.\n\n", num_cpuse);
 	    }
 	    
-	    NNEW(ithread,ITG,num_cpus);
+	    NNEW(ithread,ITG,num_cpuse);
 	    
 	    /* Total difference of the internal shape energy */
 	    /* create threads and wait */
 	    
-	    for(i=0; i<num_cpus; i++)  {
+	    for(i=0;i<num_cpuse;i++)  {
 		ithread[i]=i;
 		pthread_create(&tid[i], NULL, (void *)objectivemt_shapeener_dx, (void *)&ithread[i]);
 	    }
 	    
-	    for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
+	    for(i=0;i<num_cpuse;i++)  pthread_join(tid[i], NULL);
     
 	    /* Assembling g0 */
 	    
 	    g0[m]=g01[m];
-	    for(j=1;j<num_cpus;j++){
+	    for(j=1;j<num_cpuse;j++){
 		g0[m]+=g01[m+j**nobject];
 	    }
 	    SFREE(g01);SFREE(ithread);
@@ -395,11 +408,16 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 
             /* composing the total derivative */
 
-	    FORTRAN(objective_shapeener_tot,(dgdx,df,vold,ndesi,&iobject,
-					     mi,nactdofinv,jqs,irows,iperturb,fint));
+	    NNEW(vec,double,*neq);
+
+	    FORTRAN(objective_shapeener_tot,(ne,kon,ipkon,lakon,fint,vold,
+			iperturb,mi,nactdof,dgdx,df,ndesi,&iobject,jqs,
+			irows,vec));
 	    
-	}else if((strcmp1(&objectset[m*243],"EIGENFREQUENCY")==0)||
-                 (strcmp1(&objectset[m*243],"GREEN")==0)){
+	    SFREE(vec);
+	    
+	}else if((strcmp1(&objectset[m*324],"EIGENFREQUENCY")==0)||
+                 (strcmp1(&objectset[m*324],"GREEN")==0)){
 	    iobject=m+1;
 	    
 	    /* OBJECTIVE: EIGENFREQUENCY */
@@ -450,15 +468,15 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 
                 /* determine the derivative of the eigenvectors */
 
-		NNEW(bfix,double,*neq);
-		NNEW(b,double,*neq);
+		NNEW(bfix,double,neq[1]);
+		NNEW(b,double,neq[1]);
 		NNEW(temp,double,mt**nk);
 
 		if(*igreen!=1){
 		    
 		    /* bfix = M * eigenvector */
 		    
-		    FORTRAN(op,(neq,&z[*iev**neq],bfix,adb,aub,jq,irow));
+		    FORTRAN(op,(neq,&z[*iev*neq[1]],bfix,adb,aub,jq,irow));
 
 		}else{		
 
@@ -510,11 +528,11 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
                     /* setting up the RHS of the system */
 
 		    if(*igreen!=1){
-			for(j=0;j<*neq;j++){
+			for(j=0;j<neq[1];j++){
 			    b[j]=dgdx[idesvar]*bfix[j];
 			}
 		    }else{
-			DMEMSET(b,0,*neq,0.);
+			DMEMSET(b,0,neq[1],0.);
 		    }
 
 		    for(j=jqs[idesvar]-1;j<jqs[idesvar+1]-1;j++){
@@ -550,16 +568,16 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 			NNEW(c,double,*nev);
 			for(j=0;j<*nev;j++){
 			    if(j==*iev) continue;
-			    for(k=0;k<*neq;k++){
-				c[j]+=z[j**neq+k]*b[k];
+			    for(k=0;k<neq[1];k++){
+				c[j]+=z[j*neq[1]+k]*b[k];
 			    }
 			    c[j]/=(d[j]-d[*iev]);
 			}
-			DMEMSET(b,0,*neq,0.);
+			DMEMSET(b,0,neq[1],0.);
 			for(j=0;j<*nev;j++){
 			    if(j==*iev) continue;
-			    for(k=0;k<*neq;k++){
-				b[k]+=c[j]*z[j**neq+k];
+			    for(k=0;k<neq[1];k++){
+				b[k]+=c[j]*z[j*neq[1]+k];
 			    }
 			}
 			SFREE(c);
@@ -615,7 +633,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 
 	    }
 
-	}else if(strcmp1(&objectset[m*243],"DISPLACEMENT")==0){
+	}else if(strcmp1(&objectset[m*324],"DISPLACEMENT")==0){
 	    iobject=m+1;
 
             /* OBJECTIVE: DISPLACEMENT */
@@ -627,7 +645,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 	    FORTRAN(createinum,(ipkon,inum,kon,lakon,nk,ne,&cflag[0],nelemload,
 		    nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat));
 	    
-	    NNEW(b,double,*neq);
+	    NNEW(b,double,neq[1]);
 	    NNEW(temp,double,mt**nk);
 
             /* if the design variables are the coordinates:
@@ -638,8 +656,8 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 	    if(*icoordinate==1){
 		nodeset=0;
 		for(i=0;i<*nset;i++){
-		    if(strcmp1(&objectset[m*243+162]," ")==0) continue;
-		    if(strcmp2(&objectset[m*243+162],&set[i*81],81)==0){
+		    if(strcmp1(&objectset[m*324+162]," ")==0) continue;
+		    if(strcmp2(&objectset[m*324+162],&set[i*81],81)==0){
 			nodeset=i+1;
 			break;
 		    }
@@ -653,7 +671,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 		
                 /* copying the RHS from field df */
 
-		DMEMSET(b,0,*neq,0.);
+		DMEMSET(b,0,neq[1],0.);
 		for(j=jqs[idesvar]-1;j<jqs[idesvar+1]-1;j++){
 		    b[irows[j]-1]=df[j];
 		}
@@ -710,12 +728,89 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 
 	    SFREE(b);SFREE(temp);SFREE(inum);
 	    
-	}else if(strcmp1(&objectset[m*243],"STRESS")==0){
+	}else if(strcmp1(&objectset[m*324],"STRESS")==0){
 	    iobject=m+1;
 
 	    NNEW(filabl,char,87**nlabel);
 	    for(i=0;i<87**nlabel;i++){strcpy1(&filabl[i]," ",1);}
 	    strcpy1(&filabl[174],"S   ",4);
+	    
+	    /* deactivating all elements which are not part of
+	       the target function */
+	   
+	    NNEW(neinset,ITG,*ne);
+
+	    FORTRAN(actideactistr,(set,nset,istartset,iendset,ialset,objectset,
+                                ipkon,&iobject,ne,neinset,iponoel,inoel,&nepar));
+
+            /* determining the nodal bounds in each thread */
+
+	    if(nepar<num_cpus){num_cpuse=nepar;}else{num_cpuse=num_cpus;}
+
+            NNEW(neapar,ITG,num_cpuse);
+            NNEW(nebpar,ITG,num_cpuse);
+	    
+	    idelta=nepar/num_cpuse;
+	    
+	    /* dividing the range from 1 to the number of active elements */
+	    
+            isum=0;
+            for(i=0;i<num_cpuse;i++){
+	       neapar[i]=isum;
+	       if(i!=num_cpuse-1){
+	          isum+=idelta;
+	       }else{
+	          isum=nepar;
+	       }
+	       nebpar[i]=isum-1;
+            }
+	    
+            /* translating the bounds of the ranges to real node numbers */
+
+            i=-1;
+            j=0;
+            nepar=-1;
+
+            do{
+	        if(j==num_cpuse) break;
+	        do{
+	            if(neapar[j]==nepar){
+		        neapar[j]=i;
+		        break;
+	            }else{
+		        do{
+		            i++;
+		            if(neinset[i]==1){
+			        nepar++;
+			        break;
+		            }
+		        }while(1);
+	            }
+	        }while(1);
+
+	        do{
+	            if(nebpar[j]==nepar){
+		        nebpar[j]=i;
+		        j++;
+		        break;
+	            }else{
+		        do{
+		            i++;
+		            if(neinset[i]==1){
+			        nepar++;
+			        break;
+		            }
+		        }while(1);
+	            }
+	        }while(1);
+            }while(1);
+
+            /* FORTRAN convention */
+
+	    nestart=neapar[0]+1;
+	    neend=nebpar[num_cpuse-1]+1;
+
+	    SFREE(neinset);
 	    
 	    /* OBJECTIVE: STRESS */
 
@@ -732,7 +827,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 	    *iout=2;
 	    *icmd=3;
 	    
-	    results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
+	    resultsstr(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 		    elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
 		    ielorien,norien,orab,ntmat_,t0,t1,ithermal,
 		    prestr,iprestr,filabl,eme,emn,een,iperturb,
@@ -748,15 +843,13 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 		    reltime,ne0,xforc,nforc,thicke,shcon,nshcon,
 		    sideload,xload,xloadold,icfd,inomat,pslavsurf,pmastsurf,
 		    mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-		    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-                    inoel,&nener,orname,&network);
+		    islavsurf,ielprop,prop,energyini,energy,&kscale,
+		    &nener,orname,&network,neapar,nebpar);
 	    
 	    *icmd=0;
 	    
 	    SFREE(v);SFREE(fn);SFREE(stx);SFREE(eei);
 	    
-	    NNEW(b,double,*neq);
-	    NNEW(temp,double,mt**nk);
 
             /* if the design variables are the coordinates:
                check for the existence of a target node set */
@@ -766,8 +859,8 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 	    if(*icoordinate==1){
 		nodeset=0;
 		for(i=0;i<*nset;i++){
-		    if(strcmp1(&objectset[m*243+162]," ")==0) continue;
-		    if(strcmp2(&objectset[m*243+162],&set[i*81],81)==0){
+		    if(strcmp1(&objectset[m*324+162]," ")==0) continue;
+		    if(strcmp2(&objectset[m*324+162],&set[i*81],81)==0){
 			nodeset=i+1;
 			break;
 		    }
@@ -776,50 +869,55 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 			ialset,nk,&idesvar,&iobject,mi,g0,
 			nobject,stn,objectset));
 	    }
-	    
-	    for(idesvar=0;idesvar<*ndesi;idesvar++){
+
+	    if(*icoordinate!=1){
+
+		/* orientation as design variables */
+	      
+	      NNEW(b,double,neq[1]);
+	      NNEW(vnew,double,mt**nk);
+	      
+	      for(idesvar=0;idesvar<*ndesi;idesvar++){
 		
                 /* copying the RHS from field df */
-
-		DMEMSET(b,0,*neq,0.);
+		
+		DMEMSET(b,0,neq[1],0.);
 		for(j=jqs[idesvar]-1;j<jqs[idesvar+1]-1;j++){
-		    b[irows[j]-1]=df[j];
+		  b[irows[j]-1]=df[j];
 		}
-
+		
                 /* solve the system */
-
+		
 		if(*isolver==0){
 #ifdef SPOOLES
-		    spooles_solve(b,&neq[1]);
+		  spooles_solve(b,&neq[1]);
 #endif
 		}
 		else if(*isolver==4){
 #ifdef SGI
-		    sgi_solve(b,token);
+		  sgi_solve(b,token);
 #endif
 		}
 		else if(*isolver==5){
 #ifdef TAUCS
-		    tau_solve(b,&neq[1]);
+		  tau_solve(b,&neq[1]);
 #endif
 		}
 		else if(*isolver==7){
 #ifdef PARDISO
-		    pardiso_solve(b,&neq[1],&symmetryflag);
+		  pardiso_solve(b,&neq[1],&symmetryflag);
 #endif
 		}
-
+		
                 /* calculating the perturbed displacements */
-
-		NNEW(vnew,double,mt**nk);
-		    
+		
 		FORTRAN(resultsnoddir,(nk,vnew,nactdof,b,ipompc,nodempc,
 				       coefmpc,nmpc,mi));
-
+		
 		for(i=0;i<mt**nk;i++){vnew[i]=vold[i]+(*distmin)*vnew[i];}
-
+		
                 /* calculating the stress in the perturbed state */
-  
+		
 		NNEW(v,double,mt**nk);
 		NNEW(fn,double,mt**nk);
 		NNEW(stx,double,6*mi[0]**ne);
@@ -829,100 +927,213 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 		memcpy(&v[0],&vnew[0],sizeof(double)*mt**nk);
 		*iout=2;
 		*icmd=3;
-	   
+		
 		/* calculate a delta in the orientation
 		   in case the material orientation is the design variable */
-	
-		if(*icoordinate!=1){
-		    iorien=idesvar/3;
-		    
-		    /* save nominal orientation */
-		    
-		    memcpy(&orabsav[0],&orab[7*iorien],sizeof(double)*7);
-		    
-		    /* calculate the transformation matrix */
-		    
-		    FORTRAN(transformatrix,(&orab[7*iorien],pgauss,a));
-		    
-		    /* calculate the rotation vector from the transformation matrix */
-		    
-		    FORTRAN(rotationvector,(a,rotvec));
-		    idir=idesvar-iorien*3;
-		    
-		    /* add a small variation to the rotation vector component */
-		    
-		    rotvec[idir]+=*distmin;
-		    
-		    /* determine the new transformation matrix */
-		    
-		    FORTRAN(rotationvectorinv,(a,rotvec));
-		    
-		    /* determine two new points in the x-y plane */
-		    
-		    for(i=0;i<6;i++){orab[7*iorien+i]=a[i];}
-		}
 		
-		results(co,nk,kon,ipkon,lakon,ne,v,dstn,inum,stx,
-		    elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
-		    ielorien,norien,orab,ntmat_,t0,t1,ithermal,
-		    prestr,iprestr,filabl,eme,emn,een,iperturb,
-		    f,fn,nactdof,iout,qa,vold,b,nodeboun,
-		    ndirboun,xboun,nboun,ipompc,
-		    nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
-		    bet,gam,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
-		    xstateini,xstiff,xstate,npmat_,epn,matname,mi,ielas,icmd,
-		    ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,emeini,
-		    xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
-		    ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
-		    nelemload,nload,ikmpc,ilmpc,istep,iinc,springarea,
-		    reltime,ne0,xforc,nforc,thicke,shcon,nshcon,
-		    sideload,xload,xloadold,icfd,inomat,pslavsurf,pmastsurf,
-		    mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
-		    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-		    inoel,&nener,orname,&network);
-	    
+		iorien=idesvar/3;
+		
+		/* save nominal orientation */
+		
+		memcpy(&orabsav[0],&orab[7*iorien],sizeof(double)*7);
+		
+		/* calculate the transformation matrix */
+		
+		FORTRAN(transformatrix,(&orab[7*iorien],pgauss,a));
+		
+		/* calculate the rotation vector from the transformation matrix */
+		
+		FORTRAN(rotationvector,(a,rotvec));
+		idir=idesvar-iorien*3;
+		
+		/* add a small variation to the rotation vector component */
+		
+		rotvec[idir]+=*distmin;
+		
+		/* determine the new transformation matrix */
+		
+		FORTRAN(rotationvectorinv,(a,rotvec));
+		
+		/* determine two new points in the x-y plane */
+		
+		for(i=0;i<6;i++){orab[7*iorien+i]=a[i];}
+		
+		resultsstr(co,nk,kon,ipkon,lakon,ne,v,dstn,inum,stx,
+			   elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
+			   ielorien,norien,orab,ntmat_,t0,t1,ithermal,
+			   prestr,iprestr,filabl,eme,emn,een,iperturb,
+			   f,fn,nactdof,iout,qa,vold,b,nodeboun,
+			   ndirboun,xboun,nboun,ipompc,
+			   nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
+			   bet,gam,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
+			   xstateini,xstiff,xstate,npmat_,epn,matname,mi,ielas,icmd,
+			   ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,enern,emeini,
+			   xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
+			   ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
+			   nelemload,nload,ikmpc,ilmpc,istep,iinc,springarea,
+			   reltime,ne0,xforc,nforc,thicke,shcon,nshcon,
+			   sideload,xload,xloadold,icfd,inomat,pslavsurf,pmastsurf,
+			   mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
+			   islavsurf,ielprop,prop,energyini,energy,&kscale,
+			   &nener,orname,&network,neapar,nebpar);
+		
 		*icmd=0;
 		
 		SFREE(v);SFREE(fn);SFREE(stx);SFREE(eei);
-
+		
                 /* calculate the stress sensitivity */
-
+		
 		for(i=0;i<6**nk;i++){dstn[i]=(dstn[i]-stn[i])/(*distmin);}
-		SFREE(vnew);
+		
+		/* restoring the nominal orientation  */
+		
+//		if(idesvar>0){
+		  memcpy(&orab[7*iorien],&orabsav[0],sizeof(double)*7);
+//		}
+		
+		/* storing the results to file */
+		
+		++*kode;
+		frd_sen(co,nk,dstn,inum,nmethod,kode,filab,
+			&ptime,nstate_,
+			istep,iinc,&mode,&noddiam,description,mi,&ngraph,
+			ne,cs,set,nset,istartset,iendset,ialset,
+			jobnamec,output,temp,&iobject,objectset,ntrans,
+			inotr,trab,&idesvar,orname,icoordinate,&inorm,
+			&irand); 
+		
+		SFREE(dstn);
+		
+	      }
+	      
+	      SFREE(vnew);SFREE(b);
+	      
+	    }else{
+	      
+	      /* coordinates as design variables */
+	      
+	      lmax=*ndesi/num_cpus;
 
-		if(*icoordinate!=1){
-	   
-		    /* restoring the nominal orientation  */
-	
-		    if(idesvar>0){
-			memcpy(&orab[7*iorien],&orabsav[0],sizeof(double)*7);
-		    }
-		    
-		    /* storing the results to file */
-		    
-		    ++*kode;
-		    frd_sen(co,nk,dstn,inum,nmethod,kode,filab,
-                       &ptime,nstate_,
-		       istep,iinc,&mode,&noddiam,description,mi,&ngraph,
-                       ne,cs,set,nset,istartset,iendset,ialset,
-		       jobnamec,output,temp,&iobject,objectset,ntrans,
-		       inotr,trab,&idesvar,orname,icoordinate,&inorm,
-                       &irand); 
+              /* deviding the design variables in sets of
+                 num_cpus variables */
 
+	      for(l=0;l<lmax+1;l++){
+		if(l<lmax){
+		  num_cpusd=num_cpus;
 		}else{
-		    FORTRAN(objective_stress_dx,(&nodeset,istartset,iendset,
-			    ialset,nk,&idesvar,&iobject,dgdx,
-			    ndesi,nobject,stn,dstn,objectset,g0));
+		  num_cpusd=*ndesi-lmax*num_cpus;
+		  if(num_cpusd==0){break;}
+		}
+	      
+		/* solving the system of equations for
+                   num_cpusd design variables */
+	      
+		NNEW(b,double,num_cpusd*neq[1]);
+		
+		for(k=0;k<num_cpusd;k++){
+
+		  /* design variable at stake */
+
+		  idesvar=l*num_cpus+k;
+		  
+		  /* copying the RHS from field df */
+		  
+		  for(j=jqs[idesvar]-1;j<jqs[idesvar+1]-1;j++){
+		    b[k*neq[1]+irows[j]-1]=df[j];
+		  }
+		  
+		  /* solve the system */
+		  
+		  if(*isolver==0){
+#ifdef SPOOLES
+		    spooles_solve(&b[k*neq[1]],&neq[1]);
+#endif
+		  }
+		  else if(*isolver==4){
+#ifdef SGI
+		    sgi_solve(&b[k*neq[1]],token);
+#endif
+		  }
+		  else if(*isolver==5){
+#ifdef TAUCS
+		    tau_solve(&b[k*neq[1]],&neq[1]);
+#endif
+		  }
+		  else if(*isolver==7){
+#ifdef PARDISO
+		    pardiso_solve(&b[k*neq[1]],&neq[1],&symmetryflag);
+#endif
+		  }
 		}
 
-		SFREE(dstn);
+                /* last design variable treated (FORTRAN-notation) */
 
+		idesvar=l*num_cpus;
+
+		printf(" Using up to %" ITGFORMAT " cpu(s) for the stress sensitivity.\n\n", num_cpusd);
+  
+		co1=co;nk1=nk;kon1=kon;ipkon1=ipkon;lakon1=lakon;ne1=ne;stn1=stn;
+		elcon1=elcon;nelcon1=nelcon;rhcon1=rhcon;nrhcon1=nrhcon;alcon1=alcon;
+		nalcon1=nalcon;alzero1=alzero;ielmat1=ielmat;ielorien1=ielorien;norien1=norien;
+		orab1=orab;ntmat1_=ntmat_;t01=t0;t11=t1;ithermal1=ithermal;prestr1=prestr;
+		iprestr1=iprestr;filabl1=filabl;emn1=emn;een1=een;iperturb1=iperturb;
+		f1=f;nactdof1=nactdof;vold1=vold;nodeboun1=nodeboun;
+		ndirboun1=ndirboun;xboun1=xboun;nboun1=nboun;ipompc1=ipompc;nodempc1=nodempc;
+		coefmpc1=coefmpc;labmpc1=labmpc;nmpc1=nmpc;nmethod1=nmethod;cam1=cam;neq1=neq;
+		veold1=veold;accold1=accold;bet1=bet;gam1=gam;dtime1=dtime;time1=time;ttime1=ttime;
+		plicon1=plicon;nplicon1=nplicon;plkcon1=plkcon;nplkcon1=nplkcon;xstateini1=xstateini;
+		xstate1=xstate;npmat1_=npmat_;epn1=epn;matname1=matname;mi1=mi;
+		ielas1=ielas;ncmat1_=ncmat_;nstate1_=nstate_;stiini1=stiini;vini1=vini;
+		ikboun1=ikboun;ilboun1=ilboun;enern1=enern;emeini1=emeini;xstaten1=xstaten;
+		enerini1=enerini;cocon1=cocon;ncocon1=ncocon;set1=set;nset1=nset;
+		istartset1=istartset;iendset1=iendset;ialset1=ialset;nprint1=nprint;prlab1=prlab;
+		prset1=prset;qfx1=qfx;qfn1=qfn;trab1=trab;inotr1=inotr;ntrans1=ntrans;fmpc1=fmpc;
+		nelemload1=nelemload;nload1=nload;ikmpc1=ikmpc;ilmpc1=ilmpc;istep1=istep;iinc1=iinc;
+		springarea1=springarea;reltime1=reltime;ne01=ne0;xforc1=xforc;nforc1=nforc;
+		thicke1=thicke;shcon1=shcon;nshcon1=nshcon;sideload1=sideload;xload1=xload;
+		xloadold1=xloadold;icfd1=icfd;inomat1=inomat;pslavsurf1=pslavsurf;pmastsurf1=pmastsurf;
+		mortar1=mortar;islavact1=islavact;cdn1=cdn;islavnode1=islavnode;nslavnode1=nslavnode;
+		ntie1=ntie;clearini1=clearini;islavsurf1=islavsurf;ielprop1=ielprop;prop1=prop;
+		energyini1=energyini;energy1=energy;kscale1=kscale;orname1=orname;
+		network1=network;nestart1=nestart;neend1=neend;jqs1=jqs;irows1=irows;
+		nodedesi1=nodedesi;xdesi1=xdesi;ndesi1=ndesi;iobject1=iobject;nobject1=nobject;
+		objectset1=objectset;g01=g0;dgdx1=dgdx;nasym1=nasym;isolver1=isolver;distmin1=distmin;
+		nodeset1=nodeset;b1=b;idesvar1=idesvar;
+		
+		NNEW(ithread,ITG,num_cpusd);
+		
+		/* Total difference of the mass */
+		/* create threads and wait */
+		
+		for(i=0;i<num_cpusd;i++)  {
+		  ithread[i]=i;
+		  pthread_create(&tid[i], NULL, (void *)stress_senmt, (void *)&ithread[i]);
+		}
+		
+		for(i=0;i<num_cpusd;i++)  pthread_join(tid[i], NULL);
+		
+		SFREE(ithread);SFREE(b);
+
+	      }
+	      
 	    }
 
-	    SFREE(b);SFREE(temp);SFREE(inum);SFREE(stn);SFREE(filabl);
-	    
-	}
+            /* reactivating all elements */
 
+	    for(i=0;i<*ne;i++){
+		if(ipkon[i]<-1) ipkon[i]=-2-ipkon[i];
+	    }
+
+	    SFREE(inum);SFREE(stn);SFREE(filabl);
+	    SFREE(neapar);SFREE(nebpar);
+	    
+    	}else if(strcmp1(&objectset[m*324],"THICKNESS")==0){
+	    iobject=m+1;
+
+            thicknessmain(co,dgdx,nobject,nk,nodedesi,ndesi,objectset,
+	                  ipkon,kon,lakon,set,nset,istartset,iendset,ialset,
+			  &iobject,nodedesiinv,dgdxglob); 
+        }
     }
     
     if(*idisplacement==1){
@@ -966,10 +1177,10 @@ void *objectivemt_shapeener_dx(ITG *i){
     indexg0=*i**nobject1;
     indexdgdx=*i**nobject1**ndesi1;
 
-    nedelta=(ITG)floor(*ne1/(double)num_cpus);
+    nedelta=(ITG)floor(*ne1/(double)num_cpuse);
     nea=*i*nedelta+1;
     neb=(*i+1)*nedelta;
-    if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
+    if((*i==num_cpuse-1)&&(neb<*ne1)) neb=*ne1;
     
     FORTRAN(objective_shapeener_dx,(co1,kon1,ipkon1,lakon1,ne1,
 	  stx1,elcon1,nelcon1,rhcon1,nrhcon1,alcon1,nalcon1,alzero1,
@@ -998,10 +1209,10 @@ void *objectivemt_mass_dx(ITG *i){
     indexg0=*i**nobject1;
     indexdgdx=*i**nobject1**ndesi1;
 
-    nedelta=(ITG)floor(*ne1/(double)num_cpus);
+    nedelta=(ITG)floor(*ne1/(double)num_cpuse);
     nea=*i*nedelta+1;
     neb=(*i+1)*nedelta;
-    if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
+    if((*i==num_cpuse-1)&&(neb<*ne1)) neb=*ne1;
 
     FORTRAN(objective_mass_dx,(co1,kon1,ipkon1,lakon1,nelcon1,rhcon1,          
           ielmat1,ielorien1,norien1,ntmat1_,matname1,mi1,
@@ -1010,4 +1221,44 @@ void *objectivemt_mass_dx(ITG *i){
 	  istartdesi1,ialdesi1,xdesi1,&idesvar1));
           
     return NULL;
+}
+	      
+
+/* -----------------------------------------------------------*/
+/* subroutine for multithreading of the stress sensitivity    */
+/* -----------------------------------------------------------*/
+
+void *stress_senmt(ITG *i){
+  
+  ITG idesvara,idesvarb,indexb;
+
+  /* next design variable to tread (FORTRAN-notation) */
+  
+  idesvara=idesvar1+(*i)+1;
+  idesvarb=idesvara;
+  indexb=*i*neq1[1];
+  
+  stress_sen(co1,nk1,kon1,ipkon1,lakon1,ne1,stn1,
+	     elcon1,nelcon1,rhcon1,nrhcon1,alcon1,nalcon1,alzero1,ielmat1,
+	     ielorien1,norien1,orab1,ntmat1_,t01,t11,ithermal1,
+	     prestr1,iprestr1,filabl1,emn1,een1,iperturb1,
+	     f1,nactdof1,vold1,nodeboun1,
+	     ndirboun1,xboun1,nboun1,ipompc1,
+	     nodempc1,coefmpc1,labmpc1,nmpc1,nmethod1,cam1,neq1,veold1,accold1,
+	     bet1,gam1,dtime1,time1,ttime1,plicon1,nplicon1,plkcon1,nplkcon1,
+	     xstateini1,xstate1,npmat1_,epn1,matname1,mi1,ielas1,
+	     ncmat1_,nstate1_,stiini1,vini1,ikboun1,ilboun1,enern1,emeini1,
+	     xstaten1,enerini1,cocon1,ncocon1,set1,nset1,istartset1,iendset1,
+	     ialset1,nprint1,prlab1,prset1,qfx1,qfn1,trab1,inotr1,ntrans1,fmpc1,
+	     nelemload1,nload1,ikmpc1,ilmpc1,istep1,iinc1,springarea1,
+	     reltime1,ne01,xforc1,nforc1,thicke1,shcon1,nshcon1,
+	     sideload1,xload1,xloadold1,icfd1,inomat1,pslavsurf1,pmastsurf1,
+	     mortar1,islavact1,cdn1,islavnode1,nslavnode1,ntie1,clearini1,
+	     islavsurf1,ielprop1,prop1,energyini1,energy1,&kscale1,
+	     orname1,&network1,&nestart1,&neend1,jqs1,irows1,nodedesi1,
+	     xdesi1,ndesi1,&iobject1,nobject1,objectset1,g01,dgdx1,
+             &idesvara,&idesvarb,nasym1,isolver1,distmin1,&nodeset1,
+             &b1[indexb]);
+  
+  return NULL;
 }

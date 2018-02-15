@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -95,7 +95,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
               ITG *cyclicsymmetry,double *xnoels,ITG *ielas,ITG *ielprop,
               double *prop){
     
-  char lakonl[9]="        \0";
+  char lakonl[9]="        \0",jobnamef[396]="";
 
   ITG i,j,k,l,init,*itg=NULL,ntg=0,maxlenmpc,icascade=0,loop,
       konl[20],imat,nope,kodem,indexe,j1,jdof,kmin,kmax,
@@ -103,7 +103,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       *ikactcont=NULL,*ilactcont=NULL,*ikactcont1=NULL,nactcont1=0,
       i1,icutb=0,iconvergence=0,idivergence=0,mt=mi[1]+1,
       nactcont1_=100,*ikactmech=NULL,iabsload=0,im,nasym=0,mortar=0,
-      ialeatoric=0;
+      ialeatoric=0,*iponoel=NULL,*inoel=NULL;
 
   long long i2;
 
@@ -119,6 +119,10 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       *pslavsurf=NULL,*pmastsurf=NULL,*clearini=NULL,venergy=0.0;
 
   ikactcont=*ikactcontp;ikactmech=*ikactmechp;
+  
+  for(k=0;k<3;k++){
+      strcpy1(&jobnamef[k*132],&jobnamec[k*132],132);
+  }
 
   if(*inonlinmpc==1) iabsload=2;
 
@@ -159,13 +163,12 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	  ialset,itietri,lakon,ipkon,kon,koncont,ne,cg,
 	  straight,nkon,co,vold,ielmat,cs,elcon,istep,
 	  iinc,iit,ncmat_,ntmat_,ne0,
-	  vini,nmethod,nmpc,mpcfree,memmpc_,
-	  &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
+	  vini,nmethod,
           iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
           itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
 	  imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
           xnoels,&mortar,pslavsurf,pmastsurf,clearini,theta,
-	  xstateini,xstate,nstate_,&icutb,&ialeatoric);
+	  xstateini,xstate,nstate_,&icutb,&ialeatoric,jobnamef);
 
   NNEW(ikactcont1,ITG,nactcont1_);
 
@@ -323,7 +326,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		nelemload,sideload,mi,
 		xforcdiff,xloaddiff,xbodydiff,t1diff,xboundiff,&iabsload,
 		iprescribedboundary,ntrans,trab,inotr,veold,nactdof,bcont,
-                fn));
+                fn,ipobody,iponoel,inoel));
 	      
       /* calculating the instantaneous loading vector */
       
@@ -714,13 +717,12 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	      ialset,itietri,lakon,ipkon,kon,koncont,ne,cg,
 	      straight,nkon,co,vold,ielmat,cs,elcon,istep,
 	      iinc,iit,ncmat_,ntmat_,ne0,
-	      vini,nmethod,nmpc,mpcfree,memmpc_,
-	      &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
+	      vini,nmethod,
 	      iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
               itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
 	      imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
               xnoels,&mortar,pslavsurf,pmastsurf,clearini,theta,
-	      xstateini,xstate,nstate_,&icutb,&ialeatoric);
+	      xstateini,xstate,nstate_,&icutb,&ialeatoric,jobnamef);
 
       for(i=*ne0;i<*ne;i++){
 	indexe=ipkon[i];

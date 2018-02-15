@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -845,9 +845,6 @@ c     &          (labmpc(ii)(1:7).ne.'CONTACT').and.
             elseif(labmpc(ii)(1:4).eq.'DIST') then
                call umpc_dist(aux,aux(3*maxlenmpc+1),const,
      &            aux(6*maxlenmpc+1),iaux,n,fmpc(ii),iit,idiscon)
-c            elseif(labmpc(ii)(1:3).eq.'GAP') then
-c               call umpc_gap(aux,aux(3*maxlenmpc+1),const,
-c     &            aux(6*maxlenmpc+1),iaux,n,fmpc(ii),iit,idiscon)
             elseif(labmpc(ii)(1:4).eq.'USER') then
                call umpc_user(aux,aux(3*maxlenmpc+1),const,
      &            aux(6*maxlenmpc+1),iaux,n,fmpc(ii),iit,idiscon)

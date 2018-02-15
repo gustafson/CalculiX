@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,8 @@
       subroutine film(h,sink,temp,kstep,kinc,time,noel,npt,
      &  coords,jltyp,field,nfield,loadtype,node,area,vold,mi,
      &  ipkon,kon,lakon,iponoel,inoel,ielprop,prop,ielmat,
-     &  shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon)
+     &  shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon,
+     &  ipobody,xbody,ibody,heatnod,heatfac)
 !
 !     user subroutine film
 !
@@ -111,6 +112,22 @@
 !                        j of material i
 !     cocon(k,j,i)       conductivity coefficient k at conductivity
 !                        temperature point j of material i
+!     ipobody(1,i)       points to an entry in fields ibody and xbody 
+!                        containing the body load applied to element i, 
+!                        if any, else 0
+!     ipobody(2,i)       index referring to the line in field ipobody
+!                        containing a pointer to the next body load
+!                        applied to element i, else 0
+!     ibody(1,i)         code identifying the kind of body load i:
+!                        1=centrifugal, 2=gravity, 3=generalized gravity
+!     ibody(2,i)         amplitude number for load i
+!     ibody(3,i)         load case number for load i
+!     xbody(1,i)      size of body load i
+!     xbody(2..4,i)   for centrifugal loading: point on the axis,
+!                        for gravity loading with known gravity vector:
+!                          normalized gravity vector
+!     xbody(5..7,i)   for centrifugal loading: normalized vector on the
+!                          rotation axis
 !
 !     OUTPUT:
 !
@@ -118,6 +135,10 @@
 !     h(2)               not used; please do NOT assign any value
 !     sink               (updated) sink temperature (need not be
 !                        defined for forced convection)
+!     heatnod            extra heat flow going to the network node
+!                        (zero if not specified)
+!     heatfac            extra heat flow going to the structural face
+!                        (zero if not specified)
 !           
       implicit none
 !
@@ -127,19 +148,21 @@
       integer kstep,kinc,noel,npt,jltyp,nfield,node,mi(*),ipkon(*),
      &  kon(*),iponoel(*),inoel(2,*),ielprop(*),ielmat(*),ntmat_,
      &  nshcon(*),nrhcon(*),ncocon(2,*),nodem,indexprop,indexe,
-     &  iel1,iel2,ielup,iit,imat,icase,ithermal
+     &  iel1,iel2,ielup,iit,imat,icase,ithermal,ipobody(2,*),
+     &  ibody(3,*)
 !
       real*8 h(2),sink,time(2),coords(3),temp,field(nfield),area,
      &  vold(0:mi(2),*),prop(*),shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),
      &  cocon(0:6,ntmat_,*),rho,r,Pt,Pr,xl,Tt,Ts,xflow,Tsold,Re,um,
-     &  xks,xkappa,xlambda,f,cp,A,D,form_fact
+     &  xks,xkappa,xlambda,f,cp,A,D,form_fact,xbody(7,*),heatnod,
+     &  heatfac
 !
       intent(in) temp,kstep,kinc,time,noel,npt,
      &  coords,jltyp,field,nfield,loadtype,node,area,vold,mi,
      &  ipkon,kon,lakon,iponoel,inoel,ielprop,prop,ielmat,shcon,
-     &  nshcon,rhcon,nrhcon,ntmat_
+     &  nshcon,rhcon,nrhcon,ntmat_,ipobody,ibody,xbody
 !
-      intent(out) h
+      intent(out) h,heatnod,heatfac
 !
       intent(inout) sink
 !

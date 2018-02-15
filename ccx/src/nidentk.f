@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,8 +25,15 @@
 !
       subroutine nidentk(x,px,n,id,k)
       implicit none
+!
       integer x,px,n,id,n2,m,k
+!
       dimension x(k,n)
+!
+      intent(in) x,px,n
+!
+      intent(out) id
+!
       id=0
       if(n.eq.0) return
       n2=n+1

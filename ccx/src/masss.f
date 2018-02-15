@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine masss(inpc,textpart,nrhcon,nmat,ntmat_,
      &        rhcon,matname,irstrt,istep,istat,n,iline,ipol,
      &        inl,ipoinp,inp,nmat_,set,istartset,iendset,ialset,
-     &        nset,ielmat,ielorien,ipoinpc,mi)
+     &        nset,ielmat,ielorien,ipoinpc,mi,iaxial)
 !
 !     reading the input deck: *MASS
 !
@@ -31,7 +31,7 @@
       character*132 textpart(16)
 !
       integer mi(*),nrhcon(*),nmat,ntmat_,ntmat,istep,
-     &  n,key,i,istat,istartset(*),
+     &  n,key,i,istat,istartset(*),iaxial,
      &  iendset(*),irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),nmat_,
      &  ialset(*),ipos,nset,j,k,ielmat(mi(3),*),ielorien(mi(3),*),
      &  ipoinpc(0:*)  
@@ -82,6 +82,8 @@
          call exit(201)
       endif
 !
+!     reading the mass and storing it in rhcon
+!
       ntmat=ntmat+1
       nrhcon(nmat)=ntmat
       if(ntmat.gt.ntmat_) then
@@ -90,6 +92,11 @@
       endif
       read(textpart(1)(1:20),'(f20.0)',iostat=istat)
      &     rhcon(1,ntmat,nmat)
+!
+!     dividing by 180 for axisymmetric structures
+!
+      if(iaxial.eq.180) rhcon(1,ntmat,nmat)=rhcon(1,ntmat,nmat)/iaxial
+!
       if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*MASS%")
       rhcon(0,ntmat,nmat)=0.d0

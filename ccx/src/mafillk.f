@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine mafillk(nef,ipnei,neifa,neiel,vfa,xxn,area,
      &  au,ad,jq,irow,nzs,b,vel,umfa,xlet,xle,gradkfa,xxi,
      &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
-     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,xrlfa,
+     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,xrlfa,
      &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb,iau6,xxni,xxnj,
      &  iturbulent)
 !
@@ -40,13 +40,13 @@
      &  vel(nef,0:7),umfa(*),xlet(*),xle(*),coef,gradkfa(3,*),
      &  xxi(3,*),body(0:3,*),volume(*),dtimef,velo(nef,0:7),
      &  veloo(nef,0:7),rhovol,cvel(*),gradvel(3,3,*),sk,
-     &  cvfa(*),hcfa(*),div,xload(2,*),gammat(*),xrlfa(3,*),
+     &  cvfa(*),hcfa(*),div,xload(2,*),gamma(*),xrlfa(3,*),
      &  xxj(3,*),a1,a2,a3,flux(*),xxnj(3,*),xxni(3,*),difcoef
 !
       intent(in) nef,ipnei,neifa,neiel,vfa,xxn,area,
      &  jq,irow,nzs,vel,umfa,xlet,xle,gradkfa,xxi,
      &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
-     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,xrlfa,
+     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,xrlfa,
      &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb,iturbulent
 !
       intent(inout) au,ad,b
@@ -77,18 +77,18 @@
 !     outflowing flux
 !     
                ad(i)=ad(i)+xflux
-!     centdiff
-ccccccc                   b(i)=b(i)-(vfa(0,ifa)-vel(i,0))*xflux
-!end centdiff
+!
+               b(i)=b(i)-gamma(ifa)*(vfa(6,ifa)-vel(i,6))*xflux
+!
             else
                if(iel.gt.0) then
 !
 !                    incoming flux from neighboring element
 !
                   au(indexf)=au(indexf)+xflux
-!centdiff
-cccccc                    b(i)=b(i)-(vfa(0,ifa)-vel(iel,0))*xflux
-!end centdiff
+!
+                  b(i)=b(i)-gamma(ifa)*(vfa(6,ifa)-vel(iel,6))*xflux
+!
                else
 !
 !                    incoming flux through boundary
@@ -101,16 +101,20 @@ cccccc                    b(i)=b(i)-(vfa(0,ifa)-vel(iel,0))*xflux
      &                    (dabs(xflux).lt.1.d-10)) then
                         b(i)=b(i)-vfa(6,ifa)*xflux
                      else
-                        write(*,*) '*ERROR in mafillk: the tempera-'
-                        write(*,*) '       ture of an incoming flux'
-                        write(*,*) '       through face ',j,'of'
+                        write(*,*) '*ERROR in mafillk: the turbulent'
+                        write(*,*) '       kinetic energy'
+                        write(*,*) '       of an incoming flux'
+                        write(*,*) '       through face ',
+     &                        indexf-ipnei(i),'of'
                         write(*,*)'       element ',nactdohinv(i),
      &                          ' is not given'
                      endif
                   else
-                     write(*,*) '*ERROR in mafillk: the tempera-'
-                     write(*,*) '       ture of an incoming flux'
-                     write(*,*) '       through face ',j,'of'
+                     write(*,*) '*ERROR in mafillk: the turbulent'
+                     write(*,*) '       kinetic energy'
+                     write(*,*) '       of an incoming flux'
+                     write(*,*) '       through face ',
+     &                         indexf-ipnei(i),'of'
                      write(*,*)'       element ',nactdohinv(i),
      &                   ' is not given'
                   endif
@@ -177,13 +181,19 @@ cccccc                    b(i)=b(i)-(vfa(0,ifa)-vel(iel,0))*xflux
 !     
          rhovol=vel(i,5)*volume(i)
 !
+!        sink terms are treated implicitly (lhs)
+!
+         ad(i)=ad(i)+rhovol*0.09d0*vel(i,7)
+!
+!        source terms are treated explicitly (rhs)
+!
          b(i)=b(i)+rhovol*vel(i,6)*((
      &        (2.d0*(gradvel(1,1,i)**2+gradvel(2,2,i)**2+
      &        gradvel(3,3,i)**2)+
      &        (gradvel(1,2,i)+gradvel(2,1,i))**2+
      &        (gradvel(1,3,i)+gradvel(3,1,i))**2+
      &        (gradvel(2,3,i)+gradvel(3,2,i))**2))/vel(i,7)
-     &        -0.09d0*vel(i,7)
+c     &        -0.09d0*vel(i,7)
      &        )
 !
 !           transient term

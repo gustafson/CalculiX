@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -61,7 +61,8 @@
                adv(i)=adv(i)+xflux
 ccccc retarded central differences
 c                  do k=1,3
-c                     bv(i,k)=bv(i,k)-(vfa(k,ifa)-vel(i,k))*xflux
+c                     bv(i,k)=bv(i,k)-gamma(ifa)*
+c     &                          (vfa(k,ifa)-vel(i,k))*xflux
 c                  enddo
 ccccc
             else
@@ -73,7 +74,8 @@ ccccc
                      auv(indexf)=auv(indexf)+xflux
 ccccc retarded central differences
 c                   do k=1,3
-c                      bv(i,k)=bv(i,k)-(vfa(k,ifa)-vel(iel,k))*xflux
+c                      bv(i,k)=bv(i,k)-gamma(ifa)*
+c     &                        (vfa(k,ifa)-vel(iel,k))*xflux
 c                   enddo
 ccccc
                   elseif(ifatie(ifa).gt.0) then
@@ -174,13 +176,16 @@ ccccc
                if(ipointer.gt.0) then
                   iwall=ifabou(ipointer+5)
                endif
-               if(iwall.lt.1) then
+c               if(iwall.lt.1) then
+               if(iwall.eq.0) then
 !
 !                 external face, but no wall
 !
-                  if((ifabou(ipointer+1).ne.0).or.
-     &                 (ifabou(ipointer+2).ne.0).or.
-     &                 (ifabou(ipointer+3).ne.0)) then
+c                  if((ifabou(ipointer+1).ne.0).or.
+c     &                 (ifabou(ipointer+2).ne.0).or.
+c     &                 (ifabou(ipointer+3).ne.0)) then
+c
+                  if(ielfa(3,ifa).gt.0) then
 !
 !                    no outlet: face velocity fixed
 !
@@ -203,7 +208,8 @@ ccccc
      &                  gradvfa(k,2,ifa)*xxni(2,indexf)+
      &                  gradvfa(k,3,ifa)*xxni(3,indexf))
                   enddo
-               else
+c               else
+               elseif(iwall.gt.0) then
 !     
 !                 wall
 !     
@@ -219,6 +225,20 @@ ccccc
                   do k=1,3
                      bv(i,k)=bv(i,k)+coef*vfa(k,ifa)+
      &                 coef2*xxn(k,indexf)
+                  enddo
+               else
+!     
+!                 sliding conditions (no shear stress)
+!     
+                  coef=umfa(ifa)*area(ifa)/(xle(indexf)*cosa(indexf))
+!
+!                 correction for non-orthogonal grid
+!
+                  coef2=((vel(i,1)-vfa(1,ifa))*xxn(1,indexf)+
+     &                   (vel(i,2)-vfa(2,ifa))*xxn(2,indexf)+
+     &                   (vel(i,3)-vfa(3,ifa))*xxn(3,indexf))*coef
+                  do k=1,3
+                     bv(i,k)=bv(i,k)-coef2*xxn(k,indexf)
                   enddo
                endif
             endif

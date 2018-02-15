@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -104,40 +104,6 @@
                enddo
             enddo
          enddo
-!
-      elseif(lakonl(8:8).eq.'B') then
-!
-!        BOX cross section
-         a=prop(npropstart+1)
-         b=prop(npropstart+2)
-         t1=prop(npropstart+3)
-         t2=prop(npropstart+4)
-         t3=prop(npropstart+5)
-         t4=prop(npropstart+6)
-c
-c        new local coordinates for node points of element
-c
-         xis(1,1) = -1/sqrt(3.0d0)
-         xis(1,2) = -(t4-t2-2*b)/((-2*b)+t2+t4)
-         xis(1,3) = (t3-t1+2*a)/((-2*a)+t1+t3)
-         xis(2,1) = 1/sqrt(3.0d0)
-         xis(2,2) = -(t4-t2-2*b)/((-2*b)+t2+t4)
-         xis(2,3) = (t3-t1+2*a)/((-2*a)+t1+t3)
-         xis(3,1) = 1/sqrt(3.0d0)
-         xis(3,2) = -(t4-t2+2*b)/((-2*b)+t2+t4)
-         xis(3,3) = (t3-t1+2*a)/((-2*a)+t1+t3)
-         xis(4,1) = -1/sqrt(3.0d0)
-         xis(4,2) = -(t4-t2+2*b)/((-2*b)+t2+t4)
-         xis(4,3) = (t3-t1+2*a)/((-2*a)+t1+t3)
-         xis(5,1) = -1/sqrt(3.0d0)
-         xis(5,2) = -(t4-t2-2*b)/((-2*b)+t2+t4)
-         xis(5,3) = (t3-t1-2*a)/((-2*a)+t1+t3)
-         xis(6,1) = 1/sqrt(3.0d0)
-         xis(6,2) = -(t4-t2-2*b)/((-2*b)+t2+t4)
-         xis(6,3) = (t3-t1-2*a)/((-2*a)+t1+t3)
-         xis(7,1) = 1/sqrt(3.0d0)
-         xis(7,2) = -(t4-t2+2*b)/((-2*b)+t2+t4)
-         xis(7,3) = (t3-t1-2*a)/((-2*a)+t1+t3)
 !
       elseif(lakonl(8:8).eq.'B') then
 !

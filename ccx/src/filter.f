@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@
 !
       implicit none
 !
-      character*81 objectset(3,*)
+      character*81 objectset(4,*)
 
       integer nobject,nk,nodedesi(*),nnodesinside,i,
      &        ndesi,j,m,neighbor(ndesi+6),nx(ndesi),
@@ -56,18 +56,26 @@
 !
          elseif(objectset(2,1)(1:5).eq.'GAUSS') then
             do i=1,nnodesinside
-               filterval(i)=dexp(-(0.5*r(i)**2/filterrad**2))
+               filterval(i)=dexp(-(2*r(i)/filterrad**2))
             enddo 
+!
+!        Calculate function value of the filterfunction (cubic) 
+!
+         elseif(objectset(2,1)(1:5).eq.'CUBIC') then
+            do i=1,nnodesinside
+               filterval(i)=filterrad-(1/filterrad**2)*dsqrt(r(i))**3
+            enddo
          endif
 !  
 !        Calculate filtered sensitivity
  
          do m=1,nobject
+            if(objectset(1,m)(1:9).eq.'THICKNESS') cycle             
             nominator=0.d0
             denominator=0.d0
             do i=1,nnodesinside
                nominator=nominator+filterval(i)*
-     &              dgdxglob(1,nodedesi(neighbor(i)),m)
+     &             dgdxglob(1,nodedesi(neighbor(i)),m)
                denominator=denominator+filterval(i)
             enddo 
             dgdxglob(2,nodedesi(j),m)=nominator/denominator

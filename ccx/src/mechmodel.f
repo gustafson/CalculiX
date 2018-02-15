@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &     icmd,beta,stre,xkl,ckl,vj,xikl,vij,plconloc,xstate,xstateini,
      &     ielas,amat,t1l,dtime,time,ttime,iel,iint,nstate_,mi,
      &     iorien,pgauss,orab,eloc,mattyp,pnewdt,istep,iinc,ipkon,
-     &     nmethod,iperturb)
+     &     nmethod,iperturb,depvisc)
 !
 !     kode=-1: Arruda-Boyce
 !          -2: Mooney-Rivlin
@@ -53,7 +53,7 @@
      &  mattyp,istep,iinc,ipkon(*),nmethod,iperturb(*)
 !
       real*8 elconloc(*),elas(21),emec(*),emec0(*),beta(*),stre(*),
-     &  ckl(*),vj,plconloc(*),t1l,xkl(*),xikl(*),vij,
+     &  ckl(*),vj,plconloc(*),t1l,xkl(*),xikl(*),vij,depvisc,
      &  dtime,didc(27),d2idc2(243),dibdc(27),d2ibdc2(243),
      &  dudc(9),d2udc2(81),dldc(27),d2ldc2(243),dlbdc(27),d2lbdc2(243),
      &  pgauss(3),orab(7,*),time,ttime,eloc(6),pnewdt
@@ -78,20 +78,20 @@
             call incplas(elconloc,plconloc,xstate,xstateini,elas,emec,
      &           ithermal,icmd,beta,stre,vj,kode,ielas,amat,t1l,dtime,
      &           time,ttime,iel,iint,nstate_,mi(1),eloc,pgauss,nmethod,
-     &           pnewdt)
+     &           pnewdt,depvisc)
          else
             call incplas_lin(elconloc,plconloc,xstate,xstateini,elas,
      &           emec,
      &           ithermal,icmd,beta,stre,vj,kode,ielas,amat,t1l,dtime,
      &           time,ttime,iel,iint,nstate_,mi(1),eloc,pgauss,nmethod,
-     &           pnewdt)
+     &           pnewdt,depvisc)
          endif
       else
          mattyp=3
          call umat_main(amat,iel,iint,kode,elconloc,emec,emec0,beta,
      &        xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,icmd,ielas,
      &        mi(1),nstate_,xstateini,xstate,stre,elas,iorien,pgauss,
-     &        orab,pnewdt,istep,iinc,ipkon,nmethod,iperturb)
+     &        orab,pnewdt,istep,iinc,ipkon,nmethod,iperturb,depvisc)
       endif
 !
       return

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,7 +26,7 @@
      &  calcul_fn,calcul_qa,nal,nea,neb,ithermal,nelemload,nload,
      &  nmethod,reltime,sideload,xload,xloadold,pslavsurf,
      &  pmastsurf,mortar,clearini,plicon,nplicon,ielprop,prop,
-     &  iponoel,inoel,network)
+     &  iponoel,inoel,network,ipobody,xbody,ibody)
 !
 !     calculates the heat flux and the material tangent at the integration
 !     points and the internal concentrated flux at the nodes
@@ -46,7 +46,7 @@
      &  nplkcon(0:ntmat_,*),npmat_,calcul_fn,calcul_qa,nea,neb,
      &  nelemload(2,*),nload,ithermal(2),nmethod,nopered,iloc,
      &  jfaces,node,nplicon(0:ntmat_,*),null,ielprop(*),
-     &  iponoel(*),inoel(2,*),network
+     &  iponoel(*),inoel(2,*),network,ipobody(2,*),ibody(3,*)
 !
       real*8 co(3,*),v(0:mi(2),*),shp(4,26),reltime,
      &  xl(3,26),vl(0:mi(2),26),elcon(0:ncmat_,ntmat_,*),
@@ -54,12 +54,13 @@
      &  rho,fn(0:mi(2),*),tnl(19),timeend(2),q(0:mi(2),26),
      &  vkl(0:3,3),t0(*),vold(0:mi(2),*),coefmpc(*),
      &  springarea(2,*),elconloc(21),cocon(0:6,ntmat_,*),
-     &  shcon(0:3,ntmat_,*),sph,c1,xi,et,ze,xsj,qa(3),t0l,t1l,dtime,
+     &  shcon(0:3,ntmat_,*),sph,c1,xi,et,ze,xsj,qa(*),t0l,t1l,dtime,
      &  weight,pgauss(3),coconloc(6),qflux(3),time,ttime,
      &  t1lold,plkcon(0:2*npmat_,ntmat_,*),xstiff(27,mi(1),*),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  xload(2,*),xloadold(2,*),clearini(3,9,*),pslavsurf(3,*),
-     &  pmastsurf(6,*),plicon(0:2*npmat_,ntmat_,*),prop(*)
+     &  pmastsurf(6,*),plicon(0:2*npmat_,ntmat_,*),prop(*),
+     &  xbody(7,*)
 !
       include "gauss.f"
 !
@@ -245,13 +246,7 @@ c            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
      &                 dtime,sideload,v,mi,xloadold,reltime,nmethod,
      &                 tnl,iinc,iponoel,inoel,ielprop,prop,ielmat,shcon,
      &                 nshcon,rhcon,nrhcon,ntmat_,ipkon,kon,cocon,
-     &                 ncocon)
-c                  call advecforc(nope,vl,ithermal,xl,nelemload,
-c     &                 i,nload,lakon,xload,istep,time,ttime,
-c     &                 dtime,sideload,vold,mi,xloadold,reltime,nmethod,
-c     &                 tnl,iinc,iponoel,inoel,ielprop,prop,ielmat,shcon,
-c     &                 nshcon,rhcon,nrhcon,ntmat_,ipkon,kon,cocon,
-c     &                 ncocon)
+     &                 ncocon,ipobody,xbody,ibody)
                endif
 !
             elseif((lakonl(1:2).eq.'D ').or.
@@ -372,6 +367,9 @@ c     &                 ncocon)
                nopered=20
                call lintemp_th(t0,vold,konl,nopered,kk,t0l,t1lold,mi)
                call lintemp_th(t0,v,konl,nopered,kk,t0l,t1l,mi)
+            elseif(lakon(i)(4:6).eq.'10T') then
+               call linscal10(vold,konl,t1lold,mi(2),shp)
+               call linscal10(v,konl,t1l,mi(2),shp)
             else
                do i1=1,nope
                   t1lold=t1lold+shp(4,i1)*vold(0,konl(i1))

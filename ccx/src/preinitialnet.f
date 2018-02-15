@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2015 Guido Dhondt
+!     Copyright (C) 1998-2017 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,16 +43,123 @@
       integer mi(*),ieg(*),nflow,i,ielmat(mi(3),*),ntmat_,node1,node2,
      &     nelem,index,nshcon(*),ipkon(*),kon(*),nodem,imat,ielprop(*),
      &     nrhcon(*),neighbor,ichange,iponoel(*),inoel(2,*),indexe,
-     &     itg(*),ntg,node,imin,imax
+     &     itg(*),ntg,node,imin,imax,iel,nodemnei,ierror,nelemnei,
+     &     nodenei,ibranch,numel,noderef,nelemref,ierr
 !     
       real*8 prop(*),shcon(0:3,ntmat_,*),xflow,v(0:mi(2),*),cp,r,
      &     dvi,rho,rhcon(0:1,ntmat_,*),kappa,cti,Ti,ri,ro,p1zp2,omega,
-     &     p2zp1,xmin,xmax
+     &     p2zp1,xmin,xmax,fluxtot,ratio,pref,prefnew
 !
-c      write(*,*) 'preinitialnet '
-c      do i=1,ntg
-c         write(*,'(i10,3(1x,e11.4))') itg(i),(v(j,itg(i)),j=0,2)
-c      enddo
+!     the user should assign an initial pressure to any
+!         - node which is connected to an inlet or an outlet
+!         - node belonging to more than 2 network elements
+!     this is checked in the next lines
+!
+      ierror=0
+!
+      do i=1,ntg
+         node=itg(i)
+         index=iponoel(node)
+!
+!        node not connected to any element
+!
+         if(index.eq.0) cycle
+         nelem=inoel(1,index)
+!
+!        midside node
+!
+         if(kon(ipkon(nelem)+2).eq.node) cycle
+!
+!        initial pressure assigned
+!
+         if(v(2,node).gt.0.d0) cycle
+!
+!        check whether node belongs to more than 1 element
+!
+         index=inoel(2,index)
+         if(index.eq.0) then
+            write(*,*) '*ERROR in preinitialnet:'
+            write(*,*) '       node',node,
+     &         ' is an inlet or outlet, yet'
+            write(*,*) '       no initial pressure was assigned'
+            ierror=1
+            cycle
+         endif
+!
+         call networkneighbor(nelem,node,nelemnei,nodenei,ibranch,
+     &        iponoel,inoel,ipkon,kon)
+         if(nodenei.eq.0) then
+            write(*,*) '*ERROR in preinitialnet:'
+            write(*,*) '       node',node,
+     &         ' is an inlet or outlet, yet'
+            write(*,*) '       no initial pressure was assigned'
+            ierror=1
+            cycle
+         endif
+!
+         index=inoel(2,index)
+         if(index.ne.0) then
+            write(*,*) '*ERROR in preinitialnet:'
+            write(*,*) '       node',node,
+     &         ' belongs to more than 2 network elements, yet'
+            write(*,*) '       no initial pressure was assigned'
+            ierror=1
+         endif
+      enddo
+      if(ierror.eq.1) call exit(201)
+!     
+!     for directional elements: small mass flow if none specified              
+!
+      do i=1,nflow
+         nelem=ieg(i)
+         indexe=ipkon(nelem)
+!     
+         nodem=kon(indexe+2)
+!     
+         if(lakon(nelem)(2:3).eq.'OR') then
+!
+!           orifice
+!
+            if(v(1,nodem).eq.0.d0) v(1,nodem)=1.d-30
+         elseif(lakon(nelem)(2:4).eq.'LAB') then
+!
+!           stepped labyrinth
+!
+            if((lakon(nelem)(5:6).eq.'SP').or.
+     &         (lakon(nelem)(6:7).eq.'SP')) then
+               if(v(1,nodem).eq.0.d0) v(1,nodem)=1.d-30
+            endif
+         elseif(lakon(nelem)(2:3).eq.'RE') then
+!
+!           enlargement, contraction, wall orifice, entrance or exit
+!
+            if((lakon(nelem)(4:5).eq.'EL').or.
+     &         (lakon(nelem)(4:5).eq.'CO').or.
+     &         (lakon(nelem)(4:7).eq.'WAOR').or.
+     &         (lakon(nelem)(4:5).eq.'EN').or.
+     &         (lakon(nelem)(4:5).eq.'EX')) then
+               if(v(1,nodem).eq.0.d0) v(1,nodem)=1.d-30
+            endif
+         elseif(lakon(nelem)(4:5).eq.'BR') then
+!
+!           joint or split
+!
+            if((lakon(nelem)(6:6).eq.'J').or.
+     &         (lakon(nelem)(6:6).eq.'S')) then
+               if(v(1,nodem).eq.0.d0) v(1,nodem)=1.d-30
+            endif
+         elseif(lakon(nelem)(2:7).eq.'CROSPL') then
+!
+!           cross split
+!
+            if(v(1,nodem).eq.0.d0) v(1,nodem)=1.d-30
+         elseif(lakon(nelem)(2:3).eq.'MR') then
+!
+!           Moehring
+!
+            if(v(1,nodem).eq.0.d0) v(1,nodem)=1.d-30
+         endif
+      enddo
 !
       do
          ichange=0
@@ -74,18 +181,7 @@ c      enddo
             if(((v(2,node1).ne.0.d0).and.(v(2,node2).eq.0.d0)).or.
      &         ((v(2,node1).eq.0.d0).and.(v(2,node2).ne.0.d0))) then
 !
-               if(lakon(nelem)(2:3).eq.'OR') then
-!
-!               directional elements: small slope               
-!
-                  if(v(2,node1).eq.0.d0) then
-                     v(2,node1)=v(2,node2)*1.01d0
-                  else
-                     v(2,node2)=v(2,node1)*0.99d0
-                  endif
-                  ichange=1
-                  if(v(1,nodem).eq.0.d0) v(1,nodem)=1.d-30
-               elseif(lakon(nelem)(2:3).eq.'VO') then
+               if(lakon(nelem)(2:3).eq.'VO') then
 !
 !                 vortex: pressure ratio can be determined
 !                 from geometry
@@ -184,19 +280,155 @@ c      enddo
 !                 mass flow is given (either size or just the
 !                 direction): small slope
 !
+                  ierror=0
                   if(v(1,nodem).gt.0.d0) then
                      if(v(2,node1).eq.0.d0) then
                         v(2,node1)=v(2,node2)*1.01d0
+                        call networkneighbor(nelem,node1,nelemnei,
+     &                       nodenei,ibranch,iponoel,inoel,ipkon,kon)
+                        if(v(2,nodenei).le.v(2,node1)) ierror=1
                      else
                         v(2,node2)=v(2,node1)*0.99d0
+                        call networkneighbor(nelem,node2,nelemnei,
+     &                       nodenei,ibranch,iponoel,inoel,ipkon,kon)
+                        if(v(2,nodenei).ge.v(2,node2)) ierror=2
                      endif
                   else
                      if(v(2,node1).eq.0.d0) then
                         v(2,node1)=v(2,node2)*0.99d0
+                        call networkneighbor(nelem,node1,nelemnei,
+     &                       nodenei,ibranch,iponoel,inoel,ipkon,kon)
+                        if(v(2,nodenei).ge.v(2,node1)) ierror=1
                      else
                         v(2,node2)=v(2,node1)*1.01d0
+                        call networkneighbor(nelem,node2,nelemnei,
+     &                       nodenei,ibranch,iponoel,inoel,ipkon,kon)
+                        if(v(2,nodenei).le.v(2,node2)) ierror=2
                      endif
                   endif
+!
+!                 if a discontinuity is detected in the pressure
+!                 the complete branch (i.e. the elements between
+!                 branch points and/or inlets and/or outlets) is
+!                 reanalyzed
+!                
+                  if(ierror.ne.0) then
+!
+!                    looking in the direction of node 1 until a
+!                    branch point/inlet/outlet
+!                     
+                     node=node1
+                     do
+                        call networkneighbor(nelem,node,nelemnei,
+     &                       nodenei,ibranch,iponoel,inoel,ipkon,kon)
+                        if((ibranch.eq.1).or.(nodenei.eq.0)) exit
+                        node=nodenei
+                        nelem=nelemnei
+                     enddo
+!
+!                    noderef is branch point/inlet/outlet
+!                    the adjacent element into the branch is nelemref
+!
+                     noderef=node
+                     nelemref=nelem
+!
+                     indexe=ipkon(nelemref)
+                     if(kon(indexe+1).eq.noderef) then
+                        node=kon(indexe+3)
+                     else
+                        node=kon(indexe+1)
+                     endif
+!
+!                    looking in the other direction until 
+!                    branch point/inlet/outlet
+!                    counting the non-vortex elements
+!                    storing the pressure ratio over the vortices
+!
+                     ratio=1.d0
+                     numel=0
+!
+                     if(lakon(nelem)(2:3).eq.'VO') then
+                        ratio=ratio*v(2,node)/v(2,noderef)
+                     else
+                        numel=numel+1
+                     endif
+!
+                     ierr=0
+                     do
+                        call networkneighbor(nelem,node,nelemnei,
+     &                       nodenei,ibranch,iponoel,inoel,ipkon,kon)
+                        if((ibranch.eq.1).or.(nodenei.eq.0)) exit
+                        if(lakon(nelemnei)(2:3).eq.'VO') then
+                           if((v(2,node).eq.0.d0).or.
+     &                        (v(2,nodenei).eq.0.d0)) then
+                              ierr=1
+                              exit
+                           endif
+                           ratio=ratio*v(2,nodenei)/v(2,node)
+                        else
+                           numel=numel+1
+                        endif
+                        node=nodenei
+                        nelem=nelemnei
+                     enddo
+!
+                     if(ierr.eq.0) then
+!
+!                       determining the required pressure ratio over the
+!                       non-vortex elements from the pressure at the ends of
+!                       the branch and the pressure ratio over the vortices
+!
+                        ratio=(v(2,node)/(v(2,noderef)*ratio))
+     &                      **(1.d0/numel)
+!
+!                       going through the branch again; determining the
+!                       initial values
+!
+                        indexe=ipkon(nelemref)
+                        if(kon(indexe+1).eq.noderef) then
+                           node=kon(indexe+3)
+                        else
+                           node=kon(indexe+1)
+                        endif
+!
+                        nelem=nelemref
+                        pref=v(2,node)
+                        if(lakon(nelem)(2:3).ne.'VO') then
+                           v(2,node)=v(2,noderef)*ratio
+                        endif
+!
+                        do
+                           call networkneighbor(nelem,node,nelemnei,
+     &                          nodenei,ibranch,iponoel,inoel,ipkon,kon)
+                           if((ibranch.eq.1).or.(nodenei.eq.0)) exit
+                           if(lakon(nelemnei)(2:3).eq.'VO') then
+                              prefnew=v(2,nodenei)
+                              v(2,nodenei)=v(2,node)*v(2,nodenei)/pref
+                              pref=prefnew
+                           else
+                              pref=v(2,nodenei)
+                              v(2,nodenei)=v(2,node)*ratio
+c                              write(*,*) nodenei,v(2,nodenei)
+                           endif
+                           node=nodenei
+                           nelem=nelemnei
+                        enddo
+                     else
+!
+!                       the pressure in the nodes adjacent to at least one
+!                       vortex element were not available
+!
+!                       reset values; no change;
+!
+                        if(ierror.eq.1) then
+                           v(2,node1)=0.d0
+                        else
+                           v(2,node2)=0.d0
+                        endif
+                        cycle
+                     endif
+                  endif
+!
                   ichange=1
                endif
             endif
@@ -204,7 +436,7 @@ c      enddo
 !
 !        propagation of the mass flow through the network
 !
-         do i=1,nflow
+         loop1: do i=1,nflow
             nelem=ieg(i)
             indexe=ipkon(nelem)
             nodem=kon(indexe+2)
@@ -241,7 +473,11 @@ c      enddo
 !                    propagate initial mass flow
 !
                         if(dabs(xflow).gt.1.d-30) then
-                           v(1,nodem)=xflow
+                           if(kon(ipkon(neighbor)+1).eq.node1) then
+                              v(1,nodem)=-xflow
+                           else
+                              v(1,nodem)=xflow
+                           endif
                            ichange=1
                            cycle
                         endif
@@ -250,11 +486,44 @@ c      enddo
 !                    propagate only the sign of the mass flow
 !
                         if(dabs(xflow).gt.0.d0) then
-                           v(1,nodem)=xflow
+                           if(kon(ipkon(neighbor)+1).eq.node1) then
+                              v(1,nodem)=-xflow
+                           else
+                              v(1,nodem)=xflow
+                           endif
                            ichange=1
                            cycle
                         endif
                      endif
+!
+!                    if more than 2 elements meet: check whether
+!                    the flux in all but the element at stake is
+!                    known. If so, apply the mass balance
+!
+                     fluxtot=0.d0
+                     do
+                        if(inoel(1,index).ne.nelem) then
+                           iel=inoel(1,index)
+                           nodemnei=kon(ipkon(iel)+2)
+                           if(dabs(v(1,nodemnei)).le.1.d-30) exit
+!
+!                          convention: inflow = positive
+!
+                           if(kon(ipkon(iel)+1).eq.node1) then
+                              fluxtot=fluxtot-v(1,nodemnei)
+                           else
+                              fluxtot=fluxtot+v(1,nodemnei)
+                           endif
+                        endif
+                        if(inoel(2,index).eq.0) then
+                           v(1,nodem)=fluxtot
+                           ichange=1
+                           cycle loop1
+                        else
+                           index=inoel(2,index)
+                        endif
+                     enddo
+!
                   endif
                endif
 !
@@ -284,7 +553,11 @@ c      enddo
 !                    propagate initial mass flow
 !
                         if(dabs(xflow).gt.1.d-30) then
-                           v(1,nodem)=xflow
+                           if(kon(ipkon(neighbor)+3).eq.node2) then
+                              v(1,nodem)=-xflow
+                           else
+                              v(1,nodem)=xflow
+                           endif
                            ichange=1
                            cycle
                         endif
@@ -293,15 +566,48 @@ c      enddo
 !                    propagate only the sign of the mass flow
 !
                         if(dabs(xflow).gt.0.d0) then
-                           v(1,nodem)=xflow
+                           if(kon(ipkon(neighbor)+3).eq.node2) then
+                              v(1,nodem)=-xflow
+                           else
+                              v(1,nodem)=xflow
+                           endif
                            ichange=1
                            cycle
                         endif
                      endif
+!
+!                    if more than 2 elements meet: check whether
+!                    the flux in all but the element at stake is
+!                    known. If so, apply the mass balance
+!
+                     fluxtot=0.d0
+                     do
+                        if(inoel(1,index).ne.nelem) then
+                           iel=inoel(1,index)
+                           nodemnei=kon(ipkon(iel)+2)
+                           if(dabs(v(1,nodemnei)).le.1.d-30) exit
+!
+!                          convention: outflow = positive
+!
+                           if(kon(ipkon(iel)+3).eq.node2) then
+                              fluxtot=fluxtot-v(1,nodemnei)
+                           else
+                              fluxtot=fluxtot+v(1,nodemnei)
+                           endif
+                        endif
+                        if(inoel(2,index).eq.0) then
+                           v(1,nodem)=fluxtot
+                           ichange=1
+                           cycle loop1
+                        else
+                           index=inoel(2,index)
+                        endif
+                     enddo
+!
                   endif
                endif
             endif
-         enddo
+         enddo loop1
 !
 !        propagation of the temperature
 !

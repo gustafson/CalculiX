@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,140 +16,143 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
+      subroutine attachline(pneigh,pnode,nterms,xil,etl,xn)
 !
-!     finds the intersection of a straight line through the node
-!     with coordinates in pnode and direction vector xn with
-!     the face containing 
-!     "nterms" nodes with coordinates in field "pneigh" (nterms < 9).
-!     cave: the coordinates are stored in pneigh(1..3,*)
-!
-      subroutine attachline(pneigh,pnode,nterms,ratio,dist,xil,etl,xn)
-!
-!     Author: Saskia Sitzmann
+!     returns the local coordinates in a face described by
+!     the nodal coordinates in pneigh(1..3,*) of the intersection
+!     with a straight line through point pnode(1..3) and
+!     direction xn(1..3)
 !
       implicit none
 !
-      integer nterms,i,j,imin,jmin,idepth,k
+      integer nterms,i,j,k,imin,jmin,im,jm
 !
-      real*8 ratio(8),pneigh(3,8),pnode(3),dummy,
-     &  a(-1:1,-1:1),xi(-1:1,-1:1),et(-1:1,-1:1),p(3),aold(-1:1,-1:1),
-     &  xiold(-1:1,-1:1),etold(-1:1,-1:1),distmin,xiopt,etopt,
-     &  dist,xil,etl,xn(3),d(5),th,coeff
+      real*8 pneigh(3,9),pnode(3),xi(-1:1,-1:1),
+     &  et(-1:1,-1:1),distmin,d1,dist,xil,etl,xn(3)
 !
-      idepth=3
-      d=(/1.d-2,1.d-4,1.d-6,1.d-9,1.d-14/)
-      th=1.d-21
-!     
-      do k=1,idepth   
-!     
+      intent(in) pneigh,nterms,xn,pnode
+!
+      intent(inout) xil,etl
+!
+      d1=1.d0
+!
+      xi(0,0)=0.d0
+      et(0,0)=0.d0
+      call distattachline(xi(0,0),et(0,0),pneigh,pnode,dist,
+     &     nterms,xn)
+      distmin=dist
+      imin=0
+      jmin=0
+!
+      do k=1,6
+!
 !     initialisation
+!
+         d1=d1/10.d0
 !     
-         if(k.eq.1)then
-            xiopt=0.0
-            etopt=0.0
-         else
-            xiopt=xi(0,0)
-            etopt=et(0,0)
-         endif
          do i=-1,1
             do j=-1,1
-               xi(i,j)=xiopt+i*d(k)
-               et(i,j)=etopt+j*d(k)
-               xi(i,j)=min(xi(i,j),1.d0)
-               xi(i,j)=max(xi(i,j),-1.d0)
-               et(i,j)=min(et(i,j),1.d0)
-               et(i,j)=max(et(i,j),-1.d0)
-               call distattachline(xi(i,j),et(i,j),pneigh,pnode,a(i,j),
-     &              p,ratio,nterms,xn)
+               if((i.eq.0).and.(j.eq.0)) cycle
+!
+               xi(i,j)=xi(0,0)+i*d1
+               et(i,j)=et(0,0)+j*d1
+!
+!              check whether inside the (-1,1)x(-1,1) domain
+!
+               if((xi(i,j).le.1.d0).and.
+     &              (xi(i,j).ge.-1.d0).and.
+     &              (et(i,j).le.1.d0).and.
+     &              (et(i,j).ge.-1.d0)) then
+                  call distattachline(xi(i,j),et(i,j),pneigh,pnode,
+     &                 dist,nterms,xn)
+!     
+!                 checking for smallest initial distance
+!     
+                  if(dist.lt.distmin) then
+                     distmin=dist
+                     imin=i
+                     jmin=j
+                  endif
+               endif
+!
             enddo
          enddo
 !     
 !     minimizing the distance from the face to the node
 !     
          do
-            distmin=a(0,0)
-            imin=0
-            jmin=0
-            do i=-1,1
-               do j=-1,1
-                  if(a(i,j).lt.distmin) then
-                     distmin=a(i,j)
-                     imin=i
-                     jmin=j
-                  endif
-               enddo
-            enddo
 !     
 !     exit if minimum found
 !     
             if((imin.eq.0).and.(jmin.eq.0)) exit
+!
+!           new center of 3x3 matrix
+!
+            xi(0,0)=xi(imin,jmin)
+            et(0,0)=et(imin,jmin)
+!
+            im=imin
+            jm=jmin
+!
+            imin=0
+            jmin=0
 !     
             do i=-1,1
                do j=-1,1
-                  aold(i,j)=a(i,j)
-                  xiold(i,j)=xi(i,j)
-                  etold(i,j)=et(i,j)
+                  if((i+im.lt.-1).or.(i+im.gt.1).or.
+     &                 (j+jm.lt.-1).or.(j+jm.gt.1)) then
+!
+                     xi(i,j)=xi(0,0)+i*d1
+                     et(i,j)=et(0,0)+j*d1
+!
+!              check whether inside the (-1,1)x(-1,1) domain
+!
+                     if((xi(i,j).le.1.d0).and.
+     &                  (xi(i,j).ge.-1.d0).and.
+     &                  (et(i,j).le.1.d0).and.
+     &                  (et(i,j).ge.-1.d0)) then
+                        call distattachline(xi(i,j),et(i,j),pneigh,
+     &                       pnode,dist,nterms,xn)
+!
+!                       check for new minimum
+!
+                        if(dist.lt.distmin) then
+                           distmin=dist
+                           imin=i
+                           jmin=j
+                        endif
+                     endif
+!
+                  endif
                enddo
             enddo
-!     
-            do i=-1,1
-               do j=-1,1
-                  if((i+imin.ge.-1).and.(i+imin.le.1).and.
-     &                 (j+jmin.ge.-1).and.(j+jmin.le.1)) then
-                     a(i,j)=aold(i+imin,j+jmin)
-                     xi(i,j)=xiold(i+imin,j+jmin)
-                     et(i,j)=etold(i+imin,j+jmin)
-                  else
-                     xi(i,j)=xi(i,j)+imin*d(k)
-                     et(i,j)=et(i,j)+jmin*d(k)
-!     
-                     xi(i,j)=min(xi(i,j),1.d0)
-                     xi(i,j)=max(xi(i,j),-1.d0)
-                     et(i,j)=min(et(i,j),1.d0)
-                     et(i,j)=max(et(i,j),-1.d0)
-!     
-                     call distattachline(xi(i,j),et(i,j),pneigh,
-     &          pnode,a(i,j),p,ratio,nterms,xn)
-            endif
-          enddo
-        enddo
-       enddo
-       if(distmin.lt.th) exit
+         enddo
       enddo
-
-      dist=a(0,0)
 !
       if(nterms.eq.3) then
-         xil=(xi(0,0)+1.d0)/2.d0
-         etl=(et(0,0)+1.d0)/2.d0
-         if(xil+etl.gt.1.d0) then
-            dummy=xil
-            xil=1.d0-etl
-            etl=1.d0-dummy
+         if(xi(0,0)+et(0,0).le.0.d0) then
+            xil=(xi(0,0)+1.d0)/2.d0
+            etl=(et(0,0)+1.d0)/2.d0
+         else
+            xil=(1.d0-et(0,0))/2.d0
+            etl=(1.d0-xi(0,0))/2.d0
          endif
       elseif(nterms.eq.4) then
          xil=xi(0,0)
          etl=et(0,0)
       elseif(nterms.eq.6) then
-         xil=(xi(0,0)+1.d0)/2.d0
-         etl=(et(0,0)+1.d0)/2.d0
-         if(xil+etl.gt.1.d0) then
-            dummy=xil
-            xil=1.d0-etl
-            etl=1.d0-dummy
+         if(xi(0,0)+et(0,0).le.0.d0) then
+            xil=(xi(0,0)+1.d0)/2.d0
+            etl=(et(0,0)+1.d0)/2.d0
+         else
+            xil=(1.d0-et(0,0))/2.d0
+            etl=(1.d0-xi(0,0))/2.d0
          endif
       elseif(nterms.eq.8) then
          xil=xi(0,0)
          etl=et(0,0)
       endif
-!      
-      call distattachline(xi(0,0),et(0,0),pneigh,
-     &     pnode,a(0,0),p,ratio,nterms,xn)
-      coeff= (p(1)-pnode(1))*xn(1)+
-     &     (p(2)-pnode(2))*xn(2)+
-     &     (p(3)-pnode(3))*xn(3)
 !     
       return
       end
-      
       

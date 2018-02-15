@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,9 +34,12 @@
      &  namtot_,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipos,
      &  ipoinpc(0:*)
 !
-      real*8 amta(2,*),x,y
+      real*8 amta(2,*),x,y,shiftx,shifty
 !
       user=.false.
+!
+      shiftx=0.d0
+      shifty=0.d0
 !
       if((istep.gt.0).and.(irstrt.ge.0)) then
          write(*,*) '*ERROR reading *AMPLITUDE: *AMPLITUDE should be'
@@ -73,6 +76,14 @@
             cycle
          elseif(textpart(i)(1:14).eq.'VALUE=RELATIVE') then
             cycle
+         elseif(textpart(i)(1:6).eq.'SHIFTX') then
+               read(textpart(i)(8:27),'(f20.0)',iostat=istat) shiftx
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*AMPLITUDE%")
+         elseif(textpart(i)(1:6).eq.'SHIFTY') then
+               read(textpart(i)(8:27),'(f20.0)',iostat=istat) shifty
+               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*AMPLITUDE%")
          else
             write(*,*) 
      &        '*WARNING reading *AMPLITUDE: parameter not recognized:'
@@ -117,8 +128,8 @@
                read(textpart(2*i),'(f20.0)',iostat=istat) y
                if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
      &"*AMPLITUDE%")
-               amta(1,namtot)=x
-               amta(2,namtot)=y
+               amta(1,namtot)=x+shiftx
+               amta(2,namtot)=y+shifty
                namta(2,nam)=namtot
             else
                exit

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -60,7 +60,8 @@
          do ii=is,ie
             irotnode(ii)=node
             if(ii.gt.3) then
-               idof=8*(node-1)+ii+1
+c               idof=8*(node-1)+ii+1
+               idof=8*(node-1)+ii
                call nident(ikmpc,idof,nmpc,id)
                if(id.gt.0) then
                   if(ikmpc(id).eq.idof) then
@@ -96,14 +97,15 @@
                   i=ii
                endif
             else
-               if(ii.le.3) then
+c               if(ii.le.3) then
+               if(ii.le.6) then
                   i=ii
-               elseif(ii.eq.4) then
-                  i=5
-               elseif(ii.eq.5) then
-                  i=6
-               elseif(ii.eq.6) then
-                  i=7
+c               elseif(ii.eq.4) then
+c                  i=5
+c               elseif(ii.eq.5) then
+c                  i=6
+c               elseif(ii.eq.6) then
+c                  i=7
                elseif(ii.eq.8) then
                   i=4
                elseif(ii.eq.11) then
@@ -163,14 +165,15 @@
 !        coordinates
 !
             call transformatrix(trab(1,itr),co(1,node),a)
-            if(ii.le.3) then
+c            if(ii.le.3) then
+            if(ii.le.6) then
                i=ii
-            elseif(ii.eq.4) then
-               i=5
-            elseif(ii.eq.5) then
-               i=6
-            elseif(ii.eq.6) then
-               i=7
+c            elseif(ii.eq.4) then
+c               i=5
+c            elseif(ii.eq.5) then
+c               i=6
+c            elseif(ii.eq.6) then
+c               i=7
             elseif(ii.eq.8) then
                i=4
             elseif(ii.eq.11) then
@@ -294,7 +297,7 @@ c               if(dabs(a(number,i)).lt.1.d-5) cycle
                coefmpc(mpcfree)=a(number,i)
                mpcfree=nodempc(3,mpcfree)
                if(mpcfree.eq.0) then
-                  write(*,*) '*ERROR in bounadd: increase nmpc_'
+                  write(*,*) '*ERROR in bounadd: increase memmpc_'
                   call exit(201)
                endif
             enddo

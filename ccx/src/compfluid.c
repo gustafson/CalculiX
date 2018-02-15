@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                     */
+/*              Copyright (C) 1998-2017 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -41,15 +41,15 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
     ITG *nfreestream, ITG *isolidsurf, ITG *neighsolidsurf,
     ITG *nsolidsurf, ITG *nshcon, double *shcon,
     ITG *nrhcon, double *rhcon, double **voldp, ITG *ntmat_,ITG *nodeboun, 
-    ITG *ndirboun, ITG *nboun, ITG **ipompcp,ITG **nodempcp, ITG *nmpc,
-    ITG **ikmpcp, ITG **ilmpcp, ITG *ithermal, ITG *ikboun, ITG *ilboun,
+    ITG *ndirboun, ITG *nboun, ITG *ipompc,ITG *nodempc, ITG *nmpc,
+    ITG *ikmpc, ITG *ilmpc, ITG *ithermal, ITG *ikboun, ITG *ilboun,
     ITG *iturbulent, ITG *isolver, ITG *iexpl, double *ttime,
     double *time, double *dtime, ITG *nodeforc,ITG *ndirforc,double *xforc,
     ITG *nforc, ITG *nelemload, char *sideload, double *xload,ITG *nload,
     double *xbody,ITG *ipobody,ITG *nbody, ITG *ielmatf, char *matname,
     ITG *mi, ITG *ncmat_, double *physcon, ITG *istep, ITG *iinc,
     ITG *ibody, double *xloadold, double *xboun,
-    double **coefmpcp, ITG *nmethod, double *xforcold, double *xforcact,
+    double *coefmpc, ITG *nmethod, double *xforcold, double *xforcact,
     ITG *iamforc,ITG *iamload, double *xbodyold, double *xbodyact,
     double *t1old, double *t1, double *t1act, ITG *iamt1, double *amta,
     ITG *namta, ITG *nam, double *ampli, double *xbounold, double *xbounact,
@@ -58,10 +58,10 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
     ITG *nface, double *cocon, ITG *ncocon, double *xloadact, double *tper,
     ITG *jmax, ITG *jout, char *set, ITG *nset, ITG *istartset,
     ITG *iendset, ITG *ialset, char *prset, char *prlab, ITG *nprint,
-    double *trab, ITG *inotr, ITG *ntrans, char *filab, char **labmpcp, 
+    double *trab, ITG *inotr, ITG *ntrans, char *filab, char *labmpc, 
     double *sti, ITG *norien, double *orab, char *jobnamef,char *tieset,
     ITG *ntie, ITG *mcs, ITG *ics, double *cs, ITG *nkon, ITG *mpcfree,
-    ITG *memmpc_,double **fmpcp,ITG *nef,ITG **inomatp,double *qfx,
+    ITG *memmpc_,double *fmpc,ITG *nef,ITG **inomatp,double *qfx,
     ITG *neifa,ITG *neiel,ITG *ielfa,ITG *ifaext,double *vfa,double *vel,
     ITG *ipnei,ITG *nflnei,ITG *nfaext,char *typeboun,ITG *neij,
     double *tincf,ITG *nactdoh,ITG *nactdohinv,ITG *ielorienf,char*jobnamec,
@@ -71,28 +71,29 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 
     /* main computational fluid dynamics routine */
   
-    char cflag[1],*labmpc=NULL,*lakonf=NULL,*sideface=NULL,fncvg[132]="";
+    char cflag[1],*lakonf=NULL,*sideface=NULL,fncvg[132]="";
 
   ITG *ipointer=NULL,*mast1=NULL,*irow=NULL,*icol=NULL,*jq=NULL,
       nzs=20000000,kode,compressible,*ifabou=NULL,*ja=NULL,
-      *nodempc=NULL,*ipompc=NULL,*ikmpc=NULL,*ilmpc=NULL,nfabou,im,
+      nfabou,im,
       *ipkonf=NULL,*nelemface=NULL,last=0,icyclic,*iau6=NULL,
       *inomat=NULL,ithermalref,*integerglob=NULL,iincf,
       iconvergence=0,i,*inum=NULL,iitf,ifreefa,*neielcp=NULL,
       *iponofa=NULL,*inofa=NULL,is,ie,*ia=NULL,*ielpropf=NULL,
       icent=0,isti=0,iqfx=0,nfield,ndim,iorienglob,force=0,icfd=1,
-      imach=0,ikappa=0,iit,jit,iatleastonepressurebc,iturb=0;
+      imach=0,ikappa=0,iit,jit,iatleastonepressurebc,iturb=0,
+      *inoel=NULL,*iponoel=NULL;
 
   ITG nelt,isym,itol,itmax,iunit,lrgw,*igwk=NULL,ligw,ierr,*iwork=NULL,iter,
       nsave,lenw,leniw;
 
-  double *coefmpc=NULL,*fmpc=NULL,*umfa=NULL,reltime,*doubleglob=NULL,
+  double *umfa=NULL,reltime,*doubleglob=NULL,
       *co=NULL,*vold=NULL,*coel=NULL,*cosa=NULL,*gradvel=NULL,*gradvfa=NULL,
       *xxn=NULL,*xxi=NULL,*xle=NULL,*xlen=NULL,*xlet=NULL,timef,dtimef,
       *cofa=NULL,*area=NULL,*xrlfa=NULL,reltimef,ttimef,*hcfa=NULL,*cvel=NULL,
       *au=NULL,*ad=NULL,*b=NULL,*volume=NULL,*body=NULL,*dy=NULL,
       *advfa=NULL,*ap=NULL,*bp=NULL,*xxj=NULL,*gradkel=NULL,*gradoel=NULL,
-      *v=NULL,*velo=NULL,*veloo=NULL,*gammat=NULL,*cosb=NULL,dmin,tincfguess,
+      *v=NULL,*velo=NULL,*veloo=NULL,*cosb=NULL,dmin,tincfguess,
       *hel=NULL,*hfa=NULL,*auv=NULL,*adv=NULL,*bv=NULL,*sel=NULL,*gamma=NULL,
       *gradtfa=NULL,*gradtel=NULL,*umel=NULL,*cvfa=NULL,*gradpel=NULL,
       *eei=NULL,*ener=NULL,*thicke=NULL,*eme=NULL,c[9],*gradkfa=NULL,
@@ -101,14 +102,13 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
       *xmach=NULL,*xkappa=NULL,urelax,*flux=NULL,velnormo[5],velnorm[5],
       relnormt,relnormv,relnormp,relnormmax=1.e30,*temp=NULL,*auv6=NULL,
       *adv6=NULL,*auv3=NULL,*bv3=NULL,*vela=NULL,*velaa=NULL,
-      *gradofa=NULL;
+      *gradofa=NULL,betam=0.1,*gradpfa=NULL;
 
-  double tol,*rgwk=NULL,err,*sb=NULL,*sx=NULL,*rwork=NULL;
+  double tol,*rgwk=NULL,err,*sb=NULL,*sx=NULL,*rwork=NULL,*rf=NULL;
 
   FILE *f1;
 
-  nodempc=*nodempcp;ipompc=*ipompcp;ikmpc=*ikmpcp;ilmpc=*ilmpcp;
-  coefmpc=*coefmpcp;labmpc=*labmpcp;fmpc=*fmpcp;co=*cop;
+  co=*cop;
   ipkonf=*ipkonfp;lakonf=*lakonfp;
   nelemface=*nelemfacep;sideface=*sidefacep;
   vold=*voldp;inomat=*inomatp;
@@ -259,15 +259,16 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
   NNEW(cofa,double,3**nface);
   NNEW(area,double,*nface);
   NNEW(xrlfa,double,3**nface);
+  NNEW(rf,double,3**nface);
   if(*iturbulent>0) NNEW(dy,double,*nsolidsurf);
 
   FORTRAN(initialcfd,(nef,ipkonf,konf,lakonf,co,coel,cofa,nface,
 	  ielfa,area,ipnei,neiel,xxn,xxi,xle,xlen,xlet,xrlfa,cosa,
 	  volume,neifa,xxj,cosb,&dmin,ifatie,cs,tieset,&icyclic,c,
 	  neij,physcon,isolidsurf,nsolidsurf,dy,xxni,xxnj,xxicn,
-	  nflnei,iturbulent));
+	  nflnei,iturbulent,rf));
 
-  SFREE(xxj);
+//  SFREE(xxj);
 
   /* storing pointers to the boundary conditions in ielfa */
 
@@ -300,11 +301,6 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
   if(*ithermal==0){
       
       /* athermal incompressible calculations */
-
-      /* calculating the density at the element centers */
-      
-      FORTRAN(calcrhoel,(nef,vel,rhcon,nrhcon,ielmatf,ntmat_,
-			 ithermal,mi));
 
       /* calculating the dynamic viscosity at the element centers */
       
@@ -342,7 +338,8 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
              nodeboun,ndirboun,nodeforc,ndirforc,istep,iinc,
 	     co,v,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
 	     ntrans,trab,inotr,vold,integerglob,doubleglob,tieset,istartset,
-             iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc));
+             iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
+             ipobody,iponoel,inoel));
 
       /* body forces (gravity, centrifugal and Coriolis forces */
 
@@ -355,48 +352,37 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
   /* extrapolating the velocity from the elements centers to the face
      centers, thereby taking the boundary conditions into account */
 
-  FORTRAN(extrapolate_vel,(nface,ielfa,xrlfa,vel,vfa,
-	  ifabou,xbounact,ipnei,nef,&icyclic,c,ifatie,xxn));
+  NNEW(gradvel,double,9**nef);
+  NNEW(gradvfa,double,9**nface);
 
-  /* applying MPC's to the faces */
-
-  if(*nmpc>0){
-      is=1;ie=3;
-      FORTRAN(applympc,(nface,ielfa,&is,&ie,ifabou,ipompc,vfa,coefmpc,
-			nodempc,ipnei,neifa,labmpc,xbounact,nactdoh,
-			ifaext,nfaext));
-			}
+  FORTRAN(extrapol_vel,(nface,ielfa,xrlfa,vel,vfa,
+       ifabou,xbounact,ipnei,nef,&icyclic,c,ifatie,xxn,gradvel,
+       gradvfa,neifa,rf,area,volume,xle,xxi,xxj,xlet,
+       coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh));
 
   /* extrapolation of the pressure at the element centers
      to the face centers */
-  
-  FORTRAN(extrapolate_pel,(nface,ielfa,xrlfa,vel,vfa,ifabou,
-			   xbounact,nef));
 
-  /* applying MPC's to the faces */
+  NNEW(gradpel,double,3**nef);
+  NNEW(gradpfa,double,3**nface);
 
-  if(*nmpc>0){
-      is=4;ie=4;
-      FORTRAN(applympc,(nface,ielfa,&is,&ie,ifabou,ipompc,vfa,coefmpc,
-			nodempc,ipnei,neifa,labmpc,xbounact,nactdoh,
-			ifaext,nfaext));
-  }
+  FORTRAN(extrapol_pel,(nface,ielfa,xrlfa,vel,vfa,
+       ifabou,xbounact,nef,gradpel,gradpfa,neifa,rf,area,volume,
+       xle,xxi,&icyclic,xxn,ipnei,ifatie,
+       coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh));
 
   /* extrapolation of the temperature at the element centers
      to the face centers */
 
   if(*ithermal>0){
-      FORTRAN(extrapolate_tel,(nface,ielfa,xrlfa,vel,vfa,
-			       ifabou,xbounact,ipnei,nef));
 
-      /* applying MPC's to the faces */
-      
-      if(*nmpc>0){
-	  is=0;ie=0;
-	  FORTRAN(applympc,(nface,ielfa,&is,&ie,ifabou,ipompc,vfa,coefmpc,
-			    nodempc,ipnei,neifa,labmpc,xbounact,nactdoh,
-			    ifaext,nfaext));
-      }
+      NNEW(gradtel,double,3**nef);
+      NNEW(gradtfa,double,3**nface);
+
+      FORTRAN(extrapol_tel,(nface,ielfa,xrlfa,vel,vfa,
+       ifabou,xbounact,nef,gradtel,gradtfa,neifa,rf,area,volume,
+       xle,xxi,&icyclic,xxn,ipnei,ifatie,xload,xlet,xxj,
+       coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh));
 	  
       /* calculating the heat conduction at the face centers */
 	  
@@ -419,8 +405,15 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 				mi,ielfa,cvfa,physcon));
       }
   }
+
+  NNEW(flux,double,6**nef);
       
   if(compressible!=1){
+
+      /* calculating the density at the element centers */
+      
+      FORTRAN(calcrhoel,(nef,vel,rhcon,nrhcon,ielmatf,ntmat_,
+			 ithermal,mi));
       
       /* calculating the density at the face centers */
       
@@ -428,22 +421,22 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 			 ithermal,mi,ielfa));
 
   }else{
-      
-      /* calculating the density at the face centers */
-      
-      FORTRAN(calcrhofacomp,(nface,vfa,shcon,ielmatf,ntmat_,
-			     mi,ielfa));
 
       /* calculating the density at the element centers */
       
       FORTRAN(calcrhoelcomp,(nef,vel,shcon,ielmatf,ntmat_,
 			     mi));
+      
+      /* calculating the density at the face centers */
+      
+      FORTRAN(calcrhofacomp,(nface,vfa,shcon,ielmatf,ntmat_,
+	      mi,ielfa,ipnei,vel,nef,flux,gradpel,gradtel,xxj,
+	      &betam,xlet));
 
   }
   
   /* calculating the initial mass flux */
 
-  NNEW(flux,double,6**nef);
   FORTRAN(calcinitialflux,(area,vfa,xxn,ipnei,nef,neifa,lakonf,flux));
 
   /* calculating the dynamic viscosity at the face centers */
@@ -456,14 +449,25 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 
   if(*iturbulent>0){
 
-      FORTRAN(extrapolate_kel,(nface,ielfa,xrlfa,vel,vfa,
-			       ifabou,xbounact,ipnei,nef,
-			       physcon,umfa));
+      NNEW(gradkel,double,3**nef);
+      NNEW(gradkfa,double,3**nface);
+      NNEW(gradoel,double,3**nef);
+      NNEW(gradofa,double,3**nface);
 
       DMEMSET(vel,7**nef,8**nef,1.);
-      FORTRAN(extrapolate_oel,(nface,ielfa,xrlfa,vel,vfa,
-			       ifabou,xbounact,ipnei,nef,
-			       physcon,umfa,dy));
+
+      FORTRAN(extrapol_kel,(nface,ielfa,xrlfa,vel,vfa,
+       ifabou,xbounact,nef,gradkel,gradkfa,neifa,rf,area,volume,
+       xle,xxi,&icyclic,xxn,ipnei,ifatie,xlet,xxj,
+       coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh,
+       umfa,physcon));
+
+      FORTRAN(extrapol_oel,(nface,ielfa,xrlfa,vel,vfa,
+       ifabou,xbounact,nef,gradoel,gradofa,neifa,rf,area,volume,
+       xle,xxi,&icyclic,xxn,ipnei,ifatie,xlet,xxj,
+       coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh,
+       umfa,physcon,dy));
+
   }
 
   /* calculating the time increment */
@@ -472,9 +476,6 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
                           &compressible));
 
   /* start of the major loop */
-
-  NNEW(gradvel,double,9**nef);
-  NNEW(gradvfa,double,9**nface);
 
   NNEW(advfa,double,*nface);
   NNEW(hfa,double,3**nface);
@@ -496,26 +497,12 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
   }else{
       NNEW(auv,double,*nflnei+*nef);
   }
-//  NNEW(adv,double,*nef);
+
   NNEW(bv,double,3**nef);
   NNEW(hel,double,3**nef);
   NNEW(sel,double,3**nef);
 
   NNEW(rwork,double,*nef);
-
-  NNEW(gradpel,double,3**nef);
-
-  if(*ithermal>0){
-      NNEW(gradtel,double,3**nef);
-      NNEW(gradtfa,double,3**nface);
-  }
-
-  if(*iturbulent>0){
-      NNEW(gradkel,double,3**nef);
-      NNEW(gradkfa,double,3**nface);
-      NNEW(gradoel,double,3**nef);
-      NNEW(gradofa,double,3**nface);
-  }
 
   NNEW(inum,ITG,*nk);
 
@@ -584,6 +571,7 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
   }
 
   NNEW(temp,double,6**nef);
+  NNEW(gamma,double,*nface);
 
   do{
 
@@ -627,7 +615,8 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
              nodeboun,ndirboun,nodeforc,ndirforc,istep,iinc,
 	     co,v,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
              ntrans,trab,inotr,vold,integerglob,doubleglob,tieset,istartset,
-             iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc));
+             iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
+             ipobody,iponoel,inoel));
 
 	  /* body forces (gravity, centrifugal and Coriolis forces) */
       
@@ -666,7 +655,6 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 	  }else{
 
 	      /* calculating material data 
-		 density (elements+faces)
 		 heat capacity at constant volume (elements+faces)
 		 dynamic viscosity (elements+faces)
 		 heat conduction (faces) */
@@ -677,67 +665,50 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 	  }
 
       }
-	  
-      /* calculating the gradient of the velocity at the element
-	 centers */
-      
-      DMEMSET(gradvel,0,9**nef,0.);
-      FORTRAN(calcgradvel,(nef,lakonf,ipnei,vfa,area,xxn,gradvel,neifa,
-                         volume));
-      
-      /* extrapolating the gradient of the velocity from the element
-	 centers to the face centers */
-
-      FORTRAN(extrapolate_gradvel,(nface,ielfa,xrlfa,gradvel,gradvfa,
-              &icyclic,c,ifatie));
 
       if(*nblk==0){
 
       /* filling the lhs and rhs's for the balance of momentum
 	 equations */
       
-//	  DMEMSET(adv,0,*nef,0.);
 	  DMEMSET(auv,0,*nflnei+*nef,0.);
 	  DMEMSET(bv,0,3**nef,0.);
 	  
 	  if(compressible==0){
+      
+              /* calculate gamma (Ph.D. Thesis Jasak) */
+
+	      FORTRAN(calcgamma,(nface,ielfa,vel,gradvel,gamma,xlet,xxn,xxj,
+	      ipnei,&betam,nef,flux));
+	      
 	      mafillvmain(nef,ipnei,neifa,neiel,vfa,xxn,area,
-		       auv,&auv[*nflnei],jq,irow,&nzs,bv,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
+		       auv,&auv[*nflnei],jq,irow,&nzs,bv,vel,cosa,umfa,
+		       xlet,xle,gradvfa,xxi,
 		       body,volume,ielfa,lakonf,ifabou,nbody,
 		       &dtimef,velo,veloo,sel,xrlfa,gamma,xxj,nactdohinv,&a1,
 		       &a2,&a3,flux,&icyclic,c,ifatie,iau6,xxni,xxnj,
-                       iturbulent);
+			  iturbulent,gradvel);
+	      
 	  }else{
       
-      /* calculate gamma (Ph.D. Thesis Jasak) */
+              /* calculate gamma (Ph.D. Thesis Jasak) */
 
-/*	  betam=0.1;
-	  NNEW(gamma,double,*nface);
-	  FORTRAN(calcgamma,(nface,ielfa,vel,gradvel,gamma,xlet,xxn,xxj,
-	  ipnei,&betam,nef,flux));*/
+//	      FORTRAN(calcgamma,(nface,ielfa,vel,gradvel,gamma,xlet,xxn,xxj,
+//				 ipnei,&betam,nef,flux));
+	      
 	      mafillvcompmain(nef,ipnei,neifa,neiel,vfa,xxn,area,
-		       auv,&auv[*nflnei],jq,irow,&nzs,bv,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
+		       auv,&auv[*nflnei],jq,irow,&nzs,bv,vel,cosa,umfa,
+                       xlet,xle,gradvfa,xxi,
 		       body,volume,ielfa,lakonf,ifabou,nbody,
 		       &dtimef,velo,veloo,sel,xrlfa,gamma,xxj,nactdohinv,&a1,
 		       &a2,&a3,flux,&icyclic,c,ifatie,iau6,xxni,xxnj);
-//           SFREE(gamma);
 	  }
 
-	  nelt=*nflnei+*nef;
 	  isym=0;
-	  itol=0;
-	  tol=1.e-6;
-	  itmax=0;
-	  iunit=0;
+	  nelt=*nflnei+*nef;
 	  lrgw=131+16**nef;
 	  NNEW(rgwk,double,lrgw);
 	  NNEW(igwk,ITG,20);
-	  igwk[0]=10;
-	  igwk[1]=10;
-	  igwk[2]=0;
-	  igwk[3]=1;
-	  igwk[4]=10;
-	  ligw=20;
 	  for(i=0;i<*nef;i++){rwork[i]=1./auv[*nflnei+i];}
 
 //      if(compressible==0) memcpy(&temp[*nef],&vel[*nef],sizeof(double)*3**nef);
@@ -831,10 +802,6 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 
 	      if(iitf==0){
 		  
-		  DMEMSET(gradpel,0,3**nef,0.);
-		  FORTRAN(calcgradpel,(nef,lakonf,ipnei,vfa,area,xxn,gradpel,neifa,
-				       volume));
-		  
 		  /* first iteration: calculating both lhs and rhs */
 		  
 		  DMEMSET(ad,0,*nef,0.);
@@ -845,17 +812,10 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 				   ielfa,ifabou,xle,b,xxn,nef,
 				   &nzs,hfa,gradpel,bp,xxi,neij,xlen,cosb,
 			           &iatleastonepressurebc,iau6,xxicn);
-		  
+
 		  FORTRAN(convert2slapcol,(au,ad,jq,&nzs,nef,aua));
 		  
 	      }else{
-		  
-		  /* calculating the pressure gradient at the element
-		     centers */
-		  
-		  DMEMSET(gradpel,0,3**nef,0.);
-		  FORTRAN(calcgradpel,(nef,lakonf,ipnei,vfa,area,xxn,gradpel,neifa,
-				       volume));
 		  
 		  /* second, third.. iteration: calculate the rhs only */
 		  
@@ -865,6 +825,7 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 		       &iatleastonepressurebc,xxicn);
 		  
 	      }
+
 	      
 	      nelt=nzs+*nef;
 	      isym=1;
@@ -889,8 +850,7 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 	      FORTRAN(dslugm,(nef,&b[0],&vel[4**nef],&nelt,ia,ja,aua,
 			      &isym,&nsave,&itol,&tol,&itmax,&iter,
 			      &err,&ierr,&iunit,rgwk,&lenw,igwk,&leniw));
-	      SFREE(rgwk);SFREE(igwk);
-//	      printf("iter=%d\n",iter);
+			      SFREE(rgwk);SFREE(igwk);
 
 	      for(i=4**nef;i<5**nef;i++){vel[i]=0.3*vel[i]+0.7*temp[i];}
 	      
@@ -901,40 +861,26 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 	      
 	      /* compressible media */
 		  
-	      DMEMSET(gradpel,0,3**nef,0.);
-	      FORTRAN(calcgradpel,(nef,lakonf,ipnei,vfa,area,xxn,gradpel,neifa,
-				   volume));
-		  
-//	      DMEMSET(ad,0,*nef,0.);
 	      DMEMSET(au,0,*nflnei+*nef,0.);
-
-//    printf("before mafillpcompmain \n");
+      
+	      /* calculate gamma (Ph.D. Thesis Jasak) */
+	      
+//	      FORTRAN(calcgammap,(nface,ielfa,vel,gradtel,gamma,xlet,xxn,xxj,
+//				  ipnei,&betam,nef,flux));
 	      
 	      mafillpcompmain(nef,lakonf,ipnei,neifa,neiel,vfa,area,
 			  advfa,xlet,cosa,volume,au,&au[*nflnei],jq,irow,ap,
 			  ielfa,ifabou,xle,b,xxn,nef,
 			  &nzs,hfa,gradpel,bp,xxi,neij,xlen,cosb,
 			  ielmatf,mi,&a1,&a2,&a3,velo,veloo,&dtimef,shcon,
-			  ntmat_,vel,nactdohinv,xrlfa,flux,iau6,xxicn);
-
-//    printf("after mafillpcompmain \n");
+			  ntmat_,vel,nactdohinv,xrlfa,flux,iau6,xxicn,
+                          gamma);
 	      
-//	      memcpy(&au[*nflnei],ad,sizeof(double)**nef);
-	      nelt=*nflnei+*nef;
 	      isym=0;
-	      itol=0;
-	      tol=1.e-6;
-	      itmax=0;
-	      iunit=0;
+	      nelt=*nflnei+*nef;
 	      lrgw=131+16**nef;
 	      NNEW(rgwk,double,lrgw);
 	      NNEW(igwk,ITG,20);
-	      igwk[0]=10;
-	      igwk[1]=10;
-	      igwk[2]=0;
-	      igwk[3]=1;
-	      igwk[4]=10;
-	      ligw=20;
 	      for(i=0;i<*nef;i++){rwork[i]=1./au[*nflnei+i];}
 
 	      NNEW(dp,double,*nef);
@@ -955,18 +901,11 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 		  }
 	      
 	  }
-	  
-	  FORTRAN(extrapolate_pel,(nface,ielfa,xrlfa,vel,vfa,ifabou,
-				   xbounact,nef));
 
-	  /* applying MPC's to the faces */
-	  
-	  if(*nmpc>0){
-	      is=4;ie=4;
-	      FORTRAN(applympc,(nface,ielfa,&is,&ie,ifabou,ipompc,vfa,coefmpc,
-				nodempc,ipnei,neifa,labmpc,xbounact,nactdoh,
-				ifaext,nfaext));
-	  }
+          FORTRAN(extrapol_pel,(nface,ielfa,xrlfa,vel,vfa,
+                  ifabou,xbounact,nef,gradpel,gradpfa,neifa,rf,area,volume,
+                  xle,xxi,&icyclic,xxn,ipnei,ifatie,
+                  coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh));
 	  
 	  /* correction of the velocity at the element centers due
              to the pressure change */
@@ -981,52 +920,30 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 				      ifabou,ipnei,nef,neifa,hfa,vel,xbounact,lakonf,
 				      flux));
 		  
-		  /* calculating the temperature gradient at the element
-		     centers */
-		  
-		  DMEMSET(gradtel,0,3**nef,0.);
-		  FORTRAN(calcgradtel,(nef,lakonf,ipnei,vfa,area,xxn,gradtel,neifa,
-				       volume));
-		  
-		  /* extrapolating the temperature gradient from the element
-		     centers to the face centers */
-		  
-		  FORTRAN(extrapolate_gradtel,(nface,ielfa,xrlfa,gradtel,gradtfa,
-                             &icyclic,c,ifatie));
-		  
 		  /* calculating the lhs and rhs of the energy equation */
 		  
-//		  DMEMSET(ad,0,*nef,0.);
 		  DMEMSET(au,0,*nflnei+*nef,0.);
 		  DMEMSET(b,0,*nef,0.);
+      
+		  /* calculate gamma (Ph.D. Thesis Jasak) */
+
+//		  FORTRAN(calcgammat,(nface,ielfa,vel,gradtel,gamma,xlet,xxn,xxj,
+//				  ipnei,&betam,nef,flux));
 		  
 		  mafilltcompmain(nef,ipnei,neifa,neiel,vfa,xxn,area,
 				  au,&au[*nflnei],jq,irow,&nzs,b,vel,umel,xlet,
                                   xle,gradtfa,xxi,
 				  body,volume,ielfa,lakonf,ifabou,nbody,nef,
 				  &dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,
-                                  xload,gammat,
+                                  xload,gamma,
 				  xrlfa,xxj,nactdohinv,&a1,&a2,&a3,flux,iau6,
                                   xxni,xxnj);
 		  
-//	  SFREE(gammat);
-		  
-//		  memcpy(&au[*nflnei],ad,sizeof(double)**nef);
 		  nelt=*nflnei+*nef;
 		  isym=0;
-		  itol=0;
-		  tol=1.e-6;
-		  itmax=0;
-		  iunit=0;
 		  lrgw=131+16**nef;
 		  NNEW(rgwk,double,lrgw);
 		  NNEW(igwk,ITG,20);
-		  igwk[0]=10;
-		  igwk[1]=10;
-		  igwk[2]=0;
-		  igwk[3]=1;
-		  igwk[4]=10;
-		  ligw=20;
 		  for(i=0;i<*nef;i++){rwork[i]=1./au[*nflnei+i];}
 		  FORTRAN(predgmres,(nef,&b[0],&vel[0],&nelt,neielcp,ipnei,au,
 				     &isym,&itol,&tol,&itmax,&iter,
@@ -1036,31 +953,23 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 		  if(ierr>0){
 		      printf("*WARNING in compfluid: error message from predgmres (T)=%d\n",ierr);
 		  }
-		  
-		  /* extrapolation of the temperature at the element centers
-		     to the face centers */
-		  
-	          FORTRAN(extrapolate_tel,(nface,ielfa,xrlfa,vel,vfa,
-					   ifabou,xbounact,ipnei,nef));
-		  
-		  /* applying MPC's to the faces */
-		  
-		  if(*nmpc>0){
-		      is=0;ie=0;
-		      FORTRAN(applympc,(nface,ielfa,&is,&ie,ifabou,ipompc,vfa,coefmpc,
-			      nodempc,ipnei,neifa,labmpc,xbounact,nactdoh,
-			      ifaext,nfaext));
-		  }
-		  
-		  /* calculating the density at the face centers */
-		  
-		  FORTRAN(calcrhofacomp,(nface,vfa,shcon,ielmatf,ntmat_,
-					 mi,ielfa));
+
+		  FORTRAN(extrapol_tel,(nface,ielfa,xrlfa,vel,vfa,
+			  ifabou,xbounact,nef,gradtel,gradtfa,neifa,rf,area,volume,
+			  xle,xxi,&icyclic,xxn,ipnei,ifatie,xload,xlet,xxj,
+			  coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh));
 		  
 		  /* calculating the density at the element centers */
 		  
 		  FORTRAN(calcrhoelcomp,(nef,vel,shcon,ielmatf,ntmat_,
 					 mi));
+
+		  /* calculating the density at the face centers
+                     (gamma method) */
+		  
+		  FORTRAN(calcrhofacomp,(nface,vfa,shcon,ielmatf,ntmat_,
+			  mi,ielfa,ipnei,vel,nef,flux,gradpel,gradtel,xxj,
+			  &betam,xlet));
 		  
 		  for(i=0;i<5;i++){velnorm[i]=0;}
 		  FORTRAN(norm,(vel,velnorm,nef));
@@ -1108,65 +1017,45 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
       
       if(*ithermal>0){
 
-          /* calculating the temperature gradient at the element
-             centers */
-
-	  DMEMSET(gradtel,0,3**nef,0.);
-	  FORTRAN(calcgradtel,(nef,lakonf,ipnei,vfa,area,xxn,gradtel,neifa,
-			       volume));
-
-	  /* extrapolating the temperature gradient from the element
-             centers to the face centers */
-
-	  FORTRAN(extrapolate_gradtel,(nface,ielfa,xrlfa,gradtel,gradtfa,
-                  &icyclic,c,ifatie));
-      
-      /* calculate gammat (Ph.D. Thesis Jasak) */
-
-//	  betam=0.1;
-//	  NNEW(gammat,double,*nface);
-//	  FORTRAN(calcgammat,(nface,ielfa,vel,gradtfa,gammat,xlet,xxn,xxj,
-//			      ipnei,&betam,ne));
-
           /* calculating the lhs and rhs of the energy equation */
 
-//	  DMEMSET(ad,0,*nef,0.);
+	  DMEMSET(ad,0,*nef,0.);
 	  DMEMSET(au,0,*nflnei+*nef,0.);
 	  DMEMSET(b,0,*nef,0.);
 
 	  if(compressible==0){
+      
+             /* calculate gamma (Ph.D. Thesis Jasak) */
+
+	      FORTRAN(calcgammat,(nface,ielfa,vel,gradtel,gamma,xlet,xxn,xxj,
+				  ipnei,&betam,nef,flux));
+
 	      mafilltmain(nef,ipnei,neifa,neiel,vfa,xxn,area,
 	       au,&au[*nflnei],jq,irow,&nzs,b,vel,umel,xlet,xle,gradtfa,xxi,
 	       body,volume,ielfa,lakonf,ifabou,nbody,nef,
-	       &dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,
+	       &dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,
 	       xrlfa,xxj,nactdohinv,&a1,&a2,&a3,flux,iau6,xxni,xxnj,
                iturbulent);
+
 	  }else{
+      
+             /* calculate gamma (Ph.D. Thesis Jasak) */
+
+//	      FORTRAN(calcgammat,(nface,ielfa,vel,gradtel,gamma,xlet,xxn,xxj,
+//				  ipnei,&betam,nef,flux));
+
 	      mafilltcompmain(nef,ipnei,neifa,neiel,vfa,xxn,area,
 	       au,&au[*nflnei],jq,irow,&nzs,b,vel,umel,xlet,xle,gradtfa,xxi,
 	       body,volume,ielfa,lakonf,ifabou,nbody,nef,
-	       &dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,
+	       &dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,
 	       xrlfa,xxj,nactdohinv,&a1,&a2,&a3,flux,iau6,xxni,xxnj);
 	  }
 
-//	  SFREE(gammat);
-
-//	  memcpy(&au[*nflnei],ad,sizeof(double)**nef);
-	  nelt=*nflnei+*nef;
 	  isym=0;
-	  itol=0;
-	  tol=1.e-6;
-	  itmax=0;
-	  iunit=0;
+	  nelt=*nflnei+*nef;
 	  lrgw=131+16**nef;
 	  NNEW(rgwk,double,lrgw);
 	  NNEW(igwk,ITG,20);
-	  igwk[0]=10;
-	  igwk[1]=10;
-	  igwk[2]=0;
-	  igwk[3]=1;
-	  igwk[4]=10;
-	  ligw=20;
 	  for(i=0;i<*nef;i++){rwork[i]=1./au[*nflnei+i];}
 	  FORTRAN(predgmres,(nef,&b[0],&vel[0],&nelt,neielcp,ipnei,au,
 			     &isym,&itol,&tol,&itmax,&iter,
@@ -1180,75 +1069,63 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 	  /* extrapolation of the temperature at the element centers
 	     to the face centers */
 
-	  FORTRAN(extrapolate_tel,(nface,ielfa,xrlfa,vel,vfa,
-				   ifabou,xbounact,ipnei,nef));
+	  FORTRAN(extrapol_tel,(nface,ielfa,xrlfa,vel,vfa,
+		  ifabou,xbounact,nef,gradtel,gradtfa,neifa,rf,area,volume,
+		  xle,xxi,&icyclic,xxn,ipnei,ifatie,xload,xlet,xxj,
+		  coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh));
 
-	  /* applying MPC's to the faces */
+          /* recalculating the density for compressible materials */
+
+	  if(compressible!=0){
+		  
+	      /* calculating the density at the element centers */
 	  
-	  if(*nmpc>0){
-	      is=0;ie=0;
-	      FORTRAN(applympc,(nface,ielfa,&is,&ie,ifabou,ipompc,vfa,coefmpc,
-				nodempc,ipnei,neifa,labmpc,xbounact,nactdoh,
-				ifaext,nfaext));
+	      FORTRAN(calcrhoelcomp,(nef,vel,shcon,ielmatf,ntmat_,
+				 mi));
+	  
+	      /* calculating the density at the face centers 
+                 (gamma method) */
+	  
+	      FORTRAN(calcrhofacomp,(nface,vfa,shcon,ielmatf,ntmat_,
+		  mi,ielfa,ipnei,vel,nef,flux,gradpel,gradtel,xxj,
+		  &betam,xlet));
+
 	  }
 
       }
       
       if(*iturbulent>0){
 
-          /* calculating the temperature gradient at the element
-             centers */
-
-	  DMEMSET(gradkel,0,3**nef,0.);
-	  FORTRAN(calcgradkel,(nef,lakonf,ipnei,vfa,area,xxn,gradkel,neifa,
-				volume));
-	  DMEMSET(gradoel,0,3**nef,0.);
-	  FORTRAN(calcgradoel,(nef,lakonf,ipnei,vfa,area,xxn,gradoel,neifa,
-				volume));
-
-	  /* extrapolating the temperature gradient from the element
-             centers to the face centers */
-
-	  FORTRAN(extrapolate_gradkel,(nface,ielfa,xrlfa,gradkel,gradkfa,
-                  &icyclic,c,ifatie));
-	  FORTRAN(extrapolate_gradoel,(nface,ielfa,xrlfa,gradoel,gradofa,
-                  &icyclic,c,ifatie));
-
           /* calculating the lhs and rhs of the k-equation */
 
 	  DMEMSET(au,0,*nflnei+*nef,0.);
 	  DMEMSET(b,0,*nef,0.);
+      
+          /* calculate gamma (Ph.D. Thesis Jasak) */
+
+	  FORTRAN(calcgammak,(nface,ielfa,vel,gradkel,gamma,xlet,xxn,xxj,
+				  ipnei,&betam,nef,flux));
 
 	  if(compressible==0){
 	      mafillkmain(nef,ipnei,neifa,neiel,vfa,xxn,area,
 	       au,&au[*nflnei],jq,irow,&nzs,b,vel,umfa,xlet,xle,gradkfa,xxi,
 	       body,volume,ielfa,lakonf,ifabou,nbody,nef,
-	       &dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,
+	       &dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,
 	       xrlfa,xxj,nactdohinv,&a1,&a2,&a3,flux,iau6,xxni,xxnj,
                iturbulent);
 	  }else{
 	      mafilltcompmain(nef,ipnei,neifa,neiel,vfa,xxn,area,
 	       au,&au[*nflnei],jq,irow,&nzs,b,vel,umel,xlet,xle,gradtfa,xxi,
 	       body,volume,ielfa,lakonf,ifabou,nbody,nef,
-	       &dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,
+	       &dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,
 	       xrlfa,xxj,nactdohinv,&a1,&a2,&a3,flux,iau6,xxni,xxnj);
 	  }
 
-	  nelt=*nflnei+*nef;
 	  isym=0;
-	  itol=0;
-	  tol=1.e-6;
-	  itmax=0;
-	  iunit=0;
+	  nelt=*nflnei+*nef;
 	  lrgw=131+16**nef;
 	  NNEW(rgwk,double,lrgw);
 	  NNEW(igwk,ITG,20);
-	  igwk[0]=10;
-	  igwk[1]=10;
-	  igwk[2]=0;
-	  igwk[3]=1;
-	  igwk[4]=10;
-	  ligw=20;
 	  for(i=0;i<*nef;i++){rwork[i]=1./au[*nflnei+i];}
 	  memcpy(&temp[0],&vel[6**nef],sizeof(double)**nef);
 	  FORTRAN(predgmres,(nef,&b[0],&temp[0],&nelt,neielcp,ipnei,au,
@@ -1264,37 +1141,32 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 
 	  DMEMSET(au,0,*nflnei+*nef,0.);
 	  DMEMSET(b,0,*nef,0.);
+      
+          /* calculate gamma (Ph.D. Thesis Jasak) */
+
+	  FORTRAN(calcgammao,(nface,ielfa,vel,gradoel,gamma,xlet,xxn,xxj,
+				  ipnei,&betam,nef,flux));
 
 	  if(compressible==0){
 	      mafillomain(nef,ipnei,neifa,neiel,vfa,xxn,area,
 	       au,&au[*nflnei],jq,irow,&nzs,b,vel,umfa,xlet,xle,gradofa,xxi,
 	       body,volume,ielfa,lakonf,ifabou,nbody,nef,
-	       &dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,
+	       &dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,
 	       xrlfa,xxj,nactdohinv,&a1,&a2,&a3,flux,iau6,xxni,xxnj,
 	       iturbulent,gradkel,gradoel);
 	  }else{
 	      mafilltcompmain(nef,ipnei,neifa,neiel,vfa,xxn,area,
 	       au,&au[*nflnei],jq,irow,&nzs,b,vel,umel,xlet,xle,gradtfa,xxi,
 	       body,volume,ielfa,lakonf,ifabou,nbody,nef,
-	       &dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gammat,
+	       &dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,
 	       xrlfa,xxj,nactdohinv,&a1,&a2,&a3,flux,iau6,xxni,xxnj);
 	  }
 
-	  nelt=*nflnei+*nef;
 	  isym=0;
-	  itol=0;
-	  tol=1.e-6;
-	  itmax=0;
-	  iunit=0;
+	  nelt=*nflnei+*nef;
 	  lrgw=131+16**nef;
 	  NNEW(rgwk,double,lrgw);
 	  NNEW(igwk,ITG,20);
-	  igwk[0]=10;
-	  igwk[1]=10;
-	  igwk[2]=0;
-	  igwk[3]=1;
-	  igwk[4]=10;
-	  ligw=20;
 	  for(i=0;i<*nef;i++){rwork[i]=1./au[*nflnei+i];}
 	  FORTRAN(predgmres,(nef,&b[0],&vel[7**nef],&nelt,neielcp,ipnei,au,
 			     &isym,&itol,&tol,&itmax,&iter,
@@ -1312,39 +1184,27 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 	  /* extrapolation of the turbulence variables at the element centers
 	     to the face centers */
 
-	  FORTRAN(extrapolate_kel,(nface,ielfa,xrlfa,vel,vfa,
-				   ifabou,xbounact,ipnei,nef,
-                                   physcon,umfa));
+	  FORTRAN(extrapol_kel,(nface,ielfa,xrlfa,vel,vfa,
+		  ifabou,xbounact,nef,gradkel,gradkfa,neifa,rf,area,volume,
+                  xle,xxi,&icyclic,xxn,ipnei,ifatie,xlet,xxj,
+                  coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh,
+                  umfa,physcon));
 
-	  FORTRAN(extrapolate_oel,(nface,ielfa,xrlfa,vel,vfa,
-				   ifabou,xbounact,ipnei,nef,
-                                   physcon,umfa,dy));
-
-	  /* applying MPC's to the faces */
-	  
-/*	  if(*nmpc>0){
-	      is=0;ie=0;
-	      FORTRAN(applympc,(nface,ielfa,&is,&ie,ifabou,ipompc,vfa,coefmpc,
-				nodempc,ipnei,neifa,labmpc,xbounact,nactdoh,
-				ifaext,nfaext));
-				}*/
+	  FORTRAN(extrapol_oel,(nface,ielfa,xrlfa,vel,vfa,
+                  ifabou,xbounact,nef,gradoel,gradofa,neifa,rf,area,volume,
+                  xle,xxi,&icyclic,xxn,ipnei,ifatie,xlet,xxj,
+                  coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh,
+		  umfa,physcon,dy));
 
       }
 
       /* extrapolating the velocity from the elements centers to the face
 	 centers, thereby taking the boundary conditions into account */
-      
-      FORTRAN(extrapolate_vel,(nface,ielfa,xrlfa,vel,vfa,
-	      ifabou,xbounact,ipnei,nef,&icyclic,c,ifatie,xxn));
 
-      /* applying MPC's to the faces */
-      
-      if(*nmpc>0){
-	  is=1;ie=3;
-	  FORTRAN(applympc,(nface,ielfa,&is,&ie,ifabou,ipompc,vfa,coefmpc,
-			    nodempc,ipnei,neifa,labmpc,xbounact,nactdoh,
-			    ifaext,nfaext));
-      }
+      FORTRAN(extrapol_vel,(nface,ielfa,xrlfa,vel,vfa,
+              ifabou,xbounact,ipnei,nef,&icyclic,c,ifatie,xxn,gradvel,
+              gradvfa,neifa,rf,area,volume,xle,xxi,xxj,xlet,
+              coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh));
 
 //      FORTRAN(writevfa,(vfa,nface,nactdohinv,ielfa));
 
@@ -1550,7 +1410,8 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
   
   SFREE(coel);SFREE(cosa);SFREE(xxn);SFREE(xxi);SFREE(xle);SFREE(xlen);
   SFREE(xlet);SFREE(cofa);SFREE(area);SFREE(xrlfa);SFREE(volume);
-  SFREE(cosb);SFREE(xxni);SFREE(xxnj);SFREE(xxicn);
+  SFREE(cosb);SFREE(xxni);SFREE(xxnj);SFREE(xxicn);SFREE(xxj);
+  SFREE(rf);
   if(*iturbulent>0) SFREE(dy);
 
   SFREE(ifabou);SFREE(umfa);SFREE(umel);
@@ -1582,7 +1443,9 @@ void compfluid(double **cop, ITG *nk, ITG **ipkonfp, ITG *konf, char **lakonfp,
 
   *ithermal=ithermalref;
 
-  SFREE(temp);
+  SFREE(temp);SFREE(gamma);
+
+  SFREE(gradpfa);
 
   return;
   

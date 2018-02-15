@@ -1,9 +1,3 @@
-!
-!    SLATEC: public domain
-!
-!    Changes by Guido Dhondt:
-!    170402: added $omp statements
-!
 *DECK DSLUGM
       SUBROUTINE DSLUGM (N, B, X, NELT, IA, JA, A, ISYM, NSAVE, ITOL,
      +   TOL, ITMAX, ITER, ERR, IERR, IUNIT, RWORK, LENW, IWORK, LENIW)

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,9 +18,9 @@
 !
       subroutine umat_main(amat,iel,iint,kode,elconloc,emec,emec0,
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
-     &        icmd,ielas,mi,
-     &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,
-     &        orab,pnewdt,istep,iinc,ipkon,nmethod,iperturb)
+     &        icmd,ielas,mi,nstate_,xstateini,xstate,stre,stiff,
+     &        iorien,pgauss,orab,pnewdt,istep,iinc,ipkon,nmethod,
+     &        iperturb,depvisc)
 !
 !     calculates stiffness and stresses for a user defined material
 !     law
@@ -34,7 +34,7 @@
 !
       real*8 elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xikl(3,3),vij,pgauss(3),orab(7,*),
-     &  time,ttime,pnewdt
+     &  time,ttime,pnewdt,depvisc
 !
       real*8 xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
 !
@@ -89,7 +89,7 @@
      &        iel,iint,kode,elconloc,emec,emec0,
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
-     &        iorien,pgauss,orab,nmethod,pnewdt)
+     &        iorien,pgauss,orab,nmethod,pnewdt,depvisc)
 !
       elseif(amat(1:10).eq.'CIARLET_EL') then
 !
@@ -180,6 +180,13 @@
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
      &        iorien,pgauss,orab,pnewdt,ipkon)
+!
+      elseif(amat(1:1).eq.'@') then
+!
+         call call_external_umat_user(amat,iel,iint,kode,elconloc,
+     &        emec,emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,
+     &        dtime,time,ttime,icmd,ielas,mi(1),nstate_,xstateini,
+     &        xstate,stre,stiff,iorien,pgauss,orab,pnewdt,ipkon)
       else
          write(*,*) '*ERROR in umat: no user material subroutine'
          write(*,*) '       defined for material ',amat

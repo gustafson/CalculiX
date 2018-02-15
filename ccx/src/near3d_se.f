@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -52,7 +52,7 @@
       implicit none
 !
       integer n,nx(n),ny(n),nz(n),ir(n+6),nr,nrprev,irnew,
-     &  i,j,k,m,id,idx,idy,idz,node,l,kfix
+     &  i,j,k,m,id,idx,idy,idz,node
 !
       real*8 x(n),y(n),z(n),xo(n),yo(n),zo(n),xp,yp,zp,r(n+6),
      &  xr,yr,zr,c(8),dd,xw,xe,ys,yn,zb,zt,radius,
@@ -208,7 +208,7 @@
             nrprev=m
          endif
 !
-	 i=i+1
+         i=i+1
 !
 !        check the corners of the box
 !

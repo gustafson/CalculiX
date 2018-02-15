@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2015 Guido Dhondt
+!     Copyright (C) 1998-2017 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -54,7 +54,8 @@
      &     pt1,pt2,vold(0:mi(2),*),xloadold(2,*),reltime,pi,d,
      &     cocon(0:6,ntmat_,*),xflow360,xflow_oil,ks,form_fact,
      &     Qred_crit,reynolds,pt2zpt1_c,Qred1,pt2zpt1,phi,lambda,
-     &     M1,M2,bb,cc,km1,kp1,a,kappa,ff1,ff2,Tt1,Tt2,T1,T2,M1_c
+     &     M1,M2,bb,cc,km1,kp1,a,kappa,ff1,ff2,Tt1,Tt2,T1,T2,M1_c,
+     &     heatnod,heatfac
 !     
       include "gauss.f"
 !     
@@ -106,6 +107,8 @@
          node2=kon(index+3)
 !
          xflow=v(1,nodem)
+!
+!        next section is for liquids only (no gas)
 !
         if((lakon(nelem)(2:3).ne.'LP').and.
      &     (lakon(nelem)(2:3).ne.'LI')) then
@@ -311,7 +314,7 @@ c                     call exit(201)
 !                 calculating the critical conditions
 !     
                   call pt2zpt1_crit(pt2,pt1,Tt1,lambda,kappa,r,dl,d,
-     &                 inv,pt2zpt1_c,Qred_crit,crit,icase,M1_c)
+     &                 pt2zpt1_c,Qred_crit,crit,icase,M1_c)
 !
                   Qred1=xflow360*dsqrt(Tt1)/(A*Pt1)
 !
@@ -375,65 +378,7 @@ c                     M1=min(M1,0.999d0/dsqrt(kappa))
                         ac(ieq,idoft2)=-1.d0/(1.d0+bb/kappa)
                      endif
                   endif
-
-c                  if(nacteq(3,node1).eq.node2) then
-c!     
-c                     if(inv.eq.-1) then
-c                        if(idoft1.ne.0) then
-c                           ac(ieq,idoft1)=-xcst*xk1*(1.d0-expon
-c     &                          *(1.d0-ts1/tg1))/(xdenom1*ts1) 
-c                        endif
-c!     
-c                        if(idoft2.ne.0)then
-c                           ac(ieq,idoft2)=xcst*xk2*(1.d0-expon
-c     &                          *(1.d0-ts2/tg2))/(xdenom2*ts2) 
-c                        endif
-c!     
-c                        if(idofm.ne.0) then
-c                           ac(ieq,idofm)=(-2.d0*xflow*ts2
-c     &                          /xdenom2+2.d0*xflow*ts1/xdenom1)
-c                        endif
-c!     
-c                        if(idofp1.ne.0) then
-c                           ieq=nacteq(2,idofp1)
-c                           ac(ieq,idofp1)=2.d0*xcst*dt1*xk1
-c     &                          /(pt1*xdenom1)
-c                        endif
-c!     
-c                        if(idofp2.ne.0) then
-c                           ac(ieq,idofp2)=-2.d0*xcst*dt2*xk2
-c     &                          /(pt2*xdenom2)
-c                        endif
-c!     
-c                     elseif(inv.eq.1)then
-c                        if(idoft1.ne.0) then
-c                           ac(ieq,idoft1)=xcst*xk1*(1.d0-expon
-c     &                          *(1.d0-ts1/tg1))/(xdenom1*ts1) 
-c                        endif
-c!     
-c                        if(idoft2.ne.0)then
-c                           ac(ieq,idoft2)=-xcst*xk2*(1.d0-expon
-c     &                          *(1.d0-ts2/tg2))/(xdenom2*ts2) 
-c                        endif
-c!     
-c                        if(idofm.ne.0) then
-c                           ac(ieq,idofm)=-(-2.d0*xflow*ts2
-c     &                          /xdenom2+2.d0*xflow*ts1/xdenom1)
-c                        endif
-c!     
-c                        if(idofp1.ne.0) then
-c                           ieq=nacteq(2,idofp1)
-c                           ac(ieq,idofp1)=-2.d0*xcst*dt1*xk1
-c     &                          /(pt1*xdenom1)
-c                        endif
-c!     
-c                        if(idofp2.ne.0) then
-c                           ac(ieq,idofp2)=2.d0*xcst*dt2*xk2
-c     &                          /(pt2*xdenom2)
-c                        endif
-c!     
-c                     endif
-c                  endif
+!
                endif
             endif
 !     
@@ -517,7 +462,7 @@ c                     call exit(201)
 !                 calculating the critical conditions
 !     
                   call pt2zpt1_crit(pt2,pt1,Tt1,lambda,kappa,r,dl,d,
-     &                 inv,pt2zpt1_c,Qred_crit,crit,icase,M1_c)
+     &                 pt2zpt1_c,Qred_crit,crit,icase,M1_c)
 !
                   Qred1=xflow360*dsqrt(Tt1)/(A*Pt1)
 !
@@ -582,61 +527,6 @@ c                     M1=min(M1,0.999d0/dsqrt(kappa))
                      endif
                   endif
 !
-c
-c                  if(inv.eq.-1) then
-c                     if(idoft1.ne.0)then
-c                        ac(ieq,idoft1)=-xcst*xk1*(1.d0-expon
-c     &                       *(1.d0-ts1/tg1))/(xdenom1*ts1) 
-c                     endif
-c!     
-c                     if(idoft2.ne.0) then
-c                        ac(ieq,idoft2)=(xcst*xk2*(1.d0-expon
-c     &                       *(1.d0-ts2/tg2))/(xdenom2*ts2)) 
-c                     endif
-c!     
-c                     if(idofm.ne.0) then
-c                        ac(ieq,idofm)=(-2.d0*xflow*ts2
-c     &                       /xdenom2+2.d0*xflow*ts1/xdenom1)
-c                     endif
-c!     
-c                     if(idofp1.ne.0) then
-c                        ac(ieq,idofp1)=+2.d0*xcst*dt1*xk1
-c     &                       /(pt1*xdenom1)
-c                     endif
-c!     
-c                     if(idofp2.ne.0) then
-c                        ac(ieq,idofp2)=-2.d0*xcst*dt2*xk2
-c     &                       /(pt2*xdenom2)
-c                     endif
-c!
-c                  elseif(inv.eq.1) then
-c     
-c                     if(idoft1.ne.0)then
-c                        ac(ieq,idoft1)=xcst*xk1*(1.d0-expon
-c     &                       *(1.d0-ts1/tg1))/(xdenom1*ts1) 
-c                     endif
-c!     
-c                     if(idoft2.ne.0) then
-c                        ac(ieq,idoft2)=-(xcst*xk2*(1.d0-expon
-c     &                       *(1.d0-ts2/tg2))/(xdenom2*ts2)) 
-c                     endif
-c!     
-c                     if(idofm.ne.0) then
-c                        ac(ieq,idofm)=-(-2.d0*xflow*ts2
-c     &                       /xdenom2+2.d0*xflow*ts1/xdenom1)
-c                     endif
-c!     
-c                     if(idofp1.ne.0) then
-c                        ac(ieq,idofp1)=+2.d0*xcst*dt1*xk1
-c     &                       /(pt1*xdenom1)
-c                     endif
-c!     
-c                     if(idofp2.ne.0) then
-c                        ac(ieq,idofp2)=-2.d0*xcst*dt2*xk2
-c     &                       /(pt2*xdenom2)
-c                    endif
-c                 endif
-!     
               endif 
            endif
 !     
@@ -875,9 +765,10 @@ c                 endif
      &                 iinc,tvar,nelem,l,coords,jltyp,field,nfield,
      &                 sideload(i),node,areaj,v,mi,ipkon,kon,lakon,
      &                 iponoel,inoel,ielprop,prop,ielmat,shcon,nshcon,
-     &                 rhcon,nrhcon,ntmat_,cocon,ncocon)
-                  if(nmethod.eq.1) h(1)=xloadold(1,i)+
-     &                 (h(1)-xloadold(1,i))*reltime
+     &                 rhcon,nrhcon,ntmat_,cocon,ncocon,
+     &                 ipobody,xbodyact,ibody,heatnod,heatfac)
+c                  if(nmethod.eq.1) h(1)=xloadold(1,i)+
+c     &                 (h(1)-xloadold(1,i))*reltime
                endif
 !     
                idoft=nactdog(0,node)
@@ -898,17 +789,27 @@ c                 endif
       do i=nmpc,1,-1
          if(labmpc(i)(1:7).ne.'NETWORK') cycle
          j=j-1
-         index=ipompc(i)
+         if(labmpc(i)(8:8).eq.' ') then
+            index=ipompc(i)
 !
-         do
-            node=nodempc(1,index)
-            idir=nodempc(2,index)
-            if(nactdog(idir,node).ne.0) then
-               ac(j,nactdog(idir,node))=coefmpc(index)
-            endif
-            index=nodempc(3,index)
-            if(index.eq.0) exit
-         enddo
+!           linear equation
+!
+            do
+               node=nodempc(1,index)
+               idir=nodempc(2,index)
+               if(nactdog(idir,node).ne.0) then
+                  ac(j,nactdog(idir,node))=coefmpc(index)
+               endif
+               index=nodempc(3,index)
+               if(index.eq.0) exit
+            enddo
+         else
+!
+!           user-defined network equation
+!
+            call networkmpc_lhs(i,ipompc,nodempc,coefmpc,labmpc,
+     &          v,nactdog,ac,j,mi,nteq)
+         endif
       enddo
 !
 c      write(*,*) nteq,' mafillnet '

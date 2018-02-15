@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -69,7 +69,8 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	     ITG *mortar,ITG *mpcinfo,double *tietol,ITG *ics,ITG *icontact,
              char *orname){
   
-  char description[13]="            ",*lakon=NULL,stiffmatrix[132]="",fneig[132]="";
+  char description[13]="            ",*lakon=NULL,stiffmatrix[132]="",
+       fneig[132]="",jobnamef[396]="";
 
   ITG *inum=NULL,k,*icol=NULL,*irow=NULL,ielas=0,icmd=0,iinc=1,nasym=0,i,j,ic,ir,
       mass[2]={0,0}, stiffness=1, buckling=0, rhsi=1, intscheme=0,*ncocon=NULL,
@@ -87,7 +88,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       *ielorien=NULL,network=0;
 
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*xstiff=NULL,*stiini=NULL,*tper,
-         *f=NULL,*fn=NULL,qa[3],*fext=NULL,*epn=NULL,*xstateini=NULL,
+         *f=NULL,*fn=NULL,qa[4],*fext=NULL,*epn=NULL,*xstateini=NULL,
          *vini=NULL,*stx=NULL,*enern=NULL,*xbounact=NULL,*xforcact=NULL,
          *xloadact=NULL,*t1act=NULL,*ampli=NULL,*xstaten=NULL,*eei=NULL,
          *enerini=NULL,*cocon=NULL,*shcon=NULL,*physcon=NULL,*qfx=NULL,
@@ -112,6 +113,10 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
   irow=*irowp;ener=*enerp;xstate=*xstatep;ipkon=*ipkonp;lakon=*lakonp;
   kon=*konp;ielmat=*ielmatp;ielorien=*ielorienp;icol=*icolp;
+  
+  for(k=0;k<3;k++){
+      strcpy1(&jobnamef[k*132],&jobnamec[k*132],132);
+  }
 
   tper=&timepar[1];
 
@@ -165,8 +170,6 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  lakon,ipkon,kon,&koncont,&nslavs,tietol,&ismallsliding,&itiefac,
           &islavsurf,&islavnode,&imastnode,&nslavnode,&nmastnode,
           mortar,&imastop,nkon,&iponoels,&inoels,&ipe,&ime,ne,&ifacecount,
-          nmpc,&mpcfree,&memmpc_,
-	  &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
 	  iperturb,ikboun,nboun,co,istep,&xnoels);
 
       if(ncont!=0){
@@ -261,13 +264,12 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  contact(&ncont,ntie,tieset,nset,set,istartset,iendset,
 	     ialset,itietri,lakon,ipkon,kon,koncont,ne,cg,straight,nkon,
 	     co,vold,ielmat,cs,elcon,istep,&iinc,&iit,ncmat_,ntmat_,
-	     &ne0,vini,nmethod,nmpc,&mpcfree,&memmpc_,
-	     &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
+	     &ne0,vini,nmethod,
 	     iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
 	     itiefac,areaslav,iponoels,inoels,springarea,tietol,&reltime,
 	     imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
 	     xnoels,mortar,pslavsurf,pmastsurf,clearini,&theta,
-	     xstateini,xstate,nstate_,&icutb,&ialeatoric);
+	     xstateini,xstate,nstate_,&icutb,&ialeatoric,jobnamef);
 	  
 	  printf("number of contact spring elements=%" ITGFORMAT "\n\n",*ne-ne0);
 	  
@@ -303,7 +305,8 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      nodeboun,ndirboun,nodeforc,ndirforc,istep,&iinc,
 	      co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
               ntrans,trab,inotr,veold,integerglob,doubleglob,tieset,istartset,
-              iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc));
+              iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
+              ipobody,iponoel,inoel));
 
   /* determining the internal forces and the stiffness coefficients */
 
@@ -335,7 +338,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	  mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-          inoel,nener,orname,&network);
+          inoel,nener,orname,&network,ipobody,xbodyact,ibody);
   SFREE(v);SFREE(fn);SFREE(stx);SFREE(inum);
   iout=1;
   
@@ -366,9 +369,13 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       /* nretain!=0: submatrix application
          nretain==0: Green function application */
       
-      RENEW(iretain,ITG,nretain);
-      RENEW(noderetain,ITG,nretain);
-      RENEW(ndirretain,ITG,nretain);
+      if(nretain>0){
+	  RENEW(iretain,ITG,nretain);
+	  RENEW(noderetain,ITG,nretain);
+	  RENEW(ndirretain,ITG,nretain);
+      }else{
+	  SFREE(iretain);SFREE(noderetain);SFREE(ndirretain);
+      }
       
       /* creating the right size au */
 
@@ -543,7 +550,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		   sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		   mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 		   islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-		   inoel,nener,orname,&network);
+		   inoel,nener,orname,&network,ipobody,xbodyact,ibody);
 	      
 	      xbounact[iretain[i]-1]=0.;
 	      
@@ -565,6 +572,12 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      SFREE(fn);
 	      
 	  }
+	  SFREE(iretain);
+	  
+	  FORTRAN(writesubmatrix,(submatrix,noderetain,ndirretain,&nretain,jobnamec));
+	  
+	  SFREE(submatrix);SFREE(noderetain);SFREE(ndirretain);
+
       }else{
 
 	  /* Green function applications */
@@ -715,7 +728,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		   sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		   mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 		   islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-		   inoel,nener,orname,&network);
+		   inoel,nener,orname,&network,ipobody,xbodyact,ibody);
 	      
 	      SFREE(eei);
 	      if(*nener==1){
@@ -736,7 +749,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 			 nstate_,istep,&iinc,iperturb,ener,mi,output,ithermal,
 			 qfn,ialset,istartset,iendset,trab,inotr,ntrans,orab,
 			 ielorien,norien,sti,veold,&noddiam,set,nset,emn,thicke,
-			 jobnamec,&ne0,cdn,mortar,nmat);
+			 jobnamec,&ne0,cdn,mortar,nmat,qfx);
 	      }
 	      else{
 		  if(strcmp1(&filab[1044],"ZZS")==0){
@@ -769,16 +782,11 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       }
 	  
       SFREE(au);SFREE(ad);SFREE(b);
-      SFREE(iretain);
       
       SFREE(xbounact);SFREE(xforcact);SFREE(xloadact);SFREE(t1act);SFREE(ampli);
       SFREE(xbodyact);if(*nbody>0) SFREE(ipobody);SFREE(xstiff);
       
       if(iglob==1){SFREE(integerglob);SFREE(doubleglob);}
-      
-      FORTRAN(writesubmatrix,(submatrix,noderetain,ndirretain,&nretain,jobnamec));
-      
-      SFREE(submatrix);SFREE(noderetain);SFREE(ndirretain);
       
       return;
 
@@ -931,7 +939,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
             mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-            inoel,nener,orname,&network);
+            inoel,nener,orname,&network,ipobody,xbodyact,ibody);
 
     SFREE(eei);
     if(*nener==1){
@@ -951,7 +959,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
                    nstate_,istep,&iinc,iperturb,ener,mi,output,ithermal,
                    qfn,ialset,istartset,iendset,trab,inotr,ntrans,orab,
 	           ielorien,norien,sti,veold,&noddiam,set,nset,emn,thicke,
-	           jobnamec,&ne0,cdn,mortar,nmat);
+	           jobnamec,&ne0,cdn,mortar,nmat,qfx);
     }
     else{
 	if(strcmp1(&filab[1044],"ZZS")==0){

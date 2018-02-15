@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                     */
+/*              Copyright (C) 1998-2017 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -69,7 +69,8 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
                  double *coefmpc,char *labmpc, ITG *iemchange,ITG *nam, 
                  ITG *iamload,ITG *jqrad,ITG *irowrad,ITG *nzsrad,
                  ITG *icolrad,ITG *ne,ITG *iaxial,double *qa,
-                 double *cocon,ITG *ncocon,ITG *iponoel,ITG *inoel,ITG *nprop){
+                 double *cocon,ITG *ncocon,ITG *iponoel,ITG *inoel,
+                 ITG *nprop,char *amname,ITG *namta,double *amta){
   
   /* network=0: no network
      network=1: purely thermal (presence of "Dx"- and/or of "D " network elements; declared
@@ -113,7 +114,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
       NNEW(prop_store,double,*nprop);
       memcpy(&prop_store[0],&prop[0],sizeof(double)**nprop);
       FORTRAN(propertynet,(ieg,nflow,prop,ielprop,lakon,&iin,
-			   prop_store,ttime,time));
+			   prop_store,ttime,time,nam,amname,namta,amta));
       FORTRAN(checkinputvaluesnet,(ieg,nflow,prop,ielprop,lakon));
 #else
       if(*iit==-1) FORTRAN(checkinputvaluesnet,(ieg,nflow,prop,ielprop,lakon));
@@ -122,8 +123,18 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
       while(icntrl==0) {
 	  
 	  if(iin==0){
-	      
-	      for(i=0;i<mt**nk;i++) v[i]=vold[i];
+	     
+	      memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
+
+              /* resetting ineighe to 0 for renewed call of
+                 radflowload (not for cut-backs without
+                 leaving radflowload */
+
+              /* for a cut-back iin is reset to 0, iin_abs is not */
+
+	      if(iin_abs==0) DMEMSET(ineighe,0,*ntg,0);
+
+//	      for(i=0;i<mt**nk;i++) v[i]=vold[i];
 
               /* initialization pressurized flow 
                  (no free surface: gas networks or

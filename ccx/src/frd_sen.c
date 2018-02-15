@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -143,9 +143,9 @@ void frd_sen(double *co,ITG *nk,double *dstn,ITG *inum,ITG *nmethod,
 
       /* storing the orientation sensitivities in the nodes */
   
-      if((strcmp1(&objectset[(*iobject-1)*243],"DISPLACEMENT")==0)||
-	 (strcmp1(&objectset[(*iobject-1)*243],"EIGENFREQUENCY")==0)||
-	 (strcmp1(&objectset[(*iobject-1)*243],"GREEN")==0)){
+      if((strcmp1(&objectset[(*iobject-1)*324],"DISPLACEMENT")==0)||
+	 (strcmp1(&objectset[(*iobject-1)*324],"EIGENFREQUENCY")==0)||
+	 (strcmp1(&objectset[(*iobject-1)*324],"GREEN")==0)){
 	  
 	  frdset(&filab[4002],set,&iset,istartset,iendset,ialset,
 		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
@@ -184,7 +184,7 @@ void frd_sen(double *co,ITG *nk,double *dstn,ITG *inum,ITG *nmethod,
 	  frdvector(v,&iset,ntrans,&filab[4002],&nkcoords,inum,m1,inotr,
 		    trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
 	  
-      }else if(strcmp1(&objectset[(*iobject-1)*243],"STRESS")==0){
+      }else if(strcmp1(&objectset[(*iobject-1)*324],"STRESS")==0){
 	  
 	  frdset(&filab[4002],set,&iset,istartset,iendset,ialset,
 		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
@@ -245,14 +245,20 @@ void frd_sen(double *co,ITG *nk,double *dstn,ITG *inum,ITG *nmethod,
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		&noutloc,description,kode,nmethod,f1,output,istep,iinc); 
       
-      if(strcmp1(&objectset[*iobject*243],"SHAPEENERGY")==0){
+      if(strcmp1(&objectset[*iobject*324],"SHAPEENERGY")==0){
 	  fprintf(f1," -4  SENENER     2    1\n");
-      }else if(strcmp1(&objectset[*iobject*243],"MASS")==0){
+      }else if(strcmp1(&objectset[*iobject*324],"MASS")==0){
 	  fprintf(f1," -4  SENMASS     2    1\n");
-      }else if(strcmp1(&objectset[*iobject*243],"DISPLACEMENT")==0){
+      }else if(strcmp1(&objectset[*iobject*324],"DISPLACEMENT")==0){
 	  fprintf(f1," -4  SENDISP     2    1\n");
-      }else if(strcmp1(&objectset[*iobject*243],"EIGENFREQUENCY")==0){
+      }else if(strcmp1(&objectset[*iobject*324],"STRESS")==0){
+	  fprintf(f1," -4  SENSTRE     2    1\n");
+      }else if(strcmp1(&objectset[*iobject*324],"EIGENFREQUENCY")==0){
 	  fprintf(f1," -4  SENFREQ     2    1\n");
+      }else if(strcmp1(&objectset[*iobject*324],"THICKNESS")==0){
+	  fprintf(f1," -4  SENTHCK     2    1\n");
+      }else if(strcmp1(&objectset[*iobject*324],"PROJECTGRAD")==0){
+	  fprintf(f1," -4  PRJGRAD     2    1\n");
       }
       
       fprintf(f1," -5  DFDN        1    1    1    0\n");

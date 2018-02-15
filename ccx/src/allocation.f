@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -22,7 +22,8 @@
      &  namtot,ncmat,memmpc,ne1d,ne2d,nflow,jobnamec,irstrt,
      &  ithermal,nener,nstate,irestartstep,inpc,ipoinp,inp,
      &  ntie,nbody,nprop,ipoinpc,nevdamp,npt,nslavs,nkon,mcs,
-     &  mortar,ifacecount,nintpoint,infree,nheading,nobject)
+     &  mortar,ifacecount,nintpoint,infree,nheading,nobject,
+     &  iuel)
 !
 !     calculates a conservative estimate of the size of the 
 !     fields to be allocated
@@ -34,10 +35,14 @@
 !     rmeminset=total # of reduced terms (due to use of generate) in
 !               sets
 !
+!     nstate needs only be assigned for
+!     a. restart (read from file)
+!     b. initial conditions (defined by *depvar)
+!
       implicit none
 !
       logical igen,lin,frequency,cyclicsymmetry,composite,
-     &  tabular,massflow
+     &  tabular,massflow,beamgeneralsection
 !
       character*1 selabel,sulabel,inpc(*)
       character*5 llab
@@ -59,12 +64,12 @@
      &  ntie,nbody,nprop,ipoinpc(0:*),nevdamp,npt,nentries,
      &  iposs,iposm,nslavs,nlayer,nkon,nopeexp,k,iremove,mcs,
      &  ifacecount,nintpoint,mortar,infree(4),nheading,icfd,
-     &  multslav,multmast,nobject,numnodes,iorientation,
-     &  irotation,itranslation
+     &  multslav,multmast,nobject,numnodes,iorientation,id,
+     &  irotation,itranslation,nuel,iuel(4,*),number,four
 !
       real*8 temperature,tempact,xfreq,tpinc,tpmin,tpmax
 !
-      parameter(nentries=16)
+      parameter(nentries=17)
 !
 !     icfd=-1: initial value
 !         =0: pure mechanical analysis
@@ -100,6 +105,9 @@
       neb32=0
       nradiate=0
       nkon=0
+      nuel=0
+!
+      four=4
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
@@ -122,15 +130,36 @@
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
                if((istat.lt.0).or.(key.eq.1)) then
-                  nprop=nprop-8
+c                  nprop=nprop-8
                   exit
                endif
                nprop=nprop+8
             enddo
          elseif(textpart(1)(1:12).eq.'*BEAMSECTION') then
             mi(3)=max(mi(3),2)
-            call getnewline(inpc,textpart,istat,n,key,iline,ipol,
+            beamgeneralsection=.false.
+            do i=2,n
+               if((textpart(i)(1:11).eq.'SECTION=BOX').or.
+     &            (textpart(i)(1:11).eq.'SECTION=PIP').or.
+     &            (textpart(i)(1:11).eq.'SECTION=GEN')) then
+                  beamgeneralsection=.true.
+                  exit
+               endif
+            enddo
+            if(beamgeneralsection) then
+               do
+                  call getnewline(inpc,textpart,istat,n,key,iline,ipol,
+     &                 inl,ipoinp,inp,ipoinpc)
+                  if((istat.lt.0).or.(key.eq.1)) then
+c                     nprop=nprop-8
+                     exit
+                  endif
+                  nprop=nprop+8
+               enddo
+            else
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,
      &           inl,ipoinp,inp,ipoinpc)
+            endif
          elseif(textpart(1)(1:10).eq.'*BOUNDARYF') then
             nam=nam+1
             namtot=namtot+1
@@ -152,7 +181,7 @@
                endif
                ibound=ibounend-ibounstart+1
                ibound=max(1,ibound)
-               ibound=min(3,ibound)
+c               ibound=min(3,ibound)
 !
                read(textpart(1)(1:10),'(i10)',iostat=istat) l
                if(istat.eq.0) then
@@ -221,7 +250,7 @@
                endif
                ibound=ibounend-ibounstart+1
                ibound=max(1,ibound)
-               ibound=min(3,ibound)
+c               ibound=min(mi(2),ibound)
 !
                read(textpart(1)(1:10),'(i10)',iostat=istat) l
                if(istat.eq.0) then
@@ -319,6 +348,13 @@
                ntmatl=ntmatl+1
                ntmat=max(ntmatl,ntmat)
             enddo
+         elseif(textpart(1)(1:11).eq.'*CONSTRAINT') then
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+               nobject=nobject+1
+            enddo    
          elseif(textpart(1)(1:15).eq.'*CONTACTDAMPING') then
             ncmat=max(8,ncmat)
             ntmat=max(1,ntmat)
@@ -367,11 +403,22 @@
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:6).eq.'*CREEP') then
-            ncmat=max(9,ncmat)
+            ntmatl=0
             npmat=max(2,npmat)
-            if(ncmat.ge.9) ncmat=max(19,ncmat)
-            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+            if(ncmat.le.2) then
+!              elastic isotropic
+               ncmat=max(9,ncmat)
+            else
+!              elastic anisotropic
+               ncmat=max(19,ncmat)
+            endif
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit
+               ntmatl=ntmatl+1
+            enddo
+            ntmat=max(ntmatl,ntmat)
          elseif(textpart(1)(1:16).eq.'*CYCLICHARDENING') then
             ntmatl=0
             do
@@ -683,26 +730,26 @@ c                  mi(1)=18
      &                 inl,ipoinp,inp,ipoinpc)
                   if((istat.lt.0).or.(key.eq.1)) exit
                   ntmatl=ntmatl+1
-                  ntmat=max(ntmatl,ntmat)
                enddo
+               ntmat=max(ntmatl,ntmat)
             elseif(ityp.eq.9) then
                do
                   call getnewline(inpc,textpart,istat,n,key,iline,ipol,
      &                 inl,ipoinp,inp,ipoinpc)
                   if((istat.lt.0).or.(key.eq.1)) exit
                   ntmatl=ntmatl+1
-                  ntmat=max(ntmatl,ntmat)
                   iline=iline+1
                enddo
+               ntmat=max(ntmatl,ntmat)
             elseif(ityp.eq.21) then
                do
                   call getnewline(inpc,textpart,istat,n,key,iline,ipol,
      &                 inl,ipoinp,inp,ipoinpc)
                   if((istat.lt.0).or.(key.eq.1)) exit
                   ntmatl=ntmatl+1
-                  ntmat=max(ntmatl,ntmat)
                   iline=iline+2
                enddo
+               ntmat=max(ntmatl,ntmat)
             endif
          elseif(textpart(1)(1:17).eq.'*ELECTROMAGNETICS') then
             mi(2)=max(mi(2),5)
@@ -757,7 +804,8 @@ c                  mi(1)=18
                      mi(1)=max(mi(1),1)
                      nope=8
                      nopeexp=8
-                  elseif(label.eq.'C3D10   ') then
+                  elseif((label.eq.'C3D10   ').or.
+     &                   (label.eq.'C3D10T  ')) then
                      mi(1)=max(mi(1),4)
                      nope=10
                      nopeexp=10
@@ -842,7 +890,9 @@ c    Bernhardi end
                      nope=8
                      nopeexp=28
                   elseif((label.eq.'B31     ').or.
-     &                   (label.eq.'T3D2    ')) then
+     &                   (label.eq.'B21     ').or.
+     &                   (label.eq.'T3D2    ').or.
+     &                   (label.eq.'T2D2    ')) then
                      mi(1)=max(mi(1),8)
                      mi(3)=max(mi(3),2)
                      nope=2
@@ -899,6 +949,35 @@ c                     mi(1)=max(mi(1),8)
                   elseif(label(1:4).eq.'MASS') then
                      nope=1
                      nopeexp=1
+                  elseif(label(1:1).eq.'U') then
+!
+!                    the number uniquely characterizes the
+!                    element name (consisting of 4 freely
+!                    selectable characters in position 2..5)
+!
+                     number=ichar(label(2:2))*256**3+
+     &                      ichar(label(3:3))*256**2+
+     &                      ichar(label(4:4))*256+
+     &                      ichar(label(5:5))
+c                     read(label(2:5),'(i4)',iostat=istat) number
+c                     if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+c     &"*ELEMENT%")
+                     nope=-1
+                     call nidentk(iuel,number,nuel,id,four)
+                     if(id.gt.0) then
+                        if(iuel(1,id).eq.number) then
+                           mi(1)=max(mi(1),iuel(2,id))
+                           mi(2)=max(mi(2),iuel(3,id))
+                           nope=iuel(4,id)
+                           nopeexp=nope
+                        endif
+                     endif
+                     if(nope.eq.-1) then
+                        write(*,*) '*ERROR reading *ELEMENT'
+                        write(*,*) '       nonexistent element type:'
+                        write(*,*) '       ',label
+                        call exit(201)
+                     endif
                   endif
                   if(label(1:1).eq.'F') then
                      mi(2)=max(mi(2),4)
@@ -1081,21 +1160,29 @@ c!
                enddo
             enddo
          elseif(textpart(1)(1:13).eq.'*FLUIDSECTION') then
-            nprop=nprop+41
+            nconstants=-1
+            do i=2,n
+               if(textpart(i)(1:10).eq.'CONSTANTS=') then
+                  read(textpart(i)(11:20),'(i10)',iostat=istat) 
+     &              nconstants
+                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &"*FLUID SECTION%")
+                  nprop=nprop+nconstants
+                  exit
+               endif
+            enddo
+            if(nconstants.lt.0) nprop=nprop+41
             do
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
                if((istat.lt.0).or.(key.eq.1)) exit
-c               nprop=nprop+8
             enddo
          elseif(textpart(1)(1:9).eq.'*FRICTION') then
-c            ncmat=max(7,ncmat)
 !
 !           '8' is for Mortar.
 !
             ncmat=max(8,ncmat)
             ntmat=max(1,ntmat)
-            nstate=max(9,nstate)
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:5).eq.'*GAP ') then
@@ -1346,13 +1433,6 @@ c            ncmat=max(7,ncmat)
             endif
          elseif(textpart(1)(1:4).eq.'*MPC') then
             mpclabel='                    '
-c            if((mpclabel(1:8).ne.'STRAIGHT').and.
-c     &           (mpclabel(1:4).ne.'PLANE')) then
-c               nk=nk+1
-c               nmpc=nmpc+1
-c               nboun=nboun+1
-c               memmpc=memmpc+1
-c            endif
             do
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &              ipoinp,inp,ipoinpc)
@@ -1412,6 +1492,28 @@ c            endif
                   endif
                enddo
             enddo
+         elseif(textpart(1)(1:11).eq.'*NETWORKMPC') then
+            do
+               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &              ipoinp,inp,ipoinpc)
+               if((istat.lt.0).or.(key.eq.1)) exit 
+               read(textpart(1)(1:10),'(i10)',iostat=istat) nterm
+               if(ntrans.eq.0) then
+                  nmpc=nmpc+1
+                  memmpc=memmpc+nterm
+               else
+                  nmpc=nmpc+3
+                  memmpc=memmpc+3*nterm
+               endif
+               ii=0
+               do
+                  call getnewline(inpc,textpart,istat,n,key,iline,ipol,
+     &                 inl,ipoinp,inp,ipoinpc)
+                  if((istat.lt.0).or.(key.eq.1)) exit
+                  ii=ii+n/3
+                  if(ii.eq.nterm) exit
+               enddo
+            enddo
          elseif((textpart(1)(1:5).eq.'*NODE').and.
      &           (textpart(1)(1:10).ne.'*NODEPRINT').and.
      &           (textpart(1)(1:9).ne.'*NODEFILE').and.
@@ -1459,7 +1561,6 @@ c            endif
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &              ipoinp,inp,ipoinpc)
                if((istat.lt.0).or.(key.eq.1)) exit
-c               if(textpart(1)(1:11).eq.'SHAPEENERGY') nener=1
                nobject=nobject+1
             enddo    
          elseif(textpart(1)(1:12).eq.'*ORIENTATION') then
@@ -1517,20 +1618,32 @@ c               if(textpart(1)(1:11).eq.'SHAPEENERGY') nener=1
                      nk=nk+8*meminset(i)
                      npt=npt+8*meminset(i)
 !     
+c!                 2 MPC's per node perpendicular to tension direction
+c!                 + 1 thermal MPC per node
+c!                 + 1 MPC in tension direction
 !                 2 MPC's per node perpendicular to tension direction
 !                 + 1 thermal MPC per node
-!                 + 1 MPC in tension direction
+!                 + 1 MPC per node in tension direction (the total of
+!                   which is divided into one global tension MPC and the
+!                   rest are MPC's specifying that the distance in tension
+!                   direction in all nodes should be the same)
 !                  
-c                  nmpc=nmpc+16*meminset(i)+1
-                     nmpc=nmpc+24*meminset(i)+1
+c                     nmpc=nmpc+24*meminset(i)+1
+                     nmpc=nmpc+32*meminset(i)+1
 !
 !                 6 terms per MPC perpendicular to tension direction
 !                 + 2 thermal terms per MPC
 !                 + 6 terms * # of nodes +1 parallel to tension
 !                 direction
+!                 + 12 terms per MPC parallel to tension direction
 !
-c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
-                     memmpc=memmpc+112*meminset(i)+48*meminset(i)+1
+c                     memmpc=memmpc+96*meminset(i)
+c     &                            +16*meminset(i)
+c     &                            +48*meminset(i)+1
+                     memmpc=memmpc+96*meminset(i)
+     &                            +16*meminset(i)
+     &                            +48*meminset(i)+1
+     &                            +12*(8*meminset(i)-1)
                      exit
 !     
                   endif
@@ -2067,6 +2180,10 @@ c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
      &              ipoinp,inp,ipoinpc)
                if((istat.lt.0).or.(key.eq.1)) exit
             enddo
+         elseif(textpart(1)(1:12).eq.'*USERELEMENT') then
+            call userelements(textpart,n,iuel,nuel,inpc,ipoinpc,iline)
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:13).eq.'*USERMATERIAL') then
             ntmatl=0
             do i=2,n
@@ -2085,7 +2202,8 @@ c                  memmpc=memmpc+96*meminset(i)+48*meminset(i)+1
                if((istat.lt.0).or.(key.eq.1)) exit
                ntmatl=ntmatl+1
                ntmat=max(ntmatl,ntmat)
-               do i=2,(nconstants-1)/8+1
+c               do i=2,(nconstants-1)/8+1
+               do i=2,nconstants/8+1
                   call getnewline(inpc,textpart,istat,n,key,iline,ipol,
      &                 inl,ipoinp,inp,ipoinpc)
                enddo

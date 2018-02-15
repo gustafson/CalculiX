@@ -1,5 +1,5 @@
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,14 +16,14 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine materialdata_me(elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
-     &  imat,amat,iorien,pgauss,orab,ntmat_,elas,rho,i,ithermal,
+     &  imat,amat,iorien,pgauss,orab,ntmat_,elas,rho,iel,ithermal,
      &  alzero,mattyp,t0l,t1l,ihyper,istiff,elconloc,eth,kode,plicon,
-     &  nplicon,plkcon,nplkcon,npmat_,plconloc,mi,dtime,iel,iint,
+     &  nplicon,plkcon,nplkcon,npmat_,plconloc,mi,dtime,iint,
      &  xstiff,ncmat_)
 !
       implicit none
 !
-!     determines the material data for element i
+!     determines the material data for element iel
 !
 !     istiff=0: only interpolation of material data
 !     istiff=1: copy the consistent tangent matrix from the field
@@ -32,7 +32,7 @@
       character*80 amat
 !
       integer nelcon(2,*),nrhcon(*),nalcon(2,*),
-     &  imat,iorien,ithermal,i,j,k,mattyp,kal(2,6),j1,j2,j3,j4,
+     &  imat,iorien,ithermal,j,k,mattyp,kal(2,6),j1,j2,j3,j4,
      &  jj,ntmat_,istiff,nelconst,ihyper,kode,itemp,kin,nelas,
      &  iel,iint,mi(*),ncmat_,id,two,seven,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
@@ -45,9 +45,9 @@
      &  plconloc(802),dtime
 !
       intent(in) elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
-     &  imat,amat,iorien,pgauss,orab,ntmat_,i,ithermal,
+     &  imat,amat,iorien,pgauss,orab,ntmat_,iel,ithermal,
      &  alzero,t0l,t1l,ihyper,istiff,kode,plicon,
-     &  nplicon,plkcon,nplkcon,npmat_,mi,dtime,iel,iint,
+     &  nplicon,plkcon,nplkcon,npmat_,mi,dtime,iint,
      &  xstiff,ncmat_
 !
       intent(inout) plconloc,eth,elconloc,elas,mattyp,rho
@@ -205,7 +205,7 @@
                   if(nplicon(1,imat).ne.0) then
                      kin=0
                      call plcopy(plicon,nplicon,plconloc,npmat_,ntmat_,
-     &                    imat,itemp,i,kin)
+     &                    imat,itemp,iel,kin)
                   endif
 !     
 !     kinematic hardening
@@ -213,7 +213,7 @@
                   if(nplkcon(1,imat).ne.0) then
                      kin=1
                      call plcopy(plkcon,nplkcon,plconloc,npmat_,ntmat_,
-     &                    imat,itemp,i,kin)
+     &                    imat,itemp,iel,kin)
                   endif
 !     
                endif
@@ -344,13 +344,13 @@
                         endif
                         kin=0
                         call plcopy(plicon,nplicon,plconloc,npmat_,
-     &                       ntmat_,imat,itemp,i,kin)
+     &                       ntmat_,imat,itemp,iel,kin)
                         if((id.eq.0).or.(id.eq.nplicon(0,imat))) then
                         endif
                      else
                         kin=0
                         call plmix(plicon,nplicon,plconloc,npmat_,
-     &                       ntmat_,imat,id+1,t1l,i,kin)
+     &                       ntmat_,imat,id+1,t1l,iel,kin)
                      endif
                   endif
 !     
@@ -376,13 +376,13 @@
                         endif
                         kin=1
                         call plcopy(plkcon,nplkcon,plconloc,npmat_,
-     &                       ntmat_,imat,itemp,i,kin)
+     &                       ntmat_,imat,itemp,iel,kin)
                         if((id.eq.0).or.(id.eq.nplkcon(0,imat))) then
                         endif
                      else
                         kin=1
                         call plmix(plkcon,nplkcon,plconloc,npmat_,
-     &                       ntmat_,imat,id+1,t1l,i,kin)
+     &                       ntmat_,imat,id+1,t1l,iel,kin)
                      endif
                   endif
                endif

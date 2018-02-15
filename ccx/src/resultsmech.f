@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -59,13 +59,26 @@
      &  xikl(3,3),ener(mi(1),*),emec(6),eei(6,mi(1),*),enerini(mi(1),*),
      &  emec0(6),vel(1:3,26),veoldl(0:mi(2),26),xsj2(3),shp2(7,8),
      &  e,un,al,um,am1,xi,et,ze,tt,exx,eyy,ezz,exy,exz,eyz,
-     &  xsj,qa(3),vj,t0l,t1l,dtime,weight,pgauss(3),vij,time,ttime,
+     &  xsj,qa(*),vj,t0l,t1l,dtime,weight,pgauss(3),vij,time,ttime,
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),xstate(nstate_,mi(1),*),plconloc(802),
      &  vokl(3,3),xstateini(nstate_,mi(1),*),vikl(3,3),
      &  gs(8,4),a,reltime,tlayer(4),dlayer(4),xlayer(mi(3),4),
      &  thicke(mi(3),*),emeini(6,mi(1),*),clearini(3,9,*),
      &  pslavsurf(3,*),pmastsurf(6,*)
+!
+      intent(in) co,kon,ipkon,lakon,ne,v,
+     &  elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
+     &  ielmat,ielorien,norien,orab,ntmat_,t0,t1,ithermal,prestr,
+     &  iprestr,iperturb,iout,vold,nmethod,
+     &  veold,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
+     &  xstateini,xstate,npmat_,matname,mi,ielas,icmd,
+     &  ncmat_,nstate_,stiini,vini,enerini,istep,iinc,
+     &  springarea,reltime,calcul_fn,calcul_qa,calcul_cauchy,nener,
+     &  ikin,ne0,thicke,emeini,pslavsurf,
+     &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop,kscale
+!
+      intent(inout) nal,qa,fn,xstiff,ener,eme,eei,stx
 !
       include "gauss.f"
 !
@@ -74,6 +87,8 @@
 !
       mt=mi(2)+1
       nal=0
+      qa(3)=-1.
+      qa(4)=0.
 !
       do i=nea,neb
 !
@@ -85,6 +100,21 @@
 !
          if(lakonl(1:1).eq.'F') cycle
          if(lakonl(1:7).eq.'DCOUP3D') cycle
+!
+!        user elements
+!
+         if(lakonl(1:1).eq.'U') then
+            call resultsmech_u(co,kon,ipkon,lakon,ne,v,
+     &        stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
+     &        ielmat,ielorien,norien,orab,ntmat_,t0,t1,ithermal,prestr,
+     &        iprestr,eme,iperturb,fn,iout,qa,vold,nmethod,
+     &        veold,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
+     &        xstateini,xstiff,xstate,npmat_,matname,mi,ielas,icmd,
+     &        ncmat_,nstate_,stiini,vini,ener,eei,enerini,istep,iinc,
+     &        reltime,calcul_fn,calcul_qa,calcul_cauchy,nener,
+     &        ikin,nal,ne0,thicke,emeini,i,ielprop,prop)
+            cycle
+         endif
 !
          if(lakonl(7:8).ne.'LC') then
 !
@@ -291,12 +321,14 @@ c     Bernhardi end
 !
 !        calculating the forces for the contact elements
 !
+c         write(*,*) 'resultsmech ',i,lakonl,mint3d
          if(mint3d.eq.0) then
 !
 !           "normal" spring and dashpot elements
 !
             kode=nelcon(1,imat)
-            if(lakonl(7:7).eq.'A') then
+            if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'1').or.
+     &            (lakonl(7:7).eq.'2')) then
                t0l=0.d0
                t1l=0.d0
                if(ithermal(1).eq.1) then
@@ -349,25 +381,6 @@ c     Bernhardi end
                      enddo
                   enddo
                endif
-!
-!              dashpot elements (including contact dashpots)
-!
-            elseif((nmethod.eq.4).or.(nmethod.eq.5).or.
-     &             ((abs(nmethod).eq.1).and.(iperturb(1).ge.2))) then
-c               do j=1,nope
-c                  konl(j)=kon(indexe+j)
-c                  do k=1,3
-c                     vel(k,j)=veold(k,konl(j))
-c                  enddo
-c               enddo
-c               call dashforc(xl,konl,vl,imat,elcon,nelcon,
-c     &              elas,fnl,ncmat_,ntmat_,nope,lakonl,t0l,t1l,kode,
-c     &              elconloc,plicon,nplicon,npmat_,vel,time,nmethod,mi)
-c               do j=1,nope
-c                  do k=1,3
-c                     fn(k,konl(j))=fn(k,konl(j))+fnl(k,j)
-c                  enddo
-c               enddo
             endif
          elseif(ikin.eq.1) then
             do j=1,nope
@@ -628,22 +641,6 @@ c                  write(*,*) 'vnoeie',i,konl(m1),(vkl(m2,k),k=1,3)
      &              vokl(3,2)*vkl(3,3)+vokl(3,3)*vkl(3,2)
             endif
 !
-c            if(iperturb(2).eq.1) then
-c!     
-c!                 Lagrangian strain
-c!     
-c               exx=exx+(vkl(1,1)**2+vkl(2,1)**2+vkl(3,1)**2)/2.d0
-c               eyy=eyy+(vkl(1,2)**2+vkl(2,2)**2+vkl(3,2)**2)/2.d0
-c               ezz=ezz+(vkl(1,3)**2+vkl(2,3)**2+vkl(3,3)**2)/2.d0
-c               exy=exy+vkl(1,1)*vkl(1,2)+vkl(2,1)*vkl(2,2)+
-c     &              vkl(3,1)*vkl(3,2)
-c               exz=exz+vkl(1,1)*vkl(1,3)+vkl(2,1)*vkl(2,3)+
-c     &              vkl(3,1)*vkl(3,3)
-c               eyz=eyz+vkl(1,2)*vkl(1,3)+vkl(2,2)*vkl(2,3)+
-c     &              vkl(3,2)*vkl(3,3)
-c!     
-c            endif
-!
 !              storing the local strains
 !
             if(iperturb(1).ne.-1) then
@@ -806,6 +803,9 @@ c     Bernhardi end
                   elseif(lakonl(4:6).eq.'20 ') then
                      nopered=20
                      call lintemp(t0,t1,konl,nopered,jj,t0l,t1l)
+                  elseif(lakonl(4:6).eq.'10T') then
+                     call linscal10(t0,konl,t0l,null,shp)
+                     call linscal10(t1,konl,t1l,null,shp)
                   else
                      do i1=1,nope
                         t0l=t0l+shp(4,i1)*t0(konl(i1))
@@ -822,6 +822,9 @@ c     Bernhardi end
                   elseif(lakonl(4:6).eq.'20 ') then
                      nopered=20
                      call lintemp_th(t0,vold,konl,nopered,jj,t0l,t1l,mi)
+                  elseif(lakonl(4:6).eq.'10T') then
+                     call linscal10(t0,konl,t0l,null,shp)
+                     call linscal10(vold,konl,t1l,mi(2),shp)
                   else
                      do i1=1,nope
                         t0l=t0l+shp(4,i1)*t0(konl(i1))
@@ -855,7 +858,7 @@ c     Bernhardi end
      &           nalcon,imat,amat,iorien,pgauss,orab,ntmat_,
      &           elas,rho,i,ithermal,alzero,mattyp,t0l,t1l,ihyper,
      &           istiff,elconloc,eth,kode,plicon,nplicon,
-     &           plkcon,nplkcon,npmat_,plconloc,mi(1),dtime,i,jj,
+     &           plkcon,nplkcon,npmat_,plconloc,mi(1),dtime,jj,
      &           xstiff,ncmat_)
 !
 !           determining the mechanical strain
@@ -892,10 +895,10 @@ c                 emec0(m1)=emeini(m1,jj,i)
      &           plconloc,xstate,xstateini,ielas,
      &           amat,t1l,dtime,time,ttime,i,jj,nstate_,mi(1),
      &           iorien,pgauss,orab,eloc,mattyp,qa(3),istep,iinc,
-     &           ipkon,nmethod,iperturb)
+     &           ipkon,nmethod,iperturb,qa(4))
 !
             if(((nmethod.ne.4).or.(iperturb(1).ne.0)).and.
-     &         (nmethod.ne.5)) then
+     &         (nmethod.ne.5).and.(icmd.ne.3)) then
                do m1=1,21
                   xstiff(m1,jj,i)=elas(m1)
                enddo
@@ -988,23 +991,6 @@ c                 emec0(m1)=emeini(m1,jj,i)
      &         (eloc(4)-eth(4)-emeini(4,jj,i))*(stre(4)+stiini(4,jj,i))+
      &         (eloc(5)-eth(5)-emeini(5,jj,i))*(stre(5)+stiini(5,jj,i))+
      &         (eloc(6)-eth(6)-emeini(6,jj,i))*(stre(6)+stiini(6,jj,i))
-c                  write(*,*) 'resultsmech ',jj,i,enerini(jj,i)
-c                  write(*,*) (eloc(k),k=1,6)
-c                  write(*,*) (eth(k),k=1,6)
-c                  write(*,*) (emeini(k,jj,i),k=1,6)
-c                  write(*,*) (stre(k),k=1,6)
-c                  write(*,*) (stiini(k,jj,i),k=1,6)
-c                  write(*,*) 'resultsmech2 ',jj,i,ener(jj,i)
-c                  ener(jj,i)=enerini(jj,i)+
-c     &                 ((eloc(1)-eth(1)-eme(1,jj,i))*
-c     &                  (stre(1)+stiini(1,jj,i))+
-c     &                  (eloc(2)-eth(2)-eme(2,jj,i))*
-c     &                  (stre(2)+stiini(2,jj,i))+
-c     &                  (eloc(3)-eth(3)-eme(3,jj,i))*
-c     &                  (stre(3)+stiini(3,jj,i)))/2.d0+
-c     &            (eloc(4)-eth(4)-eme(4,jj,i))*(stre(4)+stiini(4,jj,i))+
-c     &            (eloc(5)-eth(5)-eme(5,jj,i))*(stre(5)+stiini(5,jj,i))+
-c     &            (eloc(6)-eth(6)-eme(6,jj,i))*(stre(6)+stiini(6,jj,i))
                endif
                eme(1,jj,i)=eloc(1)-eth(1)
                eme(2,jj,i)=eloc(2)-eth(2)
@@ -1015,12 +1001,6 @@ c     &            (eloc(6)-eth(6)-eme(6,jj,i))*(stre(6)+stiini(6,jj,i))
             endif
 !
             if((iout.gt.0).or.(iout.eq.-2).or.(kode.le.-100)) then
-c               eme(1,jj,i)=eloc(1)-eth(1)
-c               eme(2,jj,i)=eloc(2)-eth(2)
-c               eme(3,jj,i)=eloc(3)-eth(3)
-c               eme(4,jj,i)=eloc(4)-eth(4)
-c               eme(5,jj,i)=eloc(5)-eth(5)
-c               eme(6,jj,i)=eloc(6)-eth(6)
 !
                eei(1,jj,i)=eloc(1)
                eei(2,jj,i)=eloc(2)
@@ -1033,7 +1013,7 @@ c               eme(6,jj,i)=eloc(6)-eth(6)
 !     updating the kinetic energy
 !
             if(ikin.eq.1) then
-               
+!               
                call materialdata_rho(rhcon,nrhcon,imat,rho,t1l,
      &              ntmat_,ithermal)
                do m1=1,3
@@ -1166,6 +1146,8 @@ c     Bernhardi end
             nal=nal+3*nope
          endif
       enddo
+!
+c      write(*,*) 'resultsmech ',qa(4)
 !
       return
       end

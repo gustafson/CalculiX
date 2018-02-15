@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,8 @@
      &  advfa,xlet,cosa,volume,au,ad,jq,irow,ap,ielfa,ifabou,xle,
      &  b,xxn,neq,nzs,hfa,gradpel,bp,xxi,neij,
      &  xlen,cosb,ielmatf,mi,a1,a2,a3,velo,veloo,dtimef,shcon,
-     &  ntmat_,vel,nactdohinv,xrlfa,flux,nefa,nefb,iau6,xxicn)
+     &  ntmat_,vel,nactdohinv,xrlfa,flux,nefa,nefb,iau6,xxicn,
+     &  gamma)
 !
 !     filling the lhs and rhs to calculate p
 !
@@ -39,14 +40,14 @@
      &  hfa(3,*),gradpel(3,*),bp(*),xxi(3,*),xlen(*),r,a1,a2,a3,
      &  xflux,constant,velo(nef,0:7),veloo(nef,0:7),dtimef,
      &  shcon(0:3,ntmat_,*),vel(nef,0:7),dd,convec,fluxisobar,
-     &  coef1,coef3,xrlfa(3,*),coef2,gamma,coefp,coefn,xmach,
+     &  coef1,coef3,xrlfa(3,*),coef2,gamma(*),coefp,coefn,xmach,
      &  flux(*),bp_ifa,aa(8,8),xxicn(3,*)
 !
       intent(in) nef,lakonf,ipnei,neifa,neiel,vfa,area,
      &  advfa,xlet,cosa,volume,jq,irow,ielfa,ifabou,xle,
      &  xxn,nzs,hfa,gradpel,xxi,neij,
      &  xlen,cosb,ielmatf,mi,a1,a2,a3,velo,veloo,dtimef,shcon,
-     &  ntmat_,vel,nactdohinv,xrlfa,flux
+     &  ntmat_,vel,nactdohinv,xrlfa,flux,gamma
 !
       intent(inout) ad,au,b,ap,bp
 !
@@ -191,7 +192,7 @@
                ad(i)=ad(i)+coef
 c
 c               retarded central difference     
-c               b(i)=b(i)-(vfa(4,ifa)-vel(i,4))*coef
+c               b(i)=b(i)-gamma(ifa)*(vfa(4,ifa)-vel(i,4))*coef
 c
             else
                if(iel.gt.0) then
@@ -202,7 +203,7 @@ c
 !
 c
 c               retarded central difference     
-c                  b(i)=b(i)-(vfa(4,ifa)-vel(iel,4))*coef
+c                  b(i)=b(i)-gamma(ifa)*(vfa(4,ifa)-vel(iel,4))*coef
 c
                elseif(knownpressure.eq.0) then
                   ad(i)=ad(i)+coef

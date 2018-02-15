@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2015 Guido Dhondt                          */
+/*              Copyright (C) 1998-2017 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -38,7 +38,7 @@ void remastructar(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
        spring elements: version for frequency calculations (called
        by arpack and arpackcs)  */
 
-    ITG *nodempc=NULL,*mast1=NULL,*ipointer=NULL,mpcend,mpcmult,
+    ITG *nodempc=NULL,*mast1=NULL,*ipointer=NULL,mpcend,
         callfrommain,i,*irow=NULL,mt;
 
     double *coefmpc=NULL;
@@ -54,7 +54,7 @@ void remastructar(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     callfrommain=0;
     cascade(ipompc,&coefmpc,&nodempc,nmpc,
 	    mpcfree,nodeboun,ndirboun,nboun,ikmpc,
-	    ilmpc,ikboun,ilboun,&mpcend,&mpcmult,
+	    ilmpc,ikboun,ilboun,&mpcend,
 	    labmpc,nk,memmpc_,icascade,maxlenmpc,
             &callfrommain,iperturb,ithermal);
 

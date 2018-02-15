@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,14 +24,14 @@ c     Bernhardi start
       implicit none
 !
       character*8 lakon(*)
-c
+!
       real*8 co(3,*),coords(3)
-c
+!
       integer i,kon(*),ipkon(*),ne,nope,nopeexp,
      &  nk,nk_,j,indexe,k,nodeb(8,3)
-c
+!
       indexe=ipkon(i)
-c
+!
       if(lakon(i)(1:5).eq.'C3D8I')then
          nope=8
          nopeexp=3

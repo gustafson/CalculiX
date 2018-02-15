@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,7 +32,11 @@
       real*8 coefmpc(*),denominator,vfa(0:7,*),sum,xbounact(*),
      &  coefnorm
 !
-c      do i=1,nface
+      intent(in) nface,ielfa,is,ie,ifabou,ipompc,coefmpc,
+     &  nodempc,ipnei,neifa,labmpc,xbounact,nactdoh,ifaext,nfaext
+!
+      intent(inout) vfa
+!
 c$omp parallel default(none)
 c$omp& shared(nfaext,ifaext,ielfa,ifabou,ipompc,nodempc,coefmpc,
 c$omp&        xbounact,nactdoh,neifa,ipnei,vfa,is,ie)

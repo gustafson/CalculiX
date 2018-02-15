@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -286,7 +286,7 @@ c            close(70)
             coefmpc(mpcfree)=al(number,ndir)
             mpcfree=nodempc(3,mpcfree)
             if(mpcfree.eq.0) then
-               write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
+               write(*,*)'*ERROR in generatecycmpcs: increase memmpc_'
                call exit(201)
             endif
          enddo
@@ -301,7 +301,8 @@ c            close(70)
                mpcfreeold=mpcfree
                mpcfree=nodempc(3,mpcfree)
                if(mpcfree.eq.0) then
-                  write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
+                  write(*,*)
+     &             '*ERROR in generatecycmpcs: increase memmpc_'
                   call exit(201)
                endif
             else
@@ -361,7 +362,7 @@ c            close(70)
       coefmpc(mpcfree)=1.d0
       mpcfree=nodempc(3,mpcfree)
       if(mpcfree.eq.0) then
-         write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
+         write(*,*)'*ERROR in generatecycmpcs: increase memmpc_'
          call exit(201)
       endif
       if(.not.interpolation) then
@@ -371,7 +372,7 @@ c            close(70)
          mpcfreeold=mpcfree
          mpcfree=nodempc(3,mpcfree)
          if(mpcfree.eq.0) then
-            write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
+            write(*,*)'*ERROR in generatecycmpcs: increase memmpc_'
             call exit(201)
          endif
       else
@@ -382,7 +383,7 @@ c            close(70)
             mpcfreeold=mpcfree
             mpcfree=nodempc(3,mpcfree)
             if(mpcfree.eq.0) then
-               write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
+               write(*,*)'*ERROR in generatecycmpcs: increase memmpc_'
                call exit(201)
             endif
          enddo
@@ -409,7 +410,7 @@ c            close(70)
          call nident(ikmpc,idof,nmpc-1,id)
          if(id.gt.0) then
             if(ikmpc(id).eq.idof) then
-               write(*,*) '*ERROR in generatecycmpcs: temperature'
+               write(*,*) '*ERROR in generatecycmpcs: pressure'
                write(*,*) '       in node',noded,'is already used'
                call exit(201)
             endif
@@ -429,7 +430,7 @@ c            close(70)
          coefmpc(mpcfree)=1.d0
          mpcfree=nodempc(3,mpcfree)
          if(mpcfree.eq.0) then
-            write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
+            write(*,*)'*ERROR in generatecycmpcs: increase memmpc_'
             call exit(201)
          endif
          if(.not.interpolation) then
@@ -439,7 +440,7 @@ c            close(70)
             mpcfreeold=mpcfree
             mpcfree=nodempc(3,mpcfree)
             if(mpcfree.eq.0) then
-               write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
+               write(*,*)'*ERROR in generatecycmpcs: increase memmpc_'
                call exit(201)
             endif
          else
@@ -450,7 +451,8 @@ c            close(70)
                mpcfreeold=mpcfree
                mpcfree=nodempc(3,mpcfree)
                if(mpcfree.eq.0) then
-                  write(*,*)'*ERROR in generatecycmpcs: increase nmpc_'
+                  write(*,*)
+     &              '*ERROR in generatecycmpcs: increase memmpc_'
                   call exit(201)
                endif
             enddo

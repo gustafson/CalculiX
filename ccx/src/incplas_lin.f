@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine incplas_lin(elconloc,plconloc,xstate,xstateini,
      &  elas,emec,ithermal,icmd,beta,stre,vj,kode,
      &  ielas,amat,t1l,dtime,time,ttime,iel,iint,nstate_,mi,
-     &  eloc,pgauss,nmethod,pnewdt)
+     &  eloc,pgauss,nmethod,pnewdt,depvisc)
 !
 !     calculates stiffness and stresses for the incremental plasticity
 !     material law
@@ -49,7 +49,7 @@
      &  dcop,time,ttime,eloc(6),xstate(nstate_,mi(1),*),
      &  xstateini(nstate_,mi(1),*),decra(5),deswa(5),serd,
      &  esw(2),ec(2),p,qtild,predef(1),dpred(1),timeabq(2),pgauss(3),
-     &  dtemp,pnewdt,um2
+     &  dtemp,pnewdt,um2,depvisc
 !
 !
       kel=reshape((/1,1,1,1,1,1,2,2,2,2,2,2,1,1,3,3,2,2,3,3,3,3,3,3,
@@ -58,7 +58,7 @@
      &          1,2,2,3,1,3,2,3,2,3,2,3/),(/4,21/))
       dkl=reshape((/1.,0.,0.,0.,1.,0.,0.,0.,1./),(/3,3/))
 !
-      pnewdt=-1.d0
+c      pnewdt=-1.d0
       leximp=1
       lend=2
       user_creep=0
@@ -441,6 +441,10 @@
          xstate(7+i,iint,iel)=stbl(i)
       enddo
       xstate(1,iint,iel)=ep
+!
+!     maximum equivalent viscoplastic strain in this increment
+!
+      depvisc=max(depvisc,ep-epini)
 !
       return
       end

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,7 +30,8 @@
 !
       integer nface,ielfa(4,*),ipo1,iel2,ipo3,i,j,icyclic,ifatie(*)
 !
-      real*8 xrlfa(3,*),xl1,xl2,advfa(*),adv(*),hel(3,*),hfa(3,*),c(3,3)
+      real*8 xrlfa(3,*),xl1,xl2,advfa(*),adv(*),hel(3,*),hfa(3,*),
+     &     c(3,3)
 !     
 c$omp parallel default(none)
 c$omp& shared(nface,ielfa,xrlfa,advfa,adv,hfa,hel,icyclic,c,ifatie)
@@ -68,11 +69,11 @@ c     &        adv(iel2),xl1,xl2
      &                       c(3,j)*hel(3,iel2)))/advfa(i)
                enddo
             endif
-         elseif(ielfa(3,i).gt.0) then
+         elseif(ielfa(3,i).ne.0) then
 !
 !           external face; linear extrapolation
 !
-            ipo3=ielfa(3,i)
+            ipo3=abs(ielfa(3,i))
             advfa(i)=xl1*adv(ipo1)+xrlfa(3,i)*adv(ipo3)
             do j=1,3
                hfa(j,i)=(xl1*hel(j,ipo1)+xrlfa(3,i)*hel(j,ipo3))

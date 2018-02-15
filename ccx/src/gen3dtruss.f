@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -84,7 +84,7 @@
             mpcfree=nodempc(3,mpcfree)
             if(mpcfree.eq.0) then
                write(*,*) 
-     &              '*ERROR in gen3dtruss: increase nmpc_'
+     &              '*ERROR in gen3dtruss: increase memmpc_'
                call exit(201)
             endif
             do k=2,4
@@ -94,7 +94,7 @@
                mpcfree=nodempc(3,mpcfree)
                if(mpcfree.eq.0) then
                   write(*,*) 
-     &                 '*ERROR in gen3dtruss: increase nmpc_'
+     &                 '*ERROR in gen3dtruss: increase memmpc_'
                   call exit(201)
                endif
             enddo
@@ -104,7 +104,7 @@
             mpcfreenew=nodempc(3,mpcfree)
             if(mpcfreenew.eq.0) then
                write(*,*) 
-     &              '*ERROR in gen3dtruss: increase nmpc_'
+     &              '*ERROR in gen3dtruss: increase memmpc_'
                call exit(201)
             endif
             nodempc(3,mpcfree)=0

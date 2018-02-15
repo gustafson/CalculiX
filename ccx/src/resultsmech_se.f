@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -56,7 +56,7 @@
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),xs2(3,7),
      &  alcon(0:6,ntmat_,*),vini(0:mi(2),*),thickness,
      &  alzero(*),orab(7,*),elas(21),rho,fn(0:mi(2),*),
-     &  fnl(3,10),skl(3,3),beta(6),xl2(3,8),pnewdt,
+     &  fnl(3,10),skl(3,3),beta(6),xl2(3,8),qa(4),
      &  vkl(0:3,3),t0(*),t1(*),prestr(6,mi(1),*),eme(6,mi(1),*),
      &  ckl(3,3),vold(0:mi(2),*),eloc(9),veold(0:mi(2),*),
      &  springarea(2,*),elconloc(21),eth(6),xkl(3,3),voldl(0:mi(2),26),
@@ -77,6 +77,8 @@
 !
       iflag=3
       null=0
+      qa(3)=-1.d0
+      qa(4)=0.d0
 !
       mt=mi(2)+1
 !
@@ -832,6 +834,9 @@ c     Bernhardi end
                   elseif(lakonl(4:6).eq.'20 ') then
                      nopered=20
                      call lintemp(t0,t1,konl,nopered,jj,t0l,t1l)
+                  elseif(lakonl(4:6).eq.'10T') then
+                     call linscal10(t0,konl,t0l,null,shp)
+                     call linscal10(t1,konl,t1l,null,shp)
                   else
                      do i1=1,nope
                         t0l=t0l+shp(4,i1)*t0(konl(i1))
@@ -848,6 +853,9 @@ c     Bernhardi end
                   elseif(lakonl(4:6).eq.'20 ') then
                      nopered=20
                      call lintemp_th(t0,vold,konl,nopered,jj,t0l,t1l,mi)
+                  elseif(lakonl(4:6).eq.'10T') then
+                     call linscal10(t0,konl,t0l,null,shp)
+                     call linscal10(vold,konl,t1l,mi(2),shp)
                   else
                      do i1=1,nope
                         t0l=t0l+shp(4,i1)*t0(konl(i1))
@@ -881,7 +889,7 @@ c     Bernhardi end
      &           nalcon,imat,amat,iorien,pgauss,orab,ntmat_,
      &           elas,rho,i,ithermal,alzero,mattyp,t0l,t1l,ihyper,
      &           istiff,elconloc,eth,kode,plicon,nplicon,
-     &           plkcon,nplkcon,npmat_,plconloc,mi(1),dtime,i,jj,
+     &           plkcon,nplkcon,npmat_,plconloc,mi(1),dtime,jj,
      &           xstiff,ncmat_)
 !
 !           determining the mechanical strain
@@ -917,8 +925,8 @@ c                 emec0(m1)=emeini(m1,jj,i)
      &           icmd,beta,stre,xkl,ckl,vj,xikl,vij,
      &           plconloc,xstate,xstateini,ielas,
      &           amat,t1l,dtime,time,ttime,i,jj,nstate_,mi(1),
-     &           iorien,pgauss,orab,eloc,mattyp,pnewdt,istep,iinc,
-     &           ipkon,nmethod,iperturb)
+     &           iorien,pgauss,orab,eloc,mattyp,qa(3),istep,iinc,
+     &           ipkon,nmethod,iperturb,qa(4))
 !
             if(((nmethod.ne.4).or.(iperturb(1).ne.0)).and.
      &         (nmethod.ne.5)) then

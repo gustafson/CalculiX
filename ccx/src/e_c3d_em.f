@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -46,7 +46,8 @@
      &  ielmat(mi(3),*),ntmat_,nope,nopes,imat,mint2d,mint3d,
      &  ifacet(6,4),nopev,ifacew(8,5),ipointeri,ipointerj,iflag,
      &  nelcon(2,*),ncmat_,nalcon(2,*),iel,ii1,ilength,istart,iset,
-     &  isurf,jj1,istartset(*),iendset(*),ialset(*),three,nfaces
+     &  isurf,jj1,istartset(*),iendset(*),ialset(*),three,nfaces,
+     &  null
 !
       real*8 co(3,*),xl(3,26),shp(4,26),s(100,100),ff(100),xs2(3,7),
      &  t1(*),h0(3,*),xl2(3,9),xsj2(3),shp2(7,9),vold(0:mi(2),*),
@@ -74,6 +75,7 @@
      &             4,6,3,1,12,15,9,13/
       data d /1.d0,0.d0,0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,1.d0/
 !
+      null=0
       one=1
       three=3
       iflag=3
@@ -249,8 +251,10 @@
                   h0l(j)=h0l(j)+h0(j,konl(i1))/8.d0
                enddo
             enddo
-         elseif(lakonl(4:6).eq.'20 ')then
+         elseif(lakonl(4:6).eq.'20 ') then
             call linvec(h0,konl,nope,kk,h0l,one,three)
+         elseif(lakonl(4:6).eq.'10T') then
+            call linvec(h0,konl,h0l,one,three,shp)
          else
             do i1=1,nope
                do j=1,3
@@ -268,6 +272,8 @@
                enddo
             elseif(lakonl(4:6).eq.'20 ')then
                call linscal(t1,konl,nope,kk,t1l,one)
+            elseif(lakonl(4:6).eq.'10T') then
+               call linscal10(t1,konl,t1l,null,shp)
             else
                do i1=1,nope
                   t1l=t1l+shp(4,i1)*t1(konl(i1))
@@ -280,6 +286,8 @@
                enddo
             elseif(lakonl(4:6).eq.'20 ')then
                call linscal(vold,konl,nope,kk,t1l,mi(2))
+            elseif(lakonl(4:6).eq.'10T') then
+               call linscal10(vold,konl,t1l,mi(2),shp)
             else
                do i1=1,nope
                   t1l=t1l+shp(4,i1)*vold(0,konl(i1))
@@ -384,202 +392,202 @@
 !     
       m=int(elconloc(2))
       if(iactive(m).eq.0) return
-         iset=iactive(m)
-         istart=istartset(iset)
-         ilength=iendset(iset)-istart+1
+      iset=iactive(m)
+      istart=istartset(iset)
+      ilength=iendset(iset)-istart+1
 !     
-         isurf=10*nelem+nfaces
-         call nident(ialset(istart),isurf,ilength,id)
+      isurf=10*nelem+nfaces
+      call nident(ialset(istart),isurf,ilength,id)
 !     
-         do
-            if(id.eq.0) exit
-            isurf=ialset(istart+id-1)
-            iel=int(isurf/10.d0)
-            if(iel.ne.nelem) exit
-            ig=isurf-10*iel
+      do
+         if(id.eq.0) exit
+         isurf=ialset(istart+id-1)
+         iel=int(isurf/10.d0)
+         if(iel.ne.nelem) exit
+         ig=isurf-10*iel
 !     
 !     treatment of wedge faces
 !     
-            if(lakonl(4:4).eq.'6') then
-               mint2d=1
-               if(ig.le.2) then
-                  nopes=3
-               else
-                  nopes=4
-               endif
-            endif
-            if(lakonl(4:5).eq.'15') then
-               if(ig.le.2) then
-                  mint2d=3
-                  nopes=6
-               else
-                  mint2d=4
-                  nopes=8
-               endif
-            endif
-!     
-            if((nope.eq.20).or.(nope.eq.8)) then
-               do i=1,nopes
-                  do j=1,3
-                     h0l2(j,i)=h0(j,konl(ifaceq(i,ig)))
-                     xl2(j,i)=co(j,konl(ifaceq(i,ig)))
-                  enddo
-               enddo
-            elseif((nope.eq.10).or.(nope.eq.4)) then
-               do i=1,nopes
-                  do j=1,3
-                     h0l2(j,i)=h0(j,konl(ifacet(i,ig)))
-                     xl2(j,i)=co(j,konl(ifacet(i,ig)))
-                  enddo
-               enddo
+         if(lakonl(4:4).eq.'6') then
+            mint2d=1
+            if(ig.le.2) then
+               nopes=3
             else
-               do i=1,nopes
-                  do j=1,3
-                     h0l2(j,i)=h0(j,konl(ifacew(i,ig)))
-                     xl2(j,i)=co(j,konl(ifacew(i,ig)))
-                  enddo
+               nopes=4
+            endif
+         endif
+         if(lakonl(4:5).eq.'15') then
+            if(ig.le.2) then
+               mint2d=3
+               nopes=6
+            else
+               mint2d=4
+               nopes=8
+            endif
+         endif
+!     
+         if((nope.eq.20).or.(nope.eq.8)) then
+            do i=1,nopes
+               do j=1,3
+                  h0l2(j,i)=h0(j,konl(ifaceq(i,ig)))
+                  xl2(j,i)=co(j,konl(ifaceq(i,ig)))
                enddo
+            enddo
+         elseif((nope.eq.10).or.(nope.eq.4)) then
+            do i=1,nopes
+               do j=1,3
+                  h0l2(j,i)=h0(j,konl(ifacet(i,ig)))
+                  xl2(j,i)=co(j,konl(ifacet(i,ig)))
+               enddo
+            enddo
+         else
+            do i=1,nopes
+               do j=1,3
+                  h0l2(j,i)=h0(j,konl(ifacew(i,ig)))
+                  xl2(j,i)=co(j,konl(ifacew(i,ig)))
+               enddo
+            enddo
+         endif
+!     
+         do i=1,mint2d
+!     
+            if((lakonl(4:5).eq.'8R').or.
+     &           ((lakonl(4:4).eq.'6').and.(nopes.eq.4))) then
+               xi=gauss2d1(1,i)
+               et=gauss2d1(2,i)
+               weight=weight2d1(i)
+            elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R').or.
+     &              ((lakonl(4:5).eq.'15').and.(nopes.eq.8))) then
+               xi=gauss2d2(1,i)
+               et=gauss2d2(2,i)
+               weight=weight2d2(i)
+            elseif(lakonl(4:4).eq.'2') then
+               xi=gauss2d3(1,i)
+               et=gauss2d3(2,i)
+               weight=weight2d3(i)
+            elseif((lakonl(4:5).eq.'10').or.
+     &              ((lakonl(4:5).eq.'15').and.(nopes.eq.6))) then
+               xi=gauss2d5(1,i)
+               et=gauss2d5(2,i)
+               weight=weight2d5(i)
+            elseif((lakonl(4:4).eq.'4').or.
+     &              ((lakonl(4:4).eq.'6').and.(nopes.eq.3))) then
+               xi=gauss2d4(1,i)
+               et=gauss2d4(2,i)
+               weight=weight2d4(i)
             endif
 !     
-            do i=1,mint2d
+            if(nopes.eq.8) then
+               call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
+            elseif(nopes.eq.4) then
+               call shape4q(xi,et,xl2,xsj2,xs2,shp2,iflag)
+            elseif(nopes.eq.6) then
+               call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+            else
+               call shape3tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+            endif
 !     
-               if((lakonl(4:5).eq.'8R').or.
-     &              ((lakonl(4:4).eq.'6').and.(nopes.eq.4))) then
-                  xi=gauss2d1(1,i)
-                  et=gauss2d1(2,i)
-                  weight=weight2d1(i)
-               elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R').or.
-     &                 ((lakonl(4:5).eq.'15').and.(nopes.eq.8))) then
-                  xi=gauss2d2(1,i)
-                  et=gauss2d2(2,i)
-                  weight=weight2d2(i)
-               elseif(lakonl(4:4).eq.'2') then
-                  xi=gauss2d3(1,i)
-                  et=gauss2d3(2,i)
-                  weight=weight2d3(i)
-               elseif((lakonl(4:5).eq.'10').or.
-     &                 ((lakonl(4:5).eq.'15').and.(nopes.eq.6))) then
-                  xi=gauss2d5(1,i)
-                  et=gauss2d5(2,i)
-                  weight=weight2d5(i)
-               elseif((lakonl(4:4).eq.'4').or.
-     &                 ((lakonl(4:4).eq.'6').and.(nopes.eq.3))) then
-                  xi=gauss2d4(1,i)
-                  et=gauss2d4(2,i)
-                  weight=weight2d4(i)
-               endif
-!     
-               if(nopes.eq.8) then
-                  call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
-               elseif(nopes.eq.4) then
-                  call shape4q(xi,et,xl2,xsj2,xs2,shp2,iflag)
-               elseif(nopes.eq.6) then
-                  call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
-               else
-                  call shape3tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
-               endif
-!     
-               do k=1,3
-                  h0l(k)=0.d0
-                  do j=1,nopes
-                     h0l(k)=h0l(k)+h0l2(k,j)*shp2(4,j)
-                  enddo
+            do k=1,3
+               h0l(k)=0.d0
+               do j=1,nopes
+                  h0l(k)=h0l(k)+h0l2(k,j)*shp2(4,j)
                enddo
+            enddo
 !     
-               if((rhsi).and.(m.gt.1)) then
-                  do k=1,nopes
-                     if((nope.eq.20).or.(nope.eq.8)) then
-                        ipointer=5*(ifaceq(k,ig)-1)
-                     elseif((nope.eq.10).or.(nope.eq.4)) then
-                        ipointer=5*(ifacet(k,ig)-1)
-                     else
-                        ipointer=5*(ifacew(k,ig)-1)
-                     endif
+            if((rhsi).and.(m.gt.1)) then
+               do k=1,nopes
+                  if((nope.eq.20).or.(nope.eq.8)) then
+                     ipointer=5*(ifaceq(k,ig)-1)
+                  elseif((nope.eq.10).or.(nope.eq.4)) then
+                     ipointer=5*(ifacet(k,ig)-1)
+                  else
+                     ipointer=5*(ifacew(k,ig)-1)
+                  endif
 !     
 !                    F_A vector
 !
-                     ff(ipointer+1)=ff(ipointer+1)+
-     &                  shp2(4,k)*(h0l(2)*xsj2(3)-h0l(3)*xsj2(2))*weight
-                     ff(ipointer+2)=ff(ipointer+2)+
-     &                  shp2(4,k)*(h0l(3)*xsj2(1)-h0l(1)*xsj2(3))*weight
-                     ff(ipointer+3)=ff(ipointer+3)+
-     &                  shp2(4,k)*(h0l(1)*xsj2(2)-h0l(2)*xsj2(1))*weight
+                  ff(ipointer+1)=ff(ipointer+1)+
+     &                 shp2(4,k)*(h0l(2)*xsj2(3)-h0l(3)*xsj2(2))*weight
+                  ff(ipointer+2)=ff(ipointer+2)+
+     &                 shp2(4,k)*(h0l(3)*xsj2(1)-h0l(1)*xsj2(3))*weight
+                  ff(ipointer+3)=ff(ipointer+3)+
+     &                 shp2(4,k)*(h0l(1)*xsj2(2)-h0l(2)*xsj2(1))*weight
 !     
-                  enddo
+               enddo
+            endif
+!     
+            do ii=1,nopes
+               if((nope.eq.20).or.(nope.eq.8)) then
+                  ipointeri=5*(ifaceq(ii,ig)-1)
+               elseif((nope.eq.10).or.(nope.eq.4)) then
+                  ipointeri=5*(ifacet(ii,ig)-1)
+               else
+                  ipointeri=5*(ifacew(ii,ig)-1)
                endif
-!     
-               do ii=1,nopes
+               do jj=1,nopes
                   if((nope.eq.20).or.(nope.eq.8)) then
-                     ipointeri=5*(ifaceq(ii,ig)-1)
+                     ipointerj=5*(ifaceq(jj,ig)-1)
                   elseif((nope.eq.10).or.(nope.eq.4)) then
-                     ipointeri=5*(ifacet(ii,ig)-1)
+                     ipointerj=5*(ifacet(jj,ig)-1)
                   else
-                     ipointeri=5*(ifacew(ii,ig)-1)
+                     ipointerj=5*(ifacew(jj,ig)-1)
                   endif
-                  do jj=1,nopes
-                     if((nope.eq.20).or.(nope.eq.8)) then
-                        ipointerj=5*(ifaceq(jj,ig)-1)
-                     elseif((nope.eq.10).or.(nope.eq.4)) then
-                        ipointerj=5*(ifacet(jj,ig)-1)
-                     else
-                        ipointerj=5*(ifacew(jj,ig)-1)
-                     endif
 !     
-                     if(m.gt.1) then
+                  if(m.gt.1) then
 !
 !                       K_Aphi matrix
 !
-                        if((ipointeri+1).gt.ipointerj+5) cycle
-                        s(ipointeri+1,ipointerj+5)=
-     &                       s(ipointeri+1,ipointerj+5)
-     &                       +shp2(4,jj)*(shp2(3,ii)*xsj2(2)
-     &                                   -shp2(2,ii)*xsj2(3))
-     &                       *weight
+                     if((ipointeri+1).gt.ipointerj+5) cycle
+                     s(ipointeri+1,ipointerj+5)=
+     &                    s(ipointeri+1,ipointerj+5)
+     &                    +shp2(4,jj)*(shp2(3,ii)*xsj2(2)
+     &                    -shp2(2,ii)*xsj2(3))
+     &                    *weight
 !     
-                        if((ipointeri+2).gt.ipointerj+5) cycle
-                        s(ipointeri+2,ipointerj+5)=
-     &                       s(ipointeri+2,ipointerj+5)
-     &                       +shp2(4,jj)*(shp2(1,ii)*xsj2(3)
-     &                                   -shp2(3,ii)*xsj2(1))
-     &                       *weight
+                     if((ipointeri+2).gt.ipointerj+5) cycle
+                     s(ipointeri+2,ipointerj+5)=
+     &                    s(ipointeri+2,ipointerj+5)
+     &                    +shp2(4,jj)*(shp2(1,ii)*xsj2(3)
+     &                    -shp2(3,ii)*xsj2(1))
+     &                    *weight
 !     
-                        if((ipointeri+3).gt.ipointerj+5) cycle
-                        s(ipointeri+3,ipointerj+5)=
-     &                       s(ipointeri+3,ipointerj+5)
-     &                       +shp2(4,jj)*(shp2(2,ii)*xsj2(1)
-     &                                   -shp2(1,ii)*xsj2(2))
-     &                       *weight
+                     if((ipointeri+3).gt.ipointerj+5) cycle
+                     s(ipointeri+3,ipointerj+5)=
+     &                    s(ipointeri+3,ipointerj+5)
+     &                    +shp2(4,jj)*(shp2(2,ii)*xsj2(1)
+     &                    -shp2(1,ii)*xsj2(2))
+     &                    *weight
 !
 !                       K_phiA matrix
 !
-                        if(ipointeri+5.gt.(ipointerj+1)) cycle
-                        s(ipointeri+5,ipointerj+1)=
-     &                       s(ipointeri+5,ipointerj+1)
-     &                       +shp2(4,ii)*(shp2(3,jj)*xsj2(2)
-     &                                   -shp2(2,jj)*xsj2(3))
-     &                       *weight
+                     if(ipointeri+5.gt.(ipointerj+1)) cycle
+                     s(ipointeri+5,ipointerj+1)=
+     &                    s(ipointeri+5,ipointerj+1)
+     &                    +shp2(4,ii)*(shp2(3,jj)*xsj2(2)
+     &                    -shp2(2,jj)*xsj2(3))
+     &                    *weight
 !     
-                        if(ipointeri+5.gt.(ipointerj+2)) cycle
-                        s(ipointeri+5,ipointerj+2)=
-     &                       s(ipointeri+5,ipointerj+2)
-     &                       +shp2(4,ii)*(shp2(1,jj)*xsj2(3)
-     &                                   -shp2(3,jj)*xsj2(1))
-     &                       *weight
+                     if(ipointeri+5.gt.(ipointerj+2)) cycle
+                     s(ipointeri+5,ipointerj+2)=
+     &                    s(ipointeri+5,ipointerj+2)
+     &                    +shp2(4,ii)*(shp2(1,jj)*xsj2(3)
+     &                    -shp2(3,jj)*xsj2(1))
+     &                    *weight
 !     
-                        if(ipointeri+5.gt.(ipointerj+3)) cycle
-                        s(ipointeri+5,ipointerj+3)=
-     &                       s(ipointeri+5,ipointerj+3)
-     &                       +shp2(4,ii)*(shp2(2,jj)*xsj2(1)
-     &                                   -shp2(1,jj)*xsj2(2))
-     &                       *weight
-                     endif
-                  enddo
+                     if(ipointeri+5.gt.(ipointerj+3)) cycle
+                     s(ipointeri+5,ipointerj+3)=
+     &                    s(ipointeri+5,ipointerj+3)
+     &                    +shp2(4,ii)*(shp2(2,jj)*xsj2(1)
+     &                    -shp2(1,jj)*xsj2(2))
+     &                    *weight
+                  endif
                enddo
-!     
             enddo
 !     
-            id=id-1
          enddo
+!     
+         id=id-1
+      enddo
 !     
       return
       end

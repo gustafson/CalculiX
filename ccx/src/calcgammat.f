@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2015 Guido Dhondt
+!              Copyright (C) 1998-2017 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,19 +16,19 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine calcgammat(nface,ielfa,vel,gradtfa,gammat,xlet,
-     &  xxn,xxj,ipnei,betam,nef)
+      subroutine calcgammat(nface,ielfa,vel,gradtel,gamma,xlet,
+     &  xxn,xxj,ipnei,betam,nef,flux)
 !
-!     determine gammat:
-!        upwind difference: gammat=0
-!        central difference: gammat=1
+!     determine gamma for the temperature:
+!        upwind difference: gamma=0
+!        central difference: gamma=1
 !
       implicit none
 !
       integer nface,ielfa(4,*),i,j,indexf,ipnei(*),iel1,iel2,nef
 !
-      real*8 vel(nef,0:7),gradtfa(3,*),xxn(3,*),xxj(3,*),vud,vcd,
-     &  gammat(*),phic,xlet(*),betam
+      real*8 vel(nef,0:7),gradtel(3,*),xxn(3,*),xxj(3,*),vud,vcd,
+     &  gamma(*),phic,xlet(*),betam,flux(*)
 !
       do i=1,nface
          iel2=ielfa(2,i)
@@ -41,34 +41,37 @@
          indexf=ipnei(iel1)+j
 !
          vcd=vel(iel2,0)-vel(iel1,0)
+         if(dabs(vcd).lt.1.d-3*dabs(vel(iel1,0))) vcd=0.d0
 !
-         vud=2.d0*xlet(indexf)*
-     &       (gradtfa(1,i)*xxj(1,indexf)+
-     &        gradtfa(2,i)*xxj(2,indexf)+
-     &        gradtfa(3,i)*xxj(3,indexf))
-c         write(*,*) xlet(indexf)
-c         write(*,*) xxn(1,indexf),xxn(2,indexf),xxn(3,indexf)
-c         write(*,*) xxj(1,indexf),xxj(2,indexf),xxj(3,indexf)
-c         write(*,*) 'calcgammat ',vcd,vud
+         if(flux(indexf).ge.0.d0) then
+            vud=2.d0*xlet(indexf)*
+     &           (gradtel(1,iel1)*xxj(1,indexf)+
+     &            gradtel(2,iel1)*xxj(2,indexf)+
+     &            gradtel(3,iel1)*xxj(3,indexf))
+         else
+            vud=2.d0*xlet(indexf)*
+     &           (gradtel(1,iel2)*xxj(1,indexf)+
+     &            gradtel(2,iel2)*xxj(2,indexf)+
+     &            gradtel(3,iel2)*xxj(3,indexf))
+         endif
 !
          if(dabs(vud).lt.1.d-20) then
-c            gammat(i)=1.d0
-            gammat(i)=0.d0
+            gamma(i)=0.d0
             cycle
          endif
 !            
          phic=1.d0-vcd/vud
 !
          if(phic.ge.1.d0) then
-            gammat(i)=0.d0
+            gamma(i)=0.d0
          elseif(phic.le.0.d0) then
-            gammat(i)=0.d0
+            gamma(i)=0.d0
          elseif(betam.le.phic) then
-            gammat(i)=1.d0
+            gamma(i)=1.d0
          else
-            gammat(i)=phic/betam
+            gamma(i)=phic/betam
          endif
-c         write(*,*) 'calcgammat ',i,gammat(i)
+c         write(*,*) 'calcgammat',i,gamma(i)
       enddo
 !            
       return
