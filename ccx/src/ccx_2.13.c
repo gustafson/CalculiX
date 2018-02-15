@@ -132,6 +132,7 @@ FORTRAN(openfile,(jobnamef,output));
 
 printf("\n************************************************************\n\n");
 printf("CalculiX Version 2.13, Copyright(C) 1998-2017 Guido Dhondt\n");
+printf("CalculiX Extras version 2.13, Copyright(C) 2013-2018 Peter Gustafson\n");
 printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
 printf("software, and you are welcome to redistribute it under\n");
 printf("certain conditions, see gpl.htm\n\n");
