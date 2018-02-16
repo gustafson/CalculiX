@@ -404,10 +404,12 @@ c         iaxial=0
      &           ipoinp,inp,ipoinpc,imat)
          elseif((textpart(1)(1:12).eq.'*CONTACTFILE').or.
      &          (textpart(1)(1:14).eq.'*CONTACTOUTPUT')) then
-            if(textpart(1)(1:12).eq.'*CONTACTFILE') then
-               output='asc'
-            else
-               output='bin'
+            if(output.ne.'exo') then
+               if(textpart(1)(1:12).eq.'*CONTACTFILE') then
+                  output='asc'
+               else
+                  output='bin'
+               endif
             endif
             ifile_output=3
             call noelfiles(inpc,textpart,jout,filab,nmethod,
@@ -569,10 +571,12 @@ c
 !
          elseif((textpart(1)(1:7).eq.'*ELFILE').or.
      &          (textpart(1)(1:14).eq.'*ELEMENTOUTPUT')) then
-            if(textpart(1)(1:7).eq.'*ELFILE') then
-               output='asc'
-            else
-               output='bin'
+            if(output.ne.'exo') then
+               if(textpart(1)(1:7).eq.'*ELFILE') then
+                  output='asc'
+               else
+                  output='bin'
+               endif
             endif
             ifile_output=2
             call noelfiles(inpc,textpart,jout,filab,nmethod,
@@ -776,10 +780,12 @@ c
 !
          elseif((textpart(1)(1:9).eq.'*NODEFILE').or.
      &          (textpart(1)(1:11).eq.'*NODEOUTPUT')) then
-            if(textpart(1)(1:9).eq.'*NODEFILE') then
-               output='asc'
-            else
-               output='bin'
+            if(output.ne.'exo') then
+               if(textpart(1)(1:9).eq.'*NODEFILE') then
+                  output='asc'
+               else
+                  output='bin'
+               endif
             endif
             ifile_output=1
             call noelfiles(inpc,textpart,jout,filab,nmethod,
