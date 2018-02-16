@@ -1,5 +1,7 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2018 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                     */
+/*     Modifications of this subroutine                                  */
+/*              Copyright (C) 2013-2018 Peter A. Gustafson               */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -20,6 +22,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "CalculiX.h"
+#ifdef EXODUSII
+#include "exo.h"
+#endif
 
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
