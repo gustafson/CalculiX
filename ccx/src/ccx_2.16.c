@@ -1539,8 +1539,14 @@ if((f1=fopen(fneig,"ab"))==NULL){
     printf("*ERROR in frd: cannot open frd file for writing...");
     exit(0);
 }
+#ifdef EXODUSII
+ if(strcmp1(output,"exo")==1){
+#endif
 fprintf(f1," 9999\n");
 fclose(f1);
+#ifdef EXODUSII
+ }
+#endif
 
 /* deallocating the fields
    this section is addressed immediately after leaving calinput */

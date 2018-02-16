@@ -928,6 +928,10 @@ dynacont.c \
 dynboun.c \
 electromagnetics.c \
 elemChecker.c \
+exo.c \
+exoselect.c \
+exosetfind.c \
+exovector.c \
 elementcpuload.c \
 expand.c \
 external.c \
