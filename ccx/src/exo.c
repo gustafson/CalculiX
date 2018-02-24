@@ -73,7 +73,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   ITG mt=mi[1]+1;
 
   ITG ncompscalar=1,ifieldscalar[1]={1},icompscalar[1]={0},nfieldscalar[2]={1,0};
-  ITG ncompvector=3,ifieldvector[3]={1,1,1},icompvector[3]={0,1,2},nfieldvector1[2]={3,0},nfieldvector0[2]={mi[1]+1,0};
+  ITG ncompvector=3,ifieldvector[3]={1,1,1},icompvector[3]={0,1,2},nfieldvector1[2]={3,0},nfieldvector0[2]={mi[1]+1,0},icompvectorlast[3]={3,4,5};
   ITG ncomptensor=6,ifieldtensor[6]={1,1,1,1,1,1},icomptensor[6]={0,1,2,3,5,4},nfieldtensor[2]={6,0};
   ITG ncompscalph=2,ifieldscalph[2]={1,2},icompscalph[2]={0,0},nfieldscalph[2]={0,0};
   ITG ncompvectph=6,ifieldvectph[6]={1,1,1,2,2,2},icompvectph[6]={1,2,3,1,2,3},nfieldvectph[2]={mi[1]+1,mi[1]+1};
@@ -151,7 +151,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   /* first time something is written in the exo-file: store
      computational metadata, the nodal coordinates and the
      topology */
-  if(*kode==1){
+  if((*kode==1)&&((*nmethod!=5)||(*mode!=0))){
     iaxial=0.;
     num_dim = 3;
     num_elem_blk = 19;
@@ -332,8 +332,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	/* 4-node tetrahedral element */
 	blkassign[l++]=11;
       }else if(strcmp1(&lakon[8*i+3],"15")==0){
-	if((strcmp1(&lakon[8*i+6]," ")==0)||
-	   (strcmp1(&filab[4],"E")==0)){
+	if(((strcmp1(&lakon[8*i+6]," ")==0)||
+	    (strcmp1(&filab[4],"E")==0))&&
+           (strcmp2(&lakon[8*i+6],"LC",2)!=0)){
 	  /* 15-node wedge element */
 	  blkassign[l++]=12;
 	}else{
@@ -635,27 +636,29 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     if((*nmethod==2)&&(((*mode/2)*2!=*mode)&&(*noddiam>=0))){ex_close(exoid);return;}
 
     /* storing the displacements in the nodes */
-    if(strcmp1(filab,"U ")==0){
-      if (countbool==3){
-	countvars+=3;
-      }else if(countbool==2){
-     	var_names[countvars++]="Ux";
-	var_names[countvars++]="Uy";
-	var_names[countvars++]="Uz";
-      }else{
-	iselect=1;
+    if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(filab,"U ")==0)&&(*ithermal!=2)){
+	if (countbool==3){
+	  countvars+=3;
+	}else if(countbool==2){
+	  var_names[countvars++]="Ux";
+	  var_names[countvars++]="Uy";
+	  var_names[countvars++]="Uz";
+	}else{
+	  iselect=1;
 
-	frdset(filab,set,&iset,istartset,iendset,ialset,
-	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	       ngraph);
+	  frdset(filab,set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
 
-	exovector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
-		  trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
-		  exoid, num_time_steps,countvars,nout);
-	countvars+=3;
+	  exovector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
+		    trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
+		    exoid, num_time_steps,countvars,nout);
+	  countvars+=3;
+	}
       }
     }
-
+    
     /*     storing the imaginary part of displacements in the nodes
 	   for the odd modes of cyclic symmetry calculations */
     if(*noddiam>=0){
@@ -675,9 +678,29 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}
       }
     }
+    
+    /*     storing the imaginary part of displacements in the nodes
+	   for steady state calculations */
+    if((*nmethod==5)&&(*mode==0)){
+      if((strcmp1(filab,"U ")==0)&&(*ithermal!=2)){
+	if (countbool==3){
+	  countvars+=3;
+	}else if(countbool==2){
+	  var_names[countvars++]="U-imag-x";
+	  var_names[countvars++]="U-imag-y";
+	  var_names[countvars++]="U-imag-z";
+	}else{
+	  iselect=1;
+	  exovector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
+		    trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
+		    exoid,num_time_steps,countvars,nout);
+	  countvars+=3;
+	}
+      }
+    }
 
     /* storing the velocities in the nodes */
-    if(strcmp1(&filab[1740],"V   ")==0){
+    if((strcmp1(&filab[1740],"V   ")==0)&&(*ithermal!=2)){
       if (countbool==3){
 	countvars+=3;
       }else if(countbool==2){
@@ -725,49 +748,72 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       }
     }
 
-    /* storing the stresses in the nodes */
-    if(strcmp1(&filab[174],"S   ")==0){
+    /* storing the electrical potential in the nodes */
+    if((strcmp1(&filab[3654],"POT ")==0)&&(*ithermal==2)){
       if (countbool==3){
-	countvars+=6;
+	countvars+=1;
       }else if(countbool==2){
-	// Note reordered relative to frd file
-	// Order must be xx  yy  zz  xy  xz  yz
-	var_names[countvars++]="Sxx";
-	var_names[countvars++]="Syy";
-	var_names[countvars++]="Szz";
-	var_names[countvars++]="Sxy";
-	var_names[countvars++]="Sxz";
-	var_names[countvars++]="Syz";
+      	var_names[countvars++]="POT";
       }else{
-	iselect=1;
-
-	frdset(&filab[174],set,&iset,istartset,iendset,ialset,
+	iselect=0;
+    
+	frdset(&filab[3654],set,&iset,istartset,iendset,ialset,
 	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 	       ngraph);
-
-	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
-		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
-	countvars+=6;
+    
+	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export POT to exo not tested.\n");
+	countvars+=1;
       }
     }
+    
+    /* storing the stresses in the nodes */
+    if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[174],"S   ")==0)&&(*ithermal!=2)){
+	if (countbool==3){
+	  countvars+=6;
+	}else if(countbool==2){
+	  // Note reordered relative to frd file
+	  // Order must be xx  yy  zz  xy  xz  yz
+	  var_names[countvars++]="Sxx";
+	  var_names[countvars++]="Syy";
+	  var_names[countvars++]="Szz";
+	  var_names[countvars++]="Sxy";
+	  var_names[countvars++]="Sxz";
+	  var_names[countvars++]="Syz";
+	}else{
+	  iselect=1;
 
+	  frdset(&filab[174],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+
+	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+	  countvars+=6;
+	}
+      }
+    }
+      
     /* storing the imaginary part of the stresses in the nodes
        for the odd modes of cyclic symmetry calculations */
     if(*noddiam>=0){
-      if (countbool==3){
-	countvars+=6;
-      }else if(countbool==2){
-	// Note reordered relative to frd file
-	// Order must be xx  yy  zz  xy  xz  yz
-	var_names[countvars++]="S-imagxx";
-	var_names[countvars++]="S-imagyy";
-	var_names[countvars++]="S-imagzz";
-	var_names[countvars++]="S-imagxy";
-	var_names[countvars++]="S-imagzx";
-	var_names[countvars++]="S-imagyz";
-      }else{
-	if(strcmp1(&filab[174],"S   ")==0){
+      if((strcmp1(&filab[174],"S   ")==0)&&(*ithermal!=2)){
+	if (countbool==3){
+	  countvars+=6;
+	}else if(countbool==2){
+	  // Note reordered relative to frd file
+	  // Order must be xx  yy  zz  xy  xz  yz
+	  var_names[countvars++]="S-imagxx";
+	  var_names[countvars++]="S-imagyy";
+	  var_names[countvars++]="S-imagzz";
+	  var_names[countvars++]="S-imagxy";
+	  var_names[countvars++]="S-imagzx";
+	  var_names[countvars++]="S-imagyz";
+	}else{
 	  exoselect(&stn[6**nk],stn,&iset,&nkcoords,inum,istartset,iendset,
 	  	    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
 	  	    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
@@ -776,35 +822,114 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       }
     }
 
-    /* storing the total strains in the nodes */
-    if(strcmp1(&filab[261],"E   ")==0){
-      if (countbool==3){
-	countvars+=6;
-      }else if(countbool==2){
-	// Note reordered relative to frd file
-	// Order must be xx  yy  zz  xy  xz  yz
-	var_names[countvars++]="Exx";
-	var_names[countvars++]="Eyy";
-	var_names[countvars++]="Ezz";
-	var_names[countvars++]="Exy";
-	var_names[countvars++]="Exz";
-	var_names[countvars++]="Eyz";
-      }else{
-	iselect=1;
+    /* storing the imaginary part of the stresses in the nodes
+       for steady state calculations */
+    if((*nmethod==5)&&(*mode==0)){
+      if((strcmp1(&filab[174],"S   ")==0)&&(*ithermal!=2)){
+	if (countbool==3){
+	  countvars+=6;
+	}else if(countbool==2){
+	  // Note reordered relative to frd file
+	  // Order must be xx  yy  zz  xy  xz  yz
+	  var_names[countvars++]="S-imagxx";
+	  var_names[countvars++]="S-imagyy";
+	  var_names[countvars++]="S-imagzz";
+	  var_names[countvars++]="S-imagxy";
+	  var_names[countvars++]="S-imagzx";
+	  var_names[countvars++]="S-imagyz";
+	}else{
+	  iselect=1;
+	
+	  frdset(&filab[174],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+      
+	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
 
-
-	frdset(&filab[261],set,&iset,istartset,iendset,ialset,
-	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	       ngraph);
-
-	exoselect(een,een,&iset,&nkcoords,inum,istartset,iendset,
-		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
-
-	countvars+=6;
+	  countvars+=6;
+	}      
       }
     }
 
+    /* storing the electromagnetic field E in the nodes */
+    if((strcmp1(&filab[3741],"EMFE")==0)&&(*ithermal!=2)){
+      if (countbool==3){
+	countvars+=3;
+      }else if(countbool==2){
+      	var_names[countvars++]="EMF-Ex";
+	var_names[countvars++]="EMF-Ey";
+	var_names[countvars++]="EMF-Ez";
+      }else{
+	iselect=1;
+
+	frdset(&filab[3741],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+    
+	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompvector,ifieldvector,icompvector,
+		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export EMF-E to exo not tested.\n");
+	countvars+=3;
+      }
+    }
+
+    /* storing the electromagnetic field B in the nodes */
+    if((strcmp1(&filab[3828],"EMFB")==0)&&(*ithermal!=2)){
+      if (countbool==3){
+	countvars+=3;
+      }else if(countbool==2){
+      	var_names[countvars++]="EMF-Bx";
+	var_names[countvars++]="EMF-By";
+	var_names[countvars++]="EMF-Bz";
+      }else{
+	iselect=1;
+
+	frdset(&filab[3828],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+    
+	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompvector,ifieldvector,icompvectorlast,
+		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export EMF-B to exo not tested.\n");
+	countvars+=3;
+      }
+    }
+    
+    /* storing the total strains in the nodes */
+    if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[261],"E   ")==0)&&(*ithermal!=2)){
+	if (countbool==3){
+	  countvars+=6;
+	}else if(countbool==2){
+	  // Note reordered relative to frd file
+	  // Order must be xx  yy  zz  xy  xz  yz
+	  var_names[countvars++]="Exx";
+	  var_names[countvars++]="Eyy";
+	  var_names[countvars++]="Ezz";
+	  var_names[countvars++]="Exy";
+	  var_names[countvars++]="Exz";
+	  var_names[countvars++]="Eyz";
+	}else{
+	  iselect=1;
+
+
+	  frdset(&filab[261],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+
+	  exoselect(een,een,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+
+	  countvars+=6;
+	}
+      }
+    }
+    
     /* storing the imaginary part of the total strains in the nodes
        for the odd modes of cyclic symmetry calculations */
     if(*noddiam>=0){
@@ -829,36 +954,69 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}
       }
     }
-
+    
+    /* storing the imaginary part of the total strains in the nodes
+       for steady state calculations */
+    if((*nmethod==5)&&(*mode==0)){
+      if((strcmp1(&filab[261],"E   ")==0)&&(*ithermal!=2)){
+	if (countbool==3){
+	  countvars+=6;
+	}else if(countbool==2){
+	  // Note reordered relative to frd file
+	  // Order must be xx  yy  zz  xy  xz  yz
+	  var_names[countvars++]="E-imagxx";
+	  var_names[countvars++]="E-imagyy";
+	  var_names[countvars++]="E-imagzz";
+	  var_names[countvars++]="E-imagxy";
+	  var_names[countvars++]="E-imagxz";
+	  var_names[countvars++]="E-imagyz";
+	}else{
+	  iselect=1;
+	  
+	  frdset(&filab[261],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+	  
+	  exoselect(een,een,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+	  printf ("Warning: export E-imag to exo not tested.\n");
+	  countvars+=6;
+	}
+      }
+    }
+    
     /* storing the mechanical strains in the nodes */
-    if(strcmp1(&filab[2697],"ME  ")==0){
-      if (countbool==3){
-	countvars+=6;
-      }else if(countbool==2){
-	// Note reordered relative to frd file
-	// Order must be xx  yy  zz  xy  xz  yz
-	var_names[countvars++]="MExx";
-	var_names[countvars++]="MEyy";
-	var_names[countvars++]="MEzz";
-	var_names[countvars++]="MExy";
-	var_names[countvars++]="MExz";
-	var_names[countvars++]="MEyz";
-      }else{
-	iselect=1;
-	frdset(&filab[2697],set,&iset,istartset,iendset,ialset,
-	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	       ngraph);
-	exoselect(emn,emn,&iset,&nkcoords,inum,istartset,iendset,
-		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
-	countvars+=6;
+    if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[2697],"ME  ")==0)&&(*ithermal!=2)){
+	if (countbool==3){
+	  countvars+=6;
+	}else if(countbool==2){
+	  // Note reordered relative to frd file
+	  // Order must be xx  yy  zz  xy  xz  yz
+	  var_names[countvars++]="MExx";
+	  var_names[countvars++]="MEyy";
+	  var_names[countvars++]="MEzz";
+	  var_names[countvars++]="MExy";
+	  var_names[countvars++]="MExz";
+	  var_names[countvars++]="MEyz";
+	}else{
+	  iselect=1;
+	  frdset(&filab[2697],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+	  exoselect(emn,emn,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+	  countvars+=6;
+	}
       }
     }
 
     /* storing the imaginary part of the mechanical strains in the nodes
        for the odd modes of cyclic symmetry calculations */
-    if(*noddiam>=0){
-      if(strcmp1(&filab[2697],"ME  ")==0){
+    if((*noddiam>=0)||((*nmethod==5)&&(*mode==0))){
+      if((strcmp1(&filab[2697],"ME  ")==0)&&(*ithermal!=2)){
 	if (countbool==3){
 	  countvars+=6;
 	}else if(countbool==2){
@@ -878,34 +1036,35 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}
       }
     }
-
+  
     /* storing the forces in the nodes */
-
-    if(strcmp1(&filab[348],"RF  ")==0){
-      if (countbool==3){
-	countvars+=3;
-      }else if(countbool==2){
-	var_names[countvars++]="RFx";
-	var_names[countvars++]="RFy";
-	var_names[countvars++]="RFz";
-      }else{
-	iselect=1;
-	frdset(&filab[348],set,&iset,istartset,iendset,ialset,
-	  inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	  ngraph);
-	if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]*=180.;fn[2+i*mt]*=180.;fn[3+i*mt]*=180.;}}
-	exovector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,m1,inotr,
-		  trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
-		  exoid,num_time_steps,countvars,nout);
-	if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]/=180.;fn[2+i*mt]/=180.;fn[3+i*mt]/=180.;}}
-	countvars+=3;
+    if((*nmethod!=5)||(*mode==-1)){    
+      if((strcmp1(&filab[348],"RF  ")==0)&&(*ithermal!=2)){
+	if (countbool==3){
+	  countvars+=3;
+	}else if(countbool==2){
+	  var_names[countvars++]="RFx";
+	  var_names[countvars++]="RFy";
+	  var_names[countvars++]="RFz";
+	}else{
+	  iselect=1;
+	  frdset(&filab[348],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+	  if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]*=180.;fn[2+i*mt]*=180.;fn[3+i*mt]*=180.;}}
+	  exovector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,m1,inotr,
+		    trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
+		    exoid,num_time_steps,countvars,nout);
+	  if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]/=180.;fn[2+i*mt]/=180.;fn[3+i*mt]/=180.;}}
+	  countvars+=3;
+	}
       }
     }
-
+    
     /*     storing the imaginary part of the forces in the nodes
 	   for the odd modes of cyclic symmetry calculations */
-    if(*noddiam>=0){
-      if(strcmp1(&filab[348],"RF  ")==0){
+    if((*noddiam>=0)||((*nmethod==5)&&(*mode==0))){
+      if((strcmp1(&filab[348],"RF  ")==0)&&(*ithermal!=2)){
 	if (countbool==3){
 	  countvars+=3;
 	}else if(countbool==2){
@@ -922,7 +1081,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     }
 
     /* storing the equivalent plastic strains in the nodes */
-    if(strcmp1(&filab[435],"PEEQ")==0){
+    if((strcmp1(&filab[435],"PEEQ")==0)&&(*ithermal!=2)){
       if (countbool==3){
 	countvars+=1;
       }else if(countbool==2){
@@ -942,7 +1101,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 
     /* storing the energy in the nodes */
-    if(strcmp1(&filab[522],"ENER")==0){
+    if((strcmp1(&filab[522],"ENER")==0)&&(*ithermal!=2)){
       if (countbool==3){
 	countvars+=1;
       }else if(countbool==2){
@@ -961,7 +1120,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     }
 
     /* storing the contact displacements and stresses at the slave nodes */
-    if(strcmp1(&filab[2175],"CONT")==0){
+    /* node-to-face penalty */
+    if((strcmp1(&filab[2175],"CONT")==0)&&(*mortar!=1)&&(*ithermal!=2)&&(*nmethod!=2)){
       if (countbool==3){
 	countvars+=6;
       }else if(countbool==2){
@@ -996,11 +1156,65 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}
 
 	free(nodal_var_vals);
+	printf ("Warning: export CONT to exo not tested.\n");
+	countvars+=6;
       }
     }
 
+    /* face-to-face penalty */
+    if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[2175],"CONT")==0)&&(*mortar==1)&&(*ithermal!=2)){
+	if (countbool==3){
+	  countvars+=6;
+	}else if(countbool==2){
+	  var_names[countvars++]="COPEN";
+	  var_names[countvars++]="CSLIP1";
+	  var_names[countvars++]="CSLIP2";
+	  var_names[countvars++]="CPRESS";
+	  var_names[countvars++]="CSHEAR1";
+	  var_names[countvars++]="CSHEAR2";
+	}else{
+	  iselect=1;
+	
+	  frdset(&filab[2175],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+    
+	  exoselect(cdn,cdn,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+	  printf ("Warning: export CONT to exo not tested.\n");
+	  countvars+=6;
+	}
+      }
+    }
+
+    /* storing imaginary part of the differential contact displacements 
+       and the contact stresses for the odd modes of cyclic symmetry
+       calculations */
+    if((*noddiam>=0)||((*nmethod==5)&&(*mode==0))){
+      if((strcmp1(&filab[2175],"CONT")==0)&&(*mortar==1)&&(*ithermal!=2)){
+	if (countbool==3){
+	  countvars+=6;
+	}else if(countbool==2){
+	  var_names[countvars++]="COPEN-Imag";
+	  var_names[countvars++]="CSLIP1-Imag";
+	  var_names[countvars++]="CSLIP2-Imag";
+	  var_names[countvars++]="CPRESS-Imag";
+	  var_names[countvars++]="CSHEAR1-Imag";
+	  var_names[countvars++]="CSHEAR2-Imag";
+	}else{
+	  iselect=1;
+	  exoselect(&cdn[6**nk],cdn,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+	  countvars+=6;
+	}
+      }
+    }
+  
     /* storing the contact energy at the slave nodes */
-    if(strcmp1(&filab[2262],"CELS")==0){
+    if((strcmp1(&filab[2262],"CELS")==0)&&(*ithermal!=2)){
       if (countbool==3){
 	countvars+=1;
       }else if(countbool==2){
@@ -1060,7 +1274,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
        the heat flux has been extrapolated from the integration points
        in subroutine extropolate.f, taking into account whether the
        results are requested in the global system or in a local system.
-       Therefore, subroutine frdvector cannot be used, since it assumes
+       Therefore, subroutine exovector cannot be used, since it assumes
        the values are stored in the global system */
     if((strcmp1(&filab[696],"HFL ")==0)&&(*ithermal>1)){
       if (countbool==3){
@@ -1083,6 +1297,31 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       }
     }
 
+    /* storing the electrical current in the nodes
+       (cf. heat flux HFL above)  */
+    
+    if((strcmp1(&filab[3567],"ECD ")==0)&&(*ithermal==2)){
+      if (countbool==3){
+	countvars+=3;
+      }else if(countbool==2){
+	var_names[countvars++]="ECDx";
+	var_names[countvars++]="ECDy";
+	var_names[countvars++]="ECDz";
+      }else{
+	iselect=1;
+    
+	frdset(&filab[3567],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+    
+	exoselect(qfn,qfn,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncompvector,ifieldvector,icompvector,
+		  nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout);
+	printf ("Warning: export ECD to exo not tested.\n");
+	countvars+=3;
+      }
+    }
+    
     /* storing the heat generation in the nodes */
     if((strcmp1(&filab[783],"RFL ")==0)&&(*ithermal>1)){
       if (countbool==3){
@@ -1103,41 +1342,44 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     }
 
     /* storing the Zienkiewicz-Zhu improved stresses in the nodes */
-    if(strcmp1(&filab[1044],"ZZS")==0){
-      if (countbool==3){
-	countvars+=6;
-      }else if(countbool==2){
-	// Note reordered relative to frd file
-	// Order must be xx  yy  zz  xy  xz  yz
-	var_names[countvars++]="ZZSxx";
-	var_names[countvars++]="ZZSyy";
-	var_names[countvars++]="ZZSzz";
-	var_names[countvars++]="ZZSxy";
-	var_names[countvars++]="ZZSxz";
-	var_names[countvars++]="ZZSyz";
-      }else{
-	FORTRAN(zienzhu,(co,nk,kon,ipkon,lakon,ne0,stn,ipneigh,neigh,
-			 stx,&mi[0]));
+    if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[1044],"ZZS")==0)&&(*ithermal!=2)){
+	if (countbool==3){
+	  countvars+=6;
+	}else if(countbool==2){
+	  // Note reordered relative to frd file
+	  // Order must be xx  yy  zz  xy  xz  yz
+	  var_names[countvars++]="ZZSxx";
+	  var_names[countvars++]="ZZSyy";
+	  var_names[countvars++]="ZZSzz";
+	  var_names[countvars++]="ZZSxy";
+	  var_names[countvars++]="ZZSxz";
+	  var_names[countvars++]="ZZSyz";
+	}else{
+	  FORTRAN(zienzhu,(co,nk,kon,ipkon,lakon,ne0,stn,ipneigh,neigh,
+			   stx,&mi[0]));
 
-	iselect=1;
+	  iselect=1;
 
-	frdset(&filab[1044],set,&iset,istartset,iendset,ialset,
-	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	       ngraph);
+	  frdset(&filab[1044],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
 
-	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
-		  ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
-	countvars+=6;
+	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+	  printf ("Warning: export of ZZSTR to exo not tested.\n");
+	  countvars+=6;
+	}
       }
     }
-
+    
     /* storing the imaginary part of the Zienkiewicz-Zhu
        improved stresses in the nodes
        for the odd modes of cyclic symmetry calculations */
-
-    if(*noddiam>=0){
-      if(strcmp1(&filab[1044],"ZZS")==0){
+    
+    if((*noddiam>=0)||((*nmethod==5)&&(*mode==0))){
+      if((strcmp1(&filab[1044],"ZZS")==0)&&(*ithermal!=2)){
 	if (countbool==3){
 	  countvars+=6;
 	}else if(countbool==2){
@@ -1151,7 +1393,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  var_names[countvars++]="ZZS-imagyz";
 	}else{
 
-          FORTRAN(zienzhu,(co,nk,kon,ipkon,lakon,ne0,stn,ipneigh,neigh,
+	  FORTRAN(zienzhu,(co,nk,kon,ipkon,lakon,ne0,stn,ipneigh,neigh,
 			   &stx[6*mi[0]**ne],&mi[0]));
 
 	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
@@ -1159,47 +1401,47 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
 	  printf ("Warning: export of ZZSTR imaginary to exo not tested.\n");
 	  countvars+=6;
-        }
+	}
       }
     }
 
     /* storing the error estimator in the nodes */
+    if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[1044],"ERR")==0)&&(*ithermal!=2)){
+	if (countbool==3){
+	  countvars+=2;
+	}else if(countbool==2){
+	  var_names[countvars++]="PSTDERROR";
+	  var_names[countvars++]="VMSTDERROR";
+	}else{
 
-    if(strcmp1(&filab[1044],"ERR")==0){
-      if (countbool==3){
-	countvars+=2;
-      }else if(countbool==2){
-	var_names[countvars++]="PSTDERROR";
-	var_names[countvars++]="VMSTDERROR";
-      }else{
+	  nterms=6;
+	  FORTRAN(errorestimator,(stx,stn,ipkon,kon,lakon,nk,ne,
+				  mi,ielmat,&nterms,inum,co,vold,&filab[1048]));
 
-	nterms=6;
-	FORTRAN(errorestimator,(stx,stn,ipkon,kon,lakon,nk,ne,
-				mi,ielmat,&nterms,inum,co,vold,&filab[1048]));
+	  iselect=1;
 
-	iselect=1;
+	  frdset(&filab[1044],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
 
-	frdset(&filab[1044],set,&iset,istartset,iendset,ialset,
-	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	       ngraph);
+	  ncomp=2;
+	  ifield[0]=1;ifield[1]=1;
+	  icomp[0]=0;icomp[1]=1;
 
-	ncomp=2;
-	ifield[0]=1;ifield[1]=1;
-	icomp[0]=2;icomp[1]=4;
+	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncomp,ifield,icomp,
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
 
-	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
-		  ialset,ngraph,&ncomp,ifield,icomp,
-		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
-
-	countvars+=2;
+	  countvars+=2;
+	}
       }
     }
 
-
     /* storing the imaginary part of the error estimator in the nodes
        for the odd modes of cyclic symmetry calculations */
-    if(*noddiam>=0){
-      if(strcmp1(&filab[1044],"ERR")==0){
+    if((*noddiam>=0)||((*nmethod==5)&&(*mode==0))){
+      if((strcmp1(&filab[1044],"ERR")==0)&&(*ithermal!=2)){
 	if (countbool==3){
 	  countvars+=2;
 	}else if(countbool==2){
@@ -1212,8 +1454,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	
 	  ncomp=2;
 	  ifield[0]=1;ifield[1]=1;
-	  icomp[0]=2;icomp[1]=4;
-
+	  icomp[0]=0;icomp[1]=1;
+	
 	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
 		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
@@ -1224,36 +1466,38 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     }
 
     /* storing the thermal error estimator in the nodes */
-    if(strcmp1(&filab[2784],"HER")==0){
-      if (countbool==3){
-	countvars+=1;
-      }else if(countbool==2){
-	var_names[countvars++]="HFLSTD";
-      }else{
-	nterms=3;
-	FORTRAN(errorestimator,(qfx,qfn,ipkon,kon,lakon,nk,ne,
-				mi,ielmat,&nterms,inum,co,vold,&filab[2788]));
+    if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[2784],"HER")==0)&&(*ithermal>1)){
+	if (countbool==3){
+	  countvars+=1;
+	}else if(countbool==2){
+	  var_names[countvars++]="HFLSTD";
+	}else{
+	  nterms=3;
+	  FORTRAN(errorestimator,(qfx,qfn,ipkon,kon,lakon,nk,ne,
+				  mi,ielmat,&nterms,inum,co,vold,&filab[2788]));
 
-	iselect=1;
-	frdset(&filab[2784],set,&iset,istartset,iendset,ialset,
-	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	       ngraph);
+	  iselect=1;
+	  frdset(&filab[2784],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
 
-	ncomp=1;
-	ifield[0]=1;
-	icomp[0]=2;
-
-	exoselect(qfn,qfn,&iset,&nkcoords,inum,istartset,iendset,
-		  ialset,ngraph,&ncomp,ifield,icomp,
-		  nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout);
-	countvars+=1;
+	  ncomp=1;
+	  ifield[0]=1;
+	  icomp[0]=1;
+	
+	  exoselect(qfn,qfn,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncomp,ifield,icomp,
+		    nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout);
+	  countvars+=1;
+	}
       }
     }
 
     /* storing the imaginary part of the thermal error estimator in the nodes
        for the odd modes of cyclic symmetry calculations */
-
-    if(*noddiam>=0){
+  
+    if((*noddiam>=0)||((*nmethod==5)&&(*mode==0))){
       if(strcmp1(&filab[2784],"HER")==0){
 	if (countbool==3){
 	  countvars+=1;
@@ -1266,8 +1510,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	
 	  ncomp=1;
 	  ifield[0]=1;
-	  icomp[0]=2;
-	
+	  icomp[0]=1;
+	  
 	  exoselect(qfn,qfn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
 		    nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout);
@@ -1278,7 +1522,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     }
 
     /* storing the total temperatures in the network nodes */
-    if(strcmp1(&filab[1131],"TT  ")==0){
+    if((strcmp1(&filab[1131],"TT  ")==0)&&(*ithermal>1)){
       if (countbool==3){
 	countvars+=1;
       }else if(countbool==2){
@@ -1299,7 +1543,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     }
 
     /* storing the total temperatures in the network nodes */
-    if(strcmp1(&filab[1218],"MF  ")==0){
+    if((strcmp1(&filab[1218],"MF  ")==0)&&(*ithermal>1)){
       if (countbool==3){
 	countvars+=1;
       }else if(countbool==2){
@@ -1322,7 +1566,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     }
 
     /* storing the total pressure in the network nodes */
-    if(strcmp1(&filab[1305],"PT  ")==0){
+    if((strcmp1(&filab[1305],"PT  ")==0)&&(*ithermal>1)){
       if (countbool==3){
 	countvars+=1;
       }else if(countbool==2){
@@ -1343,7 +1587,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     }
 
     /* storing the static pressure in the liquid network nodes */
-    if(strcmp1(&filab[1827],"PS  ")==0){
+    if((strcmp1(&filab[1827],"PS  ")==0)&&(*ithermal>1)){
       if (countbool==3){
 	countvars+=1;
       }else if(countbool==2){
@@ -1387,7 +1631,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     }
 
     /* storing the critical depth in the channel nodes */
-    if(strcmp1(&filab[2436],"HCRI")==0){
+    if((strcmp1(&filab[2436],"HCRI")==0)&&(*ithermal>1)){
       if (countbool==3){
 	countvars+=1;
       }else if(countbool==2){
@@ -1409,7 +1653,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     }
 
     /* storing the static temperature in the network nodes */
-    if(strcmp1(&filab[1392],"TS  ")==0){
+    if((strcmp1(&filab[1392],"TS  ")==0)&&(*ithermal>1)){
       if (countbool==3){
 	countvars+=1;
       }else if(countbool==2){
@@ -1437,7 +1681,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     if((*nmethod==5)&&(*mode==-1)){goto WRITENAMES;}
 
     /* storing the displacements in the nodes (magnitude, phase) */
-    if(strcmp1(&filab[870],"PU  ")==0){
+    if((strcmp1(&filab[870],"PU  ")==0)&&(*ithermal!=2)){
       if (countbool==3){
 	countvars+=6;
       }else if(countbool==2){
@@ -1464,7 +1708,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     }
 
     /* storing the temperatures in the nodes (magnitude, phase) */
-    if(strcmp1(&filab[957],"PNT ")==0){
+    if((strcmp1(&filab[957],"PNT ")==0)&&(*ithermal>1)){
       if (countbool==3){
 	countvars+=2;
       }else if(countbool==2){
@@ -1481,13 +1725,13 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 		  ialset,ngraph,&ncompscalph,ifieldscalph,icompscalph,
 		  nfieldscalph,&iselect,exoid,num_time_steps,countvars,nout);
 	printf ("Warning: export of PNDTEMP to exo not tested.\n");
-	countvars+=6;
+	countvars+=2;
       }
     }
 
     /* storing the stresses in the nodes (magnitude, phase) */
-	
-    if(strcmp1(&filab[1479],"PHS ")==0){
+	  
+    if((strcmp1(&filab[1479],"PHS ")==0)&&(*ithermal!=2)){
       if (countbool==3){
 	countvars+=12;
       }else if(countbool==2){
@@ -1516,6 +1760,42 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 		  ialset,ngraph,&ncomptensph,ifieldtensph,icomptensph,
 		  nfieldtensph,&iselect,exoid,num_time_steps,countvars,nout);
 	countvars+=12;
+      }
+    }
+
+    /* storing the differential contact displacements and
+       the contact stresses in the nodes (magnitude, phase)
+       only for face-to-face penalty contact */
+    if((strcmp1(&filab[3915],"PCON")==0)&&(*ithermal!=2)&&(*mortar==1)){
+      if (countbool==3){
+	countvars+=12;
+      }else if(countbool==2){
+	// NOT SURE IF THE ORDER IS CORRECT HERE... ORDERING GETS
+	// CHANGED IN EXOSELECT
+	var_names[countvars++]="MAGO  ";
+	var_names[countvars++]="MAGSL1";
+	var_names[countvars++]="MAGSL2";
+	var_names[countvars++]="MAGP  ";
+	var_names[countvars++]="MAGSH1";
+	var_names[countvars++]="MAGSH2";
+	var_names[countvars++]="PHAO  ";
+	var_names[countvars++]="PHASL1";
+	var_names[countvars++]="PHASL2";
+	var_names[countvars++]="PHAP  ";
+	var_names[countvars++]="PHASH1";
+	var_names[countvars++]="PHASH2";
+      }else{
+	iselect=1;
+	
+	frdset(&filab[3915],set,&iset,istartset,iendset,ialset,
+	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	       ngraph);
+    
+	exoselect(cdnr,cdni,&iset,&nkcoords,inum,istartset,iendset,
+		  ialset,ngraph,&ncomptensph,ifieldtensph,icomptensph,
+		  nfieldtensph,&iselect,exoid,num_time_steps,countvars,nout);
+	countvars+=12;
+	printf ("Warning: export PCON to exo not tested and likely has incorrect ordering.\n");
       }
     }
 
@@ -1552,8 +1832,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
     /* storing the maximum displacements of the nodes in the base sector
        (components, magnitude) */
-	
-    if(strcmp1(&filab[1566],"MAXU")==0){
+	  
+    if((strcmp1(&filab[1566],"MAXU")==0)&&(*ithermal!=2)){
       if (countbool==3){
 	countvars+=4;
       }else if(countbool==2){
@@ -1583,14 +1863,13 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       }
     }
 
-    //  /* storing the worst principal stress at the nodes
-    //     in the basis sector (components, magnitude)
-    //
-    //     the worst principal stress is the maximum of the
-    //     absolute value of all principal stresses, times
-    //     its original sign */
-    //	
-    if(strcmp1(&filab[1653],"MAXS")==0){
+    /* storing the worst principal stress at the nodes in the basis
+       sector (components, magnitude)
+    
+       the worst principal stress is the maximum of the absolute value
+       of all principal stresses, times its original sign */
+      
+    if((strcmp1(&filab[1653],"MAXS")==0)&&(*ithermal!=2)){
       if (countbool==3){
 	countvars+=7;
       }else if(countbool==2){
@@ -1634,7 +1913,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
        the worst principal strain is the maximum of the
        absolute value of all principal strains, times
        its original sign */
-    if(strcmp1(&filab[2523],"MAXE")==0){
+    if((strcmp1(&filab[2523],"MAXE")==0)&&(*ithermal!=2)){
       if (countbool==3){
 	countvars+=7;
       }else if(countbool==2){

@@ -148,7 +148,6 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
     }
 
     // Note: the results for exo tensor format are strangely ordered,
-    // but provide the
     if (*ncomp==12){
       k=j;
     }else{k=j;}
