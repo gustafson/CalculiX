@@ -150,8 +150,8 @@ LDFLAGS += `pkg-config --libs pardiso`
 ## EXODUSII
 ## CFLAGS  += -DEXODUSII
 ## LDFLAGS += -lexoIIv2c -lnetcdf
-## CFLAGS  += `pkg-config --cflags exodusii` -DEXODUSII
-## LDFLAGS += `pkg-config --libs exodusii`
+CFLAGS  += `pkg-config --cflags exodusii` -DEXODUSII
+LDFLAGS += `pkg-config --libs exodusii`
 
 
 
